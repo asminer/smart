@@ -988,7 +988,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     }
   }
 
-  constfunc* find = NULL;
+  variable* find = NULL;
 
   // see if the variable exists...
   if (WithinModel()) {
@@ -1002,7 +1002,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     }
   } else {
     // Globally
-    find = (constfunc*) Constants.FindName(id);
+    find = (variable*) Constants.FindName(id);
     if (find) {
       bool error = true;
       if (WithinConverge()) {
@@ -1088,7 +1088,7 @@ statement* BuildGuessStmt(type t, char* id, expr* ret)
   }
 
   // see if the variable exists already
-  constfunc* find = (constfunc*) Constants.FindName(id);
+  variable* find = (variable*) Constants.FindName(id);
   if (find) {
     Error.Start(filename, lexer.lineno());
     Error << "Re-definition of constant " << find;
@@ -1721,7 +1721,7 @@ expr* FindIdent(char* name)
   }
 
   // check constants
-  constfunc* find = (constfunc*) Constants.FindName(name);
+  variable* find = (variable*) Constants.FindName(name);
   if (find) return Copy(find);
 
   // Couldn't find it.

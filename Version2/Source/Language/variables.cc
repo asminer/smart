@@ -17,16 +17,32 @@
 
 // ******************************************************************
 // *                                                                *
+// *                        variable methods                        *
+// *                                                                *
+// ******************************************************************
+
+variable::variable(const char *fn, int line, type t, char* n)
+  : symbol(fn, line, t, n)
+{
+  state = CS_Undefined;
+  SetSubstitution(false);  
+}
+
+void variable::show(OutputStream &s) const
+{
+  s << Name();
+}
+
+// ******************************************************************
+// *                                                                *
 // *                       constfunc  methods                       *
 // *                                                                *
 // ******************************************************************
 
 constfunc::constfunc(const char *fn, int line, type t, char* n)
-  : symbol(fn, line, t, n)
+  : variable(fn, line, t, n)
 {
-  state = CS_Undefined;
   return_expr = NULL;
-  SetSubstitution(false);  
   have_cached = false;
   cache.setNull();
 }
@@ -35,11 +51,6 @@ constfunc::~constfunc()
 {
   DeleteResult(mytype, cache);
   Delete(return_expr);
-}
-
-void constfunc::show(OutputStream &s) const
-{
-  s << Name();
 }
 
 void constfunc::ShowHeader(OutputStream &s) const

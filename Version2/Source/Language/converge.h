@@ -21,7 +21,7 @@
 /** Real variables within a converge.
     Members are public because they're used by converge statements.
  */
-class cvgfunc : public constfunc {
+class cvgfunc : public variable {
 public:
   result current;
   result update;

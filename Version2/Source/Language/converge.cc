@@ -32,13 +32,12 @@ option_const* absolute;
 // ******************************************************************
 
 cvgfunc::cvgfunc(const char* fn, int line, type t, char* n)
- : constfunc(fn, line, t, n)
+ : variable(fn, line, t, n)
 {
   current.Clear();
   current.setNull();  // haven't been computed yet
   hasconverged = false;
   was_updated = false;
-  state = CS_Undefined;
 }
 
 void cvgfunc::Compute(int i, result &x)

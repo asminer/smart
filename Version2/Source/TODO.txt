@@ -1,7 +1,7 @@
 
 // $Id$
 
-Things to work on:
+Things to check on:
 
 * Forward definition of functions
 
@@ -10,6 +10,13 @@ Things to work on:
 * Input functions
 
 * Converge
+
+Things to do:
+
+* Make sure we correctly handle things like
+
+  rand real x := ...;
+  rand real y := x + x;  // Can't sample x twice!
 
 * Models
 

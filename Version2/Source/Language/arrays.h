@@ -115,14 +115,14 @@ public:
     Used as part of the descriptor structure within an array.
     If there is another dimension below this one, then all the
     down pointers will be to other descriptors, otherwise they
-    will be to constfuncs.  (see variables.h)
+    will be to variables.  (see variables.h)
 */  
 
 struct array_desc {
   /// The values that can be assumed here.
   set_result *values;
   /** Pointers to the next dimension (another array_desc)
-      or to the array values (a constfunc).
+      or to the array values (a variable).
       Note that the dimension of this array is equal to the
       size of the set "values".
    */
@@ -220,7 +220,7 @@ public:
 
   /** For the given indices (as expressions),
       find the array "value".
-      Actually, we return a constfunc.
+      Actually, we return a variable.
       Used directly by "acall".
       @param	il	Indices to use.  Must be exactly of size "dimension".
       @param	x	Where we return the function (in the "other" field).

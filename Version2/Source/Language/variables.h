@@ -39,6 +39,25 @@ enum const_state {
   
 // ******************************************************************
 // *                                                                *
+// *                         variable class                         *
+// *                                                                *
+// ******************************************************************
+
+
+/** Variables.
+    An abstract base class that includes constfunc and cvgfunc.
+ */
+class variable : public symbol {
+public:
+  /// State; used by compiler.
+  const_state state;
+public:
+  variable(const char *fn, int line, type t, char *n);
+  virtual void show(OutputStream &s) const;
+};
+
+// ******************************************************************
+// *                                                                *
 // *                        constfunc  class                        *
 // *                                                                *
 // ******************************************************************
@@ -48,10 +67,7 @@ enum const_state {
     These are used often as building blocks for more complex items.
     So, some functionality here is provided for derived classes.
  */
-class constfunc : public symbol {
-public:
-  /// State; used by compiler.
-  const_state state;
+class constfunc : public variable {
 protected:
   /// The return expression for the function.
   expr* return_expr;
@@ -62,7 +78,6 @@ protected:
 public:
   constfunc(const char *fn, int line, type t, char *n);
   virtual ~constfunc();
-  virtual void show(OutputStream &s) const;
   virtual void ShowHeader(OutputStream &s) const;
 
   virtual void ClearCache();
