@@ -803,6 +803,7 @@ statement* BuildArrayStmt(array *a, expr *e)
   if (ERROR==e) return NULL;
   if (NULL==e) {
     return MakeArrayAssign(a, NULL, filename, lexer.lineno());
+    // this is the proper thing even within a converge
   }
   if (!Promotable(e->Type(0), a->Type(0))) {
     Error.Start(filename, lexer.lineno());
@@ -812,7 +813,11 @@ statement* BuildArrayStmt(array *a, expr *e)
   }
   Optimize(0, e);
   expr* ne = MakeTypecast(e, a->Type(0), filename, lexer.lineno());
-  statement *s = MakeArrayAssign(a, ne, filename, lexer.lineno());
+  statement *s;
+  if (WithinConverge()) 
+    s = MakeArrayCvgAssign(a, ne, filename, lexer.lineno());
+  else
+    s = MakeArrayAssign(a, ne, filename, lexer.lineno());
   return s; 
 }
 
@@ -956,6 +961,39 @@ statement* BuildGuessStmt(type t, char* id, expr* ret)
   return s;
 }
 
+statement* BuildArrayGuess(array* id, expr* ret)
+{
+  if (NULL==id || ERROR==id) return NULL;
+  if (ERROR==ret) return NULL;
+
+  if (!WithinConverge()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Guess for " << id << " outside converge";
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+
+  // check type consistency
+  DCASSERT(NumComponents(ret)==1);
+  if (!Promotable(Type(ret, 0), REAL)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Return type for identifier " << id;
+    Error << " should be " << GetType(REAL);
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+
+  if (ret) {
+    Optimize(0, ret);
+    expr* nr = MakeTypecast(ret, REAL, filename, lexer.lineno());
+    statement* s = MakeArrayCvgGuess(id, nr, filename, lexer.lineno());
+    return s;
+  }
+  return MakeArrayCvgGuess(id, NULL, filename, lexer.lineno());
+}
+
 void* AppendStatement(void* list, statement* s)
 {
   if (NULL==s) return list;
@@ -1095,12 +1133,30 @@ array* BuildArray(type t, char*n, void* list)
   if (NULL==n) return NULL;
   if (NULL==list) return NULL;
 
-  // Check that this array name is ok
-  if (Arrays->FindName(n)) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Array " << n << " already defined";
-    Error.Stop();
-    return NULL;
+  if (WithinConverge()) {
+    // Make sure we're REAL
+    if (t != REAL) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Converge variable " << n << " must have type real";
+      Error.Stop();
+      return NULL;
+    }
+  }
+
+  // Does the array exist already?
+  array* find = (array*) Arrays->FindName(n);
+  if (find) {
+    bool error = true;
+    if (WithinConverge()) {
+      // might be ok
+      error = (find->state == CS_Defined) || (find->state == CS_Computed);
+    }
+    if (error) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " already defined";
+      Error.Stop();
+      return NULL;
+    }
   }
   
   List <char> *foo = (List <char> *)list;
@@ -1131,6 +1187,9 @@ array* BuildArray(type t, char*n, void* list)
       return NULL;
     }
   }
+
+  // If this is an existing array, then bail out
+  if (find) return find;
 
   // Build "copies" of iterators 
   array_index **il = Iterators->Copy();

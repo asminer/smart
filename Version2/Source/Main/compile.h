@@ -189,6 +189,10 @@ statement* BuildVarStmt(type t, char* id, expr* ret);
 */
 statement* BuildGuessStmt(type t, char* id, expr* ret);
 
+/** Builds an array "guess" statement with typechecking.
+*/
+statement* BuildArrayGuess(array* id, expr* ret);
+
 /** Adds a statement to our list (which may be null).
     @param list	List of statements (or NULL)
     @param s	statement to add (ignored if NULL)

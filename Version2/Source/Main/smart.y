@@ -421,7 +421,7 @@ defn_stmt
   Output << "Reducing defn_stmt : array_header GUESS expr SEMI\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = BuildArrayGuess($1, $3);
 }
 ;
 
