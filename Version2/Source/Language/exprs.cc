@@ -2,6 +2,7 @@
 // $Id$
 
 #include "exprs.h"
+#include "strings.h"
 #include "measures.h"
 #include "../Base/memtrack.h"
 
@@ -906,24 +907,28 @@ public:
 /** A string constant expression.
  */
 class stringconst : public constant {
-  char *value;
+  shared_string *value;
   public:
   stringconst(const char* fn, int line, char *v) : constant(fn, line, STRING) {
     ALLOC("stringconst", sizeof(stringconst));
-    value = v;
+    if (v) value = new shared_string(v);
+    else value = NULL;
   }
   virtual ~stringconst() {
     FREE("stringconst", sizeof(stringconst));
-    delete[] value;
+    Delete(value);
   }
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
-    x.other = value;
-    x.notFreeable();
+    x.other = Share(value);
   }
   virtual void show(OutputStream &s) const {
-    if (value) s << '"' << value << '"';
+    if (value) {
+      s.Put('"');
+      value->show(s);
+      s.Put('"');
+    }
     else s << "null string";
   }
 };

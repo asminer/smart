@@ -835,8 +835,7 @@ void spn_model::FinalizeModel(result &x)
 #endif
   // success:
   x.Clear();
-  x.notFreeable();
-  x.other = this;
+  x.other = Share(this);
 }
 
 state_model* spn_model::BuildStateModel(const char* fn, int ln)

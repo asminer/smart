@@ -12,6 +12,9 @@ Things to check on:
 
 Things to do:
 
+* String testing.
+
+
 * Generic priority structure in state_model class,
   so we don't have to re-implement it for every formalism.
 

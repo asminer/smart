@@ -14,6 +14,7 @@
 */
 
 #include "../Base/api.h"
+#include "shared.h"
 
 //@{
 
@@ -55,15 +56,17 @@ enum compute_special {
 
       For pointer values, set the boolean flag "canfree" if the
       pointer needs to be freed when we're done
+
+
+      TO DO!!! IMPORTANT!!!
+      eliminate "canfree", replace with "link counter" which is
+      decremented on delete, incremented on copy.
 */  
 
 struct result {
   public:
   /// Are we a special value, or not
   compute_special special;
-
-  /// Should pointers be freed?
-  bool freeable;
 
   public:
 
@@ -78,7 +81,7 @@ struct result {
     /// Used by real and expo type
     double rvalue;
     /// Everything else
-    void*  other; 
+    shared_object* other; 
   };
 
   /// Is this a normal value?
@@ -100,14 +103,8 @@ struct result {
   inline bool isNull() const { return CS_Null == special; }
   inline void setNull() { special = CS_Null; ivalue = 0; }
 
-  /// For pointers, should we free it?  (allows shallow copy of strings!)
-  inline bool isFreeable() const { return freeable; }
-  inline void setFreeable() { freeable = true; }
-  inline void notFreeable() { freeable = false; }
-
   inline void Clear() {
     special = CS_Normal;
-    freeable = true;
   }
 };
 
@@ -129,15 +126,25 @@ void PrintResult(OutputStream &s, type t, const result &x, int width=-1, int pre
     I.e., free the pointer if necessary.
     Note: this is necessary for general things,
     like destroying passed parameters.
-    For specifics, you should know how to delete it yourself
-    (e.g., you know it is a string, so cast to a char* and call free)
 */
 void DeleteResult(type t, result &x);
 
 /** Check equality of two results.
     Used primarily by models to check passed parameters.
 */
-bool Equals(type t, result &x, result &y);
+bool Equals(type t, const result &x, const result &y);
+
+/** Copy two results.
+    Shares whenever possible.
+*/
+inline void CopyResult(type t, result &dest, const result &src)
+{
+  dest = src;
+  switch (t) {
+    case STRING:
+	dest.other = Share(src.other);
+  }
+}
 
 //@}
 

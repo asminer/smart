@@ -71,8 +71,7 @@ void formal_param::Compute(int i, result &x)
   DCASSERT(i==0);
   DCASSERT(stack);
   DCASSERT(stack[0]);   
-  x = stack[0][offset];  
-  x.notFreeable();    // this is a shallow copy
+  CopyResult(Type(i), x, stack[0][offset]);
 }
 
 void formal_param::Sample(Rng &, int i, result &x)
@@ -80,8 +79,7 @@ void formal_param::Sample(Rng &, int i, result &x)
   DCASSERT(i==0);
   DCASSERT(stack);
   DCASSERT(stack[0]);   
-  x = stack[0][offset];  
-  x.notFreeable();
+  CopyResult(Type(i), x, stack[0][offset]);
 }
 
 

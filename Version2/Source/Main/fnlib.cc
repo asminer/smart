@@ -6,9 +6,12 @@
 #include "compile.h"
 #include "../Rng/rng.h"
 #include "../Formalisms/api.h"
+#include "../Language/strings.h"
 #include <math.h>
 
 char** environment; // used by system function
+
+shared_string empty_string(strdup(""));
 
 extern PtrTable Builtins;
 
@@ -135,7 +138,7 @@ void compute_help(expr **pp, int np, result &x)
   x.Clear();
   SafeCompute(pp[0], 0, x);
   if (x.isNormal()) 
-    help_search_string = (char*) x.other;
+    help_search_string = stringconvert(x.other);
 
   // Look through functions
   Builtins.Traverse(ShowDocs);
@@ -269,7 +272,7 @@ void compute_sprint(expr **p, int np, result &x)
   char* bar = strbuffer.GetString();
   strbuffer.flush();
   x.Clear();
-  x.other = bar;
+  x.other = new shared_string(bar);
 }
 
 void AddSprint(PtrTable *fns)
@@ -302,7 +305,8 @@ void compute_read_bool(expr **pp, int np, result &x)
   while (1) {
     if (Input.IsDefault()) 
       if (!x.isNull()) {
-        Output << "Enter the [y/n] value for " << (char*) x.other << " : ";
+        Output << "Enter the [y/n] value for ";
+        Output << stringconvert(x.other) << " : ";
         Output.flush();
       }     
     Input.Get(c);
@@ -337,7 +341,8 @@ void compute_read_int(expr **pp, int np, result &x)
 
   if (Input.IsDefault()) 
     if (!x.isNull()) {
-      Output << "Enter the (integer) value for " << (char*) x.other << " : ";
+      Output << "Enter the (integer) value for ";
+      Output << stringconvert(x.other) << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -374,7 +379,8 @@ void compute_read_real(expr **pp, int np, result &x)
 
   if (Input.IsDefault()) 
     if (!x.isNull()) {
-      Output << "Enter the (real) value for " << (char*) x.other << " : ";
+      Output << "Enter the (real) value for ";
+      Output << stringconvert(x.other) << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -416,7 +422,8 @@ void compute_read_string(expr **pp, int np, result &x)
 
   if (Input.IsDefault()) 
     if (!x.isNull()) {
-      Output << "Enter the (string) value for " << (char*) x.other << " : ";
+      Output << "Enter the (string) value for ";
+      Output << stringconvert(x.other) << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -441,7 +448,7 @@ void compute_read_string(expr **pp, int np, result &x)
     if ((c==' ') || (c=='\t') || (c=='\n')) c=0;
   }
   buffer[i] = 0;  // in case we go past the end
-  x.other = buffer;
+  x.other = new shared_string(buffer);
 }
 
 void AddReadString(PtrTable *fns)
@@ -476,7 +483,7 @@ void compute_inputfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* infile = fopen((char*) x.other, "r");
+  FILE* infile = fopen(stringconvert(x.other), "r");
   DeleteResult(STRING, x); 
   x.Clear();
   if (NULL==infile) {
@@ -515,7 +522,7 @@ void compute_errorfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen((char*) x.other, "a");
+  FILE* outfile = fopen(stringconvert(x.other), "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -553,7 +560,7 @@ void compute_warningfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen((char*) x.other, "a");
+  FILE* outfile = fopen(stringconvert(x.other), "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -591,7 +598,7 @@ void compute_outputfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen((char*) x.other, "a");
+  FILE* outfile = fopen(stringconvert(x.other), "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -627,42 +634,71 @@ void compute_substr(expr** p, int np, result &x)
   DCASSERT(np==3);
   result start;
   result stop;
+
   SafeCompute(p[0], 0, x);
   if (!x.isNormal()) return;
+  char* src = stringconvert(x.other);
+  int srclen = strlen(src);
 
   SafeCompute(p[1], 0, start);
-  SafeCompute(p[2], 0, stop);
-
-  char* src = (char*) x.other;
-
-  char* answer = NULL;
-
-  // check errors here...
-
-  if (start.ivalue >= strlen(src)) {
+  if (start.isInfinity()) {
+    if (start.ivalue>0) {
+      // +infinity: result is empty string
+      DeleteResult(STRING, x);
+      x.other = Share(&empty_string);
+      return;
+    } else {
+      // -infinity is the same as 0 here
+      start.Clear();
+      start.ivalue = 0; 
+    }
+  }
+  if (!start.isNormal()) {
     DeleteResult(STRING, x);
-    x.Clear();
-    x.setNull();
+    x = start;
     return;
   }
 
-  if (stop.isInfinity() || stop.ivalue >= strlen(src)) {
-    // don't have to chop of the end of the string
-    answer = strdup(src + start.ivalue);
-    x.Clear();
-    x.other = answer;
+  SafeCompute(p[2], 0, stop);
+  if (stop.isInfinity()) {
+    if (stop.ivalue>0) {
+      // +infinity is the same as the string length
+      stop.Clear();
+      stop.ivalue = srclen;
+    } else {
+      // -infinity: stop is less than start, this gives empty string
+      DeleteResult(STRING, x);
+      x.other = Share(&empty_string);
+      return;
+    }
+  }
+  if (!stop.isNormal()) {
+    DeleteResult(STRING, x);
+    x = stop;
     return;
-  } 
-  answer = new char[stop.ivalue - start.ivalue+2]; 
+  }
+
+  // still here? stop and start are both finite, ordinary integers
+
+  if (stop.ivalue<0 || start.ivalue>stop.ivalue) {  // definitely empty string
+    DeleteResult(STRING, x);
+    x.other = Share(&empty_string);
+    return;
+  }
+
+  start.ivalue = MAX(start.ivalue, 0);
+  stop.ivalue =  MIN(stop.ivalue, srclen);
+
+  char* answer = new char[stop.ivalue - start.ivalue+2]; 
   strncpy(answer, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
   answer[stop.ivalue - start.ivalue + 1] = 0;
   x.Clear();
-  x.other = answer;
+  x.other = new shared_string(answer);
 }
 
 void AddSubstr(PtrTable *fns)
 {
-  const char* helpdoc = "Get the substring between (and including) elements <left> and <right> of string <x>.";
+  const char* helpdoc = "Get the substring between (and including) elements left and right of string x.  If left>right, returns the empty string.";
 
   formal_param **pl = new formal_param*[3];
   pl[0] = new formal_param(STRING, "x");
@@ -1599,8 +1635,7 @@ void compute_filename(expr **p, int np, result &x)
 {
   DCASSERT(0==np);
   x.Clear();
-  x.other = Filename();
-  x.notFreeable();
+  x.other = new shared_string(strdup(Filename()));
 }
 
 void AddFilename(PtrTable *fns)
@@ -1622,22 +1657,22 @@ void compute_env(expr **p, int np, result &x)
   if (!x.isNormal()) return;
   result find = x;
   if (NULL==environment) return;
-  int xlen = strlen((char*) x.other);
+  char* key = stringconvert(x.other);
+  int xlen = strlen(key);
   for (int i=0; environment[i]; i++) {
     char* equals = strstr(environment[i], "=");
     if (NULL==equals) continue;  // shouldn't happen, right? 
     int length = (equals - environment[i]);
     if (length!=xlen) continue;
-    if (strncmp(environment[i], (char*) x.other, length)!=0) continue;  
+    if (strncmp(environment[i], key, length)!=0) continue;  
     // match, clear out old x
     DeleteResult(STRING, x); 
     x.Clear();
-    x.other = strdup(equals+1);
+    x.other = new shared_string(strdup(equals+1));
     return;
   }
   // not found
   DeleteResult(STRING, x); 
-  x.setNull();
 }
 
 void AddEnv(PtrTable *fns)

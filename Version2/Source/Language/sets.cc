@@ -29,10 +29,9 @@ option* index_precision;
 // *                                                                *
 // ******************************************************************
 
-set_result::set_result(int s)
+set_result::set_result(int s) : shared_object() 
 {
   ALLOC("set_result", sizeof(set_result));
-  incoming = 1;
   size = s;
 }
 

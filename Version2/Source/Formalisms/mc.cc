@@ -372,8 +372,7 @@ void markov_model::FinalizeModel(result &x)
   diags = NULL;
 
   x.Clear();
-  x.notFreeable();
-  x.other = this;
+  x.other = Share(this);
 }
 
 state_model* markov_model::BuildStateModel(const char* fn, int ln)

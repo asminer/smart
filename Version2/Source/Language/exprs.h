@@ -15,7 +15,7 @@
 #include "results.h"
 #include "../Templates/list.h"
 
-//#define SHARE_DEBUG
+//#define COMPUTE_DEBUG
 
 //@{
 
@@ -111,19 +111,16 @@ class measure;	// also below
       another derived class just to avoid an if statement if necessary.
 */  
 
-class expr {
+class expr : public shared_object {
 private:
   /// The name of the file we were declared in.
   const char* filename;  
   /// The line number of the file we were declared on.
   int linenumber;  
-  /// The number of incoming pointers to this expression.
-  int incoming;
 public:
-  expr(const char* fn, int line) {
+  expr(const char* fn, int line) : shared_object() {
     filename = fn;
     linenumber = line;
-    incoming = 1;
   }
 
   virtual ~expr() { }
@@ -234,9 +231,6 @@ public:
 
   /// Display the expression to the given output stream.
   virtual void show(OutputStream &s) const = 0;
-
-  friend expr* Copy(expr *e);
-  friend void Delete(expr *e);
 };
 
 /** Error expression.
@@ -257,13 +251,7 @@ static expr* DEFLT = ((expr*)0xfffffffe);
 inline expr* Copy(expr *e)
 {
   if (e && e!=ERROR && e!=DEFLT) {
-    e->incoming++;
-#ifdef SHARE_DEBUG
-    Output << "increased incoming count for ";
-    e->show(Output);
-    Output << " to " << e->incoming << "\n";
-    Output.flush();
-#endif
+    Share(e);
   }
   return e;
 }
@@ -276,23 +264,7 @@ inline expr* Copy(expr *e)
 inline void Delete(expr *e)
 {
   if (e && e!=ERROR && e!=DEFLT) {
-    DCASSERT(e->incoming>0);
-    e->incoming--;
-#ifdef SHARE_DEBUG
-    Output << "decreased incoming count for ";
-    e->show(Output);
-    Output << " to " << e->incoming << "\n";
-    Output.flush();
-#endif
-    if (0==e->incoming) {
-#ifdef SHARE_DEBUG
-      Output << "Deleting ";
-      e->show(Output);
-      Output << "\n";
-      Output.flush();
-#endif
-      delete e;
-    }
+    Delete((shared_object*) e);
   }
 }
 
@@ -497,7 +469,21 @@ inline void SafeCompute(expr *e, int a, result &x)
   DCASSERT(e!=ERROR);
   DCASSERT(e!=DEFLT);
   if (e) {
+#ifdef COMPUTE_DEBUG
+    Output << "Computing expression "; 
+    e->show(Output);
+    Output << "...\n";
+    Output.flush();
+#endif
     e->Compute(a, x);
+#ifdef COMPUTE_DEBUG
+    Output << "expression ";
+    e->show(Output);
+    Output << " evaluated to ";
+    PrintResult(Output, e->Type(a), x);
+    Output << "...\n";
+    Output.flush();
+#endif
   } else {
     x.Clear();
     x.setNull();

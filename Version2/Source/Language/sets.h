@@ -36,9 +36,7 @@
       (for instance, within multiple arrays).
 */  
 
-class set_result {
-  /// The number of incoming pointers
-  int incoming;
+class set_result : public shared_object {
   /// Number of elements
   int size;  
 public:
@@ -66,9 +64,6 @@ public:
 
   /// For display purposes.
   virtual void show(OutputStream &s) = 0;
-
-  friend set_result* Copy(set_result *e);
-  friend void Delete(set_result *e);
 };
 
 inline OutputStream& operator<< (OutputStream &s, set_result *r) 
@@ -77,27 +72,10 @@ inline OutputStream& operator<< (OutputStream &s, set_result *r)
   return s;
 }
 
-/**  Create a "copy" of this set.
-     Since we share pointers, this simply
-     increases the incoming pointer count.
- */
-inline set_result* Copy(set_result *s)
+inline set_result* Copy(set_result *e)
 {
-  if (s) s->incoming++;
-  return s;
-}
-
-/**  Delete a set.
-     We decrease the incoming pointer count, and if
-     it reaches zero, then we delete the set.
- */
-inline void Delete(set_result *s)
-{
-  if (s) {
-    DCASSERT(s->incoming>0);
-    s->incoming--;
-    if (0==s->incoming) delete s;
-  }
+  Share(e);
+  return e;
 }
 
 

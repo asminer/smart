@@ -121,9 +121,12 @@ public:
     If there is another dimension below this one, then all the
     down pointers will be to other descriptors, otherwise they
     will be to variables.  (see variables.h)
+
+    This is derived from shared_object only to simplify 
+    using array_desc within a result struct.
 */  
 
-struct array_desc {
+struct array_desc : public shared_object {
   /// The values that can be assumed here.
   set_result *values;
   /** Pointers to the next dimension (another array_desc)

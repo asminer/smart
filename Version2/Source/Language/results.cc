@@ -55,35 +55,32 @@ void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
   DCASSERT(0);
 }
 
-/*  As other complex structures that make use of "other"
-    come along, this function will need to be updated
-*/
 void DeleteResult(type t, result &x)
 {
-  if (x.isNull()) return;  // nothing to free
-  if (!x.isFreeable()) {
-    x.setNull();
-    return;  // we shouldn't be deleting anything
-  }
+  // types that use "other" go here
   switch (t) {
-    case STRING:	free(x.other);		break;  // should be ok?
+    case STRING:	
+		Delete(x.other);	
+		x.other = NULL;
+	        x.setNull();
+		break;  // should be ok?
   }
-  x.setNull();
 }
 
-bool Equals(type t, result &x, result &y)
+bool Equals(type t, const result &x, const result &y)
 {
+  // these had better be the same type
   if (x.isNormal() && y.isNormal()) {
     switch (t) {
       case BOOL:	return x.bvalue == y.bvalue;
       case INT:		return x.ivalue == y.ivalue;
       case REAL:	return x.rvalue == y.rvalue;
-      case STRING:	return (strcmp((char *)x.other, (char *)y.other) == 0);
+      case STRING:	return StringEquals(x, y);
     }
     // still here?
     return false;
   }
-  if (x.isInfinity() && y.isInfinity()) return true;
+  if (x.isInfinity() && y.isInfinity()) return x.ivalue == y.ivalue;
   if (x.isNull() && y.isNull()) return true;
   return false;
 }

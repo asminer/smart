@@ -74,29 +74,21 @@ void constfunc::ClearCache()
 void constfunc::Compute(int i, result &x)
 {
   DCASSERT(i==0);
-  if (have_cached) {
-    x = cache;
-    x.notFreeable();
-  } else { 
-    SafeCompute(return_expr, i, x);
-    cache = x;
-    x.notFreeable();
+  if (!have_cached) {
+    SafeCompute(return_expr, i, cache);
     have_cached = true;
-  }
+  } 
+  CopyResult(mytype, x, cache);
 }
 
 void constfunc::Sample(Rng &seed, int i, result &x)
 {
   DCASSERT(i==0);
-  if (have_cached) {
-    x = cache;
-    x.notFreeable();
-  } else {
-    SafeSample(return_expr, seed, i, x);
-    cache = x;
-    x.notFreeable();
+  if (!have_cached) {
+    SafeSample(return_expr, seed, i, cache);
     have_cached = true;
   }
+  CopyResult(mytype, x, cache);
 }
 
 Engine_type constfunc::GetEngine(engineinfo *e)
@@ -145,18 +137,14 @@ determfunc::determfunc(const char *fn, int line, type t, char *n)
 void determfunc::Compute(int i, result &x)
 {
   DCASSERT(i==0);
-  if (have_cached) {
-    x = cache;
-    x.notFreeable();
-  } else { 
-    SafeCompute(return_expr, i, x);
-    cache = x;
-    x.notFreeable();
+  if (!have_cached) {
+    SafeCompute(return_expr, i, cache);
     have_cached = true;
     Delete(return_expr);
     return_expr = NULL;
     state = CS_Computed;
   }
+  CopyResult(mytype, x, cache);
 }
 
 void determfunc::ShowHeader(OutputStream &s) const

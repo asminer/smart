@@ -5,9 +5,14 @@
 #include "operators.h"
 #include "baseops.h"
 
+//#define DEBUG_STRINGS
+
 void PrintString(const result& x, OutputStream &out, int width)
 {
-  const char* s = (char*)x.other;
+  shared_string* ssx = dynamic_cast<shared_string*>(x.other);
+  DCASSERT(ssx);
+  if (ssx->isDeleted()) { out << "(deleted result)"; return; }
+  char* s = ssx->string;
   int stlen = strlen(s);
   int i;
   if (width>=0) {
@@ -91,39 +96,63 @@ void string_add::Compute(int a, result &x)
   x.Clear();
 
   int i;
-  // Clear strings
-  for (i=0; i<opnd_count; i++) xop[i].notFreeable();
 
   // Compute strings for each operand
   int total_length = 0;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
+#ifdef DEBUG_STRINGS
+    Output << "Computing operand: " << operands[i] << "\n";
+    Output.flush();
+#endif
     operands[i]->Compute(0, xop[i]);
+#ifdef DEBUG_STRINGS
+    Output << "Got operand  " << operands[i] << " = ";
+    PrintResult(Output, STRING, xop[i]);
+    Output << "\n";
+    Output.flush();
+#endif
     if (xop[i].isError() || xop[i].isNull()) {
       x = xop[i];
       break;
     }
-    if (xop[i].other)
-      total_length += strlen((char*)xop[i].other); 
+    if (xop[i].other) {
+      shared_string *ss = dynamic_cast<shared_string*>(xop[i].other);
+      DCASSERT(ss);
+      total_length += ss->length();
+    }
   }
 
   if (x.isError() || x.isNull()) {
     // delete strings and bail out
-    for (i=0; i<opnd_count; i++) if (xop[i].isFreeable()) free(xop[i].other); 
+    for (i=0; i<opnd_count; i++) DeleteResult(STRING, xop[i]);
     return;
   }
 
+#ifdef DEBUG_STRINGS
+  Output << "Concatenating operands: ";
+  for (i=0; i<opnd_count; i++) PrintResult(Output, STRING, xop[i]);
+  Output << "\n";
+#endif
+
   // concatenate all strings
-  char* answer = (char*) malloc(total_length+1); // save room for terminating 0
+  char* answer = new char[total_length+1]; // save room for terminating 0
   answer[0] = 0;
-  for (i=0; i<opnd_count; i++) if (xop[i].other) {
-    strcat(answer, (char*)xop[i].other);
-    if (xop[i].isFreeable()) free(xop[i].other);
+  for (i=0; i<opnd_count; i++) {
+    if (xop[i].other) {
+      shared_string *ss = dynamic_cast<shared_string*>(xop[i].other);
+      strcat(answer, ss->string);
+    }
+    DeleteResult(STRING, xop[i]);
   }
 
-  x.other = answer;
-  x.setFreeable();
+  x.other = new shared_string(answer);
+
+#ifdef DEBUG_STRINGS
+  Output << "And got answer: " << answer << "\n";
+  Output.flush();
+#endif
 }
 
 
@@ -170,10 +199,12 @@ void string_equal::Compute(int i, result &x)
     return;
   }
   if (x.isNormal()) {
-    x.bvalue = (0==strcmp((char*)l.other, (char*)r.other));
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (0==compare(sl, sr));
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 // ******************************************************************
@@ -218,10 +249,12 @@ void string_neq::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    x.bvalue = (0!=strcmp((char*)l.other, (char*)r.other));
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (0!=compare(sl, sr));
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 
@@ -267,10 +300,12 @@ void string_gt::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    x.bvalue = (strcmp((char*)l.other, (char*)r.other) > 0);
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (compare(sl, sr) > 0);
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 // ******************************************************************
@@ -315,10 +350,12 @@ void string_ge::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    x.bvalue = (strcmp((char*)l.other, (char*)r.other) >= 0);
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (compare(sl, sr) >= 0);
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 // ******************************************************************
@@ -363,10 +400,12 @@ void string_lt::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    x.bvalue = (strcmp((char*)l.other, (char*)r.other) < 0);
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (compare(sl, sr) < 0);
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 // ******************************************************************
@@ -411,10 +450,12 @@ void string_le::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) { 
-    x.bvalue = (strcmp((char*)l.other, (char*)r.other) <= 0);
+    shared_string* sl = dynamic_cast<shared_string*>(l.other);
+    shared_string* sr = dynamic_cast<shared_string*>(r.other);
+    x.bvalue = (compare(sl, sr) <= 0);
   } 
-  if (l.isFreeable()) free(l.other);
-  if (r.isFreeable()) free(r.other);
+  DeleteResult(STRING, l);
+  DeleteResult(STRING, r);
 }
 
 // ******************************************************************
@@ -450,3 +491,12 @@ line)
   return NULL;
 }
 
+bool StringEquals(const result &x, const result &y)
+{
+  if (x.other == y.other) return true;  // shared or both null
+  shared_string* ssx = dynamic_cast<shared_string*>(x.other);
+  DCASSERT(ssx);
+  shared_string* ssy = dynamic_cast<shared_string*>(y.other);
+  DCASSERT(ssy);
+  return (0==compare(ssx, ssy));
+}
