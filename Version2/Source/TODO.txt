@@ -3,11 +3,9 @@
 
 Things to work on:
 
+* Named parameters
+
 * Input functions
-
-* Run-time error messages (for divide by zero, etc)
-
-* Stack dump on stack overflow
 
 * Converge
 

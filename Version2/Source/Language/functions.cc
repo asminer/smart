@@ -77,12 +77,54 @@ void formal_param::Sample(long &, int i, result &x)
 // *                                                                *
 // ******************************************************************
 
+void function::SortParameters()
+{
+  name_order = NULL;
+  if (NULL==parameters) return;
+  // First: check that all formal parameters have names
+  int i;
+  for (i=0; i<num_params; i++) {
+    DCASSERT(parameters[i]);
+    if (NULL==parameters[i]->Name()) return;
+  }
+  // Selection sort parameters by name
+  name_order = new int[num_params];
+  for (i=0; i<num_params; i++) name_order[i] = i;
+  for (i=0; i<num_params-1; i++) {
+    // find smallest in remaining
+    int min = i;
+    const char* minname = parameters[name_order[i]]->Name();
+    for (int j=i+1; j<num_params; j++) {
+      int cmp = strcmp(parameters[name_order[j]]->Name(), minname);
+      if (0==cmp) {
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Function " << Name();
+	Internal << " has two parameters named " << minname;
+	Internal.Stop();
+      }
+      if (cmp<0) { // new smallest
+        min = j;
+	minname = parameters[name_order[j]]->Name();
+      }
+    }
+    if (min!=i) SWAP(name_order[i], name_order[min]);
+  }
+/*
+  Output << "Done sorting parameters:\n";
+  for (i=0; i<num_params; i++) {
+    Output << "\t" << parameters[name_order[i]] << "\n";
+  }
+  Output.flush();
+*/
+}
+
 function::function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np) : symbol(fn, line, t, n)
 {
   parameters = pl;
   num_params = np;
   repeat_point = np+1;
+  SortParameters();
 }
 
 function::function(const char* fn, int line, type t, char* n, 
@@ -91,6 +133,7 @@ function::function(const char* fn, int line, type t, char* n,
   parameters = pl;
   num_params = np;
   repeat_point = rp;
+  name_order = NULL;
 }
 
 function::~function()
@@ -99,6 +142,7 @@ function::~function()
   for (i=0; i<num_params; i++)
     delete parameters[i];
   delete[] parameters;
+  delete[] name_order;
 }
 
 bool function::HasSpecialTypechecking() const 

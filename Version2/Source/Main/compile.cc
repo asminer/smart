@@ -687,6 +687,17 @@ expr* BuildAggregate(void* x)
 int AddIterator(array_index *i)
 {
   if (NULL==i || ERROR==i) return 0;
+  // Check for duplicates!
+  for (int n=0; n<Iterators->Length(); n++) {
+    if (strcmp(Iterators->Item(n)->Name(), i->Name())==0) {
+      // Something fishy
+      Error.Start(filename, lexer.lineno());
+      Error << "Duplicate iterator named " << i;
+      Error.Stop();
+      Delete(i);
+      return 0;
+    }
+  }
   Iterators->Append(i);
 #ifdef COMPILE_DEBUG
   Output << "Adding " << i << " to Iterators\n";
@@ -877,6 +888,18 @@ void* AddFormalIndex(void* list, char* n)
   return foo;
 }
 
+inline bool ListContainsName(void* list, const char* name)
+{
+  // I wonder if this works?
+  List <symbol> *foo = (List <symbol> *)list;
+  if (NULL==foo) return false;
+  int i;
+  for (i=0; i<foo->Length(); i++) {
+    if (strcmp(foo->Item(i)->Name(), name)==0) return true;
+  }
+  return false;
+}
+
 template <class PARAM>
 inline void* Template_AddParameter(void* list, PARAM *p)
 {
@@ -894,6 +917,13 @@ void* AddParameter(void* list, expr* pass)
 
 void* AddParameter(void* list, formal_param* fp)
 {
+  if (ListContainsName(list, fp->Name())) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Duplicate formal parameter named " << fp;
+    Error.Stop();
+    Delete(fp);
+    return list;
+  }
   return Template_AddParameter(list, fp);
 }
 
@@ -965,7 +995,13 @@ void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
     DCASSERT(!perfect);
     return;
   }
-  if (NULL==pass) return;
+  if (NULL==pass) {
+    return;
+  }
+  if (ERROR==pass) {
+    perfect = promote = false;
+    return;
+  }
   DCASSERT(p);
   if (p->NumComponents() != pass->NumComponents()) {
     perfect = promote = false;

@@ -123,6 +123,9 @@ struct named_param {
 */  
 
 class function : public symbol {
+private:
+  int* name_order;
+  void SortParameters();
 protected:
   /// Formal parameters (ordered, typed, and named).
   formal_param **parameters;
@@ -149,6 +152,16 @@ public:
     pl = parameters;
     np = num_params;
     rp = repeat_point;
+  }
+
+  inline bool CanUseNamedParams() const { return name_order; }
+
+  /** Parameters sorted by name (indexes).
+      Returns the index of the ith parameter as ordered by name.
+  */
+  inline int NamedPosition(int i) const { 
+    DCASSERT(name_order);
+    return name_order[i];
   }
 
   inline bool ParamsRepeat() const { return repeat_point < num_params; }

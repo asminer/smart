@@ -247,4 +247,8 @@ for (int i in {1..N}) {
   print("\n");
 }
 
+print("This should cause an error message\n");
+for (int i in {1..9}, real i in {2.3..4.5..0.5}) {
+  print(i, "\n");
+}
 

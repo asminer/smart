@@ -32,14 +32,17 @@ OutputStream& operator<< (OutputStream &s, expr *e)
 
 void PrintExprType(expr *e, OutputStream &s)
 {
-  DCASSERT(e);
-  if (e!=ERROR) {
-    for (int i=0; i<e->NumComponents(); i++) {
-      if (i) s << ":";
-      s << GetType(e->Type(i));
-    }
-  } else {
+  if (NULL==e) {
+    s << "null";
+    return;
+  }
+  if (ERROR==e) {
     s << "error";
+    return;
+  }
+  for (int i=0; i<e->NumComponents(); i++) {
+    if (i) s << ":";
+    s << GetType(e->Type(i));
   }
 }
 
