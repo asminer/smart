@@ -163,6 +163,12 @@ expr* BuildInterval(expr* start, expr* stop)
   }
   
   // make sure both are integers here...
+  if (start->Type(0)!=INT || stop->Type(0)!=INT) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Step size expected for interval" << start << ".." << stop;
+    Error.Stop();
+    return NULL;
+  }
 
   expr* answer = MakeInterval(filename, lexer.lineno(), 
                       start, stop, MakeConstExpr(1, filename, lexer.lineno()));
@@ -185,7 +191,38 @@ expr* BuildInterval(expr* start, expr* stop, expr* inc)
     return NULL;
   }
 
-  // type checking and promotion here...
+  bool typemismatch = false;
+  if (start->Type(0)==REAL || stop->Type(0)==REAL || inc->Type(0)==REAL) {
+    // If any is real, promote all to real.
+    typemismatch = !Promotable(start->Type(0), REAL)
+    			||
+    		   !Promotable(stop->Type(0), REAL)
+		   	||
+    		   !Promotable(inc->Type(0), REAL);
+    if (!typemismatch) {
+      start = MakeTypecast(start, REAL, filename, lexer.lineno());
+      stop = MakeTypecast(stop, REAL, filename, lexer.lineno());
+      inc = MakeTypecast(inc, REAL, filename, lexer.lineno());
+    }
+  } else {
+    // Make sure we are all ints.
+    typemismatch = start->Type(0)!=INT 
+    			|| 
+		   stop->Type(0)!=INT 
+		   	||
+     		   inc->Type(0)!=INT;
+  }
+  if (typemismatch) {
+    // Something strange was attempted    
+    Error.Start(filename, lexer.lineno());
+    Error << "Type mismatch for interval ";
+    Error << start << ".." << stop << ".." << inc;
+    Error.Stop();
+    Delete(start);
+    Delete(stop);
+    Delete(inc);
+    return NULL;
+  }
 
   expr* answer = MakeInterval(filename, lexer.lineno(), start, stop, inc);
 
@@ -207,7 +244,44 @@ expr* AppendSetElem(expr* left, expr* right)
     return NULL;
   }
 
-  // type checking goes here
+  bool ok = false;
+  switch (left->Type(0)) {
+    case SET_INT:
+    	switch (right->Type(0)) {
+       	  case SET_INT:		
+	   	ok = true;	
+	  break;
+      	  case SET_REAL:	
+      		left = MakeInt2RealSet(filename, lexer.lineno(), left);
+		DCASSERT(left);
+        	ok = true;
+	  break;
+    	};
+	break;
+
+    case SET_REAL:
+    	switch (right->Type(0)) {
+	  case SET_INT:
+      		right = MakeInt2RealSet(filename, lexer.lineno(), right);
+		DCASSERT(right);
+        	ok = true;
+	  break;
+	  case SET_REAL:
+	  	ok = true;
+	  break;
+	};
+	break;
+  }
+  if (!ok) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Type mismatch for set union: ";
+    PrintExprType(left, Error);
+    Error << " , ";
+    PrintExprType(right, Error);
+    Error.Stop();
+    return NULL;
+  }
+
   expr* answer = MakeUnionOp(filename, lexer.lineno(), left, right);
   return answer;
 }
@@ -221,7 +295,18 @@ array_index* BuildIterator(type t, char* n, expr* values)
   bool match = false;
   switch (t) {
     case INT:	match = (vt == SET_INT); 	break;
-    case REAL:	match = (vt == SET_REAL);	break;
+    case REAL:	
+    	if (vt == SET_INT) {
+	  values = MakeInt2RealSet(filename, lexer.lineno(), values);
+	  vt = values->Type(0);
+	}
+    	match = (vt == SET_REAL);	break;
+    default:
+    	Error.Start(filename, lexer.lineno());
+	Error << "Illegal type for iterator " << n;
+	Error.Stop();
+	Delete(values);
+	return NULL;
   }
 
   // To do still: promote int sets to reals, if t is real
@@ -230,6 +315,7 @@ array_index* BuildIterator(type t, char* n, expr* values)
     Error.Start(filename, lexer.lineno());
     Error << "Type mismatch: iterator " << n << " expects set of type " << GetType(t);
     Error.Stop();
+    Delete(values);
     return NULL;
   }
 
