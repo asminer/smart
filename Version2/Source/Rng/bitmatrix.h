@@ -17,6 +17,7 @@ unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 struct bitmatrix {
   unsigned int row[32];
   bool flag;
+  int count;
 
   inline unsigned int vm_mult(unsigned int v) {
     unsigned int answer = 0;
@@ -35,6 +36,11 @@ struct bitmatrix {
 
   inline void zero() {
     for (int r=0; r<32; r++) row[r] = 0;
+  }
+
+  inline int Signature(int prime) {
+    // return ((row[31] % prime) * 256 + row[29]) % prime;
+    return ((row[31] % prime) * 256 + row[0]) % prime;
   }
 };
 
