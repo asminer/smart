@@ -36,6 +36,12 @@ public:
     DCASSERT(data);
     return data[n];
   }
+  inline result Read(int n) const {
+    DCASSERT(n>=0);
+    DCASSERT(n<size);
+    DCASSERT(data);
+    return data[n];
+  }
   void Show(OutputStream& s) const;
   friend bool AllocState(state &s, int length);
   friend void FreeState(state &s);

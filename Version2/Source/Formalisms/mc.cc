@@ -7,6 +7,8 @@
 #include "../Language/api.h"
 #include "../Main/tables.h"
 
+#include "dsm.h"
+
 
 // ******************************************************************
 // *                                                                *
@@ -90,6 +92,62 @@ state_model* markov_model::BuildStateModel()
 // *                        markov_dsm  class                       *
 // *                                                                *
 // ******************************************************************
+
+class markov_dsm : public state_model {
+  char** statenames;
+  int numstates;
+public:
+  /** Constructor.
+	@param	sn	Array of state names
+	@param	ns	Number of states
+  */
+  markov_dsm(char** sn, int ns);
+  virtual ~markov_dsm();
+
+  // required stuff:
+
+  virtual void ShowState(OutputStream &s, const state &x);
+  virtual void ShowEventName(OutputStream &s, int e);
+
+/*
+  virtual int NumInitialStates() const;
+  virtual void GetInitialState(int n, state &s) const;
+
+  virtual expr* EnabledExpr(int e);
+  virtual expr* NextStateExpr(int e);
+  virtual expr* EventDistribution(int e);
+*/
+
+};
+
+// ******************************************************************
+// *                       markov_dsm methods                       *
+// ******************************************************************
+
+markov_dsm::markov_dsm(char** sn, int ns) : state_model(1)
+{
+  statenames = sn;
+  numstates = ns;
+}
+
+markov_dsm::~markov_dsm()
+{
+}
+
+void markov_dsm::ShowState(OutputStream &s, const state &x)
+{
+  // check state legality and range here...
+  s << statenames[x.Read(0).ivalue];
+}
+
+void markov_dsm::ShowEventName(OutputStream &s, int e)
+{
+  DCASSERT(e < NumEvents());
+  DCASSERT(e>=0);
+
+  // Is there something better to do here?
+  s << "Markov chain";
+}
 
 // ******************************************************************
 // *                                                                *

@@ -15,9 +15,10 @@
 
 //@{
 
-state_model::state_model()
+state_model::state_model(int e)
 {
   statespace = NULL;
+  events = e;
 }
 
 state_model::~state_model()

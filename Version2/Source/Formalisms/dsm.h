@@ -42,8 +42,8 @@ class state_model {
 
   int events;
 public:
-  state_model();
-  ~state_model();
+  state_model(int e);
+  virtual ~state_model();
 
   inline int NumEvents() const { return events; }
 
@@ -98,6 +98,7 @@ public:
 	    returned.
   */
   virtual expr* EventDistribution(int e) = 0;
+
 };
 
 //@}
