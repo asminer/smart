@@ -481,9 +481,6 @@ protected:
     if (s.isInfinity() || e.isInfinity()) {
       // Print error message here
       x.setError();
-#ifdef TRACK_ERRORS
-      x.error = CE_Undefined;
-#endif
       return false;
     } 
     return true;
@@ -661,9 +658,6 @@ void intset_element::Compute(int i, result &x)
   if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
     x.setError();
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;  // print error message?
-#endif
     return;
   }
   int* values = new int[1];
@@ -988,9 +982,6 @@ void realset_element::Compute(int i, result &x)
   if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
     x.setError();
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;  // print error message?
-#endif
     return;
   }
   double* values = new double[1];

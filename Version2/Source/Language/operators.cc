@@ -226,17 +226,6 @@ void bool_equal::Compute(int i, result &x)
     return;
   }
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
-
   if (l.isUnknown() || r.isUnknown()) {
     x.setUnknown();
     return;
@@ -288,17 +277,6 @@ void bool_neq::Compute(int i, result &x)
     x.bvalue = (l.bvalue != r.bvalue);
     return;
   }
-
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
 
   if (l.isUnknown() || r.isUnknown()) {
     x.setUnknown();
@@ -490,16 +468,6 @@ void randbool_equal::Sample(long &seed, int i, result &x)
     return;
   }
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   if (l.isUnknown() || r.isUnknown()) {
     x.setUnknown();
     return;
@@ -551,16 +519,6 @@ void randbool_neq::Sample(long &seed, int i, result &x)
     return;
   }
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   if (l.isUnknown() || r.isUnknown()) {
     x.setUnknown();
     return;
@@ -687,12 +645,6 @@ void int_add::Compute(int a, result &x)
         x.setNull();
         return;  // null...short circuit
       }
-#ifdef TRACK_ERRORS
-      if (foo.error) {
-	  x.error = foo.error;
-	  return;  // error...short circuit
-      }
-#endif
       // must be an error
       x.setError();
       return;  // error...short circuit
@@ -717,9 +669,6 @@ void int_add::Compute(int a, result &x)
 	  Error << "Undefined operation (infty-infty) due to ";
 	  Error << operands[i];
 	  Error.Stop();
-#ifdef TRACK_ERRORS
-	  x.error = CE_Undefined;
-#endif
 	  x.setError();
 	  return;
       }
@@ -784,9 +733,6 @@ void int_sub::Compute(int i, result &x)
     Error.Start(right->Filename(), right->Linenumber());
     Error << "Undefined operation (infty-infty) due to " << right;
     Error.Stop();
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;
-#endif
     x.setError();
     return;
   }
@@ -810,16 +756,6 @@ void int_sub::Compute(int i, result &x)
     x.setNull();
     return;
   }
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   x.setError();
 }
 
@@ -910,9 +846,6 @@ void int_mult::Compute(int a, result &x)
       }
       // must be an error
       x.setError();
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
     } // for i
   }
 
@@ -930,9 +863,6 @@ void int_mult::Compute(int a, result &x)
           Error << "Undefined operation (0 * infty) due to ";
           Error << operands[i];
           Error.Stop();
-#ifdef TRACK_ERRORS
-	  x.error = CE_Undefined;
-#endif
           x.setError();
 	  return;
 	} else {
@@ -951,9 +881,6 @@ void int_mult::Compute(int a, result &x)
       }
       // must be an error
       x.setError();
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
     } // for i
   } 
 
@@ -974,9 +901,6 @@ void int_mult::Compute(int a, result &x)
         Error << "Undefined operation (0 * infty) due to ";
         Error << operands[i];
         Error.Stop();
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return;
       }
@@ -984,9 +908,6 @@ void int_mult::Compute(int a, result &x)
         x.setNull();
         return;  // null...short circuit
       }
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
       x.setError();
       return;  // error...short circuit
     } // for i
@@ -1035,9 +956,6 @@ void int_div::Compute(int i, result &x)
   if (l.isNormal() && r.isNormal()) {
     x.rvalue = l.ivalue;
     if (0==r.ivalue) {
-#ifdef TRACK_ERRORS
-      x.error = CE_ZeroDivide;
-#endif
       Error.Start(right->Filename(), right->Linenumber());
       Error << "Undefined operation (divide by 0) due to " << right;
       Error.Stop();
@@ -1049,9 +967,6 @@ void int_div::Compute(int i, result &x)
   }
 
   if (l.isInfinity() && r.isInfinity()) {
-#ifdef TRACK_ERRORS
-      x.error = CE_Undefined;
-#endif
       Error.Start(right->Filename(), right->Linenumber());
       Error << "Undefined operation (infty / infty) due to " << left << "/" << right;
       Error.Stop();
@@ -1080,16 +995,6 @@ void int_div::Compute(int i, result &x)
     return;
   }
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   x.setError();
 }
 
@@ -1417,9 +1322,6 @@ void real_add::Compute(int a, result &x)
         x.setNull();
         return;  // null...short circuit
       }
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
       x.setError();
       return;
     } // for i
@@ -1443,9 +1345,6 @@ void real_add::Compute(int a, result &x)
 	  Error << "Undefined operation (infty-infty) due to ";
 	  Error << operands[i];
 	  Error.Stop();
-#ifdef TRACK_ERRORS
-	  x.error = CE_Undefined;
-#endif
 	  x.setError();
 	  return;
       }
@@ -1454,9 +1353,6 @@ void real_add::Compute(int a, result &x)
       x.setNull();
       return;  // null...short circuit
     }
-#ifdef TRACK_ERRORS
-    x.error = foo.error;
-#endif
     x.setError();
     return;
   } // for i
@@ -1512,9 +1408,6 @@ void real_sub::Compute(int i, result &x)
     Error.Start(right->Filename(), right->Linenumber());
     Error << "Undefined operation (infty-infty) due to " << right;
     Error.Stop();
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;
-#endif
     x.setError();
     return;
   }
@@ -1538,16 +1431,6 @@ void real_sub::Compute(int i, result &x)
     x.setNull();
     return;
   }
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   x.setError();
 }
 
@@ -1638,9 +1521,6 @@ void real_mult::Compute(int a, result &x)
       }
       // must be an error
       x.setError();
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
     } // for i
   }
 
@@ -1658,9 +1538,6 @@ void real_mult::Compute(int a, result &x)
           Error << "Undefined operation (0 * infty) due to ";
           Error << operands[i];
           Error.Stop();
-#ifdef TRACK_ERRORS
-	  x.error = CE_Undefined;
-#endif
           x.setError();
 	  return;
 	} else {
@@ -1683,9 +1560,6 @@ void real_mult::Compute(int a, result &x)
       }
       // must be an error
       x.setError();
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
     } // for i
   } 
 
@@ -1706,9 +1580,6 @@ void real_mult::Compute(int a, result &x)
         Error << "Undefined operation (0 * infty) due to ";
         Error << operands[i];
         Error.Stop();
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return;
       }
@@ -1716,9 +1587,6 @@ void real_mult::Compute(int a, result &x)
         x.setNull();
         return;  // null...short circuit
       }
-#ifdef TRACK_ERRORS
-      x.error = foo.error;
-#endif
       x.setError();
       return;  // error...short circuit
     } // for i
@@ -1765,9 +1633,6 @@ void real_div::Compute(int i, result &x)
 
   if (l.isNormal() && r.isNormal()) {
     if (0.0==r.rvalue) {
-#ifdef TRACK_ERRORS
-      x.error = CE_ZeroDivide;
-#endif
       Error.Start(right->Filename(), right->Linenumber());
       Error << "Undefined operation (divide by 0) due to " << right;
       Error.Stop();
@@ -1779,9 +1644,6 @@ void real_div::Compute(int i, result &x)
   }
 
   if (l.isInfinity() && r.isInfinity()) {
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;
-#endif
     Error.Start(right->Filename(), right->Linenumber());
     Error << "Undefined operation (infty / infty) due to " << left << "/" << right;
     Error.Stop();
@@ -1810,16 +1672,6 @@ void real_div::Compute(int i, result &x)
     x.setNull();
     return;
   }
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-#endif
   x.setError();
 }
 

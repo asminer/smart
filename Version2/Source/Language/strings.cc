@@ -156,13 +156,6 @@ void string_equal::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
@@ -212,13 +205,6 @@ void string_neq::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
@@ -264,13 +250,6 @@ void string_gt::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
@@ -319,13 +298,6 @@ void string_ge::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
@@ -374,13 +346,6 @@ void string_lt::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
@@ -429,13 +394,6 @@ void string_le::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
-#ifdef TRACK_ERRORS
-  if (l.error) {
-    x.error = l.error;
-  } else if (r.error) {
-    x.error = r.error;
-  }
-#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }

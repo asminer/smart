@@ -157,9 +157,6 @@ void array::Compute(expr **il, result &x)
       int ndx = ptr->values->IndexOf(y);
       if (ndx<0) {
         // range error
-#ifdef TRACK_ERRORS
-        x.error = CE_OutOfRange;
-#endif
         Error.Start(il[i]->Filename(), il[i]->Linenumber());
         Error << "Bad value: ";
         PrintResult(Error, il[i]->Type(0), y);
@@ -195,9 +192,6 @@ void array::Sample(long &seed, expr **il, result &x)
       int ndx = ptr->values->IndexOf(y);
       if (ndx<0) {
         // range error
-#ifdef TRACK_ERRORS
-        x.error = CE_OutOfRange;
-#endif
         Error.Start(il[i]->Filename(), il[i]->Linenumber());
         Error << "Bad value: ";
         PrintResult(Error, il[i]->Type(0), y);
