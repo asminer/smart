@@ -501,8 +501,9 @@ void shared_matrix::show(OutputStream &s)
   }
 }
 
-void shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
+int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
 {
+  int nnz = 0;
   int i,j,k;
   for (i=0; i<N; i++) {
     for (j=0; j<N; j++) {
@@ -514,8 +515,10 @@ void shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
       } // for k
       acc = Reduce(acc);
       SetPtr(i, j, acc);
+      if (acc) nnz++;
     } // for j
   } // for i
+  return nnz;
 }  
 
 void InitMatrix()

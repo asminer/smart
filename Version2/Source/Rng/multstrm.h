@@ -147,8 +147,8 @@ public:
   }
   inline int Distinct() const { return distinct; }
 
-  /// this = b * c
-  void Multiply(shared_matrix *b, shared_matrix *c);
+  /// this = b * c, returns #nonzeroes
+  int Multiply(shared_matrix *b, shared_matrix *c);
   
 protected:
   inline void SetPtr(int i, int j, bitmatrix* m) {

@@ -12,18 +12,20 @@ void smart_exit()
 
 void Braised(int n, shared_matrix* B, shared_matrix *tmp, shared_matrix *answer)
 {
+  int nnz; 
   if (2==n) {
-    answer->Multiply(B, B);
+    nnz = answer->Multiply(B, B);
   } else if (n%2 == 0) {
     // even, square it
     Braised(n/2, B, answer, tmp);
-    answer->Multiply(tmp, tmp);
+    nnz = answer->Multiply(tmp, tmp);
   } else {
     // odd
     Braised(n-1, B, answer, tmp);
-    answer->Multiply(B, tmp);
+    nnz = answer->Multiply(B, tmp);
   }
-  Output << "Computed B^" << n << "\n";
+  Output << "Computed B^" << n << "\t\t\t";
+  Output << nnz << " nonzeroes\n";
   Output.flush();
 }
 
