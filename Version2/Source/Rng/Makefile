@@ -12,7 +12,7 @@ CXX = g++
 #CPPFLAGS = -g 
 CPPFLAGS = -O3
 
-EXECS = square multiply makeB mtcheck checkmult dist makeJump jumpcheck
+EXECS = square multiply makeB mtcheck checkmult dist makeJump jumpcheck generate
 
 all: $(EXECS)
 
@@ -39,6 +39,9 @@ makeJump: makeJump.o multstrm.o streams.o
 
 jumpcheck: jumpcheck.o streams.o rng.o mtwist.o
 	g++ $(CPPFLAGS) -o jumpcheck jumpcheck.o streams.o rng.o mtwist.o
+
+generate: generate.o rng.o mtwist.o
+	g++ $(CPPFLAGS) -o generate generate.o rng.o mtwist.o
 
 timers.o: ../Base/timers.cc ../Base/timers.h
 	g++ $(CPPFLAGS) -c -o timers.o ../Base/timers.cc

@@ -10,6 +10,7 @@
 */
 class Rng : public mt_prng {
 public:
+  Rng() : mt_prng() { }
   Rng(unsigned long seed) : mt_prng(seed) { }
 
   /// Return a uniform (0,1).  Values 0 and 1 are NOT possible.
