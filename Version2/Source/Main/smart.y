@@ -24,10 +24,13 @@
 %}
 
 %union {
-  char *name;
+  char* name;
   type Type_ID;
-  expr *Expr;
+  expr* Expr;
   void* list;   
+  array_index* index;
+  int count;
+  statement* stmt;
   /*
   option *Option;
   expr_set *setexpr;
@@ -49,13 +52,13 @@ COMMA SEMI COLON POUND DOT DOTDOT GETS PLUS MINUS TIMES DIVIDE OR AND NOT
 EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
-%type <Type_ID> type
-%type <Expr> expr term const_expr function_call model_call model_function_call
-/*
-%type <setexpr> set_expr set_elems set_elem 
-%type <itrs> iterator iterators for_header 
-*/
-%type <list> statement statements decl_stmt defn_stmt model_stmt model_stmts
+%type <Type_ID> type model_var_decl
+%type <Expr> topexpr expr term const_expr function_call model_call model_function_call set_expr set_elems set_elem 
+%type <list> aggexpr statements decl_stmt defn_stmt model_stmt model_stmts
+formal_indexes
+%type <index> iterator
+%type <count> for_header iterators
+%type <stmt> statement
 /*
 %type <Func> header array_header
 %type <Option> opt_header
@@ -65,7 +68,6 @@ NUL DEFAULT TYPE MODIF MODEL
 %type <fpl> formal_params formal_param
 %type <ppl> pos_params pos_param indexes index
 %type <npl> named_params named_param 
-%type <varlist> model_var_decl
 %type <tuple_ids> tupleidlist
 */
 
@@ -98,12 +100,14 @@ statements
 #ifdef PARSE_TRACE
   cout << "Reducing statements : statements statement\n";
 #endif
+  $$ = AppendStatement($1, $2);
 }
 	|	statement
 {
 #ifdef PARSE_TRACE
   cout << "Reducing statements : statement\n";
 #endif
+  $$ = AppendStatement(NULL, $1);
 }
 	;
 
@@ -113,48 +117,56 @@ statement
 #ifdef PARSE_TRACE
   cout << "Reducing statement : for_header LBRACE statements RBRACE\n";
 #endif
+  $$ = BuildForLoop($1, $3);
 }
 	|	converge LBRACE statements RBRACE
 { 
 #ifdef PARSE_TRACE
   cout << "Reducing statement : converge LBRACE statements RBRACE\n";
 #endif
+  $$ = NULL;
 }
 	|	decl_stmt
 { 
 #ifdef PARSE_TRACE
   cout << "Reducing statement : decl_stmt\n";
 #endif
+  $$ = NULL;
 }
 	|	defn_stmt
 { 
 #ifdef PARSE_TRACE
   cout << "Reducing statement : defn_stmt\n";
 #endif
+  $$ = NULL;
 }
         |       model_decl
 { 
 #ifdef PARSE_TRACE
   cout << "Reducing statement : model_decl\n";
 #endif
+  $$ = NULL;
 } 
         |       opt_header const_expr ENDPND 
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing statement : opt_header const_expr ENDPND\n";
+  cout << "Reducing statement : opt_header topexpr ENDPND\n";
 #endif
+  $$ = NULL;
 }
         |       opt_header IDENT ENDPND
 {
 #ifdef PARSE_TRACE
   cout << "Reducing statement : opt_header IDENT ENDPND\n";
 #endif
+  $$ = NULL;
 }       
         |       opt_header LBRACE tupleidlist RBRACE ENDPND
 {
 #ifdef PARSE_TRACE
   cout << "Reducing statement : opt_header LBRACE tipleidlist RBRACE ENDPND\n";
 #endif
+  $$ = NULL;
 }       
         |       expr SEMI
 {
@@ -168,6 +180,7 @@ statement
 #ifdef PARSE_TRACE
   cout << "Reducing statement : SEMI\n";
 #endif
+  $$ = NULL;
 }
 	;
 
@@ -192,6 +205,7 @@ for_header
 #ifdef PARSE_TRACE
   cout << "Reducing for_header : FOR LPAR iterators RPAR\n";
 #endif
+ $$ = $3;  
 }
 	;
 
@@ -219,12 +233,14 @@ iterators
 #ifdef PARSE_TRACE
   cout << "Reducing iterators : iterators COMMA iterator\n";
 #endif
+  $$ = $1 + AddIterator($3);
 }
 	|	iterator
 { 
 #ifdef PARSE_TRACE
   cout << "Reducing iterators : iterator\n";
 #endif
+  $$ = AddIterator($1);
 }
 	;
 
@@ -234,6 +250,7 @@ iterator
 #ifdef PARSE_TRACE
   cout << "Reducing iterator : type IDENT IN set_expr\n";
 #endif
+  $$ = BuildIterator($1, $2, $4);
 }
 	;
 
@@ -243,12 +260,14 @@ type
 #ifdef PARSE_TRACE
   cout << "Reducing type : MODIF TYPE\n";
 #endif
+  $$ = MakeType($1, $2);
 }
         |       TYPE
 {
 #ifdef PARSE_TRACE
   cout << "Reducing type : TYPE\n";
 #endif
+  $$ = MakeType(NULL, $1);
 }
 ;
 
@@ -258,6 +277,7 @@ set_expr
 #ifdef PARSE_TRACE
   cout << "Reducing set_expr : LBRACE set_elems RBRACE\n";
 #endif
+  $$ = $2;
 }
 	;
 
@@ -267,12 +287,14 @@ set_elems
 #ifdef PARSE_TRACE
   cout << "Reducing set_elems : set_elems COMMA set_elem\n";
 #endif
+  $$ = AppendSetElem($1, $3);
 }
 	|	set_elem
 {
 #ifdef PARSE_TRACE
   cout << "Reducing set_elems : set_elem\n";
 #endif
+  $$ = $1;
 }
 	;
 
@@ -282,18 +304,21 @@ set_elem
 #ifdef PARSE_TRACE
   cout << "Reducing set_elem : expr\n";
 #endif
+  $$ = MakeElementSet(Filename(), LineNumber(), $1);
 }
 	|	expr DOTDOT expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing set_elem : expr DOTDOT expr\n";
 #endif
+  $$ = BuildInterval($1, $3); 
 }
 	|	expr DOTDOT expr DOTDOT expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing set_elem : expr DOTDOT expr DOTDOT expr\n";
 #endif
+  $$ = BuildInterval($1, $3, $5);
 }
 	;
 
@@ -367,10 +392,10 @@ header
         ;
 
 array_header
-        :       type IDENT indexes 
+        :       type IDENT formal_indexes 
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing array_header : type IDENT indexes\n";
+  cout << "Reducing array_header : type IDENT formal_indexes\n";
 #endif
 }
         ;
@@ -454,24 +479,28 @@ model_var_decl
 #ifdef PARSE_TRACE
   cout << "Reducing model_var_decl : model_var_decl COMMA IDENT\n";
 #endif
+  $$ = $1;
 }
-        |       model_var_decl COMMA IDENT indexes
+        |       model_var_decl COMMA IDENT formal_indexes
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing model_var_decl : model_var_decl COMMA IDENT indexes\n";
+  cout << "Reducing model_var_decl : model_var_decl COMMA IDENT formal_indexes\n";
 #endif
+  $$ = $1;
 }
         |       type IDENT    
 {
 #ifdef PARSE_TRACE
   cout << "Reducing model_var_decl : type IDENT\n";
 #endif
+  $$ = $1;
 }
-	|	type IDENT indexes
+	|	type IDENT formal_indexes
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing model_var_decl : type IDENT indexes\n";
+  cout << "Reducing model_var_decl : type IDENT formal_indexes\n";
 #endif
+  $$ = $1;
 }
         ;
 
@@ -481,6 +510,25 @@ model_var_decl
 |                            Expressions                            |        
 |                                                                   |
 \==================================================================*/
+
+topexpr
+	:	expr
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing topexpr : expr\n";
+#endif
+  Optimize(0, $1);
+  $$ = $1;
+}
+	|	aggexpr
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing topexpr : aggexpr\n";
+#endif
+  $$ = BuildAggregate($1);
+}
+	;
+
 
 expr 
 	:	NUL
@@ -502,12 +550,14 @@ expr
 #ifdef PARSE_TRACE
   cout << "Reducing expr : model_function_call\n";
 #endif
+  $$ = $1;
 }
 	|	function_call
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : function_call\n";
 #endif
+  $$ = $1;
 }
 	|	LPAR expr RPAR
 {
@@ -558,18 +608,6 @@ expr
 #endif
   $$ = BuildBinary($1, AND, $3);
 }
-	|	NOT expr
-{
-#ifdef PARSE_TRACE
-  cout << "Reducing expr : NOT expr\n";
-#endif
-}
-	|	MINUS expr %prec UMINUS
-{
-#ifdef PARSE_TRACE
-  cout << "Reducing expr : MINUS expr\n";
-#endif
-}
 	|	expr EQUALS expr
 {
 #ifdef PARSE_TRACE
@@ -612,17 +650,44 @@ expr
 #endif
   $$ = BuildBinary($1, LE, $3);
 }
+	|	NOT expr
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing expr : NOT expr\n";
+#endif
+  $$ = BuildUnary(NOT, $2);
+}
+	|	MINUS expr %prec UMINUS
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing expr : MINUS expr\n";
+#endif
+  $$ = BuildUnary(MINUS, $2);
+}
 	|	type LPAR expr RPAR
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : type LPAR expr RPAR\n";
 #endif
+  $$ = BuildTypecast($3, $1);
+}
+	;
+
+
+aggexpr 
+	:	aggexpr COLON expr
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing aggexpr : aggexpr COLON expr\n";
+#endif
+  $$ = AddAggregate($1, $3);
 }
         |       expr COLON expr
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing expr : expr COLON expr\n";
+  cout << "Reducing aggexpr : expr COLON expr\n";
 #endif
+  $$ = StartAggregate($1, $3);
 }
         ;
 
@@ -692,12 +757,14 @@ model_function_call
 #ifdef PARSE_TRACE
   cout << "Reducing model_function_call : model_call DOT IDENT\n";
 #endif
+  $$ = NULL;
 }
 	|	model_call DOT IDENT indexes
 {
 #ifdef PARSE_TRACE
   cout << "Reducing model_function_call : model_call DOT IDENT indexes\n";
 #endif
+  $$ = NULL;
 }
         ;
 
@@ -734,24 +801,28 @@ function_call
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT\n";
 #endif
+  $$ = FindIdent($1);
 }
 	|	IDENT indexes	 
 {
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT indexes\n";
 #endif
+  $$ = NULL;
 }
 	|	IDENT LPAR pos_params RPAR
 {
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT LPAR pos_params RPAR\n";
 #endif
+  $$ = NULL;
 }
         |       IDENT LPAR named_params RPAR
 {
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT LPAR named_params RPAR\n";
 #endif
+  $$ = NULL;
 }
 	;
 
@@ -790,6 +861,24 @@ formal_param
 #endif
 }
 	;
+
+formal_indexes
+	:	formal_indexes LBRAK IDENT RBRAK
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing formal_indexes : formal_indexes LBRAK IDENT RBRAK\n";
+#endif
+  $$ = AddFormalIndex($1, $3);
+}
+	|	LBRAK IDENT RBRAK
+{
+#ifdef PARSE_TRACE
+  cout << "Reducing formal_indexes : LBRAK IDENT RBRAK\n";
+#endif
+  $$ = AddFormalIndex(NULL, $2);
+}
+	;
+
 
 indexes
 	:	indexes LBRAK index RBRAK
@@ -832,7 +921,7 @@ pos_params
 	;
 
 pos_param 
-	:	expr  
+	:	topexpr  
 {
 #ifdef PARSE_TRACE
   cout << "Reducing pos_param : expr\n";
@@ -862,7 +951,7 @@ named_params
 	;
 
 named_param 
-	:	IDENT GETS expr
+	:	IDENT GETS topexpr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing named_param : IDENT GETS expr\n";

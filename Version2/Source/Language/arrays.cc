@@ -315,25 +315,30 @@ void acall::show(ostream &s) const
 // ******************************************************************
 
 /**  A statement used for for-loops.
+     Note we allow multiple dimensions now!
  */
 
 class forstmt : public statement {
-  array_index *index;
+  array_index **index;
+  int dimension;
   statement **block;
   int blocksize;
 public:
-  forstmt(const char *fn, int l, array_index *i, statement **b, int n);
+  forstmt(const char *fn, int l, array_index **i, int d, statement **b, int n);
   virtual ~forstmt(); 
 
   virtual void Execute();
   virtual void show(ostream &s) const;
   virtual void showfancy(int depth, ostream &s) const;
+protected:
+  void Execute(int d);
 };
 
-forstmt::forstmt(const char *fn, int l, array_index *i, statement **b, int n)
+forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, int n)
   : statement(fn, l)
 {
   index = i;
+  dimension = d;
   block = b;
   blocksize = n;
 
@@ -351,25 +356,40 @@ forstmt::~forstmt()
   int j;
   for (j=0; j<blocksize; j++) delete block[j];
   delete[] block;
+  for (j=0; j<dimension; j++) Delete(index[j]);
+  delete[] index;
 }
 
 void forstmt::Execute()
 {
-  index->ComputeCurrent();
-  if (!index->FirstIndex()) return;  // error?
+  Execute(0);
+}
 
-  do {
+void forstmt::Execute(int d)
+{
+  if (d>=dimension) {
     // execute block
     int j;
     for (j=0; j<blocksize; j++) block[j]->Execute();
-
-  } while (index->NextValue());
+  } else {
+    // Loop this dimension
+    index[d]->ComputeCurrent();
+    if (!index[d]->FirstIndex()) return;  // empty loop
+    do {
+      Execute(d+1);
+    } while (index[d]->NextValue());
+  }
 }
 
 void forstmt::show(ostream &s) const
 {
   s << "for (";
-  index->showfancy(s);
+  index[0]->showfancy(s);
+  int d;
+  for (d=1; d<dimension; d++) {
+    s << ", ";
+    index[d]->showfancy(s);
+  }
   s << ")";
 }
 
@@ -474,10 +494,11 @@ expr* MakeArrayCall(array *f, expr **p, int np, const char *fn, int l)
   return new acall(fn, l, f, p, np);
 }
 
-statement* MakeForLoop(array_index *i, statement** block, int blocksize,
+statement* MakeForLoop(array_index **i, int dim, 
+		       statement** block, int blocksize,
                        const char *fn, int line)
 {
-  return new forstmt(fn, line, i, block, blocksize);
+  return new forstmt(fn, line, i, dim, block, blocksize);
 }
 
 statement* MakeArrayAssign(array *f, expr* retval,

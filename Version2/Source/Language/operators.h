@@ -14,6 +14,9 @@
 
 #include "baseops.h"
 
+class array_index;
+class statement;
+
 #include "../Main/smart.tab.h"
 /* For token identifiers such as PLUS, MINUS, etc... */
 

@@ -220,7 +220,7 @@ expr* MakeArrayCall(array *f, expr **p, int np, const char *fn=NULL, int l=0);
 /** Make a for-loop statement.
     We only handle one dimension at a time.
  */
-statement* MakeForLoop(array_index *i, statement** block, int blocksize, 
+statement* MakeForLoop(array_index **i, int dim, statement** block, int bsize, 
                        const char *fn=NULL, int line=0);
 
 /// "Normal" array assignments.

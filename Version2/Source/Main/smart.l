@@ -211,7 +211,7 @@ void IllegalToken()
   Error.Stop();
 }
 
-int yyerror(char *msg)
+void yyerror(char *msg)
 {
   Error.Start(filename, lexer.lineno());
   Error << msg;

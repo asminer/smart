@@ -35,6 +35,7 @@ public:
     free(data);
   }
   inline int Length() const { return last; }
+  inline void Pop() { if (last) last--; }
   void** Copy() const {
     if (0==last) return NULL;
     void** thing = new void* [Length()];
@@ -73,7 +74,8 @@ public:
   List(int size) { p = new PtrList(size); }  
   ~List() { delete p; }
   inline int Length() const { return p->Length(); }
-  inline DATA** Copy() const { return static_cast<DATA**>(p->Copy()); }
+  inline void Pop() { p->Pop(); }
+  inline DATA** Copy() const { return (DATA **)(p->Copy()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(p->Item(n)); }
   inline void Append(DATA *x) { p->Append(x); }
   inline void Append(List <DATA> *x) { if (x) { p->Append(x->p); delete x; } }

@@ -48,6 +48,7 @@ int smart_main(int argc, char *argv[])
   InitBase();
   InitLanguage();
   InitLexer(argc, argv);
+  InitCompiler();
 
   yyparse();
 
