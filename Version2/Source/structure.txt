@@ -36,6 +36,23 @@ What we have:
      types, results, basic expressions,
      symbols, functions, 
 
+Notes:
+
+For this version, avoid linked lists for language features
+(e.g., return the variables in an expression, etc.)
+Use buffers instead, where a function will return the number of
+items and fill a buffer of those items (prevening overflow, of course).
 
 
+Re-designing discrete-state model stuff:
+
+Discrete states: now will be arrays of shorts.  No virtual functions.
+No functions at all, actually.
+The model itself will be used to display the states.
+
+When a partition is specified: all states are saved as an array of
+submarking indices, submarkings generated on the fly for explicit
+approaches.
+
+Use templates for fast things like firing events and generation.
 
