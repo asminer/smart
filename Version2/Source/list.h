@@ -37,7 +37,7 @@ public:
   }
   inline int Length() const { return last; }
   inline void Pop() { if (last) last--; }
-  void** Copy() const {
+  void** VCopy() const {
     if (0==last) return NULL;
     void** thing = new void* [Length()];
     memcpy(thing, data, last * sizeof(void*));
@@ -47,7 +47,7 @@ public:
       Since this trashes our copy, this should be used
       when we were going to delete the original anyway.
   */
-  void** MakeArray() {
+  void** VMakeArray() {
     if (0==last) return NULL;
     Resize(last);
     void **ret = data;
@@ -56,14 +56,14 @@ public:
     return ret;
   }
 
-  inline void* Item(int n) const { 
+  inline void* VItem(int n) const { 
     DCASSERT(n<last);
     DCASSERT(n>=0);
     DCASSERT(data);
     return data[n]; 
   }
 
-  void InsertAt(int n, void* x) {
+  void VInsertAt(int n, void* x) {
     DCASSERT(n>=0);
     DCASSERT(n<=last);
     DCASSERT(data);
@@ -75,13 +75,13 @@ public:
     last++;
   }
 
-  void Append(void* x) {
+  void VAppend(void* x) {
     if (last>=size) Resize(2*size);
     data[last] = x;
     last++;
   }
 
-  void Append(PtrList *x) {
+  void VAppend(PtrList *x) {
     if (x) {
       while (last + x->last >= size) size*=2;
       Resize(size);
@@ -98,20 +98,22 @@ public:
 };
 
 template <class DATA> 
-class List {
-  PtrList *p;
+class List : public PtrList {
+  // PtrList *p;
 public:
-  List(int size) { p = new PtrList(size); }  
-  ~List() { delete p; }
-  inline int Length() const { return p->Length(); }
-  inline void Pop() { p->Pop(); }
-  inline DATA** Copy() const { return (DATA **)(p->Copy()); }
-  inline DATA** MakeArray() { return (DATA **)(p->MakeArray()); }
-  inline DATA* Item(int n) const { return static_cast<DATA*>(p->Item(n)); }
-  inline void Append(DATA *x) { p->Append(x); }
-  inline void Append(List <DATA> *x) { if (x) { p->Append(x->p); delete x; } }
-  inline void InsertAt(int n, DATA* x) { p->InsertAt(n, x); }
-  inline void Clear() { p->Clear(); }
+  List(int size) : PtrList(size) {} // { p = new PtrList(size); }  
+  // ~List() { delete p; }
+  // inline int Length() const { return p->Length(); }
+  // inline void Pop() { p->Pop(); }
+  //inline DATA** Copy() const { return (DATA **)(p->Copy()); }
+  inline DATA** Copy() const { return (DATA **)(VCopy()); }
+  // inline DATA** MakeArray() { return (DATA **)(p->MakeArray()); }
+  inline DATA** MakeArray() { return (DATA **)(VMakeArray()); }
+  inline DATA* Item(int n) const { return static_cast<DATA*>(VItem(n)); }
+  inline void Append(DATA *x) { VAppend(x); }
+  inline void Append(List <DATA> *x) { if (x) { VAppend(x); delete x; } }
+  inline void InsertAt(int n, DATA* x) { VInsertAt(n, x); }
+  // inline void Clear() { p->Clear(); }
 };
 
 template <class DATA>
