@@ -3,6 +3,8 @@
 
 Things to work on:
 
+* I/O
+
 * Run-time error messages (for divide by zero, etc)
 
 * Stack dump on stack overflow
