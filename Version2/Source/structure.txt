@@ -10,6 +10,8 @@ File	  	What's there
 types		Definitions of type constants, and some handy 
 		functions (mostly used by the compiler)
 
+symbols		Base class for symbols.
+
 exprs		Result class.  Engine information class.
 		Expression class base.
 		Constant bool, int, and real expressions.

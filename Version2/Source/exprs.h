@@ -314,15 +314,15 @@ class expr {
 
 inline ostream& operator<< (ostream &s, expr *e)
 {
-  if (NULL==e) s << "null";
-  else e->show(s);
+  if (e) e->show(s);
+  else s << "null";
   return s;
 }
 
 inline expr* CopyExpr(expr *e)
 {
-  if (NULL==e) return NULL;
-  return e->Copy();
+  if (e) return e->Copy();
+  return NULL;
 }
 
 // ******************************************************************
