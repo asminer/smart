@@ -49,6 +49,7 @@ void FreeState(state &s)
   delete[] s.data;
   s.size = 0;
   s.data = NULL;
+  s.am_substate = true; // prevents a second deletion
 }
 
 void MakeSubstate(state &sub, const state &s, int pos, int len)

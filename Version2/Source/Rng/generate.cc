@@ -185,7 +185,12 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  InitStreams(streams, 7309259);
+  fprintf(stderr, "Enter initial seed: \n");
+  long seed;
+  scanf("%ld", &seed);
+  fprintf(stderr, "Using seed %ld\n", seed);
+
+  InitStreams(streams, seed);
 
   switch (argv[1][0]) {
     case 't':	TextGenerate(streams, samples); 	return 0;

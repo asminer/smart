@@ -2643,6 +2643,7 @@ void InitCompiler()
 
   InitBuiltinFunctions(&Builtins); 
   InitBuiltinConstants(&Constants);
+  InitModels();  // defined in Formalisms/api.h
 
 #ifdef COMPILE_DEBUG
   Output << "Initialized compiler data\n";

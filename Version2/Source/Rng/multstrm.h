@@ -5,7 +5,7 @@
 #define MULTSTRM_H
 
 #include "../Base/api.h"
-#include "../memmgr.h"
+#include "../Templates/memmgr.h"
 
 const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x08000000, 0x04000000, 0x02000000, 0x01000000,

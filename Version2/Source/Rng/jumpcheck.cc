@@ -8,7 +8,7 @@
 #include "../Base/streams.h"
 #include "rng.h"
 
-const long JUMP = 1024;
+const long JUMP = 1024*1024;
 
 void smart_exit()
 {
