@@ -43,21 +43,16 @@ int main()
     if (i<0) break;
     if (j<0) break;
 
-    //foo.AddEdge(i, j);
-    foo.AddEdgeInOrder(i, j);
+    foo.AddEdge(i, j);
+    //foo.AddEdgeInOrder(i, j);
   }
 
   Output << "Done adding edges\n";
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
-  Output << "Converting to static\n";
+  Output << "Transposing\n";
   Output.flush();
-  foo.ConvertToStatic();
-  Output << "Static graph:\n";
-  for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
-
-  Output << "Converting back to dynamic\n";
-  foo.ConvertToDynamic();
+  foo.Transpose();
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
   Output << "The end\n";

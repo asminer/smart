@@ -11,7 +11,7 @@
 
 // #include "graphs.h"
 
-#define DEBUG_GRAPH
+// #define DEBUG_GRAPH
 
 /** Directed graph struct.
 
@@ -34,10 +34,14 @@
     (except for addition of a next array if necessary)
     in O(num_edges) time.  ;^)
 
-    TBD: "Transpose" method, which will order elements
-    TBD: "isTransposed" member
+    Note: we always store "by rows".  However, this is not a problem;
+    if you need a graph/matrix by columns, store its transpose. 
+    There is a nice in-place (almost...) method to perform the transpose.
 */
 struct digraph {
+  /// Is the matrix transposed?
+  bool isTransposed;
+
   /// Number of nodes in graph
   int num_nodes;
 
@@ -91,12 +95,15 @@ public:
   void AddEdge(int from, int to);
 
   /** If this is called every time, row lists will be ordered.
-      Duplicate edges are not added.
+      Duplicate edges are not added twice.
+      Returns true if the edge was a duplicate.
   */
-  void AddEdgeInOrder(int from, int to);
+  bool AddEdgeInOrder(int from, int to);
 
   void ConvertToStatic();
   void ConvertToDynamic();
+
+  void Transpose();
 
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
@@ -119,6 +126,7 @@ digraph::digraph()
   column_index = NULL;
   next = NULL;
   edges_alloc = 0;
+  isTransposed = false;
 }
 
 digraph::~digraph()
@@ -178,7 +186,7 @@ void digraph::AddEdge(int from, int to)
   num_edges++;
 }
 
-void digraph::AddEdgeInOrder(int from, int to)
+bool digraph::AddEdgeInOrder(int from, int to)
 {
   DCASSERT(IsDynamic());
   if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
@@ -189,7 +197,7 @@ void digraph::AddEdgeInOrder(int from, int to)
     next[num_edges] = num_edges;  // circle of this node itself
     row_pointer[from] = num_edges;
     num_edges++;
-    return;
+    return false;
   } 
   // Row is not empty.
   int prev = row_pointer[from];
@@ -199,7 +207,7 @@ void digraph::AddEdgeInOrder(int from, int to)
     next[prev] = num_edges;
     row_pointer[from] = num_edges;
     num_edges++;
-    return;
+    return false;
   }
   // Find spot for this edge
   while (1) {
@@ -209,11 +217,11 @@ void digraph::AddEdgeInOrder(int from, int to)
       next[num_edges] = curr;
       next[prev] = num_edges;
       num_edges++;
-      return;
+      return false;
     }
     if (to == column_index[curr]) {
       // duplicate edge, don't add it
-      return;
+      return true;
     }
     prev = curr;
   }
@@ -334,21 +342,83 @@ void digraph::ConvertToDynamic()
 #endif
 }
 
+void digraph::Transpose()
+{
+  DCASSERT(IsDynamic());
+
+  // we need another row_pointer array; everything else is "in place"
+  int* col_pointer = (int *) malloc((num_nodes+1)*sizeof(int));
+  if (NULL==col_pointer) OutOfMemoryError("Graph Transpose");
+  int s;
+  for (s=0; s<=num_nodes; s++) col_pointer[s] = -1;
+
+  // Convert row lists into column lists
+  for (s=0; s<num_nodes; s++) {
+    if (row_pointer[s] < 0) continue; // empty list
+    int front = next[row_pointer[s]];
+    int ptr = front;
+    do {
+      int nextptr = next[ptr];  // save next ptr, it will be trashed
+      // change column index to row
+      int col = column_index[ptr];
+      column_index[ptr] = s;
+      // add entry to appropriate column
+      if (col_pointer[col] < 0) {
+	// empty column
+	next[ptr] = ptr;
+      } else {
+	// add to end of column
+	next[ptr] = col_pointer[col];
+	next[col_pointer[col]] = ptr;
+      }
+      col_pointer[col] = ptr;
+      // advance
+      ptr = nextptr;  
+    } while (ptr!=front);
+  }
+
+  // update row pointers and sizes
+  free(row_pointer);
+  row_pointer = col_pointer;
+  nodes_alloc = num_nodes;
+
+  // toggle
+  isTransposed = !(isTransposed);
+
+#ifdef DEBUG_GRAPH
+  Output << "Transposed graph, dynamic arrays are now:\n";
+  Output << "row_pointer: [";
+  Output.PutArray(row_pointer, num_nodes);
+  Output << "]\n";
+  Output.flush();
+  Output << "column_index: [";
+  Output.PutArray(column_index, num_edges);
+  Output << "]\n";
+  Output.flush();
+  Output << "        next: [";
+  Output.PutArray(next, num_edges);
+  Output << "]\n";
+  Output.flush();
+#endif
+}
+
 void digraph::ShowNodeList(OutputStream &s, int node)
 {
+  const char* fromstr = (isTransposed) ? "\tTo node " : "\tFrom node ";
+  const char* tostr = (isTransposed) ? "\t\tFrom node " : "\t\tTo node ";
   int e;
   if (IsStatic()) {
-    s << "\tFrom node " << node << "\n";
+    s << fromstr << node << "\n";
     for (e=row_pointer[node]; e<row_pointer[node+1]; e++) {
-      s << "\t\tTo node " << column_index[e] << "\n";
+      s << tostr << column_index[e] << "\n";
     }
   } else {
-    s << "\tFrom node " << node << "\n";
+    s << fromstr << node << "\n";
     if (row_pointer[node]<0) return;
     int front = next[row_pointer[node]];
     e = front;
     do {
-      s << "\t\tTo node " << column_index[e] << "\n";
+      s << tostr << column_index[e] << "\n";
       e = next[e];
     } while (e!=front);
   }
