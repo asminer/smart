@@ -213,7 +213,6 @@ public:
 // *                                                                *
 // ******************************************************************
 
-
 /** Make an expression to call an array.
  */
 expr* MakeArrayCall(array *f, expr **p, int np, const char *fn, int l);

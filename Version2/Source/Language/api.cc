@@ -48,10 +48,10 @@ void InitLanguage()
 
   // testing... add more options
 
-  option* foo = MakeRealOption("IndexPrecision", 
+  index_precision = MakeRealOption("IndexPrecision", 
                 "Epsilon for real array index comparisons", 1e-5, 0, 1e100);
 
-  AddOption(foo);
+  AddOption(index_precision);
 
   option* bar = MakeIntOption("Iterations", "Max iterations allowed", 
   				1000, 0, 2000000000);

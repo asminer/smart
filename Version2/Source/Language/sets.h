@@ -107,6 +107,10 @@ inline void Delete(set_result *s)
 // *                                                                *
 // ******************************************************************
 
+// used by real set indexing
+extern option* index_precision;
+
+
 /**  Builds an interval set expression.
      The arguments must be all the same type.
  */

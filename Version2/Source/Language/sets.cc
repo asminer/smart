@@ -2,6 +2,9 @@
 // $Id$
 
 #include "sets.h"
+
+#include "math.h"
+
 //@Include: sets.h
 
 /** @name sets.cc
@@ -15,6 +18,8 @@
 //@{
 
 #define UNION_DEBUG
+
+option* index_precision;
 
 // ******************************************************************
 // *                                                                *
@@ -132,9 +137,18 @@ void real_interval::GetElement(int n, result &x)
 int real_interval::IndexOf(const result &x)
 {
   if (x.error || x.null || x.infinity) return -1;
-  int i = int((x.rvalue-start)/inc);
+  int i;
+  if (inc>0) 
+    i = int( ceil((x.rvalue-start)/inc - 0.5) );
+  else
+    i = int( ceil((start-x.rvalue)/inc - 0.5) );
   if (i>=Size()) return -1;
   if (i<0) return -1;
+  // i is the closest index.
+  // make sure start + i*inc is close enough to x
+  double delta = fabs( (start + i*inc) - x.rvalue );
+  if (delta > index_precision->GetReal()) 
+    return -1;  // too far away
   return i;
 }
 
