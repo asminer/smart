@@ -10,7 +10,7 @@
 
 #include "dsm.h"
 
-//#define DEBUG_MC
+#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -135,8 +135,15 @@ markov_model::~markov_model()
 
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
+  int ndx = statelist->Length();
   statelist->Append(n);
-  return NULL;
+  model_var* s = new model_var(fn, l, t, n);
+  s->SetIndex(ndx);
+#ifdef DEBUG_MC
+  Output << "\tModel " << Name() << " created state " << n << " index " << ndx << "\n"; 
+  Output.flush();
+#endif
+  return s;
 }
 
 void markov_model::InitModel()
@@ -153,7 +160,7 @@ void markov_model::FinalizeModel(result &x)
   delete statelist;
   statelist = NULL;
 #ifdef DEBUG_MC
-  Output << "MC has " << numstates << " states?\n";
+  Output << "\tMC " << Name() << " has " << numstates << " states\n";
   int i;
   for (i=0; i<numstates; i++) {
     Output << "\t" << statenames[i] << "\n";
@@ -178,6 +185,67 @@ state_model* markov_model::BuildStateModel()
 // ******************************************************************
 
 
+// ********************************************************
+// *                         init                         *
+// ********************************************************
+
+void compute_mc_init(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  model *m = dynamic_cast<model*> (pp[0]);
+  DCASSERT(m);
+
+#ifdef DEBUG_MC
+  Output << "\tInside init for model " << m << "\n";
+#endif
+
+  markov_model *mc = dynamic_cast<markov_model*>(m);
+  DCASSERT(mc);
+
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+#ifdef DEBUG_MC
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+    Output << "\t state ";
+#endif
+    SafeCompute(pp[i], 0, x);
+#ifdef DEBUG_MC
+    PrintResult(Output, INT, x);
+    Output << "\n\t value ";
+#endif
+    SafeCompute(pp[i], 1, x);
+#ifdef DEBUG_MC
+    PrintResult(Output, REAL, x);
+    Output << "\n";
+#endif
+  }
+
+#ifdef DEBUG_MC
+  Output << "\tExiting init for model " << m << "\n";
+  Output.flush();
+#endif
+
+  x.setNull();
+}
+
+void Add_init(type mctype, PtrTable *fns)
+{
+  const char* helpdoc = "Sets the initial state(s) with probabilities for a Markov Chain model.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(mctype, "m");
+  type *tl = new type[2];
+  tl[0] = STATE;
+  tl[1] = REAL;
+  pl[1] = new formal_param(tl, 2, "pair");
+  internal_func *p = new internal_func(VOID, "init", 
+	compute_mc_init, NULL,
+	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+  InsertFunction(fns, p);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -193,5 +261,7 @@ model* MakeMarkovChain(type t, char* id, formal_param **pl, int np,
 
 void InitMCModelFuncs(PtrTable *t)
 {
+  Add_init(DTMC, t);
+  Add_init(CTMC, t);
 }
 

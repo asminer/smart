@@ -64,6 +64,8 @@ class formal_param : public symbol {
 public:
   /// Use this constructor for builtin functions
   formal_param(type t, char* n);
+  /// Use this constructor for builtin functions, aggregate params
+  formal_param(type *t, int tlen, char* n);
   /// Use this constructor for user-defined functions.
   formal_param(const char* fn, int line, type t, char* n);
   virtual ~formal_param();

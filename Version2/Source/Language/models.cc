@@ -37,6 +37,26 @@ model_var::model_var(const char* fn, int line, type t, char* n)
   part_index = -1;
 }
 
+void model_var::Compute(int i, result &x)
+{
+  x.Clear();
+  if (state_index < 0) {
+    // the index was never set
+    // not sure what to do here, try this...
+    x.setError();  
+    Error.Start(Filename(), Linenumber());
+    Error << "No index set for state " << Name();
+    Error.Stop();
+  } else {
+    x.ivalue = state_index;
+  }
+}
+
+void model_var::ClearCache()
+{
+  // Do nothing?
+}
+
 // ******************************************************************
 // *                                                                *
 // *                         model  methods                         *
@@ -467,6 +487,10 @@ public:
     s << " (";
     if (var) s << var; else s << " ";
     s << ") ";
+  }
+
+  virtual void Compute(int i, result &x) {
+    SafeCompute(var, i, x);
   }
 
 };

@@ -34,6 +34,12 @@ formal_param::formal_param(type t, char* n)
   Construct();
 }
 
+formal_param::formal_param(type *t, int tlen, char* n)
+  : symbol(NULL, -1, t, tlen, n)
+{
+  Construct();
+}
+
 formal_param::formal_param(const char* fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {

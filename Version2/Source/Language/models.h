@@ -49,7 +49,18 @@ public:
 public:
   model_var(const char* fn, int line, type t, char* n);
 
-  // stuff for derived classes ?
+  inline void SetIndex(int si) {
+    DCASSERT(state_index<0);
+    DCASSERT(si>=0);
+    state_index = si;
+  }
+
+  /// Returns the state_index
+  virtual void Compute(int i, result &x);
+
+  // other required virtual functions here
+
+  virtual void ClearCache();
 };
 
 // ******************************************************************
