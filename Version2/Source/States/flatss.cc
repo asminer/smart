@@ -124,8 +124,8 @@ void state_array::WriteInt(char bits, int x)
   
   // First: fill the rest of the bits from this byte.
   bits -= (bitptr+1);
-  unsigned char chunk = x / twoexp[bits];
-  x %= twoexp[bits];
+  unsigned char chunk = x / twoexp[int(bits)];
+  x %= twoexp[int(bits)];
   mem[byteptr] |= chunk;
   bitptr = 7;
   byteptr++;
@@ -143,8 +143,8 @@ void state_array::WriteInt(char bits, int x)
     // we write an entire byte
     bits -= 8;
     if (bits) {
-      chunk = x / twoexp[bits];
-      x %= twoexp[bits];
+      chunk = x / twoexp[int(bits)];
+      x %= twoexp[int(bits)];
       mem[byteptr] = chunk;
     } else {
       mem[byteptr] = x;
@@ -335,18 +335,18 @@ int state_array::AddState(state &s)
   //
   char npselect;
   for (npselect=0; npselect<5; npselect++) 
-    if (np <= placelimit[npselect]) break;
+    if (np <= placelimit[int(npselect)]) break;
   DCASSERT(npselect<5);
-  char npbits = placebits[npselect];
+  char npbits = placebits[int(npselect)];
 
   //  
   //  Determine number of bits to use for "tokens"
   //
   char tkselect;
   for (tkselect=0; tkselect<7; tkselect++) 
-    if (maxval < tokenlimit[tkselect]) break;
+    if (maxval < tokenlimit[int(tkselect)]) break;
   DCASSERT(tkselect<7);
-  char tkbits = tokenbits[tkselect];
+  char tkbits = tokenbits[int(tkselect)];
 
   //
   //  Scan state to determine runlength stats
@@ -458,7 +458,7 @@ int state_array::AddState(state &s)
     	encoding = 1;
   else  
     	encoding = 2;
-  encodecount[encoding]++;
+  encodecount[int(encoding)]++;
 
   //
   // Make room for this state
