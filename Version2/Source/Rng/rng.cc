@@ -28,16 +28,16 @@ inline void vm_mult(unsigned long v, const submatrix *m, unsigned long &answer)
   for (int b=31; b>=0; b--) if ((*m)[b]) if (v & mask[b]) answer ^= (*m)[b];
 }
 
-void Rng::JumpStream(const Rng &input)
+void Rng::JumpStream(Rng *input)
 {
-  state.initialized = input.state.initialized;
-  state.stateptr = input.state.stateptr;
+  state.initialized = input->state.initialized;
+  state.stateptr = input->state.stateptr;
 
   // vector-matrix multiply
   int i,j;
   for (i=N-1; i>=0; i--) state.statevec[i] = 0;
   for (i=N-1; i>=0; i--)
     for (j=N-1; j>=0; j--)
-      vm_mult(input.state.statevec[i], Jump[i][j], state.statevec[j]);
+      vm_mult(input->state.statevec[i], Jump[i][j], state.statevec[j]);
 }
 

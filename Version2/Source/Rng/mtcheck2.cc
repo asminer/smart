@@ -29,9 +29,15 @@ void JumpA()
 void JumpB(long long n)
 {
   Rng tmp;
+  Rng* current = &stream2;
+  Rng* next = &tmp;
   for (long long i=0; i<n; i++) {
-    tmp.JumpStream(stream2);
-    SWAP(tmp, stream2);
+    next->JumpStream(current);
+    SWAP(next, current);
+  }
+  if (current != &stream2) {
+    for (int j=0; j<MT_STATE_SIZE; j++)
+      stream2.GetState()->statevec[j] =current->GetState()->statevec[j];
   }
 }
 

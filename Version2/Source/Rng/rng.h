@@ -30,7 +30,7 @@ public:
     the implementation of this function.
     (See the journal article, hopefully ;^)
 */
-  void JumpStream(const Rng &input);
+  void JumpStream(Rng* input);
 
   // we will need direct access for testing...
   inline mt_state* GetState() { return &state; }
