@@ -12,6 +12,62 @@
 
 //#define COMPILE_DEBUG
 
+// ==================================================================
+// |                                                                |
+// |                          Lexer  hooks                          |
+// |                                                                |
+// ==================================================================
+
+extern char* filename;
+extern yyFlexLexer lexer;
+
+char* Filename() { return filename; }
+
+int LineNumber() { return lexer.lineno(); }
+
+bool IsInteractive() { return (strcmp("-", filename)==0); }
+
+// ==================================================================
+// |                                                                |
+// |                      Global compiler data                      | 
+// |                                                                |
+// ==================================================================
+
+/// Current stack of for-loop iterators
+List <array_index> *Iterators;
+
+/// Depth of converges
+int converge_depth;
+
+/// Symbol table of arrays
+PtrTable *Arrays;
+
+/// Symbol table of functions
+PtrTable *Builtins;
+
+/// Symbol table of "constants", including user-defined
+PtrTable *Constants;
+
+/// "Symbol table" of formal parameters
+List <formal_param> *FormalParams;
+
+/** List of functions that match what we're looking for.
+    Global because we'll re-use it.
+*/
+List <function> *matches;
+
+bool WithinFor() { return (Iterators->Length()); }
+
+bool WithinConverge() { return (converge_depth>0); }
+
+bool WithinBlock() { return WithinFor() || WithinConverge(); }
+
+// ==================================================================
+// |                                                                |
+// |                       Handy output stuff                       |
+// |                                                                |
+// ==================================================================
+
 void DumpPassed(OutputStream &s, List <expr> *pass)
 {
   if (NULL==pass) return;
@@ -45,64 +101,6 @@ void DumpPassed(OutputStream &s, List <named_param> *pass)
   }
   s << ")";
 }
-
-// ==================================================================
-// |                                                                |
-// |                      Global compiler data                      | 
-// |                                                                |
-// ==================================================================
-
-/// Current stack of for-loop iterators
-List <array_index> *Iterators;
-
-/// Depth of converges
-int converge_depth;
-
-/// Symbol table of arrays
-PtrTable *Arrays;
-
-/// Symbol table of functions
-PtrTable *Builtins;
-
-/// Symbol table of "constants", including user-defined
-PtrTable *Constants;
-
-/// "Symbol table" of formal parameters
-List <formal_param> *FormalParams;
-
-/** List of functions that match what we're looking for.
-    Global because we'll re-use it.
-*/
-List <function> *matches;
-
-
-bool WithinFor()
-{
-  return (Iterators->Length());
-}
-
-bool WithinConverge()
-{
-  return (converge_depth>0);
-}
-
-bool WithinBlock()
-{
-  return WithinFor() || WithinConverge();
-}
-
-// ==================================================================
-// |                                                                |
-// |                          Lexer  hooks                          | 
-// |                                                                |
-// ==================================================================
-
-extern char* filename;
-extern yyFlexLexer lexer;
-
-char* Filename() { return filename; }
-
-int LineNumber() { return lexer.lineno(); }
 
 // ==================================================================
 // |                                                                |

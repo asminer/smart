@@ -172,7 +172,8 @@ void do_print(expr **p, int np, result &x, OutputStream &s)
 void compute_print(expr **p, int np, result &x)
 {
   do_print(p, np, x, Output);
-  Output.flush();
+  if (IsInteractive()) Output.flush();
+  else Output.Check();
 }
 
 void AddPrint(PtrTable *fns)

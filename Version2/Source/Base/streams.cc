@@ -312,7 +312,7 @@ void DisplayStream::Deactivate()
 
 void DisplayStream::flush()
 {
-  if (ready) {
+  if (ready) if (buftop) {
     fputs(buffer, display);
     fflush(display);
     buftop = 0;
@@ -360,6 +360,7 @@ void ErrorStream::Stop()
 {
   if (active) {
     Put("\n");
+    Output.flush();
     flush();
     ready = false;
   }
@@ -428,6 +429,7 @@ void InternalStream::Stop()
 {
   if (active) {
     Put("\n");
+    Output.flush();
     flush();
     ready = false;
   }

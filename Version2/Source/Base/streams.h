@@ -101,6 +101,8 @@ public:
   virtual void flush();
 };
 
+const int display_buffer_size = 1023;
+
 /** Output (to the "display") stream.
     Note that error streams are derived from this class.
 */
@@ -118,6 +120,10 @@ public:
   void Deactivate();
 
   virtual void flush();
+  
+  inline void Check() {
+    if (ready) if (buftop>display_buffer_size) flush();
+  }
 };
 
 /**

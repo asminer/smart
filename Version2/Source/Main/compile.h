@@ -21,6 +21,11 @@ int yyerror(char *errmsg);
 /// For use in smart.y, for simplicity
 char* Filename();
 
+/** Is the input file from standard input?
+    If so we flush output more frequently
+*/
+bool IsInteractive();
+
 /// Also used in smart.y, for simplicity
 int LineNumber();
 
