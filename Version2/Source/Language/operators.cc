@@ -260,6 +260,18 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
       if (op==MINUS) return new real_neg(file, line, opnd);
       return NULL;
 
+    case RAND_BOOL:
+      if (op==NOT) return new rand_bool_not(file, line, opnd);
+      return NULL;
+
+    case RAND_INT:
+      if (op==MINUS) return new rand_int_neg(file, line, opnd);
+      return NULL;
+
+    case RAND_REAL:
+      if (op==MINUS) return new rand_real_neg(file, line, opnd);
+      return NULL;
+
     case PROC_BOOL:
     case PROC_INT:
     case PROC_REAL:
@@ -362,6 +374,64 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case GE:	return new real_ge(file, line, left, right);
 	  case LT:	return new real_lt(file, line, left, right);
 	  case LE:	return new real_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
+    case RAND_BOOL:
+
+      DCASSERT(rtype==RAND_BOOL);
+
+      switch (op) {
+          case PLUS:
+          case OR:	return new rand_bool_or(file, line, left, right);
+
+	  case TIMES:
+	  case AND:   	return new rand_bool_and(file, line, left, right);
+
+	  case EQUALS:	return new rand_bool_equal(file, line, left, right);
+	  case NEQUAL:	return new rand_bool_neq(file, line, left, right);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case RAND_INT:
+
+      DCASSERT(rtype==RAND_INT);
+
+      switch (op) {
+          case PLUS:	return new rand_int_add(file, line, left, right);
+          case TIMES:	return new rand_int_mult(file, line, left, right);
+          case MINUS:	return new rand_int_sub(file, line, left, right);
+          case DIVIDE:	return new rand_int_div(file, line, left, right);
+	  case EQUALS:	return new rand_int_equal(file, line, left, right);
+	  case NEQUAL:	return new rand_int_neq(file, line, left, right);
+	  case GT:	return new rand_int_gt(file, line, left, right);
+	  case GE:	return new rand_int_ge(file, line, left, right);
+	  case LT:	return new rand_int_lt(file, line, left, right);
+	  case LE:	return new rand_int_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
+    case RAND_REAL:
+
+      DCASSERT(rtype==RAND_REAL);
+
+      switch (op) {
+          case PLUS:	return new rand_real_add(file, line, left, right);
+          case TIMES:	return new rand_real_mult(file, line, left, right);
+          case MINUS:	return new rand_real_sub(file, line, left, right);
+          case DIVIDE:	return new rand_real_div(file, line, left, right);
+	  case EQUALS:	return new rand_real_equal(file, line, left, right);
+	  case NEQUAL:	return new rand_real_neq(file, line, left, right);
+	  case GT:	return new rand_real_gt(file, line, left, right);
+	  case GE:	return new rand_real_ge(file, line, left, right);
+	  case LT:	return new rand_real_lt(file, line, left, right);
+	  case LE:	return new rand_real_le(file, line, left, right);
       }
       return NULL;
       
@@ -474,6 +544,45 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       switch (op) {
           case PLUS:	return new real_add(file, line, opnds, n);
           case TIMES:	return new real_mult(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+
+    //===============================================================
+    case RAND_BOOL:
+
+      switch (op) {
+          case PLUS:
+          case OR:	return new rand_bool_or(file, line, opnds, n);
+
+	  case TIMES:
+	  case AND:   	return new rand_bool_and(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case RAND_INT:
+
+      switch (op) {
+          case PLUS:	return new rand_int_add(file, line, opnds, n);
+          case TIMES:	return new rand_int_mult(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+
+    //===============================================================
+    case RAND_REAL:
+
+      switch (op) {
+          case PLUS:	return new rand_real_add(file, line, opnds, n);
+          case TIMES:	return new rand_real_mult(file, line, opnds, n);
 
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
