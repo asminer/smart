@@ -1,0 +1,13 @@
+
+// $Id$
+
+Things to work on:
+
+* Stack option
+
+* Stack dump on stack overflow
+
+* Run-time error messages (for divide by zero, etc)
+
+* Models
+
