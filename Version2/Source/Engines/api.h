@@ -27,6 +27,25 @@
         all measures should have their return value results set to
 	the error state.
 */
-void 	SolveSteady(model *m, List <measure> *mlist);
+void 	SolveSteadyInst(model *m, List <measure> *mlist);
+
+/** 	Solve a list of steady-state accumulated measures for a given model.
+	@param  m	The model to solve.
+	@param  mlist	A list of measures to compute.
+*/
+void	SolveSteadyAcc(model *m, List <measure> *mlist);
+
+/** 	Solve a list of transient measures for a given model.
+	@param  m	The model to solve.
+	@param  mlist	A list of measures to compute.
+*/
+void	SolveTransientInst(model *m, List <measure> *mlist);
+
+/** 	Solve a list of transient accumulated measures for a given model.
+	@param  m	The model to solve.
+	@param  mlist	A list of measures to compute.
+*/
+void	SolveTransientAcc(model *m, List <measure> *mlist);
+
 
 #endif

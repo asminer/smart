@@ -244,31 +244,19 @@ void model::SolveMeasure(measure *m)
 		break;
 
 	case ENG_SS_Inst:
-		SolveSteady(this, msteady);
+		SolveSteadyInst(this, msteady);
 		break;
 
 	case ENG_SS_Acc:
-#ifdef DEBUG_MODEL
-  		Output << "Solving group of accumulated (steady-state) measures\n";
-  		Output.flush();
-#endif
-		// call appropriate engine for list macc_steady
+		SolveSteadyAcc(this, macc_steady);
 		break;
 
 	case ENG_T_Inst:
-#ifdef DEBUG_MODEL
-  		Output << "Solving group of transient measures\n";
-  		Output.flush();
-#endif
-		// call the transient engine
+		SolveTransientInst(this, mtrans);
 		break;
 
 	case ENG_T_Acc:
-#ifdef DEBUG_MODEL
-  		Output << "Solving group of accumulated (transient) measures\n";
-  		Output.flush();
-#endif
-		// call the transient accumulative engine
+		SolveTransientAcc(this, mtrans);
 		break;
 
 	default:
