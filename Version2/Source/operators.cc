@@ -39,9 +39,6 @@ class bool_not : public negop {
 public:
   bool_not(const char* fn, int line, expr *x) : negop(fn, line, x) { }
   
-  virtual expr* Copy() const { 
-    return new bool_not(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -74,10 +71,6 @@ public:
   bool_or(const char* fn, int line, expr *l, expr *r) 
     : addop(fn, line, l, r) { }
 
-  virtual expr* Copy() const { 
-    return new bool_or(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -124,10 +117,6 @@ public:
   bool_and(const char* fn, int line, expr *l, expr *r) 
     : multop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new bool_and(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -172,10 +161,6 @@ public:
   bool_equal(const char* fn, int line, expr *l, expr *r) 
     : consteqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new bool_equal(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -220,10 +205,6 @@ public:
   bool_neq(const char* fn, int line, expr *l, expr *r)
     : constneqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new bool_neq(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -279,9 +260,6 @@ class randbool_not : public negop {
 public:
   randbool_not(const char* fn, int line, expr *x) : negop(fn, line, x) { }
   
-  virtual expr* Copy() const { 
-    return new randbool_not(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -314,10 +292,6 @@ public:
   randbool_or(const char* fn, int line, expr *l, expr *r) 
     : addop(fn, line, l, r) { }
 
-  virtual expr* Copy() const { 
-    return new randbool_or(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -364,10 +338,6 @@ public:
   randbool_and(const char* fn, int line, expr *l, expr *r) 
     : multop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new randbool_and(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -412,10 +382,6 @@ public:
   randbool_equal(const char* fn, int line, expr *l, expr *r) 
     : eqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new randbool_equal(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -460,10 +426,6 @@ public:
   randbool_neq(const char* fn, int line, expr *l, expr *r)
     : neqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new randbool_neq(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -519,9 +481,6 @@ class int_neg : public negop {
 public:
   int_neg(const char* fn, int line, expr *x) : negop(fn, line, x) { }
   
-  virtual expr* Copy() const { 
-    return new int_neg(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
@@ -555,10 +514,6 @@ public:
   int_add(const char* fn, int line, expr *l, expr *r) 
     : addop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_add(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
@@ -627,10 +582,6 @@ class int_sub : public subop {
 public:
   int_sub(const char* fn, int line, expr *l, expr *r) : subop(fn,line,l,r) {}
   
-  virtual expr* Copy() const { 
-    return new int_sub(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
@@ -700,10 +651,6 @@ public:
   int_mult(const char* fn, int line, expr *l, expr *r) 
     : multop(fn,line,l,r) { }
   
-  virtual expr* Copy() const { 
-    return new int_mult(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
@@ -769,10 +716,6 @@ public:
   int_div(const char* fn, int line, expr *l, expr *r) 
     : divop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_div(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return REAL;
@@ -823,10 +766,6 @@ public:
   int_equal(const char* fn, int line, expr *l, expr *r)
     : consteqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_equal(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -854,10 +793,6 @@ public:
   int_neq(const char* fn, int line, expr *l, expr *r)
     : constneqop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_neq(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -890,10 +825,6 @@ public:
   int_gt(const char* fn, int line, expr *l, expr *r)
     : constgtop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_gt(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -921,10 +852,6 @@ public:
   int_ge(const char* fn, int line, expr *l, expr *r)
     : constgeop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_ge(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -955,10 +882,6 @@ public:
   int_lt(const char* fn, int line, expr *l, expr *r)
     : constltop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_lt(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -990,10 +913,6 @@ public:
   int_le(const char* fn, int line, expr *l, expr *r)
     : constleop(fn, line, l, r) { }
   
-  virtual expr* Copy() const { 
-    return new int_le(Filename(), Linenumber(), 
-	               CopyExpr(left), CopyExpr(right));
-  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -1035,24 +954,16 @@ void int_le::Compute(int i, result &x) const
 
 /** Unary operators for procs.
  */
-class proc_unary : public expr {
+class proc_unary : public unary {
 protected:
   type returntype;
   int oper;
-  expr* opnd;
 public:
   proc_unary(const char* fn, int line, type rt, int op, expr *x)
-    : expr(fn, line) 
+    : unary(fn, line, x) 
   { 
     returntype = rt;
     oper = op;
-    opnd = x;
-  }
-  virtual ~proc_unary() {
-    delete opnd;
-  }
-  virtual expr* Copy() const { 
-    return new proc_unary(Filename(), Linenumber(), returntype, oper, CopyExpr(opnd));
   }
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -1098,28 +1009,16 @@ void proc_unary::show(ostream &s) const
 
 /** Binary operations for procs.
  */
-class proc_binary : public expr {
+class proc_binary : public binary {
 protected:
   type returntype;
   int oper;
-  expr *left;
-  expr *right;
 public:
   proc_binary(const char* fn, int line, type rt, int op, expr *l, expr *r)
-    : expr(fn, line) 
+    : binary(fn, line, l, r) 
   { 
     returntype = rt;
     oper = op;
-    left = l;
-    right = r;
-  }
-  virtual ~proc_binary() {
-    delete left;
-    delete right;
-  }
-  virtual expr* Copy() const { 
-    return new proc_binary(Filename(), Linenumber(), returntype, oper,
-	               CopyExpr(left), CopyExpr(right));
   }
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -1145,19 +1044,19 @@ void proc_binary::Compute(int i, result &x) const
   x.other = NULL;
   if (l.error) {
     // some option about error tracing here, I guess...
-    delete (expr *)l.other;
+    Delete((expr *)l.other);
     x.error = l.error;
     return;
   }
   if (r.error) {
-    delete (expr *)r.other;
+    Delete((expr *)r.other);
     x.error = r.error;
     return;
   }
   if (l.null || r.null) {
     x.null = true;
-    delete (expr *)l.other;
-    delete (expr *)r.other;
+    Delete((expr *)l.other);
+    Delete((expr *)r.other);
     return;
   }
 

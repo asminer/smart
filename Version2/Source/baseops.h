@@ -31,12 +31,9 @@
       Note: this includes binary "not"
 */  
 
-class negop : public expr {
-protected:
-  expr* opnd;
+class negop : public unary {
 public:
-  negop(const char* fn, int line, expr* x);
-  virtual ~negop();
+  negop(const char* fn, int line, expr* x) : unary (fn, line, x) {}
   virtual void show(ostream &s) const;
 };
 
@@ -55,15 +52,11 @@ public:
       Note: this includes binary or
 */  
 
-class addop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class addop : public binary {
 public:
-  addop(const char* fn, int line, expr* l, expr* r);
-  virtual ~addop();
+  addop(const char* fn, int line, expr* l, expr* r) : binary(fn, line, l, r) {}
   virtual void show(ostream &s) const;
-  virtual int GetSums(expr **sums=NULL, int N=0, int offset=0);
+  virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
 };
 
 // ******************************************************************
@@ -75,13 +68,9 @@ public:
 /**   The base class of subtraction classes.
 */  
 
-class subop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class subop : public binary {
 public:
-  subop(const char* fn, int line, expr* l, expr* r);
-  virtual ~subop();
+  subop(const char* fn, int line, expr* l, expr* r) : binary(fn, line, l, r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -100,15 +89,11 @@ public:
       Note: this includes binary and
 */  
 
-class multop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class multop : public binary {
 public:
-  multop(const char* fn, int line, expr* l, expr* r);
-  virtual ~multop();
+  multop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r){}
   virtual void show(ostream &s) const;
-  virtual int GetProducts(expr **prods=NULL, int N=0, int offset=0);
+  virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
 };
 
 // ******************************************************************
@@ -120,13 +105,9 @@ public:
 /**   The base class of division classes.
 */  
 
-class divop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class divop : public binary {
 public:
-  divop(const char* fn, int line, expr* l, expr* r);
-  virtual ~divop();
+  divop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -140,10 +121,8 @@ public:
 /**   The base class for equality check, for constants (i.e., deterministic).
 */  
 
-class consteqop : public expr {
+class consteqop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of consteqop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -187,8 +166,7 @@ protected:
     return true;
   }
 public:
-  consteqop(const char* fn, int line, expr* l, expr* r);
-  virtual ~consteqop();
+  consteqop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -206,10 +184,8 @@ public:
 /**   The base class for inequality check, for constants.
 */  
 
-class constneqop : public expr {
+class constneqop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of constneqop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -253,8 +229,7 @@ protected:
     return true;
   }
 public:
-  constneqop(const char* fn, int line, expr* l, expr* r);
-  virtual ~constneqop();
+  constneqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -272,10 +247,8 @@ public:
 /**   The base class for greater than check, for constants.
 */  
 
-class constgtop : public expr {
+class constgtop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of constgtop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -324,8 +297,7 @@ protected:
     return true;
   }
 public:
-  constgtop(const char* fn, int line, expr* l, expr* r);
-  virtual ~constgtop();
+  constgtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -343,10 +315,8 @@ public:
 /**   The base class for greater than or equal check, for constants.
 */  
 
-class constgeop : public expr {
+class constgeop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of constgeop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -395,8 +365,7 @@ protected:
     return true;
   }
 public:
-  constgeop(const char* fn, int line, expr* l, expr* r);
-  virtual ~constgeop();
+  constgeop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -414,10 +383,8 @@ public:
 /**   The base class for less than check, for constants.
 */  
 
-class constltop : public expr {
+class constltop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of constltop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -466,8 +433,7 @@ protected:
     return true;
   }
 public:
-  constltop(const char* fn, int line, expr* l, expr* r);
-  virtual ~constltop();
+  constltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -485,10 +451,8 @@ public:
 /**   The base class for greater than or equal check, for constants.
 */  
 
-class constleop : public expr {
+class constleop : public binary {
 protected:
-  expr* left;
-  expr* right;
   /** The common part of constleop for derived classes.
       @param l	The value of the left operand.
       @param r	The value of the right operand.
@@ -537,8 +501,7 @@ protected:
     return true;
   }
 public:
-  constleop(const char* fn, int line, expr* l, expr* r);
-  virtual ~constleop();
+  constleop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
@@ -557,13 +520,9 @@ public:
 /**   The base class for equality check, for non-constants 
 */  
 
-class eqop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class eqop : public binary {
 public:
-  eqop(const char* fn, int line, expr* l, expr* r);
-  virtual ~eqop();
+  eqop(const char* fn, int line, expr* l, expr* r): binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -578,13 +537,9 @@ public:
 /**   The base class for inequality check, for non-constants 
 */  
 
-class neqop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class neqop : public binary {
 public:
-  neqop(const char* fn, int line, expr* l, expr* r);
-  virtual ~neqop();
+  neqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -599,13 +554,9 @@ public:
 /**   The base class for greater than check, for non-constants 
 */  
 
-class gtop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class gtop : public binary {
 public:
-  gtop(const char* fn, int line, expr* l, expr* r);
-  virtual ~gtop();
+  gtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -620,13 +571,9 @@ public:
 /**   The base class for greater-equal check, for non-constants 
 */  
 
-class geop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class geop : public binary {
 public:
-  geop(const char* fn, int line, expr* l, expr* r);
-  virtual ~geop();
+  geop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -641,13 +588,9 @@ public:
 /**   The base class for less than check, for non-constants 
 */  
 
-class ltop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class ltop : public binary {
 public:
-  ltop(const char* fn, int line, expr* l, expr* r);
-  virtual ~ltop();
+  ltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 
@@ -662,13 +605,9 @@ public:
 /**   The base class for less-equal check, for non-constants 
 */  
 
-class leop : public expr {
-protected:
-  expr* left;
-  expr* right;
+class leop : public binary {
 public:
-  leop(const char* fn, int line, expr* l, expr* r);
-  virtual ~leop();
+  leop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
   virtual void show(ostream &s) const;
 };
 

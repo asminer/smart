@@ -4,7 +4,7 @@
 #include "functions.h"
 //@Include: functions.h
 
-/** @name symbpls.cc
+/** @name functions.cc
     @type File
     @args \ 
 
@@ -36,8 +36,8 @@ formal_param::formal_param(const char* fn, int line, type t, char* n)
 
 formal_param::~formal_param()
 {
-  delete pass;
-  delete deflt;
+  Delete(pass);
+  Delete(deflt);
 }
 
 void formal_param::show(ostream &s) const

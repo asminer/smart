@@ -32,10 +32,6 @@ class infinityconst : public expr {
     sign = s;
   }
 
-  virtual expr* Copy() const { 
-    return new infinityconst(Filename(), Linenumber(), sign); 
-  }
-
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;

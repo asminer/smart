@@ -217,6 +217,8 @@ struct engineinfo {
 // *                                                                *
 // ******************************************************************
 
+class symbol; // defined below
+
 /**   The base class of all expressions, and the
       heart of all expression trees.
  
@@ -229,17 +231,18 @@ struct engineinfo {
 */  
 
 class expr {
-  private:
-    /// The name of the file we were declared in.
-    const char* filename;  
-    /// The line number of the file we were declared on.
-    int linenumber;  
-
-  public:
-
+private:
+  /// The name of the file we were declared in.
+  const char* filename;  
+  /// The line number of the file we were declared on.
+  int linenumber;  
+  /// The number of incoming pointers to this expression.
+  int incoming;
+public:
   expr(const char* fn, int line) {
     filename = fn;
     linenumber = line;
+    incoming = 1;
   }
 
   virtual ~expr() { }
@@ -247,34 +250,24 @@ class expr {
   inline const char* Filename() const { return filename; } 
   inline int Linenumber() const { return linenumber; }
 
-  /// Make a new copy of this expression tree.
-  virtual expr* Copy() const = 0;
-
   /// The number of aggregate components in this expression.
-  virtual int NumComponents() const { return 1; }
+  virtual int NumComponents() const;
 
   /// Return a pointer to component i.
-  virtual expr* GetComponent(int i) {
-    DCASSERT(i==0);
-    return this;
-  }
+  virtual expr* GetComponent(int i);
 
   /// The type of component i.
   virtual type Type(int i) const = 0;
 
   /// Compute the value of component i.
-  virtual void Compute(int i, result &x) const {
-    cerr << "Internal error: Illegal expression compuation!\n";
-    DCASSERT(0);
-  }
+  virtual void Compute(int i, result &x) const;
 
   /// Sample a value of component i (with given rng seed).
-  virtual void Sample(long &, int i, result &x) const {
-    Compute(i, x);
-  }
+  virtual void Sample(long &, int i, result &x) const;
 
   /** Split this expression into a sequence of sums.
       We store pointers to parts of the expressions, not copies.
+      @param	i	The component to split.
       @param	sums	An array of pointers, already allocated, to store
       			each piece of the expression.
 			If NULL, we only count the sums.
@@ -288,28 +281,35 @@ class expr {
       		Obviously, if this exceeds N, then not all sums
 		are stored in the array.
    */
-  virtual int GetSums(expr **sums=NULL, int N=0, int offset=0) {
-    if (offset<N) sums[offset] = this;
-    return 1;
-  }
+  virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
 
   /** Split this expression into a sequence of products.
       Similar to GetSums.
+      @param	i	The component to split.
       @param	prods	An array of pointers, or NULL.
       @param    N	The size of the array (or 0).
       @param	offset	The first slot to use in the array.
       @return	The number of products.
    */
-  virtual int GetProducts(expr **prods=NULL, int N=0, int offset=0) {
-    if (offset<N) prods[offset] = this;
-    return 1;
-  }
+  virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
+
+  /** Get the symbols contained in this expression.
+      @param	i	The component to check.
+      @param	syms	Array of symbols, or NULL.
+      @param	N	The size of the array (or 0).
+      @param	offset	The first slot to use in the array.
+      @return	The number of symbols.
+   */
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
 
   /// Required for aggregation.  Used only by aggregates class.
   virtual void TakeAggregates() { ASSERT(0); }
 
   /// Display the expression to the given output stream.
   virtual void show(ostream &s) const = 0;
+
+  friend expr* Copy(expr *e);
+  friend void Delete(expr *e);
 };
 
 inline ostream& operator<< (ostream &s, expr *e)
@@ -319,11 +319,104 @@ inline ostream& operator<< (ostream &s, expr *e)
   return s;
 }
 
-inline expr* CopyExpr(expr *e)
+inline expr* Copy(expr *e)
 {
-  if (e) return e->Copy();
-  return NULL;
+  if (e) e->incoming++;
+  return e;
 }
+
+inline void Delete(expr *e)
+{
+  if (e) {
+    DCASSERT(e->incoming>0);
+    e->incoming--;
+    if (0==e->incoming) delete e;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                          unary  class                          *
+// *                                                                *
+// ******************************************************************
+
+/**  The base class for unary operations.
+     Deriving from this class will save you from having
+     to implement a few things.
+ */
+
+class unary : public expr {
+protected:
+  expr* opnd;
+public:
+  unary(const char* fn, int line, expr* x);
+  virtual ~unary();
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+};
+
+// ******************************************************************
+// *                                                                *
+// *                          binary class                          *
+// *                                                                *
+// ******************************************************************
+
+/**  The base class for binary operations.
+     Deriving from this class will save you from having
+     to implement a few things.
+ */
+
+class binary : public expr {
+protected:
+  expr* left;
+  expr* right;
+public:
+  binary(const char* fn, int line, expr* l, expr* r);
+  virtual ~binary();
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+};
+
+// ******************************************************************
+// *                                                                *
+// *                          symbol class                          *
+// *                                                                *
+// ******************************************************************
+
+/**   The base class of all symbols.
+      That includes formal parameters, for loop iterators,
+      functions, and model objects like states, places, and transitions.
+
+      Note: we derive symbols from expressions because it 
+      greatly simplifies for-loop iterators
+      (otherwise you have an expression wrapped around
+      an iterator, and that is unnecessary overhead.)
+*/  
+
+class symbol : public expr {
+  private:
+    /// The symbol name.
+    char* name;
+    /// The symbol type.
+    type mytype;
+
+  public:
+
+  symbol(const char* fn, int line, type t, char* n) : expr (fn, line) {
+    mytype = t;
+    name = n;
+  }
+
+  virtual ~symbol() { 
+    delete[] name;
+  }
+
+  virtual type Type() const { return mytype; }
+  inline const char* Name() const { return name; }
+
+  // Do we need a way to distinguish between functions, parameters, etc?
+
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+};
+
 
 // ******************************************************************
 // *                                                                *

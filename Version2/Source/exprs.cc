@@ -16,6 +16,127 @@
 
 // ******************************************************************
 // *                                                                *
+// *                           expr class                           *
+// *                                                                *
+// ******************************************************************
+
+// Defaults for virtual functions here.
+
+int expr::NumComponents() const 
+{ 
+  return 1; 
+}
+
+expr* expr::GetComponent(int i) 
+{
+  DCASSERT(i==0);
+  return this;
+}
+
+void expr::Compute(int i, result &x) const 
+{
+  cerr << "Internal error: Illegal expression compuation!\n";
+  DCASSERT(0);
+}
+
+void expr::Sample(long &, int i, result &x) const 
+{
+  cerr << "Internal error: Illegal expression sample!\n";
+  DCASSERT(0);
+}
+
+int expr::GetSums(int i, expr **sums, int N, int offset) 
+{
+  DCASSERT(i==0);
+  if (offset<N) sums[offset] = this;
+  return 1;
+}
+
+int expr::GetProducts(int i, expr **prods, int N, int offset) 
+{
+  DCASSERT(i==0);
+  if (offset<N) prods[offset] = this;
+  return 1;
+}
+
+int expr::GetSymbols(int i, symbol **syms, int N, int offset)
+{
+  DCASSERT(i==0);
+  return 0;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                          unary  class                          *
+// *                                                                *
+// ******************************************************************
+
+unary::unary(const char* fn, int line, expr *x) : expr(fn,line) 
+{
+  opnd = x;
+}
+
+unary::~unary()
+{
+  Delete(opnd);
+}
+
+int unary::GetSymbols(int i, symbol **syms, int N, int offset)
+{
+  DCASSERT(i==0);
+  if (opnd) return opnd->GetSymbols(0, syms, N, offset);
+  return 0;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                          binary class                          *
+// *                                                                *
+// ******************************************************************
+
+binary::binary(const char* fn, int line, expr *l, expr *r) : expr(fn,line) 
+{
+  left = l;
+  right = r;
+}
+
+binary::~binary()
+{
+  Delete(left);
+  Delete(right);
+}
+
+int binary::GetSymbols(int i, symbol **syms, int N, int offset)
+{
+  DCASSERT(i==0);
+  int answer = 0;
+  if (left) {
+    answer = left->GetSymbols(0, syms, N, offset);
+  } 
+  if (right) {
+    answer += right->GetSymbols(0, syms, N, offset+answer);
+  }
+  return answer;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                          symbol class                          *
+// *                                                                *
+// ******************************************************************
+
+// Defaults for virtual functions here.
+
+int symbol::GetSymbols(int i, symbol **syms, int N, int offset) 
+{
+  DCASSERT(i==0);
+  if (offset<N) syms[offset] = this;
+  return 1;
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                        aggregates class                        *
 // *                                                                *
 // ******************************************************************
@@ -44,28 +165,16 @@ public:
 
   virtual ~aggregates();
 
-  virtual expr* Copy() const;
-  virtual int NumComponents() const { return numitems; }
-  virtual expr* GetComponent(int i) { 
-    CHECK_RANGE(0, i, numitems);
-    return items[i]; 
-  }
-  virtual type Type(int i) const {
-    CHECK_RANGE(0, i, numitems);
-    if (items[i]) return items[i]->Type(0);
-    return VOID;
-  }
-  virtual void Compute(int i, result &x) const {
-    CHECK_RANGE(0, i, numitems);
-    if (items[i]) items[i]->Compute(0, x);
-    else x.null = true;
-  }
-  virtual void Sample(long &seed, int i, result &x) const {
-    CHECK_RANGE(0, i, numitems);
-    if (items[i]) items[i]->Sample(seed, 0, x);
-    else x.null = true;
-  }
+  virtual int NumComponents() const;
+  virtual expr* GetComponent(int i);
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x) const;
   virtual void show(ostream &s) const;
+
+  virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
+  virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
 
 protected:
   virtual void TakeAggregates();
@@ -123,18 +232,40 @@ aggregates::aggregates(expr* left, expr* right) : expr(NULL,0)
 aggregates::~aggregates()
 {
   int i;
-  for (i=0; i<numitems; i++) delete items[i];
+  for (i=0; i<numitems; i++) Delete(items[i]);
   delete[] items;
 }
 
-expr* aggregates::Copy() const
+int aggregates::NumComponents() const 
+{ 
+  return numitems; 
+}
+
+expr* aggregates::GetComponent(int i) 
+{ 
+  CHECK_RANGE(0, i, numitems);
+  return items[i]; 
+}
+
+type aggregates::Type(int i) const 
 {
-  int i;
-  aggregates *answer = new aggregates();
-  answer->numitems = numitems;
-  answer->items = new expr* [numitems];
-  for (i=0; i<numitems; i++) answer->items[i] = CopyExpr(items[i]);
-  return answer;
+  CHECK_RANGE(0, i, numitems);
+  if (items[i]) return items[i]->Type(0);
+  return VOID;
+}
+
+void aggregates::Compute(int i, result &x) const 
+{
+  CHECK_RANGE(0, i, numitems);
+  if (items[i]) items[i]->Compute(0, x);
+  else x.null = true;
+}
+
+void aggregates::Sample(long &seed, int i, result &x) const 
+{
+  CHECK_RANGE(0, i, numitems);
+  if (items[i]) items[i]->Sample(seed, 0, x);
+  else x.null = true;
 }
 
 void aggregates::show(ostream &s) const
@@ -142,6 +273,27 @@ void aggregates::show(ostream &s) const
   int i;
   s << items[0];
   for (i=1; i<numitems; i++) s << ":" << items[i];
+}
+
+int aggregates::GetSums(int i, expr **sums, int N, int offset) 
+{
+  CHECK_RANGE(0, i, numitems);
+  if (items[i]) return items[i]->GetSums(0, sums, N, offset);
+  return 0;  // null expression
+}
+
+int aggregates::GetProducts(int i, expr **prods, int N, int offset) 
+{
+    CHECK_RANGE(0, i, numitems);
+    if (items[i]) return items[i]->GetProducts(0, prods, N, offset);
+    return 0;  // null expression
+}
+
+int aggregates::GetSymbols(int i, symbol **syms, int N, int offset) 
+{
+    CHECK_RANGE(0, i, numitems);
+    if (items[i]) return items[i]->GetSymbols(0, syms, N, offset);
+    return 0;  // null expression
 }
 
 void aggregates::TakeAggregates()
@@ -167,16 +319,18 @@ class boolconst : public expr {
     value = v;
   }
 
-  virtual expr* Copy() const { 
-    return new boolconst(Filename(), Linenumber(), value); 
-  }
-
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return BOOL;
   }
 
   virtual void Compute(int i, result &x) const {
+    DCASSERT(0==i);
+    x.Clear();
+    x.bvalue = value;
+  }
+
+  virtual void Sample(long &, int i, result &x) const {
     DCASSERT(0==i);
     x.Clear();
     x.bvalue = value;
@@ -202,16 +356,18 @@ class intconst : public expr {
     value = v;
   }
 
-  virtual expr* Copy() const { 
-    return new intconst(Filename(), Linenumber(), value); 
-  }
-
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
   }
 
   virtual void Compute(int i, result &x) const {
+    DCASSERT(0==i);
+    x.Clear();
+    x.ivalue = value;
+  }
+
+  virtual void Sample(long &, int i, result &x) const {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
@@ -237,16 +393,18 @@ class realconst : public expr {
     value = v;
   }
 
-  virtual expr* Copy() const { 
-    return new realconst(Filename(), Linenumber(), value); 
-  }
-
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return REAL;
   }
 
   virtual void Compute(int i, result &x) const {
+    DCASSERT(0==i);
+    x.Clear();
+    x.rvalue = value;
+  }
+
+  virtual void Sample(long &, int i, result &x) const {
     DCASSERT(0==i);
     x.Clear();
     x.rvalue = value;
@@ -274,11 +432,6 @@ class stringconst : public expr {
 
   virtual ~stringconst() {
     delete[] value;
-  }
-
-  virtual expr* Copy() const { 
-    if (value) return new stringconst(Filename(), Linenumber(), strdup(value)); 
-    return new stringconst(Filename(), Linenumber(), NULL);
   }
 
   virtual type Type(int i) const {

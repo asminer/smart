@@ -29,17 +29,12 @@
      So are the things like Copying.
 */   
 
-class typecast : public expr {
+class typecast : public unary {
 protected:
-  expr* opnd;
   type newtype;  
 public:
-  typecast(const char* fn, int line, type nt, expr* x) : expr(fn, line) {
+  typecast(const char* fn, int line, type nt, expr* x) : unary(fn, line, x) {
     newtype = nt;
-    opnd = x;
-  }
-  virtual ~typecast() {
-    delete opnd;
   }
   virtual void show(ostream &s) const {
     s << GetType(newtype) << "(" << opnd << ")";
@@ -64,9 +59,6 @@ public:
   determ2rand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual expr* Copy() const { 
-    return new determ2rand(Filename(), Linenumber(), Type(0), CopyExpr(opnd));
-  }
   virtual void Sample(long &seed, int i, result &x) const;
 };
 
@@ -93,9 +85,6 @@ public:
   bool2procbool(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_BOOL, x) { }
 
-  virtual expr* Copy() const { 
-    return new bool2procbool(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -128,9 +117,6 @@ public:
   bool2procrandbool(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_RAND_BOOL, x) { }
 
-  virtual expr* Copy() const { 
-    return new bool2procrandbool(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual void Sample(long &seed, int i, result &x) const;
 };
 
@@ -162,9 +148,6 @@ class int2real : public typecast {
 public:
   int2real(const char* fn, int line, expr* x) : typecast(fn, line, REAL, x) { }
 
-  virtual expr* Copy() const { 
-    return new int2real(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -195,9 +178,6 @@ public:
   int2procint(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_INT, x) { }
 
-  virtual expr* Copy() const { 
-    return new int2procint(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -232,9 +212,6 @@ class real2int : public typecast {
 public:
   real2int(const char* fn, int line, expr* x) : typecast(fn, line, INT, x) { }
 
-  virtual expr* Copy() const { 
-    return new real2int(Filename(), Linenumber(), CopyExpr(opnd));
-  }
   virtual void Compute(int i, result &x) const;
 };
 
@@ -266,18 +243,13 @@ public:
   rand2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual expr* Copy() const { 
-    return new rand2procrand(Filename(), Linenumber(), Type(0), CopyExpr(opnd));
-  }
   virtual void Sample(long &seed, int i, result &x) const;
 };
 
 void rand2procrand::Sample(long &, int i, result &x) const
 {
   DCASSERT(0==i);
-  // Copy the expression...
-  expr* answer = opnd->Copy();
-  x.other = answer;
+  x.other = Copy(opnd);
 }
 
 // ******************************************************************
@@ -294,9 +266,6 @@ public:
   proc2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual expr* Copy() const { 
-    return new proc2procrand(Filename(), Linenumber(), Type(0), CopyExpr(opnd));
-  }
   virtual void Sample(long &seed, int i, result &x) const;
 };
 

@@ -18,7 +18,6 @@
 
  */
 
-#include "symbols.h"
 #include "exprs.h"
 
 //@{

@@ -20,8 +20,7 @@ MYINCLUDES = -I$(OBJECTDIR)
 STDLIBS     = -lm -lfl 
 
 SOURCES = \
-	types.cc	symbols.cc	\
-	exprs.cc	infinity.cc	\
+	types.cc	exprs.cc	infinity.cc	\
 	baseops.cc	operators.cc	casting.cc \
 	functions.cc
 

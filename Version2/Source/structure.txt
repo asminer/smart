@@ -10,10 +10,9 @@ File	  	What's there
 types		Definitions of type constants, and some handy 
 		functions (mostly used by the compiler)
 
-symbols		Base class for symbols.
-
 exprs		Result class.  Engine information class.
 		Expression class base.
+		Symbols.
 		Constant bool, int, and real expressions.
 
 options
@@ -46,6 +45,10 @@ For this version, avoid linked lists for language features
 Use buffers instead, where a function will return the number of
 items and fill a buffer of those items (prevening overflow, of course).
 
+Check on: sharing subexpressions (especially: symbols)
+using incoming pointer counts and such.
+Can we get rid of deep expression copies?
+(Probably we still need to "deiterate" or "substitute".)
 
 Re-designing discrete-state model stuff:
 
