@@ -71,13 +71,13 @@ protected:
   virtual void TakeAggregates();
 };
 
-aggregates::aggregates() : expr()
+aggregates::aggregates() : expr(NULL,0)
 {
   items = NULL;
   numitems = 0;
 }
 
-aggregates::aggregates(expr* left, expr* right) : expr()
+aggregates::aggregates(expr* left, expr* right) : expr(NULL,0)
 {
   int leftcount = 1;
   if (left) leftcount = left->NumComponents();

@@ -23,15 +23,10 @@
 
 /** Negation of a boolean expression.
  */
-class bool_not : public expr {
-  expr *opnd;
-  public:
-  bool_not(const char* fn, int line, expr *x) : expr (fn, line) {
-    opnd = x;
-  }
-  virtual ~bool_not() {
-    delete opnd;
-  }
+class bool_not : public negop {
+public:
+  bool_not(const char* fn, int line, expr *x) : negop(fn, line, x) { }
+  
   virtual expr* Copy() const { 
     return new bool_not(Filename(), Linenumber(), CopyExpr(opnd));
   }
@@ -40,9 +35,6 @@ class bool_not : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "!(" << opnd << ")";
-  }
 };
 
 void bool_not::Compute(int i, result &x) const
@@ -65,18 +57,11 @@ void bool_not::Compute(int i, result &x) const
 
 /** Or of two boolean expressions.
  */
-class bool_or : public expr {
-  expr *left;
-  expr *right;
-  public:
-  bool_or(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~bool_or() {
-    delete left;
-    delete right;
-  }
+class bool_or : public addop {
+public:
+  bool_or(const char* fn, int line, expr *l, expr *r) 
+    : addop(fn, line, l, r) { }
+
   virtual expr* Copy() const { 
     return new bool_or(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -86,9 +71,6 @@ class bool_or : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " | " << right << ")";
-  }
 };
 
 void bool_or::Compute(int i, result &x) const
@@ -97,6 +79,8 @@ void bool_or::Compute(int i, result &x) const
   result l;
   result r;
   if (left) left->Compute(0, l); else l.null = true;
+
+  // Should we short-circuit?  (i.e., don't compute right if left=true?)
   if (right) right->Compute(0, r); else r.null = true;
 
   if (l.error) {
@@ -123,18 +107,11 @@ void bool_or::Compute(int i, result &x) const
 
 /** And of two boolean expressions.
  */
-class bool_and : public expr {
-  expr *left;
-  expr *right;
-  public:
-  bool_and(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~bool_and() {
-    delete left;
-    delete right;
-  }
+class bool_and : public multop {
+public:
+  bool_and(const char* fn, int line, expr *l, expr *r) 
+    : multop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new bool_and(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -144,9 +121,6 @@ class bool_and : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " & " << right << ")";
-  }
 };
 
 void bool_and::Compute(int i, result &x) const
@@ -181,15 +155,10 @@ void bool_and::Compute(int i, result &x) const
 
 /** Negation of an integer expression.
  */
-class int_neg : public expr {
-  expr *opnd;
-  public:
-  int_neg(const char* fn, int line, expr *x) : expr (fn, line) {
-    opnd = x;
-  }
-  virtual ~int_neg() {
-    delete opnd;
-  }
+class int_neg : public negop {
+public:
+  int_neg(const char* fn, int line, expr *x) : negop(fn, line, x) { }
+  
   virtual expr* Copy() const { 
     return new int_neg(Filename(), Linenumber(), CopyExpr(opnd));
   }
@@ -198,9 +167,6 @@ class int_neg : public expr {
     return INT;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "-(" << opnd << ")";
-  }
 };
 
 void int_neg::Compute(int i, result &x) const
@@ -223,18 +189,11 @@ void int_neg::Compute(int i, result &x) const
 
 /** Addition of two integer expressions.
  */
-class int_add : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_add(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_add() {
-    delete left;
-    delete right;
-  }
+class int_add : public addop {
+public:
+  int_add(const char* fn, int line, expr *l, expr *r) 
+    : addop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new int_add(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -244,9 +203,6 @@ class int_add : public expr {
     return INT;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " + " << right << ")";
-  }
 };
 
 void int_add::Compute(int i, result &x) const
@@ -306,18 +262,10 @@ void int_add::Compute(int i, result &x) const
 
 /** Subtraction of two integer expressions.
  */
-class int_sub : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_sub(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_sub() {
-    delete left;
-    delete right;
-  }
+class int_sub : public subop {
+public:
+  int_sub(const char* fn, int line, expr *l, expr *r) : subop(fn,line,l,r) {}
+  
   virtual expr* Copy() const { 
     return new int_sub(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -327,9 +275,6 @@ class int_sub : public expr {
     return INT;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " - " << right << ")";
-  }
 };
 
 void int_sub::Compute(int i, result &x) const
@@ -389,18 +334,11 @@ void int_sub::Compute(int i, result &x) const
 
 /** Multiplication of two integer expressions.
  */
-class int_mult : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_mult(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_mult() {
-    delete left;
-    delete right;
-  }
+class int_mult : public multop {
+public:
+  int_mult(const char* fn, int line, expr *l, expr *r) 
+    : multop(fn,line,l,r) { }
+  
   virtual expr* Copy() const { 
     return new int_mult(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -410,9 +348,6 @@ class int_mult : public expr {
     return INT;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " * " << right << ")";
-  }
 };
 
 void int_mult::Compute(int i, result &x) const
@@ -468,18 +403,11 @@ void int_mult::Compute(int i, result &x) const
 
 /** Division of two integer expressions.
  */
-class int_div : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_div(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_div() {
-    delete left;
-    delete right;
-  }
+class int_div : public divop {
+public:
+  int_div(const char* fn, int line, expr *l, expr *r) 
+    : divop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new int_div(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -489,9 +417,6 @@ class int_div : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " / " << right << ")";
-  }
 };
 
 void int_div::Compute(int i, result &x) const
@@ -532,15 +457,10 @@ void int_div::Compute(int i, result &x) const
 
 /** Negation of a real expression.
  */
-class real_neg : public expr {
-  expr *opnd;
-  public:
-  real_neg(const char* fn, int line, expr *x) : expr (fn, line) {
-    opnd = x;
-  }
-  virtual ~real_neg() {
-    delete opnd;
-  }
+class real_neg : public negop {
+public:
+  real_neg(const char* fn, int line, expr *x) : negop(fn, line, x) { }
+  
   virtual expr* Copy() const { 
     return new real_neg(Filename(), Linenumber(), CopyExpr(opnd));
   }
@@ -549,9 +469,6 @@ class real_neg : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "-(" << opnd << ")";
-  }
 };
 
 void real_neg::Compute(int i, result &x) const
@@ -574,18 +491,11 @@ void real_neg::Compute(int i, result &x) const
 
 /** Addition of two real expressions.
  */
-class real_add : public expr {
-  expr *left;
-  expr *right;
-  public:
-  real_add(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~real_add() {
-    delete left;
-    delete right;
-  }
+class real_add : public addop {
+public:
+  real_add(const char* fn, int line, expr *l, expr *r)
+    : addop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new real_add(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -595,9 +505,6 @@ class real_add : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " + " << right << ")";
-  }
 };
 
 void real_add::Compute(int i, result &x) const
@@ -657,18 +564,11 @@ void real_add::Compute(int i, result &x) const
 
 /** Subtraction of two real expressions.
  */
-class real_sub : public expr {
-  expr *left;
-  expr *right;
-  public:
-  real_sub(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~real_sub() {
-    delete left;
-    delete right;
-  }
+class real_sub : public subop {
+public:
+  real_sub(const char* fn, int line, expr *l, expr *r) 
+    : subop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new real_sub(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -678,9 +578,6 @@ class real_sub : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " - " << right << ")";
-  }
 };
 
 void real_sub::Compute(int i, result &x) const
@@ -741,18 +638,11 @@ void real_sub::Compute(int i, result &x) const
 
 /** Multiplication of two real expressions.
  */
-class real_mult : public expr {
-  expr *left;
-  expr *right;
-  public:
-  real_mult(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~real_mult() {
-    delete left;
-    delete right;
-  }
+class real_mult : public multop {
+public:
+  real_mult(const char* fn, int line, expr *l, expr *r)
+    : multop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new real_mult(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -762,9 +652,6 @@ class real_mult : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " * " << right << ")";
-  }
 };
 
 void real_mult::Compute(int i, result &x) const
@@ -799,18 +686,11 @@ void real_mult::Compute(int i, result &x) const
 
 /** Division of two real expressions.
  */
-class real_div : public expr {
-  expr *left;
-  expr *right;
-  public:
-  real_div(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~real_div() {
-    delete left;
-    delete right;
-  }
+class real_div : public divop {
+public:
+  real_div(const char* fn, int line, expr *l, expr *r)
+    : divop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new real_div(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -820,9 +700,6 @@ class real_div : public expr {
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " / " << right << ")";
-  }
 };
 
 void real_div::Compute(int i, result &x) const
@@ -857,18 +734,11 @@ void real_div::Compute(int i, result &x) const
 
 /** Check equality of two boolean expressions.
  */
-class bool_equal : public expr {
-  expr *left;
-  expr *right;
-  public:
-  bool_equal(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~bool_equal() {
-    delete left;
-    delete right;
-  }
+class bool_equal : public eqop {
+public:
+  bool_equal(const char* fn, int line, expr *l, expr *r) 
+    : eqop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new bool_equal(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -878,9 +748,6 @@ class bool_equal : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " == " << right << ")";
-  }
 };
 
 void bool_equal::Compute(int i, result &x) const
@@ -915,18 +782,11 @@ void bool_equal::Compute(int i, result &x) const
 
 /** Check inequality of two boolean expressions.
  */
-class bool_neq : public expr {
-  expr *left;
-  expr *right;
-  public:
-  bool_neq(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~bool_neq() {
-    delete left;
-    delete right;
-  }
+class bool_neq : public neqop {
+public:
+  bool_neq(const char* fn, int line, expr *l, expr *r)
+    : neqop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new bool_neq(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -936,9 +796,6 @@ class bool_neq : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " != " << right << ")";
-  }
 };
 
 void bool_neq::Compute(int i, result &x) const
@@ -973,18 +830,11 @@ void bool_neq::Compute(int i, result &x) const
 
 /** Check equality of two boolean expressions.
  */
-class int_equal : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_equal(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_equal() {
-    delete left;
-    delete right;
-  }
+class int_equal : public eqop {
+public:
+  int_equal(const char* fn, int line, expr *l, expr *r)
+    : eqop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new int_equal(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -994,9 +844,6 @@ class int_equal : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " == " << right << ")";
-  }
 };
 
 void int_equal::Compute(int i, result &x) const
@@ -1026,24 +873,17 @@ void int_equal::Compute(int i, result &x) const
 
 // ******************************************************************
 // *                                                                *
-// *                         int_neq class                         *
+// *                         int_neq  class                         *
 // *                                                                *
 // ******************************************************************
 
 /** Check inequality of two boolean expressions.
  */
-class int_neq : public expr {
-  expr *left;
-  expr *right;
-  public:
-  int_neq(const char* fn, int line, expr *l, expr *r) : expr (fn, line) {
-    left = l;
-    right = r;
-  }
-  virtual ~int_neq() {
-    delete left;
-    delete right;
-  }
+class int_neq : public neqop {
+public:
+  int_neq(const char* fn, int line, expr *l, expr *r)
+    : neqop(fn, line, l, r) { }
+  
   virtual expr* Copy() const { 
     return new int_neq(Filename(), Linenumber(), 
 	               CopyExpr(left), CopyExpr(right));
@@ -1053,9 +893,6 @@ class int_neq : public expr {
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
-  virtual void show(ostream &s) const {
-    s << "(" << left << " != " << right << ")";
-  }
 };
 
 void int_neq::Compute(int i, result &x) const
@@ -1082,6 +919,12 @@ void int_neq::Compute(int i, result &x) const
   // check infinity
   x.bvalue = (l.ivalue != r.ivalue);
 }
+
+
+// classes for gt, ge, lt, le here
+//
+
+// then cut and paste the same for reals
 
 // ******************************************************************
 // *                                                                *

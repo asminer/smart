@@ -18,7 +18,10 @@ options
 
 infinity	Infinity constants.
 
-operators	Unary and binary operator expressions for
+baseops		Base classes for operators like "+"
+		(to reduce cut&paste of virtual functions)
+
+operators	Operator expressions for
 		bool, int, bigint, real, string types.
 
 casting		Type casting operators for

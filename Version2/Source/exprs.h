@@ -36,7 +36,9 @@ enum compute_error {
   /// Divide by zero
   CE_ZeroDivide,
   /// Undefined quantity such as infinity-infinity
-  CE_Undefined
+  CE_Undefined,
+  /// Tried to compute a rand
+  CE_ComputeRand
 };
 
 
@@ -235,12 +237,6 @@ class expr {
     int linenumber;  
 
   public:
-
-  expr() {
-    // for expressions built by smart
-    filename = NULL;
-    linenumber = 0;
-  }
 
   expr(const char* fn, int line) {
     filename = fn;
