@@ -361,7 +361,7 @@ defn_stmt
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : type IDENT GETS expr SEMI\n";
 #endif
-  $$ = NULL;
+  $$ = BuildVarStmt($1, $2, $4);
 }
 	|	type IDENT GUESS expr SEMI
 {

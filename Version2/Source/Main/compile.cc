@@ -40,7 +40,7 @@ PtrTable *Arrays;
 /// Symbol table of functions
 PtrTable *Builtins;
 
-/// Symbol table of "constants"
+/// Symbol table of "constants", including user-defined
 PtrTable *Constants;
 
 /// "Symbol table" of formal parameters
@@ -469,6 +469,7 @@ expr* BuildBinary(expr* left, int op, expr* right)
   expr* answer = MakeBinaryOp(left, op, right, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
   Output << "Got " << answer << "\n";
+  Output.flush();
 #endif
   return answer;
 }
@@ -539,6 +540,7 @@ int AddIterator(array_index *i)
   Iterators->Append(i);
 #ifdef COMPILE_DEBUG
   Output << "Adding " << i << " to Iterators\n";
+  Output.flush();
 #endif
   return 1;
 }
@@ -547,6 +549,7 @@ statement* BuildForLoop(int count, void *stmts)
 {
 #ifdef COMPILE_DEBUG
   Output << "Popping " << count << " Iterators\n";
+  Output.flush();
 #endif
   if (count > Iterators->Length()) {
     Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
@@ -560,6 +563,7 @@ statement* BuildForLoop(int count, void *stmts)
   if (NULL==stmts) {
 #ifdef COMPILE_DEBUG
     Output << "Empty for loop statement, skipping\n";
+    Output.flush();
 #endif
     return NULL;
   }
@@ -630,10 +634,54 @@ statement* BuildFuncStmt(user_func *f, expr *r)
 {
   if (f) {
     // Check type!
-    f->SetReturn(r);
+    DCASSERT(r->NumComponents()==1);
+    if (!Promotable(r->Type(0), f->Type(0))) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Return type for function " << f->Name();
+      Error << " should be " << GetType(f->Type(0));
+      Error.Stop();
+    } else {
+      expr* ans = MakeTypecast(r, f->Type(0), filename, lexer.lineno());
+      f->SetReturn(ans);
+    }
   }
   delete FormalParams;
   FormalParams = NULL;
+  return NULL;
+}
+
+statement* BuildVarStmt(type t, char* id, expr* ret)
+{
+  if (NULL==ret) return NULL;
+
+  // eventually... check if we're in a converge
+
+  // first... see if the variable exists already
+  constfunc* find = (constfunc*) Constants->FindName(id);
+  if (find) {
+    // actually, we'll need (eventually) to check state, 
+    // because this might be a guess.
+    Error.Start(filename, lexer.lineno());
+    Error << "Re-definition of constant " << find;
+    Error.Stop();
+    return NULL;
+  }
+  // name ok, check type consistency
+  DCASSERT(ret->NumComponents()==1);
+  if (!Promotable(ret->Type(0), t)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Return type for identifier " << id;
+    Error << " should be " << GetType(t);
+    Error.Stop();
+    return NULL;
+  }
+  expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
+
+  // check that we're deterministic...
+
+  constfunc *v = new determfunc(filename, lexer.lineno(), t, id);
+  v->SetReturn(ans);
+  Constants->AddNamePtr(id, v); 
   return NULL;
 }
 
@@ -1114,6 +1162,7 @@ statement* BuildOptionStatement(option* o, expr* v)
   statement *ans = MakeOptionStatement(o, e, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
   Output << "Built option statement: " << ans << "\n";
+  Output.flush();
 #endif
   ans->Execute();
   return ans;
@@ -1142,6 +1191,7 @@ statement* BuildOptionStatement(option* o, char* n)
   statement *ans = MakeOptionStatement(o, v, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
   Output << "Built option statement: " << ans << "\n";
+  Output.flush();
 #endif
   ans->Execute();
   return ans;

@@ -167,6 +167,12 @@ statement* BuildArrayStmt(array *a, expr *e);
 */
 statement* BuildFuncStmt(user_func *f, expr *r);
 
+/** Builds a "variable" statement with typechecking.
+    If we're not within a converge, we return NULL.
+    Otherwise, we return an assignment (eventually).
+*/
+statement* BuildVarStmt(type t, char* id, expr* ret);
+
 /** Adds a statement to our list (which may be null).
     @param list	List of statements (or NULL)
     @param s	statement to add (ignored if NULL)
