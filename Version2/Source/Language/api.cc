@@ -41,12 +41,9 @@ void InitLanguage()
                        SetStackSize, NULL);
   AddOption(o);
   CreateRuntimeStack(1024); // Large enough?
-  
-  // UseCurrent
-  const char* ucdoc = "Should converge variables be updated immediately";
-  use_current = MakeBoolOption("UseCurrent", ucdoc, true);
-  AddOption(use_current);
 
+  InitConvergeOptions();  // see converge.cc
+  
 
 
   // testing... add more options
@@ -70,11 +67,7 @@ void InitLanguage()
   option* test1 = MakeEnumOption("IndexComparison", 
      "Method to compare real array indices", list, 2, relative);
 
-  option* test2 = MakeEnumOption("ConvergeComparison",
-     "Method to compare converge values", list, 2, relative);
-
   AddOption(test1);
-  AddOption(test2);
 
   option_const** list2 = new option_const*[4];
   list2[0] = new option_const("GAUSS_SEIDEL", "Gauss-Seidel");

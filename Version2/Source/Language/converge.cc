@@ -15,6 +15,14 @@
 //@{
 
 option* use_current;
+option* max_converge_iters;
+option* converge_precision;
+option* converge_precision_test;
+
+option_const* relative;
+option_const* absolute;
+
+//#define DEBUG_CONVERGE
 
 // ******************************************************************
 // *                                                                *
@@ -54,7 +62,7 @@ public:
   guess_stmt(const char* fn, int line, cvgfunc* var, expr* guess);
   virtual ~guess_stmt();
   virtual void Execute() { }
-  virtual void Guess();
+  virtual void InitialGuess();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int dpth, OutputStream &s) const;
 };
@@ -72,9 +80,15 @@ guess_stmt::~guess_stmt()
   Delete(guess);
 }
 
-void guess_stmt::Guess()
+void guess_stmt::InitialGuess()
 {
   guess->Compute(0, var->current);
+#ifdef DEBUG_CONVERGE
+  Output << "Initialized " << var << " got ";
+  PrintResult(Output, REAL, var->current);
+  Output << "\n";
+  Output.flush();
+#endif
 }
 
 void guess_stmt::show(OutputStream &s) const
@@ -142,16 +156,19 @@ protected:
     // ok, so we should have 2 reals, check their difference
 
     double delta = ABS(var->current.rvalue - update.rvalue);
-    // if relative difference then...
-    if (var->current.rvalue) delta /= var->current.rvalue;
-    // ...endif
-    // 1e-5 should be an option
-    hasconverged = (delta < 1e-5);
+    if (converge_precision_test->GetEnum() == relative) {
+      if (var->current.rvalue) delta /= var->current.rvalue;
+    }
+    hasconverged = (delta < converge_precision->GetReal());
   }
   inline void Update() {
     CheckConvergence();
     var->current = update;
     was_updated = true;
+#ifdef DEBUG_CONVERGE
+    Output << "Updated " << var << "\n";
+    Output.flush();
+#endif
   }
 };
 
@@ -176,6 +193,12 @@ void assign_stmt::Execute()
 {
   DCASSERT(!isfixed);
   rhs->Compute(0, update);
+#ifdef DEBUG_CONVERGE
+  Output << "Computed " << var << " got ";
+  PrintResult(Output, REAL, var->current);
+  Output << "\n";
+  Output.flush();
+#endif
   was_updated = false;
   if (use_current->GetBool()) Update();
 }
@@ -219,8 +242,8 @@ public:
   virtual ~converge_stmt();
 
   virtual void Execute();
-  virtual void InitialGuess();
-  virtual bool HasConverged();
+  // virtual void InitialGuess();
+  // virtual bool HasConverged();
   virtual void Affix();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int depth, OutputStream &s) const;
@@ -242,25 +265,30 @@ converge_stmt::~converge_stmt()
 
 void converge_stmt::Execute()
 {
-  int j;
-  for (j=0; j<blocksize; j++)
-    block[j]->Execute();
-}
+  int iters, j;
+  // do guesses
+  for (j=0; j<blocksize; j++) block[j]->InitialGuess();
+  
+  for (iters=max_converge_iters->GetInt(); iters; iters--) {
+    
+    // execute block
+    for (j=0; j<blocksize; j++) block[j]->Execute();
 
-void converge_stmt::InitialGuess()
-{
-  int j;
-  for (j=0; j<blocksize; j++)
-    block[j]->InitialGuess();
-}
+    // have we converged yet?
+    bool hc = true;
+    for (j=0; j<blocksize; j++) 
+      if (!block[j]->HasConverged()) hc = false;
 
-bool converge_stmt::HasConverged()
-{
-  bool hc = true;
-  int j;
-  for (j=0; j<blocksize; j++)
-    if (!block[j]->HasConverged()) hc = false;
-  return hc;
+    if (hc) break;
+  }
+
+  if (0==iters) {
+    Warning.Start(Filename(), Linenumber());
+    Warning << "converge did not attain precision ";
+    Warning << converge_precision->GetReal() << " after ";
+    Warning << max_converge_iters->GetInt() << " iterations";
+    Warning.Stop();
+  }
 }
 
 void converge_stmt::Affix() 
@@ -317,6 +345,37 @@ statement* MakeAssignStmt(cvgfunc* v, expr* r, const char* fn, int line)
 statement* MakeConverge(statement** block, int bsize, const char* fn, int ln)
 {
   return new converge_stmt(fn, ln, block, bsize);
+}
+
+void InitConvergeOptions()
+{
+  // UseCurrent
+  const char* ucdoc = "Should converge variables be updated immediately";
+  use_current = MakeBoolOption("UseCurrent", ucdoc, true);
+  AddOption(use_current);
+
+  // MaxConvergeIters
+  const char* mci = "Maximum number of iterations of a converge";
+  max_converge_iters = MakeIntOption("MaxConvergeIters", mci, 1000, 1, 2000000000);
+  AddOption(max_converge_iters);
+
+  // ConvergePrecision
+  const char* cp = "Desired precision for converge values";
+  converge_precision = MakeRealOption("ConvergePrecision", cp, 1e-5, 1e-100, 1);
+  AddOption(converge_precision);
+
+  // ConvergePrecisionTest
+  absolute = new option_const("ABSOLUTE", "Use absolute precision");
+  relative = new option_const("RELATIVE", "Use relative precision");
+  option_const** list = new option_const*[2];
+  list[0] = absolute;
+  list[1] = relative;
+
+  const char* cpt = "Comparison to use for convergence test of converge values";
+
+  converge_precision_test 
+    = MakeEnumOption("ConvergePrecisionTest", cpt, list, 2, relative);
+  AddOption(converge_precision_test);
 }
 
 //@}
