@@ -46,6 +46,13 @@ struct bitmatrix {
     for (int r=31; r>=0; r--) row[r] = 0;
   }
 
+  inline void FillFrom(bitmatrix *x) {
+    if (NULL==x) 
+      zero();
+    else
+      for (int r=0; r<32; r++) row[r] = x->row[r];
+  }
+
   inline bool is_zero() {
     for (int r=31; r>=0; r--) if (row[r]) return false;
     return true;
@@ -75,67 +82,14 @@ inline void mm_acc(bitmatrix *a, bitmatrix *c)
 
 
 
-#ifdef EXPLICIT
 
-struct bigmatrix {
-  int N;
-  unsigned int** row;
-  bigmatrix(int n);
-  ~bigmatrix();
 
-  inline void column_dot_product(int cw, unsigned int *vect, unsigned int &a) {
-    unsigned int** ptr = row;
-    for (int i=0; i<N; i++) 
-      for (register int b=0; b<32; b++) {
-        if (vect[i] & mask[b]) a ^= ptr[0][cw];
-	ptr++;
-      }
-  }
-  inline void zero() {
-    for (int i=N-1; i>=0; i--) row[0][i] = 0;
-    for (int i=32*N-1; i; i--)
-      memcpy(row[i], row[0], N * sizeof(int));
-  }
-  void show(OutputStream &s);
-
-  inline void DumpSubmatrix(int r, int c, bitmatrix* sub) const {
-    for (int i=31; i>=0; i--) {
-      sub->row[i] = row[r*32+i][c];
-    }
-  }
-
-  inline void FillSubmatrix(int r, int c, const bitmatrix* sub) {
-    for (int i=31; i>=0; i--) {
-      row[r*32+i][c] = sub->row[i];
-    }
-  }
-
-  /// this = b * c
-  inline void Multiply(bigmatrix *b, bigmatrix *c) {
-    for (int i=32*N-1; i>=0; i--)
-      for (int j=N-1; j>=0; j--) {
-        row[i][j] = 0;
-        c->column_dot_product(j, b->row[i], row[i][j]);
-      }
-  }
-
-  /** Make this bigmatrix equal to the B matrix used in
-      a Mersenne Twister prng.
-  */
-  void MakeB(int M, unsigned int A);
-};
-
-#endif
 
 /// A 2-level Mxd, essentially ;^)
 class shared_matrix {
   int N;
   bitmatrix*** ptrs;
-  int distinct;
 public:
-#ifdef EXPLICIT
-  shared_matrix(bigmatrix *full);
-#endif
   shared_matrix(int n);
   void MakeB(int M, unsigned int A);
   void MakeBN(int M, unsigned int A);
@@ -152,7 +106,6 @@ public:
 	  ptrs[i][j]->vm_mult(y[i], x[j]);
 	//  x[j] ^= ptrs[i][j]->vm_mult(y[i]);
   }
-  inline int Distinct() const { return distinct; }
 
   /// this = b * c, returns #nonzeroes
   int Multiply(shared_matrix *b, shared_matrix *c);
@@ -167,6 +120,38 @@ protected:
     if (m) m->ptrcount++;
   }
   void ColCpy(int dest, int src);
+  friend class fullmatrix;
+};
+
+
+
+
+
+
+/** Good old, full, explicit matrix.  For comparison.
+    It is the non-shared version of shared_matrix.
+*/
+struct fullmatrix {
+  int N;
+  bitmatrix*** ptrs;
+public:
+  fullmatrix(int n);
+  ~fullmatrix();
+  void show(OutputStream &s);
+  /// x = y * this;
+  inline void vector_multiply(unsigned long *x, unsigned long *y) {
+    int i,j;
+    for (i=N-1; i>=0; i--) x[i] = 0;
+    for (i=N-1; i>=0; i--)
+      for (j=N-1; j>=0; j--)
+	if (ptrs[i][j])
+	  ptrs[i][j]->vm_mult(y[i], x[j]);
+  }
+
+  /// this = b * c, returns #nonzeroes
+  int Multiply(fullmatrix *b, fullmatrix *c);
+  
+  void FillFrom(const shared_matrix &);
 };
 
 void InitMatrix();

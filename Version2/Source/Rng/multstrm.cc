@@ -5,71 +5,6 @@
 
 #define NO_CACHE
 
-#ifdef EXPLICIT
-
-bigmatrix::bigmatrix(int n)
-{
-  N = n;
-  row = new unsigned int*[32*N];  // one per bit
-  int i;
-  for (i=32*N-1; i>=0; i--) 
-    row[i] = new unsigned int[N];
-}
-
-bigmatrix::~bigmatrix()
-{
-  int i;
-  for (i=32*N-1; i>=0; i--) delete[] row[i];
-  delete[] row;
-}
-
-void bigmatrix::show(OutputStream &s)
-{
-  int i,j;
-  for (i=0; i<32*N; i++) {
-    if (i) if (i%32==0) {
-      s << " ";
-      for (j=0; j<N; j++) s << "-----------";
-      s << " \n";
-      s.flush();
-    }
-    s << "[";
-    for (j=0; j<N; j++) {
-      if (j) s.Put(":");
-      s.PutHex(row[i][j]);
-    }
-    s << "]\n";
-    s.flush();
-  }
-}
-
-void bigmatrix::MakeB(int M, unsigned int A)
-{
-  zero();
-  int i;
-
-  bitmatrix IDENTITY;
-  for (i=0; i<32; i++) IDENTITY.row[i] = mask[i];
-
-  bitmatrix L;
-  L.row[0] = 0;
-  for (i=1; i<31; i++) L.row[i] = mask[i+1];
-  L.row[31] = A;
-
-  bitmatrix U;
-  U.row[0] = mask[1];
-  for (i=1; i<32; i++) U.row[i] = 0;
-
-  // Fill from submatrices
-  for (i=1; i<N; i++)  FillSubmatrix(i-1, i, &IDENTITY);
-  FillSubmatrix(N-M-1, 0, &IDENTITY);
-  FillSubmatrix(N-2, 0, &L);
-  FillSubmatrix(N-1, 0, &U);
-
-}
-
-#endif
-
 // ------------------------------------------------------------------
 //   hash table.  eventually replace with a nice general class.
 // ------------------------------------------------------------------
@@ -430,43 +365,26 @@ bitmatrix* cache_mult(bitmatrix *b, bitmatrix *c)
   return answer;
 }
 
+bitmatrix* nocache_mult(bitmatrix *b, bitmatrix *c)
+{
+  if (NULL==b) return NULL;
+  if (NULL==c) return NULL;
+
+  bitmatrix *answer;
+  answer = matrix_pile.NewObject();
+  mm_mult(answer, b, c); 
+
+  if (answer->is_zero()) {
+    matrix_pile.FreeObject(answer);
+    answer = NULL;
+  }
+  return answer;
+}
+
 // ------------------------------------------------------------------
 //   Shared matrix class.  Zero submatrices beome NULL.
 // ------------------------------------------------------------------
 
-#ifdef EXPLICIT
-
-shared_matrix::shared_matrix(bigmatrix *full)
-{
-  N = full->N;
-  ptrs = new bitmatrix**[N];
-  int i,j;
-  for (i=0; i<N; i++) {
-    ptrs[i] = new bitmatrix*[N];
-  }
-  matrix_pile = new Manager <bitmatrix>(16);
-
-  myhash UniqueTable;
-
-  // fill bitmatrices and merge duplicates
-  for (i=0; i<N; i++)
-    for (j=0; j<N; j++) {
-      bitmatrix *tmp = matrix_pile->NewObject();
-      full->DumpSubmatrix(i, j, tmp);
-      if (tmp->is_zero()) {
-	matrix_pile->FreeObject(tmp);
-	ptrs[i][j] = NULL;
-	continue;
-      }
-      // not zero, check unique table
-      bitmatrix *d = UniqueTable.Insert(tmp);
-      if (tmp != d) matrix_pile->FreeObject(tmp); 
-      ptrs[i][j] = d;
-    }
-  distinct = UniqueTable.Entries();
-}
-
-#endif
 
 shared_matrix::shared_matrix(int n)
 {
@@ -636,6 +554,95 @@ int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
   } // for i
   return nnz;
 }  
+
+// ------------------------------------------------------------------
+//    Good old memory-hoggin' explicit
+// ------------------------------------------------------------------
+
+fullmatrix::fullmatrix(int n)
+{
+  N = n;
+  ptrs = new bitmatrix**[N];
+  int i,j;
+  for (i=0; i<N; i++) {
+    ptrs[i] = new bitmatrix*[N];
+  }
+}
+
+fullmatrix::~fullmatrix()
+{
+  int i;
+  for (i=0; i<N; i++) delete[] ptrs[i];
+  delete[] ptrs;
+}
+
+void fullmatrix::show(OutputStream &s)
+{
+  int i,j;
+  for (i=0; i<N; i++) {
+    s << "[";
+    for (j=0; j<N; j++) {
+      if (j) s << ", ";
+      if (ptrs[i][j]) {
+        ptrs[i][j]->flag = false;
+	if (IDENTITY == ptrs[i][j]) s.Put('I');
+	else s.PutHex((unsigned int)ptrs[i][j]);
+      } else {
+	s << "0";
+      }
+    }
+    s << "]\n";
+    s.flush();
+  }
+  // dump the submatrices
+  for (i=0; i<N; i++) for (j=0; j<N; j++) {
+    if (NULL == ptrs[i][j]) continue;
+    if (IDENTITY == ptrs[i][j]) continue;
+    if (ptrs[i][j]->flag) continue;
+    ptrs[i][j]->show(s);
+    ptrs[i][j]->flag = true;
+  }
+}
+
+int fullmatrix::Multiply(fullmatrix *b, fullmatrix *c)
+{
+  int nnz = 0;
+  int i,j,k;
+  for (i=0; i<N; i++) {
+    for (j=0; j<N; j++) {
+      if (NULL == ptrs[i][j])
+	ptrs[i][j] = matrix_pile.NewObject();
+      ptrs[i][j]->zero();
+      for (k=0; k<N; k++) {
+	bitmatrix* term = nocache_mult(b->ptrs[i][k], c->ptrs[k][j]);
+	if (term) {
+	  mm_acc(ptrs[i][j], term);
+	  matrix_pile.FreeObject(term);
+	}
+      } // for k
+      if (ptrs[i][j]->is_zero()) {
+	matrix_pile.FreeObject(ptrs[i][j]);
+	ptrs[i][j] = NULL;
+      } else nnz++;
+    } // for j
+  } // for i
+  return nnz;
+}  
+
+void fullmatrix::FillFrom(const shared_matrix &a)
+{
+  int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) {
+    if (a.ptrs[i][j]) {
+      ptrs[i][j] = matrix_pile.NewObject();
+      ptrs[i][j]->FillFrom(a.ptrs[i][j]);
+    } else {
+      ptrs[i][j] = NULL;
+    }
+  }
+}
+
+// ------------------------------------------------------------------
 
 void InitMatrix()
 {
