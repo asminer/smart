@@ -3,9 +3,9 @@
 
 Things to work on:
 
-* Positional parameters with default values
+* Forward definition of functions
 
-* Named parameters
+* What about forward definition of functions with default parameters?
 
 * Input functions
 
