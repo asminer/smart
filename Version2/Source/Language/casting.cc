@@ -4,6 +4,8 @@
 #include "casting.h"
 
 #include "infinity.h"
+#include "../Rng/rng.h"
+#include <math.h>
 
 //@Include: casting.h
 
@@ -167,15 +169,43 @@ protected:
 
 void int2real::Compute(int i, result &x)
 {
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x); 
-
+  SafeCompute(opnd, i, x);
   if (!x.isNormal()) return;
-
   x.rvalue = x.ivalue;
 }
 
+// ******************************************************************
+// *                                                                *
+// *                         int2expo class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  Type promotion from integer to expo.
+*/   
+
+class int2expo : public typecast {
+public:
+  int2expo(const char* fn, int line, expr* x) : typecast(fn, line, EXPO, x) { }
+
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new int2expo(Filename(), Linenumber(), x);
+  }
+};
+
+void int2expo::Compute(int i, result &x)
+{
+  SafeCompute(opnd, i, x);
+  if (x.isNormal()) {
+    x.rvalue = x.ivalue;
+    return;
+  } 
+  // if (x.isInfinity()) {
+  // x.rvalue = 0.0;
+  // }
+  // the rest are safely propogated
+}
 
 
 // ******************************************************************
@@ -247,6 +277,29 @@ void real2int::Compute(int i, result &x)
   x.ivalue = int(x.rvalue);
 }
 
+// ******************************************************************
+// *                                                                *
+// *                        real2expo  class                        *
+// *                                                                *
+// ******************************************************************
+
+/**  Type casting from real to expo.
+*/   
+class real2expo : public typecast {
+public:
+  real2expo(const char* fn, int line, expr* x) : typecast(fn, line, EXPO, x) { }
+
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new real2int(Filename(), Linenumber(), x);
+  }
+};
+
+void real2expo::Compute(int i, result &x)
+{
+  SafeCompute(opnd, i, x);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -256,7 +309,6 @@ void real2int::Compute(int i, result &x)
 
 /**  Type promotion from real to proc real.
 */   
-
 class real2procreal : public typecast {
 public:
   real2procreal(const char* fn, int line, expr* x) 
@@ -285,7 +337,45 @@ void real2procreal::Compute(int i, result &x)
 }
 
 
+// ******************************************************************
+// *                                                                *
+// *                      expo2randreal  class                      *
+// *                                                                *
+// ******************************************************************
 
+/**  Type promotion from expo to rand real.
+*/   
+class expo2randreal : public typecast {
+public:
+  expo2randreal(const char* fn, int line, expr* x) 
+    : typecast(fn, line, RAND_REAL, x) { }
+
+  virtual void Sample(Rng &seed, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new real2procreal(Filename(), Linenumber(), x);
+  }
+};
+
+void expo2randreal::Sample(Rng &seed, int i, result &x)
+{
+  SafeCompute(opnd, i, x);
+
+  if (x.isNormal()) {
+    if (x.rvalue) {
+      double mean = 1.0 / x.rvalue;
+      x.rvalue = -mean * log(seed.uniform());
+    } else {
+      x.setInfinity();  // expo(0) has mean infinity...
+    }
+    return;
+  }
+  if (x.isInfinity()) {  // expo(infintity) has mean 0
+    x.Clear();
+    x.rvalue = 0.0;
+    return;
+  }
+}
 
 // ******************************************************************
 // *                                                                *
@@ -362,6 +452,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
   // Note... it is assumed that e is promotable to "newtype".
   switch (e->Type(0)) {
     
+    // --------------------------------------------------------------
     case BOOL: 
 
       switch (newtype) {
@@ -375,7 +466,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
       return NULL;   
 
 
-
+    // --------------------------------------------------------------
     case INT:
 
       switch (newtype) {
@@ -383,6 +474,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new int2real(file, line, e);
 
 	// add PH_INT eventually
+
+	case EXPO:
+	  return new int2expo(file, line, e);
 	
 	case RAND_INT:
 	  return new determ2rand(file, line, RAND_INT, e);
@@ -393,10 +487,14 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
       return NULL;
 
+    // --------------------------------------------------------------
     case REAL:
       switch (newtype) {
 	case INT:
 	  return new real2int(file, line, e);
+
+	case EXPO:
+	  return new real2expo(file, line, e);
 	
 	case RAND_REAL:
 	  return new determ2rand(file, line, RAND_REAL, e);
@@ -407,13 +505,22 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
       return NULL;
 
-    // lots of others go here...
+
+    // --------------------------------------------------------------
+    case EXPO:
+      switch (newtype) {
+	case RAND_REAL:
+	  return new expo2randreal(file, line, e);
+      }
+      return NULL;
       
+    // --------------------------------------------------------------
     case RAND_BOOL:
       if (newtype==PROC_RAND_BOOL) 
 	return new rand2procrand(file, line, PROC_RAND_BOOL, e);
       return NULL;
 
+    // --------------------------------------------------------------
     case RAND_INT:
       switch (newtype) {
 	case PROC_RAND_INT:
@@ -423,11 +530,13 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
       }
       return NULL;
 
+    // --------------------------------------------------------------
     case PROC_BOOL:
       if (newtype==PROC_RAND_BOOL)
 	return new proc2procrand(file, line, PROC_RAND_BOOL, e);
       return NULL;
 
+    // --------------------------------------------------------------
     case PROC_INT:
       switch (newtype) {
 	case PROC_RAND_INT:

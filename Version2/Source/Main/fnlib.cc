@@ -4,6 +4,7 @@
 #include "api.h"
 #include "fnlib.h"
 #include "compile.h"
+#include "../Rng/rng.h"
 #include <math.h>
 
 extern PtrTable* Builtins;
@@ -537,6 +538,69 @@ void AddSqrt(PtrTable *fns)
 }
 
 // ********************************************************
+// *                probability and such                  *
+// ********************************************************
+
+void compute_avg(expr **p, int np, result &x)
+{
+  const int N = 100000;
+  // For testing right now.  Write a better version eventually.
+  Rng foo(123456789);
+  
+  // A bad way to compute the average...
+  x.Clear();
+  x.rvalue = 0.0;
+  int i;
+  for (i=0; i<N; i++) {
+    result sample;
+    SafeSample(p[0], foo, 0, sample);
+    /*
+    Output << "  sampled ";
+    PrintResult(Output, REAL, sample);
+    Output << "\n";
+    */
+    if (sample.isNormal()) {
+      x.rvalue += sample.rvalue;
+      continue;
+    }
+    if (sample.isInfinity()) {
+      if (x.isInfinity()) {
+	// if signs don't match, error
+	if (SIGN(x.ivalue)!=SIGN(sample.ivalue)) {
+	  x.setError();
+	  Error.Start(p[0]->Filename(), p[0]->Linenumber());
+	  Error << "Undefined value (infinity - infinity) in Avg";
+	  Error.Stop();
+	  return;
+	}
+      }
+      x = sample;
+      continue;
+    }
+    // if we get here we've got null or an error, bail out
+    x = sample;
+    return;
+  } // for i
+
+  // Divide by N 
+  if (x.isInfinity()) return;  // unless we're infinity
+
+  x.rvalue /= N;
+}
+
+void AddAvg(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the expected value of x";
+
+  formal_param **pl2 = new formal_param*[1];
+  pl2[0] = new formal_param(RAND_REAL, "x");
+  internal_func *p2 =
+    new internal_func(REAL, "avg", compute_avg, NULL, pl2, 1, helpdoc);
+  InsertFunction(fns, p2);
+}
+
+
+// ********************************************************
 // *               system-like  functions                 *
 // ********************************************************
 
@@ -648,6 +712,8 @@ void InitBuiltinFunctions(PtrTable *t)
   AddDiv(t);
   AddMod(t);
   AddSqrt(t);
+  // Probability
+  AddAvg(t);
   // System stuff
   AddExit(t);
   // Conditionals
