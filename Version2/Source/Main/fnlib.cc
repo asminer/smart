@@ -1394,7 +1394,7 @@ void AddExpo(PtrTable *fns)
 
 void compute_avg(expr **p, int np, result &x)
 {
-  const int N = 20;
+  const int N = 100000;
   // For testing right now.  Write a better version eventually.
   Rng foo(123456789);
   

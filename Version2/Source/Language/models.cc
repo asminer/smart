@@ -363,9 +363,11 @@ void model::Clear()
     stmt_block[i]->Clear();
   }
 
+#ifdef MEM_TRACE_ON
   Memory_Log.Stop(Output);
   Output.flush();
   Memory_Log.Start();
+#endif
 }
 
 // ******************************************************************

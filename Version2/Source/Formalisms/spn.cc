@@ -43,7 +43,15 @@ public:
     inline bool operator>(const arcinfo &a) const { return place > a.place; }
     inline bool operator==(const arcinfo &a) const { return place == a.place; }
     void operator+=(const arcinfo &a) {
-	DCASSERT(0);
+        const_card += a.const_card;
+	if (a.proc_card) {
+	  if (proc_card) {
+	    proc_card = MakeBinaryOp(proc_card, PLUS, a.proc_card,
+	      a.proc_card->Filename(), a.proc_card->Linenumber());
+	  } else {
+	    proc_card = a.proc_card;
+	  }
+	}
     }
   };
 protected:
@@ -147,7 +155,7 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   Warning << "Summing cardinalities on duplicate arc\n";
   Warning << "\tfrom " << placelist->Item(place);
   Warning << " to " << translist->Item(trans);
-  Warning << "in SPN " << Name();
+  Warning << " in SPN " << Name();
   Warning.Stop();
 }
 
@@ -170,7 +178,7 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   Warning << "Summing cardinalities on duplicate arc\n";
   Warning << "\tfrom " << translist->Item(trans);
   Warning << " to " << placelist->Item(place);
-  Warning << "in SPN " << Name();
+  Warning << " in SPN " << Name();
   Warning.Stop();
 }
 
@@ -193,7 +201,7 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   Warning << "Summing cardinalities on duplicate inhibitor arc\n";
   Warning << "\tfrom " << placelist->Item(place);
   Warning << " to " << translist->Item(trans);
-  Warning << "in SPN " << Name();
+  Warning << " in SPN " << Name();
   Warning.Stop();
 }
 

@@ -72,6 +72,9 @@ public:
 
   /** Build an expression that determines if a given event is enabled.
       The expression should be of type "proc bool".
+      Priority should be ignored.  I.e., this is really if a given
+      event "has candidacy"; the generation algorithm will correct
+      for priorities.
   */
   virtual expr* EnabledExpr(int e) = 0;
 
