@@ -6,7 +6,8 @@
 #
 
 SOURCES = \
-	api.cc	sccs.cc	linear.cc	numerical.cc	simul.cc
+	api.cc	sccs.cc	linear.cc	numerical.cc	simul.cc	\
+	ssgen.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

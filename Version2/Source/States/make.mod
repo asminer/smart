@@ -7,7 +7,8 @@
 
 SOURCES = \
 	reachset.cc	\
-	flatss.cc	stateheap.cc	ops_state.cc
+	flatss.cc	stateheap.cc	ops_state.cc	\
+	trees.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

@@ -55,8 +55,83 @@ protected:
 
   /** Traverse subtree searching for s.
       The path taken is saved by pushing onto a stack.
+      @return	The compare result of the last item seen:
+      		0, s was found 
+		1, last item was larger than s 
+		-1, last item was smaller than s
   */
-  void FindPath(const state &s);
+  int FindPath(const state &s);
+};
+
+class splay_state_tree : public binary_tree {
+public:
+  splay_state_tree(state_array *s);
+  /** Insert this state into the tree.
+      If a duplicate is already present, do not insert the state.
+      @param 	s	The state to insert.
+
+      @return	The handle (index) of the state.
+  */
+  int AddState(const state &s);
+
+  /** Find this state in the tree.
+      @param	s 	The state to find.
+      @return	The handle (index) of the state, if found;
+		otherwise, -1.
+  */
+  inline int FindState(const state &s) {
+    int cmp = Splay(s);
+    states->PopLast();
+    if (0==cmp) return root;
+    return -1;
+  }
+protected:
+  void Resize(int newsize); 
+  inline int Pop() { return (path->Empty()) ? -1 : path->Pop(); }
+  // Copied & adapted from splay template
+  inline void SplayRotate(int C, int P, int GP) {
+    // swap parent and child
+    if (left[P] == C) {
+      left[P] = right[C];
+      right[C] = P;
+    } else {
+      DCASSERT(C==right[P]);
+      right[P] = left[C];
+      left[C] = P;
+    } 
+    if (GP>=0) {
+      if (P==left[GP]) {
+	left[GP] = C;
+      } else {
+	DCASSERT(P==right[GP]);
+	right[GP] = C;
+      }
+    } // if gp
+  }
+  inline void SplayStep(int c, int p, int gp, int ggp) {
+    if (gp<0) {
+      SplayRotate(c, p, -1);
+    } else {
+      bool ParentIsRight = (right[gp] == p);
+      bool ChildIsRight = (right[p] == c);
+      if (ParentIsRight == ChildIsRight) {
+	SplayRotate(p, gp, ggp);
+	SplayRotate(c, p, ggp);
+      } else {
+	SplayRotate(c, p, gp);
+	SplayRotate(c, gp, ggp);
+      }
+    }
+  }
+  /**
+      Perform a splay operation: find the desired node and move it to the top.
+      @param	s	The state to find
+      @return	The compare result of the root item:
+      		0, s was found (and moved to root)
+		1, an item larger than s was moved to root
+		-1, an item smaller than s was moved to root
+  */
+  int Splay(const state &s);
 };
 
 /*
@@ -68,10 +143,6 @@ public:
   // If state s already is present, its state index is returned.
   // Otherwise, s is added to the tree and a new state index is returned.
   int InsertState(const state &s);
-};
-
-class splay_state_tree : public binary_state_tree {
-public:
 };
 
 */

@@ -26,6 +26,11 @@ struct option_const {
   const char* doc;
   // handy...
   option_const(const char* n, const char* d) { name = n; doc = d; }
+  // also handy...
+  inline void show(OutputStream &s) {
+    if (name) s << name;
+    else s << "(no name)";
+  }
 };
 
 /**  Base class for options.
@@ -68,6 +73,7 @@ public:
 };
 
 OutputStream& operator<< (OutputStream &s, option* o);
+OutputStream& operator<< (OutputStream &s, option_const* c);
 
 /** For action options, use the following declaration:
     void MyActionGet(void *x);

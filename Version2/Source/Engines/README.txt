@@ -20,3 +20,5 @@ numerical	Solves measures by analyzing the underlying process.
 
 simul		Discrete-event simulation engines.
 
+ssgen		State space generation (explicit and eventually...)
+

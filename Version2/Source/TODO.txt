@@ -20,5 +20,8 @@ Things to do:
 	+ have firing distributions attached
 	+ be visible outside of dsm...
 
+* Add mechanism to track where a model was "instantiated", so, e.g.,
+  an error message during state space generation can say so
+
 * Models
 

@@ -5,6 +5,7 @@
 
 #include "../Language/measures.h"
 
+#include "ssgen.h"
 #include "numerical.h"
 #include "simul.h"
 
@@ -17,6 +18,14 @@ option_const simulation_oc("SIMULATION", "Discrete-event simulation");
 
 option_const* NUMERICAL = &numerical_oc;
 option_const* SIMULATION = &simulation_oc;
+
+
+bool 	BuildReachset(model *m)
+{
+  if ((NULL==m) || (ERROR==m)) return false;
+  state_model *dsm = m->GetModel();
+  return BuildReachset(dsm); // defined in ssgen.h
+}
 
 /// Sets the return result for all measures to be "error"
 void ErrorList(List <measure> *mlist)
@@ -94,4 +103,5 @@ void 	InitEngines()
   // initialize specifics
   InitNumerical();
   InitSimulation();
+  InitSSGen();
 }

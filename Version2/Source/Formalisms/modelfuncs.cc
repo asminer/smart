@@ -5,7 +5,7 @@
 
 #include "dsm.h"
 #include "../States/reachset.h"
-
+#include "../Engines/api.h"
 
 // ********************************************************
 // *                  prob_ss and avg_ss                  *
@@ -164,12 +164,16 @@ void compute_num_states(expr **pp, int np, result &x)
   DCASSERT(m);
   state_model *dsm = m->GetModel();
   DCASSERT(dsm);
+  x.Clear();
 
-  // Generate state space here
+  bool success = BuildReachset(m);
+  if (false==success) {
+    x.setNull();
+    return;
+  }
 
   DCASSERT(dsm->statespace);
 
-  x.Clear();
   x.ivalue = dsm->statespace->Size();
 
   // should we show the state space?

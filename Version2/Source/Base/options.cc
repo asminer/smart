@@ -15,6 +15,13 @@ OutputStream& operator<< (OutputStream &s, option *o)
   return s;
 }
 
+OutputStream& operator<< (OutputStream &s, option_const *c)
+{
+  if (NULL==c) s << "(null)"; else c->show(s);
+  return s;
+}
+
+
 option::option(type t, const char *n, const char* d)
 {
   mytype = t;

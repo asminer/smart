@@ -11,6 +11,12 @@
 
  */
 
+/** 	Build the reachability set for a given model.
+	@param  m	The model to solve.
+	@return	true on success
+*/
+bool 	BuildReachset(model *m);
+
 /** 	Solve a list of steady-state measures for a given model.
 
         (Do we need more parameters or a return value?)
