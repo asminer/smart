@@ -273,6 +273,18 @@ public:
   */
   virtual Engine_type GetEngineInfo(expr **pp, int np, engineinfo *e) const;
 
+  /** Returns -1 for most functions.
+      If this is a special internal function to specify an engine,
+      return the parameter to this function that is the reward expression.
+      E.g., function "avg_ss" would return 0, because it would be invoked
+      as "avg_ss(reward)".
+      E.g., a function "foo_engine" invoked as "foo_engine(bar, param,
+      reward)" would return 2.
+
+      Used in conjunction with "fcall" to determine the reward of an
+      expression.
+  */
+  virtual int GetRewardParameter() const;
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(Rng &, expr **, int np, result &x) = 0;
@@ -323,6 +335,63 @@ public:
 
 // ******************************************************************
 // *                                                                *
+// *                      engine_wrapper class                      *
+// *                                                                *
+// ******************************************************************
+
+/** For determining engine information.
+    Use the following declaration:
+
+    Engine_type MyFunc(expr **pp, int np, engineinfo *e);
+
+*/
+typedef Engine_type (*engine_func) (expr **pp, int np, engineinfo *e);
+
+/**   Class for syntactic engine wrappers.
+      Like internal functions with no actual computation required.
+      E.g., "prob_ss", since this "function" never needs to be computed;
+      the solution engine strips off the "prob_ss" part.
+    
+*/  
+
+class engine_wrapper : public function {
+protected:
+  const char* documentation;
+  bool hidedocs;
+  engine_func getengine;
+  int reward;
+public:
+  /** Constructor.
+      @param t		The type.
+      @param n		The name.
+      @param e		The C-function to call to determine the engine.
+      @param pl		The parameter list.
+      @param np		The number of formal parameters (no repetition).
+      @param reward	The parameter used as the actual reward.
+      @param doc 	Documentation
+   */
+  engine_wrapper(type t, char *n, engine_func e, 
+                formal_param **pl, int np, int reward, const char* doc);
+
+  virtual void Compute(expr **, int np, result &x);
+  virtual void Sample(Rng &, expr **, int np, result &x);
+
+  virtual void show(OutputStream &s) const;
+
+  void HideDocs();
+  virtual bool IsUndocumented() const;
+  virtual const char* GetDocumentation() const;
+
+  // For solution engine stuff
+  virtual bool HasEngineInformation() const;
+  virtual Engine_type GetEngineInfo(expr **pp, int np, engineinfo *e) const;
+  virtual int GetRewardParameter() const;
+};
+
+
+
+// ******************************************************************
+// *                                                                *
 // *                      internal_func  class                      *
 // *                                                                *
 // ******************************************************************
@@ -359,14 +428,6 @@ typedef void (*compute_func) (expr **pp, int np, result &x);
  */
 typedef void (*sample_func) (Rng &seed, expr **pp, int np, result &x);
 
-/** For determining engine information.
-    Use the following declaration:
-
-    Engine_type MyFunc(expr **pp, int np, engineinfo *e);
-
-*/
-typedef Engine_type (*engine_func) (expr **pp, int np, engineinfo *e);
-
 /**   Class for internal functions.
       Used for internally declared functions (such as sqrt).
     
@@ -386,7 +447,6 @@ protected:
   bool hidedocs;
   typecheck_func typecheck;
   link_func linkparams;
-  engine_func getengine;
 public:
   /** Constructor.
       @param t	The type.
@@ -431,11 +491,6 @@ public:
   void SetSpecialParamLinking(link_func t);
   virtual bool HasSpecialParamLinking() const;
   virtual bool LinkParams(expr** p, int np) const;
-
-  // For solution engine stuff
-  void SetEngineInformation(engine_func e);
-  virtual bool HasEngineInformation() const;
-  virtual Engine_type GetEngineInfo(expr **pp, int np, engineinfo *e) const;
 };
 
 

@@ -198,6 +198,10 @@ private:
   */
   void Clear();
 
+  /** Solve the group of steady-state measures.
+  */
+  void SolveSteady();
+
 protected:
   /** Prepare for instantiation.
       Provided in derived classes.  Called immediately before

@@ -45,6 +45,7 @@ public:
   virtual void Compute(int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
   virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* GetRewardExpr();
   virtual expr* SplitEngines(List <measure> *mlist);
 
   /** Preprocess the measure.

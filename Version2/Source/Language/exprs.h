@@ -206,6 +206,13 @@ public:
   */
   virtual Engine_type GetEngine(engineinfo *e);
 
+  /** Get the "reward expression".
+      E.g., if this expression is "prob_at( instate(A), 6.0 )"
+      then this should return expression "instate(A)".
+      For ordinary expressions (default behavior) return ERROR.
+  */
+  virtual expr* GetRewardExpr();
+
   /** Used for mixed solution engines.
       Make a copy of the expression, except replace single mixed measures 
       with multiple measures of a single engine.

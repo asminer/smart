@@ -133,6 +133,11 @@ Engine_type expr::GetEngine(engineinfo *)
   return ENG_Error;  // Keep compiler quiet
 }
 
+expr* expr::GetRewardExpr()
+{
+  return ERROR;
+}
+
 expr* expr::SplitEngines(List <measure> *)
 {
   Internal.Start(__FILE__, __LINE__, filename, linenumber);

@@ -195,6 +195,11 @@ Engine_type function::GetEngineInfo(expr **pp, int np, engineinfo *e) const
   return ENG_Error;
 }
 
+int function::GetRewardParameter() const
+{
+  return -1;
+}
+
 bool function::IsUndocumented() const
 {
   // default
@@ -385,16 +390,77 @@ void user_func::show(OutputStream &s) const
   s << ") := " << return_expr;
 }
 
-/*
-void user_func::FillFormal(List <formal_param>* fpl) const
+
+// ******************************************************************
+// *                                                                *
+// *                     engine_wrapper methods                     *
+// *                                                                *
+// ******************************************************************
+
+engine_wrapper::engine_wrapper(type t, char *n, engine_func e, 
+                formal_param **pl, int np, int rew, const char* doc)
+ : function(NULL, -1, t, n, pl, np)
 {
-  int i;
-  for (i=0; i<num_params; i++) {
-    DCASSERT(fpl);
-    fpl->Append(parameters[i]);
-  }
+  documentation = doc;
+  getengine = e;
+  reward = rew;
 }
-*/
+
+void engine_wrapper::Compute(expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal engine wrapper computation";
+  Internal.Stop();
+}
+
+void engine_wrapper::Sample(Rng &, expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal engine wrapper function sample";
+  Internal.Stop();
+}
+
+void engine_wrapper::show(OutputStream &s) const
+{
+  if (NULL==Name()) return; // Hidden?
+  s << GetType(Type(0)) << " " << Name();
+}
+
+void engine_wrapper::HideDocs()
+{
+  hidedocs = true;
+}
+
+bool engine_wrapper::IsUndocumented() const
+{
+#ifdef DEVELOPMENT_CODE
+  return false;
+#else
+  return hidedocs;
+#endif
+}
+
+const char* engine_wrapper::GetDocumentation() const
+{
+  return documentation;
+}
+
+bool engine_wrapper::HasEngineInformation() const
+{
+  return (getengine != NULL);
+}
+
+Engine_type engine_wrapper::GetEngineInfo(expr **pp, int np, engineinfo *e) const
+{
+  if (getengine) return getengine(pp, np, e);
+  DCASSERT(0);
+  return ENG_Error;
+}
+
+int engine_wrapper::GetRewardParameter() const
+{
+  return reward;
+}
 
 // ******************************************************************
 // *                                                                *
@@ -411,8 +477,8 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
-  getengine = NULL;
   isForward = false;
+  hidedocs = false;
 }
 
 internal_func::internal_func(type t, char *n, 
@@ -425,8 +491,8 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
-  getengine = NULL;
   isForward = false;
+  hidedocs = false;
 }
 
 void internal_func::Compute(expr **pp, int np, result &x)
@@ -518,23 +584,6 @@ bool internal_func::LinkParams(expr** p, int np) const
   return linkparams(p, np);
 }
 
-void internal_func::SetEngineInformation(engine_func e)
-{
-  getengine = e;
-}
-
-bool internal_func::HasEngineInformation() const
-{
-  return (getengine != NULL);
-}
-
-Engine_type internal_func::GetEngineInfo(expr **pp, int np, engineinfo *e) const
-{
-  if (getengine) return getengine(pp, np, e);
-  DCASSERT(0);
-  return ENG_Error;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                          fcall  class                          *
@@ -560,6 +609,7 @@ public:
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
   virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* GetRewardExpr();
   virtual expr* SplitEngines(List <measure> *mlist);
 };
 
@@ -668,6 +718,14 @@ Engine_type fcall::GetEngine(engineinfo *e)
   }
   if (e) e->engine = foo;
   return foo;
+}
+
+expr* fcall::GetRewardExpr()
+{
+  int rw = func->GetRewardParameter();
+  if (rw<0) return ERROR;
+  DCASSERT(rw<numpass);
+  return Copy(pass[rw]);
 }
 
 expr* fcall::SplitEngines(List <measure> *mlist)

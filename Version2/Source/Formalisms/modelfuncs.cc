@@ -8,6 +8,52 @@
 
 
 // ********************************************************
+// *                        prob_ss                       *
+// ********************************************************
+
+Engine_type prob_ss_engine(expr **pp, int np, engineinfo *e)
+{
+  DCASSERT(pp);
+  DCASSERT(np==2);  // params are: (model, reward)
+  if (e) {
+    e->engine = ENG_SS_Inst;
+    e->starttime.setInfinity();
+    e->stoptime.setInfinity();
+  }
+  return ENG_SS_Inst;
+}
+
+void Add_prob_ss(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the steady-state probability of b.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_BOOL, "b");
+  engine_wrapper *p = new engine_wrapper(REAL, "prob_ss", 
+	prob_ss_engine, pl, 2, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                        avg_ss                        *
+// ********************************************************
+
+void Add_avg_ss(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the steady-state average of x.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_REAL, "x");
+  engine_wrapper *p = new engine_wrapper(REAL, "avg_ss", 
+	prob_ss_engine, pl, 2, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                      num_states                      *
 // ********************************************************
 
@@ -81,6 +127,9 @@ void Add_num_states(PtrTable *fns)
 
 void InitGenericModelFunctions(PtrTable *t)
 {
+  Add_prob_ss(t);
+  Add_avg_ss(t);
+
   Add_num_states(t);
 }
 

@@ -71,6 +71,12 @@ Engine_type measure::GetEngine(engineinfo *e)
   return eng->engine;
 }
 
+expr* measure::GetRewardExpr()
+{
+  if (return_expr) return return_expr->GetRewardExpr();
+  return ERROR;
+}
+
 expr* measure::SplitEngines(List <measure> *mlist)
 {
   return Copy(this);

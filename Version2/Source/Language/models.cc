@@ -16,6 +16,8 @@
 
 //@{
 
+#define DEBUG_MODEL
+
 // remove this soon...
 
 void Delete(state_model *x)
@@ -219,8 +221,10 @@ void model::SolveMeasure(measure *m)
     SolveMeasure(m->GetDependency(i));
   }
 
+#ifdef DEBUG_MODEL
   Output << "Model " << Name() << " solving measure " << m << "\n";
   Output.flush();
+#endif
 
   // Based on the engine type of m, 
   // solve a huge batch of measures with the same engine
@@ -236,18 +240,30 @@ void model::SolveMeasure(measure *m)
 		break;
 
 	case ENG_SS_Inst:
-		// call the steady-state engine for list msteady
+		SolveSteady();
 		break;
 
 	case ENG_SS_Acc:
+#ifdef DEBUG_MODEL
+  		Output << "Solving group of accumulated (steady-state) measures\n";
+  		Output.flush();
+#endif
 		// call appropriate engine for list macc_steady
 		break;
 
 	case ENG_T_Inst:
+#ifdef DEBUG_MODEL
+  		Output << "Solving group of transient measures\n";
+  		Output.flush();
+#endif
 		// call the transient engine
 		break;
 
 	case ENG_T_Acc:
+#ifdef DEBUG_MODEL
+  		Output << "Solving group of accumulated (transient) measures\n";
+  		Output.flush();
+#endif
 		// call the transient accumulative engine
 		break;
 
@@ -291,6 +307,52 @@ void model::GroupMeasures()
 				// (keeps compiler happy)
     } // switch
   }
+#ifdef DEBUG_MODEL
+  Output << "Classified measures for model " << Name() << "\n";
+  Output.flush();
+  if (mtrans->Length()) {
+    Output << "\tTransient: ";
+    for (i=0; i<mtrans->Length(); i++) {
+      if (i) Output << ", ";
+      measure *foo = mtrans->Item(i);
+      Output << foo->Name();
+    }
+    Output << "\n";
+    Output.flush();
+  }
+  if (msteady->Length()) {
+    Output << "\tSteady-state: ";
+    for (i=0; i<msteady->Length(); i++) {
+      if (i) Output << ", ";
+      measure *foo = msteady->Item(i);
+      Output << foo->Name();
+    }
+    Output << "\n";
+    Output.flush();
+  }
+  if (macc_trans->Length()) {
+    Output << "\tAccumulated (transient): ";
+    for (i=0; i<macc_trans->Length(); i++) {
+      if (i) Output << ", ";
+      measure *foo = macc_trans->Item(i);
+      Output << foo->Name();
+    }
+    Output << "\n";
+    Output.flush();
+  }
+  if (macc_steady->Length()) {
+    Output << "\tAccumulated (steady-state): ";
+    for (i=0; i<macc_steady->Length(); i++) {
+      if (i) Output << ", ";
+      measure *foo = macc_steady->Item(i);
+      Output << foo->Name();
+    }
+    Output << "\n";
+    Output.flush();
+  }
+  Output << "Remaining are custom engines\n";
+  Output.flush();
+#endif
 }
 
 void model::Clear()
@@ -303,9 +365,24 @@ void model::Clear()
   macc_steady->Clear();
 }
 
+void model::SolveSteady()
+{
+#ifdef DEBUG_MODEL
+  Output << "Solving group of steady-state measures\n";
+  Output.flush();
+#endif
+  int i;
+  for (i=0; i<msteady->Length(); i++) {
+    measure* foo = msteady->Item(i);
+    expr* bar = foo->GetRewardExpr();
+    Output << "\tMeasure " << foo << " has reward " << bar << "\n";
+  }
+  Output.flush();
+}
+
 // ******************************************************************
 // *                                                                *
-// *                        mcall class                        *
+// *                          mcall  class                          *
 // *                                                                *
 // ******************************************************************
 
@@ -334,7 +411,7 @@ public:
 };
 
 // ******************************************************************
-// *                       mcall methods                       *
+// *                         mcall  methods                         *
 // ******************************************************************
 
 mcall::mcall(const char *fn, int l, model *m, expr **p, int np,
