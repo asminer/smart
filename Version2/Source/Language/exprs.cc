@@ -805,6 +805,7 @@ class stringconst : public constant {
     DCASSERT(0==i);
     x.Clear();
     x.other = value;
+    x.notFreeable();
   }
 
   virtual void show(OutputStream &s) const {

@@ -133,8 +133,15 @@ void determfunc::ShowHeader(OutputStream &s) const
 
 constfunc* MakeConstant(type t, char* id, const char* file, int line)
 {
-  // Check if we are deterministic or not...
-  return new determfunc(file, line, t, id);
+  switch (t) {
+    case BOOL:
+    case INT:
+    case REAL:
+  	return new determfunc(file, line, t, id);
+
+    default:
+    	return new constfunc(file, line, t, id);
+  }
 }
 
 //@}

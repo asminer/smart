@@ -200,8 +200,9 @@ protected:
 void int2real::Compute(int i, result &x)
 {
   SafeCompute(opnd, i, x);
-  if (!x.isNormal()) return;
-  x.rvalue = x.ivalue;
+  if (x.isNormal()) {
+    x.rvalue = x.ivalue;
+  }
 }
 
 // ******************************************************************
@@ -229,12 +230,7 @@ void int2expo::Compute(int i, result &x)
   SafeCompute(opnd, i, x);
   if (x.isNormal()) {
     x.rvalue = x.ivalue;
-    return;
   } 
-  // if (x.isInfinity()) {
-  // x.rvalue = 0.0;
-  // }
-  // the rest are safely propogated
 }
 
 // ******************************************************************
@@ -259,13 +255,10 @@ protected:
 
 void real2int::Compute(int i, result &x)
 {
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x); 
-
-  if (!x.isNormal()) return;
-
-  x.ivalue = int(x.rvalue);
+  SafeCompute(opnd, i, x);
+  if (x.isNormal()) {
+    x.ivalue = int(x.rvalue);
+  }
 }
 
 // ******************************************************************
@@ -329,6 +322,122 @@ void expo2randreal::Sample(Rng &seed, int i, result &x)
     x.Clear();
     x.rvalue = 0.0;
     return;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    rand_int2rand_real class                    *
+// *                                                                *
+// ******************************************************************
+
+/**  Type promotion from rand integer to rand real.
+*/   
+
+class rand_int2rand_real : public typecast {
+public:
+  rand_int2rand_real(const char* fn, int line, expr* x) 
+  : typecast(fn, line, RAND_REAL, x) { }
+
+  virtual void Sample(Rng &seed, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new rand_int2rand_real(Filename(), Linenumber(), x);
+  }
+};
+
+void rand_int2rand_real::Sample(Rng &seed, int i, result &x)
+{
+  SafeSample(opnd, seed, i, x);
+  if (x.isNormal()) {
+    x.rvalue = x.ivalue;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    rand_real2rand_int class                    *
+// *                                                                *
+// ******************************************************************
+
+/**  Type casting from rand_real to rand_integer.
+*/   
+
+class rand_real2rand_int : public typecast {
+public:
+  rand_real2rand_int(const char* fn, int line, expr* x) 
+  : typecast(fn, line, RAND_INT, x) { }
+
+  virtual void Sample(Rng &seed, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new rand_real2rand_int(Filename(), Linenumber(), x);
+  }
+};
+
+void rand_real2rand_int::Sample(Rng &seed, int i, result &x)
+{
+  SafeSample(opnd, seed, i, x);
+  if (x.isNormal()) {
+    x.ivalue = int(x.rvalue);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    proc_int2proc_real class                    *
+// *                                                                *
+// ******************************************************************
+
+/**  Type promotion from proc integer to proc real.
+*/   
+
+class proc_int2proc_real : public typecast {
+public:
+  proc_int2proc_real(const char* fn, int line, expr* x) 
+  : typecast(fn, line, PROC_REAL, x) { }
+
+  virtual void Compute(const state &, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new proc_int2proc_real(Filename(), Linenumber(), x);
+  }
+};
+
+void proc_int2proc_real::Compute(const state &s, int i, result &x)
+{
+  SafeCompute(opnd, s, i, x);
+  if (x.isNormal()) {
+    x.rvalue = x.ivalue;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    proc_real2proc_int class                    *
+// *                                                                *
+// ******************************************************************
+
+/**  Type casting from proc_real to proc_integer.
+*/   
+
+class proc_real2proc_int : public typecast {
+public:
+  proc_real2proc_int(const char* fn, int line, expr* x) 
+  : typecast(fn, line, PROC_INT, x) { }
+
+  virtual void Compute(const state &s, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new proc_real2proc_int(Filename(), Linenumber(), x);
+  }
+};
+
+void proc_real2proc_int::Compute(const state &s, int i, result &x)
+{
+  SafeCompute(opnd, s, i, x);
+  if (x.isNormal()) {
+    x.ivalue = int(x.rvalue);
   }
 }
 
@@ -432,6 +541,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     // --------------------------------------------------------------
     case RAND_INT:
       switch (newtype) {
+	case RAND_REAL:
+	  return new rand_int2rand_real(file, line, e);
+
 	case PROC_RAND_INT:
 	  return new rand2procrand(file, line, PROC_RAND_INT, e);
 
@@ -442,6 +554,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     // --------------------------------------------------------------
     case RAND_REAL:
       switch (newtype) {
+	case RAND_INT:
+	  return new rand_real2rand_int(file, line, e);
+
 	case PROC_RAND_REAL:
 	  return new rand2procrand(file, line, PROC_RAND_REAL, e);
 
@@ -457,6 +572,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     // --------------------------------------------------------------
     case PROC_INT:
       switch (newtype) {
+	case PROC_REAL:
+	  return new proc_int2proc_real(file, line, e);
+
 	case PROC_RAND_INT:
 	  return new proc2procrand(file, line, PROC_RAND_INT, e);
 
@@ -467,6 +585,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     // --------------------------------------------------------------
     case PROC_REAL:
       switch (newtype) {
+	case PROC_INT:
+	  return new proc_real2proc_int(file, line, e);
+
 	case PROC_RAND_REAL:
 	  return new proc2procrand(file, line, PROC_RAND_REAL, e);
 

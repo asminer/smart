@@ -49,6 +49,7 @@ void PrintString(const result& x, OutputStream &out, int width)
       case 'q'	:	out << '"';	break;
       case 'b'	:	out << "\b";	break;
       case 'a'	:	out << "\a";	break;
+      case 'f'  :	out.flush();    break;  // does this work?
     }
   }
 }
