@@ -173,10 +173,10 @@ void state_array::EnlargeMem(int newsize)
   if (newsize<memsize) return;
   int newmemsize = memsize;
   while (newsize>=newmemsize) {
-    if (newmemsize<16777216)  // less than 16Mb, double size
+    if (newmemsize<1048576)  // less than 1Mb, double size
       newmemsize *= 2;
-    else  // greater than 16Mb, add 16Mb increments 
-      newmemsize += 16777216;
+    else  // greater than 1Mb, add 1Mb increments 
+      newmemsize += 1048576;
   }
   mem = (unsigned char*) realloc(mem, newmemsize);
   if (NULL==mem) OutOfMemoryError("state array resize");
@@ -1035,7 +1035,8 @@ flatss::~flatss()
 int flatss::binsearch(int h)
 {
   int low = 0;
-  int high = states->NumStates();
+  int high = states->NumStates()-1;  
+  // note: there is one extra state, the one we are looking for
   while (low<high) {
     int mid = (low+high)/2;
     int cmp = states->Compare(order[mid], h);
