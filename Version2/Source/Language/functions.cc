@@ -247,7 +247,10 @@ void user_func::Compute(expr **pp, int np, result &x)
     Error.Start(Filename(), Linenumber());
     Error << "Stack overflow in function call " << Name();
     Error.Stop();
+#ifdef TRACK_ERRORS
     x.error = CE_StackOverflow;
+#endif
+    x.setError();
     return;
   }
 
@@ -259,14 +262,18 @@ void user_func::Compute(expr **pp, int np, result &x)
 
   // Compute parameters, place on stack
   int i;
+#ifdef TRACK_ERRORS
   for (i=0; i<np; i++) newstackptr[i].error = CE_Uncomputed;
+#else
+  for (i=0; i<np; i++) newstackptr[i].setError();
+#endif
   for (i=0; i<np; i++) SafeCompute(pp[i], 0, newstackptr[i]); 
 
   // "call" function
   stack_ptr = newstackptr;
   SafeCompute(return_expr, 0, x);
 
-  if (x.error) {
+  if (x.isError()) {
     // check option?
     Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "function call " << Name();

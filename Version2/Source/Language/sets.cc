@@ -76,7 +76,7 @@ void int_interval::GetElement(int n, result &x)
 
 int int_interval::IndexOf(const result &x)
 {
-  if (x.error || x.isNull() || x.isInfinity()) return -1;
+  if (!x.isNormal()) return -1;
   int i = int((x.ivalue-start)/inc);
   if (i>=Size()) return -1;
   if (i<0) return -1;
@@ -136,7 +136,7 @@ void real_interval::GetElement(int n, result &x)
 
 int real_interval::IndexOf(const result &x)
 {
-  if (x.error || x.isNull() || x.isInfinity()) return -1;
+  if (!x.isNormal()) return -1;
   int i;
   if (inc>0) 
     i = int( ceil((x.rvalue-start)/inc - 0.5) );
@@ -213,7 +213,7 @@ void generic_int_set::GetElement(int n, result &x)
 
 int generic_int_set::IndexOf(const result &x)
 {
-  if (x.error || x.isNull() || x.isInfinity()) return -1;
+  if (!x.isNormal()) return -1;
   // binary search through values
   int low = 0, high = Size()-1;
   while (low <= high) {
@@ -309,7 +309,7 @@ void generic_real_set::GetElement(int n, result &x)
 
 int generic_real_set::IndexOf(const result &x)
 {
-  if (x.error || x.isNull() || x.isInfinity()) return -1;
+  if (!x.isNormal()) return -1;
   // binary search through values
   double epsilon = index_precision->GetReal(); 
   int low = 0, high = Size()-1;
@@ -394,7 +394,7 @@ void int_realset::GetElement(int n, result &x)
 {
   DCASSERT(intset);
   intset->GetElement(n, x);
-  if (x.isInfinity() || x.isNull() || x.error) return;
+  if (!x.isNormal()) return;
   // convert to real
   x.rvalue = x.ivalue; 
 }
@@ -412,7 +412,7 @@ void int_realset::GetOrder(int n, int &i, result &x)
 {
   DCASSERT(intset);
   intset->GetOrder(n, i, x);
-  if (x.isInfinity() || x.isNull() || x.error) return;
+  if (!x.isNormal()) return;
   // convert to real
   x.rvalue = x.ivalue; 
 }
@@ -463,24 +463,27 @@ protected:
   inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
     x.Clear();
     start->Compute(0, s);
-    if (s.isNull() || s.error) {
+    if (s.isNull() || s.isError()) {
       x = s;
       return false;
     }
     stop->Compute(0, e);
-    if (e.isNull() || e.error) {
+    if (e.isNull() || e.isError()) {
       x = e;
       return false;
     }
     inc->Compute(0, i);
-    if (i.isNull() || i.error) {
+    if (i.isNull() || i.isError()) {
       x = i;
       return false;
     }
     // special cases here
     if (s.isInfinity() || e.isInfinity()) {
       // Print error message here
+      x.setError();
+#ifdef TRACK_ERRORS
       x.error = CE_Undefined;
+#endif
       return false;
     } 
     return true;
@@ -655,9 +658,12 @@ void intset_element::Compute(int i, result &x)
   DCASSERT(i==0);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.error || x.isNull()) return;
+  if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
+    x.setError();
+#ifdef TRACK_ERRORS
     x.error = CE_Undefined;  // print error message?
+#endif
     return;
   }
   int* values = new int[1];
@@ -708,14 +714,14 @@ void intset_union::Compute(int i, result &x)
   x.Clear();
   result l;
   left->Compute(0, l); 
-  if (l.error || l.isNull()) {
+  if (l.isError() || l.isNull()) {
     x = l;
     return;
   }
   set_result *ls = (set_result*) l.other;
   result r;
   right->Compute(0, r);
-  if (r.error || r.isNull()) {
+  if (r.isError() || r.isNull()) {
     x = r;
     Delete(ls);
     return;
@@ -867,7 +873,7 @@ void int2realset::Compute(int i, result &x)
   DCASSERT(0==i);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.isNull() || x.error) return;
+  if (x.isNull() || x.isError()) return;
   set_result* xs = (set_result*) x.other;
   set_result* answer = new int_realset(xs);
   x.other = answer;
@@ -979,9 +985,12 @@ void realset_element::Compute(int i, result &x)
   DCASSERT(i==0);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.error || x.isNull()) return;
+  if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
+    x.setError();
+#ifdef TRACK_ERRORS
     x.error = CE_Undefined;  // print error message?
+#endif
     return;
   }
   double* values = new double[1];
@@ -1032,14 +1041,14 @@ void realset_union::Compute(int i, result &x)
   x.Clear();
   result l;
   left->Compute(0, l); 
-  if (l.error || l.isNull()) {
+  if (l.isError() || l.isNull()) {
     x = l;
     return;
   }
   set_result *ls = (set_result*) l.other;
   result r;
   right->Compute(0, r);
-  if (r.error || r.isNull()) {
+  if (r.isError() || r.isNull()) {
     x = r;
     Delete(ls);
     return;

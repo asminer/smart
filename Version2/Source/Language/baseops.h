@@ -138,6 +138,14 @@ protected:
     left->Compute(0, l);
     right->Compute(0, r);
 
+    // Most common case first
+    if (l.isNormal() && r.isNormal()) return true;
+
+    if (l.isError() || r.isError()) {
+      x.setError();
+      return false;
+    }
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
@@ -146,6 +154,7 @@ protected:
       x.error = r.error;
       return false;
     }
+#endif
     if (l.isNull() || r.isNull()) {
       x.setNull();
       return false;
@@ -154,8 +163,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign, definitely not equal
@@ -171,6 +182,9 @@ protected:
       x.setUnknown();
       return false;
     }
+
+    // Can we get here?
+    DCASSERT(0);
     return true;
   }
 public:
@@ -207,12 +221,21 @@ protected:
     left->Compute(0, l);
     right->Compute(0, r);
 
+    // Most common case first
+    if (l.isNormal() && r.isNormal()) return true;
+
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
     }
     if (r.error) {
       x.error = r.error;
+      return false;
+    }
+#endif
+    if (l.isError() || r.isError()) {
+      x.setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
@@ -223,8 +246,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign, definitely not equal
@@ -240,6 +265,8 @@ protected:
       x.setUnknown();
       return false;
     }
+    // can we get here?
+    DCASSERT(0);
     return true;
   }
 public:
@@ -276,12 +303,21 @@ protected:
     left->Compute(0, l);
     right->Compute(0, r);
 
+    // most common case first
+    if (l.isNormal() && r.isNormal()) return true;
+
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
     }
     if (r.error) {
       x.error = r.error;
+      return false;
+    }
+#endif
+    if (l.isError() || r.isError()) {
+      x.setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
@@ -292,8 +328,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
@@ -314,6 +352,10 @@ protected:
       x.setUnknown();
       return false;
     }
+
+    // Still here?
+    DCASSERT(0);
+    // keep compiler happy
     return true;
   }
 public:
@@ -350,12 +392,21 @@ protected:
     left->Compute(0, l);
     right->Compute(0, r);
 
+    // most common case
+    if (l.isNormal() && r.isNormal()) return true;
+
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
     }
     if (r.error) {
       x.error = r.error;
+      return false;
+    }
+#endif
+    if (l.isError() || r.isError()) {
+      x.setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
@@ -366,8 +417,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
@@ -388,6 +441,7 @@ protected:
       x.setUnknown();
       return false;
     }
+    DCASSERT(0);
     return true;
   }
 public:
@@ -424,12 +478,20 @@ protected:
     left->Compute(0, l);
     right->Compute(0, r);
 
+    if (l.isNormal() && r.isNormal()) return true;
+
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
     }
     if (r.error) {
       x.error = r.error;
+      return false;
+    }
+#endif
+    if (l.isError() || r.isError()) {
+      x.setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
@@ -440,8 +502,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign.  
@@ -462,6 +526,7 @@ protected:
       x.setUnknown();
       return false;
     }
+    DCASSERT(0);
     return true;
   }
 public:
@@ -497,13 +562,21 @@ protected:
     x.Clear();
     left->Compute(0, l);
     right->Compute(0, r);
+    
+    if (l.isNormal() && r.isNormal()) return true;
 
+#ifdef TRACK_ERRORS
     if (l.error) {
       x.error = l.error;
       return false;
     }
     if (r.error) {
       x.error = r.error;
+      return false;
+    }
+#endif
+    if (l.isError() || r.isError()) {
+      x.setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
@@ -514,8 +587,10 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
+#ifdef TRACK_ERRORS
         x.error = CE_Undefined;
-        x.setNull();
+#endif
+        x.setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
@@ -536,6 +611,7 @@ protected:
       x.setUnknown();
       return false;
     }
+    DCASSERT(0);
     return true;
   }
 public:

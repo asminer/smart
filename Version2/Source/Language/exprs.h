@@ -8,9 +8,6 @@
     @type File
     @args \ 
 
-  New, very fast, and simple way to represent results.
-  Virtual-function free!
-
   Base class for expressions, and all expressions that
   deal with simple types: bool, int, real, string.
  */

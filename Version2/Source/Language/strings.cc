@@ -98,7 +98,7 @@ void string_add::Compute(int a, result &x)
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
     operands[i]->Compute(0, xop[i]);
-    if (xop[i].error || xop[i].isNull()) {
+    if (xop[i].isError() || xop[i].isNull()) {
       x = xop[i];
       break;
     }
@@ -106,7 +106,7 @@ void string_add::Compute(int a, result &x)
       total_length += strlen((char*)xop[i].other); 
   }
 
-  if (x.error || x.isNull()) {
+  if (x.isError() || x.isNull()) {
     // delete strings and bail out
     for (i=0; i<opnd_count; i++) if (xop[i].isFreeable()) free(xop[i].other); 
     return;
@@ -156,15 +156,21 @@ void string_equal::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+    return;
+  }
+  if (x.isNormal()) {
     x.bvalue = (0==strcmp((char*)l.other, (char*)r.other));
   } 
   if (l.isFreeable()) free(l.other);
@@ -206,15 +212,20 @@ void string_neq::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+  }
+  if (x.isNormal()) {
     x.bvalue = (0!=strcmp((char*)l.other, (char*)r.other));
   } 
   if (l.isFreeable()) free(l.other);
@@ -253,15 +264,20 @@ void string_gt::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+  }
+  if (x.isNormal()) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) > 0);
   } 
   if (l.isFreeable()) free(l.other);
@@ -303,15 +319,20 @@ void string_ge::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+  }
+  if (x.isNormal()) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) >= 0);
   } 
   if (l.isFreeable()) free(l.other);
@@ -353,15 +374,20 @@ void string_lt::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+  }
+  if (x.isNormal()) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) < 0);
   } 
   if (l.isFreeable()) free(l.other);
@@ -403,15 +429,20 @@ void string_le::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+#ifdef TRACK_ERRORS
   if (l.error) {
     x.error = l.error;
   } else if (r.error) {
     x.error = r.error;
   }
+#endif
   if (l.isNull() || r.isNull()) {
     x.setNull();
   }
-  if ((!x.error) && (!x.isNull())) {
+  if (l.isError() || r.isError()) {
+    x.setError();
+  }
+  if (x.isNormal()) { 
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) <= 0);
   } 
   if (l.isFreeable()) free(l.other);

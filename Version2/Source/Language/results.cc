@@ -25,7 +25,7 @@ void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
     return; 
   }
   if (x.isNull()) { s << "null"; return; }
-  if (x.error) { s << "null"; return; }
+  if (x.isError()) { s << "null"; return; }
   // width not specified
   if (width<0) {
     switch(t) {

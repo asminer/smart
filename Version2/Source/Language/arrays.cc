@@ -149,33 +149,32 @@ void array::Compute(expr **il, result &x)
   for (i=0; i<dimension; i++) {
     result y;
     il[i]->Compute(0, y);
-    if (y.isNull()) {
-      x.setNull();
-      return;
-    }
-    if (y.error) {
-      // Trace the error here?
-      x.error = y.error;
-      return;
-    }
     if (NULL==ptr) {
-      // error?  
       x.setNull();
       return;
     }
-    int ndx = ptr->values->IndexOf(y);
-    if (ndx<0) {
-      // range error
-      x.error = CE_OutOfRange;
-      Error.Start(il[i]->Filename(), il[i]->Linenumber());
-      Error << "Bad value: ";
-      PrintResult(Error, il[i]->Type(0), y);
-      Error << " for index " << index_list[i];
-      Error << " in array " << Name();
-      Error.Stop();
-      return;
+    if (y.isNormal()||y.isInfinity()) {
+      int ndx = ptr->values->IndexOf(y);
+      if (ndx<0) {
+        // range error
+#ifdef TRACK_ERRORS
+        x.error = CE_OutOfRange;
+#endif
+        Error.Start(il[i]->Filename(), il[i]->Linenumber());
+        Error << "Bad value: ";
+        PrintResult(Error, il[i]->Type(0), y);
+        Error << " for index " << index_list[i];
+        Error << " in array " << Name();
+        Error.Stop();
+	x.setError();
+        return;
+      }
+      ptr = (array_desc*) ptr->down[ndx];
+      continue;
     }
-    ptr = (array_desc*) ptr->down[ndx];
+    // there is something strange with y (null, error, etc), propogate to x
+    x = y;
+    return;
   }
   x.other = ptr;
 }
@@ -188,28 +187,32 @@ void array::Sample(long &seed, expr **il, result &x)
   for (i=0; i<dimension; i++) {
     result y;
     il[i]->Sample(seed, 0, y);
-    if (y.isNull()) {
-      x.setNull();
-      return;
-    }
-    if (y.error) {
-      // Trace the error here?
-      x.error = y.error;
-      return;
-    }
     if (NULL==ptr) {
-      // error?  
       x.setNull();
       return;
     }
-    int ndx = ptr->values->IndexOf(y);
-    if (ndx<0) {
-      // range error
-      x.error = CE_OutOfRange;
-      // print something?
-      return;
+    if (y.isNormal()||y.isInfinity()) {
+      int ndx = ptr->values->IndexOf(y);
+      if (ndx<0) {
+        // range error
+#ifdef TRACK_ERRORS
+        x.error = CE_OutOfRange;
+#endif
+        Error.Start(il[i]->Filename(), il[i]->Linenumber());
+        Error << "Bad value: ";
+        PrintResult(Error, il[i]->Type(0), y);
+        Error << " for index " << index_list[i];
+        Error << " in array " << Name();
+        Error.Stop();
+	x.setError();
+        return;
+      }
+      ptr = (array_desc*) ptr->down[ndx];
+      continue;
     }
-    ptr = (array_desc*) ptr->down[ndx];
+    // there is something strange with y (null, error, etc), propogate to x
+    x = y;
+    return;
   }
   x.other = ptr;
 }
@@ -281,7 +284,7 @@ void acall::Compute(int i, result &x)
   DCASSERT(0==i);
   func->Compute(pass, x);
   if (x.isNull()) return;
-  if (x.error) return;  // print message?
+  if (x.isError()) return;  // print message?
   constfunc* foo = (constfunc*) x.other;
 #ifdef ARRAY_TRACE
   cout << "Computing " << foo << "\n";
@@ -297,7 +300,7 @@ void acall::Sample(long &seed, int i, result &x)
   DCASSERT(0==i);
   func->Sample(seed, pass, x);
   if (x.isNull()) return;
-  if (x.error) return;  // print message?
+  if (x.isError()) return;  // print message?
   constfunc* foo = (constfunc*) x.other;
   foo->Sample(seed, 0, x);
 }

@@ -100,7 +100,7 @@ void bool2procbool::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x);
 
-  if (x.error || x.isNull() || x.isUnknown()) return;
+  if (!x.isNormal()) return;
 
   DCASSERT(false==x.isInfinity());  // Can this fail?
 
@@ -136,9 +136,7 @@ void bool2procrandbool::Sample(long &seed, int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x); 
 
-  if (x.error) return;
-  if (x.isNull()) return;
-  if (x.isUnknown()) return;
+  if (!x.isNormal()) return;
 
   DCASSERT(false==x.isInfinity());  // Can this fail?
 
@@ -173,10 +171,7 @@ void int2real::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x); 
 
-  if (x.error) return;
-  if (x.isNull()) return;
-  if (x.isInfinity()) return;
-  if (x.isUnknown()) return;
+  if (!x.isNormal()) return;
 
   x.rvalue = x.ivalue;
 }
@@ -210,18 +205,13 @@ void int2procint::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x);
 
-  if (x.error) return;
-  if (x.isNull()) return;
-  if (x.isUnknown()) return;
-
-  expr *answer = NULL;
   if (x.isInfinity()) {
-    answer = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
-  } else {
-    answer = MakeConstExpr(x.ivalue, Filename(), Linenumber());
+    x.other = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
+    x.setFreeable();
+  } else if (x.isNormal()) {
+    x.other = MakeConstExpr(x.ivalue, Filename(), Linenumber());
+    x.setFreeable();
   }
-  x.other = answer;
-  x.setFreeable();
 }
 
 
@@ -252,12 +242,8 @@ void real2int::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x); 
 
-  if (x.error) return;
-  if (x.isNull()) return;
-  if (x.isInfinity()) return;
-  if (x.isUnknown()) return;
+  if (!x.isNormal()) return;
 
-  // error checking here
   x.ivalue = int(x.rvalue);
 }
 
@@ -289,18 +275,13 @@ void real2procreal::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x);
 
-  if (x.error) return;
-  if (x.isNull()) return;
-  if (x.isUnknown()) return;
-
-  expr *answer = NULL;
   if (x.isInfinity()) {
-    answer = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
-  } else {
-    answer = MakeConstExpr(x.rvalue, Filename(), Linenumber());
+    x.other = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
+    x.setFreeable();
+  } else if (x.isNormal()) {
+    x.other = MakeConstExpr(x.rvalue, Filename(), Linenumber());
+    x.setFreeable();
   }
-  x.other = answer;
-  x.setFreeable();
 }
 
 
@@ -359,7 +340,6 @@ void proc2procrand::Sample(long &, int i, result &x)
 {
   DCASSERT(0==i);
   opnd->Compute(i, x);
-  // check for errors?
 }
 
 // ******************************************************************

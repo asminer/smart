@@ -63,7 +63,7 @@ expr* MakeInfinityExpr(int sign, const char* file, int line)
 expr* MakeConstExpr(type t, const result &x, const char* file, int line)
 {
   if (x.isNull()) return NULL;
-  if (x.error) return NULL;
+  if (x.isError()) return NULL;
   if (x.isInfinity()) return MakeInfinityExpr(x.ivalue, file, line);
   switch (t) {
     case BOOL:		return MakeConstExpr(x.bvalue, file, line);

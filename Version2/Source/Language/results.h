@@ -17,6 +17,12 @@
 
 //@{
 
+
+// I'm not sure that we need to remember the error cause,
+// since we print a message immediately, just that there was an error.
+
+#ifdef TRACK_ERRORS
+
 /// Things that can go wrong when computing a result.
 enum compute_error {
   /** No problems.  
@@ -40,6 +46,21 @@ enum compute_error {
   CE_StackOverflow
 };
 
+#endif
+
+/// Special cases for a result
+enum compute_special {
+  /// An ordinary value
+  CS_Normal = 0,
+  /// Plus or minus infinity
+  CS_Infinity,
+  /// Null value
+  CS_Null,
+  /// Same as null, but due to an error
+  CS_Error,
+  /// Unknown value
+  CS_Unknown
+};
 
 // ******************************************************************
 // *                                                                *
@@ -66,31 +87,45 @@ enum compute_error {
 */  
 
 struct result {
-  protected:
-    unsigned char flags;  // Use the inline functions
+  public:
+  /// Are we a special value, or not
+  compute_special special;
+
+  /// Should pointers be freed?
+  bool freeable;
+
   public:
 
   // No type!  can be determined from expression that computes us, if needed
 
+#ifdef TRACK_ERRORS
   /// The first thing that went wrong while computing us.
   compute_error error;
+#endif
+
+  /// Is this a normal value?
+  inline bool isNormal() const { return CS_Normal == special; }
 
   /// Is this an unknown value?
-  inline bool isUnknown() const { return (flags & 1); }
-  inline void setUnknown() { flags |= 1; }
+  inline bool isUnknown() const { return CS_Unknown == special; }
+  inline void setUnknown() { special = CS_Unknown; }
 
   /// Are we infinite.  Sign is determined from the value.
-  inline bool isInfinity() const { return (flags & 2); }
-  inline void setInfinity() { flags |= 2; }
+  inline bool isInfinity() const { return CS_Infinity == special; }
+  inline void setInfinity() { special = CS_Infinity; }
+
+  /// Was there an error?
+  inline bool isError() const { return CS_Error == special; }
+  inline void setError() { special = CS_Error; }
 
   /// Are we a null value?  
-  inline bool isNull() const { return (flags & 4); }
-  inline void setNull() { flags |= 4; }
+  inline bool isNull() const { return CS_Null == special; }
+  inline void setNull() { special = CS_Null; }
 
   /// For pointers, should we free it?  (allows shallow copy of strings!)
-  inline bool isFreeable() const { return (flags & 8); }
-  inline void setFreeable() { flags |= 8; }
-  inline void notFreeable() { flags &= 247; }
+  inline bool isFreeable() const { return freeable; }
+  inline void setFreeable() { freeable = true; }
+  inline void notFreeable() { freeable = false; }
 
   union {
     /// Used by boolean type
@@ -105,8 +140,8 @@ struct result {
   };
 
   inline void Clear() {
-    error = CE_Ok;
-    flags = 0;
+    special = CS_Normal;
+    freeable = true;
   }
 };
 
