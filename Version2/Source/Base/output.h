@@ -38,6 +38,12 @@ inline OutputStream& operator<< (OutputStream& s, bool data)
   return s;
 }
 
+inline OutputStream& operator<< (OutputStream& s, char data) 
+{
+  s.Put(data);
+  return s;
+}
+
 inline OutputStream& operator<< (OutputStream& s, int data) 
 {
   s.Put(data);

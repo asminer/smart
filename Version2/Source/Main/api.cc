@@ -45,10 +45,14 @@ int smart_main(int argc, char *argv[])
 
   // Initialize modules
 
+  StartOptions();
+
   InitBase();
   InitLanguage();
   InitLexer(argc, argv);
   InitCompiler();
+
+  SortOptions();
 
   yyparse();
 

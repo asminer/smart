@@ -64,8 +64,19 @@ void computehelp(expr **pp, int np, result &x)
     help_search_string = (char*) x.other;
   }
 
-
+  // Look through functions
   Builtins->Traverse(ShowDocs);
+
+  // Now go through options
+  int i;
+  for (i=0; i<NumOptions(); i++) {
+    option* o = GetOptionNumber(i);
+    if (NULL==strstr(o->Name(), help_search_string)) continue;
+    if (o->IsUndocumented()) continue;
+    o->ShowHeader(Output);
+    Output << "\n\t";
+    Output << o->GetDocumentation() << "\n\n";
+  }
 
   // return something...
   x.null = true;

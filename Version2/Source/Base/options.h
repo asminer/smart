@@ -11,7 +11,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "types.h"
+#include "output.h"
 
 /**  Base class for options.
      Derived classes are "hidden" in options.cc.
@@ -29,47 +29,62 @@ public:
   inline const char* GetDocumentation() const { return documentation; }
 
   // provided in derived classes
+
+  virtual void SetValue(bool b, const char* file, int line);
+  virtual void SetValue(int n, const char* file, int line);
+  virtual void SetValue(double r, const char* file, int line);
+  virtual void SetValue(char *c, const char* file, int line);
+
+  virtual bool GetBool() const;
+  virtual int GetInt() const;
+  virtual double GetReal() const;
+  virtual char* GetString() const;
+
   virtual void ShowHeader(OutputStream &s) const = 0;
-  virtual void GetValue(result &x) = 0;
-  virtual void SetValue(const result &x) = 0;
 };
 
 /** For action options, use the following declaration:
-
-    void MyGetAction(result &x);
+    void MyActionGet(void *x);
 */
-typedef void (*action_get) (result &x);
+typedef void (*action_get) (void *x);
 
 
 /** For action options, use the following declaration:
-
-    void MySetAction(const result &x);
+    void MyActionSet(void *x, const char* filename, int lineno);
 */
-typedef void (*action_set) (const result &x);
+typedef void (*action_set) (void *x, const char* f, int l);
 
 
 // **************************************************************************
 // *                            Global interface                            *
 // **************************************************************************
 
-/**
-*/
-option* MakeEnumOption(const char *name, const char* doc, 
+option* MakeEnumOption(const char* name, const char* doc, 
 			int deflt, int range);
 
-/**
-*/
-option* MakeActionOption(const char *name, const char* doc,
-			action_get g, action_set s);
+option* MakeBoolOption(const char* name, const char* doc, bool deflt);
 
+option* MakeIntOption(const char* name, const char* doc,
+			int deflt, int min, int max);
+
+option* MakeRealOption(const char* name, const char* doc,
+			double deflt, double min, double max);
+
+option* MakeStringOption(const char* name, const char* doc, char* deflt);
+
+option* MakeActionOption(const char *name, const char* doc,
+			action_set s, action_get g);
+
+
+void StartOptions();
 void AddOption(option *);
 void SortOptions();
 option* FindOption(char* name);
 
-bool GetBoolOption(option *);
-int GetIntOption(option *);
-double GetRealOption(option *);
-char* GetStringOption(option *);
+int NumOptions();
+option* GetOptionNumber(int i);
+
+
 
 #endif
 

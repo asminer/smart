@@ -14,6 +14,8 @@
 
 //@{
 
+option* infinity_string;
+
 // ******************************************************************
 // *                                                                *
 // *                      infinityconst  class                      *
@@ -48,7 +50,8 @@ class infinityconst : public constant {
 
   virtual void show(OutputStream &s) const {
     if (sign<0) s << "-";
-    s << "infinity";       //<<<<<<<<<<<<<<<<<<<<<<<FIX THIS LATER!!!!!!!!!!!
+    DCASSERT(infinity_string);
+    s << infinity_string->GetString();
   }
 };
 

@@ -25,6 +25,8 @@
 // *                                                                *
 // ******************************************************************
 
+extern option* infinity_string;
+
 /// Build an infinity constant (type=integer).
 expr* MakeInfinityExpr(int sign, const char* file=NULL, int line=0);
 
