@@ -53,6 +53,7 @@ bool CanDeclareType(type modeltype, type vartype)
 
 // Symbol tables
 PtrTable GenericModelFuncs;
+PtrTable MCModelFuncs;
 
 List <function> *FindModelFunctions(type modeltype, const char* n)
 {
@@ -63,6 +64,10 @@ List <function> *FindModelFunctions(type modeltype, const char* n)
   // then check model specific functions
   switch (modeltype) {
 
+    case DTMC:
+    case CTMC:
+    		return FindFunctions(&MCModelFuncs, n);
+	
     // bail out
     default:
     	return NULL;
@@ -82,5 +87,6 @@ void InitModels()
   InitGenericModelFunctions(&GenericModelFuncs);
 
   // Deal with formalism specifics
+  InitMCModelFuncs(&MCModelFuncs);
 }
 

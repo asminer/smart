@@ -5,6 +5,7 @@
 
 #include "../Base/api.h"
 #include "../Language/api.h"
+#include "../Main/tables.h"
 
 
 // ******************************************************************
@@ -16,7 +17,7 @@
 /** Smart support for the Markov chain "formalism".
 */
 class markov_model : public model {
-  int states;
+  List <char> *statenames;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
@@ -41,27 +42,32 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
 {
   Output << "Created (empty) model " << n << "\n";
   Output.flush();
-  states = -1;
+  statenames = NULL; 
 }
 
 markov_model::~markov_model()
 {
+  delete statenames;
 }
 
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
-  states++;
+  statenames->Append(n);
   return NULL;
 }
 
 void markov_model::InitModel()
 {
-  states = 0;
+  statenames = new List <char> (16);
 }
 
 void markov_model::FinalizeModel(result &x)
 {
-  Output << "MC has " << states << " states?\n";
+  Output << "MC has " << statenames->Length() << " states?\n";
+  int i;
+  for (i=0; i<statenames->Length(); i++) {
+    Output << "\t" << statenames->Item(i) << "\n";
+  }
   Output.flush();
 
   x.Clear();
@@ -76,7 +82,19 @@ state_model* markov_model::BuildStateModel()
 
 // ******************************************************************
 // *                                                                *
-// *                        Global front-end                        *
+// *                        markov_dsm  class                       *
+// *                                                                *
+// ******************************************************************
+
+// ******************************************************************
+// *                                                                *
+// *                      MC-specific functions                     *
+// *                                                                *
+// ******************************************************************
+
+// ******************************************************************
+// *                                                                *
+// *                        Global front-ends                       *
 // *                                                                *
 // ******************************************************************
 
@@ -86,4 +104,7 @@ model* MakeMarkovChain(type t, char* id, formal_param **pl, int np,
   return new markov_model(fn, line, t, id, pl, np);
 }
 
+void InitMCModelFuncs(PtrTable *t)
+{
+}
 
