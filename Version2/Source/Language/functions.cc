@@ -528,6 +528,22 @@ internal_func::internal_func(type t, char *n,
   hidedocs = false;
 }
 
+internal_func::internal_func(type t, char *n, 
+   compute_proc c, sample_proc s, formal_param **pl, int np, int rp,
+   const char* d) 
+ : function(NULL, -1, t, n, pl, np, rp)
+{
+  compute = NULL;
+  sample = NULL;
+  comp_proc = c;
+  samp_proc = s;
+  documentation = d;
+  typecheck = NULL;
+  linkparams = NULL;
+  isForward = false;
+  hidedocs = false;
+}
+
 void internal_func::Compute(expr **pp, int np, result &x)
 {
   if (NULL==compute) {

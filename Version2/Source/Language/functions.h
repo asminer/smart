@@ -492,13 +492,27 @@ public:
   /** Constructor.
       @param t	The type.
       @param n	The name.
-      @param c	The C-function to call to compute the (proc-style) result.
+      @param c	The C-function to call to compute (proc-style) the result.
+      @param s	The C-function to call to sample (proc-style) the result.
       @param pl	The parameter list.
       @param np	The number of formal parameters (no repetition).
       @param doc Documentation
    */
   internal_func(type t, char *n, compute_proc c, sample_proc s,
                 formal_param **pl, int np, const char* doc);
+
+  /** Constructor.
+      @param t	The type.
+      @param n	The name.
+      @param c	The C-function to call to compute (proc-style) the result.
+      @param s	The C-function to call to sample (proc-style) the result.
+      @param pl	The parameter list.
+      @param np	The number of formal parameters.
+      @param rp	The point to start repeating parameters
+      @param doc Documentation
+   */
+  internal_func(type t, char *n, compute_proc c, sample_proc s,
+                formal_param **pl, int np, int rp, const char* doc);
 
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(Rng &, expr **, int np, result &x);

@@ -1340,7 +1340,7 @@ void proc_compute_cond(const state &m, expr **pp, int np, result &x)
   else SafeCompute(pp[2], m, 0, x);
 }
 
-void proc_rand_compute_cond(Rng &s, const state &m, expr **pp, int np, result &x)
+void proc_sample_cond(Rng &s, const state &m, expr **pp, int np, result &x)
 {
   DCASSERT(pp);
   DCASSERT(np==3);
@@ -1379,7 +1379,7 @@ void AddCond(type bt, type t, PtrTable *fns)
 	break;
 
     case PROC_RAND_BOOL:
-      	cnd = new internal_func(t, "cond", NULL, proc_rand_compute_cond, pl, 3, conddoc);
+      	cnd = new internal_func(t, "cond", NULL, proc_sample_cond, pl, 3, conddoc);
 	break;
  
     default:
@@ -1443,6 +1443,57 @@ void sample_case(Rng &s, expr **pp, int np, result &x)
   SafeCompute(pp[1], 0, x);
 }
 
+void proc_compute_case(const state &s, expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np>1);
+  result c;
+  SafeCompute(pp[0], s, 0, c);
+  if (c.isNull() || c.isError()) {
+    // error stuff?
+    x = c;
+    return;
+  }
+  int i;
+  for (i=2; i<np; i++) {
+    result m;
+    SafeCompute(pp[i], s, 0, m);
+    if (m.isNormal()) if (m.ivalue == c.ivalue) {
+      // this is it!
+      SafeCompute(pp[i], s, 1, x);
+      return;
+    }
+  }
+  // still here?  use the default value
+  SafeCompute(pp[1], s, 0, x);
+}
+
+void proc_sample_case(Rng &r, const state &s, expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np>1);
+  result c;
+  SafeSample(pp[0], r, s, 0, c);
+  if (c.isNull() || c.isError()) {
+    // error stuff?
+    x = c;
+    return;
+  }
+  int i;
+  for (i=2; i<np; i++) {
+    result m;
+    SafeSample(pp[i], r, s, 0, m);
+    if (m.isNormal()) if (m.ivalue == c.ivalue) {
+      // this is it!
+      SafeSample(pp[i], r, s, 1, x);
+      return;
+    }
+  }
+  // still here?  use the default value
+  SafeSample(pp[1], r, s, 0, x);
+}
+
+
 const char* casedoc = "Match the value <c> with one of the <c:v> pairs. If matched, return the matching v; Otherwise return the default value <dv>.";
 
 void AddCase(type it, type t, PtrTable *fns)
@@ -1458,11 +1509,19 @@ void AddCase(type it, type t, PtrTable *fns)
   internal_func *ca = NULL;
   switch (it) {
     case INT:
-      	ca = new internal_func(it, "case", compute_case, NULL, pl, 3, 2, casedoc);
+      	ca = new internal_func(t, "case", compute_case, NULL, pl, 3, 2, casedoc);
 	break;
     
     case RAND_INT:
       	ca = new internal_func(t, "case", NULL, sample_case, pl, 3, 2, casedoc);
+	break;
+
+    case PROC_INT:
+      	ca = new internal_func(t, "case", proc_compute_case, NULL, pl, 3, 2, casedoc);
+	break;
+    
+    case PROC_RAND_INT:
+      	ca = new internal_func(t, "case", NULL, proc_sample_case, pl, 3, 2, casedoc);
 	break;
 
     default:
@@ -1531,6 +1590,8 @@ void InitBuiltinFunctions(PtrTable *t)
   // Case
   for (i=FIRST_SIMPLE; i<=PH_REAL; i++)		AddCase(INT, i, t);
   for (i=RAND_BOOL; i<=RAND_REAL; i++)		AddCase(RAND_INT, i, t);
+  for (i=PROC_BOOL; i<=PROC_PH_REAL; i++)	AddCase(PROC_INT, i, t);
+  for (i=PROC_RAND_BOOL; i<=PROC_RAND_REAL; i++)AddCase(PROC_RAND_INT, i, t);
   for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCase(INT, i, t);
 
   // Misc
