@@ -133,3 +133,28 @@ for (real x in {1.5..3.6..1.0,  1..3}) {
   print(x, " ");
 }
 
+print("\nMulti-dimensional loops\n\n");
+
+for (int i in {1..9}, int j in {1..9}) {
+  print("(", i, ",", j, ")");
+}
+print("\n\n");
+
+for (int i in {1..4}, int j in {1..4}, int k in {1..4}) {
+  print("(", i, ",", j, ",", k, ")");
+}
+print("\n\n");
+
+print("\nMulti-dimensional non-rectangular loops\n\n");
+
+for (int i in {1..9}, int j in {i..9}) {
+  print("(", i, "<=", j, ")");
+}
+print("\n\n");
+
+for (int i in {1..9}, int j in {i..9}, int k in {j..9}) {
+  print("(", i, "<=", j, "<=", k, ")");
+}
+print("\n\n");
+
+
