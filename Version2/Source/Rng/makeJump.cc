@@ -33,7 +33,8 @@ int main(int argc, char** argv)
   Verbose.SwitchDisplay(out);
   Verbose.Activate();
 
-  Verbose << "/*\n\n\t This file generated automatically by makeJump\n\n*/\n\n";
+  Verbose << "/*\n\n\t This file generated automatically by makeJump\n";
+  Verbose << "\tbased on jump multiplier " << argv[1] << "\n\n*/\n\n";
 
   Verbose << "#ifndef JUMP_MATRIX\n#define JUMP_MATRIX\n\n";
   
