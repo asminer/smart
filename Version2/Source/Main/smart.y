@@ -553,7 +553,7 @@ model_stmt
   Output << "Reducing model_stmt : for_header LBRACE model_stmts RBRACE\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = BuildForLoop($1, $3);
 }
         ;
 

@@ -1668,8 +1668,24 @@ expr* FindIdent(char* name)
 expr* BuildArrayCall(const char* n, void* ind)
 {
   List <expr> *foo = (List <expr> *)ind;
-  // find symbol table entry
-  array* entry = (array*) (Arrays->FindName(n));
+  array* entry = NULL;
+  // Check model first
+  if (ModelInternal) {
+    expr* match = (expr*) ModelInternal->FindName(n);
+    if (match) {
+      entry = dynamic_cast<array*>(match);
+      if (!entry) {
+	// The model has a variable of this name, but it's not an array
+	Error.Start(filename, lexer.lineno());
+	Error << "Variable " << n << " is not an array";
+	Error.Stop();
+	delete foo;
+	return ERROR;
+      }
+    }
+  }
+  // Check symbol table
+  if (NULL==entry) entry = (array*) (Arrays->FindName(n));
   if (NULL==entry) {
     Error.Start(filename, lexer.lineno());
     Error << "Unknown array " << n;
@@ -2247,7 +2263,6 @@ statement* BuildModelStmt(model *m, void* block)
 void* AddModelVariable(void* list, char* ident)
 {
   DCASSERT(ModelInternal);
-  DCASSERT(ModelExternal);
   if (NULL==ident) return list;
   if (WithinFor()) {
     Error.Start(filename, lexer.lineno());
@@ -2256,7 +2271,7 @@ void* AddModelVariable(void* list, char* ident)
     return list;
   }
   // Is the name used already?
-  if (ModelInternal->ContainsName(ident)||ModelExternal->ContainsName(ident)) {
+  if (ModelInternal->ContainsName(ident)) {
     Error.Start(filename, lexer.lineno());
     Error << "Duplicate identifier " << ident << " within model";
     Error.Stop();
@@ -2291,7 +2306,6 @@ void* AddModelArray(void* list, char* ident, void* indexlist)
 {
   DCASSERT(WithinModel()); 
   DCASSERT(ModelInternal);
-  DCASSERT(ModelExternal);
   if (NULL==ident) return list;
   if (!WithinFor()) {
     Error.Start(filename, lexer.lineno());
@@ -2300,7 +2314,7 @@ void* AddModelArray(void* list, char* ident, void* indexlist)
     return list;
   }
   // Is the name used already?
-  if (ModelInternal->ContainsName(ident)||ModelExternal->ContainsName(ident)) {
+  if (ModelInternal->ContainsName(ident)) {
     Error.Start(filename, lexer.lineno());
     Error << "Duplicate identifier " << ident << " within model";
     Error.Stop();
