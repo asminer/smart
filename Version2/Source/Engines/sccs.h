@@ -50,4 +50,26 @@ int 	ComputeSCCs(digraph *g, unsigned long* sccmap);
 */
 int	ComputeTSCCs(digraph *g, unsigned long* sccmap);
 
+/**	Compute sccs that contain loops.
+	Differs from ordinary sccs in that single-state sccs
+	are not counted unless they have a self-loop.
+	Used for computing ctl operator EG.
+
+	@param 	g	The graph.
+	@param	sccmap	An array of dimension #nodes.
+			ON INPUT:
+			For node k in the graph to be considered,
+			sccmap[k] must be 0; to be not considered,
+			sccmap[k] must be more than 2*#nodes.
+			ON OUTPUT:
+			sccmap[k] is 0 if node k is its own scc with no loop,
+                        between 1 and #sccs if it is within an scc that loops,
+			assuming node k was to be considered.
+
+	@return		The number of "looping" sccs
+			or -1 if there was some error.
+*/
+int	ComputeLoopedSCCs(digraph *g, unsigned long* sccmap);
+
+
 #endif

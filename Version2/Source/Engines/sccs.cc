@@ -144,6 +144,8 @@ void FwdArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
 	    Output << i << " to " << j << "\n";
 	    Output.flush();
 #endif
+	    // no sense checking remaining arcs
+            break;
           }
           edge = g->next[edge];
         } while (edge!=g->row_pointer[i]);
@@ -162,6 +164,8 @@ void FwdArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
 	    Output << i << " to " << j << "\n";
 	    Output.flush();
 #endif
+	    // no sense checking remaining arcs
+            break;
           }
         }
         // end of static graph portion
@@ -260,4 +264,87 @@ int 	ComputeTSCCs(digraph *g, unsigned long* sccmap)
   delete[] visit_stack;
   return termcount;
 }
+
+
+
+
+void FindLoops(digraph *g, unsigned long* sccmap, int* hasloop)
+{
+  // For each state
+  for (int i=0; i<g->NumNodes(); i++) {
+    // Get the class for this state
+    int c = sccmap[i] - g->NumNodes();
+    // Already known to have a loop?
+    if (hasloop[c]) continue; 
+    // check all outgoing arcs from this state
+    if (g->IsDynamic()) {
+        // Dynamic graph, traverse circular list
+        int edge = g->row_pointer[i];
+        if (edge>=0) do {
+          int j = g->column_index[edge];
+	  // there is an arc from i to j
+	  if (sccmap[j] == sccmap[i]) {
+	    // loop within this class
+	    hasloop[c] = 1;
+            break; // no sense checking the rest of the arcs
+          }
+          edge = g->next[edge];
+        } while (edge!=g->row_pointer[i]);
+        // end of dynamic graph portion
+    } else { 
+        // Static graph
+        int edge = scc_graph->row_pointer[i];
+        for (; edge<scc_graph->row_pointer[i+1]; edge++) {
+          int j = scc_graph->column_index[edge];
+	  // there is an arc from i to j
+	  if (sccmap[j] == sccmap[i]) {
+	    // loop within this class
+	    hasloop[c] = 1;
+            break; // no sense checking the rest of the arcs
+          }
+        }
+        // end of static graph portion
+    } // if dynamic graph
+  } // for i
+}
+
+int 	ComputeLoopedSCCs(digraph *g, unsigned long* sccmap)
+{
+#ifdef DEBUG_SCCS
+  Output << "Computing looped strongly connected components\n";
+#endif
+  scc_graph = g;
+  visit_stack = new int[g->NumNodes()];
+  visit_id = 0;
+  scc_val = sccmap;
+  scc_count = g->NumNodes();
+  int i;
+  for (i=0; i<g->NumNodes(); i++) 
+    if (0==sccmap[i]) scc_visit(i);
+
+  // sccs are numbered #states ... 2*#states-1 (at most)
+  // figure out which sccs have arcs to their own scc.
+  // We'll store the results in the stack array: 1 means this 
+  // class has an arc to itself.
+
+  for (i=0; i<g->NumNodes(); i++) visit_stack[i] = 0;
+
+  FindLoops(g, sccmap, visit_stack);
+  
+  // renumber classes.  
+  // first, compact the looped sccs to have numbers 1,2,3,...
+  int termcount = 0;
+  for (i=0; i<g->NumNodes(); i++) if (visit_stack[i]) {
+    termcount++;
+    visit_stack[i] = termcount;
+  }
+  // next, renumber the scc mapping array.
+  for (i=0; i<g->NumNodes(); i++) 
+	sccmap[i] = visit_stack[sccmap[i]-g->NumNodes()];
+
+  // done!
+  delete[] visit_stack;
+  return termcount;
+}
+
 
