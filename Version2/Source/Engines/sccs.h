@@ -28,7 +28,7 @@
 	@return		The number of sccs, or -1 if there was some error.
 			(Any errors possible?)
 */
-int 	ComputeSCCs(const digraph *g, unsigned long* sccmap);
+int 	ComputeSCCs(const digraph *g, int* sccmap);
 
 // other functions that could be useful
 
@@ -48,7 +48,7 @@ int 	ComputeSCCs(const digraph *g, unsigned long* sccmap);
 	@return		The number of terminal sccs (recurrent classes), 
 			or -1 if there was some error.
 */
-int	ComputeTSCCs(const digraph *g, unsigned long* sccmap);
+int	ComputeTSCCs(const digraph *g, int* sccmap);
 
 /**	Compute sccs that contain loops.
 	Differs from ordinary sccs in that single-state sccs
@@ -69,7 +69,7 @@ int	ComputeTSCCs(const digraph *g, unsigned long* sccmap);
 	@return		The number of "looping" sccs
 			or -1 if there was some error.
 */
-int	ComputeLoopedSCCs(const digraph *g, unsigned long* sccmap);
+int	ComputeLoopedSCCs(const digraph *g, int* sccmap);
 
 
 #endif

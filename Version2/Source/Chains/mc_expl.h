@@ -66,7 +66,7 @@ struct classified_chain {
   int* blockstart;
 
   /// Use to renumber states to their classified index
-  unsigned long* renumber;
+  int* renumber;
 
   /** The block-diagonal, "self" matrix.
       TT, R1, R2, ..., Rn, and A all stored in one.
@@ -202,7 +202,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output.flush();
 #endif
   // build state to tscc mapping
-  renumber = new unsigned long[states];
+  renumber = new int[states];
   int i;
   for (i=0; i<states; i++) renumber[i] = 0; 
   int count = 1+ComputeTSCCs(graph, renumber); 

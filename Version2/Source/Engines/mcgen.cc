@@ -185,6 +185,11 @@ void SparseCTMC(state_model *dsm)
 
   // "generate" initial probability vector here...
 
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating CTMC; classifying and compressing\n";
+    Verbose.flush();
+  }
+
   // transpose if necessary
   if (!MatrixByRows->GetBool()) mc->Transpose();
 
