@@ -21,14 +21,14 @@
 			sccmap[k] must be 0; to be not considered,
 			sccmap[k] must be more than 2*#nodes.
 			ON OUTPUT:
-			sccmap[k] is between #nodes+1 and 2*#nodes if
+			sccmap[k] is between #nodes+1 and #nodes+#sccs if
 			this was a node to be considered;
 			all nodes within the same scc will have the same value.
 
 	@return		The number of sccs, or -1 if there was some error.
 			(Any errors possible?)
 */
-int 	ComputeSCCs(digraph *g, unsigned int* sccmap);
+int 	ComputeSCCs(digraph *g, unsigned long* sccmap);
 
 // other functions that could be useful
 

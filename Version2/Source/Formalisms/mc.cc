@@ -105,8 +105,8 @@ class markov_model : public model {
   char** statenames;
   int numstates;
   sparse_vector <float> *initial;
-  labeled_digraph <float> *wdgraph;
 public:
+  labeled_digraph <float> *wdgraph;
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
 
@@ -246,15 +246,13 @@ void compute_mc_init(expr **pp, int np, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
-  model *m = dynamic_cast<model*> (pp[0]);
-  DCASSERT(m);
+
+  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  DCASSERT(mc);
 
 #ifdef DEBUG_MC
-  Output << "\tInside init for model " << m << "\n";
+  Output << "\tInside init for model " << mc << "\n";
 #endif
-
-  markov_model *mc = dynamic_cast<markov_model*>(m);
-  DCASSERT(mc);
 
   x.Clear();
   int i;
@@ -283,7 +281,7 @@ void compute_mc_init(expr **pp, int np, result &x)
   }
 
 #ifdef DEBUG_MC
-  Output << "\tExiting init for model " << m << "\n";
+  Output << "\tExiting init for model " << mc << "\n";
   Output.flush();
 #endif
 
@@ -315,15 +313,13 @@ void compute_mc_arcs(expr **pp, int np, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
-  model *m = dynamic_cast<model*> (pp[0]);
-  DCASSERT(m);
+  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  DCASSERT(mc);
 
 #ifdef DEBUG_MC
-  Output << "\tInside arcs for model " << m << "\n";
+  Output << "\tInside arcs for model " << mc << "\n";
 #endif
 
-  markov_model *mc = dynamic_cast<markov_model*>(m);
-  DCASSERT(mc);
 
   x.Clear();
   int i;
@@ -359,7 +355,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
   }
 
 #ifdef DEBUG_MC
-  Output << "\tExiting arcs for model " << m << "\n";
+  Output << "\tExiting arcs for model " << mc << "\n";
   Output.flush();
 #endif
 
@@ -439,6 +435,47 @@ void Add_instate(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
+// ********************************************************
+// *                          test                        *
+// ********************************************************
+
+#include "../Engines/sccs.h"
+
+// A hook for testing things
+void compute_mc_test(expr **pp, int np, result &x)
+{
+  DCASSERT(np==2);
+  DCASSERT(pp);
+  markov_model *mc = dynamic_cast<markov_model*> (pp[0]);
+  DCASSERT(mc);
+
+  Output << "Computing sccs for Markov chain " << mc << "\n";
+  Output.flush();
+  digraph *foo = mc->wdgraph;
+  unsigned long* mapping = new unsigned long[foo->NumNodes()];
+  int i;
+  for (i=0; i<foo->NumNodes(); i++) mapping[i] = 0;
+
+  x.ivalue = ComputeSCCs(foo, mapping); 
+
+  Output << "Done, node vector is: [";
+  Output.PutArray(mapping, foo->NumNodes());
+  Output << "]\n";
+  Output.flush();
+  
+  delete[] mapping;
+}
+
+void Add_test(PtrTable *fns)
+{
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(MARKOV, "m");
+  pl[1] = new formal_param(BOOL, "dummy");
+  internal_func *p = new internal_func(INT, "test",
+	compute_mc_test, NULL, pl, 2, NULL);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -458,5 +495,7 @@ void InitMCModelFuncs(PtrTable *t)
   Add_arcs(t);
 
   Add_instate(t);
+
+  Add_test(t);
 }
 
