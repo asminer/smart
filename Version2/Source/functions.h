@@ -16,6 +16,11 @@
   We also have arrays and models, but those are 
   defined elsewhere.
 
+Thoughts: 
+  Don't derive arrays from functions, do something separate.
+  Don't use formal parameters for arrays, do something new.
+  (That should clean up the function interface a bit.)
+
  */
 
 #include "exprs.h"
@@ -35,21 +40,25 @@
  
     Note: if the name is NULL, we assume that the parameter is "hidden".
 
-   TBD: Try to set up passed results directly in terms of the stack
-        (to avoid having to copy...)
 */  
 
 class formal_param : public symbol {
-  /** For passed parameters.
-      This is a pointer to the proper position in the run-time stack.
-   */
-  result* pass;  
   /** Do we have a default?  
       This is necessary because the default might be NULL!
    */
   bool hasdefault;
   /// Default values (for user-defined functions)
   expr* deflt;
+  /** Used for user-defined functions.
+      The address of the pointer to the "current"
+      spot in the run-time stack.
+   */
+  result** stack;
+  /** Used for user-defined functions.
+      The offset in the stack to use
+      when computing our value.
+   */
+  int offset;
 public:
   formal_param(const char* fn, int line, type t, char* n);
   virtual ~formal_param();
@@ -59,7 +68,14 @@ public:
   virtual expr* Substitute(int i);
   virtual void show(ostream &s) const;
 
-  inline void SetPass(result *p) { pass = p; }
+  /** Used to "link" the formal params to 
+      a user-defined function.
+      (This initializes the stack pointer and offset.)
+   */
+  inline void LinkUserFunc(result** s, int o) {
+    stack = s;
+    offset = o;
+  }
   inline void SetDefault(expr *d) { deflt = d; hasdefault = true; }
   inline bool HasDefault() const { return hasdefault; }
   inline expr* Default() const { return deflt; }
@@ -131,9 +147,6 @@ public:
     rp = repeat_point;
   }
 
-  /// Overrided by Arrays.
-  virtual bool IsArray() const;
-
   /** Overridden in derived classes.
       Should we use our own technique to check the passed parameter types?
       Usually this will be false.
@@ -196,7 +209,7 @@ public:
 
 class user_func : public function {
 private:
-  int prev_stack_ptr;
+  result* stack_ptr;
 protected:
   expr* return_expr;
 public:

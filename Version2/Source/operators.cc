@@ -14,6 +14,7 @@
 
 //@{
 
+//#define DEBUG_DEEP
 
 // ******************************************************************
 // ******************************************************************
@@ -586,9 +587,15 @@ void int_add::Compute(int i, result &x)
   result l;
   result r;
   x.Clear();
+#ifdef DEBUG_DEEP
+  cout << "Adding " << left << " to " << right << "\n";
+#endif
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
-
+#ifdef DEBUG_DEEP
+  cout << "Got " << left << " = " << l.ivalue << "\n";
+  cout << "Got " << right << " = " << r.ivalue << "\n";
+#endif
   if (l.error) {
     // some option about error tracing here, I guess...
     x.error = l.error;
@@ -628,6 +635,9 @@ void int_add::Compute(int i, result &x)
   }
   // ordinary integer addition
   x.ivalue = l.ivalue + r.ivalue;
+#ifdef DEBUG_DEEP
+  cout << "So their sum is " << x.ivalue << "\n";
+#endif
 }
 
 // ******************************************************************
@@ -659,8 +669,15 @@ void int_sub::Compute(int i, result &x)
   result l;
   result r;
   x.Clear();
+#ifdef DEBUG_DEEP
+  cout << "Adding " << left << " to " << right << "\n";
+#endif
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
+#ifdef DEBUG_DEEP
+  cout << "Got " << left << " = " << l.ivalue << "\n";
+  cout << "Got " << right << " = " << r.ivalue << "\n";
+#endif
 
   if (l.error) {
     // some option about error tracing here, I guess...
@@ -701,6 +718,9 @@ void int_sub::Compute(int i, result &x)
   }
   // ordinary integer subtraction
   x.ivalue = l.ivalue - r.ivalue;
+#ifdef DEBUG_DEEP
+  cout << "So their difference is " << x.ivalue << "\n";
+#endif
 }
 
 // ******************************************************************
@@ -922,7 +942,15 @@ void int_gt::Compute(int i, result &x)
   result r;
   if (ComputeOpnds(l, r, x)) {
     // normal comparison
+#ifdef DEBUG_DEEP
+    cout << "Comparing " << left << " and " << right << "\n";
+    cout << "Got " << left << " = " << l.ivalue << "\n";
+    cout << "Got " << right << " = " << r.ivalue << "\n";
+#endif
     x.bvalue = (l.ivalue > r.ivalue);
+#ifdef DEBUG_DEEP
+    cout << "So " << left << " > " << right << " is " << x.bvalue << "\n";
+#endif
   }
 }
 

@@ -30,8 +30,10 @@ int ParamStackSize;
 formal_param::formal_param(const char* fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
-  pass = NULL;
+  hasdefault = false;
   deflt = NULL;
+  stack = NULL;
+  offset = 0;
 }
 
 formal_param::~formal_param()
@@ -42,15 +44,17 @@ formal_param::~formal_param()
 void formal_param::Compute(int i, result &x)
 {
   DCASSERT(i==0);
-  DCASSERT(pass);
-  x = *pass;
+  DCASSERT(stack);
+  DCASSERT(stack[0]);   
+  x = stack[0][offset];  
 }
 
 void formal_param::Sample(long &, int i, result &x)
 {
   DCASSERT(i==0);
-  DCASSERT(pass);
-  x = *pass;
+  DCASSERT(stack);
+  DCASSERT(stack[0]);   
+  x = stack[0][offset];  
 }
 
 expr* formal_param::Substitute(int i)
@@ -94,11 +98,6 @@ expr* function::Substitute(int i)
   return NULL; 
 }
 
-bool function::IsArray() const
-{
-  return false;
-}
-
 bool function::HasSpecialTypechecking() const 
 { 
   return false; 
@@ -129,8 +128,13 @@ bool function::LinkParams(expr **pp, int np, ostream &error) const
 
 user_func::user_func(const char* fn, int line, type t, char* n, formal_param **pl, int np) : function (fn, line, t, n, pl, np, np+1)
 {
-  prev_stack_ptr = -1;
   return_expr = NULL;
+  stack_ptr = NULL;
+  // link the parameters
+  int i;
+  for (i=0; i<np; i++) {
+    pl[i]->LinkUserFunc(&stack_ptr, i+2);
+  }
 }
 
 user_func::~user_func()
@@ -146,92 +150,39 @@ void user_func::Compute(expr **pp, int np, result &x)
   }
 
   // first... make sure there is enough room on the stack to save params
-  if (ParamStackTop+np+3 > ParamStackSize) {
+  if (ParamStackTop+np+2 > ParamStackSize) {
     StackOverflowPanic();
     // still alive?
     x.error = CE_StackOverflow;
     return;
   }
 
-  int mystacktop = ParamStackTop;
-  ParamStackTop += 3+np;  
+  int oldstacktop = ParamStackTop;  
+  result* oldstackptr = stack_ptr;
+  result* newstackptr = ParamStack + ParamStackTop;
 
-  // set up our stack
-  ParamStack[mystacktop  ].other  = this;  // ptr to function
-  ParamStack[mystacktop+1].ivalue = prev_stack_ptr;
-  prev_stack_ptr = mystacktop;
-  ParamStack[mystacktop+2].ivalue = np;
+  // Set up our stack
+  newstackptr[0].other = this;  // ptr to function
+  newstackptr[1].ivalue = np;
+  ParamStackTop += 2+np;  
 
   // Compute parameters, place on stack
   int i;
-  for (i=0; i<np; i++) ParamStack[mystacktop+3+i].error = CE_Uncomputed;
-  for (i=0; i<np; i++) {
-    pp[i]->Compute(0, ParamStack[mystacktop+3+i]);
-    parameters[i]->SetPass(ParamStack + mystacktop + 3 + i); 
-  }
+  for (i=0; i<np; i++) newstackptr[2+i].error = CE_Uncomputed;
+  for (i=0; i<np; i++) pp[i]->Compute(0, newstackptr[2+i]); 
 
   // "call" function
+  stack_ptr = newstackptr;
   return_expr->Compute(0, x);
 
-  // Restore old parameters, if any
-  prev_stack_ptr = ParamStack[mystacktop+1].ivalue;
-  if (prev_stack_ptr>=0) {
-    DCASSERT(ParamStack[prev_stack_ptr].other == this);
-    int oldnp = ParamStack[prev_stack_ptr+2].ivalue;
-    for (i=0; i<oldnp; i++) {
-      parameters[i]->SetPass(ParamStack + prev_stack_ptr + 3 + i);
-    }
-  }
   // pop off stack
-  ParamStackTop = mystacktop;
+  ParamStackTop = oldstacktop;
+  stack_ptr = oldstackptr;
 }
 
 void user_func::Sample(long &s, expr **pp, int np, result &x) 
 {
-  if (NULL==return_expr) {
-    x.null = true;
-    return;
-  }
-
-  // first... make sure there is enough room on the stack to save params
-  if (ParamStackTop+np+3 > ParamStackSize) {
-    StackOverflowPanic();
-    // still alive?
-    x.error = CE_StackOverflow;
-    return;
-  }
-
-  int mystacktop = ParamStackTop;
-  ParamStackTop += 3+np;  
-
-  // set up our stack
-  ParamStack[mystacktop  ].other  = this;  // ptr to function
-  ParamStack[mystacktop+1].ivalue = prev_stack_ptr;
-  prev_stack_ptr = mystacktop;
-  ParamStack[mystacktop+2].ivalue = np;
-
-  // Compute parameters, place on stack
-  int i;
-  for (i=0; i<np; i++) ParamStack[mystacktop+3+i].error = CE_Uncomputed;
-  for (i=0; i<np; i++) {
-    pp[i]->Sample(s, 0, ParamStack[mystacktop+3+i]);
-    parameters[i]->SetPass(ParamStack + mystacktop + 3 + i); 
-  }
-
-  // "call" function
-  return_expr->Sample(s, 0, x);
-
-  // Restore old parameters, if any
-  prev_stack_ptr = ParamStack[mystacktop+1].ivalue;
-  if (prev_stack_ptr>=0) {
-    DCASSERT(ParamStack[prev_stack_ptr].other == this);
-    int oldnp = ParamStack[prev_stack_ptr+2].ivalue;
-    for (i=0; i<oldnp; i++) {
-      parameters[i]->SetPass(ParamStack + prev_stack_ptr + 3 + i);
-    }
-  }
-  // pop off stack
-  ParamStackTop = mystacktop;
+  cout << "Sample not yet done.  (Copy from compute, eventually.)\n";
 }
 
 void user_func::show(ostream &s) const
@@ -389,10 +340,10 @@ void DumpRuntimeStack(ostream &s)
   while (ptr<ParamStackTop) {
     function *f = (function*) ParamStack[ptr].other; 
     s << "\t" << f << "\n";
-    int np = ParamStack[ptr+2].ivalue;
+    int np = ParamStack[ptr+1].ivalue;
     s << "\t#parameters: " << np << "\n";
     // Eventually... display the parameters
-    ptr += 3+np;
+    ptr += 2+np;
   }
 }
 
