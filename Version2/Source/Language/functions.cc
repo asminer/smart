@@ -200,6 +200,34 @@ int function::GetRewardParameter() const
   return -1;
 }
 
+void function::Compute(expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal function computation";
+  Internal.Stop();
+}
+
+void function::Sample(Rng &, expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal function sample";
+  Internal.Stop();
+}
+
+void function::Compute(const state &, expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal function computation";
+  Internal.Stop();
+}
+
+void function::Sample(Rng &, const state &, expr **, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal function sample";
+  Internal.Stop();
+}
+
 bool function::IsUndocumented() const
 {
   // default
@@ -406,20 +434,6 @@ engine_wrapper::engine_wrapper(type t, char *n, engine_func e,
   reward = rew;
 }
 
-void engine_wrapper::Compute(expr **, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal engine wrapper computation";
-  Internal.Stop();
-}
-
-void engine_wrapper::Sample(Rng &, expr **, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal engine wrapper function sample";
-  Internal.Stop();
-}
-
 void engine_wrapper::show(OutputStream &s) const
 {
   if (NULL==Name()) return; // Hidden?
@@ -474,6 +488,7 @@ internal_func::internal_func(type t, char *n,
 {
   compute = c;
   sample = s;
+  comp_proc = NULL;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -488,6 +503,21 @@ internal_func::internal_func(type t, char *n,
 {
   compute = c;
   sample = s;
+  comp_proc = NULL;
+  documentation = d;
+  typecheck = NULL;
+  linkparams = NULL;
+  isForward = false;
+  hidedocs = false;
+}
+
+internal_func::internal_func(type t, char *n, 
+   compute_proc c, formal_param **pl, int np, const char* d) 
+ : function(NULL, -1, t, n, pl, np)
+{
+  compute = NULL;
+  sample = NULL;
+  comp_proc = c;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -517,6 +547,18 @@ void internal_func::Sample(Rng &seed, expr **pp, int np, result &x)
     return;
   }
   sample(seed, pp, np, x);
+}
+
+void internal_func::Compute(const state &s, expr **pp, int np, result &x)
+{
+  if (NULL==comp_proc) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Illegal internal function computation";
+    Internal.Stop();
+    x.setNull();
+    return;
+  }
+  comp_proc(s, pp, np, x);
 }
 
 void internal_func::show(OutputStream &s) const
@@ -605,6 +647,8 @@ public:
   virtual void ClearCache();
   virtual void Compute(int i, result &x);
   virtual void Sample(Rng &, int i, result &x);
+  virtual void Compute(const state &, int i, result &x);
+  virtual void Sample(Rng &, const state &, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -658,6 +702,20 @@ void fcall::Sample(Rng &s, int i, result &x)
   DCASSERT(0==i);
   DCASSERT(func);
   func->Sample(s, pass, numpass, x);
+}
+
+void fcall::Compute(const state &m, int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(func);
+  func->Compute(m, pass, numpass, x);
+}
+
+void fcall::Sample(Rng &s, const state &m, int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(func);
+  func->Sample(s, m, pass, numpass, x);
 }
 
 expr* fcall::Substitute(int i)

@@ -286,8 +286,10 @@ public:
   */
   virtual int GetRewardParameter() const;
 
-  virtual void Compute(expr **, int np, result &x) = 0;
-  virtual void Sample(Rng &, expr **, int np, result &x) = 0;
+  virtual void Compute(expr **, int np, result &x);
+  virtual void Sample(Rng &, expr **, int np, result &x);
+  virtual void Compute(const state &, expr **, int np, result &x);
+  virtual void Sample(Rng &, const state &, expr **, int np, result &x);
 
   /** Return true if this function should NOT be documented.
       (Probably because it is a research function.)
@@ -373,9 +375,6 @@ public:
   engine_wrapper(type t, char *n, engine_func e, 
                 formal_param **pl, int np, int reward, const char* doc);
 
-  virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(Rng &, expr **, int np, result &x);
-
   virtual void show(OutputStream &s) const;
 
   void HideDocs();
@@ -420,6 +419,14 @@ typedef bool (*link_func) (expr** p, int np);
  */
 typedef void (*compute_func) (expr **pp, int np, result &x);
 
+/** For computing internal proc functions.
+    Use the following declaration:
+
+    void MyFunc(const state &, expr **pp, int np, result &x);
+
+ */
+typedef void (*compute_proc) (const state &, expr **pp, int np, result &x);
+
 /** For sampling internal functions.
     Use the following declaration:
 
@@ -436,13 +443,13 @@ typedef void (*sample_func) (Rng &seed, expr **pp, int np, result &x);
     
       For distributions, define a similar function for creating a sample.
     
-      To do still: add fancy type checking and engines.
 */  
 
 class internal_func : public function {
 protected:
   compute_func compute;
   sample_func sample;
+  compute_proc comp_proc;
   const char* documentation;
   bool hidedocs;
   typecheck_func typecheck;
@@ -473,8 +480,20 @@ public:
   internal_func(type t, char *n, compute_func c, sample_func s, 
                 formal_param **pl, int np, int rp, const char* doc);
 
+  /** Constructor.
+      @param t	The type.
+      @param n	The name.
+      @param c	The C-function to call to compute the (proc-style) result.
+      @param pl	The parameter list.
+      @param np	The number of formal parameters (no repetition).
+      @param doc Documentation
+   */
+  internal_func(type t, char *n, compute_proc c,
+                formal_param **pl, int np, const char* doc);
+
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(Rng &, expr **, int np, result &x);
+  virtual void Compute(const state &, expr **, int np, result &x);
 
   virtual void show(OutputStream &s) const;
 

@@ -290,12 +290,12 @@ void compute_mc_init(expr **pp, int np, result &x)
   x.setNull();
 }
 
-void Add_init(type mctype, PtrTable *fns)
+void Add_init(PtrTable *fns)
 {
   const char* helpdoc = "Sets the initial state(s) with probabilities for a Markov Chain model.";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(mctype, "m");
+  pl[0] = new formal_param(MARKOV, "m");
   type *tl = new type[2];
   tl[0] = STATE;
   tl[1] = REAL;
@@ -366,12 +366,12 @@ void compute_mc_arcs(expr **pp, int np, result &x)
   x.setNull();
 }
 
-void Add_arcs(type mctype, PtrTable *fns)
+void Add_arcs(PtrTable *fns)
 {
   const char* helpdoc = "Adds a set of arcs to the Markov chain";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(mctype, "m");
+  pl[0] = new formal_param(MARKOV, "m");
   type *tl = new type[3];
   tl[0] = STATE;
   tl[1] = STATE;
@@ -383,6 +383,62 @@ void Add_arcs(type mctype, PtrTable *fns)
   p->setWithinModel();
   InsertFunction(fns, p);
 }
+
+// ********************************************************
+// *                        instate                       *
+// ********************************************************
+
+// A Proc function!
+void compute_mc_instate(const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(np==2);
+  DCASSERT(pp);
+  /*
+  model *m = dynamic_cast<model*> (pp[0]);
+  DCASSERT(m);
+  */
+  // debugging
+  Output << "Checking instate\n";
+  Output.flush();
+
+  x.Clear();
+  SafeCompute(pp[1], 0, x);
+
+  // error checking here...
+
+  Output << "\tgot param: ";
+  PrintResult(Output, INT, x);
+  Output << "\n";
+  Output.flush();
+
+  Output << "\tcurrent state: ";
+  PrintResult(Output, INT, m.Read(0));
+  Output << "\n";
+  Output.flush();
+
+  // error checking here for m
+
+  if (x.ivalue == m.Read(0).ivalue) {
+    x.bvalue = true;
+  } else {
+    x.bvalue = false;
+  }
+}
+
+void Add_instate(PtrTable *fns)
+{
+  const char* helpdoc = "Returns true if the Markov chain is in the specified state";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(MARKOV, "m");
+  pl[1] = new formal_param(STATE, "s");
+  internal_func *p = new internal_func(PROC_BOOL, "instate", 
+	compute_mc_instate,
+	pl, 2, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -398,14 +454,9 @@ model* MakeMarkovChain(type t, char* id, formal_param **pl, int np,
 
 void InitMCModelFuncs(PtrTable *t)
 {
-  Add_init(MARKOV, t);
-  Add_arcs(MARKOV, t);
-  /*
-  Add_init(DTMC, t);
-  Add_init(CTMC, t);
+  Add_init(t);
+  Add_arcs(t);
 
-  Add_arcs(DTMC, t);
-  Add_arcs(CTMC, t);
-  */
+  Add_instate(t);
 }
 
