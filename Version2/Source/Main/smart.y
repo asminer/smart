@@ -34,8 +34,8 @@
   statement* stmt;
   array* Array;
   user_func* Func;
-  /*
   option *Option;
+  /*
   expr_set *setexpr;
   List <local_iterator> *itrs;
   List <statement> *stmts;
@@ -66,8 +66,8 @@ formal_params formal_indexes pos_params named_params indexes
 %type <stmt> statement defn_stmt
 %type <Array> array_header
 %type <Func> func_header
-/*
 %type <Option> opt_header
+/*
 %type <setexpr> set_expr set_elems set_elem 
 %type <itrs> iterator iterators for_header 
 %type <stmts> statement statements decl_stmt defn_stmt model_stmt model_stmts
@@ -156,14 +156,14 @@ statement
 #ifdef PARSE_TRACE
   cout << "Reducing statement : opt_header topexpr ENDPND\n";
 #endif
-  $$ = NULL;
+  $$ = BuildOptionStatement($1, $2);
 }
         |       opt_header IDENT ENDPND
 {
 #ifdef PARSE_TRACE
   cout << "Reducing statement : opt_header IDENT ENDPND\n";
 #endif
-  $$ = NULL;
+  $$ = BuildOptionStatement($1, $2);
 }       
         |       opt_header LBRACE tupleidlist RBRACE ENDPND
 {
@@ -228,6 +228,7 @@ opt_header
 #ifdef PARSE_TRACE
   cout << "Reducing opt_header : POUND IDENT\n";
 #endif
+  $$ = BuildOptionHeader($2);
 }
 	;
 

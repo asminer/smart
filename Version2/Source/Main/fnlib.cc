@@ -74,8 +74,11 @@ void computehelp(expr **pp, int np, result &x)
     if (NULL==strstr(o->Name(), help_search_string)) continue;
     if (o->IsUndocumented()) continue;
     o->ShowHeader(Output);
-    Output << "\n\t";
-    Output << o->GetDocumentation() << "\n\n";
+    Output << "\n";
+    Output << "\t" << o->GetDocumentation() << "\n";
+    Output << "\tLegal values: ";
+    o->ShowRange(Output);
+    Output << "\n";
   }
 
   // return something...

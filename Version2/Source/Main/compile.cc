@@ -804,6 +804,78 @@ expr* BuildNamedFunctionCall(const char *, void*)
 
 // ==================================================================
 // |                                                                |
+// |                             Options                            | 
+// |                                                                |
+// ==================================================================
+
+option* BuildOptionHeader(char* name)
+{
+  option* answer = FindOption(name);
+  if (NULL==answer) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown option " << name;
+    Error.Stop();
+  }
+  return answer;
+}
+
+statement* BuildOptionStatement(option* o, expr* v)
+{
+  if (NULL==o) return NULL;
+  if (NULL==v) return NULL;
+  // check types
+  if (!Promotable(v->Type(0), o->Type())) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Option " << o;
+    if (o->Type()==VOID) {
+      // this is an enumerated option
+      Error << " is enumerated";
+    } else {
+      // type mismatch
+      Error << " expects type " << GetType(o->Type());
+    }
+    Error.Stop();
+    return NULL;
+  }
+
+  expr *e = MakeTypecast(v, o->Type(), filename, lexer.lineno());
+
+  statement *ans = MakeOptionStatement(o, e, filename, lexer.lineno());
+#ifdef COMPILE_DEBUG
+  Output << "Built option statement: " << ans << "\n";
+#endif
+  return ans;
+}
+
+statement* BuildOptionStatement(option* o, char* n)
+{
+  if (NULL==o) return NULL;
+  if (NULL==n) return NULL;
+
+  if (o->Type()!=VOID) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Option " << o << " expects type " << GetType(o->Type());
+    Error.Stop();
+    return NULL;
+  }
+
+  const option_const *v = o->FindConstant(n);
+  if (NULL==v) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal value " << n << " for option " << o;
+    Error.Stop();
+    return NULL;
+  }
+
+  statement *ans = MakeOptionStatement(o, v, filename, lexer.lineno());
+#ifdef COMPILE_DEBUG
+  Output << "Built option statement: " << ans << "\n";
+#endif
+  return ans;
+}
+
+// ==================================================================
+// |                                                                |
 // |                                                                |
 // |                    Initialize compiler data                    | 
 // |                                                                |

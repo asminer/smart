@@ -45,10 +45,13 @@ void InitBase()
 
   // initialize options
   const char* vdoc = "Should SMART turn on the verbose output stream";
-  option *verbose = MakeActionOption("Verbose", vdoc, SetVerbose, GetVerbose);
+  const char* range = "[false, true]";
+  option *verbose 
+    = MakeActionOption(BOOL, "Verbose", vdoc, range, SetVerbose, GetVerbose);
   AddOption(verbose);
 
   const char* rdoc = "Should SMART turn on the report output stream";
-  option *report = MakeActionOption("Report", rdoc, SetReport, GetReport);
+  option *report 
+    = MakeActionOption(BOOL, "Report", rdoc, range, SetReport, GetReport);
   AddOption(report);
 }

@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	types.cc	exprs.cc	infinity.cc	\
+	exprs.cc	infinity.cc	\
 	sets.cc 	stmts.cc \
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \

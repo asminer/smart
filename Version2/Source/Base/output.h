@@ -34,7 +34,7 @@ public:
 
 inline OutputStream& operator<< (OutputStream& s, bool data) 
 {
-  s.Put(data);
+  if (data) s.Put("true"); else s.Put("false");
   return s;
 }
 

@@ -15,7 +15,6 @@
   deal with simple types: bool, int, real, string.
  */
 
-#include "types.h"
 #include "../Base/api.h"
 
 //#define SHARE_DEBUG

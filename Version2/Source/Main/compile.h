@@ -247,6 +247,29 @@ expr* BuildNamedFunctionCall(const char* n, void* namedparams);
 
 // ==================================================================
 // |                                                                |
+// |                             Options                            | 
+// |                                                                |
+// ==================================================================
+
+/** Find option with specified name.
+    If none exists, print an error message and return NULL.
+*/
+option* BuildOptionHeader(char* name);
+
+/** Build an option statement.
+    Does type checking on the option and the value.
+    On error, displays an error message and returns NULL.
+*/
+statement* BuildOptionStatement(option* o, expr* v);
+
+/** Build an (enumerated) option statement.
+    Does type checking on the option and the value.
+    On error, displays an error message and returns NULL.
+*/
+statement* BuildOptionStatement(option* o, char* n);
+
+// ==================================================================
+// |                                                                |
 // |                                                                |
 // |                    Initialize compiler data                    | 
 // |                                                                |

@@ -12,36 +12,62 @@
 #define OPTIONS_H
 
 #include "output.h"
+#include "types.h"
+
+/** Structure for option constants.
+    Used by enumeration options;
+    e.g., #Solver JACOBI.
+    (JACOBI is an option_const).
+*/
+struct option_const {
+  /// Name of the constant.
+  const char* name;
+  /// Documentation.
+  const char* doc;
+  // handy...
+  option_const(const char* n, const char* d) { name = n; doc = d; }
+};
 
 /**  Base class for options.
      Derived classes are "hidden" in options.cc.
 */
 class option {
+  type mytype;
   const char* name;
   const char* documentation;
   bool hidden;
 public:
-  option(const char* n, const char* d);
+  option(type t, const char* n, const char* d);
   virtual ~option();
-  inline void Hide() { hidden = true; }
   inline const char* Name() const { return name; }
-  inline bool IsUndocumented() const { return hidden; }
+  inline type Type() const { return mytype; }
   inline const char* GetDocumentation() const { return documentation; }
 
-  // provided in derived classes
+  inline bool IsUndocumented() const { return hidden; }
+  inline void Hide() { hidden = true; }
 
+  inline void show(OutputStream &s) const { s << "#" << name; }
+
+  // provided in derived classes
   virtual void SetValue(bool b, const char* file, int line);
   virtual void SetValue(int n, const char* file, int line);
   virtual void SetValue(double r, const char* file, int line);
   virtual void SetValue(char *c, const char* file, int line);
+  virtual void SetValue(const option_const*, const char* file, int line);
+
+  virtual const option_const* FindConstant(const char* name) const;
 
   virtual bool GetBool() const;
   virtual int GetInt() const;
   virtual double GetReal() const;
   virtual char* GetString() const;
+  virtual const option_const* GetEnum() const;
 
   virtual void ShowHeader(OutputStream &s) const = 0;
+  virtual void ShowRange(OutputStream &s) const = 0;
 };
+
+OutputStream& operator<< (OutputStream &s, option* o);
 
 /** For action options, use the following declaration:
     void MyActionGet(void *x);
@@ -60,7 +86,8 @@ typedef void (*action_set) (void *x, const char* f, int l);
 // **************************************************************************
 
 option* MakeEnumOption(const char* name, const char* doc, 
-			int deflt, int range);
+		       option_const** values, int numvalues,
+		       const option_const* deflt);
 
 option* MakeBoolOption(const char* name, const char* doc, bool deflt);
 
@@ -72,8 +99,8 @@ option* MakeRealOption(const char* name, const char* doc,
 
 option* MakeStringOption(const char* name, const char* doc, char* deflt);
 
-option* MakeActionOption(const char *name, const char* doc,
-			action_set s, action_get g);
+option* MakeActionOption(type t, const char *name, const char* doc, 
+			const char* range, action_set s, action_get g);
 
 
 void StartOptions();

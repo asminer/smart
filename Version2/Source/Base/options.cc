@@ -10,8 +10,15 @@
 // *                             option methods                             *
 // **************************************************************************
 
-option::option(const char *n, const char* d)
+OutputStream& operator<< (OutputStream &s, option *o)
 {
+  if (NULL==o) s << "(null)"; else o->show(s);
+  return s;
+}
+
+option::option(type t, const char *n, const char* d)
+{
+  mytype = t;
   name = n;
   documentation = d;
   hidden = false;
@@ -49,6 +56,18 @@ void option::SetValue(char*, const char *f, int l)
   Internal.Stop();
 }
 
+void option::SetValue(const option_const*, const char *f, int l)
+{
+  Internal.Start(__FILE__, __LINE__, f, l);
+  Internal << "Bad call to option::SetValue(option_const*)";
+  Internal.Stop();
+}
+
+const option_const* option::FindConstant(const char*) const
+{
+  return NULL;
+}
+
 bool option::GetBool() const
 {
   Internal.Start(__FILE__, __LINE__);
@@ -81,6 +100,14 @@ char* option::GetString() const
   return NULL;
 }
 
+const option_const* option::GetEnum() const
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Bad call to option::GetEnum()";
+  Internal.Stop();
+  return NULL;
+}
+
 
 // **************************************************************************
 // *                            boolean  options                            *
@@ -89,12 +116,17 @@ char* option::GetString() const
 class bool_opt : public option {
   bool value;
 public:
-  bool_opt(const char* n, const char* d, bool v) : option(n,d) { value = v; }
+  bool_opt(const char* n, const char* d, bool v)
+   : option(BOOL, n, d) { value = v; }
   virtual ~bool_opt() { } 
   virtual void SetValue(bool b, const char *, int) { value = b; }
   virtual bool GetBool() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
-    s << "#" << Name() << " " << value;
+    show(s);
+    s << " " << value;
+  }
+  virtual void ShowRange(OutputStream &s) const {
+    s << "[false, true]\n";
   }
 };
 
@@ -112,8 +144,8 @@ class int_opt : public option {
   int min;
   int value;
 public:
-  int_opt(const char* n, const char* d, int v, int mx, int mn) : option(n,d) 
-  { value = v; max = mx; min = mn; }
+  int_opt(const char* n, const char* d, int v, int mn, int mx)
+   : option(INT, n ,d) { value = v; max = mx; min = mn; }
   virtual ~int_opt() { }
   virtual void SetValue(int b, const char* f, int l) { 
     if (min<max) {
@@ -128,9 +160,14 @@ public:
   }
   virtual int GetInt() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
-    s << "#" << Name() << " ";
-    if (min<max) s << "[" << min << ".." << max << "] ";
-    s << value;
+    show(s);
+    s << " " << value;
+  }
+  virtual void ShowRange(OutputStream &s) const {
+    if (min<max)
+      s << "[" << min << ".." << max << "]\n";
+    else
+      s << "any integer\n";
   }
 };
 
@@ -149,8 +186,8 @@ class real_opt : public option {
   double min;
   double value;
 public:
-  real_opt(const char* n, const char* d, double v, double mx, double mn)
-   : option(n,d) { value = v; max = mx; min = mn; }
+  real_opt(const char* n, const char* d, double v, double mn, double mx)
+   : option(REAL, n, d) { value = v; max = mx; min = mn; }
   ~real_opt() { } 
   virtual void SetValue(double b, const char* f, int l) { 
     if (min<max) {
@@ -165,9 +202,14 @@ public:
   }
   virtual double GetReal() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
-    s << "#" << Name() << " ";
-    if (min<max) s << "[" << min << ".." << max << "] ";
-    s << value;
+    show(s);
+    s << " " << value;
+  }
+  virtual void ShowRange(OutputStream &s) const {
+    if (min<max)
+      s << "[" << min << ".." << max << "]\n";
+    else
+      s << "any real value\n";
   }
 };
 
@@ -185,16 +227,20 @@ option* MakeRealOption(const char* name, const char* doc,
 class string_opt : public option {
   char* value;
 public:
-  string_opt(const char* n, const char* d, char *v) : option(n,d) { value = v; }
+  string_opt(const char* n, const char* d, char *v)
+   : option(STRING, n, d) { value = v; }
   virtual ~string_opt() { delete[] value; }
   virtual void SetValue(char *v, const char*, int) { 
     delete[] value; value = v; 
   }
   virtual char* GetString() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
-    s << "#" << Name() << " ";
+    show(s);
     if (value) s << '"' << value << '"';
     else s << "null";
+  }
+  virtual void ShowRange(OutputStream &s) const {
+    s << "any string\n";
   }
 };
 
@@ -211,6 +257,7 @@ option* MakeStringOption(const char* name, const char* doc, char* v)
 class action_opt : public option {
   action_set Set; 
   action_get Get;
+  const char* ranges;
 protected:
   inline void SetVoid(void* x, const char *f, int l) {
     if (NULL==Set) {
@@ -231,8 +278,9 @@ protected:
     Get(x);
   }
 public:
-  action_opt(const char* n, const char* d, action_set s, action_get g)
-   : option(n,d) { Set = s; Get = g; }
+  action_opt(type t, const char* n, const char* d, const char* r, 
+             action_set s, action_get g)
+   : option(t,n,d) { Set = s; Get = g; ranges = r; }
   virtual ~action_opt() { }
   virtual void SetValue(bool x, const char* f, int l) { SetVoid(&x, f, l); }
   virtual void SetValue(int x, const char* f, int l) { SetVoid(&x, f, l); }
@@ -244,13 +292,14 @@ public:
   virtual double GetReal() { double b; Get(&b); return b; }
   virtual char* GetString() { char* b; Get(&b); return b; }
 
-  virtual void ShowHeader(OutputStream &s) const { s << "#" << Name(); }
+  virtual void ShowHeader(OutputStream &s) const { show(s); }
+  virtual void ShowRange(OutputStream &s) const { s << ranges << "\n"; }
 };
 
-option* MakeActionOption(const char* name, const char* doc, 
-			action_set s, action_get g)
+option* MakeActionOption(type t, const char* name, const char* doc, 
+                         const char* r, action_set s, action_get g)
 {
-  return new action_opt(name, doc, s, g);
+  return new action_opt(t, name, doc, r, s, g);
 }
 
 
@@ -258,12 +307,82 @@ option* MakeActionOption(const char* name, const char* doc,
 // *                              enum options                              *
 // **************************************************************************
 
-option* MakeEnumOption(const char*, const char*, int d, int r)
+class enum_opt : public option {
+  option_const** possible;
+  int numpossible;
+  const option_const* value;
+public:
+  enum_opt(const char* n, const char* d, option_const** p, int np, 
+  		const option_const* v)
+  : option(VOID, n, d) { possible = p; numpossible = np; value = v; }
+  virtual ~enum_opt() { delete[] possible; }
+  virtual void SetValue(const option_const* v, const char* f, int l) {
+    value = v;
+  }
+  virtual const option_const* GetEnum() const {
+    return value;
+  }
+  virtual void ShowHeader(OutputStream &s) const {
+    DCASSERT(value);
+    show(s);
+    s << " " << value->name;
+  }
+  // These are a bit more interesting...
+  virtual const option_const* FindConstant(const char* name) const;
+  virtual void ShowRange(OutputStream &s) const;
+};
+
+/** Find the appropriate value for this enumerated name.
+    If the name is bad (i.e., not found), we return NULL.
+*/
+const option_const* enum_opt::FindConstant(const char* name) const
 {
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Enumerated options not done yet\n";
-  Internal.Stop();
+  // binary search
+  int low = 0;
+  int high = numpossible;
+  while (low < high) {
+    int mid = (low+high)/2;
+    int cmp = strcmp(possible[mid]->name, name);
+    if (0==cmp) return possible[mid];
+    if (cmp>0) {
+      high = mid;
+    } else {
+      low = mid+1;
+    }
+  }
+  // not found
   return NULL;
+}
+
+void enum_opt::ShowRange(OutputStream &s) const
+{
+  s << "\n";
+  int i;
+  for (i=0; i<numpossible; i++) {
+    s << "\t" << possible[i]->name << "\t" << possible[i]->doc << "\n";
+  }
+}
+
+option* MakeEnumOption(const char* name, const char* doc, 
+                       option_const** values, int numv,
+		       const option_const* deflt)
+{
+  DCASSERT(values);
+#ifdef DEVELOPMENT_CODE
+  // Check that the values are sorted
+  DCASSERT(values[0]);
+  int i;
+  for (i=1; i<numv; i++) {
+    DCASSERT(values[i]);
+    int cmp = strcmp(values[i]->name, values[i-1]->name);
+    if (cmp<=0) {
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Enumerated values for option " << name << " are not sorted!\n";
+      Internal.Stop();
+    }
+  }
+#endif
+  return new enum_opt(name, doc, values, numv, deflt);
 }
 
 

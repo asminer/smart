@@ -6,6 +6,7 @@
 
 #include "output.h"
 #include "errors.h"
+#include "types.h"
 #include "options.h"
 
 void InitBase();
