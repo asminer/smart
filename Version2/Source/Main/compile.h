@@ -116,14 +116,6 @@ void* AddAggregate(void *x, expr *b);
 */
 expr* BuildAggregate(void* x);
 
-/** 	Build an array "call".
-	@param	n	The name of the array
-	@param	ind	list of indexes
-	@return NULL on error (e.g., no array with that name); 
-		otherwise the array call expression.
-*/
-expr* BuildArrayCall(const char* n, void* ind);
-
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -201,6 +193,14 @@ array* BuildArray(type t, char* n, void* list);
     @return	Function call or NULL.
 */
 expr* FindIdent(char* name);
+
+/** 	Build an array "call".
+	@param	n	The name of the array
+	@param	ind	list of indexes
+	@return NULL on error (e.g., no array with that name); 
+		otherwise the array call expression.
+*/
+expr* BuildArrayCall(const char* n, void* ind);
 
 // ==================================================================
 // |                                                                |

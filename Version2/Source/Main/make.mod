@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	compile.cc api.cc
+	compile.cc tables.cc fnlib.cc api.cc
 
 GENOBJS = lex.yy.o smart.tab.o
 

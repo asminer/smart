@@ -1480,6 +1480,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 
 void Optimize(int a, expr* &e)
 {
+  if (NULL==e) return;
   int i;
   // First... try to split us into sums
   int sumcount = e->GetSums(a, NULL, 0);

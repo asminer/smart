@@ -4,15 +4,23 @@
 #ifndef TABLES_H
 #define TABLES_H
 
-#include "../list.h"
 #include "../splay.h"
-#include <string.h>
+#include "../Language/api.h"
 
 /**
     A symbol table class.
     Basically, a splay tree, where the data is a pair (name, ptr).
     For overloading, ptr should be a list of items.
 */
+
+
+/** To traverse a symbol table, define a function:
+
+    void MyFunc(void *x)
+
+    which will be called for each symbol table node (splayitem).
+*/
+typedef void (*tablevisit) (void *ptr);
 
 class PtrTable {
 public:
@@ -22,42 +30,29 @@ public:
     splayitem(const char *n, void *x) { name = n; ptr = x; }
   };
 protected:
+  void Traverse(PtrSplay::node *root, tablevisit visit) {
+	if (NULL==root) return;
+	Traverse(root->left, visit);
+	visit(root->data);
+  	Traverse(root->right, visit);
+  }
+protected:
   SplayWrap <splayitem> *splaywrapper; 
   PtrSplay::node *root;
 public:
-  PtrTable() {
-    splaywrapper = new SplayWrap <splayitem>;
-    root = NULL;
-  }
+  PtrTable();
   ~PtrTable();
-  void* FindName(const char* n) {
-    splayitem tmp(n, NULL);
-    int foo = splaywrapper->Splay(root, &tmp);
-    if (foo!=0) return NULL;
-    splayitem *bar = (splayitem*) root->data;
-    return bar->ptr;
-  }
-  void AddNamePtr(const char* n, void *p) {
-    splayitem *key = new splayitem(n, p);
-    int foo = splaywrapper->Splay(root, key);
-    DCASSERT(foo!=0);
-    PtrSplay::node *x = new PtrSplay::node;
-    x->data = key;
-    if (foo>0) {
-      // root > x
-      x->right = root; x->left = NULL;
-    } else {
-      // root < x
-      x->left = root; x->right = NULL;
-    }
-    root = x;
-  }
+  void* FindName(const char* n);
+  void AddNamePtr(const char* n, void *p);
+  void Traverse(tablevisit visit) { Traverse(root, visit); }
 };
 
-int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b)
-{
-  return strcmp(a->name, b->name);
-}
+int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
+
+/**
+    Add function f to the list of functions with that name, to table t.
+*/
+void InsertFunction(PtrTable *t, function *f);
 
 #endif
 

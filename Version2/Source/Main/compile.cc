@@ -1,16 +1,36 @@
 
 // $Id$
 
-#include "../defines.h"
-#include "compile.h"
 #include "../Base/api.h"
+#include "compile.h"
 #include "../list.h"
 #include "tables.h"
+#include "fnlib.h"
 
 #include <stdio.h>
 #include <FlexLexer.h>
 
 #define COMPILE_DEBUG
+
+/// Dump a function header.
+void DumpHeader(OutputStream &s, function *f)
+{
+  s << f;
+  formal_param **fp;
+  int np;
+  int rp;
+  f->GetParamList(fp, np, rp);  
+  if (np<1) return;
+  s << "(";
+  int i;
+  for (i=0; i<np; i++) {
+    if (rp==i) s << "...";
+    s << fp[i];
+    if (i<np-1) s << ",";
+  }
+  if (rp>=0) s << ",...";
+  s << ")";
+}
 
 
 // ==================================================================
@@ -458,7 +478,6 @@ void* AddFormalIndex(void* list, char* n)
 
 void* AddParameter(void* list, expr* e)
 {
-  if (NULL==e) return list;
   List <expr> *foo = (List <expr> *)list;
   if (NULL==foo) 
     foo = new List <expr> (256);
@@ -565,12 +584,32 @@ expr* FindIdent(char* name)
 // |                                                                |
 // ==================================================================
 
+#ifdef COMPILE_DEBUG
+void ShowSymbols(void *x)
+{
+  PtrTable::splayitem *foo = (PtrTable::splayitem *)x;
+  Output << foo->name << "\n";
+  List <function> *bar = (List <function> *)foo->ptr;
+  int i;
+  for (i=0; i<bar->Length(); i++) {
+    Output << "\t";
+    DumpHeader(Output, bar->Item(i));
+    Output << "\n";
+  }
+}
+#endif
+
 void InitCompiler()
 {
   Iterators = new List <array_index> (256);
   Arrays = new PtrTable();
+  PtrTable *Builtins = new PtrTable();
+  InitBuiltinFunctions(Builtins); 
 #ifdef COMPILE_DEBUG
   cout << "Initialized compiler data\n";
+  cout << "Builtin Functions:\n";
+  Builtins->Traverse(ShowSymbols);
+  cout << "ready to rock.\n";
 #endif
 }
 

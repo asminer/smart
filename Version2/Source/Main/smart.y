@@ -55,9 +55,9 @@ NUL DEFAULT TYPE MODIF MODEL
 
 %type <Type_ID> type model_var_decl
 %type <Expr> topexpr expr term const_expr function_call model_call
-model_function_call set_expr set_elems set_elem index
+model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmt model_stmts
-formal_indexes indexes
+formal_indexes pos_params indexes
 %type <index> iterator
 %type <count> for_header iterators
 %type <stmt> statement defn_stmt
@@ -69,7 +69,6 @@ formal_indexes indexes
 %type <itrs> iterator iterators for_header 
 %type <stmts> statement statements decl_stmt defn_stmt model_stmt model_stmts
 %type <fpl> formal_params formal_param
-%type <ppl> pos_params pos_param indexes index
 %type <npl> named_params named_param 
 %type <tuple_ids> tupleidlist
 */
@@ -925,12 +924,14 @@ pos_params
 #ifdef PARSE_TRACE
   cout << "Reducing pos_params : pos_params COMMA pos_param\n";
 #endif
+  $$ = AddParameter($1, $3);
 }
 	|	pos_param
 {
 #ifdef PARSE_TRACE
   cout << "Reducing pos_params : pos_param\n";
 #endif
+  $$ = AddParameter(NULL, $1);
 }
 	;
 
@@ -940,6 +941,7 @@ pos_param
 #ifdef PARSE_TRACE
   cout << "Reducing pos_param : expr\n";
 #endif
+  $$ = $1;
 }
 	|	DEFAULT
 {

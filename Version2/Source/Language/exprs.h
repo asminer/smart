@@ -505,14 +505,20 @@ private:
   char* name;
   /// The symbol type.
   type mytype;
+  /// If the symbol is an aggregate, then the type is an array.
+  type* aggtype;
+  /// Length of aggregate, or 1 for "normal" types.
+  int agglength;
   /// Should we substitute our value?  Default: true.
   bool substitute_value;
 public:
 
   symbol(const char* fn, int line, type t, char* n);
+  symbol(const char* fn, int line, type *t, int tlen, char* n);
   virtual ~symbol();
 
   virtual type Type(int i) const;
+  virtual int NumComponents() const;
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   
   inline const char* Name() const { return name; }

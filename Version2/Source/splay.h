@@ -15,6 +15,7 @@
 #ifndef SPLAY_H
 #define SPLAY_H
 
+#include "defines.h"
 #include "stack.h"
 
 class PtrSplay {

@@ -230,7 +230,7 @@ public:
 /** For computing internal functions.
     Use the following declaration:
 
-    void MyFunc(pos\_param **pp, int np, result &x);
+    void MyFunc(expr **pp, int np, result &x);
 
  */
 typedef void (*compute_func) (expr **pp, int np, result &x);
@@ -238,7 +238,7 @@ typedef void (*compute_func) (expr **pp, int np, result &x);
 /** For sampling internal functions.
     Use the following declaration:
 
-    void MyFunc(long &seed, pos\_param **pp, int np, result &x);
+    void MyFunc(long &seed, expr **pp, int np, result &x);
 
  */
 typedef void (*sample_func) (long &seed, expr **pp, int np, result &x);

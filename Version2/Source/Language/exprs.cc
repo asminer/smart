@@ -278,9 +278,25 @@ void assoc::assoc_show(ostream &s, const char* op) const
 symbol::symbol(const char* fn, int line, type t, char* n) : expr (fn, line)
 {
   mytype = t;
+  aggtype = NULL;
+  agglength = 1;
   name = n;
   substitute_value = true;
 }
+
+symbol::symbol(const char* fn, int line, type *t, int tlen, char* n) 
+ : expr (fn, line)
+{
+  mytype = VOID;
+  aggtype = t;
+  agglength = tlen;
+  DCASSERT(tlen>1);
+  DCASSERT(t);
+  name = n;
+  substitute_value = true;
+}
+
+
 
 symbol::~symbol()
 {
@@ -289,8 +305,14 @@ symbol::~symbol()
 
 type symbol::Type(int i) const
 {
-  DCASSERT(i==0);
-  return mytype;
+  DCASSERT(i<agglength);
+  if (NULL==aggtype) return mytype;
+  return aggtype[i];
+}
+
+int symbol::NumComponents() const
+{
+  return agglength;
 }
 
 int symbol::GetSymbols(int i, symbol **syms, int N, int offset) 
