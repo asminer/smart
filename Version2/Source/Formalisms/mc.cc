@@ -143,6 +143,7 @@ class markov_model : public model {
   model_var** states;
   int numstates;
   sparse_vector <float> *initial;
+  sparse_vector <float> *diags;
   labeled_digraph <float> *wdgraph;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
@@ -173,12 +174,14 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   states = NULL;
   numstates = 0;
   initial = NULL;
+  diags = NULL;
   wdgraph = NULL;
 }
 
 markov_model::~markov_model()
 {
   delete initial;
+  delete diags;
   delete wdgraph;
 }
 
@@ -198,6 +201,34 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
 
 void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
 {
+  if (fromstate==tostate) {
+    if (Type(0)==CTMC) {
+      Warning.Start(fn, line);
+      Warning << "Ignoring self-arc to state " << statelist->Item(tostate);
+      Warning << " in CTMC " << Name();
+      Warning.Stop();
+      return;
+    }
+    // For DTMCs, we need to save the diagonal but only until
+    // we have normalized the rows.
+    
+    // check if there is an existing self-arc
+    int p = diags->BinarySearchIndex(tostate);
+    if (p>=0) {
+      Warning.Start(fn, line);
+      Warning << "Summing duplicate self-arc to ";
+      Warning << statelist->Item(tostate);
+      Warning << " in DTMC " << Name();
+      Warning.Stop();
+      diags->value[p] += weight;
+    } else {
+      diags->SortedAppend(tostate, weight);
+    }
+    return;
+  }
+
+  // Not a diagonal, add to the graph/matrix
+
   DCASSERT(wdgraph);
   float f = weight;
   if (wdgraph->AddEdgeInOrder(fromstate, tostate, f) == wdgraph->NumEdges()-1) 
@@ -233,6 +264,7 @@ void markov_model::InitModel()
   states = NULL;
   numstates = 0;
   initial = new sparse_vector <float>(2);
+  diags = new sparse_vector <float>(2);
   wdgraph = new labeled_digraph <float>;
   wdgraph->ResizeNodes(4);
   wdgraph->ResizeEdges(4);
@@ -240,10 +272,40 @@ void markov_model::InitModel()
 
 void markov_model::FinalizeModel(result &x)
 {
+  DCASSERT((Type(0) == DTMC) || (Type(0) == CTMC));
+
   numstates = statelist->Length();
   states = statelist->MakeArray();
   delete statelist;
   statelist = NULL;
+
+  if (Type(0) == DTMC) {
+    // Normalize rows
+    DCASSERT(wdgraph->IsDynamic());
+    diags->Sort();  // should be sorted already...
+    int dnz = 0;
+    for (int s=0; s<numstates; s++) {
+      double total = 0.0;
+      if (dnz < diags->nonzeroes) 
+        if (diags->index[dnz] == s) {
+          total = diags->value[dnz];
+          dnz++;
+        }
+      int e = wdgraph->row_pointer[s];
+      if (e<0) continue;
+      do {
+        total += wdgraph->value[e];
+        e = wdgraph->next[e];
+      } while (e != wdgraph->row_pointer[s]);
+      DCASSERT(total > 0);
+      e = wdgraph->row_pointer[s];
+      do {
+        wdgraph->value[e] /= total;
+        e = wdgraph->next[e];
+      } while (e != wdgraph->row_pointer[s]);
+    }
+  } 
+
 #ifdef DEBUG_MC
   Output << "\tMC " << Name() << " has " << numstates << " states\n";
   int i;
@@ -255,6 +317,11 @@ void markov_model::FinalizeModel(result &x)
     Output << "\t" << states[initial->index[i]];
     Output << " : " << initial->value[i] << "\n"; 
   }
+  Output << "Markov chain diagonals:\n";
+  for (i=0; i<diags->NumNonzeroes(); i++) {
+    Output << "\t" << states[diags->index[i]];
+    Output << " : " << diags->value[i] << "\n"; 
+  }
   Output.flush();
   Output << "Markov chain itself:\n";
   for (i=0; i<numstates; i++) {
@@ -262,6 +329,9 @@ void markov_model::FinalizeModel(result &x)
     Output.flush();
   }
 #endif
+
+  delete diags;
+  diags = NULL;
 
   x.Clear();
   x.notFreeable();

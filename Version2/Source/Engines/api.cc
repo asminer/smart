@@ -43,7 +43,7 @@ void 	SolveSteadyInst(model *m, List <measure> *mlist)
 	aok = SimulateSteadyInst(m, mlist);
   else {
 	Internal.Start(__FILE__, __LINE__);
-	Internal << "Bad value for option  #SolutionType\n";
+	Internal << "Bad value for option  " << SolutionType << "\n";
  	Internal.Stop();
 	// won't get here
   } 

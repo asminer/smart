@@ -114,6 +114,9 @@ public:
     return newnumber < blockstart[1];
   }
   
+  inline int numStates() const { 
+    return states;
+  }
   inline int numTransient() const { 
     DCASSERT(blockstart);
     return blockstart[1]; 
@@ -384,6 +387,7 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
   free(graph->next);
   graph->next = NULL;
   graph->ResizeEdges(graph->num_edges);
+  graph->isDynamic = false;
 }
 
 template <class LABEL>

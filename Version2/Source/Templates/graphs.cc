@@ -117,7 +117,7 @@ void digraph::Defragment(int first_slot)
 {
   DCASSERT(IsDynamic());
 #ifdef DEBUG_GRAPH
-  Output << "Linked lists before degragment:\n";
+  Output << "Linked lists before defragment:\n";
   Output << "row_pointer: [";
   Output.PutArray(row_pointer, num_nodes);
   Output << "]\n";

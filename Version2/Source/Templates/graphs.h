@@ -17,7 +17,7 @@
 const int MAX_NODE_ADD = 4096;
 const int MAX_EDGE_ADD = 4096;
 
-#define DEBUG_GRAPH
+//#define DEBUG_GRAPH
 
 // ******************************************************************
 // *                                                                *
@@ -307,7 +307,22 @@ public:
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
 
+  template <class SUMLABELS>
+  void SumOutgoingEdges(SUMLABELS *sum) {
+    DCASSERT(IsStatic());
+    if (isTransposed) {
+      int stop = row_pointer[num_nodes];
+      for (int e = row_pointer[0]; e<stop; e++)
+        sum[column_index[e]] += value[e];
+    } else {
+      int e = row_pointer[0];
+      for (int r=0; r<num_nodes; r++)
+        for (; e<row_pointer[r+1]; e++)
+          sum[r] += value[e];
+    }
+  }
 };
+
 
 
 // ******************************************************************
