@@ -4,6 +4,7 @@
 #include "mc.h"
 
 #include "../Base/api.h"
+#include "../Base/memtrack.h"
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../States/reachset.h"
@@ -70,6 +71,7 @@ markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns,
 			markov_chain *theMC)
 : state_model(name, 1)
 {
+  ALLOC("markov_dsm", sizeof(markov_dsm));
   discrete = disc;
   statenames = sn;
   numstates = ns;
@@ -100,6 +102,7 @@ markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns,
 
 markov_dsm::~markov_dsm()
 {
+  FREE("markov_dsm", sizeof(markov_dsm));
   // nothing else to do...
 }
 
@@ -529,7 +532,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
   x.setNull();
 }
 
-void Add_arcs(PtrTable *fns)
+void Add_mc_arcs(PtrTable *fns)
 {
   const char* helpdoc = "Adds a set of arcs to the Markov chain";
 
@@ -727,7 +730,7 @@ model* MakeMarkovChain(type t, char* id, formal_param **pl, int np,
 void InitMCModelFuncs(PtrTable *t)
 {
   Add_init(t);
-  Add_arcs(t);
+  Add_mc_arcs(t);
 
   Add_instate(t);
   Add_transient(t);

@@ -4,6 +4,7 @@
 #include "dsm.h"
 
 #include "../States/reachset.h"
+#include "../Base/memtrack.h"
 
 /** @name dsm.cc
     @type File
@@ -29,6 +30,7 @@ OutputStream& operator<< (OutputStream &s, state_model *e)
 
 state_model::state_model(const char* n, int e)
 {
+  ALLOC("state_model", sizeof(state_model));
   name = n;
   statespace = NULL;
   events = e;
@@ -38,6 +40,7 @@ state_model::state_model(const char* n, int e)
 
 state_model::~state_model()
 {
+  FREE("state_model", sizeof(state_model));
   // Do NOT delete name, we are sharing it
   delete statespace;
   delete mc;

@@ -11,54 +11,62 @@
 // for memcpy
 #include <string.h>
 #include "../Base/errors.h"
+#include "../Base/memtrack.h"
 
-const int MAX_LIST_ADD = 4096;
+const int MAX_LIST_ADD = 1024;
 
-class PtrList {
-  void** data;
-  int size;
+
+template <class DATA>
+struct DataList {
+  DATA* data;
+  int alloc;
   int last;
-protected:
   void Resize(int newsize) {
-    void ** foo = (void**) realloc(data, newsize*sizeof(void*));
-    if (newsize && (NULL==foo)) OutOfMemoryError("List resize");
-    data = foo;
-    size = newsize;
+    data = (DATA*) realloc(data, newsize*sizeof(DATA));
+    if (newsize && (NULL==data)) OutOfMemoryError("List resize");
+    alloc = newsize;
   }
 public:
-  PtrList(int inits) {
+  DataList(int inits) {
+    ALLOC("DataList", sizeof(DataList));
     data = NULL;
     Resize(inits);
     last = 0;
   }
-  PtrList(void** d, int s, int l) {
-    data = d;
-    size = s;
-    last = l;
-  }
-  ~PtrList() {
+  ~DataList() {
+    FREE("DataList", sizeof(DataList));
     Resize(0);
   }
   inline int Length() const { return last; }
   inline void Pop() { if (last) last--; }
-  void** VCopy() const {
+  inline void AppendBlank() {
+    if (last>=alloc) Resize(MIN(2*alloc, alloc+MAX_LIST_ADD));
+    last++;
+  }
+  inline void Clear() { last = 0; }
+  DATA* CopyArray() const {
     if (0==last) return NULL;
-    void** thing = new void* [Length()];
-    memcpy(thing, data, last * sizeof(void*));
-    return thing;
-  };
-  /** Equivalent to Copy followed by Clear.
+    DATA* c = new DATA[last]; 
+    memcpy(c, data, last * sizeof(DATA));
+    return c;
+  }
+  /** Equivalent to CopyArray followed by Clear.
       Since this trashes our copy, this should be used
       when we were going to delete the original anyway.
   */
-  void** VMakeArray() {
+  DATA* CopyAndClearArray() {
     if (0==last) return NULL;
     Resize(last);
-    void **ret = data;
-    size = last = 0;
+    DATA* a = data;
     data = NULL;
-    return ret;
+    alloc = last = 0;
+    return a;
   }
+};
+
+class PtrList : public DataList <void*> {
+public:
+  PtrList(int inits) : DataList <void*> (inits) { }
 
   inline void* VItem(int n) const { 
     CHECK_RANGE(0, n, last);
@@ -75,7 +83,7 @@ public:
   void VInsertAt(int n, void* x) {
     CHECK_RANGE(0, n, 1+last);
     DCASSERT(data);
-    if (last >= size) Resize(MIN(2*size, size+MAX_LIST_ADD));
+    if (last >= alloc) Resize(MIN(2*alloc, alloc+MAX_LIST_ADD));
     for (int i = last; i>n; i--) {
       data[i] = data[i-1];
     }
@@ -84,15 +92,15 @@ public:
   }
 
   void VAppend(void* x) {
-    if (last>=size) Resize(MIN(2*size, size+MAX_LIST_ADD));
+    if (last>=alloc) Resize(MIN(2*alloc, alloc+MAX_LIST_ADD));
     data[last] = x;
     last++;
   }
 
   void VAppend(PtrList *x) {
     if (x) {
-      while (last + x->last >= size) size*=2;
-      Resize(size);
+      while (last + x->last >= alloc) alloc*=2;
+      Resize(alloc);
       // risky....
       memcpy(data+last, x->data, x->last * sizeof(void*));
       last += x->last;
@@ -100,18 +108,14 @@ public:
     }
   }
 
-  inline void Clear() {
-    last = 0;
-  }
 };
 
 template <class DATA> 
 class List : public PtrList {
 public:
   List(int size) : PtrList(size) {} 
-  List(DATA** a, int size, int last) : PtrList((void**)a, size, last) { }
-  inline DATA** Copy() const { return (DATA **)(VCopy()); }
-  inline DATA** MakeArray() { return (DATA **)(VMakeArray()); }
+  inline DATA** Copy() const { return (DATA **)(CopyArray()); }
+  inline DATA** MakeArray() { return (DATA **)(CopyAndClearArray()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(VItem(n)); }
   inline void Append(DATA *x) { VAppend(x); }
   inline void Append(List <DATA> *x) { VAppend(x); }

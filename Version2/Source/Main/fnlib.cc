@@ -370,7 +370,7 @@ void compute_read_string(expr **pp, int np, result &x)
 
 void AddReadString(PtrTable *fns)
 {
-  const char* helpdoc = "Prompt for and read a string of at most <length> characters. The string is read from the input prompt.";
+  const char* helpdoc = "Prompt for and read a string of at most <length> characters. The string is read from the input stream.";
 
   formal_param **fp = new formal_param*[2];
   fp[0] = new formal_param(STRING, "prompt");

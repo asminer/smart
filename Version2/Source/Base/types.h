@@ -130,7 +130,7 @@ bool Castable(type t1, type t2);
 /// Returns true if the type is a model
 inline bool IsModelType(type t)
 {
-  return (t >= FIRST_MODEL) && (t < LAST_MODEL);
+  return (t >= FIRST_MODEL) && (t <= LAST_MODEL);
 }
 
 /// Returns true if the given type matches the template

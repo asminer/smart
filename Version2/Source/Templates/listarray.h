@@ -170,6 +170,7 @@ public:
       DATA* bar = (DATA *) realloc(value, new_items*sizeof(DATA));
       if (new_items && (NULL==bar)) OutOfMemoryError("Lists resize");
       value = bar;
+      items_alloc = new_items;
     }
   }
 
@@ -186,6 +187,23 @@ public:
     value[num_items] = v;
     AppendToCircularList(listno, num_items);
     num_items++;
+  }
+
+  int AddItemInOrder(int listno, const DATA &v) {
+    // Sanity checks
+    DCASSERT(IsDynamic());
+    CHECK_RANGE(0, listno, num_lists);
+    // enlarge if necessary
+    if (num_items >= items_alloc) 
+	ResizeItems(items_alloc+1024);
+    DCASSERT(items_alloc > num_items);
+    // fix a new edge
+    value[num_items] = v;
+    // add it to the list
+    int spot = InsertInOrderedCircularList(listno, num_items);
+    if (spot==num_items) num_items++;
+    else value[spot] += v;
+    return spot;
   }
 
   void Defragment(int first_slot);
@@ -205,6 +223,37 @@ public:
 
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
+
+protected:
+  /// Insert in ordered circular list i
+  inline int InsertInOrderedCircularList(int i, int ptr) {
+    if (list_pointer[i] < 0) {
+      // empty list
+      return next[ptr] = list_pointer[i] = ptr;
+    } 
+    // not empty
+    int prev = list_pointer[i];
+    if (value[ptr] > value[prev]) {
+      // New item goes at the end
+      next[ptr] = next[prev];
+      return next[prev] = list_pointer[i] = ptr;
+    }
+    // Find the spot for this edge
+    while (1) {
+      int curr = next[prev];
+      if (value[curr] > value[ptr]) {
+	// goes here
+  	next[ptr] = curr;
+	next[prev] = ptr;
+	return ptr;
+      }
+      if (value[curr] == value[ptr]) {
+	// duplicate edge, bail
+	return curr;
+      }
+      prev = curr;
+    } // while 1
+  }
 };
 
 

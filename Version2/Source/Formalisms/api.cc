@@ -8,6 +8,7 @@
 
 // formalisms:
 #include "mc.h"
+#include "spn.h"
 
 // generic model functions:
 #include "modelfuncs.h"
@@ -21,9 +22,7 @@ model* MakeNewModel(const char* fn, int line, type t, char* name, formal_param
     	return MakeMarkovChain(t, name, pl, np, fn, line);
 
     case SPN:
-    	Output << "SPN not implemented yet\n";
-	Output.flush();
-	return NULL;
+	return MakePetriNet(t, name, pl, np, fn, line);
 
   }
   
@@ -54,6 +53,7 @@ bool CanDeclareType(type modeltype, type vartype)
 // Symbol tables
 PtrTable GenericModelFuncs;
 PtrTable MCModelFuncs;
+PtrTable PNModelFuncs;
 
 List <function> *FindModelFunctions(type modeltype, const char* n)
 {
@@ -68,6 +68,9 @@ List <function> *FindModelFunctions(type modeltype, const char* n)
     case CTMC:
     		return FindFunctions(&MCModelFuncs, n);
 	
+    case SPN:
+		return FindFunctions(&PNModelFuncs, n);
+
     // bail out
     default:
     	return NULL;
@@ -88,7 +91,7 @@ void InitModels()
 
   // Deal with formalism specifics
   InitMCModelFuncs(&MCModelFuncs);
-
+  InitPNModelFuncs(&PNModelFuncs);
   // New formalisms here...
 }
 
@@ -108,6 +111,10 @@ void HelpModelFuncs()
   // Traverse Markov chain formalism
   EnclosingModel = DTMC;
   MCModelFuncs.Traverse(ShowModelDocs);
+
+  // Traverse PN formalism
+  EnclosingModel = SPN;
+  PNModelFuncs.Traverse(ShowModelDocs);
   
   // New formalisms here...
 }

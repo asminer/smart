@@ -789,11 +789,12 @@ void fcall::show(OutputStream &s) const
 {
   if (func->Name()==NULL) return;  // Hidden?
   s << func->Name();
-  if (0==numpass) return;
+  int start = (func->isWithinModel()) ? 1 : 0;
+  if (numpass <= start) return;
   s << "(";
   int i;
-  for (i=0; i<numpass; i++) {
-    if (i) s << ", ";
+  for (i=start; i<numpass; i++) {
+    if (i>start) s << ", ";
     s << pass[i];
   }
   s << ")";

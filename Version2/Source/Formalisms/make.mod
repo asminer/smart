@@ -7,7 +7,7 @@
 
 SOURCES = \
 	dsm.cc	modelfuncs.cc	\
-	mc.cc	\
+	mc.cc	spn.cc		\
 	api.cc	
 
 ALLOBJS = $(SOURCES:.cc=.o) 
