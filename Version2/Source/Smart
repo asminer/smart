@@ -1,0 +1,18 @@
+#!/bin/csh
+
+#
+# $Id$
+#
+# Builds the appropriate development version of SMART
+# based on the environment variable SMART_PLATFORM
+#
+
+set ok = `env | grep "SMART_PLATFORM" | wc -c`
+if ($ok) then
+  echo Using platform: $SMART_PLATFORM
+else
+  echo Please set environment variable SMART_PLATFORM
+  exit
+endif
+
+../$SMART_PLATFORM/smart $argv
