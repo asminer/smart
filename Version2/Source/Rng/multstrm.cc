@@ -1,6 +1,8 @@
 
 #include "multstrm.h"
 
+//#define CHECK_CACHE
+
 #ifdef EXPLICIT
 
 bigmatrix::bigmatrix(int n)
@@ -226,31 +228,6 @@ DATA* myhash<DATA>::Insert(DATA *m)
   return m;
 }
 
-/*
-template <class DATA>
-bool myhash<DATA>::Remove(DATA *m)
-{
-  // if (count < hashsizes[size_index-1]) Resize(-1);
-  int h = m->Signature(Size());
-  hashnode *ptr;
-  hashnode *prev = NULL;
-  for (ptr = table[h]; ptr; ptr=ptr->next) {
-    if (ptr->data == m) {
-      if (prev) {  
-	prev->next = ptr->next;
-      } else {
-	table[h] = ptr->next;
-      }
-      count--;
-      node_pile->FreeObject(ptr);
-      return true;
-    }
-    prev = ptr;
-  } // for
-  // not there
-  return false;
-}
-*/
 
 // ------------------------------------------------------------------
 //   Global vars.  Initialized below.
@@ -291,9 +268,6 @@ inline bool Stale(bitmatrix *m)
 { 
   if ((m->ptrcount) || (m->cachecount)) return false;
 
-  Output << "stale unique table entry\n";
-  Output.flush();
-
   matrix_pile.FreeObject(m);
   return true;
 }
@@ -306,12 +280,21 @@ inline bitmatrix* Reduce(bitmatrix *a)
   }
   bitmatrix *d = UniqueTable.Insert(a);
   if (d!=a) matrix_pile.FreeObject(a);
+  else {
+    // a is new and unique...
+    a->ptrcount = a->cachecount = 0;
+  }
   return d;
 }
 
 inline int Compare(bincache *x, bincache *y)
 {
-  return (x->b == y->b) && (x->c == y->c);
+  // 0 means equal
+
+  if ((x->b == y->b) && (x->c == y->c)) return 0;
+
+// supposed to be like strcmp, but only used for equality, so no matter
+  return 1;
 }
 
 inline bool Stale(bincache *x)
@@ -324,12 +307,21 @@ inline bool Stale(bincache *x)
       return false;
   }
 
-  Output << "stale compute table entry\n";
-  Output.flush();
-
   x->b->cachecount--;
   x->c->cachecount--;
   if (x->answer) x->answer->cachecount--;
+
+#ifdef CHECK_CACHE
+  Output << "  Remove ";
+  Output.PutHex((unsigned int)x->b);
+  Output << " ";
+  Output.PutHex((unsigned int)x->c);
+  Output << " got ";
+  Output.PutHex((unsigned int)x->answer);
+  Output << "\n";
+  Output.flush();
+#endif
+  
   cache_pile.FreeObject(x);
   return true;
 }
@@ -337,7 +329,7 @@ inline bool Stale(bincache *x)
 
 void CacheAdd(bitmatrix *b, bitmatrix *c, bitmatrix *ans)
 {
-  // return;
+  //return;
   b->cachecount++;
   c->cachecount++;
   if (ans) ans->cachecount++;
@@ -372,7 +364,7 @@ bitmatrix* cache_mult(bitmatrix *b, bitmatrix *c)
   // special case (keeps cache down)
   if (b == IDENTITY) return c;
   if (c == IDENTITY) return b;
-  
+   
   bitmatrix *answer;
   if (CacheHit(b, c, answer)) return answer;
 
@@ -381,6 +373,18 @@ bitmatrix* cache_mult(bitmatrix *b, bitmatrix *c)
 
   answer = Reduce(answer);
   CacheAdd(b, c, answer);
+
+#ifdef CHECK_CACHE
+  Output << "Multiply ";
+  Output.PutHex((unsigned int)b);
+  Output << " ";
+  Output.PutHex((unsigned int)c);
+  Output << " got ";
+  Output.PutHex((unsigned int)answer);
+  Output << "\n";
+  Output.flush();
+#endif
+  
   return answer;
 }
 
