@@ -53,6 +53,12 @@ template <class T> inline T ABS(T X) { return ((X<0)?(-X):(X)); }
 /// SWAP "macro".
 template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
 
+/// POSITIVE "macro".
+template <class T> inline bool POSITIVE(T X) { return (X>0) ? 1 : 0; }
+
+/// SIGN "macro".
+template <class T> inline int SIGN(T X) { return (X<0) ? -1 : POSITIVE(X); }
+
 /*
   
     There are now two modes of code generation:
