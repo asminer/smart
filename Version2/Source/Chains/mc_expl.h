@@ -379,6 +379,11 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
   graph->num_nodes = numTransient();
   graph->row_pointer = TRarcs;
   graph->Defragment(self_arcs[states-numAbsorbing()]);
+
+  // Compact arrays and such
+  free(graph->next);
+  graph->next = NULL;
+  graph->ResizeEdges(graph->num_edges);
 }
 
 template <class LABEL>

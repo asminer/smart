@@ -12,3 +12,9 @@ File	  	What's there
 api		Front end
 
 sccs		Determines sccs of graphs (explicitly)
+
+numerical	Solves measures by analyzing the underlying process.
+		E.g., generate and solve a Markov chain
+
+simul		Discrete-event simulation engines.
+

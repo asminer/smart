@@ -48,4 +48,8 @@ void	SolveTransientInst(model *m, List <measure> *mlist);
 void	SolveTransientAcc(model *m, List <measure> *mlist);
 
 
+/** 	Used to initialize options for solution engines.
+*/
+void InitEngines();
+
 #endif

@@ -5,8 +5,16 @@
 
 #include "../Language/measures.h"
 
-// Probably these will be divided up, so I'm guessing
-// lots of includes here.
+#include "numerical.h"
+#include "simul.h"
+
+option* SolutionType;
+
+option_const numerical_oc("NUMERICAL", "Generate and analyze underlying stochastic process");
+option_const simulation_oc("SIMULATION", "Discrete-event simulation");
+
+option_const* NUMERICAL = &numerical_oc;
+option_const* SIMULATION = &simulation_oc;
 
 /// Sets the return result for all measures to be "error"
 void ErrorList(List <measure> *mlist)
@@ -27,32 +35,19 @@ void 	SolveSteadyInst(model *m, List <measure> *mlist)
 {
   Output << "Solving group of steady-state measures for model " << m << "\n";
   Output.flush();
-
-  // EXTREMELY temporary
-/*
-  state m;
-  AllocState(m, 1);
-  int i;
-  for (i=0; i<msteady->Length(); i++) {
-    measure* foo = msteady->Item(i);
-    expr* bar = foo->GetRewardExpr();
-    Output << "\tMeasure " << foo << " has reward " << bar << "\n";
-    for (int s=0; s<10; s++) {
-      m[0].Clear();
-      m[0].ivalue = s;
-      result x;
-      x.Clear();
-      bar->Compute(m, 0, x);
-      Output << "\t\t state " << s << " returned ";
-      PrintResult(Output, BOOL, x);
-      Output << "\n";
-      Output.flush();
-    }
-  }
-  FreeState(m);
-*/
-
-  ErrorList(mlist);
+  DCASSERT(SolutionType);
+  bool aok = false;
+  if (SolutionType->GetEnum()==NUMERICAL)
+	aok = NumericalSteadyInst(m, mlist);
+  else if (SolutionType->GetEnum()==SIMULATION)
+	aok = SimulateSteadyInst(m, mlist);
+  else {
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad value for option  #SolutionType\n";
+ 	Internal.Stop();
+	// won't get here
+  } 
+  if (!aok) ErrorList(mlist);
 }
 
 void 	SolveSteadyAcc(model *m, List <measure> *mlist)
@@ -76,4 +71,17 @@ void 	SolveTransientAcc(model *m, List <measure> *mlist)
   ErrorList(mlist);
 }
 
+void 	InitEngines()
+{
+  // initialize "global" engine options
+  option_const **enginelist = new option_const*[2];
+  enginelist[0] = NUMERICAL;
+  enginelist[1] = SIMULATION;
+  SolutionType = MakeEnumOption("SolutionType", "Method to compute measures",
+    enginelist, 2, NUMERICAL);
+  AddOption(SolutionType);
 
+  // initialize specifics
+  InitNumerical();
+  InitSimulation();
+}

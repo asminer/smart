@@ -6,6 +6,7 @@
 
 #include "../Base/api.h"
 #include "../Language/api.h"
+#include "../Engines/api.h"
 
 // These are defined in smart.l
 extern char **inputFiles;
@@ -52,6 +53,7 @@ int smart_main(int argc, char *argv[])
   InitLanguage();
   InitLexer(argc, argv);
   InitCompiler();
+  InitEngines();
 
   SortOptions();
   Output.flush();

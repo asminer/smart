@@ -235,10 +235,13 @@ public:
 
   /// For allocating edges
   void ResizeEdges(int new_edges) {
-    digraph::ResizeEdges(new_edges);
-    LABEL* bar = (LABEL *) realloc(value, new_edges*sizeof(LABEL));
-    if (new_edges && (NULL==bar)) OutOfMemoryError("Graph resize");
-    value = bar;
+    DCASSERT(IsDynamic());
+    if (edges_alloc != new_edges) {
+      digraph::ResizeEdges(new_edges);
+      LABEL* bar = (LABEL *) realloc(value, new_edges*sizeof(LABEL));
+      if (new_edges && (NULL==bar)) OutOfMemoryError("Graph resize");
+      value = bar;
+    }
   }
 
   /** Add an edge to unordered row list.
