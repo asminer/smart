@@ -139,7 +139,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
@@ -205,7 +204,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
@@ -271,7 +269,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
@@ -342,7 +339,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
@@ -413,7 +409,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
@@ -484,7 +479,6 @@ protected:
     right->Compute(0, r);
 
     if (l.error) {
-      // some option about error tracing here, I guess...
       x.error = l.error;
       return false;
     }
