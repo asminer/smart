@@ -404,6 +404,50 @@ bitmatrix* nocache_mult(bitmatrix *b, bitmatrix *c)
 }
 
 // ------------------------------------------------------------------
+//   midmatrix class.  
+// ------------------------------------------------------------------
+
+void midmatrix::ClearFlags()
+{
+  int i,j;
+  for (i=0; i<16; i++) for (j=0; j<16; j++)
+    if (mx[i][j]) mx[i][j]->flag = 0;
+  flag = 0;
+}
+
+void midmatrix::writeCbelow(OutputStream &s, int &botcnt)
+{
+  if (flag) return;
+  int i,j;
+  for (i=0; i<16; i++) for (j=0; j<16; j++) if (mx[i][j])
+    if (0==mx[i][j]->flag) {
+      mx[i][j]->flag = botcnt++;
+      mx[i][j]->writeC(s);
+    }
+}
+
+void midmatrix::writeC(OutputStream &s)
+{
+  s << "midmatrix m" << flag << " = {\n";
+  int i,j;
+  for (i=0; i<16; i++) {
+    s << "  {";
+    for (j=0; j<16; j++) {
+      if (j) s << ", ";
+      if (mx[i][j]) s << "&b" << mx[i][j]->flag;
+      else s << "NULL";
+    }
+    s << "}";
+    if (i<15) s << ",";
+    s << "\n";
+    s.flush();
+  }
+  
+  s << "};\n";
+  s.flush();
+}
+
+// ------------------------------------------------------------------
 //   Shared matrix class.  Zero submatrices beome NULL.
 // ------------------------------------------------------------------
 
@@ -586,10 +630,10 @@ void shared_matrix::writeC(OutputStream &s)
   for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
     ptrs[i][j]->flag = 0;
 
-  int subcnt = 1;
+  int botcnt = 1;
   for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
     if (0==ptrs[i][j]->flag) {
-      ptrs[i][j]->flag = subcnt++;
+      ptrs[i][j]->flag = botcnt++;
       ptrs[i][j]->writeC(s);
     }
 
@@ -600,7 +644,7 @@ void shared_matrix::writeC(OutputStream &s)
     s << "  {";
     for (j=0; j<N; j++) {
       if (j) s << ", ";
-      if (ptrs[i][j]) s << "&m" << ptrs[i][j]->flag;
+      if (ptrs[i][j]) s << "&b" << ptrs[i][j]->flag;
       else s << "NULL";
     }
     s << "}";
@@ -755,6 +799,60 @@ topmatrix::~topmatrix()
 {
   // later
 }
+
+void topmatrix::writeC(OutputStream &s)
+{
+  int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->ClearFlags();
+
+  s << "\n/* =======================================================\n";
+  s << "\t\tBottom-level submatrices\n";
+  s << "======================================================= */\n\n";
+
+  botcount = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->writeCbelow(s, botcount);
+  botcount--;
+
+  s << "\n\n";
+
+  s << "\n/* =======================================================\n";
+  s << "\t\tMiddle-level submatrices\n";
+  s << "======================================================= */\n\n";
+
+  midcount = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j]) 
+    if (0==ptrs[i][j]->flag) {
+      ptrs[i][j]->flag = midcount++;
+      ptrs[i][j]->writeC(s);
+    }
+
+  s << "\n\n";
+
+  s << "\n/* =======================================================\n";
+  s << "\t\tTop-level matrix\n";
+  s << "======================================================= */\n\n";
+
+  s << "const midmatrix* Jump[" << N << "][" << N << "] = {\n";
+  
+  for (i=0; i<N; i++) {
+    s << "  {";
+    for (j=0; j<N; j++) {
+      if (j) s << ", ";
+      if (ptrs[i][j]) s << "&m" << ptrs[i][j]->flag;
+      else s << "NULL";
+    }
+    s << "}";
+    if (i<N-1) s << ",";
+    s << "\n";
+    s.flush();
+  }
+  
+  s << "};\n";
+  s.flush();
+}
+
 
 // ------------------------------------------------------------------
 

@@ -29,11 +29,8 @@ int main(int argc, char** argv)
   shared_matrix B(N);
   B.read(Input);
 
-  // testing...
+  // further compression:
   topmatrix C(&B);
-  return 0;
-
-  // normal stuff
 
   Verbose.SwitchDisplay(out);
   Verbose.Activate();
@@ -43,11 +40,15 @@ int main(int argc, char** argv)
 
   Verbose << "#ifndef JUMP_MATRIX\n#define JUMP_MATRIX\n\n";
   
-  B.writeC(Verbose);
+  C.writeC(Verbose);
 
   Verbose << "\n\n#endif\n";
   
   Verbose.flush();
+
+  Output << "Jump matrix has \n";
+  Output << "\t" << C.midcount << " middle-level matrices\n";
+  Output << "\t" << C.botcount << " bottom-level matrices\n";
   
   return 0;
 }

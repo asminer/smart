@@ -3,9 +3,8 @@
 
 #include "rng.h"
 
-const int N = MT_STATE_SIZE;
-
 typedef unsigned long submatrix[32];
+typedef submatrix *midmatrix[16][16];
 
 #include "jump.h"
 
@@ -21,11 +20,20 @@ const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x00000080, 0x00000040, 0x00000020, 0x00000010,
 			  0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
-inline void vm_mult(unsigned long v, const submatrix *m, unsigned long &answer) 
+inline void vsm_mult(unsigned long v, submatrix *m, unsigned long &answer)
 {
   if (NULL==m) return;
   if (0==v) return;
   for (int b=31; b>=0; b--) if ((*m)[b]) if (v & mask[b]) answer ^= (*m)[b];
+}
+
+// in and out are subvectors, by magic of pointer arithmetic!
+void vmm_mult(unsigned long *in, midmatrix *m, unsigned long *out)
+{
+  int i,j;
+  for (i=15; i>=0; i--)
+    for (j=15; j>=0; j--)
+      vsm_mult(in[i], (*m)[i][j], out[j]);
 }
 
 void Rng::JumpStream(Rng *input)
@@ -35,9 +43,11 @@ void Rng::JumpStream(Rng *input)
 
   // vector-matrix multiply
   int i,j;
-  for (i=N-1; i>=0; i--) state.statevec[i] = 0;
-  for (i=N-1; i>=0; i--)
-    for (j=N-1; j>=0; j--)
-      vm_mult(input->state.statevec[i], Jump[i][j], state.statevec[j]);
+  for (i=MT_STATE_SIZE-1; i>=0; i--) state.statevec[i] = 0;
+  for (i=0; i<39; i++) {
+    unsigned long *in = input->state.statevec + i*16;
+    for (j=0; j<39; j++)
+      vmm_mult(in, Jump[i][j], state.statevec + j*16);
+  } // for i
 }
 

@@ -51,7 +51,7 @@ struct bitmatrix {
   }
 
   void writeC(OutputStream &s) {
-    s << "const submatrix m" << flag << " = { ";
+    s << "submatrix b" << flag << " = { ";
     for (int r=0; r<32; r++) {
       if (r) s << ", ";
       s.PutHex(row[r]);
@@ -117,6 +117,10 @@ struct midmatrix {
     unsigned long d3 = mx[0][0] ? mx[0][0]->Signature(prime) : 0;
     return (((d1 * 256 + d2) % prime) * 256 + d3) % prime;
   }
+
+  void ClearFlags();
+  void writeCbelow(OutputStream &s, int &botcnt);
+  void writeC(OutputStream &s);
 };
 
 
@@ -190,6 +194,9 @@ class topmatrix {
 public:
   topmatrix(shared_matrix *foo);
   ~topmatrix();
+  void writeC(OutputStream &s);
+  int midcount;
+  int botcount;
 };
 
 
