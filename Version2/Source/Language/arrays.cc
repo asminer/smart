@@ -83,6 +83,15 @@ array::array(const char* fn, int line, type t, char* n, array_index **il, int di
   state = CS_Undefined;
 }
  
+array::array(const char* fn, int line, char* n, array_index **il, int dim)
+  : symbol(fn, line, VOID, n)
+{
+  index_list = il;
+  dimension = dim;
+  descriptor = NULL;
+  state = CS_Untyped;
+}
+ 
 array::~array()
 {
   Clear();
@@ -106,7 +115,7 @@ void array::Clear(int level, void* desc)
   // IMPLEMENT THIS!  
 }
 
-void array::SetCurrentReturn(constfunc *retvalue)
+void array::SetCurrentReturn(symbol *retvalue)
 {
   int i;
   array_desc *prev = NULL;
@@ -131,7 +140,7 @@ void array::SetCurrentReturn(constfunc *retvalue)
   prev->down[lastindex] = retvalue;
 }
 
-constfunc* array::GetCurrentReturn()
+symbol* array::GetCurrentReturn()
 {
   int i;
   array_desc *prev = NULL;
@@ -147,7 +156,7 @@ constfunc* array::GetCurrentReturn()
     prev = curr;
     curr = (array_desc*) curr->down[lastindex];
   }
-  return (constfunc*) prev->down[lastindex];
+  return (symbol*) prev->down[lastindex];
 }
 
 void array::GetName(OutputStream &s) const
@@ -303,7 +312,7 @@ void acall::Compute(int i, result &x)
   func->Compute(pass, x);
   if (x.isNull()) return;
   if (x.isError()) return;  // print message?
-  constfunc* foo = (constfunc*) x.other;
+  symbol* foo = (symbol*) x.other;
 #ifdef ARRAY_TRACE
   cout << "Computing " << foo << "\n";
 #endif
@@ -319,7 +328,7 @@ void acall::Sample(Rng &seed, int i, result &x)
   func->Sample(seed, pass, x);
   if (x.isNull()) return;
   if (x.isError()) return;  // print message?
-  constfunc* foo = (constfunc*) x.other;
+  symbol* foo = (symbol*) x.other;
   foo->Sample(seed, 0, x);
 }
 
@@ -595,11 +604,9 @@ void arrayassign::Execute()
 #ifdef LONG_INTERNAL_ARRAY_NAME
   // Build a long name.  Useful for debugging, otherwise 
   // I think it is unnecessary work.
-  char buffer[1024];
-  strstream s(buffer, 1024);
-  f->GetName(s);
-  s.put(0);
-  char* name = strdup(buffer);
+  StringStream dealy;
+  f->GetName(dealy);
+  char* name = dealy.GetString();
 #else
   char* name = NULL;
 #endif

@@ -32,3 +32,19 @@ model* MakeNewModel(const char* fn, int line, type t, char* name, formal_param
   // Won't get here
   return NULL;
 }
+
+bool CanDeclareType(type modeltype, type vartype)
+{
+  switch (modeltype) {
+    case DTMC:
+    case CTMC:
+    		return (vartype == STATE);
+
+    case SPN:
+    		return (vartype == PLACE) || (vartype == TRANS);
+  }
+
+  // slipped through the cracks
+  return false;
+}
+

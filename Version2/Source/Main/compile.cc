@@ -35,7 +35,10 @@ bool IsInteractive() { return (strcmp("-", filename)==0); }
 // ==================================================================
 
 /// Current stack of for-loop iterators
-List <array_index> *Iterators;
+List <array_index> Iterators(256);
+
+/// Current stack of array indexes
+List <char> Indexes(256);
 
 /// Depth of converges
 int converge_depth;
@@ -64,9 +67,9 @@ PtrTable *ModelExternal;
 /** List of functions that match what we're looking for.
     Global because we'll re-use it.
 */
-List <function> *matches;
+List <function> matches(16);
 
-bool WithinFor() { return (Iterators->Length()); }
+bool WithinFor() { return (Iterators.Length()); }
 
 bool WithinConverge() { return (converge_depth>0); }
 
@@ -825,8 +828,8 @@ int AddIterator(array_index *i)
 {
   if (NULL==i || ERROR==i) return 0;
   // Check for duplicates!
-  for (int n=0; n<Iterators->Length(); n++) {
-    if (strcmp(Iterators->Item(n)->Name(), i->Name())==0) {
+  for (int n=0; n<Iterators.Length(); n++) {
+    if (strcmp(Iterators.Item(n)->Name(), i->Name())==0) {
       // Something fishy
       Error.Start(filename, lexer.lineno());
       Error << "Duplicate iterator named " << i;
@@ -835,7 +838,7 @@ int AddIterator(array_index *i)
       return 0;
     }
   }
-  Iterators->Append(i);
+  Iterators.Append(i);
 #ifdef COMPILE_DEBUG
   Output << "Adding " << i << " to Iterators\n";
   Output.flush();
@@ -850,12 +853,12 @@ statement* BuildForLoop(int count, void *stmts)
   Output << "Popping " << count << " Iterators\n";
   Output.flush();
 #endif
-  if (count > Iterators->Length()) {
+  if (count > Iterators.Length()) {
     Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
     Internal << "Iterator stack underflow";
     Internal.Stop();
 
-    Iterators->Clear();
+    Iterators.Clear();
     return NULL;
   }
 
@@ -865,16 +868,16 @@ statement* BuildForLoop(int count, void *stmts)
     Output.flush();
 #endif
     // Remove iterators 
-    for (d=0; d<count; d++) Iterators->Pop();
+    for (d=0; d<count; d++) Iterators.Pop();
     return NULL;
   }
 
   array_index **i = new array_index*[count];
-  int first = Iterators->Length() - count;
+  int first = Iterators.Length() - count;
   for (d=0; d<count; d++) {
-    i[d] = Iterators->Item(first+d);
+    i[d] = Iterators.Item(first+d);
   }
-  for (d=0; d<count; d++) Iterators->Pop();
+  for (d=0; d<count; d++) Iterators.Pop();
 
   statement** block = NULL;
   int bsize = 0;
@@ -1154,20 +1157,22 @@ statement* FinishConverge(void* list)
 void* AddFormalIndex(void* list, char* n)
 {
   if (NULL==n) return list;
-  List <char> *foo = (List <char> *)list;
-  if (NULL==foo) 
-    foo = new List <char> (256);
-  foo->Append(n);
+  if (NULL==list) {
+    Indexes.Clear();
+    list = &Indexes;
+  } 
+  DCASSERT(list == &Indexes);
+  Indexes.Append(n);
 #ifdef COMPILE_DEBUG
   Output << "Formal index stack: ";
-  for (int i=0; i<foo->Length(); i++) {
-    char* id = foo->Item(i);
+  for (int i=0; i<Indexes.Length(); i++) {
+    char* id = Indeses.Item(i);
     Output << id << " ";
   }
   Output << "\n";
   Output.flush();
 #endif
-  return foo;
+  return list;
 }
 
 inline bool ListContainsName(void* list, const char* name)
@@ -1236,6 +1241,54 @@ void* AddParameter(void* list, named_param* np)
   return foo;
 }
 
+void TrashIndexList()
+{
+  int length = Indexes.Length();
+  for (length--; length>=0; length--) 
+    delete[] Indexes.Item(length);
+  Indexes.Clear();
+}
+
+/**
+    Returns true if they match, false if they don't.
+    @param	n	The array we're defining (used for errors)
+    @param	itlist	List of index names
+*/
+bool CompareIterators(char* n, void* itlist)
+{
+  if (NULL==itlist) return false;
+  DCASSERT(itlist == &Indexes);
+  int dim = Iterators.Length();
+
+  // check the iterators dimensions
+  if (Indexes.Length() != dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Dimension of array " << n << " does not match iterators";
+    Error.Stop();
+    return false;
+  }
+
+  // compare iterator names
+  int i;
+  for (i=0; i<dim; i++) {
+    array_index* it = Iterators.Item(i);
+    DCASSERT(it);
+    const char* exname = it->Name();
+    DCASSERT(exname);
+    char* myname = Indexes.Item(i);
+    DCASSERT(myname);
+    if (strcmp(exname, myname)!=0) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " expecting index " << exname;
+      Error << ", got " << myname;
+      Error.Stop();
+      return false;
+    }
+  }
+
+  return true;
+}
+
 array* BuildArray(type t, char*n, void* list)
 {
   if (NULL==n) return NULL;
@@ -1247,6 +1300,7 @@ array* BuildArray(type t, char*n, void* list)
       Error.Start(filename, lexer.lineno());
       Error << "Converge variable " << n << " must have type real";
       Error.Stop();
+      TrashIndexList();
       return NULL;
     }
   }
@@ -1263,45 +1317,24 @@ array* BuildArray(type t, char*n, void* list)
       Error.Start(filename, lexer.lineno());
       Error << "Array " << n << " already defined";
       Error.Stop();
+      TrashIndexList();
       return NULL;
     }
   }
   
-  List <char> *foo = (List <char> *)list;
-  int dim = Iterators->Length();
-
-  // check the iterators dimensions
-  if (foo->Length() != dim) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Dimension of array " << n << " does not match iterators";
-    Error.Stop();
+  if (!CompareIterators(n, list)) {
+    // Problem with iterators, bail out
+    TrashIndexList();
     return NULL;
-  }
-
-  // compare iterator names
-  int i;
-  for (i=0; i<dim; i++) {
-    array_index* it = Iterators->Item(i);
-    DCASSERT(it);
-    const char* exname = it->Name();
-    DCASSERT(exname);
-    char* myname = foo->Item(i);
-    DCASSERT(myname);
-    if (strcmp(exname, myname)!=0) {
-      Error.Start(filename, lexer.lineno());
-      Error << "Array " << n << " expecting index " << exname;
-      Error << ", got " << myname;
-      Error.Stop();
-      return NULL;
-    }
   }
 
   // If this is an existing array, then bail out
   if (find) return find;
 
   // Build "copies" of iterators 
-  array_index **il = Iterators->Copy();
-  for (i=0; i<dim; i++) {
+  int dim = Iterators.Length();
+  array_index **il = Iterators.Copy();
+  for (int i=0; i<dim; i++) {
     Copy(il[i]);  // increment counter
   }
 
@@ -1310,6 +1343,9 @@ array* BuildArray(type t, char*n, void* list)
 
   // Add array to array symbol table
   Arrays->AddNamePtr(n, A); 
+
+  // Done with indexes
+  TrashIndexList();
 
   return A;
 }
@@ -1589,8 +1625,8 @@ expr* FindIdent(char* name)
 {
   // Check for loop iterators
   int d;
-  for (d=0; d<Iterators->Length(); d++) {
-    array_index *i = Iterators->Item(d);
+  for (d=0; d<Iterators.Length(); d++) {
+    array_index *i = Iterators.Item(d);
     DCASSERT(i);
     if (strcmp(name, i->Name())==0)
       return Copy(i);
@@ -1796,12 +1832,12 @@ expr* BuildFunctionCall(const char* n, void* posparams)
 
     if ((score>=0) && (score<bestmatch)) {
       // better match, clear old list
-      matches->Clear();
+      matches.Clear();
       bestmatch = score;
     }
     if (score==bestmatch) {
       // Add to list
-      matches->Append(flist->Item(i));
+      matches.Append(flist->Item(i));
     }
   }
 
@@ -1814,7 +1850,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     return ERROR;
   }
 
-  if (matches->Length()>1) {
+  if (matches.Length()>1) {
     DCASSERT(bestmatch>0);
     Error.Start(filename, lexer.lineno());
     Error << "Multiple promotions possible for " << n;
@@ -1825,7 +1861,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   }
 
   // Good to go
-  function* find = matches->Item(0);
+  function* find = matches.Item(0);
   int np = params->Length();
   expr** pp = params->MakeArray();
   delete params; 
@@ -1999,12 +2035,12 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
 
     if ((score>=0) && (score<bestmatch)) {
       // better match, clear old list
-      matches->Clear();
+      matches.Clear();
       bestmatch = score;
     }
     if (score==bestmatch) {
       // Add to list
-      matches->Append(flist->Item(i));
+      matches.Append(flist->Item(i));
     }
   }
 
@@ -2017,7 +2053,7 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
     return ERROR;
   }
 
-  if (matches->Length()>1) {
+  if (matches.Length()>1) {
     DCASSERT(bestmatch>0);
     Error.Start(filename, lexer.lineno());
     Error << "Multiple promotions possible for " << n;
@@ -2028,7 +2064,7 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
   }
 
   // Good to go; convert to positional params
-  function* find = matches->Item(0);
+  function* find = matches.Item(0);
   int np;
   expr** pp = NamedToPositions(find, params, np);
   delete params; 
@@ -2226,9 +2262,22 @@ void* AddModelVariable(void* list, char* ident)
     Error.Stop();
     return list;
   }
-  // Check parameter names here...
+  // Check parameter names
+  if (model_under_construction) {
+    formal_param** mpl;
+    int mnp, mrp;
+    model_under_construction->GetParamList(mpl, mnp, mrp);
+    for (mnp--; mnp>=0; mnp--) {
+      if (strcmp(mpl[mnp]->Name(), ident)==0) {
+	Error.Start(filename, lexer.lineno());
+	Error << "Model variable " << ident << " has same name as parameter";
+	Error.Stop();
+	return list;
+      }
+    }
+  }
 
-  // add to symbol table
+  // Everything checks out, add to symbol table
   expr *wr = MakeEmptyWrapper(filename, lexer.lineno());
   ModelInternal->AddNamePtr(ident, wr);
   // add to list
@@ -2241,7 +2290,62 @@ void* AddModelVariable(void* list, char* ident)
 void* AddModelArray(void* list, char* ident, void* indexlist)
 {
   DCASSERT(WithinModel()); 
-  return NULL;
+  DCASSERT(ModelInternal);
+  DCASSERT(ModelExternal);
+  if (NULL==ident) return list;
+  if (!WithinFor()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Array outside of for loop for model variable " << ident;
+    Error.Stop();
+    return list;
+  }
+  // Is the name used already?
+  if (ModelInternal->ContainsName(ident)||ModelExternal->ContainsName(ident)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Duplicate identifier " << ident << " within model";
+    Error.Stop();
+    return list;
+  }
+  // Check parameter names
+  if (model_under_construction) {
+    formal_param** mpl;
+    int mnp, mrp;
+    model_under_construction->GetParamList(mpl, mnp, mrp);
+    for (mnp--; mnp>=0; mnp--) {
+      if (strcmp(mpl[mnp]->Name(), ident)==0) {
+	Error.Start(filename, lexer.lineno());
+	Error << "Model variable " << ident << " has same name as parameter";
+	Error.Stop();
+	return list;
+      }
+    }
+  }
+
+  if (!CompareIterators(ident, indexlist)) {
+    // Problem with iterators, bail out
+    TrashIndexList();
+    return NULL;
+  }
+  TrashIndexList();
+
+  // Build "copies" of iterators 
+  int dim = Iterators.Length();
+  array_index **il = Iterators.Copy();
+  for (int i=0; i<dim; i++) {
+    Copy(il[i]);  // increment counter
+  }
+
+  // Create an array of unknown type
+  array *A = new array(filename, lexer.lineno(), ident, il, dim);
+
+  // Add to symbol table 
+  ModelInternal->AddNamePtr(ident, A);  
+
+  // Add to list
+  List <char>* foo = (List <char> *)list;
+  if (NULL==foo) { foo = new List <char> (256); }
+  foo->Append(ident);
+  return foo;
 }
 
 statement* BuildModelVarStmt(type t, void* list)
@@ -2249,22 +2353,46 @@ statement* BuildModelVarStmt(type t, void* list)
   DCASSERT(WithinModel()); 
   if (NULL==list) return NULL;
 
-  // make sure the type is compatible with the model here.
-
-  // make sure our model is not null.
-  
   List <char>* foo = (List <char> *)list;
   int length = foo->Length();
-  char** namelist = foo->MakeArray();
-  delete foo;
 
+  // make sure our model is not null
+  if (NULL==model_under_construction) {
+    delete foo;
+    return NULL; 
+  }
+  
+  // make sure the type is compatible with the model
+  if (!CanDeclareType(model_under_construction->Type(0), t)) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Cannot declare variable of type " << GetType(t);
+      Error << "within " << GetType(model_under_construction->Type(0));
+      Error.Stop();
+      delete foo;
+      return NULL; 
+  }
+
+  int i;
   if (WithinFor()) {
-    // use arrays
-    return NULL;
+    // Set return type for arrays
+
+    array** alist = new array*[length];
+    for (i=0; i<length; i++) {
+      expr* e = (expr*) ModelInternal->FindName(foo->Item(i));
+      DCASSERT(e);
+      alist[i] = dynamic_cast<array*>(e);
+      DCASSERT(alist[i]);
+      alist[i]->SetType(t);
+    }
+    delete foo;
+
+    return MakeModelArrayStmt(model_under_construction, alist, length,
+  			filename, lexer.lineno());
   } 
 
   // Not within for loops
-  int i;
+  char** namelist = foo->MakeArray();
+  delete foo;
   expr** ws = new expr*[length];
   for (i=0; i<length; i++) {
     ws[i] = (expr*) ModelInternal->FindName(namelist[i]);
@@ -2300,12 +2428,10 @@ void ShowSymbols(void *x)
 
 void InitCompiler()
 {
-  Iterators = new List <array_index> (256);
   Arrays = new PtrTable();
   Builtins = new PtrTable();
   Constants = new PtrTable();
   FormalParams = NULL;
-  matches = new List <function> (32);
   converge_depth = 0;
   model_under_construction = NULL;
   ModelInternal = NULL;

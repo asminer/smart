@@ -171,6 +171,17 @@ public:
   const_state state;
 public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
+
+  /// When we don't know the type yet (used by models)
+  array(const char* fn, int line, char* n, array_index **il, int dim);
+
+  /// For delayed type definition (by models)
+  inline void SetType(type t) {
+    DCASSERT(state == CS_Untyped);
+    mytype = t;
+    state = CS_Undefined;
+  }
+
   virtual ~array();
 
   /** Clear out the array elements but keep everything else.
@@ -190,14 +201,14 @@ public:
   /** For the current values of the iterators,
       set the return "value" of the array.
    */
-  void SetCurrentReturn(constfunc *retvalue);
+  void SetCurrentReturn(symbol *retvalue);
 
   /** For the current values of the iterators,
       obtain the return value function.
       Returns null if the return value has not been set yet.
       (Used for converge array assignments)
    */
-  constfunc* GetCurrentReturn();
+  symbol* GetCurrentReturn();
 
   /** Determine our current "name", which
       will be written to the specified stream.

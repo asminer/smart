@@ -14,6 +14,7 @@
  */
 
 #include "functions.h"
+#include "arrays.h"
 #include "stmts.h"
 
 //@{
@@ -214,6 +215,9 @@ expr* MakeEmptyWrapper(const char *fn, int line);
     @param	l	linenumber
 */
 statement* MakeModelVarStmt(model *p, type t, char** names, expr** wraps, int N,
+			const char* fn, int l);
+
+statement* MakeModelArrayStmt(model *p, array** alist, int N, 
 			const char* fn, int l);
 
 //@}

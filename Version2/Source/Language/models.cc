@@ -437,6 +437,84 @@ void model_var_stmt::showfancy(int dpth, OutputStream &s) const
 
 // ******************************************************************
 // *                                                                *
+// *                    model_varray_stmt  class                    *
+// *                                                                *
+// ******************************************************************
+
+class model_varray_stmt : public statement {
+protected:
+  model* parent;
+  array** vars;
+  int numvars;
+public:
+  model_varray_stmt(const char *fn, int line, model *p, array** a, int nv);
+
+  virtual ~model_varray_stmt();
+  virtual void Execute();
+  virtual void Clear();
+  virtual void showfancy(int dpth, OutputStream &s) const;
+  virtual void show(OutputStream &s) const { showfancy(0, s); }
+};
+
+model_varray_stmt::model_varray_stmt(const char *fn, int line, model *p, 
+  		array** a, int nv) : statement(fn, line) 
+{
+  parent = p;
+  vars = a;
+  numvars = nv;
+  DCASSERT(numvars);
+}
+
+model_varray_stmt::~model_varray_stmt()
+{
+  Clear();
+  int i;
+  for (i=0; i<numvars; i++) {
+    delete[] vars[i];
+  }
+  delete[] vars;
+}
+
+void model_varray_stmt::Execute()
+{
+  static StringStream mvs_name;
+  int i;
+  for (i=0; i<numvars; i++) {
+    mvs_name.flush();
+    vars[i]->GetName(mvs_name);
+    char* name = mvs_name.GetString();
+    symbol* var = parent->MakeModelVar( 
+    			vars[i]->Filename(), 
+			vars[i]->Linenumber(), 
+			vars[i]->Type(0),
+			name
+		);
+    vars[i]->SetCurrentReturn(var);
+  }
+}
+
+void model_varray_stmt::Clear()
+{
+  int i;
+  for (i=0; i<numvars; i++) {
+    vars[i]->Clear();
+  }
+}
+
+void model_varray_stmt::showfancy(int dpth, OutputStream &s) const
+{
+  s.Pad(dpth);
+  s << GetType(vars[0]->Type(0)) << " ";
+  int i;
+  for (i=0; i<numvars; i++) {
+    if (i) s << ", ";
+    s << vars[i];
+  }
+  s << ";";
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
@@ -457,6 +535,12 @@ statement* MakeModelVarStmt(model* p, type t, char** names, expr** wraps, int N,
 			const char* fn, int l)
 {
   return new model_var_stmt(fn, l, p, t, names, wraps, N);
+}
+
+statement* MakeModelArrayStmt(model* p, array** alist, int N,
+			const char* fn, int l)
+{
+  return new model_varray_stmt(fn, l, p, alist, N);
 }
 
 //@}

@@ -259,7 +259,7 @@ array_guess_stmt::~array_guess_stmt()
 void array_guess_stmt::InitialGuess()
 {
   // Get this converge function thingy
-  constfunc* thisvar = var->GetCurrentReturn();
+  symbol* thisvar = var->GetCurrentReturn();
   if (NULL==thisvar) {
     // create the function
     char* name = strdup(var->Name());
@@ -278,7 +278,7 @@ void array_guess_stmt::InitialGuess()
 
 void array_guess_stmt::Affix()
 {
-  constfunc* thisvar = var->GetCurrentReturn();
+  symbol* thisvar = var->GetCurrentReturn();
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
   v->state = CS_Computed;
@@ -335,7 +335,7 @@ array_assign_stmt::~array_assign_stmt()
 void array_assign_stmt::Execute()
 {
   // Get this converge function thingy
-  constfunc* thisvar = var->GetCurrentReturn();
+  symbol* thisvar = var->GetCurrentReturn();
   if (NULL==thisvar) {
     // function hasn't been created yet, make one
     char* name = strdup(var->Name());
@@ -354,7 +354,7 @@ void array_assign_stmt::Execute()
 
 bool array_assign_stmt::HasConverged()
 {
-  constfunc* thisvar = var->GetCurrentReturn();
+  symbol* thisvar = var->GetCurrentReturn();
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
   if (!v->was_updated) v->UpdateAndCheck();
@@ -363,7 +363,7 @@ bool array_assign_stmt::HasConverged()
 
 void array_assign_stmt::Affix()
 {
-  constfunc* thisvar = var->GetCurrentReturn();
+  symbol* thisvar = var->GetCurrentReturn();
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
   v->state = CS_Computed;

@@ -25,4 +25,15 @@
 model*	MakeNewModel(const char* fn, int line, 
 			type t, char* name, formal_param **pl, int np);
 
+/** 	Checks if a desired model variable is allowed
+	within a specific model type.
+
+	@param	modeltype	The type of the model
+	@param	vartype		The type of the variable
+
+	@return	true	If the variable is allowed within the model
+*/
+
+bool	CanDeclareType(type modeltype, type vartype);
+
 #endif

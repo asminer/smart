@@ -397,11 +397,12 @@ protected:
 */  
 
 class symbol : public expr {
+protected:
+  /// The symbol type.
+  type mytype;
 private:
   /// The symbol name.
   char* name;
-  /// The symbol type.
-  type mytype;
   /// If the symbol is an aggregate, then the type is an array.
   type* aggtype;
   /// Length of aggregate, or 1 for "normal" types.

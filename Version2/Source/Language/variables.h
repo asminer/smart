@@ -25,6 +25,8 @@
 
 /// Possible states of a constant
 enum const_state {
+  /// No type yet! 
+  CS_Untyped,
   /// Not yet defined
   CS_Undefined,
   /// Given an initial guess
