@@ -244,22 +244,15 @@ void generic_int_set::GetOrder(int n, int &i, result &x)
 
 void generic_int_set::show(OutputStream &s)
 {
-  s << "{";
-  int i;
-  if (Size()) {
-    s << values[0];
-    for (i=1; i<Size(); i++) s << ", " << values[i];
-  }
-  s << "}";
+  s.Put('{');
+  s.PutArray(values, Size());
+  s.Put('}');
   // temporary...
   /*
   s << "\nOrder array:\n";
-  if (order) {
-    s << "[" << order[0];
-    int i;
-    for (i=1; i<Size(); i++) s << ", " << order[i];
-    s << "]\n";
-  } else s << "[]\n";
+  s.Put('[');
+  if (order) s.PutArray(order, Size());
+  s << "]\n";
   */
 }
 
@@ -348,13 +341,9 @@ void generic_real_set::GetOrder(int n, int &i, result &x)
 
 void generic_real_set::show(OutputStream &s)
 {
-  s << "{";
-  int i;
-  if (Size()) {
-    s << values[0];
-    for (i=1; i<Size(); i++) s << ", " << values[i];
-  }
-  s << "}";
+  s.Put('{');
+  s.PutArray(values, Size());
+  s.Put('}');
 }
 
 

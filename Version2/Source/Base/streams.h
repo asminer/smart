@@ -54,6 +54,18 @@ public:
 
   void Put(double data, int width, int prec);
 
+  /// super handy- print an array!
+  template <class DATA>
+  void PutArray(DATA* array, int elements) {
+    int i;
+    if (elements) Put(array[0]);
+    for (i=1; i<elements; i++) {
+      Put(',');
+      Put(' ');
+      Put(array[i]);
+    }
+  }
+
   /// Force stream to dump buffer.
   virtual void flush() = 0;
 };
@@ -229,7 +241,6 @@ public:
   inline bool Get(double &x) { return (1==fscanf(input, "%lf", &x)); }
   inline bool Get(unsigned long &x) { return (1==fscanf(input, "%lu", &x)); }
 };
-
 
 
 // Pre-defined output streams

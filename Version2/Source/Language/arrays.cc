@@ -369,10 +369,9 @@ void acall::show(OutputStream &s) const
   if (func->Name()==NULL) return; // hidden?
   s << func->Name();
   DCASSERT(numpass>0);
-  s << "[" << pass[0];
-  int i;
-  for (i=1; i<numpass; i++) s << ", " << pass[i];
-  s << "]";
+  s.Put('[');
+  s.PutArray(pass, numpass);
+  s.Put(']');
 }
 
 Engine_type acall::GetEngine(engineinfo *e)
