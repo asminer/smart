@@ -1,13 +1,12 @@
 
 // $Id$
 
-Currently working on:  trees for state space storage
+Currently working on:  
 
-Things to check on:
+* Just added flatss class (in flatss file)
 
-* Memory leaks
+* Go from "tree" to "flatss" class
 
-* Input functions
 
 
 Things to do:

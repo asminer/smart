@@ -3,6 +3,8 @@
 
 #include "flatss.h"
 
+#include "../Base/memtrack.h"
+
 /** @name states.cc
     @type File
     @args \ 
@@ -964,6 +966,45 @@ void state_array::Clear()
   // stats
   encodecount[0] = encodecount[1] = encodecount[2] = encodecount[3] = 0;
 }
+
+
+// ==================================================================
+// ||                                                              ||
+// ||                        flatss methods                        ||
+// ||                                                              ||
+// ==================================================================
+
+flatss::flatss(state_array *sa, int *o)
+{
+  ALLOC("flatss", sizeof(flatss));
+  states = sa;
+  DCASSERT(states);
+  DCASSERT(states->UsesIndexHandles());
+  order = o;
+}
+
+flatss::~flatss()
+{
+  FREE("flatss", sizeof(flatss));
+  // not sure about this
+  delete states;
+  delete[] order;
+}
+
+int flatss::binsearch(int h)
+{
+  int low = 0;
+  int high = states->NumStates();
+  while (low<high) {
+    int mid = (low+high)/2;
+    int cmp = states->Compare(order[mid], h);
+    if (0==cmp) return order[mid];
+    if (cmp<0) low = mid+1;
+    else high = mid;
+  }
+  return -1; // not found
+}
+
 
 //@}
 

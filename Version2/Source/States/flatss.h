@@ -223,6 +223,48 @@ public:
   void Clear();
 };
 
+
+
+// ******************************************************************
+// *                                                                *
+// *                         flatss class                           *
+// *                                                                *
+// ******************************************************************
+
+/** Final structure for flat reachability sets.
+
+    All we need is the state array itself, to "get" states,
+    and an ordering array, to "find" states.
+    
+    We assume that states are "indexed" in the state array,
+    e.g., the third state has handle 3.
+*/
+class flatss {
+  /// States are stored here in discovery order.
+  state_array *states;
+  /// Order of states according to state_array::Compare.
+  int* order;
+public:
+  flatss(state_array *sa, int *o);
+  ~flatss();
+
+  inline bool GetState(int h, state &s) { 
+    DCASSERT(states);
+    return states->GetState(h, s);
+  }
+
+  inline int FindState(const state &s) {
+    DCASSERT(states);
+    int a = binsearch(states->AddState(s));
+    states->PopLast();
+    return a;
+  }
+
+protected:
+  int binsearch(int h);
+};
+
+
 //@}
 
 #endif
