@@ -69,8 +69,7 @@ int_interval::int_interval(int s, int e, int i)
 
 void int_interval::GetElement(int n, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   x.ivalue = start + n * inc;
 }
@@ -86,8 +85,7 @@ int int_interval::IndexOf(const result &x)
 
 void int_interval::GetOrder(int n, int &i, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   if (inc>0) i = n;
   else i = Size()-n-1;
@@ -129,8 +127,7 @@ real_interval::real_interval(double s, double e, double i)
 
 void real_interval::GetElement(int n, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   x.rvalue = start + n * inc;
 }
@@ -155,8 +152,7 @@ int real_interval::IndexOf(const result &x)
 
 void real_interval::GetOrder(int n, int &i, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   if (inc>0) i = n;
   else i = Size()-n-1;
@@ -206,8 +202,7 @@ generic_int_set::~generic_int_set()
 
 void generic_int_set::GetElement(int n, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   x.ivalue = values[n];
 }
@@ -220,8 +215,7 @@ int generic_int_set::IndexOf(const result &x)
   while (low <= high) {
     int mid = (low+high)/2;
     int i = order[mid];
-    DCASSERT(i>=0);
-    DCASSERT(i<Size());
+    CHECK_RANGE(0, i, Size());
     if (values[i] == x.ivalue) return i;
     if (values[i] < x.ivalue) 
       low = mid+1;
@@ -233,11 +227,9 @@ int generic_int_set::IndexOf(const result &x)
 
 void generic_int_set::GetOrder(int n, int &i, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   i = order[n];
-  DCASSERT(i>=0);
-  DCASSERT(i<Size());
+  CHECK_RANGE(0, i, Size());
   x.Clear();
   x.ivalue = values[i];
 }
@@ -295,8 +287,7 @@ generic_real_set::~generic_real_set()
 
 void generic_real_set::GetElement(int n, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   x.Clear();
   x.rvalue = values[n];
 }
@@ -310,8 +301,7 @@ int generic_real_set::IndexOf(const result &x)
   while (low <= high) {
     int mid = (low+high)/2;
     int i = order[mid];
-    DCASSERT(i>=0);
-    DCASSERT(i<Size());
+    CHECK_RANGE(0, i, Size());
     if (values[i] > x.rvalue + epsilon) {
       // x is definitely smaller than midpoint
       high = mid-1;
@@ -330,11 +320,9 @@ int generic_real_set::IndexOf(const result &x)
 
 void generic_real_set::GetOrder(int n, int &i, result &x)
 {
-  DCASSERT(n>=0);
-  DCASSERT(n<Size());
+  CHECK_RANGE(0, n, Size());
   i = order[n];
-  DCASSERT(i>=0);
-  DCASSERT(i<Size());
+  CHECK_RANGE(0, i, Size());
   x.Clear();
   x.rvalue = values[i];
 }

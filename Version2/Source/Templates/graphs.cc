@@ -67,10 +67,8 @@ void digraph::AddEdge(int from, int to)
 {
   // Sanity checks
   DCASSERT(IsDynamic());
-  DCASSERT(from>=0);
-  DCASSERT(from<num_nodes);
-  DCASSERT(to>=0);
-  DCASSERT(to<num_nodes);
+  CHECK_RANGE(0, from, num_nodes);
+  CHECK_RANGE(0, to, num_nodes);
 
   if (num_edges >= edges_alloc) 
 	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));

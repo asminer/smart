@@ -20,7 +20,7 @@
 
 //@{
 
-#define DEBUG_MODEL
+//#define DEBUG_MODEL
 
 // remove this soon...
 

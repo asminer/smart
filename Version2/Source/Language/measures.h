@@ -63,8 +63,7 @@ public:
 
   /// Get dependency i.
   inline measure* GetDependency(int i) const {
-    DCASSERT(i>=0);
-    DCASSERT(i<num_dependencies);
+    CHECK_RANGE(0, i, num_dependencies);
     DCASSERT(dependencies);
     return dependencies[i];
   }

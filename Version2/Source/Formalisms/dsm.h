@@ -36,6 +36,7 @@ class reachset;  // defined in States/reachset.h
 
 class state_model {
   int events;
+  const char* name; 
 public:  // for now at least
   /// Reachable states.
   reachset *statespace; 
@@ -43,10 +44,11 @@ public:  // for now at least
   // Markov chain here?
 
 public:
-  state_model(int e);
+  state_model(const char* name, int e);
   virtual ~state_model();
 
   inline int NumEvents() const { return events; }
+  inline const char* Name() const { return name; }
 
   virtual void ShowState(OutputStream &s, const state &x) = 0;
   virtual void ShowEventName(OutputStream &s, int e) = 0;
@@ -101,6 +103,8 @@ public:
   virtual expr* EventDistribution(int e) = 0;
 
 };
+
+OutputStream& operator<< (OutputStream &s, state_model *m);
 
 //@}
 

@@ -5,7 +5,7 @@
 
 #include "../Templates/stack.h"
 
-#define DEBUG_SCCS
+//#define DEBUG_SCCS
 
 // globals
 const digraph* scc_graph;
@@ -235,13 +235,14 @@ int 	ComputeTSCCs(const digraph *g, unsigned long* sccmap)
   int i;
   for (i=0; i<g->NumNodes(); i++) 
     if (0==sccmap[i]) scc_visit(i);
+  scc_count -= g->NumNodes();
 
   // sccs are numbered #states ... 2*#states-1 (at most)
   // figure out which sccs are terminal.  If there is an arc out of
   // one, then it is not terminal.
   // We'll store the results in the stack array.
 
-  for (i=0; i<g->NumNodes(); i++) visit_stack[i] = 1;
+  for (i=0; i<scc_count; i++) visit_stack[i] = 1;
 
   if (g->isTransposed) {
     BackArcsFindTerminal(g, sccmap, visit_stack);
@@ -252,7 +253,7 @@ int 	ComputeTSCCs(const digraph *g, unsigned long* sccmap)
   // renumber classes.  
   // first, compact the terminal sccs to have numbers 1,2,3,...
   int termcount = 0;
-  for (i=0; i<g->NumNodes(); i++) if (visit_stack[i]) {
+  for (i=0; i<scc_count; i++) if (visit_stack[i]) {
     termcount++;
     visit_stack[i] = termcount;
   }

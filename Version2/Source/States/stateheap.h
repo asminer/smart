@@ -31,14 +31,12 @@ public:
   state() { size = 0; data = NULL; }
   inline int Size() const { return size; }
   inline result& operator[](int n) {
-    DCASSERT(n>=0);
-    DCASSERT(n<size);
+    CHECK_RANGE(0, n, size);
     DCASSERT(data);
     return data[n];
   }
   inline result Read(int n) const {
-    DCASSERT(n>=0);
-    DCASSERT(n<size);
+    CHECK_RANGE(0, n, size);
     DCASSERT(data);
     return data[n];
   }

@@ -413,10 +413,8 @@ assoc::assoc(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
   operands = new expr*[2];
   operands[0] = l;
   operands[1] = r;
-#ifdef DEVELOPMENT_CODE
   DCASSERT(l);
   DCASSERT(r);
-#endif
 }
 
 assoc::~assoc()

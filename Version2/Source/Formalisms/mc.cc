@@ -13,7 +13,7 @@
 
 #include "dsm.h"
 
-#define DEBUG_MC
+//#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -26,12 +26,15 @@
 class markov_dsm : public state_model {
   char** statenames;
   int numstates;
+  classified_chain <float> *arcs;
 public:
   /** Constructor.
+	@param	name	Model name
 	@param	sn	Array of state names
 	@param	ns	Number of states
+	@param	a	P or R matrix.
   */
-  markov_dsm(char** sn, int ns);
+  markov_dsm(const char* name, char** sn, int ns, classified_chain <float> *a);
   virtual ~markov_dsm();
 
   // required stuff:
@@ -52,10 +55,13 @@ public:
 // *                       markov_dsm methods                       *
 // ******************************************************************
 
-markov_dsm::markov_dsm(char** sn, int ns) : state_model(1)
+markov_dsm::markov_dsm(const char *name, char** sn, int ns, 
+			classified_chain <float> *a) 
+: state_model(name, 1)
 {
   statenames = sn;
   numstates = ns;
+  arcs = a;
 
   statespace = new reachset;
   statespace->CreateEnumerated(numstates);
@@ -63,6 +69,7 @@ markov_dsm::markov_dsm(char** sn, int ns) : state_model(1)
 
 markov_dsm::~markov_dsm()
 {
+  delete arcs;
 }
 
 void markov_dsm::ShowState(OutputStream &s, const state &x)
@@ -73,8 +80,7 @@ void markov_dsm::ShowState(OutputStream &s, const state &x)
 
 void markov_dsm::ShowEventName(OutputStream &s, int e)
 {
-  DCASSERT(e < NumEvents());
-  DCASSERT(e>=0);
+  CHECK_RANGE(0, e, NumEvents());
 
   // Is there something better to do here?
   s << "Markov chain";
@@ -106,8 +112,8 @@ class markov_model : public model {
   char** statenames;
   int numstates;
   sparse_vector <float> *initial;
-public:
   labeled_digraph <float> *wdgraph;
+public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
 
@@ -135,10 +141,8 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   statelist = NULL; 
   statenames = NULL;
   numstates = 0;
-  initial = new sparse_vector <float>(2);
-  wdgraph = new labeled_digraph <float>;
-  wdgraph->ResizeNodes(4);
-  wdgraph->ResizeEdges(4);
+  initial = NULL;
+  wdgraph = NULL;
 }
 
 markov_model::~markov_model()
@@ -163,6 +167,7 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
 
 void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
 {
+  DCASSERT(wdgraph);
   float f = weight;
   if (wdgraph->AddEdgeInOrder(fromstate, tostate, f) == wdgraph->NumEdges()-1) 
     return;
@@ -177,6 +182,7 @@ void markov_model::AddArc(int fromstate, int tostate, double weight, const char 
 
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
+  DCASSERT(wdgraph);
   int ndx = statelist->Length();
   statelist->Append(n);
   wdgraph->AddNode();
@@ -194,6 +200,10 @@ void markov_model::InitModel()
   statelist = new List <char> (16);
   statenames = NULL;
   numstates = 0;
+  initial = new sparse_vector <float>(2);
+  wdgraph = new labeled_digraph <float>;
+  wdgraph->ResizeNodes(4);
+  wdgraph->ResizeEdges(4);
 }
 
 void markov_model::FinalizeModel(result &x)
@@ -214,8 +224,6 @@ void markov_model::FinalizeModel(result &x)
     Output << " : " << initial->value[i] << "\n"; 
   }
   Output.flush();
-  // wdgraph->Transpose();
-  wdgraph->ConvertToStatic();
   Output << "Markov chain itself:\n";
   for (i=0; i<numstates; i++) {
     wdgraph->ShowNodeList(Output, i);
@@ -230,7 +238,9 @@ void markov_model::FinalizeModel(result &x)
 
 state_model* markov_model::BuildStateModel()
 {
-  return new markov_dsm(statenames, numstates);
+  classified_chain <float> *foo = new classified_chain <float>(wdgraph);
+  wdgraph = NULL;
+  return new markov_dsm(Name(), statenames, numstates, foo);
 }
 
 // ******************************************************************
@@ -447,33 +457,16 @@ void compute_mc_test(expr **pp, int np, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
-  markov_model *mc = dynamic_cast<markov_model*> (pp[0]);
+  DCASSERT(pp[0]);
+  model *mcmod = dynamic_cast<model*> (pp[0]);
+  DCASSERT(mcmod);
+  markov_dsm *mc = dynamic_cast <markov_dsm*> (mcmod->GetModel());
   DCASSERT(mc);
-  result term;
-  SafeCompute(pp[1], 0, term);
 
-  if (term.bvalue)
-	Output << "Computing terminal sccs for Markov chain " << mc << "\n";
-  else
-  	Output << "Computing sccs for Markov chain " << mc << "\n";
+  Output << "Got markov_dsm " << mc << "\n";
   Output.flush();
-  digraph *foo = mc->wdgraph;
-  unsigned long* mapping = new unsigned long[foo->NumNodes()];
-  int i;
-  for (i=0; i<foo->NumNodes(); i++) mapping[i] = 0;
-
   x.Clear();
-  if (term.bvalue)
-  	x.ivalue = ComputeTSCCs(foo, mapping); 
-  else
-  	x.ivalue = ComputeSCCs(foo, mapping); 
-
-  Output << "Done, node vector is: [";
-  Output.PutArray(mapping, foo->NumNodes());
-  Output << "]\n";
-  Output.flush();
-  
-  delete[] mapping;
+  x.ivalue = 0;
 }
 
 void Add_test(PtrTable *fns)

@@ -52,18 +52,15 @@ public:
   }
   inline int Size() const { return size; }
   inline void Set(int n) {
-    DCASSERT(n>=0);
-    DCASSERT(n<size);
+    CHECK_RANGE(0, n, size);
     data[n/32] |= mask[n%32]; // set bit n
   }
   inline void Unset(int n) {
-    DCASSERT(n>=0);
-    DCASSERT(n<size);
+    CHECK_RANGE(0, n, size);
     data[n/32] &= notm[n%32]; // clear bit n      
   }
   inline bool IsSet(int n) const {
-    DCASSERT(n>=0);
-    DCASSERT(n<size);
+    CHECK_RANGE(0, n, size);
     return (data[n/32] & mask[n%32]) > 0;  
   }
   inline void UnsetAll() {
@@ -76,11 +73,8 @@ public:
   }
   /// Unset all bits from b1 to b2, inclusive
   inline void UnsetRange(int b1, int b2) {
-    DCASSERT(b1>=0);
-    DCASSERT(b1<size);
-    DCASSERT(b2>=0);
-    DCASSERT(b2<size);
-    DCASSERT(b1 <= b2);
+    CHECK_RANGE(0, b1, size);
+    CHECK_RANGE(b1, b2, size);
     // do the stray bits up to the word boundary
     while ((b1 <= b2) && (b1 % 32 > 0)) Unset(b1++);
     // do words at a time
@@ -93,11 +87,8 @@ public:
   }
   /// Set all bits from b1 to b2, inclusive
   inline void SetRange(int b1, int b2) {
-    DCASSERT(b1>=0);
-    DCASSERT(b1<size);
-    DCASSERT(b2>=0);
-    DCASSERT(b2<size);
-    DCASSERT(b1 <= b2);
+    CHECK_RANGE(0, b1, size);
+    CHECK_RANGE(b1, b2, size);
     // do the stray bits up to the word boundary
     while ((b1 <= b2) && (b1 % 32 > 0)) Set(b1++);
     // do words at a time

@@ -61,22 +61,19 @@ public:
   }
 
   inline void* VItem(int n) const { 
-    DCASSERT(n<last);
-    DCASSERT(n>=0);
+    CHECK_RANGE(0, n, last);
     DCASSERT(data);
     return data[n]; 
   }
 
   inline void SetItem(int n, void *v) { 
-    DCASSERT(n<last);
-    DCASSERT(n>=0);
+    CHECK_RANGE(0, n, last);
     DCASSERT(data);
     data[n] = v;
   }
 
   void VInsertAt(int n, void* x) {
-    DCASSERT(n>=0);
-    DCASSERT(n<=last);
+    CHECK_RANGE(0, n, 1+last);
     DCASSERT(data);
     if (last >= size) Resize(MIN(2*size, size+MAX_LIST_ADD));
     for (int i = last; i>n; i--) {
