@@ -41,6 +41,8 @@ real pie:=3.1415;
 int sum(int a, int b) := a+b;
 int sum(int a, int b) := a*b;
 
+int foofunc(int a, int a) := a;
+
 pie;
 sum(4,5);
 

@@ -1985,6 +1985,7 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
 {
   if (NULL==opnd) return NULL;
   if (ERROR==opnd) return ERROR;
+  DCASSERT(opnd!=DEFLT);
 
   type optype = opnd->Type(0);
   switch (optype) {
@@ -2028,6 +2029,9 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
     Delete(right);
     return ERROR;
   }
+  DCASSERT(left!=DEFLT);
+  DCASSERT(right!=DEFLT);
+
   type ltype = left->Type(0);
   type rtype = right->Type(0);
 
@@ -2167,6 +2171,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       delete[] opnds;
       return ERROR;
     }
+    DCASSERT(opnds[i]!=DEFLT);
   }
   type alltypes = opnds[0]->Type(0);
 #ifdef DEVELOPMENT_CODE
@@ -2241,6 +2246,7 @@ void Optimize(int a, expr* &e)
   static List <expr> optbuffer(128);
   if (NULL==e) return;
   if (ERROR==e) return;
+  DCASSERT(e!=DEFLT);
   int i;
   // First... try to split us into sums
   optbuffer.Clear();

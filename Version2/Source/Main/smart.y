@@ -959,6 +959,7 @@ pos_param
 #ifdef PARSE_TRACE
   cout << "Reducing pos_param : DEFAULT\n";
 #endif
+  $$ = DEFLT;
 }
 	;
 

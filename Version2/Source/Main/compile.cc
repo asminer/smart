@@ -929,6 +929,7 @@ void* AddParameter(void* list, formal_param* fp)
 
 void* AddParameter(void* list, named_param* np)
 {
+  if (NULL==np) return list;
   List <named_param>* foo = (List <named_param> *)list;
   if (NULL==foo) {
     foo = new List <named_param> (256);
@@ -1022,9 +1023,16 @@ void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
     return;
   }
   if (NULL==pass) {
+    // this counts as a perfect match
     return;
   }
   if (ERROR==pass) {
+    perfect = promote = false;
+    return;
+  }
+  if (DEFLT==pass) {
+    if (p->HasDefault()) return;
+    // We're trying to pass a default for a parameter that doesn't have one
     perfect = promote = false;
     return;
   }
@@ -1078,7 +1086,13 @@ int CantDistinguishFunction(function *f, List <formal_param> *fpb)
       bool perfect = true;
       bool promote = true;
       MatchParam(fpa[i], fpb->Item(i), perfect, promote);
-      if (!perfect) break;
+      if (!perfect) {
+	// These parameters don't have the same type.
+	if (!fpa[i]->HasDefault()) break;
+	if (!fpb->Item(i)->HasDefault()) break;
+	// Still here? They both have defaults, which means
+	// they cannot be distinguished if the defaults are passed
+      }
     }
     if (i>=npb) {
       // ALL matched, bail
@@ -1335,12 +1349,18 @@ bool LinkFunction(function *f, expr** params, int np)
 
     // promote each component as necessary
     expr *prom = NULL;
-    if (fpl[fptr]->NumComponents()==1) {
-      // no aggregation
-      prom = MakeTypecast(params[pptr], fpl[fptr]->Type(0),
-      				filename, lexer.lineno());
+    if (DEFLT==params[pptr]) {
+      // Replace defaults
+      prom = Copy(fpl[fptr]->Default());
     } else {
-      prom = MakeTypecast(params[pptr], fpl[fptr], filename, lexer.lineno());
+      // Promote parameter as necessary
+      if (fpl[fptr]->NumComponents()==1) {
+        // no aggregation
+        prom = MakeTypecast(params[pptr], fpl[fptr]->Type(0),
+      				filename, lexer.lineno());
+      } else {
+        prom = MakeTypecast(params[pptr], fpl[fptr], filename, lexer.lineno());
+      }
     }
     params[pptr] = prom;
     fptr++;

@@ -194,6 +194,9 @@ void function::ShowHeader(OutputStream &s) const
 	s << GetType(parameters[i]->Type(j));
       }
       s << " " << parameters[i];
+      if (parameters[i]->HasDefault()) {
+	s << ":=" << parameters[i]->Default();
+      }
     }
     if (i<num_params-1) s << ", ";
   }

@@ -3,6 +3,8 @@
 
 Things to work on:
 
+* Positional parameters with default values
+
 * Named parameters
 
 * Input functions
