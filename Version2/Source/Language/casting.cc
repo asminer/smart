@@ -59,14 +59,14 @@ public:
   determ2rand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x);
+  virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new determ2rand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void determ2rand::Sample(long &, int i, result &x) 
+void determ2rand::Sample(Rng &, int i, result &x) 
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
@@ -123,14 +123,14 @@ public:
   bool2procrandbool(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_RAND_BOOL, x) { }
 
-  virtual void Sample(long &seed, int i, result &x);
+  virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new bool2procrandbool(Filename(), Linenumber(), x);
   }
 };
 
-void bool2procrandbool::Sample(long &seed, int i, result &x)
+void bool2procrandbool::Sample(Rng &seed, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
@@ -301,14 +301,14 @@ public:
   rand2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x);
+  virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new rand2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void rand2procrand::Sample(long &, int i, result &x)
+void rand2procrand::Sample(Rng &, int i, result &x)
 {
   DCASSERT(0==i);
   x.other = Copy(opnd);
@@ -329,14 +329,14 @@ public:
   proc2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x);
+  virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new proc2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void proc2procrand::Sample(long &, int i, result &x)
+void proc2procrand::Sample(Rng &, int i, result &x)
 {
   DCASSERT(0==i);
   opnd->Compute(i, x);

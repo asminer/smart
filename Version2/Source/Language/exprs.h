@@ -92,6 +92,9 @@ struct engineinfo {
 // *                                                                *
 // ******************************************************************
 
+class Rng;	// Random number generator class, defined elsewhere
+class state;    // defined elsewhere, used for proc expressions.
+
 class symbol;	// defined below
 class measure;	// also below
 
@@ -139,7 +142,17 @@ public:
   virtual void Compute(int i, result &x);
 
   /// Sample a value of component i (with given rng seed).
-  virtual void Sample(long &, int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
+
+  /** Compute the value of component i, given the state.
+      Necessary for "proc" expressions.
+  */
+  virtual void Compute(const state &, int i, result &x);
+
+  /** Sample a value of component i, given the state.
+      Necessary for "proc rand" expressions.
+  */
+  virtual void Sample(Rng &, const state &, int i, result &x);
 
   /** Create a copy of this expression with values substituted
       for certain symbols. 
@@ -431,7 +444,7 @@ public:
 // ******************************************************************
 
 /** Compute an expression.
-    This deals with error traces and such.
+    Correctly handles null expressions.
  */
 inline void SafeCompute(expr *e, int a, result &x) 
 {
@@ -446,14 +459,44 @@ inline void SafeCompute(expr *e, int a, result &x)
 }
 
 /** Sample an expression.
-    This deals with error traces and such.
+    Correctly handles null expressions.
  */
-inline void SafeSample(expr *e, int a, long &seed, result &x) 
+inline void SafeSample(expr *e, Rng &seed, int a, result &x) 
 {
   DCASSERT(e!=ERROR);
   DCASSERT(e!=DEFLT);
   if (e) {
     e->Sample(seed, a, x);
+  } else {
+    x.Clear();
+    x.setNull();
+  }
+}
+
+/** Compute an expression.
+    Correctly handles null expressions.
+ */
+inline void SafeCompute(expr *e, const state &s, int a, result &x) 
+{
+  DCASSERT(e!=ERROR);
+  DCASSERT(e!=DEFLT);
+  if (e) {
+    e->Compute(s, a, x);
+  } else {
+    x.Clear();
+    x.setNull();
+  }
+}
+
+/** Sample an expression.
+    Correctly handles null expressions.
+ */
+inline void SafeSample(expr *e, Rng &seed, const state &s, int a, result &x) 
+{
+  DCASSERT(e!=ERROR);
+  DCASSERT(e!=DEFLT);
+  if (e) {
+    e->Sample(seed, s, a, x);
   } else {
     x.Clear();
     x.setNull();

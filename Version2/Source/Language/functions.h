@@ -69,7 +69,7 @@ public:
   virtual ~formal_param();
 
   virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
 
   /** Used to "link" the formal params to 
       a user-defined function.
@@ -252,7 +252,7 @@ public:
 
 
   virtual void Compute(expr **, int np, result &x) = 0;
-  virtual void Sample(long &, expr **, int np, result &x) = 0;
+  virtual void Sample(Rng &, expr **, int np, result &x) = 0;
 
   /** Return true if this function should NOT be documented.
       (Probably because it is a research function.)
@@ -289,7 +289,7 @@ public:
   virtual ~user_func();
 
   virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(long &, expr **, int np, result &x);
+  virtual void Sample(Rng &, expr **, int np, result &x);
 
   virtual void SetReturn(expr *e);
 
@@ -331,10 +331,10 @@ typedef void (*compute_func) (expr **pp, int np, result &x);
 /** For sampling internal functions.
     Use the following declaration:
 
-    void MyFunc(long &seed, expr **pp, int np, result &x);
+    void MyFunc(Rng &seed, expr **pp, int np, result &x);
 
  */
-typedef void (*sample_func) (long &seed, expr **pp, int np, result &x);
+typedef void (*sample_func) (Rng &seed, expr **pp, int np, result &x);
 
 /** For determining engine information.
     Use the following declaration:
@@ -391,7 +391,7 @@ public:
                 formal_param **pl, int np, int rp, const char* doc);
 
   virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(long &, expr **, int np, result &x);
+  virtual void Sample(Rng &, expr **, int np, result &x);
 
   virtual void show(OutputStream &s) const;
 

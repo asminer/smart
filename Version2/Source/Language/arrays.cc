@@ -186,7 +186,7 @@ void array::Compute(expr **il, result &x)
   x.other = ptr;
 }
 
-void array::Sample(long &seed, expr **il, result &x)
+void array::Sample(Rng &seed, expr **il, result &x)
 {
   x.Clear();
   int i;
@@ -252,7 +252,7 @@ public:
   virtual ~acall();
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   virtual void show(OutputStream &s) const;
@@ -301,7 +301,7 @@ void acall::Compute(int i, result &x)
 #endif
 }
 
-void acall::Sample(long &seed, int i, result &x)
+void acall::Sample(Rng &seed, int i, result &x)
 {
   DCASSERT(0==i);
   func->Sample(seed, pass, x);

@@ -12,7 +12,8 @@
 
  */
 
-#include "baseops.h"
+// #include "baseops.h"
+#include "exprs.h"
 
 // These are necessary because they appear in smart.tab.h
 class array_index;

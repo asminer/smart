@@ -8,7 +8,8 @@
 SOURCES = \
 	results.cc	exprs.cc	infinity.cc	\
 	sets.cc 	stmts.cc 	\
-	baseops.cc	operators.cc	casting.cc \
+	operators.cc	baseops.cc 	ops_const.cc	ops_rand.cc	\
+	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
 	converge.cc	\
 	measures.cc	\

@@ -63,7 +63,7 @@ void formal_param::Compute(int i, result &x)
   x.notFreeable();    // this is a shallow copy
 }
 
-void formal_param::Sample(long &, int i, result &x)
+void formal_param::Sample(Rng &, int i, result &x)
 {
   DCASSERT(i==0);
   DCASSERT(stack);
@@ -300,11 +300,57 @@ void user_func::Compute(expr **pp, int np, result &x)
   stack_ptr = oldstackptr;
 }
 
-void user_func::Sample(long &s, expr **pp, int np, result &x) 
+void user_func::Sample(Rng &s, expr **pp, int np, result &x) 
 {
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Sample not yet done.  (Copy from compute, eventually.)\n";
-  Internal.Stop();
+  if (NULL==return_expr) {
+    x.setNull();
+    return;
+  }
+
+  // first... make sure there is enough room on the stack to save params
+  if (ParamStackTop+np > ParamStackSize) {
+    Error.Start(Filename(), Linenumber());
+    Error << "Stack overflow in function call " << Name();
+    Error.Stop();
+    x.setError();
+    return;
+  }
+
+  int oldstacktop = ParamStackTop;  
+  result* oldstackptr = stack_ptr;
+  result* newstackptr = ParamStack + ParamStackTop;
+
+  ParamStackTop += np; 
+
+  // Compute parameters, place on stack
+  int i;
+  for (i=0; i<np; i++) newstackptr[i].setError();
+  for (i=0; i<np; i++) SafeSample(pp[i], s, 0, newstackptr[i]); 
+
+  // "call" function
+  stack_ptr = newstackptr;
+  SafeSample(return_expr, s, 0, x);
+
+  if (x.isError()) {
+    // check option?
+    Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "function call " << Name();
+    if (np) Error << "(";
+    for (i=0; i<np; i++) {
+      if (i) Error << ", ";
+      Error << parameters[i] << "=";
+      PrintResult(Error, parameters[i]->Type(0), newstackptr[i]);
+    }
+    if (np) Error << ")";
+    Error.Stop();
+  }
+
+  // free parameters, in case they're strings or other bulky items
+  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[i]);
+
+  // pop off stack
+  ParamStackTop = oldstacktop;
+  stack_ptr = oldstackptr;
 }
 
 void user_func::SetReturn(expr *e)
@@ -384,7 +430,7 @@ void internal_func::Compute(expr **pp, int np, result &x)
   compute(pp, np, x);
 }
 
-void internal_func::Sample(long &seed, expr **pp, int np, result &x)
+void internal_func::Sample(Rng &seed, expr **pp, int np, result &x)
 {
   if (NULL==sample) {
     Internal.Start(__FILE__, __LINE__);
@@ -497,7 +543,7 @@ public:
   virtual ~fcall();
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   virtual void show(OutputStream &s) const;
@@ -539,7 +585,7 @@ void fcall::Compute(int i, result &x)
   func->Compute(pass, numpass, x);
 }
 
-void fcall::Sample(long &s, int i, result &x)
+void fcall::Sample(Rng &s, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(func);

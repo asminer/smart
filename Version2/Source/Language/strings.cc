@@ -3,6 +3,7 @@
 
 #include "strings.h"
 #include "operators.h"
+#include "baseops.h"
 
 void PrintString(const result& x, OutputStream &out, int width)
 {

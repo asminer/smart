@@ -208,7 +208,7 @@ public:
 
   /** Like compute, but we sample the indices instead.
    */
-  void Sample(long &, expr **il, result &x);
+  void Sample(Rng &, expr **il, result &x);
 
   virtual void show(OutputStream &s) const;
 };

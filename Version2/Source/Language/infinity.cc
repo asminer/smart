@@ -41,13 +41,6 @@ class infinityconst : public constant {
     x.setInfinity();
   }
 
-  virtual void Sample(long &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = sign;
-    x.setInfinity();
-  }
-
   virtual void show(OutputStream &s) const {
     if (sign<0) s << "-";
     DCASSERT(infinity_string);
