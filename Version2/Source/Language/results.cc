@@ -18,8 +18,12 @@
 
 void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 {
-  if (x.isUnknown()) { s << "?"; return; }
-  if (x.isInfinity()) { s << infinity_string->GetString(); return; }
+  if (x.isUnknown()) { s.Put('?'); return; }
+  if (x.isInfinity()) { 
+    if (x.ivalue<0) s.Put('-');
+    s << infinity_string->GetString(); 
+    return; 
+  }
   if (x.isNull()) { s << "null"; return; }
   if (x.error) { s << "null"; return; }
   // width not specified

@@ -301,13 +301,13 @@ protected:
       return false;
     }
     if (l.isInfinity()) {
-      // first is infinity, the other isn't; definitely greater.
-      x.bvalue = true;
+      // first is infinity, the other isn't; check sign
+      x.bvalue = (l.ivalue>0);
       return false;
     }
     if (r.isInfinity()) {
-      // second is infinity, the other isn't; definitely not greater.
-      x.bvalue = false;
+      // second is infinity, the other isn't; check sign
+      x.bvalue = (r.ivalue<0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
@@ -375,13 +375,13 @@ protected:
       return false;
     }
     if (l.isInfinity()) {
-      // first is infinity, the other isn't; definitely greater.
-      x.bvalue = true;
+      // first is infinity, the other isn't; check sign
+      x.bvalue = (l.ivalue>0);
       return false;
     }
     if (r.isInfinity()) {
-      // second is infinity, the other isn't; definitely not greater.
-      x.bvalue = false;
+      // second is infinity, the other isn't; check sign
+      x.bvalue = (r.ivalue<0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
@@ -449,13 +449,13 @@ protected:
       return false;
     }
     if (l.isInfinity()) {
-      // first is infinity, the other isn't; definitely greater.
-      x.bvalue = false;
+      // first is infinity, the other isn't; check sign
+      x.bvalue = (l.ivalue<0);
       return false;
     }
     if (r.isInfinity()) {
-      // second is infinity, the other isn't; definitely not greater.
-      x.bvalue = true;
+      // second is infinity, the other isn't; check sign
+      x.bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
@@ -523,13 +523,13 @@ protected:
       return false;
     }
     if (l.isInfinity()) {
-      // first is infinity, the other isn't; definitely greater.
-      x.bvalue = false;
+      // first is infinity, the other isn't; check sign
+      x.bvalue = (l.ivalue<0);
       return false;
     }
     if (r.isInfinity()) {
-      // second is infinity, the other isn't; definitely not greater.
-      x.bvalue = true;
+      // second is infinity, the other isn't; check sign
+      x.bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {

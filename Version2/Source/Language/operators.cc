@@ -817,6 +817,10 @@ void int_mult::Compute(int a, result &x)
   if (x.error) return;
   if (x.isNull()) return;  // short circuit
   bool unknown = x.isUnknown();
+  if (unknown) {
+    x.Clear();
+    x.ivalue = 1;
+  }
   int i=0;
   if (x.ivalue) {
     // Multiply until we run out of operands or hit zero
@@ -1258,6 +1262,7 @@ void real_add::Compute(int a, result &x)
   if (x.error) return;
   if (x.isNull()) return;  // short circuit
   bool unknown = x.isUnknown();
+  if (unknown) x.Clear();
   int i=0;
   if (!x.isInfinity()) {
     // Sum until we run out of operands or hit an infinity
@@ -1439,6 +1444,10 @@ void real_mult::Compute(int a, result &x)
   if (x.error) return;
   if (x.isNull()) return;  // short circuit
   bool unknown = x.isUnknown();
+  if (unknown) {
+    x.Clear();
+    x.rvalue = 1.0;
+  }
   int i=0;
   if (x.rvalue) {
     // Multiply until we run out of operands or hit zero
@@ -2027,8 +2036,12 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       DCASSERT(rtype==BOOL);
 
       switch (op) {
-          case PLUS:	return new bool_or(file, line, left, right);
-	  case TIMES:   return new bool_and(file, line, left, right);
+          case PLUS:
+          case OR:	return new bool_or(file, line, left, right);
+
+	  case TIMES:
+	  case AND:   	return new bool_and(file, line, left, right);
+
 	  case EQUALS:	return new bool_equal(file, line, left, right);
 	  case NEQUAL:	return new bool_neq(file, line, left, right);
       }
@@ -2165,8 +2178,11 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
     case BOOL:
 
       switch (op) {
-          case PLUS:	return new bool_or(file, line, opnds, n);
-	  case TIMES:   return new bool_and(file, line, opnds, n);
+          case PLUS:
+          case OR:	return new bool_or(file, line, opnds, n);
+
+	  case TIMES:
+	  case AND:   	return new bool_and(file, line, opnds, n);
 
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
