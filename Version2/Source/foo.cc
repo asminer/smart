@@ -35,10 +35,11 @@ statement* MakeFor(int n)
   expr** ind2 = new expr*[1];
   ind2[0] = MakeBinaryOp(Copy(i), MINUS, two);
 
-  expr* fib1 = MakeArrayCall(fib, ind1, 1, "foo", 42);
-  expr* fib2 = MakeArrayCall(fib, ind2, 1, "foo", 42);
+  expr** fibs = new expr*[2];
+  fibs[0] = MakeArrayCall(fib, ind1, 1, "foo", 42);
+  fibs[1] = MakeArrayCall(fib, ind2, 1, "foo", 42);
 
-  pass[1] = MakeBinaryOp(fib1, PLUS, fib2);
+  pass[1] = MakeAssocOp(PLUS, fibs, 2);
   pass[2] = Copy(one);
   
   function* cond = MakeCond(INT);

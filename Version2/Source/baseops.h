@@ -49,12 +49,12 @@ public:
       the virtual functions, because they are all the
       same for addition.
 
-      Note: this includes binary or
+      Note: this includes logical or
 */  
 
-class addop : public binary {
+class addop : public assoc {
 public:
-  addop(const char* fn, int line, expr* l, expr* r) : binary(fn, line, l, r) {}
+  addop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n) {}
   virtual void show(ostream &s) const;
   virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
 };
@@ -71,7 +71,7 @@ public:
 class subop : public binary {
 public:
   subop(const char* fn, int line, expr* l, expr* r) : binary(fn, line, l, r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "-"); }
 };
 
 // ******************************************************************
@@ -86,12 +86,12 @@ public:
       the virtual functions, because they are all the
       same for multiplication.
 
-      Note: this includes binary and
+      Note: this includes logical and
 */  
 
-class multop : public binary {
+class multop : public assoc {
 public:
-  multop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r){}
+  multop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n){}
   virtual void show(ostream &s) const;
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
 };
@@ -108,7 +108,7 @@ public:
 class divop : public binary {
 public:
   divop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "/"); }
 };
 
 
@@ -130,9 +130,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -172,7 +174,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "=="); }
 };
 
 
@@ -194,9 +196,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -236,7 +240,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "!="); }
 };
 
 
@@ -258,9 +262,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -305,7 +311,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, ">"); }
 };
 
 
@@ -327,9 +333,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -374,7 +382,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, ">="); }
 };
 
 
@@ -396,9 +404,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -443,7 +453,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "<"); }
 };
 
 
@@ -465,9 +475,11 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    DCASSERT(left);
+    DCASSERT(right);
     x.Clear();
-    if (left) left->Compute(0, l); else l.null = true;
-    if (right) right->Compute(0, r); else r.null = true;
+    left->Compute(0, l);
+    right->Compute(0, r);
 
     if (l.error) {
       // some option about error tracing here, I guess...
@@ -512,7 +524,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "<="); }
 };
 
 
@@ -529,7 +541,7 @@ public:
 class eqop : public binary {
 public:
   eqop(const char* fn, int line, expr* l, expr* r): binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "=="); }
 };
 
 
@@ -546,7 +558,7 @@ public:
 class neqop : public binary {
 public:
   neqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "!="); }
 };
 
 
@@ -563,7 +575,7 @@ public:
 class gtop : public binary {
 public:
   gtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, ">"); }
 };
 
 
@@ -580,7 +592,7 @@ public:
 class geop : public binary {
 public:
   geop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, ">="); }
 };
 
 
@@ -597,7 +609,7 @@ public:
 class ltop : public binary {
 public:
   ltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "<"); }
 };
 
 
@@ -614,7 +626,7 @@ public:
 class leop : public binary {
 public:
   leop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, "<="); }
 };
 
 

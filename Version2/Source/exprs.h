@@ -20,7 +20,6 @@
 //#define SHARE_DEBUG
 
 //@{
-  
 
 /// Things that can go wrong when computing a result.
 enum compute_error {
@@ -284,7 +283,8 @@ public:
   virtual expr* Substitute(int i) = 0;
 
   /** Split this expression into a sequence of sums.
-      We store pointers to parts of the expressions, not copies.
+      We store pointers to parts of the expressions, not copies;
+      so don't delete them.
       @param	i	The component to split.
       @param	sums	An array of pointers, already allocated, to store
       			each piece of the expression.
@@ -419,6 +419,7 @@ protected:
       The filename and line number should be copied.
    */
   virtual expr* MakeAnother(expr* newopnd) = 0;
+  void unary_show(ostream &s, const char *op) const;
 };
 
 // ******************************************************************
@@ -443,10 +444,42 @@ public:
   virtual expr* Substitute(int i);
 protected:
   /** Used by Substitute.
-      Whatever kind of unary operation we are, make another one.
+      Whatever kind of binary operation we are, make another one.
       The filename and line number should be copied.
    */
   virtual expr* MakeAnother(expr* newleft, expr* newright) = 0;
+  void binary_show(ostream &s, const char *op) const;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                          assoc  class                          *
+// *                                                                *
+// ******************************************************************
+
+/**  The base class for associative operations.
+     This allows us to string together things like sums
+     into a single operator (for efficiency).
+     Deriving from this class will save you from having
+     to implement a few things.
+ */
+
+class assoc : public expr {
+protected:
+  int opnd_count;
+  expr** operands;
+public:
+  assoc(const char* fn, int line, expr **x, int n);
+  virtual ~assoc();
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual expr* Substitute(int i);
+protected:
+  /** Used by Substitute.
+      Whatever kind of associative operation we are, make another one.
+      The filename and line number should be copied.
+   */
+  virtual expr* MakeAnother(expr **newx, int newn) = 0;
+  void assoc_show(ostream &s, const char *op) const;
 };
 
 // ******************************************************************
@@ -499,6 +532,43 @@ public:
 
 // ******************************************************************
 // *                                                                *
+// *                Global functions for expressions                *
+// *                                                                *
+// ******************************************************************
+
+/** Compute an expression.
+    This deals with error traces and such.
+ */
+inline void Compute(expr *e, int a, result &x) 
+{
+  if (e) {
+    e->Compute(a, x);
+    // error tracing here
+    // if (x.error) do something cool;
+  } else {
+    x.Clear();
+    x.null = true;
+  }
+}
+
+/** Sample an expression.
+    This deals with error traces and such.
+ */
+inline void Sample(expr *e, int a, long &seed, result &x) 
+{
+  if (e) {
+    e->Sample(seed, a, x);
+    // error tracing here
+    // if (x.error) do something cool;
+  } else {
+    x.Clear();
+    x.null = true;
+  }
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                  Global functions for results                  *
 // *                                                                *
 // ******************************************************************
@@ -533,6 +603,8 @@ expr* MakeConstExpr(char *c, const char* file=NULL, int line=0);
  */
 expr* MakeConstExpr(type t, const result &x, const char* file=NULL, int line=0);
 
+/// Build an aggregate
+assoc* MakeAggregate(expr **list, int size, const char* file=NULL, int line=0);
 
 //@}
 

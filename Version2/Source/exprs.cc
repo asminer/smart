@@ -97,6 +97,7 @@ expr* constant::Substitute(int i)
 unary::unary(const char* fn, int line, expr *x) : expr(fn,line) 
 {
   opnd = x;
+  DCASSERT(opnd);
 }
 
 unary::~unary()
@@ -125,6 +126,11 @@ expr* unary::Substitute(int i)
   return MakeAnother(newopnd);
 }
 
+void unary::unary_show(ostream &s, const char* op) const
+{
+  s << op << opnd;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                          binary class                          *
@@ -135,6 +141,8 @@ binary::binary(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
 {
   left = l;
   right = r;
+  DCASSERT(left);
+  DCASSERT(right);
 }
 
 binary::~binary()
@@ -171,6 +179,82 @@ expr* binary::Substitute(int i)
   // The substitution is different... make a new one of us
   return MakeAnother(newleft, newright);
 }
+
+void binary::binary_show(ostream &s, const char* op) const
+{
+  s << "(" << left << op << right << ")";
+}
+
+// ******************************************************************
+// *                                                                *
+// *                          assoc  class                          *
+// *                                                                *
+// ******************************************************************
+
+assoc::assoc(const char* fn, int line, expr **x, int n) : expr(fn,line) 
+{
+  opnd_count = n;
+  operands = x;
+#ifdef DEVELOPMENT_CODE
+  int i;
+  for (i=0; i<n; i++)
+    DCASSERT(operands[i]);
+#endif
+}
+
+assoc::~assoc()
+{
+  int i;
+  for (i=0; i<opnd_count; i++) Delete(operands[i]);
+  delete[] operands;
+}
+
+int assoc::GetSymbols(int a, symbol **syms, int N, int offset)
+{
+  DCASSERT(a==0);
+  int answer = 0;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    answer += operands[i]->GetSymbols(0, syms, N, offset+answer);
+  }
+  return answer;
+}
+
+expr* assoc::Substitute(int a)
+{
+  DCASSERT(a==0);
+  // Slick...
+  expr** newops = new expr* [opnd_count];
+  bool notequal = false;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    newops[i] = operands[i]->Substitute(0);
+    if (newops[i] != operands[i]) notequal = true;
+  }
+  if (notequal)  // The substitution is different... make a new one of us
+    return MakeAnother(newops, opnd_count);
+
+  // Substitution doesn't change anything, copy ourself
+
+  // But delete the copies first...
+  for (i=0; i<opnd_count; i++)
+    Delete(newops[i]);
+  delete[] newops;
+
+  return Copy(this);
+}
+
+void assoc::assoc_show(ostream &s, const char* op) const
+{
+  s << "(" << operands[0];
+  int i;
+  for (i=1; i<opnd_count; i++) 
+    s << op << operands[i];
+  s << ")";
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -229,27 +313,16 @@ void symbol::show(ostream &s) const
 
 /**   The class used to aggregate expressions.
  
-      Note: instead of using several binary operations, like we used to,
-      we group all the aggregates together in one place.
-      Why?  Speed, of course.
+      We are derived from assoc, but most of the
+      provided functions of assoc must be overloaded
+      (because of the special nature of aggregates).
 */  
 
-class aggregates : public expr {
-  /// The individual expressions.
-  expr** items;
-  /// The number of individual expressions.
-  int numitems;
+class aggregates : public assoc {
 public:
-  /// Empty constructor.
-  aggregates();
-
-  /** Constructor.
-      Note: if left or right is already an aggregate, its entries
-            will be copied, and it will be destroyed.
-   */
-  aggregates(expr* left, expr* right);
-
-  virtual ~aggregates();
+  /// Constructor.
+  aggregates(const char* fn, int line, expr **x, int n) 
+    : assoc (fn, line, x, n) { }
 
   virtual int NumComponents() const;
   virtual expr* GetComponent(int i);
@@ -263,142 +336,76 @@ public:
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
 
-  virtual void show(ostream &s) const;
-
+  virtual void show(ostream &s) const { assoc_show(s, ":"); }
 protected:
-  virtual void TakeAggregates();
+  virtual assoc* MakeAnother(expr **, int) {
+    cerr << "INTERNAL: call to aggregates::MakeAnother\n";
+    ASSERT(0);
+    return NULL;
+  }
 };
 
-aggregates::aggregates() : expr(NULL,0)
-{
-  items = NULL;
-  numitems = 0;
-}
-
-aggregates::aggregates(expr* left, expr* right) : expr(NULL,0)
-{
-  int leftcount = 1;
-  if (left) leftcount = left->NumComponents();
-  int rightcount = 1;
-  if (rightcount) rightcount = right->NumComponents();
-  // make space for us
-  numitems = leftcount+rightcount;
-  items = new expr* [numitems];
-  int i,j;
-  // Copy left items
-  if (left) {
-    if (1==leftcount) {
-      items[0] = left;
-      i = 1;
-    } else {
-      // we have aggregates
-      for (i=0; i<leftcount; i++) 
-	items[i] = left->GetComponent(i);
-      left->TakeAggregates();
-    }
-  } else {
-    items[0] = NULL;
-    i = 1;
-  }
-  // Copy right items
-  if (right) {
-    if (1==rightcount) {
-      items[i] = right;
-    } else {
-      // we have aggregates
-      for (j=0; j<leftcount; j++) 
-	items[j+i] = right->GetComponent(j);
-      right->TakeAggregates();
-    }
-  } else {
-    items[i] = NULL;
-  }
-  // Cleanup
-  delete left;
-  delete right;
-}
-
-aggregates::~aggregates()
-{
-  int i;
-  for (i=0; i<numitems; i++) Delete(items[i]);
-  delete[] items;
-}
 
 int aggregates::NumComponents() const 
 { 
-  return numitems; 
+  return opnd_count;
 }
 
 expr* aggregates::GetComponent(int i) 
 { 
-  CHECK_RANGE(0, i, numitems);
-  return items[i]; 
+  CHECK_RANGE(0, i, opnd_count);
+  return operands[i]; 
 }
 
 type aggregates::Type(int i) const 
 {
-  CHECK_RANGE(0, i, numitems);
-  if (items[i]) return items[i]->Type(0);
+  CHECK_RANGE(0, i, opnd_count);
+  if (operands[i]) return operands[i]->Type(0);
   return VOID;
 }
 
 void aggregates::Compute(int i, result &x) const 
 {
-  CHECK_RANGE(0, i, numitems);
-  if (items[i]) items[i]->Compute(0, x);
+  CHECK_RANGE(0, i, opnd_count);
+  if (operands[i]) operands[i]->Compute(0, x);
   else x.null = true;
 }
 
 void aggregates::Sample(long &seed, int i, result &x) const 
 {
-  CHECK_RANGE(0, i, numitems);
-  if (items[i]) items[i]->Sample(seed, 0, x);
+  CHECK_RANGE(0, i, opnd_count);
+  if (operands[i]) operands[i]->Sample(seed, 0, x);
   else x.null = true;
 }
 
 expr* aggregates::Substitute(int i) 
 {
-  CHECK_RANGE(0, i, numitems);
-  if (items[i]) return items[i]->Substitute(0);
+  CHECK_RANGE(0, i, opnd_count);
+  if (operands[i]) return operands[i]->Substitute(0);
   return NULL;
 }
 
 int aggregates::GetSums(int i, expr **sums, int N, int offset) 
 {
-  CHECK_RANGE(0, i, numitems);
-  if (items[i]) return items[i]->GetSums(0, sums, N, offset);
+  CHECK_RANGE(0, i, opnd_count);
+  if (operands[i]) return operands[i]->GetSums(0, sums, N, offset);
   return 0;  // null expression
 }
 
 int aggregates::GetProducts(int i, expr **prods, int N, int offset) 
 {
-    CHECK_RANGE(0, i, numitems);
-    if (items[i]) return items[i]->GetProducts(0, prods, N, offset);
+    CHECK_RANGE(0, i, opnd_count);
+    if (operands[i]) return operands[i]->GetProducts(0, prods, N, offset);
     return 0;  // null expression
 }
 
 int aggregates::GetSymbols(int i, symbol **syms, int N, int offset) 
 {
-    CHECK_RANGE(0, i, numitems);
-    if (items[i]) return items[i]->GetSymbols(0, syms, N, offset);
+    CHECK_RANGE(0, i, opnd_count);
+    if (operands[i]) return operands[i]->GetSymbols(0, syms, N, offset);
     return 0;  // null expression
 }
 
-void aggregates::show(ostream &s) const
-{
-  int i;
-  s << items[0];
-  for (i=1; i<numitems; i++) s << ":" << items[i];
-}
-
-void aggregates::TakeAggregates()
-{
-  // Our items have been copied, so set them to NULL so we don't
-  // delete them in the destructor
-  int i;
-  for (i=0; i<numitems; i++) items[i] = NULL;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -576,6 +583,11 @@ expr* MakeConstExpr(double c, const char* file, int line)
 expr* MakeConstExpr(char *c, const char* file, int line) 
 {
   return new stringconst(file, line, c);
+}
+
+assoc* MakeAggregate(expr **list, int size, const char* file, int line)
+{
+  return new aggregates(file, line, list, size);
 }
 
 //@}

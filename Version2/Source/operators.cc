@@ -20,6 +20,30 @@
 
 //#define DEBUG_DEEP
 
+inline bool Pos(int i) { return (i>0) ? 1 : 0; }
+inline int Sign(int i) { return (i<0) ? -1 : Pos(i); }
+
+const char* GetOp(int op)
+{
+  switch (op) {
+    case NOT: 		return "!";
+    case NEG: 		return "-";
+    case PLUS: 		return "+";
+    case MINUS:		return "-";
+    case TIMES:		return "*";
+    case DIVIDE:	return "/";
+    case EQUALS:	return "==";
+    case NEQ:		return "!=";
+    case GT:		return ">";
+    case GE:		return ">=";
+    case LT:		return "<";
+    case LE:		return "<=";
+    default:
+			return "unknown_op";
+  }
+  return "error";  // keep compilers happy
+}
+
 // ******************************************************************
 // ******************************************************************
 // **                                                              **
@@ -58,10 +82,10 @@ protected:
 void bool_not::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(opnd);
   x.Clear();
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  opnd->Compute(0, x); 
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 
@@ -74,12 +98,12 @@ void bool_not::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-/** Or of two boolean expressions.
+/** Or of boolean expressions.
  */
 class bool_or : public addop {
 public:
-  bool_or(const char* fn, int line, expr *l, expr *r) 
-    : addop(fn, line, l, r) { }
+  bool_or(const char* fn, int line, expr **x, int n) 
+    : addop(fn, line, x, n) { }
 
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -87,36 +111,23 @@ public:
   }
   virtual void Compute(int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new bool_or(Filename(), Linenumber(), l, r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new bool_or(Filename(), Linenumber(), x, n);
   }
 };
 
-void bool_or::Compute(int i, result &x)
+void bool_or::Compute(int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-
-  // Should we short-circuit?  (i.e., don't compute right if left=true?)
-  if (right) right->Compute(0, r); else r.null = true;
-
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  x.bvalue = l.bvalue || r.bvalue;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->Compute(0, x);
+    if (x.error) 	return; // error...short circuit
+    if (x.null) 	return;	// null...short circuit
+    if (x.bvalue) 	return;	// true...short circuit
+  } // for i
 }
 
 // ******************************************************************
@@ -129,8 +140,8 @@ void bool_or::Compute(int i, result &x)
  */
 class bool_and : public multop {
 public:
-  bool_and(const char* fn, int line, expr *l, expr *r) 
-    : multop(fn, line, l, r) { }
+  bool_and(const char* fn, int line, expr **x, int n) 
+    : multop(fn, line, x, n) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -138,34 +149,23 @@ public:
   }
   virtual void Compute(int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new bool_and(Filename(), Linenumber(), l, r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new bool_and(Filename(), Linenumber(), x, n);
   }
 };
 
-void bool_and::Compute(int i, result &x)
+void bool_and::Compute(int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
-
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  x.bvalue = l.bvalue && r.bvalue;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->Compute(0, x);
+    if (x.error) 	return; // error...short circuit
+    if (x.null) 	return;	// null...short circuit
+    if (!x.bvalue) 	return;	// false...short circuit
+  } // for i
 }
 
 // ******************************************************************
@@ -195,11 +195,14 @@ protected:
 void bool_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
+
+  left->Compute(0, l); 
+  right->Compute(0, r); 
 
   if (l.error) {
     // some option about error tracing here, I guess...
@@ -244,11 +247,13 @@ protected:
 void bool_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
+  left->Compute(0, l);
+  right->Compute(0, r);
 
   if (l.error) {
     // some option about error tracing here, I guess...
@@ -304,10 +309,10 @@ protected:
 void randbool_not::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(opnd);
   x.Clear();
-  if (opnd) opnd->Sample(seed, 0, x); else x.null = true;
+  opnd->Sample(seed, 0, x);
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 
@@ -324,8 +329,8 @@ void randbool_not::Sample(long &seed, int i, result &x)
  */
 class randbool_or : public addop {
 public:
-  randbool_or(const char* fn, int line, expr *l, expr *r) 
-    : addop(fn, line, l, r) { }
+  randbool_or(const char* fn, int line, expr **x, int n) 
+    : addop(fn, line, x, n) { }
 
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -333,36 +338,23 @@ public:
   }
   virtual void Sample(long &seed, int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new randbool_or(Filename(), Linenumber(), l,r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new randbool_or(Filename(), Linenumber(), x, n);
   }
 };
 
-void randbool_or::Sample(long &seed, int i, result &x)
+void randbool_or::Sample(long &seed, int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-  if (left) left->Sample(seed, 0, l); else l.null = true;
-
-  // Should we short-circuit?  (i.e., don't compute right if left=true?)
-  if (right) right->Sample(seed, 0, r); else r.null = true;
-
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  x.bvalue = l.bvalue || r.bvalue;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->Sample(seed, 0, x);
+    if (x.error) 	return; // error...short circuit
+    if (x.null) 	return;	// null...short circuit
+    if (x.bvalue) 	return;	// true...short circuit
+  } // for i
 }
 
 // ******************************************************************
@@ -375,8 +367,8 @@ void randbool_or::Sample(long &seed, int i, result &x)
  */
 class randbool_and : public multop {
 public:
-  randbool_and(const char* fn, int line, expr *l, expr *r) 
-    : multop(fn, line, l, r) { }
+  randbool_and(const char* fn, int line, expr **x, int n) 
+    : multop(fn, line, x, n) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -384,34 +376,23 @@ public:
   }
   virtual void Sample(long &seed, int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new randbool_and(Filename(), Linenumber(), l, r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new randbool_and(Filename(), Linenumber(), x, n);
   }
 };
 
-void randbool_and::Sample(long &seed, int i, result &x)
+void randbool_and::Sample(long &seed, int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-  if (left) left->Sample(seed, 0, l); else l.null = true;
-  if (right) right->Sample(seed, 0, r); else r.null = true;
-
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  x.bvalue = l.bvalue && r.bvalue;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->Sample(seed, 0, x);
+    if (x.error) 	return; // error...short circuit
+    if (x.null) 	return;	// null...short circuit
+    if (!x.bvalue) 	return;	// false...short circuit
+  } // for i
 }
 
 // ******************************************************************
@@ -441,11 +422,13 @@ protected:
 void randbool_equal::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  if (left) left->Sample(seed, 0, l); else l.null = true;
-  if (right) right->Sample(seed, 0, r); else r.null = true;
+  left->Sample(seed, 0, l); 
+  right->Sample(seed, 0, r);
 
   if (l.error) {
     // some option about error tracing here, I guess...
@@ -490,11 +473,13 @@ protected:
 void randbool_neq::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  if (left) left->Sample(seed, 0, l); else l.null = true;
-  if (right) right->Sample(seed, 0, l); else r.null = true;
+  left->Sample(seed, 0, l);
+  right->Sample(seed, 0, r);
 
   if (l.error) {
     // some option about error tracing here, I guess...
@@ -550,10 +535,10 @@ protected:
 void int_neg::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(opnd);
   x.Clear();
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  opnd->Compute(0, x);
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 
@@ -567,12 +552,12 @@ void int_neg::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-/** Addition of two integer expressions.
+/** Addition of integer expressions.
  */
 class int_add : public addop {
 public:
-  int_add(const char* fn, int line, expr *l, expr *r) 
-    : addop(fn, line, l, r) { }
+  int_add(const char* fn, int line, expr **x, int n) 
+    : addop(fn, line, x, n) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -580,68 +565,76 @@ public:
   }
   virtual void Compute(int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new int_add(Filename(), Linenumber(), l, r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new int_add(Filename(), Linenumber(), x, n);
   }
 };
 
-void int_add::Compute(int i, result &x)
+
+void int_add::Compute(int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-#ifdef DEBUG_DEEP
-  cout << "Adding " << left << " to " << right << "\n";
-#endif
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
-#ifdef DEBUG_DEEP
-  cout << "Got " << left << " = " << l.ivalue << "\n";
-  cout << "Got " << right << " = " << r.ivalue << "\n";
-#endif
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
+  DCASSERT(operands[0]);
+  operands[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) return;  // short circuit
+  int i=0;
+  if (!x.infinity) {
+    // Sum until we run out of operands or hit an infinity
+    for (i++; i<opnd_count; i++) {
+      DCASSERT(operands[i]);
+      result foo;
+      operands[i]->Compute(0, foo);
+      if (foo.error) {
+	  // error tracing options here
+	  x.error = foo.error;
+	  return;  // error...short circuit
+      }
+      if (foo.null) {
+	  x.null = true;
+	  return;  // null...short circuit
+      }
+      // new operand is not null or an error, add to x
+      if (foo.infinity) {
+        x.infinity = true;
+        x.ivalue = foo.ivalue;
+        break;  
+      } else {
+        x.ivalue += foo.ivalue;  // normal finite addition
+      }
+    } // for i
   }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  if (l.infinity && r.infinity) {
-    // both infinity
-    if ((l.ivalue > 0) == (r.ivalue >0)) {
-      x.infinity = true;
-      x.ivalue = l.ivalue;
-      return;
+
+
+  // sum so far is +/- infinity, or we are out of operands.
+  // Check the remaining operands, if any, and throw an
+  // error if we have infinity - infinity.
+  
+  for (i++; i<opnd_count; i++) {
+    DCASSERT(x.infinity);
+    DCASSERT(operands[i]);
+    result foo;
+    operands[i]->Compute(0, foo);
+    if (foo.error) {
+        // error tracing options here
+	x.error = foo.error;
+	return;  // error...short circuit
     }
-    // different signs, print error message here
-    x.error = CE_Undefined;
-    x.null = true;
-    return;
-  }
-  if (l.infinity) {
-    // one infinity
-    x.infinity = true;
-    x.ivalue = l.ivalue;
-    return;
-  }
-  if (r.infinity) {
-    // one infinity
-    x.infinity = true;
-    x.ivalue = r.ivalue;
-    return;
-  }
-  // ordinary integer addition
-  x.ivalue = l.ivalue + r.ivalue;
-#ifdef DEBUG_DEEP
-  cout << "So their sum is " << x.ivalue << "\n";
-#endif
+    if (foo.null) {
+        x.null = true;
+        return;  // null...short circuit
+    }
+    // check operand for opposite sign for infinity
+    if (foo.infinity) {
+      if ( (x.ivalue>0) != (foo.ivalue>0) ) {
+	  // deal with error tracing here
+	  x.error = CE_Undefined;
+	  x.null = true;
+	  return;
+      }
+    }
+  } // for i
 }
 
 // ******************************************************************
@@ -670,14 +663,16 @@ protected:
 void int_sub::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
 #ifdef DEBUG_DEEP
   cout << "Adding " << left << " to " << right << "\n";
 #endif
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
+  left->Compute(0, l);
+  right->Compute(0, r);
 #ifdef DEBUG_DEEP
   cout << "Got " << left << " = " << l.ivalue << "\n";
   cout << "Got " << right << " = " << r.ivalue << "\n";
@@ -737,8 +732,8 @@ void int_sub::Compute(int i, result &x)
  */
 class int_mult : public multop {
 public:
-  int_mult(const char* fn, int line, expr *l, expr *r) 
-    : multop(fn,line,l,r) { }
+  int_mult(const char* fn, int line, expr **x, int n) 
+    : multop(fn,line,x,n) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -746,55 +741,83 @@ public:
   }
   virtual void Compute(int i, result &x);
 protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new int_mult(Filename(), Linenumber(), l, r);
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new int_mult(Filename(), Linenumber(), x, n);
   }
 };
 
-void int_mult::Compute(int i, result &x)
+void int_mult::Compute(int a, result &x)
 {
-  DCASSERT(0==i);
-  result l;
-  result r;
+  DCASSERT(0==a);
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
+  DCASSERT(operands[0]);
+  operands[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) return;  // short circuit
+  int i=0;
+  if (x.ivalue) {
+    // Multiply until we run out of operands or hit zero
+    for (i++; i<opnd_count; i++) {
+      DCASSERT(operands[i]);
+      result foo;
+      operands[i]->Compute(0, foo);
+      if (foo.error) {
+	  // error tracing options here
+	  x.error = foo.error;
+	  return;  // error...short circuit
+      }
+      if (foo.null) {
+	  x.null = true;
+	  return;  // null...short circuit
+      }
+      if (0==foo.ivalue) {
+	// we have zero
+	if (x.infinity) {
+	  // 0 * infinity, error
+	  x.error = CE_Undefined;
+          x.null = true;
+	  return;
+	}
+	x.ivalue = 0;
+	break;
+      }
+      if (foo.infinity) {
+	// we have infinity
+        x.infinity = true;
+        x.ivalue = Sign(x.ivalue) * Sign(foo.ivalue);
+      } else {
+	// normal finite integer multiplication
+        x.ivalue *= foo.ivalue;
+      }
+    } // for i
+  }
 
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    x.error = r.error;
-    return;
-  }
-  if (l.null || r.null) {
-    x.null = true;
-    return;
-  }
-  if (l.infinity || r.infinity) {
-    if ((l.ivalue==0) || (r.ivalue==0)) {
-      // 0 * infinity, undefined
-      // print error message here
+
+  // product so far is zero, or we are out of operands.
+  // Check the remaining operands, if any, and throw an
+  // error if we have infinity * 0.
+  
+  for (i++; i<opnd_count; i++) {
+    DCASSERT(x.ivalue==0);
+    DCASSERT(operands[i]);
+    result foo;
+    operands[i]->Compute(0, foo);
+    if (foo.error) {
+        // error tracing options here
+	x.error = foo.error;
+	return;  // error...short circuit
+    }
+    if (foo.null) {
+        x.null = true;
+        return;  // null...short circuit
+    }
+    // check for infinity
+    if (foo.infinity) {
       x.error = CE_Undefined;
       x.null = true;
       return;
     }
-    x.infinity = true;
-    // check the signs
-    bool lpos = l.ivalue > 0;
-    bool rpos = r.ivalue > 0;
-    if (lpos == rpos) {
-      // either infinity*infinity or -infinity * -infinity
-      x.ivalue = 1;
-    } else {
-      x.ivalue = -1;
-    }
-    return;
-  }
-  // Ordinary integer multiplication
-  x.ivalue = l.ivalue * r.ivalue;
+  } // for i
 }
 
 // ******************************************************************
@@ -824,14 +847,15 @@ protected:
 void int_div::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  if (left) left->Compute(0, l); else l.null = true;
-  if (right) right->Compute(0, r); else r.null = true;
+  left->Compute(0, l);
+  right->Compute(0, r);
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -846,7 +870,6 @@ void int_div::Compute(int i, result &x)
   x.rvalue = l.ivalue;
   if (0==r.ivalue) {
     x.error = CE_ZeroDivide;
-    // spew out some error message here
   } else {
     x.rvalue /= r.ivalue;
   }
@@ -1101,7 +1124,7 @@ public:
     return returntype;
   }
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { unary_show(s, GetOp(oper)); }
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new proc_unary(Filename(), Linenumber(), returntype, oper, x);
@@ -1111,8 +1134,9 @@ protected:
 void proc_unary::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(opnd);
   x.Clear();
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  opnd->Compute(0, x); 
 
   // Trace errors?
   if (x.error) return;
@@ -1120,22 +1144,6 @@ void proc_unary::Compute(int i, result &x)
 
   x.other = MakeUnaryOp(oper, (expr*)x.other, Filename(), Linenumber());
 }
-
-void proc_unary::show(ostream &s) const 
-{
-  switch (oper) {
-    case NOT:
-      s << "!";
-      break;
-    case NEG:
-      s << "-";
-      break;
-    default:
-      s << "(unknown unary operator)";
-  }
-  s << opnd;
-}
-
 
 // ******************************************************************
 // *                                                                *
@@ -1161,7 +1169,7 @@ public:
     return returntype;
   }
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const;
+  virtual void show(ostream &s) const { binary_show(s, GetOp(oper)); }
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new proc_binary(Filename(), Linenumber(), returntype, oper, l, r);
@@ -1171,61 +1179,78 @@ protected:
 void proc_binary::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  result l;
+  DCASSERT(left);
+  DCASSERT(right);
   result r;
   x.Clear();
-  if (left) left->Compute(0, l); else { 
-    l.null = true;
-    l.other = NULL;
-  }
-  if (right) right->Compute(0, r); else {
-    r.null = true;
-    r.other = NULL;
-  }
+  left->Compute(0, x); 
   x.other = NULL;
-  if (l.error) {
-    // some option about error tracing here, I guess...
-    Delete((expr *)l.other);
-    x.error = l.error;
-    return;
-  }
-  if (r.error) {
-    Delete((expr *)r.other);
+  if (x.error) return;
+  if (x.null) return;
+  right->Compute(0, r); 
+  if (r.error || r.null) {
+    Delete((expr *)x.other);
+    x.null = true;
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
-    Delete((expr *)l.other);
-    Delete((expr *)r.other);
-    return;
-  }
 
-  x.other = MakeBinaryOp((expr*)l.other, oper, (expr*)r.other,
+  x.other = MakeBinaryOp((expr*)x.other, oper, (expr*)r.other,
 	                 Filename(), Linenumber());
 }
 
-void proc_binary::show(ostream &s) const 
-{
-  s << left;
-  switch (oper) {
-    case PLUS:		s << "+"; 	break;
-    case MINUS:		s << "-"; 	break;
-    case TIMES:		s << "*"; 	break;
-    case DIVIDE:	s << "/"; 	break;
-    case EQUALS:	s << "=="; 	break;
-    case NEQ:		s << "!="; 	break;
-    case GT:		s << ">"; 	break;
-    case GE:		s << ">="; 	break;
-    case LT:		s << "<"; 	break;
-    case LE:		s << "<="; 	break;
-    default:
-      s << "(unknown binary operator)";
+
+// ******************************************************************
+// *                                                                *
+// *                        proc_assoc class                        *
+// *                                                                *
+// ******************************************************************
+
+/** Associative operations for procs.
+ */
+class proc_assoc : public assoc {
+protected:
+  type returntype;
+  int oper;
+public:
+  proc_assoc(const char* fn, int line, type rt, int op, expr **x, int n)
+    : assoc(fn, line, x, n) 
+  { 
+    returntype = rt;
+    oper = op;
   }
-  s << right;
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return returntype;
+  }
+  virtual void Compute(int i, result &x);
+  virtual void show(ostream &s) const { assoc_show(s, GetOp(oper)); }
+protected:
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new proc_assoc(Filename(), Linenumber(), returntype, oper, x, n);
+  }
+};
+
+void proc_assoc::Compute(int a, result &x)
+{
+  DCASSERT(0==a);
+  expr** r = new expr* [opnd_count];
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->Compute(0, x);
+    if (x.error || x.null) {
+      // bail out
+      int j;
+      for (j=0; j<i; j++) Delete(r[j]);
+      delete[] r;
+      return;
+    }
+    r[i] = (expr *) x.other;
+  }
+  // all opnds computed successfully, build expression
+  x.other = MakeAssocOp(oper, r, opnd_count, Filename(), Linenumber());
 }
-
-
 
 
 // ******************************************************************
@@ -1268,6 +1293,15 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
   return NULL;
 }
 
+expr* BinaryAssocError(type ltype, int op, type rtype)
+{
+  cerr << "INTERNAL: expression " << GetType(ltype) << " ";
+  cerr << GetOp(op) << " " << GetType(rtype) << "\n\t";
+  cerr << "should use associative expression\n";
+  return NULL;
+}
+
+
 // Note: the types left and right must match properly already
 expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 {
@@ -1287,8 +1321,9 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       DCASSERT(rtype==BOOL);
 
       switch (op) {
-          case PLUS:	return new bool_or(file, line, left, right);
-	  case TIMES:   return new bool_and(file, line, left, right);
+          case PLUS:	
+	  case TIMES:   return BinaryAssocError(ltype, op, rtype);
+
 	  case EQUALS:	return new bool_equal(file, line, left, right);
 	  case NEQ:	return new bool_neq(file, line, left, right);
       }
@@ -1307,9 +1342,10 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       DCASSERT(rtype==INT);
 
       switch (op) {
-          case PLUS:	return new int_add(file, line, left, right);
+          case PLUS:	
+          case TIMES:	return BinaryAssocError(ltype, op, rtype);
+
           case MINUS:	return new int_sub(file, line, left, right);
-          case TIMES:	return new int_mult(file, line, left, right);
           case DIVIDE:	return new int_div(file, line, left, right);
 	  case EQUALS:	return new int_equal(file, line, left, right);
 	  case NEQ:	return new int_neq(file, line, left, right);
@@ -1347,6 +1383,70 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
     case PROC_RAND_REAL:
       return new proc_binary(file, line, ltype, op, left, right); 
 
+
+  }
+
+  return NULL;
+}
+
+expr* IllegalAssocError(int op, type alltype)
+{
+  cerr << "INTERNAL: illegal associative operator " << GetOp(op);
+  cerr << " for type " << GetType(alltype) << "\n";
+  return NULL;
+}
+
+
+// Note: operand types must match properly already
+expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
+{
+  int i;
+  for (i=0; i<n; i++) if (NULL==opnds[i]) {
+    int j;
+    for (j=0; j<n; j++) Delete(opnds[j]);
+    delete[] opnds;
+    return NULL;
+  }
+  type alltypes = opnds[0]->Type(0);
+#ifdef DEVELOPMENT_CODE
+  for (i=1; i<n; i++) {
+    type foo = opnds[1]->Type(0);
+    DCASSERT(foo==alltypes);
+  }
+#endif
+  switch (alltypes) {
+
+    //===============================================================
+    case BOOL:
+
+      switch (op) {
+          case PLUS:	return new bool_or(file, line, opnds, n);
+	  case TIMES:   return new bool_and(file, line, opnds, n);
+
+	  case EQUALS:	
+	  case NEQ:	return IllegalAssocError(op, alltypes);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case INT:
+
+      switch (op) {
+          case PLUS:	return new int_add(file, line, opnds, n);
+          case TIMES:	return new int_mult(file, line, opnds, n);
+
+          case MINUS:	
+          case DIVIDE:	
+	  case EQUALS:	
+	  case NEQ:	
+	  case GT:	
+	  case GE:	
+	  case LT:	
+	  case LE:	return IllegalAssocError(op, alltypes);
+      }
+      return NULL;
+      
 
   }
 

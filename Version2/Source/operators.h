@@ -71,6 +71,26 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
 expr* MakeBinaryOp(expr *left, int op, expr *right, 
                      const char* file=NULL, int line=0);
 
+/**
+     Build an associative expression.
+
+     @param	op	The operator (as defined in smart.tab.h)
+     @param	opnds	The operands as expressions, 
+     			which must have been typecase already
+			as necessary to perfectly match.
+     @param	n	Number of operands.
+     			Must be at least 1.
+     @param	file	Source file where this is defined
+     @param	line	Line number where this is defined
+
+     @return	The appropriate new expression, or NULL if
+     		we could not build the expression.
+
+*/
+expr* MakeAssocOp(int op, expr **opnds, int n, 
+                     const char* file=NULL, int line=0);
+
+
 
 
 //@}

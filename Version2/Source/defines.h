@@ -28,6 +28,8 @@
 #include <string.h>
 #include <iostream>
 
+using namespace std;
+
 #define _VERSION "1.1"
 
 // Handy Constants
