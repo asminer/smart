@@ -442,9 +442,15 @@ arrayassign::~arrayassign()
 void arrayassign::Execute()
 {
   // De-iterate the return value
-  expr* rv = retval->Substitute(0);
+  expr* rv = (retval) ? (retval->Substitute(0)) : NULL;
 
-  DCASSERT(rv); // hmmmm....  can this ever happen?
+  if (NULL==rv) {
+    f->SetCurrentReturn(NULL);
+#ifdef ARRAY_TRACE
+    cout << "Array assign: null\n";
+#endif
+    return;
+  }
   
 #ifdef LONG_INTERNAL_ARRAY_NAME
   // Build a long name.  Useful for debugging, otherwise 

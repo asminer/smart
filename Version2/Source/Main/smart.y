@@ -54,12 +54,13 @@ EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
 %type <Type_ID> type model_var_decl
-%type <Expr> topexpr expr term const_expr function_call model_call model_function_call set_expr set_elems set_elem 
-%type <list> aggexpr statements decl_stmt defn_stmt model_stmt model_stmts
-formal_indexes
+%type <Expr> topexpr expr term const_expr function_call model_call
+model_function_call set_expr set_elems set_elem index
+%type <list> aggexpr statements model_stmt model_stmts
+formal_indexes indexes
 %type <index> iterator
 %type <count> for_header iterators
-%type <stmt> statement
+%type <stmt> statement defn_stmt
 %type <Array> array_header
 /*
 %type <Func> header array_header
@@ -140,7 +141,7 @@ statement
 #ifdef PARSE_TRACE
   cout << "Reducing statement : defn_stmt\n";
 #endif
-  $$ = NULL;
+  $$ = $1;
 }
         |       model_decl
 { 
@@ -351,30 +352,35 @@ defn_stmt
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : header GETS expr SEMI\n";
 #endif
+  $$ = NULL;
 }
 	|	type IDENT GETS expr SEMI 
 {
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : type IDENT GETS expr SEMI\n";
 #endif
+  $$ = NULL;
 }
 	|	type IDENT GUESS expr SEMI
 {
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : type IDENT GUESS expr SEMI\n";
 #endif
+  $$ = NULL;
 }
 	|	array_header GETS expr SEMI
 {
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : array_header GETS expr SEMI\n";
 #endif
+  $$ = BuildArrayStmt($1, $3);
 }
 	|	array_header GUESS expr SEMI
 {
 #ifdef PARSE_TRACE
   cout << "Reducing defn_stmt : array_header GUESS expr SEMI\n";
 #endif
+  $$ = NULL;
 }
 ;
 
@@ -813,7 +819,7 @@ function_call
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT indexes\n";
 #endif
-  $$ = NULL;
+  $$ = BuildArrayCall($1, $2);
 }
 	|	IDENT LPAR pos_params RPAR
 {
@@ -891,12 +897,14 @@ indexes
 #ifdef PARSE_TRACE
   cout << "Reducing indexes : indexes LBRAK index RBRAK\n";
 #endif
+  $$ = AddParameter($1, $3);
 }
 	|	LBRAK index RBRAK
 {
 #ifdef PARSE_TRACE
   cout << "Reducing indexes : LBRAK index RBRAK\n";
 #endif
+  $$ = AddParameter(NULL, $2);
 }
 	;
 
@@ -906,6 +914,7 @@ index
 #ifdef PARSE_TRACE
   cout << "Reducing index : expr\n";
 #endif
+  $$ = $1;
 }
         ;
 

@@ -269,6 +269,21 @@ expr* BuildAggregate(void* x)
   return answer;
 }
 
+expr* BuildArrayCall(const char* n, void* ind)
+{
+  // find symbol table entry
+  array* entry = (array*) (Arrays->FindName(n));
+  if (NULL==entry) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown array " << n;
+    Error.Stop();
+    return NULL;
+  }
+  // check type, dimension of indexes
+  
+
+}
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -298,6 +313,13 @@ statement* BuildForLoop(int count, void *stmts)
     Internal.Stop();
 
     Iterators->Clear();
+    return NULL;
+  }
+
+  if (NULL==stmts) {
+#ifdef COMPILE_DEBUG
+    cout << "Empty for loop statement, skipping\n";
+#endif
     return NULL;
   }
 
@@ -344,6 +366,24 @@ statement* BuildExprStatement(expr *x)
   return s;
 }
 
+statement* BuildArrayStmt(array *a, expr *e)
+{
+  if (NULL==a) return NULL;
+  if (NULL==e) {
+    return MakeArrayAssign(a, NULL, filename, lexer.lineno());
+  }
+  if (!Promotable(e->Type(0), a->Type(0))) {
+    Error.Start(filename, lexer.lineno());
+    Error << "type mismatch in assignment for array " << a->Name();
+    Error.Stop();
+    return NULL;
+  }
+  Optimize(0, e);
+  expr* ne = MakeTypecast(e, a->Type(0), filename, lexer.lineno());
+  statement *s = MakeArrayAssign(a, ne, filename, lexer.lineno());
+  return s; 
+}
+
 void* AppendStatement(void* list, statement* s)
 {
   if (NULL==s) return list;
@@ -374,6 +414,24 @@ void* AddFormalIndex(void* list, char* n)
   for (int i=0; i<foo->Length(); i++) {
     char* id = foo->Item(i);
     cout << id << " ";
+  }
+  cout << endl;
+#endif
+  return foo;
+}
+
+void* AddParameter(void* list, expr* e)
+{
+  if (NULL==e) return list;
+  List <expr> *foo = (List <expr> *)list;
+  if (NULL==foo) 
+    foo = new List <expr> (256);
+  foo->Append(e);
+#ifdef COMPILE_DEBUG
+  cout << "Parameter list: ";
+  for (int i=0; i<foo->Length(); i++) {
+    expr* p = foo->Item(i);
+    cout << p << " ";
   }
   cout << endl;
 #endif

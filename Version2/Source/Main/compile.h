@@ -116,6 +116,14 @@ void* AddAggregate(void *x, expr *b);
 */
 expr* BuildAggregate(void* x);
 
+/** 	Build an array "call".
+	@param	n	The name of the array
+	@param	ind	list of indexes
+	@return NULL on error (e.g., no array with that name); 
+		otherwise the array call expression.
+*/
+expr* BuildArrayCall(const char* n, void* ind);
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -146,6 +154,13 @@ statement* BuildForLoop(int count, void* stmts);
 */
 statement* BuildExprStatement(expr *x);
 
+/** Builds an array assignment statement with typechecking.
+    @param	a	The array
+    @param	e	The expression
+    @return	NULL if a is NULL; otherwise an array assignment statement
+*/
+statement* BuildArrayStmt(array *a, expr *e);
+
 /** Adds a statement to our list (which may be null).
     @param list	List of statements (or NULL)
     @param s	statement to add (ignored if NULL)
@@ -165,7 +180,10 @@ void* AppendStatement(void* list, statement* s);
 /// Add a formal index (name) to our list.
 void* AddFormalIndex(void* list, char* ident);
 
-/// thing and stuff
+/// Add an index / pos.param to our list.
+void* AddParameter(void* list, expr* pass);
+
+/// Build an array "header"
 array* BuildArray(type t, char* n, void* list);
 
 // ==================================================================
