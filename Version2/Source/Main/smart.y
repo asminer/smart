@@ -529,7 +529,7 @@ model_stmt
   Output << "Reducing model_stmt : function_call SEMI\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = BuildExprStatement($1);
 }
 	|	type model_var_list SEMI
 {
@@ -545,7 +545,7 @@ model_stmt
   Output << "Reducing model_stmt : defn_stmt\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = $1;
 }
         |       for_header LBRACE model_stmts RBRACE
 {

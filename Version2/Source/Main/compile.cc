@@ -7,6 +7,7 @@
 #include "tables.h"
 #include "fnlib.h"
 #include "../Formalisms/api.h"
+#include "../Language/measures.h"
 
 #include <stdio.h>
 #include <FlexLexer.h>
@@ -929,6 +930,9 @@ statement* BuildArrayStmt(array *a, expr *e)
     s = MakeArrayCvgAssign(a, ne, filename, lexer.lineno());
   else
     s = MakeArrayAssign(a, ne, filename, lexer.lineno());
+
+  // TO DO: deal with models
+    
   return s; 
 }
 
@@ -974,20 +978,35 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     }
   }
 
-  // see if the variable exists already
-  constfunc* find = (constfunc*) Constants->FindName(id);
-  if (find) {
-    bool error = true;
-    if (WithinConverge()) {
-      error = (find->state != CS_HasGuess);
-    } 
-    if (error) {
+  constfunc* find = NULL;
+
+  // see if the variable exists...
+  if (WithinModel()) {
+    // Just within this model
+    DCASSERT(ModelInternal);
+    if (ModelInternal->ContainsName(id)) {
       Error.Start(filename, lexer.lineno());
-      Error << "Re-definition of constant " << find;
+      Error << "Identifier " << id << " already used in model";
       Error.Stop();
       return NULL;
     }
+  } else {
+    // Globally
+    find = (constfunc*) Constants->FindName(id);
+    if (find) {
+      bool error = true;
+      if (WithinConverge()) {
+        error = (find->state != CS_HasGuess);
+      } 
+      if (error) {
+        Error.Start(filename, lexer.lineno());
+        Error << "Re-definition of constant " << find;
+        Error.Stop();
+        return NULL;
+      }
+    }
   }
+
   // name ok, check type consistency
   DCASSERT(NumComponents(ret)==1);
   if (!Promotable(Type(ret, 0), t)) {
@@ -999,8 +1018,8 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
   }
   expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
 
-  statement* s = NULL;
   if (WithinConverge()) {
+    // Idents within a converge
     cvgfunc* v; 
     if (find) {
       v = dynamic_cast<cvgfunc*> (find);
@@ -1013,15 +1032,25 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
       v = MakeConvergeVar(t, id, filename, lexer.lineno());
       Constants->AddNamePtr(id, v); 
     }
-    s = MakeAssignStmt(v, ans, filename, lexer.lineno());
-  } else {
-    constfunc* v;
-    v = MakeConstant(t, id, filename, lexer.lineno());
-    v->SetReturn(ans);
-    Constants->AddNamePtr(id, v); 
+    statement *s = MakeAssignStmt(v, ans, filename, lexer.lineno());
+    return s;
+  } 
+
+  if (WithinModel()) {
+    // Idents within a model (must be a measure)
+    measure *m = new measure(filename, lexer.lineno(), t, id);
+    m->SetReturn(ans);
+    ModelInternal->AddNamePtr(id, m);
+    ModelExternal->AddNamePtr(id, m);
+    return NULL;
   }
 
-  return s;
+  // Normal idents (i.e., constants)
+  constfunc* v;
+  v = MakeConstant(t, id, filename, lexer.lineno());
+  v->SetReturn(ans);
+  Constants->AddNamePtr(id, v); 
+  return NULL;
 }
 
 statement* BuildGuessStmt(type t, char* id, expr* ret)
@@ -1305,30 +1334,47 @@ array* BuildArray(type t, char*n, void* list)
     }
   }
 
-  // Does the array exist already?
-  array* find = (array*) Arrays->FindName(n);
-  if (find) {
-    bool error = true;
-    if (WithinConverge()) {
-      // might be ok
-      error = (find->state == CS_Defined) || (find->state == CS_Computed);
+  // Does the array / name exist already?
+  array* find = NULL;
+  if (WithinModel()) {
+    // look at model symbols
+    DCASSERT(ModelInternal);
+    if (ModelInternal->ContainsName(n)) {
+        Error.Start(filename, lexer.lineno());
+        Error << "Identifier " << n << " already used in model";
+        Error.Stop();
+        TrashIndexList();
+        return NULL;
     }
-    if (error) {
-      Error.Start(filename, lexer.lineno());
-      Error << "Array " << n << " already defined";
-      Error.Stop();
-      TrashIndexList();
-      return NULL;
+  } else {
+    // look at global symbols
+    find = (array*) Arrays->FindName(n);
+
+    // Allow guesses in converge, otherwise duplication = error
+    if (find) {
+      bool error = true;
+      if (WithinConverge()) {
+        // might be ok
+        error = (find->state == CS_Defined) || (find->state == CS_Computed);
+      }
+      if (error) {
+        Error.Start(filename, lexer.lineno());
+        Error << "Array " << n << " already defined";
+        Error.Stop();
+        TrashIndexList();
+        return NULL;
+      }
     }
   }
   
+  // Name is ok, check iterators
   if (!CompareIterators(n, list)) {
     // Problem with iterators, bail out
     TrashIndexList();
     return NULL;
   }
 
-  // If this is an existing array, then bail out
+  // If this is an existing array, then return it
   if (find) return find;
 
   // Build "copies" of iterators 
@@ -1341,8 +1387,14 @@ array* BuildArray(type t, char*n, void* list)
   // build array
   array *A = new array(filename, lexer.lineno(), t, n, il, dim);
 
-  // Add array to array symbol table
-  Arrays->AddNamePtr(n, A); 
+  if (WithinModel()) {
+    // Add array (measure) to model symbol table
+    ModelInternal->AddNamePtr(n, A);
+    ModelExternal->AddNamePtr(n, A);
+  } else {
+    // Add array to array symbol table
+    Arrays->AddNamePtr(n, A); 
+  }
 
   // Done with indexes
   TrashIndexList();
