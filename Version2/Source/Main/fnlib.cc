@@ -617,6 +617,67 @@ void AddOutputFile(PtrTable *fns)
 
 // ******************************************************************
 // *                                                                *
+// *                       string functions                         *
+// *                                                                *
+// ******************************************************************
+
+void compute_substr(expr** p, int np, result &x)
+{
+  DCASSERT(p);
+  DCASSERT(np==3);
+  result start;
+  result stop;
+  SafeCompute(p[0], 0, x);
+  if (!x.isNormal()) return;
+
+  SafeCompute(p[1], 0, start);
+  SafeCompute(p[2], 0, stop);
+
+  char* src = (char*) x.other;
+
+  char* answer = NULL;
+
+  // check errors here...
+
+  if (start.ivalue >= strlen(src)) {
+    DeleteResult(STRING, x);
+    x.Clear();
+    x.setNull();
+    return;
+  }
+
+  if (stop.isInfinity() || stop.ivalue >= strlen(src)) {
+    // don't have to chop of the end of the string
+    answer = strdup(src + start.ivalue);
+    x.Clear();
+    x.other = answer;
+    return;
+  } 
+  answer = new char[stop.ivalue - start.ivalue+2]; 
+  strncpy(answer, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
+  answer[stop.ivalue - start.ivalue + 1] = 0;
+  x.Clear();
+  x.other = answer;
+}
+
+void AddSubstr(PtrTable *fns)
+{
+  const char* helpdoc = "Get the substring between (and including) elements <left> and <right> of string <x>.";
+
+  formal_param **pl = new formal_param*[3];
+  pl[0] = new formal_param(STRING, "x");
+  pl[1] = new formal_param(INT, "left");
+  pl[2] = new formal_param(INT, "right");
+
+  internal_func *p =
+    new internal_func(STRING, "substr", compute_substr, NULL, pl, 3, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                        Math functions                          *
 // *                                                                *
 // ******************************************************************
@@ -1534,6 +1595,25 @@ void AddAvg(PtrTable *fns)
 // *               system-like  functions                 *
 // ********************************************************
 
+void compute_filename(expr **p, int np, result &x)
+{
+  DCASSERT(0==np);
+  x.Clear();
+  x.other = Filename();
+  x.notFreeable();
+}
+
+void AddFilename(PtrTable *fns)
+{
+  const char* helpdoc = "Return the name of the current source file being read by the Smart interpreter, as invoked from the command line or an #include.  The name \"-\" is used when reading from standard input.";
+
+  internal_func *p = 
+    new internal_func(STRING, "Filename", compute_filename, NULL, NULL, 0, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
 void compute_env(expr **p, int np, result &x)
 {
   DCASSERT(1==np);
@@ -1899,6 +1979,8 @@ void InitBuiltinFunctions(PtrTable *t)
   AddErrorFile(t);
   AddWarningFile(t);
   AddOutputFile(t);
+  // Handy string functions
+  AddSubstr(t);
   // Arithmetic
   AddDiv(t);
   AddMod(t);
@@ -1913,6 +1995,7 @@ void InitBuiltinFunctions(PtrTable *t)
   // Probability
   AddAvg(t);
   // System stuff
+  AddFilename(t);
   AddEnv(t);
   AddExit(t);
   // Conditionals

@@ -2060,12 +2060,17 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist, bo
     foo->pass = params->MakeArray();
     delete params; 
   } else {
-    // This should be a model function with one hidden parameter
-    DCASSERT(!is_normal_match);
-    DCASSERT(model_under_construction);
-    foo->np = 1;
-    foo->pass = new expr*[1];
-    foo->pass[0] = Copy(model_under_construction);
+    if (is_normal_match) {
+      // a rare function call with no parameters
+      foo->np = 0;
+      foo->pass = NULL; 
+    } else {
+      // This should be a model function with one hidden parameter
+      DCASSERT(model_under_construction);
+      foo->np = 1;
+      foo->pass = new expr*[1];
+      foo->pass[0] = Copy(model_under_construction);
+    }
   }
 
   // Promote params
@@ -2351,8 +2356,10 @@ expr* FindIdent(char* name)
   }
 
   // check model functions with no visible parameters
+  // and functions with no parameters (there are a few...)
+
   // overkill, but it will work
-  func_call *x = MatchFunctionCallPos(NULL, name, NULL, true);
+  func_call *x = MatchFunctionCallPos(&Builtins, name, NULL, true);
   if (x) {
     // match!
     expr *fcall = MakeFunctionCall(x->find, x->pass, x->np, 
