@@ -46,7 +46,7 @@ protected:
 public:
   constfunc(const char *fn, int line, type t, char *n);
   virtual ~constfunc();
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 
   inline void SetReturn(expr *e) { return_expr = e; }
 };
@@ -69,7 +69,7 @@ public:
   determfunc(const char *fn, int line, type t, char *n);
   virtual void Compute(int i, result &x);
   virtual void Sample(long &, int i, result &x);
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 // ******************************************************************

@@ -59,14 +59,14 @@ public:
   virtual void Execute() = 0;
 
   /// Display the statement to the given output stream.
-  virtual void show(ostream &s) const = 0;
+  virtual void show(OutputStream &s) const = 0;
 
-  virtual void showfancy(int dpth, ostream &s) const = 0;
+  virtual void showfancy(int dpth, OutputStream &s) const = 0;
 };
 
-inline ostream& operator<< (ostream &s, statement *x)
+inline OutputStream& operator<< (OutputStream &s, statement *x)
 {
-  if (s) x->show(s);
+  if (x) x->show(s);
   return s;
 }
 

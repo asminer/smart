@@ -32,8 +32,8 @@ public:
   exprstmt(const char* fn, int line, expr *e);
   virtual ~exprstmt();
   virtual void Execute();
-  virtual void show(ostream &s) const;
-  virtual void showfancy(int depth, ostream &s) const;
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
 };
 
 exprstmt::exprstmt(const char* fn, int line, expr *e) : statement(fn,line)
@@ -57,31 +57,34 @@ void exprstmt::Execute()
   // hmmm... do we check for errors here?
 
 #ifdef ALLOW_NON_VOID_EXPRSTMT
-  cout << "Evaluated statement " << x << ", got:";
+  if (VOID == x->Type(0)) return;
+
+  Output << "Evaluated statement " << x << ", got:";
   switch (x->Type(0)) {
     case BOOL:
-    	cout << dummy.bvalue;
+    	Output << dummy.bvalue;
 	break;
     case INT:
-    	cout << dummy.ivalue;
+    	Output << dummy.ivalue;
 	break;
     case REAL:
-    	cout << dummy.rvalue;
+    	Output << dummy.rvalue;
 	break;
     default:
-    	cout << "(some value)";
+    	Output << "(some value)";
 	break;
   }
-  cout << endl;
+  Output << "\n";
+  Output.flush();
 #endif
 }
 
-void exprstmt::show(ostream &s) const
+void exprstmt::show(OutputStream &s) const
 {
   s << x;
 }
 
-void exprstmt::showfancy(int depth, ostream &s) const
+void exprstmt::showfancy(int depth, OutputStream &s) const
 {
   int i;
   for (i=depth; i; i--) s << " ";

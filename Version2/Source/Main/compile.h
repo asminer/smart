@@ -27,13 +27,6 @@ int LineNumber();
 /// Build a type.  On error, returns VOID.
 type MakeType(const char* modif, const char* tp);
 
-
-/// Dump a formal parameter
-void DumpParam(OutputStream &s, formal_param *p);
-
-/// Dump a function header.
-void DumpHeader(OutputStream &s, function *f);
-
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -164,6 +157,13 @@ statement* BuildExprStatement(expr *x);
 */
 statement* BuildArrayStmt(array *a, expr *e);
 
+/** Builds a function "statement" with typechecking.
+    @param	f	The function
+    @param	r	The return expression
+    @return	NULL
+*/
+statement* BuildFuncStmt(user_func *f, expr *r);
+
 /** Adds a statement to our list (which may be null).
     @param list	List of statements (or NULL)
     @param s	statement to add (ignored if NULL)
@@ -183,11 +183,24 @@ void* AppendStatement(void* list, statement* s);
 /// Add a formal index (name) to our list.
 void* AddFormalIndex(void* list, char* ident);
 
-/// Add an index / pos.param to our list.
+/// Add a passed parameter/index to our list.
 void* AddParameter(void* list, expr* pass);
+
+/// Add a formal parameter to our list
+void* AddParameter(void* list, formal_param* fp);
 
 /// Build an array "header"
 array* BuildArray(type t, char* n, void* list);
+
+/// Build a function "header"
+user_func* BuildFunction(type t, char* n, void* list);
+
+/// Build a formal parameter (with typechecking)
+formal_param* BuildFormal(type t, char* name);
+
+/// Build a formal parameter (with typechecking)
+formal_param* BuildFormal(type t, char* name, expr* deflt);
+
 
 // ==================================================================
 // |                                                                |

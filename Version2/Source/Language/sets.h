@@ -65,13 +65,13 @@ public:
   virtual void GetOrder(int n, int &i, result &x) = 0;
 
   /// For display purposes.
-  virtual void show(ostream &s) = 0;
+  virtual void show(OutputStream &s) = 0;
 
   friend set_result* Copy(set_result *e);
   friend void Delete(set_result *e);
 };
 
-inline ostream& operator<< (ostream &s, set_result *r) 
+inline OutputStream& operator<< (OutputStream &s, set_result *r) 
 {
   r->show(s);
   return s;

@@ -14,8 +14,11 @@
 
 #include "baseops.h"
 
+// These are necessary because they appear in smart.tab.h
 class array_index;
 class array;
+class formal_param;
+class user_func;
 class statement;
 
 #include "../Main/smart.tab.h"

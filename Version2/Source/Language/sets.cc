@@ -14,6 +14,8 @@
 
 //@{
 
+#define UNION_DEBUG
+
 // ******************************************************************
 // *                                                                *
 // *                        set_result class                        *
@@ -48,7 +50,7 @@ public:
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
   virtual void GetOrder(int n, int &i, result &x);
-  virtual void show(ostream &s);
+  virtual void show(OutputStream &s);
 };
 
 int_interval::int_interval(int s, int e, int i) 
@@ -86,7 +88,7 @@ void int_interval::GetOrder(int n, int &i, result &x)
   x.ivalue = start + i * inc;
 }
 
-void int_interval::show(ostream &s)
+void int_interval::show(OutputStream &s)
 {
   s << "{" << start << ".." << stop << ".." << inc << "}";
 }
@@ -112,7 +114,7 @@ public:
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
   virtual void GetOrder(int n, int &i, result &x);
-  virtual void show(ostream &s);
+  virtual void show(OutputStream &s);
 };
 
 generic_int_set::generic_int_set(int s, int* v, int* o) : set_result(s)
@@ -165,7 +167,7 @@ void generic_int_set::GetOrder(int n, int &i, result &x)
   x.ivalue = values[i];
 }
 
-void generic_int_set::show(ostream &s)
+void generic_int_set::show(OutputStream &s)
 {
   s << "{";
   int i;
@@ -206,7 +208,7 @@ public:
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
   virtual void GetOrder(int n, int &i, result &x);
-  virtual void show(ostream &s);
+  virtual void show(OutputStream &s);
 };
 
 int_realset::int_realset(set_result *is) : set_result(is->Size())
@@ -246,7 +248,7 @@ void int_realset::GetOrder(int n, int &i, result &x)
   x.rvalue = x.ivalue; 
 }
 
-void int_realset::show(ostream &s)
+void int_realset::show(OutputStream &s)
 {
   s << intset;
 }
@@ -293,7 +295,7 @@ public:
   virtual void Compute(int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 setexpr_interval::setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i) : expr(f, l)
@@ -407,7 +409,7 @@ int setexpr_interval::GetSymbols(int i, symbol **syms, int N, int offset)
   return answer;
 }
 
-void setexpr_interval::show(ostream &s) const
+void setexpr_interval::show(OutputStream &s) const
 {
   s << start << ".." << stop << ".." << inc;
 }
@@ -427,7 +429,7 @@ public:
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
     return new intset_element(Filename(), Linenumber(), newopnd);
@@ -459,7 +461,7 @@ void intset_element::Compute(int i, result &x)
   x.other = answer;
 }
 
-void intset_element::show(ostream &s) const
+void intset_element::show(OutputStream &s) const
 {
   s << opnd;
 }
@@ -479,7 +481,7 @@ public:
     : binary(fn, line, l, r) { };
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const { s << left << ", " << right; }
+  virtual void show(OutputStream &s) const { s << left << ", " << right; }
 protected:
   virtual expr* MakeAnother(expr* newleft, expr* newright) {
     return new intset_union(Filename(), Linenumber(), newleft, newright);
@@ -618,10 +620,10 @@ void intset_union::Compute(int i, result &x)
     delete[] rspos;
   }
 
-  // temporary...
-
-  cout << "Inside set union\n";
-  cout << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#ifdef UNION_DEBUG
+  Output << "Inside set union\n";
+  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#endif
   
   x.other = answer;
   Delete(ls);
@@ -643,7 +645,7 @@ public:
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const { s << opnd; }
+  virtual void show(OutputStream &s) const { s << opnd; }
 protected:
   virtual expr* MakeAnother(expr* newx) {
     return new int2realset(Filename(), Linenumber(), newx);

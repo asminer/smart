@@ -16,6 +16,7 @@
  */
 
 #include "types.h"
+#include "../Base/api.h"
 
 //#define SHARE_DEBUG
 
@@ -324,19 +325,13 @@ public:
   virtual void TakeAggregates() { ASSERT(0); }
 
   /// Display the expression to the given output stream.
-  virtual void show(ostream &s) const = 0;
+  virtual void show(OutputStream &s) const = 0;
 
   friend expr* Copy(expr *e);
   friend void Delete(expr *e);
-  friend ostream& operator<<(ostream &s, expr *e);
 };
 
-inline ostream& operator<< (ostream &s, expr *e)
-{
-  if (e) e->show(s);
-  else s << "null";
-  return s;
-}
+OutputStream& operator<< (OutputStream &s, expr *e);
 
 /**  Create a "copy" of this expression.
      Since we share pointers, this simply
@@ -419,7 +414,7 @@ protected:
       The filename and line number should be copied.
    */
   virtual expr* MakeAnother(expr* newopnd) = 0;
-  void unary_show(ostream &s, const char *op) const;
+  void unary_show(OutputStream &s, const char *op) const;
 };
 
 // ******************************************************************
@@ -448,7 +443,7 @@ protected:
       The filename and line number should be copied.
    */
   virtual expr* MakeAnother(expr* newleft, expr* newright) = 0;
-  void binary_show(ostream &s, const char *op) const;
+  void binary_show(OutputStream &s, const char *op) const;
 };
 
 // ******************************************************************
@@ -480,7 +475,7 @@ protected:
       The filename and line number should be copied.
    */
   virtual expr* MakeAnother(expr **newx, int newn) = 0;
-  void assoc_show(ostream &s, const char *op) const;
+  void assoc_show(OutputStream &s, const char *op) const;
 };
 
 // ******************************************************************
@@ -533,7 +528,7 @@ public:
   inline void SetSubstitution(bool sv) { substitute_value = sv;}
 
   virtual expr* Substitute(int i);
-  virtual void show(ostream &) const;
+  virtual void show(OutputStream &) const;
 };
 
 
@@ -585,7 +580,7 @@ inline void Sample(expr *e, int a, long &seed, result &x)
     But that's ok, because I/O is slow anyway.
     Note that certain types cannot be printed.
  */
-void PrintResult(type t, const result &x, ostream &s);
+void PrintResult(type t, const result &x, OutputStream &s);
 
 // ******************************************************************
 // *                                                                *

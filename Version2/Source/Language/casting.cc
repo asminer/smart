@@ -36,7 +36,7 @@ public:
   typecast(const char* fn, int line, type nt, expr* x) : unary(fn, line, x) {
     newtype = nt;
   }
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     s << GetType(newtype) << "(" << opnd << ")";
   }
   virtual type Type(int i) const {

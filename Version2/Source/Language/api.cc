@@ -5,5 +5,5 @@
 
 void InitLanguage()
 {
-  // nothing yet
+  CreateRuntimeStack(1024); // Large enough?
 }

@@ -14,6 +14,13 @@
 
 //@{
 
+OutputStream& operator<< (OutputStream &s, expr *e)
+{
+  if (e) e->show(s);
+  else s << "null";
+  return s;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                           expr class                           *
@@ -35,14 +42,16 @@ expr* expr::GetComponent(int i)
 
 void expr::Compute(int i, result &x) 
 {
-  cerr << "Internal error: Illegal expression compuation!\n";
-  DCASSERT(0);
+  Internal.Start(__FILE__, __LINE__, filename, linenumber);
+  Internal << "Illegal expression compuation!";
+  Internal.Stop();
 }
 
 void expr::Sample(long &, int i, result &x) 
 {
-  cerr << "Internal error: Illegal expression sample!\n";
-  DCASSERT(0);
+  Internal.Start(__FILE__, __LINE__, filename, linenumber);
+  Internal << "Illegal expression sample!";
+  Internal.Stop();
 }
 
 int expr::GetSums(int i, expr **sums, int N, int offset) 
@@ -127,7 +136,7 @@ expr* unary::Substitute(int i)
   return MakeAnother(newopnd);
 }
 
-void unary::unary_show(ostream &s, const char* op) const
+void unary::unary_show(OutputStream &s, const char* op) const
 {
   s << op << opnd;
 }
@@ -181,7 +190,7 @@ expr* binary::Substitute(int i)
   return MakeAnother(newleft, newright);
 }
 
-void binary::binary_show(ostream &s, const char* op) const
+void binary::binary_show(OutputStream &s, const char* op) const
 {
   s << "(" << left << op << right << ")";
 }
@@ -259,7 +268,7 @@ expr* assoc::Substitute(int a)
   return Copy(this);
 }
 
-void assoc::assoc_show(ostream &s, const char* op) const
+void assoc::assoc_show(OutputStream &s, const char* op) const
 {
   s << "(" << operands[0];
   int i;
@@ -334,7 +343,7 @@ expr* symbol::Substitute(int i)
   return Copy(this);
 }
 
-void symbol::show(ostream &s) const
+void symbol::show(OutputStream &s) const
 {
   if (NULL==name) return;  // Hidden symbol?
   s << name;
@@ -371,12 +380,13 @@ public:
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
 
-  virtual void show(ostream &s) const { assoc_show(s, ":"); }
+  virtual void show(OutputStream &s) const { assoc_show(s, ":"); }
 protected:
   virtual assoc* MakeAnother(expr **, int) {
-    cerr << "INTERNAL: call to aggregates::MakeAnother\n";
-    ASSERT(0);
-    return NULL;
+    Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
+    Internal << "call to aggregates::MakeAnother";
+    Internal.Stop();
+    return NULL;  // shouldn't get here
   }
 };
 
@@ -469,7 +479,7 @@ class boolconst : public constant {
     x.bvalue = value;
   }
 
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     if (value) s << "true"; else s << "false";
   }
 };
@@ -501,7 +511,7 @@ class intconst : public constant {
     x.ivalue = value;
   }
 
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     s << value;
   }
 };
@@ -533,7 +543,7 @@ class realconst : public constant {
     x.rvalue = value;
   }
 
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     s << value;
   }
 };
@@ -569,7 +579,7 @@ class stringconst : public constant {
     x.other = strdup(value);
   }
 
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     if (value) s << '"' << value << '"';
     else s << "null string";
   }
@@ -581,7 +591,7 @@ class stringconst : public constant {
 // *                                                                *
 // ******************************************************************
 
-void PrintResult(type t, const result &x, ostream &s)
+void PrintResult(type t, const result &x, OutputStream &s)
 {
   if (x.infinity) { s << "infinity"; return; }
   if (x.null) { s << "null"; return; }

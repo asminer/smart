@@ -89,31 +89,30 @@ const char* InternalNames[] = {
 //  Code --> Type name conversion
 //
 
-const char* GetType(unsigned char type)
+const char* GetType(type t)
 {
-  if (type<=LAST_SIMPLE)
-    return NonProcNames[type];
+  if (t<=LAST_SIMPLE)
+    return NonProcNames[t];
 
-  if (type<=LAST_PROC)
-    return ProcNames[type-FIRST_PROC];
+  if (t<=LAST_PROC)
+    return ProcNames[t-FIRST_PROC];
 
-  if (type<=LAST_MODEL)
-    return ModelNames[type-FIRST_MODEL];
+  if (t<=LAST_MODEL)
+    return ModelNames[t-FIRST_MODEL];
 
-  if (type<=LAST_VOID)
-    return VoidNames[type-FIRST_VOID];
+  if (t<=LAST_VOID)
+    return VoidNames[t-FIRST_VOID];
 
-  if (type<=LAST_SET)
-    return SetNames[type-FIRST_SET];
+  if (t<=LAST_SET)
+    return SetNames[t-FIRST_SET];
 
-  if (type<=LAST_INTERNAL)
-    return InternalNames[type-FIRST_INTERNAL];
+  if (t<=LAST_INTERNAL)
+    return InternalNames[t-FIRST_INTERNAL];
 
   // unknown type?
   
   return "Unknown type";
 }
-
 
 //
 //  Type name --> integer code conversion

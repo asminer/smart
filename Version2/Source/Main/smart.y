@@ -29,9 +29,11 @@
   expr* Expr;
   void* list;   
   array_index* index;
+  formal_param* fparam;
   int count;
   statement* stmt;
   array* Array;
+  user_func* Func;
   /*
   option *Option;
   expr_set *setexpr;
@@ -57,18 +59,18 @@ NUL DEFAULT TYPE MODIF MODEL
 %type <Expr> topexpr expr term const_expr function_call model_call
 model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmt model_stmts
-formal_indexes pos_params named_params indexes
+formal_params formal_indexes pos_params named_params indexes
 %type <index> iterator
+%type <fparam> formal_param
 %type <count> for_header iterators
 %type <stmt> statement defn_stmt
 %type <Array> array_header
+%type <Func> func_header
 /*
-%type <Func> header array_header
 %type <Option> opt_header
 %type <setexpr> set_expr set_elems set_elem 
 %type <itrs> iterator iterators for_header 
 %type <stmts> statement statements decl_stmt defn_stmt model_stmt model_stmts
-%type <fpl> formal_params formal_param
 %type <npl> named_params named_param 
 %type <tuple_ids> tupleidlist
 */
@@ -331,10 +333,10 @@ set_elem
 \==================================================================*/
 
 decl_stmt 
-        :       header SEMI
+        :       func_header SEMI
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing decl_stmt : header SEMI\n";
+  cout << "Reducing decl_stmt : func_header SEMI\n";
 #endif
 }
 	|	array_header SEMI
@@ -346,12 +348,12 @@ decl_stmt
 	;
 
 defn_stmt
-	:	header GETS expr SEMI
+	:	func_header GETS expr SEMI
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing defn_stmt : header GETS expr SEMI\n";
+  cout << "Reducing defn_stmt : func_header GETS expr SEMI\n";
 #endif
-  $$ = NULL;
+  $$ = BuildFuncStmt($1, $3);
 }
 	|	type IDENT GETS expr SEMI 
 {
@@ -389,12 +391,13 @@ defn_stmt
 |                                                                   |
 \==================================================================*/
 
-header
+func_header
 	:	type IDENT LPAR formal_params RPAR
 {
 #ifdef PARSE_TRACE
-  cout << "Reducing header : type IDENT LPAR formal_params RPAR\n";
+  cout << "Reducing func_header : type IDENT LPAR formal_params RPAR\n";
 #endif
+  $$ = BuildFunction($1, $2, $4);
 }
         ;
 
@@ -848,12 +851,14 @@ formal_params
 #ifdef PARSE_TRACE
   cout << "Reducing formal_params : formal_params COMMA formal_param\n";
 #endif
+  $$ = AddParameter($1, $3);
 }
 	|	formal_param
 {
 #ifdef PARSE_TRACE
   cout << "Reducing formal_params : formal_param\n";
 #endif
+  $$ = AddParameter(NULL, $1);
 }
 	;
 
@@ -863,12 +868,14 @@ formal_param
 #ifdef PARSE_TRACE
   cout << "Reducing formal_param : type IDENT\n";
 #endif
+  $$ = BuildFormal($1, $2);
 }
 	|	type IDENT GETS expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing formal_param : type IDENT GETS expr\n";
 #endif
+  $$ = BuildFormal($1, $2, $4);
 }
 	;
 

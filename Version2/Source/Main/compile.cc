@@ -12,39 +12,31 @@
 
 #define COMPILE_DEBUG
 
-void DumpParam(OutputStream &s, formal_param *p)
+void DumpExprType(OutputStream &s, expr *e)
 {
-  if (NULL==p) {
+  if (NULL==e) {
     s << "null";
     return;
   }
   int i;
-  for (i=0; i<p->NumComponents(); i++) {
+  for (i=0; i<e->NumComponents(); i++) {
     if (i) s << ":";
-    s << GetType(p->Type(i));
+    s << GetType(e->Type(i));
   }
-  s << " " << p->Name();
 }
 
-void DumpHeader(OutputStream &s, function *f)
+void DumpPassed(OutputStream &s, List <expr> *pass)
 {
-  s << f;
-  formal_param **fp;
-  int np;
-  int rp;
-  f->GetParamList(fp, np, rp);  
-  if (np<1) return;
+  if (NULL==pass) return;
+  if (pass->Length()==0) return;
   s << "(";
   int i;
-  for (i=0; i<np; i++) {
-    if (rp==i) s << "...";
-    DumpParam(s, fp[i]);
-    if (i<np-1) s << ", ";
+  for (i=0; i<pass->Length(); i++) {
+    if (i) s << ", ";
+    DumpExprType(s, pass->Item(i));
   }
-  if (rp<=np) s << ",...";
   s << ")";
 }
-
 
 // ==================================================================
 // |                                                                |
@@ -60,6 +52,15 @@ PtrTable *Arrays;
 
 /// Symbol table of functions
 PtrTable *Builtins;
+
+/// "Symbol table" of formal parameters
+List <formal_param> *FormalParams;
+
+/** List of functions that match what we're looking for.
+    Global because we'll re-use it.
+*/
+List <function> *matches;
+
 
 // ==================================================================
 // |                                                                |
@@ -102,9 +103,10 @@ type MakeType(const char* modif, const char* tp)
   type answer;
   if (modif) answer = ModifyType(m, t); else answer = t;
 #ifdef COMPILE_DEBUG
-  cout << "MakeType(";
-  if (modif) cout << modif; else cout << "null";
-  cout << ", " << tp << ") returned " << int(answer) << endl;
+  Output << "MakeType(";
+  if (modif) Output << modif; else Output << "null";
+  Output << ", " << tp << ") returned " << GetType(answer) << "\n";
+  Output.flush();
 #endif
   return answer;
 }
@@ -160,8 +162,9 @@ expr* BuildInterval(expr* start, expr* stop)
                       start, stop, MakeConstExpr(1, filename, lexer.lineno()));
 
 #ifdef COMPILE_DEBUG
-  cout << "Built interval, start: " << start << " stop: " << stop << endl;
-  cout << "\tGot: " << answer << endl;
+  Output << "Built interval, start: " << start << " stop: " << stop << "\n";
+  Output << "\tGot: " << answer << "\n";
+  Output.flush();
 #endif
 
   return answer;
@@ -181,9 +184,10 @@ expr* BuildInterval(expr* start, expr* stop, expr* inc)
   expr* answer = MakeInterval(filename, lexer.lineno(), start, stop, inc);
 
 #ifdef COMPILE_DEBUG
-  cout << "Built interval, start: " << start;
-  cout << " stop: " << stop << " inc: " << inc << endl;
-  cout << "\tGot: " << answer << endl;
+  Output << "Built interval, start: " << start;
+  Output << " stop: " << stop << " inc: " << inc << "\n";
+  Output << "\tGot: " << answer << "\n";
+  Output.flush();
 #endif
 
   return answer;
@@ -226,7 +230,8 @@ array_index* BuildIterator(type t, char* n, expr* values)
   array_index* ans = new array_index(filename, lexer.lineno(), t, n, values);
 
 #ifdef COMPILE_DEBUG
-  cout << "Built iterator: " << ans << endl;
+  Output << "Built iterator: " << ans << "\n";
+  Output.flush();
 #endif
 
   return ans;
@@ -300,7 +305,8 @@ expr* BuildAggregate(void* x)
   delete foo;
   expr* answer = MakeAggregate(parts, size, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
-  cout << "Built aggregate expression: " << answer << endl;
+  Output << "Built aggregate expression: " << answer << "\n";
+  Output.flush();
 #endif
   return answer;
 }
@@ -318,7 +324,7 @@ int AddIterator(array_index *i)
   if (NULL==i) return 0;
   Iterators->Append(i);
 #ifdef COMPILE_DEBUG
-  cout << "Adding " << i << " to Iterators\n";
+  Output << "Adding " << i << " to Iterators\n";
 #endif
   return 1;
 }
@@ -326,7 +332,7 @@ int AddIterator(array_index *i)
 statement* BuildForLoop(int count, void *stmts)
 {
 #ifdef COMPILE_DEBUG
-  cout << "Popping " << count << " Iterators\n";
+  Output << "Popping " << count << " Iterators\n";
 #endif
   if (count > Iterators->Length()) {
     Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
@@ -339,7 +345,7 @@ statement* BuildForLoop(int count, void *stmts)
 
   if (NULL==stmts) {
 #ifdef COMPILE_DEBUG
-    cout << "Empty for loop statement, skipping\n";
+    Output << "Empty for loop statement, skipping\n";
 #endif
     return NULL;
   }
@@ -364,9 +370,10 @@ statement* BuildForLoop(int count, void *stmts)
   statement *f = MakeForLoop(i, count, block, bsize, filename, lexer.lineno());
 
 #ifdef COMPILE_DEBUG
-  cout << "Built for loop statement: ";
-  f->showfancy(0, cout);
-  cout << endl;
+  Output << "Built for loop statement: ";
+  f->showfancy(0, Output);
+  Output << "\n";
+  Output.flush();
 #endif
 
   f->Execute();
@@ -405,6 +412,17 @@ statement* BuildArrayStmt(array *a, expr *e)
   return s; 
 }
 
+statement* BuildFuncStmt(user_func *f, expr *r)
+{
+  if (f) {
+    // Check type!
+    f->SetReturn(r);
+  }
+  delete FormalParams;
+  FormalParams = NULL;
+  return NULL;
+}
+
 void* AppendStatement(void* list, statement* s)
 {
   if (NULL==s) return list;
@@ -431,31 +449,35 @@ void* AddFormalIndex(void* list, char* n)
     foo = new List <char> (256);
   foo->Append(n);
 #ifdef COMPILE_DEBUG
-  cout << "Formal index stack: ";
+  Output << "Formal index stack: ";
   for (int i=0; i<foo->Length(); i++) {
     char* id = foo->Item(i);
-    cout << id << " ";
+    Output << id << " ";
   }
-  cout << endl;
+  Output << "\n";
+  Output.flush();
 #endif
   return foo;
 }
 
-void* AddParameter(void* list, expr* e)
+template <class PARAM>
+inline void* Template_AddParameter(void* list, PARAM *p)
 {
-  List <expr> *foo = (List <expr> *)list;
+  List <PARAM> *foo = (List <PARAM> *)list;
   if (NULL==foo) 
-    foo = new List <expr> (256);
-  foo->Append(e);
-#ifdef COMPILE_DEBUG
-  cout << "Parameter list: ";
-  for (int i=0; i<foo->Length(); i++) {
-    expr* p = foo->Item(i);
-    cout << p << " ";
-  }
-  cout << endl;
-#endif
+    foo = new List <PARAM> (256);
+  foo->Append(p);
   return foo;
+}
+
+void* AddParameter(void* list, expr* pass)
+{
+  return Template_AddParameter(list, pass);
+}
+
+void* AddParameter(void* list, formal_param* fp)
+{
+  return Template_AddParameter(list, fp);
 }
 
 array* BuildArray(type t, char*n, void* list)
@@ -515,6 +537,50 @@ array* BuildArray(type t, char*n, void* list)
   return A;
 }
 
+user_func* BuildFunction(type t, char*n, void* list)
+{
+  if (NULL==n) return NULL;
+  if (NULL==list) return NULL;  // No parameters? build a const func...
+
+  // TO DO STILL: search symbol table for existing functions with this name!
+
+  List <formal_param> *fpl = (List <formal_param> *)list;
+  user_func *f = new user_func(filename, lexer.lineno(), t, n,
+  			fpl->Copy(), fpl->Length());
+
+  // Save the formal parameters to a "symbol table"
+  FormalParams = fpl;
+
+  InsertFunction(Builtins, f);
+  return f;
+}
+
+formal_param* BuildFormal(type t, char* name)
+{
+  return new formal_param(filename, lexer.lineno(), t, name);
+}
+
+formal_param* BuildFormal(type t, char* name, expr* deflt)
+{
+  formal_param *f = new formal_param(filename, lexer.lineno(), t, name);
+
+  expr* d = NULL;
+  // check return type of deflt
+  if (deflt) {
+    if (!Promotable(deflt->Type(0), t)) {
+      Error.Start(filename, lexer.lineno());
+      Error << "default type does not match parameter " << f;
+      Error.Stop();
+      Delete(deflt);
+    } else {
+      d = MakeTypecast(deflt, t, filename, lexer.lineno());
+    }
+  } 
+  f->SetDefault(d);
+
+  return f;
+}
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -530,6 +596,14 @@ expr* FindIdent(char* name)
   for (d=0; d<Iterators->Length(); d++) {
     array_index *i = Iterators->Item(d);
     DCASSERT(i);
+    if (strcmp(name, i->Name())==0)
+      return Copy(i);
+  }
+  
+  // check formal parameters?
+  if (FormalParams) for (d=0; d<FormalParams->Length(); d++) {
+    formal_param *i = FormalParams->Item(d);
+    if (NULL==i) continue; // can this happen?
     if (strcmp(name, i->Name())==0)
       return Copy(i);
   }
@@ -592,6 +666,77 @@ expr* BuildArrayCall(const char* n, void* ind)
   return answer;
 }
 
+/**  Check types;  tricky only because of aggregates.
+     If types match perfectly, "perfect" will be set to true.
+     If passed expression can be promoted to match perfectly, 
+     "promote" will be set to true.
+*/
+void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
+{
+  if (!promote) {
+    DCASSERT(!perfect);
+    return;
+  }
+  if (NULL==pass) return;
+  DCASSERT(p);
+  if (p->NumComponents() != pass->NumComponents()) {
+    perfect = promote = false;
+    return;
+  }
+  int i;
+  for (i=0; i<p->NumComponents(); i++) {
+    type tfp = p->Type(i);
+    type tpass = pass->Type(i);
+    if (tfp != tpass) perfect = false;
+    if (!Promotable(tpass, tfp)) {
+      promote = false;
+      return;
+    }
+  }
+}
+
+/**  Score how well this function matches the passed parameters.
+     @param	f	The function to check
+     @param	params	List of passed parameters (in positional order).
+     @return 	Score, as follows.
+     		0	: Perfect match
+		+n	: n parameters will need to be promoted
+		-1	: Parameters do not match in number/type
+*/
+int ScoreFunction(function *f, List <expr> *params)
+{
+  bool perfect = true;
+  bool promote = true;
+  formal_param **fpl;
+  int np;
+  int rp;
+  f->GetParamList(fpl, np, rp);
+  int fptr = 0;
+  int pptr = 0;
+  int numpromote = 0;
+  while (promote) {
+    if ((fptr == np) && (pptr == params->Length())) break;  // end of params
+
+    if (pptr == params->Length()) return -1;  // not enough passed
+
+    if (fptr == np) {  // too many passed, maybe...
+      // can we repeat?
+      if (f->ParamsRepeat()) 
+	fptr = rp;  // might be ok
+      else
+	return -1;  // too many passed parameters
+    }
+
+    // Compare formal param #fptr with passed param #pptr
+    MatchParam(fpl[fptr], params->Item(pptr), perfect, promote);
+    if (!perfect) numpromote++;
+    fptr++;
+    pptr++;
+  }
+  if (promote) return numpromote;
+  return -1;
+}
+
 expr* BuildFunctionCall(const char* n, void* posparams)
 {
   List <expr> *params = (List <expr> *)posparams;
@@ -605,13 +750,54 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     return NULL;
   }
 
-  // check parameters
-  return NULL;
+  // Find best match in symbol table
+  int bestmatch = params->Length()+2;
+  int i;
+  for (i=flist->Length()-1; i>=0; i--) {
+    int score = ScoreFunction(flist->Item(i), params);
+    if ((score>=0) && (score<bestmatch)) {
+      // better match, clear old list
+      matches->Clear();
+      bestmatch = score;
+    }
+    if (score==bestmatch) {
+      // Add to list
+      matches->Append(flist->Item(i));
+    }
+  }
+
+  if (bestmatch > params->Length()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "No match for " << n;
+    DumpPassed(Error, params);
+    Error.Stop();
+    // dump candidates?
+    return NULL;
+  }
+
+  if (matches->Length()>1) {
+    DCASSERT(bestmatch>0);
+    Error.Start(filename, lexer.lineno());
+    Error << "Multiple promotions possible for " << n;
+    DumpPassed(Error, params);
+    Error.Stop();
+    // dump matching candidates?
+    return NULL;
+  }
+
+  // Good to go
+  function* find = matches->Item(0);
+  expr *fcall = MakeFunctionCall(find, params->Copy(), params->Length(), 
+  					filename, lexer.lineno());
+  delete params;
+  return fcall;
 }
 
 expr* BuildNamedFunctionCall(const char *, void*)
 {
-  cerr << "Named parameters not done yet, sorry\n";
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Named parameters not done yet, sorry";
+  Internal.Stop();
   return NULL;
 }
 
@@ -632,7 +818,8 @@ void ShowSymbols(void *x)
   int i;
   for (i=0; i<bar->Length(); i++) {
     Output << "\t";
-    DumpHeader(Output, bar->Item(i));
+    function *f = bar->Item(i);
+    f->ShowHeader(Output);
     Output << "\n";
   }
 }
@@ -643,12 +830,15 @@ void InitCompiler()
   Iterators = new List <array_index> (256);
   Arrays = new PtrTable();
   Builtins = new PtrTable();
+  FormalParams = NULL;
   InitBuiltinFunctions(Builtins); 
+  matches = new List <function> (32);
+
 #ifdef COMPILE_DEBUG
-  cout << "Initialized compiler data\n";
-  cout << "Builtin Functions:\n";
+  Output << "Initialized compiler data\n";
+  Output << "Builtin Functions:\n";
   Builtins->Traverse(ShowSymbols);
-  cout << "ready to rock.\n";
+  Output << "ready to rock.\n";
 #endif
 }
 

@@ -34,7 +34,7 @@
 class negop : public unary {
 public:
   negop(const char* fn, int line, expr* x) : unary (fn, line, x) {}
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 // ******************************************************************
@@ -56,7 +56,7 @@ class addop : public assoc {
 public:
   addop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n) {}
   addop(const char* fn, int line, expr* l, expr* r) : assoc(fn, line, l, r) {}
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
   virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
 };
 
@@ -72,7 +72,7 @@ public:
 class subop : public binary {
 public:
   subop(const char* fn, int line, expr* l, expr* r) : binary(fn, line, l, r) {}
-  virtual void show(ostream &s) const { binary_show(s, "-"); }
+  virtual void show(OutputStream &s) const { binary_show(s, "-"); }
 };
 
 // ******************************************************************
@@ -94,7 +94,7 @@ class multop : public assoc {
 public:
   multop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n){}
   multop(const char* fn, int line, expr* l, expr* r) : assoc(fn, line, l, r){}
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
 };
 
@@ -110,7 +110,7 @@ public:
 class divop : public binary {
 public:
   divop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, "/"); }
+  virtual void show(OutputStream &s) const { binary_show(s, "/"); }
 };
 
 
@@ -176,7 +176,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, "=="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "=="); }
 };
 
 
@@ -242,7 +242,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, "!="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "!="); }
 };
 
 
@@ -313,7 +313,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, ">"); }
+  virtual void show(OutputStream &s) const { binary_show(s, ">"); }
 };
 
 
@@ -384,7 +384,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, ">="); }
+  virtual void show(OutputStream &s) const { binary_show(s, ">="); }
 };
 
 
@@ -455,7 +455,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, "<"); }
+  virtual void show(OutputStream &s) const { binary_show(s, "<"); }
 };
 
 
@@ -526,7 +526,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void show(ostream &s) const { binary_show(s, "<="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "<="); }
 };
 
 
@@ -543,7 +543,7 @@ public:
 class eqop : public binary {
 public:
   eqop(const char* fn, int line, expr* l, expr* r): binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, "=="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "=="); }
 };
 
 
@@ -560,7 +560,7 @@ public:
 class neqop : public binary {
 public:
   neqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, "!="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "!="); }
 };
 
 
@@ -577,7 +577,7 @@ public:
 class gtop : public binary {
 public:
   gtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, ">"); }
+  virtual void show(OutputStream &s) const { binary_show(s, ">"); }
 };
 
 
@@ -594,7 +594,7 @@ public:
 class geop : public binary {
 public:
   geop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, ">="); }
+  virtual void show(OutputStream &s) const { binary_show(s, ">="); }
 };
 
 
@@ -611,7 +611,7 @@ public:
 class ltop : public binary {
 public:
   ltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, "<"); }
+  virtual void show(OutputStream &s) const { binary_show(s, "<"); }
 };
 
 
@@ -628,7 +628,7 @@ public:
 class leop : public binary {
 public:
   leop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(ostream &s) const { binary_show(s, "<="); }
+  virtual void show(OutputStream &s) const { binary_show(s, "<="); }
 };
 
 

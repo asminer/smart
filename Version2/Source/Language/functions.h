@@ -150,6 +150,8 @@ public:
     rp = repeat_point;
   }
 
+  inline bool ParamsRepeat() const { return repeat_point < num_params; }
+
   /** Overridden in derived classes.
       Should we use our own technique to check the passed parameter types?
       Usually this will be false.
@@ -168,7 +170,7 @@ public:
 
       @return	true if the parameters match (or can be promoted). 
    */
-  virtual bool Typecheck(const expr** pp, int np, ostream &error) const;
+  virtual bool Typecheck(const expr** pp, int np, OutputStream &error) const;
 
   /** Overridden in derived classes.
       Should we use our own technique to "link" the passed parameters
@@ -192,7 +194,7 @@ public:
 
       \end{tabular}
    */
-  virtual bool LinkParams(expr **pp, int np, ostream &error) const;
+  virtual bool LinkParams(expr **pp, int np, OutputStream &error) const;
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(long &, expr **, int np, result &x) = 0;
@@ -205,6 +207,8 @@ public:
   /** Returns NULL for user functions, documentation for internal funcs.
   */
   virtual const char* GetDocumentation() const;
+
+  void ShowHeader(OutputStream &s) const;
 };
 
 
@@ -234,7 +238,7 @@ public:
 
   inline void SetReturn(expr *e) { return_expr = e; }
 
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 // ******************************************************************
@@ -306,7 +310,7 @@ public:
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(long &, expr **, int np, result &x);
 
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 
   void HideDocs();
   virtual bool IsUndocumented() const;
@@ -325,7 +329,7 @@ public:
 void CreateRuntimeStack(int size);
 void DestroyRuntimeStack();
 
-void DumpRuntimeStack(ostream &s);  // Handy for run-time errors
+void DumpRuntimeStack(OutputStream &s);  // Handy for run-time errors
 
 /** Called if there is a run-time stack overflow.
     Usually this is caused by too much recursion.

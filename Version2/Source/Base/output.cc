@@ -15,7 +15,7 @@ OutputStream::OutputStream(std::ostream* d)
 {
   deflt = d;
   display = d;
-  active = false;
+  ready = true; 
 }
 
 void OutputStream::SwitchDisplay(std::ostream* out)
@@ -26,6 +26,15 @@ void OutputStream::SwitchDisplay(std::ostream* out)
     display = out ? out : deflt;
 }
 
+void OutputStream::Activate()
+{
+  ready = true;
+}
+
+void OutputStream::Deactivate()
+{
+  ready = false;
+}
 
 OutputStream Output(&cout);
 OutputStream Verbose(&cout);
@@ -33,8 +42,8 @@ OutputStream Report(&cout);
 
 void InitOutputStreams() 
 {
-  Output.active = true;
-  Verbose.active = false;
-  Report.active = false;
+  Output.Activate();
+  Verbose.Deactivate();
+  Report.Deactivate();
 }
 

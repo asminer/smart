@@ -104,7 +104,7 @@ bool function::HasSpecialTypechecking() const
   return false; 
 }
 
-bool function::Typecheck(const expr** pp, int np, ostream &error) const
+bool function::Typecheck(const expr** pp, int np, OutputStream &error) const
 {
   DCASSERT(0);
   return false;
@@ -115,7 +115,7 @@ bool function::HasSpecialParamLinking() const
   return false; 
 }
 
-bool function::LinkParams(expr **pp, int np, ostream &error) const
+bool function::LinkParams(expr **pp, int np, OutputStream &error) const
 {
   DCASSERT(0);
   return false;
@@ -131,6 +131,28 @@ const char* function::GetDocumentation() const
 {
   // default...
   return NULL;
+}
+
+void function::ShowHeader(OutputStream &s) const
+{
+  s << GetType(Type(0)) << " " << Name();
+  if (num_params<1) return;
+  s << "(";
+  for (int i=0; i<num_params; i++) {
+    if (repeat_point==i) s << "...";
+    if (NULL==parameters[i]) s << "null";
+    else {
+      // print type of parameter i
+      for (int j=0; j<parameters[i]->NumComponents(); j++) {
+	if (j) s << ":";
+	s << GetType(parameters[i]->Type(j));
+      }
+      s << " " << parameters[i];
+    }
+    if (i<num_params-1) s << ", ";
+  }
+  if (repeat_point<=num_params) s << ",...";
+  s << ")";
 }
 
 // ******************************************************************
@@ -195,10 +217,12 @@ void user_func::Compute(expr **pp, int np, result &x)
 
 void user_func::Sample(long &s, expr **pp, int np, result &x) 
 {
-  cout << "Sample not yet done.  (Copy from compute, eventually.)\n";
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Sample not yet done.  (Copy from compute, eventually.)\n";
+  Internal.Stop();
 }
 
-void user_func::show(ostream &s) const
+void user_func::show(OutputStream &s) const
 {
   DCASSERT(Name());
   s << GetType(Type(0)) << " " << Name() << "(";
@@ -243,7 +267,9 @@ internal_func::internal_func(type t, char *n,
 void internal_func::Compute(expr **pp, int np, result &x)
 {
   if (NULL==compute) {
-    cerr << "Internal error: illegal internal function computation?\n";
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Illegal internal function computation";
+    Internal.Stop();
     x.null = true;
     return;
   }
@@ -253,14 +279,16 @@ void internal_func::Compute(expr **pp, int np, result &x)
 void internal_func::Sample(long &seed, expr **pp, int np, result &x)
 {
   if (NULL==sample) {
-    cerr << "Internal error: illegal internal function sampling?\n";
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Illegal internal function sample";
+    Internal.Stop();
     x.null = true;
     return;
   }
   sample(seed, pp, np, x);
 }
 
-void internal_func::show(ostream &s) const
+void internal_func::show(OutputStream &s) const
 {
   if (NULL==Name()) return; // Hidden?
   s << GetType(Type(0)) << " " << Name();
@@ -307,7 +335,7 @@ public:
   virtual void Sample(long &, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 // fcall  methods
@@ -367,7 +395,7 @@ int fcall::GetSymbols(int i, symbol **syms, int N, int offset)
   return 0;
 }
 
-void fcall::show(ostream &s) const
+void fcall::show(OutputStream &s) const
 {
   if (func->Name()==NULL) return;  // Hidden?
   s << func->Name();
@@ -403,9 +431,8 @@ void DestroyRuntimeStack()
   ParamStack = NULL;
 }
 
-void DumpRuntimeStack(ostream &s)
+void DumpRuntimeStack(OutputStream &s)
 {
-  s << "Error: Stack overflow\n";
   s << "Stack dump:\n";
   int ptr = 0;
   while (ptr<ParamStackTop) {
@@ -420,9 +447,9 @@ void DumpRuntimeStack(ostream &s)
 
 void StackOverflowPanic()
 {
-  cerr << "Run-time stack overflow!\n";
-  DumpRuntimeStack(cerr);
-  exit(0);
+  Error.Start(NULL, -1);
+  Error << "Run-time stack overflow!\n";
+  DumpRuntimeStack(Error);
 }
 
 expr* MakeFunctionCall(function *f, expr **p, int np, const char*fn, int line)

@@ -52,7 +52,7 @@ void array_index::Compute(int i, result &x)
   current->GetElement(index, x);
 }
 
-void array_index::showfancy(ostream &s) const
+void array_index::showfancy(OutputStream &s) const
 {
   s << Name() << " in {" << values << "}";
 }
@@ -101,13 +101,14 @@ void array::SetCurrentReturn(constfunc *retvalue)
   }
   if (prev->down[lastindex]) {
     // we already have a value...
-    cerr << "Internal error: array reassignment?\n";
-    exit(0);
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "array reassignment?";
+    Internal.Stop();
   }
   prev->down[lastindex] = retvalue;
 }
 
-void array::GetName(ostream &s) const
+void array::GetName(OutputStream &s) const
 {
   s << Name() << "[";
   int i;
@@ -188,7 +189,7 @@ void array::Sample(long &seed, expr **il, result &x)
   x.other = ptr;
 }
 
-void array::show(ostream &s) const
+void array::show(OutputStream &s) const
 {
   DCASSERT(Name());
   s << GetType(Type(0)) << " " << Name() << "[" << index_list[0];
@@ -222,7 +223,7 @@ public:
   virtual void Sample(long &, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 // acall methods
@@ -296,7 +297,7 @@ int acall::GetSymbols(int i, symbol **syms, int N, int offset)
   return 0;
 }
 
-void acall::show(ostream &s) const
+void acall::show(OutputStream &s) const
 {
   if (func->Name()==NULL) return; // hidden?
   s << func->Name();
@@ -328,8 +329,8 @@ public:
   virtual ~forstmt(); 
 
   virtual void Execute();
-  virtual void show(ostream &s) const;
-  virtual void showfancy(int depth, ostream &s) const;
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
 protected:
   void Execute(int d);
 };
@@ -381,7 +382,7 @@ void forstmt::Execute(int d)
   }
 }
 
-void forstmt::show(ostream &s) const
+void forstmt::show(OutputStream &s) const
 {
   s << "for (";
   index[0]->showfancy(s);
@@ -393,7 +394,7 @@ void forstmt::show(ostream &s) const
   s << ")";
 }
 
-void forstmt::showfancy(int depth, ostream &s) const
+void forstmt::showfancy(int depth, OutputStream &s) const
 {
   int j;
   for (j=depth; j; j--) s << " ";
@@ -423,8 +424,8 @@ public:
   virtual ~arrayassign(); 
 
   virtual void Execute();
-  virtual void show(ostream &s) const;
-  virtual void showfancy(int depth, ostream &s) const;
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
 };
 
 arrayassign::arrayassign(const char *fn, int l, array *a, expr *e)
@@ -474,12 +475,12 @@ void arrayassign::Execute()
 #endif
 }
 
-void arrayassign::show(ostream &s) const
+void arrayassign::show(OutputStream &s) const
 {
   s << f << " := " << retval;
 }
 
-void arrayassign::showfancy(int depth, ostream &s) const
+void arrayassign::showfancy(int depth, OutputStream &s) const
 {
   int j;
   for (j=depth; j; j--) s << " ";

@@ -34,13 +34,18 @@ void ShowDocs(void *x)
       unshown = false;
     }
     Output << "\t";
-    DumpHeader(Output, hit);
+    hit->ShowHeader(Output);
     Output << "\n";
     const char* d = hit->GetDocumentation();
     if (d) DumpDocs(d);
     else { // user defined... 
-	Output << "\tdefined in " << hit->Filename() << " near line ";
-	Output << hit->Linenumber() << "\n";
+	Output << "\tdefined in "; 
+        const char* fn = hit->Filename();
+	if (fn[0]=='-' && fn[1]==0) 
+	  Output << "standard input";
+	else
+	  Output << fn;
+	Output << " near line " << hit->Linenumber() << "\n";
     }
     Output << "\n";
   }
@@ -48,9 +53,6 @@ void ShowDocs(void *x)
 
 void computehelp(expr **pp, int np, result &x)
 {
-
-Output << "Hello!\n";
-
   DCASSERT(np==1);
   if (NULL==pp) 
     help_search_string = "";
@@ -77,7 +79,7 @@ void AddHelp(PtrTable *fns)
   const char* helpdoc = "Searches on-line help for function and option names containing <search>";
 
   internal_func *hlp =
-    new internal_func(BOOL, "help", computehelp, NULL, pl, 1, helpdoc);
+    new internal_func(VOID, "help", computehelp, NULL, pl, 1, helpdoc);
 
   InsertFunction(fns, hlp);
 }

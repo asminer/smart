@@ -33,7 +33,7 @@ constfunc::~constfunc()
   Delete(return_expr);
 }
 
-void constfunc::show(ostream &s) const
+void constfunc::show(OutputStream &s) const
 {
   if (NULL==Name()) return; // hidden?
   s << GetType(Type(0)) << " " << Name() << " := " << return_expr;
@@ -86,7 +86,7 @@ void determfunc::Sample(long &s, int i, result &x)
   x = value;
 }
 
-void determfunc::show(ostream &s) const
+void determfunc::show(OutputStream &s) const
 {
   if (NULL==Name()) return; // hidden?
   s << GetType(Type(0)) << " " << Name() << " := ";

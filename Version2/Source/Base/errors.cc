@@ -12,87 +12,83 @@
 
 using namespace std;
 
-ErrorStream::ErrorStream(const char* et)
+ErrorStream::ErrorStream(const char* et, ostream *d) : OutputStream(d)
 {
   errortype = et;
-  out = NULL;
-  display = NULL;
-  ready = false;
   active = false;
 }
 
-void ErrorStream::Start(char* filename, int lineno)
+void ErrorStream::Start(const char* filename, int lineno)
 {
   if (active) {
-    out = new ostringstream;
+    Out() << errortype;
     ready = true;
-    *out << errortype;
     if (filename) {
       if (filename[0]=='-' && filename[1]==0) {
-        // standard input
-        *out << " in standard input";
+        Out() << " in standard input";
       } else if (filename[0]=='>' && filename[1]==0) {
-	// command line
-	*out << " on command line";
+	Out() << " on command line";
 	lineno = -1;
       } else {
-        *out << " in file " << filename;
+        Out() << " in file " << filename;
       }
     }
     if (lineno>=0)
-      *out << " near line " << lineno;
-    *out << ":\n\t";
+      Out() << " near line " << lineno;
+    Out() << ":\n\t";
   }
 }
 
 void ErrorStream::Stop()
 {
   if (active) {
-    *display << out->str().c_str() << endl;
-    delete out;
-    out = NULL;
+    Out() << endl;
     ready = false;
   }
 }
 
-void InternalStream::Start(char *srcfile, int srcline, char* fn, int ln)
+void InternalStream::Start(const char *srcfile, int srcline, 
+			   const char* fn, int ln)
 {
   if (active) {
-    out = new ostringstream;
     ready = true;
-    *out << errortype;
-    *out << " in " << srcfile << " at " << srcline;
+    Out() << errortype;
+    Out() << " in " << srcfile << " at " << srcline;
     if (fn) {
-      *out << " caused by ";
+      Out() << " caused by ";
       if (fn[0]=='-' && fn[1]==0) {
-        // standard input
-        *out << "standard input";
+        Out() << "standard input";
       } else if (fn[0]=='>' && fn[1]==0) {
-	// command line
-	*out << "command line";
+	Out() << "command line";
       } else {
-        *out << "file " << fn;
+        Out() << "file " << fn;
       }
       if (ln>=0)
-        *out << " near line " << ln;
+        Out() << " near line " << ln;
     }
-    *out << ":\n\t";
+    Out() << ":\n\t";
   }
 }
 
-ErrorStream Error("ERROR");
-ErrorStream Warn("WARNING");
-InternalStream Internal("INTERNAL");
+void InternalStream::Stop()
+{
+  if (active) {
+    Out() << endl;
+    ready = false;
+  }
+  exit(0);
+}
+
+
+
+ErrorStream Error("ERROR", &cout);
+ErrorStream Warn("WARNING", &cout);
+InternalStream Internal("INTERNAL", &cout);
 
 void InitErrorStreams() 
 {
-  Error.SetDisplay(&cout);
   Error.Activate();
-
-  Warn.SetDisplay(&cout);
   Warn.Activate();
-
-  Internal.SetDisplay(&cout);
   Internal.Activate();
 }
 

@@ -52,7 +52,7 @@ public:
   virtual ~array_index(); 
 
   virtual void Compute(int i, result &x);
-  void showfancy(ostream &s) const;
+  void showfancy(OutputStream &s) const;
 
   // Used by for loops and arrays:
 
@@ -181,7 +181,7 @@ public:
   /** Determine our current "name", which
       will be written to the specified stream.
    */
-  void GetName(ostream &s) const;
+  void GetName(OutputStream &s) const;
 
   /** For the given indices (as expressions),
       find the array "value".
@@ -197,7 +197,7 @@ public:
    */
   void Sample(long &, expr **il, result &x);
 
-  virtual void show(ostream &s) const;
+  virtual void show(OutputStream &s) const;
 };
 
 

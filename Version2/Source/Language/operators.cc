@@ -1138,7 +1138,7 @@ public:
     return returntype;
   }
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const { unary_show(s, GetOp(oper)); }
+  virtual void show(OutputStream &s) const { unary_show(s, GetOp(oper)); }
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new proc_unary(Filename(), Linenumber(), returntype, oper, x);
@@ -1183,7 +1183,7 @@ public:
     return returntype;
   }
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const { binary_show(s, GetOp(oper)); }
+  virtual void show(OutputStream &s) const { binary_show(s, GetOp(oper)); }
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new proc_binary(Filename(), Linenumber(), returntype, oper, l, r);
@@ -1245,7 +1245,7 @@ public:
     return returntype;
   }
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const { assoc_show(s, GetOp(oper)); }
+  virtual void show(OutputStream &s) const { assoc_show(s, GetOp(oper)); }
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new proc_assoc(Filename(), Linenumber(), returntype, oper, x, n);
@@ -1314,15 +1314,6 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
   return NULL;
 }
 
-/*
-expr* BinaryAssocError(type ltype, int op, type rtype)
-{
-  cerr << "INTERNAL: expression " << GetType(ltype) << " ";
-  cerr << GetOp(op) << " " << GetType(rtype) << "\n\t";
-  cerr << "should use associative expression\n";
-  return NULL;
-}
-*/
 
 
 // Note: the types left and right must match properly already
@@ -1410,10 +1401,12 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
   return NULL;
 }
 
-expr* IllegalAssocError(int op, type alltype)
+expr* IllegalAssocError(int op, type alltype, const char *fn, int ln)
 {
-  cerr << "INTERNAL: illegal associative operator " << GetOp(op);
-  cerr << " for type " << GetType(alltype) << "\n";
+  Internal.Start(__FILE__, __LINE__, fn, ln);
+  Internal << "Illegal associative operator " << GetOp(op);
+  Internal << " for type " << GetType(alltype);
+  Internal.Stop();
   return NULL;
 }
 
@@ -1445,7 +1438,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  case TIMES:   return new bool_and(file, line, opnds, n);
 
 	  case EQUALS:	
-	  case NEQUAL:	return IllegalAssocError(op, alltypes);
+	  case NEQUAL:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
 
@@ -1464,7 +1457,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  case GT:	
 	  case GE:	
 	  case LT:	
-	  case LE:	return IllegalAssocError(op, alltypes);
+	  case LE:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
       

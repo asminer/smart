@@ -20,7 +20,7 @@
 // *                                                                *
 // ******************************************************************
 
-void negop::show(ostream &s) const 
+void negop::show(OutputStream &s) const 
 {
   type t = Type(0); // sneaky...  this is slow but so's I/O so who cares
   const char* op = "-";
@@ -35,7 +35,7 @@ void negop::show(ostream &s) const
 // *                                                                *
 // ******************************************************************
 
-void addop::show(ostream &s) const 
+void addop::show(OutputStream &s) const 
 {
   type t = Type(0); // sneaky...  this is slow but so's I/O so who cares
   const char* op = "+";
@@ -63,7 +63,7 @@ int addop::GetSums(int a, expr **sums, int N, int offset)
 // *                                                                *
 // ******************************************************************
 
-void multop::show(ostream &s) const 
+void multop::show(OutputStream &s) const 
 {
   type t = Type(0); // sneaky...  this is slow but so's I/O so who cares
   const char* op = "*";

@@ -46,7 +46,7 @@ class infinityconst : public constant {
     x.infinity = true;
   }
 
-  virtual void show(ostream &s) const {
+  virtual void show(OutputStream &s) const {
     if (sign<0) s << "-";
     s << "infinity";       //<<<<<<<<<<<<<<<<<<<<<<<FIX THIS LATER!!!!!!!!!!!
   }
@@ -69,7 +69,9 @@ expr* MakeConstExpr(type t, const result &x, const char* file, int line)
     case STRING:	return MakeConstExpr((char*)x.other, file, line);
   }
   //
-  cerr << "Internal error: illegal type for MakeConstExpr\n";
+  Internal.Start(__FILE__, __LINE__, file, line);
+  Internal << "Illegal type for MakeConstExpr";
+  Internal.Stop();
   return NULL;
 }
 

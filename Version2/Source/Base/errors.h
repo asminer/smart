@@ -8,33 +8,27 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-#include <sstream>
+#include "output.h"
 
 /**
     Used for centralized error reporting.
 */
-class ErrorStream {
+class ErrorStream : public OutputStream {
 protected:
-  std::ostringstream *out;
-  bool ready;
-  const char* errortype;
   bool active;
-  std::ostream* display;
+  const char* errortype;
 public:
-  ErrorStream(const char* et);
+  ErrorStream(const char* et, std::ostream *deflt);
 
-  std::ostream& Out() { return *out; }
-  bool IsReady() const { return ready; }
   void Activate() { active = true; }
-  void Deactivate() { active = false; }
-  void SetDisplay(std::ostream *d) { display = d; }
+  void Deactivate() { active = ready = false; }
 
   /**
       Used to start reporting an error.
       @param filename	Offending input file to smart
       @param lineno	Approximate line number of offending input file
   */
-  void Start(char* filename=NULL, int lineno=-1);
+  void Start(const char* filename=NULL, int lineno=-1);
 
   /**
       We're done reporting an error.
@@ -42,29 +36,30 @@ public:
   void Stop();
 };
 
-template <class DATA>
-ErrorStream& operator<< (ErrorStream& s, DATA data) 
-{
-  if (s.IsReady()) s.Out() << data;
-  return s;
-}
-
 /**
-     Used for internal errors.
+    Used for centralized error reporting of internal errors.
 */
 class InternalStream : public ErrorStream {
 public:
-  InternalStream(const char* et) : ErrorStream(et) { };
+  InternalStream(const char* et, std::ostream *d) : ErrorStream(et, d) { }
   /**
-  	Used to start reporting an error.
+      Used to start reporting an internal error.
 
       @param srcfile		Which source (i.e., c++ file) is unhappy
       @param srcline		Where in c++ source file we are unhappy
       @param filename		Offending smart input file
       @param lineno		Approximate line number of offending input file
   */
-  void Start(char* srcfile, int srcline, char* filename=NULL, int lineno=-1);
+  void Start(const char* srcfile, int srcline, 
+             const char* filename=NULL, int lineno=-1);
+
+  /**
+      We're done reporting an error.
+      In the internal case, we will terminate!
+  */
+  void Stop();
 };
+
 
 // Pre-defined streams
 extern ErrorStream Error;
