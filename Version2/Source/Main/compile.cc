@@ -2290,10 +2290,12 @@ void StartModelTables()
 
 void KillModelTables()
 {
+#ifdef DEBUG_MODEL
   Output << "Destroying symbol tables for model ";
   if (model_under_construction) Output << model_under_construction; 
   Output << "\nInternal symbols:\n";
   if (ModelInternal) ModelInternal->Traverse(ShowSymbolNames);
+#endif
 
   delete ModelInternal;
   ModelInternal = NULL;

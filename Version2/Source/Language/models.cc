@@ -20,6 +20,7 @@
 
 void Delete(state_model *x)
 {
+  if (NULL==x) return;
   DCASSERT(0);
 }
 
@@ -44,6 +45,8 @@ model_var::model_var(const char* fn, int line, type t, char* n)
 
 bool model::SameParams()
 {
+  if (never_built) return false;  // force construction the first time
+
   // compare current_params with last_params
   int i;
   for (i=0; i<num_params; i++) {
@@ -57,6 +60,7 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
  : function(fn, l, t, n, pl, np)
 {
   // we can probably allow forward defs, but for now let's not.
+  never_built = true;
   isForward = false;
   stmt_block = NULL;
   num_stmts = 0;
@@ -117,6 +121,11 @@ void model::Compute(expr **p, int np, result &x)
   }
 
   // nope... rebuild
+#ifdef DEBUG_MODEL
+  Output << "Building model " << Name() << "\n";
+  Output.flush();
+#endif
+
   InitModel();
   Clear();
 
@@ -133,6 +142,7 @@ void model::Compute(expr **p, int np, result &x)
   // save parameters
   FreeLast();
   SWAP(current_params, last_params);  // pointer swap!
+  never_built = false;
 }
 
 void model::Sample(Rng &, expr **, int np, result &)
@@ -176,6 +186,7 @@ void model::SolveMeasure(measure *m)
   // or just solve this one
 
   Output << "Model " << Name() << " solving measure " << m << "\n";
+  Output.flush();
 }
 
 void model::GroupMeasures()
@@ -278,7 +289,7 @@ void mcall::Compute(int i, result &x)
     x = m;
     return;
   }
-  DCASSERT(x.other == mdl);
+  DCASSERT(m.other == mdl);
 
   mdl->SolveMeasure(msr);
   msr->Compute(0, x);

@@ -24,6 +24,8 @@
 class state_model;
 void Delete(state_model *);
 
+#define DEBUG_MODEL
+
 // ******************************************************************
 // *                                                                *
 // *                        model_var  class                        *
@@ -67,6 +69,7 @@ public:
 class model : public function {
 
 private:
+  bool never_built;
   result* current_params;
   result* last_params;
   inline void FreeLast() {
@@ -121,6 +124,14 @@ public:
   inline void SetStatementBlock(statement **b, int n) {
     DCASSERT(NULL==stmt_block);
     stmt_block = b; num_stmts = n;
+#ifdef DEBUG_MODEL
+    Output << "Set statement block for model " << Name() << ":\n";
+    int i;
+    for (i=0; i<n; i++) {
+      Output << "\t" << stmt_block[i] << ";\n";
+    }
+    Output.flush();
+#endif
   }
 
   /** Set the symbol table (done by compiler).
