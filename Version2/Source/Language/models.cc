@@ -69,6 +69,10 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
   dsm = NULL;
   // measure structures
   mlist = new List <measure>(16);
+  mtrans = new List <measure>(16);
+  msteady = new List <measure>(16);
+  macc_trans = new List <measure>(16);
+  macc_steady = new List <measure>(16);
   // Allocate space to save parameters
   if (np) {
     current_params = new result[np];
@@ -267,7 +271,7 @@ void model::Clear()
 {
   Delete(dsm);
   mlist->Clear();
-  mtrans->Clear();
+  if (mtrans) mtrans->Clear();
   msteady->Clear();
   macc_trans->Clear();
   macc_steady->Clear();
