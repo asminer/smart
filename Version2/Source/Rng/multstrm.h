@@ -2,7 +2,10 @@
 #ifndef MULTSTRM_H
 #define MULTSTRM_H
 
-unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
+#include "../Base/api.h"
+#include "../memmgr.h"
+
+const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x08000000, 0x04000000, 0x02000000, 0x01000000,
 
 			  0x00800000, 0x00400000, 0x00200000, 0x00100000,
@@ -15,6 +18,61 @@ unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
 
+struct bitmatrix {
+  unsigned int row[32];
+  int ptrcount;
+  int cachecount;
+  bool flag;
+
+  inline unsigned int vm_mult(unsigned int v) {
+    unsigned int answer = 0;
+    for (int b=31; b>=0; b--) if (row[b])
+      if (v & mask[b]) answer ^= row[b];
+    return answer;
+  }
+
+  void show(OutputStream &s) {
+    s << "Submatrix: ";
+    s.PutHex((unsigned int) this);
+    s << "\n\t" << ptrcount << " ptrs\t" << cachecount << " cache\n";
+    for (int r=0; r<32; r++) {
+      s << '[';
+      for (int c=0; c<32; c++) if (row[r] & mask[c]) s << '1'; else s << '0';
+      s << "]\n";
+    }
+    s.flush();
+  }
+
+  inline void zero() {
+    for (int r=31; r>=0; r--) row[r] = 0;
+  }
+
+  inline bool is_zero() {
+    for (int r=31; r>=0; r--) if (row[r]) return false;
+    return true;
+  }
+
+  inline int Signature(int prime) {
+    return ((row[31] % prime) * 256 + row[0]) % prime;
+  }
+};
+
+/// a = b * c
+inline void mm_mult(bitmatrix *a, bitmatrix *b, bitmatrix *c)
+{
+  for (int i=0; i<32; i++) a->row[i] = c->vm_mult(b->row[i]);
+}
+
+/// a += c
+inline void mm_acc(bitmatrix *a, bitmatrix *c)
+{
+  for (int i=0; i<32; i++) a->row[i] ^= c->row[i];
+}
+
+
+
+#ifdef EXPLICIT
+
 struct bigmatrix {
   int N;
   unsigned int** row;
@@ -22,9 +80,11 @@ struct bigmatrix {
   ~bigmatrix();
 
   inline void column_dot_product(int cw, unsigned int *vect, unsigned int &a) {
-    for (int i=N-1; i>=0; i--) 
-      for (register int b=31; b>=0; b--) {
-        if (vect[i] & mask[b]) a ^= row[i*32+b][cw];
+    unsigned int** ptr = row;
+    for (int i=0; i<N; i++) 
+      for (register int b=0; b<32; b++) {
+        if (vect[i] & mask[b]) a ^= ptr[0][cw];
+	ptr++;
       }
   }
   inline void zero() {
@@ -32,16 +92,78 @@ struct bigmatrix {
     for (int i=32*N-1; i; i--)
       memcpy(row[i], row[0], N * sizeof(int));
   }
-  void Show(OutputStream &s);
+  void show(OutputStream &s);
+
+  inline void DumpSubmatrix(int r, int c, bitmatrix* sub) const {
+    for (int i=31; i>=0; i--) {
+      sub->row[i] = row[r*32+i][c];
+    }
+  }
+
+  inline void FillSubmatrix(int r, int c, const bitmatrix* sub) {
+    for (int i=31; i>=0; i--) {
+      row[r*32+i][c] = sub->row[i];
+    }
+  }
+
+  /// this = b * c
+  inline void Multiply(bigmatrix *b, bigmatrix *c) {
+    for (int i=32*N-1; i>=0; i--)
+      for (int j=N-1; j>=0; j--) {
+        row[i][j] = 0;
+        c->column_dot_product(j, b->row[i], row[i][j]);
+      }
+  }
+
+  /** Make this bigmatrix equal to the B matrix used in
+      a Mersenne Twister prng.
+  */
+  void MakeB(int M, unsigned int A);
 };
 
-/// a = b * c
-inline void mm_mult(bigmatrix *a, bigmatrix *b, bigmatrix *c)
-{
-  for (int i=32*N-1; i>=0; i--)
-    for (int j=N-1; j>=0; j--) {
-      a->row[i][j] = 0;
-      c->column_dot_product(j, b->row[i]);
+#endif
+
+/// A 2-level Mxd, essentially ;^)
+class shared_matrix {
+  int N;
+  bitmatrix*** ptrs;
+  int distinct;
+public:
+#ifdef EXPLICIT
+  shared_matrix(bigmatrix *full);
+#endif
+  shared_matrix(int n);
+  void MakeB(int M, unsigned int A);
+  ~shared_matrix();
+  void show(OutputStream &s);
+  /// x = y * this;
+  inline void vector_multiply(unsigned long *x, unsigned long *y) {
+    int i,j;
+    for (i=N-1; i>=0; i--) x[i] = 0;
+    for (i=N-1; i>=0; i--)
+      for (j=N-1; j>=0; j--)
+	if (ptrs[i][j])
+	  x[j] ^= ptrs[i][j]->vm_mult(y[i]);
+  }
+  inline int Distinct() const { return distinct; }
+
+  /// this = b * c
+  void Multiply(shared_matrix *b, shared_matrix *c);
+  
+protected:
+  inline void SetPtr(int i, int j, bitmatrix* m) {
+    if (ptrs[i][j]) {
+      DCASSERT(ptrs[i][j]->ptrcount>0);
+      ptrs[i][j]->ptrcount--;
     }
-}
+    ptrs[i][j] = m;
+    if (m) m->ptrcount++;
+  }
+};
+
+void InitMatrix();
+
+void MatrixStats();
+
+#endif
 
