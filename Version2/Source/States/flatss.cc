@@ -213,7 +213,7 @@ state_array::~state_array()
 }
 
 
-void state_array::RunlengthEncode(char npbits, char tkbits, state &s)
+void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
 {
   // state is not binary
   int i = 0;
@@ -223,18 +223,18 @@ void state_array::RunlengthEncode(char npbits, char tkbits, state &s)
      	// one last state var, treat as a list of length 1
 	WriteInt(1, LIST_BIT);
 	WriteInt(npbits, 1);  
-	WriteInt(tkbits, s[i].ivalue);
+	WriteInt(tkbits, s.Read(i).ivalue);
         i++;
         continue;
     }
-    if (s[i].ivalue == s[i+1].ivalue) {
+    if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
  	// Start of a RUN
 	WriteInt(1, RUN_BIT); 
 	int j;
-	for (j=i+1; j<np && s[i].ivalue == s[j].ivalue; j++) { } 
+	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
   	WriteInt(npbits, j-i);    	// run length
-	WriteInt(tkbits, s[i].ivalue);	// run value
+	WriteInt(tkbits, s.Read(i).ivalue);	// run value
  	i = j;
      	continue;
     }
@@ -247,23 +247,23 @@ void state_array::RunlengthEncode(char npbits, char tkbits, state &s)
 	j=np;
 	break;
       } 
-      if (s[j].ivalue != s[j+1].ivalue) continue;
-      if (s[j].ivalue == s[j+2].ivalue) break;  // run of 3
+      if (s.Read(j).ivalue != s.Read(j+1).ivalue) continue;
+      if (s.Read(j).ivalue == s.Read(j+2).ivalue) break;  // run of 3
     } // for j
     // j is one past the end of the list
     WriteInt(npbits, j-i);	// list length
     for (; i<j; i++)
-      WriteInt(tkbits, s[i].ivalue);
+      WriteInt(tkbits, s.Read(i).ivalue);
   } // while i < np
 }
 
-void state_array::RunlengthEncodeBinary(char npbits, state &s)
+void state_array::RunlengthEncodeBinary(char npbits, const state &s)
 {
   // special case: state is binary
   int i = 0;
   int np = s.Size();
   // write the first bit value
-  WriteInt(1, s[0].ivalue);
+  WriteInt(1, s.Read(0).ivalue);
   while (i<np) {
     if (i+1 >= np) {
      	// one last state var, treat as a flip of length 1
@@ -272,11 +272,11 @@ void state_array::RunlengthEncodeBinary(char npbits, state &s)
         i++;
         continue;
     }
-    if (s[i].ivalue == s[i+1].ivalue) {
+    if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
  	// Start of a RUN
 	WriteInt(1, RUN_BIT); 
 	int j;
-	for (j=i+1; j<np && s[i].ivalue == s[j].ivalue; j++) { } 
+	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
   	WriteInt(npbits, j-i);    	// run length
  	i = j;
@@ -291,7 +291,7 @@ void state_array::RunlengthEncodeBinary(char npbits, state &s)
 	j=np;
 	break;
       } 
-      if (s[j].ivalue == s[j+1].ivalue) break;
+      if (s.Read(j).ivalue == s.Read(j+1).ivalue) break;
     } // for j
     // j is one past the end of the list
     WriteInt(npbits, j-i);	// list length
@@ -299,7 +299,7 @@ void state_array::RunlengthEncodeBinary(char npbits, state &s)
   } // while i<np
 }
  
-int state_array::AddState(state &s)
+int state_array::AddState(const state &s)
 {
   int answer;
   if (firsthandle<0) firsthandle = lasthandle;
@@ -325,8 +325,8 @@ int state_array::AddState(state &s)
   nnz = maxval = 0;
   for (i = 0; i < np; i++) {
     // verify the state vars are legal
-    DCASSERT(s[i].isNormal());
-    unsigned si = s[i].ivalue;
+    DCASSERT(s.Read(i).isNormal());
+    unsigned si = s.Read(i).ivalue;
     maxval = MAX(maxval, si);
     if (si) nnz++;
   }
@@ -367,11 +367,11 @@ int state_array::AddState(state &s)
           i++;
           continue;
         }
-        if (s[i].ivalue == s[i+1].ivalue) {
+        if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
  	  // Start of a RUN
 	  runs++;
-	  int runval = s[i].ivalue;
-  	  do { i++; } while ((i<np) && (runval==s[i].ivalue));	
+	  int runval = s.Read(i).ivalue;
+  	  do { i++; } while ((i<np) && (runval==s.Read(i).ivalue));	
      	  continue;
         }
 	// Must be a LIST, in this case, a sequence of FLIPS
@@ -384,7 +384,7 @@ int state_array::AddState(state &s)
 	    listlengths++;
 	    break;	
  	  } 
-	  if (s[i].ivalue == s[i+1].ivalue) break;
+	  if (s.Read(i).ivalue == s.Read(i+1).ivalue) break;
 	} // while 1
       } // while i<np
     } else {
@@ -398,11 +398,11 @@ int state_array::AddState(state &s)
           i++;
           continue;
         }
-        if (s[i].ivalue == s[i+1].ivalue) {
+        if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
  	  // Start of a RUN
 	  runs++;
-	  int runval = s[i].ivalue;
-  	  do { i++; } while ((i<np) && (runval==s[i].ivalue));	
+	  int runval = s.Read(i).ivalue;
+  	  do { i++; } while ((i<np) && (runval==s.Read(i).ivalue));	
      	  continue;
         }
 	// Must be a LIST
@@ -415,8 +415,8 @@ int state_array::AddState(state &s)
 	    listlengths+=2;
 	    break;	
  	  } 
-	  if (s[i].ivalue != s[i+1].ivalue) continue;
-	  if (s[i+1].ivalue == s[i+2].ivalue) break;  // run of 3
+	  if (s.Read(i).ivalue != s.Read(i+1).ivalue) continue;
+	  if (s.Read(i+1).ivalue == s.Read(i+2).ivalue) break;  // run of 3
 	} // while 1
       } // while i < np
     } // if maxval
@@ -486,7 +486,7 @@ int state_array::AddState(state &s)
       // *****************	Sparse Encoding 
       WriteInt(npbits, nnz);
       for (i=0; i<np; i++) {
-        int tk = s[i].ivalue;
+        int tk = s.Read(i).ivalue;
         if (tk) {
           WriteInt(npbits, i);
           if (tkbits>1) WriteInt(tkbits, tk);
@@ -505,7 +505,7 @@ int state_array::AddState(state &s)
       // *****************	Full Encoding 
       WriteInt(npbits, (np-1));
       for (i=0; i<np; i++) 
-	WriteInt(tkbits, s[i].ivalue);
+	WriteInt(tkbits, s.Read(i).ivalue);
     break;
 
     default:
@@ -540,7 +540,7 @@ int state_array::AddState(state &s)
       Output << "List length: " << listlengths << "\n";
       break;
     case 3:
-      Output << "#places: " << np << "\n";
+      Output << "#places: " << (int) np << "\n";
       break;
   }
   Output << "Encoding:\n";
@@ -814,7 +814,7 @@ int state_array::Compare(int h1, int h2) const
   return strncmp(ptr1, ptr2, length1); 
 }
 
-int state_array::Compare(int hndl1, state& s2)
+int state_array::Compare(int hndl1, const state& s2)
 {
   //
   //  Check handle
@@ -859,12 +859,12 @@ int state_array::Compare(int hndl1, state& s2)
       for (i=0; i<nnz; i++) {
         ReadInt(npbits, np);
         // next nonzero is at np, compare with s2
-        for (;j<np; j++) if (s2[j].ivalue) return -1;
+        for (;j<np; j++) if (s2.Read(j).ivalue) return -1;
 	if (tkbits>1) {
 	  ReadInt(tkbits, tk);
-          cmp = (tk - s2[np].ivalue);
+          cmp = (tk - s2.Read(np).ivalue);
 	} else {
-          cmp = 1 - s2[np].ivalue;
+          cmp = 1 - s2.Read(np).ivalue;
         }
  	if (cmp) return cmp;
         j = np+1;
@@ -883,7 +883,7 @@ int state_array::Compare(int hndl1, state& s2)
           ReadInt(npbits, np);
 	  if (tkbits>1) ReadInt(tkbits, tk);
           for(; np; np--) {
-	    cmp = tk - s2[j++].ivalue;
+	    cmp = tk - s2.Read(j++).ivalue;
 	    if (cmp) return cmp;
           } // for np
 	  // flip bit
@@ -893,7 +893,7 @@ int state_array::Compare(int hndl1, state& s2)
 	  ReadInt(npbits, np);
 	  for(; np; np--) {
 	    if (tkbits>1) ReadInt(tkbits, tk);
-	    cmp = tk - s2[j++].ivalue;
+	    cmp = tk - s2.Read(j++).ivalue;
 	    if (cmp) return cmp;
 	    tk = !tk;  // faster to just do it every time
           }
@@ -907,7 +907,7 @@ int state_array::Compare(int hndl1, state& s2)
       np++;
       for (i=0; i<np; i++) {
 	ReadInt(tkbits, tk);
-	cmp = tk - s2[i].ivalue;
+	cmp = tk - s2.Read(i).ivalue;
 	if (cmp) return cmp;
       }
     break;

@@ -1,6 +1,8 @@
 
 // $Id$
 
+Currently working on:  trees for state space storage
+
 Things to check on:
 
 * Memory leaks

@@ -157,8 +157,8 @@ protected:
   void EnlargeMem(int newsize);
 
   // Helpers for AddState
-  void RunlengthEncode(char npbits, char tkbits, state &s);
-  void RunlengthEncodeBinary(char npbits, state &s);
+  void RunlengthEncode(char npbits, char tkbits, const state &s);
+  void RunlengthEncodeBinary(char npbits, const state &s);
 
   inline int Bits2Bytes(int numbits) const { return (numbits+7)/8; }
 public:
@@ -171,7 +171,7 @@ public:
   inline int MaxHandle() const { return map ? numstates : lasthandle; }
   inline int FirstHandle() const { return map ? 0 : firsthandle; }
   
-  int AddState(state &s);
+  int AddState(const state &s);
   /// Can only be used with map array.
   inline void PopLast() {
     DCASSERT(map);
@@ -211,7 +211,7 @@ public:
        * the second state doesn't have to be added yet 
        * can be used without a map array (non-index handles)
   */
-  int Compare(int h1, state& s2);
+  int Compare(int h1, const state& s2);
 
   void Report(OutputStream &r);
   int MemUsed();

@@ -193,6 +193,15 @@ spn_dsm::~spn_dsm()
 
 void spn_dsm::ShowState(OutputStream &s, const state &x) const
 {
+/* Idea:
+	have different state display "formats" to select from
+	using an option; e.g.,
+	 #PN_Marking_Style
+		SPARSE_SAFE	(don't show #tokens unless > 1)
+		SPARSE 		(the one currently implemented)
+		FULL_INDEXED	(like sparse, but show also for 0 tokens)
+		FULL_VECTOR	(marking is a vector of naturals)
+*/
   DCASSERT(x.Size() >= num_places);
   int i;
   bool printed = false;
@@ -1151,5 +1160,7 @@ void InitPNModelFuncs(PtrTable *t)
   Add_spn_firing(t);
 
   Add_spn_tk(t);
+
+  // Initialize PN-specific options here?
 }
 
