@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <FlexLexer.h>
 
-#define COMPILE_DEBUG
+//#define COMPILE_DEBUG
 
 void DumpPassed(OutputStream &s, List <expr> *pass)
 {
@@ -632,7 +632,7 @@ statement* BuildArrayStmt(array *a, expr *e)
 
 statement* BuildFuncStmt(user_func *f, expr *r)
 {
-  if (f) {
+  if (f && r) {
     // Check type!
     DCASSERT(r->NumComponents()==1);
     if (!Promotable(r->Type(0), f->Type(0))) {
@@ -971,7 +971,6 @@ void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
 */
 int ScoreFunction(function *f, List <expr> *params)
 {
-  bool perfect = true;
   bool promote = true;
   formal_param **fpl;
   int np;
@@ -994,6 +993,7 @@ int ScoreFunction(function *f, List <expr> *params)
     }
 
     // Compare formal param #fptr with passed param #pptr
+    bool perfect = true;
     MatchParam(fpl[fptr], params->Item(pptr), perfect, promote);
     if (!perfect) numpromote++;
     fptr++;
@@ -1063,6 +1063,11 @@ expr* BuildFunctionCall(const char* n, void* posparams)
       score = f->Typecheck(params);
     else
       score = ScoreFunction(f, params);
+
+#ifdef COMPILE_DEBUG
+    Output << "Function " << f << " got score " << score << "\n";
+    Output.flush();
+#endif
 
     if ((score>=0) && (score<bestmatch)) {
       // better match, clear old list

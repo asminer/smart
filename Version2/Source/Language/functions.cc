@@ -212,6 +212,12 @@ void user_func::Compute(expr **pp, int np, result &x)
   stack_ptr = newstackptr;
   return_expr->Compute(0, x);
 
+  if (x.error) {
+    Error.Start(return_expr->Filename(), return_expr->Linenumber());
+    Error << "calling function: " << Name();
+    Error.Stop();
+  }
+
   // free parameters, in case they're strings or other bulky items
   for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[2+i]);
 

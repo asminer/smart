@@ -1476,7 +1476,7 @@ void real_div::Compute(int i, result &x)
     x.null = true;
     return;
   }
-  if (0.0==r.ivalue) {
+  if (0.0==r.rvalue) {
     x.error = CE_ZeroDivide;
     Error.Start(right->Filename(), right->Linenumber());
     Error << "Undefined operation (divide by 0) caused by " << right;
