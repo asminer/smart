@@ -1,5 +1,5 @@
 
-/* $Id:
+/* $Id$
 
    Main module of smart (i.e., compiler)
 

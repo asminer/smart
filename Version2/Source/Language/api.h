@@ -11,6 +11,7 @@
 #include "arrays.h"
 #include "functions.h"
 #include "operators.h"
+#include "initfuncs.h"
 
 #endif
 

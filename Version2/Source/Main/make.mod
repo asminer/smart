@@ -7,7 +7,9 @@
 
 SOURCES = foo.cc
 
-ALLOBJS = $(SOURCES:.cc=.o) 
+GENOBJS = lex.yy.o
+
+ALLOBJS = $(SOURCES:.cc=.o) $(GENOBJS)
 
 CPPFLAGS 	= $(PLAT_FLAGS) -Wall 
 
@@ -20,6 +22,8 @@ depend:
 	cd $(SOURCEDIR); $(CC) $(CPPFLAGS) -MM $(SOURCES) > $(OBJECTDIR)/make.depend
 
 clean :
-	rm -f *.o
+	rm -f *.o lex.yy.cc
 
+lex.yy.cc : smart.l smart.tab.h
+	flex $(SOURCEDIR)/smart.l
 
