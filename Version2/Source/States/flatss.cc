@@ -252,7 +252,7 @@ void state_array::RunlengthEncode(char npbits, char tkbits, state &s)
     } // for j
     // j is one past the end of the list
     WriteInt(npbits, j-i);	// list length
-    for (i; i<j; i++)
+    for (; i<j; i++)
       WriteInt(tkbits, s[i].ivalue);
   } // while i < np
 }
@@ -317,15 +317,16 @@ int state_array::AddState(state &s)
   // 
   // Scan state for max #tokens and number of nonzeroes 
   //
-  int i;
-  int np = s.Size();
+  unsigned i;
+  unsigned np = s.Size();
   DCASSERT(np);        // can we have 0-length states?
-  int nnz, maxval;
+  unsigned maxval;
+  int nnz;
   nnz = maxval = 0;
   for (i = 0; i < np; i++) {
     // verify the state vars are legal
     DCASSERT(s[i].isNormal());
-    int si = s[i].ivalue;
+    unsigned si = s[i].ivalue;
     maxval = MAX(maxval, si);
     if (si) nnz++;
   }
@@ -621,7 +622,7 @@ bool state_array::GetState(int Handel, state &s)
 #endif
           ReadInt(npbits, np);
 	  if (tkbits>1) ReadInt(tkbits, tk);
-          for(np; np; np--) 
+          for(; np; np--) 
 	    s[j++].ivalue = tk;
 	  // flip bit
 	  tk = !tk;
@@ -632,7 +633,7 @@ bool state_array::GetState(int Handel, state &s)
 	  lists++;
 	  listlength+=np;
 #endif
-	  for(np; np; np--) {
+	  for(; np; np--) {
 	    if (tkbits>1) ReadInt(tkbits, tk);
 	    s[j++].ivalue = tk;
 	    if (tkbits<=1) tk = !tk;
@@ -719,8 +720,7 @@ int state_array::NextHandle(int h)
   //
   // Determine state length (#bits), reading only as much as necessary
   //
-  int numbits = 0;
-  int tk, np, nnz;
+  int np, nnz;
   int i, j, type;
   // stats for debugging
 #ifdef DEBUG_COMPACT
@@ -882,7 +882,7 @@ int state_array::Compare(int hndl1, state& s2)
 	  // RUN
           ReadInt(npbits, np);
 	  if (tkbits>1) ReadInt(tkbits, tk);
-          for(np; np; np--) {
+          for(; np; np--) {
 	    cmp = tk - s2[j++].ivalue;
 	    if (cmp) return cmp;
           } // for np
@@ -891,7 +891,7 @@ int state_array::Compare(int hndl1, state& s2)
         } else {
 	  // LIST
 	  ReadInt(npbits, np);
-	  for(np; np; np--) {
+	  for(; np; np--) {
 	    if (tkbits>1) ReadInt(tkbits, tk);
 	    cmp = tk - s2[j++].ivalue;
 	    if (cmp) return cmp;

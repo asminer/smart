@@ -2,13 +2,12 @@
 # $Id$
 
 #
-#  Makefile for Formalisms module: common section
+#  Makefile for States module: common section
 #
 
 SOURCES = \
-	dsm.cc	\
-	mc.cc	\
-	api.cc	
+	reachset.cc	\
+	flatss.cc	stateheap.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

@@ -35,6 +35,7 @@ bool AllocState(state &s, int length)
   s.am_substate = false;
   s.size = length;
   s.data = new result[length];
+  return true;
 }
 
 void FreeState(state &s)
