@@ -20,6 +20,7 @@ private:
   int lastfree;
   void* freelist;   // recycled objects
   int peakobjects;
+  int activeobjects;
 protected:
   inline void PushFree(void* obj) {
     void** thing = (void**) obj;
@@ -53,6 +54,7 @@ public:
     NewChunk();
     freelist = NULL;
     peakobjects = 0;
+    activeobjects = 0;
   }
   ~ObjMgr() {
     // more work here
@@ -64,6 +66,7 @@ public:
     }
   }
   void* GetChunk() {
+    activeobjects++;
     if (freelist) { return PopFree(); }
     if (lastfree >= chunksize) {
       chunklist.VAppend(chunk);
@@ -75,9 +78,11 @@ public:
     return answer;
   }
   inline void FreeChunk(void* obj) {
+    activeobjects--;
     PushFree(obj);
   }
   inline int PeakObjects() { return peakobjects; }
+  inline int ActiveObjects() { return activeobjects; }
 };
 
 template <class DATA>
@@ -89,6 +94,7 @@ public:
   inline DATA* NewObject() { return (DATA *) m->GetChunk(); }
   inline void FreeObject(DATA *x) { m->FreeChunk(x); }
   inline int PeakObjects() { return m->PeakObjects(); }
+  inline int ActiveObjects() { return m->ActiveObjects(); }
 };
 
 #endif

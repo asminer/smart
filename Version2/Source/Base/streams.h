@@ -39,6 +39,7 @@ public:
   void Put(bool data);
   void Put(char data);
   void Put(int data);
+  void PutHex(unsigned int data);
   void Put(float data);
   void Put(double data);
   void Put(const char* data);
