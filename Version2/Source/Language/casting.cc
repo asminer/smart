@@ -100,9 +100,9 @@ void bool2procbool::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x);
 
-  if (x.error || x.null) return;
+  if (x.error || x.isNull() || x.isUnknown()) return;
 
-  DCASSERT(false==x.infinity);  // Can this fail?
+  DCASSERT(false==x.isInfinity());  // Can this fail?
 
   expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
   x.other = answer;
@@ -136,9 +136,10 @@ void bool2procrandbool::Sample(long &seed, int i, result &x)
   opnd->Compute(0, x); 
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
-  DCASSERT(false==x.infinity);  // Can this fail?
+  DCASSERT(false==x.isInfinity());  // Can this fail?
 
   expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
   x.other = answer;
@@ -171,8 +172,9 @@ void int2real::Compute(int i, result &x)
   opnd->Compute(0, x); 
 
   if (x.error) return;
-  if (x.null) return;
-  if (x.infinity) return;
+  if (x.isNull()) return;
+  if (x.isInfinity()) return;
+  if (x.isUnknown()) return;
 
   x.rvalue = x.ivalue;
 }
@@ -207,10 +209,11 @@ void int2procint::Compute(int i, result &x)
   opnd->Compute(0, x);
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
   expr *answer = NULL;
-  if (x.infinity) {
+  if (x.isInfinity()) {
     answer = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
   } else {
     answer = MakeConstExpr(x.ivalue, Filename(), Linenumber());
@@ -247,8 +250,9 @@ void real2int::Compute(int i, result &x)
   opnd->Compute(0, x); 
 
   if (x.error) return;
-  if (x.null) return;
-  if (x.infinity) return;
+  if (x.isNull()) return;
+  if (x.isInfinity()) return;
+  if (x.isUnknown()) return;
 
   // error checking here
   x.ivalue = int(x.rvalue);

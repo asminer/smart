@@ -146,25 +146,29 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign, definitely not equal
       x.bvalue = false;
       return false;
     }
-    if (l.infinity || r.infinity) {
+    if (l.isInfinity() || r.isInfinity()) {
       // one infinity, one not: definitely not equal
       x.bvalue = false;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;
@@ -211,25 +215,29 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign, definitely not equal
       x.bvalue = true;
       return false;
     }
-    if (l.infinity || r.infinity) {
+    if (l.isInfinity() || r.isInfinity()) {
       // one infinity, one not: definitely not equal
       x.bvalue = true;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;
@@ -276,30 +284,34 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
       x.bvalue = (l.ivalue>0);
       return false;
     }
-    if (l.infinity) {
+    if (l.isInfinity()) {
       // first is infinity, the other isn't; definitely greater.
       x.bvalue = true;
       return false;
     }
-    if (r.infinity) {
+    if (r.isInfinity()) {
       // second is infinity, the other isn't; definitely not greater.
       x.bvalue = false;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;
@@ -346,30 +358,34 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
       x.bvalue = (l.ivalue>0);
       return false;
     }
-    if (l.infinity) {
+    if (l.isInfinity()) {
       // first is infinity, the other isn't; definitely greater.
       x.bvalue = true;
       return false;
     }
-    if (r.infinity) {
+    if (r.isInfinity()) {
       // second is infinity, the other isn't; definitely not greater.
       x.bvalue = false;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;
@@ -416,30 +432,34 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign.  
       x.bvalue = (r.ivalue>0);
       return false;
     }
-    if (l.infinity) {
+    if (l.isInfinity()) {
       // first is infinity, the other isn't; definitely greater.
       x.bvalue = false;
       return false;
     }
-    if (r.infinity) {
+    if (r.isInfinity()) {
       // second is infinity, the other isn't; definitely not greater.
       x.bvalue = true;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;
@@ -486,30 +506,34 @@ protected:
       x.error = r.error;
       return false;
     }
-    if (l.null || r.null) {
-      x.null = true;
+    if (l.isNull() || r.isNull()) {
+      x.setNull();
       return false;
     }
-    if (l.infinity && r.infinity) {
+    if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
         x.error = CE_Undefined;
-        x.null = true;
+        x.setNull();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
       x.bvalue = (r.ivalue>0);
       return false;
     }
-    if (l.infinity) {
+    if (l.isInfinity()) {
       // first is infinity, the other isn't; definitely greater.
       x.bvalue = false;
       return false;
     }
-    if (r.infinity) {
+    if (r.isInfinity()) {
       // second is infinity, the other isn't; definitely not greater.
       x.bvalue = true;
+      return false;
+    }
+    if (l.isUnknown() || r.isUnknown()) {
+      x.setUnknown();
       return false;
     }
     return true;

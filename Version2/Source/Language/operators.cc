@@ -88,7 +88,8 @@ void bool_not::Compute(int i, result &x)
   opnd->Compute(0, x); 
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
   x.bvalue = !x.bvalue;
 }
@@ -122,13 +123,19 @@ void bool_or::Compute(int a, result &x)
   DCASSERT(0==a);
   x.Clear();
   int i;
+  bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     operands[i]->Compute(0, x);
     if (x.error) 	return; // error...short circuit
-    if (x.null) 	return;	// null...short circuit
+    if (x.isNull()) 	return;	// null...short circuit
+    if (x.isUnknown()) {
+      unknown = true;
+      continue;
+    }
     if (x.bvalue) 	return;	// true...short circuit
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -163,13 +170,19 @@ void bool_and::Compute(int a, result &x)
   DCASSERT(0==a);
   x.Clear();
   int i;
+  bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     operands[i]->Compute(0, x);
     if (x.error) 	return; // error...short circuit
-    if (x.null) 	return;	// null...short circuit
+    if (x.isNull()) 	return;	// null...short circuit
+    if (x.isUnknown()) {
+      unknown = true;
+      continue;
+    }
     if (!x.bvalue) 	return;	// false...short circuit
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -216,8 +229,12 @@ void bool_equal::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   x.bvalue = (l.bvalue == r.bvalue);
@@ -266,8 +283,12 @@ void bool_neq::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   x.bvalue = (l.bvalue != r.bvalue);
@@ -316,7 +337,8 @@ void randbool_not::Sample(long &seed, int i, result &x)
   opnd->Sample(seed, 0, x);
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
   x.bvalue = !x.bvalue;
 }
@@ -353,13 +375,19 @@ void randbool_or::Sample(long &seed, int a, result &x)
   DCASSERT(0==a);
   x.Clear();
   int i;
+  bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     operands[i]->Sample(seed, 0, x);
     if (x.error) 	return; // error...short circuit
-    if (x.null) 	return;	// null...short circuit
+    if (x.isNull()) 	return;	// null...short circuit
+    if (x.isUnknown()) {
+      unknown = true;
+      continue;
+    }
     if (x.bvalue) 	return;	// true...short circuit
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -394,13 +422,19 @@ void randbool_and::Sample(long &seed, int a, result &x)
   DCASSERT(0==a);
   x.Clear();
   int i;
+  bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     operands[i]->Sample(seed, 0, x);
     if (x.error) 	return; // error...short circuit
-    if (x.null) 	return;	// null...short circuit
+    if (x.isNull()) 	return;	// null...short circuit
+    if (x.isUnknown()) {
+      unknown = true;
+      continue;
+    }
     if (!x.bvalue) 	return;	// false...short circuit
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -446,8 +480,12 @@ void randbool_equal::Sample(long &seed, int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   x.bvalue = (l.bvalue == r.bvalue);
@@ -496,8 +534,12 @@ void randbool_neq::Sample(long &seed, int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   x.bvalue = (l.bvalue != r.bvalue);
@@ -546,7 +588,8 @@ void int_neg::Compute(int i, result &x)
   opnd->Compute(0, x);
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
   // This is the right thing to do even for infinity.
   x.ivalue = -x.ivalue;
@@ -587,9 +630,14 @@ void int_add::Compute(int a, result &x)
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.error) return;
-  if (x.null) return;  // short circuit
+  if (x.isNull()) return;  // short circuit
+  bool unknown = false;
+  if (x.isUnknown()) {
+    unknown = true;
+    x.Clear();
+  }
   int i=0;
-  if (!x.infinity) {
+  if (!x.isInfinity()) {
     // Sum until we run out of operands or hit an infinity
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);
@@ -599,13 +647,18 @@ void int_add::Compute(int a, result &x)
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
-      if (foo.null) {
-	  x.null = true;
+      if (foo.isNull()) {
+	  x.setNull();
 	  return;  // null...short circuit
       }
+      if (foo.isUnknown()) {
+	unknown = true;
+	continue;
+      }
       // new operand is not null or an error, add to x
-      if (foo.infinity) {
-        x.infinity = true;
+      if (foo.isInfinity()) {
+	unknown = false;  // infinity + ? = infinity
+        x.setInfinity();
         x.ivalue = foo.ivalue;
         break;  
       } else {
@@ -620,7 +673,7 @@ void int_add::Compute(int a, result &x)
   // error if we have infinity - infinity.
   
   for (i++; i<opnd_count; i++) {
-    DCASSERT(x.infinity);
+    DCASSERT(x.isInfinity());
     DCASSERT(operands[i]);
     result foo;
     operands[i]->Compute(0, foo);
@@ -628,23 +681,24 @@ void int_add::Compute(int a, result &x)
 	x.error = foo.error;
 	return;  // error...short circuit
     }
-    if (foo.null) {
-        x.null = true;
+    if (foo.isNull()) {
+        x.setNull();
         return;  // null...short circuit
     }
     // check operand for opposite sign for infinity
-    if (foo.infinity) {
+    if (foo.isInfinity()) {
       if ( (x.ivalue>0) != (foo.ivalue>0) ) {
 	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
 	  Error << "Undefined operation (infty-infty) caused by ";
 	  Error << operands[i];
 	  Error.Stop();
 	  x.error = CE_Undefined;
-	  x.null = true;
+	  x.setNull();
 	  return;
       }
     }
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -689,14 +743,14 @@ void int_sub::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
     return;
   }
-  if (l.infinity && r.infinity) {
+  if (l.isInfinity() && r.isInfinity()) {
     // both infinity
     if ((l.ivalue > 0) != (r.ivalue >0)) {
-      x.infinity = true;
+      x.setInfinity();
       x.ivalue = l.ivalue;
       return;
     }
@@ -704,19 +758,23 @@ void int_sub::Compute(int i, result &x)
     Error << "Undefined operation (infty-infty) caused by " << right;
     Error.Stop();
     x.error = CE_Undefined;
-    x.null = true;
+    x.setNull();
     return;
   }
-  if (l.infinity) {
+  if (l.isInfinity()) {
     // one infinity
-    x.infinity = true;
+    x.setInfinity();
     x.ivalue = l.ivalue;
     return;
   }
-  if (r.infinity) {
+  if (r.isInfinity()) {
     // one infinity
-    x.infinity = true;
+    x.setInfinity();
     x.ivalue = -r.ivalue;
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   // ordinary integer subtraction
@@ -757,7 +815,8 @@ void int_mult::Compute(int a, result &x)
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.error) return;
-  if (x.null) return;  // short circuit
+  if (x.isNull()) return;  // short circuit
+  bool unknown = x.isUnknown();
   int i=0;
   if (x.ivalue) {
     // Multiply until we run out of operands or hit zero
@@ -769,28 +828,33 @@ void int_mult::Compute(int a, result &x)
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
-      if (foo.null) {
-	  x.null = true;
+      if (foo.isNull()) {
+	  x.setNull();
 	  return;  // null...short circuit
+      }
+      if (foo.isUnknown()) {
+	unknown = true;
+	continue;
       }
       if (0==foo.ivalue) {
 	// we have zero
-	if (x.infinity) {
+	if (x.isInfinity()) {
 	  // 0 * infinity, error
           Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
           Error << "Undefined operation (0 * infty) caused by ";
           Error << operands[i];
           Error.Stop();
 	  x.error = CE_Undefined;
-          x.null = true;
+          x.setNull();
 	  return;
 	}
 	x.ivalue = 0;
+	unknown = false;  // 0 * ? = 0.
 	break;
       }
-      if (foo.infinity) {
+      if (foo.isInfinity()) {
 	// we have infinity
-        x.infinity = true;
+        x.setInfinity();
         x.ivalue = Sign(x.ivalue) * Sign(foo.ivalue);
       } else {
 	// normal finite integer multiplication
@@ -813,21 +877,22 @@ void int_mult::Compute(int a, result &x)
 	x.error = foo.error;
 	return;  // error...short circuit
     }
-    if (foo.null) {
-        x.null = true;
+    if (foo.isNull()) {
+        x.setNull();
         return;  // null...short circuit
     }
     // check for infinity
-    if (foo.infinity) {
+    if (foo.isInfinity()) {
       Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
       Error << "Undefined operation (0 * infty) caused by ";
       Error << operands[i];
       Error.Stop();
       x.error = CE_Undefined;
-      x.null = true;
+      x.setNull();
       return;
     }
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -874,8 +939,12 @@ void int_div::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   x.rvalue = l.ivalue;
@@ -1142,9 +1211,10 @@ void real_neg::Compute(int i, result &x)
   opnd->Compute(0, x);
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
-  if (x.infinity) {
+  if (x.isInfinity()) {
     x.ivalue = -x.ivalue;
   } else {
     x.rvalue = -x.rvalue;
@@ -1186,9 +1256,10 @@ void real_add::Compute(int a, result &x)
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.error) return;
-  if (x.null) return;  // short circuit
+  if (x.isNull()) return;  // short circuit
+  bool unknown = x.isUnknown();
   int i=0;
-  if (!x.infinity) {
+  if (!x.isInfinity()) {
     // Sum until we run out of operands or hit an infinity
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);
@@ -1198,14 +1269,19 @@ void real_add::Compute(int a, result &x)
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
-      if (foo.null) {
-	  x.null = true;
+      if (foo.isNull()) {
+	  x.setNull();
 	  return;  // null...short circuit
       }
+      if (foo.isUnknown()) {
+	unknown = true;
+	continue;
+      }
       // new operand is not null or an error, add to x
-      if (foo.infinity) {
-        x.infinity = true;
+      if (foo.isInfinity()) {
+        x.setInfinity();
         x.ivalue = foo.ivalue;
+	unknown = false;
         break;  
       } else {
         x.rvalue += foo.rvalue;  // normal finite addition
@@ -1219,7 +1295,7 @@ void real_add::Compute(int a, result &x)
   // error if we have infinity - infinity.
   
   for (i++; i<opnd_count; i++) {
-    DCASSERT(x.infinity);
+    DCASSERT(x.isInfinity());
     DCASSERT(operands[i]);
     result foo;
     operands[i]->Compute(0, foo);
@@ -1227,23 +1303,24 @@ void real_add::Compute(int a, result &x)
 	x.error = foo.error;
 	return;  // error...short circuit
     }
-    if (foo.null) {
-        x.null = true;
+    if (foo.isNull()) {
+        x.setNull();
         return;  // null...short circuit
     }
     // check operand for opposite sign for infinity
-    if (foo.infinity) {
+    if (foo.isInfinity()) {
       if ( (x.ivalue>0) != (foo.ivalue>0) ) {
 	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
 	  Error << "Undefined operation (infty-infty) caused by ";
 	  Error << operands[i];
 	  Error.Stop();
 	  x.error = CE_Undefined;
-	  x.null = true;
+	  x.setNull();
 	  return;
       }
     }
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -1288,14 +1365,14 @@ void real_sub::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
     return;
   }
-  if (l.infinity && r.infinity) {
+  if (l.isInfinity() && r.isInfinity()) {
     // both infinity
     if ((l.ivalue > 0) != (r.ivalue >0)) {
-      x.infinity = true;
+      x.setInfinity();
       x.ivalue = l.ivalue;
       return;
     }
@@ -1303,19 +1380,23 @@ void real_sub::Compute(int i, result &x)
     Error << "Undefined operation (infty-infty) caused by " << right;
     Error.Stop();
     x.error = CE_Undefined;
-    x.null = true;
+    x.setNull();
     return;
   }
-  if (l.infinity) {
+  if (l.isInfinity()) {
     // one infinity
-    x.infinity = true;
+    x.setInfinity();
     x.ivalue = l.ivalue;
     return;
   }
-  if (r.infinity) {
+  if (r.isInfinity()) {
     // one infinity
-    x.infinity = true;
+    x.setInfinity();
     x.ivalue = -r.ivalue;
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   // ordinary subtraction
@@ -1356,7 +1437,8 @@ void real_mult::Compute(int a, result &x)
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.error) return;
-  if (x.null) return;  // short circuit
+  if (x.isNull()) return;  // short circuit
+  bool unknown = x.isUnknown();
   int i=0;
   if (x.rvalue) {
     // Multiply until we run out of operands or hit zero
@@ -1368,28 +1450,33 @@ void real_mult::Compute(int a, result &x)
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
-      if (foo.null) {
-	  x.null = true;
+      if (foo.isNull()) {
+	  x.setNull();
 	  return;  // null...short circuit
+      }
+      if (foo.isUnknown()) {
+	unknown = true;
+	continue;
       }
       if (0.0==foo.rvalue) {
 	// we have zero
-	if (x.infinity) {
+	if (x.isInfinity()) {
 	  // 0 * infinity, error
           Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
           Error << "Undefined operation (0 * infty) caused by ";
           Error << operands[i];
           Error.Stop();
 	  x.error = CE_Undefined;
-          x.null = true;
+          x.setNull();
 	  return;
 	}
 	x.rvalue = 0.0;
+	unknown = false;
 	break;
       }
-      if (foo.infinity) {
+      if (foo.isInfinity()) {
 	// we have infinity
-        x.infinity = true;
+        x.setInfinity();
         x.ivalue = Sign(x.ivalue) * Sign(foo.ivalue);
       } else {
 	// normal finite real multiplication
@@ -1412,21 +1499,22 @@ void real_mult::Compute(int a, result &x)
 	x.error = foo.error;
 	return;  // error...short circuit
     }
-    if (foo.null) {
-        x.null = true;
+    if (foo.isNull()) {
+        x.setNull();
         return;  // null...short circuit
     }
     // check for infinity
-    if (foo.infinity) {
+    if (foo.isInfinity()) {
       Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
       Error << "Undefined operation (0 * infty) caused by ";
       Error << operands[i];
       Error.Stop();
       x.error = CE_Undefined;
-      x.null = true;
+      x.setNull();
       return;
     }
   } // for i
+  if (unknown) x.setUnknown();
 }
 
 // ******************************************************************
@@ -1472,8 +1560,12 @@ void real_div::Compute(int i, result &x)
     x.error = r.error;
     return;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
+    return;
+  }
+  if (l.isUnknown() || r.isUnknown()) {
+    x.setUnknown();
     return;
   }
   if (0.0==r.rvalue) {
@@ -1742,7 +1834,8 @@ void proc_unary::Compute(int i, result &x)
   opnd->Compute(0, x); 
 
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
 
   x.other = MakeUnaryOp(oper, (expr*)x.other, Filename(), Linenumber());
 }
@@ -1788,11 +1881,12 @@ void proc_binary::Compute(int i, result &x)
   left->Compute(0, x); 
   x.other = NULL;
   if (x.error) return;
-  if (x.null) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
   right->Compute(0, r); 
-  if (r.error || r.null) {
+  if (r.error || r.isNull()) {
     Delete((expr *)x.other);
-    x.null = true;
+    x.setNull();
     x.error = r.error;
     return;
   }
@@ -1848,7 +1942,7 @@ void proc_assoc::Compute(int a, result &x)
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     operands[i]->Compute(0, x);
-    if (x.error || x.null) {
+    if (x.error || x.isNull() || x.isUnknown()) {
       // bail out
       int j;
       for (j=0; j<i; j++) Delete(r[j]);

@@ -18,8 +18,9 @@
 
 void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 {
-  if (x.infinity) { s << infinity_string->GetString(); return; }
-  if (x.null) { s << "null"; return; }
+  if (x.isUnknown()) { s << "?"; return; }
+  if (x.isInfinity()) { s << infinity_string->GetString(); return; }
+  if (x.isNull()) { s << "null"; return; }
   if (x.error) { s << "null"; return; }
   // width not specified
   if (width<0) {
@@ -55,7 +56,7 @@ void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 */
 void DeleteResult(type t, result &x)
 {
-  if (!x.canfree) return;  // we shouldn't be deleting anything
+  if (!x.isFreeable()) return;  // we shouldn't be deleting anything
   switch (t) {
     case STRING:	free(x.other);		break;  // should be ok?
   }

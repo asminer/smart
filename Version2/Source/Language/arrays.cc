@@ -45,7 +45,7 @@ void array_index::Compute(int i, result &x)
   DCASSERT(i==0);
   x.Clear();
   if (NULL==current) {
-    x.null = true;
+    x.setNull();
     // set error condition?
     return;
   }
@@ -129,8 +129,8 @@ void array::Compute(expr **il, result &x)
   for (i=0; i<dimension; i++) {
     result y;
     il[i]->Compute(0, y);
-    if (y.null) {
-      x.null = true;
+    if (y.isNull()) {
+      x.setNull();
       return;
     }
     if (y.error) {
@@ -140,7 +140,7 @@ void array::Compute(expr **il, result &x)
     }
     if (NULL==ptr) {
       // error?  
-      x.null = true;
+      x.setNull();
       return;
     }
     int ndx = ptr->values->IndexOf(y);
@@ -168,8 +168,8 @@ void array::Sample(long &seed, expr **il, result &x)
   for (i=0; i<dimension; i++) {
     result y;
     il[i]->Sample(seed, 0, y);
-    if (y.null) {
-      x.null = true;
+    if (y.isNull()) {
+      x.setNull();
       return;
     }
     if (y.error) {
@@ -179,7 +179,7 @@ void array::Sample(long &seed, expr **il, result &x)
     }
     if (NULL==ptr) {
       // error?  
-      x.null = true;
+      x.setNull();
       return;
     }
     int ndx = ptr->values->IndexOf(y);
@@ -260,7 +260,7 @@ void acall::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   func->Compute(pass, x);
-  if (x.null) return;
+  if (x.isNull()) return;
   if (x.error) return;  // print message?
   constfunc* foo = (constfunc*) x.other;
 #ifdef ARRAY_TRACE
@@ -276,7 +276,7 @@ void acall::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   func->Sample(seed, pass, x);
-  if (x.null) return;
+  if (x.isNull()) return;
   if (x.error) return;  // print message?
   constfunc* foo = (constfunc*) x.other;
   foo->Sample(seed, 0, x);

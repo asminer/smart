@@ -66,7 +66,7 @@ void determfunc::Compute(int i, result &x)
       Delete(return_expr);
       return_expr = NULL;
     } else {
-      value.null = true;
+      value.setNull();
     }
     computed_already = true;
   }
@@ -84,7 +84,7 @@ void determfunc::Sample(long &s, int i, result &x)
       Delete(return_expr);
       return_expr = NULL;
     } else {
-      value.null = true;
+      value.setNull();
     }
     computed_already = true;
   }

@@ -59,7 +59,7 @@ void formal_param::Compute(int i, result &x)
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   x = stack[0][offset];  
-  x.canfree = false;    // this is a shallow copy
+  x.notFreeable();    // this is a shallow copy
 }
 
 void formal_param::Sample(long &, int i, result &x)
@@ -68,7 +68,7 @@ void formal_param::Sample(long &, int i, result &x)
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   x = stack[0][offset];  
-  x.canfree = false;
+  x.notFreeable();
 }
 
 // ******************************************************************
@@ -182,7 +182,7 @@ user_func::~user_func()
 void user_func::Compute(expr **pp, int np, result &x) 
 {
   if (NULL==return_expr) {
-    x.null = true;
+    x.setNull();
     return;
   }
 
@@ -285,7 +285,7 @@ void internal_func::Compute(expr **pp, int np, result &x)
     Internal.Start(__FILE__, __LINE__);
     Internal << "Illegal internal function computation";
     Internal.Stop();
-    x.null = true;
+    x.setNull();
     return;
   }
   compute(pp, np, x);
@@ -297,7 +297,7 @@ void internal_func::Sample(long &seed, expr **pp, int np, result &x)
     Internal.Start(__FILE__, __LINE__);
     Internal << "Illegal internal function sample";
     Internal.Stop();
-    x.null = true;
+    x.setNull();
     return;
   }
   sample(seed, pp, np, x);

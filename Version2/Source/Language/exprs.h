@@ -91,13 +91,13 @@ struct engineinfo {
   }
   /// Assuming we are numerical, is it a steady-state measure?
   inline bool IsSteadyState() const {
-    DCASSERT(stoptime.null == false);
-    return stoptime.infinity;
+    DCASSERT(stoptime.isNull() == false);
+    return stoptime.isInfinity();
   }
   /// Assuming we are numerical, is it a transient measure?
   inline bool IsTransient() const {
-    DCASSERT(stoptime.null==false);
-    return !(stoptime.infinity);
+    DCASSERT(stoptime.isNull()==false);
+    return !(stoptime.isInfinity());
   }
   /// Assuming we are numerical, is it a cumulative measure?
   inline bool IsCumulative() const {
@@ -110,8 +110,8 @@ struct engineinfo {
   /// Handy for non-numerical engines and such.
   inline void SetEngine(Engine_type e) {
     engine = e;
-    starttime.null = true;
-    stoptime.null = true;
+    starttime.setNull();
+    stoptime.setNull();
   }
   /// Basically, an explicit destructor.
   inline void Clear() {
@@ -119,7 +119,7 @@ struct engineinfo {
   }
   /// Returs true if there was an error
   inline bool Error() const {
-    return IsNumerical() && (starttime.null || stoptime.null);
+    return IsNumerical() && (starttime.isNull() || stoptime.isNull());
   }
   /// Tells how to group a measure requiring this engine
   inline Group_type GetGroup() const {
@@ -462,7 +462,7 @@ inline void SafeCompute(expr *e, int a, result &x)
     e->Compute(a, x);
   } else {
     x.Clear();
-    x.null = true;
+    x.setNull();
   }
 }
 
@@ -476,7 +476,7 @@ inline void SafeSample(expr *e, int a, long &seed, result &x)
     e->Sample(seed, a, x);
   } else {
     x.Clear();
-    x.null = true;
+    x.setNull();
   }
 }
 

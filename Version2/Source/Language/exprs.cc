@@ -439,14 +439,14 @@ void aggregates::Compute(int i, result &x)
 {
   CHECK_RANGE(0, i, opnd_count);
   if (operands[i]) operands[i]->Compute(0, x);
-  else x.null = true;
+  else x.setNull();
 }
 
 void aggregates::Sample(long &seed, int i, result &x)
 {
   CHECK_RANGE(0, i, opnd_count);
   if (operands[i]) operands[i]->Sample(seed, 0, x);
-  else x.null = true;
+  else x.setNull();
 }
 
 expr* aggregates::Substitute(int i) 
@@ -597,14 +597,12 @@ class stringconst : public constant {
     DCASSERT(0==i);
     x.Clear();
     x.other = value;
-    x.canfree = false;  // don't delete the pointer!
   }
 
   virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.other = value;
-    x.canfree = false;  // don't delete the pointer!
   }
 
   virtual void show(OutputStream &s) const {

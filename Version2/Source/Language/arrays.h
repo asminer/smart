@@ -61,7 +61,7 @@ public:
     Delete(current);
     result x;
     SafeCompute(values, 0, x);
-    if (x.null || x.error) current = NULL;  // print an error?
+    if (x.isNull() || x.error) current = NULL;  // print an error?
     else current = (set_result*) x.other;
   }
 

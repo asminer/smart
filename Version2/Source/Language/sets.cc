@@ -76,7 +76,7 @@ void int_interval::GetElement(int n, result &x)
 
 int int_interval::IndexOf(const result &x)
 {
-  if (x.error || x.null || x.infinity) return -1;
+  if (x.error || x.isNull() || x.isInfinity()) return -1;
   int i = int((x.ivalue-start)/inc);
   if (i>=Size()) return -1;
   if (i<0) return -1;
@@ -136,7 +136,7 @@ void real_interval::GetElement(int n, result &x)
 
 int real_interval::IndexOf(const result &x)
 {
-  if (x.error || x.null || x.infinity) return -1;
+  if (x.error || x.isNull() || x.isInfinity()) return -1;
   int i;
   if (inc>0) 
     i = int( ceil((x.rvalue-start)/inc - 0.5) );
@@ -213,7 +213,7 @@ void generic_int_set::GetElement(int n, result &x)
 
 int generic_int_set::IndexOf(const result &x)
 {
-  if (x.error || x.null || x.infinity) return -1;
+  if (x.error || x.isNull() || x.isInfinity()) return -1;
   // binary search through values
   int low = 0, high = Size()-1;
   while (low <= high) {
@@ -309,7 +309,7 @@ void generic_real_set::GetElement(int n, result &x)
 
 int generic_real_set::IndexOf(const result &x)
 {
-  if (x.error || x.null || x.infinity) return -1;
+  if (x.error || x.isNull() || x.isInfinity()) return -1;
   // binary search through values
   double epsilon = index_precision->GetReal(); 
   int low = 0, high = Size()-1;
@@ -394,7 +394,7 @@ void int_realset::GetElement(int n, result &x)
 {
   DCASSERT(intset);
   intset->GetElement(n, x);
-  if (x.infinity || x.null || x.error) return;
+  if (x.isInfinity() || x.isNull() || x.error) return;
   // convert to real
   x.rvalue = x.ivalue; 
 }
@@ -412,7 +412,7 @@ void int_realset::GetOrder(int n, int &i, result &x)
 {
   DCASSERT(intset);
   intset->GetOrder(n, i, x);
-  if (x.infinity || x.null || x.error) return;
+  if (x.isInfinity() || x.isNull() || x.error) return;
   // convert to real
   x.rvalue = x.ivalue; 
 }
@@ -463,22 +463,22 @@ protected:
   inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
     x.Clear();
     start->Compute(0, s);
-    if (s.null || s.error) {
+    if (s.isNull() || s.error) {
       x = s;
       return false;
     }
     stop->Compute(0, e);
-    if (e.null || e.error) {
+    if (e.isNull() || e.error) {
       x = e;
       return false;
     }
     inc->Compute(0, i);
-    if (i.null || i.error) {
+    if (i.isNull() || i.error) {
       x = i;
       return false;
     }
     // special cases here
-    if (s.infinity || e.infinity) {
+    if (s.isInfinity() || e.isInfinity()) {
       // Print error message here
       x.error = CE_Undefined;
       return false;
@@ -596,7 +596,7 @@ void int_setexpr_interval::Compute(int n, result &x)
   set_result *xs = NULL;
   int* values;
   int* order;
-  if (i.infinity || i.ivalue==0) {
+  if (i.isInfinity() || i.ivalue==0) {
     // that means an interval with just the start element.
     values = new int[1];
     order = new int[1];
@@ -655,8 +655,8 @@ void intset_element::Compute(int i, result &x)
   DCASSERT(i==0);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.error || x.null) return;
-  if (x.infinity) {
+  if (x.error || x.isNull()) return;
+  if (x.isInfinity()) {
     x.error = CE_Undefined;  // print error message?
     return;
   }
@@ -708,14 +708,14 @@ void intset_union::Compute(int i, result &x)
   x.Clear();
   result l;
   left->Compute(0, l); 
-  if (l.error || l.null) {
+  if (l.error || l.isNull()) {
     x = l;
     return;
   }
   set_result *ls = (set_result*) l.other;
   result r;
   right->Compute(0, r);
-  if (r.error || r.null) {
+  if (r.error || r.isNull()) {
     x = r;
     Delete(ls);
     return;
@@ -867,7 +867,7 @@ void int2realset::Compute(int i, result &x)
   DCASSERT(0==i);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.null || x.error) return;
+  if (x.isNull() || x.error) return;
   set_result* xs = (set_result*) x.other;
   set_result* answer = new int_realset(xs);
   x.other = answer;
@@ -920,7 +920,7 @@ void real_setexpr_interval::Compute(int n, result &x)
   set_result *xs = NULL;
   double* values;
   int* order;
-  if (i.infinity || i.rvalue==0.0) {
+  if (i.isInfinity() || i.rvalue==0.0) {
     // that means an interval with just the start element.
     values = new double[1];
     order = new int[1];
@@ -979,8 +979,8 @@ void realset_element::Compute(int i, result &x)
   DCASSERT(i==0);
   DCASSERT(opnd);
   opnd->Compute(0, x);
-  if (x.error || x.null) return;
-  if (x.infinity) {
+  if (x.error || x.isNull()) return;
+  if (x.isInfinity()) {
     x.error = CE_Undefined;  // print error message?
     return;
   }
@@ -1032,14 +1032,14 @@ void realset_union::Compute(int i, result &x)
   x.Clear();
   result l;
   left->Compute(0, l); 
-  if (l.error || l.null) {
+  if (l.error || l.isNull()) {
     x = l;
     return;
   }
   set_result *ls = (set_result*) l.other;
   result r;
   right->Compute(0, r);
-  if (r.error || r.null) {
+  if (r.error || r.isNull()) {
     x = r;
     Delete(ls);
     return;

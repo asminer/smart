@@ -90,7 +90,7 @@ void string_add::Compute(int a, result &x)
 
   int i;
   // Clear strings
-  for (i=0; i<opnd_count; i++) xop[i].canfree = false;
+  for (i=0; i<opnd_count; i++) xop[i].notFreeable();
 
   // Compute strings for each operand
   int total_length = 0;
@@ -98,7 +98,7 @@ void string_add::Compute(int a, result &x)
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
     operands[i]->Compute(0, xop[i]);
-    if (xop[i].error || xop[i].null) {
+    if (xop[i].error || xop[i].isNull()) {
       x = xop[i];
       break;
     }
@@ -106,9 +106,9 @@ void string_add::Compute(int a, result &x)
       total_length += strlen((char*)xop[i].other); 
   }
 
-  if (x.error || x.null) {
+  if (x.error || x.isNull()) {
     // delete strings and bail out
-    for (i=0; i<opnd_count; i++) if (xop[i].canfree) free(xop[i].other); 
+    for (i=0; i<opnd_count; i++) if (xop[i].isFreeable()) free(xop[i].other); 
     return;
   }
 
@@ -117,11 +117,11 @@ void string_add::Compute(int a, result &x)
   answer[0] = 0;
   for (i=0; i<opnd_count; i++) if (xop[i].other) {
     strcat(answer, (char*)xop[i].other);
-    if (xop[i].canfree) free(xop[i].other);
+    if (xop[i].isFreeable()) free(xop[i].other);
   }
 
   x.other = answer;
-  x.canfree = true;
+  x.setFreeable();
 }
 
 
@@ -161,14 +161,14 @@ void string_equal::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (0==strcmp((char*)l.other, (char*)r.other));
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 // ******************************************************************
@@ -211,14 +211,14 @@ void string_neq::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (0!=strcmp((char*)l.other, (char*)r.other));
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 
@@ -258,14 +258,14 @@ void string_gt::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) > 0);
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 // ******************************************************************
@@ -308,14 +308,14 @@ void string_ge::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) >= 0);
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 // ******************************************************************
@@ -358,14 +358,14 @@ void string_lt::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) < 0);
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 // ******************************************************************
@@ -408,14 +408,14 @@ void string_le::Compute(int i, result &x)
   } else if (r.error) {
     x.error = r.error;
   }
-  if (l.null || r.null) {
-    x.null = true;
+  if (l.isNull() || r.isNull()) {
+    x.setNull();
   }
-  if ((!x.error) && (!x.null)) {
+  if ((!x.error) && (!x.isNull())) {
     x.bvalue = (strcmp((char*)l.other, (char*)r.other) <= 0);
   } 
-  if (l.canfree) free(l.other);
-  if (r.canfree) free(r.other);
+  if (l.isFreeable()) free(l.other);
+  if (r.isFreeable()) free(r.other);
 }
 
 // ******************************************************************

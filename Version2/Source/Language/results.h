@@ -26,10 +26,6 @@ enum compute_error {
   CE_Ok = 0,
   /// We haven't been computed yet
   CE_Uncomputed,
-  /// We encountered a "don't know" state
-  CE_Dont_Know,
-  /// We encountered a "don't care" state
-  CE_Dont_Care,
   /// We encountered overflow when casting to another result type
   CE_Overflow,
   /// Divide by zero
@@ -70,21 +66,31 @@ enum compute_error {
 */  
 
 struct result {
-  // everything is public... we know what we are doing.
+  protected:
+    unsigned char flags;  // Use the inline functions
+  public:
 
   // No type!  can be determined from expression that computes us, if needed
 
   /// The first thing that went wrong while computing us.
   compute_error error;
 
+  /// Is this an unknown value?
+  inline bool isUnknown() const { return (flags & 1); }
+  inline void setUnknown() { flags |= 1; }
+
   /// Are we infinite.  Sign is determined from the value.
-  bool infinity;
+  inline bool isInfinity() const { return (flags & 2); }
+  inline void setInfinity() { flags |= 2; }
 
   /// Are we a null value?  
-  bool null;
+  inline bool isNull() const { return (flags & 4); }
+  inline void setNull() { flags |= 4; }
 
-  /// For pointers, should we free it?
-  bool canfree;
+  /// For pointers, should we free it?  (allows shallow copy of strings!)
+  inline bool isFreeable() const { return (flags & 8); }
+  inline void setFreeable() { flags |= 8; }
+  inline void notFreeable() { flags &= 247; }
 
   union {
     /// Used by boolean type
@@ -100,8 +106,7 @@ struct result {
 
   inline void Clear() {
     error = CE_Ok;
-    infinity = false;
-    null = false;
+    flags = 0;
   }
 };
 

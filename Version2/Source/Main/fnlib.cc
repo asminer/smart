@@ -64,7 +64,7 @@ void compute_help(expr **pp, int np, result &x)
   DCASSERT(pp); 
   x.Clear();
   SafeCompute(pp[0], 0, x);
-  if (!x.error && !x.null) 
+  if (!x.error && !x.isNull()) 
     help_search_string = (char*) x.other;
 
   // Look through functions
@@ -86,7 +86,7 @@ void compute_help(expr **pp, int np, result &x)
 
   Output.flush();
   // return something...
-  x.null = true;
+  x.setNull();
 }
 
 void AddHelp(PtrTable *fns)
@@ -157,11 +157,11 @@ void do_print(expr **p, int np, result &x, OutputStream &s)
     if (NumComponents(p[i])>1) {
       y.Clear();
       SafeCompute(p[i], 1, y);
-      if (!y.infinity && !y.null && !y.error) width = y.ivalue;
+      if (!y.isInfinity() && !y.isNull() && !y.error) width = y.ivalue;
       if (NumComponents(p[i])>2) {
         y.Clear();
 	SafeCompute(p[i], 2, y);
-        if (!y.infinity && !y.null && !y.error) prec = y.ivalue;
+        if (!y.isInfinity() && !y.isNull() && !y.error) prec = y.ivalue;
       }
     }
     PrintResult(s, Type(p[i], 0), x, width, prec);
@@ -191,7 +191,7 @@ void compute_sprint(expr **p, int np, result &x)
 {
   static StringStream strbuffer;
   do_print(p, np, x, strbuffer);
-  if (x.error || x.null) return;
+  if (x.error || x.isNull()) return;
   char* bar = strbuffer.GetString();
   strbuffer.flush();
   x.Clear();
@@ -235,7 +235,7 @@ void compute_errorfile(expr **p, int np, result &x)
   x.Clear();
   SafeCompute(p[0], 0, x);
   if (x.error) return;
-  if (x.null) {
+  if (x.isNull()) {
     Error.SwitchDisplay(NULL);
     x.Clear();
     x.bvalue = true;
@@ -273,7 +273,7 @@ void compute_warningfile(expr **p, int np, result &x)
   x.Clear();
   SafeCompute(p[0], 0, x);
   if (x.error) return;
-  if (x.null) {
+  if (x.isNull()) {
     Warning.SwitchDisplay(NULL);
     x.Clear();
     x.bvalue = true;
@@ -311,7 +311,7 @@ void compute_outputfile(expr **p, int np, result &x)
   x.Clear();
   SafeCompute(p[0], 0, x);
   if (x.error) return;
-  if (x.null) {
+  if (x.isNull()) {
     Output.SwitchDisplay(NULL);
     x.Clear();
     x.bvalue = true;
@@ -351,7 +351,7 @@ void compute_exit(expr **p, int np, result &x)
   DCASSERT(p);
   int code = 0;
   SafeCompute(p[0], 0, x);
-  if (!x.null && !x.error && !x.infinity) {
+  if (!x.isNull() && !x.error && !x.isInfinity()) {
     code = x.ivalue;
   }
   smart_exit();
@@ -382,7 +382,7 @@ void compute_cond(expr **pp, int np, result &x)
   result b;
   b.Clear();
   SafeCompute(pp[0], 0, b);
-  if (b.null || b.error) {
+  if (b.isNull() || b.error) {
     // error stuff?
     x = b;
     return;
@@ -399,7 +399,7 @@ void sample_cond(long &seed, expr **pp, int np, result &x)
   result b;
   b.Clear();
   SafeSample(pp[0], 0, seed, b);
-  if (b.null || b.error) {
+  if (b.isNull() || b.error) {
     x = b;
     return;
   }
@@ -423,6 +423,21 @@ void AddCond(type t, PtrTable *fns)
 }
 
 
+void compute_dontknow(expr **pp, int np, result &x)
+{
+  x.Clear();
+  x.setUnknown();
+}
+
+void AddDontKnow(PtrTable *t)
+{
+  const char* dkdoc = "Returns a finite, unknown value.";
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(INT, "dummy");
+  internal_func *foo = new internal_func(INT, "DontKnow", compute_dontknow, NULL, pl, 1, dkdoc);
+  foo->HideDocs();  // this is not for public consumption
+  InsertFunction(t, foo);
+}
 
 void InitBuiltinFunctions(PtrTable *t)
 {
@@ -441,6 +456,8 @@ void InitBuiltinFunctions(PtrTable *t)
   for (i=FIRST_SIMPLE; i<=LAST_SIMPLE; i++)	AddCond(i, t);
   for (i=FIRST_PROC; i<=LAST_PROC; i++)		AddCond(i, t);
   for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCond(i, t);
+  // Misc
+  AddDontKnow(t);
 }
 
 

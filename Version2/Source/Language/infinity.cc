@@ -38,14 +38,14 @@ class infinityconst : public constant {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;
-    x.infinity = true;
+    x.setInfinity();
   }
 
   virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;
-    x.infinity = true;
+    x.setInfinity();
   }
 
   virtual void show(OutputStream &s) const {
@@ -62,9 +62,9 @@ expr* MakeInfinityExpr(int sign, const char* file, int line)
 
 expr* MakeConstExpr(type t, const result &x, const char* file, int line)
 {
-  if (x.null) return NULL;
+  if (x.isNull()) return NULL;
   if (x.error) return NULL;
-  if (x.infinity) return MakeInfinityExpr(x.ivalue, file, line);
+  if (x.isInfinity()) return MakeInfinityExpr(x.ivalue, file, line);
   switch (t) {
     case BOOL:		return MakeConstExpr(x.bvalue, file, line);
     case INT: 		return MakeConstExpr(x.ivalue, file, line);
