@@ -6,8 +6,8 @@
 #
 
 SOURCES = \
-	types.cc	exprs.cc	sets.cc 	stmts.cc \
-	infinity.cc	\
+	types.cc	options.cc	exprs.cc	infinity.cc	\
+	sets.cc 	stmts.cc \
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
 	api.cc

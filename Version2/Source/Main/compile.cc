@@ -301,7 +301,7 @@ expr* BuildAggregate(void* x)
   if (NULL==x) return NULL;
   List <expr> *foo = (List <expr> *)x;
   int size = foo->Length();
-  expr** parts = foo->Copy();
+  expr** parts = foo->MakeArray();
   delete foo;
   expr* answer = MakeAggregate(parts, size, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
@@ -363,7 +363,7 @@ statement* BuildForLoop(int count, void *stmts)
   if (stmts) {
     List <statement> *foo = (List <statement> *)stmts;
     bsize = foo->Length();
-    block = foo->Copy();
+    block = foo->MakeArray();
     delete foo;
   }
 
@@ -787,9 +787,10 @@ expr* BuildFunctionCall(const char* n, void* posparams)
 
   // Good to go
   function* find = matches->Item(0);
-  expr *fcall = MakeFunctionCall(find, params->Copy(), params->Length(), 
-  					filename, lexer.lineno());
-  delete params;
+  int np = params->Length();
+  expr** pp = params->MakeArray();
+  delete params; 
+  expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
   return fcall;
 }
 
