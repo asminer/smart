@@ -827,6 +827,7 @@ void topmatrix::writeC(OutputStream &s)
       ptrs[i][j]->flag = midcount++;
       ptrs[i][j]->writeC(s);
     }
+  midcount--;
 
   s << "\n\n";
 
@@ -834,7 +835,7 @@ void topmatrix::writeC(OutputStream &s)
   s << "\t\tTop-level matrix\n";
   s << "======================================================= */\n\n";
 
-  s << "const midmatrix* Jump[" << N << "][" << N << "] = {\n";
+  s << "midmatrix* Jump[" << N << "][" << N << "] = {\n";
   
   for (i=0; i<N; i++) {
     s << "  {";

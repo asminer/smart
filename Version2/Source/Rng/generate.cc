@@ -125,12 +125,7 @@ void WordGenerate(int strms, int samples)
     // Generate and write from each stream
     for (s=0; s<strms; s++) {
       unsigned long sample = stream[s].lrand();
-      char* foo = (char*)&sample;
-      fputc(foo[0], stdout);
-      fputc(foo[1], stdout);
-      fputc(foo[2], stdout);
-      fputc(foo[3], stdout);
-      // by hand instead of write to fix the order.
+      fwrite(&sample, sizeof(unsigned long), 1, stdout);
     }
   }
 }

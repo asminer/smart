@@ -3,6 +3,11 @@
 
 #include "rng.h"
 
+#define INCLUDE_JUMP
+#ifdef INCLUDE_JUMP
+
+// Allow jumping of RNG state (necessary for simulation)
+
 typedef unsigned long submatrix[32];
 typedef submatrix *midmatrix[16][16];
 
@@ -50,4 +55,19 @@ void Rng::JumpStream(Rng *input)
       vmm_mult(in, Jump[i][j], state.statevec + j*16);
   } // for i
 }
+
+#else
+
+#include "../Base/streams.h"
+
+// Disallow jumping of RNG state (faster compile, smaller exec.)
+
+void Rng::JumpStream(Rng*)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Can't jump RNG state, jump module excluded from build!";
+  Internal.Stop();
+}
+
+#endif
 
