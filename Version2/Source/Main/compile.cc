@@ -844,6 +844,7 @@ statement* BuildOptionStatement(option* o, expr* v)
 #ifdef COMPILE_DEBUG
   Output << "Built option statement: " << ans << "\n";
 #endif
+  ans->Execute();
   return ans;
 }
 
@@ -871,6 +872,7 @@ statement* BuildOptionStatement(option* o, char* n)
 #ifdef COMPILE_DEBUG
   Output << "Built option statement: " << ans << "\n";
 #endif
+  ans->Execute();
   return ans;
 }
 

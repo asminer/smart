@@ -99,8 +99,9 @@ option* MakeRealOption(const char* name, const char* doc,
 
 option* MakeStringOption(const char* name, const char* doc, char* deflt);
 
-option* MakeActionOption(type t, const char *name, const char* doc, 
-			const char* range, action_set s, action_get g);
+option* MakeActionOption(type t, const char *name, const char* deflt,
+			const char* doc, const char* range, 
+			action_set s, action_get g);
 
 
 void StartOptions();

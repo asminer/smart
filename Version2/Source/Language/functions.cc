@@ -419,7 +419,7 @@ void fcall::show(OutputStream &s) const
 
 void CreateRuntimeStack(int size)
 {
-  ParamStack = new result[size];
+  ParamStack = (result*) malloc(size * sizeof(result*));
   ParamStackSize = size;
   ParamStackTop = 0;
 }
@@ -427,8 +427,23 @@ void CreateRuntimeStack(int size)
 void DestroyRuntimeStack()
 {
   DCASSERT(ParamStackTop==0);  // Otherwise we're mid function call!
-  delete[] ParamStack;
+  free(ParamStack);
   ParamStack = NULL;
+  ParamStackSize = 0;
+}
+
+bool ResizeRuntimeStack(int newsize)
+{
+  DCASSERT(ParamStackTop<newsize);
+  if (0==newsize) {
+    DestroyRuntimeStack();
+    return true;
+  }
+  void *foo = realloc(ParamStack, newsize * sizeof(result*));
+  if (NULL==foo) return false; // there was a problem.
+  ParamStackSize = newsize;
+  ParamStack = (result*) foo;
+  return true;
 }
 
 void DumpRuntimeStack(OutputStream &s)

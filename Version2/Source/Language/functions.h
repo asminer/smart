@@ -328,6 +328,8 @@ public:
 
 void CreateRuntimeStack(int size);
 void DestroyRuntimeStack();
+/// Returns true on success.
+bool ResizeRuntimeStack(int newsize);
 
 void DumpRuntimeStack(OutputStream &s);  // Handy for run-time errors
 

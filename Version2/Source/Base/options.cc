@@ -257,6 +257,7 @@ option* MakeStringOption(const char* name, const char* doc, char* v)
 class action_opt : public option {
   action_set Set; 
   action_get Get;
+  const char* deflt;
   const char* ranges;
 protected:
   inline void SetVoid(void* x, const char *f, int l) {
@@ -278,9 +279,10 @@ protected:
     Get(x);
   }
 public:
-  action_opt(type t, const char* n, const char* d, const char* r, 
+  action_opt(type t, const char* n, const char* def, 
+  	     const char* d, const char* r, 
              action_set s, action_get g)
-   : option(t,n,d) { Set = s; Get = g; ranges = r; }
+   : option(t,n,d) { Set = s; Get = g; ranges = r; deflt = def; }
   virtual ~action_opt() { }
   virtual void SetValue(bool x, const char* f, int l) { SetVoid(&x, f, l); }
   virtual void SetValue(int x, const char* f, int l) { SetVoid(&x, f, l); }
@@ -292,14 +294,18 @@ public:
   virtual double GetReal() { double b; Get(&b); return b; }
   virtual char* GetString() { char* b; Get(&b); return b; }
 
-  virtual void ShowHeader(OutputStream &s) const { show(s); }
+  virtual void ShowHeader(OutputStream &s) const { 
+    show(s); 
+    s << " " << deflt;
+  }
   virtual void ShowRange(OutputStream &s) const { s << ranges << "\n"; }
 };
 
-option* MakeActionOption(type t, const char* name, const char* doc, 
+option* MakeActionOption(type t, const char* name, const char* deflt, 
+			 const char* doc, 
                          const char* r, action_set s, action_get g)
 {
-  return new action_opt(t, name, doc, r, s, g);
+  return new action_opt(t, name, deflt, doc, r, s, g);
 }
 
 

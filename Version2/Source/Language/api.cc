@@ -5,15 +5,46 @@
 
 #include "infinity.h"
 
+void SetStackSize(void *x, const char* f, int l)
+{
+  int newsize = ((int*)x)[0];
+  if ((newsize<0) || (newsize>2000000000)) {
+    Warn.Start(f, l);
+    Warn << "Option #StackSize set out of range";
+    Warn.Stop();
+    return;
+  }
+  bool ok = ResizeRuntimeStack(newsize);
+  if (!ok) {
+    Warn.Start(f, l);
+    Warn << "Attempt to set option #StackSize failed, ignoring";
+    Warn.Stop();
+  }
+  // remove soon
+  Output << "Successfully resized stack\n";
+}
+
 void InitLanguage()
 {
-  CreateRuntimeStack(1024); // Large enough?
-
+  option *o;
   // initialize options
+
+  // InfinityString
   char* inf = strdup("infinity");
   const char* doc1 = "Output string for infinity";
   infinity_string = MakeStringOption("InfinityString", doc1, inf);
   AddOption(infinity_string);
+
+  // StackSize
+  const char* ssdoc = "Size of run-time stack to use for function calls";
+  o = MakeActionOption(INT, "StackSize", "1024", ssdoc, "[0..2000000000]", 
+                       SetStackSize, NULL);
+  AddOption(o);
+  CreateRuntimeStack(1024); // Large enough?
+  
+
+
+
 
   // testing... add more options
 
