@@ -34,6 +34,9 @@
     but we also use them for models and internal functions.
  
     Note: if the name is NULL, we assume that the parameter is "hidden".
+
+   TBD: Try to set up passed results directly in terms of the stack
+        (to avoid having to copy...)
 */  
 
 class formal_param : public symbol {
