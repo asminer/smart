@@ -5,7 +5,7 @@
 #include "../list.h"
 #include <string.h>
 
-#define TABLE_DEBUG
+//#define TABLE_DEBUG
 
 // ==================================================================
 // |                       PtrTable  methods                        |

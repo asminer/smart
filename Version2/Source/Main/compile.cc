@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <FlexLexer.h>
 
-#define COMPILE_DEBUG
+//#define COMPILE_DEBUG
 
 void DumpPassed(OutputStream &s, List <expr> *pass)
 {
@@ -140,7 +140,8 @@ expr* MakeRealConst(char* s)
 
 expr* MakeStringConst(char *s)
 {
-  return MakeConstExpr(s, filename, lexer.lineno());
+  char *scopy = strdup(s);
+  return MakeConstExpr(scopy, filename, lexer.lineno());
 }
 
 expr* BuildInterval(expr* start, expr* stop)
@@ -250,8 +251,15 @@ expr* BuildBinary(expr* left, int op, expr* right)
   }
 
   // type checking goes here
+#ifdef COMPILE_DEBUG
+  Output << "Building binary expression " << left << GetOp(op) << right << "\n";
+#endif
 
-  return MakeBinaryOp(left, op, right, filename, lexer.lineno());
+  expr* answer = MakeBinaryOp(left, op, right, filename, lexer.lineno());
+#ifdef COMPILE_DEBUG
+  Output << "Got " << answer << "\n";
+#endif
+  return answer;
 }
 
 expr* BuildTypecast(expr* opnd, type newtype)
