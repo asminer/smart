@@ -147,6 +147,6 @@ for (int i in {1..TS}) {
   for (int j in {2..i}) {
     print(pascal(i,j):6);
   }
-  print("\n");
+  print("\n\f");
 }
 

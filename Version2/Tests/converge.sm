@@ -1,0 +1,110 @@
+
+/*
+   $Id$
+*/
+
+/*
+ *    This program tests converge statements
+ */
+
+	
+# UseCurrent true
+# ConvergePrecision 1e-7
+
+# Verbose true
+	
+/*
+
+  Checks 1d converge statement
+
+*/
+
+
+converge {
+  real a guess 1000.0;
+  real a := sqrt(a);
+}
+
+print("a=",a,"\n"); 
+
+/* 
+    Test of a 2d converge:
+
+    2s+t=4
+    s+2t=5
+
+*/
+
+converge {
+  real s guess 100.0;
+  real t := (5.0-s)/2.0;
+  real s := (4.0-t)/2.0;
+};
+
+print("s=",s,"\n");
+print("t=",t,"\n");
+
+/* 
+    Test of a 3d converge:
+
+    5x+y+z = 10
+    x+5y+z = 14 
+    x+y+5z = 18
+
+*/
+
+converge {
+  real x guess 100.0;
+  real y guess 100.0;
+  real z := (18.0-x-y)/5.0; 
+  real y := (14.0-x-z)/5.0;
+  real x := (10.0-y-z)/5.0;
+};
+
+print("x=",x,"\n");
+print("y=",y,"\n");
+print("z=",z,"\n");
+
+# UseCurrent false
+	
+/* 
+
+  Test of the UseCurrent option
+	
+*/
+
+converge {
+  real x2 guess 100.0;
+  real y2 guess 100.0;
+  real z2 guess 100.0;  
+  real z2 := (18.0-x2-y2)/5.0; 
+  real y2 := (14.0-x2-z2)/5.0;
+  real x2 := (10.0-y2-z2)/5.0;
+};
+
+print("x2=",x2,"\n");
+print("y2=",y2,"\n");
+print("z2=",z2,"\n");
+
+
+# ConvergePrecision 1e-2
+# ConvergePrecisionTest ABSOLUTE
+
+print("Using absolute precision\n");
+
+converge {
+    real apx guess 1000;
+    real apx := 10*sqrt(apx);
+    print("\tapx=",apx,"\n");
+};
+
+print("Using relative precision\n");
+
+# ConvergePrecisionTest RELATIVE
+
+converge {
+    real rpy guess 1000;
+    real rpy := 10*sqrt(rpy);
+    print("\trpy=",rpy,"\n");
+};
+

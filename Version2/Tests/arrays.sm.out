@@ -1,19 +1,19 @@
 Testing factorial array, everything after index 20 is an error
-ERROR in file arrays.sm near line 20:
+ 25! = ERROR in file arrays.sm near line 20:
 	Bad value: 25 for index i in array fact
- 25! = null
-ERROR in file arrays.sm near line 20:
+null
+ 24! = ERROR in file arrays.sm near line 20:
 	Bad value: 24 for index i in array fact
- 24! = null
-ERROR in file arrays.sm near line 20:
+null
+ 23! = ERROR in file arrays.sm near line 20:
 	Bad value: 23 for index i in array fact
- 23! = null
-ERROR in file arrays.sm near line 20:
+null
+ 22! = ERROR in file arrays.sm near line 20:
 	Bad value: 22 for index i in array fact
- 22! = null
-ERROR in file arrays.sm near line 20:
+null
+ 21! = ERROR in file arrays.sm near line 20:
 	Bad value: 21 for index i in array fact
- 21! = null
+null
  20! = 2.4329e+18
  19! = 1.21645e+17
  18! = 6.40237e+15
@@ -36,12 +36,12 @@ ERROR in file arrays.sm near line 20:
   1! = 1
   0! = 1
 Testing fibonacci array, valid from 0..30
-ERROR in file arrays.sm near line 30:
+ 32th fib:ERROR in file arrays.sm near line 30:
 	Bad value: 32 for index i in array fib
- 32th fib:null
-ERROR in file arrays.sm near line 30:
+null
+ 31th fib:ERROR in file arrays.sm near line 30:
 	Bad value: 31 for index i in array fib
- 31th fib:null
+null
  30th fib:1346269
  29th fib:832040
  28th fib:514229
@@ -73,12 +73,12 @@ ERROR in file arrays.sm near line 30:
   2th fib:2
   1th fib:1
   0th fib:1
-ERROR in file arrays.sm near line 30:
+ -1th fib:ERROR in file arrays.sm near line 30:
 	Bad value: -1 for index i in array fib
- -1th fib:null
-ERROR in file arrays.sm near line 30:
+null
+ -2th fib:ERROR in file arrays.sm near line 30:
 	Bad value: -2 for index i in array fib
- -2th fib:null
+null
 Assign f[1] = 1
 Assign f[2] = 2
 Assign f[3] = 3
