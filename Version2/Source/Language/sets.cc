@@ -294,7 +294,7 @@ public:
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
   virtual expr* Substitute(int i);
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
 };
 
@@ -396,16 +396,16 @@ expr* setexpr_interval::Substitute(int i)
   return new setexpr_interval(Filename(), Linenumber(), newstart, newstop, newinc);
 }
 
-int setexpr_interval::GetSymbols(int i, symbol **syms, int N, int offset)
+int setexpr_interval::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(0==i);
   DCASSERT(start);
   DCASSERT(stop);
   DCASSERT(inc);
   int answer = 0;
-  answer = start->GetSymbols(0, syms, N, offset);
-  answer += stop->GetSymbols(0, syms, N, offset+answer);
-  answer += inc->GetSymbols(0, syms, N, offset+answer);
+  answer = start->GetSymbols(0, syms);
+  answer += stop->GetSymbols(0, syms);
+  answer += inc->GetSymbols(0, syms);
   return answer;
 }
 

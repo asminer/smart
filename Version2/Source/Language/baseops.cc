@@ -44,15 +44,13 @@ void addop::show(OutputStream &s) const
   assoc_show(s, op);
 }
 
-int addop::GetSums(int a, expr **sums, int N, int offset)
+int addop::GetSums(int a, List <expr> *sums)
 {
   DCASSERT(a==0);
   int i;
   int opnds=0;
   for (i=0; i<opnd_count; i++) {
-    int count = operands[i]->GetSums(a, sums, N, offset);
-    offset += count;
-    opnds += count;
+    opnds += operands[i]->GetSums(a, sums);
   }
   return opnds;
 }
@@ -72,15 +70,13 @@ void multop::show(OutputStream &s) const
   assoc_show(s, op);
 }
 
-int multop::GetProducts(int a, expr **prods, int N, int offset)
+int multop::GetProducts(int a, List <expr> *prods)
 {
   DCASSERT(a==0);
   int i;
   int opnds=0;
   for (i=0; i<opnd_count; i++) {
-    int count = operands[i]->GetProducts(a, prods, N, offset);
-    offset += count;
-    opnds += count;
+    opnds += operands[i]->GetProducts(a, prods);
   }
   return opnds;
 }

@@ -2113,36 +2113,39 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 
 void Optimize(int a, expr* &e)
 {
+  static List <expr> optbuffer(128);
   if (NULL==e) return;
   int i;
   // First... try to split us into sums
-  int sumcount = e->GetSums(a, NULL, 0);
+  optbuffer.Clear();
+  int sumcount = e->GetSums(a, &optbuffer);
   if (sumcount>1) {
     // There is a sum below e
-    expr **opnds = new expr*[sumcount];
-    e->GetSums(a, opnds, sumcount);
+    expr **opnds = optbuffer.Copy();
     for (i=0; i<sumcount; i++) {
-      opnds[i] = Copy(opnds[i]);
+      opnds[i] = Copy(opnds[i]);  // make this our copy
       Optimize(a, opnds[i]);
     }
     // replace with associative sum
-    expr *ne = MakeAssocOp(PLUS, opnds, sumcount, e->Filename(), e->Linenumber());
+    expr *ne = MakeAssocOp(PLUS, opnds, sumcount, 
+    				e->Filename(), e->Linenumber());
     Delete(e);
     e = ne;
     return;  // done
   } 
   // Still here?  try to split into products
-  int prodcount = e->GetProducts(a, NULL, 0);
+  optbuffer.Clear();
+  int prodcount = e->GetProducts(a, &optbuffer);
   if (prodcount>1) {
     // There is a product below us
-    expr **opnds = new expr*[prodcount];
-    e->GetProducts(a, opnds, prodcount);
+    expr **opnds = optbuffer.Copy();
     for (i=0; i<prodcount; i++) {
       opnds[i] =Copy(opnds[i]);
       Optimize(a, opnds[i]);
     }
     // replace with associative product
-    expr *ne = MakeAssocOp(TIMES, opnds, prodcount, e->Filename(), e->Linenumber());
+    expr *ne = MakeAssocOp(TIMES, opnds, prodcount, 
+    				e->Filename(), e->Linenumber());
     Delete(e);
     e = ne;
   } 

@@ -72,21 +72,21 @@ void expr::Sample(long &, int i, result &x)
   Internal.Stop();
 }
 
-int expr::GetSums(int i, expr **sums, int N, int offset) 
+int expr::GetSums(int i, List <expr> *sums)
 {
   DCASSERT(i==0);
-  if (offset<N) sums[offset] = this;
+  if (sums) sums->Append(this);
   return 1;
 }
 
-int expr::GetProducts(int i, expr **prods, int N, int offset) 
+int expr::GetProducts(int i, List <expr> *prods) 
 {
   DCASSERT(i==0);
-  if (offset<N) prods[offset] = this;
+  if (prods) prods->Append(this);
   return 1;
 }
 
-int expr::GetSymbols(int i, symbol **syms, int N, int offset)
+int expr::GetSymbols(int i, List <symbol> *)
 {
   DCASSERT(i==0);
   return 0;
@@ -133,10 +133,10 @@ unary::~unary()
   Delete(opnd);
 }
 
-int unary::GetSymbols(int i, symbol **syms, int N, int offset)
+int unary::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(i==0);
-  if (opnd) return opnd->GetSymbols(0, syms, N, offset);
+  if (opnd) return opnd->GetSymbols(0, syms);
   return 0;
 }
 
@@ -179,15 +179,15 @@ binary::~binary()
   Delete(right);
 }
 
-int binary::GetSymbols(int i, symbol **syms, int N, int offset)
+int binary::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(i==0);
   int answer = 0;
   if (left) {
-    answer = left->GetSymbols(0, syms, N, offset);
+    answer = left->GetSymbols(0, syms);
   } 
   if (right) {
-    answer += right->GetSymbols(0, syms, N, offset+answer);
+    answer += right->GetSymbols(0, syms);
   }
   return answer;
 }
@@ -249,14 +249,14 @@ assoc::~assoc()
   delete[] operands;
 }
 
-int assoc::GetSymbols(int a, symbol **syms, int N, int offset)
+int assoc::GetSymbols(int a, List <symbol> *syms)
 {
   DCASSERT(a==0);
   int answer = 0;
   int i;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
-    answer += operands[i]->GetSymbols(0, syms, N, offset+answer);
+    answer += operands[i]->GetSymbols(0, syms);
   }
   return answer;
 }
@@ -342,10 +342,10 @@ int symbol::NumComponents() const
   return agglength;
 }
 
-int symbol::GetSymbols(int i, symbol **syms, int N, int offset) 
+int symbol::GetSymbols(int i, List <symbol> *syms) 
 {
   DCASSERT(i==0);
-  if (offset<N) syms[offset] = this;
+  if (syms) syms->Append(this);
   return 1;
 }
 
@@ -394,9 +394,9 @@ public:
 
   virtual expr* Substitute(int i);
 
-  virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
-  virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSums(int i, List <expr> *sums=NULL);
+  virtual int GetProducts(int i, List <expr> *prods=NULL);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
 
   virtual void show(OutputStream &s) const { assoc_show(s, ":"); }
 protected:
@@ -448,24 +448,24 @@ expr* aggregates::Substitute(int i)
   return NULL;
 }
 
-int aggregates::GetSums(int i, expr **sums, int N, int offset) 
+int aggregates::GetSums(int i, List <expr> *sums) 
 {
   CHECK_RANGE(0, i, opnd_count);
-  if (operands[i]) return operands[i]->GetSums(0, sums, N, offset);
+  if (operands[i]) return operands[i]->GetSums(0, sums);
   return 0;  // null expression
 }
 
-int aggregates::GetProducts(int i, expr **prods, int N, int offset) 
+int aggregates::GetProducts(int i, List <expr> *prods) 
 {
     CHECK_RANGE(0, i, opnd_count);
-    if (operands[i]) return operands[i]->GetProducts(0, prods, N, offset);
+    if (operands[i]) return operands[i]->GetProducts(0, prods);
     return 0;  // null expression
 }
 
-int aggregates::GetSymbols(int i, symbol **syms, int N, int offset) 
+int aggregates::GetSymbols(int i, List <symbol> *syms) 
 {
     CHECK_RANGE(0, i, opnd_count);
-    if (operands[i]) return operands[i]->GetSymbols(0, syms, N, offset);
+    if (operands[i]) return operands[i]->GetSymbols(0, syms);
     return 0;  // null expression
 }
 

@@ -16,6 +16,7 @@
  */
 
 #include "results.h"
+#include "../list.h"
 
 //#define SHARE_DEBUG
 
@@ -203,43 +204,32 @@ public:
    */
   virtual expr* Substitute(int i) = 0;
 
-  /** Split this expression into a sequence of sums.
-      We store pointers to parts of the expressions, not copies;
-      so don't delete them.
+  /** Split this expression into a list of sums.
+      We store pointers to parts of the expressions (not copies);
+      DO NOT DELETE them.
       @param	i	The component to split.
-      @param	sums	An array of pointers, already allocated, to store
-      			each piece of the expression.
-			If NULL, we only count the sums.
-      @param    N	The size of the array.
-      			We'll avoid writing past the end of the array.
-			This had better be 0 if the array is NULL.
-      @param	offset	The first slot to use in the array.
-      			(Used by recursion, mainly.)
+      @param	sums	An array-list template of expressions, or NULL.
+      			If not null, the list will contain the sums
+			on exit;  if NULL, we simply count them.
+      @return	The number of sums.  
+  */
+  virtual int GetSums(int i, List <expr> *sums=NULL);
 
-      @return	The number of sums.
-      		Obviously, if this exceeds N, then not all sums
-		are stored in the array.
-   */
-  virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
-
+  
   /** Split this expression into a sequence of products.
       Similar to GetSums.
       @param	i	The component to split.
-      @param	prods	An array of pointers, or NULL.
-      @param    N	The size of the array (or 0).
-      @param	offset	The first slot to use in the array.
+      @param	prods	An array-list template of pointers, or NULL.
       @return	The number of products.
    */
-  virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
+  virtual int GetProducts(int i, List <expr> *prods=NULL);
 
   /** Get the symbols contained in this expression.
       @param	i	The component to check.
-      @param	syms	Array of symbols, or NULL.
-      @param	N	The size of the array (or 0).
-      @param	offset	The first slot to use in the array.
+      @param	syms	Array-list of symbols, or NULL.
       @return	The number of symbols.
    */
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
 
   /// Required for aggregation.  Used only by aggregates class.
   virtual void TakeAggregates() { ASSERT(0); }
@@ -324,7 +314,7 @@ protected:
 public:
   unary(const char* fn, int line, expr* x);
   virtual ~unary();
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
 protected:
   /** Used by Substitute.
@@ -353,7 +343,7 @@ protected:
 public:
   binary(const char* fn, int line, expr* l, expr* r);
   virtual ~binary();
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
 protected:
   /** Used by Substitute.
@@ -385,7 +375,7 @@ public:
   assoc(const char* fn, int line, expr **x, int n);
   assoc(const char* fn, int line, expr *l, expr *r);
   virtual ~assoc();
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
 protected:
   /** Used by Substitute.
@@ -432,7 +422,7 @@ public:
 
   virtual type Type(int i) const;
   virtual int NumComponents() const;
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   
   inline const char* Name() const { return name; }
 
