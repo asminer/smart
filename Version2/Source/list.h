@@ -16,9 +16,9 @@ class PtrList {
   int size;
   int last;
 protected:
-  void Enlarge(int newsize) {
+  void Resize(int newsize) {
     void ** foo = (void**) realloc(data, newsize*sizeof(void*));
-    if (NULL==foo) {
+    if (newsize && (NULL==foo)) {
       Internal.Start(__FILE__, __LINE__);
       Internal << "Memory overflow on List resize\n";
       Internal.Stop();
@@ -26,15 +26,14 @@ protected:
     data = foo;
     size = newsize;
   }
-
 public:
   PtrList(int inits) {
-    data = (void**) malloc(inits * sizeof(void*));
-    size = inits;
+    data = NULL;
+    Resize(inits);
     last = 0;
   }
   ~PtrList() {
-    free(data);
+    Resize(0);
   }
   inline int Length() const { return last; }
   inline void Pop() { if (last) last--; }
@@ -44,11 +43,28 @@ public:
     memcpy(thing, data, last * sizeof(void*));
     return thing;
   };
+  /** Equivalent to Copy followed by Clear.
+      Since this trashes our copy, this should be used
+      when we were going to delete the original anyway.
+  */
+  void** MakeArray() {
+    if (0==last) return NULL;
+    Resize(last);
+    void **ret = data;
+    size = last = 0;
+    data = NULL;
+    return ret;
+  }
 
-  inline void* Item(int n) const { return data[n]; }
+  inline void* Item(int n) const { 
+    DCASSERT(n<last);
+    DCASSERT(n>=0);
+    DCASSERT(data);
+    return data[n]; 
+  }
 
   void Append(void* x) {
-    if (last>=size) Enlarge(2*size);
+    if (last>=size) Resize(2*size);
     data[last] = x;
     last++;
   }
@@ -56,7 +72,7 @@ public:
   void Append(PtrList *x) {
     if (x) {
       while (last + x->last >= size) size*=2;
-      Enlarge(size);
+      Resize(size);
       // risky....
       memcpy(data+last, x->data, x->last * sizeof(void*));
       last += x->last;
@@ -78,6 +94,7 @@ public:
   inline int Length() const { return p->Length(); }
   inline void Pop() { p->Pop(); }
   inline DATA** Copy() const { return (DATA **)(p->Copy()); }
+  inline DATA** MakeArray() { return (DATA **)(p->MakeArray()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(p->Item(n)); }
   inline void Append(DATA *x) { p->Append(x); }
   inline void Append(List <DATA> *x) { if (x) { p->Append(x->p); delete x; } }
