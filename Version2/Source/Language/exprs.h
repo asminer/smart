@@ -15,38 +15,12 @@
   deal with simple types: bool, int, real, string.
  */
 
-#include "../Base/api.h"
+#include "results.h"
 
 //#define SHARE_DEBUG
 
 //@{
 
-/// Things that can go wrong when computing a result.
-enum compute_error {
-  /** No problems.  
-      By forcing the value to zero we should be able to do things like
-      "if (error) ..."
-   */
-  CE_Ok = 0,
-  /// We haven't been computed yet
-  CE_Uncomputed,
-  /// We encountered a "don't know" state
-  CE_Dont_Know,
-  /// We encountered a "don't care" state
-  CE_Dont_Care,
-  /// We encountered overflow when casting to another result type
-  CE_Overflow,
-  /// Divide by zero
-  CE_ZeroDivide,
-  /// Undefined quantity such as infinity-infinity
-  CE_Undefined,
-  /// Tried to compute a rand
-  CE_ComputeRand,
-  /// Array range error
-  CE_OutOfRange,
-  /// There was a stack overflow
-  CE_StackOverflow
-};
 
 
 /// Possible solution engines
@@ -81,59 +55,6 @@ enum Group_type {
 };
 
 
-// ******************************************************************
-// *                                                                *
-// *                          result class                          *
-// *                                                                *
-// ******************************************************************
-
-/**   The structure used by expressions to represent values.
- 
-      Completely redesigned for version 2:
-      No more derived classes or virtual functions.
-
-      Conventions:
-
-      Whenever an error occurs, the value should be set to
-      null by setting null to true.
-      (A value can be null when no error occurs.)
-
-      For +- infinity, set infinity to true.
-      Then, set the sign appropriately for ivalue.
-*/  
-
-struct result {
-  // everything is public... we know what we are doing.
-
-  // No type!  can be determined from expression that computes us, if needed
-
-  /// The first thing that went wrong while computing us.
-  compute_error error;
-
-  /// Are we infinite.  Sign is determined from the value.
-  bool infinity;
-
-  /// Are we a null value?  
-  bool null;
-
-  union {
-    /// Used by boolean type
-    bool   bvalue;
-    /// Used by integer type
-    int    ivalue;
-    // Should we add bigint here?
-    /// Used by real and expo type
-    double rvalue;
-    /// Everything else
-    void*  other; 
-  };
-
-  inline void Clear() {
-    error = CE_Ok;
-    infinity = false;
-    null = false;
-  }
-};
 
 
 // ******************************************************************
@@ -569,13 +490,6 @@ inline void Sample(expr *e, int a, long &seed, result &x)
 // ******************************************************************
 
 OutputStream& operator<< (OutputStream &s, expr *e);
-
-/** Print a result.
-    Basically a gigantic switch statement for the type.
-    But that's ok, because I/O is slow anyway.
-    Note that certain types cannot be printed.
- */
-void PrintResult(type t, const result &x, OutputStream &s);
 
 /**
     Print the type of an expression.

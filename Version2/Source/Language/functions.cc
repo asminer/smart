@@ -59,6 +59,7 @@ void formal_param::Compute(int i, result &x)
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   x = stack[0][offset];  
+  x.canfree = false;    // this is a shallow copy
 }
 
 void formal_param::Sample(long &, int i, result &x)
@@ -67,6 +68,7 @@ void formal_param::Sample(long &, int i, result &x)
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   x = stack[0][offset];  
+  x.canfree = false;
 }
 
 // ******************************************************************
@@ -209,6 +211,9 @@ void user_func::Compute(expr **pp, int np, result &x)
   // "call" function
   stack_ptr = newstackptr;
   return_expr->Compute(0, x);
+
+  // free parameters, in case they're strings or other bulky items
+  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[2+i]);
 
   // pop off stack
   ParamStackTop = oldstacktop;

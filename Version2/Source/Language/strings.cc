@@ -14,15 +14,15 @@
  */
 
 class string_add : public addop {
-  char** sop;
+  result* xop;
 public:
   string_add(const char* fn, int line, expr **x, int n) 
-    : addop(fn, line, x, n) { sop = new char*[n]; }
+    : addop(fn, line, x, n) { xop = new result[n]; }
   
   string_add(const char* fn, int line, expr *l, expr *r) 
-    : addop(fn, line, l, r) { sop = new char*[2]; }
+    : addop(fn, line, l, r) { xop = new result[2]; }
 
-  virtual ~string_add() { delete[] sop; }
+  virtual ~string_add() { delete[] xop; }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -43,36 +43,38 @@ void string_add::Compute(int a, result &x)
 
   int i;
   // Clear strings
-  for (i=0; i<opnd_count; i++) sop[i] = NULL;
+  for (i=0; i<opnd_count; i++) xop[i].canfree = false;
 
   // Compute strings for each operand
   int total_length = 0;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
-    operands[i]->Compute(0, x);
-    sop[i] = (char*) x.other;
-    if (x.error) break;
-    if (x.null) break;
-    if (sop[i])
-      total_length += strlen(sop[i]); 
+    operands[i]->Compute(0, xop[i]);
+    if (xop[i].error || xop[i].null) {
+      x = xop[i];
+      break;
+    }
+    if (xop[i].other)
+      total_length += strlen((char*)xop[i].other); 
   }
 
   if (x.error || x.null) {
     // delete strings and bail out
-    for (i=0; i<opnd_count; i++) delete[] sop[i]; 
+    for (i=0; i<opnd_count; i++) if (xop[i].canfree) free(xop[i].other); 
     return;
   }
 
   // concatenate all strings
-  char* answer = new char[total_length+1];  // save room for terminating 0
+  char* answer = (char*) malloc(total_length+1); // save room for terminating 0
   answer[0] = 0;
-  for (i=0; i<opnd_count; i++) if (sop[i]) {
-    strcat(answer, sop[i]);
-    delete[] sop[i];
+  for (i=0; i<opnd_count; i++) if (xop[i].other) {
+    strcat(answer, (char*)xop[i].other);
+    if (xop[i].canfree) free(xop[i].other);
   }
 
   x.other = answer;
+  x.canfree = true;
 }
 
 

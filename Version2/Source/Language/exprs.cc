@@ -2,7 +2,6 @@
 // $Id$
 
 #include "exprs.h"
-#include "infinity.h"
 
 //@Include: exprs.h
 
@@ -27,21 +26,6 @@ OutputStream& operator<< (OutputStream &s, expr *e)
   if (e) e->show(s);
   else s << "null";
   return s;
-}
-
-void PrintResult(type t, const result &x, OutputStream &s)
-{
-  if (x.infinity) { s << infinity_string->GetString(); return; }
-  if (x.null) { s << "null"; return; }
-  if (x.error) { s << "error"; return; }
-  switch(t) {
-    case VOID: 		DCASSERT(0); 		return;
-    case BOOL: 		s << x.bvalue; 		return;
-    case INT:  		s << x.ivalue; 		return;
-    case REAL: 		s << x.rvalue; 		return;
-    case STRING: 	s << (char*) x.other;	return;	
-  }
-  DCASSERT(0);
 }
 
 void PrintExprType(expr *e, OutputStream &s)
@@ -604,13 +588,15 @@ class stringconst : public constant {
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
-    x.other = strdup(value);
+    x.other = value;
+    x.canfree = false;  // don't delete the pointer!
   }
 
   virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
-    x.other = strdup(value);
+    x.other = value;
+    x.canfree = false;  // don't delete the pointer!
   }
 
   virtual void show(OutputStream &s) const {
