@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	circlist.cc
+	graphs.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

@@ -9,14 +9,9 @@
 
 #include "../defines.h"
 #include "../Base/streams.h"
-#include "graphs.cc"
+#include "graphs.h"
 
 void smart_exit()
-{
-  exit(0);
-}
-
-void OutOfMemoryError(char const *)
 {
   exit(0);
 }
