@@ -73,3 +73,11 @@ print(substr(full, infinity, -infinity), "\n");
 print(substr(full, infinity, infinity), "\n");
 print(substr(full, -infinity, -infinity), "\n");
 print("Did you see them?\n");
+
+/* sprint test */
+
+string dealy := sprint("print ", 2, " a string; ", 3.27, " and such");
+string line := dealy+"\n";
+string twice := repeat(line, 2);
+print(twice);
+

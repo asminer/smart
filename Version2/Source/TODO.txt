@@ -12,9 +12,6 @@ Things to check on:
 
 Things to do:
 
-* String testing.
-
-
 * Generic priority structure in state_model class,
   so we don't have to re-implement it for every formalism.
 
@@ -22,9 +19,6 @@ Things to do:
   events can 
 	+ have firing distributions attached
 	+ be visible outside of dsm...
-
-* Add mechanism to track where a model was "instantiated", so, e.g.,
-  an error message during state space generation can say so
 
 * Models
 

@@ -159,6 +159,11 @@ public:
 
   virtual ~markov_model();
 
+  inline model_var* GetState(int index) const {
+    DCASSERT(statelist);
+    return statelist->Item(index);
+  }
+
   void AddInitial(int state, double weight, const char *fn, int line);
   void AddArc(int fromstate, int tostate, double weight, const char *fn, int line);
 
@@ -443,7 +448,7 @@ void compute_mc_init(expr **pp, int np, result &x)
     Output << "\n\t value ";
 #endif
     int index = x.ivalue;
-    // check for errors here...
+    if (!x.isNormal()) continue;  // shouldn't happen, it's the state
 
     SafeCompute(pp[i], 1, x);
 #ifdef DEBUG_MC
@@ -451,6 +456,14 @@ void compute_mc_init(expr **pp, int np, result &x)
     Output << "\n";
 #endif
     double weight = x.rvalue;
+    if (!x.isNormal()) {
+      Error.Start(pp[i]->Filename(), pp[i]->Linenumber());
+      Error << "Bad weight: ";
+      PrintResult(Error, REAL, x);
+      Error << " for state " << mc->GetState(index) << "\n";
+      Error.Stop();
+      continue;
+    }
     // again with the errors
 
     mc->AddInitial(index, weight, pp[i]->Filename(), pp[i]->Linenumber());

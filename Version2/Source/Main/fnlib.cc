@@ -272,7 +272,7 @@ void compute_sprint(expr **p, int np, result &x)
   char* bar = strbuffer.GetString();
   strbuffer.flush();
   x.Clear();
-  x.other = new shared_string(bar);
+  x.svalue = new shared_string(bar);
 }
 
 void AddSprint(PtrTable *fns)
@@ -452,7 +452,7 @@ void compute_read_string(expr **pp, int np, result &x)
     if ((c==' ') || (c=='\t') || (c=='\n')) c=0;
   }
   buffer[i] = 0;  // in case we go past the end
-  x.other = new shared_string(buffer);
+  x.svalue = new shared_string(buffer);
 }
 
 void AddReadString(PtrTable *fns)
@@ -491,7 +491,6 @@ void compute_inputfile(expr **p, int np, result &x)
   DeleteResult(STRING, x); 
   x.Clear();
   if (NULL==infile) {
-    // error, print message?
     x.bvalue = false;
   } else {
     Input.SwitchInput(infile);
@@ -512,8 +511,7 @@ void AddInputFile(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-
-void compute_errorfile(expr **p, int np, result &x)
+void compute_file(DisplayStream &s, expr **p, int np, result &x)
 {
   DCASSERT(np==1);
   DCASSERT(p);
@@ -521,7 +519,7 @@ void compute_errorfile(expr **p, int np, result &x)
   SafeCompute(p[0], 0, x);
   if (x.isError()) return;
   if (x.isNull()) {
-    Error.SwitchDisplay(NULL);
+    s.SwitchDisplay(NULL);
     x.Clear();
     x.bvalue = true;
     return;
@@ -529,12 +527,16 @@ void compute_errorfile(expr **p, int np, result &x)
   FILE* outfile = fopen(x.svalue->string, "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
-    // error, print message?
     x.bvalue = false;
   } else {
-    Error.SwitchDisplay(outfile);
+    s.SwitchDisplay(outfile);
     x.bvalue = true;
   }
+}
+
+void compute_errorfile(expr **p, int np, result &x)
+{
+  compute_file(Error, p, np, x);
 }
 
 void AddErrorFile(PtrTable *fns)
@@ -553,26 +555,7 @@ void AddErrorFile(PtrTable *fns)
 
 void compute_warningfile(expr **p, int np, result &x)
 {
-  DCASSERT(np==1);
-  DCASSERT(p);
-  x.Clear();
-  SafeCompute(p[0], 0, x);
-  if (x.isError()) return;
-  if (x.isNull()) {
-    Warning.SwitchDisplay(NULL);
-    x.Clear();
-    x.bvalue = true;
-    return;
-  }
-  FILE* outfile = fopen(x.svalue->string, "a");
-  DeleteResult(STRING, x);
-  if (NULL==outfile) {
-    // error, print message?
-    x.bvalue = false;
-  } else {
-    Warning.SwitchDisplay(outfile);
-    x.bvalue = true;
-  }
+  compute_file(Warning, p, np, x);
 }
 
 void AddWarningFile(PtrTable *fns)
@@ -591,26 +574,7 @@ void AddWarningFile(PtrTable *fns)
 
 void compute_outputfile(expr **p, int np, result &x)
 {
-  DCASSERT(np==1);
-  DCASSERT(p);
-  x.Clear();
-  SafeCompute(p[0], 0, x);
-  if (x.isError()) return;
-  if (x.isNull()) {
-    Output.SwitchDisplay(NULL);
-    x.Clear();
-    x.bvalue = true;
-    return;
-  }
-  FILE* outfile = fopen(x.svalue->string, "a");
-  DeleteResult(STRING, x);
-  if (NULL==outfile) {
-    // error, print message?
-    x.bvalue = false;
-  } else {
-    Output.SwitchDisplay(outfile);
-    x.bvalue = true;
-  }
+  compute_file(Output, p, np, x);
 }
 
 void AddOutputFile(PtrTable *fns)
@@ -1650,7 +1614,7 @@ void compute_filename(expr **p, int np, result &x)
 {
   DCASSERT(0==np);
   x.Clear();
-  x.other = new shared_string(strdup(Filename()));
+  x.svalue = new shared_string(strdup(Filename()));
 }
 
 void AddFilename(PtrTable *fns)
@@ -1683,7 +1647,7 @@ void compute_env(expr **p, int np, result &x)
     // match, clear out old x
     DeleteResult(STRING, x); 
     x.Clear();
-    x.other = new shared_string(strdup(equals+1));
+    x.svalue = new shared_string(strdup(equals+1));
     return;
   }
   // not found
@@ -1870,12 +1834,12 @@ void sample_case(Rng &s, expr **pp, int np, result &x)
     SafeSample(pp[i], s, 0, m);
     if (m.isNormal()) if (m.ivalue == c.ivalue) {
       // this is it!
-      SafeCompute(pp[i], 1, x);
+      SafeSample(pp[i], s, 1, x);
       return;
     }
   }
   // still here?  use the default value
-  SafeCompute(pp[1], 0, x);
+  SafeSample(pp[1], s, 0, x);
 }
 
 void proc_compute_case(const state &s, expr **pp, int np, result &x)
@@ -1977,9 +1941,9 @@ void compute_is_null(expr **pp, int np, result &x)
 {
   DCASSERT(pp);
   DCASSERT(np==1);
-  x.Clear();
   result y;
   SafeCompute(pp[0], 0, y);
+  x.Clear();
   x.bvalue = y.isNull();
 }
 
