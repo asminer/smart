@@ -590,8 +590,8 @@ void ma_call::Compute(int i, result &x)
   DCASSERT(0==i);
   DCASSERT(mdl);
 
-  // "compute" the model (builds it if necessary)
-  mdl->Compute(pass, numpass, x);
+  // builds the model (if necessary)
+  mdl->Instantiate(pass, numpass, x, Filename(), Linenumber());
   if (x.isError() || x.isNull()) return;
   DCASSERT(x.other == mdl);
 

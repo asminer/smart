@@ -8,6 +8,8 @@
 #include "../Formalisms/api.h"
 #include <math.h>
 
+char** environment; // used by system function
+
 extern PtrTable Builtins;
 
 //--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//
@@ -288,6 +290,43 @@ void AddSprint(PtrTable *fns)
 // *                  Input  functions                    *
 // ********************************************************
 
+void compute_read_bool(expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==1);
+
+  SafeCompute(pp[0], 0, x);
+  if (x.isError()) return;
+
+  char c=' ';
+  while (1) {
+    if (Input.IsDefault()) 
+      if (!x.isNull()) {
+        Output << "Enter the [y/n] value for " << (char*) x.other << " : ";
+        Output.flush();
+      }     
+    Input.Get(c);
+    if (c=='y' || c=='Y' || c=='n' || c=='N') break;
+  }
+  DeleteResult(STRING, x);
+
+  x.Clear();
+  x.bvalue = (c=='y' || c=='Y');
+}
+
+void AddReadBool(PtrTable *fns)
+{
+  const char* helpdoc = "Prompt for and read a boolean value from the input stream";
+
+  formal_param **fp = new formal_param*[1];
+  fp[0] = new formal_param(STRING, "prompt");
+  internal_func *p =
+    new internal_func(BOOL, "read_bool", compute_read_bool, NULL, fp, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
 void compute_read_int(expr **pp, int np, result &x)
 {
   DCASSERT(pp);
@@ -320,6 +359,43 @@ void AddReadInt(PtrTable *fns)
   fp[0] = new formal_param(STRING, "prompt");
   internal_func *p =
     new internal_func(INT, "read_int", compute_read_int, NULL, fp, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
+void compute_read_real(expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==1);
+
+  SafeCompute(pp[0], 0, x);
+  if (x.isError()) return;
+
+  if (Input.IsDefault()) 
+    if (!x.isNull()) {
+      Output << "Enter the (real) value for " << (char*) x.other << " : ";
+      Output.flush();
+    }   
+  DeleteResult(STRING, x);
+
+  x.Clear();
+  if (!Input.Get(x.rvalue)) {
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Expecting real value from input stream\n";
+    Error.Stop();
+    x.setError();
+  }
+}
+
+void AddReadReal(PtrTable *fns)
+{
+  const char* helpdoc = "Prompt for and read a real value from the input stream";
+
+  formal_param **fp = new formal_param*[1];
+  fp[0] = new formal_param(STRING, "prompt");
+  internal_func *p =
+    new internal_func(REAL, "read_real", compute_read_real, NULL, fp, 1, helpdoc);
 
   InsertFunction(fns, p);
 }
@@ -1458,6 +1534,44 @@ void AddAvg(PtrTable *fns)
 // *               system-like  functions                 *
 // ********************************************************
 
+void compute_env(expr **p, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(p);
+  SafeCompute(p[0], 0, x);
+  if (!x.isNormal()) return;
+  result find = x;
+  if (NULL==environment) return;
+  int xlen = strlen((char*) x.other);
+  for (int i=0; environment[i]; i++) {
+    char* equals = strstr(environment[i], "=");
+    if (NULL==equals) continue;  // shouldn't happen, right? 
+    int length = (equals - environment[i]);
+    if (length!=xlen) continue;
+    if (strncmp(environment[i], (char*) x.other, length)!=0) continue;  
+    // match, clear out old x
+    DeleteResult(STRING, x); 
+    x.Clear();
+    x.other = strdup(equals+1);
+    return;
+  }
+  // not found
+  DeleteResult(STRING, x); 
+  x.setNull();
+}
+
+void AddEnv(PtrTable *fns)
+{
+  const char* helpdoc = "Return the first environment string that matches parameter <find>.";
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(STRING, "find");
+
+  internal_func *p = 
+    new internal_func(STRING, "env", compute_env, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
 void compute_exit(expr **p, int np, result &x)
 {
   DCASSERT(1==np);
@@ -1773,8 +1887,10 @@ void InitBuiltinFunctions(PtrTable *t)
 {
   AddHelp(t);
   // Input
-  AddReadString(t);
+  AddReadBool(t);
   AddReadInt(t);
+  AddReadReal(t);
+  AddReadString(t);
   // Output
   AddPrint(t);
   AddSprint(t);
@@ -1797,6 +1913,7 @@ void InitBuiltinFunctions(PtrTable *t)
   // Probability
   AddAvg(t);
   // System stuff
+  AddEnv(t);
   AddExit(t);
   // Conditionals
   type i;

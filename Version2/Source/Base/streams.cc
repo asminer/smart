@@ -436,12 +436,12 @@ void ErrorStream::StartModel(const char* mdl, const char* filename, int lineno)
     if (filename) {
       Put(" instantiated ");
       if (filename[0]=='-' && filename[1]==0) {
-        Put(" in standard input");
+        Put("in standard input");
       } else if (filename[0]=='>' && filename[1]==0) {
-	Put(" on command line");
+	Put("on command line");
 	lineno = -1;
       } else {
-        Put(" in file ");
+        Put("in file ");
 	Put(filename);
       }
       if (lineno>=0) {

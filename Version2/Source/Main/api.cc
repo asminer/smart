@@ -14,6 +14,9 @@ extern int numInputFiles;
 extern int whichInputFile;
 extern char* filename;
 
+// in fnlib.cc
+extern char** environment; 
+
 void InitLexer(int filecount, char** files)
 {
   numInputFiles = filecount;
@@ -38,12 +41,13 @@ void smart_exit()
   Output.flush();
 }
 
-int smart_main(int argc, char *argv[])
+int smart_main(int argc, char *argv[], char *env[])
 {
   if (argc<2) {
     HelpScreen();
     return 0;
   }
+  environment = env;
 
   // Initialize modules
 

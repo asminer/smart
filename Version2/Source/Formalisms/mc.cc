@@ -386,6 +386,13 @@ state_model* markov_model::BuildStateModel(const char* fn, int ln)
     // renumber states
     for (i=0; i<numstates; i++)
       states[i]->state_index = mc->explicit_mc->Renumber(states[i]->state_index);
+    // make sure we have an initial distribution
+    if (0==initial->nonzeroes) {
+      Warning.StartModel(Name(), fn, ln);
+      Warning << "Reducible Markov chain with no initial distribution";
+      Warning.Stop();
+    }
+
     // fix initial distribution
     for (i=0; i<initial->nonzeroes; i++)
       initial->index[i] = mc->explicit_mc->Renumber(initial->index[i]);
