@@ -5,6 +5,7 @@
 
 #include "../Language/measures.h"
 #include "../Formalisms/dsm.h"
+#include "../Chains/procs.h"
 
 #include "linear.h"
 
@@ -69,9 +70,16 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
   }
 
   // Count number of visits for each transient state
-  if (mc->numTransient()) 
+  if (mc->numTransient()) {
     if (!MTTASolve(pi, mc->graph, h, initial, 0, mc->numTransient()))
       aok = false;
+#ifdef DEBUG
+    Output << "Time spent in each transient state=[";
+    Output.PutArray(pi, mc->numStates());
+    Output << "]\n";
+    Output.flush();
+#endif
+  }
 
   // put initial probs in absorbing slots of pi
   for (int nnz=0; nnz<initial->nonzeroes; nnz++) {
@@ -88,7 +96,7 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
       VectorColmatrixMultiply(pi, mc->graph, pi, mc->numTransient(), mc->numStates());
     } else {
       // Q_TA is by rows
-      VectorRowmatrixMultiply(pi, mc->graph, pi, 0, mc->numStates());
+      VectorRowmatrixMultiply(pi, mc->graph, pi, 0, mc->numTransient());
     }
 
     // normalize absorption probs, set stationary probs to 0 for transient
@@ -100,6 +108,13 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
 	pi[s] /= total;
 
     mc->UseSelfMatrix();
+
+#ifdef DEBUG
+    Output << "Absorption probabilities=[";
+    Output.PutArray(pi, mc->numStates());
+    Output << "]\n";
+    Output.flush();
+#endif
   }
 
   // for each class (with size>1), compute its prob of absorption;
@@ -168,5 +183,6 @@ void InitNumerical()
 #endif
   // Linear solver options
   InitLinear();
+  InitProcOptions();
 }
 

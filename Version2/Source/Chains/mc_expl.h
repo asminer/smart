@@ -347,7 +347,6 @@ void classified_chain <LABEL> :: ArrangeMatricesByCols()
   
   for (j=0; j<states; j++) {
     int new_j = Renumber(j);
-    if (isAbsorbing(new_j)) continue;
     int e;
     while (oldcol[j]>=0) {
       e = oldcol[j];

@@ -279,8 +279,75 @@ int MTTAColJacobi(double *n, labeled_digraph <float> *Q, float *h,
     Verbose << "Starting column-wise Jacobi\n";
     Verbose.flush();
   }
+  DCASSERT(init->isSorted);
   DCASSERT(Q->isTransposed);
-  return 0;
+  int iters;
+  int maxiters = Iters->GetInt();
+  double relax = Relaxation->GetReal();
+  double one_minus_relax = 1.0 - relax;
+  double prec = Precision->GetReal();
+
+  // auxiliary vector
+  float* oldn = new float[stop-start];
+  oldn -= start;
+
+  // start iterations
+  for (iters=1; iters<=maxiters; iters++) {
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi starting iteration " << iters << "\n";
+    Output << "\tcurrent solution vector: [";
+    Output.PutArray(n+start, stop-start);
+    Output << "]\n";
+    Output.flush();
+#endif
+    // copy n into oldn, clear n
+    for (int s=start; s<stop; s++) {
+      oldn[s] = n[s];
+      n[s] = 0;
+    }
+    // set n = init
+    for (int p=init->nonzeroes-1; p>=0; p--) {
+      int s = init->index[p];
+      if (s>=stop) continue;
+      if (s<start) break;
+      n[s] = init->value[p];
+    }
+
+    // iteration...
+    double maxerror = 0;
+    int *ci = Q->column_index + Q->row_pointer[start];
+    float *v = Q->value + Q->row_pointer[start];
+    for (int s=start; s<stop; s++) { 
+      // compute new element s
+      int *cstop = Q->column_index + Q->row_pointer[s+1];
+      double tmp = n[s];
+      while (ci < cstop) {
+        tmp += oldn[ci[0]] * v[0];
+        ci++;
+        v++;
+      }
+      // now, tmp is dot product of n and column s of Q, plus init[s]
+      tmp *= relax * h[s];
+      n[s] = tmp + one_minus_relax * oldn[s];
+      double delta = n[s] - oldn[s];
+      // if relative precision...
+      if (n[s]) delta /= n[s];
+      if (delta<0) delta = -delta;
+      maxerror = MAX(maxerror, delta);
+    } // for s
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi finishing iteration " << iters;
+    Output << ", precision is " << maxerror << "\n";
+    Output.flush();
+#endif
+    if (maxerror < prec) break; 
+  } // for iters
+
+  // done with aux vector
+  oldn += start;
+  delete[] oldn;
+
+  return iters;
 }
 
 int MTTARowJacobi(double *n, labeled_digraph <float> *Q, float *h,
@@ -291,6 +358,7 @@ int MTTARowJacobi(double *n, labeled_digraph <float> *Q, float *h,
     Verbose << "Starting row-wise Jacobi\n";
     Verbose.flush();
   }
+  DCASSERT(init->isSorted);
   DCASSERT(!Q->isTransposed);
   int iters;
   int maxiters = Iters->GetInt();
@@ -317,8 +385,12 @@ int MTTARowJacobi(double *n, labeled_digraph <float> *Q, float *h,
       n[s] = 0.0;
     }
     // set n = init
-    for (int p=init->nonzeroes-1; p>=0; p--)
-      n[init->index[p]] = init->value[p];
+    for (int p=init->nonzeroes-1; p>=0; p--) {
+      int s = init->index[p];
+      if (s>=stop) continue;
+      if (s<start) break;
+      n[s] = init->value[p];
+    }
 
     // n = oldn * Q
     VectorRowmatrixMultiply(oldn, Q, n, start, stop);
@@ -357,7 +429,63 @@ int MTTAGaussSeidel(double *n, labeled_digraph <float> *Q, float *h,
     Verbose.flush();
   }
   DCASSERT(Q->isTransposed);
-  return 0;
+  DCASSERT(init->isSorted);
+  int iters;
+  int maxiters = Iters->GetInt();
+  double relax = Relaxation->GetReal();
+  double one_minus_relax = 1.0 - relax;
+  double prec = Precision->GetReal();
+
+  // start iterations
+  for (iters=1; iters<=maxiters; iters++) {
+#ifdef DEBUG_LINEAR
+    Output << "\tGauss-Seidel starting iteration " << iters << "\n";
+    Output << "\tcurrent solution vector: [";
+    Output.PutArray(n+start, stop-start);
+    Output << "]\n";
+    Output.flush();
+#endif
+    int initptr = 0;
+    // iteration...
+    double maxerror = 0;
+    int *ci = Q->column_index + Q->row_pointer[start];
+    float *v = Q->value + Q->row_pointer[start];
+    for (int s=start; s<stop; s++) { 
+      // compute new element s
+      int *cstop = Q->column_index + Q->row_pointer[s+1];
+      double tmp;
+      // init is sparsely stored...
+      if (init->index[initptr] == s) {
+        tmp = init->value[initptr];
+        initptr++;
+        if (initptr>=init->nonzeroes) initptr--;
+      } else {
+        tmp = 0;
+      }
+      while (ci < cstop) {
+        tmp += n[ci[0]] * v[0];
+        ci++;
+        v++;
+      }
+      // now, tmp is dot product of n and column s of Q, plus init[s]
+      tmp *= relax * h[s];
+      tmp += one_minus_relax * n[s];
+      double delta = tmp - n[s];
+      // if relative precision...
+      if (tmp) delta /= tmp;
+      if (delta<0) delta = -delta;
+      maxerror = MAX(maxerror, delta);
+      n[s] = tmp;
+    } // for s
+#ifdef DEBUG_LINEAR
+    Output << "\tGauss-Seidel finishing iteration " << iters;
+    Output << ", precision is " << maxerror << "\n";
+    Output.flush();
+#endif
+    if (maxerror < prec) break; 
+  } // for iters
+
+  return iters;
 }
 
 bool MTTASolve(double *n, labeled_digraph <float> *Q, float *h,

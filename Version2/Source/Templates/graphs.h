@@ -486,11 +486,12 @@ inline void VectorColmatrixMultiply(
 			int start,
 			int stop)
 {
-  DCASSERT(!M->isTransposed);
+  DCASSERT(M->isTransposed);
   int *rp = M->row_pointer + start;
   int *rpstop = M->row_pointer + stop;
   int *ci = M->column_index + rp[0];
   LABEL *v = M->value + rp[0];
+  out += start;
   while (rp < rpstop) { 
     rp++;
     int *cstop = M->column_index + rp[0];

@@ -9,6 +9,7 @@
 #define PROCS_H
 
 #include "mc_expl.h"
+#include "../Base/options.h"
 #include "../Templates/sparsevect.h"
 
 enum Process_type {
@@ -41,5 +42,8 @@ struct markov_chain {
 
 };
 
+extern option* MatrixByRows;
+
+void InitProcOptions();
 
 #endif

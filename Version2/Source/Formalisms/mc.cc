@@ -328,10 +328,14 @@ void markov_model::FinalizeModel(result &x)
     }
   } 
 
+  // Transpose if necessary
+  if (!MatrixByRows->GetBool()) wdgraph->Transpose();
+
   // Normalize initial probs
   double total = 0.0;
   for (int z=0; z<initial->NumNonzeroes(); z++) total += initial->value[z];
   for (int z=0; z<initial->NumNonzeroes(); z++) initial->value[z] /= total;
+
 
 #ifdef DEBUG_MC
   Output << "\tMC " << Name() << " has " << numstates << " states\n";
