@@ -47,6 +47,8 @@ const int SMART_PANIC = 3;
 template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
 /// Standard MIN "macro".
 template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
+/// Standard ABS "macro".
+template <class T> inline T ABS(T X) { return ((X<0)?(-X):(X)); }
 
 /// SWAP "macro".
 template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
