@@ -43,6 +43,7 @@ expr* SimpleUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
 
 /**
      Build a binary expression for simple types.
+     The left and right expressions already match types.
      The simple types supported are:
      bool, int, real.
 
