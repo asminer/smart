@@ -10,7 +10,7 @@
 
   Results for sets.
   Basic set expressions.
-  (Set operators are defined elsewhere.)
+  Set operators.
 
   Right now, only integer and real sets are supported.
  
@@ -57,9 +57,16 @@ public:
       This is used during set union, intersection, etc.
    */
   virtual void GetOrder(int n, int &i, result &x) = 0;
+
+  /// For display purposes.
+  virtual void show(ostream &s) = 0;
 };
 
-
+inline ostream& operator<< (ostream &s, set_result *r) 
+{
+  r->show(s);
+  return s;
+}
 
 
 // ******************************************************************
@@ -71,8 +78,17 @@ public:
 /**  Builds an interval set expression.
      The arguments must be all the same type.
  */
+expr*  MakeInterval(const char* fn, int line, expr* start, expr* stop, expr* inc);
 
-expr*  MakeInterval(expr* start, expr* stop, expr* inc);
+/**  Builds a set with a single element.
+ */
+expr*  MakeElementSet(const char* fn, int line, expr* element);
+
+/**  Builds a set (expression) as the union of other sets.
+ */
+expr*  MakeUnionOp(const char* fn, int line, expr* left, expr* right);
+
+// Do we need to be able to build an empty set?
 
 //@}
 

@@ -18,7 +18,7 @@ converge_array: arrays within a converge statement.
 
  */
 
-#include "exprs.h"
+#include "sets.h"
 
 //@{
   
@@ -34,53 +34,39 @@ converge_array: arrays within a converge statement.
 
     Note: these are used directly by for loops.
     So, some of the functionality here is for them.
+
 */  
 
 class array_index : public symbol {
-  // set_expr *values;
-  // set_result *current;
-  // int index;
-public:
-  array_index(const char *fn, int line, type t, char *n);
-  virtual ~array_index(); 
-};
-
-/*
-
-class iterator : public symbol {
-  /// Starting value
-  int start;
-  /// Stopping value
-  int stop;
-  /// increment
-  int inc;
-  /// Index (useful for arrays)
+protected:
+  /// Expression (set type) for the values of the iterator.
+  expr *values;
+  /// Current range of values for the iterator.
+  set_result *current;
+  /// Index in the above set for the current value.
   int index;
-  /// Current value
-  int value;
 public:
-  iterator(const char *fn, int line, type t, char *n);
-  virtual void Compute(int i, result &x) const;
-  virtual expr* Substitute(int i);
-  virtual void show(ostream &s) const;
+  array_index(const char *fn, int line, type t, char *n, expr *v);
+  virtual ~array_index(); 
 
-  inline bool FirstValue() { 
-    value = start; 
-    if (value>stop) return false;
-    index = 0; 
+  // Used by for loops
+
+  /// Compute the current range of values for the iterator.
+  void ComputeCurrent();
+
+  inline bool FirstIndex() { 
+    if (NULL==current) return false;
+    index = 0;
     return true;
   }
   inline bool NextValue() { 
-    value += inc;
-    if (value>stop) return false;
+    DCASSERT(current);
     index++;
-    return true;
+    return (index < current->Size());
   }
   inline int Index() { return index; }
-
 };
 
-*/
 
 // ******************************************************************
 // *                                                                *
