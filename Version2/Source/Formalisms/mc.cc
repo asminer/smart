@@ -8,10 +8,11 @@
 #include "../Main/tables.h"
 #include "../States/reachset.h"
 #include "../Templates/sparsevect.h"
+#include "../Templates/graphs.h"
 
 #include "dsm.h"
 
-//#define DEBUG_MC
+#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -104,6 +105,7 @@ class markov_model : public model {
   char** statenames;
   int numstates;
   sparse_vector <double> *initial;
+  dynamic_lg <double> *wdgraph;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
@@ -111,6 +113,7 @@ public:
   virtual ~markov_model();
 
   void AddInitial(int state, double weight, const char *fn, int line);
+  void AddArc(int fromstate, int tostate, double weight, const char *fn, int line);
 
   // Required for models:
 
@@ -132,11 +135,13 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   statenames = NULL;
   numstates = 0;
   initial = new sparse_vector <double>(2);
+  wdgraph = new dynamic_lg <double>(false, 2);
 }
 
 markov_model::~markov_model()
 {
   delete initial;
+  delete wdgraph;
 }
 
 void markov_model::AddInitial(int state, double weight, const char* fn, int line)
@@ -153,10 +158,22 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
   Warning.Stop();
 }
 
+void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
+{
+  if (wdgraph->AddArc(fromstate, tostate, weight)) return;
+  // Duplicate entry, give a warning
+  Warning.Start(fn, line);
+  Warning << "Summing duplicate arc from \n\tstate ";
+  Warning << statelist->Item(fromstate) << " to " << statelist->Item(tostate);
+  Warning << " in Markov chain " << Name();
+  Warning.Stop();
+}
+
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
   int ndx = statelist->Length();
   statelist->Append(n);
+  wdgraph->AddVertex();
   model_var* s = new model_var(fn, l, t, n);
   s->SetIndex(ndx);
 #ifdef DEBUG_MC
@@ -278,6 +295,81 @@ void Add_init(type mctype, PtrTable *fns)
   InsertFunction(fns, p);
 }
 
+// ********************************************************
+// *                         arcs                         *
+// ********************************************************
+
+void compute_mc_arcs(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  model *m = dynamic_cast<model*> (pp[0]);
+  DCASSERT(m);
+
+#ifdef DEBUG_MC
+  Output << "\tInside arcs for model " << m << "\n";
+#endif
+
+  markov_model *mc = dynamic_cast<markov_model*>(m);
+  DCASSERT(mc);
+
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+#ifdef DEBUG_MC
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+    Output << "\t from state ";
+#endif
+    SafeCompute(pp[i], 0, x);
+#ifdef DEBUG_MC
+    PrintResult(Output, INT, x);
+    Output << "\n\t to state ";
+#endif
+    int fromstate = x.ivalue;
+    // check for errors here...
+
+    SafeCompute(pp[i], 1, x);
+#ifdef DEBUG_MC
+    PrintResult(Output, INT, x);
+    Output << "\n\t weight ";
+#endif
+    int tostate = x.ivalue;
+
+    SafeCompute(pp[i], 2, x);
+#ifdef DEBUG_MC
+    PrintResult(Output, REAL, x);
+    Output << "\n";
+#endif
+    double weight = x.rvalue;
+    // again with the errors
+
+    mc->AddArc(fromstate, tostate, weight, pp[i]->Filename(), pp[i]->Linenumber());
+  }
+
+#ifdef DEBUG_MC
+  Output << "\tExiting arcs for model " << m << "\n";
+  Output.flush();
+#endif
+
+  x.setNull();
+}
+
+void Add_arcs(type mctype, PtrTable *fns)
+{
+  const char* helpdoc = "Adds a set of arcs to the Markov chain";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(mctype, "m");
+  type *tl = new type[3];
+  tl[0] = STATE;
+  tl[1] = STATE;
+  tl[2] = REAL;
+  pl[1] = new formal_param(tl, 3, "triple");
+  internal_func *p = new internal_func(VOID, "arcs", 
+	compute_mc_arcs, NULL,
+	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+  InsertFunction(fns, p);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -295,5 +387,8 @@ void InitMCModelFuncs(PtrTable *t)
 {
   Add_init(DTMC, t);
   Add_init(CTMC, t);
+
+  Add_arcs(DTMC, t);
+  Add_arcs(CTMC, t);
 }
 

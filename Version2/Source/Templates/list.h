@@ -65,6 +65,13 @@ public:
     return data[n]; 
   }
 
+  inline void SetItem(int n, void *v) { 
+    DCASSERT(n<last);
+    DCASSERT(n>=0);
+    DCASSERT(data);
+    data[n] = v;
+  }
+
   void VInsertAt(int n, void* x) {
     DCASSERT(n>=0);
     DCASSERT(n<=last);
