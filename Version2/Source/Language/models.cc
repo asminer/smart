@@ -85,6 +85,8 @@ bool model::SameParams()
 model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
  : function(fn, l, t, n, pl, np)
 {
+  // Important!
+  SetSubstitution(false); 
   // we can probably allow forward defs, but for now let's not.
   never_built = true;
   isForward = false;
@@ -492,6 +494,159 @@ expr* mcall::SplitEngines(List <measure> *mlist)
 
 // ******************************************************************
 // *                                                                *
+// *                         ma_call  class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  An expression to compute a model call for an array measure.
+     That is, this computes expressions of the type
+        model(p1, p2, p3).measure[i][j];
+*/
+
+class ma_call : public expr {
+protected:
+  // model call part
+  model *mdl;
+  expr **pass;
+  int numpass;
+  // measure call part
+  array *msr;
+  expr **indx;
+  int numindx;
+public:
+  ma_call(const char *fn, int line, model *m, expr **p, int np, 
+	  array *s, expr **i, int ni);
+  virtual ~ma_call();
+  virtual type Type(int i) const;
+  virtual void ClearCache();
+  virtual void Compute(int i, result &x);
+  virtual expr* Substitute(int i);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
+  virtual void show(OutputStream &s) const;
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *mlist);
+};
+
+// ******************************************************************
+// *                        ma_call  methods                        *
+// ******************************************************************
+
+ma_call::ma_call(const char *fn, int l, model *m, expr **p, int np,
+array *s, expr **i, int ni) : expr (fn, l)
+{
+  mdl = m;
+  pass = p;
+  numpass = np;
+  msr = s;
+  indx = i;
+  numindx = ni;
+}
+
+ma_call::~ma_call()
+{
+  // don't delete the model
+  int i;
+  for (i=0; i < numpass; i++) Delete(pass[i]);
+  delete[] pass;
+  // TODO: delete the measures?
+}
+
+type ma_call::Type(int i) const
+{
+  DCASSERT(0==i);
+  return msr->Type(i);
+}
+
+void ma_call::ClearCache()
+{
+  int i;
+  for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
+}
+
+void ma_call::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(mdl);
+
+  // "compute" the model (builds it if necessary)
+  mdl->Compute(pass, numpass, x);
+  if (x.isError() || x.isNull()) return;
+  DCASSERT(x.other == mdl);
+
+  // grab the measure from the array
+  msr->Compute(indx, x);
+  if (x.isError() || x.isNull()) return;
+  measure *m = (measure*) x.other;
+ 
+  mdl->SolveMeasure(m);
+  m->Compute(0, x);
+}
+
+expr* ma_call::Substitute(int i)
+{
+  DCASSERT(0==i);
+  if (0==numpass) return Copy(this);
+
+  // substitute each passed parameter
+  expr ** pass2 = new expr*[numpass];
+  int n;
+  for (n=0; n<numpass; n++) pass2[n] = pass[n]->Substitute(0);
+
+  // substitute each index
+  expr** indx2 = new expr*[numindx];
+  for (n=0; n<numindx; n++) indx2[n] = indx[n]->Substitute(0);
+
+  return new ma_call(Filename(), Linenumber(), mdl, 
+			pass2, numpass, msr, indx2, numindx);
+}
+
+int ma_call::GetSymbols(int i, List <symbol> *syms)
+{
+  DCASSERT(0==i);
+  int n;
+  int answer = 0;
+  for (n=0; n<numpass; n++) {
+    answer += pass[n]->GetSymbols(0, syms);
+  }
+  for (n=0; n<numindx; n++) {
+    answer += indx[n]->GetSymbols(0, syms);
+  }
+  return answer;
+}
+
+void ma_call::show(OutputStream &s) const
+{
+  if (mdl->Name()==NULL) return; // can this happen?
+  s << mdl->Name();
+  if (numpass) {
+    s << "(";
+    int i;
+    for (i=0; i<numpass; i++) {
+      if (i) s << ", ";
+      s << pass[i];
+    }
+    s << ")";
+  }
+  s << "." << msr->Name();
+  for (int n=0; n<numindx; n++) { 
+    s << "[" << indx[n] << "]";
+  }
+}
+
+Engine_type ma_call::GetEngine(engineinfo *e)
+{
+  // Since we are outside the model, treat this as NONE
+  if (e) e->engine = ENG_None;
+  return ENG_None;
+}
+
+expr* ma_call::SplitEngines(List <measure> *mlist)
+{
+  return Copy(this);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                         wrapper  class                         *
 // *                                                                *
 // ******************************************************************
@@ -816,7 +971,7 @@ void measure_array_assign::Execute()
     return;
   }
   
-#ifdef LONG_INTERNAL_ARRAY_NAME
+#ifdef DEBUG_MODEL
   // Build a long name.  Useful for debugging, otherwise 
   // I think it is unnecessary work.
   StringStream dealy;
@@ -863,6 +1018,11 @@ void measure_array_assign::showfancy(int depth, OutputStream &s) const
 expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, int line)
 {
   return new mcall(fn, line, m, p, np, s);
+}
+
+expr* MakeMeasureArrayCall(model *m, expr **p, int np, array *s, expr **i, int ni, const char *fn, int line)
+{
+  return new ma_call(fn, line, m, p, np, s, i, ni);
 }
 
 expr* MakeEmptyWrapper(const char *fn, int line)

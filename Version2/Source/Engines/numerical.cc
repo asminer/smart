@@ -10,7 +10,7 @@
 
 #include "linear.h"
 
-#define DEBUG
+//#define DEBUG
 
 void Warnwrapper(bool ok)
 {

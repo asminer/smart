@@ -8,6 +8,8 @@
 #include "numerical.h"
 #include "simul.h"
 
+//#define DEBUG
+
 option* SolutionType;
 
 option_const numerical_oc("NUMERICAL", "Generate and analyze underlying stochastic process");
@@ -33,8 +35,10 @@ void ErrorList(List <measure> *mlist)
 
 void 	SolveSteadyInst(model *m, List <measure> *mlist)
 {
+#ifdef DEBUG
   Output << "Solving group of steady-state measures for model " << m << "\n";
   Output.flush();
+#endif
   DCASSERT(SolutionType);
   bool aok = false;
   if (SolutionType->GetEnum()==NUMERICAL)
@@ -52,22 +56,28 @@ void 	SolveSteadyInst(model *m, List <measure> *mlist)
 
 void 	SolveSteadyAcc(model *m, List <measure> *mlist)
 {
+#ifdef DEBUG
   Output << "Solving group of steady-state accumulated measures for model " << m << "\n";
   Output.flush();
+#endif
   ErrorList(mlist);
 }
 
 void 	SolveTransientInst(model *m, List <measure> *mlist)
 {
+#ifdef DEBUG
   Output << "Solving group of transient measures for model " << m << "\n";
   Output.flush();
+#endif
   ErrorList(mlist);
 }
 
 void 	SolveTransientAcc(model *m, List <measure> *mlist)
 {
+#ifdef DEBUG
   Output << "Solving group of transient accumulated measures for model " << m << "\n";
   Output.flush();
+#endif
   ErrorList(mlist);
 }
 

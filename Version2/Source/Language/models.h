@@ -252,7 +252,7 @@ protected:
  */
 expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, int line);
 
-// expr* MakeArrayMeasureCall(model *m, expr **p, int np, expr **i, int ni);
+expr* MakeMeasureArrayCall(model *m, expr **p, int np, array *s, expr **i, int ni, const char *fn, int line);
 
 /** New for version 2.
     When a model variable is declared within a model and used in an

@@ -7,6 +7,8 @@
 #include "../Templates/graphs.h"
 #include "../Engines/sccs.h"
 
+// #define DEBUG_CLASSIFY
+
 /** Classified Markov chain (or other graph).
 	
     This will almost always be a proper Markov chain, but
@@ -185,7 +187,6 @@ protected:
 };
 
 
-#define DEBUG_CLASSIFY
 
 template <class LABEL>
 classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)

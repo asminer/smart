@@ -2719,9 +2719,73 @@ expr* MakeMCall(func_call *fc, char* msr)
   return mc;
 }
 
-expr* MakeMACall(func_call *fc, char* m, void* list)
+expr* MakeMACall(func_call *fc, char* msr, void* list)
 {
-  return NULL;
+  if (NULL==fc) return ERROR;
+
+  List <expr> *foo = (List <expr> *)list;
+
+  model *m = dynamic_cast<model*>(fc->find);
+  if (NULL==m) {
+    Internal.Start(__FILE__, __LINE__, Filename(), lexer.lineno());
+    Internal << "Function within model symbol table?\n";
+    Internal.Stop();
+    return ERROR;
+  }
+  symbol *s = m->FindVisible(msr);
+  if (NULL==s) {
+    Error.Start(Filename(), lexer.lineno());
+    Error << "Measure " << msr << " does not exist in model " << m;
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+  array *thing = dynamic_cast<array*>(s);
+  if (NULL==thing) {
+    // Symbol must not be an array then
+    Error.Start(Filename(), lexer.lineno());
+    Error << "Measure " << msr << " within model " << m << " is not an array";
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+  // check type, dimension of indexes
+  int numindx = foo->Length();
+  int i;
+  array_index **il;
+  int dim;
+  thing->GetIndexList(il, dim);
+  if (numindx!=dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Measure array " << msr << " has dimension " << dim;
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+  // types
+  for (i=0; i<dim; i++) {
+    expr* me = foo->Item(i);
+    if (!Promotable(me->Type(0), il[i]->Type(0))) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Measure array " << msr << " expects type ";
+      Error << GetType(il[i]->Type(0));
+      Error << " for index " << il[i]->Name();
+      Error.Stop();
+      delete foo;
+      return ERROR;
+    }
+  }
+
+  // Ok, build the array call
+  expr** indx = new expr*[dim];
+  for (i=0; i<dim; i++) {
+    expr* x = foo->Item(i);
+    Optimize(0, x);
+    indx[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
+  }
+  delete foo;
+  expr* answer = MakeMeasureArrayCall(m, fc->pass, fc->np, thing, indx, numindx, filename, lexer.lineno());
+  return answer;
 }
 
 
