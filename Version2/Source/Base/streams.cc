@@ -167,13 +167,27 @@ void OutputStream::Put(long data)
   DCASSERT(buffer[buftop]==0);
 }
 
-void OutputStream::PutHex(unsigned int data)
+void OutputStream::Put(unsigned long data)
 {
   if (ready) {
-    int size = snprintf(bufptr(), bufspace(), "%#010x", data);
+    int size = snprintf(bufptr(), bufspace(), "%lu", data);
     if (size>=bufspace()) { // there wasn't enough space
       ExpandBuffer(buftop+size+1);
-      size = snprintf(bufptr(), bufspace(), "%#010x", data);
+      size = snprintf(bufptr(), bufspace(), "%lu", data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
+  }
+  DCASSERT(buffer[buftop]==0);
+}
+
+void OutputStream::PutHex(unsigned long data)
+{
+  if (ready) {
+    int size = snprintf(bufptr(), bufspace(), "%#010lx", data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%#010lx", data);
       DCASSERT(size < bufspace());
     }
     buftop += size;

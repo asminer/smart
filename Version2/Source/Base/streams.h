@@ -40,7 +40,8 @@ public:
   void Put(char data);
   void Put(int data);
   void Put(long data);
-  void PutHex(unsigned int data);
+  void Put(unsigned long data);
+  void PutHex(unsigned long data);
   void Put(float data);
   void Put(double data);
   void Put(const char* data);
@@ -75,6 +76,12 @@ inline OutputStream& operator<< (OutputStream& s, int data)
 }
 
 inline OutputStream& operator<< (OutputStream& s, long data) 
+{
+  s.Put(data);
+  return s;
+}
+
+inline OutputStream& operator<< (OutputStream& s, unsigned long data) 
 {
   s.Put(data);
   return s;
@@ -210,6 +217,7 @@ public:
   inline bool Get(char &x) { x = getc(input); return (x!=EOF); }
   inline bool Get(int &x) { return (1==fscanf(input, "%d", &x)); }
   inline bool Get(double &x) { return (1==fscanf(input, "%lf", &x)); }
+  inline bool Get(unsigned long &x) { return (1==fscanf(input, "%lu", &x)); }
 };
 
 
