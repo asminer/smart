@@ -110,6 +110,19 @@ public:
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
 
+protected:
+  /** Converts the circular linked lists to null-terminated ones.
+      Used right before conversion to static.
+  */
+  inline void CircularToTerminated() {
+    int s;
+    for (s=0; s<num_nodes; s++) {
+      if (row_pointer[s]<0) continue;
+      int tail = row_pointer[s];    
+      row_pointer[s] = next[tail];  
+      next[tail] = -1;
+    }
+  }
 };
 
 
@@ -232,13 +245,7 @@ void digraph::ConvertToStatic()
   if (IsStatic()) return;
 
   // First: convert circular lists to lists with null terminator
-  int s;
-  for (s=0; s<num_nodes; s++) {
-    if (row_pointer[s]<0) continue;
-    int tail = row_pointer[s];    
-    row_pointer[s] = next[tail];  
-    next[tail] = -1;
-  }
+  CircularToTerminated();
 
 #ifdef DEBUG_GRAPH
   Output << "Dynamic to static, dynamic arrays are:\n";
@@ -257,7 +264,8 @@ void digraph::ConvertToStatic()
 #endif
   
   // make lists contiguous by swapping, forwarding pointers
-  int i = 0; // everything before here is contiguous, after here is linked
+  int i = 0; // everything before i is contiguous, after i is linked
+  int s;
   for (s=0; s<num_nodes; s++) {
     int list = row_pointer[s];
     row_pointer[s] = i;
@@ -484,8 +492,6 @@ public:
 
   void ConvertToStatic();
 
-  void Transpose();
-
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
 
@@ -497,4 +503,110 @@ public:
 // *                                                                *
 // ******************************************************************
 
+
+template <class LABEL>
+void labeled_digraph <LABEL> :: ConvertToStatic()
+/* Exactly the same as the unlabeled case, except we
+   also must swap values.
+*/
+{
+  if (IsStatic()) return;
+
+  // First: convert circular lists to lists with null terminator
+  CircularToTerminated();
+
+#ifdef DEBUG_GRAPH
+  Output << "Dynamic to static, dynamic arrays are:\n";
+  Output << "row_pointer: [";
+  Output.PutArray(row_pointer, num_nodes);
+  Output << "]\n";
+  Output.flush();
+  Output << "column_index: [";
+  Output.PutArray(column_index, num_edges);
+  Output << "]\n";
+  Output.flush();
+  Output << "       value: [";
+  Output.PutArray(value, num_edges);
+  Output << "]\n";
+  Output.flush();
+  Output << "        next: [";
+  Output.PutArray(next, num_edges);
+  Output << "]\n";
+  Output.flush();
+#endif
+  
+  // make lists contiguous by swapping, forwarding pointers
+  int i = 0; // everything before here is contiguous, after here is linked
+  for (s=0; s<num_nodes; s++) {
+    int list = row_pointer[s];
+    row_pointer[s] = i;
+    while (list >= 0) {
+      // traverse forwarding arcs if necessary...
+      while (list<i) list = next[list];
+      int nextlist = next[list];
+      if (i!=list) {
+        // swap i and list, set up forward
+        next[list] = next[i];
+        SWAP(column_index[i], column_index[list]);
+	// This is...
+	SWAP(value[i], value[list]);  
+	// ... the only difference for labeled edges
+        next[i] = list;  // forwarding info
+      }
+      list = nextlist;
+      i++;
+    } // while list
+  } // for s
+  row_pointer[num_nodes] = i;
+  
+  // resize arrays to be "tight"
+  ResizeNodes(num_nodes);
+  ResizeEdges(num_edges);
+
+  // Trash next array
+  free(next);
+  next = NULL;
+
+#ifdef DEBUG_GRAPH
+  Output << "Static arrays are:\n";
+  Output << "row_pointer: [";
+  Output.PutArray(row_pointer, num_nodes+1);
+  Output << "]\n";
+  Output.flush();
+  Output << "column_index: [";
+  Output.PutArray(column_index, num_edges);
+  Output << "]\n";
+  Output.flush();
+  Output << "       value: [";
+  Output.PutArray(value, num_edges);
+  Output << "]\n";
+  Output.flush();
+#endif
+}
+
+template <class LABEL>
+void labeled_digraph <LABEL> :: ShowNodeList(OutputStream &s, int node)
+{
+  const char* fromstr = (isTransposed) ? "\tTo node " : "\tFrom node ";
+  const char* tostr = (isTransposed) ? "\t\tFrom node " : "\t\tTo node ";
+  const char* labelstr = "\tLabel ";
+  int e;
+  if (IsStatic()) {
+    s << fromstr << node << "\n";
+    for (e=row_pointer[node]; e<row_pointer[node+1]; e++) {
+      s << tostr << column_index[e];
+      s << labelstr << value[e] << "\n";
+    }
+  } else {
+    s << fromstr << node << "\n";
+    if (row_pointer[node]<0) return;
+    int front = next[row_pointer[node]];
+    e = front;
+    do {
+      s << tostr << column_index[e];
+      s << labelstr << value[e] << "\n";
+      e = next[e];
+    } while (e!=front);
+  }
+}
 

@@ -23,38 +23,46 @@ void OutOfMemoryError(char const *)
 
 int main()
 {
-  digraph foo;
-  Output << "Enter number of nodes in graph (-1 to quit)\n";
+  labeled_digraph <char> foo;
+  Output << "Enter number of nodes in graph\n";
   Output.flush();
   int N, i, j;
-  Input.Get(N);
+  if (!Input.Get(N)) return 0;
   if (N<=0) return 0;
   foo.ResizeNodes(N);
   foo.ResizeEdges(8);
   for (i=0; i<N; i++) foo.AddNode();
 
-  Output << "Enter edges (i j), -1 to quit\n";
+  Output << "Enter (character-labeled) edges (i j c)\n";
   Output.flush();
 
   while (1) {
-    Input.Get(i);
-    Input.Get(j);
-
+    if (!Input.Get(i)) break;
     if (i<0) break;
+
+    if (!Input.Get(j)) break;
     if (j<0) break;
 
-    foo.AddEdge(i, j);
+    char c=' ';
+    do {
+      if (!Input.Get(c)) break;
+    } while (c==' ');
+    if (c==' ') break;
+
+    foo.AddEdge(i, j, c);
     //foo.AddEdgeInOrder(i, j);
   }
 
   Output << "Done adding edges\n";
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
+  /*
   Output << "Transposing\n";
   Output.flush();
   foo.Transpose();
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
+  */
   Output << "The end\n";
   return 0;
 }
