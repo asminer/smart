@@ -322,6 +322,26 @@ statement* BuildOptionStatement(option* o, char* n);
 // ==================================================================
 // |                                                                |
 // |                                                                |
+// |                       Model construction                       | 
+// |                                                                |
+// |                                                                |
+// ==================================================================
+
+/// Build a model "header"
+model* BuildModel(type t, char* n, void* list);
+
+
+/** Builds a function "statement" with typechecking.
+    @param	f	The function
+    @param	block	List of statements within the model
+    @return	NULL
+*/
+statement* BuildModelStmt(model *m, void* block);
+
+
+// ==================================================================
+// |                                                                |
+// |                                                                |
 // |                    Initialize compiler data                    | 
 // |                                                                |
 // |                                                                |

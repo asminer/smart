@@ -6,6 +6,7 @@
 #include "../list.h"
 #include "tables.h"
 #include "fnlib.h"
+#include "../Formalisms/api.h"
 
 #include <stdio.h>
 #include <FlexLexer.h>
@@ -51,6 +52,12 @@ PtrTable *Constants;
 /// "Symbol table" of formal parameters
 List <formal_param> *FormalParams;
 
+/// Internal model symbol table
+PtrTable *ModelInternal;
+
+/// External model symbol table
+PtrTable *ModelExternal;
+
 /** List of functions that match what we're looking for.
     Global because we'll re-use it.
 */
@@ -60,7 +67,9 @@ bool WithinFor() { return (Iterators->Length()); }
 
 bool WithinConverge() { return (converge_depth>0); }
 
-bool WithinBlock() { return WithinFor() || WithinConverge(); }
+bool WithinModel() { return (ModelInternal != NULL); }
+
+bool WithinBlock() { return WithinFor() || WithinConverge() || WithinModel(); }
 
 // ==================================================================
 // |                                                                |
@@ -1414,27 +1423,70 @@ bool PerfectFormalMatch(function *f, List <formal_param> *fpb)
   return true;
 }
 
-/**  Make sure this function's parameters differ enough
-     from the given formal parameters.
-     (Used to check that a newly defined function is not a duplicate of an
-     existing function)
-     @param	f	The function to check
-     @param	params	List of passed parameters (in positional order).
-     @return 	The following code.
-     		0	: The functions can always be distinguished
-		1	: Positional parameters match perfectly
-		2	: Named parameters match perfectly
+
+/** Check for proper overloading and forward defs.
+    @param	t	Function (or model) type to be declared
+    @param	n	Function name
+    @param	FormalParams	(Global variable) for the formal parameters.
+    @param	out	The matched function or NULL if none (legal)
+
+    @return	true 	If we should continue and construct a new function
 */
-int CantDistinguishFunction(function *f, List <formal_param> *fpb)
+bool CheckFunctionDecl(type t, char *n, function* &out)
 {
-  // Not sure how to deal with repeats, so bail for now.
-  if (f->ParamsRepeat()) {
-    return 0;
-  }
+  List <function> *flist = FindFunctions(Builtins, n);
+  int i = (flist) ? flist->Length() : 0;
+  for (i--; i>=0; i--) {
+    // Check functions with this name (if any)
+    function *f = flist->Item(i);
 
-  // Check names (eventually)
-
-  return 0;
+    if (CanDistinguishPositionalParams(f, FormalParams) &&
+        CanDistinguishNamedParams(f, FormalParams)) 
+      continue;  // properly overloaded function
+      
+    // Check: Is this a forward-defined function?
+    if (f->isForwardDefined()) {
+      // we had better match perfectly
+      if ((!PerfectFormalMatch(f, FormalParams)) || (t!=f->Type(0))) {
+	Error.Start(filename, lexer.lineno());
+	Error << "Forward declaration mismatch with function:\n\t";
+	f->ShowHeader(Error);
+	if (f->Filename()) {
+          Error << " declared in file " << f->Filename();
+	  Error << " near line " << f->Linenumber();
+	} 
+	Error.Stop();
+	delete FormalParams;
+	FormalParams = NULL;
+	out = NULL;
+	return false;
+      }
+      // Replace us with the forward declaration 
+      out = f;
+      // Swap parameters...
+      FormalParams->Clear();
+      f->FillFormal(FormalParams);
+      return false;
+    } else {
+      // Not forward defined; bad overloading
+      Error.Start(filename, lexer.lineno());
+      Error << "Function declaration conflicts with existing function:\n\t";
+      f->ShowHeader(Error);
+      Error << " declared";
+      if (f->Filename()) {
+        Error << " in file " << f->Filename() << " near line " << f->Linenumber();
+      } else {
+	Error << " internally";
+      }
+      Error.Stop();
+      delete FormalParams;
+      FormalParams = NULL;
+      out = NULL;
+      return false;
+    } // if (forward defined)
+  } // for i
+  out = NULL;
+  return true;
 }
 
 user_func* BuildFunction(type t, char*n, void* list)
@@ -1453,68 +1505,28 @@ user_func* BuildFunction(type t, char*n, void* list)
     return NULL;
   }
 
+  function *out;
   // Make sure this function isn't a duplicate of an existing function
-  List <function> *flist = FindFunctions(Builtins, n);
-  int i = (flist) ? flist->Length() : 0;
-  for (i--; i>=0; i--) {
-    // Check functions with this name (if any)
-    function *f = flist->Item(i);
+  if (CheckFunctionDecl(t, n, out)) {
+    // This is a new function.
+    user_func *f = new user_func(filename, lexer.lineno(), t, n,
+    			FormalParams->Copy(), FormalParams->Length());
 
-    if (CanDistinguishPositionalParams(f, FormalParams) &&
-        CanDistinguishNamedParams(f, FormalParams)) 
-      continue;  // properly overloaded function
-      
-    // Check: Is this a forward-defined function?
-    if (f->isForwardDefined()) {
-      // we had better match perfectly
-      if (!PerfectFormalMatch(f, FormalParams)) {
-	Error.Start(filename, lexer.lineno());
-	Error << "Forward declaration mismatch with function:\n\t";
-	f->ShowHeader(Error);
-	if (f->Filename()) {
-          Error << " declared in file " << f->Filename();
-	  Error << " near line " << f->Linenumber();
-	} 
-	Error.Stop();
-	delete FormalParams;
-	FormalParams = NULL;
-	return NULL;
-      }
-      // Replace us with the forward declaration 
-      user_func* u = dynamic_cast<user_func*>(f);
-      if (NULL==u) {
+    InsertFunction(Builtins, f);
+    return f;
+  } else {
+    if (out) {
+      // found a forward decl
+      user_func *f = dynamic_cast<user_func*> (out);
+      if (NULL==f) {
 	Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
 	Internal << "Bad forward definition match?";
 	Internal.Stop();
       }
-      // Swap parameters...
-      FormalParams->Clear();
-      u->FillFormal(FormalParams);
-      return u;
-    } else {
-      // Not forward defined; bad overloading
-      Error.Start(filename, lexer.lineno());
-      Error << "Function declaration conflicts with existing function:\n\t";
-      f->ShowHeader(Error);
-      Error << " declared";
-      if (f->Filename()) {
-        Error << " in file " << f->Filename() << " near line " << f->Linenumber();
-      } else {
-	Error << " internally";
-      }
-      Error.Stop();
-      delete FormalParams;
-      FormalParams = NULL;
-      return NULL;
-    } // if (forward defined)
-  } // for i
-
-  // This is a new function.
-  user_func *f = new user_func(filename, lexer.lineno(), t, n,
-  			FormalParams->Copy(), FormalParams->Length());
-
-  InsertFunction(Builtins, f);
-  return f;
+      return f;
+    } 
+  }
+  return NULL;
 }
 
 formal_param* BuildFormal(type t, char* name)
@@ -2096,6 +2108,63 @@ statement* BuildOptionStatement(option* o, char* n)
 // ==================================================================
 // |                                                                |
 // |                                                                |
+// |                       Model construction                       | 
+// |                                                                |
+// |                                                                |
+// ==================================================================
+
+model* BuildModel(type t, char* n, void* list)
+{
+  if (NULL==n) return NULL;
+
+  FormalParams = (List <formal_param> *)list;
+
+  if (WithinBlock()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Model " << n << " defined within another block";
+    Error.Stop();
+    delete FormalParams;
+    FormalParams = NULL;
+    return NULL;
+  }
+
+
+  function *out;
+  model *f;
+  // Make sure this function isn't a duplicate of an existing function
+  if (CheckFunctionDecl(t, n, out)) {
+    // This is a new model.
+    if (FormalParams) 
+  	f = MakeNewModel(filename, lexer.lineno(), t, n,
+  			FormalParams->Copy(), FormalParams->Length());
+    else
+  	f = MakeNewModel(filename, lexer.lineno(), t, n, NULL, 0);
+
+    InsertFunction(Builtins, f);
+    return f;
+  } else {
+    if (out) {
+      // found a forward decl
+      f = dynamic_cast<model*> (out);
+      if (NULL==f) {
+	Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+	Internal << "Bad forward definition match?";
+	Internal.Stop();
+      }
+      return f;
+    } 
+  }
+  return NULL;
+}
+
+statement* BuildModelStmt(model *m, void* block)
+{
+  return NULL;
+}
+
+// ==================================================================
+// |                                                                |
+// |                                                                |
 // |                    Initialize compiler data                    | 
 // |                                                                |
 // |                                                                |
@@ -2126,6 +2195,8 @@ void InitCompiler()
   FormalParams = NULL;
   matches = new List <function> (32);
   converge_depth = 0;
+  ModelInternal = NULL;
+  ModelExternal = NULL;
 
   InitBuiltinFunctions(Builtins); 
   InitBuiltinConstants(Constants);

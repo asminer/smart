@@ -7,6 +7,7 @@
 #include "../Language/api.h"
 #include "../list.h"
 #include "../splay.h"
+#include "../memmgr.h"
 
 /**
     A symbol table class.
@@ -28,7 +29,9 @@ public:
   struct splayitem {
     const char* name;
     void *ptr;
+    splayitem() { }
     splayitem(const char *n, void *x) { name = n; ptr = x; }
+    void Set(const char *n, void *x) { name = n; ptr = x; }
   };
 protected:
   void Traverse(PtrSplay::node *root, tablevisit visit) {
@@ -40,12 +43,16 @@ protected:
 protected:
   SplayWrap <splayitem> *splaywrapper; 
   PtrSplay::node *root;
+  int node_count;
+  Manager <PtrSplay::node> *node_pile;
+  Manager <splayitem> *splay_pile;
 public:
   PtrTable();
   ~PtrTable();
   void* FindName(const char* n);
   void AddNamePtr(const char* n, void *p);
   void Traverse(tablevisit visit) { Traverse(root, visit); }
+  int NameCount() const { return node_count; }
 };
 
 int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
@@ -59,6 +66,8 @@ void InsertFunction(PtrTable *t, function *f);
     Find list of functions with name n, from table t, or NULL if none.
 */
 List <function> *FindFunctions(PtrTable *t, const char* n);
+
+
 
 #endif
 

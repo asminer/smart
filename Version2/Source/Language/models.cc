@@ -56,8 +56,12 @@ bool model::SameParams()
 model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
  : function(fn, l, t, n, pl, np)
 {
+  // we can probably allow forward defs, but for now let's not.
+  isForward = false;
   stmt_block = NULL;
   num_stmts = 0;
+  mtable = NULL;
+  size_mtable = 0;
   dsm = NULL;
   // Allocate space to save parameters
   if (np) {
@@ -85,13 +89,7 @@ model::~model()
   FreeLast();
   delete[] current_params;
   delete[] last_params;
-}
-
-void model::SetStatementBlock(statement **b, int n)
-{
-  DCASSERT(NULL==stmt_block);
-  stmt_block = b;
-  num_stmts = n;
+  // delete symbols...
 }
 
 void model::Compute(expr **p, int np, result &x)
@@ -134,6 +132,41 @@ void model::Sample(Rng &, expr **, int np, result &)
   Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
   Internal << "Attempt to sample a model.";
   Internal.Stop();
+}
+
+symbol* model::FindVisible(char* name) const
+{
+  int low = 0;
+  int high = size_mtable;
+  while (low < high) {
+    int mid = (high+low) / 2;
+    const char* peek = mtable[mid]->Name(); 
+    int cmp = strcmp(name, peek);
+    if (0==cmp) return mtable[mid];
+    if (cmp<0) {
+      // name < peek
+      high = mid-1;
+    } else {
+      // name > peek
+      low = mid+1;
+    }
+  }
+  // not found
+  return NULL;
+}
+
+void model::AddMeasure(measure *m)
+{
+  // do something eventually...
+
+  Output << "Model " << Name() << " adding measure " << m << "\n";
+}
+
+void model::SolveMeasure(measure *m)
+{
+  // do something
+
+  Output << "Model " << Name() << " solving measure " << m << "\n";
 }
 
 // ******************************************************************
@@ -184,6 +217,7 @@ model_call::~model_call()
   int i;
   for (i=0; i < numpass; i++) Delete(pass[i]);
   delete[] pass;
+  // don't delete the measure
 }
 
 type model_call::Type(int i) const
@@ -204,9 +238,8 @@ void model_call::Compute(int i, result &x)
   }
   DCASSERT(x.other == mdl);
 
-  // compute the measure and stuff here...
-
-  x.setNull();
+  mdl->SolveMeasure(msr);
+  msr->Compute(0, x);
 }
 
 expr* model_call::Substitute(int i)

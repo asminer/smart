@@ -35,7 +35,8 @@
   statement* stmt;
   array* Array;
   user_func* Func;
-  option *Option;
+  option* Option;
+  model* Model;
   /*
   expr_set *setexpr;
   List <local_iterator> *itrs;
@@ -56,7 +57,7 @@ COMMA SEMI COLON POUND DOT DOTDOT GETS PLUS MINUS TIMES DIVIDE OR AND NOT
 EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
-%type <Type_ID> type model_var_decl
+%type <Type_ID> type model_var_decl model
 %type <Expr> topexpr expr term const_expr function_call model_call
 model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmt model_stmts
@@ -68,6 +69,7 @@ formal_params formal_indexes pos_params named_params indexes
 %type <stmt> statement defn_stmt
 %type <Array> array_header
 %type <Func> func_header
+%type <Model> model_header
 %type <Option> opt_header
 /*
 %type <setexpr> set_expr set_elems set_elem 
@@ -301,6 +303,16 @@ type
 }
 ;
 
+model
+	:	MODEL
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing model : MODEL\n";
+  Output.flush();
+#endif
+  $$ = MakeType(NULL, $1);
+}
+
 set_expr
 	:	LBRACE set_elems RBRACE
 {
@@ -466,24 +478,27 @@ model_decl
   Output << "Reducing model_decl : model_header GETS LBRACE model_stmts RBRACE SEMI\n";
   Output.flush();
 #endif
+  BuildModelStmt($1, $4);
 }
 	; 
 
 
 model_header
-	:	MODEL IDENT LPAR formal_params RPAR
+	:	model IDENT LPAR formal_params RPAR
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_header : MODEL IDENT LPAR formal_params RPAR\n";
+  Output << "Reducing model_header : model IDENT LPAR formal_params RPAR\n";
   Output.flush();
 #endif
+  $$ = BuildModel($1, $2, $4);
 }
-        |       MODEL IDENT
+        |       model IDENT
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_header : MODEL IDENT\n";
+  Output << "Reducing model_header : model IDENT\n";
   Output.flush();
 #endif
+  $$ = BuildModel($1, $2, NULL);
 }
         ;
 

@@ -15,12 +15,16 @@ PtrTable::PtrTable()
 {
     splaywrapper = new SplayWrap <splayitem>;
     root = NULL;
+    node_count = 0;
+    node_pile = new Manager <PtrSplay::node> (16);
+    splay_pile = new Manager <splayitem> (16);
 }
 
 PtrTable::~PtrTable()
 {
   delete splaywrapper;
-  // delete nodes, not sure how...
+  delete splay_pile;
+  delete node_pile;
 }
 
 void* PtrTable::FindName(const char* n)
@@ -35,10 +39,13 @@ void* PtrTable::FindName(const char* n)
 void PtrTable::AddNamePtr(const char* n, void *p)
 {
     DCASSERT(n);
-    splayitem *key = new splayitem(n, p);
+  //  splayitem *key = new splayitem(n, p);
+    splayitem *key = splay_pile->NewObject();
+    key->Set(n, p);
     int foo = splaywrapper->Splay(root, key);
     DCASSERT(foo!=0);
-    PtrSplay::node *x = new PtrSplay::node;
+    // PtrSplay::node *x = new PtrSplay::node;
+    PtrSplay::node *x = node_pile->NewObject();
     x->data = key;
     if (foo>0) {
       // root > x
@@ -60,6 +67,7 @@ void PtrTable::AddNamePtr(const char* n, void *p)
       }
     }
     root = x;
+    node_count++;
 }
 
 // ==================================================================

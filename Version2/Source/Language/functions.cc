@@ -376,6 +376,7 @@ void user_func::show(OutputStream &s) const
   s << ") := " << return_expr;
 }
 
+/*
 void user_func::FillFormal(List <formal_param>* fpl) const
 {
   int i;
@@ -384,6 +385,7 @@ void user_func::FillFormal(List <formal_param>* fpl) const
     fpl->Append(parameters[i]);
   }
 }
+*/
 
 // ******************************************************************
 // *                                                                *

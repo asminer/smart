@@ -75,12 +75,22 @@ private:
       DeleteResult(parameters[i]->Type(0), current_params[i]);
   }
   bool SameParams();
+
+  // group measures here
+
 protected:
   statement **stmt_block;
   int num_stmts;
   result last_build;
   /// Discrete-state "meta" model used by engines.
   state_model *dsm;
+
+  /** Symbols that can be exported (usually measures or arrays of measures).
+      Stored as an array of symbols, sorted by name.
+  */
+  symbol **mtable;  
+  int size_mtable;  
+  
 public:
   model(const char* fn, int line, type t, char* n,
   	formal_param **pl, int np);
@@ -96,7 +106,18 @@ public:
       @param	b	Array of statements
       @param	n	Number of statements
   */
-  void SetStatementBlock(statement **b, int n);
+  inline void SetStatementBlock(statement **b, int n) {
+    DCASSERT(NULL==stmt_block);
+    stmt_block = b; num_stmts = n;
+  }
+
+  /** Set the symbol table (done by compiler).
+      These are the externally-visible symbols (usually measures).
+  */
+  inline void SetSymbolTable(symbol **st, int n) {
+    DCASSERT(NULL==mtable);
+    mtable = st; size_mtable = n;
+  }
 
   inline state_model* GetModel() const { return dsm; }
     
@@ -104,6 +125,25 @@ public:
       Must be provided in derived classes.
   */
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n) = 0;
+
+
+  /** Find an externally-visible symbol with specified name.
+      @param	name	The symbol to look for.
+      @return	The symbol with matching name (there can be only one)
+      		or NULL if there is none.
+  */
+  symbol* FindVisible(char* name) const;
+
+  /** Add a measure and classify it.
+      Used when we have arrays of measures.
+  */
+  void AddMeasure(measure *m);
+
+  /** Solve a given measure.
+      If the measure is part of a group, all measures in the group
+      are solved.
+  */
+  void SolveMeasure(measure *m);
 
 protected:
   /** Prepare for instantiation.

@@ -175,6 +175,13 @@ public:
     rp = repeat_point;
   }
 
+  inline void FillFormal(List <formal_param>* fpl) const {
+    for (int i=0; i<num_params; i++) {
+      DCASSERT(fpl);
+      fpl->Append(parameters[i]);
+    }
+  }
+
   inline bool CanUseNamedParams() const { return name_order; }
 
   inline bool isForwardDefined() const { return isForward; }
@@ -295,7 +302,7 @@ public:
 
   virtual void show(OutputStream &s) const;
 
-  void FillFormal(List <formal_param>* fpl) const;
+//   void FillFormal(List <formal_param>* fpl) const;
 };
 
 // ******************************************************************
