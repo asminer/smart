@@ -125,6 +125,11 @@ public:
   /// this = b * c, returns #nonzeroes
   int Multiply(shared_matrix *b, shared_matrix *c);
 
+  /** For debugging.
+      Returns true if this == b * c
+  */
+  bool CheckMultiply(shared_matrix *b, shared_matrix *c);
+
   int CheckShift(shared_matrix *a);
   
 protected:

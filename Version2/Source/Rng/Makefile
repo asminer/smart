@@ -12,13 +12,16 @@ CXX = g++
 CPPFLAGS = -g 
 #CPPFLAGS = -O3
 
-all: square multiply makeB mtcheck
+all: square multiply makeB mtcheck checkmult
 
 square: square.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o square square.o multstrm.o streams.o timers.o
 
 multiply: multiply.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o multiply multiply.o multstrm.o streams.o timers.o
+
+checkmult: checkmult.o multstrm.o streams.o timers.o
+	g++ $(CPPFLAGS) -o checkmult checkmult.o multstrm.o streams.o timers.o
 
 makeB: makeB.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o makeB makeB.o multstrm.o streams.o timers.o

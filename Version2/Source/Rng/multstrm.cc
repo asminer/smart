@@ -622,6 +622,27 @@ int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
   return nnz;
 }  
 
+bool shared_matrix::CheckMultiply(shared_matrix *b, shared_matrix *c)
+{
+  int nnz = 0;
+  int i,j,k;
+  for (i=0; i<N; i++) {
+    for (j=0; j<N; j++) {
+      bitmatrix* acc = matrix_pile.NewObject();
+      acc->zero();
+      for (k=0; k<N; k++) {
+	bitmatrix* term = cache_mult(b->ptrs[i][k], c->ptrs[k][j]);
+	if (term) mm_acc(acc, term);
+      } // for k
+      acc = Reduce(acc);
+      if (ptrs[i][j] != acc) {
+	return false;
+      }
+    } // for j
+  } // for i
+  return true;
+}  
+
 int shared_matrix::CheckShift(shared_matrix *b)
 {
   int cnt = 0;
