@@ -4,6 +4,7 @@
 #include "api.h"
 #include "fnlib.h"
 #include "compile.h"
+#include <math.h>
 
 extern PtrTable* Builtins;
 
@@ -468,6 +469,76 @@ void AddMod(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
+void compute_sqrt(expr **p, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(p);
+  SafeCompute(p[0], 0, x);
+  if (x.isNull() || x.error || x.isUnknown()) return;
+
+  if (x.isInfinity()) {
+    if (x.ivalue>0) return;  // sqrt(infty) = infty
+  } else {
+    if (x.rvalue>0) {
+      x.rvalue = sqrt(x.rvalue);
+      return;
+    }
+  }
+  
+  // negative square root, error (we don't have complex)
+  Error.Start(p[0]->Filename(), p[0]->Linenumber());
+  Error << "Square root with negative argument: ";
+  PrintResult(Error, REAL, x);
+  Error.Stop();
+  x.error = CE_Undefined;
+}
+
+void sample_sqrt(long& seed, expr **p, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(p);
+  SafeSample(p[0], 0, seed, x);
+  if (x.isNull() || x.error || x.isUnknown()) return;
+
+  if (x.isInfinity()) {
+    if (x.ivalue>0) return;  // sqrt(infty) = infty
+  } else {
+    if (x.rvalue>0) {
+      x.rvalue = sqrt(x.rvalue);
+      return;
+    }
+  }
+  
+  // negative square root, error (we don't have complex)
+  Error.Start(p[0]->Filename(), p[0]->Linenumber());
+  Error << "Square root with negative argument: ";
+  PrintResult(Error, REAL, x);
+  Error.Stop();
+  x.error = CE_Undefined;
+}
+
+
+void AddSqrt(PtrTable *fns)
+{
+  const char* helpdoc = "The positive square root of x";
+
+  // Deterministic real version
+  
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(REAL, "x");
+  internal_func *p =
+    new internal_func(REAL, "sqrt", compute_sqrt, NULL, pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // Random real version
+
+  formal_param **pl2 = new formal_param*[1];
+  pl2[0] = new formal_param(RAND_REAL, "x");
+  internal_func *p2 =
+    new internal_func(RAND_REAL, "sqrt", NULL, sample_sqrt, pl2, 1, helpdoc);
+  InsertFunction(fns, p2);
+}
+
 // ********************************************************
 // *               system-like  functions                 *
 // ********************************************************
@@ -579,6 +650,7 @@ void InitBuiltinFunctions(PtrTable *t)
   // Arithmetic
   AddDiv(t);
   AddMod(t);
+  AddSqrt(t);
   // System stuff
   AddExit(t);
   // Conditionals

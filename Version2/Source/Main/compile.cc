@@ -863,7 +863,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
   if (find) {
     bool error = true;
     if (WithinConverge()) {
-      error = (find->state == CS_Defined);
+      error = (find->state != CS_HasGuess);
     } 
     if (error) {
       Error.Start(filename, lexer.lineno());
@@ -963,6 +963,7 @@ void* AppendStatement(void* list, statement* s)
   // Top level: execute and forget
   if (!WithinBlock()) {
     s->Execute();
+    s->Affix();
     delete s;
     return NULL;
   }
