@@ -9,10 +9,10 @@
 
 CC = g++
 CXX = g++
-CPPFLAGS = -g 
-#CPPFLAGS = -O3
+#CPPFLAGS = -g 
+CPPFLAGS = -O3
 
-all: square multiply makeB mtcheck checkmult
+all: square multiply makeB mtcheck checkmult dist
 
 square: square.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o square square.o multstrm.o streams.o timers.o
@@ -28,6 +28,9 @@ makeB: makeB.o multstrm.o streams.o timers.o
 
 mtcheck: mtcheck.o multstrm.o streams.o mtwist.o
 	g++ $(CPPFLAGS) -o mtcheck mtcheck.o multstrm.o streams.o mtwist.o
+
+dist: dist.o mtwist.o
+	g++ $(CPPFLAGS) -o dist dist.o mtwist.o
 
 timers.o: ../Base/timers.cc ../Base/timers.h
 	g++ $(CPPFLAGS) -c -o timers.o ../Base/timers.cc

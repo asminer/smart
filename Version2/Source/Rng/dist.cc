@@ -1,5 +1,8 @@
 
-/* Test of multiple stream stuff */
+/** Computes the distance between a
+    starting seed (using the Knuth rng)
+    and any other seed generated using Knuth's rng.
+  */
 
 #include "mtwist.h"
 
@@ -8,11 +11,7 @@
 
 using namespace std;
 
-unsigned long seeds[MT_STATE_SIZE];
-
 const int KNUTH_MULTIPLIER_OLD = 69069;
-
-unsigned long firstseed;
 
 bool stop_tests = false;
 
@@ -27,58 +26,53 @@ inline long knuth(long seed)
   return (KNUTH_MULTIPLIER_OLD * seed) & 0xffffffff;
 }
 
-void Init()
+void Init(long seed)
 {
-  int i;
-  unsigned long seed = firstseed;
-  for (i=0; i<MT_STATE_SIZE; i++) {
-    seeds[i] = seed;
-    seed = knuth(seed);
-  }
+  mt_default_state.statevec[MT_STATE_SIZE - 1] = seed & 0xffffffff;
+  for (int i = MT_STATE_SIZE - 2;  i >= 0;  i--)
+      mt_default_state.statevec[i] = knuth(mt_default_state.statevec[i+1]);
+
+  mt_default_state.stateptr = MT_STATE_SIZE;
+  mts_mark_initialized(&mt_default_state);
+  mts_refresh(&mt_default_state);
 }
 
-bool IsSequence()
+unsigned long NextRaw()
 {
-  int i;
-  unsigned long sd = mt_default_state.statevec[MT_STATE_SIZE-1];
-  for (i=MT_STATE_SIZE-2; i >= 0; i--) {
-    sd = knuth(sd);
-    if (mt_default_state.statevec[i] != sd) return false;
-  }
-  return true;
+  if (mt_default_state.stateptr <= 0)  mts_refresh(&mt_default_state);
+  unsigned long x = mt_default_state.statevec[--mt_default_state.stateptr];
+  return x;
 }
 
 int main()
 {
   signal(SIGTERM, catchterm);
   cout << "Enter seed to check: ";
+  long firstseed;
   cin >> firstseed;
   cout << firstseed << "\n";
-  Init();
+  Init(firstseed);
   long long distance = 0;
-  long long nextprint = 1024;
-  while (1) {
+  int run = 0;
+  int maxrun = 0;
+  unsigned long lastx = NextRaw();
+  unsigned long thisx;
+  while (maxrun < 623) {
     distance++;
-    mts_refresh(&mt_default_state);
-    if (IsSequence()) {
-      cout << "Starting with sequence generated from " << seeds[0] << "\n";
-      cout << "  we reach the sequence generated from ";
-      cout << mt_default_state.statevec[MT_STATE_SIZE-1] << "\n";
-      cout << "  in " << distance << " steps!" << endl;
-      return 0;
+    thisx = NextRaw();
+    if (knuth(lastx) == thisx) {
+      run++;
+    } else {
+      if (run > maxrun) {
+	maxrun = run;
+	cout << "Max run is " << maxrun << "\t\tdistance " << distance << endl;
+      }
+      run = 0;
     }
-    if (distance<=0) {
-      cout << "Distance overflow!\n";
-      distance--;
-      break;
-    }
-    if (distance==nextprint) {
-      cout << "  > " << distance << endl;
-      nextprint *= 2;
-    }
+    lastx = thisx;
     if (stop_tests) break;
   }
-  cout << "Distance is greater than " << distance << endl;
+  cout << distance << " prngs checked " << endl;
   return 0;
 }
 

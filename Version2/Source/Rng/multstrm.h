@@ -100,6 +100,7 @@ inline void mm_acc(bitmatrix *a, bitmatrix *c)
 class shared_matrix {
   int N;
   bitmatrix*** ptrs;
+  bool initialized;
 public:
   shared_matrix(int n);
   void MakeB(int M, unsigned int A);

@@ -218,10 +218,10 @@ void DumpObject(bincache *x)
   Output.flush();
 }
 
-Manager <hashnode> hash_node_pile(16);
+Manager <hashnode> hash_node_pile(1024);
 
-Manager <bitmatrix> matrix_pile(16);
-Manager <bincache> cache_pile(16);
+Manager <bitmatrix> matrix_pile(1024);
+Manager <bincache> cache_pile(1024);
 
 myhash <bitmatrix> UniqueTable(&hash_node_pile);
 myhash <bincache> ComputeTable(&hash_node_pile);
@@ -395,6 +395,7 @@ shared_matrix::shared_matrix(int n)
   for (i=0; i<N; i++) {
     ptrs[i] = new bitmatrix*[N];
   }
+  initialized = false;
 }
 
 shared_matrix::~shared_matrix()
@@ -432,6 +433,8 @@ void shared_matrix::MakeB(int M, unsigned int A)
   SetPtr(N-M-1, 0, IDENTITY);
   SetPtr(N-2, 0, L);
   SetPtr(N-1, 0, U);
+
+  initialized = true;
 }
 
 void shared_matrix::MakeBN(int M, unsigned int A)
@@ -485,6 +488,8 @@ void shared_matrix::MakeBN(int M, unsigned int A)
   }
   SetPtr(N-2, 0, cache_mult(L, L));
   SetPtr(N-1, 0, cache_mult(U, L));
+
+  initialized = true;
 }
 
 void shared_matrix::ColCpy(int dest, int src)
@@ -586,6 +591,8 @@ void shared_matrix::read(InputStream &s)
   for (i=1; i<subcnt; i++) map[i]->cachecount = 0;
   
   delete[] map;
+
+  initialized = true;
 }
 
 int shared_matrix::Distinct()
@@ -604,8 +611,12 @@ int shared_matrix::Distinct()
 
 int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
 {
-  int nnz = 0;
   int i,j,k;
+  if (!initialized) {
+    for (i=0; i<N; i++) for (j=0; j<N; j++) ptrs[i][j] = NULL;
+    initialized = true;
+  }
+  int nnz = 0;
   for (i=0; i<N; i++) {
     for (j=0; j<N; j++) {
       bitmatrix* acc = matrix_pile.NewObject();
