@@ -65,6 +65,7 @@ int expr::GetSymbols(int i, symbol **syms, int N, int offset)
   return 0;
 }
 
+
 // ******************************************************************
 // *                                                                *
 // *                         constant class                         *

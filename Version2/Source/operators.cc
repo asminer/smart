@@ -1453,5 +1453,46 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
   return NULL;
 }
 
+// ******************************************************************
+// *                    Expression  optimization                    *
+// ******************************************************************
+
+void Optimize(int a, expr* &e)
+{
+  int i;
+  // First... try to split us into sums
+  int sumcount = e->GetSums(a, NULL, 0);
+  if (sumcount>1) {
+    // There is a sum below e
+    expr **opnds = new expr*[sumcount];
+    e->GetSums(a, opnds, sumcount);
+    for (i=0; i<sumcount; i++) {
+      opnds[i] = Copy(opnds[i]);
+      Optimize(a, opnds[i]);
+    }
+    // replace with associative sum
+    expr *ne = MakeAssocOp(PLUS, opnds, sumcount, e->Filename(), e->Linenumber());
+    Delete(e);
+    e = ne;
+    return;  // done
+  } 
+  // Still here?  try to split into products
+  int prodcount = e->GetProducts(a, NULL, 0);
+  if (prodcount>1) {
+    // There is a product below us
+    expr **opnds = new expr*[prodcount];
+    e->GetProducts(a, opnds, prodcount);
+    for (i=0; i<prodcount; i++) {
+      opnds[i] =Copy(opnds[i]);
+      Optimize(a, opnds[i]);
+    }
+    // replace with associative product
+    expr *ne = MakeAssocOp(TIMES, opnds, prodcount, e->Filename(), e->Linenumber());
+    Delete(e);
+    e = ne;
+  } 
+}
+
+
 //@}
 

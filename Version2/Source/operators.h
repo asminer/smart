@@ -92,6 +92,14 @@ expr* MakeAssocOp(int op, expr **opnds, int n,
 
 
 
+/**  "Optimize" an expression.
+     This takes a generic expression and tries to replace a series of 
+     sums and products with an associative list of sums and products.
+     @param 	i	The component to optimize
+     @param	e	The expression to optimize
+ */
+void Optimize(int i, expr* &e);
+
 
 //@}
 

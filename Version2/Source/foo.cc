@@ -117,19 +117,7 @@ void TestSums()
   optimize = yn=='y';
 
   if (optimize) {
-    // cheat.. we know the expression
-    expr **ops = new expr*[n+50];
-    int x = rough->GetSums(0, ops, n+50); 
-    if (x>n+50) cout << "Barf!\n";
-    expr **foo = new expr*[x];
-    for (int d=0; d<x; d++) foo[d] = Copy(ops[d]);
-    delete[] ops;
-    
-    expr* better = MakeAssocOp(PLUS, foo, x, "foo", 125);
-    Delete(rough);
-    rough = better;
-
-    //
+    Optimize(0, rough);
     cout << "Optimized expr: " << rough << "\n";
   }
 
