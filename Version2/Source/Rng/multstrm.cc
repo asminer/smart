@@ -319,7 +319,6 @@ void CacheAdd(bitmatrix *b, bitmatrix *c, bitmatrix *ans)
 
 bool CacheHit(bitmatrix* b, bitmatrix* c, bitmatrix* &ans)
 {
-  // return false;
   cachetries++;
   bincache tmp;
   tmp.b = b;
@@ -496,29 +495,84 @@ void shared_matrix::ColCpy(int dest, int src)
 void shared_matrix::show(OutputStream &s)
 {
   int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->flag = 0;
+
+  // number the submatrices (and dump them)
+  int subcnt = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    if (0==ptrs[i][j]->flag) {
+      ptrs[i][j]->flag = subcnt++;
+      ptrs[i][j]->show(s);
+    }
+  
   for (i=0; i<N; i++) {
     s << "[";
     for (j=0; j<N; j++) {
       if (j) s << ", ";
-      if (ptrs[i][j]) {
-        ptrs[i][j]->flag = false;
-	if (IDENTITY == ptrs[i][j]) s.Put('I');
-	else s.PutHex((unsigned int)ptrs[i][j]);
-      } else {
-	s << "0";
-      }
+      if (ptrs[i][j]) 
+	s << ptrs[i][j]->flag;
+      else
+	s << '0';
     }
     s << "]\n";
     s.flush();
   }
-  // dump the submatrices
-  for (i=0; i<N; i++) for (j=0; j<N; j++) {
-    if (NULL == ptrs[i][j]) continue;
-    if (IDENTITY == ptrs[i][j]) continue;
-    if (ptrs[i][j]->flag) continue;
-    ptrs[i][j]->show(s);
-    ptrs[i][j]->flag = true;
+}
+
+void shared_matrix::write(OutputStream &s)
+{
+  int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->flag = 0;
+
+  int subcnt = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    if (0==ptrs[i][j]->flag) ptrs[i][j]->flag = subcnt++;
+
+  s << subcnt << "\n";
+
+  subcnt = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    if (subcnt == ptrs[i][j]->flag) {
+      subcnt++;
+      ptrs[i][j]->write(s);
+      s << "\n";
+      s.flush();
+    }
+
+  for (i=0; i<N; i++) {
+    for (j=0; j<N; j++) {
+      if (ptrs[i][j]) s << ptrs[i][j]->flag;
+      else s << '0';
+      s.Pad(1);
+    } // for j
+    s << "\n";
+    s.flush();
   }
+}
+
+void shared_matrix::read(InputStream &s)
+{
+  int subcnt;
+  s.Get(subcnt);
+  bitmatrix** map = new bitmatrix*[subcnt];
+  map[0] = NULL; // nice trick
+  int i;
+  for (i=1; i<subcnt; i++) {
+    map[i] = matrix_pile.NewObject();
+    bool ok = map[i]->read(s);
+    map[i] = Reduce(map[i]);
+  }
+  int j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) ptrs[i][j] = NULL;
+
+  for (i=0; i<N; i++) for (j=0; j<N; j++) {
+    int which;
+    s.Get(which);
+    SetPtr(i, j, map[which]);
+  }
+  delete[] map;
 }
 
 int shared_matrix::Distinct()
@@ -673,12 +727,13 @@ void MatrixStats()
   Output << UniqueTable.MaxChain() << " maxchain\n";
 
 #ifndef NO_CACHE
-  Output << "Compute table: \t";
+  Output << "\tCompute table: \t";
   Output << ComputeTable.Size() << " size, ";
   Output << ComputeTable.Entries() << " entries, ";
   Output << ComputeTable.MaxChain() << " maxchain\n";
-  Output << "               \t";
+  Output << "\t               \t";
   Output << cachehits << " hits / " << cachetries << " pings\n";
+  cachehits = cachetries = 0;
 #endif
 
   Output.flush();

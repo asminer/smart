@@ -1,3 +1,9 @@
+
+There are several files here for testing and computing jump multipliers for
+the Mersenne Twist prng, that are not built into smart.
+
+About mtwist.? :
+
 This is an implementation of the Mersenne Twist pseudorandom number
 generator, including both C and C++ interfaces and a set of functions
 for generating random variates from common distributions.

@@ -6,7 +6,7 @@
 #include "multstrm.h"
 #include "../Base/timers.h"
 
-//#define USE_SHARED
+#define USE_SHARED
 
 void smart_exit()
 {
@@ -51,7 +51,7 @@ int main()
     SWAP(tmp, answer);
     compute.Stop();
     Output << "Computed B^(2^" << i << ")\n";
-    Output << "\titeration took " << compute << "\n";
+    Output << "\titeration took " << compute.User_Seconds() << "\n";
     Output << "\tmultiplier: ";
 #ifdef USE_SHARED
     Output << answer->Distinct() << " distinct / ";

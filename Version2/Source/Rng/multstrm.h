@@ -22,7 +22,7 @@ struct bitmatrix {
   unsigned long row[32];
   int ptrcount;
   int cachecount;
-  bool flag;
+  int flag;
 
   inline void vm_mult(unsigned long v, unsigned long &answer) {
     if (0==v) return;
@@ -31,8 +31,7 @@ struct bitmatrix {
   }
 
   void show(OutputStream &s) {
-    s << "Submatrix: ";
-    s.PutHex((unsigned int) this);
+    s << "Submatrix " << flag;
     s << "\n\t" << ptrcount << " ptrs\t" << cachecount << " cache\n";
     for (int r=0; r<32; r++) {
       s << '[';
@@ -40,6 +39,15 @@ struct bitmatrix {
       s << "]\n";
     }
     s.flush();
+  }
+
+  void write(OutputStream &s) {
+    for (int r=0; r<32; r++) { s << row[r] << " "; }
+  }
+
+  bool read(InputStream &s) {
+    for (int r=0; r<32; r++) if (!s.Get(row[r])) return false;
+    return true;
   }
 
   inline void zero() {
@@ -94,7 +102,11 @@ public:
   void MakeB(int M, unsigned int A);
   void MakeBN(int M, unsigned int A);
   ~shared_matrix();
+  // Human readable
   void show(OutputStream &s);
+  // Less so.
+  void write(OutputStream &s);
+  void read(InputStream &s);
   int Distinct();
   /// x = y * this;
   inline void vector_multiply(unsigned long *x, unsigned long *y) {
