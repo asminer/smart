@@ -6,6 +6,7 @@
 #
 
 SOURCES = \
+	dsm.cc	\
 	mc.cc	\
 	api.cc	
 
