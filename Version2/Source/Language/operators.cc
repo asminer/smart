@@ -841,6 +841,7 @@ void int_mult::Compute(int a, result &x)
 // ******************************************************************
 
 /** Division of two integer expressions.
+    Note that the result type is REAL.
  */
 class int_div : public divop {
 public:
