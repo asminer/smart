@@ -603,6 +603,20 @@ void shared_matrix::show(OutputStream &s)
   }
 }
 
+int shared_matrix::Distinct()
+{
+  int d = 0;
+  int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->flag = false;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j]) {
+    if (ptrs[i][j]->flag) continue;
+    d++;
+    ptrs[i][j]->flag = true;
+  }
+  return d;
+}
+
 int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
 {
   int nnz = 0;
@@ -638,25 +652,27 @@ void InitMatrix()
 
 void MatrixStats()
 {
-  Output << "Submatrices: \t";
+  Output << "\tSubmatrices: \t";
   Output << matrix_pile.ActiveObjects() << " active, ";
   Output << matrix_pile.PeakObjects() << " peak\n";
 
-  Output << "Hash tables: \t";
+  Output << "\tHash tables: \t";
   Output << hash_node_pile.ActiveObjects() << " active, ";
   Output << hash_node_pile.PeakObjects() << " peak\n";
 
-  Output << "Unique table: \t";
+  Output << "\tUnique table: \t";
   Output << UniqueTable.Size() << " size, ";
   Output << UniqueTable.Entries() << " entries, ";
   Output << UniqueTable.MaxChain() << " maxchain\n";
 
+#ifndef NO_CACHE
   Output << "Compute table: \t";
   Output << ComputeTable.Size() << " size, ";
   Output << ComputeTable.Entries() << " entries, ";
   Output << ComputeTable.MaxChain() << " maxchain\n";
   Output << "               \t";
   Output << cachehits << " hits / " << cachetries << " pings\n";
+#endif
 
   Output.flush();
 }

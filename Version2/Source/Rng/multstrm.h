@@ -141,6 +141,7 @@ public:
   void MakeBN(int M, unsigned int A);
   ~shared_matrix();
   void show(OutputStream &s);
+  int Distinct();
   /// x = y * this;
   inline void vector_multiply(unsigned long *x, unsigned long *y) {
     int i,j;

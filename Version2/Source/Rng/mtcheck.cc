@@ -26,7 +26,8 @@ void Braised(int n, shared_matrix* B, shared_matrix *tmp, shared_matrix *answer)
     nnz = answer->Multiply(B, tmp);
   }
   Output << "Computed B^" << n << "\t\t\t";
-  Output << nnz << " nonzeroes\n";
+  Output << answer->Distinct() << " distinct / ";
+  Output << nnz << " nzs\n";
   Output.flush();
 }
 
