@@ -24,6 +24,7 @@
 /** A discrete-state model (internel representation) for Markov chains.
 */
 class markov_dsm : public state_model {
+public:
   model_var** statenames;
   int numstates;
   classified_chain <float> *arcs;
@@ -437,19 +438,15 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
-  /*
-  model *m = dynamic_cast<model*> (pp[0]);
-  DCASSERT(m);
-  */
-  // debugging
+#ifdef DEBUG
   Output << "Checking instate\n";
   Output.flush();
-
+#endif
   x.Clear();
   SafeCompute(pp[1], 0, x);
 
   // error checking here...
-
+#ifdef DEBUG
   Output << "\tgot param: ";
   PrintResult(Output, INT, x);
   Output << "\n";
@@ -459,7 +456,7 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
   PrintResult(Output, INT, m.Read(0));
   Output << "\n";
   Output.flush();
-
+#endif
   // error checking here for m
 
   if (x.ivalue == m.Read(0).ivalue) {
@@ -479,6 +476,84 @@ void Add_instate(PtrTable *fns)
   internal_func *p = new internal_func(PROC_BOOL, "instate", 
 	compute_mc_instate, NULL,
 	pl, 2, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                       transient                      *
+// ********************************************************
+
+void compute_mc_transient(const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(np==1);
+  DCASSERT(pp);
+  markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
+  DCASSERT(mm);
+  markov_dsm *md = dynamic_cast<markov_dsm*>(mm->GetModel());
+  DCASSERT(md);
+  DCASSERT(md->arcs);
+#ifdef DEBUG
+  Output << "Checking transient\n";
+  Output << "\tcurrent state: ";
+  PrintResult(Output, INT, m.Read(0));
+  Output << "\n";
+  Output.flush();
+#endif
+  // error checking here for m
+
+  x.Clear();
+  x.bvalue = md->arcs->isTransient(m.Read(0).ivalue);
+}
+
+void Add_transient(PtrTable *fns)
+{
+  const char* helpdoc = "Returns true if the Markov chain is in a transient state";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(MARKOV, "m");
+  internal_func *p = new internal_func(PROC_BOOL, "transient", 
+	compute_mc_transient, NULL,
+	pl, 1, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                       absorbing                      *
+// ********************************************************
+
+void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(np==1);
+  DCASSERT(pp);
+  markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
+  DCASSERT(mm);
+  markov_dsm *md = dynamic_cast<markov_dsm*>(mm->GetModel());
+  DCASSERT(md);
+  DCASSERT(md->arcs);
+#ifdef DEBUG
+  Output << "Checking absorbing\n";
+  Output << "\tcurrent state: ";
+  PrintResult(Output, INT, m.Read(0));
+  Output << "\n";
+  Output.flush();
+#endif
+  // error checking here for m
+
+  x.Clear();
+  x.bvalue = md->arcs->isAbsorbing(m.Read(0).ivalue);
+}
+
+void Add_absorbing(PtrTable *fns)
+{
+  const char* helpdoc = "Returns true if the Markov chain is in an absorbing state";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(MARKOV, "m");
+  internal_func *p = new internal_func(PROC_BOOL, "absorbing", 
+	compute_mc_absorbing, NULL,
+	pl, 1, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -534,6 +609,8 @@ void InitMCModelFuncs(PtrTable *t)
   Add_arcs(t);
 
   Add_instate(t);
+  Add_transient(t);
+  Add_absorbing(t);
 
   Add_test(t);
 }

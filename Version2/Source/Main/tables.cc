@@ -126,6 +126,7 @@ void InsertFunction(PtrTable *t, function *f)
 List <function> *FindFunctions(PtrTable *t, const char* n)
 {
   if (NULL==n) return NULL;
+  if (NULL==t) return NULL;
   void* x = t->FindName(n);
   return (List <function> *)x;
 }

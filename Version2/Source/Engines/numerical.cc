@@ -5,7 +5,7 @@
 
 #include "../Language/measures.h"
 
-#define DEBUG
+//#define DEBUG
 
 bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 {

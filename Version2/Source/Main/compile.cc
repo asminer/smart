@@ -1690,117 +1690,6 @@ named_param* BuildNamedDefault(char* name)
 // |                                                                |
 // ==================================================================
 
-expr* FindIdent(char* name)
-{
-  // Check for loop iterators
-  int d;
-  for (d=0; d<Iterators.Length(); d++) {
-    array_index *i = Iterators.Item(d);
-    DCASSERT(i);
-    if (strcmp(name, i->Name())==0)
-      return Copy(i);
-  }
-  
-  // check formal parameters
-  if (FormalParams) for (d=0; d<FormalParams->Length(); d++) {
-    formal_param *i = FormalParams->Item(d);
-    if (NULL==i) continue; // can this happen?
-    if (strcmp(name, i->Name())==0)
-      return Copy(i);
-  }
-
-  // check model variables
-  if (ModelInternal) {
-    expr* f = (expr*) ModelInternal->FindName(name);
-    if (f) { // found
-      if (dynamic_cast<array*>(f)) {
-        Error.Start(filename, lexer.lineno());
-        Error << "Model identifier " << name << " is an array\n";
-        Error.Stop();
-        return NULL;
-      }
-      return f;
-    }
-  }
-
-  // check constants
-  variable* find = (variable*) Constants.FindName(name);
-  if (find) return Copy(find);
-
-  // Couldn't find it.
-  Error.Start(filename, lexer.lineno());
-  Error << "Unknown identifier: " << name;
-  Error.Stop();
-  return ERROR;
-}
-
-expr* BuildArrayCall(const char* n, void* ind)
-{
-  List <expr> *foo = (List <expr> *)ind;
-  array* entry = NULL;
-  // Check model first
-  if (ModelInternal) {
-    expr* match = (expr*) ModelInternal->FindName(n);
-    if (match) {
-      entry = dynamic_cast<array*>(match);
-      if (!entry) {
-	// The model has a variable of this name, but it's not an array
-	Error.Start(filename, lexer.lineno());
-	Error << "Variable " << n << " is not an array";
-	Error.Stop();
-	delete foo;
-	return ERROR;
-      }
-    }
-  }
-  // Check symbol table
-  if (NULL==entry) entry = (array*) (Arrays.FindName(n));
-  if (NULL==entry) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Unknown array " << n;
-    Error.Stop();
-    delete foo;
-    return ERROR;
-  }
-  // check type, dimension of indexes
-  int size = foo->Length();
-  int i;
-  array_index **il;
-  int dim;
-  entry->GetIndexList(il, dim);
-  if (size!=dim) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Array " << n << " has dimension " << dim;
-    Error.Stop();
-    delete foo;
-    return ERROR;
-  }
-  // types
-  for (i=0; i<dim; i++) {
-    expr* me = foo->Item(i);
-    if (!Promotable(me->Type(0), il[i]->Type(0))) {
-      Error.Start(filename, lexer.lineno());
-      Error << "Array " << n << " expects type ";
-      Error << GetType(il[i]->Type(0));
-      Error << " for index " << il[i]->Name();
-      Error.Stop();
-      delete foo;
-      return ERROR;
-    }
-  }
-
-  // Ok, build the array call
-  expr** pass = new expr*[dim];
-  for (i=0; i<dim; i++) {
-    expr* x = foo->Item(i);
-    Optimize(0, x);
-    pass[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
-  }
-  delete foo;
-  expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
-  return answer;
-}
-
 /**  Score how well this function matches the passed parameters.
      @param	f	The function to check
      @param	hidden	Type model we're in (for model functions)
@@ -1835,6 +1724,12 @@ int ScoreFunction(function *f, type hidden, List <expr> *params)
     fptr++;
   } else {
     DCASSERT(!f->isWithinModel());
+  }
+
+  if (NULL==params) {
+    // no passed params
+    if (fptr == np) return numpromote;  
+    else return -1; // wrong number of params
   }
 
   // Check the rest of the passed parameters
@@ -1907,10 +1802,10 @@ bool LinkFunction(function *f, expr** params, int np)
 
 // Used for both function and model calls ;^)
 // returns NULL on error, a nice struct on success.
-func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
+func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist, bool quietly)
 {
-  if (NULL==poslist) return NULL;  // I think...
   List <expr> *params = (List <expr> *)poslist;
+  int params_length = (params) ? (params->Length()) : 0;
   
   // If we are within a model, check model functions too
   List <function> *flist_mod = NULL;
@@ -1923,14 +1818,16 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
 
   if ((NULL==flist_mod) && (NULL==flist)) {
     // Never heard of it
-    Error.Start(filename, lexer.lineno());
-    Error << "Unknown function " << n;
-    Error.Stop();
+    if (!quietly) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Unknown function " << n;
+      Error.Stop();
+    }
     delete params;
     return NULL;
   }
 
-  int bestmatch = params->Length()+2;
+  int bestmatch = params_length+2;
   int i, last;
   bool is_normal_match = true;
 
@@ -1995,12 +1892,15 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
   } // for i
 
   // Did we get any hits?
-  if (bestmatch > params->Length()) {
-    Error.Start(filename, lexer.lineno());
-    Error << "No match for " << n;
-    DumpPassed(Error, params);
-    Error.Stop();
+  if (bestmatch > params_length) {
+    if (!quietly) {
+      Error.Start(filename, lexer.lineno());
+      Error << "No match for " << n;
+      DumpPassed(Error, params);
+      Error.Stop();
+    }
     // dump candidates?
+    delete params;
     return NULL;
   }
 
@@ -2010,26 +1910,37 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
     Error << "Multiple promotions possible for " << n;
     DumpPassed(Error, params);
     Error.Stop();
+    delete params;
     // dump matching candidates?
     return NULL;
   }
 
-  // If necessary, add hidden parameter
-  if (!is_normal_match) {
-    DCASSERT(model_under_construction);
-    params->InsertAt(0, Copy(model_under_construction));
-#ifdef COMPILE_DEBUG
-    Output << "Added parameter " << model_under_construction << "\n";
-    Output.flush();
-#endif
-  }
-
-  // Good to go, fill struct
+  // Fill struct for matching function call
   func_call *foo = FuncCallPile.NewObject();
   foo->find = matches.Item(0);
-  foo->np = params->Length();
-  foo->pass = params->MakeArray();
-  delete params; 
+
+  if (params) {
+    // If necessary, add hidden parameter
+    if (!is_normal_match) {
+      DCASSERT(model_under_construction);
+      params->InsertAt(0, Copy(model_under_construction));
+#ifdef COMPILE_DEBUG
+      Output << "Added parameter " << model_under_construction << "\n";
+      Output.flush();
+#endif
+    }
+    // Good to go, fill struct
+    foo->np = params->Length();
+    foo->pass = params->MakeArray();
+    delete params; 
+  } else {
+    // This should be a model function with one hidden parameter
+    DCASSERT(!is_normal_match);
+    DCASSERT(model_under_construction);
+    foo->np = 1;
+    foo->pass = new expr*[1];
+    foo->pass[0] = Copy(model_under_construction);
+  }
 
   // Promote params
   bool ok;
@@ -2039,6 +1950,7 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
     ok = LinkFunction(foo->find, foo->pass, foo->np);
 
   if (!ok) {
+    // should delete foo->pass
     FuncCallPile.FreeObject(foo);
     return NULL;
   }
@@ -2048,7 +1960,7 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
 
 expr* BuildFunctionCall(const char* n, void* posparams)
 {
-  func_call *x = MatchFunctionCallPos(&Builtins, n, posparams);
+  func_call *x = MatchFunctionCallPos(&Builtins, n, posparams, false);
   if (NULL==x) return ERROR;
   expr *fcall = MakeFunctionCall(x->find, x->pass, x->np, 
   				filename, lexer.lineno());
@@ -2274,6 +2186,128 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
   				filename, lexer.lineno());
   FuncCallPile.FreeObject(foo);
   return fcall;
+}
+
+expr* FindIdent(char* name)
+{
+  // Check for loop iterators
+  int d;
+  for (d=0; d<Iterators.Length(); d++) {
+    array_index *i = Iterators.Item(d);
+    DCASSERT(i);
+    if (strcmp(name, i->Name())==0)
+      return Copy(i);
+  }
+  
+  // check formal parameters
+  if (FormalParams) for (d=0; d<FormalParams->Length(); d++) {
+    formal_param *i = FormalParams->Item(d);
+    if (NULL==i) continue; // can this happen?
+    if (strcmp(name, i->Name())==0)
+      return Copy(i);
+  }
+
+  // check model variables
+  if (ModelInternal) {
+    expr* f = (expr*) ModelInternal->FindName(name);
+    if (f) { // found
+      if (dynamic_cast<array*>(f)) {
+        Error.Start(filename, lexer.lineno());
+        Error << "Model identifier " << name << " is an array\n";
+        Error.Stop();
+        return NULL;
+      }
+      return f;
+    }
+  }
+
+  // check model functions with no visible parameters
+  // overkill, but it will work
+  func_call *x = MatchFunctionCallPos(NULL, name, NULL, true);
+  if (x) {
+    // match!
+    expr *fcall = MakeFunctionCall(x->find, x->pass, x->np, 
+  				filename, lexer.lineno());
+    FuncCallPile.FreeObject(x);
+    return fcall;
+  }
+
+  // check constants
+  variable* find = (variable*) Constants.FindName(name);
+  if (find) return Copy(find);
+
+  // Couldn't find it.
+  Error.Start(filename, lexer.lineno());
+  Error << "Unknown identifier: " << name;
+  Error.Stop();
+  return ERROR;
+}
+
+expr* BuildArrayCall(const char* n, void* ind)
+{
+  List <expr> *foo = (List <expr> *)ind;
+  array* entry = NULL;
+  // Check model first
+  if (ModelInternal) {
+    expr* match = (expr*) ModelInternal->FindName(n);
+    if (match) {
+      entry = dynamic_cast<array*>(match);
+      if (!entry) {
+	// The model has a variable of this name, but it's not an array
+	Error.Start(filename, lexer.lineno());
+	Error << "Variable " << n << " is not an array";
+	Error.Stop();
+	delete foo;
+	return ERROR;
+      }
+    }
+  }
+  // Check symbol table
+  if (NULL==entry) entry = (array*) (Arrays.FindName(n));
+  if (NULL==entry) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown array " << n;
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+  // check type, dimension of indexes
+  int size = foo->Length();
+  int i;
+  array_index **il;
+  int dim;
+  entry->GetIndexList(il, dim);
+  if (size!=dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Array " << n << " has dimension " << dim;
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+  // types
+  for (i=0; i<dim; i++) {
+    expr* me = foo->Item(i);
+    if (!Promotable(me->Type(0), il[i]->Type(0))) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " expects type ";
+      Error << GetType(il[i]->Type(0));
+      Error << " for index " << il[i]->Name();
+      Error.Stop();
+      delete foo;
+      return ERROR;
+    }
+  }
+
+  // Ok, build the array call
+  expr** pass = new expr*[dim];
+  for (i=0; i<dim; i++) {
+    expr* x = foo->Item(i);
+    Optimize(0, x);
+    pass[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
+  }
+  delete foo;
+  expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
+  return answer;
 }
 
 // ==================================================================
@@ -2645,7 +2679,7 @@ func_call* MakeModelCall(char* n)
 
 func_call* MakeModelCallPos(char* n, void* list)
 {
-  return MatchFunctionCallPos(&Models, n, list);
+  return MatchFunctionCallPos(&Models, n, list, false);
 }
 
 func_call* MakeModelCallNamed(char* n, void* list)
