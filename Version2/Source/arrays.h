@@ -19,6 +19,7 @@ converge_array: arrays within a converge statement.
  */
 
 #include "sets.h"
+#include "variables.h"
 
 //@{
   
@@ -91,7 +92,6 @@ public:
   inline int Index() { 
     return index; 
   }
-
 };
 
 
@@ -121,6 +121,16 @@ struct array_desc {
       size of the set "values".
    */
   void** down;
+
+  array_desc(set_result *v) {
+    values = v;
+    down = new void*[values->Size()];
+    for (int i=0; i<values->Size(); i++) down[i] = NULL;
+  }
+  ~array_desc() {
+    Delete(values);
+    delete[] down;
+  }
 };
 
 
@@ -144,6 +154,8 @@ protected:
   array_index **index_list;
   /// The number of iterators.
   int dimension;
+  /// The descriptor.
+  array_desc *descriptor;
 public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
   virtual ~array();
@@ -157,15 +169,24 @@ public:
     dim = dimension;
   }
 
-  virtual void Compute(expr **, int np, result &x) = 0;
-  virtual void Sample(long &, expr **, int np, result &x) = 0;
-
   /** For the current values of the iterators,
-      set the return "value" of the array to
-      the specified expression (which should NOT contain
-      any iterators).
+      set the return "value" of the array.
    */
-  void SetCurrentReturn(expr *retexpr);
+  void SetCurrentReturn(constfunc *retvalue);
+
+  /** For the given indices (as expressions),
+      find the array "value".
+      Actually, we return a constfunc.
+      Used directly by "acall".
+      @param	il	Indices to use.  Must be exactly of size "dimension".
+      @param	x	Where we return the function (in the "other" field).
+      Note: this way we can set the error values appropriately!
+   */
+  void Compute(expr** il, result &x);
+
+  /** Like compute, but we sample the indices instead.
+   */
+  void Sample(long &, expr **il, result &x);
 };
 
 

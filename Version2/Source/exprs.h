@@ -41,6 +41,8 @@ enum compute_error {
   CE_Undefined,
   /// Tried to compute a rand
   CE_ComputeRand,
+  /// Array range error
+  CE_OutOfRange,
   /// There was a stack overflow
   CE_StackOverflow
 };
