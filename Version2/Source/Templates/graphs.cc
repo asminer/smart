@@ -19,7 +19,6 @@
     graphs use the same structure.  When the graph is "dynamic",
     nodes and edges can be added to the graph at will.
     We use sparse row-wise storage.
-    TBD: allow column-wise and add a Transpose function.
 
     In dynamic mode, arrays may be slightly larger than needed,
     and are enlarged if they become too small.
@@ -83,6 +82,9 @@ public:
   inline bool IsStatic() const { return NULL==next; }
   inline bool IsDynamic() const { return NULL!=next; }
 
+  inline int NumNodes() const { return num_nodes; }
+  inline int NumEdges() const { return num_edges; }
+
   inline void AddNode() {
     DCASSERT(IsDyanamic());
     if (num_nodes >= nodes_alloc) ResizeNodes(2*nodes_alloc);
@@ -96,9 +98,9 @@ public:
 
   /** If this is called every time, row lists will be ordered.
       Duplicate edges are not added twice.
-      Returns true if the edge was a duplicate.
+      Returns the "address" (index) of the added / duplicate edge.
   */
-  bool AddEdgeInOrder(int from, int to);
+  int AddEdgeInOrder(int from, int to);
 
   void ConvertToStatic();
   void ConvertToDynamic();
@@ -186,7 +188,7 @@ void digraph::AddEdge(int from, int to)
   num_edges++;
 }
 
-bool digraph::AddEdgeInOrder(int from, int to)
+int digraph::AddEdgeInOrder(int from, int to)
 {
   DCASSERT(IsDynamic());
   if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
@@ -196,8 +198,7 @@ bool digraph::AddEdgeInOrder(int from, int to)
     // row was empty before
     next[num_edges] = num_edges;  // circle of this node itself
     row_pointer[from] = num_edges;
-    num_edges++;
-    return false;
+    return num_edges++;
   } 
   // Row is not empty.
   int prev = row_pointer[from];
@@ -206,8 +207,7 @@ bool digraph::AddEdgeInOrder(int from, int to)
     next[num_edges] = next[prev];
     next[prev] = num_edges;
     row_pointer[from] = num_edges;
-    num_edges++;
-    return false;
+    return num_edges++;
   }
   // Find spot for this edge
   while (1) {
@@ -216,12 +216,11 @@ bool digraph::AddEdgeInOrder(int from, int to)
       // edge goes here!
       next[num_edges] = curr;
       next[prev] = num_edges;
-      num_edges++;
-      return false;
+      return num_edges++;
     }
     if (to == column_index[curr]) {
       // duplicate edge, don't add it
-      return true;
+      return curr;
     }
     prev = curr;
   }
@@ -423,4 +422,79 @@ void digraph::ShowNodeList(OutputStream &s, int node)
     } while (e!=front);
   }
 }
+
+
+/** Labeled directed graph struct.
+
+    Derived from digraph class to save some implementation.
+
+*/
+template <class LABEL>
+struct labeled_digraph : public digraph {
+  /// Labels on the edges
+  LABEL* value;
+
+public:
+  /// Constructor
+  labeled_digraph() : digraph() {
+    value = NULL;
+  }
+
+  /// Destructor
+  ~labeled_digraph() {
+    ResizeNodes(0);
+    ResizeEdges(0);
+  }
+
+  /// For allocating edges
+  void ResizeEdges(int new_edges) {
+    digraph::ResizeEdges(new_edges);
+    LABEL* bar = (LABEL *) realloc(value, new_edges*sizeof(LABEL));
+    if (new_edges && (NULL==bar)) OutOfMemoryError("Graph resize");
+    value = bar;
+  }
+
+  /** Add an edge to unordered row list.
+  */
+  inline void AddEdge(int from, int to, const LABEL &v) {
+    DCASSERT(IsDynamic());
+    if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
+    DCASSERT(edges_alloc > num_edges);
+    value[num_edges] = v;
+    digraph::AddEdge(from, to);
+  }
+
+  /** If this is called every time, row lists will be ordered.
+      If there is already an edge between the specified nodes,
+      the given label will be added to the existing label (via +=).
+      The function returns the "address" of the edge.
+  */
+  int AddEdgeInOrder(int from, int to, const LABEL &v) {
+    DCASSERT(IsDynamic());
+    if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
+    DCASSERT(edges_alloc > num_edges);
+    value[num_edges] = v;
+    int p = digraph::AddEdgeInOrder(from, to);
+    if (p<num_edges-1) {
+      // existing edge, sum values
+     value[p] += v;
+    }
+    return p;
+  }
+
+  void ConvertToStatic();
+
+  void Transpose();
+
+  /// Dump to a stream (human readable)
+  void ShowNodeList(OutputStream &s, int node);
+
+};
+
+// ******************************************************************
+// *                                                                *
+// *                     labeled_digraph methods                    *
+// *                                                                *
+// ******************************************************************
+
 
