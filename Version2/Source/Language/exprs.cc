@@ -312,6 +312,11 @@ Engine_type binary::GetEngine(engineinfo *e)
     if (e) e->engine = ENG_Error;
     return ENG_Error;
   }
+  // It is best to merge model-checking engines
+  if ((l == ENG_ModelChecking) && (r == ENG_ModelChecking)) {
+    if (e) e->engine = ENG_ModelChecking;
+    return ENG_ModelChecking;
+  }
   // any other cases to merge?
 
   // Mixed, even if they are the same (because it is better to split)
@@ -324,7 +329,9 @@ expr* binary::SplitEngines(List <measure> *mlist)
   measure* m;
   Engine_type mine = GetEngine(NULL);
   if (ENG_Error == mine) return NULL;
-  if (mine != ENG_Mixed) return Copy(this);
+  if (ENG_Mixed != mine) return Copy(this);
+
+  // Still here?  We have a mixed engine, must split.
 
   Engine_type l = left ? left->GetEngine(NULL) : ENG_None;
   expr* newleft;
@@ -455,16 +462,29 @@ Engine_type assoc::GetEngine(engineinfo *e)
   DCASSERT(operands[0]);
   if (opnd_count < 2) return operands[0]->GetEngine(e);
 
-  Engine_type foo = ENG_None;
+  Engine_type foo = operands[0]->GetEngine(NULL);
+  if (ENG_Error == foo) {
+    if (e) e->engine = ENG_Error;
+    return foo;
+  }
   int i;
-  for (i=0; i<opnd_count; i++) {
+  for (i=1; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     Engine_type bar = operands[i]->GetEngine(NULL);
     if (ENG_Error == bar) {
       if (e) e->engine = ENG_Error;
       return ENG_Error;
     }
-    if (bar != ENG_None) foo = ENG_Mixed; 
+    if ((ENG_ModelChecking == foo) && (ENG_ModelChecking == bar)) {
+      // merge model checking engines
+      continue;
+    }
+    if ((ENG_None == foo) && (ENG_None == bar)) {
+      // merge when no engine
+      continue;
+    }
+    // still here? Must be mixed.
+    foo = ENG_Mixed; 
   }
   if (e) e->engine = foo;
   return foo;

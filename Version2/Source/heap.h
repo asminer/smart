@@ -9,6 +9,8 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+#include "list.h"
+
 template <class DATA>
 class Heap {
   DATA **data;  
@@ -55,6 +57,14 @@ public:
     data = NULL;
     sorted = false;
     return ret;
+  }
+  List <DATA> *MakeList() {
+    DCASSERT(sorted);
+    List <DATA> *foo = new List <DATA> (data, size, last);
+    size = last = 0;
+    data = NULL;
+    sorted = false;
+    return foo;
   }
 protected:
   inline void Swap(int i, int j) {

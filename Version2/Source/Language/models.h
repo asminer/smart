@@ -56,15 +56,6 @@ public:
 // *                                                                *
 // ******************************************************************
 
-inline int Compare(measure *a, measure *b)
-{
-  // Required for heap.
-  // Sort measures by measure pointer info, for speed.
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
-}
-
 /**   The base class of high-level formalisms (for language support).
 
       Specific formalisms should be derived from this class.
@@ -88,14 +79,14 @@ private:
   }
   bool SameParams();
 
-  /// Measures, used during model instantiation.
-  Heap <measure> *mheap;
+  /// All measures for this instantiation
+  List <measure> *mlist;
 
-  /// Final sorted array of measures.
-  measure** mlist;
+  /// All transient measures
+  List <measure> *mtrans;
 
-  /// Size of measure list
-  int mlist_size;
+  /// All steady-state measures
+  List <measure> *msteady;
 
   // Add more info for each measure here...
 
@@ -152,7 +143,7 @@ public:
       (handled by an appropriate statement)
       so that we can group the measures by solution engine.
   */
-  inline void AcceptMeasure(measure *m) { mheap->Insert(m); }
+  void AcceptMeasure(measure *m);
 
   /** Find an externally-visible symbol with specified name.
       @param	name	The symbol to look for.
@@ -172,11 +163,6 @@ private:
       Called at the end of model instantiation.
   */
   void GroupMeasures();
-
-  /** Find the index of s within the sorted list of measures.
-      Returns NOT_FOUND if s is not in the list.
-  */
-  int FindMeasure(symbol* s);
 
   /** Clear out all old structs.
       Used before re-creating a model (with new parameters).

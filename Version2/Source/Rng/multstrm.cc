@@ -96,8 +96,8 @@ public:
   ~myhash() { free(table); }
   DATA* Find(DATA *);
   DATA* Insert(DATA *x);
-  // bool Remove(DATA *);
   void Resize();
+  void Dump(); // for debugging
   inline int Entries() const { return count; }
   inline int Size() const { return hashsizes[size_index]; }
   inline int MaxChain() const { return maxchain; }
@@ -136,7 +136,6 @@ void myhash<DATA>::Resize()
       }
       table[i] = link;
     }
-    i++;
   }
   // hash table = one huge list
   
@@ -228,6 +227,15 @@ DATA* myhash<DATA>::Insert(DATA *m)
   return m;
 }
 
+template <class DATA>
+void myhash<DATA>::Dump()
+{
+  int i = 0;
+  for (i=0; i<Size(); i++) {
+    for (hashnode* ptr = table[i]; ptr; ptr=ptr->next) 
+      Dump(ptr->data);
+  }
+}
 
 // ------------------------------------------------------------------
 //   Global vars.  Initialized below.

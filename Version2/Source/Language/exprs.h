@@ -98,6 +98,8 @@ class state;    // defined elsewhere, used for proc expressions.
 class symbol;	// defined below
 class measure;	// also below
 
+
+
 /**   The base class of all expressions, and the
       heart of all expression trees.
  

@@ -64,8 +64,7 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
   size_mtable = 0;
   dsm = NULL;
   // measure structures
-  mheap = new Heap <measure>(16);
-  mlist = NULL;
+  mlist = new List <measure>(16);
   // Allocate space to save parameters
   if (np) {
     current_params = new result[np];
@@ -94,8 +93,7 @@ model::~model()
   delete[] current_params;
   delete[] last_params;
   // delete measure structs
-  delete mheap;
-  delete[] mlist;
+  delete mlist;
   // delete symbols...
 }
 
@@ -144,6 +142,12 @@ void model::Sample(Rng &, expr **, int np, result &)
   Internal.Stop();
 }
 
+void model::AcceptMeasure(measure *m)
+{
+  mlist->Append(m); 
+  m->ComputeDependencies(mlist);
+}
+
 symbol* model::FindVisible(char* name) const
 {
   int low = 0;
@@ -167,37 +171,44 @@ symbol* model::FindVisible(char* name) const
 
 void model::SolveMeasure(measure *m)
 {
-  // do something
+  // Based on the engine type of m, 
+  // solve a huge batch of measures with the same engine
+  // or just solve this one
 
   Output << "Model " << Name() << " solving measure " << m << "\n";
 }
 
 void model::GroupMeasures()
 {
-  mheap->Sort();
-  mlist_size = mheap->Length();
-  mlist = mheap->MakeArray();  // trashes the heap
+  // for each measure in the list 
+  int i;
+  for (i=0; i<mlist->Length(); i++) {
+    measure *m = mlist->Item(i);
 
-  // Compute dependency info
-}
+    // If the measure is a certain type, 
+    // group with others to be solved in batch
+    switch (m->GetEngine(NULL)) {
 
-int model::FindMeasure(symbol* s)
-{
-  int low = 0;
-  int high = mlist_size;
-  while (low < high) {
-    int mid = (low+high)/2;
-    if (s == mlist[mid]) return mid;
-    if (s < mlist[mid]) high = mid;
-    else low = mid+1;
+	case ENG_T_Inst:
+   				mtrans->Append(m);
+				break;
+
+	case ENG_SS_Inst:
+				msteady->Append(m);
+				break;
+
+	default:
+				break;
+				// Do nothing 
+				// (keeps compiler happy)
+    } // switch
   }
-  return NOT_FOUND;
 }
 
 void model::Clear()
 {
   Delete(dsm);
-  delete[] mlist;
+  mlist->Clear();
 }
 
 // ******************************************************************

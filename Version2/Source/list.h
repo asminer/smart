@@ -32,6 +32,11 @@ public:
     Resize(inits);
     last = 0;
   }
+  PtrList(void** d, int s, int l) {
+    data = d;
+    size = s;
+    last = l;
+  }
   ~PtrList() {
     Resize(0);
   }
@@ -99,21 +104,15 @@ public:
 
 template <class DATA> 
 class List : public PtrList {
-  // PtrList *p;
 public:
-  List(int size) : PtrList(size) {} // { p = new PtrList(size); }  
-  // ~List() { delete p; }
-  // inline int Length() const { return p->Length(); }
-  // inline void Pop() { p->Pop(); }
-  //inline DATA** Copy() const { return (DATA **)(p->Copy()); }
+  List(int size) : PtrList(size) {} 
+  List(DATA** a, int size, int last) : PtrList((void**)a, size, last) { }
   inline DATA** Copy() const { return (DATA **)(VCopy()); }
-  // inline DATA** MakeArray() { return (DATA **)(p->MakeArray()); }
   inline DATA** MakeArray() { return (DATA **)(VMakeArray()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(VItem(n)); }
   inline void Append(DATA *x) { VAppend(x); }
   inline void Append(List <DATA> *x) { if (x) { VAppend(x); delete x; } }
   inline void InsertAt(int n, DATA* x) { VInsertAt(n, x); }
-  // inline void Clear() { p->Clear(); }
 };
 
 template <class DATA>
