@@ -182,6 +182,7 @@ symbol::symbol(const char* fn, int line, type t, char* n) : expr (fn, line)
 {
   mytype = t;
   name = n;
+  substitute_value = true;
 }
 
 symbol::~symbol()
@@ -202,6 +203,17 @@ int symbol::GetSymbols(int i, symbol **syms, int N, int offset)
   return 1;
 }
 
+expr* symbol::Substitute(int i)
+{
+  DCASSERT(i==0);
+  if (substitute_value) {
+    result x;
+    Compute(0, x);
+    return MakeConstExpr(Type(0), x, Filename(), Linenumber());
+  }
+  // Don't substitute
+  return Copy(this);
+}
 
 // ******************************************************************
 // *                                                                *

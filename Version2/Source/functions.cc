@@ -34,6 +34,7 @@ formal_param::formal_param(const char* fn, int line, type t, char* n)
   deflt = NULL;
   stack = NULL;
   offset = 0;
+  // SetSubstitution(false);   // Not sure about this yet
 }
 
 formal_param::~formal_param()
@@ -55,13 +56,6 @@ void formal_param::Sample(long &, int i, result &x)
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   x = stack[0][offset];  
-}
-
-expr* formal_param::Substitute(int i)
-{
-  DCASSERT(0);   // I don't think we can ever get here.
-  //
-  return NULL;
 }
 
 void formal_param::show(ostream &s) const
@@ -89,13 +83,6 @@ function::~function()
   for (i=0; i<num_params; i++)
     delete parameters[i];
   delete[] parameters;
-}
-
-expr* function::Substitute(int i) 
-{ 
-  // This should never get called.
-  DCASSERT(0); 
-  return NULL; 
 }
 
 bool function::HasSpecialTypechecking() const 

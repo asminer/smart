@@ -52,11 +52,26 @@ class infinityconst : public constant {
   }
 };
 
-expr* MakeInfinityExpr(int sign, const char* file=NULL, int line=0)
+expr* MakeInfinityExpr(int sign, const char* file, int line)
 {
   return new infinityconst(file, line, sign);
 }
 
+expr* MakeConstExpr(type t, const result &x, const char* file, int line)
+{
+  if (x.null) return NULL;
+  if (x.error) return NULL;
+  if (x.infinity) return MakeInfinityExpr(x.ivalue, file, line);
+  switch (t) {
+    case BOOL:		return MakeConstExpr(x.bvalue, file, line);
+    case INT: 		return MakeConstExpr(x.ivalue, file, line);
+    case REAL:		return MakeConstExpr(x.rvalue, file, line);
+    case STRING:	return MakeConstExpr((char*)x.other, file, line);
+  }
+  //
+  cerr << "Internal error: illegal type for MakeConstExpr\n";
+  return NULL;
+}
 
 //@}
 

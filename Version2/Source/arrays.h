@@ -49,41 +49,52 @@ public:
   array_index(const char *fn, int line, type t, char *n, expr *v);
   virtual ~array_index(); 
 
-  // Used by for loops
+  virtual void Compute(int i, result &x);
+  virtual void show(ostream &s) const;
+
+  // Used by for loops and arrays:
 
   /// Compute the current range of values for the iterator.
-  void ComputeCurrent();
+  inline void ComputeCurrent() {
+    Delete(current);
+    result x;
+    values->Compute(0, x);
+    if (x.null || x.error) current = NULL;  // print an error?
+    else current = (set_result*) x.other;
+  }
 
+  /// Copy the current range of values.
+  inline set_result* CopyCurrent() {
+    return Copy(current);
+  }
+
+  /** Fix our value to the first element of the current set.
+      @return true on success.
+   */
   inline bool FirstIndex() { 
     if (NULL==current) return false;
     index = 0;
     return true;
   }
+
+  /** Fix our value to the next element of the current set.
+      @return true on success.
+   */
   inline bool NextValue() { 
     DCASSERT(current);
     index++;
     return (index < current->Size());
   }
-  inline int Index() { return index; }
+
+  /** The element number of the current set that we are "on".
+   */
+  inline int Index() { 
+    return index; 
+  }
+
 };
 
 
-// ******************************************************************
-// *                                                                *
-// *                      array_element  class                      *
-// *                                                                *
-// ******************************************************************
-
-/** Array element struct.
-    Used as part of the descriptor structure within an array.
-    This struct will be at the "leaves".
-*/  
-
-struct array_element {
-  bool already_computed;
-  result value;
-  expr* return_expr;
-};
 
 
 
@@ -98,11 +109,17 @@ struct array_element {
     Used as part of the descriptor structure within an array.
     If there is another dimension below this one, then all the
     down pointers will be to other descriptors, otherwise they
-    will be to elements.
+    will be to constfuncs.  (see variables.h)
 */  
 
 struct array_desc {
-  // set_result *values;
+  /// The values that can be assumed here.
+  set_result *values;
+  /** Pointers to the next dimension (another array_desc)
+      or to the array values (a constfunc).
+      Note that the dimension of this array is equal to the
+      size of the set "values".
+   */
   void** down;
 };
 
@@ -131,8 +148,6 @@ public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
   virtual ~array();
 
-  virtual expr* Substitute(int i);
-
   /** So that the compiler can do typechecking.
       @param	il	List of indices.  MUST NOT BE CHANGED.
       @param	dim	Dimension (number of indices).
@@ -144,8 +159,13 @@ public:
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(long &, expr **, int np, result &x) = 0;
-protected:
 
+  /** For the current values of the iterators,
+      set the return "value" of the array to
+      the specified expression (which should NOT contain
+      any iterators).
+   */
+  void SetCurrentReturn(expr *retexpr);
 };
 
 

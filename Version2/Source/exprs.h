@@ -272,7 +272,9 @@ public:
   /** Create a copy of this expression with values substituted
       for certain symbols. 
       (The symbols themselves determine the substitution.)
-      Note: try to do shallow copies if possible.
+      Normally this is used by arrays within for loops.
+      We make shallow copies (shared pointers to expressions)
+      whenever possible.
       @param	i	The component to substitute.	
    */
   virtual expr* Substitute(int i) = 0;
@@ -331,12 +333,21 @@ inline ostream& operator<< (ostream &s, expr *e)
   return s;
 }
 
+/**  Create a "copy" of this expression.
+     Since we share pointers, this simply
+     increases the incoming pointer count.
+ */
 inline expr* Copy(expr *e)
 {
   if (e) e->incoming++;
   return e;
 }
 
+/**  Delete an expression.
+     This should *always* be called instead
+     of doing it "by hand", because the expression
+     might be shared.  This version takes sharing into account.
+ */
 inline void Delete(expr *e)
 {
   if (e) {
@@ -442,7 +453,8 @@ private:
   char* name;
   /// The symbol type.
   type mytype;
-
+  /// Should we substitute our value?  Default: true.
+  bool substitute_value;
 public:
 
   symbol(const char* fn, int line, type t, char* n);
@@ -452,6 +464,17 @@ public:
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   
   inline const char* Name() const { return name; }
+
+  /** Change our substitution rule.
+      @param sv		If sv is true, whenever an expression calls
+                        "Substitute", we will replace ourself with
+			a constant equal to our current value.
+			If sv is false, whenever an expression calls
+			"Substitute", we will copy ourself.
+   */ 
+  inline void SetSubstitution(bool sv) { substitute_value = sv;}
+
+  virtual expr* Substitute(int i);
 };
 
 
@@ -473,6 +496,10 @@ expr* MakeConstExpr(double c, const char* file=NULL, int line=0);
 /// Build a string constant.
 expr* MakeConstExpr(char *c, const char* file=NULL, int line=0);
 
+/** Build a generic constant.
+    Defined in infinity.cc.
+ */
+expr* MakeConstExpr(type t, const result &x, const char* file=NULL, int line=0);
 
 
 //@}

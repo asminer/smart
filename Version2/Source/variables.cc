@@ -25,17 +25,12 @@ constfunc::constfunc(const char *fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
   return_expr = NULL;
+  SetSubstitution(false);  
 }
 
 constfunc::~constfunc()
 {
   Delete(return_expr);
-}
-
-expr* constfunc::Substitute(int i)
-{
-  DCASSERT(i==0);
-  return Copy(this);
 }
 
 void constfunc::show(ostream &s) const

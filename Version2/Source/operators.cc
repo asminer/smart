@@ -10,6 +10,10 @@
 
    Implementation of operator classes.
 
+   Also, some other expression things are here,
+   since this is essentially the "top" of the
+   expression stuff.
+
  */
 
 //@{
@@ -1342,6 +1346,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
     case PROC_RAND_INT:
     case PROC_RAND_REAL:
       return new proc_binary(file, line, ltype, op, left, right); 
+
 
   }
 

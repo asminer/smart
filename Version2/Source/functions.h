@@ -65,7 +65,6 @@ public:
 
   virtual void Compute(int i, result &x);
   virtual void Sample(long &, int i, result &x);
-  virtual expr* Substitute(int i);
   virtual void show(ostream &s) const;
 
   /** Used to "link" the formal params to 
@@ -133,8 +132,6 @@ public:
   function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np, int rp);
   virtual ~function();
-
-  virtual expr* Substitute(int i);
 
   /** So that the compiler can do typechecking.
       @param	pl	List of parameters.  MUST NOT BE CHANGED.

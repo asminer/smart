@@ -46,7 +46,6 @@ protected:
 public:
   constfunc(const char *fn, int line, type t, char *n);
   virtual ~constfunc();
-  virtual expr* Substitute(int i);
   virtual void show(ostream &s) const;
 
   inline void SetReturn(expr *e) { return_expr = e; }

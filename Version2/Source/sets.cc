@@ -22,6 +22,7 @@
 
 set_result::set_result(int s)
 {
+  incoming = 1;
   size = s;
 }
 
@@ -173,7 +174,101 @@ void generic_int_set::show(ostream &s)
     for (i=1; i<Size(); i++) s << ", " << values[i];
   }
   s << "}";
+  // temporary...
+  /*
+  s << "\nOrder array:\n";
+  if (order) {
+    s << "[" << order[0];
+    int i;
+    for (i=1; i<Size(); i++) s << ", " << order[i];
+    s << "]\n";
+  } else s << "[]\n";
+  */
 }
+
+
+// ******************************************************************
+// *                                                                *
+// *                       int_realset  class                       *
+// *                                                                *
+// ******************************************************************
+
+/**  A set of reals that was built as a set of integers.
+     If we take the union of a set of integers and
+     a set of reals, we wrap this around the set of integers.
+     That way the types match.
+ */
+class int_realset : public set_result {
+  set_result *intset;
+public:
+  int_realset(set_result *is);
+  virtual ~int_realset(); 
+  virtual void GetElement(int n, result &x);
+  virtual int IndexOf(const result &x);
+  virtual void GetOrder(int n, int &i, result &x);
+  virtual void show(ostream &s);
+};
+
+int_realset::int_realset(set_result *is) : set_result(is->Size())
+{
+  intset = is;
+}
+
+int_realset::~int_realset()
+{
+  Delete(intset);
+}
+
+void int_realset::GetElement(int n, result &x)
+{
+  DCASSERT(intset);
+  intset->GetElement(n, x);
+  if (x.infinity || x.null || x.error) return;
+  // convert to real
+  x.rvalue = x.ivalue; 
+}
+
+int int_realset::IndexOf(const result &x)
+{
+  result y;
+  y.Clear();
+  y.ivalue = int(x.rvalue);
+  DCASSERT(intset);
+  return intset->IndexOf(y);
+}
+
+void int_realset::GetOrder(int n, int &i, result &x)
+{
+  DCASSERT(intset);
+  intset->GetOrder(n, i, x);
+  if (x.infinity || x.null || x.error) return;
+  // convert to real
+  x.rvalue = x.ivalue; 
+}
+
+void int_realset::show(ostream &s)
+{
+  s << intset;
+}
+
+
+
+
+// ******************************************************************
+// ******************************************************************
+// **                                                              **
+// **                                                              **
+// **                                                              **
+// **                     Expressions for sets                     **
+// **                                                              **
+// **                                                              **
+// **                                                              **
+// ******************************************************************
+// ******************************************************************
+
+
+
+
 
 
 // ******************************************************************
@@ -250,12 +345,28 @@ void setexpr_interval::Compute(int n, result &x)
     x.error = CE_Undefined;
     return;
   } 
+  set_result *xs = NULL;
+  int* values;
+  int* order;
   if (i.infinity || i.ivalue==0) {
     // that means an interval with just the start element.
-    e.ivalue = s.ivalue;
-    i.ivalue = 1;
+    values = new int[1];
+    order = new int[1];
+    values[0] = s.ivalue;
+    order[0] = 0;
+    xs = new generic_int_set(1, values, order);
+    // print a warning here
+  } else
+  if (((s.ivalue > e.ivalue) && (i.ivalue>0))
+     ||
+     ((s.ivalue < e.ivalue) && (i.ivalue<0))) {
+    // empty interval
+    xs = new generic_int_set(0, NULL, NULL);
+    // print a warning here...
+  } else {
+    // we have an ordinary interval
+    xs = new int_interval(s.ivalue, e.ivalue, i.ivalue);
   }
-  set_result *xs = new int_interval(s.ivalue, e.ivalue, i.ivalue);
   x.other = xs;
 }
 
@@ -303,6 +414,58 @@ void setexpr_interval::show(ostream &s) const
 
 // ******************************************************************
 // *                                                                *
+// *                      intset_element class                      *
+// *                                                                *
+// ******************************************************************
+
+/** Used for a single element set.
+    (Used when we make those ugly for loops.)
+ */
+class intset_element : public unary {
+public:
+  intset_element(const char* fn, int line, expr* x) 
+    : unary(fn, line, x) { };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(ostream &s) const;
+protected:
+  virtual expr* MakeAnother(expr* newopnd) {
+    return new intset_element(Filename(), Linenumber(), newopnd);
+  }
+};
+
+type intset_element::Type(int i) const 
+{
+  DCASSERT(i==0);
+  return SET_INT;
+}
+
+void intset_element::Compute(int i, result &x)
+{
+  DCASSERT(i==0);
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
+  if (x.error || x.null) return;
+  if (x.infinity) {
+    x.error = CE_Undefined;  // print error message?
+    return;
+  }
+  int* values = new int[1];
+  int* order = new int[1];
+  values[0] = x.ivalue;
+  order[0] = 0;
+   
+  set_result *answer = new generic_int_set(1, values, order);
+  x.other = answer;
+}
+
+void intset_element::show(ostream &s) const
+{
+  s << opnd;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                       intset_union class                       *
 // *                                                                *
 // ******************************************************************
@@ -346,53 +509,114 @@ void intset_union::Compute(int i, result &x)
   right->Compute(0, r);
   if (r.error || r.null) {
     x = r;
-    delete ls;
+    Delete(ls);
     return;
   }
   set_result *rs = (set_result*) r.other;
 
-  // figure out how many elements in rs are also in ls.
-  int duplicates = 0;
+  // mark the duplicate elements in rs.
+  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
   int lp = 0, rp = 0;
   result lx, rx;
-  int dumbl, dumbr;
-  if (lp<ls->Size() && rp<rs->Size()) {
-    ls->GetOrder(lp, dumbl, lx);
-    rs->GetOrder(rp, dumbr, rx);
-  }
+  int ordl, ordr;
+  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
   while (lp<ls->Size() && rp<rs->Size()) {
     if (lx.ivalue == rx.ivalue) {
-      duplicates++;
+      rspos[ordr] = 0;  // duplicate
       lp++;
       rp++;
-      if (lp<ls->Size() && rp<rs->Size()) {
-        ls->GetOrder(lp, dumbl, lx);
-        rs->GetOrder(rp, dumbr, rx);
-      }
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
     } else if (lx.ivalue < rx.ivalue) {
       // advance lp only
       lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, dumbl, lx);
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
     } else {
       // advance rp only
+      rspos[ordr] = 1;  // not duplicate
       rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, dumbr, rx);
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
     }
   }
-  int newsize = ls->Size() + rs->Size() - duplicates;
-  // We don't allow empty sets, so the union should have at least one element.
-  DCASSERT(newsize>0);
+  // fill the rest of rspos
+  while (rp<rs->Size()) {
+    rspos[ordr] = 1;
+    rp++;
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  }
 
-  // Do a "mergesort"
-  int* values = new int[newsize];
-  int* order = new int[newsize];
-  int lvptr = 0;
-  int rvptr = ls->Size();
-  int optr = 0;
+  // we have an array of bits for non-duplicates.
+  // translate that into the new positions (by summing).
+  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
+  
+  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
+  
+  int newsize = ls->Size() + rspos[rs->Size()-1];
 
-  // tricky part here...
+  set_result *answer;
 
-  set_result *answer = new generic_int_set(newsize, values, order);
+  if (0==newsize) {
+    // left and right must be empty.
+    answer = new generic_int_set(0, NULL, NULL);
+
+  } else {
+    // we have a non-trivial union.
+
+    // Do a "mergesort"
+    int* values = new int[newsize];
+    int* order = new int[newsize];
+    int optr = 0;
+    lp = 0; rp = 0;
+    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    while (lp<ls->Size() && rp<rs->Size()) {
+      if (lx.ivalue == rx.ivalue) {
+        // this is a duplicate
+        order[optr] = ordl;
+        optr++;
+        values[ordl] = lx.ivalue;
+        lp++;
+        rp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      } else if (lx.ivalue < rx.ivalue) {
+        // copy next element from left
+        order[optr] = ordl;
+        values[ordl] = lx.ivalue;
+        optr++;
+        lp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      } else {
+        // copy next element from right
+        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
+        values[order[optr]] = rx.ivalue;
+        optr++;
+        rp++;
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      }
+    }
+    // At most one of these loops will go
+    while (lp<ls->Size()) {
+      order[optr] = ordl;
+      values[ordl] = lx.ivalue;
+      optr++;
+      lp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    }
+    while (rp<rs->Size()) {
+      order[optr] = rspos[ordr] + ls->Size() - 1;
+      values[order[optr]] = rx.ivalue;
+      optr++;
+      rp++;
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    }
+
+    answer = new generic_int_set(newsize, values, order);
+    
+    // eventually... return buffer
+    delete[] rspos;
+  }
 
   // temporary...
 
@@ -400,29 +624,100 @@ void intset_union::Compute(int i, result &x)
   cout << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
   
   x.other = answer;
-  delete ls;
-  delete rs;
+  Delete(ls);
+  Delete(rs);
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                       int2realset  class                       *
+// *                                                                *
+// ******************************************************************
+
+/** A typecast expression from int sets to real sets.
+ */
+class int2realset : public unary {
+public:
+  int2realset(const char* fn, int line, expr* x) 
+    : unary(fn, line, x) { };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(ostream &s) const { s << opnd; }
+protected:
+  virtual expr* MakeAnother(expr* newx) {
+    return new int2realset(Filename(), Linenumber(), newx);
+  }
+};
+
+type int2realset::Type(int i) const
+{
+  DCASSERT(0==i);
+  return SET_REAL;
+}
+
+void int2realset::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
+  if (x.null || x.error) return;
+  set_result* xs = (set_result*) x.other;
+  set_result* answer = new int_realset(xs);
+  x.other = answer;
 }
 
 // ******************************************************************
+// *                                                                *
 // *                                                                *
 // *           Global functions  to build set expressions           *
 // *                                                                *
+// *                                                                *
 // ******************************************************************
 
-expr*  MakeInterval(expr* start, expr* stop, expr* inc)
+expr*  MakeInterval(const char *fn, int ln, expr* start, expr* stop, expr* inc)
 {
+  switch (start->Type(0)) {
+    case INT: 
+      return new setexpr_interval(fn, ln, start, stop, inc);
+
+    case REAL:
+      // not done yet
+      return NULL;
+  }
   return NULL;
 }
 
-expr*  MakeElementSet(expr* element)
+expr*  MakeElementSet(const char *fn, int ln, expr* element)
 {
+  switch (element->Type(0)) {
+    case INT:
+      return new intset_element(fn, ln, element);
+
+    case REAL:
+      // not done yet
+      return NULL;
+  }
   return NULL;
 }
 
-expr*  MakeUnionOp(expr* left, expr* right)
+expr*  MakeUnionOp(const char *fn, int ln, expr* left, expr* right)
 {
+  switch (left->Type(0)) {
+    case SET_INT:
+      return new intset_union(fn, ln, left, right);
+
+    case SET_REAL:
+      // not done yet
+      return NULL;
+  }
   return NULL;
+}
+
+expr*  MakeInt2RealSet(const char* fn, int line, expr* intset)
+{
+  DCASSERT(intset->Type(0) == SET_INT);
+  return new int2realset(fn, line, intset);
 }
 
 //@}
