@@ -97,10 +97,10 @@ void Heap<DATA>::DownHeap(int n)
 {
   int x=0;
   while (1) {
-    int a = 2*x;  // left child
+    int a = 2*x+1;  // left child
     int b = a+1;  // right child
     if (a>=n) return;  // no children
-    if (b>=last) {
+    if (b>=n) {
       // this node has one left child (a leaf), and no right child.
       // check the child and swap if necessary, then we're done
       int cmp = Compare(data[a], data[x]);
