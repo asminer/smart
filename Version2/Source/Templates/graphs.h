@@ -17,6 +17,8 @@
 const int MAX_NODE_ADD = 4096;
 const int MAX_EDGE_ADD = 4096;
 
+#define DEBUG_GRAPH
+
 // ******************************************************************
 // *                                                                *
 // *                         digraph  class                         *
@@ -364,7 +366,7 @@ void labeled_digraph <LABEL> :: Defragment(int first_slot)
 #ifdef DEBUG_GRAPH
   Output << "Linked lists after defragment:\n";
   Output << "row_pointer: [";
-  Output.PutArray(row_pointer, num_nodes);
+  Output.PutArray(row_pointer, 1+num_nodes);
   Output << "]\n";
   Output.flush();
   Output << "column_index: [";

@@ -21,9 +21,23 @@
     Even though absorbing states are recurrent classes, we count them
     separately because they are a special case that can be handled VERY easily.
    
+    The original P (or Q) matrix is then split into 
+	P = Pself + Ptr
+    where Pself is a block-diagonal matrix that holds all arcs within 
+    recurrent classes (or transient-transient).
+    Because the states are reordered, we can get the desired submatrix
+    from the appropriate subset of rows/columns.
+
+    Then there is Ptr, the transient-recurrent + transient-absorbing arcs.
+    It is stored in a single matrix, because realistically, it is only
+    used in a "transient probability" * Ptr multiplication to obtain
+    the corresponding "recurrent / absorbing probability".
 */
 template <class LABEL>
 struct classified_chain {
+  /// Total number of states
+  int states;
+
   /** The overall graph that we carve up.
       All fields are shared amongst the classified chain except
  	row_pointer,
@@ -52,20 +66,18 @@ struct classified_chain {
   /// Use to renumber states to their classified index
   unsigned long* renumber;
 
-  /** Pointers to Recurrent-recurrent matrices.
-      Outermost array is of dimension #recurrent.
-      (The absorbing-absorbing identity is not stored.)
-      Innermost arrays are "row pointers" (unless transposed).
+  /** The block-diagonal, "self" matrix.
+      TT, R1, R2, ..., Rn, and A all stored in one.
+      These are row/column pointers of dimension #states - #absorbing
+      (because there are no absorbing-absorbing arcs stored). 
   */
-  int** RRarcs;
+  int* self_arcs;
 
-  /** Pointers to transient-transient, transient-recurrent, 
-      and transient-absorbing matrices.
+  /** The transient-recurrent/absorbing matrix.
       If there are NO transient states, this is NULL.
-      Otherwise, dimension is 1+#recurrent+1.
-      Innermost arrays again are "row pointers" unless transposed.
+      These are row/column pointers of the #transient x #states matrix.
   */
-  int** Tarcs;
+  int* TRarcs;
 public:
   /** Constructor.
 	@param	gr	Labeled digraph to build from.
@@ -82,7 +94,7 @@ public:
 
   inline unsigned long Renumber(int old_index) const {  
     DCASSERT(renumber);
-    CHECK_RANGE(0, old_index, graph->NumNodes());
+    CHECK_RANGE(0, old_index, states);
     return renumber[old_index];
   }
 
@@ -108,7 +120,7 @@ public:
   }
   inline int numAbsorbing() const { 
     DCASSERT(blockstart);
-    return graph->NumNodes() - blockstart[recurrent+1]; 
+    return states - blockstart[recurrent+1]; 
   }
   /// Total number of recurrent classes, including absorbing states
   inline int numClasses() const { 
@@ -132,7 +144,7 @@ public:
     return (1==recurrent) && (0==numTransient()) && (0==numAbsorbing());
   }
   inline int getClass(int newnumber) const {
-    CHECK_RANGE(0, newnumber, graph->NumNodes());
+    CHECK_RANGE(0, newnumber, states);
     int abs_index = newnumber - blockstart[recurrent+1];
     if (abs_index>=0) return abs_index + recurrent + 1;
     // state is not absorbing.
@@ -164,19 +176,20 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 {
   DCASSERT(in);
   graph = in;
+  states = graph->NumNodes();
 #ifdef DEBUG_CLASSIFY
   Output << "Starting to classify chain\n";
   Output.flush();
 #endif
   // build state to tscc mapping
-  renumber = new unsigned long[graph->NumNodes()];
+  renumber = new unsigned long[states];
   int i;
-  for (i=0; i<graph->NumNodes(); i++) renumber[i] = 0; 
+  for (i=0; i<states; i++) renumber[i] = 0; 
   int count = 1+ComputeTSCCs(graph, renumber); 
 
 #ifdef DEBUG_CLASSIFY
   Output << "Got " << count << " classes:\nclass array: [";
-  Output.PutArray(renumber, graph->NumNodes());
+  Output.PutArray(renumber, states);
   Output << "]\n";
   Output.flush();
 #endif
@@ -184,7 +197,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   // Count number of states per class
   blockstart = (int*) malloc(sizeof(int)*(1+count));
   for (i=0; i<count; i++) blockstart[i] = 0;
-  for (i=0; i<graph->NumNodes(); i++) blockstart[renumber[i]]++;
+  for (i=0; i<states; i++) blockstart[renumber[i]]++;
 #ifdef DEBUG_CLASSIFY
   Output << "Number of states per class: [";
   Output.PutArray(blockstart, count);
@@ -219,17 +232,17 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output.flush();
 #endif
   // renumber the classes
-  for (i=0; i<graph->NumNodes(); i++) renumber[i] = blockstart[renumber[i]];
+  for (i=0; i<states; i++) renumber[i] = blockstart[renumber[i]];
 #ifdef DEBUG_CLASSIFY
   Output << "Renumbered class array: [";
-  Output.PutArray(renumber, graph->NumNodes());
+  Output.PutArray(renumber, states);
   Output << "]\n";
   Output.flush();
 #endif
 
   // Re-count number of states per class
   for (i=0; i<count; i++) blockstart[i] = 0;
-  for (i=0; i<graph->NumNodes(); i++) blockstart[renumber[i]]++;
+  for (i=0; i<states; i++) blockstart[renumber[i]]++;
   
   // Sanity check
   for (i=1; i<=recurrent; i++) 
@@ -251,7 +264,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 #endif
 
   // Change the state class mapping into the state renumbering array, in place!
-  for (i=0; i<graph->NumNodes(); i++) renumber[i] = blockstart[renumber[i]]++; 
+  for (i=0; i<states; i++) renumber[i] = blockstart[renumber[i]]++; 
 
   // shift the class sizes back
   for (i=count; i; i--) blockstart[i] = blockstart[i-1];
@@ -271,19 +284,17 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output << "Blockstart array: [";
   Output.PutArray(blockstart, 2+recurrent);
   Output << "]\nRenumber array: [";
-  Output.PutArray(renumber, graph->NumNodes());
+  Output.PutArray(renumber, states);
   Output << "]\n";
   Output.flush();
 #endif
 
-  // Allocate RRarcs and Tarcs
 
-  RRarcs = (recurrent) ? (new int*[recurrent]) : NULL;
-  Tarcs = (numTransient()) ? (new int*[2+recurrent]) : NULL;
+  TRarcs = NULL;
 
   if (isIrreducible()) {
     graph->ConvertToStatic();
-    RRarcs[0] = graph->row_pointer;
+    self_arcs = graph->row_pointer;
     DoneRenumbering();  // no renumbering of states necessary
   } else {
     graph->ConvertToDynamic();
@@ -303,6 +314,7 @@ void classified_chain <LABEL> :: ArrangeMatricesByCols()
   Output << "Arranging matrices by columns\n";
   Output.flush();
 #endif
+  // Allocate RRarcs and Tarcs
 }
 
 template <class LABEL>
@@ -314,46 +326,36 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
   Output << "Arranging matrices by rows\n";
   Output.flush();
 #endif
-  // allocate row pointers for T-T, T-R, T-A matrices
+  // allocate row pointers for T-R, T-A matrix and set all rows empty
   if (numTransient()) {
-    DCASSERT(Tarcs);
-    // These matrices all have #transients rows.
-    for (i=0; i<2+recurrent; i++) {
-      Tarcs[i] = new int[numTransient()+1];      
-      // set all rows to empty
-      for (int j=numTransient(); j>=0; j--) Tarcs[i][j] = -1;
-    } // for i
+    TRarcs = (int*) malloc(sizeof(int) * numTransient()+1);
+    if (NULL==TRarcs) OutOfMemoryError("Matrix classify");
+    for (int j=numTransient(); j>=0; j--) TRarcs[j] = -1;
   }
-  // allocate row pointers for each R-R submatrix
-  for (i=0; i<recurrent; i++) {
-    // These matrices all have #(recurrent states in this class) rows.
-    RRarcs[i] = new int[numRecurrent(i+1)+1];
-    // set all rows to empty
-    for (int j=numRecurrent(i+1); j>=0; j--) RRarcs[i][j] = -1;
-  }
-
+  // allocate row pointers for "within class" matrix, set all rows empty
+  self_arcs = (int*) malloc(sizeof(int) * (1+states - numAbsorbing()));
+  if (NULL==self_arcs) OutOfMemoryError("Matrix classify");
+  for (int j=states-numAbsorbing(); j>=0; j--) self_arcs[j] = -1;
+  
   // Traverse old rows, translate each item and add to appropriate submatrix
   int* oldrow = graph->row_pointer;
-  for (i=0; i<graph->NumNodes(); i++) {
+  
+  for (i=0; i<states; i++) {
     int new_i = Renumber(i);
+    if (isAbsorbing(new_i)) continue;
+    if (!isTransient(new_i)) graph->row_pointer = self_arcs;
     int e;
-    int ci = getClass(new_i);
-    if (ci>recurrent) continue;  // from state is absorbing
-    CHECK_RANGE(0, ci, recurrent+1);
-    if (ci) {
-      DCASSERT(RRarcs);
-      graph->row_pointer = RRarcs[ci-1];
-    }
     while (oldrow[i]>=0) {
       e = oldrow[i];
       oldrow[i] = graph->next[e];
       int new_j = Renumber(graph->column_index[e]);
       graph->column_index[e] = new_j;
-      int cj = isAbsorbing(new_j) ? recurrent+1 : getClass(new_j);
-      if (0==ci) {
- 	// transient from-state, submatrix determined by to-state
-        DCASSERT(Tarcs);
-        graph->row_pointer = Tarcs[cj];
+      if (isTransient(new_i)) {
+        DCASSERT(TRarcs);
+        if (isTransient(new_j))
+          graph->row_pointer = self_arcs;
+        else
+          graph->row_pointer = TRarcs;
       }
       // add this element to the submatrix
       graph->AddToOrderedCircularList(new_i, e);
@@ -361,33 +363,22 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
   } // for i
   free(oldrow);
 
-  // Defragment submatrices, and delete rowpointers for empty submatrices
-  int defragstart = 0;
+  // Convert matrices to non-circular lists
   if (numTransient()) {
-    // These matrices all have #transients rows.
-    for (i=0; i<2+recurrent; i++) {
-      graph->row_pointer = Tarcs[i];
-      graph->CircularToTerminated();
-      graph->Defragment(defragstart);
-      if (Tarcs[i][numTransient()] == defragstart)  {
- 	// empty submatrix
-        delete[] Tarcs[i];
-        Tarcs[i] = NULL;
-      } else {
-        // advance defragstart
-        defragstart = Tarcs[i][numTransient()];
-      }
-    } // for i
-  }
-  for (i=0; i<recurrent; i++) {
-    // These matrices all have #(recurrent states in this class) rows.
-    graph->row_pointer = RRarcs[i];
+    graph->num_nodes = numTransient();
+    graph->row_pointer = TRarcs;
     graph->CircularToTerminated();
-    graph->Defragment(defragstart);
-    // None of these submatrices should be empty
-    DCASSERT(RRarcs[i][numRecurrent(i+1)] > defragstart);
-    defragstart = RRarcs[i][numRecurrent(i+1)]; 
   }
+  graph->num_nodes = states - numAbsorbing();
+  graph->row_pointer = self_arcs;
+  graph->CircularToTerminated();
+  
+  // Defragment submatrices
+  graph->Defragment(0);
+
+  graph->num_nodes = numTransient();
+  graph->row_pointer = TRarcs;
+  graph->Defragment(self_arcs[states-numAbsorbing()]);
 }
 
 template <class LABEL>
@@ -396,7 +387,7 @@ void classified_chain <LABEL> :: Show(OutputStream &s) const
   const char* rowname = (graph->isTransposed) ? "column" : "row";
   const char* colname = (graph->isTransposed) ? "row" : "column";
   s.Pad('-', 60);
-  s << "\nClassified chain with " << graph->NumNodes() << " states total\n";
+  s << "\nClassified chain with " << states << " states total\n";
   s << "\t" << numTransient() << " transient states\n";
   s << "\t" << numClasses() << " recurrent classes, of which\n";
   s << "\t" << numAbsorbing() << " are absorbing states\n";
@@ -417,25 +408,15 @@ void classified_chain <LABEL> :: Show(OutputStream &s) const
   }
   s.flush();
 
-  int i;
+  s << "self matrix\n";
+  s << "\t" << rowname << " pointers: [";
+  s.PutArray(self_arcs, 1+states-numAbsorbing());
+  s << "]\n";
   if (numTransient()) {
-    for (i=0; i<recurrent+2; i++) {
-      s << "Transient-";
-      if (i==0) s << "transient"; 
-      else if (i>recurrent) s << "absorbing"; 
-      else s << "recurrent " << i;
-      s << " " << rowname << " pointers: [";
-      s.PutArray(Tarcs[i], 
-    	graph->isTransposed ? numRecurrent(i) : numTransient());
-      s << "]\n";
-      s.flush();
-    } // for i
-  }
-  for (i=0; i<recurrent; i++) {
-    s << "Recurrent class " << i+1 << " " << rowname << " pointers: [";
-    s.PutArray(RRarcs[i], numRecurrent(i+1));
+    s << "TR matrix\n";
+    s << "\t" << rowname << " pointers: [";
+    s.PutArray(TRarcs, graph->isTransposed ? 1+states : 1+numTransient());
     s << "]\n";
-    s.flush();
   }
   s << "End of classified chain\n";
   s.Pad('-', 60);
