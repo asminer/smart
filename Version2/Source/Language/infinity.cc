@@ -59,9 +59,24 @@ expr* MakeConstExpr(type t, const result &x, const char* file, int line)
   if (x.isError()) return NULL;
   if (x.isInfinity()) return MakeInfinityExpr(x.ivalue, file, line);
   switch (t) {
-    case BOOL:		return MakeConstExpr(x.bvalue, file, line);
-    case INT: 		return MakeConstExpr(x.ivalue, file, line);
-    case REAL:		return MakeConstExpr(x.rvalue, file, line);
+    case BOOL:		
+    case RAND_BOOL:		
+    case PROC_BOOL:		
+    case PROC_RAND_BOOL:		
+			return MakeConstExpr(t, x.bvalue, file, line);
+
+    case INT: 		
+    case RAND_INT: 		
+    case PROC_INT: 		
+    case PROC_RAND_INT: 		
+			return MakeConstExpr(t, x.ivalue, file, line);
+
+    case REAL:		
+    case RAND_REAL:		
+    case PROC_REAL:		
+    case PROC_RAND_REAL:		
+			return MakeConstExpr(t, x.rvalue, file, line);
+
     case STRING:	return MakeConstExpr((char*)x.other, file, line);
   }
   //

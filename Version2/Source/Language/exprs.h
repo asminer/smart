@@ -580,14 +580,16 @@ void PrintExprType(expr *e, OutputStream &s);
 // *                                                                *
 // ******************************************************************
 
-/// Build a boolean constant.
-expr* MakeConstExpr(bool c, const char* file, int line);
+/** Build a boolean constant.
+    The type can be BOOL, RAND_BOOL, PROC_BOOL...
+*/
+expr* MakeConstExpr(type t, bool c, const char* file, int line);
 
 /// Build an integer constant.
-expr* MakeConstExpr(int c, const char* file, int line);
+expr* MakeConstExpr(type t, int c, const char* file, int line);
 
 /// Build a real constant.
-expr* MakeConstExpr(double c, const char* file, int line);
+expr* MakeConstExpr(type t, double c, const char* file, int line);
 
 /// Build a string constant.
 expr* MakeConstExpr(char *c, const char* file, int line);

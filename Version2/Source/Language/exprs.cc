@@ -775,17 +775,30 @@ int aggregates::GetSymbols(int i, List <symbol> *syms)
  */
 class boolconst : public constant {
   bool value;
-  public:
-  boolconst(const char* fn, int line, bool v) : constant (fn, line, BOOL) {
+public:
+  boolconst(const char* fn, int ln, type t, bool v) : constant (fn, ln, t) {
     value = v;
   }
-
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.bvalue = value;
   }
-
+  virtual void Sample(Rng &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.bvalue = value;
+  }
+  virtual void Compute(const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.bvalue = value;
+  }
+  virtual void Sample(Rng &, const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.bvalue = value;
+  }
   virtual void show(OutputStream &s) const {
     if (value) s << "true"; else s << "false";
   }
@@ -801,17 +814,30 @@ class boolconst : public constant {
  */
 class intconst : public constant {
   int value;
-  public:
-  intconst(const char* fn, int line, int v) : constant (fn, line, INT) {
+public:
+  intconst(const char* fn, int line, type t, int v) : constant (fn, line, t) {
     value = v;
   }
-
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
   }
-
+  virtual void Sample(Rng &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.ivalue = value;
+  }
+  virtual void Compute(const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.ivalue = value;
+  }
+  virtual void Sample(Rng &, const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.ivalue = value;
+  }
   virtual void show(OutputStream &s) const {
     s << value;
   }
@@ -827,17 +853,30 @@ class intconst : public constant {
  */
 class realconst : public constant {
   double value;
-  public:
-  realconst(const char* fn, int line, double v) : constant(fn, line, REAL) {
+public:
+  realconst(const char* fn, int ln, type t, double v) : constant(fn, ln, t) {
     value = v;
   }
-
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.rvalue = value;
   }
-
+  virtual void Sample(Rng &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.rvalue = value;
+  }
+  virtual void Compute(const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.rvalue = value;
+  }
+  virtual void Sample(Rng &, const state &, int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.rvalue = value;
+  }
   virtual void show(OutputStream &s) const {
     s << value;
   }
@@ -858,19 +897,16 @@ class stringconst : public constant {
     ALLOC("stringconst", sizeof(stringconst));
     value = v;
   }
-
   virtual ~stringconst() {
     FREE("stringconst", sizeof(stringconst));
     delete[] value;
   }
-
   virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.other = value;
     x.notFreeable();
   }
-
   virtual void show(OutputStream &s) const {
     if (value) s << '"' << value << '"';
     else s << "null string";
@@ -883,19 +919,22 @@ class stringconst : public constant {
 // *                                                                *
 // ******************************************************************
 
-expr* MakeConstExpr(bool c, const char* file, int line) 
+expr* MakeConstExpr(type t, bool c, const char* file, int line) 
 {
-  return new boolconst(file, line, c);
+  DCASSERT(t==BOOL || t==RAND_BOOL || t==PROC_BOOL || t==PROC_RAND_BOOL);
+  return new boolconst(file, line, t, c);
 }
 
-expr* MakeConstExpr(int c, const char* file, int line) 
+expr* MakeConstExpr(type t, int c, const char* file, int line) 
 {
-  return new intconst(file, line, c);
+  DCASSERT(t==INT || t==RAND_INT || t==PROC_INT || t==PROC_RAND_INT);
+  return new intconst(file, line, t, c);
 }
 
-expr* MakeConstExpr(double c, const char* file, int line) 
+expr* MakeConstExpr(type t, double c, const char* file, int line) 
 {
-  return new realconst(file, line, c);
+  DCASSERT(t==REAL || t==RAND_REAL || t==PROC_REAL || t==PROC_RAND_REAL);
+  return new realconst(file, line, t, c);
 }
 
 expr* MakeConstExpr(char *c, const char* file, int line) 

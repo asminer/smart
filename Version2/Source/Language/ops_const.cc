@@ -28,7 +28,6 @@ void bool_not::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
-  x.Clear();
   opnd->Compute(0, x); 
 
   if (!x.isNormal()) return;
@@ -45,7 +44,6 @@ void bool_not::Compute(int i, result &x)
 void bool_or::Compute(int a, result &x)
 {
   DCASSERT(0==a);
-  x.Clear();
   int i;
   bool unknown = false;
   for (i=0; i<opnd_count; i++) {
@@ -70,7 +68,6 @@ void bool_or::Compute(int a, result &x)
 void bool_and::Compute(int a, result &x)
 {
   DCASSERT(0==a);
-  x.Clear();
   int i;
   bool unknown = false;
   for (i=0; i<opnd_count; i++) {
@@ -104,6 +101,7 @@ void bool_equal::Compute(int i, result &x)
   left->Compute(0, l); 
   right->Compute(0, r); 
 
+  x.Clear();
   if (CheckOpnds(l, r, x)) {
     x.bvalue = (l.bvalue == r.bvalue);
   }
@@ -127,6 +125,7 @@ void bool_neq::Compute(int i, result &x)
   left->Compute(0, l);
   right->Compute(0, r);
 
+  x.Clear();
   if (CheckOpnds(l, r, x)) {
     x.bvalue = (l.bvalue != r.bvalue);
   }
@@ -142,7 +141,6 @@ void int_neg::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
-  x.Clear();
   opnd->Compute(0, x);
 
   if (x.isNormal() || x.isInfinity()) {
@@ -160,7 +158,6 @@ void int_neg::Compute(int i, result &x)
 void int_add::Compute(int a, result &x)
 {
   DCASSERT(0==a);
-  x.Clear();
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.isNull() || x.isError()) return;  // short circuit
@@ -302,7 +299,6 @@ void int_sub::Compute(int i, result &x)
 void int_mult::Compute(int a, result &x)
 {
   DCASSERT(0==a);
-  x.Clear();
   DCASSERT(operands[0]);
   operands[0]->Compute(0, x);
   if (x.isError()) return;

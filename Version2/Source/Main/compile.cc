@@ -174,10 +174,10 @@ type MakeType(const char* modif, const char* tp)
 expr* MakeBoolConst(char* s)
 {
   if (strcmp(s, "true") == 0) {
-    return MakeConstExpr(true, filename, lexer.lineno());
+    return MakeConstExpr(BOOL, true, filename, lexer.lineno());
   }
   if (strcmp(s, "false") == 0) {
-    return MakeConstExpr(false, filename, lexer.lineno());
+    return MakeConstExpr(BOOL, false, filename, lexer.lineno());
   }
   // error
   Internal.Start(filename, lexer.lineno());
@@ -190,14 +190,14 @@ expr* MakeIntConst(char* s)
 {
   int value;
   sscanf(s, "%d", &value);
-  return MakeConstExpr(value, filename, lexer.lineno());
+  return MakeConstExpr(INT, value, filename, lexer.lineno());
 }
 
 expr* MakeRealConst(char* s)
 {
   double value;
   sscanf(s, "%lf", &value);
-  return MakeConstExpr(value, filename, lexer.lineno());
+  return MakeConstExpr(REAL, value, filename, lexer.lineno());
 }
 
 expr* MakeStringConst(char *s)
@@ -230,8 +230,8 @@ expr* BuildInterval(expr* start, expr* stop)
     return ERROR;
   }
 
-  expr* answer = MakeInterval(filename, lexer.lineno(), 
-                      start, stop, MakeConstExpr(1, filename, lexer.lineno()));
+  expr* answer = MakeInterval(filename, lexer.lineno(), start, stop, 
+			MakeConstExpr(INT, 1, filename, lexer.lineno()));
 
 #ifdef COMPILE_DEBUG
   Output << "Built interval, start: " << start << " stop: " << stop << "\n";
