@@ -36,11 +36,18 @@ public:
     DCASSERT(data);
     return data[n];
   }
+  void Show(OutputStream& s) const;
   friend bool AllocState(state &s, int length);
   friend void FreeState(state &s);
   friend void MakeSubstate(state &sub, const state &s, int pos, int len);
 };
 
+/** Stream overloading for state */
+inline OutputStream& operator<< (OutputStream& s, const state &st)
+{
+  st.Show(s);
+  return s;
+}
 
 /** Set up space for state s, from the state "heap".
     Returns true on success.

@@ -34,6 +34,16 @@ const unsigned int twoexp[32] =
 const char* EncodingMethod[4] = 
 	{ "deleted state", "sparse", "runlength", "full" };
 
+const char LIST_BIT = 0;
+const char RUN_BIT = 1;
+
+const unsigned placelimit[] = { 16, 256, 65536, 16777216, 0xffffffff };
+const char placebits[] = { 4, 8, 16, 24, 32 };
+
+const unsigned tokenlimit[] = { 2, 4, 16, 256, 65536, 16777216, 0xffffffff };
+const char tokenbits[] = { 1, 2, 4, 8, 16, 24, 32 };
+
+
 void state_array::ReadInt(char bits, int &x)
 {
   int toptr = bitptr-bits+1;
@@ -197,8 +207,89 @@ state_array::~state_array()
 }
 
 
-void state_array::AddRunlength(const state &s, int maxval, int runbits)
+void state_array::RunlengthEncode(char npbits, char tkbits, state &s)
 {
+  // state is not binary
+  int i = 0;
+  int np = s.Size();
+  while (i<np) {
+    if (i+1 >= np) {
+     	// one last state var, treat as a list of length 1
+	WriteInt(1, LIST_BIT);
+	WriteInt(npbits, 1);  
+	WriteInt(tkbits, s[i].ivalue);
+        i++;
+        continue;
+    }
+    if (s[i].ivalue == s[i+1].ivalue) {
+ 	// Start of a RUN
+	WriteInt(1, RUN_BIT); 
+	int j;
+	for (j=i+1; j<np && s[i].ivalue == s[j].ivalue; j++) { } 
+	// j is one past the end of the run
+  	WriteInt(npbits, j-i);    	// run length
+	WriteInt(tkbits, s[i].ivalue);	// run value
+ 	i = j;
+     	continue;
+    }
+    // Must be a LIST
+    WriteInt(1, LIST_BIT);	
+    int j;
+    // find end of list
+    for (j=i+1; j<np; j++) {
+      if (j+2 >= np) {
+	j=np;
+	break;
+      } 
+      if (s[j].ivalue != s[j+1].ivalue) continue;
+      if (s[j].ivalue == s[j+2].ivalue) break;  // run of 3
+    } // for j
+    // j is one past the end of the list
+    WriteInt(npbits, j-i);	// list length
+    for (i; i<j; i++)
+      WriteInt(tkbits, s[i].ivalue);
+  } // while i < np
+}
+
+void state_array::RunlengthEncodeBinary(char npbits, state &s)
+{
+  // special case: state is binary
+  int i = 0;
+  int np = s.Size();
+  // write the first bit value
+  WriteInt(1, s[0].ivalue);
+  while (i<np) {
+    if (i+1 >= np) {
+     	// one last state var, treat as a flip of length 1
+	WriteInt(1, LIST_BIT);
+	WriteInt(npbits, 1);  
+        i++;
+        continue;
+    }
+    if (s[i].ivalue == s[i+1].ivalue) {
+ 	// Start of a RUN
+	WriteInt(1, RUN_BIT); 
+	int j;
+	for (j=i+1; j<np && s[i].ivalue == s[j].ivalue; j++) { } 
+	// j is one past the end of the run
+  	WriteInt(npbits, j-i);    	// run length
+ 	i = j;
+     	continue;
+    }
+    // Must be a LIST, in this case, a sequence of FLIPS
+    WriteInt(1, LIST_BIT);	
+    int j;
+    // find end of list
+    for (j=i+1; j<np; j++) {
+      if (j+1 >= np) {
+	j=np;
+	break;
+      } 
+      if (s[j].ivalue == s[j+1].ivalue) break;
+    } // for j
+    // j is one past the end of the list
+    WriteInt(npbits, j-i);	// list length
+  } // while i<np
 }
  
 int state_array::AddState(state &s)
@@ -236,35 +327,19 @@ int state_array::AddState(state &s)
   //  Determine number of bits to use for "places"
   //
   char npselect;
-  if (np<=16) 
-    npselect = 0;
-  else if (np<=256) 
-    npselect = 1;
-  else if (np<=65536) 
-    npselect = 2;
-  else if (np<=16777216) 
-    npselect = 3;
-  else // I can't imagine having more than 16 million places, but ok...
-    npselect = 4;
-
-  char npbits = (npselect) ? (8*npselect) : 4;
+  for (npselect=0; npselect<5; npselect++) 
+    if (np <= placelimit[npselect]) break;
+  DCASSERT(npselect<5);
+  char npbits = placebits[npselect];
 
   //  
   //  Determine number of bits to use for "tokens"
   //
   char tkselect;
-  if (maxval<2) 
-    tkselect = 0; 
-  else if (maxval < 4) 
-    tkselect = 1; 
-  else if (maxval < 16) 
-    tkselect = 2; 
-  else if (maxval < 256) 
-    tkselect = 3; 
-  else 
-    tkselect = 4; 
-
-  char tkbits = twoexp[tkselect];
+  for (tkselect=0; tkselect<7; tkselect++) 
+    if (maxval < tokenlimit[tkselect]) break;
+  DCASSERT(tkselect<7);
+  char tkbits = tokenbits[tkselect];
 
   //
   //  Scan state to determine runlength stats
@@ -353,7 +428,7 @@ int state_array::AddState(state &s)
   //
   // Count bits/bytes required total for sparse storage
   //
-  int sparse_bits = npbits + nnz*npbits;
+  int sparse_bits = (1+nnz) * npbits;
   if (tkbits>1) sparse_bits += nnz*tkbits;
   int sparse_bytes = Bits2Bytes(sparse_bits);
 
@@ -413,16 +488,10 @@ int state_array::AddState(state &s)
       break;
 
     case 2: 
-      // *****************	Inverse-Sparse Encoding 
-      if (tkbits>1) WriteInt(tkbits, Mfv);
-      WriteInt(npbits, nnM);
-      for (i=0; i<np; i++) {
-        int tk = s->Get(i);
-        if (tk != Mfv) {
-          WriteInt(npbits, i);
-          if (tkbits>1) WriteInt(tkbits, tk);
-        }
-      }
+      // *****************	Runlength Encoding 
+      WriteInt(npbits, runs+lists);
+      if (tkbits>1) RunlengthEncode(npbits, tkbits, s);
+      else RunlengthEncodeBinary(npbits, s);
       break;
 
     case 3:
@@ -471,8 +540,11 @@ int state_array::AddState(state &s)
 
 bool state_array::GetState(int Handel, state &s)
 {
+  //
+  //  Find starting point of the state represented by Handel
+  //
   int h;
-  if (Handel<0) return false;
+  if (Handel<0) return false;  // Impossible, bail out
   if (map) {
     if (Handel>=numstates) return false;
     h = map[Handel];
@@ -480,60 +552,80 @@ bool state_array::GetState(int Handel, state &s)
     if (Handel>=lasthandle) return false;
     h = Handel;
   }
-  int tk, np, nnz;
-  int encselect;
-  int npselect;
-  char npbits;
-  int tkselect;
-  char tkbits;
-  int i;
-  int Mfv;
-#ifndef SHORT_STATES
-  int dummy;
-#endif
   
-  // here we go...
+  // 
+  // Initialize bitstream and read state encoding method
+  // 
   byteptr = h;
   bitptr = 7;
-  // read the state code
+  int encselect;
   ReadInt(2, encselect);
+  int npselect;
   ReadInt(3, npselect); 	// #places selector
+  int tkselect;
   ReadInt(3, tkselect);  	// maxtokens selector
 
-  // Figure out the numbers of bits
-  npbits = (npselect) ? (npselect*8) : 4;
+  // Figure out the numbers of bits used
+  char npbits = placebits[npselect];
+  char tkbits = tokenbits[tkselect];
 
-  tkbits = twoexp[tkselect];
-  
+  //
+  // Decode the state based on the encoding method
+  //
+  int tk, np, nnz;
+  int i, j, type;
+  // stats for debugging
+#ifdef DEBUG_COMPACT
+  int lists, runs, listlength;
+  lists = runs = listlength = 0;
+#endif
   switch(encselect) {
     case 1: 
       // *****************	Sparse Encoding 
-      s->Fill(0);
+      for (i=s.Size()-1; i>=0; i--) s[i].ivalue = 0;
       ReadInt(npbits, nnz);
       for (i=0; i<nnz; i++) {
         ReadInt(npbits, np);
 	if (tkbits>1) {
 	  ReadInt(tkbits, tk);
-	  s->Set(np, tk);
+	  s[np].ivalue = tk;
 	} else 
-	  s->Set(np, 1);
+	  s[np].ivalue = 1;
       }
       break;
       
     case 2: 
-      // *****************	Inverse-Sparse Encoding 
-      if (tkbits>1) ReadInt(tkbits, Mfv);
-      else Mfv = 1;
-      s->Fill(Mfv);
-      ReadInt(npbits, nnz);
+      // *****************	Runlength Encoding 
+      ReadInt(npbits, nnz); 
+      j=0;
+      if (1==tkbits) ReadInt(1, tk);
       for (i=0; i<nnz; i++) {
-        ReadInt(npbits, np);
-	if (tkbits>1) {
-	  ReadInt(tkbits, tk);
-	  s->Set(np, tk);
-	} else 
-	  s->Set(np, 0);
-      }
+        ReadInt(1, type);
+        if (RUN_BIT == type) {
+	  // RUN
+#ifdef DEBUG_COMPACT
+	  runs++;
+#endif
+          ReadInt(npbits, np);
+	  if (tkbits>1) ReadInt(tkbits, tk);
+          for(np; np; np--) 
+	    s[j++].ivalue = tk;
+	  // flip bit
+	  tk = !tk;
+        } else {
+	  // LIST
+	  ReadInt(npbits, np);
+#ifdef DEBUG_COMPACT
+	  lists++;
+	  listlength+=np;
+#endif
+	  for(np; np; np--) {
+	    if (tkbits>1) ReadInt(tkbits, tk);
+	    s[j++].ivalue = tk;
+	    if (tkbits<=1) tk = !tk;
+          }
+        }
+      } // for i
       break;
       
     case 3:
@@ -542,7 +634,7 @@ bool state_array::GetState(int Handel, state &s)
       np++;
       for (i=0; i<np; i++) {
 	ReadInt(tkbits, tk);
-	s->Set(i, tk);
+	s[i].ivalue = tk;
       }
     break;
 
@@ -564,8 +656,9 @@ bool state_array::GetState(int Handel, state &s)
       Output << "#nonzeroes: " << nnz << "\n"; 
       break;
     case 2:
-      Output << "Mfv: " << Mfv << "\n";
-      Output << "#not-Mfvs: " << nnz << "\n";
+      Output << "#Runs: " << runs << "\n";
+      Output << "#Lists: " << lists << "\n";
+      Output << "List length: " << listlength << "\n";
       break;
     case 3:
       Output << "#places: " << np << "\n";
@@ -580,6 +673,7 @@ bool state_array::GetState(int Handel, state &s)
 
 int state_array::NextHandle(int h)
 {
+/*
   if (h<0) return -1;
   if (map) {
     // handles are indices
@@ -666,19 +760,24 @@ int state_array::NextHandle(int h)
 #endif
 
   return answer;
+*/
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Next handle not implemented yet\n";
+  Internal.Stop();
+  return 0;
 }
 
-void state_array::Report()
+void state_array::Report(OutputStream &R)
 {
-  Report << "State array report\n";
-  Report << "  " << numstates << " states inserted\n";
+  R << "State array report\n";
+  R << "  " << numstates << " states inserted\n";
   int i;
   for (i=0; i<4; i++) if (encodecount[i])
-    Report <<"  "<< encodecount[i] <<" "<< EncodingMethod[i] << " encodings\n";
-  Report << "State array " << memsize << " bytes\n";
-  Report << " states use " << lasthandle << " bytes\n";
+    R <<"  "<< encodecount[i] <<" "<< EncodingMethod[i] << " encodings\n";
+  R << "State array " << memsize << " bytes\n";
+  R << " states use " << lasthandle << " bytes\n";
   if (map) 
-    Report << "Index handles require " << numstates*sizeof(int) << " bytes\n";
+    R << "Index handles require " << int(numstates*sizeof(int)) << " bytes\n";
 }
 
 int state_array::MemUsed()

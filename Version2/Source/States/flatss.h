@@ -58,18 +58,20 @@
 	3: full  
      
      bits 5,4,3: \\
-     	0 : 0 < \#places <= 16,  		 half-byte can be used \\
-     	1 : 16 < \#places <= 256, 		 one byte can be used \\
-     	2 : 256 < \#places <= 65536,  		 two bytes can be used \\
-     	3 : 65536 < \#places <= 16777216,	 three bytes can be used \\
-     	4 : 1677216 < \#places <= 2^32, 	 four bytes used 
+     	0 : 0 < \#places <= 16,  		 four bits used \\
+     	1 : 16 < \#places <= 256, 		 one byte used \\
+     	2 : 256 < \#places <= 65536,  		 two bytes used \\
+     	3 : 65536 < \#places <= 16777216,	 three bytes used \\
+     	4 : 1677216 < \#places <= 2^32, 	 four bytes used \\
 
      bits 2,1,0: \\
-     	0 : 0 <= maxtokens < 2,		 one bit can be used \\
-	1 : 2 <= maxtokens < 4,		 two bits can be used \\
-     	2 : 2 <= maxtokens < 16,	 four bits can be used \\
-     	3 : 16 <= maxtokens < 256,	 one byte used \\
-     	4 : 256 <= maxtokens < 65536,	 two bytes used \\
+     	0 : 0 <= maxtokens < 2,		 	one bit used \\
+	1 : 2 <= maxtokens < 4,		 	two bits used \\
+     	2 : 2 <= maxtokens < 16,	 	four bits used \\
+     	3 : 16 <= maxtokens < 256,	 	one byte used \\
+     	4 : 256 <= maxtokens < 65536,	 	two bytes used \\
+     	5 : 65536 <= maxtokens < 16777216, 	three bytes used \\
+     	6 : 16777216 <= maxtokens < 2^32, 	four bytes used \\
 
      Then we pull off integers of appropriate sizes (e.g., if we know that
      16 <= \#places < 256, we'll get 8-bits for a place\#) according to the
@@ -81,8 +83,9 @@
       	Note if maxtokens = 1 then we don't need to store \#tokens! 
 
      Runlength encoding: \\
-	Bit indicating that the next "record" is either a RUN or a LIST \\
-	count, of size MIN(8, \#places) bits \\
+        \#entries total (uses \#places bits) \\
+	Bit indicating if the next entry is a RUN or a LIST \\
+	run/list length, of size #places bits \\
 	if RUN, then a single value (the value of the next count state vars) \\
 	if LIST, then count values are listed	
 	Note: if maxtokens = 1 then the value is ALWAYS implied
@@ -141,8 +144,8 @@ protected:
   void EnlargeMem(int newsize);
 
   // Helpers for AddState
-
-  void AddRunlength(const state &s, int maxval, int runbits);
+  void RunlengthEncode(char npbits, char tkbits, state &s);
+  void RunlengthEncodeBinary(char npbits, state &s);
 
   inline int Bits2Bytes(int numbits) const { return (numbits+7)/8; }
 public:
@@ -163,7 +166,7 @@ public:
 
   int NextHandle(int h); 
 
-  void Report();
+  void Report(OutputStream &r);
   int MemUsed();
 
   // Clear out old states but keep memory allocated.

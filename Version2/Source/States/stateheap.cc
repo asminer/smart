@@ -3,6 +3,18 @@
 
 #include "stateheap.h"
 
+void state::Show(OutputStream& s) const
+{
+  int i;
+  s.Put('[');
+  PrintResult(s, INT, data[0]);
+  for (i=1; i<size; i++) {
+    s.Put(", ");
+    PrintResult(s, INT, data[i]); 
+  }
+  s.Put(']');
+}
+
 /*
 	Someday, we may want to set up a nice memory heap
   	just for states to speed things up a bit.
