@@ -1,0 +1,109 @@
+3.14159
+These should be errors:
+ERROR in file funcs.sm near line 11:
+	Re-definition of constant pi
+ERROR in file funcs.sm near line 12:
+	Re-definition of constant pi
+ERROR in file funcs.sm near line 13:
+	Re-definition of constant pi
+should get 8: 8
+should get 8.01: 8.01
+should get 8.01: 8.01
+should get 15: 15
+should get 3: 3
+Duplication errors:
+ERROR in file funcs.sm near line 27:
+	Function declaration conflicts with existing function:
+	int plus(int a, int b) declared in file funcs.sm near line 17
+ERROR in file funcs.sm near line 27:
+	Unknown identifier: a
+ERROR in file funcs.sm near line 27:
+	Unknown identifier: b
+ERROR in file funcs.sm near line 28:
+	Function declaration conflicts with existing function:
+	int times(int a, int b:=1) declared in file funcs.sm near line 19
+ERROR in file funcs.sm near line 29:
+	Duplicate formal parameter named a
+ERROR in file funcs.sm near line 29:
+	Duplicate formal parameter named a
+Bad function calls:
+ERROR in file funcs.sm near line 32:
+	No match for plus(int, int, int)
+ERROR in file funcs.sm near line 33:
+	No match for times(real, real)
+ERROR in file funcs.sm near line 34:
+	No match for times(int)
+ERROR in file funcs.sm near line 34:
+	No match for plus(error, int)
+Nesting:
+should get 12: 12
+should get 10: 10
+should get 10: 10
+should be 5.0: 5.0
+should be 5.1: 5.1
+This should be an error:
+ERROR in file funcs.sm near line 53:
+	Return type for function foo should be int
+Factorials:
+  0! is 1
+  1! is 1
+  2! is 2
+  3! is 6
+  4! is 24
+  5! is 120
+  6! is 720
+  7! is 5040
+  8! is 40320
+  9! is 362880
+ 10! is 3628800
+ 11! is 39916800
+ 12! is 479001600
+ 13! is 6227020800
+ 14! is 87178291200
+ 15! is 1307674368000
+ 16! is 20922789888000
+ 17! is 355687428096000
+ 18! is 6402373705728000
+ 19! is 121645100408832000
+ 20! is 2432902008176640000
+Fibonacci:
+  0th Fibonacci: 1
+  1th Fibonacci: 1
+  2th Fibonacci: 2
+  3th Fibonacci: 3
+  4th Fibonacci: 5
+  5th Fibonacci: 8
+  6th Fibonacci: 13
+  7th Fibonacci: 21
+  8th Fibonacci: 34
+  9th Fibonacci: 55
+ 10th Fibonacci: 89
+ 11th Fibonacci: 144
+ 12th Fibonacci: 233
+ 13th Fibonacci: 377
+ 14th Fibonacci: 610
+ 15th Fibonacci: 987
+ 16th Fibonacci: 1597
+ 17th Fibonacci: 2584
+ 18th Fibonacci: 4181
+ 19th Fibonacci: 6765
+ 20th Fibonacci: 10946
+ 21th Fibonacci: 17711
+ 22th Fibonacci: 28657
+ 23th Fibonacci: 46368
+ 24th Fibonacci: 75025
+ 25th Fibonacci: 121393
+should be 5.0: 5.0
+should be 5.1: 5.1
+Another duplication error:
+ERROR in file funcs.sm near line 77:
+	Function declaration conflicts with existing function:
+	real promote2(int c, real d) declared in file funcs.sm near line 44
+Should be ok
+should be 4: 4
+should be 5: 5
+should be 12: 12
+should be 10: 10
+should be  6: 3
+should be  4: 4
+should be  1: 1

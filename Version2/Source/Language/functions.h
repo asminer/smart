@@ -105,6 +105,19 @@ struct named_param {
        pass the null expression!)
    */
   bool UseDefault;
+
+  // constructor for safety
+  named_param() {
+    name = NULL;
+    pass = NULL;
+    UseDefault = false;
+  }
+
+  // destructor
+  ~named_param() {
+    free(name);
+    Delete(pass);
+  }
 };
 
 

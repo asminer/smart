@@ -25,6 +25,27 @@ void DumpPassed(OutputStream &s, List <expr> *pass)
   s << ")";
 }
 
+void DumpPassed(OutputStream &s, List <named_param> *pass)
+{
+  if (NULL==pass) return;
+  if (pass->Length()==0) return;
+  s << "(";
+  int i;
+  for (i=0; i<pass->Length(); i++) {
+    if (i) s << ", ";
+    named_param *np = pass->Item(i);
+    if (!np->UseDefault) {
+      PrintExprType(np->pass, s);
+      s << " ";
+    }
+    s << pass->Item(i)->name;
+    if (np->UseDefault) {
+      s << ":=default";
+    }
+  }
+  s << ")";
+}
+
 // ==================================================================
 // |                                                                |
 // |                      Global compiler data                      | 
@@ -1508,17 +1529,68 @@ int ScoreFunction(function *f, List <named_param> *params)
   return -1;
 }
 
+expr** NamedToPositions(function *f, List <named_param> *named, int& np)
+{
+  DCASSERT(f);
+  DCASSERT(named);
+  formal_param **fpl;
+  int dummy;
+  f->GetParamList(fpl, np, dummy);
+  expr** params = new expr* [np];
+  // Traverse sorted lists
+  int fptr = 0;
+  int pptr = 0;
+  formal_param* y = fpl[f->NamedPosition(0)];
+  named_param* x = named->Item(0);
+  while (x || y) {
+    int cmp;
+    if (x && y) cmp = strcmp(y->Name(), x->name);
+    else if (y) cmp = -1;
+    else cmp = 1;
+
+    DCASSERT(cmp<=0);  // Otherwise there is an extra named parameter!
+
+    if (cmp<0) {
+      // formal parameter but no named, use default
+      DCASSERT(y->HasDefault());
+      params[f->NamedPosition(fptr)] = DEFLT;
+      // advance formal ptr
+      fptr++;
+      if (fptr < np) y = fpl[f->NamedPosition(fptr)];
+      else y = NULL;
+    } else {
+      // Match
+      if (x->UseDefault) 
+        params[f->NamedPosition(fptr)] = DEFLT;
+      else	
+        params[f->NamedPosition(fptr)] = x->pass;
+      x->pass = NULL;
+      // advance named ptr
+      pptr++;
+      if (pptr < named->Length()) x = named->Item(pptr);
+      else x = NULL;
+      // advance formal ptr
+      fptr++;
+      if (fptr < np) y = fpl[f->NamedPosition(fptr)];
+      else y = NULL;
+    }
+  }
+
+  return params;
+}
 
 expr* BuildNamedFunctionCall(const char *n, void* x)
 {
-  List <named_param> * foo = (List <named_param> *) x;
-  if (NULL == foo) return NULL;
+  List <named_param> * params = (List <named_param> *) x;
+  if (NULL == params) return NULL;
   int i;
+#ifdef COMPILE_DEBUG
   Output << "Named parameters:\n";
-  for (i=0; i<foo->Length(); i++) {
-    Output << "\t" << foo->Item(i)->name << "\n";
+  for (i=0; i<params->Length(); i++) {
+    Output << "\t" << params->Item(i)->name << "\n";
   }
   Output.flush();
+#endif
 
   // find symbol table entry
   List <function> *flist = FindFunctions(Builtins, n);
@@ -1526,14 +1598,75 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
     Error.Start(filename, lexer.lineno());
     Error << "Unknown function " << n;
     Error.Stop();
-    delete foo;
+    delete params;
     return ERROR;
   }
 
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Named parameters not done yet, sorry";
-  Internal.Stop();
-  return ERROR;
+  // Find best match in symbol table
+  int bestmatch = params->Length()+2;
+  for (i=flist->Length()-1; i>=0; i--) {
+    function *f = flist->Item(i);
+    int score;
+    if (f->HasSpecialTypechecking()) {
+      // can we allow named parameters here?
+      // For now: no.
+      continue;
+    } else {
+      score = ScoreFunction(f, params);
+    }
+
+#ifdef COMPILE_DEBUG
+    Output << "Function " << f << " got score " << score << "\n";
+    Output.flush();
+#endif
+
+    if ((score>=0) && (score<bestmatch)) {
+      // better match, clear old list
+      matches->Clear();
+      bestmatch = score;
+    }
+    if (score==bestmatch) {
+      // Add to list
+      matches->Append(flist->Item(i));
+    }
+  }
+
+  if (bestmatch > params->Length()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "No match for " << n;
+    DumpPassed(Error, params);
+    Error.Stop();
+    // dump candidates?
+    return ERROR;
+  }
+
+  if (matches->Length()>1) {
+    DCASSERT(bestmatch>0);
+    Error.Start(filename, lexer.lineno());
+    Error << "Multiple promotions possible for " << n;
+    DumpPassed(Error, params);
+    Error.Stop();
+    // dump matching candidates?
+    return ERROR;
+  }
+
+  // Good to go; convert to positional params
+  function* find = matches->Item(0);
+  int np;
+  expr** pp = NamedToPositions(find, params, np);
+  delete params; 
+
+  // Promote params
+  bool ok;
+  if (find->HasSpecialParamLinking())
+    ok = find->LinkParams(pp, np);
+  else
+    ok = LinkFunction(find, pp, np);
+
+  if (!ok) return ERROR;
+
+  expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
+  return fcall;
 }
 
 // ==================================================================
