@@ -10,6 +10,7 @@ SOURCES = \
 	sets.cc 	stmts.cc \
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
+	strings.cc	\
 	api.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 

@@ -39,7 +39,7 @@
 		it is returned unchanged.
      			
  */
-expr* MakeTypecast(expr *e, type newtype, const char* file=NULL, int line=0);
+expr* MakeTypecast(expr *e, type newtype, const char* file, int line);
 
 
 //@}

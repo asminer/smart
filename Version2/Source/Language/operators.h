@@ -48,7 +48,7 @@ class statement;
 
      Note: the only unary operators currently are NOT and unary minus.
 */
-expr* MakeUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
+expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line);
 
 /**
      Build a binary expression.
@@ -65,8 +65,7 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
      		we could not build the expression.
 
 */
-expr* MakeBinaryOp(expr *left, int op, expr *right, 
-                     const char* file=NULL, int line=0);
+expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line);
 
 /**
      Build an associative expression.
@@ -84,8 +83,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right,
      		we could not build the expression.
 
 */
-expr* MakeAssocOp(int op, expr **opnds, int n, 
-                     const char* file=NULL, int line=0);
+expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line);
 
 
 

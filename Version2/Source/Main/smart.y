@@ -732,6 +732,7 @@ term
 #ifdef PARSE_TRACE
   cout << "Reducing term : STRCONST\n";
 #endif
+  $$ = MakeStringConst($1);
 }
         ;
 

@@ -590,24 +590,24 @@ void PrintExprType(expr *e, OutputStream &s);
 // ******************************************************************
 
 /// Build a boolean constant.
-expr* MakeConstExpr(bool c, const char* file=NULL, int line=0);
+expr* MakeConstExpr(bool c, const char* file, int line);
 
 /// Build an integer constant.
-expr* MakeConstExpr(int c, const char* file=NULL, int line=0);
+expr* MakeConstExpr(int c, const char* file, int line);
 
 /// Build a real constant.
-expr* MakeConstExpr(double c, const char* file=NULL, int line=0);
+expr* MakeConstExpr(double c, const char* file, int line);
 
 /// Build a string constant.
-expr* MakeConstExpr(char *c, const char* file=NULL, int line=0);
+expr* MakeConstExpr(char *c, const char* file, int line);
 
 /** Build a generic constant.
     Defined in infinity.cc.
  */
-expr* MakeConstExpr(type t, const result &x, const char* file=NULL, int line=0);
+expr* MakeConstExpr(type t, const result &x, const char* file, int line);
 
 /// Build an aggregate
-assoc* MakeAggregate(expr **list, int size, const char* file=NULL, int line=0);
+assoc* MakeAggregate(expr **list, int size, const char* file, int line);
 
 //@}
 

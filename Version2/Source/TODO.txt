@@ -4,9 +4,7 @@
 Things to work on:
 
 * Strings:
-	+ options
 	+ expressions
-	+ display
 
 * Stack dump on stack overflow
 

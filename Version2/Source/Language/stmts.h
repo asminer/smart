@@ -79,7 +79,7 @@ inline OutputStream& operator<< (OutputStream &s, statement *x)
 // ******************************************************************
 
 /// Build a "function call".
-statement* MakeExprStatement(expr* e, const char* file=NULL, int line=0);
+statement* MakeExprStatement(expr* e, const char* file, int line);
 
 /// Build a "value" option statement
 statement* MakeOptionStatement(option *o, expr *e, const char* file, int line);

@@ -216,17 +216,17 @@ public:
 
 /** Make an expression to call an array.
  */
-expr* MakeArrayCall(array *f, expr **p, int np, const char *fn=NULL, int l=0);
+expr* MakeArrayCall(array *f, expr **p, int np, const char *fn, int l);
 
 /** Make a for-loop statement.
     We only handle one dimension at a time.
  */
 statement* MakeForLoop(array_index **i, int dim, statement** block, int bsize, 
-                       const char *fn=NULL, int line=0);
+                       const char *fn, int line);
 
 /// "Normal" array assignments.
 statement* MakeArrayAssign(array *f, expr* retval, 
-                           const char *fn=NULL, int line=0);
+                           const char *fn, int line);
 
 //@}
 

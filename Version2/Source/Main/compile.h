@@ -44,6 +44,9 @@ expr* MakeIntConst(char* s);
 /// Build a real constant
 expr* MakeRealConst(char* s);
 
+/// Build a string constant
+expr* MakeStringConst(char *s);
+
 /// Build an interval (does typechecking, etc.)
 expr* BuildInterval(expr* start, expr* stop);
 

@@ -350,8 +350,7 @@ void StackOverflowPanic();
     @param	fn	Filename we are declared in.
     @param	line	line number we are declared on.
  */
-expr* MakeFunctionCall(function *f, expr **p, int np, 
-    			const char *fn=NULL, int line=0);
+expr* MakeFunctionCall(function *f, expr **p, int np, const char *fn, int line);
 
 //@}
 

@@ -138,6 +138,11 @@ expr* MakeRealConst(char* s)
   return MakeConstExpr(value, filename, lexer.lineno());
 }
 
+expr* MakeStringConst(char *s)
+{
+  return MakeConstExpr(s, filename, lexer.lineno());
+}
+
 expr* BuildInterval(expr* start, expr* stop)
 {
   if (NULL==start || NULL==stop) {

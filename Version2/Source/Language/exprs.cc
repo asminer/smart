@@ -35,10 +35,11 @@ void PrintResult(type t, const result &x, OutputStream &s)
   if (x.null) { s << "null"; return; }
   if (x.error) { s << "error"; return; }
   switch(t) {
-    case VOID: 	DCASSERT(0); 	return;
-    case BOOL: 	s << x.bvalue; 	return;
-    case INT:  	s << x.ivalue; 	return;
-    case REAL: 	s << x.rvalue; 	return;
+    case VOID: 		DCASSERT(0); 		return;
+    case BOOL: 		s << x.bvalue; 		return;
+    case INT:  		s << x.ivalue; 		return;
+    case REAL: 		s << x.rvalue; 		return;
+    case STRING: 	s << (char*) x.other;	return;	
   }
   DCASSERT(0);
 }
