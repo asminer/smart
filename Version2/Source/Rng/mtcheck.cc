@@ -55,18 +55,6 @@ bool CheckSequence(int d)
   return true;
 }
 
-int atoi(const char* a)
-{
-  int i = 0;
-  while (a[0] != 0) {
-    i += (a[0] - '0');
-    a++;
-    if (a[0]) i*= 10;
-    if (i<0) return i; // overflow
-  }
-  return i;
-}
-
 
 
 int main(int argc, char** argv)

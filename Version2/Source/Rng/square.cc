@@ -3,7 +3,6 @@
 
 /* Test of multiple stream stuff */
 
-#include "../Base/streams.h"
 #include "../Base/timers.h"
 #include "multstrm.h"
 
@@ -15,6 +14,7 @@ void smart_exit()
 {
 }
 
+/*
 int atoi(const char* a)
 {
   int i = 0;
@@ -26,6 +26,7 @@ int atoi(const char* a)
   }
   return i;
 }
+*/
 
 int main(int argc, char** argv)
 {

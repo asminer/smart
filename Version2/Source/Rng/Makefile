@@ -12,6 +12,8 @@ CXX = g++
 # CPPFLAGS = -g 
 CPPFLAGS = -O3
 
+all: square multiply makeB mtcheck
+
 square: square.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o square square.o multstrm.o streams.o timers.o
 
@@ -25,8 +27,7 @@ mtcheck: mtcheck.o multstrm.o streams.o mtwist.o
 	g++ $(CPPFLAGS) -o mtcheck mtcheck.o multstrm.o streams.o mtwist.o
 
 timers.o: ../Base/timers.cc ../Base/timers.h
-	g++ $(CPPFLAGS) -c -o streams.o ../Base/streams.cc
-
+	g++ $(CPPFLAGS) -c -o timers.o ../Base/timers.cc
 
 streams.o: ../Base/streams.cc ../Base/streams.h
 	g++ $(CPPFLAGS) -c -o streams.o ../Base/streams.cc
