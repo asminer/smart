@@ -228,10 +228,28 @@ public:
       @param np		Number of passed parameters.
 
       @return 	true if there were no fatal errors.
-
-      \end{tabular}
    */
   virtual bool LinkParams(expr **pp, int np) const;
+
+  /** Overridden in derived classes.
+      Does this function have its own engine information?
+      Yes for things like "avg_ss" within measures, no for everything else.
+   */
+  virtual bool HasEngineInformation() const;
+
+  /** Determines solution engine, if available.
+      Note the parameters may need to be evaluated to
+      determine solution time (e.g., for transient).
+      Should only be called if HasEngineInformation() returns true.
+
+	@param	pp	Array of passed parameters.
+	@param	np	Number of passed parameters.
+	@param	e	If not NULL, address of struct to store engine data.
+
+	@return	Engine type
+  */
+  virtual Engine_type GetEngineInfo(expr **pp, int np, engineinfo *e) const;
+
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(long &, expr **, int np, result &x) = 0;
@@ -318,6 +336,13 @@ typedef void (*compute_func) (expr **pp, int np, result &x);
  */
 typedef void (*sample_func) (long &seed, expr **pp, int np, result &x);
 
+/** For determining engine information.
+    Use the following declaration:
+
+    Engine_type MyFunc(expr **pp, int np, engineinfo *e);
+
+*/
+typedef Engine_type (*engine_func) (expr **pp, int np, engineinfo *e);
 
 /**   Class for internal functions.
       Used for internally declared functions (such as sqrt).
@@ -338,6 +363,7 @@ protected:
   bool hidedocs;
   typecheck_func typecheck;
   link_func linkparams;
+  engine_func getengine;
 public:
   /** Constructor.
       @param t	The type.
@@ -382,6 +408,11 @@ public:
   void SetSpecialParamLinking(link_func t);
   virtual bool HasSpecialParamLinking() const;
   virtual bool LinkParams(expr** p, int np) const;
+
+  // For solution engine stuff
+  void SetEngineInformation(engine_func e);
+  virtual bool HasEngineInformation() const;
+  virtual Engine_type GetEngineInfo(expr **pp, int np, engineinfo *e) const;
 };
 
 

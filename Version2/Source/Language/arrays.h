@@ -54,6 +54,9 @@ public:
   virtual void Compute(int i, result &x);
   void showfancy(OutputStream &s) const;
 
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *); 
+
   // Used by for loops and arrays:
 
   /// Compute the current range of values for the iterator.

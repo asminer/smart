@@ -2,6 +2,7 @@
 // $Id$
 
 #include "exprs.h"
+#include "measures.h"
 
 //@Include: exprs.h
 
@@ -110,6 +111,21 @@ int expr::GetSymbols(int i, List <symbol> *)
   return 0;
 }
 
+Engine_type expr::GetEngine(engineinfo *)
+{
+  Internal.Start(__FILE__, __LINE__, filename, linenumber);
+  Internal << "Illegal expression engine request";
+  Internal.Stop();
+  return ENG_Error;  // Keep compiler quiet
+}
+
+expr* expr::SplitEngines(List <measure> *)
+{
+  Internal.Start(__FILE__, __LINE__, filename, linenumber);
+  Internal << "Illegal expression engine split";
+  Internal.Stop();
+  return NULL;
+}
 
 // ******************************************************************
 // *                                                                *
@@ -131,6 +147,17 @@ type constant::Type(int i) const
 expr* constant::Substitute(int i)
 {
   DCASSERT(0==i);
+  return Copy(this);
+}
+
+Engine_type constant::GetEngine(engineinfo *e)
+{
+  if (e) e->setNone();
+  return ENG_None;
+}
+
+expr* constant::SplitEngines(List <measure> *)
+{
   return Copy(this);
 }
 
@@ -177,6 +204,27 @@ expr* unary::Substitute(int i)
 void unary::unary_show(OutputStream &s, const char* op) const
 {
   s << op << opnd;
+}
+
+Engine_type unary::GetEngine(engineinfo *e)
+{
+  if (opnd) return opnd->GetEngine(e);
+  if (e) e->setNone();
+  return ENG_None;
+}
+
+expr* unary::SplitEngines(List <measure> *mlist)
+{
+  if (NULL==opnd) return NULL;  // sanity
+  // like substitute...
+  expr* newopnd = opnd->SplitEngines(mlist);
+  if (newopnd==opnd) {
+    // we created a copy... so delete the copy and copy ourself
+    Delete(newopnd);
+    return Copy(this);
+  }
+  // The split is different... make a new one of us
+  return MakeAnother(newopnd);
 }
 
 // ******************************************************************
@@ -235,6 +283,74 @@ expr* binary::Substitute(int i)
 void binary::binary_show(OutputStream &s, const char* op) const
 {
   s << "(" << left << op << right << ")";
+}
+
+Engine_type binary::GetEngine(engineinfo *e)
+{
+  Engine_type l,r;
+  l = left ? left->GetEngine(NULL) : ENG_None;
+  r = right ? right->GetEngine(NULL) : ENG_None;
+  if ((l == ENG_None) && (r == ENG_None)) {
+    if (e) e->setNone();
+    return ENG_None;
+  }
+  if ((l == ENG_Error) || (r == ENG_Error)) {
+    if (e) e->engine = ENG_Error;
+    return ENG_Error;
+  }
+  // any other cases to merge?
+
+  // Mixed, even if they are the same (because it is better to split)
+  if (e) e->setMixed();
+  return ENG_Mixed; 
+}
+
+expr* binary::SplitEngines(List <measure> *mlist)
+{
+  measure* m;
+  Engine_type mine = GetEngine(NULL);
+  if (ENG_Error == mine) return NULL;
+  if (mine != ENG_Mixed) return Copy(this);
+
+  Engine_type l = left ? left->GetEngine(NULL) : ENG_None;
+  expr* newleft;
+  switch (l) {
+    case ENG_None:
+    	newleft = Copy(left);
+	break;
+
+    case ENG_Mixed: 
+    	newleft = left->SplitEngines(mlist);
+	break;
+
+    default:
+     	m = new measure(left->Filename(), left->Linenumber(), 
+			left->Type(0), NULL);
+	m->SetReturn(Copy(left));
+	mlist->Append(m);
+	newleft = m;
+  }
+
+  Engine_type r = right ? right->GetEngine(NULL) : ENG_None;
+  expr* newright;
+  switch (r) {
+    case ENG_None:
+    	newright = Copy(right);
+	break;
+
+    case ENG_Mixed: 
+    	newright = right->SplitEngines(mlist);
+	break;
+
+    default:
+     	m = new measure(right->Filename(), right->Linenumber(), 
+			right->Type(0), NULL);
+	m->SetReturn(Copy(right));
+	mlist->Append(m);
+	newright = m;
+  }
+
+  return MakeAnother(newleft, newright);
 }
 
 // ******************************************************************
@@ -319,6 +435,64 @@ void assoc::assoc_show(OutputStream &s, const char* op) const
   s << ")";
 }
 
+Engine_type assoc::GetEngine(engineinfo *e)
+{
+  DCASSERT(operands);
+  DCASSERT(operands[0]);
+  if (opnd_count < 2) return operands[0]->GetEngine(e);
+
+  Engine_type foo = ENG_None;
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    Engine_type bar = operands[i]->GetEngine(NULL);
+    if (ENG_Error == bar) {
+      if (e) e->engine = ENG_Error;
+      return ENG_Error;
+    }
+    if (bar != ENG_None) foo = ENG_Mixed; 
+  }
+  if (e) e->engine = foo;
+  return foo;
+}
+
+expr* assoc::SplitEngines(List <measure> *mlist)
+{
+  DCASSERT(operands);
+  DCASSERT(operands[0]);
+  if (opnd_count < 2) return operands[0]->SplitEngines(mlist);
+
+  expr** newops = new expr* [opnd_count];
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    Engine_type et = operands[i]->GetEngine(NULL);
+    measure *m;
+    switch (et) {
+      case ENG_Error:
+      	delete[] newops;
+	return NULL;
+	break;
+
+      case ENG_None:
+    	newops[i] = Copy(operands[i]);
+	break;
+
+      case ENG_Mixed: 
+    	newops[i] = operands[i]->SplitEngines(mlist);
+	break;
+
+      default:  // A "leaf"
+     	m = new measure(operands[i]->Filename(), operands[i]->Linenumber(), 
+			operands[i]->Type(0), NULL);
+	m->SetReturn(Copy(operands[i]));
+	mlist->Append(m);
+	newops[i] = m;
+    } // switch
+  } // for i
+
+  return MakeAnother(newops, opnd_count);
+}
 
 // ******************************************************************
 // *                                                                *

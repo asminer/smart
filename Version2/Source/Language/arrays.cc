@@ -57,6 +57,16 @@ void array_index::showfancy(OutputStream &s) const
   s << Name() << " in {" << values << "}";
 }
 
+Engine_type array_index::GetEngine(engineinfo *e)
+{
+  if (e) e->setNone();
+  return ENG_None;
+}
+
+expr* array_index::SplitEngines(List <measure> *)
+{
+  return Copy(this);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -246,6 +256,8 @@ public:
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   virtual void show(OutputStream &s) const;
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *mlist);
 };
 
 // acall methods
@@ -330,6 +342,20 @@ void acall::show(OutputStream &s) const
   s << "]";
 }
 
+Engine_type acall::GetEngine(engineinfo *e)
+{
+  // not sure about this one yet...
+  // what about arrays of measures?
+
+  // for now...
+  if (e) e->setNone();
+  return ENG_None; 
+}
+
+expr* acall::SplitEngines(List <measure> *)
+{
+  return Copy(this);
+}
 
 // ******************************************************************
 // *                                                                *

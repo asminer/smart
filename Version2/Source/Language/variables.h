@@ -14,8 +14,8 @@
     description, but it works.
 
     Classes defined here:
-    For-loop iterators
     User-defined functions with no parameters
+    Measures
 
  */
 
@@ -63,6 +63,9 @@ public:
     state = CS_Defined;
     return_expr = e; 
   }
+
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *mlist);
 };
 
 // ******************************************************************
@@ -77,6 +80,11 @@ public:
     For functions within a converge, use something else.  
 */
 constfunc* MakeConstant(type t, char* id, const char* file, int line);
+
+/** Make a measure.
+    Used within models.
+*/
+measure* MakeMeasure(type t, char* id, const char* file, int line);
 
 //@}
 

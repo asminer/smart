@@ -45,6 +45,17 @@ void constfunc::ShowHeader(OutputStream &s) const
   s << GetType(Type(0)) << " " << Name() << " := " << return_expr;
 }
 
+Engine_type constfunc::GetEngine(engineinfo *e)
+{
+  if (e) e->setNone();
+  return ENG_None;
+}
+
+expr* constfunc::SplitEngines(List <measure> *mlist)
+{
+  return Copy(this);
+}
+
 // ******************************************************************
 // *                                                                *
 // *                        determfunc class                        *

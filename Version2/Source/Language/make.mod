@@ -11,6 +11,7 @@ SOURCES = \
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
 	converge.cc	\
+	measures.cc	\
 	strings.cc	\
 	api.cc
 

@@ -69,6 +69,18 @@ struct result {
 
   // No type!  can be determined from expression that computes us, if needed
 
+  union {
+    /// Used by boolean type
+    bool   bvalue;
+    /// Used by integer type
+    int    ivalue;
+    // Should we add bigint here?
+    /// Used by real and expo type
+    double rvalue;
+    /// Everything else
+    void*  other; 
+  };
+
   /// Is this a normal value?
   inline bool isNormal() const { return CS_Normal == special; }
 
@@ -86,24 +98,12 @@ struct result {
 
   /// Are we a null value?  
   inline bool isNull() const { return CS_Null == special; }
-  inline void setNull() { special = CS_Null; }
+  inline void setNull() { special = CS_Null; ivalue = 0; }
 
   /// For pointers, should we free it?  (allows shallow copy of strings!)
   inline bool isFreeable() const { return freeable; }
   inline void setFreeable() { freeable = true; }
   inline void notFreeable() { freeable = false; }
-
-  union {
-    /// Used by boolean type
-    bool   bvalue;
-    /// Used by integer type
-    int    ivalue;
-    // Should we add bigint here?
-    /// Used by real and expo type
-    double rvalue;
-    /// Everything else
-    void*  other; 
-  };
 
   inline void Clear() {
     special = CS_Normal;

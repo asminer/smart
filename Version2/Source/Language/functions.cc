@@ -2,6 +2,7 @@
 // $Id$
 
 #include "functions.h"
+#include "measures.h"
 //@Include: functions.h
 
 /** @name functions.cc
@@ -175,6 +176,17 @@ bool function::LinkParams(expr **pp, int np) const
   return false;
 }
 
+bool function::HasEngineInformation() const
+{
+  return false;
+}
+
+Engine_type function::GetEngineInfo(expr **pp, int np, engineinfo *e) const
+{
+  DCASSERT(0);
+  return ENG_Error;
+}
+
 bool function::IsUndocumented() const
 {
   // default
@@ -342,6 +354,7 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
+  getengine = NULL;
   isForward = false;
 }
 
@@ -355,6 +368,7 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
+  getengine = NULL;
   isForward = false;
 }
 
@@ -447,6 +461,23 @@ bool internal_func::LinkParams(expr** p, int np) const
   return linkparams(p, np);
 }
 
+void internal_func::SetEngineInformation(engine_func e)
+{
+  getengine = e;
+}
+
+bool internal_func::HasEngineInformation() const
+{
+  return (getengine != NULL);
+}
+
+Engine_type internal_func::GetEngineInfo(expr **pp, int np, engineinfo *e) const
+{
+  if (getengine) return getengine(pp, np, e);
+  DCASSERT(0);
+  return ENG_Error;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                          fcall  class                          *
@@ -470,9 +501,14 @@ public:
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   virtual void show(OutputStream &s) const;
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *mlist);
 };
 
-// fcall  methods
+// ******************************************************************
+// *                         fcall  methods                         *
+// ******************************************************************
+
 
 fcall::fcall(const char *fn, int line, function *f, expr **p, int np)
   : expr (fn, line)
@@ -543,6 +579,57 @@ void fcall::show(OutputStream &s) const
     s << pass[i];
   }
   s << ")";
+}
+
+Engine_type fcall::GetEngine(engineinfo *e)
+{
+  if (func->HasEngineInformation()) 
+    return func->GetEngineInfo(pass, numpass, e);
+
+  // "ordinary" function, engine depends only on params
+  Engine_type foo = ENG_None;
+  int i;
+  for (i=0; i<numpass; i++) {
+    DCASSERT(pass[i]);
+    Engine_type bar = pass[i]->GetEngine(NULL);
+    if (ENG_Error == bar) {
+      if (e) e->engine = ENG_Error;
+      return ENG_Error;
+    }
+    if (bar != ENG_None) foo = ENG_Mixed;
+  }
+  if (e) e->engine = foo;
+  return foo;
+}
+
+expr* fcall::SplitEngines(List <measure> *mlist)
+{
+  if (GetEngine(NULL) != ENG_Mixed) return Copy(this);
+
+  expr** newpass = new expr* [numpass];
+  int i;
+  for (i=0; i<numpass; i++) {
+    DCASSERT(pass[i]);
+    Engine_type et = pass[i]->GetEngine(NULL);
+    measure *m;
+    switch (et) {
+      case ENG_None:
+    	newpass[i] = Copy(pass[i]);
+	break;
+
+      case ENG_Mixed: 
+    	newpass[i] = pass[i]->SplitEngines(mlist);
+	break;
+
+      default:  // A "leaf"
+     	m = new measure(pass[i]->Filename(), pass[i]->Linenumber(), 
+			pass[i]->Type(0), NULL);
+	m->SetReturn(Copy(pass[i]));
+	mlist->Append(m);
+	newpass[i] = m;
+    } // switch
+  } // for i
+  return new fcall(Filename(), Linenumber(), func, newpass, numpass);
 }
 
 // ******************************************************************

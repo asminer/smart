@@ -19,37 +19,25 @@
 
 //@{
 
-
-
-/// Possible solution engines
 enum Engine_type {
-  /// We don't know yet
-  ENG_UNKNOWN,
-  /// No engine 
-  ENG_NONE,
-  /// Custom solution engine
-  ENG_CUSTOM,
-  /// Numerical solution engine
-  ENG_NUMERICAL,
-  /// Model checking engine
-  ENG_MODEL_CHECKING,
-  /// A mix of things.  Currently this is illegal.
-  ENG_MIXED
-};
-
-
-/// Possible ways to classify measures
-enum Group_type {
-  /// Don't group
-  GT_UNGROUPED,
-  /// Steady state instantaneous
-  GT_SSINST,
-  /// Steady state cumulative
-  GT_SSCUMUL,
+  /// Error of some sort
+  ENG_Error,
+  /// Steady-state instantaneous
+  ENG_SS_Inst,
+  /// Steady-state accumulated
+  ENG_SS_Acc,
   /// Transient instantaneous
-  GT_TINST,
-  /// Transient cumulative
-  GT_TCUMUL
+  ENG_T_Inst,
+  /// Transient accumulated
+  ENG_T_Acc,
+  /// No engine
+  ENG_None,
+  /// Model checking (statesets)
+  ENG_ModelChecking,
+  /// Custom engine 
+  ENG_Custom,
+  /// Expression containing several of the above
+  ENG_Mixed
 };
 
 
@@ -73,67 +61,28 @@ struct engineinfo {
   Engine_type engine;
   /** The starting time.
       Used for numerical solution engines only.
-      For instantaneous, set to the same time as the stop time
-      (or, to be safe, set to a value larger than the stop time).
    */
   result starttime;
   /** The stop time.
       Used for numerical solution engines only.
-      May be infinite.
+      May be infinite (for steady-state) or equal to the start time (for
+      instantaneous)
    */
   result stoptime;
-  /// Does this require numerical solution?
-  inline bool IsNumerical() const {
-    return engine==ENG_NUMERICAL;
-  }
-  /// Assuming we are numerical, is it a steady-state measure?
-  inline bool IsSteadyState() const {
-    DCASSERT(stoptime.isNull() == false);
-    return stoptime.isInfinity();
-  }
-  /// Assuming we are numerical, is it a transient measure?
-  inline bool IsTransient() const {
-    DCASSERT(stoptime.isNull()==false);
-    return !(stoptime.isInfinity());
-  }
-  /// Assuming we are numerical, is it a cumulative measure?
-  inline bool IsCumulative() const {
-    return starttime.rvalue < stoptime.rvalue;
-  }
-  /// Assuming we are numerical, is it an instantaneous measure?
-  inline bool IsInstantaneous() const {
-    return starttime.rvalue >= stoptime.rvalue;
-  }
-  /// Handy for non-numerical engines and such.
-  inline void SetEngine(Engine_type e) {
-    engine = e;
+
+  /// Set to none
+  void setNone() {
+    engine = ENG_None;
     starttime.setNull();
     stoptime.setNull();
   }
-  /// Basically, an explicit destructor.
-  inline void Clear() {
-    SetEngine(ENG_UNKNOWN);
-  }
-  /// Returs true if there was an error
-  inline bool Error() const {
-    return IsNumerical() && (starttime.isNull() || stoptime.isNull());
-  }
-  /// Tells how to group a measure requiring this engine
-  inline Group_type GetGroup() const {
-    if (!IsNumerical()) return GT_UNGROUPED;
-    if (Error()) return GT_UNGROUPED; 
-    if (IsSteadyState())
-      if (IsInstantaneous())
-	return GT_SSINST;
-      else
-	return GT_SSCUMUL;
-    else
-      if (IsInstantaneous())
-	return GT_TINST;
-      else
-	return GT_TCUMUL;
-  }
 
+  /// Set to mixed
+  void setMixed() {
+    engine = ENG_Mixed;
+    starttime.setNull();
+    stoptime.setNull();
+  }
 };
 
 
@@ -143,7 +92,8 @@ struct engineinfo {
 // *                                                                *
 // ******************************************************************
 
-class symbol; // defined below
+class symbol;	// defined below
+class measure;	// also below
 
 /**   The base class of all expressions, and the
       heart of all expression trees.
@@ -228,6 +178,21 @@ public:
    */
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
 
+  /** Get the engine type for this expression.
+      @param	e	If not null, fill with all engine information.
+      @return	The engine type.
+  */
+  virtual Engine_type GetEngine(engineinfo *e);
+
+  /** Used for mixed solution engines.
+      Make a copy of the expression, except replace single mixed measures 
+      with multiple measures of a single engine.
+      @param	mlist	Any created measures are added to this list.
+      @return	If the engine type is not mixed, a copy of this expression;
+      		otherwise, a new expression.
+  */
+  virtual expr* SplitEngines(List <measure> *mlist);
+
   /// Required for aggregation.  Used only by aggregates class.
   virtual void TakeAggregates() { ASSERT(0); }
 
@@ -303,6 +268,8 @@ public:
   constant(const char* fn, int line, type mt);
   virtual type Type(int i) const;
   virtual expr* Substitute(int i);
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *);
 };
 
 // ******************************************************************
@@ -324,6 +291,8 @@ public:
   virtual ~unary();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *);
 protected:
   /** Used by Substitute.
       Whatever kind of unary operation we are, make another one.
@@ -353,6 +322,8 @@ public:
   virtual ~binary();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *);
 protected:
   /** Used by Substitute.
       Whatever kind of binary operation we are, make another one.
@@ -385,6 +356,8 @@ public:
   virtual ~assoc();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *);
 protected:
   /** Used by Substitute.
       Whatever kind of associative operation we are, make another one.

@@ -2,6 +2,7 @@
 // $Id$
 
 #include "sets.h"
+#include "measures.h"
 
 #include "math.h"
 
@@ -459,6 +460,8 @@ public:
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *);
 protected:
   inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
     x.Clear();
@@ -548,6 +551,93 @@ void setexpr_interval::show(OutputStream &s) const
   s << start << ".." << stop << ".." << inc;
 }
 
+Engine_type setexpr_interval::GetEngine(engineinfo *ei)
+{
+  Engine_type s,e,i;
+  s = start ? start->GetEngine(NULL) : ENG_None;
+  e = stop ? stop->GetEngine(NULL) : ENG_None;
+  i = inc ? inc->GetEngine(NULL) : ENG_None;
+  
+  if ((s == ENG_None) && (e == ENG_None) && (i == ENG_None)) {
+    if (e) ei->setNone();
+    return ENG_None;
+  }
+
+  if ((s == ENG_Error) && (e == ENG_Error) && (i == ENG_Error)) {
+    if (e) ei->engine = ENG_Error;
+    return ENG_Error;
+  }
+
+  if (ei) ei->setMixed();
+  return ENG_Mixed;
+}
+
+expr* setexpr_interval::SplitEngines(List <measure> *mlist)
+{
+  measure *m;
+  Engine_type mine = GetEngine(NULL);
+  if (ENG_Error == mine) return NULL;
+  if (mine != ENG_Mixed) return Copy(this);
+
+  Engine_type s = start ? start->GetEngine(NULL) : ENG_None;
+  expr* newstart;
+  switch (s) {
+    case ENG_None:
+    	newstart = Copy(start);
+	break;
+
+    case ENG_Mixed: 
+    	newstart = start->SplitEngines(mlist);
+	break;
+
+    default:
+     	m = new measure(start->Filename(), start->Linenumber(), 
+			start->Type(0), NULL);
+	m->SetReturn(Copy(start));
+	mlist->Append(m);
+	newstart = m;
+  }
+
+  Engine_type e = stop ? stop->GetEngine(NULL) : ENG_None;
+  expr* newstop;
+  switch (e) {
+    case ENG_None:
+    	newstop = Copy(stop);
+	break;
+
+    case ENG_Mixed: 
+    	newstop = stop->SplitEngines(mlist);
+	break;
+
+    default:
+     	m = new measure(stop->Filename(), stop->Linenumber(), 
+			stop->Type(0), NULL);
+	m->SetReturn(Copy(stop));
+	mlist->Append(m);
+	newstop = m;
+  }
+
+  Engine_type i = inc ? inc->GetEngine(NULL) : ENG_None;
+  expr* newinc;
+  switch (i) {
+    case ENG_None:
+    	newinc = Copy(inc);
+	break;
+
+    case ENG_Mixed: 
+    	newinc = inc->SplitEngines(mlist);
+	break;
+
+    default:
+     	m = new measure(inc->Filename(), inc->Linenumber(), 
+			inc->Type(0), NULL);
+	m->SetReturn(Copy(inc));
+	mlist->Append(m);
+	newinc = m;
+  }
+
+  return MakeAnother(Filename(), Linenumber(), newstart, newstop, newinc);
+}
 
 // ******************************************************************
 // *                                                                *
