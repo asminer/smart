@@ -41,6 +41,7 @@ expr* MakeStringAdd(expr** opnds, int n, const char* file, int line);
      @param	left	The left-hand expression (type STRING).
      @param	op	The operator (as defined in smart.tab.h)
      			Must be one of:
+			PLUS
 			EQUALS
 			NEQUAL
 			GT

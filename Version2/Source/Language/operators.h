@@ -35,6 +35,11 @@ class statement;
 // *                                                                *
 // ******************************************************************
 
+/** Returns the token that generates the given operator code.
+    Handy for output.
+*/
+const char* GetOp(int op);
+
 /**
      Build a unary expression.
 

@@ -2,6 +2,8 @@
 // $Id$
 
 #include "operators.h"
+#include "strings.h"
+
 //@Include: operators.h
 
 /** @name operators.cc
@@ -1377,6 +1379,13 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       
 
     //===============================================================
+    case STRING:
+      
+      DCASSERT(rtype==STRING);
+      // Defined in strings.cc
+      return MakeStringBinary(left, op, right, file, line);
+    
+    //===============================================================
     case PROC_INT:
       if (rtype==PROC_PH_INT) {
 	DCASSERT(op==TIMES);
@@ -1467,8 +1476,19 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  case LE:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
-      
 
+
+    //===============================================================
+    case STRING:
+      
+      switch (op) {
+	case PLUS:	return MakeStringAdd(opnds, n, file, line);
+			// Defined in strings.cc
+
+	default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+      
   }
 
   return NULL;
