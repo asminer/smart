@@ -136,6 +136,12 @@ protected:
 };
 
 /*
+
+class red_black_tree : public binary_state_tree {
+protected:
+  int rbtreeinsert(int root, const state &s
+};
+
 class avl_state_tree : public binary_state_tree {
   // allocate a few extra bits per node for balancing
 public:
