@@ -8,6 +8,7 @@
 #ifndef LIST_H
 #define LIST_H
 
+// for memcpy
 #include <string.h>
 
 class PtrList {

@@ -31,6 +31,7 @@
   array_index* index;
   int count;
   statement* stmt;
+  array* Array;
   /*
   option *Option;
   expr_set *setexpr;
@@ -59,6 +60,7 @@ formal_indexes
 %type <index> iterator
 %type <count> for_header iterators
 %type <stmt> statement
+%type <Array> array_header
 /*
 %type <Func> header array_header
 %type <Option> opt_header
@@ -397,6 +399,7 @@ array_header
 #ifdef PARSE_TRACE
   cout << "Reducing array_header : type IDENT formal_indexes\n";
 #endif
+  $$ = BuildArray($1, $2, $3);
 }
         ;
 
@@ -736,12 +739,14 @@ const_expr
 #ifdef PARSE_TRACE
   cout << "Reducing const_expr : MINUS const_expr\n";
 #endif
+  $$ = BuildUnary(MINUS, $2);
 }
 	|	NOT const_expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing const_expr : NOT const_expr\n";
 #endif
+  $$ = BuildUnary(NOT, $2);
 }
 	;
 

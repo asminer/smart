@@ -75,6 +75,7 @@ public:
    */
   inline bool FirstIndex() { 
     if (NULL==current) return false;
+    if (current->Size() < 1) return false;
     index = 0;
     return true;
   }

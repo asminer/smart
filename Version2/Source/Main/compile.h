@@ -165,6 +165,9 @@ void* AppendStatement(void* list, statement* s);
 /// Add a formal index (name) to our list.
 void* AddFormalIndex(void* list, char* ident);
 
+/// thing and stuff
+array* BuildArray(type t, char* n, void* list);
+
 // ==================================================================
 // |                                                                |
 // |                                                                |

@@ -35,14 +35,16 @@ protected:
 public:
   Stack(int currentsize, int msize=1000000000) {
     // 1 billion max by default is effectively infinite
-    size = currentsize;
+    size = 0;
+    data = NULL;
     top = 0;
     maxsize = msize;
-    data = (DATA *) malloc(currentsize * sizeof(DATA));
+    Enlarge(currentsize);
   }
   ~Stack() { free(data); }
   inline bool Empty() const { return 0==top; }
   inline int NumEntries() const { return top; }
+  inline void Clear() { top = 0; }
   inline void Push(const DATA &x) {
     if (top>=size) Enlarge(MIN(2*size, maxsize));
     data[top] = x;

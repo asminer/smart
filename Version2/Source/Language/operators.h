@@ -15,6 +15,7 @@
 #include "baseops.h"
 
 class array_index;
+class array;
 class statement;
 
 #include "../Main/smart.tab.h"

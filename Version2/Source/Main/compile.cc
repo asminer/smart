@@ -5,6 +5,7 @@
 #include "compile.h"
 #include "../Base/api.h"
 #include "../list.h"
+#include "tables.h"
 
 #include <stdio.h>
 #include <FlexLexer.h>
@@ -18,7 +19,11 @@
 // |                                                                |
 // ==================================================================
 
+/// Current stack of for-loop iterators
 List <array_index> *Iterators;
+
+/// Symbol table of arrays
+PtrTable *Arrays;
 
 // ==================================================================
 // |                                                                |
@@ -364,7 +369,73 @@ void* AddFormalIndex(void* list, char* n)
   if (NULL==foo) 
     foo = new List <char> (256);
   foo->Append(n);
+#ifdef COMPILE_DEBUG
+  cout << "Formal index stack: ";
+  for (int i=0; i<foo->Length(); i++) {
+    char* id = foo->Item(i);
+    cout << id << " ";
+  }
+  cout << endl;
+#endif
   return foo;
+}
+
+array* BuildArray(type t, char*n, void* list)
+{
+  if (NULL==n) return NULL;
+  if (NULL==list) return NULL;
+
+  // Check that this array name is ok
+  if (Arrays->FindName(n)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Array " << n << " already defined";
+    Error.Stop();
+    return NULL;
+  }
+  
+  List <char> *foo = (List <char> *)list;
+  int dim = Iterators->Length();
+
+  // check the iterators dimensions
+  if (foo->Length() != dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Dimension of array " << n << " does not match iterators";
+    Error.Stop();
+    return NULL;
+  }
+
+  // compare iterator names
+  int i;
+  for (i=0; i<dim; i++) {
+    array_index* it = Iterators->Item(i);
+    DCASSERT(it);
+    const char* exname = it->Name();
+    DCASSERT(exname);
+    char* myname = foo->Item(i);
+    DCASSERT(myname);
+    if (strcmp(exname, myname)!=0) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " expecting index " << exname;
+      Error << ", got " << myname;
+      Error.Stop();
+      return NULL;
+    }
+  }
+
+  // Build "copies" of iterators 
+  array_index **il = new array_index*[dim];
+  for (i=0; i<dim; i++) {
+    il[i] = Iterators->Item(i);
+    Copy(il[i]);  // increment counter
+  }
+
+  // build array
+  array *A = new array(filename, lexer.lineno(), t, n, il, dim);
+
+  // Add array to array symbol table
+  Arrays->AddNamePtr(n, A); 
+
+  return A;
 }
 
 // ==================================================================
@@ -404,6 +475,7 @@ expr* FindIdent(char* name)
 void InitCompiler()
 {
   Iterators = new List <array_index> (256);
+  Arrays = new PtrTable();
 #ifdef COMPILE_DEBUG
   cout << "Initialized compiler data\n";
 #endif
