@@ -56,7 +56,9 @@ void OutputStream::ExpandBuffer(int wantsize)
 
 void OutputStream::DetermineRealFormat()
 {
-  const option_const* foo = real_format->GetEnum();
+  const option_const* foo;
+  if (real_format) foo = real_format->GetEnum();
+  else foo = RF_GENERAL;
   if (foo==RF_GENERAL) {
     	floatformat = "%g";
 	doubleformat = "%lg";
