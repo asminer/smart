@@ -283,7 +283,21 @@ public:
     return spot;
   }
 
-  void ConvertToStatic();
+  void Defragment(int first_slot);
+
+  inline void ConvertToStatic() {
+    if (IsStatic()) return;
+    CircularToTerminated();
+    Defragment(0);
+    // resize arrays to be "tight"
+    ResizeNodes(num_nodes);
+    ResizeEdges(num_edges);
+    // Trash next array
+    free(next);
+    next = NULL;
+    isDynamic = false;
+  }
+
 
   /// Dump to a stream (human readable)
   void ShowNodeList(OutputStream &s, int node);
@@ -299,18 +313,14 @@ public:
 
 
 template <class LABEL>
-void labeled_digraph <LABEL> :: ConvertToStatic()
+void labeled_digraph <LABEL> :: Defragment(int first_slot)
 /* Exactly the same as the unlabeled case, except we
    also must swap values.
 */
 {
-  if (IsStatic()) return;
-
-  // First: convert circular lists to lists with null terminator
-  CircularToTerminated();
-
+  DCASSERT(IsDynamic());
 #ifdef DEBUG_GRAPH
-  Output << "Dynamic to static, dynamic arrays are:\n";
+  Output << "Linked lists before degragment:\n";
   Output << "row_pointer: [";
   Output.PutArray(row_pointer, num_nodes);
   Output << "]\n";
@@ -319,10 +329,9 @@ void labeled_digraph <LABEL> :: ConvertToStatic()
   Output.PutArray(column_index, num_edges);
   Output << "]\n";
   Output.flush();
-  Output << "       value: [";
+  Output << "      values: [";
   Output.PutArray(value, num_edges);
   Output << "]\n";
-  Output.flush();
   Output << "        next: [";
   Output.PutArray(next, num_edges);
   Output << "]\n";
@@ -330,7 +339,7 @@ void labeled_digraph <LABEL> :: ConvertToStatic()
 #endif
   
   // make lists contiguous by swapping, forwarding pointers
-  int i = 0; // everything before here is contiguous, after here is linked
+  int i = first_slot; // everything before i is contiguous, after i is linked
   int s;
   for (s=0; s<num_nodes; s++) {
     int list = row_pointer[s];
@@ -343,9 +352,7 @@ void labeled_digraph <LABEL> :: ConvertToStatic()
         // swap i and list, set up forward
         next[list] = next[i];
         SWAP(column_index[i], column_index[list]);
-	// This is...
-	SWAP(value[i], value[list]);  
-	// ... the only difference for labeled edges
+        SWAP(value[i], value[list]);
         next[i] = list;  // forwarding info
       }
       list = nextlist;
@@ -354,27 +361,21 @@ void labeled_digraph <LABEL> :: ConvertToStatic()
   } // for s
   row_pointer[num_nodes] = i;
   
-  // resize arrays to be "tight"
-  ResizeNodes(num_nodes);
-  ResizeEdges(num_edges);
-
-  // Trash next array
-  free(next);
-  next = NULL;
-  isDynamic = false;
-
 #ifdef DEBUG_GRAPH
-  Output << "Static arrays are:\n";
+  Output << "Linked lists after defragment:\n";
   Output << "row_pointer: [";
-  Output.PutArray(row_pointer, num_nodes+1);
+  Output.PutArray(row_pointer, num_nodes);
   Output << "]\n";
   Output.flush();
   Output << "column_index: [";
   Output.PutArray(column_index, num_edges);
   Output << "]\n";
   Output.flush();
-  Output << "       value: [";
+  Output << "      values: [";
   Output.PutArray(value, num_edges);
+  Output << "]\n";
+  Output << "  fwd / next: [";
+  Output.PutArray(next, num_edges);
   Output << "]\n";
   Output.flush();
 #endif

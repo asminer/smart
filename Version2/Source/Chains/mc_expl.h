@@ -115,7 +115,10 @@ public:
     return recurrent + numAbsorbing(); 
   }
   /** Number of states in recurrent class c.
-      Valid for 0 <= c <= numClasses()
+      Valid for 0 <= c <= numClasses().
+      c = 0 is for the transient states.
+      1 <= c <= recurrent is for recurrent class c.
+      c > recurrent is for absorbing states.
    */
   inline int numRecurrent(int c) const { 
     DCASSERT(blockstart);
@@ -129,10 +132,19 @@ public:
     return (1==recurrent) && (0==numTransient()) && (0==numAbsorbing());
   }
   inline int getClass(int newnumber) const {
-    CHECK_RANGE(0, newnumber, states);
+    CHECK_RANGE(0, newnumber, graph->NumNodes());
     int abs_index = newnumber - blockstart[recurrent+1];
     if (abs_index>=0) return abs_index + recurrent + 1;
-    // done 
+    // state is not absorbing.
+    // find c such that blockstart[c] <= newnumber < blockstart[c+1]
+    int low = 0;
+    int high = recurrent+1; 
+    while (low+1<high) {
+      int mid = (low+high)/2;
+      if (blockstart[mid] == newnumber) return mid;
+      if (blockstart[mid] < newnumber) low=mid; else high=mid;
+    }
+    return low;
   }
 
   /** Display (primarily for debugging purposes).
@@ -266,7 +278,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 
   // Allocate RRarcs and Tarcs
 
-  RRarcs = new int*[recurrent];
+  RRarcs = (recurrent) ? (new int*[recurrent]) : NULL;
   Tarcs = (numTransient()) ? (new int*[2+recurrent]) : NULL;
 
   if (isIrreducible()) {
@@ -274,6 +286,8 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
     RRarcs[0] = graph->row_pointer;
     DoneRenumbering();  // no renumbering of states necessary
   } else {
+    graph->ConvertToDynamic();
+    graph->CircularToTerminated();
     if (graph->isTransposed)
       ArrangeMatricesByCols();
     else
@@ -294,11 +308,86 @@ void classified_chain <LABEL> :: ArrangeMatricesByCols()
 template <class LABEL>
 void classified_chain <LABEL> :: ArrangeMatricesByRows()
 {
+  int i;
   DCASSERT(!graph->isTransposed);
 #ifdef DEBUG_CLASSIFY
-  Output << "Arranging matrices by columns\n";
+  Output << "Arranging matrices by rows\n";
   Output.flush();
 #endif
+  // allocate row pointers for T-T, T-R, T-A matrices
+  if (numTransient()) {
+    DCASSERT(Tarcs);
+    // These matrices all have #transients rows.
+    for (i=0; i<2+recurrent; i++) {
+      Tarcs[i] = new int[numTransient()+1];      
+      // set all rows to empty
+      for (int j=numTransient(); j>=0; j--) Tarcs[i][j] = -1;
+    } // for i
+  }
+  // allocate row pointers for each R-R submatrix
+  for (i=0; i<recurrent; i++) {
+    // These matrices all have #(recurrent states in this class) rows.
+    RRarcs[i] = new int[numRecurrent(i+1)+1];
+    // set all rows to empty
+    for (int j=numRecurrent(i+1); j>=0; j--) RRarcs[i][j] = -1;
+  }
+
+  // Traverse old rows, translate each item and add to appropriate submatrix
+  int* oldrow = graph->row_pointer;
+  for (i=0; i<graph->NumNodes(); i++) {
+    int new_i = Renumber(i);
+    int e;
+    int ci = getClass(new_i);
+    if (ci>recurrent) continue;  // from state is absorbing
+    CHECK_RANGE(0, ci, recurrent+1);
+    if (ci) {
+      DCASSERT(RRarcs);
+      graph->row_pointer = RRarcs[ci-1];
+    }
+    while (oldrow[i]>=0) {
+      e = oldrow[i];
+      oldrow[i] = graph->next[e];
+      int new_j = Renumber(graph->column_index[e]);
+      graph->column_index[e] = new_j;
+      int cj = isAbsorbing(new_j) ? recurrent+1 : getClass(new_j);
+      if (0==ci) {
+ 	// transient from-state, submatrix determined by to-state
+        DCASSERT(Tarcs);
+        graph->row_pointer = Tarcs[cj];
+      }
+      // add this element to the submatrix
+      graph->AddToOrderedCircularList(new_i, e);
+    } // while oldrow[i]
+  } // for i
+  free(oldrow);
+
+  // Defragment submatrices, and delete rowpointers for empty submatrices
+  int defragstart = 0;
+  if (numTransient()) {
+    // These matrices all have #transients rows.
+    for (i=0; i<2+recurrent; i++) {
+      graph->row_pointer = Tarcs[i];
+      graph->CircularToTerminated();
+      graph->Defragment(defragstart);
+      if (Tarcs[i][numTransient()] == defragstart)  {
+ 	// empty submatrix
+        delete[] Tarcs[i];
+        Tarcs[i] = NULL;
+      } else {
+        // advance defragstart
+        defragstart = Tarcs[i][numTransient()];
+      }
+    } // for i
+  }
+  for (i=0; i<recurrent; i++) {
+    // These matrices all have #(recurrent states in this class) rows.
+    graph->row_pointer = RRarcs[i];
+    graph->CircularToTerminated();
+    graph->Defragment(defragstart);
+    // None of these submatrices should be empty
+    DCASSERT(RRarcs[i][numRecurrent(i+1)] > defragstart);
+    defragstart = RRarcs[i][numRecurrent(i+1)]; 
+  }
 }
 
 template <class LABEL>
@@ -320,8 +409,34 @@ void classified_chain <LABEL> :: Show(OutputStream &s) const
   s << "values: [";
   s.PutArray(graph->value, graph->NumEdges());
   s << "]\n";
+  if (graph->next) {
+    s.Pad(' ', graph->isTransposed ? 7 : 10);
+    s << "next: [";
+    s.PutArray(graph->next, graph->NumEdges());
+    s << "]\n";
+  }
   s.flush();
 
+  int i;
+  if (numTransient()) {
+    for (i=0; i<recurrent+2; i++) {
+      s << "Transient-";
+      if (i==0) s << "transient"; 
+      else if (i>recurrent) s << "absorbing"; 
+      else s << "recurrent " << i;
+      s << " " << rowname << " pointers: [";
+      s.PutArray(Tarcs[i], 
+    	graph->isTransposed ? numRecurrent(i) : numTransient());
+      s << "]\n";
+      s.flush();
+    } // for i
+  }
+  for (i=0; i<recurrent; i++) {
+    s << "Recurrent class " << i+1 << " " << rowname << " pointers: [";
+    s.PutArray(RRarcs[i], numRecurrent(i+1));
+    s << "]\n";
+    s.flush();
+  }
   s << "End of classified chain\n";
   s.Pad('-', 60);
   s << "\n";
