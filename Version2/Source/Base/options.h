@@ -11,7 +11,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "output.h"
+#include "streams.h"
 #include "types.h"
 
 /** Structure for option constants.

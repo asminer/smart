@@ -2,7 +2,6 @@
 // $Id$
 
 #include "options.h"
-#include "errors.h"
 #include "../defines.h"
 #include "../heap.h"
 

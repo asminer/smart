@@ -40,8 +40,7 @@ void GetReport(void *x)
 
 void InitBase()
 {
-  InitErrorStreams();
-  InitOutputStreams();
+  InitStreams();
 
   // initialize options
   const char* vdoc = "Should SMART turn on the verbose output stream";
