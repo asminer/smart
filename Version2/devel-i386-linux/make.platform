@@ -5,8 +5,7 @@
 #  Platform specific portion of makefile for SMART project, i686-Linux version
 #
 
-OBJECTDIR = ../devel-i386-linux
 CXX = g++
 CC  = g++
 
-MOREFLAGS=-g -DDEVELOPMENT_CODE
+PLAT_FLAGS=-g -DDEVELOPMENT_CODE
