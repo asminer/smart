@@ -45,14 +45,18 @@ for (int i in {1..5}, int j in {1..5}, int k in {i..j}) {
   print("Assign g1[",i,"][",j,"][",k,"] = ",g1[i][j][k], "\n"); 
 }
 
-g1[1][3][2];
-g1[1][2][3];
-g1[5][5][5];
+print(g1[1][3][2], "\n");
+print(g1[5][5][5], "\n");
+
+print("Range error:\n");
+print(g1[1][2][3], "\n");
 
 
 /*
  *    Tests bad array indices and compiler robustness
  */
+
+print("Test of array index order:\n");
 
 for (int i in {0..9}, int j in {1..5}) {
   int g2[j][i] := i+j;
@@ -61,7 +65,7 @@ for (int i in {0..9}, int j in {1..5}) {
 
 }
 
-g2[2][2];
+print(g2[2][2], "\n");
 
 
 /* 
@@ -85,24 +89,26 @@ for (real x in {0.1}) {
 
 #IndexPrecision 1e-4
 	
-g[0.3];
-g[0.2];
-g[0.15];
-g[0.13];
-g[0.12];
-g[0.11];
-g[0.105];
-g[0.102];
-g[0.101];
-g[0.1001];
-g[0.10001];
-g[0.100001];
-g[0.1000001];
-g[0.10000001];
-g[0.100000001];
-g[0.1000000001];
-g[0.10000000001];
-g[0.1];
+print("These should be range errors:\n");
+print(g[0.3],"\n");
+print(g[0.2],"\n");
+print(g[0.15],"\n");
+print(g[0.13],"\n");
+print(g[0.12],"\n");
+print(g[0.11],"\n");
+print(g[0.105],"\n");
+print(g[0.102],"\n");
+print(g[0.101],"\n");
+print("These should go to g[0.1]:\n");
+print(g[0.1001],"\n");
+print(g[0.10001],"\n");
+print(g[0.100001],"\n");
+print(g[0.1000001],"\n");
+print(g[0.10000001],"\n");
+print(g[0.100000001],"\n");
+print(g[0.1000000001],"\n");
+print(g[0.10000000001],"\n");
+print(g[0.1],"\n");
 
 /* Another bizarre array */
 
@@ -122,16 +128,19 @@ for (real x in {0.2..0.8..0.2}, real y in {0.2..0.8..0.2}, real z in {x..y..x*y}
 
 /*  These all are leagal */
 
-xyz[0.2][0.2][0.2];
-xyz[0.2][0.6][0.32];
-xyz[0.4][0.8][0.72];
+print(xyz[0.2][0.2][0.2], "\n");
+print(xyz[0.2][0.6][0.32], "\n");
+print(xyz[0.4][0.8][0.72], "\n");
 
 /* These are not */
 
-xyz[0.6][0.2][0.2];
-xyz[0.6][0.7][0.2];
-xyz[0.6][0.6][0.8];
+print("These should be range errors:\n");
 
+print(xyz[0.6][0.2][0.2], "\n");
+print(xyz[0.6][0.7][0.2], "\n");
+print(xyz[0.6][0.6][0.8], "\n");
+
+print("Testing number of array indices:\n");
 
 /* Testing wrong number of indices */
 for (int i in {1..2}, int j in {10..20}, int k in {100..200}) {
@@ -144,8 +153,34 @@ wrongind[1][10][100][3];
    Testing wrong index names and orders
 */
 
+print("Testing wrong index names:\n");
+
 for (int i in {1..10}, int j in {1..10}) {
   int wrongorder[j][i] := i+j;
   int wrongname1[i][k] := i+j;
   int wrongname2[m][n] := i+j;
 }
+
+/* 
+   Fun stuff
+ */
+
+print("\n\nJust for kicks:\n\n");
+
+int TS := 20;
+
+for (int i in {1..TS}, int j in {0..i+1}) {
+  int pascal[i][j] := cond(j==0 | j>i, 0, 
+                           cond(i==1, 1, pascal[i-1][j-1] + pascal[i-1][j])
+			  );
+}
+
+
+for (int i in {1..TS}) {
+  print(pascal[i][1]:3+(TS-i)*3);
+  for (int j in {2..i}) {
+    print(pascal[i][j]:6);
+  }
+  print("\n");
+}
+
