@@ -4,14 +4,21 @@
 # $Id$
 #
 # This script is used to build a platform-dependent makefile
+# based on the environment variable SMART_PLATFORM
 #
 
-echo Building makefile for platform $SMART_PLATFORM
-cd ../$SMART_PLATFORM
-touch ../Source/smart.tab.h
-cat make.platform ../Source/make.common >! makefile
-echo Generating dependencies
-make depend
-cat make.platform ../Source/make.common make.depend >! makefile
-rm ../Source/smart.tab.h
+# Make sure variable exists
+
+set ok = `env | grep "SMART_PLATFORM" | wc -c`
+if ( $ok ) then
+  echo Building makefile for platform $SMART_PLATFORM
+  cd ../$SMART_PLATFORM
+  touch ../Source/smart.tab.h
+  cat make.platform ../Source/make.common >! makefile
+  echo Generating dependencies
+  make depend
+  cat make.platform ../Source/make.common make.depend >! makefile
+  rm ../Source/smart.tab.h
+else
+  echo Please set environment variable SMART_PLATFORM
 endif

@@ -7,11 +7,16 @@
 # based on the environment variable SMART_PLATFORM
 #
 
-echo Running make for platform: $SMART_PLATFORM
-cd ../$SMART_PLATFORM
-make makefile 
-make $1 $2 $3 $4 $5
+# Make sure variable exists
 
-echo "Done"    
-
+set ok = `env | grep "SMART_PLATFORM" | wc -c`
+if ( $ok ) then
+  echo Running make for platform: $SMART_PLATFORM
+  cd ../$SMART_PLATFORM
+  make makefile 
+  make $1 $2 $3 $4 $5
+  echo "Done"    
+else
+  echo Please set environment variable SMART_PLATFORM
+endif
 
