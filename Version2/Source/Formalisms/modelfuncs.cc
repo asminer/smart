@@ -8,7 +8,7 @@
 
 
 // ********************************************************
-// *                        prob_ss                       *
+// *                  prob_ss and avg_ss                  *
 // ********************************************************
 
 Engine_type prob_ss_engine(expr **pp, int np, engineinfo *e)
@@ -36,10 +36,6 @@ void Add_prob_ss(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-// ********************************************************
-// *                        avg_ss                        *
-// ********************************************************
-
 void Add_avg_ss(PtrTable *fns)
 {
   const char* helpdoc = "Computes the steady-state average of x.";
@@ -49,6 +45,109 @@ void Add_avg_ss(PtrTable *fns)
   pl[1] = new formal_param(PROC_REAL, "x");
   engine_wrapper *p = new engine_wrapper(REAL, "avg_ss", 
 	prob_ss_engine, pl, 2, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                  prob_at and avg_at                  *
+// ********************************************************
+
+Engine_type prob_at_engine(expr **pp, int np, engineinfo *e)
+{
+  DCASSERT(pp);
+  DCASSERT(np==3);  // params are: (model, reward, time)
+  result x;
+  x.Clear();
+  SafeCompute(pp[2], 0, x);  // get the time
+  // check for errors here...
+
+  if (e) {
+    e->starttime = x;
+    e->stoptime = x;
+    e->engine = (x.isInfinity()) ? ENG_SS_Inst : ENG_T_Inst;
+  }
+  return (x.isInfinity()) ? ENG_SS_Inst : ENG_T_Inst;
+}
+
+void Add_prob_at(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the probability of b at time t.";
+
+  formal_param **pl = new formal_param*[3];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_BOOL, "b");
+  pl[2] = new formal_param(REAL, "t");
+  engine_wrapper *p = new engine_wrapper(REAL, "prob_at", 
+	prob_at_engine, pl, 3, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+void Add_avg_at(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the average of x at time t.";
+
+  formal_param **pl = new formal_param*[3];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_REAL, "x");
+  pl[2] = new formal_param(REAL, "t");
+  engine_wrapper *p = new engine_wrapper(REAL, "avg_at", 
+	prob_at_engine, pl, 3, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                 prob_acc and avg_acc                 *
+// ********************************************************
+
+Engine_type prob_acc_engine(expr **pp, int np, engineinfo *e)
+{
+  DCASSERT(pp);
+  DCASSERT(np==4);  // params are: (model, reward, starttime, stoptime)
+  result t1, t2;
+  t1.Clear();
+  t2.Clear();
+  SafeCompute(pp[2], 0, t1);  // get the start time
+  SafeCompute(pp[3], 0, t2);  // get the stop time
+
+  // check for errors here...
+
+  if (e) {
+    e->starttime = t1;
+    e->stoptime = t2;
+    e->engine = (t2.isInfinity()) ? ENG_SS_Acc : ENG_T_Acc;
+  }
+  return (t2.isInfinity()) ? ENG_SS_Acc : ENG_T_Acc;
+}
+
+void Add_prob_acc(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the accumulated probability of b from time t1 to time t2.";
+
+  formal_param **pl = new formal_param*[4];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_BOOL, "b");
+  pl[2] = new formal_param(REAL, "t1");
+  pl[3] = new formal_param(REAL, "t2");
+  engine_wrapper *p = new engine_wrapper(REAL, "prob_acc", 
+	prob_acc_engine, pl, 4, 1, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+void Add_avg_acc(PtrTable *fns)
+{
+  const char* helpdoc = "Computes the accumulated average of x from time t1 to time t2.";
+
+  formal_param **pl = new formal_param*[4];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(PROC_REAL, "x");
+  pl[2] = new formal_param(REAL, "t1");
+  pl[3] = new formal_param(REAL, "t2");
+  engine_wrapper *p = new engine_wrapper(REAL, "avg_acc", 
+	prob_acc_engine, pl, 4, 1, helpdoc);
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -129,6 +228,12 @@ void InitGenericModelFunctions(PtrTable *t)
 {
   Add_prob_ss(t);
   Add_avg_ss(t);
+
+  Add_prob_at(t);
+  Add_avg_at(t);
+
+  Add_prob_acc(t);
+  Add_avg_acc(t);
 
   Add_num_states(t);
 }
