@@ -9,14 +9,30 @@ using namespace std;
 
 unsigned long seeds[MT_STATE_SIZE];
 
-void Init(unsigned long nz)
+const int KNUTH_MULTIPLIER_OLD = 69069;
+
+unsigned long firstseed;
+
+inline long knuth(long seed)
+{
+  return (KNUTH_MULTIPLIER_OLD * seed) & 0xffffffff;
+}
+
+void Init()
 {
   int i;
-  nz += MT_STATE_SIZE;
+  unsigned long seed = firstseed;
   for (i=0; i<MT_STATE_SIZE; i++) {
-    nz--;
-    seeds[i] = nz;
+    seeds[i] = seed;
+    seed = knuth(seed);
   }
+}
+
+void InitNext()
+{
+  int i;
+  for (i=0; i<MT_STATE_SIZE-1; i++) seeds[i] = seeds[i+1];
+  seeds[MT_STATE_SIZE-1] = knuth(seeds[MT_STATE_SIZE-2]);
 }
 
 void Dump()
@@ -33,35 +49,59 @@ void Dump()
 bool IsSequence()
 {
   int i;
-  for (i=1; i<MT_STATE_SIZE; i++) 
-    if (mt_default_state.statevec[i-1]+1 != mt_default_state.statevec[i]) return false;
+  unsigned long sd = mt_default_state.statevec[MT_STATE_SIZE-1];
+  for (i=MT_STATE_SIZE-2; i >= 0; i--) {
+    sd = knuth(sd);
+    if (mt_default_state.statevec[i] != sd) return false;
+  }
 
   return true;
 }
 
-int main()
-{
-  int foo;
-  cout << "Enter starting seed thingy\n";
-  cin >> foo;
-  Init(foo);
-  mt_seedfull(seeds);
-  Dump();
+unsigned long MAXDIST;
 
-  if (!IsSequence()) {
-    cout << "Not a sequence\n";
-    return 0;
-  }
-  int i;
-  for (i=1; i<1000; i++) {
+bool Test()
+{
+  unsigned long i;
+  for (i=MAXDIST; i; i--) {
     mts_refresh(&mt_default_state);
     if (IsSequence()) {
-      cout << "Hit next sequence!  First is " << mt_default_state.statevec[0] << endl;
-      cout << "Distance is " << i << endl;
-      return 0;
+      cout << "Starting with sequence generated from " << seeds[0] << "\n";
+      cout << "  we reach the sequence generated from ";
+      cout << mt_default_state.statevec[MT_STATE_SIZE-1] << "\n";
+      cout << "  in " << MAXDIST-i << "+1 steps" << endl;
+      return true;
     }
   }
-  cout << "No sequence with distance less than " << i << endl;
+  return false;
+}
+
+int main()
+{
+  cout << "Enter starting seed thingy\n";
+  cin >> firstseed;
+  cout << "Enter max distance to check\n";
+  cin >> MAXDIST;
+
+  if (!IsSequence()) {
+    cout << "Not a sequence?\n";
+    return 0;
+  }
+
+  unsigned long count = 0;
+  unsigned long nextprint = 1;
+  Init();
+  do {
+    if (Test()) return 0; 
+    count++;
+    if (count >= nextprint) {
+      cout << count << " seeds checked" << endl;
+      nextprint *= 2;
+    }
+    InitNext();
+  } while (seeds[0] != firstseed);
+
+  cout << "\n\n" << count << " seeds checked, all pass!\n";
   return 0;
 }
 
