@@ -1293,16 +1293,14 @@ void AddExit(PtrTable *fns)
 }
 
 // ********************************************************
-// *                  switch functions                    *
+// *                        cond                          *
 // ********************************************************
 
 void compute_cond(expr **pp, int np, result &x)
 {
-  x.Clear();
   DCASSERT(pp);
   DCASSERT(np==3);
   result b;
-  b.Clear();
   SafeCompute(pp[0], 0, b);
   if (b.isNull() || b.isError()) {
     // error stuff?
@@ -1315,11 +1313,9 @@ void compute_cond(expr **pp, int np, result &x)
 
 void sample_cond(Rng &seed, expr **pp, int np, result &x)
 {
-  x.Clear();
   DCASSERT(pp);
   DCASSERT(np==3);
   result b;
-  b.Clear();
   SafeSample(pp[0], seed, 0, b);
   if (b.isNull() || b.isError()) {
     x = b;
@@ -1327,6 +1323,36 @@ void sample_cond(Rng &seed, expr **pp, int np, result &x)
   }
   if (b.bvalue) SafeSample(pp[1], seed, 0, x);
   else SafeSample(pp[2], seed, 0, x); 
+}
+
+void proc_compute_cond(const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==3);
+  result b;
+  SafeCompute(pp[0], m, 0, b);
+  if (b.isNull() || b.isError()) {
+    // error stuff?
+    x = b;
+    return;
+  }
+  if (b.bvalue) SafeCompute(pp[1], m, 0, x);
+  else SafeCompute(pp[2], m, 0, x);
+}
+
+void proc_rand_compute_cond(Rng &s, const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==3);
+  result b;
+  SafeSample(pp[0], s, m, 0, b);
+  if (b.isNull() || b.isError()) {
+    // error stuff?
+    x = b;
+    return;
+  }
+  if (b.bvalue) SafeSample(pp[1], s, m, 0, x);
+  else SafeSample(pp[2], s, m, 0, x);
 }
 
 const char* conddoc = "If <b> is true, returns <t>; else, returns <f>.";
@@ -1338,11 +1364,120 @@ void AddCond(type bt, type t, PtrTable *fns)
   pl[1] = new formal_param(t, "t");
   pl[2] = new formal_param(t, "f");
 
-  internal_func *cnd = 
-    new internal_func(t, "cond", compute_cond, sample_cond, pl, 3, conddoc);
+  internal_func *cnd = NULL;
+  switch (bt) {
+    case BOOL:
+      	cnd = new internal_func(t, "cond", compute_cond, NULL, pl, 3, conddoc);
+	break;
+    
+    case RAND_BOOL:
+      	cnd = new internal_func(t, "cond", NULL, sample_cond, pl, 3, conddoc);
+	break;
 
+    case PROC_BOOL:
+      	cnd = new internal_func(t, "cond", proc_compute_cond, NULL, pl, 3, conddoc);
+	break;
+
+    case PROC_RAND_BOOL:
+      	cnd = new internal_func(t, "cond", NULL, proc_rand_compute_cond, pl, 3, conddoc);
+	break;
+ 
+    default:
+      	DCASSERT(0);
+	return;
+  }
+  
   InsertFunction(fns, cnd);
 }
+
+// ********************************************************
+// *                        case                          *
+// ********************************************************
+
+void compute_case(expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np>1);
+  result c;
+  SafeCompute(pp[0], 0, c);
+  if (c.isNull() || c.isError()) {
+    // error stuff?
+    x = c;
+    return;
+  }
+  int i;
+  for (i=2; i<np; i++) {
+    result m;
+    SafeCompute(pp[i], 0, m);
+    if (m.isNormal()) if (m.ivalue == c.ivalue) {
+      // this is it!
+      SafeCompute(pp[i], 1, x);
+      return;
+    }
+  }
+  // still here?  use the default value
+  SafeCompute(pp[1], 0, x);
+}
+
+void sample_case(Rng &s, expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np>1);
+  result c;
+  SafeSample(pp[0], s, 0, c);
+  if (!c.isNormal()) {
+    x.setError();
+    return;
+  }
+  int i;
+  for (i=2; i<np; i++) {
+    result m;
+    SafeSample(pp[i], s, 0, m);
+    if (m.isNormal()) if (m.ivalue == c.ivalue) {
+      // this is it!
+      SafeCompute(pp[i], 1, x);
+      return;
+    }
+  }
+  // still here?  use the default value
+  SafeCompute(pp[1], 0, x);
+}
+
+const char* casedoc = "Match the value <c> with one of the <c:v> pairs. If matched, return the matching v; Otherwise return the default value <dv>.";
+
+void AddCase(type it, type t, PtrTable *fns)
+{
+  formal_param **pl = new formal_param*[3];
+  pl[0] = new formal_param(it, "c");
+  pl[1] = new formal_param(t, "dv");
+  type *tl = new type[2];
+  tl[0] = it;
+  tl[1] = t;
+  pl[2] = new formal_param(tl, 2, "cv");
+
+  internal_func *ca = NULL;
+  switch (it) {
+    case INT:
+      	ca = new internal_func(it, "case", compute_case, NULL, pl, 3, 2, casedoc);
+	break;
+    
+    case RAND_INT:
+      	ca = new internal_func(t, "case", NULL, sample_case, pl, 3, 2, casedoc);
+	break;
+
+    default:
+      	DCASSERT(0);
+	return;
+  }
+  
+  InsertFunction(fns, ca);
+}
+
+
+
+// ********************************************************
+// *                      dontknow                        *
+// ********************************************************
 
 
 void compute_dontknow(expr **pp, int np, result &x)
@@ -1393,6 +1528,11 @@ void InitBuiltinFunctions(PtrTable *t)
   for (i=PROC_BOOL; i<=PROC_PH_REAL; i++)	AddCond(PROC_BOOL, i, t);
   for (i=PROC_RAND_BOOL; i<=PROC_RAND_REAL; i++)AddCond(PROC_RAND_BOOL, i, t);
   for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCond(BOOL, i, t);
+  // Case
+  for (i=FIRST_SIMPLE; i<=PH_REAL; i++)		AddCase(INT, i, t);
+  for (i=RAND_BOOL; i<=RAND_REAL; i++)		AddCase(RAND_INT, i, t);
+  for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCase(INT, i, t);
+
   // Misc
   AddDontKnow(t);
 }

@@ -571,7 +571,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
   // Still here?  Slipped through the cracks.
   Internal.Start(__FILE__, __LINE__, file, line);
   Internal << "Bad typecast from " << GetType(e->Type(0));
-  Internal << "to " << GetType(newtype);
+  Internal << " to " << GetType(newtype);
   Internal.Stop();
   return NULL;
 }
