@@ -44,6 +44,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *x) {
+    return new bool_not(Filename(), Linenumber(), x);
+  }
 };
 
 void bool_not::Compute(int i, result &x) const
@@ -76,6 +80,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new bool_or(Filename(), Linenumber(), l, r);
+  }
 };
 
 void bool_or::Compute(int i, result &x) const
@@ -122,6 +130,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new bool_and(Filename(), Linenumber(), l, r);
+  }
 };
 
 void bool_and::Compute(int i, result &x) const
@@ -166,6 +178,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr* r) {
+    return new bool_equal(Filename(), Linenumber(), l, r);
+  }
 };
 
 void bool_equal::Compute(int i, result &x) const
@@ -210,6 +226,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new bool_neq(Filename(), Linenumber(), l, r);
+  }
 };
 
 void bool_neq::Compute(int i, result &x) const
@@ -265,6 +285,10 @@ public:
     return RAND_BOOL;
   }
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *x) {
+    return new randbool_not(Filename(), Linenumber(), x);
+  }
 };
 
 void randbool_not::Sample(long &seed, int i, result &x) const
@@ -297,6 +321,10 @@ public:
     return RAND_BOOL;
   }
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new randbool_or(Filename(), Linenumber(), l,r);
+  }
 };
 
 void randbool_or::Sample(long &seed, int i, result &x) const
@@ -343,6 +371,10 @@ public:
     return RAND_BOOL;
   }
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new randbool_and(Filename(), Linenumber(), l, r);
+  }
 };
 
 void randbool_and::Sample(long &seed, int i, result &x) const
@@ -387,6 +419,10 @@ public:
     return RAND_BOOL;
   }
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new randbool_equal(Filename(), Linenumber(), l, r);
+  }
 };
 
 void randbool_equal::Sample(long &seed, int i, result &x) const
@@ -431,6 +467,10 @@ public:
     return RAND_BOOL;
   }
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new randbool_neq(Filename(), Linenumber(), l, r);
+  }
 };
 
 void randbool_neq::Sample(long &seed, int i, result &x) const
@@ -486,6 +526,10 @@ public:
     return INT;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *x) {
+    return new int_neg(Filename(), Linenumber(), x);
+  }
 };
 
 void int_neg::Compute(int i, result &x) const
@@ -519,6 +563,10 @@ public:
     return INT;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_add(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_add::Compute(int i, result &x) const
@@ -587,6 +635,10 @@ public:
     return INT;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_sub(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_sub::Compute(int i, result &x) const
@@ -656,6 +708,10 @@ public:
     return INT;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_mult(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_mult::Compute(int i, result &x) const
@@ -721,6 +777,10 @@ public:
     return REAL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_div(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_div::Compute(int i, result &x) const
@@ -767,6 +827,10 @@ public:
     : consteqop(fn, line, l, r) { }
   
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_equal(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_equal::Compute(int i, result &x) const
@@ -798,6 +862,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_neq(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_neq::Compute(int i, result &x) const
@@ -826,6 +894,10 @@ public:
     : constgtop(fn, line, l, r) { }
   
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_gt(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_gt::Compute(int i, result &x) const
@@ -857,6 +929,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_ge(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_ge::Compute(int i, result &x) const
@@ -887,6 +963,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_lt(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_lt::Compute(int i, result &x) const
@@ -918,6 +998,10 @@ public:
     return BOOL;
   }
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new int_le(Filename(), Linenumber(), l, r);
+  }
 };
 
 void int_le::Compute(int i, result &x) const
@@ -971,6 +1055,10 @@ public:
   }
   virtual void Compute(int i, result &x) const;
   virtual void show(ostream &s) const;
+protected:
+  virtual expr* MakeAnother(expr *x) {
+    return new proc_unary(Filename(), Linenumber(), returntype, oper, x);
+  }
 };
 
 void proc_unary::Compute(int i, result &x) const
@@ -1026,6 +1114,10 @@ public:
   }
   virtual void Compute(int i, result &x) const;
   virtual void show(ostream &s) const;
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new proc_binary(Filename(), Linenumber(), returntype, oper, l, r);
+  }
 };
 
 void proc_binary::Compute(int i, result &x) const
@@ -1100,8 +1192,116 @@ void proc_binary::show(ostream &s) const
 // ******************************************************************
 
 
-expr* MakeUnaryOp(int op, expr *opnd);
-expr* MakeBinaryOr(expr *left, int op, expr *right);
+expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
+{
+  if (NULL==opnd) return NULL;
+
+  type optype = opnd->Type(0);
+  switch (optype) {
+    case BOOL:
+      if (op==NOT) return new bool_not(file, line, opnd);
+      return NULL;
+
+    case INT:
+      if (op==NEG) return new int_neg(file, line, opnd);
+      return NULL;
+
+    case PROC_BOOL:
+    case PROC_INT:
+    case PROC_REAL:
+    case PROC_PH_INT:
+    case PROC_PH_REAL:
+    case PROC_RAND_BOOL:
+    case PROC_RAND_INT:
+    case PROC_RAND_REAL:
+      return new proc_unary(file, line, optype, op, opnd);
+  }
+  return NULL;
+}
+
+// Note: the types left and right must match properly already
+expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
+{
+  if (NULL==left || NULL==right) {
+    Delete(left);
+    Delete(right);
+    return NULL;
+  }
+  type ltype = left->Type(0);
+  type rtype = right->Type(0);
+
+  switch (ltype) {
+
+    //===============================================================
+    case BOOL:
+
+      DCASSERT(rtype==BOOL);
+
+      switch (op) {
+          case PLUS:	return new bool_or(file, line, left, right);
+	  case TIMES:   return new bool_and(file, line, left, right);
+	  case EQUALS:	return new bool_equal(file, line, left, right);
+	  case NEQ:	return new bool_neq(file, line, left, right);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case INT:
+
+      if (rtype==PH_INT) {
+	DCASSERT(op==TIMES);
+	// do ph int times int here
+	return NULL;
+      }
+
+      DCASSERT(rtype==INT);
+
+      switch (op) {
+          case PLUS:	return new int_add(file, line, left, right);
+          case MINUS:	return new int_sub(file, line, left, right);
+          case TIMES:	return new int_mult(file, line, left, right);
+          case DIVIDE:	return new int_div(file, line, left, right);
+	  case EQUALS:	return new int_equal(file, line, left, right);
+	  case NEQ:	return new int_neq(file, line, left, right);
+	  case GT:	return new int_gt(file, line, left, right);
+	  case GE:	return new int_ge(file, line, left, right);
+	  case LT:	return new int_lt(file, line, left, right);
+	  case LE:	return new int_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
+    case PROC_INT:
+      if (rtype==PROC_PH_INT) {
+	DCASSERT(op==TIMES);
+	return new proc_binary(file, line, rtype, op, left, right);
+      }
+      return new proc_binary(file, line, ltype, op, left, right);
+
+      
+    //===============================================================
+    case PROC_REAL:
+      if (rtype==PROC_PH_REAL) {
+	DCASSERT(op==TIMES);
+	return new proc_binary(file, line, rtype, op, left, right);
+      }
+      return new proc_binary(file, line, ltype, op, left, right);
+
+
+    //===============================================================
+    case PROC_BOOL:
+    case PROC_PH_INT:
+    case PROC_PH_REAL:
+    case PROC_RAND_INT:
+    case PROC_RAND_REAL:
+      return new proc_binary(file, line, ltype, op, left, right); 
+
+  }
+
+  return NULL;
+}
 
 //@}
 

@@ -25,19 +25,21 @@
     Note the type of infinity is integer.
     (That way it can be promoted to real, if necessary.)
  */
-class infinityconst : public expr {
+class infinityconst : public constant {
   int sign;
   public:
-  infinityconst(const char* fn, int line, int s) : expr (fn, line) {
+  infinityconst(const char* fn, int line, int s) : constant (fn, line, INT) {
     sign = s;
   }
 
-  virtual type Type(int i) const {
+  virtual void Compute(int i, result &x) const {
     DCASSERT(0==i);
-    return INT;
+    x.Clear();
+    x.ivalue = sign;
+    x.infinity = true;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Sample(long &, int i, result &x) const {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;

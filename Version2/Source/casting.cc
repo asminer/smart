@@ -60,6 +60,10 @@ public:
     : typecast(fn, line, nt, x) { }
 
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new determ2rand(Filename(), Linenumber(), Type(0), x);
+  }
 };
 
 void determ2rand::Sample(long &, int i, result &x) const
@@ -86,6 +90,10 @@ public:
     : typecast(fn, line, PROC_BOOL, x) { }
 
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new bool2procbool(Filename(), Linenumber(), x);
+  }
 };
 
 void bool2procbool::Compute(int i, result &x) const
@@ -118,6 +126,10 @@ public:
     : typecast(fn, line, PROC_RAND_BOOL, x) { }
 
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new bool2procrandbool(Filename(), Linenumber(), x);
+  }
 };
 
 void bool2procrandbool::Sample(long &seed, int i, result &x) const
@@ -149,6 +161,10 @@ public:
   int2real(const char* fn, int line, expr* x) : typecast(fn, line, REAL, x) { }
 
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new int2real(Filename(), Linenumber(), x);
+  }
 };
 
 void int2real::Compute(int i, result &x) const
@@ -179,6 +195,10 @@ public:
     : typecast(fn, line, PROC_INT, x) { }
 
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new int2procint(Filename(), Linenumber(), x);
+  }
 };
 
 void int2procint::Compute(int i, result &x) const
@@ -213,6 +233,10 @@ public:
   real2int(const char* fn, int line, expr* x) : typecast(fn, line, INT, x) { }
 
   virtual void Compute(int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new real2int(Filename(), Linenumber(), x);
+  }
 };
 
 void real2int::Compute(int i, result &x) const
@@ -244,6 +268,10 @@ public:
     : typecast(fn, line, nt, x) { }
 
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new rand2procrand(Filename(), Linenumber(), Type(0), x);
+  }
 };
 
 void rand2procrand::Sample(long &, int i, result &x) const
@@ -267,6 +295,10 @@ public:
     : typecast(fn, line, nt, x) { }
 
   virtual void Sample(long &seed, int i, result &x) const;
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new proc2procrand(Filename(), Linenumber(), Type(0), x);
+  }
 };
 
 void proc2procrand::Sample(long &, int i, result &x) const

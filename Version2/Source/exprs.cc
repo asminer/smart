@@ -67,6 +67,29 @@ int expr::GetSymbols(int i, symbol **syms, int N, int offset)
 
 // ******************************************************************
 // *                                                                *
+// *                         constant class                         *
+// *                                                                *
+// ******************************************************************
+
+constant::constant(const char* fn, int line, type mt) : expr (fn, line)
+{
+  mytype = mt;
+}
+
+type constant::Type(int i) const
+{
+  DCASSERT(i==0);
+  return mytype;
+}
+
+expr* constant::Substitute(int i)
+{
+  DCASSERT(0==i);
+  return Copy(this);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                          unary  class                          *
 // *                                                                *
 // ******************************************************************
@@ -86,6 +109,20 @@ int unary::GetSymbols(int i, symbol **syms, int N, int offset)
   DCASSERT(i==0);
   if (opnd) return opnd->GetSymbols(0, syms, N, offset);
   return 0;
+}
+
+expr* unary::Substitute(int i)
+{
+  DCASSERT(i==0);
+  // Slick...
+  expr* newopnd = opnd->Substitute(0);
+  if (newopnd==opnd) {
+    // we created a copy... so delete the copy and copy ourself
+    Delete(newopnd);
+    return Copy(this);
+  }
+  // The substitution is different... make a new one of us
+  return MakeAnother(newopnd);
 }
 
 // ******************************************************************
@@ -117,6 +154,22 @@ int binary::GetSymbols(int i, symbol **syms, int N, int offset)
     answer += right->GetSymbols(0, syms, N, offset+answer);
   }
   return answer;
+}
+
+expr* binary::Substitute(int i)
+{
+  DCASSERT(i==0);
+  // Slick...
+  expr* newleft = left->Substitute(0);
+  expr* newright = right->Substitute(0);
+  if ((newleft==left) && (newright==right)) {
+    // We can safely just copy ourself
+    Delete(newleft);
+    Delete(newright);
+    return Copy(this);
+  }
+  // The substitution is different... make a new one of us
+  return MakeAnother(newleft, newright);
 }
 
 // ******************************************************************
@@ -170,11 +223,14 @@ public:
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x) const;
   virtual void Sample(long &seed, int i, result &x) const;
-  virtual void show(ostream &s) const;
+
+  virtual expr* Substitute(int i);
 
   virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+
+  virtual void show(ostream &s) const;
 
 protected:
   virtual void TakeAggregates();
@@ -268,11 +324,11 @@ void aggregates::Sample(long &seed, int i, result &x) const
   else x.null = true;
 }
 
-void aggregates::show(ostream &s) const
+expr* aggregates::Substitute(int i) 
 {
-  int i;
-  s << items[0];
-  for (i=1; i<numitems; i++) s << ":" << items[i];
+  CHECK_RANGE(0, i, numitems);
+  if (items[i]) return items[i]->Substitute(0);
+  return NULL;
 }
 
 int aggregates::GetSums(int i, expr **sums, int N, int offset) 
@@ -296,6 +352,13 @@ int aggregates::GetSymbols(int i, symbol **syms, int N, int offset)
     return 0;  // null expression
 }
 
+void aggregates::show(ostream &s) const
+{
+  int i;
+  s << items[0];
+  for (i=1; i<numitems; i++) s << ":" << items[i];
+}
+
 void aggregates::TakeAggregates()
 {
   // Our items have been copied, so set them to NULL so we don't
@@ -312,16 +375,11 @@ void aggregates::TakeAggregates()
 
 /** A boolean constant expression.
  */
-class boolconst : public expr {
+class boolconst : public constant {
   bool value;
   public:
-  boolconst(const char* fn, int line, bool v) : expr (fn, line) {
+  boolconst(const char* fn, int line, bool v) : constant (fn, line, BOOL) {
     value = v;
-  }
-
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
   }
 
   virtual void Compute(int i, result &x) const {
@@ -349,16 +407,11 @@ class boolconst : public expr {
 
 /** An integer constant expression.
  */
-class intconst : public expr {
+class intconst : public constant {
   int value;
   public:
-  intconst(const char* fn, int line, int v) : expr (fn, line) {
+  intconst(const char* fn, int line, int v) : constant (fn, line, INT) {
     value = v;
-  }
-
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return INT;
   }
 
   virtual void Compute(int i, result &x) const {
@@ -386,16 +439,11 @@ class intconst : public expr {
 
 /** A real constant expression.
  */
-class realconst : public expr {
+class realconst : public constant {
   double value;
   public:
-  realconst(const char* fn, int line, double v) : expr (fn, line) {
+  realconst(const char* fn, int line, double v) : constant(fn, line, REAL) {
     value = v;
-  }
-
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return REAL;
   }
 
   virtual void Compute(int i, result &x) const {
@@ -423,20 +471,15 @@ class realconst : public expr {
 
 /** A string constant expression.
  */
-class stringconst : public expr {
+class stringconst : public constant {
   char *value;
   public:
-  stringconst(const char* fn, int line, char *v) : expr (fn, line) {
+  stringconst(const char* fn, int line, char *v) : constant(fn, line, STRING) {
     value = v;
   }
 
   virtual ~stringconst() {
     delete[] value;
-  }
-
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return STRING;
   }
 
   virtual void Compute(int i, result &x) const {

@@ -265,6 +265,14 @@ public:
   /// Sample a value of component i (with given rng seed).
   virtual void Sample(long &, int i, result &x) const;
 
+  /** Create a copy of this expression with values substituted
+      for certain symbols. 
+      (The symbols themselves determine the substitution.)
+      Note: try to do shallow copies if possible.
+      @param	i	The component to substitute.	
+   */
+  virtual expr* Substitute(int i) = 0;
+
   /** Split this expression into a sequence of sums.
       We store pointers to parts of the expressions, not copies.
       @param	i	The component to split.
@@ -336,6 +344,25 @@ inline void Delete(expr *e)
 
 // ******************************************************************
 // *                                                                *
+// *                         constant class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  The base class for "constants".
+     That means things like "3.2", "infinity".
+ */
+
+class constant : public expr {
+protected:
+  type mytype;  // Simplify life
+public:
+  constant(const char* fn, int line, type mt);
+  virtual type Type(int i) const;
+  virtual expr* Substitute(int i);
+};
+
+// ******************************************************************
+// *                                                                *
 // *                          unary  class                          *
 // *                                                                *
 // ******************************************************************
@@ -352,6 +379,13 @@ public:
   unary(const char* fn, int line, expr* x);
   virtual ~unary();
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual expr* Substitute(int i);
+protected:
+  /** Used by Substitute.
+      Whatever kind of unary operation we are, make another one.
+      The filename and line number should be copied.
+   */
+  virtual expr* MakeAnother(expr* newopnd) = 0;
 };
 
 // ******************************************************************
@@ -373,6 +407,13 @@ public:
   binary(const char* fn, int line, expr* l, expr* r);
   virtual ~binary();
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual expr* Substitute(int i);
+protected:
+  /** Used by Substitute.
+      Whatever kind of unary operation we are, make another one.
+      The filename and line number should be copied.
+   */
+  virtual expr* MakeAnother(expr* newleft, expr* newright) = 0;
 };
 
 // ******************************************************************
@@ -392,13 +433,13 @@ public:
 */  
 
 class symbol : public expr {
-  private:
-    /// The symbol name.
-    char* name;
-    /// The symbol type.
-    type mytype;
+private:
+  /// The symbol name.
+  char* name;
+  /// The symbol type.
+  type mytype;
 
-  public:
+public:
 
   symbol(const char* fn, int line, type t, char* n) : expr (fn, line) {
     mytype = t;
