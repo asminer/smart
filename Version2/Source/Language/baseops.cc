@@ -44,7 +44,7 @@ void addop::show(ostream &s) const
   assoc_show(s, op);
 }
 
-int addop::GetSums(int a, expr **sums=NULL, int N=0, int offset=0)
+int addop::GetSums(int a, expr **sums, int N, int offset)
 {
   DCASSERT(a==0);
   int i;
@@ -72,7 +72,7 @@ void multop::show(ostream &s) const
   assoc_show(s, op);
 }
 
-int multop::GetProducts(int a, expr **prods=NULL, int N=0, int offset=0)
+int multop::GetProducts(int a, expr **prods, int N, int offset)
 {
   DCASSERT(a==0);
   int i;

@@ -1,9 +1,8 @@
 
 /* A Test of the new smart expression engine */
 
-#include "arrays.h"
-#include "functions.h"
-#include "operators.h"
+#include "../Language/api.h"
+#include "api.h"
 
 internal_func* MakeCond(type t);
 
@@ -136,7 +135,7 @@ void TestSums()
 
 }
 
-int main()
+int smart_main(int argc, char** argv)
 {
   cout << "Hello world\n";
 

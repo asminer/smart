@@ -3,7 +3,7 @@
 
 #include "arrays.h"
 
-#include <strstream>
+#include <sstream>
 
 //@Include: arrays.h
 
@@ -469,7 +469,7 @@ void arrayassign::showfancy(int depth, ostream &s) const
 // *                                                                *
 // ******************************************************************
 
-expr* MakeArrayCall(array *f, expr **p, int np, const char *fn=NULL, int l=0)
+expr* MakeArrayCall(array *f, expr **p, int np, const char *fn, int l)
 {
   return new acall(fn, l, f, p, np);
 }

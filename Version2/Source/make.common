@@ -2,11 +2,8 @@
 # $Id$
 
 #
-#  Makefile : common section
+#  Makefile : common section for all modules
 #
-
-
-SOURCEDIR = ../Source
 
 vpath %.tab.h $(OBJECTDIR)
 vpath %.h  $(SOURCEDIR)
@@ -14,80 +11,4 @@ vpath %.c  $(SOURCEDIR)
 vpath %.cc $(SOURCEDIR)
 vpath %.l  $(SOURCEDIR)
 vpath %.y  $(SOURCEDIR)
-
-MYINCLUDES = -I$(OBJECTDIR)
-
-STDLIBS     = 
-# STDLIBS     = -lm -lfl 
-
-SOURCES = \
-	types.cc	exprs.cc	sets.cc 	stmts.cc \
-	infinity.cc	\
-	baseops.cc	operators.cc	casting.cc \
-	variables.cc	functions.cc	arrays.cc \
-	initfuncs.cc
-
-MODULES = 
-
-
-GENSOURCES = \
-     smart.tab.h	smart.tab.c	lex.yy.cc     
-
-GENOBJS = \
-     smart.tab.o     	lex.yy.o     
-
-OBJS = $(SOURCES:.cc=.o) 
-
-MODOBJS = $(MODULES:.cc=.o)
-
-ALLCCS = $(SOURCES) $(MODULES) 
-
-ALLHS = $(ALLCCS:.cc=.h)
-
-ALLOBJS = $(OBJS)
-# ALLOBJS = $(OBJS) $(MODOBJS) $(GENOBJS) lip.o
-
-LINKFLAGS 	= $(PLAT_LINK) $(LINKINCLUDES)
-CPPFLAGS 	= $(MOREFLAGS) -Wall $(SYSINCLUDES) $(MYINCLUDES) $(PLAT_FLAGS)
-EXES		= foo 
-
-all:	$(EXES)
-
-foo : foo.o $(ALLOBJS)
-	$(CXX) $(LINKFLAGS) $(ALLOBJS) foo.o -o foo $(STDLIBS) $(PLAT_LIBS)
-
-smart : $(ALLOBJS) 
-	$(CXX) $(LINKFLAGS) $(ALLOBJS) -o smart $(STDLIBS) $(PLAT_LIBS)
-
-release : $(ALLOBJS) 
-	$(CXX) -static $(LINKFLAGS) $(ALLOBJS) -o smart_static $(STDLIBS) $(PLAT_LIBS)
-
-manual : 
-	cd $(SOURCEDIR); Manual
-
-makefile: $(SOURCEDIR)/make.common
-	cd $(SOURCEDIR); ./BuildMake
-
-depend:
-	cd $(SOURCEDIR); $(CC) $(CPPFLAGS) -MM $(ALLCCS) > $(OBJECTDIR)/make.depend
-
-lex.yy.cc : smart.l smart.tab.h 
-	flex $(SOURCEDIR)/smart.l
-
-hosts.tab.c : hosts.y
-	bison -p Host hosts.y
-
-lex.Host.c : hosts.lex
-	flex -PHost hosts.lex
-
-clean :
-	rm -f *.o $(EXES) $(GENSOURCES) errlog.dat 
-
-smart.tab.h smart.tab.c : smart.y $(ALLHS) defines.h
-	bison -d $(SOURCEDIR)/smart.y -o smart.tab.c
-
-lip.o:	lip.c lip.h lippar.h lip++.h
-	gcc -O $(SOURCEDIR)/lip.c -c -lm
-
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
