@@ -13,7 +13,7 @@
 
 #include "dsm.h"
 
-//#define DEBUG_MC
+#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -24,17 +24,22 @@
 /** A discrete-state model (internel representation) for Markov chains.
 */
 class markov_dsm : public state_model {
-  char** statenames;
+  model_var** statenames;
   int numstates;
   classified_chain <float> *arcs;
+  sparse_vector <float> *initial;
 public:
   /** Constructor.
 	@param	name	Model name
-	@param	sn	Array of state names
+	@param	sn	Array of states
 	@param	ns	Number of states
 	@param	a	P or R matrix.
+	@param  p0	Initial distribution
   */
-  markov_dsm(const char* name, char** sn, int ns, classified_chain <float> *a);
+  markov_dsm(const char* name, model_var** sn, int ns, 
+	     classified_chain <float> *a,
+             sparse_vector <float> *p0);
+
   virtual ~markov_dsm();
 
   // required stuff:
@@ -55,21 +60,39 @@ public:
 // *                       markov_dsm methods                       *
 // ******************************************************************
 
-markov_dsm::markov_dsm(const char *name, char** sn, int ns, 
-			classified_chain <float> *a) 
+markov_dsm::markov_dsm(const char *name, model_var **sn, int ns, 
+		       classified_chain <float> *a, sparse_vector <float> *p0) 
 : state_model(name, 1)
 {
   statenames = sn;
   numstates = ns;
   arcs = a;
-
+  initial = p0;
   statespace = new reachset;
   statespace->CreateEnumerated(numstates);
+#ifdef DEBUG_MC
+  Output << "Built Markov chain state model " << name << "\n";
+  int i;
+  Output << "States:\n";
+  for (i=0; i<ns; i++) {
+    Output << "\t" << statenames[i]->Name();
+    Output << " index " << statenames[i]->state_index << "\n";
+  }
+  Output.flush();
+  Output << "Initial distribution:\n";
+  Output << "\tindex: [";
+  Output.PutArray(initial->index, initial->nonzeroes);
+  Output << "]\n\tvalues:[";
+  Output.PutArray(initial->value, initial->nonzeroes);
+  Output << "]\nArcs:\n";
+  arcs->Show(Output);
+#endif
 }
 
 markov_dsm::~markov_dsm()
 {
   delete arcs;
+  delete initial;
 }
 
 void markov_dsm::ShowState(OutputStream &s, const state &x)
@@ -108,8 +131,8 @@ void markov_dsm::GetInitialState(int n, state &s) const
     I.e., front-end stuff for Markov chain formalism.
 */
 class markov_model : public model {
-  List <char> *statelist;
-  char** statenames;
+  List <model_var> *statelist;
+  model_var** states;
   int numstates;
   sparse_vector <float> *initial;
   labeled_digraph <float> *wdgraph;
@@ -139,7 +162,7 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   formal_param **pl, int np) : model(fn, line, t, n, pl, np)
 {
   statelist = NULL; 
-  statenames = NULL;
+  states = NULL;
   numstates = 0;
   initial = NULL;
   wdgraph = NULL;
@@ -184,12 +207,13 @@ model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
   DCASSERT(wdgraph);
   int ndx = statelist->Length();
-  statelist->Append(n);
   wdgraph->AddNode();
   model_var* s = new model_var(fn, l, t, n);
   s->SetIndex(ndx);
+  Copy(s);  // hack
+  statelist->Append(s);
 #ifdef DEBUG_MC
-  Output << "\tModel " << Name() << " created state " << n << " index " << ndx << "\n"; 
+  Output << "\tModel " << Name() << " created state " << s << " index " << ndx << "\n"; 
   Output.flush();
 #endif
   return s;
@@ -197,8 +221,8 @@ model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 
 void markov_model::InitModel()
 {
-  statelist = new List <char> (16);
-  statenames = NULL;
+  statelist = new List <model_var> (16);
+  states = NULL;
   numstates = 0;
   initial = new sparse_vector <float>(2);
   wdgraph = new labeled_digraph <float>;
@@ -209,18 +233,18 @@ void markov_model::InitModel()
 void markov_model::FinalizeModel(result &x)
 {
   numstates = statelist->Length();
-  statenames = statelist->MakeArray();
+  states = statelist->MakeArray();
   delete statelist;
   statelist = NULL;
 #ifdef DEBUG_MC
   Output << "\tMC " << Name() << " has " << numstates << " states\n";
   int i;
   for (i=0; i<numstates; i++) {
-    Output << "\t" << statenames[i] << "\n";
+    Output << "\t" << states[i] << "\n";
   }
   Output << "\tInitial weights:\n";
   for (i=0; i<initial->NumNonzeroes(); i++) {
-    Output << "\t" << statenames[initial->index[i]];
+    Output << "\t" << states[initial->index[i]];
     Output << " : " << initial->value[i] << "\n"; 
   }
   Output.flush();
@@ -240,7 +264,19 @@ state_model* markov_model::BuildStateModel()
 {
   classified_chain <float> *foo = new classified_chain <float>(wdgraph);
   wdgraph = NULL;
-  return new markov_dsm(Name(), statenames, numstates, foo);
+  if (!foo->isIrreducible()) {
+    int i;
+    // renumber states
+    for (i=0; i<numstates; i++)
+      states[i]->state_index = foo->Renumber(states[i]->state_index);
+    // fix initial distribution
+    for (i=0; i<initial->nonzeroes; i++)
+      initial->index[i] = foo->Renumber(initial->index[i]);
+    initial->isSorted = false;
+
+    foo->DoneRenumbering();
+  }
+  return new markov_dsm(Name(), states, numstates, foo, initial);
 }
 
 // ******************************************************************

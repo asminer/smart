@@ -35,7 +35,7 @@ public:
 
   inline bool IsActive() const { return ready; }
 
-  void Pad(int spaces);
+  void Pad(char space, int num_spaces);
   void Put(bool data);
   void Put(char data);
   void Put(int data);

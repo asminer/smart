@@ -32,7 +32,7 @@ void PrintString(const result& x, OutputStream &out, int width)
       }
     }
     // pad with spaces to get to desired width
-    out.Pad(width-printlen);
+    out.Pad(' ', width-printlen);
   } // if width
   for (i=0; i<stlen; i++) {
     if (s[i]!='\\') {

@@ -54,6 +54,12 @@ public:
     state_index = si;
   }
 
+  inline void ResetIndex(int si) {
+    DCASSERT(si>=0);
+    state_index = si;
+  }
+
+
   /// Returns the state_index
   virtual void Compute(int i, result &x);
 

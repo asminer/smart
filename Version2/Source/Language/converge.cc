@@ -155,7 +155,7 @@ void guess_stmt::show(OutputStream &s) const
 
 void guess_stmt::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }
@@ -229,7 +229,7 @@ void assign_stmt::show(OutputStream &s) const
 
 void assign_stmt::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }
@@ -303,7 +303,7 @@ void array_guess_stmt::show(OutputStream &s) const
 
 void array_guess_stmt::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }
@@ -388,7 +388,7 @@ void array_assign_stmt::show(OutputStream &s) const
 
 void array_assign_stmt::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }
@@ -471,12 +471,12 @@ void converge_stmt::show(OutputStream &s) const
 void converge_stmt::showfancy(int depth, OutputStream &s) const
 {
   int j;
-  s.Pad(depth);
+  s.Pad(' ', depth);
   s << "converge {\n";
   for (j=0; j<blocksize; j++) {
     block[j]->showfancy(depth+2, s);
   }
-  s.Pad(depth);
+  s.Pad(' ', depth);
   s << "}\n";
 }
 

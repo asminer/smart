@@ -626,7 +626,7 @@ void model_var_stmt::Clear()
 
 void model_var_stmt::showfancy(int dpth, OutputStream &s) const
 {
-  s.Pad(dpth);
+  s.Pad(' ', dpth);
   s << GetType(vartype) << " ";
   int i;
   for (i=0; i<numvars; i++) {
@@ -704,7 +704,7 @@ void model_varray_stmt::Clear()
 
 void model_varray_stmt::showfancy(int dpth, OutputStream &s) const
 {
-  s.Pad(dpth);
+  s.Pad(' ', dpth);
   s << GetType(vars[0]->Type(0)) << " ";
   int i;
   for (i=0; i<numvars; i++) {
@@ -761,7 +761,7 @@ void measure_assign::show(OutputStream &s) const
 
 void measure_assign::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }
@@ -845,7 +845,7 @@ void measure_array_assign::show(OutputStream &s) const
 
 void measure_array_assign::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }

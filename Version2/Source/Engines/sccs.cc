@@ -242,7 +242,7 @@ int 	ComputeTSCCs(const digraph *g, unsigned long* sccmap)
   // one, then it is not terminal.
   // We'll store the results in the stack array.
 
-  for (i=0; i<scc_count; i++) visit_stack[i] = 1;
+  for (i=0; i<int(scc_count); i++) visit_stack[i] = 1;
 
   if (g->isTransposed) {
     BackArcsFindTerminal(g, sccmap, visit_stack);
@@ -253,7 +253,7 @@ int 	ComputeTSCCs(const digraph *g, unsigned long* sccmap)
   // renumber classes.  
   // first, compact the terminal sccs to have numbers 1,2,3,...
   int termcount = 0;
-  for (i=0; i<scc_count; i++) if (visit_stack[i]) {
+  for (i=0; i<int(scc_count); i++) if (visit_stack[i]) {
     termcount++;
     visit_stack[i] = termcount;
   }

@@ -46,6 +46,39 @@ struct classified_chain {
 
   /// Use to renumber states to their classified index
   unsigned long* renumber;
+
+  /// If true, stored by columns, otherwise by rows.
+  bool isTransposed;
+
+  /// Total number of edges
+  int total_edges;
+
+  /** Column indices (unless we are transposed).
+      Array of size total_edges.
+      All matrices share this array.
+  */ 
+  int* column_index;
+
+  /** Values assigned to edges.
+      Array of size total_edges.
+      All matrices share this array.
+  */
+  LABEL* value;
+
+  /** Pointers to Recurrent-recurrent matrices.
+      Outermost array is of dimension #recurrent.
+      (The absorbing-absorbing identity is not stored.)
+      Innermost arrays are "row pointers" (unless transposed).
+  */
+  int** RRarcs;
+
+  /** Pointers to transient-transient, transient-recurrent, 
+      and transient-absorbing matrices.
+      If there are NO transient states, this is NULL.
+      Otherwise, dimension is 1+#recurrent+1.
+      Innermost arrays again are "row pointers" unless transposed.
+  */
+  int** Tarcs;
 public:
   /** Constructor.
 	@param	gr	Labeled digraph to build from.
@@ -68,8 +101,8 @@ public:
 
   inline void DoneRenumbering() {
     // use this if we do not need the renumbering array any longer
-    delete[] newnumber;
-    newnumber = NULL;
+    delete[] renumber;
+    renumber = NULL;
   }
 
   inline bool isAbsorbing(int newnumber) const {
@@ -105,13 +138,23 @@ public:
 	:
 	1; // must be an absorbing class
   }
-
+  inline bool isIrreducible() const {
+    return (1==recurrent) && (0==numTransient()) && (0==numAbsorbing());
+  }
   inline int getClass(int newnumber) const {
     CHECK_RANGE(0, newnumber, states);
     int abs_index = newnumber - blockstart[recurrent+1];
     if (abs_index>=0) return abs_index + recurrent + 1;
     // done 
   }
+
+  /** Display (primarily for debugging purposes).
+      Note we must be able to "Put" the LABEL class to the stream.
+  */ 
+  void Show(OutputStream &s) const;
+protected:
+  void ArrangeMatricesByRows(labeled_digraph <LABEL> *in);
+  void ArrangeMatricesByCols(labeled_digraph <LABEL> *in);
 };
 
 
@@ -125,8 +168,8 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output << "Starting to classify chain\n";
   Output.flush();
 #endif
-  in->ConvertToDynamic();
   states = in->NumNodes();
+  isTransposed = in->isTransposed;
  
   // build state to tscc mapping
   renumber = new unsigned long[states];
@@ -218,7 +261,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   blockstart[0] = 0;
 
   // shrink the blockstart array to its final size
-  // (cut of the tail, which holds absorbing state stuff)
+  // (cut off the tail, which holds absorbing state stuff)
 
   int* foo = (int*) realloc(blockstart, sizeof(int) * (2+recurrent));
   if (NULL==foo)
@@ -236,6 +279,77 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output.flush();
 #endif
 
+  // Allocate RRarcs and Tarcs
+
+  total_edges = in->NumEdges();
+  RRarcs = new int*[recurrent];
+  Tarcs = (numTransient()) ? (new int*[2+recurrent]) : NULL;
+
+  if (isIrreducible()) {
+    in->ConvertToStatic();
+    RRarcs[0] = in->row_pointer;
+    in->row_pointer = NULL;
+    column_index = in->column_index;
+    in->column_index = NULL;
+    value = in->value;
+    in->value = NULL;
+    delete in;
+    DoneRenumbering();  // no renumbering of states necessary
+  } else {
+    if (isTransposed)
+      ArrangeMatricesByCols(in);
+    else
+      ArrangeMatricesByRows(in);
+  }
+}
+
+template <class LABEL>
+void classified_chain <LABEL> :: ArrangeMatricesByCols(labeled_digraph <LABEL> *in)
+{
+  DCASSERT(isTransposed);
+  DCASSERT(in->isTransposed);
+#ifdef DEBUG_CLASSIFY
+  Output << "Arranging matrices by columns\n";
+  Output.flush();
+#endif
+}
+
+template <class LABEL>
+void classified_chain <LABEL> :: ArrangeMatricesByRows(labeled_digraph <LABEL> *in)
+{
+  DCASSERT(!isTransposed);
+  DCASSERT(!in->isTransposed);
+#ifdef DEBUG_CLASSIFY
+  Output << "Arranging matrices by columns\n";
+  Output.flush();
+#endif
+}
+
+template <class LABEL>
+void classified_chain <LABEL> :: Show(OutputStream &s) const
+{
+  const char* rowname = (isTransposed) ? "column" : "row";
+  const char* colname = (isTransposed) ? "row" : "column";
+  s.Pad('-', 60);
+  s << "\nClassified chain with " << states << " states total\n";
+  s << "\t" << numTransient() << " transient states\n";
+  s << "\t" << numClasses() << " recurrent classes, of which\n";
+  s << "\t" << numAbsorbing() << " are absorbing states\n";
+  s << "Matrices, stored by " << rowname << "s\n";
+  s.flush();
+  s << colname << " indices: [";
+  s.PutArray(column_index, total_edges);
+  s << "]\n";
+  s.Pad(' ', isTransposed ? 5 : 8);
+  s << "values: [";
+  s.PutArray(value, total_edges);
+  s << "]\n";
+  s.flush();
+
+  s << "End of classified chain\n";
+  s.Pad('-', 60);
+  s << "\n";
+  s.flush();
 }
 
 #endif

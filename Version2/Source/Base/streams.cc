@@ -101,13 +101,13 @@ OutputStream::~OutputStream()
   free(buffer);
 }
 
-void OutputStream::Pad(int s)
+void OutputStream::Pad(char space, int s)
 {
   if (!ready) return;
   if (s<=0) return;
   ExpandBuffer(buftop+s+1);
   for (; s>0; s--) {
-    buffer[buftop] = ' ';
+    buffer[buftop] = space;
     buftop++;
   }
   buffer[buftop] = 0;
@@ -255,10 +255,10 @@ void OutputStream::Put(bool data, int width)
 {
   if (ready) {
     if (data) {
-      Pad(width-4);
+      Pad(' ', width-4);
       Put("true");
     } else {
-      Pad(width-5);
+      Pad(' ', width-5);
       Put("false");
     }
   }
@@ -298,7 +298,7 @@ void OutputStream::Put(const char* data, int width)
 {
   if (ready) {
     int len = strlen(data);
-    Pad(width-len);
+    Pad(' ', width-len);
     ExpandBuffer(buftop+len+2);
     strncpy(bufptr(), data, len);
     buftop+=len;

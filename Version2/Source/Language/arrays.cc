@@ -551,13 +551,13 @@ void forstmt::show(OutputStream &s) const
 void forstmt::showfancy(int depth, OutputStream &s) const
 {
   int j;
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << " {\n";
   for (j=0; j<blocksize; j++) {
     block[j]->showfancy(depth+2, s);
   }
-  s.Pad(depth);
+  s.Pad(' ', depth);
   s << "}\n";
 }
 
@@ -634,7 +634,7 @@ void arrayassign::show(OutputStream &s) const
 
 void arrayassign::showfancy(int depth, OutputStream &s) const
 {
-  s.Pad(depth);
+  s.Pad(' ', depth);
   show(s);
   s << ";\n";
 }

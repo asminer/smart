@@ -164,6 +164,7 @@ public:
 
   /// Destructor
   ~labeled_digraph() {
+    isDynamic = true;
     ResizeNodes(0);
     ResizeEdges(0);
   }
