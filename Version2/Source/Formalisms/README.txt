@@ -9,6 +9,8 @@ File	  	What's there
 ----------	----------------------------------------------------
 api		Front end
 
+mc		Markov chain models
+
 		(Class for meta-models?)
 
 Formalism-specific files...

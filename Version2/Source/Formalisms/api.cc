@@ -3,19 +3,16 @@
 
 #include "api.h"
 
+// formalisms:
+#include "mc.h"
+
 model* MakeNewModel(const char* fn, int line, type t, char* name, formal_param
 **pl, int np)
 {
   switch(t) {
     case DTMC:
-    	Output << "DTMC not implemented yet\n";
-	Output.flush();
-	return NULL;
-
     case CTMC:
-    	Output << "CTMC not implemented yet\n";
-	Output.flush();
-	return NULL;
+    	return MakeMarkovChain(t, name, pl, np, fn, line);
 
     case SPN:
     	Output << "SPN not implemented yet\n";

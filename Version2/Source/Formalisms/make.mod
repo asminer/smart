@@ -6,7 +6,8 @@
 #
 
 SOURCES = \
-	api.cc
+	mc.cc	\
+	api.cc	
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

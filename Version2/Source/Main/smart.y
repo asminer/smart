@@ -37,18 +37,7 @@
   user_func* Func;
   option* Option;
   model* Model;
-  /*
-  expr_set *setexpr;
-  List <local_iterator> *itrs;
-  List <statement> *stmts;
-  function *Func;
-  List <formal_param> *fpl;
-  List <array_index> *apl;
-  List <expr> *ppl;
-  List <named_param> *npl;
-  List <function> *varlist;
-  List <char *> *tuple_ids;
-  */
+  func_call* Mcall;
 }
 
 %token <name> IDENT BOOLCONST INTCONST REALCONST STRCONST 
@@ -58,7 +47,7 @@ EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
 %type <Type_ID> type model
-%type <Expr> topexpr expr term const_expr function_call model_call
+%type <Expr> topexpr expr term const_expr function_call
 model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmts model_var_list
 formal_params formal_indexes pos_params named_params indexes
@@ -71,6 +60,7 @@ formal_params formal_indexes pos_params named_params indexes
 %type <Func> func_header
 %type <Model> model_header
 %type <Option> opt_header
+%type <Mcall> model_call
 /*
 %type <setexpr> set_expr set_elems set_elem 
 %type <itrs> iterator iterators for_header 
@@ -880,7 +870,7 @@ model_function_call
   Output << "Reducing model_function_call : model_call DOT IDENT\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = MakeMCall($1, $3);
 }
 	|	model_call DOT IDENT indexes
 {
@@ -888,7 +878,7 @@ model_function_call
   Output << "Reducing model_function_call : model_call DOT IDENT indexes\n";
   Output.flush();
 #endif
-  $$ = NULL;
+  $$ = MakeMACall($1, $3, $4);
 }
         ;
 
@@ -899,6 +889,7 @@ model_call
   Output << "Reducing model_call : IDENT\n";
   Output.flush();
 #endif
+  $$ = MakeModelCall($1);
 }
         |       IDENT LPAR pos_params RPAR
 { 
@@ -906,6 +897,7 @@ model_call
   Output << "Reducing model_call : IDENT LPAR pos_params RPAR\n";
   Output.flush();
 #endif
+  $$ = MakeModelCallPos($1, $3);
 }
         |       IDENT LPAR named_params RPAR
 {
@@ -913,6 +905,7 @@ model_call
   Output << "Reducing model_call : IDENT LPAR named_params RPAR\n";
   Output.flush();
 #endif
+  $$ = MakeModelCallNamed($1, $3);
 }
 	;
 

@@ -11,6 +11,13 @@
    Compile-time utilities and main function are here.
 */
 
+/// Info for a function call
+struct func_call {
+  function* find;
+  expr** pass;
+  int np;
+};
+
 // Good old lex/yacc style functions...
 int yyparse();  
 
@@ -355,6 +362,34 @@ void* AddModelArray(void* list, char* ident, void* indexlist);
     (we already verified the indices in "AddModelArray").
 */
 statement* BuildModelVarStmt(type t, void* list);
+
+/** Handle the first half of a model call.
+    No parameters.
+*/
+func_call* MakeModelCall(char* n);
+
+/** Handle the first half of a model call.
+    Positional parameters.
+*/
+func_call* MakeModelCallPos(char* n, void* list);
+
+/** Handle the first half of a model call.
+    Named parameters.
+*/
+func_call* MakeModelCallNamed(char* n, void* list);
+
+/** Build a measure call.
+    Form (funccall).measure
+    Makes sure that the measure (m) exists in the model (within struct fc).
+*/
+expr* MakeMCall(func_call *fc, char* m);
+
+/** Build a measure array call.
+    Form (funccall).marray[indices]
+    Makes sure that the measure (m) exists in the model (within struct fc),
+    and matches array indices.
+*/
+expr* MakeMACall(func_call *, char* n, void *);
 
 // ==================================================================
 // |                                                                |

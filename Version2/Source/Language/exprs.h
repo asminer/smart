@@ -439,6 +439,14 @@ public:
   bool Matches(symbol *) const;
 };
 
+inline int Compare(symbol *a, symbol *b)
+{
+  DCASSERT(a);
+  DCASSERT(b);
+  DCASSERT(a->Name());
+  DCASSERT(b->Name());
+  return strcmp(a->Name(), b->Name());
+}
 
 // ******************************************************************
 // *                                                                *

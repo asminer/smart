@@ -213,7 +213,7 @@ void model::Clear()
 
 // ******************************************************************
 // *                                                                *
-// *                        model_call class                        *
+// *                        mcall class                        *
 // *                                                                *
 // ******************************************************************
 
@@ -222,15 +222,15 @@ void model::Clear()
         model(p1, p2, p3).measure;
 */
 
-class model_call : public expr {
+class mcall : public expr {
 protected:
   model *mdl;
   expr **pass;
   int numpass;
   measure *msr;
 public:
-  model_call(const char *fn, int line, model *m, expr **p, int np, measure *s);
-  virtual ~model_call();
+  mcall(const char *fn, int line, model *m, expr **p, int np, measure *s);
+  virtual ~mcall();
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
   virtual expr* Substitute(int i);
@@ -241,10 +241,10 @@ public:
 };
 
 // ******************************************************************
-// *                       model_call methods                       *
+// *                       mcall methods                       *
 // ******************************************************************
 
-model_call::model_call(const char *fn, int l, model *m, expr **p, int np,
+mcall::mcall(const char *fn, int l, model *m, expr **p, int np,
 measure *s) : expr (fn, l)
 {
   mdl = m;
@@ -253,7 +253,7 @@ measure *s) : expr (fn, l)
   msr = s;
 }
 
-model_call::~model_call()
+mcall::~mcall()
 {
   // don't delete the model
   int i;
@@ -262,13 +262,13 @@ model_call::~model_call()
   // don't delete the measure
 }
 
-type model_call::Type(int i) const
+type mcall::Type(int i) const
 {
   DCASSERT(0==i);
   return msr->Type(i);
 }
 
-void model_call::Compute(int i, result &x)
+void mcall::Compute(int i, result &x)
 {
   result m;
   DCASSERT(0==i);
@@ -284,7 +284,7 @@ void model_call::Compute(int i, result &x)
   msr->Compute(0, x);
 }
 
-expr* model_call::Substitute(int i)
+expr* mcall::Substitute(int i)
 {
   DCASSERT(0==i);
   if (0==numpass) return Copy(this);
@@ -294,10 +294,10 @@ expr* model_call::Substitute(int i)
   int n;
   for (n=0; n<numpass; n++) pass2[n] = pass[n]->Substitute(0);
 
-  return new model_call(Filename(), Linenumber(), mdl, pass2, numpass, msr);
+  return new mcall(Filename(), Linenumber(), mdl, pass2, numpass, msr);
 }
 
-int model_call::GetSymbols(int i, List <symbol> *syms)
+int mcall::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(0==i);
   int n;
@@ -308,7 +308,7 @@ int model_call::GetSymbols(int i, List <symbol> *syms)
   return answer;
 }
 
-void model_call::show(OutputStream &s) const
+void mcall::show(OutputStream &s) const
 {
   if (mdl->Name()==NULL) return; // can this happen?
   s << mdl->Name();
@@ -324,14 +324,14 @@ void model_call::show(OutputStream &s) const
   s << "." << msr;
 }
 
-Engine_type model_call::GetEngine(engineinfo *e)
+Engine_type mcall::GetEngine(engineinfo *e)
 {
   // Since we are outside the model, treat this as NONE
   if (e) e->engine = ENG_None;
   return ENG_None;
 }
 
-expr* model_call::SplitEngines(List <measure> *mlist)
+expr* mcall::SplitEngines(List <measure> *mlist)
 {
   return Copy(this);
 }
@@ -702,7 +702,7 @@ void measure_array_assign::showfancy(int depth, OutputStream &s) const
 
 expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, int line)
 {
-  return new model_call(fn, line, m, p, np, s);
+  return new mcall(fn, line, m, p, np, s);
 }
 
 expr* MakeEmptyWrapper(const char *fn, int line)

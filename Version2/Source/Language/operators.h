@@ -22,6 +22,7 @@ class named_param;
 class user_func;
 class statement;
 class model;
+struct func_call;
 
 #include "../Main/smart.tab.h"
 /* For token identifiers such as PLUS, MINUS, etc... */

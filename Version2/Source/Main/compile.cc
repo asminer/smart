@@ -41,17 +41,23 @@ List <array_index> Iterators(256);
 /// Current stack of array indexes
 List <char> Indexes(256);
 
+/// For allocating func_call structs
+Manager <func_call> FuncCallPile(16);
+
 /// Depth of converges
 int converge_depth;
 
 /// Symbol table of arrays
-PtrTable *Arrays;
+PtrTable Arrays;
 
 /// Symbol table of functions
-PtrTable *Builtins;
+PtrTable Builtins;
+
+/// Symbol table of models
+PtrTable Models;
 
 /// Symbol table of "constants", including user-defined
-PtrTable *Constants;
+PtrTable Constants;
 
 /// "Symbol table" of formal parameters
 List <formal_param> *FormalParams;
@@ -63,7 +69,7 @@ model *model_under_construction;
 PtrTable *ModelInternal;
 
 /// External model symbol table
-PtrTable *ModelExternal;
+Heap <symbol> ModelExternal(16);
 
 /** List of functions that match what we're looking for.
     Global because we'll re-use it.
@@ -996,7 +1002,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     }
   } else {
     // Globally
-    find = (constfunc*) Constants->FindName(id);
+    find = (constfunc*) Constants.FindName(id);
     if (find) {
       bool error = true;
       if (WithinConverge()) {
@@ -1034,7 +1040,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
       }
     } else {
       v = MakeConvergeVar(t, id, filename, lexer.lineno());
-      Constants->AddNamePtr(id, v); 
+      Constants.AddNamePtr(id, v); 
     }
     statement *s = MakeAssignStmt(v, ans, filename, lexer.lineno());
     return s;
@@ -1045,7 +1051,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     measure *m = new measure(filename, lexer.lineno(), t, id);
     m->SetReturn(ans);
     ModelInternal->AddNamePtr(id, m);
-    ModelExternal->AddNamePtr(id, m);
+    ModelExternal.Insert(m);
     return MakeMeasureAssign(
     		model_under_construction, 
 		m, filename, lexer.lineno()
@@ -1056,7 +1062,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
   constfunc* v;
   v = MakeConstant(t, id, filename, lexer.lineno());
   v->SetReturn(ans);
-  Constants->AddNamePtr(id, v); 
+  Constants.AddNamePtr(id, v); 
   return NULL;
 }
 
@@ -1082,7 +1088,7 @@ statement* BuildGuessStmt(type t, char* id, expr* ret)
   }
 
   // see if the variable exists already
-  constfunc* find = (constfunc*) Constants->FindName(id);
+  constfunc* find = (constfunc*) Constants.FindName(id);
   if (find) {
     Error.Start(filename, lexer.lineno());
     Error << "Re-definition of constant " << find;
@@ -1103,7 +1109,7 @@ statement* BuildGuessStmt(type t, char* id, expr* ret)
   expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
 
   cvgfunc *v = MakeConvergeVar(t, id, filename, lexer.lineno());
-  Constants->AddNamePtr(id, v); 
+  Constants.AddNamePtr(id, v); 
   statement* s = MakeGuessStmt(v, ans, filename, lexer.lineno());
   return s;
 }
@@ -1355,7 +1361,7 @@ array* BuildArray(type t, char*n, void* list)
     }
   } else {
     // look at global symbols
-    find = (array*) Arrays->FindName(n);
+    find = (array*) Arrays.FindName(n);
 
     // Allow guesses in converge, otherwise duplication = error
     if (find) {
@@ -1397,10 +1403,10 @@ array* BuildArray(type t, char*n, void* list)
   if (WithinModel()) {
     // Add array (measure) to model symbol table
     ModelInternal->AddNamePtr(n, A);
-    ModelExternal->AddNamePtr(n, A);
+    ModelExternal.Insert(A);
   } else {
     // Add array to array symbol table
-    Arrays->AddNamePtr(n, A); 
+    Arrays.AddNamePtr(n, A); 
   }
 
   // Done with indexes
@@ -1523,6 +1529,7 @@ bool PerfectFormalMatch(function *f, List <formal_param> *fpb)
 
 
 /** Check for proper overloading and forward defs.
+    @param	table	The symbol table to check
     @param	t	Function (or model) type to be declared
     @param	n	Function name
     @param	FormalParams	(Global variable) for the formal parameters.
@@ -1530,9 +1537,9 @@ bool PerfectFormalMatch(function *f, List <formal_param> *fpb)
 
     @return	true 	If we should continue and construct a new function
 */
-bool CheckFunctionDecl(type t, char *n, function* &out)
+bool CheckFunctionDecl(PtrTable *table, type t, char *n, function* &out)
 {
-  List <function> *flist = FindFunctions(Builtins, n);
+  List <function> *flist = FindFunctions(table, n);
   int i = (flist) ? flist->Length() : 0;
   for (i--; i>=0; i--) {
     // Check functions with this name (if any)
@@ -1605,12 +1612,12 @@ user_func* BuildFunction(type t, char*n, void* list)
 
   function *out;
   // Make sure this function isn't a duplicate of an existing function
-  if (CheckFunctionDecl(t, n, out)) {
+  if (CheckFunctionDecl(&Builtins, t, n, out)) {
     // This is a new function.
     user_func *f = new user_func(filename, lexer.lineno(), t, n,
     			FormalParams->Copy(), FormalParams->Length());
 
-    InsertFunction(Builtins, f);
+    InsertFunction(&Builtins, f);
     return f;
   } else {
     if (out) {
@@ -1714,7 +1721,7 @@ expr* FindIdent(char* name)
   }
 
   // check constants
-  constfunc* find = (constfunc*) Constants->FindName(name);
+  constfunc* find = (constfunc*) Constants.FindName(name);
   if (find) return Copy(find);
 
   // Couldn't find it.
@@ -1744,7 +1751,7 @@ expr* BuildArrayCall(const char* n, void* ind)
     }
   }
   // Check symbol table
-  if (NULL==entry) entry = (array*) (Arrays->FindName(n));
+  if (NULL==entry) entry = (array*) (Arrays.FindName(n));
   if (NULL==entry) {
     Error.Start(filename, lexer.lineno());
     Error << "Unknown array " << n;
@@ -1876,17 +1883,21 @@ bool LinkFunction(function *f, expr** params, int np)
   return true;
 }
 
-expr* BuildFunctionCall(const char* n, void* posparams)
+// Used for both function and model calls ;^)
+// returns NULL on error, a nice struct on success.
+func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
 {
-  List <expr> *params = (List <expr> *)posparams;
+  if (NULL==poslist) return NULL;  // I think...
+  List <expr> *params = (List <expr> *)poslist;
+
   // find symbol table entry
-  List <function> *flist = FindFunctions(Builtins, n);
+  List <function> *flist = FindFunctions(syms, n);
   if (NULL==flist) {
     Error.Start(filename, lexer.lineno());
     Error << "Unknown function " << n;
     Error.Stop();
     delete params;
-    return ERROR;
+    return NULL;
   }
 
   // Find best match in symbol table
@@ -1922,7 +1933,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     DumpPassed(Error, params);
     Error.Stop();
     // dump candidates?
-    return ERROR;
+    return NULL;
   }
 
   if (matches.Length()>1) {
@@ -1932,25 +1943,38 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     DumpPassed(Error, params);
     Error.Stop();
     // dump matching candidates?
-    return ERROR;
+    return NULL;
   }
 
-  // Good to go
-  function* find = matches.Item(0);
-  int np = params->Length();
-  expr** pp = params->MakeArray();
+  // Good to go, fill struct
+  func_call *foo = FuncCallPile.NewObject();
+  foo->find = matches.Item(0);
+  foo->np = params->Length();
+  foo->pass = params->MakeArray();
   delete params; 
 
   // Promote params
   bool ok;
-  if (find->HasSpecialParamLinking())
-    ok = find->LinkParams(pp, np);
+  if (foo->find->HasSpecialParamLinking())
+    ok = foo->find->LinkParams(foo->pass, foo->np);
   else
-    ok = LinkFunction(find, pp, np);
+    ok = LinkFunction(foo->find, foo->pass, foo->np);
 
-  if (!ok) return ERROR;
+  if (!ok) {
+    FuncCallPile.FreeObject(foo);
+    return NULL;
+  }
 
-  expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
+  return foo;
+}
+
+expr* BuildFunctionCall(const char* n, void* posparams)
+{
+  func_call *x = MatchFunctionCallPos(&Builtins, n, posparams);
+  if (NULL==x) return ERROR;
+  expr *fcall = MakeFunctionCall(x->find, x->pass, x->np, 
+  				filename, lexer.lineno());
+  FuncCallPile.FreeObject(x);
   return fcall;
 }
 
@@ -2066,9 +2090,9 @@ expr** NamedToPositions(function *f, List <named_param> *named, int& np)
   return params;
 }
 
-expr* BuildNamedFunctionCall(const char *n, void* x)
+func_call* MatchFunctionCallNamed(PtrTable *syms, const char* n, void* list)
 {
-  List <named_param> * params = (List <named_param> *) x;
+  List <named_param> * params = (List <named_param> *) list;
   if (NULL == params) return NULL;
   int i;
 #ifdef COMPILE_DEBUG
@@ -2080,13 +2104,13 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
 #endif
 
   // find symbol table entry
-  List <function> *flist = FindFunctions(Builtins, n);
+  List <function> *flist = FindFunctions(syms, n);
   if (NULL==flist) {
     Error.Start(filename, lexer.lineno());
     Error << "Unknown function " << n;
     Error.Stop();
     delete params;
-    return ERROR;
+    return NULL;
   }
 
   // Find best match in symbol table
@@ -2125,7 +2149,7 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
     DumpPassed(Error, params);
     Error.Stop();
     // dump candidates?
-    return ERROR;
+    return NULL;
   }
 
   if (matches.Length()>1) {
@@ -2135,25 +2159,37 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
     DumpPassed(Error, params);
     Error.Stop();
     // dump matching candidates?
-    return ERROR;
+    return NULL;
   }
 
   // Good to go; convert to positional params
-  function* find = matches.Item(0);
-  int np;
-  expr** pp = NamedToPositions(find, params, np);
+  func_call *foo = FuncCallPile.NewObject();
+  foo->find = matches.Item(0);
+  foo->pass = NamedToPositions(foo->find, params, foo->np);
   delete params; 
 
   // Promote params
   bool ok;
-  if (find->HasSpecialParamLinking())
-    ok = find->LinkParams(pp, np);
+  if (foo->find->HasSpecialParamLinking())
+    ok = foo->find->LinkParams(foo->pass, foo->np);
   else
-    ok = LinkFunction(find, pp, np);
+    ok = LinkFunction(foo->find, foo->pass, foo->np);
 
-  if (!ok) return ERROR;
+  if (!ok) {
+    FuncCallPile.FreeObject(foo);
+    return NULL;
+  }
 
-  expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
+  return foo;
+}
+
+expr* BuildNamedFunctionCall(const char *n, void* x)
+{
+  func_call *foo = MatchFunctionCallNamed(&Builtins, n, x);
+  if (NULL==foo) return ERROR;
+  expr *fcall = MakeFunctionCall(foo->find, foo->pass, foo->np, 
+  				filename, lexer.lineno());
+  FuncCallPile.FreeObject(foo);
   return fcall;
 }
 
@@ -2250,7 +2286,6 @@ void ShowSymbolNames(void *x)
 void StartModelTables()
 {
   ModelInternal = new PtrTable();
-  ModelExternal = new PtrTable();
 }
 
 void KillModelTables()
@@ -2259,14 +2294,9 @@ void KillModelTables()
   if (model_under_construction) Output << model_under_construction; 
   Output << "\nInternal symbols:\n";
   if (ModelInternal) ModelInternal->Traverse(ShowSymbolNames);
-  Output << "External symbols:\n";
-  if (ModelExternal) ModelExternal->Traverse(ShowSymbolNames);
-  Output.flush();
 
   delete ModelInternal;
-  delete ModelExternal;
   ModelInternal = NULL;
-  ModelExternal = NULL;
 }
 
 model* BuildModel(type t, char* n, void* list)
@@ -2287,8 +2317,9 @@ model* BuildModel(type t, char* n, void* list)
 
   function *out;
   model *f = NULL;
-  // Make sure this function isn't a duplicate of an existing function
-  if (CheckFunctionDecl(t, n, out)) {
+  // Make sure this model isn't a duplicate of an existing model
+  // (at least in terms of parameters)
+  if (CheckFunctionDecl(&Models, t, n, out)) {
     // This is a new model.
     if (FormalParams) 
   	f = MakeNewModel(filename, lexer.lineno(), t, n,
@@ -2296,7 +2327,7 @@ model* BuildModel(type t, char* n, void* list)
     else
   	f = MakeNewModel(filename, lexer.lineno(), t, n, NULL, 0);
 
-    InsertFunction(Builtins, f);
+    InsertFunction(&Models, f);
   } else {
     if (out) {
       // found a forward decl
@@ -2314,6 +2345,16 @@ model* BuildModel(type t, char* n, void* list)
 
 statement* BuildModelStmt(model *m, void* block)
 {
+  List <statement> *sb = (List <statement>*)block;
+  int num_stmts = sb->Length();
+  statement** stmts = sb->MakeArray();
+  int num_syms = ModelExternal.Length();
+  ModelExternal.Sort();
+  symbol** syms = ModelExternal.MakeArray();
+  if (model_under_construction) {
+    model_under_construction->SetStatementBlock(stmts, num_stmts);
+    model_under_construction->SetSymbolTable(syms, num_syms);
+  }
   KillModelTables();
   model_under_construction = NULL;
   return NULL;
@@ -2475,6 +2516,98 @@ statement* BuildModelVarStmt(type t, void* list)
   			filename, lexer.lineno());
 }
 
+func_call* MakeModelCall(char* n)
+{
+  // find model n
+  List <function> *flist = FindFunctions(&Models, n);
+  if (NULL==flist) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown model " << n;
+    Error.Stop();
+    return NULL;
+  }
+  int i;
+  matches.Clear();
+  for (i=flist->Length()-1; i>=0; i--) {
+    function *f = flist->Item(i);
+    if (f->NumParams()==0) matches.Append(f);
+  }
+  if (matches.Length() == 0) {
+    // no matches
+    Error.Start(filename, lexer.lineno());
+    Error << "No match for model " << n << " with no parameters";
+    Error.Stop();
+    return NULL;
+  }
+  if (matches.Length() > 1) {
+    // This should never happen
+    Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+    Internal << "Two models named " << n << " with no parameters?\n";
+    Internal.Stop();
+    return NULL;  // won't get here
+  }
+
+  // only one match, use it
+  func_call *foo = FuncCallPile.NewObject();
+  function *f = matches.Item(0);
+  foo->find = dynamic_cast<model*>(f);
+  foo->pass = NULL;
+  foo->np = 0;
+  matches.Clear();
+
+  return foo;
+}
+
+func_call* MakeModelCallPos(char* n, void* list)
+{
+  return MatchFunctionCallPos(&Models, n, list);
+}
+
+func_call* MakeModelCallNamed(char* n, void* list)
+{
+  return MatchFunctionCallNamed(&Models, n, list);
+}
+
+expr* MakeMCall(func_call *fc, char* msr)
+{
+  if (NULL==fc) return ERROR;
+
+  model *m = dynamic_cast<model*>(fc->find);
+  if (NULL==m) {
+    Internal.Start(__FILE__, __LINE__, Filename(), lexer.lineno());
+    Internal << "Function within model symbol table?\n";
+    Internal.Stop();
+    return ERROR;
+  }
+  symbol *s = m->FindVisible(msr);
+  if (NULL==s) {
+    Error.Start(Filename(), lexer.lineno());
+    Error << "Measure " << msr << " does not exist in model " << m;
+    Error.Stop();
+    return ERROR;
+  }
+  measure *thing = dynamic_cast<measure*>(s);
+  if (NULL==thing) {
+    // Symbol must be an array then
+    Error.Start(Filename(), lexer.lineno());
+    Error << "Measure " << msr << " within model " << m << " is an array";
+    Error.Stop();
+    return ERROR;
+  }
+  // Everything is great
+  expr* mc = MakeMeasureCall(m, fc->pass, fc->np, thing, 
+  				Filename(), lexer.lineno());
+
+  FuncCallPile.FreeObject(fc);
+  return mc;
+}
+
+expr* MakeMACall(func_call *fc, char* m, void* list)
+{
+  return NULL;
+}
+
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -2501,17 +2634,13 @@ void ShowSymbols(void *x)
 
 void InitCompiler()
 {
-  Arrays = new PtrTable();
-  Builtins = new PtrTable();
-  Constants = new PtrTable();
   FormalParams = NULL;
   converge_depth = 0;
   model_under_construction = NULL;
   ModelInternal = NULL;
-  ModelExternal = NULL;
 
-  InitBuiltinFunctions(Builtins); 
-  InitBuiltinConstants(Constants);
+  InitBuiltinFunctions(&Builtins); 
+  InitBuiltinConstants(&Constants);
 
 #ifdef COMPILE_DEBUG
   Output << "Initialized compiler data\n";

@@ -175,6 +175,8 @@ public:
     rp = repeat_point;
   }
 
+  inline int NumParams() const { return num_params; }
+
   inline void FillFormal(List <formal_param>* fpl) const {
     for (int i=0; i<num_params; i++) {
       DCASSERT(fpl);
