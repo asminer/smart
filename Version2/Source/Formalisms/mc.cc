@@ -104,9 +104,8 @@ class markov_model : public model {
   List <char> *statelist;
   char** statenames;
   int numstates;
-  sparse_vector <double> *initial;
-  dynamic_labeled <double> *wdgraph;
-  Manager < circ_node_data<double> > *nodepool;
+  sparse_vector <float> *initial;
+  labeled_digraph <float> *wdgraph;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
@@ -135,16 +134,16 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   statelist = NULL; 
   statenames = NULL;
   numstates = 0;
-  initial = new sparse_vector <double>(2);
-  nodepool = new Manager < circ_node_data<double> > (1024);
-  wdgraph = new dynamic_labeled <double>(nodepool, false);
+  initial = new sparse_vector <float>(2);
+  wdgraph = new labeled_digraph <float>;
+  wdgraph->ResizeNodes(4);
+  wdgraph->ResizeEdges(4);
 }
 
 markov_model::~markov_model()
 {
   delete initial;
   delete wdgraph;
-  delete nodepool;
 }
 
 void markov_model::AddInitial(int state, double weight, const char* fn, int line)
@@ -163,7 +162,10 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
 
 void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
 {
-  if (wdgraph->AddLabeledEdge(fromstate, tostate, weight)) return;
+  float f = weight;
+  if (wdgraph->AddEdgeInOrder(fromstate, tostate, f) == wdgraph->NumEdges()-1) 
+    return;
+
   // Duplicate entry, give a warning
   Warning.Start(fn, line);
   Warning << "Summing duplicate arc from \n\tstate ";
@@ -176,7 +178,7 @@ model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
   int ndx = statelist->Length();
   statelist->Append(n);
-  wdgraph->AddVertex();
+  wdgraph->AddNode();
   model_var* s = new model_var(fn, l, t, n);
   s->SetIndex(ndx);
 #ifdef DEBUG_MC
@@ -211,14 +213,12 @@ void markov_model::FinalizeModel(result &x)
     Output << " : " << initial->value[i] << "\n"; 
   }
   Output.flush();
+  wdgraph->ConvertToStatic();
   Output << "Markov chain itself:\n";
-  wdgraph->Show(Output);
-  Output.flush();
-  // test... compact
-  labeled_graph <double> *compress = wdgraph->CompressAndDestroy();
-  Output << "Compressed:\n";
-  compress->Show(Output);
-  Output.flush();
+  for (i=0; i<numstates; i++) {
+    wdgraph->ShowNodeList(Output, i);
+    Output.flush();
+  }
 #endif
 
   x.Clear();
