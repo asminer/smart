@@ -64,11 +64,15 @@ expr* cvgfunc::SplitEngines(List <measure> *mlist)
 
 void cvgfunc::UpdateAndCheck() 
 {
-  if (current.isNull() && update.isNull()) {
-    // Both null
+  if (update.isNull()) {
+    // Once we're null, STAY null.
     hasconverged = true;
-  } else if (current.isNull() || update.isNull()) {
-    // one is null
+    was_updated = true;
+    current = update;
+    return;
+  }
+  if (current.isNull()) {
+    // this can be due to no initial guess
     hasconverged = false;
   } else if (current.isInfinity() && update.isInfinity()) {
     // both infinite (means converged to stop infinite loops)
@@ -131,7 +135,7 @@ guess_stmt::~guess_stmt()
 void guess_stmt::InitialGuess()
 {
   DCASSERT(var->state != CS_Computed);
-  guess->Compute(0, var->current);
+  SafeCompute(guess, 0, var->current);
   var->hasconverged = false;
   var->was_updated = true;
 #ifdef DEBUG_CONVERGE
@@ -185,9 +189,11 @@ assign_stmt::assign_stmt(const char* fn, int line, cvgfunc* v, expr* r)
 {
   var = v;
   rhs = r;
+#ifdef DEVELOPMENT_CODE
   DCASSERT(rhs != ERROR);
-  DCASSERT(rhs);
-  DCASSERT(rhs->Type(0) == REAL);
+  if (rhs)
+    DCASSERT(rhs->Type(0) == REAL);
+#endif
 }
 
 assign_stmt::~assign_stmt()
@@ -198,7 +204,7 @@ assign_stmt::~assign_stmt()
 void assign_stmt::Execute()
 {
   DCASSERT(var->state != CS_Computed);
-  rhs->Compute(0, var->update);
+  SafeCompute(rhs, 0, var->update);
   var->was_updated = false;
 #ifdef DEBUG_CONVERGE
   Output << "Computed " << var << " got ";

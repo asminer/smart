@@ -1535,6 +1535,29 @@ void AddCase(type it, type t, PtrTable *fns)
 
 
 // ********************************************************
+// *                      is_null                         *
+// ********************************************************
+
+void compute_is_null(expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==1);
+  x.Clear();
+  result y;
+  SafeCompute(pp[0], 0, y);
+  x.bvalue = y.isNull();
+}
+
+void AddIsNull(PtrTable *t, type paramtype)
+{
+  const char* doc = "Returns true if the argument is null.";
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(paramtype, "x");
+  internal_func *foo = new internal_func(BOOL, "is_null", compute_is_null, NULL, pl, 1, doc);
+  InsertFunction(t, foo);
+}
+
+// ********************************************************
 // *                      dontknow                        *
 // ********************************************************
 
@@ -1593,6 +1616,8 @@ void InitBuiltinFunctions(PtrTable *t)
   for (i=PROC_BOOL; i<=PROC_PH_REAL; i++)	AddCase(PROC_INT, i, t);
   for (i=PROC_RAND_BOOL; i<=PROC_RAND_REAL; i++)AddCase(PROC_RAND_INT, i, t);
   for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCase(INT, i, t);
+  // is_null
+  for (i=VOID; i<=STATESET; i++) 	AddIsNull(t, i);
 
   // Misc
   AddDontKnow(t);

@@ -32,6 +32,7 @@ if ( {(echo $LINE1 $LINE2 $LINE3 | $SMART - $1)} ) then
     if ( {(diff -B $1.out /tmp/smarttest >! $1.diffs)} ) then
       $OK
       rm -f $1.diffs
+      rm -f $1.test
     else
       $CHANGE
       echo "        Output has changed, differences written to $1.diffs"

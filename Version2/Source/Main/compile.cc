@@ -1430,7 +1430,8 @@ void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
     return;
   }
   if (NULL==pass) {
-    // this counts as a perfect match
+    // this counts as a perfect match for VOID, and promotable otherwise
+    perfect = (p->NumComponents()==1) && (p->Type(0)==VOID);
     return;
   }
   if (ERROR==pass) {
