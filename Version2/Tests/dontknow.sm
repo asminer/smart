@@ -104,16 +104,16 @@ print(B | true | c, "\n");
 print(true | B | c, "\n");
 print(true | c | B, "\n");
 
-print(I <  infty, "\n");
-print(I <= infty, "\n");
-print(I != infty, "\n");
-print(infty >= I, "\n");
-print(infty >  I, "\n");
-print(I >  -infty, "\n");
-print(I >= -infty, "\n");
-print(I != -infty, "\n");
-print(-infty <= I, "\n");
-print(-infty <  I, "\n");
+print(I <  infinity, "\n");
+print(I <= infinity, "\n");
+print(I != infinity, "\n");
+print(infinity >= I, "\n");
+print(infinity >  I, "\n");
+print(I >  -infinity, "\n");
+print(I >= -infinity, "\n");
+print(I != -infinity, "\n");
+print(-infinity <= I, "\n");
+print(-infinity <  I, "\n");
 
 
 print("These should be false:\n");
@@ -125,16 +125,16 @@ print(B & false & c, "\n");
 print(false & B & c, "\n");
 print(false & c & B, "\n");
 
-print(I >  infty, "\n");
-print(I >= infty, "\n");
-print(I == infty, "\n");
-print(infty <= I, "\n");
-print(infty <  I, "\n");
-print(I <  -infty, "\n");
-print(I <= -infty, "\n");
-print(I == -infty, "\n");
-print(-infty >= I, "\n");
-print(-infty >  I, "\n");
+print(I >  infinity, "\n");
+print(I >= infinity, "\n");
+print(I == infinity, "\n");
+print(infinity <= I, "\n");
+print(infinity <  I, "\n");
+print(I <  -infinity, "\n");
+print(I <= -infinity, "\n");
+print(I == -infinity, "\n");
+print(-infinity >= I, "\n");
+print(-infinity >  I, "\n");
 
 print("These should be 0:\n");
 
@@ -154,40 +154,40 @@ print(0.0*3.4*R, "\n");
 
 print("These should be infinity:\n");
 
-print(I+infty, "\n");
-print(infty+I, "\n");
+print(I+infinity, "\n");
+print(infinity+I, "\n");
 
-print(I+infty+7, "\n");
-print(infty+I+7, "\n");
-print(infty+7+I, "\n");
+print(I+infinity+7, "\n");
+print(infinity+I+7, "\n");
+print(infinity+7+I, "\n");
 
-print(I- (-infty), "\n");
+print(I- (-infinity), "\n");
 
-print(R+infty, "\n");
-print(infty+R, "\n");
+print(R+infinity, "\n");
+print(infinity+R, "\n");
 
-print(R+infty+4.7, "\n");
-print(infty+R+4.7, "\n");
-print(infty+4.7+R, "\n");
+print(R+infinity+4.7, "\n");
+print(infinity+R+4.7, "\n");
+print(infinity+4.7+R, "\n");
 
-print(R- (-infty), "\n");
+print(R- (-infinity), "\n");
 
 print("These should be -infinity:\n");
 
-print(I+(-infty), "\n");
-print((-infty)+I, "\n");
+print(I+(-infinity), "\n");
+print((-infinity)+I, "\n");
 
-print(I+(-infty)+7, "\n");
-print((-infty)+I+7, "\n");
-print((-infty)+7+I, "\n");
+print(I+(-infinity)+7, "\n");
+print((-infinity)+I+7, "\n");
+print((-infinity)+7+I, "\n");
 
-print(I-infty, "\n");
+print(I-infinity, "\n");
 
-print(R+(-infty), "\n");
-print((-infty)+R, "\n");
+print(R+(-infinity), "\n");
+print((-infinity)+R, "\n");
 
-print(R+(-infty)+4.7, "\n");
-print((-infty)+R+4.7, "\n");
-print((-infty)+4.7+R, "\n");
+print(R+(-infinity)+4.7, "\n");
+print((-infinity)+R+4.7, "\n");
+print((-infinity)+4.7+R, "\n");
 
-print(R-infty, "\n");
+print(R-infinity, "\n");
