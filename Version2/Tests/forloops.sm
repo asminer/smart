@@ -157,4 +157,21 @@ for (int i in {1..9}, int j in {i..9}, int k in {j..9}) {
 }
 print("\n\n");
 
+print("Just for kicks:\n\n");
+
+int N := 9;
+
+print("  * |");
+for (int i in {1..N}) { print(i:3); }
+print("\n----+");
+for (int i in {1..N}) { print("---"); }
+print("\n");
+for (int i in {1..N}) {
+  print(i:3, " |");
+  for (int j in {1..N}) {
+    print(i*j:3);
+  }
+  print("\n");
+}
+
 
