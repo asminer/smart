@@ -20,7 +20,7 @@ void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 {
   if (x.infinity) { s << infinity_string->GetString(); return; }
   if (x.null) { s << "null"; return; }
-  if (x.error) { s << "error"; return; }
+  if (x.error) { s << "null"; return; }
   // width not specified
   if (width<0) {
     switch(t) {
