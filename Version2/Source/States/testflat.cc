@@ -22,8 +22,7 @@ int main_unlimited()
   state s;
   AllocState(s, np);
 
-  state_array pile_of_states(false);
-  // state_array pile_of_states(true);
+  state_array pile_of_states(true );
   bool aok = true;
   while (aok) {
     Output << "Enter state (length " << np << "):\n";
@@ -96,7 +95,7 @@ int main_comp1()
   return 0;
 }
 
-int main()
+int main_cmp2()
 {
   state_array pile_of_states(true);
   Output.Activate();
@@ -128,4 +127,9 @@ int main()
   Output << "Got compare value: " << cmp << "\n";
 
   return 0;
+}
+
+int main() 
+{
+  return main_unlimited();
 }

@@ -8,7 +8,7 @@
 
 CC = g++
 CXX = g++
-CPPFLAGS = -g 
+CPPFLAGS = -ggdb
 #CPPFLAGS = -O3
 
 EXECS = testflat

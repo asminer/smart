@@ -233,7 +233,7 @@ void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
 	int j;
 	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
-  	WriteInt(npbits, j-i);    	// run length
+  	WriteInt(npbits, (j-i)-1);    	// run length
 	WriteInt(tkbits, s.Read(i).ivalue);	// run value
  	i = j;
      	continue;
@@ -251,7 +251,7 @@ void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
       if (s.Read(j).ivalue == s.Read(j+2).ivalue) break;  // run of 3
     } // for j
     // j is one past the end of the list
-    WriteInt(npbits, j-i);	// list length
+    WriteInt(npbits, (j-i)-1);	// list length
     for (; i<j; i++)
       WriteInt(tkbits, s.Read(i).ivalue);
   } // while i < np
@@ -278,7 +278,7 @@ void state_array::RunlengthEncodeBinary(char npbits, const state &s)
 	int j;
 	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
-  	WriteInt(npbits, j-i);    	// run length
+  	WriteInt(npbits, (j-i)-1);    	// run length
  	i = j;
      	continue;
     }
@@ -294,7 +294,7 @@ void state_array::RunlengthEncodeBinary(char npbits, const state &s)
       if (s.Read(j).ivalue == s.Read(j+1).ivalue) break;
     } // for j
     // j is one past the end of the list
-    WriteInt(npbits, j-i);	// list length
+    WriteInt(npbits, (j-i)-1);	// list length minus one (none with zero length)
     i = j;
   } // while i<np
 }
@@ -624,6 +624,7 @@ bool state_array::GetState(int Handel, state &s)
 	  runs++;
 #endif
           ReadInt(npbits, np);
+	  np++;
 	  if (tkbits>1) ReadInt(tkbits, tk);
           for(; np; np--) 
 	    s[j++].ivalue = tk;
@@ -632,6 +633,7 @@ bool state_array::GetState(int Handel, state &s)
         } else {
 	  // LIST
 	  ReadInt(npbits, np);
+	  np++;
 #ifdef DEBUG_COMPACT
 	  lists++;
 	  listlength+=np;
