@@ -415,11 +415,40 @@ void ErrorStream::Start(const char* filename, int lineno)
         Put(" in file ");
 	Put(filename);
       }
-    }
-    if (lineno>=0) {
-      Put(" near line ");
-      Put(lineno);
-    }
+      if (lineno>=0) {
+        Put(" near line ");
+        Put(lineno);
+      }
+    } // if filename
+    Put(":\n\t");
+  }
+  WritingToErrorStream = true;
+}
+
+void ErrorStream::StartModel(const char* mdl, const char* filename, int lineno)
+{
+  if (WritingToErrorStream) CrossedStreams();
+  if (active) {
+    ready = true;
+    Put(errortype);
+    Put(" in model ");
+    Put(mdl);
+    if (filename) {
+      Put(" instantiated ");
+      if (filename[0]=='-' && filename[1]==0) {
+        Put(" in standard input");
+      } else if (filename[0]=='>' && filename[1]==0) {
+	Put(" on command line");
+	lineno = -1;
+      } else {
+        Put(" in file ");
+	Put(filename);
+      }
+      if (lineno>=0) {
+        Put(" near line ");
+        Put(lineno);
+      }
+    } // if filename
     Put(":\n\t");
   }
   WritingToErrorStream = true;

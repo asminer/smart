@@ -28,7 +28,7 @@ OutputStream& operator<< (OutputStream &s, state_model *e)
   return s;
 }
 
-state_model::state_model(const char* n, int e)
+state_model::state_model(const char* n, int e, const char* fn, int ln)
 {
   ALLOC("state_model", sizeof(state_model));
   name = n;
@@ -36,6 +36,8 @@ state_model::state_model(const char* n, int e)
   events = e;
   proctype = Proc_Unknown;
   mc = NULL;
+  filename = fn;
+  linenumber = ln;
 }
 
 state_model::~state_model()

@@ -38,6 +38,9 @@ class reachset;  // defined in States/reachset.h
 class state_model {
   int events;
   const char* name; 
+  // where we were "instantiated"
+  const char* filename; 
+  int linenumber; 
 public:  // for now at least
   /// Type of the underlying process
   Process_type proctype;
@@ -50,11 +53,14 @@ public:  // for now at least
   markov_chain *mc;
 
 public:
-  state_model(const char* name, int e);
+  state_model(const char* name, int e, const char* fn, int ln);
   virtual ~state_model();
 
   inline int NumEvents() const { return events; }
   inline const char* Name() const { return name; }
+
+  inline const char* Filename() const { return filename; }
+  inline int Linenumber() const { return linenumber; }
 
   /** Does this model use a state of constant size.
       True for Petri nets and Markov chains.

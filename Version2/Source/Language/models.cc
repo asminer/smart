@@ -136,7 +136,7 @@ model::~model()
   // delete symbols...
 }
 
-void model::Compute(expr **p, int np, result &x)
+void model::Instantiate(expr **p, int np, result &x, const char* f, int ln)
 {
   if (NULL==stmt_block) {
     x.setNull();
@@ -171,20 +171,13 @@ void model::Compute(expr **p, int np, result &x)
 
   FinalizeModel(last_build);
   x = last_build;
-  if (x.other == this) dsm = BuildStateModel(); 
+  if (x.other == this) dsm = BuildStateModel(f, ln); 
   else dsm = NULL;
 
   // save parameters
   FreeLast();
   SWAP(current_params, last_params);  // pointer swap!
   never_built = false;
-}
-
-void model::Sample(Rng &, expr **, int np, result &)
-{
-  Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
-  Internal << "Attempt to sample a model.";
-  Internal.Stop();
 }
 
 Engine_type model::GetEngine(engineinfo *e)
@@ -444,7 +437,19 @@ void mcall::Compute(int i, result &x)
   DCASSERT(mdl);
   result m;
 
-  mdl->Compute(pass, numpass, m);
+  mdl->Instantiate(pass, numpass, m, Filename(), Linenumber());
+  /*
+  if (m.isError()) {
+    Error.Continue(Filename(), Linenumber());
+    Error << "model instantiation " << mdl;
+    if (numpass>1) Error << "(" << pass[1];
+    for (int i=2; i<numpass; i++) {
+      Error << ", " << pass[i];
+    }
+    if (numpass>1) Error << ")";
+    Error.Stop();
+  }
+  */
   if (m.isError() || m.isNull()) {
       x = m;
       return;

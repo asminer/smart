@@ -237,6 +237,13 @@ void function::Sample(Rng &, const state &, expr **, int, result &)
   Internal.Stop();
 }
 
+void function::Instantiate(expr **, int, result &, const char*, int)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Illegal model instantiaton";
+  Internal.Stop();
+}
+
 bool function::IsUndocumented() const
 {
   // default

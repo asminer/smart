@@ -7,6 +7,8 @@
 #include "../States/trees.h"
 #include "../Base/timers.h"
 
+#define USE_EXPRESSIONS
+
 option* StateStorage;
 
 const int num_ss_options = 2;
@@ -25,6 +27,7 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 
   bool error = false;
   int e;
+#ifdef USE_EXPRESSIONS
   // build event enabling and next-state expressions
   expr** enabled = new expr*[dsm->NumEvents()];
   expr** next = new expr*[dsm->NumEvents()];
@@ -35,6 +38,7 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     next[e] = dsm->NextStateExpr(e);
     DCASSERT(next[e] != ERROR);
   }
+#endif
 
   // allocate temporary (full) states
   DCASSERT(dsm->UsesConstantStateSize());
@@ -71,9 +75,14 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     
     // what is enabled?
     for (e=0; e<dsm->NumEvents(); e++) {
+#ifdef USE_EXPRESSIONS
+      if (NULL==next[e]) continue;  // firing is "no-op", don't bother
       enabled[e]->Compute(current, 0, x);
+#else
+      dsm->isEnabled(e, current, x);
+#endif
       if (!x.isNormal()) {
-	Error.Start();
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
 	if (x.isUnknown()) 
 	  Error << "Unknown if event is enabled";
 	else
@@ -86,14 +95,17 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
       if (!x.bvalue) continue;  // event is not enabled
 
       // e is enabled, fire and get new state
-      if (NULL==next[e]) continue;  // firing is "no-op"
 
       // set reached = current
       states->GetState(explore, reached);
       // do the firing
+#ifdef USE_EXPRESSIONS
       next[e]->NextState(current, reached, x); 
+#else
+      dsm->getNextState(current, e, reached, x);
+#endif
       if (!x.isNormal()) {
-	Error.Start();
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
 	Error << "Bad next-state expression during state space generation";
 	Error.Stop();
 	error = true;
@@ -118,12 +130,14 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
   // cleanup
   FreeState(reached);
   FreeState(current);
+#ifdef USE_EXPRESSIONS
   for (e=0; e<dsm->NumEvents(); e++) {
     Delete(enabled[e]);
     Delete(next[e]);
   }
   delete[] enabled;
   delete[] next;
+#endif
 
   return !error; 
 }
@@ -139,6 +153,7 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 
   bool error = false;
   int e;
+#ifdef USE_EXPRESSIONS
   // build event enabling and next-state expressions
   expr** enabled = new expr*[dsm->NumEvents()];
   expr** next = new expr*[dsm->NumEvents()];
@@ -149,6 +164,7 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     next[e] = dsm->NextStateExpr(e);
     DCASSERT(next[e] != ERROR);
   }
+#endif
 
   // allocate temporary (full) states
   DCASSERT(dsm->UsesConstantStateSize());
@@ -171,9 +187,14 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     
     // what is enabled?
     for (e=0; e<dsm->NumEvents(); e++) {
+#ifdef USE_EXPRESSIONS
+      if (NULL==next[e]) continue;  // firing is "no-op"
       enabled[e]->Compute(current, 0, x);
+#else
+      dsm->isEnabled(e, current, x);
+#endif
       if (!x.isNormal()) {
-	Error.Start();
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
 	if (x.isUnknown()) 
 	  Error << "Unknown if event is enabled";
 	else
@@ -186,14 +207,17 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
       if (!x.bvalue) continue;  // event is not enabled
 
       // e is enabled, fire and get new state
-      if (NULL==next[e]) continue;  // firing is "no-op"
 
       // set reached = current
       states->GetState(explore, reached);
       // do the firing
+#ifdef USE_EXPRESSIONS
       next[e]->NextState(current, reached, x); 
+#else
+      dsm->getNextState(current, e, reached, x);
+#endif
       if (!x.isNormal()) {
-	Error.Start();
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
 	Error << "Bad next-state expression during state space generation";
 	Error.Stop();
 	error = true;
@@ -207,12 +231,14 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
   // cleanup
   FreeState(reached);
   FreeState(current);
+#ifdef USE_EXPRESSIONS
   for (e=0; e<dsm->NumEvents(); e++) {
     Delete(enabled[e]);
     Delete(next[e]);
   }
   delete[] enabled;
   delete[] next;
+#endif
 
   return !error; 
 }

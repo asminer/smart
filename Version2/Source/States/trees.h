@@ -135,13 +135,43 @@ protected:
   int Splay(const state &s);
 };
 
-/*
 
-class red_black_tree : public binary_state_tree {
+class red_black_tree : public binary_tree {
+public:
+  red_black_tree(state_array *s);
+  ~red_black_tree();
+
+  /** Insert this state into the tree.
+      If a duplicate is already present, do not insert the state.
+      @param 	s	The state to insert.
+
+      @return	The handle (index) of the state.
+  */
+  int AddState(const state &s);
+
+  /** Find this state in the tree.
+      @param	s 	The state to find.
+      @return	The handle (index) of the state, if found;
+		otherwise, -1.
+  */
+  int FindState(const state &s) {
+    return -1;
+  }
+  void Report(OutputStream &r);
 protected:
-  int rbtreeinsert(int root, const state &s
+  void Resize(int newsize); 
+  int Rotate(int key, int y) {
+      /*
+      int c, gc;
+      if (states->Compare(key, y) < 0)
+	c = left[y];
+      else
+	c = right[y];
+	*/
+  }
 };
 
+/*
 class avl_state_tree : public binary_state_tree {
   // allocate a few extra bits per node for balancing
 public:

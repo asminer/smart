@@ -169,9 +169,8 @@ public:
 
   virtual ~model();
 
-  // Required as a function...
-  virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(Rng &, expr **, int np, result &x);
+  // Model instantiation...
+  virtual void Instantiate(expr **, int np, result &x, const char *f, int ln);
 
   // Required because models will be passed as parameters...
   virtual Engine_type GetEngine(engineinfo *);
@@ -261,7 +260,7 @@ protected:
   /** Construct the underlying state_model.
       Called after "FinalizeModel" if it was successful.
   */
-  virtual state_model* BuildStateModel() = 0;
+  virtual state_model* BuildStateModel(const char *fn, int ln) = 0;
 };
 
 // ******************************************************************

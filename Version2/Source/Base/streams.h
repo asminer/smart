@@ -182,6 +182,14 @@ public:
   void Start(const char* filename=NULL, int lineno=-1);
 
   /**
+      Used to start reporting an error within a model.
+      @param name	Model name
+      @param filename	File of model instantiation
+      @param lineno	Approximate line number of model instantiation
+  */
+  void StartModel(const char* mdl, const char* filename=NULL, int lineno=-1);
+
+  /**
       We're done reporting an error.
   */
   void Stop();

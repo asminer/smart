@@ -139,7 +139,8 @@ public:
 	  model_var** p, int np, 
           transition** t, int nt, 
 	  sparse_vector <int> *init,
-          listarray<spn_arcinfo> *a);
+          listarray<spn_arcinfo> *a,
+	  const char* fn, int ln);
   virtual ~spn_dsm();
 
   virtual bool UsesConstantStateSize() const { return true; }
@@ -180,7 +181,8 @@ spn_dsm::spn_dsm(const char* name,
 	model_var** p, int np,
 	transition** t, int nt,
    	sparse_vector <int> *init,
-	listarray<spn_arcinfo> *a) : state_model(name, nt)
+	listarray<spn_arcinfo> *a,
+	const char* fn, int ln) : state_model(name, nt, fn, ln)
 {
   places = p;
   num_places = np;
@@ -463,6 +465,7 @@ void spn_dsm::isEnabled(int e, const state &s, result &answer)
 {
   CHECK_RANGE(0, e, NumEvents());
   answer.Clear();
+  answer.bvalue = true;
   // go through input arcs
   int ptr;
   int list = transitions[e]->inputs;
@@ -511,6 +514,33 @@ void spn_dsm::isEnabled(int e, const state &s, result &answer)
 
 void spn_dsm::getNextState(const state &cur, int e, state &nxt, result &err)
 {
+  CHECK_RANGE(0, e, NumEvents());
+  err.Clear();
+  // go through input arcs, subtract tokens
+  int ptr;
+  int list = transitions[e]->inputs;
+  if (list>=0) {
+    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
+      int i = arcs->value[ptr].place;
+      nxt[i].ivalue -= arcs->value[ptr].const_card;
+      if (NULL==arcs->value[ptr].proc_card) continue;
+      arcs->value[ptr].proc_card->Compute(cur, 0, err);
+      if (!err.isNormal()) return;
+      nxt[i].ivalue -= err.ivalue;
+    } // for ptr
+  }
+  // go through output arcs, add tokens
+  list = transitions[e]->outputs;
+  if (list>=0) {
+    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
+      int i = arcs->value[ptr].place;
+      nxt[i].ivalue += arcs->value[ptr].const_card;
+      if (NULL==arcs->value[ptr].proc_card) continue;
+      arcs->value[ptr].proc_card->Compute(cur, 0, err);
+      if (!err.isNormal()) return;
+      nxt[i].ivalue += err.ivalue;
+    } // for ptr
+  }
 }
 
 // ******************************************************************
@@ -545,7 +575,7 @@ public:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
   virtual void InitModel();
   virtual void FinalizeModel(result &);
-  virtual state_model* BuildStateModel();
+  virtual state_model* BuildStateModel(const char *fn, int ln);
 protected:
   // true if unique arc
   bool ListAdd(int list,  spn_arcinfo &x, expr* card);
@@ -809,7 +839,7 @@ void spn_model::FinalizeModel(result &x)
   x.other = this;
 }
 
-state_model* spn_model::BuildStateModel()
+state_model* spn_model::BuildStateModel(const char* fn, int ln)
 {
   int num_places = placelist->Length();
   model_var** plist = placelist->MakeArray();
@@ -823,7 +853,11 @@ state_model* spn_model::BuildStateModel()
 
   arcs->ConvertToStatic();
 
-  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, initial, arcs);
+  return new spn_dsm(Name(), 
+  			plist, num_places, 
+			tlist, num_trans, 
+			initial, arcs,
+			fn, ln);
 }
 
 // ******************************************************************

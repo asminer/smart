@@ -286,10 +286,20 @@ public:
   */
   virtual int GetRewardParameter() const;
 
+  /// Call the function, for "deterministic" types
   virtual void Compute(expr **, int np, result &x);
+  /// Call the function, for "rand" types
   virtual void Sample(Rng &, expr **, int np, result &x);
+  /// Call the function, for "proc" types
   virtual void Compute(const state &, expr **, int np, result &x);
+  /// Call the function, for "proc rand" types
   virtual void Sample(Rng &, const state &, expr **, int np, result &x);
+
+  /** Call the function, for models.
+      f and ln are the filename and linenumber where the model is
+      instantiated.
+  */
+  virtual void Instantiate(expr **, int np, result &x, const char* f, int ln);
 
   /** Return true if this function should NOT be documented.
       (Probably because it is a research function.)

@@ -241,7 +241,7 @@ void add_const_to_sv::NextState(const state &, state &next, result &x)
   next[var->state_index].ivalue += delta;
   if (var->hasLowerBound()) 
     if (next[var->state_index].ivalue < var->getLowerBound()) {
-      Error.Start();
+      Error.Start(Filename(), Linenumber());
       if (delta>0) Error << "Overflow of ";
       else Error << "Underflow of ";
       Error << GetType(var->Type(0)) << " " << var->Name();
@@ -252,7 +252,7 @@ void add_const_to_sv::NextState(const state &, state &next, result &x)
 
   if (var->hasUpperBound()) 
     if (next[var->state_index].ivalue > var->getUpperBound()) {
-      Error.Start();
+      Error.Start(Filename(), Linenumber());
       if (delta<0) Error << "Overflow of ";
       else Error << "Underflow of ";
       Error << GetType(var->Type(0));
@@ -317,7 +317,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
     next[var->state_index].ivalue += x.ivalue;
     if (var->hasLowerBound())
       if (next[var->state_index].ivalue < var->getLowerBound()) {
-        Error.Start();
+        Error.Start(Filename(), Linenumber());
         if (x.ivalue>0) Error << "Overflow of ";
         else Error << "Underflow of ";
         Error << GetType(var->Type(0));
@@ -328,7 +328,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
       }
     if (var->hasUpperBound())
       if (next[var->state_index].ivalue > var->getUpperBound()) {
-        Error.Start();
+        Error.Start(Filename(), Linenumber());
         if (x.ivalue>0) Error << "Overflow of ";
         else Error << "Underflow of ";
         Error << GetType(var->Type(0));
@@ -343,7 +343,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
     return;
   }
   if (x.isInfinity()) {
-      Error.Start();
+      Error.Start(Filename(), Linenumber());
       Error << "Infinity ";
       if (x.ivalue>0) Error << "added to ";
       else Error << "subtracted from ";
@@ -378,7 +378,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
     next[var->state_index].ivalue -= x.ivalue;
     if (var->hasLowerBound())
       if (next[var->state_index].ivalue < var->getLowerBound()) {
-        Error.Start();
+        Error.Start(Filename(), Linenumber());
         if (x.ivalue<0) Error << "Overflow of ";
         else Error << "Underflow of ";
         Error << GetType(var->Type(0));
@@ -389,7 +389,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
       }
     if (var->hasUpperBound())
       if (next[var->state_index].ivalue > var->getUpperBound()) {
-        Error.Start();
+        Error.Start(Filename(), Linenumber());
         if (x.ivalue<0) Error << "Overflow of ";
         else Error << "Underflow of ";
         Error << GetType(var->Type(0));
@@ -404,7 +404,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
     return;
   }
   if (x.isInfinity()) {
-      Error.Start();
+      Error.Start(Filename(), Linenumber());
       Error << "Infinity ";
       if (x.ivalue<0) Error << "added to ";
       else Error << "subtracted from ";

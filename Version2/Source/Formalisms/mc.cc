@@ -35,9 +35,11 @@ public:
 	@param	sn	Array of states
 	@param	ns	Number of states
   	@param  mc	Markov chain
+	@param	fn	Filename
+	@param	ln	linenumber
   */
   markov_dsm(const char* name, bool disc, model_var** sn, int ns, 
-             markov_chain *mc);
+             markov_chain *mc, const char* fn, int ln);
 
   virtual ~markov_dsm();
 
@@ -71,8 +73,8 @@ public:
 // ******************************************************************
 
 markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns, 
-			markov_chain *theMC)
-: state_model(name, 1)
+			markov_chain *theMC, const char* fn, int ln)
+: state_model(name, 1, fn, ln)
 {
   ALLOC("markov_dsm", sizeof(markov_dsm));
   discrete = disc;
@@ -166,7 +168,7 @@ public:
 
   virtual void InitModel();
   virtual void FinalizeModel(result &);
-  virtual state_model* BuildStateModel();
+  virtual state_model* BuildStateModel(const char* fn, int ln);
 };
 
 // ******************************************************************
@@ -374,7 +376,7 @@ void markov_model::FinalizeModel(result &x)
   x.other = this;
 }
 
-state_model* markov_model::BuildStateModel()
+state_model* markov_model::BuildStateModel(const char* fn, int ln)
 {
   markov_chain *mc = new markov_chain();
   mc->explicit_mc = new classified_chain <float>(wdgraph);
@@ -396,7 +398,7 @@ state_model* markov_model::BuildStateModel()
   bool discrete = (Type(0) == DTMC);
   mc->initial = initial;
   initial = NULL;
-  return new markov_dsm(Name(), discrete, states, numstates, mc);
+  return new markov_dsm(Name(), discrete, states, numstates, mc, fn, ln);
 }
 
 // ******************************************************************
