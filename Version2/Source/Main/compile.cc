@@ -1446,6 +1446,69 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   return fcall;
 }
 
+/**  Score how well this function matches the passed named parameters.
+     @param	f	The function to check
+     @param	params	List of parameters (in name order).
+     @return 	Score, as follows.
+     		0	: Perfect match
+		+n	: n parameters will need to be promoted
+		-1	: Some fatal error (e.g.,
+			  missing name, type mismatch, etc.)
+*/
+int ScoreFunction(function *f, List <named_param> *params)
+{
+  if (f->ParamsRepeat()) return -1;
+  // For now, don't allow named parameters with repeating lists.
+
+  bool promote = true;
+  formal_param **fpl;
+  int dummy;
+  int np;
+  f->GetParamList(fpl, np, dummy);
+  // Traverse f's sorted list, check against ours
+  int fptr = 0;
+  int pptr = 0;
+  int numpromote = 0;
+  formal_param* y = fpl[f->NamedPosition(0)];
+  named_param* x = params->Item(0);
+  while (promote) {
+    if ((NULL==x) && (NULL==y)) break;
+    int cmp;
+    if (x && y) cmp = strcmp(y->Name(), x->name);
+    else if (y) cmp = -1;
+    else cmp = 1;
+    if (cmp<0) {
+      // formal parameter not passed, make sure there's a default
+      if (!y->HasDefault()) {
+	return -1;  // critical parameter is missing
+      }
+      // there's a default; advance formal
+      fptr++;
+      if (fptr < np) y = fpl[f->NamedPosition(fptr)];
+      else y = NULL;
+    } else if (cmp>0) {
+      // extra named parameter, that's bad
+      return -1;
+    } else {
+      // Match; check types.
+      bool perfect = true;
+      MatchParam(y, x->pass, perfect, promote);
+      if (!perfect) numpromote++;
+      // advance named
+      pptr++;
+      if (pptr < params->Length()) x = params->Item(pptr);
+      else x = NULL;
+      // advance formal
+      fptr++;
+      if (fptr < np) y = fpl[f->NamedPosition(fptr)];
+      else y = NULL;
+    }
+  }
+  if (promote) return numpromote;
+  return -1;
+}
+
+
 expr* BuildNamedFunctionCall(const char *n, void* x)
 {
   List <named_param> * foo = (List <named_param> *) x;
@@ -1456,6 +1519,17 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
     Output << "\t" << foo->Item(i)->name << "\n";
   }
   Output.flush();
+
+  // find symbol table entry
+  List <function> *flist = FindFunctions(Builtins, n);
+  if (NULL==flist) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown function " << n;
+    Error.Stop();
+    delete foo;
+    return ERROR;
+  }
+
   Internal.Start(__FILE__, __LINE__);
   Internal << "Named parameters not done yet, sorry";
   Internal.Stop();
