@@ -14,6 +14,30 @@ unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x00000080, 0x00000040, 0x00000020, 0x00000010,
 			  0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
+
+const int N = 7;
+
+class bigmatrix {
+protected
+  unsigned int** row;
+public:
+  bigmatrix();
+  ~bigmatrix();
+
+  inline void column_dot_product(int cw, unsigned int *vect, unsigned int &a) {
+    for (int i=N-1; i>=0; i--) 
+      for (register int b=31; b>=0; b--) {
+        if (vect[i] & mask[b]) a ^= row[i*32+b][cw];
+      }
+  }
+  inline void zero() {
+    for (int i=N-1; i>=0; i--) row[0][i] = 0;
+    for (int i=32*N-1; i; i--)
+      memcpy(row[i], row[0], N * sizeof(int));
+  }
+};
+
+
 struct bitmatrix {
   unsigned int row[32];
   bool flag;

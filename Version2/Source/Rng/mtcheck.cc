@@ -72,8 +72,6 @@ myhash::~myhash()
 
 void myhash::Resize(int delta)
 {
-  Output << "Resizing hash table\n";
-  Output.flush();
   // build huge list
   node* list = NULL;
   int i = 0;
@@ -99,8 +97,6 @@ void myhash::Resize(int delta)
     list = link;
   }
   maxchain = 0;
-  Output << "Done resizing\n";
-  Output.flush();
 }
 
 bitmatrix* myhash::Find(bitmatrix *m)
