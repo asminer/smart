@@ -306,7 +306,7 @@ void compute_read_bool(expr **pp, int np, result &x)
     if (Input.IsDefault()) 
       if (!x.isNull()) {
         Output << "Enter the [y/n] value for ";
-        Output.Put(x.svalue);
+        x.svalue->show(Output);
 	Output << " : ";
         Output.flush();
       }     
@@ -343,7 +343,7 @@ void compute_read_int(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (integer) value for ";
-      Output.Put(x.svalue);
+      x.svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   
@@ -382,7 +382,7 @@ void compute_read_real(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (real) value for ";
-      Output.Put(x.svalue);
+      x.svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   
@@ -426,7 +426,7 @@ void compute_read_string(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (string) value for ";
-      Output.Put(x.svalue);
+      x.svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   

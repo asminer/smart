@@ -44,7 +44,12 @@ binary_tree::~binary_tree()
 
 void binary_tree::FillOrderList(int tree, int &index, int* order)
 {
-  DCASSERT(0);
+  // Nice, inorder traversal of the tree
+  if (tree<0) return;
+  CHECK_RANGE(0, tree, states->NumStates());
+  FillOrderList(left[tree], index, order);
+  order[index++] = tree;
+  FillOrderList(right[tree], index, order);
 }
 
 int binary_tree::FindPath(const state &s)

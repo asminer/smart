@@ -2,6 +2,7 @@
 // $Id$
 
 #include "ssgen.h"
+#include "../States/reachset.h"
 #include "../States/flatss.h"
 #include "../States/stateheap.h"
 #include "../States/trees.h"
@@ -244,7 +245,27 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
   return !error; 
 }
 
-bool DebugReachset(state_model *dsm)
+void CompressAndAffix(state_model* dsm, state_array* states, binary_tree* tree)
+{
+  DCASSERT(dsm);
+  DCASSERT(NULL==dsm->statespace);
+  dsm->statespace = new reachset;
+  if (NULL==states || 0==states->NumStates()) {
+    // Error during generation, reflect that fact
+    dsm->statespace->CreateError();
+    delete states;
+  } else {
+    // AOK, compress and trash the tree!
+    int* order = new int[states->NumStates()];
+    tree->FillOrderList(order);
+    flatss* ss = new flatss(states, order);
+    dsm->statespace = new reachset;
+    dsm->statespace->CreateExplicit(ss);
+  }
+  delete tree;
+}
+
+void DebugReachset(state_model *dsm)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting reachability set generation in debug mode\n";
@@ -253,29 +274,27 @@ bool DebugReachset(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   bool ok = Debug_Explore_Indexed(dsm, states, tree);
-  return false; // temporary
-
-  // affix to state model here...
-
-  // return ok;
+  if (!ok) {
+    delete states;
+    states = NULL;
+  }
+  CompressAndAffix(dsm, states, tree);
 }
 
-bool SplayReachset(state_model *dsm)
+void SplayReachset(state_model *dsm)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting reachability set generation using Splay tree\n";
     Verbose.flush();
   }
   timer watch;
+
   watch.Start();
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   bool ok = Explore_Indexed(dsm, states, tree);
-  
-  Output << states->NumStates() << " states generated\n";
-  Output.flush();
-  
   watch.Stop();
+
   if (Report.IsActive()) {
     Report << "Generation took " << watch << "\n";
     Report << "Splay tree:\n";
@@ -283,16 +302,22 @@ bool SplayReachset(state_model *dsm)
     states->Report(Report);
     Report.flush();
   }
+  
+  watch.Start();
+  if (!ok) {
+    delete states;
+    states = NULL;
+  }
+  CompressAndAffix(dsm, states, tree);
+  watch.Stop();
 
-
-  return false; // temporary
-
-  // affix to state model here...
-
-  // return ok;
+  if (Report.IsActive()) {
+    Report << "Compression took " << watch << "\n";
+    Report.flush();
+  }
 }
 
-bool RedBlackReachset(state_model *dsm)
+void RedBlackReachset(state_model *dsm)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting reachability set generation using red-black tree\n";
@@ -304,9 +329,6 @@ bool RedBlackReachset(state_model *dsm)
   red_black_tree* tree = new red_black_tree(states);
   bool ok = Explore_Indexed(dsm, states, tree);
   
-  Output << states->NumStates() << " states generated\n";
-  Output.flush();
-  
   watch.Stop();
   if (Report.IsActive()) {
     Report << "Generation took " << watch << "\n";
@@ -316,28 +338,39 @@ bool RedBlackReachset(state_model *dsm)
     Report.flush();
   }
 
-
-  return false; // temporary
-
-  // affix to state model here...
-
-  // return ok;
+  if (!ok) {
+    delete states;
+    states = NULL;
+  }
+  CompressAndAffix(dsm, states, tree);
 }
 
-bool BuildReachset(state_model *dsm)
+void BuildReachset(state_model *dsm)
 {
-  const option_const* ss_option = StateStorage->GetEnum();
-  if (ss_option == &debug_ss)
-    return DebugReachset(dsm); 
-  if (ss_option == &splay_ss)
-    return SplayReachset(dsm); 
-  if (ss_option == &redblack_ss)
-    return RedBlackReachset(dsm); 
+  if (NULL==dsm) return;
+  if (dsm->statespace) return;  // already built
 
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "StateStorage option " << ss_option << " not handled";
-  Internal.Stop();
-  return false;
+  const option_const* ss_option = StateStorage->GetEnum();
+
+  timer watch;
+
+  watch.Start();
+  if (ss_option == &debug_ss)		DebugReachset(dsm); 
+  if (ss_option == &splay_ss)		SplayReachset(dsm); 
+  if (ss_option == &redblack_ss)	RedBlackReachset(dsm); 
+  watch.Stop();
+
+  if (NULL==dsm->statespace) {
+    // we didn't do anything...
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "StateStorage option " << ss_option << " not handled";
+    Internal.Stop();
+  }
+
+  if (Verbose.IsActive()) {
+    Verbose << "Generation took " << watch << "\n";
+    Verbose.flush();
+  }
 }
 
 //#define DEBUG

@@ -12,10 +12,10 @@
  */
 
 /** 	Build the reachability set for a given model.
+	The reachability set is added to the state model.
 	@param  m	The model to solve.
-	@return	true on success
 */
-bool 	BuildReachset(model *m);
+void 	BuildReachset(model *m);
 
 /** 	Solve a list of steady-state measures for a given model.
 

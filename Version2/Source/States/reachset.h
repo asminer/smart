@@ -30,18 +30,20 @@ enum reachset_type {
   /// Explicit flat.  Stored in a state array class.
   RT_Explicit,
   /// EV+MDD.  Not implemented yet.
-  RT_Implicit
+  RT_Implicit,
+  /// There was an error generating it.
+  RT_Error
 };
 
 class reachset {
-  /// The number of states.  Change to "bigint" soon...
-  int size; 
   /// The type of reachset encoding.
   reachset_type encoding;
 public:
   union {
+    /// Used by enumerated storage.  
+    int size;
     /// Used by explicit storage.
-    state_array *flat;
+    flatss* flat;
     /// Used by implicit storage.
     void* evmdd;
   };
@@ -53,11 +55,20 @@ public:
   /// Create an enumerated reachset
   void CreateEnumerated(int s);
   /// Create an explicit reachset
-  void CreateExplicit(int s, state_array *f);
+  void CreateExplicit(flatss* f);
   /// Create an implicit reachset
-  void CreateImplicit(int s, void* e);
+  void CreateImplicit(void* e);
+  /// Create an error reachset
+  void CreateError();
 
-  inline int Size() const { return size; }
+  inline int Size() const { 
+    switch (encoding) {
+      case RT_Enumerated:	return size; 
+      case RT_Explicit: 	return flat->NumStates();
+      default:
+      		return 0;
+    }
+  }
   inline reachset_type Type() const { return encoding; }
 
   // Stuff for accessing states here...

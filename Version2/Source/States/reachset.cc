@@ -49,20 +49,24 @@ void reachset::CreateEnumerated(int s)
   size = s;
 }
 
-void reachset::CreateExplicit(int s, state_array *f)
+void reachset::CreateExplicit(flatss* f)
 {
   DCASSERT(encoding == RT_None);
   encoding = RT_Explicit;
-  size = s;
   flat = f;
 }
 
-void reachset::CreateImplicit(int s, void* e)
+void reachset::CreateImplicit(void* e)
 {
   DCASSERT(encoding == RT_None);
   encoding = RT_Implicit;
-  size = s;
   evmdd = e;
+}
+
+void reachset::CreateError()
+{
+  DCASSERT(encoding == RT_None);
+  encoding = RT_Error;
 }
 
 //@}

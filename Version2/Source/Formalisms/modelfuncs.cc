@@ -166,15 +166,19 @@ void compute_num_states(expr **pp, int np, result &x)
   DCASSERT(dsm);
   x.Clear();
 
-  bool success = BuildReachset(m);
-  if (false==success) {
+  BuildReachset(m);
+  reachset* ss = dsm->statespace;
+  DCASSERT(ss);  // should be set to something
+
+  DCASSERT(ss->Type() != RT_None);
+
+  if (ss->Type() == RT_Error) {
+    // is an error message necessary?
     x.setNull();
     return;
   }
-
-  DCASSERT(dsm->statespace);
-
-  x.ivalue = dsm->statespace->Size();
+  
+  x.ivalue = ss->Size();
 
   // should we show the state space?
   result show;

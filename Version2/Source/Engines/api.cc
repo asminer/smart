@@ -20,11 +20,12 @@ option_const* NUMERICAL = &numerical_oc;
 option_const* SIMULATION = &simulation_oc;
 
 
-bool 	BuildReachset(model *m)
+void 	BuildReachset(model *m)
 {
-  if ((NULL==m) || (ERROR==m)) return false;
+  if ((NULL==m) || (ERROR==m)) return;
   state_model *dsm = m->GetModel();
-  return BuildReachset(dsm); // defined in ssgen.h
+  DCASSERT(dsm);
+  BuildReachset(dsm); // defined in ssgen.h
 }
 
 /// Sets the return result for all measures to be "error"

@@ -248,6 +248,11 @@ public:
   flatss(state_array *sa, int *o);
   ~flatss();
 
+  inline int NumStates() const {
+    DCASSERT(states);
+    return states->NumStates();
+  }
+
   inline bool GetState(int h, state &s) { 
     DCASSERT(states);
     return states->GetState(h, s);
