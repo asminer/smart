@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	mtwist.c
+	mtwist.c rng.cc
 
 ALLOBJS = $(SOURCES:.c=.o) 
 

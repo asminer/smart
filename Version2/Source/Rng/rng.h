@@ -20,7 +20,17 @@ public:
     } while (0==u);  
     return u * (1.0 / 4294967296.0);
   }
+
+/** For creating multiple streams.
+    Given a rng state, create another stream distance J away.
+    J, the jump distance, depends on the magic matrix used by
+    the implementation of this function.
+    (See the journal article, hopefully ;^)
+*/
+  void JumpStream(const Rng &input);
 };
+
+
 
 #endif
 

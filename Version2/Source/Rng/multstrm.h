@@ -48,6 +48,16 @@ struct bitmatrix {
     for (int r=0; r<32; r++) { s << row[r] << " "; }
   }
 
+  void writeC(OutputStream &s) {
+    s << "const submatrix m" << flag << " = { ";
+    for (int r=0; r<32; r++) {
+      if (r) s << ", ";
+      s.PutHex(row[r]);
+    }
+    s << " };\n";
+    s.flush();
+  }
+
   bool read(InputStream &s) {
     for (int r=0; r<32; r++) if (!s.Get(row[r])) return false;
     return true;
@@ -110,6 +120,7 @@ public:
   void show(OutputStream &s);
   // Less so.
   void write(OutputStream &s);
+  void writeC(OutputStream &s);
   void read(InputStream &s);
   int Distinct();
   /// x = y * this;

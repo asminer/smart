@@ -559,6 +559,39 @@ void shared_matrix::write(OutputStream &s)
   }
 }
 
+void shared_matrix::writeC(OutputStream &s)
+{
+  int i,j;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    ptrs[i][j]->flag = 0;
+
+  int subcnt = 1;
+  for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
+    if (0==ptrs[i][j]->flag) {
+      ptrs[i][j]->flag = subcnt++;
+      ptrs[i][j]->writeC(s);
+    }
+
+  s << "\n\n";
+  s << "const submatrix* Jump[N][N] = {\n";
+  
+  for (i=0; i<N; i++) {
+    s << "  {";
+    for (j=0; j<N; j++) {
+      if (j) s << ", ";
+      if (ptrs[i][j]) s << "&m" << ptrs[i][j]->flag;
+      else s << "NULL";
+    }
+    s << "}";
+    if (i<N-1) s << ",";
+    s << "\n";
+    s.flush();
+  }
+  
+  s << "};\n";
+  s.flush();
+}
+
 void shared_matrix::read(InputStream &s)
 {
   int subcnt;
