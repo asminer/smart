@@ -3,6 +3,7 @@
 
 #include "mtwist.h"
 
+#include <signal.h>
 #include <iostream>
 
 using namespace std;
@@ -11,7 +12,15 @@ unsigned long seeds[MT_STATE_SIZE];
 
 const int KNUTH_MULTIPLIER_OLD = 69069;
 
-unsigned long firstseed;
+unsigned long firstseed, lastseed;
+
+bool stop_tests = false;
+
+void catchterm(int dealy)
+{
+  cout << "Caught signal " << dealy << ", will terminate" << endl;
+  stop_tests = true;
+}
 
 inline long knuth(long seed)
 {
@@ -78,15 +87,16 @@ bool Test()
 
 int main()
 {
-  cout << "Enter starting seed thingy\n";
+  signal(SIGTERM, catchterm);
+  cout << "Enter starting seed thingy: ";
   cin >> firstseed;
-  cout << "Enter max distance to check\n";
+  cout << firstseed << "\n";
+  cout << "Enter stopping seed thingy: ";
+  cin >> lastseed;
+  cout << lastseed << "\n";
+  cout << "Enter max distance to check: ";
   cin >> MAXDIST;
-
-  if (!IsSequence()) {
-    cout << "Not a sequence?\n";
-    return 0;
-  }
+  cout << MAXDIST << endl;
 
   unsigned long count = 0;
   unsigned long nextprint = 1;
@@ -95,11 +105,15 @@ int main()
     if (Test()) return 0; 
     count++;
     if (count >= nextprint) {
-      cout << count << " seeds checked" << endl;
+      cout << count << " seeds checked \tlast " << seeds[0] << endl;
       nextprint *= 2;
     }
+    if (stop_tests) {
+      cout << count << " seeds checked \tlast " << seeds[0] << endl;
+      return 0;
+    }
     InitNext();
-  } while (seeds[0] != firstseed);
+  } while (seeds[0] != lastseed);
 
   cout << "\n\n" << count << " seeds checked, all pass!\n";
   return 0;
