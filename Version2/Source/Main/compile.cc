@@ -983,7 +983,17 @@ void StartConverge()
 statement* FinishConverge(void* list)
 {
   converge_depth--;
-  return NULL;  // for now
+  List <statement> *foo = (List <statement> *) list;
+  statement** block = NULL;
+  int bsize = 0;
+  if (foo) {
+    bsize = foo->Length();
+    block = foo->MakeArray();
+  }
+  delete foo;
+  if (NULL==block) return NULL;
+
+  return MakeConverge(block, bsize, filename, lexer.lineno());
 }
 
 // ==================================================================
