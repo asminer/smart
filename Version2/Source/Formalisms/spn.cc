@@ -123,23 +123,28 @@ protected:
   model_var** places;
   int num_places;
   transition** transitions;
+  sparse_vector <int> *initial;
   listarray <spn_arcinfo> *arcs;
 public:
   spn_dsm(const char* name, 
 	  model_var** p, int np, 
           transition** t, int nt, 
+	  sparse_vector <int> *init,
           listarray<spn_arcinfo> *a);
   virtual ~spn_dsm();
 
-  virtual void ShowState(OutputStream &s, const state &x) {
-    DCASSERT(0);
-  }
-  virtual void ShowEventName(OutputStream &s, int e) {
+  virtual bool UsesConstantStateSize() const { return true; }
+
+  // This will need to change once we handle phase firing delays
+  virtual int GetConstantStateSize() const { return num_places; }
+
+  virtual void ShowState(OutputStream &s, const state &x) const;
+  virtual void ShowEventName(OutputStream &s, int e) const {
     s << transitions[e]->Name();
   }
 
   virtual int NumInitialStates() const { return 1; }
-  virtual void GetInitialState(int n, state &s) const { DCASSERT(0); }
+  virtual void GetInitialState(int n, state &s) const;
   virtual expr* EnabledExpr(int e);
   virtual expr* NextStateExpr(int e);
   virtual expr* EventDistribution(int e) { 
@@ -161,15 +166,18 @@ public:
 spn_dsm::spn_dsm(const char* name, 
 	model_var** p, int np,
 	transition** t, int nt,
+   	sparse_vector <int> *init,
 	listarray<spn_arcinfo> *a) : state_model(name, nt)
 {
   places = p;
   num_places = np;
   transitions = t;
+  initial = init;
   arcs = a;
   DCASSERT(arcs->IsStatic());
   // temp stuff
   exprlist = new List <expr> (16);
+  initial = NULL;
 }
 
 spn_dsm::~spn_dsm()
@@ -177,9 +185,53 @@ spn_dsm::~spn_dsm()
   // places and transitions themselves are deleted by the model, right?
   free(places);
   free(transitions);
+  delete initial;
   delete arcs;
   // temp stuff
   delete exprlist;
+}
+
+void spn_dsm::ShowState(OutputStream &s, const state &x) const
+{
+  DCASSERT(x.Size() >= num_places);
+  int i;
+  bool printed = false;
+  s << "[";
+  for (i=0; i<num_places; i++) {
+    if (x.Read(i).isNormal()) {
+      if (0==x.Read(i).ivalue) continue;
+    }
+    if (printed) s << ", ";
+    else printed = true;
+    s << places[i] << ":";
+    PrintResult(s, INT, x.Read(i), -1, -1);
+  }
+  s << "]";
+}
+
+void spn_dsm::GetInitialState(int n, state &s) const
+{
+  DCASSERT(n==0);
+  if (s.Size() < num_places) {
+    // initialize
+    FreeState(s);  // in case it is just too small
+    AllocState(s, num_places);
+  }
+  int lasti = 0;
+  for (int z=0; z<initial->NumNonzeroes(); z++) {
+    int thisi = initial->index[z];
+    for (int i=lasti; i<thisi; i++) {
+      s[i].Clear();
+      s[i].ivalue = 0;
+    }
+    s[thisi].Clear();
+    s[thisi].ivalue = initial->value[z];
+    lasti = thisi+1;
+  }
+  for (int i=lasti; i<num_places; i++) {
+    s[i].Clear();
+    s[i].ivalue = 0;
+  }
 }
 
 expr* spn_dsm::EnabledExpr(int e)
@@ -352,6 +404,7 @@ class spn_model : public model {
 protected:
   List <model_var> *placelist;
   List <transition> *translist;
+  sparse_vector <int> *initial;
   listarray <spn_arcinfo> *arcs;
 public:
   spn_model(const char* fn, int line, type t, char *n, 
@@ -365,6 +418,7 @@ public:
   void AddInhibitor(int place, int trans, expr* card, const char *fn, int ln);
   void AddGuard(int trans, expr* guard);
   void AddFiring(int trans, expr* firing);
+  void AddInit(int place, int tokens, const char *fn, int ln);
 
   // Required for models:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
@@ -386,6 +440,7 @@ spn_model::spn_model(const char *fn, int line, type t, char *n,
   placelist = NULL;
   translist = NULL;
   arcs = NULL;
+  initial = NULL;
 }
 
 spn_model::~spn_model()
@@ -394,6 +449,7 @@ spn_model::~spn_model()
   delete placelist;
   delete translist;
   delete arcs;
+  delete initial;
 }
 
 bool spn_model::ListAdd(int list,  spn_arcinfo &data, expr* card)
@@ -529,6 +585,22 @@ void spn_model::AddFiring(int trans, expr* firing)
   Warning.Stop();
 }
 
+void spn_model::AddInit(int place, int tokens, const char* fn, int ln)
+{
+  CHECK_RANGE(0, place, placelist->Length());
+  DCASSERT(tokens);
+  int z = initial->BinarySearchIndex(place);
+  if (z<0) { // no initialization yet for this place
+    initial->SortedAppend(place, tokens);
+    return;
+  }
+  initial->value[z] += tokens;
+  Warning.Start(fn, ln);
+  Warning << "Summing duplicate initialization for place ";
+  Warning << placelist->Item(place) << " in SPN " << Name();
+  Warning.Stop();
+}
+
 model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
   model_var* p = NULL;
@@ -571,12 +643,27 @@ void spn_model::InitModel()
   placelist = new List <model_var> (16);
   translist = new List <transition> (16);
   arcs = new listarray <spn_arcinfo>;
+  initial = new sparse_vector <int> (8);
 }
 
 void spn_model::FinalizeModel(result &x)
 {
+  // Check that there is an initial marking
+  if (0==initial->NumNonzeroes()) {
+    Warning.Start();
+    Warning << "Assuming zero initial marking in SPN " << Name();
+    Warning.Stop();
+  }
 #ifdef DEBUG_SPN
   int i;
+  Output << "Initial marking: [";
+  for (i=0; i<initial->NumNonzeroes(); i++) {
+    if (i) Output << ", ";
+    Output << placelist->Item(initial->index[i]) << ":";
+    Output << initial->value[i];
+  }
+  Output << "]\n";
+  Output.flush();
   for (i=0; i<translist->Length(); i++) {
     transition *t = translist->Item(i);
     Output << "Transition " << t << "\n";
@@ -592,6 +679,7 @@ void spn_model::FinalizeModel(result &x)
       Output << "\tinhibitors: ";
       arcs->ShowNodeList(Output, t->inhibitors);
     }
+    Output.flush();
   }
 #endif
   // success:
@@ -614,7 +702,7 @@ state_model* spn_model::BuildStateModel()
 
   arcs->ConvertToStatic();
 
-  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, arcs);
+  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, initial, arcs);
 }
 
 // ******************************************************************
@@ -622,6 +710,57 @@ state_model* spn_model::BuildStateModel()
 // *                      PN-specific functions                     *
 // *                                                                *
 // ******************************************************************
+
+// ********************************************************
+// *                         init                         *
+// ********************************************************
+
+void compute_spn_init(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+#ifdef DEBUG_SPN
+  Output << "Inside init for spn " << spn << "\n";
+#endif
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+    DCASSERT(pp[i]);
+    DCASSERT(pp[i]!=ERROR);
+#ifdef DEBUG_SPN
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+#endif
+    result pl, tk;
+    SafeCompute(pp[i], 0, pl);
+    SafeCompute(pp[i], 1, tk);
+    // error checking of pl and tk here   
+    spn->AddInit(pl.ivalue, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
+  }
+#ifdef DEBUG_SPN
+  Output << "Exiting init for spn " << spn << "\n";
+  Output.flush();
+#endif
+  x.setNull();
+}
+
+void Add_spn_init(PtrTable *fns)
+{
+  const char* helpdoc = "Assigns the initial marking.  Any places not listed are assumed to be initially empty.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(SPN, "net");
+  type *tl = new type[2];
+  tl[0] = PLACE;
+  tl[1] = INT;
+  pl[1] = new formal_param(tl, 2, "pt");
+  internal_func *p = new internal_func(VOID, "init", 
+	compute_spn_init, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
 
 // ********************************************************
 // *                         arcs                         *
@@ -1005,9 +1144,9 @@ model* MakePetriNet(type t, char* id, formal_param **pl, int np,
 
 void InitPNModelFuncs(PtrTable *t)
 {
+  Add_spn_init(t);
   Add_spn_arcs(t);
   Add_spn_inhibit(t);
-  
   Add_spn_guard(t);
   Add_spn_firing(t);
 

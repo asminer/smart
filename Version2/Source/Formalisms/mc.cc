@@ -48,8 +48,11 @@ public:
 
   // required stuff:
 
-  virtual void ShowState(OutputStream &s, const state &x);
-  virtual void ShowEventName(OutputStream &s, int e);
+  virtual bool UsesConstantStateSize() const { return true; }
+  virtual int GetConstantStateSize() const { return 1; }
+
+  virtual void ShowState(OutputStream &s, const state &x) const;
+  virtual void ShowEventName(OutputStream &s, int e) const;
 
   virtual int NumInitialStates() const;
   virtual void GetInitialState(int n, state &s) const;
@@ -106,13 +109,13 @@ markov_dsm::~markov_dsm()
   // nothing else to do...
 }
 
-void markov_dsm::ShowState(OutputStream &s, const state &x)
+void markov_dsm::ShowState(OutputStream &s, const state &x) const
 {
   // check state legality and range here...
   s << statenames[x.Read(0).ivalue];
 }
 
-void markov_dsm::ShowEventName(OutputStream &s, int e)
+void markov_dsm::ShowEventName(OutputStream &s, int e) const
 {
   CHECK_RANGE(0, e, NumEvents());
 

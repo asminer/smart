@@ -46,6 +46,14 @@ state_model::~state_model()
   delete mc;
 }
 
+int state_model::GetConstantStateSize() const
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Request for state size, for a model with variable-sized states";
+  Internal.Stop();
+  return 0; // keep compiler happy
+}
+
 void state_model::DetermineProcessType()
 {
   if (proctype != Proc_Unknown) return;

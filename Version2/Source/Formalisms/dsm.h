@@ -56,8 +56,21 @@ public:
   inline int NumEvents() const { return events; }
   inline const char* Name() const { return name; }
 
-  virtual void ShowState(OutputStream &s, const state &x) = 0;
-  virtual void ShowEventName(OutputStream &s, int e) = 0;
+  /** Does this model use a state of constant size.
+      True for Petri nets and Markov chains.
+      False for colored nets (not implemented yet...)
+  */
+  virtual bool UsesConstantStateSize() const = 0;
+
+  /** How large is a state for this model.
+      Assumes the model uses a state of constant size.
+      Behavior specified here is to bail out
+      (which is what should be done if a state is NOT constant size).
+  */
+  virtual int  GetConstantStateSize() const;
+
+  virtual void ShowState(OutputStream &s, const state &x) const = 0;
+  virtual void ShowEventName(OutputStream &s, int e) const = 0;
 
   /** Returns the number of initial states for this model.
       For a Petri net, this should be 1.
