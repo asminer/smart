@@ -39,6 +39,8 @@ int main(int argc, char** argv)
 
   shared_matrix *answer = new shared_matrix(N);
   answer->read(Input);
+  Output << "Read matrix: " << answer->Distinct() << " distinct\n";
+  Output.flush();
   shared_matrix *tmp = new shared_matrix(N);
   for (int i=1; i<=iters; i++) {
     timer compute;

@@ -9,8 +9,8 @@
 
 CC = g++
 CXX = g++
-#CPPFLAGS = -g 
-CPPFLAGS = -O3
+CPPFLAGS = -g 
+#CPPFLAGS = -O3
 
 all: square multiply makeB mtcheck
 

@@ -571,7 +571,7 @@ void shared_matrix::read(InputStream &s)
       return;
     }
     map[i] = Reduce(map[i]);
-    map[i]->ptrcount++;  // prevent this from being removed
+    map[i]->cachecount = 1;  // prevent this from being removed
   }
   int j;
   for (i=0; i<N; i++) for (j=0; j<N; j++) ptrs[i][j] = NULL;
@@ -582,8 +582,8 @@ void shared_matrix::read(InputStream &s)
     SetPtr(i, j, map[which]);
   }
  
-  // adjust ptrcounts
-  for (i=1; i<subcnt; i++) map[i]->ptrcount--;
+  // allow removal now
+  for (i=1; i<subcnt; i++) map[i]->cachecount = 0;
   
   delete[] map;
 }
