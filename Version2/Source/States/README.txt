@@ -12,4 +12,6 @@ stateheap	Definition of state class, and centralized functions
 flatss		Collection of compressed states for flat storage.
 		For now, copied from version 1;  soon to be updated ;^)
 
+testflat	Not included in SMART, but used to test the
+		state_array class in flatss.
 

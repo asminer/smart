@@ -11,6 +11,8 @@
     
  */
 
+#define  DEBUG_COMPACT
+
 //@{ 
 
 // ==================================================================
@@ -176,7 +178,7 @@ void state_array::EnlargeMem(int newsize)
   memsize = newmemsize;
 }
 
-state_array::state_array(int bsize, bool useindices)
+state_array::state_array(bool useindices)
 {
   // start with 256 bytes, in case we're a small set
   mem = (unsigned char*) malloc(256);  
@@ -289,6 +291,7 @@ void state_array::RunlengthEncodeBinary(char npbits, state &s)
     } // for j
     // j is one past the end of the list
     WriteInt(npbits, j-i);	// list length
+    i = j;
   } // while i<np
 }
  
@@ -524,15 +527,16 @@ int state_array::AddState(state &s)
     case 2:
       Output << "#Runs: " << runs << "\n";
       Output << "#Lists: " << lists << "\n";
-      Output << "List length: " << listlength << "\n";
+      Output << "List length: " << listlengths << "\n";
       break;
     case 3:
       Output << "#places: " << np << "\n";
       break;
   }
   Output << "Encoding:\n";
-  PrintBits(Handel, lasthandle);
+  PrintBits(Output, Handel, lasthandle);
   Output << "\n";
+  Output.flush();
 #endif
   
   return answer;
@@ -647,7 +651,7 @@ bool state_array::GetState(int Handel, state &s)
   Output << "Handle: " << h << "\n";
   Output << "Encoding:\n";
   if (bitptr<7) byteptr++;
-  PrintBits(h, byteptr);
+  PrintBits(Output, h, byteptr);
   Output << "\n#places bits: " << (int) npbits;
   Output << "\t#tokens bits: " << (int) tkbits << "\n";
   Output << "Used " << EncodingMethod[encselect] << " storage\n";
@@ -665,6 +669,7 @@ bool state_array::GetState(int Handel, state &s)
       break;
   }
   Output << "Got state " << s << "\n";
+  Output.flush();
 #endif
 
   return true;
@@ -774,10 +779,12 @@ void state_array::Report(OutputStream &R)
   int i;
   for (i=0; i<4; i++) if (encodecount[i])
     R <<"  "<< encodecount[i] <<" "<< EncodingMethod[i] << " encodings\n";
-  R << "State array " << memsize << " bytes\n";
-  R << " states use " << lasthandle << " bytes\n";
-  if (map) 
-    R << "Index handles require " << int(numstates*sizeof(int)) << " bytes\n";
+  R << "State array allocated " << memsize << " bytes\n";
+  R << "State array using     " << lasthandle << " bytes\n";
+  if (map) {
+    R << "Index map allocated " << int(mapsize*sizeof(int)) << " bytes\n";
+    R << "Index map using     " << int(numstates*sizeof(int)) << " bytes\n";
+  }
 }
 
 int state_array::MemUsed()

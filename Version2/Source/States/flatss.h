@@ -149,7 +149,7 @@ protected:
 
   inline int Bits2Bytes(int numbits) const { return (numbits+7)/8; }
 public:
-  state_array(int bsize, bool useindices);
+  state_array(bool useindices);
   ~state_array();
 
   inline bool UsesIndexHandles() const { return (map!=NULL); }

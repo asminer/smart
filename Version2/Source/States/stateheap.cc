@@ -7,10 +7,18 @@ void state::Show(OutputStream& s) const
 {
   int i;
   s.Put('[');
+#ifdef EXTRACTED_FROM_SMART
+  s.Put(data[0].ivalue);
+#else
   PrintResult(s, INT, data[0]);
+#endif
   for (i=1; i<size; i++) {
     s.Put(", ");
+#ifdef EXTRACTED_FROM_SMART
+    s.Put(data[i].ivalue);
+#else
     PrintResult(s, INT, data[i]); 
+#endif
   }
   s.Put(']');
 }
