@@ -33,9 +33,9 @@ void JumpA()
   for (i=0; i<MT_STATE_SIZE; i++) state1.statevec[i] = tmp.statevec[i]; 
 }
 
-void JumpB(int n)
+void JumpB(long long n)
 {
-  int i;
+  long long i;
   for (i=0; i<n; i++) mts_lrand(&state2);
 }
 
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
   Input.SwitchInput(in);
   A.read(Input);
 
-  int JUMP = atoi(argv[2]);
+  long long JUMP = atoll(argv[2]);
   if (JUMP<1) {
     Output << "Bad jump length: " << JUMP << "\n";
     return 0;
