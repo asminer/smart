@@ -68,6 +68,7 @@ public:
   formal_param(const char* fn, int line, type t, char* n);
   virtual ~formal_param();
 
+  virtual void ClearCache() { } // No cache
   virtual void Compute(int i, result &x);
   virtual void Sample(Rng &, int i, result &x);
 
@@ -158,6 +159,8 @@ public:
            formal_param **pl, int np);
 
   virtual ~function();
+
+  virtual void ClearCache() { } // No cache
 
   /** Sets the return value.
       Used only by user functions; necessary to deal with forward defs.

@@ -38,6 +38,7 @@ cvgfunc::cvgfunc(const char* fn, int line, type t, char* n)
   current.setNull();  // haven't been computed yet
   hasconverged = false;
   was_updated = false;
+  state = CS_Undefined;
 }
 
 void cvgfunc::Compute(int i, result &x)
@@ -49,6 +50,17 @@ void cvgfunc::Compute(int i, result &x)
 void cvgfunc::ShowHeader(OutputStream &s) const
 {
   s << GetType(Type(0)) << " " << Name();
+}
+
+Engine_type cvgfunc::GetEngine(engineinfo *e)
+{
+  if (e) e->setNone();
+  return ENG_None;
+}
+
+expr* cvgfunc::SplitEngines(List <measure> *mlist)
+{
+  return Copy(this);
 }
 
 void cvgfunc::UpdateAndCheck() 

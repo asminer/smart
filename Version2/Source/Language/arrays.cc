@@ -272,6 +272,7 @@ public:
   acall(const char *fn, int line, array *f, expr **p, int np);
   virtual ~acall();
   virtual type Type(int i) const;
+  virtual void ClearCache();
   virtual void Compute(int i, result &x);
   virtual void Sample(Rng &, int i, result &x);
   virtual expr* Substitute(int i);
@@ -304,6 +305,12 @@ type acall::Type(int i) const
 {
   DCASSERT(0==i);
   return func->Type(0);
+}
+
+void acall::ClearCache()
+{
+  int i;
+  for (i=0; i<numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
 void acall::Compute(int i, result &x)

@@ -51,6 +51,7 @@ public:
   array_index(const char *fn, int line, type t, char *n, expr *v);
   virtual ~array_index(); 
 
+  virtual void ClearCache() { } // No cache
   virtual void Compute(int i, result &x);
   void showfancy(OutputStream &s) const;
 
@@ -214,6 +215,8 @@ public:
       will be written to the specified stream.
    */
   void GetName(OutputStream &s) const;
+
+  virtual void ClearCache() { } // No cache
 
   /** For the given indices (as expressions),
       find the array "value".

@@ -194,6 +194,11 @@ unary::~unary()
   Delete(opnd);
 }
 
+void unary::ClearCache()
+{
+  if (opnd) opnd->ClearCache();
+}
+
 int unary::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(i==0);
@@ -263,6 +268,12 @@ binary::~binary()
 {
   Delete(left);
   Delete(right);
+}
+
+void binary::ClearCache()
+{
+  if (left) left->ClearCache();
+  if (right) right->ClearCache();
 }
 
 int binary::GetSymbols(int i, List <symbol> *syms)
@@ -408,6 +419,15 @@ assoc::~assoc()
   int i;
   for (i=0; i<opnd_count; i++) Delete(operands[i]);
   delete[] operands;
+}
+
+void assoc::ClearCache()
+{
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->ClearCache();
+  } 
 }
 
 int assoc::GetSymbols(int a, List <symbol> *syms)

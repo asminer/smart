@@ -55,12 +55,17 @@ public:
 protected:
   /// The return expression for the function.
   expr* return_expr;
+  /// Do we have a cached value?
+  bool have_cached;
+  /// The cached value
+  result cache; 
 public:
   constfunc(const char *fn, int line, type t, char *n);
   virtual ~constfunc();
   virtual void show(OutputStream &s) const;
   virtual void ShowHeader(OutputStream &s) const;
 
+  virtual void ClearCache();
   virtual void Compute(int i, result &x);
   virtual void Sample(Rng &, int i, result &x);
 

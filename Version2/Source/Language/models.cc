@@ -294,6 +294,7 @@ public:
   mcall(const char *fn, int line, model *m, expr **p, int np, measure *s);
   virtual ~mcall();
   virtual type Type(int i) const;
+  virtual void ClearCache();
   virtual void Compute(int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
@@ -328,6 +329,12 @@ type mcall::Type(int i) const
 {
   DCASSERT(0==i);
   return msr->Type(i);
+}
+
+void mcall::ClearCache()
+{
+  int i;
+  for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
 void mcall::Compute(int i, result &x)
@@ -438,6 +445,8 @@ public:
     DCASSERT(i==0);
     return mytype;
   }
+
+  virtual void ClearCache() { } // No cache
 
   virtual expr* Substitute(int i) {
     DCASSERT(i==0);

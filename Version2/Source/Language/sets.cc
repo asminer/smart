@@ -457,6 +457,7 @@ protected:
 public:
   setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual ~setexpr_interval();
+  virtual void ClearCache();
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -507,6 +508,17 @@ setexpr_interval::~setexpr_interval()
   Delete(start);
   Delete(stop);
   Delete(inc);
+}
+
+void setexpr_interval::ClearCache()
+{
+  // not sure if this is necessary, but it is correct ;^)
+  DCASSERT(start);
+  DCASSERT(stop);
+  DCASSERT(inc);
+  start->ClearCache();
+  stop->ClearCache();
+  inc->ClearCache();
 }
 
 expr* setexpr_interval::Substitute(int i)

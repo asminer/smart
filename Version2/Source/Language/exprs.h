@@ -140,6 +140,13 @@ public:
   /// The type of component i.
   virtual type Type(int i) const = 0;
 
+  /** Clear the compute cache.
+      We use a compute cache for each function with no parameters.
+      This is required to handle dependent random variables correctly!
+      So, we need a meachanism to clear the caches.
+  */
+  virtual void ClearCache() = 0;
+
   /// Compute the value of component i.
   virtual void Compute(int i, result &x);
 
@@ -282,6 +289,7 @@ protected:
 public:
   constant(const char* fn, int line, type mt);
   virtual type Type(int i) const;
+  virtual void ClearCache() { } // No cache for constants!
   virtual expr* Substitute(int i);
   virtual Engine_type GetEngine(engineinfo *e);
   virtual expr* SplitEngines(List <measure> *);
@@ -304,6 +312,7 @@ protected:
 public:
   unary(const char* fn, int line, expr* x);
   virtual ~unary();
+  virtual void ClearCache();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
   virtual Engine_type GetEngine(engineinfo *e);
@@ -335,6 +344,7 @@ protected:
 public:
   binary(const char* fn, int line, expr* l, expr* r);
   virtual ~binary();
+  virtual void ClearCache();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
   virtual Engine_type GetEngine(engineinfo *e);
@@ -369,6 +379,7 @@ public:
   assoc(const char* fn, int line, expr **x, int n);
   assoc(const char* fn, int line, expr *l, expr *r);
   virtual ~assoc();
+  virtual void ClearCache();
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual expr* Substitute(int i);
   virtual Engine_type GetEngine(engineinfo *e);

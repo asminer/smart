@@ -29,8 +29,11 @@ public:
   bool hasconverged;
 public:
   cvgfunc(const char *fn, int line, type t, char *n);
+  virtual void ClearCache() { } // no cache
   virtual void Compute(int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
+  virtual Engine_type GetEngine(engineinfo *e);
+  virtual expr* SplitEngines(List <measure> *mlist);
   void UpdateAndCheck();
 };
 

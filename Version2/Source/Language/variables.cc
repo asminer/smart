@@ -27,10 +27,13 @@ constfunc::constfunc(const char *fn, int line, type t, char* n)
   state = CS_Undefined;
   return_expr = NULL;
   SetSubstitution(false);  
+  have_cached = false;
+  cache.setNull();
 }
 
 constfunc::~constfunc()
 {
+  DeleteResult(mytype, cache);
   Delete(return_expr);
 }
 
@@ -45,14 +48,37 @@ void constfunc::ShowHeader(OutputStream &s) const
   s << GetType(Type(0)) << " " << Name() << " := " << return_expr;
 }
 
+void constfunc::ClearCache()
+{
+  have_cached = false;
+}
+
 void constfunc::Compute(int i, result &x)
 {
-  SafeCompute(return_expr, i, x);
+  DCASSERT(i==0);
+  if (have_cached) {
+    x = cache;
+    x.notFreeable();
+  } else { 
+    SafeCompute(return_expr, i, x);
+    cache = x;
+    x.notFreeable();
+    have_cached = true;
+  }
 }
 
 void constfunc::Sample(Rng &seed, int i, result &x)
 {
-  SafeSample(return_expr, seed, i, x);
+  DCASSERT(i==0);
+  if (have_cached) {
+    x = cache;
+    x.notFreeable();
+  } else {
+    SafeSample(return_expr, seed, i, x);
+    cache = x;
+    x.notFreeable();
+    have_cached = true;
+  }
 }
 
 Engine_type constfunc::GetEngine(engineinfo *e)
@@ -74,14 +100,14 @@ expr* constfunc::SplitEngines(List <measure> *mlist)
 
 
 /** Constant functions that are true constants.
-    Thus, eventually, the value will be computed,
-    and once it has, we can trash the return expression.
+    Once the value has been computed and is cached,
+    we trash the return expression (and we never clear the cache).
+   
  */
 class determfunc : public constfunc {
-  bool computed_already;
-  result value;
 public:
   determfunc(const char *fn, int line, type t, char *n);
+  virtual void ClearCache() { }  // DO NOT TRASH cache
   virtual void Compute(int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
 };
@@ -95,32 +121,32 @@ public:
 determfunc::determfunc(const char *fn, int line, type t, char *n)
   : constfunc(fn, line, t, n)
 {
-  computed_already = false;
+  // nothing!
 }
 
 void determfunc::Compute(int i, result &x)
 {
   DCASSERT(i==0);
-  if (state != CS_Computed) {
-    if (return_expr) {
-      return_expr->Compute(0, value);
-      // check for errors here
-      Delete(return_expr);
-      return_expr = NULL;
-    } else {
-      value.setNull();
-    }
+  if (have_cached) {
+    x = cache;
+    x.notFreeable();
+  } else { 
+    SafeCompute(return_expr, i, x);
+    cache = x;
+    x.notFreeable();
+    have_cached = true;
+    Delete(return_expr);
+    return_expr = NULL;
     state = CS_Computed;
   }
-  x = value;
 }
 
 void determfunc::ShowHeader(OutputStream &s) const
 {
   if (NULL==Name()) return; // hidden?
   s << GetType(Type(0)) << " " << Name() << " := ";
-  if (!computed_already) s << return_expr;
-  else PrintResult(s, Type(0), value);
+  if (!have_cached) s << return_expr;
+  else PrintResult(s, Type(0), cache);
 }
 
 // ******************************************************************
