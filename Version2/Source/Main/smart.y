@@ -47,9 +47,9 @@ EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
 %type <Type_ID> type model
-%type <Expr> topexpr seqexpr expr term const_expr function_call
+%type <Expr> topexpr expr term const_expr function_call
 model_function_call set_expr set_elems set_elem pos_param index
-%type <list> aggexpr statements model_stmts model_var_list
+%type <list> aggexpr seqexpr statements model_stmts model_var_list
 formal_params formal_indexes pos_params named_params indexes
 %type <index> iterator
 %type <fparam> formal_param
@@ -614,6 +614,7 @@ topexpr
   Output << "Reducing topexpr : seqexpr\n";
   Output.flush();
 #endif
+  $$ = BuildSequence($1);
 }
 	;
 
@@ -809,6 +810,7 @@ seqexpr
   Output << "Reducing seqexpr : seqexpr SEMI expr\n";
   Output.flush();
 #endif
+  $$ = AddToSequence($1, $3);
 }
         |       expr SEMI expr
 {
@@ -816,6 +818,7 @@ seqexpr
   Output << "Reducing seqexpr : expr SEMI expr\n";
   Output.flush();
 #endif
+  $$ = StartSequence($1, $3);
 }
         ;
 

@@ -141,6 +141,39 @@ void* AddAggregate(void *x, expr *b);
 */
 expr* BuildAggregate(void* x);
 
+/**
+	Start a sequence list.
+	@param	a	First expression, must have type VOID
+	@param	b	Second expression, must have type VOID
+
+	@return	If a or b is NULL, then return NULL;
+		If a or b is ERROR, return ERROR;
+		else return a pointer to a new list, containing a and b.
+*/
+void* StartSequence(expr *a, expr *b);
+
+/**
+	Add to a sequence list.
+	@param x	A pointer to a list of expressions
+	@param b	Expression to add, must have type VOID
+
+	@return	If b is NULL, return NULL and trash x;
+		If b is ERROR or x is ERROR, returns ERROR;
+		otherwise, adds b to x and returns x.
+*/
+void* AddToSequence(void *x, expr *b);
+
+/**
+	Make a sequence expression.
+	@param	x	A pointer to a List of expressions (of type VOID)
+
+	@return	If x is NULL, then return NULL;
+		if x is ERROR, then return ERROR;
+		else return a sequence expression.
+*/
+expr* BuildSequence(void* x);
+
+
 // ==================================================================
 // |                                                                |
 // |                                                                |

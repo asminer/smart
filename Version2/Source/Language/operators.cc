@@ -65,6 +65,16 @@ const char* GetOp(int op)
 // ******************************************************************
 // ******************************************************************
 
+expr* IllegalUnaryError(int op, type t, const char *fn, int ln)
+{
+  // error should have been caught already
+  Internal.Start(__FILE__, __LINE__, fn, ln);
+  Internal << "Illegal unary operator: ";
+  Internal << GetOp(op) << " " << GetType(t);
+  Internal.Stop();
+  return ERROR;
+}
+
 
 expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
 {
@@ -76,45 +86,54 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
   switch (optype) {
     case BOOL:
       if (op==NOT) return new bool_not(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case INT:
       if (op==MINUS) return new int_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case REAL:
       if (op==MINUS) return new real_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case RAND_BOOL:
       if (op==NOT) return new rand_bool_not(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case RAND_INT:
       if (op==MINUS) return new rand_int_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case RAND_REAL:
       if (op==MINUS) return new rand_real_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case PROC_BOOL:
       if (op==NOT) return new proc_bool_not(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case PROC_INT:
       if (op==MINUS) return new proc_int_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
     case PROC_REAL:
       if (op==MINUS) return new proc_real_neg(file, line, opnd);
-      return NULL;
+      return IllegalUnaryError(op, optype, file, line);
 
   }
-  return NULL;
+  return IllegalUnaryError(op, optype, file, line);
 }
 
 
+expr* IllegalBinaryError(type t1, int op, type t2, const char *fn, int ln)
+{
+  // error should have been caught already
+  Internal.Start(__FILE__, __LINE__, fn, ln);
+  Internal << "Illegal binary operator: ";
+  Internal << GetType(t1) << " " << GetOp(op) << " " << GetType(t2);
+  Internal.Stop();
+  return ERROR;
+}
 
 // Note: the types left and right must match properly already
 expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
@@ -152,7 +171,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case EQUALS:	return new bool_equal(file, line, left, right);
 	  case NEQUAL:	return new bool_neq(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
 
       
     //===============================================================
@@ -178,7 +197,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new int_lt(file, line, left, right);
 	  case LE:	return new int_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -204,7 +223,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new real_lt(file, line, left, right);
 	  case LE:	return new real_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -222,7 +241,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case EQUALS:	return new rand_bool_equal(file, line, left, right);
 	  case NEQUAL:	return new rand_bool_neq(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
 
       
     //===============================================================
@@ -242,7 +261,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new rand_int_lt(file, line, left, right);
 	  case LE:	return new rand_int_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -262,7 +281,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new rand_real_lt(file, line, left, right);
 	  case LE:	return new rand_real_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -280,7 +299,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case EQUALS:	return new proc_bool_equal(file, line, left, right);
 	  case NEQUAL:	return new proc_bool_neq(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
 
       
     //===============================================================
@@ -300,7 +319,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new proc_int_lt(file, line, left, right);
 	  case LE:	return new proc_int_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -320,7 +339,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case LT:	return new proc_real_lt(file, line, left, right);
 	  case LE:	return new proc_real_le(file, line, left, right);
       }
-      return NULL;
+      return IllegalBinaryError(ltype, op, rtype, file, line);
       
 
     //===============================================================
@@ -332,7 +351,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
     
   }
 
-  return NULL;
+  return IllegalBinaryError(ltype, op, rtype, file, line);
 }
 
 expr* IllegalAssocError(int op, type alltype, const char *fn, int ln)
@@ -341,7 +360,7 @@ expr* IllegalAssocError(int op, type alltype, const char *fn, int ln)
   Internal << "Illegal associative operator " << GetOp(op);
   Internal << " for type " << GetType(alltype);
   Internal.Stop();
-  return NULL;
+  return ERROR;
 }
 
 
@@ -370,6 +389,15 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
   }
 #endif
   switch (alltypes) {
+    //===============================================================
+    case VOID:
+
+      switch (op) {
+	case SEMI:	return new void_seq(file, line, opnds, n);
+
+ 	default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
 
     //===============================================================
     case BOOL:
@@ -501,7 +529,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       
   }
 
-  return NULL;
+  return IllegalAssocError(op, alltypes, file, line);
 }
 
 // ******************************************************************

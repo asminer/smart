@@ -52,7 +52,7 @@ const char* GetOp(int op);
      @param	line	Line number where this is defined
 
      @return	The appropriate new expression, error if the opnd is error,
-                or NULL if we could not build the expression.
+                or internal error if we could not build the expression.
 
      Note: the only unary operators currently are NOT and unary minus.
 */
@@ -71,7 +71,7 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line);
 
      @return	The appropriate new expression, 
      		error if left or right is error,
-		or NULL if we could not build the expression.
+		or internal error if we could not build the expression.
 
 */
 expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line);
@@ -90,7 +90,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line);
 
      @return	The appropriate new expression, 
      		error if any operand is error, 
-		or NULL if we could not build the expression.
+		or internal error if we could not build the expression.
 
 */
 expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line);

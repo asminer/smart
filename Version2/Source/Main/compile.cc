@@ -826,6 +826,76 @@ expr* BuildAggregate(void* x)
   return answer;
 }
 
+void* StartSequence(expr* a, expr* b)
+{
+  if (NULL==a || NULL==b) {
+    Delete(a);
+    Delete(b);
+    return NULL;
+  }
+  if (ERROR==a || ERROR==b) {
+    Delete(a);
+    Delete(b);
+    return ERROR;
+  }
+  if (a->Type(0)!=VOID || b->Type(0)!=VOID) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal binary operation: ";
+    PrintExprType(a, Error);
+    Error << " ; ";
+    PrintExprType(b, Error);
+    Error.Stop();
+    Delete(a);
+    Delete(b);
+    return ERROR;
+  } 
+  List <expr> *foo = new List <expr> (256);
+  foo->Append(a);
+  foo->Append(b);
+  return foo;
+}
+
+void* AddToSequence(void* x, expr* b)
+{
+  if (NULL==x || ERROR==x) {
+    Delete(b);
+    return x;
+  }
+  List <expr> *foo = (List <expr> *)x;
+  if (NULL==b || ERROR==b) {
+    delete foo;
+    return b;
+  }
+  if (b->Type(0)!=VOID) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal binary operation: VOID ; ";
+    PrintExprType(b, Error);
+    Error.Stop();
+    Delete(b);
+    delete foo;
+    return ERROR;
+  }
+  foo->Append(b);
+  return foo;
+}
+
+expr* BuildSequence(void* x)
+{
+  if (NULL==x) return NULL;
+  if (ERROR==x) return ERROR;
+  List <expr> *foo = (List <expr> *)x;
+  int size = foo->Length();
+  expr** parts = foo->MakeArray();
+  delete foo;
+  expr* answer = MakeAssocOp(SEMI, parts, size, filename, lexer.lineno());
+#ifdef COMPILE_DEBUG
+  Output << "Built sequence expression: " << answer << "\n";
+  Output.flush();
+#endif
+  return answer;
+}
+
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
