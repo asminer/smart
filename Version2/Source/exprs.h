@@ -27,6 +27,8 @@ enum compute_error {
       "if (error) ..."
    */
   CE_Ok = 0,
+  /// We haven't been computed yet
+  CE_Uncomputed,
   /// We encountered a "don't know" state
   CE_Dont_Know,
   /// We encountered a "don't care" state
@@ -38,7 +40,9 @@ enum compute_error {
   /// Undefined quantity such as infinity-infinity
   CE_Undefined,
   /// Tried to compute a rand
-  CE_ComputeRand
+  CE_ComputeRand,
+  /// There was a stack overflow
+  CE_StackOverflow
 };
 
 
@@ -260,10 +264,10 @@ public:
   virtual type Type(int i) const = 0;
 
   /// Compute the value of component i.
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 
   /// Sample a value of component i (with given rng seed).
-  virtual void Sample(long &, int i, result &x) const;
+  virtual void Sample(long &, int i, result &x);
 
   /** Create a copy of this expression with values substituted
       for certain symbols. 

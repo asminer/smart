@@ -33,13 +33,13 @@ expr* expr::GetComponent(int i)
   return this;
 }
 
-void expr::Compute(int i, result &x) const 
+void expr::Compute(int i, result &x) 
 {
   cerr << "Internal error: Illegal expression compuation!\n";
   DCASSERT(0);
 }
 
-void expr::Sample(long &, int i, result &x) const 
+void expr::Sample(long &, int i, result &x) 
 {
   cerr << "Internal error: Illegal expression sample!\n";
   DCASSERT(0);

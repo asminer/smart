@@ -37,8 +37,10 @@
 */  
 
 class formal_param : public symbol {
-  /// For passed parameters.
-  expr* pass;  
+  /** For passed parameters.
+      This is a pointer to the proper position in the run-time stack.
+   */
+  result* pass;  
   /** Do we have a default?  
       This is necessary because the default might be NULL!
    */
@@ -49,14 +51,15 @@ public:
   formal_param(const char* fn, int line, type t, char* n);
   virtual ~formal_param();
 
-  inline void SetPass(expr *p) { pass = p; }
+  virtual void Compute(int i, result &x);
+  virtual void Sample(long &, int i, result &x);
+  virtual void show(ostream &s) const;
+
+  inline void SetPass(result *p) { pass = p; }
   inline void SetDefault(expr *d) { deflt = d; hasdefault = true; }
-  inline expr* Pass() const { return pass; }
   inline bool HasDefault() const { return hasdefault; }
   inline expr* Default() const { return deflt; }
 
-  // Required for symbol
-  virtual void show(ostream &s) const;
 };
 
 // ******************************************************************
@@ -122,6 +125,7 @@ struct named_param {
 */  
 
 class function : public symbol {
+protected:
   /// Formal parameters (ordered, typed, and named).
   formal_param **parameters;
   /// The number of parameters.
@@ -131,7 +135,8 @@ class function : public symbol {
    */
   int repeat_point;
 public:
-  function(const char* fn, int line, type t, char* n, formal_param *pl, int np);
+  function(const char* fn, int line, type t, char* n, 
+           formal_param *pl, int np, int rp);
   virtual ~function();
 
   /** So that the compiler can do typechecking.
@@ -190,8 +195,38 @@ public:
 
       \end{tabular}
    */
-  virtual bool LinkParams(const pos_param **pp, int np, ostream &error) const{}
+  virtual bool LinkParams(pos_param **pp, int np, ostream &error) const{}
 
+  virtual void Compute(const pos_param **, int np, result &x) = 0;
+  virtual void Sample(long &, const pos_param **, int np, result &x) = 0;
+};
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                        user_func  class                        *
+// *                                                                *
+// ******************************************************************
+
+/**   Class for user-defined functions.
+
+*/  
+
+class user_func : public function {
+private:
+  int prev_stack_ptr;
+protected:
+  expr* return_expr;
+public:
+  user_func(const char* fn, int line, type t, char* n, 
+           formal_param *pl, int np);
+  virtual ~user_func();
+
+  virtual void Compute(const pos_param **, int np, result &x);
+  virtual void Sample(long &, const pos_param **, int np, result &x);
+
+  inline void SetReturn(expr *e) { return_expr = e; }
 };
 
 
@@ -209,6 +244,12 @@ void DestroyRuntimeStack();
 
 void DumpRuntimeStack(ostream &s);  // Handy for run-time errors
 
+/** Called if there is a run-time stack overflow.
+    Usually this is caused by too much recursion.
+    It can also be caused by extremely large input files
+    with a very large number of parameters passed to user-defined functions.
+ */
+void StackOverflowPanic();
 
 //@}
 
