@@ -22,9 +22,9 @@ makefile: $(SOURCEDIR)/make.mod $(SOURCEDIR)/../make.common
 	cd $(SOURCEDIR); ./BuildMake
 
 depend:
-	cd $(SOURCEDIR); $(CC) $(CPPFLAGS) -MM $(SOURCES) > $(OBJECTDIR)/make.depend
+	cd $(SOURCEDIR); touch smart.tab.h; $(CC) $(CPPFLAGS) -MM $(SOURCES) > $(OBJECTDIR)/make.depend
 
 clean :
-	rm -f *.o 
+	rm -f *.o smart.tab.h
 
 

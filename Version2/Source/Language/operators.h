@@ -23,20 +23,9 @@
 // *                                                                *
 // ******************************************************************
 
-// eventually these will be in smart.tab.h
+#include "smart.tab.h" 
+/* For token identifiers such as PLUS, MINUS, etc... */
 
-const int NOT = 1;
-const int NEG = 2;
-const int PLUS = 3;
-const int MINUS = 4;
-const int TIMES = 5;
-const int DIVIDE = 6;
-const int EQUALS = 7;
-const int NEQ = 8;
-const int GT = 9;
-const int GE = 10;
-const int LT = 11;
-const int LE = 12;
 
 /**
      Build a unary expression.

@@ -54,9 +54,34 @@ void ErrorStream::Stop()
   }
 }
 
+void InternalStream::Start(char *srcfile, int srcline, char* fn, int ln)
+{
+  if (active) {
+    out = new ostringstream;
+    ready = true;
+    *out << errortype;
+    *out << " in " << srcfile << " at " << srcline;
+    if (fn) {
+      *out << " caused by ";
+      if (fn[0]=='-' && fn[1]==0) {
+        // standard input
+        *out << "standard input";
+      } else if (fn[0]=='>' && fn[1]==0) {
+	// command line
+	*out << "command line";
+      } else {
+        *out << "file " << fn;
+      }
+      if (ln>=0)
+        *out << " near line " << ln;
+    }
+    *out << ":\n\t";
+  }
+}
+
 ErrorStream Error("ERROR");
 ErrorStream Warn("WARNING");
-ErrorStream Internal("INTERNAL");
+InternalStream Internal("INTERNAL");
 
 void InitStreams() 
 {

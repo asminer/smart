@@ -14,10 +14,11 @@
 
 %{
 
-#include "../Base/api.h"
-#include "../Language/api.h"
-#include "../stack.h"
-#include "smart.tab.h"
+#include "../../Source/Base/api.h"
+#include "../../Source/Language/api.h"
+#include "../../Source/stack.h"
+#include "../../Source/list.h"
+// #include "smart.tab.h"  // should be part of language api
 #include <string.h>
 #include <fstream>
 #include <FlexLexer.h>  // For the new & improved lexer class
@@ -102,7 +103,7 @@ char* IncludeFile(char *name, bool kill)
     fileinfo fi(name, kill);
     // First: check for circular dependency
     if (FileStack.Contains(fi)) {
-	Warn.Start(filename, lexer.lineno);
+	Warn.Start(filename, lexer.lineno());
 	Warn << "circular dependency caused by #include "; 
 	Warn << name << ", ignoring";
 	Warn.Stop();
@@ -112,7 +113,7 @@ char* IncludeFile(char *name, bool kill)
     ifstream *infile = new ifstream(name);
     if (!infile->good()) {
         delete infile;
-        Error.Start(filename, lexer.lineno);	
+        Error.Start(filename, lexer.lineno());	
 	Error << "couldn't open file " << name << ", ignoring";
 	Error.Stop();
         return filename;
@@ -156,7 +157,7 @@ void NextFile()
     istream *thing = &cin;
     YY_BUFFER_STATE b = lexer.yy_create_buffer(thing, YY_BUF_SIZE);
     lexer.yy_switch_to_buffer(b);
-    fileinfo *fi = new fileinfo("-", false);
+    fileinfo fi("-", false);
     fi.SetBuffer(b);
     FileStack.Push(fi);
     filename = "-";
@@ -189,7 +190,7 @@ int ProcessString(int type)
 
   yylval.name = strdup(lexer.YYText()+1);  /* skip open quote */
   if (yylval.name[lexer.YYLeng()-2] != '"') {
-    Error.Start(filename, lexer.lineno);
+    Error.Start(filename, lexer.lineno());
     Error << "Unclosed quote";
     Error.Stop();
   } else 
@@ -199,14 +200,14 @@ int ProcessString(int type)
 
 void UnclosedComment()
 {
-  Error.Start(filename, lexer.lineno);
+  Error.Start(filename, lexer.lineno());
   Error << "Unclosed comment";
   Error.Stop();
 }
 
 void IllegalToken()
 {
-  Error.Start(filename, lexer.lineno);
+  Error.Start(filename, lexer.lineno());
   Error << "Illegal syntactical element: '" << lexer.YYText() << "'";
   Error.Stop();
 }
@@ -221,8 +222,8 @@ void Include()
   for(start=0; start<tokenlen; start++) 
     if (token[start]=='"') break;
   if (start>=tokenlen) {
-    Internal.Start(filename, lexer.lineno);
-    Internal << "Include() error, line ~ 224";
+    Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+    Internal << "Include() error, missing quote?";
     Internal.Stop();
     return;
   }
@@ -230,21 +231,21 @@ void Include()
   for (stop=tokenlen-1; stop>start; stop--)
     if (token[stop]=='"') break;
   if (stop<=start) {
-    Internal.Start(filename, lexer.lineno);
-    Internal << "Include() error, line ~ 233";
+    Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+    Internal << "Include() error, missing final quote?";
     Internal.Stop();
     return;
   }
 
   // Bail out for empty strings
   if (stop-1==start) {
-    Warn.Start(filename, lexer.lineno);
+    Warn.Start(filename, lexer.lineno());
     Warn << "Empty filename for include, ignoring";
     Warn.Stop();
     return;
   }
 
-  char* fn = malloc(stop-start);
+  char* fn = (char*) malloc(stop-start);
   fn[stop-start-1] = 0;
   int p;
   for (p=start+1; p<stop; p++) fn[p-start-1] = token[p];
