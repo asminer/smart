@@ -177,6 +177,9 @@ public:
     DCASSERT(map);
     DCASSERT(numstates);
     lasthandle = map[--numstates];
+    int encoding = (mem[map[numstates]] & 0xC0) / 64;
+    CHECK_RANGE(0, encoding, 4);
+    encodecount[encoding]--;
   }
 
   bool GetState(int h, state &s);

@@ -41,6 +41,7 @@ public:
   ~Stack() { free(data); }
   inline bool Empty() const { return 0==top; }
   inline int NumEntries() const { return top; }
+  inline int AllocEntries() const { return size; }
   inline void Clear() { top = 0; }
   inline void Push(const DATA &x) {
     if (top>=size) Enlarge(MIN(2*size, maxsize));

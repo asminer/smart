@@ -593,10 +593,13 @@ bool state_array::GetState(int Handel, state &s)
   int lists, runs, listlength;
   lists = runs = listlength = 0;
 #endif
+
+  for (i=s.Size()-1; i>=0; i--) s[i].Clear();
+
   switch(encselect) {
     case 1: 
       // *****************	Sparse Encoding 
-      for (i=s.Size()-1; i>=0; i--) s[i].ivalue = 0;
+      for (i=s.Size()-1; i>=0; i--) s[i].ivalue = 0; 
       ReadInt(npbits, nnz);
       for (i=0; i<nnz; i++) {
         ReadInt(npbits, np);
@@ -801,7 +804,7 @@ int state_array::Compare(int h1, int h2) const
   const char* ptr1 = (char *) mem + map[h1];
   const char* ptr2 = (char *) mem + map[h2];
 #ifdef DEBUG_COMPACT
-  int compare = strncmp(ptr1, ptr2, length1);
+  int compare = memcmp(ptr1, ptr2, length1);
   Output << "Comparing handle " << h1 << " and " << h2 << "\n";
   Output << "Encoding of " << h1 << ": ";
   PrintBits(Output, map[h1], map[h1+1]);
@@ -811,7 +814,8 @@ int state_array::Compare(int h1, int h2) const
   Output.flush();
 #endif
   // doesn't get much faster than this:
-  return strncmp(ptr1, ptr2, length1); 
+  return memcmp(ptr1, ptr2, length1); 
+  // don't use strncmp, because if ptr1 and ptr2 contain '0', comparison stops!
 }
 
 int state_array::Compare(int hndl1, const state& s2)
@@ -928,15 +932,15 @@ int state_array::Compare(int hndl1, const state& s2)
 void state_array::Report(OutputStream &R)
 {
   R << "State array report\n";
-  R << "  " << numstates << " states inserted\n";
+  R << "\t  " << numstates << " states inserted\n";
   int i;
   for (i=0; i<4; i++) if (encodecount[i])
-    R <<"  "<< encodecount[i] <<" "<< EncodingMethod[i] << " encodings\n";
-  R << "State array allocated " << memsize << " bytes\n";
-  R << "State array using     " << lasthandle << " bytes\n";
+    R <<"\t  "<< encodecount[i] <<" "<< EncodingMethod[i] << " encodings\n";
+  R << "\tState array allocated " << memsize << " bytes\n";
+  R << "\tState array using     " << lasthandle << " bytes\n";
   if (map) {
-    R << "Index map allocated " << int(mapsize*sizeof(int)) << " bytes\n";
-    R << "Index map using     " << int(numstates*sizeof(int)) << " bytes\n";
+    R << "\tIndex map allocated " << int(mapsize*sizeof(int)) << " bytes\n";
+    R << "\tIndex map using     " << int(numstates*sizeof(int)) << " bytes\n";
   }
 }
 

@@ -2539,10 +2539,19 @@ void KillModelTables()
   if (model_under_construction) Output << model_under_construction; 
   Output << "\nInternal symbols:\n";
   if (ModelInternal) ModelInternal->Traverse(ShowSymbolNames);
+  if (FormalParams) {
+    Output << "\nFormal parameters:\n\t";
+    for (int i=0; i<FormalParams->Length(); i++)
+      Output << FormalParams->Item(i) << "  ";
+    Output << "\n";
+  }
 #endif
 
   delete ModelInternal;
   ModelInternal = NULL;
+
+  delete FormalParams;
+  FormalParams = NULL;
 }
 
 model* BuildModel(type t, char* n, void* list)

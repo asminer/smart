@@ -11,7 +11,16 @@
 
 #include "dsm.h"
 
-#define DEBUG_SPN
+//#define DEBUG_SPN
+
+// options!
+
+option* PN_Marking_Style;
+
+option_const ms_safe   ("SAFE", "Format is [p1, p3:2, p6]");
+option_const ms_sparse ("SPARSE", "Format is [p1:1, p3:2, p6:1]");
+option_const ms_indexed("INDEXED", "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]");
+option_const ms_vector ("VECTOR", "Format is [1, 0, 2, 0, 0, 1]");
 
 
 // ******************************************************************
@@ -177,7 +186,6 @@ spn_dsm::spn_dsm(const char* name,
   DCASSERT(arcs->IsStatic());
   // temp stuff
   exprlist = new List <expr> (16);
-  initial = NULL;
 }
 
 spn_dsm::~spn_dsm()
@@ -203,19 +211,65 @@ void spn_dsm::ShowState(OutputStream &s, const state &x) const
 		FULL_VECTOR	(marking is a vector of naturals)
 */
   DCASSERT(x.Size() >= num_places);
+  const option_const* ms_option = PN_Marking_Style->GetEnum();
   int i;
   bool printed = false;
+  bool handled = false;
   s << "[";
-  for (i=0; i<num_places; i++) {
-    if (x.Read(i).isNormal()) {
-      if (0==x.Read(i).ivalue) continue;
+  if (ms_option == &ms_sparse) {
+    // format is [p1:1, p3:2, p4:1]
+    for (i=0; i<num_places; i++) {
+      if (x.Read(i).isNormal()) {
+        if (0==x.Read(i).ivalue) continue;
+      }
+      if (printed) s << ", ";
+      else printed = true;
+      s << places[i] << ":";
+      PrintResult(s, INT, x.Read(i), -1, -1);
     }
-    if (printed) s << ", ";
-    else printed = true;
-    s << places[i] << ":";
-    PrintResult(s, INT, x.Read(i), -1, -1);
+    handled = true;
+  }
+  if (ms_option == &ms_safe) {
+    // format is [p1, p3:2, p4]
+    for (i=0; i<num_places; i++) {
+      if (x.Read(i).isNormal()) {
+        if (0==x.Read(i).ivalue) continue;
+      }
+      if (printed) s << ", ";
+      else printed = true;
+      s << places[i];
+      if (x.Read(i).isNormal() && x.Read(i).ivalue==1) continue;
+      s << ":";
+      PrintResult(s, INT, x.Read(i), -1, -1);
+    }
+    handled = true;
+  }
+  if (ms_option == &ms_indexed) {
+    // format is [p1:1, p2:0, p3:2, p4:1]
+    s << places[0] << ":";
+    PrintResult(s, INT, x.Read(0), -1, -1);
+    for (i=1; i<num_places; i++) {
+      s << ", " << places[i] << ":";
+      PrintResult(s, INT, x.Read(i), -1, -1);
+    }
+    handled = true;
+  }
+  if (ms_option == &ms_vector) {
+    // format is [p1:1, p2:0, p3:2, p4:1]
+    PrintResult(s, INT, x.Read(0), -1, -1);
+    for (i=1; i<num_places; i++) {
+      s << ", ";
+      PrintResult(s, INT, x.Read(i), -1, -1);
+    }
+    handled = true;
   }
   s << "]";
+  
+  if (!handled) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Marking style " << ms_option << " not handled\n";
+    Internal.Stop();
+  }
 }
 
 void spn_dsm::GetInitialState(int n, state &s) const
@@ -227,7 +281,7 @@ void spn_dsm::GetInitialState(int n, state &s) const
     AllocState(s, num_places);
   }
   int lasti = 0;
-  for (int z=0; z<initial->NumNonzeroes(); z++) {
+  if (initial) for (int z=0; z<initial->NumNonzeroes(); z++) {
     int thisi = initial->index[z];
     for (int i=lasti; i<thisi; i++) {
       s[i].Clear();
@@ -1161,6 +1215,17 @@ void InitPNModelFuncs(PtrTable *t)
 
   Add_spn_tk(t);
 
-  // Initialize PN-specific options here?
+  // Initialize PN-specific options
+
+  // PN_Marking_Style option
+  option_const **mslist = new option_const*[4];
+  // alphabetical...
+  mslist[0] = &ms_indexed;
+  mslist[1] = &ms_safe;
+  mslist[2] = &ms_sparse;
+  mslist[3] = &ms_vector;
+  // ...any others?
+  PN_Marking_Style = MakeEnumOption("PnMarkingStyle", "How to display a Petri net marking", mslist, 4, &ms_sparse);
+  AddOption(PN_Marking_Style);
 }
 

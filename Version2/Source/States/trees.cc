@@ -49,16 +49,16 @@ void binary_tree::FillOrderList(int tree, int &index, int* order)
 
 int binary_tree::FindPath(const state &s)
 {
-  int c = 0;
+  int c = 1;
   path->Clear();
   int h = states->AddState(s);
-  DCASSERT(nodes_used + 1 == h);
+  DCASSERT(nodes_used == h);
   int subtree = root;
   while (subtree >= 0) {
     path->Push(subtree);
-    c = states->Compare(h, subtree);
+    c = states->Compare(subtree, h);
     if (c==0) return 0;
-    if (c<0) subtree = left[subtree];
+    if (c>0) subtree = left[subtree];
     else subtree = right[subtree];
   } // while
   return c;
@@ -80,6 +80,14 @@ int splay_state_tree::AddState(const state &s)
   if (nodes_used >= nodes_alloc) {
     Resize( (nodes_alloc < 1024) ? (nodes_alloc*2) : (nodes_alloc+1024) );
   }
+  if (root<0) {
+    // empty tree
+    int h = states->AddState(s);
+    DCASSERT(0 == h);
+    left[0] = -1;
+    right[0] = -1;
+    return root = nodes_used++;
+  }
   int cmp = Splay(s);
   if (0==cmp) {
     // duplicate!
@@ -88,16 +96,30 @@ int splay_state_tree::AddState(const state &s)
   }
   if (cmp>0) {
     // root > s
-    left[nodes_used] = -1;
+    left[nodes_used] = left[root];
     right[nodes_used] = root;
+    left[root] = -1;
   } else {
     // root < s
     left[nodes_used] = root;
-    right[nodes_used] = -1;
+    right[nodes_used] = right[root];
+    right[root] = -1;
   }
   // root = nodes_used;
   // nodes_used++;
   return root = nodes_used++;
+}
+
+void splay_state_tree::Report(OutputStream &r)
+{
+  r << "Splay tree report:\n";
+  r << "\t" << nodes_alloc << " allocated nodes\n";
+  r << "\t" << nodes_used << " used nodes\n";
+  r << "\t" << (int)(nodes_alloc * 2 * sizeof(int)) << " bytes allocated\n";
+  r << "\t" << (int)(nodes_used * 2 * sizeof(int)) << " bytes used\n";
+  r << "Splay stack report:\n";
+  r << "\t" << path->AllocEntries() << " stack entries allocated\n";
+  r << "\t" << (int)(path->AllocEntries() * sizeof(int)) << " bytes allocated\n";
 }
 
 void splay_state_tree::Resize(int newsize)

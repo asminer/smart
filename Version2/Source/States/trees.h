@@ -85,6 +85,7 @@ public:
     if (0==cmp) return root;
     return -1;
   }
+  void Report(OutputStream &r);
 protected:
   void Resize(int newsize); 
   inline int Pop() { return (path->Empty()) ? -1 : path->Pop(); }
