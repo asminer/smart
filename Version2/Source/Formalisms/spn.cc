@@ -60,12 +60,16 @@ public:
   // For construction
   void AddInput(int place, int trans, expr* card, const char *fn, int ln);
   void AddOutput(int trans, int place, expr* card, const char *fn, int ln);
+  void AddInhibitor(int place, int trans, expr* card, const char *fn, int ln);
 
   // Required for models:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
   virtual void InitModel();
   virtual void FinalizeModel(result &);
   virtual state_model* BuildStateModel();
+protected:
+  // true if unique arc
+  bool ListAdd(int list,  arcinfo &x, expr* card);
 };
 
 OutputStream& operator<< (OutputStream& s, const spn_model::arcinfo &a)
@@ -97,17 +101,8 @@ spn_model::~spn_model()
   delete arcs;
 }
 
-void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int ln)
+bool spn_model::ListAdd(int list,  arcinfo &data, expr* card)
 {
-  CHECK_RANGE(0, place, placelist->Length());
-  CHECK_RANGE(0, trans, translist->Length());
-
-  if (transinfo->data[trans].inputs<0)
-	transinfo->data[trans].inputs = arcs->NewList();
-
-  int list = transinfo->data[trans].inputs;
-  arcinfo data;
-  data.place = place;
   if (NULL==card) {
     data.const_card = 1;
     data.proc_card = NULL;
@@ -130,7 +125,22 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   }
 
   DCASSERT(arcs);
-  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
+  return (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1);
+}
+
+void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int ln)
+{
+  CHECK_RANGE(0, place, placelist->Length());
+  CHECK_RANGE(0, trans, translist->Length());
+
+  if (transinfo->data[trans].inputs<0)
+	transinfo->data[trans].inputs = arcs->NewList();
+
+  int list = transinfo->data[trans].inputs;
+  arcinfo data;
+  data.place = place;
+
+  if (ListAdd(list, data, card)) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -152,29 +162,8 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   int list = transinfo->data[trans].outputs;
   arcinfo data;
   data.place = place;
-  if (NULL==card) {
-    data.const_card = 1;
-    data.proc_card = NULL;
-  } else if (card->Type(0) == INT) {
-    // constant cardinality, compute it
-    result x;
-    SafeCompute(card, 0, x);
-    if (x.isNormal()) {
-      data.const_card = x.ivalue;
-      data.proc_card = NULL;
-    } else {
-      // error?
-      data.const_card = 0;
-      data.proc_card = Copy(card);
-    }
-  } else {
-    // proc int
-    data.const_card = 0;
-    data.proc_card = Copy(card);
-  }
 
-  DCASSERT(arcs);
-  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
+  if (ListAdd(list, data, card)) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -184,6 +173,30 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   Warning << "in SPN " << Name();
   Warning.Stop();
 }
+
+void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, int ln)
+{
+  CHECK_RANGE(0, place, placelist->Length());
+  CHECK_RANGE(0, trans, translist->Length());
+
+  if (transinfo->data[trans].inhibitors<0)
+	transinfo->data[trans].inhibitors = arcs->NewList();
+
+  int list = transinfo->data[trans].inhibitors;
+  arcinfo data;
+  data.place = place;
+
+  if (ListAdd(list, data, card)) return;
+
+  // Duplicate entry, give warning
+  Warning.Start(fn, ln);
+  Warning << "Summing cardinalities on duplicate inhibitor arc\n";
+  Warning << "\tfrom " << placelist->Item(place);
+  Warning << " to " << translist->Item(trans);
+  Warning << "in SPN " << Name();
+  Warning.Stop();
+}
+
 
 model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
@@ -242,6 +255,10 @@ void spn_model::FinalizeModel(result &x)
     if (transinfo->data[i].outputs>=0) {
       Output << "\toutputs: ";
       arcs->ShowNodeList(Output, transinfo->data[i].outputs);
+    }
+    if (transinfo->data[i].inhibitors>=0) {
+      Output << "\tinhibitors: ";
+      arcs->ShowNodeList(Output, transinfo->data[i].inhibitors);
     }
   }
   // success:
@@ -365,6 +382,98 @@ void Add_spn_arcs(PtrTable *fns)
 
 
 // ********************************************************
+// *                        inhibit                       *
+// ********************************************************
+
+void compute_spn_inhibit(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+
+#ifdef DEBUG_SPN
+  Output << "Inside inhibit for spn " << spn << "\n";
+  Output.flush();
+#endif
+
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+    DCASSERT(pp[i]);
+    DCASSERT(pp[i]!=ERROR);
+#ifdef DEBUG_SPN
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+#endif
+    result first;
+    result second;
+    SafeCompute(pp[i], 0, first);
+    SafeCompute(pp[i], 1, second); 
+ 
+    // error checking of first and second here   
+ 
+    expr* card = NULL;
+    if (pp[i]->NumComponents()==3) card = pp[i]->GetComponent(2);
+
+    spn->AddInhibitor(first.ivalue, second.ivalue, card, pp[i]->Filename(), pp[i]->Linenumber());
+    
+  }
+
+#ifdef DEBUG_MC
+  Output << "Exiting inhibit for spn " << spn << "\n";
+  Output.flush();
+#endif
+
+  x.setNull();
+}
+
+
+int typecheck_inhibit(List <expr> *params)
+{
+  // Note: hidden parameter SPN has NOT been added yet...
+  int np = params->Length();
+  int i;
+  for (i=0; i<np; i++) {
+    expr* p = params->Item(i);
+    if (NULL==p) return -1;
+    if (ERROR==p) return -1;
+    if (p->NumComponents()<2) return -1;
+    if (p->NumComponents()>3) return -1;
+
+    if (p->Type(0)!=PLACE) return -1;
+    if (p->Type(1)!=TRANS) return -1;
+   
+    // check cardinality, if it is there
+    if (p->NumComponents()==2) continue;
+    if (p->Type(2) == INT) continue;
+    if (p->Type(2) == PROC_INT) continue;
+    return -1;
+  } // for i
+  return 0;
+}
+
+bool linkparams_inhibit(expr **p, int np)
+{
+  // anything?
+  return true;
+}
+
+void Add_spn_inhibit(PtrTable *fns)
+{
+  const char* helpdoc = "\b(describe arguments)\nAdds inhibitor arcs to a Petri net";
+
+  internal_func *p = new internal_func(VOID, "inhibit", 
+	compute_spn_inhibit, NULL, NULL, 0, helpdoc);
+  p->setWithinModel();
+  p->SetSpecialTypechecking(typecheck_inhibit);
+  p->SetSpecialParamLinking(linkparams_inhibit);
+  InsertFunction(fns, p);
+}
+
+
+
+
+// ********************************************************
 // *                          tk                          *
 // ********************************************************
 
@@ -423,6 +532,7 @@ model* MakePetriNet(type t, char* id, formal_param **pl, int np,
 void InitPNModelFuncs(PtrTable *t)
 {
   Add_spn_arcs(t);
+  Add_spn_inhibit(t);
 
   Add_spn_tk(t);
 }
