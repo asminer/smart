@@ -160,11 +160,11 @@ protected:
     }
     // ok, so we should have 2 reals, check their difference
 
-    double delta = ABS(var->current.rvalue - update.rvalue);
+    double delta = var->current.rvalue - update.rvalue;
     if (converge_precision_test->GetEnum() == relative) {
       if (var->current.rvalue) delta /= var->current.rvalue;
     }
-    hasconverged = (delta < converge_precision->GetReal());
+    hasconverged = (ABS(delta) < converge_precision->GetReal());
   }
   inline void Update() {
     CheckConvergence();
