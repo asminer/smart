@@ -32,6 +32,8 @@
 const char* GetOp(int op)
 {
   switch (op) {
+    case AND:		return "&";
+    case OR:		return "|";
     case NOT: 		return "!";
     case PLUS: 		return "+";
     case MINUS:		return "-";
@@ -43,7 +45,14 @@ const char* GetOp(int op)
     case GE:		return ">=";
     case LT:		return "<";
     case LE:		return "<=";
+    case COMMA:		return ",";
     case SEMI:		return ";";
+    case COLON:		return ":";
+    case DOT:		return ".";
+    case DOTDOT:	return "..";
+    case GETS:		return ":=";
+    case ARROW:		return "->";
+    
     default:
 			return "unknown_op";
   }
