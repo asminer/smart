@@ -34,6 +34,19 @@ enum compute_special {
   CS_Unknown
 };
 
+/** Strings.
+    The only reason we use this is so we can "share" strings
+    without copying them.
+*/
+class shared_string : public shared_object {
+public:
+  char* string;
+  shared_string() { string = NULL; }
+  shared_string(char* s) { string = s; }
+  virtual~ shared_string() { delete[] string; }
+  inline void show(OutputStream &s) { s.Put(string); }
+};
+
 // ******************************************************************
 // *                                                                *
 // *                          result class                          *
@@ -80,6 +93,8 @@ struct result {
     // Should we add bigint here?
     /// Used by real and expo type
     double rvalue;
+    /// Used by strings
+    shared_string* svalue;
     /// Everything else
     shared_object* other; 
   };
@@ -142,7 +157,7 @@ inline void CopyResult(type t, result &dest, const result &src)
   dest = src;
   switch (t) {
     case STRING:
-	dest.other = Share(src.other);
+	Share(dest.svalue);
   }
 }
 

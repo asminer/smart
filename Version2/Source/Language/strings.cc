@@ -9,10 +9,9 @@
 
 void PrintString(const result& x, OutputStream &out, int width)
 {
-  shared_string* ssx = dynamic_cast<shared_string*>(x.other);
-  DCASSERT(ssx);
-  if (ssx->isDeleted()) { out << "(deleted result)"; return; }
-  char* s = ssx->string;
+  DCASSERT(x.svalue);
+  if (x.svalue->isDeleted()) { out << "(deleted result)"; return; }
+  char* s = x.svalue->string;
   int stlen = strlen(s);
   int i;
   if (width>=0) {
@@ -117,10 +116,8 @@ void string_add::Compute(int a, result &x)
       x = xop[i];
       break;
     }
-    if (xop[i].other) {
-      shared_string *ss = dynamic_cast<shared_string*>(xop[i].other);
-      DCASSERT(ss);
-      total_length += ss->length();
+    if (xop[i].svalue) {
+      total_length += strlen(xop[i].svalue->string);
     }
   }
 
@@ -140,14 +137,13 @@ void string_add::Compute(int a, result &x)
   char* answer = new char[total_length+1]; // save room for terminating 0
   answer[0] = 0;
   for (i=0; i<opnd_count; i++) {
-    if (xop[i].other) {
-      shared_string *ss = dynamic_cast<shared_string*>(xop[i].other);
-      strcat(answer, ss->string);
+    if (xop[i].svalue) {
+      strcat(answer, xop[i].svalue->string);
     }
     DeleteResult(STRING, xop[i]);
   }
 
-  x.other = new shared_string(answer);
+  x.svalue = new shared_string(answer);
 
 #ifdef DEBUG_STRINGS
   Output << "And got answer: " << answer << "\n";
@@ -199,9 +195,9 @@ void string_equal::Compute(int i, result &x)
     return;
   }
   if (x.isNormal()) {
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (0==compare(sl, sr));
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)==0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -249,9 +245,9 @@ void string_neq::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (0!=compare(sl, sr));
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)!=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -300,9 +296,9 @@ void string_gt::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (compare(sl, sr) > 0);
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string) > 0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -350,9 +346,9 @@ void string_ge::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (compare(sl, sr) >= 0);
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)>=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -400,9 +396,9 @@ void string_lt::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) {
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (compare(sl, sr) < 0);
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string) < 0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -450,9 +446,9 @@ void string_le::Compute(int i, result &x)
     x.setError();
   }
   if (x.isNormal()) { 
-    shared_string* sl = dynamic_cast<shared_string*>(l.other);
-    shared_string* sr = dynamic_cast<shared_string*>(r.other);
-    x.bvalue = (compare(sl, sr) <= 0);
+    DCASSERT(l.svalue);
+    DCASSERT(r.svalue);
+    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)<=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -493,10 +489,6 @@ line)
 
 bool StringEquals(const result &x, const result &y)
 {
-  if (x.other == y.other) return true;  // shared or both null
-  shared_string* ssx = dynamic_cast<shared_string*>(x.other);
-  DCASSERT(ssx);
-  shared_string* ssy = dynamic_cast<shared_string*>(y.other);
-  DCASSERT(ssy);
-  return (0==compare(ssx, ssy));
+  if (x.svalue == y.svalue) return true;  // shared or both null
+  return (0==strcmp(x.svalue->string, y.svalue->string));
 }

@@ -138,7 +138,7 @@ void compute_help(expr **pp, int np, result &x)
   x.Clear();
   SafeCompute(pp[0], 0, x);
   if (x.isNormal()) 
-    help_search_string = stringconvert(x.other);
+    help_search_string = x.svalue->string;
 
   // Look through functions
   Builtins.Traverse(ShowDocs);
@@ -306,7 +306,8 @@ void compute_read_bool(expr **pp, int np, result &x)
     if (Input.IsDefault()) 
       if (!x.isNull()) {
         Output << "Enter the [y/n] value for ";
-        Output << stringconvert(x.other) << " : ";
+        Output.Put(x.svalue);
+	Output << " : ";
         Output.flush();
       }     
     Input.Get(c);
@@ -342,7 +343,8 @@ void compute_read_int(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (integer) value for ";
-      Output << stringconvert(x.other) << " : ";
+      Output.Put(x.svalue);
+      Output << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -380,7 +382,8 @@ void compute_read_real(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (real) value for ";
-      Output << stringconvert(x.other) << " : ";
+      Output.Put(x.svalue);
+      Output << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -423,7 +426,8 @@ void compute_read_string(expr **pp, int np, result &x)
   if (Input.IsDefault()) 
     if (!x.isNull()) {
       Output << "Enter the (string) value for ";
-      Output << stringconvert(x.other) << " : ";
+      Output.Put(x.svalue);
+      Output << " : ";
       Output.flush();
     }   
   DeleteResult(STRING, x);
@@ -483,7 +487,7 @@ void compute_inputfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* infile = fopen(stringconvert(x.other), "r");
+  FILE* infile = fopen(x.svalue->string, "r");
   DeleteResult(STRING, x); 
   x.Clear();
   if (NULL==infile) {
@@ -522,7 +526,7 @@ void compute_errorfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen(stringconvert(x.other), "a");
+  FILE* outfile = fopen(x.svalue->string, "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -560,7 +564,7 @@ void compute_warningfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen(stringconvert(x.other), "a");
+  FILE* outfile = fopen(x.svalue->string, "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -598,7 +602,7 @@ void compute_outputfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  FILE* outfile = fopen(stringconvert(x.other), "a");
+  FILE* outfile = fopen(x.svalue->string, "a");
   DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
@@ -637,7 +641,7 @@ void compute_substr(expr** p, int np, result &x)
 
   SafeCompute(p[0], 0, x);
   if (!x.isNormal()) return;
-  char* src = stringconvert(x.other);
+  char* src = x.svalue->string;
   int srclen = strlen(src);
 
   SafeCompute(p[1], 0, start);
@@ -645,7 +649,8 @@ void compute_substr(expr** p, int np, result &x)
     if (start.ivalue>0) {
       // +infinity: result is empty string
       DeleteResult(STRING, x);
-      x.other = Share(&empty_string);
+      x.svalue = &empty_string;
+      Share(x.svalue);
       return;
     } else {
       // -infinity is the same as 0 here
@@ -668,7 +673,8 @@ void compute_substr(expr** p, int np, result &x)
     } else {
       // -infinity: stop is less than start, this gives empty string
       DeleteResult(STRING, x);
-      x.other = Share(&empty_string);
+      x.svalue = &empty_string;
+      Share(x.svalue);
       return;
     }
   }
@@ -682,7 +688,8 @@ void compute_substr(expr** p, int np, result &x)
 
   if (stop.ivalue<0 || start.ivalue>stop.ivalue) {  // definitely empty string
     DeleteResult(STRING, x);
-    x.other = Share(&empty_string);
+    x.svalue = &empty_string;
+    Share(x.svalue);
     return;
   }
 
@@ -693,7 +700,7 @@ void compute_substr(expr** p, int np, result &x)
   strncpy(answer, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
   answer[stop.ivalue - start.ivalue + 1] = 0;
   x.Clear();
-  x.other = new shared_string(answer);
+  x.svalue = new shared_string(answer);
 }
 
 void AddSubstr(PtrTable *fns)
@@ -1657,7 +1664,7 @@ void compute_env(expr **p, int np, result &x)
   if (!x.isNormal()) return;
   result find = x;
   if (NULL==environment) return;
-  char* key = stringconvert(x.other);
+  char* key = x.svalue->string;
   int xlen = strlen(key);
   for (int i=0; environment[i]; i++) {
     char* equals = strstr(environment[i], "=");

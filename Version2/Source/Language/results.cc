@@ -60,8 +60,8 @@ void DeleteResult(type t, result &x)
   // types that use "other" go here
   switch (t) {
     case STRING:	
-		Delete(x.other);	
-		x.other = NULL;
+		Delete(x.svalue);
+		x.svalue = NULL;
 	        x.setNull();
 		break;  // should be ok?
   }

@@ -15,31 +15,6 @@
 
 //@{
 
-class shared_string : public shared_object {
-public:
-  char* string;
-  shared_string() { string = NULL; }
-  shared_string(char* s) { string = s; }
-  virtual~ shared_string() { delete[] string; }
-  inline int length() const { return strlen(string); }
-  inline void show(OutputStream &s) { s.Put(string); }
-};
-
-inline int compare(shared_string *a, shared_string *b)
-{
-  if (a==b) return 0;  // shared or null
-  if (NULL==a) return -1;
-  if (b==NULL) return 1;
-  return strcmp(a->string, b->string);
-}
-
-inline char* stringconvert(shared_object *x)
-{
-  if (NULL==x) return NULL;
-  shared_string *ss = dynamic_cast<shared_string*>(x);
-  DCASSERT(ss);
-  return ss->string;
-}
 
 // ******************************************************************
 // *                                                                *
