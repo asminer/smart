@@ -211,6 +211,7 @@ DATA* myhash<DATA>::Insert(DATA *m)
       else table[h] = nxt;
       node_pile->FreeObject(ptr);
       ptr = nxt;
+      count--;
     } else {
       prev = ptr;
       ptr = ptr->next;
@@ -271,7 +272,12 @@ void DumpObject(bincache *x)
   Output.PutHex((unsigned int) x->c);
   Output << " ";
   Output.PutHex((unsigned int) x->answer);
-  Output << ")\n";
+  Output << ") \t";
+  Output << " (" << x->b->ptrcount << ", " << x->b->cachecount << ")";
+  Output << " (" << x->c->ptrcount << ", " << x->c->cachecount << ")";
+  if (x->answer)
+    Output << " (" << x->answer->ptrcount << ", " << x->answer->cachecount << ")";
+  Output << "\n";
   Output.flush();
 }
 
@@ -594,11 +600,12 @@ void GarbageCollect()
 {
   ComputeTable.Resize();
   UniqueTable.Resize();
-
+/*
   Output << "Unique Table:\n";
   UniqueTable.Dump();
 
   Output << "Compute Table:\n";
   ComputeTable.Dump();
+  */
 }
 
