@@ -4,11 +4,36 @@
 #include "strings.h"
 #include "operators.h"
 
-void PrintString(const result& x, OutputStream &out)
+void PrintString(const result& x, OutputStream &out, int width)
 {
   const char* s = (char*)x.other;
   int stlen = strlen(s);
   int i;
+  if (width>=0) {
+    // count length: account for special chars.
+    int printlen = 0;
+    for (i=0; i<stlen; i++) {
+      if (s[i]!='\\') {
+        printlen++;
+        continue;
+      }
+      // special character
+      i++;
+      if (i>=stlen) break;  // trailing \, ignore
+      switch (s[i]) {
+        case 'n'	:
+        case 't'	:
+        case '\\'	:
+        case 'q'	:
+        case 'b'	:
+        case 'a'	:
+      	  printlen++;
+      }
+    }
+    // pad with spaces to get to desired width
+    width -= printlen;
+    for (; width>=0; width--) out << ' ';
+  } // if width
   for (i=0; i<stlen; i++) {
     if (s[i]!='\\') {
       out << s[i];

@@ -16,18 +16,37 @@
 //@{
 
 
-void PrintResult(type t, const result &x, OutputStream &s)
+void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 {
   if (x.infinity) { s << infinity_string->GetString(); return; }
   if (x.null) { s << "null"; return; }
   if (x.error) { s << "error"; return; }
-  switch(t) {
-    case VOID: 		DCASSERT(0); 		return;
-    case BOOL: 		s << x.bvalue; 		return;
-    case INT:  		s << x.ivalue; 		return;
-    case REAL: 		s << x.rvalue; 		return;
-    case STRING: 	PrintString(x, s);	return;	
+  // width not specified
+  if (width<0) {
+    switch(t) {
+      case BOOL: 	s << x.bvalue; 		return;
+      case INT:  	s << x.ivalue; 		return;
+      case REAL: 	s << x.rvalue; 		return;
+      case STRING: 	PrintString(x, s);	return;	
+      default: 		DCASSERT(0); 		return;
+    }
   }
+  // width specified
+  if (prec<0) {
+    switch(t) {
+      case BOOL: 	s.Put(x.bvalue, width);		return;
+      case INT:  	s.Put(x.ivalue, width);		return;
+      case REAL: 	s.Put(x.rvalue, width);		return;
+      case STRING: 	PrintString(x, s, width);	return;	
+      default: 		DCASSERT(0); 			return;
+    }
+  }
+  // width and prec are specified
+  switch (t) {
+    case REAL:		s.Put(x.rvalue, width, prec);	return;
+    default: 		DCASSERT(0); 			return;
+  }
+  // anything fell through the cracks?
   DCASSERT(0);
 }
 

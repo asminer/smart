@@ -116,7 +116,7 @@ void array::GetName(OutputStream &s) const
     if (i) s << ", ";
     result ind;
     index_list[i]->Compute(0, ind);
-    PrintResult(index_list[i]->Type(0), ind, s);
+    PrintResult(s, index_list[i]->Type(0), ind);
   }
   s << "]";
 }

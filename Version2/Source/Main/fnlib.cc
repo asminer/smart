@@ -86,6 +86,7 @@ void compute_help(expr **pp, int np, result &x)
     Output << "\n";
   }
 
+  Output.flush();
   // return something...
   x.null = true;
 }
@@ -115,20 +116,25 @@ int typecheck_print(List <expr> *params)
   int i;
   for (i=0; i<np; i++) {
     expr* p = params->Item(i);
-    if (p->NumComponents()>1) {
-      Internal.Start(__FILE__, __LINE__);
-      Internal << "Sorry, print does not handle width specifiers yet\n";
-      Internal.Stop();
-    }
     switch (p->Type(0)) {
       case BOOL:
       case INT:
       case REAL:
       case STRING:
-      	continue;
+      	break;
       default:
         return -1;
     }
+    // width?
+    if (p->NumComponents()==1) continue;
+    if (p->Type(1)!=INT) return -1;
+    if (p->NumComponents()==2) continue;
+    // precision, but only for reals
+    if (p->Type(0)!=REAL) return -1;
+    if (p->Type(2)!=INT) return -1;
+    if (p->NumComponents()==3) continue;
+    // that should be all
+    return -1;
   }
   return 0;
 }
@@ -139,24 +145,68 @@ bool linkparams_print(expr **p, int np)
   return true;
 }
 
-void compute_print(expr **p, int np, result &x)
+void do_print(expr **p, int np, result &x, OutputStream &s)
 {
   int i;
+  result y;
   for (i=0; i<np; i++) {
     x.Clear();
-    if (x.error) return;
     p[i]->Compute(0, x);
-    PrintResult(p[i]->Type(0), x, Output);
+    if (x.error) return;
+    int width = -1;
+    int prec = -1;
+    if (p[i]->NumComponents()>1) {
+      y.Clear();
+      p[i]->Compute(1, y);
+      if (y.error) return;
+      if (!y.infinity && !y.null) width = y.ivalue;
+      if (p[i]->NumComponents()>2) {
+        y.Clear();
+	p[i]->Compute(2, y);
+        if (y.error) return;
+        if (!y.infinity && !y.null) prec = y.ivalue;
+      }
+    }
+    PrintResult(s, p[i]->Type(0), x, width, prec);
   }
+}
+
+void compute_print(expr **p, int np, result &x)
+{
+  do_print(p, np, x, Output);
   Output.flush();
 }
 
 void AddPrint(PtrTable *fns)
 {
-  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
+  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument to output\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
 
   internal_func *p =
     new internal_func(VOID, "print", compute_print, NULL, NULL, 0, helpdoc);
+
+  p->SetSpecialTypechecking(typecheck_print);
+  p->SetSpecialParamLinking(linkparams_print);
+
+  InsertFunction(fns, p);
+}
+
+void compute_sprint(expr **p, int np, result &x)
+{
+  static StringStream strbuffer;
+  do_print(p, np, x, strbuffer);
+  if (x.error || x.null) return;
+  char* bar = strbuffer.GetString();
+  strbuffer.flush();
+  x.Clear();
+  x.other = bar;
+}
+
+void AddSprint(PtrTable *fns)
+{
+  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument to a string\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
+
+  internal_func *p =
+    new internal_func(STRING, "sprint", compute_sprint, NULL, NULL, 0, helpdoc);
 
   p->SetSpecialTypechecking(typecheck_print);
   p->SetSpecialParamLinking(linkparams_print);
@@ -233,6 +283,7 @@ void InitBuiltinFunctions(PtrTable *t)
 {
   AddHelp(t);
   AddPrint(t);
+  AddSprint(t);
   // Conditionals
   type i;
   for (i=FIRST_SIMPLE; i<=LAST_SIMPLE; i++)	AddCond(i, t);

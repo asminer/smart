@@ -389,8 +389,8 @@ public:
   virtual int NumComponents() const;
   virtual expr* GetComponent(int i);
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x) const;
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Compute(int i, result &x);
+  virtual void Sample(long &seed, int i, result &x);
 
   virtual expr* Substitute(int i);
 
@@ -427,14 +427,14 @@ type aggregates::Type(int i) const
   return VOID;
 }
 
-void aggregates::Compute(int i, result &x) const 
+void aggregates::Compute(int i, result &x)
 {
   CHECK_RANGE(0, i, opnd_count);
   if (operands[i]) operands[i]->Compute(0, x);
   else x.null = true;
 }
 
-void aggregates::Sample(long &seed, int i, result &x) const 
+void aggregates::Sample(long &seed, int i, result &x)
 {
   CHECK_RANGE(0, i, opnd_count);
   if (operands[i]) operands[i]->Sample(seed, 0, x);

@@ -117,7 +117,7 @@ struct result {
     But that's ok, because I/O is slow anyway.
     Note that certain types cannot be printed.
  */
-void PrintResult(type t, const result &x, OutputStream &s);
+void PrintResult(OutputStream &s, type t, const result &x, int width=-1, int prec=-1);
 
 /** Delete a result.
     I.e., free the pointer if necessary.

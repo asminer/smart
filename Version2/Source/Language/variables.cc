@@ -96,7 +96,7 @@ void determfunc::ShowHeader(OutputStream &s) const
   if (NULL==Name()) return; // hidden?
   s << GetType(Type(0)) << " " << Name() << " := ";
   if (!computed_already) s << return_expr;
-  else PrintResult(Type(0), value, s);
+  else PrintResult(s, Type(0), value);
 }
 
 // ******************************************************************

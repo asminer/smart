@@ -24,6 +24,7 @@ void InitLexer(int filecount, char** files)
 void ShowVersion()
 {
   Output << "SMART version " << _VERSION << "\n";
+  Output.flush();
 }
 
 void HelpScreen()
@@ -32,6 +33,7 @@ void HelpScreen()
   Output << "smart <file1> <file2> ... <filen>\n";
   Output << "      Use the filename `-' to denote standard input\n";
   Output << "\n";  
+  Output.flush();
 }
 
 
@@ -53,6 +55,7 @@ int smart_main(int argc, char *argv[])
   InitCompiler();
 
   SortOptions();
+  Output.flush();
 
   yyparse();
 

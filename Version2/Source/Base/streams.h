@@ -10,23 +10,25 @@
 
 #include <stdio.h>
 
-/** Basic output stream.
-    Note that error streams are derived from this class.
+/** Abstract base class for output.
+    All output goes to the buffer, for speed.
+    (This unfies all output streams.)
 */
 class OutputStream {
 protected:
+  char* buffer;
+  int bufsize;
+  int buftop;
   bool ready;
-  FILE* deflt;
-  FILE* display;
+protected:
+  void ExpandBuffer(int newsize);
 public:
-  OutputStream(FILE* deflt);
+  OutputStream();
+  virtual ~OutputStream();
 
-  void SwitchDisplay(FILE* out);
+  inline bool IsActive() const { return ready; }
 
-  void Activate();
-  void Deactivate();
-  bool IsActive() { return ready; }
-
+  void Pad(int spaces);
   void Put(bool data);
   void Put(char data);
   void Put(int data);
@@ -34,16 +36,15 @@ public:
   void Put(double data);
   void Put(const char* data);
 
-/*
   void Put(bool data, int width);
   void Put(int data, int width);
   void Put(double data, int width);
   void Put(const char* data, int width);
 
   void Put(double data, int width, int prec);
-  */
 
-  inline void flush() { fflush(display); }
+  /// Force stream to dump buffer.
+  virtual void flush() = 0;
 };
 
 inline OutputStream& operator<< (OutputStream& s, bool data) 
@@ -76,24 +77,46 @@ inline OutputStream& operator<< (OutputStream& s, double data)
   return s;
 }
 
-/*
-inline OutputStream& operator<< (OutputStream& s, char* data) 
-{
-  s.Put(data);
-  return s;
-}
-*/
-
 inline OutputStream& operator<< (OutputStream& s, const char* data) 
 {
   s.Put(data);
   return s;
 }
 
+/** String stream.
+    Used by sprint.
+*/
+class StringStream : public OutputStream {
+public:
+  StringStream();
+  
+  char* GetString() const;
+  virtual void flush();
+};
+
+/** Output (to the "display") stream.
+    Note that error streams are derived from this class.
+*/
+class DisplayStream : public OutputStream {
+protected:
+  FILE* deflt;
+  FILE* display;
+public:
+  DisplayStream(FILE* deflt);
+  virtual ~DisplayStream();
+
+  void SwitchDisplay(FILE* out);
+
+  void Activate();
+  void Deactivate();
+
+  virtual void flush();
+};
+
 /**
     Used for centralized error reporting.
 */
-class ErrorStream : public OutputStream {
+class ErrorStream : public DisplayStream {
 protected:
   bool active;
   const char* errortype;
@@ -142,31 +165,13 @@ public:
 
 
 
-class InputStream {
-protected:
-  bool ready;
-  FILE* stream;
-public:
-  InputStream(FILE* deflt);
-
-  void SwitchInput(FILE* in);
-
-  void Activate();
-  void Deactivate();
-
-  bool Get(bool &data);
-  bool Get(int &data);
-  bool Get(double &data);
-  bool Get(char* &data);
-};
-
 
 
 
 // Pre-defined output streams
-extern OutputStream Output;
-extern OutputStream Verbose;
-extern OutputStream Report;
+extern DisplayStream Output;
+extern DisplayStream Verbose;
+extern DisplayStream Report;
 // Pre-defined error streams
 extern ErrorStream Error;
 extern ErrorStream Warn;

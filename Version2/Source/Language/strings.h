@@ -63,7 +63,7 @@ line);
 /** Print the specified string.
     This is necessary to handle fancy string things, line \n, \t, etc.
 */
-void PrintString(const result &x, OutputStream &out);
+void PrintString(const result &x, OutputStream &out, int width=-1);
 
 //@}
 

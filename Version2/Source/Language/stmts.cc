@@ -60,7 +60,7 @@ void exprstmt::Execute()
   if (VOID == x->Type(0)) return;
 
   Output << "Evaluated statement " << x << ", got: ";
-  PrintResult(x->Type(0), dummy, Output);
+  PrintResult(Output, x->Type(0), dummy);
   Output << "\n";
   Output.flush();
 #endif
