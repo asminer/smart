@@ -52,6 +52,16 @@ List <formal_param> *FormalParams;
 List <function> *matches;
 
 
+bool WithinFor()
+{
+  return (Iterators->Length());
+}
+
+bool WithinBlock()
+{
+  return WithinFor();
+}
+
 // ==================================================================
 // |                                                                |
 // |                          Lexer  hooks                          | 
@@ -594,8 +604,6 @@ statement* BuildForLoop(int count, void *stmts)
   Output.flush();
 #endif
 
-  f->Execute();
-  
   return f;
 }
 
@@ -605,10 +613,6 @@ statement* BuildExprStatement(expr *x)
   Optimize(0, x);
   statement* s = MakeExprStatement(x, filename, lexer.lineno());
   if (NULL==s) return NULL;
-
-  // remove this eventually...
-  s->Execute();
-
   return s;
 }
 
@@ -688,6 +692,15 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
 void* AppendStatement(void* list, statement* s)
 {
   if (NULL==s) return list;
+
+  // Top level: execute and forget
+  if (!WithinBlock()) {
+    s->Execute();
+    delete s;
+    return NULL;
+  }
+
+  // We're within some block; save this statement for later
   List <statement> *foo = (List <statement> *)list;
   if (NULL==foo) 
     foo = new List <statement> (256);
