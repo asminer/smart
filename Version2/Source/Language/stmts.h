@@ -52,11 +52,25 @@ public:
   inline statement* Parent() { return parent; }
   inline void SetParent(statement *p) { parent = p; }
 
-
   /** Execute the statement.
       Must be provided in derived classes.
    */
   virtual void Execute() = 0;
+
+  /** Execute guesses.
+      Default behavior is to do nothing.
+  */
+  virtual void InitialGuess() { }
+
+  /** Has the statement converged?
+      Default is always return true.
+  */
+  virtual bool HasConverged() { return true; }
+
+  /** Permanently affix statements after convergence.
+      Default behavior is to do nothing.
+  */
+  virtual void Affix() { }
 
   /// Display the statement to the given output stream.
   virtual void show(OutputStream &s) const = 0;

@@ -862,9 +862,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
   }
   expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
 
-  // check that we're deterministic...
-
-  constfunc *v = new determfunc(filename, lexer.lineno(), t, id);
+  constfunc *v = MakeConstant(t, id, filename, lexer.lineno());
   v->SetReturn(ans);
   Constants->AddNamePtr(id, v); 
   return NULL;

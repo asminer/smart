@@ -334,10 +334,16 @@ public:
   virtual ~forstmt(); 
 
   virtual void Execute();
+  virtual void InitialGuess();
+  virtual bool HasConverged();
+  virtual void Affix(); 
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int depth, OutputStream &s) const;
 protected:
   void Execute(int d);
+  void InitialGuess(int d);
+  bool HasConverged(int d);
+  void Affix(int d);
 };
 
 forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, int n)
@@ -371,6 +377,21 @@ void forstmt::Execute()
   Execute(0);
 }
 
+void forstmt::InitialGuess()
+{
+  InitialGuess(0);
+}
+
+bool forstmt::HasConverged()
+{
+  return HasConverged(0);
+}
+
+void forstmt::Affix()
+{
+  Affix(0);
+}
+
 void forstmt::Execute(int d)
 {
   if (d>=dimension) {
@@ -386,6 +407,57 @@ void forstmt::Execute(int d)
     } while (index[d]->NextValue());
   }
 }
+
+void forstmt::InitialGuess(int d)
+{
+  if (d>=dimension) {
+    // execute block
+    int j;
+    for (j=0; j<blocksize; j++) block[j]->InitialGuess();
+  } else {
+    // Loop this dimension
+    index[d]->ComputeCurrent();
+    if (!index[d]->FirstIndex()) return;  // empty loop
+    do {
+      InitialGuess(d+1);
+    } while (index[d]->NextValue());
+  }
+}
+
+bool forstmt::HasConverged(int d)
+{
+  if (d>=dimension) {
+    // execute block
+    int j;
+    for (j=0; j<blocksize; j++) 
+      if (!block[j]->HasConverged()) return false;
+  } else {
+    // Loop this dimension
+    index[d]->ComputeCurrent();
+    if (!index[d]->FirstIndex()) return true;  // empty loop
+    do {
+      if (!HasConverged(d+1)) return false;
+    } while (index[d]->NextValue());
+  }
+  return true;
+}
+
+void forstmt::Affix(int d)
+{
+  if (d>=dimension) {
+    // execute block
+    int j;
+    for (j=0; j<blocksize; j++) block[j]->Affix();
+  } else {
+    // Loop this dimension
+    index[d]->ComputeCurrent();
+    if (!index[d]->FirstIndex()) return;  // empty loop
+    do {
+      Affix(d+1);
+    } while (index[d]->NextValue());
+  }
+}
+
 
 void forstmt::show(OutputStream &s) const
 {
@@ -470,7 +542,7 @@ void arrayassign::Execute()
   char* name = NULL;
 #endif
 
-  determfunc *frv = new determfunc(Filename(), Linenumber(), rv->Type(0), name);
+  constfunc *frv = MakeConstant(rv->Type(0), name, Filename(), Linenumber());
   frv->SetReturn(rv);
 
   f->SetCurrentReturn(frv);

@@ -594,7 +594,7 @@ void InitBuiltinFunctions(PtrTable *t)
 void InitBuiltinConstants(PtrTable *t)
 {
   // Infinity
-  constfunc *infty = new determfunc(NULL, -1, INT, "infty");
+  constfunc *infty = MakeConstant(INT, "infty", NULL, -1);
   infty->SetReturn(MakeInfinityExpr(1, NULL, -1));
   t->AddNamePtr("infty", infty);
 

@@ -23,10 +23,6 @@
 
 //@{
   
-
-
-
-
 // ******************************************************************
 // *                                                                *
 // *                        constfunc  class                        *
@@ -54,33 +50,16 @@ public:
 
 // ******************************************************************
 // *                                                                *
-// *                        determfunc class                        *
-// *                                                                *
-// ******************************************************************
-
-
-/** Constant functions that are true constants.
-    Thus, eventually, the value will be computed,
-    and once it has, we can trash the return expression.
- */
-class determfunc : public constfunc {
-  bool computed_already;
-  result value;
-public:
-  determfunc(const char *fn, int line, type t, char *n);
-  virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
-  virtual void ShowHeader(OutputStream &s) const;
-};
-
-// ******************************************************************
-// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
+/** Make a constant function.
+    For functions within a converge, use something else.  
+*/
+constfunc* MakeConstant(type t, char* id, const char* file, int line);
 
 //@}
 
