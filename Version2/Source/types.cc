@@ -75,6 +75,11 @@ const char* VoidNames[] = {
   "trans"
 };
 
+const char* SetNames[] = {
+  "{int}",
+  "{real}"
+};
+
 const char* InternalNames[] = {
   "(internal) engine info",
   "(internal) expr*"
@@ -97,6 +102,9 @@ const char* GetType(unsigned char type)
 
   if (type<=LAST_VOID)
     return VoidNames[type-FIRST_VOID];
+
+  if (type<=LAST_SET)
+    return SetNames[type-FIRST_SET];
 
   if (type<=LAST_INTERNAL)
     return InternalNames[type-FIRST_INTERNAL];
@@ -231,6 +239,10 @@ bool Promotable(unsigned char t1, unsigned char t2)
 
     case PROC_RAND_INT	: return (PROC_RAND_REAL==t2);
 
+    // internal stuff
+
+    case SET_INT	: return (SET_REAL==t2);
+
     default: return false;  // no promotions
   };
 
@@ -258,29 +270,6 @@ bool Castable(int t1, int t2)
   return false;
 }
 
-/*
-bool Castable(type_list *t1, type_list *t2)
-{
-  if ((t1==NULL)||(t2==NULL)) return true;
-
-  // very special case: casting real:real:real:...:real to expo
-  if (t2->Matches(EXPO)) {
-    while (t1) {
-      if ((t1->Data()!=BIGINT) && (t1->Data()!=INT)&&(t1->Data()!=REAL)) return false;
-      t1 = t1->Next();
-    }
-    return true;
-  }
-
-  if (t1->Length()!=t2->Length()) return false;
-  while (t1) {
-    if (!Castable(t1->Data(), t2->Data())) return false;
-    t1 = t1->Next();
-    t2 = t2->Next();
-  }
-  return true;
-}
-*/
 
 //@}
 

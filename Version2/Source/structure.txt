@@ -15,14 +15,23 @@ exprs		Result class.  Engine information class.
 		Symbols.
 		Constant bool, int, and real expressions.
 
+sets		Set expressions and their results.
+
 options
 
 infinity	Infinity constants.
 
+variables	Functions with no parameters.
+
+functions	User-defined functions and internal functions.
+
+arrays		User-defined arrays.
+
 baseops		Base classes for operators like "+"
 		(to reduce cut&paste of virtual functions)
 
-operators	Operator expressions for all types.
+operators	Operator expressions for all types,
+		including sets.
 
 casting		Type casting operators for all types.
 

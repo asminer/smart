@@ -89,6 +89,14 @@ const type 	TRANS 		= 98;
 const type 	FIRST_VOID	= STATE;
 const type 	LAST_VOID	= TRANS;
 
+// Sets.  (not user-definable yet)
+
+const type	SET_INT		= 110;
+const type	SET_REAL	= 111;
+
+const type	FIRST_SET	= SET_INT;
+const type 	LAST_SET	= SET_REAL;
+
 // Internal types
 
 const type    ENGINEINFO 	= 128;

@@ -24,61 +24,6 @@
 //@{
   
 
-// ******************************************************************
-// *                                                                *
-// *                         iterator class                         *
-// *                                                                *
-// ******************************************************************
-
-/**   Symbols used within for loops.
-
-      Temporarily... use simple integer for loops.
-      Eventually... allow those complex sets.
-*/  
-
-class iterator : public symbol {
-  /// Starting value
-  int start;
-  /// Stopping value
-  int stop;
-  /// increment
-  int inc;
-  /// Index (useful for arrays)
-  int index;
-  /// Current value
-  int value;
-public:
-  iterator(const char *fn, int line, type t, char *n);
-  virtual void Compute(int i, result &x) const;
-  virtual expr* Substitute(int i);
-  virtual void show(ostream &s) const;
-
-  /** Set our value to the first item.
-      Return true on success.
-      (This will fail if we are iterating over an empty set.)
-   */
-  inline bool FirstValue() { 
-    value = start; 
-    if (value>stop) return false;
-    index = 0; 
-    return true;
-  }
-  /** Set our value to the next item.
-      Return true on success.
-      (This fails when we pass the last item.)
-   */
-  inline bool NextValue() { 
-    value += inc;
-    if (value>stop) return false;
-    index++;
-    return true;
-  }
-  /** Item number we are on.
-      Used by arrays (this is the array index).
-   */
-  inline int Index() { return index; }
-
-};
 
 
 
