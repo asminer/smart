@@ -954,19 +954,120 @@ array* BuildArray(type t, char*n, void* list)
   return A;
 }
 
+/**  Check types;  tricky only because of aggregates.
+     If types match perfectly, "perfect" will be set to true.
+     If passed expression can be promoted to match perfectly, 
+     "promote" will be set to true.
+*/
+void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
+{
+  if (!promote) {
+    DCASSERT(!perfect);
+    return;
+  }
+  if (NULL==pass) return;
+  DCASSERT(p);
+  if (p->NumComponents() != pass->NumComponents()) {
+    perfect = promote = false;
+    return;
+  }
+  int i;
+  for (i=0; i<p->NumComponents(); i++) {
+    type tfp = p->Type(i);
+    type tpass = pass->Type(i);
+    if (tfp != tpass) perfect = false;
+    if (!Promotable(tpass, tfp)) {
+      promote = false;
+      return;
+    }
+  }
+}
+
+/**  Make sure this function's parameters differ enough
+     from the given formal parameters.
+     (Used to check that a newly defined function is not a duplicate of an
+     existing function)
+     @param	f	The function to check
+     @param	params	List of passed parameters (in positional order).
+     @return 	The following code.
+     		0	: The functions can always be distinguished
+		1	: Positional parameters match perfectly
+		2	: Named parameters match perfectly
+*/
+int CantDistinguishFunction(function *f, List <formal_param> *fpb)
+{
+  // Not sure how to deal with repeats, so bail for now.
+  if (f->ParamsRepeat()) {
+    return 0;
+  }
+
+  formal_param **fpa;
+  int npa;
+  int dummy;
+  f->GetParamList(fpa, npa, dummy);
+  
+  int npb = fpb->Length();
+
+  // First: check positions and types
+  if (npa == npb) {
+    // Only check if the number of parameters is the same
+    int i;
+    for (i = 0; i < npb; i++) {
+      bool perfect = true;
+      bool promote = true;
+      MatchParam(fpa[i], fpb->Item(i), perfect, promote);
+      if (!perfect) break;
+    }
+    if (i>=npb) {
+      // ALL matched, bail
+      return 1;
+    }
+  }
+
+  // Check names (eventually)
+
+  return 0;
+}
+
 user_func* BuildFunction(type t, char*n, void* list)
 {
   if (NULL==n) return NULL;
   if (NULL==list) return NULL;  // No parameters? build a const func...
 
-  // TO DO STILL: search symbol table for existing functions with this name!
-
+  // Save the formal parameters to a "symbol table" (deleted later)
   List <formal_param> *fpl = (List <formal_param> *)list;
+  FormalParams = fpl;
+
+  // Make sure this function isn't a duplicate of an existing function
+  List <function> *flist = FindFunctions(Builtins, n);
+  int i = (flist) ? flist->Length() : 0;
+  for (i--; i>=0; i--) {
+    // Check functions with this name (if any)
+    function *f = flist->Item(i);
+    bool error = false;
+    if (f->HasSpecialTypechecking()) {
+      // Don't allow this yet
+      error = true;
+    } else {
+      error = CantDistinguishFunction(f, fpl);
+    }
+    if (error) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Function declaration conflicts with existing function:\n\t";
+      f->ShowHeader(Error);
+      Error << " declared";
+      if (f->Filename()) {
+        Error << " in file " << f->Filename() << " near line " << f->Linenumber();
+      } else {
+	Error << " internally";
+      }
+      Error.Stop();
+      return NULL;
+    }
+  }
+
   user_func *f = new user_func(filename, lexer.lineno(), t, n,
   			fpl->Copy(), fpl->Length());
-
-  // Save the formal parameters to a "symbol table"
-  FormalParams = fpl;
 
   InsertFunction(Builtins, f);
   return f;
@@ -1085,35 +1186,6 @@ expr* BuildArrayCall(const char* n, void* ind)
   delete foo;
   expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
   return answer;
-}
-
-/**  Check types;  tricky only because of aggregates.
-     If types match perfectly, "perfect" will be set to true.
-     If passed expression can be promoted to match perfectly, 
-     "promote" will be set to true.
-*/
-void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
-{
-  if (!promote) {
-    DCASSERT(!perfect);
-    return;
-  }
-  if (NULL==pass) return;
-  DCASSERT(p);
-  if (p->NumComponents() != pass->NumComponents()) {
-    perfect = promote = false;
-    return;
-  }
-  int i;
-  for (i=0; i<p->NumComponents(); i++) {
-    type tfp = p->Type(i);
-    type tpass = pass->Type(i);
-    if (tfp != tpass) perfect = false;
-    if (!Promotable(tpass, tfp)) {
-      promote = false;
-      return;
-    }
-  }
 }
 
 /**  Score how well this function matches the passed parameters.
