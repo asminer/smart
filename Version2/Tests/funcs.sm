@@ -129,6 +129,23 @@ int myfwd(int a, int b) := a+b;
 print("defined:\n");
 print(myfoo(3,4), "\n");
 
+/* 
+   Illegal places to define functions
+*/
+
+print("Trying to define functions in a for loop:\n");
+for (int i in {1..10}) {
+  int forplus(int a, int b) := a+b;
+  int foriplus(int a) := a+i;
+}
+
+print("Trying to define functions in a converge:\n");
+converge {
+  real cvgplus(real x, real y) := x+y;
+  real z guess 10;
+  real cvgzplus(real x) := x+z;
+}
+
 
 /*
     More fun stuff
@@ -136,7 +153,7 @@ print(myfoo(3,4), "\n");
 
 print("\n\nJust for kicks:\n\n");
 
-int TS := 20;
+int TS := 13;
 
 int pascal(int i, int j) := cond(j==0 | j>i, 0, 
                            cond(i==1, 1, pascal(i-1, j-1) + pascal(i-1, j))

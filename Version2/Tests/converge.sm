@@ -108,3 +108,126 @@ converge {
     print("\trpy=",rpy,"\n");
 };
 
+# ConvergePrecision 1e-7
+
+/*
+    Evil things within a converge statement.
+*/
+
+print("Testing bad guess\n");
+converge{
+  real z1 guess z1; 
+  real z1 := sqrt(z1);
+};
+print("This may cause a compile error:\n");
+print(z1, "\n");
+
+print("Testing Null guess\n");
+converge{
+  real z3 guess null;
+  real z3 := sqrt(z3);
+};
+print("This should be null: ", z3, "\n");
+
+print("Testing Bad return value\n");
+converge{
+  real z4 guess 100;
+  real z4 := sqrt(z4+ bad_variable);
+};
+print(z4, "\n");
+
+print("Testing Null return value\n");
+converge{
+  real z5 guess 10;
+  real z5 := null;
+};
+print("This should be null: ", z5, "\n");
+
+print("Testing Bad guess & return value\n");
+converge {
+  real z6 guess z6;
+  real z6 := sqrt(z6+bad_variable);
+};
+print(z6, "\n");
+
+print("Testing Null guess & return value\n");
+converge {
+  real z7 guess null;
+  real z7 := null;
+};
+print(z7, "\n");
+
+print("Testing No guess\n");
+converge {
+  real z8 := sqrt(z8);
+}
+print(z8, "\n");
+
+print("Testing z9: ok, z10: no guess, bad return value\n");
+converge {
+  real z9 guess 100;
+  real z10 := sqrt(z10);
+  real z9 := sqrt(z9);
+};
+print(z9, ", ", z10, "\n");
+
+print("Testing p: ok, q: null return value\n");
+converge {
+  real p guess 100;
+  real q := null;
+  real p := sqrt(p);
+};
+print(p, ", ", q, "\n");
+
+print("This leads to a bad computation\n");
+converge {
+  real n guess -100;
+  real n := sqrt(n);
+};
+print(n, "\n");  // should be null
+
+print("This is fine computationally, but we want it to be null\n");
+converge{
+  real m guess null;
+  real m := cond(is_null(m), 1, null);
+  print("Current m is ", m, "\n");
+};
+print(m, "\n");
+
+print("These are type mismatches for converge\n");
+converge{
+  int i guess 1;
+  int i := mod(i*3, 31);
+};
+print(i, "\n");
+
+print("We should get an error for re-defining z11\n");
+converge {
+  real z11 guess 30;
+  real z11 := sqrt(z11);
+  real z11 := sqrt(z11+1);
+}
+print("should be 1: ", z11, "\n");
+
+print("Errors for too many guesses, for z12 and z13\n");
+converge{
+  real z12 guess 50;
+  real z12 guess 60;
+  real z12 := sqrt(z12);
+  real z13 := sqrt(z12);
+  real z13 guess 70;
+}
+print("should be all 1: ", z12, ", ", z13, "\n");
+
+print("Testing split converge error\n");
+
+converge {
+  real split guess 100;
+}
+print("Should be 100: ", split, "\n");
+
+print("This should be an error:\n");
+converge {
+  real split := sqrt(split);
+}
+print("Still 100: ", split, "\n");
