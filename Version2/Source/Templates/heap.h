@@ -44,6 +44,13 @@ public:
     UpHeap(last);
     last++;
   }
+  void Remove(DATA *a) {
+    DCASSERT(!sorted);
+    Swap(0, last-1);
+    DownHeap(last-1);
+    last--;
+    a = data[last]; 
+  }
   /// Assumes all elements were added via "insert"
   void Sort();
   DATA** MakeArray() {
