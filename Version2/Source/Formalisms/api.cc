@@ -3,8 +3,14 @@
 
 #include "api.h"
 
+// symbol tables:
+#include "../Main/tables.h"
+
 // formalisms:
 #include "mc.h"
+
+// generic model functions:
+#include "modelfuncs.h"
 
 model* MakeNewModel(const char* fn, int line, type t, char* name, formal_param
 **pl, int np)
@@ -43,5 +49,38 @@ bool CanDeclareType(type modeltype, type vartype)
 
   // slipped through the cracks
   return false;
+}
+
+// Symbol tables
+PtrTable GenericModelFuncs;
+
+List <function> *FindModelFunctions(type modeltype, const char* n)
+{
+  // first check generic functions
+  List <function> *answer = FindFunctions(&GenericModelFuncs, n);
+  if (answer) return answer;
+
+  // then check model specific functions
+  switch (modeltype) {
+
+    // bail out
+    default:
+    	return NULL;
+  }
+
+  // Keep compiler happy
+  return NULL;
+}
+
+void InitModels()
+{
+  /* 
+	Initialize model-specific and generic model builtin functions
+  */
+  
+  // Deal with generics
+  InitGenericModelFunctions(&GenericModelFuncs);
+
+  // Deal with formalism specifics
 }
 

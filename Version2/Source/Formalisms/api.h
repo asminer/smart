@@ -36,4 +36,15 @@ model*	MakeNewModel(const char* fn, int line,
 
 bool	CanDeclareType(type modeltype, type vartype);
 
+/**	
+	Find the list of built-in functions with name n, for
+	a model of given type.
+	Used by the compiler.
+*/
+List <function> *FindModelFunctions(type modeltype, const char* n);
+
+/**	Initializes model formalism stuff.
+*/
+void InitModels();
+
 #endif

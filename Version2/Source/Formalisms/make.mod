@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	dsm.cc	\
+	dsm.cc	modelfuncs.cc	\
 	mc.cc	\
 	api.cc	
 
