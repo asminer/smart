@@ -364,9 +364,6 @@ void compute_div(expr **p, int np, result &x)
   if (a.isNormal() && x.isNormal()) {
     if (x.ivalue == 0) {
       // a div 0
-#ifdef TRACK_ERRORS
-      x.error = CE_ZeroDivide;
-#endif
       DCASSERT(p[1]);  // otherwise b is null
       Error.Start(p[1]->Filename(), p[1]->Linenumber());
       Error << "Illegal operation: divide by 0";
@@ -380,9 +377,6 @@ void compute_div(expr **p, int np, result &x)
   }
 
   if (a.isInfinity() && x.isInfinity()) {
-#ifdef TRACK_ERRORS
-    x.error = CE_Undefined;
-#endif
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
     Error << "Illegal operation: infty / infty";
     Error.Stop();
@@ -444,9 +438,6 @@ void compute_mod(expr **p, int np, result &x)
       return;
     }
     // a mod 0, error
-#ifdef TRACK_ERRORS
-    x.error = CE_ZeroDivide;
-#endif
     DCASSERT(p[1]);  // otherwise b is null
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
     Error << "Illegal operation: modulo 0";
@@ -495,9 +486,6 @@ void compute_sqrt(expr **p, int np, result &x)
   Error << "Square root with negative argument: ";
   PrintResult(Error, REAL, x);
   Error.Stop();
-#ifdef TRACK_ERRORS
-  x.error = CE_Undefined;
-#endif
   x.setError();
 }
 
@@ -523,9 +511,6 @@ void sample_sqrt(long& seed, expr **p, int np, result &x)
   Error << "Square root with negative argument: ";
   PrintResult(Error, REAL, x);
   Error.Stop();
-#ifdef TRACK_ERRORS
-  x.error = CE_Undefined;
-#endif
   x.setError();
 }
 
