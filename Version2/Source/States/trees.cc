@@ -323,7 +323,7 @@ void red_black_tree::Report(OutputStream &r)
   r << "\t" << memalloc << " bytes allocated\n";
   int memused = nodes_used * 2 * sizeof(int) + isRed->MemUsed(); 
   r << "\t" << memused << " bytes used\n";
-  r << "Splay stack report:\n";
+  r << "Red-black stack report:\n";
   r << "\t" << path->AllocEntries() << " stack entries allocated\n";
   r << "\t" << (int)(path->AllocEntries() * sizeof(int)) << " bytes allocated\n";
 }
