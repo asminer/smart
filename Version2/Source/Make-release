@@ -1,0 +1,33 @@
+#!/bin/csh
+
+#
+# $Id$
+#
+# Builds the appropriate release version of SMART
+#
+
+if ( $HOSTTYPE == "i386-linux" ) then 
+  echo Running make for release-i386-linux
+  cd ../release-i386-linux
+  make makefile 
+  make $1 $2 $3 $4 $5
+else if ( $HOSTTYPE == "i386-solaris" ) then
+  echo Running make for release-i386-solaris
+  cd ../release-i386-solaris
+  make makefile
+  make $1 $2 $3 $4 $5
+else if ( $HOSTTYPE == "macintosh" ) then
+  echo Running make for release-macintosh
+  cd ../release-macintosh
+  make makefile
+  make $1 $2 $3 $4 $5
+else 
+  echo Running generic make
+  cd ../generic
+  make makefile
+  make $1 $2 $3 $4 $5
+endif
+	
+echo "Done"    
+
+

@@ -3,57 +3,16 @@
 #
 # $Id$
 #
+# Usage: BuildMake  platform
+#
 # This script is used to build a platform-dependent makefile
 #
 
-if ( $HOSTTYPE == sun4 ) then 
-  echo Building sparc-SunOS makefile 
-  cd ../sparc-SunOS
-  touch ../Source/smart.tab.h
-  cat make.platform ../Source/make.common >! makefile
-  echo Generating dependencies
-  gmake depend
-  cat make.platform ../Source/make.common make.depend >! makefile
-  rm ../Source/smart.tab.h
-else if ( $HOSTTYPE == sun4) then 
-  echo Building sun4m-SunOS makefile 
-  cd ../sun4m-SunOS
-  touch ../Source/smart.tab.h
-  cat make.platform ../Source/make.common >! makefile
-  echo Generating dependencies
-  gmake depend
-  cat make.platform ../Source/make.common make.depend >! makefile
-  rm ../Source/smart.tab.h
-else if ( $HOSTTYPE == i386-linux ) then 
-  echo Building i386-linux makefile  
-  cd ../i386-linux  
-  touch ../Source/smart.tab.h
-  cat make.platform ../Source/make.common >! makefile
-  echo Generating dependencies
-  make depend
-  cat make.platform ../Source/make.common make.depend >! makefile
-  rm ../Source/smart.tab.h
-else if ( $HOSTTYPE == i386-solaris ) then
-  echo Building i386-solaris makefile  
-  cd ../i386-solaris
-  touch ../Source/smart.tab.h
-  cat make.platform ../Source/make.common >! makefile
-  echo Generating dependencies
-  make depend
-  cat make.platform ../Source/make.common make.depend >! makefile
-  rm ../Source/smart.tab.h
-else if ( $HOSTTYPE == macintosh ) then
-  echo Building macintosh makefile
-  cd ../macintosh
-  touch ../Source/smart.tab.h
-  cat make.platform ../Source/make.common >! makefile
-  echo Generating dependencies
-  make depend CC=gcc
-  cat make.platform ../Source/make.common make.depend >! makefile
-  rm ../Source/smart.tab.h
-else 
-  echo Trying generic makefile  
-  cd ../generic
+if ($# < 1) then
+  echo New usage: BuildMake  platform-directory
+else
+  echo Building $1 makefile  
+  cd $1
   touch ../Source/smart.tab.h
   cat make.platform ../Source/make.common >! makefile
   echo Generating dependencies
@@ -61,6 +20,3 @@ else
   cat make.platform ../Source/make.common make.depend >! makefile
   rm ../Source/smart.tab.h
 endif
-	
-
-
