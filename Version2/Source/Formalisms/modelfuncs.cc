@@ -237,6 +237,8 @@ void compute_test(expr **pp, int np, result &x)
   Output << "Testing EnabledExpr and such\n";
   Output.flush();
 
+  List <symbol> deplist(16);
+
   for (int e=0; e<proc->NumEvents(); e++) {
     Output << "Event " << e << " is named ";
     proc->ShowEventName(Output, e);
@@ -246,6 +248,17 @@ void compute_test(expr **pp, int np, result &x)
     expr* enable = proc->EnabledExpr(e);
     Output << "enabling expression: " << enable << "\n";
     Output.flush();
+
+    if (NULL==enable) continue;
+
+    deplist.Clear();
+    enable->GetSymbols(0, &deplist);
+    Output << "\tdepends on: ";
+    for (int p=0; p<deplist.Length(); p++)
+      Output << deplist.Item(p) << " ";
+    Output << "\n";
+    Output.flush();
+ 
     Delete(enable);
   }
 

@@ -20,10 +20,10 @@
 
 class internal_tk : public constant { // think "no parameters", not constant
 private:
-  const char* placename;
+  symbol* placename;
   int stateid;
 public:
-  internal_tk(const char* pn, int sid) : constant(NULL, -1, PROC_INT) {
+  internal_tk(symbol* pn, int sid) : constant(NULL, -1, PROC_INT) {
     placename = pn;
     stateid = sid;
   }
@@ -36,6 +36,12 @@ public:
   }
   virtual void show(OutputStream &s) const {
     s << "tk(" << placename << ")";
+  }
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
+    // fix later
+    DCASSERT(i==0);
+    if (syms) syms->Append(placename);
+    return 1;
   }
 };
 
@@ -179,7 +185,7 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (i_pl < h_pl) {
       // this place is connected only as input
-      expr* inplace = new internal_tk(places[i_pl]->Name(), i_pl);
+      expr* inplace = new internal_tk(places[i_pl], i_pl);
       // we want tk(inplace) >= cardinality of arc
       expr* cmp = NULL;
       if (NULL==arcs->value[input_ptr].proc_card) {
@@ -209,7 +215,7 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (h_pl < i_pl) {
       // this place is connected only as an inhibitor
-      expr* hbplace = new internal_tk(places[h_pl]->Name(), h_pl);
+      expr* hbplace = new internal_tk(places[h_pl], h_pl);
       // we want tk(hbplace) < cardinality of arc
       expr* cmp = NULL;
       if (NULL==arcs->value[inhib_ptr].proc_card) {
@@ -238,7 +244,7 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (h_pl == i_pl) {
       // this place is connected both as an inhibitor and as input
-      expr* inplace = new internal_tk(places[i_pl]->Name(), i_pl);
+      expr* inplace = new internal_tk(places[i_pl], i_pl);
       // we want inputcard <= tk(inplace) < inhibcard
       expr* cmp = NULL;
       if ((NULL==arcs->value[inhib_ptr].proc_card) &&
@@ -284,7 +290,7 @@ expr* spn_dsm::EnabledExpr(int e)
 
   // have list of conditions, build conjunction
   int numopnds = exprlist->Length();
-  DCASSERT(numopnds>0);
+  if (numopnds==0) return NULL;
   expr** opnds = exprlist->Copy();  
   exprlist->Clear();
   return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
@@ -362,12 +368,12 @@ bool spn_model::ListAdd(int list,  spn_arcinfo &data, expr* card)
     } else {
       // error?
       data.const_card = 0;
-      data.proc_card = Copy(card);
+      data.proc_card = card->Substitute(0);
     }
   } else {
     // proc int
     data.const_card = 0;
-    data.proc_card = Copy(card);
+    data.proc_card = card->Substitute(0);
   }
 
   DCASSERT(arcs);

@@ -17,6 +17,8 @@
 
 //@{
 
+// #define DEBUG_GETSYMS
+
 // ******************************************************************
 // *                                                                *
 // *                    Output-related functions                    *
@@ -123,6 +125,12 @@ int expr::GetProducts(int i, List <expr> *prods)
 int expr::GetSymbols(int i, List <symbol> *)
 {
   DCASSERT(i==0);
+#ifdef DEBUG_GETSYMS
+  Output << "default GetSymbols for expression: ";
+  show(Output);
+  Output << "\n";
+  Output.flush();
+#endif
   return 0;
 }
 

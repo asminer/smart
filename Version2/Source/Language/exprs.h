@@ -199,7 +199,7 @@ public:
       @return	The number of symbols.
    */
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
-
+  
   /** Get the engine type for this expression.
       @param	e	If not null, fill with all engine information.
       @return	The engine type.

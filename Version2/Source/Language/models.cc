@@ -35,6 +35,7 @@ model_var::model_var(const char* fn, int line, type t, char* n)
   ALLOC("model_var", sizeof(model_var));
   state_index = -1;
   part_index = -1;
+  SetSubstitution(false);
 }
 
 model_var::~model_var()
