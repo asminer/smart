@@ -192,7 +192,7 @@ void compute_num_states(expr **pp, int np, result &x)
   switch (dsm->statespace->Type()) {
     case RT_Enumerated:
 	AllocState(s, 1);
-	for (i=0; i<x.ivalue; i++) {
+	for (i=0; i<ss->size; i++) {
           s[0].ivalue = i; 
 	  Output << "State " << i << ": ";
 	  dsm->ShowState(Output, s);
@@ -201,7 +201,22 @@ void compute_num_states(expr **pp, int np, result &x)
 	} // for i	
 	FreeState(s);
     return;
-    
+   
+    case RT_Explicit:
+	DCASSERT(ss->flat);
+	// This may change in the future...
+	DCASSERT(dsm->UsesConstantStateSize());		
+	AllocState(s, dsm->GetConstantStateSize());
+	for (i=0; i<x.ivalue; i++) {
+	  DCASSERT(ss->flat->GetState(i, s));
+	  Output << "State " << i << ": ";
+	  dsm->ShowState(Output, s);
+	  Output << "\n";
+	  Output.flush();
+	} // for i	
+ 	FreeState(s);
+    return; 
+
     default:
 	Internal.Start(__FILE__, __LINE__);
 	Internal << "Unhandled state space type\n";

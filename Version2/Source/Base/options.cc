@@ -34,6 +34,12 @@ option::~option()
 {
 }
 
+bool option::isApropos(const char* find) const
+{
+  // default behavior, override for enumerated options
+  return strstr(name, find) != NULL;
+}
+
 void option::SetValue(bool, const char *f, int l)
 {
   Internal.Start(__FILE__, __LINE__, f, l);
@@ -334,6 +340,7 @@ public:
   		const option_const* v)
   : option(VOID, n, d) { possible = p; numpossible = np; value = v; }
   virtual ~enum_opt() { delete[] possible; }
+  virtual bool isApropos(const char* find) const;
   virtual void SetValue(const option_const* v, const char* f, int l) {
     value = v;
   }
@@ -349,6 +356,20 @@ public:
   virtual const option_const* FindConstant(const char* name) const;
   virtual void ShowRange(OutputStream &s) const;
 };
+
+bool enum_opt::isApropos(const char* find) const
+{
+  // check the option name...
+  if (strstr(Name(), find)) return true;
+  // now check all the enumerated names
+  for (int i=0; i<numpossible; i++) {
+    DCASSERT(possible[i]);
+    DCASSERT(possible[i]->name);
+    if (strstr(possible[i]->name, find)) return true;
+  }
+  return false;
+}
+
 
 /** Find the appropriate value for this enumerated name.
     If the name is bad (i.e., not found), we return NULL.

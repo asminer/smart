@@ -53,6 +53,9 @@ public:
 
   inline void show(OutputStream &s) const { s << "#" << name; }
 
+  /// Does this option match a help string?
+  virtual bool isApropos(const char* find) const;
+
   // provided in derived classes
   virtual void SetValue(bool b, const char* file, int line);
   virtual void SetValue(int n, const char* file, int line);

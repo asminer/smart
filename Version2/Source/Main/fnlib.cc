@@ -141,17 +141,23 @@ void compute_help(expr **pp, int np, result &x)
     help_search_string = x.svalue->string;
 
   // Look through functions
+  Output << "\nOrdinary functions matching \"" << help_search_string;
+  Output << "\":\n";
   Builtins.Traverse(ShowDocs);
 
   // Look through model functions
+  Output << "\nModel functions matching \"" << help_search_string;
+  Output << "\":\n";
   HelpModelFuncs();
 
   // Now go through options
+  Output << "\nOptions/constants \"" << help_search_string;
+  Output << "\":\n";
   int i;
   for (i=0; i<NumOptions(); i++) {
     option* o = GetOptionNumber(i);
-    if (NULL==strstr(o->Name(), help_search_string)) continue;
     if (o->IsUndocumented()) continue;
+    if (!o->isApropos(help_search_string)) continue;
     o->ShowHeader(Output);
     Output << "\n";
     Output << "\t" << o->GetDocumentation() << "\n";

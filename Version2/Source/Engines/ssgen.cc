@@ -287,34 +287,20 @@ void SplayReachset(state_model *dsm)
     Verbose << "Starting reachability set generation using Splay tree\n";
     Verbose.flush();
   }
-  timer watch;
-
-  watch.Start();
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   bool ok = Explore_Indexed(dsm, states, tree);
-  watch.Stop();
-
   if (Report.IsActive()) {
-    Report << "Generation took " << watch << "\n";
     Report << "Splay tree:\n";
     tree->Report(Report);
     states->Report(Report);
     Report.flush();
   }
-  
-  watch.Start();
   if (!ok) {
     delete states;
     states = NULL;
   }
   CompressAndAffix(dsm, states, tree);
-  watch.Stop();
-
-  if (Report.IsActive()) {
-    Report << "Compression took " << watch << "\n";
-    Report.flush();
-  }
 }
 
 void RedBlackReachset(state_model *dsm)
@@ -323,21 +309,15 @@ void RedBlackReachset(state_model *dsm)
     Verbose << "Starting reachability set generation using red-black tree\n";
     Verbose.flush();
   }
-  timer watch;
-  watch.Start();
   state_array* states = new state_array(true);
   red_black_tree* tree = new red_black_tree(states);
   bool ok = Explore_Indexed(dsm, states, tree);
-  
-  watch.Stop();
   if (Report.IsActive()) {
-    Report << "Generation took " << watch << "\n";
     Report << "red-black tree:\n";
     tree->Report(Report);
     states->Report(Report);
     Report.flush();
   }
-
   if (!ok) {
     delete states;
     states = NULL;
