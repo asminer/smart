@@ -60,6 +60,7 @@ int smart_main(int argc, char *argv[])
   yyparse();
 
   Output << "Done.\n";
+  Output.flush();
 
   return 0;
 }
