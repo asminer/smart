@@ -19,15 +19,15 @@ class Stack {
 protected:
   void Enlarge(int newsize) {
     if (size == maxsize) {
-      // better failure here...
-      cerr << "Stack overflow\n";
-      exit(0);
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Stack overflow";
+      Internal.Stop();
     }
     DATA *foo = (DATA *) realloc(data, newsize*sizeof(DATA));
     if (NULL==foo) {
-      // handle failure better here...
-      cerr << "Memory overflow on stack resize\n";
-      exit(0);
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Memory overflow on stack resize";
+      Internal.Stop();
     }
     data = foo;
     size = newsize;
@@ -52,7 +52,8 @@ public:
   }
   inline DATA Pop() {
     DCASSERT(top);
-    return data[top--];
+    top--;
+    return data[top];
   }
   inline DATA Top() const {
     DCASSERT(top);

@@ -26,11 +26,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <iostream>
 
-using namespace std;
-
-#define _VERSION "1.1"
+#define _VERSION "2.0"
 
 // Handy Constants
 

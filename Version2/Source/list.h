@@ -19,8 +19,9 @@ protected:
   void Enlarge(int newsize) {
     void ** foo = (void**) realloc(data, newsize*sizeof(void*));
     if (NULL==foo) {
-      cerr << "Memory overflow on PtrList resize\n";
-      exit(0);
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Memory overflow on List resize\n";
+      Internal.Stop();
     }
     data = foo;
     size = newsize;
