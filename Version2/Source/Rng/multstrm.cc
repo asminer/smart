@@ -3,6 +3,8 @@
 
 //#define CHECK_CACHE
 
+#define NO_CACHE
+
 #ifdef EXPLICIT
 
 bigmatrix::bigmatrix(int n)
@@ -366,7 +368,9 @@ inline bool Stale(bincache *x)
 
 void CacheAdd(bitmatrix *b, bitmatrix *c, bitmatrix *ans)
 {
-  //return;
+#ifdef NO_CACHE
+  return;
+#else
   b->cachecount++;
   c->cachecount++;
   if (ans) ans->cachecount++;
@@ -375,6 +379,7 @@ void CacheAdd(bitmatrix *b, bitmatrix *c, bitmatrix *ans)
   foo->c = c;
   foo->answer = ans;
   ComputeTable.Insert(foo);
+#endif
 }
 
 bool CacheHit(bitmatrix* b, bitmatrix* c, bitmatrix* &ans)
@@ -508,6 +513,66 @@ void shared_matrix::MakeB(int M, unsigned int A)
   SetPtr(N-M-1, 0, IDENTITY);
   SetPtr(N-2, 0, L);
   SetPtr(N-1, 0, U);
+}
+
+void shared_matrix::MakeBN(int M, unsigned int A)
+{
+  int i,j;
+  for (i=0; i<N; i++) 
+    for (j=0; j<N; j++)
+      ptrs[i][j] = NULL;
+
+  // Make the submatrices
+
+  InitMatrix(); // just in case
+
+  bitmatrix* L = matrix_pile.NewObject();
+  L->row[0] = 0;
+  for (i=1; i<31; i++) L->row[i] = mask[i+1];
+  L->row[31] = A;  
+  L = Reduce(L);
+
+  bitmatrix* U = matrix_pile.NewObject();
+  U->row[0] = mask[1];
+  for (i=1; i<32; i++) U->row[i] = 0;
+  U = Reduce(U);
+
+  // Init: identity  (will be overwritten)
+  for (i=0; i<N; i++) SetPtr(i, i, IDENTITY);
+  
+  // Fill (see MT paper pseudocode to explain) 
+
+  int k;
+  for (k=N-1; k>M-1; k--) {
+    SetPtr(k-M, k, IDENTITY);
+    SetPtr(k-1, k, L);
+    SetPtr(k, k, U); 
+  }
+  for (k=M-1; k; k--) {
+    ColCpy(k, k+N-M); 
+    SetPtr(k-1, k, L);
+    SetPtr(k, k, U); 
+  }
+  ColCpy(0, N-M);
+
+  SetPtr(0, 0, U);
+  if (ptrs[(N-1)-M][0]) {
+    bitmatrix* crust = matrix_pile.NewObject();
+    mm_acc(crust, ptrs[(N-1)-M][0]);
+    mm_acc(crust, L);
+    SetPtr((N-1)-M, 0, Reduce(crust));
+  } else {
+    SetPtr((N-1)-M, 0, L);
+  }
+  SetPtr(N-2, 0, cache_mult(L, L));
+  SetPtr(N-1, 0, cache_mult(U, L));
+}
+
+void shared_matrix::ColCpy(int dest, int src)
+{
+  int k;
+  for (k=0; k<N; k++) 
+    SetPtr(k, dest, ptrs[k][src]);
 }
 
 void shared_matrix::show(OutputStream &s)

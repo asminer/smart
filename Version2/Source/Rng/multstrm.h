@@ -19,16 +19,15 @@ const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 
 
 struct bitmatrix {
-  unsigned int row[32];
+  unsigned long row[32];
   int ptrcount;
   int cachecount;
   bool flag;
 
-  inline unsigned int vm_mult(unsigned int v) {
-    unsigned int answer = 0;
+  inline void vm_mult(unsigned long v, unsigned long &answer) {
+    if (0==v) return;
     for (int b=31; b>=0; b--) if (row[b])
       if (v & mask[b]) answer ^= row[b];
-    return answer;
   }
 
   void show(OutputStream &s) {
@@ -52,7 +51,7 @@ struct bitmatrix {
     return true;
   }
 
-  inline unsigned int Signature(int prime) {
+  inline unsigned long Signature(long prime) {
     // return (row[31] ^ row[15] ^ row[0]) % prime;
     return ((((row[31] % prime) * 256 + row[15]) % prime) * 256 + row[0]) % prime;
   }
@@ -61,8 +60,12 @@ struct bitmatrix {
 /// a = b * c
 inline void mm_mult(bitmatrix *a, bitmatrix *b, bitmatrix *c)
 {
-  for (int i=0; i<32; i++) a->row[i] = c->vm_mult(b->row[i]);
+  for (int i=0; i<32; i++) {
+    a->row[i] = 0;
+    c->vm_mult(b->row[i], a->row[i]);
+  }
 }
+
 
 /// a += c
 inline void mm_acc(bitmatrix *a, bitmatrix *c)
@@ -135,6 +138,7 @@ public:
 #endif
   shared_matrix(int n);
   void MakeB(int M, unsigned int A);
+  void MakeBN(int M, unsigned int A);
   ~shared_matrix();
   void show(OutputStream &s);
   /// x = y * this;
@@ -144,7 +148,8 @@ public:
     for (i=N-1; i>=0; i--)
       for (j=N-1; j>=0; j--)
 	if (ptrs[i][j])
-	  x[j] ^= ptrs[i][j]->vm_mult(y[i]);
+	  ptrs[i][j]->vm_mult(y[i], x[j]);
+	//  x[j] ^= ptrs[i][j]->vm_mult(y[i]);
   }
   inline int Distinct() const { return distinct; }
 
@@ -160,6 +165,7 @@ protected:
     ptrs[i][j] = m;
     if (m) m->ptrcount++;
   }
+  void ColCpy(int dest, int src);
 };
 
 void InitMatrix();

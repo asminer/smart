@@ -43,18 +43,20 @@ void MakeMatrix(shared_matrix &answer)
   Output << "Initializing...\n";
   Output.flush();
 
-  shared_matrix B(N);
+  if (CYCLES < 2) {
+    answer.MakeBN(M, A);
+    return;
+  }
+
+  shared_matrix BN(N);
   shared_matrix tmp(N);
 
-  B.MakeB(M, A);
+  BN.MakeBN(M, A);
   Output << "Computed B\n";
   Output.flush();
 
-  Braised(N*CYCLES, &B, &tmp, &answer);
+  Braised(CYCLES, &BN, &tmp, &answer);
 
-  MatrixStats();
-  Output << "Collecting garbage\n";
-  GarbageCollect();
   MatrixStats();
 }
 
