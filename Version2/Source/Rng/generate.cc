@@ -32,7 +32,7 @@ void TextGenerate(int strms, int samples)
   }
 }
 
-void PackBit(FILE* out, bool value)
+void PackBit(bool value)
 {
   static unsigned char byte = 0;
   static int bit = 8;
@@ -42,13 +42,13 @@ void PackBit(FILE* out, bool value)
   bit--;
   if (value) byte += mask[bit];
   if (0==bit) {
-    fputc(byte, out);
+    fputc(byte, stdout);
     bit = 8;
     byte = 0;
   }
 }
 
-void BinGenerate(int strms, int samples)
+void BitGenerate(int strms, int samples)
 {
 const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x08000000, 0x04000000, 0x02000000, 0x01000000,
@@ -63,63 +63,99 @@ const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
 
-  FILE* out[MAX_STREAMS];
   int s;
-  char buffer[255];
-  for (s=0; s<strms; s++) {
-    buffer[0] = 0;
-    sprintf(buffer, "bits%d.bin", s);
-    printf("Opening %s\n", buffer);
-    out[s] = fopen(buffer, "w");
-  }
-
-  printf("Opening mixed.bin\n");
-  FILE* mixed = fopen("mixed.bin", "w");
-
   int n;
   unsigned long genseq[MAX_STREAMS]; 
   for (n=0; n<samples; n++) {
-    // Generate and write from each stream
+    // Generate from each stream
     for (s=0; s<strms; s++) {
       genseq[s] = stream[s].lrand();
-      fwrite(genseq+s, sizeof(unsigned long), 1, out[s]);
     }
     // Interleave bits for the mixed stream
     for (int bit=0; bit<32; bit++) {
       for (s=0; s<strms; s++) {
 	bool b = (genseq[s] & mask[bit]);
-	PackBit(mixed, b);
+	PackBit(b);
       } // s
     } // bit
   } // n
+}
 
-  fclose(mixed);
-  for (s=0; s<strms; s++) fclose(out[s]);
-  
+void ByteGenerate(int strms, int samples)
+{
+  int s,n;
+  unsigned long genseq[MAX_STREAMS];
+  for (n=0; n<samples; n++) {
+    // Generate from each stream
+    for (s=0; s<strms; s++) {
+      genseq[s] = stream[s].lrand();
+    }
+    // Interleave bytes (nice hack)
+    // write first byte from each sample
+    char* foo = (char*) genseq;
+    for (s=0; s<strms; s++) {
+      fputc(foo[0], stdout);
+      foo += 4;  
+    }
+    // write the second byte from each sample
+    foo = (char*) genseq;
+    for (s=0; s<strms; s++) {
+      fputc(foo[1], stdout);
+      foo += 4;  
+    }
+    // write the third byte from each sample
+    foo = (char*) genseq;
+    for (s=0; s<strms; s++) {
+      fputc(foo[2], stdout);
+      foo += 4;  
+    }
+    // write the fourth byte from each sample
+    foo = (char*) genseq;
+    for (s=0; s<strms; s++) {
+      fputc(foo[3], stdout);
+      foo += 4;  
+    }
+  } // n
+}
+
+void WordGenerate(int strms, int samples)
+{
+  int s,n;
+  for (n=0; n<samples; n++) {
+    // Generate and write from each stream
+    for (s=0; s<strms; s++) {
+      unsigned long sample = stream[s].lrand();
+      char* foo = (char*)&sample;
+      fputc(foo[0], stdout);
+      fputc(foo[1], stdout);
+      fputc(foo[2], stdout);
+      fputc(foo[3], stdout);
+      // by hand instead of write to fix the order.
+    }
+  }
 }
 
 int main(int argc, char** argv)
 {
   if (argc<3) {
-    fprintf(stderr, "\n\tUsage: %s t|b <#streams> <#samples>\n\n", argv[0]);
+    fprintf(stderr, "\n\tUsage: %s t|b|y|w <#streams> <#samples>\n\n", argv[0]);
     fprintf(stderr, "\t #streams is the number of parallel streams to use\n");
     fprintf(stderr, "\t #samples is the number of samples (per stream) to generate\n");
     fprintf(stderr, "\t t  means output will be text mode, #streams per line\n");
-    fprintf(stderr, "\t b  means output will be binary files\n");
-    fprintf(stderr, "\t\t  bits0.bin ... bits(n-1).bin mixed.bin\n\n");
+    fprintf(stderr, "\t b  means output stream will be interleaved bits\n");
+    fprintf(stderr, "\t y  means output stream will be interleaved bytes\n");
+    fprintf(stderr, "\t w  means output stream will be interleaved words\n\n");
     return 0;
   }
 
-  bool binary = false;
   switch (argv[1][0]) {
-    case 'b' : 
-    	binary = true;
-	break;
     case 't' :
-    	binary = false;
+    case 'b' : 
+    case 'y' : 
+    case 'w' : 
 	break;
     default:
-    	fprintf(stderr, "Expecting t|b for first argument\n");
+    	fprintf(stderr, "Expecting t|b|y|w for first argument\n");
 	return 0;
   }
 
@@ -137,10 +173,11 @@ int main(int argc, char** argv)
 
   InitStreams(streams, 7309259);
 
-  if (binary)
-    BinGenerate(streams, samples);
-  else
-    TextGenerate(streams, samples);
-
+  switch (argv[1][0]) {
+    case 't':	TextGenerate(streams, samples); 	return 0;
+    case 'b': 	BitGenerate(streams, samples);		return 0;
+    case 'y':	ByteGenerate(streams, samples);		return 0;
+    case 'w':	WordGenerate(streams, samples);		return 0;
+  }
   return 0;
 }
