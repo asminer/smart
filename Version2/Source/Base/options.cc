@@ -397,7 +397,7 @@ option* MakeEnumOption(const char* name, const char* doc,
 // *                                                                        *
 // **************************************************************************
 
-Heap <option> optionlist(128);
+HeapOfPointers <option> optionlist(128);
 option** SortedOptions;
 int NumSortedOptions;
 

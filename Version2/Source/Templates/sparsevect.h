@@ -9,8 +9,10 @@
 #define SPARSEVECT_H
 
 #include "../Base/errors.h"
+#include "heap.h"  // for sorting
 
 class sparse_bitvector {
+public:
   /// Number of nonzero entries
   int nonzeroes;
   /// Vector of nonzero indices
@@ -38,7 +40,7 @@ public:
   }
   inline void Clear() { nonzeroes = 0; isSorted = true; }
   inline int NumNonzeroes() const { return nonzeroes; }
-  int BinaryFindIndex(int e) const {
+  int BinarySearchIndex(int e) const {
     DCASSERT(isSorted);
     int high = nonzeroes;
     int low = 0;
@@ -50,16 +52,11 @@ public:
     }
     return -1;
   }
-  int LinearFindIndex(int e) const {
+  int LinearSearchIndex(int e) const {
     int low;  
     for (low=nonzeroes-1; low>=0; low--) 
       if (e == index[low]) return low;
     return -1;
-  }
-  inline int GetNthNonzeroIndex(int n) const {
-    DCASSERT(n<nonzeroes);
-    DCASSERT(n>=0);
-    return index[n];
   }
   inline void Append(int a) {
     while (nonzeroes >= size) Resize(size + MAX(size/2, 1));
@@ -84,8 +81,77 @@ public:
   }
   void Sort() {
     if (isSorted) return;
-    // heapsort here
+    HeapOfObjects <int> foo(index, nonzeroes); 
+    foo.Sort();
+    index = foo.MakeArray();
+    size = nonzeroes;
     isSorted = true;
+  }
+};
+
+/*
+template <class DATA>
+struct index_pair {
+  int index;
+  DATA value;
+};
+
+template <class DATA>
+inline bool operator> (const index_pair <DATA> &a, const index_pair <DATA> &b)
+{
+  return a.index > b.index;
+}
+*/
+
+template <class DATA>
+class sparse_vector : public sparse_bitvector {
+public:
+  /// Value of each nonzero entry
+  DATA* value;
+protected:
+  void Resize(int newsize) {
+    sparse_bitvector::Resize(newsize);
+    DATA *bar = (DATA *) realloc(value, newsize*sizeof(DATA));
+    if (newsize && (NULL==bar)) OutOfMemoryError("Sparse vector resize");
+    value = bar;
+  }
+public:
+  sparse_vector(int inits) : sparse_bitvector(0) {
+    index = NULL;
+    value = NULL;
+    Resize(MAX(inits, 1));
+    nonzeroes = 0;
+    isSorted = true;
+  }
+  ~sparse_vector() { 
+    Resize(0);
+  }
+  inline void Append(int i, DATA v) {
+    while (nonzeroes >= size) Resize(size + MAX(size/2, 1));
+    index[nonzeroes] = i;
+    value[nonzeroes] = v;
+    nonzeroes++;
+    isSorted = false;
+  }
+  inline void SortedAppend(int i, DATA v) {
+    DCASSERT(isSorted);
+    while (nonzeroes >= size) Resize(size + MAX(size/2, 1));
+    int n = nonzeroes;
+    while (n) {
+      if (i < index[n-1]) {
+        index[n] = index[n-1];
+        value[n] = value[n-1];
+      } else {
+	break;
+      }
+      n--;
+    }
+    index[n] = i; 
+    value[n] = v;
+    nonzeroes++;
+  }
+  void Sort() {
+    DCASSERT(0);
   }
 };
 

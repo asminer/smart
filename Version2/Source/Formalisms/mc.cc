@@ -7,10 +7,11 @@
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../States/reachset.h"
+#include "../Templates/sparsevect.h"
 
 #include "dsm.h"
 
-#define DEBUG_MC
+//#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -102,11 +103,14 @@ class markov_model : public model {
   List <char> *statelist;
   char** statenames;
   int numstates;
+  sparse_vector <double> *initial;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
 
   virtual ~markov_model();
+
+  void AddInitial(int state, double weight, const char *fn, int line);
 
   // Required for models:
 
@@ -127,10 +131,26 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   statelist = NULL; 
   statenames = NULL;
   numstates = 0;
+  initial = new sparse_vector <double>(2);
 }
 
 markov_model::~markov_model()
 {
+  delete initial;
+}
+
+void markov_model::AddInitial(int state, double weight, const char* fn, int line)
+{
+  int e = initial->BinarySearchIndex(state);
+  if (e<0) {
+    initial->SortedAppend(state, weight);
+    return;
+  }
+  // Duplicate entry, give a warning
+  Warning.Start(fn, line);
+  Warning << "Ignoring duplicate initial probability for \n\tstate ";
+  Warning << statelist->Item(state) << " in Markov chain " << Name();
+  Warning.Stop();
 }
 
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
@@ -164,6 +184,11 @@ void markov_model::FinalizeModel(result &x)
   int i;
   for (i=0; i<numstates; i++) {
     Output << "\t" << statenames[i] << "\n";
+  }
+  Output << "\tInitial weights:\n";
+  for (i=0; i<initial->NumNonzeroes(); i++) {
+    Output << "\t" << statenames[initial->index[i]];
+    Output << " : " << initial->value[i] << "\n"; 
   }
   Output.flush();
 #endif
@@ -215,11 +240,18 @@ void compute_mc_init(expr **pp, int np, result &x)
     PrintResult(Output, INT, x);
     Output << "\n\t value ";
 #endif
+    int index = x.ivalue;
+    // check for errors here...
+
     SafeCompute(pp[i], 1, x);
 #ifdef DEBUG_MC
     PrintResult(Output, REAL, x);
     Output << "\n";
 #endif
+    double weight = x.rvalue;
+    // again with the errors
+
+    mc->AddInitial(index, weight, pp[i]->Filename(), pp[i]->Linenumber());
   }
 
 #ifdef DEBUG_MC

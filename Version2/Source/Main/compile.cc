@@ -4,6 +4,7 @@
 #include "../Base/api.h"
 #include "compile.h"
 #include "../Templates/list.h"
+#include "../Templates/heap.h"
 #include "tables.h"
 #include "fnlib.h"
 #include "../Formalisms/api.h"
@@ -69,7 +70,7 @@ model *model_under_construction;
 PtrTable *ModelInternal;
 
 /// External model symbol table
-Heap <symbol> ModelExternal(16);
+HeapOfPointers <symbol> ModelExternal(16);
 
 /** List of functions that match what we're looking for.
     Global because we'll re-use it.

@@ -16,7 +16,6 @@
 #include "functions.h"
 #include "arrays.h"
 #include "stmts.h"
-#include "../Templates/heap.h"
 
 //@{
   
