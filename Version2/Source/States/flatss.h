@@ -131,6 +131,19 @@ protected:
    */
   void ReadInt(char bits, int &x); 
 
+  /** Skips the next \emph{bits} bits from the "bit stream".
+      I.e., like ReadInt except we don't care about the value.
+  */
+  inline void SkipInt(char bits) {
+    byteptr += bits / 8;
+    bitptr -= bits % 8;
+    if (bitptr < 0) {
+      bitptr += 8;
+      byteptr++;
+    }
+    CHECK_RANGE(bitptr, 0, 7);
+  };
+
   /** The opposite of ReadInt.
       Writes the integer \emph{x} onto the "bit stream", using
       \emph{bits} bits.

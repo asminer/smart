@@ -18,7 +18,8 @@ int main()
   state s;
   AllocState(s, np);
 
-  state_array pile_of_states(true);
+  state_array pile_of_states(false);
+  // state_array pile_of_states(true);
   bool aok = true;
   while (aok) {
     Output << "Enter state (length " << np << "):\n";
@@ -38,9 +39,13 @@ int main()
   }
 
   Output << "\n\nRetrieving states...\n";
-  int i;
-  for (i=0; i<pile_of_states.NumStates(); i++) {
-    pile_of_states.GetState(i, s);
+  int h = pile_of_states.FirstHandle();
+  while (h < pile_of_states.MaxHandle()) {
+    Output << "Trying state with handle " << h << "\n";
+    Output.flush();
+    pile_of_states.GetState(h, s);
+    h = pile_of_states.NextHandle(h);
+    if (h<0) break;
   }
 
   FreeState(s);

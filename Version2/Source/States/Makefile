@@ -32,5 +32,8 @@ results.o: ../Language/results.cc ../Language/results.h
 stateheap.o: stateheap.h stateheap.cc
 	$(CXX) $(CPPFLAGS) -DEXTRACTED_FROM_SMART -c stateheap.cc
 
+flatss.o: flatss.h flatss.cc stateheap.h
+	$(CXX) $(CPPFLAGS) -DDEBUG_COMPACT -c flatss.cc
+
 clean:
 	rm *.o $(EXECS)

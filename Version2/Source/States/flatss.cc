@@ -11,8 +11,6 @@
     
  */
 
-#define  DEBUG_COMPACT
-
 //@{ 
 
 // ==================================================================
@@ -27,11 +25,16 @@ const unsigned char frommask[8] =
 const unsigned char tomask[8] = 
 	{0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80};
 
-const unsigned int twoexp[32] = 
-	{0x0001, 0x0002, 0x0004, 0x0008, 
-	 0x0010, 0x0020, 0x0040, 0x0080,
-	 0x0100, 0x0200, 0x0400, 0x0800,
-	 0x1000, 0x2000, 0x4000, 0x8000};
+const unsigned long int twoexp[32] = {
+	0x00000001, 0x00000002, 0x00000004, 0x00000008, 
+	0x00000010, 0x00000020, 0x00000040, 0x00000080,
+	0x00000100, 0x00000200, 0x00000400, 0x00000800,
+	0x00001000, 0x00002000, 0x00004000, 0x00008000,
+	0x00010000, 0x00020000, 0x00040000, 0x00080000,
+	0x00100000, 0x00200000, 0x00400000, 0x00800000,
+	0x01000000, 0x02000000, 0x04000000, 0x08000000,
+	0x10000000, 0x20000000, 0x40000000, 0x80000000
+};
 
 const char* EncodingMethod[4] = 
 	{ "deleted state", "sparse", "runlength", "full" };
@@ -120,10 +123,10 @@ void state_array::WriteInt(char bits, int x)
   // If we're here, we cross a byte boundary.
   
   // First: fill the rest of the bits from this byte.
-  unsigned char chunk = x / twoexp[bits - (bitptr+1)];
-  x %= twoexp[bits - (bitptr+1)];
-  mem[byteptr] |= chunk;
   bits -= (bitptr+1);
+  unsigned char chunk = x / twoexp[bits];
+  x %= twoexp[bits];
+  mem[byteptr] |= chunk;
   bitptr = 7;
   byteptr++;
   // Do the rest of the bits
@@ -503,6 +506,11 @@ int state_array::AddState(state &s)
       for (i=0; i<np; i++) 
 	WriteInt(tkbits, s[i].ivalue);
     break;
+
+    default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad state encoding?\n";
+	Internal.Stop();
   }
   
   // 
@@ -643,7 +651,10 @@ bool state_array::GetState(int Handel, state &s)
     break;
 
     default:
-      return false;  // shouldn't get here
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad state encoding?\n";
+	Internal.Stop();
+      	return false;  // shouldn't get here
   }
 
 #ifdef  DEBUG_COMPACT
@@ -678,98 +689,102 @@ bool state_array::GetState(int Handel, state &s)
 
 int state_array::NextHandle(int h)
 {
-/*
-  if (h<0) return -1;
+  // 
+  // Take care of easy cases first
+  //
   if (map) {
     // handles are indices
-    if (h>=numstates-1) return -1;
-    return h+1;
+    if (h>=numstates) return -1;
+    return h+1; 
   }
   if (h>=lasthandle) return -1;
-  int np, nnz, Mfv;
-  int encselect;
-  int npselect;
-  char npbits;
-  int tkselect;
-  char tkbits;
-#ifndef SHORT_STATES
-  int dummy;
-#endif
-  int numbits;
   
-  // here we go...
+  // 
+  // Initialize bitstream and read state encoding method
+  // 
   byteptr = h;
   bitptr = 7;
-  // read the state code
+  int encselect;
   ReadInt(2, encselect);
+  int npselect;
   ReadInt(3, npselect); 	// #places selector
-#ifdef SHORT_STATES
+  int tkselect;
   ReadInt(3, tkselect);  	// maxtokens selector
-#else
-  ReadInt(2, tkselect);  	// maxtokens selector
-  ReadInt(1, dummy);		// extra unused bit
+
+  // Figure out the numbers of bits used
+  char npbits = placebits[npselect];
+  char tkbits = tokenbits[tkselect];
+
+  //
+  // Determine state length (#bits), reading only as much as necessary
+  //
+  int numbits = 0;
+  int tk, np, nnz;
+  int i, j, type;
+  // stats for debugging
+#ifdef DEBUG_COMPACT
+  int lists, runs, listlength;
+  lists = runs = listlength = 0;
 #endif
-
-  // Figure out the numbers of bits
-  switch(npselect) {
-    case 0: npbits = 4; break;
-    case 1: npbits = 8; break;
-    case 2: npbits = 16; break;
-    case 3: npbits = 24; break;
-    case 4: npbits = 32; break;
-    default:
-      return -1;  // shouldn't get here
-  }
-
-  tkbits = twoexp[tkselect];
-
   switch(encselect) {
     case 1: 
       // *****************	Sparse Encoding 
       ReadInt(npbits, nnz);
-      if (tkbits==1) tkbits=0;  // #tk not used in this case
-      numbits = 8+npbits+ nnz*(npbits + tkbits);
+      if (tkbits==1) tkbits=0;  // #tokens never part of state
+      SkipInt(nnz * (npbits + tkbits));
       break;
 
     case 2: 
-      // *****************	Inverse-Sparse Encoding 
-      if (tkbits==1) tkbits=0;  // #tk not used in this case
-      if (tkbits) ReadInt(tkbits, Mfv);
-      ReadInt(npbits, nnz);
-      numbits = 8+npbits+tkbits+ nnz*(npbits + tkbits);
+      // *****************	Runlength Encoding 
+      ReadInt(npbits, nnz); 
+      j=0;
+      if (tkbits==1) {
+	tkbits=0;    // #tokens never part of state...
+	SkipInt(1);  // except here
+      }
+      for (i=0; i<nnz; i++) {
+        ReadInt(1, type);
+        if (RUN_BIT == type) {
+	  // RUN
+          SkipInt(npbits + tkbits);
+        } else {
+	  // LIST
+	  ReadInt(npbits, np);
+	  SkipInt(tkbits * np);
+        }
+      } // for i
       break;
 
     case 3:
       // *****************	Full Encoding 
       ReadInt(npbits, np);
       np++;
-      numbits = 8+npbits+ np*tkbits;
-      break;
+      SkipInt(np * tkbits);
+    break;
 
     default:
-      return -1;  // shouldn't get here
-  }
-  int answer;
-  bool extrabits = (numbits % 8);
-  answer = h+numbits / 8;
-  if (extrabits) answer++;
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad state encoding?\n";
+	Internal.Stop();
+      	return -1;  // shouldn't get here
+  } // switch
+
+  // 
+  // Close off bitstream
+  // 
+  if (bitptr<7) byteptr++;
 
 #ifdef  DEBUG_COMPACT
   Output << "Determined next handle ok?\n";
   Output << "Handle: " << h << "\n";
   Output << "Encoding:\n";
-  PrintBits(h, answer);
+  PrintBits(Output, h, byteptr);
   Output << "\n#places bits: " << (int)npbits;
   Output << "\t#tokens bits: " << (int)tkbits << "\n";
-  Output << "Next handle: " << answer << "\n";
+  Output << "Next handle: " << byteptr << "\n";
 #endif
 
-  return answer;
-*/
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Next handle not implemented yet\n";
-  Internal.Stop();
-  return 0;
+  return byteptr;
 }
 
 void state_array::Report(OutputStream &R)
