@@ -15,15 +15,73 @@ extern PtrTable Builtins;
 // Used by computehelp
 char* help_search_string;
 
+const int docwidth = 60;  // make an option?
+
 void DumpDocs(const char* doc)
 {
-  // Note: this is in case we want to do fancy stuff, in the future ;^)
-  if (doc[0] != '\b') 
-    Output << "\t" << doc << "\n";
-  else {
-    const char* doc1 = doc+1;
-    Output << doc1 << "\n";
+  int ptr = 0;
+  if ('\b' == doc[0]) {
+    // function header is done "by hand", dump until newline character
+    for (ptr=1; doc[ptr]!='\n'; ptr++) {
+      DCASSERT(doc[ptr]);
+      Output.Put(doc[ptr]);
+    }
+    ptr++;
   }
+  Output.Put('\n');
+  Output.Put('\t');
+  Output.Pad('-', 60);
+  Output.Put('\n');
+  while (doc[ptr]) {
+    // start of a line, skip spaces (but not tabs or newlines)
+    while (doc[ptr]==' ') ptr++;
+    if (0==doc[ptr]) break;
+
+    Output.Put('\t');
+
+    // write first word
+    int written = 0;
+    while (1) {
+      if (doc[ptr]==' ' || doc[ptr]=='\n' || doc[ptr]==0)
+        break;
+      Output.Put(doc[ptr]);
+      written++;
+      ptr++;
+    }
+
+    // continue writing words until we exceed the line width or hit newline
+    while (written < docwidth) {
+      if (doc[ptr]=='\n' || doc[ptr]==0) break;
+
+      // print inter-word space
+      Output.Put(' ');
+      written++;
+
+      // get to start of next word
+      while (doc[ptr]==' ') ptr++;
+
+      // count spaces of next word
+      int ns = ptr;
+      while (1) {
+        if (doc[ns]==' ' || doc[ns]=='\n' || doc[ns]==0) break;
+        ns++;
+        written++;
+      }
+      if (written < docwidth) {
+        // write the next word
+        while (1) {
+          if (doc[ptr]==' ' || doc[ptr]=='\n' || doc[ptr]==0)
+            break;
+          Output.Put(doc[ptr]);
+          ptr++;
+        }
+      }
+    } // while written
+
+    // That's all we can fit on this line, or it is the last line.
+    Output.Put('\n');
+    if (doc[ptr]=='\n') ptr++;
+  } // while doc[ptr]
 }
 
 void ShowDocs(void *x)
@@ -43,11 +101,18 @@ void ShowDocs(void *x)
     }
     Output << "\t";
     hit->ShowHeader(Output);
-    if (!hit->HasSpecialTypechecking()) Output << "\n";
     // special type checking: documentation must display parameters, too
     const char* d = hit->GetDocumentation();
-    if (d) DumpDocs(d);
-    else { // user defined... 
+    if (d) {
+      // For template functions, show only the last one
+      bool next_is_different = true;
+      if (i+1<bar->Length()) {
+        function *next = bar->Item(i+1);
+        if (next->GetDocumentation() == d) 
+	  next_is_different = false;
+      }
+      if (next_is_different) DumpDocs(d);
+    } else { // user defined... 
 	Output << "\tdefined in "; 
         const char* fn = hit->Filename();
 	if (fn[0]=='-' && fn[1]==0) 
@@ -183,7 +248,7 @@ void compute_print(expr **p, int np, result &x)
 
 void AddPrint(PtrTable *fns)
 {
-  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument to output\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
+  const char* helpdoc = "\b(arg1, arg2, ...)\nPrint each argument to output (talk about width specifiers when they are implemented,and special chars)";
 
   internal_func *p =
     new internal_func(VOID, "print", compute_print, NULL, NULL, 0, helpdoc);
@@ -207,7 +272,7 @@ void compute_sprint(expr **p, int np, result &x)
 
 void AddSprint(PtrTable *fns)
 {
-  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument to a string\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
+  const char* helpdoc = "\b(arg1, arg2, ...)\nPrint each argument to a string (talk about width specifiers when they are implemented, and special chars)";
 
   internal_func *p =
     new internal_func(STRING, "sprint", compute_sprint, NULL, NULL, 0, helpdoc);
@@ -225,15 +290,141 @@ void AddSprint(PtrTable *fns)
 
 void compute_read_int(expr **pp, int np, result &x)
 {
-  x.Clear();
   DCASSERT(pp);
   DCASSERT(np==1);
 
+  SafeCompute(pp[0], 0, x);
+  if (x.isError()) return;
+
+  if (Input.IsDefault()) 
+    if (!x.isNull()) {
+      Output << "Enter the (integer) value for " << (char*) x.other << " : ";
+      Output.flush();
+    }   
+  DeleteResult(STRING, x);
+
+  x.Clear();
+  if (!Input.Get(x.ivalue)) {
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Expecting integer from input stream\n";
+    Error.Stop();
+    x.setError();
+  }
 }
+
+void AddReadInt(PtrTable *fns)
+{
+  const char* helpdoc = "Prompt for and read an integer from the input stream";
+
+  formal_param **fp = new formal_param*[1];
+  fp[0] = new formal_param(STRING, "prompt");
+  internal_func *p =
+    new internal_func(INT, "read_int", compute_read_int, NULL, fp, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
+
+void compute_read_string(expr **pp, int np, result &x)
+{
+  DCASSERT(pp);
+  DCASSERT(np==2);
+
+  SafeCompute(pp[1], 0, x);
+  if (x.isError()) return;
+  int length = x.ivalue;
+
+  SafeCompute(pp[0], 0, x);
+  if (x.isError()) return;
+
+  if (Input.IsDefault()) 
+    if (!x.isNull()) {
+      Output << "Enter the (string) value for " << (char*) x.other << " : ";
+      Output.flush();
+    }   
+  DeleteResult(STRING, x);
+
+  x.Clear();
+  char* buffer = new char[length+2];
+  char c;
+  do {
+    if (!Input.Get(c)) {
+      Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+      Error << "End of input stream before expected string\n";
+      Error.Stop();
+      x.setError();
+      return;
+    }
+  } while ((c==' ') || (c=='\t') || (c=='\n'));
+  int i;
+  for (i=0; i<length; i++) {
+    buffer[i] = c;
+    if (0==c) break;
+    if (!Input.Get(c)) c=0;
+    if ((c==' ') || (c=='\t') || (c=='\n')) c=0;
+  }
+  buffer[i] = 0;  // in case we go past the end
+  x.other = buffer;
+}
+
+void AddReadString(PtrTable *fns)
+{
+  const char* helpdoc = "Prompt for and read a string of at most <length> characters. The string is read from the input prompt.";
+
+  formal_param **fp = new formal_param*[2];
+  fp[0] = new formal_param(STRING, "prompt");
+  fp[1] = new formal_param(INT, "length");
+  internal_func *p =
+    new internal_func(STRING, "read_string", compute_read_string, NULL, fp, 2, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
 
 // ********************************************************
 // *                   File functions                     *
 // ********************************************************
+
+void compute_inputfile(expr **p, int np, result &x)
+{
+  DCASSERT(np==1);
+  DCASSERT(p);
+  x.Clear();
+  SafeCompute(p[0], 0, x);
+  if (x.isError()) return;
+  if (x.isNull()) {
+    Input.SwitchInput(NULL);
+    x.Clear();
+    x.bvalue = true;
+    return;
+  }
+  FILE* infile = fopen((char*) x.other, "r");
+  DeleteResult(STRING, x); 
+  x.Clear();
+  if (NULL==infile) {
+    // error, print message?
+    x.bvalue = false;
+  } else {
+    Input.SwitchInput(infile);
+    x.bvalue = true;
+  }
+}
+
+void AddInputFile(PtrTable *fns)
+{
+  const char* helpdoc = "Switch the input stream from the specified filename.  If the filename is null, the input stream is switched to standard input. If the filename does not exist or cannot be opened, return false. Returns true on success.";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(STRING, "filename");
+
+  internal_func *p =
+    new internal_func(BOOL, "InputFile", compute_inputfile, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
 
 void compute_errorfile(expr **p, int np, result &x)
 {
@@ -248,8 +439,8 @@ void compute_errorfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  char* filename = (char*) x.other;
-  FILE* outfile = fopen(filename, "a");
+  FILE* outfile = fopen((char*) x.other, "a");
+  DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
     x.bvalue = false;
@@ -261,7 +452,7 @@ void compute_errorfile(expr **p, int np, result &x)
 
 void AddErrorFile(PtrTable *fns)
 {
-  const char* helpdoc = "Append the error stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the error stream is switched to standard error. \n\tReturns true on success.";
+  const char* helpdoc = "Append the error stream to the specified filename. If the file does not exist, it is created. If the filename is null, the error stream is switched to standard error. Returns true on success.";
 
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(STRING, "filename");
@@ -286,8 +477,8 @@ void compute_warningfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  char* filename = (char*) x.other;
-  FILE* outfile = fopen(filename, "a");
+  FILE* outfile = fopen((char*) x.other, "a");
+  DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
     x.bvalue = false;
@@ -299,7 +490,7 @@ void compute_warningfile(expr **p, int np, result &x)
 
 void AddWarningFile(PtrTable *fns)
 {
-  const char* helpdoc = "Append the warning stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the warning stream is switched to standard error. \n\tReturns true on success.";
+  const char* helpdoc = "Append the warning stream to the specified filename. If the file does not exist, it is created. If the filename is null, the warning stream is switched to standard error. Returns true on success.";
 
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(STRING, "filename");
@@ -324,8 +515,8 @@ void compute_outputfile(expr **p, int np, result &x)
     x.bvalue = true;
     return;
   }
-  char* filename = (char*) x.other;
-  FILE* outfile = fopen(filename, "a");
+  FILE* outfile = fopen((char*) x.other, "a");
+  DeleteResult(STRING, x);
   if (NULL==outfile) {
     // error, print message?
     x.bvalue = false;
@@ -337,7 +528,7 @@ void compute_outputfile(expr **p, int np, result &x)
 
 void AddOutputFile(PtrTable *fns)
 {
-  const char* helpdoc = "Append the output stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the output stream is switched to standard output. \n\tReturns true on success.";
+  const char* helpdoc = "Append the output stream to the specified filename. If the file does not exist, it is created. If the filename is null, the output stream is switched to standard output. Returns true on success.";
 
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(STRING, "filename");
@@ -1581,10 +1772,14 @@ void AddDontKnow(PtrTable *t)
 void InitBuiltinFunctions(PtrTable *t)
 {
   AddHelp(t);
-  // I/O
+  // Input
+  AddReadString(t);
+  AddReadInt(t);
+  // Output
   AddPrint(t);
   AddSprint(t);
   // Files
+  AddInputFile(t);
   AddErrorFile(t);
   AddWarningFile(t);
   AddOutputFile(t);

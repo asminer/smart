@@ -152,7 +152,6 @@ void ShowModelDocs(void *x)
     }
     Output << "\t";
     hit->ShowHeader(Output);
-    if (!hit->HasSpecialTypechecking()) Output << "\n";
     // special type checking: documentation must display parameters, too
     const char* d = hit->GetDocumentation();
     if (d) DumpDocs(d);

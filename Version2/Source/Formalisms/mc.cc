@@ -706,8 +706,9 @@ void Add_test(PtrTable *fns)
   pl[0] = new formal_param(MARKOV, "m");
   pl[1] = new formal_param(BOOL, "dummy");
   internal_func *p = new internal_func(INT, "test",
-	compute_mc_test, NULL, pl, 2, NULL);
+	compute_mc_test, NULL, pl, 2, "hidden function");
   p->setWithinModel();
+  p->HideDocs();
   InsertFunction(fns, p);
 }
 
