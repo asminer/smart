@@ -16,6 +16,7 @@
 #include "functions.h"
 #include "arrays.h"
 #include "stmts.h"
+#include "../heap.h"
 
 //@{
   
@@ -55,6 +56,15 @@ public:
 // *                                                                *
 // ******************************************************************
 
+inline int Compare(measure *a, measure *b)
+{
+  // Required for heap.
+  // Sort measures by measure pointer info, for speed.
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
 /**   The base class of high-level formalisms (for language support).
 
       Specific formalisms should be derived from this class.
@@ -64,6 +74,7 @@ public:
 */  
 
 class model : public function {
+
 private:
   result* current_params;
   result* last_params;
@@ -77,7 +88,16 @@ private:
   }
   bool SameParams();
 
-  // group measures here
+  /// Measures, used during model instantiation.
+  Heap <measure> *mheap;
+
+  /// Final sorted array of measures.
+  measure** mlist;
+
+  /// Size of measure list
+  int mlist_size;
+
+  // Add more info for each measure here...
 
 protected:
   statement **stmt_block;
@@ -91,7 +111,7 @@ protected:
   */
   symbol **mtable;  
   int size_mtable;  
-  
+
 public:
   model(const char* fn, int line, type t, char* n,
   	formal_param **pl, int np);
@@ -132,7 +152,7 @@ public:
       (handled by an appropriate statement)
       so that we can group the measures by solution engine.
   */
-  void AcceptMeasure(measure *m);
+  inline void AcceptMeasure(measure *m) { mheap->Insert(m); }
 
   /** Find an externally-visible symbol with specified name.
       @param	name	The symbol to look for.
@@ -146,6 +166,22 @@ public:
       are solved.
   */
   void SolveMeasure(measure *m);
+
+private:
+  /** Process the list of measures.
+      Called at the end of model instantiation.
+  */
+  void GroupMeasures();
+
+  /** Find the index of s within the sorted list of measures.
+      Returns NOT_FOUND if s is not in the list.
+  */
+  int FindMeasure(symbol* s);
+
+  /** Clear out all old structs.
+      Used before re-creating a model (with new parameters).
+  */
+  void Clear();
 
 protected:
   /** Prepare for instantiation.

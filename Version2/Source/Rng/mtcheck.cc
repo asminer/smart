@@ -5,6 +5,7 @@
 
 #include "multstrm.h"
 #include "mtwist.h"
+#include "../Base/timers.h"
 
 void smart_exit()
 {
@@ -52,6 +53,9 @@ void MakeMatrix(shared_matrix &answer)
   Braised(N*CYCLES, &B, &tmp, &answer);
 
   MatrixStats();
+  Output << "Collecting garbage\n";
+  GarbageCollect();
+  MatrixStats();
 }
 
 int main()
@@ -60,13 +64,21 @@ int main()
   Output.flush();
 
   Input.Get(CYCLES);
+
+  timer compute;
+  compute.Start();
+  
   shared_matrix refresh(N);
   MakeMatrix(refresh);
 
+  compute.Stop();
+  Output << "That took: " << compute << "\n";
   Output << "Comparing against MT19937\n";
   Output.flush();
   int c;
   int rep;
+
+  compute.Start();
 
   mt_state mine1, mine2;
   mts_seed32(&mine1, 7309259);
@@ -97,6 +109,8 @@ int main()
     } // for i
   }
   
+  compute.Stop();
+  Output << "Comparison took: " << compute << "\n";
   Output << "That's all for now\n";
   Output.flush();
   return 0;

@@ -166,5 +166,7 @@ void InitMatrix();
 
 void MatrixStats();
 
+void GarbageCollect();
+
 #endif
 

@@ -88,7 +88,6 @@ class myhash {
   hashnode** table;
   Manager <hashnode> *node_pile;
 protected:
-  void Resize();
   inline unsigned int HashFunc(hashnode *x) {
     return ((DATA*)x->data)->Signature(Size());
   }
@@ -98,6 +97,7 @@ public:
   DATA* Find(DATA *);
   DATA* Insert(DATA *x);
   // bool Remove(DATA *);
+  void Resize();
   inline int Entries() const { return count; }
   inline int Size() const { return hashsizes[size_index]; }
   inline int MaxChain() const { return maxchain; }
@@ -557,5 +557,11 @@ void MatrixStats()
   Output << cachehits << " hits / " << cachetries << " pings\n";
 
   Output.flush();
+}
+
+void GarbageCollect()
+{
+  ComputeTable.Resize();
+  UniqueTable.Resize();
 }
 

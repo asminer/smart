@@ -63,6 +63,9 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
   mtable = NULL;
   size_mtable = 0;
   dsm = NULL;
+  // measure structures
+  mheap = new Heap <measure>(16);
+  mlist = NULL;
   // Allocate space to save parameters
   if (np) {
     current_params = new result[np];
@@ -90,6 +93,9 @@ model::~model()
   FreeLast();
   delete[] current_params;
   delete[] last_params;
+  // delete measure structs
+  delete mheap;
+  delete[] mlist;
   // delete symbols...
 }
 
@@ -113,14 +119,17 @@ void model::Compute(expr **p, int np, result &x)
   }
 
   // nope... rebuild
-  Delete(dsm);
   InitModel();
+  Clear();
+
   for (i=0; i<num_stmts; i++) {
     stmt_block[i]->Execute();
   }
+  GroupMeasures();
+
   FinalizeModel(last_build);
   x = last_build;
-  if (x.other == this) dsm = BuildStateModel();
+  if (x.other == this) dsm = BuildStateModel(); 
   else dsm = NULL;
 
   // save parameters
@@ -146,7 +155,7 @@ symbol* model::FindVisible(char* name) const
     if (0==cmp) return mtable[mid];
     if (cmp<0) {
       // name < peek
-      high = mid-1;
+      high = mid;
     } else {
       // name > peek
       low = mid+1;
@@ -156,18 +165,39 @@ symbol* model::FindVisible(char* name) const
   return NULL;
 }
 
-void model::AcceptMeasure(measure *m)
-{
-  // do something eventually...
-
-  Output << "Model " << Name() << " adding measure " << m << "\n";
-}
-
 void model::SolveMeasure(measure *m)
 {
   // do something
 
   Output << "Model " << Name() << " solving measure " << m << "\n";
+}
+
+void model::GroupMeasures()
+{
+  mheap->Sort();
+  mlist_size = mheap->Length();
+  mlist = mheap->MakeArray();  // trashes the heap
+
+  // Compute dependency info
+}
+
+int model::FindMeasure(symbol* s)
+{
+  int low = 0;
+  int high = mlist_size;
+  while (low < high) {
+    int mid = (low+high)/2;
+    if (s == mlist[mid]) return mid;
+    if (s < mlist[mid]) high = mid;
+    else low = mid+1;
+  }
+  return NOT_FOUND;
+}
+
+void model::Clear()
+{
+  Delete(dsm);
+  delete[] mlist;
 }
 
 // ******************************************************************
