@@ -1,0 +1,21 @@
+
+/*
+    $Id$
+ */
+	
+/*
+    Tests a for - converge nesting
+
+*/
+
+# Verbose true
+# ConvergePrecision 1e-7
+	
+for (int i in {1..10}) {
+  converge {
+    real x[i] guess 100*i; 
+    real x[i] := sqrt(i*x[i]);
+  }
+  print("x[", i, "] converged to ", x[i], "\n"); 
+}
+
