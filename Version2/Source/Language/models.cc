@@ -183,12 +183,49 @@ void model::SolveMeasure(measure *m)
 {
   if (CS_Computed == m->state) return;  // already solved
 
-  // Based on the engine type of m, 
-  // solve a huge batch of measures with the same engine
-  // or just solve this one
+  // First: solve any measures that this one depends on.
+  int i;
+  for (i=m->NumDependencies()-1; i>=0; i--) {
+    SolveMeasure(m->GetDependency(i));
+  }
 
   Output << "Model " << Name() << " solving measure " << m << "\n";
   Output.flush();
+
+  // Based on the engine type of m, 
+  // solve a huge batch of measures with the same engine
+  // or just solve this one
+  result foo;
+  switch (m->GetEngine(NULL)) {
+
+    	case ENG_Error:
+    		// not sure about this
+		foo.Clear();
+		foo.setError();
+		m->SetValue(foo);
+		break;
+
+	case ENG_SS_Inst:
+		// call the steady-state engine for list msteady
+		break;
+
+	case ENG_SS_Acc:
+		// call appropriate engine for list macc_steady
+		break;
+
+	case ENG_T_Inst:
+		// call the transient engine
+		break;
+
+	case ENG_T_Acc:
+		// call the transient accumulative engine
+		break;
+
+	default:
+		// no engine
+		m->Compute(0, foo);
+		m->SetValue(foo);
+  }
 }
 
 void model::GroupMeasures()
@@ -210,6 +247,14 @@ void model::GroupMeasures()
 				msteady->Append(m);
 				break;
 
+	case ENG_T_Acc:
+   				macc_trans->Append(m);
+				break;
+
+	case ENG_SS_Acc:
+				macc_steady->Append(m);
+				break;
+
 	default:
 				break;
 				// Do nothing 
@@ -222,6 +267,10 @@ void model::Clear()
 {
   Delete(dsm);
   mlist->Clear();
+  mtrans->Clear();
+  msteady->Clear();
+  macc_trans->Clear();
+  macc_steady->Clear();
 }
 
 // ******************************************************************

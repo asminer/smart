@@ -30,10 +30,10 @@
     expression with the return value until told.
  */
 class measure : public constfunc {
+protected:
   engineinfo *eng;
   result value;
   expr* split_return;
-public:
   /// For mixed measures, the (non-mixed) measures we depend on.
   measure** dependencies;
   /// Length of dependencies array.
@@ -53,6 +53,19 @@ public:
       Dependencies are also added to the parameter GlobalList
   */
   void ComputeDependencies(List <measure> *GlobalList);
+
+  /** Number of other measures we depend on.
+      Will be 0 unless we are "mixed".
+  */
+  inline int NumDependencies() const { return num_dependencies; }
+
+  /// Get dependency i.
+  inline measure* GetDependency(int i) const {
+    DCASSERT(i>=0);
+    DCASSERT(i<num_dependencies);
+    DCASSERT(dependencies);
+    return dependencies[i];
+  }
 
   /// Call this after we are computed
   inline void SetValue(const result &v) {

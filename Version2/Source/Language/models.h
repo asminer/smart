@@ -91,6 +91,12 @@ private:
   /// All steady-state measures
   List <measure> *msteady;
 
+  /// All transient, accumulated measures
+  List <measure> *macc_trans;
+
+  /// All steady-state, accumulated measures
+  List <measure> *macc_steady;
+
   // Add more info for each measure here...
 
 protected:
