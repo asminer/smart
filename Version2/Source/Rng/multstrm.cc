@@ -233,9 +233,20 @@ void myhash<DATA>::Dump()
   int i = 0;
   for (i=0; i<Size(); i++) {
     for (hashnode* ptr = table[i]; ptr; ptr=ptr->next) 
-      Dump(ptr->data);
+      DumpObject((DATA*)ptr->data);
   }
 }
+
+void DumpObject(bitmatrix *x)
+{
+  Output << "\tSubmatrix ";
+  Output.PutHex((unsigned int)x);
+  Output << "\t ptrcount: " << x->ptrcount;
+  Output << "\t cachecount: " << x->cachecount;
+  Output << "\n";
+  Output.flush();
+}
+
 
 // ------------------------------------------------------------------
 //   Global vars.  Initialized below.
@@ -251,6 +262,18 @@ struct bincache {
     return (((unsigned int) b) * 256 + (unsigned int) c) % prime;
   }
 };
+
+void DumpObject(bincache *x)
+{
+  Output << "\t(";
+  Output.PutHex((unsigned int) x->b);
+  Output << " ";
+  Output.PutHex((unsigned int) x->c);
+  Output << " ";
+  Output.PutHex((unsigned int) x->answer);
+  Output << ")\n";
+  Output.flush();
+}
 
 Manager <hashnode> hash_node_pile(16);
 
@@ -571,5 +594,11 @@ void GarbageCollect()
 {
   ComputeTable.Resize();
   UniqueTable.Resize();
+
+  Output << "Unique Table:\n";
+  UniqueTable.Dump();
+
+  Output << "Compute Table:\n";
+  ComputeTable.Dump();
 }
 
