@@ -270,6 +270,31 @@ void int_add::Compute(int i, result &x) const
     x.null = true;
     return;
   }
+  if (l.infinity && r.infinity) {
+    // both infinity
+    if ((l.ivalue > 0) == (r.ivalue >0)) {
+      x.infinity = true;
+      x.ivalue = l.ivalue;
+      return;
+    }
+    // different signs, print error message here
+    x.error = CE_Undefined;
+    x.null = true;
+    return;
+  }
+  if (l.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = l.ivalue;
+    return;
+  }
+  if (r.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = r.ivalue;
+    return;
+  }
+  // ordinary integer addition
   x.ivalue = l.ivalue + r.ivalue;
 }
 
@@ -328,6 +353,31 @@ void int_sub::Compute(int i, result &x) const
     x.null = true;
     return;
   }
+  if (l.infinity && r.infinity) {
+    // both infinity
+    if ((l.ivalue > 0) != (r.ivalue >0)) {
+      x.infinity = true;
+      x.ivalue = l.ivalue;
+      return;
+    }
+    // summing infinities with different signs, print error message here
+    x.error = CE_Undefined;
+    x.null = true;
+    return;
+  }
+  if (l.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = l.ivalue;
+    return;
+  }
+  if (r.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = -r.ivalue;
+    return;
+  }
+  // ordinary integer subtraction
   x.ivalue = l.ivalue - r.ivalue;
 }
 
@@ -386,6 +436,27 @@ void int_mult::Compute(int i, result &x) const
     x.null = true;
     return;
   }
+  if (l.infinity || r.infinity) {
+    if ((l.ivalue==0) || (r.ivalue==0)) {
+      // 0 * infinity, undefined
+      // print error message here
+      x.error = CE_Undefined;
+      x.null = true;
+      return;
+    }
+    x.infinity = true;
+    // check the signs
+    bool lpos = l.ivalue > 0;
+    bool rpos = r.ivalue > 0;
+    if (lpos == rpos) {
+      // either infinity*infinity or -infinity * -infinity
+      x.ivalue = 1;
+    } else {
+      x.ivalue = -1;
+    }
+    return;
+  }
+  // Ordinary integer multiplication
   x.ivalue = l.ivalue * r.ivalue;
 }
 
@@ -550,6 +621,31 @@ void real_add::Compute(int i, result &x) const
     x.null = true;
     return;
   }
+  if (l.infinity && r.infinity) {
+    // both infinity
+    if ((l.ivalue > 0) == (r.ivalue >0)) {
+      x.infinity = true;
+      x.rvalue = l.rvalue;
+      return;
+    }
+    // different signs, print error message here
+    x.error = CE_Undefined;
+    x.null = true;
+    return;
+  }
+  if (l.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.rvalue = l.rvalue;
+    return;
+  }
+  if (r.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.rvalue = r.rvalue;
+    return;
+  }
+  // ordinary real addition
   x.rvalue = l.rvalue + r.rvalue;
 }
 
@@ -608,8 +704,34 @@ void real_sub::Compute(int i, result &x) const
     x.null = true;
     return;
   }
+  if (l.infinity && r.infinity) {
+    // both infinity
+    if ((l.ivalue > 0) != (r.ivalue >0)) {
+      x.infinity = true;
+      x.rvalue = l.rvalue;
+      return;
+    }
+    // different signs, print error message here
+    x.error = CE_Undefined;
+    x.null = true;
+    return;
+  }
+  if (l.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.rvalue = l.rvalue;
+    return;
+  }
+  if (r.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.rvalue = -r.rvalue;
+    return;
+  }
+  // ordinary real subtraction
   x.rvalue = l.rvalue - r.rvalue;
 }
+
 
 // ******************************************************************
 // *                                                                *

@@ -34,7 +34,9 @@ enum compute_error {
   /// We encountered overflow when casting to another result type
   CE_Overflow,
   /// Divide by zero
-  CE_ZeroDivide
+  CE_ZeroDivide,
+  /// Undefined quantity such as infinity-infinity
+  CE_Undefined
 };
 
 
