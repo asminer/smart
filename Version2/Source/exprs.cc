@@ -535,6 +535,25 @@ class stringconst : public constant {
 
 // ******************************************************************
 // *                                                                *
+// *                  Global functions for results                  *
+// *                                                                *
+// ******************************************************************
+
+void PrintResult(type t, const result &x, ostream &s)
+{
+  if (x.infinity) { s << "infinity"; return; }
+  if (x.null) { s << "null"; return; }
+  switch(t) {
+    case VOID: 	DCASSERT(0); 				return;
+    case BOOL: 	s << (x.bvalue?"true":"false"); 	return;
+    case INT:  	s << x.ivalue;  			return;
+    case REAL: 	s << x.rvalue;  			return;
+  }
+  DCASSERT(0);
+}
+
+// ******************************************************************
+// *                                                                *
 // *             Global functions  to build expressions             *
 // *                                                                *
 // ******************************************************************

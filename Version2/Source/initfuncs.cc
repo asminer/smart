@@ -14,7 +14,7 @@
 
 //@{
 
-#define DEBUG_DEEP
+//#define DEBUG_DEEP
 
 void cond_c(expr **pp, int np, result &x)
 {

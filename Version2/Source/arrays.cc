@@ -2,6 +2,9 @@
 // $Id$
 
 #include "arrays.h"
+
+#include <strstream>
+
 //@Include: arrays.h
 
 /** @name arrays.cc
@@ -13,6 +16,10 @@
  */
 
 //@{
+
+//#define ARRAY_TRACE
+
+//#define LONG_INTERNAL_ARRAY_NAME
 
 // ******************************************************************
 // *                                                                *
@@ -98,6 +105,19 @@ void array::SetCurrentReturn(constfunc *retvalue)
     exit(0);
   }
   prev->down[lastindex] = retvalue;
+}
+
+void array::GetName(ostream &s) const
+{
+  s << Name() << "[";
+  int i;
+  for (i=0; i<dimension; i++) {
+    if (i) s << ", ";
+    result ind;
+    index_list[i]->Compute(0, ind);
+    PrintResult(index_list[i]->Type(0), ind, s);
+  }
+  s << "]";
 }
 
 void array::Compute(expr **il, result &x)
@@ -237,7 +257,13 @@ void acall::Compute(int i, result &x)
   if (x.null) return;
   if (x.error) return;  // print message?
   constfunc* foo = (constfunc*) x.other;
+#ifdef ARRAY_TRACE
+  cout << "Computing " << foo << "\n";
+#endif
   foo->Compute(0, x);
+#ifdef ARRAY_TRACE
+  cout << "Now we have " << foo << "\n";
+#endif
 }
 
 void acall::Sample(long &seed, int i, result &x)
@@ -400,14 +426,26 @@ void arrayassign::Execute()
 
   DCASSERT(rv); // hmmmm....  can this ever happen?
   
-  // build a better name?
-  determfunc *frv = new determfunc(Filename(), Linenumber(), rv->Type(0), 
-                                   strdup(f->Name()));
+#ifdef LONG_INTERNAL_ARRAY_NAME
+  // Build a long name.  Useful for debugging, otherwise 
+  // I think it is unnecessary work.
+  char buffer[1024];
+  strstream s(buffer, 1024);
+  f->GetName(s);
+  s.put(0);
+  char* name = strdup(buffer);
+#else
+  char* name = NULL;
+#endif
+
+  determfunc *frv = new determfunc(Filename(), Linenumber(), rv->Type(0), name);
   frv->SetReturn(rv);
 
   f->SetCurrentReturn(frv);
 
+#ifdef ARRAY_TRACE
   cout << "Array assign: " << frv << "\n";
+#endif
 }
 
 void arrayassign::show(ostream &s) const

@@ -177,6 +177,11 @@ public:
    */
   void SetCurrentReturn(constfunc *retvalue);
 
+  /** Determine our current "name", which
+      will be written to the specified stream.
+   */
+  void GetName(ostream &s) const;
+
   /** For the given indices (as expressions),
       find the array "value".
       Actually, we return a constfunc.

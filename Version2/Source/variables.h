@@ -69,6 +69,7 @@ public:
   determfunc(const char *fn, int line, type t, char *n);
   virtual void Compute(int i, result &x);
   virtual void Sample(long &, int i, result &x);
+  virtual void show(ostream &s) const;
 };
 
 // ******************************************************************

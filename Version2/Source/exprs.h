@@ -17,6 +17,8 @@
 
 #include "types.h"
 
+//#define SHARE_DEBUG
+
 //@{
   
 
@@ -326,6 +328,7 @@ public:
 
   friend expr* Copy(expr *e);
   friend void Delete(expr *e);
+  friend ostream& operator<<(ostream &s, expr *e);
 };
 
 inline ostream& operator<< (ostream &s, expr *e)
@@ -341,7 +344,12 @@ inline ostream& operator<< (ostream &s, expr *e)
  */
 inline expr* Copy(expr *e)
 {
-  if (e) e->incoming++;
+  if (e) {
+    e->incoming++;
+#ifdef SHARE_DEBUG
+    cerr << "increased incoming count for " << e << " to " << e->incoming << endl;
+#endif
+  }
   return e;
 }
 
@@ -355,7 +363,15 @@ inline void Delete(expr *e)
   if (e) {
     DCASSERT(e->incoming>0);
     e->incoming--;
-    if (0==e->incoming) delete e;
+#ifdef SHARE_DEBUG
+    cerr << "decreased incoming count for " << e << " to " << e->incoming << endl;
+#endif
+    if (0==e->incoming) {
+#ifdef SHARE_DEBUG
+      cerr << "Deleting " << e << "\n";
+#endif
+      delete e;
+    }
   }
 }
 
@@ -480,6 +496,19 @@ public:
   virtual void show(ostream &) const;
 };
 
+
+// ******************************************************************
+// *                                                                *
+// *                  Global functions for results                  *
+// *                                                                *
+// ******************************************************************
+
+/** Print a result.
+    Basically a gigantic switch statement for the type.
+    But that's ok, because I/O is slow anyway.
+    Note that certain types cannot be printed.
+ */
+void PrintResult(type t, const result &x, ostream &s);
 
 // ******************************************************************
 // *                                                                *

@@ -263,7 +263,7 @@ fcall::~fcall()
 {
   // don't delete func
   int i;
-  for (i=0; i < numpass; i++) delete pass[i];
+  for (i=0; i < numpass; i++) Delete(pass[i]);
   delete[] pass;
 }
 

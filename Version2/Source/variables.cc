@@ -86,6 +86,14 @@ void determfunc::Sample(long &s, int i, result &x)
   x = value;
 }
 
+void determfunc::show(ostream &s) const
+{
+  if (NULL==Name()) return; // hidden?
+  s << GetType(Type(0)) << " " << Name() << " := ";
+  if (!computed_already) s << return_expr;
+  else PrintResult(Type(0), value, s);
+}
+
 // ******************************************************************
 // *                                                                *
 // *                                                                *
