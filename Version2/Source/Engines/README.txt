@@ -11,3 +11,4 @@ File	  	What's there
 ----------	----------------------------------------------------
 api		Front end
 
+sccs		Determines sccs of graphs (explicitly)
