@@ -97,29 +97,16 @@ void bool_equal::Compute(int i, result &x)
   DCASSERT(0==i);
   DCASSERT(left);
   DCASSERT(right);
+
   result l;
   result r;
-  x.Clear();
 
   left->Compute(0, l); 
   right->Compute(0, r); 
 
-  // most common case
-  if (l.isNormal() && r.isNormal()) {
+  if (CheckOpnds(l, r, x)) {
     x.bvalue = (l.bvalue == r.bvalue);
-    return;
   }
-
-  if (l.isUnknown() || r.isUnknown()) {
-    x.setUnknown();
-    return;
-  }
-  if (l.isNull() || r.isNull()) {
-    x.setNull();
-    return;
-  }
-  // must be an error
-  x.setError();
 }
 
 // ******************************************************************
@@ -133,26 +120,16 @@ void bool_neq::Compute(int i, result &x)
   DCASSERT(0==i);
   DCASSERT(left);
   DCASSERT(right);
+
   result l;
   result r;
-  x.Clear();
+  
   left->Compute(0, l);
   right->Compute(0, r);
 
-  if (l.isNormal() && r.isNormal()) {
+  if (CheckOpnds(l, r, x)) {
     x.bvalue = (l.bvalue != r.bvalue);
-    return;
   }
-
-  if (l.isUnknown() || r.isUnknown()) {
-    x.setUnknown();
-    return;
-  }
-  if (l.isNull() || r.isNull()) {
-    x.setNull();
-    return;
-  }
-  x.setError();
 }
 
 // ******************************************************************

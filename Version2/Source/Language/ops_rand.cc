@@ -129,24 +129,11 @@ void randbool_neq::Sample(Rng &seed, int i, result &x)
   DCASSERT(right);
   result l;
   result r;
-  x.Clear();
   left->Sample(seed, 0, l);
   right->Sample(seed, 0, r);
-
-  if (l.isNormal() && r.isNormal()) {
+  if (CheckOpnds(l, r, x)) {
     x.bvalue = (l.bvalue != r.bvalue);
-    return;
   }
-
-  if (l.isUnknown() || r.isUnknown()) {
-    x.setUnknown();
-    return;
-  }
-  if (l.isNull() || r.isNull()) {
-    x.setNull();
-    return;
-  }
-  x.setError();
 }
 
 
