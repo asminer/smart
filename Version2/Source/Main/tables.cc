@@ -34,6 +34,7 @@ void* PtrTable::FindName(const char* n)
 
 void PtrTable::AddNamePtr(const char* n, void *p)
 {
+    DCASSERT(n);
     splayitem *key = new splayitem(n, p);
     int foo = splaywrapper->Splay(root, key);
     DCASSERT(foo!=0);
@@ -45,6 +46,8 @@ void PtrTable::AddNamePtr(const char* n, void *p)
       if (root) {
         x->left = root->left;
         root->left = NULL;
+      } else {
+	x->left = NULL;
       }
     } else {
       // root < x
@@ -52,6 +55,8 @@ void PtrTable::AddNamePtr(const char* n, void *p)
       if (root) {
         x->right = root->right;
         root->right = NULL;
+      } else {
+	x->right = NULL;
       }
     }
     root = x;

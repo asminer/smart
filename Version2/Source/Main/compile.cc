@@ -557,6 +557,7 @@ int AddIterator(array_index *i)
 
 statement* BuildForLoop(int count, void *stmts)
 {
+  int d;
 #ifdef COMPILE_DEBUG
   Output << "Popping " << count << " Iterators\n";
   Output.flush();
@@ -575,11 +576,12 @@ statement* BuildForLoop(int count, void *stmts)
     Output << "Empty for loop statement, skipping\n";
     Output.flush();
 #endif
+    // Remove iterators 
+    for (d=0; d<count; d++) Iterators->Pop();
     return NULL;
   }
 
   array_index **i = new array_index*[count];
-  int d;
   int first = Iterators->Length() - count;
   for (d=0; d<count; d++) {
     i[d] = Iterators->Item(first+d);
