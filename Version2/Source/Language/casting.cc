@@ -183,26 +183,48 @@ void proc2procrand::Sample(Rng &, const state &s, int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-/**  Type promotion from integer to real.
+/**  Type promotion from integer to various reals.
 */   
 
 class int2real : public typecast {
 public:
-  int2real(const char* fn, int line, expr* x) : typecast(fn, line, REAL, x) { }
+  int2real(const char* fn, int line, type newt, expr* x)
+  : typecast(fn, line, newt, x) { }
 
   virtual void Compute(int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
+  virtual void Compute(const state &, int i, result &x);
+  virtual void Sample(Rng &, const state &, int i, result &x);
 protected:
+  inline void compute(int i, result &x) {
+    SafeCompute(opnd, i, x);
+    if (x.isNormal()) {
+      x.rvalue = x.ivalue;
+    }
+  }
   virtual expr* MakeAnother(expr* x) { 
-    return new int2real(Filename(), Linenumber(), x);
+    return new int2real(Filename(), Linenumber(), Type(0), x);
   }
 };
 
 void int2real::Compute(int i, result &x)
 {
-  SafeCompute(opnd, i, x);
-  if (x.isNormal()) {
-    x.rvalue = x.ivalue;
-  }
+  compute(i, x);
+}
+
+void int2real::Sample(Rng &, int i, result &x)
+{
+  compute(i, x);
+}
+
+void int2real::Compute(const state &, int i, result &x)
+{
+  compute(i, x);
+}
+
+void int2real::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(i, x);
 }
 
 // ******************************************************************
@@ -418,6 +440,15 @@ void proc_real2proc_int::Compute(const state &s, int i, result &x)
 // ******************************************************************
 // ******************************************************************
 
+expr* BadTypecast(expr *e, type newtype, const char* file, int line)
+{
+  Error.Start(file, line);
+  Error << "Bad typecast from type " << GetType(e->Type(0));
+  Error << " to type " << GetType(newtype);
+  Error.Stop();
+  return ERROR;
+}
+
 expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 {
   if (NULL==e || ERROR==e || DEFLT==e) return e;
@@ -431,7 +462,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     Internal << "Bad model typecast attempt\n";
     Internal.Stop();
     // shouldn't get here
-    return NULL;
+    return ERROR;
   }
 
   // Note... it is assumed that e is promotable to "newtype".
@@ -451,7 +482,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new determ2procrand(file, line, PROC_RAND_BOOL, e);
       }
 
-      return NULL;   
+      return BadTypecast(e, newtype, file, line);
 
 
     // --------------------------------------------------------------
@@ -459,21 +490,30 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
       switch (newtype) {
 	case REAL:
-	  return new int2real(file, line, e);
+	  return new int2real(file, line, REAL, e);
 
 	// add PH_INT eventually
 
 	case RAND_INT:
 	  return new determ2rand(file, line, RAND_INT, e);
 
+	case RAND_REAL:
+	  return new int2real(file, line, RAND_REAL, e);
+
 	case PROC_INT:
 	  return new determ2proc(file, line, PROC_INT, e);
 
+	case PROC_REAL:
+	  return new int2real(file, line, PROC_REAL, e);
+
 	case PROC_RAND_INT:
 	  return new determ2procrand(file, line, PROC_RAND_INT, e);
+
+	case PROC_RAND_REAL:
+	  return new int2real(file, line, PROC_RAND_REAL, e);
       }
 
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case REAL:
@@ -491,7 +531,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new determ2procrand(file, line, PROC_RAND_REAL, e);
       }
 
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
 
     // --------------------------------------------------------------
@@ -503,13 +543,13 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	case RAND_REAL:
 	  return new expo2randreal(file, line, e);
       }
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
       
     // --------------------------------------------------------------
     case RAND_BOOL:
       if (newtype==PROC_RAND_BOOL) 
 	return new rand2procrand(file, line, PROC_RAND_BOOL, e);
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case RAND_INT:
@@ -522,7 +562,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
 	// add RAND_REAL, PROC_RAND_REAL, PROC_PH_INT, ....
       }
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case RAND_REAL:
@@ -534,13 +574,13 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new rand2procrand(file, line, PROC_RAND_REAL, e);
 
       }
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case PROC_BOOL:
       if (newtype==PROC_RAND_BOOL)
 	return new proc2procrand(file, line, PROC_RAND_BOOL, e);
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case PROC_INT:
@@ -553,7 +593,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
 	// Add PROC_REAL, ...
       }
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
 
     // --------------------------------------------------------------
     case PROC_REAL:
@@ -565,7 +605,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new proc2procrand(file, line, PROC_RAND_REAL, e);
 
       }
-      return NULL;
+      return BadTypecast(e, newtype, file, line);
   }
 
   // Still here?  Slipped through the cracks.
@@ -573,7 +613,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
   Internal << "Bad typecast from " << GetType(e->Type(0));
   Internal << " to " << GetType(newtype);
   Internal.Stop();
-  return NULL;
+  return ERROR;
 }
 
 expr* MakeTypecast(expr *e, const expr* fp, const char* file, int line)

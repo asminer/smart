@@ -1390,7 +1390,7 @@ void AddExpo(PtrTable *fns)
 // *                probability and such                  *
 // ********************************************************
 
-// #define DEBUG_AVG
+//#define DEBUG_AVG
 
 void compute_avg(expr **p, int np, result &x)
 {
