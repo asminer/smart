@@ -220,6 +220,9 @@ public:
   void SwitchInput(FILE* in);
   inline bool IsDefault() { return (input==deflt); }
 
+  // Handy...
+  inline bool Eof() { return feof(input); }
+
   // return true on success.
   inline bool Get(char &x) { x = getc(input); return (x!=EOF); }
   inline bool Get(int &x) { return (1==fscanf(input, "%d", &x)); }
