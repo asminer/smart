@@ -2,8 +2,7 @@
 // $Id$
 
 /*
-    A centralized set of classes to handle the various errors
-    and output streams in Smart
+    A centralized set of classes to handle the various error streams in Smart
 */
 
 #ifndef ERRORS_H
@@ -76,7 +75,7 @@ extern InternalStream Internal;
 /**
     Initialize the global error streams.
 */
-void InitStreams();
+void InitErrorStreams();
 
 #endif
 

@@ -31,9 +31,10 @@ void ErrorStream::Start(char* filename, int lineno)
       if (filename[0]=='-' && filename[1]==0) {
         // standard input
         *out << " in standard input";
-      } if (filename[0]=='>' && filename[1]==0) {
+      } else if (filename[0]=='>' && filename[1]==0) {
 	// command line
 	*out << " on command line";
+	lineno = -1;
       } else {
         *out << " in file " << filename;
       }
@@ -83,7 +84,7 @@ ErrorStream Error("ERROR");
 ErrorStream Warn("WARNING");
 InternalStream Internal("INTERNAL");
 
-void InitStreams() 
+void InitErrorStreams() 
 {
   Error.SetDisplay(&cout);
   Error.Activate();

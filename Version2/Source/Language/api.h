@@ -13,5 +13,7 @@
 #include "operators.h"
 #include "initfuncs.h"
 
+void InitLanguage();
+
 #endif
 

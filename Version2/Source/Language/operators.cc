@@ -27,13 +27,12 @@ const char* GetOp(int op)
 {
   switch (op) {
     case NOT: 		return "!";
-    case NEG: 		return "-";
     case PLUS: 		return "+";
     case MINUS:		return "-";
     case TIMES:		return "*";
     case DIVIDE:	return "/";
     case EQUALS:	return "==";
-    case NEQ:		return "!=";
+    case NEQUAL:	return "!=";
     case GT:		return ">";
     case GE:		return ">=";
     case LT:		return "<";
@@ -102,8 +101,8 @@ void bool_not::Compute(int i, result &x)
  */
 class bool_or : public addop {
 public:
-  bool_or(const char* fn, int line, expr **x, int n) 
-    : addop(fn, line, x, n) { }
+  bool_or(const char* fn, int line, expr **x, int n): addop(fn, line, x, n) { }
+  bool_or(const char* fn, int line, expr *l, expr* r): addop(fn, line, l, r) { }
 
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -141,7 +140,10 @@ void bool_or::Compute(int a, result &x)
 class bool_and : public multop {
 public:
   bool_and(const char* fn, int line, expr **x, int n) 
-    : multop(fn, line, x, n) { }
+  : multop(fn, line, x, n) { }
+
+  bool_and(const char* fn, int line, expr *l, expr *r) 
+  : multop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -332,6 +334,9 @@ public:
   randbool_or(const char* fn, int line, expr **x, int n) 
     : addop(fn, line, x, n) { }
 
+  randbool_or(const char* fn, int line, expr *l, expr *r) 
+    : addop(fn, line, l, r) { }
+
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return RAND_BOOL;
@@ -369,6 +374,9 @@ class randbool_and : public multop {
 public:
   randbool_and(const char* fn, int line, expr **x, int n) 
     : multop(fn, line, x, n) { }
+  
+  randbool_and(const char* fn, int line, expr *l, expr *r) 
+    : multop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -559,6 +567,9 @@ public:
   int_add(const char* fn, int line, expr **x, int n) 
     : addop(fn, line, x, n) { }
   
+  int_add(const char* fn, int line, expr *l, expr *r) 
+    : addop(fn, line, l, r) { }
+  
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return INT;
@@ -734,6 +745,9 @@ class int_mult : public multop {
 public:
   int_mult(const char* fn, int line, expr **x, int n) 
     : multop(fn,line,x,n) { }
+  
+  int_mult(const char* fn, int line, expr *l, expr *r)
+    : multop(fn,line,l,r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -1219,6 +1233,13 @@ public:
     returntype = rt;
     oper = op;
   }
+
+  proc_assoc(const char* fn, int line, type rt, int op, expr *l, expr *r)
+    : assoc(fn, line, l, r) 
+  { 
+    returntype = rt;
+    oper = op;
+  }
   virtual type Type(int i) const {
     DCASSERT(0==i);
     return returntype;
@@ -1277,7 +1298,7 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
       return NULL;
 
     case INT:
-      if (op==NEG) return new int_neg(file, line, opnd);
+      if (op==MINUS) return new int_neg(file, line, opnd);
       return NULL;
 
     case PROC_BOOL:
@@ -1293,6 +1314,7 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
   return NULL;
 }
 
+/*
 expr* BinaryAssocError(type ltype, int op, type rtype)
 {
   cerr << "INTERNAL: expression " << GetType(ltype) << " ";
@@ -1300,6 +1322,7 @@ expr* BinaryAssocError(type ltype, int op, type rtype)
   cerr << "should use associative expression\n";
   return NULL;
 }
+*/
 
 
 // Note: the types left and right must match properly already
@@ -1321,11 +1344,10 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       DCASSERT(rtype==BOOL);
 
       switch (op) {
-          case PLUS:	
-	  case TIMES:   return BinaryAssocError(ltype, op, rtype);
-
+          case PLUS:	return new bool_or(file, line, left, right);
+	  case TIMES:   return new bool_and(file, line, left, right);
 	  case EQUALS:	return new bool_equal(file, line, left, right);
-	  case NEQ:	return new bool_neq(file, line, left, right);
+	  case NEQUAL:	return new bool_neq(file, line, left, right);
       }
       return NULL;
 
@@ -1342,13 +1364,12 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       DCASSERT(rtype==INT);
 
       switch (op) {
-          case PLUS:	
-          case TIMES:	return BinaryAssocError(ltype, op, rtype);
-
+          case PLUS:	return new int_add(file, line, left, right);
+          case TIMES:	return new int_mult(file, line, left, right);
           case MINUS:	return new int_sub(file, line, left, right);
           case DIVIDE:	return new int_div(file, line, left, right);
 	  case EQUALS:	return new int_equal(file, line, left, right);
-	  case NEQ:	return new int_neq(file, line, left, right);
+	  case NEQUAL:	return new int_neq(file, line, left, right);
 	  case GT:	return new int_gt(file, line, left, right);
 	  case GE:	return new int_ge(file, line, left, right);
 	  case LT:	return new int_lt(file, line, left, right);
@@ -1424,7 +1445,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  case TIMES:   return new bool_and(file, line, opnds, n);
 
 	  case EQUALS:	
-	  case NEQ:	return IllegalAssocError(op, alltypes);
+	  case NEQUAL:	return IllegalAssocError(op, alltypes);
       }
       return NULL;
 
@@ -1439,7 +1460,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
           case MINUS:	
           case DIVIDE:	
 	  case EQUALS:	
-	  case NEQ:	
+	  case NEQUAL:	
 	  case GT:	
 	  case GE:	
 	  case LT:	

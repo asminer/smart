@@ -14,6 +14,11 @@
 
 #include "baseops.h"
 
+#include "../Main/smart.tab.h"
+/* For token identifiers such as PLUS, MINUS, etc... */
+
+
+
 //@{
   
 
@@ -22,10 +27,6 @@
 // *             Global functions  to build expressions             *
 // *                                                                *
 // ******************************************************************
-
-#include "smart.tab.h" 
-/* For token identifiers such as PLUS, MINUS, etc... */
-
 
 /**
      Build a unary expression.

@@ -55,6 +55,7 @@ public:
 class addop : public assoc {
 public:
   addop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n) {}
+  addop(const char* fn, int line, expr* l, expr* r) : assoc(fn, line, l, r) {}
   virtual void show(ostream &s) const;
   virtual int GetSums(int i, expr **sums=NULL, int N=0, int offset=0);
 };
@@ -92,6 +93,7 @@ public:
 class multop : public assoc {
 public:
   multop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n){}
+  multop(const char* fn, int line, expr* l, expr* r) : assoc(fn, line, l, r){}
   virtual void show(ostream &s) const;
   virtual int GetProducts(int i, expr **prods=NULL, int N=0, int offset=0);
 };

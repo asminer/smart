@@ -3,19 +3,22 @@
 
 # overall makefile (stub)
 
-smart: main language
-	$(CXX) $(SOURCEDIR)/main.cc Language/*.o Main/*.o -o smart
+all: libs smart
 
-language:
+smart: Base/timestamp Language/timestamp Main/timestamp
+	$(CXX) $(SOURCEDIR)/main.cc Base/*.o Language/*.o Main/*.o -lfl -o smart
+
+libs:
+	cd Main; make smart.tab.h
+	cd Base; make
 	cd Language; make
-
-main:
 	cd Main; make
 
 base:
 	cd Base; make
 
 clean:
+	cd Base; make clean
 	cd Language; make clean
 	cd Main; make clean
 	cd Base; make clean

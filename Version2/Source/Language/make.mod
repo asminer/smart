@@ -10,21 +10,23 @@ SOURCES = \
 	infinity.cc	\
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
-	initfuncs.cc
+	initfuncs.cc	api.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 
 CPPFLAGS 	= $(PLAT_FLAGS) -Wall 
 
-all : $(ALLOBJS)
+timestamp: $(ALLOBJS)
+	touch timestamp
 
 makefile: $(SOURCEDIR)/make.mod $(SOURCEDIR)/../make.common
 	cd $(SOURCEDIR); ./BuildMake
 
 depend:
-	cd $(SOURCEDIR); touch smart.tab.h; $(CC) $(CPPFLAGS) -MM $(SOURCES) > $(OBJECTDIR)/make.depend
+	touch $(SOURCEDIR)/../Main/smart.tab.h
+	cd $(SOURCEDIR); $(CXX) $(CPPFLAGS) -MM $(SOURCES) > $(OBJECTDIR)/make.depend
+	rm -f $(SOURCEDIR)/../Main/smart.tab.h $(OBJECTDIR)/../Main/smart.tab.h
 
 clean :
-	rm -f *.o smart.tab.h
-
+	rm -f *.o
 

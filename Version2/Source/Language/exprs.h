@@ -470,6 +470,7 @@ protected:
   expr** operands;
 public:
   assoc(const char* fn, int line, expr **x, int n);
+  assoc(const char* fn, int line, expr *l, expr *r);
   virtual ~assoc();
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
   virtual expr* Substitute(int i);

@@ -17,8 +17,7 @@
 #include "../../Source/Base/api.h"
 #include "../../Source/Language/api.h"
 #include "../../Source/stack.h"
-#include "../../Source/list.h"
-// #include "smart.tab.h"  // should be part of language api
+//#include "smart.tab.h"
 #include <string.h>
 #include <fstream>
 #include <FlexLexer.h>  // For the new & improved lexer class
@@ -116,7 +115,7 @@ char* IncludeFile(char *name, bool kill)
         Error.Start(filename, lexer.lineno());	
 	Error << "couldn't open file " << name << ", ignoring";
 	Error.Stop();
-        return filename;
+        return NULL;
     }
     // We have a good file, set up the buffer
     YY_BUFFER_STATE b = lexer.yy_create_buffer(infile, YY_BUF_SIZE);
@@ -209,6 +208,13 @@ void IllegalToken()
 {
   Error.Start(filename, lexer.lineno());
   Error << "Illegal syntactical element: '" << lexer.YYText() << "'";
+  Error.Stop();
+}
+
+int yyerror(char *msg)
+{
+  Error.Start(filename, lexer.lineno());
+  Error << msg;
   Error.Stop();
 }
 
@@ -359,3 +365,4 @@ int yylex()
 #endif
   return token;
 }
+

@@ -13,12 +13,11 @@
 
 %{
 
-#include "../../Source/Language/api.h"  // previous layer
+#include "../../Source/Main/compile.h" // compile-time functionality 
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>  // keeps compiler happy
-#include <new>
 
 // #define PARSE_TRACE
 
@@ -28,12 +27,13 @@
   char *name;
   type Type_ID;
   expr *Expr;
-  function *Func;
+  void* list;   
   /*
   option *Option;
   expr_set *setexpr;
   List <local_iterator> *itrs;
   List <statement> *stmts;
+  function *Func;
   List <formal_param> *fpl;
   List <array_index> *apl;
   List <expr> *ppl;
@@ -51,8 +51,13 @@ NUL DEFAULT TYPE MODIF MODEL
 
 %type <Type_ID> type
 %type <Expr> expr term const_expr function_call model_call model_function_call
-%type <Func> header array_header
 /*
+%type <setexpr> set_expr set_elems set_elem 
+%type <itrs> iterator iterators for_header 
+*/
+%type <list> statement statements decl_stmt defn_stmt model_stmt model_stmts
+/*
+%type <Func> header array_header
 %type <Option> opt_header
 %type <setexpr> set_expr set_elems set_elem 
 %type <itrs> iterator iterators for_header 
@@ -63,7 +68,6 @@ NUL DEFAULT TYPE MODIF MODEL
 %type <varlist> model_var_decl
 %type <tuple_ids> tupleidlist
 */
-
 
 %left COMMA
 %left COLON
@@ -157,6 +161,7 @@ statement
 #ifdef PARSE_TRACE
   cout << "Reducing statement : expr SEMI\n";
 #endif
+  $$ = BuildExprStatement($1);
 }
         |       SEMI
 {  
@@ -490,6 +495,7 @@ expr
 #ifdef PARSE_TRACE
   cout << "Reducing expr : term\n";
 #endif
+  $$ = $1;
 }
         |       model_function_call
 {
@@ -508,43 +514,49 @@ expr
 #ifdef PARSE_TRACE
   cout << "Reducing expr : LPAR expr RPAR\n";
 #endif
-   $$ = $2;
+  $$ = $2;
 }
 	|	expr PLUS expr
 {  
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr PLUS expr\n";
 #endif
+  $$ = BuildBinary($1, PLUS, $3);
 }
 	| 	expr MINUS expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr MINUS expr\n";
 #endif
+  $$ = BuildBinary($1, MINUS, $3);
 }
 	|	expr TIMES expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr TIMES expr\n";
 #endif
+  $$ = BuildBinary($1, TIMES, $3);
 }
 	|	expr DIVIDE expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr DIVIDE expr\n";
 #endif
+  $$ = BuildBinary($1, DIVIDE, $3);
 }
 	|	expr OR expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr OR expr\n";
 #endif
+  $$ = BuildBinary($1, OR, $3);
 }
 	|	expr AND expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr AND expr\n";
 #endif
+  $$ = BuildBinary($1, AND, $3);
 }
 	|	NOT expr
 {
@@ -563,36 +575,42 @@ expr
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr EQUALS expr\n";
 #endif
+  $$ = BuildBinary($1, EQUALS, $3);
 }
 	|	expr NEQUAL expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr NEQUAL expr\n";
 #endif
+  $$ = BuildBinary($1, NEQUAL, $3);
 }
 	|	expr GT expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr GT expr\n";
 #endif
+  $$ = BuildBinary($1, GT, $3);
 }
 	|	expr GE	expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr GE expr\n";
 #endif
+  $$ = BuildBinary($1, GE, $3);
 }
 	|	expr LT expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr LT expr\n";
 #endif
+  $$ = BuildBinary($1, LT, $3);
 }
 	|	expr LE expr
 {
 #ifdef PARSE_TRACE
   cout << "Reducing expr : expr LE expr\n";
 #endif
+  $$ = BuildBinary($1, LE, $3);
 }
 	|	type LPAR expr RPAR
 {
@@ -616,18 +634,21 @@ term
 #ifdef PARSE_TRACE
   cout << "Reducing term : BOOLCONST\n";
 #endif
+  $$ = MakeBoolConst($1);
 } 
 	|	INTCONST
 {
 #ifdef PARSE_TRACE
   cout << "Reducing term : INTCONST\n";
 #endif
+  $$ = MakeIntConst($1);
 }
         |       REALCONST
 {
 #ifdef PARSE_TRACE
   cout << "Reducing term : REALCONST\n";
 #endif
+  $$ = MakeRealConst($1);
 }
         |       STRCONST
 {
@@ -643,6 +664,7 @@ const_expr
 #ifdef PARSE_TRACE
   cout << "Reducing const_expr : term\n";
 #endif
+  $$ = $1;
 }
 	|	MINUS const_expr %prec UMINUS
 {
