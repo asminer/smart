@@ -33,6 +33,7 @@ digraph::digraph()
 
 digraph::~digraph()
 {
+  isDynamic = true;
   ResizeNodes(0);
   ResizeEdges(0);
 }
@@ -266,7 +267,7 @@ void digraph::Transpose()
 	next[ptr] = ptr;
       } else {
 	// add to end of column
-	next[ptr] = col_pointer[col];
+	next[ptr] = next[col_pointer[col]];
 	next[col_pointer[col]] = ptr;
       }
       col_pointer[col] = ptr;
