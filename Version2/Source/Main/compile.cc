@@ -242,6 +242,206 @@ expr* BuildUnary(int op, expr* opnd)
   return MakeUnaryOp(op, opnd, filename, lexer.lineno());
 }
 
+bool PromoteForOp(expr* &left, int op, expr* &right)
+{
+  DCASSERT(left);
+  DCASSERT(right);
+
+  // these should be enforced by the compiler (the language itself)
+  DCASSERT(left->NumComponents()==1);
+  DCASSERT(right->NumComponents()==1);
+
+  type lt = left->Type(0);
+  type rt = right->Type(0);
+
+  // A triple-nested switch.  Unpleasant, but clear.
+  const char* file = filename;
+  int line = lexer.lineno();
+
+  switch (lt) {
+    // ========================================================
+    case BOOL:
+	switch (op) {
+	  case OR:
+	  case AND:
+	  case EQUALS:
+	  case NEQUAL:
+		switch (rt) {
+		  case BOOL:	
+			return true;
+		  case RAND_BOOL:
+		  case PROC_BOOL:
+		  case PROC_RAND_BOOL:
+		  	// promote left
+			left = MakeTypecast(left, rt, file, line);
+		  	return true;
+		}
+	} // end of switch op for bool
+	return false;
+
+    // ========================================================
+    case INT:
+    	switch (op) {
+	  case TIMES:
+	  	switch (rt) {
+		  case INT:
+		  case PH_INT: 
+		  	return true;  
+		  case PROC_INT:
+		  case PROC_PH_INT:
+		  	left = MakeTypecast(left, PROC_INT, file, line);
+			return true;
+		  case REAL:
+		  case PH_REAL:
+		  	left = MakeTypecast(left, REAL, file, line);
+			return true;  // real * ph real is ok!
+		  case PROC_REAL:
+		  case PROC_PH_REAL:
+		  	left = MakeTypecast(left, PROC_REAL, file, line);
+			return true;  
+		  case RAND_INT:
+		  case RAND_REAL:
+		  case PROC_RAND_INT:
+		  case PROC_RAND_REAL:
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		};
+	  return false;
+
+	  case PLUS:
+	  	switch (rt) {
+		  case INT:
+		  	return true;
+		  case REAL:
+		  case PH_INT:
+		  case RAND_INT:
+		  case RAND_REAL:
+		  case PROC_INT:
+		  case PROC_REAL:
+		  case PROC_PH_INT:
+		  case PROC_RAND_INT:
+		  case PROC_RAND_REAL:
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		}; 
+	  return false;
+
+	  case MINUS:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+		  	return true;	
+		  case REAL:
+		  case RAND_INT:
+		  case RAND_REAL:
+		  case PROC_INT:
+		  case PROC_REAL:
+		  case PROC_RAND_INT:
+		  case PROC_RAND_REAL:
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		}
+	} // end of switch op for int
+	return false;
+
+    // ========================================================
+    case REAL:
+    	switch (op) {
+	  case TIMES:
+	  	switch (rt) {
+		  case INT:
+		  	right = MakeTypecast(right, REAL, file, line);
+			return true;
+		  case PROC_INT:
+			left = MakeTypecast(left, PROC_REAL, file, line);
+		  	right = MakeTypecast(right, PROC_REAL, file, line);
+			return true;
+		  case REAL:
+		  case PH_REAL:
+			return true;  // real * ph real is ok!
+		  case PROC_REAL:
+		  case PROC_PH_REAL:
+		  	left = MakeTypecast(left, PROC_REAL, file, line);
+			return true;  
+		  case RAND_INT:
+		  	left = MakeTypecast(left, RAND_REAL, file, line);
+			right = MakeTypecast(right, RAND_REAL, file, line);
+			return true;
+		  case PROC_RAND_INT:
+		  	left = MakeTypecast(left, PROC_RAND_REAL, file, line);
+			right = MakeTypecast(right, PROC_RAND_REAL, file, line);
+			return true;
+		  case RAND_REAL:
+		  case PROC_RAND_REAL:
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		};
+	  return false;
+
+	  case PLUS:
+	  case MINUS:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+			right = MakeTypecast(right, REAL, file, line);
+		  	return true;	
+		  case RAND_INT:
+		  	left = MakeTypecast(left, RAND_REAL, file, line);
+			right = MakeTypecast(right, RAND_REAL, file, line);
+			return true;
+		  case PROC_INT:
+		  	left = MakeTypecast(left, PROC_REAL, file, line);
+			right = MakeTypecast(right, PROC_REAL, file, line);
+			return true;
+		  case PROC_RAND_INT:
+		  	left = MakeTypecast(left, PROC_RAND_REAL, file, line);
+			right = MakeTypecast(right, PROC_RAND_REAL, file, line);
+			return true;
+		  case REAL:
+		  case RAND_REAL:
+		  case PROC_REAL:
+		  case PROC_RAND_REAL:
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		}
+	} // end of switch op for real
+	return false;
+    	
+    // ========================================================
+    case STRING:
+	switch (op) {
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  case PLUS:
+		switch (rt) {
+		  case STRING:	
+			return true;
+		}
+	} // end of switch op for string
+	return false;
+
+    // ========================================================
+  }
+
+  return false;
+}
+
 expr* BuildBinary(expr* left, int op, expr* right)
 {
   if (NULL==left || NULL==right) {
@@ -250,10 +450,21 @@ expr* BuildBinary(expr* left, int op, expr* right)
     return NULL;
   }
 
-  // type checking goes here
 #ifdef COMPILE_DEBUG
   Output << "Building binary expression " << left << GetOp(op) << right << "\n";
 #endif
+
+  // type checking
+  bool ok = PromoteForOp(left, op, right);
+  if (!ok) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal binary operation: ";
+    PrintExprType(left, Error);
+    Error << " " << GetOp(op) << " ";
+    PrintExprType(right, Error);
+    Error.Stop();
+    return NULL;
+  }
 
   expr* answer = MakeBinaryOp(left, op, right, filename, lexer.lineno());
 #ifdef COMPILE_DEBUG
@@ -744,6 +955,42 @@ int ScoreFunction(function *f, List <expr> *params)
   return -1;
 }
 
+/** Promote passed parameters to formal types, as necessary.
+    Assumes that type checking has been performed already. 
+*/
+bool LinkFunction(function *f, expr** params, int np)
+{
+  formal_param **fpl;
+  int nfp;
+  int rfp;
+  f->GetParamList(fpl, nfp, rfp);
+  int fptr = 0;
+  for (int pptr=0; pptr<np; pptr++) {
+    if (fptr == nfp) {
+      if (f->ParamsRepeat())
+	fptr = rfp;
+      else {
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Can't link parameters";
+	Internal.Stop();
+	return false;
+      }
+    }
+
+    // promote each component as necessary
+    expr *prom = NULL;
+    if (fpl[fptr]->NumComponents()==1) {
+      // no aggregation
+      prom = MakeTypecast(params[pptr], fpl[fptr]->Type(0),
+      				filename, lexer.lineno());
+    } else {
+      prom = MakeTypecast(params[pptr], fpl[fptr], filename, lexer.lineno());
+    }
+    params[pptr] = prom;
+  }
+  return true;
+}
+
 expr* BuildFunctionCall(const char* n, void* posparams)
 {
   List <expr> *params = (List <expr> *)posparams;
@@ -763,7 +1010,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   for (i=flist->Length()-1; i>=0; i--) {
     function *f = flist->Item(i);
     int score;
-    if (f->HasSpecialTypeChecking()) 
+    if (f->HasSpecialTypechecking()) 
       score = f->Typecheck(params);
     else
       score = ScoreFunction(f, params);
@@ -805,6 +1052,13 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   delete params; 
 
   // Promote params
+  bool ok;
+  if (find->HasSpecialParamLinking())
+    ok = find->LinkParams(pp, np, Error);
+  else
+    ok = LinkFunction(find, pp, np);
+
+  if (!ok) return NULL;
 
   expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
   return fcall;

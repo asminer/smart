@@ -397,5 +397,36 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
   return NULL;
 }
 
+expr* MakeTypecast(expr *e, const expr* fp, const char* file, int line)
+{
+  if (NULL==e) return NULL;
+  if (NULL==fp) return NULL;
+  
+  DCASSERT(fp->NumComponents() == e->NumComponents());
+  int nc = e->NumComponents();
+  expr** newagg = new expr*[nc];
+  bool same = true;
+  bool null = false;
+  int i;
+  for (i=0; i<nc; i++) {
+    expr* thisone = Copy(e->GetComponent(i));
+    newagg[i] = MakeTypecast(thisone, fp->Type(i), file, line);
+    if (newagg[i] != thisone) same = false;
+    if (thisone) if (NULL==newagg[i]) {
+      // we couldn't typecast this component
+      null = true;
+      break;
+    }
+  }
+  if (!same && !null) { 
+    Delete(e);
+    return MakeAggregate(newagg, nc, file, line);
+  }
+  delete[] newagg;
+  if (same) return e;
+  // must be null
+  return NULL;
+}
+
 //@}
 

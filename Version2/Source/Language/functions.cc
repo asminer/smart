@@ -106,10 +106,10 @@ bool function::HasSpecialTypechecking() const
   return false; 
 }
 
-bool function::Typecheck(const expr** pp, int np, OutputStream &error) const
+int function::Typecheck(List <expr> *) const
 {
   DCASSERT(0);
-  return false;
+  return 0;
 }
 
 bool function::HasSpecialParamLinking() const 
