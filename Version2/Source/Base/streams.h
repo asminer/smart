@@ -22,6 +22,8 @@ protected:
   bool ready;
 protected:
   void ExpandBuffer(int newsize);
+  inline char* bufptr() { return buffer+buftop; }
+  inline int bufspace() { return bufsize-buftop; }
 public:
   OutputStream();
   virtual ~OutputStream();

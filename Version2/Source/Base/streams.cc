@@ -25,18 +25,20 @@ void OutputStream::ExpandBuffer(int wantsize)
       exit(0);
     }
   }
-  buffer = (char*) realloc(buffer, newsize);
-  if (NULL==buffer) {
+  char* newbuffer = (char*) realloc(buffer, newsize);
+  if (NULL==newbuffer) {
     fprintf(stderr, "Smart Panic: memory error for output buffer\n");
     exit(0);
   }
   bufsize = newsize;
+  buffer = newbuffer;  // just in case
 }
 
 OutputStream::OutputStream()
 {
-  buffer = (char*) malloc(1024);
-  bufsize = 1024;
+  static const int initsize = 1024;
+  buffer = (char*) malloc(initsize);
+  bufsize = initsize;
   buftop = 0;
   buffer[0] = 0;
   ready = true; 
@@ -64,13 +66,14 @@ void OutputStream::Put(bool data)
   if (ready) {
     ExpandBuffer(buftop+6);
     if (data) {
-      strcpy(buffer+buftop, "true");
+      strcpy(bufptr(), "true");
       buftop += 4;
     } else {
-      strcpy(buffer+buftop, "false");
+      strcpy(bufptr(), "false");
       buftop += 5;
     }
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(char data)
@@ -80,33 +83,50 @@ void OutputStream::Put(char data)
     buffer[buftop] = data;
     buftop++;
     buffer[buftop] = 0;
-  }
+  } 
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(int data)
 {
   if (ready) {
-    ExpandBuffer(buftop+10);
-    buftop += sprintf(buffer+buftop, "%d", data);
+    int size = snprintf(bufptr(), bufspace(), "%d", data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%d", data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(float data)
 {
   if (ready) {
-    /* Eventually.. check options for how to print floats */
-    ExpandBuffer(buftop+20); // what's the max float size?
-    buftop += sprintf(buffer+buftop, "%f", data);
+    int size = snprintf(bufptr(), bufspace(), "%f", data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%f", data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(double data)
 {
   if (ready) {
-    // check options here
-    ExpandBuffer(buftop+20); // what's the max float size?
-    buftop += sprintf(buffer+buftop, "%lf", data);
+    int size = snprintf(bufptr(), bufspace(), "%lf", data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%lf", data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(const char* data)
@@ -114,9 +134,11 @@ void OutputStream::Put(const char* data)
   if (ready) {
     int len = strlen(data);
     ExpandBuffer(buftop+len+2);
-    strcpy(buffer+buftop, data);
+    strncpy(bufptr(), data, len);
     buftop+=len;
+    buffer[buftop]=0;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(bool data, int width)
@@ -130,22 +152,35 @@ void OutputStream::Put(bool data, int width)
       Put("false");
     }
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(int data, int width)
 {
   if (ready) {
-    ExpandBuffer(buftop+width+10);
-    buftop += sprintf(buffer+buftop, "%*d", width, data);
+    int size = snprintf(bufptr(), bufspace(), "%*d", width, data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%*d", width, data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(double data, int width)
 {
   if (ready) {
-    ExpandBuffer(buftop+width+20);
-    buftop += sprintf(buffer+buftop, "%*lf", width, data);
+    int size = snprintf(bufptr(), bufspace(), "%*lf", width, data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%*lf", width, data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(const char* data, int width)
@@ -153,16 +188,25 @@ void OutputStream::Put(const char* data, int width)
   if (ready) {
     int len = strlen(data);
     Pad(width-len);
-    Put(data);
+    ExpandBuffer(buftop+len+2);
+    strncpy(bufptr(), data, len);
+    buftop+=len;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 void OutputStream::Put(double data, int width, int prec)
 {
   if (ready) {
-    ExpandBuffer(buftop+width+prec+20);
-    buftop += sprintf(buffer+buftop, "%*.*lf", width, prec, data);
+    int size = snprintf(bufptr(), bufspace(), "%*.*lf", width, prec, data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%*.*lf", width, prec, data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
   }
+  DCASSERT(buffer[buftop]==0);
 }
 
 // ==================================================================
