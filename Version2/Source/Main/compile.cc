@@ -927,6 +927,32 @@ void* AddParameter(void* list, formal_param* fp)
   return Template_AddParameter(list, fp);
 }
 
+void* AddParameter(void* list, named_param* np)
+{
+  List <named_param>* foo = (List <named_param> *)list;
+  if (NULL==foo) {
+    foo = new List <named_param> (256);
+    foo->Append(np);
+    return foo;
+  }
+  // Find the spot to insert np
+  int length = foo->Length();
+  int spot;
+  for (spot = length; spot; spot--) {
+    int cmp = strcmp(foo->Item(spot-1)->name, np->name);
+    if (0==cmp) {
+      // error, duplicate name
+      Error.Start(filename, lexer.lineno());
+      Error << "Duplicate passed parameter with name " << np->name;
+      Error.Stop();
+      return foo;
+    }
+    if (cmp<0) break;  // order is correct
+  }
+  foo->InsertAt(spot, np);
+  return foo;
+}
+
 array* BuildArray(type t, char*n, void* list)
 {
   if (NULL==n) return NULL;
@@ -1133,6 +1159,25 @@ formal_param* BuildFormal(type t, char* name, expr* deflt)
   f->SetDefault(d);
 
   return f;
+}
+
+named_param* BuildNamedParam(char* name, expr* pass)
+{
+  if (ERROR == pass) return NULL;
+  named_param* answer = new named_param;
+  answer->name = name;
+  answer->pass = pass;
+  answer->UseDefault = false;
+  return answer;
+}
+
+named_param* BuildNamedDefault(char* name)
+{
+  named_param* answer = new named_param;
+  answer->name = name;
+  answer->pass = NULL;
+  answer->UseDefault = true;
+  return answer;
 }
 
 // ==================================================================
@@ -1381,8 +1426,16 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   return fcall;
 }
 
-expr* BuildNamedFunctionCall(const char *, void*)
+expr* BuildNamedFunctionCall(const char *n, void* x)
 {
+  List <named_param> * foo = (List <named_param> *) x;
+  if (NULL == foo) return NULL;
+  int i;
+  Output << "Named parameters:\n";
+  for (i=0; i<foo->Length(); i++) {
+    Output << "\t" << foo->Item(i)->name << "\n";
+  }
+  Output.flush();
   Internal.Start(__FILE__, __LINE__);
   Internal << "Named parameters not done yet, sorry";
   Internal.Stop();

@@ -205,6 +205,9 @@ void* AddParameter(void* list, expr* pass);
 /// Add a formal parameter to our list
 void* AddParameter(void* list, formal_param* fp);
 
+/// Add a named parameter to our list (kept sorted by name)
+void* AddParameter(void* list, named_param* np);
+
 /// Build an array "header"
 array* BuildArray(type t, char* n, void* list);
 
@@ -217,6 +220,11 @@ formal_param* BuildFormal(type t, char* name);
 /// Build a formal parameter (with typechecking)
 formal_param* BuildFormal(type t, char* name, expr* deflt);
 
+/// Build a named parameter (passed)
+named_param* BuildNamedParam(char* name, expr* pass);
+
+/// Build a default named paramater (passed)
+named_param* BuildNamedDefault(char* name);
 
 // ==================================================================
 // |                                                                |

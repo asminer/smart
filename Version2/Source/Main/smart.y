@@ -30,6 +30,7 @@
   void* list;   
   array_index* index;
   formal_param* fparam;
+  named_param* nparam;
   int count;
   statement* stmt;
   array* Array;
@@ -62,6 +63,7 @@ model_function_call set_expr set_elems set_elem pos_param index
 formal_params formal_indexes pos_params named_params indexes
 %type <index> iterator
 %type <fparam> formal_param
+%type <nparam> named_param
 %type <count> for_header iterators
 %type <stmt> statement defn_stmt
 %type <Array> array_header
@@ -966,13 +968,14 @@ named_params
 #ifdef PARSE_TRACE
   cout << "Reducing named_params : named_params COMMA named_param\n";
 #endif
-  $$ = NULL;
+  $$ = AddParameter($1, $3);
 }
 	|	named_param
 {
 #ifdef PARSE_TRACE
   cout << "Reducing named_params : named_param\n";
 #endif
+  $$ = AddParameter(NULL, $1);
 }
 	;
 
@@ -982,12 +985,14 @@ named_param
 #ifdef PARSE_TRACE
   cout << "Reducing named_param : IDENT GETS expr\n";
 #endif
+  $$ = BuildNamedParam($1, $3);
 }
 	|	IDENT GETS DEFAULT
 {
 #ifdef PARSE_TRACE
   cout << "Reducing named_param : IDENT GETS DEFAULT\n";
 #endif
+  $$ = BuildNamedDefault($1);
 }
 	;
 

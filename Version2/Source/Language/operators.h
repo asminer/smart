@@ -18,6 +18,7 @@
 class array_index;
 class array;
 class formal_param;
+class named_param;
 class user_func;
 class statement;
 
