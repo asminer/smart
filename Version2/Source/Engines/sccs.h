@@ -21,7 +21,7 @@
 			sccmap[k] must be 0; to be not considered,
 			sccmap[k] must be more than 2*#nodes.
 			ON OUTPUT:
-			sccmap[k] is between #nodes+1 and #nodes+#sccs if
+			sccmap[k] is between 0 and #sccs if
 			this was a node to be considered;
 			all nodes within the same scc will have the same value.
 
@@ -32,7 +32,22 @@ int 	ComputeSCCs(digraph *g, unsigned long* sccmap);
 
 // other functions that could be useful
 
-// compute the terminal sccs (as for mc state classification)
-// int	ComputeTSCCs(const digraph &g, int* sccmap);
+/**	Compute the terminal sccs (as for mc state classification).
+
+	@param 	g	The graph.
+	@param	sccmap	An array of dimension #nodes.
+			ON INPUT:
+			For node k in the graph to be considered,
+			sccmap[k] must be 0; to be not considered,
+			sccmap[k] must be more than 2*#nodes.
+			ON OUTPUT:
+			sccmap[k] is 0 if node k is "transient",
+                        between 1 and #classes if k is "recurrent",
+			assuming node k was to be considered.
+
+	@return		The number of terminal sccs (recurrent classes), 
+			or -1 if there was some error.
+*/
+int	ComputeTSCCs(digraph *g, unsigned long* sccmap);
 
 #endif

@@ -213,6 +213,7 @@ void markov_model::FinalizeModel(result &x)
     Output << " : " << initial->value[i] << "\n"; 
   }
   Output.flush();
+  // wdgraph->Transpose();
   wdgraph->ConvertToStatic();
   Output << "Markov chain itself:\n";
   for (i=0; i<numstates; i++) {
@@ -448,15 +449,24 @@ void compute_mc_test(expr **pp, int np, result &x)
   DCASSERT(pp);
   markov_model *mc = dynamic_cast<markov_model*> (pp[0]);
   DCASSERT(mc);
+  result term;
+  SafeCompute(pp[1], 0, term);
 
-  Output << "Computing sccs for Markov chain " << mc << "\n";
+  if (term.bvalue)
+	Output << "Computing terminal sccs for Markov chain " << mc << "\n";
+  else
+  	Output << "Computing sccs for Markov chain " << mc << "\n";
   Output.flush();
   digraph *foo = mc->wdgraph;
   unsigned long* mapping = new unsigned long[foo->NumNodes()];
   int i;
   for (i=0; i<foo->NumNodes(); i++) mapping[i] = 0;
 
-  x.ivalue = ComputeSCCs(foo, mapping); 
+  x.Clear();
+  if (term.bvalue)
+  	x.ivalue = ComputeTSCCs(foo, mapping); 
+  else
+  	x.ivalue = ComputeSCCs(foo, mapping); 
 
   Output << "Done, node vector is: [";
   Output.PutArray(mapping, foo->NumNodes());
