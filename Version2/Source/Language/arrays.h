@@ -166,7 +166,7 @@ protected:
   array_desc *descriptor;
 
   /// Recursive function to clear out descriptor
-  void Clear(int level, void *desc);
+  void Clear(int level, void *x);
 public:
   /// Used to catch compile errors with converges and such
   const_state state;

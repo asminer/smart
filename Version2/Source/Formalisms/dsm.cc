@@ -15,6 +15,11 @@
 
 //@{
 
+void Delete(state_model *x) 
+{
+  delete x;
+}
+
 OutputStream& operator<< (OutputStream &s, state_model *e)
 {
   if (e) s << e->Name();

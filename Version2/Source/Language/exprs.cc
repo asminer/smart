@@ -582,7 +582,7 @@ symbol::symbol(const char* fn, int line, type *t, int tlen, char* n)
 
 symbol::~symbol()
 {
-  delete[] name;
+  if (name) delete[] name;
   delete[] aggtype;
 }
 

@@ -57,6 +57,10 @@ public:
    */
   virtual void Execute() = 0;
 
+  /** Reset.  Used for statements within models.
+  */
+  virtual void Clear() { }
+
   /** Execute guesses.
       Default behavior is to do nothing.
   */

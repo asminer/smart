@@ -110,9 +110,18 @@ void array::Clear()
   descriptor = NULL;
 }
 
-void array::Clear(int level, void* desc)
+void array::Clear(int level, void* x)
 {
-  // IMPLEMENT THIS!  
+  if (NULL==x) return;
+  if (level<dimension) {
+    array_desc* d = (array_desc*) x;
+    for (int i=0; i<d->values->Size(); i++) 
+      Clear(level+1, d->down[i]);
+    delete d;
+  } else {
+    symbol* s = (symbol*) x;
+    Delete(s);
+  }
 }
 
 void array::SetCurrentReturn(symbol *retvalue)
@@ -370,7 +379,9 @@ void acall::show(OutputStream &s) const
   s << func->Name();
   DCASSERT(numpass>0);
   s.Put('[');
-  s.PutArray(pass, numpass);
+  s << pass[0];
+  for (int i = 1; i<numpass; i++)
+    s << ", " << pass[i];
   s.Put(']');
 }
 
@@ -409,6 +420,7 @@ public:
   virtual ~forstmt(); 
 
   virtual void Execute();
+  virtual void Clear();
   virtual void InitialGuess();
   virtual bool HasConverged();
   virtual void Affix(); 
@@ -428,15 +440,6 @@ forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, i
   dimension = d;
   block = b;
   blocksize = n;
-
-  // set us as parent of the block
-  /*
-  int j;
-  for (j=0; j<blocksize; j++) {
-    DCASSERT(block[j]);
-    block[j]->SetParent(this);
-  }
-  */
 }
 
 forstmt::~forstmt()
@@ -452,6 +455,11 @@ forstmt::~forstmt()
 void forstmt::Execute()
 {
   Execute(0);
+}
+
+void forstmt::Clear()
+{
+  for (int i=0; i<blocksize; i++) block[i]->Clear();
 }
 
 void forstmt::InitialGuess()

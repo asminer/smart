@@ -22,14 +22,6 @@
 
 //#define DEBUG_MODEL
 
-// remove this soon...
-
-void Delete(state_model *x)
-{
-  if (NULL==x) return;
-  DCASSERT(0);
-}
-
 // ******************************************************************
 // *                                                                *
 // *                       model_var  methods                       *
@@ -158,8 +150,8 @@ void model::Compute(expr **p, int np, result &x)
   Output.flush();
 #endif
 
-  InitModel();
   Clear();
+  InitModel();
 
   for (i=0; i<num_stmts; i++) {
     stmt_block[i]->Execute();
@@ -352,11 +344,15 @@ void model::GroupMeasures()
 void model::Clear()
 {
   Delete(dsm);
+  dsm = NULL;
   mlist->Clear();
   if (mtrans) mtrans->Clear();
   msteady->Clear();
   macc_trans->Clear();
   macc_steady->Clear();
+  for (int i=0; i<num_stmts; i++) {
+    stmt_block[i]->Clear();
+  }
 }
 
 // ******************************************************************
@@ -689,12 +685,12 @@ public:
 
   virtual expr* Substitute(int i) {
     DCASSERT(i==0);
-    return var;
+    return Copy(var);
   }
 
   virtual void show(OutputStream &s) const {
     s << " (";
-    if (var) s << var; else s << " ";
+    if (var) s << var; else s << who;
     s << ") ";
   }
 
@@ -888,6 +884,7 @@ public:
   virtual ~measure_assign(); 
 
   virtual void Execute();
+  virtual void Clear();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int depth, OutputStream &s) const;
 };
@@ -907,6 +904,11 @@ measure_assign::~measure_assign()
 void measure_assign::Execute()
 {
   parent->AcceptMeasure(msr);
+}
+
+void measure_assign::Clear()
+{
+  msr->Clear();
 }
 
 void measure_assign::show(OutputStream &s) const
@@ -941,6 +943,7 @@ public:
   virtual ~measure_array_assign(); 
 
   virtual void Execute();
+  virtual void Clear();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int depth, OutputStream &s) const;
 };
@@ -991,6 +994,11 @@ void measure_array_assign::Execute()
 #ifdef ARRAY_TRACE
   cout << "Array assign: " << frv << "\n";
 #endif
+}
+
+void measure_array_assign::Clear()
+{
+  f->Clear();
 }
 
 void measure_array_assign::show(OutputStream &s) const

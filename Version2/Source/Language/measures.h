@@ -70,9 +70,12 @@ public:
 
   /// Call this after we are computed
   inline void SetValue(const result &v) {
-    Delete(return_expr);
     value = v;
     state = CS_Computed;
+  }
+
+  void Clear() {
+    state = CS_Defined;
   }
 };
 

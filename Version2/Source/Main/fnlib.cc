@@ -1627,9 +1627,9 @@ void InitBuiltinFunctions(PtrTable *t)
 void InitBuiltinConstants(PtrTable *t)
 {
   // Infinity
-  constfunc *infty = MakeConstant(INT, "infty", NULL, -1);
+  constfunc *infty = MakeConstant(INT, "infinity", NULL, -1);
   infty->SetReturn(MakeInfinityExpr(1, NULL, -1));
-  t->AddNamePtr("infty", infty);
+  t->AddNamePtr("infinity", infty);
 
   // Other constants? 
 }

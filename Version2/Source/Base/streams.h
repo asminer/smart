@@ -120,7 +120,8 @@ inline OutputStream& operator<< (OutputStream& s, double data)
 
 inline OutputStream& operator<< (OutputStream& s, const char* data) 
 {
-  s.Put(data);
+  if (data) s.Put(data);
+  else s.Pad('"', 2);
   return s;
 }
 

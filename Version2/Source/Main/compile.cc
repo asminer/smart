@@ -2227,7 +2227,7 @@ expr* FindIdent(char* name)
         Error.Stop();
         return NULL;
       }
-      return f;
+      return Copy(f);
     }
   }
 

@@ -252,7 +252,10 @@ inline expr* Copy(expr *e)
   if (e && e!=ERROR && e!=DEFLT) {
     e->incoming++;
 #ifdef SHARE_DEBUG
-    cerr << "increased incoming count for " << e << " to " << e->incoming << endl;
+    Output << "increased incoming count for ";
+    e->show(Output);
+    Output << " to " << e->incoming << "\n";
+    Output.flush();
 #endif
   }
   return e;
@@ -269,11 +272,17 @@ inline void Delete(expr *e)
     DCASSERT(e->incoming>0);
     e->incoming--;
 #ifdef SHARE_DEBUG
-    cerr << "decreased incoming count for " << e << " to " << e->incoming << endl;
+    Output << "decreased incoming count for ";
+    e->show(Output);
+    Output << " to " << e->incoming << "\n";
+    Output.flush();
 #endif
     if (0==e->incoming) {
 #ifdef SHARE_DEBUG
-      cerr << "Deleting " << e << "\n";
+      Output << "Deleting ";
+      e->show(Output);
+      Output << "\n";
+      Output.flush();
 #endif
       delete e;
     }

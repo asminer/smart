@@ -592,7 +592,7 @@ void Add_instate(PtrTable *fns)
   formal_param **pl = new formal_param*[2];
   pl[0] = new formal_param(MARKOV, "m");
   pl[1] = new formal_param(STATE, "s");
-  internal_func *p = new internal_func(PROC_BOOL, "instate", 
+  internal_func *p = new internal_func(PROC_BOOL, "in_state", 
 	compute_mc_instate, NULL,
 	pl, 2, helpdoc);  
   p->setWithinModel();

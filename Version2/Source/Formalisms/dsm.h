@@ -125,6 +125,8 @@ public:
   void DetermineProcessType();
 };
 
+void Delete(state_model *x);
+
 OutputStream& operator<< (OutputStream &s, state_model *m);
 
 //@}
