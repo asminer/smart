@@ -151,7 +151,7 @@ protected:
   void WriteInt(char bits, int x);
 
   /// For debugging.
-  void PrintBits(OutputStream &s, int start, int stop);
+  void PrintBits(OutputStream &s, int start, int stop) const;
 
   /** Enlarge the memory array, if necessary. */
   void EnlargeMem(int newsize);
@@ -173,11 +173,44 @@ public:
   
   int AddState(state &s);
   /// Can only be used with map array.
-  void PopLast();
+  inline void PopLast() {
+    DCASSERT(map);
+    lasthandle = map[--numstates];
+  }
 
   bool GetState(int h, state &s);
 
   int NextHandle(int h); 
+
+  /**  Compares the encodings of two states.
+       Note: this is done by comparing the encodings of the states
+       without unpacking.  For speed, this requires a map array (index 
+       handles) to find the "end" of the encoding.
+       @param h1	First state
+       @param h2	Second state
+       @return	An integer with the same sign as 
+		 (encoding of state h1) - (encoding of state h2)
+       This would be used for example with a "dictionary" data structure
+       to keep track of unique states, something like:
+       1) add new state
+       2) check if it exists already
+       3) if so, call PopLast
+  */
+  int Compare(int h1, int h2) const;
+
+  /**  Compare an encoded state with a full state.
+       The encoded state is unpacked "on the fly",
+       only as much as necessary.
+       @param h1	First state (handle)
+       @param s2	Second state (full)	
+       @return  An integer with the same sign as
+		(unpacked state h1) - (s2)
+       Could also be used with a dictionary structure to keep track
+       of unique states.  Differences with the above "Compare":
+       * the second state doesn't have to be added yet 
+       * can be used without a map array (non-index handles)
+  */
+  int Compare(int h1, state& s2);
 
   void Report(OutputStream &r);
   int MemUsed();

@@ -153,7 +153,7 @@ void state_array::WriteInt(char bits, int x)
   }
 }
 
-void state_array::PrintBits(OutputStream &s, int start, int stop)
+void state_array::PrintBits(OutputStream &s, int start, int stop) const
 {
   int i, b;
   for (i=start; i<stop; i++) {
@@ -192,6 +192,7 @@ state_array::state_array(bool useindices)
     mapsize = 256;
     map = (int*) malloc(mapsize * sizeof(int));
     if (NULL==map) OutOfMemoryError("new state array");
+    map[0] = 0; // initialize "first" handle
   } else {
     mapsize = 0;
     map = NULL;
@@ -303,13 +304,12 @@ int state_array::AddState(state &s)
   int answer;
   if (firsthandle<0) firsthandle = lasthandle;
   if (map) {
-    if (numstates>=mapsize) {
+    if (numstates+1>=mapsize) {
       // Enlarge map array
       mapsize *= 2;
       map = (int*) realloc(map, mapsize * sizeof(int));
       if (NULL==map) OutOfMemoryError("too many states");
     }
-    map[numstates] = lasthandle;
     answer = numstates;
   } else {
     answer = lasthandle;
@@ -519,6 +519,7 @@ int state_array::AddState(state &s)
   if (bitptr<7) byteptr++;
   lasthandle = byteptr;
   numstates++;
+  map[numstates] = lasthandle;  // keeps track of this state "size"
 
 #ifdef  DEBUG_COMPACT
   Output << "Added state #" << numstates-1 << " : " << s << "\n";
@@ -785,6 +786,31 @@ int state_array::NextHandle(int h)
 #endif
 
   return byteptr;
+}
+
+int state_array::Compare(int h1, int h2) const
+{
+  DCASSERT(map);
+  // compare by length first, then in case of a tie,
+  // check the actual encodings.
+  int length1 = map[h1+1] - map[h1];
+  int length2 = map[h2+1] - map[h2];
+  int foo = length1 - length2;
+  if (foo!=0) return foo;
+  // same size, check bytes
+  const char* ptr1 = (char *) mem + map[h1];
+  const char* ptr2 = (char *) mem + map[h2];
+#ifdef DEBUG_COMPACT
+  int compare = strncmp(ptr1, ptr2, length1);
+  Output << "Comparing handle " << h1 << " and " << h2 << "\n";
+  Output << "Encoding of " << h1 << ": ";
+  PrintBits(Output, map[h1], map[h1+1]);
+  Output << "\nEncoding of " << h2 << ": ";
+  PrintBits(Output, map[h2], map[h2+1]);
+  Output << "\nGot: " << compare << "\n";
+  Output.flush();
+#endif
+  return strncmp(ptr1, ptr2, length1);   // ya gotta love it
 }
 
 void state_array::Report(OutputStream &R)
