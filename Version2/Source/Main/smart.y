@@ -341,6 +341,7 @@ decl_stmt
 #ifdef PARSE_TRACE
   cout << "Reducing decl_stmt : func_header SEMI\n";
 #endif
+  DoneWithFunctionHeader($1);
 }
 	|	array_header SEMI
 {

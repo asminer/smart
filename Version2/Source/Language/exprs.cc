@@ -391,6 +391,28 @@ void symbol::show(OutputStream &s) const
   s << name;
 }
 
+bool symbol::Matches(symbol *x) const
+{
+  if (NULL==x) return false;
+  // check type
+  if (agglength != x->agglength) return false;
+  if (agglength>1) {
+    // check aggregate type
+    DCASSERT(aggtype);
+    DCASSERT(x->aggtype);
+    for (int i=0; i<agglength; i++) {
+      if (aggtype[i] != x->aggtype[i]) return false;
+    }
+  } else {
+    // check simple type
+    if (mytype != x->mytype) return false;
+  }
+  // types match, check names
+  if (NULL==name && NULL==x->name) return true;
+  if (NULL==name || NULL==x->name) return false;
+  return (strcmp(name, x->name)==0);
+}
+
 // ******************************************************************
 // *                                                                *
 // *                        aggregates class                        *

@@ -828,6 +828,13 @@ statement* BuildFuncStmt(user_func *f, expr *r)
   return NULL;
 }
 
+void DoneWithFunctionHeader(user_func* )
+{
+  // do we need to do anything to the function?
+  delete FormalParams;
+  FormalParams = NULL;
+}
+
 statement* BuildVarStmt(type t, char* id, expr* ret)
 {
   if (ERROR==ret) return NULL;
@@ -1074,6 +1081,76 @@ void MatchParam(formal_param *p, expr* pass, bool &perfect, bool &promote)
   }
 }
 
+bool CanDistinguishPositionalParams(function *f, List <formal_param> *fpb)
+{
+  // Not sure how to deal with this case, so don't (for now)
+  if (f->HasSpecialTypechecking())
+    return false;
+
+  formal_param **fpa;
+  int npa;
+  int dummy;
+  f->GetParamList(fpa, npa, dummy);
+  
+  int npb = fpb->Length();
+
+  // Check positions and types
+  if (npa == npb) {
+    // Only check if the number of parameters is the same
+    int i;
+    for (i = 0; i < npb; i++) {
+      bool perfect = true;
+      bool promote = true;
+      MatchParam(fpa[i], fpb->Item(i), perfect, promote);
+      if (!perfect) {
+	// These parameters don't have the same type.
+	if (!fpa[i]->HasDefault()) break;
+	if (!fpb->Item(i)->HasDefault()) break;
+	// Still here? They both have defaults, which means
+	// they cannot be distinguished if the defaults are passed
+      }
+    }
+    if (i>=npb) {
+      // ALL matched, bail
+      return false;
+    }
+  }
+  return true; 
+}
+
+bool CanDistinguishNamedParams(function *f, List <formal_param> *fpb)
+{
+  // Not sure how to deal with this case, so don't (for now)
+  if (f->HasSpecialTypechecking())
+    return false;
+
+  // not implemented yet ;^)
+  return true;
+}
+
+bool PerfectFormalMatch(function *f, List <formal_param> *fpb)
+{
+  if (f->HasSpecialTypechecking()) return false;
+
+  formal_param **fpa;
+  int npa;
+  int dummy;
+  f->GetParamList(fpa, npa, dummy);
+
+  if (npa != fpb->Length()) return false;
+
+  int i;
+  for (i=0; i<npa; i++) {
+    // Check defaults later!
+
+    DCASSERT(fpa[i]);
+    if (fpa[i]->Matches(fpb->Item(i))) continue;
+    // mismatch
+    return false;
+  }
+  return true;
+}
+
 /**  Make sure this function's parameters differ enough
      from the given formal parameters.
      (Used to check that a newly defined function is not a duplicate of an
@@ -1092,35 +1169,6 @@ int CantDistinguishFunction(function *f, List <formal_param> *fpb)
     return 0;
   }
 
-  formal_param **fpa;
-  int npa;
-  int dummy;
-  f->GetParamList(fpa, npa, dummy);
-  
-  int npb = fpb->Length();
-
-  // First: check positions and types
-  if (npa == npb) {
-    // Only check if the number of parameters is the same
-    int i;
-    for (i = 0; i < npb; i++) {
-      bool perfect = true;
-      bool promote = true;
-      MatchParam(fpa[i], fpb->Item(i), perfect, promote);
-      if (!perfect) {
-	// These parameters don't have the same type.
-	if (!fpa[i]->HasDefault()) break;
-	if (!fpb->Item(i)->HasDefault()) break;
-	// Still here? They both have defaults, which means
-	// they cannot be distinguished if the defaults are passed
-      }
-    }
-    if (i>=npb) {
-      // ALL matched, bail
-      return 1;
-    }
-  }
-
   // Check names (eventually)
 
   return 0;
@@ -1131,9 +1179,7 @@ user_func* BuildFunction(type t, char*n, void* list)
   if (NULL==n) return NULL;
   if (NULL==list) return NULL;  // No parameters? build a const func...
 
-  // Save the formal parameters to a "symbol table" (deleted later)
-  List <formal_param> *fpl = (List <formal_param> *)list;
-  FormalParams = fpl;
+  FormalParams = (List <formal_param> *)list;
 
   // Make sure this function isn't a duplicate of an existing function
   List <function> *flist = FindFunctions(Builtins, n);
@@ -1141,14 +1187,40 @@ user_func* BuildFunction(type t, char*n, void* list)
   for (i--; i>=0; i--) {
     // Check functions with this name (if any)
     function *f = flist->Item(i);
-    bool error = false;
-    if (f->HasSpecialTypechecking()) {
-      // Don't allow this yet
-      error = true;
+
+    if (CanDistinguishPositionalParams(f, FormalParams) &&
+        CanDistinguishNamedParams(f, FormalParams)) 
+      continue;  // properly overloaded function
+      
+    // Check: Is this a forward-defined function?
+    if (f->isForwardDefined()) {
+      // we had better match perfectly
+      if (!PerfectFormalMatch(f, FormalParams)) {
+	Error.Start(filename, lexer.lineno());
+	Error << "Forward declaration mismatch with function:\n\t";
+	f->ShowHeader(Error);
+	if (f->Filename()) {
+          Error << " declared in file " << f->Filename();
+	  Error << " near line " << f->Linenumber();
+	} 
+	Error.Stop();
+	delete FormalParams;
+	FormalParams = NULL;
+	return NULL;
+      }
+      // Replace us with the forward declaration 
+      user_func* u = dynamic_cast<user_func*>(f);
+      if (NULL==u) {
+	Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+	Internal << "Bad forward definition match?";
+	Internal.Stop();
+      }
+      // Swap parameters...
+      FormalParams->Clear();
+      u->FillFormal(FormalParams);
+      return u;
     } else {
-      error = CantDistinguishFunction(f, fpl);
-    }
-    if (error) {
+      // Not forward defined; bad overloading
       Error.Start(filename, lexer.lineno());
       Error << "Function declaration conflicts with existing function:\n\t";
       f->ShowHeader(Error);
@@ -1159,12 +1231,15 @@ user_func* BuildFunction(type t, char*n, void* list)
 	Error << " internally";
       }
       Error.Stop();
+      delete FormalParams;
+      FormalParams = NULL;
       return NULL;
-    }
-  }
+    } // if (forward defined)
+  } // for i
 
+  // This is a new function.
   user_func *f = new user_func(filename, lexer.lineno(), t, n,
-  			fpl->Copy(), fpl->Length());
+  			FormalParams->Copy(), FormalParams->Length());
 
   InsertFunction(Builtins, f);
   return f;
@@ -1606,6 +1681,7 @@ expr* BuildNamedFunctionCall(const char *n, void* x)
   int bestmatch = params->Length()+2;
   for (i=flist->Length()-1; i>=0; i--) {
     function *f = flist->Item(i);
+    if (!f->CanUseNamedParams()) continue;
     int score;
     if (f->HasSpecialTypechecking()) {
       // can we allow named parameters here?

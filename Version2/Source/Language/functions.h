@@ -82,7 +82,6 @@ public:
   inline void SetDefault(expr *d) { deflt = d; hasdefault = true; }
   inline bool HasDefault() const { return hasdefault; }
   inline expr* Default() const { return deflt; }
-
 };
 
 // ******************************************************************
@@ -146,6 +145,10 @@ protected:
   int num_params;
   /// The point where the parameters start to repeat.  
   int repeat_point;
+  /** Is this forward defined?
+      If so, we're allowed to re-assign its return value later.
+  */
+  bool isForward;
 public:
   /// Use this constructor when there are repeating params.
   function(const char* fn, int line, type t, char* n, 
@@ -155,6 +158,11 @@ public:
            formal_param **pl, int np);
 
   virtual ~function();
+
+  /** Sets the return value.
+      Used only by user functions; necessary to deal with forward defs.
+  */
+  virtual void SetReturn(expr *e);
 
   /** So that the compiler can do typechecking.
       @param	pl	List of parameters.  MUST NOT BE CHANGED.
@@ -168,6 +176,8 @@ public:
   }
 
   inline bool CanUseNamedParams() const { return name_order; }
+
+  inline bool isForwardDefined() const { return isForward; }
 
   /** Parameters sorted by name (indexes).
       Returns the index of the ith parameter as ordered by name.
@@ -263,9 +273,11 @@ public:
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(long &, expr **, int np, result &x);
 
-  inline void SetReturn(expr *e) { return_expr = e; }
+  virtual void SetReturn(expr *e);
 
   virtual void show(OutputStream &s) const;
+
+  void FillFormal(List <formal_param>* fpl) const;
 };
 
 // ******************************************************************

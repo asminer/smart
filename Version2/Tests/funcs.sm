@@ -90,4 +90,42 @@ print("should be  6: ", mymult(a:=3), "\n");
 print("should be  4: ", mymult(b:=5), "\n");
 print("should be  1: ", mymult(a:=default, b:=default), "\n");
 
+// Forward declarations
+
+print("Testing forward function declarations\n");
+
+int mybinary(int a, int b);
+int myident := 0;
+
+int square(int a) := mybinary(a,a);
+int mypow(int a, int b) := 
+  cond(b==0,
+    myident,
+    cond(mod(b,2)==0,
+      square(mypow(a, div(b,2))),
+      mybinary(a, mypow(a, b-1))
+    )
+  );
+
+int mybinary(int a, int b) := a+b;
+
+print("Should be 0..20..2:\n");
+for (int i in {0..10}) {
+  print(mypow(2, i), "\n");
+}
+
+int myfwd(int a, int b);
+int myfoo(int a, int b) := myfwd(a,b);
+
+print("Should cause an error:\n");
+int myfwd(int c, int d) := c+d;
+
+int myfwd(int a, int b);
+
+print("Not yet defined:\n");
+print(myfoo(3,4), "\n");
+
+int myfwd(int a, int b) := a+b;
+print("defined:\n");
+print(myfoo(3,4), "\n");
 

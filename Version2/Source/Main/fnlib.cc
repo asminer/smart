@@ -342,6 +342,133 @@ void AddOutputFile(PtrTable *fns)
 }
 
 // ********************************************************
+// *                   Math functions                     *
+// ********************************************************
+
+void compute_div(expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a;
+  SafeCompute(p[0], 0, a);
+  if (a.isNull() || a.error || a.isUnknown()) {
+    x = a;
+    return;
+    // null div b = null,
+    // ? div b = ?
+  }
+  SafeCompute(p[1], 0, x);
+  if (x.isNull() || x.error || x.isUnknown()) {
+    return;
+    // a div null = null,
+    // a div ? = ?
+  }
+  if (a.isInfinity() && x.isInfinity()) {
+    x.error = CE_Undefined;
+    Error.Start(p[1]->Filename(), p[1]->Linenumber());
+    Error << "Illegal operation: infinity / infinity";
+    Error.Stop();
+    return;
+  }
+  if (x.isInfinity()) {
+    // a div +-infty = 0
+    x.Clear();
+    x.ivalue = 0;
+    return;
+  }
+  if (a.isInfinity()) {
+    // infinty div b = +- infinity
+    if ((a.ivalue > 0) == (x.ivalue > 0)) {
+      // same sign, that's +infinity
+      x = a;
+      x.ivalue = 1;
+    } else {
+      // opposite sign, that's -infinity
+      x = a;
+      x.ivalue = -1;
+    }
+    return;
+  }
+  if (x.ivalue == 0) {
+    // a div 0
+    x.Clear();
+    x.error = CE_ZeroDivide;
+    DCASSERT(p[1]);  // otherwise b is null
+    Error.Start(p[1]->Filename(), p[1]->Linenumber());
+    Error << "Illegal operation: divide by 0";
+    Error.Stop();
+    return;
+  }
+  // ordinary integer division
+  x.ivalue = a.ivalue / x.ivalue;
+}
+
+void AddDiv(PtrTable *fns)
+{
+  const char* helpdoc = "Integer division: computes int(a/b)";
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(INT, "a");
+  pl[1] = new formal_param(INT, "b");
+
+  internal_func *p = 
+    new internal_func(INT, "div", compute_div, NULL, pl, 2, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+void compute_mod(expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  int a,b;
+  SafeCompute(p[0], 0, x);
+  if (x.isNull() || x.error || x.isUnknown() || x.isInfinity()) {
+    return;
+    // null mod b = null,
+    // ? mod b = ?,
+    // infty mod b = infty
+  }
+  a = x.ivalue;
+  SafeCompute(p[1], 0, x);
+  if (x.isNull() || x.error || x.isUnknown()) {
+    return;
+    // a mod null = null,
+    // a mod ? = ?
+  }
+  if (x.isInfinity()) {
+    // a mod infty = a
+    x.Clear();
+    x.ivalue = a;
+    return;
+  }
+  b = x.ivalue;
+  x.Clear();
+  if (b) {
+    x.ivalue = a % b;
+    return;
+  }
+  // a mod 0, error
+  x.error = CE_ZeroDivide;
+  DCASSERT(p[1]);  // otherwise b is null
+  Error.Start(p[1]->Filename(), p[1]->Linenumber());
+  Error << "Illegal operation: modulo 0";
+  Error.Stop();
+}
+
+void AddMod(PtrTable *fns)
+{
+  const char* helpdoc = "Modulo arithmetic: computes a mod b";
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(INT, "a");
+  pl[1] = new formal_param(INT, "b");
+
+  internal_func *p = 
+    new internal_func(INT, "mod", compute_mod, NULL, pl, 2, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *               system-like  functions                 *
 // ********************************************************
 
@@ -449,6 +576,9 @@ void InitBuiltinFunctions(PtrTable *t)
   AddErrorFile(t);
   AddWarningFile(t);
   AddOutputFile(t);
+  // Arithmetic
+  AddDiv(t);
+  AddMod(t);
   // System stuff
   AddExit(t);
   // Conditionals

@@ -448,6 +448,9 @@ public:
 
   virtual expr* Substitute(int i);
   virtual void show(OutputStream &) const;
+
+  /// Returns true if the types and names match perfectly.
+  bool Matches(symbol *) const;
 };
 
 

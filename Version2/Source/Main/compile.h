@@ -174,6 +174,11 @@ statement* BuildArrayStmt(array *a, expr *e);
 */
 statement* BuildFuncStmt(user_func *f, expr *r);
 
+/** Used when f is "forward defined".
+    This allows us to clear the formal parameters when we're done with them.
+*/
+void DoneWithFunctionHeader(user_func *f);
+
 /** Builds a "variable" statement with typechecking.
     If we're not within a converge, we return NULL.
     Otherwise, we return an assignment (eventually).

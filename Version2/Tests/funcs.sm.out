@@ -22,6 +22,10 @@ ERROR in file funcs.sm near line 27:
 ERROR in file funcs.sm near line 28:
 	Function declaration conflicts with existing function:
 	int times(int a, int b:=1) declared in file funcs.sm near line 19
+ERROR in file funcs.sm near line 28:
+	Unknown identifier: x
+ERROR in file funcs.sm near line 28:
+	Unknown identifier: y
 ERROR in file funcs.sm near line 29:
 	Duplicate formal parameter named a
 ERROR in file funcs.sm near line 29:
@@ -99,6 +103,10 @@ Another duplication error:
 ERROR in file funcs.sm near line 77:
 	Function declaration conflicts with existing function:
 	real promote2(int c, real d) declared in file funcs.sm near line 44
+ERROR in file funcs.sm near line 77:
+	Unknown identifier: c
+ERROR in file funcs.sm near line 77:
+	Unknown identifier: d
 Should be ok
 should be 4: 4
 should be 5: 5
@@ -107,3 +115,28 @@ should be 10: 10
 should be  6: 3
 should be  4: 4
 should be  1: 1
+Testing forward function declarations
+Should be 0..20..2:
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+20
+Should cause an error:
+ERROR in file funcs.sm near line 122:
+	Forward declaration mismatch with function:
+	int myfwd(int a, int b) declared in file funcs.sm near line 118
+ERROR in file funcs.sm near line 122:
+	Unknown identifier: c
+ERROR in file funcs.sm near line 122:
+	Unknown identifier: d
+Not yet defined:
+null
+defined:
+7

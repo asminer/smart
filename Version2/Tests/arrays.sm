@@ -141,5 +141,11 @@ wrongind[1][10];
 wrongind[1][10][100][3]; 
 
 /* 
-   Test of delayed evaluation
+   Testing wrong index names and orders
 */
+
+for (int i in {1..10}, int j in {1..10}) {
+  int wrongorder[j][i] := i+j;
+  int wrongname1[i][k] := i+j;
+  int wrongname2[m][n] := i+j;
+}

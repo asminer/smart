@@ -71,6 +71,7 @@ void formal_param::Sample(long &, int i, result &x)
   x.notFreeable();
 }
 
+
 // ******************************************************************
 // *                                                                *
 // *                        function methods                        *
@@ -143,6 +144,13 @@ function::~function()
     delete parameters[i];
   delete[] parameters;
   delete[] name_order;
+}
+
+void function::SetReturn(expr *)
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Bad function modification?\n";
+  Internal.Stop();
 }
 
 bool function::HasSpecialTypechecking() const 
@@ -219,6 +227,7 @@ user_func::user_func(const char* fn, int line, type t, char* n, formal_param **p
   for (i=0; i<np; i++) {
     pl[i]->LinkUserFunc(&stack_ptr, i);
   }
+  isForward = true;
 }
 
 user_func::~user_func()
@@ -286,6 +295,12 @@ void user_func::Sample(long &s, expr **pp, int np, result &x)
   Internal.Stop();
 }
 
+void user_func::SetReturn(expr *e)
+{
+  return_expr = e; 
+  isForward = false; 
+}
+
 void user_func::show(OutputStream &s) const
 {
   DCASSERT(Name());
@@ -303,6 +318,15 @@ void user_func::show(OutputStream &s) const
   s << ") := " << return_expr;
 }
 
+void user_func::FillFormal(List <formal_param>* fpl) const
+{
+  int i;
+  for (i=0; i<num_params; i++) {
+    DCASSERT(fpl);
+    fpl->Append(parameters[i]);
+  }
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     internal_func  methods                     *
@@ -318,6 +342,7 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
+  isForward = false;
 }
 
 internal_func::internal_func(type t, char *n, 
@@ -330,6 +355,7 @@ internal_func::internal_func(type t, char *n,
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
+  isForward = false;
 }
 
 void internal_func::Compute(expr **pp, int np, result &x)
