@@ -1,0 +1,18 @@
+
+$Id$
+
+Smart version 2.
+
+Overview of file structure will go here.
+
+Try changing the structure significantly.
+
+What we have:
+
+   Base language:
+     types, results, basic expressions,
+     symbols, functions, 
+
+
+
+
