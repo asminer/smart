@@ -67,15 +67,14 @@ void PrintString(const result& x, OutputStream &out, int width)
 /** Addition of strings.
  */
 class string_add : public addop {
-  result* xop;
 public:
   string_add(const char* fn, int line, expr **x, int n) 
-    : addop(fn, line, x, n) { xop = new result[n]; }
+    : addop(fn, line, x, n) { }
   
   string_add(const char* fn, int line, expr *l, expr *r) 
-    : addop(fn, line, l, r) { xop = new result[2]; }
+    : addop(fn, line, l, r) { }
 
-  virtual ~string_add() { delete[] xop; }
+  virtual ~string_add() { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -92,63 +91,21 @@ protected:
 void string_add::Compute(int a, result &x)
 {
   DCASSERT(0==a);
-  x.Clear();
-
-  int i;
-
+  // strings are accumulated into a string stream
+  StringStream acc;
   // Compute strings for each operand
-  int total_length = 0;
-  for (i=0; i<opnd_count; i++) {
+  for (int i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
-#ifdef DEBUG_STRINGS
-    Output << "Computing operand: " << operands[i] << "\n";
-    Output.flush();
-#endif
-    operands[i]->Compute(0, xop[i]);
-#ifdef DEBUG_STRINGS
-    Output << "Got operand  " << operands[i] << " = ";
-    PrintResult(Output, STRING, xop[i]);
-    Output << "\n";
-    Output.flush();
-#endif
-    if (xop[i].isError() || xop[i].isNull()) {
-      x = xop[i];
-      break;
-    }
-    if (xop[i].svalue) {
-      total_length += strlen(xop[i].svalue->string);
-    }
+    SafeCompute(operands[i], 0, x);
+    if (x.isError() || x.isNull()) return;
+    DCASSERT(x.svalue);
+    x.svalue->show(acc);
+    DeleteResult(STRING, x);
   }
-
-  if (x.isError() || x.isNull()) {
-    // delete strings and bail out
-    for (i=0; i<opnd_count; i++) DeleteResult(STRING, xop[i]);
-    return;
-  }
-
-#ifdef DEBUG_STRINGS
-  Output << "Concatenating operands: ";
-  for (i=0; i<opnd_count; i++) PrintResult(Output, STRING, xop[i]);
-  Output << "\n";
-#endif
-
-  // concatenate all strings
-  char* answer = new char[total_length+1]; // save room for terminating 0
-  answer[0] = 0;
-  for (i=0; i<opnd_count; i++) {
-    if (xop[i].svalue) {
-      strcat(answer, xop[i].svalue->string);
-    }
-    DeleteResult(STRING, xop[i]);
-  }
-
+  // done, collect concatenation
+  char* answer = acc.GetString();
   x.svalue = new shared_string(answer);
-
-#ifdef DEBUG_STRINGS
-  Output << "And got answer: " << answer << "\n";
-  Output.flush();
-#endif
 }
 
 
@@ -179,13 +136,11 @@ protected:
 void string_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -230,13 +185,11 @@ protected:
 void string_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -281,13 +234,11 @@ protected:
 void string_gt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -331,13 +282,11 @@ protected:
 void string_ge::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -381,13 +330,11 @@ protected:
 void string_lt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -431,13 +378,11 @@ protected:
 void string_le::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  SafeCompute(left, 0, l);
+  SafeCompute(right, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();

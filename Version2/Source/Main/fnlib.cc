@@ -686,7 +686,9 @@ void compute_substr(expr** p, int np, result &x)
 
   // still here? stop and start are both finite, ordinary integers
 
-  if (stop.ivalue<0 || start.ivalue>stop.ivalue) {  // definitely empty string
+  if (stop.ivalue<0 || 
+      start.ivalue > srclen || 
+      start.ivalue>stop.ivalue) {  // definitely empty string
     DeleteResult(STRING, x);
     x.svalue = &empty_string;
     Share(x.svalue);
@@ -695,7 +697,13 @@ void compute_substr(expr** p, int np, result &x)
 
   start.ivalue = MAX(start.ivalue, 0);
   stop.ivalue =  MIN(stop.ivalue, srclen);
-
+  // is it the full string?
+  if ((0==start.ivalue) && (srclen==stop.ivalue)) {
+    // x is the string parameter, keep it that way
+    Share(x.svalue);
+    return;
+  }
+  // we are a proper substring, fill it
   char* answer = new char[stop.ivalue - start.ivalue+2]; 
   strncpy(answer, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
   answer[stop.ivalue - start.ivalue + 1] = 0;

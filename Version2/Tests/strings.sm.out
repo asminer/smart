@@ -1,0 +1,87 @@
+string 1: This should be con
+string 2: nected
+sum     : This should be connected
+Empty string: ---><---
+a
+a
+aa
+aa
+---><---
+---><---
+---><---
+--->#<---
+--->##<---
+--->###<---
+--->####<---
+--->#####<---
+--->######<---
+--->#######<---
+--->########<---
+--->#########<---
+--->##########<---
+--->###########<---
+--->############<---
+--->#############<---
+--->##############<---
+--->###############<---
+--->################<---
+--->#################<---
+--->##################<---
+--->###################<---
+--->####################<---
+--->#####################<---
+--->######################<---
+--->#######################<---
+--->########################<---
+--->#########################<---
+--->xxxxxxxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxxx<---
+--->xxxxxxxxxxxxx<---
+--->xxxxxxxxxxxx<---
+--->xxxxxxxxxxx<---
+--->xxxxxxxxxx<---
+--->xxxxxxxxx<---
+--->xxxxxxxx<---
+--->xxxxxxx<---
+--->xxxxxx<---
+--->xxxxx<---
+--->xxxx<---
+--->xxx<---
+--->xx<---
+--->x<---
+---><---
+---><---
+---><---
+T
+T
+T
+This
+This
+This
+is is 
+is is a test string
+is is a test string
+This is a test string
+Several empty substrings:
+
+
+
+
+
+
+
+
+
+
+
+Did you see them?

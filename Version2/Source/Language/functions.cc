@@ -305,6 +305,7 @@ user_func::~user_func()
 
 void user_func::Compute(expr **pp, int np, result &x) 
 {
+  x.Clear();
   if (NULL==return_expr) {
     x.setNull();
     return;
@@ -358,6 +359,7 @@ void user_func::Compute(expr **pp, int np, result &x)
 
 void user_func::Sample(Rng &s, expr **pp, int np, result &x) 
 {
+  x.Clear();
   if (NULL==return_expr) {
     x.setNull();
     return;

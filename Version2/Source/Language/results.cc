@@ -62,7 +62,6 @@ void DeleteResult(type t, result &x)
     case STRING:	
 		Delete(x.svalue);
 		x.svalue = NULL;
-	        x.setNull();
 		break;  // should be ok?
   }
 }

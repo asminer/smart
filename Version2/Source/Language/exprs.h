@@ -15,7 +15,7 @@
 #include "results.h"
 #include "../Templates/list.h"
 
-//#define COMPUTE_DEBUG
+// #define COMPUTE_DEBUG
 
 //@{
 
@@ -466,22 +466,30 @@ inline int Compare(symbol *a, symbol *b)
  */
 inline void SafeCompute(expr *e, int a, result &x) 
 {
+#ifdef COMPUTE_DEBUG
+  static int depth = 0;
+#endif
+
   DCASSERT(e!=ERROR);
   DCASSERT(e!=DEFLT);
   if (e) {
 #ifdef COMPUTE_DEBUG
+    Output.Pad(' ', depth*2);
     Output << "Computing expression "; 
     e->show(Output);
-    Output << "...\n";
+    Output << "\n";
     Output.flush();
+    depth++;
 #endif
     e->Compute(a, x);
 #ifdef COMPUTE_DEBUG
+    depth--;
+    Output.Pad(' ', depth*2);
     Output << "expression ";
     e->show(Output);
     Output << " evaluated to ";
     PrintResult(Output, e->Type(a), x);
-    Output << "...\n";
+    Output << "\n";
     Output.flush();
 #endif
   } else {

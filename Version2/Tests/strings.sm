@@ -1,0 +1,75 @@
+
+// $Id$
+
+/*
+    Test of string operators and such
+*/
+
+
+/* String addition: */
+
+string first := "This should be con";
+string second := "nected";
+
+print("string 1: ", first, "\n");
+print("string 2: ", second, "\n");
+print("sum     : ", first+second, "\n");
+
+/* Empty string test */
+
+string empty := "";
+
+print("Empty string: --->", empty, "<---\n");
+
+print("a"+empty, "\n");
+print(empty+"a", "\n");
+print("a"+empty+"a", "\n");
+print("a"+empty+"a\n");
+
+/* String function test */
+
+string nrpt(string x, int n) := cond(n<1, "", x+nrpt(x, n-1));
+                                       
+for(int i in {-2 .. 25}) {
+  print("--->", nrpt("#", i), "<---\n");
+}
+
+string repeat(string x, int n) := cond(n<1, "",
+					cond( mod(n,2)==0, 
+					      repeat(x+x, div(n,2)),
+					      x+repeat(x, n-1)
+                                            )
+			              );
+
+
+for(int i in {25..-2..-1}) {
+  print("--->", repeat("x", i), "<---\n");
+}
+
+/* substr tests */
+
+string full := "This is a test string";
+
+print(substr(full, 0, 0), "\n");
+print(substr(full, -5, 0), "\n");
+print(substr(full, -infinity, 0), "\n");
+print(substr(full, 0, 3), "\n");
+print(substr(full, -5, 3), "\n");
+print(substr(full, -infinity, 3), "\n");
+print(substr(full, 2, 7), "\n");
+print(substr(full, 2, 70), "\n");
+print(substr(full, 2, infinity), "\n");
+print(substr(full, -infinity, infinity), "\n");
+print("Several empty substrings:\n");
+print(substr(full, 2, 1), "\n");
+print(substr(full, 70, 1), "\n");
+print(substr(full, 70, 75), "\n");
+print(substr(full, infinity, 1), "\n");
+print(substr(full, 2, -5), "\n");
+print(substr(full, -19, -5), "\n");
+print(substr(full, 2, -infinity), "\n");
+print(substr(full, -2, -infinity), "\n");
+print(substr(full, infinity, -infinity), "\n");
+print(substr(full, infinity, infinity), "\n");
+print(substr(full, -infinity, -infinity), "\n");
+print("Did you see them?\n");
