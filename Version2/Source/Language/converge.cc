@@ -63,6 +63,7 @@ public:
   virtual ~guess_stmt();
   virtual void Execute() { }
   virtual void InitialGuess();
+  virtual void Affix();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int dpth, OutputStream &s) const;
 };
@@ -91,6 +92,11 @@ void guess_stmt::InitialGuess()
 #endif
 }
 
+void guess_stmt::Affix()
+{
+  var->state = CS_Computed;
+}
+
 void guess_stmt::show(OutputStream &s) const
 {
   var->ShowHeader(s);
@@ -116,7 +122,6 @@ private:
   expr* rhs;
   result update;
   bool hasconverged;
-  bool isfixed;
   bool was_updated;
 public:
   assign_stmt(const char* fn, int line, cvgfunc* var, expr* rhs);
@@ -180,7 +185,6 @@ assign_stmt::assign_stmt(const char* fn, int line, cvgfunc* v, expr* r)
   DCASSERT(rhs != ERROR);
   DCASSERT(rhs);
   DCASSERT(rhs->Type(0) == REAL);
-  isfixed = false;
   was_updated = false;
 }
 
@@ -191,7 +195,7 @@ assign_stmt::~assign_stmt()
 
 void assign_stmt::Execute()
 {
-  DCASSERT(!isfixed);
+  DCASSERT(var->state != CS_Computed);
   rhs->Compute(0, update);
 #ifdef DEBUG_CONVERGE
   Output << "Computed " << var << " got ";
@@ -205,14 +209,14 @@ void assign_stmt::Execute()
 
 bool assign_stmt::HasConverged()
 {
-  DCASSERT(!isfixed);
+  DCASSERT(var->state != CS_Computed);
   if (!was_updated) Update();
   return hasconverged;
 }
 
 void assign_stmt::Affix()
 {
-  isfixed = true;
+  var->state = CS_Computed;
 }
 
 void assign_stmt::show(OutputStream &s) const

@@ -62,7 +62,6 @@ class determfunc : public constfunc {
 public:
   determfunc(const char *fn, int line, type t, char *n);
   virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
 };
 
@@ -81,7 +80,7 @@ determfunc::determfunc(const char *fn, int line, type t, char *n)
 void determfunc::Compute(int i, result &x)
 {
   DCASSERT(i==0);
-  if (!computed_already) {
+  if (state != CS_Computed) {
     if (return_expr) {
       return_expr->Compute(0, value);
       // check for errors here
@@ -90,25 +89,7 @@ void determfunc::Compute(int i, result &x)
     } else {
       value.setNull();
     }
-    computed_already = true;
-  }
-  x = value;
-}
-
-void determfunc::Sample(long &s, int i, result &x)
-{
-  // we are deterministic... just compute the result
-  DCASSERT(i==0);
-  if (!computed_already) {
-    if (return_expr) {
-      return_expr->Compute(0, value);
-      // check for errors here
-      Delete(return_expr);
-      return_expr = NULL;
-    } else {
-      value.setNull();
-    }
-    computed_already = true;
+    state = CS_Computed;
   }
   x = value;
 }

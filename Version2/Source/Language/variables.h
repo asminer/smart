@@ -30,7 +30,9 @@ enum const_state {
   /// Given an initial guess
   CS_HasGuess,
   /// Has a return expression
-  CS_Defined
+  CS_Defined,
+  /// Has been computed (for deterministic)
+  CS_Computed
 };
   
 // ******************************************************************
