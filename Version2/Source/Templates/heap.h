@@ -7,6 +7,8 @@
 #include "list.h"
 #include "../Base/errors.h"
 
+const int MAX_HEAP_ADD = 4096;
+
 // ==================================================================
 // ||                                                              ||
 // ||                     HeapOfObjects  class                     ||
@@ -59,7 +61,7 @@ public:
   }
   void Insert(DATA a) {
     DCASSERT(!sorted);
-    if (last>=size) Resize(2*size);
+    if (last>=size) Resize(MIN(2*size, size+MAX_HEAP_ADD));
     data[last] = a;
     UpHeap(last);
     last++;
@@ -212,7 +214,7 @@ public:
   inline int Length() { return last; }
   void Insert(DATA* a) {
     DCASSERT(!sorted);
-    if (last>=size) Resize(2*size);
+    if (last>=size) Resize(MIN(2*size, size+MAX_HEAP_ADD));
     data[last] = a;
     UpHeap(last);
     last++;

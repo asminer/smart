@@ -12,6 +12,8 @@
 #include <string.h>
 #include "../Base/errors.h"
 
+const int MAX_LIST_ADD = 4096;
+
 class PtrList {
   void** data;
   int size;
@@ -76,7 +78,7 @@ public:
     DCASSERT(n>=0);
     DCASSERT(n<=last);
     DCASSERT(data);
-    if (last >= size) Resize(2*size);
+    if (last >= size) Resize(MIN(2*size, size+MAX_LIST_ADD));
     for (int i = last; i>n; i--) {
       data[i] = data[i-1];
     }
@@ -85,7 +87,7 @@ public:
   }
 
   void VAppend(void* x) {
-    if (last>=size) Resize(2*size);
+    if (last>=size) Resize(MIN(2*size, size+MAX_LIST_ADD));
     data[last] = x;
     last++;
   }

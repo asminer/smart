@@ -72,7 +72,8 @@ void digraph::AddEdge(int from, int to)
   DCASSERT(to>=0);
   DCASSERT(to<num_nodes);
 
-  if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
+  if (num_edges >= edges_alloc) 
+	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
   DCASSERT(edges_alloc > num_edges);
   column_index[num_edges] = to;
   if (row_pointer[from] < 0) {
@@ -92,7 +93,8 @@ void digraph::AddEdge(int from, int to)
 int digraph::AddEdgeInOrder(int from, int to)
 {
   DCASSERT(IsDynamic());
-  if (num_edges >= edges_alloc) ResizeEdges(2*edges_alloc);
+  if (num_edges >= edges_alloc) 
+	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
   DCASSERT(edges_alloc > num_edges);
   column_index[num_edges] = to;
   if (row_pointer[from] < 0) {
