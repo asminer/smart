@@ -12,6 +12,14 @@ stateheap	Definition of state class, and centralized functions
 flatss		Collection of compressed states for flat storage.
 		For now, copied from version 1;  soon to be updated ;^)
 
+reachset	Class used to store a reachability set.
+		We allow three types of storage: 
+		"enumerated", where the states are explicitly named 
+			as done by a Markov chain;
+		"explicit", stored using flatss 
+			(eventually: either canonical order or lexical)
+		"evmdd", a K-level MDD with offsets stored along edges.
+
 testflat	Not included in SMART, but used to test the
 		state_array class in flatss.
 
