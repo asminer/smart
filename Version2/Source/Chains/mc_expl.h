@@ -162,10 +162,23 @@ public:
     return low;
   }
 
+  inline void UseSelfMatrix() {
+    graph->row_pointer = self_arcs;
+    graph->num_nodes = states - numAbsorbing();
+  }
+  inline void UseTRMatrix() {
+    DCASSERT(TRarcs);
+    graph->row_pointer = TRarcs;
+    if (graph->isTransposed) 
+      graph->num_nodes = states;
+    else
+      graph->num_nodes = numTransient();
+  }
+
   /** Display (primarily for debugging purposes).
       Note we must be able to "Put" the LABEL class to the stream.
   */ 
-  void Show(OutputStream &s) const;
+  void Show(OutputStream &s);
 protected:
   void ArrangeMatricesByRows();
   void ArrangeMatricesByCols();
@@ -391,7 +404,7 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
 }
 
 template <class LABEL>
-void classified_chain <LABEL> :: Show(OutputStream &s) const
+void classified_chain <LABEL> :: Show(OutputStream &s)
 {
   const char* rowname = (graph->isTransposed) ? "column" : "row";
   const char* colname = (graph->isTransposed) ? "row" : "column";
@@ -400,8 +413,21 @@ void classified_chain <LABEL> :: Show(OutputStream &s) const
   s << "\t" << numTransient() << " transient states\n";
   s << "\t" << numClasses() << " recurrent classes, of which\n";
   s << "\t" << numAbsorbing() << " are absorbing states\n";
-  s << "Matrices, stored by " << rowname << "s\n";
-  s.flush();
+  s << "Self matrix:\n";
+  UseSelfMatrix();
+  for (int i=0; i<graph->num_nodes; i++) {
+    graph->ShowNodeList(s, i);
+    s.flush();
+  }
+  if (TRarcs) {
+    s << "Transient to recurrent matrix:\n";
+    UseTRMatrix();
+    for (int i=0; i<graph->num_nodes; i++) {
+      graph->ShowNodeList(s, i);
+      s.flush();
+    }
+  }
+  s << "Internal storage of matrices (by " << rowname << "s)\n";
   s << colname << " indices: [";
   s.PutArray(graph->column_index, graph->NumEdges());
   s << "]\n";
@@ -416,7 +442,6 @@ void classified_chain <LABEL> :: Show(OutputStream &s) const
     s << "]\n";
   }
   s.flush();
-
   s << "self matrix\n";
   s << "\t" << rowname << " pointers: [";
   s.PutArray(self_arcs, 1+states-numAbsorbing());

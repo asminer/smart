@@ -40,10 +40,10 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
 
   // build holding vector, but use pi to get row sums
   if (mc->numTransient()) {
-    mc->graph->row_pointer = mc->TRarcs;
+    mc->UseTRMatrix();
     mc->graph->SumOutgoingEdges(pi);
   }
-  mc->graph->row_pointer = mc->self_arcs;
+  mc->UseSelfMatrix();
   mc->graph->SumOutgoingEdges(pi);
 #ifdef DEBUG
   Output << "Row sum vector: [";
@@ -80,7 +80,7 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
   }
 
   if (mc->numTransient()) {
-    mc->graph->row_pointer = mc->TRarcs;
+    mc->UseTRMatrix();
     // accumulate other probability of absorption
     // by multiplying pi * Q_TA
     if (mc->graph->isTransposed) {
@@ -99,7 +99,7 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
       for (int s=mc->numTransient(); s<mc->numStates(); s++) 
 	pi[s] /= total;
 
-    mc->graph->row_pointer = mc->self_arcs;
+    mc->UseSelfMatrix();
   }
 
   // for each class (with size>1), compute its prob of absorption;
