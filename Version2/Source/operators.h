@@ -8,8 +8,7 @@
     @type File
     @args \ 
 
-  Classes to deal with binary and unary operators,
-  for types: bool, int, real, string.
+  Classes to deal with binary and unary operators.
 
  */
 
@@ -24,10 +23,23 @@
 // *                                                                *
 // ******************************************************************
 
+// eventually these will be in smart.tab.h
+
+const int NOT = 1;
+const int NEG = 2;
+const int PLUS = 3;
+const int MINUS = 4;
+const int TIMES = 5;
+const int DIVIDE = 6;
+const int EQUALS = 7;
+const int NEQ = 8;
+const int GT = 9;
+const int GE = 10;
+const int LT = 11;
+const int LE = 12;
+
 /**
-     Build a unary expression for simple types.
-     The simple types supported are:
-     bool, int, real.
+     Build a unary expression.
 
      @param	op	The operator (as defined in smart.tab.h)
      @param	opnd	The operand, already of the proper type.
@@ -39,13 +51,10 @@
 
      Note: the only unary operators currently are NOT and unary minus.
 */
-expr* SimpleUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
+expr* MakeUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
 
 /**
-     Build a binary expression for simple types.
-     The left and right expressions already match types.
-     The simple types supported are:
-     bool, int, real.
+     Build a binary expression.
 
      @param	left	The left-hand expression.
      @param	op	The operator (as defined in smart.tab.h)
@@ -59,7 +68,7 @@ expr* SimpleUnaryOp(int op, expr *opnd, const char* file=NULL, int line=0);
      		we could not build the expression.
 
 */
-expr* SimpleBinaryOp(expr *left, int op, expr *right, 
+expr* MakeBinaryOp(expr *left, int op, expr *right, 
                      const char* file=NULL, int line=0);
 
 //@}

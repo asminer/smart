@@ -92,9 +92,7 @@ enum Group_type {
       (A value can be null when no error occurs.)
 
       For +- infinity, set infinity to true.
-      Then, set the sign appropriately for the proper type.
-      For example, if the type is integer, and we want -infinity,
-      set infinity to true, and ivalue to -1 (or any other - int).
+      Then, set the sign appropriately for ivalue.
 */  
 
 struct result {
@@ -112,11 +110,12 @@ struct result {
   bool null;
 
   union {
-    /// If we are a boolean type
+    /// Used by boolean type
     bool   bvalue;
-    /// If we are an integer type
+    /// Used by integer type
     int    ivalue;
-    /// If we are a real type
+    // Should we add bigint here?
+    /// Used by real and expo type
     double rvalue;
     /// Everything else
     void*  other; 
@@ -264,7 +263,10 @@ class expr {
   virtual type Type(int i) const = 0;
 
   /// Compute the value of component i.
-  virtual void Compute(int i, result &x) const = 0;
+  virtual void Compute(int i, result &x) const {
+    cerr << "Internal error: Illegal expression compuation!\n";
+    DCASSERT(0);
+  }
 
   /// Sample a value of component i (with given rng seed).
   virtual void Sample(long &, int i, result &x) const {

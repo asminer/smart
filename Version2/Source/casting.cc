@@ -74,6 +74,7 @@ void int2real::Compute(int i, result &x) const
   // Trace errors?
   if (x.error) return;
   if (x.null) return;
+  if (x.infinity) return;
 
   x.rvalue = x.ivalue;
 }
@@ -105,6 +106,7 @@ void real2int::Compute(int i, result &x) const
   // Trace errors?
   if (x.error) return;
   if (x.null) return;
+  if (x.infinity) return;
 
   // error checking here
   x.ivalue = int(x.rvalue);
@@ -118,7 +120,16 @@ void real2int::Compute(int i, result &x) const
 
 expr* SimpleTypecast(expr *e, type newtype, const char* file=NULL, int line=0)
 {
-  // needs to be implemented.
+  if (newtype == e->Type(0)) return e;
+
+  // Note... it is assumed that e is promotable to "newtype".
+  switch (e->Type(0)) {
+    
+    case BOOL : 
+      return NULL;   
+  }
+
+  // Still here?  Slipped through the cracks.
   return NULL;
 }
 

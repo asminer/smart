@@ -10,6 +10,9 @@
 
     Constant infinity expression.
     (Infinity is type int).
+
+    The only reason this is separate from "exprs"
+    is that we need options (for the #InfinityString option).
  */
 
 #include "exprs.h"

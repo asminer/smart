@@ -8,8 +8,7 @@
     @type File
     @args \ 
 
-    Expressions that deal with typecasting between types:
-    bool, int, real, string.
+    Expressions that deal with typecasting between types.
  */
 
 #include "exprs.h"
@@ -26,10 +25,11 @@
 
 /** 
      Build a typecast expression.
+     If e is not promotable to the specified type, we return NULL.
+     If e is already of the specified type, we return it.
+
      @param	e		The original expression.
      @param	newtype		The desired new type.
-     				Specifically, one of:
-				bool, int, real.
      @param	file		Source file where this is defined
      @param	line		Line number where this is defined
      
@@ -39,7 +39,7 @@
 		it is returned unchanged.
      			
  */
-expr* SimpleTypecast(expr *e, type newtype, const char* file=NULL, int line=0);
+expr* MakeTypecast(expr *e, type newtype, const char* file=NULL, int line=0);
 
 
 //@}

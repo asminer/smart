@@ -21,11 +21,9 @@ infinity	Infinity constants.
 baseops		Base classes for operators like "+"
 		(to reduce cut&paste of virtual functions)
 
-operators	Operator expressions for
-		bool, int, bigint, real, string types.
+operators	Operator expressions for all types.
 
-casting		Type casting operators for
-		bool, int, bigint, real, string types.
+casting		Type casting operators for all types.
 
 
 
