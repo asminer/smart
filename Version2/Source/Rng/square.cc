@@ -62,15 +62,9 @@ int main(int argc, char** argv)
     Output << "Computed A^(2^" << i << ")\n";
     Output << "\titeration took " << compute.User_Seconds() << " secs\n";
     Output << "\tmultiplier: ";
-#ifdef USE_SHARED
     Output << answer->Distinct() << " distinct / ";
-#endif
     Output << nnz << " nonzeroes\n";
-#ifdef USE_SHARED
     MatrixStats();
-#else
-    Output.flush();
-#endif
   }
   
   answer->write(Verbose);

@@ -46,12 +46,8 @@ int main(int argc, char** argv)
   compute.Stop();
   Output << "Multiplication took " << compute.User_Seconds() << " secs\n";
   Output << "\tmatrix A: ";
-#ifdef USE_SHARED
   Output << A.Distinct() << " distinct / ";
-#endif
   Output << nnz << " nonzeroes\n";
-#ifdef USE_SHARED
   MatrixStats();
-#endif
   return 0;
 }
