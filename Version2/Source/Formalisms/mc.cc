@@ -681,40 +681,6 @@ void Add_absorbing(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-// ********************************************************
-// *                          test                        *
-// ********************************************************
-
-
-// A hook for testing things
-void compute_mc_test(expr **pp, int np, result &x)
-{
-  DCASSERT(np==2);
-  DCASSERT(pp);
-  DCASSERT(pp[0]);
-  model *mcmod = dynamic_cast<model*> (pp[0]);
-  DCASSERT(mcmod);
-  markov_dsm *mc = dynamic_cast <markov_dsm*> (mcmod->GetModel());
-  DCASSERT(mc);
-
-  Output << "Got markov_dsm " << mc << "\n";
-  Output.flush();
-  x.Clear();
-  x.ivalue = 0;
-}
-
-void Add_test(PtrTable *fns)
-{
-  formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(MARKOV, "m");
-  pl[1] = new formal_param(BOOL, "dummy");
-  internal_func *p = new internal_func(INT, "test",
-	compute_mc_test, NULL, pl, 2, "hidden function");
-  p->setWithinModel();
-  p->HideDocs();
-  InsertFunction(fns, p);
-}
-
 // ******************************************************************
 // *                                                                *
 // *                        Global front-ends                       *
@@ -735,7 +701,5 @@ void InitMCModelFuncs(PtrTable *t)
   Add_instate(t);
   Add_transient(t);
   Add_absorbing(t);
-
-  Add_test(t);
 }
 

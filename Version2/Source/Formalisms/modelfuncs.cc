@@ -218,6 +218,54 @@ void Add_num_states(PtrTable *fns)
 }
 
 
+// ********************************************************
+// *                          test                        *
+// ********************************************************
+
+
+// A hook for testing things
+void compute_test(expr **pp, int np, result &x)
+{
+  DCASSERT(np==2);
+  DCASSERT(pp);
+  DCASSERT(pp[0]);
+  model *mcmod = dynamic_cast<model*> (pp[0]);
+  DCASSERT(mcmod);
+  state_model* proc = mcmod->GetModel();
+  DCASSERT(proc);
+  Output << "Got state model " << proc << "\n";
+  Output << "Testing EnabledExpr and such\n";
+  Output.flush();
+
+  for (int e=0; e<proc->NumEvents(); e++) {
+    Output << "Event " << e << " is named ";
+    proc->ShowEventName(Output, e);
+    Output << "\n";
+    Output.flush();
+
+    expr* enable = proc->EnabledExpr(e);
+    Output << "enabling expression: " << enable << "\n";
+    Output.flush();
+    Delete(enable);
+  }
+
+  x.Clear();
+  x.ivalue = 0;
+}
+
+void Add_test(PtrTable *fns)
+{
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(BOOL, "dummy");
+  internal_func *p = new internal_func(INT, "test",
+	compute_test, NULL, pl, 2, "hidden test function");
+  p->setWithinModel();
+  p->HideDocs();
+  InsertFunction(fns, p);
+}
+
+
 // ==================================================================
 // |                                                                |
 // |                           Front  end                           |
@@ -236,5 +284,7 @@ void InitGenericModelFunctions(PtrTable *t)
   Add_avg_acc(t);
 
   Add_num_states(t);
+
+  Add_test(t);
 }
 

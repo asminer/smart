@@ -3,10 +3,8 @@
 
 #include "ops_extra.h"
 
-#ifndef OPS_EXTRA_H
-#define OPS_EXTRA_H
-
 #include "exprs.h"
+#include "operators.h"
 
 
 /** @name ops_extra.cc
@@ -202,7 +200,7 @@ expr* MakeConstCompare(int left, int op, expr* right, const char* f, int ln)
   DCASSERT(right);
   DCASSERT(right->Type(0)==PROC_INT);
   switch (op) {
-    case EQ:	return new int_eq_expr(f, ln, left, right);
+    case EQUALS:	return new int_eq_expr(f, ln, left, right);
     case GT:	return new int_gt_expr(f, ln, left, right);
     case LE:	return new int_le_expr(f, ln, left, right);
     // Not sure if the others are necessary
@@ -222,8 +220,6 @@ expr* MakeConstBounds(int lower, expr* opnd, int upper, const char* f, int ln)
   return new expr_between(f, ln, lower, opnd, upper);
 }
 
-
-#endif
 
 //@}
 

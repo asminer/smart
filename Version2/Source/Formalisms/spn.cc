@@ -14,12 +14,281 @@
 
 // ******************************************************************
 // *                                                                *
+// *                Specialized Petri net expressions               *
+// *                                                                *
+// ******************************************************************
+
+class internal_tk : public constant { // think "no parameters", not constant
+private:
+  const char* placename;
+  int stateid;
+public:
+  internal_tk(const char* pn, int sid) : constant(NULL, -1, PROC_INT) {
+    placename = pn;
+    stateid = sid;
+  }
+  virtual ~internal_tk() {
+    // DO NOT DELETE placename...
+  }
+  virtual void Compute(const state &s, int i, result &x) {
+    DCASSERT(i==0);
+    x = s.Read(stateid); 
+  }
+  virtual void show(OutputStream &s) const {
+    s << "tk(" << placename << ")";
+  }
+};
+
+// ******************************************************************
+// *                                                                *
+// *                        Petri net structs                       *
+// *                                                                *
+// ******************************************************************
+
+/// Things to remember for each transition.
+struct trans_info {
+  int inputs;
+  int outputs;
+  int inhibitors;
+  // guards
+  // firing distribution
+};
+
+
+/// Information for each input / output / inhibitor arc
+struct spn_arcinfo {
+  int place;
+  int const_card;  
+  expr* proc_card;
+  inline bool operator>(const spn_arcinfo &a) const { 
+    return place > a.place; 
+  }
+  inline bool operator==(const spn_arcinfo &a) const { 
+    return place == a.place; 
+  }
+  void operator+=(const spn_arcinfo &a) {
+    const_card += a.const_card;
+    if (a.proc_card) {
+	  if (proc_card) {
+	    proc_card = MakeBinaryOp(proc_card, PLUS, a.proc_card,
+	      a.proc_card->Filename(), a.proc_card->Linenumber());
+	  } else {
+	    proc_card = a.proc_card;
+	  }
+    } // if a.proc_card
+  }
+};
+
+/// Useful for debugging
+OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
+{
+  s << "Place: " << a.place << "\t const_card: " << a.const_card;
+  s << "\t proc_card: " << a.proc_card;
+  return s;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                          spn_dsm class                         *
 // *                                                                *
 // ******************************************************************
 
 /** A discrete-state model (internel representation) for Stochastic Petri nets.
 */
+class spn_dsm : public state_model {
+private:
+  /// Used to build expressions
+  List <expr> *exprlist;
+protected:
+  model_var** places;
+  int num_places;
+  model_var** transitions;
+  trans_info* trans_data;
+  listarray <spn_arcinfo> *arcs;
+public:
+  spn_dsm(const char* name, 
+	model_var** p, int np,
+	model_var** t, int nt,
+        trans_info* td, listarray<spn_arcinfo> *a);
+  virtual ~spn_dsm();
+
+  virtual void ShowState(OutputStream &s, const state &x) {
+    DCASSERT(0);
+  }
+  virtual void ShowEventName(OutputStream &s, int e) {
+    s << transitions[e]->Name();
+  }
+
+  virtual int NumInitialStates() const { return 1; }
+  virtual void GetInitialState(int n, state &s) const { DCASSERT(0); }
+  virtual expr* EnabledExpr(int e);
+  virtual expr* NextStateExpr(int e) { DCASSERT(0); }
+  virtual expr* EventDistribution(int e) { DCASSERT(0); }
+  virtual type EventDistributionType(int e) { DCASSERT(0); }
+};
+
+// ******************************************************************
+// *                         spn_dsm methods                        *
+// ******************************************************************
+
+spn_dsm::spn_dsm(const char* name, 
+	model_var** p, int np,
+	model_var** t, int nt,
+        trans_info* td, listarray<spn_arcinfo> *a) : state_model(name, nt)
+{
+  places = p;
+  num_places = np;
+  transitions = t;
+  trans_data = td;
+  arcs = a;
+  DCASSERT(arcs->IsStatic());
+  // temp stuff
+  exprlist = new List <expr> (16);
+}
+
+spn_dsm::~spn_dsm()
+{
+  // places and transitions themselves are deleted by the model, right?
+  free(places);
+  free(transitions);
+  free(trans_data);
+  delete arcs;
+  // temp stuff
+  delete exprlist;
+}
+
+expr* spn_dsm::EnabledExpr(int e)
+{
+  // Build a huge conjunction, first as a list of expressions
+  exprlist->Clear();
+
+  // Go through inputs and inhibitors in order (they're ordered)
+  int input_list = trans_data[e].inputs;
+  int input_ptr;
+  if (input_list>=0) input_ptr = arcs->list_pointer[input_list];
+  else input_ptr = -1; // signifies "done"
+
+  int inhib_list = trans_data[e].inhibitors;
+  int inhib_ptr;
+  if (inhib_list>=0) inhib_ptr = arcs->list_pointer[inhib_list];
+  else inhib_ptr = -1; // signifies "done"
+  
+  while (inhib_ptr>=0 || input_ptr>=0) {
+    int i_pl = (input_ptr<0) ? num_places+1 : arcs->value[input_ptr].place;
+    int h_pl = (inhib_ptr<0) ? num_places+1 : arcs->value[inhib_ptr].place;
+    
+    if (i_pl < h_pl) {
+      // this place is connected only as input
+      expr* inplace = new internal_tk(places[i_pl]->Name(), i_pl);
+      // we want tk(inplace) >= cardinality of arc
+      expr* cmp = NULL;
+      if (NULL==arcs->value[input_ptr].proc_card) {
+        // constant cardinality case
+        cmp = MakeConstCompare(arcs->value[input_ptr].const_card, 
+				LE, inplace, NULL, -1);
+      } else {
+        // expression for cardinality 
+	expr* card = NULL;
+        if (arcs->value[input_ptr].const_card) {
+	  // we have a constant portion and an expression, merge them
+	  expr* cc = MakeConstExpr(PROC_INT, 
+			arcs->value[input_ptr].const_card, NULL, -1);
+          card = MakeBinaryOp(cc, PLUS, arcs->value[input_ptr].proc_card, NULL, -1);
+        } else {
+          // only an expression
+	  card = Copy(arcs->value[input_ptr].proc_card);
+        }
+        cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
+      }
+      if (cmp) exprlist->Append(cmp);
+
+      // advance input arc ptr
+      input_ptr++;
+      if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+    } // if input only place
+    
+    if (h_pl < i_pl) {
+      // this place is connected only as an inhibitor
+      expr* hbplace = new internal_tk(places[h_pl]->Name(), h_pl);
+      // we want tk(hbplace) < cardinality of arc
+      expr* cmp = NULL;
+      if (NULL==arcs->value[inhib_ptr].proc_card) {
+        // constant cardinality case
+        cmp = MakeConstCompare(arcs->value[inhib_ptr].const_card, 
+				GT, hbplace, NULL, -1);
+      } else {
+        // expression for cardinality 
+	expr* card = NULL;
+        if (arcs->value[inhib_ptr].const_card) {
+	  // we have a constant portion and an expression, merge them
+	  expr* cc = MakeConstExpr(PROC_INT, arcs->value[inhib_ptr].const_card, NULL, -1);
+          card = MakeBinaryOp(cc, PLUS, arcs->value[inhib_ptr].proc_card, NULL, -1);
+        } else {
+          // only an expression
+	  card = Copy(arcs->value[inhib_ptr].proc_card);
+        }
+        cmp = MakeBinaryOp(card, GT, hbplace, NULL, -1);
+      }
+      if (cmp) exprlist->Append(cmp);
+
+      // advance inhibitor arc ptr
+      inhib_ptr++;
+      if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
+    } // if inhibitor only place
+    
+    if (h_pl == i_pl) {
+      // this place is connected both as an inhibitor and as input
+      expr* inplace = new internal_tk(places[i_pl]->Name(), i_pl);
+      // we want inputcard <= tk(inplace) < inhibcard
+      expr* cmp = NULL;
+      if ((NULL==arcs->value[inhib_ptr].proc_card) &&
+          (NULL==arcs->value[input_ptr].proc_card)) {
+        // constant cardinality for both arcs, can use a fast operator
+        cmp = MakeConstBounds(arcs->value[input_ptr].const_card, 
+	 	inplace, arcs->value[inhib_ptr].const_card-1, NULL, -1);
+        // advance input arc ptr
+        input_ptr++;
+        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+        // advance inhibitor arc ptr
+        inhib_ptr++;
+        if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
+      } else {
+        // no fast operator, so handle them separately
+        // input first
+        if (NULL==arcs->value[input_ptr].proc_card) {
+          // constant input cardinality case
+          cmp = MakeConstCompare(arcs->value[input_ptr].const_card, 
+				LE, inplace, NULL, -1);
+        } else {
+          // expression for input cardinality 
+	  expr* card = NULL;
+          if (arcs->value[input_ptr].const_card) {
+	    // we have a constant portion and an expression, merge them
+	    expr* cc = MakeConstExpr(PROC_INT, arcs->value[input_ptr].const_card, NULL, -1);
+            card = MakeBinaryOp(cc, PLUS, arcs->value[input_ptr].proc_card, NULL, -1);
+          } else {
+            // only an expression
+	    card = Copy(arcs->value[input_ptr].proc_card);
+          }
+          cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
+        } // const/expr cardinality
+        // advance input arc ptr
+        input_ptr++;
+        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+      } // if both constant
+      if (cmp) exprlist->Append(cmp);
+    } // both input and inhibitor
+  } // while
+
+  // add any transition guards to the list here.
+
+  // have list of conditions, build conjunction
+  int numopnds = exprlist->Length();
+  DCASSERT(numopnds>0);
+  expr** opnds = exprlist->Copy();  
+  exprlist->Clear();
+  return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -30,35 +299,11 @@
 /** Smart support for the Petri net "formalism".
 */
 class spn_model : public model {
-public:
-  struct tinfo {
-    int inputs;
-    int outputs;
-    int inhibitors;
-  };
-  struct arcinfo {
-    int place;
-    int const_card;  
-    expr* proc_card;
-    inline bool operator>(const arcinfo &a) const { return place > a.place; }
-    inline bool operator==(const arcinfo &a) const { return place == a.place; }
-    void operator+=(const arcinfo &a) {
-        const_card += a.const_card;
-	if (a.proc_card) {
-	  if (proc_card) {
-	    proc_card = MakeBinaryOp(proc_card, PLUS, a.proc_card,
-	      a.proc_card->Filename(), a.proc_card->Linenumber());
-	  } else {
-	    proc_card = a.proc_card;
-	  }
-	}
-    }
-  };
 protected:
   List <model_var> *placelist;
   List <model_var> *translist;
-  DataList <tinfo> *transinfo;
-  listarray <arcinfo> *arcs;
+  DataList <trans_info> *transinfo;
+  listarray <spn_arcinfo> *arcs;
 public:
   spn_model(const char* fn, int line, type t, char *n, 
 		formal_param **pl, int np);
@@ -77,15 +322,8 @@ public:
   virtual state_model* BuildStateModel();
 protected:
   // true if unique arc
-  bool ListAdd(int list,  arcinfo &x, expr* card);
+  bool ListAdd(int list,  spn_arcinfo &x, expr* card);
 };
-
-OutputStream& operator<< (OutputStream& s, const spn_model::arcinfo &a)
-{
-  s << "Place: " << a.place << "\t const_card: " << a.const_card;
-  s << "\t proc_card: " << a.proc_card;
-  return s;
-}
 
 // ******************************************************************
 // *                       spn_model  methods                       *
@@ -109,7 +347,7 @@ spn_model::~spn_model()
   delete arcs;
 }
 
-bool spn_model::ListAdd(int list,  arcinfo &data, expr* card)
+bool spn_model::ListAdd(int list,  spn_arcinfo &data, expr* card)
 {
   if (NULL==card) {
     data.const_card = 1;
@@ -145,7 +383,7 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
 	transinfo->data[trans].inputs = arcs->NewList();
 
   int list = transinfo->data[trans].inputs;
-  arcinfo data;
+  spn_arcinfo data;
   data.place = place;
 
   if (ListAdd(list, data, card)) return;
@@ -168,7 +406,7 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
 	transinfo->data[trans].outputs = arcs->NewList();
 
   int list = transinfo->data[trans].outputs;
-  arcinfo data;
+  spn_arcinfo data;
   data.place = place;
 
   if (ListAdd(list, data, card)) return;
@@ -191,7 +429,7 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
 	transinfo->data[trans].inhibitors = arcs->NewList();
 
   int list = transinfo->data[trans].inhibitors;
-  arcinfo data;
+  spn_arcinfo data;
   data.place = place;
 
   if (ListAdd(list, data, card)) return;
@@ -247,8 +485,8 @@ void spn_model::InitModel()
   DCASSERT(NULL==translist); 
   placelist = new List <model_var> (16);
   translist = new List <model_var> (16);
-  transinfo = new DataList <spn_model::tinfo> (16);
-  arcs = new listarray <arcinfo>;
+  transinfo = new DataList <trans_info> (16);
+  arcs = new listarray <spn_arcinfo>;
 }
 
 void spn_model::FinalizeModel(result &x)
@@ -277,7 +515,22 @@ void spn_model::FinalizeModel(result &x)
 
 state_model* spn_model::BuildStateModel()
 {
-  return NULL;
+  int num_places = placelist->Length();
+  model_var** plist = placelist->MakeArray();
+  delete placelist; 
+  placelist = NULL;
+
+  int num_trans = translist->Length();
+  model_var** tlist = translist->MakeArray();
+  delete translist;
+  translist = NULL;
+
+  trans_info* transdata = transinfo->CopyAndClearArray();
+  delete transinfo;
+  transinfo = NULL;
+  arcs->ConvertToStatic();
+
+  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, transdata, arcs);
 }
 
 // ******************************************************************

@@ -41,7 +41,7 @@
 
     @return	Appropriate expression of type PROC_BOOL
 */
-expr* MakeConstCompare(int left, int op, expr* right, const char* file=NULL, int line=-1);
+expr* MakeConstCompare(int left, int op, expr* right, const char* f, int ln);
 
 /**
     Build a specialized bounding comparison.
@@ -60,7 +60,7 @@ expr* MakeConstCompare(int left, int op, expr* right, const char* file=NULL, int
     @return	Appropriate expression of type PROC_BOOL that is true if
 		lower <= opnd <= upper	
 */
-expr* MakeConstBounds(int lower, expr* opnd, int upper, const char* file=NULL, int line=-1);
+expr* MakeConstBounds(int lower, expr* opnd, int upper, const char* f, int ln);
 
 
 #endif

@@ -16,6 +16,7 @@
 #include "variables.h"
 #include "converge.h"
 #include "models.h"
+#include "ops_extra.h"
 
 void InitLanguage();
 
