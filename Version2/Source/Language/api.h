@@ -12,6 +12,8 @@
 #include "functions.h"
 #include "operators.h"
 #include "casting.h"
+#include "infinity.h"
+#include "variables.h"
 
 void InitLanguage();
 

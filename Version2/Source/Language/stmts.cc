@@ -59,21 +59,8 @@ void exprstmt::Execute()
 #ifdef ALLOW_NON_VOID_EXPRSTMT
   if (VOID == x->Type(0)) return;
 
-  Output << "Evaluated statement " << x << ", got:";
-  switch (x->Type(0)) {
-    case BOOL:
-    	Output << dummy.bvalue;
-	break;
-    case INT:
-    	Output << dummy.ivalue;
-	break;
-    case REAL:
-    	Output << dummy.rvalue;
-	break;
-    default:
-    	Output << "(some value)";
-	break;
-  }
+  Output << "Evaluated statement " << x << ", got: ";
+  PrintResult(x->Type(0), dummy, Output);
   Output << "\n";
   Output.flush();
 #endif

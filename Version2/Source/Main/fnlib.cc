@@ -168,3 +168,13 @@ void InitBuiltinFunctions(PtrTable *t)
   for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCond(i, t);
 }
 
+
+void InitBuiltinConstants(PtrTable *t)
+{
+  // Infinity
+  constfunc *infty = new determfunc(NULL, -1, INT, "infty");
+  infty->SetReturn(MakeInfinityExpr(1, NULL, -1));
+  t->AddNamePtr("infty", infty);
+
+  // Other constants? 
+}

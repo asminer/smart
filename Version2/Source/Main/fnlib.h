@@ -11,4 +11,9 @@
 */
 void InitBuiltinFunctions(PtrTable *t);
 
+/**	Add builtin constants to symbol table t.
+        Example: infty.
+*/
+void InitBuiltinConstants(PtrTable *t);
+
 #endif

@@ -2,6 +2,8 @@
 // $Id$
 
 #include "exprs.h"
+#include "infinity.h"
+
 //@Include: exprs.h
 
 /** @name exprs.cc
@@ -14,12 +16,43 @@
 
 //@{
 
+// ******************************************************************
+// *                                                                *
+// *                    Output-related functions                    *
+// *                                                                *
+// ******************************************************************
+
 OutputStream& operator<< (OutputStream &s, expr *e)
 {
   if (e) e->show(s);
   else s << "null";
   return s;
 }
+
+void PrintResult(type t, const result &x, OutputStream &s)
+{
+  if (x.infinity) { s << infinity_string->GetString(); return; }
+  if (x.null) { s << "null"; return; }
+  if (x.error) { s << "error"; return; }
+  switch(t) {
+    case VOID: 	DCASSERT(0); 	return;
+    case BOOL: 	s << x.bvalue; 	return;
+    case INT:  	s << x.ivalue; 	return;
+    case REAL: 	s << x.rvalue; 	return;
+  }
+  DCASSERT(0);
+}
+
+void PrintExprType(expr *e, OutputStream &s)
+{
+  DCASSERT(e);
+  int i;
+  for (i=0; i<e->NumComponents(); i++) {
+    if (i) s << ":";
+    s << GetType(e->Type(i));
+  }
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -584,25 +617,6 @@ class stringconst : public constant {
     else s << "null string";
   }
 };
-
-// ******************************************************************
-// *                                                                *
-// *                  Global functions for results                  *
-// *                                                                *
-// ******************************************************************
-
-void PrintResult(type t, const result &x, OutputStream &s)
-{
-  if (x.infinity) { s << "infinity"; return; }
-  if (x.null) { s << "null"; return; }
-  switch(t) {
-    case VOID: 	DCASSERT(0); 				return;
-    case BOOL: 	s << (x.bvalue?"true":"false"); 	return;
-    case INT:  	s << x.ivalue;  			return;
-    case REAL: 	s << x.rvalue;  			return;
-  }
-  DCASSERT(0);
-}
 
 // ******************************************************************
 // *                                                                *

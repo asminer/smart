@@ -12,19 +12,6 @@
 
 #define COMPILE_DEBUG
 
-void DumpExprType(OutputStream &s, expr *e)
-{
-  if (NULL==e) {
-    s << "null";
-    return;
-  }
-  int i;
-  for (i=0; i<e->NumComponents(); i++) {
-    if (i) s << ":";
-    s << GetType(e->Type(i));
-  }
-}
-
 void DumpPassed(OutputStream &s, List <expr> *pass)
 {
   if (NULL==pass) return;
@@ -33,7 +20,7 @@ void DumpPassed(OutputStream &s, List <expr> *pass)
   int i;
   for (i=0; i<pass->Length(); i++) {
     if (i) s << ", ";
-    DumpExprType(s, pass->Item(i));
+    PrintExprType(pass->Item(i), s);
   }
   s << ")";
 }
@@ -52,6 +39,9 @@ PtrTable *Arrays;
 
 /// Symbol table of functions
 PtrTable *Builtins;
+
+/// Symbol table of "constants"
+PtrTable *Constants;
 
 /// "Symbol table" of formal parameters
 List <formal_param> *FormalParams;
@@ -600,13 +590,17 @@ expr* FindIdent(char* name)
       return Copy(i);
   }
   
-  // check formal parameters?
+  // check formal parameters
   if (FormalParams) for (d=0; d<FormalParams->Length(); d++) {
     formal_param *i = FormalParams->Item(d);
     if (NULL==i) continue; // can this happen?
     if (strcmp(name, i->Name())==0)
       return Copy(i);
   }
+
+  // check constants
+  constfunc* find = (constfunc*) Constants->FindName(name);
+  if (find) return Copy(find);
 
   // Couldn't find it.
   Error.Start(filename, lexer.lineno());
@@ -905,9 +899,12 @@ void InitCompiler()
   Iterators = new List <array_index> (256);
   Arrays = new PtrTable();
   Builtins = new PtrTable();
+  Constants = new PtrTable();
   FormalParams = NULL;
-  InitBuiltinFunctions(Builtins); 
   matches = new List <function> (32);
+
+  InitBuiltinFunctions(Builtins); 
+  InitBuiltinConstants(Constants);
 
 #ifdef COMPILE_DEBUG
   Output << "Initialized compiler data\n";

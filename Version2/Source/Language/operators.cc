@@ -207,7 +207,6 @@ void bool_equal::Compute(int i, result &x)
   right->Compute(0, r); 
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -258,7 +257,6 @@ void bool_neq::Compute(int i, result &x)
   right->Compute(0, r);
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -439,7 +437,6 @@ void randbool_equal::Sample(long &seed, int i, result &x)
   right->Sample(seed, 0, r);
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -490,7 +487,6 @@ void randbool_neq::Sample(long &seed, int i, result &x)
   right->Sample(seed, 0, r);
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -598,7 +594,6 @@ void int_add::Compute(int a, result &x)
       result foo;
       operands[i]->Compute(0, foo);
       if (foo.error) {
-	  // error tracing options here
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
@@ -628,7 +623,6 @@ void int_add::Compute(int a, result &x)
     result foo;
     operands[i]->Compute(0, foo);
     if (foo.error) {
-        // error tracing options here
 	x.error = foo.error;
 	return;  // error...short circuit
     }
@@ -639,7 +633,10 @@ void int_add::Compute(int a, result &x)
     // check operand for opposite sign for infinity
     if (foo.infinity) {
       if ( (x.ivalue>0) != (foo.ivalue>0) ) {
-	  // deal with error tracing here
+	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+	  Error << "Undefined operation (infty-infty) caused by ";
+	  Error << operands[i];
+	  Error.Stop();
 	  x.error = CE_Undefined;
 	  x.null = true;
 	  return;
@@ -690,7 +687,6 @@ void int_sub::Compute(int i, result &x)
 #endif
 
   if (l.error) {
-    // some option about error tracing here, I guess...
     x.error = l.error;
     return;
   }
@@ -709,7 +705,9 @@ void int_sub::Compute(int i, result &x)
       x.ivalue = l.ivalue;
       return;
     }
-    // summing infinities with different signs, print error message here
+    Error.Start(right->Filename(), right->Linenumber());
+    Error << "Undefined operation (infty-infty) caused by " << right;
+    Error.Stop();
     x.error = CE_Undefined;
     x.null = true;
     return;
@@ -776,7 +774,6 @@ void int_mult::Compute(int a, result &x)
       result foo;
       operands[i]->Compute(0, foo);
       if (foo.error) {
-	  // error tracing options here
 	  x.error = foo.error;
 	  return;  // error...short circuit
       }
@@ -788,6 +785,10 @@ void int_mult::Compute(int a, result &x)
 	// we have zero
 	if (x.infinity) {
 	  // 0 * infinity, error
+          Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+          Error << "Undefined operation (0 * infty) caused by ";
+          Error << operands[i];
+          Error.Stop();
 	  x.error = CE_Undefined;
           x.null = true;
 	  return;
@@ -817,7 +818,6 @@ void int_mult::Compute(int a, result &x)
     result foo;
     operands[i]->Compute(0, foo);
     if (foo.error) {
-        // error tracing options here
 	x.error = foo.error;
 	return;  // error...short circuit
     }
@@ -827,6 +827,10 @@ void int_mult::Compute(int a, result &x)
     }
     // check for infinity
     if (foo.infinity) {
+      Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+      Error << "Undefined operation (0 * infty) caused by ";
+      Error << operands[i];
+      Error.Stop();
       x.error = CE_Undefined;
       x.null = true;
       return;
@@ -885,6 +889,9 @@ void int_div::Compute(int i, result &x)
   x.rvalue = l.ivalue;
   if (0==r.ivalue) {
     x.error = CE_ZeroDivide;
+    Error.Start(right->Filename(), right->Linenumber());
+    Error << "Undefined operation (divide by 0) caused by " << right;
+    Error.Stop();
   } else {
     x.rvalue /= r.ivalue;
   }
@@ -1153,7 +1160,6 @@ void proc_unary::Compute(int i, result &x)
   x.Clear();
   opnd->Compute(0, x); 
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 

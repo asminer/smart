@@ -330,8 +330,6 @@ public:
   friend void Delete(expr *e);
 };
 
-OutputStream& operator<< (OutputStream &s, expr *e);
-
 /**  Create a "copy" of this expression.
      Since we share pointers, this simply
      increases the incoming pointer count.
@@ -544,8 +542,6 @@ inline void Compute(expr *e, int a, result &x)
 {
   if (e) {
     e->Compute(a, x);
-    // error tracing here
-    // if (x.error) do something cool;
   } else {
     x.Clear();
     x.null = true;
@@ -559,8 +555,6 @@ inline void Sample(expr *e, int a, long &seed, result &x)
 {
   if (e) {
     e->Sample(seed, a, x);
-    // error tracing here
-    // if (x.error) do something cool;
   } else {
     x.Clear();
     x.null = true;
@@ -570,9 +564,11 @@ inline void Sample(expr *e, int a, long &seed, result &x)
 
 // ******************************************************************
 // *                                                                *
-// *                  Global functions for results                  *
+// *                  Global functions for output                   *
 // *                                                                *
 // ******************************************************************
+
+OutputStream& operator<< (OutputStream &s, expr *e);
 
 /** Print a result.
     Basically a gigantic switch statement for the type.
@@ -580,6 +576,12 @@ inline void Sample(expr *e, int a, long &seed, result &x)
     Note that certain types cannot be printed.
  */
 void PrintResult(type t, const result &x, OutputStream &s);
+
+/**
+    Print the type of an expression.
+    Works correctly for aggregates, also.
+*/
+void PrintExprType(expr *e, OutputStream &s);
 
 // ******************************************************************
 // *                                                                *
