@@ -76,7 +76,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right,
 
      @param	op	The operator (as defined in smart.tab.h)
      @param	opnds	The operands as expressions, 
-     			which must have been typecase already
+     			which must have been typecast already
 			as necessary to perfectly match.
      @param	n	Number of operands.
      			Must be at least 1.

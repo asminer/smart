@@ -54,10 +54,8 @@ statement* MakeFor(int n)
   return floop;
 }
 
-int main()
+void TestFib()
 {
-  cout << "Hello world\n";
-
   int n;
   cout << "Enter n: \n";
   cin >> n;
@@ -87,6 +85,74 @@ int main()
   if (answer.error) cout << "Error: " << answer.error << "\n";
 
   cout << "Got: " << answer.ivalue << "\n";
+
+}
+
+expr* SumOf(int n)
+{
+  if (n==0) {
+    return MakeConstExpr(0, "foo", 94);
+  }
+  expr** things = new expr*[2];
+  things[0] = SumOf(n-1);
+  things[1] = MakeConstExpr(n, "foo", 98);
+
+  return MakeAssocOp(PLUS, things, 2);
+}
+
+void TestSums()         
+{
+  int n;
+  cout << "Enter n:\n";
+  cin >> n;
+
+  expr* rough = SumOf(n);
+
+  cout << "Got expression: " << rough << "\n";
+
+  bool optimize;
+  char yn='d';
+  cout << "Optimize? (y/n)\n";
+  while (yn!='y' && yn!='n') cin >> yn;
+  optimize = yn=='y';
+
+  if (optimize) {
+    // cheat.. we know the expression
+    expr **ops = new expr*[n+50];
+    int x = rough->GetSums(0, ops, n+50); 
+    if (x>n+50) cout << "Barf!\n";
+    expr **foo = new expr*[x];
+    for (int d=0; d<x; d++) foo[d] = Copy(ops[d]);
+    delete[] ops;
+    
+    expr* better = MakeAssocOp(PLUS, foo, x, "foo", 125);
+    Delete(rough);
+    rough = better;
+
+    //
+    cout << "Optimized expr: " << rough << "\n";
+  }
+
+  cout << "Computing 100000 times\n";
+
+  result answer;
+  for (int i=0; i<100000; i++) {
+    answer.Clear();
+    rough->Compute(0, answer);
+  }
+
+  if (answer.null) cout << "Got null!\n";
+  if (answer.error) cout << "Error: " << answer.error << "\n";
+
+  cout << "Got: " << answer.ivalue << "\n";
+
+}
+
+int main()
+{
+  cout << "Hello world\n";
+
+  TestSums();
 
   cout << "Exiting\n";
   return 0;

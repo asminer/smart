@@ -48,9 +48,13 @@ int addop::GetSums(int a, expr **sums=NULL, int N=0, int offset=0)
 {
   DCASSERT(a==0);
   int i;
-  for (i=0; i<opnd_count; i++) 
-    if (i+offset<N) sums[i+offset] = operands[i];
-  return opnd_count;
+  int opnds=0;
+  for (i=0; i<opnd_count; i++) {
+    int count = operands[i]->GetSums(a, sums, N, offset);
+    offset += count;
+    opnds += count;
+  }
+  return opnds;
 }
 
 // ******************************************************************
@@ -72,9 +76,13 @@ int multop::GetProducts(int a, expr **prods=NULL, int N=0, int offset=0)
 {
   DCASSERT(a==0);
   int i;
-  for (i=0; i<opnd_count; i++) 
-    if (i+offset<N) prods[i+offset] = operands[i];
-  return opnd_count;
+  int opnds=0;
+  for (i=0; i<opnd_count; i++) {
+    int count = operands[i]->GetProducts(a, prods, N, offset);
+    offset += count;
+    opnds += count;
+  }
+  return opnds;
 }
 
 
