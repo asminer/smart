@@ -1,0 +1,32 @@
+
+/*
+
+  yThis_is_also_a_data_file!
+  123
+  4.56
+
+*/
+
+// $Id$
+
+bool absolute_path := (substr(Filename, 0, 0) == "/");
+
+absolute_path;
+
+string pathn := cond(absolute_path, Filename, 
+			sprint(env("PWD"), "/", Filename)
+                    );
+
+bool b := InputFile(pathn);
+
+cond(b, null, print("Couldn't open input file ", pathn, "\n"); exit(0));
+
+bool ok := read_bool("ok");
+string line := read_string("dummy", 40);
+int d1 := read_int("d1");
+real d2 := read_real("d2");
+
+string yesno(bool k) := cond(k, "yes", "no");
+
+print("Data read : ", yesno(ok), "\n", line, "\n", d1, "\n", d2, "\n");
+
