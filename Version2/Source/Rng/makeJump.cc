@@ -22,13 +22,18 @@ int main(int argc, char** argv)
     return 0;
   }
   
-
   FILE* inB = fopen(argv[1], "r");
   FILE* out = fopen(argv[2], "w");
 
   Input.SwitchInput(inB);
   shared_matrix B(N);
   B.read(Input);
+
+  // testing...
+  topmatrix C(&B);
+  return 0;
+
+  // normal stuff
 
   Verbose.SwitchDisplay(out);
   Verbose.Activate();

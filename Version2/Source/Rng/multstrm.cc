@@ -226,6 +226,7 @@ Manager <bitmatrix> matrix_pile(1024);
 Manager <bincache> cache_pile(1024);
 
 myhash <bitmatrix> UniqueTable(&hash_node_pile);
+myhash <midmatrix> MidUniqueTable(&hash_node_pile);
 myhash <bincache> ComputeTable(&hash_node_pile);
 
 int cachetries = 0;
@@ -233,6 +234,9 @@ int cachehits = 0;
 
 inline int Compare(bitmatrix *a, bitmatrix *b)
 {
+  if ((NULL==a) && (NULL==b)) return 0;
+  if (NULL==a) return -1;
+  if (NULL==b) return 1;
   for (int i=0; i<32; i++) {
     if (a->row[i] < b->row[i]) return -1;
     if (a->row[i] > b->row[i]) return 1;
@@ -246,6 +250,21 @@ inline bool Stale(bitmatrix *m)
 
   matrix_pile.FreeObject(m);
   return true;
+}
+
+inline int Compare(midmatrix *a, midmatrix *b)
+{
+  for (int i=0; i<16; i++)
+    for (int j=0; j<16; j++) {
+      int c = Compare(a->mx[i][j], b->mx[i][j]);
+      if (c!=0) return c;
+    }
+  return 0;
+}
+
+inline bool Stale(midmatrix *m)
+{
+  return false;
 }
 
 inline bitmatrix* Reduce(bitmatrix *a)
@@ -700,90 +719,41 @@ int shared_matrix::CheckShift(shared_matrix *b)
 }
 
 // ------------------------------------------------------------------
-//    Good old memory-hoggin' explicit
+//    3-level Mxd
 // ------------------------------------------------------------------
 
-fullmatrix::fullmatrix(int n)
+topmatrix::topmatrix(shared_matrix *s)
 {
-  N = n;
-  ptrs = new bitmatrix**[N];
-  int i,j;
-  for (i=0; i<N; i++) {
-    ptrs[i] = new bitmatrix*[N];
+  N = s->Size() / 16;
+  if (N*16 != s->Size()) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Can't make topmatrix: uneven size!\n";
+    Internal.Stop();
   }
-}
-
-fullmatrix::~fullmatrix()
-{
-  int i;
-  for (i=0; i<N; i++) delete[] ptrs[i];
-  delete[] ptrs;
-}
-
-void fullmatrix::show(OutputStream &s)
-{
+  ptrs = new midmatrix**[N];
   int i,j;
+  int count = 0;
+  midmatrix *tmp = NULL;
   for (i=0; i<N; i++) {
-    s << "[";
+    ptrs[i] = new midmatrix*[N];
     for (j=0; j<N; j++) {
-      if (j) s << ", ";
-      if (ptrs[i][j]) {
-        ptrs[i][j]->flag = false;
-	if (IDENTITY == ptrs[i][j]) s.Put('I');
-	else s.PutHex((unsigned int)ptrs[i][j]);
-      } else {
-	s << "0";
+      if (NULL==tmp) tmp = new midmatrix;
+      s->FillMiddle(i*16, j*16, tmp);
+      // check unique table
+      ptrs[i][j] = MidUniqueTable.Insert(tmp);
+      if (ptrs[i][j]==tmp) {
+	tmp = NULL;
+	count++;
       }
     }
-    s << "]\n";
-    s.flush();
   }
-  // dump the submatrices
-  for (i=0; i<N; i++) for (j=0; j<N; j++) {
-    if (NULL == ptrs[i][j]) continue;
-    if (IDENTITY == ptrs[i][j]) continue;
-    if (ptrs[i][j]->flag) continue;
-    ptrs[i][j]->show(s);
-    ptrs[i][j]->flag = true;
-  }
+  delete tmp;
+  Output << "Topmatrix used " << count << " middle matrices out of possible " << N*N << "\n";
 }
 
-int fullmatrix::Multiply(fullmatrix *b, fullmatrix *c)
+topmatrix::~topmatrix()
 {
-  int nnz = 0;
-  int i,j,k;
-  for (i=0; i<N; i++) {
-    for (j=0; j<N; j++) {
-      if (NULL == ptrs[i][j])
-	ptrs[i][j] = matrix_pile.NewObject();
-      ptrs[i][j]->zero();
-      for (k=0; k<N; k++) {
-	bitmatrix* term = nocache_mult(b->ptrs[i][k], c->ptrs[k][j]);
-	if (term) {
-	  mm_acc(ptrs[i][j], term);
-	  matrix_pile.FreeObject(term);
-	}
-      } // for k
-      if (ptrs[i][j]->is_zero()) {
-	matrix_pile.FreeObject(ptrs[i][j]);
-	ptrs[i][j] = NULL;
-      } else nnz++;
-    } // for j
-  } // for i
-  return nnz;
-}  
-
-void fullmatrix::FillFrom(const shared_matrix &a)
-{
-  int i,j;
-  for (i=0; i<N; i++) for (j=0; j<N; j++) {
-    if (a.ptrs[i][j]) {
-      ptrs[i][j] = matrix_pile.NewObject();
-      ptrs[i][j]->FillFrom(a.ptrs[i][j]);
-    } else {
-      ptrs[i][j] = NULL;
-    }
-  }
+  // later
 }
 
 // ------------------------------------------------------------------

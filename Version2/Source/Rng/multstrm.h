@@ -19,7 +19,7 @@ const unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 			  0x00000080, 0x00000040, 0x00000020, 0x00000010,
 			  0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
-
+/// Bottom-level submatrix
 struct bitmatrix {
   unsigned long row[32];
   int ptrcount;
@@ -106,6 +106,21 @@ inline void mm_acc(bitmatrix *a, bitmatrix *c)
 
 
 
+/// middle level in 3-level mxd
+struct midmatrix {
+  bitmatrix* mx[16][16];
+  int flag;
+
+  unsigned long Signature(long prime) {
+    unsigned long d1 = mx[15][15] ? mx[15][15]->Signature(prime) : 0;
+    unsigned long d2 = mx[8][7] ? mx[8][7]->Signature(prime) : 0;
+    unsigned long d3 = mx[0][0] ? mx[0][0]->Signature(prime) : 0;
+    return (((d1 * 256 + d2) % prime) * 256 + d3) % prime;
+  }
+};
+
+
+
 
 
 /// A 2-level Mxd, essentially ;^)
@@ -115,9 +130,10 @@ class shared_matrix {
   bool initialized;
 public:
   shared_matrix(int n);
+  ~shared_matrix();
   void MakeB(int M, unsigned int A);
   void MakeBN(int M, unsigned int A);
-  ~shared_matrix();
+  inline int Size() const { return N; }
   // Human readable
   void show(OutputStream &s);
   // Less so.
@@ -125,6 +141,14 @@ public:
   void writeC(OutputStream &s);
   void read(InputStream &s);
   int Distinct();
+  /// conversion to 3-level
+  void FillMiddle(int rs, int cs, midmatrix *m) {
+    int i, j;
+    for (i=15; i>=0; i--)
+      for (j=15; j>=0; j--)
+	m->mx[i][j] = ptrs[rs+i][cs+j];
+  }
+  
   /// x = y * this;
   inline void vector_multiply(unsigned long *x, unsigned long *y) {
     int i,j;
@@ -133,7 +157,6 @@ public:
       for (j=N-1; j>=0; j--)
 	if (ptrs[i][j])
 	  ptrs[i][j]->vm_mult(y[i], x[j]);
-	//  x[j] ^= ptrs[i][j]->vm_mult(y[i]);
   }
 
   /// this = b * c, returns #nonzeroes
@@ -156,39 +179,19 @@ protected:
     if (m) m->ptrcount++;
   }
   void ColCpy(int dest, int src);
-  friend class fullmatrix;
+
 };
 
 
-
-
-
-
-/** Good old, full, explicit matrix.  For comparison.
-    It is the non-shared version of shared_matrix.
-*/
-struct fullmatrix {
+/// Top level in 3-level mxd
+class topmatrix {
   int N;
-  bitmatrix*** ptrs;
+  midmatrix*** ptrs;
 public:
-  fullmatrix(int n);
-  ~fullmatrix();
-  void show(OutputStream &s);
-  /// x = y * this;
-  inline void vector_multiply(unsigned long *x, unsigned long *y) {
-    int i,j;
-    for (i=N-1; i>=0; i--) x[i] = 0;
-    for (i=N-1; i>=0; i--)
-      for (j=N-1; j>=0; j--)
-	if (ptrs[i][j])
-	  ptrs[i][j]->vm_mult(y[i], x[j]);
-  }
-
-  /// this = b * c, returns #nonzeroes
-  int Multiply(fullmatrix *b, fullmatrix *c);
-  
-  void FillFrom(const shared_matrix &);
+  topmatrix(shared_matrix *foo);
+  ~topmatrix();
 };
+
 
 void InitMatrix();
 
