@@ -6,6 +6,8 @@
 #include "../Language/measures.h"
 
 #include "ssgen.h"
+#include "mcgen.h"
+#include "ssmcgen.h"
 #include "numerical.h"
 #include "simul.h"
 
@@ -13,8 +15,8 @@
 
 option* SolutionType;
 
-option_const numerical_oc("NUMERICAL", "Generate and analyze underlying stochastic process");
-option_const simulation_oc("SIMULATION", "Discrete-event simulation");
+option_const numerical_oc("NUMERICAL", "\aGenerate and analyze underlying stochastic process");
+option_const simulation_oc("SIMULATION", "\aDiscrete-event simulation");
 
 option_const* NUMERICAL = &numerical_oc;
 option_const* SIMULATION = &simulation_oc;
@@ -105,4 +107,5 @@ void 	InitEngines()
   InitNumerical();
   InitSimulation();
   InitSSGen();
+  InitMCGen();
 }

@@ -106,8 +106,46 @@ int state_model::GetConstantStateSize() const
 void state_model::DetermineProcessType()
 {
   if (proctype != Proc_Unknown) return;
-  // some stuff here
+  
+  int e;
+  // check if this is a Finite state machine (no distros)
+  proctype = Proc_FSM;
+  for (e=0; e<num_events; e++) {
+    DCASSERT(event_data[e]);
+    if (event_data[e]->Distribution()) {
+      proctype = Proc_Unknown;
+      break;
+    }
+  } // for e
+  if (Proc_FSM == proctype) return;  
 
+  // Not a FSM, now check distributions
+  bool all_expos = true;
+  for (e=0; e<num_events; e++) {
+    switch (event_data[e]->DistroType()) {
+      case VOID:
+		// some events have no distribution, that's bad
+		proctype = Proc_Error;
+		return;
+
+      case EXPO:
+      case PROC_EXPO:
+		// rule some other things out, eventually
+		break;
+
+      default:
+		all_expos = false;
+		break;
+    } // switch
+  } 
+
+  if (all_expos) {
+    proctype = Proc_Ctmc;
+    return;
+  }
+
+  // there needs to be more here, eventually
+  
   proctype = Proc_General;
 }
 

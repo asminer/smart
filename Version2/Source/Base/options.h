@@ -72,7 +72,7 @@ public:
   virtual const option_const* GetEnum() const;
 
   virtual void ShowHeader(OutputStream &s) const = 0;
-  virtual void ShowRange(OutputStream &s) const = 0;
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const = 0;
 };
 
 OutputStream& operator<< (OutputStream &s, option* o);

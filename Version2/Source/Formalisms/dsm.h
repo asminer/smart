@@ -32,6 +32,8 @@ class reachset;  // defined in States/reachset.h
     The event class is derived from symbol, because it is useful for
     them to have names, types, and filename/linenumber where created.
 
+    TODO STILL: figure out how to handle immediate events
+
     The mechanisms used are:
 
     enabling:	An expression of type "proc bool" that evaluates to

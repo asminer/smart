@@ -17,10 +17,10 @@
 
 option* PN_Marking_Style;
 
-option_const ms_safe   ("SAFE", "Format is [p1, p3:2, p6]");
-option_const ms_sparse ("SPARSE", "Format is [p1:1, p3:2, p6:1]");
-option_const ms_indexed("INDEXED", "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]");
-option_const ms_vector ("VECTOR", "Format is [1, 0, 2, 0, 0, 1]");
+option_const ms_safe   ("SAFE", "\aFormat is [p1, p3:2, p6]");
+option_const ms_sparse ("SPARSE", "\aFormat is [p1:1, p3:2, p6:1]");
+option_const ms_indexed("INDEXED", "\aFormat is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]");
+option_const ms_vector ("VECTOR", "\aFormat is [1, 0, 2, 0, 0, 1]");
 
 
 // ******************************************************************

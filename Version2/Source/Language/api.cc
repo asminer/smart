@@ -57,8 +57,8 @@ void InitLanguage()
   				1000, 0, 2000000000);
   AddOption(bar);
 
-  option_const* relative = new option_const("RELATIVE", "Use relative precision");
-  option_const* absolute = new option_const("ABSOLUTE", "Use absolute precision");
+  option_const* relative = new option_const("RELATIVE", "\aUse relative precision");
+  option_const* absolute = new option_const("ABSOLUTE", "\aUse absolute precision");
 
   option_const** list = new option_const*[2];
   list[0] = absolute;

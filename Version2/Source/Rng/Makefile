@@ -22,8 +22,8 @@ square: square.o multstrm.o streams.o timers.o
 multiply: multiply.o multstrm.o streams.o timers.o
 	g++ $(CPPFLAGS) -o multiply multiply.o multstrm.o streams.o timers.o
 
-makeB: makeB.o multstrm.o streams.o timers.o
-	g++ $(CPPFLAGS) -o makeB makeB.o multstrm.o streams.o timers.o
+makeB: makeB.o multstrm.o streams.o timers.o errors.o
+	g++ $(CPPFLAGS) -o makeB makeB.o multstrm.o streams.o timers.o errors.o
 
 mtcheck: mtcheck.o multstrm.o streams.o mtwist.o
 	g++ $(CPPFLAGS) -o mtcheck mtcheck.o multstrm.o streams.o mtwist.o
@@ -48,6 +48,9 @@ timers.o: ../Base/timers.cc ../Base/timers.h
 
 streams.o: ../Base/streams.cc ../Base/streams.h
 	g++ $(CPPFLAGS) -c -o streams.o ../Base/streams.cc
+
+errors.o: ../Base/errors.cc ../Base/errors.h
+	g++ $(CPPFLAGS) -c -o errors.o ../Base/errors.cc
 
 multstrm.o: multstrm.h multstrm.cc
 

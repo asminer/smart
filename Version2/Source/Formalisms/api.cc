@@ -3,6 +3,9 @@
 
 #include "api.h"
 
+// documentation display
+#include "../Base/docs.h"
+
 // symbol tables:
 #include "../Main/tables.h"
 
@@ -124,9 +127,6 @@ void HelpModelFuncs()
 // shouldn't have to touch anything below here 
 // =======================================================================
 
-// Implemented in fnlib.cc
-void DumpDocs(const char* doc);
-
 // Global for help, defined and set in fnlib.cc
 extern char* help_search_string;
 
@@ -157,11 +157,11 @@ void ShowModelDocs(void *x)
       Output << " model\n";
       unshown = false;
     }
-    Output << "\t";
+    Output.Pad(' ', 5);
     hit->ShowHeader(Output);
     // special type checking: documentation must display parameters, too
     const char* d = hit->GetDocumentation();
-    if (d) DumpDocs(d);
+    if (d) DisplayDocs(Output, d, 5, 75, true);
     else {
       Internal.Start(__FILE__, __LINE__);
       Internal << "No documentation for this function?\n";

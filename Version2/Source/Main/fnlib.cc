@@ -4,6 +4,7 @@
 #include "api.h"
 #include "fnlib.h"
 #include "compile.h"
+#include "../Base/docs.h"
 #include "../Rng/rng.h"
 #include "../Formalisms/api.h"
 #include "../Language/strings.h"
@@ -20,74 +21,6 @@ extern PtrTable Builtins;
 // Used by computehelp
 char* help_search_string;
 
-const int docwidth = 60;  // make an option?
-
-void DumpDocs(const char* doc)
-{
-  int ptr = 0;
-  if ('\b' == doc[0]) {
-    // function header is done "by hand", dump until newline character
-    for (ptr=1; doc[ptr]!='\n'; ptr++) {
-      DCASSERT(doc[ptr]);
-      Output.Put(doc[ptr]);
-    }
-    ptr++;
-  }
-  Output.Put('\n');
-  Output.Put('\t');
-  Output.Pad('-', 60);
-  Output.Put('\n');
-  while (doc[ptr]) {
-    // start of a line, skip spaces (but not tabs or newlines)
-    while (doc[ptr]==' ') ptr++;
-    if (0==doc[ptr]) break;
-
-    Output.Put('\t');
-
-    // write first word
-    int written = 0;
-    while (1) {
-      if (doc[ptr]==' ' || doc[ptr]=='\n' || doc[ptr]==0)
-        break;
-      Output.Put(doc[ptr]);
-      written++;
-      ptr++;
-    }
-
-    // continue writing words until we exceed the line width or hit newline
-    while (written < docwidth) {
-      if (doc[ptr]=='\n' || doc[ptr]==0) break;
-
-      // print inter-word space
-      Output.Put(' ');
-      written++;
-
-      // get to start of next word
-      while (doc[ptr]==' ') ptr++;
-
-      // count spaces of next word
-      int ns = ptr;
-      while (1) {
-        if (doc[ns]==' ' || doc[ns]=='\n' || doc[ns]==0) break;
-        ns++;
-        written++;
-      }
-      if (written < docwidth) {
-        // write the next word
-        while (1) {
-          if (doc[ptr]==' ' || doc[ptr]=='\n' || doc[ptr]==0)
-            break;
-          Output.Put(doc[ptr]);
-          ptr++;
-        }
-      }
-    } // while written
-
-    // That's all we can fit on this line, or it is the last line.
-    Output.Put('\n');
-    if (doc[ptr]=='\n') ptr++;
-  } // while doc[ptr]
-}
 
 void ShowDocs(void *x)
 {
@@ -104,7 +37,7 @@ void ShowDocs(void *x)
       Output << foo->name << "\n";
       unshown = false;
     }
-    Output << "\t";
+    Output.Pad(' ', 5);
     hit->ShowHeader(Output);
     // special type checking: documentation must display parameters, too
     const char* d = hit->GetDocumentation();
@@ -116,7 +49,8 @@ void ShowDocs(void *x)
         if (next->GetDocumentation() == d) 
 	  next_is_different = false;
       }
-      if (next_is_different) DumpDocs(d);
+      if (next_is_different) 
+	DisplayDocs(Output, d, 5, 75, true);
     } else { // user defined... 
 	Output << "\tdefined in "; 
         const char* fn = hit->Filename();
@@ -140,29 +74,21 @@ void compute_help(expr **pp, int np, result &x)
   if (x.isNormal()) 
     help_search_string = x.svalue->string;
 
-  // Look through functions
-  Output << "\nOrdinary functions matching \"" << help_search_string;
-  Output << "\":\n";
+  // Builtin functions
   Builtins.Traverse(ShowDocs);
 
-  // Look through model functions
-  Output << "\nModel functions matching \"" << help_search_string;
-  Output << "\":\n";
+  // Model functions
   HelpModelFuncs();
 
   // Now go through options
-  Output << "\nOptions/constants matching \"" << help_search_string;
-  Output << "\":\n";
   int i;
   for (i=0; i<NumOptions(); i++) {
     option* o = GetOptionNumber(i);
     if (o->IsUndocumented()) continue;
     if (!o->isApropos(help_search_string)) continue;
     o->ShowHeader(Output);
-    Output << "\n";
-    Output << "\t" << o->GetDocumentation() << "\n";
-    Output << "\tLegal values: ";
-    o->ShowRange(Output);
+    DisplayDocs(Output, o->GetDocumentation(), 5, 75, false);
+    o->ShowRange(Output, 5, 75);
     Output << "\n";
   }
 

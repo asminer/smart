@@ -565,8 +565,8 @@ void InitConvergeOptions()
   AddOption(converge_precision);
 
   // ConvergePrecisionTest
-  absolute = new option_const("ABSOLUTE", "Use absolute precision");
-  relative = new option_const("RELATIVE", "Use relative precision");
+  absolute = new option_const("ABSOLUTE", "\aUse absolute precision");
+  relative = new option_const("RELATIVE", "\aUse relative precision");
   option_const** list = new option_const*[2];
   list[0] = absolute;
   list[1] = relative;

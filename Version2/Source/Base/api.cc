@@ -62,9 +62,9 @@ void InitBase()
     = MakeActionOption(BOOL, "Report", def, rdoc, range, SetReport, GetReport);
   AddOption(report);
 
-  RF_GENERAL = new option_const("GENERAL", "\tSame as printf(%g)");
-  RF_FIXED = new option_const("FIXED", "\tSame as printf(%f)");
-  RF_SCIENTIFIC = new option_const("SCIENTIFIC", "Same as printf(%e)");
+  RF_GENERAL = new option_const("GENERAL", "\aSame as printf(%g)");
+  RF_FIXED = new option_const("FIXED", "\aSame as printf(%f)");
+  RF_SCIENTIFIC = new option_const("SCIENTIFIC", "\aSame as printf(%e)");
 
   option_const** things = new option_const*[3];
   things[0] = RF_FIXED;

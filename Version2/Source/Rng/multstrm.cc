@@ -5,7 +5,7 @@
 
 //#define CHECK_CACHE
 
-#define NO_CACHE
+//#define NO_CACHE
 
 // ------------------------------------------------------------------
 //   hash table.  eventually replace with a nice general class.
@@ -359,10 +359,8 @@ bitmatrix* cache_mult(bitmatrix *b, bitmatrix *c)
   if (NULL==c) return NULL;
 
   // special case (keeps cache down)
-  /*
   if (b == IDENTITY) return c;
   if (c == IDENTITY) return b;
-  */
    
   bitmatrix *answer;
   if (CacheHit(b, c, answer)) return answer;
@@ -617,7 +615,7 @@ void shared_matrix::write(OutputStream &s)
     for (j=0; j<N; j++) {
       if (ptrs[i][j]) s << ptrs[i][j]->flag;
       else s << '0';
-      s.Pad(1);
+      s.Pad(' ',1);
     } // for j
     s << "\n";
     s.flush();

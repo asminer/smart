@@ -8,6 +8,15 @@
 #include "../Engines/api.h"
 
 // ********************************************************
+// * options and option constants used by model functions *
+// ********************************************************
+
+option* StateDisplayOrder;
+
+option_const lexical_sdo("LEXICAL", "\aStates are sorted by lexical ordering");
+option_const natural_sdo("NATURAL", "\aThe most natural order for the selected state space data structure");
+
+// ********************************************************
 // *                  prob_ss and avg_ss                  *
 // ********************************************************
 
@@ -349,5 +358,17 @@ void InitGenericModelFunctions(PtrTable *t)
   Add_num_states(t);
 
   Add_test(t);
+
+  // ****************************************************************
+  // Options
+  // ****************************************************************
+
+  // StateDisplayOrder option
+  option_const **sdolist = new option_const*[2];
+  // these must be alphabetical
+  sdolist[0] = &lexical_sdo;
+  sdolist[1] = &natural_sdo;
+  StateDisplayOrder = MakeEnumOption("StateDisplayOrder", "The order to use for displaying states in functions num_states and num_arcs.  This does not affect the internal storage of the states, so the reordering is done as necessary only for display.", sdolist, 2, &natural_sdo);
+  AddOption(StateDisplayOrder);
 }
 

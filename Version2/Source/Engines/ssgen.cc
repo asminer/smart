@@ -12,9 +12,9 @@ option* StateStorage;
 
 const int num_ss_options = 3;
 
-option_const debug_ss("DEBUG", "Use splay tree and display states as they are generated");
-option_const redblack_ss("RED_BLACK", "red-black tree");
-option_const splay_ss("SPLAY", "Splay tree");
+option_const debug_ss("DEBUG", "\aUse splay tree and display states as they are generated");
+option_const redblack_ss("RED_BLACK", "\ared-black tree");
+option_const splay_ss("SPLAY", "\aSplay tree");
 
 // return true on success
 template <class SSTYPE>
@@ -273,6 +273,10 @@ void RedBlackReachset(state_model *dsm)
   }
   CompressAndAffix(dsm, states, tree);
 }
+
+// *******************************************************************
+// *                           Front  ends                           *
+// *******************************************************************
 
 void BuildReachset(state_model *dsm)
 {

@@ -4,6 +4,7 @@
 #include "../defines.h"
 #include "options.h"
 #include "../Templates/heap.h"
+#include "docs.h"
 
 // **************************************************************************
 // *                             option methods                             *
@@ -137,8 +138,9 @@ public:
     show(s);
     s << " " << value;
   }
-  virtual void ShowRange(OutputStream &s) const {
-    s << "[false, true]\n";
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const {
+    s.Pad(' ', LM);
+    s << "Legal values: [false, true]\n";
   }
 };
 
@@ -165,7 +167,9 @@ public:
     show(s);
     s << " " << value;
   }
-  virtual void ShowRange(OutputStream &s) const {
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const {
+    s.Pad(' ', LM);
+    s << "Legal values: ";
     if (min<max)
       s << "integers in [" << min << ".." << max << "]\n";
     else
@@ -210,7 +214,9 @@ public:
     show(s);
     s << " " << value;
   }
-  virtual void ShowRange(OutputStream &s) const {
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const {
+    s.Pad(' ', LM);
+    s << "Legal values: ";
     if (min<max)
       s << "reals in [" << min << ".." << max << "]\n";
     else
@@ -257,8 +263,9 @@ public:
     if (value) s << '"' << value << '"';
     else s << "null";
   }
-  virtual void ShowRange(OutputStream &s) const {
-    s << "any string\n";
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const {
+    s.Pad(' ', LM);
+    s << "Legal values: any string\n";
   }
 };
 
@@ -316,7 +323,10 @@ public:
     show(s); 
     s << " " << deflt;
   }
-  virtual void ShowRange(OutputStream &s) const { s << ranges << "\n"; }
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const { 
+    s.Pad(' ', LM);
+    s << "Legal values: " << ranges << "\n"; 
+  }
 };
 
 option* MakeActionOption(type t, const char* name, const char* deflt, 
@@ -354,7 +364,7 @@ public:
   }
   // These are a bit more interesting...
   virtual const option_const* FindConstant(const char* name) const;
-  virtual void ShowRange(OutputStream &s) const;
+  virtual void ShowRange(OutputStream &s, int LM, int RM) const;
 };
 
 bool enum_opt::isApropos(const char* find) const
@@ -393,12 +403,22 @@ const option_const* enum_opt::FindConstant(const char* name) const
   return NULL;
 }
 
-void enum_opt::ShowRange(OutputStream &s) const
+void enum_opt::ShowRange(OutputStream &s, int LM, int RM) const
 {
-  s << "\n";
+  s.Pad(' ', LM);
+  s << "Legal values:\n";
   int i;
+  int maxenum = 0;
+  for (i=0; i<numpossible; i++)  {
+    int l = strlen(possible[i]->name);
+    maxenum = MAX(maxenum, l);
+  }
+
   for (i=0; i<numpossible; i++) {
-    s << "\t" << possible[i]->name << "\t" << possible[i]->doc << "\n";
+    s.Pad(' ', LM);
+    s << possible[i]->name;
+    s.Pad(' ', 2+maxenum - strlen(possible[i]->name));
+    DisplayDocs(s, possible[i]->doc, LM+maxenum+2, RM, false);
   }
 }
 

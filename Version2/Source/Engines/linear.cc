@@ -18,10 +18,10 @@ option* Relaxation;
 option* Iters;
 option* Precision;
 
-option_const Power_oc("POWER", "Power method");
-option_const Jacobi_oc("JACOBI", "Jacobi");
-option_const Gauss_oc("GAUSS_SEIDEL", "Gauss-Seidel");
-option_const Sor_oc("SOR", "Adaptive successive over-relaxation");
+option_const Power_oc("POWER", "\aPower method");
+option_const Jacobi_oc("JACOBI", "\aJacobi");
+option_const Gauss_oc("GAUSS_SEIDEL", "\aGauss-Seidel");
+option_const Sor_oc("SOR", "\aAdaptive successive over-relaxation");
 
 option_const* POWER = &Power_oc;
 option_const* JACOBI = &Jacobi_oc;

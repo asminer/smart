@@ -56,7 +56,8 @@ public:
 /**   The structure used by expressions to represent values.
  
       Completely redesigned for version 2:
-      No more derived classes or virtual functions.
+      No more derived classes or virtual functions for the 
+      "core" types (ints, reals, booleans).
 
       Conventions:
 
@@ -67,13 +68,6 @@ public:
       For +- infinity, set infinity to true.
       Then, set the sign appropriately for ivalue.
 
-      For pointer values, set the boolean flag "canfree" if the
-      pointer needs to be freed when we're done
-
-
-      TO DO!!! IMPORTANT!!!
-      eliminate "canfree", replace with "link counter" which is
-      decremented on delete, incremented on copy.
 */  
 
 struct result {
