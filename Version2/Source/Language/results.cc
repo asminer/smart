@@ -60,9 +60,31 @@ void PrintResult(OutputStream &s, type t, const result &x, int width, int prec)
 */
 void DeleteResult(type t, result &x)
 {
-  if (!x.isFreeable()) return;  // we shouldn't be deleting anything
+  if (x.isNull()) return;  // nothing to free
+  if (!x.isFreeable()) {
+    x.setNull();
+    return;  // we shouldn't be deleting anything
+  }
   switch (t) {
     case STRING:	free(x.other);		break;  // should be ok?
   }
+  x.setNull();
+}
+
+bool Equals(type t, result &x, result &y)
+{
+  if (x.isNormal() && y.isNormal()) {
+    switch (t) {
+      case BOOL:	return x.bvalue == y.bvalue;
+      case INT:		return x.ivalue == y.ivalue;
+      case REAL:	return x.rvalue == y.rvalue;
+      case STRING:	return (strcmp((char *)x.other, (char *)y.other) == 0);
+    }
+    // still here?
+    return false;
+  }
+  if (x.isInfinity() && y.isInfinity()) return true;
+  if (x.isNull() && y.isNull()) return true;
+  return false;
 }
 

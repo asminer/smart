@@ -84,10 +84,6 @@ public:
 */
 constfunc* MakeConstant(type t, char* id, const char* file, int line);
 
-/** Make a measure.
-    Used within models.
-*/
-measure* MakeMeasure(type t, char* id, const char* file, int line);
 
 //@}
 

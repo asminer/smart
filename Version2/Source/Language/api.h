@@ -15,6 +15,7 @@
 #include "infinity.h"
 #include "variables.h"
 #include "converge.h"
+#include "models.h"
 
 void InitLanguage();
 

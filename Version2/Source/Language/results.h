@@ -134,6 +134,11 @@ void PrintResult(OutputStream &s, type t, const result &x, int width=-1, int pre
 */
 void DeleteResult(type t, result &x);
 
+/** Check equality of two results.
+    Used primarily by models to check passed parameters.
+*/
+bool Equals(type t, result &x, result &y);
+
 //@}
 
 #endif
