@@ -16,6 +16,7 @@ unsigned int mask[32] = { 0x80000000, 0x40000000, 0x20000000, 0x10000000,
 
 struct bitmatrix {
   unsigned int row[32];
+  bool flag;
 
   inline unsigned int vm_mult(unsigned int v) {
     unsigned int answer = 0;

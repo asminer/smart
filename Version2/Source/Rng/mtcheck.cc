@@ -16,6 +16,9 @@
 
 //#define DEBUG_MATRIX
 
+#define COMPARE_STREAMS
+//#define DUMP_MATRIX
+
 Manager <bitmatrix> matrix_pile(16);
 
 class mysplay {
@@ -150,15 +153,28 @@ void matrix::zero()
 
 void matrix::show(OutputStream &s)
 {
-  for (int i=0; i<N; i++) {
+  int i,j;
+  for (i=0; i<N; i++) {
     s << "[";
-    for (int j=0; j<N; j++) {
+    for (j=0; j<N; j++) {
       if (j) s << ", ";
       showbm(s, ptrs[i][j]);
+      ptrs[i][j]->flag = false;
     }
     s << "]\n";
     s.flush();
   }
+  ZERO->flag = true;
+  IDENTITY->flag = true;
+  for (i=0; i<N; i++) 
+    for (j=0; j<N; j++) {
+      if (ptrs[i][j]->flag) continue;
+      s << "Submatrix ";
+      showbm(s, ptrs[i][j]);
+      s << "\n";
+      ptrs[i][j]->show(s);
+      ptrs[i][j]->flag = true;
+    }
 }
 
 // x = y * thismatrix
@@ -314,8 +330,11 @@ int main()
 
   Output << "Computing B matrix\n";
   Output.flush();
-  const int CYCLES = 8;
-  matrix *thing = Braised(N*CYCLES); // two cycles
+  const int CYCLES = 1;
+  int POWER = N*CYCLES;
+  matrix *thing = Braised(POWER); // two cycles
+
+#ifdef COMPARE_STREAMS
   Output << "Comparing generators\n";
   Output.flush();
 
@@ -346,7 +365,12 @@ int main()
   }
   Output << "Streams matched up to " << j << " cycles\n";
   Output << "Done\n";
+#endif
   Output << "Peak of " << UniqueTable.Nodes() << " unique bit matrix\n";
+#ifdef DUMP_MATRIX
+  Output << "Matrix B^" << POWER << " =\n";
+  thing->show(Output);
+#endif
   Output.flush();
   return 0;
 }
