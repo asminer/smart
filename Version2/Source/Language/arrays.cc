@@ -85,13 +85,25 @@ array::array(const char* fn, int line, type t, char* n, array_index **il, int di
  
 array::~array()
 {
+  Clear();
   // Does this *ever* get called?
   if (index_list) {
     int i;
     for (i=0; i<dimension; i++) Delete(index_list[i]);
     delete[] index_list;
   }
-  // delete descriptor here...
+}
+
+void array::Clear()
+{
+  // delete descriptor
+  Clear(0, descriptor);
+  descriptor = NULL;
+}
+
+void array::Clear(int level, void* desc)
+{
+  // IMPLEMENT THIS!  
 }
 
 void array::SetCurrentReturn(constfunc *retvalue)

@@ -195,6 +195,27 @@ expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, in
 
 // expr* MakeArrayMeasureCall(model *m, expr **p, int np, expr **i, int ni);
 
+/** New for version 2.
+    When a model variable is declared within a model and used in an
+    expression, we use an empty wrapper to represent the variable
+    because the variable does not exist until the model is instantiated.
+    The wrapper is filled by a "ModelVarStmt" statement (see below).
+    A call to "Substitite" will eliminate the wrapper.
+*/
+expr* MakeEmptyWrapper(const char *fn, int line);
+
+/** Statement to construct model variables (no arrays).
+    @param	p	The parent model
+    @param	t	The type of variables
+    @param	names	Array of names to create
+    @param	wraps	Array of wrappers to use
+    @param	N	size of names and wraps arrays
+    @param	fn	filename
+    @param	l	linenumber
+*/
+statement* MakeModelVarStmt(model *p, type t, char** names, expr** wraps, int N,
+			const char* fn, int l);
+
 //@}
 
 #endif

@@ -52,6 +52,9 @@ PtrTable *Constants;
 /// "Symbol table" of formal parameters
 List <formal_param> *FormalParams;
 
+/// Model block we are in (switch to stack if we allow nesting)
+model *model_under_construction;
+
 /// Internal model symbol table
 PtrTable *ModelInternal;
 
@@ -1601,6 +1604,20 @@ expr* FindIdent(char* name)
       return Copy(i);
   }
 
+  // check model variables
+  if (ModelInternal) {
+    expr* f = (expr*) ModelInternal->FindName(name);
+    if (f) { // found
+      if (dynamic_cast<array*>(f)) {
+        Error.Start(filename, lexer.lineno());
+        Error << "Model identifier " << name << " is an array\n";
+        Error.Stop();
+        return NULL;
+      }
+      return f;
+    }
+  }
+
   // check constants
   constfunc* find = (constfunc*) Constants->FindName(name);
   if (find) return Copy(find);
@@ -2113,6 +2130,34 @@ statement* BuildOptionStatement(option* o, char* n)
 // |                                                                |
 // ==================================================================
 
+void ShowSymbolNames(void *x)
+{
+  PtrTable::splayitem *foo = (PtrTable::splayitem *)x;
+  Output << "\t" << foo->name << "\n";
+}
+
+void StartModelTables()
+{
+  ModelInternal = new PtrTable();
+  ModelExternal = new PtrTable();
+}
+
+void KillModelTables()
+{
+  Output << "Destroying symbol tables for model ";
+  if (model_under_construction) Output << model_under_construction; 
+  Output << "\nInternal symbols:\n";
+  if (ModelInternal) ModelInternal->Traverse(ShowSymbolNames);
+  Output << "External symbols:\n";
+  if (ModelExternal) ModelExternal->Traverse(ShowSymbolNames);
+  Output.flush();
+
+  delete ModelInternal;
+  delete ModelExternal;
+  ModelInternal = NULL;
+  ModelExternal = NULL;
+}
+
 model* BuildModel(type t, char* n, void* list)
 {
   if (NULL==n) return NULL;
@@ -2130,7 +2175,7 @@ model* BuildModel(type t, char* n, void* list)
 
 
   function *out;
-  model *f;
+  model *f = NULL;
   // Make sure this function isn't a duplicate of an existing function
   if (CheckFunctionDecl(t, n, out)) {
     // This is a new model.
@@ -2141,7 +2186,6 @@ model* BuildModel(type t, char* n, void* list)
   	f = MakeNewModel(filename, lexer.lineno(), t, n, NULL, 0);
 
     InsertFunction(Builtins, f);
-    return f;
   } else {
     if (out) {
       // found a forward decl
@@ -2151,15 +2195,83 @@ model* BuildModel(type t, char* n, void* list)
 	Internal << "Bad forward definition match?";
 	Internal.Stop();
       }
-      return f;
     } 
   }
-  return NULL;
+  StartModelTables();
+  return (model_under_construction = f);
 }
 
 statement* BuildModelStmt(model *m, void* block)
 {
+  KillModelTables();
+  model_under_construction = NULL;
   return NULL;
+}
+
+void* AddModelVariable(void* list, char* ident)
+{
+  DCASSERT(ModelInternal);
+  DCASSERT(ModelExternal);
+  if (NULL==ident) return list;
+  if (WithinFor()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Expecting array for model variable " << ident;
+    Error.Stop();
+    return list;
+  }
+  // Is the name used already?
+  if (ModelInternal->ContainsName(ident)||ModelExternal->ContainsName(ident)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Duplicate identifier " << ident << " within model";
+    Error.Stop();
+    return list;
+  }
+  // Check parameter names here...
+
+  // add to symbol table
+  expr *wr = MakeEmptyWrapper(filename, lexer.lineno());
+  ModelInternal->AddNamePtr(ident, wr);
+  // add to list
+  List <char>* foo = (List <char> *)list;
+  if (NULL==foo) { foo = new List <char> (256); }
+  foo->Append(ident);
+  return foo;
+}
+
+void* AddModelArray(void* list, char* ident, void* indexlist)
+{
+  DCASSERT(WithinModel()); 
+  return NULL;
+}
+
+statement* BuildModelVarStmt(type t, void* list)
+{
+  DCASSERT(WithinModel()); 
+  if (NULL==list) return NULL;
+
+  // make sure the type is compatible with the model here.
+
+  // make sure our model is not null.
+  
+  List <char>* foo = (List <char> *)list;
+  int length = foo->Length();
+  char** namelist = foo->MakeArray();
+  delete foo;
+
+  if (WithinFor()) {
+    // use arrays
+    return NULL;
+  } 
+
+  // Not within for loops
+  int i;
+  expr** ws = new expr*[length];
+  for (i=0; i<length; i++) {
+    ws[i] = (expr*) ModelInternal->FindName(namelist[i]);
+    DCASSERT(ws[i]);
+  }
+  return MakeModelVarStmt(model_under_construction, t, namelist, ws, length, 
+  			filename, lexer.lineno());
 }
 
 // ==================================================================
@@ -2195,6 +2307,7 @@ void InitCompiler()
   FormalParams = NULL;
   matches = new List <function> (32);
   converge_depth = 0;
+  model_under_construction = NULL;
   ModelInternal = NULL;
   ModelExternal = NULL;
 

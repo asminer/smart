@@ -36,6 +36,17 @@ void* PtrTable::FindName(const char* n)
     return bar->ptr;
 }
 
+bool PtrTable::ReplaceNull(const char* n, void *p)
+{
+  splayitem tmp(n, NULL);
+  int foo = splaywrapper->Splay(root, &tmp);
+  if (foo!=0) return false; // not found
+  splayitem *bar = (splayitem*) root->data;
+  if (bar->ptr) return false;  // not null
+  bar->ptr = p;
+  return true;
+}
+
 void PtrTable::AddNamePtr(const char* n, void *p)
 {
     DCASSERT(n);

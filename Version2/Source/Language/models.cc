@@ -74,6 +74,7 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
   int i;
   for (i=0; i<np; i++) {
     pl[i]->LinkUserFunc(&current_params, i);
+    last_params[i].setNull();
   }
   last_build.Clear();
   last_build.setNull();
@@ -296,6 +297,146 @@ expr* model_call::SplitEngines(List <measure> *mlist)
 
 // ******************************************************************
 // *                                                                *
+// *                         wrapper  class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Class used as a wrapper around a (not yet existing) model variable.
+    The variable can be plugged in after it exists.
+
+    Everything is public because the substitutions are handled
+    directly by a statement.
+
+    Since any expression with a wrapper should be "Substituted" before
+    execution (for speed), we shouldn't need to provide "compute" or 
+    "sample" methods.
+*/
+class wrapper : public expr {
+public:
+  /// The (eventual) symbol to be plugged here
+  const char* who;
+  /// The (eventual) type of that symbol
+  type mytype;
+  /// The variable.
+  model_var* var;
+public:
+  wrapper(const char* fn, int line) : expr(fn, line) {
+    who = NULL;
+    mytype = VOID; // fill in later
+    var = NULL;
+  }
+  virtual ~wrapper() {
+    // don't delete "who", we don't own it
+    // not sure about var yet
+  }
+
+  virtual type Type(int i) const {
+    DCASSERT(i==0);
+    return mytype;
+  }
+
+  virtual expr* Substitute(int i) {
+    DCASSERT(i==0);
+    return var;
+  }
+
+  virtual void show(OutputStream &s) const {
+    s << " (";
+    if (var) s << var; else s << " ";
+    s << ") ";
+  }
+
+};
+
+// ******************************************************************
+// *                                                                *
+// *                      model_var_stmt class                      *
+// *                                                                *
+// ******************************************************************
+
+class model_var_stmt : public statement {
+protected:
+  model* parent;
+  type vartype;
+  char** names;
+  expr** wraps;
+  int numvars;
+public:
+  model_var_stmt(const char *fn, int line, model *p, type t, 
+  		char** n, expr** w, int nv);
+
+  virtual ~model_var_stmt();
+  virtual void Execute();
+  virtual void Clear();
+  virtual void showfancy(int dpth, OutputStream &s) const;
+  virtual void show(OutputStream &s) const { showfancy(0, s); }
+};
+
+model_var_stmt::model_var_stmt(const char *fn, int line, model *p, type t, 
+  		char** n, expr** w, int nv) : statement(fn, line) 
+{
+  parent = p;
+  vartype = t;
+  names = n;
+  wraps = w;
+  numvars = nv;
+  int i;
+  for (i=0; i<numvars; i++) {
+    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
+    if (NULL==z) {
+      Internal.Start(__FILE__, __LINE__, fn, line);
+      Internal << "Bad wrapper for model variable";
+      Internal.Stop();
+    }
+    z->mytype = vartype;
+    z->who = names[i];
+  }
+}
+
+model_var_stmt::~model_var_stmt()
+{
+  Clear();
+  int i;
+  for (i=0; i<numvars; i++) {
+    delete[] names[i];
+  }
+  delete[] names;
+  delete[] wraps;
+}
+
+void model_var_stmt::Execute()
+{
+  int i;
+  for (i=0; i<numvars; i++) {
+    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
+    z->var = parent->MakeModelVar(z->Filename(), z->Linenumber(), vartype, names[i]);
+  }
+}
+
+void model_var_stmt::Clear()
+{
+  int i;
+  for (i=0; i<numvars; i++) {
+    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
+    delete z->var;
+    z->var = NULL;
+  }
+}
+
+void model_var_stmt::showfancy(int dpth, OutputStream &s) const
+{
+  s.Pad(dpth);
+  s << GetType(vartype) << " ";
+  int i;
+  for (i=0; i<numvars; i++) {
+    if (i) s << ", ";
+    s << names[i];
+  }
+  s << ";";
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
@@ -305,6 +446,17 @@ expr* model_call::SplitEngines(List <measure> *mlist)
 expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, int line)
 {
   return new model_call(fn, line, m, p, np, s);
+}
+
+expr* MakeEmptyWrapper(const char *fn, int line)
+{
+  return new wrapper(fn, line);  
+}
+
+statement* MakeModelVarStmt(model* p, type t, char** names, expr** wraps, int N,
+			const char* fn, int l)
+{
+  return new model_var_stmt(fn, l, p, t, names, wraps, N);
 }
 
 //@}

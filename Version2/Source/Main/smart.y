@@ -57,16 +57,16 @@ COMMA SEMI COLON POUND DOT DOTDOT GETS PLUS MINUS TIMES DIVIDE OR AND NOT
 EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
-%type <Type_ID> type model_var_decl model
+%type <Type_ID> type model
 %type <Expr> topexpr expr term const_expr function_call model_call
 model_function_call set_expr set_elems set_elem pos_param index
-%type <list> aggexpr statements model_stmt model_stmts
+%type <list> aggexpr statements model_stmts model_var_list
 formal_params formal_indexes pos_params named_params indexes
 %type <index> iterator
 %type <fparam> formal_param
 %type <nparam> named_param
 %type <count> for_header iterators
-%type <stmt> statement defn_stmt
+%type <stmt> statement defn_stmt model_stmt
 %type <Array> array_header
 %type <Func> func_header
 %type <Model> model_header
@@ -312,6 +312,7 @@ model
 #endif
   $$ = MakeType(NULL, $1);
 }
+	;
 
 set_expr
 	:	LBRACE set_elems RBRACE
@@ -509,6 +510,7 @@ model_stmts
   Output << "Reducing model_stmts : model_stmts model_stmt\n";
   Output.flush();
 #endif
+  $$ = AppendStatement($1, $2);
 }
         |       model_stmt
 {
@@ -516,6 +518,7 @@ model_stmts
   Output << "Reducing model_stmts : model_stmt\n";
   Output.flush();
 #endif
+  $$ = AppendStatement(NULL, $1);
 }
         ;
 
@@ -526,13 +529,15 @@ model_stmt
   Output << "Reducing model_stmt : function_call SEMI\n";
   Output.flush();
 #endif
+  $$ = NULL;
 }
-	|	model_var_decl SEMI
+	|	type model_var_list SEMI
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_stmt : model_var_decl SEMI\n";
+  Output << "Reducing model_stmt : type model_var_list SEMI\n";
   Output.flush();
 #endif
+  $$ = BuildModelVarStmt($1, $2);
 }
 	|	defn_stmt 
 {
@@ -540,6 +545,7 @@ model_stmt
   Output << "Reducing model_stmt : defn_stmt\n";
   Output.flush();
 #endif
+  $$ = NULL;
 }
         |       for_header LBRACE model_stmts RBRACE
 {
@@ -547,41 +553,42 @@ model_stmt
   Output << "Reducing model_stmt : for_header LBRACE model_stmts RBRACE\n";
   Output.flush();
 #endif
+  $$ = NULL;
 }
         ;
 
-model_var_decl
-        :       model_var_decl COMMA IDENT    
+model_var_list
+        :       model_var_list COMMA IDENT    
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_var_decl : model_var_decl COMMA IDENT\n";
+  Output << "Reducing model_var_list : model_var_list COMMA IDENT\n";
   Output.flush();
 #endif
-  $$ = $1;
+  $$ = AddModelVariable($1, $3);
 }
-        |       model_var_decl COMMA IDENT formal_indexes
+        |       model_var_list COMMA IDENT formal_indexes
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_var_decl : model_var_decl COMMA IDENT formal_indexes\n";
+  Output << "Reducing model_var_list : model_var_list COMMA IDENT formal_indexes\n";
   Output.flush();
 #endif
-  $$ = $1;
+  $$ = AddModelArray($1, $3, $4);
 }
-        |       type IDENT    
+        |       IDENT    
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_var_decl : type IDENT\n";
+  Output << "Reducing model_var_list : IDENT\n";
   Output.flush();
 #endif
-  $$ = $1;
+  $$ = AddModelVariable(NULL, $1);
 }
-	|	type IDENT formal_indexes
+	|	IDENT formal_indexes
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing model_var_decl : type IDENT formal_indexes\n";
+  Output << "Reducing model_var_list : IDENT formal_indexes\n";
   Output.flush();
 #endif
-  $$ = $1;
+  $$ = AddModelArray(NULL, $1, $2);
 }
         ;
 

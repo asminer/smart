@@ -49,7 +49,12 @@ protected:
 public:
   PtrTable();
   ~PtrTable();
+  inline bool ContainsName(const char* n) {
+    splayitem tmp(n, NULL);
+    return (0==splaywrapper->Splay(root, &tmp));
+  }
   void* FindName(const char* n);
+  bool ReplaceNull(const char* n, void *p);
   void AddNamePtr(const char* n, void *p);
   void Traverse(tablevisit visit) { Traverse(root, visit); }
   int NameCount() const { return node_count; }
@@ -66,7 +71,6 @@ void InsertFunction(PtrTable *t, function *f);
     Find list of functions with name n, from table t, or NULL if none.
 */
 List <function> *FindFunctions(PtrTable *t, const char* n);
-
 
 
 #endif

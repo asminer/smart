@@ -163,12 +163,20 @@ protected:
   int dimension;
   /// The descriptor.
   array_desc *descriptor;
+
+  /// Recursive function to clear out descriptor
+  void Clear(int level, void *desc);
 public:
   /// Used to catch compile errors with converges and such
   const_state state;
 public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
   virtual ~array();
+
+  /** Clear out the array elements but keep everything else.
+      Used for models to allow "reinstantiation".
+  */
+  void Clear();
 
   /** So that the compiler can do typechecking.
       @param	il	List of indices.  MUST NOT BE CHANGED.

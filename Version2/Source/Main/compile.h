@@ -338,6 +338,23 @@ model* BuildModel(type t, char* n, void* list);
 */
 statement* BuildModelStmt(model *m, void* block);
 
+/** Add a model variable (name) to our list.
+    If this is impossible (i.e., illegal), we do nothing.
+    The name is also added to the model's internal symbol table.
+*/
+void* AddModelVariable(void* list, char* ident);
+
+/** Add a model array (name) to our list.
+    The name is also added to the model's internal symbol table.
+    The index list is checked against the enclosing for statements.
+*/
+void* AddModelArray(void* list, char* ident, void* indexlist);
+
+/** Build a statement to declare model variables.
+    If we're within a for-loop, these will be arrays
+    (we already verified the indices in "AddModelArray").
+*/
+statement* BuildModelVarStmt(type t, void* list);
 
 // ==================================================================
 // |                                                                |
