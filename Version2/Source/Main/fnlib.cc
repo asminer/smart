@@ -152,19 +152,16 @@ void do_print(expr **p, int np, result &x, OutputStream &s)
   for (i=0; i<np; i++) {
     x.Clear();
     p[i]->Compute(0, x);
-    if (x.error) return;
     int width = -1;
     int prec = -1;
     if (p[i]->NumComponents()>1) {
       y.Clear();
       p[i]->Compute(1, y);
-      if (y.error) return;
-      if (!y.infinity && !y.null) width = y.ivalue;
+      if (!y.infinity && !y.null && !y.error) width = y.ivalue;
       if (p[i]->NumComponents()>2) {
         y.Clear();
 	p[i]->Compute(2, y);
-        if (y.error) return;
-        if (!y.infinity && !y.null) prec = y.ivalue;
+        if (!y.infinity && !y.null && !y.error) prec = y.ivalue;
       }
     }
     PrintResult(s, p[i]->Type(0), x, width, prec);
