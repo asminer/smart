@@ -987,6 +987,7 @@ bool LinkFunction(function *f, expr** params, int np)
       prom = MakeTypecast(params[pptr], fpl[fptr], filename, lexer.lineno());
     }
     params[pptr] = prom;
+    fptr++;
   }
   return true;
 }
