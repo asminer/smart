@@ -17,31 +17,90 @@
 
   Hopefully this can avoid virtual functions for the critical operations.
 
-  We will still use virtual functions and derived classes for:
-	Showing states
-
 */
 
 //@{
 
 class reachset;  // defined in States/reachset.h
 
-/** Meta-model class.
+
+
+/** Meta-event class.
     
-    For explicit models such as Markov chains, we supply full functionality
-    for completeness, but some functions probably will never be used.
-    E.g., the events correspond to the arcs in the chain; we can then produce
-    expressions for the "next state function", but since the "underlying"
-    Markov chain is already known, we should never need those expressions.
+    Basically, we now force a specific formalism to "compile" down to
+    these events, which completely describe state changes.
+    The event class is derived from symbol, because it is useful for
+    them to have names, types, and filename/linenumber where created.
+
+    The mechanisms used are:
+
+    enabling:	An expression of type "proc bool" that evaluates to
+    		true if the event is enabled in a given state.
+		This expression does not need to take event priorities
+		into account (those are "fixed" outside of here).
+
+    nextstate:	An expression either of type "proc state" or "proc stateset".
+    		The expression may assume that the event is in fact enabled.
+
+    		For proc state, we can determine the (unique) next state
+		reached if the event fires.
+
+		For proc stateset, we can determing the set of possible states
+		reached if the event fires.
+
+    distro:	The firing distribution, or NULL for "nondeterministic".
+    		The expression may assume that the event is in fact enabled.
+    		Type can be "int" or "real" for constants,
+		"ph int", "ph real", "rand int", "rand real"
+		for state independent random durations,
+		and the "proc" versions of the above if durations
+		are state dependent.
 */
 
-class state_model {
-  int events;
-  const char* name; 
-  // where we were "instantiated"
-  const char* filename; 
-  int linenumber; 
-public:  // for now at least
+class event : public symbol {
+  /// Enabling expression
+  expr* enabling;
+  /// Nextstate expression
+  expr* nextstate;
+  /// Firing distribution
+  expr* distro;
+public:
+  event(const char* fn, int line, type t, char* n);
+  virtual ~event();
+
+  void setEnabling(expr *e);
+  void setNextstate(expr *e);
+  void setDistribution(expr *e);
+
+  inline expr* isEnabled() { return enabling; }
+  inline expr* getNextstate() { return nextstate; }
+  inline type  NextstateType() { return (nextstate) ? nextstate->Type(0) : VOID; }
+  inline expr* Distribution() { return distro; }
+  inline type  DistroType() { return (distro) ? distro->Type(0) : VOID; }
+
+  // required to keep exprs happy
+  virtual void ClearCache() { DCASSERT(0); }
+};
+
+
+/** Meta-model class.
+    
+    Also derived from "symbol" for the same reasons: to have the name,
+    type, and filename/linenumber.
+
+    Interface is significantly simplified thanks to event class (above).
+
+    We will still use virtual functions and derived classes for:
+	
+	State information
+		displaying, size, initial state, etc.
+
+*/
+
+class state_model : public symbol {
+  int num_events;
+  event** event_data;
+public:  
   /// Type of the underlying process
   Process_type proctype;
   /// Reachable states.
@@ -53,14 +112,17 @@ public:  // for now at least
   markov_chain *mc;
 
 public:
-  state_model(const char* name, int e, const char* fn, int ln);
+  state_model(const char* fn, int line, type t, char* n, event** ed, int ne);
   virtual ~state_model();
 
-  inline int NumEvents() const { return events; }
-  inline const char* Name() const { return name; }
+  inline int NumEvents() const { return num_events; }
+  inline event* GetEvent(int n) const {
+    DCASSERT(event_data);
+    CHECK_RANGE(0, n, num_events);
+    return event_data[n];
+  }
 
-  inline const char* Filename() const { return filename; }
-  inline int Linenumber() const { return linenumber; }
+  void DetermineProcessType();
 
   /** Does this model use a state of constant size.
       True for Petri nets and Markov chains.
@@ -76,7 +138,6 @@ public:
   virtual int  GetConstantStateSize() const;
 
   virtual void ShowState(OutputStream &s, const state &x) const = 0;
-  virtual void ShowEventName(OutputStream &s, int e) const = 0;
 
   /** Returns the number of initial states for this model.
       For a Petri net, this should be 1.
@@ -89,86 +150,11 @@ public:
   */
   virtual void GetInitialState(int n, state &s) const = 0;
 
-  /** Build an expression that determines if a given event is enabled.
-      The expression should be of type "proc bool".
-      Priority should be ignored.  I.e., this is really if a given
-      event "has candidacy"; the generation algorithm will correct
-      for priorities.
-  */
-  virtual expr* EnabledExpr(int e) = 0;
-
-  /** Determine if a given event is enabled.
-      Let's see if this can be done slightly faster than evaluating
-      the enabling expression.
-  */
-  virtual void isEnabled(int e, const state &s, result &answer) { 
-    DCASSERT(0);
-    answer.Clear();
-    answer.bvalue = false;
-    // make pure virtual if it catches on
-  }
-
-  /** Build an expression that determines the next state when an event occurs.
-      The expression should be of type "proc state".
-      The expression may assume that the event is enabled.
-      Note: if the occurrence of the event in a given state can lead
-            to more than one new state, the expression ERROR should be
-	    returned.
-	    In this case, use a different function (below).
-  */
-  virtual expr* NextStateExpr(int e) = 0;
-
-  /** Determine the next state when an event occurs.
-      Let's see if this can be done slightly faster than evaluating
-      the NextStateExpr each time.
-  */
-  virtual void getNextState(const state &cur, int e, state &nxt, result &err)
-  {
-    DCASSERT(0);
-    err.setError();
-  }
-
-  /** Build an expression that determines the set of states that can
-      be reached when an event occurs.
-      The expression should be of type "proc stateset"
-         (using an explicit stateset representation).
-  */ 
-  virtual expr* NextStatesExpr(int e) {
-    Internal.Start(__FILE__, __LINE__);
-    Internal << "NextStatesExpr is just an idea at this point, not implemented!\n"; 
-    Internal.Stop();
-    return ERROR;  // Keep compiler happy
-  }
-
-  /** Build an expression that determines an event's firing distribution.
-      See EventDistributionType for the possible types of this expression.
-      The expression may assume that the event is enabled.
-      If the event has no assigned distribution (e.g., for model checking)
-      	then NULL should be returned.
-      Note: this effectively assumes that the occurrence of the event
-            in a given state can lead to at most one new state;
-	    if this is not the case, the expression ERROR should be
-	    returned.
-  */
-  virtual expr* EventDistribution(int e) = 0;
-
-  /** Just return the type of an event's firing distribution.
-      (assuming the event is enabled)
-      If the distribution depends on the state, then the type will be
-      "proc T", otherwise it is simply "T", where T can be any of
-         int, real, ph int, ph real, expo, rand int, rand real.
-      If the event has no assigned distribution (e.g., for model checking)
-      	then VOID should be returned.
-      Note: this effectively assumes that the occurrence of the event
-            in a given state can lead to at most one new state;
-	    if this is not the case, then NO_SUCH_TYPE should be returned.
-  */
-  virtual type EventDistributionType(int e) = 0;
-
-  void DetermineProcessType();
+  // required to keep exprs happy
+  virtual void ClearCache() { DCASSERT(0); }
 };
 
-void Delete(state_model *x);
+// void Delete(state_model *x);
 
 OutputStream& operator<< (OutputStream &s, state_model *m);
 

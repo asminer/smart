@@ -19,10 +19,6 @@
 
 //@{
   
-// Defined in another module
-class state_model;
-void Delete(state_model *);
-
 //#define DEBUG_MODEL
 
 // ******************************************************************
@@ -155,7 +151,7 @@ protected:
   int num_stmts;
   result last_build;
   /// Discrete-state "meta" model used by engines.
-  state_model *dsm;
+  shared_object *dsm;
 
   /** Symbols that can be exported (usually measures or arrays of measures).
       Stored as an array of symbols, sorted by name.
@@ -200,7 +196,7 @@ public:
     mtable = st; size_mtable = n;
   }
 
-  inline state_model* GetModel() const { return dsm; }
+  inline shared_object* GetModel() const { return dsm; }
     
   /** Create a model variable of the specified type.
       Must be provided in derived classes.
@@ -260,7 +256,7 @@ protected:
   /** Construct the underlying state_model.
       Called after "FinalizeModel" if it was successful.
   */
-  virtual state_model* BuildStateModel(const char *fn, int ln) = 0;
+  virtual shared_object* BuildStateModel(const char *fn, int ln) = 0;
 };
 
 // ******************************************************************

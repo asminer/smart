@@ -162,7 +162,7 @@ void compute_num_states(expr **pp, int np, result &x)
   DCASSERT(pp);
   model *m = dynamic_cast<model*> (pp[0]);
   DCASSERT(m);
-  state_model *dsm = m->GetModel();
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   DCASSERT(dsm);
   x.Clear();
 
@@ -254,7 +254,7 @@ void compute_test(expr **pp, int np, result &x)
   DCASSERT(pp[0]);
   model *mcmod = dynamic_cast<model*> (pp[0]);
   DCASSERT(mcmod);
-  state_model* proc = mcmod->GetModel();
+  state_model *proc = dynamic_cast<state_model*> (mcmod->GetModel());
   DCASSERT(proc);
   Output << "Got state model " << proc << "\n";
   Output << "Testing EnabledExpr and such\n";
@@ -264,13 +264,13 @@ void compute_test(expr **pp, int np, result &x)
 
   for (int e=0; e<proc->NumEvents(); e++) {
     Output << "Event " << e << " is named ";
-    proc->ShowEventName(Output, e);
-    Output << "\n";
+    event* foo = proc->GetEvent(e);
+    Output << foo << "\n";
     Output.flush();
 
     //  CHECK enabling expression
 
-    expr* enable = proc->EnabledExpr(e);
+    expr* enable = foo->isEnabled();
     Output << "enabling expression: " << enable << "\n";
     Output.flush();
 
@@ -287,7 +287,7 @@ void compute_test(expr **pp, int np, result &x)
 
     //  CHECK next state expression
 
-    expr* fire = proc->NextStateExpr(e);
+    expr* fire = foo->getNextstate();
     Output << "next state expression: " << fire << "\n";
     Output.flush();
     
@@ -304,11 +304,11 @@ void compute_test(expr **pp, int np, result &x)
 
     // Check firing distribution
     Output << "firing distribution type is: ";
-    Output << GetType(proc->EventDistributionType(e)) << "\n";
+    Output << GetType(foo->DistroType()) << "\n";
     Output.flush();
 
     Output << "firing distribution is: ";
-    Output << proc->EventDistribution(e) << "\n";
+    Output << foo->Distribution() << "\n";
     Output.flush();
   }
 

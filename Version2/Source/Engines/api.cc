@@ -23,7 +23,7 @@ option_const* SIMULATION = &simulation_oc;
 void 	BuildReachset(model *m)
 {
   if ((NULL==m) || (ERROR==m)) return;
-  state_model *dsm = m->GetModel();
+  state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
   DCASSERT(dsm);
   BuildReachset(dsm); // defined in ssgen.h
 }

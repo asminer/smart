@@ -216,7 +216,7 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
   Output.flush();
 #endif
   if (NULL==m) return false;
-  state_model *dsm = m->GetModel();
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   if (!BuildProcess(dsm)) return false;
 
   DCASSERT(dsm->proctype != Proc_Unknown);

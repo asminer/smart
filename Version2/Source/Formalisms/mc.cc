@@ -54,17 +54,9 @@ public:
   virtual int GetConstantStateSize() const { return 1; }
 
   virtual void ShowState(OutputStream &s, const state &x) const;
-  virtual void ShowEventName(OutputStream &s, int e) const;
 
   virtual int NumInitialStates() const;
   virtual void GetInitialState(int n, state &s) const;
-
-  virtual expr* EnabledExpr(int e) { return NULL; } // fix later
-  virtual expr* NextStateExpr(int e) { return NULL; } // fix later
-  virtual expr* EventDistribution(int e) { return NULL; } // fix later
-  virtual type EventDistributionType(int e) { 
-    return (discrete) ? INT : EXPO;
-  }
 
 };
 
@@ -74,7 +66,7 @@ public:
 
 markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns, 
 			markov_chain *theMC, const char* fn, int ln)
-: state_model(name, 1, fn, ln)
+: state_model(fn, ln, disc ? DTMC : CTMC, strdup(name), NULL, 0)
 {
   ALLOC("markov_dsm", sizeof(markov_dsm));
   discrete = disc;
@@ -115,14 +107,6 @@ void markov_dsm::ShowState(OutputStream &s, const state &x) const
 {
   // check state legality and range here...
   s << statenames[x.Read(0).ivalue];
-}
-
-void markov_dsm::ShowEventName(OutputStream &s, int e) const
-{
-  CHECK_RANGE(0, e, NumEvents());
-
-  // Is there something better to do here?
-  s << "Markov chain";
 }
 
 int markov_dsm::NumInitialStates() const
@@ -173,7 +157,7 @@ public:
 
   virtual void InitModel();
   virtual void FinalizeModel(result &);
-  virtual state_model* BuildStateModel(const char* fn, int ln);
+  virtual shared_object* BuildStateModel(const char* fn, int ln);
 };
 
 // ******************************************************************
@@ -380,7 +364,7 @@ void markov_model::FinalizeModel(result &x)
   x.other = Share(this);
 }
 
-state_model* markov_model::BuildStateModel(const char* fn, int ln)
+shared_object* markov_model::BuildStateModel(const char* fn, int ln)
 {
   markov_chain *mc = new markov_chain();
   mc->explicit_mc = new classified_chain <float>(wdgraph);
@@ -635,7 +619,7 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
   DCASSERT(pp);
   markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  state_model *dsm = mm->GetModel();
+  state_model *dsm = dynamic_cast<state_model*>(mm->GetModel());
   DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking transient\n";
@@ -675,7 +659,7 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
   DCASSERT(pp);
   markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  state_model *dsm = mm->GetModel();
+  state_model *dsm = dynamic_cast<state_model*>(mm->GetModel());
   DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking absorbing\n";

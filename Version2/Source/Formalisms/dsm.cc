@@ -18,8 +18,56 @@
 
 void Delete(state_model *x) 
 {
-  delete x;
+  Delete((expr*) x);
 }
+
+// ******************************************************************
+// *                                                                *
+// *                          event methods                         *
+// *                                                                *
+// ******************************************************************
+
+event::event(const char* fn, int line, type t, char* n)
+ : symbol(fn, line, t, n)
+{
+  enabling = nextstate = distro = NULL;
+}
+
+event::~event()
+{
+  Delete(enabling);
+  Delete(nextstate);
+  Delete(distro);
+}
+
+void event::setEnabling(expr *e)
+{
+  DCASSERT(e); // at least should be constant "true"
+  DCASSERT(NULL==enabling);
+  enabling = e;
+  DCASSERT(e->Type(0) == PROC_BOOL);
+}
+
+void event::setNextstate(expr *e)
+{
+  DCASSERT(NULL==nextstate);
+  nextstate = e;
+  DCASSERT(
+    NULL==e || e->Type(0) == PROC_STATE  // add proc_stateset once we're ready
+  );
+}
+
+void event::setDistribution(expr *e)
+{
+  DCASSERT(NULL==distro);
+  distro = e;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       state_model methods                      *
+// *                                                                *
+// ******************************************************************
 
 OutputStream& operator<< (OutputStream &s, state_model *e)
 {
@@ -28,22 +76,21 @@ OutputStream& operator<< (OutputStream &s, state_model *e)
   return s;
 }
 
-state_model::state_model(const char* n, int e, const char* fn, int ln)
+state_model::state_model(const char* fn, int line, type t, char* n,
+  event** ed, int ne) : symbol(fn, line, t, n)
 {
   ALLOC("state_model", sizeof(state_model));
-  name = n;
+  event_data = ed;
+  num_events = ne;
+  // set useful stuff to unknown values
   statespace = NULL;
-  events = e;
   proctype = Proc_Unknown;
   mc = NULL;
-  filename = fn;
-  linenumber = ln;
 }
 
 state_model::~state_model()
 {
   FREE("state_model", sizeof(state_model));
-  // Do NOT delete name, we are sharing it
   delete statespace;
   delete mc;
 }

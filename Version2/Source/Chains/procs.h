@@ -15,8 +15,10 @@
 enum Process_type {
   /// Placeholder; we don't know yet
   Proc_Unknown,
-  /// No timing information on events
-  Proc_None,
+  /// An unsupported process, or an error occurred
+  Proc_Error,
+  /// Finite state machine (no timing, for model checking)
+  Proc_FSM,
   /// Discrete-time Markov chain
   Proc_Dtmc,
   /// Continuous-time Markov chain

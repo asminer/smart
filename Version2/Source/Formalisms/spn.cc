@@ -146,24 +146,20 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 // ******************************************************************
 
 /** A discrete-state model (internel representation) for Stochastic Petri nets.
+    Because of the new state_model class, this is significantly smaller.
+    We need only state information:
+    	the list of places,
+	the initial marking.
+    Everything else is handled by the state_model "events".
 */
 class spn_dsm : public state_model {
-private:
-  /// Used to build expressions
-  List <expr> *exprlist;
 protected:
   model_var** places;
   int num_places;
-  transition** transitions;
   sparse_vector <int> *initial;
-  listarray <spn_arcinfo> *arcs;
 public:
-  spn_dsm(const char* name, 
-	  model_var** p, int np, 
-          transition** t, int nt, 
-	  sparse_vector <int> *init,
-          listarray<spn_arcinfo> *a,
-	  const char* fn, int ln);
+  spn_dsm(const char* fn, int line, char* name, event** ed, int ne,
+	  model_var** p, int np, sparse_vector <int> *init);
   virtual ~spn_dsm();
 
   virtual bool UsesConstantStateSize() const { return true; }
@@ -172,60 +168,31 @@ public:
   virtual int GetConstantStateSize() const { return num_places; }
 
   virtual void ShowState(OutputStream &s, const state &x) const;
-  virtual void ShowEventName(OutputStream &s, int e) const {
-    s << transitions[e]->Name();
-  }
 
   virtual int NumInitialStates() const { return 1; }
   virtual void GetInitialState(int n, state &s) const;
-  virtual expr* EnabledExpr(int e);
-  virtual expr* NextStateExpr(int e);
-
-  virtual void isEnabled(int e, const state &s, result &answer);
-  virtual void getNextState(const state &cur, int e, state &nxt, result &err);
-
-  virtual expr* EventDistribution(int e) { 
-    CHECK_RANGE(0, e, NumEvents());
-    return transitions[e]->firing;
-  }
-  virtual type EventDistributionType(int e) { 
-    CHECK_RANGE(0, e, NumEvents());
-    if (transitions[e]->firing) 
-      return transitions[e]->firing->Type(0);
-    return VOID;
-  }
 };
+
+
 
 // ******************************************************************
 // *                         spn_dsm methods                        *
 // ******************************************************************
 
-spn_dsm::spn_dsm(const char* name, 
-	model_var** p, int np,
-	transition** t, int nt,
-   	sparse_vector <int> *init,
-	listarray<spn_arcinfo> *a,
-	const char* fn, int ln) : state_model(name, nt, fn, ln)
+spn_dsm::spn_dsm(const char* fn, int line, char* name, event** ed, int ne,
+	model_var** p, int np, sparse_vector <int> *init) 
+ : state_model(fn, line, SPN, name, ed, ne)
 {
   places = p;
   num_places = np;
-  transitions = t;
   initial = init;
-  arcs = a;
-  DCASSERT(arcs->IsStatic());
-  // temp stuff
-  exprlist = new List <expr> (16);
 }
 
 spn_dsm::~spn_dsm()
 {
   // places and transitions themselves are deleted by the model, right?
   free(places);
-  free(transitions);
   delete initial;
-  delete arcs;
-  // temp stuff
-  delete exprlist;
 }
 
 void spn_dsm::ShowState(OutputStream &s, const state &x) const
@@ -326,245 +293,6 @@ void spn_dsm::GetInitialState(int n, state &s) const
   }
 }
 
-expr* spn_dsm::EnabledExpr(int e)
-{
-  CHECK_RANGE(0, e, NumEvents());
-  // Build a huge conjunction, first as a list of expressions
-  exprlist->Clear();
-
-  // Go through inputs and inhibitors in order (they're ordered)
-  int input_list = transitions[e]->inputs;
-  int input_ptr;
-  if (input_list>=0) input_ptr = arcs->list_pointer[input_list];
-  else input_ptr = -1; // signifies "done"
-
-  int inhib_list = transitions[e]->inhibitors;
-  int inhib_ptr;
-  if (inhib_list>=0) inhib_ptr = arcs->list_pointer[inhib_list];
-  else inhib_ptr = -1; // signifies "done"
-  
-  while (inhib_ptr>=0 || input_ptr>=0) {
-    int i_pl = (input_ptr<0) ? num_places+1 : arcs->value[input_ptr].place;
-    int h_pl = (inhib_ptr<0) ? num_places+1 : arcs->value[inhib_ptr].place;
-    
-    if (i_pl < h_pl) {
-      // this place is connected only as input
-      expr* cmp = arcs->value[input_ptr].InputCompare(places[i_pl]);
-      if (cmp) exprlist->Append(cmp);
-      // advance input arc ptr
-      input_ptr++;
-      if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-    } // if input only place
-    
-    if (h_pl < i_pl) {
-      // this place is connected only as an inhibitor
-      expr* cmp = arcs->value[inhib_ptr].InhibitCompare(places[h_pl]);
-      if (cmp) exprlist->Append(cmp);
-      // advance inhibitor arc ptr
-      inhib_ptr++;
-      if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
-    } // if inhibitor only place
-    
-    if (h_pl == i_pl) {
-      // this place is connected both as an inhibitor and as input
-      // we want inputcard <= tk(inplace) < inhibcard
-      expr* cmp = NULL;
-      if ((NULL==arcs->value[inhib_ptr].proc_card) &&
-          (NULL==arcs->value[input_ptr].proc_card)) {
-        // constant cardinality for both arcs, can use a fast operator
-        cmp = MakeConstBounds(arcs->value[input_ptr].const_card, 
-  	  places[i_pl], arcs->value[inhib_ptr].const_card-1, NULL, -1);
-        // advance input arc ptr
-        input_ptr++;
-        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-        // advance inhibitor arc ptr
-        inhib_ptr++;
-        if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
-      } else {
-        // no fast operator, so handle them separately
-        // input first
-        cmp = arcs->value[input_ptr].InputCompare(places[i_pl]);
-        // advance input arc ptr
-        input_ptr++;
-        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-      } // if both constant
-      if (cmp) exprlist->Append(cmp);
-    } // both input and inhibitor
-  } // while
-
-  // add any transition guards to the list here.
-  expr* guard = transitions[e]->guard;
-  if (guard) {
-    // split into products, because we want one huge conjunction
-    List <expr> foo(16);
-    int np = guard->GetProducts(0, &foo);
-    for (int p=0; p<np; p++) {
-      exprlist->Append(Copy(foo.Item(p)));
-    }
-  }
-
-  // have list of conditions, build conjunction
-  int numopnds = exprlist->Length();
-  if (numopnds==0) return MakeConstExpr(PROC_BOOL, true, NULL, -1);
-  expr** opnds = exprlist->Copy();  
-  exprlist->Clear();
-  return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
-}
-
-expr* spn_dsm::NextStateExpr(int e)
-{
-  CHECK_RANGE(0, e, NumEvents());
-  // Build a huge conjunction, first as a list of expressions
-  exprlist->Clear();
-
-  // Go through inputs and outputs in order (they're ordered)
-  int in_list = transitions[e]->inputs;
-  int in_ptr;
-  if (in_list>=0) in_ptr = arcs->list_pointer[in_list];
-  else in_ptr = -1; // signifies "done"
-
-  int out_list = transitions[e]->outputs;
-  int out_ptr;
-  if (out_list>=0) out_ptr = arcs->list_pointer[out_list];
-  else out_ptr = -1; // signifies "done"
-
-  while (out_ptr>=0 || in_ptr>=0) {
-    int i_pl = (in_ptr<0) ? num_places+1 : arcs->value[in_ptr].place;
-    int o_pl = (out_ptr<0) ? num_places+1 : arcs->value[out_ptr].place;
-    
-    if (i_pl < o_pl) {
-      // this place is connected only as input, subtract arc card
-      expr* sub = arcs->value[in_ptr].SubFromPlace(Name(), places[i_pl]);
-      if (sub) exprlist->Append(sub);
-      // advance input arc ptr
-      in_ptr++;
-      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
-    } // if input only place
-    
-    if (o_pl < i_pl) {
-      // this place is connected only as output, add arc card
-      expr* add = arcs->value[out_ptr].AddToPlace(Name(), places[o_pl]);
-      if (add) exprlist->Append(add);
-      // advance output arc ptr
-      out_ptr++;
-      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
-    } // if output only place
-    
-    if (o_pl == i_pl) {
-      // this place is connected both as an inhibitor and as input
-      // Add (outcard - incard) 
-      expr* add = NULL;
-      if ((NULL==arcs->value[out_ptr].proc_card) &&
-          (NULL==arcs->value[in_ptr].proc_card)) {
-        // constant cardinality for both arcs, produce constant delta
-        int delta = arcs->value[out_ptr].const_card - arcs->value[in_ptr].const_card;
-        add = ChangeStateVar(Name(), places[i_pl], delta, NULL, -1);
-      } else {
-        // expressions for one or more arcs, produce expression delta
-        expr* incard = arcs->value[in_ptr].MakeCard();
-        expr* outcard = arcs->value[out_ptr].MakeCard();
-        expr* delta = MakeBinaryOp(outcard, MINUS, incard, NULL, -1);
-        add = ChangeStateVar(Name(), places[i_pl], PLUS, delta, NULL, -1);
-      }
-      if (add) exprlist->Append(add);
-      // advance input arc ptr
-      in_ptr++;
-      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
-      // advance output arc ptr
-      out_ptr++;
-      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
-    } // both input and output
-  } // while
-
-  // have list of state changes, build sequence of them
-  int numopnds = exprlist->Length();
-  if (numopnds==0) return NULL;
-  expr** opnds = exprlist->Copy();  
-  exprlist->Clear();
-  return MakeAssocOp(SEMI, opnds, numopnds, NULL, -1);
-}
-
-void spn_dsm::isEnabled(int e, const state &s, result &answer)
-{
-  CHECK_RANGE(0, e, NumEvents());
-  answer.Clear();
-  answer.bvalue = true;
-  // go through input arcs
-  int ptr;
-  int list = transitions[e]->inputs;
-  if (list>=0) {
-    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
-      int i = arcs->value[ptr].place;
-      if (s.Read(i).ivalue < arcs->value[ptr].const_card) {
-	answer.bvalue = false;
-	return;
-      }   
-      if (NULL==arcs->value[ptr].proc_card) continue;
-      int foo = s.Read(i).ivalue - arcs->value[ptr].const_card;
-      result x;
-      arcs->value[ptr].proc_card->Compute(s, 0, x);
-      if (!x.isNormal()) { answer = x; return; }
-      if (foo < x.ivalue) {
-	answer.bvalue = false;
-	return;
-      }
-    } // for ptr
-  }
-  // go through inhibitors
-  list = transitions[e]->inhibitors;
-  if (list>=0) {
-    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
-      int i = arcs->value[ptr].place;
-      if (s.Read(i).ivalue >= arcs->value[ptr].const_card) {
-	answer.bvalue = false;
-	return;
-      }   
-      if (NULL==arcs->value[ptr].proc_card) continue;
-      int foo = s.Read(i).ivalue - arcs->value[ptr].const_card;
-      result x;
-      arcs->value[ptr].proc_card->Compute(s, 0, x);
-      if (!x.isNormal()) { answer = x; return; }
-      if (foo >= x.ivalue) {
-	answer.bvalue = false;
-	return;
-      }
-    } // for ptr
-  }
-  // guard
-  if (NULL==transitions[e]->guard) return;
-  transitions[e]->guard->Compute(s, 0, answer);
-}
-
-void spn_dsm::getNextState(const state &cur, int e, state &nxt, result &err)
-{
-  CHECK_RANGE(0, e, NumEvents());
-  err.Clear();
-  // go through input arcs, subtract tokens
-  int ptr;
-  int list = transitions[e]->inputs;
-  if (list>=0) {
-    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
-      int i = arcs->value[ptr].place;
-      nxt[i].ivalue -= arcs->value[ptr].const_card;
-      if (NULL==arcs->value[ptr].proc_card) continue;
-      arcs->value[ptr].proc_card->Compute(cur, 0, err);
-      if (!err.isNormal()) return;
-      nxt[i].ivalue -= err.ivalue;
-    } // for ptr
-  }
-  // go through output arcs, add tokens
-  list = transitions[e]->outputs;
-  if (list>=0) {
-    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
-      int i = arcs->value[ptr].place;
-      nxt[i].ivalue += arcs->value[ptr].const_card;
-      if (NULL==arcs->value[ptr].proc_card) continue;
-      arcs->value[ptr].proc_card->Compute(cur, 0, err);
-      if (!err.isNormal()) return;
-      nxt[i].ivalue += err.ivalue;
-    } // for ptr
-  }
-}
 
 // ******************************************************************
 // *                                                                *
@@ -575,6 +303,9 @@ void spn_dsm::getNextState(const state &cur, int e, state &nxt, result &err)
 /** Smart support for the Petri net "formalism".
 */
 class spn_model : public model {
+private:
+  // used during state model "compilation"
+  List <expr> *exprlist;
 protected:
   List <model_var> *placelist;
   List <transition> *translist;
@@ -598,7 +329,12 @@ public:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
   virtual void InitModel();
   virtual void FinalizeModel(result &);
-  virtual state_model* BuildStateModel(const char *fn, int ln);
+  virtual shared_object* BuildStateModel(const char *fn, int ln);
+
+protected:
+  // used to compile the model
+  expr* BuildEnabledExpr(transition *t);
+  expr* BuildNextstateExpr(transition *t);
 };
 
 // ******************************************************************
@@ -608,6 +344,7 @@ public:
 spn_model::spn_model(const char *fn, int line, type t, char *n, 
  formal_param **pl, int np) : model(fn, line, t, n, pl, np)
 {
+  exprlist = new List <expr> (16);
   placelist = NULL;
   translist = NULL;
   arcs = NULL;
@@ -616,6 +353,7 @@ spn_model::spn_model(const char *fn, int line, type t, char *n,
 
 spn_model::~spn_model()
 {
+  delete exprlist;
   // These *should* be null already
   delete placelist;
   delete translist;
@@ -867,28 +605,211 @@ void spn_model::FinalizeModel(result &x)
   // success:
   x.Clear();
   x.other = Share(this);
+
+  arcs->ConvertToStatic();
 }
 
-state_model* spn_model::BuildStateModel(const char* fn, int ln)
+shared_object* spn_model::BuildStateModel(const char* fn, int ln)
 {
+  // This must now "compile" our nice PN representation
+  // into "events" as required by state_models.
+
+  // 
+  // Make an event for each transition
+  // 
+  int num_events = translist->Length();
+  event** event_data = new event*[num_events];
+  for (int i=0; i<num_events; i++) {
+    transition* t = translist->Item(i);
+    event_data[i] = new event(t->Filename(), t->Linenumber(), TRANS, strdup(t->Name()));
+    event_data[i]->setEnabling(BuildEnabledExpr(t));
+    event_data[i]->setNextstate(BuildNextstateExpr(t));
+    event_data[i]->setDistribution(Copy(t->firing));
+  }
+  delete translist;
+  delete arcs;
+
+  //
+  // Places: specific to SPN state model
+  //
   int num_places = placelist->Length();
   model_var** plist = placelist->MakeArray();
   delete placelist; 
   placelist = NULL;
 
-  int num_trans = translist->Length();
-  transition** tlist = translist->MakeArray();
-  delete translist;
-  translist = NULL;
-
-  arcs->ConvertToStatic();
-
-  return new spn_dsm(Name(), 
-  			plist, num_places, 
-			tlist, num_trans, 
-			initial, arcs,
-			fn, ln);
+  //
+  // Construction, finally
+  //
+  return new spn_dsm(fn, ln, strdup(Name()), event_data, num_events,
+  			plist, num_places, initial);
 }
+
+
+expr* spn_model::BuildEnabledExpr(transition *t)
+{
+  DCASSERT(arcs);
+  DCASSERT(arcs->IsStatic());
+  DCASSERT(t);
+
+  int num_places = placelist->Length();
+  // Build a huge conjunction, first as a list of expressions
+  exprlist->Clear();
+
+  // Go through inputs and inhibitors in order (they're ordered)
+  int input_list = t->inputs;
+  int input_ptr;
+  if (input_list>=0) input_ptr = arcs->list_pointer[input_list];
+  else input_ptr = -1; // signifies "done"
+
+  int inhib_list = t->inhibitors;
+  int inhib_ptr;
+  if (inhib_list>=0) inhib_ptr = arcs->list_pointer[inhib_list];
+  else inhib_ptr = -1; // signifies "done"
+  
+  while (inhib_ptr>=0 || input_ptr>=0) {
+    int i_pl = (input_ptr<0) ? num_places+1 : arcs->value[input_ptr].place;
+    int h_pl = (inhib_ptr<0) ? num_places+1 : arcs->value[inhib_ptr].place;
+    
+    if (i_pl < h_pl) {
+      // this place is connected only as input
+      expr* cmp = arcs->value[input_ptr].InputCompare(placelist->Item(i_pl));
+      if (cmp) exprlist->Append(cmp);
+      // advance input arc ptr
+      input_ptr++;
+      if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+    } // if input only place
+    
+    if (h_pl < i_pl) {
+      // this place is connected only as an inhibitor
+      expr* cmp = arcs->value[inhib_ptr].InhibitCompare(placelist->Item(h_pl));
+      if (cmp) exprlist->Append(cmp);
+      // advance inhibitor arc ptr
+      inhib_ptr++;
+      if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
+    } // if inhibitor only place
+    
+    if (h_pl == i_pl) {
+      // this place is connected both as an inhibitor and as input
+      // we want inputcard <= tk(inplace) < inhibcard
+      expr* cmp = NULL;
+      if ((NULL==arcs->value[inhib_ptr].proc_card) &&
+          (NULL==arcs->value[input_ptr].proc_card)) {
+        // constant cardinality for both arcs, can use a fast operator
+        cmp = MakeConstBounds(arcs->value[input_ptr].const_card, 
+  	  placelist->Item(i_pl), arcs->value[inhib_ptr].const_card-1, NULL, -1);
+        // advance input arc ptr
+        input_ptr++;
+        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+        // advance inhibitor arc ptr
+        inhib_ptr++;
+        if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
+      } else {
+        // no fast operator, so handle them separately
+        // input first
+        cmp = arcs->value[input_ptr].InputCompare(placelist->Item(i_pl));
+        // advance input arc ptr
+        input_ptr++;
+        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
+      } // if both constant
+      if (cmp) exprlist->Append(cmp);
+    } // both input and inhibitor
+  } // while
+
+  // add any transition guards to the list here.
+  if (t->guard) {
+    // split into products, because we want one huge conjunction
+    List <expr> foo(16);
+    int np = t->guard->GetProducts(0, &foo);
+    for (int p=0; p<np; p++) {
+      exprlist->Append(Copy(foo.Item(p)));
+    }
+  }
+
+  // have list of conditions, build conjunction
+  int numopnds = exprlist->Length();
+  if (numopnds==0) return MakeConstExpr(PROC_BOOL, true, NULL, -1);
+  expr** opnds = exprlist->Copy();  
+  exprlist->Clear();
+  return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
+}
+
+expr* spn_model::BuildNextstateExpr(transition *t)
+{
+  DCASSERT(arcs);
+  DCASSERT(arcs->IsStatic());
+  DCASSERT(t);
+
+  int num_places = placelist->Length();
+  // Build a huge conjunction, first as a list of expressions
+  exprlist->Clear();
+
+  // Go through inputs and outputs in order (they're ordered)
+  int in_list = t->inputs;
+  int in_ptr;
+  if (in_list>=0) in_ptr = arcs->list_pointer[in_list];
+  else in_ptr = -1; // signifies "done"
+
+  int out_list = t->outputs;
+  int out_ptr;
+  if (out_list>=0) out_ptr = arcs->list_pointer[out_list];
+  else out_ptr = -1; // signifies "done"
+
+  while (out_ptr>=0 || in_ptr>=0) {
+    int i_pl = (in_ptr<0) ? num_places+1 : arcs->value[in_ptr].place;
+    int o_pl = (out_ptr<0) ? num_places+1 : arcs->value[out_ptr].place;
+    
+    if (i_pl < o_pl) {
+      // this place is connected only as input, subtract arc card
+      expr* sub = arcs->value[in_ptr].SubFromPlace(Name(), placelist->Item(i_pl));
+      if (sub) exprlist->Append(sub);
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
+    } // if input only place
+    
+    if (o_pl < i_pl) {
+      // this place is connected only as output, add arc card
+      expr* add = arcs->value[out_ptr].AddToPlace(Name(), placelist->Item(o_pl));
+      if (add) exprlist->Append(add);
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
+    } // if output only place
+    
+    if (o_pl == i_pl) {
+      // this place is connected both as an inhibitor and as input
+      // Add (outcard - incard) 
+      expr* add = NULL;
+      if ((NULL==arcs->value[out_ptr].proc_card) &&
+          (NULL==arcs->value[in_ptr].proc_card)) {
+        // constant cardinality for both arcs, produce constant delta
+        int delta = arcs->value[out_ptr].const_card - arcs->value[in_ptr].const_card;
+        add = ChangeStateVar(Name(), placelist->Item(i_pl), delta, NULL, -1);
+      } else {
+        // expressions for one or more arcs, produce expression delta
+        expr* incard = arcs->value[in_ptr].MakeCard();
+        expr* outcard = arcs->value[out_ptr].MakeCard();
+        expr* delta = MakeBinaryOp(outcard, MINUS, incard, NULL, -1);
+        add = ChangeStateVar(Name(), placelist->Item(i_pl), PLUS, delta, NULL, -1);
+      }
+      if (add) exprlist->Append(add);
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
+    } // both input and output
+  } // while
+
+  // have list of state changes, build sequence of them
+  int numopnds = exprlist->Length();
+  if (numopnds==0) return NULL;
+  expr** opnds = exprlist->Copy();  
+  exprlist->Clear();
+  return MakeAssocOp(SEMI, opnds, numopnds, NULL, -1);
+}
+
 
 // ******************************************************************
 // *                                                                *
