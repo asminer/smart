@@ -7,9 +7,10 @@
 
 SOURCES = \
 	results.cc	exprs.cc	infinity.cc	\
-	sets.cc 	stmts.cc \
+	sets.cc 	stmts.cc 	\
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
+	converge.cc	\
 	strings.cc	\
 	api.cc
 

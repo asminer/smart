@@ -14,6 +14,7 @@
 #include "casting.h"
 #include "infinity.h"
 #include "variables.h"
+#include "converge.h"
 
 void InitLanguage();
 

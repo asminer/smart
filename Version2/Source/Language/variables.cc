@@ -24,6 +24,7 @@
 constfunc::constfunc(const char *fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
+  state = CS_Undefined;
   return_expr = NULL;
   SetSubstitution(false);  
 }

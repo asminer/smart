@@ -73,8 +73,7 @@ void exprstmt::show(OutputStream &s) const
 
 void exprstmt::showfancy(int depth, OutputStream &s) const
 {
-  int i;
-  for (i=depth; i; i--) s << " ";
+  s.Pad(depth);
   s << x << ";\n";
 }
 

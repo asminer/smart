@@ -22,6 +22,16 @@
 #include "exprs.h"
 
 //@{
+
+/// Possible states of a constant
+enum const_state {
+  /// Not yet defined
+  CS_Undefined,
+  /// Given an initial guess
+  CS_HasGuess,
+  /// Has a return expression
+  CS_Defined
+};
   
 // ******************************************************************
 // *                                                                *
@@ -35,9 +45,11 @@
     So, some functionality here is provided for derived classes.
  */
 class constfunc : public symbol {
-  // Function_State state;
-  /// The return expression for the function.
+public:
+  /// State; used by compiler.
+  const_state state;
 protected:
+  /// The return expression for the function.
   expr* return_expr;
 public:
   constfunc(const char *fn, int line, type t, char *n);
@@ -45,7 +57,10 @@ public:
   virtual void show(OutputStream &s) const;
   virtual void ShowHeader(OutputStream &s) const;
 
-  inline void SetReturn(expr *e) { return_expr = e; }
+  inline void SetReturn(expr *e) { 
+    state = CS_Defined;
+    return_expr = e; 
+  }
 };
 
 // ******************************************************************

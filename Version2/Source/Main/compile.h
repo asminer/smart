@@ -185,6 +185,10 @@ void DoneWithFunctionHeader(user_func *f);
 */
 statement* BuildVarStmt(type t, char* id, expr* ret);
 
+/** Builds a "guess" statement with typechecking.
+*/
+statement* BuildGuessStmt(type t, char* id, expr* ret);
+
 /** Adds a statement to our list (which may be null).
     @param list	List of statements (or NULL)
     @param s	statement to add (ignored if NULL)
@@ -192,6 +196,15 @@ statement* BuildVarStmt(type t, char* id, expr* ret);
     		Else returns list with s appended.
 */
 void* AppendStatement(void* list, statement* s);
+
+/** Everything from now on is within a converge statement.
+*/
+void StartConverge();
+
+/** Complete the converge statement (started with StartConverge).
+    @param list		List of statements (or NULL)
+*/
+statement* FinishConverge(void* list);
 
 // ==================================================================
 // |                                                                |

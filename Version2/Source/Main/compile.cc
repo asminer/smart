@@ -55,6 +55,9 @@ void DumpPassed(OutputStream &s, List <named_param> *pass)
 /// Current stack of for-loop iterators
 List <array_index> *Iterators;
 
+/// Depth of converges
+int converge_depth;
+
 /// Symbol table of arrays
 PtrTable *Arrays;
 
@@ -78,9 +81,14 @@ bool WithinFor()
   return (Iterators->Length());
 }
 
+bool WithinConverge()
+{
+  return (converge_depth>0);
+}
+
 bool WithinBlock()
 {
-  return WithinFor();
+  return WithinFor() || WithinConverge();
 }
 
 // ==================================================================
@@ -839,17 +847,30 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
 {
   if (ERROR==ret) return NULL;
 
-  // eventually... check if we're in a converge
+  if (WithinConverge()) {
+    // Make sure we're REAL
+    if (t != REAL) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Converge variable " << id << " must have type real";
+      Error.Stop();
+      Delete(ret);
+      return NULL;
+    }
+  }
 
-  // first... see if the variable exists already
+  // see if the variable exists already
   constfunc* find = (constfunc*) Constants->FindName(id);
   if (find) {
-    // actually, we'll need (eventually) to check state, 
-    // because this might be a guess.
-    Error.Start(filename, lexer.lineno());
-    Error << "Re-definition of constant " << find;
-    Error.Stop();
-    return NULL;
+    bool error = true;
+    if (WithinConverge()) {
+      error = (find->state == CS_Defined);
+    } 
+    if (error) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Re-definition of constant " << find;
+      Error.Stop();
+      return NULL;
+    }
   }
   // name ok, check type consistency
   DCASSERT(NumComponents(ret)==1);
@@ -862,10 +883,77 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
   }
   expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
 
-  constfunc *v = MakeConstant(t, id, filename, lexer.lineno());
-  v->SetReturn(ans);
+  statement* s = NULL;
+  if (WithinConverge()) {
+    cvgfunc* v; 
+    if (find) {
+      v = dynamic_cast<cvgfunc*> (find);
+      if (!v) {
+	Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
+	Internal << "Bad already guessed converge var " << find;
+	Internal.Stop();
+      }
+    } else {
+      v = MakeConvergeVar(t, id, filename, lexer.lineno());
+      Constants->AddNamePtr(id, v); 
+    }
+    s = MakeAssignStmt(v, ans, filename, lexer.lineno());
+  } else {
+    constfunc* v;
+    v = MakeConstant(t, id, filename, lexer.lineno());
+    v->SetReturn(ans);
+    Constants->AddNamePtr(id, v); 
+  }
+
+  return s;
+}
+
+statement* BuildGuessStmt(type t, char* id, expr* ret)
+{
+  if (ERROR==ret) return NULL;
+
+  if (!WithinConverge()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Guess for " << id << " outside converge";
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+
+  // Make sure we're REAL
+  if (t != REAL) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Converge variable " << id << " must have type real";
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+
+  // see if the variable exists already
+  constfunc* find = (constfunc*) Constants->FindName(id);
+  if (find) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Re-definition of constant " << find;
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+  // name ok, check type consistency
+  DCASSERT(NumComponents(ret)==1);
+  if (!Promotable(Type(ret, 0), t)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Return type for identifier " << id;
+    Error << " should be " << GetType(t);
+    Error.Stop();
+    Delete(ret);
+    return NULL;
+  }
+  expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
+
+  cvgfunc *v = MakeConvergeVar(t, id, filename, lexer.lineno());
   Constants->AddNamePtr(id, v); 
-  return NULL;
+  statement* s = MakeGuessStmt(v, ans, filename, lexer.lineno());
+  return s;
 }
 
 void* AppendStatement(void* list, statement* s)
@@ -885,6 +973,17 @@ void* AppendStatement(void* list, statement* s)
     foo = new List <statement> (256);
   foo->Append(s);
   return foo;
+}
+
+void StartConverge()
+{
+  converge_depth++;
+}
+
+statement* FinishConverge(void* list)
+{
+  converge_depth--;
+  return NULL;  // for now
 }
 
 // ==================================================================
@@ -1178,6 +1277,15 @@ user_func* BuildFunction(type t, char*n, void* list)
   if (NULL==list) return NULL;  // No parameters? build a const func...
 
   FormalParams = (List <formal_param> *)list;
+
+  if (WithinBlock()) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Function " << n << " defined within a for/converge";
+    Error.Stop();
+    delete FormalParams;
+    FormalParams = NULL;
+    return NULL;
+  }
 
   // Make sure this function isn't a duplicate of an existing function
   List <function> *flist = FindFunctions(Builtins, n);
@@ -1851,6 +1959,7 @@ void InitCompiler()
   Constants = new PtrTable();
   FormalParams = NULL;
   matches = new List <function> (32);
+  converge_depth = 0;
 
   InitBuiltinFunctions(Builtins); 
   InitBuiltinConstants(Constants);

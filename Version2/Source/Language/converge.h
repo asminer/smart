@@ -13,9 +13,21 @@
 #ifndef CONVERGE_H
 #define CONVERGE_H
 
-// front-ends here
+#include "variables.h"
+#include "stmts.h"
 
-class cvgfunc;
+
+/** Real variables within a converge.
+    Members are public because they're used by converge statements.
+ */
+class cvgfunc : public constfunc {
+public:
+  result current;
+public:
+  cvgfunc(const char *fn, int line, type t, char *n);
+  virtual void Compute(int i, result &x);
+  virtual void ShowHeader(OutputStream &s) const;
+};
 
 // ******************************************************************
 // *                                                                *
@@ -26,5 +38,8 @@ class cvgfunc;
 // ******************************************************************
 
 cvgfunc* MakeConvergeVar(type t, char* id, const char* file, int line);
+
+statement* MakeGuessStmt(cvgfunc* v, expr* guess, const char* file, int line);
+statement* MakeAssignStmt(cvgfunc* v, expr* rhs, const char* file, int line);
 
 #endif
