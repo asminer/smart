@@ -51,13 +51,11 @@ int main()
   Output << "Done adding edges\n";
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
-  /*
   Output << "Transposing\n";
   Output.flush();
   foo.Transpose();
   Output << "Dynamic graph:\n";
   for (i=0; i<N; i++) foo.ShowNodeList(Output, i);
-  */
   Output << "The end\n";
   return 0;
 }

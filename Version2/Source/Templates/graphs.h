@@ -65,7 +65,8 @@ struct digraph {
   */
   int* row_pointer;   
 
-  /// Size of row_pointer array.
+  /** Size of row_pointer array.
+  */
   int nodes_alloc;
 
   /** Array of size num_edges (or larger).
@@ -77,7 +78,8 @@ struct digraph {
   */
   int* next;
 
-  /// Size of the next and column_index arrays (and possibly others)
+  /** Size of the next and column_index arrays (and possibly others).
+  */
   int edges_alloc;
 
 public:
@@ -108,23 +110,53 @@ public:
 
   /** Add an edge to unordered row list.
   */
-  void AddEdge(int from, int to);
+  inline void AddEdge(int from, int to) {
+    // Sanity checks
+    DCASSERT(IsDynamic());
+    CHECK_RANGE(0, from, num_nodes);
+    CHECK_RANGE(0, to, num_nodes);
+    // enlarge if necessary
+    if (num_edges >= edges_alloc) 
+	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
+    DCASSERT(edges_alloc > num_edges);
+    // fix a new edge
+    column_index[num_edges] = to;
+    // add it to the list
+    AddToCircularList(from, num_edges);
+    num_edges++;
+  }
 
   /** If this is called every time, row lists will be ordered.
       Duplicate edges are not added twice.
       Returns the "address" (index) of the added / duplicate edge.
   */
-  int AddEdgeInOrder(int from, int to);
+  int AddEdgeInOrder(int from, int to) {
+    // Sanity checks
+    DCASSERT(IsDynamic());
+    CHECK_RANGE(0, from, num_nodes);
+    CHECK_RANGE(0, to, num_nodes);
+    // enlarge if necessary
+    if (num_edges >= edges_alloc) 
+	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
+    DCASSERT(edges_alloc > num_edges);
+    // fix a new edge
+    column_index[num_edges] = to;
+    // add it to the list
+    int spot = AddToOrderedCircularList(from, num_edges);
+    if (spot==num_edges) num_edges++;
+    return spot;
+  }
 
-  void ConvertToStatic();
-  void ConvertToDynamic();
+  /// Add to circular list i, not in order.
+  void AddToCircularList(int i, int ptr); 
 
-  void Transpose();
+  /** Add to circular list i, in order.
+      If a duplicate is found, a pointer to it is returned and the
+ 	new item is not inserted.
+      Otherwise, the item is inserted and a pointer to it is returned.
+  */
+  int AddToOrderedCircularList(int i, int ptr);
 
-  /// Dump to a stream (human readable)
-  void ShowNodeList(OutputStream &s, int node);
-
-protected:
   /** Converts the circular linked lists to null-terminated ones.
       Used right before conversion to static.
   */
@@ -137,6 +169,36 @@ protected:
       next[tail] = -1;
     }
   }
+
+  /** Swaps edges so that linked lists are in contiguous order in memory.
+      Lists must be null-terminated, not circular.
+      Used to convert from dynamic to static.
+      @param	first_slot	Position to use for first node, usually 0.
+				But if the arrays are shared for example,
+				this might be something other than 0.
+  */
+  void Defragment(int first_slot);
+
+  inline void ConvertToStatic() {
+    if (IsStatic()) return;
+    CircularToTerminated();
+    Defragment(0);
+    // resize arrays to be "tight"
+    ResizeNodes(num_nodes);
+    ResizeEdges(num_edges);
+    // Trash next array
+    free(next);
+    next = NULL;
+    isDynamic = false;
+  }
+
+  void ConvertToDynamic();
+
+  void Transpose();
+
+  /// Dump to a stream (human readable)
+  void ShowNodeList(OutputStream &s, int node);
+
 };
 
 
@@ -180,13 +242,22 @@ public:
   /** Add an edge to unordered row list.
   */
   inline void AddEdge(int from, int to, const LABEL &v) {
+    // Sanity checks
     DCASSERT(IsDynamic());
+    CHECK_RANGE(0, from, num_nodes);
+    CHECK_RANGE(0, to, num_nodes);
+    // enlarge if necessary
     if (num_edges >= edges_alloc) 
 	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
     DCASSERT(edges_alloc > num_edges);
+    // fix a new edge
+    column_index[num_edges] = to;
     value[num_edges] = v;
-    digraph::AddEdge(from, to);
+    // add it to the list
+    AddToCircularList(from, num_edges);
+    num_edges++;
   }
+
 
   /** If this is called every time, row lists will be ordered.
       If there is already an edge between the specified nodes,
@@ -194,17 +265,22 @@ public:
       The function returns the "address" of the edge.
   */
   int AddEdgeInOrder(int from, int to, const LABEL &v) {
+    // Sanity checks
     DCASSERT(IsDynamic());
+    CHECK_RANGE(0, from, num_nodes);
+    CHECK_RANGE(0, to, num_nodes);
+    // enlarge if necessary
     if (num_edges >= edges_alloc) 
 	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
     DCASSERT(edges_alloc > num_edges);
+    // fix a new edge
+    column_index[num_edges] = to;
     value[num_edges] = v;
-    int p = digraph::AddEdgeInOrder(from, to);
-    if (p<num_edges-1) {
-      // existing edge, sum values
-     value[p] += v;
-    }
-    return p;
+    // add it to the list
+    int spot = AddToOrderedCircularList(from, num_edges);
+    if (spot==num_edges) num_edges++;
+    else value[spot] += v;
+    return spot;
   }
 
   void ConvertToStatic();

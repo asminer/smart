@@ -24,8 +24,13 @@
 */
 template <class LABEL>
 struct classified_chain {
-  /// Total number of states
-  int states;
+  /** The overall graph that we carve up.
+      All fields are shared amongst the classified chain except
+ 	row_pointer,
+      which will be changed around depending on which subgraph we 
+      need to access.
+  */
+  labeled_digraph <LABEL> *graph;
 
   /// Number of recurrent classes (not counting absorbing states)
   int recurrent; 
@@ -46,24 +51,6 @@ struct classified_chain {
 
   /// Use to renumber states to their classified index
   unsigned long* renumber;
-
-  /// If true, stored by columns, otherwise by rows.
-  bool isTransposed;
-
-  /// Total number of edges
-  int total_edges;
-
-  /** Column indices (unless we are transposed).
-      Array of size total_edges.
-      All matrices share this array.
-  */ 
-  int* column_index;
-
-  /** Values assigned to edges.
-      Array of size total_edges.
-      All matrices share this array.
-  */
-  LABEL* value;
 
   /** Pointers to Recurrent-recurrent matrices.
       Outermost array is of dimension #recurrent.
@@ -95,7 +82,7 @@ public:
 
   inline unsigned long Renumber(int old_index) const {  
     DCASSERT(renumber);
-    CHECK_RANGE(0, old_index, states);
+    CHECK_RANGE(0, old_index, graph->NumNodes());
     return renumber[old_index];
   }
 
@@ -121,7 +108,7 @@ public:
   }
   inline int numAbsorbing() const { 
     DCASSERT(blockstart);
-    return states - blockstart[recurrent+1]; 
+    return graph->NumNodes() - blockstart[recurrent+1]; 
   }
   /// Total number of recurrent classes, including absorbing states
   inline int numClasses() const { 
@@ -153,8 +140,8 @@ public:
   */ 
   void Show(OutputStream &s) const;
 protected:
-  void ArrangeMatricesByRows(labeled_digraph <LABEL> *in);
-  void ArrangeMatricesByCols(labeled_digraph <LABEL> *in);
+  void ArrangeMatricesByRows();
+  void ArrangeMatricesByCols();
 };
 
 
@@ -164,22 +151,20 @@ template <class LABEL>
 classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 {
   DCASSERT(in);
+  graph = in;
 #ifdef DEBUG_CLASSIFY
   Output << "Starting to classify chain\n";
   Output.flush();
 #endif
-  states = in->NumNodes();
-  isTransposed = in->isTransposed;
- 
   // build state to tscc mapping
-  renumber = new unsigned long[states];
+  renumber = new unsigned long[graph->NumNodes()];
   int i;
-  for (i=0; i<states; i++) renumber[i] = 0; 
-  int count = 1+ComputeTSCCs(in, renumber); 
+  for (i=0; i<graph->NumNodes(); i++) renumber[i] = 0; 
+  int count = 1+ComputeTSCCs(graph, renumber); 
 
 #ifdef DEBUG_CLASSIFY
   Output << "Got " << count << " classes:\nclass array: [";
-  Output.PutArray(renumber, states);
+  Output.PutArray(renumber, graph->NumNodes());
   Output << "]\n";
   Output.flush();
 #endif
@@ -187,7 +172,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   // Count number of states per class
   blockstart = (int*) malloc(sizeof(int)*(1+count));
   for (i=0; i<count; i++) blockstart[i] = 0;
-  for (i=0; i<states; i++) blockstart[renumber[i]]++;
+  for (i=0; i<graph->NumNodes(); i++) blockstart[renumber[i]]++;
 #ifdef DEBUG_CLASSIFY
   Output << "Number of states per class: [";
   Output.PutArray(blockstart, count);
@@ -222,17 +207,17 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output.flush();
 #endif
   // renumber the classes
-  for (i=0; i<states; i++) renumber[i] = blockstart[renumber[i]];
+  for (i=0; i<graph->NumNodes(); i++) renumber[i] = blockstart[renumber[i]];
 #ifdef DEBUG_CLASSIFY
   Output << "Renumbered class array: [";
-  Output.PutArray(renumber, in->NumNodes());
+  Output.PutArray(renumber, graph->NumNodes());
   Output << "]\n";
   Output.flush();
 #endif
 
   // Re-count number of states per class
   for (i=0; i<count; i++) blockstart[i] = 0;
-  for (i=0; i<states; i++) blockstart[renumber[i]]++;
+  for (i=0; i<graph->NumNodes(); i++) blockstart[renumber[i]]++;
   
   // Sanity check
   for (i=1; i<=recurrent; i++) 
@@ -254,7 +239,7 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 #endif
 
   // Change the state class mapping into the state renumbering array, in place!
-  for (i=0; i<states; i++) renumber[i] = blockstart[renumber[i]]++; 
+  for (i=0; i<graph->NumNodes(); i++) renumber[i] = blockstart[renumber[i]]++; 
 
   // shift the class sizes back
   for (i=count; i; i--) blockstart[i] = blockstart[i-1];
@@ -274,40 +259,32 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output << "Blockstart array: [";
   Output.PutArray(blockstart, 2+recurrent);
   Output << "]\nRenumber array: [";
-  Output.PutArray(renumber, states);
+  Output.PutArray(renumber, graph->NumNodes());
   Output << "]\n";
   Output.flush();
 #endif
 
   // Allocate RRarcs and Tarcs
 
-  total_edges = in->NumEdges();
   RRarcs = new int*[recurrent];
   Tarcs = (numTransient()) ? (new int*[2+recurrent]) : NULL;
 
   if (isIrreducible()) {
-    in->ConvertToStatic();
-    RRarcs[0] = in->row_pointer;
-    in->row_pointer = NULL;
-    column_index = in->column_index;
-    in->column_index = NULL;
-    value = in->value;
-    in->value = NULL;
-    delete in;
+    graph->ConvertToStatic();
+    RRarcs[0] = graph->row_pointer;
     DoneRenumbering();  // no renumbering of states necessary
   } else {
-    if (isTransposed)
-      ArrangeMatricesByCols(in);
+    if (graph->isTransposed)
+      ArrangeMatricesByCols();
     else
-      ArrangeMatricesByRows(in);
+      ArrangeMatricesByRows();
   }
 }
 
 template <class LABEL>
-void classified_chain <LABEL> :: ArrangeMatricesByCols(labeled_digraph <LABEL> *in)
+void classified_chain <LABEL> :: ArrangeMatricesByCols()
 {
-  DCASSERT(isTransposed);
-  DCASSERT(in->isTransposed);
+  DCASSERT(graph->isTransposed);
 #ifdef DEBUG_CLASSIFY
   Output << "Arranging matrices by columns\n";
   Output.flush();
@@ -315,10 +292,9 @@ void classified_chain <LABEL> :: ArrangeMatricesByCols(labeled_digraph <LABEL> *
 }
 
 template <class LABEL>
-void classified_chain <LABEL> :: ArrangeMatricesByRows(labeled_digraph <LABEL> *in)
+void classified_chain <LABEL> :: ArrangeMatricesByRows()
 {
-  DCASSERT(!isTransposed);
-  DCASSERT(!in->isTransposed);
+  DCASSERT(!graph->isTransposed);
 #ifdef DEBUG_CLASSIFY
   Output << "Arranging matrices by columns\n";
   Output.flush();
@@ -328,21 +304,21 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows(labeled_digraph <LABEL> *
 template <class LABEL>
 void classified_chain <LABEL> :: Show(OutputStream &s) const
 {
-  const char* rowname = (isTransposed) ? "column" : "row";
-  const char* colname = (isTransposed) ? "row" : "column";
+  const char* rowname = (graph->isTransposed) ? "column" : "row";
+  const char* colname = (graph->isTransposed) ? "row" : "column";
   s.Pad('-', 60);
-  s << "\nClassified chain with " << states << " states total\n";
+  s << "\nClassified chain with " << graph->NumNodes() << " states total\n";
   s << "\t" << numTransient() << " transient states\n";
   s << "\t" << numClasses() << " recurrent classes, of which\n";
   s << "\t" << numAbsorbing() << " are absorbing states\n";
   s << "Matrices, stored by " << rowname << "s\n";
   s.flush();
   s << colname << " indices: [";
-  s.PutArray(column_index, total_edges);
+  s.PutArray(graph->column_index, graph->NumEdges());
   s << "]\n";
-  s.Pad(' ', isTransposed ? 5 : 8);
+  s.Pad(' ', graph->isTransposed ? 5 : 8);
   s << "values: [";
-  s.PutArray(value, total_edges);
+  s.PutArray(graph->value, graph->NumEdges());
   s << "]\n";
   s.flush();
 

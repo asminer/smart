@@ -63,63 +63,48 @@ void digraph::ResizeEdges(int new_edges)
   }
 }
 
-void digraph::AddEdge(int from, int to)
+void digraph::AddToCircularList(int i, int ptr)
 {
-  // Sanity checks
-  DCASSERT(IsDynamic());
-  CHECK_RANGE(0, from, num_nodes);
-  CHECK_RANGE(0, to, num_nodes);
-
-  if (num_edges >= edges_alloc) 
-	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
-  DCASSERT(edges_alloc > num_edges);
-  column_index[num_edges] = to;
-  if (row_pointer[from] < 0) {
+  if (row_pointer[i] < 0) {
     // row was empty before
-    next[num_edges] = num_edges;  // circle of this node itself
-    row_pointer[from] = num_edges;
+    next[ptr] = ptr;  // circle of this node itself
+    row_pointer[i] = ptr;
   } else {
     // nonempty row, add edge to tail of circular list
-    int tail = row_pointer[from];
-    next[num_edges] = next[tail];
-    next[tail] = num_edges;
-    row_pointer[from] = num_edges;
+    int tail = row_pointer[i];
+    next[ptr] = next[tail];
+    next[tail] = ptr;
+    row_pointer[i] = ptr;
   }
-  num_edges++;
 }
 
-int digraph::AddEdgeInOrder(int from, int to)
+int digraph::AddToOrderedCircularList(int i, int ptr)
 {
-  DCASSERT(IsDynamic());
-  if (num_edges >= edges_alloc) 
-	ResizeEdges(MIN(2*edges_alloc, edges_alloc+MAX_EDGE_ADD));
-  DCASSERT(edges_alloc > num_edges);
-  column_index[num_edges] = to;
-  if (row_pointer[from] < 0) {
+  if (row_pointer[i] < 0) {
     // row was empty before
-    next[num_edges] = num_edges;  // circle of this node itself
-    row_pointer[from] = num_edges;
-    return num_edges++;
+    next[ptr] = ptr;  // circle of this node itself
+    row_pointer[i] = ptr;
+    return ptr;
   } 
   // Row is not empty.
-  int prev = row_pointer[from];
-  if (to > column_index[prev]) {
+  int prev = row_pointer[i];
+  if (column_index[ptr] > column_index[prev]) {
     // Fast and easy special case: new edge at end of list
-    next[num_edges] = next[prev];
-    next[prev] = num_edges;
-    row_pointer[from] = num_edges;
-    return num_edges++;
+    next[ptr] = next[prev];
+    next[prev] = ptr;
+    row_pointer[i] = ptr;
+    return ptr;
   }
   // Find spot for this edge
   while (1) {
     int curr = next[prev];
-    if (to < column_index[curr]) {
+    if (column_index[ptr] < column_index[curr]) {
       // edge goes here!
-      next[num_edges] = curr;
-      next[prev] = num_edges;
-      return num_edges++;
+      next[ptr] = curr;
+      next[prev] = ptr;
+      return ptr;
     }
-    if (to == column_index[curr]) {
+    if (column_index[ptr] == column_index[curr]) {
       // duplicate edge, don't add it
       return curr;
     }
@@ -128,15 +113,11 @@ int digraph::AddEdgeInOrder(int from, int to)
   // never get here.
 }
 
-void digraph::ConvertToStatic()
+void digraph::Defragment(int first_slot)
 {
-  if (IsStatic()) return;
-
-  // First: convert circular lists to lists with null terminator
-  CircularToTerminated();
-
+  DCASSERT(IsDynamic());
 #ifdef DEBUG_GRAPH
-  Output << "Dynamic to static, dynamic arrays are:\n";
+  Output << "Linked lists before degragment:\n";
   Output << "row_pointer: [";
   Output.PutArray(row_pointer, num_nodes);
   Output << "]\n";
@@ -152,7 +133,7 @@ void digraph::ConvertToStatic()
 #endif
   
   // make lists contiguous by swapping, forwarding pointers
-  int i = 0; // everything before i is contiguous, after i is linked
+  int i = first_slot; // everything before i is contiguous, after i is linked
   int s;
   for (s=0; s<num_nodes; s++) {
     int list = row_pointer[s];
@@ -173,24 +154,18 @@ void digraph::ConvertToStatic()
   } // for s
   row_pointer[num_nodes] = i;
   
-  // resize arrays to be "tight"
-  ResizeNodes(num_nodes);
-  ResizeEdges(num_edges);
-
-  // Trash next array
-  free(next);
-  next = NULL;
-
-  isDynamic = false;
-
 #ifdef DEBUG_GRAPH
-  Output << "Static arrays are:\n";
+  Output << "Linked lists after defragment:\n";
   Output << "row_pointer: [";
-  Output.PutArray(row_pointer, num_nodes+1);
+  Output.PutArray(row_pointer, num_nodes);
   Output << "]\n";
   Output.flush();
   Output << "column_index: [";
   Output.PutArray(column_index, num_edges);
+  Output << "]\n";
+  Output.flush();
+  Output << "  fwd / next: [";
+  Output.PutArray(next, num_edges);
   Output << "]\n";
   Output.flush();
 #endif
@@ -246,40 +221,30 @@ void digraph::Transpose()
   DCASSERT(IsDynamic());
 
   // we need another row_pointer array; everything else is "in place"
-  int* col_pointer = (int *) malloc((num_nodes+1)*sizeof(int));
-  if (NULL==col_pointer) OutOfMemoryError("Graph Transpose");
-  int s;
-  for (s=0; s<=num_nodes; s++) col_pointer[s] = -1;
+  int* old_row_pointer = (int *) malloc((num_nodes+1)*sizeof(int));
+  if (NULL==old_row_pointer) OutOfMemoryError("Graph Transpose");
 
-  // Convert row lists into column lists
+  CircularToTerminated();
+
+  int s;
+  for (s=0; s<=num_nodes; s++) old_row_pointer[s] = -1;
+  SWAP(row_pointer, old_row_pointer);
+  nodes_alloc = num_nodes;
+
+  // Convert old row lists into column lists
   for (s=0; s<num_nodes; s++) {
-    if (row_pointer[s] < 0) continue; // empty list
-    int front = next[row_pointer[s]];
-    int ptr = front;
-    do {
-      int nextptr = next[ptr];  // save next ptr, it will be trashed
+    while (old_row_pointer[s]>=0) {
+      int ptr = old_row_pointer[s];
+      old_row_pointer[s] = next[ptr];
       // change column index to row
       int col = column_index[ptr];
       column_index[ptr] = s;
-      // add entry to appropriate column
-      if (col_pointer[col] < 0) {
-	// empty column
-	next[ptr] = ptr;
-      } else {
-	// add to end of column
-	next[ptr] = next[col_pointer[col]];
-	next[col_pointer[col]] = ptr;
-      }
-      col_pointer[col] = ptr;
-      // advance
-      ptr = nextptr;  
-    } while (ptr!=front);
-  }
+      AddToOrderedCircularList(col, ptr);
+    } // while
+  } // for s
 
-  // update row pointers and sizes
-  free(row_pointer);
-  row_pointer = col_pointer;
-  nodes_alloc = num_nodes;
+  // done with old matrix
+  free(old_row_pointer);
 
   // toggle
   isTransposed = !(isTransposed);
