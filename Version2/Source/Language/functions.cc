@@ -206,11 +206,11 @@ void user_func::Compute(expr **pp, int np, result &x)
   // Compute parameters, place on stack
   int i;
   for (i=0; i<np; i++) newstackptr[2+i].error = CE_Uncomputed;
-  for (i=0; i<np; i++) pp[i]->Compute(0, newstackptr[2+i]); 
+  for (i=0; i<np; i++) SafeCompute(pp[i], 0, newstackptr[2+i]); 
 
   // "call" function
   stack_ptr = newstackptr;
-  return_expr->Compute(0, x);
+  SafeCompute(return_expr, 0, x);
 
   if (x.error) {
     Error.Start(return_expr->Filename(), return_expr->Linenumber());
@@ -420,12 +420,14 @@ type fcall::Type(int i) const
 void fcall::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(func);
   func->Compute(pass, numpass, x);
 }
 
 void fcall::Sample(long &s, int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(func);
   func->Sample(s, pass, numpass, x);
 }
 

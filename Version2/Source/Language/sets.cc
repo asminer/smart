@@ -311,17 +311,25 @@ int generic_real_set::IndexOf(const result &x)
 {
   if (x.error || x.null || x.infinity) return -1;
   // binary search through values
+  double epsilon = index_precision->GetReal(); 
   int low = 0, high = Size()-1;
   while (low <= high) {
     int mid = (low+high)/2;
     int i = order[mid];
     DCASSERT(i>=0);
     DCASSERT(i<Size());
-    if (values[i] == x.rvalue) return i;
-    if (values[i] < x.rvalue) 
-      low = mid+1;
-    else
+    if (values[i] > x.rvalue + epsilon) {
+      // x is definitely smaller than midpoint
       high = mid-1;
+      continue;
+    }
+    if (values[i]+epsilon < x.rvalue) {
+      // x is definitely larger than midpoint
+      low = mid+1;
+      continue;
+    }
+    // still here?  x is within epsilon of midpoint; that's equal in our book
+    return i;
   }
   return -1;
 }

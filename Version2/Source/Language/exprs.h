@@ -449,7 +449,7 @@ public:
 /** Compute an expression.
     This deals with error traces and such.
  */
-inline void Compute(expr *e, int a, result &x) 
+inline void SafeCompute(expr *e, int a, result &x) 
 {
   if (e) {
     e->Compute(a, x);
@@ -462,7 +462,7 @@ inline void Compute(expr *e, int a, result &x)
 /** Sample an expression.
     This deals with error traces and such.
  */
-inline void Sample(expr *e, int a, long &seed, result &x) 
+inline void SafeSample(expr *e, int a, long &seed, result &x) 
 {
   if (e) {
     e->Sample(seed, a, x);
@@ -472,6 +472,19 @@ inline void Sample(expr *e, int a, long &seed, result &x)
   }
 }
 
+/// Safe way to count components
+inline int NumComponents(expr *e)
+{
+  if (e) return e->NumComponents();
+  return 1;
+}
+
+/// Safe way to get expression type
+inline type Type(expr *e, int comp)
+{
+  if (NULL==e) return VOID;
+  return e->Type(comp);
+}
 
 // ******************************************************************
 // *                                                                *

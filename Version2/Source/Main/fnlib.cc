@@ -59,16 +59,13 @@ void ShowDocs(void *x)
 
 void compute_help(expr **pp, int np, result &x)
 {
+  help_search_string = "";
   DCASSERT(np==1);
-  if (NULL==pp) 
-    help_search_string = "";
-  else if (NULL==pp[0])
-    help_search_string = "";
-  else {
-    x.Clear();
-    pp[0]->Compute(0, x);
+  DCASSERT(pp); 
+  x.Clear();
+  SafeCompute(pp[0], 0, x);
+  if (!x.error && !x.null) 
     help_search_string = (char*) x.other;
-  }
 
   // Look through functions
   Builtins->Traverse(ShowDocs);
@@ -117,6 +114,7 @@ int typecheck_print(List <expr> *params)
   int i;
   for (i=0; i<np; i++) {
     expr* p = params->Item(i);
+    if (NULL==p) continue;
     switch (p->Type(0)) {
       case BOOL:
       case INT:
@@ -152,20 +150,20 @@ void do_print(expr **p, int np, result &x, OutputStream &s)
   result y;
   for (i=0; i<np; i++) {
     x.Clear();
-    p[i]->Compute(0, x);
+    SafeCompute(p[i], 0, x);
     int width = -1;
     int prec = -1;
-    if (p[i]->NumComponents()>1) {
+    if (NumComponents(p[i])>1) {
       y.Clear();
-      p[i]->Compute(1, y);
+      SafeCompute(p[i], 1, y);
       if (!y.infinity && !y.null && !y.error) width = y.ivalue;
-      if (p[i]->NumComponents()>2) {
+      if (NumComponents(p[i])>2) {
         y.Clear();
-	p[i]->Compute(2, y);
+	SafeCompute(p[i], 2, y);
         if (!y.infinity && !y.null && !y.error) prec = y.ivalue;
       }
     }
-    PrintResult(s, p[i]->Type(0), x, width, prec);
+    PrintResult(s, Type(p[i], 0), x, width, prec);
   }
 }
 
@@ -232,13 +230,9 @@ void compute_read_int(expr **pp, int np, result &x)
 void compute_errorfile(expr **p, int np, result &x)
 {
   DCASSERT(np==1);
+  DCASSERT(p);
   x.Clear();
-  if (p[0]==NULL) {
-    Error.SwitchDisplay(NULL);
-    x.bvalue = true;
-    return;
-  }
-  p[0]->Compute(0, x);
+  SafeCompute(p[0], 0, x);
   if (x.error) return;
   if (x.null) {
     Error.SwitchDisplay(NULL);
@@ -274,13 +268,9 @@ void AddErrorFile(PtrTable *fns)
 void compute_outputfile(expr **p, int np, result &x)
 {
   DCASSERT(np==1);
+  DCASSERT(p);
   x.Clear();
-  if (p[0]==NULL) {
-    Output.SwitchDisplay(NULL);
-    x.bvalue = true;
-    return;
-  }
-  p[0]->Compute(0, x);
+  SafeCompute(p[0], 0, x);
   if (x.error) return;
   if (x.null) {
     Output.SwitchDisplay(NULL);
@@ -318,12 +308,12 @@ void AddOutputFile(PtrTable *fns)
 
 void compute_exit(expr **p, int np, result &x)
 {
+  DCASSERT(1==np);
+  DCASSERT(p);
   int code = 0;
-  if (p[0]) {
-    p[0]->Compute(0, x);
-    if (!x.null && !x.error && !x.infinity) {
-      code = x.ivalue;
-    }
+  SafeCompute(p[0], 0, x);
+  if (!x.null && !x.error && !x.infinity) {
+    code = x.ivalue;
   }
   smart_exit();
   exit(code);
@@ -350,26 +340,16 @@ void compute_cond(expr **pp, int np, result &x)
   x.Clear();
   DCASSERT(pp);
   DCASSERT(np==3);
-  if (NULL==pp[0]) {
-    // some type of error stuff?
-    x.null = true;
-    return;
-  }
   result b;
   b.Clear();
-  pp[0]->Compute(0, b);
+  SafeCompute(pp[0], 0, b);
   if (b.null || b.error) {
     // error stuff?
     x = b;
     return;
   }
-  if (b.bvalue) {
-    if (pp[1]) pp[1]->Compute(0, x);
-    else x.null = true;
-  } else {
-    if (pp[2]) pp[2]->Compute(0, x); 
-    else x.null = true;
-  }
+  if (b.bvalue) SafeCompute(pp[1], 0, x);
+  else SafeCompute(pp[2], 0, x);
 }
 
 void sample_cond(long &seed, expr **pp, int np, result &x)
@@ -377,19 +357,15 @@ void sample_cond(long &seed, expr **pp, int np, result &x)
   x.Clear();
   DCASSERT(pp);
   DCASSERT(np==3);
-  if (NULL==pp[0]) {
-    x.null = true;
-    return;
-  }
   result b;
   b.Clear();
-  pp[0]->Sample(seed, 0, b);
+  SafeSample(pp[0], 0, seed, b);
   if (b.null || b.error) {
     x = b;
     return;
   }
-  if (b.bvalue) pp[1]->Sample(seed, 0, x);
-  else pp[2]->Sample(seed, 0, x); 
+  if (b.bvalue) SafeSample(pp[1], 0, seed, x);
+  else SafeSample(pp[2], 0, seed, x); 
 }
 
 const char* conddoc = "If <b> is true, returns <t>; else, returns <f>.";
