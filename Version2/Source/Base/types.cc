@@ -260,12 +260,26 @@ bool Castable(type t1, type t2)
 // Can type t1 be cast to type t2?
 {
   if (Promotable(t1,t2)) return true;
-  if ((t1==REAL)&&(t2==INT)) return true;
-  if ((t1==REAL)&&(t2==BIGINT)) return true;
-  if ((t1==INT)&&(t2==BIGINT)) return true;
-  if ((t1==BIGINT)&&(t2==INT)) return true;
-  if (t2==EXPO)
-    return (t1==BIGINT) || (t1==INT)||(t1==REAL);
+  switch (t1) {
+    case INT:
+      return (t2 == EXPO);
+
+    case REAL:
+      return (t2 == INT) || (t2 == BIGINT) || (t2 == EXPO);
+
+    case BIGINT:
+      return (t2 == INT);
+
+    case RAND_REAL:
+      return (t2 == RAND_INT);
+
+    case PROC_REAL:
+      return (t2 == PROC_INT);
+
+    case PROC_RAND_REAL:
+      return (t2 == PROC_RAND_INT);
+
+  }
   return false;
 }
 

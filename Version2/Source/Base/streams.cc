@@ -9,6 +9,9 @@
 #include "options.h"
 #include "../defines.h"
 
+// Global: is an error stream active?
+bool WritingToErrorStream;
+
 // defined in topmost api...
 void smart_exit();
 
@@ -18,6 +21,12 @@ option* real_format;
 option_const* RF_GENERAL;
 option_const* RF_FIXED;
 option_const* RF_SCIENTIFIC;
+
+void CrossedStreams()
+{
+  fprintf(stderr, "Smart Panic: Someone crossed the streams!\n");
+  exit(SMART_PANIC);
+}
 
 // ==================================================================
 // |                                                                |
@@ -334,6 +343,7 @@ ErrorStream::ErrorStream(const char* et, FILE* d) : DisplayStream(d)
 
 void ErrorStream::Start(const char* filename, int lineno)
 {
+  if (WritingToErrorStream) CrossedStreams();
   if (active) {
     ready = true;
     Put(errortype);
@@ -354,6 +364,7 @@ void ErrorStream::Start(const char* filename, int lineno)
     }
     Put(":\n\t");
   }
+  WritingToErrorStream = true;
 }
 
 void ErrorStream::Stop()
@@ -364,10 +375,12 @@ void ErrorStream::Stop()
     flush();
     ready = false;
   }
+  WritingToErrorStream = false;
 }
 
 void ErrorStream::Continue(const char* filename, int lineno)
 {
+  if (WritingToErrorStream) CrossedStreams();
   if (active) {
     ready = true;
     Put("    Caused by");
@@ -388,6 +401,7 @@ void ErrorStream::Continue(const char* filename, int lineno)
     }
     Put(":\n\t");
   }
+  WritingToErrorStream = true;
 }
 
 // ==================================================================
@@ -399,6 +413,7 @@ void ErrorStream::Continue(const char* filename, int lineno)
 void InternalStream::Start(const char *srcfile, int srcline, 
 			   const char* fn, int ln)
 {
+  if (WritingToErrorStream) CrossedStreams();
   if (active) {
     ready = true;
     Put(errortype);
@@ -423,6 +438,7 @@ void InternalStream::Start(const char *srcfile, int srcline,
     }
     Put(":\n\t");
   }
+  WritingToErrorStream = true;
 }
 
 void InternalStream::Stop()
@@ -433,6 +449,7 @@ void InternalStream::Stop()
     flush();
     ready = false;
   }
+  WritingToErrorStream = false;  // pointless, because we'll exit next
   smart_exit();
   exit(INTERNAL_ERROR);
 }
@@ -479,5 +496,6 @@ void InitStreams()
   Error.Activate();
   Warning.Activate();
   Internal.Activate();
+  WritingToErrorStream = false;
 }
 
