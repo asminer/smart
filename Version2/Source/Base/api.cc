@@ -38,6 +38,13 @@ void GetReport(void *x)
 }
 
 
+// For output options:
+extern option* real_format;
+extern option_const* RF_GENERAL;
+extern option_const* RF_FIXED;
+extern option_const* RF_SCIENTIFIC;
+
+
 void InitBase()
 {
   InitStreams();
@@ -54,4 +61,18 @@ void InitBase()
   option *report 
     = MakeActionOption(BOOL, "Report", def, rdoc, range, SetReport, GetReport);
   AddOption(report);
+
+  RF_GENERAL = new option_const("GENERAL", "\tSame as printf(%g)");
+  RF_FIXED = new option_const("FIXED", "\tSame as printf(%f)");
+  RF_SCIENTIFIC = new option_const("SCIENTIFIC", "Same as printf(%e)");
+
+  option_const** things = new option_const*[3];
+  things[0] = RF_FIXED;
+  things[1] = RF_GENERAL;
+  things[2] = RF_SCIENTIFIC;
+
+  real_format = MakeEnumOption("RealFormat", "Format to use for output of reals",
+  			things, 3, RF_GENERAL);
+
+  AddOption(real_format);
 }

@@ -6,7 +6,15 @@
 */
 
 #include "streams.h"
+#include "options.h"
 #include "../defines.h"
+
+// Output options:
+
+option* real_format;
+option_const* RF_GENERAL;
+option_const* RF_FIXED;
+option_const* RF_SCIENTIFIC;
 
 // ==================================================================
 // |                                                                |
@@ -32,6 +40,36 @@ void OutputStream::ExpandBuffer(int wantsize)
   }
   bufsize = newsize;
   buffer = newbuffer;  // just in case
+}
+
+void OutputStream::DetermineRealFormat()
+{
+  const option_const* foo = real_format->GetEnum();
+  if (foo==RF_GENERAL) {
+    	floatformat = "%g";
+	doubleformat = "%lg";
+	doublewidthformat = "%*lg";
+	doubleprecformat = "%*.*lg";
+	return;
+  }
+  if (foo==RF_FIXED) {
+    	floatformat = "%f";
+	doubleformat = "%lf";
+	doublewidthformat = "%*lf";
+	doubleprecformat = "%*.*lf";
+        return;
+  }
+  if (foo==RF_SCIENTIFIC) {
+    	floatformat = "%e";
+	doubleformat = "%le";
+	doublewidthformat = "%*le";
+	doubleprecformat = "%*.*le";
+	return;
+  }
+  fprintf(stderr, "Smart Panic: unknown real format ");
+  if (foo) fprintf(stderr, "\"%s\" ", foo->name);
+  fprintf(stderr, "for output\n");
+  exit(0);
 }
 
 OutputStream::OutputStream()
@@ -104,10 +142,11 @@ void OutputStream::Put(int data)
 void OutputStream::Put(float data)
 {
   if (ready) {
-    int size = snprintf(bufptr(), bufspace(), "%f", data);
+    DetermineRealFormat();
+    int size = snprintf(bufptr(), bufspace(), floatformat, data);
     if (size>=bufspace()) { // there wasn't enough space
       ExpandBuffer(buftop+size+1);
-      size = snprintf(bufptr(), bufspace(), "%f", data);
+      size = snprintf(bufptr(), bufspace(), floatformat, data);
       DCASSERT(size < bufspace());
     }
     buftop += size;
@@ -118,10 +157,11 @@ void OutputStream::Put(float data)
 void OutputStream::Put(double data)
 {
   if (ready) {
-    int size = snprintf(bufptr(), bufspace(), "%lf", data);
+    DetermineRealFormat();
+    int size = snprintf(bufptr(), bufspace(), doubleformat, data);
     if (size>=bufspace()) { // there wasn't enough space
       ExpandBuffer(buftop+size+1);
-      size = snprintf(bufptr(), bufspace(), "%lf", data);
+      size = snprintf(bufptr(), bufspace(), doubleformat, data);
       DCASSERT(size < bufspace());
     }
     buftop += size;
@@ -172,10 +212,11 @@ void OutputStream::Put(int data, int width)
 void OutputStream::Put(double data, int width)
 {
   if (ready) {
-    int size = snprintf(bufptr(), bufspace(), "%*lf", width, data);
+    DetermineRealFormat();
+    int size = snprintf(bufptr(), bufspace(), doublewidthformat, width, data);
     if (size>=bufspace()) { // there wasn't enough space
       ExpandBuffer(buftop+size+1);
-      size = snprintf(bufptr(), bufspace(), "%*lf", width, data);
+      size = snprintf(bufptr(), bufspace(), doublewidthformat, width, data);
       DCASSERT(size < bufspace());
     }
     buftop += size;
@@ -198,10 +239,11 @@ void OutputStream::Put(const char* data, int width)
 void OutputStream::Put(double data, int width, int prec)
 {
   if (ready) {
-    int size = snprintf(bufptr(), bufspace(), "%*.*lf", width, prec, data);
+    DetermineRealFormat();
+    int size = snprintf(bufptr(), bufspace(), doubleprecformat, width, prec, data);
     if (size>=bufspace()) { // there wasn't enough space
       ExpandBuffer(buftop+size+1);
-      size = snprintf(bufptr(), bufspace(), "%*.*lf", width, prec, data);
+      size = snprintf(bufptr(), bufspace(), doubleprecformat, width, prec, data);
       DCASSERT(size < bufspace());
     }
     buftop += size;

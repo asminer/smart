@@ -20,10 +20,15 @@ protected:
   int bufsize;
   int buftop;
   bool ready;
+  const char* floatformat;
+  const char* doubleformat;
+  const char* doublewidthformat;
+  const char* doubleprecformat;
 protected:
   void ExpandBuffer(int newsize);
   inline char* bufptr() { return buffer+buftop; }
   inline int bufspace() { return bufsize-buftop; }
+  void DetermineRealFormat();
 public:
   OutputStream();
   virtual ~OutputStream();
