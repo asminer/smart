@@ -18,10 +18,5 @@ Things to do:
 
   Then define "(cross) product of state changes"...
 
-* Make sure we correctly handle things like
-
-  rand real x := ...;
-  rand real y := x + x;  // Can't sample x twice!
-
 * Models
 
