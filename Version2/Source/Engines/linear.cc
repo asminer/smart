@@ -120,7 +120,7 @@ int SSRowJacobi(double *pi, labeled_digraph <float> *Q, float *h,
 
   // auxiliary vector
   float* oldpi = new float[stop-start];
-  oldpi -= start;
+  float* fulloldpi = oldpi - start;
 
   for (iters=1; iters<=maxiters; iters++) {
 #ifdef DEBUG_LINEAR
@@ -133,33 +133,21 @@ int SSRowJacobi(double *pi, labeled_digraph <float> *Q, float *h,
 #endif
     // copy pi into oldpi, and clear out pi
     for (int s=start; s<stop; s++) {
-      oldpi[s] = pi[s];
+      fulloldpi[s] = pi[s];
       pi[s] = 0.0;
     }
-    // iteration...
-    int *ci = Q->column_index + Q->row_pointer[start];
-    float *v = Q->value + Q->row_pointer[start];
-    // pi = oldpi * Q
-    for (int s=start; s<stop; s++) { 
-      double alpha = oldpi[s];
 
-      // pi += alpha * Q[s, all]
-     
-      int *cstop = Q->column_index + Q->row_pointer[s+1];
-      while (ci < cstop) {
-        pi[ci[0]] += alpha * v[0];
-        ci++;
-        v++;
-      }
-    }
+    // pi = oldpi * Q
+    VectorRowmatrixMultiply(oldpi, Q, pi, start, stop);
+
     // finish the iteration
     double maxerror = 0;
     double total = 0;
     for (int s=start; s<stop; s++) {
       pi[s] *= relax * h[s];
-      pi[s] += one_minus_relax * oldpi[s];
+      pi[s] += one_minus_relax * fulloldpi[s];
       total += pi[s]; 
-      double delta = pi[s] - oldpi[s];
+      double delta = pi[s] - fulloldpi[s];
       // if relative precision...
       if (pi[s]) delta /= pi[s];
       if (delta<0) delta = -delta;
@@ -176,7 +164,6 @@ int SSRowJacobi(double *pi, labeled_digraph <float> *Q, float *h,
   } // for iters
 
   // done with aux vector
-  oldpi += start;
   delete[] oldpi;
 
   return iters;
@@ -246,7 +233,7 @@ int SSGaussSeidel(double *pi, labeled_digraph <float> *Q, float *h,
 // *                            Front end                            *
 // *******************************************************************
 
-void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
+bool SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
 	     int start, int stop)
 {
   DCASSERT(start < stop);
@@ -275,6 +262,7 @@ void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
     Verbose << "Finished, " << count << " iterations\n";
     Verbose.flush();
   }
+  return count <= Iters->GetInt();
 }
 
 // *******************************************************************
@@ -285,7 +273,7 @@ void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
 
 int MTTAColJacobi(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init,
-	       int start, int stop)
+		int start, int stop)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting column-wise Jacobi\n";
@@ -297,19 +285,72 @@ int MTTAColJacobi(double *n, labeled_digraph <float> *Q, float *h,
 
 int MTTARowJacobi(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init,
-	       int start, int stop)
+		int start, int stop)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting row-wise Jacobi\n";
     Verbose.flush();
   }
   DCASSERT(!Q->isTransposed);
-  return 0;
+  int iters;
+  int maxiters = Iters->GetInt();
+  double relax = Relaxation->GetReal();
+  double one_minus_relax = 1.0 - relax;
+  double prec = Precision->GetReal();
+
+  // auxiliary vector
+  float* oldn = new float[stop-start];
+  float* fulloldn = oldn-start;
+
+  for (iters=1; iters<=maxiters; iters++) {
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi starting iteration " << iters << "\n";
+    Output << "\trelaxation value: " << relax << "\n";
+    Output << "\tcurrent solution vector: [";
+    Output.PutArray(n+start, stop-start);
+    Output << "]\n";
+    Output.flush();
+#endif
+    // copy n into oldn, and clear n
+    for (int s=start; s<stop; s++) {
+      fulloldn[s] = n[s];
+      n[s] = 0.0;
+    }
+    // set n = init
+    for (int p=init->nonzeroes-1; p>=0; p--)
+      n[init->index[p]] = init->value[p];
+
+    // n = oldn * Q
+    VectorRowmatrixMultiply(oldn, Q, n, start, stop);
+
+    // finish the iteration
+    double maxerror = 0;
+    for (int s=start; s<stop; s++) {
+      n[s] *= relax * h[s];
+      n[s] += one_minus_relax * oldn[s];
+      double delta = n[s] - fulloldn[s];
+      // if relative precision...
+      if (n[s]) delta /= n[s];
+      if (delta<0) delta = -delta;
+      maxerror = MAX(maxerror, delta);
+    } // for s
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi finishing iteration " << iters;
+    Output << ", precision is " << maxerror << "\n";
+    Output.flush();
+#endif
+    if (maxerror < prec) break; 
+  }
+
+  // done with aux vector
+  delete[] oldn;
+
+  return iters;
 }
 
 int MTTAGaussSeidel(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init,
-	       int start, int stop)
+		int start, int stop)
 {
   if (Verbose.IsActive()) {
     Verbose << "Starting Gauss-Seidel\n";
@@ -319,9 +360,9 @@ int MTTAGaussSeidel(double *n, labeled_digraph <float> *Q, float *h,
   return 0;
 }
 
-void MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
+bool MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init,
-	       int start, int stop)
+		int start, int stop)
 {
   DCASSERT(start < stop);
   if (Verbose.IsActive()) {
@@ -349,6 +390,7 @@ void MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
     Verbose << "Finished, " << count << " iterations\n";
     Verbose.flush();
   }
+  return count <= Iters->GetInt();
 }
 
 void InitLinear()

@@ -428,6 +428,106 @@ void labeled_digraph <LABEL> :: ShowNodeList(OutputStream &s, int node)
   }
 }
 
+/**  Vector matrix multiply.
+     Computes out += in * M 
+
+     @param in 	Input vector
+     @param M   Matrix
+     @param out Output vector
+
+     This makes heavy use of pointer arithmetic ;^)
+*/
+template <class LABEL, class INVECT, class OUTVECT>
+inline void VectorRowmatrixMultiply(
+			INVECT* in, 
+			labeled_digraph <LABEL> *M, 
+			OUTVECT* out)
+{
+  DCASSERT(!M->isTransposed);
+  int *rp = M->row_pointer;
+  int *rpstop = M->row_pointer + M->num_nodes;
+  int *ci = M->column_index + rp[0];
+  LABEL *v = M->value + rp[0];
+  while (rp < rpstop) { 
+    rp++;
+    int *cstop = M->column_index + rp[0];
+    while (ci < cstop) {
+      out[ci[0]] += in[0] * v[0];
+      ci++;
+      v++;
+    } // while
+    in++;  
+  } 
+}
+
+/**  Vector matrix multiply.
+     Computes out += in * M 
+
+     @param in 	Input vector
+     @param M   Matrix
+     @param out Output vector
+
+     This makes heavy use of pointer arithmetic ;^)
+*/
+template <class LABEL, class INVECT, class OUTVECT>
+inline void VectorColmatrixMultiply(
+			INVECT* in, 
+			labeled_digraph <LABEL> *M, 
+			OUTVECT* out)
+{
+  DCASSERT(!M->isTransposed);
+  int *rp = M->row_pointer;
+  int *rpstop = M->row_pointer + M->num_nodes;
+  int *ci = M->column_index + rp[0];
+  LABEL *v = M->value + rp[0];
+  while (rp < rpstop) { 
+    rp++;
+    int *cstop = M->column_index + rp[0];
+    while (ci < cstop) {
+      out[0] += in[ci[0]] * v[0];
+      ci++;
+      v++;
+    } // while
+    out++;  
+  } 
+}
+
+/**  Vector matrix multiply.
+     Computes out += in * M[start..stop, *] 
+
+     @param in 	Input vector, dimension is (stop-start), starting at index 0
+     @param M   Matrix
+     @param out Output vector
+
+     @param start	Starting row
+     @param stop	Stopping row+1
+
+     This makes heavy use of pointer arithmetic ;^)
+*/
+template <class LABEL, class INVECT, class OUTVECT>
+inline void VectorRowmatrixMultiply(
+			INVECT* in, 
+			labeled_digraph <LABEL> *M, 
+			OUTVECT* out,
+			int start,
+			int stop)
+{
+  DCASSERT(!M->isTransposed);
+  int *rp = M->row_pointer + start;
+  int *rpstop = M->row_pointer + stop;
+  int *ci = M->column_index + rp[0];
+  LABEL *v = M->value + rp[0];
+  while (rp < rpstop) { 
+    rp++;
+    int *cstop = M->column_index + rp[0];
+    while (ci < cstop) {
+      out[ci[0]] += in[0] * v[0];
+      ci++;
+      v++;
+    } // while
+    in++;  
+  } 
+}
 
 #endif
 

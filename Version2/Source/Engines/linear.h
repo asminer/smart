@@ -22,8 +22,9 @@
 
 			E.g., for irreducible chains, use start=0, stop=#states
 
+     @return	true if desired precision was achieved
 */
-void SSSolve(double *pi, labeled_digraph <float> *Q, float *h, 
+bool SSSolve(double *pi, labeled_digraph <float> *Q, float *h, 
 		int start, int stop);
 
 /**  
@@ -39,8 +40,9 @@ void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
 
 			E.g., for irreducible chains, use start=0, stop=#states
 
+     @return	true if desired precision was achieved
 */
-void MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
+bool MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init, int start, int stop);
 
 
