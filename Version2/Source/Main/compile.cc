@@ -925,15 +925,19 @@ statement* BuildArrayStmt(array *a, expr *e)
   }
   Optimize(0, e);
   expr* ne = MakeTypecast(e, a->Type(0), filename, lexer.lineno());
-  statement *s;
+  
   if (WithinConverge()) 
-    s = MakeArrayCvgAssign(a, ne, filename, lexer.lineno());
-  else
-    s = MakeArrayAssign(a, ne, filename, lexer.lineno());
+    return MakeArrayCvgAssign(a, ne, filename, lexer.lineno());
 
-  // TO DO: deal with models
-    
-  return s; 
+  if (WithinModel()) 
+    return MakeMeasureArrayAssign(
+    		model_under_construction,
+		a, ne, filename, lexer.lineno()
+	   );
+
+  // ordinary array
+
+  return MakeArrayAssign(a, ne, filename, lexer.lineno());
 }
 
 statement* BuildFuncStmt(user_func *f, expr *r)
@@ -1042,7 +1046,10 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     m->SetReturn(ans);
     ModelInternal->AddNamePtr(id, m);
     ModelExternal->AddNamePtr(id, m);
-    return NULL;
+    return MakeMeasureAssign(
+    		model_under_construction, 
+		m, filename, lexer.lineno()
+	   );
   }
 
   // Normal idents (i.e., constants)

@@ -127,6 +127,12 @@ public:
   */
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n) = 0;
 
+  /** Instantiate a measure.
+      This must be called whenever a measure is "created" for a model
+      (handled by an appropriate statement)
+      so that we can group the measures by solution engine.
+  */
+  void AcceptMeasure(measure *m);
 
   /** Find an externally-visible symbol with specified name.
       @param	name	The symbol to look for.
@@ -134,11 +140,6 @@ public:
       		or NULL if there is none.
   */
   symbol* FindVisible(char* name) const;
-
-  /** Add a measure and classify it.
-      Used when we have arrays of measures.
-  */
-  void AddMeasure(measure *m);
 
   /** Solve a given measure.
       If the measure is part of a group, all measures in the group
@@ -219,6 +220,13 @@ statement* MakeModelVarStmt(model *p, type t, char** names, expr** wraps, int N,
 
 statement* MakeModelArrayStmt(model *p, array** alist, int N, 
 			const char* fn, int l);
+
+/// Measure assignments.
+statement* MakeMeasureAssign(model *p, measure *m, const char *fn, int line);
+
+/// Measure array assignments.
+statement* MakeMeasureArrayAssign(model *p, array *f, expr* retval, 
+					const char *fn, int line);
 
 //@}
 

@@ -156,7 +156,7 @@ symbol* model::FindVisible(char* name) const
   return NULL;
 }
 
-void model::AddMeasure(measure *m)
+void model::AcceptMeasure(measure *m)
 {
   // do something eventually...
 
@@ -515,6 +515,144 @@ void model_varray_stmt::showfancy(int dpth, OutputStream &s) const
 
 // ******************************************************************
 // *                                                                *
+// *                      measure_assign class                      *
+// *                                                                *
+// ******************************************************************
+
+/**  A statement used for measure assignments.
+     Only necessary to initialize the measure within the model
+     for each model instantiation.
+ */
+
+class measure_assign : public statement {
+  measure *msr;
+  model *parent;
+public:
+  measure_assign(const char *fn, int l, model *p, measure *msr);
+  virtual ~measure_assign(); 
+
+  virtual void Execute();
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
+};
+
+measure_assign::measure_assign(const char *fn, int l, 
+	model *p, measure *m) : statement(fn, l)
+{
+  parent = p;
+  msr = m;
+}
+
+measure_assign::~measure_assign()
+{
+  Delete(msr);
+}
+
+void measure_assign::Execute()
+{
+  parent->AcceptMeasure(msr);
+}
+
+void measure_assign::show(OutputStream &s) const
+{
+  s << msr;
+}
+
+void measure_assign::showfancy(int depth, OutputStream &s) const
+{
+  s.Pad(depth);
+  show(s);
+  s << ";\n";
+}
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                   measure_array_assign class                   *
+// *                                                                *
+// ******************************************************************
+
+/**  A statement used for measure array assignments.
+ */
+
+class measure_array_assign : public statement {
+  array *f;
+  model *parent;
+  expr *retval;
+public:
+  measure_array_assign(const char *fn, int l, model *p, array *a, expr *e);
+  virtual ~measure_array_assign(); 
+
+  virtual void Execute();
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
+};
+
+measure_array_assign::measure_array_assign(const char *fn, int l, 
+	model *p, array *a, expr *e) : statement(fn, l)
+{
+  parent = p;
+  f = a;
+  retval = e;
+}
+
+measure_array_assign::~measure_array_assign()
+{
+  Delete(retval);
+}
+
+void measure_array_assign::Execute()
+{
+  // De-iterate the return value
+  expr* rv = (retval) ? (retval->Substitute(0)) : NULL;
+
+  if (NULL==rv) {
+    f->SetCurrentReturn(NULL);
+#ifdef ARRAY_TRACE
+    cout << "Array assign: null\n";
+#endif
+    return;
+  }
+  
+#ifdef LONG_INTERNAL_ARRAY_NAME
+  // Build a long name.  Useful for debugging, otherwise 
+  // I think it is unnecessary work.
+  StringStream dealy;
+  f->GetName(dealy);
+  char* name = dealy.GetString();
+#else
+  char* name = NULL;
+#endif
+
+  measure* frv = new measure(Filename(), Linenumber(), rv->Type(0), name);
+  frv->SetReturn(rv);
+
+  parent->AcceptMeasure(frv);
+
+  f->SetCurrentReturn(frv);
+
+#ifdef ARRAY_TRACE
+  cout << "Array assign: " << frv << "\n";
+#endif
+}
+
+void measure_array_assign::show(OutputStream &s) const
+{
+  s << f << " := " << retval;
+}
+
+void measure_array_assign::showfancy(int depth, OutputStream &s) const
+{
+  s.Pad(depth);
+  show(s);
+  s << ";\n";
+}
+
+
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
@@ -542,6 +680,20 @@ statement* MakeModelArrayStmt(model* p, array** alist, int N,
 {
   return new model_varray_stmt(fn, l, p, alist, N);
 }
+
+statement* MakeMeasureAssign(model *p, measure *m, const char *fn, int line)
+{
+  return new measure_assign(fn, line, p, m);
+}
+
+statement* MakeMeasureArrayAssign(model *p, array *f, expr* retval, 
+                           const char *fn, int line)
+{
+  f->state = CS_Defined;
+  return new measure_array_assign(fn, line, p, f, retval);
+}
+
+
 
 //@}
 
