@@ -146,17 +146,7 @@ public:
   int_opt(const char* n, const char* d, int v, int mn, int mx)
    : option(INT, n ,d) { value = v; max = mx; min = mn; }
   virtual ~int_opt() { }
-  virtual void SetValue(int b, const char* f, int l) { 
-    if (min<max) {
-      if ((value<min) || (value>max)) {
-	Warning.Start(f, l);
-	Warning << "Illegal value for option " << Name() << ", ignoring";
-	Warning.Stop();
-	return;
-      }
-    }
-    value = b; 
-  }
+  virtual void SetValue(int b, const char* f, int l); 
   virtual int GetInt() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
     show(s);
@@ -169,6 +159,19 @@ public:
       s << "any integer\n";
   }
 };
+
+void int_opt::SetValue(int b, const char* f, int l)
+{ 
+  if (min<max) {
+    if ((b<min) || (b>max)) {
+	Warning.Start(f, l);
+	Warning << "Illegal value for option " << Name() << ", ignoring";
+	Warning.Stop();
+	return;
+    }
+  }
+  value = b; 
+}
 
 option* MakeIntOption(const char* name, const char* doc, 
 			int v, int min, int max)
@@ -188,17 +191,7 @@ public:
   real_opt(const char* n, const char* d, double v, double mn, double mx)
    : option(REAL, n, d) { value = v; max = mx; min = mn; }
   ~real_opt() { } 
-  virtual void SetValue(double b, const char* f, int l) { 
-    if (min<max) {
-      if ((value<min) || (value>max)) {
-	Warning.Start(f, l);
-	Warning << "Illegal value for option " << Name() << ", ignoring";
-	Warning.Stop();
-	return;
-      }
-    }
-    value = b; 
-  }
+  virtual void SetValue(double b, const char* f, int l);
   virtual double GetReal() const { return value; }
   virtual void ShowHeader(OutputStream &s) const {
     show(s);
@@ -211,6 +204,19 @@ public:
       s << "any real value\n";
   }
 };
+
+void real_opt::SetValue(double b, const char* f, int l) 
+{ 
+    if (min<max) {
+      if ((b<min) || (b>max)) {
+	Warning.Start(f, l);
+	Warning << "Illegal value for option " << Name() << ", ignoring";
+	Warning.Stop();
+	return;
+      }
+    }
+    value = b; 
+}
 
 option* MakeRealOption(const char* name, const char* doc, 
 			double v, double min, double max)

@@ -49,6 +49,15 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
     pi[s] = 0.0;
   }
 
+  // Only one recurrent class?  That's easy
+  if (1==mc->numClasses()) {
+    double oneoverN = 1.0 / (mc->numStates()-mc->numTransient());
+    for(s=mc->numTransient(); s<mc->numStates(); s++) pi[s] = oneoverN;
+    if (oneoverN<1.0)
+      SSSolve(pi, mc->graph, h, mc->numTransient(), mc->numStates());
+    return pi;
+  }
+
   // Count number of visits for each transient state
   if (mc->numTransient()) 
     MTTASolve(pi, mc->graph, h, initial, 0, mc->numTransient());
@@ -89,6 +98,12 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
   double *pi = ComputeStationary(disc, dsm->mc->explicit_mc, dsm->mc->initial);
   if (NULL==pi) return false;
 
+#ifdef DEBUG
+  Output << "Got solution vector pi=[";
+  Output.PutArray(pi, dsm->mc->explicit_mc->numStates());
+  Output << "]\n";
+  Output.flush();
+#endif
   // compute measures
   
  

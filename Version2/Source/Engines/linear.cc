@@ -7,7 +7,7 @@
 #include "../Base/options.h"
 #include "linear.h"
 
-#define DEBUG_LINEAR
+//#define DEBUG_LINEAR
 
 // *******************************************************************
 // *                             Globals                             *
@@ -57,7 +57,7 @@ int SSColJacobi(double *pi, labeled_digraph <float> *Q, float *h,
 #ifdef DEBUG_LINEAR
     Output << "\tJacobi starting iteration " << iters << "\n";
     Output << "\tcurrent solution vector: [";
-    Output.PutArray(pi, stop-start);
+    Output.PutArray(pi+start, stop-start);
     Output << "]\n";
     Output.flush();
 #endif
@@ -113,7 +113,73 @@ int SSRowJacobi(double *pi, labeled_digraph <float> *Q, float *h,
   }
   DCASSERT(!Q->isTransposed);
   int iters;
-  return 0;
+  int maxiters = Iters->GetInt();
+  double relax = Relaxation->GetReal();
+  double one_minus_relax = 1.0 - relax;
+  double prec = Precision->GetReal();
+
+  // auxiliary vector
+  float* oldpi = new float[stop-start];
+  oldpi -= start;
+
+  for (iters=1; iters<=maxiters; iters++) {
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi starting iteration " << iters << "\n";
+    Output << "\trelaxation value: " << relax << "\n";
+    Output << "\tcurrent solution vector: [";
+    Output.PutArray(pi+start, stop-start);
+    Output << "]\n";
+    Output.flush();
+#endif
+    // copy pi into oldpi, and clear out pi
+    for (int s=start; s<stop; s++) {
+      oldpi[s] = pi[s];
+      pi[s] = 0.0;
+    }
+    // iteration...
+    int *ci = Q->column_index + Q->row_pointer[start];
+    float *v = Q->value + Q->row_pointer[start];
+    // pi = oldpi * Q
+    for (int s=start; s<stop; s++) { 
+      double alpha = oldpi[s];
+
+      // pi += alpha * Q[s, all]
+     
+      int *cstop = Q->column_index + Q->row_pointer[s+1];
+      while (ci < cstop) {
+        pi[ci[0]] += alpha * v[0];
+        ci++;
+        v++;
+      }
+    }
+    // finish the iteration
+    double maxerror = 0;
+    double total = 0;
+    for (int s=start; s<stop; s++) {
+      pi[s] *= relax * h[s];
+      pi[s] += one_minus_relax * oldpi[s];
+      total += pi[s]; 
+      double delta = pi[s] - oldpi[s];
+      // if relative precision...
+      if (pi[s]) delta /= pi[s];
+      if (delta<0) delta = -delta;
+      maxerror = MAX(maxerror, delta);
+    } // for s
+    // normalize
+    for (int s=start; s<stop; s++) pi[s] /= total;
+#ifdef DEBUG_LINEAR
+    Output << "\tJacobi finishing iteration " << iters;
+    Output << ", precision is " << maxerror << "\n";
+    Output.flush();
+#endif
+    if (maxerror < prec) break; 
+  } // for iters
+
+  // done with aux vector
+  oldpi += start;
+  delete[] oldpi;
+
+  return iters;
 }
 
 int SSGaussSeidel(double *pi, labeled_digraph <float> *Q, float *h, 
@@ -135,7 +201,7 @@ int SSGaussSeidel(double *pi, labeled_digraph <float> *Q, float *h,
 #ifdef DEBUG_LINEAR
     Output << "\tGauss-Seidel starting iteration " << iters << "\n";
     Output << "\tcurrent solution vector: [";
-    Output.PutArray(pi, stop-start);
+    Output.PutArray(pi+start, stop-start);
     Output << "]\n";
     Output.flush();
 #endif
@@ -189,10 +255,10 @@ void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
     Verbose.flush();
   }
   int count = 0;
-  if (Solver->GetEnum()==GAUSS_SEIDEL) {
+  if (Solver->GetEnum()==JACOBI) {
     if (Q->isTransposed) count = SSColJacobi(pi, Q, h, start, stop);
     else count = SSRowJacobi(pi, Q, h, start, stop);
-  } else if (Solver->GetEnum()==JACOBI) {
+  } else if (Solver->GetEnum()==GAUSS_SEIDEL) {
     if (Q->isTransposed) count = SSGaussSeidel(pi, Q, h, start, stop);
     else {
       Error.Start();

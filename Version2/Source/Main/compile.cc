@@ -2353,7 +2353,6 @@ statement* BuildOptionStatement(option* o, expr* v)
   Output << "Built option statement: " << ans << "\n";
   Output.flush();
 #endif
-  ans->Execute();
   return ans;
 }
 
@@ -2382,7 +2381,6 @@ statement* BuildOptionStatement(option* o, char* n)
   Output << "Built option statement: " << ans << "\n";
   Output.flush();
 #endif
-  ans->Execute();
   return ans;
 }
 

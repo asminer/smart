@@ -187,6 +187,15 @@ markov_model::~markov_model()
 
 void markov_model::AddInitial(int state, double weight, const char* fn, int line)
 {
+  if (weight<=0) {
+    Warning.Start(fn, line);
+    Warning << "Ignoring initial weight " << weight << " for state ";
+    Warning << statelist->Item(state);
+    Warning << " in Markov chain " << Name();
+    Warning.Stop();
+    return;
+  }
+
   int e = initial->BinarySearchIndex(state);
   if (e<0) {
     initial->SortedAppend(state, weight);
@@ -201,6 +210,19 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
 
 void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
 {
+  if (weight<=0) {
+    Warning.Start(fn, line);
+    Warning << "Ignoring arc from ";
+    Warning << statelist->Item(fromstate) << " to ";
+    Warning << statelist->Item(tostate);
+    Warning << " with weight " << weight;
+    Warning << " in Markov chain " << Name();
+    Warning.Stop();
+    return;
+  }
+
+  // Deal with self-arcs
+
   if (fromstate==tostate) {
     if (Type(0)==CTMC) {
       Warning.Start(fn, line);
@@ -306,13 +328,18 @@ void markov_model::FinalizeModel(result &x)
     }
   } 
 
+  // Normalize initial probs
+  double total = 0.0;
+  for (int z=0; z<initial->NumNonzeroes(); z++) total += initial->value[z];
+  for (int z=0; z<initial->NumNonzeroes(); z++) initial->value[z] /= total;
+
 #ifdef DEBUG_MC
   Output << "\tMC " << Name() << " has " << numstates << " states\n";
   int i;
   for (i=0; i<numstates; i++) {
     Output << "\t" << states[i] << "\n";
   }
-  Output << "\tInitial weights:\n";
+  Output << "\tInitial distribution:\n";
   for (i=0; i<initial->NumNonzeroes(); i++) {
     Output << "\t" << states[initial->index[i]];
     Output << " : " << initial->value[i] << "\n"; 
@@ -465,14 +492,17 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     PrintResult(Output, INT, x);
     Output << "\n\t to state ";
 #endif
+    if (!x.isNormal()) continue;  // Bad arc, skip it
+    // do we need an error message?
     int fromstate = x.ivalue;
-    // check for errors here...
 
     SafeCompute(pp[i], 1, x);
 #ifdef DEBUG_MC
     PrintResult(Output, INT, x);
     Output << "\n\t weight ";
 #endif
+    if (!x.isNormal()) continue;  // Bad arc, skip it
+    // do we need an error message?
     int tostate = x.ivalue;
 
     SafeCompute(pp[i], 2, x);
@@ -480,6 +510,8 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     PrintResult(Output, REAL, x);
     Output << "\n";
 #endif
+    if (!x.isNormal()) continue;  // Bad arc, skip it
+    // do we need an error message?
     double weight = x.rvalue;
     // again with the errors
 
