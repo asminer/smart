@@ -156,6 +156,12 @@ void model::Sample(Rng &, expr **, int np, result &)
   Internal.Stop();
 }
 
+Engine_type model::GetEngine(engineinfo *e)
+{
+  if (e) e->setNone();
+  return ENG_None;
+}
+
 void model::AcceptMeasure(measure *m)
 {
   mlist->Append(m); 

@@ -7,7 +7,7 @@
     this allows us to keep tighter control over the splay stack.
 
     For complete functionality (allocation of nodes, etc.), 
-    derive a class from "Splay".
+    derive a class from "SplayWrap".
     
     For data comparison, there must be a function Compare(DATA *a, DATA *b)
 */

@@ -122,6 +122,8 @@ public:
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(Rng &, expr **, int np, result &x);
 
+  // Required because models will be passed as parameters...
+  virtual Engine_type GetEngine(engineinfo *);
 
   /** Fill the body of the function.
       @param	b	Array of statements

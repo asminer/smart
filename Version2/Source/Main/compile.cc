@@ -1208,7 +1208,7 @@ void* AddFormalIndex(void* list, char* n)
 #ifdef COMPILE_DEBUG
   Output << "Formal index stack: ";
   for (int i=0; i<Indexes.Length(); i++) {
-    char* id = Indeses.Item(i);
+    char* id = Indexes.Item(i);
     Output << id << " ";
   }
   Output << "\n";
@@ -1800,13 +1800,15 @@ expr* BuildArrayCall(const char* n, void* ind)
 
 /**  Score how well this function matches the passed parameters.
      @param	f	The function to check
+     @param	hidden	Type model we're in (for model functions)
+			or VOID to use normal functions.
      @param	params	List of passed parameters (in positional order).
      @return 	Score, as follows.
      		0	: Perfect match
 		+n	: n parameters will need to be promoted
 		-1	: Parameters do not match in number/type
 */
-int ScoreFunction(function *f, List <expr> *params)
+int ScoreFunction(function *f, type hidden, List <expr> *params)
 {
   bool promote = true;
   formal_param **fpl;
@@ -1816,6 +1818,23 @@ int ScoreFunction(function *f, List <expr> *params)
   int fptr = 0;
   int pptr = 0;
   int numpromote = 0;
+
+  // Typecheck the hidden parameter, if any
+  if (hidden != VOID) {
+    DCASSERT(IsModelType(hidden));
+
+    if (0==np) return -1;  // no parameters for this function!
+
+    // Compare formal param #fptr with hidden passed param
+    if (fpl[fptr]->Type(0) != ANYMODEL) {
+      if (fpl[fptr]->Type(0) != hidden)
+        return -1;
+    }
+    
+    fptr++;
+  }
+
+  // Check the rest of the passed parameters
   while (promote) {
     if ((fptr == np) && (pptr == params->Length())) break;  // end of params
 
@@ -1889,10 +1908,18 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
 {
   if (NULL==poslist) return NULL;  // I think...
   List <expr> *params = (List <expr> *)poslist;
+  
+  // If we are within a model, check model functions too
+  List <function> *flist_mod = NULL;
+  if (model_under_construction) {
+    flist_mod = FindModelFunctions(model_under_construction->Type(0), n);
+  }
 
   // find symbol table entry
   List <function> *flist = FindFunctions(syms, n);
-  if (NULL==flist) {
+
+  if ((NULL==flist_mod) && (NULL==flist)) {
+    // Never heard of it
     Error.Start(filename, lexer.lineno());
     Error << "Unknown function " << n;
     Error.Stop();
@@ -1900,16 +1927,19 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
     return NULL;
   }
 
-  // Find best match in symbol table
   int bestmatch = params->Length()+2;
-  int i;
-  for (i=flist->Length()-1; i>=0; i--) {
+  int i, last;
+  bool is_normal_match = true;
+
+  // Find best match in "ordinary" symbol table
+  last = (flist) ? flist->Length()-1 : -1;
+  for (i=last; i>=0; i--) {
     function *f = flist->Item(i);
     int score;
     if (f->HasSpecialTypechecking()) 
       score = f->Typecheck(params);
     else
-      score = ScoreFunction(f, params);
+      score = ScoreFunction(f, VOID, params);
 
 #ifdef COMPILE_DEBUG
     Output << "Function " << f << " got score " << score << "\n";
@@ -1925,8 +1955,43 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
       // Add to list
       matches.Append(flist->Item(i));
     }
-  }
+  } // for i
 
+  // Find best match in model symbol table
+  last = (flist_mod) ? flist_mod->Length()-1 : -1;
+  for (i=last; i>=0; i--) {
+    // same as above except we have to add the "hidden" parameter
+    function *f = flist_mod->Item(i);
+    int score;
+    if (f->HasSpecialTypechecking()) 
+      score = f->Typecheck(params);
+    else
+      score = ScoreFunction(f, model_under_construction->Type(0), params);
+
+#ifdef COMPILE_DEBUG
+    Output << "Function " << f << " got score " << score << "\n";
+    Output.flush();
+#endif
+
+    if ((score>=0) && (score<bestmatch)) {
+      // better match, clear old list
+      matches.Clear();
+      bestmatch = score;
+      is_normal_match = false;
+    }
+    if (score==bestmatch) {
+      if (is_normal_match) {
+        // tie between ordinary function and model function...
+        // Is this even possible?  If so, model function wins
+        matches.Clear();
+        is_normal_match = false;
+      }
+      // Add to list
+      matches.Append(flist_mod->Item(i));
+    }
+  } // for i
+
+  // Did we get any hits?
   if (bestmatch > params->Length()) {
     Error.Start(filename, lexer.lineno());
     Error << "No match for " << n;
@@ -1944,6 +2009,16 @@ func_call* MatchFunctionCallPos(PtrTable *syms, const char* n, void* poslist)
     Error.Stop();
     // dump matching candidates?
     return NULL;
+  }
+
+  // If necessary, add hidden parameter
+  if (!is_normal_match) {
+    DCASSERT(model_under_construction);
+    params->InsertAt(0, Copy(model_under_construction));
+#ifdef COMPILE_DEBUG
+    Output << "Added parameter " << model_under_construction << "\n";
+    Output.flush();
+#endif
   }
 
   // Good to go, fill struct
@@ -1974,6 +2049,10 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   if (NULL==x) return ERROR;
   expr *fcall = MakeFunctionCall(x->find, x->pass, x->np, 
   				filename, lexer.lineno());
+#ifdef COMPILE_DEBUG
+  Output << "Built function call:\n\t" << fcall << "\n";
+  Output.flush();
+#endif
   FuncCallPile.FreeObject(x);
   return fcall;
 }
@@ -1991,6 +2070,7 @@ int ScoreFunction(function *f, List <named_param> *params)
 {
   if (f->ParamsRepeat()) return -1;
   // For now, don't allow named parameters with repeating lists.
+  // Also don't allow hidden named parameters
 
   bool promote = true;
   formal_param **fpl;
@@ -2648,7 +2728,7 @@ void InitCompiler()
 #ifdef COMPILE_DEBUG
   Output << "Initialized compiler data\n";
   Output << "Builtin Functions:\n";
-  Builtins->Traverse(ShowSymbols);
+  Builtins.Traverse(ShowSymbols);
   Output << "ready to rock.\n";
 #endif
 }

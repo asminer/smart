@@ -456,7 +456,16 @@ void proc_real2proc_int::Compute(const state &s, int i, result &x)
 expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 {
   if (NULL==e || ERROR==e || DEFLT==e) return e;
-  if (newtype == e->Type(0)) return e;
+  if (e->Type(0) == newtype) return e;
+  if (ANYMODEL==newtype) {
+    if (IsModelType(e->Type(0))) return e;
+    // still here?  Problem...
+    Internal.Start(__FILE__, __LINE__, file, line);
+    Internal << "Bad model typecast attempt\n";
+    Internal.Stop();
+    // shouldn't get here
+    return NULL;
+  }
 
   // Note... it is assumed that e is promotable to "newtype".
   switch (e->Type(0)) {
