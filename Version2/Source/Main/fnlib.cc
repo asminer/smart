@@ -266,6 +266,44 @@ void AddErrorFile(PtrTable *fns)
 }
 
 
+void compute_warningfile(expr **p, int np, result &x)
+{
+  DCASSERT(np==1);
+  DCASSERT(p);
+  x.Clear();
+  SafeCompute(p[0], 0, x);
+  if (x.error) return;
+  if (x.null) {
+    Warning.SwitchDisplay(NULL);
+    x.Clear();
+    x.bvalue = true;
+    return;
+  }
+  char* filename = (char*) x.other;
+  FILE* outfile = fopen(filename, "a");
+  if (NULL==outfile) {
+    // error, print message?
+    x.bvalue = false;
+  } else {
+    Warning.SwitchDisplay(outfile);
+    x.bvalue = true;
+  }
+}
+
+void AddWarningFile(PtrTable *fns)
+{
+  const char* helpdoc = "Append the warning stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the warning stream is switched to standard error. \n\tReturns true on success.";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(STRING, "filename");
+
+  internal_func *p =
+    new internal_func(BOOL, "WarningFile", compute_warningfile, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
 void compute_outputfile(expr **p, int np, result &x)
 {
   DCASSERT(np==1);
@@ -394,6 +432,7 @@ void InitBuiltinFunctions(PtrTable *t)
   AddSprint(t);
   // Files
   AddErrorFile(t);
+  AddWarningFile(t);
   AddOutputFile(t);
   // System stuff
   AddExit(t);
