@@ -215,33 +215,46 @@ state_array::~state_array()
 }
 
 
-void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
+// Helper function for counting bits for runlength encoding.
+// This one will bail out if we exceed minbits.
+// Assumes a non-binary state
+inline int RunlengthBits(char npbits, char tkbits, const state &s, 
+				int minbits, int &items)
 {
   // state is not binary
+  int bits = npbits; // first we store number of runs+lists
   int i = 0;
   int np = s.Size();
+  items = 0;
   while (i<np) {
+    if (bits >= minbits) return bits+1;  // no point continuing
     if (i+1 >= np) {
      	// one last state var, treat as a list of length 1
-	WriteInt(1, LIST_BIT);
-	WriteInt(npbits, 1);  
-	WriteInt(tkbits, s.Read(i).ivalue);
+	items++;
+	bits+= (1+npbits+tkbits);
         i++;
         continue;
     }
     if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
  	// Start of a RUN
-	WriteInt(1, RUN_BIT); 
+	items++;
+	bits++;
 	int j;
 	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
-  	WriteInt(npbits, (j-i)-1);    	// run length
-	WriteInt(tkbits, s.Read(i).ivalue);	// run value
+	bits+=(npbits+tkbits);
  	i = j;
      	continue;
     }
     // Must be a LIST
-    WriteInt(1, LIST_BIT);	
+    bits++;
+    items++;
+    if (i+2 >= np) {
+     	// two last state vars, treat as a list of length 2
+	bits += npbits + 2*tkbits;
+        i+=2;
+        continue;
+    }
     int j;
     // find end of list
     for (j=i+1; j<np; j++) {
@@ -253,12 +266,113 @@ void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
       if (s.Read(j).ivalue == s.Read(j+2).ivalue) break;  // run of 3
     } // for j
     // j is one past the end of the list
-    WriteInt(npbits, (j-i)-1);	// list length
+    bits += npbits + (j-i)*tkbits;
+  } // while i < np
+  return bits;
+}
+
+void state_array::RunlengthEncode(char npbits, char tkbits, const state &s)
+{
+  // state is not binary
+  int i = 0;
+  int np = s.Size();
+  while (i<np) {
+    if (i+1 >= np) {
+     	// one last state var, treat as a list of length 1
+	WriteInt(1, LIST_BIT);
+	WriteInt(npbits, 0);  // length-1
+	WriteInt(tkbits, s.Read(i).ivalue);
+        i++;
+        continue;
+    }
+    if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
+ 	// Start of a RUN
+	WriteInt(1, RUN_BIT); 
+	int j;
+	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
+	// j is one past the end of the run
+  	WriteInt(npbits, (j-i)-1);    	// run length-1
+	WriteInt(tkbits, s.Read(i).ivalue);	// run value
+ 	i = j;
+     	continue;
+    }
+    // Must be a LIST
+    WriteInt(1, LIST_BIT);	
+    if (i+2 >= np) {
+     	// two last state vars, treat as a list of length 2
+	WriteInt(npbits, 1);  // length-1
+	WriteInt(tkbits, s.Read(i).ivalue);
+	WriteInt(tkbits, s.Read(i+1).ivalue);
+        i+=2;
+        continue;
+    }
+    int j;
+    // find end of list
+    for (j=i+1; j<np; j++) {
+      if (j+2 >= np) {
+	j=np;
+	break;
+      } 
+      if (s.Read(j).ivalue != s.Read(j+1).ivalue) continue;
+      if (s.Read(j).ivalue == s.Read(j+2).ivalue) break;  // run of 3
+    } // for j
+    // j is one past the end of the list
+    WriteInt(npbits, (j-i)-1);	// list length-1
     for (; i<j; i++)
       WriteInt(tkbits, s.Read(i).ivalue);
   } // while i < np
 }
 
+// Helper function for counting bits for runlength encoding.
+// This one will bail out if we exceed minbits.
+// The state is binary (0 and 1 state vars only)
+inline int RunlengthBitsBinary(char npbits, const state &s, 
+					int minbits, int& items)
+{
+  // special case: state is binary
+  int bits = 1+npbits; // "store" number of runs+lists, and initial state var
+  int i = 0;
+  int np = s.Size();
+  items = 0;
+  while (i<np) {
+    if (bits >= minbits) return bits+1;  // no point continuing
+    if (i+1 >= np) {
+     	// one last state var, treat as a flip of length 1
+	items++;
+	bits += 1+npbits;
+        i++;
+        continue;
+    }
+    if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
+ 	// Start of a RUN
+	items++;
+	bits++;
+	int j;
+	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
+	// j is one past the end of the run
+	bits += npbits;
+ 	i = j;
+     	continue;
+    }
+    // Must be a LIST, in this case, a sequence of FLIPS
+    bits++;
+    items++;
+    int j;
+    // find end of list
+    for (j=i+1; j<np; j++) {
+      if (j+1 >= np) {
+	j=np;
+	break;
+      } 
+      if (s.Read(j).ivalue == s.Read(j+1).ivalue) break;
+    } // for j
+    // j is one past the end of the list
+    bits += npbits;
+    i = j;
+  } // while i<np
+  return bits;
+}
+ 
 void state_array::RunlengthEncodeBinary(char npbits, const state &s)
 {
   // special case: state is binary
@@ -270,7 +384,7 @@ void state_array::RunlengthEncodeBinary(char npbits, const state &s)
     if (i+1 >= np) {
      	// one last state var, treat as a flip of length 1
 	WriteInt(1, LIST_BIT);
-	WriteInt(npbits, 1);  
+	WriteInt(npbits, 0);  // list length-1
         i++;
         continue;
     }
@@ -280,7 +394,7 @@ void state_array::RunlengthEncodeBinary(char npbits, const state &s)
 	int j;
 	for (j=i+1; j<np && s.Read(i).ivalue == s.Read(j).ivalue; j++) { } 
 	// j is one past the end of the run
-  	WriteInt(npbits, (j-i)-1);    	// run length
+  	WriteInt(npbits, (j-i)-1);    	// run length-1
  	i = j;
      	continue;
     }
@@ -296,7 +410,7 @@ void state_array::RunlengthEncodeBinary(char npbits, const state &s)
       if (s.Read(j).ivalue == s.Read(j+1).ivalue) break;
     } // for j
     // j is one past the end of the list
-    WriteInt(npbits, (j-i)-1);	// list length minus one (none with zero length)
+    WriteInt(npbits, (j-i)-1);	// list length-1 
     i = j;
   } // while i<np
 }
@@ -351,85 +465,6 @@ int state_array::AddState(const state &s)
   char tkbits = tokenbits[int(tkselect)];
 
   //
-  //  Scan state to determine runlength stats
-  //  (but only if there are more than 2 state variables)
-  // 
-  int runs = 0;
-  int lists = 0;
-  int listlengths = 0;
-  if (np>2) {
-    if (maxval == 1) {
-      // special case: state is binary
-      i = 0;
-      while (i<np) {
-	if (i+1 >= np) {
-          // one last state var, treat as a list
-   	  lists++;
-          listlengths++;
-          i++;
-          continue;
-        }
-        if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
- 	  // Start of a RUN
-	  runs++;
-	  int runval = s.Read(i).ivalue;
-  	  do { i++; } while ((i<np) && (runval==s.Read(i).ivalue));	
-     	  continue;
-        }
-	// Must be a LIST, in this case, a sequence of FLIPS
- 	lists++;
-  	while (1) {
-	  listlengths++;
-	  i++;
-	  if (i+1 >= np) {
-	    i++;
-	    listlengths++;
-	    break;	
- 	  } 
-	  if (s.Read(i).ivalue == s.Read(i+1).ivalue) break;
-	} // while 1
-      } // while i<np
-    } else {
-      // state is not binary
-      i = 0;
-      while (i<np) {
-	if (i+1 >= np) {
-          // one last state var, treat as a list
-   	  lists++;
-          listlengths++;
-          i++;
-          continue;
-        }
-        if (s.Read(i).ivalue == s.Read(i+1).ivalue) {
- 	  // Start of a RUN
-	  runs++;
-	  int runval = s.Read(i).ivalue;
-  	  do { i++; } while ((i<np) && (runval==s.Read(i).ivalue));	
-     	  continue;
-        }
-	// Must be a LIST
- 	lists++;
-  	while (1) {
-	  listlengths++;
-	  i++;
-	  if (i+2 >= np) {
-	    i+=2;
-	    listlengths+=2;
-	    break;	
- 	  } 
-	  if (s.Read(i).ivalue != s.Read(i+1).ivalue) continue;
-	  if (s.Read(i+1).ivalue == s.Read(i+2).ivalue) break;  // run of 3
-	} // while 1
-      } // while i < np
-    } // if maxval
-  } else {
-    // set to impossible values (on the large side)
-    runs = 0;
-    lists = np;
-    listlengths = 2*np;
-  }
-  
-  //
   // Count bits/bytes required total for full storage
   //
   int full_bytes = Bits2Bytes(npbits + np*tkbits);
@@ -441,12 +476,18 @@ int state_array::AddState(const state &s)
   if (tkbits>1) sparse_bits += nnz*tkbits;
   int sparse_bytes = Bits2Bytes(sparse_bits);
 
-  // 
-  // Count bits/bytes required total for runlength storage
+  // if runlength requires more than this, don't use it
+  int minbits = (MIN(sparse_bytes, full_bytes)-1)*8;
+
   //
-  int runlength_bits = npbits + (runs+lists) * (npbits+1);
-  if (tkbits>1) runlength_bits += (runs+listlengths) * tkbits;
-  else runlength_bits++;
+  // Scan and count bits required total for runlength storage
+  //
+  int items;
+  int runlength_bits;
+  if (maxval == 1) // binary states
+    runlength_bits = RunlengthBitsBinary(npbits, s, minbits, items);
+  else
+    runlength_bits = RunlengthBits(npbits, tkbits, s, minbits, items);
   int runlength_bytes = Bits2Bytes(runlength_bits);
 
   //
@@ -498,7 +539,7 @@ int state_array::AddState(const state &s)
 
     case 2: 
       // *****************	Runlength Encoding 
-      WriteInt(npbits, runs+lists);
+      WriteInt(npbits, items);
       if (tkbits>1) RunlengthEncode(npbits, tkbits, s);
       else RunlengthEncodeBinary(npbits, s);
       break;
