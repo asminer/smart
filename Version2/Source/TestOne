@@ -26,8 +26,9 @@ endif
 echo -n "  $1  "
 rm -f /tmp/smarttest
 set LINE1='cond(ErrorFile("/tmp/smarttest"),null,exit(1));'
-set LINE2='cond(OutputFile("/tmp/smarttest"),null,exit(1));'
-if ( {(echo $LINE1 $LINE2 | $SMART - $1)} ) then
+set LINE2='cond(WarningFile("/tmp/smarttest"),null,exit(1));'
+set LINE3='cond(OutputFile("/tmp/smarttest"),null,exit(1));'
+if ( {(echo $LINE1 $LINE2 $LINE3 | $SMART - $1)} ) then
     if ( {(diff -B $1.out /tmp/smarttest >! $1.diffs)} ) then
       $OK
       rm -f $1.diffs
