@@ -272,6 +272,7 @@ void compute_num_arcs(expr **pp, int np, result &x)
 
   // get number of arcs
   markov_chain* mc = dsm->mc;
+  DCASSERT(mc);
   switch (mc->Storage()) {
     case MC_Explicit:
 	x.ivalue = mc->Explicit()->numArcs();

@@ -5,6 +5,21 @@
 #define SSGEN_H
 
 #include "../Formalisms/dsm.h"
+#include "../States/flatss.h"
+#include "../States/trees.h"
+
+// Necessary for ssmcgen.cc
+
+extern option* StateStorage;
+extern option_const debug_ss;
+extern option_const redblack_ss;
+extern option_const splay_ss;
+
+/** Useful helper function.
+    Compress and attach the reachability set to the state model.
+    If an error occurred, use states = NULL.
+*/
+void CompressAndAffix(state_model* dsm, state_array* states, binary_tree* tree);
 
 /** 	Build the reachability set for a state model.
 

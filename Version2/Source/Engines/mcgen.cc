@@ -145,6 +145,17 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   return !error; 
 }
 
+void CompressAndAffix(state_model* dsm, labeled_digraph<float> *mc)
+{
+  if (NULL==mc) {
+    dsm->mc = new markov_chain(NULL);
+    dsm->mc->CreateError();
+    return;
+  }
+  dsm->mc = new markov_chain(NULL);
+  dsm->mc->CreateExplicit(new classified_chain<float>(mc));
+}
+
 void SparseCTMC(state_model *dsm)
 {
   DCASSERT(NULL==dsm->mc);
@@ -164,8 +175,6 @@ void SparseCTMC(state_model *dsm)
 
     case RT_Explicit:
         mc = new labeled_digraph<float>;
-        mc->ResizeNodes(dsm->statespace->Size()); 
-        mc->ResizeEdges(4);
 	ok = GenerateCTMC(dsm, dsm->statespace->Explicit(), mc);
 	break;
 			
@@ -175,27 +184,25 @@ void SparseCTMC(state_model *dsm)
 	Internal.Stop();
   }
 
-  // An error occurred during generation, bail
-  if (!ok) {
-    delete mc;
-    dsm->mc = new markov_chain(NULL);
-    dsm->mc->CreateError();
-    return;
-  }
-
-  // "generate" initial probability vector here...
-
   if (Verbose.IsActive()) {
     Verbose << "Done generating CTMC; classifying and compressing\n";
     Verbose.flush();
   }
 
-  // transpose if necessary
-  if (!MatrixByRows->GetBool()) mc->Transpose();
+  // An error occurred during generation
+  if (!ok) {
+    delete mc;
+    mc = NULL;
+  } else {
+
+    // "generate" initial probability vector here...
+
+    // transpose if necessary
+    if (!MatrixByRows->GetBool()) mc->Transpose();
+  }
 
   // attach to model
-  dsm->mc = new markov_chain(NULL);
-  dsm->mc->CreateExplicit(new classified_chain<float>(mc));
+  CompressAndAffix(dsm, mc);
 }
 
 // *******************************************************************
