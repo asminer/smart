@@ -16,7 +16,7 @@
 
 #include "../../Source/Base/api.h"
 #include "../../Source/Language/api.h"
-#include "../../Source/stack.h"
+#include "../../Source/Templates/stack.h"
 //#include "smart.tab.h"
 #include <string.h>
 #include <fstream>

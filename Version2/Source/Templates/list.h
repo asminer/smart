@@ -97,7 +97,7 @@ public:
     }
   }
 
-  void Clear() {
+  inline void Clear() {
     last = 0;
   }
 };
@@ -111,7 +111,7 @@ public:
   inline DATA** MakeArray() { return (DATA **)(VMakeArray()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(VItem(n)); }
   inline void Append(DATA *x) { VAppend(x); }
-  inline void Append(List <DATA> *x) { if (x) { VAppend(x); delete x; } }
+  inline void Append(List <DATA> *x) { VAppend(x); }
   inline void InsertAt(int n, DATA* x) { VInsertAt(n, x); }
 };
 

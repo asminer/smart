@@ -2,7 +2,6 @@
 // $Id$
 
 #include "tables.h"
-#include "../list.h"
 #include <string.h>
 
 //#define TABLE_DEBUG

@@ -5,9 +5,9 @@
      Implementation of streams
 */
 
+#include "../defines.h"
 #include "streams.h"
 #include "options.h"
-#include "../defines.h"
 
 // Global: is an error stream active?
 bool WritingToErrorStream;

@@ -5,9 +5,9 @@
 #define TABLES_H
 
 #include "../Language/api.h"
-#include "../list.h"
-#include "../splay.h"
-#include "../memmgr.h"
+#include "../Templates/list.h"
+#include "../Templates/splay.h"
+#include "../Templates/memmgr.h"
 
 /**
     A symbol table class.

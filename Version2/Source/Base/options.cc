@@ -1,9 +1,9 @@
 
 // $Id$
 
-#include "options.h"
 #include "../defines.h"
-#include "../heap.h"
+#include "options.h"
+#include "../Templates/heap.h"
 
 // **************************************************************************
 // *                             option methods                             *
