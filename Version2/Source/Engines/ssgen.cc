@@ -11,9 +11,10 @@
 
 option* StateStorage;
 
-const int num_ss_options = 2;
+const int num_ss_options = 3;
 
 option_const debug_ss("DEBUG", "Use splay tree and display states as they are generated");
+option_const redblack_ss("RED_BLACK", "red-black tree");
 option_const splay_ss("SPLAY", "Splay tree");
 
 // return true on success
@@ -291,6 +292,38 @@ bool SplayReachset(state_model *dsm)
   // return ok;
 }
 
+bool RedBlackReachset(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting reachability set generation using red-black tree\n";
+    Verbose.flush();
+  }
+  timer watch;
+  watch.Start();
+  state_array* states = new state_array(true);
+  red_black_tree* tree = new red_black_tree(states);
+  bool ok = Explore_Indexed(dsm, states, tree);
+  
+  Output << states->NumStates() << " states generated\n";
+  Output.flush();
+  
+  watch.Stop();
+  if (Report.IsActive()) {
+    Report << "Generation took " << watch << "\n";
+    Report << "red-black tree:\n";
+    tree->Report(Report);
+    states->Report(Report);
+    Report.flush();
+  }
+
+
+  return false; // temporary
+
+  // affix to state model here...
+
+  // return ok;
+}
+
 bool BuildReachset(state_model *dsm)
 {
   const option_const* ss_option = StateStorage->GetEnum();
@@ -298,6 +331,8 @@ bool BuildReachset(state_model *dsm)
     return DebugReachset(dsm); 
   if (ss_option == &splay_ss)
     return SplayReachset(dsm); 
+  if (ss_option == &redblack_ss)
+    return RedBlackReachset(dsm); 
 
   Internal.Start(__FILE__, __LINE__);
   Internal << "StateStorage option " << ss_option << " not handled";
@@ -316,7 +351,8 @@ void InitSSGen()
   option_const **sslist = new option_const*[num_ss_options];
   // these must be alphabetical
   sslist[0] = &debug_ss;
-  sslist[1] = &splay_ss;
+  sslist[1] = &redblack_ss;
+  sslist[2] = &splay_ss;
   StateStorage = MakeEnumOption("StateStorage", "Algorithm and data structure to use for state space generation", sslist, num_ss_options, &splay_ss);
   AddOption(StateStorage);
 }

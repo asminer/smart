@@ -6,6 +6,7 @@
 
 #include "flatss.h"
 #include "../Templates/stack.h"
+#include "../Templates/bitvector.h"
 
 /** @name trees.h
     @type File
@@ -50,6 +51,7 @@ public:
     FillOrderList(root, i, order);
   }
 protected:
+  inline int Pop() { return (path->Empty()) ? -1 : path->Pop(); }
   /// Traverse subtree, add to order array starting with "index".
   void FillOrderList(int tree, int &index, int* order);
 
@@ -88,7 +90,6 @@ public:
   void Report(OutputStream &r);
 protected:
   void Resize(int newsize); 
-  inline int Pop() { return (path->Empty()) ? -1 : path->Pop(); }
   // Copied & adapted from splay template
   inline void SplayRotate(int C, int P, int GP) {
     // swap parent and child
@@ -137,6 +138,7 @@ protected:
 
 
 class red_black_tree : public binary_tree {
+  bitvector* isRed; 
 public:
   red_black_tree(state_array *s);
   ~red_black_tree();
@@ -154,21 +156,14 @@ public:
       @return	The handle (index) of the state, if found;
 		otherwise, -1.
   */
-  int FindState(const state &s) {
-    return -1;
-  }
+  int FindState(const state &s);
   void Report(OutputStream &r);
 protected:
-  void Resize(int newsize); 
-  int Rotate(int key, int y) {
-      /*
-      int c, gc;
-      if (states->Compare(key, y) < 0)
-	c = left[y];
-      else
-	c = right[y];
-	*/
+  inline bool is4node(int p) const {
+    if (left[p]<0 || right[p]<0) return false;  // not enough children
+    return isRed->IsSet(left[p]) && isRed->IsSet(right[p]);
   }
+  void Resize(int newsize); 
 };
 
 /*

@@ -33,11 +33,12 @@ class bitvector {
   int size;
   unsigned int *data;
 public:
-  BitArray(int s) { 
+  bitvector(int s) { 
+    data = NULL;
     size = 0;
     Resize(s);
   }
-  ~BitArray() { 
+  ~bitvector() { 
     Resize(0);
   }
   void Resize(int ns) {
@@ -51,17 +52,18 @@ public:
     size = ns;
   }
   inline int Size() const { return size; }
+  inline int MemUsed() const { return (size>0) ? 4*(((size-1)/32)+1) : 0; }
   inline void Set(int n) {
     CHECK_RANGE(0, n, size);
-    data[n/32] |= mask[n%32]; // set bit n
+    data[n/32] |= bitvector_mask[n%32]; // set bit n
   }
   inline void Unset(int n) {
     CHECK_RANGE(0, n, size);
-    data[n/32] &= notm[n%32]; // clear bit n      
+    data[n/32] &= bitvector_notm[n%32]; // clear bit n      
   }
   inline bool IsSet(int n) const {
     CHECK_RANGE(0, n, size);
-    return (data[n/32] & mask[n%32]) > 0;  
+    return (data[n/32] & bitvector_mask[n%32]) > 0;  
   }
   inline void UnsetAll() {
     int i;
