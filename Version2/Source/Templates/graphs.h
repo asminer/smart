@@ -10,7 +10,8 @@
 #ifndef GRAPHS_H
 #define GRAPHS_H
 
-#include "../Base/errors.h"
+// Old klunky graphs below
+
 #include "../Base/streams.h"
 #include "list.h"
 #include "circlist.h"

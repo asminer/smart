@@ -89,19 +89,6 @@ public:
   }
 };
 
-/*
-template <class DATA>
-struct index_pair {
-  int index;
-  DATA value;
-};
-
-template <class DATA>
-inline bool operator> (const index_pair <DATA> &a, const index_pair <DATA> &b)
-{
-  return a.index > b.index;
-}
-*/
 
 template <class DATA>
 class sparse_vector : public sparse_bitvector {
