@@ -32,6 +32,23 @@ void TextGenerate(int strms, int samples)
   }
 }
 
+void SplitGenerate(int strms, int samples)
+{
+  int s,n;
+  // Generate and write from each stream
+  for (s=0; s<strms; s++) {
+    char buffer[25];
+    sprintf(buffer, "s%d", s);
+    FILE* out = fopen(buffer, "w");
+    // dump to this file 
+    for (n=0; n<samples; n++) {
+      unsigned long sample = stream[s].lrand();
+      fwrite(&sample, sizeof(unsigned long), 1, out);
+    }
+    fclose(out);
+  }
+}
+
 void PackBit(bool value)
 {
   static unsigned char byte = 0;
@@ -137,6 +154,7 @@ int main(int argc, char** argv)
     fprintf(stderr, "\t #streams is the number of parallel streams to use\n");
     fprintf(stderr, "\t #samples is the number of samples (per stream) to generate\n");
     fprintf(stderr, "\t t  means output will be text mode, #streams per line\n");
+    fprintf(stderr, "\t s  means each output stream goes to its own file\n");
     fprintf(stderr, "\t b  means output stream will be interleaved bits\n");
     fprintf(stderr, "\t y  means output stream will be interleaved bytes\n");
     fprintf(stderr, "\t w  means output stream will be interleaved words\n\n");
@@ -145,12 +163,13 @@ int main(int argc, char** argv)
 
   switch (argv[1][0]) {
     case 't' :
+    case 's' : 
     case 'b' : 
     case 'y' : 
     case 'w' : 
 	break;
     default:
-    	fprintf(stderr, "Expecting t|b|y|w for first argument\n");
+    	fprintf(stderr, "Expecting t|s|b|y|w for first argument\n");
 	return 0;
   }
 
@@ -170,6 +189,7 @@ int main(int argc, char** argv)
 
   switch (argv[1][0]) {
     case 't':	TextGenerate(streams, samples); 	return 0;
+    case 's':	SplitGenerate(streams, samples); 	return 0;
     case 'b': 	BitGenerate(streams, samples);		return 0;
     case 'y':	ByteGenerate(streams, samples);		return 0;
     case 'w':	WordGenerate(streams, samples);		return 0;
