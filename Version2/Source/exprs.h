@@ -477,6 +477,7 @@ public:
   inline void SetSubstitution(bool sv) { substitute_value = sv;}
 
   virtual expr* Substitute(int i);
+  virtual void show(ostream &) const;
 };
 
 

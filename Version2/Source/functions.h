@@ -65,7 +65,6 @@ public:
 
   virtual void Compute(int i, result &x);
   virtual void Sample(long &, int i, result &x);
-  virtual void show(ostream &s) const;
 
   /** Used to "link" the formal params to 
       a user-defined function.

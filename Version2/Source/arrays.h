@@ -52,7 +52,6 @@ public:
   virtual ~array_index(); 
 
   virtual void Compute(int i, result &x);
-  virtual void show(ostream &s) const;
   void showfancy(ostream &s) const;
 
   // Used by for loops and arrays:
@@ -191,6 +190,8 @@ public:
   /** Like compute, but we sample the indices instead.
    */
   void Sample(long &, expr **il, result &x);
+
+  virtual void show(ostream &s) const;
 };
 
 

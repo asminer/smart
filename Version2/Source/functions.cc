@@ -58,11 +58,6 @@ void formal_param::Sample(long &, int i, result &x)
   x = stack[0][offset];  
 }
 
-void formal_param::show(ostream &s) const
-{
-  s << Name();
-}
-
 // ******************************************************************
 // *                                                                *
 // *                        function methods                        *
@@ -293,8 +288,15 @@ void fcall::Sample(long &s, int i, result &x)
 expr* fcall::Substitute(int i)
 {
   DCASSERT(0==i);
+  if (0==numpass) return Copy(this);
+
   // substitute each passed parameter...
-  return NULL;
+  expr** pass2 = new expr*[numpass];
+  int n;
+  for (n=0; n<numpass; n++) {
+    pass2[n] = pass[n]->Substitute(0);
+  }
+  return new fcall(Filename(), Linenumber(), func, pass2, numpass);
 }
 
 int fcall::GetSymbols(int i, symbol **syms, int N, int offset)

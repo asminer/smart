@@ -45,14 +45,9 @@ void array_index::Compute(int i, result &x)
   current->GetElement(index, x);
 }
 
-void array_index::show(ostream &s) const
-{
-  s << Name();
-}
-
 void array_index::showfancy(ostream &s) const
 {
-  s << Name() << " in " << values;
+  s << Name() << " in {" << values << "}";
 }
 
 
@@ -173,7 +168,16 @@ void array::Sample(long &seed, expr **il, result &x)
   x.other = ptr;
 }
 
-
+void array::show(ostream &s) const
+{
+  DCASSERT(Name());
+  s << GetType(Type(0)) << " " << Name() << "[" << index_list[0];
+  int i;
+  for (i=1; i<dimension; i++) {
+    s << ", " << index_list[i];
+  }
+  s << "]";
+}
 
 
 // ******************************************************************
@@ -248,8 +252,16 @@ void acall::Sample(long &seed, int i, result &x)
 
 expr* acall::Substitute(int i)
 {
-  // implement this!
-  return NULL;
+  DCASSERT(0==i);
+  DCASSERT(numpass);
+
+  // substitute each index
+  expr** pass2 = new expr*[numpass];
+  int n;
+  for (n=0; n<numpass; n++) {
+    pass2[n] = pass[n]->Substitute(0);
+  }
+  return new acall(Filename(), Linenumber(), func, pass2, numpass);
 }
 
 int acall::GetSymbols(int i, symbol **syms, int N, int offset)
@@ -265,7 +277,7 @@ void acall::show(ostream &s) const
   DCASSERT(numpass>0);
   s << "[" << pass[0];
   int i;
-  for (i=0; i<numpass; i++) s << ", " << pass[i];
+  for (i=1; i<numpass; i++) s << ", " << pass[i];
   s << "]";
 }
 
@@ -385,12 +397,17 @@ void arrayassign::Execute()
 {
   // De-iterate the return value
   expr* rv = retval->Substitute(0);
+
+  DCASSERT(rv); // hmmmm....  can this ever happen?
   
   // build a better name?
   determfunc *frv = new determfunc(Filename(), Linenumber(), rv->Type(0), 
                                    strdup(f->Name()));
+  frv->SetReturn(rv);
 
   f->SetCurrentReturn(frv);
+
+  cout << "Array assign: " << frv << "\n";
 }
 
 void arrayassign::show(ostream &s) const

@@ -215,6 +215,12 @@ expr* symbol::Substitute(int i)
   return Copy(this);
 }
 
+void symbol::show(ostream &s) const
+{
+  if (NULL==name) return;  // Hidden symbol?
+  s << name;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                        aggregates class                        *

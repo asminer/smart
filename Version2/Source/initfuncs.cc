@@ -14,6 +14,8 @@
 
 //@{
 
+#define DEBUG_DEEP
+
 void cond_c(expr **pp, int np, result &x)
 {
   DCASSERT(pp);
@@ -22,11 +24,24 @@ void cond_c(expr **pp, int np, result &x)
     x.null = true;
     return;
   } 
+#ifdef DEBUG_DEEP
+  cout << "Inside cond\n";
+  cout << "Computing test condition: " << pp[0] << "\n";
+#endif
   pp[0]->Compute(0, b);
+#ifdef DEBUG_DEEP
+  cout << "Got test condition: " << b.bvalue << "\n";
+#endif
   if (b.bvalue) {
+#ifdef DEBUG_DEEP
+    cout << "Computing then param: " << pp[1] << "\n";
+#endif
     if (NULL==pp[1]) x.null = true;
     else pp[1]->Compute(0, x);
   } else {
+#ifdef DEBUG_DEEP
+    cout << "Computing else param: " << pp[2] << "\n";
+#endif
     if (NULL==pp[2]) x.null = true;
     else pp[2]->Compute(0, x);
   }

@@ -76,7 +76,7 @@ void exprstmt::showfancy(int depth, ostream &s)
 statement* MakeExprStatement(expr* e, const char* file, int line)
 {
   if (NULL==e) return NULL;
-  DCASSERT(e->Type()==VOID);
+  DCASSERT(e->Type(0)==VOID);
   return NULL;
 }
   
