@@ -7,10 +7,9 @@ Files, and what they define, in a roughly layered sense.
 
 File	  	What's there
 ----------	----------------------------------------------------
-types		Definitions of type constants, and some handy 
-		functions (mostly used by the compiler)
+results		The result class.  Functions to print and delete results.
 
-exprs		Result class.  Engine information class.
+exprs		Engine information class.
 		Expression class base.
 		Symbols.
 		Constant bool, int, and real expressions.
@@ -18,10 +17,6 @@ exprs		Result class.  Engine information class.
 stmts		Statements.
 
 sets		Set expressions and their results.
-
-options
-
-infinity	Infinity constants.
 
 variables	Functions with no parameters.
 
@@ -31,15 +26,22 @@ arrays		User-defined arrays.
 		For loops.
 		Array assigmnent statements.
 
-baseops		Base classes for operators like "+"
-		(to reduce cut&paste of virtual functions)
-
-operators	Operator expressions for all types,
-		including sets.
+operators	Operator expressions for all types, including sets.  
+		This is so huge that it is split into its own hierarchy:
+		baseops		Base classes for operators like "+"
+		ops_const	Operators for "determ"
+		ops_rand	Operators for "rand"
+		ops_proc	Operators for "proc"
 
 casting		Type casting operators for all types.
 
-initfuncs	Initializes built-in (not model-related) functions
+converge	Converge statements (including within arrays)
+
+infinity	Infinity constants.
+
+strings		String results and operators.
+
+measures	Measures (special case of variable)
 
 api		Front end
 
