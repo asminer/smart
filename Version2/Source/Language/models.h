@@ -76,8 +76,6 @@ public:
     state_index = si;
   }
 
-  inline int GetIndex() const { return state_index; }
-
   inline bool hasLowerBound() const { return has_lower_bound; }
   inline bool hasUpperBound() const { return has_upper_bound; }
   inline int getLowerBound() const {

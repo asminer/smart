@@ -712,7 +712,30 @@ bool PromoteForOp(expr* &left, int op, expr* &right)
 	} // end of switch op for rand int
 	return false;
 
-  }
+    // ========================================================
+    case PROC_INT:
+    	switch (op) {
+	  case PLUS:
+	  case MINUS:
+	  case TIMES:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+		  	right = MakeTypecast(right, PROC_INT, file, line);
+			return true;
+		  case PROC_INT:
+			return true;
+		} // switch rt
+	  return false;
+	} // switch op for proc int
+
+  } // switch lt
 
   return false;
 }

@@ -13,208 +13,6 @@
 
 #define DEBUG_SPN
 
-// ******************************************************************
-// *                                                                *
-// *                Specialized Petri net expressions               *
-// *                                                                *
-// ******************************************************************
-
-/*
-class internal_tk : public constant { // think "no parameters", not constant
-private:
-  symbol* placename;
-  int stateid;
-public:
-  internal_tk(symbol* pn, int sid) : constant(NULL, -1, PROC_INT) {
-    placename = pn;
-    stateid = sid;
-  }
-  virtual ~internal_tk() {
-    // DO NOT DELETE placename...
-  }
-  virtual void Compute(const state &s, int i, result &x) {
-    DCASSERT(i==0);
-    x = s.Read(stateid); 
-  }
-  virtual void show(OutputStream &s) const {
-    s << "tk(" << placename << ")";
-  }
-  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
-    DCASSERT(i==0);
-    if (syms) syms->Append(placename);
-    return 1;
-  }
-};
-
-*/
-/*
-
-class add_const_to_place : public constant {
-private:
-  const char* modelname;
-  symbol* placename;
-  int stateid;
-  int delta;
-public:
-  add_const_to_place(const char* mn, symbol* pn, int sid, int d)
-  : constant(NULL, -1, PROC_STATE) {
-    modelname = mn;
-    placename = pn;
-    stateid = sid;
-    delta = d;
-    DCASSERT(delta);
-  }
-  virtual ~add_const_to_place() {
-    // DO NOT DELETE placename...
-  }
-  virtual void NextState(const state &, state &next, result &x) {
-    next[stateid].ivalue += delta;
-    if (next[stateid].ivalue < 0) {
-      Error.Start();
-      if (delta>0) Error << "Overflow of place " << placename;
-      else Error << "Underflow of place " << placename;
-      Error << " in model " << modelname;
-      x.setError();
-    }
-  }
-  virtual void show(OutputStream &s) const {
-    s << placename;
-    if (delta>0) s << "+=" << delta; 
-    else s << "-=" << -delta;
-  }
-  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
-    DCASSERT(i==0);
-    if (syms) syms->Append(placename);
-    return 1;
-  }
-};
-
-class add_expr_to_place : public unary {
-private:
-  const char* modelname;
-  symbol* placename;
-  int stateid;
-public:
-  add_expr_to_place(const char* mn, symbol* pn, int sid, expr* delta)
-  : unary(NULL, -1, delta) {
-    modelname = mn;
-    placename = pn;
-    stateid = sid;
-    DCASSERT(delta);
-  }
-  virtual ~add_expr_to_place() {
-    // DO NOT DELETE placename...
-  }
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return PROC_STATE;
-  }
-  virtual void NextState(const state &, state &next, result &x) {
-    SafeCompute(opnd, 0, x);
-    if (x.isNormal()) {
-      next[stateid].ivalue += x.ivalue;
-      if (next[stateid].ivalue < 0) {
-        Error.Start();
-        if (x.ivalue>0) Error << "Overflow of place " << placename;
-        else Error << "Underflow of place " << placename;
-        Error << " in model " << modelname;
-        x.setError();
-      }
-      return;
-    }
-    if (x.isUnknown()) {
-      next[stateid].setUnknown();
-      return;
-    }
-    if (x.isInfinity()) {
-      Error.Start();
-      Error << "Infinite tokens added to place " << placename;
-      Error << " in model " << modelname;
-      Error.Stop();
-      x.setError();
-      return;
-    }
-    // some other error, propogate it
-  }
-  virtual void show(OutputStream &s) const {
-    s << placename << "+=" << opnd;
-  }
-  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
-    DCASSERT(i==0);
-    int answer = 1;
-    if (syms) syms->Append(placename);
-    answer += opnd->GetSymbols(0, syms);
-    return answer;
-  }
-protected:
-  virtual expr* MakeAnother(expr* newopnd) {
-    return new add_expr_to_place(modelname, placename, stateid, newopnd);
-  }
-};
-
-class sub_expr_from_place : public unary {
-private:
-  const char* modelname;
-  symbol* placename;
-  int stateid;
-public:
-  sub_expr_from_place(const char* mn, symbol* pn, int sid, expr* delta)
-  : unary(NULL, -1, delta) {
-    modelname = mn;
-    placename = pn;
-    stateid = sid;
-    DCASSERT(delta);
-  }
-  virtual ~sub_expr_from_place() {
-    // DO NOT DELETE placename...
-  }
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return PROC_STATE;
-  }
-  virtual void NextState(const state &, state &next, result &x) {
-    SafeCompute(opnd, 0, x);
-    if (x.isNormal()) {
-      next[stateid].ivalue -= x.ivalue;
-      if (next[stateid].ivalue < 0) {
-        Error.Start();
-        if (x.ivalue<0) Error << "Overflow of place " << placename;
-        else Error << "Underflow of place " << placename;
-        Error << " in model " << modelname;
-        x.setError();
-      }
-      return;
-    }
-    if (x.isUnknown()) {
-      next[stateid].setUnknown();
-      return;
-    }
-    if (x.isInfinity()) {
-      Error.Start();
-      Error << "Infinite tokens removed from place " << placename;
-      Error << " in model " << modelname;
-      Error.Stop();
-      x.setError();
-      return;
-    }
-    // some other error, propogate it
-  }
-  virtual void show(OutputStream &s) const {
-    s << placename << "-=" << opnd;
-  }
-  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
-    DCASSERT(i==0);
-    int answer = 1;
-    if (syms) syms->Append(placename);
-    answer += opnd->GetSymbols(0, syms);
-    return answer;
-  }
-protected:
-  virtual expr* MakeAnother(expr* newopnd) {
-    return new sub_expr_from_place(modelname, placename, stateid, newopnd);
-  }
-};
-*/
 
 // ******************************************************************
 // *                                                                *
@@ -222,13 +20,20 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/// Things to remember for each transition.
-struct trans_info {
+class transition : public model_var {
+public:
+  /// List of inputs
   int inputs;
+  /// List of outputs
   int outputs;
+  /// List of inhibitors
   int inhibitors;
-  // guards
+  /// guard expression
+  expr* guard;
   // firing distribution
+  expr* firing;
+public:
+  transition(const char* fn, int line, char* n) : model_var(fn, line, TRANS, n) { inputs = outputs = inhibitors = -1; guard = firing = NULL; }
 };
 
 
@@ -317,14 +122,13 @@ private:
 protected:
   model_var** places;
   int num_places;
-  model_var** transitions;
-  trans_info* trans_data;
+  transition** transitions;
   listarray <spn_arcinfo> *arcs;
 public:
   spn_dsm(const char* name, 
-	model_var** p, int np,
-	model_var** t, int nt,
-        trans_info* td, listarray<spn_arcinfo> *a);
+	  model_var** p, int np, 
+          transition** t, int nt, 
+          listarray<spn_arcinfo> *a);
   virtual ~spn_dsm();
 
   virtual void ShowState(OutputStream &s, const state &x) {
@@ -338,8 +142,16 @@ public:
   virtual void GetInitialState(int n, state &s) const { DCASSERT(0); }
   virtual expr* EnabledExpr(int e);
   virtual expr* NextStateExpr(int e);
-  virtual expr* EventDistribution(int e) { DCASSERT(0); }
-  virtual type EventDistributionType(int e) { DCASSERT(0); }
+  virtual expr* EventDistribution(int e) { 
+    CHECK_RANGE(0, e, NumEvents());
+    return transitions[e]->firing;
+  }
+  virtual type EventDistributionType(int e) { 
+    CHECK_RANGE(0, e, NumEvents());
+    if (transitions[e]->firing) 
+      return transitions[e]->firing->Type(0);
+    return VOID;
+  }
 };
 
 // ******************************************************************
@@ -348,13 +160,12 @@ public:
 
 spn_dsm::spn_dsm(const char* name, 
 	model_var** p, int np,
-	model_var** t, int nt,
-        trans_info* td, listarray<spn_arcinfo> *a) : state_model(name, nt)
+	transition** t, int nt,
+	listarray<spn_arcinfo> *a) : state_model(name, nt)
 {
   places = p;
   num_places = np;
   transitions = t;
-  trans_data = td;
   arcs = a;
   DCASSERT(arcs->IsStatic());
   // temp stuff
@@ -366,7 +177,6 @@ spn_dsm::~spn_dsm()
   // places and transitions themselves are deleted by the model, right?
   free(places);
   free(transitions);
-  free(trans_data);
   delete arcs;
   // temp stuff
   delete exprlist;
@@ -374,16 +184,17 @@ spn_dsm::~spn_dsm()
 
 expr* spn_dsm::EnabledExpr(int e)
 {
+  CHECK_RANGE(0, e, NumEvents());
   // Build a huge conjunction, first as a list of expressions
   exprlist->Clear();
 
   // Go through inputs and inhibitors in order (they're ordered)
-  int input_list = trans_data[e].inputs;
+  int input_list = transitions[e]->inputs;
   int input_ptr;
   if (input_list>=0) input_ptr = arcs->list_pointer[input_list];
   else input_ptr = -1; // signifies "done"
 
-  int inhib_list = trans_data[e].inhibitors;
+  int inhib_list = transitions[e]->inhibitors;
   int inhib_ptr;
   if (inhib_list>=0) inhib_ptr = arcs->list_pointer[inhib_list];
   else inhib_ptr = -1; // signifies "done"
@@ -438,6 +249,15 @@ expr* spn_dsm::EnabledExpr(int e)
   } // while
 
   // add any transition guards to the list here.
+  expr* guard = transitions[e]->guard;
+  if (guard) {
+    // split into products, because we want one huge conjunction
+    List <expr> foo(16);
+    int np = guard->GetProducts(0, &foo);
+    for (int p=0; p<np; p++) {
+      exprlist->Append(Copy(foo.Item(p)));
+    }
+  }
 
   // have list of conditions, build conjunction
   int numopnds = exprlist->Length();
@@ -449,16 +269,17 @@ expr* spn_dsm::EnabledExpr(int e)
 
 expr* spn_dsm::NextStateExpr(int e)
 {
+  CHECK_RANGE(0, e, NumEvents());
   // Build a huge conjunction, first as a list of expressions
   exprlist->Clear();
 
   // Go through inputs and outputs in order (they're ordered)
-  int in_list = trans_data[e].inputs;
+  int in_list = transitions[e]->inputs;
   int in_ptr;
   if (in_list>=0) in_ptr = arcs->list_pointer[in_list];
   else in_ptr = -1; // signifies "done"
 
-  int out_list = trans_data[e].outputs;
+  int out_list = transitions[e]->outputs;
   int out_ptr;
   if (out_list>=0) out_ptr = arcs->list_pointer[out_list];
   else out_ptr = -1; // signifies "done"
@@ -530,8 +351,7 @@ expr* spn_dsm::NextStateExpr(int e)
 class spn_model : public model {
 protected:
   List <model_var> *placelist;
-  List <model_var> *translist;
-  DataList <trans_info> *transinfo;
+  List <transition> *translist;
   listarray <spn_arcinfo> *arcs;
 public:
   spn_model(const char* fn, int line, type t, char *n, 
@@ -543,6 +363,8 @@ public:
   void AddInput(int place, int trans, expr* card, const char *fn, int ln);
   void AddOutput(int trans, int place, expr* card, const char *fn, int ln);
   void AddInhibitor(int place, int trans, expr* card, const char *fn, int ln);
+  void AddGuard(int trans, expr* guard);
+  void AddFiring(int trans, expr* firing);
 
   // Required for models:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
@@ -563,7 +385,6 @@ spn_model::spn_model(const char *fn, int line, type t, char *n,
 {
   placelist = NULL;
   translist = NULL;
-  transinfo = NULL;
   arcs = NULL;
 }
 
@@ -572,7 +393,6 @@ spn_model::~spn_model()
   // These *should* be null already
   delete placelist;
   delete translist;
-  delete transinfo;
   delete arcs;
 }
 
@@ -608,10 +428,10 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
 
-  if (transinfo->data[trans].inputs<0)
-	transinfo->data[trans].inputs = arcs->NewList();
+  transition *t = translist->Item(trans);
+  if (t->inputs<0) t->inputs = arcs->NewList();
 
-  int list = transinfo->data[trans].inputs;
+  int list = t->inputs;
   spn_arcinfo data;
   data.place = place;
   data.filename = fn;
@@ -633,10 +453,10 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
 
-  if (transinfo->data[trans].outputs<0)
-	transinfo->data[trans].outputs = arcs->NewList();
+  transition *t = translist->Item(trans);
+  if (t->outputs<0) t->outputs = arcs->NewList();
 
-  int list = transinfo->data[trans].outputs;
+  int list = t->outputs;
   spn_arcinfo data;
   data.place = place;
   data.filename = fn;
@@ -658,10 +478,11 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
 
-  if (transinfo->data[trans].inhibitors<0)
-	transinfo->data[trans].inhibitors = arcs->NewList();
+  transition *t = translist->Item(trans);
+  if (t->inhibitors<0)
+	t->inhibitors = arcs->NewList();
 
-  int list = transinfo->data[trans].inhibitors;
+  int list = t->inhibitors;
   spn_arcinfo data;
   data.place = place;
   data.filename = fn;
@@ -678,26 +499,55 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   Warning.Stop();
 }
 
+void spn_model::AddGuard(int trans, expr* guard)
+{
+  CHECK_RANGE(0, trans, translist->Length());
+  transition *t = translist->Item(trans);
+  if (NULL==t->guard) {
+    t->guard = guard->Substitute(0);
+    return;
+  }
+  Warning.Start(guard->Filename(), guard->Linenumber());
+  Warning << "Merging duplicate guard on transition " << t;
+  Warning << " in SPN " << Name();
+  Warning.Stop(); 
+  expr* merge = MakeBinaryOp(t->guard, AND, guard->Substitute(0), NULL, -1);
+  t->guard = merge;
+}
+
+void spn_model::AddFiring(int trans, expr* firing)
+{
+  CHECK_RANGE(0, trans, translist->Length());
+  transition *t = translist->Item(trans);
+  if (NULL==t->firing) {
+    t->firing = firing->Substitute(0);
+    return;
+  }
+  Warning.Start(firing->Filename(), firing->Linenumber());
+  Warning << "Ignoring duplicate firing for transition " << t;
+  Warning << " in SPN " << Name();
+  Warning.Stop();
+}
 
 model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
-  model_var* s = new model_var(fn, l, t, n);
+  model_var* p = NULL;
+  transition* tr = NULL;
   int index;
   switch (t) {
     case PLACE:
+ 	p = new model_var(fn, l, t, n);
         index = placelist->Length();
-	s->SetIndex(index);
-	placelist->Append(s);
+	p->SetIndex(index);
+	placelist->Append(p);
 	break;
 
     case TRANS:
+        tr = new transition(fn, l, n);
 	index = translist->Length();
-	s->SetIndex(index);
-	translist->Append(s);
-        transinfo->AppendBlank(); 
-        transinfo->data[index].inputs = -1;
-        transinfo->data[index].outputs = -1;
-        transinfo->data[index].inhibitors = -1;
+	tr->SetIndex(index);
+	translist->Append(tr);
+        p = tr;
 	break;
 
     default:
@@ -708,10 +558,10 @@ model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
   }
 #ifdef DEBUG_SPN
   Output << "\tModel " << Name() << " created " << GetType(t);
-  Output << " " << s << " index " << index << "\n"; 
+  Output << " " << p << " index " << index << "\n"; 
   Output.flush();
 #endif
-  return s;
+  return p;
 }
 
 void spn_model::InitModel()
@@ -719,29 +569,31 @@ void spn_model::InitModel()
   DCASSERT(NULL==placelist);
   DCASSERT(NULL==translist); 
   placelist = new List <model_var> (16);
-  translist = new List <model_var> (16);
-  transinfo = new DataList <trans_info> (16);
+  translist = new List <transition> (16);
   arcs = new listarray <spn_arcinfo>;
 }
 
 void spn_model::FinalizeModel(result &x)
 {
+#ifdef DEBUG_SPN
   int i;
-  for (i=0; i<transinfo->Length(); i++) {
-    Output << "Transition " << translist->Item(i) << "\n";
-    if (transinfo->data[i].inputs>=0) {
+  for (i=0; i<translist->Length(); i++) {
+    transition *t = translist->Item(i);
+    Output << "Transition " << t << "\n";
+    if (t->inputs>=0) {
       Output << "\tinputs: ";
-      arcs->ShowNodeList(Output, transinfo->data[i].inputs);
+      arcs->ShowNodeList(Output, t->inputs);
     }
-    if (transinfo->data[i].outputs>=0) {
+    if (t->outputs>=0) {
       Output << "\toutputs: ";
-      arcs->ShowNodeList(Output, transinfo->data[i].outputs);
+      arcs->ShowNodeList(Output, t->outputs);
     }
-    if (transinfo->data[i].inhibitors>=0) {
+    if (t->inhibitors>=0) {
       Output << "\tinhibitors: ";
-      arcs->ShowNodeList(Output, transinfo->data[i].inhibitors);
+      arcs->ShowNodeList(Output, t->inhibitors);
     }
   }
+#endif
   // success:
   x.Clear();
   x.notFreeable();
@@ -756,16 +608,13 @@ state_model* spn_model::BuildStateModel()
   placelist = NULL;
 
   int num_trans = translist->Length();
-  model_var** tlist = translist->MakeArray();
+  transition** tlist = translist->MakeArray();
   delete translist;
   translist = NULL;
 
-  trans_info* transdata = transinfo->CopyAndClearArray();
-  delete transinfo;
-  transinfo = NULL;
   arcs->ConvertToStatic();
 
-  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, transdata, arcs);
+  return new spn_dsm(Name(), plist, num_places, tlist, num_trans, arcs);
 }
 
 // ******************************************************************
@@ -967,7 +816,136 @@ void Add_spn_inhibit(PtrTable *fns)
 }
 
 
+// ********************************************************
+// *                         guard                        *
+// ********************************************************
 
+void compute_spn_guard(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+#ifdef DEBUG_SPN
+  Output << "Inside guard for spn " << spn << "\n";
+#endif
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+    DCASSERT(pp[i]);
+    DCASSERT(pp[i]!=ERROR);
+#ifdef DEBUG_SPN
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+#endif
+    result t;
+    SafeCompute(pp[i], 0, t);
+    // error checking of t here   
+    spn->AddGuard(t.ivalue, pp[i]->GetComponent(1));
+  }
+#ifdef DEBUG_SPN
+  Output << "Exiting guard for spn " << spn << "\n";
+  Output.flush();
+#endif
+  x.setNull();
+}
+
+void Add_spn_guard(PtrTable *fns)
+{
+  const char* helpdoc = "Assigns guard expressions to transitions.  If the guard evaluates to false then the transition is disabled.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(SPN, "net");
+  type *tl = new type[2];
+  tl[0] = TRANS;
+  tl[1] = PROC_BOOL;
+  pl[1] = new formal_param(tl, 2, "tg");
+  internal_func *p = new internal_func(VOID, "guard", 
+	compute_spn_guard, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                        firing                        *
+// ********************************************************
+
+void compute_spn_firing(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+#ifdef DEBUG_SPN
+  Output << "Inside firing for spn " << spn << "\n";
+#endif
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+    DCASSERT(pp[i]);
+    DCASSERT(pp[i]!=ERROR);
+#ifdef DEBUG_SPN
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+#endif
+    result t;
+    SafeCompute(pp[i], 0, t);
+    // error checking of t here   
+    spn->AddFiring(t.ivalue, pp[i]->GetComponent(1));
+  }
+#ifdef DEBUG_SPN
+  Output << "Exiting firing for spn " << spn << "\n";
+  Output.flush();
+#endif
+  x.setNull();
+}
+
+int typecheck_firing(List <expr> *params)
+{
+  // Note: hidden parameter SPN has NOT been added yet...
+  int np = params->Length();
+  int i;
+  for (i=0; i<np; i++) {
+    expr* p = params->Item(i);
+    if (NULL==p) return -1;
+    if (ERROR==p) return -1;
+    if (p->NumComponents()!=2) return -1;
+    if (p->Type(0)!=TRANS) return -1;
+    bool ok;
+    switch (p->Type(1)) {
+      case INT:
+      case REAL:
+      case EXPO:
+      case PH_INT:
+      case PH_REAL:
+      case RAND_INT:
+      case RAND_REAL:
+			ok = true;
+			break;
+      default:
+			ok = false;
+    }
+    if (!ok) return -1;
+  } // for i
+  return 0;
+}
+
+bool linkparams_firing(expr **p, int np)
+{
+  // anything?
+  return true;
+}
+
+
+void Add_spn_firing(PtrTable *fns)
+{
+  const char* helpdoc = "\b(..., trans : distribution, ...)\nAssigns firing distributions to transitions.";
+
+  internal_func *p = new internal_func(VOID, "firing", 
+	compute_spn_firing, NULL, NULL, 0, helpdoc);  
+  p->setWithinModel();
+  p->SetSpecialTypechecking(typecheck_firing);
+  p->SetSpecialParamLinking(linkparams_firing);
+  InsertFunction(fns, p);
+}
 
 // ********************************************************
 // *                          tk                          *
@@ -1029,6 +1007,9 @@ void InitPNModelFuncs(PtrTable *t)
 {
   Add_spn_arcs(t);
   Add_spn_inhibit(t);
+  
+  Add_spn_guard(t);
+  Add_spn_firing(t);
 
   Add_spn_tk(t);
 }

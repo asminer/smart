@@ -292,7 +292,7 @@ void listarray <DATA> :: Defragment(int first_slot)
       i++;
     } // while list
   } // for s
-  list_pointer[num_lists] = i;
+  if (list_pointer) list_pointer[num_lists] = i;
 }
 
 template <class DATA>

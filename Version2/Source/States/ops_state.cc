@@ -57,7 +57,7 @@ public:
   : statevar_comp(f, ln, v, EQUALS, rhs) { }
   virtual void Compute(const state &s, int i, result &x) {
     DCASSERT(0==i);
-    x.bvalue = (s.Read(var->GetIndex()).ivalue == rightside); 
+    x.bvalue = (s.Read(var->state_index).ivalue == rightside); 
   }
 };
 
@@ -71,7 +71,7 @@ public:
   : statevar_comp(f, ln, v, LT, rhs) { }
   virtual void Compute(const state &s, int i, result &x) {
     DCASSERT(0==i);
-    x.bvalue = (s.Read(var->GetIndex()).ivalue < rightside); 
+    x.bvalue = (s.Read(var->state_index).ivalue < rightside); 
   }
 };
 
@@ -85,7 +85,7 @@ public:
   : statevar_comp(f, ln, v, GE, rhs) { }
   virtual void Compute(const state &s, int i, result &x) {
     DCASSERT(0==i);
-    x.bvalue = (s.Read(var->GetIndex()).ivalue >= rightside); 
+    x.bvalue = (s.Read(var->state_index).ivalue >= rightside); 
   }
 };
 
@@ -134,7 +134,7 @@ public:
     DCASSERT(0==i);
     SafeCompute(opnd, 0, x);
     if (x.isNormal()) {
-      x.bvalue = (s.Read(var->GetIndex()).ivalue < x.ivalue); 
+      x.bvalue = (s.Read(var->state_index).ivalue < x.ivalue); 
       return;
     }
     if (x.isInfinity()) {
@@ -158,7 +158,7 @@ public:
     DCASSERT(0==i);
     SafeCompute(opnd, 0, x);
     if (x.isNormal()) {
-      x.bvalue = (s.Read(var->GetIndex()).ivalue >= x.ivalue); 
+      x.bvalue = (s.Read(var->state_index).ivalue >= x.ivalue); 
       return;
     }
     if (x.isInfinity()) {
@@ -193,9 +193,9 @@ public:
   }
   virtual void Compute(const state &s, int i, result &x) {
     DCASSERT(0==i);
-    x.bvalue =	(lower <= s.Read(var->GetIndex()).ivalue) 
+    x.bvalue =	(lower <= s.Read(var->state_index).ivalue) 
 		&& 
-		(s.Read(var->GetIndex()).ivalue <= upper); 
+		(s.Read(var->state_index).ivalue <= upper); 
   }
   virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
     DCASSERT(i==0);
@@ -238,9 +238,9 @@ public:
 
 void add_const_to_sv::NextState(const state &, state &next, result &x) 
 {
-  next[var->GetIndex()].ivalue += delta;
+  next[var->state_index].ivalue += delta;
   if (var->hasLowerBound()) 
-    if (next[var->GetIndex()].ivalue < var->getLowerBound()) {
+    if (next[var->state_index].ivalue < var->getLowerBound()) {
       Error.Start();
       if (delta>0) Error << "Overflow of ";
       else Error << "Underflow of ";
@@ -251,7 +251,7 @@ void add_const_to_sv::NextState(const state &, state &next, result &x)
     } // if
 
   if (var->hasUpperBound()) 
-    if (next[var->GetIndex()].ivalue > var->getUpperBound()) {
+    if (next[var->state_index].ivalue > var->getUpperBound()) {
       Error.Start();
       if (delta<0) Error << "Overflow of ";
       else Error << "Underflow of ";
@@ -314,9 +314,9 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
 {
   SafeCompute(opnd, 0, x);
   if (x.isNormal()) {
-    next[var->GetIndex()].ivalue += x.ivalue;
+    next[var->state_index].ivalue += x.ivalue;
     if (var->hasLowerBound())
-      if (next[var->GetIndex()].ivalue < var->getLowerBound()) {
+      if (next[var->state_index].ivalue < var->getLowerBound()) {
         Error.Start();
         if (x.ivalue>0) Error << "Overflow of ";
         else Error << "Underflow of ";
@@ -327,7 +327,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
         return;
       }
     if (var->hasUpperBound())
-      if (next[var->GetIndex()].ivalue > var->getUpperBound()) {
+      if (next[var->state_index].ivalue > var->getUpperBound()) {
         Error.Start();
         if (x.ivalue>0) Error << "Overflow of ";
         else Error << "Underflow of ";
@@ -339,7 +339,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
     return;
   } // normal x
   if (x.isUnknown()) {
-    next[var->GetIndex()].setUnknown();
+    next[var->state_index].setUnknown();
     return;
   }
   if (x.isInfinity()) {
@@ -375,9 +375,9 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
 {
   SafeCompute(opnd, 0, x);
   if (x.isNormal()) {
-    next[var->GetIndex()].ivalue -= x.ivalue;
+    next[var->state_index].ivalue -= x.ivalue;
     if (var->hasLowerBound())
-      if (next[var->GetIndex()].ivalue < var->getLowerBound()) {
+      if (next[var->state_index].ivalue < var->getLowerBound()) {
         Error.Start();
         if (x.ivalue<0) Error << "Overflow of ";
         else Error << "Underflow of ";
@@ -388,7 +388,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
         return;
       }
     if (var->hasUpperBound())
-      if (next[var->GetIndex()].ivalue > var->getUpperBound()) {
+      if (next[var->state_index].ivalue > var->getUpperBound()) {
         Error.Start();
         if (x.ivalue<0) Error << "Overflow of ";
         else Error << "Underflow of ";
@@ -400,7 +400,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
     return;
   } // normal x
   if (x.isUnknown()) {
-    next[var->GetIndex()].setUnknown();
+    next[var->state_index].setUnknown();
     return;
   }
   if (x.isInfinity()) {

@@ -10,19 +10,13 @@ Things to check on:
 
 Things to do:
 
-* For "state change": consider another type of expression,
-  PROC_STATE (or something else?)
-  with "signature"
-  void StateChange(const state &current, state &next, result &x);
-  // x is for catching errors
-
-  Then define "(cross) product of state changes"...
-
-* Move specialized operators into "Formalisms/ops_spn"
-  and eliminate "Language/ops_extra"
-
 * Generic priority structure in state_model class,
   so we don't have to re-implement it for every formalism.
+
+* Consider creating a global "event" type, deriving "transition" from it
+  events can 
+	+ have firing distributions attached
+	+ be visible outside of dsm...
 
 * Models
 

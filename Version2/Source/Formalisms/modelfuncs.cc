@@ -262,13 +262,13 @@ void compute_test(expr **pp, int np, result &x)
     }
     Delete(enable);
 
-    //  CHECK firing expression
+    //  CHECK next state expression
 
     expr* fire = proc->NextStateExpr(e);
-    Output << "firing expression: " << fire << "\n";
+    Output << "next state expression: " << fire << "\n";
     Output.flush();
     
-    if (enable) {
+    if (fire) {
       deplist.Clear();
       fire->GetSymbols(0, &deplist);
       Output << "\tdepends on: ";
@@ -278,6 +278,15 @@ void compute_test(expr **pp, int np, result &x)
       Output.flush();
     }
     Delete(fire);
+
+    // Check firing distribution
+    Output << "firing distribution type is: ";
+    Output << GetType(proc->EventDistributionType(e)) << "\n";
+    Output.flush();
+
+    Output << "firing distribution is: ";
+    Output << proc->EventDistribution(e) << "\n";
+    Output.flush();
   }
 
   x.Clear();
