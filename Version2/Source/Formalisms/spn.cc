@@ -7,6 +7,7 @@
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../Templates/listarray.h"
+#include "../States/ops_state.h"
 
 #include "dsm.h"
 
@@ -18,6 +19,7 @@
 // *                                                                *
 // ******************************************************************
 
+/*
 class internal_tk : public constant { // think "no parameters", not constant
 private:
   symbol* placename;
@@ -43,6 +45,9 @@ public:
     return 1;
   }
 };
+
+*/
+/*
 
 class add_const_to_place : public constant {
 private:
@@ -84,6 +89,133 @@ public:
   }
 };
 
+class add_expr_to_place : public unary {
+private:
+  const char* modelname;
+  symbol* placename;
+  int stateid;
+public:
+  add_expr_to_place(const char* mn, symbol* pn, int sid, expr* delta)
+  : unary(NULL, -1, delta) {
+    modelname = mn;
+    placename = pn;
+    stateid = sid;
+    DCASSERT(delta);
+  }
+  virtual ~add_expr_to_place() {
+    // DO NOT DELETE placename...
+  }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return PROC_STATE;
+  }
+  virtual void NextState(const state &, state &next, result &x) {
+    SafeCompute(opnd, 0, x);
+    if (x.isNormal()) {
+      next[stateid].ivalue += x.ivalue;
+      if (next[stateid].ivalue < 0) {
+        Error.Start();
+        if (x.ivalue>0) Error << "Overflow of place " << placename;
+        else Error << "Underflow of place " << placename;
+        Error << " in model " << modelname;
+        x.setError();
+      }
+      return;
+    }
+    if (x.isUnknown()) {
+      next[stateid].setUnknown();
+      return;
+    }
+    if (x.isInfinity()) {
+      Error.Start();
+      Error << "Infinite tokens added to place " << placename;
+      Error << " in model " << modelname;
+      Error.Stop();
+      x.setError();
+      return;
+    }
+    // some other error, propogate it
+  }
+  virtual void show(OutputStream &s) const {
+    s << placename << "+=" << opnd;
+  }
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
+    DCASSERT(i==0);
+    int answer = 1;
+    if (syms) syms->Append(placename);
+    answer += opnd->GetSymbols(0, syms);
+    return answer;
+  }
+protected:
+  virtual expr* MakeAnother(expr* newopnd) {
+    return new add_expr_to_place(modelname, placename, stateid, newopnd);
+  }
+};
+
+class sub_expr_from_place : public unary {
+private:
+  const char* modelname;
+  symbol* placename;
+  int stateid;
+public:
+  sub_expr_from_place(const char* mn, symbol* pn, int sid, expr* delta)
+  : unary(NULL, -1, delta) {
+    modelname = mn;
+    placename = pn;
+    stateid = sid;
+    DCASSERT(delta);
+  }
+  virtual ~sub_expr_from_place() {
+    // DO NOT DELETE placename...
+  }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return PROC_STATE;
+  }
+  virtual void NextState(const state &, state &next, result &x) {
+    SafeCompute(opnd, 0, x);
+    if (x.isNormal()) {
+      next[stateid].ivalue -= x.ivalue;
+      if (next[stateid].ivalue < 0) {
+        Error.Start();
+        if (x.ivalue<0) Error << "Overflow of place " << placename;
+        else Error << "Underflow of place " << placename;
+        Error << " in model " << modelname;
+        x.setError();
+      }
+      return;
+    }
+    if (x.isUnknown()) {
+      next[stateid].setUnknown();
+      return;
+    }
+    if (x.isInfinity()) {
+      Error.Start();
+      Error << "Infinite tokens removed from place " << placename;
+      Error << " in model " << modelname;
+      Error.Stop();
+      x.setError();
+      return;
+    }
+    // some other error, propogate it
+  }
+  virtual void show(OutputStream &s) const {
+    s << placename << "-=" << opnd;
+  }
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
+    DCASSERT(i==0);
+    int answer = 1;
+    if (syms) syms->Append(placename);
+    answer += opnd->GetSymbols(0, syms);
+    return answer;
+  }
+protected:
+  virtual expr* MakeAnother(expr* newopnd) {
+    return new sub_expr_from_place(modelname, placename, stateid, newopnd);
+  }
+};
+*/
+
 // ******************************************************************
 // *                                                                *
 // *                        Petri net structs                       *
@@ -105,6 +237,8 @@ struct spn_arcinfo {
   int place;
   int const_card;  
   expr* proc_card;
+  const char* filename;
+  int linenumber;
   inline bool operator>(const spn_arcinfo &a) const { 
     return place > a.place; 
   }
@@ -121,13 +255,42 @@ struct spn_arcinfo {
 	    proc_card = a.proc_card;
 	  }
     } // if a.proc_card
+    // multiple arcs are merged, they can be in different files even
+    filename = NULL; 
+    linenumber = -1;
   }
-  inline expr* MakeCard(const char* f, int n) const {
-    if (NULL==proc_card) return MakeConstExpr(PROC_INT, const_card, f, n);
-    if (0==const_card) return Copy(proc_card);
+  inline expr* MakeCard() const {
+    if (NULL==proc_card) 
+      return MakeConstExpr(PROC_INT, const_card, filename, linenumber);
+    if (0==const_card) 
+      return Copy(proc_card);
     // we have a constant portion and an expression, merge them
-    expr* cc = MakeConstExpr(PROC_INT, const_card, f, n);
-    return MakeBinaryOp(cc, PLUS, proc_card, f, n);
+    expr* cc = MakeConstExpr(PROC_INT, const_card, filename, linenumber);
+    return MakeBinaryOp(cc, PLUS, proc_card, NULL, -1);
+  }
+  inline expr* InputCompare(model_var* pl) const {
+    // we want cardinality of tk(pn) >= arc
+    if (NULL==proc_card) 
+      return MakeConstCompare(pl, GE, const_card, filename, linenumber);
+    // expression for cardinality 
+    return MakeExprCompare(pl, GE, MakeCard(), filename, linenumber);
+  }
+  inline expr* InhibitCompare(model_var* pl) const {
+    // we want cardinality of arc > tk(pn)
+    if (NULL==proc_card) 
+      return MakeConstCompare(pl, LT, const_card, filename, linenumber);
+    // expression for cardinality 
+    return MakeExprCompare(pl, LT, MakeCard(), filename, linenumber);
+  }
+  inline expr* AddToPlace(const char* mn, model_var* pn) const {
+    if (NULL==proc_card) 
+      return ChangeStateVar(mn, pn, const_card, filename, linenumber);
+    return ChangeStateVar(mn, pn, PLUS, MakeCard(), filename, linenumber);
+  }
+  inline expr* SubFromPlace(const char* mn, model_var* pn) const {
+    if (NULL==proc_card)
+      return ChangeStateVar(mn, pn, -const_card, filename, linenumber);
+    return ChangeStateVar(mn, pn, MINUS, MakeCard(), filename, linenumber);
   }
 };
 
@@ -231,20 +394,8 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (i_pl < h_pl) {
       // this place is connected only as input
-      expr* inplace = new internal_tk(places[i_pl], i_pl);
-      // we want tk(inplace) >= cardinality of arc
-      expr* cmp = NULL;
-      if (NULL==arcs->value[input_ptr].proc_card) {
-        // constant cardinality case
-        cmp = MakeConstCompare(arcs->value[input_ptr].const_card, 
-				LE, inplace, NULL, -1);
-      } else {
-        // expression for cardinality 
-	expr* card = arcs->value[input_ptr].MakeCard(NULL, -1);
-        cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
-      }
+      expr* cmp = arcs->value[input_ptr].InputCompare(places[i_pl]);
       if (cmp) exprlist->Append(cmp);
-
       // advance input arc ptr
       input_ptr++;
       if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
@@ -252,20 +403,8 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (h_pl < i_pl) {
       // this place is connected only as an inhibitor
-      expr* hbplace = new internal_tk(places[h_pl], h_pl);
-      // we want tk(hbplace) < cardinality of arc
-      expr* cmp = NULL;
-      if (NULL==arcs->value[inhib_ptr].proc_card) {
-        // constant cardinality case
-        cmp = MakeConstCompare(arcs->value[inhib_ptr].const_card, 
-				GT, hbplace, NULL, -1);
-      } else {
-        // expression for cardinality 
-        expr* card = arcs->value[inhib_ptr].MakeCard(NULL, -1);
-        cmp = MakeBinaryOp(card, GT, hbplace, NULL, -1);
-      }
+      expr* cmp = arcs->value[inhib_ptr].InhibitCompare(places[h_pl]);
       if (cmp) exprlist->Append(cmp);
-
       // advance inhibitor arc ptr
       inhib_ptr++;
       if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
@@ -273,14 +412,13 @@ expr* spn_dsm::EnabledExpr(int e)
     
     if (h_pl == i_pl) {
       // this place is connected both as an inhibitor and as input
-      expr* inplace = new internal_tk(places[i_pl], i_pl);
       // we want inputcard <= tk(inplace) < inhibcard
       expr* cmp = NULL;
       if ((NULL==arcs->value[inhib_ptr].proc_card) &&
           (NULL==arcs->value[input_ptr].proc_card)) {
         // constant cardinality for both arcs, can use a fast operator
         cmp = MakeConstBounds(arcs->value[input_ptr].const_card, 
-	 	inplace, arcs->value[inhib_ptr].const_card-1, NULL, -1);
+  	  places[i_pl], arcs->value[inhib_ptr].const_card-1, NULL, -1);
         // advance input arc ptr
         input_ptr++;
         if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
@@ -290,15 +428,7 @@ expr* spn_dsm::EnabledExpr(int e)
       } else {
         // no fast operator, so handle them separately
         // input first
-        if (NULL==arcs->value[input_ptr].proc_card) {
-          // constant input cardinality case
-          cmp = MakeConstCompare(arcs->value[input_ptr].const_card, 
-				LE, inplace, NULL, -1);
-        } else {
-          // expression for input cardinality 
-	  expr* card = arcs->value[input_ptr].MakeCard(NULL, -1);
-          cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
-        } // const/expr cardinality
+        cmp = arcs->value[input_ptr].InputCompare(places[i_pl]);
         // advance input arc ptr
         input_ptr++;
         if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
@@ -319,7 +449,74 @@ expr* spn_dsm::EnabledExpr(int e)
 
 expr* spn_dsm::NextStateExpr(int e)
 {
-  return NULL;
+  // Build a huge conjunction, first as a list of expressions
+  exprlist->Clear();
+
+  // Go through inputs and outputs in order (they're ordered)
+  int in_list = trans_data[e].inputs;
+  int in_ptr;
+  if (in_list>=0) in_ptr = arcs->list_pointer[in_list];
+  else in_ptr = -1; // signifies "done"
+
+  int out_list = trans_data[e].outputs;
+  int out_ptr;
+  if (out_list>=0) out_ptr = arcs->list_pointer[out_list];
+  else out_ptr = -1; // signifies "done"
+
+  while (out_ptr>=0 || in_ptr>=0) {
+    int i_pl = (in_ptr<0) ? num_places+1 : arcs->value[in_ptr].place;
+    int o_pl = (out_ptr<0) ? num_places+1 : arcs->value[out_ptr].place;
+    
+    if (i_pl < o_pl) {
+      // this place is connected only as input, subtract arc card
+      expr* sub = arcs->value[in_ptr].SubFromPlace(Name(), places[i_pl]);
+      if (sub) exprlist->Append(sub);
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
+    } // if input only place
+    
+    if (o_pl < i_pl) {
+      // this place is connected only as output, add arc card
+      expr* add = arcs->value[out_ptr].AddToPlace(Name(), places[o_pl]);
+      if (add) exprlist->Append(add);
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
+    } // if output only place
+    
+    if (o_pl == i_pl) {
+      // this place is connected both as an inhibitor and as input
+      // Add (outcard - incard) 
+      expr* add = NULL;
+      if ((NULL==arcs->value[out_ptr].proc_card) &&
+          (NULL==arcs->value[in_ptr].proc_card)) {
+        // constant cardinality for both arcs, produce constant delta
+        int delta = arcs->value[out_ptr].const_card - arcs->value[in_ptr].const_card;
+        add = ChangeStateVar(Name(), places[i_pl], delta, NULL, -1);
+      } else {
+        // expressions for one or more arcs, produce expression delta
+        expr* incard = arcs->value[in_ptr].MakeCard();
+        expr* outcard = arcs->value[out_ptr].MakeCard();
+        expr* delta = MakeBinaryOp(outcard, MINUS, incard, NULL, -1);
+        add = ChangeStateVar(Name(), places[i_pl], PLUS, delta, NULL, -1);
+      }
+      if (add) exprlist->Append(add);
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
+    } // both input and output
+  } // while
+
+  // have list of state changes, build sequence of them
+  int numopnds = exprlist->Length();
+  if (numopnds==0) return NULL;
+  expr** opnds = exprlist->Copy();  
+  exprlist->Clear();
+  return MakeAssocOp(SEMI, opnds, numopnds, NULL, -1);
 }
 
 // ******************************************************************
@@ -417,6 +614,8 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   int list = transinfo->data[trans].inputs;
   spn_arcinfo data;
   data.place = place;
+  data.filename = fn;
+  data.linenumber = ln;
 
   if (ListAdd(list, data, card)) return;
 
@@ -440,6 +639,8 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   int list = transinfo->data[trans].outputs;
   spn_arcinfo data;
   data.place = place;
+  data.filename = fn;
+  data.linenumber = ln;
 
   if (ListAdd(list, data, card)) return;
 
@@ -463,6 +664,8 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   int list = transinfo->data[trans].inhibitors;
   spn_arcinfo data;
   data.place = place;
+  data.filename = fn;
+  data.linenumber = ln;
 
   if (ListAdd(list, data, card)) return;
 

@@ -39,12 +39,28 @@ public:
   /** Linkage between state and variables.
       If this variable requires state, then this is the index
       of the variable within a state array.
-      Otherwise, stateindex should be negative (e.g., for a transition).
   */
   int state_index;
 
   /// Partition info (for structured approaches).
   int part_index;  
+
+  /** Lower bound, if any.
+      Used during state changes to generate errors.
+  */
+  int lower;
+
+  /// do we have a lower bound
+  bool has_lower_bound;
+
+  /** Upper bound, if any.
+      Used during state changes to generate errors.
+  */
+  int upper;
+
+  /// do we have an upper bound
+  bool has_upper_bound;
+  
 public:
   model_var(const char* fn, int line, type t, char* n);
   virtual ~model_var();
@@ -60,6 +76,26 @@ public:
     state_index = si;
   }
 
+  inline int GetIndex() const { return state_index; }
+
+  inline bool hasLowerBound() const { return has_lower_bound; }
+  inline bool hasUpperBound() const { return has_upper_bound; }
+  inline int getLowerBound() const {
+    DCASSERT(has_lower_bound);
+    return lower;
+  }
+  inline int getUpperBound() const {
+    DCASSERT(has_upper_bound);
+    return upper; 
+  }
+  inline void setLowerBound(int L) {
+    has_upper_bound = true;
+    lower = L;
+  }
+  inline void setUpperBound(int U) {
+    has_upper_bound = true;
+    upper = U;
+  }
 
   /// Returns the state_index
   virtual void Compute(int i, result &x);

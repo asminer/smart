@@ -1119,8 +1119,20 @@ void proc_real_le::Compute(const state &st, int i, result &x)
   }
 }
 
+// ******************************************************************
+// *                                                                *
+// *                     proc_state_seq methods                     *
+// *                                                                *
+// ******************************************************************
 
-
+void proc_state_seq::NextState(const state& current, state& next, result &x)
+{
+  for (int i=0; i<opnd_count; i++) {
+    DCASSERT(operands[i]);
+    operands[i]->NextState(current, next, x);
+    if (x.isError()) return;
+  }
+}
 
 //@}
 

@@ -43,6 +43,7 @@ const char* GetOp(int op)
     case GE:		return ">=";
     case LT:		return "<";
     case LE:		return "<=";
+    case SEMI:		return ";";
     default:
 			return "unknown_op";
   }
@@ -414,7 +415,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
-      
     //===============================================================
     case INT:
 
@@ -425,7 +425,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
-
 
     //===============================================================
     case REAL:
@@ -438,7 +437,17 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
+    //===============================================================
+    case STRING:
+      
+      switch (op) {
+	case PLUS:	return MakeStringAdd(opnds, n, file, line);
+			// Defined in strings.cc
 
+	default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+      
     //===============================================================
     case RAND_BOOL:
 
@@ -453,7 +462,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
-      
     //===============================================================
     case RAND_INT:
 
@@ -465,7 +473,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
-
     //===============================================================
     case RAND_REAL:
 
@@ -476,7 +483,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
-
 
     //===============================================================
     case PROC_BOOL:
@@ -492,7 +498,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
-      
     //===============================================================
     case PROC_INT:
 
@@ -503,7 +508,6 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
-
 
     //===============================================================
     case PROC_REAL:
@@ -516,18 +520,16 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       }
       return NULL;
 
-
     //===============================================================
-    case STRING:
-      
-      switch (op) {
-	case PLUS:	return MakeStringAdd(opnds, n, file, line);
-			// Defined in strings.cc
+    case PROC_STATE:
 
-	default:	return IllegalAssocError(op, alltypes, file, line);
+      switch (op) {
+	case SEMI:	return new proc_state_seq(file, line, opnds, n);
+
+ 	default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
-      
+
   }
 
   return IllegalAssocError(op, alltypes, file, line);

@@ -18,6 +18,9 @@ Things to do:
 
   Then define "(cross) product of state changes"...
 
+* Move specialized operators into "Formalisms/ops_spn"
+  and eliminate "Language/ops_extra"
+
 * Generic priority structure in state_model class,
   so we don't have to re-implement it for every formalism.
 

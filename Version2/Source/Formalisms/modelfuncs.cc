@@ -245,21 +245,39 @@ void compute_test(expr **pp, int np, result &x)
     Output << "\n";
     Output.flush();
 
+    //  CHECK enabling expression
+
     expr* enable = proc->EnabledExpr(e);
     Output << "enabling expression: " << enable << "\n";
     Output.flush();
 
-    if (NULL==enable) continue;
-
-    deplist.Clear();
-    enable->GetSymbols(0, &deplist);
-    Output << "\tdepends on: ";
-    for (int p=0; p<deplist.Length(); p++)
-      Output << deplist.Item(p) << " ";
-    Output << "\n";
-    Output.flush();
- 
+    if (enable) {
+      deplist.Clear();
+      enable->GetSymbols(0, &deplist);
+      Output << "\tdepends on: ";
+      for (int p=0; p<deplist.Length(); p++)
+        Output << deplist.Item(p) << " ";
+      Output << "\n";
+      Output.flush();
+    }
     Delete(enable);
+
+    //  CHECK firing expression
+
+    expr* fire = proc->NextStateExpr(e);
+    Output << "firing expression: " << fire << "\n";
+    Output.flush();
+    
+    if (enable) {
+      deplist.Clear();
+      fire->GetSymbols(0, &deplist);
+      Output << "\tdepends on: ";
+      for (int p=0; p<deplist.Length(); p++)
+        Output << deplist.Item(p) << " ";
+      Output << "\n";
+      Output.flush();
+    }
+    Delete(fire);
   }
 
   x.Clear();

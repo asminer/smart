@@ -36,6 +36,7 @@ model_var::model_var(const char* fn, int line, type t, char* n)
   state_index = -1;
   part_index = -1;
   SetSubstitution(false);
+  has_lower_bound = has_upper_bound = false;
 }
 
 model_var::~model_var()

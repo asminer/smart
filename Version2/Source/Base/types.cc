@@ -59,7 +59,8 @@ const char* ProcNames[] = {
   "proc ph real",
   "proc rand bool",
   "proc rand int",
-  "proc rand real"
+  "proc rand real",
+  "proc state"
 };
 
 const char* ModelNames[] = {
