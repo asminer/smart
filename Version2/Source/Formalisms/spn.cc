@@ -156,6 +156,10 @@ public:
   virtual void GetInitialState(int n, state &s) const;
   virtual expr* EnabledExpr(int e);
   virtual expr* NextStateExpr(int e);
+
+  virtual void isEnabled(int e, const state &s, result &answer);
+  virtual void getNextState(const state &cur, int e, state &nxt, result &err);
+
   virtual expr* EventDistribution(int e) { 
     CHECK_RANGE(0, e, NumEvents());
     return transitions[e]->firing;
@@ -453,6 +457,60 @@ expr* spn_dsm::NextStateExpr(int e)
   expr** opnds = exprlist->Copy();  
   exprlist->Clear();
   return MakeAssocOp(SEMI, opnds, numopnds, NULL, -1);
+}
+
+void spn_dsm::isEnabled(int e, const state &s, result &answer)
+{
+  CHECK_RANGE(0, e, NumEvents());
+  answer.Clear();
+  // go through input arcs
+  int ptr;
+  int list = transitions[e]->inputs;
+  if (list>=0) {
+    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
+      int i = arcs->value[ptr].place;
+      if (s.Read(i).ivalue < arcs->value[ptr].const_card) {
+	answer.bvalue = false;
+	return;
+      }   
+      if (NULL==arcs->value[ptr].proc_card) continue;
+      int foo = s.Read(i).ivalue - arcs->value[ptr].const_card;
+      result x;
+      arcs->value[ptr].proc_card->Compute(s, 0, x);
+      if (!x.isNormal()) { answer = x; return; }
+      if (foo < x.ivalue) {
+	answer.bvalue = false;
+	return;
+      }
+    } // for ptr
+  }
+  // go through inhibitors
+  list = transitions[e]->inhibitors;
+  if (list>=0) {
+    for (ptr=arcs->list_pointer[list]; ptr<arcs->list_pointer[list+1]; ptr++) {
+      int i = arcs->value[ptr].place;
+      if (s.Read(i).ivalue >= arcs->value[ptr].const_card) {
+	answer.bvalue = false;
+	return;
+      }   
+      if (NULL==arcs->value[ptr].proc_card) continue;
+      int foo = s.Read(i).ivalue - arcs->value[ptr].const_card;
+      result x;
+      arcs->value[ptr].proc_card->Compute(s, 0, x);
+      if (!x.isNormal()) { answer = x; return; }
+      if (foo >= x.ivalue) {
+	answer.bvalue = false;
+	return;
+      }
+    } // for ptr
+  }
+  // guard
+  if (NULL==transitions[e]->guard) return;
+  transitions[e]->guard->Compute(s, 0, answer);
+}
+
+void spn_dsm::getNextState(const state &cur, int e, state &nxt, result &err)
+{
 }
 
 // ******************************************************************

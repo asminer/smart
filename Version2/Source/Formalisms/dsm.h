@@ -91,6 +91,17 @@ public:
   */
   virtual expr* EnabledExpr(int e) = 0;
 
+  /** Determine if a given event is enabled.
+      Let's see if this can be done slightly faster than evaluating
+      the enabling expression.
+  */
+  virtual void isEnabled(int e, const state &s, result &answer) { 
+    DCASSERT(0);
+    answer.Clear();
+    answer.bvalue = false;
+    // make pure virtual if it catches on
+  }
+
   /** Build an expression that determines the next state when an event occurs.
       The expression should be of type "proc state".
       The expression may assume that the event is enabled.
@@ -100,6 +111,16 @@ public:
 	    In this case, use a different function (below).
   */
   virtual expr* NextStateExpr(int e) = 0;
+
+  /** Determine the next state when an event occurs.
+      Let's see if this can be done slightly faster than evaluating
+      the NextStateExpr each time.
+  */
+  virtual void getNextState(const state &cur, int e, state &nxt, result &err)
+  {
+    DCASSERT(0);
+    err.setError();
+  }
 
   /** Build an expression that determines the set of states that can
       be reached when an event occurs.
