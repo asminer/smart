@@ -32,14 +32,14 @@ class infinityconst : public constant {
     sign = s;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;
     x.infinity = true;
   }
 
-  virtual void Sample(long &, int i, result &x) const {
+  virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;

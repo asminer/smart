@@ -65,35 +65,6 @@ public:
 
 // ******************************************************************
 // *                                                                *
-// *                        pos_param  class                        *
-// *                                                                *
-// ******************************************************************
-
-/** Positional parameters.
-    These have been completely stripped-down and simplified in this version!
-*/  
-
-struct pos_param {
-  /// The expression we are passing.
-  expr* pass;  
-  /// The file where this is happening 
-  const char* filename;
-  /// The line number where this is happening
-  int linenumber;
- 
-  // handy stuff
-
-  /// Compute the passed value.
-  inline void Compute(int i, result &x) const { pass->Compute(i, x); }
-  
-  /// Sample the passed value.
-  inline void Sample(long &s, int i, result &x) const { pass->Sample(s, i, x); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
 // *                       named_param  class                       *
 // *                                                                *
 // ******************************************************************
@@ -112,10 +83,6 @@ struct named_param {
        pass the null expression!)
    */
   bool UseDefault;
-  /// The file where this is happening 
-  const char* filename;
-  /// The line number where this is happening
-  int linenumber;
 };
 
 
@@ -148,8 +115,7 @@ public:
            formal_param **pl, int np, int rp);
   virtual ~function();
 
-  // One nasty little expr method, that should never get called.
-  virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
+  virtual expr* Substitute(int i);
 
   /** So that the compiler can do typechecking.
       @param	pl	List of parameters.  MUST NOT BE CHANGED.
@@ -163,7 +129,7 @@ public:
   }
 
   /// Overrided by Arrays.
-  virtual bool IsArray() const { return false; }
+  virtual bool IsArray() const;
 
   /** Overridden in derived classes.
       Should we use our own technique to check the passed parameter types?
@@ -171,19 +137,19 @@ public:
       This should be true for internal functions that use any type of
       non-standard type-checking (such as "arcs" for Petri nets).
    */
-  virtual bool HasSpecialTypechecking() const { return false; }
+  virtual bool HasSpecialTypechecking() const;
 
   /** Overridden in derived classes.
       Use our own technique to check passed (positional) parameters.
       (For classes that don't support this, we can simply do nothing!)
       
-      @param	pp	Array of positional parameters
+      @param	pp	Array of passed parameters
       @param	np	Number of parameters
       @param	error	Stream where any typechecking errors should be written.
 
       @return	true if the parameters match (or can be promoted). 
    */
-  virtual bool Typecheck(const pos_param** pp, int np, ostream &error) const{}
+  virtual bool Typecheck(const expr** pp, int np, ostream &error) const;
 
   /** Overridden in derived classes.
       Should we use our own technique to "link" the passed parameters
@@ -191,7 +157,7 @@ public:
       This is very, very rarely true.
       Sometimes it is necessary for very fancy internal functions.
    */
-  virtual bool HasSpecialParamLinking() const { return false; }
+  virtual bool HasSpecialParamLinking() const;
 
   /** Promotes the passed parameters.
       Basically, this means that we are definitely going to use this 
@@ -199,7 +165,7 @@ public:
       promoting the passed parameters, or checking random variable 
       independence).
 
-      @param pp		Array of passed positional parameters.
+      @param pp		Array of passed parameters.
       @param np		Number of passed parameters.
       @param error	Stream where any errors should be written.
 
@@ -207,10 +173,10 @@ public:
 
       \end{tabular}
    */
-  virtual bool LinkParams(pos_param **pp, int np, ostream &error) const{}
+  virtual bool LinkParams(expr **pp, int np, ostream &error) const;
 
-  virtual void Compute(const pos_param **, int np, result &x) = 0;
-  virtual void Sample(long &, const pos_param **, int np, result &x) = 0;
+  virtual void Compute(expr **, int np, result &x) = 0;
+  virtual void Sample(long &, expr **, int np, result &x) = 0;
 };
 
 
@@ -235,8 +201,8 @@ public:
            formal_param **pl, int np);
   virtual ~user_func();
 
-  virtual void Compute(const pos_param **, int np, result &x);
-  virtual void Sample(long &, const pos_param **, int np, result &x);
+  virtual void Compute(expr **, int np, result &x);
+  virtual void Sample(long &, expr **, int np, result &x);
 
   inline void SetReturn(expr *e) { return_expr = e; }
 
@@ -252,18 +218,18 @@ public:
 /** For computing internal functions.
     Use the following declaration:
 
-    void MyFunc(const pos\_param **pp, int np, result &x);
+    void MyFunc(pos\_param **pp, int np, result &x);
 
  */
-typedef void (*compute_func) (const pos_param **pp, int np, result &x);
+typedef void (*compute_func) (expr **pp, int np, result &x);
 
 /** For sampling internal functions.
     Use the following declaration:
 
-    void MyFunc(long &seed, const pos\_param **pp, int np, result &x);
+    void MyFunc(long &seed, pos\_param **pp, int np, result &x);
 
  */
-typedef void (*sample_func) (long &seed, const pos_param **pp, int np, result &x);
+typedef void (*sample_func) (long &seed, expr **pp, int np, result &x);
 
 
 /**   Class for internal functions.
@@ -294,14 +260,37 @@ public:
   internal_func(type t, char *n, compute_func c, sample_func s, 
                 formal_param **pl, int np, int rp);
 
-  virtual void Compute(const pos_param **, int np, result &x);
-  virtual void Sample(long &, const pos_param **, int np, result &x);
+  virtual void Compute(expr **, int np, result &x);
+  virtual void Sample(long &, expr **, int np, result &x);
 
   virtual void show(ostream &s) const;
 };
 
 
+// ******************************************************************
+// *                                                                *
+// *                          fcall  class                          *
+// *                                                                *
+// ******************************************************************
 
+/**  An expression used to compute a function call.
+ */
+
+class fcall : public expr {
+protected:
+  function *func;
+  expr **pass;
+  int numpass;
+public:
+  fcall(const char *fn, int line, function *f, expr **p, int np);
+  virtual ~fcall();
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void Sample(long &, int i, result &x);
+  virtual expr* Substitute(int i);
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual void show(ostream &s) const;
+};
 
 // ******************************************************************
 // *                                                                *

@@ -43,16 +43,17 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new bool_not(Filename(), Linenumber(), x);
   }
 };
 
-void bool_not::Compute(int i, result &x) const
+void bool_not::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  x.Clear();
   if (opnd) opnd->Compute(0, x); else x.null = true;
 
   // Trace errors?
@@ -79,18 +80,19 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new bool_or(Filename(), Linenumber(), l, r);
   }
 };
 
-void bool_or::Compute(int i, result &x) const
+void bool_or::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
 
   // Should we short-circuit?  (i.e., don't compute right if left=true?)
@@ -129,18 +131,19 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new bool_and(Filename(), Linenumber(), l, r);
   }
 };
 
-void bool_and::Compute(int i, result &x) const
+void bool_and::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -177,18 +180,19 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr* r) {
     return new bool_equal(Filename(), Linenumber(), l, r);
   }
 };
 
-void bool_equal::Compute(int i, result &x) const
+void bool_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -225,18 +229,19 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new bool_neq(Filename(), Linenumber(), l, r);
   }
 };
 
-void bool_neq::Compute(int i, result &x) const
+void bool_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -284,16 +289,17 @@ public:
     DCASSERT(0==i);
     return RAND_BOOL;
   }
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new randbool_not(Filename(), Linenumber(), x);
   }
 };
 
-void randbool_not::Sample(long &seed, int i, result &x) const
+void randbool_not::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
+  x.Clear();
   if (opnd) opnd->Sample(seed, 0, x); else x.null = true;
 
   // Trace errors?
@@ -320,18 +326,19 @@ public:
     DCASSERT(0==i);
     return RAND_BOOL;
   }
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new randbool_or(Filename(), Linenumber(), l,r);
   }
 };
 
-void randbool_or::Sample(long &seed, int i, result &x) const
+void randbool_or::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Sample(seed, 0, l); else l.null = true;
 
   // Should we short-circuit?  (i.e., don't compute right if left=true?)
@@ -370,18 +377,19 @@ public:
     DCASSERT(0==i);
     return RAND_BOOL;
   }
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new randbool_and(Filename(), Linenumber(), l, r);
   }
 };
 
-void randbool_and::Sample(long &seed, int i, result &x) const
+void randbool_and::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Sample(seed, 0, l); else l.null = true;
   if (right) right->Sample(seed, 0, r); else r.null = true;
 
@@ -418,18 +426,19 @@ public:
     DCASSERT(0==i);
     return RAND_BOOL;
   }
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new randbool_equal(Filename(), Linenumber(), l, r);
   }
 };
 
-void randbool_equal::Sample(long &seed, int i, result &x) const
+void randbool_equal::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Sample(seed, 0, l); else l.null = true;
   if (right) right->Sample(seed, 0, r); else r.null = true;
 
@@ -466,18 +475,19 @@ public:
     DCASSERT(0==i);
     return RAND_BOOL;
   }
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new randbool_neq(Filename(), Linenumber(), l, r);
   }
 };
 
-void randbool_neq::Sample(long &seed, int i, result &x) const
+void randbool_neq::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Sample(seed, 0, l); else l.null = true;
   if (right) right->Sample(seed, 0, l); else r.null = true;
 
@@ -525,16 +535,17 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new int_neg(Filename(), Linenumber(), x);
   }
 };
 
-void int_neg::Compute(int i, result &x) const
+void int_neg::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  x.Clear();
   if (opnd) opnd->Compute(0, x); else x.null = true;
 
   // Trace errors?
@@ -562,18 +573,19 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_add(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_add::Compute(int i, result &x) const
+void int_add::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -634,18 +646,19 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_sub(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_sub::Compute(int i, result &x) const
+void int_sub::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -707,18 +720,19 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_mult(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_mult::Compute(int i, result &x) const
+void int_mult::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -776,18 +790,19 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_div(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_div::Compute(int i, result &x) const
+void int_div::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else l.null = true;
   if (right) right->Compute(0, r); else r.null = true;
 
@@ -826,14 +841,14 @@ public:
   int_equal(const char* fn, int line, expr *l, expr *r)
     : consteqop(fn, line, l, r) { }
   
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_equal(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_equal::Compute(int i, result &x) const
+void int_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -861,14 +876,14 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_neq(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_neq::Compute(int i, result &x) const
+void int_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -893,14 +908,14 @@ public:
   int_gt(const char* fn, int line, expr *l, expr *r)
     : constgtop(fn, line, l, r) { }
   
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_gt(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_gt::Compute(int i, result &x) const
+void int_gt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -928,14 +943,14 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_ge(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_ge::Compute(int i, result &x) const
+void int_ge::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -962,14 +977,14 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_lt(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_lt::Compute(int i, result &x) const
+void int_lt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -997,14 +1012,14 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_le(Filename(), Linenumber(), l, r);
   }
 };
 
-void int_le::Compute(int i, result &x) const
+void int_le::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
@@ -1053,7 +1068,7 @@ public:
     DCASSERT(0==i);
     return returntype;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
   virtual void show(ostream &s) const;
 protected:
   virtual expr* MakeAnother(expr *x) {
@@ -1061,9 +1076,10 @@ protected:
   }
 };
 
-void proc_unary::Compute(int i, result &x) const
+void proc_unary::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  x.Clear();
   if (opnd) opnd->Compute(0, x); else x.null = true;
 
   // Trace errors?
@@ -1112,7 +1128,7 @@ public:
     DCASSERT(0==i);
     return returntype;
   }
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
   virtual void show(ostream &s) const;
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
@@ -1120,11 +1136,12 @@ protected:
   }
 };
 
-void proc_binary::Compute(int i, result &x) const
+void proc_binary::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
+  x.Clear();
   if (left) left->Compute(0, l); else { 
     l.null = true;
     l.other = NULL;

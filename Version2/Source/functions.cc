@@ -62,9 +62,63 @@ expr* formal_param::Substitute(int i)
 
 void formal_param::show(ostream &s) const
 {
-  if (NULL==Name()) return;  // Don't show hidden parameters
+  s << Name();
+}
 
-  s << GetType(Type(0)) << " " << Name() << " := " << pass;
+// ******************************************************************
+// *                                                                *
+// *                        function methods                        *
+// *                                                                *
+// ******************************************************************
+
+function::function(const char* fn, int line, type t, char* n, 
+           formal_param **pl, int np, int rp) : symbol(fn, line, t, n)
+{
+  parameters = pl;
+  num_params = np;
+  repeat_point = rp;
+}
+
+function::~function()
+{
+  int i;
+  for (i=0; i<num_params; i++)
+    delete parameters[i];
+  delete[] parameters;
+}
+
+expr* function::Substitute(int i) 
+{ 
+  // This should never get called.
+  DCASSERT(0); 
+  return NULL; 
+}
+
+bool function::IsArray() const
+{
+  return false;
+}
+
+bool function::HasSpecialTypechecking() const 
+{ 
+  return false; 
+}
+
+bool function::Typecheck(const expr** pp, int np, ostream &error) const
+{
+  DCASSERT(0);
+  return false;
+}
+
+bool function::HasSpecialParamLinking() const 
+{ 
+  return false; 
+}
+
+bool function::LinkParams(expr **pp, int np, ostream &error) const
+{
+  DCASSERT(0);
+  return false;
 }
 
 // ******************************************************************
@@ -84,7 +138,7 @@ user_func::~user_func()
   Delete(return_expr);
 }
 
-void user_func::Compute(const pos_param **pp, int np, result &x) 
+void user_func::Compute(expr **pp, int np, result &x) 
 {
   if (NULL==return_expr) {
     x.null = true;
@@ -112,7 +166,7 @@ void user_func::Compute(const pos_param **pp, int np, result &x)
   int i;
   for (i=0; i<np; i++) ParamStack[mystacktop+3+i].error = CE_Uncomputed;
   for (i=0; i<np; i++) {
-    pp[i]->pass->Compute(0, ParamStack[mystacktop+3+i]);
+    pp[i]->Compute(0, ParamStack[mystacktop+3+i]);
     parameters[i]->SetPass(ParamStack + mystacktop + 3 + i); 
   }
 
@@ -132,6 +186,71 @@ void user_func::Compute(const pos_param **pp, int np, result &x)
   ParamStackTop = mystacktop;
 }
 
+void user_func::Sample(long &s, expr **pp, int np, result &x) 
+{
+  if (NULL==return_expr) {
+    x.null = true;
+    return;
+  }
+
+  // first... make sure there is enough room on the stack to save params
+  if (ParamStackTop+np+3 > ParamStackSize) {
+    StackOverflowPanic();
+    // still alive?
+    x.error = CE_StackOverflow;
+    return;
+  }
+
+  int mystacktop = ParamStackTop;
+  ParamStackTop += 3+np;  
+
+  // set up our stack
+  ParamStack[mystacktop  ].other  = this;  // ptr to function
+  ParamStack[mystacktop+1].ivalue = prev_stack_ptr;
+  prev_stack_ptr = mystacktop;
+  ParamStack[mystacktop+2].ivalue = np;
+
+  // Compute parameters, place on stack
+  int i;
+  for (i=0; i<np; i++) ParamStack[mystacktop+3+i].error = CE_Uncomputed;
+  for (i=0; i<np; i++) {
+    pp[i]->Sample(s, 0, ParamStack[mystacktop+3+i]);
+    parameters[i]->SetPass(ParamStack + mystacktop + 3 + i); 
+  }
+
+  // "call" function
+  return_expr->Sample(s, 0, x);
+
+  // Restore old parameters, if any
+  prev_stack_ptr = ParamStack[mystacktop+1].ivalue;
+  if (prev_stack_ptr>=0) {
+    DCASSERT(ParamStack[prev_stack_ptr].other == this);
+    int oldnp = ParamStack[prev_stack_ptr+2].ivalue;
+    for (i=0; i<oldnp; i++) {
+      parameters[i]->SetPass(ParamStack + prev_stack_ptr + 3 + i);
+    }
+  }
+  // pop off stack
+  ParamStackTop = mystacktop;
+}
+
+void user_func::show(ostream &s) const
+{
+  DCASSERT(Name());
+  s << GetType(Type(0)) << " " << Name() << "(";
+  int i;
+  for (i=0; i<num_params; i++) {
+    if (i) s << ", ";
+    if (parameters[i]->Name()) {
+      s << GetType(parameters[i]->Type(0)) << " " << parameters[i];
+      if (parameters[i]->HasDefault()) {
+	s << " := " << parameters[i]->Default();
+      }
+    }
+  }
+  s << ") := " << return_expr;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     internal_func  methods                     *
@@ -146,7 +265,7 @@ internal_func::internal_func(type t, char *n,
   sample = s;
 }
 
-void internal_func::Compute(const pos_param **pp, int np, result &x)
+void internal_func::Compute(expr **pp, int np, result &x)
 {
   if (NULL==compute) {
     cerr << "Internal error: illegal internal function computation?\n";
@@ -156,7 +275,7 @@ void internal_func::Compute(const pos_param **pp, int np, result &x)
   compute(pp, np, x);
 }
 
-void internal_func::Sample(long &seed, const pos_param **pp, int np, result &x)
+void internal_func::Sample(long &seed, expr **pp, int np, result &x)
 {
   if (NULL==sample) {
     cerr << "Internal error: illegal internal function sampling?\n";
@@ -170,6 +289,74 @@ void internal_func::show(ostream &s) const
 {
   if (NULL==Name()) return; // Hidden?
   s << GetType(Type(0)) << " " << Name();
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         fcall  methods                         *
+// *                                                                *
+// ******************************************************************
+
+fcall::fcall(const char *fn, int line, function *f, expr **p, int np)
+  : expr (fn, line)
+{
+  func = f;
+  pass = p;
+  numpass = np;
+}
+
+fcall::~fcall()
+{
+  // don't delete func
+  int i;
+  for (i=0; i < numpass; i++) delete pass[i];
+  delete[] pass;
+}
+
+type fcall::Type(int i) const
+{
+  DCASSERT(0==i);
+  return func->Type(0);
+}
+
+void fcall::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  func->Compute(pass, numpass, x);
+}
+
+void fcall::Sample(long &s, int i, result &x)
+{
+  DCASSERT(0==i);
+  func->Sample(s, pass, numpass, x);
+}
+
+expr* fcall::Substitute(int i)
+{
+  DCASSERT(0==i);
+  // substitute each passed parameter...
+  return NULL;
+}
+
+int fcall::GetSymbols(int i, symbol **syms, int N, int offset)
+{
+  DCASSERT(0==i);
+  // check each passed parameter
+  return 0;
+}
+
+void fcall::show(ostream &s) const
+{
+  if (func->Name()==NULL) return;  // Hidden?
+  s << func->Name();
+  if (0==numpass) return;
+  s << "(";
+  int i;
+  for (i=0; i<numpass; i++) {
+    if (i) s << ", ";
+    s << pass[i];
+  }
+  s << ")";
 }
 
 // ******************************************************************

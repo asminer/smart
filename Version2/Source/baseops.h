@@ -130,6 +130,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 
@@ -193,6 +194,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 
@@ -256,6 +258,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 
@@ -324,6 +327,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 
@@ -392,6 +396,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 
@@ -460,6 +465,7 @@ protected:
       @return	true if the computation should continue after calling this.
   */
   inline bool ComputeOpnds(result &l, result &r, result &x) const {
+    x.Clear();
     if (left) left->Compute(0, l); else l.null = true;
     if (right) right->Compute(0, r); else r.null = true;
 

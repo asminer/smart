@@ -14,7 +14,7 @@
 
 //@{
 
-void cond_c(const pos_param **pp, int np, result &x)
+void cond_c(expr **pp, int np, result &x)
 {
   DCASSERT(pp);
   result b;
@@ -32,7 +32,7 @@ void cond_c(const pos_param **pp, int np, result &x)
   }
 }
 
-void cond_s(long &s, const pos_param **pp, int np, result &x)
+void cond_s(long &s, expr **pp, int np, result &x)
 {
   DCASSERT(pp);
   result b;
@@ -52,7 +52,7 @@ void cond_s(long &s, const pos_param **pp, int np, result &x)
 
 internal_func* MakeCond(type t)
 {
-  formal_param *pl[3];
+  formal_param **pl = new formal_param*[3];
   pl[0] = new formal_param(NULL, -1, BOOL, "b");
   pl[1] = new formal_param(NULL, -1, t, "then");
   pl[2] = new formal_param(NULL, -1, t, "else");

@@ -397,13 +397,13 @@ class boolconst : public constant {
     value = v;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.bvalue = value;
   }
 
-  virtual void Sample(long &, int i, result &x) const {
+  virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.bvalue = value;
@@ -429,13 +429,13 @@ class intconst : public constant {
     value = v;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
   }
 
-  virtual void Sample(long &, int i, result &x) const {
+  virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
@@ -461,13 +461,13 @@ class realconst : public constant {
     value = v;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Compute(int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.rvalue = value;
   }
 
-  virtual void Sample(long &, int i, result &x) const {
+  virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.rvalue = value;
@@ -497,7 +497,13 @@ class stringconst : public constant {
     delete[] value;
   }
 
-  virtual void Compute(int i, result &x) const {
+  virtual void Compute(int i, result &x) {
+    DCASSERT(0==i);
+    x.Clear();
+    x.other = strdup(value);
+  }
+
+  virtual void Sample(long &, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.other = strdup(value);

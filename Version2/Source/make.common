@@ -17,7 +17,8 @@ vpath %.y  $(SOURCEDIR)
 
 MYINCLUDES = -I$(OBJECTDIR)
 
-STDLIBS     = -lm -lfl 
+STDLIBS     = 
+# STDLIBS     = -lm -lfl 
 
 SOURCES = \
 	types.cc	exprs.cc	infinity.cc	\
@@ -42,13 +43,17 @@ ALLCCS = $(SOURCES) $(MODULES)
 
 ALLHS = $(ALLCCS:.cc=.h)
 
-ALLOBJS = $(OBJS) $(MODOBJS) $(GENOBJS) lip.o
+ALLOBJS = $(OBJS)
+# ALLOBJS = $(OBJS) $(MODOBJS) $(GENOBJS) lip.o
 
 LINKFLAGS 	= $(PLAT_LINK) $(LINKINCLUDES)
 CPPFLAGS 	= $(MOREFLAGS) -Wall $(SYSINCLUDES) $(MYINCLUDES) $(PLAT_FLAGS)
-EXES		= smart
+EXES		= foo 
 
 all:	$(EXES)
+
+foo : foo.o $(ALLOBJS)
+	$(CXX) $(LINKFLAGS) $(ALLOBJS) foo.o -o foo $(STDLIBS) $(PLAT_LIBS)
 
 smart : $(ALLOBJS) 
 	$(CXX) $(LINKFLAGS) $(ALLOBJS) -o smart $(STDLIBS) $(PLAT_LIBS)

@@ -103,6 +103,24 @@ void determfunc::Compute(int i, result &x)
   x = value;
 }
 
+void determfunc::Sample(long &s, int i, result &x)
+{
+  // we are deterministic... just compute the result
+  DCASSERT(i==0);
+  if (!computed_already) {
+    if (return_expr) {
+      return_expr->Compute(0, value);
+      // check for errors here
+      Delete(return_expr);
+      return_expr = NULL;
+    } else {
+      value.null = true;
+    }
+    computed_already = true;
+  }
+  x = value;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                                                                *

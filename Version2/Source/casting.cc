@@ -59,14 +59,14 @@ public:
   determ2rand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new determ2rand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void determ2rand::Sample(long &, int i, result &x) const
+void determ2rand::Sample(long &, int i, result &x) 
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -89,14 +89,14 @@ public:
   bool2procbool(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_BOOL, x) { }
 
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new bool2procbool(Filename(), Linenumber(), x);
   }
 };
 
-void bool2procbool::Compute(int i, result &x) const
+void bool2procbool::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -125,14 +125,14 @@ public:
   bool2procrandbool(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_RAND_BOOL, x) { }
 
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new bool2procrandbool(Filename(), Linenumber(), x);
   }
 };
 
-void bool2procrandbool::Sample(long &seed, int i, result &x) const
+void bool2procrandbool::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -160,14 +160,14 @@ class int2real : public typecast {
 public:
   int2real(const char* fn, int line, expr* x) : typecast(fn, line, REAL, x) { }
 
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new int2real(Filename(), Linenumber(), x);
   }
 };
 
-void int2real::Compute(int i, result &x) const
+void int2real::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -179,6 +179,8 @@ void int2real::Compute(int i, result &x) const
 
   x.rvalue = x.ivalue;
 }
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -194,14 +196,14 @@ public:
   int2procint(const char* fn, int line, expr* x) 
     : typecast(fn, line, PROC_INT, x) { }
 
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new int2procint(Filename(), Linenumber(), x);
   }
 };
 
-void int2procint::Compute(int i, result &x) const
+void int2procint::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -219,6 +221,8 @@ void int2procint::Compute(int i, result &x) const
   x.other = answer;
 }
 
+
+
 // ******************************************************************
 // *                                                                *
 // *                         real2int class                         *
@@ -232,14 +236,14 @@ class real2int : public typecast {
 public:
   real2int(const char* fn, int line, expr* x) : typecast(fn, line, INT, x) { }
 
-  virtual void Compute(int i, result &x) const;
+  virtual void Compute(int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new real2int(Filename(), Linenumber(), x);
   }
 };
 
-void real2int::Compute(int i, result &x) const
+void real2int::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   if (opnd) opnd->Compute(0, x); else x.null = true;
@@ -252,6 +256,8 @@ void real2int::Compute(int i, result &x) const
   // error checking here
   x.ivalue = int(x.rvalue);
 }
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -267,14 +273,14 @@ public:
   rand2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new rand2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void rand2procrand::Sample(long &, int i, result &x) const
+void rand2procrand::Sample(long &, int i, result &x)
 {
   DCASSERT(0==i);
   x.other = Copy(opnd);
@@ -294,14 +300,14 @@ public:
   proc2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(long &seed, int i, result &x) const;
+  virtual void Sample(long &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new proc2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void proc2procrand::Sample(long &, int i, result &x) const
+void proc2procrand::Sample(long &, int i, result &x)
 {
   DCASSERT(0==i);
   opnd->Compute(i, x);
