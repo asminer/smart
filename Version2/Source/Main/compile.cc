@@ -1055,7 +1055,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   // Promote params
   bool ok;
   if (find->HasSpecialParamLinking())
-    ok = find->LinkParams(pp, np, Error);
+    ok = find->LinkParams(pp, np);
   else
     ok = LinkFunction(find, pp, np);
 

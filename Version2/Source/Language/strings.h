@@ -60,6 +60,11 @@ expr* MakeStringAdd(expr** opnds, int n, const char* file, int line);
 expr* MakeStringBinary(expr* left, int op, expr* right, const char* file, int
 line);
 
+/** Print the specified string.
+    This is necessary to handle fancy string things, line \n, \t, etc.
+*/
+void PrintString(const result &x, OutputStream &out);
+
 //@}
 
 #endif

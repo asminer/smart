@@ -117,7 +117,7 @@ bool function::HasSpecialParamLinking() const
   return false; 
 }
 
-bool function::LinkParams(expr **pp, int np, OutputStream &error) const
+bool function::LinkParams(expr **pp, int np) const
 {
   DCASSERT(0);
   return false;
@@ -257,6 +257,8 @@ internal_func::internal_func(type t, char *n,
   compute = c;
   sample = s;
   documentation = d;
+  typecheck = NULL;
+  linkparams = NULL;
 }
 
 internal_func::internal_func(type t, char *n, 
@@ -267,6 +269,8 @@ internal_func::internal_func(type t, char *n,
   compute = c;
   sample = s;
   documentation = d;
+  typecheck = NULL;
+  linkparams = NULL;
 }
 
 void internal_func::Compute(expr **pp, int np, result &x)
@@ -316,6 +320,46 @@ bool internal_func::IsUndocumented() const
 const char* internal_func::GetDocumentation() const
 {
   return documentation;
+}
+
+void internal_func::SetSpecialTypechecking(typecheck_func t) 
+{
+  typecheck = t;
+}
+
+bool internal_func::HasSpecialTypechecking() const
+{
+  return (typecheck!=NULL);
+}
+
+int internal_func::Typecheck(List <expr> *params) const
+{
+  if (NULL==typecheck) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Bad use of custom type checking";
+    Internal.Stop();
+  }
+  return typecheck(params);
+}
+
+void internal_func::SetSpecialParamLinking(link_func t)
+{
+  linkparams = t;
+}
+
+bool internal_func::HasSpecialParamLinking() const
+{
+  return (linkparams!=NULL);
+}
+
+bool internal_func::LinkParams(expr** p, int np) const
+{
+  if (NULL==linkparams) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Bad use of custom parameter linking";
+    Internal.Stop();
+  }
+  return linkparams(p, np);
 }
 
 // ******************************************************************

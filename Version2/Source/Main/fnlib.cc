@@ -8,14 +8,18 @@ extern PtrTable* Builtins;
 
 //--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//
 
-// Used by computecond
+// Used by computehelp
 char* help_search_string;
 
 void DumpDocs(const char* doc)
 {
   // Note: this is in case we want to do fancy stuff, in the future ;^)
-
-  Output << "\t" << doc << "\n";
+  if (doc[0] != '\b') 
+    Output << "\t" << doc << "\n";
+  else {
+    const char* doc1 = doc+1;
+    Output << doc1 << "\n";
+  }
 }
 
 void ShowDocs(void *x)
@@ -35,7 +39,8 @@ void ShowDocs(void *x)
     }
     Output << "\t";
     hit->ShowHeader(Output);
-    Output << "\n";
+    if (!hit->HasSpecialTypechecking()) Output << "\n";
+    // special type checking: documentation must display parameters, too
     const char* d = hit->GetDocumentation();
     if (d) DumpDocs(d);
     else { // user defined... 
@@ -51,7 +56,7 @@ void ShowDocs(void *x)
   }
 }
 
-void computehelp(expr **pp, int np, result &x)
+void compute_help(expr **pp, int np, result &x)
 {
   DCASSERT(np==1);
   if (NULL==pp) 
@@ -93,13 +98,79 @@ void AddHelp(PtrTable *fns)
   const char* helpdoc = "Searches on-line help for function and option names containing <search>";
 
   internal_func *hlp =
-    new internal_func(VOID, "help", computehelp, NULL, pl, 1, helpdoc);
+    new internal_func(VOID, "help", compute_help, NULL, pl, 1, helpdoc);
 
   InsertFunction(fns, hlp);
 }
 
 
-void computecond(expr **pp, int np, result &x)
+
+// ********************************************************
+// *                  Output functions                    *
+// ********************************************************
+
+int typecheck_print(List <expr> *params)
+{
+  int np = params->Length();
+  int i;
+  for (i=0; i<np; i++) {
+    expr* p = params->Item(i);
+    if (p->NumComponents()>1) {
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Sorry, print does not handle width specifiers yet\n";
+      Internal.Stop();
+    }
+    switch (p->Type(0)) {
+      case BOOL:
+      case INT:
+      case REAL:
+      case STRING:
+      	continue;
+      default:
+        return -1;
+    }
+  }
+  return 0;
+}
+
+bool linkparams_print(expr **p, int np)
+{
+  // do we need to do anything?
+  return true;
+}
+
+void compute_print(expr **p, int np, result &x)
+{
+  int i;
+  for (i=0; i<np; i++) {
+    x.Clear();
+    if (x.error) return;
+    p[i]->Compute(0, x);
+    PrintResult(p[i]->Type(0), x, Output);
+  }
+  Output.flush();
+}
+
+void AddPrint(PtrTable *fns)
+{
+  const char* helpdoc = "\b(arg1, arg2, ...)\n\tPrint each argument\n\t(talk about width specifiers when they are implemented,\n\tand special chars)";
+
+  internal_func *p =
+    new internal_func(VOID, "print", compute_print, NULL, NULL, 0, helpdoc);
+
+  p->SetSpecialTypechecking(typecheck_print);
+  p->SetSpecialParamLinking(linkparams_print);
+
+  InsertFunction(fns, p);
+}
+
+
+
+// ********************************************************
+// *                  switch functions                    *
+// ********************************************************
+
+void compute_cond(expr **pp, int np, result &x)
 {
   x.Clear();
   DCASSERT(pp);
@@ -121,7 +192,7 @@ void computecond(expr **pp, int np, result &x)
   else pp[2]->Compute(0, x); 
 }
 
-void samplecond(long &seed, expr **pp, int np, result &x)
+void sample_cond(long &seed, expr **pp, int np, result &x)
 {
   x.Clear();
   DCASSERT(pp);
@@ -151,7 +222,7 @@ void AddCond(type t, PtrTable *fns)
   pl[2] = new formal_param(t, "f");
 
   internal_func *cnd = 
-    new internal_func(t, "cond", computecond, samplecond, pl, 3, conddoc);
+    new internal_func(t, "cond", compute_cond, sample_cond, pl, 3, conddoc);
 
   InsertFunction(fns, cnd);
 }
@@ -161,6 +232,7 @@ void AddCond(type t, PtrTable *fns)
 void InitBuiltinFunctions(PtrTable *t)
 {
   AddHelp(t);
+  AddPrint(t);
   // Conditionals
   type i;
   for (i=FIRST_SIMPLE; i<=LAST_SIMPLE; i++)	AddCond(i, t);

@@ -4,6 +4,30 @@
 #include "strings.h"
 #include "operators.h"
 
+void PrintString(const result& x, OutputStream &out)
+{
+  const char* s = (char*)x.other;
+  int stlen = strlen(s);
+  int i;
+  for (i=0; i<stlen; i++) {
+    if (s[i]!='\\') {
+      out << s[i];
+      continue;
+    }
+    // special character
+    i++;
+    if (i>=stlen) break;  // trailing \, ignore
+    switch (s[i]) {
+      case 'n'	:	out << "\n";	break;
+      case 't'	:	out << "\t";	break;
+      case '\\'	:	out << "\\";	break;
+      case 'q'	:	out << '"';	break;
+      case 'b'	:	out << "\b";	break;
+      case 'a'	:	out << "\a";	break;
+    }
+  }
+}
+
 // ******************************************************************
 // *                                                                *
 // *                        string_add class                        *

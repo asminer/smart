@@ -190,13 +190,12 @@ public:
 
       @param pp		Array of passed parameters.
       @param np		Number of passed parameters.
-      @param error	Stream where any errors should be written.
 
       @return 	true if there were no fatal errors.
 
       \end{tabular}
    */
-  virtual bool LinkParams(expr **pp, int np, OutputStream &error) const;
+  virtual bool LinkParams(expr **pp, int np) const;
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(long &, expr **, int np, result &x) = 0;
@@ -249,6 +248,22 @@ public:
 // *                                                                *
 // ******************************************************************
 
+/** For special type checking.
+    Use the following declaration:
+
+    int MyTypecheck(List <expr> *params, int np);
+
+ */
+typedef int (*typecheck_func) (List <expr> *params);
+
+/** For special parameter linking.
+    Use the following declaration:
+
+    bool MyParamLink(expr** p, int np);
+
+ */
+typedef bool (*link_func) (expr** p, int np);
+
 /** For computing internal functions.
     Use the following declaration:
 
@@ -283,6 +298,8 @@ protected:
   sample_func sample;
   const char* documentation;
   bool hidedocs;
+  typecheck_func typecheck;
+  link_func linkparams;
 public:
   /** Constructor.
       @param t	The type.
@@ -317,6 +334,16 @@ public:
   void HideDocs();
   virtual bool IsUndocumented() const;
   virtual const char* GetDocumentation() const;
+
+  // For custom parameter checks
+  void SetSpecialTypechecking(typecheck_func t);
+  virtual bool HasSpecialTypechecking() const;
+  virtual int Typecheck(List <expr> *params) const;
+
+  // For custom parameter linking
+  void SetSpecialParamLinking(link_func t);
+  virtual bool HasSpecialParamLinking() const;
+  virtual bool LinkParams(expr** p, int np) const;
 };
 
 

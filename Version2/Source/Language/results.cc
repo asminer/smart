@@ -3,6 +3,7 @@
 
 #include "results.h"
 #include "infinity.h"
+#include "strings.h"
 
 /** @name results.cc
     @type File
@@ -25,7 +26,7 @@ void PrintResult(type t, const result &x, OutputStream &s)
     case BOOL: 		s << x.bvalue; 		return;
     case INT:  		s << x.ivalue; 		return;
     case REAL: 		s << x.rvalue; 		return;
-    case STRING: 	s << (char*) x.other;	return;	
+    case STRING: 	PrintString(x, s);	return;	
   }
   DCASSERT(0);
 }
