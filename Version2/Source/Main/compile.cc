@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <FlexLexer.h>
 
-//#define COMPILE_DEBUG
+#define COMPILE_DEBUG
 
 void DumpPassed(OutputStream &s, List <expr> *pass)
 {
@@ -761,7 +761,13 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   int bestmatch = params->Length()+2;
   int i;
   for (i=flist->Length()-1; i>=0; i--) {
-    int score = ScoreFunction(flist->Item(i), params);
+    function *f = flist->Item(i);
+    int score;
+    if (f->HasSpecialTypeChecking()) 
+      score = f->Typecheck(params);
+    else
+      score = ScoreFunction(f, params);
+
     if ((score>=0) && (score<bestmatch)) {
       // better match, clear old list
       matches->Clear();
@@ -797,6 +803,9 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   int np = params->Length();
   expr** pp = params->MakeArray();
   delete params; 
+
+  // Promote params
+
   expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
   return fcall;
 }

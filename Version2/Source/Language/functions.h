@@ -164,13 +164,14 @@ public:
       Use our own technique to check passed (positional) parameters.
       (For classes that don't support this, we can simply do nothing!)
       
-      @param	pp	Array of passed parameters
-      @param	np	Number of parameters
-      @param	error	Stream where any typechecking errors should be written.
+      @param	params	List of passed parameters (in positional order)
 
-      @return	true if the parameters match (or can be promoted). 
+      @return	Score, as follows.
+      		0	: Perfect match
+		+n	: n parameters will need promotions
+		-1	: parameters do not match in number/type
    */
-  virtual bool Typecheck(const expr** pp, int np, OutputStream &error) const;
+  virtual int Typecheck(List <expr> *params) const;
 
   /** Overridden in derived classes.
       Should we use our own technique to "link" the passed parameters
@@ -341,6 +342,7 @@ void DumpRuntimeStack(OutputStream &s);  // Handy for run-time errors
 void StackOverflowPanic();
 
 /** Make an expression to call a function.
+    Passed parameters must match exactly in type.
     @param	f	The function to call.  Can be user-defined, 
       			internal, or pretty much anything.
 

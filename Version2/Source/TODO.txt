@@ -3,8 +3,7 @@
 
 Things to work on:
 
-* Strings:
-	+ expressions
+* Type promotion for real/int stuff
 
 * Stack dump on stack overflow
 

@@ -678,15 +678,8 @@ void int_sub::Compute(int i, result &x)
   result l;
   result r;
   x.Clear();
-#ifdef DEBUG_DEEP
-  cout << "Adding " << left << " to " << right << "\n";
-#endif
   left->Compute(0, l);
   right->Compute(0, r);
-#ifdef DEBUG_DEEP
-  cout << "Got " << left << " = " << l.ivalue << "\n";
-  cout << "Got " << right << " = " << r.ivalue << "\n";
-#endif
 
   if (l.error) {
     x.error = l.error;
@@ -728,9 +721,6 @@ void int_sub::Compute(int i, result &x)
   }
   // ordinary integer subtraction
   x.ivalue = l.ivalue - r.ivalue;
-#ifdef DEBUG_DEEP
-  cout << "So their difference is " << x.ivalue << "\n";
-#endif
 }
 
 // ******************************************************************
@@ -739,7 +729,7 @@ void int_sub::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-/** Multiplication of two integer expressions.
+/** Multiplication of integer expressions.
  */
 class int_mult : public multop {
 public:
@@ -1109,8 +1099,597 @@ void int_le::Compute(int i, result &x)
   }
 }
 
+// ******************************************************************
+// ******************************************************************
+// **                                                              **
+// **                                                              **
+// **                                                              **
+// **                      Operators for real                      **
+// **                                                              **
+// **                                                              **
+// **                                                              **
+// ******************************************************************
+// ******************************************************************
 
-// cut and paste the same for reals
+// ******************************************************************
+// *                                                                *
+// *                         real_neg class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Negation of a real expression.
+ */
+class real_neg : public negop {
+public:
+  real_neg(const char* fn, int line, expr *x) : negop(fn, line, x) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return REAL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *x) {
+    return new real_neg(Filename(), Linenumber(), x);
+  }
+};
+
+void real_neg::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(opnd);
+  x.Clear();
+  opnd->Compute(0, x);
+
+  if (x.error) return;
+  if (x.null) return;
+
+  if (x.infinity) {
+    x.ivalue = -x.ivalue;
+  } else {
+    x.rvalue = -x.rvalue;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_add class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Addition of real expressions.
+ */
+class real_add : public addop {
+public:
+  real_add(const char* fn, int line, expr **x, int n) 
+    : addop(fn, line, x, n) { }
+  
+  real_add(const char* fn, int line, expr *l, expr *r) 
+    : addop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return REAL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new real_add(Filename(), Linenumber(), x, n);
+  }
+};
+
+
+void real_add::Compute(int a, result &x)
+{
+  DCASSERT(0==a);
+  x.Clear();
+  DCASSERT(operands[0]);
+  operands[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) return;  // short circuit
+  int i=0;
+  if (!x.infinity) {
+    // Sum until we run out of operands or hit an infinity
+    for (i++; i<opnd_count; i++) {
+      DCASSERT(operands[i]);
+      result foo;
+      operands[i]->Compute(0, foo);
+      if (foo.error) {
+	  x.error = foo.error;
+	  return;  // error...short circuit
+      }
+      if (foo.null) {
+	  x.null = true;
+	  return;  // null...short circuit
+      }
+      // new operand is not null or an error, add to x
+      if (foo.infinity) {
+        x.infinity = true;
+        x.ivalue = foo.ivalue;
+        break;  
+      } else {
+        x.rvalue += foo.rvalue;  // normal finite addition
+      }
+    } // for i
+  }
+
+
+  // sum so far is +/- infinity, or we are out of operands.
+  // Check the remaining operands, if any, and throw an
+  // error if we have infinity - infinity.
+  
+  for (i++; i<opnd_count; i++) {
+    DCASSERT(x.infinity);
+    DCASSERT(operands[i]);
+    result foo;
+    operands[i]->Compute(0, foo);
+    if (foo.error) {
+	x.error = foo.error;
+	return;  // error...short circuit
+    }
+    if (foo.null) {
+        x.null = true;
+        return;  // null...short circuit
+    }
+    // check operand for opposite sign for infinity
+    if (foo.infinity) {
+      if ( (x.ivalue>0) != (foo.ivalue>0) ) {
+	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+	  Error << "Undefined operation (infty-infty) caused by ";
+	  Error << operands[i];
+	  Error.Stop();
+	  x.error = CE_Undefined;
+	  x.null = true;
+	  return;
+      }
+    }
+  } // for i
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_sub class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Subtraction of two real expressions.
+ */
+class real_sub : public subop {
+public:
+  real_sub(const char* fn, int line, expr *l, expr *r) : subop(fn,line,l,r) {}
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return REAL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_sub(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_sub::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+  result l;
+  result r;
+  x.Clear();
+  left->Compute(0, l);
+  right->Compute(0, r);
+
+  if (l.error) {
+    x.error = l.error;
+    return;
+  }
+  if (r.error) {
+    x.error = r.error;
+    return;
+  }
+  if (l.null || r.null) {
+    x.null = true;
+    return;
+  }
+  if (l.infinity && r.infinity) {
+    // both infinity
+    if ((l.ivalue > 0) != (r.ivalue >0)) {
+      x.infinity = true;
+      x.ivalue = l.ivalue;
+      return;
+    }
+    Error.Start(right->Filename(), right->Linenumber());
+    Error << "Undefined operation (infty-infty) caused by " << right;
+    Error.Stop();
+    x.error = CE_Undefined;
+    x.null = true;
+    return;
+  }
+  if (l.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = l.ivalue;
+    return;
+  }
+  if (r.infinity) {
+    // one infinity
+    x.infinity = true;
+    x.ivalue = -r.ivalue;
+    return;
+  }
+  // ordinary subtraction
+  x.rvalue = l.rvalue - r.rvalue;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                        real_mult  class                        *
+// *                                                                *
+// ******************************************************************
+
+/** Multiplication of real expressions.
+ */
+class real_mult : public multop {
+public:
+  real_mult(const char* fn, int line, expr **x, int n) 
+    : multop(fn,line,x,n) { }
+  
+  real_mult(const char* fn, int line, expr *l, expr *r)
+    : multop(fn,line,l,r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return REAL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr **x, int n) {
+    return new real_mult(Filename(), Linenumber(), x, n);
+  }
+};
+
+void real_mult::Compute(int a, result &x)
+{
+  DCASSERT(0==a);
+  x.Clear();
+  DCASSERT(operands[0]);
+  operands[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) return;  // short circuit
+  int i=0;
+  if (x.rvalue) {
+    // Multiply until we run out of operands or hit zero
+    for (i++; i<opnd_count; i++) {
+      DCASSERT(operands[i]);
+      result foo;
+      operands[i]->Compute(0, foo);
+      if (foo.error) {
+	  x.error = foo.error;
+	  return;  // error...short circuit
+      }
+      if (foo.null) {
+	  x.null = true;
+	  return;  // null...short circuit
+      }
+      if (0.0==foo.rvalue) {
+	// we have zero
+	if (x.infinity) {
+	  // 0 * infinity, error
+          Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+          Error << "Undefined operation (0 * infty) caused by ";
+          Error << operands[i];
+          Error.Stop();
+	  x.error = CE_Undefined;
+          x.null = true;
+	  return;
+	}
+	x.rvalue = 0.0;
+	break;
+      }
+      if (foo.infinity) {
+	// we have infinity
+        x.infinity = true;
+        x.ivalue = Sign(x.ivalue) * Sign(foo.ivalue);
+      } else {
+	// normal finite real multiplication
+        x.rvalue *= foo.rvalue;
+      }
+    } // for i
+  }
+
+
+  // product so far is zero, or we are out of operands.
+  // Check the remaining operands, if any, and throw an
+  // error if we have infinity * 0.
+  
+  for (i++; i<opnd_count; i++) {
+    DCASSERT(x.rvalue==0.0);
+    DCASSERT(operands[i]);
+    result foo;
+    operands[i]->Compute(0, foo);
+    if (foo.error) {
+	x.error = foo.error;
+	return;  // error...short circuit
+    }
+    if (foo.null) {
+        x.null = true;
+        return;  // null...short circuit
+    }
+    // check for infinity
+    if (foo.infinity) {
+      Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+      Error << "Undefined operation (0 * infty) caused by ";
+      Error << operands[i];
+      Error.Stop();
+      x.error = CE_Undefined;
+      x.null = true;
+      return;
+    }
+  } // for i
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_div class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Division of two real expressions.
+ */
+class real_div : public divop {
+public:
+  real_div(const char* fn, int line, expr *l, expr *r) 
+    : divop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return REAL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_div(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_div::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+  result l;
+  result r;
+  x.Clear();
+  left->Compute(0, l);
+  right->Compute(0, r);
+
+  if (l.error) {
+    x.error = l.error;
+    return;
+  }
+  if (r.error) {
+    x.error = r.error;
+    return;
+  }
+  if (l.null || r.null) {
+    x.null = true;
+    return;
+  }
+  if (0.0==r.ivalue) {
+    x.error = CE_ZeroDivide;
+    Error.Start(right->Filename(), right->Linenumber());
+    Error << "Undefined operation (divide by 0) caused by " << right;
+    Error.Stop();
+  } else {
+    x.rvalue = l.rvalue / r.rvalue;
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                        real_equal class                        *
+// *                                                                *
+// ******************************************************************
+
+/** Check equality of two real expressions.
+    To do still: check precision option, etc.
+ */
+class real_equal : public consteqop {
+public:
+  real_equal(const char* fn, int line, expr *l, expr *r)
+    : consteqop(fn, line, l, r) { }
+  
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_equal(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_equal::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l, r, x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue == r.rvalue);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_neq class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Check inequality of two real expressions.
+ */
+class real_neq : public constneqop {
+public:
+  real_neq(const char* fn, int line, expr *l, expr *r)
+    : constneqop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_neq(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_neq::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l, r, x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue != r.rvalue);
+  }
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                         real_gt  class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Check if one real expression is greater than another.
+ */
+class real_gt : public constgtop {
+public:
+  real_gt(const char* fn, int line, expr *l, expr *r)
+    : constgtop(fn, line, l, r) { }
+  
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_gt(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_gt::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l, r, x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue > r.rvalue);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_ge  class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Check if one real expression is greater than or equal another.
+ */
+class real_ge : public constgeop {
+public:
+  real_ge(const char* fn, int line, expr *l, expr *r)
+    : constgeop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_ge(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_ge::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l,r,x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue >= r.rvalue);
+  }
+}
+// ******************************************************************
+// *                                                                *
+// *                         real_lt  class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Check if one real expression is less than another.
+ */
+class real_lt : public constltop {
+public:
+  real_lt(const char* fn, int line, expr *l, expr *r)
+    : constltop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_lt(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_lt::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l,r,x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue < r.rvalue);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         real_le  class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Check if one real expression is less than or equal another.
+ */
+class real_le : public constleop {
+public:
+  real_le(const char* fn, int line, expr *l, expr *r)
+    : constleop(fn, line, l, r) { }
+  
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr *l, expr *r) {
+    return new real_le(Filename(), Linenumber(), l, r);
+  }
+};
+
+void real_le::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  result l;
+  result r;
+  if (ComputeOpnds(l,r,x)) {
+    // normal comparison
+    x.bvalue = (l.rvalue <= r.rvalue);
+  }
+}
+
+
 
 // ******************************************************************
 // ******************************************************************
@@ -1310,6 +1889,10 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
       if (op==MINUS) return new int_neg(file, line, opnd);
       return NULL;
 
+    case REAL:
+      if (op==MINUS) return new real_neg(file, line, opnd);
+      return NULL;
+
     case PROC_BOOL:
     case PROC_INT:
     case PROC_REAL:
@@ -1374,6 +1957,32 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 	  case GE:	return new int_ge(file, line, left, right);
 	  case LT:	return new int_lt(file, line, left, right);
 	  case LE:	return new int_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
+    case REAL:
+
+      if (rtype==PH_REAL) {
+	DCASSERT(op==TIMES);
+	// do ph real times real here
+	return NULL;
+      }
+
+      DCASSERT(rtype==REAL);
+
+      switch (op) {
+          case PLUS:	return new real_add(file, line, left, right);
+          case TIMES:	return new real_mult(file, line, left, right);
+          case MINUS:	return new real_sub(file, line, left, right);
+          case DIVIDE:	return new real_div(file, line, left, right);
+	  case EQUALS:	return new real_equal(file, line, left, right);
+	  case NEQUAL:	return new real_neq(file, line, left, right);
+	  case GT:	return new real_gt(file, line, left, right);
+	  case GE:	return new real_ge(file, line, left, right);
+	  case LT:	return new real_lt(file, line, left, right);
+	  case LE:	return new real_le(file, line, left, right);
       }
       return NULL;
       
@@ -1453,8 +2062,7 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
           case PLUS:	return new bool_or(file, line, opnds, n);
 	  case TIMES:   return new bool_and(file, line, opnds, n);
 
-	  case EQUALS:	
-	  case NEQUAL:	return IllegalAssocError(op, alltypes, file, line);
+	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
 
@@ -1466,14 +2074,19 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
           case PLUS:	return new int_add(file, line, opnds, n);
           case TIMES:	return new int_mult(file, line, opnds, n);
 
-          case MINUS:	
-          case DIVIDE:	
-	  case EQUALS:	
-	  case NEQUAL:	
-	  case GT:	
-	  case GE:	
-	  case LT:	
-	  case LE:	return IllegalAssocError(op, alltypes, file, line);
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+
+    //===============================================================
+    case REAL:
+
+      switch (op) {
+          case PLUS:	return new real_add(file, line, opnds, n);
+          case TIMES:	return new real_mult(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
       }
       return NULL;
 
