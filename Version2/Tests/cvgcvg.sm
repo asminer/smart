@@ -1,0 +1,49 @@
+
+/*
+   $Id$
+ */
+
+/*
+
+  A nested converge statement.
+
+*/
+
+# UseCurrent true
+# ConvergePrecision 1e-7
+
+# Verbose true
+	
+/* The good old x=sqrt(x) converge */
+
+real Answer := 3;
+
+print("Nested converge:\n");
+
+converge {
+  real y guess 100;
+
+  /* A strange way to compute x := sqrt(y); */
+  converge { 
+    real x guess 1;
+    real x := x - (x*x - y)/(y+1);
+    print("\t\tx = ", x, "\n");
+  }
+
+  real y:=Answer*x;
+  print("\ty = ", y, "\n");
+
+}
+
+print("Stable : x = ", x, "  Should be ", Answer, "\n");
+print("Stable : y = ", y, "  Should be ", Answer * Answer, "\n");
+
+print("This should cause an error:\n");
+
+# Verbose false
+converge {
+  real a := sqrt(a);
+  real a guess 100;
+}
+print("a = ", a, "\n");
+
