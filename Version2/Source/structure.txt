@@ -26,6 +26,8 @@ operators	Operator expressions for all types.
 
 casting		Type casting operators for all types.
 
+initfuncs	Initialization of internal (not model-related) functions.
+
 
 
 Overview of file structure will go here.

@@ -178,7 +178,22 @@ expr* binary::Substitute(int i)
 // *                                                                *
 // ******************************************************************
 
-// Defaults for virtual functions here.
+symbol::symbol(const char* fn, int line, type t, char* n) : expr (fn, line)
+{
+  mytype = t;
+  name = n;
+}
+
+symbol::~symbol()
+{
+  delete[] name;
+}
+
+type symbol::Type(int i) const
+{
+  DCASSERT(i==0);
+  return mytype;
+}
 
 int symbol::GetSymbols(int i, symbol **syms, int N, int offset) 
 {

@@ -445,21 +445,13 @@ private:
 
 public:
 
-  symbol(const char* fn, int line, type t, char* n) : expr (fn, line) {
-    mytype = t;
-    name = n;
-  }
+  symbol(const char* fn, int line, type t, char* n);
+  virtual ~symbol();
 
-  virtual ~symbol() { 
-    delete[] name;
-  }
-
-  virtual type Type() const { return mytype; }
-  inline const char* Name() const { return name; }
-
-  // Do we need a way to distinguish between functions, parameters, etc?
-
+  virtual type Type(int i) const;
   virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  
+  inline const char* Name() const { return name; }
 };
 
 

@@ -22,7 +22,8 @@ STDLIBS     = -lm -lfl
 SOURCES = \
 	types.cc	exprs.cc	infinity.cc	\
 	baseops.cc	operators.cc	casting.cc \
-	variables.cc	functions.cc
+	variables.cc	functions.cc	\
+	initfuncs.cc
 
 MODULES = 
 

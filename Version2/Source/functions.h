@@ -53,6 +53,7 @@ public:
 
   virtual void Compute(int i, result &x);
   virtual void Sample(long &, int i, result &x);
+  virtual expr* Substitute(int i);
   virtual void show(ostream &s) const;
 
   inline void SetPass(result *p) { pass = p; }
@@ -79,6 +80,14 @@ struct pos_param {
   const char* filename;
   /// The line number where this is happening
   int linenumber;
+ 
+  // handy stuff
+
+  /// Compute the passed value.
+  inline void Compute(int i, result &x) const { pass->Compute(i, x); }
+  
+  /// Sample the passed value.
+  inline void Sample(long &s, int i, result &x) const { pass->Sample(s, i, x); }
 };
 
 
@@ -136,8 +145,11 @@ protected:
   int repeat_point;
 public:
   function(const char* fn, int line, type t, char* n, 
-           formal_param *pl, int np, int rp);
+           formal_param **pl, int np, int rp);
   virtual ~function();
+
+  // One nasty little expr method, that should never get called.
+  virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
 
   /** So that the compiler can do typechecking.
       @param	pl	List of parameters.  MUST NOT BE CHANGED.
@@ -220,14 +232,74 @@ protected:
   expr* return_expr;
 public:
   user_func(const char* fn, int line, type t, char* n, 
-           formal_param *pl, int np);
+           formal_param **pl, int np);
   virtual ~user_func();
 
   virtual void Compute(const pos_param **, int np, result &x);
   virtual void Sample(long &, const pos_param **, int np, result &x);
 
   inline void SetReturn(expr *e) { return_expr = e; }
+
+  virtual void show(ostream &s) const;
 };
+
+// ******************************************************************
+// *                                                                *
+// *                      internal_func  class                      *
+// *                                                                *
+// ******************************************************************
+
+/** For computing internal functions.
+    Use the following declaration:
+
+    void MyFunc(const pos\_param **pp, int np, result &x);
+
+ */
+typedef void (*compute_func) (const pos_param **pp, int np, result &x);
+
+/** For sampling internal functions.
+    Use the following declaration:
+
+    void MyFunc(long &seed, const pos\_param **pp, int np, result &x);
+
+ */
+typedef void (*sample_func) (long &seed, const pos_param **pp, int np, result &x);
+
+
+/**   Class for internal functions.
+      Used for internally declared functions (such as sqrt).
+    
+      Write a C function (of format compute_func) which computes the desired 
+      result.  Pass the address of the function to the constructor.
+    
+      For distributions, define a similar function for creating a sample.
+    
+      To do still: add fancy type checking and engines.
+*/  
+
+class internal_func : public function {
+protected:
+  compute_func compute;
+  sample_func sample;
+public:
+  /** Constructor.
+      @param t	The type.
+      @param n	The name.
+      @param c	The C-function to call to compute the result.
+      @param s	The C-function to call to sample the result
+      @param pl	The parameter list.
+      @param np	The number of formal parameters.
+      @param rp	The point to start repeating parameters.
+   */
+  internal_func(type t, char *n, compute_func c, sample_func s, 
+                formal_param **pl, int np, int rp);
+
+  virtual void Compute(const pos_param **, int np, result &x);
+  virtual void Sample(long &, const pos_param **, int np, result &x);
+
+  virtual void show(ostream &s) const;
+};
+
 
 
 

@@ -42,7 +42,7 @@ expr* iterator::Substitute(int i)
 void iterator::show(ostream &s) const
 {
   if (NULL==Name()) return;  // hidden?
-  s << GetType(Type()) << " " << Name();
+  s << GetType(Type(0)) << " " << Name();
 }
 
 // ******************************************************************
@@ -71,7 +71,7 @@ expr* constfunc::Substitute(int i)
 void constfunc::show(ostream &s) const
 {
   if (NULL==Name()) return; // hidden?
-  s << GetType(Type()) << " " << Name() << " := " << return_expr;
+  s << GetType(Type(0)) << " " << Name() << " := " << return_expr;
 }
 
 // ******************************************************************

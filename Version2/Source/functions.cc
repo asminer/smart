@@ -53,11 +53,18 @@ void formal_param::Sample(long &, int i, result &x)
   x = *pass;
 }
 
+expr* formal_param::Substitute(int i)
+{
+  DCASSERT(0);   // I don't think we can ever get here.
+  //
+  return NULL;
+}
+
 void formal_param::show(ostream &s) const
 {
   if (NULL==Name()) return;  // Don't show hidden parameters
 
-  s << GetType(Type()) << " " << Name() << " := " << pass;
+  s << GetType(Type(0)) << " " << Name() << " := " << pass;
 }
 
 // ******************************************************************
@@ -66,7 +73,7 @@ void formal_param::show(ostream &s) const
 // *                                                                *
 // ******************************************************************
 
-user_func::user_func(const char* fn, int line, type t, char* n, formal_param *pl, int np) : function (fn, line, t, n, pl, np, np+1)
+user_func::user_func(const char* fn, int line, type t, char* n, formal_param **pl, int np) : function (fn, line, t, n, pl, np, np+1)
 {
   prev_stack_ptr = -1;
   return_expr = NULL;
@@ -127,6 +134,46 @@ void user_func::Compute(const pos_param **pp, int np, result &x)
 
 // ******************************************************************
 // *                                                                *
+// *                     internal_func  methods                     *
+// *                                                                *
+// ******************************************************************
+
+internal_func::internal_func(type t, char *n, 
+   compute_func c, sample_func s, formal_param **pl, int np, int rp) 
+ : function(NULL, -1, t, n, pl, np, rp)
+{
+  compute = c;
+  sample = s;
+}
+
+void internal_func::Compute(const pos_param **pp, int np, result &x)
+{
+  if (NULL==compute) {
+    cerr << "Internal error: illegal internal function computation?\n";
+    x.null = true;
+    return;
+  }
+  compute(pp, np, x);
+}
+
+void internal_func::Sample(long &seed, const pos_param **pp, int np, result &x)
+{
+  if (NULL==sample) {
+    cerr << "Internal error: illegal internal function sampling?\n";
+    x.null = true;
+    return;
+  }
+  sample(seed, pp, np, x);
+}
+
+void internal_func::show(ostream &s) const
+{
+  if (NULL==Name()) return; // Hidden?
+  s << GetType(Type(0)) << " " << Name();
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
@@ -153,8 +200,12 @@ void DumpRuntimeStack(ostream &s)
   s << "Stack dump:\n";
   int ptr = 0;
   while (ptr<ParamStackTop) {
-   // do something...
-    ptr++;  // not this
+    function *f = (function*) ParamStack[ptr].other; 
+    s << "\t" << f << "\n";
+    int np = ParamStack[ptr+2].ivalue;
+    s << "\t#parameters: " << np << "\n";
+    // Eventually... display the parameters
+    ptr += 3+np;
   }
 }
 
