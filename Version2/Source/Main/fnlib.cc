@@ -538,6 +538,235 @@ void AddSqrt(PtrTable *fns)
 }
 
 // ********************************************************
+// *                                                      *
+// *                                                      *
+// *               Discrete Distributions                 *
+// *                                                      *
+// *                                                      *
+// ********************************************************
+
+
+// ********************************************************
+// *                      Bernoulli                       *
+// ********************************************************
+
+void sample_bernoulli(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+
+  SafeCompute(pp[0], 0, x);
+
+  if (x.isNormal()) {
+    if ((x.rvalue>=0.0) && (x.rvalue<=1.0)) {
+      x.ivalue = (strm.uniform() < x.rvalue) ? 1 : 0;
+      return;
+    }
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Bernoulli probability " << x.rvalue << " out of range";
+    Error.Stop();
+    x.setError();
+    return;
+  }
+  if (x.isInfinity()) {
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Bernoulli probability is infinite";
+    Error.Stop();
+    x.setError();
+    return;
+  }
+
+  // other strange values (error, null, unknown) may propogate
+}
+
+void AddBernoulli(PtrTable *fns)
+{
+  const char* helpdoc = "Bernoulli distribution: one with probability p, zero otherwise";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(REAL, "p");
+  internal_func *p = new internal_func(PH_INT, "bernoulli", 
+  	NULL, // Add a function here to return a phase int
+	sample_bernoulli, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                     Equilikely                       *
+// ********************************************************
+
+void sample_equilikely(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  
+  result a,b;
+
+  SafeCompute(pp[0], 0, a);
+  SafeCompute(pp[1], 0, b);
+
+  x.Clear();
+  
+  // Normal behavior
+  if (a.isNormal() && b.isNormal()) {
+    x.ivalue = int(a.ivalue + (b.ivalue-a.ivalue+1)*strm.uniform());
+    return;
+  }
+
+  if (a.isInfinity() || b.isInfinity()) {
+    x.setError();
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Equilikely with infinite argument";
+    Error.Stop();
+    return;
+  }
+
+  if (a.isUnknown() || b.isUnknown()) {
+    x.setUnknown();
+    return;
+  }
+
+  if (a.isNull() || b.isNull()) {
+    x.setNull();
+    return;
+  }
+
+  // any other errors here
+  x.setError();
+}
+
+void AddEquilikely(PtrTable *fns)
+{
+  const char* helpdoc = "Distribution: integers [a..b] with equal probability";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(INT, "a");
+  pl[1] = new formal_param(INT, "b");
+  internal_func *p = new internal_func(PH_INT, "equilikely", 
+  	NULL, // Add a function here to return a phase int
+	sample_equilikely, // function for sampling
+	pl, 2, helpdoc);
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                      Geometric                       *
+// ********************************************************
+
+void sample_geometric(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+
+  SafeCompute(pp[0], 0, x);
+
+  if (x.isNormal()) {
+    if ((x.rvalue>0.0) && (x.rvalue<1.0)) {
+      x.ivalue = int(log(strm.uniform()) / log(x.rvalue)) ? 1 : 0;
+      return;
+    }
+    if (0.0 == x.rvalue) return; 
+    if (1.0 == x.rvalue) {
+      x.setInfinity();
+      return;
+    }
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Geometric probability " << x.rvalue << " out of range";
+    Error.Stop();
+    x.setError();
+    return;
+  }
+  if (x.isInfinity()) {
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Geometric probability is infinite";
+    Error.Stop();
+    x.setError();
+    return;
+  }
+
+  // other strange values (error, null, unknown) may propogate
+}
+
+void AddGeometric(PtrTable *fns)
+{
+  const char* helpdoc = "Geometric distribution: Pr(X=x) = (1-p)*p^x";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(REAL, "p");
+  internal_func *p = new internal_func(PH_INT, "geometric", 
+  	NULL, // Add a function here to return a phase int
+	sample_geometric, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+}
+
+
+// ********************************************************
+// *                                                      *
+// *                                                      *
+// *              Continuous Distributions                *
+// *                                                      *
+// *                                                      *
+// ********************************************************
+
+// ********************************************************
+// *                       Uniform                        *
+// ********************************************************
+
+void sample_uniform(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  
+  result a,b;
+
+  SafeCompute(pp[0], 0, a);
+  SafeCompute(pp[1], 0, b);
+
+  x.Clear();
+  
+  // Normal behavior
+  if (a.isNormal() && b.isNormal()) {
+    x.rvalue = a.rvalue + (b.rvalue-a.rvalue)*strm.uniform();
+    return;
+  }
+
+  if (a.isInfinity() || b.isInfinity()) {
+    x.setError();
+    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "Uniform with infinite argument";
+    Error.Stop();
+    return;
+  }
+
+  if (a.isUnknown() || b.isUnknown()) {
+    x.setUnknown();
+    return;
+  }
+
+  if (a.isNull() || b.isNull()) {
+    x.setNull();
+    return;
+  }
+
+  // any other errors here
+  x.setError();
+}
+
+void AddUniform(PtrTable *fns)
+{
+  const char* helpdoc = "Uniform distribution: reals between (a,b) with equal probability";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(INT, "a");
+  pl[1] = new formal_param(INT, "b");
+  internal_func *p = new internal_func(RAND_REAL, "uniform", 
+	NULL, sample_uniform, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                probability and such                  *
 // ********************************************************
 
@@ -712,6 +941,12 @@ void InitBuiltinFunctions(PtrTable *t)
   AddDiv(t);
   AddMod(t);
   AddSqrt(t);
+  // Discrete distributions
+  AddBernoulli(t);
+  AddEquilikely(t);
+  AddGeometric(t);
+  // Continuous distributions
+  AddUniform(t);
   // Probability
   AddAvg(t);
   // System stuff
