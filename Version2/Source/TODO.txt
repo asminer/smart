@@ -3,6 +3,11 @@
 
 Things to work on:
 
+* Strings:
+	+ options
+	+ expressions
+	+ display
+
 * Stack dump on stack overflow
 
 * Run-time error messages (for divide by zero, etc)
