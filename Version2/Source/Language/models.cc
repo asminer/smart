@@ -181,6 +181,8 @@ symbol* model::FindVisible(char* name) const
 
 void model::SolveMeasure(measure *m)
 {
+  if (CS_Computed == m->state) return;  // already solved
+
   // Based on the engine type of m, 
   // solve a huge batch of measures with the same engine
   // or just solve this one
@@ -281,13 +283,14 @@ type mcall::Type(int i) const
 
 void mcall::Compute(int i, result &x)
 {
-  result m;
   DCASSERT(0==i);
   DCASSERT(mdl);
+  result m;
+
   mdl->Compute(pass, numpass, m);
   if (m.isError() || m.isNull()) {
-    x = m;
-    return;
+      x = m;
+      return;
   }
   DCASSERT(m.other == mdl);
 
