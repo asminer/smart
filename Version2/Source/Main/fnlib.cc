@@ -65,7 +65,7 @@ void compute_help(expr **pp, int np, result &x)
   DCASSERT(pp); 
   x.Clear();
   SafeCompute(pp[0], 0, x);
-  if (!x.error && !x.isNull()) 
+  if (x.isNormal()) 
     help_search_string = (char*) x.other;
 
   // Look through functions
@@ -158,11 +158,11 @@ void do_print(expr **p, int np, result &x, OutputStream &s)
     if (NumComponents(p[i])>1) {
       y.Clear();
       SafeCompute(p[i], 1, y);
-      if (!y.isInfinity() && !y.isNull() && !y.error) width = y.ivalue;
+      if (y.isNormal()) width = y.ivalue;
       if (NumComponents(p[i])>2) {
         y.Clear();
 	SafeCompute(p[i], 2, y);
-        if (!y.isInfinity() && !y.isNull() && !y.error) prec = y.ivalue;
+        if (y.isNormal()) prec = y.ivalue;
       }
     }
     PrintResult(s, Type(p[i], 0), x, width, prec);
@@ -193,7 +193,7 @@ void compute_sprint(expr **p, int np, result &x)
 {
   static StringStream strbuffer;
   do_print(p, np, x, strbuffer);
-  if (x.error || x.isNull()) return;
+  if (!x.isNormal()) return;
   char* bar = strbuffer.GetString();
   strbuffer.flush();
   x.Clear();
@@ -236,7 +236,7 @@ void compute_errorfile(expr **p, int np, result &x)
   DCASSERT(p);
   x.Clear();
   SafeCompute(p[0], 0, x);
-  if (x.error) return;
+  if (x.isError()) return;
   if (x.isNull()) {
     Error.SwitchDisplay(NULL);
     x.Clear();
@@ -274,7 +274,7 @@ void compute_warningfile(expr **p, int np, result &x)
   DCASSERT(p);
   x.Clear();
   SafeCompute(p[0], 0, x);
-  if (x.error) return;
+  if (x.isError()) return;
   if (x.isNull()) {
     Warning.SwitchDisplay(NULL);
     x.Clear();
@@ -312,7 +312,7 @@ void compute_outputfile(expr **p, int np, result &x)
   DCASSERT(p);
   x.Clear();
   SafeCompute(p[0], 0, x);
-  if (x.error) return;
+  if (x.isError()) return;
   if (x.isNull()) {
     Output.SwitchDisplay(NULL);
     x.Clear();
@@ -353,23 +353,40 @@ void compute_div(expr **p, int np, result &x)
   DCASSERT(p);
   result a;
   SafeCompute(p[0], 0, a);
-  if (a.isNull() || a.error || a.isUnknown()) {
+  if (a.isNull() || a.isError() || a.isUnknown()) {
     x = a;
     return;
     // null div b = null,
     // ? div b = ?
   }
   SafeCompute(p[1], 0, x);
-  if (x.isNull() || x.error || x.isUnknown()) {
+
+  if (a.isNormal() && x.isNormal()) {
+    if (x.ivalue == 0) {
+      // a div 0
+#ifdef TRACK_ERRORS
+      x.error = CE_ZeroDivide;
+#endif
+      DCASSERT(p[1]);  // otherwise b is null
+      Error.Start(p[1]->Filename(), p[1]->Linenumber());
+      Error << "Illegal operation: divide by 0";
+      Error.Stop();
+      x.setError();
+      return;
+    }
+    // ordinary integer division
+    x.ivalue = a.ivalue / x.ivalue;
     return;
-    // a div null = null,
-    // a div ? = ?
   }
+
   if (a.isInfinity() && x.isInfinity()) {
+#ifdef TRACK_ERRORS
     x.error = CE_Undefined;
+#endif
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
-    Error << "Illegal operation: infinity / infinity";
+    Error << "Illegal operation: infty / infty";
     Error.Stop();
+    x.setError();
     return;
   }
   if (x.isInfinity()) {
@@ -389,20 +406,7 @@ void compute_div(expr **p, int np, result &x)
       x = a;
       x.ivalue = -1;
     }
-    return;
   }
-  if (x.ivalue == 0) {
-    // a div 0
-    x.Clear();
-    x.error = CE_ZeroDivide;
-    DCASSERT(p[1]);  // otherwise b is null
-    Error.Start(p[1]->Filename(), p[1]->Linenumber());
-    Error << "Illegal operation: divide by 0";
-    Error.Stop();
-    return;
-  }
-  // ordinary integer division
-  x.ivalue = a.ivalue / x.ivalue;
 }
 
 void AddDiv(PtrTable *fns)
@@ -424,7 +428,7 @@ void compute_mod(expr **p, int np, result &x)
   DCASSERT(p);
   int a,b;
   SafeCompute(p[0], 0, x);
-  if (x.isNull() || x.error || x.isUnknown() || x.isInfinity()) {
+  if (!x.isNormal()) {
     return;
     // null mod b = null,
     // ? mod b = ?,
@@ -432,29 +436,28 @@ void compute_mod(expr **p, int np, result &x)
   }
   a = x.ivalue;
   SafeCompute(p[1], 0, x);
-  if (x.isNull() || x.error || x.isUnknown()) {
-    return;
-    // a mod null = null,
-    // a mod ? = ?
+  if (x.isNormal()) {
+    b = x.ivalue;
+    x.Clear();
+    if (b) {
+      x.ivalue = a % b;
+      return;
+    }
+    // a mod 0, error
+#ifdef TRACK_ERRORS
+    x.error = CE_ZeroDivide;
+#endif
+    DCASSERT(p[1]);  // otherwise b is null
+    Error.Start(p[1]->Filename(), p[1]->Linenumber());
+    Error << "Illegal operation: modulo 0";
+    Error.Stop();
+    x.setError();
   }
   if (x.isInfinity()) {
     // a mod infty = a
     x.Clear();
     x.ivalue = a;
-    return;
   }
-  b = x.ivalue;
-  x.Clear();
-  if (b) {
-    x.ivalue = a % b;
-    return;
-  }
-  // a mod 0, error
-  x.error = CE_ZeroDivide;
-  DCASSERT(p[1]);  // otherwise b is null
-  Error.Start(p[1]->Filename(), p[1]->Linenumber());
-  Error << "Illegal operation: modulo 0";
-  Error.Stop();
 }
 
 void AddMod(PtrTable *fns)
@@ -475,7 +478,8 @@ void compute_sqrt(expr **p, int np, result &x)
   DCASSERT(1==np);
   DCASSERT(p);
   SafeCompute(p[0], 0, x);
-  if (x.isNull() || x.error || x.isUnknown()) return;
+
+  if (x.isUnknown() || x.isError() || x.isNull()) return;
 
   if (x.isInfinity()) {
     if (x.ivalue>0) return;  // sqrt(infty) = infty
@@ -491,7 +495,10 @@ void compute_sqrt(expr **p, int np, result &x)
   Error << "Square root with negative argument: ";
   PrintResult(Error, REAL, x);
   Error.Stop();
+#ifdef TRACK_ERRORS
   x.error = CE_Undefined;
+#endif
+  x.setError();
 }
 
 void sample_sqrt(long& seed, expr **p, int np, result &x)
@@ -499,7 +506,8 @@ void sample_sqrt(long& seed, expr **p, int np, result &x)
   DCASSERT(1==np);
   DCASSERT(p);
   SafeSample(p[0], 0, seed, x);
-  if (x.isNull() || x.error || x.isUnknown()) return;
+
+  if (x.isUnknown() || x.isError() || x.isNull()) return;
 
   if (x.isInfinity()) {
     if (x.ivalue>0) return;  // sqrt(infty) = infty
@@ -515,7 +523,10 @@ void sample_sqrt(long& seed, expr **p, int np, result &x)
   Error << "Square root with negative argument: ";
   PrintResult(Error, REAL, x);
   Error.Stop();
+#ifdef TRACK_ERRORS
   x.error = CE_Undefined;
+#endif
+  x.setError();
 }
 
 
@@ -550,7 +561,7 @@ void compute_exit(expr **p, int np, result &x)
   DCASSERT(p);
   int code = 0;
   SafeCompute(p[0], 0, x);
-  if (!x.isNull() && !x.error && !x.isInfinity()) {
+  if (x.isNormal()) {
     code = x.ivalue;
   }
   smart_exit();
@@ -581,7 +592,7 @@ void compute_cond(expr **pp, int np, result &x)
   result b;
   b.Clear();
   SafeCompute(pp[0], 0, b);
-  if (b.isNull() || b.error) {
+  if (b.isNull() || b.isError()) {
     // error stuff?
     x = b;
     return;
@@ -598,7 +609,7 @@ void sample_cond(long &seed, expr **pp, int np, result &x)
   result b;
   b.Clear();
   SafeSample(pp[0], 0, seed, b);
-  if (b.isNull() || b.error) {
+  if (b.isNull() || b.isError()) {
     x = b;
     return;
   }
