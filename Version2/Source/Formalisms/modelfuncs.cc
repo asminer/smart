@@ -355,7 +355,6 @@ void compute_test(expr **pp, int np, result &x)
       Output << "\n";
       Output.flush();
     }
-    Delete(enable);
 
     //  CHECK next state expression
 
@@ -372,7 +371,6 @@ void compute_test(expr **pp, int np, result &x)
       Output << "\n";
       Output.flush();
     }
-    Delete(fire);
 
     // Check firing distribution
     Output << "firing distribution type is: ";

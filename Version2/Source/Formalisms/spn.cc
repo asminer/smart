@@ -4,6 +4,7 @@
 #include "spn.h"
 
 #include "../Base/api.h"
+#include "../Base/memtrack.h"
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../Templates/listarray.h"
@@ -138,6 +139,244 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
   s << "Place: " << a.place << "\t const_card: " << a.const_card;
   s << "\t proc_card: " << a.proc_card;
   return s;
+}
+
+// ******************************************************************
+// *                                                                *
+// *            "compiled" Petri net enabling expression            *
+// *                                                                *
+// ******************************************************************
+
+class transition_enabled : public expr {
+  // We have a list of comparisons, split out by comparison type
+  // and stored in a not user-friendly way (in favor of speed)
+  int end_lower;
+  int end_upper;
+  int end_expr_lower;
+  int end_expr_upper;
+  int* lower; // dimension is "end_lower"
+  int* upper; // dimension is "end_upper-end_lower"
+  model_var** places; // dimension is "end_expr_upper"
+  expr** boundlist;   // dimension is "end_expr_upper-end_upper"
+  expr* guard;
+public:
+  // Very heavy constructor, all "compilation" takes place here!
+  transition_enabled(listarray <spn_arcinfo> *a, List <model_var> *P, transition *t);
+  virtual ~transition_enabled();
+  virtual type Type(int i) const {
+    DCASSERT(i==0);
+    return PROC_BOOL;
+  }
+  virtual void ClearCache() { DCASSERT(0); }
+  virtual void Compute(const state &, int i, result &x);
+  virtual expr* Substitute(int i) { DCASSERT(0); }
+// virtual int GetProducts(int i, List <expr> *prods);
+// virtual int GetSymbols(int i, List <symbol> *syms);
+  virtual void show(OutputStream &s) const;
+};
+
+// ******************************************************************
+
+transition_enabled::transition_enabled(
+	listarray <spn_arcinfo> *a, List <model_var> *P,
+	transition *t) : expr(NULL, -1)
+{
+  ALLOC("transition_enabled", sizeof(transition_enabled));
+  DCASSERT(a);
+  DCASSERT(a->IsStatic());
+  DCASSERT(t);
+ 
+  List <model_var> plist(4);
+
+  // traverse inputs for constant lower bounds
+  DataList <int> lowlist(4);
+  if (t->inputs>=0) {
+    for (int ptr = a->list_pointer[t->inputs]; 
+	 ptr < a->list_pointer[t->inputs+1]; ptr++)  {
+      // check if this is a constant arc
+      if (a->value[ptr].proc_card) continue;  // there's an expression
+      // add this to the comparison list
+      plist.Append(P->Item(a->value[ptr].place));
+      lowlist.AppendBlank(); 
+      lowlist.data[lowlist.last-1] = a->value[ptr].const_card;
+    } // for ptr
+  }  // if inputs
+  end_lower = plist.Length();
+  lower = lowlist.CopyAndClearArray();
+
+  // traverse inhibitors for constant upper bounds
+  DataList <int> highlist(4);
+  if (t->inhibitors>=0) {
+    for (int ptr = a->list_pointer[t->inhibitors]; 
+	 ptr < a->list_pointer[t->inhibitors+1]; ptr++)  {
+      // check if this is a constant arc
+      if (a->value[ptr].proc_card) continue;  // there's an expression
+      // add this to the comparison list
+      plist.Append(P->Item(a->value[ptr].place));
+      highlist.AppendBlank(); 
+      highlist.data[highlist.last-1] = a->value[ptr].const_card;
+    } // for ptr
+  }  // if inputs
+  end_upper = plist.Length();
+  upper = highlist.CopyAndClearArray();
+
+  // traverse inputs for variable lower bounds
+  List <expr> exprlist(4);
+  if (t->inputs>=0) {
+    for (int ptr = a->list_pointer[t->inputs]; 
+	 ptr < a->list_pointer[t->inputs+1]; ptr++)  {
+      if (NULL==a->value[ptr].proc_card) continue;  // constant arc
+      // add this to the comparison list
+      plist.Append(P->Item(a->value[ptr].place));
+      exprlist.Append(a->value[ptr].MakeCard());
+    } // for ptr
+  }  // if inputs
+  end_expr_lower = plist.Length();
+
+  // traverse inhibitors for variable upper bounds
+  if (t->inhibitors>=0) {
+    for (int ptr = a->list_pointer[t->inhibitors]; 
+	 ptr < a->list_pointer[t->inhibitors+1]; ptr++)  {
+      if (NULL==a->value[ptr].proc_card) continue;  // constant arc
+      // add this to the comparison list
+      plist.Append(P->Item(a->value[ptr].place));
+      exprlist.Append(a->value[ptr].MakeCard());
+    } // for ptr
+  }  // if inputs
+  end_expr_upper = plist.Length();
+
+  places = plist.MakeArray(); 
+  boundlist = exprlist.MakeArray();
+  
+  guard = t->guard; 
+}
+
+transition_enabled::~transition_enabled()
+{
+  FREE("transition_enabled", sizeof(transition_enabled));
+  delete[] lower;
+  delete[] upper;
+  delete[] places;
+  // delete the bound expressions, we own them
+  for (int i=0; i<end_expr_upper - end_upper; i++) {
+    Delete(boundlist[i]);
+  }
+  delete[] boundlist;
+}
+
+void transition_enabled::Compute(const state &s, int a, result &x)
+{
+  DCASSERT(0==a);
+  x.Clear();
+  x.bvalue = false;
+  int i;
+  model_var **p = places;
+  int* L = lower;
+  for (i=0; i<end_lower; i++) {
+    if (L[0] > s.Read(p[0]->state_index).ivalue) return;
+    L++;
+    p++;
+  }
+  int* U = upper;
+  for (; i<end_upper; i++) {
+    if (U[0] <= s.Read(p[0]->state_index).ivalue) return;
+    U++;
+    p++;
+  }
+  expr** b = boundlist;
+  for (; i<end_expr_lower; i++) {
+    SafeCompute(b[0], s, 0, x);
+    if (x.isNormal()) {
+      if (x.ivalue > s.Read(p[0]->state_index).ivalue) {
+        x.bvalue = false;
+        return;
+      }
+    } else {
+      if (x.isInfinity()) {
+        x.Clear();
+        if (x.ivalue>0) {
+	  // infinity <= tk(p), definitely false
+	  x.bvalue = false;
+	  return;
+        }
+      } else {
+        return;  
+      }
+    }
+    b++;
+    p++;
+  }
+  for (; i<end_expr_upper; i++) {
+    SafeCompute(b[0], s, 0, x);
+    if (x.isNormal()) {
+      if (x.ivalue <= s.Read(p[0]->state_index).ivalue) {
+        x.bvalue = false;
+        return;
+      }
+    } else {
+      if (x.isInfinity()) {
+        x.Clear();
+        if (x.ivalue<0) {
+	  // -infinity > tk(p), definitely false
+	  x.bvalue = false;
+	  return;
+        }
+      } else {
+        return;  
+      }
+    }
+    b++;
+    p++;
+  }
+  if (guard) {
+    SafeCompute(guard, s, 0, x);
+    return;
+  }
+  x.bvalue = true;
+}
+
+void transition_enabled::show(OutputStream &s) const
+{
+  bool printed = false;
+  int i;
+  model_var **p = places;
+  int* L = lower;
+  for (i=0; i<end_lower; i++) {
+    if (printed) s << " & ";
+    s << "(" << L[0] << "<=" << p[0]->Name() << ")";
+    printed = true;
+    L++;
+    p++;
+  }
+  int* U = upper;
+  for (; i<end_upper; i++) {
+    if (printed) s << " & ";
+    s << "(" << p[0]->Name() << "<" << U[0] << ")";
+    printed = true;
+    U++;
+    p++;
+  }
+  expr** b = boundlist;
+  for (; i<end_expr_lower; i++) {
+    if (printed) s << " & ";
+    s << "(" << b[0] << "<=" << p[0]->Name() << ")";
+    printed = true;
+    b++;
+    p++;
+  }
+  for (; i<end_expr_upper; i++) {
+    if (printed) s << " & ";
+    s << "(" << p[0]->Name() << "<" << b[0] << ")";
+    printed = true;
+    b++;
+    p++;
+  }
+  if (guard) {
+    if (printed) s << " & ";
+    printed = true;
+    s << guard;
+  }
+  if (!printed) s << "true";
 }
 
 // ******************************************************************
@@ -648,6 +887,8 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
 
 expr* spn_model::BuildEnabledExpr(transition *t)
 {
+  return new transition_enabled(arcs, placelist, t);
+  // old...
   DCASSERT(arcs);
   DCASSERT(arcs->IsStatic());
   DCASSERT(t);
