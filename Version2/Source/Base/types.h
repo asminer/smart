@@ -65,8 +65,10 @@ const type	PROC_RAND_BOOL	= 22;
 const type	PROC_RAND_INT	= 23;
 const type	PROC_RAND_REAL	= 24;
 
+const type	PROC_STATE	= 25;
+
 const type	FIRST_PROC	= PROC_BOOL;
-const type	LAST_PROC	= PROC_RAND_REAL;
+const type	LAST_PROC	= PROC_STATE;
 
 //  Model types 
 

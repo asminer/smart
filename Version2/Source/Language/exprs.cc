@@ -108,6 +108,13 @@ void expr::Sample(Rng &, const state&, int i, result &x)
   Internal.Stop();
 }
 
+void expr::NextState(const state &current, state &next, result &x)
+{
+  Internal.Start(__FILE__, __LINE__, filename, linenumber);
+  Internal << "Illegal NextState request!";
+  Internal.Stop();
+}
+
 int expr::GetSums(int i, List <expr> *sums)
 {
   DCASSERT(i==0);

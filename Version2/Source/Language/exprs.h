@@ -163,6 +163,13 @@ public:
   */
   virtual void Sample(Rng &, const state &, int i, result &x);
 
+  /** Compute the next state from the current state.
+      Used by models for deterministic events.
+      Used for "proc state" expressions.
+      The result is used to catch errors.
+  */
+  virtual void NextState(const state &current, state &next, result &x);
+
   /** Create a copy of this expression with values substituted
       for certain symbols. 
       (The symbols themselves determine the substitution.)

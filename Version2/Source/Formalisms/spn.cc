@@ -38,7 +38,46 @@ public:
     s << "tk(" << placename << ")";
   }
   virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
-    // fix later
+    DCASSERT(i==0);
+    if (syms) syms->Append(placename);
+    return 1;
+  }
+};
+
+class add_const_to_place : public constant {
+private:
+  const char* modelname;
+  symbol* placename;
+  int stateid;
+  int delta;
+public:
+  add_const_to_place(const char* mn, symbol* pn, int sid, int d)
+  : constant(NULL, -1, PROC_STATE) {
+    modelname = mn;
+    placename = pn;
+    stateid = sid;
+    delta = d;
+    DCASSERT(delta);
+  }
+  virtual ~add_const_to_place() {
+    // DO NOT DELETE placename...
+  }
+  virtual void NextState(const state &, state &next, result &x) {
+    next[stateid].ivalue += delta;
+    if (next[stateid].ivalue < 0) {
+      Error.Start();
+      if (delta>0) Error << "Overflow of place " << placename;
+      else Error << "Underflow of place " << placename;
+      Error << " in model " << modelname;
+      x.setError();
+    }
+  }
+  virtual void show(OutputStream &s) const {
+    s << placename;
+    if (delta>0) s << "+=" << delta; 
+    else s << "-=" << -delta;
+  }
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
     DCASSERT(i==0);
     if (syms) syms->Append(placename);
     return 1;
@@ -82,6 +121,13 @@ struct spn_arcinfo {
 	    proc_card = a.proc_card;
 	  }
     } // if a.proc_card
+  }
+  inline expr* MakeCard(const char* f, int n) const {
+    if (NULL==proc_card) return MakeConstExpr(PROC_INT, const_card, f, n);
+    if (0==const_card) return Copy(proc_card);
+    // we have a constant portion and an expression, merge them
+    expr* cc = MakeConstExpr(PROC_INT, const_card, f, n);
+    return MakeBinaryOp(cc, PLUS, proc_card, f, n);
   }
 };
 
@@ -128,7 +174,7 @@ public:
   virtual int NumInitialStates() const { return 1; }
   virtual void GetInitialState(int n, state &s) const { DCASSERT(0); }
   virtual expr* EnabledExpr(int e);
-  virtual expr* NextStateExpr(int e) { DCASSERT(0); }
+  virtual expr* NextStateExpr(int e);
   virtual expr* EventDistribution(int e) { DCASSERT(0); }
   virtual type EventDistributionType(int e) { DCASSERT(0); }
 };
@@ -194,16 +240,7 @@ expr* spn_dsm::EnabledExpr(int e)
 				LE, inplace, NULL, -1);
       } else {
         // expression for cardinality 
-	expr* card = NULL;
-        if (arcs->value[input_ptr].const_card) {
-	  // we have a constant portion and an expression, merge them
-	  expr* cc = MakeConstExpr(PROC_INT, 
-			arcs->value[input_ptr].const_card, NULL, -1);
-          card = MakeBinaryOp(cc, PLUS, arcs->value[input_ptr].proc_card, NULL, -1);
-        } else {
-          // only an expression
-	  card = Copy(arcs->value[input_ptr].proc_card);
-        }
+	expr* card = arcs->value[input_ptr].MakeCard(NULL, -1);
         cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
       }
       if (cmp) exprlist->Append(cmp);
@@ -224,15 +261,7 @@ expr* spn_dsm::EnabledExpr(int e)
 				GT, hbplace, NULL, -1);
       } else {
         // expression for cardinality 
-	expr* card = NULL;
-        if (arcs->value[inhib_ptr].const_card) {
-	  // we have a constant portion and an expression, merge them
-	  expr* cc = MakeConstExpr(PROC_INT, arcs->value[inhib_ptr].const_card, NULL, -1);
-          card = MakeBinaryOp(cc, PLUS, arcs->value[inhib_ptr].proc_card, NULL, -1);
-        } else {
-          // only an expression
-	  card = Copy(arcs->value[inhib_ptr].proc_card);
-        }
+        expr* card = arcs->value[inhib_ptr].MakeCard(NULL, -1);
         cmp = MakeBinaryOp(card, GT, hbplace, NULL, -1);
       }
       if (cmp) exprlist->Append(cmp);
@@ -267,15 +296,7 @@ expr* spn_dsm::EnabledExpr(int e)
 				LE, inplace, NULL, -1);
         } else {
           // expression for input cardinality 
-	  expr* card = NULL;
-          if (arcs->value[input_ptr].const_card) {
-	    // we have a constant portion and an expression, merge them
-	    expr* cc = MakeConstExpr(PROC_INT, arcs->value[input_ptr].const_card, NULL, -1);
-            card = MakeBinaryOp(cc, PLUS, arcs->value[input_ptr].proc_card, NULL, -1);
-          } else {
-            // only an expression
-	    card = Copy(arcs->value[input_ptr].proc_card);
-          }
+	  expr* card = arcs->value[input_ptr].MakeCard(NULL, -1);
           cmp = MakeBinaryOp(card, LE, inplace, NULL, -1);
         } // const/expr cardinality
         // advance input arc ptr
@@ -290,10 +311,15 @@ expr* spn_dsm::EnabledExpr(int e)
 
   // have list of conditions, build conjunction
   int numopnds = exprlist->Length();
-  if (numopnds==0) return NULL;
+  if (numopnds==0) return MakeConstExpr(PROC_BOOL, true, NULL, -1);
   expr** opnds = exprlist->Copy();  
   exprlist->Clear();
   return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
+}
+
+expr* spn_dsm::NextStateExpr(int e)
+{
+  return NULL;
 }
 
 // ******************************************************************
