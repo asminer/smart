@@ -1540,6 +1540,24 @@ bool PerfectFormalMatch(function *f, List <formal_param> *fpb)
   return true;
 }
 
+bool HasADefault(function *f, List <formal_param> *fpb)
+{
+  formal_param **fpa;
+  int npa;
+  int dummy;
+  f->GetParamList(fpa, npa, dummy);
+  int i;
+  for (i=0; i<npa; i++) {
+    DCASSERT(fpa[i]);
+    if (fpa[i]->HasDefault()) return true;
+  }
+  
+  for (i=0; i<fpb->Length(); i++) {
+    formal_param *fp = fpb->Item(i);
+    if (fp->HasDefault()) return true;
+  }
+  return false;
+}
 
 /** Check for proper overloading and forward defs.
     @param	table	The symbol table to check
@@ -1579,11 +1597,18 @@ bool CheckFunctionDecl(PtrTable *table, type t, char *n, function* &out)
 	out = NULL;
 	return false;
       }
+      bool need_warning = HasADefault(f, FormalParams);
       // Replace us with the forward declaration 
       out = f;
       // Swap parameters...
       FormalParams->Clear();
       f->FillFormal(FormalParams);
+      if (need_warning) {
+        Warning.Start(filename, lexer.lineno());
+        Warning << "Using original defaults for forward-defined function:\n\t";
+        f->ShowHeader(Warning);
+        Warning.Stop();
+      }
       return false;
     } else {
       // Not forward defined; bad overloading
@@ -2027,7 +2052,10 @@ int ScoreFunction(function *f, List <named_param> *params)
       // extra named parameter, that's bad
       return -1;
     } else {
-      // Match; check types.
+      // Match
+      // Check defaults
+      if (x->UseDefault) if (!y->HasDefault()) return -1; 
+      // Check types.
       bool perfect = true;
       MatchParam(y, x->pass, perfect, promote);
       if (!perfect) numpromote++;
