@@ -10,6 +10,7 @@
 #define MEMMGR_H
 
 #include "list.h"
+#include "../Base/errors.h"
 
 class ObjMgr {
 private:
@@ -35,11 +36,7 @@ protected:
   }
   inline void NewChunk() {
     chunk = (char*) malloc(chunksize);
-    if (NULL==chunk) {
-      Internal.Start(__FILE__, __LINE__);
-      Internal << "Out of memory for object manager\n";
-      Internal.Stop();
-    }
+    if (NULL==chunk) OutOfMemoryError("object manager");
     lastfree = 0;
   }
 public:

@@ -10,6 +10,7 @@
 #define HEAP_H
 
 #include "list.h"
+#include "../Base/errors.h"
 
 template <class DATA>
 class Heap {
@@ -20,11 +21,7 @@ class Heap {
 protected:
   void Resize(int newsize) {
     DATA ** foo = (DATA**) realloc(data, newsize*sizeof(void*));
-    if (newsize && (NULL==foo)) {
-      Internal.Start(__FILE__, __LINE__);
-      Internal << "Memory overflow on Heap resize\n";
-      Internal.Stop();
-    }
+    if (newsize && (NULL==foo)) OutOfMemoryError("Heap resize");
     data = foo;
     size = newsize;
   }

@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	streams.cc types.cc options.cc timers.cc api.cc
+	streams.cc types.cc options.cc timers.cc errors.cc api.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

@@ -9,6 +9,7 @@
 #define STACK_H
 
 #include <stdlib.h>
+#include "../Base/errors.h"
 
 template <class DATA>
 class Stack {
@@ -24,11 +25,7 @@ protected:
       Internal.Stop();
     }
     DATA *foo = (DATA *) realloc(data, newsize*sizeof(DATA));
-    if (NULL==foo) {
-      Internal.Start(__FILE__, __LINE__);
-      Internal << "Memory overflow on stack resize";
-      Internal.Stop();
-    }
+    if (NULL==foo) OutOfMemoryError("stack resize");
     data = foo;
     size = newsize;
   }

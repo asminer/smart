@@ -7,6 +7,7 @@
 #include "streams.h"
 #include "types.h"
 #include "options.h"
+#include "errors.h"
 
 void InitBase();
 

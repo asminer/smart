@@ -10,6 +10,7 @@
 
 // for memcpy
 #include <string.h>
+#include "../Base/errors.h"
 
 class PtrList {
   void** data;
@@ -18,11 +19,7 @@ class PtrList {
 protected:
   void Resize(int newsize) {
     void ** foo = (void**) realloc(data, newsize*sizeof(void*));
-    if (newsize && (NULL==foo)) {
-      Internal.Start(__FILE__, __LINE__);
-      Internal << "Memory overflow on List resize\n";
-      Internal.Stop();
-    }
+    if (newsize && (NULL==foo)) OutOfMemoryError("List resize");
     data = foo;
     size = newsize;
   }

@@ -4,6 +4,7 @@
 #ifndef FLATSS_H
 #define FLATSS_H
 
+#include "../Base/streams.h"
 #include "stateheap.h" 
 
 
@@ -53,7 +54,7 @@
      bits 7,6:  (i.e., first we read a 2-bit integer...)  \\
 	0: not in use, deleted state  \\
 	1: sparse \\
-	2: inverse-sparse \\
+	2: runlength encoding \\
 	3: full  
      
      bits 5,4,3: \\
@@ -61,7 +62,7 @@
      	1 : 16 < \#places <= 256, 		 one byte can be used \\
      	2 : 256 < \#places <= 65536,  		 two bytes can be used \\
      	3 : 65536 < \#places <= 16777216,	 three bytes can be used \\
-     	4 : 65536 < \#places <= 2^32, 		 four bytes used 
+     	4 : 1677216 < \#places <= 2^32, 	 four bytes used 
 
      bits 2,1,0: \\
      	0 : 0 <= maxtokens < 2,		 one bit can be used \\
@@ -79,12 +80,12 @@
       	\#nz pairs of (place\#, \#tokens) with each of appropriate size. \\
       	Note if maxtokens = 1 then we don't need to store \#tokens! 
 
-     Inverse sparse: \\
-        Mfv : Most frequent value (size dictated by \#tokens) \\
-	\#values not equal to most frequent value \\
-	\#values pairs of (place\#, \#tokens) with each of appropriate size.\\
-	If maxtokens = 1, then we must have Mfv=1, so it is not stored, nor
-	is #tokens for each pair.
+     Runlength encoding: \\
+	Bit indicating that the next "record" is either a RUN or a LIST \\
+	count, of size MIN(8, \#places) bits \\
+	if RUN, then a single value (the value of the next count state vars) \\
+	if LIST, then count values are listed	
+	Note: if maxtokens = 1 then the value is ALWAYS implied
 
      Full storage: \\
       	\#places \\
@@ -108,19 +109,17 @@ class state_array {
   // stats
   int encodecount[4];
 
-  /// Used by inverse-sparse encoding to determine Mfv.
-#ifdef SHORT_STATES
-  int histogram[USHRT_MAX+1];
-#else
-  int histogram[256];
-#endif
-
 protected:
   /// Index to handle mapping, if desired
-  heaparray <int> *map;
-  int firsthandle;
-  int lasthandle;   
+  int* map;
+  /// Current size of map array (will expand as necessary)
+  int mapsize;
+  /// Number of inserted states
   int numstates;  
+  /// Handle of first state
+  int firsthandle;
+  /// Handle of next state to be added
+  int lasthandle;   
 
   /** The workhorse of the whole thing.
       So it better be efficient!
@@ -136,38 +135,36 @@ protected:
   void WriteInt(char bits, int x);
 
   /// For debugging.
-  void PrintBits(int start, int stop);
+  void PrintBits(OutputStream &s, int start, int stop);
 
   /** Enlarge the memory array, if necessary. */
   void EnlargeMem(int newsize);
 
+  // Helpers for AddState
+
+  void AddRunlength(const state &s, int maxval, int runbits);
+
+  inline int Bits2Bytes(int numbits) const { return (numbits+7)/8; }
 public:
   state_array(int bsize, bool useindices);
   ~state_array();
 
-  inline bool UsesIndexHandles() { return (map!=NULL); }
-  inline int NumStates() { return numstates; }
+  inline bool UsesIndexHandles() const { return (map!=NULL); }
+  inline int NumStates() const { return numstates; }
+
+  inline int MaxHandle() const { return map ? numstates : lasthandle; }
+  inline int FirstHandle() const { return map ? 0 : firsthandle; }
   
-  int AddState(const state &s);
-  bool GetState(int h, discrete_state *s);
-  int Compare(int h, discrete_state *s);
+  int AddState(state &s);
+  /// Can only be used with map array.
+  void PopLast();
 
-  // void Write(ostream &f);
+  bool GetState(int h, state &s);
 
-  inline int MaxHandle() { return map ? numstates : lasthandle; }
-
-  inline int FirstHandle() { return map ? 0 : firsthandle; }
-  
   int NextHandle(int h); 
 
   void Report();
   int MemUsed();
-
-  /** Write the array to a stream (not human readable) */
-  void Write(ostream &);
-
-  /** Read the array from a stream */
-  void Read(istream &);
 
   // Clear out old states but keep memory allocated.
   void Clear();
