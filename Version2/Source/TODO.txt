@@ -10,11 +10,13 @@ Things to check on:
 
 Things to do:
 
-* Investigate treating statements as expressions of type void!
+* For "state change": consider another type of expression,
+  PROC_STATE (or something else?)
+  with "signature"
+  void StateChange(const state &current, state &next, result &x);
+  // x is for catching errors
 
-
-* Find a way to pass a block of statements to cond.
-
+  Then define "(cross) product of state changes"...
 
 * Make sure we correctly handle things like
 
