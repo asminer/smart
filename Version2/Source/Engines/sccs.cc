@@ -8,7 +8,7 @@
 #define DEBUG_SCCS
 
 // globals
-digraph* scc_graph;
+const digraph* scc_graph;
 int* visit_stack;
 int visit_stack_top;
 unsigned long visit_id;
@@ -96,7 +96,7 @@ unsigned long scc_visit(int k)
 }
 
 
-int 	ComputeSCCs(digraph *g, unsigned long* sccmap)
+int 	ComputeSCCs(const digraph *g, unsigned long* sccmap)
 {
 #ifdef DEBUG_SCCS
   Output << "Computing strongly connected components\n";
@@ -119,7 +119,7 @@ int 	ComputeSCCs(digraph *g, unsigned long* sccmap)
 
 
 
-void FwdArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
+void FwdArcsFindTerminal(const digraph *g, unsigned long* sccmap, int* isterm)
 {
   DCASSERT(g->isTransposed == false);
   
@@ -174,7 +174,7 @@ void FwdArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
   } // for i
 }
 
-void BackArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
+void BackArcsFindTerminal(const digraph *g, unsigned long* sccmap, int* isterm)
 {
   DCASSERT(g->isTransposed);
   
@@ -222,7 +222,7 @@ void BackArcsFindTerminal(digraph *g, unsigned long* sccmap, int* isterm)
   } // for j
 }
 
-int 	ComputeTSCCs(digraph *g, unsigned long* sccmap)
+int 	ComputeTSCCs(const digraph *g, unsigned long* sccmap)
 {
 #ifdef DEBUG_SCCS
   Output << "Computing terminal strongly connected components\n";
@@ -268,7 +268,7 @@ int 	ComputeTSCCs(digraph *g, unsigned long* sccmap)
 
 
 
-void FindLoops(digraph *g, unsigned long* sccmap, int* hasloop)
+void FindLoops(const digraph *g, unsigned long* sccmap, int* hasloop)
 {
   // For each state
   for (int i=0; i<g->NumNodes(); i++) {
@@ -308,7 +308,7 @@ void FindLoops(digraph *g, unsigned long* sccmap, int* hasloop)
   } // for i
 }
 
-int 	ComputeLoopedSCCs(digraph *g, unsigned long* sccmap)
+int ComputeLoopedSCCs(const digraph *g, unsigned long* sccmap)
 {
 #ifdef DEBUG_SCCS
   Output << "Computing looped strongly connected components\n";

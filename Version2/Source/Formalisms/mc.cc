@@ -8,7 +8,8 @@
 #include "../Main/tables.h"
 #include "../States/reachset.h"
 #include "../Templates/sparsevect.h"
-#include "../Templates/graphs.h"
+
+#include "../Chains/mc_expl.h"
 
 #include "dsm.h"
 
@@ -440,7 +441,6 @@ void Add_instate(PtrTable *fns)
 // *                          test                        *
 // ********************************************************
 
-#include "../Engines/sccs.h"
 
 // A hook for testing things
 void compute_mc_test(expr **pp, int np, result &x)
