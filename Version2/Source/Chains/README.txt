@@ -8,5 +8,7 @@ processes).
 
 Files:
 
+procs		Frontend.  (Stochastic processes)
+
 mc_expl		Explicit representations for MCs
 

@@ -164,7 +164,7 @@ public:
   }
   virtual void ShowRange(OutputStream &s) const {
     if (min<max)
-      s << "[" << min << ".." << max << "]\n";
+      s << "integers in [" << min << ".." << max << "]\n";
     else
       s << "any integer\n";
   }
@@ -206,7 +206,7 @@ public:
   }
   virtual void ShowRange(OutputStream &s) const {
     if (min<max)
-      s << "[" << min << ".." << max << "]\n";
+      s << "reals in [" << min << ".." << max << "]\n";
     else
       s << "any real value\n";
   }

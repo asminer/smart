@@ -138,9 +138,78 @@ public:
     nonzeroes++;
   }
   void Sort() {
-    DCASSERT(0);
+    if (isSorted) return;
+    int i;
+    for (i=1; i<nonzeroes; i++) UpHeap(i);
+    for (i=nonzeroes-1; i>0; i--) {
+      SWAP(index[0], index[i]);
+      SWAP(value[0], value[i]);
+      DownHeap(i);
+    }
+    isSorted = true;
   }
+protected:
+  void UpHeap(int n) {
+    while (n) {
+      int parent = n/2;
+      if (index[n] < index[parent]) return;
+      SWAP(index[n], index[parent]);
+      SWAP(value[n], value[parent]);
+      n = parent;
+    }
+  };
+  void DownHeap(int n);
 };
+
+template <class DATA>
+void sparse_vector <DATA> :: DownHeap(int n)
+{
+  int x=0;
+  while (1) {
+    int a = 2*x+1;  // left child
+    int b = a+1;  // right child
+    if (a>=n) return;  // no children
+    if (b>=n) {
+        // this node has one left child (a leaf), and no right child.
+        // check the child and swap if necessary, then we're done
+	if (index[a] > index[x]) {
+	  SWAP(index[a], index[x]);
+	  SWAP(value[a], value[x]);
+        }
+        return;
+    }
+    bool xbeatsa = (index[x] > index[a]);
+    bool xbeatsb = (index[x] > index[b]);
+    if (xbeatsa && xbeatsb) return;  // already a heap
+    if (xbeatsa) { 
+	// b is the new parent
+	SWAP(index[b], index[x]);
+	SWAP(value[b], value[x]);
+        x = b; 
+        continue;
+    }
+    if (xbeatsb) { 
+   	// a is the new parent
+	SWAP(index[a], index[x]);
+	SWAP(value[a], value[x]);
+        x = a;
+        continue;
+    }
+    // Still here?  we must have a>x and b>x; 
+    // New parent is max of a and b.
+    if (index[a] >= index[b]) {
+        // a is new parent
+	SWAP(index[a], index[x]);
+	SWAP(value[a], value[x]);
+        x = a;
+    } else {
+        // b is new parent
+	SWAP(index[b], index[x]);
+	SWAP(value[b], value[x]);
+        x = b;
+    }
+  } // while
+}
 
 #endif
 

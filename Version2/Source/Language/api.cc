@@ -69,13 +69,4 @@ void InitLanguage()
 
   AddOption(test1);
 
-  option_const** list2 = new option_const*[4];
-  list2[0] = new option_const("GAUSS_SEIDEL", "Gauss-Seidel");
-  list2[1] = new option_const("JACOBI", "Jacobi");
-  list2[2] = new option_const("POWER", "Power method");
-  list2[3] = new option_const("SOR", "Adaptive successive over-relaxation");
-
-  option* solver = MakeEnumOption("Solver", "Numerical method to use when solving linear systems", list2, 4, list2[1]);
-
-  AddOption(solver);
 }

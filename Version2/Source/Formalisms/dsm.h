@@ -6,6 +6,7 @@
 
 #include "../Language/exprs.h"
 #include "../States/stateheap.h"
+#include "../Chains/procs.h"
 
 /** @name dsm.h
     @type File
@@ -25,21 +26,6 @@
 
 class reachset;  // defined in States/reachset.h
 
-enum Process_type {
-  /// Placeholder; we don't know yet
-  Proc_Unknown,
-  /// No timing information on events
-  Proc_None,
-  /// Discrete-time Markov chain
-  Proc_Dtmc,
-  /// Continuous-time Markov chain
-  Proc_Ctmc,
-  // other types, for Rob?
-
-  /// General stochastic process (use simulation)
-  Proc_General
-};
-
 /** Meta-model class.
     
     For explicit models such as Markov chains, we supply full functionality
@@ -58,7 +44,10 @@ public:  // for now at least
   /// Reachable states.
   reachset *statespace; 
   // Reachability graph?
-  // Markov chain here?
+
+  // Expansion: either list the different types here, or enclose them
+  // within a struct (e.g., "stochastic process")
+  markov_chain *mc;
 
 public:
   state_model(const char* name, int e);

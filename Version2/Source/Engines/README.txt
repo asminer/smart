@@ -13,6 +13,8 @@ api		Front end
 
 sccs		Determines sccs of graphs (explicitly)
 
+linear		Solves linear systems.
+
 numerical	Solves measures by analyzing the underlying process.
 		E.g., generate and solve a Markov chain
 

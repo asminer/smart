@@ -7,9 +7,8 @@
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../States/reachset.h"
-#include "../Templates/sparsevect.h"
 
-#include "../Chains/mc_expl.h"
+#include "../Chains/procs.h"
 
 #include "dsm.h"
 
@@ -28,20 +27,16 @@ class markov_dsm : public state_model {
 public:
   model_var** statenames;
   int numstates;
-  classified_chain <float> *arcs;
-  sparse_vector <float> *initial;
 public:
   /** Constructor.
 	@param	name	Model name
 	@param	disc	Is it discrete?  (otherwise, continuous)
 	@param	sn	Array of states
 	@param	ns	Number of states
-	@param	a	P or R matrix.
-	@param  p0	Initial distribution
+  	@param  mc	Markov chain
   */
   markov_dsm(const char* name, bool disc, model_var** sn, int ns, 
-	     classified_chain <float> *a,
-             sparse_vector <float> *p0);
+             markov_chain *mc);
 
   virtual ~markov_dsm();
 
@@ -72,14 +67,13 @@ public:
 // ******************************************************************
 
 markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns, 
-		       classified_chain <float> *a, sparse_vector <float> *p0) 
+			markov_chain *theMC)
 : state_model(name, 1)
 {
   discrete = disc;
   statenames = sn;
   numstates = ns;
-  arcs = a;
-  initial = p0;
+  mc = theMC;
   proctype = (discrete) ? Proc_Dtmc : Proc_Ctmc;
   statespace = new reachset;
   statespace->CreateEnumerated(numstates);
@@ -96,18 +90,17 @@ markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns,
   Output.flush();
   Output << "Initial distribution:\n";
   Output << "\tindex: [";
-  Output.PutArray(initial->index, initial->nonzeroes);
+  Output.PutArray(mc->initial->index, mc->initial->nonzeroes);
   Output << "]\n\tvalues:[";
-  Output.PutArray(initial->value, initial->nonzeroes);
+  Output.PutArray(mc->initial->value, mc->initial->nonzeroes);
   Output << "]\nArcs:\n";
-  arcs->Show(Output);
+  mc->explicit_mc->Show(Output);
 #endif
 }
 
 markov_dsm::~markov_dsm()
 {
-  delete arcs;
-  delete initial;
+  // nothing else to do...
 }
 
 void markov_dsm::ShowState(OutputStream &s, const state &x)
@@ -277,23 +270,27 @@ void markov_model::FinalizeModel(result &x)
 
 state_model* markov_model::BuildStateModel()
 {
-  classified_chain <float> *foo = new classified_chain <float>(wdgraph);
+  markov_chain *mc = new markov_chain();
+  mc->explicit_mc = new classified_chain <float>(wdgraph);
   wdgraph = NULL;
-  if (!foo->isIrreducible()) {
+  if (!mc->explicit_mc->isIrreducible()) {
     int i;
     // renumber states
     for (i=0; i<numstates; i++)
-      states[i]->state_index = foo->Renumber(states[i]->state_index);
+      states[i]->state_index = mc->explicit_mc->Renumber(states[i]->state_index);
     // fix initial distribution
     for (i=0; i<initial->nonzeroes; i++)
-      initial->index[i] = foo->Renumber(initial->index[i]);
+      initial->index[i] = mc->explicit_mc->Renumber(initial->index[i]);
     initial->isSorted = false;
+    initial->Sort();
 
-    foo->DoneRenumbering();
+    mc->explicit_mc->DoneRenumbering();
   }
   DCASSERT((Type(0) == DTMC) || (Type(0) == CTMC));
   bool discrete = (Type(0) == DTMC);
-  return new markov_dsm(Name(), discrete, states, numstates, foo, initial);
+  mc->initial = initial;
+  initial = NULL;
+  return new markov_dsm(Name(), discrete, states, numstates, mc);
 }
 
 // ******************************************************************
@@ -506,9 +503,8 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
   DCASSERT(pp);
   markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  markov_dsm *md = dynamic_cast<markov_dsm*>(mm->GetModel());
-  DCASSERT(md);
-  DCASSERT(md->arcs);
+  state_model *dsm = mm->GetModel();
+  DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking transient\n";
   Output << "\tcurrent state: ";
@@ -517,9 +513,11 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
   Output.flush();
 #endif
   // error checking here for m
+  DCASSERT(dsm->mc);
+  DCASSERT(dsm->mc->explicit_mc);
 
   x.Clear();
-  x.bvalue = md->arcs->isTransient(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->explicit_mc->isTransient(m.Read(0).ivalue);
 }
 
 void Add_transient(PtrTable *fns)
@@ -545,9 +543,8 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
   DCASSERT(pp);
   markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  markov_dsm *md = dynamic_cast<markov_dsm*>(mm->GetModel());
-  DCASSERT(md);
-  DCASSERT(md->arcs);
+  state_model *dsm = mm->GetModel();
+  DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking absorbing\n";
   Output << "\tcurrent state: ";
@@ -556,9 +553,11 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
   Output.flush();
 #endif
   // error checking here for m
+  DCASSERT(dsm->mc);
+  DCASSERT(dsm->mc->explicit_mc);
 
   x.Clear();
-  x.bvalue = md->arcs->isAbsorbing(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->explicit_mc->isAbsorbing(m.Read(0).ivalue);
 }
 
 void Add_absorbing(PtrTable *fns)
