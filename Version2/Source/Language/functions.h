@@ -435,6 +435,14 @@ typedef void (*compute_proc) (const state &, expr **pp, int np, result &x);
  */
 typedef void (*sample_func) (Rng &seed, expr **pp, int np, result &x);
 
+/** For sampling internal proc functions.
+    Use the following declaration:
+
+    void MyFunc(Rng &seed, const state &, expr **pp, int np, result &x);
+
+ */
+typedef void (*sample_proc) (Rng &seed, const state &, expr **pp, int np, result &x);
+
 /**   Class for internal functions.
       Used for internally declared functions (such as sqrt).
     
@@ -450,6 +458,7 @@ protected:
   compute_func compute;
   sample_func sample;
   compute_proc comp_proc;
+  sample_proc samp_proc;
   const char* documentation;
   bool hidedocs;
   typecheck_func typecheck;
@@ -488,12 +497,13 @@ public:
       @param np	The number of formal parameters (no repetition).
       @param doc Documentation
    */
-  internal_func(type t, char *n, compute_proc c,
+  internal_func(type t, char *n, compute_proc c, sample_proc s,
                 formal_param **pl, int np, const char* doc);
 
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(Rng &, expr **, int np, result &x);
   virtual void Compute(const state &, expr **, int np, result &x);
+  virtual void Sample(Rng &, const state &, expr **, int np, result &x);
 
   virtual void show(OutputStream &s) const;
 

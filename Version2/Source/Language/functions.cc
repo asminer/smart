@@ -489,6 +489,7 @@ internal_func::internal_func(type t, char *n,
   compute = c;
   sample = s;
   comp_proc = NULL;
+  samp_proc = NULL;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -504,6 +505,7 @@ internal_func::internal_func(type t, char *n,
   compute = c;
   sample = s;
   comp_proc = NULL;
+  samp_proc = NULL;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -512,12 +514,13 @@ internal_func::internal_func(type t, char *n,
 }
 
 internal_func::internal_func(type t, char *n, 
-   compute_proc c, formal_param **pl, int np, const char* d) 
+   compute_proc c, sample_proc s, formal_param **pl, int np, const char* d) 
  : function(NULL, -1, t, n, pl, np)
 {
   compute = NULL;
   sample = NULL;
   comp_proc = c;
+  samp_proc = s;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -559,6 +562,18 @@ void internal_func::Compute(const state &s, expr **pp, int np, result &x)
     return;
   }
   comp_proc(s, pp, np, x);
+}
+
+void internal_func::Sample(Rng &s, const state &m, expr **p, int np, result &x)
+{
+  if (NULL==samp_proc) {
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "Illegal internal function sample";
+    Internal.Stop();
+    x.setNull();
+    return;
+  }
+  samp_proc(s, m, p, np, x);
 }
 
 void internal_func::show(OutputStream &s) const

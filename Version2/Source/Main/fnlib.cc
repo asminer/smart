@@ -348,125 +348,308 @@ void AddOutputFile(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
+// ******************************************************************
+// *                                                                *
+// *                        Math functions                          *
+// *                                                                *
+// ******************************************************************
+
 // ********************************************************
-// *                   Math functions                     *
+// *                        div                           *
 // ********************************************************
 
-void compute_div(expr **p, int np, result &x)
+// x = a div b; checks errors
+// expression err is used only to obtain filename and linenumber
+// in case of an error.
+inline void div(const result &a, const result &b, result &x, expr *err)
 {
-  DCASSERT(2==np);
-  DCASSERT(p);
-  result a;
-  SafeCompute(p[0], 0, a);
+  x.Clear();
   if (a.isNull() || a.isError() || a.isUnknown()) {
-    x = a;
+    x = a; // propogate the "error"
     return;
-    // null div b = null,
-    // ? div b = ?
   }
-  SafeCompute(p[1], 0, x);
-
-  if (a.isNormal() && x.isNormal()) {
-    if (x.ivalue == 0) {
+  if (b.isNull() || b.isError() || b.isUnknown()) {
+    x = b; // propogate the "error"
+    return;
+  }
+  if (a.isNormal() && b.isNormal()) {
+    if (b.ivalue == 0) {
       // a div 0
-      DCASSERT(p[1]);  // otherwise b is null
-      Error.Start(p[1]->Filename(), p[1]->Linenumber());
+      DCASSERT(err);
+      Error.Start(err->Filename(), err->Linenumber());
       Error << "Illegal operation: divide by 0";
       Error.Stop();
       x.setError();
       return;
     }
     // ordinary integer division
-    x.ivalue = a.ivalue / x.ivalue;
+    x.ivalue = a.ivalue / b.ivalue;
     return;
   }
 
-  if (a.isInfinity() && x.isInfinity()) {
-    Error.Start(p[1]->Filename(), p[1]->Linenumber());
+  if (a.isInfinity() && b.isInfinity()) {
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Illegal operation: infty / infty";
     Error.Stop();
     x.setError();
     return;
   }
-  if (x.isInfinity()) {
+  if (b.isInfinity()) {
     // a div +-infty = 0
-    x.Clear();
     x.ivalue = 0;
     return;
   }
   if (a.isInfinity()) {
+    x.setInfinity();
     // infinty div b = +- infinity
-    if ((a.ivalue > 0) == (x.ivalue > 0)) {
+    if ((a.ivalue > 0) == (b.ivalue > 0)) {
       // same sign, that's +infinity
-      x = a;
       x.ivalue = 1;
     } else {
       // opposite sign, that's -infinity
-      x = a;
       x.ivalue = -1;
     }
   }
+  // still here? some type of error
+  x.setError();
 }
+
+void compute_div(expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeCompute(p[0], 0, a);
+  SafeCompute(p[1], 0, b);
+  div(a, b, x, p[0]);
+}
+
+void sample_div(Rng &s, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeSample(p[0], s, 0, a);
+  SafeSample(p[1], s, 0, b);
+  div(a, b, x, p[0]);
+}
+
+void proc_compute_div(const state &m, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeCompute(p[0], m, 0, a);
+  SafeCompute(p[1], m, 0, b);
+  div(a, b, x, p[0]);
+}
+
+void proc_sample_div(Rng &s, const state &m, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeSample(p[0], s, m, 0, a);
+  SafeSample(p[1], s, m, 0, b);
+  div(a, b, x, p[0]);
+}
+
 
 void AddDiv(PtrTable *fns)
 {
   const char* helpdoc = "Integer division: computes int(a/b)";
-  formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(INT, "a");
-  pl[1] = new formal_param(INT, "b");
 
-  internal_func *p = 
-    new internal_func(INT, "div", compute_div, NULL, pl, 2, helpdoc);
+  // Deterministic version
+  formal_param **pl_1 = new formal_param*[2];
+  pl_1[0] = new formal_param(INT, "a");
+  pl_1[1] = new formal_param(INT, "b");
+  internal_func *p1 = 
+    new internal_func(INT, "div", compute_div, NULL, pl_1, 2, helpdoc);
 
-  InsertFunction(fns, p);
+  // Random version
+  formal_param **pl_2 = new formal_param*[2];
+  pl_2[0] = new formal_param(RAND_INT, "a");
+  pl_2[1] = new formal_param(RAND_INT, "b");
+  internal_func *p2 = 
+    new internal_func(RAND_INT, "div", NULL, sample_div, pl_2, 2, helpdoc);
+
+  // Proc version
+  formal_param **pl_3 = new formal_param*[2];
+  pl_3[0] = new formal_param(PROC_INT, "a");
+  pl_3[1] = new formal_param(PROC_INT, "b");
+  internal_func *p3 = 
+    new internal_func(PROC_INT, "div", compute_div, NULL, pl_3, 2, helpdoc);
+
+  // Proc rand version
+  formal_param **pl_4 = new formal_param*[2];
+  pl_4[0] = new formal_param(PROC_RAND_INT, "a");
+  pl_4[1] = new formal_param(PROC_RAND_INT, "b");
+  internal_func *p4 = 
+    new internal_func(PROC_RAND_INT, "div", compute_div, NULL, pl_4, 2, helpdoc);
+
+  InsertFunction(fns, p1);
+  InsertFunction(fns, p2);
+  InsertFunction(fns, p3);
+  InsertFunction(fns, p4);
+}
+
+// ********************************************************
+// *                        mod                           *
+// ********************************************************
+
+inline void mod(const result &a, const result &b, result &x, expr *err)
+{
+  x.Clear();
+  if (a.isNull() || a.isError() || a.isUnknown()) {
+    x = a; // propogate the "error"
+    return;
+  }
+  if (b.isNull() || b.isError() || b.isUnknown()) {
+    x = b; // propogate the "error"
+    return;
+  }
+  if (a.isNormal() && b.isNormal()) {
+    if (b.ivalue == 0) {
+      // a mod 0
+      DCASSERT(err);
+      Error.Start(err->Filename(), err->Linenumber());
+      Error << "Illegal operation: modulo 0";
+      Error.Stop();
+      x.setError();
+      return;
+    }
+    // ordinary mod 
+    x.ivalue = a.ivalue % b.ivalue;
+    return;
+  }
+  if (a.isInfinity() && b.isInfinity()) {
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
+    Error << "Illegal operation: infty mod infty";
+    Error.Stop();
+    x.setError();
+    return;
+  }
+  if (b.isInfinity()) {
+    // a mod +-infty = a
+    x.ivalue = a.ivalue;  // should we check signs?
+    return;
+  }
+  if (a.isInfinity()) {
+    // +- infty mod b is undefined
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
+    Error << "Illegal operation: infty mod " << b.ivalue;
+    Error.Stop();
+    x.setError();
+    return;
+  }
+  // still here? some type of error
+  x.setError();
 }
 
 void compute_mod(expr **p, int np, result &x)
 {
   DCASSERT(2==np);
   DCASSERT(p);
-  int a,b;
-  SafeCompute(p[0], 0, x);
-  if (!x.isNormal()) {
-    return;
-    // null mod b = null,
-    // ? mod b = ?,
-    // infty mod b = infty
-  }
-  a = x.ivalue;
-  SafeCompute(p[1], 0, x);
-  if (x.isNormal()) {
-    b = x.ivalue;
-    x.Clear();
-    if (b) {
-      x.ivalue = a % b;
-      return;
-    }
-    // a mod 0, error
-    DCASSERT(p[1]);  // otherwise b is null
-    Error.Start(p[1]->Filename(), p[1]->Linenumber());
-    Error << "Illegal operation: modulo 0";
-    Error.Stop();
-    x.setError();
-  }
-  if (x.isInfinity()) {
-    // a mod infty = a
-    x.Clear();
-    x.ivalue = a;
-  }
+  result a,b;
+  SafeCompute(p[0], 0, a);
+  SafeCompute(p[1], 0, b);
+  mod(a, b, x, p[0]);
+}
+
+void sample_mod(Rng &s, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeSample(p[0], s, 0, a);
+  SafeSample(p[1], s, 0, b);
+  mod(a, b, x, p[0]);
+}
+
+void proc_compute_mod(const state &m, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeCompute(p[0], m, 0, a);
+  SafeCompute(p[1], m, 0, b);
+  mod(a, b, x, p[0]);
+}
+
+void proc_sample_mod(Rng &s, const state &m, expr **p, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(p);
+  result a,b;
+  SafeSample(p[0], s, m, 0, a);
+  SafeSample(p[1], s, m, 0, b);
+  mod(a, b, x, p[0]);
 }
 
 void AddMod(PtrTable *fns)
 {
   const char* helpdoc = "Modulo arithmetic: computes a mod b";
-  formal_param **pl = new formal_param*[2];
+  formal_param **pl;
+  internal_func *p;
+
+  // Deterministic version
+  pl = new formal_param*[2];
   pl[0] = new formal_param(INT, "a");
   pl[1] = new formal_param(INT, "b");
-
-  internal_func *p = 
-    new internal_func(INT, "mod", compute_mod, NULL, pl, 2, helpdoc);
-
+  p = new internal_func(INT, "mod", compute_mod, NULL, pl, 2, helpdoc);
   InsertFunction(fns, p);
+
+  // Random version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(RAND_INT, "a");
+  pl[1] = new formal_param(RAND_INT, "b");
+  p = new internal_func(RAND_INT, "mod", NULL, sample_mod, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_INT, "a");
+  pl[1] = new formal_param(PROC_INT, "b");
+  p = new internal_func(PROC_INT, "mod", proc_compute_mod, NULL, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc_Rand version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_RAND_INT, "a");
+  pl[1] = new formal_param(PROC_RAND_INT, "b");
+  p = new internal_func(PROC_RAND_INT, "mod", NULL, proc_sample_mod, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+}
+
+// ********************************************************
+// *                        sqrt                          *
+// ********************************************************
+
+// In-place sqrt of x, with error checking
+inline void my_sqrt(result &x, expr *err)
+{
+  if (x.isUnknown() || x.isError() || x.isNull()) return;
+
+  if (x.isInfinity()) {
+    if (x.ivalue>0) return;  // sqrt(infty) = infty
+  } else {
+    if (x.rvalue>=0) {
+      x.rvalue = sqrt(x.rvalue);
+      return;
+    }
+  }
+  
+  // negative square root, error (we don't have complex)
+  DCASSERT(err);
+  Error.Start(err->Filename(), err->Linenumber());
+  Error << "Square root with negative argument: ";
+  PrintResult(Error, REAL, x);
+  Error.Stop();
+  x.setError();
 }
 
 void compute_sqrt(expr **p, int np, result &x)
@@ -474,24 +657,7 @@ void compute_sqrt(expr **p, int np, result &x)
   DCASSERT(1==np);
   DCASSERT(p);
   SafeCompute(p[0], 0, x);
-
-  if (x.isUnknown() || x.isError() || x.isNull()) return;
-
-  if (x.isInfinity()) {
-    if (x.ivalue>0) return;  // sqrt(infty) = infty
-  } else {
-    if (x.rvalue>0) {
-      x.rvalue = sqrt(x.rvalue);
-      return;
-    }
-  }
-  
-  // negative square root, error (we don't have complex)
-  Error.Start(p[0]->Filename(), p[0]->Linenumber());
-  Error << "Square root with negative argument: ";
-  PrintResult(Error, REAL, x);
-  Error.Stop();
-  x.setError();
+  my_sqrt(x, p[0]);
 }
 
 void sample_sqrt(Rng &seed, expr **p, int np, result &x)
@@ -499,26 +665,8 @@ void sample_sqrt(Rng &seed, expr **p, int np, result &x)
   DCASSERT(1==np);
   DCASSERT(p);
   SafeSample(p[0], seed, 0, x);
-
-  if (x.isUnknown() || x.isError() || x.isNull()) return;
-
-  if (x.isInfinity()) {
-    if (x.ivalue>0) return;  // sqrt(infty) = infty
-  } else {
-    if (x.rvalue>0) {
-      x.rvalue = sqrt(x.rvalue);
-      return;
-    }
-  }
-  
-  // negative square root, error (we don't have complex)
-  Error.Start(p[0]->Filename(), p[0]->Linenumber());
-  Error << "Square root with negative argument: ";
-  PrintResult(Error, REAL, x);
-  Error.Stop();
-  x.setError();
+  my_sqrt(x, p[0]);
 }
-
 
 void AddSqrt(PtrTable *fns)
 {
@@ -554,44 +702,102 @@ void AddSqrt(PtrTable *fns)
 // *                      Bernoulli                       *
 // ********************************************************
 
-void sample_bernoulli(Rng &strm, expr **pp, int np, result &x)
+inline void bernoulli_sample(Rng &strm, result &x, expr *err)
 {
-  DCASSERT(1==np);
-  DCASSERT(pp);
-
-  SafeCompute(pp[0], 0, x);
-
   if (x.isNormal()) {
     if ((x.rvalue>=0.0) && (x.rvalue<=1.0)) {
       x.ivalue = (strm.uniform() < x.rvalue) ? 1 : 0;
       return;
     }
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Bernoulli probability " << x.rvalue << " out of range";
     Error.Stop();
     x.setError();
     return;
   }
   if (x.isInfinity()) {
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Bernoulli probability is infinite";
     Error.Stop();
     x.setError();
     return;
   }
-
   // other strange values (error, null, unknown) may propogate
 }
+
+void sample_bernoulli(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], 0, x);
+  bernoulli_sample(strm, x, pp[0]);
+}
+
+void rand_sample_bernoulli(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeSample(pp[0], strm, 0, x);
+  bernoulli_sample(strm, x, pp[0]);
+}
+
+void proc_sample_bernoulli(Rng &strm, const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], m, 0, x);
+  bernoulli_sample(strm, x, pp[0]);
+}
+
+void proc_rand_sample_bernoulli(Rng &strm, const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeSample(pp[0], strm, m, 0, x);
+  bernoulli_sample(strm, x, pp[0]);
+}
+
 
 void AddBernoulli(PtrTable *fns)
 {
   const char* helpdoc = "Bernoulli distribution: one with probability p, zero otherwise";
 
-  formal_param **pl = new formal_param*[1];
+  formal_param **pl;
+  internal_func *p;
+
+  // PH_INT version
+  pl = new formal_param*[1];
   pl[0] = new formal_param(REAL, "p");
-  internal_func *p = new internal_func(PH_INT, "bernoulli", 
+  p = new internal_func(PH_INT, "bernoulli", 
   	NULL, // Add a function here to return a phase int
 	sample_bernoulli, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // RAND_INT version, note parameter 
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(RAND_REAL, "p");
+  p = new internal_func(RAND_INT, "bernoulli", NULL,
+	rand_sample_bernoulli, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // PROC_PH_INT version
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(PROC_REAL, "p");
+  p = new internal_func(PROC_PH_INT, "bernoulli", 
+  	NULL, // Add a function here to return a phase int
+	proc_sample_bernoulli, 
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // PROC_RAND_INT version
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(PROC_RAND_REAL, "p");
+  p = new internal_func(PROC_RAND_INT, "bernoulli", NULL, 
+	proc_rand_sample_bernoulli, 
 	pl, 1, helpdoc);
   InsertFunction(fns, p);
 }
@@ -600,16 +806,8 @@ void AddBernoulli(PtrTable *fns)
 // *                     Equilikely                       *
 // ********************************************************
 
-void sample_equilikely(Rng &strm, expr **pp, int np, result &x)
+inline void equilikely_sample(Rng &strm, const result &a, const result &b, result &x, expr* err)
 {
-  DCASSERT(2==np);
-  DCASSERT(pp);
-  
-  result a,b;
-
-  SafeCompute(pp[0], 0, a);
-  SafeCompute(pp[1], 0, b);
-
   x.Clear();
   
   // Normal behavior
@@ -617,27 +815,34 @@ void sample_equilikely(Rng &strm, expr **pp, int np, result &x)
     x.ivalue = int(a.ivalue + (b.ivalue-a.ivalue+1)*strm.uniform());
     return;
   }
-
   if (a.isInfinity() || b.isInfinity()) {
     x.setError();
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Equilikely with infinite argument";
     Error.Stop();
     return;
   }
-
   if (a.isUnknown() || b.isUnknown()) {
     x.setUnknown();
     return;
   }
-
   if (a.isNull() || b.isNull()) {
     x.setNull();
     return;
   }
-
   // any other errors here
   x.setError();
+}
+
+void sample_equilikely(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeCompute(pp[0], 0, a);
+  SafeCompute(pp[1], 0, b);
+  equilikely_sample(strm, a, b, x, pp[0]);
 }
 
 void AddEquilikely(PtrTable *fns)
@@ -658,16 +863,11 @@ void AddEquilikely(PtrTable *fns)
 // *                      Geometric                       *
 // ********************************************************
 
-void sample_geometric(Rng &strm, expr **pp, int np, result &x)
+inline void geometric_sample(Rng &strm, result &x, expr *err)
 {
-  DCASSERT(1==np);
-  DCASSERT(pp);
-
-  SafeCompute(pp[0], 0, x);
-
   if (x.isNormal()) {
     if ((x.rvalue>0.0) && (x.rvalue<1.0)) {
-      x.ivalue = int(log(strm.uniform()) / log(x.rvalue)) ? 1 : 0;
+      x.ivalue = int(log(strm.uniform()) / log(x.rvalue));
       return;
     }
     if (0.0 == x.rvalue) return; 
@@ -675,21 +875,29 @@ void sample_geometric(Rng &strm, expr **pp, int np, result &x)
       x.setInfinity();
       return;
     }
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Geometric probability " << x.rvalue << " out of range";
     Error.Stop();
     x.setError();
     return;
   }
   if (x.isInfinity()) {
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Geometric probability is infinite";
     Error.Stop();
     x.setError();
     return;
   }
-
   // other strange values (error, null, unknown) may propogate
+}
+
+void sample_geometric(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], 0, x);
+  geometric_sample(strm, x, pp[0]);
 }
 
 void AddGeometric(PtrTable *fns)
@@ -718,44 +926,42 @@ void AddGeometric(PtrTable *fns)
 // *                       Uniform                        *
 // ********************************************************
 
-void sample_uniform(Rng &strm, expr **pp, int np, result &x)
+inline void uniform(Rng &strm, result &a, result &b, result &x, expr *err)
 {
-  DCASSERT(2==np);
-  DCASSERT(pp);
-  
-  result a,b;
-
-  SafeCompute(pp[0], 0, a);
-  SafeCompute(pp[1], 0, b);
-
   x.Clear();
-  
   // Normal behavior
   if (a.isNormal() && b.isNormal()) {
     x.rvalue = a.rvalue + (b.rvalue-a.rvalue)*strm.uniform();
     return;
   }
-
   if (a.isInfinity() || b.isInfinity()) {
     x.setError();
-    Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
+    DCASSERT(err);
+    Error.Start(err->Filename(), err->Linenumber());
     Error << "Uniform with infinite argument";
     Error.Stop();
     return;
   }
-
   if (a.isUnknown() || b.isUnknown()) {
     x.setUnknown();
     return;
   }
-
   if (a.isNull() || b.isNull()) {
     x.setNull();
     return;
   }
-
   // any other errors here
   x.setError();
+}
+
+void sample_uniform(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeCompute(pp[0], 0, a);
+  SafeCompute(pp[1], 0, b);
+  uniform(strm, a, b, x, pp[0]);
 }
 
 void AddUniform(PtrTable *fns)
@@ -771,12 +977,38 @@ void AddUniform(PtrTable *fns)
 }
 
 // ********************************************************
+// *                         Expo                         *
+// ********************************************************
+
+void compute_expo(expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], 0, x);
+}
+
+void AddExpo(PtrTable *fns)
+{
+  const char* helpdoc = "Exponential distribution with rate lambda";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(REAL, "lambda");
+  internal_func *p = new internal_func(EXPO, "expo", 
+	compute_expo, 
+	NULL, // sampling is handled in casting.cc
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                probability and such                  *
 // ********************************************************
 
+// #define DEBUG_AVG
+
 void compute_avg(expr **p, int np, result &x)
 {
-  const int N = 100000;
+  const int N = 20;
   // For testing right now.  Write a better version eventually.
   Rng foo(123456789);
   
@@ -786,12 +1018,15 @@ void compute_avg(expr **p, int np, result &x)
   int i;
   for (i=0; i<N; i++) {
     result sample;
+    p[0]->ClearCache(); // reset samples
     SafeSample(p[0], foo, 0, sample);
-    /*
+    
+#ifdef DEBUG_AVG
     Output << "  sampled ";
     PrintResult(Output, REAL, sample);
     Output << "\n";
-    */
+#endif
+   
     if (sample.isNormal()) {
       x.rvalue += sample.rvalue;
       continue;
@@ -951,6 +1186,7 @@ void InitBuiltinFunctions(PtrTable *t)
   AddGeometric(t);
   // Continuous distributions
   AddUniform(t);
+  AddExpo(t);
   // Probability
   AddAvg(t);
   // System stuff

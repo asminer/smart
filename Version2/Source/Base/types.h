@@ -20,31 +20,31 @@
 
 //@{
 
-// In case we change to short or something...
-
 typedef unsigned char	type;
 
 typedef unsigned char	modifier;
 
 // Non-model, non-proc types
 
+/// Used to indicate illegal values
+const type	NO_SUCH_TYPE	= 0;
 /// Void.
-const type 	VOID 		= 0;
-const type	BOOL 		= 1;
-const type	INT 		= 2;
-const type	REAL		= 3;
-const type	STRING		= 4;
-const type	BIGINT		= 5;
-const type	STATESET	= 6;
+const type 	VOID 		= 1;
+const type	BOOL 		= 2;
+const type	INT 		= 3;
+const type	REAL		= 4;
+const type	STRING		= 5;
+const type	BIGINT		= 6;
+const type	STATESET	= 7;
 
-const type	EXPO		= 7;
+const type	EXPO		= 8;
 
-const type	PH_INT		= 8;
-const type	PH_REAL		= 9;
+const type	PH_INT		= 9;
+const type	PH_REAL		= 10;
 
-const type	RAND_BOOL	= 10;
-const type	RAND_INT	= 11;
-const type	RAND_REAL	= 12;
+const type	RAND_BOOL	= 11;
+const type	RAND_INT	= 12;
+const type	RAND_REAL	= 13;
 
 const type	FIRST_SIMPLE	= VOID;
 const type	LAST_ONE_WORD	= EXPO;
@@ -70,46 +70,50 @@ const type	LAST_PROC	= PROC_RAND_REAL;
 
 //  Model types 
 
-const type  	ANYMODEL 	= 64;
+const type  	ANYMODEL 	= 32;
 
-const type	MARKOV		= 65;  // matches both DTMC and CTMC
-const type 	DTMC 		= 66;
-const type 	CTMC 		= 67;
-const type 	SPN 		= 68;
+const type	MARKOV		= 33;  // matches both DTMC and CTMC
+const type 	DTMC 		= 34;
+const type 	CTMC 		= 35;
+const type 	SPN 		= 36;
 
 const type	FIRST_MODEL	= ANYMODEL;
 const type	LAST_MODEL	= SPN;
 
 // void types (used by models)
 
-const type 	STATE 		= 96;
+const type 	STATE 		= 64;
 
-const type 	PLACE 		= 97;
-const type 	TRANS 		= 98;
+const type 	PLACE 		= 65;
+const type 	TRANS 		= 66;
 
 const type 	FIRST_VOID	= STATE;
 const type 	LAST_VOID	= TRANS;
 
 // Sets.  (not user-definable yet)
 
-const type	SET_INT		= 110;
-const type	SET_REAL	= 111;
+const type	SET_INT		= 96;
+const type	SET_REAL	= 97;
 
 const type	FIRST_SET	= SET_INT;
 const type 	LAST_SET	= SET_REAL;
 
 // Internal types
 
-const type    ENGINEINFO 	= 128;
-const type      EXPR_PTR 	= 129;
+const type    ENGINEINFO 	= 120;
+const type      EXPR_PTR 	= 121;
 
 const type 	FIRST_INTERNAL 	= ENGINEINFO;
 const type 	LAST_INTERNAL 	= EXPR_PTR;
 
+
 // Used by lexer
 
-const modifier 	PHASE = 0;
-const modifier	RAND  = 1;
+const modifier  NO_SUCH_MODIF	= 255;
+
+const modifier 	PHASE = 1;
+const modifier	RAND  = 2;
+const modifier	FIRST_MODIF = PHASE;
 const modifier	LAST_MODIF = RAND;
 
 // Handy functions.
@@ -156,22 +160,23 @@ inline bool IsVoidType(type t)
 
 // The following are used by the lexer.
 
-int FindSimpleType(const char *t);     // returns T for a type name, or -1
-int FindModel(const char *);	       
-int FindVoidType(const char *);
+type FindSimpleType(const char *t);     // returns T for a type name, or -1
+type FindModel(const char *);	       
+type FindVoidType(const char *);
 
-inline int FindType(const char *t)
+inline type FindType(const char *t)
 {
-  int n;
+  type n;
   n = FindSimpleType(t);
-  if (n>=0) return n;
+  if (n!=NO_SUCH_TYPE) return n;
   n = FindModel(t);
-  if (n>=0) return n;
+  if (n!=NO_SUCH_TYPE) return n;
   n = FindVoidType(t);
   return n;
 }
 
-int FindModif(const char *m);          // returns M for a modifier name, or -1
+/// Returns M for a modifier name, or -1
+modifier FindModif(const char *m);          
 
 /// Returns the type defined by "modif type", or 0 if it is illegal.
 inline type ModifyType(modifier modif, type t)

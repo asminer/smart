@@ -136,18 +136,20 @@ type MakeType(const char* modif, const char* tp)
   int m = 0;
   if (modif) {
     m = FindModif(modif);
-    if (m<0) {
+    if (NO_SUCH_MODIF == m) {
       Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
-      Internal << "Bad type modifier: " << modif << ", using void";
+      Internal << "Bad type modifier: " << modif;
       Internal.Stop();
+      // shouldn't get here
       return VOID;
     }
   }
   int t = FindType(tp);
-  if (t<0) {
+  if (NO_SUCH_TYPE == t) {
     Internal.Start(__FILE__, __LINE__, filename, lexer.lineno());
-    Internal << "Bad type: " << tp << ", using void";
+    Internal << "Bad type: " << tp;
     Internal.Stop();
+    // shouldn't get here
     return VOID;
   }
   type answer;

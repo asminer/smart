@@ -170,10 +170,10 @@ int ProcessID()
 {
   const char *yytext = lexer.YYText();
   yylval.name = strdup(yytext);
-  if (FindSimpleType(yytext)>=0) return TYPE;
-  if (FindModif(yytext)>=0) return MODIF;
-  if (FindModel(yytext)>=0) return MODEL;
-  if (FindVoidType(yytext)>=0) return TYPE;
+  if (FindSimpleType(yytext)!=NO_SUCH_TYPE) return TYPE;
+  if (FindModif(yytext)!=NO_SUCH_MODIF) return MODIF;
+  if (FindModel(yytext)!=NO_SUCH_TYPE) return MODEL;
+  if (FindVoidType(yytext)!=NO_SUCH_TYPE) return TYPE;
   return IDENT;
 }
 

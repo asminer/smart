@@ -30,7 +30,7 @@ const char* OneWordSimple[] = {
 };
 
 const char* Modifs[] = {
-  "phase",
+  "ph",
   "rand"
 };
 
@@ -92,8 +92,11 @@ const char* InternalNames[] = {
 
 const char* GetType(type t)
 {
+  if (NO_SUCH_TYPE == t)
+    return "Unknown type";
+  
   if (t<=LAST_SIMPLE)
-    return NonProcNames[t];
+    return NonProcNames[t-FIRST_SIMPLE];
 
   if (t<=LAST_PROC)
     return ProcNames[t-FIRST_PROC];
@@ -110,8 +113,7 @@ const char* GetType(type t)
   if (t<=LAST_INTERNAL)
     return InternalNames[t-FIRST_INTERNAL];
 
-  // unknown type?
-  
+  // Still here?
   return "Unknown type";
 }
 
@@ -119,37 +121,44 @@ const char* GetType(type t)
 //  Type name --> integer code conversion
 //
 
-int FindSimpleType(const char *t)
+// Which simple types can be defined by a user
+inline bool isUserDefinable(type t)
 {
-  int i;
-  for (i=0; i<=LAST_ONE_WORD; i++)
-    if (0==strcmp(t,OneWordSimple[i])) return i;
-  return -1;
-} 
-
-int FindModel(const char *t)
-{
-  int i;
-  for (i=0; i<=LAST_MODEL-FIRST_MODEL; i++)
-    if (0==strcmp(t,ModelNames[i])) return FIRST_MODEL + i;
-  return -1;
-} 
-
-int FindVoidType(const char *t)
-{
-  int i;
-  for (i=0; i<=LAST_VOID-FIRST_VOID; i++)
-    if (0==strcmp(t,VoidNames[i])) return FIRST_VOID + i;
-  return -1;
-  
+  return (t!=EXPO);
 }
 
-int FindModif(const char *m)
+type FindSimpleType(const char *t)
 {
-  int i;
-  for (i=0; i<=LAST_MODIF; i++)
-    if (0==strcmp(m,Modifs[i])) return i;
-  return -1;
+  type i;
+  for (i=FIRST_SIMPLE; i<=LAST_ONE_WORD; i++)
+    if (isUserDefinable(i))
+      if (0==strcmp(t,OneWordSimple[i-FIRST_SIMPLE])) 
+	return i;
+  return NO_SUCH_TYPE;
+} 
+
+type FindModel(const char *t)
+{
+  type i;
+  for (i=FIRST_MODEL; i<=LAST_MODEL; i++)
+    if (0==strcmp(t,ModelNames[i-FIRST_MODEL])) return i;
+  return NO_SUCH_TYPE;
+} 
+
+type FindVoidType(const char *t)
+{
+  type i;
+  for (i=FIRST_VOID; i<=LAST_VOID; i++)
+    if (0==strcmp(t,VoidNames[i-FIRST_VOID])) return i;
+  return NO_SUCH_TYPE;
+}
+
+modifier FindModif(const char *m)
+{
+  modifier i;
+  for (i=FIRST_MODIF; i<=LAST_MODIF; i++)
+    if (0==strcmp(m,Modifs[i-FIRST_MODIF])) return i;
+  return NO_SUCH_MODIF;
 }
 
 

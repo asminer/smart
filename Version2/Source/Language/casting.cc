@@ -207,34 +207,6 @@ void int2real::Compute(int i, result &x)
 
 // ******************************************************************
 // *                                                                *
-// *                         int2expo class                         *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from integer to expo.
-*/   
-
-class int2expo : public typecast {
-public:
-  int2expo(const char* fn, int line, expr* x) : typecast(fn, line, EXPO, x) { }
-
-  virtual void Compute(int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new int2expo(Filename(), Linenumber(), x);
-  }
-};
-
-void int2expo::Compute(int i, result &x)
-{
-  SafeCompute(opnd, i, x);
-  if (x.isNormal()) {
-    x.rvalue = x.ivalue;
-  } 
-}
-
-// ******************************************************************
-// *                                                                *
 // *                         real2int class                         *
 // *                                                                *
 // ******************************************************************
@@ -263,30 +235,6 @@ void real2int::Compute(int i, result &x)
 
 // ******************************************************************
 // *                                                                *
-// *                        real2expo  class                        *
-// *                                                                *
-// ******************************************************************
-
-/**  Type casting from real to expo.
-*/   
-class real2expo : public typecast {
-public:
-  real2expo(const char* fn, int line, expr* x) : typecast(fn, line, EXPO, x) { }
-
-  virtual void Compute(int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new real2int(Filename(), Linenumber(), x);
-  }
-};
-
-void real2expo::Compute(int i, result &x)
-{
-  SafeCompute(opnd, i, x);
-}
-
-// ******************************************************************
-// *                                                                *
 // *                      expo2randreal  class                      *
 // *                                                                *
 // ******************************************************************
@@ -310,19 +258,36 @@ void expo2randreal::Sample(Rng &seed, int i, result &x)
   SafeCompute(opnd, i, x);
 
   if (x.isNormal()) {
-    if (x.rvalue) {
-      double mean = 1.0 / x.rvalue;
-      x.rvalue = -mean * log(seed.uniform());
-    } else {
-      x.setInfinity();  // expo(0) has mean infinity...
-    }
+    if (x.rvalue>0) {
+      x.rvalue = - log(seed.uniform()) / x.rvalue;
+      return;
+    } 
+    if (x.rvalue<0) {
+      Error.Start(Filename(), Linenumber());
+      Error << "expo with parameter " << x.rvalue << ", must be non-negative";
+      Error.Stop();
+      x.setError();
+      return;
+    } 
+    // still here?  Must be expo(0) = const(infinity)
+    x.setInfinity();  
+    x.ivalue = 1;
     return;
   }
   if (x.isInfinity()) {  // expo(infintity) has mean 0
+    if (x.ivalue < 0) {
+      Error.Start(Filename(), Linenumber());
+      Error << "expo with parameter ";
+      PrintResult(Error, REAL, x);
+      Error.Stop();
+      x.setError();
+      return; 
+    }
     x.Clear();
     x.rvalue = 0.0;
     return;
   }
+  // some other error, just propogate it
 }
 
 // ******************************************************************
@@ -498,9 +463,6 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
 	// add PH_INT eventually
 
-	case EXPO:
-	  return new int2expo(file, line, e);
-	
 	case RAND_INT:
 	  return new determ2rand(file, line, RAND_INT, e);
 
@@ -519,9 +481,6 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	case INT:
 	  return new real2int(file, line, e);
 
-	case EXPO:
-	  return new real2expo(file, line, e);
-	
 	case RAND_REAL:
 	  return new determ2rand(file, line, RAND_REAL, e);
 
@@ -538,6 +497,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
     // --------------------------------------------------------------
     case EXPO:
       switch (newtype) {
+
+	// add PH_REAL eventually
+
 	case RAND_REAL:
 	  return new expo2randreal(file, line, e);
       }
@@ -607,6 +569,10 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
   }
 
   // Still here?  Slipped through the cracks.
+  Internal.Start(__FILE__, __LINE__, file, line);
+  Internal << "Bad typecast from " << GetType(e->Type(0));
+  Internal << "to " << GetType(newtype);
+  Internal.Stop();
   return NULL;
 }
 
