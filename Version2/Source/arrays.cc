@@ -50,7 +50,10 @@ void array_index::show(ostream &s) const
   s << Name();
 }
 
-
+void array_index::showfancy(ostream &s) const
+{
+  s << Name() << " in " << values;
+}
 
 
 // ******************************************************************
@@ -175,9 +178,30 @@ void array::Sample(long &seed, expr **il, result &x)
 
 // ******************************************************************
 // *                                                                *
-// *                         acall  methods                         *
+// *                          acall  class                          *
 // *                                                                *
 // ******************************************************************
+
+/**  An expression used to obtain an array element.
+ */
+
+class acall : public expr {
+protected:
+  array *func;
+  expr **pass;
+  int numpass;
+public:
+  acall(const char *fn, int line, array *f, expr **p, int np);
+  virtual ~acall();
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void Sample(long &, int i, result &x);
+  virtual expr* Substitute(int i);
+  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual void show(ostream &s) const;
+};
+
+// acall methods
 
 acall::acall(const char *fn, int line, array *f, expr **p, int np)
   : expr(fn, line)
@@ -245,6 +269,167 @@ void acall::show(ostream &s) const
   s << "]";
 }
 
+
+// ******************************************************************
+// *                                                                *
+// *                         forstmt  class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  A statement used for for-loops.
+ */
+
+class forstmt : public statement {
+  array_index *index;
+  statement **block;
+  int blocksize;
+public:
+  forstmt(const char *fn, int l, array_index *i, statement **b, int n);
+  virtual ~forstmt(); 
+
+  virtual void Execute();
+  virtual void show(ostream &s) const;
+  virtual void showfancy(int depth, ostream &s) const;
+};
+
+forstmt::forstmt(const char *fn, int l, array_index *i, statement **b, int n)
+  : statement(fn, l)
+{
+  index = i;
+  block = b;
+  blocksize = n;
+
+  // set us as parent of the block
+  int j;
+  for (j=0; j<blocksize; j++) {
+    DCASSERT(block[j]);
+    block[j]->SetParent(this);
+  }
+}
+
+forstmt::~forstmt()
+{
+  // Is this ever called?
+  int j;
+  for (j=0; j<blocksize; j++) delete block[j];
+  delete[] block;
+}
+
+void forstmt::Execute()
+{
+  index->ComputeCurrent();
+  if (!index->FirstIndex()) return;  // error?
+
+  do {
+    // execute block
+    int j;
+    for (j=0; j<blocksize; j++) block[j]->Execute();
+
+  } while (index->NextValue());
+}
+
+void forstmt::show(ostream &s) const
+{
+  s << "for (";
+  index->showfancy(s);
+  s << ")";
+}
+
+void forstmt::showfancy(int depth, ostream &s) const
+{
+  int j;
+  for (j=depth; j; j--) s << " ";
+  show(s);
+  s << " {\n";
+  for (j=0; j<blocksize; j++) {
+    block[j]->showfancy(depth+2, s);
+  }
+  for (j=depth; j; j--) s << " ";
+  s << "}\n";
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       arrayassign  class                       *
+// *                                                                *
+// ******************************************************************
+
+/**  A statement used for array assignments.
+ */
+
+class arrayassign : public statement {
+  array *f;
+  expr *retval;
+public:
+  arrayassign(const char *fn, int l, array *a, expr *e);
+  virtual ~arrayassign(); 
+
+  virtual void Execute();
+  virtual void show(ostream &s) const;
+  virtual void showfancy(int depth, ostream &s) const;
+};
+
+arrayassign::arrayassign(const char *fn, int l, array *a, expr *e)
+  : statement(fn, l)
+{
+  f = a;
+  retval = e;
+}
+
+arrayassign::~arrayassign()
+{
+  Delete(retval);
+}
+
+void arrayassign::Execute()
+{
+  // De-iterate the return value
+  expr* rv = retval->Substitute(0);
+  
+  // build a better name?
+  determfunc *frv = new determfunc(Filename(), Linenumber(), rv->Type(0), 
+                                   strdup(f->Name()));
+
+  f->SetCurrentReturn(frv);
+}
+
+void arrayassign::show(ostream &s) const
+{
+  s << f << " := " << retval;
+}
+
+void arrayassign::showfancy(int depth, ostream &s) const
+{
+  int j;
+  for (j=depth; j; j--) s << " ";
+  show(s);
+  s << ";\n";
+}
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                          Global stuff                          *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+expr* MakeArrayCall(array *f, expr **p, int np, const char *fn=NULL, int l=0)
+{
+  return new acall(fn, l, f, p, np);
+}
+
+statement* MakeForLoop(array_index *i, statement** block, int blocksize,
+                       const char *fn, int line)
+{
+  return new forstmt(fn, line, i, block, blocksize);
+}
+
+statement* MakeArrayAssign(array *f, expr* retval,
+    		    	   const char *fn, int line)
+{
+  return new arrayassign(fn, line, f, retval);
+}
 
 //@}
 

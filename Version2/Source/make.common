@@ -21,7 +21,7 @@ STDLIBS     =
 # STDLIBS     = -lm -lfl 
 
 SOURCES = \
-	types.cc	exprs.cc	sets.cc \
+	types.cc	exprs.cc	sets.cc 	stmts.cc \
 	infinity.cc	\
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \

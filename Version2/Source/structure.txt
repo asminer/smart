@@ -15,6 +15,8 @@ exprs		Result class.  Engine information class.
 		Symbols.
 		Constant bool, int, and real expressions.
 
+stmts		Statements.
+
 sets		Set expressions and their results.
 
 options
@@ -26,6 +28,8 @@ variables	Functions with no parameters.
 functions	User-defined functions and internal functions.
 
 arrays		User-defined arrays.
+		For loops.
+		Array assigmnent statements.
 
 baseops		Base classes for operators like "+"
 		(to reduce cut&paste of virtual functions)

@@ -282,31 +282,6 @@ public:
 
 // ******************************************************************
 // *                                                                *
-// *                          fcall  class                          *
-// *                                                                *
-// ******************************************************************
-
-/**  An expression used to compute a function call.
- */
-
-class fcall : public expr {
-protected:
-  function *func;
-  expr **pass;
-  int numpass;
-public:
-  fcall(const char *fn, int line, function *f, expr **p, int np);
-  virtual ~fcall();
-  virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
-  virtual expr* Substitute(int i);
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
-  virtual void show(ostream &s) const;
-};
-
-// ******************************************************************
-// *                                                                *
 // *                                                                *
 // *                          Global stuff                          *
 // *                                                                *
@@ -324,6 +299,19 @@ void DumpRuntimeStack(ostream &s);  // Handy for run-time errors
     with a very large number of parameters passed to user-defined functions.
  */
 void StackOverflowPanic();
+
+/** Make an expression to call a function.
+    @param	f	The function to call.  Can be user-defined, 
+      			internal, or pretty much anything.
+
+    @param	p	The parameters to pass, as an array of expressions.
+    @param	np	Number of passed parameters.
+
+    @param	fn	Filename we are declared in.
+    @param	line	line number we are declared on.
+ */
+expr* MakeFunctionCall(function *f, expr **p, int np, 
+    			const char *fn=NULL, int line=0);
 
 //@}
 

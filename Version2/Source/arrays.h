@@ -19,6 +19,7 @@ converge_array: arrays within a converge statement.
  */
 
 #include "sets.h"
+#include "stmts.h"
 #include "variables.h"
 
 //@{
@@ -52,6 +53,7 @@ public:
 
   virtual void Compute(int i, result &x);
   virtual void show(ostream &s) const;
+  void showfancy(ostream &s) const;
 
   // Used by for loops and arrays:
 
@@ -143,6 +145,8 @@ struct array_desc {
 // ******************************************************************
 
 /**   The base class of arrays.
+      
+      Do we need to derive anything from this?
 
       Note: we've moved all compiler-related functionality
             OUT of this class to keep it simple.
@@ -193,31 +197,29 @@ public:
 
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                          acall  class                          *
+// *                                                                *
+// *                          Global stuff                          *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-/**  An expression used to obtain an array element.
+
+/** Make an expression to call an array.
  */
+expr* MakeArrayCall(array *f, expr **p, int np, const char *fn=NULL, int l=0);
 
-class acall : public expr {
-protected:
-  array *func;
-  expr **pass;
-  int numpass;
-public:
-  acall(const char *fn, int line, array *f, expr **p, int np);
-  virtual ~acall();
-  virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
-  virtual void Sample(long &, int i, result &x);
-  virtual expr* Substitute(int i);
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
-  virtual void show(ostream &s) const;
-};
+/** Make a for-loop statement.
+    We only handle one dimension at a time.
+ */
+statement* MakeForLoop(array_index *i, statement** block, int blocksize, 
+                       const char *fn=NULL, int line=0);
 
+/// "Normal" array assignments.
+statement* MakeArrayAssign(array *f, expr* retval, 
+                           const char *fn=NULL, int line=0);
 
 //@}
 
