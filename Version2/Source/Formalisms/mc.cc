@@ -105,7 +105,8 @@ class markov_model : public model {
   char** statenames;
   int numstates;
   sparse_vector <double> *initial;
-  dynamic_lg <double> *wdgraph;
+  dynamic_labeled <double> *wdgraph;
+  Manager < circ_node_data<double> > *nodepool;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
@@ -135,13 +136,15 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
   statenames = NULL;
   numstates = 0;
   initial = new sparse_vector <double>(2);
-  wdgraph = new dynamic_lg <double>(false, 2);
+  nodepool = new Manager < circ_node_data<double> > (1024);
+  wdgraph = new dynamic_labeled <double>(nodepool, false);
 }
 
 markov_model::~markov_model()
 {
   delete initial;
   delete wdgraph;
+  delete nodepool;
 }
 
 void markov_model::AddInitial(int state, double weight, const char* fn, int line)
@@ -160,7 +163,7 @@ void markov_model::AddInitial(int state, double weight, const char* fn, int line
 
 void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
 {
-  if (wdgraph->AddArc(fromstate, tostate, weight)) return;
+  if (wdgraph->AddLabeledEdge(fromstate, tostate, weight)) return;
   // Duplicate entry, give a warning
   Warning.Start(fn, line);
   Warning << "Summing duplicate arc from \n\tstate ";
@@ -207,6 +210,14 @@ void markov_model::FinalizeModel(result &x)
     Output << "\t" << statenames[initial->index[i]];
     Output << " : " << initial->value[i] << "\n"; 
   }
+  Output.flush();
+  Output << "Markov chain itself:\n";
+  wdgraph->Show(Output);
+  Output.flush();
+  // test... compact
+  labeled_graph <double> *compress = wdgraph->CompressAndDestroy();
+  Output << "Compressed:\n";
+  compress->Show(Output);
   Output.flush();
 #endif
 

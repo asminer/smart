@@ -3,7 +3,7 @@
 
 /*  
     Proper circular linked lists, sorted by "index".
-    To deal with more data, derive a class from it.
+    To deal with more data, derive a class from it (e.g., circ_node_data)
 
     REMEMBER: circular lists, so next of tail element is the front of the list
 */
@@ -17,6 +17,11 @@ struct circ_node {
   int index;  
   /// next in the chain
   circ_node* next;
+};
+
+template <class DATA>
+struct circ_node_data : public circ_node {
+  DATA value;
 };
 
 circ_node *AddElement(circ_node *tail, circ_node *element);

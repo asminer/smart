@@ -29,7 +29,8 @@ circ_node *AddElement(circ_node *tail, circ_node *element)
   while (1) {
     if (element->index == front->index) {
       // elements must be combined somehow, beyond our ability.
-      return NULL;
+      // return the conflicting element.
+      return front;
     }
     if (element->index < front->index) {
       prev->next = element;

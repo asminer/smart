@@ -11,11 +11,18 @@
 #define GRAPHS_H
 
 #include "../Base/errors.h"
+#include "../Base/streams.h"
 #include "list.h"
 #include "circlist.h"
 #include "memmgr.h"
 
-/** A simple directed graph struct.
+// ******************************************************************
+// *                                                                *
+// *                      directed_graph  class                     *
+// *                                                                *
+// ******************************************************************
+
+/** A simple directed graph struct (static).
     Useful to unify the graph algorithms that don't care
     about edge values, like computing SCCs.
 */
@@ -74,6 +81,15 @@ public:
   }
 };
 
+// ******************************************************************
+// *                                                                *
+// *                       labeled_graph class                      *
+// *                                                                *
+// ******************************************************************
+
+/** A labeled directed graph struct (static).
+    In other words, a sparsely stored matrix.
+*/
 template <class LABEL>
 struct labeled_graph : public directed_graph {
   LABEL* values;
@@ -93,14 +109,48 @@ public:
       values = foo;
     }
   }
+  /// Dump to a stream (human readable)
+  void Show(OutputStream &s);
 };
 
+template <class LABEL>
+void labeled_graph <LABEL>::Show(OutputStream &s)
+{
+  const char* storage = (reversedArcs) ? "incoming" : "outgoing";
+  const char* rowlabel = (reversedArcs) ? "Into" : "Out of";
+  const char* collabel = (reversedArcs) ? "Out of" : "Into";
+  s << "Labeled graph, stored via " << storage << " edges\n";
+  int i;
+  int j=node_pointer[0];
+  for (i=0; i<num_nodes; i++) {
+    s << "\t" << rowlabel << " vertex " << i << "\n";
+    for (; j<node_pointer[i+1]; j++) {
+      s << "\t\t" << collabel << " vertex " << edge_index[j];
+      s << "\t label " << values[j] << "\n";
+    } 
+  }
+  s << "End of graph\n";
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                      dynamic_digraph class                     *
+// *                                                                *
+// ******************************************************************
+
+/** Directed graph class, where both vertices and edges can be added.
+    
+*/
 class dynamic_digraph {
-  List <circ_node> *chains;
   int num_nodes;
   int num_edges;
+protected:
+  bool reversedArcs;
+  List <circ_node> *chains;
 public:
-  dynamic_digraph(int initsize) {
+  dynamic_digraph(bool rev) {
+    reversedArcs = rev;
     chains = new List <circ_node> (2);
     num_edges = num_nodes = 0;
   }
@@ -113,103 +163,125 @@ public:
     chains->Append((circ_node*)NULL);
     num_nodes++;
   }
+  inline circ_node* AddEdge(int from, int to, circ_node* edge) {
+    DCASSERT(edge);
+    if (reversedArcs) {
+      edge->index = from;
+      return AddUniqueEdge(to, edge);
+    } else {
+      edge->index = to;
+      return AddUniqueEdge(from, edge);
+    }
+  }
+protected:
   /// Returns an existing edge or the passed edge (if it is new).
-  circ_node* AddUniqueEdge(int ndx, circ_node* edge);
+  circ_node* AddUniqueEdge(int ndx, circ_node* edge) {
+    DCASSERT(edge);
+    DCASSERT(ndx>=0);
+    DCASSERT(ndx<num_nodes);
+    circ_node* thing = AddElement(chains->Item(ndx), edge);
+    DCASSERT(thing);
+    if ((thing->index == edge->index) && (thing != edge)) {
+      // existing edge
+      return thing;
+    }
+    chains->SetItem(ndx, thing);
+    num_edges++;
+    return edge;
+  }
 };
 
+
+// ******************************************************************
+// *                                                                *
+// *                      dynamic_labeled class                     *
+// *                                                                *
+// ******************************************************************
+
+/** Directed graph class with labels.
+*/
 template <class LABEL>
-class dynamic_lg {
-  struct node : public circ_node {
-    LABEL value;
-  };
-  /// List of chains, each chain a circular-linked list
-  List <node> *chains;
-  int num_nodes;
-  int num_edges;
-  bool reversedArcs;
+class dynamic_labeled : public dynamic_digraph {
+  typedef circ_node_data <LABEL> node;
   /// pool of nodes
   Manager <node> *pool;
 public:
-  dynamic_lg(bool rev, int initsize) {
-    reversedArcs = rev;
-    chains = NULL;
-    pool = NULL;
-    num_edges = 0;
-    num_nodes = 0;
+  dynamic_labeled(Manager <node> *p, bool rev) : dynamic_digraph(rev) {
+    pool = p;
+    DCASSERT(pool->ObjectSize() >= sizeof(node));
   };
-  ~dynamic_lg() {
-    delete chains;
-    delete pool;
+  ~dynamic_labeled() {
+    // Don't delete pool, it might be shared
   }
-  inline void AddVertex() {
-    if (NULL==chains) chains = new List <node>(2);
-    if (NULL==pool) pool = new Manager <node> (1024);
-    chains->Append((node*)NULL);
-    num_nodes++;
-  }
-  bool AddArc(int from, int to, const LABEL &value);
-  inline int NumEdges() const { return num_edges; }
+  /// Returns true if the arc was new; otherwise labels are summed
+  bool AddLabeledEdge(int from, int to, const LABEL &value) {
+    node *cur = pool->NewObject();
+    cur->value = value;
+    node *bar = (node*) AddEdge(from, to, cur);
+    if (bar!=cur) {
+      // existing edge, add labels
+      bar->value += cur->value;
+      pool->FreeObject(cur);
+      return false;
+    } 
+    return true;
+  };
+  /// Dump to a stream (human readable)
+  void Show(OutputStream &s);
   /// Copy to more static storage and clear the graph.
-//  labeled_graph <LABEL> * Compress();
+  labeled_graph <LABEL> * CompressAndDestroy();
 };
 
 template <class LABEL>
-/// Returns true if the arc was new
-bool dynamic_lg<LABEL>::AddArc(int from, int to, const LABEL &value)
+void dynamic_labeled <LABEL>::Show(OutputStream &s)
 {
-  DCASSERT(num_nodes>0);
-  DCASSERT(from>=0);
-  DCASSERT(from<chains->Length());
-  DCASSERT(to>=0);
-  DCASSERT(to<chains->Length());
-  bool added = false;
-
-  node *cur = pool->NewObject();
-  cur->next = NULL;
-  cur->value = value;
-  node *tail;
-  if (reversedArcs) {
-    tail = chains->Item(to);
-    cur->index = from;
-  } else {
-    tail = chains->Item(from);
-    cur->index = to;
-  }
-  node *newtail = (node*) AddElement(tail, cur);
-  if (NULL == newtail) {
-    // collision?
-    newtail = (node*) FindIndex(tail, cur->index); 
-    DCASSERT(newtail);
-    newtail->value += cur->value;
-    newtail = tail;  // for later
-    pool->FreeObject(cur);
-  } else {
-    num_edges++;
-    added = true;
-  }
-  // update list of tails
-  if (reversedArcs) {
-      chains->SetItem(to, cur);
-  } else {
-      chains->SetItem(from, cur);
-  }
-  return added;
-}
-
-/*
-template <class LABEL>
-labeled_graph <LABEL> * dynamic_lg<LABEL>::Compress()
-{
-  labeled_graph <LABEL> *compact = new labeled_graph;
-  compact->ResizeNodes(num_nodes);
- 
-  // Count number of edges for each node
-  compact->node_pointer[i] = 0;
+  const char* storage = (reversedArcs) ? "incoming" : "outgoing";
+  const char* rowlabel = (reversedArcs) ? "Into" : "Out of";
+  const char* collabel = (reversedArcs) ? "Out of" : "Into";
+  s << "Dynamic labeled graph, stored via " << storage << " edges\n";
   int i;
-  for (i=0; i<= num_nodes; i++) compact->node_pointer[i] = 0;
-
+  for (i=0; i<NumNodes(); i++) {
+    s << "\t" << rowlabel << " vertex " << i << "\n";
+    node* ptr = (node*) chains->Item(i);
+    if (NULL==ptr) continue;
+    do {
+      ptr = (node*) ptr->next;
+      s << "\t\t" << collabel << " vertex " << ptr->index;
+      s << "\t label " << ptr->value << "\n";
+    } while (chains->Item(i) != ptr);
+  }
+  s << "End of graph\n";
 }
-*/
+
+template <class LABEL>
+labeled_graph <LABEL> * dynamic_labeled<LABEL>::CompressAndDestroy()
+{
+  labeled_graph <LABEL> *compact = new labeled_graph <LABEL>;
+  compact->ResizeNodes(NumNodes());
+  compact->ResizeEdges(NumEdges());
+  compact->reversedArcs = reversedArcs;
+
+  int edgeptr = 0;
+  int i;
+  for (i=0; i<NumNodes(); i++) {
+    compact->node_pointer[i] = edgeptr;
+    // traverse list for vertex i
+    node* ptr = (node*) chains->Item(i);
+    if (NULL==ptr) continue;
+    node* next = (node*) ptr->next;
+    do {
+      ptr = next; 
+      compact->edge_index[edgeptr] = ptr->index;
+      compact->values[edgeptr] = ptr->value;
+      edgeptr++;
+      next = (node*) ptr->next;
+      pool->FreeObject(ptr);
+    } while (chains->Item(i) != ptr);
+  }
+  compact->node_pointer[i] = edgeptr;
+  chains->Clear();
+  return compact;
+}
 
 #endif
 

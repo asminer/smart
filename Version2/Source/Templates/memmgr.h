@@ -14,7 +14,7 @@
 
 class ObjMgr {
 private:
-  int objsize;
+  size_t objsize;
   PtrList chunklist;
   char* chunk;  
   int chunksize;
@@ -40,7 +40,7 @@ protected:
     lastfree = 0;
   }
 public:
-  ObjMgr(int osize, int allocsize=1024) : chunklist(16) {
+  ObjMgr(size_t osize, int allocsize=1024) : chunklist(16) {
     if (osize < 4) {
       Internal.Start(__FILE__, __LINE__);
       Internal << "Object manager requires objects of at least 4 bytes\n";
@@ -78,8 +78,9 @@ public:
     activeobjects--;
     PushFree(obj);
   }
-  inline int PeakObjects() { return peakobjects; }
-  inline int ActiveObjects() { return activeobjects; }
+  inline size_t ObjectSize() const { return objsize; }
+  inline int PeakObjects() const { return peakobjects; }
+  inline int ActiveObjects() const { return activeobjects; }
 };
 
 template <class DATA>
@@ -90,8 +91,9 @@ public:
   ~Manager() { delete m; }
   inline DATA* NewObject() { return (DATA *) m->GetChunk(); }
   inline void FreeObject(DATA *x) { m->FreeChunk(x); }
-  inline int PeakObjects() { return m->PeakObjects(); }
-  inline int ActiveObjects() { return m->ActiveObjects(); }
+  inline size_t ObjectSize() const { return m->ObjectSize(); }
+  inline int PeakObjects() const { return m->PeakObjects(); }
+  inline int ActiveObjects() const { return m->ActiveObjects(); }
 };
 
 #endif
