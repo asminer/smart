@@ -99,10 +99,10 @@ protected:
 
 /** Check equality of two boolean expressions.
  */
-class bool_equal : public consteqop {
+class bool_equal : public eqop {
 public:
   bool_equal(const char* fn, int line, expr *l, expr *r) 
-    : consteqop(fn, line, l, r) { }
+    : eqop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -121,10 +121,10 @@ protected:
 
 /** Check inequality of two boolean expressions.
  */
-class bool_neq : public constneqop {
+class bool_neq : public neqop {
 public:
   bool_neq(const char* fn, int line, expr *l, expr *r)
-    : constneqop(fn, line, l, r) { }
+    : neqop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -271,10 +271,14 @@ protected:
 
 /** Check equality of two integer expressions.
  */
-class int_equal : public consteqop {
+class int_equal : public eqop {
 public:
   int_equal(const char* fn, int line, expr *l, expr *r)
-    : consteqop(fn, line, l, r) { }
+    : eqop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -290,10 +294,10 @@ protected:
 
 /** Check inequality of two integer expressions.
  */
-class int_neq : public constneqop {
+class int_neq : public neqop {
 public:
   int_neq(const char* fn, int line, expr *l, expr *r)
-    : constneqop(fn, line, l, r) { }
+    : neqop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -314,10 +318,14 @@ protected:
 
 /** Check if one integer expression is greater than another.
  */
-class int_gt : public constgtop {
+class int_gt : public gtop {
 public:
   int_gt(const char* fn, int line, expr *l, expr *r)
-    : constgtop(fn, line, l, r) { }
+    : gtop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -333,10 +341,10 @@ protected:
 
 /** Check if one integer expression is greater than or equal another.
  */
-class int_ge : public constgeop {
+class int_ge : public geop {
 public:
   int_ge(const char* fn, int line, expr *l, expr *r)
-    : constgeop(fn, line, l, r) { }
+    : geop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -356,10 +364,10 @@ protected:
 
 /** Check if one integer expression is less than another.
  */
-class int_lt : public constltop {
+class int_lt : public ltop {
 public:
   int_lt(const char* fn, int line, expr *l, expr *r)
-    : constltop(fn, line, l, r) { }
+    : ltop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -379,10 +387,10 @@ protected:
 
 /** Check if one integer expression is less than or equal another.
  */
-class int_le : public constleop {
+class int_le : public leop {
 public:
   int_le(const char* fn, int line, expr *l, expr *r)
-    : constleop(fn, line, l, r) { }
+    : leop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -531,10 +539,14 @@ protected:
 /** Check equality of two real expressions.
     To do still: check precision option, etc.
  */
-class real_equal : public consteqop {
+class real_equal : public eqop {
 public:
   real_equal(const char* fn, int line, expr *l, expr *r)
-    : consteqop(fn, line, l, r) { }
+    : eqop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -550,10 +562,10 @@ protected:
 
 /** Check inequality of two real expressions.
  */
-class real_neq : public constneqop {
+class real_neq : public neqop {
 public:
   real_neq(const char* fn, int line, expr *l, expr *r)
-    : constneqop(fn, line, l, r) { }
+    : neqop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -574,10 +586,14 @@ protected:
 
 /** Check if one real expression is greater than another.
  */
-class real_gt : public constgtop {
+class real_gt : public gtop {
 public:
   real_gt(const char* fn, int line, expr *l, expr *r)
-    : constgtop(fn, line, l, r) { }
+    : gtop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -593,10 +609,10 @@ protected:
 
 /** Check if one real expression is greater than or equal another.
  */
-class real_ge : public constgeop {
+class real_ge : public geop {
 public:
   real_ge(const char* fn, int line, expr *l, expr *r)
-    : constgeop(fn, line, l, r) { }
+    : geop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -616,10 +632,10 @@ protected:
 
 /** Check if one real expression is less than another.
  */
-class real_lt : public constltop {
+class real_lt : public ltop {
 public:
   real_lt(const char* fn, int line, expr *l, expr *r)
-    : constltop(fn, line, l, r) { }
+    : ltop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -639,10 +655,10 @@ protected:
 
 /** Check if one real expression is less than or equal another.
  */
-class real_le : public constleop {
+class real_le : public leop {
 public:
   real_le(const char* fn, int line, expr *l, expr *r)
-    : constleop(fn, line, l, r) { }
+    : leop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);

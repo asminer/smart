@@ -524,9 +524,16 @@ void int_div::Compute(int i, result &x)
 void int_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+    
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+
+  left->Compute(0, l);
+  right->Compute(0, r);
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.ivalue == r.ivalue);
   }
@@ -541,9 +548,14 @@ void int_equal::Compute(int i, result &x)
 void int_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.ivalue != r.ivalue);
   }
@@ -558,9 +570,13 @@ void int_neq::Compute(int i, result &x)
 void int_gt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
 #ifdef DEBUG_DEEP
     cout << "Comparing " << left << " and " << right << "\n";
@@ -583,9 +599,13 @@ void int_gt::Compute(int i, result &x)
 void int_ge::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue >= r.ivalue);
   }
@@ -600,9 +620,13 @@ void int_ge::Compute(int i, result &x)
 void int_lt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue < r.ivalue);
   }
@@ -617,9 +641,13 @@ void int_lt::Compute(int i, result &x)
 void int_le::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue <= r.ivalue);
   }
@@ -994,11 +1022,18 @@ void real_div::Compute(int i, result &x)
 void real_equal::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+    
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+
+  left->Compute(0, l);
+  right->Compute(0, r);
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.rvalue == r.rvalue);
+    x.bvalue = (l.ivalue == r.ivalue);
   }
 }
 
@@ -1011,9 +1046,13 @@ void real_equal::Compute(int i, result &x)
 void real_neq::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.rvalue != r.rvalue);
   }
@@ -1028,9 +1067,13 @@ void real_neq::Compute(int i, result &x)
 void real_gt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l, r, x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.rvalue > r.rvalue);
   }
@@ -1045,9 +1088,13 @@ void real_gt::Compute(int i, result &x)
 void real_ge::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.rvalue >= r.rvalue);
   }
@@ -1062,9 +1109,13 @@ void real_ge::Compute(int i, result &x)
 void real_lt::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.rvalue < r.rvalue);
   }
@@ -1079,9 +1130,13 @@ void real_lt::Compute(int i, result &x)
 void real_le::Compute(int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
   result l;
   result r;
-  if (ComputeOpnds(l,r,x)) {
+  left->Compute(0, l);
+  right->Compute(0, r);
+  if (CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.rvalue <= r.rvalue);
   }

@@ -113,31 +113,28 @@ public:
   virtual void show(OutputStream &s) const { binary_show(s, "/"); }
 };
 
-
 // ******************************************************************
 // *                                                                *
-// *                        consteqop  class                        *
+// *                           eqop class                           *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for equality check, for constants (i.e., deterministic).
+/**   The base class for equality check, for non-constants 
 */  
 
-class consteqop : public binary {
+class eqop : public binary {
+public:
+  eqop(const char* fn, int line, expr* l, expr* r): binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, "=="); }
 protected:
-  /** The common part of consteqop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all eqops. 
+      @param l	The value of the left operand (already computed).
+      @param r	The value of the right operand (already computed).
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
-
     // Most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
@@ -145,16 +142,6 @@ protected:
       x.setError();
       return false;
     }
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isNull() || r.isNull()) {
       x.setNull();
       return false;
@@ -163,9 +150,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -185,55 +169,38 @@ protected:
 
     // Can we get here?
     DCASSERT(0);
-    return true;
+    return false;
   }
-public:
-  consteqop(const char* fn, int line, expr* l, expr* r) : binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, "=="); }
 };
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                        constneqop class                        *
+// *                          neqop  class                          *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for inequality check, for constants.
+/**   The base class for inequality check, for non-constants 
 */  
 
-class constneqop : public binary {
+class neqop : public binary {
+public:
+  neqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, "!="); }
 protected:
-  /** The common part of constneqop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all neqops.
+      @param l	The value of the left operand (already computed)
+      @param r	The value of the right operand (already computed)
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(result &l, result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
 
     // Most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isError() || r.isError()) {
       x.setError();
       return false;
@@ -246,9 +213,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -267,55 +231,38 @@ protected:
     }
     // can we get here?
     DCASSERT(0);
-    return true;
+    return false;
   }
-public:
-  constneqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, "!="); }
 };
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                        constgtop  class                        *
+// *                           gtop class                           *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for greater than check, for constants.
+/**   The base class for greater than check, for non-constants 
 */  
 
-class constgtop : public binary {
+class gtop : public binary {
+public:
+  gtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, ">"); }
 protected:
-  /** The common part of constgtop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all gtops.
+      @param l	The value of the left operand (already computed).
+      @param r	The value of the right operand (already computed).
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
 
     // most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isError() || r.isError()) {
       x.setError();
       return false;
@@ -328,9 +275,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -356,55 +300,38 @@ protected:
     // Still here?
     DCASSERT(0);
     // keep compiler happy
-    return true;
+    return false;
   }
-public:
-  constgtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, ">"); }
 };
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                        constgeop  class                        *
+// *                           geop class                           *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for greater than or equal check, for constants.
+/**   The base class for greater-equal check, for non-constants 
 */  
 
-class constgeop : public binary {
+class geop : public binary {
+public:
+  geop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, ">="); }
 protected:
-  /** The common part of constgeop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all geops.
+      @param l	The value of the left operand (already computed)
+      @param r	The value of the right operand (already computed)
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
 
     // most common case
     if (l.isNormal() && r.isNormal()) return true;
 
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isError() || r.isError()) {
       x.setError();
       return false;
@@ -417,9 +344,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -442,54 +366,37 @@ protected:
       return false;
     }
     DCASSERT(0);
-    return true;
+    return false;
   }
-public:
-  constgeop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, ">="); }
 };
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                        constltop  class                        *
+// *                           ltop class                           *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for less than check, for constants.
+/**   The base class for less than check, for non-constants 
 */  
 
-class constltop : public binary {
+class ltop : public binary {
+public:
+  ltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, "<"); }
 protected:
-  /** The common part of constltop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all ltops.
+      @param l	The value of the left operand (already computed)
+      @param r	The value of the right operand (already computed)
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
 
     if (l.isNormal() && r.isNormal()) return true;
 
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isError() || r.isError()) {
       x.setError();
       return false;
@@ -502,9 +409,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -529,52 +433,35 @@ protected:
     DCASSERT(0);
     return true;
   }
-public:
-  constltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, "<"); }
 };
 
 
+
 // ******************************************************************
 // *                                                                *
-// *                        constleop  class                        *
+// *                           leop class                           *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for greater than or equal check, for constants.
+/**   The base class for less-equal check, for non-constants 
 */  
 
-class constleop : public binary {
+class leop : public binary {
+public:
+  leop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
+  virtual void show(OutputStream &s) const { binary_show(s, "<="); }
 protected:
-  /** The common part of constleop for derived classes.
-      @param l	The value of the left operand.
-      @param r	The value of the right operand.
+  /** Common to all leops.
+      @param l	The value of the left operand (already computed)
+      @param r	The value of the right operand (already computed)
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool ComputeOpnds(result &l, result &r, result &x) const {
-    DCASSERT(left);
-    DCASSERT(right);
+  inline bool CheckOpnds(result &l, result &r, result &x) const {
     x.Clear();
-    left->Compute(0, l);
-    right->Compute(0, r);
     
     if (l.isNormal() && r.isNormal()) return true;
 
-#ifdef TRACK_ERRORS
-    if (l.error) {
-      x.error = l.error;
-      return false;
-    }
-    if (r.error) {
-      x.error = r.error;
-      return false;
-    }
-#endif
     if (l.isError() || r.isError()) {
       x.setError();
       return false;
@@ -587,9 +474,6 @@ protected:
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-#ifdef TRACK_ERRORS
-        x.error = CE_Undefined;
-#endif
         x.setError();
         return false;
       }
@@ -612,117 +496,8 @@ protected:
       return false;
     }
     DCASSERT(0);
-    return true;
+    return false;
   }
-public:
-  constleop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r){}
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return BOOL;
-  }
-  virtual void show(OutputStream &s) const { binary_show(s, "<="); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           eqop class                           *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for equality check, for non-constants 
-*/  
-
-class eqop : public binary {
-public:
-  eqop(const char* fn, int line, expr* l, expr* r): binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, "=="); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                          neqop  class                          *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for inequality check, for non-constants 
-*/  
-
-class neqop : public binary {
-public:
-  neqop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, "!="); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           gtop class                           *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for greater than check, for non-constants 
-*/  
-
-class gtop : public binary {
-public:
-  gtop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, ">"); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           geop class                           *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for greater-equal check, for non-constants 
-*/  
-
-class geop : public binary {
-public:
-  geop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, ">="); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           ltop class                           *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for less than check, for non-constants 
-*/  
-
-class ltop : public binary {
-public:
-  ltop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, "<"); }
-};
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           leop class                           *
-// *                                                                *
-// ******************************************************************
-
-/**   The base class for less-equal check, for non-constants 
-*/  
-
-class leop : public binary {
-public:
-  leop(const char* fn, int line, expr* l, expr* r):binary(fn,line,l,r) {}
-  virtual void show(OutputStream &s) const { binary_show(s, "<="); }
 };
 
 

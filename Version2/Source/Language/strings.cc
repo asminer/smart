@@ -134,10 +134,14 @@ void string_add::Compute(int a, result &x)
 
 /** Check equality of two string expressions.
  */
-class string_equal : public consteqop {
+class string_equal : public eqop {
 public:
   string_equal(const char* fn, int line, expr *l, expr *r)
-    : consteqop(fn, line, l, r) { }
+    : eqop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -179,10 +183,10 @@ void string_equal::Compute(int i, result &x)
 
 /** Check inequality of two string expressions.
  */
-class string_neq : public constneqop {
+class string_neq : public neqop {
 public:
   string_neq(const char* fn, int line, expr *l, expr *r)
-    : constneqop(fn, line, l, r) { }
+    : neqop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -228,10 +232,14 @@ void string_neq::Compute(int i, result &x)
 
 /** Check if one string expression is greater than another.
  */
-class string_gt : public constgtop {
+class string_gt : public gtop {
 public:
   string_gt(const char* fn, int line, expr *l, expr *r)
-    : constgtop(fn, line, l, r) { }
+    : gtop(fn, line, l, r) { }
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return BOOL;
+  }
   
   virtual void Compute(int i, result &x);
 protected:
@@ -272,10 +280,10 @@ void string_gt::Compute(int i, result &x)
 
 /** Check if one string expression is greater than or equal another.
  */
-class string_ge : public constgeop {
+class string_ge : public geop {
 public:
   string_ge(const char* fn, int line, expr *l, expr *r)
-    : constgeop(fn, line, l, r) { }
+    : geop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -320,10 +328,10 @@ void string_ge::Compute(int i, result &x)
 
 /** Check if one string expression is less than another.
  */
-class string_lt : public constltop {
+class string_lt : public ltop {
 public:
   string_lt(const char* fn, int line, expr *l, expr *r)
-    : constltop(fn, line, l, r) { }
+    : ltop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
@@ -368,10 +376,10 @@ void string_lt::Compute(int i, result &x)
 
 /** Check if one string expression is less than or equal another.
  */
-class string_le : public constleop {
+class string_le : public leop {
 public:
   string_le(const char* fn, int line, expr *l, expr *r)
-    : constleop(fn, line, l, r) { }
+    : leop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
     DCASSERT(0==i);
