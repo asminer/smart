@@ -88,5 +88,80 @@ void InitModels()
 
   // Deal with formalism specifics
   InitMCModelFuncs(&MCModelFuncs);
+
+  // New formalisms here...
+}
+
+// Implemented below;
+void ShowModelDocs(void *x); 
+
+// required by ShowModelDocs
+
+type EnclosingModel;
+
+void HelpModelFuncs()
+{
+  // Traverse symbol table common to all formalisms
+  EnclosingModel = ANYMODEL;
+  GenericModelFuncs.Traverse(ShowModelDocs);
+
+  // Traverse Markov chain formalism
+  EnclosingModel = DTMC;
+  MCModelFuncs.Traverse(ShowModelDocs);
+  
+  // New formalisms here...
+}
+
+
+// When adding a new formalism, you
+// shouldn't have to touch anything below here 
+// =======================================================================
+
+// Implemented in fnlib.cc
+void DumpDocs(const char* doc);
+
+// Global for help, defined and set in fnlib.cc
+extern char* help_search_string;
+
+void ShowModelDocs(void *x)
+{
+  PtrTable::splayitem *foo = (PtrTable::splayitem *) x;
+  if (NULL==strstr(foo->name, help_search_string)) return;  // not interested...
+  bool unshown = true;
+  List <function> *bar = (List <function> *)foo->ptr;
+  int i;
+  for (i=0; i<bar->Length(); i++) {
+    function *hit = bar->Item(i);
+    DCASSERT(hit->isWithinModel());
+    if (hit->IsUndocumented()) continue;  // don't show this to the public
+    // show to the public
+    if (unshown) {
+      Output << foo->name << " within ";
+      switch (EnclosingModel) {
+	case DTMC:
+		Output << "a Markov chain";
+		break;
+	case ANYMODEL:
+		Output << "any";
+		break;
+	default:
+		Output << "a " << GetType(EnclosingModel);
+      }
+      Output << " model\n";
+      unshown = false;
+    }
+    Output << "\t";
+    hit->ShowHeader(Output);
+    if (!hit->HasSpecialTypechecking()) Output << "\n";
+    // special type checking: documentation must display parameters, too
+    const char* d = hit->GetDocumentation();
+    if (d) DumpDocs(d);
+    else {
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "No documentation for this function?\n";
+      Internal.Stop();
+    }
+    Output << "\n";
+  }
 }
 

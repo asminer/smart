@@ -456,9 +456,11 @@ void proc_real2proc_int::Compute(const state &s, int i, result &x)
 expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 {
   if (NULL==e || ERROR==e || DEFLT==e) return e;
-  if (e->Type(0) == newtype) return e;
-  if (ANYMODEL==newtype) {
-    if (IsModelType(e->Type(0))) return e;
+
+  // Should catch SPN->ANYMODEL, DTMC->MARKOV, etc.
+  if (MatchesTemplate(newtype, e->Type(0))) return e;
+
+  if (IsModelType(newtype)) {
     // still here?  Problem...
     Internal.Start(__FILE__, __LINE__, file, line);
     Internal << "Bad model typecast attempt\n";

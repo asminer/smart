@@ -133,6 +133,7 @@ function::function(const char* fn, int line, type t, char* n,
   num_params = np;
   repeat_point = np+1;
   SortParameters();
+  isInsideModel = false;
 }
 
 function::function(const char* fn, int line, type t, char* n, 
@@ -142,6 +143,7 @@ function::function(const char* fn, int line, type t, char* n,
   num_params = np;
   repeat_point = rp;
   name_order = NULL;
+  isInsideModel = false;
 }
 
 function::~function()
@@ -210,7 +212,8 @@ void function::ShowHeader(OutputStream &s) const
   s << GetType(Type(0)) << " " << Name();
   if (num_params<1) return;
   s << "(";
-  for (int i=0; i<num_params; i++) {
+  // skip first parameter if we are a model function
+  for (int i= (isWithinModel()) ? 1 : 0; i<num_params; i++) {
     if (repeat_point==i) s << "...";
     if (NULL==parameters[i]) s << "null";
     else {

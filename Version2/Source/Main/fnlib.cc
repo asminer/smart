@@ -5,9 +5,10 @@
 #include "fnlib.h"
 #include "compile.h"
 #include "../Rng/rng.h"
+#include "../Formalisms/api.h"
 #include <math.h>
 
-extern PtrTable* Builtins;
+extern PtrTable Builtins;
 
 //--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//--//
 
@@ -70,7 +71,10 @@ void compute_help(expr **pp, int np, result &x)
     help_search_string = (char*) x.other;
 
   // Look through functions
-  Builtins->Traverse(ShowDocs);
+  Builtins.Traverse(ShowDocs);
+
+  // Look through model functions
+  HelpModelFuncs();
 
   // Now go through options
   int i;

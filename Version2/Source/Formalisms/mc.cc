@@ -303,6 +303,7 @@ void Add_init(type mctype, PtrTable *fns)
   internal_func *p = new internal_func(VOID, "init", 
 	compute_mc_init, NULL,
 	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+  p->setWithinModel();
   InsertFunction(fns, p);
 }
 
@@ -379,6 +380,7 @@ void Add_arcs(type mctype, PtrTable *fns)
   internal_func *p = new internal_func(VOID, "arcs", 
 	compute_mc_arcs, NULL,
 	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+  p->setWithinModel();
   InsertFunction(fns, p);
 }
 
@@ -396,10 +398,14 @@ model* MakeMarkovChain(type t, char* id, formal_param **pl, int np,
 
 void InitMCModelFuncs(PtrTable *t)
 {
+  Add_init(MARKOV, t);
+  Add_arcs(MARKOV, t);
+  /*
   Add_init(DTMC, t);
   Add_init(CTMC, t);
 
   Add_arcs(DTMC, t);
   Add_arcs(CTMC, t);
+  */
 }
 

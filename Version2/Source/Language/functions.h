@@ -152,6 +152,11 @@ protected:
       If so, we're allowed to re-assign its return value later.
   */
   bool isForward;
+  /** Is this function called within a model?
+      If so, the first parameter is "hidden", and is a pointer
+      to the model.
+  */
+  bool isInsideModel;
 public:
   /// Use this constructor when there are repeating params.
   function(const char* fn, int line, type t, char* n, 
@@ -192,6 +197,10 @@ public:
   inline bool CanUseNamedParams() const { return name_order; }
 
   inline bool isForwardDefined() const { return isForward; }
+
+  inline bool isWithinModel() const { return isInsideModel; }
+
+  inline void setWithinModel() { isInsideModel = true; }
 
   /** Parameters sorted by name (indexes).
       Returns the index of the ith parameter as ordered by name.

@@ -72,9 +72,10 @@ const type	LAST_PROC	= PROC_RAND_REAL;
 
 const type  	ANYMODEL 	= 64;
 
-const type 	DTMC 		= 65;
-const type 	CTMC 		= 66;
-const type 	SPN 		= 67;
+const type	MARKOV		= 65;  // matches both DTMC and CTMC
+const type 	DTMC 		= 66;
+const type 	CTMC 		= 67;
+const type 	SPN 		= 68;
 
 const type	FIRST_MODEL	= ANYMODEL;
 const type	LAST_MODEL	= SPN;
@@ -127,6 +128,22 @@ inline bool IsModelType(type t)
 {
   return (t >= FIRST_MODEL) && (t < LAST_MODEL);
 }
+
+/// Returns true if the given type matches the template
+inline bool MatchesTemplate(type templ, type given)
+{
+  switch (templ) {
+    case ANYMODEL:
+    	return IsModelType(given);
+
+    case MARKOV:
+    	return (given==DTMC) || (given==CTMC);
+
+    default:
+        return (templ == given);
+  }
+}
+
 
 /** Returns true if the type is a void type.
     This implies that assignments are illegal.

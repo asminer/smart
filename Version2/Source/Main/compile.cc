@@ -1822,17 +1822,17 @@ int ScoreFunction(function *f, type hidden, List <expr> *params)
 
   // Typecheck the hidden parameter, if any
   if (hidden != VOID) {
+    DCASSERT(f->isWithinModel());
     DCASSERT(IsModelType(hidden));
 
     if (0==np) return -1;  // no parameters for this function!
 
     // Compare formal param #fptr with hidden passed param
-    if (fpl[fptr]->Type(0) != ANYMODEL) {
-      if (fpl[fptr]->Type(0) != hidden)
-        return -1;
-    }
+    if (!MatchesTemplate(fpl[fptr]->Type(0), hidden)) return -1;
     
     fptr++;
+  } else {
+    DCASSERT(!f->isWithinModel());
   }
 
   // Check the rest of the passed parameters

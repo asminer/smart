@@ -64,6 +64,7 @@ const char* ProcNames[] = {
 
 const char* ModelNames[] = {
   "any model",
+  "Markov chain",
   "dtmc",
   "ctmc",
   "spn"

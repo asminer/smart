@@ -47,4 +47,9 @@ List <function> *FindModelFunctions(type modeltype, const char* n);
 */
 void InitModels();
 
+/** Display documentation for model functions matching the help string.
+    Called by compute_help in fnlib.cc
+*/
+void HelpModelFuncs();
+
 #endif

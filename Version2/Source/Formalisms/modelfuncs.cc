@@ -66,6 +66,7 @@ void Add_num_states(PtrTable *fns)
   internal_func *p = new internal_func(INT, "num_states", 
 	compute_num_states, NULL,
 	pl, 2, helpdoc);
+  p->setWithinModel();
   InsertFunction(fns, p);
 
   // NOTE: change this to "bigint" soon.
