@@ -37,6 +37,8 @@ public:
 // *                                                                *
 // ******************************************************************
 
+extern option* use_current;
+
 cvgfunc* MakeConvergeVar(type t, char* id, const char* file, int line);
 
 statement* MakeGuessStmt(cvgfunc* v, expr* guess, const char* file, int line);

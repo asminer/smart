@@ -42,7 +42,10 @@ void InitLanguage()
   AddOption(o);
   CreateRuntimeStack(1024); // Large enough?
   
-
+  // UseCurrent
+  const char* ucdoc = "Should converge variables be updated immediately";
+  use_current = MakeBoolOption("UseCurrent", ucdoc, true);
+  AddOption(use_current);
 
 
 

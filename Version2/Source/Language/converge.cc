@@ -14,6 +14,8 @@
 
 //@{
 
+option* use_current;
+
 // ******************************************************************
 // *                                                                *
 // *                         cvgfunc  class                         *
@@ -167,21 +169,19 @@ void assign_stmt::Execute()
 {
   DCASSERT(!isfixed);
   rhs->Compute(0, update);
-  // if update immediately then...
-  CheckConvergence();
-  var->current = update;
-  // endif
+  if (use_current->GetBool()) {
+    CheckConvergence();
+    var->current = update;
+  }
 }
 
 bool assign_stmt::HasConverged()
 {
   DCASSERT(!isfixed);
-  // if not updated immediately then...
-  /*
-  CheckConvergence();
-  var->current = update;
-  */
-  // endif
+  if (!use_current->GetBool()) {
+    CheckConvergence();
+    var->current = update;
+  }
   return hasconverged;
 }
 
