@@ -6,6 +6,8 @@
 #include "../Templates/heap.h"
 #include "docs.h"
 
+//#define DEBUG_SORT
+
 // **************************************************************************
 // *                             option methods                             *
 // **************************************************************************
@@ -470,6 +472,13 @@ void AddOption(option *o)
 {
   DCASSERT(NULL==SortedOptions);
   optionlist.Insert(o);
+#ifdef DEBUG_SORT
+  Output << "Added option " << o << ", new heap:\n";
+  optionlist.show(Output);
+  Output.Pad('=', 70);
+  Output.Put('\n');
+  Output.flush();
+#endif
 }
 
 void SortOptions()

@@ -151,7 +151,7 @@ public:
 protected:
   void UpHeap(int n) {
     while (n) {
-      int parent = n/2;
+      int parent = (n-1)/2;
       if (index[n] < index[parent]) return;
       SWAP(index[n], index[parent]);
       SWAP(value[n], value[parent]);

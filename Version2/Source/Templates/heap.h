@@ -111,7 +111,7 @@ template <class DATA>
 void HeapOfObjects<DATA>::UpHeap(int n)
 {
   while (n) {
-    int parent = n/2;
+    int parent = (n-1)/2;
     if (!(data[n] > data[parent])) return;  // child <= parent, we're a heap
     Swap(n, parent);
     n = parent;
@@ -172,6 +172,8 @@ void HeapOfObjects<DATA>::DownHeap(int n)
         int Compare(DATA *a, DATA *b) that works like strcmp.
      Note: the heap keeps the LARGEST element at the root,
      so that the sorted array is in INCREASING order.
+
+     Heap method "show" requires a similar method for the stored objects.
 */
 
 template <class DATA>
@@ -244,6 +246,8 @@ public:
     sorted = false;
     return foo;
   }
+  // for debugging
+  void show(OutputStream &s) const;
 protected:
   inline void Swap(int i, int j) {
     if (i!=j) {
@@ -272,7 +276,7 @@ template <class DATA>
 void HeapOfPointers<DATA>::UpHeap(int n)
 {
   while (n) {
-    int parent = n/2;
+    int parent = (n-1)/2;
     int cmp = Compare(data[n], data[parent]);
     if (cmp<=0) return; // child <= parent, done
     Swap(n, parent);
@@ -318,6 +322,26 @@ void HeapOfPointers<DATA>::DownHeap(int n)
       x = b;
     }
   } // while
+}
+
+template <class DATA>
+void HeapOfPointers<DATA>::show(OutputStream &s) const
+{
+  s << "Heap, by node:\n";
+  int i;
+  for (i=0; i<last; i++) {
+    s << "Node " << i << ":\n";
+    s << "\tobject: " << data[i] << "\n";
+    int lc = 2*i+1;
+    int rc = lc+1;
+    if (lc<last)
+      s << "\t  left: " << data[lc] << "\n";
+    if (rc<last)
+      s << "\t right: " << data[rc] << "\n";
+    s.flush(); 
+  }
+  s << "End of heap\n";
+  s.flush();
 }
 
 #endif
