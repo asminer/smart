@@ -254,7 +254,7 @@ public:
   virtual void Compute(int i, result &x);
   virtual void Sample(Rng &, int i, result &x);
   virtual expr* Substitute(int i);
-  virtual int GetSymbols(int i, symbol **syms=NULL, int N=0, int offset=0);
+  virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
   virtual Engine_type GetEngine(engineinfo *e);
   virtual expr* SplitEngines(List <measure> *mlist);
@@ -325,10 +325,15 @@ expr* acall::Substitute(int i)
   return new acall(Filename(), Linenumber(), func, pass2, numpass);
 }
 
-int acall::GetSymbols(int i, symbol **syms, int N, int offset)
+int acall::GetSymbols(int i, List <symbol> *syms)
 {
-  // implement this, too
-  return 0;
+  DCASSERT(0==i);
+  int n;
+  int answer = 0;
+  for (n=0; n<numpass; n++) {
+    answer += pass[n]->GetSymbols(0, syms);
+  }
+  return answer;
 }
 
 void acall::show(OutputStream &s) const

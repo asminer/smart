@@ -18,6 +18,9 @@
 
 //@{
   
+// Defined in another module
+class state_model;
+void Delete(state_model *);
 
 // ******************************************************************
 // *                                                                *
@@ -76,7 +79,8 @@ protected:
   statement **stmt_block;
   int num_stmts;
   result last_build;
-
+  /// Discrete-state "meta" model used by engines.
+  state_model *dsm;
 public:
   model(const char* fn, int line, type t, char* n,
   	formal_param **pl, int np);
@@ -93,12 +97,15 @@ public:
       @param	n	Number of statements
   */
   void SetStatementBlock(statement **b, int n);
+
+  inline state_model* GetModel() const { return dsm; }
     
   /** Create a model variable of the specified type.
       Must be provided in derived classes.
   */
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n) = 0;
 
+protected:
   /** Prepare for instantiation.
       Provided in derived classes.  Called immediately before
       the model is constructed for specific parameters.
@@ -116,13 +123,12 @@ public:
 			(i.e., x.other = this).
   */
   virtual void FinalizeModel(result &x) = 0;
-  
+
+  /** Construct the underlying state_model.
+      Called after "FinalizeModel" if it was successful.
+  */
+  virtual state_model* BuildStateModel() = 0;
 };
-
-
-
-
-
 
 // ******************************************************************
 // *                                                                *
@@ -134,15 +140,18 @@ public:
 
 /** Make an expression to call a model measure.
     Passed parameters must match exactly in type.
+    Expression for m(p).s
     @param	m	The model to instantiate (if necessary)
 
     @param	p	The parameters to pass to the model.
     @param	np	Number of passed parameters.
 
+    @param	s	The measure within the model to call.
+
     @param	fn	Filename we are declared in.
     @param	line	line number we are declared on.
  */
-expr* MakeMeasureCall(model *m, expr **p, int np, const char *fn, int line);
+expr* MakeMeasureCall(model *m, expr **p, int np, measure *s, const char *fn, int line);
 
 // expr* MakeArrayMeasureCall(model *m, expr **p, int np, expr **i, int ni);
 

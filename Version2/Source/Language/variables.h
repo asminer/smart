@@ -81,6 +81,7 @@ public:
 
 /** Make a constant function.
     For functions within a converge, use something else.  
+    Never use this within a model.
 */
 constfunc* MakeConstant(type t, char* id, const char* file, int line);
 
