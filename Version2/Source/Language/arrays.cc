@@ -3,6 +3,8 @@
 
 #include "arrays.h"
 
+#include "../Base/memtrack.h"
+
 #include <sstream>
 
 //@Include: arrays.h
@@ -30,12 +32,14 @@
 array_index::array_index(const char *fn, int line, type t, char *n, expr *v) 
   : symbol(fn, line, t, n)
 {
+  ALLOC("array_index", sizeof(array_index));
   values = v;
   current = NULL;
 }
 
 array_index::~array_index()
 {
+  FREE("array_index", sizeof(array_index));
   Delete(values);
   Delete(current);
 }
@@ -69,6 +73,26 @@ expr* array_index::SplitEngines(List <measure> *)
 }
 
 // ******************************************************************
+// *                       array_desc methods                       *
+// ******************************************************************
+
+array_desc::array_desc(set_result *v) 
+{
+    ALLOC("array_desc", v->Size()*sizeof(void*) + sizeof(array_desc));
+    values = v;
+    down = new void*[values->Size()];
+    for (int i=0; i<values->Size(); i++) down[i] = NULL;
+}
+
+array_desc::~array_desc() 
+{
+    FREE("array_desc", values->Size()*sizeof(void*) + sizeof(array_desc));
+    Delete(values);
+    delete[] down;
+}
+
+
+// ******************************************************************
 // *                                                                *
 // *                         array  methods                         *
 // *                                                                *
@@ -77,6 +101,7 @@ expr* array_index::SplitEngines(List <measure> *)
 array::array(const char* fn, int line, type t, char* n, array_index **il, int dim)
   : symbol(fn, line, t, n)
 {
+  ALLOC("array", sizeof(array));
   index_list = il;
   dimension = dim;
   descriptor = NULL;
@@ -86,6 +111,7 @@ array::array(const char* fn, int line, type t, char* n, array_index **il, int di
 array::array(const char* fn, int line, char* n, array_index **il, int dim)
   : symbol(fn, line, VOID, n)
 {
+  ALLOC("array", sizeof(array));
   index_list = il;
   dimension = dim;
   descriptor = NULL;
@@ -94,6 +120,7 @@ array::array(const char* fn, int line, char* n, array_index **il, int dim)
  
 array::~array()
 {
+  FREE("array", sizeof(array));
   Clear();
   // Does this *ever* get called?
   if (index_list) {
@@ -296,6 +323,7 @@ public:
 acall::acall(const char *fn, int line, array *f, expr **p, int np)
   : expr(fn, line)
 {
+  ALLOC("acall", sizeof(acall));
   func = f;
   pass = p;
   numpass = np;
@@ -308,6 +336,7 @@ acall::~acall()
   int i;
   for (i=0; i<numpass; i++) Delete(pass[i]);
   delete[] pass;
+  FREE("acall", sizeof(acall));
 }
 
 type acall::Type(int i) const
@@ -436,6 +465,7 @@ protected:
 forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, int n)
   : statement(fn, l)
 {
+  ALLOC("forstmt", sizeof(forstmt));
   index = i;
   dimension = d;
   block = b;
@@ -444,6 +474,7 @@ forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, i
 
 forstmt::~forstmt()
 {
+  FREE("forstmt", sizeof(forstmt));
   // Is this ever called?
   int j;
   for (j=0; j<blocksize; j++) delete block[j];
@@ -593,12 +624,14 @@ public:
 arrayassign::arrayassign(const char *fn, int l, array *a, expr *e)
   : statement(fn, l)
 {
+  ALLOC("arrayassign", sizeof(arrayassign));
   f = a;
   retval = e;
 }
 
 arrayassign::~arrayassign()
 {
+  FREE("arrayassign", sizeof(arrayassign));
   Delete(retval);
 }
 

@@ -304,6 +304,7 @@ protected:
   type mytype;  // Simplify life
 public:
   constant(const char* fn, int line, type mt);
+  ~constant();
   virtual type Type(int i) const;
   virtual void ClearCache() { } // No cache for constants!
   virtual expr* Substitute(int i);

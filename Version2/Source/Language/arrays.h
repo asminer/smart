@@ -128,15 +128,8 @@ struct array_desc {
    */
   void** down;
 
-  array_desc(set_result *v) {
-    values = v;
-    down = new void*[values->Size()];
-    for (int i=0; i<values->Size(); i++) down[i] = NULL;
-  }
-  ~array_desc() {
-    Delete(values);
-    delete[] down;
-  }
+  array_desc(set_result *v);
+  ~array_desc();
 };
 
 

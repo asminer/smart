@@ -47,6 +47,7 @@ public:
   int part_index;  
 public:
   model_var(const char* fn, int line, type t, char* n);
+  virtual ~model_var();
 
   inline void SetIndex(int si) {
     DCASSERT(state_index<0);

@@ -2,6 +2,8 @@
 // $Id$
 
 #include "measures.h"
+#include "../Base/memtrack.h"
+
 //@Include: measures.cc
 
 /** @name measures.cc
@@ -24,6 +26,7 @@
 measure::measure(const char *fn, int line, type t, char *n)
   : constfunc(fn, line, t, n)
 {
+  ALLOC("measure", sizeof(measure));
   eng = NULL;
   split_return = NULL;
   dependencies = NULL;
@@ -32,6 +35,7 @@ measure::measure(const char *fn, int line, type t, char *n)
 
 measure::~measure()
 {
+  FREE("measure", sizeof(measure));
   delete eng;
 }
 

@@ -3,6 +3,7 @@
 
 #include "sets.h"
 #include "measures.h"
+#include "../Base/memtrack.h"
 
 #include "math.h"
 
@@ -30,12 +31,14 @@ option* index_precision;
 
 set_result::set_result(int s)
 {
+  ALLOC("set_result", sizeof(set_result));
   incoming = 1;
   size = s;
 }
 
 set_result::~set_result()
 {
+  FREE("set_result", sizeof(set_result));
   // nothing to do
 }
 

@@ -3,6 +3,7 @@
 
 #include "exprs.h"
 #include "measures.h"
+#include "../Base/memtrack.h"
 
 //@Include: exprs.h
 
@@ -154,7 +155,13 @@ expr* expr::SplitEngines(List <measure> *)
 
 constant::constant(const char* fn, int line, type mt) : expr (fn, line)
 {
+  ALLOC("constant", sizeof(constant));
   mytype = mt;
+}
+
+constant::~constant()
+{
+  FREE("constant", sizeof(constant));
 }
 
 type constant::Type(int i) const
@@ -188,6 +195,7 @@ expr* constant::SplitEngines(List <measure> *)
 
 unary::unary(const char* fn, int line, expr *x) : expr(fn,line) 
 {
+  ALLOC("unary", sizeof(unary));
   DCASSERT(x!=ERROR);
   DCASSERT(x!=DEFLT);
   opnd = x;
@@ -196,6 +204,7 @@ unary::unary(const char* fn, int line, expr *x) : expr(fn,line)
 
 unary::~unary()
 {
+  FREE("unary", sizeof(unary));
   Delete(opnd);
 }
 
@@ -259,6 +268,7 @@ expr* unary::SplitEngines(List <measure> *mlist)
 
 binary::binary(const char* fn, int line, expr *l, expr *r) : expr(fn,line) 
 {
+  ALLOC("binary", sizeof(binary));
   left = l;
   right = r;
   DCASSERT(left);
@@ -271,6 +281,7 @@ binary::binary(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
 
 binary::~binary()
 {
+  FREE("binary", sizeof(binary));
   Delete(left);
   Delete(right);
 }
@@ -398,6 +409,7 @@ expr* binary::SplitEngines(List <measure> *mlist)
 
 assoc::assoc(const char* fn, int line, expr **x, int n) : expr(fn,line) 
 {
+  ALLOC("assoc", sizeof(assoc));
   opnd_count = n;
   operands = x;
 #ifdef DEVELOPMENT_CODE
@@ -409,6 +421,7 @@ assoc::assoc(const char* fn, int line, expr **x, int n) : expr(fn,line)
 
 assoc::assoc(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
 {
+  ALLOC("assoc", sizeof(assoc));
   opnd_count = 2;
   operands = new expr*[2];
   operands[0] = l;
@@ -419,6 +432,7 @@ assoc::assoc(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
 
 assoc::~assoc()
 {
+  FREE("assoc", sizeof(assoc));
   int i;
   for (i=0; i<opnd_count; i++) Delete(operands[i]);
   delete[] operands;
@@ -559,6 +573,7 @@ expr* assoc::SplitEngines(List <measure> *mlist)
 
 symbol::symbol(const char* fn, int line, type t, char* n) : expr (fn, line)
 {
+  ALLOC("symbol", sizeof(symbol));
   mytype = t;
   aggtype = NULL;
   agglength = 1;
@@ -569,6 +584,7 @@ symbol::symbol(const char* fn, int line, type t, char* n) : expr (fn, line)
 symbol::symbol(const char* fn, int line, type *t, int tlen, char* n) 
  : expr (fn, line)
 {
+  ALLOC("symbol", sizeof(symbol));
   mytype = VOID;
   aggtype = t;
   agglength = tlen;
@@ -582,7 +598,8 @@ symbol::symbol(const char* fn, int line, type *t, int tlen, char* n)
 
 symbol::~symbol()
 {
-  if (name) delete[] name;
+  FREE("symbol", sizeof(symbol));
+  delete[] name;
   delete[] aggtype;
 }
 
@@ -838,10 +855,12 @@ class stringconst : public constant {
   char *value;
   public:
   stringconst(const char* fn, int line, char *v) : constant(fn, line, STRING) {
+    ALLOC("stringconst", sizeof(stringconst));
     value = v;
   }
 
   virtual ~stringconst() {
+    FREE("stringconst", sizeof(stringconst));
     delete[] value;
   }
 

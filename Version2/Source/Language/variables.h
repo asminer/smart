@@ -53,6 +53,7 @@ public:
   const_state state;
 public:
   variable(const char *fn, int line, type t, char *n);
+  virtual ~variable();
   virtual void show(OutputStream &s) const;
 };
 

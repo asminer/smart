@@ -3,6 +3,7 @@
 
 #include "models.h"
 #include "measures.h"
+#include "../Base/memtrack.h"
 
 // For solutions
 
@@ -31,8 +32,14 @@
 model_var::model_var(const char* fn, int line, type t, char* n)
  : symbol(fn, line, t, n)
 {
+  ALLOC("model_var", sizeof(model_var));
   state_index = -1;
   part_index = -1;
+}
+
+model_var::~model_var()
+{
+  FREE("model_var", sizeof(model_var));
 }
 
 void model_var::Compute(int i, result &x)
@@ -77,6 +84,7 @@ bool model::SameParams()
 model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
  : function(fn, l, t, n, pl, np)
 {
+  ALLOC("model", sizeof(model));
   // Important!
   SetSubstitution(false); 
   // we can probably allow forward defs, but for now let's not.
@@ -112,6 +120,7 @@ model::model(const char* fn, int l, type t, char* n, formal_param **pl, int np)
 
 model::~model()
 {
+  FREE("model", sizeof(model));
   // is this ever called?
   Delete(dsm);
   int i;
@@ -353,6 +362,10 @@ void model::Clear()
   for (int i=0; i<num_stmts; i++) {
     stmt_block[i]->Clear();
   }
+
+  Memory_Log.Stop(Output);
+  Output.flush();
+  Memory_Log.Start();
 }
 
 // ******************************************************************
@@ -392,6 +405,7 @@ public:
 mcall::mcall(const char *fn, int l, model *m, expr **p, int np,
 measure *s) : expr (fn, l)
 {
+  ALLOC("mcall", sizeof(mcall));
   mdl = m;
   pass = p;
   numpass = np;
@@ -400,6 +414,7 @@ measure *s) : expr (fn, l)
 
 mcall::~mcall()
 {
+  FREE("mcall", sizeof(mcall));
   // don't delete the model
   int i;
   for (i=0; i < numpass; i++) Delete(pass[i]);
@@ -530,6 +545,7 @@ public:
 ma_call::ma_call(const char *fn, int l, model *m, expr **p, int np,
 array *s, expr **i, int ni) : expr (fn, l)
 {
+  ALLOC("ma_call", sizeof(ma_call));
   mdl = m;
   pass = p;
   numpass = np;
@@ -540,6 +556,7 @@ array *s, expr **i, int ni) : expr (fn, l)
 
 ma_call::~ma_call()
 {
+  FREE("ma_call", sizeof(ma_call));
   // don't delete the model
   int i;
   for (i=0; i < numpass; i++) Delete(pass[i]);
@@ -667,6 +684,7 @@ public:
   model_var* var;
 public:
   wrapper(const char* fn, int line) : expr(fn, line) {
+    ALLOC("wrapper", sizeof(wrapper));
     who = NULL;
     mytype = VOID; // fill in later
     var = NULL;
@@ -674,6 +692,7 @@ public:
   virtual ~wrapper() {
     // don't delete "who", we don't own it
     // not sure about var yet
+    FREE("wrapper", sizeof(wrapper));
   }
 
   virtual type Type(int i) const {
@@ -727,6 +746,7 @@ public:
 model_var_stmt::model_var_stmt(const char *fn, int line, model *p, type t, 
   		char** n, expr** w, int nv) : statement(fn, line) 
 {
+  ALLOC("model_var_stmt", sizeof(model_var_stmt));
   parent = p;
   vartype = t;
   names = n;
@@ -747,6 +767,7 @@ model_var_stmt::model_var_stmt(const char *fn, int line, model *p, type t,
 
 model_var_stmt::~model_var_stmt()
 {
+  FREE("model_var_stmt", sizeof(model_var_stmt));
   Clear();
   int i;
   for (i=0; i<numvars; i++) {
@@ -811,6 +832,7 @@ public:
 model_varray_stmt::model_varray_stmt(const char *fn, int line, model *p, 
   		array** a, int nv) : statement(fn, line) 
 {
+  ALLOC("model_varray_stmt", sizeof(model_varray_stmt));
   parent = p;
   vars = a;
   numvars = nv;
@@ -819,6 +841,7 @@ model_varray_stmt::model_varray_stmt(const char *fn, int line, model *p,
 
 model_varray_stmt::~model_varray_stmt()
 {
+  FREE("model_varray_stmt", sizeof(model_varray_stmt));
   Clear();
   int i;
   for (i=0; i<numvars; i++) {
@@ -892,12 +915,14 @@ public:
 measure_assign::measure_assign(const char *fn, int l, 
 	model *p, measure *m) : statement(fn, l)
 {
+  ALLOC("measure_assign", sizeof(measure_assign));
   parent = p;
   msr = m;
 }
 
 measure_assign::~measure_assign()
 {
+  FREE("measure_assign", sizeof(measure_assign));
   Delete(msr);
 }
 
@@ -951,6 +976,7 @@ public:
 measure_array_assign::measure_array_assign(const char *fn, int l, 
 	model *p, array *a, expr *e) : statement(fn, l)
 {
+  ALLOC("measure_array_assign", sizeof(measure_array_assign));
   parent = p;
   f = a;
   retval = e;
@@ -958,6 +984,7 @@ measure_array_assign::measure_array_assign(const char *fn, int l,
 
 measure_array_assign::~measure_array_assign()
 {
+  FREE("measure_array_assign", sizeof(measure_array_assign));
   Delete(retval);
 }
 

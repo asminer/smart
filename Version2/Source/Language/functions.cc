@@ -3,6 +3,8 @@
 
 #include "functions.h"
 #include "measures.h"
+#include "../Base/memtrack.h"
+
 //@Include: functions.h
 
 /** @name functions.cc
@@ -31,18 +33,21 @@ int ParamStackSize;
 formal_param::formal_param(type t, char* n)
   : symbol(NULL, -1, t, n)
 {
+  ALLOC("formal_param", sizeof(formal_param));
   Construct();
 }
 
 formal_param::formal_param(type *t, int tlen, char* n)
   : symbol(NULL, -1, t, tlen, n)
 {
+  ALLOC("formal_param", sizeof(formal_param));
   Construct();
 }
 
 formal_param::formal_param(const char* fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
+  ALLOC("formal_param", sizeof(formal_param));
   Construct();
 }
 
@@ -57,6 +62,7 @@ void formal_param::Construct()
 
 formal_param::~formal_param()
 {
+  FREE("formal_param", sizeof(formal_param));
   Delete(deflt);
 }
 
@@ -129,6 +135,7 @@ void function::SortParameters()
 function::function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np) : symbol(fn, line, t, n)
 {
+  ALLOC("function", sizeof(function));
   parameters = pl;
   num_params = np;
   repeat_point = np+1;
@@ -139,6 +146,7 @@ function::function(const char* fn, int line, type t, char* n,
 function::function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np, int rp) : symbol(fn, line, t, n)
 {
+  ALLOC("function", sizeof(function));
   parameters = pl;
   num_params = np;
   repeat_point = rp;
@@ -148,6 +156,7 @@ function::function(const char* fn, int line, type t, char* n,
 
 function::~function()
 {
+  FREE("function", sizeof(function));
   int i;
   for (i=0; i<num_params; i++)
     delete parameters[i];
@@ -696,6 +705,7 @@ public:
 fcall::fcall(const char *fn, int line, function *f, expr **p, int np)
   : expr (fn, line)
 {
+  ALLOC("fcall", sizeof(fcall));
   func = f;
   pass = p;
   numpass = np;
@@ -703,6 +713,7 @@ fcall::fcall(const char *fn, int line, function *f, expr **p, int np)
 
 fcall::~fcall()
 {
+  FREE("fcall", sizeof(fcall));
   // don't delete func
   int i;
   for (i=0; i < numpass; i++) Delete(pass[i]);

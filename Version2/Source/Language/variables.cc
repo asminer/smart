@@ -2,6 +2,7 @@
 // $Id$
 
 #include "variables.h"
+#include "../Base/memtrack.h"
 //@Include: variables.h
 
 /** @name variables.cc
@@ -24,8 +25,14 @@
 variable::variable(const char *fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
+  ALLOC("variable", sizeof(variable));
   state = CS_Undefined;
   SetSubstitution(false);  
+}
+
+variable::~variable()
+{
+  FREE("variable", sizeof(variable));
 }
 
 void variable::show(OutputStream &s) const
