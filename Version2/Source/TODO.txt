@@ -3,10 +3,6 @@
 
 Currently working on:  
 
-* Just added flatss class (in flatss file)
-
-* Go from "tree" to "flatss" class
-
 
 
 Things to do:

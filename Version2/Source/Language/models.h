@@ -87,7 +87,7 @@ public:
     return upper; 
   }
   inline void setLowerBound(int L) {
-    has_upper_bound = true;
+    has_lower_bound = true;
     lower = L;
   }
   inline void setUpperBound(int U) {

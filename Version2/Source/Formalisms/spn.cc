@@ -53,6 +53,29 @@ struct spn_arcinfo {
   expr* proc_card;
   const char* filename;
   int linenumber;
+  void FillCard(expr* card) {
+    if (NULL==card) {
+      const_card = 1;
+      proc_card = NULL;
+      return;
+    }
+    if (card->Type(0) == INT) {
+      // constant cardinality, compute it
+      result x;
+      SafeCompute(card, 0, x);
+      if (x.isNormal()) {
+        const_card = x.ivalue;
+        proc_card = NULL;
+      } else {
+        // error, print the error a bit later
+        proc_card = ERROR;
+      }
+      return;
+    } 
+    // proc int
+    const_card = 0;
+    proc_card = card->Substitute(0);
+  }
   inline bool operator>(const spn_arcinfo &a) const { 
     return place > a.place; 
   }
@@ -576,9 +599,6 @@ public:
   virtual void InitModel();
   virtual void FinalizeModel(result &);
   virtual state_model* BuildStateModel(const char *fn, int ln);
-protected:
-  // true if unique arc
-  bool ListAdd(int list,  spn_arcinfo &x, expr* card);
 };
 
 // ******************************************************************
@@ -603,37 +623,12 @@ spn_model::~spn_model()
   delete initial;
 }
 
-bool spn_model::ListAdd(int list,  spn_arcinfo &data, expr* card)
-{
-  if (NULL==card) {
-    data.const_card = 1;
-    data.proc_card = NULL;
-  } else if (card->Type(0) == INT) {
-    // constant cardinality, compute it
-    result x;
-    SafeCompute(card, 0, x);
-    if (x.isNormal()) {
-      data.const_card = x.ivalue;
-      data.proc_card = NULL;
-    } else {
-      // error?
-      data.const_card = 0;
-      data.proc_card = card->Substitute(0);
-    }
-  } else {
-    // proc int
-    data.const_card = 0;
-    data.proc_card = card->Substitute(0);
-  }
-
-  DCASSERT(arcs);
-  return (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1);
-}
 
 void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int ln)
 {
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(arcs);
 
   transition *t = translist->Item(trans);
   if (t->inputs<0) t->inputs = arcs->NewList();
@@ -643,8 +638,19 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   data.place = place;
   data.filename = fn;
   data.linenumber = ln;
+  data.FillCard(card);
+  // check for errors
+  if (data.proc_card == ERROR) {
+    Error.Start(card->Filename(), card->Linenumber());
+    Error << "bad cardinality on arc\n";
+    Error << "\tfrom " << placelist->Item(place);
+    Error << " to " << translist->Item(trans);
+    Error << " in SPN " << Name();
+    Error.Stop();
+    return; 
+  }
 
-  if (ListAdd(list, data, card)) return;
+  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -659,6 +665,7 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
 {
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(arcs);
 
   transition *t = translist->Item(trans);
   if (t->outputs<0) t->outputs = arcs->NewList();
@@ -668,8 +675,19 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   data.place = place;
   data.filename = fn;
   data.linenumber = ln;
+  data.FillCard(card);
+  // check for errors
+  if (data.proc_card == ERROR) {
+    Error.Start(card->Filename(), card->Linenumber());
+    Error << "bad cardinality on arc\n";
+    Error << "\tfrom " << translist->Item(trans);
+    Error << " to " << placelist->Item(place);
+    Error << " in SPN " << Name();
+    Error.Stop();
+    return; 
+  }
 
-  if (ListAdd(list, data, card)) return;
+  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -684,6 +702,7 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
 {
   CHECK_RANGE(0, place, placelist->Length());
   CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(arcs);
 
   transition *t = translist->Item(trans);
   if (t->inhibitors<0)
@@ -694,8 +713,19 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   data.place = place;
   data.filename = fn;
   data.linenumber = ln;
+  data.FillCard(card);
+  // check for errors
+  if (data.proc_card == ERROR) {
+    Error.Start(card->Filename(), card->Linenumber());
+    Error << "bad cardinality on inhibitor arc\n";
+    Error << "\tfrom " << placelist->Item(place);
+    Error << " to " << translist->Item(trans);
+    Error << " in SPN " << Name();
+    Error.Stop();
+    return; 
+  }
 
-  if (ListAdd(list, data, card)) return;
+  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -762,6 +792,7 @@ model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
  	p = new model_var(fn, l, t, n);
         index = placelist->Length();
 	p->SetIndex(index);
+	p->setLowerBound(0);
 	placelist->Append(p);
 	break;
 

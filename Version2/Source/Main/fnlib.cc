@@ -151,7 +151,7 @@ void compute_help(expr **pp, int np, result &x)
   HelpModelFuncs();
 
   // Now go through options
-  Output << "\nOptions/constants \"" << help_search_string;
+  Output << "\nOptions/constants matching \"" << help_search_string;
   Output << "\":\n";
   int i;
   for (i=0; i<NumOptions(); i++) {

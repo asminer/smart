@@ -20,7 +20,6 @@
 //@{
 
 
-
 // ******************************************************************
 // *                   statevar_comp (base) class                   *
 // ******************************************************************
@@ -239,26 +238,25 @@ public:
 void add_const_to_sv::NextState(const state &, state &next, result &x) 
 {
   next[var->state_index].ivalue += delta;
-  if (var->hasLowerBound()) 
-    if (next[var->state_index].ivalue < var->getLowerBound()) {
+  if (	( // lower bound violation
+	  var->hasLowerBound() && 
+          next[var->state_index].ivalue < var->getLowerBound()
+        ) 
+  	||
+   	( // upper bound violation
+ 	  var->hasUpperBound() &&
+    	  next[var->state_index].ivalue > var->getUpperBound() 
+   	)  ) 
+    {
       Error.Start(Filename(), Linenumber());
       if (delta>0) Error << "Overflow of ";
       else Error << "Underflow of ";
       Error << GetType(var->Type(0)) << " " << var->Name();
       Error << " in model " << modelname;
       x.setError();
+      Error.Stop();
       return;
     } // if
-
-  if (var->hasUpperBound()) 
-    if (next[var->state_index].ivalue > var->getUpperBound()) {
-      Error.Start(Filename(), Linenumber());
-      if (delta<0) Error << "Overflow of ";
-      else Error << "Underflow of ";
-      Error << GetType(var->Type(0));
-      Error << " " << var->Name() << " in model " << modelname;
-      x.setError();
-    }
 }
 
 // ******************************************************************
@@ -293,6 +291,36 @@ public:
     answer += opnd->GetSymbols(i, syms);
     return answer;
   }
+protected:
+  inline void CheckBounds(const state &s, int d, result &x) const {
+    if (( // lower bound violation
+	  var->hasLowerBound() && 
+          s.Read(var->state_index).ivalue < var->getLowerBound()
+        ) 
+  	||
+   	( // upper bound violation
+ 	  var->hasUpperBound() &&
+    	  s.Read(var->state_index).ivalue > var->getUpperBound() 
+   	)) 
+    {
+      Error.Start(Filename(), Linenumber());
+      if (d>0) Error << "Overflow of ";
+      else Error << "Underflow of ";
+      Error << GetType(var->Type(0)) << " " << var->Name();
+      Error << " in model " << modelname;
+      x.setError();
+      Error.Stop();
+    } // if
+  }
+  inline void InfinityError(int sign) {
+      Error.Start(Filename(), Linenumber());
+      Error << "Infinity ";
+      if (sign>0) Error << "added to ";
+      else Error << "subtracted from ";
+      Error << GetType(var->Type(0));
+      Error << " " << var->Name() << " in model " << modelname;
+      Error.Stop();
+  }
 };
 
 // ******************************************************************
@@ -312,30 +340,10 @@ protected:
 
 void add_to_sv::NextState(const state &curr, state& next, result &x)
 {
-  SafeCompute(opnd, 0, x);
+  SafeCompute(opnd, curr, 0, x);
   if (x.isNormal()) {
     next[var->state_index].ivalue += x.ivalue;
-    if (var->hasLowerBound())
-      if (next[var->state_index].ivalue < var->getLowerBound()) {
-        Error.Start(Filename(), Linenumber());
-        if (x.ivalue>0) Error << "Overflow of ";
-        else Error << "Underflow of ";
-        Error << GetType(var->Type(0));
-        Error << " " << var->Name() << " in model " << modelname;
-        Error << " in model " << modelname;
-        x.setError();
-        return;
-      }
-    if (var->hasUpperBound())
-      if (next[var->state_index].ivalue > var->getUpperBound()) {
-        Error.Start(Filename(), Linenumber());
-        if (x.ivalue>0) Error << "Overflow of ";
-        else Error << "Underflow of ";
-        Error << GetType(var->Type(0));
-        Error << " " << var->Name() << " in model " << modelname;
-        x.setError();
-        return;
-      }
+    CheckBounds(next, x.ivalue, x);
     return;
   } // normal x
   if (x.isUnknown()) {
@@ -343,13 +351,7 @@ void add_to_sv::NextState(const state &curr, state& next, result &x)
     return;
   }
   if (x.isInfinity()) {
-      Error.Start(Filename(), Linenumber());
-      Error << "Infinity ";
-      if (x.ivalue>0) Error << "added to ";
-      else Error << "subtracted from ";
-      Error << GetType(var->Type(0));
-      Error << " " << var->Name() << " in model " << modelname;
-      Error.Stop();
+      InfinityError(x.ivalue);
       x.setError();
       return;
   }
@@ -373,30 +375,10 @@ protected:
 
 void sub_from_sv::NextState(const state &curr, state& next, result &x)
 {
-  SafeCompute(opnd, 0, x);
+  SafeCompute(opnd, curr, 0, x);
   if (x.isNormal()) {
     next[var->state_index].ivalue -= x.ivalue;
-    if (var->hasLowerBound())
-      if (next[var->state_index].ivalue < var->getLowerBound()) {
-        Error.Start(Filename(), Linenumber());
-        if (x.ivalue<0) Error << "Overflow of ";
-        else Error << "Underflow of ";
-        Error << GetType(var->Type(0));
-        Error << " " << var->Name() << " in model " << modelname;
-        Error << " in model " << modelname;
-        x.setError();
-        return;
-      }
-    if (var->hasUpperBound())
-      if (next[var->state_index].ivalue > var->getUpperBound()) {
-        Error.Start(Filename(), Linenumber());
-        if (x.ivalue<0) Error << "Overflow of ";
-        else Error << "Underflow of ";
-        Error << GetType(var->Type(0));
-        Error << " " << var->Name() << " in model " << modelname;
-        x.setError();
-        return;
-      }
+    CheckBounds(next, -x.ivalue, x);
     return;
   } // normal x
   if (x.isUnknown()) {
@@ -404,13 +386,7 @@ void sub_from_sv::NextState(const state &curr, state& next, result &x)
     return;
   }
   if (x.isInfinity()) {
-      Error.Start(Filename(), Linenumber());
-      Error << "Infinity ";
-      if (x.ivalue<0) Error << "added to ";
-      else Error << "subtracted from ";
-      Error << GetType(var->Type(0));
-      Error << " " << var->Name() << " in model " << modelname;
-      Error.Stop();
+      InfinityError(-x.ivalue);
       x.setError();
       return;
   }
