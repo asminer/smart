@@ -1,0 +1,45 @@
+
+// $Id$
+
+#include "stateheap.h"
+
+/*
+	Someday, we may want to set up a nice memory heap
+  	just for states to speed things up a bit.
+
+	For now, Andy is lazy, so...
+*/
+
+bool AllocState(state &s, int length)
+{
+  s.am_substate = false;
+  s.size = length;
+  s.data = new result[length];
+}
+
+void FreeState(state &s)
+{
+  if (s.am_substate) {
+    // do NOT delete anything
+    s.size = 0;
+    s.data = NULL;
+    return;
+  }
+  delete[] s.data;
+  s.size = 0;
+  s.data = NULL;
+}
+
+void MakeSubstate(state &sub, const state &s, int pos, int len)
+{
+  if ((pos<0) || (pos+len > s.size)) {
+    // range error
+    sub.size = 0;
+    sub.data = NULL;
+  } else {
+    sub.am_substate = true;
+    sub.size = len;
+    sub.data = s.data + pos;
+  }
+}
+
