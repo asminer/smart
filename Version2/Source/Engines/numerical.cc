@@ -5,6 +5,7 @@
 
 #include "../Language/measures.h"
 #include "../Formalisms/dsm.h"
+#include "../States/reachset.h"
 #include "../Chains/procs.h"
 
 #include "linear.h"
@@ -31,7 +32,7 @@ bool BuildProcess(state_model *dsm)
 }
 
 // Returns stationary vector or NULL on error
-double* ComputeStationary(bool discrete, classified_chain <float> *mc, 
+double* ComputeStationary(classified_chain <float> *mc, 
 			  sparse_vector <float> *initial)
 {
   bool aok = true;
@@ -144,6 +145,69 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
 }
 
 
+// return true on success, false if some error
+bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
+{
+  state s;
+  if (!AllocState(s, 1)) return false;
+  s[0].Clear();  
+  for (int m=0; m<mlist->Length(); m++) {
+    result mval;
+    mval.Clear();
+    double mtotal = 0.0;
+    bool mok = true;
+    DCASSERT(mlist->Item(m));
+    expr* mexpr = mlist->Item(m)->GetRewardExpr();
+    DCASSERT(mexpr != ERROR);
+    if (NULL==mexpr) {
+      mval.setNull();
+      mlist->Item(m)->SetValue(mval);
+      continue;
+    } 
+    switch (mexpr->Type(0)) {
+      case PROC_BOOL:
+	// -------------------- BOOL measures --------------------
+	for (int i=start; i<stop; i++) if (x[i]) {
+          s[0].ivalue = i;
+      	  mexpr->Compute(s, 0, mval); 
+      	  if (mval.isNormal()) {
+	    if (mval.bvalue) mtotal += x[i];
+          } else {
+            mok = false;
+	    break;
+          }
+    	} // for i
+	// -------------------------------------------------------
+      break;
+      case PROC_REAL:
+	// -------------------- REAL measures --------------------
+	for (int i=start; i<stop; i++) if (x[i]) {
+          s[0].ivalue = i;
+      	  mexpr->Compute(s, 0, mval); 
+      	  if (mval.isNormal()) {
+ 	    mtotal += mval.rvalue * x[i];
+          } else {
+            mok = false;
+            break;
+	    // TO DO: check for infinity and keep going
+            // to check for errors, e.g., infinity - infinity
+          }
+    	} // for i
+	// -------------------------------------------------------
+      break;
+      default:
+	Internal.Start(__FILE__, __LINE__);
+        Internal << "Measure expression of type " << GetType(mexpr->Type(0));
+        Internal.Stop();
+    } // switch for measure type
+    if (mok) mval.rvalue = mtotal;
+    mlist->Item(m)->SetValue(mval);
+  } // for m
+
+  FreeState(s);
+  return true;
+}
+
 
 bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 {
@@ -158,10 +222,7 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
   DCASSERT(dsm->proctype != Proc_Unknown);
   DCASSERT(dsm->mc);
   DCASSERT(dsm->mc->explicit_mc);
-  
-  bool disc = (dsm->proctype == Proc_Dtmc);
-  
-  double *pi = ComputeStationary(disc, dsm->mc->explicit_mc, dsm->mc->initial);
+  double *pi = ComputeStationary(dsm->mc->explicit_mc, dsm->mc->initial);
   if (NULL==pi) return false;
 
 #ifdef DEBUG
@@ -172,8 +233,24 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 #endif
   // compute measures
   
+  bool rwd_result;
+  switch (dsm->statespace->Type()) {
+    case RT_None:
+ 	rwd_result = false;
+	break;
+
+    case RT_Enumerated:
+	rwd_result = EnumRewards(dsm->mc->explicit_mc->numTransient(),
+				 dsm->mc->explicit_mc->numStates(),
+				 pi, mlist);
+	break;
+
+    default:
+	rwd_result = false;
+  };
  
-  return false;
+  delete[] pi;
+  return rwd_result;
 }
 
 void InitNumerical()
