@@ -57,7 +57,7 @@ int main_unlimited()
   return 0;
 }
 
-int main()
+int main_comp1()
 {
   state_array pile_of_states(true);
   Output.Activate();
@@ -91,6 +91,40 @@ int main()
 
   Output << "Comparing states:\n";
   int cmp = pile_of_states.Compare(0,1);
+  Output << "Got compare value: " << cmp << "\n";
+
+  return 0;
+}
+
+int main()
+{
+  state_array pile_of_states(true);
+  Output.Activate();
+  Output << "Testing state array vs state Compare\nEnter state size:\n";
+  Output.flush();
+  int np;
+  Input.Get(np);
+  state s1;
+  AllocState(s1, np);
+  Output << "Enter state (length " << np << "):\n";
+  Output.flush();
+  int j;
+  for (j=0; j<np; j++) {
+      s1[j].Clear();
+      Input.Get(s1[j].ivalue);
+  }
+  int h1 = pile_of_states.AddState(s1);
+  state s2;
+  AllocState(s2, np);
+  Output << "Enter compare state (length " << np << "):\n";
+  Output.flush();
+  for (j=0; j<np; j++) {
+      s2[j].Clear();
+      Input.Get(s2[j].ivalue);
+  }
+
+  Output << "Comparing states:\n";
+  int cmp = pile_of_states.Compare(h1, s2);
   Output << "Got compare value: " << cmp << "\n";
 
   return 0;

@@ -810,7 +810,119 @@ int state_array::Compare(int h1, int h2) const
   Output << "\nGot: " << compare << "\n";
   Output.flush();
 #endif
-  return strncmp(ptr1, ptr2, length1);   // ya gotta love it
+  // doesn't get much faster than this:
+  return strncmp(ptr1, ptr2, length1); 
+}
+
+int state_array::Compare(int hndl1, state& s2)
+{
+  //
+  //  Check handle
+  //
+  int h1;
+  DCASSERT(hndl1>=0);
+  if (map) {
+    DCASSERT(hndl1<numstates);
+    h1 = map[hndl1];
+  } else {
+    DCASSERT(hndl1<lasthandle);
+    h1 = hndl1;
+  }
+
+  // 
+  // Initialize bitstream and read state encoding method
+  // 
+  byteptr = h1;
+  bitptr = 7;
+  int encselect;
+  ReadInt(2, encselect);
+  int npselect;
+  ReadInt(3, npselect); 	// #places selector
+  int tkselect;
+  ReadInt(3, tkselect);  	// maxtokens selector
+
+  // Figure out the numbers of bits used
+  char npbits = placebits[npselect];
+  char tkbits = tokenbits[tkselect];
+
+  //
+  // Decode the state based on the encoding method
+  //
+  int tk, np, nnz;
+  int i, j, type, cmp;
+  // stats for debugging
+  switch(encselect) {
+    case 1: 
+      // *****************	Sparse Encoding 
+      j = 0;  // scans s2
+      ReadInt(npbits, nnz);
+      for (i=0; i<nnz; i++) {
+        ReadInt(npbits, np);
+        // next nonzero is at np, compare with s2
+        for (;j<np; j++) if (s2[j].ivalue) return -1;
+	if (tkbits>1) {
+	  ReadInt(tkbits, tk);
+          cmp = (tk - s2[np].ivalue);
+	} else {
+          cmp = 1 - s2[np].ivalue;
+        }
+ 	if (cmp) return cmp;
+        j = np+1;
+      }
+      break;
+      
+    case 2: 
+      // *****************	Runlength Encoding 
+      ReadInt(npbits, nnz); 
+      j=0;
+      if (1==tkbits) ReadInt(1, tk);
+      for (i=0; i<nnz; i++) {
+        ReadInt(1, type);
+        if (RUN_BIT == type) {
+	  // RUN
+          ReadInt(npbits, np);
+	  if (tkbits>1) ReadInt(tkbits, tk);
+          for(np; np; np--) {
+	    cmp = tk - s2[j++].ivalue;
+	    if (cmp) return cmp;
+          } // for np
+	  // flip bit
+	  tk = !tk;
+        } else {
+	  // LIST
+	  ReadInt(npbits, np);
+	  for(np; np; np--) {
+	    if (tkbits>1) ReadInt(tkbits, tk);
+	    cmp = tk - s2[j++].ivalue;
+	    if (cmp) return cmp;
+	    tk = !tk;  // faster to just do it every time
+          }
+        }
+      } // for i
+      break;
+      
+    case 3:
+      // *****************	Full Encoding 
+      ReadInt(npbits, np);
+      np++;
+      for (i=0; i<np; i++) {
+	ReadInt(tkbits, tk);
+	cmp = tk - s2[i].ivalue;
+	if (cmp) return cmp;
+      }
+    break;
+
+    default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad state encoding?\n";
+	Internal.Stop();
+      	return false;  // shouldn't get here
+  }
+
+  // 
+  // Still here? must be equal
+  //
+  return 0;
 }
 
 void state_array::Report(OutputStream &R)

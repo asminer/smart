@@ -175,6 +175,7 @@ public:
   /// Can only be used with map array.
   inline void PopLast() {
     DCASSERT(map);
+    DCASSERT(numstates);
     lasthandle = map[--numstates];
   }
 
