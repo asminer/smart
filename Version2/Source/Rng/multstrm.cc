@@ -1,4 +1,6 @@
 
+// $Id$
+
 #include "multstrm.h"
 
 //#define CHECK_CACHE

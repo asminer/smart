@@ -1,4 +1,6 @@
 
+// $Id$
+
 /** Computes the distance between a
     starting seed (using the Knuth rng)
     and any other seed generated using Knuth's rng.

@@ -1,4 +1,6 @@
 
+// $Id$
+
 /* Test of rng.  Dumps to an ascii stream for use with diehard. */
 
 #include "rng.h"

@@ -1,4 +1,6 @@
 
+// $Id$
+
 #ifndef RNG_H
 #define RNG_H
 
@@ -29,6 +31,9 @@ public:
     (See the journal article, hopefully ;^)
 */
   void JumpStream(const Rng &input);
+
+  // we will need direct access for testing...
+  inline mt_state* GetState() { return &state; }
 };
 
 

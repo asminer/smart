@@ -6,47 +6,41 @@
 //
 
 #include "multstrm.h"
-#include "mtwist.h"
-
-#define USE_SHARED
+#include "rng.h"
 
 void smart_exit()
 {
 }
 
-mt_state state1;
-mt_state state2;
+Rng stream1(7309259);
+Rng stream2(7309259);
 
 shared_matrix A(MT_STATE_SIZE);
-
-void Synchronize()
-{
-  mts_refresh(&state1);
-  mts_refresh(&state2);
-  int i;
-  for (i=0; i<MT_STATE_SIZE; i++) state2.statevec[i] = state1.statevec[i];
-}
 
 void JumpA()
 {
   mt_state tmp;
-  A.vector_multiply(tmp.statevec, state1.statevec);
+  A.vector_multiply(tmp.statevec, stream1.GetState()->statevec);
   int i;
-  for (i=0; i<MT_STATE_SIZE; i++) state1.statevec[i] = tmp.statevec[i]; 
+  for (i=0; i<MT_STATE_SIZE; i++)
+    stream1.GetState()->statevec[i] = tmp.statevec[i];
 }
 
 void JumpB(long long n)
 {
-  long long i;
-  for (i=0; i<n; i++) mts_lrand(&state2);
+  Rng tmp;
+  for (long long i=0; i<n; i++) {
+    tmp.JumpStream(stream2);
+    SWAP(tmp, stream2);
+  }
 }
 
 bool CheckSequence(int d)
 {
   int i;
   for (i=0; i<d; i++) {
-    unsigned long x1 = mts_lrand(&state1);
-    unsigned long x2 = mts_lrand(&state2); 
+    unsigned long x1 = stream1.lrand();
+    unsigned long x2 = stream2.lrand();
     if (x1 != x2) {
       Output << "\n\nDIFFERENCE at position " << i << "\n";
       Output << "  We get " << x1 << "\n";
@@ -62,11 +56,11 @@ bool CheckSequence(int d)
 int main(int argc, char** argv)
 {
   if (argc < 5) {
-    Output << "Checks a jump multiplier against the actual stream\n";
+    Output << "Checks a jump multiplier against the stream jumper\n";
     Output << "Usage: " << argv[0] << " (jump file) (jump length) dist reps\n";
     Output << "where:\n";
     Output << "\t(jump file) is the multiplier matrix file\n";
-    Output << "\t(jump length) is the jump length in rng sequence\n";
+    Output << "\t(jump length) is the number of times to jump the stream\n";
     Output << "\t(dist) is the distance to check for matches\n";
     Output << "\t(reps) is the number of replications to perform\n";
     return 0;
@@ -94,17 +88,13 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  mts_seed32(&state1, 7309259);
-  mts_seed32(&state2, 7309259);
-
   int i;
   for (i=0; i<REPS; i++) {
     Output << "Replication " << i << "\n";
-    Synchronize();
     Output << "\tUsing multiplier:\n";
     Output.flush();
     JumpA();
-    Output << "\tUsing mt:\n";
+    Output << "\tUsing mt jump:\n";
     Output.flush();
     JumpB(JUMP);
     Output << "\tComparing:\n";

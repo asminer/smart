@@ -1,4 +1,6 @@
 
+// $Id$
+
 #ifndef MULTSTRM_H
 #define MULTSTRM_H
 
