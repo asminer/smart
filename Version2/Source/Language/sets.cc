@@ -95,6 +95,66 @@ void int_interval::show(OutputStream &s)
 
 // ******************************************************************
 // *                                                                *
+// *                      real_interval  class                      *
+// *                                                                *
+// ******************************************************************
+
+/**  An interval set of reals.
+     These have the form {start..stop..inc}.
+ */
+class real_interval : public set_result {
+  double start, stop, inc;
+public:
+  real_interval(double s, double e, double i);
+  virtual ~real_interval() { }
+  virtual void GetElement(int n, result &x);
+  virtual int IndexOf(const result &x);
+  virtual void GetOrder(int n, int &i, result &x);
+  virtual void show(OutputStream &s);
+};
+
+real_interval::real_interval(double s, double e, double i) 
+  : set_result(int((e-s)/i + 1))
+{
+  start = s;
+  stop = e;
+  inc = i;
+}
+
+void real_interval::GetElement(int n, result &x)
+{
+  DCASSERT(n>=0);
+  DCASSERT(n<Size());
+  x.Clear();
+  x.rvalue = start + n * inc;
+}
+
+int real_interval::IndexOf(const result &x)
+{
+  if (x.error || x.null || x.infinity) return -1;
+  int i = int((x.rvalue-start)/inc);
+  if (i>=Size()) return -1;
+  if (i<0) return -1;
+  return i;
+}
+
+void real_interval::GetOrder(int n, int &i, result &x)
+{
+  DCASSERT(n>=0);
+  DCASSERT(n<Size());
+  x.Clear();
+  if (inc>0) i = n;
+  else i = Size()-n-1;
+  x.rvalue = start + i * inc;
+}
+
+void real_interval::show(OutputStream &s)
+{
+  s << "{" << start << ".." << stop << ".." << inc << "}";
+}
+
+// ******************************************************************
+// *                                                                *
 // *                     generic_int_set  class                     *
 // *                                                                *
 // ******************************************************************
@@ -191,6 +251,93 @@ void generic_int_set::show(OutputStream &s)
 
 // ******************************************************************
 // *                                                                *
+// *                     generic_real_set class                     *
+// *                                                                *
+// ******************************************************************
+
+/**  A generic set of reals.
+     This can be used to represent the empty set,
+     sets of a single element, and arbitrary sets.
+ */
+class generic_real_set : public set_result {
+  /// Values in the set.  Must be sorted.
+  double* values;
+  /// The order of the values.
+  int* order;
+public:
+  generic_real_set(int s, double* v, int* o);
+  virtual ~generic_real_set(); 
+  virtual void GetElement(int n, result &x);
+  virtual int IndexOf(const result &x);
+  virtual void GetOrder(int n, int &i, result &x);
+  virtual void show(OutputStream &s);
+};
+
+generic_real_set::generic_real_set(int s, double* v, int* o) : set_result(s)
+{
+  values = v;
+  order = o;
+}
+
+generic_real_set::~generic_real_set()
+{
+  delete[] values;
+  delete[] order;
+}
+
+void generic_real_set::GetElement(int n, result &x)
+{
+  DCASSERT(n>=0);
+  DCASSERT(n<Size());
+  x.Clear();
+  x.rvalue = values[n];
+}
+
+int generic_real_set::IndexOf(const result &x)
+{
+  if (x.error || x.null || x.infinity) return -1;
+  // binary search through values
+  int low = 0, high = Size()-1;
+  while (low <= high) {
+    int mid = (low+high)/2;
+    int i = order[mid];
+    DCASSERT(i>=0);
+    DCASSERT(i<Size());
+    if (values[i] == x.rvalue) return i;
+    if (values[i] < x.rvalue) 
+      low = mid+1;
+    else
+      high = mid-1;
+  }
+  return -1;
+}
+
+void generic_real_set::GetOrder(int n, int &i, result &x)
+{
+  DCASSERT(n>=0);
+  DCASSERT(n<Size());
+  i = order[n];
+  DCASSERT(i>=0);
+  DCASSERT(i<Size());
+  x.Clear();
+  x.rvalue = values[i];
+}
+
+void generic_real_set::show(OutputStream &s)
+{
+  s << "{";
+  int i;
+  if (Size()) {
+    s << values[0];
+    for (i=1; i<Size(); i++) s << ", " << values[i];
+  }
+  s << "}";
+}
+
+
+
+// ******************************************************************
+// *                                                                *
 // *                       int_realset  class                       *
 // *                                                                *
 // ******************************************************************
@@ -279,7 +426,7 @@ void int_realset::show(OutputStream &s)
 // *                                                                *
 // ******************************************************************
 
-/** An expression to build an integer set interval.
+/** Base class for expressions to build set interval.
     Those have the form {start..stop..inc}.
     If any of those are null, then we build a null set.
  */
@@ -291,11 +438,37 @@ protected:
 public:
   setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual ~setexpr_interval();
-  virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
+protected:
+  inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
+    x.Clear();
+    start->Compute(0, s);
+    if (s.null || s.error) {
+      x = s;
+      return false;
+    }
+    stop->Compute(0, e);
+    if (e.null || e.error) {
+      x = e;
+      return false;
+    }
+    inc->Compute(0, i);
+    if (i.null || i.error) {
+      x = i;
+      return false;
+    }
+    // special cases here
+    if (s.infinity || e.infinity) {
+      // Print error message here
+      x.error = CE_Undefined;
+      return false;
+    } 
+    return true;
+  }
+  virtual setexpr_interval* MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i) = 0;
 };
 
 setexpr_interval::setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i) : expr(f, l)
@@ -303,6 +476,9 @@ setexpr_interval::setexpr_interval(const char* f, int l, expr* s, expr* e, expr*
   start = s;
   stop = e;
   inc = i;
+  DCASSERT(start);
+  DCASSERT(stop);
+  DCASSERT(inc);
 }
 
 setexpr_interval::~setexpr_interval()
@@ -312,41 +488,156 @@ setexpr_interval::~setexpr_interval()
   Delete(inc);
 }
 
-type setexpr_interval::Type(int i) const
+expr* setexpr_interval::Substitute(int i)
+{
+  //  Is this even used?  Just in case...
+  // 
+  DCASSERT(0==i);
+  DCASSERT(start);
+  DCASSERT(stop);
+  DCASSERT(inc);
+  // keep copying to a minimum...
+  expr* newstart = start->Substitute(0);
+  expr* newstop = stop->Substitute(0);
+  expr* newinc = inc->Substitute(0);
+  // Anything change?
+  if ((newstart==start) && (newstop==stop) && (newinc==inc)) {
+    // Just copy ourself
+    Delete(newstart);
+    Delete(newstop);
+    Delete(newinc);
+    return Copy(this);
+  }
+  // something changed, make a new one
+  return MakeAnother(Filename(), Linenumber(), newstart, newstop, newinc);
+}
+
+int setexpr_interval::GetSymbols(int i, List <symbol> *syms)
+{
+  DCASSERT(0==i);
+  DCASSERT(start);
+  DCASSERT(stop);
+  DCASSERT(inc);
+  int answer = 0;
+  answer = start->GetSymbols(0, syms);
+  answer += stop->GetSymbols(0, syms);
+  answer += inc->GetSymbols(0, syms);
+  return answer;
+}
+
+void setexpr_interval::show(OutputStream &s) const
+{
+  s << start << ".." << stop << ".." << inc;
+}
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                  real_setexpr_interval  class                  *
+// *                                                                *
+// ******************************************************************
+
+/** An expression to build an real set interval.
+ */
+class real_setexpr_interval : public setexpr_interval {
+public:
+  real_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+protected:
+  virtual setexpr_interval* MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i);
+};
+
+real_setexpr_interval::real_setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i)
+ : setexpr_interval(f, l, s, e, i)
+{
+  DCASSERT(s->Type(0)==REAL);
+  DCASSERT(e->Type(0)==REAL);
+  DCASSERT(i->Type(0)==REAL);
+}
+
+type real_setexpr_interval::Type(int i) const
+{
+  DCASSERT(0==i);
+  return SET_REAL;
+}
+
+void real_setexpr_interval::Compute(int n, result &x)
+{
+  DCASSERT(0==n);
+  result s,e,i;
+  if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
+  set_result *xs = NULL;
+  double* values;
+  int* order;
+  if (i.infinity || i.rvalue==0.0) {
+    // that means an interval with just the start element.
+    values = new double[1];
+    order = new int[1];
+    values[0] = s.rvalue;
+    order[0] = 0;
+    xs = new generic_real_set(1, values, order);
+    // print a warning here
+  } else
+  if (((s.rvalue > e.rvalue) && (i.rvalue>0))
+     ||
+     ((s.rvalue < e.rvalue) && (i.rvalue<0))) {
+    // empty interval
+    xs = new generic_real_set(0, NULL, NULL);
+    // print a warning here...
+  } else {
+    // we have an ordinary interval
+    xs = new real_interval(s.rvalue, e.rvalue, i.rvalue);
+  }
+  x.other = xs;
+}
+
+setexpr_interval* real_setexpr_interval::MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i)
+{
+  return new real_setexpr_interval(fn, line, s, e, i);
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                   int_setexpr_interval class                   *
+// *                                                                *
+// ******************************************************************
+
+/** An expression to build an integer set interval.
+ */
+class int_setexpr_interval : public setexpr_interval {
+public:
+  int_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+protected:
+  virtual setexpr_interval* MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i);
+};
+
+int_setexpr_interval::int_setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i)
+ : setexpr_interval(f, l, s, e, i)
+{
+  DCASSERT(s->Type(0)==INT);
+  DCASSERT(e->Type(0)==INT);
+  DCASSERT(i->Type(0)==INT);
+}
+
+type int_setexpr_interval::Type(int i) const
 {
   DCASSERT(0==i);
   return SET_INT;
 }
 
-void setexpr_interval::Compute(int n, result &x)
+void int_setexpr_interval::Compute(int n, result &x)
 {
   DCASSERT(0==n);
-  DCASSERT(start);
-  DCASSERT(stop);
-  DCASSERT(inc);
-  x.Clear();
   result s,e,i;
-  start->Compute(0, s);
-  if (s.null || s.error) {
-    x = s;
-    return;
-  }
-  stop->Compute(0, e);
-  if (e.null || e.error) {
-    x = e;
-    return;
-  }
-  inc->Compute(0, i);
-  if (i.null || i.error) {
-    x = i;
-    return;
-  }
-  // special cases here
-  if (s.infinity || e.infinity) {
-    // Print error message here
-    x.error = CE_Undefined;
-    return;
-  } 
+  if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
   set_result *xs = NULL;
   int* values;
   int* order;
@@ -372,46 +663,10 @@ void setexpr_interval::Compute(int n, result &x)
   x.other = xs;
 }
 
-expr* setexpr_interval::Substitute(int i)
+setexpr_interval* int_setexpr_interval::MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i)
 {
-  //  Is this even used?  Just in case...
-  // 
-  DCASSERT(0==i);
-  DCASSERT(start);
-  DCASSERT(stop);
-  DCASSERT(inc);
-  // keep copying to a minimum...
-  expr* newstart = start->Substitute(0);
-  expr* newstop = stop->Substitute(0);
-  expr* newinc = inc->Substitute(0);
-  // Anything change?
-  if ((newstart==start) && (newstop==stop) && (newinc==inc)) {
-    // Just copy ourself
-    Delete(newstart);
-    Delete(newstop);
-    Delete(newinc);
-    return Copy(this);
-  }
-  // something changed, make a new one
-  return new setexpr_interval(Filename(), Linenumber(), newstart, newstop, newinc);
-}
-
-int setexpr_interval::GetSymbols(int i, List <symbol> *syms)
-{
-  DCASSERT(0==i);
-  DCASSERT(start);
-  DCASSERT(stop);
-  DCASSERT(inc);
-  int answer = 0;
-  answer = start->GetSymbols(0, syms);
-  answer += stop->GetSymbols(0, syms);
-  answer += inc->GetSymbols(0, syms);
-  return answer;
-}
-
-void setexpr_interval::show(OutputStream &s) const
-{
-  s << start << ".." << stop << ".." << inc;
+  return new int_setexpr_interval(fn, line, s, e, i);
 }
 
 // ******************************************************************
@@ -681,11 +936,11 @@ expr*  MakeInterval(const char *fn, int ln, expr* start, expr* stop, expr* inc)
 {
   switch (start->Type(0)) {
     case INT: 
-      return new setexpr_interval(fn, ln, start, stop, inc);
+      return new int_setexpr_interval(fn, ln, start, stop, inc);
 
     case REAL:
       // not done yet
-      return NULL;
+      return new real_setexpr_interval(fn, ln, start, stop, inc);
   }
   return NULL;
 }
