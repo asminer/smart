@@ -130,6 +130,16 @@ print("defined:\n");
 print(myfoo(3,4), "\n");
 
 /* 
+   Default parameters that aren't provided
+*/
+
+print("This is an error:\n");
+int error1 := myfoo(default, 3);
+
+print("This is an error:\n");
+int error2 := myfoo(b:=default, a:=3);
+
+/* 
    Illegal places to define functions
 */
 

@@ -140,27 +140,33 @@ Not yet defined:
 null
 defined:
 7
+This is an error:
+ERROR in file funcs.sm near line 138:
+	No match for myfoo(default, int)
+This is an error:
+ERROR in file funcs.sm near line 141:
+	No match for myfoo(int a, b:=default)
 Trying to define functions in a for loop:
-ERROR in file funcs.sm near line 139:
+ERROR in file funcs.sm near line 149:
 	Function forplus defined within a for/converge
-ERROR in file funcs.sm near line 139:
+ERROR in file funcs.sm near line 149:
 	Unknown identifier: a
-ERROR in file funcs.sm near line 139:
+ERROR in file funcs.sm near line 149:
 	Unknown identifier: b
-ERROR in file funcs.sm near line 140:
+ERROR in file funcs.sm near line 150:
 	Function foriplus defined within a for/converge
-ERROR in file funcs.sm near line 140:
+ERROR in file funcs.sm near line 150:
 	Unknown identifier: a
 Trying to define functions in a converge:
-ERROR in file funcs.sm near line 145:
+ERROR in file funcs.sm near line 155:
 	Function cvgplus defined within a for/converge
-ERROR in file funcs.sm near line 145:
+ERROR in file funcs.sm near line 155:
 	Unknown identifier: x
-ERROR in file funcs.sm near line 145:
+ERROR in file funcs.sm near line 155:
 	Unknown identifier: y
-ERROR in file funcs.sm near line 147:
+ERROR in file funcs.sm near line 157:
 	Function cvgzplus defined within a for/converge
-ERROR in file funcs.sm near line 147:
+ERROR in file funcs.sm near line 157:
 	Unknown identifier: x
 
 
