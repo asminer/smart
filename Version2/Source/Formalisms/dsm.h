@@ -35,12 +35,13 @@ class reachset;  // defined in States/reachset.h
 */
 
 class state_model {
+  int events;
+protected:
   /// Reachable states.
   reachset *statespace; 
   // Reachability graph?
   // Markov chain here?
 
-  int events;
 public:
   state_model(int e);
   virtual ~state_model();

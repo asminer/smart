@@ -6,6 +6,7 @@
 #include "../Base/api.h"
 #include "../Language/api.h"
 #include "../Main/tables.h"
+#include "../States/reachset.h"
 
 #include "dsm.h"
 
@@ -128,6 +129,9 @@ markov_dsm::markov_dsm(char** sn, int ns) : state_model(1)
 {
   statenames = sn;
   numstates = ns;
+
+  statespace = new reachset;
+  statespace->CreateEnumerated(numstates);
 }
 
 markov_dsm::~markov_dsm()
