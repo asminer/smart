@@ -30,7 +30,7 @@ option_const* SOR = &Sor_oc;
 
 // *******************************************************************
 // *                                                                 *
-// *                     Solvers for explicit MCs                    *
+// *               Stationary Solvers  for explicit MCs              *
 // *                                                                 *
 // *******************************************************************
 
@@ -243,7 +243,7 @@ int SSGaussSeidel(double *pi, labeled_digraph <float> *Q, float *h,
 
 
 // *******************************************************************
-// *                           Front  ends                           *
+// *                            Front end                            *
 // *******************************************************************
 
 void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
@@ -277,6 +277,48 @@ void SSSolve(double *pi, labeled_digraph <float> *Q, float *h,
   }
 }
 
+// *******************************************************************
+// *                                                                 *
+// *                  MTTA Solvers  for explicit MCs                 *
+// *                                                                 *
+// *******************************************************************
+
+int MTTAColJacobi(double *n, labeled_digraph <float> *Q, float *h,
+	       sparse_vector <float> *init,
+	       int start, int stop)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting column-wise Jacobi\n";
+    Verbose.flush();
+  }
+  DCASSERT(Q->isTransposed);
+  return 0;
+}
+
+int MTTARowJacobi(double *n, labeled_digraph <float> *Q, float *h,
+	       sparse_vector <float> *init,
+	       int start, int stop)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting row-wise Jacobi\n";
+    Verbose.flush();
+  }
+  DCASSERT(!Q->isTransposed);
+  return 0;
+}
+
+int MTTAGaussSeidel(double *n, labeled_digraph <float> *Q, float *h,
+	       sparse_vector <float> *init,
+	       int start, int stop)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting Gauss-Seidel\n";
+    Verbose.flush();
+  }
+  DCASSERT(Q->isTransposed);
+  return 0;
+}
+
 void MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
 	       sparse_vector <float> *init,
 	       int start, int stop)
@@ -284,6 +326,27 @@ void MTTASolve(double *n, labeled_digraph <float> *Q, float *h,
   DCASSERT(start < stop);
   if (Verbose.IsActive()) {
     Verbose << "Solving n Q = -init\n";
+    Verbose.flush();
+  }
+  int count = 0;
+  if (Solver->GetEnum()==JACOBI) {
+    if (Q->isTransposed) count = MTTAColJacobi(n, Q, h, init, start, stop);
+    else count = MTTARowJacobi(n, Q, h, init, start, stop);
+  } else if (Solver->GetEnum()==GAUSS_SEIDEL) {
+    if (Q->isTransposed) count = MTTAGaussSeidel(n, Q, h, init, start, stop);
+    else {
+      Error.Start();
+      Error << "Gauss-Seidel requires matrix stored by columns\n";
+      Error.Stop();
+      count = 0;
+    }
+  } else {
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad value for option  " << Solver << "\n";
+ 	Internal.Stop();
+  } 
+  if (Verbose.IsActive()) {
+    Verbose << "Finished, " << count << " iterations\n";
     Verbose.flush();
   }
 }
