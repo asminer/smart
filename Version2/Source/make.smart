@@ -5,12 +5,13 @@
 
 all: libs smart
 
-smart: Base/timestamp Language/timestamp Main/timestamp
-	$(CXX) $(SOURCEDIR)/main.cc Base/*.o Language/*.o Main/*.o -lfl -o smart
+smart: Base/timestamp Rng/timestamp Language/timestamp Main/timestamp
+	$(CXX) $(SOURCEDIR)/main.cc Base/*.o Rng/*.o Language/*.o Main/*.o -lfl -o smart
 
 libs:
 	cd Main; make smart.tab.h
 	cd Base; make
+	cd Rng; make
 	cd Language; make
 	cd Main; make
 
@@ -19,6 +20,6 @@ base:
 
 clean:
 	cd Base; make clean
+	cd Rng; make clean
 	cd Language; make clean
 	cd Main; make clean
-	cd Base; make clean
