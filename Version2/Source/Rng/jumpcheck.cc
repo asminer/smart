@@ -6,7 +6,7 @@
 #include "../Base/streams.h"
 #include "rng.h"
 
-const long JUMP = 33554432;
+const long JUMP = 1073741824;
 
 void smart_exit()
 {
