@@ -6,7 +6,7 @@
 #
 
 SOURCES = \
-	graphs.cc
+	graphs.cc	listarray.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

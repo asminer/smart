@@ -13,9 +13,15 @@ CXX = g++
 CPPFLAGS = -g 
 #CPPFLAGS = -O3
 
-EXECS = graphtest
+EXECS = graphtest latest
 
 all: $(EXECS)
+
+latest: latest.o listarray.o streams.o errors.o
+	$(CXX) $(CPPFLAGS) -o latest latest.o streams.o listarray.o errors.o
+
+latest.o: latest.cc listarray.h
+listarray.o: listarray.h listarray.cc
 
 graphtest: graphtest.o graphs.o streams.o errors.o
 	$(CXX) $(CPPFLAGS) -o graphtest graphtest.o streams.o graphs.o errors.o
