@@ -2,6 +2,7 @@
 // $Id$
 
 #include "exprs.h"
+//@Include: exprs.h
 
 /** @name exprs.cc
     @type File
@@ -12,7 +13,6 @@
  */
 
 //@{
-
 
 // ******************************************************************
 // *                                                                *
@@ -52,16 +52,20 @@ public:
   }
   virtual type Type(int i) const {
     CHECK_RANGE(0, i, numitems);
-    return items[i]->Type(0);
+    if (items[i]) return items[i]->Type(0);
+    return VOID;
   }
   virtual void Compute(int i, result &x) const {
     CHECK_RANGE(0, i, numitems);
-    items[i]->Compute(0, x);
+    if (items[i]) items[i]->Compute(0, x);
+    else x.null = true;
   }
   virtual void Sample(long &seed, int i, result &x) const {
     CHECK_RANGE(0, i, numitems);
-    items[i]->Sample(seed, 0, x);
+    if (items[i]) items[i]->Sample(seed, 0, x);
+    else x.null = true;
   }
+  virtual void show(ostream &s) const;
 
 protected:
   virtual void TakeAggregates();
@@ -129,9 +133,15 @@ expr* aggregates::Copy() const
   aggregates *answer = new aggregates();
   answer->numitems = numitems;
   answer->items = new expr* [numitems];
-  for (i=0; i<numitems; i++)
-    answer->items[i] = items[i]->Copy();
+  for (i=0; i<numitems; i++) answer->items[i] = CopyExpr(items[i]);
   return answer;
+}
+
+void aggregates::show(ostream &s) const
+{
+  int i;
+  s << items[0];
+  for (i=1; i<numitems; i++) s << ":" << items[i];
 }
 
 void aggregates::TakeAggregates()
@@ -171,6 +181,10 @@ class boolconst : public expr {
     x.Clear();
     x.bvalue = value;
   }
+
+  virtual void show(ostream &s) const {
+    if (value) s << "true"; else s << "false";
+  }
 };
 
 // ******************************************************************
@@ -201,6 +215,10 @@ class intconst : public expr {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
+  }
+
+  virtual void show(ostream &s) const {
+    s << value;
   }
 };
 
@@ -233,6 +251,51 @@ class realconst : public expr {
     x.Clear();
     x.rvalue = value;
   }
+
+  virtual void show(ostream &s) const {
+    s << value;
+  }
+};
+
+// ******************************************************************
+// *                                                                *
+// *                       stringconst  class                       *
+// *                                                                *
+// ******************************************************************
+
+/** A string constant expression.
+ */
+class stringconst : public expr {
+  char *value;
+  public:
+  stringconst(const char* fn, int line, char *v) : expr (fn, line) {
+    value = v;
+  }
+
+  virtual ~stringconst() {
+    delete[] value;
+  }
+
+  virtual expr* Copy() const { 
+    if (value) return new stringconst(Filename(), Linenumber(), strdup(value)); 
+    return new stringconst(Filename(), Linenumber(), NULL);
+  }
+
+  virtual type Type(int i) const {
+    DCASSERT(0==i);
+    return STRING;
+  }
+
+  virtual void Compute(int i, result &x) const {
+    DCASSERT(0==i);
+    x.Clear();
+    x.other = strdup(value);
+  }
+
+  virtual void show(ostream &s) const {
+    if (value) s << '"' << value << '"';
+    else s << "null string";
+  }
 };
 
 // ******************************************************************
@@ -256,9 +319,10 @@ expr* MakeConstExpr(double c, const char* file, int line)
   return new realconst(file, line, c);
 }
 
-expr* SimpleTypecast(expr *e, type newtype);
-expr* SimpleUnaryOp(int op, expr *opnd);
-expr* SimpleBinaryOr(expr *left, int op, expr *right);
+expr* MakeConstExpr(char *c, const char* file, int line) 
+{
+  return new stringconst(file, line, c);
+}
 
 //@}
 

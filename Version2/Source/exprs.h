@@ -307,8 +307,23 @@ class expr {
 
   /// Required for aggregation.  Used only by aggregates class.
   virtual void TakeAggregates() { ASSERT(0); }
+
+  /// Display the expression to the given output stream.
+  virtual void show(ostream &s) const = 0;
 };
 
+inline ostream& operator<< (ostream &s, expr *e)
+{
+  if (NULL==e) s << "null";
+  else e->show(s);
+  return s;
+}
+
+inline expr* CopyExpr(expr *e)
+{
+  if (NULL==e) return NULL;
+  return e->Copy();
+}
 
 // ******************************************************************
 // *                                                                *
@@ -325,56 +340,10 @@ expr* MakeConstExpr(int c, const char* file=NULL, int line=0);
 /// Build a real constant.
 expr* MakeConstExpr(double c, const char* file=NULL, int line=0);
 
+/// Build a string constant.
+expr* MakeConstExpr(char *c, const char* file=NULL, int line=0);
 
-/** 
-     Build a typecast expression.
-     @param	e		The original expression.
-     @param	newtype		The desired new type.
-     				Specifically, one of:
-				bool, int, real.
-     
-     @return	An expression casting the original one into the new type.
-     		If this is impossible we return NULL.
-		If the original expression has the same type,
-		it is returned unchanged.
-     			
- */
-expr* SimpleTypecast(expr *e, type newtype);
 
-/**
-     Build a unary expression for simple types.
-     The simple types supported are:
-     bool, int, real.
-
-     @param	op	The operator (as defined in smart.tab.h)
-
-     @param	opnd	The operand, already of the proper type.
-
-     @return	The appropriate new expression, or NULL if
-     		we could not build the expression.
-
-     Note: the only unary operators currently are NOT and unary minus.
-*/
-expr* SimpleUnaryOp(int op, expr *opnd);
-
-/**
-     Build a binary expression for simple types.
-     The simple types supported are:
-     bool, int, real.
-
-     @param	left	The left-hand expression.
-
-     @param	op	The operator (as defined in smart.tab.h)
-
-     @param	right	The right-hand expression.
-     			left and right are already typecast, if necessary,
-			to perfectly match (e.g., both reals).
-
-     @return	The appropriate new expression, or NULL if
-     		we could not build the expression.
-
-*/
-expr* SimpleBinaryOp(expr *left, int op, expr *right);
 
 //@}
 

@@ -3,6 +3,29 @@ $Id$
 
 Smart version 2.
 
+Files, and what they define, in a roughly layered sense.
+
+File	  	What's there
+----------	----------------------------------------------------
+types		Definitions of type constants, and some handy 
+		functions (mostly used by the compiler)
+
+exprs		Result class.  Engine information class.
+		Expression class base.
+		Constant bool, int, and real expressions.
+
+options
+
+infinity	Infinity constants.
+
+operators	Unary and binary operator expressions for
+		bool, int, bigint, real, string types.
+
+casting		Type casting operators for
+		bool, int, bigint, real, string types.
+
+
+
 Overview of file structure will go here.
 
 Try changing the structure significantly.
