@@ -166,7 +166,24 @@ public:
 };
 
 
+/**
+  Used for input.
+*/
+class InputStream {
+protected:
+  FILE* deflt;
+  FILE* input;
+public:
+  InputStream(FILE* in);
 
+  void SwitchInput(FILE* in);
+  inline bool IsDefault() { return (input==deflt); }
+
+  // return true on success.
+  inline bool Get(char &x) { x = getc(input); return (x!=EOF); }
+  inline bool Get(int &x) { return (1==fscanf(input, "%d", &x)); }
+  inline bool Get(double &x) { return (1==fscanf(input, "%lf", &x)); }
+};
 
 
 
@@ -179,6 +196,8 @@ extern ErrorStream Error;
 extern ErrorStream Warn;
 extern InternalStream Internal;
 
+// Pre-defined input stream
+extern InputStream Input;
 
 /**
     Initialize the global output streams.

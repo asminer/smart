@@ -371,6 +371,18 @@ void InternalStream::Stop()
 // |                                                                |
 // ==================================================================
 
+InputStream::InputStream(FILE* in)
+{
+  input = deflt = in;
+}
+
+void InputStream::SwitchInput(FILE* in)
+{
+  if (input!=deflt) 
+    fclose(input);
+  if (in) input = in;
+  else input = deflt;
+}
 
 // ==================================================================
 // |                                                                |
@@ -384,6 +396,7 @@ DisplayStream Report(stdout);
 ErrorStream Error("ERROR", stderr);
 ErrorStream Warn("WARNING", stderr);
 InternalStream Internal("INTERNAL", stderr);
+InputStream Input(stdin);
 
 void InitStreams() 
 {
