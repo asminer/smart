@@ -489,11 +489,11 @@ void compute_sqrt(expr **p, int np, result &x)
   x.setError();
 }
 
-void sample_sqrt(long& seed, expr **p, int np, result &x)
+void sample_sqrt(Rng &seed, expr **p, int np, result &x)
 {
   DCASSERT(1==np);
   DCASSERT(p);
-  SafeSample(p[0], 0, seed, x);
+  SafeSample(p[0], seed, 0, x);
 
   if (x.isUnknown() || x.isError() || x.isNull()) return;
 
@@ -586,28 +586,28 @@ void compute_cond(expr **pp, int np, result &x)
   else SafeCompute(pp[2], 0, x);
 }
 
-void sample_cond(long &seed, expr **pp, int np, result &x)
+void sample_cond(Rng &seed, expr **pp, int np, result &x)
 {
   x.Clear();
   DCASSERT(pp);
   DCASSERT(np==3);
   result b;
   b.Clear();
-  SafeSample(pp[0], 0, seed, b);
+  SafeSample(pp[0], seed, 0, b);
   if (b.isNull() || b.isError()) {
     x = b;
     return;
   }
-  if (b.bvalue) SafeSample(pp[1], 0, seed, x);
-  else SafeSample(pp[2], 0, seed, x); 
+  if (b.bvalue) SafeSample(pp[1], seed, 0, x);
+  else SafeSample(pp[2], seed, 0, x); 
 }
 
 const char* conddoc = "If <b> is true, returns <t>; else, returns <f>.";
 
-void AddCond(type t, PtrTable *fns)
+void AddCond(type bt, type t, PtrTable *fns)
 {
   formal_param **pl = new formal_param*[3];
-  pl[0] = new formal_param(BOOL, "b");
+  pl[0] = new formal_param(bt, "b");
   pl[1] = new formal_param(t, "t");
   pl[2] = new formal_param(t, "f");
 
@@ -652,9 +652,11 @@ void InitBuiltinFunctions(PtrTable *t)
   AddExit(t);
   // Conditionals
   type i;
-  for (i=FIRST_SIMPLE; i<=LAST_SIMPLE; i++)	AddCond(i, t);
-  for (i=FIRST_PROC; i<=LAST_PROC; i++)		AddCond(i, t);
-  for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCond(i, t);
+  for (i=FIRST_SIMPLE; i<=PH_REAL; i++)		AddCond(BOOL, i, t);
+  for (i=RAND_BOOL; i<=RAND_REAL; i++)		AddCond(RAND_BOOL, i, t);
+  for (i=PROC_BOOL; i<=PROC_PH_REAL; i++)	AddCond(PROC_BOOL, i, t);
+  for (i=PROC_RAND_BOOL; i<=PROC_RAND_REAL; i++)AddCond(PROC_RAND_BOOL, i, t);
+  for (i=FIRST_VOID; i<=LAST_VOID; i++)		AddCond(BOOL, i, t);
   // Misc
   AddDontKnow(t);
 }
