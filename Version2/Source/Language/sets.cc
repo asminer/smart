@@ -17,7 +17,7 @@
 
 //@{
 
-#define UNION_DEBUG
+//#define UNION_DEBUG
 
 option* index_precision;
 
@@ -430,10 +430,6 @@ void int_realset::show(OutputStream &s)
 // ******************************************************************
 
 
-
-
-
-
 // ******************************************************************
 // *                                                                *
 // *                     setexpr_interval class                     *
@@ -545,80 +541,17 @@ void setexpr_interval::show(OutputStream &s) const
 }
 
 
-
 // ******************************************************************
 // *                                                                *
-// *                  real_setexpr_interval  class                  *
+// *                                                                *
+// *                     integer set expressions                    *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
-
-/** An expression to build an real set interval.
- */
-class real_setexpr_interval : public setexpr_interval {
-public:
-  real_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
-  virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
-protected:
-  virtual setexpr_interval* MakeAnother(const char* fn, int line, 
-  					expr* s, expr* e, expr* i);
-};
-
-real_setexpr_interval::real_setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i)
- : setexpr_interval(f, l, s, e, i)
-{
-  DCASSERT(s->Type(0)==REAL);
-  DCASSERT(e->Type(0)==REAL);
-  DCASSERT(i->Type(0)==REAL);
-}
-
-type real_setexpr_interval::Type(int i) const
-{
-  DCASSERT(0==i);
-  return SET_REAL;
-}
-
-void real_setexpr_interval::Compute(int n, result &x)
-{
-  DCASSERT(0==n);
-  result s,e,i;
-  if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
-  set_result *xs = NULL;
-  double* values;
-  int* order;
-  if (i.infinity || i.rvalue==0.0) {
-    // that means an interval with just the start element.
-    values = new double[1];
-    order = new int[1];
-    values[0] = s.rvalue;
-    order[0] = 0;
-    xs = new generic_real_set(1, values, order);
-    // print a warning here
-  } else
-  if (((s.rvalue > e.rvalue) && (i.rvalue>0))
-     ||
-     ((s.rvalue < e.rvalue) && (i.rvalue<0))) {
-    // empty interval
-    xs = new generic_real_set(0, NULL, NULL);
-    // print a warning here...
-  } else {
-    // we have an ordinary interval
-    xs = new real_interval(s.rvalue, e.rvalue, i.rvalue);
-  }
-  x.other = xs;
-}
-
-setexpr_interval* real_setexpr_interval::MakeAnother(const char* fn, int line, 
-  					expr* s, expr* e, expr* i)
-{
-  return new real_setexpr_interval(fn, line, s, e, i);
-}
 
 
 // ******************************************************************
-// *                                                                *
 // *                   int_setexpr_interval class                   *
-// *                                                                *
 // ******************************************************************
 
 /** An expression to build an integer set interval.
@@ -684,9 +617,7 @@ setexpr_interval* int_setexpr_interval::MakeAnother(const char* fn, int line,
 }
 
 // ******************************************************************
-// *                                                                *
 // *                      intset_element class                      *
-// *                                                                *
 // ******************************************************************
 
 /** Used for a single element set.
@@ -736,9 +667,7 @@ void intset_element::show(OutputStream &s) const
 }
 
 // ******************************************************************
-// *                                                                *
 // *                       intset_union class                       *
-// *                                                                *
 // ******************************************************************
 
 /** A binary operator to handle the union of two integer sets.
@@ -901,9 +830,7 @@ void intset_union::Compute(int i, result &x)
 
 
 // ******************************************************************
-// *                                                                *
 // *                       int2realset  class                       *
-// *                                                                *
 // ******************************************************************
 
 /** A typecast expression from int sets to real sets.
@@ -941,6 +868,296 @@ void int2realset::Compute(int i, result &x)
 // ******************************************************************
 // *                                                                *
 // *                                                                *
+// *                      real  set expressions                     *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+
+// ******************************************************************
+// *                  real_setexpr_interval  class                  *
+// ******************************************************************
+
+/** An expression to build an real set interval.
+ */
+class real_setexpr_interval : public setexpr_interval {
+public:
+  real_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+protected:
+  virtual setexpr_interval* MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i);
+};
+
+real_setexpr_interval::real_setexpr_interval(const char* f, int l, expr* s, expr* e, expr* i)
+ : setexpr_interval(f, l, s, e, i)
+{
+  DCASSERT(s->Type(0)==REAL);
+  DCASSERT(e->Type(0)==REAL);
+  DCASSERT(i->Type(0)==REAL);
+}
+
+type real_setexpr_interval::Type(int i) const
+{
+  DCASSERT(0==i);
+  return SET_REAL;
+}
+
+void real_setexpr_interval::Compute(int n, result &x)
+{
+  DCASSERT(0==n);
+  result s,e,i;
+  if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
+  set_result *xs = NULL;
+  double* values;
+  int* order;
+  if (i.infinity || i.rvalue==0.0) {
+    // that means an interval with just the start element.
+    values = new double[1];
+    order = new int[1];
+    values[0] = s.rvalue;
+    order[0] = 0;
+    xs = new generic_real_set(1, values, order);
+    // print a warning here
+  } else
+  if (((s.rvalue > e.rvalue) && (i.rvalue>0))
+     ||
+     ((s.rvalue < e.rvalue) && (i.rvalue<0))) {
+    // empty interval
+    xs = new generic_real_set(0, NULL, NULL);
+    // print a warning here...
+  } else {
+    // we have an ordinary interval
+    xs = new real_interval(s.rvalue, e.rvalue, i.rvalue);
+  }
+  x.other = xs;
+}
+
+setexpr_interval* real_setexpr_interval::MakeAnother(const char* fn, int line, 
+  					expr* s, expr* e, expr* i)
+{
+  return new real_setexpr_interval(fn, line, s, e, i);
+}
+
+// ******************************************************************
+// *                     realset_element  class                     *
+// ******************************************************************
+
+/** Used for a single element set.
+    (Used when we make those ugly for loops.)
+ */
+class realset_element : public unary {
+public:
+  realset_element(const char* fn, int line, expr* x) 
+    : unary(fn, line, x) { };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(OutputStream &s) const;
+protected:
+  virtual expr* MakeAnother(expr* newopnd) {
+    return new realset_element(Filename(), Linenumber(), newopnd);
+  }
+};
+
+type realset_element::Type(int i) const 
+{
+  DCASSERT(i==0);
+  return SET_REAL;
+}
+
+void realset_element::Compute(int i, result &x)
+{
+  DCASSERT(i==0);
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
+  if (x.error || x.null) return;
+  if (x.infinity) {
+    x.error = CE_Undefined;  // print error message?
+    return;
+  }
+  double* values = new double[1];
+  int* order = new int[1];
+  values[0] = x.rvalue;
+  order[0] = 0;
+   
+  set_result *answer = new generic_real_set(1, values, order);
+  x.other = answer;
+}
+
+void realset_element::show(OutputStream &s) const
+{
+  s << opnd;
+}
+
+// ******************************************************************
+// *                      realset_union  class                      *
+// ******************************************************************
+
+/** A binary operator to handle the union of two real sets.
+    (Used when we make those ugly for loops.)
+ */
+class realset_union : public binary {
+public:
+  realset_union(const char* fn, int line, expr* l, expr* r) 
+    : binary(fn, line, l, r) { };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(OutputStream &s) const { s << left << ", " << right; }
+protected:
+  virtual expr* MakeAnother(expr* newleft, expr* newright) {
+    return new realset_union(Filename(), Linenumber(), newleft, newright);
+  }
+};
+
+type realset_union::Type(int i) const
+{
+  DCASSERT(0==i);
+  return SET_REAL;
+}
+
+void realset_union::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+  x.Clear();
+  result l;
+  left->Compute(0, l); 
+  if (l.error || l.null) {
+    x = l;
+    return;
+  }
+  set_result *ls = (set_result*) l.other;
+  result r;
+  right->Compute(0, r);
+  if (r.error || r.null) {
+    x = r;
+    Delete(ls);
+    return;
+  }
+  set_result *rs = (set_result*) r.other;
+
+  // mark the duplicate elements in rs.
+  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
+  int lp = 0, rp = 0;
+  result lx, rx;
+  int ordl, ordr;
+  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  while (lp<ls->Size() && rp<rs->Size()) {
+    if (lx.rvalue == rx.rvalue) {
+      // Eventually: use IndexPrecision or something for epsilon...
+      rspos[ordr] = 0;  // duplicate
+      lp++;
+      rp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    } else if (lx.rvalue < rx.rvalue) {
+      // advance lp only
+      lp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    } else {
+      // advance rp only
+      rspos[ordr] = 1;  // not duplicate
+      rp++;
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    }
+  }
+  // fill the rest of rspos
+  while (rp<rs->Size()) {
+    rspos[ordr] = 1;
+    rp++;
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  }
+
+  // we have an array of bits for non-duplicates.
+  // translate that into the new positions (by summing).
+  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
+  
+  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
+  
+  int newsize = ls->Size() + rspos[rs->Size()-1];
+
+  set_result *answer;
+
+  if (0==newsize) {
+    // left and right must be empty.
+    answer = new generic_real_set(0, NULL, NULL);
+
+  } else {
+    // we have a non-trivial union.
+
+    // Do a "mergesort"
+    double* values = new double[newsize];
+    int* order = new int[newsize];
+    int optr = 0;
+    lp = 0; rp = 0;
+    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    while (lp<ls->Size() && rp<rs->Size()) {
+      if (lx.rvalue == rx.rvalue) {
+        // this is a duplicate
+        order[optr] = ordl;
+        optr++;
+        values[ordl] = lx.rvalue;
+        lp++;
+        rp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      } else if (lx.rvalue < rx.rvalue) {
+        // copy next element from left
+        order[optr] = ordl;
+        values[ordl] = lx.rvalue;
+        optr++;
+        lp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      } else {
+        // copy next element from right
+        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
+        values[order[optr]] = rx.rvalue;
+        optr++;
+        rp++;
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      }
+    }
+    // At most one of these loops will go
+    while (lp<ls->Size()) {
+      order[optr] = ordl;
+      values[ordl] = lx.rvalue;
+      optr++;
+      lp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    }
+    while (rp<rs->Size()) {
+      order[optr] = rspos[ordr] + ls->Size() - 1;
+      values[order[optr]] = rx.rvalue;
+      optr++;
+      rp++;
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    }
+
+    answer = new generic_real_set(newsize, values, order);
+    
+    // eventually... return buffer
+    delete[] rspos;
+  }
+
+#ifdef UNION_DEBUG
+  Output << "Inside set union\n";
+  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#endif
+  
+  x.other = answer;
+  Delete(ls);
+  Delete(rs);
+}
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
 // *           Global functions  to build set expressions           *
 // *                                                                *
 // *                                                                *
@@ -966,8 +1183,7 @@ expr*  MakeElementSet(const char *fn, int ln, expr* element)
       return new intset_element(fn, ln, element);
 
     case REAL:
-      // not done yet
-      return NULL;
+      return new realset_element(fn, ln, element);
   }
   return NULL;
 }
@@ -979,8 +1195,7 @@ expr*  MakeUnionOp(const char *fn, int ln, expr* left, expr* right)
       return new intset_union(fn, ln, left, right);
 
     case SET_REAL:
-      // not done yet
-      return NULL;
+      return new realset_union(fn, ln, left, right);
   }
   return NULL;
 }
