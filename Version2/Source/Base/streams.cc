@@ -311,6 +311,7 @@ void DisplayStream::flush()
 {
   if (ready) {
     fputs(buffer, display);
+    fflush(display);
     buftop = 0;
     buffer[0] = 0;
   }
