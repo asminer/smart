@@ -3,6 +3,8 @@
 
 // Various integer sets / for loops
 
+int n := null;
+
 print("\nInteger loops\n\n");
 
 print("interval: ");
@@ -45,6 +47,12 @@ print("complex: ");
 for (int i in {12, 13, 1..5, -6..23..3}) {
   print(i, " ");
 };
+print("\n");
+
+print("null: ");
+for (int i in {1..null}) {
+  print(i, " ");
+}
 print("\n");
 
 print("\nReal loops\n\n");

@@ -3,7 +3,7 @@
 	
 /*
 
-Testing the print function
+Testing the new print statement (actually, void function)
 	
 */
 	
@@ -123,6 +123,8 @@ for (int p in {2..7}) {
   print("\n");
 }
 
+print("testing spacing: this is an error","X":5:3,"\n");
+
 print("testing spacing: this","abcdef":5,"should take 6 positions, not 5\n");
 print("testing spacing: this","X":5,"should take 5 positions\n");
 print("testing spacing: this",2:5,"should take 5 positions\n");
@@ -130,5 +132,4 @@ print("testing spacing: this",2.0:5,"should take 5 positions\n");
 print("testing spacing: this",2.0:5:3,"should take 5 positions\n");
 print("testing spacing: this",2.3333333:5:3,"should take 5 positions\n");
 
-print("testing spacing: this is an error","X":5:3,"\n");
 
