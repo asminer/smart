@@ -47,7 +47,7 @@ EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
 NUL DEFAULT TYPE MODIF MODEL 
 
 %type <Type_ID> type model
-%type <Expr> topexpr expr term const_expr function_call
+%type <Expr> topexpr seqexpr expr term const_expr function_call
 model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmts model_var_list
 formal_params formal_indexes pos_params named_params indexes
@@ -69,6 +69,7 @@ formal_params formal_indexes pos_params named_params indexes
 %type <tuple_ids> tupleidlist
 */
 
+%left SEMI
 %left COMMA
 %left COLON
 %nonassoc DOTDOT
@@ -155,7 +156,7 @@ statement
         |       opt_header const_expr ENDPND 
 {
 #ifdef PARSE_TRACE
-  Output << "Reducing statement : opt_header topexpr ENDPND\n";
+  Output << "Reducing statement : opt_header const_expr ENDPND\n";
   Output.flush();
 #endif
   $$ = BuildOptionStatement($1, $2);
@@ -607,6 +608,13 @@ topexpr
 #endif
   $$ = BuildAggregate($1);
 }
+	|	seqexpr
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing topexpr : seqexpr\n";
+  Output.flush();
+#endif
+}
 	;
 
 
@@ -790,6 +798,24 @@ aggexpr
   Output.flush();
 #endif
   $$ = StartAggregate($1, $3);
+}
+        ;
+
+
+seqexpr 
+	:	seqexpr SEMI expr
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing seqexpr : seqexpr SEMI expr\n";
+  Output.flush();
+#endif
+}
+        |       expr SEMI expr
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing seqexpr : expr SEMI expr\n";
+  Output.flush();
+#endif
 }
         ;
 
