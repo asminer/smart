@@ -1,0 +1,42 @@
+#!/bin/csh
+
+#
+# $Id$ 
+#
+# Using the appropriate version of SMART, we compile a
+# test program and compare the output.  If there is a compile
+# error or different output, a message is displayed
+#
+# Usage:  TestOne program color
+
+#
+#  Fancy stuff, copied from linux startup scripts!
+#
+
+set     OK='echo . . . . . . . . . . . . . . . . . . OK'
+set CHANGE='echo =======>>> CHANGE'
+set FAILED='echo FAILED'
+set SMART="../$SMART_PLATFORM/smart"
+if ( $2 ) then
+    set OK='/bin/echo -e [52G [1;32m OK [0;39m'
+    set CHANGE='/bin/echo -e [50G [1;33m CHANGE [0;39m'
+    set FAILED='/bin/echo -e [50G [1;31m FAILED [0;39m'
+endif 
+
+echo -n "  $1  "
+rm -f /tmp/smarttest
+set LINE1='cond(ErrorFile("/tmp/smarttest"),null,exit(1));'
+set LINE2='cond(OutputFile("/tmp/smarttest"),null,exit(1));'
+if ( {(echo $LINE1 $LINE2 | $SMART - $1)} ) then
+    if ( {(diff -B $1.out /tmp/smarttest >! $1.diffs)} ) then
+      $OK
+      rm -f $1.diffs
+    else
+      $CHANGE
+      echo "        Output has changed, differences written to $1.diffs"
+    endif
+else 
+    $FAILED
+    echo "        Compile failed, output written to $1.test"
+    cp -f /tmp/smarttest $1.test
+endif

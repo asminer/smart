@@ -34,6 +34,13 @@
 const int NOT_FOUND = -1;
 const int UNKNOWN = -1;
 
+// Exit codes
+
+const int NORMAL_EXIT = 0;
+const int FATAL_ERROR = 1;
+const int INTERNAL_ERROR = 2;
+const int SMART_PANIC = 3;
+
 // Handy Macros
 
 /// Standard MAX "macro".
@@ -99,8 +106,6 @@ template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
 #else
   #define CHECK_RANGE(MIN, VALUE, MAX)
 #endif
-
-#define EXIT(X) exit(X)
 
 #endif
 
