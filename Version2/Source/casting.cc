@@ -69,10 +69,8 @@ protected:
 void determ2rand::Sample(long &, int i, result &x) 
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
-  if (x.error) {
-    // Do error tracing here?
-  }
+  DCASSERT(opnd);
+  opnd->Compute(0, x); 
 }
 
 // ******************************************************************
@@ -99,11 +97,10 @@ protected:
 void bool2procbool::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
 
-  // Trace errors?
-  if (x.error) return;
-  if (x.null) return;
+  if (x.error || x.null) return;
 
   DCASSERT(false==x.infinity);  // Can this fail?
 
@@ -135,9 +132,9 @@ protected:
 void bool2procrandbool::Sample(long &seed, int i, result &x)
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  DCASSERT(opnd);
+  opnd->Compute(0, x); 
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 
@@ -170,9 +167,9 @@ protected:
 void int2real::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  DCASSERT(opnd);
+  opnd->Compute(0, x); 
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
   if (x.infinity) return;
@@ -206,9 +203,9 @@ protected:
 void int2procint::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
 
@@ -246,9 +243,9 @@ protected:
 void real2int::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  if (opnd) opnd->Compute(0, x); else x.null = true;
+  DCASSERT(opnd);
+  opnd->Compute(0, x); 
 
-  // Trace errors?
   if (x.error) return;
   if (x.null) return;
   if (x.infinity) return;
