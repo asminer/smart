@@ -1,0 +1,17 @@
+
+# $Id$
+
+# overall makefile (stub)
+
+smart: language main
+	$(CXX) $(SOURCEDIR)/main.cc Language/*.o Main/*.o -o smart
+
+language:
+	cd Language; make
+
+main:
+	cd Main; make
+
+clean:
+	cd Language; make clean
+	cd Main; make clean
