@@ -394,6 +394,11 @@ expr* BuildUnary(int op, expr* opnd)
   return MakeUnaryOp(op, opnd, filename, lexer.lineno());
 }
 
+/**  Performs type promotion for left and right operators
+     as necessary for the given operator.
+     If this is impossible, return false.
+     If we are successful, return true.
+*/
 bool PromoteForOp(expr* &left, int op, expr* &right)
 {
   DCASSERT(left);
@@ -591,6 +596,99 @@ bool PromoteForOp(expr* &left, int op, expr* &right)
 	return false;
 
     // ========================================================
+    case RAND_BOOL:
+	switch (op) {
+	  case OR:
+	  case AND:
+	  case EQUALS:
+	  case NEQUAL:
+		switch (rt) {
+		  case BOOL:
+		  	// promote right
+			right = MakeTypecast(right, lt, file, line);
+			return true;
+		  case RAND_BOOL:	
+			return true;
+		  case PROC_BOOL:
+		  case PROC_RAND_BOOL:
+		  	// promote left
+			left = MakeTypecast(left, rt, file, line);
+		  	return true;
+		}
+	} // end of switch op for rand bool
+	return false;
+
+    // ========================================================
+    case RAND_INT:
+    	switch (op) {
+	  case PLUS:
+	  case MINUS:
+	  case TIMES:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+		  case PH_INT:
+		  	// promote right
+			right = MakeTypecast(right, lt, file, line);
+			return true;
+
+		  case RAND_INT:
+		  	return true;
+
+		  case RAND_REAL:
+		  case PROC_INT:
+		  case PROC_REAL:
+		  case PROC_RAND_INT:
+		  case PROC_RAND_REAL:
+		  	// promote left
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		}
+	} // end of switch op for rand int
+	return false;
+
+    // ========================================================
+    case RAND_REAL:
+    	switch (op) {
+	  case PLUS:
+	  case MINUS:
+	  case TIMES:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+		  case REAL:
+		  case EXPO:
+		  case PH_INT:
+		  case PH_REAL:
+		  case RAND_INT:
+		  	// promote right
+			right = MakeTypecast(right, lt, file, line);
+			return true;
+
+		  case RAND_REAL:
+		  	return true;
+
+		  case PROC_REAL:
+		  case PROC_RAND_REAL:
+		  	// promote left
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
+		}
+	} // end of switch op for rand int
+	return false;
+
   }
 
   return false;
