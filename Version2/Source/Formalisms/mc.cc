@@ -24,6 +24,7 @@
 /** A discrete-state model (internel representation) for Markov chains.
 */
 class markov_dsm : public state_model {
+  bool discrete;
 public:
   model_var** statenames;
   int numstates;
@@ -32,16 +33,22 @@ public:
 public:
   /** Constructor.
 	@param	name	Model name
+	@param	disc	Is it discrete?  (otherwise, continuous)
 	@param	sn	Array of states
 	@param	ns	Number of states
 	@param	a	P or R matrix.
 	@param  p0	Initial distribution
   */
-  markov_dsm(const char* name, model_var** sn, int ns, 
+  markov_dsm(const char* name, bool disc, model_var** sn, int ns, 
 	     classified_chain <float> *a,
              sparse_vector <float> *p0);
 
   virtual ~markov_dsm();
+
+  // handy stuff
+
+  inline bool isDiscrete() const { return discrete; }
+  inline bool isContinuous() const { return !discrete; }
 
   // required stuff:
 
@@ -54,6 +61,9 @@ public:
   virtual expr* EnabledExpr(int e) { return NULL; } // fix later
   virtual expr* NextStateExpr(int e) { return NULL; } // fix later
   virtual expr* EventDistribution(int e) { return NULL; } // fix later
+  virtual type EventDistributionType(int e) { 
+    return (discrete) ? INT : EXPO;
+  }
 
 };
 
@@ -61,18 +71,22 @@ public:
 // *                       markov_dsm methods                       *
 // ******************************************************************
 
-markov_dsm::markov_dsm(const char *name, model_var **sn, int ns, 
+markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns, 
 		       classified_chain <float> *a, sparse_vector <float> *p0) 
 : state_model(name, 1)
 {
+  discrete = disc;
   statenames = sn;
   numstates = ns;
   arcs = a;
   initial = p0;
+  proctype = (discrete) ? Proc_Dtmc : Proc_Ctmc;
   statespace = new reachset;
   statespace->CreateEnumerated(numstates);
 #ifdef DEBUG_MC
-  Output << "Built Markov chain state model " << name << "\n";
+  Output << "Built ";
+  if (discrete) Output << "DTMC"; else Output << "CTMC";
+  Output << " state model " << name << "\n";
   int i;
   Output << "States:\n";
   for (i=0; i<ns; i++) {
@@ -277,7 +291,9 @@ state_model* markov_model::BuildStateModel()
 
     foo->DoneRenumbering();
   }
-  return new markov_dsm(Name(), states, numstates, foo, initial);
+  DCASSERT((Type(0) == DTMC) || (Type(0) == CTMC));
+  bool discrete = (Type(0) == DTMC);
+  return new markov_dsm(Name(), discrete, states, numstates, foo, initial);
 }
 
 // ******************************************************************

@@ -25,6 +25,21 @@
 
 class reachset;  // defined in States/reachset.h
 
+enum Process_type {
+  /// Placeholder; we don't know yet
+  Proc_Unknown,
+  /// No timing information on events
+  Proc_None,
+  /// Discrete-time Markov chain
+  Proc_Dtmc,
+  /// Continuous-time Markov chain
+  Proc_Ctmc,
+  // other types, for Rob?
+
+  /// General stochastic process (use simulation)
+  Proc_General
+};
+
 /** Meta-model class.
     
     For explicit models such as Markov chains, we supply full functionality
@@ -38,6 +53,8 @@ class state_model {
   int events;
   const char* name; 
 public:  // for now at least
+  /// Type of the underlying process
+  Process_type proctype;
   /// Reachable states.
   reachset *statespace; 
   // Reachability graph?
@@ -92,9 +109,10 @@ public:
   }
 
   /** Build an expression that determines an event's firing distribution.
-      The expression can be of type "proc T", where T can be any of
-         int, real, ph int, ph real, expo, rand int, rand real.
+      See EventDistributionType for the possible types of this expression.
       The expression may assume that the event is enabled.
+      If the event has no assigned distribution (e.g., for model checking)
+      	then NULL should be returned.
       Note: this effectively assumes that the occurrence of the event
             in a given state can lead to at most one new state;
 	    if this is not the case, the expression ERROR should be
@@ -102,6 +120,20 @@ public:
   */
   virtual expr* EventDistribution(int e) = 0;
 
+  /** Just return the type of an event's firing distribution.
+      (assuming the event is enabled)
+      If the distribution depends on the state, then the type will be
+      "proc T", otherwise it is simply "T", where T can be any of
+         int, real, ph int, ph real, expo, rand int, rand real.
+      If the event has no assigned distribution (e.g., for model checking)
+      	then VOID should be returned.
+      Note: this effectively assumes that the occurrence of the event
+            in a given state can lead to at most one new state;
+	    if this is not the case, then NO_SUCH_TYPE should be returned.
+  */
+  virtual type EventDistributionType(int e) = 0;
+
+  void DetermineProcessType();
 };
 
 OutputStream& operator<< (OutputStream &s, state_model *m);

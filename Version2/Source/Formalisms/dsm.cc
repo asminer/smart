@@ -27,12 +27,21 @@ state_model::state_model(const char* n, int e)
   name = n;
   statespace = NULL;
   events = e;
+  proctype = Proc_Unknown;
 }
 
 state_model::~state_model()
 {
   // Do NOT delete name, we are sharing it
   delete statespace;
+}
+
+void state_model::DetermineProcessType()
+{
+  if (proctype != Proc_Unknown) return;
+  // some stuff here
+
+  proctype = Proc_General;
 }
 
 //@}
