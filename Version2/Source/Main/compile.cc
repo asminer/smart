@@ -271,17 +271,53 @@ expr* BuildAggregate(void* x)
 
 expr* BuildArrayCall(const char* n, void* ind)
 {
+  List <expr> *foo = (List <expr> *)ind;
   // find symbol table entry
   array* entry = (array*) (Arrays->FindName(n));
   if (NULL==entry) {
     Error.Start(filename, lexer.lineno());
     Error << "Unknown array " << n;
     Error.Stop();
+    delete foo;
     return NULL;
   }
   // check type, dimension of indexes
-  
+  int size = foo->Length();
+  int i;
+  array_index **il;
+  int dim;
+  entry->GetIndexList(il, dim);
+  if (size!=dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Array " << n << " has dimension " << dim;
+    Error.Stop();
+    delete foo;
+    return NULL;
+  }
+  // types
+  for (i=0; i<dim; i++) {
+    expr* me = foo->Item(i);
+    if (!Promotable(me->Type(0), il[i]->Type(0))) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " expects type ";
+      Error << GetType(il[i]->Type(0));
+      Error << " for index " << il[i]->Name();
+      Error.Stop();
+      delete foo;
+      return NULL;
+    }
+  }
 
+  // Ok, build the array call
+  expr** pass = new expr*[dim];
+  for (i=0; i<dim; i++) {
+    expr* x = foo->Item(i);
+    Optimize(0, x);
+    pass[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
+  }
+  delete foo;
+  expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
+  return answer;
 }
 
 // ==================================================================
@@ -481,9 +517,8 @@ array* BuildArray(type t, char*n, void* list)
   }
 
   // Build "copies" of iterators 
-  array_index **il = new array_index*[dim];
+  array_index **il = Iterators->Copy();
   for (i=0; i<dim; i++) {
-    il[i] = Iterators->Item(i);
     Copy(il[i]);  // increment counter
   }
 
