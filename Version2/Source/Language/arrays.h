@@ -69,6 +69,11 @@ public:
     else current = (set_result*) x.other;
   }
 
+  inline void DoneCurrent() {
+    Delete(current);
+    current = NULL;
+  }
+
   /// Copy the current range of values.
   inline set_result* CopyCurrent() {
     return Copy(current);

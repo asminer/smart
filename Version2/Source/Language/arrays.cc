@@ -521,6 +521,7 @@ void forstmt::Execute(int d)
     do {
       Execute(d+1);
     } while (index[d]->NextValue());
+    index[d]->DoneCurrent();
   }
 }
 
@@ -537,6 +538,7 @@ void forstmt::InitialGuess(int d)
     do {
       InitialGuess(d+1);
     } while (index[d]->NextValue());
+    index[d]->DoneCurrent();
   }
 }
 
@@ -554,6 +556,7 @@ bool forstmt::HasConverged(int d)
     do {
       if (!HasConverged(d+1)) return false;
     } while (index[d]->NextValue());
+    index[d]->DoneCurrent();
   }
   return true;
 }
@@ -571,6 +574,7 @@ void forstmt::Affix(int d)
     do {
       Affix(d+1);
     } while (index[d]->NextValue());
+    index[d]->DoneCurrent();
   }
 }
 

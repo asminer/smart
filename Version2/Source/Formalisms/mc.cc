@@ -271,7 +271,6 @@ model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
   wdgraph->AddNode();
   model_var* s = new model_var(fn, l, t, n);
   s->SetIndex(ndx);
-  Copy(s);  // hack
   statelist->Append(s);
 #ifdef DEBUG_MC
   Output << "\tModel " << Name() << " created state " << s << " index " << ndx << "\n"; 
