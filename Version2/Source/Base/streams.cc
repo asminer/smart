@@ -151,6 +151,20 @@ void OutputStream::Put(int data)
   DCASSERT(buffer[buftop]==0);
 }
 
+void OutputStream::Put(long data)
+{
+  if (ready) {
+    int size = snprintf(bufptr(), bufspace(), "%ld", data);
+    if (size>=bufspace()) { // there wasn't enough space
+      ExpandBuffer(buftop+size+1);
+      size = snprintf(bufptr(), bufspace(), "%ld", data);
+      DCASSERT(size < bufspace());
+    }
+    buftop += size;
+  }
+  DCASSERT(buffer[buftop]==0);
+}
+
 void OutputStream::PutHex(unsigned int data)
 {
   if (ready) {

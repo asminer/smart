@@ -39,6 +39,7 @@ public:
   void Put(bool data);
   void Put(char data);
   void Put(int data);
+  void Put(long data);
   void PutHex(unsigned int data);
   void Put(float data);
   void Put(double data);
@@ -68,6 +69,12 @@ inline OutputStream& operator<< (OutputStream& s, char data)
 }
 
 inline OutputStream& operator<< (OutputStream& s, int data) 
+{
+  s.Put(data);
+  return s;
+}
+
+inline OutputStream& operator<< (OutputStream& s, long data) 
 {
   s.Put(data);
   return s;
