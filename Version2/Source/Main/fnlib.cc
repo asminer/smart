@@ -845,18 +845,83 @@ void sample_equilikely(Rng &strm, expr **pp, int np, result &x)
   equilikely_sample(strm, a, b, x, pp[0]);
 }
 
+void rand_sample_equilikely(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeSample(pp[0], strm, 0, a);
+  SafeSample(pp[1], strm, 0, b);
+  equilikely_sample(strm, a, b, x, pp[0]);
+}
+
+void proc_sample_equilikely(Rng &strm, const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeCompute(pp[0], m, 0, a);
+  SafeCompute(pp[1], m, 0, b);
+  equilikely_sample(strm, a, b, x, pp[0]);
+}
+
+void proc_rand_sample_equilikely(Rng &strm, const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeSample(pp[0], strm, m, 0, a);
+  SafeSample(pp[1], strm, m, 0, b);
+  equilikely_sample(strm, a, b, x, pp[0]);
+}
+
+
 void AddEquilikely(PtrTable *fns)
 {
   const char* helpdoc = "Distribution: integers [a..b] with equal probability";
+  formal_param **pl;
+  internal_func *p;
 
-  formal_param **pl = new formal_param*[2];
+  // Deterministic parameter version
+  pl = new formal_param*[2];
   pl[0] = new formal_param(INT, "a");
   pl[1] = new formal_param(INT, "b");
-  internal_func *p = new internal_func(PH_INT, "equilikely", 
+  p = new internal_func(PH_INT, "equilikely", 
   	NULL, // Add a function here to return a phase int
 	sample_equilikely, // function for sampling
 	pl, 2, helpdoc);
   InsertFunction(fns, p);
+
+  // Random parameter version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(RAND_INT, "a");
+  pl[1] = new formal_param(RAND_INT, "b");
+  p = new internal_func(RAND_INT, "equilikely", 
+  	NULL, 
+	rand_sample_equilikely, 
+	pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc parameter version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_INT, "a");
+  pl[1] = new formal_param(PROC_INT, "b");
+  p = new internal_func(PROC_PH_INT, "equilikely", 
+  	NULL,  // add ph-int version
+	proc_sample_equilikely, 
+	pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc rand parameter version
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_RAND_INT, "a");
+  pl[1] = new formal_param(PROC_RAND_INT, "b");
+  p = new internal_func(PROC_RAND_INT, "equilikely", 
+  	NULL,  
+	proc_rand_sample_equilikely, 
+	pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
 }
 
 // ********************************************************
@@ -900,15 +965,69 @@ void sample_geometric(Rng &strm, expr **pp, int np, result &x)
   geometric_sample(strm, x, pp[0]);
 }
 
+void rand_sample_geometric(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeSample(pp[0], strm, 0, x);
+  geometric_sample(strm, x, pp[0]);
+}
+
+void proc_sample_geometric(Rng &strm, const state& m, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], m, 0, x);
+  geometric_sample(strm, x, pp[0]);
+}
+
+void proc_rand_sample_geometric(Rng &strm, const state& m, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeSample(pp[0], strm, m, 0, x);
+  geometric_sample(strm, x, pp[0]);
+}
+
 void AddGeometric(PtrTable *fns)
 {
   const char* helpdoc = "Geometric distribution: Pr(X=x) = (1-p)*p^x";
+  formal_param **pl;
+  internal_func *p;
 
-  formal_param **pl = new formal_param*[1];
+  // Deterministic version
+  pl = new formal_param*[1];
   pl[0] = new formal_param(REAL, "p");
-  internal_func *p = new internal_func(PH_INT, "geometric", 
+  p = new internal_func(PH_INT, "geometric", 
   	NULL, // Add a function here to return a phase int
 	sample_geometric, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // Random version
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(RAND_REAL, "p");
+  p = new internal_func(RAND_INT, "geometric", 
+  	NULL, 
+	rand_sample_geometric, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc version
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(PROC_REAL, "p");
+  p = new internal_func(PROC_PH_INT, "geometric", 
+  	NULL,  // add phase here
+	proc_sample_geometric, // function for sampling
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc-rand version
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(PROC_RAND_REAL, "p");
+  p = new internal_func(PROC_RAND_INT, "geometric", 
+  	NULL, 
+	proc_rand_sample_geometric, // function for sampling
 	pl, 1, helpdoc);
   InsertFunction(fns, p);
 }
@@ -964,15 +1083,72 @@ void sample_uniform(Rng &strm, expr **pp, int np, result &x)
   uniform(strm, a, b, x, pp[0]);
 }
 
+void rand_sample_uniform(Rng &strm, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeSample(pp[0], strm, 0, a);
+  SafeSample(pp[0], strm, 0, b);
+  uniform(strm, a, b, x, pp[0]);
+}
+
+void proc_sample_uniform(Rng &strm, const state& m, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeCompute(pp[0], m, 0, a);
+  SafeCompute(pp[0], m, 0, b);
+  uniform(strm, a, b, x, pp[0]);
+}
+
+void proc_rand_sample_uniform(Rng &strm, const state& m, expr **pp, int np, result &x)
+{
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  result a,b;
+  SafeSample(pp[0], strm, m, 0, a);
+  SafeSample(pp[0], strm, m, 0, b);
+  uniform(strm, a, b, x, pp[0]);
+}
+
 void AddUniform(PtrTable *fns)
 {
   const char* helpdoc = "Uniform distribution: reals between (a,b) with equal probability";
+  formal_param **pl;
+  internal_func *p;
 
-  formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(INT, "a");
-  pl[1] = new formal_param(INT, "b");
-  internal_func *p = new internal_func(RAND_REAL, "uniform", 
+  // Deterministic params
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(REAL, "a");
+  pl[1] = new formal_param(REAL, "b");
+  p = new internal_func(RAND_REAL, "uniform", 
 	NULL, sample_uniform, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Random params
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(RAND_REAL, "a");
+  pl[1] = new formal_param(RAND_REAL, "b");
+  p = new internal_func(RAND_REAL, "uniform", 
+	NULL, rand_sample_uniform, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc params
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_REAL, "a");
+  pl[1] = new formal_param(PROC_REAL, "b");
+  p = new internal_func(PROC_RAND_REAL, "uniform", 
+	NULL, proc_sample_uniform, pl, 2, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc-rand params
+  pl = new formal_param*[2];
+  pl[0] = new formal_param(PROC_RAND_REAL, "a");
+  pl[1] = new formal_param(PROC_RAND_REAL, "b");
+  p = new internal_func(PROC_RAND_REAL, "uniform", 
+	NULL, proc_rand_sample_uniform, pl, 2, helpdoc);
   InsertFunction(fns, p);
 }
 
@@ -987,14 +1163,33 @@ void compute_expo(expr **pp, int np, result &x)
   SafeCompute(pp[0], 0, x);
 }
 
+void proc_compute_expo(const state& m, expr **pp, int np, result &x)
+{
+  DCASSERT(1==np);
+  DCASSERT(pp);
+  SafeCompute(pp[0], m, 0, x);
+}
+
 void AddExpo(PtrTable *fns)
 {
   const char* helpdoc = "Exponential distribution with rate lambda";
+  formal_param **pl;
+  internal_func *p;
 
-  formal_param **pl = new formal_param*[1];
+  // Deterministic param
+  pl = new formal_param*[1];
   pl[0] = new formal_param(REAL, "lambda");
-  internal_func *p = new internal_func(EXPO, "expo", 
+  p = new internal_func(EXPO, "expo", 
 	compute_expo, 
+	NULL, // sampling is handled in casting.cc
+	pl, 1, helpdoc);
+  InsertFunction(fns, p);
+
+  // Proc. param
+  pl = new formal_param*[1];
+  pl[0] = new formal_param(PROC_REAL, "lambda");
+  p = new internal_func(PROC_EXPO, "expo", 
+	proc_compute_expo, 
 	NULL, // sampling is handled in casting.cc
 	pl, 1, helpdoc);
   InsertFunction(fns, p);
