@@ -20,3 +20,16 @@ For more information, see the Web page for the package, at:
 or
 
 	http://www.lasr.cs.ucla.edu/geoff/mtwist.html
+
+
+About rng:
+
+Very thin wrapper around the mtwist package.  Basically we want 
+Uniform (0,1) but mtwist provides Uniform [0,1) so we discard 0.
+Also there is a mechanism to jump the state ahead for use with 
+multiple streams.
+
+All the other files:
+
+Used to compute jump multipliers and test them; not compiled into smart.
+

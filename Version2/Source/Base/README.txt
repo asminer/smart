@@ -14,6 +14,8 @@ types		Definitions of type constants, and some handy
 		functions (mostly used by the compiler)
 
 options		Options, which require types and strings.
+
+timers		A handy class for measuring CPU usage
 		
 api		Front end
 
