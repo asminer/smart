@@ -49,5 +49,6 @@ int main(int argc, char** argv)
   Output << A.Distinct() << " distinct / ";
   Output << nnz << " nonzeroes\n";
   MatrixStats();
+
   return 0;
 }

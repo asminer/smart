@@ -338,8 +338,10 @@ bitmatrix* cache_mult(bitmatrix *b, bitmatrix *c)
   if (NULL==c) return NULL;
 
   // special case (keeps cache down)
+  /*
   if (b == IDENTITY) return c;
   if (c == IDENTITY) return b;
+  */
    
   bitmatrix *answer;
   if (CacheHit(b, c, answer)) return answer;
@@ -562,7 +564,14 @@ void shared_matrix::read(InputStream &s)
   for (i=1; i<subcnt; i++) {
     map[i] = matrix_pile.NewObject();
     bool ok = map[i]->read(s);
+    if (!ok) {
+      Internal.Start(__FILE__, __LINE__);
+      Internal << "Error reading file\n";
+      Internal.Stop();
+      return;
+    }
     map[i] = Reduce(map[i]);
+    map[i]->ptrcount++;  // prevent this from being removed
   }
   int j;
   for (i=0; i<N; i++) for (j=0; j<N; j++) ptrs[i][j] = NULL;
@@ -572,6 +581,10 @@ void shared_matrix::read(InputStream &s)
     s.Get(which);
     SetPtr(i, j, map[which]);
   }
+ 
+  // adjust ptrcounts
+  for (i=1; i<subcnt; i++) map[i]->ptrcount--;
+  
   delete[] map;
 }
 
@@ -580,11 +593,11 @@ int shared_matrix::Distinct()
   int d = 0;
   int i,j;
   for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j])
-    ptrs[i][j]->flag = false;
+    ptrs[i][j]->flag = 0;
   for (i=0; i<N; i++) for (j=0; j<N; j++) if (ptrs[i][j]) {
     if (ptrs[i][j]->flag) continue;
     d++;
-    ptrs[i][j]->flag = true;
+    ptrs[i][j]->flag = 1;
   }
   return d;
 }
@@ -608,6 +621,16 @@ int shared_matrix::Multiply(shared_matrix *b, shared_matrix *c)
   } // for i
   return nnz;
 }  
+
+int shared_matrix::CheckShift(shared_matrix *b)
+{
+  int cnt = 0;
+  int i,j;
+  for (i=0; i<N; i++) for (j=1; j<N; j++)
+    if (b->ptrs[i][j-1] != ptrs[i][j]) 
+      cnt++;
+  return cnt;
+}
 
 // ------------------------------------------------------------------
 //    Good old memory-hoggin' explicit

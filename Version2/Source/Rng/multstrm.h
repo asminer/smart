@@ -26,8 +26,11 @@ struct bitmatrix {
 
   inline void vm_mult(unsigned long v, unsigned long &answer) {
     if (0==v) return;
-    for (int b=31; b>=0; b--) if (row[b])
-      if (v & mask[b]) answer ^= row[b];
+    // for (int b=0; b<32; b++) 
+    for (int b=31; b>=0; b--)
+      if (row[b])
+        if (v & mask[b]) 
+	  answer ^= row[b];
   }
 
   void show(OutputStream &s) {
@@ -121,6 +124,8 @@ public:
 
   /// this = b * c, returns #nonzeroes
   int Multiply(shared_matrix *b, shared_matrix *c);
+
+  int CheckShift(shared_matrix *a);
   
 protected:
   inline void SetPtr(int i, int j, bitmatrix* m) {
