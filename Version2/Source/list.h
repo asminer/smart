@@ -63,6 +63,18 @@ public:
     return data[n]; 
   }
 
+  void InsertAt(int n, void* x) {
+    DCASSERT(n>=0);
+    DCASSERT(n<=last);
+    DCASSERT(data);
+    if (last >= size) Resize(2*size);
+    for (int i = last; i>n; i--) {
+      data[i] = data[i-1];
+    }
+    data[n] = x;
+    last++;
+  }
+
   void Append(void* x) {
     if (last>=size) Resize(2*size);
     data[last] = x;
@@ -98,6 +110,7 @@ public:
   inline DATA* Item(int n) const { return static_cast<DATA*>(p->Item(n)); }
   inline void Append(DATA *x) { p->Append(x); }
   inline void Append(List <DATA> *x) { if (x) { p->Append(x->p); delete x; } }
+  inline void InsertAt(int n, DATA* x) { p->InsertAt(n, x); }
   inline void Clear() { p->Clear(); }
 };
 
