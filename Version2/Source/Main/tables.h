@@ -34,12 +34,7 @@ public:
     void Set(const char *n, void *x) { name = n; ptr = x; }
   };
 protected:
-  void Traverse(PtrSplay::node *root, tablevisit visit) {
-	if (NULL==root) return;
-	Traverse(root->left, visit);
-	visit(root->data);
-  	Traverse(root->right, visit);
-  }
+  void Traverse(PtrSplay::node *root, tablevisit visit);
 protected:
   SplayWrap <splayitem> *splaywrapper; 
   PtrSplay::node *root;
@@ -49,18 +44,13 @@ protected:
 public:
   PtrTable();
   ~PtrTable();
-  inline bool ContainsName(const char* n) {
-    splayitem tmp(n, NULL);
-    return (0==splaywrapper->Splay(root, &tmp));
-  }
+  bool ContainsName(const char* n);
   void* FindName(const char* n);
   bool ReplaceNull(const char* n, void *p);
   void AddNamePtr(const char* n, void *p);
-  void Traverse(tablevisit visit) { Traverse(root, visit); }
-  int NameCount() const { return node_count; }
+  inline void Traverse(tablevisit visit) { Traverse(root, visit); }
+  inline int NameCount() const { return node_count; }
 };
-
-int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
 
 /**
     Add function f to the list of functions with that name, to table t.

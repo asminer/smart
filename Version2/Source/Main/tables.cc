@@ -7,6 +7,9 @@
 
 //#define TABLE_DEBUG
 
+int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
+
+
 // ==================================================================
 // |                       PtrTable  methods                        |
 // ==================================================================
@@ -25,6 +28,20 @@ PtrTable::~PtrTable()
   delete splaywrapper;
   delete splay_pile;
   delete node_pile;
+}
+
+void PtrTable::Traverse(PtrSplay::node *root, tablevisit visit) 
+{
+  if (NULL==root) return;
+  Traverse(root->left, visit);
+  visit(root->data);
+  Traverse(root->right, visit);
+}
+
+bool PtrTable::ContainsName(const char* n) 
+{
+  splayitem tmp(n, NULL);
+  return (0==splaywrapper->Splay(root, &tmp));
 }
 
 void* PtrTable::FindName(const char* n)
