@@ -70,6 +70,7 @@ array::array(const char* fn, int line, type t, char* n, array_index **il, int di
   index_list = il;
   dimension = dim;
   descriptor = NULL;
+  state = CS_Undefined;
 }
  
 array::~array()
@@ -106,6 +107,25 @@ void array::SetCurrentReturn(constfunc *retvalue)
     Internal.Stop();
   }
   prev->down[lastindex] = retvalue;
+}
+
+constfunc* array::GetCurrentReturn()
+{
+  int i;
+  array_desc *prev = NULL;
+  array_desc *curr = descriptor;
+  int lastindex = 0;
+  for (i=0; i<dimension; i++) {
+    if (NULL==curr) {
+      curr = new array_desc(index_list[i]->CopyCurrent());
+      if (prev) prev->down[lastindex] = curr;
+      else descriptor = curr;
+    }
+    lastindex = index_list[i]->Index();
+    prev = curr;
+    curr = (array_desc*) curr->down[lastindex];
+  }
+  return (constfunc*) prev->down[lastindex];
 }
 
 void array::GetName(OutputStream &s) const
@@ -561,8 +581,7 @@ void arrayassign::show(OutputStream &s) const
 
 void arrayassign::showfancy(int depth, OutputStream &s) const
 {
-  int j;
-  for (j=depth; j; j--) s << " ";
+  s.Pad(depth);
   show(s);
   s << ";\n";
 }
@@ -590,6 +609,7 @@ statement* MakeForLoop(array_index **i, int dim,
 statement* MakeArrayAssign(array *f, expr* retval,
     		    	   const char *fn, int line)
 {
+  f->state = CS_Defined;
   return new arrayassign(fn, line, f, retval);
 }
 

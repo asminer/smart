@@ -161,6 +161,9 @@ protected:
   /// The descriptor.
   array_desc *descriptor;
 public:
+  /// Used to catch compile errors with converges and such
+  const_state state;
+public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
   virtual ~array();
 
@@ -177,6 +180,13 @@ public:
       set the return "value" of the array.
    */
   void SetCurrentReturn(constfunc *retvalue);
+
+  /** For the current values of the iterators,
+      obtain the return value function.
+      Returns null if the return value has not been set yet.
+      (Used for converge array assignments)
+   */
+  constfunc* GetCurrentReturn();
 
   /** Determine our current "name", which
       will be written to the specified stream.
