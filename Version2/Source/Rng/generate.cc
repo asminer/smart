@@ -16,7 +16,7 @@ void InitStreams(int strms, unsigned long seed)
   int i;
   stream[0].seed32(seed);
   for (i=1; i<strms; i++) {
-    stream[i].JumpStream(stream[i-1]);
+    stream[i].JumpStream(&stream[i-1]);
   }
 }
 

@@ -19,7 +19,7 @@ Rng strm2(7309259ul);
 
 void JumpA()
 {
-  strm1.JumpStream(strm2);
+  strm1.JumpStream(&strm2);
 }
 
 void JumpB()
