@@ -5,8 +5,8 @@
 
 all: libs smart
 
-smart: Templates/timestamp Base/timestamp Rng/timestamp Language/timestamp States/timestamp Formalisms/timestamp Main/timestamp
-	$(CXX) $(SOURCEDIR)/main.cc Templates/*.o Base/*.o Rng/*.o Language/*.o States/*.o Formalisms/*.o Main/*.o -lfl -o smart
+smart: Templates/timestamp Base/timestamp Rng/timestamp Language/timestamp States/timestamp Formalisms/timestamp Engines/timestamp Main/timestamp
+	$(CXX) $(SOURCEDIR)/main.cc Templates/*.o Base/*.o Rng/*.o Language/*.o States/*.o Formalisms/*.o Engines/*.o Main/*.o -lfl -o smart
 
 libs:
 	cd Main; make smart.tab.h
@@ -16,6 +16,7 @@ libs:
 	cd Language; make
 	cd States; make
 	cd Formalisms; make
+	cd Engines; make
 	cd Main; make
 
 base:
@@ -28,4 +29,5 @@ clean:
 	cd Language; make clean
 	cd States; make clean
 	cd Formalisms; make clean
+	cd Engines; make clean
 	cd Main; make clean

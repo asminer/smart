@@ -4,6 +4,10 @@
 #include "models.h"
 #include "measures.h"
 
+// For solutions
+
+#include "../Engines/api.h"
+
 //@Include: models.h
 
 /** @name models.cc
@@ -240,7 +244,7 @@ void model::SolveMeasure(measure *m)
 		break;
 
 	case ENG_SS_Inst:
-		SolveSteady();
+		SolveSteady(this, msteady);
 		break;
 
 	case ENG_SS_Acc:
@@ -363,37 +367,6 @@ void model::Clear()
   msteady->Clear();
   macc_trans->Clear();
   macc_steady->Clear();
-}
-
-// Temporary...
-#include "../States/stateheap.h"
-
-void model::SolveSteady()
-{
-#ifdef DEBUG_MODEL
-  Output << "Solving group of steady-state measures\n";
-  Output.flush();
-#endif
-  state m;
-  AllocState(m, 1);
-  int i;
-  for (i=0; i<msteady->Length(); i++) {
-    measure* foo = msteady->Item(i);
-    expr* bar = foo->GetRewardExpr();
-    Output << "\tMeasure " << foo << " has reward " << bar << "\n";
-    for (int s=0; s<10; s++) {
-      m[0].Clear();
-      m[0].ivalue = s;
-      result x;
-      x.Clear();
-      bar->Compute(m, 0, x);
-      Output << "\t\t state " << s << " returned ";
-      PrintResult(Output, BOOL, x);
-      Output << "\n";
-      Output.flush();
-    }
-  }
-  FreeState(m);
 }
 
 // ******************************************************************
