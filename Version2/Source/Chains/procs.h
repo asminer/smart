@@ -3,6 +3,7 @@
 
 /*
    Stochastic process (minimalist) frontend.
+   Same philosophy as reachability sets.
 */
 
 #ifndef PROCS_H
@@ -12,36 +13,47 @@
 #include "../Base/options.h"
 #include "../Templates/sparsevect.h"
 
-enum Process_type {
-  /// Placeholder; we don't know yet
-  Proc_Unknown,
-  /// An unsupported process, or an error occurred
-  Proc_Error,
-  /// Finite state machine (no timing, for model checking)
-  Proc_FSM,
-  /// Discrete-time Markov chain
-  Proc_Dtmc,
-  /// Continuous-time Markov chain
-  Proc_Ctmc,
-  // other types, for Rob?
+/// Storage options for a Markov chain
+enum mc_storage {
+  /// Empty (use for initializing)
+  MC_None,
+  /// Explicit (sparse) storage.
+  MC_Explicit,
+  /// Kronecker (eventually)
+  MC_Kronecker,
+  // others here
 
-  /// General stochastic process (use simulation)
-  Proc_General
+  /// There was an error generating it.
+  MC_Error
 };
 
+class markov_chain {
+  /// how it is stored.
+  mc_storage encoding;
+  union {
+    /// Used by explicit storage
+    classified_chain <float>  *explicit_mc;
 
-struct markov_chain {
-
-  // Not sure how to organize this yet...
-  classified_chain <float>  *explicit_mc;
-
-  // implicit types (kronecker, etc.) here
-
+    /// Implement later...
+    void* kron;
+  };
+public:
   sparse_vector <float> *initial; 
-
-  markov_chain();
+public:
+  markov_chain(sparse_vector <float> *init);
   ~markov_chain();
 
+  inline mc_storage Storage() const { return encoding; }
+
+  /// Create an explicit mc
+  void CreateExplicit(classified_chain<float> *ex);
+  /// Create an error mc
+  void CreateError();
+
+  inline classified_chain<float>* Explicit() const {
+    DCASSERT(encoding == MC_Explicit);
+    return explicit_mc;
+  }
 };
 
 extern option* MatrixByRows;

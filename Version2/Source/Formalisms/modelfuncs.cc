@@ -5,6 +5,7 @@
 
 #include "dsm.h"
 #include "../States/reachset.h"
+#include "../Chains/procs.h"
 #include "../Engines/api.h"
 
 // ********************************************************
@@ -167,21 +168,21 @@ void Add_avg_acc(PtrTable *fns)
 
 void compute_num_states(expr **pp, int np, result &x)
 {
+  x.Clear();
   DCASSERT(2==np);
   DCASSERT(pp);
   model *m = dynamic_cast<model*> (pp[0]);
   DCASSERT(m);
-  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
-  DCASSERT(dsm);
-  x.Clear();
 
   BuildReachset(m);
+
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
+  DCASSERT(dsm);
   reachset* ss = dsm->statespace;
   DCASSERT(ss);  // should be set to something
+  DCASSERT(ss->Storage() != RT_None);
 
-  DCASSERT(ss->Type() != RT_None);
-
-  if (ss->Type() == RT_Error) {
+  if (ss->Storage() == RT_Error) {
     // is an error message necessary?
     x.setNull();
     return;
@@ -198,10 +199,10 @@ void compute_num_states(expr **pp, int np, result &x)
   // We must display the state space...
   int i;
   state s;
-  switch (dsm->statespace->Type()) {
+  switch (ss->Storage()) {
     case RT_Enumerated:
 	AllocState(s, 1);
-	for (i=0; i<ss->size; i++) {
+	for (i=0; i<ss->Enumerated(); i++) {
           s[0].ivalue = i; 
 	  Output << "State " << i << ": ";
 	  dsm->ShowState(Output, s);
@@ -212,12 +213,12 @@ void compute_num_states(expr **pp, int np, result &x)
     return;
    
     case RT_Explicit:
-	DCASSERT(ss->flat);
+	DCASSERT(ss->Explicit());
 	// This may change in the future...
 	DCASSERT(dsm->UsesConstantStateSize());		
 	AllocState(s, dsm->GetConstantStateSize());
 	for (i=0; i<x.ivalue; i++) {
-	  DCASSERT(ss->flat->GetState(i, s));
+	  DCASSERT(ss->Explicit()->GetState(i, s));
 	  Output << "State " << i << ": ";
 	  dsm->ShowState(Output, s);
 	  Output << "\n";
@@ -242,6 +243,67 @@ void Add_num_states(PtrTable *fns)
   pl[1] = new formal_param(BOOL, "show");
   internal_func *p = new internal_func(INT, "num_states", 
 	compute_num_states, NULL,
+	pl, 2, helpdoc);
+  p->setWithinModel();
+  InsertFunction(fns, p);
+
+  // NOTE: change this to "bigint" soon.
+}
+
+
+// ********************************************************
+// *                       num_arcs                       *
+// ********************************************************
+
+void compute_num_arcs(expr **pp, int np, result &x)
+{
+  x.Clear();
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  model *m = dynamic_cast<model*> (pp[0]);
+  DCASSERT(m);
+  
+  BuildProcess(m);
+
+  // eventually: switch for different process types
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
+  DCASSERT(dsm);
+  DCASSERT(Proc_Ctmc == dsm->proctype);
+
+  // get number of arcs
+  markov_chain* mc = dsm->mc;
+  switch (mc->Storage()) {
+    case MC_Explicit:
+	x.ivalue = mc->Explicit()->numArcs();
+	break;
+
+    case MC_Kronecker:
+	x.ivalue = 0;
+	break;
+
+    default:
+	x.setNull();
+	return;
+  }
+
+  // should we show the graph / MC?
+  result show;
+  SafeCompute(pp[1], 0, show);
+  if (!show.isNormal()) return;
+  if (!show.bvalue) return;
+  
+  // display here...
+}
+
+void Add_num_arcs(PtrTable *fns)
+{
+  const char* helpdoc = "Returns number of arcs in the reachability graph or Markov chain.  If show is true, then as a side effect, the graph is displayed to the current output stream.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(ANYMODEL, "m");
+  pl[1] = new formal_param(BOOL, "show");
+  internal_func *p = new internal_func(INT, "num_arcs", 
+	compute_num_arcs, NULL,
 	pl, 2, helpdoc);
   p->setWithinModel();
   InsertFunction(fns, p);
@@ -356,6 +418,7 @@ void InitGenericModelFunctions(PtrTable *t)
   Add_avg_acc(t);
 
   Add_num_states(t);
+  Add_num_arcs(t);
 
   Add_test(t);
 

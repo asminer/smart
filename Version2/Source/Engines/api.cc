@@ -22,12 +22,28 @@ option_const* NUMERICAL = &numerical_oc;
 option_const* SIMULATION = &simulation_oc;
 
 
-void 	BuildReachset(model *m)
+void BuildReachset(model *m)
 {
   if ((NULL==m) || (ERROR==m)) return;
   state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
   DCASSERT(dsm);
   BuildReachset(dsm); // defined in ssgen.h
+}
+
+void BuildProcess(model *m)
+{
+  if ((NULL==m) || (ERROR==m)) return;
+  state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
+  DCASSERT(dsm);
+  dsm->DetermineProcessType();
+  // eventually... switch based on process type
+
+  if (NULL==dsm->statespace) {
+    // build both reachability set and Markov chain
+    BuildReachsetAndCTMC(dsm);
+  } else {
+    BuildCTMC(dsm);
+  }
 }
 
 /// Sets the return result for all measures to be "error"

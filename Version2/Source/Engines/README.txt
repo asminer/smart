@@ -22,3 +22,7 @@ simul		Discrete-event simulation engines.
 
 ssgen		State space generation (explicit and eventually...)
 
+mcgen		Markov chain generation
+
+ssmcgen		Simultaneous state space & Markov chain generation
+

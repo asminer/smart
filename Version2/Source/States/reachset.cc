@@ -21,7 +21,6 @@
 
 reachset::reachset()
 {
-  size = 0;
   encoding = RT_None;
 }
 

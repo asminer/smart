@@ -119,6 +119,9 @@ public:
   inline int numStates() const { 
     return states;
   }
+  inline int numArcs() const {
+    return graph->NumEdges();
+  }
   inline int numTransient() const { 
     DCASSERT(blockstart);
     return blockstart[1]; 

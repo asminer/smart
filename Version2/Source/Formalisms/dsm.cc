@@ -4,6 +4,7 @@
 #include "dsm.h"
 
 #include "../States/reachset.h"
+#include "../Chains/procs.h"
 #include "../Base/memtrack.h"
 
 /** @name dsm.cc

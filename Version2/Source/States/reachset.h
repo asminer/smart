@@ -38,7 +38,6 @@ enum reachset_type {
 class reachset {
   /// The type of reachset encoding.
   reachset_type encoding;
-public:
   union {
     /// Used by enumerated storage.  
     int size;
@@ -52,6 +51,9 @@ public:
   reachset();
   /// Destructor
   ~reachset();
+
+  inline reachset_type Storage() const { return encoding; }
+
   /// Create an enumerated reachset
   void CreateEnumerated(int s);
   /// Create an explicit reachset
@@ -61,18 +63,26 @@ public:
   /// Create an error reachset
   void CreateError();
 
+  inline int Enumerated() const {
+    DCASSERT(encoding == RT_Enumerated);
+    return size;
+  }
+  inline flatss* Explicit() const {
+    DCASSERT(encoding == RT_Explicit);
+    return flat;
+  }
+  inline void* Implicit() const {
+    DCASSERT(encoding == RT_Implicit);
+    return evmdd;
+  }
+
   inline int Size() const { 
     switch (encoding) {
       case RT_Enumerated:	return size; 
       case RT_Explicit: 	return flat->NumStates();
-      default:
-      		return 0;
+      default: 			return 0;
     }
   }
-  inline reachset_type Type() const { return encoding; }
-
-  // Stuff for accessing states here...
-
 };
 
 #endif

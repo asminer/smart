@@ -73,11 +73,12 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   // ok, build the ctmc
   int from; 
   mc->ResizeNodes(S->NumStates());
-  mc->ResizeEdges(4);
   for (from=0; from < S->NumStates(); from++) {
     mc->AddNode();
+  }
+  mc->ResizeEdges(4);
+  for (from=0; from < S->NumStates(); from++) {
     S->GetState(from, current);
-    
     // what is enabled?
     for (e=0; e<dsm->NumEvents(); e++) {
       event* t = dsm->GetEvent(e);
@@ -151,17 +152,22 @@ void SparseCTMC(state_model *dsm)
     Verbose << "Starting CTMC generation using sparse storage\n";
     Verbose.flush();
   }
-  labeled_digraph<float>* mc = new labeled_digraph<float>;
+
+  labeled_digraph<float>* mc = NULL;
   bool ok = false;
-  // get the state space
-  switch (dsm->statespace->Type()) {
+
+  // Build CTMC based on state space type
+  switch (dsm->statespace->Storage()) {
+    case RT_None:
     case RT_Error:
-	dsm->proctype = Proc_Error;
-	delete mc;
-	return;  
+	break;
 
     case RT_Explicit:
-	ok = GenerateCTMC(dsm, dsm->statespace->flat, mc);
+        mc = new labeled_digraph<float>;
+        mc->ResizeNodes(dsm->statespace->Size()); 
+        mc->ResizeEdges(4);
+	ok = GenerateCTMC(dsm, dsm->statespace->Explicit(), mc);
+	break;
 			
     default:
 	Internal.Start(__FILE__, __LINE__);
@@ -172,19 +178,19 @@ void SparseCTMC(state_model *dsm)
   // An error occurred during generation, bail
   if (!ok) {
     delete mc;
-    dsm->mc = NULL;
+    dsm->mc = new markov_chain(NULL);
+    dsm->mc->CreateError();
     return;
   }
+
+  // "generate" initial probability vector here...
 
   // transpose if necessary
   if (!MatrixByRows->GetBool()) mc->Transpose();
 
-  // convert to MC format
-  markov_chain *CTMC = new markov_chain();
-  CTMC->explicit_mc = new classified_chain<float>(mc);
-
   // attach to model
-  dsm->mc = CTMC;
+  dsm->mc = new markov_chain(NULL);
+  dsm->mc->CreateExplicit(new classified_chain<float>(mc));
 }
 
 // *******************************************************************

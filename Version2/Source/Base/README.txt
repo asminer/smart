@@ -16,6 +16,8 @@ types		Definitions of type constants, and some handy
 options		Options, which require types and strings.
 
 timers		A handy class for measuring CPU usage
+
+docs		Centralized "documentation display"
 		
 api		Front end
 

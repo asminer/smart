@@ -17,6 +17,12 @@
 */
 void 	BuildReachset(model *m);
 
+/** 	Build the underlying process for a given model.
+	The (stochastic) process is added to the state model.
+	@param  m	The model to solve.
+*/
+void 	BuildProcess(model *m);
+
 /** 	Solve a list of steady-state measures for a given model.
 
         (Do we need more parameters or a return value?)

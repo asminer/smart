@@ -7,20 +7,43 @@
 
 #include "procs.h"
 
-
-
-markov_chain::markov_chain()
+markov_chain::markov_chain(sparse_vector <float> *init)
 {
-  explicit_mc = NULL;
-  initial = NULL;
+  encoding = MC_None;
+  initial = init;
 }
 
 markov_chain::~markov_chain()
 {
-  delete explicit_mc;
+  switch (encoding) {
+    case MC_Explicit:
+ 	delete explicit_mc;
+	break;
+
+    case MC_Kronecker:
+	// delete kronecker
+	break;
+
+    default:
+	// error or never initialized, do nothing
+	// (keep compiler happy, though)
+	break;
+  }
   delete initial;
 }
 
+void markov_chain::CreateExplicit(classified_chain<float> *ex)
+{
+  DCASSERT(encoding == MC_None);
+  encoding = MC_Explicit;
+  explicit_mc = ex;
+}
+
+void markov_chain::CreateError()
+{
+  DCASSERT(encoding == MC_None);
+  encoding = MC_Error;
+}
 
 option* MatrixByRows = NULL;
 
@@ -30,6 +53,6 @@ void InitProcOptions()
   MatrixByRows = MakeBoolOption("MatrixByRows", "Should sparse matrices be stored by rows", false);
   AddOption(MatrixByRows);
 
-  // MarkovStorage and such?
+  // MarkovStorage and such are defined in Engines/mcgen
 }
 

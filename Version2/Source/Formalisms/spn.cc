@@ -7,6 +7,7 @@
 #include "../Language/api.h"
 #include "../Main/tables.h"
 #include "../Templates/listarray.h"
+#include "../Templates/sparsevect.h"
 #include "../States/ops_state.h"
 
 #include "dsm.h"

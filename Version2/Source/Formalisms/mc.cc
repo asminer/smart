@@ -93,7 +93,7 @@ markov_dsm::markov_dsm(const char *name, bool disc, model_var **sn, int ns,
   Output << "]\n\tvalues:[";
   Output.PutArray(mc->initial->value, mc->initial->nonzeroes);
   Output << "]\nArcs:\n";
-  mc->explicit_mc->Show(Output);
+  mc->Explicit()->Show(Output);
 #endif
 }
 
@@ -366,14 +366,14 @@ void markov_model::FinalizeModel(result &x)
 
 shared_object* markov_model::BuildStateModel(const char* fn, int ln)
 {
-  markov_chain *mc = new markov_chain();
-  mc->explicit_mc = new classified_chain <float>(wdgraph);
+  markov_chain *mc = new markov_chain(initial);
+  classified_chain <float>* cmc = new classified_chain <float>(wdgraph);
   wdgraph = NULL;
-  if (!mc->explicit_mc->isIrreducible()) {
+  if (!cmc->isIrreducible()) {
     int i;
     // renumber states
     for (i=0; i<numstates; i++)
-      states[i]->state_index = mc->explicit_mc->Renumber(states[i]->state_index);
+      states[i]->state_index = cmc->Renumber(states[i]->state_index);
     // make sure we have an initial distribution
     if (0==initial->nonzeroes) {
       Warning.StartModel(Name(), fn, ln);
@@ -383,15 +383,15 @@ shared_object* markov_model::BuildStateModel(const char* fn, int ln)
 
     // fix initial distribution
     for (i=0; i<initial->nonzeroes; i++)
-      initial->index[i] = mc->explicit_mc->Renumber(initial->index[i]);
+      initial->index[i] = cmc->Renumber(initial->index[i]);
     initial->isSorted = false;
     initial->Sort();
 
-    mc->explicit_mc->DoneRenumbering();
+    cmc->DoneRenumbering();
   }
+  mc->CreateExplicit(cmc);
   DCASSERT((Type(0) == DTMC) || (Type(0) == CTMC));
   bool discrete = (Type(0) == DTMC);
-  mc->initial = initial;
   initial = NULL;
   return new markov_dsm(Name(), discrete, states, numstates, mc, fn, ln);
 }
@@ -630,10 +630,10 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
 #endif
   // error checking here for m
   DCASSERT(dsm->mc);
-  DCASSERT(dsm->mc->explicit_mc);
+  DCASSERT(dsm->mc->Explicit());
 
   x.Clear();
-  x.bvalue = dsm->mc->explicit_mc->isTransient(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->Explicit()->isTransient(m.Read(0).ivalue);
 }
 
 void Add_transient(PtrTable *fns)
@@ -670,10 +670,10 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
 #endif
   // error checking here for m
   DCASSERT(dsm->mc);
-  DCASSERT(dsm->mc->explicit_mc);
+  DCASSERT(dsm->mc->Explicit());
 
   x.Clear();
-  x.bvalue = dsm->mc->explicit_mc->isAbsorbing(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->Explicit()->isAbsorbing(m.Read(0).ivalue);
 }
 
 void Add_absorbing(PtrTable *fns)

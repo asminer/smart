@@ -221,27 +221,27 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 
   DCASSERT(dsm->proctype != Proc_Unknown);
   DCASSERT(dsm->mc);
-  DCASSERT(dsm->mc->explicit_mc);
-  double *pi = ComputeStationary(dsm->mc->explicit_mc, dsm->mc->initial);
+  DCASSERT(dsm->mc->Explicit());
+  double *pi = ComputeStationary(dsm->mc->Explicit(), dsm->mc->initial);
   if (NULL==pi) return false;
 
 #ifdef DEBUG
   Output << "Got solution vector pi=[";
-  Output.PutArray(pi, dsm->mc->explicit_mc->numStates());
+  Output.PutArray(pi, dsm->mc->Explicit()->numStates());
   Output << "]\n";
   Output.flush();
 #endif
   // compute measures
   
   bool rwd_result;
-  switch (dsm->statespace->Type()) {
+  switch (dsm->statespace->Storage()) {
     case RT_None:
  	rwd_result = false;
 	break;
 
     case RT_Enumerated:
-	rwd_result = EnumRewards(dsm->mc->explicit_mc->numTransient(),
-				 dsm->mc->explicit_mc->numStates(),
+	rwd_result = EnumRewards(dsm->mc->Explicit()->numTransient(),
+				 dsm->mc->Explicit()->numStates(),
 				 pi, mlist);
 	break;
 
