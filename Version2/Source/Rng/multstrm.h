@@ -52,8 +52,9 @@ struct bitmatrix {
     return true;
   }
 
-  inline int Signature(int prime) {
-    return ((row[31] % prime) * 256 + row[0]) % prime;
+  inline unsigned int Signature(int prime) {
+    // return (row[31] ^ row[15] ^ row[0]) % prime;
+    return ((((row[31] % prime) * 256 + row[15]) % prime) * 256 + row[0]) % prime;
   }
 };
 

@@ -89,7 +89,7 @@ class myhash {
   Manager <hashnode> *node_pile;
 protected:
   void Resize();
-  inline int HashFunc(hashnode *x) {
+  inline unsigned int HashFunc(hashnode *x) {
     return ((DATA*)x->data)->Signature(Size());
   }
 public:
@@ -168,7 +168,7 @@ void myhash<DATA>::Resize()
 template <class DATA>
 DATA* myhash<DATA>::Find(DATA *m)
 {
-  int h = m->Signature(Size());
+  unsigned int h = m->Signature(Size());
   hashnode *ptr;
   hashnode *prev = NULL;
   for (ptr = table[h]; ptr; ptr=ptr->next) {
@@ -188,7 +188,7 @@ template <class DATA>
 DATA* myhash<DATA>::Insert(DATA *m)
 {
   if (count > hashsizes[size_index+1]) Resize();
-  int h = m->Signature(Size());
+  unsigned int h = m->Signature(Size());
   hashnode *ptr;
   hashnode *prev = NULL;
   int time = 0;
@@ -239,8 +239,8 @@ struct bincache {
   bitmatrix *b;
   bitmatrix *c;
   bitmatrix *answer;
-  inline int Signature(int prime) {
-    return (int(b) * 256 + int(c)) % prime;
+  inline unsigned int Signature(int prime) {
+    return (((unsigned int) b) * 256 + (unsigned int) c) % prime;
   }
 };
 
