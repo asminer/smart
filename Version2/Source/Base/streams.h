@@ -144,6 +144,14 @@ public:
       We're done reporting an error.
   */
   void Stop();
+
+  /** 
+      Used to print further messages about the last error.
+      For instance, when doing a stack dump due to a runtime error.
+      @param filename	Offending input file
+      @param lineno	Approximate line number
+  */
+  void Continue(const char* filename = NULL, int lineno=-1);
 };
 
 /**

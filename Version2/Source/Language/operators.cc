@@ -689,7 +689,7 @@ void int_add::Compute(int a, result &x)
     if (foo.isInfinity()) {
       if ( (x.ivalue>0) != (foo.ivalue>0) ) {
 	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-	  Error << "Undefined operation (infty-infty) caused by ";
+	  Error << "Undefined operation (infty-infty) due to ";
 	  Error << operands[i];
 	  Error.Stop();
 	  x.error = CE_Undefined;
@@ -755,7 +755,7 @@ void int_sub::Compute(int i, result &x)
       return;
     }
     Error.Start(right->Filename(), right->Linenumber());
-    Error << "Undefined operation (infty-infty) caused by " << right;
+    Error << "Undefined operation (infty-infty) due to " << right;
     Error.Stop();
     x.error = CE_Undefined;
     x.setNull();
@@ -845,7 +845,7 @@ void int_mult::Compute(int a, result &x)
 	if (x.isInfinity()) {
 	  // 0 * infinity, error
           Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-          Error << "Undefined operation (0 * infty) caused by ";
+          Error << "Undefined operation (0 * infty) due to ";
           Error << operands[i];
           Error.Stop();
 	  x.error = CE_Undefined;
@@ -888,7 +888,7 @@ void int_mult::Compute(int a, result &x)
     // check for infinity
     if (foo.isInfinity()) {
       Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-      Error << "Undefined operation (0 * infty) caused by ";
+      Error << "Undefined operation (0 * infty) due to ";
       Error << operands[i];
       Error.Stop();
       x.error = CE_Undefined;
@@ -955,7 +955,7 @@ void int_div::Compute(int i, result &x)
   if (0==r.ivalue) {
     x.error = CE_ZeroDivide;
     Error.Start(right->Filename(), right->Linenumber());
-    Error << "Undefined operation (divide by 0) caused by " << right;
+    Error << "Undefined operation (divide by 0) due to " << right;
     Error.Stop();
   } else {
     x.rvalue /= r.ivalue;
@@ -1316,7 +1316,7 @@ void real_add::Compute(int a, result &x)
     if (foo.isInfinity()) {
       if ( (x.ivalue>0) != (foo.ivalue>0) ) {
 	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-	  Error << "Undefined operation (infty-infty) caused by ";
+	  Error << "Undefined operation (infty-infty) due to ";
 	  Error << operands[i];
 	  Error.Stop();
 	  x.error = CE_Undefined;
@@ -1382,7 +1382,7 @@ void real_sub::Compute(int i, result &x)
       return;
     }
     Error.Start(right->Filename(), right->Linenumber());
-    Error << "Undefined operation (infty-infty) caused by " << right;
+    Error << "Undefined operation (infty-infty) due to " << right;
     Error.Stop();
     x.error = CE_Undefined;
     x.setNull();
@@ -1472,7 +1472,7 @@ void real_mult::Compute(int a, result &x)
 	if (x.isInfinity()) {
 	  // 0 * infinity, error
           Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-          Error << "Undefined operation (0 * infty) caused by ";
+          Error << "Undefined operation (0 * infty) due to ";
           Error << operands[i];
           Error.Stop();
 	  x.error = CE_Undefined;
@@ -1515,7 +1515,7 @@ void real_mult::Compute(int a, result &x)
     // check for infinity
     if (foo.isInfinity()) {
       Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
-      Error << "Undefined operation (0 * infty) caused by ";
+      Error << "Undefined operation (0 * infty) due to ";
       Error << operands[i];
       Error.Stop();
       x.error = CE_Undefined;
@@ -1580,7 +1580,7 @@ void real_div::Compute(int i, result &x)
   if (0.0==r.rvalue) {
     x.error = CE_ZeroDivide;
     Error.Start(right->Filename(), right->Linenumber());
-    Error << "Undefined operation (divide by 0) caused by " << right;
+    Error << "Undefined operation (divide by 0) due to " << right;
     Error.Stop();
   } else {
     x.rvalue = l.rvalue / r.rvalue;
@@ -1847,6 +1847,7 @@ void proc_unary::Compute(int i, result &x)
   if (x.isUnknown()) return;
 
   x.other = MakeUnaryOp(oper, (expr*)x.other, Filename(), Linenumber());
+  x.setFreeable();
 }
 
 // ******************************************************************
@@ -1902,6 +1903,7 @@ void proc_binary::Compute(int i, result &x)
 
   x.other = MakeBinaryOp((expr*)x.other, oper, (expr*)r.other,
 	                 Filename(), Linenumber());
+  x.setFreeable();
 }
 
 
@@ -1962,6 +1964,7 @@ void proc_assoc::Compute(int a, result &x)
   }
   // all opnds computed successfully, build expression
   x.other = MakeAssocOp(oper, r, opnd_count, Filename(), Linenumber());
+  x.setFreeable();
 }
 
 

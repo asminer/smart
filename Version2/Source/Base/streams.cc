@@ -365,6 +365,30 @@ void ErrorStream::Stop()
   }
 }
 
+void ErrorStream::Continue(const char* filename, int lineno)
+{
+  if (active) {
+    ready = true;
+    Put("    Caused by");
+    if (filename) {
+      if (filename[0]=='-' && filename[1]==0) {
+        Put(" standard input");
+      } else if (filename[0]=='>' && filename[1]==0) {
+	Put(" command line");
+	lineno = -1;
+      } else {
+        Put(" file ");
+	Put(filename);
+      }
+    }
+    if (lineno>=0) {
+      Put(" near line ");
+      Put(lineno);
+    }
+    Put(":\n\t");
+  }
+}
+
 // ==================================================================
 // |                                                                |
 // |                     InternalStream methods                     |

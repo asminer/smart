@@ -170,7 +170,7 @@ user_func::user_func(const char* fn, int line, type t, char* n, formal_param **p
   // link the parameters
   int i;
   for (i=0; i<np; i++) {
-    pl[i]->LinkUserFunc(&stack_ptr, i+2);
+    pl[i]->LinkUserFunc(&stack_ptr, i);
   }
 }
 
@@ -187,9 +187,10 @@ void user_func::Compute(expr **pp, int np, result &x)
   }
 
   // first... make sure there is enough room on the stack to save params
-  if (ParamStackTop+np+2 > ParamStackSize) {
-    StackOverflowPanic();
-    // still alive?
+  if (ParamStackTop+np > ParamStackSize) {
+    Error.Start(Filename(), Linenumber());
+    Error << "Stack overflow in function call " << Name();
+    Error.Stop();
     x.error = CE_StackOverflow;
     return;
   }
@@ -198,28 +199,33 @@ void user_func::Compute(expr **pp, int np, result &x)
   result* oldstackptr = stack_ptr;
   result* newstackptr = ParamStack + ParamStackTop;
 
-  // Set up our stack
-  newstackptr[0].other = this;  // ptr to function
-  newstackptr[1].ivalue = np;
-  ParamStackTop += 2+np;  
+  ParamStackTop += np; 
 
   // Compute parameters, place on stack
   int i;
-  for (i=0; i<np; i++) newstackptr[2+i].error = CE_Uncomputed;
-  for (i=0; i<np; i++) SafeCompute(pp[i], 0, newstackptr[2+i]); 
+  for (i=0; i<np; i++) newstackptr[i].error = CE_Uncomputed;
+  for (i=0; i<np; i++) SafeCompute(pp[i], 0, newstackptr[i]); 
 
   // "call" function
   stack_ptr = newstackptr;
   SafeCompute(return_expr, 0, x);
 
   if (x.error) {
-    Error.Start(return_expr->Filename(), return_expr->Linenumber());
-    Error << "calling function: " << Name();
+    // check option?
+    Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "function call " << Name();
+    if (np) Error << "(";
+    for (i=0; i<np; i++) {
+      if (i) Error << ", ";
+      Error << parameters[i] << "=";
+      PrintResult(Error, parameters[i]->Type(0), newstackptr[i]);
+    }
+    if (np) Error << ")";
     Error.Stop();
   }
 
   // free parameters, in case they're strings or other bulky items
-  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[2+i]);
+  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[i]);
 
   // pop off stack
   ParamStackTop = oldstacktop;
@@ -476,7 +482,7 @@ void fcall::show(OutputStream &s) const
 
 void CreateRuntimeStack(int size)
 {
-  ParamStack = (result*) malloc(size * sizeof(result*));
+  ParamStack = (result*) malloc(size * sizeof(result));
   ParamStackSize = size;
   ParamStackTop = 0;
 }
@@ -496,12 +502,14 @@ bool ResizeRuntimeStack(int newsize)
     DestroyRuntimeStack();
     return true;
   }
-  void *foo = realloc(ParamStack, newsize * sizeof(result*));
+  void *foo = realloc(ParamStack, newsize * sizeof(result));
   if (NULL==foo) return false; // there was a problem.
   ParamStackSize = newsize;
   ParamStack = (result*) foo;
   return true;
 }
+
+/*
 
 void DumpRuntimeStack(OutputStream &s)
 {
@@ -523,6 +531,8 @@ void StackOverflowPanic()
   Error << "Run-time stack overflow!\n";
   DumpRuntimeStack(Error);
 }
+
+*/
 
 expr* MakeFunctionCall(function *f, expr **p, int np, const char*fn, int line)
 {

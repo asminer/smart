@@ -106,6 +106,7 @@ void bool2procbool::Compute(int i, result &x)
 
   expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
   x.other = answer;
+  x.setFreeable();
 }
 
 // ******************************************************************
@@ -143,6 +144,7 @@ void bool2procrandbool::Sample(long &seed, int i, result &x)
 
   expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
   x.other = answer;
+  x.setFreeable();
 }
 
 // ******************************************************************
@@ -219,6 +221,7 @@ void int2procint::Compute(int i, result &x)
     answer = MakeConstExpr(x.ivalue, Filename(), Linenumber());
   }
   x.other = answer;
+  x.setFreeable();
 }
 
 
@@ -259,6 +262,49 @@ void real2int::Compute(int i, result &x)
 }
 
 
+// ******************************************************************
+// *                                                                *
+// *                      real2procreal  class                      *
+// *                                                                *
+// ******************************************************************
+
+/**  Type promotion from real to proc real.
+*/   
+
+class real2procreal : public typecast {
+public:
+  real2procreal(const char* fn, int line, expr* x) 
+    : typecast(fn, line, PROC_REAL, x) { }
+
+  virtual void Compute(int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new real2procreal(Filename(), Linenumber(), x);
+  }
+};
+
+void real2procreal::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(opnd);
+  opnd->Compute(0, x);
+
+  if (x.error) return;
+  if (x.isNull()) return;
+  if (x.isUnknown()) return;
+
+  expr *answer = NULL;
+  if (x.isInfinity()) {
+    answer = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
+  } else {
+    answer = MakeConstExpr(x.rvalue, Filename(), Linenumber());
+  }
+  x.other = answer;
+  x.setFreeable();
+}
+
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -285,6 +331,7 @@ void rand2procrand::Sample(long &, int i, result &x)
 {
   DCASSERT(0==i);
   x.other = Copy(opnd);
+  x.setFreeable();
 }
 
 // ******************************************************************
@@ -366,6 +413,19 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
       return NULL;
 
+    case REAL:
+      switch (newtype) {
+	case INT:
+	  return new real2int(file, line, e);
+	
+	case RAND_REAL:
+	  return new determ2rand(file, line, RAND_REAL, e);
+
+	case PROC_INT:
+	  return new real2procreal(file, line, e);
+      }
+
+      return NULL;
 
     // lots of others go here...
       
