@@ -24,7 +24,7 @@
 class state_model;
 void Delete(state_model *);
 
-#define DEBUG_MODEL
+//#define DEBUG_MODEL
 
 // ******************************************************************
 // *                                                                *

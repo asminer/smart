@@ -3,6 +3,9 @@
 
 #include "modelfuncs.h"
 
+#include "dsm.h"
+#include "../States/reachset.h"
+
 
 // ********************************************************
 // *                      num_states                      *
@@ -12,16 +15,45 @@ void compute_num_states(expr **pp, int np, result &x)
 {
   DCASSERT(2==np);
   DCASSERT(pp);
-
-  Output << "Inside num_states\n";
-  Output.flush();
-
   model *m = dynamic_cast<model*> (pp[0]);
   DCASSERT(m);
+  state_model *dsm = m->GetModel();
+  DCASSERT(dsm);
 
-  Output << "Got model: " << m << "\n";
-  Output.flush();
+  // Generate state space here
 
+  DCASSERT(dsm->statespace);
+
+  x.Clear();
+  x.ivalue = dsm->statespace->Size();
+
+  // should we show the state space?
+  result show;
+  SafeCompute(pp[1], 0, show);
+  if (!show.isNormal()) return;
+  if (!show.bvalue) return;
+  
+  // We must display the state space...
+  int i;
+  state s;
+  switch (dsm->statespace->Type()) {
+    case RT_Enumerated:
+	AllocState(s, 1);
+	for (i=0; i<x.ivalue; i++) {
+          s[0].ivalue = i; 
+	  Output << "State " << i << ": ";
+	  dsm->ShowState(Output, s);
+	  Output << "\n";
+	  Output.flush();
+	} // for i	
+	FreeState(s);
+    return;
+    
+    default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Unhandled state space type\n";
+	Internal.Stop();
+  }
 }
 
 void Add_num_states(PtrTable *fns)

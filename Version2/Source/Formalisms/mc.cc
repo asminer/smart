@@ -10,83 +10,7 @@
 
 #include "dsm.h"
 
-
-// ******************************************************************
-// *                                                                *
-// *                       markov_model class                       *
-// *                                                                *
-// ******************************************************************
-
-/** Smart support for the Markov chain "formalism".
-*/
-class markov_model : public model {
-  List <char> *statelist;
-  char** statenames;
-  int numstates;
-public:
-  markov_model(const char* fn, int line, type t, char*n, 
-  		formal_param **pl, int np);
-
-  virtual ~markov_model();
-
-  // Required for models:
-
-  virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
-
-  virtual void InitModel();
-  virtual void FinalizeModel(result &);
-  virtual state_model* BuildStateModel();
-};
-
-// ******************************************************************
-// *                      markov_model methods                      *
-// ******************************************************************
-
-markov_model::markov_model(const char* fn, int line, type t, char*n, 
-  formal_param **pl, int np) : model(fn, line, t, n, pl, np)
-{
-  Output << "Created (empty) model " << n << "\n";
-  Output.flush();
-  statelist = NULL; 
-}
-
-markov_model::~markov_model()
-{
-}
-
-model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
-{
-  statelist->Append(n);
-  return NULL;
-}
-
-void markov_model::InitModel()
-{
-  statelist = new List <char> (16);
-}
-
-void markov_model::FinalizeModel(result &x)
-{
-  numstates = statelist->Length();
-  statenames = statelist->MakeArray();
-  delete statelist;
-  statelist = NULL;
-  Output << "MC has " << numstates << " states?\n";
-  int i;
-  for (i=0; i<numstates; i++) {
-    Output << "\t" << statenames[i] << "\n";
-  }
-  Output.flush();
-
-  x.Clear();
-  x.notFreeable();
-  x.other = this;
-}
-
-state_model* markov_model::BuildStateModel()
-{
-  return NULL;
-}
+//#define DEBUG_MC
 
 // ******************************************************************
 // *                                                                *
@@ -94,6 +18,8 @@ state_model* markov_model::BuildStateModel()
 // *                                                                *
 // ******************************************************************
 
+/** A discrete-state model (internel representation) for Markov chains.
+*/
 class markov_dsm : public state_model {
   char** statenames;
   int numstates;
@@ -110,14 +36,12 @@ public:
   virtual void ShowState(OutputStream &s, const state &x);
   virtual void ShowEventName(OutputStream &s, int e);
 
-/*
   virtual int NumInitialStates() const;
   virtual void GetInitialState(int n, state &s) const;
 
-  virtual expr* EnabledExpr(int e);
-  virtual expr* NextStateExpr(int e);
-  virtual expr* EventDistribution(int e);
-*/
+  virtual expr* EnabledExpr(int e) { return NULL; } // fix later
+  virtual expr* NextStateExpr(int e) { return NULL; } // fix later
+  virtual expr* EventDistribution(int e) { return NULL; } // fix later
 
 };
 
@@ -151,6 +75,100 @@ void markov_dsm::ShowEventName(OutputStream &s, int e)
 
   // Is there something better to do here?
   s << "Markov chain";
+}
+
+int markov_dsm::NumInitialStates() const
+{
+  // fill this in later
+  return 0;
+}
+
+void markov_dsm::GetInitialState(int n, state &s) const
+{
+  // fill this in later
+  s[0].ivalue = 0;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       markov_model class                       *
+// *                                                                *
+// ******************************************************************
+
+/** Smart support for the Markov chain "formalism".
+    I.e., front-end stuff for Markov chain formalism.
+*/
+class markov_model : public model {
+  List <char> *statelist;
+  char** statenames;
+  int numstates;
+public:
+  markov_model(const char* fn, int line, type t, char*n, 
+  		formal_param **pl, int np);
+
+  virtual ~markov_model();
+
+  // Required for models:
+
+  virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
+
+  virtual void InitModel();
+  virtual void FinalizeModel(result &);
+  virtual state_model* BuildStateModel();
+};
+
+// ******************************************************************
+// *                      markov_model methods                      *
+// ******************************************************************
+
+markov_model::markov_model(const char* fn, int line, type t, char*n, 
+  formal_param **pl, int np) : model(fn, line, t, n, pl, np)
+{
+  statelist = NULL; 
+  statenames = NULL;
+  numstates = 0;
+}
+
+markov_model::~markov_model()
+{
+}
+
+model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
+{
+  statelist->Append(n);
+  return NULL;
+}
+
+void markov_model::InitModel()
+{
+  statelist = new List <char> (16);
+  statenames = NULL;
+  numstates = 0;
+}
+
+void markov_model::FinalizeModel(result &x)
+{
+  numstates = statelist->Length();
+  statenames = statelist->MakeArray();
+  delete statelist;
+  statelist = NULL;
+#ifdef DEBUG_MC
+  Output << "MC has " << numstates << " states?\n";
+  int i;
+  for (i=0; i<numstates; i++) {
+    Output << "\t" << statenames[i] << "\n";
+  }
+  Output.flush();
+#endif
+
+  x.Clear();
+  x.notFreeable();
+  x.other = this;
+}
+
+state_model* markov_model::BuildStateModel()
+{
+  return new markov_dsm(statenames, numstates);
 }
 
 // ******************************************************************

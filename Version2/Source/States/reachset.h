@@ -38,6 +38,7 @@ class reachset {
   int size; 
   /// The type of reachset encoding.
   reachset_type encoding;
+public:
   union {
     /// Used by explicit storage.
     state_array *flat;

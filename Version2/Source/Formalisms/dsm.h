@@ -36,7 +36,7 @@ class reachset;  // defined in States/reachset.h
 
 class state_model {
   int events;
-protected:
+public:  // for now at least
   /// Reachable states.
   reachset *statespace; 
   // Reachability graph?
