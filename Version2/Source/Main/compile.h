@@ -1,6 +1,10 @@
 
 // $Id$
 
+#ifndef COMPILE_H
+#define COMPILE_H
+
+#include "../Base/api.h"
 #include "../Language/api.h"
 
 /*
@@ -22,6 +26,13 @@ int LineNumber();
 
 /// Build a type.  On error, returns VOID.
 type MakeType(const char* modif, const char* tp);
+
+
+/// Dump a formal parameter
+void DumpParam(OutputStream &s, formal_param *p);
+
+/// Dump a function header.
+void DumpHeader(OutputStream &s, function *f);
 
 // ==================================================================
 // |                                                                |
@@ -202,6 +213,25 @@ expr* FindIdent(char* name);
 */
 expr* BuildArrayCall(const char* n, void* ind);
 
+/**	Build a function call.
+	Does type checking, promotion, overloading, and everything.
+	@param	n	The function name
+	@param	ind	List of passed (positional) parameters
+	@return	NULL on error (e.g., bad parameters, etc);
+		otherwise the function call expression.
+*/
+expr* BuildFunctionCall(const char* n, void* posparams);
+
+/**	Build a function call (named parameter version).
+	Does type checking, promotion, overloading, and everything.
+	@param	n	The function name
+	@param	ind	List of passed (named) parameters
+	@return	NULL on error (e.g., bad parameters, etc);
+		otherwise the function call expression.
+*/
+expr* BuildNamedFunctionCall(const char* n, void* namedparams);
+
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -212,3 +242,4 @@ expr* BuildArrayCall(const char* n, void* ind);
 
 void InitCompiler();
 
+#endif

@@ -12,7 +12,6 @@
 #include "functions.h"
 #include "operators.h"
 #include "casting.h"
-#include "initfuncs.h"
 
 void InitLanguage();
 

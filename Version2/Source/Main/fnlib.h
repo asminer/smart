@@ -1,6 +1,9 @@
 
 // $Id$
 
+#ifndef FNLIB_H
+#define FNLIB_H
+
 #include "tables.h"
 
 /**	Add internal (builtin) functions to symbol table t.
@@ -8,3 +11,4 @@
 */
 void InitBuiltinFunctions(PtrTable *t);
 
+#endif

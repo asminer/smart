@@ -5,6 +5,8 @@
 #include "../list.h"
 #include <string.h>
 
+#define TABLE_DEBUG
+
 // ==================================================================
 // |                       PtrTable  methods                        |
 // ==================================================================
@@ -58,12 +60,26 @@ int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b)
 void InsertFunction(PtrTable *t, function *f)
 {
   if (NULL==f) return;
+#ifdef TABLE_DEBUG
+  cout << "Adding function " << f << " to table\n";
+#endif
   void* x = t->FindName(f->Name());
   List <function> *foo = (List <function> *) x;
   if (NULL==x) {
+#ifdef TABLE_DEBUG
+    cout << "New name entry\n";
+#endif
     foo = new List <function> (2);
     t->AddNamePtr(f->Name(), foo);
   }
   foo->Append(f);
 }
+
+List <function> *FindFunctions(PtrTable *t, const char* n)
+{
+  if (NULL==n) return NULL;
+  void* x = t->FindName(n);
+  return (List <function> *)x;
+}
+
 

@@ -57,7 +57,7 @@ NUL DEFAULT TYPE MODIF MODEL
 %type <Expr> topexpr expr term const_expr function_call model_call
 model_function_call set_expr set_elems set_elem pos_param index
 %type <list> aggexpr statements model_stmt model_stmts
-formal_indexes pos_params indexes
+formal_indexes pos_params named_params indexes
 %type <index> iterator
 %type <count> for_header iterators
 %type <stmt> statement defn_stmt
@@ -825,14 +825,14 @@ function_call
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT LPAR pos_params RPAR\n";
 #endif
-  $$ = NULL;
+  $$ = BuildFunctionCall($1, $3);
 }
         |       IDENT LPAR named_params RPAR
 {
 #ifdef PARSE_TRACE
   cout << "Reducing function_call : IDENT LPAR named_params RPAR\n";
 #endif
-  $$ = NULL;
+  $$ = BuildNamedFunctionCall($1, $3);
 }
 	;
 
@@ -957,6 +957,7 @@ named_params
 #ifdef PARSE_TRACE
   cout << "Reducing named_params : named_params COMMA named_param\n";
 #endif
+  $$ = NULL;
 }
 	|	named_param
 {

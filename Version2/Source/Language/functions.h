@@ -59,7 +59,11 @@ class formal_param : public symbol {
       when computing our value.
    */
   int offset;
+  void Construct();
 public:
+  /// Use this constructor for builtin functions
+  formal_param(type t, char* n);
+  /// Use this constructor for user-defined functions.
   formal_param(const char* fn, int line, type t, char* n);
   virtual ~formal_param();
 
@@ -123,13 +127,16 @@ protected:
   formal_param **parameters;
   /// The number of parameters.
   int num_params;
-  /** The point where the parameters start to repeat.  
-      If there is no repeating, set to num_params+1.
-   */
+  /// The point where the parameters start to repeat.  
   int repeat_point;
 public:
+  /// Use this constructor when there are repeating params.
   function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np, int rp);
+  /// Use this constructor when there are no repeating params.
+  function(const char* fn, int line, type t, char* n, 
+           formal_param **pl, int np);
+
   virtual ~function();
 
   /** So that the compiler can do typechecking.
@@ -189,6 +196,15 @@ public:
 
   virtual void Compute(expr **, int np, result &x) = 0;
   virtual void Sample(long &, expr **, int np, result &x) = 0;
+
+  /** Return true if this function should NOT be documented.
+      (Probably because it is a research function.)
+  */
+  virtual bool IsUndocumented() const;
+
+  /** Returns NULL for user functions, documentation for internal funcs.
+  */
+  virtual const char* GetDocumentation() const;
 };
 
 
@@ -259,6 +275,8 @@ class internal_func : public function {
 protected:
   compute_func compute;
   sample_func sample;
+  const char* documentation;
+  bool hidedocs;
 public:
   /** Constructor.
       @param t	The type.
@@ -266,16 +284,33 @@ public:
       @param c	The C-function to call to compute the result.
       @param s	The C-function to call to sample the result
       @param pl	The parameter list.
-      @param np	The number of formal parameters.
-      @param rp	The point to start repeating parameters.
+      @param np	The number of formal parameters (no repetition).
+      @param doc Documentation
    */
   internal_func(type t, char *n, compute_func c, sample_func s, 
-                formal_param **pl, int np, int rp);
+                formal_param **pl, int np, const char* doc);
+
+  /** Constructor.
+      @param t	The type.
+      @param n	The name.
+      @param c	The C-function to call to compute the result.
+      @param s	The C-function to call to sample the result
+      @param pl	The parameter list.
+      @param np	The number of formal parameters.
+      @param rp	The point to start repeating parameters
+      @param doc Documentation
+   */
+  internal_func(type t, char *n, compute_func c, sample_func s, 
+                formal_param **pl, int np, int rp, const char* doc);
 
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(long &, expr **, int np, result &x);
 
   virtual void show(ostream &s) const;
+
+  void HideDocs();
+  virtual bool IsUndocumented() const;
+  virtual const char* GetDocumentation() const;
 };
 
 

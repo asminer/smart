@@ -12,7 +12,20 @@
 
 #define COMPILE_DEBUG
 
-/// Dump a function header.
+void DumpParam(OutputStream &s, formal_param *p)
+{
+  if (NULL==p) {
+    s << "null";
+    return;
+  }
+  int i;
+  for (i=0; i<p->NumComponents(); i++) {
+    if (i) s << ":";
+    s << GetType(p->Type(i));
+  }
+  s << " " << p->Name();
+}
+
 void DumpHeader(OutputStream &s, function *f)
 {
   s << f;
@@ -25,10 +38,10 @@ void DumpHeader(OutputStream &s, function *f)
   int i;
   for (i=0; i<np; i++) {
     if (rp==i) s << "...";
-    s << fp[i];
-    if (i<np-1) s << ",";
+    DumpParam(s, fp[i]);
+    if (i<np-1) s << ", ";
   }
-  if (rp>=0) s << ",...";
+  if (rp<=np) s << ",...";
   s << ")";
 }
 
@@ -44,6 +57,9 @@ List <array_index> *Iterators;
 
 /// Symbol table of arrays
 PtrTable *Arrays;
+
+/// Symbol table of functions
+PtrTable *Builtins;
 
 // ==================================================================
 // |                                                                |
@@ -289,57 +305,6 @@ expr* BuildAggregate(void* x)
   return answer;
 }
 
-expr* BuildArrayCall(const char* n, void* ind)
-{
-  List <expr> *foo = (List <expr> *)ind;
-  // find symbol table entry
-  array* entry = (array*) (Arrays->FindName(n));
-  if (NULL==entry) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Unknown array " << n;
-    Error.Stop();
-    delete foo;
-    return NULL;
-  }
-  // check type, dimension of indexes
-  int size = foo->Length();
-  int i;
-  array_index **il;
-  int dim;
-  entry->GetIndexList(il, dim);
-  if (size!=dim) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Array " << n << " has dimension " << dim;
-    Error.Stop();
-    delete foo;
-    return NULL;
-  }
-  // types
-  for (i=0; i<dim; i++) {
-    expr* me = foo->Item(i);
-    if (!Promotable(me->Type(0), il[i]->Type(0))) {
-      Error.Start(filename, lexer.lineno());
-      Error << "Array " << n << " expects type ";
-      Error << GetType(il[i]->Type(0));
-      Error << " for index " << il[i]->Name();
-      Error.Stop();
-      delete foo;
-      return NULL;
-    }
-  }
-
-  // Ok, build the array call
-  expr** pass = new expr*[dim];
-  for (i=0; i<dim; i++) {
-    expr* x = foo->Item(i);
-    Optimize(0, x);
-    pass[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
-  }
-  delete foo;
-  expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
-  return answer;
-}
-
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -576,6 +541,80 @@ expr* FindIdent(char* name)
   return NULL;
 }
 
+expr* BuildArrayCall(const char* n, void* ind)
+{
+  List <expr> *foo = (List <expr> *)ind;
+  // find symbol table entry
+  array* entry = (array*) (Arrays->FindName(n));
+  if (NULL==entry) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown array " << n;
+    Error.Stop();
+    delete foo;
+    return NULL;
+  }
+  // check type, dimension of indexes
+  int size = foo->Length();
+  int i;
+  array_index **il;
+  int dim;
+  entry->GetIndexList(il, dim);
+  if (size!=dim) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Array " << n << " has dimension " << dim;
+    Error.Stop();
+    delete foo;
+    return NULL;
+  }
+  // types
+  for (i=0; i<dim; i++) {
+    expr* me = foo->Item(i);
+    if (!Promotable(me->Type(0), il[i]->Type(0))) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Array " << n << " expects type ";
+      Error << GetType(il[i]->Type(0));
+      Error << " for index " << il[i]->Name();
+      Error.Stop();
+      delete foo;
+      return NULL;
+    }
+  }
+
+  // Ok, build the array call
+  expr** pass = new expr*[dim];
+  for (i=0; i<dim; i++) {
+    expr* x = foo->Item(i);
+    Optimize(0, x);
+    pass[i] = MakeTypecast(x, il[i]->Type(0), filename, lexer.lineno());
+  }
+  delete foo;
+  expr* answer = MakeArrayCall(entry, pass, size, filename, lexer.lineno());
+  return answer;
+}
+
+expr* BuildFunctionCall(const char* n, void* posparams)
+{
+  List <expr> *params = (List <expr> *)posparams;
+  // find symbol table entry
+  List <function> *flist = FindFunctions(Builtins, n);
+  if (NULL==flist) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Unknown function " << n;
+    Error.Stop();
+    delete params;
+    return NULL;
+  }
+
+  // check parameters
+  return NULL;
+}
+
+expr* BuildNamedFunctionCall(const char *, void*)
+{
+  cerr << "Named parameters not done yet, sorry\n";
+  return NULL;
+}
+
 // ==================================================================
 // |                                                                |
 // |                                                                |
@@ -603,7 +642,7 @@ void InitCompiler()
 {
   Iterators = new List <array_index> (256);
   Arrays = new PtrTable();
-  PtrTable *Builtins = new PtrTable();
+  Builtins = new PtrTable();
   InitBuiltinFunctions(Builtins); 
 #ifdef COMPILE_DEBUG
   cout << "Initialized compiler data\n";

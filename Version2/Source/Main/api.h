@@ -5,5 +5,9 @@
 
 */
 
+#ifndef MAIN_API
+#define MAIN_API
+
 int smart_main(int argc, char** argv);
 
+#endif

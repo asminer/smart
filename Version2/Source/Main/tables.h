@@ -4,8 +4,9 @@
 #ifndef TABLES_H
 #define TABLES_H
 
-#include "../splay.h"
 #include "../Language/api.h"
+#include "../list.h"
+#include "../splay.h"
 
 /**
     A symbol table class.
@@ -53,6 +54,11 @@ int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
     Add function f to the list of functions with that name, to table t.
 */
 void InsertFunction(PtrTable *t, function *f);
+
+/**
+    Find list of functions with name n, from table t, or NULL if none.
+*/
+List <function> *FindFunctions(PtrTable *t, const char* n);
 
 #endif
 

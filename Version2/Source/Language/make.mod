@@ -10,7 +10,7 @@ SOURCES = \
 	infinity.cc	\
 	baseops.cc	operators.cc	casting.cc \
 	variables.cc	functions.cc	arrays.cc \
-	initfuncs.cc	api.cc
+	api.cc
 
 ALLOBJS = $(SOURCES:.cc=.o) 
 

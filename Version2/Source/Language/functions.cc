@@ -27,8 +27,19 @@ int ParamStackSize;
 // *                                                                *
 // ******************************************************************
 
+formal_param::formal_param(type t, char* n)
+  : symbol(NULL, -1, t, n)
+{
+  Construct();
+}
+
 formal_param::formal_param(const char* fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
+{
+  Construct();
+}
+
+void formal_param::Construct()
 {
   hasdefault = false;
   deflt = NULL;
@@ -63,6 +74,14 @@ void formal_param::Sample(long &, int i, result &x)
 // *                        function methods                        *
 // *                                                                *
 // ******************************************************************
+
+function::function(const char* fn, int line, type t, char* n, 
+           formal_param **pl, int np) : symbol(fn, line, t, n)
+{
+  parameters = pl;
+  num_params = np;
+  repeat_point = np+1;
+}
 
 function::function(const char* fn, int line, type t, char* n, 
            formal_param **pl, int np, int rp) : symbol(fn, line, t, n)
@@ -102,13 +121,25 @@ bool function::LinkParams(expr **pp, int np, ostream &error) const
   return false;
 }
 
+bool function::IsUndocumented() const
+{
+  // default
+  return false;
+}
+
+const char* function::GetDocumentation() const 
+{
+  // default...
+  return NULL;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                       user_func  methods                       *
 // *                                                                *
 // ******************************************************************
 
-user_func::user_func(const char* fn, int line, type t, char* n, formal_param **pl, int np) : function (fn, line, t, n, pl, np, np+1)
+user_func::user_func(const char* fn, int line, type t, char* n, formal_param **pl, int np) : function (fn, line, t, n, pl, np)
 {
   return_expr = NULL;
   stack_ptr = NULL;
@@ -191,11 +222,22 @@ void user_func::show(ostream &s) const
 // ******************************************************************
 
 internal_func::internal_func(type t, char *n, 
-   compute_func c, sample_func s, formal_param **pl, int np, int rp) 
+   compute_func c, sample_func s, formal_param **pl, int np, const char* d) 
+ : function(NULL, -1, t, n, pl, np)
+{
+  compute = c;
+  sample = s;
+  documentation = d;
+}
+
+internal_func::internal_func(type t, char *n, 
+   compute_func c, sample_func s, formal_param **pl, int np, int rp, 
+   const char* d) 
  : function(NULL, -1, t, n, pl, np, rp)
 {
   compute = c;
   sample = s;
+  documentation = d;
 }
 
 void internal_func::Compute(expr **pp, int np, result &x)
@@ -222,6 +264,25 @@ void internal_func::show(ostream &s) const
 {
   if (NULL==Name()) return; // Hidden?
   s << GetType(Type(0)) << " " << Name();
+}
+
+void internal_func::HideDocs()
+{
+  hidedocs = true;
+}
+
+bool internal_func::IsUndocumented() const
+{
+#ifdef DEVELOPMENT_CODE
+  return false;
+#else
+  return hidedocs;
+#endif
+}
+
+const char* internal_func::GetDocumentation() const
+{
+  return documentation;
 }
 
 // ******************************************************************
