@@ -52,7 +52,8 @@ const char* GetOp(int op);
      @param	line	Line number where this is defined
 
      @return	The appropriate new expression, error if the opnd is error,
-                or internal error if we could not build the expression.
+                or Error message (and ERROR) if 
+		we could not build the expression.
 
      Note: the only unary operators currently are NOT and unary minus.
 */

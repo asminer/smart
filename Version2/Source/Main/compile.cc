@@ -414,8 +414,6 @@ expr* BuildUnary(int op, expr* opnd)
   if (NULL==opnd) return NULL;
   if (ERROR==opnd) return ERROR;
 
-  // type checking here
-
   return MakeUnaryOp(op, opnd, filename, lexer.lineno());
 }
 

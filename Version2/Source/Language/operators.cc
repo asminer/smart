@@ -67,11 +67,11 @@ const char* GetOp(int op)
 
 expr* IllegalUnaryError(int op, type t, const char *fn, int ln)
 {
-  // error should have been caught already
-  Internal.Start(__FILE__, __LINE__, fn, ln);
-  Internal << "Illegal unary operator: ";
-  Internal << GetOp(op) << " " << GetType(t);
-  Internal.Stop();
+  // For the unary case, fine to have compile checking here.
+  Error.Start(fn, ln);
+  Error << "Illegal unary operation: ";
+  Error << GetOp(op) << " " << GetType(t);
+  Error.Stop();
   return ERROR;
 }
 
@@ -129,7 +129,7 @@ expr* IllegalBinaryError(type t1, int op, type t2, const char *fn, int ln)
 {
   // error should have been caught already
   Internal.Start(__FILE__, __LINE__, fn, ln);
-  Internal << "Illegal binary operator: ";
+  Internal << "Illegal binary operation: ";
   Internal << GetType(t1) << " " << GetOp(op) << " " << GetType(t2);
   Internal.Stop();
   return ERROR;
@@ -356,6 +356,7 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
 
 expr* IllegalAssocError(int op, type alltype, const char *fn, int ln)
 {
+  // shouldn't ever get here
   Internal.Start(__FILE__, __LINE__, fn, ln);
   Internal << "Illegal associative operator " << GetOp(op);
   Internal << " for type " << GetType(alltype);
