@@ -656,6 +656,10 @@ statement* MakeForLoop(array_index **i, int dim,
 		       statement** block, int blocksize,
                        const char *fn, int line)
 {
+  for (int s=0; s<blocksize; s++) {
+    DCASSERT(block[s]);
+    block[s]->GuessesToDefs();
+  }
   return new forstmt(fn, line, i, dim, block, blocksize);
 }
 

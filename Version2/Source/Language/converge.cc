@@ -115,6 +115,7 @@ public:
   virtual void Execute() { }
   virtual void InitialGuess();
   virtual void Affix();
+  virtual void GuessesToDefs();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int dpth, OutputStream &s) const;
 };
@@ -149,6 +150,12 @@ void guess_stmt::InitialGuess()
 void guess_stmt::Affix()
 {
   var->state = CS_Computed;
+}
+
+void guess_stmt::GuessesToDefs()
+{
+  if (var->state == CS_HasGuess)
+    var->state = CS_Defined;
 }
 
 void guess_stmt::show(OutputStream &s) const
@@ -256,6 +263,7 @@ public:
   virtual void Execute() { }
   virtual void InitialGuess();
   virtual void Affix();
+  virtual void GuessesToDefs();
   virtual void show(OutputStream &s) const;
   virtual void showfancy(int dpth, OutputStream &s) const;
 };
@@ -277,12 +285,10 @@ void array_guess_stmt::InitialGuess()
 {
   // Get this converge function thingy
   symbol* thisvar = var->GetCurrentReturn();
-  if (NULL==thisvar) {
-    // create the function
-    char* name = strdup(var->Name());
-    thisvar = MakeConvergeVar(REAL, name, Filename(), Linenumber());
-    var->SetCurrentReturn(thisvar);
-  }
+  DCASSERT(NULL==thisvar);
+  char* name = strdup(var->Name());
+  thisvar = MakeConvergeVar(REAL, name, Filename(), Linenumber());
+  var->SetCurrentReturn(thisvar);
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
   DCASSERT(v->state != CS_Computed);
@@ -300,6 +306,12 @@ void array_guess_stmt::Affix()
   DCASSERT(v!=NULL);
   v->state = CS_Computed;
   var->state = CS_Computed;
+}
+
+void array_guess_stmt::GuessesToDefs()
+{
+  if (var->state == CS_HasGuess)
+    var->state = CS_Defined;
 }
 
 void array_guess_stmt::show(OutputStream &s) const
@@ -515,6 +527,11 @@ statement* MakeAssignStmt(cvgfunc* v, expr* r, const char* fn, int line)
 
 statement* MakeConverge(statement** block, int bsize, const char* fn, int ln)
 {
+  int i;
+  for (i=0; i<bsize; i++) {
+    DCASSERT(block[i]);
+    block[i]->GuessesToDefs();
+  }
   return new converge_stmt(fn, ln, block, bsize);
 }
 

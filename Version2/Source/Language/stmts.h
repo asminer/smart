@@ -72,6 +72,13 @@ public:
   */
   virtual void Affix() { }
 
+  /** Make variables have state "CS_Defined".
+      Used by converges: once we have seen the close of a converge,
+      any variable that is only "guessed" within that converge
+      is essentially defined to be itself.
+  */
+  virtual void GuessesToDefs() { }
+
   /// Display the statement to the given output stream.
   virtual void show(OutputStream &s) const = 0;
 

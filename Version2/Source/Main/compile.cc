@@ -1141,6 +1141,15 @@ statement* BuildArrayGuess(array* id, expr* ret)
     return NULL;
   }
 
+  // guess already?
+  if (id->state != CS_Undefined) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Duplicate guess for identifier " << id;
+    Error.Stop();
+    return NULL;
+  }
+
+  // good to go
   if (ret) {
     Optimize(0, ret);
     expr* nr = MakeTypecast(ret, REAL, filename, lexer.lineno());
