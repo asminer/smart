@@ -70,81 +70,111 @@ protected:
 
 void determ2rand::Sample(Rng &, int i, result &x) 
 {
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x); 
+  SafeCompute(opnd, i, x);
 }
 
 // ******************************************************************
 // *                                                                *
-// *                      bool2procbool  class                      *
+// *                       determ2proc  class                       *
 // *                                                                *
 // ******************************************************************
 
-/**  Type promotion from bool to proc bool.
+/**  Type promotion from const X to proc X.
 */   
 
-class bool2procbool : public typecast {
+class determ2proc : public typecast {
 public:
-  bool2procbool(const char* fn, int line, expr* x) 
-    : typecast(fn, line, PROC_BOOL, x) { }
+  determ2proc(const char* fn, int line, type nt, expr* x) 
+    : typecast(fn, line, nt, x) { }
 
-  virtual void Compute(int i, result &x);
+  virtual void Compute(const state &, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
-    return new bool2procbool(Filename(), Linenumber(), x);
+    return new determ2proc(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void bool2procbool::Compute(int i, result &x)
+void determ2proc::Compute(const state &, int i, result &x) 
 {
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x);
-
-  if (!x.isNormal()) return;
-
-  DCASSERT(false==x.isInfinity());  // Can this fail?
-
-  expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
-  x.other = answer;
-  x.setFreeable();
+  SafeCompute(opnd, i, x);
 }
 
 // ******************************************************************
 // *                                                                *
-// *                    bool2procrandbool  class                    *
+// *                     determ2procrand  class                     *
 // *                                                                *
 // ******************************************************************
 
-/**  Type promotion from bool to proc rand bool.
+/**  Type promotion from const X to proc rand X.
 */   
 
-class bool2procrandbool : public typecast {
+class determ2procrand : public typecast {
 public:
-  bool2procrandbool(const char* fn, int line, expr* x) 
-    : typecast(fn, line, PROC_RAND_BOOL, x) { }
+  determ2procrand(const char* fn, int line, type nt, expr* x) 
+    : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(Rng &seed, int i, result &x);
+  virtual void Sample(Rng &, const state &, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
-    return new bool2procrandbool(Filename(), Linenumber(), x);
+    return new determ2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void bool2procrandbool::Sample(Rng &seed, int i, result &x)
+void determ2procrand::Sample(Rng &, const state &, int i, result &x) 
 {
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x); 
+  SafeCompute(opnd, i, x);
+}
 
-  if (!x.isNormal()) return;
+// ******************************************************************
+// *                                                                *
+// *                      rand2procrand  class                      *
+// *                                                                *
+// ******************************************************************
 
-  DCASSERT(false==x.isInfinity());  // Can this fail?
+/**  Type promotion from rand X to proc rand X.
+*/   
 
-  expr *answer = MakeConstExpr(x.bvalue, Filename(), Linenumber());
-  x.other = answer;
-  x.setFreeable();
+class rand2procrand : public typecast {
+public:
+  rand2procrand(const char* fn, int line, type nt, expr* x) 
+    : typecast(fn, line, nt, x) { }
+
+  virtual void Sample(Rng &, const state &, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new rand2procrand(Filename(), Linenumber(), Type(0), x);
+  }
+};
+
+void rand2procrand::Sample(Rng &seed, const state &, int i, result &x) 
+{
+  SafeSample(opnd, seed, i, x);
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      proc2procrand  class                      *
+// *                                                                *
+// ******************************************************************
+
+/**  Type promotion from proc X to proc rand X.
+*/   
+
+class proc2procrand : public typecast {
+public:
+  proc2procrand(const char* fn, int line, type nt, expr* x) 
+    : typecast(fn, line, nt, x) { }
+
+  virtual void Sample(Rng &, const state &, int i, result &x);
+protected:
+  virtual expr* MakeAnother(expr* x) { 
+    return new proc2procrand(Filename(), Linenumber(), Type(0), x);
+  }
+};
+
+void proc2procrand::Sample(Rng &, const state &s, int i, result &x) 
+{
+  SafeCompute(opnd, s, i, x);
 }
 
 // ******************************************************************
@@ -207,45 +237,6 @@ void int2expo::Compute(int i, result &x)
   // the rest are safely propogated
 }
 
-
-// ******************************************************************
-// *                                                                *
-// *                       int2procint  class                       *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from int to proc int.
-*/   
-
-class int2procint : public typecast {
-public:
-  int2procint(const char* fn, int line, expr* x) 
-    : typecast(fn, line, PROC_INT, x) { }
-
-  virtual void Compute(int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new int2procint(Filename(), Linenumber(), x);
-  }
-};
-
-void int2procint::Compute(int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x);
-
-  if (x.isInfinity()) {
-    x.other = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
-    x.setFreeable();
-  } else if (x.isNormal()) {
-    x.other = MakeConstExpr(x.ivalue, Filename(), Linenumber());
-    x.setFreeable();
-  }
-}
-
-
-
 // ******************************************************************
 // *                                                                *
 // *                         real2int class                         *
@@ -303,42 +294,6 @@ void real2expo::Compute(int i, result &x)
 
 // ******************************************************************
 // *                                                                *
-// *                      real2procreal  class                      *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from real to proc real.
-*/   
-class real2procreal : public typecast {
-public:
-  real2procreal(const char* fn, int line, expr* x) 
-    : typecast(fn, line, PROC_REAL, x) { }
-
-  virtual void Compute(int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new real2procreal(Filename(), Linenumber(), x);
-  }
-};
-
-void real2procreal::Compute(int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(0, x);
-
-  if (x.isInfinity()) {
-    x.other = MakeInfinityExpr(x.ivalue, Filename(), Linenumber());
-    x.setFreeable();
-  } else if (x.isNormal()) {
-    x.other = MakeConstExpr(x.rvalue, Filename(), Linenumber());
-    x.setFreeable();
-  }
-}
-
-
-// ******************************************************************
-// *                                                                *
 // *                      expo2randreal  class                      *
 // *                                                                *
 // ******************************************************************
@@ -353,7 +308,7 @@ public:
   virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
-    return new real2procreal(Filename(), Linenumber(), x);
+    return new expo2randreal(Filename(), Linenumber(), x);
   }
 };
 
@@ -375,61 +330,6 @@ void expo2randreal::Sample(Rng &seed, int i, result &x)
     x.rvalue = 0.0;
     return;
   }
-}
-
-// ******************************************************************
-// *                                                                *
-// *                      rand2procrand  class                      *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from rand X to proc rand X.
-*/   
-
-class rand2procrand : public typecast {
-public:
-  rand2procrand(const char* fn, int line, type nt, expr* x) 
-    : typecast(fn, line, nt, x) { }
-
-  virtual void Sample(Rng &seed, int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new rand2procrand(Filename(), Linenumber(), Type(0), x);
-  }
-};
-
-void rand2procrand::Sample(Rng &, int i, result &x)
-{
-  DCASSERT(0==i);
-  x.other = Copy(opnd);
-  x.setFreeable();
-}
-
-// ******************************************************************
-// *                                                                *
-// *                      proc2procrand  class                      *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from proc X to proc rand X.
-*/   
-
-class proc2procrand : public typecast {
-public:
-  proc2procrand(const char* fn, int line, type nt, expr* x) 
-    : typecast(fn, line, nt, x) { }
-
-  virtual void Sample(Rng &seed, int i, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new proc2procrand(Filename(), Linenumber(), Type(0), x);
-  }
-};
-
-void proc2procrand::Sample(Rng &, int i, result &x)
-{
-  DCASSERT(0==i);
-  opnd->Compute(i, x);
 }
 
 // ******************************************************************
@@ -460,7 +360,10 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new determ2rand(file, line, RAND_BOOL, e);
 
 	case PROC_BOOL:
-	  return new bool2procbool(file, line, e);
+	  return new determ2proc(file, line, PROC_BOOL, e);
+
+	case PROC_RAND_BOOL:
+	  return new determ2procrand(file, line, PROC_RAND_BOOL, e);
       }
 
       return NULL;   
@@ -482,7 +385,10 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new determ2rand(file, line, RAND_INT, e);
 
 	case PROC_INT:
-	  return new int2procint(file, line, e);
+	  return new determ2proc(file, line, PROC_INT, e);
+
+	case PROC_RAND_INT:
+	  return new determ2procrand(file, line, PROC_RAND_INT, e);
       }
 
       return NULL;
@@ -499,8 +405,11 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	case RAND_REAL:
 	  return new determ2rand(file, line, RAND_REAL, e);
 
-	case PROC_INT:
-	  return new real2procreal(file, line, e);
+	case PROC_REAL:
+	  return new determ2proc(file, line, PROC_REAL, e);
+
+	case PROC_RAND_REAL:
+	  return new determ2procrand(file, line, PROC_RAND_REAL, e);
       }
 
       return NULL;
@@ -531,6 +440,15 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
       return NULL;
 
     // --------------------------------------------------------------
+    case RAND_REAL:
+      switch (newtype) {
+	case PROC_RAND_REAL:
+	  return new rand2procrand(file, line, PROC_RAND_REAL, e);
+
+      }
+      return NULL;
+
+    // --------------------------------------------------------------
     case PROC_BOOL:
       if (newtype==PROC_RAND_BOOL)
 	return new proc2procrand(file, line, PROC_RAND_BOOL, e);
@@ -543,6 +461,15 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	  return new proc2procrand(file, line, PROC_RAND_INT, e);
 
 	// Add PROC_REAL, ...
+      }
+      return NULL;
+
+    // --------------------------------------------------------------
+    case PROC_REAL:
+      switch (newtype) {
+	case PROC_RAND_REAL:
+	  return new proc2procrand(file, line, PROC_RAND_REAL, e);
+
       }
       return NULL;
   }

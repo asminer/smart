@@ -59,6 +59,9 @@ public:
   virtual void show(OutputStream &s) const;
   virtual void ShowHeader(OutputStream &s) const;
 
+  virtual void Compute(int i, result &x);
+  virtual void Sample(Rng &, int i, result &x);
+
   inline void SetReturn(expr *e) { 
     state = CS_Defined;
     return_expr = e; 

@@ -25,6 +25,7 @@
 #include "baseops.h"		// Base operators (remove eventually)
 #include "ops_const.h"		// Operators for "const" nature
 #include "ops_rand.h"		// Operators for "rand" nature
+#include "ops_proc.h"		// Operators for "rand" nature
 #include "strings.h"		// operators for strings
 
 
@@ -50,181 +51,6 @@ const char* GetOp(int op)
 
 
 
-// old expr-style proc is here:
-
-
-// ******************************************************************
-// ******************************************************************
-// **                                                              **
-// **                                                              **
-// **                                                              **
-// **                     Operators for  procs                     **
-// **                                                              **
-// **                                                              **
-// **                                                              **
-// ******************************************************************
-// ******************************************************************
-
-// ******************************************************************
-// *                                                                *
-// *                        proc_unary class                        *
-// *                                                                *
-// ******************************************************************
-
-/** Unary operators for procs.
- */
-class proc_unary : public unary {
-protected:
-  type returntype;
-  int oper;
-public:
-  proc_unary(const char* fn, int line, type rt, int op, expr *x)
-    : unary(fn, line, x) 
-  { 
-    returntype = rt;
-    oper = op;
-  }
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return returntype;
-  }
-  virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { unary_show(s, GetOp(oper)); }
-protected:
-  virtual expr* MakeAnother(expr *x) {
-    return new proc_unary(Filename(), Linenumber(), returntype, oper, x);
-  }
-};
-
-void proc_unary::Compute(int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  x.Clear();
-  opnd->Compute(0, x); 
-
-  if (x.isNormal()) {
-    x.other = MakeUnaryOp(oper, (expr*)x.other, Filename(), Linenumber());
-    x.setFreeable();
-    return;
-  }
-  x.other = NULL;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                       proc_binary  class                       *
-// *                                                                *
-// ******************************************************************
-
-/** Binary operations for procs.
- */
-class proc_binary : public binary {
-protected:
-  type returntype;
-  int oper;
-public:
-  proc_binary(const char* fn, int line, type rt, int op, expr *l, expr *r)
-    : binary(fn, line, l, r) 
-  { 
-    returntype = rt;
-    oper = op;
-  }
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return returntype;
-  }
-  virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { binary_show(s, GetOp(oper)); }
-protected:
-  virtual expr* MakeAnother(expr *l, expr *r) {
-    return new proc_binary(Filename(), Linenumber(), returntype, oper, l, r);
-  }
-};
-
-void proc_binary::Compute(int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
-  result r;
-  x.Clear();
-  left->Compute(0, x); 
-  x.other = NULL;
-  if (!x.isNormal()) return;
-  right->Compute(0, r); 
-  if (!r.isNormal()) {
-    Delete((expr *)x.other);
-    x.setNull();
-    x.special = r.special;
-    return;
-  }
-
-  x.other = MakeBinaryOp((expr*)x.other, oper, (expr*)r.other,
-	                 Filename(), Linenumber());
-  x.setFreeable();
-}
-
-
-// ******************************************************************
-// *                                                                *
-// *                        proc_assoc class                        *
-// *                                                                *
-// ******************************************************************
-
-/** Associative operations for procs.
- */
-class proc_assoc : public assoc {
-protected:
-  type returntype;
-  int oper;
-public:
-  proc_assoc(const char* fn, int line, type rt, int op, expr **x, int n)
-    : assoc(fn, line, x, n) 
-  { 
-    returntype = rt;
-    oper = op;
-  }
-
-  proc_assoc(const char* fn, int line, type rt, int op, expr *l, expr *r)
-    : assoc(fn, line, l, r) 
-  { 
-    returntype = rt;
-    oper = op;
-  }
-  virtual type Type(int i) const {
-    DCASSERT(0==i);
-    return returntype;
-  }
-  virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { assoc_show(s, GetOp(oper)); }
-protected:
-  virtual expr* MakeAnother(expr **x, int n) {
-    return new proc_assoc(Filename(), Linenumber(), returntype, oper, x, n);
-  }
-};
-
-void proc_assoc::Compute(int a, result &x)
-{
-  DCASSERT(0==a);
-  expr** r = new expr* [opnd_count];
-  int i;
-  for (i=0; i<opnd_count; i++) {
-    DCASSERT(operands[i]);
-    operands[i]->Compute(0, x);
-    if (!x.isNormal()) {
-      // bail out
-      int j;
-      for (j=0; j<i; j++) Delete(r[j]);
-      delete[] r;
-      return;
-    }
-    r[i] = (expr *) x.other;
-  }
-  // all opnds computed successfully, build expression
-  x.other = MakeAssocOp(oper, r, opnd_count, Filename(), Linenumber());
-  x.setFreeable();
-}
 
 
 // ******************************************************************
@@ -273,14 +99,17 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
       return NULL;
 
     case PROC_BOOL:
+      if (op==NOT) return new proc_bool_not(file, line, opnd);
+      return NULL;
+
     case PROC_INT:
+      if (op==MINUS) return new proc_int_neg(file, line, opnd);
+      return NULL;
+
     case PROC_REAL:
-    case PROC_PH_INT:
-    case PROC_PH_REAL:
-    case PROC_RAND_BOOL:
-    case PROC_RAND_INT:
-    case PROC_RAND_REAL:
-      return new proc_unary(file, line, optype, op, opnd);
+      if (op==MINUS) return new proc_real_neg(file, line, opnd);
+      return NULL;
+
   }
   return NULL;
 }
@@ -437,39 +266,70 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
       
 
     //===============================================================
+    case PROC_BOOL:
+
+      DCASSERT(rtype==PROC_BOOL);
+
+      switch (op) {
+          case PLUS:
+          case OR:	return new proc_bool_or(file, line, left, right);
+
+	  case TIMES:
+	  case AND:   	return new proc_bool_and(file, line, left, right);
+
+	  case EQUALS:	return new proc_bool_equal(file, line, left, right);
+	  case NEQUAL:	return new proc_bool_neq(file, line, left, right);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case PROC_INT:
+
+      DCASSERT(rtype==PROC_INT);
+
+      switch (op) {
+          case PLUS:	return new proc_int_add(file, line, left, right);
+          case TIMES:	return new proc_int_mult(file, line, left, right);
+          case MINUS:	return new proc_int_sub(file, line, left, right);
+          case DIVIDE:	return new proc_int_div(file, line, left, right);
+	  case EQUALS:	return new proc_int_equal(file, line, left, right);
+	  case NEQUAL:	return new proc_int_neq(file, line, left, right);
+	  case GT:	return new proc_int_gt(file, line, left, right);
+	  case GE:	return new proc_int_ge(file, line, left, right);
+	  case LT:	return new proc_int_lt(file, line, left, right);
+	  case LE:	return new proc_int_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
+    case PROC_REAL:
+
+      DCASSERT(rtype==PROC_REAL);
+
+      switch (op) {
+          case PLUS:	return new proc_real_add(file, line, left, right);
+          case TIMES:	return new proc_real_mult(file, line, left, right);
+          case MINUS:	return new proc_real_sub(file, line, left, right);
+          case DIVIDE:	return new proc_real_div(file, line, left, right);
+	  case EQUALS:	return new proc_real_equal(file, line, left, right);
+	  case NEQUAL:	return new proc_real_neq(file, line, left, right);
+	  case GT:	return new proc_real_gt(file, line, left, right);
+	  case GE:	return new proc_real_ge(file, line, left, right);
+	  case LT:	return new proc_real_lt(file, line, left, right);
+	  case LE:	return new proc_real_le(file, line, left, right);
+      }
+      return NULL;
+      
+
+    //===============================================================
     case STRING:
       
       DCASSERT(rtype==STRING);
       // Defined in strings.cc
       return MakeStringBinary(left, op, right, file, line);
     
-    //===============================================================
-    case PROC_INT:
-      if (rtype==PROC_PH_INT) {
-	DCASSERT(op==TIMES);
-	return new proc_binary(file, line, rtype, op, left, right);
-      }
-      return new proc_binary(file, line, ltype, op, left, right);
-
-      
-    //===============================================================
-    case PROC_REAL:
-      if (rtype==PROC_PH_REAL) {
-	DCASSERT(op==TIMES);
-	return new proc_binary(file, line, rtype, op, left, right);
-      }
-      return new proc_binary(file, line, ltype, op, left, right);
-
-
-    //===============================================================
-    case PROC_BOOL:
-    case PROC_PH_INT:
-    case PROC_PH_REAL:
-    case PROC_RAND_INT:
-    case PROC_RAND_REAL:
-      return new proc_binary(file, line, ltype, op, left, right); 
-
-
   }
 
   return NULL;
@@ -583,6 +443,45 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
       switch (op) {
           case PLUS:	return new rand_real_add(file, line, opnds, n);
           case TIMES:	return new rand_real_mult(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+
+    //===============================================================
+    case PROC_BOOL:
+
+      switch (op) {
+          case PLUS:
+          case OR:	return new proc_bool_or(file, line, opnds, n);
+
+	  case TIMES:
+	  case AND:   	return new proc_bool_and(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+      
+    //===============================================================
+    case PROC_INT:
+
+      switch (op) {
+          case PLUS:	return new proc_int_add(file, line, opnds, n);
+          case TIMES:	return new proc_int_mult(file, line, opnds, n);
+
+	  default:	return IllegalAssocError(op, alltypes, file, line);
+      }
+      return NULL;
+
+
+    //===============================================================
+    case PROC_REAL:
+
+      switch (op) {
+          case PLUS:	return new proc_real_add(file, line, opnds, n);
+          case TIMES:	return new proc_real_mult(file, line, opnds, n);
 
 	  default:	return IllegalAssocError(op, alltypes, file, line);
       }

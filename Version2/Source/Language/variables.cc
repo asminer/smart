@@ -45,6 +45,16 @@ void constfunc::ShowHeader(OutputStream &s) const
   s << GetType(Type(0)) << " " << Name() << " := " << return_expr;
 }
 
+void constfunc::Compute(int i, result &x)
+{
+  SafeCompute(return_expr, i, x);
+}
+
+void constfunc::Sample(Rng &seed, int i, result &x)
+{
+  SafeSample(return_expr, seed, i, x);
+}
+
 Engine_type constfunc::GetEngine(engineinfo *e)
 {
   if (e) e->setNone();
