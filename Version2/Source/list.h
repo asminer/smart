@@ -16,7 +16,7 @@ class PtrList {
   int last;
 protected:
   void Enlarge(int newsize) {
-    void ** foo = realloc(data, newsize*sizeof(void*));
+    void ** foo = (void**) realloc(data, newsize*sizeof(void*));
     if (NULL==foo) {
       cerr << "Memory overflow on PtrList resize\n";
       exit(0);
@@ -27,7 +27,7 @@ protected:
 
 public:
   PtrList(int inits) {
-    data = malloc(inits * sizeof(void*));
+    data = (void**) malloc(inits * sizeof(void*));
     size = inits;
     last = 0;
   }
@@ -52,11 +52,11 @@ public:
 
   void Append(PtrList *x) {
     if (x) {
-      while (last + x.last >= size) size*=2;
+      while (last + x->last >= size) size*=2;
       Enlarge(size);
       // risky....
-      memcpy(data+last, x.data, x.last * sizeof(void*));
-      last += x.last;
+      memcpy(data+last, x->data, x->last * sizeof(void*));
+      last += x->last;
       delete x;
     }
   }
@@ -64,7 +64,7 @@ public:
   void Clear() {
     last = 0;
   }
-}
+};
 
 template <class DATA> 
 class List {
@@ -79,5 +79,13 @@ public:
   inline void Append(List <DATA> *x) { if (x) { p->Append(x->p); delete x; } }
   inline void Clear() { p->Clear(); }
 };
+
+template <class DATA>
+inline List <DATA> *Append(List<DATA> *a, List<DATA> *b)
+{
+  if (NULL==a) return b;
+  a->Append(b);
+  return a;
+}
 
 #endif

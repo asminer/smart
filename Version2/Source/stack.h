@@ -23,7 +23,7 @@ protected:
       cerr << "Stack overflow\n";
       exit(0);
     }
-    DATA *foo = realloc(data, newsize*sizeof(DATA));
+    DATA *foo = (DATA *) realloc(data, newsize*sizeof(DATA));
     if (NULL==foo) {
       // handle failure better here...
       cerr << "Memory overflow on stack resize\n";
@@ -38,7 +38,7 @@ public:
     size = currentsize;
     top = 0;
     maxsize = msize;
-    data = malloc(currentsize * sizeof(DATA));
+    data = (DATA *) malloc(currentsize * sizeof(DATA));
   }
   ~Stack() { free(data); }
   inline bool Empty() const { return 0==top; }
