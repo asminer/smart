@@ -1,0 +1,193 @@
+
+// $Id$
+
+/*
+    Tests the "don't know" value within expressions;
+    this is crucial for general (non-product-form) 
+    saturation stuff.
+*/
+
+int I := DontKnow(1);  // undocumented function!
+
+
+print("These should all be ?:\n");
+print(I);
+
+print(I+5);
+print(5+I);
+
+print(I+5+7);
+print(5+I+7);
+print(5+7+I);
+
+int j := 3+4+I+5;
+print(j);
+
+print(I-5);
+print(5-I);
+
+print(I*5);
+print(5*I);
+
+print(I*5*7);
+print(5*I*7);
+print(5*7*I);
+
+print(I == 5);
+print(I != 5);
+print(I >  5);
+print(I >= 5);
+print(I <  5);
+print(I <= 5);
+
+bool B := I==5;
+bool c := true;
+bool d := false;
+
+print(B);
+
+print(B & true);
+print(true & B);
+
+print(B & true & c);
+print(true & B & c);
+print(true & c & B);
+
+print(B | false);
+print(false | B);
+
+print(B | false | d);
+print(false | B | d);
+print(false | d | B);
+
+print(B == true);
+print(B != true);
+print(B == false);
+print(B != false);
+
+real R := I / 5;
+
+print(R);
+
+print(R+1.2);
+print(1.2+R);
+
+print(R+1.2+3.4);
+print(1.2+R+3.4);
+print(1.2+3.4+R);
+
+print(R-1.2);
+print(1.2-R);
+
+print(R*1.2);
+print(1.2*R);
+
+print(R*1.2*3.4);
+print(1.2*R*3.4);
+print(1.2*3.4*R);
+
+print(R == 1.2);
+print(R != 1.2);
+print(R >  1.2);
+print(R >= 1.2);
+print(R <  1.2);
+print(R <= 1.2);
+
+print("\n");
+
+print("These should be true:\n");
+
+print(B | true, "\n");
+print(true | B, "\n");
+
+print(B | true | c, "\n");
+print(true | B | c, "\n");
+print(true | c | B, "\n");
+
+print(I <  infty, "\n");
+print(I <= infty, "\n");
+print(I != infty, "\n");
+print(infty >= I, "\n");
+print(infty >  I, "\n");
+print(I >  -infty, "\n");
+print(I >= -infty, "\n");
+print(I != -infty, "\n");
+print(-infty <= I, "\n");
+print(-infty <  I, "\n");
+
+
+print("These should be false:\n");
+
+print(B & false, "\n");
+print(false & B, "\n");
+
+print(B & false & c, "\n");
+print(false & B & c, "\n");
+print(false & c & B, "\n");
+
+print(I >  infty, "\n");
+print(I >= infty, "\n");
+print(I == infty, "\n");
+print(infty <= I, "\n");
+print(infty <  I, "\n");
+print(I <  -infty, "\n");
+print(I <= -infty, "\n");
+print(I == -infty, "\n");
+print(-infty >= I, "\n");
+print(-infty >  I, "\n");
+
+print("These should be 0:\n");
+
+print(I*0, "\n");
+print(0*I, "\n");
+
+print(I*0*7, "\n");
+print(0*I*7, "\n");
+print(0*7*I, "\n");
+
+print(R*0.0, "\n");
+print(0.0*R, "\n");
+
+print(R*0.0*3.4, "\n");
+print(0.0*R*3.4, "\n");
+print(0.0*3.4*R, "\n");
+
+print("These should be infinity:\n");
+
+print(I+infty, "\n");
+print(infty+I, "\n");
+
+print(I+infty+7, "\n");
+print(infty+I+7, "\n");
+print(infty+7+I, "\n");
+
+print(I- (-infty), "\n");
+
+print(R+infty, "\n");
+print(infty+R, "\n");
+
+print(R+infty+4.7, "\n");
+print(infty+R+4.7, "\n");
+print(infty+4.7+R, "\n");
+
+print(R- (-infty), "\n");
+
+print("These should be -infinity:\n");
+
+print(I+(-infty), "\n");
+print((-infty)+I, "\n");
+
+print(I+(-infty)+7, "\n");
+print((-infty)+I+7, "\n");
+print((-infty)+7+I, "\n");
+
+print(I-infty, "\n");
+
+print(R+(-infty), "\n");
+print((-infty)+R, "\n");
+
+print(R+(-infty)+4.7, "\n");
+print((-infty)+R+4.7, "\n");
+print((-infty)+4.7+R, "\n");
+
+print(R-infty, "\n");
