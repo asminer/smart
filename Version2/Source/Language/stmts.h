@@ -33,14 +33,14 @@
 class statement {
 private:
   /// The statement that contains us (e.g., a for loop), or NULL.
-  statement *parent;
+  // statement *parent;
   /// The name of the file we were declared in.
   const char* filename;
   /// The line number of the file we were declared on.
   int linenumber;
 public:
   statement(const char* fn, int line) {
-    parent = NULL;
+    // parent = NULL;
     filename = fn;
     linenumber = line;
   }
@@ -49,8 +49,8 @@ public:
 
   inline const char* Filename() const { return filename; } 
   inline int Linenumber() const { return linenumber; }
-  inline statement* Parent() { return parent; }
-  inline void SetParent(statement *p) { parent = p; }
+  // inline statement* Parent() { return parent; }
+  // inline void SetParent(statement *p) { parent = p; }
 
   /** Execute the statement.
       Must be provided in derived classes.

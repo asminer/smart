@@ -103,6 +103,7 @@ private:
   result update;
   bool hasconverged;
   bool isfixed;
+  bool was_updated;
 public:
   assign_stmt(const char* fn, int line, cvgfunc* var, expr* rhs);
   virtual ~assign_stmt();
@@ -147,6 +148,11 @@ protected:
     // 1e-5 should be an option
     hasconverged = (delta < 1e-5);
   }
+  inline void Update() {
+    CheckConvergence();
+    var->current = update;
+    was_updated = true;
+  }
 };
 
 assign_stmt::assign_stmt(const char* fn, int line, cvgfunc* v, expr* r)
@@ -158,6 +164,7 @@ assign_stmt::assign_stmt(const char* fn, int line, cvgfunc* v, expr* r)
   DCASSERT(rhs);
   DCASSERT(rhs->Type(0) == REAL);
   isfixed = false;
+  was_updated = false;
 }
 
 assign_stmt::~assign_stmt()
@@ -169,19 +176,14 @@ void assign_stmt::Execute()
 {
   DCASSERT(!isfixed);
   rhs->Compute(0, update);
-  if (use_current->GetBool()) {
-    CheckConvergence();
-    var->current = update;
-  }
+  was_updated = false;
+  if (use_current->GetBool()) Update();
 }
 
 bool assign_stmt::HasConverged()
 {
   DCASSERT(!isfixed);
-  if (!use_current->GetBool()) {
-    CheckConvergence();
-    var->current = update;
-  }
+  if (!was_updated) Update();
   return hasconverged;
 }
 
@@ -202,6 +204,89 @@ void assign_stmt::showfancy(int depth, OutputStream &s) const
   show(s);
   s << ";\n";
 }
+
+// ******************************************************************
+// *                                                                *
+// *                      converge_stmt  class                      *
+// *                                                                *
+// ******************************************************************
+
+class converge_stmt : public statement {
+  statement **block;
+  int blocksize;
+public:
+  converge_stmt(const char* fn, int line, statement** b, int bs);
+  virtual ~converge_stmt();
+
+  virtual void Execute();
+  virtual void InitialGuess();
+  virtual bool HasConverged();
+  virtual void Affix();
+  virtual void show(OutputStream &s) const;
+  virtual void showfancy(int depth, OutputStream &s) const;
+};
+
+converge_stmt::converge_stmt(const char* fn, int line, statement** b, int bs)
+ : statement(fn, line)
+{
+  block = b;
+  blocksize = bs;
+}
+
+converge_stmt::~converge_stmt()
+{
+  int j;
+  for (j=0; j<blocksize; j++) delete block[j];
+  delete[] block;
+}
+
+void converge_stmt::Execute()
+{
+  int j;
+  for (j=0; j<blocksize; j++)
+    block[j]->Execute();
+}
+
+void converge_stmt::InitialGuess()
+{
+  int j;
+  for (j=0; j<blocksize; j++)
+    block[j]->InitialGuess();
+}
+
+bool converge_stmt::HasConverged()
+{
+  bool hc = true;
+  int j;
+  for (j=0; j<blocksize; j++)
+    if (!block[j]->HasConverged()) hc = false;
+  return hc;
+}
+
+void converge_stmt::Affix() 
+{
+  int j;
+  for (j=0; j<blocksize; j++)
+    block[j]->Affix();
+}
+
+void converge_stmt::show(OutputStream &s) const
+{
+  s << "converge";
+}
+
+void converge_stmt::showfancy(int depth, OutputStream &s) const
+{
+  int j;
+  s.Pad(depth);
+  s << "converge {\n";
+  for (j=0; j<blocksize; j++) {
+    block[j]->showfancy(depth+2, s);
+  }
+  s.Pad(depth);
+  s << "}\n";
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -229,6 +314,10 @@ statement* MakeAssignStmt(cvgfunc* v, expr* r, const char* fn, int line)
   return new assign_stmt(fn, line, v, r);
 }
 
+statement* MakeConverge(statement** block, int bsize, const char* fn, int ln)
+{
+  return new converge_stmt(fn, ln, block, bsize);
+}
 
 //@}
 

@@ -43,5 +43,6 @@ cvgfunc* MakeConvergeVar(type t, char* id, const char* file, int line);
 
 statement* MakeGuessStmt(cvgfunc* v, expr* guess, const char* file, int line);
 statement* MakeAssignStmt(cvgfunc* v, expr* rhs, const char* file, int line);
+statement* MakeConverge(statement** block, int bsize, const char* fn, int ln);
 
 #endif

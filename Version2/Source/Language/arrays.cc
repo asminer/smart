@@ -355,11 +355,13 @@ forstmt::forstmt(const char *fn, int l, array_index **i, int d, statement **b, i
   blocksize = n;
 
   // set us as parent of the block
+  /*
   int j;
   for (j=0; j<blocksize; j++) {
     DCASSERT(block[j]);
     block[j]->SetParent(this);
   }
+  */
 }
 
 forstmt::~forstmt()
@@ -474,13 +476,13 @@ void forstmt::show(OutputStream &s) const
 void forstmt::showfancy(int depth, OutputStream &s) const
 {
   int j;
-  for (j=depth; j; j--) s << " ";
+  s.Pad(depth);
   show(s);
   s << " {\n";
   for (j=0; j<blocksize; j++) {
     block[j]->showfancy(depth+2, s);
   }
-  for (j=depth; j; j--) s << " ";
+  s.Pad(depth);
   s << "}\n";
 }
 
