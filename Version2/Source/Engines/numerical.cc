@@ -85,10 +85,10 @@ double* ComputeStationary(bool discrete, classified_chain <float> *mc,
     // by multiplying pi * Q_TA
     if (mc->graph->isTransposed) {
       // Q_TA is by columns
-      VectorColmatrixMultiply(pi, mc->graph, pi);
+      VectorColmatrixMultiply(pi, mc->graph, pi, mc->numTransient(), mc->numStates());
     } else {
       // Q_TA is by rows
-      VectorRowmatrixMultiply(pi, mc->graph, pi);
+      VectorRowmatrixMultiply(pi, mc->graph, pi, 0, mc->numStates());
     }
 
     // normalize absorption probs, set stationary probs to 0 for transient

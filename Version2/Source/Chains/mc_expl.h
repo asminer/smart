@@ -325,12 +325,73 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
 template <class LABEL>
 void classified_chain <LABEL> :: ArrangeMatricesByCols()
 {
+  int j;
   DCASSERT(graph->isTransposed);
 #ifdef DEBUG_CLASSIFY
   Output << "Arranging matrices by columns\n";
   Output.flush();
 #endif
-  // Allocate RRarcs and Tarcs
+  // allocate column pointers for T-R, T-A matrix and set all cols empty
+  if (numTransient()) {
+    TRarcs = (int*) malloc(sizeof(int) * numStates()+1);
+    if (NULL==TRarcs) OutOfMemoryError("Matrix classify");
+    for (j=0; j<=numStates(); j++) TRarcs[j] = -1;
+  }
+  // allocate column pointers for "within class" matrix, set all cols empty
+  self_arcs = (int*) malloc(sizeof(int) * (1+states - numAbsorbing()));
+  if (NULL==self_arcs) OutOfMemoryError("Matrix classify");
+  for (j=states-numAbsorbing(); j>=0; j--) self_arcs[j] = -1;
+
+  // Traverse old columns, translate each item and add to appropriate submatrix
+  int* oldcol = graph->row_pointer;
+  
+  for (j=0; j<states; j++) {
+    int new_j = Renumber(j);
+    if (isAbsorbing(new_j)) continue;
+    int e;
+    while (oldcol[j]>=0) {
+      e = oldcol[j];
+      oldcol[j] = graph->next[e];
+      int new_i = Renumber(graph->column_index[e]);
+      graph->column_index[e] = new_i;
+      if (isTransient(new_i)) {
+        // row is transient, check column
+        DCASSERT(TRarcs);
+        if (isTransient(new_j))
+          graph->row_pointer = self_arcs;
+        else
+          graph->row_pointer = TRarcs;
+      } else {
+        // row is recurrent, must be in the main block
+        graph->row_pointer = self_arcs;
+      }
+      // add this element to the submatrix
+      graph->AddToOrderedCircularList(new_j, e);
+    } // while oldcol[i]
+  } // for i
+  free(oldcol);
+
+  // Convert matrices to non-circular lists
+  if (numTransient()) {
+    UseTRMatrix();
+    graph->CircularToTerminated();
+  }
+  UseSelfMatrix();
+  graph->CircularToTerminated();
+  
+  // Defragment submatrices
+  graph->Defragment(0);
+
+  if (numTransient()) {
+    UseTRMatrix();
+    graph->Defragment(self_arcs[states-numAbsorbing()]);
+  }
+
+  // Compact arrays and such
+  free(graph->next);
+  graph->next = NULL;
+  graph->ResizeEdges(graph->num_edges);
+  graph->isDynamic = false;
 }
 
 template <class LABEL>
@@ -381,20 +442,19 @@ void classified_chain <LABEL> :: ArrangeMatricesByRows()
 
   // Convert matrices to non-circular lists
   if (numTransient()) {
-    graph->num_nodes = numTransient();
-    graph->row_pointer = TRarcs;
+    UseTRMatrix();
     graph->CircularToTerminated();
   }
-  graph->num_nodes = states - numAbsorbing();
-  graph->row_pointer = self_arcs;
+  UseSelfMatrix();
   graph->CircularToTerminated();
   
   // Defragment submatrices
   graph->Defragment(0);
 
-  graph->num_nodes = numTransient();
-  graph->row_pointer = TRarcs;
-  graph->Defragment(self_arcs[states-numAbsorbing()]);
+  if (numTransient()) {
+    UseTRMatrix();
+    graph->Defragment(self_arcs[states-numAbsorbing()]);
+  }
 
   // Compact arrays and such
   free(graph->next);
