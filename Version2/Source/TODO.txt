@@ -3,7 +3,7 @@
 
 Things to work on:
 
-* I/O and redirection
+* Input functions
 
 * Run-time error messages (for divide by zero, etc)
 
