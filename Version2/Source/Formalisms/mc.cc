@@ -17,7 +17,9 @@
 /** Smart support for the Markov chain "formalism".
 */
 class markov_model : public model {
-  List <char> *statenames;
+  List <char> *statelist;
+  char** statenames;
+  int numstates;
 public:
   markov_model(const char* fn, int line, type t, char*n, 
   		formal_param **pl, int np);
@@ -42,31 +44,34 @@ markov_model::markov_model(const char* fn, int line, type t, char*n,
 {
   Output << "Created (empty) model " << n << "\n";
   Output.flush();
-  statenames = NULL; 
+  statelist = NULL; 
 }
 
 markov_model::~markov_model()
 {
-  delete statenames;
 }
 
 model_var* markov_model::MakeModelVar(const char *fn, int l, type t, char* n)
 {
-  statenames->Append(n);
+  statelist->Append(n);
   return NULL;
 }
 
 void markov_model::InitModel()
 {
-  statenames = new List <char> (16);
+  statelist = new List <char> (16);
 }
 
 void markov_model::FinalizeModel(result &x)
 {
-  Output << "MC has " << statenames->Length() << " states?\n";
+  numstates = statelist->Length();
+  statenames = statelist->MakeArray();
+  delete statelist;
+  statelist = NULL;
+  Output << "MC has " << numstates << " states?\n";
   int i;
-  for (i=0; i<statenames->Length(); i++) {
-    Output << "\t" << statenames->Item(i) << "\n";
+  for (i=0; i<numstates; i++) {
+    Output << "\t" << statenames[i] << "\n";
   }
   Output.flush();
 
