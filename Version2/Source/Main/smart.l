@@ -102,10 +102,10 @@ char* IncludeFile(char *name, bool kill)
     fileinfo fi(name, kill);
     // First: check for circular dependency
     if (FileStack.Contains(fi)) {
-	Warn.Start(filename, lexer.lineno());
-	Warn << "circular dependency caused by #include "; 
-	Warn << name << ", ignoring";
-	Warn.Stop();
+	Warning.Start(filename, lexer.lineno());
+	Warning << "circular dependency caused by #include "; 
+	Warning << name << ", ignoring";
+	Warning.Stop();
 	return filename;
     } 
     // Second: try to open the file
@@ -245,9 +245,9 @@ void Include()
 
   // Bail out for empty strings
   if (stop-1==start) {
-    Warn.Start(filename, lexer.lineno());
-    Warn << "Empty filename for include, ignoring";
-    Warn.Stop();
+    Warning.Start(filename, lexer.lineno());
+    Warning << "Empty filename for include, ignoring";
+    Warning.Stop();
     return;
   }
 

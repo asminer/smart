@@ -441,7 +441,7 @@ DisplayStream Output(stdout);
 DisplayStream Verbose(stdout);
 DisplayStream Report(stdout);
 ErrorStream Error("ERROR", stderr);
-ErrorStream Warn("WARNING", stderr);
+ErrorStream Warning("WARNING", stderr);
 InternalStream Internal("INTERNAL", stderr);
 InputStream Input(stdin);
 
@@ -451,7 +451,7 @@ void InitStreams()
   Verbose.Deactivate();
   Report.Deactivate();
   Error.Activate();
-  Warn.Activate();
+  Warning.Activate();
   Internal.Activate();
 }
 

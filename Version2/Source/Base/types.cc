@@ -158,11 +158,11 @@ int FindModif(const char *m)
 // *                                                                 *
 // *******************************************************************
 
-bool Promotable(unsigned char t1, unsigned char t2)
+bool Promotable(type t1, type t2)
 // Can type t1 be promoted to type t2?
 {
   if (t1==t2) return true;
-  if (t1==VOID) return false;
+  if (t1==VOID) return true;  // Allows null -> int/real/etc promotion
   if (t2==VOID) return false; // I think...
 
   // Handle "promotion" of specific models to generic models.
@@ -256,7 +256,7 @@ bool Promotable(unsigned char t1, unsigned char t2)
 // *                                                                 *
 // *******************************************************************
 
-bool Castable(int t1, int t2)
+bool Castable(type t1, type t2)
 // Can type t1 be cast to type t2?
 {
   if (Promotable(t1,t2)) return true;

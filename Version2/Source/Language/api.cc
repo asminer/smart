@@ -9,16 +9,16 @@ void SetStackSize(void *x, const char* f, int l)
 {
   int newsize = ((int*)x)[0];
   if ((newsize<0) || (newsize>2000000000)) {
-    Warn.Start(f, l);
-    Warn << "Option #StackSize set out of range";
-    Warn.Stop();
+    Warning.Start(f, l);
+    Warning << "Option #StackSize set out of range";
+    Warning.Stop();
     return;
   }
   bool ok = ResizeRuntimeStack(newsize);
   if (!ok) {
-    Warn.Start(f, l);
-    Warn << "Attempt to set option #StackSize failed, ignoring";
-    Warn.Stop();
+    Warning.Start(f, l);
+    Warning << "Attempt to set option #StackSize failed, ignoring";
+    Warning.Stop();
   }
   // remove soon
   Output << "Successfully resized stack\n";

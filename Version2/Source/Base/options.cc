@@ -149,9 +149,9 @@ public:
   virtual void SetValue(int b, const char* f, int l) { 
     if (min<max) {
       if ((value<min) || (value>max)) {
-	Warn.Start(f, l);
-	Warn << "Illegal value for option " << Name() << ", ignoring";
-	Warn.Stop();
+	Warning.Start(f, l);
+	Warning << "Illegal value for option " << Name() << ", ignoring";
+	Warning.Stop();
 	return;
       }
     }
@@ -191,9 +191,9 @@ public:
   virtual void SetValue(double b, const char* f, int l) { 
     if (min<max) {
       if ((value<min) || (value>max)) {
-	Warn.Start(f, l);
-	Warn << "Illegal value for option " << Name() << ", ignoring";
-	Warn.Stop();
+	Warning.Start(f, l);
+	Warning << "Illegal value for option " << Name() << ", ignoring";
+	Warning.Stop();
 	return;
       }
     }

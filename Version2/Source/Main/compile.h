@@ -66,7 +66,8 @@ array_index* BuildIterator(type t, char* n, expr* values);
     @param	opnd	Operand.
 
     @return	Desired expression.
-    		Returns NULL if opnd is NULL, or there was an error.
+    		Returns NULL if opnd is NULL, 
+		ERROR if there was an error.
 
 */
 expr* BuildUnary(int op, expr* opnd);
@@ -80,7 +81,9 @@ expr* BuildUnary(int op, expr* opnd);
     @param	right	Right expression
 
     @return	Desired expression.
-    		If left or right are NULL, or there was an error, returns NULL.
+    		If left or right are NULL, returns NULL.
+		If left or right are ERROR, or there was an error,
+		returns ERROR.
 */
 expr* BuildBinary(expr* left, int op, expr* right);
 
@@ -90,7 +93,7 @@ expr* BuildBinary(expr* left, int op, expr* right);
     @param	opnd	Operand expression.
     @param	newtype	Desired new type of the expression.
 
-    @return	Desired expression, or NULL on an error.
+    @return	Desired expression, ERROR on an error.
 */
 expr* BuildTypecast(expr* opnd, type newtype);
 
@@ -100,6 +103,7 @@ expr* BuildTypecast(expr* opnd, type newtype);
 	@param	b	Second expression
 
 	@return	If a or b is NULL, then return NULL;
+		If a or b is ERROR, return ERROR;
 		else return a pointer to a new list, containing a and b.
 */
 void* StartAggregate(expr *a, expr *b);
@@ -110,6 +114,7 @@ void* StartAggregate(expr *a, expr *b);
 	@param b	Expression to add
 
 	@return	If b is NULL, return NULL and trash x;
+		If b is ERROR or x is ERROR, returns ERROR;
 		otherwise, adds b to x and returns x.
 */
 void* AddAggregate(void *x, expr *b);
@@ -119,6 +124,7 @@ void* AddAggregate(void *x, expr *b);
 	@param	x	A pointer to a List of expressions
 
 	@return	If x is NULL, then return NULL;
+		if x is ERROR, then return ERROR;
 		else return an aggregate expression.
 */
 expr* BuildAggregate(void* x);
@@ -136,7 +142,7 @@ expr* BuildAggregate(void* x);
 
   @param	i	Iterator to add to stack.
   @return	1 if iterator was added,
-  		0 if it was not (i.e., if i is NULL)
+  		0 if it was not (i.e., if i is NULL or ERROR)
 */
 int AddIterator(array_index* i);
 
@@ -149,14 +155,15 @@ int AddIterator(array_index* i);
 statement* BuildForLoop(int count, void* stmts);
 
 /** Builds an expression statement.
-    If the expression is NULL, we return NULL.
+    If the expression is NULL or ERROR, we return NULL.
 */
 statement* BuildExprStatement(expr *x);
 
 /** Builds an array assignment statement with typechecking.
     @param	a	The array
     @param	e	The expression
-    @return	NULL if a is NULL; otherwise an array assignment statement
+    @return	NULL if a is NULL or e is ERROR,
+    		otherwise an array assignment statement
 */
 statement* BuildArrayStmt(array *a, expr *e);
 

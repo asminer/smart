@@ -60,7 +60,7 @@ public:
   inline void ComputeCurrent() {
     Delete(current);
     result x;
-    values->Compute(0, x);
+    SafeCompute(values, 0, x);
     if (x.null || x.error) current = NULL;  // print an error?
     else current = (set_result*) x.other;
   }

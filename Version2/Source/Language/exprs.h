@@ -241,13 +241,19 @@ public:
   friend void Delete(expr *e);
 };
 
+/* Error expression.
+    Use this instead of NULL, because NULL means null.
+    error should be used for, say, compile-time errors.
+*/
+#define ERROR ((expr*)0xffffffff) 
+
 /**  Create a "copy" of this expression.
      Since we share pointers, this simply
      increases the incoming pointer count.
  */
 inline expr* Copy(expr *e)
 {
-  if (e) {
+  if (e && e!=ERROR) {
     e->incoming++;
 #ifdef SHARE_DEBUG
     cerr << "increased incoming count for " << e << " to " << e->incoming << endl;
@@ -263,7 +269,7 @@ inline expr* Copy(expr *e)
  */
 inline void Delete(expr *e)
 {
-  if (e) {
+  if (e && e!=ERROR) {
     DCASSERT(e->incoming>0);
     e->incoming--;
 #ifdef SHARE_DEBUG
@@ -451,6 +457,7 @@ public:
  */
 inline void SafeCompute(expr *e, int a, result &x) 
 {
+  DCASSERT(e!=ERROR);
   if (e) {
     e->Compute(a, x);
   } else {
@@ -464,6 +471,7 @@ inline void SafeCompute(expr *e, int a, result &x)
  */
 inline void SafeSample(expr *e, int a, long &seed, result &x) 
 {
+  DCASSERT(e!=ERROR);
   if (e) {
     e->Sample(seed, a, x);
   } else {
@@ -475,6 +483,7 @@ inline void SafeSample(expr *e, int a, long &seed, result &x)
 /// Safe way to count components
 inline int NumComponents(expr *e)
 {
+  DCASSERT(e!=ERROR);
   if (e) return e->NumComponents();
   return 1;
 }
@@ -482,6 +491,7 @@ inline int NumComponents(expr *e)
 /// Safe way to get expression type
 inline type Type(expr *e, int comp)
 {
+  DCASSERT(e!=ERROR);
   if (NULL==e) return VOID;
   return e->Type(comp);
 }

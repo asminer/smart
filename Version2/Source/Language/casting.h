@@ -25,6 +25,7 @@
 
 /** 
      Build a typecast expression.
+     If e is NULL or error, it is returned.
      If e is not promotable to the specified type, we return NULL.
      If e is already of the specified type, we return it.
 

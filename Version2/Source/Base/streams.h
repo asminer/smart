@@ -198,7 +198,7 @@ extern DisplayStream Verbose;
 extern DisplayStream Report;
 // Pre-defined error streams
 extern ErrorStream Error;
-extern ErrorStream Warn;
+extern ErrorStream Warning;
 extern InternalStream Internal;
 
 // Pre-defined input stream

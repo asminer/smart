@@ -115,6 +115,7 @@ int typecheck_print(List <expr> *params)
   for (i=0; i<np; i++) {
     expr* p = params->Item(i);
     if (NULL==p) continue;
+    if (ERROR==p) return -1;
     switch (p->Type(0)) {
       case BOOL:
       case INT:

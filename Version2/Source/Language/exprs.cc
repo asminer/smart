@@ -23,18 +23,23 @@
 
 OutputStream& operator<< (OutputStream &s, expr *e)
 {
-  if (e) e->show(s);
-  else s << "null";
+  if (e!=ERROR) {
+    if (e) e->show(s);
+    else s << "null";
+  } else s << "error";
   return s;
 }
 
 void PrintExprType(expr *e, OutputStream &s)
 {
   DCASSERT(e);
-  int i;
-  for (i=0; i<e->NumComponents(); i++) {
-    if (i) s << ":";
-    s << GetType(e->Type(i));
+  if (e!=ERROR) {
+    for (int i=0; i<e->NumComponents(); i++) {
+      if (i) s << ":";
+      s << GetType(e->Type(i));
+    }
+  } else {
+    s << "error";
   }
 }
 
@@ -124,6 +129,7 @@ expr* constant::Substitute(int i)
 
 unary::unary(const char* fn, int line, expr *x) : expr(fn,line) 
 {
+  DCASSERT(x!=ERROR);
   opnd = x;
   DCASSERT(opnd);
 }
@@ -171,6 +177,8 @@ binary::binary(const char* fn, int line, expr *l, expr *r) : expr(fn,line)
   right = r;
   DCASSERT(left);
   DCASSERT(right);
+  DCASSERT(left!=ERROR);
+  DCASSERT(right!=ERROR);
 }
 
 binary::~binary()

@@ -129,9 +129,9 @@ expr* MakeBoolConst(char* s)
   }
   // error
   Internal.Start(filename, lexer.lineno());
-  Internal << "bad boolean constant";
+  Internal << "bad boolean constant: " << s;
   Internal.Stop();
-  return NULL;
+  return ERROR;
 }
 
 expr* MakeIntConst(char* s)
@@ -162,12 +162,20 @@ expr* BuildInterval(expr* start, expr* stop)
     return NULL;
   }
   
+  if (ERROR==start || ERROR==stop) {
+    Delete(start);
+    Delete(stop);
+    return ERROR;
+  }
+  
   // make sure both are integers here...
   if (start->Type(0)!=INT || stop->Type(0)!=INT) {
     Error.Start(filename, lexer.lineno());
     Error << "Step size expected for interval" << start << ".." << stop;
     Error.Stop();
-    return NULL;
+    Delete(start);
+    Delete(stop);
+    return ERROR;
   }
 
   expr* answer = MakeInterval(filename, lexer.lineno(), 
@@ -189,6 +197,13 @@ expr* BuildInterval(expr* start, expr* stop, expr* inc)
     Delete(stop);
     Delete(inc);
     return NULL;
+  }
+
+  if (ERROR==start || ERROR==stop || ERROR==inc) {
+    Delete(start);
+    Delete(stop);
+    Delete(inc);
+    return ERROR;
   }
 
   bool typemismatch = false;
@@ -221,7 +236,7 @@ expr* BuildInterval(expr* start, expr* stop, expr* inc)
     Delete(start);
     Delete(stop);
     Delete(inc);
-    return NULL;
+    return ERROR;
   }
 
   expr* answer = MakeInterval(filename, lexer.lineno(), start, stop, inc);
@@ -242,6 +257,12 @@ expr* AppendSetElem(expr* left, expr* right)
     Delete(left);
     Delete(right);
     return NULL;
+  }
+
+  if (ERROR==left || ERROR==right) {
+    Delete(left);
+    Delete(right);
+    return ERROR;
   }
 
   bool ok = false;
@@ -279,7 +300,9 @@ expr* AppendSetElem(expr* left, expr* right)
     Error << " , ";
     PrintExprType(right, Error);
     Error.Stop();
-    return NULL;
+    Delete(left);
+    Delete(right);
+    return ERROR;
   }
 
   expr* answer = MakeUnionOp(filename, lexer.lineno(), left, right);
@@ -288,35 +311,40 @@ expr* AppendSetElem(expr* left, expr* right)
 
 array_index* BuildIterator(type t, char* n, expr* values)
 {
-  if (NULL==values) return NULL;
+  if (ERROR==values) return NULL;
 
-  // type checking
-  type vt = values->Type(0);
-  bool match = false;
-  switch (t) {
-    case INT:	match = (vt == SET_INT); 	break;
-    case REAL:	
-    	if (vt == SET_INT) {
-	  values = MakeInt2RealSet(filename, lexer.lineno(), values);
-	  vt = values->Type(0);
+  if (NULL==values) {
+    Warning.Start(filename, lexer.lineno());
+    Warning << "Empty set for iterator " << n;
+    Warning.Stop();
+  } else {
+    // type checking
+    type vt = values->Type(0);
+    bool match = false;
+    switch (t) {
+      case INT:	match = (vt == SET_INT); 	break;
+      case REAL:	
+        if (vt == SET_INT) {
+	    values = MakeInt2RealSet(filename, lexer.lineno(), values);
+	    vt = values->Type(0);
 	}
     	match = (vt == SET_REAL);	break;
-    default:
+      default:
     	Error.Start(filename, lexer.lineno());
 	Error << "Illegal type for iterator " << n;
 	Error.Stop();
 	Delete(values);
 	return NULL;
-  }
+    }
 
-  // To do still: promote int sets to reals, if t is real
-  
-  if (!match) {
-    Error.Start(filename, lexer.lineno());
-    Error << "Type mismatch: iterator " << n << " expects set of type " << GetType(t);
-    Error.Stop();
-    Delete(values);
-    return NULL;
+    if (!match) {
+      Error.Start(filename, lexer.lineno());
+      Error << "Type mismatch: iterator " << n;
+      Error << " expects set of type " << GetType(t);
+      Error.Stop();
+      Delete(values);
+      return NULL;
+    }
   }
 
   array_index* ans = new array_index(filename, lexer.lineno(), t, n, values);
@@ -332,6 +360,7 @@ array_index* BuildIterator(type t, char* n, expr* values)
 expr* BuildUnary(int op, expr* opnd)
 {
   if (NULL==opnd) return NULL;
+  if (ERROR==opnd) return ERROR;
 
   // type checking here
 
@@ -342,6 +371,8 @@ bool PromoteForOp(expr* &left, int op, expr* &right)
 {
   DCASSERT(left);
   DCASSERT(right);
+  DCASSERT(left!=ERROR);
+  DCASSERT(right!=ERROR);
 
   // these should be enforced by the compiler (the language itself)
   DCASSERT(left->NumComponents()==1);
@@ -546,6 +577,12 @@ expr* BuildBinary(expr* left, int op, expr* right)
     return NULL;
   }
 
+  if (ERROR==left || ERROR==right) {
+    Delete(left);
+    Delete(right);
+    return ERROR;
+  }
+
 #ifdef COMPILE_DEBUG
   Output << "Building binary expression " << left << GetOp(op) << right << "\n";
 #endif
@@ -559,7 +596,9 @@ expr* BuildBinary(expr* left, int op, expr* right)
     Error << " " << GetOp(op) << " ";
     PrintExprType(right, Error);
     Error.Stop();
-    return NULL;
+    Delete(left);
+    Delete(right);
+    return ERROR;
   }
 
   expr* answer = MakeBinaryOp(left, op, right, filename, lexer.lineno());
@@ -573,8 +612,17 @@ expr* BuildBinary(expr* left, int op, expr* right)
 expr* BuildTypecast(expr* opnd, type newtype)
 {
   if (NULL==opnd) return NULL;
+  if (ERROR==opnd) return ERROR;
 
   // type checking here
+  if (!Castable(opnd->Type(0), newtype)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal typecast from " << GetType(opnd->Type(0));
+    Error << " to " << GetType(newtype);
+    Error.Stop();
+    Delete(opnd);
+    return ERROR;
+  }
   
   return MakeTypecast(opnd, newtype, filename, lexer.lineno());
 }
@@ -586,6 +634,11 @@ void* StartAggregate(expr* a, expr* b)
     Delete(b);
     return NULL;
   }
+  if (ERROR==a || ERROR==b) {
+    Delete(a);
+    Delete(b);
+    return ERROR;
+  }
   List <expr> *foo = new List <expr> (256);
   foo->Append(a);
   foo->Append(b);
@@ -594,14 +647,14 @@ void* StartAggregate(expr* a, expr* b)
 
 void* AddAggregate(void* x, expr* b)
 {
-  if (NULL==x) {
+  if (NULL==x || ERROR==x) {
     Delete(b);
-    return NULL;
+    return x;
   }
   List <expr> *foo = (List <expr> *)x;
-  if (NULL==b) {
+  if (NULL==b || ERROR==b) {
     delete foo;
-    return NULL;
+    return b;
   }
   foo->Append(b);
   return foo;
@@ -610,6 +663,7 @@ void* AddAggregate(void* x, expr* b)
 expr* BuildAggregate(void* x)
 {
   if (NULL==x) return NULL;
+  if (ERROR==x) return ERROR;
   List <expr> *foo = (List <expr> *)x;
   int size = foo->Length();
   expr** parts = foo->MakeArray();
@@ -632,7 +686,7 @@ expr* BuildAggregate(void* x)
 
 int AddIterator(array_index *i)
 {
-  if (NULL==i) return 0;
+  if (NULL==i || ERROR==i) return 0;
   Iterators->Append(i);
 #ifdef COMPILE_DEBUG
   Output << "Adding " << i << " to Iterators\n";
@@ -697,22 +751,22 @@ statement* BuildForLoop(int count, void *stmts)
 
 statement* BuildExprStatement(expr *x)
 {
-  if (NULL==x) return NULL;
+  if (NULL==x || ERROR==x) return NULL;
   Optimize(0, x);
   statement* s = MakeExprStatement(x, filename, lexer.lineno());
-  if (NULL==s) return NULL;
   return s;
 }
 
 statement* BuildArrayStmt(array *a, expr *e)
 {
-  if (NULL==a) return NULL;
+  if (NULL==a || ERROR==a) return NULL;
+  if (ERROR==e) return NULL;
   if (NULL==e) {
     return MakeArrayAssign(a, NULL, filename, lexer.lineno());
   }
   if (!Promotable(e->Type(0), a->Type(0))) {
     Error.Start(filename, lexer.lineno());
-    Error << "type mismatch in assignment for array " << a->Name();
+    Error << "Type mismatch in assignment for array " << a->Name();
     Error.Stop();
     return NULL;
   }
@@ -724,10 +778,10 @@ statement* BuildArrayStmt(array *a, expr *e)
 
 statement* BuildFuncStmt(user_func *f, expr *r)
 {
-  if (f && r) {
+  if (f && r!=ERROR) {
     // Check type!
     DCASSERT(r->NumComponents()==1);
-    if (!Promotable(r->Type(0), f->Type(0))) {
+    if (!Promotable(Type(r, 0), f->Type(0))) {
       Error.Start(filename, lexer.lineno());
       Error << "Return type for function " << f->Name();
       Error << " should be " << GetType(f->Type(0));
@@ -744,7 +798,7 @@ statement* BuildFuncStmt(user_func *f, expr *r)
 
 statement* BuildVarStmt(type t, char* id, expr* ret)
 {
-  if (NULL==ret) return NULL;
+  if (ERROR==ret) return NULL;
 
   // eventually... check if we're in a converge
 
@@ -759,8 +813,8 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     return NULL;
   }
   // name ok, check type consistency
-  DCASSERT(ret->NumComponents()==1);
-  if (!Promotable(ret->Type(0), t)) {
+  DCASSERT(NumComponents(ret)==1);
+  if (!Promotable(Type(ret, 0), t)) {
     Error.Start(filename, lexer.lineno());
     Error << "Return type for identifier " << id;
     Error << " should be " << GetType(t);
@@ -979,7 +1033,7 @@ expr* FindIdent(char* name)
   Error.Start(filename, lexer.lineno());
   Error << "Unknown identifier: " << name;
   Error.Stop();
-  return NULL;
+  return ERROR;
 }
 
 expr* BuildArrayCall(const char* n, void* ind)
@@ -992,7 +1046,7 @@ expr* BuildArrayCall(const char* n, void* ind)
     Error << "Unknown array " << n;
     Error.Stop();
     delete foo;
-    return NULL;
+    return ERROR;
   }
   // check type, dimension of indexes
   int size = foo->Length();
@@ -1005,7 +1059,7 @@ expr* BuildArrayCall(const char* n, void* ind)
     Error << "Array " << n << " has dimension " << dim;
     Error.Stop();
     delete foo;
-    return NULL;
+    return ERROR;
   }
   // types
   for (i=0; i<dim; i++) {
@@ -1017,7 +1071,7 @@ expr* BuildArrayCall(const char* n, void* ind)
       Error << " for index " << il[i]->Name();
       Error.Stop();
       delete foo;
-      return NULL;
+      return ERROR;
     }
   }
 
@@ -1151,7 +1205,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     Error << "Unknown function " << n;
     Error.Stop();
     delete params;
-    return NULL;
+    return ERROR;
   }
 
   // Find best match in symbol table
@@ -1187,7 +1241,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     DumpPassed(Error, params);
     Error.Stop();
     // dump candidates?
-    return NULL;
+    return ERROR;
   }
 
   if (matches->Length()>1) {
@@ -1197,7 +1251,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
     DumpPassed(Error, params);
     Error.Stop();
     // dump matching candidates?
-    return NULL;
+    return ERROR;
   }
 
   // Good to go
@@ -1213,7 +1267,7 @@ expr* BuildFunctionCall(const char* n, void* posparams)
   else
     ok = LinkFunction(find, pp, np);
 
-  if (!ok) return NULL;
+  if (!ok) return ERROR;
 
   expr *fcall = MakeFunctionCall(find, pp, np, filename, lexer.lineno());
   return fcall;
@@ -1224,7 +1278,7 @@ expr* BuildNamedFunctionCall(const char *, void*)
   Internal.Start(__FILE__, __LINE__);
   Internal << "Named parameters not done yet, sorry";
   Internal.Stop();
-  return NULL;
+  return ERROR;
 }
 
 // ==================================================================
@@ -1247,7 +1301,7 @@ option* BuildOptionHeader(char* name)
 statement* BuildOptionStatement(option* o, expr* v)
 {
   if (NULL==o) return NULL;
-  if (NULL==v) return NULL;
+  if (NULL==v || ERROR==v) return NULL;
   // check types
   if (!Promotable(v->Type(0), o->Type())) {
     Error.Start(filename, lexer.lineno());

@@ -325,7 +325,7 @@ void proc2procrand::Sample(long &, int i, result &x)
 
 expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 {
-  if (NULL==e) return NULL;
+  if (NULL==e || ERROR==e) return e;
   if (newtype == e->Type(0)) return e;
 
   // Note... it is assumed that e is promotable to "newtype".
@@ -400,8 +400,9 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 
 expr* MakeTypecast(expr *e, const expr* fp, const char* file, int line)
 {
-  if (NULL==e) return NULL;
+  if (NULL==e || ERROR==e) return e;
   if (NULL==fp) return NULL;
+  DCASSERT(ERROR!=fp);
   
   DCASSERT(fp->NumComponents() == e->NumComponents());
   int nc = e->NumComponents();

@@ -1878,6 +1878,7 @@ void proc_assoc::Compute(int a, result &x)
 expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
 {
   if (NULL==opnd) return NULL;
+  if (ERROR==opnd) return ERROR;
 
   type optype = opnd->Type(0);
   switch (optype) {
@@ -1915,6 +1916,11 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
     Delete(left);
     Delete(right);
     return NULL;
+  }
+  if (ERROR==left || ERROR==right) {
+    Delete(left);
+    Delete(right);
+    return ERROR;
   }
   type ltype = left->Type(0);
   type rtype = right->Type(0);
@@ -2039,12 +2045,18 @@ expr* IllegalAssocError(int op, type alltype, const char *fn, int ln)
 // Note: operand types must match properly already
 expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
 {
-  int i;
-  for (i=0; i<n; i++) if (NULL==opnds[i]) {
-    int j;
-    for (j=0; j<n; j++) Delete(opnds[j]);
-    delete[] opnds;
-    return NULL;
+  int i,j;
+  for (i=0; i<n; i++) {
+    if (NULL==opnds[i]) {
+      for (j=0; j<n; j++) Delete(opnds[j]);
+      delete[] opnds;
+      return NULL;
+    }
+    if (ERROR==opnds[i]) {
+      for (j=0; j<n; j++) Delete(opnds[j]);
+      delete[] opnds;
+      return ERROR;
+    }
   }
   type alltypes = opnds[0]->Type(0);
 #ifdef DEVELOPMENT_CODE
@@ -2115,6 +2127,7 @@ void Optimize(int a, expr* &e)
 {
   static List <expr> optbuffer(128);
   if (NULL==e) return;
+  if (ERROR==e) return;
   int i;
   // First... try to split us into sums
   optbuffer.Clear();
