@@ -9,6 +9,9 @@
 #include "options.h"
 #include "../defines.h"
 
+// defined in topmost api...
+void smart_exit();
+
 // Output options:
 
 option* real_format;
@@ -30,13 +33,13 @@ void OutputStream::ExpandBuffer(int wantsize)
     newsize *= 2;
     if (newsize > 1000000) {
       fprintf(stderr, "Smart Panic: Output buffer overflow, bailing out\n");
-      exit(0);
+      exit(SMART_PANIC);
     }
   }
   char* newbuffer = (char*) realloc(buffer, newsize);
   if (NULL==newbuffer) {
     fprintf(stderr, "Smart Panic: memory error for output buffer\n");
-    exit(0);
+    exit(SMART_PANIC);
   }
   bufsize = newsize;
   buffer = newbuffer;  // just in case
@@ -69,7 +72,7 @@ void OutputStream::DetermineRealFormat()
   fprintf(stderr, "Smart Panic: unknown real format ");
   if (foo) fprintf(stderr, "\"%s\" ", foo->name);
   fprintf(stderr, "for output\n");
-  exit(0);
+  exit(SMART_PANIC);
 }
 
 OutputStream::OutputStream()
@@ -404,7 +407,8 @@ void InternalStream::Stop()
     flush();
     ready = false;
   }
-  exit(0);
+  smart_exit();
+  exit(INTERNAL_ERROR);
 }
 
 

@@ -147,7 +147,12 @@ void array::Compute(expr **il, result &x)
     if (ndx<0) {
       // range error
       x.error = CE_OutOfRange;
-      // print something?
+      Error.Start(il[i]->Filename(), il[i]->Linenumber());
+      Error << "Bad value: ";
+      PrintResult(Error, il[i]->Type(0), y);
+      Error << " for index " << index_list[i];
+      Error << " in array " << Name();
+      Error.Stop();
       return;
     }
     ptr = (array_desc*) ptr->down[ndx];

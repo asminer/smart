@@ -325,6 +325,7 @@ void proc2procrand::Sample(long &, int i, result &x)
 
 expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 {
+  if (NULL==e) return NULL;
   if (newtype == e->Type(0)) return e;
 
   // Note... it is assumed that e is promotable to "newtype".

@@ -21,14 +21,9 @@ void InitLexer(int filecount, char** files)
   filename = NULL;
 }
 
-void ShowVersion()
-{
-  Output << "SMART version " << _VERSION << "\n";
-  Output.flush();
-}
-
 void HelpScreen()
 {
+  Output << "SMART version " << _VERSION << "\n";
   Output << "Usage : \n";
   Output << "smart <file1> <file2> ... <filen>\n";
   Output << "      Use the filename `-' to denote standard input\n";
@@ -36,10 +31,14 @@ void HelpScreen()
   Output.flush();
 }
 
+void smart_exit()
+{
+  // we're going to bail
+  Output.flush();
+}
 
 int smart_main(int argc, char *argv[])
 {
-  ShowVersion();
   if (argc<2) {
     HelpScreen();
     return 0;
@@ -59,9 +58,7 @@ int smart_main(int argc, char *argv[])
 
   yyparse();
 
-  Output << "Done.\n";
-  Output.flush();
-
+  smart_exit();
   return 0;
 }
 

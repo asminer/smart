@@ -10,4 +10,9 @@
 
 int smart_main(int argc, char** argv);
 
+/** Should be called before exiting, either normally or due to an error.
+    Does critical cleanup, like flushing output.
+*/
+void smart_exit();
+
 #endif

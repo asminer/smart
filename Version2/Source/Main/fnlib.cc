@@ -1,6 +1,7 @@
 
 // $Id$
 
+#include "api.h"
 #include "fnlib.h"
 #include "compile.h"
 
@@ -225,6 +226,122 @@ void compute_read_int(expr **pp, int np, result &x)
 }
 
 // ********************************************************
+// *                   File functions                     *
+// ********************************************************
+
+void compute_errorfile(expr **p, int np, result &x)
+{
+  DCASSERT(np==1);
+  x.Clear();
+  if (p[0]==NULL) {
+    Error.SwitchDisplay(NULL);
+    x.bvalue = true;
+    return;
+  }
+  p[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) {
+    Error.SwitchDisplay(NULL);
+    x.Clear();
+    x.bvalue = true;
+    return;
+  }
+  char* filename = (char*) x.other;
+  FILE* outfile = fopen(filename, "a");
+  if (NULL==outfile) {
+    // error, print message?
+    x.bvalue = false;
+  } else {
+    Error.SwitchDisplay(outfile);
+    x.bvalue = true;
+  }
+}
+
+void AddErrorFile(PtrTable *fns)
+{
+  const char* helpdoc = "Append the error stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the error stream is switched to standard error. \n\tReturns true on success.";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(STRING, "filename");
+
+  internal_func *p =
+    new internal_func(BOOL, "ErrorFile", compute_errorfile, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+
+void compute_outputfile(expr **p, int np, result &x)
+{
+  DCASSERT(np==1);
+  x.Clear();
+  if (p[0]==NULL) {
+    Output.SwitchDisplay(NULL);
+    x.bvalue = true;
+    return;
+  }
+  p[0]->Compute(0, x);
+  if (x.error) return;
+  if (x.null) {
+    Output.SwitchDisplay(NULL);
+    x.Clear();
+    x.bvalue = true;
+    return;
+  }
+  char* filename = (char*) x.other;
+  FILE* outfile = fopen(filename, "a");
+  if (NULL==outfile) {
+    // error, print message?
+    x.bvalue = false;
+  } else {
+    Output.SwitchDisplay(outfile);
+    x.bvalue = true;
+  }
+}
+
+void AddOutputFile(PtrTable *fns)
+{
+  const char* helpdoc = "Append the output stream to the specified filename.  \n\tIf the file does not exist, it is created.  \n\tIf the filename is null, the output stream is switched to standard output. \n\tReturns true on success.";
+
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(STRING, "filename");
+
+  internal_func *p =
+    new internal_func(BOOL, "OutputFile", compute_outputfile, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *               system-like  functions                 *
+// ********************************************************
+
+void compute_exit(expr **p, int np, result &x)
+{
+  int code = 0;
+  if (p[0]) {
+    p[0]->Compute(0, x);
+    if (!x.null && !x.error && !x.infinity) {
+      code = x.ivalue;
+    }
+  }
+  smart_exit();
+  exit(code);
+}
+
+void AddExit(PtrTable *fns)
+{
+  const char* helpdoc = "Exit smart with specified return code.";
+  formal_param **pl = new formal_param*[1];
+  pl[0] = new formal_param(INT, "code");
+
+  internal_func *p = 
+    new internal_func(VOID, "exit", compute_exit, NULL, pl, 1, helpdoc);
+
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                  switch functions                    *
 // ********************************************************
 
@@ -246,8 +363,13 @@ void compute_cond(expr **pp, int np, result &x)
     x = b;
     return;
   }
-  if (b.bvalue) pp[1]->Compute(0, x);
-  else pp[2]->Compute(0, x); 
+  if (b.bvalue) {
+    if (pp[1]) pp[1]->Compute(0, x);
+    else x.null = true;
+  } else {
+    if (pp[2]) pp[2]->Compute(0, x); 
+    else x.null = true;
+  }
 }
 
 void sample_cond(long &seed, expr **pp, int np, result &x)
@@ -290,8 +412,14 @@ void AddCond(type t, PtrTable *fns)
 void InitBuiltinFunctions(PtrTable *t)
 {
   AddHelp(t);
+  // I/O
   AddPrint(t);
   AddSprint(t);
+  // Files
+  AddErrorFile(t);
+  AddOutputFile(t);
+  // System stuff
+  AddExit(t);
   // Conditionals
   type i;
   for (i=FIRST_SIMPLE; i<=LAST_SIMPLE; i++)	AddCond(i, t);
