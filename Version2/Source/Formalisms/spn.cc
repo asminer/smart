@@ -107,30 +107,6 @@ struct spn_arcinfo {
     expr* cc = MakeConstExpr(PROC_INT, const_card, filename, linenumber);
     return MakeBinaryOp(cc, PLUS, proc_card, NULL, -1);
   }
-  inline expr* InputCompare(model_var* pl) const {
-    // we want cardinality of tk(pn) >= arc
-    if (NULL==proc_card) 
-      return MakeConstCompare(pl, GE, const_card, filename, linenumber);
-    // expression for cardinality 
-    return MakeExprCompare(pl, GE, MakeCard(), filename, linenumber);
-  }
-  inline expr* InhibitCompare(model_var* pl) const {
-    // we want cardinality of arc > tk(pn)
-    if (NULL==proc_card) 
-      return MakeConstCompare(pl, LT, const_card, filename, linenumber);
-    // expression for cardinality 
-    return MakeExprCompare(pl, LT, MakeCard(), filename, linenumber);
-  }
-  inline expr* AddToPlace(const char* mn, model_var* pn) const {
-    if (NULL==proc_card) 
-      return ChangeStateVar(mn, pn, const_card, filename, linenumber);
-    return ChangeStateVar(mn, pn, PLUS, MakeCard(), filename, linenumber);
-  }
-  inline expr* SubFromPlace(const char* mn, model_var* pn) const {
-    if (NULL==proc_card)
-      return ChangeStateVar(mn, pn, -const_card, filename, linenumber);
-    return ChangeStateVar(mn, pn, MINUS, MakeCard(), filename, linenumber);
-  }
 };
 
 /// Useful for debugging
@@ -171,7 +147,7 @@ public:
   virtual void Compute(const state &, int i, result &x);
   virtual expr* Substitute(int i) { DCASSERT(0); }
 // virtual int GetProducts(int i, List <expr> *prods);
-// virtual int GetSymbols(int i, List <symbol> *syms);
+  virtual int GetSymbols(int i, List <symbol> *syms);
   virtual void show(OutputStream &s) const;
 };
 
@@ -335,6 +311,17 @@ void transition_enabled::Compute(const state &s, int a, result &x)
   x.bvalue = true;
 }
 
+int transition_enabled::GetSymbols(int i, List <symbol> *syms)
+{
+  DCASSERT(0==i);
+  int answer = end_expr_upper;
+  if (syms) {
+    for (int i=0; i<answer; i++) syms->Append(places[i]);
+  }
+  // add expressions here
+  return answer; 
+}
+
 void transition_enabled::show(OutputStream &s) const
 {
   bool printed = false;
@@ -377,6 +364,271 @@ void transition_enabled::show(OutputStream &s) const
     s << guard;
   }
   if (!printed) s << "true";
+}
+
+// ******************************************************************
+// *                                                                *
+// *             "compiled" Petri net firing expression             *
+// *                                                                *
+// ******************************************************************
+
+class transition_fire : public expr {
+  // First, a list of integer changes to places;
+  // then, a list of expression changes to places.
+  // Stored in a not user-friendly way (in favor of speed)
+  int end_const;
+  int* delta; // dimension is "end_const"
+  int end_expr;
+  expr** exprlist;   // dimension is "end_expr - end_const"
+  model_var** places; // dimension is "end_expr"
+  const char* modelname;
+public:
+  // Very heavy constructor, all "compilation" takes place here!
+  transition_fire(const char* mn, listarray <spn_arcinfo> *a, List <model_var> *P, transition *t);
+  virtual ~transition_fire();
+  virtual type Type(int i) const {
+    DCASSERT(i==0);
+    return PROC_STATE;
+  }
+  virtual void ClearCache() { DCASSERT(0); }
+  virtual void NextState(const state &, state &next, result &x);
+  virtual expr* Substitute(int i) { DCASSERT(0); }
+// virtual int GetProducts(int i, List <expr> *prods);
+// virtual int GetSymbols(int i, List <symbol> *syms);
+  virtual void show(OutputStream &s) const;
+};
+
+// ******************************************************************
+
+transition_fire::transition_fire(const char* mn,
+	listarray <spn_arcinfo> *a, List <model_var> *P,
+	transition *t) : expr(NULL, -1)
+{
+  ALLOC("transition_fire", sizeof(transition_fire));
+  DCASSERT(a);
+  DCASSERT(a->IsStatic());
+  DCASSERT(t);
+ 
+  modelname = mn;
+  List <model_var> plist(4);
+  DataList <int> dlist(4);
+
+  // traverse inputs and outputs simultaneously for constant "deltas";
+  // a place with both contant input and constant output will
+  // have a single, constant delta.
+
+  int in_ptr;
+  if (t->inputs>=0) in_ptr = a->list_pointer[t->inputs];
+  else in_ptr = -1; // signifies "done"
+  int out_ptr;
+  if (t->outputs>=0) out_ptr = a->list_pointer[t->outputs];
+  else out_ptr = -1; // signifies "done"
+
+  while (1) {
+    // advance past any zero constants
+    while (in_ptr >=0 && a->value[in_ptr].const_card ==0) {
+      in_ptr++;
+      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+    }
+    while (out_ptr >=0 && a->value[out_ptr].const_card ==0) {
+      out_ptr++;
+      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+    }
+    if (out_ptr < 0 && in_ptr < 0) break;
+    int i_pl = (in_ptr<0) ? P->Length()+1 : a->value[in_ptr].place;
+    int o_pl = (out_ptr<0) ? P->Length()+1 : a->value[out_ptr].place;
+    
+    if (i_pl < o_pl) {
+      // this place is connected only as input, subtract arc card
+      plist.Append(P->Item(i_pl));
+      dlist.AppendBlank(); 
+      dlist.data[dlist.last-1] = - a->value[in_ptr].const_card;
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+      continue;
+    } // if input only place
+    
+    if (o_pl < i_pl) {
+      // this place is connected only as output, add arc card
+      plist.Append(P->Item(o_pl));
+      dlist.AppendBlank(); 
+      dlist.data[dlist.last-1] = a->value[out_ptr].const_card;
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+      continue;
+    } // if output only place
+    
+    // still here, must have o_pl == i_pl
+    DCASSERT(o_pl == i_pl);  // sanity check ;^)
+
+    // this place is connected both as an inhibitor and as input
+    // Add (outcard - incard), unless it is zero
+    int d = a->value[out_ptr].const_card - a->value[in_ptr].const_card;
+    if (d) {
+      plist.Append(P->Item(o_pl));
+      dlist.AppendBlank(); 
+      dlist.data[dlist.last-1] = d;
+    }
+    // advance input arc ptr
+    in_ptr++;
+    if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+    // advance output arc ptr
+    out_ptr++;
+    if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+  } // while
+
+  end_const = plist.Length();
+  delta = dlist.CopyAndClearArray();
+
+  List <expr> elist(4);
+  // traverse inputs and outputs simultaneously for expression "deltas"
+
+  if (t->inputs>=0) in_ptr = a->list_pointer[t->inputs];
+  else in_ptr = -1; // signifies "done"
+  if (t->outputs>=0) out_ptr = a->list_pointer[t->outputs];
+  else out_ptr = -1; // signifies "done"
+
+  while (1) {
+    // advance past any non-expressions
+    while (in_ptr >=0 && a->value[in_ptr].proc_card ==NULL) {
+      in_ptr++;
+      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+    }
+    while (out_ptr >=0 && a->value[out_ptr].proc_card ==NULL) {
+      out_ptr++;
+      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+    }
+    if (out_ptr < 0 && in_ptr < 0) break;
+    int i_pl = (in_ptr<0) ? P->Length()+1 : a->value[in_ptr].place;
+    int o_pl = (out_ptr<0) ? P->Length()+1 : a->value[out_ptr].place;
+    
+    if (i_pl < o_pl) {
+      // this place is connected only as input, subtract arc card
+      plist.Append(P->Item(i_pl));
+      elist.Append(MakeUnaryOp(MINUS, Copy(a->value[in_ptr].proc_card), NULL, -1));
+      // advance input arc ptr
+      in_ptr++;
+      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+      continue;
+    } // if input only place
+    
+    if (o_pl < i_pl) {
+      // this place is connected only as output, add arc card
+      plist.Append(P->Item(o_pl));
+      elist.Append(Copy(a->value[out_ptr].proc_card));
+      // advance output arc ptr
+      out_ptr++;
+      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+      continue;
+    } // if output only place
+    
+    // still here, must have o_pl == i_pl
+    DCASSERT(o_pl == i_pl);  // sanity check ;^)
+
+    // this place is connected both as an inhibitor and as input
+    // Add (outcard - incard), unless it is zero
+    expr *d = MakeBinaryOp(
+			Copy(a->value[out_ptr].proc_card),
+			PLUS,
+			Copy(a->value[in_ptr].proc_card),
+			NULL, -1
+              );
+    DCASSERT(d);
+    plist.Append(P->Item(o_pl));
+    elist.Append(d);
+    // advance input arc ptr
+    in_ptr++;
+    if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+    // advance output arc ptr
+    out_ptr++;
+    if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+  } // while
+
+  end_expr = plist.Length();
+  exprlist = elist.MakeArray();
+  places = plist.MakeArray(); 
+}
+
+transition_fire::~transition_fire()
+{
+  FREE("transition_fire", sizeof(transition_fire));
+  delete[] delta;
+  delete[] places;
+  // delete the expressions, we own them
+  for (int i=0; i<end_expr - end_const; i++) {
+    Delete(exprlist[i]);
+  }
+  delete[] exprlist;
+}
+
+void transition_fire::NextState(const state &cur, state &next, result &x)
+{
+  x.Clear();
+  int i;
+  model_var **p = places;
+  int* D = delta;
+  for (i=0; i<end_const; i++) {
+    // update state; check bounds
+    if ( (next[p[0]->state_index].ivalue += (*D)) < 0) {
+      // underflow or overflow?
+      Error.Start(NULL, -1);
+      if (*D > 0) Error << "Overflow ";
+      else Error << "Underflow ";
+      Error << "of place " << p[0]->Name();
+      Error << " in model " << modelname;    
+      Error.Stop();
+      x.setError(); 
+      return;
+    }
+    D++;
+    p++;
+  }
+  expr** b = exprlist;
+  for (; i<end_expr; i++) {
+    // compute delta expression
+    SafeCompute((*b), cur, 0, x);
+    if (!x.isNormal()) return;
+    if ( (next[p[0]->state_index].ivalue += x.ivalue) < 0) {
+      // underflow or overflow?
+      Error.Start(NULL, -1);
+      if (x.ivalue > 0) Error << "Overflow ";
+      else Error << "Underflow ";
+      Error << "of place " << p[0]->Name();
+      Error << " in model " << modelname;    
+      Error.Stop();
+      x.setError(); 
+      return;
+    }
+    b++;
+    p++;
+  }
+}
+
+void transition_fire::show(OutputStream &s) const
+{
+  bool printed = false;
+  int i;
+  model_var **p = places;
+  int* D = delta;
+  for (i=0; i<end_const; i++) {
+    if (printed) s << "; ";
+    s << p[0]->Name();
+    if (*D<0) s << " -= " << - (*D);
+    else s << " += " << (*D);
+    printed = true;
+    D++;
+    p++;
+  }
+  expr** b = exprlist;
+  for (; i<end_expr; i++) {
+    if (printed) s << "; ";
+    s << p[0]->Name() << " += " << (*b);
+    printed = true;
+    b++;
+    p++;
+  }
 }
 
 // ******************************************************************
@@ -570,11 +822,6 @@ public:
   virtual void InitModel();
   virtual void FinalizeModel(result &);
   virtual shared_object* BuildStateModel(const char *fn, int ln);
-
-protected:
-  // used to compile the model
-  expr* BuildEnabledExpr(transition *t);
-  expr* BuildNextstateExpr(transition *t);
 };
 
 // ******************************************************************
@@ -862,8 +1109,8 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   for (int i=0; i<num_events; i++) {
     transition* t = translist->Item(i);
     event_data[i] = new event(t->Filename(), t->Linenumber(), TRANS, strdup(t->Name()));
-    event_data[i]->setEnabling(BuildEnabledExpr(t));
-    event_data[i]->setNextstate(BuildNextstateExpr(t));
+    event_data[i]->setEnabling(new transition_enabled(arcs, placelist, t));
+    event_data[i]->setNextstate(new transition_fire(Name(), arcs, placelist, t));
     event_data[i]->setDistribution(Copy(t->firing));
   }
   delete translist;
@@ -882,174 +1129,6 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   //
   return new spn_dsm(fn, ln, strdup(Name()), event_data, num_events,
   			plist, num_places, initial);
-}
-
-
-expr* spn_model::BuildEnabledExpr(transition *t)
-{
-  return new transition_enabled(arcs, placelist, t);
-  // old...
-  DCASSERT(arcs);
-  DCASSERT(arcs->IsStatic());
-  DCASSERT(t);
-
-  int num_places = placelist->Length();
-  // Build a huge conjunction, first as a list of expressions
-  exprlist->Clear();
-
-  // Go through inputs and inhibitors in order (they're ordered)
-  int input_list = t->inputs;
-  int input_ptr;
-  if (input_list>=0) input_ptr = arcs->list_pointer[input_list];
-  else input_ptr = -1; // signifies "done"
-
-  int inhib_list = t->inhibitors;
-  int inhib_ptr;
-  if (inhib_list>=0) inhib_ptr = arcs->list_pointer[inhib_list];
-  else inhib_ptr = -1; // signifies "done"
-  
-  while (inhib_ptr>=0 || input_ptr>=0) {
-    int i_pl = (input_ptr<0) ? num_places+1 : arcs->value[input_ptr].place;
-    int h_pl = (inhib_ptr<0) ? num_places+1 : arcs->value[inhib_ptr].place;
-    
-    if (i_pl < h_pl) {
-      // this place is connected only as input
-      expr* cmp = arcs->value[input_ptr].InputCompare(placelist->Item(i_pl));
-      if (cmp) exprlist->Append(cmp);
-      // advance input arc ptr
-      input_ptr++;
-      if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-    } // if input only place
-    
-    if (h_pl < i_pl) {
-      // this place is connected only as an inhibitor
-      expr* cmp = arcs->value[inhib_ptr].InhibitCompare(placelist->Item(h_pl));
-      if (cmp) exprlist->Append(cmp);
-      // advance inhibitor arc ptr
-      inhib_ptr++;
-      if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
-    } // if inhibitor only place
-    
-    if (h_pl == i_pl) {
-      // this place is connected both as an inhibitor and as input
-      // we want inputcard <= tk(inplace) < inhibcard
-      expr* cmp = NULL;
-      if ((NULL==arcs->value[inhib_ptr].proc_card) &&
-          (NULL==arcs->value[input_ptr].proc_card)) {
-        // constant cardinality for both arcs, can use a fast operator
-        cmp = MakeConstBounds(arcs->value[input_ptr].const_card, 
-  	  placelist->Item(i_pl), arcs->value[inhib_ptr].const_card-1, NULL, -1);
-        // advance input arc ptr
-        input_ptr++;
-        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-        // advance inhibitor arc ptr
-        inhib_ptr++;
-        if (inhib_ptr==arcs->list_pointer[inhib_list+1]) inhib_ptr = -1;
-      } else {
-        // no fast operator, so handle them separately
-        // input first
-        cmp = arcs->value[input_ptr].InputCompare(placelist->Item(i_pl));
-        // advance input arc ptr
-        input_ptr++;
-        if (input_ptr==arcs->list_pointer[input_list+1]) input_ptr = -1;
-      } // if both constant
-      if (cmp) exprlist->Append(cmp);
-    } // both input and inhibitor
-  } // while
-
-  // add any transition guards to the list here.
-  if (t->guard) {
-    // split into products, because we want one huge conjunction
-    List <expr> foo(16);
-    int np = t->guard->GetProducts(0, &foo);
-    for (int p=0; p<np; p++) {
-      exprlist->Append(Copy(foo.Item(p)));
-    }
-  }
-
-  // have list of conditions, build conjunction
-  int numopnds = exprlist->Length();
-  if (numopnds==0) return MakeConstExpr(PROC_BOOL, true, NULL, -1);
-  expr** opnds = exprlist->Copy();  
-  exprlist->Clear();
-  return MakeAssocOp(AND, opnds, numopnds, NULL, -1);
-}
-
-expr* spn_model::BuildNextstateExpr(transition *t)
-{
-  DCASSERT(arcs);
-  DCASSERT(arcs->IsStatic());
-  DCASSERT(t);
-
-  int num_places = placelist->Length();
-  // Build a huge conjunction, first as a list of expressions
-  exprlist->Clear();
-
-  // Go through inputs and outputs in order (they're ordered)
-  int in_list = t->inputs;
-  int in_ptr;
-  if (in_list>=0) in_ptr = arcs->list_pointer[in_list];
-  else in_ptr = -1; // signifies "done"
-
-  int out_list = t->outputs;
-  int out_ptr;
-  if (out_list>=0) out_ptr = arcs->list_pointer[out_list];
-  else out_ptr = -1; // signifies "done"
-
-  while (out_ptr>=0 || in_ptr>=0) {
-    int i_pl = (in_ptr<0) ? num_places+1 : arcs->value[in_ptr].place;
-    int o_pl = (out_ptr<0) ? num_places+1 : arcs->value[out_ptr].place;
-    
-    if (i_pl < o_pl) {
-      // this place is connected only as input, subtract arc card
-      expr* sub = arcs->value[in_ptr].SubFromPlace(Name(), placelist->Item(i_pl));
-      if (sub) exprlist->Append(sub);
-      // advance input arc ptr
-      in_ptr++;
-      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
-    } // if input only place
-    
-    if (o_pl < i_pl) {
-      // this place is connected only as output, add arc card
-      expr* add = arcs->value[out_ptr].AddToPlace(Name(), placelist->Item(o_pl));
-      if (add) exprlist->Append(add);
-      // advance output arc ptr
-      out_ptr++;
-      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
-    } // if output only place
-    
-    if (o_pl == i_pl) {
-      // this place is connected both as an inhibitor and as input
-      // Add (outcard - incard) 
-      expr* add = NULL;
-      if ((NULL==arcs->value[out_ptr].proc_card) &&
-          (NULL==arcs->value[in_ptr].proc_card)) {
-        // constant cardinality for both arcs, produce constant delta
-        int delta = arcs->value[out_ptr].const_card - arcs->value[in_ptr].const_card;
-        add = ChangeStateVar(Name(), placelist->Item(i_pl), delta, NULL, -1);
-      } else {
-        // expressions for one or more arcs, produce expression delta
-        expr* incard = arcs->value[in_ptr].MakeCard();
-        expr* outcard = arcs->value[out_ptr].MakeCard();
-        expr* delta = MakeBinaryOp(outcard, MINUS, incard, NULL, -1);
-        add = ChangeStateVar(Name(), placelist->Item(i_pl), PLUS, delta, NULL, -1);
-      }
-      if (add) exprlist->Append(add);
-      // advance input arc ptr
-      in_ptr++;
-      if (in_ptr==arcs->list_pointer[in_list+1]) in_ptr = -1;
-      // advance output arc ptr
-      out_ptr++;
-      if (out_ptr==arcs->list_pointer[out_list+1]) out_ptr = -1;
-    } // both input and output
-  } // while
-
-  // have list of state changes, build sequence of them
-  int numopnds = exprlist->Length();
-  if (numopnds==0) return NULL;
-  expr** opnds = exprlist->Copy();  
-  exprlist->Clear();
-  return MakeAssocOp(SEMI, opnds, numopnds, NULL, -1);
 }
 
 
