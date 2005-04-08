@@ -50,7 +50,6 @@ bool Debug_GenerateSandCTMC(state_model *dsm,
 			    labeled_digraph<float>* mc)
 {
   DCASSERT(dsm);
-  DCASSERT(dsm->NumEvents() > 0);
   DCASSERT(states);
   DCASSERT(tree);
   DCASSERT(mc);
@@ -84,7 +83,8 @@ bool Debug_GenerateSandCTMC(state_model *dsm,
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
-  float* rates = new float[dsm->NumEvents()];
+  float* rates = NULL;
+  if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
   for (e=0; e<dsm->NumEvents(); e++) {
     event* t = dsm->GetEvent(e);
     if (EXPO==t->DistroType()) {
@@ -194,7 +194,6 @@ bool GenerateSandCTMC(state_model *dsm,
 			    labeled_digraph<float>* mc)
 {
   DCASSERT(dsm);
-  DCASSERT(dsm->NumEvents() > 0);
   DCASSERT(states);
   DCASSERT(tree);
   DCASSERT(mc);
@@ -222,7 +221,8 @@ bool GenerateSandCTMC(state_model *dsm,
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
-  float* rates = new float[dsm->NumEvents()];
+  float* rates = NULL;
+  if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
   for (e=0; e<dsm->NumEvents(); e++) {
     event* t = dsm->GetEvent(e);
     if (EXPO==t->DistroType()) {

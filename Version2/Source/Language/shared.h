@@ -37,6 +37,7 @@ public:
   shared_object() { linkcount = 1; }
   virtual ~shared_object() { }
   inline bool isDeleted() const { return linkcount<1; }
+  inline int numRefs() const { return linkcount; }
   friend shared_object* Share(shared_object *o);
   friend void Delete(shared_object* o);
 };

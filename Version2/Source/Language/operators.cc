@@ -568,7 +568,11 @@ void Optimize(int a, expr* &e)
     Delete(e);
     e = ne;
     return;  // done
-  } 
+  } else {
+    // the list holds a copy to the expression itself
+    DCASSERT(sumcount);
+    Delete(optbuffer.Item(0));
+  }
   // Still here?  try to split into products
   optbuffer.Clear();
   int prodcount = e->GetProducts(a, &optbuffer);
@@ -581,7 +585,11 @@ void Optimize(int a, expr* &e)
     				e->Filename(), e->Linenumber());
     Delete(e);
     e = ne;
-  } 
+  } else {
+    // the list holds a copy to the expression itself
+    DCASSERT(prodcount);
+    Delete(optbuffer.Item(0));
+  }
 }
 
 

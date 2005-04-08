@@ -21,7 +21,6 @@ template <class SSTYPE>
 bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 {
   DCASSERT(dsm);
-  DCASSERT(dsm->NumEvents() > 0);
   DCASSERT(states);
   DCASSERT(tree);
 
@@ -122,7 +121,6 @@ template <class SSTYPE>
 bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 {
   DCASSERT(dsm);
-  DCASSERT(dsm->NumEvents() > 0);
   DCASSERT(states);
   DCASSERT(tree);
 

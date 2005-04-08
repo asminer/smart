@@ -2,6 +2,7 @@
 // $Id$
 
 #include "stmts.h"
+#include "../Base/memtrack.h"
 
 //@Include: stmts.h
 
@@ -38,11 +39,13 @@ public:
 
 exprstmt::exprstmt(const char* fn, int line, expr *e) : statement(fn,line)
 {
+  ALLOC("exprstmt", sizeof(exprstmt));
   x = e;
 }
 
 exprstmt::~exprstmt()
 {
+  FREE("exprstmt", sizeof(exprstmt));
   Delete(x);
 }
 

@@ -16,6 +16,7 @@
 #include "../Templates/list.h"
 
 // #define COMPUTE_DEBUG
+// #define SHARED_EXPR_DEBUG
 
 //@{
 
@@ -251,6 +252,12 @@ static expr* DEFLT = ((expr*)0xfffffffe);
 inline expr* Copy(expr *e)
 {
   if (e && e!=ERROR && e!=DEFLT) {
+#ifdef SHARED_EXPR_DEBUG
+    Output << "Copying expression: ";
+    e->show(Output);
+    Output << ", already " << e->numRefs() << " copies\n";
+    Output.flush();
+#endif
     Share(e);
   }
   return e;
@@ -264,6 +271,12 @@ inline expr* Copy(expr *e)
 inline void Delete(expr *e)
 {
   if (e && e!=ERROR && e!=DEFLT) {
+#ifdef SHARED_EXPR_DEBUG
+    Output << "Deleting expression: ";
+    e->show(Output);
+    Output << ", currently " << e->numRefs() << " copies\n";
+    Output.flush();
+#endif
     Delete((shared_object*) e);
   }
 }

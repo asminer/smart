@@ -94,6 +94,11 @@ state_model::~state_model()
   FREE("state_model", sizeof(state_model));
   delete statespace;
   delete mc;
+  // trash the events
+  for (int e=0; e<num_events; e++) {
+    Delete(event_data[e]);  // Delete, in case they are shared
+  }
+  delete[] event_data;
 }
 
 int state_model::GetConstantStateSize() const

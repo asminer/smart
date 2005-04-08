@@ -145,7 +145,7 @@ public:
   }
   virtual void ClearCache() { DCASSERT(0); }
   virtual void Compute(const state &, int i, result &x);
-  virtual expr* Substitute(int i) { DCASSERT(0); }
+  virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
   virtual int GetProducts(int i, List <expr> *prods);
   virtual int GetSymbols(int i, List <symbol> *syms);
   virtual void show(OutputStream &s) const;
@@ -435,7 +435,7 @@ public:
   }
   virtual void ClearCache() { DCASSERT(0); }
   virtual void NextState(const state &, state &next, result &x);
-  virtual expr* Substitute(int i) { DCASSERT(0); }
+  virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
   virtual int GetProducts(int i, List <expr> *prods);
   virtual int GetSymbols(int i, List <symbol> *syms);
   virtual void show(OutputStream &s) const;
@@ -1264,6 +1264,7 @@ void compute_spn_init(expr **pp, int np, result &x)
     SafeCompute(pp[i], 0, pl);
     SafeCompute(pp[i], 1, tk);
     // error checking of pl and tk here   
+    if (0==tk.ivalue) continue;  // print a warning...
     spn->AddInit(pl.ivalue, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
   }
 #ifdef DEBUG_SPN

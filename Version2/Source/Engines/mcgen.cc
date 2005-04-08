@@ -37,7 +37,6 @@ template <class REACHSET>
 bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
 {
   DCASSERT(dsm);
-  DCASSERT(dsm->NumEvents() > 0);
   DCASSERT(S);
 
   bool error = false;
@@ -54,7 +53,8 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
-  float* rates = new float[dsm->NumEvents()];
+  float* rates = NULL;
+  if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
   for (e=0; e<dsm->NumEvents(); e++) {
     event* t = dsm->GetEvent(e);
     if (EXPO==t->DistroType()) {
