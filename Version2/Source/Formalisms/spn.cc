@@ -55,6 +55,7 @@ struct spn_arcinfo {
   expr* proc_card;
   const char* filename;
   int linenumber;
+  void Clear() { Delete(proc_card); }
   void FillCard(expr* card) {
     if (NULL==card) {
       const_card = 1;
@@ -238,6 +239,7 @@ transition_enabled::~transition_enabled()
     Delete(boundlist[i]);
   }
   delete[] boundlist;
+  Delete(guard);
 }
 
 void transition_enabled::Compute(const state &s, int a, result &x)
@@ -1212,10 +1214,13 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
     event_data[i] = new event(t->Filename(), t->Linenumber(), TRANS, strdup(t->Name()));
     event_data[i]->setEnabling(new transition_enabled(arcs, placelist, t));
     event_data[i]->setNextstate(new transition_fire(Name(), arcs, placelist, t));
-    event_data[i]->setDistribution(Copy(t->firing));
+    event_data[i]->setDistribution(t->firing);
   }
   delete translist;
+  // clear out the arcs 
+  for (int e=0; e<arcs->items_alloc; e++) arcs->value[e].Clear();
   delete arcs;
+  translist = NULL;
 
   //
   // Places: specific to SPN state model
