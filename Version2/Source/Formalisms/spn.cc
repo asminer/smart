@@ -338,12 +338,12 @@ int transition_enabled::GetProducts(int a, List <expr> *prods)
   }
   expr** b = boundlist;
   for (; i<end_expr_lower; i++) {
-    prods->Append(MakeExprCompare(p[0], GE, b[0], NULL, -1));
+    prods->Append(MakeExprCompare(p[0], GE, Copy(b[0]), NULL, -1));
     b++;
     p++;
   }
   for (; i<end_expr_upper; i++) {
-    prods->Append(MakeExprCompare(p[0], LT, b[0], NULL, -1));
+    prods->Append(MakeExprCompare(p[0], LT, Copy(b[0]), NULL, -1));
     b++;
     p++;
   }
@@ -682,7 +682,7 @@ int transition_fire::GetProducts(int a, List <expr> *prods)
   bool* neg = negate_expr;
   for (; i<end_expr; i++) {
     int OP = (*neg) ? MINUS : PLUS;
-    prods->Append(ChangeStateVar(modelname, p[0], OP, *b, NULL, -1));
+    prods->Append(ChangeStateVar(modelname, p[0], OP, Copy(*b), NULL, -1));
     b++;
     neg++;
     p++;
