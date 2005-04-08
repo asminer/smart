@@ -50,6 +50,8 @@ const char placebits[] = { 4, 8, 16, 24, 32 };
 const unsigned tokenlimit[] = { 2, 4, 16, 256, 65536, 16777216, 0xffffffff };
 const char tokenbits[] = { 1, 2, 4, 8, 16, 24, 32 };
 
+const int MAX_MEM_ADD = 65536;	// 64kb
+const int MAX_STATE_ADD = 2048; 
 
 void state_array::ReadInt(char bits, int &x)
 {
@@ -173,10 +175,10 @@ void state_array::EnlargeMem(int newsize)
   if (newsize<memsize) return;
   int newmemsize = memsize;
   while (newsize>=newmemsize) {
-    if (newmemsize<1048576)  // less than 1Mb, double size
+    if (newmemsize<MAX_MEM_ADD)  
       newmemsize *= 2;
-    else  // greater than 1Mb, add 1Mb increments 
-      newmemsize += 1048576;
+    else  
+      newmemsize += MAX_MEM_ADD;
   }
   mem = (unsigned char*) realloc(mem, newmemsize);
   if (NULL==mem) OutOfMemoryError("state array resize");
@@ -422,7 +424,8 @@ int state_array::AddState(const state &s)
   if (map) {
     if (numstates+1>=mapsize) {
       // Enlarge map array
-      mapsize *= 2;
+      mapsize = MIN(2*mapsize, mapsize+MAX_STATE_ADD);
+      DCASSERT(mapsize>=0);
       map = (int*) realloc(map, mapsize * sizeof(int));
       if (NULL==map) OutOfMemoryError("too many states");
     }

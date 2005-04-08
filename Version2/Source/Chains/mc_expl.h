@@ -7,7 +7,7 @@
 #include "../Templates/graphs.h"
 #include "../Engines/sccs.h"
 
-// #define DEBUG_CLASSIFY
+//#define DEBUG_CLASSIFY
 
 /** Classified Markov chain (or other graph).
 	
@@ -201,6 +201,8 @@ classified_chain <LABEL> :: classified_chain(labeled_digraph <LABEL> *in)
   Output << "Starting to classify chain\n";
   Output.flush();
 #endif
+  // first, compact the graph, since we will need lots of memory
+  graph->ConvertToStatic();
   // build state to tscc mapping
   renumber = new int[states];
   int i;
