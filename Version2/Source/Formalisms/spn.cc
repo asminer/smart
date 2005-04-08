@@ -580,7 +580,7 @@ transition_fire::transition_fire(const char* mn,
     // Add (outcard - incard), unless it is zero
     expr *d = MakeBinaryOp(
 			Copy(a->value[out_ptr].proc_card),
-			PLUS,
+			MINUS,
 			Copy(a->value[in_ptr].proc_card),
 			NULL, -1
               );
