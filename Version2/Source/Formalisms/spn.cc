@@ -146,7 +146,7 @@ public:
   virtual void ClearCache() { DCASSERT(0); }
   virtual void Compute(const state &, int i, result &x);
   virtual expr* Substitute(int i) { DCASSERT(0); }
-// virtual int GetProducts(int i, List <expr> *prods);
+  virtual int GetProducts(int i, List <expr> *prods);
   virtual int GetSymbols(int i, List <symbol> *syms);
   virtual void show(OutputStream &s) const;
 };
@@ -311,6 +311,44 @@ void transition_enabled::Compute(const state &s, int a, result &x)
   x.bvalue = true;
 }
 
+int transition_enabled::GetProducts(int a, List <expr> *prods)
+{
+  DCASSERT(0==a);
+  int answer = end_expr_upper;
+  if (NULL==prods) {
+    if (guard) answer += guard->GetProducts(0, NULL);
+    return answer;
+  }
+  DCASSERT(prods); 
+  int i;
+  model_var **p = places;
+  int* L = lower;
+  for (i=0; i<end_lower; i++) {
+    prods->Append(MakeConstCompare(p[0], GE, L[0], NULL, -1)); 
+    L++;
+    p++;
+  }
+  int* U = upper;
+  for (; i<end_upper; i++) {
+    prods->Append(MakeConstCompare(p[0], LT, U[0], NULL, -1));
+    U++;
+    p++;
+  }
+  expr** b = boundlist;
+  for (; i<end_expr_lower; i++) {
+    prods->Append(MakeExprCompare(p[0], GE, b[0], NULL, -1));
+    b++;
+    p++;
+  }
+  for (; i<end_expr_upper; i++) {
+    prods->Append(MakeExprCompare(p[0], LT, b[0], NULL, -1));
+    b++;
+    p++;
+  }
+  if (guard) answer += guard->GetProducts(a, prods);
+  return answer;
+}
+
 int transition_enabled::GetSymbols(int i, List <symbol> *syms)
 {
   DCASSERT(0==i);
@@ -318,7 +356,11 @@ int transition_enabled::GetSymbols(int i, List <symbol> *syms)
   if (syms) {
     for (int i=0; i<answer; i++) syms->Append(places[i]);
   }
-  // add expressions here
+  for (int i=0; i<end_expr_upper - end_upper; i++) {
+    DCASSERT(boundlist[i]);
+    answer += boundlist[i]->GetSymbols(0, syms);
+  }
+  if (guard) answer += guard->GetSymbols(0, syms);
   return answer; 
 }
 
@@ -379,7 +421,8 @@ class transition_fire : public expr {
   int end_const;
   int* delta; // dimension is "end_const"
   int end_expr;
-  expr** exprlist;   // dimension is "end_expr - end_const"
+  expr** exprlist;    // dimension is "end_expr - end_const"
+  bool* negate_expr;  // dimension is "end_expr - end_const"
   model_var** places; // dimension is "end_expr"
   const char* modelname;
 public:
@@ -393,8 +436,8 @@ public:
   virtual void ClearCache() { DCASSERT(0); }
   virtual void NextState(const state &, state &next, result &x);
   virtual expr* Substitute(int i) { DCASSERT(0); }
-// virtual int GetProducts(int i, List <expr> *prods);
-// virtual int GetSymbols(int i, List <symbol> *syms);
+  virtual int GetProducts(int i, List <expr> *prods);
+  virtual int GetSymbols(int i, List <symbol> *syms);
   virtual void show(OutputStream &s) const;
 };
 
@@ -483,7 +526,9 @@ transition_fire::transition_fire(const char* mn,
   delta = dlist.CopyAndClearArray();
 
   List <expr> elist(4);
+  DataList <bool> neglist(4);
   // traverse inputs and outputs simultaneously for expression "deltas"
+  // the boolean is used to negate the expression (for input arcs)
 
   if (t->inputs>=0) in_ptr = a->list_pointer[t->inputs];
   else in_ptr = -1; // signifies "done"
@@ -507,7 +552,9 @@ transition_fire::transition_fire(const char* mn,
     if (i_pl < o_pl) {
       // this place is connected only as input, subtract arc card
       plist.Append(P->Item(i_pl));
-      elist.Append(MakeUnaryOp(MINUS, Copy(a->value[in_ptr].proc_card), NULL, -1));
+      elist.Append(Copy(a->value[in_ptr].proc_card));
+      neglist.AppendBlank();
+      neglist.data[neglist.last-1] = true;  // negate the cardinality
       // advance input arc ptr
       in_ptr++;
       if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
@@ -518,6 +565,8 @@ transition_fire::transition_fire(const char* mn,
       // this place is connected only as output, add arc card
       plist.Append(P->Item(o_pl));
       elist.Append(Copy(a->value[out_ptr].proc_card));
+      neglist.AppendBlank();
+      neglist.data[neglist.last-1] = false; 
       // advance output arc ptr
       out_ptr++;
       if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
@@ -538,6 +587,8 @@ transition_fire::transition_fire(const char* mn,
     DCASSERT(d);
     plist.Append(P->Item(o_pl));
     elist.Append(d);
+    neglist.AppendBlank();
+    neglist.data[neglist.last-1] = false; 
     // advance input arc ptr
     in_ptr++;
     if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
@@ -548,6 +599,7 @@ transition_fire::transition_fire(const char* mn,
 
   end_expr = plist.Length();
   exprlist = elist.MakeArray();
+  negate_expr = neglist.CopyAndClearArray();
   places = plist.MakeArray(); 
 }
 
@@ -561,6 +613,7 @@ transition_fire::~transition_fire()
     Delete(exprlist[i]);
   }
   delete[] exprlist;
+  delete[] negate_expr;
 }
 
 void transition_fire::NextState(const state &cur, state &next, result &x)
@@ -586,10 +639,12 @@ void transition_fire::NextState(const state &cur, state &next, result &x)
     p++;
   }
   expr** b = exprlist;
+  bool* neg = negate_expr;
   for (; i<end_expr; i++) {
     // compute delta expression
     SafeCompute((*b), cur, 0, x);
     if (!x.isNormal()) return;
+    if (neg[0]) x.ivalue *= -1; 
     if ( (next[p[0]->state_index].ivalue += x.ivalue) < 0) {
       // underflow or overflow?
       Error.Start(NULL, -1);
@@ -602,9 +657,51 @@ void transition_fire::NextState(const state &cur, state &next, result &x)
       return;
     }
     b++;
+    neg++;
     p++;
   }
 }
+
+int transition_fire::GetProducts(int a, List <expr> *prods)
+{
+  DCASSERT(0==a);
+  int answer = end_expr;
+  if (NULL==prods) return answer;
+  DCASSERT(prods); 
+  int i;
+  model_var **p = places;
+  int* D = delta;
+  for (i=0; i<end_const; i++) {
+    prods->Append(ChangeStateVar(modelname, p[0], *D, NULL, -1));
+    D++;
+    p++;
+  }
+  expr** b = exprlist;
+  bool* neg = negate_expr;
+  for (; i<end_expr; i++) {
+    int OP = (*neg) ? MINUS : PLUS;
+    prods->Append(ChangeStateVar(modelname, p[0], OP, *b, NULL, -1));
+    b++;
+    neg++;
+    p++;
+  }
+  return answer;
+}
+
+int transition_fire::GetSymbols(int i, List <symbol> *syms)
+{
+  DCASSERT(0==i);
+  int answer = end_expr;
+  if (syms) {
+    for (int i=0; i<answer; i++) syms->Append(places[i]);
+  }
+  for (int i=0; i<end_expr - end_const; i++) {
+    DCASSERT(exprlist[i]);
+    answer += exprlist[i]->GetSymbols(0, syms);
+  }
+  return answer; 
+}
+
 
 void transition_fire::show(OutputStream &s) const
 {
@@ -622,11 +719,15 @@ void transition_fire::show(OutputStream &s) const
     p++;
   }
   expr** b = exprlist;
+  bool* neg = negate_expr;
   for (; i<end_expr; i++) {
     if (printed) s << "; ";
-    s << p[0]->Name() << " += " << (*b);
+    s << p[0]->Name();
+    if (*neg) s << " -= "; else s << " += ";
+    s << (*b);
     printed = true;
     b++;
+    neg++;
     p++;
   }
 }

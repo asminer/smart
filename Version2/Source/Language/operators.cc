@@ -561,10 +561,7 @@ void Optimize(int a, expr* &e)
   if (sumcount>1) {
     // There is a sum below e
     expr **opnds = optbuffer.Copy();
-    for (i=0; i<sumcount; i++) {
-      opnds[i] = Copy(opnds[i]);  // make this our copy
-      Optimize(a, opnds[i]);
-    }
+    for (i=0; i<sumcount; i++)  Optimize(a, opnds[i]); 
     // replace with associative sum
     expr *ne = MakeAssocOp(PLUS, opnds, sumcount, 
     				e->Filename(), e->Linenumber());
@@ -578,10 +575,7 @@ void Optimize(int a, expr* &e)
   if (prodcount>1) {
     // There is a product below us
     expr **opnds = optbuffer.Copy();
-    for (i=0; i<prodcount; i++) {
-      opnds[i] =Copy(opnds[i]);
-      Optimize(a, opnds[i]);
-    }
+    for (i=0; i<prodcount; i++)  Optimize(a, opnds[i]); 
     // replace with associative product
     expr *ne = MakeAssocOp(TIMES, opnds, prodcount, 
     				e->Filename(), e->Linenumber());

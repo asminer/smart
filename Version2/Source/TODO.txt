@@ -5,8 +5,6 @@ Currently working on:
 
 	CTMC generation in mcgen
 
-	customized spn expressions for speed
-		split into ordinary state expressions for "Products"
 
 Things to do:
 

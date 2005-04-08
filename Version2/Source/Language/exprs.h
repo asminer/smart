@@ -178,8 +178,8 @@ public:
   virtual expr* Substitute(int i) = 0;
 
   /** Split this expression into a list of sums.
-      We store pointers to parts of the expressions (not copies);
-      DO NOT DELETE them.
+      The expressions in the list should be deleted (with Delete)
+      when done; we store copies (possibly shared) of parts of expressions. 
       @param	i	The component to split.
       @param	sums	An array-list template of expressions, or NULL.
       			If not null, the list will contain the sums

@@ -119,14 +119,14 @@ void expr::NextState(const state &current, state &next, result &x)
 int expr::GetSums(int i, List <expr> *sums)
 {
   DCASSERT(i==0);
-  if (sums) sums->Append(this);
+  if (sums) sums->Append(Copy(this));
   return 1;
 }
 
 int expr::GetProducts(int i, List <expr> *prods) 
 {
   DCASSERT(i==0);
-  if (prods) prods->Append(this);
+  if (prods) prods->Append(Copy(this));
   return 1;
 }
 

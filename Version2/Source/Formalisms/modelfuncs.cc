@@ -333,6 +333,7 @@ void compute_test(expr **pp, int np, result &x)
   Output.flush();
 
   List <symbol> deplist(16);
+  List <expr> prodlist(16);
 
   for (int e=0; e<proc->NumEvents(); e++) {
     Output << "Event " << e << " is named ";
@@ -345,8 +346,8 @@ void compute_test(expr **pp, int np, result &x)
     expr* enable = foo->isEnabled();
     Output << "enabling expression: " << enable << "\n";
     Output.flush();
-
     if (enable) {
+      // Show dependencies
       deplist.Clear();
       enable->GetSymbols(0, &deplist);
       Output << "\tdepends on: ";
@@ -354,6 +355,15 @@ void compute_test(expr **pp, int np, result &x)
         Output << deplist.Item(p) << " ";
       Output << "\n";
       Output.flush();
+      // Show products
+      prodlist.Clear();
+      enable->GetProducts(0, &prodlist);
+      Output << "\tProducts:\n";     
+      for (int p=0; p<prodlist.Length(); p++) {
+        expr *e = prodlist.Item(p);
+        Output << "\t\t" << e << "\n";
+	Delete(e);
+      }
     }
 
     //  CHECK next state expression
@@ -363,6 +373,7 @@ void compute_test(expr **pp, int np, result &x)
     Output.flush();
     
     if (fire) {
+      // Show dependencies
       deplist.Clear();
       fire->GetSymbols(0, &deplist);
       Output << "\tdepends on: ";
@@ -370,6 +381,15 @@ void compute_test(expr **pp, int np, result &x)
         Output << deplist.Item(p) << " ";
       Output << "\n";
       Output.flush();
+      // Show products
+      prodlist.Clear();
+      fire->GetProducts(0, &prodlist);
+      Output << "\tProducts:\n";     
+      for (int p=0; p<prodlist.Length(); p++) {
+        expr *e = prodlist.Item(p);
+        Output << "\t\t" << e << "\n";
+	Delete(e);
+      }
     }
 
     // Check firing distribution
