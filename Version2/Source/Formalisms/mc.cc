@@ -148,8 +148,8 @@ public:
     return statelist->Item(index);
   }
 
-  void AddInitial(int state, double weight, const char *fn, int line);
-  void AddArc(int fromstate, int tostate, double weight, const char *fn, int line);
+  void AddInitial(model_var* state, double weight, const char *fn, int line);
+  void AddArc(model_var* from, model_var* to, double weight, const char *fn, int line);
 
   // Required for models:
 
@@ -182,48 +182,60 @@ markov_model::~markov_model()
   delete wdgraph;
 }
 
-void markov_model::AddInitial(int state, double weight, const char* fn, int line)
+void markov_model::AddInitial(model_var* state, double weight, const char* fn, int line)
 {
   if (weight<=0) {
     Warning.Start(fn, line);
     Warning << "Ignoring initial weight " << weight << " for state ";
-    Warning << statelist->Item(state);
+    Warning << state;
     Warning << " in Markov chain " << Name();
     Warning.Stop();
     return;
   }
 
-  int e = initial->BinarySearchIndex(state);
+  int index = state->state_index;
+  CHECK_RANGE(0, index, statelist->Length());
+  DCASSERT(statelist->Item(index) == state);
+
+  int e = initial->BinarySearchIndex(index);
   if (e<0) {
-    initial->SortedAppend(state, weight);
+    initial->SortedAppend(index, weight);
     return;
   }
   // Duplicate entry, give a warning
   Warning.Start(fn, line);
   Warning << "Ignoring duplicate initial probability for \n\tstate ";
-  Warning << statelist->Item(state) << " in Markov chain " << Name();
+  Warning << state << " in Markov chain " << Name();
   Warning.Stop();
 }
 
-void markov_model::AddArc(int fromstate, int tostate, double weight, const char *fn, int line)
+void markov_model::AddArc(model_var* from, model_var* to, double weight, const char *fn, int line)
 {
   if (weight<=0) {
     Warning.Start(fn, line);
     Warning << "Ignoring arc from ";
-    Warning << statelist->Item(fromstate) << " to ";
-    Warning << statelist->Item(tostate);
+    Warning << from << " to " << to;
     Warning << " with weight " << weight;
     Warning << " in Markov chain " << Name();
     Warning.Stop();
     return;
   }
 
+  int fromstate = from->state_index;
+  int tostate = to->state_index;
+
+  CHECK_RANGE(0, fromstate, statelist->Length());
+  CHECK_RANGE(0, tostate, statelist->Length());
+
+  DCASSERT(statelist->Item(fromstate) == from);
+  DCASSERT(statelist->Item(tostate) == to);
+
   // Deal with self-arcs
 
   if (fromstate==tostate) {
     if (Type(0)==CTMC) {
       Warning.Start(fn, line);
-      Warning << "Ignoring self-arc to state " << statelist->Item(tostate);
+      Warning << "Ignoring self-arc to state " << to;
       Warning << " in CTMC " << Name();
       Warning.Stop();
       return;
@@ -236,7 +248,7 @@ void markov_model::AddArc(int fromstate, int tostate, double weight, const char 
     if (p>=0) {
       Warning.Start(fn, line);
       Warning << "Summing duplicate self-arc to ";
-      Warning << statelist->Item(tostate);
+      Warning << to;
       Warning << " in DTMC " << Name();
       Warning.Stop();
       diags->value[p] += weight;
@@ -256,7 +268,7 @@ void markov_model::AddArc(int fromstate, int tostate, double weight, const char 
   // Duplicate entry, give a warning
   Warning.Start(fn, line);
   Warning << "Summing duplicate arc from \n\tstate ";
-  Warning << statelist->Item(fromstate) << " to " << statelist->Item(tostate);
+  Warning << from << " to " << to;
   Warning << " in Markov chain " << Name();
   Warning.Stop();
 }
@@ -427,12 +439,12 @@ void compute_mc_init(expr **pp, int np, result &x)
     Output << "\t state ";
 #endif
     SafeCompute(pp[i], 0, x);
+    DCASSERT(x.isNormal());
+    model_var* st = dynamic_cast<model_var*> (x.other);
+    DCASSERT(st);
 #ifdef DEBUG_MC
-    PrintResult(Output, INT, x);
-    Output << "\n\t value ";
+    Output << st << "\n\t value ";
 #endif
-    int index = x.ivalue;
-    if (!x.isNormal()) continue;  // shouldn't happen, it's the state
 
     SafeCompute(pp[i], 1, x);
 #ifdef DEBUG_MC
@@ -444,13 +456,13 @@ void compute_mc_init(expr **pp, int np, result &x)
       Error.Start(pp[i]->Filename(), pp[i]->Linenumber());
       Error << "Bad weight: ";
       PrintResult(Error, REAL, x);
-      Error << " for state " << mc->GetState(index) << "\n";
+      Error << " for state " << st << "\n";
       Error.Stop();
       continue;
     }
     // again with the errors
 
-    mc->AddInitial(index, weight, pp[i]->Filename(), pp[i]->Linenumber());
+    mc->AddInitial(st, weight, pp[i]->Filename(), pp[i]->Linenumber());
   }
 
 #ifdef DEBUG_MC
@@ -502,22 +514,21 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     Output << "\t from state ";
 #endif
     SafeCompute(pp[i], 0, x);
+    DCASSERT(x.isNormal());
+    model_var* from = dynamic_cast<model_var*> (x.other);
+    DCASSERT(from);
 #ifdef DEBUG_MC
-    PrintResult(Output, INT, x);
-    Output << "\n\t to state ";
+    Output << from << "\n\t to state ";
 #endif
-    if (!x.isNormal()) continue;  // Bad arc, skip it
-    // do we need an error message?
-    int fromstate = x.ivalue;
 
     SafeCompute(pp[i], 1, x);
+    DCASSERT(x.isNormal());
+    model_var* to = dynamic_cast<model_var*> (x.other);
+    DCASSERT(to);
 #ifdef DEBUG_MC
     PrintResult(Output, INT, x);
     Output << "\n\t weight ";
 #endif
-    if (!x.isNormal()) continue;  // Bad arc, skip it
-    // do we need an error message?
-    int tostate = x.ivalue;
 
     SafeCompute(pp[i], 2, x);
 #ifdef DEBUG_MC
@@ -529,7 +540,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     double weight = x.rvalue;
     // again with the errors
 
-    mc->AddArc(fromstate, tostate, weight, pp[i]->Filename(), pp[i]->Linenumber());
+    mc->AddArc(from, to, weight, pp[i]->Filename(), pp[i]->Linenumber());
   }
 
 #ifdef DEBUG_MC
@@ -573,12 +584,13 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
 #endif
   x.Clear();
   SafeCompute(pp[1], 0, x);
+  DCASSERT(x.isNormal());
+  model_var* st = dynamic_cast<model_var*> (x.other);
+  DCASSERT(st);
 
   // error checking here...
 #ifdef DEBUG
-  Output << "\tgot param: ";
-  PrintResult(Output, INT, x);
-  Output << "\n";
+  Output << "\tgot param: " << st << "\n";
   Output.flush();
 
   Output << "\tcurrent state: ";
@@ -588,7 +600,7 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
 #endif
   // error checking here for m
 
-  if (x.ivalue == m.Read(0).ivalue) {
+  if (st->state_index == m.Read(0).ivalue) {
     x.bvalue = true;
   } else {
     x.bvalue = false;

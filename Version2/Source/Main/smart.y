@@ -61,13 +61,6 @@ formal_params formal_indexes pos_params named_params indexes
 %type <Model> model_header
 %type <Option> opt_header
 %type <Mcall> model_call
-/*
-%type <setexpr> set_expr set_elems set_elem 
-%type <itrs> iterator iterators for_header 
-%type <stmts> statement statements decl_stmt defn_stmt model_stmt model_stmts
-%type <npl> named_params named_param 
-%type <tuple_ids> tupleidlist
-*/
 
 %left SEMI
 %left COMMA
@@ -81,7 +74,6 @@ formal_params formal_indexes pos_params named_params indexes
 %left TIMES DIVIDE
 %right NOT UMINUS
 %nonassoc ARROW
-%right NEGSIGN
 %nonassoc LPAR RPAR
 
 /*-----------------------------------------------------------------*/
@@ -632,6 +624,14 @@ expr
 {
 #ifdef PARSE_TRACE
   Output << "Reducing expr : term\n";
+  Output.flush();
+#endif
+  $$ = $1;
+}
+	|	set_expr
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing expr : set_expr\n";
   Output.flush();
 #endif
   $$ = $1;

@@ -96,9 +96,11 @@ const type 	LAST_VOID	= TRANS;
 
 const type	SET_INT		= 96;
 const type	SET_REAL	= 97;
+const type	SET_PLACE	= 98;
+const type	SET_TRANS	= 99;
 
 const type	FIRST_SET	= SET_INT;
-const type 	LAST_SET	= SET_REAL;
+const type 	LAST_SET	= SET_TRANS;
 
 // Internal types
 
@@ -122,6 +124,11 @@ const modifier	LAST_MODIF = RAND;
 
 /// Given any type, return the full type name.
 const char* GetType(type);
+
+/** Return the type of a set whose elements have type t.
+    If sets of these are not allowed, returns NO_SUCH_TYPE.
+*/
+type SetOf(type t);
 
 /// Returns true if type t1 can be promoted to type t2.
 bool Promotable(type t1, type t2);            

@@ -50,7 +50,7 @@ public:
 
 /// Information for each input / output / inhibitor arc
 struct spn_arcinfo {
-  int place;
+  model_var* place;
   int const_card;  
   expr* proc_card;
   const char* filename;
@@ -138,7 +138,7 @@ class transition_enabled : public expr {
   expr* guard;
 public:
   // Very heavy constructor, all "compilation" takes place here!
-  transition_enabled(listarray <spn_arcinfo> *a, List <model_var> *P, transition *t);
+  transition_enabled(listarray <spn_arcinfo> *a, transition *t);
   virtual ~transition_enabled();
   virtual type Type(int i) const {
     DCASSERT(i==0);
@@ -154,8 +154,7 @@ public:
 
 // ******************************************************************
 
-transition_enabled::transition_enabled(
-	listarray <spn_arcinfo> *a, List <model_var> *P,
+transition_enabled::transition_enabled(listarray <spn_arcinfo> *a, 
 	transition *t) : expr(NULL, -1)
 {
   ALLOC("transition_enabled", sizeof(transition_enabled));
@@ -173,7 +172,7 @@ transition_enabled::transition_enabled(
       // check if this is a constant arc
       if (a->value[ptr].proc_card) continue;  // there's an expression
       // add this to the comparison list
-      plist.Append(P->Item(a->value[ptr].place));
+      plist.Append(a->value[ptr].place);
       lowlist.AppendBlank(); 
       lowlist.data[lowlist.last-1] = a->value[ptr].const_card;
     } // for ptr
@@ -189,7 +188,7 @@ transition_enabled::transition_enabled(
       // check if this is a constant arc
       if (a->value[ptr].proc_card) continue;  // there's an expression
       // add this to the comparison list
-      plist.Append(P->Item(a->value[ptr].place));
+      plist.Append(a->value[ptr].place);
       highlist.AppendBlank(); 
       highlist.data[highlist.last-1] = a->value[ptr].const_card;
     } // for ptr
@@ -204,7 +203,7 @@ transition_enabled::transition_enabled(
 	 ptr < a->list_pointer[t->inputs+1]; ptr++)  {
       if (NULL==a->value[ptr].proc_card) continue;  // constant arc
       // add this to the comparison list
-      plist.Append(P->Item(a->value[ptr].place));
+      plist.Append(a->value[ptr].place);
       exprlist.Append(a->value[ptr].MakeCard());
     } // for ptr
   }  // if inputs
@@ -216,7 +215,7 @@ transition_enabled::transition_enabled(
 	 ptr < a->list_pointer[t->inhibitors+1]; ptr++)  {
       if (NULL==a->value[ptr].proc_card) continue;  // constant arc
       // add this to the comparison list
-      plist.Append(P->Item(a->value[ptr].place));
+      plist.Append(a->value[ptr].place);
       exprlist.Append(a->value[ptr].MakeCard());
     } // for ptr
   }  // if inputs
@@ -429,7 +428,7 @@ class transition_fire : public expr {
   const char* modelname;
 public:
   // Very heavy constructor, all "compilation" takes place here!
-  transition_fire(const char* mn, listarray <spn_arcinfo> *a, List <model_var> *P, transition *t);
+  transition_fire(const char* mn, listarray <spn_arcinfo> *a, transition *t);
   virtual ~transition_fire();
   virtual type Type(int i) const {
     DCASSERT(i==0);
@@ -446,8 +445,7 @@ public:
 // ******************************************************************
 
 transition_fire::transition_fire(const char* mn,
-	listarray <spn_arcinfo> *a, List <model_var> *P,
-	transition *t) : expr(NULL, -1)
+	listarray <spn_arcinfo> *a, transition *t) : expr(NULL, -1)
 {
   ALLOC("transition_fire", sizeof(transition_fire));
   DCASSERT(a);
@@ -462,122 +460,141 @@ transition_fire::transition_fire(const char* mn,
   // a place with both contant input and constant output will
   // have a single, constant delta.
 
-  int in_ptr;
-  if (t->inputs>=0) in_ptr = a->list_pointer[t->inputs];
-  else in_ptr = -1; // signifies "done"
-  int out_ptr;
-  if (t->outputs>=0) out_ptr = a->list_pointer[t->outputs];
-  else out_ptr = -1; // signifies "done"
-
-  while (1) {
+  int in_ptr, in_last;
+  if (t->inputs>=0) {
+    in_ptr = a->list_pointer[t->inputs];
+    in_last = a->list_pointer[t->inputs+1];
+  } else {
+    in_ptr = 1;
+    in_last = 0;
+  }
+  int out_ptr, out_last;
+  if (t->outputs>=0) {
+    out_ptr = a->list_pointer[t->outputs];
+    out_last = a->list_pointer[t->outputs+1];
+  } else {
+    out_ptr = 1;
+    out_last = 0;
+  }
+  
+  while (in_ptr<in_last && out_ptr<out_last) {
     // advance past any zero constants
-    while (in_ptr >=0 && a->value[in_ptr].const_card ==0) {
+    if (a->value[in_ptr].const_card==0) {
       in_ptr++;
-      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+      continue;
     }
-    while (out_ptr >=0 && a->value[out_ptr].const_card ==0) {
+    if (a->value[out_ptr].const_card ==0) {
       out_ptr++;
-      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+      continue;
     }
-    if (out_ptr < 0 && in_ptr < 0) break;
-    int i_pl = (in_ptr<0) ? P->Length()+1 : a->value[in_ptr].place;
-    int o_pl = (out_ptr<0) ? P->Length()+1 : a->value[out_ptr].place;
-    
+    model_var* i_pl = a->value[in_ptr].place;
+    model_var* o_pl = a->value[out_ptr].place;
     if (i_pl < o_pl) {
       // this place is connected only as input, subtract arc card
-      plist.Append(P->Item(i_pl));
+      plist.Append(i_pl);
       dlist.AppendBlank(); 
       dlist.data[dlist.last-1] = - a->value[in_ptr].const_card;
       // advance input arc ptr
       in_ptr++;
-      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
       continue;
     } // if input only place
-    
     if (o_pl < i_pl) {
       // this place is connected only as output, add arc card
-      plist.Append(P->Item(o_pl));
+      plist.Append(o_pl);
       dlist.AppendBlank(); 
       dlist.data[dlist.last-1] = a->value[out_ptr].const_card;
       // advance output arc ptr
       out_ptr++;
-      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
       continue;
     } // if output only place
-    
     // still here, must have o_pl == i_pl
     DCASSERT(o_pl == i_pl);  // sanity check ;^)
-
     // this place is connected both as an inhibitor and as input
     // Add (outcard - incard), unless it is zero
     int d = a->value[out_ptr].const_card - a->value[in_ptr].const_card;
     if (d) {
-      plist.Append(P->Item(o_pl));
+      plist.Append(o_pl);
       dlist.AppendBlank(); 
       dlist.data[dlist.last-1] = d;
     }
-    // advance input arc ptr
+    // advance input and output arc ptrs
     in_ptr++;
-    if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
-    // advance output arc ptr
     out_ptr++;
-    if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
   } // while
-
+  // At most one of these loops will execute
+  for (; in_ptr < in_last; in_ptr++) {
+    if (a->value[in_ptr].const_card==0) continue;
+    // this place is connected only as input, subtract arc card
+    plist.Append(a->value[in_ptr].place);
+    dlist.AppendBlank(); 
+    dlist.data[dlist.last-1] = - a->value[in_ptr].const_card;
+  } // for the rest of the input places
+  for (; out_ptr < out_last; out_ptr++) {
+    if (a->value[out_ptr].const_card==0) continue;
+    // this place is connected only as output, add arc card
+    plist.Append(a->value[out_ptr].place);
+    dlist.AppendBlank(); 
+    dlist.data[dlist.last-1] = a->value[out_ptr].const_card;
+  } // for the rest of the output places
+    
   end_const = plist.Length();
   delta = dlist.CopyAndClearArray();
 
   List <expr> elist(4);
   DataList <bool> neglist(4);
+
   // traverse inputs and outputs simultaneously for expression "deltas"
   // the boolean is used to negate the expression (for input arcs)
 
-  if (t->inputs>=0) in_ptr = a->list_pointer[t->inputs];
-  else in_ptr = -1; // signifies "done"
-  if (t->outputs>=0) out_ptr = a->list_pointer[t->outputs];
-  else out_ptr = -1; // signifies "done"
-
-  while (1) {
+  if (t->inputs>=0) {
+    in_ptr = a->list_pointer[t->inputs];
+    in_last = a->list_pointer[t->inputs+1];
+  } else {
+    in_ptr = 1;
+    in_last = 0;
+  }
+  if (t->outputs>=0) {
+    out_ptr = a->list_pointer[t->outputs];
+    out_last = a->list_pointer[t->outputs+1];
+  } else {
+    out_ptr = 1;
+    out_last = 0;
+  }
+  
+  while (in_ptr<in_last && out_ptr<out_last) {
     // advance past any non-expressions
-    while (in_ptr >=0 && a->value[in_ptr].proc_card ==NULL) {
+    if (a->value[in_ptr].proc_card ==NULL) {
       in_ptr++;
-      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
+      continue;
     }
-    while (out_ptr >=0 && a->value[out_ptr].proc_card ==NULL) {
+    if (a->value[out_ptr].proc_card ==NULL) {
       out_ptr++;
-      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
+      continue;
     }
-    if (out_ptr < 0 && in_ptr < 0) break;
-    int i_pl = (in_ptr<0) ? P->Length()+1 : a->value[in_ptr].place;
-    int o_pl = (out_ptr<0) ? P->Length()+1 : a->value[out_ptr].place;
-    
+    model_var* i_pl = a->value[in_ptr].place;
+    model_var* o_pl = a->value[out_ptr].place;
     if (i_pl < o_pl) {
       // this place is connected only as input, subtract arc card
-      plist.Append(P->Item(i_pl));
+      plist.Append(i_pl);
       elist.Append(Copy(a->value[in_ptr].proc_card));
       neglist.AppendBlank();
       neglist.data[neglist.last-1] = true;  // negate the cardinality
       // advance input arc ptr
       in_ptr++;
-      if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
       continue;
     } // if input only place
-    
     if (o_pl < i_pl) {
       // this place is connected only as output, add arc card
-      plist.Append(P->Item(o_pl));
+      plist.Append(o_pl);
       elist.Append(Copy(a->value[out_ptr].proc_card));
       neglist.AppendBlank();
       neglist.data[neglist.last-1] = false; 
       // advance output arc ptr
       out_ptr++;
-      if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
       continue;
     } // if output only place
-    
     // still here, must have o_pl == i_pl
     DCASSERT(o_pl == i_pl);  // sanity check ;^)
-
     // this place is connected both as an inhibitor and as input
     // Add (outcard - incard), unless it is zero
     expr *d = MakeBinaryOp(
@@ -587,18 +604,32 @@ transition_fire::transition_fire(const char* mn,
 			NULL, -1
               );
     DCASSERT(d);
-    plist.Append(P->Item(o_pl));
+    plist.Append(o_pl);
     elist.Append(d);
     neglist.AppendBlank();
     neglist.data[neglist.last-1] = false; 
-    // advance input arc ptr
+    // advance ptrs
     in_ptr++;
-    if (in_ptr==a->list_pointer[t->inputs+1]) in_ptr = -1;
-    // advance output arc ptr
     out_ptr++;
-    if (out_ptr==a->list_pointer[t->outputs+1]) out_ptr = -1;
   } // while
-
+  // At most one of these loops will execute
+  for (; in_ptr < in_last; in_ptr++) {
+    if (a->value[in_ptr].proc_card==NULL) continue;
+    // this place is connected only as input, subtract arc card
+    plist.Append(a->value[in_ptr].place);
+    elist.Append(Copy(a->value[in_ptr].proc_card));
+    neglist.AppendBlank();
+    neglist.data[neglist.last-1] = true;  // negate the cardinality
+  } // for the rest of the input places
+  for (; out_ptr < out_last; out_ptr++) {
+    if (a->value[out_ptr].proc_card==NULL) continue;
+    // this place is connected only as output, add arc card
+    plist.Append(a->value[out_ptr].place);
+    elist.Append(Copy(a->value[out_ptr].proc_card));
+    neglist.AppendBlank();
+    neglist.data[neglist.last-1] = false; 
+  } // for the rest of the output places
+    
   end_expr = plist.Length();
   exprlist = elist.MakeArray();
   negate_expr = neglist.CopyAndClearArray();
@@ -792,15 +823,6 @@ spn_dsm::~spn_dsm()
 
 void spn_dsm::ShowState(OutputStream &s, const state &x) const
 {
-/* Idea:
-	have different state display "formats" to select from
-	using an option; e.g.,
-	 #PN_Marking_Style
-		SPARSE_SAFE	(don't show #tokens unless > 1)
-		SPARSE 		(the one currently implemented)
-		FULL_INDEXED	(like sparse, but show also for 0 tokens)
-		FULL_VECTOR	(marking is a vector of naturals)
-*/
   DCASSERT(x.Size() >= num_places);
   const option_const* ms_option = PN_Marking_Style->GetEnum();
   int i;
@@ -913,12 +935,15 @@ public:
   virtual ~spn_model();
 
   // For construction
-  void AddInput(int place, int trans, expr* card, const char *fn, int ln);
-  void AddOutput(int trans, int place, expr* card, const char *fn, int ln);
-  void AddInhibitor(int place, int trans, expr* card, const char *fn, int ln);
-  void AddGuard(int trans, expr* guard);
-  void AddFiring(int trans, expr* firing);
-  void AddInit(int place, int tokens, const char *fn, int ln);
+  void AddInput(model_var* pl, model_var* tr, expr* card, 
+	 	const char *fn, int ln);
+  void AddOutput(model_var* tr, model_var* pl, expr* card, 
+		const char *fn, int ln);
+  void AddInhibitor(model_var* pl, model_var* tr, expr* card, 
+		const char *fn, int ln);
+  void AddGuard(model_var* tr, expr* guard);
+  void AddFiring(model_var* tr, expr* firing);
+  void AddInit(model_var* pl, int tokens, const char *fn, int ln);
 
   // Required for models:
   virtual model_var* MakeModelVar(const char *fn, int l, type t, char* n);
@@ -952,18 +977,26 @@ spn_model::~spn_model()
 }
 
 
-void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int ln)
+void spn_model::AddInput(model_var* pl, model_var* tr, expr* card, 
+			const char *fn, int ln)
 {
-  CHECK_RANGE(0, place, placelist->Length());
-  CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(pl);
+  CHECK_RANGE(0, pl->state_index, placelist->Length());
+  DCASSERT(placelist->Item(pl->state_index) == pl);
+
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
   DCASSERT(arcs);
 
-  transition *t = translist->Item(trans);
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
   if (t->inputs<0) t->inputs = arcs->NewList();
 
   int list = t->inputs;
   spn_arcinfo data;
-  data.place = place;
+  data.place = pl;
   data.filename = fn;
   data.linenumber = ln;
   data.FillCard(card);
@@ -971,8 +1004,7 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   if (data.proc_card == ERROR) {
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on arc\n";
-    Error << "\tfrom " << placelist->Item(place);
-    Error << " to " << translist->Item(trans);
+    Error << "\tfrom " << pl << " to " << t;
     Error << " in SPN " << Name();
     Error.Stop();
     return; 
@@ -983,24 +1015,31 @@ void spn_model::AddInput(int place, int trans, expr* card, const char *fn, int l
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate arc\n";
-  Warning << "\tfrom " << placelist->Item(place);
-  Warning << " to " << translist->Item(trans);
+  Warning << "\tfrom " << pl << " to " << t;
   Warning << " in SPN " << Name();
   Warning.Stop();
 }
 
-void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int ln)
+void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card, 
+			const char *fn, int ln)
 {
-  CHECK_RANGE(0, place, placelist->Length());
-  CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(pl);
+  CHECK_RANGE(0, pl->state_index, placelist->Length());
+  DCASSERT(placelist->Item(pl->state_index) == pl);
+
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
   DCASSERT(arcs);
 
-  transition *t = translist->Item(trans);
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
   if (t->outputs<0) t->outputs = arcs->NewList();
 
   int list = t->outputs;
   spn_arcinfo data;
-  data.place = place;
+  data.place = pl;
   data.filename = fn;
   data.linenumber = ln;
   data.FillCard(card);
@@ -1008,8 +1047,7 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   if (data.proc_card == ERROR) {
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on arc\n";
-    Error << "\tfrom " << translist->Item(trans);
-    Error << " to " << placelist->Item(place);
+    Error << "\tfrom " << t << " to " << pl;
     Error << " in SPN " << Name();
     Error.Stop();
     return; 
@@ -1020,25 +1058,32 @@ void spn_model::AddOutput(int trans, int place, expr* card, const char *fn, int 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate arc\n";
-  Warning << "\tfrom " << translist->Item(trans);
-  Warning << " to " << placelist->Item(place);
+  Warning << "\tfrom " << t << " to " << pl;
   Warning << " in SPN " << Name();
   Warning.Stop();
 }
 
-void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, int ln)
+void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card, 
+			const char *fn, int ln)
 {
-  CHECK_RANGE(0, place, placelist->Length());
-  CHECK_RANGE(0, trans, translist->Length());
+  DCASSERT(pl);
+  CHECK_RANGE(0, pl->state_index, placelist->Length());
+  DCASSERT(placelist->Item(pl->state_index) == pl);
+
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
   DCASSERT(arcs);
 
-  transition *t = translist->Item(trans);
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
   if (t->inhibitors<0)
 	t->inhibitors = arcs->NewList();
 
   int list = t->inhibitors;
   spn_arcinfo data;
-  data.place = place;
+  data.place = pl;
   data.filename = fn;
   data.linenumber = ln;
   data.FillCard(card);
@@ -1046,8 +1091,7 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   if (data.proc_card == ERROR) {
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on inhibitor arc\n";
-    Error << "\tfrom " << placelist->Item(place);
-    Error << " to " << translist->Item(trans);
+    Error << "\tfrom " << pl << " to " << t;
     Error << " in SPN " << Name();
     Error.Stop();
     return; 
@@ -1058,16 +1102,19 @@ void spn_model::AddInhibitor(int place, int trans, expr* card, const char *fn, i
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate inhibitor arc\n";
-  Warning << "\tfrom " << placelist->Item(place);
-  Warning << " to " << translist->Item(trans);
+  Warning << "\tfrom " << pl << " to " << t;
   Warning << " in SPN " << Name();
   Warning.Stop();
 }
 
-void spn_model::AddGuard(int trans, expr* guard)
+void spn_model::AddGuard(model_var* tr, expr* guard)
 {
-  CHECK_RANGE(0, trans, translist->Length());
-  transition *t = translist->Item(trans);
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
   if (NULL==t->guard) {
     t->guard = guard->Substitute(0);
     return;
@@ -1080,10 +1127,14 @@ void spn_model::AddGuard(int trans, expr* guard)
   t->guard = merge;
 }
 
-void spn_model::AddFiring(int trans, expr* firing)
+void spn_model::AddFiring(model_var* tr, expr* firing)
 {
-  CHECK_RANGE(0, trans, translist->Length());
-  transition *t = translist->Item(trans);
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
   if (NULL==t->firing) {
     t->firing = firing->Substitute(0);
     return;
@@ -1094,10 +1145,14 @@ void spn_model::AddFiring(int trans, expr* firing)
   Warning.Stop();
 }
 
-void spn_model::AddInit(int place, int tokens, const char* fn, int ln)
+void spn_model::AddInit(model_var* pl, int tokens, const char* fn, int ln)
 {
+  DCASSERT(pl);
+  int place = pl->state_index;
   CHECK_RANGE(0, place, placelist->Length());
+  DCASSERT(placelist->Item(place) == pl);
   DCASSERT(tokens);
+
   int z = initial->BinarySearchIndex(place);
   if (z<0) { // no initialization yet for this place
     initial->SortedAppend(place, tokens);
@@ -1106,7 +1161,7 @@ void spn_model::AddInit(int place, int tokens, const char* fn, int ln)
   initial->value[z] += tokens;
   Warning.Start(fn, ln);
   Warning << "Summing duplicate initialization for place ";
-  Warning << placelist->Item(place) << " in SPN " << Name();
+  Warning << pl << " in SPN " << Name();
   Warning.Stop();
 }
 
@@ -1212,8 +1267,8 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   for (int i=0; i<num_events; i++) {
     transition* t = translist->Item(i);
     event_data[i] = new event(t->Filename(), t->Linenumber(), TRANS, strdup(t->Name()));
-    event_data[i]->setEnabling(new transition_enabled(arcs, placelist, t));
-    event_data[i]->setNextstate(new transition_fire(Name(), arcs, placelist, t));
+    event_data[i]->setEnabling(new transition_enabled(arcs, t));
+    event_data[i]->setNextstate(new transition_fire(Name(), arcs, t));
     event_data[i]->setDistribution(t->firing);
   }
   delete translist;
@@ -1264,13 +1319,18 @@ void compute_spn_init(expr **pp, int np, result &x)
     DCASSERT(pp[i]!=ERROR);
 #ifdef DEBUG_SPN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
+    Output.flush();
 #endif
     result pl, tk;
     SafeCompute(pp[i], 0, pl);
+    DCASSERT(pl.isNormal());
+    model_var* place = dynamic_cast <model_var*> (pl.other);
+    DCASSERT(place);
+
     SafeCompute(pp[i], 1, tk);
-    // error checking of pl and tk here   
+    // error checking of tk here   
     if (0==tk.ivalue) continue;  // print a warning...
-    spn->AddInit(pl.ivalue, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
+    spn->AddInit(place, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
   }
 #ifdef DEBUG_SPN
   Output << "Exiting init for spn " << spn << "\n";
@@ -1321,9 +1381,16 @@ void compute_spn_arcs(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    result second;
     SafeCompute(pp[i], 0, first);
+    DCASSERT(first.isNormal());
+    model_var* fv = dynamic_cast <model_var*> (first.other);
+    DCASSERT(fv);
+
+    result second;
     SafeCompute(pp[i], 1, second); 
+    DCASSERT(second.isNormal());
+    model_var* sv = dynamic_cast <model_var*> (second.other);
+    DCASSERT(sv);
  
     // error checking of first and second here   
  
@@ -1331,11 +1398,11 @@ void compute_spn_arcs(expr **pp, int np, result &x)
     if (pp[i]->NumComponents()==3) card = pp[i]->GetComponent(2);
     switch (pp[i]->Type(0)) {
       case PLACE:
-        spn->AddInput(first.ivalue, second.ivalue, card, pp[i]->Filename(), pp[i]->Linenumber());
+        spn->AddInput(fv, sv, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
 
       case TRANS:
-        spn->AddOutput(first.ivalue, second.ivalue, card, pp[i]->Filename(), pp[i]->Linenumber());
+        spn->AddOutput(fv, sv, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
       
       default:
@@ -1347,7 +1414,7 @@ void compute_spn_arcs(expr **pp, int np, result &x)
     // stuff here
   }
 
-#ifdef DEBUG_MC
+#ifdef DEBUG_SPN
   Output << "Exiting arcs for spn " << spn << "\n";
   Output.flush();
 #endif
@@ -1424,20 +1491,25 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    result second;
     SafeCompute(pp[i], 0, first);
+    DCASSERT(first.isNormal());
+    model_var* fv = dynamic_cast <model_var*> (first.other);
+    DCASSERT(fv);
+
+    result second;
     SafeCompute(pp[i], 1, second); 
- 
-    // error checking of first and second here   
+    DCASSERT(second.isNormal());
+    model_var* sv = dynamic_cast <model_var*> (second.other);
+    DCASSERT(sv);
  
     expr* card = NULL;
     if (pp[i]->NumComponents()==3) card = pp[i]->GetComponent(2);
 
-    spn->AddInhibitor(first.ivalue, second.ivalue, card, pp[i]->Filename(), pp[i]->Linenumber());
+    spn->AddInhibitor(fv, sv, card, pp[i]->Filename(), pp[i]->Linenumber());
     
   }
 
-#ifdef DEBUG_MC
+#ifdef DEBUG_SPN
   Output << "Exiting inhibit for spn " << spn << "\n";
   Output.flush();
 #endif
@@ -1512,8 +1584,11 @@ void compute_spn_guard(expr **pp, int np, result &x)
 #endif
     result t;
     SafeCompute(pp[i], 0, t);
-    // error checking of t here   
-    spn->AddGuard(t.ivalue, pp[i]->GetComponent(1));
+    DCASSERT(t.isNormal());
+    model_var* tv = dynamic_cast <model_var*> (t.other);
+    DCASSERT(tv);
+    
+    spn->AddGuard(tv, pp[i]->GetComponent(1));
   }
 #ifdef DEBUG_SPN
   Output << "Exiting guard for spn " << spn << "\n";
@@ -1561,8 +1636,11 @@ void compute_spn_firing(expr **pp, int np, result &x)
 #endif
     result t;
     SafeCompute(pp[i], 0, t);
-    // error checking of t here   
-    spn->AddFiring(t.ivalue, pp[i]->GetComponent(1));
+    DCASSERT(t.isNormal());
+    model_var* tv = dynamic_cast <model_var*> (t.other);
+    DCASSERT(tv);
+    
+    spn->AddFiring(tv, pp[i]->GetComponent(1));
   }
 #ifdef DEBUG_SPN
   Output << "Exiting firing for spn " << spn << "\n";
@@ -1635,18 +1713,18 @@ void compute_spn_tk(const state &m, expr **pp, int np, result &x)
 #endif
   x.Clear();
   SafeCompute(pp[1], 0, x);
-  // error checking here...
+  DCASSERT(x.isNormal());
+  model_var* place = dynamic_cast <model_var*> (x.other);
+  DCASSERT(place);
+ 
 #ifdef DEBUG
   Output << "\tgot param: ";
   PrintResult(Output, INT, x);
   Output << "\n";
   Output.flush();
 #endif
-  int place = x.ivalue;
 
-  // error checking here for m, place out of bounds, etc.
-
-  x = m.Read(place);
+  x = m.Read(place->state_index);
 }
 
 void Add_spn_tk(PtrTable *fns)
@@ -1662,6 +1740,50 @@ void Add_spn_tk(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
+// ********************************************************
+// *                       showlist                       *
+// ********************************************************
+
+
+void compute_showlist(expr **pp, int np, result &x)
+{
+  DCASSERT(np==2);
+  DCASSERT(pp);
+  x.Clear();
+  SafeCompute(pp[1], 0, x);
+  if (x.isError() || x.isNull()) return;
+
+  set_result* T = dynamic_cast <set_result*> (x.other);
+  DCASSERT(T); 
+  Output << "Transitions in set:\n";
+  int i;
+  for (i=0; i<T->Size(); i++) {
+    x.Clear();
+    T->GetElement(i, x);
+    if (!x.isNormal()) {
+      Output << "\t(bad transition)\n";
+    } else {
+      symbol* s = dynamic_cast <symbol*> (x.other);
+      DCASSERT(s);
+      Output << "\t" << s << "\n";
+    }
+  }
+  
+  x.setNull();
+}
+
+void Add_showlist(PtrTable *fns)
+{
+  const char* helpdoc = "Test function; displays a set of transitions.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(SPN, "net");
+  pl[1] = new formal_param(SET_TRANS, "T");
+  internal_func *p = new internal_func(VOID, "showlist", 
+	compute_showlist, NULL, pl, 2, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
 
 
 // ******************************************************************
@@ -1685,6 +1807,10 @@ void InitPNModelFuncs(PtrTable *t)
   Add_spn_firing(t);
 
   Add_spn_tk(t);
+
+  // testing
+
+  Add_showlist(t);
 
   // Initialize PN-specific options
 

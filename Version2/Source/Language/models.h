@@ -91,7 +91,7 @@ public:
     upper = U;
   }
 
-  /// Returns the state_index
+  /// Returns a pointer to ourself
   virtual void Compute(int i, result &x);
 
   // other required virtual functions here

@@ -46,7 +46,10 @@ model_var::~model_var()
 
 void model_var::Compute(int i, result &x)
 {
+  DCASSERT(0==i);
   x.Clear();
+  x.other = this;
+/*
   if (state_index < 0) {
     // the index was never set
     // not sure what to do here, try this...
@@ -57,6 +60,7 @@ void model_var::Compute(int i, result &x)
   } else {
     x.ivalue = state_index;
   }
+*/
 }
 
 void model_var::ClearCache()
@@ -723,7 +727,9 @@ public:
   }
 
   virtual void Compute(int i, result &x) {
-    SafeCompute(var, i, x);
+    x.Clear();
+    if (NULL==var) x.setNull();
+    else x.other = var;
   }
 
 };

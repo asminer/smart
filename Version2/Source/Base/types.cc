@@ -79,7 +79,9 @@ const char* VoidNames[] = {
 
 const char* SetNames[] = {
   "{int}",
-  "{real}"
+  "{real}",
+  "{place}",
+  "{trans}"
 };
 
 const char* InternalNames[] = {
@@ -116,6 +118,16 @@ const char* GetType(type t)
 
   // Still here?
   return "Unknown type";
+}
+
+type SetOf(type t)
+{
+  switch (t) {
+    case INT:		return SET_INT;
+    case REAL:		return SET_REAL;
+    case TRANS:		return SET_TRANS;
+  }
+  return NO_SUCH_TYPE;
 }
 
 //

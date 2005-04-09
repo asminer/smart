@@ -344,6 +344,11 @@ expr* AppendSetElem(expr* left, expr* right)
 	  break;
 	};
 	break;
+
+    case SET_PLACE:
+    case SET_TRANS:
+ 	ok = (left->Type(0) == right->Type(0));
+	break;
   }
   if (!ok) {
     Error.Start(filename, lexer.lineno());

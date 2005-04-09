@@ -241,13 +241,6 @@ void generic_int_set::show(OutputStream &s)
   s.Put('{');
   s.PutArray(values, Size());
   s.Put('}');
-  // temporary...
-  /*
-  s << "\nOrder array:\n";
-  s.Put('[');
-  if (order) s.PutArray(order, Size());
-  s << "]\n";
-  */
 }
 
 
@@ -333,6 +326,90 @@ void generic_real_set::show(OutputStream &s)
 {
   s.Put('{');
   s.PutArray(values, Size());
+  s.Put('}');
+}
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                     generic_void_set class                     *
+// *                                                                *
+// ******************************************************************
+
+/**  A generic set of voids.
+     Used for sets of places, transitions, etc.
+     I.e., sets of anything that qualifies as a void type,
+     declared within a model.
+ */
+class generic_void_set : public set_result {
+  /// Values in the set.  Sorted by address.
+  symbol** values;
+  /// The order of the values.
+  int* order;
+public:
+  generic_void_set(int s, symbol** v, int* o);
+  virtual ~generic_void_set(); 
+  virtual void GetElement(int n, result &x);
+  virtual int IndexOf(const result &x);
+  virtual void GetOrder(int n, int &i, result &x);
+  virtual void show(OutputStream &s);
+};
+
+generic_void_set::generic_void_set(int s, symbol** v, int* o) : set_result(s)
+{
+  values = v;
+  order = o;
+}
+
+generic_void_set::~generic_void_set()
+{
+  // TBD: do we need to Delete the symbols?
+  delete[] values;
+  delete[] order;
+}
+
+void generic_void_set::GetElement(int n, result &x)
+{
+  CHECK_RANGE(0, n, Size());
+  x.Clear();
+  x.other = values[n];
+}
+
+int generic_void_set::IndexOf(const result &x)
+{
+  if (!x.isNormal()) return -1;
+  // binary search through values
+  int low = 0, high = Size()-1;
+  while (low <= high) {
+    int mid = (low+high)/2;
+    int i = order[mid];
+    CHECK_RANGE(0, i, Size());
+    if (values[i] == x.other) return i;
+    if (values[i] < x.other) 
+      low = mid+1;
+    else
+      high = mid-1;
+  }
+  return -1;
+}
+
+void generic_void_set::GetOrder(int n, int &i, result &x)
+{
+  CHECK_RANGE(0, n, Size());
+  i = order[n];
+  CHECK_RANGE(0, i, Size());
+  x.Clear();
+  x.other = values[i];
+}
+
+void generic_void_set::show(OutputStream &s)
+{
+  s.Put('{');
+  for (int i=0; i<Size(); i++) {
+    if (i) s << ", ";
+    s << values[i]->Name();
+  }
   s.Put('}');
 }
 
@@ -793,7 +870,8 @@ void intset_union::Compute(int i, result &x)
     x = l;
     return;
   }
-  set_result *ls = (set_result*) l.other;
+  set_result *ls = dynamic_cast<set_result*> (l.other);
+  DCASSERT(ls);
   result r;
   right->Compute(0, r);
   if (r.isError() || r.isNull()) {
@@ -801,7 +879,8 @@ void intset_union::Compute(int i, result &x)
     Delete(ls);
     return;
   }
-  set_result *rs = (set_result*) r.other;
+  set_result *rs = dynamic_cast<set_result*> (r.other);
+  DCASSERT(rs);
 
   // mark the duplicate elements in rs.
   int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
@@ -949,7 +1028,8 @@ void int2realset::Compute(int i, result &x)
   DCASSERT(opnd);
   opnd->Compute(0, x);
   if (x.isNull() || x.isError()) return;
-  set_result* xs = (set_result*) x.other;
+  set_result* xs = dynamic_cast<set_result*> (x.other);
+  DCASSERT(xs);
   set_result* answer = new int_realset(xs);
   x.other = answer;
 }
@@ -1117,7 +1197,8 @@ void realset_union::Compute(int i, result &x)
     x = l;
     return;
   }
-  set_result *ls = (set_result*) l.other;
+  set_result *ls = dynamic_cast<set_result*> (l.other);
+  DCASSERT(ls);
   result r;
   right->Compute(0, r);
   if (r.isError() || r.isNull()) {
@@ -1125,7 +1206,8 @@ void realset_union::Compute(int i, result &x)
     Delete(ls);
     return;
   }
-  set_result *rs = (set_result*) r.other;
+  set_result *rs = dynamic_cast<set_result*> (r.other);
+  DCASSERT(rs);
 
   // mark the duplicate elements in rs.
   int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
@@ -1243,6 +1325,238 @@ void realset_union::Compute(int i, result &x)
 }
 
 
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                      void  set expressions                     *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+// ******************************************************************
+// *                     voidset_element  class                     *
+// ******************************************************************
+
+/** Used for a single element set.  
+    This is the "base case" for all void sets.
+ */
+class voidset_element : public unary {
+  type setType;
+public:
+  voidset_element(const char* fn, int line, expr* x, type st) 
+    : unary(fn, line, x) { 
+    CHECK_RANGE(FIRST_SET, st, 1+LAST_SET); 
+    setType = st;
+  };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(OutputStream &s) const;
+protected:
+  virtual expr* MakeAnother(expr* newopnd) {
+    return new voidset_element(Filename(), Linenumber(), newopnd, setType);
+  }
+};
+
+type voidset_element::Type(int i) const 
+{
+  DCASSERT(i==0);
+  return setType;
+}
+
+void voidset_element::Compute(int i, result &x)
+{
+  DCASSERT(i==0);
+  DCASSERT(opnd);
+  symbol** values = new symbol*[1];
+  int* order = new int[1];
+  SafeCompute(opnd, 0, x); 
+  DCASSERT(x.isNormal()); // I'm *pretty* sure the alternative is impossible
+  values[0] = dynamic_cast<symbol*> (x.other); 
+  DCASSERT(values[0]);
+  order[0] = 0;
+   
+  set_result *answer = new generic_void_set(1, values, order);
+  x.other = answer;
+}
+
+void voidset_element::show(OutputStream &s) const
+{
+  s << opnd;
+}
+
+// ******************************************************************
+// *                      voidset_union  class                      *
+// ******************************************************************
+
+/** A binary operator to handle the union of two void sets.
+ */
+class voidset_union : public binary {
+public:
+  voidset_union(const char* fn, int line, expr* l, expr* r) 
+    : binary(fn, line, l, r) { 
+    DCASSERT(l); 
+    DCASSERT(r); 
+  };
+  virtual type Type(int i) const;
+  virtual void Compute(int i, result &x);
+  virtual void show(OutputStream &s) const { s << left << ", " << right; }
+protected:
+  virtual expr* MakeAnother(expr* newleft, expr* newright) {
+    return new voidset_union(Filename(), Linenumber(), newleft, newright);
+  }
+};
+
+type voidset_union::Type(int i) const
+{
+  DCASSERT(0==i);
+  DCASSERT(left);
+  return left->Type(i);
+}
+
+void voidset_union::Compute(int i, result &x)
+{
+  DCASSERT(0==i);
+  DCASSERT(left);
+  DCASSERT(right);
+  x.Clear();
+  result l;
+  left->Compute(0, l); 
+  if (l.isError() || l.isNull()) {
+    x = l;
+    return;
+  }
+  set_result *ls = dynamic_cast<set_result*> (l.other);
+  DCASSERT(ls);
+  result r;
+  right->Compute(0, r);
+  if (r.isError() || r.isNull()) {
+    x = r;
+    Delete(ls);
+    return;
+  }
+  set_result *rs = dynamic_cast<set_result*> (r.other);
+  DCASSERT(rs);
+
+  // mark the duplicate elements in rs.
+  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
+  int lp = 0, rp = 0;
+  result lx, rx;
+  int ordl, ordr;
+  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  while (lp<ls->Size() && rp<rs->Size()) {
+    if (lx.other == rx.other) {
+      rspos[ordr] = 0;  // duplicate
+      lp++;
+      rp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    } else if (lx.other < rx.other) {
+      // advance lp only
+      lp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    } else {
+      // advance rp only
+      rspos[ordr] = 1;  // not duplicate
+      rp++;
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    }
+  }
+  // fill the rest of rspos
+  while (rp<rs->Size()) {
+    rspos[ordr] = 1;
+    rp++;
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  }
+
+  // we have an array of bits for non-duplicates.
+  // translate that into the new positions (by summing).
+  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
+  
+  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
+  
+  int newsize = ls->Size() + rspos[rs->Size()-1];
+
+  set_result *answer;
+
+  if (0==newsize) {
+    // left and right must be empty.
+    answer = new generic_void_set(0, NULL, NULL);
+
+  } else {
+    // we have a non-trivial union.
+
+    // Do a "mergesort"
+    symbol** values = new symbol*[newsize];
+    int* order = new int[newsize];
+    int optr = 0;
+    lp = 0; rp = 0;
+    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    while (lp<ls->Size() && rp<rs->Size()) {
+      if (lx.other == rx.other) {
+        // this is a duplicate
+        order[optr] = ordl;
+        optr++;
+        values[ordl] = dynamic_cast<symbol*>(lx.other);
+        DCASSERT(values[ordl]);
+        lp++;
+        rp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      } else if (lx.other < rx.other) {
+        // copy next element from left
+        order[optr] = ordl;
+        values[ordl] = dynamic_cast<symbol*>(lx.other);
+        DCASSERT(values[ordl]);
+        optr++;
+        lp++;
+        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+      } else {
+        // copy next element from right
+        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
+        values[order[optr]] = dynamic_cast<symbol*>(rx.other);
+        DCASSERT(values[order[optr]]);
+        optr++;
+        rp++;
+        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+      }
+    }
+    // At most one of these loops will go
+    while (lp<ls->Size()) {
+      order[optr] = ordl;
+      values[ordl] = dynamic_cast<symbol*>(lx.other);
+      DCASSERT(values[ordl]);
+      optr++;
+      lp++;
+      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
+    }
+    while (rp<rs->Size()) {
+      order[optr] = rspos[ordr] + ls->Size() - 1;
+      values[order[optr]] = dynamic_cast<symbol*>(rx.other);
+      DCASSERT(values[order[optr]]);
+      optr++;
+      rp++;
+      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+    }
+
+    answer = new generic_void_set(newsize, values, order);
+    
+    // eventually... return buffer
+    delete[] rspos;
+  }
+
+#ifdef UNION_DEBUG
+  Output << "Inside set union\n";
+  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#endif
+  
+  x.other = answer;
+  Delete(ls);
+  Delete(rs);
+}
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -1251,6 +1565,16 @@ void realset_union::Compute(int i, result &x)
 // *                                                                *
 // *                                                                *
 // ******************************************************************
+
+expr* SetOpError(const char* what, const char *fn, int ln)
+{
+  // shouldn't ever get here
+  Internal.Start(__FILE__, __LINE__, fn, ln);
+  Internal << what;
+  Internal.Stop();
+  return ERROR;
+}
+
 
 expr*  MakeInterval(const char *fn, int ln, expr* start, expr* stop, expr* inc)
 {
@@ -1262,7 +1586,7 @@ expr*  MakeInterval(const char *fn, int ln, expr* start, expr* stop, expr* inc)
       // not done yet
       return new real_setexpr_interval(fn, ln, start, stop, inc);
   }
-  return NULL;
+  return SetOpError("Bad interval type",fn, ln);
 }
 
 expr*  MakeElementSet(const char *fn, int ln, expr* element)
@@ -1273,20 +1597,33 @@ expr*  MakeElementSet(const char *fn, int ln, expr* element)
 
     case REAL:
       return new realset_element(fn, ln, element);
+
+    case PLACE:
+      return new voidset_element(fn, ln, element, SET_PLACE);
+
+    case TRANS:
+      return new voidset_element(fn, ln, element, SET_TRANS);
   }
-  return NULL;
+  return SetOpError("Bad element set type",fn, ln);
 }
 
 expr*  MakeUnionOp(const char *fn, int ln, expr* left, expr* right)
 {
+  DCASSERT(left);
+  DCASSERT(right);
+  DCASSERT(left->Type(0) == right->Type(0));
   switch (left->Type(0)) {
     case SET_INT:
       return new intset_union(fn, ln, left, right);
 
     case SET_REAL:
       return new realset_union(fn, ln, left, right);
+
+    case SET_PLACE:
+    case SET_TRANS:
+      return new voidset_union(fn, ln, left, right);
   }
-  return NULL;
+  return SetOpError("Bad type for set union",fn, ln);
 }
 
 expr*  MakeInt2RealSet(const char* fn, int line, expr* intset)
