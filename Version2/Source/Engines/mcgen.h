@@ -14,16 +14,32 @@ extern option_const sparse_mc;
 extern option_const kronecker_mc;
 
 /** Useful helper function.
-    Compress and attach the CTMC the state model.
+    Compress and attach the RG to the state model.
+    If an error occurred, use rg = NULL.
+*/
+void CompressAndAffix(state_model* dsm, digraph *rg);
+
+/** Useful helper function.
+    Compress and attach the CTMC to the state model.
     If an error occurred, use mc = NULL.
 */
 void CompressAndAffix(state_model* dsm, labeled_digraph<float> *mc);
 
-/** 	Build the reachability set for a state model.
+/** 	Build the reachability graph for a state model.
 
         This will be added to the state model itself.
-	If there was a problem, a special "error" reachability
-	set will be set for the model.
+	If there was a problem, a special "error" reachability graph
+	will be set for the model.
+	(This allows errors to propogate in a healty way.)
+
+*/
+void 	BuildRG(state_model *dsm);
+
+/** 	Build the CTMC for a state model.
+
+        This will be added to the state model itself.
+	If there was a problem, a special "error" CTMC
+	will be set for the model.
 	(This allows errors to propogate in a healty way.)
 
 */

@@ -36,13 +36,37 @@ void BuildProcess(model *m)
   state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
   DCASSERT(dsm);
   dsm->DetermineProcessType();
-  // eventually... switch based on process type
 
-  if (NULL==dsm->statespace) {
-    // build both reachability set and Markov chain
-    BuildReachsetAndCTMC(dsm);
-  } else {
-    BuildCTMC(dsm);
+  switch (dsm->proctype) {
+    case Proc_Unknown:		// this shouldn't happen
+	DCASSERT(0);
+	return;	
+
+    case Proc_Error:
+	return;
+
+    case Proc_FSM:
+  	if (NULL==dsm->statespace) {
+    	  // build both reachability set and graph
+    	  BuildReachSetAndGraph(dsm);
+  	} else {
+    	  BuildRG(dsm);
+  	}
+	return;
+
+    case Proc_Ctmc:
+  	if (NULL==dsm->statespace) {
+    	  // build both reachability set and Markov chain
+    	  BuildReachsetAndCTMC(dsm);
+  	} else {
+    	  BuildCTMC(dsm);
+  	}
+	return;
+
+    default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Unhandled process type\n";
+        Internal.Stop();
   }
 }
 

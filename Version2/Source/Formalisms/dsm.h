@@ -21,6 +21,7 @@
 //@{
 
 class reachset;  // defined in States/reachset.h
+class reachgraph;  // defined in Chains/procs.h
 class markov_chain;  // defined in Chains/procs.h
 
 
@@ -132,6 +133,9 @@ public:
   // list out the different underlying processes here?
   // or use a union?
   // decide later...
+
+  /// Reachability graph
+  reachgraph *rg; 
 
   /// Markov chain (discrete or continuous)
   markov_chain *mc;

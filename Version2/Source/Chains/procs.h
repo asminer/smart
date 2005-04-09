@@ -13,7 +13,7 @@
 #include "../Base/options.h"
 #include "../Templates/sparsevect.h"
 
-/// Storage options for a Markov chain
+/// Storage options for a Markov chain or Reachability graph
 enum mc_storage {
   /// Empty (use for initializing)
   MC_None,
@@ -25,6 +25,34 @@ enum mc_storage {
 
   /// There was an error generating it.
   MC_Error
+};
+
+class reachgraph {
+  mc_storage encoding;
+  union {
+    /// Used by explicit storage
+    digraph *explicit_rg;
+
+    /// Implement later...
+    void* kron;
+  };
+// initial states?
+public:
+  reachgraph();
+  ~reachgraph();
+
+  inline mc_storage Storage() const { return encoding; }
+
+  /// Create an explicit rg
+  void CreateExplicit(digraph* ex);
+  /// Create an error rg
+  void CreateError();
+
+  inline digraph* Explicit() const {
+    DCASSERT(encoding == MC_Explicit);
+    return explicit_rg;
+  }
+
 };
 
 class markov_chain {

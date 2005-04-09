@@ -13,6 +13,164 @@ const int num_mc_options = 2;
 option_const sparse_mc("SPARSE", "\aSparse, row-wise or column-wise storage");
 option_const kronecker_mc("KRONECKER", "\aUsing Kronecker algebra");
 
+// *******************************************************************
+// *                                                                 *
+// *                          RG  generation                         *
+// *                                                                 *
+// *******************************************************************
+
+template <class REACHSET>
+bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
+{
+  DCASSERT(dsm);
+  DCASSERT(S);
+
+  bool error = false;
+  int e;
+
+  // allocate temporary (full) states
+  DCASSERT(dsm->UsesConstantStateSize());
+  int stsize = dsm->GetConstantStateSize();
+  state current, reached;
+  AllocState(current, stsize);
+  AllocState(reached, stsize);
+
+  result x;
+  x.Clear();
+  
+  // ok, build the graph
+  int from; 
+  rg->ResizeNodes(S->NumStates());
+  for (from=0; from < S->NumStates(); from++) {
+    rg->AddNode();
+  }
+  rg->ResizeEdges(4);
+  for (from=0; from < S->NumStates(); from++) {
+    S->GetState(from, current);
+    // what is enabled?
+    for (e=0; e<dsm->NumEvents(); e++) {
+      event* t = dsm->GetEvent(e);
+      DCASSERT(t);
+      if (NULL==t->getNextstate())
+        continue;  // firing is "no-op", don't bother
+
+      t->isEnabled()->Compute(current, 0, x);
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	if (x.isUnknown()) 
+	  Error << "Unknown if event " << t << " is enabled";
+	else
+	  Error << "Bad enabling expression for event " << t;
+	Error << " during state graph generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+      if (!x.bvalue) continue;  // event is not enabled
+
+      // e is enabled, fire and get new state
+
+      // set reached = current
+      S->GetState(from, reached);
+      // do the firing
+      t->getNextstate()->NextState(current, reached, x); 
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	Error << "Bad next-state expression during state graph generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+
+      // Which state is reached?
+      int to = S->FindState(reached);
+      if (to<0) {
+        Internal.Start(__FILE__, __LINE__, dsm->Filename(), dsm->Linenumber());
+        Internal << "Couldn't find reachable state ";
+        dsm->ShowState(Internal, reached);
+        Internal << " in reachability set\n";
+        Internal.Stop();
+      }
+
+      rg->AddEdgeInOrder(from, to);
+
+    } // for e
+    if (error) break;
+  } // for from
+
+  // cleanup
+  FreeState(reached);
+  FreeState(current);
+  return !error; 
+}
+
+void CompressAndAffix(state_model* dsm, digraph *rg)
+{
+  if (NULL==rg) {
+    dsm->rg = new reachgraph;
+    dsm->rg->CreateError();
+    return;
+  }
+  dsm->rg = new reachgraph;
+  dsm->rg->CreateExplicit(rg);
+}
+
+void SparseRG(state_model *dsm)
+{
+  DCASSERT(NULL==dsm->rg);
+  if (Verbose.IsActive()) {
+    Verbose << "Starting reachability graph generation using sparse storage\n";
+    Verbose.flush();
+  }
+
+  digraph* rg = NULL;
+  bool ok = false;
+
+  // Build CTMC based on state space type
+  switch (dsm->statespace->Storage()) {
+    case RT_None:
+    case RT_Error:
+	break;
+
+    case RT_Explicit:
+        rg = new digraph;
+	ok = GenerateRG(dsm, dsm->statespace->Explicit(), rg);
+	break;
+			
+    default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Unhandled storage type for reachability graph generation\n";
+	Internal.Stop();
+  }
+
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating reachability graph; compressing\n";
+    Verbose.flush();
+  }
+
+  // An error occurred during generation
+  if (!ok) {
+    delete rg;
+    rg = NULL;
+  } else {
+
+    // "generate" initial probability vector here...
+
+    // transpose if necessary
+    if (!MatrixByRows->GetBool()) rg->Transpose();
+  }
+
+  // attach to model
+  CompressAndAffix(dsm, rg);
+}
+
+
+// *******************************************************************
+// *                                                                 *
+// *                         CTMC  generation                        *
+// *                                                                 *
+// *******************************************************************
+
 inline bool IllegalRateCheck(result &x, state_model *dsm, event *t)
 {
   if (!x.isNormal() || x.rvalue <= 0) {
@@ -206,8 +364,37 @@ void SparseCTMC(state_model *dsm)
 }
 
 // *******************************************************************
+// *                                                                 *
 // *                           Front  ends                           *
+// *                                                                 *
 // *******************************************************************
+
+void BuildRG(state_model *dsm)
+{
+  if (NULL==dsm) return;
+  DCASSERT(dsm->statespace);
+  if (dsm->rg) return;  // already built
+
+  const option_const* mc_option = MarkovStorage->GetEnum();
+
+  timer watch;
+
+  watch.Start();
+  if (mc_option == &sparse_mc)		SparseRG(dsm); 
+  watch.Stop();
+
+  if (NULL==dsm->rg) {
+    // we didn't do anything...
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "MarkovStorage option " << mc_option->name << " not handled";
+    Internal.Stop();
+  }
+
+  if (Verbose.IsActive()) {
+    Verbose << "Generation took " << watch << "\n";
+    Verbose.flush();
+  }
+}
 
 void BuildCTMC(state_model *dsm)
 {

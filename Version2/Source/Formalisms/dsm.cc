@@ -86,6 +86,7 @@ state_model::state_model(const char* fn, int line, type t, char* n,
   // set useful stuff to unknown values
   statespace = NULL;
   proctype = Proc_Unknown;
+  rg = NULL;
   mc = NULL;
 }
 
@@ -93,6 +94,7 @@ state_model::~state_model()
 {
   FREE("state_model", sizeof(state_model));
   delete statespace;
+  delete rg;
   delete mc;
   // trash the events
   for (int e=0; e<num_events; e++) {

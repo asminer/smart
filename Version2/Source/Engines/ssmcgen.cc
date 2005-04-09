@@ -10,6 +10,310 @@
 #include "../States/reachset.h"
 #include "../Chains/procs.h"
 
+
+// *******************************************************************
+// *                                                                 *
+// *                          RG  generation                         *
+// *                                                                 *
+// *******************************************************************
+
+// which are pairwise compatible
+bool IsReachsetAndRGCompatible(const option_const* ssgen, 
+				const option_const* mcgen)
+{
+  if (mcgen == &sparse_mc) {
+    return (ssgen == &debug_ss) ||
+           (ssgen == &redblack_ss) ||
+	   (ssgen == &splay_ss);
+  }
+  // kronecker... not done yet
+  return false;
+}
+
+template <class SSTYPE>
+bool Debug_GenerateSandRG(state_model *dsm, 
+			    state_array *states,
+		   	    SSTYPE *tree, 
+			    digraph *rg)
+{
+  DCASSERT(dsm);
+  DCASSERT(states);
+  DCASSERT(tree);
+  DCASSERT(rg);
+
+  bool error = false;
+  int e;
+
+  rg->ResizeNodes(4);
+  rg->ResizeEdges(4);
+
+  // allocate temporary (full) states
+  DCASSERT(dsm->UsesConstantStateSize());
+  int stsize = dsm->GetConstantStateSize();
+  state current, reached;
+  AllocState(current, stsize);
+  AllocState(reached, stsize);
+
+  // Find and insert the initial state(s)
+  for (int i=0; i<dsm->NumInitialStates(); i++) {
+    dsm->GetInitialState(i, current);
+    tree->AddState(current);
+    rg->AddNode();
+    // debug part...
+    Output << "Added initial state: ";
+    dsm->ShowState(Output, current);
+    Output << "\n";
+    Output.flush();
+    // ...to here
+  }
+  
+  result x;
+  x.Clear();
+  
+  // ok, build the rg
+  int from;
+  for (from=0; from < states->NumStates(); from++) {
+    states->GetState(from, current);
+    // debug part...
+    Output << "\nExploring state#";
+    Output.Put(from, 5);
+    Output << " : ";
+    dsm->ShowState(Output, current);
+    Output << "\n\n";
+    Output.flush();
+    // ...to here
+    
+    // what is enabled?
+    for (e=0; e<dsm->NumEvents(); e++) {
+      event* t = dsm->GetEvent(e);
+      DCASSERT(t);
+      if (NULL==t->getNextstate())
+        continue;  // firing is "no-op", don't bother
+
+      t->isEnabled()->Compute(current, 0, x);
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	if (x.isUnknown()) 
+	  Error << "Unknown if event " << t << " is enabled";
+	else
+	  Error << "Bad enabling expression for event " << t;
+	Error << " during CTMC generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+      if (!x.bvalue) continue;  // event is not enabled
+
+      // e is enabled, fire and get new state
+
+      // set reached = current
+      states->GetState(from, reached);
+      // do the firing
+      t->getNextstate()->NextState(current, reached, x); 
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	Error << "Bad next-state expression during CTMC generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+
+      // Which state is reached?
+      int to = tree->AddState(reached);
+      if (to == rg->NumNodes()) rg->AddNode();
+
+      rg->AddEdgeInOrder(from, to);
+
+      // debug part...
+      Output << "\t" << t;
+      Output << " --> ";
+      dsm->ShowState(Output, reached);
+      Output << "\n";
+      Output.flush();
+      // ... to here
+
+    } // for e
+    if (error) break;
+  } // for from
+
+  // cleanup
+  FreeState(reached);
+  FreeState(current);
+  return !error; 
+}
+
+
+template <class SSTYPE>
+bool GenerateSandRG(state_model *dsm, 
+			    state_array *states,
+		   	    SSTYPE *tree, 
+			    digraph *rg)
+{
+  DCASSERT(dsm);
+  DCASSERT(states);
+  DCASSERT(tree);
+  DCASSERT(rg);
+
+  bool error = false;
+  int e;
+
+  rg->ResizeNodes(4);
+  rg->ResizeEdges(4);
+
+  // allocate temporary (full) states
+  DCASSERT(dsm->UsesConstantStateSize());
+  int stsize = dsm->GetConstantStateSize();
+  state current, reached;
+  AllocState(current, stsize);
+  AllocState(reached, stsize);
+
+  // Find and insert the initial state(s)
+  for (int i=0; i<dsm->NumInitialStates(); i++) {
+    dsm->GetInitialState(i, current);
+    tree->AddState(current);
+    rg->AddNode();
+  }
+  
+  result x;
+  x.Clear();
+  
+  // ok, build the rg
+  int from;
+  for (from=0; from < states->NumStates(); from++) {
+    states->GetState(from, current);
+    
+    // what is enabled?
+    for (e=0; e<dsm->NumEvents(); e++) {
+      event* t = dsm->GetEvent(e);
+      DCASSERT(t);
+      if (NULL==t->getNextstate())
+        continue;  // firing is "no-op", don't bother
+
+      t->isEnabled()->Compute(current, 0, x);
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	if (x.isUnknown()) 
+	  Error << "Unknown if event " << t << " is enabled";
+	else
+	  Error << "Bad enabling expression for event " << t;
+	Error << " during CTMC generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+      if (!x.bvalue) continue;  // event is not enabled
+
+      // e is enabled, fire and get new state
+
+      // set reached = current
+      states->GetState(from, reached);
+      // do the firing
+      t->getNextstate()->NextState(current, reached, x); 
+      if (!x.isNormal()) {
+	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+	Error << "Bad next-state expression during CTMC generation";
+	Error.Stop();
+	error = true;
+	break;
+      }
+
+      // Which state is reached?
+      int to = tree->AddState(reached);
+      if (to == rg->NumNodes()) rg->AddNode();
+      rg->AddEdgeInOrder(from, to);
+
+    } // for e
+    if (error) break;
+  } // for from
+
+  // cleanup
+  FreeState(reached);
+  FreeState(current);
+  return !error; 
+}
+
+
+void DebugRGgen(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting reachability set & CTMC generation in debug mode\n";
+    Verbose.flush();
+  }
+  state_array* states = new state_array(true);
+  splay_state_tree* tree = new splay_state_tree(states);
+  digraph *rg = new digraph;
+  bool ok = Debug_GenerateSandRG(dsm, states, tree, rg);
+  if (!ok) {
+    delete states;
+    states = NULL;
+    delete rg;
+    rg = NULL;
+  }
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating, compressing\n";
+    Verbose.flush();
+  }
+  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, rg);
+}
+
+void SplayRGgen(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting generation using Splay & sparse\n";
+    Verbose.flush();
+  }
+  state_array* states = new state_array(true);
+  splay_state_tree* tree = new splay_state_tree(states);
+  digraph *rg = new digraph;
+  bool ok = GenerateSandRG(dsm, states, tree, rg);
+  if (!ok) {
+    delete states;
+    states = NULL;
+    delete rg;
+    rg = NULL;
+  }
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating, compressing\n";
+    Verbose.flush();
+  }
+  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, rg);
+}
+
+
+void RedBlackRGgen(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting generation using red-black tree & sparse\n";
+    Verbose.flush();
+  }
+  state_array* states = new state_array(true);
+  splay_state_tree* tree = new splay_state_tree(states);
+  digraph *rg = new digraph;
+  bool ok = GenerateSandRG(dsm, states, tree, rg);
+  if (!ok) {
+    delete states;
+    states = NULL;
+    delete rg;
+    rg = NULL;
+  }
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating, compressing\n";
+    Verbose.flush();
+  }
+  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, rg);
+}
+
+
+
+// *******************************************************************
+// *                                                                 *
+// *                         CTMC  generation                        *
+// *                                                                 *
+// *******************************************************************
+
 // which are pairwise compatible
 bool IsReachsetAndCTMCCompatible(const option_const* ssgen, 
 				const option_const* mcgen)
@@ -384,6 +688,46 @@ void RedBlackCTMCgen(state_model *dsm)
 // *******************************************************************
 // *                           Front  ends                           *
 // *******************************************************************
+
+void BuildReachSetAndGraph(state_model *dsm)
+{
+  if (NULL==dsm) return;
+  if (dsm->statespace) {
+    BuildRG(dsm);
+    return;
+  }
+  DCASSERT(NULL==dsm->rg);
+  const option_const* ss_option = StateStorage->GetEnum();
+  DCASSERT(ss_option);
+  const option_const* mc_option = MarkovStorage->GetEnum();
+  DCASSERT(mc_option);
+  if (!IsReachsetAndRGCompatible(ss_option, mc_option)) {
+    BuildReachset(dsm);
+    BuildRG(dsm);
+    return;
+  }
+  DCASSERT(mc_option == &sparse_mc);  // only one implemented so far
+  
+  timer watch;
+
+  watch.Start();
+  if (ss_option == &debug_ss)		DebugRGgen(dsm); 
+  if (ss_option == &splay_ss)		SplayRGgen(dsm); 
+  if (ss_option == &redblack_ss)	RedBlackRGgen(dsm); 
+  watch.Stop();
+
+  if (NULL==dsm->statespace) {
+    // we didn't do anything...
+    Internal.Start(__FILE__, __LINE__);
+    Internal << "StateStorage option " << ss_option->name << " not handled";
+    Internal.Stop();
+  }
+
+  if (Verbose.IsActive()) {
+    Verbose << "Generation took " << watch << "\n";
+    Verbose.flush();
+  }
+}
 
 void BuildReachsetAndCTMC(state_model *dsm)
 {

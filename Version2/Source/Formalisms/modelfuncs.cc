@@ -255,27 +255,14 @@ void Add_num_states(PtrTable *fns)
 // *                       num_arcs                       *
 // ********************************************************
 
-void compute_num_arcs(expr **pp, int np, result &x)
+void fsm_arcs(state_model *dsm, bool show, result &x)
 {
-  x.Clear();
-  DCASSERT(2==np);
-  DCASSERT(pp);
-  model *m = dynamic_cast<model*> (pp[0]);
-  DCASSERT(m);
-  
-  BuildProcess(m);
-
-  // eventually: switch for different process types
-  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   DCASSERT(dsm);
-  DCASSERT(Proc_Ctmc == dsm->proctype);
-
   // get number of arcs
-  markov_chain* mc = dsm->mc;
-  DCASSERT(mc);
-  switch (mc->Storage()) {
+  DCASSERT(dsm->rg);
+  switch (dsm->rg->Storage()) {
     case MC_Explicit:
-	x.ivalue = mc->Explicit()->numArcs();
+	x.ivalue = dsm->rg->Explicit()->NumEdges();
 	break;
 
     case MC_Kronecker:
@@ -286,14 +273,64 @@ void compute_num_arcs(expr **pp, int np, result &x)
 	x.setNull();
 	return;
   }
+  // display here...
+}
+
+void mc_arcs(state_model *dsm, bool show, result &x)
+{
+  DCASSERT(dsm);
+  // get number of arcs
+  switch (dsm->mc->Storage()) {
+    case MC_Explicit:
+	x.ivalue = dsm->mc->Explicit()->numArcs();
+	break;
+
+    case MC_Kronecker:
+	x.ivalue = 0;
+	break;
+
+    default:
+	x.setNull();
+	return;
+  }
+  // display here...
+}
+
+void compute_num_arcs(expr **pp, int np, result &x)
+{
+  x.Clear();
+  DCASSERT(2==np);
+  DCASSERT(pp);
+  model *m = dynamic_cast<model*> (pp[0]);
+  DCASSERT(m);
+
+  BuildProcess(m);
 
   // should we show the graph / MC?
-  result show;
-  SafeCompute(pp[1], 0, show);
-  if (!show.isNormal()) return;
-  if (!show.bvalue) return;
-  
-  // display here...
+  bool show = false;
+  result s;
+  SafeCompute(pp[1], 0, s);
+  if (s.isNormal()) show = s.bvalue;
+
+  // eventually: switch for different process types
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
+  DCASSERT(dsm);
+
+  switch (dsm->proctype) {
+    case Proc_FSM:
+	fsm_arcs(dsm, show, x);
+	return;
+
+    case Proc_Dtmc:
+    case Proc_Ctmc:
+	mc_arcs(dsm, show, x);
+	return;
+
+    case Proc_Unknown:
+	DCASSERT(0);	// should be impossible
+    default:
+	x.setError();
+  };
 }
 
 void Add_num_arcs(PtrTable *fns)

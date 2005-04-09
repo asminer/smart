@@ -23,4 +23,7 @@
 */
 void 	BuildReachsetAndCTMC(state_model *dsm);
 
+/// Same as BuildReachsetAndCTMC, but for reachability graph.
+void 	BuildReachSetAndGraph(state_model *dsm);
+
 #endif
