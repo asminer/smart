@@ -1713,9 +1713,13 @@ void compute_spn_tk(const state &m, expr **pp, int np, result &x)
 #endif
   x.Clear();
   SafeCompute(pp[1], 0, x);
+#ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   model_var* place = dynamic_cast <model_var*> (x.other);
   DCASSERT(place);
+#else 
+  model_var* place = (model_var*) x.other;
+#endif
  
 #ifdef DEBUG
   Output << "\tgot param: ";

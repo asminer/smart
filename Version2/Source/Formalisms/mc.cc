@@ -584,11 +584,14 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
 #endif
   x.Clear();
   SafeCompute(pp[1], 0, x);
+#ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   model_var* st = dynamic_cast<model_var*> (x.other);
   DCASSERT(st);
+#else
+  model_var* st = (model_var*) x.other;
+#endif
 
-  // error checking here...
 #ifdef DEBUG
   Output << "\tgot param: " << st << "\n";
   Output.flush();
@@ -598,7 +601,6 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
   Output << "\n";
   Output.flush();
 #endif
-  // error checking here for m
 
   if (st->state_index == m.Read(0).ivalue) {
     x.bvalue = true;
