@@ -130,6 +130,12 @@ const char* GetType(type);
 */
 type SetOf(type t);
 
+/// Returns true if the type is a set of something.
+inline bool IsASet(type t) 
+{
+  return (t >= FIRST_SET) && (t <= LAST_SET);
+}
+
 /// Returns true if type t1 can be promoted to type t2.
 bool Promotable(type t1, type t2);            
 

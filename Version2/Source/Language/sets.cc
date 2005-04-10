@@ -4,6 +4,7 @@
 #include "sets.h"
 #include "measures.h"
 #include "../Base/memtrack.h"
+#include "../Templates/splay.h"
 
 #include "math.h"
 
@@ -57,7 +58,6 @@ public:
   virtual ~int_interval() { }
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -85,15 +85,6 @@ int int_interval::IndexOf(const result &x)
   return i;
 }
 
-void int_interval::GetOrder(int n, int &i, result &x)
-{
-  CHECK_RANGE(0, n, Size());
-  x.Clear();
-  if (inc>0) i = n;
-  else i = Size()-n-1;
-  x.ivalue = start + i * inc;
-}
-
 void int_interval::show(OutputStream &s)
 {
   s << "{" << start << ".." << stop << ".." << inc << "}";
@@ -115,7 +106,6 @@ public:
   virtual ~real_interval() { }
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -152,15 +142,6 @@ int real_interval::IndexOf(const result &x)
   return i;
 }
 
-void real_interval::GetOrder(int n, int &i, result &x)
-{
-  CHECK_RANGE(0, n, Size());
-  x.Clear();
-  if (inc>0) i = n;
-  else i = Size()-n-1;
-  x.rvalue = start + i * inc;
-}
-
 void real_interval::show(OutputStream &s)
 {
   s << "{" << start << ".." << stop << ".." << inc << "}";
@@ -186,7 +167,6 @@ public:
   virtual ~generic_int_set(); 
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -227,15 +207,6 @@ int generic_int_set::IndexOf(const result &x)
   return -1;
 }
 
-void generic_int_set::GetOrder(int n, int &i, result &x)
-{
-  CHECK_RANGE(0, n, Size());
-  i = order[n];
-  CHECK_RANGE(0, i, Size());
-  x.Clear();
-  x.ivalue = values[i];
-}
-
 void generic_int_set::show(OutputStream &s)
 {
   s.Put('{');
@@ -264,7 +235,6 @@ public:
   virtual ~generic_real_set(); 
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -313,15 +283,6 @@ int generic_real_set::IndexOf(const result &x)
   return -1;
 }
 
-void generic_real_set::GetOrder(int n, int &i, result &x)
-{
-  CHECK_RANGE(0, n, Size());
-  i = order[n];
-  CHECK_RANGE(0, i, Size());
-  x.Clear();
-  x.rvalue = values[i];
-}
-
 void generic_real_set::show(OutputStream &s)
 {
   s.Put('{');
@@ -352,7 +313,6 @@ public:
   virtual ~generic_void_set(); 
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -394,15 +354,6 @@ int generic_void_set::IndexOf(const result &x)
   return -1;
 }
 
-void generic_void_set::GetOrder(int n, int &i, result &x)
-{
-  CHECK_RANGE(0, n, Size());
-  i = order[n];
-  CHECK_RANGE(0, i, Size());
-  x.Clear();
-  x.other = values[i];
-}
-
 void generic_void_set::show(OutputStream &s)
 {
   s.Put('{');
@@ -433,7 +384,6 @@ public:
   virtual ~int_realset(); 
   virtual void GetElement(int n, result &x);
   virtual int IndexOf(const result &x);
-  virtual void GetOrder(int n, int &i, result &x);
   virtual void show(OutputStream &s);
 };
 
@@ -465,15 +415,6 @@ int int_realset::IndexOf(const result &x)
   return intset->IndexOf(y);
 }
 
-void int_realset::GetOrder(int n, int &i, result &x)
-{
-  DCASSERT(intset);
-  intset->GetOrder(n, i, x);
-  if (!x.isNormal()) return;
-  // convert to real
-  x.rvalue = x.ivalue; 
-}
-
 void int_realset::show(OutputStream &s)
 {
   s << intset;
@@ -494,6 +435,43 @@ void int_realset::show(OutputStream &s)
 // ******************************************************************
 // ******************************************************************
 
+// ******************************************************************
+// *                                                                *
+// *                         unionop  class                         *
+// *                                                                *
+// ******************************************************************
+
+/**   The base class of union classes.
+ 
+*/  
+
+class unionop : public assoc {
+public:
+  unionop(const char* fn, int line, expr** x, int n) : assoc(fn, line, x, n) {}
+  unionop(const char* fn, int line, expr* l, expr* r) : assoc(fn, line, l, r) {}
+  virtual void show(OutputStream &s) const;
+  virtual int GetSums(int i, List <expr> *sums=NULL);
+};
+
+void unionop::show(OutputStream &s) const 
+{ 
+  int i;
+  for (i=0; i<opnd_count; i++) {
+    if (i) s << ", ";
+    s << operands[i];
+  }  
+}
+
+int unionop::GetSums(int a, List <expr> *sums)
+{
+  DCASSERT(a==0);
+  int i;
+  int opnds=0;
+  for (i=0; i<opnd_count; i++) {
+    opnds += operands[i]->GetSums(a, sums);
+  }
+  return opnds;
+}
 
 // ******************************************************************
 // *                                                                *
@@ -836,19 +814,20 @@ void intset_element::show(OutputStream &s) const
 // *                       intset_union class                       *
 // ******************************************************************
 
-/** A binary operator to handle the union of two integer sets.
+/** An associative (yay!) operator to handle the union of integer sets.
     (Used when we make those ugly for loops.)
  */
-class intset_union : public binary {
+class intset_union : public unionop {
 public:
-  intset_union(const char* fn, int line, expr* l, expr* r) 
-    : binary(fn, line, l, r) { };
+  intset_union(const char* fn, int line, expr** x, int n) 
+   : unionop(fn, line, x, n) {}
+  intset_union(const char* fn, int line, expr* l, expr* r)
+   : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { s << left << ", " << right; }
 protected:
-  virtual expr* MakeAnother(expr* newleft, expr* newright) {
-    return new intset_union(Filename(), Linenumber(), newleft, newright);
+  virtual expr* MakeAnother(expr** newx, int newn) {
+    return new intset_union(Filename(), Linenumber(), newx, newn);
   }
 };
 
@@ -861,139 +840,36 @@ type intset_union::Type(int i) const
 void intset_union::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   x.Clear();
-  result l;
-  left->Compute(0, l); 
-  if (l.isError() || l.isNull()) {
-    x = l;
-    return;
-  }
-  set_result *ls = dynamic_cast<set_result*> (l.other);
-  DCASSERT(ls);
-  result r;
-  right->Compute(0, r);
-  if (r.isError() || r.isNull()) {
-    x = r;
-    Delete(ls);
-    return;
-  }
-  set_result *rs = dynamic_cast<set_result*> (r.other);
-  DCASSERT(rs);
-
-  // mark the duplicate elements in rs.
-  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
-  int lp = 0, rp = 0;
-  result lx, rx;
-  int ordl, ordr;
-  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  while (lp<ls->Size() && rp<rs->Size()) {
-    if (lx.ivalue == rx.ivalue) {
-      rspos[ordr] = 0;  // duplicate
-      lp++;
-      rp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    } else if (lx.ivalue < rx.ivalue) {
-      // advance lp only
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    } else {
-      // advance rp only
-      rspos[ordr] = 1;  // not duplicate
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  ArraySplay <int> *ans = new ArraySplay <int>; 
+  for (int i=0; i<opnd_count; i++) {
+    SafeCompute(operands[i], 0, x);
+    if (!x.isNormal()) {
+      // bail out
+      delete ans;
+      return;
     }
-  }
-  // fill the rest of rspos
-  while (rp<rs->Size()) {
-    rspos[ordr] = 1;
-    rp++;
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  }
-
-  // we have an array of bits for non-duplicates.
-  // translate that into the new positions (by summing).
-  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
-  
-  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
-  
-  int newsize = ls->Size() + rspos[rs->Size()-1];
-
-  set_result *answer;
-
-  if (0==newsize) {
-    // left and right must be empty.
-    answer = new generic_int_set(0, NULL, NULL);
-
-  } else {
-    // we have a non-trivial union.
-
-    // Do a "mergesort"
-    int* values = new int[newsize];
-    int* order = new int[newsize];
-    int optr = 0;
-    lp = 0; rp = 0;
-    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    while (lp<ls->Size() && rp<rs->Size()) {
-      if (lx.ivalue == rx.ivalue) {
-        // this is a duplicate
-        order[optr] = ordl;
-        optr++;
-        values[ordl] = lx.ivalue;
-        lp++;
-        rp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      } else if (lx.ivalue < rx.ivalue) {
-        // copy next element from left
-        order[optr] = ordl;
-        values[ordl] = lx.ivalue;
-        optr++;
-        lp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      } else {
-        // copy next element from right
-        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
-        values[order[optr]] = rx.ivalue;
-        optr++;
-        rp++;
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      }
-    }
-    // At most one of these loops will go
-    while (lp<ls->Size()) {
-      order[optr] = ordl;
-      values[ordl] = lx.ivalue;
-      optr++;
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    }
-    while (rp<rs->Size()) {
-      order[optr] = rspos[ordr] + ls->Size() - 1;
-      values[order[optr]] = rx.ivalue;
-      optr++;
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    }
-
-    answer = new generic_int_set(newsize, values, order);
-    
-    // eventually... return buffer
-    delete[] rspos;
-  }
-
-#ifdef UNION_DEBUG
-  Output << "Inside set union\n";
-  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#ifdef DEVELOPMENT_CODE
+    set_result *s = dynamic_cast<set_result*> (x.other);
+    DCASSERT(s);
+#else
+    set_result *s = (set_result*) x.other;
 #endif
-  
-  x.other = answer;
-  Delete(ls);
-  Delete(rs);
+    for (int e=0; e<s->Size(); e++) {
+      s->GetElement(e, x);
+      DCASSERT(x.isNormal());
+      ans->AddElement(x.ivalue);
+    } 
+    Delete(s);
+  }
+  // prepare result
+  x.Clear();
+  int newsize = ans->NumNodes();
+  int* order = (newsize) ? (new int[newsize]) : NULL;
+  ans->FillOrderList(order);
+  int* values = ans->Compress();
+  delete ans;
+  x.other = new generic_int_set(newsize, values, order);
 }
 
 
@@ -1163,19 +1039,20 @@ void realset_element::show(OutputStream &s) const
 // *                      realset_union  class                      *
 // ******************************************************************
 
-/** A binary operator to handle the union of two real sets.
+/** An assoc operator to handle the union of real sets.
     (Used when we make those ugly for loops.)
  */
-class realset_union : public binary {
+class realset_union : public unionop {
 public:
-  realset_union(const char* fn, int line, expr* l, expr* r) 
-    : binary(fn, line, l, r) { };
+  realset_union(const char* fn, int line, expr** x, int n) 
+   : unionop(fn, line, x, n) {}
+  realset_union(const char* fn, int line, expr* l, expr* r)
+   : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { s << left << ", " << right; }
 protected:
-  virtual expr* MakeAnother(expr* newleft, expr* newright) {
-    return new realset_union(Filename(), Linenumber(), newleft, newright);
+  virtual expr* MakeAnother(expr** nargs, int ncnt) {
+    return new realset_union(Filename(), Linenumber(), nargs, ncnt);
   }
 };
 
@@ -1188,140 +1065,36 @@ type realset_union::Type(int i) const
 void realset_union::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   x.Clear();
-  result l;
-  left->Compute(0, l); 
-  if (l.isError() || l.isNull()) {
-    x = l;
-    return;
-  }
-  set_result *ls = dynamic_cast<set_result*> (l.other);
-  DCASSERT(ls);
-  result r;
-  right->Compute(0, r);
-  if (r.isError() || r.isNull()) {
-    x = r;
-    Delete(ls);
-    return;
-  }
-  set_result *rs = dynamic_cast<set_result*> (r.other);
-  DCASSERT(rs);
-
-  // mark the duplicate elements in rs.
-  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
-  int lp = 0, rp = 0;
-  result lx, rx;
-  int ordl, ordr;
-  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  while (lp<ls->Size() && rp<rs->Size()) {
-    if (lx.rvalue == rx.rvalue) {
-      // Eventually: use IndexPrecision or something for epsilon...
-      rspos[ordr] = 0;  // duplicate
-      lp++;
-      rp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    } else if (lx.rvalue < rx.rvalue) {
-      // advance lp only
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    } else {
-      // advance rp only
-      rspos[ordr] = 1;  // not duplicate
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  ArraySplay <double> *ans = new ArraySplay <double>; 
+  for (int i=0; i<opnd_count; i++) {
+    SafeCompute(operands[i], 0, x);
+    if (!x.isNormal()) {
+      // bail out
+      delete ans;
+      return;
     }
-  }
-  // fill the rest of rspos
-  while (rp<rs->Size()) {
-    rspos[ordr] = 1;
-    rp++;
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  }
-
-  // we have an array of bits for non-duplicates.
-  // translate that into the new positions (by summing).
-  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
-  
-  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
-  
-  int newsize = ls->Size() + rspos[rs->Size()-1];
-
-  set_result *answer;
-
-  if (0==newsize) {
-    // left and right must be empty.
-    answer = new generic_real_set(0, NULL, NULL);
-
-  } else {
-    // we have a non-trivial union.
-
-    // Do a "mergesort"
-    double* values = new double[newsize];
-    int* order = new int[newsize];
-    int optr = 0;
-    lp = 0; rp = 0;
-    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    while (lp<ls->Size() && rp<rs->Size()) {
-      if (lx.rvalue == rx.rvalue) {
-        // this is a duplicate
-        order[optr] = ordl;
-        optr++;
-        values[ordl] = lx.rvalue;
-        lp++;
-        rp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      } else if (lx.rvalue < rx.rvalue) {
-        // copy next element from left
-        order[optr] = ordl;
-        values[ordl] = lx.rvalue;
-        optr++;
-        lp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      } else {
-        // copy next element from right
-        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
-        values[order[optr]] = rx.rvalue;
-        optr++;
-        rp++;
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      }
-    }
-    // At most one of these loops will go
-    while (lp<ls->Size()) {
-      order[optr] = ordl;
-      values[ordl] = lx.rvalue;
-      optr++;
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    }
-    while (rp<rs->Size()) {
-      order[optr] = rspos[ordr] + ls->Size() - 1;
-      values[order[optr]] = rx.rvalue;
-      optr++;
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    }
-
-    answer = new generic_real_set(newsize, values, order);
-    
-    // eventually... return buffer
-    delete[] rspos;
-  }
-
-#ifdef UNION_DEBUG
-  Output << "Inside set union\n";
-  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#ifdef DEVELOPMENT_CODE
+    set_result *s = dynamic_cast<set_result*> (x.other);
+    DCASSERT(s);
+#else
+    set_result *s = (set_result*) x.other;
 #endif
-  
-  x.other = answer;
-  Delete(ls);
-  Delete(rs);
+    for (int e=0; e<s->Size(); e++) {
+      s->GetElement(e, x);
+      DCASSERT(x.isNormal());
+      ans->AddElement(x.rvalue);
+    } 
+    Delete(s);
+  }
+  // prepare result
+  x.Clear();
+  int newsize = ans->NumNodes();
+  int* order = (newsize) ? (new int[newsize]) : NULL;
+  ans->FillOrderList(order);
+  double* values = ans->Compress();
+  delete ans;
+  x.other = new generic_real_set(newsize, values, order);
 }
 
 
@@ -1345,7 +1118,7 @@ class voidset_element : public unary {
 public:
   voidset_element(const char* fn, int line, expr* x, type st) 
     : unary(fn, line, x) { 
-    CHECK_RANGE(FIRST_SET, st, 1+LAST_SET); 
+    DCASSERT(IsASet(st));
     setType = st;
   };
   virtual type Type(int i) const;
@@ -1388,172 +1161,73 @@ void voidset_element::show(OutputStream &s) const
 // *                      voidset_union  class                      *
 // ******************************************************************
 
-/** A binary operator to handle the union of two void sets.
+/** An assoc operator to handle the union of void sets.
  */
-class voidset_union : public binary {
+class voidset_union : public unionop {
+  type mytype;
 public:
-  voidset_union(const char* fn, int line, expr* l, expr* r) 
-    : binary(fn, line, l, r) { 
-    DCASSERT(l); 
-    DCASSERT(r); 
+  voidset_union(const char* fn, int line, expr** x, int n, type mt) 
+    : unionop(fn, line, x, n) { 
+    DCASSERT(IsASet(mt));
+    mytype = mt;
+  };
+  voidset_union(const char* fn, int line, expr* l, expr* r, type mt) 
+    : unionop(fn, line, l, r) { 
+    mytype = mt;
   };
   virtual type Type(int i) const;
   virtual void Compute(int i, result &x);
-  virtual void show(OutputStream &s) const { s << left << ", " << right; }
 protected:
-  virtual expr* MakeAnother(expr* newleft, expr* newright) {
-    return new voidset_union(Filename(), Linenumber(), newleft, newright);
+  virtual expr* MakeAnother(expr** args, int n) {
+    return new voidset_union(Filename(), Linenumber(), args, n, mytype);
   }
 };
 
 type voidset_union::Type(int i) const
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  return left->Type(i);
+  return mytype;
 }
 
 void voidset_union::Compute(int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
   x.Clear();
-  result l;
-  left->Compute(0, l); 
-  if (l.isError() || l.isNull()) {
-    x = l;
-    return;
-  }
-  set_result *ls = dynamic_cast<set_result*> (l.other);
-  DCASSERT(ls);
-  result r;
-  right->Compute(0, r);
-  if (r.isError() || r.isNull()) {
-    x = r;
-    Delete(ls);
-    return;
-  }
-  set_result *rs = dynamic_cast<set_result*> (r.other);
-  DCASSERT(rs);
-
-  // mark the duplicate elements in rs.
-  int *rspos = new int[rs->Size()];     // eventually... use a temp buffer
-  int lp = 0, rp = 0;
-  result lx, rx;
-  int ordl, ordr;
-  if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-  if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  while (lp<ls->Size() && rp<rs->Size()) {
-    if (lx.other == rx.other) {
-      rspos[ordr] = 0;  // duplicate
-      lp++;
-      rp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    } else if (lx.other < rx.other) {
-      // advance lp only
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    } else {
-      // advance rp only
-      rspos[ordr] = 1;  // not duplicate
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
+  ArraySplay <symbol*> *ans = new ArraySplay <symbol*>; 
+  for (int i=0; i<opnd_count; i++) {
+    SafeCompute(operands[i], 0, x);
+    if (!x.isNormal()) {
+      // bail out
+      delete ans;
+      return;
     }
-  }
-  // fill the rest of rspos
-  while (rp<rs->Size()) {
-    rspos[ordr] = 1;
-    rp++;
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-  }
-
-  // we have an array of bits for non-duplicates.
-  // translate that into the new positions (by summing).
-  for (rp=1; rp<rs->Size(); rp++) rspos[rp] += rspos[rp-1];
-  
-  // rspos[rs->Size()-1]   is the number of non-duplicates in rs.
-  
-  int newsize = ls->Size() + rspos[rs->Size()-1];
-
-  set_result *answer;
-
-  if (0==newsize) {
-    // left and right must be empty.
-    answer = new generic_void_set(0, NULL, NULL);
-
-  } else {
-    // we have a non-trivial union.
-
-    // Do a "mergesort"
-    symbol** values = new symbol*[newsize];
-    int* order = new int[newsize];
-    int optr = 0;
-    lp = 0; rp = 0;
-    if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    while (lp<ls->Size() && rp<rs->Size()) {
-      if (lx.other == rx.other) {
-        // this is a duplicate
-        order[optr] = ordl;
-        optr++;
-        values[ordl] = dynamic_cast<symbol*>(lx.other);
-        DCASSERT(values[ordl]);
-        lp++;
-        rp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      } else if (lx.other < rx.other) {
-        // copy next element from left
-        order[optr] = ordl;
-        values[ordl] = dynamic_cast<symbol*>(lx.other);
-        DCASSERT(values[ordl]);
-        optr++;
-        lp++;
-        if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-      } else {
-        // copy next element from right
-        order[optr] = rspos[ordr] + ls->Size() - 1; // I think this works...
-        values[order[optr]] = dynamic_cast<symbol*>(rx.other);
-        DCASSERT(values[order[optr]]);
-        optr++;
-        rp++;
-        if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-      }
-    }
-    // At most one of these loops will go
-    while (lp<ls->Size()) {
-      order[optr] = ordl;
-      values[ordl] = dynamic_cast<symbol*>(lx.other);
-      DCASSERT(values[ordl]);
-      optr++;
-      lp++;
-      if (lp<ls->Size()) ls->GetOrder(lp, ordl, lx);
-    }
-    while (rp<rs->Size()) {
-      order[optr] = rspos[ordr] + ls->Size() - 1;
-      values[order[optr]] = dynamic_cast<symbol*>(rx.other);
-      DCASSERT(values[order[optr]]);
-      optr++;
-      rp++;
-      if (rp<rs->Size()) rs->GetOrder(rp, ordr, rx);
-    }
-
-    answer = new generic_void_set(newsize, values, order);
-    
-    // eventually... return buffer
-    delete[] rspos;
-  }
-
-#ifdef UNION_DEBUG
-  Output << "Inside set union\n";
-  Output << "The union of sets " << ls << " and " << rs << " is " << answer << "\n";
+#ifdef DEVELOPMENT_CODE
+    set_result *s = dynamic_cast<set_result*> (x.other);
+    DCASSERT(s);
+#else
+    set_result *s = (set_result*) x.other;
 #endif
-  
-  x.other = answer;
-  Delete(ls);
-  Delete(rs);
+    for (int e=0; e<s->Size(); e++) {
+      s->GetElement(e, x);
+      DCASSERT(x.isNormal());
+#ifdef DEVELOPMENT_CODE
+      symbol *xo = dynamic_cast<symbol*>(x.other);
+      DCASSERT(xo);
+#else
+      symbol *xo = (symbol*) x.other;
+#endif
+      ans->AddElement(xo);
+    } 
+    Delete(s);
+  }
+  // prepare result
+  x.Clear();
+  int newsize = ans->NumNodes();
+  int* order = (newsize) ? (new int[newsize]) : NULL;
+  ans->FillOrderList(order);
+  symbol** values = ans->Compress();
+  delete ans;
+  x.other = new generic_void_set(newsize, values, order);
 }
 
 
@@ -1620,8 +1294,30 @@ expr*  MakeUnionOp(const char *fn, int ln, expr* left, expr* right)
       return new realset_union(fn, ln, left, right);
 
     case SET_PLACE:
+      return new voidset_union(fn, ln, left, right, SET_PLACE);
+
     case SET_TRANS:
-      return new voidset_union(fn, ln, left, right);
+      return new voidset_union(fn, ln, left, right, SET_TRANS);
+  }
+  return SetOpError("Bad type for set union",fn, ln);
+}
+
+expr*  MakeUnionOp(const char *fn, int ln, expr** args, int n)
+{
+  DCASSERT(args);
+  DCASSERT(n>0);
+  switch (args[0]->Type(0)) {
+    case SET_INT:
+      return new intset_union(fn, ln, args, n);
+
+    case SET_REAL:
+      return new realset_union(fn, ln, args, n);
+
+    case SET_PLACE:
+      return new voidset_union(fn, ln, args, n, SET_PLACE);
+
+    case SET_TRANS:
+      return new voidset_union(fn, ln, args, n, SET_TRANS);
   }
   return SetOpError("Bad type for set union",fn, ln);
 }
@@ -1630,6 +1326,29 @@ expr*  MakeInt2RealSet(const char* fn, int line, expr* intset)
 {
   DCASSERT(intset->Type(0) == SET_INT);
   return new int2realset(fn, line, intset);
+}
+
+expr* OptimizeUnion(expr* e)
+{
+  if (NULL==e) return NULL;
+  if (ERROR==e) return ERROR;
+  DCASSERT(e!=DEFLT);
+  DCASSERT(IsASet(e->Type(0)));
+  static List <expr> optbuffer(16);
+  // Try to split us into sums
+  optbuffer.Clear();
+  int sumcount = e->GetSums(0, &optbuffer);
+  expr* ne;
+  if (1==sumcount) {
+    ne = optbuffer.Item(0);
+  } else {
+    // We should have a list of unions
+    expr **opnds = optbuffer.Copy();
+    // replace with one big union
+    ne = MakeUnionOp(e->Filename(), e->Linenumber(), opnds, sumcount);
+  }
+  Delete(e);
+  return ne;
 }
 
 //@}

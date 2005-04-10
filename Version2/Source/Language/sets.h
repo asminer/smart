@@ -10,10 +10,7 @@
 
   Results for sets.
   Basic set expressions.
-  Set operators.
 
-  Right now, only integer and real sets are supported.
- 
  */
 
 #include "exprs.h"
@@ -55,12 +52,6 @@ public:
       Note that this is the inverse of GetElement.
    */
   virtual int IndexOf(const result &x) = 0;
-
-  /** Get the index and value of the nth smallest element of the set.
-      n must be between 0 and Size()-1.
-      This is used during set union, intersection, etc.
-   */
-  virtual void GetOrder(int n, int &i, result &x) = 0;
 
   /// For display purposes.
   virtual void show(OutputStream &s) = 0;
@@ -105,6 +96,10 @@ expr*  MakeUnionOp(const char* fn, int line, expr* left, expr* right);
 /**  Converts a set of integers into a set of reals.
  */
 expr*  MakeInt2RealSet(const char* fn, int line, expr* intset);
+
+/**  Optimize union operators into one big associative operation.
+*/
+expr*  OptimizeUnion(expr* setexpr);
 
 //@}
 

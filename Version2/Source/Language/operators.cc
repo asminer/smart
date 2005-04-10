@@ -3,6 +3,8 @@
 
 #include "operators.h"
 
+#include "sets.h"
+
 //@Include: operators.h
 
 /** @name operators.cc
@@ -554,6 +556,13 @@ void Optimize(int a, expr* &e)
   if (NULL==e) return;
   if (ERROR==e) return;
   DCASSERT(e!=DEFLT);
+
+  // Handle sets differently
+  if (IsASet(e->Type(a))) {
+    e = OptimizeUnion(e);
+    return;
+  }
+
   int i;
   // First... try to split us into sums
   optbuffer.Clear();

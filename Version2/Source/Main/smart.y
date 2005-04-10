@@ -263,7 +263,7 @@ iterator
   Output << "Reducing iterator : type IDENT IN set_expr\n";
   Output.flush();
 #endif
-  $$ = BuildIterator($1, $2, $4);
+  $$ = BuildIterator($1, $2, OptimizeUnion($4));
 }
 	;
 
