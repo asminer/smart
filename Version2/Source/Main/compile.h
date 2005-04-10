@@ -59,6 +59,9 @@ expr* MakeRealConst(char* s);
 /// Build a string constant
 expr* MakeStringConst(char *s);
 
+/// Build a set element (ensures legal types)
+expr* BuildElementSet(expr* elem);
+
 /// Build an interval (does typechecking, etc.)
 expr* BuildInterval(expr* start, expr* stop);
 

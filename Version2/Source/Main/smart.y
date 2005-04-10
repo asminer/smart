@@ -334,7 +334,7 @@ set_elem
   Output << "Reducing set_elem : expr\n";
   Output.flush();
 #endif
-  $$ = MakeElementSet(Filename(), LineNumber(), $1);
+  $$ = BuildElementSet($1);
 }
 	|	expr DOTDOT expr
 {

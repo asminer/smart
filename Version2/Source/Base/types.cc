@@ -125,6 +125,7 @@ type SetOf(type t)
   switch (t) {
     case INT:		return SET_INT;
     case REAL:		return SET_REAL;
+    case PLACE:		return SET_PLACE;
     case TRANS:		return SET_TRANS;
   }
   return NO_SUCH_TYPE;

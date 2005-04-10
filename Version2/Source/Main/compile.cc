@@ -206,6 +206,23 @@ expr* MakeStringConst(char *s)
   return MakeConstExpr(scopy, filename, lexer.lineno());
 }
 
+expr* BuildElementSet(expr* elem)
+{
+  if (NULL==elem || ERROR==elem) {
+    return elem;
+  }
+  DCASSERT(elem->NumComponents() == 1);
+  // check that sets of this type are supported
+  if (NO_SUCH_TYPE == SetOf(elem->Type(0))) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Sets of type " << GetType(elem->Type(0)) << " are not allowed";
+    Error.Stop();
+    Delete(elem);
+    return ERROR;
+  }
+  return MakeElementSet(filename, lexer.lineno(), elem);  
+}
+
 expr* BuildInterval(expr* start, expr* stop)
 {
   if (NULL==start || NULL==stop) {
