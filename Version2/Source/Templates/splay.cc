@@ -5,6 +5,7 @@
     Splay implementation for non-template base classes.
 */
 
+#include "../Base/streams.h"
 #include "splay.h"
 #include "../Base/memtrack.h"
 
