@@ -4,12 +4,13 @@
 
 Things to do:
 
-* Check illegal things to do with sets, e.g.,
-
-    {1,2,3} + {4,5,6}
-
 * Generic priority structure in state_model class,
   so we don't have to re-implement it for every formalism.
+
+  + re-sort events in dsm constructor, to be ordered according
+    to priority rules
+
+  + implement "GetEnabledList"
 
 * Petri nets: implement function
 	prio ( {trans} : {trans, ...)

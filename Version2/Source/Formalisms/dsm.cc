@@ -111,6 +111,11 @@ int state_model::GetConstantStateSize() const
   return 0; // keep compiler happy
 }
 
+void state_model::GetEnabledList(const state &current, List <event> *enabled)
+{
+  // Not implemented yet...
+}
+
 void state_model::DetermineProcessType()
 {
   if (proctype != Proc_Unknown) return;

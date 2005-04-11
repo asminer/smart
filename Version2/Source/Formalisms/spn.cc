@@ -31,24 +31,14 @@ option_const ms_vector ("VECTOR", "\aFormat is [1, 0, 2, 0, 0, 1]");
 // *                                                                *
 // ******************************************************************
 
-class transition : public model_var {
-public:
-  /// List of inputs
-  int inputs;
-  /// List of outputs
-  int outputs;
-  /// List of inhibitors
-  int inhibitors;
-  /// guard expression
-  expr* guard;
-  // firing distribution
-  expr* firing;
-public:
-  transition(const char* fn, int line, char* n) : model_var(fn, line, TRANS, n) { inputs = outputs = inhibitors = -1; guard = firing = NULL; }
-};
+// ******************************************************************
+// *                        spn_arcinfo class                       *
+// ******************************************************************
 
-
-/// Information for each input / output / inhibitor arc
+/** Information associated with each arc.
+    I.e., what we need to store for an inhibitor, input, or output arc.
+    (During model construction only.)
+*/
 struct spn_arcinfo {
   model_var* place;
   int const_card;  
@@ -119,6 +109,96 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 }
 
 // ******************************************************************
+// *                        transition  class                       *
+// ******************************************************************
+
+/** Used to store information during model construction.
+    Once the model has been finalized, most of this info
+    goes away, and instead we store a pointer to the event
+    that was created to represent this transition.
+*/
+class transition : public model_var {
+  /// Data used during model construction
+  struct tdata {
+      /// List of inputs
+      int inputs;
+      /// List of outputs
+      int outputs;
+      /// List of inhibitors
+      int inhibitors;
+      /// guard expression
+      expr* guard;
+      // firing distribution
+      expr* firing;
+  };
+  /// Active during model construction
+  tdata* build_info;
+  /// Active after model construction
+  event* model_event;
+public:
+  transition(const char* fn, int line, char* n);
+  inline int Inputs() const {
+    DCASSERT(build_info);
+    return build_info->inputs;
+  }
+  inline void SetInputs(int I) {
+    DCASSERT(build_info);
+    build_info->inputs = I;
+  }
+  inline int Outputs() const {
+    DCASSERT(build_info);
+    return build_info->outputs;
+  }
+  inline void SetOutputs(int O) {
+    DCASSERT(build_info);
+    build_info->outputs = O;
+  }
+  inline int Inhibitors() const {
+    DCASSERT(build_info);
+    return build_info->inhibitors;
+  }
+  inline void SetInhibitors(int H) {
+    DCASSERT(build_info);
+    build_info->inhibitors = H;
+  }
+  inline expr* Guard() const {
+    DCASSERT(build_info);
+    return build_info->guard;
+  }
+  inline void SetGuard(expr* g) {
+    DCASSERT(build_info);
+    build_info->guard = g;
+  }
+  inline expr* Firing() const {
+    DCASSERT(build_info);
+    return build_info->firing;
+  }
+  inline void SetFiring(expr* f) {
+    DCASSERT(build_info);
+    build_info->firing = f;
+  }
+  inline event* Event() const { return model_event; }
+
+  /// Build the event and trash the other data.
+  void Compile(const char* mn, listarray <spn_arcinfo> *a);
+};
+
+transition::transition(const char* fn, int line, char* n)
+ : model_var(fn, line, TRANS, n)
+{
+  model_event = NULL;
+  build_info = new tdata;
+  build_info->inputs = -1;
+  build_info->outputs = -1;
+  build_info->inhibitors = -1;
+  build_info->guard = NULL;
+  build_info->firing = NULL;
+}
+
+
+// Compile is implemented way, way below
+
+// ******************************************************************
 // *                                                                *
 // *            "compiled" Petri net enabling expression            *
 // *                                                                *
@@ -166,9 +246,9 @@ transition_enabled::transition_enabled(listarray <spn_arcinfo> *a,
 
   // traverse inputs for constant lower bounds
   DataList <int> lowlist(4);
-  if (t->inputs>=0) {
-    for (int ptr = a->list_pointer[t->inputs]; 
-	 ptr < a->list_pointer[t->inputs+1]; ptr++)  {
+  if (t->Inputs()>=0) {
+    for (int ptr = a->list_pointer[t->Inputs()]; 
+	 ptr < a->list_pointer[t->Inputs()+1]; ptr++)  {
       // check if this is a constant arc
       if (a->value[ptr].proc_card) continue;  // there's an expression
       // add this to the comparison list
@@ -182,9 +262,9 @@ transition_enabled::transition_enabled(listarray <spn_arcinfo> *a,
 
   // traverse inhibitors for constant upper bounds
   DataList <int> highlist(4);
-  if (t->inhibitors>=0) {
-    for (int ptr = a->list_pointer[t->inhibitors]; 
-	 ptr < a->list_pointer[t->inhibitors+1]; ptr++)  {
+  if (t->Inhibitors()>=0) {
+    for (int ptr = a->list_pointer[t->Inhibitors()]; 
+	 ptr < a->list_pointer[t->Inhibitors()+1]; ptr++)  {
       // check if this is a constant arc
       if (a->value[ptr].proc_card) continue;  // there's an expression
       // add this to the comparison list
@@ -198,9 +278,9 @@ transition_enabled::transition_enabled(listarray <spn_arcinfo> *a,
 
   // traverse inputs for variable lower bounds
   List <expr> exprlist(4);
-  if (t->inputs>=0) {
-    for (int ptr = a->list_pointer[t->inputs]; 
-	 ptr < a->list_pointer[t->inputs+1]; ptr++)  {
+  if (t->Inputs()>=0) {
+    for (int ptr = a->list_pointer[t->Inputs()]; 
+	 ptr < a->list_pointer[t->Inputs()+1]; ptr++)  {
       if (NULL==a->value[ptr].proc_card) continue;  // constant arc
       // add this to the comparison list
       plist.Append(a->value[ptr].place);
@@ -210,9 +290,9 @@ transition_enabled::transition_enabled(listarray <spn_arcinfo> *a,
   end_expr_lower = plist.Length();
 
   // traverse inhibitors for variable upper bounds
-  if (t->inhibitors>=0) {
-    for (int ptr = a->list_pointer[t->inhibitors]; 
-	 ptr < a->list_pointer[t->inhibitors+1]; ptr++)  {
+  if (t->Inhibitors()>=0) {
+    for (int ptr = a->list_pointer[t->Inhibitors()]; 
+	 ptr < a->list_pointer[t->Inhibitors()+1]; ptr++)  {
       if (NULL==a->value[ptr].proc_card) continue;  // constant arc
       // add this to the comparison list
       plist.Append(a->value[ptr].place);
@@ -224,7 +304,7 @@ transition_enabled::transition_enabled(listarray <spn_arcinfo> *a,
   places = plist.MakeArray(); 
   boundlist = exprlist.MakeArray();
   
-  guard = t->guard; 
+  guard = t->Guard();
 }
 
 transition_enabled::~transition_enabled()
@@ -461,17 +541,17 @@ transition_fire::transition_fire(const char* mn,
   // have a single, constant delta.
 
   int in_ptr, in_last;
-  if (t->inputs>=0) {
-    in_ptr = a->list_pointer[t->inputs];
-    in_last = a->list_pointer[t->inputs+1];
+  if (t->Inputs()>=0) {
+    in_ptr = a->list_pointer[t->Inputs()];
+    in_last = a->list_pointer[t->Inputs()+1];
   } else {
     in_ptr = 1;
     in_last = 0;
   }
   int out_ptr, out_last;
-  if (t->outputs>=0) {
-    out_ptr = a->list_pointer[t->outputs];
-    out_last = a->list_pointer[t->outputs+1];
+  if (t->Outputs()>=0) {
+    out_ptr = a->list_pointer[t->Outputs()];
+    out_last = a->list_pointer[t->Outputs()+1];
   } else {
     out_ptr = 1;
     out_last = 0;
@@ -546,16 +626,16 @@ transition_fire::transition_fire(const char* mn,
   // traverse inputs and outputs simultaneously for expression "deltas"
   // the boolean is used to negate the expression (for input arcs)
 
-  if (t->inputs>=0) {
-    in_ptr = a->list_pointer[t->inputs];
-    in_last = a->list_pointer[t->inputs+1];
+  if (t->Inputs()>=0) {
+    in_ptr = a->list_pointer[t->Inputs()];
+    in_last = a->list_pointer[t->Inputs()+1];
   } else {
     in_ptr = 1;
     in_last = 0;
   }
-  if (t->outputs>=0) {
-    out_ptr = a->list_pointer[t->outputs];
-    out_last = a->list_pointer[t->outputs+1];
+  if (t->Outputs()>=0) {
+    out_ptr = a->list_pointer[t->Outputs()];
+    out_last = a->list_pointer[t->Outputs()+1];
   } else {
     out_ptr = 1;
     out_last = 0;
@@ -763,6 +843,23 @@ void transition_fire::show(OutputStream &s) const
     neg++;
     p++;
   }
+}
+
+// ******************************************************************
+// *      The remaining method for class "transition": Compile      *
+// ******************************************************************
+
+void transition::Compile(const char* mn, listarray <spn_arcinfo> *arcs)
+{
+  DCASSERT(NULL==model_event);
+  DCASSERT(build_info);
+  model_event = new event(Filename(), Linenumber(), TRANS, strdup(Name()));
+  model_event->setEnabling(new transition_enabled(arcs, this));
+  model_event->setNextstate(new transition_fire(mn, arcs, this));
+  model_event->setDistribution(build_info->firing);
+  // done with build_info
+  delete build_info;
+  build_info = NULL; 
 }
 
 // ******************************************************************
@@ -992,9 +1089,9 @@ void spn_model::AddInput(model_var* pl, model_var* tr, expr* card,
 
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
-  if (t->inputs<0) t->inputs = arcs->NewList();
+  if (t->Inputs()<0) t->SetInputs( arcs->NewList() );
 
-  int list = t->inputs;
+  int list = t->Inputs();
   spn_arcinfo data;
   data.place = pl;
   data.filename = fn;
@@ -1035,9 +1132,9 @@ void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card,
 
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
-  if (t->outputs<0) t->outputs = arcs->NewList();
+  if (t->Outputs()<0) t->SetOutputs( arcs->NewList() );
 
-  int list = t->outputs;
+  int list = t->Outputs();
   spn_arcinfo data;
   data.place = pl;
   data.filename = fn;
@@ -1078,10 +1175,9 @@ void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card,
 
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
-  if (t->inhibitors<0)
-	t->inhibitors = arcs->NewList();
+  if (t->Inhibitors()<0) t->SetInhibitors( arcs->NewList() );
 
-  int list = t->inhibitors;
+  int list = t->Inhibitors();
   spn_arcinfo data;
   data.place = pl;
   data.filename = fn;
@@ -1115,16 +1211,16 @@ void spn_model::AddGuard(model_var* tr, expr* guard)
   
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
-  if (NULL==t->guard) {
-    t->guard = guard->Substitute(0);
+  if (NULL==t->Guard()) {
+    t->SetGuard( guard->Substitute(0) );
     return;
   }
   Warning.Start(guard->Filename(), guard->Linenumber());
   Warning << "Merging duplicate guard on transition " << t;
   Warning << " in SPN " << Name();
   Warning.Stop(); 
-  expr* merge = MakeBinaryOp(t->guard, AND, guard->Substitute(0), NULL, -1);
-  t->guard = merge;
+  expr* merge = MakeBinaryOp(t->Guard(), AND, guard->Substitute(0), NULL, -1);
+  t->SetGuard( merge );
 }
 
 void spn_model::AddFiring(model_var* tr, expr* firing)
@@ -1135,8 +1231,8 @@ void spn_model::AddFiring(model_var* tr, expr* firing)
   
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
-  if (NULL==t->firing) {
-    t->firing = firing->Substitute(0);
+  if (NULL==t->Firing()) {
+    t->SetFiring( firing->Substitute(0) );
     return;
   }
   Warning.Start(firing->Filename(), firing->Linenumber());
@@ -1232,17 +1328,17 @@ void spn_model::FinalizeModel(result &x)
   for (i=0; i<translist->Length(); i++) {
     transition *t = translist->Item(i);
     Output << "Transition " << t << "\n";
-    if (t->inputs>=0) {
+    if (t->Inputs()>=0) {
       Output << "\tinputs: ";
-      arcs->ShowNodeList(Output, t->inputs);
+      arcs->ShowNodeList(Output, t->Inputs());
     }
-    if (t->outputs>=0) {
+    if (t->Outputs()>=0) {
       Output << "\toutputs: ";
-      arcs->ShowNodeList(Output, t->outputs);
+      arcs->ShowNodeList(Output, t->Outputs());
     }
-    if (t->inhibitors>=0) {
+    if (t->Inhibitors()>=0) {
       Output << "\tinhibitors: ";
-      arcs->ShowNodeList(Output, t->inhibitors);
+      arcs->ShowNodeList(Output, t->Inhibitors());
     }
     Output.flush();
   }
@@ -1266,10 +1362,8 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   event** event_data = new event*[num_events];
   for (int i=0; i<num_events; i++) {
     transition* t = translist->Item(i);
-    event_data[i] = new event(t->Filename(), t->Linenumber(), TRANS, strdup(t->Name()));
-    event_data[i]->setEnabling(new transition_enabled(arcs, t));
-    event_data[i]->setNextstate(new transition_fire(Name(), arcs, t));
-    event_data[i]->setDistribution(t->firing);
+    t->Compile(Name(), arcs);
+    event_data[i] = t->Event();
   }
   delete translist;
   // clear out the arcs 

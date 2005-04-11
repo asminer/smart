@@ -151,6 +151,11 @@ public:
     return event_data[n];
   }
 
+  /** List of enabled events.
+      Takes priority information into account.
+  */
+  void GetEnabledList(const state &current, List <event> *enabled);
+
   void DetermineProcessType();
 
   /** Does this model use a state of constant size.
