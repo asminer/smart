@@ -60,12 +60,19 @@ class markov_chain;  // defined in Chains/procs.h
 */
 
 class event : public symbol {
+  friend class state_model;
   /// Enabling expression
   expr* enabling;
   /// Nextstate expression
   expr* nextstate;
   /// Firing distribution
   expr* distro;
+  /// List of events that we have priority over
+  event** prio_list;
+  /// Length of prio_list
+  int prio_length;
+  /// misc integer data, e.g., for enabling
+  int misc;
 public:
   event(const char* fn, int line, type t, char* n);
   virtual ~event();
@@ -82,6 +89,12 @@ public:
 
   // required to keep exprs happy
   virtual void ClearCache() { DCASSERT(0); }
+
+  inline void SetPriorityList(event** p, int np) {
+    DCASSERT(NULL==prio_list);
+    prio_list = p;
+    prio_length = np;
+  }
 };
 
 
@@ -122,8 +135,13 @@ enum Process_type {
 */
 
 class state_model : public symbol {
+protected:
   int num_events;
   event** event_data;
+  /// Was there a priority cycle?
+  bool prio_cycle;
+  /// Check for cycles and reorder events.
+  void OrderEventsByPriority();
 public:  
   /// Type of the underlying process
   Process_type proctype;
@@ -143,6 +161,8 @@ public:
 public:
   state_model(const char* fn, int line, type t, char* n, event** ed, int ne);
   virtual ~state_model();
+
+  inline bool PrioCycle() const { return prio_cycle; } 
 
   inline int NumEvents() const { return num_events; }
   inline event* GetEvent(int n) const {

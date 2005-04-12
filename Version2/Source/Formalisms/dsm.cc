@@ -7,6 +7,8 @@
 #include "../Chains/procs.h"
 #include "../Base/memtrack.h"
 
+#define DEBUG_PRIO
+
 /** @name dsm.cc
     @type File
     @args \ 
@@ -32,6 +34,8 @@ event::event(const char* fn, int line, type t, char* n)
  : symbol(fn, line, t, n)
 {
   enabling = nextstate = distro = NULL;
+  prio_list = NULL;
+  prio_length = 0;
 }
 
 event::~event()
@@ -39,6 +43,7 @@ event::~event()
   Delete(enabling);
   Delete(nextstate);
   Delete(distro);
+  delete[] prio_list;
 }
 
 void event::setEnabling(expr *e)
@@ -88,6 +93,8 @@ state_model::state_model(const char* fn, int line, type t, char* n,
   proctype = Proc_Unknown;
   rg = NULL;
   mc = NULL;
+  prio_cycle = false;
+  OrderEventsByPriority();
 }
 
 state_model::~state_model()
@@ -101,6 +108,65 @@ state_model::~state_model()
     Delete(event_data[e]);  // Delete, in case they are shared
   }
   delete[] event_data;
+}
+
+void state_model::OrderEventsByPriority()
+{
+#ifdef DEBUG_PRIO
+  Output << "Reordering events by priority rules.  Current events:\n";
+#endif
+  // First, for each event, count the number that have priority over it
+  // and store in "misc" field
+  int e;
+  for (e=0; e<num_events; e++) event_data[e]->misc = 0;
+  for (e=0; e<num_events; e++) {
+    event* ee = event_data[e];
+#ifdef DEBUG_PRIO
+    Output << "\t" << ee << " has priority over:\n";     
+#endif
+    for (int i=0; i<ee->prio_length; i++) {
+      DCASSERT(ee->prio_list);
+      ee->prio_list[i]->misc++;
+#ifdef DEBUG_PRIO
+      Output << "\t\t" << ee->prio_list[i] << "\n";
+#endif
+    }
+#ifdef DEBUG_PRIO
+    Output.flush();
+#endif
+  }
+  // Re-fill the event array.
+  // Once an event has "misc" count of 0, it can go in the array.
+  // When an event is put into the array, decrement all of its "children"
+  // Algorithm is worst case O(n^2); O(n) if there is no priority structure
+  for (e=0; e<num_events; e++) {
+    int fz;
+    for (fz=e; fz<num_events; fz++) if (0==event_data[fz]->misc) break;
+    if (fz>=num_events) {
+      // no zeroes  <==>  priority cycle
+      Error.StartModel(Name(), Filename(), Linenumber());
+      Error << "Priority cycle exists somewhere in events:\n";
+      for (int show=e; show<num_events; show++) 
+        Error << "\t" << event_data[show] << "\n";
+      Error.Stop();
+      prio_cycle = true;
+      return;
+    }
+    // Put fz here if different from e
+    if (fz!=e) SWAP(event_data[fz], event_data[e]);
+    // decrement children
+    event* ee = event_data[e];
+    for (int i=0; i<ee->prio_length; i++) {
+      DCASSERT(ee->prio_list);
+      ee->prio_list[i]->misc--;
+    }
+  }
+#ifdef DEBUG_PRIO
+  Output << "Successfully reordered events, new order:\n";
+  for (e=0; e<num_events; e++) 
+    Output << "\t" << event_data[e] << "\n";
+  Output.flush();
+#endif
 }
 
 int state_model::GetConstantStateSize() const

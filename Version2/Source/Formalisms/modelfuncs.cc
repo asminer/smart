@@ -177,6 +177,11 @@ void compute_num_states(expr **pp, int np, result &x)
   BuildReachset(m);
 
   state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
+  if (NULL==dsm) {
+    // problem with model construction
+    x.setNull();
+    return;
+  }
   DCASSERT(dsm);
   reachset* ss = dsm->statespace;
   DCASSERT(ss);  // should be set to something
@@ -314,7 +319,11 @@ void compute_num_arcs(expr **pp, int np, result &x)
 
   // eventually: switch for different process types
   state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
-  DCASSERT(dsm);
+  if (NULL==dsm) {
+    // problem with model construction
+    x.setNull();
+    return;
+  }
 
   switch (dsm->proctype) {
     case Proc_FSM:

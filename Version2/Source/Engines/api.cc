@@ -26,7 +26,7 @@ void BuildReachset(model *m)
 {
   if ((NULL==m) || (ERROR==m)) return;
   state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
-  DCASSERT(dsm);
+  if (NULL==dsm) return;
   BuildReachset(dsm); // defined in ssgen.h
 }
 
@@ -34,7 +34,7 @@ void BuildProcess(model *m)
 {
   if ((NULL==m) || (ERROR==m)) return;
   state_model *dsm = dynamic_cast<state_model*>(m->GetModel());
-  DCASSERT(dsm);
+  if (NULL==dsm) return;
   dsm->DetermineProcessType();
 
   switch (dsm->proctype) {

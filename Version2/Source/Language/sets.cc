@@ -1193,7 +1193,7 @@ void voidset_union::Compute(int i, result &x)
 {
   DCASSERT(0==i);
   x.Clear();
-  ArraySplay <symbol*> *ans = new ArraySplay <symbol*>; 
+  ArraySplay <void*> *ans = new ArraySplay <void*>; 
   for (int i=0; i<opnd_count; i++) {
     SafeCompute(operands[i], 0, x);
     if (!x.isNormal()) {
@@ -1225,7 +1225,7 @@ void voidset_union::Compute(int i, result &x)
   int newsize = ans->NumNodes();
   int* order = (newsize) ? (new int[newsize]) : NULL;
   ans->FillOrderList(order);
-  symbol** values = ans->Compress();
+  symbol** values = (symbol**) ans->Compress();
   delete ans;
   x.other = new generic_void_set(newsize, values, order);
 }

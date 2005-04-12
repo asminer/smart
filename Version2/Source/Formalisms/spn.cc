@@ -14,6 +14,7 @@
 #include "dsm.h"
 
 //#define DEBUG_SPN
+#define DEBUG_PRIO
 
 // options!
 
@@ -135,6 +136,8 @@ class transition : public model_var {
   tdata* build_info;
   /// Active after model construction
   event* model_event;
+  /// Priority set
+  ArraySplay <void*> *pset; 
 public:
   transition(const char* fn, int line, char* n);
   inline int Inputs() const {
@@ -179,8 +182,16 @@ public:
   }
   inline event* Event() const { return model_event; }
 
+  inline void HasPrioOver(symbol* s) {
+    if (NULL==pset) pset = new ArraySplay <void*>;
+    pset->AddElement(s);
+  }
+
   /// Build the event and trash the other data.
   void Compile(const char* mn, listarray <spn_arcinfo> *a);
+
+  /// Change the priority list from transition to event.
+  void CompilePrio();
 };
 
 transition::transition(const char* fn, int line, char* n)
@@ -193,10 +204,32 @@ transition::transition(const char* fn, int line, char* n)
   build_info->inhibitors = -1;
   build_info->guard = NULL;
   build_info->firing = NULL;
+  pset = NULL;
 }
 
-
 // Compile is implemented way, way below
+
+void transition::CompilePrio()
+{
+  // Note: this must be done after each transition
+  // has an associated event; that's why this must be
+  // separate from "Compile".
+
+  if (NULL==pset) return;  // that's easy
+  // compact set
+  int plen = pset->NumNodes();
+  void** parray = pset->Compress();
+  delete pset; 
+  pset = NULL;
+  // exchange transition with its event in the list
+  for (int i=0; i<plen; i++) {
+    transition *t = (transition *) parray[i];
+    DCASSERT(t);
+    parray[i] = t->Event();
+  }
+  // affix to our own event
+  model_event->SetPriorityList((event**) parray, plen);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -1365,6 +1398,10 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
     t->Compile(Name(), arcs);
     event_data[i] = t->Event();
   }
+  for (int i=0; i<num_events; i++) {
+    transition* t = translist->Item(i);
+    t->CompilePrio();  // must be done after all events are created
+  }
   delete translist;
   // clear out the arcs 
   for (int e=0; e<arcs->items_alloc; e++) arcs->value[e].Clear();
@@ -1382,8 +1419,18 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   //
   // Construction, finally
   //
-  return new spn_dsm(fn, ln, strdup(Name()), event_data, num_events,
+  state_model *m = new spn_dsm(fn, ln, strdup(Name()), 
+			event_data, num_events,
   			plist, num_places, initial);
+
+  // check cycles in priority
+  if (m->PrioCycle()) {
+    delete m;
+    return NULL;
+  }
+  
+  // no problems
+  return m;
 }
 
 
@@ -1839,6 +1886,82 @@ void Add_spn_tk(PtrTable *fns)
 }
 
 // ********************************************************
+// *                         prio                         *
+// ********************************************************
+
+void compute_spn_prio(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+#ifdef DEBUG_SPN
+  Output << "Inside prio for spn " << spn << "\n";
+#else 
+#ifdef DEBUG_PRIO
+  Output << "Inside prio for spn " << spn << "\n";
+#endif
+#endif
+  x.Clear();
+
+  for (int i=1; i<np; i++) {
+    result s1, s2;
+    SafeCompute(pp[i], 0, s1);
+    SafeCompute(pp[i], 1, s2);
+    // error checking here
+    set_result* T1 = dynamic_cast <set_result*> (s1.other);
+    DCASSERT(T1);
+    set_result* T2 = dynamic_cast <set_result*> (s2.other);
+    DCASSERT(T2);
+    for (int j1=0; j1<T1->Size(); j1++) {
+      result x1;
+      x1.Clear();
+      T1->GetElement(j1, x1);
+      DCASSERT(x1.isNormal());
+      transition* t1 = dynamic_cast <transition*> (x1.other);
+      DCASSERT(t1);
+#ifdef DEBUG_PRIO
+      Output << "Setting priority for " << t1 << " higher than:\n\t";
+#endif
+      for (int j2=0; j2<T2->Size(); j2++) {
+        result x2;
+        x2.Clear();
+        T2->GetElement(j2, x2);
+        DCASSERT(x2.isNormal());
+        transition* t2 = dynamic_cast <transition*> (x2.other);
+        DCASSERT(t2);
+	t1->HasPrioOver(t2);
+#ifdef DEBUG_PRIO
+	Output << t2 << " ";
+#endif
+      } // for j2
+#ifdef DEBUG_PRIO
+      Output << "\n";
+      Output.flush();
+#endif
+    } // for j1
+  } // for i (parameters)
+
+  x.setNull();
+}
+
+void Add_prio(PtrTable *fns)
+{
+  const char* helpdoc = "Transitions in the set t1 all have priority over transitions in the set t2.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(SPN, "net");
+  type *tl = new type[2];
+  tl[0] = SET_TRANS;
+  tl[1] = SET_TRANS;
+  pl[1] = new formal_param(tl, 2, "t1:t2");
+  internal_func *p = new internal_func(VOID, "prio", 
+	compute_spn_prio, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                       showlist                       *
 // ********************************************************
 
@@ -1906,9 +2029,7 @@ void InitPNModelFuncs(PtrTable *t)
 
   Add_spn_tk(t);
 
-  // testing
-
-  Add_showlist(t);
+  Add_prio(t);
 
   // Initialize PN-specific options
 
