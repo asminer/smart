@@ -85,3 +85,14 @@ ERROR in file forloops.sm near line 252:
 7
 8
 9
+Type mismatch of sets:
+ERROR in file forloops.sm near line 257:
+	Type mismatch: iterator foo expects set of type int
+Does this print?
+Illegal iterator types:
+ERROR in file forloops.sm near line 262:
+	Sets of type bool are not allowed
+What about this?
+ERROR in file forloops.sm near line 265:
+	Illegal type for iterator bar
+Ok if this never prints

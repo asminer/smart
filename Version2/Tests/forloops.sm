@@ -252,3 +252,15 @@ for (int i in {1..9}, real i in {2.3..4.5..0.5}) {
   print(i, "\n");
 }
 
+print("Type mismatch of sets:\n");
+for (int foo in {2.3..4.5..0.5}) {
+  print("Does this print?\n");
+}
+
+print("Illegal iterator types:\n");
+for (bool t in {true}) {
+  print("What about this?\n");
+}
+for (ph int bar in {1, 2, 3}) {
+  print("Ok if this never prints\n");
+}
