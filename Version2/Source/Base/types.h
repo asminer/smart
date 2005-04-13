@@ -96,8 +96,9 @@ const type 	LAST_VOID	= TRANS;
 
 const type	SET_INT		= 96;
 const type	SET_REAL	= 97;
-const type	SET_PLACE	= 98;
-const type	SET_TRANS	= 99;
+const type 	SET_STATE	= 98;
+const type	SET_PLACE	= 99;
+const type	SET_TRANS	= 100;
 
 const type	FIRST_SET	= SET_INT;
 const type 	LAST_SET	= SET_TRANS;

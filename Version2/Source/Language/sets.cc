@@ -1265,18 +1265,19 @@ expr*  MakeInterval(const char *fn, int ln, expr* start, expr* stop, expr* inc)
 
 expr*  MakeElementSet(const char *fn, int ln, expr* element)
 {
-  switch (element->Type(0)) {
+  type et = element->Type(0);
+  switch (et) {
     case INT:
       return new intset_element(fn, ln, element);
 
     case REAL:
       return new realset_element(fn, ln, element);
 
+    case STATE:
     case PLACE:
-      return new voidset_element(fn, ln, element, SET_PLACE);
-
     case TRANS:
-      return new voidset_element(fn, ln, element, SET_TRANS);
+      return new voidset_element(fn, ln, element, SetOf(et));
+
   }
   return SetOpError("Bad element set type",fn, ln);
 }
@@ -1293,11 +1294,11 @@ expr*  MakeUnionOp(const char *fn, int ln, expr* left, expr* right)
     case SET_REAL:
       return new realset_union(fn, ln, left, right);
 
+    case SET_STATE:
     case SET_PLACE:
-      return new voidset_union(fn, ln, left, right, SET_PLACE);
-
     case SET_TRANS:
-      return new voidset_union(fn, ln, left, right, SET_TRANS);
+      return new voidset_union(fn, ln, left, right, left->Type(0));
+
   }
   return SetOpError("Bad type for set union",fn, ln);
 }
@@ -1313,11 +1314,11 @@ expr*  MakeUnionOp(const char *fn, int ln, expr** args, int n)
     case SET_REAL:
       return new realset_union(fn, ln, args, n);
 
+    case SET_STATE:
     case SET_PLACE:
-      return new voidset_union(fn, ln, args, n, SET_PLACE);
-
     case SET_TRANS:
-      return new voidset_union(fn, ln, args, n, SET_TRANS);
+      return new voidset_union(fn, ln, args, n, args[0]->Type(0));
+
   }
   return SetOpError("Bad type for set union",fn, ln);
 }

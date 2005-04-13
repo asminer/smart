@@ -362,6 +362,7 @@ expr* AppendSetElem(expr* left, expr* right)
 	};
 	break;
 
+    case SET_STATE:
     case SET_PLACE:
     case SET_TRANS:
  	ok = (left->Type(0) == right->Type(0));
@@ -387,6 +388,15 @@ array_index* BuildIterator(type t, char* n, expr* values)
 {
   if (ERROR==values) return NULL;
 
+  // first, check if it even makes sense to have an iterator with type t
+  if (NO_SUCH_TYPE == SetOf(t)) {
+    Error.Start(filename, lexer.lineno());
+    Error << "Illegal type for iterator " << n;
+    Error.Stop();
+    Delete(values);
+    return NULL;
+  }
+
   if (NULL==values) {
     Warning.Start(filename, lexer.lineno());
     Warning << "Empty set for iterator " << n;
@@ -394,24 +404,22 @@ array_index* BuildIterator(type t, char* n, expr* values)
   } else {
     // type checking
     type vt = values->Type(0);
-    bool match = false;
+
+    // first, handle set promotions
     switch (t) {
-      case INT:	match = (vt == SET_INT); 	break;
       case REAL:	
         if (vt == SET_INT) {
 	    values = MakeInt2RealSet(filename, lexer.lineno(), values);
 	    vt = values->Type(0);
 	}
-    	match = (vt == SET_REAL);	break;
+	break;
+
       default:
-    	Error.Start(filename, lexer.lineno());
-	Error << "Illegal type for iterator " << n;
-	Error.Stop();
-	Delete(values);
-	return NULL;
+        // nothing
+        break;
     }
 
-    if (!match) {
+    if (SetOf(t) != vt) {
       Error.Start(filename, lexer.lineno());
       Error << "Type mismatch: iterator " << n;
       Error << " expects set of type " << GetType(t);

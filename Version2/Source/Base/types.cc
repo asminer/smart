@@ -80,6 +80,7 @@ const char* VoidNames[] = {
 const char* SetNames[] = {
   "{int}",
   "{real}",
+  "{state}",
   "{place}",
   "{trans}"
 };
@@ -125,6 +126,7 @@ type SetOf(type t)
   switch (t) {
     case INT:		return SET_INT;
     case REAL:		return SET_REAL;
+    case STATE:		return SET_STATE;
     case PLACE:		return SET_PLACE;
     case TRANS:		return SET_TRANS;
   }
