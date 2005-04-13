@@ -35,6 +35,9 @@ bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
   AllocState(current, stsize);
   AllocState(reached, stsize);
 
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   
@@ -48,27 +51,18 @@ bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
   for (from=0; from < S->NumStates(); from++) {
     S->GetState(from, current);
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during state graph generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       S->GetState(from, reached);
@@ -200,7 +194,6 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   bool error = false;
   int e;
 
-
   // allocate temporary (full) states
   DCASSERT(dsm->UsesConstantStateSize());
   int stsize = dsm->GetConstantStateSize();
@@ -208,6 +201,9 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   AllocState(current, stsize);
   AllocState(reached, stsize);
 
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
@@ -238,27 +234,18 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   for (from=0; from < S->NumStates(); from++) {
     S->GetState(from, current);
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       S->GetState(from, reached);

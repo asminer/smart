@@ -4,28 +4,17 @@
 
 Things to do:
 
-* Generic priority structure in state_model class,
-  so we don't have to re-implement it for every formalism.
-
-  + re-sort events in dsm constructor, to be ordered according
-    to priority rules
-
-  + implement "GetEnabledList"
-
-* Petri nets: implement function
-	prio ( {trans} : {trans, ...)
-	where all transitions in the first set have priority
-	over all transitions in the second set.
-
-* Modify state generation algorithms to handle priority
-  (should be easy)
-
 * Notion of immediate events
 	(use a shared "const0" expression...)
 
 * Write state generation algorithms that eliminate vanishing "on the fly"
 	Use a second state array to hold vanishing states,
 	clear them once all vanishing from a tangible have been explored
+
+  + CTMC: do it properly (solve DTMC)
+
+  + cache option: save the vanishing states and their results
+    in case we see them again during search?
 
 * phase types as models (see notes)
 

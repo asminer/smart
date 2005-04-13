@@ -67,6 +67,9 @@ bool Debug_GenerateSandRG(state_model *dsm,
     // ...to here
   }
   
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   
@@ -84,27 +87,18 @@ bool Debug_GenerateSandRG(state_model *dsm,
     // ...to here
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(from, reached);
@@ -174,6 +168,9 @@ bool GenerateSandRG(state_model *dsm,
     rg->AddNode();
   }
   
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   
@@ -183,27 +180,18 @@ bool GenerateSandRG(state_model *dsm,
     states->GetState(from, current);
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(from, reached);
@@ -384,6 +372,9 @@ bool Debug_GenerateSandCTMC(state_model *dsm,
     // ...to here
   }
   
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
@@ -418,27 +409,18 @@ bool Debug_GenerateSandCTMC(state_model *dsm,
     // ...to here
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(from, reached);
@@ -522,6 +504,9 @@ bool GenerateSandCTMC(state_model *dsm,
     mc->AddNode();
   }
   
+  // Allocate list of enabled events
+  List <event> enabled(16);
+  
   result x;
   x.Clear();
   // compute the constant rates once before starting; use -1 if not const.
@@ -548,27 +533,18 @@ bool GenerateSandCTMC(state_model *dsm,
     states->GetState(from, current);
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(from, reached);
