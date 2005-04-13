@@ -121,6 +121,8 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 class transition : public model_var {
   /// Data used during model construction
   struct tdata {
+      /// Are we immediate
+      bool immed;
       /// List of inputs
       int inputs;
       /// List of outputs
@@ -129,8 +131,10 @@ class transition : public model_var {
       int inhibitors;
       /// guard expression
       expr* guard;
-      // firing distribution
+      /// firing distribution
       expr* firing;
+      /// weights, for immediate
+      expr* weight;
   };
   /// Active during model construction
   tdata* build_info;
@@ -199,11 +203,13 @@ transition::transition(const char* fn, int line, char* n)
 {
   model_event = NULL;
   build_info = new tdata;
+  build_info->immed = false;
   build_info->inputs = -1;
   build_info->outputs = -1;
   build_info->inhibitors = -1;
   build_info->guard = NULL;
   build_info->firing = NULL;
+  build_info->weight = NULL;
   pset = NULL;
 }
 
@@ -889,7 +895,13 @@ void transition::Compile(const char* mn, listarray <spn_arcinfo> *arcs)
   model_event = new event(Filename(), Linenumber(), TRANS, strdup(Name()));
   model_event->setEnabling(new transition_enabled(arcs, this));
   model_event->setNextstate(new transition_fire(mn, arcs, this));
-  model_event->setDistribution(build_info->firing);
+  if (build_info->immed) {
+    model_event->setImmediate(build_info->weight);
+  } else if (build_info->firing) {
+    model_event->setTimed(build_info->firing);
+  } else {
+    model_event->setNondeterministic();
+  }
   // done with build_info
   delete build_info;
   build_info = NULL; 

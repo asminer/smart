@@ -36,6 +36,7 @@ event::event(const char* fn, int line, type t, char* n)
   enabling = nextstate = distro = NULL;
   prio_list = NULL;
   prio_length = 0;
+  ET = E_Unknown;
 }
 
 event::~event()
@@ -63,11 +64,28 @@ void event::setNextstate(expr *e)
   );
 }
 
-void event::setDistribution(expr *e)
+void event::setNondeterministic()
 {
-  DCASSERT(NULL==distro);
-  distro = e;
+  DCASSERT(E_Unknown == ET);
+  ET = E_Nondeterm;
 }
+
+void event::setTimed(expr *dist)
+{
+  DCASSERT(E_Unknown == ET);
+  DCASSERT(NULL==distro);
+  distro = dist;
+  ET = E_Timed;
+}
+
+void event::setImmediate(expr *weight)
+{
+  DCASSERT(E_Unknown == ET);
+  DCASSERT(NULL==distro);
+  distro = weight;
+  ET = E_Immediate;
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -214,6 +232,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   return true;
 }
 
+
 void state_model::DetermineProcessType()
 {
   if (proctype != Proc_Unknown) return;
@@ -223,7 +242,7 @@ void state_model::DetermineProcessType()
   proctype = Proc_FSM;
   for (e=0; e<num_events; e++) {
     DCASSERT(event_data[e]);
-    if (event_data[e]->Distribution()) {
+    if (event_data[e]->ET != E_Nondeterm) {
       proctype = Proc_Unknown;
       break;
     }
@@ -232,23 +251,31 @@ void state_model::DetermineProcessType()
 
   // Not a FSM, now check distributions
   bool all_expos = true;
+  bool has_immed = false;
   for (e=0; e<num_events; e++) {
-    switch (event_data[e]->DistroType()) {
-      case VOID:
-		// some events have no distribution, that's bad
-		proctype = Proc_Error;
+    switch (event_data[e]->ET) {
+      case E_Unknown:
+      case E_Nondeterm:
+      		proctype = Proc_Error;
 		return;
+      case E_Immediate:
+      		has_immed = true;
+		continue;
+      case E_Timed:
+      		switch (event_data[e]->DistroType()) {
+      			case VOID:
+				proctype = Proc_Error;
+				return;
 
-      case EXPO:
-      case PROC_EXPO:
-		// rule some other things out, eventually
-		break;
+      			case EXPO:
+      			case PROC_EXPO:
+				continue;
 
-      default:
-		all_expos = false;
-		break;
-    } // switch
-  } 
+      			default:
+				all_expos = false;
+		} // distribution type switch
+    };  // event type switch
+  } // for e
 
   if (all_expos) {
     proctype = Proc_Ctmc;

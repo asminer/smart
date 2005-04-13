@@ -278,7 +278,11 @@ void fsm_arcs(state_model *dsm, bool show, result &x)
 	x.setNull();
 	return;
   }
+  if (!show) return;
+
   // display here...
+  Output << "Reachability graph:\n";
+  Output.flush();
 }
 
 void mc_arcs(state_model *dsm, bool show, result &x)

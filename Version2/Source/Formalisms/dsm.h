@@ -25,6 +25,20 @@ class reachgraph;  // defined in Chains/procs.h
 class markov_chain;  // defined in Chains/procs.h
 
 
+/** Possible type for meta-events (below).
+*/
+enum Event_type {
+  /// Placeholder; we don't know yet
+  E_Unknown,
+  /// Nondeterministic.
+  E_Nondeterm,
+  /// Timed.
+  E_Timed,
+  /// Immediate.
+  E_Immediate
+};
+
+
 /** Meta-event class.
     
     Basically, we now force a specific formalism to "compile" down to
@@ -50,22 +64,32 @@ class markov_chain;  // defined in Chains/procs.h
 		For proc stateset, we can determing the set of possible states
 		reached if the event fires.
 
-    distro:	The firing distribution, or NULL for "nondeterministic".
+    distro:	Firing distribution or weight, depending on event type.
     		The expression may assume that the event is in fact enabled.
+    
+    		If the event type is Nondeterministic, this is NULL.
+		
+		If the event type is Timed, this is the firing distribution.
     		Type can be "int" or "real" for constants,
 		"ph int", "ph real", "rand int", "rand real"
 		for state independent random durations,
 		and the "proc" versions of the above if durations
 		are state dependent.
+
+		If the event type is Immediate, this is the firing weight.
+		The type should be either "real" for constant weights,
+		or "proc real" for state-dependent weights.
 */
 
 class event : public symbol {
   friend class state_model;
+  /// The type of event.
+  Event_type ET;
   /// Enabling expression
   expr* enabling;
   /// Nextstate expression
   expr* nextstate;
-  /// Firing distribution
+  /// Firing distribution / weight
   expr* distro;
   /// List of events that we have priority over
   event** prio_list;
@@ -79,13 +103,34 @@ public:
 
   void setEnabling(expr *e);
   void setNextstate(expr *e);
-  void setDistribution(expr *e);
 
-  inline expr* isEnabled() { return enabling; }
-  inline expr* getNextstate() { return nextstate; }
-  inline type  NextstateType() { return (nextstate) ? nextstate->Type(0) : VOID; }
-  inline expr* Distribution() { return distro; }
-  inline type  DistroType() { return (distro) ? distro->Type(0) : VOID; }
+  void setNondeterministic();
+  void setTimed(expr *dist);
+  void setImmediate(expr *weight);
+
+  inline Event_type FireType() const { return ET; }
+
+  inline expr* isEnabled() const { return enabling; }
+  inline expr* getNextstate() const { return nextstate; }
+  inline type  NextstateType() const { 
+    return (nextstate) ? nextstate->Type(0) : VOID; 
+  }
+  inline expr* Distribution() const { 
+    DCASSERT(E_Timed == ET);
+    return distro; 
+  }
+  inline type  DistroType() const { 
+    DCASSERT(E_Timed == ET);
+    return (distro) ? distro->Type(0) : VOID; 
+  }
+  inline expr* Weight() const {
+    DCASSERT(E_Immediate == ET);
+    return distro;
+  }
+  inline type WeightType() const {
+    DCASSERT(E_Immediate == ET);
+    return (distro) ? distro->Type(0) : VOID;
+  }
 
   // required to keep exprs happy
   virtual void ClearCache() { DCASSERT(0); }
@@ -176,6 +221,26 @@ public:
       Returns false if there was an error, true on success.
   */
   bool GetEnabledList(const state &current, List <event> *enabled);
+
+  /** Get the first enabled event.
+      Takes priority information into account.
+      I.e., this function should return the first event that would
+      appear in the list, if GetEnabledList were called.
+      Returns NULL if no events are enabled.
+
+      x is used to pass back any errors that occurred.
+
+      The current state is vanishing IFF the first event is immediate.
+  */
+  inline event* FirstEnabled(const state &current, result &x) {
+    // check in order; no need to correct for priority!
+    for (int e=0; e<num_events; e++) {
+      event_data[e]->Compute(current, 0, x);
+      if (!x.isNormal()) return NULL;
+      if (x.bvalue) return event_data[e];
+    }
+    return NULL;
+  }
 
   void DetermineProcessType();
 
