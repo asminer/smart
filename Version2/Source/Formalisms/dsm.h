@@ -173,8 +173,9 @@ public:
 
   /** List of enabled events.
       Takes priority information into account.
+      Returns false if there was an error, true on success.
   */
-  void GetEnabledList(const state &current, List <event> *enabled);
+  bool GetEnabledList(const state &current, List <event> *enabled);
 
   void DetermineProcessType();
 

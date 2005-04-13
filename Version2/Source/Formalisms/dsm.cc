@@ -7,7 +7,7 @@
 #include "../Chains/procs.h"
 #include "../Base/memtrack.h"
 
-#define DEBUG_PRIO
+//#define DEBUG_PRIO
 
 /** @name dsm.cc
     @type File
@@ -177,9 +177,41 @@ int state_model::GetConstantStateSize() const
   return 0; // keep compiler happy
 }
 
-void state_model::GetEnabledList(const state &current, List <event> *enabled)
+bool state_model::GetEnabledList(const state &current, List <event> *enabled)
 {
-  // Not implemented yet...
+  enabled->Clear();
+  // misc field: are we enabled.  1=yes, -1=no, 0=don't know yet
+  int e;
+  for (e=0; e<num_events; e++) event_data[e]->misc = 0;
+
+  result x;
+  // check in order, correct for priority
+  for (e=0; e<num_events; e++) {
+    event *t = event_data[e];
+    if (t->misc<0) continue;
+    t->isEnabled()->Compute(current, 0, x);
+    if (!x.isNormal()) {
+      Error.StartModel(Name(), Filename(), Linenumber());
+      if (x.isUnknown()) 
+	Error << "Unknown if event " << t << " is enabled";
+      else
+	Error << "Bad enabling expression for event " << t;
+      Error.Stop();
+      return false;
+    }
+    if (!x.bvalue) {
+      t->misc = -1;
+      continue;
+    }
+    // event is enabled, disable all in priority list
+    t->misc = 1;
+    enabled->Append(t);
+    for (int j=0; j<t->prio_length; j++) {
+      DCASSERT(t->prio_list);
+      t->prio_list[j]->misc = -1;
+    } // for j
+  } // for e
+  return true;
 }
 
 void state_model::DetermineProcessType()

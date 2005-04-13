@@ -45,6 +45,9 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     Output.flush();
     // ...to here
   }
+
+  // Allocate list of enabled events
+  List <event> enabled(16);
   
   result x;
   x.Clear();
@@ -61,27 +64,18 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     // ...to here
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during state space generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(explore, reached);
@@ -140,6 +134,9 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     tree->AddState(current);
   }
   
+  // Allocate list of enabled events
+  List <event> enabled(16);
+
   result x;
   x.Clear();
   int explore; 
@@ -147,27 +144,18 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
     states->GetState(explore, current);
     
     // what is enabled?
-    for (e=0; e<dsm->NumEvents(); e++) {
-      event* t = dsm->GetEvent(e);
+    if (!dsm->GetEnabledList(current, &enabled)) {
+      error = true;
+      break;
+    }
+
+    for (e=0; e<enabled.Length(); e++) {
+      event* t = enabled.Item(e);
       DCASSERT(t);
       if (NULL==t->getNextstate())
         continue;  // firing is "no-op", don't bother
 
-      t->isEnabled()->Compute(current, 0, x);
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	if (x.isUnknown()) 
-	  Error << "Unknown if event " << t << " is enabled";
-	else
-	  Error << "Bad enabling expression for event " << t;
-	Error << " during state space generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      if (!x.bvalue) continue;  // event is not enabled
-
-      // e is enabled, fire and get new state
+      // t is enabled, fire and get new state
 
       // set reached = current
       states->GetState(explore, reached);
