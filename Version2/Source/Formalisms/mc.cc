@@ -143,9 +143,17 @@ public:
 
   virtual ~markov_model();
 
+  /// Get state, use during model construction
   inline model_var* GetState(int index) const {
     DCASSERT(statelist);
     return statelist->Item(index);
+  }
+
+  /// Get state, after model is completely built
+  inline model_var* GetState4Measure(int index) const {
+    DCASSERT(states);
+    CHECK_RANGE(0, index, numstates);
+    return states[index];
   }
 
   void AddInitial(model_var* state, double weight, const char *fn, int line);
@@ -624,6 +632,65 @@ void Add_instate(PtrTable *fns)
 }
 
 // ********************************************************
+// *                        instates                      *
+// ********************************************************
+
+// Set of states version
+void compute_mc_instates(const state &m, expr **pp, int np, result &x)
+{
+  DCASSERT(np==2);
+  DCASSERT(pp);
+#ifdef DEBUG
+  Output << "Checking instates\n";
+  Output.flush();
+#endif
+#ifdef DEVELOPMENT_CODE
+  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  DCASSERT(mc);
+#else
+  markov_model *mc = (markov_model*)(pp[0]);
+#endif
+  x.Clear();
+  SafeCompute(pp[1], 0, x);
+#ifdef DEVELOPMENT_CODE
+  DCASSERT(x.isNormal());
+  set_result* ss = dynamic_cast<set_result*> (x.other);
+  DCASSERT(ss);
+#else
+  set_result* ss = (set_result*) x.other;
+#endif
+
+#ifdef DEBUG
+  Output << "\tgot param: " << ss << "\n";
+  Output.flush();
+
+  Output << "\tcurrent state: ";
+  PrintResult(Output, INT, m.Read(0));
+  Output << "\n";
+  Output.flush();
+#endif
+
+  result current;
+  current.Clear();
+  current.other = mc->GetState4Measure(m.Read(0).ivalue);
+  x.bvalue = (ss->IndexOf(current) >= 0);
+}
+
+void Add_instates(PtrTable *fns)
+{
+  const char* helpdoc = "Returns true if the Markov chain is in one of the specified states";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(MARKOV, "m");
+  pl[1] = new formal_param(SET_STATE, "sset");
+  internal_func *p = new internal_func(PROC_BOOL, "in_states", 
+	compute_mc_instates, NULL,
+	pl, 2, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
 // *                       transient                      *
 // ********************************************************
 
@@ -721,6 +788,7 @@ void InitMCModelFuncs(PtrTable *t)
   Add_mc_arcs(t);
 
   Add_instate(t);
+  Add_instates(t);
   Add_transient(t);
   Add_absorbing(t);
 }
