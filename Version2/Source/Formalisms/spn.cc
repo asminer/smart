@@ -113,6 +113,10 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 // *                        transition  class                       *
 // ******************************************************************
 
+const char c_nondeterm = 'n';
+const char c_immediate = 'i';
+const char c_timed = 't';
+
 /** Used to store information during model construction.
     Once the model has been finalized, most of this info
     goes away, and instead we store a pointer to the event
@@ -121,8 +125,8 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 class transition : public model_var {
   /// Data used during model construction
   struct tdata {
-      /// Are we immediate
-      bool immed;
+      /// Are we immediate, timed, or nondeterministic (default)
+      char timed_or_immed;
       /// List of inputs
       int inputs;
       /// List of outputs
@@ -176,13 +180,25 @@ public:
     DCASSERT(build_info);
     build_info->guard = g;
   }
+  inline char FireType() const {
+    DCASSERT(build_info);
+    return build_info->timed_or_immed;
+  }
   inline expr* Firing() const {
     DCASSERT(build_info);
     return build_info->firing;
   }
   inline void SetFiring(expr* f) {
     DCASSERT(build_info);
+    DCASSERT(build_info->timed_or_immed == c_nondeterm);
     build_info->firing = f;
+    build_info->timed_or_immed = c_timed;
+  }
+  inline void SetWeight(expr* w) {
+    DCASSERT(build_info);
+    DCASSERT(build_info->timed_or_immed == c_nondeterm);
+    build_info->weight = w;
+    build_info->timed_or_immed = c_immediate;
   }
   inline event* Event() const { return model_event; }
 
@@ -203,7 +219,7 @@ transition::transition(const char* fn, int line, char* n)
 {
   model_event = NULL;
   build_info = new tdata;
-  build_info->immed = false;
+  build_info->timed_or_immed = c_nondeterm;
   build_info->inputs = -1;
   build_info->outputs = -1;
   build_info->inhibitors = -1;
@@ -895,12 +911,20 @@ void transition::Compile(const char* mn, listarray <spn_arcinfo> *arcs)
   model_event = new event(Filename(), Linenumber(), TRANS, strdup(Name()));
   model_event->setEnabling(new transition_enabled(arcs, this));
   model_event->setNextstate(new transition_fire(mn, arcs, this));
-  if (build_info->immed) {
-    model_event->setImmediate(build_info->weight);
-  } else if (build_info->firing) {
-    model_event->setTimed(build_info->firing);
-  } else {
-    model_event->setNondeterministic();
+  switch (build_info->timed_or_immed) {
+    case c_nondeterm:
+    	model_event->setNondeterministic();
+	break;
+    case c_immediate:
+    	model_event->setImmediate(build_info->weight);
+	break;
+    case c_timed:
+    	model_event->setTimed(build_info->firing);
+	break;
+    default:
+    	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad firing type for transition " << Name();
+	Internal.Stop();
   }
   // done with build_info
   delete build_info;
