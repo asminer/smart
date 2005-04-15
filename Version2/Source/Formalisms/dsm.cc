@@ -7,7 +7,7 @@
 #include "../Chains/procs.h"
 #include "../Base/memtrack.h"
 
-#define DEBUG_PRIO
+//#define DEBUG_PRIO
 
 /** @name dsm.cc
     @type File

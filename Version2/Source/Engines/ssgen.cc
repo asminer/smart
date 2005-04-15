@@ -9,6 +9,7 @@
 #include "../Base/timers.h"
 
 option* StateStorage;
+option* EliminateVanishing;
 
 const int num_ss_options = 3;
 
@@ -18,14 +19,20 @@ option_const splay_ss("SPLAY", "\aSplay tree");
 
 // return true on success
 template <class SSTYPE>
-bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
+bool Explore_Indexed(state_model *dsm, bool eliminate,
+			state_array *tst, SSTYPE* ttr,
+			state_array *vst, SSTYPE* vtr, bool debugging)
 {
   DCASSERT(dsm);
-  DCASSERT(states);
-  DCASSERT(tree);
+  DCASSERT(tst);
+  DCASSERT(ttr);
+  DCASSERT(vst);
+  DCASSERT(vtr);
 
   bool error = false;
   int e;
+  result x;
+  x.Clear();
 
   // allocate temporary (full) states
   DCASSERT(dsm->UsesConstantStateSize());
@@ -33,120 +40,80 @@ bool Debug_Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
   state current, reached;
   AllocState(current, stsize);
   AllocState(reached, stsize);
-
-  // Find and insert the initial state(s)
-  for (int i=0; i<dsm->NumInitialStates(); i++) {
-    dsm->GetInitialState(i, current);
-    tree->AddState(current);
-    // debug part...
-    Output << "Added initial state: ";
-    dsm->ShowState(Output, current);
-    Output << "\n";
-    Output.flush();
-    // ...to here
-  }
-
   // Allocate list of enabled events
   List <event> enabled(16);
   
-  result x;
-  x.Clear();
-  int explore; 
-  for (explore=0; explore < states->NumStates(); explore++) {
-    states->GetState(explore, current);
-    // debug part...
-    Output << "\nExploring state#";
-    Output.Put(explore, 5);
-    Output << " : ";
-    dsm->ShowState(Output, current);
-    Output << "\n\n";
-    Output.flush();
-    // ...to here
-    
-    // what is enabled?
-    if (!dsm->GetEnabledList(current, &enabled)) {
+  // Find and insert the initial state(s)
+  for (int i=0; i<dsm->NumInitialStates(); i++) {
+    dsm->GetInitialState(i, current);
+    dsm->isVanishing(current, x);
+    if (!x.isNormal()) {
+      Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+      Error << "Bad enabling expression during state space generation";
+      Error.Stop();
       error = true;
       break;
     }
-
-    for (e=0; e<enabled.Length(); e++) {
-      event* t = enabled.Item(e);
-      DCASSERT(t);
-      if (NULL==t->getNextstate())
-        continue;  // firing is "no-op", don't bother
-
-      // t is enabled, fire and get new state
-
-      // set reached = current
-      states->GetState(explore, reached);
-      // do the firing
-      t->getNextstate()->NextState(current, reached, x); 
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	Error << "Bad next-state expression during state space generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-      
-      int rindex = tree->AddState(reached);
-
-      // debug part...
-      Output << "\t" << t;
-      Output << " --> ";
-      dsm->ShowState(Output, reached);
-      Output << " (state index " << rindex << ")\n";
+    if (x.bvalue) vtr->AddState(current);
+    else ttr->AddState(current);
+    if (debugging) {
+      Output << "Added initial state: ";
+      dsm->ShowState(Output, current);
+      Output << "\n";
       Output.flush();
-      // ... to here
-
-    } // for e
-    if (error) break;
-  } // for explore
-
-  // cleanup
-  FreeState(reached);
-  FreeState(current);
-
-  return !error; 
-}
-
-// return true on success
-template <class SSTYPE>
-bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
-{
-  DCASSERT(dsm);
-  DCASSERT(states);
-  DCASSERT(tree);
-
-  bool error = false;
-  int e;
-
-  // allocate temporary (full) states
-  DCASSERT(dsm->UsesConstantStateSize());
-  int stsize = dsm->GetConstantStateSize();
-  state current, reached;
-  AllocState(current, stsize);
-  AllocState(reached, stsize);
-
-  // Find and insert the initial state(s)
-  for (int i=0; i<dsm->NumInitialStates(); i++) {
-    dsm->GetInitialState(i, current);
-    tree->AddState(current);
+    }
   }
-  
-  // Allocate list of enabled events
-  List <event> enabled(16);
 
-  result x;
-  x.Clear();
-  int explore; 
-  for (explore=0; explore < states->NumStates(); explore++) {
-    states->GetState(explore, current);
+  int v_exp = 0;
+  int t_exp = 0;
+
+  bool current_is_vanishing = false;
+
+  // New tangible + vanishing explore loop!
+  while (!error) {
+
+    // Get next state to explore, with priority to vanishings.
+    if (v_exp < vst->NumStates()) {
+      // explore next vanishing
+      vst->GetState(v_exp, current);
+      current_is_vanishing = true;
+    } else {
+      // No unexplored vanishing; safe to trash them, if desired
+      if (current_is_vanishing && eliminate) {
+	if (debugging) {
+	  Output << "Eliminating " << vst->NumStates() << " vanishing states\n";
+	}
+	vst->Clear();
+	vtr->Clear();
+	v_exp = 0;
+      }
+      current_is_vanishing = false;
+      // find next tangible to explore; if none, break out
+      if (t_exp < tst->NumStates()) {
+        tst->GetState(t_exp, current);
+      } else {
+	break;
+      }
+    }
+    
+    if (debugging) {
+      if (current_is_vanishing) {
+        Output << "\nExploring vanishing state#";
+        Output.Put(v_exp, 5);
+      } else {
+        Output << "\nExploring tangible state#";
+        Output.Put(t_exp, 5);
+      }
+      Output << " : ";
+      dsm->ShowState(Output, current);
+      Output << "\n\n";
+      Output.flush();
+    }
     
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
       error = true;
-      break;
+      continue;
     }
 
     for (e=0; e<enabled.Length(); e++) {
@@ -158,7 +125,14 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
       // t is enabled, fire and get new state
 
       // set reached = current
-      states->GetState(explore, reached);
+      if (current_is_vanishing) {
+        vst->GetState(v_exp, reached);
+	DCASSERT(t->FireType() == E_Immediate);
+      } else {
+        tst->GetState(t_exp, reached);
+	DCASSERT(t->FireType() != E_Immediate);
+      }
+
       // do the firing
       t->getNextstate()->NextState(current, reached, x); 
       if (!x.isNormal()) {
@@ -168,10 +142,45 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 	error = true;
 	break;
       }
-      tree->AddState(reached);
+
+      // determine tangible or vanishing
+      dsm->isVanishing(reached, x);
+      if (!x.isNormal()) {
+        Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+        Error << "Bad enabling expression during state space generation";
+        Error.Stop();
+        error = true;
+        break;
+      }
+
+      if (x.bvalue) {
+	// new state is vanishing
+	int vindex = vtr->AddState(reached);
+	if (debugging) {
+          Output << "\t" << t;
+          Output << " --> ";
+          dsm->ShowState(Output, reached);
+          Output << " (vanishing index " << vindex << ")\n";
+          Output.flush();
+	}
+      } else {
+	// new state is tangible
+	int tindex = ttr->AddState(reached);
+	if (debugging) {
+          Output << "\t" << t;
+          Output << " --> ";
+          dsm->ShowState(Output, reached);
+          Output << " (tangible index " << tindex << ")\n";
+          Output.flush();
+	}
+      }
+
     } // for e
-    if (error) break;
-  } // for explore
+
+
+    // advance appropriate ptr
+    if (current_is_vanishing) v_exp++; else t_exp++;
+  } // while !error
 
   // cleanup
   FreeState(reached);
@@ -179,6 +188,7 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
 
   return !error; 
 }
+
 
 void CompressAndAffix(state_model* dsm, 
 			state_array* tst, binary_tree* ttr,
@@ -224,14 +234,17 @@ void DebugReachset(state_model *dsm)
     Verbose << "Starting reachability set generation in debug mode\n";
     Verbose.flush();
   }
-  state_array* states = new state_array(true);
-  splay_state_tree* tree = new splay_state_tree(states);
-  bool ok = Debug_Explore_Indexed(dsm, states, tree);
+  state_array* tstates = new state_array(true);
+  state_array* vstates = new state_array(true);
+  splay_state_tree* ttree = new splay_state_tree(tstates);
+  splay_state_tree* vtree = new splay_state_tree(vstates);
+  bool ok = Explore_Indexed(dsm, EliminateVanishing->GetBool(), 
+  				tstates, ttree, vstates, vtree, true);
   if (!ok) {
-    delete states;
-    states = NULL;
+    delete tstates;
+    tstates = NULL;
   }
-  CompressAndAffix(dsm, states, tree, NULL, NULL);
+  CompressAndAffix(dsm, tstates, ttree, vstates, vtree);
 }
 
 void SplayReachset(state_model *dsm)
@@ -240,20 +253,23 @@ void SplayReachset(state_model *dsm)
     Verbose << "Starting reachability set generation using Splay tree\n";
     Verbose.flush();
   }
-  state_array* states = new state_array(true);
-  splay_state_tree* tree = new splay_state_tree(states);
-  bool ok = Explore_Indexed(dsm, states, tree);
+  state_array* tstates = new state_array(true);
+  state_array* vstates = new state_array(true);
+  splay_state_tree* ttree = new splay_state_tree(tstates);
+  splay_state_tree* vtree = new splay_state_tree(vstates);
+  bool ok = Explore_Indexed(dsm, EliminateVanishing->GetBool(),
+  				tstates, ttree, vstates, vtree, false);
   if (Report.IsActive()) {
-    Report << "Splay tree:\n";
-    tree->Report(Report);
-    states->Report(Report);
+    Report << "Tangible Splay tree:\n";
+    ttree->Report(Report);
+    tstates->Report(Report);
     Report.flush();
   }
   if (!ok) {
-    delete states;
-    states = NULL;
+    delete tstates;
+    tstates = NULL;
   }
-  CompressAndAffix(dsm, states, tree, NULL, NULL);
+  CompressAndAffix(dsm, tstates, ttree, vstates, vtree);
 }
 
 void RedBlackReachset(state_model *dsm)
@@ -262,20 +278,23 @@ void RedBlackReachset(state_model *dsm)
     Verbose << "Starting reachability set generation using red-black tree\n";
     Verbose.flush();
   }
-  state_array* states = new state_array(true);
-  red_black_tree* tree = new red_black_tree(states);
-  bool ok = Explore_Indexed(dsm, states, tree);
+  state_array* tstates = new state_array(true);
+  state_array* vstates = new state_array(true);
+  red_black_tree* ttree = new red_black_tree(tstates);
+  red_black_tree* vtree = new red_black_tree(vstates);
+  bool ok = Explore_Indexed(dsm, EliminateVanishing->GetBool(),
+  				tstates, ttree, vstates, vtree, false);
   if (Report.IsActive()) {
-    Report << "red-black tree:\n";
-    tree->Report(Report);
-    states->Report(Report);
+    Report << "Tangible red-black tree:\n";
+    ttree->Report(Report);
+    tstates->Report(Report);
     Report.flush();
   }
   if (!ok) {
-    delete states;
-    states = NULL;
+    delete tstates;
+    tstates = NULL;
   }
-  CompressAndAffix(dsm, states, tree, NULL, NULL);
+  CompressAndAffix(dsm, tstates, ttree, vstates, vtree);
 }
 
 // *******************************************************************
@@ -325,5 +344,9 @@ void InitSSGen()
   sslist[2] = &splay_ss;
   StateStorage = MakeEnumOption("StateStorage", "Algorithm and data structure to use for state space generation", sslist, num_ss_options, &splay_ss);
   AddOption(StateStorage);
+
+  // EliminateVanishing option
+  EliminateVanishing = MakeBoolOption("EliminateVanishing", "Should vanishing states be eliminated.", true);
+  AddOption(EliminateVanishing);
 }
 

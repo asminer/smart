@@ -15,6 +15,8 @@ extern option_const debug_ss;
 extern option_const redblack_ss;
 extern option_const splay_ss;
 
+extern option* EliminateVanishing;
+
 /** Useful helper function.
     Compress and attach the reachability set to the state model.
     If an error occurred, use states = NULL.

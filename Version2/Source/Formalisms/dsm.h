@@ -235,8 +235,9 @@ public:
   */
   inline void isVanishing(const state &current, result &x) {
     // check in order; no need to correct for priority!
+    x.bvalue = false;
     for (int e=0; e<num_immediate; e++) {
-      event_data[e]->Compute(current, 0, x);
+      event_data[e]->enabling->Compute(current, 0, x);
       if (!x.isNormal()) return;
       if (x.bvalue) return;  // an immediate is enabled.
     }

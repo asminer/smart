@@ -50,6 +50,12 @@ public:
     int i = 0; 
     FillOrderList(root, i, order);
   }
+
+  /// Empty nodes from tree; don't deallocate memory.
+  inline void Clear() {
+    root = -1;
+    nodes_used = 0;
+  }
 protected:
   inline int Pop() { return (path->Empty()) ? -1 : path->Pop(); }
   /// Traverse subtree, add to order array starting with "index".
