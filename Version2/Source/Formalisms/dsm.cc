@@ -7,7 +7,7 @@
 #include "../Chains/procs.h"
 #include "../Base/memtrack.h"
 
-//#define DEBUG_PRIO
+#define DEBUG_PRIO
 
 /** @name dsm.cc
     @type File
@@ -133,9 +133,9 @@ void state_model::OrderEventsByPriority()
 #ifdef DEBUG_PRIO
   Output << "Reordering events by priority rules.  Current events:\n";
 #endif
-  // First, for each event, count the number that have priority over it
-  // and store in "misc" field
   int e;
+  // For each event, count the number that have priority over it
+  // and store in "misc" field
   for (e=0; e<num_events; e++) event_data[e]->misc = 0;
   for (e=0; e<num_events; e++) {
     event* ee = event_data[e];
@@ -179,9 +179,23 @@ void state_model::OrderEventsByPriority()
       ee->prio_list[i]->misc--;
     }
   }
+  // 
+  // Immediate events should be first; count them.
+  //
+  for (num_immediate=0; num_immediate<num_events; num_immediate++) {
+    if (event_data[num_immediate]->ET != E_Immediate) break;
+  }
+#ifdef DEVELOPMENT_CODE
+  for (int i=num_immediate; i<num_events; i++) 
+    DCASSERT(event_data[i]->ET != E_Immediate);
+#endif
 #ifdef DEBUG_PRIO
   Output << "Successfully reordered events, new order:\n";
-  for (e=0; e<num_events; e++) 
+  for (e=0; e<num_immediate; e++) 
+    Output << "\t" << event_data[e] << "\n";
+  Output.Pad('-', 40);
+  Output << "\n";
+  for (; e<num_events; e++) 
     Output << "\t" << event_data[e] << "\n";
   Output.flush();
 #endif

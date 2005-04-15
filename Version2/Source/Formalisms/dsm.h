@@ -181,7 +181,11 @@ enum Process_type {
 
 class state_model : public symbol {
 protected:
+  /// Total number of events
   int num_events;
+  /// Number of immediate.
+  int num_immediate;
+  /// The events.
   event** event_data;
   /// Was there a priority cycle?
   bool prio_cycle;
@@ -222,24 +226,20 @@ public:
   */
   bool GetEnabledList(const state &current, List <event> *enabled);
 
-  /** Get the first enabled event.
-      Takes priority information into account.
-      I.e., this function should return the first event that would
-      appear in the list, if GetEnabledList were called.
-      Returns NULL if no events are enabled.
+  /** Returns true if the state is vanishing.
+      I.e., true iff at least one immediate event is enabled.
 
-      x is used to pass back any errors that occurred.
-
-      The current state is vanishing IFF the first event is immediate.
+      @param	current		The state to check
+      @param	x		Where to store the result.
+				(Used to catch any errors.)
   */
-  inline event* FirstEnabled(const state &current, result &x) {
+  inline void isVanishing(const state &current, result &x) {
     // check in order; no need to correct for priority!
-    for (int e=0; e<num_events; e++) {
+    for (int e=0; e<num_immediate; e++) {
       event_data[e]->Compute(current, 0, x);
-      if (!x.isNormal()) return NULL;
-      if (x.bvalue) return event_data[e];
+      if (!x.isNormal()) return;
+      if (x.bvalue) return;  // an immediate is enabled.
     }
-    return NULL;
   }
 
   void DetermineProcessType();

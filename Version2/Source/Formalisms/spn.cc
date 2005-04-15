@@ -194,6 +194,10 @@ public:
     build_info->firing = f;
     build_info->timed_or_immed = c_timed;
   }
+  inline expr* Weight() const {
+    DCASSERT(build_info);
+    return build_info->weight;
+  }
   inline void SetWeight(expr* w) {
     DCASSERT(build_info);
     DCASSERT(build_info->timed_or_immed == c_nondeterm);
@@ -1109,6 +1113,7 @@ public:
 		const char *fn, int ln);
   void AddGuard(model_var* tr, expr* guard);
   void AddFiring(model_var* tr, expr* firing);
+  void AddWeight(model_var* tr, expr* w);
   void AddInit(model_var* pl, int tokens, const char *fn, int ln);
 
   // Required for models:
@@ -1310,6 +1315,24 @@ void spn_model::AddFiring(model_var* tr, expr* firing)
   Warning.Stop();
 }
 
+void spn_model::AddWeight(model_var* tr, expr* w)
+{
+  DCASSERT(tr);
+  CHECK_RANGE(0, tr->state_index, translist->Length());
+  DCASSERT(translist->Item(tr->state_index) == tr);
+  
+  transition *t = dynamic_cast <transition*> (tr);
+  DCASSERT(t);
+  if (NULL==t->Weight()) {
+    t->SetWeight( w->Substitute(0) );
+    return;
+  }
+  Warning.Start(w->Filename(), w->Linenumber());
+  Warning << "Ignoring duplicate weight assignment for transition " << t;
+  Warning << " in SPN " << Name();
+  Warning.Stop();
+}
+
 void spn_model::AddInit(model_var* pl, int tokens, const char* fn, int ln)
 {
   DCASSERT(pl);
@@ -1383,6 +1406,48 @@ void spn_model::FinalizeModel(result &x)
     Warning.Start();
     Warning << "Assuming zero initial marking in SPN " << Name();
     Warning.Stop();
+  }
+  // Check firing and such
+  List <transition> t_list(4);
+  List <transition> i_list(4);
+  List <transition> n_list(4);
+  for (int a=0; a<translist->Length(); a++) {
+    transition *t = translist->Item(a);
+    switch (t->FireType()) {
+      case c_nondeterm:
+	n_list.Append(t);
+	break;
+      case c_immediate:
+	i_list.Append(t);
+	break;
+      case c_timed:
+	t_list.Append(t);
+	break;
+      default:
+	Internal.Start(__FILE__, __LINE__);
+	Internal << "Bad firing type\n";
+  	Internal.Stop();
+    }
+  } // for a
+  if (n_list.Length() && n_list.Length() < translist->Length()) {
+    Warning.Start();
+    Warning << "SPN " << Name() << " has no firing distributions for transitions:\n";
+    for (int p=0; p<n_list.Length(); p++) {
+      transition *t = n_list.Item(p);
+      Warning << "\t\t" << t << "\n";
+    }
+    Warning.Stop();
+  } else if (i_list.Length() == translist->Length()) {
+    Warning.Start();
+    Warning << "SPN " << Name() << " has only immediate transitions";
+    Warning.Stop();
+  }
+  // Give immediate events priority over timed ones
+  for (int im=0; im<i_list.Length(); im++) {
+    transition *it = i_list.Item(im);
+    for (int p=0; p<t_list.Length(); p++) {
+      it->HasPrioOver(t_list.Item(p));
+    } 
   }
 #ifdef DEBUG_SPN
   int i;
@@ -1727,7 +1792,7 @@ bool linkparams_inhibit(expr **p, int np)
 
 void Add_spn_inhibit(PtrTable *fns)
 {
-  const char* helpdoc = "\b(describe arguments)\nAdds inhibitor arcs to a Petri net";
+  const char* helpdoc = "\b(..., place:trans p:t  OR  place:trans:card p:t:c, ...)\nAdds an inhibitor arc from place p to transition t, with cardinality c.  If c is omitted, it is assumed to be 1.  c can have type int or proc int.";
 
   internal_func *p = new internal_func(VOID, "inhibit", 
 	compute_spn_inhibit, NULL, NULL, 0, helpdoc);
@@ -1865,13 +1930,93 @@ bool linkparams_firing(expr **p, int np)
 
 void Add_spn_firing(PtrTable *fns)
 {
-  const char* helpdoc = "\b(..., trans : distribution, ...)\nAssigns firing distributions to transitions.";
+  const char* helpdoc = "\b(..., trans:distribution t:d, ...)\nAssigns firing distribution d to transition t.  The distribution d can have types int, real, ph int, ph real, rand int, rand real, and the \"proc\" equivalents.  To set the distribution for immediate transitions, \"weight\" should be used instead.";
 
   internal_func *p = new internal_func(VOID, "firing", 
 	compute_spn_firing, NULL, NULL, 0, helpdoc);  
   p->setWithinModel();
   p->SetSpecialTypechecking(typecheck_firing);
   p->SetSpecialParamLinking(linkparams_firing);
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                        weight                        *
+// ********************************************************
+
+void compute_spn_weight(expr **pp, int np, result &x)
+{
+  DCASSERT(np>1);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+#ifdef DEBUG_SPN
+  Output << "Inside weight for spn " << spn << "\n";
+#endif
+  x.Clear();
+  int i;
+  for (i=1; i<np; i++) {
+    DCASSERT(pp[i]);
+    DCASSERT(pp[i]!=ERROR);
+#ifdef DEBUG_SPN
+    Output << "\tparameter " << i << " is " << pp[i] << "\n";
+#endif
+    result t;
+    SafeCompute(pp[i], 0, t);
+    DCASSERT(t.isNormal());
+    model_var* tv = dynamic_cast <model_var*> (t.other);
+    DCASSERT(tv);
+    
+    spn->AddWeight(tv, pp[i]->GetComponent(1));
+  }
+#ifdef DEBUG_SPN
+  Output << "Exiting weight for spn " << spn << "\n";
+  Output.flush();
+#endif
+  x.setNull();
+}
+
+int typecheck_weight(List <expr> *params)
+{
+  // Note: hidden parameter SPN has NOT been added yet...
+  int np = params->Length();
+  int i;
+  for (i=0; i<np; i++) {
+    expr* p = params->Item(i);
+    if (NULL==p) return -1;
+    if (ERROR==p) return -1;
+    if (p->NumComponents()!=2) return -1;
+    if (p->Type(0)!=TRANS) return -1;
+    bool ok;
+    switch (p->Type(1)) {
+      case REAL:
+      case PROC_REAL:
+			ok = true;
+			break;
+      default:
+			ok = false;
+    }
+    if (!ok) return -1;
+  } // for i
+  return 0;
+}
+
+bool linkparams_weight(expr **p, int np)
+{
+  // anything?
+  return true;
+}
+
+
+void Add_spn_weight(PtrTable *fns)
+{
+  const char* helpdoc = "\b(..., trans:value t:v, ...)\nMake t an immediate transition with weight v (either of type real or proc real).";
+
+  internal_func *p = new internal_func(VOID, "weight", 
+	compute_spn_weight, NULL, NULL, 0, helpdoc);  
+  p->setWithinModel();
+  p->SetSpecialTypechecking(typecheck_weight);
+  p->SetSpecialParamLinking(linkparams_weight);
   InsertFunction(fns, p);
 }
 
@@ -2062,6 +2207,7 @@ void InitPNModelFuncs(PtrTable *t)
   Add_spn_inhibit(t);
   Add_spn_guard(t);
   Add_spn_firing(t);
+  Add_spn_weight(t);
 
   Add_spn_tk(t);
 
