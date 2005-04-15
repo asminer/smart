@@ -241,7 +241,7 @@ void DebugRGgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, rg);
 }
 
@@ -265,7 +265,7 @@ void SplayRGgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, rg);
 }
 
@@ -290,7 +290,7 @@ void RedBlackRGgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, rg);
 }
 
@@ -607,7 +607,7 @@ void DebugCTMCgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, mc);
 }
 
@@ -631,7 +631,7 @@ void SplayCTMCgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, mc);
 }
 
@@ -656,7 +656,7 @@ void RedBlackCTMCgen(state_model *dsm)
     Verbose << "Done generating, compressing\n";
     Verbose.flush();
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, mc);
 }
 

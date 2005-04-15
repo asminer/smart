@@ -41,15 +41,15 @@ bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
   result x;
   x.Clear();
   
-  // ok, build the graph
+  // ok, build the graph (assumes tangible only)
   int from; 
-  rg->ResizeNodes(S->NumStates());
-  for (from=0; from < S->NumStates(); from++) {
+  rg->ResizeNodes(S->NumTangible());
+  for (from=0; from < S->NumTangible(); from++) {
     rg->AddNode();
   }
   rg->ResizeEdges(4);
-  for (from=0; from < S->NumStates(); from++) {
-    S->GetState(from, current);
+  for (from=0; from < S->NumTangible(); from++) {
+    S->GetTangible(from, current);
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
       error = true;
@@ -65,7 +65,7 @@ bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
       // t is enabled, fire and get new state
 
       // set reached = current
-      S->GetState(from, reached);
+      S->GetTangible(from, reached);
       // do the firing
       t->getNextstate()->NextState(current, reached, x); 
       if (!x.isNormal()) {
@@ -77,12 +77,12 @@ bool GenerateRG(state_model *dsm, REACHSET *S, digraph* rg)
       }
 
       // Which state is reached?
-      int to = S->FindState(reached);
+      int to = S->FindTangible(reached);
       if (to<0) {
         Internal.Start(__FILE__, __LINE__, dsm->Filename(), dsm->Linenumber());
         Internal << "Couldn't find reachable state ";
         dsm->ShowState(Internal, reached);
-        Internal << " in reachability set\n";
+        Internal << " in tangible reachability set\n";
         Internal.Stop();
       }
 
@@ -224,15 +224,15 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
     }
   } 
   
-  // ok, build the ctmc
+  // ok, build the ctmc (assumes tangible only; fix soon!)
   int from; 
-  mc->ResizeNodes(S->NumStates());
-  for (from=0; from < S->NumStates(); from++) {
+  mc->ResizeNodes(S->NumTangible());
+  for (from=0; from < S->NumTangible(); from++) {
     mc->AddNode();
   }
   mc->ResizeEdges(4);
-  for (from=0; from < S->NumStates(); from++) {
-    S->GetState(from, current);
+  for (from=0; from < S->NumTangible(); from++) {
+    S->GetTangible(from, current);
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
       error = true;
@@ -248,7 +248,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
       // t is enabled, fire and get new state
 
       // set reached = current
-      S->GetState(from, reached);
+      S->GetTangible(from, reached);
       // do the firing
       t->getNextstate()->NextState(current, reached, x); 
       if (!x.isNormal()) {
@@ -260,12 +260,12 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
       }
 
       // Which state is reached?
-      int to = S->FindState(reached);
+      int to = S->FindTangible(reached);
       if (to<0) {
         Internal.Start(__FILE__, __LINE__, dsm->Filename(), dsm->Linenumber());
         Internal << "Couldn't find reachable state ";
         dsm->ShowState(Internal, reached);
-        Internal << " in reachability set\n";
+        Internal << " in tangible reachability set\n";
         Internal.Stop();
       }
 

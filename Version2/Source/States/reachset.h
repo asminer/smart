@@ -19,6 +19,10 @@
 
     The possible storage options for a reachability set are listed
     in the enumerated type "reachset_type", below.
+
+    Note: a single reachability set should include both a tangible
+    and vanishing portion.  The vanishing portion will be empty if
+    all events are timed, or if the elimination option is used.
 */
 
 /// Possible storage options for compressed reachability set.
@@ -76,10 +80,17 @@ public:
     return evmdd;
   }
 
-  inline int Size() const { 
+  inline int NumTangible() const { 
     switch (encoding) {
       case RT_Enumerated:	return size; 
-      case RT_Explicit: 	return flat->NumStates();
+      case RT_Explicit: 	return flat->NumTangible();
+      default: 			return 0;
+    }
+  }
+  inline int NumVanishing() const { 
+    switch (encoding) {
+      case RT_Enumerated:	return 0; 
+      case RT_Explicit: 	return flat->NumVanishing();
       default: 			return 0;
     }
   }

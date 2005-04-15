@@ -180,24 +180,42 @@ bool Explore_Indexed(state_model *dsm, state_array *states, SSTYPE* tree)
   return !error; 
 }
 
-void CompressAndAffix(state_model* dsm, state_array* states, binary_tree* tree)
+void CompressAndAffix(state_model* dsm, 
+			state_array* tst, binary_tree* ttr,
+			state_array* vst, binary_tree* vtr)
 {
   DCASSERT(dsm);
   DCASSERT(NULL==dsm->statespace);
   dsm->statespace = new reachset;
-  if (NULL==states || 0==states->NumStates()) {
+  if (NULL==tst || 0==tst->NumStates()) {
     // Error during generation, reflect that fact
     dsm->statespace->CreateError();
-    delete states;
-  } else {
-    // AOK, compress and trash the tree!
-    int* order = new int[states->NumStates()];
-    tree->FillOrderList(order);
-    flatss* ss = new flatss(states, order);
-    dsm->statespace = new reachset;
-    dsm->statespace->CreateExplicit(ss);
+    delete tst;
+    delete ttr;
+    delete vst;
+    delete vtr;
+    return;
+  } 
+  // Compress tangibles, trash tree
+  int* torder = new int[tst->NumStates()];
+  ttr->FillOrderList(torder);
+  delete ttr;
+
+  // Do the same for vanishing, if we have any
+  if (vst && 0==vst->NumStates()) {
+    delete vst;
+    vst = NULL;
   }
-  delete tree;
+  int* vorder = NULL;
+  if (vst) {
+    vorder = new int[vst->NumStates()];
+    vtr->FillOrderList(vorder);
+  }
+  delete vtr;
+
+  // attach everything
+  flatss* ss = new flatss(tst, torder, vst, vorder);
+  dsm->statespace->CreateExplicit(ss);
 }
 
 void DebugReachset(state_model *dsm)
@@ -213,7 +231,7 @@ void DebugReachset(state_model *dsm)
     delete states;
     states = NULL;
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
 }
 
 void SplayReachset(state_model *dsm)
@@ -235,7 +253,7 @@ void SplayReachset(state_model *dsm)
     delete states;
     states = NULL;
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
 }
 
 void RedBlackReachset(state_model *dsm)
@@ -257,7 +275,7 @@ void RedBlackReachset(state_model *dsm)
     delete states;
     states = NULL;
   }
-  CompressAndAffix(dsm, states, tree);
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
 }
 
 // *******************************************************************

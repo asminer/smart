@@ -1018,32 +1018,39 @@ void state_array::Clear()
 // ||                                                              ||
 // ==================================================================
 
-flatss::flatss(state_array *sa, int *o)
+flatss::flatss(state_array *ta, int *to, state_array *va, int *vo)
 {
   ALLOC("flatss", sizeof(flatss));
-  states = sa;
-  DCASSERT(states);
-  DCASSERT(states->UsesIndexHandles());
-  order = o;
+  t_states = ta;
+  t_order = to;
+  v_states = va;
+  v_order = vo;
+#ifdef DEVELOPMENT_CODE
+  DCASSERT(t_states);
+  DCASSERT(t_states->UsesIndexHandles());
+  if (v_states)
+    DCASSERT(v_states->UsesIndexHandles());
+#endif
 }
 
 flatss::~flatss()
 {
   FREE("flatss", sizeof(flatss));
-  // not sure about this
-  delete states;
-  delete[] order;
+  delete t_states;
+  delete[] t_order;
+  delete v_states;
+  delete[] v_order;
 }
 
-int flatss::binsearch(int h)
+int flatss::binsearch(state_array* s, int* ord, int h)
 {
   int low = 0;
-  int high = states->NumStates()-1;  
+  int high = s->NumStates()-1;  
   // note: there is one extra state, the one we are looking for
   while (low<high) {
     int mid = (low+high)/2;
-    int cmp = states->Compare(order[mid], h);
-    if (0==cmp) return order[mid];
+    int cmp = s->Compare(ord[mid], h);
+    if (0==cmp) return ord[mid];
     if (cmp<0) low = mid+1;
     else high = mid;
   }

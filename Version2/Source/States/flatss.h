@@ -233,40 +233,67 @@ public:
 
 /** Final structure for flat reachability sets.
 
+    We store both tangible and vanishing here.
+    Vanishing will usually be empty, unless we are performing
+    some type of analysis that requires them (e.g., embedded dtmc
+    for impulse rewards, etc.)
+
     All we need is the state array itself, to "get" states,
     and an ordering array, to "find" states.
     
     We assume that states are "indexed" in the state array,
     e.g., the third state has handle 3.
+
 */
 class flatss {
-  /// States are stored here in discovery order.
-  state_array *states;
-  /// Order of states according to state_array::Compare.
-  int* order;
+  /// Tangible states are stored here in discovery order.
+  state_array *t_states;
+  /// Order of tangible states according to state_array::Compare.
+  int* t_order;
+
+  /// Vanishing states
+  state_array *v_states;
+  /// Order of vanishing states
+  int* v_order;
+
 public:
-  flatss(state_array *sa, int *o);
+  flatss(state_array *ts, int *to, state_array *vs, int *vo);
   ~flatss();
 
-  inline int NumStates() const {
-    DCASSERT(states);
-    return states->NumStates();
+  inline int NumTangible() const {
+    DCASSERT(t_states);
+    return t_states->NumStates();
   }
 
-  inline bool GetState(int h, state &s) { 
-    DCASSERT(states);
-    return states->GetState(h, s);
+  inline int NumVanishing() const {
+    return (v_states) ? v_states->NumStates() : 0;
   }
 
-  inline int FindState(const state &s) {
-    DCASSERT(states);
-    int a = binsearch(states->AddState(s));
-    states->PopLast();
+  inline bool GetTangible(int h, state &s) { 
+    DCASSERT(t_states);
+    return t_states->GetState(h, s);
+  }
+
+  inline bool GetVanishing(int h, state &s) { 
+    return (v_states) ? v_states->GetState(h, s) : false;
+  }
+
+  inline int FindTangible(const state &s) {
+    DCASSERT(t_states);
+    int a = binsearch(t_states, t_order, t_states->AddState(s));
+    t_states->PopLast();
+    return a;
+  }
+
+  inline int FindVanishing(const state &s) {
+    if (NULL==v_states) return -1;
+    int a = binsearch(v_states, v_order, v_states->AddState(s));
+    v_states->PopLast();
     return a;
   }
 
 protected:
-  int binsearch(int h);
+  int binsearch(state_array *s, int* ord, int h);
 };
 
 

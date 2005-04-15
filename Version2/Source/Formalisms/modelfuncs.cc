@@ -193,7 +193,7 @@ void compute_num_states(expr **pp, int np, result &x)
     return;
   }
   
-  x.ivalue = ss->Size();
+  x.ivalue = ss->NumTangible() + ss->NumVanishing();
 
   // should we show the state space?
   result show;
@@ -204,6 +204,7 @@ void compute_num_states(expr **pp, int np, result &x)
   // We must display the state space...
   int i;
   state s;
+  flatss *ess;
   switch (ss->Storage()) {
     case RT_Enumerated:
 	AllocState(s, 1);
@@ -218,13 +219,28 @@ void compute_num_states(expr **pp, int np, result &x)
     return;
    
     case RT_Explicit:
-	DCASSERT(ss->Explicit());
+        ess = ss->Explicit();
+	DCASSERT(ess);
 	// This may change in the future...
 	DCASSERT(dsm->UsesConstantStateSize());		
 	AllocState(s, dsm->GetConstantStateSize());
-	for (i=0; i<x.ivalue; i++) {
-	  DCASSERT(ss->Explicit()->GetState(i, s));
-	  Output << "State " << i << ": ";
+	if (ess->NumVanishing()) Output << "Tangible states:\n";
+	for (i=0; i<ess->NumTangible(); i++) {
+	  bool ok = ess->GetTangible(i, s);
+	  DCASSERT(ok);
+	  if (ess->NumVanishing())
+	    Output << "Tangible state " << i << ": ";
+	  else
+	    Output << "State " << i << ": ";
+	  dsm->ShowState(Output, s);
+	  Output << "\n";
+	  Output.flush();
+	} // for i	
+	if (ess->NumVanishing()) Output << "Vanishing states:\n";
+	for (i=0; i<ess->NumVanishing(); i++) {
+	  bool ok = ess->GetVanishing(i, s);
+	  DCASSERT(ok);
+	  Output << "Vanishing state " << i << ": ";
 	  dsm->ShowState(Output, s);
 	  Output << "\n";
 	  Output.flush();

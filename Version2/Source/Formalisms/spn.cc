@@ -1429,7 +1429,11 @@ void spn_model::FinalizeModel(result &x)
   	Internal.Stop();
     }
   } // for a
-  if (n_list.Length() && n_list.Length() < translist->Length()) {
+  if (0==translist->Length()) {
+    Warning.Start();
+    Warning << "SPN " << Name() << " has no transitions\n";
+    Warning.Stop();
+  } else if (n_list.Length() && n_list.Length() < translist->Length()) {
     Warning.Start();
     Warning << "SPN " << Name() << " has no firing distributions for transitions:\n";
     for (int p=0; p<n_list.Length(); p++) {

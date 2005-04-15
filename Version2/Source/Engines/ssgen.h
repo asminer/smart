@@ -18,8 +18,16 @@ extern option_const splay_ss;
 /** Useful helper function.
     Compress and attach the reachability set to the state model.
     If an error occurred, use states = NULL.
+
+    @param	dsm	Parent model
+    @param	tst	Tangible states.  Use NULL if an error occurred.
+    @param	ttr	Tangible tree (e.g., splay tree)
+    @param	vst	Vanishing states.  NULL means none.
+    @param	vtr	Vanishing tree
 */
-void CompressAndAffix(state_model* dsm, state_array* states, binary_tree* tree);
+void CompressAndAffix(state_model* dsm, 
+			state_array* tst, binary_tree* ttr,
+			state_array* vst, binary_tree* vtr);
 
 /** 	Build the reachability set for a state model.
 
