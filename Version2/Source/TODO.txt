@@ -4,17 +4,17 @@
 
 Things to do:
 
-* Notion of immediate events
-	(use a shared "const0" expression...)
+* MC generation algorithm to eliminate vanishing "on the fly"
 
-* Write state generation algorithms that eliminate vanishing "on the fly"
-	Use a second state array to hold vanishing states,
-	clear them once all vanishing from a tangible have been explored
+  + Check ss option for vanishing
 
-  + CTMC: do it properly (solve DTMC)
+  + store v-v, v-t graphs separately?
 
-  + cache option: save the vanishing states and their results
-    in case we see them again during search?
+  + get #visits to each vanishing, multiply by v-t
+
+* SS + MC generation algorithm to eliminate vanishing "on the fly"
+
+* Add "Embedded DTMC" generation algorithm?
 
 * phase types as models (see notes)
 

@@ -6,6 +6,8 @@
 #include "../States/reachset.h"
 #include "../Base/timers.h"
 
+#define DEBUG_IMMED
+
 option* MarkovStorage;
 
 const int num_mc_options = 2;
@@ -206,23 +208,55 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* mc)
   
   result x;
   x.Clear();
-  // compute the constant rates once before starting; use -1 if not const.
+  // compute the constant rates/weights a priori; use -1 if not const.
   float* rates = NULL;
   if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
   for (e=0; e<dsm->NumEvents(); e++) {
     event* t = dsm->GetEvent(e);
-    if (EXPO==t->DistroType()) {
-      SafeCompute(t->Distribution(), 0, x);
-      if (IllegalRateCheck(x, dsm, t)) {
-        // bail out
-	delete[] rates;
-	return false;
-      }
-      rates[e] = x.rvalue;
-    } else {
-      rates[e] = -1.0;
-    }
-  } 
+    // get rate or weight as appropriate
+    switch (t->FireType()) {
+      case E_Timed:
+    	if (EXPO==t->DistroType()) {
+#ifdef DEBUG_IMMED
+	  Output << "Pre-computing rate for event " << t << "\n";
+	  Output.flush();
+#endif
+      	  SafeCompute(t->Distribution(), 0, x);
+      	  if (IllegalRateCheck(x, dsm, t)) {
+       	    // bail out
+	    delete[] rates;
+	    return false;
+      	  }
+      	  rates[e] = x.rvalue;
+    	} else {
+      	  rates[e] = -1.0;
+    	}
+	break;
+
+      case E_Immediate:
+    	if (REAL==t->WeightType()) {
+#ifdef DEBUG_IMMED
+	  Output << "Pre-computing weight for event " << t << "\n";
+	  Output.flush();
+#endif
+      	  SafeCompute(t->Weight(), 0, x);
+	  if (x.isNormal())
+	    rates[e] = x.rvalue;
+          else
+	    rates[e] = -1;  // signal to compute again later.
+	  // Note: if this event is always enabled by itself,
+	  // the weight is irrelevant.
+    	} else {
+      	  rates[e] = -1.0;
+    	}
+	break;
+
+      default:
+	Internal.Start(__FILE__, __LINE__);
+        Internal << "Bad event type in MC generation";
+        Internal.Stop();
+    } // switch
+  } // for e
   
   // ok, build the ctmc (assumes tangible only; fix soon!)
   int from; 
