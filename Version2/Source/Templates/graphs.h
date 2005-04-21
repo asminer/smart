@@ -92,6 +92,13 @@ public:
   /// Destructor
   ~digraph();
 
+  /// Clear graph but keep memory
+  void Clear() {
+    DCASSERT(isDynamic);
+    num_nodes = 0;
+    num_edges = 0;
+  }
+
   /// For allocating nodes and edges
   void ResizeNodes(int new_nodes);
   void ResizeEdges(int new_edges);

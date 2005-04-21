@@ -1,6 +1,9 @@
 
 // $Id$
 
+Currently:
+	
+	Right in the middle of mc generation with immediate
 
 Things to do:
 

@@ -98,6 +98,9 @@ class event : public symbol {
   /// misc integer data, e.g., for enabling
   int misc;
 public:
+  /// Used by analysis engines; e.g., firing time for simulation
+  double value;
+public:
   event(const char* fn, int line, type t, char* n);
   virtual ~event();
 
