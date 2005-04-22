@@ -15,4 +15,10 @@ Things to do:
 
 * phase types as models (see notes)
 
+* Fix weights and distributions; will need both for discrete case.
 
+* So, we need to detect if a distribution is always zero.
+
+* Weight classes
+
+* Consider changing "spn" to "pn".
