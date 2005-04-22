@@ -3,17 +3,11 @@
 
 Currently:
 	
-	Right in the middle of mc generation with immediate
+	Debugging for mc generation
 
 Things to do:
 
 * MC generation algorithm to eliminate vanishing "on the fly"
-
-  + Check ss option for vanishing
-
-  + store v-v, v-t graphs separately?
-
-  + get #visits to each vanishing, multiply by v-t
 
 * SS + MC generation algorithm to eliminate vanishing "on the fly"
 

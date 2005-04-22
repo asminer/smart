@@ -373,8 +373,10 @@ void FwdArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
 {
   DCASSERT(g->isTransposed == false);
   
-  // For each state
+  int largest = 2*g->NumNodes();
+  // For each state that we care about
   for (int i=0; i<g->NumNodes(); i++) {
+    if (sccmap[i] > largest) continue;
     // Get the class for this state
     int c = sccmap[i] - g->NumNodes();
     // If the class is still thought to be terminal
@@ -515,8 +517,11 @@ int 	ComputeTSCCs(const digraph *g, int* sccmap)
     visit_stack[i] = termcount;
   }
   // next, renumber the scc mapping array.
-  for (i=0; i<g->NumNodes(); i++) 
-	sccmap[i] = visit_stack[sccmap[i]-g->NumNodes()];
+  int largest = 2*g->NumNodes();
+  for (i=0; i<g->NumNodes(); i++) {
+    if (sccmap[i] > largest) continue;
+    sccmap[i] = visit_stack[sccmap[i]-g->NumNodes()];
+  }
 
   // done!
   delete[] visit_stack;

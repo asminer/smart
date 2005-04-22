@@ -7,6 +7,8 @@
 #include "../States/trees.h"
 #include "../Base/timers.h"
 #include "../Templates/listarray.h"
+#include "linear.h"
+#include "sccs.h"
 
 #define DEBUG_IMMED
 
@@ -21,6 +23,12 @@ struct pair {
   int index;
   float weight;
 };
+
+OutputStream& operator<< (OutputStream &s, const pair& p)
+{
+  s << p.index << " : " << p.weight;
+  return s;
+}
 
 // *******************************************************************
 // *                                                                 *
@@ -297,6 +305,11 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
   int v_exp = 0;
   int t_exp = 0;
 
+  int v_alloc = 0;
+  float* h = NULL;
+  double* n = NULL;
+  int* sccmap = NULL;
+
   // allocate the Rtt arcs...
   Rtt->ResizeNodes(S->NumTangible());
   for (t_exp=0; t_exp < S->NumTangible(); t_exp++) {
@@ -306,26 +319,125 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 
   bool current_is_vanishing = false;
 
+  t_exp = 0;
+  int t_row = -1;
   // New tangible + vanishing explore loop!
   while (!error) {
-
     // Get next state to explore, with priority to vanishings.
     if (v_exp < vst.NumStates()) {
       // explore next vanishing
       vst.GetState(v_exp, current);
       current_is_vanishing = true;
     } else {
-      // No unexplored vanishing; safe to trash them, if desired
+      // No unexplored vanishing; 
+      // Eliminate vanishing states and collapse all vanishing arcs
       if (current_is_vanishing) {
+        DCASSERT(v_exp == Pvv.NumNodes());
+	DCASSERT(t_row>=0);
+	// Enlarge solution vectors as necessary
+ 	if (v_alloc < v_exp) {
+	  v_alloc = v_exp;
+	  sccmap = (int*) realloc (sccmap, v_alloc * sizeof(int));
+	  if (NULL==sccmap) OutOfMemoryError("Vector resize");
+	  h = (float*) realloc(h, v_alloc * sizeof(float));
+          if (NULL==h) OutOfMemoryError("Vector resize");
+	  n = (double*) realloc(n, v_alloc * sizeof(double));
+	  if (NULL==n) OutOfMemoryError("Vector resize");
+        }	
+	// "Partial" conversion to Static, but keep memory for later
+	Pvv.Transpose();
+	Pvv.CircularToTerminated();
+	Pvv.Defragment(0);
+	Pvv.isDynamic = false;  // slight hack ;^)
 #ifdef DEBUG_IMMED
-	Output << "Eliminating " << vst.NumStates() << " vanishing states\n";
+	Output << "\nEliminating " << vst.NumStates() << " vanishing states\n";
+	Output << "\tArcs from tangible #" << t_row << " to vanishing:\n\t\t[";
+	for (int nzp=0; nzp<Rtv.nonzeroes; nzp++) {
+	  if (nzp) Output << ", ";
+	  Output << Rtv.index[nzp] << " : " << Rtv.value[nzp];
+	}
+	Output << "]\n";
+	Output.flush();
+	Output << "\tArcs from vanishing to vanishing:\n";
+  	for (int vp=0; vp<Pvv.NumNodes(); vp++) {
+  	  Pvv.ShowNodeList(Output, vp);
+	  Output.flush();
+        }
+	Output << "\tArcs from vanishing to tangible:\n";
+	for (int vp=0; vp<Pvv.NumNodes(); vp++) {
+	  Pvt.ShowNodeList(Output, vp);
+	  Output.flush();
+  	}
+	Output << "Checking for inescapable vanishing loops\n";
+	Output.flush();
 #endif
+	// Compute the terminal SCCs, but ignore any vanishing
+	// states with arcs to tangibles; if there is still
+	// a terminal SCC, it is a vanishing loop with no escape.
+	for (int vp=0; vp<v_exp; vp++) {
+	  sccmap[vp] = (Pvt.list_pointer[vp]<0) ? 0 : 2*v_exp+1;
+        }
+	int num_tsccs = ComputeTSCCs(&Pvv, sccmap);
+#ifdef DEBUG_IMMED
+	Output << "There are " << num_tsccs << " tsccs\n";
+	Output << "TSCC map is: [";
+	Output.PutArray(sccmap, v_exp);
+	Output << "]\n";
+	Output.flush();
+#endif
+	if (num_tsccs>0) {
+          Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
+          Error << "Inescapable loop of vanishing states";
+          Error.Stop();
+          error = true;
+	  break;
+	}
+	// Ok, compute vector n = Rtv * (I + Pvv + Pvv^2 + ...) 
+	for (int i=0; i<v_exp; i++) {
+	  h[i] = 1.0; // FIX LATER: ASSUMING h = 1
+	  n[i] = 0.0;
+        }
+	MTTASolve(n, &Pvv, h, &Rtv, 0, v_exp);
+#ifdef DEBUG_IMMED
+	Output << "Computed n: [";
+	Output.PutArray(n, v_exp);
+	Output << "]\nGenerating new TT entries from tangible# "<<t_row<<"\n";
+	Output.flush();
+#endif
+	// n * Pvt should give the new T-T entries
+        DCASSERT(Pvt.IsDynamic());
+	for (int i=0; i<Pvt.num_lists; i++) {
+          CHECK_RANGE(0, i, v_exp);
+          int ptr = Pvt.list_pointer[i];
+          while (ptr>=0) {
+	    if (t_row != Pvt.value[ptr].index) { // Don't add self loops
+#ifdef DEBUG_IMMED
+	      Output << "\tto tangible# " << Pvt.value[ptr].index;
+	      Output << " rate " << n[i] * Pvt.value[ptr].weight << "\n";
+	      Output.flush();
+#endif
+              Rtt->AddEdgeInOrder(t_row, Pvt.value[ptr].index,
+				  Pvt.value[ptr].weight * n[i]);
+            } // if not self-loop
+	    ptr = Pvt.next[ptr];
+	    if (ptr==Pvt.list_pointer[i]) break;
+          } // while ptr
+	} // for i
+        
+
 	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// Collapse t-v, v-v, v-t arcs into t-t arcs
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	Pvv.isDynamic = true;  // part 2 of above hack ;^)
+        Pvv.Clear();
+  	Pvt.Clear();
+  	Rtv.Clear();
 	vst.Clear();
 	vtr.Clear();
 	v_exp = 0;
+	t_row = -1;
+
+	// Done removing vanishing states and arcs
       }
       current_is_vanishing = false;
       // find next tangible to explore; if none, break out
@@ -334,7 +446,21 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
       } else {
 	break;
       }
+    } // if (v_exp < vst.NumStates()) 
+
+#ifdef DEBUG_IMMED
+    if (current_is_vanishing) {
+        Output << "\nExploring vanishing state#";
+        Output.Put(v_exp, 5);
+    } else {
+        Output << "\nExploring tangible state#";
+        Output.Put(t_exp, 5);
     }
+    Output << " : ";
+    dsm->ShowState(Output, current);
+    Output << "\n";
+    Output.flush();
+#endif
     
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
@@ -385,13 +511,16 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
       int tindex = -1;
       if (next_is_vanishing) {
 	vindex = vtr.AddState(reached);
-	if (vindex == Pvv.NumNodes())	Pvv.AddNode();
+	if (vindex == Pvv.NumNodes()) {
+	  // new vanishing state to deal with (eventually)
+	  Pvv.AddNode();
 #ifdef DEVELOPMENT_CODE
-	int foo = Pvt.NewList();
-	DCASSERT(foo==vindex);
+	  int foo = Pvt.NewList();
+	  DCASSERT(foo==vindex);
 #else
-	Pvt.NewList();
+	  Pvt.NewList();
 #endif
+	} // if vindex
       } else {
 	tindex = S->FindTangible(reached);
         if (tindex<0) {
@@ -402,6 +531,17 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
           Internal.Stop();
         }
       }
+
+#ifdef DEBUG_IMMED
+    Output << "\t" << t << " --> ";
+    dsm->ShowState(Output, reached);
+    if (next_is_vanishing) {
+	Output << " (vanishing)\n";
+    } else {
+	Output << " (tangible)\n";
+    }
+    Output.flush();
+#endif
 
       // We have the from state index, to state index;
       // get the rate / weight and add the arc
@@ -439,6 +579,8 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  value = t->value;
 	}
 	if (next_is_vanishing) {
+	  DCASSERT(t_row<0 || t_row == t_exp);
+	  t_row = t_exp;
 	  Rtv.SortedAppend(vindex, value);
 	} else {
           Rtt->AddEdgeInOrder(t_exp, tindex, value);
@@ -447,12 +589,54 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 
     } // for e
 
+    if (current_is_vanishing) {
+      // 
+      // Get sum of this row
+      //
+      double wtotal = 0.0;
+      DCASSERT(Pvv.IsDynamic());
+      CHECK_RANGE(0, v_exp, Pvv.num_nodes);
+      int ptr = Pvv.row_pointer[v_exp];
+      while (ptr>=0) {
+	wtotal += Pvv.value[ptr];
+	ptr = Pvv.next[ptr];
+	if (ptr==Pvv.row_pointer[v_exp]) break;
+      } // while ptr
+      DCASSERT(Pvt.IsDynamic());
+      CHECK_RANGE(0, v_exp, Pvt.num_lists);
+      ptr = Pvt.list_pointer[v_exp];
+      while (ptr>=0) {
+	wtotal += Pvt.value[ptr].weight;
+	ptr = Pvt.next[ptr];
+	if (ptr==Pvt.list_pointer[v_exp]) break;
+      } // while ptr
+      //
+      // Now, normalize the row
+      //
+      DCASSERT(wtotal>0);
+      ptr = Pvv.row_pointer[v_exp];
+      while (ptr>=0) {
+	Pvv.value[ptr] /= wtotal;
+	ptr = Pvv.next[ptr];
+	if (ptr==Pvv.row_pointer[v_exp]) break;
+      } // while ptr
+      ptr = Pvt.list_pointer[v_exp];
+      while (ptr>=0) {
+	Pvt.value[ptr].weight /= wtotal;
+	ptr = Pvt.next[ptr];
+	if (ptr==Pvt.list_pointer[v_exp]) break;
+      } // while ptr
+    }
+
     // advance appropriate ptr
     if (current_is_vanishing) v_exp++; else t_exp++;
   } // while !error
 
 
   // cleanup
+  free(sccmap);
+  free(h);
+  free(n);
   FreeState(reached);
   FreeState(current);
   return !error; 

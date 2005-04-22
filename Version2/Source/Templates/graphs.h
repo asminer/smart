@@ -97,6 +97,7 @@ public:
     DCASSERT(isDynamic);
     num_nodes = 0;
     num_edges = 0;
+    isTransposed = false;
   }
 
   /// For allocating nodes and edges
@@ -457,6 +458,7 @@ inline void VectorRowmatrixMultiply(
 			int stop)
 {
   DCASSERT(!M->isTransposed);
+  DCASSERT(M->IsStatic());
   int *rp = M->row_pointer + start;
   int *rpstop = M->row_pointer + stop;
   int *ci = M->column_index + rp[0];
@@ -494,6 +496,7 @@ inline void VectorColmatrixMultiply(
 			int stop)
 {
   DCASSERT(M->isTransposed);
+  DCASSERT(M->IsStatic());
   int *rp = M->row_pointer + start;
   int *rpstop = M->row_pointer + stop;
   int *ci = M->column_index + rp[0];

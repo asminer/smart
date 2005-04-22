@@ -83,6 +83,11 @@ public:
   /// Destructor
   ~listarray_base();
 
+  /// Reset but keep memory
+  inline void Clear() {
+    num_lists = num_items = 0;
+  }
+
   void ResizeLists(int new_nodes);
 
   inline bool IsStatic() const { return !isDynamic; }
