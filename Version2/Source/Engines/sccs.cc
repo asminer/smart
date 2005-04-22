@@ -379,6 +379,7 @@ void FwdArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
     if (sccmap[i] > largest) continue;
     // Get the class for this state
     int c = sccmap[i] - g->NumNodes();
+    CHECK_RANGE(0, c, g->NumNodes());
     // If the class is still thought to be terminal
     if (isterm[c]) {
       // check all outgoing arcs from this state
@@ -429,7 +430,7 @@ void FwdArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
 void BackArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
 {
   DCASSERT(g->isTransposed);
-  
+  int largest = 2*g->NumNodes();
   // For each state
   for (int j=0; j<g->NumNodes(); j++) {
     // check all incoming arcs to this state
@@ -439,9 +440,10 @@ void BackArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
       if (edge>=0) do {
         int i = g->column_index[edge];
 	// there is an arc from i to j
-	if (sccmap[j] != sccmap[i]) {
+        if ((sccmap[i] <= largest) && (sccmap[j] != sccmap[i])) {
 	  // arc to another class, node i cannot be in a terminal scc
           int c = sccmap[i] - g->NumNodes();
+	  CHECK_RANGE(0, c, g->NumNodes());
 	  isterm[c] = 0;
 #ifdef DEBUG_SCCS
 	  Output << "SCC " << c << " is not terminal, due to arc from ";
@@ -458,9 +460,11 @@ void BackArcsFindTerminal(const digraph *g, int* sccmap, int* isterm)
       for (; edge<scc_graph->row_pointer[j+1]; edge++) {
         int i = scc_graph->column_index[edge];
 	// there is an arc from i to j
+        if (sccmap[i] > largest) continue;  // ignore this one  
 	if (sccmap[j] != sccmap[i]) {
 	  // arc to another class, node i cannot be in a terminal scc
           int c = sccmap[i] - g->NumNodes();
+	  CHECK_RANGE(0, c, g->NumNodes());
 	  isterm[c] = 0;
 #ifdef DEBUG_SCCS
           Output << "SCC " << c << " is not terminal, due to arc from ";
@@ -479,6 +483,7 @@ int 	ComputeTSCCs(const digraph *g, int* sccmap)
 #ifdef DEBUG_SCCS
   Output << "Computing terminal strongly connected components\n";
 #endif
+  DCASSERT(g->NumNodes()>0);
   scc_graph = g;
   visit_stack = new int[g->NumNodes()];
   visit_id = 0;
@@ -501,6 +506,7 @@ int 	ComputeTSCCs(const digraph *g, int* sccmap)
   // one, then it is not terminal.
   // We'll store the results in the stack array.
 
+  CHECK_RANGE(0, scc_count, 2*g->NumNodes());
   for (i=0; i<int(scc_count); i++) visit_stack[i] = 1;
 
   if (g->isTransposed) {
@@ -520,6 +526,7 @@ int 	ComputeTSCCs(const digraph *g, int* sccmap)
   int largest = 2*g->NumNodes();
   for (i=0; i<g->NumNodes(); i++) {
     if (sccmap[i] > largest) continue;
+    CHECK_RANGE(0, sccmap[i] - g->NumNodes(), scc_count);
     sccmap[i] = visit_stack[sccmap[i]-g->NumNodes()];
   }
 
