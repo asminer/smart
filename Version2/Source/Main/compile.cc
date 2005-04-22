@@ -1151,6 +1151,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     return NULL;
   }
   expr* ans = MakeTypecast(ret, t, filename, lexer.lineno());
+  if (ERROR==ans) return NULL;
 
   if (WithinConverge()) {
     // Idents within a converge
