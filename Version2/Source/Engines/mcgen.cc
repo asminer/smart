@@ -377,7 +377,6 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	for (int vp=0; vp<v_exp; vp++) {
 	  sccmap[vp] = (Pvt.list_pointer[vp]<0) ? 0 : 2*v_exp+1;
         }
-	// int num_tsccs = 0; 
 	int num_tsccs = ComputeTSCCs(&Pvv, sccmap);
 #ifdef DEBUG_IMMED
 	Output << "There are " << num_tsccs << " tsccs\n";

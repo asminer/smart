@@ -68,7 +68,7 @@ const char* ModelNames[] = {
   "Markov chain",
   "dtmc",
   "ctmc",
-  "spn"
+  "pn"
 };
 
 const char* VoidNames[] = {

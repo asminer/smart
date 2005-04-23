@@ -1,9 +1,6 @@
 
 // $Id$
 
-Currently:
-	
-	Debugging for mc generation
 
 Things to do:
 
@@ -21,4 +18,3 @@ Things to do:
 
 * Weight classes
 
-* Consider changing "spn" to "pn".

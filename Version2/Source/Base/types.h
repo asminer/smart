@@ -77,10 +77,10 @@ const type  	ANYMODEL 	= 32;
 const type	MARKOV		= 33;  // matches both DTMC and CTMC
 const type 	DTMC 		= 34;
 const type 	CTMC 		= 35;
-const type 	SPN 		= 36;
+const type 	PN 		= 36;
 
 const type	FIRST_MODEL	= ANYMODEL;
-const type	LAST_MODEL	= SPN;
+const type	LAST_MODEL	= PN;
 
 // void types (used by models)
 

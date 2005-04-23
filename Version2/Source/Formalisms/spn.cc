@@ -13,7 +13,7 @@
 
 #include "dsm.h"
 
-//#define DEBUG_SPN
+//#define DEBUG_PN
 #define DEBUG_PRIO
 
 // options!
@@ -977,7 +977,7 @@ public:
 
 spn_dsm::spn_dsm(const char* fn, int line, char* name, event** ed, int ne,
 	model_var** p, int np, sparse_vector <int> *init) 
- : state_model(fn, line, SPN, name, ed, ne)
+ : state_model(fn, line, PN, name, ed, ne)
 {
   places = p;
   num_places = np;
@@ -1176,7 +1176,7 @@ void spn_model::AddInput(model_var* pl, model_var* tr, expr* card,
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on arc\n";
     Error << "\tfrom " << pl << " to " << t;
-    Error << " in SPN " << Name();
+    Error << " in PN " << Name();
     Error.Stop();
     return; 
   }
@@ -1187,7 +1187,7 @@ void spn_model::AddInput(model_var* pl, model_var* tr, expr* card,
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate arc\n";
   Warning << "\tfrom " << pl << " to " << t;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1219,7 +1219,7 @@ void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card,
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on arc\n";
     Error << "\tfrom " << t << " to " << pl;
-    Error << " in SPN " << Name();
+    Error << " in PN " << Name();
     Error.Stop();
     return; 
   }
@@ -1230,7 +1230,7 @@ void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card,
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate arc\n";
   Warning << "\tfrom " << t << " to " << pl;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1262,7 +1262,7 @@ void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card,
     Error.Start(card->Filename(), card->Linenumber());
     Error << "bad cardinality on inhibitor arc\n";
     Error << "\tfrom " << pl << " to " << t;
-    Error << " in SPN " << Name();
+    Error << " in PN " << Name();
     Error.Stop();
     return; 
   }
@@ -1273,7 +1273,7 @@ void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card,
   Warning.Start(fn, ln);
   Warning << "Summing cardinalities on duplicate inhibitor arc\n";
   Warning << "\tfrom " << pl << " to " << t;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1291,7 +1291,7 @@ void spn_model::AddGuard(model_var* tr, expr* guard)
   }
   Warning.Start(guard->Filename(), guard->Linenumber());
   Warning << "Merging duplicate guard on transition " << t;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop(); 
   expr* merge = MakeBinaryOp(t->Guard(), AND, guard->Substitute(0), NULL, -1);
   t->SetGuard( merge );
@@ -1311,7 +1311,7 @@ void spn_model::AddFiring(model_var* tr, expr* firing)
   }
   Warning.Start(firing->Filename(), firing->Linenumber());
   Warning << "Ignoring duplicate firing for transition " << t;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1329,7 +1329,7 @@ void spn_model::AddWeight(model_var* tr, expr* w)
   }
   Warning.Start(w->Filename(), w->Linenumber());
   Warning << "Ignoring duplicate weight assignment for transition " << t;
-  Warning << " in SPN " << Name();
+  Warning << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1349,7 +1349,7 @@ void spn_model::AddInit(model_var* pl, int tokens, const char* fn, int ln)
   initial->value[z] += tokens;
   Warning.Start(fn, ln);
   Warning << "Summing duplicate initialization for place ";
-  Warning << pl << " in SPN " << Name();
+  Warning << pl << " in PN " << Name();
   Warning.Stop();
 }
 
@@ -1377,11 +1377,11 @@ model_var* spn_model::MakeModelVar(const char *fn, int l, type t, char* n)
 
     default:
 	Internal.Start(__FILE__, __LINE__, fn, l);
-	Internal << "Bad type for SPN model variable: " << GetType(t) << "\n";
+	Internal << "Bad type for PN model variable: " << GetType(t) << "\n";
 	Internal.Stop();
 	return NULL;  // Never get here
   }
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
   Output << "\tModel " << Name() << " created " << GetType(t);
   Output << " " << p << " index " << index << "\n"; 
   Output.flush();
@@ -1404,7 +1404,7 @@ void spn_model::FinalizeModel(result &x)
   // Check that there is an initial marking
   if (0==initial->NumNonzeroes()) {
     Warning.Start();
-    Warning << "Assuming zero initial marking in SPN " << Name();
+    Warning << "Assuming zero initial marking in PN " << Name();
     Warning.Stop();
   }
   // Check firing and such
@@ -1431,11 +1431,11 @@ void spn_model::FinalizeModel(result &x)
   } // for a
   if (0==translist->Length()) {
     Warning.Start();
-    Warning << "SPN " << Name() << " has no transitions\n";
+    Warning << "PN " << Name() << " has no transitions\n";
     Warning.Stop();
   } else if (n_list.Length() && n_list.Length() < translist->Length()) {
     Warning.Start();
-    Warning << "SPN " << Name() << " has no firing distributions for transitions:\n";
+    Warning << "PN " << Name() << " has no firing distributions for transitions:\n";
     for (int p=0; p<n_list.Length(); p++) {
       transition *t = n_list.Item(p);
       Warning << "\t\t" << t << "\n";
@@ -1443,7 +1443,7 @@ void spn_model::FinalizeModel(result &x)
     Warning.Stop();
   } else if (i_list.Length() == translist->Length()) {
     Warning.Start();
-    Warning << "SPN " << Name() << " has only immediate transitions";
+    Warning << "PN " << Name() << " has only immediate transitions";
     Warning.Stop();
   }
   // Give immediate events priority over timed ones
@@ -1453,7 +1453,7 @@ void spn_model::FinalizeModel(result &x)
       it->HasPrioOver(t_list.Item(p));
     } 
   }
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
   int i;
   Output << "Initial marking: [";
   for (i=0; i<initial->NumNonzeroes(); i++) {
@@ -1514,7 +1514,7 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   translist = NULL;
 
   //
-  // Places: specific to SPN state model
+  // Places: specific to PN state model
   //
   int num_places = placelist->Length();
   model_var** plist = placelist->MakeArray();
@@ -1555,15 +1555,15 @@ void compute_spn_init(expr **pp, int np, result &x)
   DCASSERT(pp);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
-#ifdef DEBUG_SPN
-  Output << "Inside init for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside init for pn " << spn << "\n";
 #endif
   x.Clear();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
     Output.flush();
 #endif
@@ -1578,8 +1578,8 @@ void compute_spn_init(expr **pp, int np, result &x)
     if (0==tk.ivalue) continue;  // print a warning...
     spn->AddInit(place, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
   }
-#ifdef DEBUG_SPN
-  Output << "Exiting init for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting init for pn " << spn << "\n";
   Output.flush();
 #endif
   x.setNull();
@@ -1590,7 +1590,7 @@ void Add_spn_init(PtrTable *fns)
   const char* helpdoc = "Assigns the initial marking.  Any places not listed are assumed to be initially empty.";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(SPN, "net");
+  pl[0] = new formal_param(PN, "net");
   type *tl = new type[2];
   tl[0] = PLACE;
   tl[1] = INT;
@@ -1613,8 +1613,8 @@ void compute_spn_arcs(expr **pp, int np, result &x)
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 
-#ifdef DEBUG_SPN
-  Output << "Inside arcs for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside arcs for pn " << spn << "\n";
   Output.flush();
 #endif
 
@@ -1623,7 +1623,7 @@ void compute_spn_arcs(expr **pp, int np, result &x)
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
@@ -1653,15 +1653,15 @@ void compute_spn_arcs(expr **pp, int np, result &x)
       
       default:
         Internal.Start(__FILE__, __LINE__, pp[i]->Filename(), pp[i]->Linenumber());
-	Internal << "Bad parameter for spn function arcs\n";
+	Internal << "Bad parameter for pn function arcs\n";
 	Internal.Stop();
     }
     
     // stuff here
   }
 
-#ifdef DEBUG_SPN
-  Output << "Exiting arcs for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting arcs for pn " << spn << "\n";
   Output.flush();
 #endif
 
@@ -1670,7 +1670,7 @@ void compute_spn_arcs(expr **pp, int np, result &x)
 
 int typecheck_arcs(List <expr> *params)
 {
-  // Note: hidden parameter SPN has NOT been added yet...
+  // Note: hidden parameter PN has NOT been added yet...
   int np = params->Length();
   int i;
   for (i=0; i<np; i++) {
@@ -1723,8 +1723,8 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 
-#ifdef DEBUG_SPN
-  Output << "Inside inhibit for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside inhibit for pn " << spn << "\n";
   Output.flush();
 #endif
 
@@ -1733,7 +1733,7 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
@@ -1755,8 +1755,8 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
     
   }
 
-#ifdef DEBUG_SPN
-  Output << "Exiting inhibit for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting inhibit for pn " << spn << "\n";
   Output.flush();
 #endif
 
@@ -1766,7 +1766,7 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
 
 int typecheck_inhibit(List <expr> *params)
 {
-  // Note: hidden parameter SPN has NOT been added yet...
+  // Note: hidden parameter PN has NOT been added yet...
   int np = params->Length();
   int i;
   for (i=0; i<np; i++) {
@@ -1817,15 +1817,15 @@ void compute_spn_guard(expr **pp, int np, result &x)
   DCASSERT(pp);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
-#ifdef DEBUG_SPN
-  Output << "Inside guard for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside guard for pn " << spn << "\n";
 #endif
   x.Clear();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
@@ -1836,8 +1836,8 @@ void compute_spn_guard(expr **pp, int np, result &x)
     
     spn->AddGuard(tv, pp[i]->GetComponent(1));
   }
-#ifdef DEBUG_SPN
-  Output << "Exiting guard for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting guard for pn " << spn << "\n";
   Output.flush();
 #endif
   x.setNull();
@@ -1848,7 +1848,7 @@ void Add_spn_guard(PtrTable *fns)
   const char* helpdoc = "Assigns guard expressions to transitions.  If the guard evaluates to false then the transition is disabled.";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(SPN, "net");
+  pl[0] = new formal_param(PN, "net");
   type *tl = new type[2];
   tl[0] = TRANS;
   tl[1] = PROC_BOOL;
@@ -1869,15 +1869,15 @@ void compute_spn_firing(expr **pp, int np, result &x)
   DCASSERT(pp);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
-#ifdef DEBUG_SPN
-  Output << "Inside firing for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside firing for pn " << spn << "\n";
 #endif
   x.Clear();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
@@ -1888,8 +1888,8 @@ void compute_spn_firing(expr **pp, int np, result &x)
     
     spn->AddFiring(tv, pp[i]->GetComponent(1));
   }
-#ifdef DEBUG_SPN
-  Output << "Exiting firing for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting firing for pn " << spn << "\n";
   Output.flush();
 #endif
   x.setNull();
@@ -1897,7 +1897,7 @@ void compute_spn_firing(expr **pp, int np, result &x)
 
 int typecheck_firing(List <expr> *params)
 {
-  // Note: hidden parameter SPN has NOT been added yet...
+  // Note: hidden parameter PN has NOT been added yet...
   int np = params->Length();
   int i;
   for (i=0; i<np; i++) {
@@ -1954,15 +1954,15 @@ void compute_spn_weight(expr **pp, int np, result &x)
   DCASSERT(pp);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
-#ifdef DEBUG_SPN
-  Output << "Inside weight for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside weight for pn " << spn << "\n";
 #endif
   x.Clear();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
-#ifdef DEBUG_SPN
+#ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
@@ -1973,8 +1973,8 @@ void compute_spn_weight(expr **pp, int np, result &x)
     
     spn->AddWeight(tv, pp[i]->GetComponent(1));
   }
-#ifdef DEBUG_SPN
-  Output << "Exiting weight for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Exiting weight for pn " << spn << "\n";
   Output.flush();
 #endif
   x.setNull();
@@ -1982,7 +1982,7 @@ void compute_spn_weight(expr **pp, int np, result &x)
 
 int typecheck_weight(List <expr> *params)
 {
-  // Note: hidden parameter SPN has NOT been added yet...
+  // Note: hidden parameter PN has NOT been added yet...
   int np = params->Length();
   int i;
   for (i=0; i<np; i++) {
@@ -2062,7 +2062,7 @@ void Add_spn_tk(PtrTable *fns)
   const char* helpdoc = "Returns the number of tokens in place p";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(SPN, "net");
+  pl[0] = new formal_param(PN, "net");
   pl[1] = new formal_param(PLACE, "p");
   internal_func *p = new internal_func(PROC_INT, "tk", 
 	compute_spn_tk, NULL, pl, 2, helpdoc);  
@@ -2080,11 +2080,11 @@ void compute_spn_prio(expr **pp, int np, result &x)
   DCASSERT(pp);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
-#ifdef DEBUG_SPN
-  Output << "Inside prio for spn " << spn << "\n";
+#ifdef DEBUG_PN
+  Output << "Inside prio for pn " << spn << "\n";
 #else 
 #ifdef DEBUG_PRIO
-  Output << "Inside prio for spn " << spn << "\n";
+  Output << "Inside prio for pn " << spn << "\n";
 #endif
 #endif
   x.Clear();
@@ -2135,7 +2135,7 @@ void Add_prio(PtrTable *fns)
   const char* helpdoc = "Transitions in the set t1 all have priority over transitions in the set t2.";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(SPN, "net");
+  pl[0] = new formal_param(PN, "net");
   type *tl = new type[2];
   tl[0] = SET_TRANS;
   tl[1] = SET_TRANS;
@@ -2183,7 +2183,7 @@ void Add_showlist(PtrTable *fns)
   const char* helpdoc = "Test function; displays a set of transitions.";
 
   formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(SPN, "net");
+  pl[0] = new formal_param(PN, "net");
   pl[1] = new formal_param(SET_TRANS, "T");
   internal_func *p = new internal_func(VOID, "showlist", 
 	compute_showlist, NULL, pl, 2, helpdoc);  

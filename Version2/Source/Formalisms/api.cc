@@ -24,7 +24,7 @@ model* MakeNewModel(const char* fn, int line, type t, char* name, formal_param
     case CTMC:
     	return MakeMarkovChain(t, name, pl, np, fn, line);
 
-    case SPN:
+    case PN:
 	return MakePetriNet(t, name, pl, np, fn, line);
 
   }
@@ -45,7 +45,7 @@ bool CanDeclareType(type modeltype, type vartype)
     case CTMC:
     		return (vartype == STATE);
 
-    case SPN:
+    case PN:
     		return (vartype == PLACE) || (vartype == TRANS);
   }
 
@@ -71,7 +71,7 @@ List <function> *FindModelFunctions(type modeltype, const char* n)
     case CTMC:
     		return FindFunctions(&MCModelFuncs, n);
 	
-    case SPN:
+    case PN:
 		return FindFunctions(&PNModelFuncs, n);
 
     // bail out
@@ -116,7 +116,7 @@ void HelpModelFuncs()
   MCModelFuncs.Traverse(ShowModelDocs);
 
   // Traverse PN formalism
-  EnclosingModel = SPN;
+  EnclosingModel = PN;
   PNModelFuncs.Traverse(ShowModelDocs);
   
   // New formalisms here...
