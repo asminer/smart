@@ -19,6 +19,7 @@
 
 //@{
 
+
 void Delete(state_model *x) 
 {
   Delete((expr*) x);
@@ -33,9 +34,9 @@ void Delete(state_model *x)
 event::event(const char* fn, int line, type t, char* n)
  : symbol(fn, line, t, n)
 {
-  enabling = nextstate = distro = NULL;
+  enabling = nextstate = distro = weight = NULL;
+  wc = 0;
   prio_list = NULL;
-  prio_length = 0;
   ET = E_Unknown;
 }
 
@@ -44,6 +45,7 @@ event::~event()
   Delete(enabling);
   Delete(nextstate);
   Delete(distro);
+  Delete(weight);
   delete[] prio_list;
 }
 
@@ -78,12 +80,19 @@ void event::setTimed(expr *dist)
   ET = E_Timed;
 }
 
-void event::setImmediate(expr *weight)
+void event::setImmediate()
 {
   DCASSERT(E_Unknown == ET);
   DCASSERT(NULL==distro);
-  distro = weight;
   ET = E_Immediate;
+}
+
+void event::setWeight(int cl, expr *w)
+{
+  DCASSERT(NULL==weight);
+  DCASSERT(cl>0);
+  wc = cl;
+  weight = w;
 }
 
 
@@ -111,7 +120,7 @@ state_model::state_model(const char* fn, int line, type t, char* n,
   proctype = Proc_Unknown;
   rg = NULL;
   mc = NULL;
-  prio_cycle = false;
+  construct_error = false;
   OrderEventsByPriority();
 }
 
@@ -144,6 +153,7 @@ void state_model::OrderEventsByPriority()
 #endif
     for (int i=0; i<ee->prio_length; i++) {
       DCASSERT(ee->prio_list);
+      DCASSERT(ee->prio_list[i]);
       ee->prio_list[i]->misc++;
 #ifdef DEBUG_PRIO
       Output << "\t\t" << ee->prio_list[i] << "\n";
@@ -167,7 +177,7 @@ void state_model::OrderEventsByPriority()
       for (int show=e; show<num_events; show++) 
         Error << "\t" << event_data[show] << "\n";
       Error.Stop();
-      prio_cycle = true;
+      construct_error = true;
       return;
     }
     // Put fz here if different from e
@@ -176,6 +186,7 @@ void state_model::OrderEventsByPriority()
     event* ee = event_data[e];
     for (int i=0; i<ee->prio_length; i++) {
       DCASSERT(ee->prio_list);
+      DCASSERT(ee->prio_list[i]);
       ee->prio_list[i]->misc--;
     }
   }
@@ -240,6 +251,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
     enabled->Append(t);
     for (int j=0; j<t->prio_length; j++) {
       DCASSERT(t->prio_list);
+      DCASSERT(t->prio_list[j]);
       t->prio_list[j]->misc = -1;
     } // for j
   } // for e

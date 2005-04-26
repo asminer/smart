@@ -24,7 +24,6 @@ class reachset;  // defined in States/reachset.h
 class reachgraph;  // defined in Chains/procs.h
 class markov_chain;  // defined in Chains/procs.h
 
-
 /** Possible type for meta-events (below).
 */
 enum Event_type {
@@ -46,8 +45,6 @@ enum Event_type {
     The event class is derived from symbol, because it is useful for
     them to have names, types, and filename/linenumber where created.
 
-    TODO STILL: figure out how to handle immediate events
-
     The mechanisms used are:
 
     enabling:	An expression of type "proc bool" that evaluates to
@@ -64,21 +61,30 @@ enum Event_type {
 		For proc stateset, we can determing the set of possible states
 		reached if the event fires.
 
-    distro:	Firing distribution or weight, depending on event type.
+    distro:	Firing distribution for Timed events.
+    		If the event type is Nondeterministic or Immediate, 
+		this is NULL.
     		The expression may assume that the event is in fact enabled.
-    
-    		If the event type is Nondeterministic, this is NULL.
 		
-		If the event type is Timed, this is the firing distribution.
     		Type can be "int" or "real" for constants,
 		"ph int", "ph real", "rand int", "rand real"
 		for state independent random durations,
 		and the "proc" versions of the above if durations
 		are state dependent.
 
-		If the event type is Immediate, this is the firing weight.
+    weight:	Post-selection priority weight.
 		The type should be either "real" for constant weights,
 		or "proc real" for state-dependent weights.
+		Will be NULL for sure for Nondeterministic events.
+		Should be NULL for Timed events with continuous distributions.
+		An error occurs if two or more events try to fire 
+		simultaneously and do not have specified weights.
+ 
+    wc:		Specifies the weight class.
+	      	Should be 0 if no weight is defined.
+		It is an error for events of different (nonzero) weight 
+		classes to be enabled simultaneously.	
+		
 */
 
 class event : public symbol {
@@ -89,11 +95,15 @@ class event : public symbol {
   expr* enabling;
   /// Nextstate expression
   expr* nextstate;
-  /// Firing distribution / weight
+  /// Firing distribution
   expr* distro;
+  /// Weight
+  expr* weight;
+  /// Weight class
+  int wc;
   /// List of events that we have priority over
   event** prio_list;
-  /// Length of prio_list
+  /// Number of events we have priority over
   int prio_length;
   /// misc integer data, e.g., for enabling
   int misc;
@@ -109,7 +119,8 @@ public:
 
   void setNondeterministic();
   void setTimed(expr *dist);
-  void setImmediate(expr *weight);
+  void setImmediate();
+  void setWeight(int wc, expr *weight);
 
   inline Event_type FireType() const { return ET; }
 
@@ -119,29 +130,30 @@ public:
     return (nextstate) ? nextstate->Type(0) : VOID; 
   }
   inline expr* Distribution() const { 
-    DCASSERT(E_Timed == ET);
+    DCASSERT((E_Timed == ET) || (E_Immediate == ET));
     return distro; 
   }
   inline type  DistroType() const { 
-    DCASSERT(E_Timed == ET);
+    DCASSERT((E_Timed == ET) || (E_Immediate == ET));
     return (distro) ? distro->Type(0) : VOID; 
   }
   inline expr* Weight() const {
-    DCASSERT(E_Immediate == ET);
-    return distro;
+    DCASSERT((E_Timed == ET) || (E_Immediate == ET));
+    return weight;
   }
   inline type WeightType() const {
-    DCASSERT(E_Immediate == ET);
-    return (distro) ? distro->Type(0) : VOID;
+    DCASSERT((E_Timed == ET) || (E_Immediate == ET));
+    return (weight) ? weight->Type(0) : VOID;
   }
+  inline int WeightClass() const { return wc; }
 
   // required to keep exprs happy
   virtual void ClearCache() { DCASSERT(0); }
 
-  inline void SetPriorityList(event** p, int np) {
+  inline void SetPriorityList(event** pl, int pn) {
     DCASSERT(NULL==prio_list);
-    prio_list = p;
-    prio_length = np;
+    prio_list = pl;
+    prio_length = pn;
   }
 };
 
@@ -190,8 +202,8 @@ protected:
   int num_immediate;
   /// The events.
   event** event_data;
-  /// Was there a priority cycle?
-  bool prio_cycle;
+  /// Was there an error during construction?
+  bool construct_error;
   /// Check for cycles and reorder events.
   void OrderEventsByPriority();
 public:  
@@ -214,7 +226,7 @@ public:
   state_model(const char* fn, int line, type t, char* n, event** ed, int ne);
   virtual ~state_model();
 
-  inline bool PrioCycle() const { return prio_cycle; } 
+  inline bool BuildError() const { return construct_error; }
 
   inline int NumEvents() const { return num_events; }
   inline event* GetEvent(int n) const {

@@ -185,7 +185,7 @@ void compute_print(expr **p, int np, result &x)
 
 void AddPrint(PtrTable *fns)
 {
-  const char* helpdoc = "\b(arg1, arg2, ...)\nPrint each argument to output (talk about width specifiers when they are implemented,and special chars)";
+  const char* helpdoc = "\b(arg1, arg2, ...)\nPrint each argument to output stream.  Arguments can be any printable type, and may include an optional width specifier as \"arg:width\".  Real values may also specify the number of digits of precision, as \"arg:width:prec\" (the format of reals is specified with the option RealFormat).  Strings may include the following special characters:\n\t\\a\taudible bell\n\t\\b\tbackspace\n\t\\f\tflush output\n\t\\n\tnewline\n\t\\q\tdouble quote \"\n\t\\t\ttab character";
 
   internal_func *p =
     new internal_func(VOID, "print", compute_print, NULL, NULL, 0, helpdoc);
@@ -209,7 +209,7 @@ void compute_sprint(expr **p, int np, result &x)
 
 void AddSprint(PtrTable *fns)
 {
-  const char* helpdoc = "\b(arg1, arg2, ...)\nPrint each argument to a string (talk about width specifiers when they are implemented, and special chars)";
+  const char* helpdoc = "\b(arg1, arg2, ...)\nJust like \"print\", except the result is written into a string, which is returned.";
 
   internal_func *p =
     new internal_func(STRING, "sprint", compute_sprint, NULL, NULL, 0, helpdoc);
@@ -253,7 +253,7 @@ void compute_read_bool(expr **pp, int np, result &x)
 
 void AddReadBool(PtrTable *fns)
 {
-  const char* helpdoc = "Prompt for and read a boolean value from the input stream";
+  const char* helpdoc = "Read a boolean value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.";
 
   formal_param **fp = new formal_param*[1];
   fp[0] = new formal_param(STRING, "prompt");

@@ -594,6 +594,9 @@ void PrintExprType(expr *e, OutputStream &s);
 // *                                                                *
 // ******************************************************************
 
+/// Used for immediate events
+extern expr* const_0;
+
 /** Build a boolean constant.
     The type can be BOOL, RAND_BOOL, PROC_BOOL...
 */

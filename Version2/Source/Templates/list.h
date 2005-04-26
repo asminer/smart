@@ -33,6 +33,11 @@ public:
     Resize(inits);
     last = 0;
   }
+  DataList(DATA* d, int sz) {
+    ALLOC("DataList", sizeof(DataList));
+    data = d;
+    alloc = last = sz;
+  }
   ~DataList() {
     FREE("DataList", sizeof(DataList));
     Resize(0);
@@ -67,6 +72,7 @@ public:
 class PtrList : public DataList <void*> {
 public:
   PtrList(int inits) : DataList <void*> (inits) { }
+  PtrList(void** d, int sz) : DataList <void*> (d, sz) { }
 
   inline void* VItem(int n) const { 
     CHECK_RANGE(0, n, last);
@@ -114,6 +120,7 @@ template <class DATA>
 class List : public PtrList {
 public:
   List(int size) : PtrList(size) {} 
+  List(DATA** d, int sz) : PtrList(d, sz) {} 
   inline DATA** Copy() const { return (DATA **)(CopyArray()); }
   inline DATA** MakeArray() { return (DATA **)(CopyAndClearArray()); }
   inline DATA* Item(int n) const { return static_cast<DATA*>(VItem(n)); }

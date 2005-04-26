@@ -113,10 +113,6 @@ OutputStream& operator<< (OutputStream& s, const spn_arcinfo &a)
 // *                        transition  class                       *
 // ******************************************************************
 
-const char c_nondeterm = 'n';
-const char c_immediate = 'i';
-const char c_timed = 't';
-
 /** Used to store information during model construction.
     Once the model has been finalized, most of this info
     goes away, and instead we store a pointer to the event
@@ -125,8 +121,6 @@ const char c_timed = 't';
 class transition : public model_var {
   /// Data used during model construction
   struct tdata {
-      /// Are we immediate, timed, or nondeterministic (default)
-      char timed_or_immed;
       /// List of inputs
       int inputs;
       /// List of outputs
@@ -137,8 +131,12 @@ class transition : public model_var {
       expr* guard;
       /// firing distribution
       expr* firing;
-      /// weights, for immediate
+      /// If true, the firing distribution is const 0.
+      bool isImmediate;
+      /// weights
       expr* weight;
+      /// weight class (default: 0)
+      int wc;
   };
   /// Active during model construction
   tdata* build_info;
@@ -180,29 +178,38 @@ public:
     DCASSERT(build_info);
     build_info->guard = g;
   }
-  inline char FireType() const {
-    DCASSERT(build_info);
-    return build_info->timed_or_immed;
-  }
   inline expr* Firing() const {
     DCASSERT(build_info);
     return build_info->firing;
   }
   inline void SetFiring(expr* f) {
     DCASSERT(build_info);
-    DCASSERT(build_info->timed_or_immed == c_nondeterm);
+    DCASSERT(NULL==build_info->firing);
     build_info->firing = f;
-    build_info->timed_or_immed = c_timed;
+  }
+  inline void SetImmediate() {
+    DCASSERT(build_info);
+    DCASSERT(NULL==build_info->firing);
+    build_info->isImmediate = true;
+  }
+  inline bool IsImmediate() const {
+    DCASSERT(build_info);
+    return build_info->isImmediate;
   }
   inline expr* Weight() const {
     DCASSERT(build_info);
     return build_info->weight;
   }
-  inline void SetWeight(expr* w) {
+  inline int WeightClass() const {
     DCASSERT(build_info);
-    DCASSERT(build_info->timed_or_immed == c_nondeterm);
+    return build_info->wc;
+  }
+  inline void SetWeight(int cl, expr* w) {
+    DCASSERT(build_info);
+    DCASSERT(NULL==build_info->weight);
+    DCASSERT(cl>0);
+    build_info->wc = cl;
     build_info->weight = w;
-    build_info->timed_or_immed = c_immediate;
   }
   inline event* Event() const { return model_event; }
 
@@ -223,13 +230,14 @@ transition::transition(const char* fn, int line, char* n)
 {
   model_event = NULL;
   build_info = new tdata;
-  build_info->timed_or_immed = c_nondeterm;
   build_info->inputs = -1;
   build_info->outputs = -1;
   build_info->inhibitors = -1;
   build_info->guard = NULL;
   build_info->firing = NULL;
+  build_info->isImmediate = false;
   build_info->weight = NULL;
+  build_info->wc = 0;
   pset = NULL;
 }
 
@@ -915,20 +923,15 @@ void transition::Compile(const char* mn, listarray <spn_arcinfo> *arcs)
   model_event = new event(Filename(), Linenumber(), TRANS, strdup(Name()));
   model_event->setEnabling(new transition_enabled(arcs, this));
   model_event->setNextstate(new transition_fire(mn, arcs, this));
-  switch (build_info->timed_or_immed) {
-    case c_nondeterm:
-    	model_event->setNondeterministic();
-	break;
-    case c_immediate:
-    	model_event->setImmediate(build_info->weight);
-	break;
-    case c_timed:
-    	model_event->setTimed(build_info->firing);
-	break;
-    default:
-    	Internal.Start(__FILE__, __LINE__);
-	Internal << "Bad firing type for transition " << Name();
-	Internal.Stop();
+  if (NULL==build_info->firing && NULL==build_info->weight) {
+    model_event->setNondeterministic();
+  } else {
+    if (build_info->isImmediate)
+      model_event->setImmediate();
+    else
+      model_event->setTimed(build_info->firing);
+    if (build_info->wc>0)
+      model_event->setWeight(build_info->wc, build_info->weight);
   }
   // done with build_info
   delete build_info;
@@ -1305,6 +1308,21 @@ void spn_model::AddFiring(model_var* tr, expr* firing)
   
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
+  result z;
+  if (INT==firing->Type(0)) {
+    firing->Compute(0, z);
+    if (z.isNormal() && z.ivalue==0) {
+      t->SetImmediate();
+      return;
+    }
+  } 
+  if (REAL==firing->Type(0)) {
+    firing->Compute(0, z);
+    if (z.isNormal() && z.rvalue==0.0) {
+      t->SetImmediate();
+      return;
+    }
+  } 
   if (NULL==t->Firing()) {
     t->SetFiring( firing->Substitute(0) );
     return;
@@ -1324,7 +1342,7 @@ void spn_model::AddWeight(model_var* tr, expr* w)
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
   if (NULL==t->Weight()) {
-    t->SetWeight( w->Substitute(0) );
+    t->SetWeight(1, w->Substitute(0) );  // TO DO!!!!!! PROPER WEIGHT CLASSES
     return;
   }
   Warning.Start(w->Filename(), w->Linenumber());
@@ -1413,21 +1431,12 @@ void spn_model::FinalizeModel(result &x)
   List <transition> n_list(4);
   for (int a=0; a<translist->Length(); a++) {
     transition *t = translist->Item(a);
-    switch (t->FireType()) {
-      case c_nondeterm:
-	n_list.Append(t);
-	break;
-      case c_immediate:
-	i_list.Append(t);
-	break;
-      case c_timed:
-	t_list.Append(t);
-	break;
-      default:
-	Internal.Start(__FILE__, __LINE__);
-	Internal << "Bad firing type\n";
-  	Internal.Stop();
-    }
+    if (t->IsImmediate()) 
+      i_list.Append(t);
+    else if (t->Firing()) 
+      t_list.Append(t);
+    else
+      n_list.Append(t);
   } // for a
   if (0==translist->Length()) {
     Warning.Start();
@@ -1529,7 +1538,7 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
   			plist, num_places, initial);
 
   // check cycles in priority
-  if (m->PrioCycle()) {
+  if (m->BuildError()) {
     delete m;
     return NULL;
   }
@@ -1594,7 +1603,7 @@ void Add_spn_init(PtrTable *fns)
   type *tl = new type[2];
   tl[0] = PLACE;
   tl[1] = INT;
-  pl[1] = new formal_param(tl, 2, "pt");
+  pl[1] = new formal_param(tl, 2, "p:tokens");
   internal_func *p = new internal_func(VOID, "init", 
 	compute_spn_init, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
   p->setWithinModel();
@@ -1701,7 +1710,7 @@ bool linkparams_arcs(expr **p, int np)
 
 void Add_spn_arcs(PtrTable *fns)
 {
-  const char* helpdoc = "\b(describe arguments)\nAdds arcs to a Petri net";
+  const char* helpdoc = "\b(..., arc, ...)\nAdds arcs to a Petri net.\n\tInput arcs are specified using \"place:trans:card\", where the cardinality <card> has type int or proc int, or using \"place:trans\" for cardinalty of one.\n\tOutput arcs are specified using \"trans:place:card\", or \"trans:place\" for cardinality of one.";
 
   internal_func *p = new internal_func(VOID, "arcs", 
 	compute_spn_arcs, NULL, NULL, 0, helpdoc);
@@ -1886,7 +1895,8 @@ void compute_spn_firing(expr **pp, int np, result &x)
     model_var* tv = dynamic_cast <model_var*> (t.other);
     DCASSERT(tv);
     
-    spn->AddFiring(tv, pp[i]->GetComponent(1));
+    expr* c1 = pp[i]->GetComponent(1);
+    if (c1) spn->AddFiring(tv, c1);
   }
 #ifdef DEBUG_PN
   Output << "Exiting firing for pn " << spn << "\n";
