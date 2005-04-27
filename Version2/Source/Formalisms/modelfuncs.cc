@@ -207,10 +207,11 @@ void compute_num_states(expr **pp, int np, result &x)
   flatss *ess;
   switch (ss->Storage()) {
     case RT_Enumerated:
-	AllocState(s, 1);
+	DCASSERT(dsm->UsesConstantStateSize());		
+	AllocState(s, dsm->GetConstantStateSize());
 	for (i=0; i<ss->Enumerated(); i++) {
-          s[0].ivalue = i; 
 	  Output << "State " << i << ": ";
+          dsm->GetState(i, s);
 	  dsm->ShowState(Output, s);
 	  Output << "\n";
 	  Output.flush();
@@ -336,18 +337,25 @@ void mc_arcs(state_model *dsm, bool show, result &x)
   // dump explicit graph
   classified_chain <float> *R = dsm->mc->Explicit();
   DCASSERT(R);
+  // renumbering system, if necessary
+  int* map = NULL;
+  if (R->NeedsRenumbering()) {
+    map = new int[R->numStates()];
+    for (int old=0; old<R->numStates(); old++)
+      map[R->Renumber(old)] = old;
+  }
   sparse_vector <float> row(4);
   const char* rowlabel = (R->graph->isTransposed) ? "Column" : "Row";
   for (int i=0; i<R->numStates(); i++) {
+    int r = (R->NeedsRenumbering()) ? (R->Renumber(i)) : i;
     row.Clear();
-    R->GrabRow(i, NULL, &row);
+    R->GrabRow(r, map, &row);
     Output << rowlabel << " " << i << ":\n";
     for (int z=0; z<row.nonzeroes; z++)
       Output << "\t" << row.index[z] << " : " << row.value[z] << "\n"; 
     Output.flush();
   }
-  
-  // TODO: Correct for state renumbering!
+  delete[] map;
 }
 
 

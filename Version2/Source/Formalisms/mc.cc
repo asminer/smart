@@ -53,6 +53,7 @@ public:
   virtual bool UsesConstantStateSize() const { return true; }
   virtual int GetConstantStateSize() const { return 1; }
 
+  virtual void GetState(int n, state &x) const;
   virtual void ShowState(OutputStream &s, const state &x) const;
 
   virtual int NumInitialStates() const;
@@ -103,9 +104,18 @@ markov_dsm::~markov_dsm()
   // nothing else to do...
 }
 
+void markov_dsm::GetState(int n, state &x) const
+{
+  CHECK_RANGE(0, n, numstates);
+  DCASSERT(statenames[n]->state_index == n);
+  x[0].Clear();
+  x[0].ivalue = n;
+}
+
 void markov_dsm::ShowState(OutputStream &s, const state &x) const
 {
-  // check state legality and range here...
+  DCASSERT(x.Read(0).isNormal());
+  CHECK_RANGE(0, x.Read(0).ivalue, numstates);
   s << statenames[x.Read(0).ivalue];
 }
 
@@ -392,8 +402,16 @@ shared_object* markov_model::BuildStateModel(const char* fn, int ln)
   if (!cmc->isIrreducible()) {
     int i;
     // renumber states
-    for (i=0; i<numstates; i++)
-      states[i]->state_index = cmc->Renumber(states[i]->state_index);
+    model_var** reordered_states = new model_var*[numstates];
+    for (i=0; i<numstates; i++) reordered_states[i] = NULL;
+    for (i=0; i<numstates; i++) {
+      int ni = cmc->Renumber(states[i]->state_index);
+      states[i]->state_index = ni;
+      DCASSERT(NULL==reordered_states[ni]);
+      reordered_states[ni] = states[i];
+    }
+    delete[] states;
+    states = reordered_states;
     // make sure we have an initial distribution
     if (0==initial->nonzeroes) {
       Warning.StartModel(Name(), fn, ln);

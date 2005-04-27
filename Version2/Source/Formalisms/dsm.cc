@@ -37,6 +37,7 @@ event::event(const char* fn, int line, type t, char* n)
   enabling = nextstate = distro = weight = NULL;
   wc = 0;
   prio_list = NULL;
+  prio_length = 0;
   ET = E_Unknown;
 }
 
@@ -218,6 +219,13 @@ int state_model::GetConstantStateSize() const
   Internal << "Request for state size, for a model with variable-sized states";
   Internal.Stop();
   return 0; // keep compiler happy
+}
+
+void state_model::GetState(int n, state &x) const
+{
+  Internal.Start(__FILE__, __LINE__);
+  Internal << "Request for state in non-enumerated model type";
+  Internal.Stop();
 }
 
 bool state_model::GetEnabledList(const state &current, List <event> *enabled)

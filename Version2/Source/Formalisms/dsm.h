@@ -275,6 +275,11 @@ public:
 
   virtual void ShowState(OutputStream &s, const state &x) const = 0;
 
+  /** For enumerated state models.
+      Obtain the ith state.
+  */
+  virtual void GetState(int n, state &x) const;
+
   /** Returns the number of initial states for this model.
       For a Petri net, this should be 1.
       For a Markov chain, this can be greater than 1.

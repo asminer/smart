@@ -107,6 +107,8 @@ public:
     renumber = NULL;
   }
 
+  inline bool NeedsRenumbering() const { return (renumber!=NULL); }
+
   inline bool isAbsorbing(int newnumber) const {
     DCASSERT(blockstart);
     return newnumber >= blockstart[recurrent+1];
