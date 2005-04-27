@@ -4,6 +4,8 @@
 
 Things to do:
 
+* Proper display of MCs in num_arcs
+
 * Weight classes
 
 * MC generation algorithm to eliminate vanishing "on the fly"
@@ -15,4 +17,6 @@ Things to do:
 * phase types as models (see notes)
 
 * Help "topics"
+
+* Add Lexical ordering for display only in num_states, num_arcs
 

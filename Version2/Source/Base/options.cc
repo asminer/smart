@@ -40,7 +40,7 @@ option::~option()
 bool option::isApropos(const char* find) const
 {
   // default behavior, override for enumerated options
-  return strstr(name, find) != NULL;
+  return DocMatches(name, find);
 }
 
 void option::SetValue(bool, const char *f, int l)
@@ -372,12 +372,12 @@ public:
 bool enum_opt::isApropos(const char* find) const
 {
   // check the option name...
-  if (strstr(Name(), find)) return true;
+  if (DocMatches(Name(), find)) return true;
   // now check all the enumerated names
   for (int i=0; i<numpossible; i++) {
     DCASSERT(possible[i]);
     DCASSERT(possible[i]->name);
-    if (strstr(possible[i]->name, find)) return true;
+    if (DocMatches(possible[i]->name, find)) return true;
   }
   return false;
 }

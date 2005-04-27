@@ -1102,6 +1102,9 @@ protected:
   sparse_vector <int> *initial;
   listarray <spn_arcinfo> *arcs;
 public:
+  // current weight class
+  int wcl_current;
+public:
   spn_model(const char* fn, int line, type t, char *n, 
 		formal_param **pl, int np);
 
@@ -1342,7 +1345,7 @@ void spn_model::AddWeight(model_var* tr, expr* w)
   transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
   if (NULL==t->Weight()) {
-    t->SetWeight(1, w->Substitute(0) );  // TO DO!!!!!! PROPER WEIGHT CLASSES
+    t->SetWeight(wcl_current, w->Substitute(0) );  
     return;
   }
   Warning.Start(w->Filename(), w->Linenumber());
@@ -1415,6 +1418,7 @@ void spn_model::InitModel()
   translist = new List <transition> (16);
   arcs = new listarray <spn_arcinfo>;
   initial = new sparse_vector <int> (8);
+  wcl_current = 0;
 }
 
 void spn_model::FinalizeModel(result &x)
@@ -1967,6 +1971,7 @@ void compute_spn_weight(expr **pp, int np, result &x)
 #ifdef DEBUG_PN
   Output << "Inside weight for pn " << spn << "\n";
 #endif
+  spn->wcl_current++;
   x.Clear();
   int i;
   for (i=1; i<np; i++) {

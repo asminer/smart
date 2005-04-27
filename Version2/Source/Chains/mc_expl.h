@@ -5,6 +5,7 @@
 #define MC_EXPL_H
 
 #include "../Templates/graphs.h"
+#include "../Templates/sparsevect.h"
 #include "../Engines/sccs.h"
 
 //#define DEBUG_CLASSIFY
@@ -184,6 +185,12 @@ public:
       Note we must be able to "Put" the LABEL class to the stream.
   */ 
   void Show(OutputStream &s);
+
+  /* Obtain the specified row.
+     Ultimately used for display, so no rush.
+     Reorder column index according to map.
+  */
+  void GrabRow(int i, int* map, sparse_vector <LABEL> *row);
 protected:
   void ArrangeMatricesByRows();
   void ArrangeMatricesByCols();
@@ -521,6 +528,27 @@ void classified_chain <LABEL> :: Show(OutputStream &s)
   s.Pad('-', 60);
   s << "\n";
   s.flush();
+}
+
+template <class LABEL>
+void classified_chain <LABEL>
+:: GrabRow(int i, int* map, sparse_vector<LABEL> *row)
+{
+  UseSelfMatrix();
+  if (i<graph->num_nodes) {
+    for (int e=graph->row_pointer[i]; e<graph->row_pointer[i+1]; e++) {
+      int c = (map) ? (map[graph->column_index[e]]) : graph->column_index[e];
+      row->SortedAppend(c, graph->value[e]);
+    }
+  }
+  if (!TRarcs) return;
+  UseTRMatrix();
+  if (i<graph->num_nodes) {
+    for (int e=graph->row_pointer[i]; e<graph->row_pointer[i+1]; e++) {
+      int c = (map) ? (map[graph->column_index[e]]) : graph->column_index[e];
+      row->SortedAppend(c, graph->value[e]);
+    }
+  }
 }
 
 #endif

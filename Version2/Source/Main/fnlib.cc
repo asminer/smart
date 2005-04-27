@@ -25,7 +25,7 @@ char* help_search_string;
 void ShowDocs(void *x)
 {
   PtrTable::splayitem *foo = (PtrTable::splayitem *) x;
-  if (NULL==strstr(foo->name, help_search_string)) return;  // not interested...
+  if (!DocMatches(foo->name, help_search_string)) return;  // not interested...
   bool unshown = true;
   List <function> *bar = (List <function> *)foo->ptr;
   int i;

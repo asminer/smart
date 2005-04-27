@@ -63,6 +63,9 @@ void BuildProcess(model *m)
   	}
 	return;
 
+    case Proc_Dtmc:
+	if (dsm->mc) return;
+
     default:
 	Internal.Start(__FILE__, __LINE__);
 	Internal << "Unhandled process type\n";

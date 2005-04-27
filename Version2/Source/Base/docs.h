@@ -27,5 +27,12 @@ void DisplayDocs(OutputStream &display, const char* doc,
 		int LM, int RM, bool rule);
 
 
+/**
+	Does this item match a help query.
+	Returns true if the search string is contained in the
+	documentation, ignoring case.
+*/
+bool DocMatches(const char* doc, const char* srch);
+
 #endif
 

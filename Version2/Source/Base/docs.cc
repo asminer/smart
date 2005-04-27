@@ -83,3 +83,13 @@ void DisplayDocs(OutputStream &disp, const char* doc, int LM, int RM, bool rule)
   } // while doc[ptr]
 }
 
+bool DocMatches(const char* doc, const char* srch)
+{
+  if (NULL==srch) return true; 
+  int slen = strlen(srch);
+  int last = strlen(doc) - slen;
+  for (int i=0; i<=last; i++) {
+    if (0==strncasecmp(doc+i, srch, slen)) return true;
+  }
+  return false;
+}

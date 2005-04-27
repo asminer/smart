@@ -299,6 +299,15 @@ void fsm_arcs(state_model *dsm, bool show, result &x)
   // display here...
   Output << "Reachability graph:\n";
   Output.flush();
+
+  DCASSERT(dsm->rg->Storage() == MC_Explicit);
+  // dump explicit graph
+  digraph* G = dsm->rg->Explicit();
+  DCASSERT(G);
+  for (int i=0; i<G->NumNodes(); i++) {
+    G->ShowNodeList(Output, i);
+    Output.flush();
+  }
 }
 
 void mc_arcs(state_model *dsm, bool show, result &x)
@@ -318,8 +327,29 @@ void mc_arcs(state_model *dsm, bool show, result &x)
 	x.setNull();
 	return;
   }
+  if (!show) return;
+
   // display here...
+  Output << "Markov chain:\n";
+  Output.flush();
+  DCASSERT(dsm->mc->Storage() == MC_Explicit);
+  // dump explicit graph
+  classified_chain <float> *R = dsm->mc->Explicit();
+  DCASSERT(R);
+  sparse_vector <float> row(4);
+  const char* rowlabel = (R->graph->isTransposed) ? "Column" : "Row";
+  for (int i=0; i<R->numStates(); i++) {
+    row.Clear();
+    R->GrabRow(i, NULL, &row);
+    Output << rowlabel << " " << i << ":\n";
+    for (int z=0; z<row.nonzeroes; z++)
+      Output << "\t" << row.index[z] << " : " << row.value[z] << "\n"; 
+    Output.flush();
+  }
+  
+  // TODO: Correct for state renumbering!
 }
+
 
 void compute_num_arcs(expr **pp, int np, result &x)
 {
@@ -410,13 +440,13 @@ void compute_test(expr **pp, int np, result &x)
     //  CHECK enabling expression
 
     expr* enable = foo->isEnabled();
-    Output << "enabling expression: " << enable << "\n";
+    Output << "\tenabling expression: " << enable << "\n";
     Output.flush();
     if (enable) {
       // Show dependencies
       deplist.Clear();
       enable->GetSymbols(0, &deplist);
-      Output << "\tdepends on: ";
+      Output << "\t\tdepends on: ";
       for (int p=0; p<deplist.Length(); p++)
         Output << deplist.Item(p) << " ";
       Output << "\n";
@@ -424,10 +454,10 @@ void compute_test(expr **pp, int np, result &x)
       // Show products
       prodlist.Clear();
       enable->GetProducts(0, &prodlist);
-      Output << "\tProducts:\n";     
+      Output << "\t\tProducts:\n";     
       for (int p=0; p<prodlist.Length(); p++) {
         expr *e = prodlist.Item(p);
-        Output << "\t\t" << e << "\n";
+        Output << "\t\t\t" << e << "\n";
 	Delete(e);
       }
     }
@@ -435,14 +465,14 @@ void compute_test(expr **pp, int np, result &x)
     //  CHECK next state expression
 
     expr* fire = foo->getNextstate();
-    Output << "next state expression: " << fire << "\n";
+    Output << "\tnext state expression: " << fire << "\n";
     Output.flush();
     
     if (fire) {
       // Show dependencies
       deplist.Clear();
       fire->GetSymbols(0, &deplist);
-      Output << "\tdepends on: ";
+      Output << "\t\tdepends on: ";
       for (int p=0; p<deplist.Length(); p++)
         Output << deplist.Item(p) << " ";
       Output << "\n";
@@ -450,22 +480,49 @@ void compute_test(expr **pp, int np, result &x)
       // Show products
       prodlist.Clear();
       fire->GetProducts(0, &prodlist);
-      Output << "\tProducts:\n";     
+      Output << "\t\tProducts:\n";     
       for (int p=0; p<prodlist.Length(); p++) {
         expr *e = prodlist.Item(p);
-        Output << "\t\t" << e << "\n";
+        Output << "\t\t\t" << e << "\n";
 	Delete(e);
       }
     }
 
-    // Check firing distribution
-    Output << "firing distribution type is: ";
-    Output << GetType(foo->DistroType()) << "\n";
-    Output.flush();
+    switch (foo->FireType()) {
+      case E_Nondeterm:
+	Output << "\tEvent is nondeterministic\n";
+	Output.flush();
+      	break;
+      case E_Timed:
+	Output << "\tEvent is timed\n";
+      	Output << "\tfiring distribution type is: ";
+    	Output << GetType(foo->DistroType()) << "\n";
+    	Output << "\tfiring distribution is: ";
+    	Output << foo->Distribution() << "\n";
+	Output << "\tweight class is: " << foo->WeightClass() << "\n";
+	if (foo->WeightClass()) {
+      	  Output << "\tfiring weight type is: ";
+    	  Output << GetType(foo->WeightType()) << "\n";
+    	  Output << "\tfiring weight is: ";
+    	  Output << foo->Weight() << "\n";
+        }
+    	Output.flush();
+	break;
+      case E_Immediate:
+	Output << "\tEvent is immediate\n";
+	Output << "\tweight class is: " << foo->WeightClass() << "\n";
+	if (foo->WeightClass()) {
+      	  Output << "\tfiring weight type is: ";
+    	  Output << GetType(foo->WeightType()) << "\n";
+    	  Output << "\tfiring weight is: ";
+    	  Output << foo->Weight() << "\n";
+        }
+    	Output.flush();
+	break;
+      default:
+	DCASSERT(0);
+    }
 
-    Output << "firing distribution is: ";
-    Output << foo->Distribution() << "\n";
-    Output.flush();
   }
 
   x.Clear();
