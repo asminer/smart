@@ -1,0 +1,171 @@
+State 0: a
+State 1: b
+2
+Markov chain:
+Row 0:
+	1 : 0.75
+Row 1:
+	0 : 1
+2
+Some bad state name errors:
+ERROR in file dtmcs.sm near line 35:
+	Duplicate identifier a within model
+ERROR in file dtmcs.sm near line 38:
+	Unknown identifier: c
+ERROR in file dtmcs.sm near line 39:
+	No match for arcs(error)
+Warnings for duplicates:
+WARNING in file dtmcs.sm near line 48:
+	Ignoring duplicate initial probability for 
+	state a in Markov chain d2
+WARNING in file dtmcs.sm near line 53:
+	Summing duplicate arc from 
+	state a to b in Markov chain d2
+State 0: a
+State 1: b
+State 2: c
+3
+States should appear in definition order: a,b,c,d,e,f,g,h,i,j:
+State 0: a
+State 1: b
+State 2: c
+State 3: d
+State 4: e
+State 5: f
+State 6: g
+State 7: h
+State 8: i
+State 9: j
+10
+Markov chain:
+Row 0:
+Row 1:
+	2 : 0.5
+	3 : 0.5
+Row 2:
+	3 : 1
+Row 3:
+	1 : 1
+Row 4:
+	5 : 0.5
+Row 5:
+	4 : 1
+Row 6:
+	0 : 0.5
+	7 : 0.5
+Row 7:
+	1 : 0.5
+	8 : 0.5
+Row 8:
+	6 : 0.5
+	9 : 0.5
+Row 9:
+	4 : 1
+13
+Transients should appear first {g,h,i,j}, then recurrent, then a:
+State 0: g
+State 1: h
+State 2: i
+State 3: j
+State 4: b
+State 5: c
+State 6: d
+State 7: e
+State 8: f
+State 9: a
+10
+Markov chain:
+Row 0:
+	1 : 0.5
+	9 : 0.5
+Row 1:
+	2 : 0.5
+	4 : 0.5
+Row 2:
+	0 : 0.5
+	3 : 0.5
+Row 3:
+	7 : 1
+Row 4:
+	5 : 0.5
+	6 : 0.5
+Row 5:
+	6 : 1
+Row 6:
+	4 : 1
+Row 7:
+	8 : 0.5
+Row 8:
+	7 : 1
+Row 9:
+13
+Birth death with 1 states:
+State 0: s[1]
+1
+Markov chain:
+Row 0:
+0
+Birth death with 2 states:
+State 0: s[1]
+State 1: s[2]
+2
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	0 : 1
+2
+Birth death with 3 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+3
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	0 : 0.666667
+	2 : 0.333333
+Row 2:
+	1 : 1
+4
+Birth death with 4 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+State 3: s[4]
+4
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	0 : 0.666667
+	2 : 0.333333
+Row 2:
+	1 : 0.666667
+	3 : 0.333333
+Row 3:
+	2 : 1
+6
+Birth death with 5 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+State 3: s[4]
+State 4: s[5]
+5
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	0 : 0.666667
+	2 : 0.333333
+Row 2:
+	1 : 0.666667
+	3 : 0.333333
+Row 3:
+	2 : 0.666667
+	4 : 0.333333
+Row 4:
+	3 : 1
+8
