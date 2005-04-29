@@ -246,6 +246,7 @@ public:
 
 */
 class flatss {
+public:
   /// Tangible states are stored here in discovery order.
   state_array *t_states;
   /// Order of tangible states according to state_array::Compare.

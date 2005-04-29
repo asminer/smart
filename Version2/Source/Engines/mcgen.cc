@@ -10,7 +10,7 @@
 #include "linear.h"
 #include "sccs.h"
 
-#define DEBUG_IMMED
+//#define DEBUG_IMMED
 
 option* MarkovStorage;
 

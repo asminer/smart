@@ -7,7 +7,7 @@
 #include "list.h"
 #include "../Base/errors.h"
 
-const int MAX_HEAP_ADD = 4096;
+const int MAX_HEAP_ADD = 1024;
 
 // ==================================================================
 // ||                                                              ||
@@ -58,6 +58,11 @@ public:
   }
   ~HeapOfObjects() {
     Resize(0);
+  }
+  void Clear(int inits) {
+    last = 0;
+    sorted = false;
+    if (inits>size) Resize(inits);
   }
   void Insert(DATA a) {
     DCASSERT(!sorted);
@@ -213,6 +218,11 @@ public:
   ~HeapOfPointers() {
     Resize(0);
   }
+  void Clear(int inits) {
+    last = 0;
+    sorted = false;
+    if (inits>size) Resize(inits);
+  }
   inline int Length() { return last; }
   void Insert(DATA* a) {
     DCASSERT(!sorted);
@@ -238,6 +248,7 @@ public:
     sorted = false;
     return ret;
   }
+  /*
   List <DATA> *MakeList() {
     DCASSERT(sorted);
     List <DATA> *foo = new List <DATA> (data, size, last);
@@ -246,6 +257,7 @@ public:
     sorted = false;
     return foo;
   }
+  */
   // for debugging
   void show(OutputStream &s) const;
 protected:

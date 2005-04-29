@@ -166,6 +166,35 @@ void Add_avg_acc(PtrTable *fns)
 // *                      num_states                      *
 // ********************************************************
 
+struct statehandle {
+  int handle;
+  state_array* states;
+  state* tempfull;
+};
+
+bool operator > (statehandle &a, statehandle &b)
+{
+  b.states->GetState(b.handle, *(b.tempfull));
+  return a.states->Compare(a.handle, *(b.tempfull)) > 0;
+}
+
+void SortStates(int* order, int N, state_array* states, state& s)
+{
+  if (N<2) return;
+  // probably overkill, but it works and this is only for 
+  // displaying states in lexical order.
+  statehandle* foo = new statehandle[N];
+  for (int i=0; i<N; i++) {
+    foo[i].handle = order[i];
+    foo[i].states = states;
+    foo[i].tempfull = &s;
+  }
+  HeapOfObjects <statehandle> bar(foo, N);
+  bar.Sort();
+  for (int i=0; i<N; i++) 
+    order[i] = foo[i].handle;
+}
+
 // for displays only
 void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
 {
@@ -179,6 +208,7 @@ void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
     return;
   }
 
+  flatss* fs;
   state s;
   DCASSERT(dsm->UsesConstantStateSize());		
   AllocState(s, dsm->GetConstantStateSize());
@@ -189,6 +219,17 @@ void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
 	  order[i] = s[0].ivalue;
 	  redro[s[0].ivalue] = i;
 	} // for i	
+    break;
+    case RT_Explicit:
+    	fs = ss->Explicit();
+	for (int i=0; i<fs->NumTangible(); i++)
+	  order[i] = i;
+	for (int i=0; i<fs->NumVanishing(); i++)
+	  order[i+fs->NumTangible()] = i;
+	SortStates(order, fs->NumTangible(), fs->t_states, s);
+	SortStates(order+fs->NumTangible(), fs->NumVanishing(), fs->v_states, s);
+	for (int i=0; i<fs->NumTangible() + fs->NumVanishing(); i++) 
+	  redro[order[i]] = i;
     break;
     default:
     	DCASSERT(0);
@@ -258,7 +299,7 @@ void compute_num_states(expr **pp, int np, result &x)
 	DCASSERT(ess);
 	if (ess->NumVanishing()) Output << "Tangible states:\n";
 	for (i=0; i<ess->NumTangible(); i++) {
-	  bool ok = ess->GetTangible(i, s);
+	  bool ok = ess->GetTangible(order[i], s);
 	  DCASSERT(ok);
 	  if (ess->NumVanishing())
 	    Output << "Tangible state " << i << ": ";
@@ -270,7 +311,7 @@ void compute_num_states(expr **pp, int np, result &x)
 	} // for i	
 	if (ess->NumVanishing()) Output << "Vanishing states:\n";
 	for (i=0; i<ess->NumVanishing(); i++) {
-	  bool ok = ess->GetVanishing(i, s);
+	  bool ok = ess->GetVanishing(order[i+ess->NumTangible()], s);
 	  DCASSERT(ok);
 	  Output << "Vanishing state " << i << ": ";
 	  dsm->ShowState(Output, s);

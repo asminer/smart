@@ -2568,6 +2568,7 @@ void ShowSymbolNames(void *x)
 void StartModelTables()
 {
   ModelInternal = new PtrTable();
+  ModelExternal.Clear(16);
 }
 
 void KillModelTables()

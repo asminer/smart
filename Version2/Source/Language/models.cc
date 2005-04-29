@@ -362,11 +362,13 @@ void model::Clear()
     stmt_block[i]->Clear();
   }
 
+/*
 #ifdef MEM_TRACE_ON
   Memory_Log.Stop(Output);
   Output.flush();
   Memory_Log.Start();
 #endif
+  */
 }
 
 // ******************************************************************
@@ -797,7 +799,8 @@ void model_var_stmt::Execute()
   int i;
   for (i=0; i<numvars; i++) {
     wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
-    z->var = parent->MakeModelVar(z->Filename(), z->Linenumber(), vartype, names[i]);
+    char* n = strdup(names[i]);
+    z->var = parent->MakeModelVar(z->Filename(), z->Linenumber(), vartype, n);
   }
 }
 
