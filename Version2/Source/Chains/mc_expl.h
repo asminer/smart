@@ -190,9 +190,8 @@ public:
 
   /* Obtain the specified row.
      Ultimately used for display, so no rush.
-     Reorder column index according to map.
   */
-  void GrabRow(int i, int* map, sparse_vector <LABEL> *row);
+  void GrabRow(int i, sparse_vector <LABEL> *row);
 protected:
   void ArrangeMatricesByRows();
   void ArrangeMatricesByCols();
@@ -534,21 +533,19 @@ void classified_chain <LABEL> :: Show(OutputStream &s)
 
 template <class LABEL>
 void classified_chain <LABEL>
-:: GrabRow(int i, int* map, sparse_vector<LABEL> *row)
+:: GrabRow(int i, sparse_vector<LABEL> *row)
 {
   UseSelfMatrix();
   if (i<graph->num_nodes) {
     for (int e=graph->row_pointer[i]; e<graph->row_pointer[i+1]; e++) {
-      int c = (map) ? (map[graph->column_index[e]]) : graph->column_index[e];
-      row->SortedAppend(c, graph->value[e]);
+      row->Append(graph->column_index[e], graph->value[e]);
     }
   }
   if (!TRarcs) return;
   UseTRMatrix();
   if (i<graph->num_nodes) {
     for (int e=graph->row_pointer[i]; e<graph->row_pointer[i+1]; e++) {
-      int c = (map) ? (map[graph->column_index[e]]) : graph->column_index[e];
-      row->SortedAppend(c, graph->value[e]);
+      row->Append(graph->column_index[e], graph->value[e]);
     }
   }
 }

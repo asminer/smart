@@ -4,7 +4,7 @@
 
 Things to do:
 
-* Proper display of MCs in num_arcs
+* Check state/MC display for pns, both natural and lexical orderings
 
 * Weight classes
 

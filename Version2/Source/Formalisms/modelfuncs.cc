@@ -14,7 +14,7 @@
 
 option* StateDisplayOrder;
 
-option_const lexical_sdo("LEXICAL", "\aStates are sorted by lexical ordering");
+option_const lexical_sdo("LEXICAL", "\aStates are sorted by lexical ordering (definition order for formalisms dtmc and ctmc)");
 option_const natural_sdo("NATURAL", "\aThe most natural order for the selected state space data structure");
 
 // ********************************************************
@@ -166,6 +166,36 @@ void Add_avg_acc(PtrTable *fns)
 // *                      num_states                      *
 // ********************************************************
 
+// for displays only
+void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
+{
+  DCASSERT(dsm);
+  reachset* ss = dsm->statespace;
+  DCASSERT(ss);
+  bool natural_order = (StateDisplayOrder->GetEnum() == &natural_sdo);
+  if (natural_order) {
+    for (int i=0; i<N; i++) 
+      order[i] = redro[i] = i;
+    return;
+  }
+
+  state s;
+  DCASSERT(dsm->UsesConstantStateSize());		
+  AllocState(s, dsm->GetConstantStateSize());
+  switch (ss->Storage()) {
+    case RT_Enumerated:
+	for (int i=0; i<ss->Enumerated(); i++) {
+	  dsm->GetState(i, s);
+	  order[i] = s[0].ivalue;
+	  redro[s[0].ivalue] = i;
+	} // for i	
+    break;
+    default:
+    	DCASSERT(0);
+  } // switch
+  FreeState(s);
+}
+
 void compute_num_states(expr **pp, int np, result &x)
 {
   x.Clear();
@@ -204,27 +234,28 @@ void compute_num_states(expr **pp, int np, result &x)
   // We must display the state space...
   int i;
   state s;
+  // This may change in the future...
+  DCASSERT(dsm->UsesConstantStateSize());		
+  AllocState(s, dsm->GetConstantStateSize());
+  int* order = new int[x.ivalue];
+  int* redro = new int[x.ivalue];
+  BuildStateOrder(dsm, order, redro, x.ivalue);
   flatss *ess;
   switch (ss->Storage()) {
     case RT_Enumerated:
-	DCASSERT(dsm->UsesConstantStateSize());		
-	AllocState(s, dsm->GetConstantStateSize());
+	s[0].Clear();
 	for (i=0; i<ss->Enumerated(); i++) {
 	  Output << "State " << i << ": ";
-          dsm->GetState(i, s);
+	  s[0].ivalue = order[i];
 	  dsm->ShowState(Output, s);
 	  Output << "\n";
 	  Output.flush();
 	} // for i	
-	FreeState(s);
-    return;
+    break;
    
     case RT_Explicit:
         ess = ss->Explicit();
 	DCASSERT(ess);
-	// This may change in the future...
-	DCASSERT(dsm->UsesConstantStateSize());		
-	AllocState(s, dsm->GetConstantStateSize());
 	if (ess->NumVanishing()) Output << "Tangible states:\n";
 	for (i=0; i<ess->NumTangible(); i++) {
 	  bool ok = ess->GetTangible(i, s);
@@ -246,14 +277,16 @@ void compute_num_states(expr **pp, int np, result &x)
 	  Output << "\n";
 	  Output.flush();
 	} // for i	
- 	FreeState(s);
-    return; 
+    break; 
 
     default:
 	Internal.Start(__FILE__, __LINE__);
 	Internal << "Unhandled state space type\n";
 	Internal.Stop();
   }
+  FreeState(s);
+  delete[] order;
+  delete[] redro;
 }
 
 void Add_num_states(PtrTable *fns)
@@ -276,6 +309,19 @@ void Add_num_states(PtrTable *fns)
 // ********************************************************
 // *                       num_arcs                       *
 // ********************************************************
+
+void State2MCOrder(state_model *dsm, int* order, int* redro, int N)
+{
+  DCASSERT(dsm->mc->Storage() == MC_Explicit);
+  classified_chain <float> *R = dsm->mc->Explicit();
+  DCASSERT(R);
+  if (!R->NeedsRenumbering()) return;
+
+  for (int i=0; i<N; i++) {
+    order[i] = R->Renumber(order[i]);
+    redro[order[i]] = i;
+  }
+}
 
 void fsm_arcs(state_model *dsm, bool show, result &x)
 {
@@ -338,24 +384,27 @@ void mc_arcs(state_model *dsm, bool show, result &x)
   classified_chain <float> *R = dsm->mc->Explicit();
   DCASSERT(R);
   // renumbering system, if necessary
-  int* map = NULL;
-  if (R->NeedsRenumbering()) {
-    map = new int[R->numStates()];
-    for (int old=0; old<R->numStates(); old++)
-      map[R->Renumber(old)] = old;
-  }
+  int N = R->numStates();
+  int* order = new int[N];
+  int* redro = new int[N];
+  BuildStateOrder(dsm, order, redro, N);
+  State2MCOrder(dsm, order, redro, N);
   sparse_vector <float> row(4);
   const char* rowlabel = (R->graph->isTransposed) ? "Column" : "Row";
   for (int i=0; i<R->numStates(); i++) {
-    int r = (R->NeedsRenumbering()) ? (R->Renumber(i)) : i;
-    row.Clear();
-    R->GrabRow(r, map, &row);
     Output << rowlabel << " " << i << ":\n";
+    row.Clear();
+    R->GrabRow(order[i], &row);
+    for (int z=0; z<row.nonzeroes; z++)
+      row.index[z] = redro[row.index[z]];
+    row.isSorted = false;
+    row.Sort();
     for (int z=0; z<row.nonzeroes; z++)
       Output << "\t" << row.index[z] << " : " << row.value[z] << "\n"; 
     Output.flush();
   }
-  delete[] map;
+  delete[] order;
+  delete[] redro;
 }
 
 
