@@ -6,10 +6,6 @@ Things to do:
 
 * Check state/MC display for pns, both natural and lexical orderings
 
-* Fix immediate transitions with no weights
-
-* Weight classes
-
 * MC generation algorithm to eliminate vanishing "on the fly"
 
 * SS + MC generation algorithm to eliminate vanishing "on the fly"
@@ -19,8 +15,6 @@ Things to do:
 * phase types as models (see notes)
 
 * Help "topics"
-
-* Add Lexical ordering for display only in num_states, num_arcs
 
 * FSM formalism
 

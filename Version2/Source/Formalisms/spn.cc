@@ -923,7 +923,10 @@ void transition::Compile(const char* mn, listarray <spn_arcinfo> *arcs)
   model_event = new event(Filename(), Linenumber(), TRANS, strdup(Name()));
   model_event->setEnabling(new transition_enabled(arcs, this));
   model_event->setNextstate(new transition_fire(mn, arcs, this));
-  if (NULL==build_info->firing && NULL==build_info->weight) {
+  if (false==build_info->isImmediate 
+   && NULL==build_info->firing 
+   && NULL==build_info->weight) 
+  {
     model_event->setNondeterministic();
   } else {
     if (build_info->isImmediate)

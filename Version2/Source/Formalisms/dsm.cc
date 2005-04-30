@@ -237,7 +237,54 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
 
   result x;
   // check in order, correct for priority
-  for (e=0; e<num_events; e++) {
+  // do immediate events first and bail if 
+  // different classes of immediate events are enabled
+  int last_wc = -1;
+  for (e=0; e<num_immediate; e++) {
+    event *t = event_data[e];
+    if (t->misc<0) continue;
+    t->isEnabled()->Compute(current, 0, x);
+    if (!x.isNormal()) {
+      Error.StartModel(Name(), Filename(), Linenumber());
+      if (x.isUnknown()) 
+	Error << "Unknown if event " << t << " is enabled";
+      else
+	Error << "Bad enabling expression for event " << t;
+      Error.Stop();
+      return false;
+    }
+    if (!x.bvalue) {
+      t->misc = -1;
+      continue;
+    }
+    // event is enabled
+    t->misc = 1;
+    enabled->Append(t);
+    // check weight
+    if (last_wc<0) {
+      last_wc = t->wc;
+    } else {
+      if (t->wc!=last_wc) {
+	Error.StartModel(Name(), Filename(), Linenumber());
+	Error << "Simultaneous firing of events in different weight classes:\n";
+	Error << "\t";
+	for (int j=0; j<enabled->Length(); j++) {
+	  if (j) Error << ", ";
+	  Error << enabled->Item(j);
+ 	}
+	Error.Stop();
+	return false;
+      }
+    }
+    // disable all in priority list
+    for (int j=0; j<t->prio_length; j++) {
+      DCASSERT(t->prio_list);
+      DCASSERT(t->prio_list[j]);
+      t->prio_list[j]->misc = -1;
+    } // for j
+  } // for e
+  // check timed; don't worry about weight classes
+  for (; e<num_events; e++) {
     event *t = event_data[e];
     if (t->misc<0) continue;
     t->isEnabled()->Compute(current, 0, x);
