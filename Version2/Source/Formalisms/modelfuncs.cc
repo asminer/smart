@@ -392,10 +392,28 @@ void fsm_arcs(state_model *dsm, bool show, result &x)
   // dump explicit graph
   digraph* G = dsm->rg->Explicit();
   DCASSERT(G);
+  // renumbering system, if necessary
+  int N = G->NumNodes();
+  int* order = new int[N];
+  int* redro = new int[N];
+  BuildStateOrder(dsm, order, redro, N);
+  sparse_bitvector row(4);
+  const char* rowlabel = (G->isTransposed) ? "To state " : "From state ";
+  const char* collabel = (G->isTransposed) ? "From state " : "To state ";
   for (int i=0; i<G->NumNodes(); i++) {
-    G->ShowNodeList(Output, i);
+    Output << "\t" << rowlabel << i << "\n";
+    row.Clear();
+    G->GetRow(order[i], &row);
+    for (int z=0; z<row.nonzeroes; z++)
+      row.index[z] = redro[row.index[z]];
+    row.isSorted = false;
+    row.Sort();
+    for (int z=0; z<row.nonzeroes; z++)
+      Output << "\t\t" << collabel << row.index[z] << "\n"; 
     Output.flush();
-  }
+  } // for i
+  delete[] order;
+  delete[] redro;
 }
 
 void mc_arcs(state_model *dsm, bool show, result &x)

@@ -8,6 +8,7 @@
 
 
 #include "graphs.h"
+#include "sparsevect.h"
 
 
 //#define DEBUG_GRAPH
@@ -266,7 +267,7 @@ void digraph::Transpose()
 #endif
 }
 
-void digraph::ShowNodeList(OutputStream &s, int node)
+void digraph::ShowNodeList(OutputStream &s, int node) const
 {
   const char* fromstr = (isTransposed) ? "\tTo node " : "\tFrom node ";
   const char* tostr = (isTransposed) ? "\t\tFrom node " : "\t\tTo node ";
@@ -283,6 +284,24 @@ void digraph::ShowNodeList(OutputStream &s, int node)
     e = front;
     do {
       s << tostr << column_index[e] << "\n";
+      e = next[e];
+    } while (e!=front);
+  }
+}
+
+void digraph::GetRow(int node, sparse_bitvector *x) const
+{
+  int e;
+  if (IsStatic()) {
+    for (e=row_pointer[node]; e<row_pointer[node+1]; e++) {
+      x->Append(column_index[e]);
+    }
+  } else {
+    if (row_pointer[node]<0) return;
+    int front = next[row_pointer[node]];
+    e = front;
+    do {
+      x->Append(column_index[e]);
       e = next[e];
     } while (e!=front);
   }

@@ -17,6 +17,8 @@
 const int MAX_NODE_ADD = 4096;
 const int MAX_EDGE_ADD = 4096;
 
+class sparse_bitvector;
+
 //#define DEBUG_GRAPH
 
 // ******************************************************************
@@ -207,8 +209,10 @@ public:
   void Transpose();
 
   /// Dump to a stream (human readable)
-  void ShowNodeList(OutputStream &s, int node);
+  void ShowNodeList(OutputStream &s, int node) const;
 
+  /// Used for display, no hurry
+  void GetRow(int node, sparse_bitvector *x) const;
 };
 
 
