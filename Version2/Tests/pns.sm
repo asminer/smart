@@ -1,0 +1,77 @@
+
+// $Id$
+
+/* 
+   Petri net test file.
+*/
+
+#MatrixByRows true
+
+print("Simple first net to check:\n",
+"              p2 --> t2 --> p4\n",
+"             /                \\\n",
+"            /                  \\\n",
+"   p1 --> t1                    t5  ---> (p1)\n",
+"	    \\                  /\n",
+"             \\   --> t3 -->   /\n",
+"              p3            p5\n",
+"                 <-- t4 <--\n\n");
+
+pn net1(int N) := {
+  place p1, p2, p3, p4, p5, p6;
+
+  trans t1, t2, t3, t4, t5;
+
+  init(p1:N);
+
+  arcs(
+	p1 : t1,
+	t1 : p2, t1 : p3,
+        p2 : t2, t2 : p4,
+        p3 : t3, t3 : p5,
+	p5 : t4, t4 : p3,
+	p4 : t5, p5 : t5, t5 : p1
+  );
+
+  int m1 := num_states(true);
+  int m2 := num_arcs(true);
+};
+
+string states1(int n) := sprint(net1(n).m1, " states total");
+string arcs1(int n) := sprint(net1(n).m2, " arcs total");
+
+print("N=1, safe markings:\n");
+#PnMarkingStyle SAFE
+
+print("States:\n", states1(1), "\n", arcs1(1), "\n");
+
+print("N=2, indexed markings:\n");
+#PnMarkingStyle INDEXED
+
+print("States:\n", states1(2), "\n", arcs1(2), "\n");
+
+print("N=3, vector markings:\n");
+#PnMarkingStyle VECTOR
+
+print("States:\n", states1(3), "\n", arcs1(3), "\n");
+
+print("Should be simultaneous RG/S construction:\n");
+print(arcs1(1), "\n");
+
+
+print("Various PN warnings:\n");
+
+pn net2 := {
+  place p, p;
+  trans t, t, t;
+  print("Duplicate init warning should follow:\n");
+  init(p:2, p:3);
+  print("Duplicate arc warning should follow:\n");
+  arcs(p:t, p:t);
+  int m := num_states(false);
+};
+  
+print(net2.m - net2.m, " should be 0\n");
+
+
+
