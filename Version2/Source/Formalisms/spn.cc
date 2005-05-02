@@ -1190,7 +1190,10 @@ void spn_model::AddInput(model_var* pl, model_var* tr, expr* card,
     return; 
   }
 
-  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
+  int slot = arcs->AddItemInOrder(list, data);
+  DCASSERT(arcs->value[slot] == data);
+  if ((arcs->value[slot].const_card == data.const_card) &&
+      (arcs->value[slot].proc_card == data.proc_card)) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -1233,7 +1236,10 @@ void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card,
     return; 
   }
 
-  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
+  int slot = arcs->AddItemInOrder(list, data);
+  DCASSERT(arcs->value[slot] == data);
+  if ((arcs->value[slot].const_card == data.const_card) &&
+      (arcs->value[slot].proc_card == data.proc_card)) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
@@ -1276,7 +1282,10 @@ void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card,
     return; 
   }
 
-  if (arcs->AddItemInOrder(list, data) == arcs->NumItems()-1) return;
+  int slot = arcs->AddItemInOrder(list, data);
+  DCASSERT(arcs->value[slot] == data);
+  if ((arcs->value[slot].const_card == data.const_card) &&
+      (arcs->value[slot].proc_card == data.proc_card)) return;
 
   // Duplicate entry, give warning
   Warning.Start(fn, ln);
