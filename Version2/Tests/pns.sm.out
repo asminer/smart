@@ -17,19 +17,19 @@ State 3: [p2, p5]
 State 4: [p4, p5]
 5 states total
 Reachability graph:
-	From node 0
-		To node 1
-	From node 1
-		To node 2
-		To node 3
-	From node 2
-		To node 4
-	From node 3
-		To node 1
-		To node 4
-	From node 4
-		To node 0
-		To node 2
+	From state 0
+		To state 1
+	From state 1
+		To state 2
+		To state 3
+	From state 2
+		To state 4
+	From state 3
+		To state 1
+		To state 4
+	From state 4
+		To state 0
+		To state 2
 8 arcs total
 N=2, indexed markings:
 States:
@@ -49,54 +49,54 @@ State 12: [p1:0, p2:1, p3:0, p4:1, p5:2, p6:0]
 State 13: [p1:0, p2:0, p3:0, p4:2, p5:2, p6:0]
 14 states total
 Reachability graph:
-	From node 0
-		To node 1
-	From node 1
-		To node 2
-		To node 3
-		To node 4
-	From node 2
-		To node 5
-		To node 6
-	From node 3
-		To node 5
-		To node 7
-	From node 4
-		To node 1
-		To node 6
-		To node 7
-	From node 5
-		To node 8
-		To node 9
-	From node 6
-		To node 2
-		To node 9
-		To node 10
-	From node 7
-		To node 0
-		To node 3
-		To node 9
-	From node 8
-		To node 11
-	From node 9
-		To node 1
-		To node 5
-		To node 11
-		To node 12
-	From node 10
-		To node 6
-		To node 12
-	From node 11
-		To node 3
-		To node 8
-		To node 13
-	From node 12
-		To node 4
-		To node 9
-		To node 13
-	From node 13
-		To node 7
-		To node 11
+	From state 0
+		To state 1
+	From state 1
+		To state 2
+		To state 3
+		To state 4
+	From state 2
+		To state 5
+		To state 6
+	From state 3
+		To state 5
+		To state 7
+	From state 4
+		To state 1
+		To state 6
+		To state 7
+	From state 5
+		To state 8
+		To state 9
+	From state 6
+		To state 2
+		To state 9
+		To state 10
+	From state 7
+		To state 0
+		To state 3
+		To state 9
+	From state 8
+		To state 11
+	From state 9
+		To state 1
+		To state 5
+		To state 11
+		To state 12
+	From state 10
+		To state 6
+		To state 12
+	From state 11
+		To state 3
+		To state 8
+		To state 13
+	From state 12
+		To state 4
+		To state 9
+		To state 13
+	From state 13
+		To state 7
+		To state 11
 34 arcs total
 N=3, vector markings:
 States:
@@ -132,153 +132,181 @@ State 28: [0, 1, 0, 2, 3, 0]
 State 29: [0, 0, 0, 3, 3, 0]
 30 states total
 Reachability graph:
-	From node 0
-		To node 1
-	From node 1
-		To node 2
-		To node 3
-		To node 4
-	From node 2
-		To node 5
-		To node 6
-		To node 7
-	From node 3
-		To node 6
-		To node 8
-	From node 4
-		To node 1
-		To node 7
-		To node 8
-	From node 5
-		To node 9
-		To node 10
-	From node 6
-		To node 9
-		To node 11
-		To node 12
-	From node 7
-		To node 2
-		To node 10
-		To node 12
-		To node 13
-	From node 8
-		To node 0
-		To node 3
-		To node 12
-	From node 9
-		To node 14
-		To node 15
-	From node 10
-		To node 5
-		To node 15
-		To node 16
-	From node 11
-		To node 14
-		To node 17
-	From node 12
-		To node 1
-		To node 6
-		To node 15
-		To node 17
-		To node 18
-	From node 13
-		To node 7
-		To node 16
-		To node 18
-	From node 14
-		To node 19
-		To node 20
-	From node 15
-		To node 2
-		To node 9
-		To node 20
-		To node 21
-	From node 16
-		To node 10
-		To node 21
-		To node 22
-	From node 17
-		To node 3
-		To node 11
-		To node 20
-		To node 23
-	From node 18
-		To node 4
-		To node 12
-		To node 21
-		To node 23
-	From node 19
-		To node 24
-	From node 20
-		To node 6
-		To node 14
-		To node 24
-		To node 25
-	From node 21
-		To node 7
-		To node 15
-		To node 25
-		To node 26
-	From node 22
-		To node 16
-		To node 26
-	From node 23
-		To node 8
-		To node 17
-		To node 25
-	From node 24
-		To node 11
-		To node 19
-		To node 27
-	From node 25
-		To node 12
-		To node 20
-		To node 27
-		To node 28
-	From node 26
-		To node 13
-		To node 21
-		To node 28
-	From node 27
-		To node 17
-		To node 24
-		To node 29
-	From node 28
-		To node 18
-		To node 25
-		To node 29
-	From node 29
-		To node 23
-		To node 27
+	From state 0
+		To state 1
+	From state 1
+		To state 2
+		To state 3
+		To state 4
+	From state 2
+		To state 5
+		To state 6
+		To state 7
+	From state 3
+		To state 6
+		To state 8
+	From state 4
+		To state 1
+		To state 7
+		To state 8
+	From state 5
+		To state 9
+		To state 10
+	From state 6
+		To state 9
+		To state 11
+		To state 12
+	From state 7
+		To state 2
+		To state 10
+		To state 12
+		To state 13
+	From state 8
+		To state 0
+		To state 3
+		To state 12
+	From state 9
+		To state 14
+		To state 15
+	From state 10
+		To state 5
+		To state 15
+		To state 16
+	From state 11
+		To state 14
+		To state 17
+	From state 12
+		To state 1
+		To state 6
+		To state 15
+		To state 17
+		To state 18
+	From state 13
+		To state 7
+		To state 16
+		To state 18
+	From state 14
+		To state 19
+		To state 20
+	From state 15
+		To state 2
+		To state 9
+		To state 20
+		To state 21
+	From state 16
+		To state 10
+		To state 21
+		To state 22
+	From state 17
+		To state 3
+		To state 11
+		To state 20
+		To state 23
+	From state 18
+		To state 4
+		To state 12
+		To state 21
+		To state 23
+	From state 19
+		To state 24
+	From state 20
+		To state 6
+		To state 14
+		To state 24
+		To state 25
+	From state 21
+		To state 7
+		To state 15
+		To state 25
+		To state 26
+	From state 22
+		To state 16
+		To state 26
+	From state 23
+		To state 8
+		To state 17
+		To state 25
+	From state 24
+		To state 11
+		To state 19
+		To state 27
+	From state 25
+		To state 12
+		To state 20
+		To state 27
+		To state 28
+	From state 26
+		To state 13
+		To state 21
+		To state 28
+	From state 27
+		To state 17
+		To state 24
+		To state 29
+	From state 28
+		To state 18
+		To state 25
+		To state 29
+	From state 29
+		To state 23
+		To state 27
 88 arcs total
 Should be simultaneous RG/S construction:
 Reachability graph:
-	From node 0
-		To node 1
-	From node 1
-		To node 2
-		To node 3
-	From node 2
-		To node 4
-	From node 3
-		To node 1
-		To node 4
-	From node 4
-		To node 0
-		To node 2
+	From state 0
+		To state 1
+	From state 1
+		To state 2
+		To state 3
+	From state 2
+		To state 4
+	From state 3
+		To state 1
+		To state 4
+	From state 4
+		To state 0
+		To state 2
+8 arcs total
+Clear: WARNING:
+	Assuming zero initial marking in PN net1
+Reachability graph:
+	From state 0
+0 arcs total
+Lexical ordering test
+States:
+State 0: [0, 0, 0, 1, 1, 0]
+State 1: [0, 0, 1, 1, 0, 0]
+State 2: [0, 1, 0, 0, 1, 0]
+State 3: [0, 1, 1, 0, 0, 0]
+State 4: [1, 0, 0, 0, 0, 0]
+5 states total
+Reachability graph:
+	From state 0
+		To state 1
+		To state 4
+	From state 1
+		To state 0
+	From state 2
+		To state 0
+		To state 3
+	From state 3
+		To state 1
+		To state 2
+	From state 4
+		To state 3
 8 arcs total
 Various PN warnings:
-ERROR in file pns.sm near line 66:
+ERROR in file pns.sm near line 70:
 	Duplicate identifier p within model
-ERROR in file pns.sm near line 67:
+ERROR in file pns.sm near line 71:
 	Duplicate identifier t within model
-ERROR in file pns.sm near line 67:
+ERROR in file pns.sm near line 71:
 	Duplicate identifier t within model
 Duplicate init warning should follow:
-WARNING in file pns.sm near line 69:
+WARNING in file pns.sm near line 73:
 	Summing duplicate initialization for place p in PN net2
 Duplicate arc warning should follow:
-WARNING in file pns.sm near line 71:
+WARNING in file pns.sm near line 75:
 	Summing cardinalities on duplicate arc
 	from p to t in PN net2
 0 should be 0

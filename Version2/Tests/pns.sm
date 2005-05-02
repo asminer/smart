@@ -58,6 +58,10 @@ print("States:\n", states1(3), "\n", arcs1(3), "\n");
 print("Should be simultaneous RG/S construction:\n");
 print(arcs1(1), "\n");
 
+print("Clear: ", arcs1(0), "\n");
+print("Lexical ordering test\n");
+#StateDisplayOrder LEXICAL
+print("States:\n", states1(1), "\n", arcs1(1), "\n");
 
 print("Various PN warnings:\n");
 
