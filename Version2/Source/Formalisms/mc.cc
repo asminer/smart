@@ -292,7 +292,8 @@ void markov_model::AddArc(model_var* from, model_var* to, double weight, const c
 
   DCASSERT(wdgraph);
   float f = weight;
-  if (wdgraph->AddEdgeInOrder(fromstate, tostate, f) == wdgraph->NumEdges()-1) 
+  int ne = wdgraph->NumEdges();
+  if (wdgraph->AddEdgeInOrder(fromstate, tostate, f) == ne) 
     return;
 
   // Duplicate entry, give a warning
