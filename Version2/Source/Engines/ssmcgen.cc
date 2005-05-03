@@ -31,10 +31,11 @@ bool IsReachsetAndRGCompatible(const option_const* ssgen,
 }
 
 template <class SSTYPE>
-bool Debug_GenerateSandRG(state_model *dsm, 
-			    state_array *states,
-		   	    SSTYPE *tree, 
-			    digraph *rg)
+bool GenerateSandRG(state_model *dsm, 
+		    state_array *states,
+	   	    SSTYPE *tree, 
+		    digraph *rg,
+		    bool debugging)
 {
   DCASSERT(dsm);
   DCASSERT(states);
@@ -59,113 +60,12 @@ bool Debug_GenerateSandRG(state_model *dsm,
     dsm->GetInitialState(i, current);
     tree->AddState(current);
     rg->AddNode();
-    // debug part...
-    Output << "Added initial state: ";
-    dsm->ShowState(Output, current);
-    Output << "\n";
-    Output.flush();
-    // ...to here
-  }
-  
-  // Allocate list of enabled events
-  List <event> enabled(16);
-  
-  result x;
-  x.Clear();
-  
-  // ok, build the rg
-  int from;
-  for (from=0; from < states->NumStates(); from++) {
-    states->GetState(from, current);
-    // debug part...
-    Output << "\nExploring state#";
-    Output.Put(from, 5);
-    Output << " : ";
-    dsm->ShowState(Output, current);
-    Output << "\n\n";
-    Output.flush();
-    // ...to here
-    
-    // what is enabled?
-    if (!dsm->GetEnabledList(current, &enabled)) {
-      error = true;
-      break;
-    }
-
-    for (e=0; e<enabled.Length(); e++) {
-      event* t = enabled.Item(e);
-      DCASSERT(t);
-      if (NULL==t->getNextstate())
-        continue;  // firing is "no-op", don't bother
-
-      // t is enabled, fire and get new state
-
-      // set reached = current
-      states->GetState(from, reached);
-      // do the firing
-      t->getNextstate()->NextState(current, reached, x); 
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	Error << "Bad next-state expression during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-
-      // Which state is reached?
-      int to = tree->AddState(reached);
-      if (to == rg->NumNodes()) rg->AddNode();
-
-      rg->AddEdgeInOrder(from, to);
-
-      // debug part...
-      Output << "\t" << t;
-      Output << " --> ";
-      dsm->ShowState(Output, reached);
+    if (debugging) {
+      Output << "Added initial state: ";
+      dsm->ShowState(Output, current);
       Output << "\n";
       Output.flush();
-      // ... to here
-
-    } // for e
-    if (error) break;
-  } // for from
-
-  // cleanup
-  FreeState(reached);
-  FreeState(current);
-  return !error; 
-}
-
-
-template <class SSTYPE>
-bool GenerateSandRG(state_model *dsm, 
-			    state_array *states,
-		   	    SSTYPE *tree, 
-			    digraph *rg)
-{
-  DCASSERT(dsm);
-  DCASSERT(states);
-  DCASSERT(tree);
-  DCASSERT(rg);
-
-  bool error = false;
-  int e;
-
-  rg->ResizeNodes(4);
-  rg->ResizeEdges(4);
-
-  // allocate temporary (full) states
-  DCASSERT(dsm->UsesConstantStateSize());
-  int stsize = dsm->GetConstantStateSize();
-  state current, reached;
-  AllocState(current, stsize);
-  AllocState(reached, stsize);
-
-  // Find and insert the initial state(s)
-  for (int i=0; i<dsm->NumInitialStates(); i++) {
-    dsm->GetInitialState(i, current);
-    tree->AddState(current);
-    rg->AddNode();
+    }
   }
   
   // Allocate list of enabled events
@@ -178,6 +78,14 @@ bool GenerateSandRG(state_model *dsm,
   int from;
   for (from=0; from < states->NumStates(); from++) {
     states->GetState(from, current);
+    if (debugging) {
+      Output << "\nExploring state#";
+      Output.Put(from, 5);
+      Output << " : ";
+      dsm->ShowState(Output, current);
+      Output << "\n\n";
+      Output.flush();
+    }
     
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
@@ -208,7 +116,16 @@ bool GenerateSandRG(state_model *dsm,
       // Which state is reached?
       int to = tree->AddState(reached);
       if (to == rg->NumNodes()) rg->AddNode();
+
       rg->AddEdgeInOrder(from, to);
+
+      if (debugging) {
+        Output << "\t" << t;
+        Output << " --> ";
+        dsm->ShowState(Output, reached);
+        Output << "\n";
+        Output.flush();
+      }
 
     } // for e
     if (error) break;
@@ -219,6 +136,7 @@ bool GenerateSandRG(state_model *dsm,
   FreeState(current);
   return !error; 
 }
+
 
 
 void DebugRGgen(state_model *dsm)
@@ -230,7 +148,7 @@ void DebugRGgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   digraph *rg = new digraph;
-  bool ok = Debug_GenerateSandRG(dsm, states, tree, rg);
+  bool ok = GenerateSandRG(dsm, states, tree, rg, true);
   if (!ok) {
     delete states;
     states = NULL;
@@ -254,7 +172,7 @@ void SplayRGgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   digraph *rg = new digraph;
-  bool ok = GenerateSandRG(dsm, states, tree, rg);
+  bool ok = GenerateSandRG(dsm, states, tree, rg, false);
   if (!ok) {
     delete states;
     states = NULL;
@@ -279,7 +197,7 @@ void RedBlackRGgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   digraph *rg = new digraph;
-  bool ok = GenerateSandRG(dsm, states, tree, rg);
+  bool ok = GenerateSandRG(dsm, states, tree, rg, false);
   if (!ok) {
     delete states;
     states = NULL;
@@ -336,148 +254,11 @@ inline bool IllegalRateCheck(result &x, state_model *dsm, event *t)
 }
 
 template <class SSTYPE>
-bool Debug_GenerateSandCTMC(state_model *dsm, 
-			    state_array *states,
-		   	    SSTYPE *tree, 
-			    labeled_digraph<float>* mc)
-{
-  DCASSERT(dsm);
-  DCASSERT(states);
-  DCASSERT(tree);
-  DCASSERT(mc);
-
-  bool error = false;
-  int e;
-
-  mc->ResizeNodes(4);
-  mc->ResizeEdges(4);
-
-  // allocate temporary (full) states
-  DCASSERT(dsm->UsesConstantStateSize());
-  int stsize = dsm->GetConstantStateSize();
-  state current, reached;
-  AllocState(current, stsize);
-  AllocState(reached, stsize);
-
-  // Find and insert the initial state(s)
-  for (int i=0; i<dsm->NumInitialStates(); i++) {
-    dsm->GetInitialState(i, current);
-    tree->AddState(current);
-    mc->AddNode();
-    // debug part...
-    Output << "Added initial state: ";
-    dsm->ShowState(Output, current);
-    Output << "\n";
-    Output.flush();
-    // ...to here
-  }
-  
-  // Allocate list of enabled events
-  List <event> enabled(16);
-  
-  result x;
-  x.Clear();
-  // compute the constant rates once before starting; use -1 if not const.
-  float* rates = NULL;
-  if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
-  for (e=0; e<dsm->NumEvents(); e++) {
-    event* t = dsm->GetEvent(e);
-    if (EXPO==t->DistroType()) {
-      SafeCompute(t->Distribution(), 0, x);
-      if (IllegalRateCheck(x, dsm, t)) {
-        // bail out
-	delete[] rates;
-	return false;
-      }
-      rates[e] = x.rvalue;
-    } else {
-      rates[e] = -1.0;
-    }
-  } 
-  
-  // ok, build the ctmc
-  int from;
-  for (from=0; from < states->NumStates(); from++) {
-    states->GetState(from, current);
-    // debug part...
-    Output << "\nExploring state#";
-    Output.Put(from, 5);
-    Output << " : ";
-    dsm->ShowState(Output, current);
-    Output << "\n\n";
-    Output.flush();
-    // ...to here
-    
-    // what is enabled?
-    if (!dsm->GetEnabledList(current, &enabled)) {
-      error = true;
-      break;
-    }
-
-    for (e=0; e<enabled.Length(); e++) {
-      event* t = enabled.Item(e);
-      DCASSERT(t);
-      if (NULL==t->getNextstate())
-        continue;  // firing is "no-op", don't bother
-
-      // t is enabled, fire and get new state
-
-      // set reached = current
-      states->GetState(from, reached);
-      // do the firing
-      t->getNextstate()->NextState(current, reached, x); 
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	Error << "Bad next-state expression during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-
-      // Which state is reached?
-      int to = tree->AddState(reached);
-      if (to == mc->NumNodes()) mc->AddNode();
-
-      // determine the rate
-      double printrate = 0.0;
-      if (rates[e]<0) {
-	// we must have a PROC_EXPO distribution
-        SafeCompute(t->Distribution(), current, 0, x);
-        if (IllegalRateCheck(x, dsm, t)) error = true;
-	else mc->AddEdgeInOrder(from, to, x.rvalue);
-        printrate = x.rvalue; 
-      } else {
-        mc->AddEdgeInOrder(from, to, rates[e]);
-        printrate = rates[e];
-      }
-
-      // debug part...
-      Output << "\t" << t;
-      Output << " --> ";
-      dsm->ShowState(Output, reached);
-      Output << "\n";
-      Output << "\tproduced MC entry [" << from << ", ";
-      Output << to << "] = " << printrate << "\n";
-      Output.flush();
-      // ... to here
-
-    } // for e
-    if (error) break;
-  } // for from
-
-  // cleanup
-  FreeState(reached);
-  FreeState(current);
-  delete[] rates;
-  return !error; 
-}
-
-
-template <class SSTYPE>
 bool GenerateSandCTMC(state_model *dsm, 
-			    state_array *states,
-		   	    SSTYPE *tree, 
-			    labeled_digraph<float>* mc)
+		    state_array *states,
+	   	    SSTYPE *tree, 
+		    labeled_digraph<float>* mc,
+		    bool debugging)
 {
   DCASSERT(dsm);
   DCASSERT(states);
@@ -502,6 +283,12 @@ bool GenerateSandCTMC(state_model *dsm,
     dsm->GetInitialState(i, current);
     tree->AddState(current);
     mc->AddNode();
+    if (debugging) {
+      Output << "Added initial state: ";
+      dsm->ShowState(Output, current);
+      Output << "\n";
+      Output.flush();
+    }
   }
   
   // Allocate list of enabled events
@@ -531,6 +318,14 @@ bool GenerateSandCTMC(state_model *dsm,
   int from;
   for (from=0; from < states->NumStates(); from++) {
     states->GetState(from, current);
+    if (debugging) {
+      Output << "\nExploring state#";
+      Output.Put(from, 5);
+      Output << " : ";
+      dsm->ShowState(Output, current);
+      Output << "\n\n";
+      Output.flush();
+    }
     
     // what is enabled?
     if (!dsm->GetEnabledList(current, &enabled)) {
@@ -573,6 +368,16 @@ bool GenerateSandCTMC(state_model *dsm,
       } else {
         mc->AddEdgeInOrder(from, to, rates[e]);
         printrate = rates[e];
+      }
+
+      if (debugging) {
+        Output << "\t" << t;
+        Output << " --> ";
+        dsm->ShowState(Output, reached);
+        Output << "\n";
+        Output << "\tproduced MC entry [" << from << ", ";
+        Output << to << "] = " << printrate << "\n";
+        Output.flush();
       }
 
     } // for e
@@ -596,7 +401,7 @@ void DebugCTMCgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   labeled_digraph<float> *mc = new labeled_digraph<float>;
-  bool ok = Debug_GenerateSandCTMC(dsm, states, tree, mc);
+  bool ok = GenerateSandCTMC(dsm, states, tree, mc, true);
   if (!ok) {
     delete states;
     states = NULL;
@@ -620,7 +425,7 @@ void SplayCTMCgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   labeled_digraph<float> *mc = new labeled_digraph<float>;
-  bool ok = GenerateSandCTMC(dsm, states, tree, mc);
+  bool ok = GenerateSandCTMC(dsm, states, tree, mc, false);
   if (!ok) {
     delete states;
     states = NULL;
@@ -645,7 +450,7 @@ void RedBlackCTMCgen(state_model *dsm)
   state_array* states = new state_array(true);
   splay_state_tree* tree = new splay_state_tree(states);
   labeled_digraph<float> *mc = new labeled_digraph<float>;
-  bool ok = GenerateSandCTMC(dsm, states, tree, mc);
+  bool ok = GenerateSandCTMC(dsm, states, tree, mc, false);
   if (!ok) {
     delete states;
     states = NULL;

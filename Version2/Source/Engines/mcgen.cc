@@ -545,7 +545,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 
       // We have the from state index, to state index;
       // get the rate / weight and add the arc
-      double value;
+      double value = 0.0;
       if (current_is_vanishing) {
 	// figure the weight
 	if (enabled.Length()==1) {
