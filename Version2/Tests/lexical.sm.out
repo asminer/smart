@@ -1,0 +1,84 @@
+Natural order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Reachability graph:
+	To state 0
+		From state 4
+	To state 1
+		From state 0
+		From state 2
+	To state 2
+		From state 1
+	To state 3
+		From state 1
+		From state 4
+	To state 4
+		From state 2
+		From state 3
+5 8
+Natural order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Markov chain:
+Column 0:
+	4 : 5.1
+Column 1:
+	0 : 1.1
+	2 : 2.1
+Column 2:
+	1 : 3.1
+Column 3:
+	1 : 4.1
+	4 : 2.1
+Column 4:
+	2 : 4.1
+	3 : 3.1
+5 8
+Lexical order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Reachability graph:
+	To state 0
+		From state 1
+	To state 1
+		From state 2
+		From state 3
+	To state 2
+		From state 4
+	To state 3
+		From state 1
+		From state 4
+	To state 4
+		From state 0
+		From state 2
+5 8
+Lexical order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Markov chain:
+Column 0:
+	1 : 5.1
+Column 1:
+	2 : 4.1
+	3 : 3.1
+Column 2:
+	4 : 3.1
+Column 3:
+	1 : 2.1
+	4 : 4.1
+Column 4:
+	0 : 1.1
+	2 : 2.1
+5 8
