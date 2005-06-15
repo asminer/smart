@@ -4,11 +4,9 @@
 
 Things to do:
 
-* Check state/MC display for pns, both natural and lexical orderings
+* Impulse rewards.
 
-* MC generation algorithm to eliminate vanishing "on the fly"
-
-* SS + MC generation algorithm to eliminate vanishing "on the fly"
+* SS + MC generation algorithms that keep vanishing states & arcs
 
 * Add "Embedded DTMC" generation algorithm?
 

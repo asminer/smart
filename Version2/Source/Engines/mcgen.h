@@ -48,4 +48,12 @@ void 	BuildCTMC(state_model *dsm);
 /// Initialize options for reachability graph / Markov chain generation.
 void InitMCGen();
 
+struct pair {
+  int index;
+  float weight;
+};
+
+OutputStream& operator<< (OutputStream &s, const pair& p);
+
+
 #endif

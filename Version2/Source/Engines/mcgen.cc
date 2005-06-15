@@ -19,11 +19,6 @@ const int num_mc_options = 2;
 option_const sparse_mc("SPARSE", "\aSparse, row-wise or column-wise storage");
 option_const kronecker_mc("KRONECKER", "\aUsing Kronecker algebra");
 
-struct pair {
-  int index;
-  float weight;
-};
-
 OutputStream& operator<< (OutputStream &s, const pair& p)
 {
   s << p.index << " : " << p.weight;
@@ -122,6 +117,8 @@ void CompressAndAffix(state_model* dsm, digraph *rg)
     dsm->rg->CreateError();
     return;
   }
+  // transpose if necessary
+  if (!MatrixByRows->GetBool()) rg->Transpose();
   dsm->rg = new reachgraph;
   dsm->rg->CreateExplicit(rg);
 }
@@ -167,8 +164,6 @@ void SparseRG(state_model *dsm)
 
     // "generate" initial probability vector here...
 
-    // transpose if necessary
-    if (!MatrixByRows->GetBool()) rg->Transpose();
   }
 
   // attach to model
@@ -424,10 +419,6 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
           } // while ptr
 	} // for i
         
-
-	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// Collapse t-v, v-v, v-t arcs into t-t arcs
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	Pvv.isDynamic = true;  // part 2 of above hack ;^)
         Pvv.Clear();
   	Pvt.Clear();
@@ -808,7 +799,9 @@ void CompressAndAffix(state_model* dsm, labeled_digraph<float> *mc)
     dsm->mc = new markov_chain(NULL);
     dsm->mc->CreateError();
     return;
-  }
+  } 
+  // transpose if necessary
+  if (!MatrixByRows->GetBool()) mc->Transpose();
   dsm->mc = new markov_chain(NULL);
   dsm->mc->CreateExplicit(new classified_chain<float>(mc));
 }
@@ -854,8 +847,6 @@ void SparseCTMC(state_model *dsm)
 
     // "generate" initial probability vector here...
 
-    // transpose if necessary
-    if (!MatrixByRows->GetBool()) mc->Transpose();
   }
 
   // attach to model
