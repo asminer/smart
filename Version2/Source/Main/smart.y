@@ -44,7 +44,7 @@
 LPAR RPAR LBRAK RBRAK LBRACE RBRACE 
 COMMA SEMI COLON POUND DOT DOTDOT GETS PLUS MINUS TIMES DIVIDE OR AND NOT 
 EQUALS NEQUAL GT GE LT LE ENDPND FOR END CONVERGE IN GUESS
-NUL DEFAULT TYPE MODIF MODEL 
+NUL DEFAULT TYPE MODIF PROC MODEL 
 
 %type <Type_ID> type model
 %type <Expr> topexpr expr term const_expr function_call
@@ -268,13 +268,29 @@ iterator
 	;
 
 type
-        :       MODIF TYPE
+        :       PROC MODIF TYPE
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing type : PROC MODIF TYPE\n";
+  Output.flush();
+#endif
+  $$ = MakeType(true, $2, $3);
+}
+        |       PROC TYPE
+{
+#ifdef PARSE_TRACE
+  Output << "Reducing type : PROC TYPE\n";
+  Output.flush();
+#endif
+  $$ = MakeType(true, NULL, $2);
+}
+        |       MODIF TYPE
 {
 #ifdef PARSE_TRACE
   Output << "Reducing type : MODIF TYPE\n";
   Output.flush();
 #endif
-  $$ = MakeType($1, $2);
+  $$ = MakeType(false, $1, $2);
 }
         |       TYPE
 {
@@ -282,9 +298,9 @@ type
   Output << "Reducing type : TYPE\n";
   Output.flush();
 #endif
-  $$ = MakeType(NULL, $1);
+  $$ = MakeType(false, NULL, $1);
 }
-;
+	;
 
 model
 	:	MODEL
@@ -293,7 +309,7 @@ model
   Output << "Reducing model : MODEL\n";
   Output.flush();
 #endif
-  $$ = MakeType(NULL, $1);
+  $$ = MakeType(false, NULL, $1);
 }
 	;
 

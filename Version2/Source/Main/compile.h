@@ -36,8 +36,9 @@ bool IsInteractive();
 /// Also used in smart.y, for simplicity
 int LineNumber();
 
-/// Build a type.  On error, returns VOID.
-type MakeType(const char* modif, const char* tp);
+/// Build a type.  On error, returns NO_SUCH_TYPE.
+type MakeType(bool proc, const char* modif, const char* tp);
+
 
 // ==================================================================
 // |                                                                |

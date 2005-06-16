@@ -131,7 +131,7 @@ void DumpPassed(OutputStream &s, List <named_param> *pass)
 // |                                                                |
 // ==================================================================
 
-type MakeType(const char* modif, const char* tp)
+type MakeType(bool proc, const char* modif, const char* tp)
 {
   int m = 0;
   if (modif) {
@@ -141,7 +141,7 @@ type MakeType(const char* modif, const char* tp)
       Internal << "Bad type modifier: " << modif;
       Internal.Stop();
       // shouldn't get here
-      return VOID;
+      return NO_SUCH_TYPE;
     }
   }
   int t = FindType(tp);
@@ -150,12 +150,14 @@ type MakeType(const char* modif, const char* tp)
     Internal << "Bad type: " << tp;
     Internal.Stop();
     // shouldn't get here
-    return VOID;
+    return NO_SUCH_TYPE;
   }
   type answer;
   if (modif) answer = ModifyType(m, t); else answer = t;
+  if (proc) answer = ProcifyType(answer);
 #ifdef COMPILE_DEBUG
   Output << "MakeType(";
+  if (proc) Output << "proc";
   if (modif) Output << modif; else Output << "null";
   Output << ", " << tp << ") returned " << GetType(answer) << "\n";
   Output.flush();

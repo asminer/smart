@@ -174,6 +174,7 @@ int ProcessID()
   if (FindModif(yytext)!=NO_SUCH_MODIF) return MODIF;
   if (FindModel(yytext)!=NO_SUCH_TYPE) return MODEL;
   if (FindVoidType(yytext)!=NO_SUCH_TYPE) return TYPE;
+  if (strcmp(yytext, "proc")==0) return PROC;
   return IDENT;
 }
 

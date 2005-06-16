@@ -194,26 +194,26 @@ inline type FindType(const char *t)
 /// Returns M for a modifier name, or -1
 modifier FindModif(const char *m);          
 
-/// Returns the type defined by "modif type", or 0 if it is illegal.
+/// Returns the type defined by "modif type", or NO_SUCH_TYPE if it is illegal.
 inline type ModifyType(modifier modif, type t)
 {
   if (PHASE==modif) 
     switch (t) {
       case INT	: return PH_INT;
       case REAL	: return PH_REAL;
-      default	: return 0;
+      default	: return NO_SUCH_TYPE;
     };
   if (RAND==modif)
     switch (t) {
       case BOOL : return RAND_BOOL;
       case INT	: return RAND_INT;
       case REAL	: return RAND_REAL;
-      default	: return 0;
+      default	: return NO_SUCH_TYPE;
     };
-  return 0; 
+  return NO_SUCH_TYPE; 
 }
 
-/// Returns the type defined by "proc type", or 0 if it is illegal.
+/// Returns the type defined by "proc type", or NO_SUCH_TYPE if it is illegal.
 inline type ProcifyType(type t)
 {
   switch (t) {
@@ -226,10 +226,10 @@ inline type ProcifyType(type t)
     case RAND_BOOL	: return	PROC_RAND_BOOL	;
     case RAND_INT	: return	PROC_RAND_INT	;
     case RAND_REAL	: return	PROC_RAND_REAL	;
-    default 	: return 0;
+    default 	: return NO_SUCH_TYPE;
   };
   // should never get here, but the compiler may complain.
-  return 0;
+  return NO_SUCH_TYPE;
 }
 
 
