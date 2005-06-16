@@ -4,6 +4,8 @@
 
 Things to do:
 
+* Marking-dependent firing rates
+
 * Impulse rewards.
 
 * SS + MC generation algorithms that keep vanishing states & arcs

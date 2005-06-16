@@ -763,9 +763,38 @@ bool PromoteForOp(expr* &left, int op, expr* &right)
 			return true;
 		  case PROC_INT:
 			return true;
+		  case PROC_REAL:
+		  	// promote left
+		  	left = MakeTypecast(left, rt, file, line);
+			return true;
 		} // switch rt
 	  return false;
 	} // switch op for proc int
+
+    // ========================================================
+    case PROC_REAL:
+    	switch (op) {
+	  case PLUS:
+	  case MINUS:
+	  case TIMES:
+	  case DIVIDE:
+	  case EQUALS:
+	  case NEQUAL:
+	  case GT:
+	  case GE:
+	  case LT:
+	  case LE:
+	  	switch (rt) {
+		  case INT:
+		  case REAL:
+		  case PROC_INT:
+		  	right = MakeTypecast(right, PROC_REAL, file, line);
+			return true;
+		  case PROC_REAL:
+			return true;
+		} // switch rt
+	  return false;
+	} // switch op for proc real
 
   } // switch lt
 

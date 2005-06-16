@@ -1941,6 +1941,13 @@ int typecheck_firing(List <expr> *params)
       case PH_REAL:
       case RAND_INT:
       case RAND_REAL:
+      case PROC_INT:
+      case PROC_REAL:
+      case PROC_EXPO:
+      case PROC_PH_INT:
+      case PROC_PH_REAL:
+      case PROC_RAND_INT:
+      case PROC_RAND_REAL:
 			ok = true;
 			break;
       default:
