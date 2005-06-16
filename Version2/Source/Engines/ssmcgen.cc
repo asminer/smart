@@ -622,7 +622,8 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 	  t_row = t_exp;
 	  Rtv.SortedAppend(vindex, value);
 	} else {
-          Rtt->AddEdgeInOrder(t_exp, tindex, value);
+	  if (t_exp != tindex)  // don't add self-loops
+            Rtt->AddEdgeInOrder(t_exp, tindex, value);
 	}
 	if (debugging) {
 	  Output << " rate " << value << "\n";

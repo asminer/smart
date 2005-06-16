@@ -230,7 +230,7 @@ void state_model::GetState(int n, state &x) const
 
 bool state_model::GetEnabledList(const state &current, List <event> *enabled)
 {
-  enabled->Clear();
+  if (enabled) enabled->Clear();
   // misc field: are we enabled.  1=yes, -1=no, 0=don't know yet
   int e;
   for (e=0; e<num_events; e++) event_data[e]->misc = 0;
@@ -259,19 +259,21 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
     }
     // event is enabled
     t->misc = 1;
-    enabled->Append(t);
+    if (enabled) enabled->Append(t);
     // check weight
     if (last_wc<0) {
       last_wc = t->wc;
     } else {
       if (t->wc!=last_wc) {
 	Error.StartModel(Name(), Filename(), Linenumber());
-	Error << "Simultaneous firing of events in different weight classes:\n";
-	Error << "\t";
-	for (int j=0; j<enabled->Length(); j++) {
-	  if (j) Error << ", ";
-	  Error << enabled->Item(j);
- 	}
+	Error << "Simultaneous firing of events in different weight classes";
+	if (enabled) {
+	  Error << ":\n\t";
+	  for (int j=0; j<enabled->Length(); j++) {
+	    if (j) Error << ", ";
+	    Error << enabled->Item(j);
+ 	  }
+	} 
 	Error.Stop();
 	return false;
       }
@@ -303,7 +305,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
     }
     // event is enabled, disable all in priority list
     t->misc = 1;
-    enabled->Append(t);
+    if (enabled) enabled->Append(t);
     for (int j=0; j<t->prio_length; j++) {
       DCASSERT(t->prio_list);
       DCASSERT(t->prio_list[j]);
@@ -312,6 +314,8 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   } // for e
   return true;
 }
+
+
 
 
 void state_model::DetermineProcessType()

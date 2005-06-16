@@ -1114,15 +1114,15 @@ public:
   virtual ~spn_model();
 
   // For construction
-  void AddInput(model_var* pl, model_var* tr, expr* card, 
+  void AddInput(model_var* pl, transition* t, expr* card, 
 	 	const char *fn, int ln);
-  void AddOutput(model_var* tr, model_var* pl, expr* card, 
+  void AddOutput(transition* t, model_var* pl, expr* card, 
 		const char *fn, int ln);
-  void AddInhibitor(model_var* pl, model_var* tr, expr* card, 
+  void AddInhibitor(model_var* pl, transition* t, expr* card, 
 		const char *fn, int ln);
-  void AddGuard(model_var* tr, expr* guard);
-  void AddFiring(model_var* tr, expr* firing);
-  void AddWeight(model_var* tr, expr* w);
+  void AddGuard(transition* t, expr* guard);
+  void AddFiring(transition* t, expr* firing);
+  void AddWeight(transition* t, expr* w);
   void AddInit(model_var* pl, int tokens, const char *fn, int ln);
 
   // Required for models:
@@ -1157,21 +1157,19 @@ spn_model::~spn_model()
 }
 
 
-void spn_model::AddInput(model_var* pl, model_var* tr, expr* card, 
+void spn_model::AddInput(model_var* pl, transition* t, expr* card, 
 			const char *fn, int ln)
 {
   DCASSERT(pl);
   CHECK_RANGE(0, pl->state_index, placelist->Length());
   DCASSERT(placelist->Item(pl->state_index) == pl);
 
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
+  DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
   
   DCASSERT(arcs);
 
-  transition *t = dynamic_cast <transition*> (tr);
-  DCASSERT(t);
   if (t->Inputs()<0) t->SetInputs( arcs->NewList() );
 
   int list = t->Inputs();
@@ -1203,21 +1201,19 @@ void spn_model::AddInput(model_var* pl, model_var* tr, expr* card,
   Warning.Stop();
 }
 
-void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card, 
+void spn_model::AddOutput(transition* t, model_var* pl, expr* card, 
 			const char *fn, int ln)
 {
   DCASSERT(pl);
   CHECK_RANGE(0, pl->state_index, placelist->Length());
   DCASSERT(placelist->Item(pl->state_index) == pl);
 
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
+  DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
   
   DCASSERT(arcs);
 
-  transition *t = dynamic_cast <transition*> (tr);
-  DCASSERT(t);
   if (t->Outputs()<0) t->SetOutputs( arcs->NewList() );
 
   int list = t->Outputs();
@@ -1249,21 +1245,19 @@ void spn_model::AddOutput(model_var* tr, model_var* pl, expr* card,
   Warning.Stop();
 }
 
-void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card, 
+void spn_model::AddInhibitor(model_var* pl, transition* t, expr* card, 
 			const char *fn, int ln)
 {
   DCASSERT(pl);
   CHECK_RANGE(0, pl->state_index, placelist->Length());
   DCASSERT(placelist->Item(pl->state_index) == pl);
 
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
+  DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
   
   DCASSERT(arcs);
 
-  transition *t = dynamic_cast <transition*> (tr);
-  DCASSERT(t);
   if (t->Inhibitors()<0) t->SetInhibitors( arcs->NewList() );
 
   int list = t->Inhibitors();
@@ -1295,14 +1289,12 @@ void spn_model::AddInhibitor(model_var* pl, model_var* tr, expr* card,
   Warning.Stop();
 }
 
-void spn_model::AddGuard(model_var* tr, expr* guard)
+void spn_model::AddGuard(transition* t, expr* guard)
 {
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
-  
-  transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
+  
   if (NULL==t->Guard()) {
     t->SetGuard( guard->Substitute(0) );
     return;
@@ -1315,14 +1307,12 @@ void spn_model::AddGuard(model_var* tr, expr* guard)
   t->SetGuard( merge );
 }
 
-void spn_model::AddFiring(model_var* tr, expr* firing)
+void spn_model::AddFiring(transition* t, expr* firing)
 {
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
-  
-  transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
+  
   result z;
   if (INT==firing->Type(0)) {
     firing->Compute(0, z);
@@ -1348,14 +1338,12 @@ void spn_model::AddFiring(model_var* tr, expr* firing)
   Warning.Stop();
 }
 
-void spn_model::AddWeight(model_var* tr, expr* w)
+void spn_model::AddWeight(transition* t, expr* w)
 {
-  DCASSERT(tr);
-  CHECK_RANGE(0, tr->state_index, translist->Length());
-  DCASSERT(translist->Item(tr->state_index) == tr);
-  
-  transition *t = dynamic_cast <transition*> (tr);
   DCASSERT(t);
+  CHECK_RANGE(0, t->state_index, translist->Length());
+  DCASSERT(translist->Item(t->state_index) == t);
+  
   if (NULL==t->Weight()) {
     t->SetWeight(wcl_current, w->Substitute(0) );  
     return;
@@ -1654,26 +1642,29 @@ void compute_spn_arcs(expr **pp, int np, result &x)
     result first;
     SafeCompute(pp[i], 0, first);
     DCASSERT(first.isNormal());
-    model_var* fv = dynamic_cast <model_var*> (first.other);
-    DCASSERT(fv);
 
     result second;
     SafeCompute(pp[i], 1, second); 
     DCASSERT(second.isNormal());
-    model_var* sv = dynamic_cast <model_var*> (second.other);
-    DCASSERT(sv);
- 
+
     // error checking of first and second here   
+
+    model_var* pl;
+    transition* t;
  
     expr* card = NULL;
     if (pp[i]->NumComponents()==3) card = pp[i]->GetComponent(2);
     switch (pp[i]->Type(0)) {
       case PLACE:
-        spn->AddInput(fv, sv, card, pp[i]->Filename(), pp[i]->Linenumber());
+        pl = dynamic_cast <model_var*> (first.other);
+        t = dynamic_cast <transition*> (second.other);
+        spn->AddInput(pl, t, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
 
       case TRANS:
-        spn->AddOutput(fv, sv, card, pp[i]->Filename(), pp[i]->Linenumber());
+        t = dynamic_cast <transition*> (first.other);
+        pl = dynamic_cast <model_var*> (second.other);
+        spn->AddOutput(t, pl, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
       
       default:
@@ -1770,7 +1761,7 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
     result second;
     SafeCompute(pp[i], 1, second); 
     DCASSERT(second.isNormal());
-    model_var* sv = dynamic_cast <model_var*> (second.other);
+    transition* sv = dynamic_cast <transition*> (second.other);
     DCASSERT(sv);
  
     expr* card = NULL;
@@ -1856,7 +1847,7 @@ void compute_spn_guard(expr **pp, int np, result &x)
     result t;
     SafeCompute(pp[i], 0, t);
     DCASSERT(t.isNormal());
-    model_var* tv = dynamic_cast <model_var*> (t.other);
+    transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
     
     spn->AddGuard(tv, pp[i]->GetComponent(1));
@@ -1908,7 +1899,7 @@ void compute_spn_firing(expr **pp, int np, result &x)
     result t;
     SafeCompute(pp[i], 0, t);
     DCASSERT(t.isNormal());
-    model_var* tv = dynamic_cast <model_var*> (t.other);
+    transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
     
     expr* c1 = pp[i]->GetComponent(1);
@@ -2002,7 +1993,7 @@ void compute_spn_weight(expr **pp, int np, result &x)
     result t;
     SafeCompute(pp[i], 0, t);
     DCASSERT(t.isNormal());
-    model_var* tv = dynamic_cast <model_var*> (t.other);
+    transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
     
     spn->AddWeight(tv, pp[i]->GetComponent(1));
@@ -2100,6 +2091,73 @@ void Add_spn_tk(PtrTable *fns)
   pl[1] = new formal_param(PLACE, "p");
   internal_func *p = new internal_func(PROC_INT, "tk", 
 	compute_spn_tk, NULL, pl, 2, helpdoc);  
+  p->setWithinModel();
+  InsertFunction(fns, p);
+}
+
+// ********************************************************
+// *                         rate                         *
+// ********************************************************
+
+void compute_spn_rate(const state &m, expr **pp, int np, result &x)
+{
+  x.Clear();
+  DCASSERT(np==2);
+  DCASSERT(pp);
+  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  DCASSERT(spn);
+  state_model *dsm = dynamic_cast<state_model*>(spn->GetModel());
+  if (NULL==dsm) {
+    x.setNull();
+    return;
+  }
+
+  SafeCompute(pp[1], 0, x);
+#ifdef DEVELOPMENT_CODE
+  DCASSERT(x.isNormal());
+  transition* tv = dynamic_cast <transition*> (x.other);
+  DCASSERT(tv);
+#else 
+  transition* tv = (transition*) x.other;
+#endif
+  event* e = tv->Event();
+  DCASSERT(e);
+ 
+  // check if this transition is enabled
+  if (!dsm->GetEnabledList(m, NULL)) {
+    x.setNull();
+    return;
+  }
+  if (e->misc<=0) {
+    x.rvalue = 0.0;
+    return;
+  }
+  // transition is enabled, get firing rate
+  switch (e->DistroType()) {
+    case EXPO:
+  	SafeCompute(e->Distribution(), 0, x);
+	return;
+    case PROC_EXPO:
+  	SafeCompute(e->Distribution(), m, 0, x);
+	return;
+    default:
+    	break;
+  }
+  Error.Start(pp[1]->Filename(), pp[1]->Linenumber());
+  Error << "Requesting rate of non-expo transition " << tv;
+  Error.Stop();
+  x.setNull();
+}
+
+void Add_spn_rate(PtrTable *fns)
+{
+  const char* helpdoc = "Returns the (current) firing rate of transition t; 0 t is disabled.  t must have EXPO firing distribution.";
+
+  formal_param **pl = new formal_param*[2];
+  pl[0] = new formal_param(PN, "net");
+  pl[1] = new formal_param(TRANS, "t");
+  internal_func *p = new internal_func(PROC_REAL, "rate", 
+	compute_spn_rate, NULL, pl, 2, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -2248,6 +2306,7 @@ void InitPNModelFuncs(PtrTable *t)
   Add_spn_weight(t);
 
   Add_spn_tk(t);
+  Add_spn_rate(t);
 
   Add_prio(t);
 

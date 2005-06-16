@@ -574,7 +574,8 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  t_row = t_exp;
 	  Rtv.SortedAppend(vindex, value);
 	} else {
-          Rtt->AddEdgeInOrder(t_exp, tindex, value);
+	  if (t_exp != tindex)  // don't add self-loops
+            Rtt->AddEdgeInOrder(t_exp, tindex, value);
 	}
       } // if (arc type)
 

@@ -105,9 +105,9 @@ class event : public symbol {
   event** prio_list;
   /// Number of events we have priority over
   int prio_length;
+public:
   /// misc integer data, e.g., for enabling
   int misc;
-public:
   /// Used by analysis engines; e.g., firing time for simulation
   double value;
 public:
@@ -238,6 +238,8 @@ public:
   /** List of enabled events.
       Takes priority information into account.
       Returns false if there was an error, true on success.
+      If enabled is NULL, don't store the enabled events.
+      Useful if we care only about particular events.
   */
   bool GetEnabledList(const state &current, List <event> *enabled);
 

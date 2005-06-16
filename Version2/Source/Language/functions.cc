@@ -428,6 +428,61 @@ void user_func::Sample(Rng &s, expr **pp, int np, result &x)
   stack_ptr = oldstackptr;
 }
 
+void user_func::Compute(const state &s, expr **pp, int np, result &x) 
+{
+  x.Clear();
+  if (NULL==return_expr) {
+    x.setNull();
+    return;
+  }
+
+  // first... make sure there is enough room on the stack to save params
+  if (ParamStackTop+np > ParamStackSize) {
+    Error.Start(Filename(), Linenumber());
+    Error << "Stack overflow in function call " << Name();
+    Error.Stop();
+    x.setError();
+    return;
+  }
+
+  int oldstacktop = ParamStackTop;  
+  result* oldstackptr = stack_ptr;
+  result* newstackptr = ParamStack + ParamStackTop;
+
+  ParamStackTop += np; 
+
+  // Compute parameters, place on stack
+  int i;
+  for (i=0; i<np; i++) newstackptr[i].setError();
+  for (i=0; i<np; i++) SafeCompute(pp[i], s, 0, newstackptr[i]); 
+
+  // "call" function
+  stack_ptr = newstackptr;
+  SafeCompute(return_expr, s, 0, x);
+
+  if (x.isError()) {
+    // check option?
+    Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
+    Error << "function call " << Name();
+    if (np) Error << "(";
+    for (i=0; i<np; i++) {
+      if (i) Error << ", ";
+      Error << parameters[i] << "=";
+      PrintResult(Error, parameters[i]->Type(0), newstackptr[i]);
+    }
+    if (np) Error << ")";
+    Error.Stop();
+  }
+
+  // free parameters, in case they're strings or other bulky items
+  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[i]);
+
+  // pop off stack
+  ParamStackTop = oldstacktop;
+  stack_ptr = oldstackptr;
+}
+
+
 void user_func::SetReturn(expr *e)
 {
   return_expr = e; 

@@ -343,6 +343,7 @@ public:
 
   virtual void Compute(expr **, int np, result &x);
   virtual void Sample(Rng &, expr **, int np, result &x);
+  virtual void Compute(const state &, expr **, int np, result &x);
 
   virtual void SetReturn(expr *e);
 

@@ -3,6 +3,8 @@
 
 #include "numerical.h"
 
+#include "api.h"
+
 #include "../Language/measures.h"
 #include "../Formalisms/dsm.h"
 #include "../States/reachset.h"
@@ -18,17 +20,6 @@ void Warnwrapper(bool ok)
   Warning.Start();
   Warning << "Numerical solution did not achieve desired precision\n";
   Warning.Stop();
-}
-
-/// Returns true on success
-bool BuildProcess(state_model *dsm)
-{
-  if (NULL==dsm) return false;
-  if (dsm->mc) return true;  // already built
-
-  // actual construction here, someday
-
-  return false;
 }
 
 // Returns stationary vector or NULL on error
@@ -209,6 +200,75 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 }
 
 
+// return true on success, false if some error
+bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
+{
+  for (int m=0; m<mlist->Length(); m++) {
+    result mval;
+    mval.Clear();
+    double mtotal = 0.0;
+    bool mok = true;
+    DCASSERT(mlist->Item(m));
+    expr* mexpr = mlist->Item(m)->GetRewardExpr();
+    DCASSERT(mexpr != ERROR);
+    if (NULL==mexpr) {
+      mval.setNull();
+      mlist->Item(m)->SetValue(mval);
+      continue;
+    } 
+    switch (mexpr->Type(0)) {
+      case PROC_BOOL:
+	// -------------------- BOOL measures --------------------
+	for (int i=SS->NumTangible()-1; i>=0; i--) if (x[i]) {
+#ifdef DEVELOPMENT_CODE
+	  DCASSERT(SS->GetTangible(i, s));	
+#else
+	  SS->GetTangible(i, s);
+#endif
+      	  mexpr->Compute(s, 0, mval); 
+      	  if (mval.isNormal()) {
+	    if (mval.bvalue) mtotal += x[i];
+          } else {
+            mok = false;
+	    break;
+          }
+    	} // for i
+	// -------------------------------------------------------
+      break;
+      case PROC_REAL:
+	// -------------------- REAL measures --------------------
+	for (int i=SS->NumTangible()-1; i>=0; i--) if (x[i]) {
+#ifdef DEVELOPMENT_CODE
+	  DCASSERT(SS->GetTangible(i, s));	
+#else
+	  SS->GetTangible(i, s);
+#endif
+      	  mexpr->Compute(s, 0, mval); 
+      	  if (mval.isNormal()) {
+ 	    mtotal += mval.rvalue * x[i];
+          } else {
+            mok = false;
+            break;
+	    // TO DO: check for infinity and keep going
+            // to check for errors, e.g., infinity - infinity
+          }
+    	} // for i
+	// -------------------------------------------------------
+      break;
+      default:
+	Internal.Start(__FILE__, __LINE__);
+        Internal << "Measure expression of type " << GetType(mexpr->Type(0));
+        Internal.Stop();
+    } // switch for measure type
+    if (mok) mval.rvalue = mtotal;
+    mlist->Item(m)->SetValue(mval);
+  } // for m
+
+  FreeState(s);
+  return true;
+}
+
+
 bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 {
 #ifdef DEBUG
@@ -216,9 +276,9 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
   Output.flush();
 #endif
   if (NULL==m) return false;
-  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
-  if (!BuildProcess(dsm)) return false;
+  BuildProcess(m);
 
+  state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   DCASSERT(dsm->proctype != Proc_Unknown);
   DCASSERT(dsm->mc);
   DCASSERT(dsm->mc->Explicit());
@@ -234,6 +294,7 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
   // compute measures
   
   bool rwd_result;
+  state s;
   switch (dsm->statespace->Storage()) {
     case RT_None:
  	rwd_result = false;
@@ -244,6 +305,14 @@ bool 	NumericalSteadyInst(model *m, List <measure> *mlist)
 				 dsm->mc->Explicit()->numStates(),
 				 pi, mlist);
 	break;
+
+    case RT_Explicit:
+    	AllocState(s, dsm->GetConstantStateSize());
+	rwd_result = ExplicitRewards(dsm->statespace->Explicit(), s,
+				 pi, mlist);
+	FreeState(s);
+	break;
+
 
     default:
 	rwd_result = false;
