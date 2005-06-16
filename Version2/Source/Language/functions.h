@@ -71,8 +71,14 @@ public:
   virtual ~formal_param();
 
   virtual void ClearCache() { } // No cache
+  /// for "deterministic" parameters
   virtual void Compute(int i, result &x);
+  /// for "rand" parameters
   virtual void Sample(Rng &, int i, result &x);
+  /// for "proc" parameters
+  virtual void Compute(const state &, int i, result &x);
+  /// for "proc rand" parameters
+  virtual void Sample(Rng &, const state &, int i, result &x);
 
   /** Used to "link" the formal params to 
       a user-defined function.

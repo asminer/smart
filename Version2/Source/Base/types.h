@@ -116,6 +116,7 @@ const type 	LAST_INTERNAL 	= EXPR_PTR;
 
 const modifier  NO_SUCH_MODIF	= 255;
 
+const modifier 	DETERM = 0;
 const modifier 	PHASE = 1;
 const modifier	RAND  = 2;
 const modifier	FIRST_MODIF = PHASE;
@@ -211,6 +212,36 @@ inline type ModifyType(modifier modif, type t)
       default	: return NO_SUCH_TYPE;
     };
   return NO_SUCH_TYPE; 
+}
+
+inline bool HasProc(type t)
+{
+  return (t>=FIRST_PROC) && (t<=LAST_PROC);
+}
+
+inline modifier GetModifier(type t)
+{
+  switch (t) {
+    case VOID :
+    case BOOL :
+    case INT  :
+    case REAL :
+    case STRING :
+    case BIGINT :
+    case STATESET :
+    			return DETERM;
+
+    case EXPO :
+    case PH_INT :
+    case PH_REAL :
+    			return PHASE;
+
+    case RAND_BOOL :
+    case RAND_INT :
+    case RAND_REAL : 
+    			return RAND;
+  }
+  return NO_SUCH_MODIF;
 }
 
 /// Returns the type defined by "proc type", or NO_SUCH_TYPE if it is illegal.

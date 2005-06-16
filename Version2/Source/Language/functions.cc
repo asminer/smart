@@ -83,6 +83,23 @@ void formal_param::Sample(Rng &, int i, result &x)
 }
 
 
+void formal_param::Compute(const state &, int i, result &x)
+{
+  DCASSERT(i==0);
+  DCASSERT(stack);
+  DCASSERT(stack[0]);   
+  CopyResult(Type(i), x, stack[0][offset]);
+}
+
+void formal_param::Sample(Rng &, const state &, int i, result &x)
+{
+  DCASSERT(i==0);
+  DCASSERT(stack);
+  DCASSERT(stack[0]);   
+  CopyResult(Type(i), x, stack[0][offset]);
+}
+
+
 // ******************************************************************
 // *                                                                *
 // *                        function methods                        *

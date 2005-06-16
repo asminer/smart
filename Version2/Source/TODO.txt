@@ -4,6 +4,8 @@
 
 Things to do:
 
+* non-constant parameters; nail down semantics.
+
 * Marking-dependent firing rates
 
 * Impulse rewards.
