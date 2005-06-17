@@ -34,5 +34,33 @@ void DisplayDocs(OutputStream &display, const char* doc,
 */
 bool DocMatches(const char* doc, const char* srch);
 
+
+/** 
+	Allows the addition of "help topics", i.e., additional
+	documentation not tied to functions or options.
+	This is for "static" documentation.
+*/
+void AddTopic(const char* topic, const char* doc);
+
+/**
+	The function signature to use for "dynamic" documentation:
+	void MyTopic(OutputStream &display, int LM, int RM);
+*/
+typedef void (*Topic_func) (OutputStream &display, int LM, int RM);
+
+/** 
+	Allows the addition of "help topics", i.e., additional
+	documentation not tied to functions or options.
+	This is for "dynamic" documentation, e.g., listing
+	all known types.
+*/
+void AddTopic(const char* topic, Topic_func f);
+
+
+/**
+	Display all topics matching the specified keyword.
+*/
+void MatchTopics(const char* key, OutputStream &display, int LM, int RM);
+
 #endif
 

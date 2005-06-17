@@ -168,6 +168,7 @@ void ShowModelDocs(void *x)
       Internal.Stop();
     }
     Output << "\n";
+    Output.Check();
   }
 }
 

@@ -2,6 +2,7 @@
 // $Id$
 
 #include "api.h"
+#include "docs.h"
 
 // Some action option functions
 
@@ -45,6 +46,65 @@ extern option_const* RF_FIXED;
 extern option_const* RF_SCIENTIFIC;
 
 
+// help functions
+
+void show_types(OutputStream &disp, int LM, int RM)
+{
+  DisplayDocs(disp, 
+  	"Documentation about types, modifiers, proc and anything else that relates to types goes here.  Long and nicely formatted, so we use the handy DisplayDocs function.",
+  LM, RM, false);
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Simple types:\n";
+  for (type t=FIRST_SIMPLE; t<EXPO; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Stochastic types:\n";
+  for (type t=EXPO;  t<=LAST_SIMPLE; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Process types:\n";
+  for (type t=FIRST_PROC; t<=LAST_PROC; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Model types:\n";
+  for (type t=DTMC; t<=LAST_MODEL; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Model variable types:\n";
+  for (type t=FIRST_VOID; t<=LAST_VOID; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+
+  disp.Put('\n');
+  disp.Pad(' ', LM);
+  disp << "Set types:\n";
+  for (type t=FIRST_SET; t<=LAST_SET; t++) {
+    disp.Pad(' ', LM+5);
+    disp << GetType(t) << "\n";
+  }
+  disp << "\n\n";
+}
+
+// Hook
 void InitBase()
 {
   InitStreams();
@@ -75,4 +135,11 @@ void InitBase()
   			things, 3, RF_GENERAL);
 
   AddOption(real_format);
+
+
+  // initialize help topics
+
+  AddTopic("test", "This is a test of help topics.");
+
+  AddTopic("types", show_types);
 }

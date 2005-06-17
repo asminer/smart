@@ -61,6 +61,7 @@ void ShowDocs(void *x)
 	Output << " near line " << hit->Linenumber() << "\n";
     }
     Output << "\n";
+    Output.Check();
   }
 }
 
@@ -73,6 +74,10 @@ void compute_help(expr **pp, int np, result &x)
   SafeCompute(pp[0], 0, x);
   if (x.isNormal()) 
     help_search_string = x.svalue->string;
+
+  // Help topics
+  MatchTopics(help_search_string, Output, 5, 75);
+  Output.Check();
 
   // Builtin functions
   Builtins.Traverse(ShowDocs);
