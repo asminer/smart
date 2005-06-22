@@ -136,10 +136,8 @@ void InitBase()
 
   AddOption(real_format);
 
+  // initialize the basic help topics
 
-  // initialize help topics
-
-  AddTopic("test", "This is a test of help topics.");
-
+  AddTopic("topics", ShowTopicNames);
   AddTopic("types", show_types);
 }

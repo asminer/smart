@@ -27,6 +27,7 @@ public:
       Display(d, LM, RM);
     }
   }
+  const char* Name() const { return topic; }
 };
 
 class static_help : public help_topic {
@@ -69,6 +70,31 @@ void AddTopic(const char* topic, const char* doc)
 void AddTopic(const char* topic, Topic_func f)
 {
   topics.Append(new dynamic_help(topic, f));
+}
+
+void ShowTopicNames(OutputStream &display, int LM, int RM)
+{
+  DisplayDocs(display, "The following help topics are available:", LM, RM, false);
+  // get longest topic name
+  int maxname = 0;
+  for (int i=0; i<topics.Length(); i++) {
+    maxname = MAX(maxname, int(strlen(topics.Item(i)->Name())));
+  }
+  maxname += 2;
+  // Display.
+  int position = RM; 
+  for (int i=0; i<topics.Length(); i++) {
+    if (position + maxname > RM) {
+      display.Put('\n');
+      display.Pad(' ', LM);
+      position = LM;
+    }
+    const char* tn = topics.Item(i)->Name();
+    display.Put(tn);
+    display.Pad(' ', maxname - strlen(tn));
+    position += maxname;
+  }
+  display.Put('\n');
 }
 
 void MatchTopics(const char* key, OutputStream &display, int LM, int RM)

@@ -107,7 +107,7 @@ void AddHelp(PtrTable *fns)
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(STRING, "search");
 
-  const char* helpdoc = "Searches on-line help for function and option names containing <search>";
+  const char* helpdoc = "An on-line help mechanism.  Searches for help topics, functions, options, and option constants containing the substring <search>.  Documentation is displayed for all matches.  Use search string \"topics\" to view the available help topics.  An empty string will cause *all* documentation to be displayed.";
 
   internal_func *hlp =
     new internal_func(VOID, "help", compute_help, NULL, pl, 1, helpdoc);

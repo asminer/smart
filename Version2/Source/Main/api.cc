@@ -5,6 +5,7 @@
 #include "compile.h"
 
 #include "../Base/api.h"
+#include "../Base/docs.h"
 #include "../Language/api.h"
 #include "../Engines/api.h"
 
@@ -23,6 +24,11 @@ void InitLexer(int filecount, char** files)
   inputFiles = files;
   whichInputFile = 1;
   filename = NULL;
+
+  // Add lexer-related documentation
+  AddTopic("#include", "A source file can include other source files using the #include preprocessing directive, as in C.  An #include directive is ignored if it causes a circular dependency.");
+
+  AddTopic("comments", "Source files can contain C and C++ style comments, which are stripped by Smart's lexer.  The rules are:\n  (1) Characters on a line following \"//\" are ignored.\n  (2) Characters between \"/*\" and \"*/\" are ignored.");
 }
 
 void HelpScreen()

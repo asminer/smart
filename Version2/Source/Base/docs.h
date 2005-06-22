@@ -56,6 +56,10 @@ typedef void (*Topic_func) (OutputStream &display, int LM, int RM);
 */
 void AddTopic(const char* topic, Topic_func f);
 
+/**
+	Show all the topic names.
+*/
+void ShowTopicNames(OutputStream &display, int LM, int RM);
 
 /**
 	Display all topics matching the specified keyword.
