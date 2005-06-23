@@ -51,7 +51,7 @@ extern option_const* RF_SCIENTIFIC;
 void show_types(OutputStream &disp, int LM, int RM)
 {
   DisplayDocs(disp, 
-  	"Documentation about types, modifiers, proc and anything else that relates to types goes here.  Long and nicely formatted, so we use the handy DisplayDocs function.",
+  	"The Smart language is strictly typed; all objects have a specified type.  Basic types can be further modified by *natures*,  which specify if the object is deterministic or random.  Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*.  Types are also used for model formalisms, model variables, and sets of objects.",
   LM, RM, false);
 
   disp.Put('\n');
