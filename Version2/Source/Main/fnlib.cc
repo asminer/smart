@@ -31,12 +31,17 @@ void ShowDocs(void *x)
   int i;
   for (i=0; i<bar->Length(); i++) {
     function *hit = bar->Item(i);
+#ifdef RELEASE_CODE
     if (hit->IsUndocumented()) continue;  // don't show this to the public
+#endif
     // show to the public
     if (unshown) {
       Output << foo->name << "\n";
       unshown = false;
     }
+#ifdef DEVELOPMENT_CODE
+    if (hit->IsUndocumented()) Output.Put("Undocumented");
+#endif
     Output.Pad(' ', 5);
     hit->ShowHeader(Output);
     // special type checking: documentation must display parameters, too

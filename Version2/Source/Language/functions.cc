@@ -535,11 +535,7 @@ void engine_wrapper::HideDocs()
 
 bool engine_wrapper::IsUndocumented() const
 {
-#ifdef DEVELOPMENT_CODE
-  return false;
-#else
   return hidedocs;
-#endif
 }
 
 const char* engine_wrapper::GetDocumentation() const
@@ -693,11 +689,7 @@ void internal_func::HideDocs()
 
 bool internal_func::IsUndocumented() const
 {
-#ifdef DEVELOPMENT_CODE
-  return false;
-#else
   return hidedocs;
-#endif
 }
 
 const char* internal_func::GetDocumentation() const

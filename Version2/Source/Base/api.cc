@@ -101,7 +101,6 @@ void show_types(OutputStream &disp, int LM, int RM)
     disp.Pad(' ', LM+5);
     disp << GetType(t) << "\n";
   }
-  disp << "\n\n";
 }
 
 // Hook

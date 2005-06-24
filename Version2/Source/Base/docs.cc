@@ -25,6 +25,7 @@ public:
     if (DocMatches(topic, key)) {
       d << "Help topic: " << topic << "\n";
       Display(d, LM, RM);
+      d.Put('\n');
     }
   }
   const char* Name() const { return topic; }

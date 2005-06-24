@@ -299,8 +299,12 @@ void compute_num_states(expr **pp, int np, result &x)
 	DCASSERT(ess);
 	if (ess->NumVanishing()) Output << "Tangible states:\n";
 	for (i=0; i<ess->NumTangible(); i++) {
+#ifdef DEVELOPMENT_CODE
 	  bool ok = ess->GetTangible(order[i], s);
 	  DCASSERT(ok);
+#else
+	  ess->GetTangible(order[i], s);
+#endif
 	  if (ess->NumVanishing())
 	    Output << "Tangible state " << i << ": ";
 	  else
@@ -311,8 +315,12 @@ void compute_num_states(expr **pp, int np, result &x)
 	} // for i	
 	if (ess->NumVanishing()) Output << "Vanishing states:\n";
 	for (i=0; i<ess->NumVanishing(); i++) {
+#ifdef DEVELOPMENT_CODE
 	  bool ok = ess->GetVanishing(order[i+ess->NumTangible()], s);
 	  DCASSERT(ok);
+#else
+	  ess->GetVanishing(order[i+ess->NumTangible()], s);
+#endif
 	  Output << "Vanishing state " << i << ": ";
 	  dsm->ShowState(Output, s);
 	  Output << "\n";
