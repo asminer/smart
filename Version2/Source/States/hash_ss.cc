@@ -15,8 +15,48 @@
 
 //@{ 
 
-state_array* hash_states_node::states = NULL;
-hash_states_node* hash_states_node::ptr = NULL;
+
+// ******************************************************************
+// *                                                                *
+// *                    hash_state_nodes methods                    *
+// *                                                                *
+// ******************************************************************
+
+hash_state_nodes::hash_state_nodes(state_array* s)
+{
+  ALLOC("hash_state_nodes", sizeof(hash_state_nodes));
+  states = s;
+  next = new DataList <int> (32);
+}
+
+hash_state_nodes::~hash_state_nodes()
+{
+  delete next;
+  FREE("hash_state_nodes", sizeof(hash_state_nodes));
+}
+
+// ******************************************************************
+// *                                                                *
+// *                        hash_sort  class                        *
+// *                                                                *
+// ******************************************************************
+
+// Used to sort states
+struct state_sorter {
+  static state_array* states;
+  int index;
+// handy constructors
+  state_sorter() { index = -1; }
+  state_sorter(int i) { index = i; }
+};
+
+inline bool operator> (const state_sorter &a, const state_sorter &b)
+{
+  DCASSERT(a.states);
+  return (a.states->Compare(a.index, b.index) > 0);
+}
+
+state_array* state_sorter::states = NULL;
 
 // ******************************************************************
 // *                                                                *
@@ -24,19 +64,17 @@ hash_states_node* hash_states_node::ptr = NULL;
 // *                                                                *
 // ******************************************************************
 
-hash_states::hash_states(state_array *s)
+hash_states::hash_states(state_array *s) : nodes(s)
 {
   ALLOC("hash_states", sizeof(hash_states));
   states = s;
-  nodes = new DataList <hash_states_node> (32);
-  Table = new HashTable <hash_states_node>;
+  Table = new HashTable <hash_state_nodes>(&nodes);
 }
 
 hash_states::~hash_states()
 {
   // don't delete states
   delete Table;
-  delete nodes;
   FREE("hash_states", sizeof(hash_states));
 }
 
@@ -46,54 +84,34 @@ void hash_states::FillOrderList(int* order)
     Verbose << "Sorting states\n";
     Verbose.flush();
   }
-  // remove everything from hash table
-  Table->ConvertToList();
-  // yank the node array
-  hash_states_node* array = nodes->CopyAndClearArray();
-  // hack: use the next pointer as the value to sort
-  for (int i=0; i<states->NumStates(); i++) 
-    array[i].next = array + i;
-  // heapsort
-  HeapOfObjects <hash_states_node> foo(array, states->NumStates());
+  // Heapsort the states
+  state_sorter::states = states;
+  HeapOfObjects <state_sorter> foo(states->NumStates());
+  for (int i=0; i<states->NumStates(); i++) foo.Insert(state_sorter(i));
   foo.Sort();
-  for (int i=0; i<states->NumStates(); i++)
-    order[i] = array[i].next->Index();
+  DCASSERT(foo.Size() == states->NumStates());
+  state_sorter* A = foo.MakeArray();
+  for (int i=0; i<states->NumStates(); i++) order[i] = A[i].index;
+  free(A);
+  state_sorter::states = NULL;
 }
 
 int hash_states::AddState(const state &s)
 {
   int key = states->AddState(s);
-  if (key >= nodes->Length()) nodes->AppendBlank(); 
-  DCASSERT(nodes->alloc > key);
-
-  nodes->data[key].states = states;
-  nodes->data[key].ptr = nodes->data;
-  nodes->data[key].next = NULL;
-
-  hash_states_node* thing = Table->Insert(nodes->data + key);
-  if (thing->Index() != key) {
-    states->PopLast();
-  }
-  return thing->Index();
+  nodes.AddState(key);
+  int thing = Table->Insert(key);
+  if (thing != key) states->PopLast();
+  return thing;
 }
 
 int hash_states::FindState(const state &s)
 {
   int key = states->AddState(s);
-  if (key >= nodes->Length()) nodes->AppendBlank(); 
-  DCASSERT(nodes->alloc > key);
-
-  nodes->data[key].states = states;
-  nodes->data[key].ptr = nodes->data;
-  nodes->data[key].next = NULL;
-
-  hash_states_node* thing = Table->Insert(nodes->data + key);
+  nodes.AddState(key);
+  int thing = Table->Find(key);
   states->PopLast();
-
-  if (thing->Index() != key) {
-    return -1;
-  }
-  return thing->Index();
+  return thing;
 }
 
 void hash_states::Report(OutputStream &r)

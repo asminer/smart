@@ -16,36 +16,40 @@
 
 */
 
-// Super hack, but keeps memory very tight
-struct hash_states_node {
-  static state_array* states;
-  static hash_states_node* ptr;
-  inline int Index() const { return this - ptr; }
-  inline int Hash(int m) const {
-    DCASSERT(states);
-    DCASSERT(ptr);
-    return states->Hash(Index(), m);
-  }
-  inline bool Equals(hash_states_node *key) const {
-    DCASSERT(states);
-    DCASSERT(ptr);
-    DCASSERT(key);
-    return (0==states->Compare(Index(), key->Index()));
-  }
-  hash_states_node* next;
-};
+// node manager for hash table
 
-bool operator> (const hash_states_node &a, const hash_states_node &b)
-{
-  return (a.states->Compare(a.Index(), b.Index()) > 0);
-}
+struct hash_state_nodes {
+  state_array* states;
+  DataList <int> *next;
+public:
+  hash_state_nodes(state_array* s);
+  ~hash_state_nodes();
+  inline void AddState(int handle) {
+    if (handle >= next->Length()) next->AppendBlank();
+    DCASSERT(next->alloc > handle);
+  }
+  // Required for hash tables
+  inline int getNext(int h) const { 
+    CHECK_RANGE(0, h, next->last);
+    return next->data[h]; 
+  }
+  inline void setNext(int h, int nxt) { 
+    CHECK_RANGE(0, h, next->last);
+    next->data[h] = nxt; 
+  } 
+  inline int hash(int h, int M) const { return states->Hash(h, M); }
+  inline bool equals(int h1, int h2) const { 
+    return (0==states->Compare(h1, h2));
+  }
+  inline void show(int h) const { Output << h; }
+};
 
 class hash_states {
 protected:
   /// State data
   state_array* states; 
-  DataList <hash_states_node> *nodes;
-  HashTable <hash_states_node> *Table;
+  hash_state_nodes nodes;
+  HashTable <hash_state_nodes> *Table;
 public:
   hash_states(state_array *s);
   ~hash_states();  

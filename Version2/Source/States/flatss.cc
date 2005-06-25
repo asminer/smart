@@ -13,6 +13,10 @@
     
  */
 
+// #define DEBUG
+// #define DEBUG_COMPACT
+// #define PRINT_BITS_BINARY
+
 //@{ 
 
 // ==================================================================
@@ -159,6 +163,7 @@ void state_array::WriteInt(char bits, int x)
 
 void state_array::PrintBits(OutputStream &s, int start, int stop) const
 {
+#ifdef PRINT_BITS_BINARY
   int i, b;
   for (i=start; i<stop; i++) {
     s << "|";
@@ -168,6 +173,11 @@ void state_array::PrintBits(OutputStream &s, int start, int stop) const
 	s << "1"; else s << "0";
     }
   }
+#else
+  s.Put("[");
+  s.PutArray(mem+start, stop-start);
+  s.Put("]");
+#endif
 }
 
 void state_array::EnlargeMem(int newsize)
@@ -571,11 +581,12 @@ int state_array::AddState(const state &s)
 #ifdef  DEBUG_COMPACT
   Output << "Added state #" << numstates-1 << " : " << s << "\n";
   int Handel = (map) ? map[numstates-1] : answer;
-  Output << "handle: " << Handel << "\n";
-  Output << "nexthandle: " << lasthandle << "\n";
-  Output << "#places bits: " << (int) npbits;
+  Output << "\thandle: " << Handel << "\n";
+  Output << "\tnexthandle: " << lasthandle << "\n";
+  Output << "\t#places bits: " << (int) npbits;
   Output << "\t#tokens bits: " << (int) tkbits << "\n";
-  Output << "Used " << EncodingMethod[encoding] << " storage\n";
+  Output << "\tUsed " << EncodingMethod[encoding] << " storage\n";
+/*
   switch (encoding) {
     case 1: 
       Output << "#nonzeroes: " << nnz << "\n"; 
@@ -589,6 +600,7 @@ int state_array::AddState(const state &s)
       Output << "#places: " << (int) np << "\n";
       break;
   }
+*/
   Output << "Encoding:\n";
   PrintBits(Output, Handel, lasthandle);
   Output << "\n";
@@ -842,6 +854,7 @@ int state_array::NextHandle(int h)
 int state_array::Hash(int handle, int M) const
 {
   DCASSERT(map);
+  CHECK_RANGE(0, handle, numstates);
   // Look at the last 4 bytes of the state, mod M.
   // Be careful not to shoot past the front of the state, though.
   int answer = 0;
@@ -850,6 +863,12 @@ int state_array::Hash(int handle, int M) const
     answer += ( (answer * 256) + mem[first] );
     answer %= M;
   }
+#ifdef DEBUG_COMPACT
+  Output << "State " << handle << " rep: [";
+  Output.PutArray(mem+map[handle], map[handle+1] - map[handle]);
+  Output << "]\nHash value (M=" << M << "): " << answer << "\n";
+  Output.flush();
+#endif
   return answer;
 }
 
@@ -1044,6 +1063,12 @@ flatss::flatss(state_array *ta, int *to, state_array *va, int *vo)
   DCASSERT(t_states->UsesIndexHandles());
   if (v_states)
     DCASSERT(v_states->UsesIndexHandles());
+#endif
+#ifdef DEBUG
+  Output << "Tangible state array: [";
+  Output.PutArray(t_order, t_states->NumStates());
+  Output << "]\n";
+  Output.flush();
 #endif
 }
 

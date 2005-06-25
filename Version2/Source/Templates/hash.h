@@ -3,18 +3,30 @@
 
 /*
 	Hash table template class.
+
+	Operations are performed on a "node manager" object, where
+	nodes are indexed by handles >= 0.  Several hash tables can
+	share a single node manager if desired.
+	The node manager must provide the following methods 
+	(preferably inlined for speed):
+
+	getNext(int h)
+	setNext(int h, int nxt)
+
+	hash(int h, int M);
+
+	equals(int h1, int h2);
 	
-	Passed objects must have a public "next" member; 
-	i.e., you must make the template object the hash table nodes.
-
-	Objects must have a method "Hash(int m)"; 
-	this is the hashing function for a table of size m (m always prime).
-
-	Objects must have a method "Equals(DATA*)".
+	for debugging:
+	show(int h);
 */
 
 #ifndef HASH_H
 #define HASH_H
+
+//#define DEBUG_HASH
+
+#include "list.h"
 
 const int num_hash_sizes = 29;
 
@@ -51,116 +63,140 @@ const int hash_sizes[num_hash_sizes] = {
 };
 
 
-template <class DATA>
+template <class MANAGER>
 class HashTable {
 protected:
   int size_index;
   int num_entries;
-  DATA** table;
+  int* table;
+  MANAGER *nodes;
 public:
-  HashTable() {
+  HashTable(MANAGER *n) {
     size_index = num_entries = 0;
     table = NULL;
+    nodes = n;
     Expand();
   }
   ~HashTable() {
-    // Will not delete entries.
+    // Do not delete nodes.
     free(table);
   }
   inline int Size() const {
     CHECK_RANGE(0, size_index, num_hash_sizes);
     return hash_sizes[size_index];
   }
-  /// Empty the hash table into a list; returns the list.
-  DATA* ConvertToList() {
+#ifdef DEBUG_HASH
+  void Show() const {
     int i;
-    DATA* front = NULL;
     for (i=0; i<Size(); i++) {
-      while (table[i]) {
-	DATA* foo = table[i]->next;
-	table[i]->next = front;
+      Output << "[" << i << "] : ";
+      for (int index = table[i]; index >= 0; index = nodes->getNext(index)) {
+	nodes->show(index);
+        Output << " ";
+      }
+      Output << "\n";
+      Output.flush();
+    }
+  }
+#endif
+  /// Empty the hash table into a list; returns the list.
+  int ConvertToList() {
+    int i;
+    int front = -1;
+    for (i=0; i<Size(); i++) {
+      while (table[i] >= 0) {
+	int foo = nodes->getNext(table[i]);
+        nodes->setNext(table[i], front);
 	front = table[i];
 	table[i] = foo;
 	num_entries--;
       } // while
+      DCASSERT(num_entries >= 0);
       if (num_entries <= 0) break;
     } // for i
     return front;
   };
   /// A series of inserts; doesn't check for duplicates or expand.
-  void BuildFromList(DATA* front) {
-    while (front) {
-      DATA* ptr = front;
-      front = front->next;
-      int h = ptr->Hash(Size());
-      ptr->next = table[h];
-      table[h] = ptr;
+  void BuildFromList(int front) {
+    while (front >= 0) {
+      int next = nodes->getNext(front);
+      int h = nodes->hash(front, Size());
+      nodes->setNext(front, table[h]);
+      table[h] = front;
+      front = next;
       num_entries++;
     }
   }
 
   void Expand() {
     if (size_index+1 >= num_hash_sizes) return;
-    DATA* ptr = ConvertToList();
+#ifdef DEBUG_HASH
+    Output << "Enlarging table.  Old table:\n";
+    Show();
+#endif
+    int ptr = ConvertToList();
     int os = Size();
     size_index++;
-    table = (DATA**) realloc(table, sizeof(DATA*) * Size());
+    table = (int*) realloc(table, sizeof(int) * Size());
     if (Size() && (NULL==table)) OutOfMemoryError("Hash table resize");
-    for (int i=os; i<Size(); i++) table[i] = NULL;
+    for (int i=os; i<Size(); i++) table[i] = -1;
     BuildFromList(ptr);
+#ifdef DEBUG_HASH
+    Output << "New table:\n";
+    Show();
+#endif
   }
 
   void Shrink() {
     if (size_index==0) return;
-    DATA* ptr = ConvertToList();
+    int ptr = ConvertToList();
     size_index--;
-    table = (DATA**) realloc(table, sizeof(DATA*) * Size());
+    table = (int*) realloc(table, sizeof(int) * Size());
     if (Size() && (NULL==table)) OutOfMemoryError("Hash table resize");
     BuildFromList(ptr);
   }
 
   /** If table contains key, move it to the front of the list.
       Otherwise, do nothing.
-      Returns ptr to the key if found, null otherwise.
+      Returns index of the item if found, -1 otherwise.
   */
-  DATA* Find(DATA* key) {
-    int h = key->Hash(Size());
+  int Find(int key) {
+    int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    DATA* parent = NULL;
-    DATA* ptr;
-    for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (key->Equals(ptr)) break;
+    int parent = -1;
+    int ptr;
+    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+      if (nodes->equals(key, ptr)) break;
       parent = ptr;
     }
-    if (ptr) {
+    if (ptr >= 0) {
       // remove from current spot
-      if (parent) parent->next = ptr->next;
-      else table[h] = ptr->next;
+      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
+      else table[h] = nodes->getNext(ptr);
       // move to front
-      ptr->next = table[h];
+      nodes->setNext(ptr, table[h]);
       table[h] = ptr;
     }
     return ptr;
   }
 
   /** If table contains key, remove it and return it.
-      Otherwise, return NULL.
+      Otherwise, return -1.
   */
-  DATA* Remove(DATA* key) {
-    int h = key->Hash(Size());
+  int Remove(int key) {
+    int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    DATA* parent = NULL;
-    DATA* ptr;
-    for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (key->Equals(ptr)) break;
+    int parent = -1;
+    int ptr;
+    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+      if (nodes->equals(key, ptr)) break;
       parent = ptr;
     }
-    if (ptr) {
+    if (ptr >= 0) {
       // remove from current spot
-      if (parent) parent->next = ptr->next;
-      else table[h] = ptr->next;
+      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
+      else table[h] = nodes->getNext(ptr);
       num_entries--;
-      if (num_entries < hash_sizes[size_index-1]) Shrink();
     }
     return ptr;
   }
@@ -170,26 +206,26 @@ public:
       Otherwise, add key to the front of the list.
       Returns the (new) front of the list.
   */
-  DATA* Insert(DATA* key) {
+  int Insert(int key) {
     if (num_entries >= hash_sizes[size_index+2]) Expand();
-    int h = key->Hash(Size());
+    int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    DATA* parent = NULL;
-    DATA* ptr;
-    for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (key->Equals(ptr)) break;
+    int parent = -1;
+    int ptr;
+    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+      if (nodes->equals(key, ptr)) break;
       parent = ptr;
     }
-    if (ptr) {
+    if (ptr >= 0) {
       // remove from current spot
-      if (parent) parent->next = ptr->next;
-      else table[h] = ptr->next;
+      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
+      else table[h] = nodes->getNext(ptr);
       // move to front
-      ptr->next = table[h];
+      nodes->setNext(ptr, table[h]);
       table[h] = ptr;
     } else {
       // add key in front
-      key->next = table[h];
+      nodes->setNext(key, table[h]);
       table[h] = key;
       num_entries++;
     }

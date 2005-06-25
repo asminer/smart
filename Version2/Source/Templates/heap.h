@@ -59,6 +59,7 @@ public:
   ~HeapOfObjects() {
     Resize(0);
   }
+  inline int Size() { return last; }
   void Clear(int inits) {
     last = 0;
     sorted = false;

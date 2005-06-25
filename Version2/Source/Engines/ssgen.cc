@@ -325,7 +325,7 @@ void HashReachset(state_model *dsm)
   hash_states* ttree = new hash_states(tstates);
   hash_states* vtree = new hash_states(vstates);
   bool ok = Explore_Indexed(dsm, EliminateVanishing->GetBool(),
-  				tstates, ttree, vstates, vtree, true );
+  				tstates, ttree, vstates, vtree, false);
   if (Report.IsActive()) {
     Report << "Tangible hash table:\n";
     ttree->Report(Report);
