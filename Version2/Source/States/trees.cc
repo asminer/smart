@@ -22,7 +22,7 @@
 
 binary_tree::binary_tree(state_array *s)
 {
-  ALLOC("binary_tree", sizeof(splay_state_tree));
+  ALLOC("binary_tree", sizeof(binary_tree));
   states = s;
   DCASSERT(states->UsesIndexHandles());
   left = NULL;  
@@ -36,7 +36,7 @@ binary_tree::binary_tree(state_array *s)
 
 binary_tree::~binary_tree()
 {
-  FREE("binary_tree", sizeof(splay_state_tree));
+  FREE("binary_tree", sizeof(binary_tree));
   free(left);
   free(right);
   delete path;

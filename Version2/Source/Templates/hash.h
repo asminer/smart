@@ -10,7 +10,7 @@
 	Objects must have a method "Hash(int m)"; 
 	this is the hashing function for a table of size m (m always prime).
 
-	Also, the operator == must work correctly on the objects.
+	Objects must have a method "Equals(DATA*)".
 */
 
 #ifndef HASH_H
@@ -58,10 +58,10 @@ protected:
   int num_entries;
   DATA** table;
 public:
-  HashTable(Manager <DATA> *nh) {
+  HashTable() {
     size_index = num_entries = 0;
-    nodeheap = nh;
     table = NULL;
+    Expand();
   }
   ~HashTable() {
     // Will not delete entries.
@@ -125,10 +125,11 @@ public:
   */
   DATA* Find(DATA* key) {
     int h = key->Hash(Size());
+    CHECK_RANGE(0, h, Size());
     DATA* parent = NULL;
     DATA* ptr;
     for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (*ptr == *key) break;
+      if (key->Equals(ptr)) break;
       parent = ptr;
     }
     if (ptr) {
@@ -147,10 +148,11 @@ public:
   */
   DATA* Remove(DATA* key) {
     int h = key->Hash(Size());
+    CHECK_RANGE(0, h, Size());
     DATA* parent = NULL;
     DATA* ptr;
     for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (*ptr == *key) break;
+      if (key->Equals(ptr)) break;
       parent = ptr;
     }
     if (ptr) {
@@ -171,10 +173,11 @@ public:
   DATA* Insert(DATA* key) {
     if (num_entries >= hash_sizes[size_index+2]) Expand();
     int h = key->Hash(Size());
+    CHECK_RANGE(0, h, Size());
     DATA* parent = NULL;
     DATA* ptr;
     for (ptr = table[h]; ptr; ptr = ptr->next) {
-      if (*ptr == *key) break;
+      if (key->Equals(ptr)) break;
       parent = ptr;
     }
     if (ptr) {

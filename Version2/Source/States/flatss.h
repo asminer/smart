@@ -186,6 +186,15 @@ public:
 
   int NextHandle(int h); 
 
+  /**	Gives a hash value for a state.
+	For speed, this requires a map array (index handles) to find 
+	the "end" of the encoding.
+	@param handle	The state
+	@param M	Size of the hash table
+	@return		An integer between 0 and M-1.
+  */
+  int Hash(int handle, int M) const;
+
   /**  Compares the encodings of two states.
        Note: this is done by comparing the encodings of the states
        without unpacking.  For speed, this requires a map array (index 

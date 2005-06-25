@@ -27,7 +27,7 @@ struct option_const {
   // handy...
   option_const(const char* n, const char* d) { name = n; doc = d; }
   // also handy...
-  inline void show(OutputStream &s) {
+  inline void show(OutputStream &s) const {
     if (name) s << name;
     else s << "(no name)";
   }

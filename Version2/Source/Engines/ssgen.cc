@@ -6,14 +6,16 @@
 #include "../States/flatss.h"
 #include "../States/stateheap.h"
 #include "../States/trees.h"
+#include "../States/hash_ss.h"
 #include "../Base/timers.h"
 
 option* StateStorage;
 option* EliminateVanishing;
 
-const int num_ss_options = 3;
+const int num_ss_options = 4;
 
 option_const debug_ss("DEBUG", "\aUse splay tree and display states as they are generated");
+option_const hash_ss("HASH", "\aHash table");
 option_const redblack_ss("RED_BLACK", "\ared-black tree");
 option_const splay_ss("SPLAY", "\aSplay tree");
 
@@ -190,9 +192,10 @@ bool Explore_Indexed(state_model *dsm, bool eliminate,
 }
 
 
-void CompressAndAffix(state_model* dsm, 
-			state_array* tst, binary_tree* ttr,
-			state_array* vst, binary_tree* vtr)
+template <class SSDATA>
+void TemplCompressAndAffix(state_model* dsm, 
+			state_array* tst, SSDATA* ttr,
+			state_array* vst, SSDATA* vtr)
 {
   DCASSERT(dsm);
   DCASSERT(NULL==dsm->statespace);
@@ -226,6 +229,20 @@ void CompressAndAffix(state_model* dsm,
   // attach everything
   flatss* ss = new flatss(tst, torder, vst, vorder);
   dsm->statespace->CreateExplicit(ss);
+}
+
+void CompressAndAffix(state_model* dsm, 
+			state_array* tst, binary_tree* ttr,
+			state_array* vst, binary_tree* vtr)
+{
+  TemplCompressAndAffix(dsm, tst, ttr, vst, vtr);
+}
+
+void CompressAndAffix(state_model* dsm, 
+			state_array* tst, hash_states* ttr,
+			state_array* vst, hash_states* vtr)
+{
+  TemplCompressAndAffix(dsm, tst, ttr, vst, vtr);
 }
 
 void DebugReachset(state_model *dsm)
@@ -297,6 +314,31 @@ void RedBlackReachset(state_model *dsm)
   CompressAndAffix(dsm, tstates, ttree, vstates, vtree);
 }
 
+void HashReachset(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting reachability set generation using hash table\n";
+    Verbose.flush();
+  }
+  state_array* tstates = new state_array(true);
+  state_array* vstates = new state_array(true);
+  hash_states* ttree = new hash_states(tstates);
+  hash_states* vtree = new hash_states(vstates);
+  bool ok = Explore_Indexed(dsm, EliminateVanishing->GetBool(),
+  				tstates, ttree, vstates, vtree, true );
+  if (Report.IsActive()) {
+    Report << "Tangible hash table:\n";
+    ttree->Report(Report);
+    tstates->Report(Report);
+    Report.flush();
+  }
+  if (!ok) {
+    delete tstates;
+    tstates = NULL;
+  }
+  CompressAndAffix(dsm, tstates, ttree, vstates, vtree);
+}
+
 // *******************************************************************
 // *                           Front  ends                           *
 // *******************************************************************
@@ -314,12 +356,15 @@ void BuildReachset(state_model *dsm)
   if (ss_option == &debug_ss)		DebugReachset(dsm); 
   if (ss_option == &splay_ss)		SplayReachset(dsm); 
   if (ss_option == &redblack_ss)	RedBlackReachset(dsm); 
+  if (ss_option == &hash_ss)		HashReachset(dsm); 
   watch.Stop();
 
   if (NULL==dsm->statespace) {
     // we didn't do anything...
     Internal.Start(__FILE__, __LINE__);
-    Internal << "StateStorage option " << ss_option << " not handled";
+    Internal << "StateStorage option ";
+    ss_option->show(Internal);
+    Internal << " not handled";
     Internal.Stop();
   }
 
@@ -340,8 +385,9 @@ void InitSSGen()
   option_const **sslist = new option_const*[num_ss_options];
   // these must be alphabetical
   sslist[0] = &debug_ss;
-  sslist[1] = &redblack_ss;
-  sslist[2] = &splay_ss;
+  sslist[1] = &hash_ss;
+  sslist[2] = &redblack_ss;
+  sslist[3] = &splay_ss;
   StateStorage = MakeEnumOption("StateStorage", "Algorithm and data structure to use for state space generation", sslist, num_ss_options, &splay_ss);
   AddOption(StateStorage);
 

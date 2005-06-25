@@ -839,6 +839,20 @@ int state_array::NextHandle(int h)
   return byteptr;
 }
 
+int state_array::Hash(int handle, int M) const
+{
+  DCASSERT(map);
+  // Look at the last 4 bytes of the state, mod M.
+  // Be careful not to shoot past the front of the state, though.
+  int answer = 0;
+  int first = MAX(map[handle], map[handle+1]-5);
+  for (; first < map[handle+1]; first++) {
+    answer += ( (answer * 256) + mem[first] );
+    answer %= M;
+  }
+  return answer;
+}
+
 int state_array::Compare(int h1, int h2) const
 {
   DCASSERT(map);
