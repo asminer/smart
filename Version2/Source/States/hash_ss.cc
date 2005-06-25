@@ -117,6 +117,15 @@ int hash_states::FindState(const state &s)
 void hash_states::Report(OutputStream &r)
 {
   r << "Hash table report for state space generation\n";
+  r << "\tCurrent size: " << Table->Size() << "\n";
+  r << "\tMax chain length seen: " << Table->MaxChain() << "\n";
+  int total = 0;
+  r << "\tTable bytes: " << int(Table->Size() * sizeof(int)) << "\n";
+  total += Table->Size() * sizeof(int);
+  r << "\tNodes allocated: " << int(nodes.next->alloc) << "\n";
+  r << "\tNode bytes: " << int(nodes.next->alloc * sizeof(int)) << "\n";
+  total += nodes.next->alloc * sizeof(int);
+  r << "\tTotal memory: " << total << "\n";
 }
 
 //@}

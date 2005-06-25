@@ -70,11 +70,14 @@ protected:
   int num_entries;
   int* table;
   MANAGER *nodes;
+  // stats
+  int maxchain;
 public:
   HashTable(MANAGER *n) {
     size_index = num_entries = 0;
     table = NULL;
     nodes = n;
+    maxchain = 0;
     Expand();
   }
   ~HashTable() {
@@ -85,6 +88,7 @@ public:
     CHECK_RANGE(0, size_index, num_hash_sizes);
     return hash_sizes[size_index];
   }
+  inline int MaxChain() const { return maxchain; }
 #ifdef DEBUG_HASH
   void Show() const {
     int i;
@@ -212,10 +216,13 @@ public:
     CHECK_RANGE(0, h, Size());
     int parent = -1;
     int ptr;
+    int thischain = 0;
     for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+      thischain++;
       if (nodes->equals(key, ptr)) break;
       parent = ptr;
     }
+    maxchain = MAX(maxchain, thischain);
     if (ptr >= 0) {
       // remove from current spot
       if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
