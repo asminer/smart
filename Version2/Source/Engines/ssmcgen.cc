@@ -26,6 +26,7 @@ bool IsReachsetAndRGCompatible(const option_const* ssgen,
 {
   if (mcgen == &sparse_mc) {
     return (ssgen == &debug_ss) ||
+           (ssgen == &hash_ss) ||
            (ssgen == &redblack_ss) ||
 	   (ssgen == &splay_ss);
   }
@@ -165,6 +166,31 @@ void DebugRGgen(state_model *dsm)
   CompressAndAffix(dsm, states, tree, NULL, NULL);
   CompressAndAffix(dsm, rg);
 }
+
+void HashRGgen(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting generation using Hash & sparse\n";
+    Verbose.flush();
+  }
+  state_array* states = new state_array(true);
+  hash_states* tree = new hash_states(states);
+  digraph *rg = new digraph;
+  bool ok = GenerateSandRG(dsm, states, tree, rg, false);
+  if (!ok) {
+    delete states;
+    states = NULL;
+    delete rg;
+    rg = NULL;
+  }
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating, compressing\n";
+    Verbose.flush();
+  }
+  CompressAndAffix(dsm, states, tree, NULL, NULL);
+  CompressAndAffix(dsm, rg);
+}
+
 
 void SplayRGgen(state_model *dsm)
 {
@@ -689,146 +715,6 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 }
 
 
-/*
-template <class SSTYPE>
-bool OLD_GenerateSandCTMC(state_model *dsm, 
-		    state_array *states,
-	   	    SSTYPE *tree, 
-		    labeled_digraph<float>* mc,
-		    bool debugging)
-{
-  DCASSERT(dsm);
-  DCASSERT(states);
-  DCASSERT(tree);
-  DCASSERT(mc);
-
-  bool error = false;
-  int e;
-
-  mc->ResizeNodes(4);
-  mc->ResizeEdges(4);
-
-  // allocate temporary (full) states
-  DCASSERT(dsm->UsesConstantStateSize());
-  int stsize = dsm->GetConstantStateSize();
-  state current, reached;
-  AllocState(current, stsize);
-  AllocState(reached, stsize);
-
-  // Find and insert the initial state(s)
-  for (int i=0; i<dsm->NumInitialStates(); i++) {
-    dsm->GetInitialState(i, current);
-    tree->AddState(current);
-    mc->AddNode();
-    if (debugging) {
-      Output << "Added initial state: ";
-      dsm->ShowState(Output, current);
-      Output << "\n";
-      Output.flush();
-    }
-  }
-  
-  // Allocate list of enabled events
-  List <event> enabled(16);
-  
-  result x;
-  x.Clear();
-  // compute the constant rates once before starting; use -1 if not const.
-  float* rates = NULL;
-  if (dsm->NumEvents()) rates = new float[dsm->NumEvents()];
-  for (e=0; e<dsm->NumEvents(); e++) {
-    event* t = dsm->GetEvent(e);
-    if (EXPO==t->DistroType()) {
-      SafeCompute(t->Distribution(), 0, x);
-      if (IllegalRateCheck(x, dsm, t)) {
-        // bail out
-	delete[] rates;
-	return false;
-      }
-      rates[e] = x.rvalue;
-    } else {
-      rates[e] = -1.0;
-    }
-  } 
-  
-  // ok, build the ctmc
-  int from;
-  for (from=0; from < states->NumStates(); from++) {
-    states->GetState(from, current);
-    if (debugging) {
-      Output << "\nExploring state#";
-      Output.Put(from, 5);
-      Output << " : ";
-      dsm->ShowState(Output, current);
-      Output << "\n\n";
-      Output.flush();
-    }
-    
-    // what is enabled?
-    if (!dsm->GetEnabledList(current, &enabled)) {
-      error = true;
-      break;
-    }
-
-    for (e=0; e<enabled.Length(); e++) {
-      event* t = enabled.Item(e);
-      DCASSERT(t);
-      if (NULL==t->getNextstate())
-        continue;  // firing is "no-op", don't bother
-
-      // t is enabled, fire and get new state
-
-      // set reached = current
-      states->GetState(from, reached);
-      // do the firing
-      t->getNextstate()->NextState(current, reached, x); 
-      if (!x.isNormal()) {
-	Error.StartModel(dsm->Name(), dsm->Filename(), dsm->Linenumber());
-	Error << "Bad next-state expression during CTMC generation";
-	Error.Stop();
-	error = true;
-	break;
-      }
-
-      // Which state is reached?
-      int to = tree->AddState(reached);
-      if (to == mc->NumNodes()) mc->AddNode();
-
-      // determine the rate
-      double printrate = 0.0;
-      if (rates[e]<0) {
-	// we must have a PROC_EXPO distribution
-        SafeCompute(t->Distribution(), current, 0, x);
-        if (IllegalRateCheck(x, dsm, t)) error = true;
-	else mc->AddEdgeInOrder(from, to, x.rvalue);
-        printrate = x.rvalue; 
-      } else {
-        mc->AddEdgeInOrder(from, to, rates[e]);
-        printrate = rates[e];
-      }
-
-      if (debugging) {
-        Output << "\t" << t;
-        Output << " --> ";
-        dsm->ShowState(Output, reached);
-        Output << "\n";
-        Output << "\tproduced MC entry [" << from << ", ";
-        Output << to << "] = " << printrate << "\n";
-        Output.flush();
-      }
-
-    } // for e
-    if (error) break;
-  } // for from
-
-  // cleanup
-  FreeState(reached);
-  FreeState(current);
-  delete[] rates;
-  return !error; 
-}
-
-*/
 
 void DebugCTMCgen(state_model *dsm)
 {
@@ -859,6 +745,37 @@ void DebugCTMCgen(state_model *dsm)
   CompressAndAffix(dsm, tst, ttr, vst, vtr);
   CompressAndAffix(dsm, mc);
 }
+
+void HashCTMCgen(state_model *dsm)
+{
+  if (Verbose.IsActive()) {
+    Verbose << "Starting generation using Hash & sparse\n";
+    Verbose.flush();
+  }
+  state_array* tst = new state_array(true);
+  state_array* vst = new state_array(true);
+  hash_states* ttr = new hash_states(tst);
+  hash_states* vtr = new hash_states(vst);
+  labeled_digraph<float> *mc = new labeled_digraph<float>;
+  bool ok = GenerateSandCTMC(dsm, true, tst, ttr, vst, vtr, mc, false);
+  delete vst;
+  vst = NULL;
+  delete vtr;
+  vtr = NULL;
+  if (!ok) {
+    delete tst;
+    tst = NULL;
+    delete mc;
+    mc = NULL;
+  }
+  if (Verbose.IsActive()) {
+    Verbose << "Done generating, compressing\n";
+    Verbose.flush();
+  }
+  CompressAndAffix(dsm, tst, ttr, vst, vtr);
+  CompressAndAffix(dsm, mc);
+}
+
 
 void SplayCTMCgen(state_model *dsm)
 {
@@ -949,6 +866,7 @@ void BuildReachSetAndGraph(state_model *dsm)
 
   watch.Start();
   if (ss_option == &debug_ss)		DebugRGgen(dsm); 
+  if (ss_option == &hash_ss)		HashRGgen(dsm); 
   if (ss_option == &splay_ss)		SplayRGgen(dsm); 
   if (ss_option == &redblack_ss)	RedBlackRGgen(dsm); 
   watch.Stop();
@@ -989,6 +907,7 @@ void BuildReachsetAndCTMC(state_model *dsm)
 
   watch.Start();
   if (ss_option == &debug_ss)		DebugCTMCgen(dsm); 
+  if (ss_option == &hash_ss)		HashCTMCgen(dsm); 
   if (ss_option == &splay_ss)		SplayCTMCgen(dsm); 
   if (ss_option == &redblack_ss)	RedBlackCTMCgen(dsm); 
   watch.Stop();

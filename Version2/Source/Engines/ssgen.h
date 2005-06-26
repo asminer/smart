@@ -7,11 +7,13 @@
 #include "../Formalisms/dsm.h"
 #include "../States/flatss.h"
 #include "../States/trees.h"
+#include "../States/hash_ss.h"
 
 // Necessary for ssmcgen.cc
 
 extern option* StateStorage;
 extern option_const debug_ss;
+extern option_const hash_ss;
 extern option_const redblack_ss;
 extern option_const splay_ss;
 
@@ -30,6 +32,10 @@ extern option* EliminateVanishing;
 void CompressAndAffix(state_model* dsm, 
 			state_array* tst, binary_tree* ttr,
 			state_array* vst, binary_tree* vtr);
+
+void CompressAndAffix(state_model* dsm, 
+			state_array* tst, hash_states* ttr,
+			state_array* vst, hash_states* vtr);
 
 /** 	Build the reachability set for a state model.
 
