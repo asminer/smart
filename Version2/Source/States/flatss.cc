@@ -851,26 +851,41 @@ int state_array::NextHandle(int h)
   return byteptr;
 }
 
-int state_array::Hash(int handle, int M) const
+int state_array::Hash(int handle, int M) const 
 {
-  DCASSERT(map);
-  CHECK_RANGE(0, handle, numstates);
-  // Look at the last 4 bytes of the state, mod M.
-  // Be careful not to shoot past the front of the state, though.
-  int answer = 0;
-  int first = MAX(map[handle], map[handle+1]-5);
-  for (; first < map[handle+1]; first++) {
-    answer += ( (answer * 256) + mem[first] );
-    answer %= M;
-  }
+    DCASSERT(map);
+    CHECK_RANGE(0, handle, numstates);
+    int start = map[handle];
+    int end = map[handle+1];
+    if (end - start > 4) end--;   // last byte is only partly full
+    if (end - start > 4) start++; // first byte is encoding method
+    DCASSERT(end - start >= 2);
+    unsigned int first4;
+    if (end - start < int(sizeof(unsigned int))) {
+      first4 = 0;
+      for (; start < end; start++) {
+        first4 *= 256;
+        first4 += mem[start];
+      }
+    } else {
+      first4 = *(unsigned int*)(mem+start);
+      start += sizeof(unsigned int);
+    }
+    // Look at remaining state
+    int answer = first4 % M;
+    for (int i=start; i<end; i++) {
+      answer += ( (answer * 256) + mem[i] );
+      answer %= M;
+    }
 #ifdef DEBUG_COMPACT
-  Output << "State " << handle << " rep: [";
-  Output.PutArray(mem+map[handle], map[handle+1] - map[handle]);
-  Output << "]\nHash value (M=" << M << "): " << answer << "\n";
-  Output.flush();
+    Output << "State " << handle << " rep: [";
+    Output.PutArray(mem+map[handle], map[handle+1] - map[handle]);
+    Output << "]\nHash value (M=" << M << "): " << answer << "\n";
+    Output.flush();
 #endif
-  return answer;
+    return answer;
 }
+
 
 int state_array::Compare(int h1, int h2) const
 {
