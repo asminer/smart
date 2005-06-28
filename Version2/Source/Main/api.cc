@@ -8,6 +8,7 @@
 #include "../Base/docs.h"
 #include "../Language/api.h"
 #include "../Engines/api.h"
+#include "../States/api.h"
 
 // These are defined in smart.l
 extern char **inputFiles;
@@ -63,6 +64,7 @@ int smart_main(int argc, char *argv[], char *env[])
   InitLanguage();
   InitLexer(argc, argv);
   InitCompiler();
+  InitStates();
   InitEngines();
 
   SortOptions();

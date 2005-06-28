@@ -19,6 +19,8 @@
 
 //@{ 
 
+option* Hash_Skip = NULL;
+
 // ==================================================================
 // ||                                                              ||
 // ||                     state_array  methods                     ||
@@ -871,9 +873,13 @@ int state_array::Hash(int handle, int M) const
       first4 = *(unsigned int*)(mem+start);
       start += sizeof(unsigned int);
     }
+    // how frequently to look at state
+    int incr = (Hash_Skip) ? Hash_Skip->GetInt() : 0;
+    start += incr;
+    incr++;
     // Look at remaining state
     int answer = first4 % M;
-    for (int i=start; i<end; i++) {
+    for (int i=start; i<end; i += incr) {
       answer += ( (answer * 256) + mem[i] );
       answer %= M;
     }
