@@ -39,14 +39,14 @@ measure::~measure()
   delete eng;
 }
 
-void measure::Compute(int i, result &x)
+void measure::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(i==0);
   if (state != CS_Computed) {
     if (split_return) {
-      split_return->Compute(i, x);
+      split_return->Compute(NULL, NULL, i, x);
     } else if (return_expr) {
-      return_expr->Compute(i, x);
+      return_expr->Compute(NULL, NULL, i, x);
     } else {
       x.setNull();
     }

@@ -2,6 +2,9 @@
 // $Id$
 
 
+Working on new unified expression computation.
+Fix lots of operators and such :^(
+
 Things to do:
 
 * non-constant parameters; nail down semantics.

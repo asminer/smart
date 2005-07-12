@@ -25,9 +25,10 @@
 //#define DEBUG_DEEP
 
 #include "baseops.h"		// Base operators (remove eventually)
-#include "ops_const.h"		// Operators for "const" nature
-#include "ops_rand.h"		// Operators for "rand" nature
-#include "ops_proc.h"		// Operators for "rand" nature
+#include "ops_bool.h"		// Operators for bools
+#include "ops_int.h"		// Operators for ints
+#include "ops_real.h"		// Operators for reals
+#include "ops_misc.h"		// Operators for misc. types
 #include "strings.h"		// operators for strings
 
 

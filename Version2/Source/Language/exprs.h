@@ -110,6 +110,7 @@ class measure;	// also below
       type checking to simplify our lives (and improve speed) 
       once an expression has been built.  That means we'll write 
       another derived class just to avoid an if statement if necessary.
+
 */  
 
 class expr : public shared_object {
@@ -145,21 +146,26 @@ public:
   */
   virtual void ClearCache() = 0;
 
-  /// Compute the value of component i.
-  virtual void Compute(int i, result &x);
+  /** Compute the expression.
 
-  /// Sample a value of component i (with given rng seed).
-  virtual void Sample(Rng &, int i, result &x);
+      @param	r	The random number generation stream.
+      			Used for rand expressions: if provided,
+			random expressions will be "sampled".
+			const expressions can use null here.
+			If null is given for a rand expression,
+			this should return an object that can be sampled.
 
-  /** Compute the value of component i, given the state.
-      Necessary for "proc" expressions.
+      @param	s	The current state.
+      			Used for proc expressions, which depend on
+			the current "state".  Non-proc expressions
+			can use null here.
+
+      @param	i	The aggregate index to compute.
+
+      @param	x	Place to store the result.
   */
-  virtual void Compute(const state &, int i, result &x);
+  virtual void Compute(Rng *r, const state *s, int i, result &x) = 0;
 
-  /** Sample a value of component i, given the state.
-      Necessary for "proc rand" expressions.
-  */
-  virtual void Sample(Rng &, const state &, int i, result &x);
 
   /** Compute the next state from the current state.
       Used by models for deterministic events.
@@ -477,7 +483,7 @@ inline int Compare(symbol *a, symbol *b)
 /** Compute an expression.
     Correctly handles null expressions.
  */
-inline void SafeCompute(expr *e, int a, result &x) 
+inline void SafeCompute(expr *e, Rng *r, const state *s, int a, result &x) 
 {
 #ifdef COMPUTE_DEBUG
   static int depth = 0;
@@ -494,7 +500,7 @@ inline void SafeCompute(expr *e, int a, result &x)
     Output.flush();
     depth++;
 #endif
-    e->Compute(a, x);
+    e->Compute(r, s, a, x);
 #ifdef COMPUTE_DEBUG
     depth--;
     Output.Pad(' ', depth*2);
@@ -511,50 +517,6 @@ inline void SafeCompute(expr *e, int a, result &x)
   }
 }
 
-/** Sample an expression.
-    Correctly handles null expressions.
- */
-inline void SafeSample(expr *e, Rng &seed, int a, result &x) 
-{
-  DCASSERT(e!=ERROR);
-  DCASSERT(e!=DEFLT);
-  if (e) {
-    e->Sample(seed, a, x);
-  } else {
-    x.Clear();
-    x.setNull();
-  }
-}
-
-/** Compute an expression.
-    Correctly handles null expressions.
- */
-inline void SafeCompute(expr *e, const state &s, int a, result &x) 
-{
-  DCASSERT(e!=ERROR);
-  DCASSERT(e!=DEFLT);
-  if (e) {
-    e->Compute(s, a, x);
-  } else {
-    x.Clear();
-    x.setNull();
-  }
-}
-
-/** Sample an expression.
-    Correctly handles null expressions.
- */
-inline void SafeSample(expr *e, Rng &seed, const state &s, int a, result &x) 
-{
-  DCASSERT(e!=ERROR);
-  DCASSERT(e!=DEFLT);
-  if (e) {
-    e->Sample(seed, s, a, x);
-  } else {
-    x.Clear();
-    x.setNull();
-  }
-}
 
 /// Safe way to count components
 inline int NumComponents(expr *e)

@@ -81,34 +81,6 @@ expr* expr::GetComponent(int i)
   return this;
 }
 
-void expr::Compute(int i, result &x) 
-{
-  Internal.Start(__FILE__, __LINE__, filename, linenumber);
-  Internal << "Illegal expression compuation!";
-  Internal.Stop();
-}
-
-void expr::Sample(Rng &, int i, result &x) 
-{
-  Internal.Start(__FILE__, __LINE__, filename, linenumber);
-  Internal << "Illegal expression sample!";
-  Internal.Stop();
-}
-
-void expr::Compute(const state&, int i, result &x) 
-{
-  Internal.Start(__FILE__, __LINE__, filename, linenumber);
-  Internal << "Illegal expression (proc) compuation!";
-  Internal.Stop();
-}
-
-void expr::Sample(Rng &, const state&, int i, result &x) 
-{
-  Internal.Start(__FILE__, __LINE__, filename, linenumber);
-  Internal << "Illegal expression (proc) sample!";
-  Internal.Stop();
-}
-
 void expr::NextState(const state &current, state &next, result &x)
 {
   Internal.Start(__FILE__, __LINE__, filename, linenumber);
@@ -643,7 +615,7 @@ expr* symbol::Substitute(int i)
   DCASSERT(i==0);
   if (substitute_value) {
     result x;
-    Compute(0, x);
+    Compute(NULL, NULL, 0, x);
     return MakeConstExpr(Type(0), x, Filename(), Linenumber());
   }
   // Don't substitute
@@ -700,8 +672,7 @@ public:
   virtual int NumComponents() const;
   virtual expr* GetComponent(int i);
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
-  virtual void Sample(Rng &seed, int i, result &x);
+  virtual void Compute(Rng *r, const state *s, int i, result &x);
 
   virtual expr* Substitute(int i);
 
@@ -738,17 +709,10 @@ type aggregates::Type(int i) const
   return VOID;
 }
 
-void aggregates::Compute(int i, result &x)
+void aggregates::Compute(Rng *r, const state *s, int i, result &x)
 {
   CHECK_RANGE(0, i, opnd_count);
-  if (operands[i]) operands[i]->Compute(0, x);
-  else x.setNull();
-}
-
-void aggregates::Sample(Rng &seed, int i, result &x)
-{
-  CHECK_RANGE(0, i, opnd_count);
-  if (operands[i]) operands[i]->Sample(seed, 0, x);
+  if (operands[i]) operands[i]->Compute(r, s, 0, x);
   else x.setNull();
 }
 
@@ -795,26 +759,12 @@ public:
   boolconst(const char* fn, int ln, type t, bool v) : constant (fn, ln, t) {
     value = v;
   }
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *, const state *, int i, result &x) { 
     DCASSERT(0==i);
     x.Clear();
     x.bvalue = value;
   }
-  virtual void Sample(Rng &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.bvalue = value;
-  }
-  virtual void Compute(const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.bvalue = value;
-  }
-  virtual void Sample(Rng &, const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.bvalue = value;
-  }
+
   virtual void show(OutputStream &s) const {
     if (value) s << "true"; else s << "false";
   }
@@ -834,26 +784,12 @@ public:
   intconst(const char* fn, int line, type t, int v) : constant (fn, line, t) {
     value = v;
   }
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *, const state *, int i, result &x) { 
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = value;
   }
-  virtual void Sample(Rng &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = value;
-  }
-  virtual void Compute(const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = value;
-  }
-  virtual void Sample(Rng &, const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = value;
-  }
+
   virtual void show(OutputStream &s) const {
     s << value;
   }
@@ -873,26 +809,12 @@ public:
   realconst(const char* fn, int ln, type t, double v) : constant(fn, ln, t) {
     value = v;
   }
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *, const state *, int i, result &x) { 
     DCASSERT(0==i);
     x.Clear();
     x.rvalue = value;
   }
-  virtual void Sample(Rng &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.rvalue = value;
-  }
-  virtual void Compute(const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.rvalue = value;
-  }
-  virtual void Sample(Rng &, const state &, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.rvalue = value;
-  }
+
   virtual void show(OutputStream &s) const {
     s << value;
   }
@@ -918,11 +840,12 @@ class stringconst : public constant {
     FREE("stringconst", sizeof(stringconst));
     Delete(value);
   }
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *, const state *, int i, result &x) { 
     DCASSERT(0==i);
     x.Clear();
     x.other = Share(value);
   }
+
   virtual void show(OutputStream &s) const {
     if (value) {
       s.Put('"');

@@ -500,17 +500,17 @@ public:
 protected:
   inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
     x.Clear();
-    start->Compute(0, s);
+    start->Compute(NULL, NULL, 0, s);
     if (s.isNull() || s.isError()) {
       x = s;
       return false;
     }
-    stop->Compute(0, e);
+    stop->Compute(NULL, NULL, 0, e);
     if (e.isNull() || e.isError()) {
       x = e;
       return false;
     }
-    inc->Compute(0, i);
+    inc->Compute(NULL, NULL, 0, i);
     if (i.isNull() || i.isError()) {
       x = i;
       return false;
@@ -704,7 +704,7 @@ class int_setexpr_interval : public setexpr_interval {
 public:
   int_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *s, int i, result &x);
 protected:
   virtual setexpr_interval* MakeAnother(const char* fn, int line, 
   					expr* s, expr* e, expr* i);
@@ -724,9 +724,11 @@ type int_setexpr_interval::Type(int i) const
   return SET_INT;
 }
 
-void int_setexpr_interval::Compute(int n, result &x)
+void int_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
 {
   DCASSERT(0==n);
+  DCASSERT(NULL==r);
+  DCASSERT(NULL==st);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
   set_result *xs = NULL;
@@ -772,7 +774,7 @@ public:
   intset_element(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *, const state *, int i, result &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -786,11 +788,11 @@ type intset_element::Type(int i) const
   return SET_INT;
 }
 
-void intset_element::Compute(int i, result &x)
+void intset_element::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   DCASSERT(opnd);
-  opnd->Compute(0, x);
+  opnd->Compute(r, st, 0, x);
   if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
     x.setError();
@@ -824,7 +826,7 @@ public:
   intset_union(const char* fn, int line, expr* l, expr* r)
    : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr** newx, int newn) {
     return new intset_union(Filename(), Linenumber(), newx, newn);
@@ -837,13 +839,13 @@ type intset_union::Type(int i) const
   return SET_INT;
 }
 
-void intset_union::Compute(int i, result &x)
+void intset_union::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   x.Clear();
   ArraySplay <int> *ans = new ArraySplay <int>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], 0, x);
+    SafeCompute(operands[i], r, st, 0, x);
     if (!x.isNormal()) {
       // bail out
       delete ans;
@@ -884,7 +886,7 @@ public:
   int2realset(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual void show(OutputStream &s) const { s << opnd; }
 protected:
   virtual expr* MakeAnother(expr* newx) {
@@ -898,11 +900,11 @@ type int2realset::Type(int i) const
   return SET_REAL;
 }
 
-void int2realset::Compute(int i, result &x)
+void int2realset::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
-  opnd->Compute(0, x);
+  opnd->Compute(r, st, 0, x);
   if (x.isNull() || x.isError()) return;
   set_result* xs = dynamic_cast<set_result*> (x.other);
   DCASSERT(xs);
@@ -929,7 +931,7 @@ class real_setexpr_interval : public setexpr_interval {
 public:
   real_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual setexpr_interval* MakeAnother(const char* fn, int line, 
   					expr* s, expr* e, expr* i);
@@ -949,9 +951,11 @@ type real_setexpr_interval::Type(int i) const
   return SET_REAL;
 }
 
-void real_setexpr_interval::Compute(int n, result &x)
+void real_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
 {
   DCASSERT(0==n);
+  DCASSERT(NULL==r);
+  DCASSERT(NULL==st);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
   set_result *xs = NULL;
@@ -997,7 +1001,7 @@ public:
   realset_element(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -1011,11 +1015,11 @@ type realset_element::Type(int i) const
   return SET_REAL;
 }
 
-void realset_element::Compute(int i, result &x)
+void realset_element::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   DCASSERT(opnd);
-  opnd->Compute(0, x);
+  opnd->Compute(r, st, 0, x);
   if (x.isError() || x.isNull()) return;
   if (x.isInfinity()) {
     x.setError();
@@ -1049,7 +1053,7 @@ public:
   realset_union(const char* fn, int line, expr* l, expr* r)
    : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr** nargs, int ncnt) {
     return new realset_union(Filename(), Linenumber(), nargs, ncnt);
@@ -1062,13 +1066,13 @@ type realset_union::Type(int i) const
   return SET_REAL;
 }
 
-void realset_union::Compute(int i, result &x)
+void realset_union::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   x.Clear();
   ArraySplay <double> *ans = new ArraySplay <double>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], 0, x);
+    SafeCompute(operands[i], r, st, 0, x);
     if (!x.isNormal()) {
       // bail out
       delete ans;
@@ -1122,7 +1126,7 @@ public:
     setType = st;
   };
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -1136,13 +1140,13 @@ type voidset_element::Type(int i) const
   return setType;
 }
 
-void voidset_element::Compute(int i, result &x)
+void voidset_element::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   DCASSERT(opnd);
   symbol** values = new symbol*[1];
   int* order = new int[1];
-  SafeCompute(opnd, 0, x); 
+  SafeCompute(opnd, r, st, 0, x); 
   DCASSERT(x.isNormal()); // I'm *pretty* sure the alternative is impossible
   values[0] = dynamic_cast<symbol*> (x.other); 
   DCASSERT(values[0]);
@@ -1176,7 +1180,7 @@ public:
     mytype = mt;
   };
   virtual type Type(int i) const;
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr** args, int n) {
     return new voidset_union(Filename(), Linenumber(), args, n, mytype);
@@ -1189,13 +1193,13 @@ type voidset_union::Type(int i) const
   return mytype;
 }
 
-void voidset_union::Compute(int i, result &x)
+void voidset_union::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   x.Clear();
   ArraySplay <void*> *ans = new ArraySplay <void*>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], 0, x);
+    SafeCompute(operands[i], r, st, 0, x);
     if (!x.isNormal()) {
       // bail out
       delete ans;

@@ -24,7 +24,7 @@
 //@{
 
 /// Possible states of a constant
-enum const_state {
+enum const_status {
   /// No type yet! 
   CS_Untyped,
   /// Not yet defined
@@ -50,7 +50,7 @@ enum const_state {
 class variable : public symbol {
 public:
   /// State; used by compiler.
-  const_state state;
+  const_status status;
 public:
   variable(const char *fn, int line, type t, char *n);
   virtual ~variable();
@@ -86,7 +86,7 @@ public:
   virtual void Sample(Rng &, int i, result &x);
 
   inline void SetReturn(expr *e) { 
-    state = CS_Defined;
+    status = CS_Defined;
     return_expr = e; 
   }
 

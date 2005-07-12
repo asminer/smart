@@ -61,17 +61,19 @@ public:
   determ2rand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(Rng &seed, int i, result &x);
+// virtual void Sample(Rng &seed, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new determ2rand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
+/*
 void determ2rand::Sample(Rng &, int i, result &x) 
 {
   SafeCompute(opnd, i, x);
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -87,17 +89,19 @@ public:
   determ2proc(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Compute(const state &, int i, result &x);
+  // virtual void Compute(const state &, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new determ2proc(Filename(), Linenumber(), Type(0), x);
   }
 };
 
+/*
 void determ2proc::Compute(const state &, int i, result &x) 
 {
   SafeCompute(opnd, i, x);
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -113,17 +117,19 @@ public:
   determ2procrand(const char* fn, int line, type nt, expr* x) 
     : typecast(fn, line, nt, x) { }
 
-  virtual void Sample(Rng &, const state &, int i, result &x);
+//  virtual void Sample(Rng &, const state &, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new determ2procrand(Filename(), Linenumber(), Type(0), x);
   }
 };
 
+/*
 void determ2procrand::Sample(Rng &, const state &, int i, result &x) 
 {
   SafeCompute(opnd, i, x);
 }
+*/
 
 // ******************************************************************
 // *                                                                *

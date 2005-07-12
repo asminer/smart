@@ -198,6 +198,8 @@ modifier FindModif(const char *m);
 /// Returns the type defined by "modif type", or NO_SUCH_TYPE if it is illegal.
 inline type ModifyType(modifier modif, type t)
 {
+  if (DETERM==modif) 
+    return t;
   if (PHASE==modif) 
     switch (t) {
       case INT	: return PH_INT;
@@ -217,6 +219,26 @@ inline type ModifyType(modifier modif, type t)
 inline bool HasProc(type t)
 {
   return (t>=FIRST_PROC) && (t<=LAST_PROC);
+}
+
+inline type StripProc(type t)
+{
+  if (!HasProc(t)) return t;
+  switch (t) {
+    case PROC_BOOL		: return	BOOL	;
+    case PROC_INT		: return	INT 	;
+    case PROC_REAL		: return	REAL	;
+    case PROC_EXPO		: return	EXPO	;
+    case PROC_PH_INT		: return	PH_INT	;
+    case PROC_PH_REAL		: return	PH_REAL	;
+    case PROC_RAND_BOOL		: return	RAND_BOOL	;
+    case PROC_RAND_INT		: return	RAND_INT	;
+    case PROC_RAND_REAL		: return	RAND_REAL	;
+    default 	: return NO_SUCH_TYPE;
+  };
+  // should never get here, but the compiler may complain.
+  return NO_SUCH_TYPE;
+  DCASSERT(0);
 }
 
 inline modifier GetModifier(type t)
@@ -263,7 +285,18 @@ inline type ProcifyType(type t)
   return NO_SUCH_TYPE;
 }
 
-
+/// Whatever proc and modifier are on type a, apply to base type b and return
+inline type ApplyPM(type a, type b)
+{
+  CHECK_RANGE(VOID, b, EXPO);
+  if (a < EXPO) return b;
+  if (a < RAND_BOOL) return ModifyType(PHASE, b);
+  if (a <= LAST_SIMPLE) return ModifyType(RAND, b);
+  if (a < PROC_EXPO) return ProcifyType(b);
+  if (a < PROC_RAND_BOOL) return ProcifyType(ModifyType(PHASE, b));
+  if (a < PROC_STATE) return ProcifyType(ModifyType(RAND, b));
+  return NO_SUCH_TYPE;
+}
 
 //@}
 

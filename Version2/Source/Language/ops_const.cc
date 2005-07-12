@@ -24,11 +24,11 @@
 // *                                                                *
 // ******************************************************************
 
-void void_seq::Compute(int a, result &x)
+void void_seq::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], 0, x);
+    SafeCompute(operands[i], NULL, NULL, 0, x);
     // check for errors and bail?
   }
 }
@@ -39,11 +39,11 @@ void void_seq::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_not::Compute(int i, result &x)
+void bool_not::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
-  opnd->Compute(0, x); 
+  opnd->Compute(NULL, NULL, 0, x); 
 
   if (!x.isNormal()) return;
 
@@ -56,14 +56,14 @@ void bool_not::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_or::Compute(int a, result &x)
+void bool_or::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   int i;
   bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
-    operands[i]->Compute(0, x);
+    operands[i]->Compute(NULL, NULL, 0, x);
     if (x.isNormal() && x.bvalue) 	return;	// true...short circuit
     if (x.isUnknown()) {
       unknown = true;
@@ -80,7 +80,7 @@ void bool_or::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_and::Compute(int a, result &x)
+void bool_and::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   int i;
@@ -104,7 +104,7 @@ void bool_and::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_equal::Compute(int i, result &x)
+void bool_equal::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -128,7 +128,7 @@ void bool_equal::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_neq::Compute(int i, result &x)
+void bool_neq::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -152,7 +152,7 @@ void bool_neq::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_neg::Compute(int i, result &x)
+void int_neg::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
@@ -170,7 +170,7 @@ void int_neg::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_add::Compute(int a, result &x)
+void int_add::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   DCASSERT(operands[0]);
@@ -253,16 +253,16 @@ void int_add::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_sub::Compute(int i, result &x)
+inline void compute(int_sub *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
 
   if (l.isNormal() && r.isNormal()) {
     // ordinary integer subtraction
@@ -276,8 +276,8 @@ void int_sub::Compute(int i, result &x)
       x.ivalue = l.ivalue;
       return;
     }
-    Error.Start(right->Filename(), right->Linenumber());
-    Error << "Undefined operation (infty-infty) due to " << right;
+    Error.Start(e->right->Filename(), e->right->Linenumber());
+    Error << "Undefined operation (infty-infty) due to " << e->right;
     Error.Stop();
     x.setError();
     return;
@@ -305,17 +305,39 @@ void int_sub::Compute(int i, result &x)
   x.setError();
 }
 
+void int_sub::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_sub::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_sub::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_sub::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+
+
 // ******************************************************************
 // *                                                                *
 // *                        int_mult methods                        *
 // *                                                                *
 // ******************************************************************
 
-void int_mult::Compute(int a, result &x)
+inline void compute(int_mult *e, int a, result &x)
 {
   DCASSERT(0==a);
-  DCASSERT(operands[0]);
-  operands[0]->Compute(0, x);
+  DCASSERT(e->operands[0]);
+  e->operands[0]->Compute(0, x);
   if (x.isError()) return;
   if (x.isNull()) return;  // short circuit
   bool unknown = x.isUnknown();
@@ -339,10 +361,10 @@ void int_mult::Compute(int a, result &x)
 
   if (x.isNormal() && x.ivalue) {
     // Multiply until we run out of operands or change state
-    for (i++; i<opnd_count; i++) {
-      DCASSERT(operands[i]);
+    for (i++; i<e->opnd_count; i++) {
+      DCASSERT(e->operands[i]);
       result foo;
-      operands[i]->Compute(0, foo);
+      e->operands[i]->Compute(0, foo);
       if (foo.isNormal()) {
 	if (0==foo.ivalue) {
 	  x.ivalue = 0;
@@ -376,16 +398,16 @@ void int_mult::Compute(int a, result &x)
   // The infinity case
   if (x.isInfinity()) {
     // Keep multiplying, only worry about sign and make sure we don't hit zero
-    for (i++; i<opnd_count; i++) {
-      DCASSERT(operands[i]);
+    for (i++; i<e->opnd_count; i++) {
+      DCASSERT(e->operands[i]);
       result foo;
-      operands[i]->Compute(0, foo);
+      e->operands[i]->Compute(0, foo);
       if (foo.isNormal() || foo.isInfinity()) {
 	if (0==foo.ivalue) {
 	  // 0 * infinity, error
-          Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+          Error.Start(e->operands[i]->Filename(), e->operands[i]->Linenumber());
           Error << "Undefined operation (0 * infty) due to ";
-          Error << operands[i];
+          Error << e->operands[i];
           Error.Stop();
           x.setError();
 	  return;
@@ -412,18 +434,18 @@ void int_mult::Compute(int a, result &x)
   if (x.ivalue == 0) {
     // Check the remaining operands, if any, and throw an
     // error if we have infinity * 0.
-    for (i++; i<opnd_count; i++) {
+    for (i++; i<e->opnd_count; i++) {
       DCASSERT(x.ivalue==0);
-      DCASSERT(operands[i]);
+      DCASSERT(e->operands[i]);
       result foo;
-      operands[i]->Compute(0, foo);
+      e->operands[i]->Compute(0, foo);
       if (foo.isNormal() || foo.isUnknown()) continue;
 
       // check for infinity
       if (foo.isInfinity()) {
-        Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
+        Error.Start(e->operands[i]->Filename(), e->operands[i]->Linenumber());
         Error << "Undefined operation (0 * infty) due to ";
-        Error << operands[i];
+        Error << e->operands[i];
         Error.Stop();
         x.setError();
         return;
@@ -441,28 +463,50 @@ void int_mult::Compute(int a, result &x)
   if (unknown) x.setUnknown();
 }
 
+void int_mult::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_mult::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_mult::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_mult::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+
+
 // ******************************************************************
 // *                                                                *
 // *                        int_div  methods                        *
 // *                                                                *
 // ******************************************************************
 
-void int_div::Compute(int i, result &x)
+inline void compute(int_div *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
   x.Clear();
-  left->Compute(0, l);
-  right->Compute(0, r);
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
 
   if (l.isNormal() && r.isNormal()) {
     x.rvalue = l.ivalue;
     if (0==r.ivalue) {
-      Error.Start(right->Filename(), right->Linenumber());
-      Error << "Undefined operation (divide by 0) due to " << right;
+      Error.Start(e->right->Filename(), e->right->Linenumber());
+      Error << "Undefined operation (divide by 0) due to " << e->right;
       Error.Stop();
       x.setError();
     } else {
@@ -472,8 +516,9 @@ void int_div::Compute(int i, result &x)
   }
 
   if (l.isInfinity() && r.isInfinity()) {
-      Error.Start(right->Filename(), right->Linenumber());
-      Error << "Undefined operation (infty / infty) due to " << left << "/" << right;
+      Error.Start(e->right->Filename(), e->right->Linenumber());
+      Error << "Undefined operation (infty / infty) due to ";
+      Error << e->left << "/" << e->right;
       Error.Stop();
       x.setError();
       return;
@@ -503,29 +548,72 @@ void int_div::Compute(int i, result &x)
   x.setError();
 }
 
+void int_div::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_div::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_div::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_div::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+
+
 // ******************************************************************
 // *                                                                *
 // *                       int_equal  methods                       *
 // *                                                                *
 // ******************************************************************
 
-void int_equal::Compute(int i, result &x)
+inline void compute(int_equal *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
     
   result l;
   result r;
 
-  left->Compute(0, l);
-  right->Compute(0, r);
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
 
-  if (CheckOpnds(l, r, x)) {
+  if (e->CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.ivalue == r.ivalue);
   }
 }
+
+void int_equal::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_equal::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_equal::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_equal::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -533,21 +621,42 @@ void int_equal::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_neq::Compute(int i, result &x)
+inline void compute(int_neq *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
-  left->Compute(0, l);
-  right->Compute(0, r);
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
 
-  if (CheckOpnds(l, r, x)) {
+  if (e->CheckOpnds(l, r, x)) {
     // normal comparison
     x.bvalue = (l.ivalue != r.ivalue);
   }
 }
+
+void int_neq::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_neq::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_neq::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_neq::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -555,28 +664,49 @@ void int_neq::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_gt::Compute(int i, result &x)
+inline void compute(int_gt *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
-  left->Compute(0, l);
-  right->Compute(0, r);
-  if (CheckOpnds(l, r, x)) {
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
+  if (e->CheckOpnds(l, r, x)) {
     // normal comparison
 #ifdef DEBUG_DEEP
-    cout << "Comparing " << left << " and " << right << "\n";
-    cout << "Got " << left << " = " << l.ivalue << "\n";
-    cout << "Got " << right << " = " << r.ivalue << "\n";
+    cout << "Comparing " << e->left << " and " << e->right << "\n";
+    cout << "Got " << e->left << " = " << l.ivalue << "\n";
+    cout << "Got " << e->right << " = " << r.ivalue << "\n";
 #endif
     x.bvalue = (l.ivalue > r.ivalue);
 #ifdef DEBUG_DEEP
-    cout << "So " << left << " > " << right << " is " << x.bvalue << "\n";
+    cout << "So " << e->left << " > " << e->right << " is " << x.bvalue << "\n";
 #endif
   }
 }
+
+void int_gt::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_gt::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_gt::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_gt::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -584,20 +714,41 @@ void int_gt::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_ge::Compute(int i, result &x)
+inline void compute(int_ge *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
-  left->Compute(0, l);
-  right->Compute(0, r);
-  if (CheckOpnds(l,r,x)) {
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
+  if (e->CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue >= r.ivalue);
   }
 }
+
+void int_ge::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_ge::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_ge::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_ge::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -605,20 +756,41 @@ void int_ge::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_lt::Compute(int i, result &x)
+inline void compute(int_lt *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
-  left->Compute(0, l);
-  right->Compute(0, r);
-  if (CheckOpnds(l,r,x)) {
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
+  if (e->CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue < r.ivalue);
   }
 }
+
+void int_lt::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_lt::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_lt::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_lt::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -626,20 +798,41 @@ void int_lt::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_le::Compute(int i, result &x)
+inline void compute(int_le *e, int i, result &x)
 {
   DCASSERT(0==i);
-  DCASSERT(left);
-  DCASSERT(right);
+  DCASSERT(e->left);
+  DCASSERT(e->right);
   result l;
   result r;
-  left->Compute(0, l);
-  right->Compute(0, r);
-  if (CheckOpnds(l,r,x)) {
+  e->left->Compute(0, l);
+  e->right->Compute(0, r);
+  if (e->CheckOpnds(l,r,x)) {
     // normal comparison
     x.bvalue = (l.ivalue <= r.ivalue);
   }
 }
+
+void int_le::Compute(Rng *, const state *, int a, result &x)
+{
+  compute(this, a, x);
+}
+
+void int_le::Sample(Rng &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_le::Compute(const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
+void int_le::Sample(Rng &, const state &, int i, result &x)
+{
+  compute(this, i, x);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -647,7 +840,7 @@ void int_le::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_neg::Compute(int i, result &x)
+void real_neg::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(opnd);
@@ -669,7 +862,7 @@ void real_neg::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_add::Compute(int a, result &x)
+void real_add::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   x.Clear();
@@ -747,7 +940,7 @@ void real_add::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_sub::Compute(int i, result &x)
+void real_sub::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -805,7 +998,7 @@ void real_sub::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_mult::Compute(int a, result &x)
+void real_mult::Compute(Rng *, const state *, int a, result &x)
 {
   DCASSERT(0==a);
   x.Clear();
@@ -946,7 +1139,7 @@ void real_mult::Compute(int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_div::Compute(int i, result &x)
+void real_div::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1007,7 +1200,7 @@ void real_div::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_equal::Compute(int i, result &x)
+void real_equal::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1031,7 +1224,7 @@ void real_equal::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_neq::Compute(int i, result &x)
+void real_neq::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1052,7 +1245,7 @@ void real_neq::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_gt::Compute(int i, result &x)
+void real_gt::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1073,7 +1266,7 @@ void real_gt::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_ge::Compute(int i, result &x)
+void real_ge::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1094,7 +1287,7 @@ void real_ge::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_lt::Compute(int i, result &x)
+void real_lt::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);
@@ -1115,7 +1308,7 @@ void real_lt::Compute(int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void real_le::Compute(int i, result &x)
+void real_le::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(left);

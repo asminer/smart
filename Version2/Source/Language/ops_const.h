@@ -41,7 +41,7 @@ public:
     DCASSERT(0==i);
     return VOID;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new void_seq(Filename(), Linenumber(), x, n);
@@ -70,7 +70,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new bool_not(Filename(), Linenumber(), x);
@@ -92,7 +92,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new bool_or(Filename(), Linenumber(), x, n);
@@ -117,7 +117,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new bool_and(Filename(), Linenumber(), x, n);
@@ -161,7 +161,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new bool_neq(Filename(), Linenumber(), l, r);
@@ -191,7 +191,7 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new int_neg(Filename(), Linenumber(), x);
@@ -216,7 +216,7 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new int_add(Filename(), Linenumber(), x, n);
@@ -238,7 +238,7 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_sub(Filename(), Linenumber(), l, r);
@@ -264,7 +264,7 @@ public:
     DCASSERT(0==i);
     return INT;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new int_mult(Filename(), Linenumber(), x, n);
@@ -288,7 +288,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_div(Filename(), Linenumber(), l, r);
@@ -311,7 +311,7 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_equal(Filename(), Linenumber(), l, r);
@@ -334,7 +334,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_neq(Filename(), Linenumber(), l, r);
@@ -357,8 +357,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_gt(Filename(), Linenumber(), l, r);
@@ -381,7 +380,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_ge(Filename(), Linenumber(), l, r);
@@ -404,7 +403,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_lt(Filename(), Linenumber(), l, r);
@@ -427,7 +426,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new int_le(Filename(), Linenumber(), l, r);
@@ -457,7 +456,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new real_neg(Filename(), Linenumber(), x);
@@ -483,7 +482,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new real_add(Filename(), Linenumber(), x, n);
@@ -506,7 +505,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_sub(Filename(), Linenumber(), l, r);
@@ -532,7 +531,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new real_mult(Filename(), Linenumber(), x, n);
@@ -555,7 +554,7 @@ public:
     DCASSERT(0==i);
     return REAL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_div(Filename(), Linenumber(), l, r);
@@ -579,7 +578,7 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_equal(Filename(), Linenumber(), l, r);
@@ -602,7 +601,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_neq(Filename(), Linenumber(), l, r);
@@ -626,7 +625,7 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_gt(Filename(), Linenumber(), l, r);
@@ -649,7 +648,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_ge(Filename(), Linenumber(), l, r);
@@ -672,7 +671,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_lt(Filename(), Linenumber(), l, r);
@@ -695,7 +694,7 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new real_le(Filename(), Linenumber(), l, r);

@@ -42,7 +42,7 @@ public:
   measure(const char *fn, int line, type t, char *n);
   virtual ~measure();
   virtual void ClearCache() { } // no cache for measures
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *s, int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
   virtual Engine_type GetEngine(engineinfo *e);
   virtual expr* GetRewardExpr();
@@ -71,11 +71,11 @@ public:
   /// Call this after we are computed
   inline void SetValue(const result &v) {
     value = v;
-    state = CS_Computed;
+    status = CS_Computed;
   }
 
   void Clear() {
-    state = CS_Defined;
+    status = CS_Defined;
   }
 };
 

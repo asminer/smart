@@ -55,7 +55,7 @@ void exprstmt::Execute()
   DCASSERT(x);
 
   result dummy;
-  x->Compute(0, dummy);
+  x->Compute(NULL, NULL, 0, dummy);
 
   // hmmm... do we check for errors here?
 
@@ -119,7 +119,7 @@ statement* MakeOptionStatement(option* o, expr* e, const char* file, int line)
   DCASSERT(e);
   result x;
   x.Clear();
-  e->Compute(0, x);
+  e->Compute(NULL, NULL, 0, x);
   // should do error checking here...
   switch (e->Type(0)) {
     case BOOL:
