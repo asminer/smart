@@ -164,7 +164,7 @@ public:
 
       @param	x	Place to store the result.
   */
-  virtual void Compute(Rng *r, const state *s, int i, result &x) = 0;
+  virtual void Compute(Rng *r, const state *s, int i, result &x);
 
 
   /** Compute the next state from the current state.

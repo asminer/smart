@@ -464,7 +464,7 @@ shared_object* markov_model::BuildStateModel(const char* fn, int ln)
 // *                         init                         *
 // ********************************************************
 
-void compute_mc_init(expr **pp, int np, result &x)
+void compute_mc_init(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -483,7 +483,7 @@ void compute_mc_init(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
     Output << "\t state ";
 #endif
-    SafeCompute(pp[i], 0, x);
+    SafeCompute(pp[i], NULL, NULL, 0, x);
     DCASSERT(x.isNormal());
     model_var* st = dynamic_cast<model_var*> (x.other);
     DCASSERT(st);
@@ -491,7 +491,7 @@ void compute_mc_init(expr **pp, int np, result &x)
     Output << st << "\n\t value ";
 #endif
 
-    SafeCompute(pp[i], 1, x);
+    SafeCompute(pp[i], NULL, NULL, 1, x);
 #ifdef DEBUG_MC
     PrintResult(Output, REAL, x);
     Output << "\n";
@@ -529,8 +529,7 @@ void Add_init(PtrTable *fns)
   tl[1] = REAL;
   pl[1] = new formal_param(tl, 2, "pair");
   internal_func *p = new internal_func(VOID, "init", 
-	compute_mc_init, NULL,
-	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+	compute_mc_init, pl, 2, 1, helpdoc);  // parameter 1 repeats...
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -539,7 +538,7 @@ void Add_init(PtrTable *fns)
 // *                         arcs                         *
 // ********************************************************
 
-void compute_mc_arcs(expr **pp, int np, result &x)
+void compute_mc_arcs(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -558,7 +557,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
     Output << "\t from state ";
 #endif
-    SafeCompute(pp[i], 0, x);
+    SafeCompute(pp[i], NULL, NULL, 0, x);
     DCASSERT(x.isNormal());
     model_var* from = dynamic_cast<model_var*> (x.other);
     DCASSERT(from);
@@ -566,7 +565,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     Output << from << "\n\t to state ";
 #endif
 
-    SafeCompute(pp[i], 1, x);
+    SafeCompute(pp[i], NULL, NULL, 1, x);
     DCASSERT(x.isNormal());
     model_var* to = dynamic_cast<model_var*> (x.other);
     DCASSERT(to);
@@ -575,7 +574,7 @@ void compute_mc_arcs(expr **pp, int np, result &x)
     Output << "\n\t weight ";
 #endif
 
-    SafeCompute(pp[i], 2, x);
+    SafeCompute(pp[i], NULL, NULL, 2, x);
 #ifdef DEBUG_MC
     PrintResult(Output, REAL, x);
     Output << "\n";
@@ -608,8 +607,7 @@ void Add_mc_arcs(PtrTable *fns)
   tl[2] = REAL;
   pl[1] = new formal_param(tl, 3, "triple");
   internal_func *p = new internal_func(VOID, "arcs", 
-	compute_mc_arcs, NULL,
-	pl, 2, 1, helpdoc);  // parameter 1 repeats...
+	compute_mc_arcs, pl, 2, 1, helpdoc);  // parameter 1 repeats...
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -618,8 +616,7 @@ void Add_mc_arcs(PtrTable *fns)
 // *                        instate                       *
 // ********************************************************
 
-// A Proc function!
-void compute_mc_instate(const state &m, expr **pp, int np, result &x)
+void compute_mc_instate(expr **pp, int np, Rng *, const state *m, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
@@ -628,7 +625,7 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
   Output.flush();
 #endif
   x.Clear();
-  SafeCompute(pp[1], 0, x);
+  SafeCompute(pp[1], NULL, m, 0, x);
 #ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   model_var* st = dynamic_cast<model_var*> (x.other);
@@ -642,12 +639,12 @@ void compute_mc_instate(const state &m, expr **pp, int np, result &x)
   Output.flush();
 
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m.Read(0));
+  PrintResult(Output, INT, m->Read(0));
   Output << "\n";
   Output.flush();
 #endif
 
-  if (st->state_index == m.Read(0).ivalue) {
+  if (st->state_index == m->Read(0).ivalue) {
     x.bvalue = true;
   } else {
     x.bvalue = false;
@@ -662,8 +659,7 @@ void Add_instate(PtrTable *fns)
   pl[0] = new formal_param(MARKOV, "m");
   pl[1] = new formal_param(STATE, "s");
   internal_func *p = new internal_func(PROC_BOOL, "in_state", 
-	compute_mc_instate, NULL,
-	pl, 2, helpdoc);  
+	compute_mc_instate, pl, 2, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -673,7 +669,7 @@ void Add_instate(PtrTable *fns)
 // ********************************************************
 
 // Set of states version
-void compute_mc_instates(const state &m, expr **pp, int np, result &x)
+void compute_mc_instates(expr **pp, int np, Rng *, const state *m, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
@@ -688,7 +684,7 @@ void compute_mc_instates(const state &m, expr **pp, int np, result &x)
   markov_model *mc = (markov_model*)(pp[0]);
 #endif
   x.Clear();
-  SafeCompute(pp[1], 0, x);
+  SafeCompute(pp[1], NULL, m, 0, x);
 #ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   set_result* ss = dynamic_cast<set_result*> (x.other);
@@ -702,14 +698,14 @@ void compute_mc_instates(const state &m, expr **pp, int np, result &x)
   Output.flush();
 
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m.Read(0));
+  PrintResult(Output, INT, m->Read(0));
   Output << "\n";
   Output.flush();
 #endif
 
   result current;
   current.Clear();
-  current.other = mc->GetState4Measure(m.Read(0).ivalue);
+  current.other = mc->GetState4Measure(m->Read(0).ivalue);
   x.bvalue = (ss->IndexOf(current) >= 0);
 }
 
@@ -721,8 +717,7 @@ void Add_instates(PtrTable *fns)
   pl[0] = new formal_param(MARKOV, "m");
   pl[1] = new formal_param(SET_STATE, "sset");
   internal_func *p = new internal_func(PROC_BOOL, "in_states", 
-	compute_mc_instates, NULL,
-	pl, 2, helpdoc);  
+	compute_mc_instates, pl, 2, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -731,7 +726,7 @@ void Add_instates(PtrTable *fns)
 // *                       transient                      *
 // ********************************************************
 
-void compute_mc_transient(const state &m, expr **pp, int np, result &x)
+void compute_mc_transient(expr **pp, int np, Rng *, const state *m, result &x)
 {
   DCASSERT(np==1);
   DCASSERT(pp);
@@ -742,7 +737,7 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
 #ifdef DEBUG
   Output << "Checking transient\n";
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m.Read(0));
+  PrintResult(Output, INT, m->Read(0));
   Output << "\n";
   Output.flush();
 #endif
@@ -751,7 +746,7 @@ void compute_mc_transient(const state &m, expr **pp, int np, result &x)
   DCASSERT(dsm->mc->Explicit());
 
   x.Clear();
-  x.bvalue = dsm->mc->Explicit()->isTransient(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->Explicit()->isTransient(m->Read(0).ivalue);
 }
 
 void Add_transient(PtrTable *fns)
@@ -761,8 +756,7 @@ void Add_transient(PtrTable *fns)
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(MARKOV, "m");
   internal_func *p = new internal_func(PROC_BOOL, "transient", 
-	compute_mc_transient, NULL,
-	pl, 1, helpdoc);  
+	compute_mc_transient, pl, 1, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -771,7 +765,7 @@ void Add_transient(PtrTable *fns)
 // *                       absorbing                      *
 // ********************************************************
 
-void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
+void compute_mc_absorbing(expr **pp, int np, Rng *, const state *m, result &x)
 {
   DCASSERT(np==1);
   DCASSERT(pp);
@@ -782,7 +776,7 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
 #ifdef DEBUG
   Output << "Checking absorbing\n";
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m.Read(0));
+  PrintResult(Output, INT, m->Read(0));
   Output << "\n";
   Output.flush();
 #endif
@@ -791,7 +785,7 @@ void compute_mc_absorbing(const state &m, expr **pp, int np, result &x)
   DCASSERT(dsm->mc->Explicit());
 
   x.Clear();
-  x.bvalue = dsm->mc->Explicit()->isAbsorbing(m.Read(0).ivalue);
+  x.bvalue = dsm->mc->Explicit()->isAbsorbing(m->Read(0).ivalue);
 }
 
 void Add_absorbing(PtrTable *fns)
@@ -801,8 +795,7 @@ void Add_absorbing(PtrTable *fns)
   formal_param **pl = new formal_param*[1];
   pl[0] = new formal_param(MARKOV, "m");
   internal_func *p = new internal_func(PROC_BOOL, "absorbing", 
-	compute_mc_absorbing, NULL,
-	pl, 1, helpdoc);  
+	compute_mc_absorbing, pl, 1, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }

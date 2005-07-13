@@ -56,7 +56,7 @@ struct spn_arcinfo {
     if (card->Type(0) == INT) {
       // constant cardinality, compute it
       result x;
-      SafeCompute(card, 0, x);
+      SafeCompute(card, NULL, NULL, 0, x);
       if (x.isNormal()) {
         const_card = x.ivalue;
         proc_card = NULL;
@@ -292,7 +292,7 @@ public:
     return PROC_BOOL;
   }
   virtual void ClearCache() { DCASSERT(0); }
-  virtual void Compute(const state &, int i, result &x);
+  virtual void Compute(Rng *, const state *, int i, result &x);
   virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
   virtual int GetProducts(int i, List <expr> *prods);
   virtual int GetSymbols(int i, List <symbol> *syms);
@@ -388,30 +388,31 @@ transition_enabled::~transition_enabled()
   Delete(guard);
 }
 
-void transition_enabled::Compute(const state &s, int a, result &x)
+void transition_enabled::Compute(Rng *, const state *s, int a, result &x)
 {
   DCASSERT(0==a);
+  DCASSERT(s);
   x.Clear();
   x.bvalue = false;
   int i;
   model_var **p = places;
   int* L = lower;
   for (i=0; i<end_lower; i++) {
-    if (L[0] > s.Read(p[0]->state_index).ivalue) return;
+    if (L[0] > s->Read(p[0]->state_index).ivalue) return;
     L++;
     p++;
   }
   int* U = upper;
   for (; i<end_upper; i++) {
-    if (U[0] <= s.Read(p[0]->state_index).ivalue) return;
+    if (U[0] <= s->Read(p[0]->state_index).ivalue) return;
     U++;
     p++;
   }
   expr** b = boundlist;
   for (; i<end_expr_lower; i++) {
-    SafeCompute(b[0], s, 0, x);
+    SafeCompute(b[0], NULL, s, 0, x);
     if (x.isNormal()) {
-      if (x.ivalue > s.Read(p[0]->state_index).ivalue) {
+      if (x.ivalue > s->Read(p[0]->state_index).ivalue) {
         x.bvalue = false;
         return;
       }
@@ -431,9 +432,9 @@ void transition_enabled::Compute(const state &s, int a, result &x)
     p++;
   }
   for (; i<end_expr_upper; i++) {
-    SafeCompute(b[0], s, 0, x);
+    SafeCompute(b[0], NULL, s, 0, x);
     if (x.isNormal()) {
-      if (x.ivalue <= s.Read(p[0]->state_index).ivalue) {
+      if (x.ivalue <= s->Read(p[0]->state_index).ivalue) {
         x.bvalue = false;
         return;
       }
@@ -453,7 +454,7 @@ void transition_enabled::Compute(const state &s, int a, result &x)
     p++;
   }
   if (guard) {
-    SafeCompute(guard, s, 0, x);
+    SafeCompute(guard, NULL, s, 0, x);
     return;
   }
   x.bvalue = true;
@@ -822,7 +823,7 @@ void transition_fire::NextState(const state &cur, state &next, result &x)
   bool* neg = negate_expr;
   for (; i<end_expr; i++) {
     // compute delta expression
-    SafeCompute((*b), cur, 0, x);
+    SafeCompute((*b), NULL, &cur, 0, x);
     if (!x.isNormal()) return;
     if (neg[0]) x.ivalue *= -1; 
     if ( (next[p[0]->state_index].ivalue += x.ivalue) < 0) {
@@ -1315,14 +1316,14 @@ void spn_model::AddFiring(transition* t, expr* firing)
   
   result z;
   if (INT==firing->Type(0)) {
-    firing->Compute(0, z);
+    firing->Compute(NULL, NULL, 0, z);
     if (z.isNormal() && z.ivalue==0) {
       t->SetImmediate();
       return;
     }
   } 
   if (REAL==firing->Type(0)) {
-    firing->Compute(0, z);
+    firing->Compute(NULL, NULL, 0, z);
     if (z.isNormal() && z.rvalue==0.0) {
       t->SetImmediate();
       return;
@@ -1562,7 +1563,7 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
 // *                         init                         *
 // ********************************************************
 
-void compute_spn_init(expr **pp, int np, result &x)
+void compute_spn_init(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1581,12 +1582,12 @@ void compute_spn_init(expr **pp, int np, result &x)
     Output.flush();
 #endif
     result pl, tk;
-    SafeCompute(pp[i], 0, pl);
+    SafeCompute(pp[i], NULL, NULL, 0, pl);
     DCASSERT(pl.isNormal());
     model_var* place = dynamic_cast <model_var*> (pl.other);
     DCASSERT(place);
 
-    SafeCompute(pp[i], 1, tk);
+    SafeCompute(pp[i], NULL, NULL, 1, tk);
     // error checking of tk here   
     if (0==tk.ivalue) continue;  // print a warning...
     spn->AddInit(place, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
@@ -1609,7 +1610,7 @@ void Add_spn_init(PtrTable *fns)
   tl[1] = INT;
   pl[1] = new formal_param(tl, 2, "p:tokens");
   internal_func *p = new internal_func(VOID, "init", 
-	compute_spn_init, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+	compute_spn_init, pl, 2, 1, helpdoc);  // param 1 repeats
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -1619,7 +1620,7 @@ void Add_spn_init(PtrTable *fns)
 // *                         arcs                         *
 // ********************************************************
 
-void compute_spn_arcs(expr **pp, int np, result &x)
+void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1640,11 +1641,11 @@ void compute_spn_arcs(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    SafeCompute(pp[i], 0, first);
+    SafeCompute(pp[i], NULL, NULL, 0, first);
     DCASSERT(first.isNormal());
 
     result second;
-    SafeCompute(pp[i], 1, second); 
+    SafeCompute(pp[i], NULL, NULL, 1, second); 
     DCASSERT(second.isNormal());
 
     // error checking of first and second here   
@@ -1720,7 +1721,7 @@ void Add_spn_arcs(PtrTable *fns)
   const char* helpdoc = "\b(..., arc, ...)\nAdds arcs to a Petri net.\n\tInput arcs are specified using \"place:trans:card\", where the cardinality <card> has type int or proc int, or using \"place:trans\" for cardinalty of one.\n\tOutput arcs are specified using \"trans:place:card\", or \"trans:place\" for cardinality of one.";
 
   internal_func *p = new internal_func(VOID, "arcs", 
-	compute_spn_arcs, NULL, NULL, 0, helpdoc);
+	compute_spn_arcs, NULL, 0, helpdoc);
   p->setWithinModel();
   p->SetSpecialTypechecking(typecheck_arcs);
   p->SetSpecialParamLinking(linkparams_arcs);
@@ -1732,7 +1733,7 @@ void Add_spn_arcs(PtrTable *fns)
 // *                        inhibit                       *
 // ********************************************************
 
-void compute_spn_inhibit(expr **pp, int np, result &x)
+void compute_spn_inhibit(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1753,13 +1754,13 @@ void compute_spn_inhibit(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    SafeCompute(pp[i], 0, first);
+    SafeCompute(pp[i], NULL, NULL, 0, first);
     DCASSERT(first.isNormal());
     model_var* fv = dynamic_cast <model_var*> (first.other);
     DCASSERT(fv);
 
     result second;
-    SafeCompute(pp[i], 1, second); 
+    SafeCompute(pp[i], NULL, NULL, 1, second); 
     DCASSERT(second.isNormal());
     transition* sv = dynamic_cast <transition*> (second.other);
     DCASSERT(sv);
@@ -1815,7 +1816,7 @@ void Add_spn_inhibit(PtrTable *fns)
   const char* helpdoc = "\b(..., place:trans p:t  OR  place:trans:card p:t:c, ...)\nAdds an inhibitor arc from place p to transition t, with cardinality c.  If c is omitted, it is assumed to be 1.  c can have type int or proc int.";
 
   internal_func *p = new internal_func(VOID, "inhibit", 
-	compute_spn_inhibit, NULL, NULL, 0, helpdoc);
+	compute_spn_inhibit, NULL, 0, helpdoc);
   p->setWithinModel();
   p->SetSpecialTypechecking(typecheck_inhibit);
   p->SetSpecialParamLinking(linkparams_inhibit);
@@ -1827,7 +1828,7 @@ void Add_spn_inhibit(PtrTable *fns)
 // *                         guard                        *
 // ********************************************************
 
-void compute_spn_guard(expr **pp, int np, result &x)
+void compute_spn_guard(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1845,7 +1846,7 @@ void compute_spn_guard(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
-    SafeCompute(pp[i], 0, t);
+    SafeCompute(pp[i], NULL, NULL, 0, t);
     DCASSERT(t.isNormal());
     transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
@@ -1870,7 +1871,7 @@ void Add_spn_guard(PtrTable *fns)
   tl[1] = PROC_BOOL;
   pl[1] = new formal_param(tl, 2, "tg");
   internal_func *p = new internal_func(VOID, "guard", 
-	compute_spn_guard, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+	compute_spn_guard, pl, 2, 1, helpdoc);  // param 1 repeats
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -1879,7 +1880,7 @@ void Add_spn_guard(PtrTable *fns)
 // *                        firing                        *
 // ********************************************************
 
-void compute_spn_firing(expr **pp, int np, result &x)
+void compute_spn_firing(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1897,7 +1898,7 @@ void compute_spn_firing(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
-    SafeCompute(pp[i], 0, t);
+    SafeCompute(pp[i], NULL, NULL, 0, t);
     DCASSERT(t.isNormal());
     transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
@@ -1961,7 +1962,7 @@ void Add_spn_firing(PtrTable *fns)
   const char* helpdoc = "\b(..., trans:distribution t:d, ...)\nAssigns firing distribution d to transition t.  The distribution d can have types int, real, ph int, ph real, rand int, rand real, and the \"proc\" equivalents.  To set the distribution for immediate transitions, \"weight\" should be used instead.";
 
   internal_func *p = new internal_func(VOID, "firing", 
-	compute_spn_firing, NULL, NULL, 0, helpdoc);  
+	compute_spn_firing, NULL, 0, helpdoc);  
   p->setWithinModel();
   p->SetSpecialTypechecking(typecheck_firing);
   p->SetSpecialParamLinking(linkparams_firing);
@@ -1972,7 +1973,7 @@ void Add_spn_firing(PtrTable *fns)
 // *                        weight                        *
 // ********************************************************
 
-void compute_spn_weight(expr **pp, int np, result &x)
+void compute_spn_weight(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -1991,7 +1992,7 @@ void compute_spn_weight(expr **pp, int np, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result t;
-    SafeCompute(pp[i], 0, t);
+    SafeCompute(pp[i], NULL, NULL, 0, t);
     DCASSERT(t.isNormal());
     transition* tv = dynamic_cast <transition*> (t.other);
     DCASSERT(tv);
@@ -2042,7 +2043,7 @@ void Add_spn_weight(PtrTable *fns)
   const char* helpdoc = "\b(..., trans:value t:v, ...)\nMake t an immediate transition with weight v (either of type real or proc real).";
 
   internal_func *p = new internal_func(VOID, "weight", 
-	compute_spn_weight, NULL, NULL, 0, helpdoc);  
+	compute_spn_weight, NULL, 0, helpdoc);  
   p->setWithinModel();
   p->SetSpecialTypechecking(typecheck_weight);
   p->SetSpecialParamLinking(linkparams_weight);
@@ -2053,17 +2054,17 @@ void Add_spn_weight(PtrTable *fns)
 // *                          tk                          *
 // ********************************************************
 
-// A Proc function 
-void compute_spn_tk(const state &m, expr **pp, int np, result &x)
+void compute_spn_tk(expr **pp, int np, Rng *, const state *m, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
+  DCASSERT(m);
 #ifdef DEBUG
   Output << "Checking tk\n";
   Output.flush();
 #endif
   x.Clear();
-  SafeCompute(pp[1], 0, x);
+  SafeCompute(pp[1], NULL, m, 0, x);
 #ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   model_var* place = dynamic_cast <model_var*> (x.other);
@@ -2079,7 +2080,7 @@ void compute_spn_tk(const state &m, expr **pp, int np, result &x)
   Output.flush();
 #endif
 
-  x = m.Read(place->state_index);
+  x = m->Read(place->state_index);
 }
 
 void Add_spn_tk(PtrTable *fns)
@@ -2090,7 +2091,7 @@ void Add_spn_tk(PtrTable *fns)
   pl[0] = new formal_param(PN, "net");
   pl[1] = new formal_param(PLACE, "p");
   internal_func *p = new internal_func(PROC_INT, "tk", 
-	compute_spn_tk, NULL, pl, 2, helpdoc);  
+	compute_spn_tk, pl, 2, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -2099,11 +2100,12 @@ void Add_spn_tk(PtrTable *fns)
 // *                         rate                         *
 // ********************************************************
 
-void compute_spn_rate(const state &m, expr **pp, int np, result &x)
+void compute_spn_rate(expr **pp, int np, Rng *, const state *m, result &x)
 {
   x.Clear();
   DCASSERT(np==2);
   DCASSERT(pp);
+  DCASSERT(m);
   spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
   state_model *dsm = dynamic_cast<state_model*>(spn->GetModel());
@@ -2112,7 +2114,7 @@ void compute_spn_rate(const state &m, expr **pp, int np, result &x)
     return;
   }
 
-  SafeCompute(pp[1], 0, x);
+  SafeCompute(pp[1], NULL, m, 0, x);
 #ifdef DEVELOPMENT_CODE
   DCASSERT(x.isNormal());
   transition* tv = dynamic_cast <transition*> (x.other);
@@ -2124,7 +2126,7 @@ void compute_spn_rate(const state &m, expr **pp, int np, result &x)
   DCASSERT(e);
  
   // check if this transition is enabled
-  if (!dsm->GetEnabledList(m, NULL)) {
+  if (!dsm->GetEnabledList((*m), NULL)) {
     x.setNull();
     return;
   }
@@ -2135,10 +2137,8 @@ void compute_spn_rate(const state &m, expr **pp, int np, result &x)
   // transition is enabled, get firing rate
   switch (e->DistroType()) {
     case EXPO:
-  	SafeCompute(e->Distribution(), 0, x);
-	return;
     case PROC_EXPO:
-  	SafeCompute(e->Distribution(), m, 0, x);
+  	SafeCompute(e->Distribution(), NULL, m, 0, x);
 	return;
     default:
     	break;
@@ -2157,7 +2157,7 @@ void Add_spn_rate(PtrTable *fns)
   pl[0] = new formal_param(PN, "net");
   pl[1] = new formal_param(TRANS, "t");
   internal_func *p = new internal_func(PROC_REAL, "rate", 
-	compute_spn_rate, NULL, pl, 2, helpdoc);  
+	compute_spn_rate, pl, 2, helpdoc);  
   p->setWithinModel();
   InsertFunction(fns, p);
 }
@@ -2166,7 +2166,7 @@ void Add_spn_rate(PtrTable *fns)
 // *                         prio                         *
 // ********************************************************
 
-void compute_spn_prio(expr **pp, int np, result &x)
+void compute_spn_prio(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np>1);
   DCASSERT(pp);
@@ -2183,8 +2183,8 @@ void compute_spn_prio(expr **pp, int np, result &x)
 
   for (int i=1; i<np; i++) {
     result s1, s2;
-    SafeCompute(pp[i], 0, s1);
-    SafeCompute(pp[i], 1, s2);
+    SafeCompute(pp[i], NULL, NULL, 0, s1);
+    SafeCompute(pp[i], NULL, NULL, 1, s2);
     // error checking here
     set_result* T1 = dynamic_cast <set_result*> (s1.other);
     DCASSERT(T1);
@@ -2233,56 +2233,10 @@ void Add_prio(PtrTable *fns)
   tl[1] = SET_TRANS;
   pl[1] = new formal_param(tl, 2, "t1:t2");
   internal_func *p = new internal_func(VOID, "prio", 
-	compute_spn_prio, NULL, pl, 2, 1, helpdoc);  // param 1 repeats
+	compute_spn_prio, pl, 2, 1, helpdoc);  // param 1 repeats
   p->setWithinModel();
   InsertFunction(fns, p);
 }
-
-// ********************************************************
-// *                       showlist                       *
-// ********************************************************
-
-
-void compute_showlist(expr **pp, int np, result &x)
-{
-  DCASSERT(np==2);
-  DCASSERT(pp);
-  x.Clear();
-  SafeCompute(pp[1], 0, x);
-  if (x.isError() || x.isNull()) return;
-
-  set_result* T = dynamic_cast <set_result*> (x.other);
-  DCASSERT(T); 
-  Output << "Transitions in set:\n";
-  int i;
-  for (i=0; i<T->Size(); i++) {
-    x.Clear();
-    T->GetElement(i, x);
-    if (!x.isNormal()) {
-      Output << "\t(bad transition)\n";
-    } else {
-      symbol* s = dynamic_cast <symbol*> (x.other);
-      DCASSERT(s);
-      Output << "\t" << s << "\n";
-    }
-  }
-  
-  x.setNull();
-}
-
-void Add_showlist(PtrTable *fns)
-{
-  const char* helpdoc = "Test function; displays a set of transitions.";
-
-  formal_param **pl = new formal_param*[2];
-  pl[0] = new formal_param(PN, "net");
-  pl[1] = new formal_param(SET_TRANS, "T");
-  internal_func *p = new internal_func(VOID, "showlist", 
-	compute_showlist, NULL, pl, 2, helpdoc);  
-  p->setWithinModel();
-  InsertFunction(fns, p);
-}
-
 
 // ******************************************************************
 // *                                                                *

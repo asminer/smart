@@ -243,7 +243,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   for (e=0; e<num_immediate; e++) {
     event *t = event_data[e];
     if (t->misc<0) continue;
-    t->isEnabled()->Compute(current, 0, x);
+    t->isEnabled()->Compute(NULL, &current, 0, x);
     if (!x.isNormal()) {
       Error.StartModel(Name(), Filename(), Linenumber());
       if (x.isUnknown()) 
@@ -289,7 +289,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   for (; e<num_events; e++) {
     event *t = event_data[e];
     if (t->misc<0) continue;
-    t->isEnabled()->Compute(current, 0, x);
+    t->isEnabled()->Compute(NULL, &current, 0, x);
     if (!x.isNormal()) {
       Error.StartModel(Name(), Filename(), Linenumber());
       if (x.isUnknown()) 

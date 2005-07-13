@@ -69,7 +69,7 @@ Engine_type prob_at_engine(expr **pp, int np, engineinfo *e)
   DCASSERT(np==3);  // params are: (model, reward, time)
   result x;
   x.Clear();
-  SafeCompute(pp[2], 0, x);  // get the time
+  SafeCompute(pp[2], NULL, NULL, 0, x);  // get the time
   // check for errors here...
 
   if (e) {
@@ -119,8 +119,8 @@ Engine_type prob_acc_engine(expr **pp, int np, engineinfo *e)
   result t1, t2;
   t1.Clear();
   t2.Clear();
-  SafeCompute(pp[2], 0, t1);  // get the start time
-  SafeCompute(pp[3], 0, t2);  // get the stop time
+  SafeCompute(pp[2], NULL, NULL, 0, t1);  // get the start time
+  SafeCompute(pp[3], NULL, NULL, 0, t2);  // get the stop time
 
   // check for errors here...
 
@@ -237,7 +237,7 @@ void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
   FreeState(s);
 }
 
-void compute_num_states(expr **pp, int np, result &x)
+void compute_num_states(expr **pp, int np, Rng *, const state *, result &x)
 {
   x.Clear();
   DCASSERT(2==np);
@@ -268,7 +268,7 @@ void compute_num_states(expr **pp, int np, result &x)
 
   // should we show the state space?
   result show;
-  SafeCompute(pp[1], 0, show);
+  SafeCompute(pp[1], NULL, NULL, 0, show);
   if (!show.isNormal()) return;
   if (!show.bvalue) return;
   
@@ -346,8 +346,7 @@ void Add_num_states(PtrTable *fns)
   pl[0] = new formal_param(ANYMODEL, "m");
   pl[1] = new formal_param(BOOL, "show");
   internal_func *p = new internal_func(INT, "num_states", 
-	compute_num_states, NULL,
-	pl, 2, helpdoc);
+	compute_num_states, pl, 2, helpdoc);
   p->setWithinModel();
   InsertFunction(fns, p);
 
@@ -475,7 +474,7 @@ void mc_arcs(state_model *dsm, bool show, result &x)
 }
 
 
-void compute_num_arcs(expr **pp, int np, result &x)
+void compute_num_arcs(expr **pp, int np, Rng *, const state *, result &x)
 {
   x.Clear();
   DCASSERT(2==np);
@@ -488,7 +487,7 @@ void compute_num_arcs(expr **pp, int np, result &x)
   // should we show the graph / MC?
   bool show = false;
   result s;
-  SafeCompute(pp[1], 0, s);
+  SafeCompute(pp[1], NULL, NULL, 0, s);
   if (s.isNormal()) show = s.bvalue;
 
   // eventually: switch for different process types
@@ -524,8 +523,7 @@ void Add_num_arcs(PtrTable *fns)
   pl[0] = new formal_param(ANYMODEL, "m");
   pl[1] = new formal_param(BOOL, "show");
   internal_func *p = new internal_func(INT, "num_arcs", 
-	compute_num_arcs, NULL,
-	pl, 2, helpdoc);
+	compute_num_arcs, pl, 2, helpdoc);
   p->setWithinModel();
   InsertFunction(fns, p);
 
@@ -539,7 +537,7 @@ void Add_num_arcs(PtrTable *fns)
 
 
 // A hook for testing things
-void compute_test(expr **pp, int np, result &x)
+void compute_test(expr **pp, int np, Rng *, const state *, result &x)
 {
   DCASSERT(np==2);
   DCASSERT(pp);
@@ -659,7 +657,7 @@ void Add_test(PtrTable *fns)
   pl[0] = new formal_param(ANYMODEL, "m");
   pl[1] = new formal_param(BOOL, "dummy");
   internal_func *p = new internal_func(INT, "test",
-	compute_test, NULL, pl, 2, "hidden test function");
+	compute_test, pl, 2, "hidden test function");
   p->setWithinModel();
   p->HideDocs();
   InsertFunction(fns, p);

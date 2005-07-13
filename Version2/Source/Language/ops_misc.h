@@ -74,7 +74,6 @@ public:
     DCASSERT(0==i);
     return PROC_STATE;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual void NextState(const state &c, state &n, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {

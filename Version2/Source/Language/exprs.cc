@@ -81,6 +81,13 @@ expr* expr::GetComponent(int i)
   return this;
 }
 
+void expr::Compute(Rng *, const state *, int, result &)
+{
+  Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
+  Internal << "Illegal expression computation request!";
+  Internal.Stop();
+}
+
 void expr::NextState(const state &current, state &next, result &x)
 {
   Internal.Start(__FILE__, __LINE__, filename, linenumber);

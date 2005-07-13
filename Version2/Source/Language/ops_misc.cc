@@ -39,13 +39,6 @@ void void_seq::Compute(Rng *, const state *, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void proc_state_seq::Compute(Rng *, const state *, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
-  Internal << "Bad computation request for proc state expression";
-  Internal.Stop();
-}
-
 void proc_state_seq::NextState(const state& current, state& next, result &x)
 {
   for (int i=0; i<opnd_count; i++) {
