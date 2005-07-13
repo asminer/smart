@@ -26,7 +26,7 @@ variable::variable(const char *fn, int line, type t, char* n)
   : symbol(fn, line, t, n)
 {
   ALLOC("variable", sizeof(variable));
-  state = CS_Undefined;
+  status = CS_Undefined;
   SetSubstitution(false);  
 }
 
@@ -71,23 +71,13 @@ void constfunc::ClearCache()
   have_cached = false;
 }
 
-void constfunc::Compute(int i, result &x)
+void constfunc::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   if (!have_cached) {
-    SafeCompute(return_expr, i, cache);
+    SafeCompute(return_expr, r, st, i, cache);
     have_cached = true;
   } 
-  CopyResult(mytype, x, cache);
-}
-
-void constfunc::Sample(Rng &seed, int i, result &x)
-{
-  DCASSERT(i==0);
-  if (!have_cached) {
-    SafeSample(return_expr, seed, i, cache);
-    have_cached = true;
-  }
   CopyResult(mytype, x, cache);
 }
 
@@ -118,7 +108,7 @@ class determfunc : public constfunc {
 public:
   determfunc(const char *fn, int line, type t, char *n);
   virtual void ClearCache() { }  // DO NOT TRASH cache
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual void ShowHeader(OutputStream &s) const;
 };
 
@@ -134,15 +124,15 @@ determfunc::determfunc(const char *fn, int line, type t, char *n)
   // nothing!
 }
 
-void determfunc::Compute(int i, result &x)
+void determfunc::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   if (!have_cached) {
-    SafeCompute(return_expr, i, cache);
+    SafeCompute(return_expr, r, st, i, cache);
     have_cached = true;
     Delete(return_expr);
     return_expr = NULL;
-    state = CS_Computed;
+    status = CS_Computed;
   }
   CopyResult(mytype, x, cache);
 }

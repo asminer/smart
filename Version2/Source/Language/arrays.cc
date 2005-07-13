@@ -44,9 +44,11 @@ array_index::~array_index()
   Delete(current);
 }
 
-void array_index::Compute(int i, result &x)
+void array_index::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
+  DCASSERT(NULL==r);
+  DCASSERT(NULL==st);
   x.Clear();
   if (NULL==current) {
     x.setNull();
@@ -105,7 +107,7 @@ array::array(const char* fn, int line, type t, char* n, array_index **il, int di
   index_list = il;
   dimension = dim;
   descriptor = NULL;
-  state = CS_Undefined;
+  status = CS_Undefined;
 }
  
 array::array(const char* fn, int line, char* n, array_index **il, int dim)
@@ -115,7 +117,7 @@ array::array(const char* fn, int line, char* n, array_index **il, int dim)
   index_list = il;
   dimension = dim;
   descriptor = NULL;
-  state = CS_Untyped;
+  status = CS_Untyped;
 }
  
 array::~array()
@@ -202,7 +204,7 @@ void array::GetName(OutputStream &s) const
   for (i=0; i<dimension; i++) {
     if (i) s << ", ";
     result ind;
-    index_list[i]->Compute(0, ind);
+    index_list[i]->Compute(NULL, NULL, 0, ind);
     PrintResult(s, index_list[i]->Type(0), ind);
   }
   s << "]";
@@ -215,42 +217,7 @@ void array::Compute(expr **il, result &x)
   array_desc *ptr = descriptor;
   for (i=0; i<dimension; i++) {
     result y;
-    il[i]->Compute(0, y);
-    if (NULL==ptr) {
-      x.setNull();
-      return;
-    }
-    if (y.isNormal()||y.isInfinity()) {
-      int ndx = ptr->values->IndexOf(y);
-      if (ndx<0) {
-        // range error
-        Error.Start(il[i]->Filename(), il[i]->Linenumber());
-        Error << "Bad value: ";
-        PrintResult(Error, il[i]->Type(0), y);
-        Error << " for index " << index_list[i];
-        Error << " in array " << Name();
-        Error.Stop();
-	x.setError();
-        return;
-      }
-      ptr = (array_desc*) ptr->down[ndx];
-      continue;
-    }
-    // there is something strange with y (null, error, etc), propogate to x
-    x = y;
-    return;
-  }
-  x.other = ptr;
-}
-
-void array::Sample(Rng &seed, expr **il, result &x)
-{
-  x.Clear();
-  int i;
-  array_desc *ptr = descriptor;
-  for (i=0; i<dimension; i++) {
-    result y;
-    il[i]->Sample(seed, 0, y);
+    il[i]->Compute(NULL, NULL, 0, y);
     if (NULL==ptr) {
       x.setNull();
       return;
@@ -309,8 +276,7 @@ public:
   virtual ~acall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(int i, result &x);
-  virtual void Sample(Rng &, int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -351,9 +317,11 @@ void acall::ClearCache()
   for (i=0; i<numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void acall::Compute(int i, result &x)
+void acall::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
+  DCASSERT(NULL==r);
+  DCASSERT(NULL==st);
   func->Compute(pass, x);
   if (x.isNull()) return;
   if (x.isError()) return;  // print message?
@@ -361,20 +329,10 @@ void acall::Compute(int i, result &x)
 #ifdef ARRAY_TRACE
   cout << "Computing " << foo << "\n";
 #endif
-  foo->Compute(0, x);
+  foo->Compute(r, st, 0, x);
 #ifdef ARRAY_TRACE
   cout << "Now we have " << foo << "\n";
 #endif
-}
-
-void acall::Sample(Rng &seed, int i, result &x)
-{
-  DCASSERT(0==i);
-  func->Sample(seed, pass, x);
-  if (x.isNull()) return;
-  if (x.isError()) return;  // print message?
-  symbol* foo = (symbol*) x.other;
-  foo->Sample(seed, 0, x);
 }
 
 expr* acall::Substitute(int i)
@@ -711,7 +669,7 @@ statement* MakeForLoop(array_index **i, int dim,
 statement* MakeArrayAssign(array *f, expr* retval,
     		    	   const char *fn, int line)
 {
-  f->state = CS_Defined;
+  f->status = CS_Defined;
   return new arrayassign(fn, line, f, retval);
 }
 

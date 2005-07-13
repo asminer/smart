@@ -48,8 +48,8 @@ public:
   bool_or(const char* fn, int line, expr *l, expr* r): addop(fn, line, l, r) { }
 
   virtual type Type(int i) const {
-    DCASSERT(operand[0]);
-    return operand[0]->Type(i);
+    DCASSERT(operands[0]);
+    return operands[0]->Type(i);
   }
   virtual void Compute(Rng *, const state *, int i, result &x);
 protected:

@@ -40,7 +40,7 @@ cvgfunc::cvgfunc(const char* fn, int line, type t, char* n)
   was_updated = false;
 }
 
-void cvgfunc::Compute(int i, result &x)
+void cvgfunc::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   x = current;
@@ -135,8 +135,8 @@ guess_stmt::~guess_stmt()
 
 void guess_stmt::InitialGuess()
 {
-  DCASSERT(var->state != CS_Computed);
-  SafeCompute(guess, 0, var->current);
+  DCASSERT(var->status != CS_Computed);
+  SafeCompute(guess, NULL, NULL, 0, var->current);
   var->hasconverged = false;
   var->was_updated = true;
 #ifdef DEBUG_CONVERGE
@@ -149,13 +149,13 @@ void guess_stmt::InitialGuess()
 
 void guess_stmt::Affix()
 {
-  var->state = CS_Computed;
+  var->status = CS_Computed;
 }
 
 void guess_stmt::GuessesToDefs()
 {
-  if (var->state == CS_HasGuess)
-    var->state = CS_Defined;
+  if (var->status == CS_HasGuess)
+    var->status = CS_Defined;
 }
 
 void guess_stmt::show(OutputStream &s) const
@@ -210,8 +210,8 @@ assign_stmt::~assign_stmt()
 
 void assign_stmt::Execute()
 {
-  DCASSERT(var->state != CS_Computed);
-  SafeCompute(rhs, 0, var->update);
+  DCASSERT(var->status != CS_Computed);
+  SafeCompute(rhs, NULL, NULL, 0, var->update);
   var->was_updated = false;
 #ifdef DEBUG_CONVERGE
   Output << "Computed " << var << " got ";
@@ -224,14 +224,14 @@ void assign_stmt::Execute()
 
 bool assign_stmt::HasConverged()
 {
-  DCASSERT(var->state != CS_Computed);
+  DCASSERT(var->status != CS_Computed);
   if (!var->was_updated) var->UpdateAndCheck();
   return var->hasconverged;
 }
 
 void assign_stmt::Affix()
 {
-  var->state = CS_Computed;
+  var->status = CS_Computed;
 }
 
 void assign_stmt::show(OutputStream &s) const
@@ -291,10 +291,10 @@ void array_guess_stmt::InitialGuess()
   var->SetCurrentReturn(thisvar);
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
-  DCASSERT(v->state != CS_Computed);
+  DCASSERT(v->status != CS_Computed);
 
   // Compute the guess  value
-  guess->Compute(0, v->current);
+  guess->Compute(NULL, NULL, 0, v->current);
   v->hasconverged = false;
   v->was_updated = true;
 }
@@ -304,14 +304,14 @@ void array_guess_stmt::Affix()
   symbol* thisvar = var->GetCurrentReturn();
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
-  v->state = CS_Computed;
-  var->state = CS_Computed;
+  v->status = CS_Computed;
+  var->status = CS_Computed;
 }
 
 void array_guess_stmt::GuessesToDefs()
 {
-  if (var->state == CS_HasGuess)
-    var->state = CS_Defined;
+  if (var->status == CS_HasGuess)
+    var->status = CS_Defined;
 }
 
 void array_guess_stmt::show(OutputStream &s) const
@@ -373,10 +373,10 @@ void array_assign_stmt::Execute()
   }
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
-  DCASSERT(v->state != CS_Computed);
+  DCASSERT(v->status != CS_Computed);
 
   // Compute the new value
-  rhs->Compute(0, v->update);
+  rhs->Compute(NULL, NULL, 0, v->update);
   v->was_updated = false;
   if (use_current->GetBool()) v->UpdateAndCheck();
 }
@@ -395,8 +395,8 @@ void array_assign_stmt::Affix()
   symbol* thisvar = var->GetCurrentReturn();
   cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
   DCASSERT(v!=NULL);
-  v->state = CS_Computed;
-  var->state = CS_Computed;
+  v->status = CS_Computed;
+  var->status = CS_Computed;
 }
 
 void array_assign_stmt::show(OutputStream &s) const
@@ -515,13 +515,13 @@ cvgfunc* MakeConvergeVar(type t, char* id, const char* file, int line)
 
 statement* MakeGuessStmt(cvgfunc* v, expr* g, const char* fn, int line)
 {
-  v->state = CS_HasGuess;
+  v->status = CS_HasGuess;
   return new guess_stmt(fn, line, v, g);
 }
 
 statement* MakeAssignStmt(cvgfunc* v, expr* r, const char* fn, int line)
 {
-  v->state = CS_Defined;
+  v->status = CS_Defined;
   return new assign_stmt(fn, line, v, r);
 }
 
@@ -537,13 +537,13 @@ statement* MakeConverge(statement** block, int bsize, const char* fn, int ln)
 
 statement* MakeArrayCvgGuess(array* f, expr* guess, const char* fn, int ln)
 {
-  f->state = CS_HasGuess;
+  f->status = CS_HasGuess;
   return new array_guess_stmt(fn, ln, f, guess);
 }
 
 statement* MakeArrayCvgAssign(array* f, expr* rhs, const char* fn, int ln)
 {
-  f->state = CS_Defined;
+  f->status = CS_Defined;
   return new array_assign_stmt(fn, ln, f, rhs);
 }
 

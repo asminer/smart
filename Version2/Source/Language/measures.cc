@@ -42,7 +42,7 @@ measure::~measure()
 void measure::Compute(Rng *, const state *, int i, result &x)
 {
   DCASSERT(i==0);
-  if (state != CS_Computed) {
+  if (status != CS_Computed) {
     if (split_return) {
       split_return->Compute(NULL, NULL, i, x);
     } else if (return_expr) {
@@ -59,7 +59,7 @@ void measure::ShowHeader(OutputStream &s) const
 {
   if (NULL==Name()) return; // hidden?
   s << GetType(Type(0)) << " " << Name() << " := ";
-  if (state != CS_Computed) s << return_expr;
+  if (status != CS_Computed) s << return_expr;
   else PrintResult(s, Type(0), value);
 }
 

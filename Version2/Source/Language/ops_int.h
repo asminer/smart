@@ -53,8 +53,8 @@ public:
     : addop(fn, line, l, r) { }
   
   virtual type Type(int i) const {
-    DCASSERT(operand[0]);
-    return operand[0]->Type(i);
+    DCASSERT(operands[0]);
+    return operands[0]->Type(i);
   }
   virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
@@ -101,8 +101,8 @@ public:
     : multop(fn,line,l,r) { }
   
   virtual type Type(int i) const {
-    DCASSERT(operand[0]);
-    return operand[0]->Type(i);
+    DCASSERT(operands[0]);
+    return operands[0]->Type(i);
   }
   virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:

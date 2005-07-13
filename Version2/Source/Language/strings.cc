@@ -80,7 +80,7 @@ public:
     DCASSERT(0==i);
     return STRING;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *, const state *, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new string_add(Filename(), Linenumber(), x, n);
@@ -88,7 +88,7 @@ protected:
 };
 
 
-void string_add::Compute(int a, result &x)
+void string_add::Compute(Rng *r, const state *st, int a, result &x)
 {
   DCASSERT(0==a);
   // strings are accumulated into a string stream
@@ -97,7 +97,7 @@ void string_add::Compute(int a, result &x)
   for (int i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
-    SafeCompute(operands[i], 0, x);
+    SafeCompute(operands[i], r, st, 0, x);
     if (x.isError() || x.isNull()) return;
     DCASSERT(x.svalue);
     x.svalue->show(acc);
@@ -126,21 +126,21 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_equal(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_equal::Compute(int i, result &x)
+void string_equal::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -175,21 +175,21 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_neq(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_neq::Compute(int i, result &x)
+void string_neq::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -224,21 +224,21 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_gt(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_gt::Compute(int i, result &x)
+void string_gt::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -272,21 +272,21 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_ge(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_ge::Compute(int i, result &x)
+void string_ge::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -320,21 +320,21 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_lt(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_lt::Compute(int i, result &x)
+void string_lt::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();
@@ -368,21 +368,21 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_le(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_le::Compute(int i, result &x)
+void string_le::Compute(Rng *g, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   result l;
   result r;
   x.Clear();
-  SafeCompute(left, 0, l);
-  SafeCompute(right, 0, r);
+  SafeCompute(left, g, st, 0, l);
+  SafeCompute(right, g, st, 0, r);
 
   if (l.isNull() || r.isNull()) {
     x.setNull();

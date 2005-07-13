@@ -82,8 +82,7 @@ public:
   virtual void ShowHeader(OutputStream &s) const;
 
   virtual void ClearCache();
-  virtual void Compute(int i, result &x);
-  virtual void Sample(Rng &, int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 
   inline void SetReturn(expr *e) { 
     status = CS_Defined;

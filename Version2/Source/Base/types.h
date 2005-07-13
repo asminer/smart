@@ -195,6 +195,42 @@ inline type FindType(const char *t)
 /// Returns M for a modifier name, or -1
 modifier FindModif(const char *m);          
 
+
+/// Returns the modifier for type t (ignoring PROC)
+inline modifier GetModifier(type t)
+{
+  switch (t) {
+    case VOID:
+    case BOOL:
+    case INT:
+    case REAL:
+    case STRING:
+    case BIGINT:
+    case STATESET:
+    case PROC_BOOL:
+    case PROC_INT:
+    case PROC_REAL:
+    			return DETERM;
+
+    case EXPO:
+    case PH_INT:
+    case PH_REAL:
+    case PROC_EXPO:
+    case PROC_PH_INT:
+    case PROC_PH_REAL:
+    			return PHASE;
+
+    case RAND_BOOL:
+    case RAND_INT:
+    case RAND_REAL: 
+    case PROC_RAND_BOOL:
+    case PROC_RAND_INT:
+    case PROC_RAND_REAL:
+    			return RAND;
+  }
+  return NO_SUCH_MODIF;
+}
+
 /// Returns the type defined by "modif type", or NO_SUCH_TYPE if it is illegal.
 inline type ModifyType(modifier modif, type t)
 {
@@ -221,6 +257,7 @@ inline bool HasProc(type t)
   return (t>=FIRST_PROC) && (t<=LAST_PROC);
 }
 
+/// Strips any PROC off of type t.
 inline type StripProc(type t)
 {
   if (!HasProc(t)) return t;
@@ -241,30 +278,36 @@ inline type StripProc(type t)
   DCASSERT(0);
 }
 
-inline modifier GetModifier(type t)
+/// Strips all modifiers for type t.
+inline type GetBase(type t)
 {
   switch (t) {
-    case VOID :
-    case BOOL :
-    case INT  :
-    case REAL :
-    case STRING :
-    case BIGINT :
-    case STATESET :
-    			return DETERM;
+    case PH_INT:
+    case RAND_INT:
+    case PROC_INT:
+    case PROC_PH_INT:
+    case PROC_RAND_INT:
+			return INT;
+    
+    case EXPO:
+    case PH_REAL:
+    case RAND_REAL:
+    case PROC_REAL:
+    case PROC_EXPO:
+    case PROC_PH_REAL:
+    case PROC_RAND_REAL:
+			return REAL;
 
-    case EXPO :
-    case PH_INT :
-    case PH_REAL :
-    			return PHASE;
+    case RAND_BOOL:
+    case PROC_BOOL:
+    case PROC_RAND_BOOL:
+			return BOOL;
 
-    case RAND_BOOL :
-    case RAND_INT :
-    case RAND_REAL : 
-    			return RAND;
   }
-  return NO_SUCH_MODIF;
+  return t;
 }
+
+
 
 /// Returns the type defined by "proc type", or NO_SUCH_TYPE if it is illegal.
 inline type ProcifyType(type t)

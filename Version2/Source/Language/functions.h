@@ -71,14 +71,7 @@ public:
   virtual ~formal_param();
 
   virtual void ClearCache() { } // No cache
-  /// for "deterministic" parameters
-  virtual void Compute(int i, result &x);
-  /// for "rand" parameters
-  virtual void Sample(Rng &, int i, result &x);
-  /// for "proc" parameters
-  virtual void Compute(const state &, int i, result &x);
-  /// for "proc rand" parameters
-  virtual void Sample(Rng &, const state &, int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
 
   /** Used to "link" the formal params to 
       a user-defined function.
@@ -292,14 +285,8 @@ public:
   */
   virtual int GetRewardParameter() const;
 
-  /// Call the function, for "deterministic" types
-  virtual void Compute(expr **, int np, result &x);
-  /// Call the function, for "rand" types
-  virtual void Sample(Rng &, expr **, int np, result &x);
-  /// Call the function, for "proc" types
-  virtual void Compute(const state &, expr **, int np, result &x);
-  /// Call the function, for "proc rand" types
-  virtual void Sample(Rng &, const state &, expr **, int np, result &x);
+  /// Call the function
+  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
 
   /** Call the function, for models.
       f and ln are the filename and linenumber where the model is
@@ -341,9 +328,7 @@ public:
            formal_param **pl, int np);
   virtual ~user_func();
 
-  virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(Rng &, expr **, int np, result &x);
-  virtual void Compute(const state &, expr **, int np, result &x);
+  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
 
   virtual void SetReturn(expr *e);
 
@@ -428,37 +413,15 @@ typedef int (*typecheck_func) (List <expr> *params);
  */
 typedef bool (*link_func) (expr** p, int np);
 
+
 /** For computing internal functions.
     Use the following declaration:
 
-    void MyFunc(expr **pp, int np, result &x);
+    void MyFunc(expr **pp, int np, Rng *r, const state *st, result &x);
 
  */
-typedef void (*compute_func) (expr **pp, int np, result &x);
+typedef void (*compute_func) (expr **pp, int np, Rng *r, const state *st, result &x);
 
-/** For computing internal proc functions.
-    Use the following declaration:
-
-    void MyFunc(const state &, expr **pp, int np, result &x);
-
- */
-typedef void (*compute_proc) (const state &, expr **pp, int np, result &x);
-
-/** For sampling internal functions.
-    Use the following declaration:
-
-    void MyFunc(Rng &seed, expr **pp, int np, result &x);
-
- */
-typedef void (*sample_func) (Rng &seed, expr **pp, int np, result &x);
-
-/** For sampling internal proc functions.
-    Use the following declaration:
-
-    void MyFunc(Rng &seed, const state &, expr **pp, int np, result &x);
-
- */
-typedef void (*sample_proc) (Rng &seed, const state &, expr **pp, int np, result &x);
 
 /**   Class for internal functions.
       Used for internally declared functions (such as sqrt).
@@ -473,9 +436,6 @@ typedef void (*sample_proc) (Rng &seed, const state &, expr **pp, int np, result
 class internal_func : public function {
 protected:
   compute_func compute;
-  sample_func sample;
-  compute_proc comp_proc;
-  sample_proc samp_proc;
   const char* documentation;
   bool hidedocs;
   typecheck_func typecheck;
@@ -485,56 +445,26 @@ public:
       @param t	The type.
       @param n	The name.
       @param c	The C-function to call to compute the result.
-      @param s	The C-function to call to sample the result
       @param pl	The parameter list.
       @param np	The number of formal parameters (no repetition).
       @param doc Documentation
    */
-  internal_func(type t, char *n, compute_func c, sample_func s, 
+  internal_func(type t, char *n, compute_func c, 
                 formal_param **pl, int np, const char* doc);
 
   /** Constructor.
       @param t	The type.
       @param n	The name.
       @param c	The C-function to call to compute the result.
-      @param s	The C-function to call to sample the result
       @param pl	The parameter list.
       @param np	The number of formal parameters.
       @param rp	The point to start repeating parameters
       @param doc Documentation
    */
-  internal_func(type t, char *n, compute_func c, sample_func s, 
+  internal_func(type t, char *n, compute_func c,
                 formal_param **pl, int np, int rp, const char* doc);
 
-  /** Constructor.
-      @param t	The type.
-      @param n	The name.
-      @param c	The C-function to call to compute (proc-style) the result.
-      @param s	The C-function to call to sample (proc-style) the result.
-      @param pl	The parameter list.
-      @param np	The number of formal parameters (no repetition).
-      @param doc Documentation
-   */
-  internal_func(type t, char *n, compute_proc c, sample_proc s,
-                formal_param **pl, int np, const char* doc);
-
-  /** Constructor.
-      @param t	The type.
-      @param n	The name.
-      @param c	The C-function to call to compute (proc-style) the result.
-      @param s	The C-function to call to sample (proc-style) the result.
-      @param pl	The parameter list.
-      @param np	The number of formal parameters.
-      @param rp	The point to start repeating parameters
-      @param doc Documentation
-   */
-  internal_func(type t, char *n, compute_proc c, sample_proc s,
-                formal_param **pl, int np, int rp, const char* doc);
-
-  virtual void Compute(expr **, int np, result &x);
-  virtual void Sample(Rng &, expr **, int np, result &x);
-  virtual void Compute(const state &, expr **, int np, result &x);
-  virtual void Sample(Rng &, const state &, expr **, int np, result &x);
+  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
 
   virtual void show(OutputStream &s) const;
 

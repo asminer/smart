@@ -34,7 +34,7 @@ class infinityconst : public constant {
     sign = s;
   }
 
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *, const state *, int i, result &x) {
     DCASSERT(0==i);
     x.Clear();
     x.ivalue = sign;

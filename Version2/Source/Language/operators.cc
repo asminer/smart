@@ -96,42 +96,23 @@ expr* MakeUnaryOp(int op, expr *opnd, const char* file, int line)
   DCASSERT(opnd!=DEFLT);
 
   type optype = opnd->Type(0);
-  switch (optype) {
-    case BOOL:
-      if (op==NOT) return new bool_not(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
+  switch (op) {
+    case NOT:
+	if (GetBase(optype)==BOOL) 
+		return new bool_not(file, line, opnd);
 
-    case INT:
-      if (op==MINUS) return new int_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
+        return IllegalUnaryError(op, optype, file, line);
 
-    case REAL:
-      if (op==MINUS) return new real_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
+    case MINUS:
+	// Below works for everything but phase.
+	if (GetModifier(optype)==PHASE) 
+		return IllegalUnaryError(op, optype, file, line);
 
-    case RAND_BOOL:
-      if (op==NOT) return new rand_bool_not(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
+	if (GetBase(optype)==INT)
+		return new int_neg(file, line, opnd);
 
-    case RAND_INT:
-      if (op==MINUS) return new rand_int_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
-
-    case RAND_REAL:
-      if (op==MINUS) return new rand_real_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
-
-    case PROC_BOOL:
-      if (op==NOT) return new proc_bool_not(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
-
-    case PROC_INT:
-      if (op==MINUS) return new proc_int_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
-
-    case PROC_REAL:
-      if (op==MINUS) return new proc_real_neg(file, line, opnd);
-      return IllegalUnaryError(op, optype, file, line);
+	if (GetBase(optype)==REAL)
+		return new real_neg(file, line, opnd);
 
   }
   return IllegalUnaryError(op, optype, file, line);
@@ -167,203 +148,198 @@ expr* MakeBinaryOp(expr *left, int op, expr *right, const char* file, int line)
   type ltype = left->Type(0);
   type rtype = right->Type(0);
 
-  switch (ltype) {
-
-    //===============================================================
-    case BOOL:
-
-      DCASSERT(rtype==BOOL);
-
-      switch (op) {
-          case PLUS:
-          case OR:	return new bool_or(file, line, left, right);
-
-	  case TIMES:
-	  case AND:   	return new bool_and(file, line, left, right);
-
-	  case EQUALS:	return new bool_equal(file, line, left, right);
-	  case NEQUAL:	return new bool_neq(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-
-      
-    //===============================================================
-    case INT:
-
-      if (rtype==PH_INT) {
-	DCASSERT(op==TIMES);
-	// do ph int times int here
-	return NULL;
-      }
-
-      DCASSERT(rtype==INT);
-
-      switch (op) {
-          case PLUS:	return new int_add(file, line, left, right);
-          case TIMES:	return new int_mult(file, line, left, right);
-          case MINUS:	return new int_sub(file, line, left, right);
-          case DIVIDE:	return new int_div(file, line, left, right);
-	  case EQUALS:	return new int_equal(file, line, left, right);
-	  case NEQUAL:	return new int_neq(file, line, left, right);
-	  case GT:	return new int_gt(file, line, left, right);
-	  case GE:	return new int_ge(file, line, left, right);
-	  case LT:	return new int_lt(file, line, left, right);
-	  case LE:	return new int_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case REAL:
-
-      if (rtype==PH_REAL) {
-	DCASSERT(op==TIMES);
-	// do ph real times real here
-	return NULL;
-      }
-
-      DCASSERT(rtype==REAL);
-
-      switch (op) {
-          case PLUS:	return new real_add(file, line, left, right);
-          case TIMES:	return new real_mult(file, line, left, right);
-          case MINUS:	return new real_sub(file, line, left, right);
-          case DIVIDE:	return new real_div(file, line, left, right);
-	  case EQUALS:	return new real_equal(file, line, left, right);
-	  case NEQUAL:	return new real_neq(file, line, left, right);
-	  case GT:	return new real_gt(file, line, left, right);
-	  case GE:	return new real_ge(file, line, left, right);
-	  case LT:	return new real_lt(file, line, left, right);
-	  case LE:	return new real_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case RAND_BOOL:
-
-      DCASSERT(rtype==RAND_BOOL);
-
-      switch (op) {
-          case PLUS:
-          case OR:	return new rand_bool_or(file, line, left, right);
-
-	  case TIMES:
-	  case AND:   	return new rand_bool_and(file, line, left, right);
-
-	  case EQUALS:	return new rand_bool_equal(file, line, left, right);
-	  case NEQUAL:	return new rand_bool_neq(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-
-      
-    //===============================================================
-    case RAND_INT:
-
-      DCASSERT(rtype==RAND_INT);
-
-      switch (op) {
-          case PLUS:	return new rand_int_add(file, line, left, right);
-          case TIMES:	return new rand_int_mult(file, line, left, right);
-          case MINUS:	return new rand_int_sub(file, line, left, right);
-          case DIVIDE:	return new rand_int_div(file, line, left, right);
-	  case EQUALS:	return new rand_int_equal(file, line, left, right);
-	  case NEQUAL:	return new rand_int_neq(file, line, left, right);
-	  case GT:	return new rand_int_gt(file, line, left, right);
-	  case GE:	return new rand_int_ge(file, line, left, right);
-	  case LT:	return new rand_int_lt(file, line, left, right);
-	  case LE:	return new rand_int_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case RAND_REAL:
-
-      DCASSERT(rtype==RAND_REAL);
-
-      switch (op) {
-          case PLUS:	return new rand_real_add(file, line, left, right);
-          case TIMES:	return new rand_real_mult(file, line, left, right);
-          case MINUS:	return new rand_real_sub(file, line, left, right);
-          case DIVIDE:	return new rand_real_div(file, line, left, right);
-	  case EQUALS:	return new rand_real_equal(file, line, left, right);
-	  case NEQUAL:	return new rand_real_neq(file, line, left, right);
-	  case GT:	return new rand_real_gt(file, line, left, right);
-	  case GE:	return new rand_real_ge(file, line, left, right);
-	  case LT:	return new rand_real_lt(file, line, left, right);
-	  case LE:	return new rand_real_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case PROC_BOOL:
-
-      DCASSERT(rtype==PROC_BOOL);
-
-      switch (op) {
-          case PLUS:
-          case OR:	return new proc_bool_or(file, line, left, right);
-
-	  case TIMES:
-	  case AND:   	return new proc_bool_and(file, line, left, right);
-
-	  case EQUALS:	return new proc_bool_equal(file, line, left, right);
-	  case NEQUAL:	return new proc_bool_neq(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-
-      
-    //===============================================================
-    case PROC_INT:
-
-      DCASSERT(rtype==PROC_INT);
-
-      switch (op) {
-          case PLUS:	return new proc_int_add(file, line, left, right);
-          case TIMES:	return new proc_int_mult(file, line, left, right);
-          case MINUS:	return new proc_int_sub(file, line, left, right);
-          case DIVIDE:	return new proc_int_div(file, line, left, right);
-	  case EQUALS:	return new proc_int_equal(file, line, left, right);
-	  case NEQUAL:	return new proc_int_neq(file, line, left, right);
-	  case GT:	return new proc_int_gt(file, line, left, right);
-	  case GE:	return new proc_int_ge(file, line, left, right);
-	  case LT:	return new proc_int_lt(file, line, left, right);
-	  case LE:	return new proc_int_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case PROC_REAL:
-
-      DCASSERT(rtype==PROC_REAL);
-
-      switch (op) {
-          case PLUS:	return new proc_real_add(file, line, left, right);
-          case TIMES:	return new proc_real_mult(file, line, left, right);
-          case MINUS:	return new proc_real_sub(file, line, left, right);
-          case DIVIDE:	return new proc_real_div(file, line, left, right);
-	  case EQUALS:	return new proc_real_equal(file, line, left, right);
-	  case NEQUAL:	return new proc_real_neq(file, line, left, right);
-	  case GT:	return new proc_real_gt(file, line, left, right);
-	  case GE:	return new proc_real_ge(file, line, left, right);
-	  case LT:	return new proc_real_lt(file, line, left, right);
-	  case LE:	return new proc_real_le(file, line, left, right);
-      }
-      return IllegalBinaryError(ltype, op, rtype, file, line);
-      
-
-    //===============================================================
-    case STRING:
-      
-      DCASSERT(rtype==STRING);
-      // Defined in strings.cc
-      return MakeStringBinary(left, op, right, file, line);
-    
+  if (ltype == STRING) {
+    DCASSERT(rtype == STRING);
+    return MakeStringBinary(left, op, right, file, line);
   }
 
+  // New and simpler, switch on operator first
+  switch (op) {
+    //---------------------------------------------------------------
+    case OR:
+	DCASSERT(ltype == rtype);  // must be true for OR
+	if (GetBase(ltype)==BOOL) 
+		return new bool_or(file, line, left, right);
+
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case AND:
+	DCASSERT(ltype == rtype);  // must be true for AND
+	if (GetBase(ltype)==BOOL) 
+		return new bool_and(file, line, left, right);
+
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case PLUS:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) {
+ 	  // PHASE + PHASE here, for both int and real
+	  return NULL;
+        }
+	switch (GetBase(ltype)) {
+	  case BOOL:
+		return new bool_or(file, line, left, right);
+
+	  case INT:
+		return new int_add(file, line, left, right);
+
+	  case REAL:
+		return new real_add(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case MINUS:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE)
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_sub(file, line, left, right);
+
+	  case REAL:
+		return new real_sub(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case TIMES:
+	if (GetModifier(ltype) == PHASE) {
+ 	  // PHASE * DETERM here, for both int and real
+	  return NULL;
+        }
+	if (GetModifier(rtype) == PHASE) {
+ 	  // DETERM * PHASE here, for both int and real
+	  return NULL;
+        }
+	DCASSERT(ltype == rtype);
+	switch (GetBase(ltype)) {
+	  case BOOL:
+		return new bool_and(file, line, left, right);
+
+	  case INT:
+		return new int_mult(file, line, left, right);
+
+	  case REAL:
+		return new real_mult(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case DIVIDE:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE)
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_div(file, line, left, right);
+
+	  case REAL:
+		return new real_div(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case EQUALS:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case BOOL:
+		return new bool_equal(file, line, left, right);
+
+	  case INT:
+		return new int_equal(file, line, left, right);
+
+	  case REAL:
+		return new real_equal(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case NEQUAL:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case BOOL:
+		return new bool_neq(file, line, left, right);
+
+	  case INT:
+		return new int_neq(file, line, left, right);
+
+	  case REAL:
+		return new real_neq(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case GT:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_gt(file, line, left, right);
+
+	  case REAL:
+		return new real_gt(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case GE:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_ge(file, line, left, right);
+
+	  case REAL:
+		return new real_ge(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case LT:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_lt(file, line, left, right);
+
+	  case REAL:
+		return new real_lt(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+    //---------------------------------------------------------------
+    case LE:
+	DCASSERT(ltype == rtype);
+	if (GetModifier(ltype) == PHASE) 
+        	return IllegalBinaryError(ltype, op, rtype, file, line);
+
+	switch (GetBase(ltype)) {
+	  case INT:
+		return new int_le(file, line, left, right);
+
+	  case REAL:
+		return new real_le(file, line, left, right);
+	}
+        return IllegalBinaryError(ltype, op, rtype, file, line);
+
+  }
   return IllegalBinaryError(ltype, op, rtype, file, line);
 }
 
@@ -402,145 +378,70 @@ expr* MakeAssocOp(int op, expr **opnds, int n, const char* file, int line)
     DCASSERT(foo==alltypes);
   }
 #endif
-  switch (alltypes) {
-    //===============================================================
-    case VOID:
 
-      switch (op) {
-	case SEMI:	return new void_seq(file, line, opnds, n);
+  switch (op) {
+    //---------------------------------------------------------------
+    case SEMI:
+	switch (alltypes) {
+	  case VOID:
+		return new void_seq(file, line, opnds, n);
 
- 	default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
+	  case PROC_STATE:
+		return new proc_state_seq(file, line, opnds, n);
+ 	}
+ 	return IllegalAssocError(op, alltypes, file, line);
 
-    //===============================================================
-    case BOOL:
+    //---------------------------------------------------------------
+    case OR:
+	if (GetBase(alltypes) == BOOL)
+		return new bool_or(file, line, opnds, n);
 
-      switch (op) {
-          case PLUS:
-          case OR:	return new bool_or(file, line, opnds, n);
+        return IllegalAssocError(op, alltypes, file, line);
 
-	  case TIMES:
-	  case AND:   	return new bool_and(file, line, opnds, n);
+    //---------------------------------------------------------------
+    case AND:
+	if (GetBase(alltypes) == BOOL)
+		return new bool_and(file, line, opnds, n);
 
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
+        return IllegalAssocError(op, alltypes, file, line);
 
-    //===============================================================
-    case INT:
+    //---------------------------------------------------------------
+    case PLUS:
+	if (GetModifier(alltypes) == PHASE) {
+ 	  // sum of PHASE here, for both int and real
+	  return NULL;
+        }
+	switch (GetBase(alltypes)) {
+	  case BOOL:
+		return new bool_or(file, line, opnds, n);
 
-      switch (op) {
-          case PLUS:	return new int_add(file, line, opnds, n);
-          case TIMES:	return new int_mult(file, line, opnds, n);
+	  case INT:
+		return new int_add(file, line, opnds, n);
 
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
+	  case REAL:
+		return new real_add(file, line, opnds, n);
 
-    //===============================================================
-    case REAL:
+	  case STRING:
+		return MakeStringAdd(opnds, n, file, line);
+	}
+        return IllegalAssocError(op, alltypes, file, line);
 
-      switch (op) {
-          case PLUS:	return new real_add(file, line, opnds, n);
-          case TIMES:	return new real_mult(file, line, opnds, n);
+    //---------------------------------------------------------------
+    case TIMES:
+	if (GetModifier(alltypes) == PHASE) 
+        	return IllegalAssocError(op, alltypes, file, line);
 
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
+	switch (GetBase(alltypes)) {
+	  case BOOL:
+		return new bool_and(file, line, opnds, n);
 
-    //===============================================================
-    case STRING:
-      
-      switch (op) {
-	case PLUS:	return MakeStringAdd(opnds, n, file, line);
-			// Defined in strings.cc
+	  case INT:
+		return new int_mult(file, line, opnds, n);
 
-	default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-      
-    //===============================================================
-    case RAND_BOOL:
-
-      switch (op) {
-          case PLUS:
-          case OR:	return new rand_bool_or(file, line, opnds, n);
-
-	  case TIMES:
-	  case AND:   	return new rand_bool_and(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case RAND_INT:
-
-      switch (op) {
-          case PLUS:	return new rand_int_add(file, line, opnds, n);
-          case TIMES:	return new rand_int_mult(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case RAND_REAL:
-
-      switch (op) {
-          case PLUS:	return new rand_real_add(file, line, opnds, n);
-          case TIMES:	return new rand_real_mult(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case PROC_BOOL:
-
-      switch (op) {
-          case PLUS:
-          case OR:	return new proc_bool_or(file, line, opnds, n);
-
-	  case TIMES:
-	  case AND:   	return new proc_bool_and(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case PROC_INT:
-
-      switch (op) {
-          case PLUS:	return new proc_int_add(file, line, opnds, n);
-          case TIMES:	return new proc_int_mult(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case PROC_REAL:
-
-      switch (op) {
-          case PLUS:	return new proc_real_add(file, line, opnds, n);
-          case TIMES:	return new proc_real_mult(file, line, opnds, n);
-
-	  default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
-
-    //===============================================================
-    case PROC_STATE:
-
-      switch (op) {
-	case SEMI:	return new proc_state_seq(file, line, opnds, n);
-
- 	default:	return IllegalAssocError(op, alltypes, file, line);
-      }
-      return NULL;
+	  case REAL:
+		return new real_mult(file, line, opnds, n);
+	}
+        return IllegalAssocError(op, alltypes, file, line);
 
   }
 

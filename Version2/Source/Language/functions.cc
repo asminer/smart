@@ -66,39 +66,13 @@ formal_param::~formal_param()
   Delete(deflt);
 }
 
-void formal_param::Compute(int i, result &x)
+void formal_param::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(i==0);
   DCASSERT(stack);
   DCASSERT(stack[0]);   
   CopyResult(Type(i), x, stack[0][offset]);
 }
-
-void formal_param::Sample(Rng &, int i, result &x)
-{
-  DCASSERT(i==0);
-  DCASSERT(stack);
-  DCASSERT(stack[0]);   
-  CopyResult(Type(i), x, stack[0][offset]);
-}
-
-
-void formal_param::Compute(const state &, int i, result &x)
-{
-  DCASSERT(i==0);
-  DCASSERT(stack);
-  DCASSERT(stack[0]);   
-  CopyResult(Type(i), x, stack[0][offset]);
-}
-
-void formal_param::Sample(Rng &, const state &, int i, result &x)
-{
-  DCASSERT(i==0);
-  DCASSERT(stack);
-  DCASSERT(stack[0]);   
-  CopyResult(Type(i), x, stack[0][offset]);
-}
-
 
 // ******************************************************************
 // *                                                                *
@@ -224,31 +198,10 @@ int function::GetRewardParameter() const
   return -1;
 }
 
-void function::Compute(expr **, int, result &)
+void function::Call(expr **, int np, Rng *r, const state *st, result &x)
 {
   Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal function computation";
-  Internal.Stop();
-}
-
-void function::Sample(Rng &, expr **, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal function sample";
-  Internal.Stop();
-}
-
-void function::Compute(const state &, expr **, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal function computation";
-  Internal.Stop();
-}
-
-void function::Sample(Rng &, const state &, expr **, int, result &)
-{
-  Internal.Start(__FILE__, __LINE__);
-  Internal << "Illegal function sample";
+  Internal << "Illegal function call";
   Internal.Stop();
 }
 
@@ -320,7 +273,7 @@ user_func::~user_func()
   Delete(return_expr);
 }
 
-void user_func::Compute(expr **pp, int np, result &x) 
+void user_func::Call(expr **pp, int np, Rng *r, const state *st, result &x) 
 {
   x.Clear();
   if (NULL==return_expr) {
@@ -343,14 +296,16 @@ void user_func::Compute(expr **pp, int np, result &x)
 
   ParamStackTop += np; 
 
+  // Hmmm, figure out when we do NOT want to do this
+
   // Compute parameters, place on stack
   int i;
   for (i=0; i<np; i++) newstackptr[i].setError();
-  for (i=0; i<np; i++) SafeCompute(pp[i], 0, newstackptr[i]); 
+  for (i=0; i<np; i++) SafeCompute(pp[i], r, st, 0, newstackptr[i]); 
 
   // "call" function
   stack_ptr = newstackptr;
-  SafeCompute(return_expr, 0, x);
+  SafeCompute(return_expr, r, st, 0, x);
 
   if (x.isError()) {
     // check option?
@@ -373,115 +328,6 @@ void user_func::Compute(expr **pp, int np, result &x)
   ParamStackTop = oldstacktop;
   stack_ptr = oldstackptr;
 }
-
-void user_func::Sample(Rng &s, expr **pp, int np, result &x) 
-{
-  x.Clear();
-  if (NULL==return_expr) {
-    x.setNull();
-    return;
-  }
-
-  // first... make sure there is enough room on the stack to save params
-  if (ParamStackTop+np > ParamStackSize) {
-    Error.Start(Filename(), Linenumber());
-    Error << "Stack overflow in function call " << Name();
-    Error.Stop();
-    x.setError();
-    return;
-  }
-
-  int oldstacktop = ParamStackTop;  
-  result* oldstackptr = stack_ptr;
-  result* newstackptr = ParamStack + ParamStackTop;
-
-  ParamStackTop += np; 
-
-  // Compute parameters, place on stack
-  int i;
-  for (i=0; i<np; i++) newstackptr[i].setError();
-  for (i=0; i<np; i++) SafeSample(pp[i], s, 0, newstackptr[i]); 
-
-  // "call" function
-  stack_ptr = newstackptr;
-  SafeSample(return_expr, s, 0, x);
-
-  if (x.isError()) {
-    // check option?
-    Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
-    Error << "function call " << Name();
-    if (np) Error << "(";
-    for (i=0; i<np; i++) {
-      if (i) Error << ", ";
-      Error << parameters[i] << "=";
-      PrintResult(Error, parameters[i]->Type(0), newstackptr[i]);
-    }
-    if (np) Error << ")";
-    Error.Stop();
-  }
-
-  // free parameters, in case they're strings or other bulky items
-  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[i]);
-
-  // pop off stack
-  ParamStackTop = oldstacktop;
-  stack_ptr = oldstackptr;
-}
-
-void user_func::Compute(const state &s, expr **pp, int np, result &x) 
-{
-  x.Clear();
-  if (NULL==return_expr) {
-    x.setNull();
-    return;
-  }
-
-  // first... make sure there is enough room on the stack to save params
-  if (ParamStackTop+np > ParamStackSize) {
-    Error.Start(Filename(), Linenumber());
-    Error << "Stack overflow in function call " << Name();
-    Error.Stop();
-    x.setError();
-    return;
-  }
-
-  int oldstacktop = ParamStackTop;  
-  result* oldstackptr = stack_ptr;
-  result* newstackptr = ParamStack + ParamStackTop;
-
-  ParamStackTop += np; 
-
-  // Compute parameters, place on stack
-  int i;
-  for (i=0; i<np; i++) newstackptr[i].setError();
-  for (i=0; i<np; i++) SafeCompute(pp[i], s, 0, newstackptr[i]); 
-
-  // "call" function
-  stack_ptr = newstackptr;
-  SafeCompute(return_expr, s, 0, x);
-
-  if (x.isError()) {
-    // check option?
-    Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
-    Error << "function call " << Name();
-    if (np) Error << "(";
-    for (i=0; i<np; i++) {
-      if (i) Error << ", ";
-      Error << parameters[i] << "=";
-      PrintResult(Error, parameters[i]->Type(0), newstackptr[i]);
-    }
-    if (np) Error << ")";
-    Error.Stop();
-  }
-
-  // free parameters, in case they're strings or other bulky items
-  for (i=0; i<np; i++) DeleteResult(pp[i]->Type(0), newstackptr[i]);
-
-  // pop off stack
-  ParamStackTop = oldstacktop;
-  stack_ptr = oldstackptr;
-}
-
 
 void user_func::SetReturn(expr *e)
 {
@@ -567,13 +413,10 @@ int engine_wrapper::GetRewardParameter() const
 // ******************************************************************
 
 internal_func::internal_func(type t, char *n, 
-   compute_func c, sample_func s, formal_param **pl, int np, const char* d) 
+   compute_func c, formal_param **pl, int np, const char* d) 
  : function(NULL, -1, t, n, pl, np)
 {
   compute = c;
-  sample = s;
-  comp_proc = NULL;
-  samp_proc = NULL;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -582,14 +425,10 @@ internal_func::internal_func(type t, char *n,
 }
 
 internal_func::internal_func(type t, char *n, 
-   compute_func c, sample_func s, formal_param **pl, int np, int rp, 
-   const char* d) 
+   compute_func c, formal_param **pl, int np, int rp, const char* d) 
  : function(NULL, -1, t, n, pl, np, rp)
 {
   compute = c;
-  sample = s;
-  comp_proc = NULL;
-  samp_proc = NULL;
   documentation = d;
   typecheck = NULL;
   linkparams = NULL;
@@ -597,83 +436,16 @@ internal_func::internal_func(type t, char *n,
   hidedocs = false;
 }
 
-internal_func::internal_func(type t, char *n, 
-   compute_proc c, sample_proc s, formal_param **pl, int np, const char* d) 
- : function(NULL, -1, t, n, pl, np)
-{
-  compute = NULL;
-  sample = NULL;
-  comp_proc = c;
-  samp_proc = s;
-  documentation = d;
-  typecheck = NULL;
-  linkparams = NULL;
-  isForward = false;
-  hidedocs = false;
-}
-
-internal_func::internal_func(type t, char *n, 
-   compute_proc c, sample_proc s, formal_param **pl, int np, int rp,
-   const char* d) 
- : function(NULL, -1, t, n, pl, np, rp)
-{
-  compute = NULL;
-  sample = NULL;
-  comp_proc = c;
-  samp_proc = s;
-  documentation = d;
-  typecheck = NULL;
-  linkparams = NULL;
-  isForward = false;
-  hidedocs = false;
-}
-
-void internal_func::Compute(expr **pp, int np, result &x)
+void internal_func::Call(expr **pp, int np, Rng *r, const state *st, result &x)
 {
   if (NULL==compute) {
     Internal.Start(__FILE__, __LINE__);
-    Internal << "Illegal internal function computation";
+    Internal << "Illegal internal function call";
     Internal.Stop();
     x.setNull();
     return;
   }
-  compute(pp, np, x);
-}
-
-void internal_func::Sample(Rng &seed, expr **pp, int np, result &x)
-{
-  if (NULL==sample) {
-    Internal.Start(__FILE__, __LINE__);
-    Internal << "Illegal internal function sample";
-    Internal.Stop();
-    x.setNull();
-    return;
-  }
-  sample(seed, pp, np, x);
-}
-
-void internal_func::Compute(const state &s, expr **pp, int np, result &x)
-{
-  if (NULL==comp_proc) {
-    Internal.Start(__FILE__, __LINE__);
-    Internal << "Illegal internal function computation";
-    Internal.Stop();
-    x.setNull();
-    return;
-  }
-  comp_proc(s, pp, np, x);
-}
-
-void internal_func::Sample(Rng &s, const state &m, expr **p, int np, result &x)
-{
-  if (NULL==samp_proc) {
-    Internal.Start(__FILE__, __LINE__);
-    Internal << "Illegal internal function sample";
-    Internal.Stop();
-    x.setNull();
-    return;
-  }
-  samp_proc(s, m, p, np, x);
+  compute(pp, np, r, st, x);
 }
 
 void internal_func::show(OutputStream &s) const
@@ -756,10 +528,7 @@ public:
   virtual ~fcall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(int i, result &x);
-  virtual void Sample(Rng &, int i, result &x);
-  virtual void Compute(const state &, int i, result &x);
-  virtual void Sample(Rng &, const state &, int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -803,32 +572,11 @@ void fcall::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache(); 
 }
 
-void fcall::Compute(int i, result &x)
+void fcall::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(func);
-  func->Compute(pass, numpass, x);
-}
-
-void fcall::Sample(Rng &s, int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(func);
-  func->Sample(s, pass, numpass, x);
-}
-
-void fcall::Compute(const state &m, int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(func);
-  func->Compute(m, pass, numpass, x);
-}
-
-void fcall::Sample(Rng &s, const state &m, int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(func);
-  func->Sample(s, m, pass, numpass, x);
+  func->Call(pass, numpass, r, st, x);
 }
 
 expr* fcall::Substitute(int i)

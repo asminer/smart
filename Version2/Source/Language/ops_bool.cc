@@ -101,7 +101,7 @@ void bool_equal::Compute(Rng *r, const state *st, int i, result &x)
   left->Compute(r, st, 0, lv); 
   right->Compute(r, st, 0, rv); 
 
-  if (CheckOpnds(l, rv, xv)) {
+  if (CheckOpnds(lv, rv, x)) {
     x.bvalue = (lv.bvalue == rv.bvalue);
   }
 }

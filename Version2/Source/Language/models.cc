@@ -44,7 +44,7 @@ model_var::~model_var()
   FREE("model_var", sizeof(model_var));
 }
 
-void model_var::Compute(int i, result &x)
+void model_var::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   x.Clear();
@@ -149,7 +149,7 @@ void model::Instantiate(expr **p, int np, result &x, const char* f, int ln)
   DCASSERT(np <= num_params);
   // compute parameters
   int i;
-  for (i=0; i<np; i++) SafeCompute(p[i], 0, current_params[i]);
+  for (i=0; i<np; i++) SafeCompute(p[i], NULL, NULL, 0, current_params[i]);
   for (i=np; i<num_params; i++) current_params[i].setNull();
 
   // same as last time?
@@ -219,7 +219,7 @@ symbol* model::FindVisible(char* name) const
 
 void model::SolveMeasure(measure *m)
 {
-  if (CS_Computed == m->state) return;  // already solved
+  if (CS_Computed == m->status) return;  // already solved
 
   // First: solve any measures that this one depends on.
   int i;
@@ -263,7 +263,7 @@ void model::SolveMeasure(measure *m)
 
 	default:
 		// no engine
-		m->Compute(0, foo);
+		m->Compute(NULL, NULL, 0, foo);
 		m->SetValue(foo);
   }
 }
@@ -393,7 +393,7 @@ public:
   virtual ~mcall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -437,7 +437,7 @@ void mcall::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void mcall::Compute(int i, result &x)
+void mcall::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(mdl);
@@ -463,7 +463,7 @@ void mcall::Compute(int i, result &x)
   DCASSERT(m.other == mdl);
 
   mdl->SolveMeasure(msr);
-  msr->Compute(0, x);
+  msr->Compute(r, st, 0, x);
 }
 
 expr* mcall::Substitute(int i)
@@ -545,7 +545,7 @@ public:
   virtual ~ma_call();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -591,7 +591,7 @@ void ma_call::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void ma_call::Compute(int i, result &x)
+void ma_call::Compute(Rng *r, const state *st, int i, result &x)
 {
   DCASSERT(0==i);
   DCASSERT(mdl);
@@ -607,7 +607,7 @@ void ma_call::Compute(int i, result &x)
   measure *m = (measure*) x.other;
  
   mdl->SolveMeasure(m);
-  m->Compute(0, x);
+  m->Compute(r, st, 0, x);
 }
 
 expr* ma_call::Substitute(int i)
@@ -728,7 +728,7 @@ public:
     s << ") ";
   }
 
-  virtual void Compute(int i, result &x) {
+  virtual void Compute(Rng *r, const state *st, int i, result &x) {
     x.Clear();
     if (NULL==var) x.setNull();
     else x.other = var;
@@ -1103,7 +1103,7 @@ statement* MakeMeasureAssign(model *p, measure *m, const char *fn, int line)
 statement* MakeMeasureArrayAssign(model *p, array *f, expr* retval, 
                            const char *fn, int line)
 {
-  f->state = CS_Defined;
+  f->status = CS_Defined;
   return new measure_array_assign(fn, line, p, f, retval);
 }
 

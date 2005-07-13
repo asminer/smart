@@ -26,7 +26,7 @@
 
 void int_neg::Compute(Rng *r, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(opnd);
   opnd->Compute(r, st, 0, x);
 
@@ -127,7 +127,7 @@ void int_add::Compute(Rng *r, const state *st, int a, result &x)
 
 void int_sub::Compute(Rng *r, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result lv;
@@ -321,7 +321,7 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
 
 void int_div::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;
@@ -384,7 +384,7 @@ void int_div::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_equal::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
     
@@ -408,7 +408,7 @@ void int_equal::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_neq::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;
@@ -430,7 +430,7 @@ void int_neq::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_gt::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;
@@ -459,7 +459,7 @@ void int_gt::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_ge::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;
@@ -480,7 +480,7 @@ void int_ge::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_lt::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;
@@ -501,7 +501,7 @@ void int_lt::Compute(Rng *g, const state *st, int a, result &x)
 
 void int_le::Compute(Rng *g, const state *st, int a, result &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(0==a);
   DCASSERT(left);
   DCASSERT(right);
   result l;

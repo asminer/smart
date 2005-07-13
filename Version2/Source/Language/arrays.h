@@ -52,7 +52,7 @@ public:
   virtual ~array_index(); 
 
   virtual void ClearCache() { } // No cache
-  virtual void Compute(int i, result &x);
+  virtual void Compute(Rng *r, const state *st, int i, result &x);
   void showfancy(OutputStream &s) const;
 
   virtual Engine_type GetEngine(engineinfo *e);
@@ -64,7 +64,7 @@ public:
   inline void ComputeCurrent() {
     Delete(current);
     result x;
-    SafeCompute(values, 0, x);
+    SafeCompute(values, NULL, NULL, 0, x);
     if (x.isNull() || x.isError()) current = NULL;  // print an error?
     else current = (set_result*) x.other;
   }
@@ -170,7 +170,7 @@ protected:
   void Clear(int level, void *x);
 public:
   /// Used to catch compile errors with converges and such
-  const_state state;
+  const_status status;
 public:
   array(const char* fn, int line, type t, char* n, array_index **il, int dim);
 
@@ -179,9 +179,9 @@ public:
 
   /// For delayed type definition (by models)
   inline void SetType(type t) {
-    DCASSERT(state == CS_Untyped);
+    DCASSERT(status == CS_Untyped);
     mytype = t;
-    state = CS_Undefined;
+    status = CS_Undefined;
   }
 
   virtual ~array();
@@ -228,10 +228,6 @@ public:
       Note: this way we can set the error values appropriately!
    */
   void Compute(expr** il, result &x);
-
-  /** Like compute, but we sample the indices instead.
-   */
-  void Sample(Rng &, expr **il, result &x);
 
   virtual void show(OutputStream &s) const;
 };
