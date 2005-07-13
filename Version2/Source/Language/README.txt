@@ -29,9 +29,10 @@ arrays		User-defined arrays.
 operators	Operator expressions for all types, including sets.  
 		This is so huge that it is split into its own hierarchy:
 		baseops		Base classes for operators like "+"
-		ops_const	Operators for "determ"
-		ops_rand	Operators for "rand"
-		ops_proc	Operators for "proc"
+		ops_bool	Operators for "bool" types
+		ops_int		Operators for "int" types
+		ops_real	Operators for "real" types
+		ops_misc	Operators for misc. types
 
 casting		Type casting operators for all types.
 
