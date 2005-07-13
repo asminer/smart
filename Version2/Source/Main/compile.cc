@@ -1161,7 +1161,7 @@ statement* BuildVarStmt(type t, char* id, expr* ret)
     if (find) {
       bool error = true;
       if (WithinConverge()) {
-        error = (find->state != CS_HasGuess);
+        error = (find->status != CS_HasGuess);
       } 
       if (error) {
         Error.Start(filename, lexer.lineno());
@@ -1295,7 +1295,7 @@ statement* BuildArrayGuess(array* id, expr* ret)
   }
 
   // guess already?
-  if (id->state != CS_Undefined) {
+  if (id->status != CS_Undefined) {
     Error.Start(filename, lexer.lineno());
     Error << "Duplicate guess for identifier " << id;
     Error.Stop();
@@ -1533,7 +1533,7 @@ array* BuildArray(type t, char*n, void* list)
       bool error = true;
       if (WithinConverge()) {
         // might be ok
-        error = (find->state == CS_Defined) || (find->state == CS_Computed);
+        error = (find->status == CS_Defined) || (find->status == CS_Computed);
       }
       if (error) {
         Error.Start(filename, lexer.lineno());

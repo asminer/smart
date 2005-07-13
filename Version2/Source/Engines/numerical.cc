@@ -160,7 +160,7 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 	// -------------------- BOOL measures --------------------
 	for (int i=start; i<stop; i++) if (x[i]) {
           s[0].ivalue = i;
-      	  mexpr->Compute(s, 0, mval); 
+      	  mexpr->Compute(NULL, &s, 0, mval); 
       	  if (mval.isNormal()) {
 	    if (mval.bvalue) mtotal += x[i];
           } else {
@@ -174,7 +174,7 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 	// -------------------- REAL measures --------------------
 	for (int i=start; i<stop; i++) if (x[i]) {
           s[0].ivalue = i;
-      	  mexpr->Compute(s, 0, mval); 
+      	  mexpr->Compute(NULL, &s, 0, mval); 
       	  if (mval.isNormal()) {
  	    mtotal += mval.rvalue * x[i];
           } else {
@@ -225,7 +225,7 @@ bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
 #else
 	  SS->GetTangible(i, s);
 #endif
-      	  mexpr->Compute(s, 0, mval); 
+      	  mexpr->Compute(NULL, &s, 0, mval); 
       	  if (mval.isNormal()) {
 	    if (mval.bvalue) mtotal += x[i];
           } else {
@@ -243,7 +243,7 @@ bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
 #else
 	  SS->GetTangible(i, s);
 #endif
-      	  mexpr->Compute(s, 0, mval); 
+      	  mexpr->Compute(NULL, &s, 0, mval); 
       	  if (mval.isNormal()) {
  	    mtotal += mval.rvalue * x[i];
           } else {

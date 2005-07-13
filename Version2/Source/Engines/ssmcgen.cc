@@ -332,7 +332,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
     switch (t->FireType()) {
       case E_Timed:
     	if (EXPO==t->DistroType()) {
-      	  SafeCompute(t->Distribution(), 0, x);
+      	  SafeCompute(t->Distribution(), NULL, NULL, 0, x);
       	  if (IllegalRateCheck(x, dsm, t)) {
        	    // bail out
 	    return false;
@@ -345,7 +345,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 
       case E_Immediate:
     	if (REAL==t->WeightType()) {
-      	  SafeCompute(t->Weight(), 0, x);
+      	  SafeCompute(t->Weight(), NULL, NULL, 0, x);
 	  if (x.isNormal())
 	    t->value = x.rvalue;
           else
@@ -615,7 +615,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 	  value = t->value;
 	} else {
 	// we must have a PROC_REAL weight
-          SafeCompute(t->Weight(), current, 0, x);
+          SafeCompute(t->Weight(), NULL, &current, 0, x);
           if (IllegalWeightCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	}
@@ -637,7 +637,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 	// figure the rate
         if (t->value<0) {
 	  // we must have a PROC_EXPO distribution
-          SafeCompute(t->Distribution(), current, 0, x);
+          SafeCompute(t->Distribution(), NULL, &current, 0, x);
           if (IllegalRateCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	} else {

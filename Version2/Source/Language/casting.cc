@@ -120,65 +120,6 @@ void real2int::Compute(Rng *r, const state *st, int i, result &x)
   }
 }
 
-// ******************************************************************
-// *                                                                *
-// *                      expo2randreal  class                      *
-// *                                                                *
-// ******************************************************************
-
-/**  Type promotion from expo to rand real.
-     Also works for proc expo to proc rand real.
-*/   
-class expo2randreal : public typecast {
-public:
-  expo2randreal(const char* fn, int line, expr* x) 
-    : typecast(fn, line, RAND_REAL, x) { }
-
-  virtual void Compute(Rng *r, const state *st, int a, result &x);
-protected:
-  virtual expr* MakeAnother(expr* x) { 
-    return new expo2randreal(Filename(), Linenumber(), x);
-  }
-};
-
-void expo2randreal::Compute(Rng *r, const state *st, int i, result &x)
-{
-  DCASSERT(0==i);
-  DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-
-  if (x.isNormal()) {
-    if (x.rvalue>0) {
-      x.rvalue = - log(r->uniform()) / x.rvalue;
-      return;
-    } 
-    if (x.rvalue<0) {
-      Error.Start(Filename(), Linenumber());
-      Error << "expo with parameter " << x.rvalue << ", must be non-negative";
-      Error.Stop();
-      x.setError();
-      return;
-    } 
-    // still here?  Must be expo(0) = const(infinity)
-    x.setInfinity();  
-    x.ivalue = 1;
-    return;
-  }
-  if (x.isInfinity()) {  // expo(infintity) has mean 0
-    if (x.ivalue < 0) {
-      Error.Start(Filename(), Linenumber());
-      Error << "expo with parameter ";
-      PrintResult(Error, REAL, x);
-      Error.Stop();
-      x.setError();
-      return; 
-    }
-    x.Clear();
-    x.rvalue = 0.0;
-    return;
-  }
-  // some other error, just propogate it
-}
 
 // ******************************************************************
 // ******************************************************************
@@ -293,7 +234,7 @@ expr* MakeTypecast(expr *e, type newtype, const char* file, int line)
 	// add PH_REAL eventually
 
 	case RAND_REAL:
-	  return new expo2randreal(file, line, e);
+	  return new typecast(file, line, RAND_REAL, e);
       }
       return BadTypecast(e, newtype, file, line);
       

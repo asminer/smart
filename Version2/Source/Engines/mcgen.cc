@@ -249,7 +249,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  Output << "Pre-computing rate for event " << t << "\n";
 	  Output.flush();
 #endif
-      	  SafeCompute(t->Distribution(), 0, x);
+      	  SafeCompute(t->Distribution(), NULL, NULL, 0, x);
       	  if (IllegalRateCheck(x, dsm, t)) {
        	    // bail out
 	    return false;
@@ -266,7 +266,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  Output << "Pre-computing weight for event " << t << "\n";
 	  Output.flush();
 #endif
-      	  SafeCompute(t->Weight(), 0, x);
+      	  SafeCompute(t->Weight(), NULL, NULL, 0, x);
 	  if (x.isNormal())
 	    t->value = x.rvalue;
           else
@@ -545,7 +545,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  value = t->value;
 	} else {
 	// we must have a PROC_REAL weight
-          SafeCompute(t->Weight(), current, 0, x);
+          SafeCompute(t->Weight(), NULL, &current, 0, x);
           if (IllegalWeightCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	}
@@ -563,7 +563,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	// figure the rate
         if (t->value<0) {
 	  // we must have a PROC_EXPO distribution
-          SafeCompute(t->Distribution(), current, 0, x);
+          SafeCompute(t->Distribution(), NULL, &current, 0, x);
           if (IllegalRateCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	} else {
