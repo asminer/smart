@@ -45,17 +45,17 @@ public:
     return newtype;
   }
   // unfortunately, this is necessary
-  virtual void Compute(Rng *r, const state *st, int a, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new typecast(Filename(), Linenumber(), newtype, x);
   }
 };
 
-void typecast::Compute(Rng *r, const state *st, int a, result &x)
+void typecast::Compute(compute_data &x)
 {
   DCASSERT(opnd);
-  opnd->Compute(r, st, a, x);
+  opnd->Compute(x);
 }
 
 // ******************************************************************
@@ -72,20 +72,21 @@ public:
   int2real(const char* fn, int line, type newt, expr* x)
   : typecast(fn, line, newt, x) { }
 
-  virtual void Compute(Rng *r, const state *st, int a, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new int2real(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void int2real::Compute(Rng *r, const state *st, int a, result &x) 
+void int2real::Compute(compute_data &x) 
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-  if (x.isNormal()) {
-    x.rvalue = x.ivalue;
+  opnd->Compute(x);
+  if (x.answer->isNormal()) {
+    x.answer->rvalue = x.answer->ivalue;
   }
 }
 
@@ -103,20 +104,21 @@ public:
   real2int(const char* fn, int line, type newt, expr* x)
   : typecast(fn, line, newt, x) { }
 
-  virtual void Compute(Rng *r, const state *st, int a, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr* x) { 
     return new real2int(Filename(), Linenumber(), Type(0), x);
   }
 };
 
-void real2int::Compute(Rng *r, const state *st, int i, result &x)
+void real2int::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-  if (x.isNormal()) {
-    x.ivalue = int(x.rvalue);
+  opnd->Compute(x);
+  if (x.answer->isNormal()) {
+    x.answer->ivalue = int(x.answer->rvalue);
   }
 }
 

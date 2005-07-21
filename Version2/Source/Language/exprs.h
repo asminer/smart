@@ -20,6 +20,19 @@
 
 //@{
 
+// Defined elsewhere but necessary here.
+
+class Rng;	// Random number generator class, defined elsewhere
+class state;    // defined elsewhere, used for proc expressions.
+
+
+// Defined below but necessary.
+
+class symbol;	
+class measure;
+
+
+
 enum Engine_type {
   /// Error of some sort
   ENG_Error,
@@ -40,8 +53,6 @@ enum Engine_type {
   /// Expression containing several of the above
   ENG_Mixed
 };
-
-
 
 
 // ******************************************************************
@@ -86,19 +97,53 @@ struct engineinfo {
   }
 };
 
+// ******************************************************************
+// *                                                                *
+// *                       compute_data class                       *
+// *                                                                *
+// ******************************************************************
+
+/** Information used for computing a value from an expression.
+    Allows for flexibility and speed.  Not bad.
+ */
+struct compute_data {
+  /// The return value.  
+  result* answer;
+  /// Aggregate index (normally 0).
+  int aggregate;
+
+  /** 
+      The random number generation stream.
+      Used for rand expressions: if provided, random expressions will 
+      be "sampled".  const expressions can use null here.  If null is 
+      given for a rand expression, this should return an object that 
+      can be sampled.
+  */
+  Rng *rng_stream;
+
+  /** 
+      The current state.
+      Used for proc expressions, which depend on the current "state".  
+      Non-proc expressions can use null here.
+  */
+  const state* current;
+
+public:
+  /// Handy: constructor
+  compute_data() {
+    answer = 0;
+    aggregate = 0;
+    rng_stream = 0;
+    current = 0;
+  }
+};
+
 
 // ******************************************************************
 // *                                                                *
 // *                           expr class                           *
 // *                                                                *
 // ******************************************************************
-
-class Rng;	// Random number generator class, defined elsewhere
-class state;    // defined elsewhere, used for proc expressions.
-
-class symbol;	// defined below
-class measure;	// also below
-
 
 
 /**   The base class of all expressions, and the
@@ -147,24 +192,9 @@ public:
   virtual void ClearCache() = 0;
 
   /** Compute the expression.
-
-      @param	r	The random number generation stream.
-      			Used for rand expressions: if provided,
-			random expressions will be "sampled".
-			const expressions can use null here.
-			If null is given for a rand expression,
-			this should return an object that can be sampled.
-
-      @param	s	The current state.
-      			Used for proc expressions, which depend on
-			the current "state".  Non-proc expressions
-			can use null here.
-
-      @param	i	The aggregate index to compute.
-
-      @param	x	Place to store the result.
+      For speed and flexibility, uses a struct parameter.
   */
-  virtual void Compute(Rng *r, const state *s, int i, result &x);
+  virtual void Compute(compute_data &x);
 
 
   /** Compute the next state from the current state.
@@ -483,7 +513,7 @@ inline int Compare(symbol *a, symbol *b)
 /** Compute an expression.
     Correctly handles null expressions.
  */
-inline void SafeCompute(expr *e, Rng *r, const state *s, int a, result &x) 
+inline void SafeCompute(expr *e, compute_data &x) 
 {
 #ifdef COMPUTE_DEBUG
   static int depth = 0;
@@ -500,20 +530,22 @@ inline void SafeCompute(expr *e, Rng *r, const state *s, int a, result &x)
     Output.flush();
     depth++;
 #endif
-    e->Compute(r, s, a, x);
+    e->Compute(x);
 #ifdef COMPUTE_DEBUG
     depth--;
     Output.Pad(' ', depth*2);
     Output << "expression ";
     e->show(Output);
     Output << " evaluated to ";
-    PrintResult(Output, e->Type(a), x);
+    DCASSERT(x->answer);
+    PrintResult(Output, e->Type(a), *(x.answer));
     Output << "\n";
     Output.flush();
 #endif
   } else {
-    x.Clear();
-    x.setNull();
+    DCASSERT(x.answer);
+    x.answer->Clear();
+    x.answer->setNull();
   }
 }
 

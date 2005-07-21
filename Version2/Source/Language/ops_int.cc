@@ -24,15 +24,16 @@
 // *                                                                *
 // ******************************************************************
 
-void int_neg::Compute(Rng *r, const state *st, int a, result &x)
+void int_neg::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
+  opnd->Compute(x);
 
-  if (x.isNormal() || x.isInfinity()) {
+  if (x.answer->isNormal() || x.answer->isInfinity()) {
     // This is the right thing to do even for infinity.
-    x.ivalue = -x.ivalue;
+    x.answer->ivalue = -x.answer->ivalue;
   }
 }
 
@@ -42,34 +43,37 @@ void int_neg::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_add::Compute(Rng *r, const state *st, int a, result &x)
+void int_add::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(operands[0]);
-  operands[0]->Compute(r, st, 0, x);
-  if (x.isNull() || x.isError()) return;  // short circuit
+  result* sum = x.answer;
+
+  operands[0]->Compute(x);
+  if (sum->isNull() || sum->isError()) return;  // short circuit
   bool unknown = false;
-  if (x.isUnknown()) {
+  if (sum->isUnknown()) {
     unknown = true;
-    x.Clear();
+    sum->Clear();
   }
   int i=0;
-  if (!x.isInfinity()) {
+  result foo;
+  x.answer = &foo;
+  if (!sum->isInfinity()) {
     // Sum until we run out of operands or hit an infinity
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);
-      result foo;
-      operands[i]->Compute(r, st, 0, foo);
+      operands[i]->Compute(x);
       if (foo.isNormal()) {
 	// normal finite addition
-        x.ivalue += foo.ivalue;  
+        sum->ivalue += foo.ivalue;  
 	continue;
       }
       if (foo.isInfinity()) {
 	// infinite addition
 	unknown = false;  // infinity + ? = infinity
-        x.setInfinity();
-        x.ivalue = foo.ivalue;
+        (*sum) = foo;
         break;  
       }
       if (foo.isUnknown()) {
@@ -77,11 +81,13 @@ void int_add::Compute(Rng *r, const state *st, int a, result &x)
 	continue;
       }
       if (foo.isNull()) {
-        x.setNull();
+        sum->setNull();
+	x.answer = sum;
         return;  // null...short circuit
       }
       // must be an error
-      x.setError();
+      sum->setError();
+      x.answer = sum;
       return;  // error...short circuit
     } // for i
   }
@@ -92,31 +98,34 @@ void int_add::Compute(Rng *r, const state *st, int a, result &x)
   // error if we have infinity - infinity.
   
   for (i++; i<opnd_count; i++) {
-    DCASSERT(x.isInfinity());
+    DCASSERT(sum->isInfinity());
     DCASSERT(operands[i]);
-    result foo;
-    operands[i]->Compute(r, st, 0, foo);
+    operands[i]->Compute(x);
     if (foo.isNormal() || foo.isUnknown()) continue;  // most likely case
     if (foo.isInfinity()) {
       // check operand for opposite sign for infinity
-      if ( (x.ivalue>0) != (foo.ivalue>0) ) {
+      if ( (sum->ivalue>0) != (foo.ivalue>0) ) {
 	  Error.Start(operands[i]->Filename(), operands[i]->Linenumber());
 	  Error << "Undefined operation (infty-infty) due to ";
 	  Error << operands[i];
 	  Error.Stop();
-	  x.setError();
+	  sum->setError();
+	  x.answer = sum;
 	  return;
       }
     } // infinity
     if (foo.isNull()) {
-      x.setNull();
+      sum->setNull();
+      x.answer = sum;
       return;  // null...short circuit
     }
     // must be an error
-    x.setError();
+    sum->setError();
+    x.answer = sum;
     return;  // error...short circuit
   } // for i
-  if (unknown) x.setUnknown();
+  if (unknown) sum->setUnknown();
+  x.answer = sum;
 }
 
 // ******************************************************************
@@ -125,56 +134,62 @@ void int_add::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_sub::Compute(Rng *r, const state *st, int a, result &x)
+void int_sub::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
   result lv;
   result rv;
-  x.Clear();
-  left->Compute(r, st, 0, lv);
-  right->Compute(r, st, 0, rv);
+  result* answer = x.answer;
+  answer->Clear();
+ 
+  x.answer = &lv;
+  left->Compute(x);
+  x.answer = &rv;
+  right->Compute(x);
+  x.answer = answer;
 
   if (lv.isNormal() && rv.isNormal()) {
     // ordinary integer subtraction
-    x.ivalue = lv.ivalue - rv.ivalue;
+    x.answer->ivalue = lv.ivalue - rv.ivalue;
     return;
   }
   if (lv.isInfinity() && rv.isInfinity()) {
     // both infinity
     if ((lv.ivalue > 0) != (rv.ivalue >0)) {
-      x.setInfinity();
-      x.ivalue = lv.ivalue;
+      x.answer->setInfinity();
+      x.answer->ivalue = lv.ivalue;
       return;
     }
     Error.Start(right->Filename(), right->Linenumber());
     Error << "Undefined operation (infty-infty) due to " << right;
     Error.Stop();
-    x.setError();
+    x.answer->setError();
     return;
   }
   if (lv.isInfinity()) {
     // one infinity
-    x.setInfinity();
-    x.ivalue = lv.ivalue;
+    x.answer->setInfinity();
+    x.answer->ivalue = lv.ivalue;
     return;
   }
   if (rv.isInfinity()) {
     // one infinity
-    x.setInfinity();
-    x.ivalue = -rv.ivalue;
+    x.answer->setInfinity();
+    x.answer->ivalue = -rv.ivalue;
     return;
   }
   if (lv.isUnknown() || rv.isUnknown()) {
-    x.setUnknown();
+    x.answer->setUnknown();
     return;
   }
   if (lv.isNull() || rv.isNull()) {
-    x.setNull();
+    x.answer->setNull();
     return;
   }
-  x.setError();
+  x.answer->setError();
 }
 
 // ******************************************************************
@@ -183,17 +198,19 @@ void int_sub::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_mult::Compute(Rng *r, const state *st, int a, result &x)
+void int_mult::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(operands[0]);
-  operands[0]->Compute(r, st, 0, x);
-  if (x.isError()) return;
-  if (x.isNull()) return;  // short circuit
-  bool unknown = x.isUnknown();
+  result* prod = x.answer;
+
+  operands[0]->Compute(x);
+  if (prod->isError() || prod->isNull()) return;
+  bool unknown = prod->isUnknown();
   if (unknown) {
-    x.Clear();
-    x.ivalue = 1;
+    prod->Clear();
+    prod->ivalue = 1;
   }
   int i=0;
 
@@ -208,28 +225,29 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
   //
   // zero multiply: check only for errors 
   //
+  result foo;
+  x.answer = &foo;
 
-  if (x.isNormal() && x.ivalue) {
+  if (prod->isNormal() && prod->ivalue) {
     // Multiply until we run out of operands or change state
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);
-      result foo;
-      operands[i]->Compute(r, st, 0, foo);
+      operands[i]->Compute(x);
       if (foo.isNormal()) {
 	if (0==foo.ivalue) {
-	  x.ivalue = 0;
+	  prod->ivalue = 0;
           unknown = false;
 	  break;  // change state
 	} else {
 	  // normal finite multiply
-	  x.ivalue *= foo.ivalue;
+	  prod->ivalue *= foo.ivalue;
 	}
 	continue;
       }
       if (foo.isInfinity()) {
 	// fix sign and change state
-	x.ivalue = SIGN(x.ivalue) * SIGN(foo.ivalue);
-	x.setInfinity();
+	prod->ivalue = SIGN(prod->ivalue) * SIGN(foo.ivalue);
+	prod->setInfinity();
 	break;
       }
       if (foo.isUnknown()) {
@@ -237,21 +255,23 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
 	continue;
       }
       if (foo.isNull()) {
-	x.setNull();
+	prod->setNull();
+     	x.answer = prod;
 	return; // short circuit
       }
       // must be an error
-      x.setError();
+      prod->setError();
+      x.answer = prod;
+      return; // short circuit
     } // for i
   }
 
   // The infinity case
-  if (x.isInfinity()) {
+  if (prod->isInfinity()) {
     // Keep multiplying, only worry about sign and make sure we don't hit zero
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);
-      result foo;
-      operands[i]->Compute(r, st, 0, foo);
+      operands[i]->Compute(x);
       if (foo.isNormal() || foo.isInfinity()) {
 	if (0==foo.ivalue) {
 	  // 0 * infinity, error
@@ -259,11 +279,12 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
           Error << "Undefined operation (0 * infty) due to ";
           Error << operands[i];
           Error.Stop();
-          x.setError();
+          prod->setError();
+   	  x.answer = prod;
 	  return;
 	} else {
 	  // fix sign
-	  x.ivalue *= SIGN(foo.ivalue);
+	  prod->ivalue *= SIGN(foo.ivalue);
 	}
 	continue;
       }
@@ -272,23 +293,25 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
 	continue;
       }
       if (foo.isNull()) {
-	x.setNull();
+	prod->setNull();
+        x.answer = prod;
 	return; // short circuit
       }
       // must be an error
-      x.setError();
+      prod->setError();
+      x.answer = prod;
+      return;
     } // for i
   } 
 
   // The zero case
-  if (x.ivalue == 0) {
+  if (prod->ivalue == 0) {
     // Check the remaining operands, if any, and throw an
     // error if we have infinity * 0.
     for (i++; i<opnd_count; i++) {
-      DCASSERT(x.ivalue==0);
+      DCASSERT(prod->ivalue==0);
       DCASSERT(operands[i]);
-      result foo;
-      operands[i]->Compute(r, st, 0, foo);
+      operands[i]->Compute(x);
       if (foo.isNormal() || foo.isUnknown()) continue;
 
       // check for infinity
@@ -297,20 +320,24 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
         Error << "Undefined operation (0 * infty) due to ";
         Error << operands[i];
         Error.Stop();
-        x.setError();
+        prod->setError();
+	x.answer = prod;
         return;
       }
       if (foo.isNull()) {
-        x.setNull();
+        prod->setNull();
+	x.answer = prod;
         return;  // null...short circuit
       }
-      x.setError();
+      prod->setError();
+      x.answer = prod;
       return;  // error...short circuit
     } // for i
   }
 
   // Only thing to worry about:
-  if (unknown) x.setUnknown();
+  if (unknown) prod->setUnknown();
+  x.answer = prod;
 }
 
 // ******************************************************************
@@ -319,26 +346,31 @@ void int_mult::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_div::Compute(Rng *g, const state *st, int a, result &x)
+void int_div::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+  result* answer = x.answer;
   result l;
   result r;
-  x.Clear();
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
+  answer->Clear();
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
 
   if (l.isNormal() && r.isNormal()) {
-    x.rvalue = l.ivalue;
+    answer->rvalue = l.ivalue;
     if (0==r.ivalue) {
       Error.Start(right->Filename(), right->Linenumber());
       Error << "Undefined operation (divide by 0) due to " << right;
       Error.Stop();
-      x.setError();
+      answer->setError();
     } else {
-      x.rvalue /= r.ivalue;
+      answer->rvalue /= r.ivalue;
     }
     return;
   }
@@ -348,32 +380,32 @@ void int_div::Compute(Rng *g, const state *st, int a, result &x)
       Error << "Undefined operation (infty / infty) due to ";
       Error << left << "/" << right;
       Error.Stop();
-      x.setError();
+      answer->setError();
       return;
   }
 
   if (l.isInfinity()) {
     // infinity / finite, check sign only
-    x.setInfinity();
-    x.ivalue = SIGN(l.ivalue) * SIGN(r.ivalue);
+    answer->setInfinity();
+    answer->ivalue = SIGN(l.ivalue) * SIGN(r.ivalue);
     return;
   }
   if (r.isInfinity()) {
     // finite / infinity = 0  
-    x.rvalue = 0.0;
+    answer->rvalue = 0.0;
     return;
   }
 
   if (l.isUnknown() || r.isUnknown()) {
-    x.setUnknown();
+    answer->setUnknown();
     return;
   }
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
     return;
   }
 
-  x.setError();
+  answer->setError();
 }
 
 // ******************************************************************
@@ -382,21 +414,25 @@ void int_div::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_equal::Compute(Rng *g, const state *st, int a, result &x)
+void int_equal::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
     
   result l;
   result r;
-
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
 
   if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.ivalue == r.ivalue);
+    x.answer->bvalue = (l.ivalue == r.ivalue);
   }
 }
 
@@ -406,19 +442,25 @@ void int_equal::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_neq::Compute(Rng *g, const state *st, int a, result &x)
+void int_neq::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+    
   result l;
   result r;
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
 
   if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.ivalue != r.ivalue);
+    x.answer->bvalue = (l.ivalue != r.ivalue);
   }
 }
 
@@ -428,26 +470,25 @@ void int_neq::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_gt::Compute(Rng *g, const state *st, int a, result &x)
+void int_gt::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+    
   result l;
   result r;
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
+
   if (CheckOpnds(l, r, x)) {
     // normal comparison
-#ifdef DEBUG_DEEP
-    cout << "Comparing " << left << " and " << right << "\n";
-    cout << "Got " << left << " = " << l.ivalue << "\n";
-    cout << "Got " << right << " = " << r.ivalue << "\n";
-#endif
-    x.bvalue = (l.ivalue > r.ivalue);
-#ifdef DEBUG_DEEP
-    cout << "So " << left << " > " << right << " is " << x.bvalue << "\n";
-#endif
+    x.answer->bvalue = (l.ivalue > r.ivalue);
   }
 }
 
@@ -457,20 +498,28 @@ void int_gt::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_ge::Compute(Rng *g, const state *st, int a, result &x)
+void int_ge::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+    
   result l;
   result r;
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
-  if (CheckOpnds(l,r,x)) {
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.ivalue >= r.ivalue);
+    x.answer->bvalue = (l.ivalue >= r.ivalue);
   }
 }
+
 
 // ******************************************************************
 // *                                                                *
@@ -478,18 +527,25 @@ void int_ge::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_lt::Compute(Rng *g, const state *st, int a, result &x)
+void int_lt::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+    
   result l;
   result r;
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
-  if (CheckOpnds(l,r,x)) {
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.ivalue < r.ivalue);
+    x.answer->bvalue = (l.ivalue < r.ivalue);
   }
 }
 
@@ -499,21 +555,27 @@ void int_lt::Compute(Rng *g, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void int_le::Compute(Rng *g, const state *st, int a, result &x)
+void int_le::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
+    
   result l;
   result r;
-  left->Compute(g, st, 0, l);
-  right->Compute(g, st, 0, r);
-  if (CheckOpnds(l,r,x)) {
+  result* answer = x.answer;
+  x.answer = &l;
+  left->Compute(x);
+  x.answer = &r;
+  right->Compute(x);
+  x.answer = answer;
+
+  if (CheckOpnds(l, r, x)) {
     // normal comparison
-    x.bvalue = (l.ivalue <= r.ivalue);
+    x.answer->bvalue = (l.ivalue <= r.ivalue);
   }
 }
-
 
 //@}
 

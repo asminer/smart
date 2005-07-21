@@ -133,37 +133,37 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(const result &l, const result &r, compute_data &x) const {
+    x.answer->Clear();
     // Most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign, definitely not equal
-      x.bvalue = false;
+      x.answer->bvalue = false;
       return false;
     }
     if (l.isInfinity() || r.isInfinity()) {
       // one infinity, one not: definitely not equal
-      x.bvalue = false;
+      x.answer->bvalue = false;
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
 
@@ -195,38 +195,38 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(result &l, result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(result &l, result &r, compute_data &x) const {
+    x.answer->Clear();
 
     // Most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign, definitely not equal
-      x.bvalue = true;
+      x.answer->bvalue = true;
       return false;
     }
     if (l.isInfinity() || r.isInfinity()) {
       // one infinity, one not: definitely not equal
-      x.bvalue = true;
+      x.answer->bvalue = true;
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
     // can we get here?
@@ -257,43 +257,43 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(const result &l, const result &r, compute_data &x) const {
+    x.answer->Clear();
 
     // most common case first
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
-      x.bvalue = (l.ivalue>0);
+      x.answer->bvalue = (l.ivalue>0);
       return false;
     }
     if (l.isInfinity()) {
       // first is infinity, the other isn't; check sign
-      x.bvalue = (l.ivalue>0);
+      x.answer->bvalue = (l.ivalue>0);
       return false;
     }
     if (r.isInfinity()) {
       // second is infinity, the other isn't; check sign
-      x.bvalue = (r.ivalue<0);
+      x.answer->bvalue = (r.ivalue<0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
 
@@ -326,43 +326,43 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(const result &l, const result &r, compute_data &x) const {
+    x.answer->Clear();
 
     // most common case
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
-      x.bvalue = (l.ivalue>0);
+      x.answer->bvalue = (l.ivalue>0);
       return false;
     }
     if (l.isInfinity()) {
       // first is infinity, the other isn't; check sign
-      x.bvalue = (l.ivalue>0);
+      x.answer->bvalue = (l.ivalue>0);
       return false;
     }
     if (r.isInfinity()) {
       // second is infinity, the other isn't; check sign
-      x.bvalue = (r.ivalue<0);
+      x.answer->bvalue = (r.ivalue<0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
     DCASSERT(0);
@@ -392,42 +392,42 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(const result &l, const result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(const result &l, const result &r, compute_data &x) const {
+    x.answer->Clear();
 
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign.  
-      x.bvalue = (r.ivalue>0);
+      x.answer->bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isInfinity()) {
       // first is infinity, the other isn't; check sign
-      x.bvalue = (l.ivalue<0);
+      x.answer->bvalue = (l.ivalue<0);
       return false;
     }
     if (r.isInfinity()) {
       // second is infinity, the other isn't; check sign
-      x.bvalue = (r.ivalue>0);
+      x.answer->bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
     DCASSERT(0);
@@ -457,42 +457,42 @@ protected:
       @param x	The result.  (Can be set on error conditions, etc.)
       @return	true if the computation should continue after calling this.
   */
-  inline bool CheckOpnds(result &l, result &r, result &x) const {
-    x.Clear();
+  inline bool CheckOpnds(result &l, result &r, compute_data &x) const {
+    x.answer->Clear();
     
     if (l.isNormal() && r.isNormal()) return true;
 
     if (l.isError() || r.isError()) {
-      x.setError();
+      x.answer->setError();
       return false;
     }
     if (l.isNull() || r.isNull()) {
-      x.setNull();
+      x.answer->setNull();
       return false;
     }
     if (l.isInfinity() && r.isInfinity()) {
       // both infinity
       if ((l.ivalue > 0) == (r.ivalue >0)) {
         // same sign infinity, this is undefined
-        x.setError();
+        x.answer->setError();
         return false;
       }
       // different sign.  If the first is positive, it is greater.
-      x.bvalue = (r.ivalue>0);
+      x.answer->bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isInfinity()) {
       // first is infinity, the other isn't; check sign
-      x.bvalue = (l.ivalue<0);
+      x.answer->bvalue = (l.ivalue<0);
       return false;
     }
     if (r.isInfinity()) {
       // second is infinity, the other isn't; check sign
-      x.bvalue = (r.ivalue>0);
+      x.answer->bvalue = (r.ivalue>0);
       return false;
     }
     if (l.isUnknown() || r.isUnknown()) {
-      x.setUnknown();
+      x.answer->setUnknown();
       return false;
     }
     DCASSERT(0);

@@ -54,8 +54,10 @@ void exprstmt::Execute()
   // this should be eliminated at compile time
   DCASSERT(x);
 
+  compute_data foo;
   result dummy;
-  x->Compute(NULL, NULL, 0, dummy);
+  foo.answer = &dummy;
+  x->Compute(foo);
 
   // hmmm... do we check for errors here?
 
@@ -117,9 +119,11 @@ public:
 statement* MakeOptionStatement(option* o, expr* e, const char* file, int line)
 {
   DCASSERT(e);
+  compute_data foo;
   result x;
   x.Clear();
-  e->Compute(NULL, NULL, 0, x);
+  foo.answer = &x;
+  e->Compute(foo);
   // should do error checking here...
   switch (e->Type(0)) {
     case BOOL:

@@ -24,11 +24,12 @@
 // *                                                                *
 // ******************************************************************
 
-void void_seq::Compute(Rng *, const state *, int a, result &x)
+void void_seq::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(0==x.aggregate);
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], NULL, NULL, 0, x);
+    DCASSERT(operands[i]);
+    operands[i]->Compute(x);
     // check for errors and bail?
   }
 }

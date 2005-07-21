@@ -41,7 +41,7 @@ public:
     DCASSERT(0==i);
     return VOID;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new void_seq(Filename(), Linenumber(), x, n);

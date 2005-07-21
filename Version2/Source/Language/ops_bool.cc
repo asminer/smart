@@ -21,16 +21,16 @@
 // *                                                                *
 // ******************************************************************
 
-void bool_not::Compute(Rng *r, const state *st, int i, result &x)
+void bool_not::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  x.Clear();
-  opnd->Compute(r, st, 0, x); 
+  opnd->Compute(x); 
 
-  if (!x.isNormal()) return;
+  if (!x.answer->isNormal()) return;
 
-  x.bvalue = !x.bvalue;
+  x.answer->bvalue = !x.answer->bvalue;
 }
 
 // ******************************************************************
@@ -39,23 +39,23 @@ void bool_not::Compute(Rng *r, const state *st, int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_or::Compute(Rng *r, const state *st, int a, result &x)
+void bool_or::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   int i;
   bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
-    operands[i]->Compute(r, st, 0, x);
-    if (x.isNormal() && x.bvalue) 	return;	// true...short circuit
-    if (x.isUnknown()) {
+    operands[i]->Compute(x);
+    if (x.answer->isNormal() && x.answer->bvalue) 	return;	//short circuit
+    if (x.answer->isUnknown()) {
       unknown = true;
       continue;
     }
-    if (!x.isNormal())  return; // error or null, short circuit
+    if (!x.answer->isNormal())  return; // error or null, short circuit
   } // for i
-  if (unknown) x.setUnknown();
+  if (unknown) x.answer->setUnknown();
 }
 
 // ******************************************************************
@@ -64,23 +64,23 @@ void bool_or::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_and::Compute(Rng *r, const state *st, int a, result &x)
+void bool_and::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   int i;
   bool unknown = false;
   for (i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
-    operands[i]->Compute(r, st, 0, x);
-    if (x.isNormal() && !x.bvalue) 	return;	// false...short circuit
-    if (x.isUnknown()) {
+    operands[i]->Compute(x);
+    if (x.answer->isNormal() && !x.answer->bvalue) 	return;	//short circuit
+    if (x.answer->isUnknown()) {
       unknown = true;
       continue;
     }
-    if (!x.isNormal())  return; // error or null, short circuit
+    if (!x.answer->isNormal())  return; // error or null, short circuit
   } // for i
-  if (unknown) x.setUnknown();
+  if (unknown) x.answer->setUnknown();
 }
 
 // ******************************************************************
@@ -89,20 +89,25 @@ void bool_and::Compute(Rng *r, const state *st, int a, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_equal::Compute(Rng *r, const state *st, int i, result &x)
+void bool_equal::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
 
+  result* answer = x.answer;
   result lv;
   result rv;
 
-  left->Compute(r, st, 0, lv); 
-  right->Compute(r, st, 0, rv); 
+  x.answer = &lv; 
+  left->Compute(x); 
+  x.answer = &rv;
+  right->Compute(x); 
+  x.answer = answer;
 
   if (CheckOpnds(lv, rv, x)) {
-    x.bvalue = (lv.bvalue == rv.bvalue);
+    x.answer->bvalue = (lv.bvalue == rv.bvalue);
   }
 }
 
@@ -112,20 +117,25 @@ void bool_equal::Compute(Rng *r, const state *st, int i, result &x)
 // *                                                                *
 // ******************************************************************
 
-void bool_neq::Compute(Rng *r, const state *st, int i, result &x)
+void bool_neq::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(left);
   DCASSERT(right);
 
+  result* answer = x.answer;
   result lv;
   result rv;
   
-  left->Compute(r, st, 0, lv);
-  right->Compute(r, st, 0, rv);
+  x.answer = &lv;
+  left->Compute(x);
+  x.answer = &rv;
+  right->Compute(x);
+  x.answer = answer;
 
   if (CheckOpnds(lv, rv, x)) {
-    x.bvalue = (lv.bvalue != rv.bvalue);
+    x.answer->bvalue = (lv.bvalue != rv.bvalue);
   }
 }
 

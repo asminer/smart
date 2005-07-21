@@ -81,7 +81,7 @@ expr* expr::GetComponent(int i)
   return this;
 }
 
-void expr::Compute(Rng *, const state *, int, result &)
+void expr::Compute(compute_data &)
 {
   Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
   Internal << "Illegal expression computation request!";
@@ -621,9 +621,11 @@ expr* symbol::Substitute(int i)
 {
   DCASSERT(i==0);
   if (substitute_value) {
-    result x;
-    Compute(NULL, NULL, 0, x);
-    return MakeConstExpr(Type(0), x, Filename(), Linenumber());
+    compute_data x;
+    result answer;
+    x.answer = &answer;
+    Compute(x);
+    return MakeConstExpr(Type(0), answer, Filename(), Linenumber());
   }
   // Don't substitute
   return Copy(this);
@@ -679,7 +681,7 @@ public:
   virtual int NumComponents() const;
   virtual expr* GetComponent(int i);
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *s, int i, result &x);
+  virtual void Compute(compute_data &x);
 
   virtual expr* Substitute(int i);
 
@@ -716,11 +718,14 @@ type aggregates::Type(int i) const
   return VOID;
 }
 
-void aggregates::Compute(Rng *r, const state *s, int i, result &x)
+void aggregates::Compute(compute_data &x)
 {
+  DCASSERT(x.answer);
+  int i = x.aggregate;
+  x.aggregate = 0;
   CHECK_RANGE(0, i, opnd_count);
-  if (operands[i]) operands[i]->Compute(r, s, 0, x);
-  else x.setNull();
+  if (operands[i]) operands[i]->Compute(x);
+  else x.answer->setNull();
 }
 
 expr* aggregates::Substitute(int i) 
@@ -766,10 +771,11 @@ public:
   boolconst(const char* fn, int ln, type t, bool v) : constant (fn, ln, t) {
     value = v;
   }
-  virtual void Compute(Rng *, const state *, int i, result &x) { 
-    DCASSERT(0==i);
-    x.Clear();
-    x.bvalue = value;
+  virtual void Compute(compute_data &x) { 
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    x.answer->Clear();
+    x.answer->bvalue = value;
   }
 
   virtual void show(OutputStream &s) const {
@@ -791,10 +797,11 @@ public:
   intconst(const char* fn, int line, type t, int v) : constant (fn, line, t) {
     value = v;
   }
-  virtual void Compute(Rng *, const state *, int i, result &x) { 
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = value;
+  virtual void Compute(compute_data &x) { 
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    x.answer->Clear();
+    x.answer->ivalue = value;
   }
 
   virtual void show(OutputStream &s) const {
@@ -816,10 +823,11 @@ public:
   realconst(const char* fn, int ln, type t, double v) : constant(fn, ln, t) {
     value = v;
   }
-  virtual void Compute(Rng *, const state *, int i, result &x) { 
-    DCASSERT(0==i);
-    x.Clear();
-    x.rvalue = value;
+  virtual void Compute(compute_data &x) { 
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    x.answer->Clear();
+    x.answer->rvalue = value;
   }
 
   virtual void show(OutputStream &s) const {
@@ -847,10 +855,11 @@ class stringconst : public constant {
     FREE("stringconst", sizeof(stringconst));
     Delete(value);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x) { 
-    DCASSERT(0==i);
-    x.Clear();
-    x.other = Share(value);
+  virtual void Compute(compute_data &x) { 
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    x.answer->Clear();
+    x.answer->other = Share(value);
   }
 
   virtual void show(OutputStream &s) const {

@@ -29,7 +29,7 @@ public:
   virtual type Type(int i) const {
     return opnd->Type(i);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *x) {
     return new bool_not(Filename(), Linenumber(), x);
@@ -51,7 +51,7 @@ public:
     DCASSERT(operands[0]);
     return operands[0]->Type(i);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new bool_or(Filename(), Linenumber(), x, n);
@@ -76,7 +76,7 @@ public:
     DCASSERT(operands[0]);
     return operands[0]->Type(i);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new bool_and(Filename(), Linenumber(), x, n);
@@ -98,7 +98,7 @@ public:
     DCASSERT(left);
     return left->Type(i);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr* r) {
     return new bool_equal(Filename(), Linenumber(), l, r);
@@ -120,7 +120,7 @@ public:
     DCASSERT(left);
     return left->Type(i);
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new bool_neq(Filename(), Linenumber(), l, r);

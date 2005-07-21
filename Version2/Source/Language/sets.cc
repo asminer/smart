@@ -498,27 +498,35 @@ public:
   virtual Engine_type GetEngine(engineinfo *e);
   virtual expr* SplitEngines(List <measure> *);
 protected:
-  inline bool ComputeAndCheck(result &s, result &e, result &i, result &x) {
-    x.Clear();
-    start->Compute(NULL, NULL, 0, s);
+  inline bool ComputeAndCheck(result &s, result &e, result &i, compute_data &x) {
+    result* answer = x.answer;
+    DCASSERT(answer);
+    answer->Clear();
+    x.answer = &s;
+    start->Compute(x);
     if (s.isNull() || s.isError()) {
-      x = s;
+      (*answer) = s;
+      x.answer = answer;
       return false;
     }
-    stop->Compute(NULL, NULL, 0, e);
+    x.answer = &e;
+    stop->Compute(x);
     if (e.isNull() || e.isError()) {
-      x = e;
+      (*answer) = e;
+      x.answer = answer;
       return false;
     }
-    inc->Compute(NULL, NULL, 0, i);
+    x.answer = &i;
+    inc->Compute(x);
+    x.answer = answer;
     if (i.isNull() || i.isError()) {
-      x = i;
+      (*answer) = i;
       return false;
     }
     // special cases here
     if (s.isInfinity() || e.isInfinity()) {
       // Print error message here
-      x.setError();
+      answer->setError();
       return false;
     } 
     return true;
@@ -704,7 +712,7 @@ class int_setexpr_interval : public setexpr_interval {
 public:
   int_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *s, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual setexpr_interval* MakeAnother(const char* fn, int line, 
   					expr* s, expr* e, expr* i);
@@ -724,11 +732,12 @@ type int_setexpr_interval::Type(int i) const
   return SET_INT;
 }
 
-void int_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
+void int_setexpr_interval::Compute(compute_data &x)
 {
-  DCASSERT(0==n);
-  DCASSERT(NULL==r);
-  DCASSERT(NULL==st);
+  DCASSERT(x.answer); 
+  DCASSERT(0==x.aggregate);
+  DCASSERT(NULL==x.rng_stream);
+  DCASSERT(NULL==x.current);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
   set_result *xs = NULL;
@@ -753,7 +762,7 @@ void int_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
     // we have an ordinary interval
     xs = new int_interval(s.ivalue, e.ivalue, i.ivalue);
   }
-  x.other = xs;
+  x.answer->other = xs;
 }
 
 setexpr_interval* int_setexpr_interval::MakeAnother(const char* fn, int line, 
@@ -774,7 +783,7 @@ public:
   intset_element(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -788,23 +797,24 @@ type intset_element::Type(int i) const
   return SET_INT;
 }
 
-void intset_element::Compute(Rng *r, const state *st, int i, result &x)
+void intset_element::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-  if (x.isError() || x.isNull()) return;
-  if (x.isInfinity()) {
-    x.setError();
+  opnd->Compute(x);
+  if (x.answer->isError() || x.answer->isNull()) return;
+  if (x.answer->isInfinity()) {
+    x.answer->setError();
     return;
   }
   int* values = new int[1];
   int* order = new int[1];
-  values[0] = x.ivalue;
+  values[0] = x.answer->ivalue;
   order[0] = 0;
    
   set_result *answer = new generic_int_set(1, values, order);
-  x.other = answer;
+  x.answer->other = answer;
 }
 
 void intset_element::show(OutputStream &s) const
@@ -826,7 +836,7 @@ public:
   intset_union(const char* fn, int line, expr* l, expr* r)
    : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr** newx, int newn) {
     return new intset_union(Filename(), Linenumber(), newx, newn);
@@ -839,39 +849,40 @@ type intset_union::Type(int i) const
   return SET_INT;
 }
 
-void intset_union::Compute(Rng *r, const state *st, int i, result &x)
+void intset_union::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
   ArraySplay <int> *ans = new ArraySplay <int>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], r, st, 0, x);
-    if (!x.isNormal()) {
+    SafeCompute(operands[i], x);
+    if (!x.answer->isNormal()) {
       // bail out
       delete ans;
       return;
     }
 #ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.other);
+    set_result *s = dynamic_cast<set_result*> (x.answer->other);
     DCASSERT(s);
 #else
-    set_result *s = (set_result*) x.other;
+    set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, x);
-      DCASSERT(x.isNormal());
-      ans->AddElement(x.ivalue);
+      s->GetElement(e, *(x.answer));
+      DCASSERT(x.answer->isNormal());
+      ans->AddElement(x.answer->ivalue);
     } 
     Delete(s);
   }
   // prepare result
-  x.Clear();
+  x.answer->Clear();
   int newsize = ans->NumNodes();
   int* order = (newsize) ? (new int[newsize]) : NULL;
   ans->FillOrderList(order);
   int* values = ans->Compress();
   delete ans;
-  x.other = new generic_int_set(newsize, values, order);
+  x.answer->other = new generic_int_set(newsize, values, order);
 }
 
 
@@ -886,7 +897,7 @@ public:
   int2realset(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void show(OutputStream &s) const { s << opnd; }
 protected:
   virtual expr* MakeAnother(expr* newx) {
@@ -900,16 +911,20 @@ type int2realset::Type(int i) const
   return SET_REAL;
 }
 
-void int2realset::Compute(Rng *r, const state *st, int i, result &x)
+void int2realset::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-  if (x.isNull() || x.isError()) return;
-  set_result* xs = dynamic_cast<set_result*> (x.other);
+  opnd->Compute(x);
+  if (x.answer->isNull() || x.answer->isError()) return;
+#ifdef DEVELOPMENT_CODE
+  set_result* xs = dynamic_cast<set_result*> (x.answer->other);
   DCASSERT(xs);
-  set_result* answer = new int_realset(xs);
-  x.other = answer;
+#else
+  set_result* xs = (set_result*) x.answer->other;
+#endif
+  x.answer->other = new int_realset(xs);
 }
 
 // ******************************************************************
@@ -931,7 +946,7 @@ class real_setexpr_interval : public setexpr_interval {
 public:
   real_setexpr_interval(const char* fn, int line, expr* s, expr* e, expr* i);
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual setexpr_interval* MakeAnother(const char* fn, int line, 
   					expr* s, expr* e, expr* i);
@@ -951,11 +966,12 @@ type real_setexpr_interval::Type(int i) const
   return SET_REAL;
 }
 
-void real_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
+void real_setexpr_interval::Compute(compute_data &x)
 {
-  DCASSERT(0==n);
-  DCASSERT(NULL==r);
-  DCASSERT(NULL==st);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(NULL==x.rng_stream);
+  DCASSERT(NULL==x.current);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
   set_result *xs = NULL;
@@ -980,7 +996,7 @@ void real_setexpr_interval::Compute(Rng *r, const state *st, int n, result &x)
     // we have an ordinary interval
     xs = new real_interval(s.rvalue, e.rvalue, i.rvalue);
   }
-  x.other = xs;
+  x.answer->other = xs;
 }
 
 setexpr_interval* real_setexpr_interval::MakeAnother(const char* fn, int line, 
@@ -1001,7 +1017,7 @@ public:
   realset_element(const char* fn, int line, expr* x) 
     : unary(fn, line, x) { };
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -1015,23 +1031,24 @@ type realset_element::Type(int i) const
   return SET_REAL;
 }
 
-void realset_element::Compute(Rng *r, const state *st, int i, result &x)
+void realset_element::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(r, st, 0, x);
-  if (x.isError() || x.isNull()) return;
-  if (x.isInfinity()) {
-    x.setError();
+  opnd->Compute(x);
+  if (x.answer->isError() || x.answer->isNull()) return;
+  if (x.answer->isInfinity()) {
+    x.answer->setError();
     return;
   }
   double* values = new double[1];
   int* order = new int[1];
-  values[0] = x.rvalue;
+  values[0] = x.answer->rvalue;
   order[0] = 0;
    
   set_result *answer = new generic_real_set(1, values, order);
-  x.other = answer;
+  x.answer->other = answer;
 }
 
 void realset_element::show(OutputStream &s) const
@@ -1053,7 +1070,7 @@ public:
   realset_union(const char* fn, int line, expr* l, expr* r)
    : unionop(fn, line, l, r) {}
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr** nargs, int ncnt) {
     return new realset_union(Filename(), Linenumber(), nargs, ncnt);
@@ -1066,39 +1083,40 @@ type realset_union::Type(int i) const
   return SET_REAL;
 }
 
-void realset_union::Compute(Rng *r, const state *st, int i, result &x)
+void realset_union::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
   ArraySplay <double> *ans = new ArraySplay <double>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], r, st, 0, x);
-    if (!x.isNormal()) {
+    SafeCompute(operands[i], x);
+    if (!x.answer->isNormal()) {
       // bail out
       delete ans;
       return;
     }
 #ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.other);
+    set_result *s = dynamic_cast<set_result*> (x.answer->other);
     DCASSERT(s);
 #else
-    set_result *s = (set_result*) x.other;
+    set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, x);
-      DCASSERT(x.isNormal());
-      ans->AddElement(x.rvalue);
+      s->GetElement(e, *(x.answer));
+      DCASSERT(x.answer->isNormal());
+      ans->AddElement(x.answer->rvalue);
     } 
     Delete(s);
   }
   // prepare result
-  x.Clear();
+  x.answer->Clear();
   int newsize = ans->NumNodes();
   int* order = (newsize) ? (new int[newsize]) : NULL;
   ans->FillOrderList(order);
   double* values = ans->Compress();
   delete ans;
-  x.other = new generic_real_set(newsize, values, order);
+  x.answer->other = new generic_real_set(newsize, values, order);
 }
 
 
@@ -1126,7 +1144,7 @@ public:
     setType = st;
   };
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void show(OutputStream &s) const;
 protected:
   virtual expr* MakeAnother(expr* newopnd) {
@@ -1140,20 +1158,20 @@ type voidset_element::Type(int i) const
   return setType;
 }
 
-void voidset_element::Compute(Rng *r, const state *st, int i, result &x)
+void voidset_element::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
   symbol** values = new symbol*[1];
   int* order = new int[1];
-  SafeCompute(opnd, r, st, 0, x); 
-  DCASSERT(x.isNormal()); // I'm *pretty* sure the alternative is impossible
-  values[0] = dynamic_cast<symbol*> (x.other); 
+  SafeCompute(opnd, x); 
+  DCASSERT(x.answer->isNormal());
+  values[0] = dynamic_cast<symbol*> (x.answer->other); 
   DCASSERT(values[0]);
   order[0] = 0;
    
-  set_result *answer = new generic_void_set(1, values, order);
-  x.other = answer;
+  x.answer->other = new generic_void_set(1, values, order);
 }
 
 void voidset_element::show(OutputStream &s) const
@@ -1180,7 +1198,7 @@ public:
     mytype = mt;
   };
   virtual type Type(int i) const;
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr** args, int n) {
     return new voidset_union(Filename(), Linenumber(), args, n, mytype);
@@ -1193,45 +1211,46 @@ type voidset_union::Type(int i) const
   return mytype;
 }
 
-void voidset_union::Compute(Rng *r, const state *st, int i, result &x)
+void voidset_union::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
   ArraySplay <void*> *ans = new ArraySplay <void*>; 
   for (int i=0; i<opnd_count; i++) {
-    SafeCompute(operands[i], r, st, 0, x);
-    if (!x.isNormal()) {
+    SafeCompute(operands[i], x);
+    if (!x.answer->isNormal()) {
       // bail out
       delete ans;
       return;
     }
 #ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.other);
+    set_result *s = dynamic_cast<set_result*> (x.answer->other);
     DCASSERT(s);
 #else
-    set_result *s = (set_result*) x.other;
+    set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, x);
-      DCASSERT(x.isNormal());
+      s->GetElement(e, *(x.answer));
+      DCASSERT(x.answer->isNormal());
 #ifdef DEVELOPMENT_CODE
-      symbol *xo = dynamic_cast<symbol*>(x.other);
+      symbol *xo = dynamic_cast<symbol*>(x.answer->other);
       DCASSERT(xo);
 #else
-      symbol *xo = (symbol*) x.other;
+      symbol *xo = (symbol*) x.answer->other;
 #endif
       ans->AddElement(xo);
     } 
     Delete(s);
   }
   // prepare result
-  x.Clear();
+  x.answer->Clear();
   int newsize = ans->NumNodes();
   int* order = (newsize) ? (new int[newsize]) : NULL;
   ans->FillOrderList(order);
   symbol** values = (symbol**) ans->Compress();
   delete ans;
-  x.other = new generic_void_set(newsize, values, order);
+  x.answer->other = new generic_void_set(newsize, values, order);
 }
 
 
