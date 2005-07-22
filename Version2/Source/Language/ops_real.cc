@@ -229,7 +229,7 @@ void real_mult::Compute(compute_data &x)
   result foo;
   x.answer = &foo;
 
-  if (prod->isNormal() && prod->ivalue) {
+  if (prod->isNormal() && prod->rvalue) {
     // Multiply until we run out of operands or change state
     for (i++; i<opnd_count; i++) {
       DCASSERT(operands[i]);

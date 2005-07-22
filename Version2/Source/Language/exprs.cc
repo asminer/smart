@@ -84,7 +84,8 @@ expr* expr::GetComponent(int i)
 void expr::Compute(compute_data &)
 {
   Internal.Start(__FILE__, __LINE__, Filename(), Linenumber());
-  Internal << "Illegal expression computation request!";
+  Internal << "Illegal expression computation request!: ";
+  show(Internal);
   Internal.Stop();
 }
 

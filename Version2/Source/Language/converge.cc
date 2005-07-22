@@ -136,11 +136,10 @@ guess_stmt::~guess_stmt()
 
 void guess_stmt::InitialGuess()
 {
-  DCASSERT(guess);
   DCASSERT(var->status != CS_Computed);
   compute_data foo;
   foo.answer = &(var->current);
-  guess->Compute(foo);
+  SafeCompute(guess, foo);
   var->hasconverged = false;
   var->was_updated = true;
 #ifdef DEBUG_CONVERGE
@@ -214,11 +213,10 @@ assign_stmt::~assign_stmt()
 
 void assign_stmt::Execute()
 {
-  DCASSERT(rhs);
   DCASSERT(var->status != CS_Computed);
   compute_data foo;
   foo.answer = &(var->update);
-  rhs->Compute(foo);
+  SafeCompute(rhs, foo);
   var->was_updated = false;
 #ifdef DEBUG_CONVERGE
   Output << "Computed " << var << " got ";

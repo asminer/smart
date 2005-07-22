@@ -34,11 +34,12 @@ class infinityconst : public constant {
     sign = s;
   }
 
-  virtual void Compute(Rng *, const state *, int i, result &x) {
-    DCASSERT(0==i);
-    x.Clear();
-    x.ivalue = sign;
-    x.setInfinity();
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    x.answer->Clear();
+    x.answer->ivalue = sign;
+    x.answer->setInfinity();
   }
 
   virtual void show(OutputStream &s) const {

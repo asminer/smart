@@ -2,12 +2,17 @@
 // $Id$
 
 
-Working on new unified expression computation.
-Fix lots of operators and such :^(
-
 Things to do:
 
-* non-constant parameters; nail down semantics.
+* zero cost promotions when base type unchanged
+	(e.g., INT to RAND INT)
+  because computing an INT is the same as sampling it.
+
+  split types out of expressions?
+  e.g., add a typed_expr struct = { type t, expr* e };
+
+  or, split modifiers out of expressions
+  typed_expr struct = { bool proc, modif m, expr* e };
 
 * Marking-dependent firing rates
 
