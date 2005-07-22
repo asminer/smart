@@ -44,23 +44,12 @@ model_var::~model_var()
   FREE("model_var", sizeof(model_var));
 }
 
-void model_var::Compute(Rng *r, const state *st, int i, result &x)
+void model_var::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
-  x.Clear();
-  x.other = this;
-/*
-  if (state_index < 0) {
-    // the index was never set
-    // not sure what to do here, try this...
-    x.setError();  
-    Error.Start(Filename(), Linenumber());
-    Error << "No index set for state " << Name();
-    Error.Stop();
-  } else {
-    x.ivalue = state_index;
-  }
-*/
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
+  x.answer->other = this;
 }
 
 void model_var::ClearCache()
@@ -149,7 +138,12 @@ void model::Instantiate(expr **p, int np, result &x, const char* f, int ln)
   DCASSERT(np <= num_params);
   // compute parameters
   int i;
-  for (i=0; i<np; i++) SafeCompute(p[i], NULL, NULL, 0, current_params[i]);
+  compute_data foo;
+  foo.answer = current_params;
+  for (i=0; i<np; i++) {
+    SafeCompute(p[i], foo);
+    foo.answer++;
+  }
   for (i=np; i<num_params; i++) current_params[i].setNull();
 
   // same as last time?
@@ -236,6 +230,8 @@ void model::SolveMeasure(measure *m)
   // solve a huge batch of measures with the same engine
   // or just solve this one
   result foo;
+  compute_data bar;
+  bar.answer = &foo;
   switch (m->GetEngine(NULL)) {
 
     	case ENG_Error:
@@ -263,7 +259,7 @@ void model::SolveMeasure(measure *m)
 
 	default:
 		// no engine
-		m->Compute(NULL, NULL, 0, foo);
+		m->Compute(bar);
 		m->SetValue(foo);
   }
 }
@@ -393,7 +389,7 @@ public:
   virtual ~mcall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -437,9 +433,10 @@ void mcall::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void mcall::Compute(Rng *r, const state *st, int i, result &x)
+void mcall::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(mdl);
   result m;
 
@@ -457,13 +454,13 @@ void mcall::Compute(Rng *r, const state *st, int i, result &x)
   }
   */
   if (m.isError() || m.isNull()) {
-      x = m;
+      *x.answer = m;
       return;
   }
   DCASSERT(m.other == mdl);
 
   mdl->SolveMeasure(msr);
-  msr->Compute(r, st, 0, x);
+  msr->Compute(x);
 }
 
 expr* mcall::Substitute(int i)
@@ -545,7 +542,7 @@ public:
   virtual ~ma_call();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -591,23 +588,25 @@ void ma_call::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void ma_call::Compute(Rng *r, const state *st, int i, result &x)
+void ma_call::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  result* answer = x.answer;
+  DCASSERT(0==x.aggregate);
   DCASSERT(mdl);
 
   // builds the model (if necessary)
-  mdl->Instantiate(pass, numpass, x, Filename(), Linenumber());
-  if (x.isError() || x.isNull()) return;
-  DCASSERT(x.other == mdl);
+  mdl->Instantiate(pass, numpass, *answer, Filename(), Linenumber());
+  if (answer->isError() || answer->isNull()) return;
+  DCASSERT(answer->other == mdl);
 
   // grab the measure from the array
-  msr->Compute(indx, x);
-  if (x.isError() || x.isNull()) return;
-  measure *m = (measure*) x.other;
+  msr->Compute(indx, answer);
+  if (answer->isError() || answer->isNull()) return;
+  measure *m = (measure*) answer->other;
  
   mdl->SolveMeasure(m);
-  m->Compute(r, st, 0, x);
+  m->Compute(x);
 }
 
 expr* ma_call::Substitute(int i)
@@ -728,10 +727,11 @@ public:
     s << ") ";
   }
 
-  virtual void Compute(Rng *r, const state *st, int i, result &x) {
-    x.Clear();
-    if (NULL==var) x.setNull();
-    else x.other = var;
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer); 
+    x.answer->Clear();
+    if (NULL==var) x.answer->setNull();
+    else x.answer->other = var;
   }
 
 };

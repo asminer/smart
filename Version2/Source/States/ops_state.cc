@@ -54,10 +54,11 @@ class sv_eq_const : public statevar_comp {
 public:
   sv_eq_const(const char* f, int ln, model_var* v, int rhs)
   : statevar_comp(f, ln, v, EQUALS, rhs) { }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    x.bvalue = (s->Read(var->state_index).ivalue == rightside); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    x.answer->bvalue = (x.current->Read(var->state_index).ivalue == rightside); 
   }
 };
 
@@ -69,10 +70,11 @@ class sv_lt_const : public statevar_comp {
 public:
   sv_lt_const(const char* f, int ln, model_var* v, int rhs)
   : statevar_comp(f, ln, v, LT, rhs) { }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    x.bvalue = (s->Read(var->state_index).ivalue < rightside); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    x.answer->bvalue = (x.current->Read(var->state_index).ivalue < rightside); 
   }
 };
 
@@ -84,10 +86,11 @@ class sv_ge_const : public statevar_comp {
 public:
   sv_ge_const(const char* f, int ln, model_var* v, int rhs)
   : statevar_comp(f, ln, v, GE, rhs) { }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    x.bvalue = (s->Read(var->state_index).ivalue >= rightside); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    x.answer->bvalue = (x.current->Read(var->state_index).ivalue >= rightside); 
   }
 };
 
@@ -132,17 +135,20 @@ class sv_lt_expr : public statevar_comp_expr {
 public:
   sv_lt_expr(const char* f, int ln, model_var* v, expr* rhs)
   : statevar_comp_expr(f, ln, v, LT, rhs) { }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    SafeCompute(opnd, r, s, 0, x);
-    if (x.isNormal()) {
-      x.bvalue = (s->Read(var->state_index).ivalue < x.ivalue); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    SafeCompute(opnd, x);
+    if (x.answer->isNormal()) {
+      x.answer->bvalue = (x.current->Read(var->state_index).ivalue 
+				< 
+			 x.answer->ivalue); 
       return;
     }
-    if (x.isInfinity()) {
-      x.bvalue = (x.ivalue > 0);
-      x.Clear(); // clear the infinity setting
+    if (x.answer->isInfinity()) {
+      x.answer->bvalue = (x.answer->ivalue > 0);
+      x.answer->Clear(); // clear the infinity setting
       return;
     }
     // anything else, propogate
@@ -157,17 +163,20 @@ class sv_ge_expr : public statevar_comp_expr {
 public:
   sv_ge_expr(const char* f, int ln, model_var* v, expr* rhs)
   : statevar_comp_expr(f, ln, v, GE, rhs) { }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    SafeCompute(opnd, r, s, 0, x);
-    if (x.isNormal()) {
-      x.bvalue = (s->Read(var->state_index).ivalue >= x.ivalue); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    SafeCompute(opnd, x);
+    if (x.answer->isNormal()) {
+      x.answer->bvalue = (x.current->Read(var->state_index).ivalue 
+				>= 
+			  x.answer->ivalue); 
       return;
     }
-    if (x.isInfinity()) {
-      x.bvalue = (x.ivalue < 0);
-      x.Clear(); // clear the infinity setting
+    if (x.answer->isInfinity()) {
+      x.answer->bvalue = (x.answer->ivalue < 0);
+      x.answer->Clear(); // clear the infinity setting
       return;
     }
     // anything else, propogate
@@ -195,12 +204,13 @@ public:
   virtual void show(OutputStream &s) const {
     s << lower << "<=" << var->Name() << "<=" << upper;
   }
-  virtual void Compute(Rng *r, const state *s, int i, result &x) {
-    DCASSERT(0==i);
-    DCASSERT(s);
-    x.bvalue =	(lower <= s->Read(var->state_index).ivalue) 
-		&& 
-		(s->Read(var->state_index).ivalue <= upper); 
+  virtual void Compute(compute_data &x) {
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(x.current);
+    x.answer->bvalue =	(lower <= x.current->Read(var->state_index).ivalue) 
+			&& 
+			(x.current->Read(var->state_index).ivalue <= upper); 
   }
   virtual int GetSymbols(int i, List <symbol> *syms=NULL) {
     DCASSERT(i==0);
@@ -346,7 +356,10 @@ protected:
 
 void add_to_sv::NextState(const state &curr, state& next, result &x)
 {
-  SafeCompute(opnd, NULL, &curr, 0, x);
+  compute_data foo;
+  foo.current = &curr;
+  foo.answer = &x;
+  SafeCompute(opnd, foo);
   if (x.isNormal()) {
     next[var->state_index].ivalue += x.ivalue;
     CheckBounds(next, x.ivalue, x);
@@ -381,7 +394,10 @@ protected:
 
 void sub_from_sv::NextState(const state &curr, state& next, result &x)
 {
-  SafeCompute(opnd, NULL, &curr, 0, x);
+  compute_data foo;
+  foo.current = &curr;
+  foo.answer = &x;
+  SafeCompute(opnd, foo);
   if (x.isNormal()) {
     next[var->state_index].ivalue -= x.ivalue;
     CheckBounds(next, -x.ivalue, x);

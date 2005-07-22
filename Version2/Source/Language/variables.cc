@@ -71,14 +71,17 @@ void constfunc::ClearCache()
   have_cached = false;
 }
 
-void constfunc::Compute(Rng *r, const state *st, int i, result &x)
+void constfunc::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
   if (!have_cached) {
-    SafeCompute(return_expr, r, st, i, cache);
+    result* answer = x.answer;
+    x.answer = &cache;
+    SafeCompute(return_expr, x);
+    x.answer = answer;
     have_cached = true;
   } 
-  CopyResult(mytype, x, cache);
+  CopyResult(mytype, *(x.answer), cache);
 }
 
 Engine_type constfunc::GetEngine(engineinfo *e)
@@ -108,7 +111,7 @@ class determfunc : public constfunc {
 public:
   determfunc(const char *fn, int line, type t, char *n);
   virtual void ClearCache() { }  // DO NOT TRASH cache
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void ShowHeader(OutputStream &s) const;
 };
 
@@ -124,17 +127,20 @@ determfunc::determfunc(const char *fn, int line, type t, char *n)
   // nothing!
 }
 
-void determfunc::Compute(Rng *r, const state *st, int i, result &x)
+void determfunc::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
   if (!have_cached) {
-    SafeCompute(return_expr, r, st, i, cache);
+    result* answer = x.answer;
+    x.answer = &cache;
+    SafeCompute(return_expr, x);
+    x.answer = answer;
     have_cached = true;
     Delete(return_expr);
     return_expr = NULL;
     status = CS_Computed;
   }
-  CopyResult(mytype, x, cache);
+  CopyResult(mytype, *(x.answer), cache);
 }
 
 void determfunc::ShowHeader(OutputStream &s) const

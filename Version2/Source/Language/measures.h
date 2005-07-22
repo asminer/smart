@@ -42,7 +42,7 @@ public:
   measure(const char *fn, int line, type t, char *n);
   virtual ~measure();
   virtual void ClearCache() { } // no cache for measures
-  virtual void Compute(Rng *r, const state *s, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual void ShowHeader(OutputStream &s) const;
   virtual Engine_type GetEngine(engineinfo *e);
   virtual expr* GetRewardExpr();

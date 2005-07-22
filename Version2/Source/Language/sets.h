@@ -45,7 +45,7 @@ public:
   /** Get the nth item of the set.
       n must be between 0 and Size()-1.
    */
-  virtual void GetElement(int n, result &x) = 0;
+  virtual void GetElement(int n, result *x) = 0;
 
   /** The position of x in the set.
       If x is not contained in the set, we return -1.

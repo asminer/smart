@@ -66,12 +66,12 @@ formal_param::~formal_param()
   Delete(deflt);
 }
 
-void formal_param::Compute(Rng *r, const state *st, int i, result &x)
+void formal_param::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
   DCASSERT(stack);
   DCASSERT(stack[0]);   
-  CopyResult(Type(i), x, stack[0][offset]);
+  CopyResult(Type(x.aggregate), *(x.answer), stack[0][offset]);
 }
 
 // ******************************************************************
@@ -198,7 +198,7 @@ int function::GetRewardParameter() const
   return -1;
 }
 
-void function::Call(expr **, int np, Rng *r, const state *st, result &x)
+void function::Call(expr **, int np, compute_data &x)
 {
   Internal.Start(__FILE__, __LINE__);
   Internal << "Illegal function call";
@@ -273,11 +273,13 @@ user_func::~user_func()
   Delete(return_expr);
 }
 
-void user_func::Call(expr **pp, int np, Rng *r, const state *st, result &x) 
+void user_func::Call(expr **pp, int np, compute_data &x) 
 {
-  x.Clear();
+  result* answer = x.answer;
+  DCASSERT(answer);
+  answer->Clear();
   if (NULL==return_expr) {
-    x.setNull();
+    answer->setNull();
     return;
   }
 
@@ -286,7 +288,7 @@ void user_func::Call(expr **pp, int np, Rng *r, const state *st, result &x)
     Error.Start(Filename(), Linenumber());
     Error << "Stack overflow in function call " << Name();
     Error.Stop();
-    x.setError();
+    answer->setError();
     return;
   }
 
@@ -301,13 +303,18 @@ void user_func::Call(expr **pp, int np, Rng *r, const state *st, result &x)
   // Compute parameters, place on stack
   int i;
   for (i=0; i<np; i++) newstackptr[i].setError();
-  for (i=0; i<np; i++) SafeCompute(pp[i], r, st, 0, newstackptr[i]); 
+  x.answer = newstackptr;
+  for (i=0; i<np; i++) {
+    SafeCompute(pp[i], x); 
+    x.answer++;
+  }
 
   // "call" function
   stack_ptr = newstackptr;
-  SafeCompute(return_expr, r, st, 0, x);
+  x.answer = answer;
+  SafeCompute(return_expr, x);
 
-  if (x.isError()) {
+  if (answer->isError()) {
     // check option?
     Error.Continue(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "function call " << Name();
@@ -436,16 +443,15 @@ internal_func::internal_func(type t, char *n,
   hidedocs = false;
 }
 
-void internal_func::Call(expr **pp, int np, Rng *r, const state *st, result &x)
+void internal_func::Call(expr **pp, int np, compute_data &x)
 {
   if (NULL==compute) {
     Internal.Start(__FILE__, __LINE__);
     Internal << "Illegal internal function call";
     Internal.Stop();
-    x.setNull();
     return;
   }
-  compute(pp, np, r, st, x);
+  compute(pp, np, x);
 }
 
 void internal_func::show(OutputStream &s) const
@@ -528,7 +534,7 @@ public:
   virtual ~fcall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -572,11 +578,10 @@ void fcall::ClearCache()
   for (i=0; i < numpass; i++) if (pass[i]) pass[i]->ClearCache(); 
 }
 
-void fcall::Compute(Rng *r, const state *st, int i, result &x)
+void fcall::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
   DCASSERT(func);
-  func->Call(pass, numpass, r, st, x);
+  func->Call(pass, numpass, x);
 }
 
 expr* fcall::Substitute(int i)

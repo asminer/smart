@@ -67,9 +67,10 @@ Engine_type prob_at_engine(expr **pp, int np, engineinfo *e)
 {
   DCASSERT(pp);
   DCASSERT(np==3);  // params are: (model, reward, time)
+  compute_data foo;
   result x;
-  x.Clear();
-  SafeCompute(pp[2], NULL, NULL, 0, x);  // get the time
+  foo.answer = &x;
+  SafeCompute(pp[2], foo);  // get the time
   // check for errors here...
 
   if (e) {
@@ -116,11 +117,14 @@ Engine_type prob_acc_engine(expr **pp, int np, engineinfo *e)
 {
   DCASSERT(pp);
   DCASSERT(np==4);  // params are: (model, reward, starttime, stoptime)
+  compute_data foo;
   result t1, t2;
   t1.Clear();
   t2.Clear();
-  SafeCompute(pp[2], NULL, NULL, 0, t1);  // get the start time
-  SafeCompute(pp[3], NULL, NULL, 0, t2);  // get the stop time
+  foo.answer = &t1;
+  SafeCompute(pp[2], foo);  // get the start time
+  foo.answer = &t2;
+  SafeCompute(pp[3], foo);  // get the stop time
 
   // check for errors here...
 
@@ -237,11 +241,18 @@ void BuildStateOrder(state_model *dsm, int* order, int* redro, int N)
   FreeState(s);
 }
 
-void compute_num_states(expr **pp, int np, Rng *, const state *, result &x)
+void compute_num_states(expr **pp, int np, compute_data &x)
 {
-  x.Clear();
+  DCASSERT(x.answer);
   DCASSERT(2==np);
   DCASSERT(pp);
+
+  // should we show the state space?
+  SafeCompute(pp[1], x);
+  bool show = false;
+  if (x.answer->isNormal()) show = x.answer->bvalue;
+  x.answer->Clear();
+  
   model *m = dynamic_cast<model*> (pp[0]);
   DCASSERT(m);
 
@@ -250,7 +261,7 @@ void compute_num_states(expr **pp, int np, Rng *, const state *, result &x)
   state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   if (NULL==dsm) {
     // problem with model construction
-    x.setNull();
+    x.answer->setNull();
     return;
   }
   DCASSERT(dsm);
@@ -260,27 +271,23 @@ void compute_num_states(expr **pp, int np, Rng *, const state *, result &x)
 
   if (ss->Storage() == RT_Error) {
     // is an error message necessary?
-    x.setNull();
+    x.answer->setNull();
     return;
   }
   
-  x.ivalue = ss->NumTangible() + ss->NumVanishing();
+  x.answer->ivalue = ss->NumTangible() + ss->NumVanishing();
 
-  // should we show the state space?
-  result show;
-  SafeCompute(pp[1], NULL, NULL, 0, show);
-  if (!show.isNormal()) return;
-  if (!show.bvalue) return;
-  
+  if (!show) return;
+
   // We must display the state space...
   int i;
   state s;
   // This may change in the future...
   DCASSERT(dsm->UsesConstantStateSize());		
   AllocState(s, dsm->GetConstantStateSize());
-  int* order = new int[x.ivalue];
-  int* redro = new int[x.ivalue];
-  BuildStateOrder(dsm, order, redro, x.ivalue);
+  int* order = new int[x.answer->ivalue];
+  int* redro = new int[x.answer->ivalue];
+  BuildStateOrder(dsm, order, redro, x.answer->ivalue);
   flatss *ess;
   switch (ss->Storage()) {
     case RT_Enumerated:
@@ -474,9 +481,9 @@ void mc_arcs(state_model *dsm, bool show, result &x)
 }
 
 
-void compute_num_arcs(expr **pp, int np, Rng *, const state *, result &x)
+void compute_num_arcs(expr **pp, int np, compute_data &x)
 {
-  x.Clear();
+  DCASSERT(x.answer);
   DCASSERT(2==np);
   DCASSERT(pp);
   model *m = dynamic_cast<model*> (pp[0]);
@@ -486,32 +493,32 @@ void compute_num_arcs(expr **pp, int np, Rng *, const state *, result &x)
 
   // should we show the graph / MC?
   bool show = false;
-  result s;
-  SafeCompute(pp[1], NULL, NULL, 0, s);
-  if (s.isNormal()) show = s.bvalue;
+  SafeCompute(pp[1], x);
+  if (x.answer->isNormal()) show = x.answer->bvalue;
+  x.answer->Clear();
 
   // eventually: switch for different process types
   state_model *dsm = dynamic_cast<state_model*> (m->GetModel());
   if (NULL==dsm) {
     // problem with model construction
-    x.setNull();
+    x.answer->setNull();
     return;
   }
 
   switch (dsm->proctype) {
     case Proc_FSM:
-	fsm_arcs(dsm, show, x);
+	fsm_arcs(dsm, show, *x.answer);
 	return;
 
     case Proc_Dtmc:
     case Proc_Ctmc:
-	mc_arcs(dsm, show, x);
+	mc_arcs(dsm, show, *x.answer);
 	return;
 
     case Proc_Unknown:
 	DCASSERT(0);	// should be impossible
     default:
-	x.setError();
+	x.answer->setError();
   };
 }
 
@@ -537,8 +544,9 @@ void Add_num_arcs(PtrTable *fns)
 
 
 // A hook for testing things
-void compute_test(expr **pp, int np, Rng *, const state *, result &x)
+void compute_test(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
   DCASSERT(np==2);
   DCASSERT(pp);
   DCASSERT(pp[0]);
@@ -647,8 +655,8 @@ void compute_test(expr **pp, int np, Rng *, const state *, result &x)
 
   }
 
-  x.Clear();
-  x.ivalue = 0;
+  x.answer->Clear();
+  x.answer->ivalue = 0;
 }
 
 void Add_test(PtrTable *fns)

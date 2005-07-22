@@ -40,10 +40,11 @@ cvgfunc::cvgfunc(const char* fn, int line, type t, char* n)
   was_updated = false;
 }
 
-void cvgfunc::Compute(Rng *r, const state *st, int i, result &x)
+void cvgfunc::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
-  x = current;
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  *x.answer = current;
 }
 
 void cvgfunc::ShowHeader(OutputStream &s) const
@@ -135,8 +136,11 @@ guess_stmt::~guess_stmt()
 
 void guess_stmt::InitialGuess()
 {
+  DCASSERT(guess);
   DCASSERT(var->status != CS_Computed);
-  SafeCompute(guess, NULL, NULL, 0, var->current);
+  compute_data foo;
+  foo.answer = &(var->current);
+  guess->Compute(foo);
   var->hasconverged = false;
   var->was_updated = true;
 #ifdef DEBUG_CONVERGE
@@ -210,8 +214,11 @@ assign_stmt::~assign_stmt()
 
 void assign_stmt::Execute()
 {
+  DCASSERT(rhs);
   DCASSERT(var->status != CS_Computed);
-  SafeCompute(rhs, NULL, NULL, 0, var->update);
+  compute_data foo;
+  foo.answer = &(var->update);
+  rhs->Compute(foo);
   var->was_updated = false;
 #ifdef DEBUG_CONVERGE
   Output << "Computed " << var << " got ";
@@ -294,7 +301,9 @@ void array_guess_stmt::InitialGuess()
   DCASSERT(v->status != CS_Computed);
 
   // Compute the guess  value
-  guess->Compute(NULL, NULL, 0, v->current);
+  compute_data foo;
+  foo.answer = &(v->current);
+  guess->Compute(foo);
   v->hasconverged = false;
   v->was_updated = true;
 }
@@ -376,7 +385,9 @@ void array_assign_stmt::Execute()
   DCASSERT(v->status != CS_Computed);
 
   // Compute the new value
-  rhs->Compute(NULL, NULL, 0, v->update);
+  compute_data foo;
+  foo.answer = &(v->update);
+  rhs->Compute(foo);
   v->was_updated = false;
   if (use_current->GetBool()) v->UpdateAndCheck();
 }

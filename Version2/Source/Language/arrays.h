@@ -47,12 +47,14 @@ protected:
   set_result *current;
   /// Index in the above set for the current value.
   int index;
+  /// Used by ComputeCurrent
+  compute_data *cd;
 public:
   array_index(const char *fn, int line, type t, char *n, expr *v);
   virtual ~array_index(); 
 
   virtual void ClearCache() { } // No cache
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   void showfancy(OutputStream &s) const;
 
   virtual Engine_type GetEngine(engineinfo *e);
@@ -62,11 +64,14 @@ public:
 
   /// Compute the current range of values for the iterator.
   inline void ComputeCurrent() {
+    DCASSERT(cd);
+    DCASSERT(cd->answer);
     Delete(current);
-    result x;
-    SafeCompute(values, NULL, NULL, 0, x);
-    if (x.isNull() || x.isError()) current = NULL;  // print an error?
-    else current = (set_result*) x.other;
+    SafeCompute(values, *cd);
+    if (cd->answer->isNull() || cd->answer->isError()) 
+	current = NULL;  // print an error?
+    else 
+	current = (set_result*) cd->answer->other;
   }
 
   inline void DoneCurrent() {
@@ -227,7 +232,7 @@ public:
       @param	x	Where we return the function (in the "other" field).
       Note: this way we can set the error values appropriately!
    */
-  void Compute(expr** il, result &x);
+  void Compute(expr** il, result *x);
 
   virtual void show(OutputStream &s) const;
 };

@@ -56,7 +56,7 @@ class int_interval : public set_result {
 public:
   int_interval(int s, int e, int i);
   virtual ~int_interval() { }
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -69,11 +69,12 @@ int_interval::int_interval(int s, int e, int i)
   inc = i;
 }
 
-void int_interval::GetElement(int n, result &x)
+void int_interval::GetElement(int n, result *x)
 {
   CHECK_RANGE(0, n, Size());
-  x.Clear();
-  x.ivalue = start + n * inc;
+  DCASSERT(x);
+  x->Clear();
+  x->ivalue = start + n * inc;
 }
 
 int int_interval::IndexOf(const result &x)
@@ -104,7 +105,7 @@ class real_interval : public set_result {
 public:
   real_interval(double s, double e, double i);
   virtual ~real_interval() { }
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -117,11 +118,12 @@ real_interval::real_interval(double s, double e, double i)
   inc = i;
 }
 
-void real_interval::GetElement(int n, result &x)
+void real_interval::GetElement(int n, result *x)
 {
   CHECK_RANGE(0, n, Size());
-  x.Clear();
-  x.rvalue = start + n * inc;
+  DCASSERT(x);
+  x->Clear();
+  x->rvalue = start + n * inc;
 }
 
 int real_interval::IndexOf(const result &x)
@@ -165,7 +167,7 @@ class generic_int_set : public set_result {
 public:
   generic_int_set(int s, int* v, int* o);
   virtual ~generic_int_set(); 
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -182,11 +184,12 @@ generic_int_set::~generic_int_set()
   delete[] order;
 }
 
-void generic_int_set::GetElement(int n, result &x)
+void generic_int_set::GetElement(int n, result *x)
 {
   CHECK_RANGE(0, n, Size());
-  x.Clear();
-  x.ivalue = values[n];
+  DCASSERT(x);
+  x->Clear();
+  x->ivalue = values[n];
 }
 
 int generic_int_set::IndexOf(const result &x)
@@ -233,7 +236,7 @@ class generic_real_set : public set_result {
 public:
   generic_real_set(int s, double* v, int* o);
   virtual ~generic_real_set(); 
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -250,11 +253,12 @@ generic_real_set::~generic_real_set()
   delete[] order;
 }
 
-void generic_real_set::GetElement(int n, result &x)
+void generic_real_set::GetElement(int n, result *x)
 {
   CHECK_RANGE(0, n, Size());
-  x.Clear();
-  x.rvalue = values[n];
+  DCASSERT(x);
+  x->Clear();
+  x->rvalue = values[n];
 }
 
 int generic_real_set::IndexOf(const result &x)
@@ -311,7 +315,7 @@ class generic_void_set : public set_result {
 public:
   generic_void_set(int s, symbol** v, int* o);
   virtual ~generic_void_set(); 
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -329,11 +333,12 @@ generic_void_set::~generic_void_set()
   delete[] order;
 }
 
-void generic_void_set::GetElement(int n, result &x)
+void generic_void_set::GetElement(int n, result *x)
 {
   CHECK_RANGE(0, n, Size());
-  x.Clear();
-  x.other = values[n];
+  DCASSERT(x);
+  x->Clear();
+  x->other = values[n];
 }
 
 int generic_void_set::IndexOf(const result &x)
@@ -382,7 +387,7 @@ class int_realset : public set_result {
 public:
   int_realset(set_result *is);
   virtual ~int_realset(); 
-  virtual void GetElement(int n, result &x);
+  virtual void GetElement(int n, result *x);
   virtual int IndexOf(const result &x);
   virtual void show(OutputStream &s);
 };
@@ -397,13 +402,14 @@ int_realset::~int_realset()
   Delete(intset);
 }
 
-void int_realset::GetElement(int n, result &x)
+void int_realset::GetElement(int n, result *x)
 {
   DCASSERT(intset);
+  DCASSERT(x);
   intset->GetElement(n, x);
-  if (!x.isNormal()) return;
+  if (!x->isNormal()) return;
   // convert to real
-  x.rvalue = x.ivalue; 
+  x->rvalue = x->ivalue; 
 }
 
 int int_realset::IndexOf(const result &x)
@@ -869,7 +875,7 @@ void intset_union::Compute(compute_data &x)
     set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, *(x.answer));
+      s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
       ans->AddElement(x.answer->ivalue);
     } 
@@ -1103,7 +1109,7 @@ void realset_union::Compute(compute_data &x)
     set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, *(x.answer));
+      s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
       ans->AddElement(x.answer->rvalue);
     } 
@@ -1231,7 +1237,7 @@ void voidset_union::Compute(compute_data &x)
     set_result *s = (set_result*) x.answer->other;
 #endif
     for (int e=0; e<s->Size(); e++) {
-      s->GetElement(e, *(x.answer));
+      s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
 #ifdef DEVELOPMENT_CODE
       symbol *xo = dynamic_cast<symbol*>(x.answer->other);

@@ -236,6 +236,9 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   for (e=0; e<num_events; e++) event_data[e]->misc = 0;
 
   result x;
+  compute_data foo;
+  foo.current = &current;
+  foo.answer = &x;
   // check in order, correct for priority
   // do immediate events first and bail if 
   // different classes of immediate events are enabled
@@ -243,7 +246,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   for (e=0; e<num_immediate; e++) {
     event *t = event_data[e];
     if (t->misc<0) continue;
-    t->isEnabled()->Compute(NULL, &current, 0, x);
+    t->isEnabled()->Compute(foo);
     if (!x.isNormal()) {
       Error.StartModel(Name(), Filename(), Linenumber());
       if (x.isUnknown()) 
@@ -289,7 +292,7 @@ bool state_model::GetEnabledList(const state &current, List <event> *enabled)
   for (; e<num_events; e++) {
     event *t = event_data[e];
     if (t->misc<0) continue;
-    t->isEnabled()->Compute(NULL, &current, 0, x);
+    t->isEnabled()->Compute(foo);
     if (!x.isNormal()) {
       Error.StartModel(Name(), Filename(), Linenumber());
       if (x.isUnknown()) 

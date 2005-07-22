@@ -39,19 +39,20 @@ measure::~measure()
   delete eng;
 }
 
-void measure::Compute(Rng *, const state *, int i, result &x)
+void measure::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   if (status != CS_Computed) {
     if (split_return) {
-      split_return->Compute(NULL, NULL, i, x);
+      split_return->Compute(x);
     } else if (return_expr) {
-      return_expr->Compute(NULL, NULL, i, x);
+      return_expr->Compute(x);
     } else {
-      x.setNull();
+      x.answer->setNull();
     }
   } else {
-    x = value;
+    *x.answer = value;
   }
 }
 

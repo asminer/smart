@@ -92,7 +92,7 @@ public:
   }
 
   /// Returns a pointer to ourself
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 
   // other required virtual functions here
 

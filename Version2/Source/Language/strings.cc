@@ -80,7 +80,7 @@ public:
     DCASSERT(0==i);
     return STRING;
   }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr **x, int n) {
     return new string_add(Filename(), Linenumber(), x, n);
@@ -88,24 +88,25 @@ protected:
 };
 
 
-void string_add::Compute(Rng *r, const state *st, int a, result &x)
+void string_add::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   // strings are accumulated into a string stream
   StringStream acc;
   // Compute strings for each operand
   for (int i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
     DCASSERT(operands[i]->Type(0) == STRING);
-    SafeCompute(operands[i], r, st, 0, x);
-    if (x.isError() || x.isNull()) return;
-    DCASSERT(x.svalue);
-    x.svalue->show(acc);
-    DeleteResult(STRING, x);
+    operands[i]->Compute(x);
+    if (x.answer->isError() || x.answer->isNull()) return;
+    DCASSERT(x.answer->svalue);
+    x.answer->svalue->show(acc);
+    DeleteResult(STRING, *x.answer);
   }
   // done, collect concatenation
   char* answer = acc.GetString();
-  x.svalue = new shared_string(answer);
+  x.answer->svalue = new shared_string(answer);
 }
 
 
@@ -126,33 +127,38 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_equal(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_equal::Compute(Rng *g, const state *st, int i, result &x)
+void string_equal::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
     return;
   }
-  if (x.isNormal()) {
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)==0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)==0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -175,32 +181,37 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_neq(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_neq::Compute(Rng *g, const state *st, int i, result &x)
+void string_neq::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
   }
-  if (x.isNormal()) {
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)!=0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)!=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -224,32 +235,37 @@ public:
     return BOOL;
   }
   
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_gt(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_gt::Compute(Rng *g, const state *st, int i, result &x)
+void string_gt::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
   }
-  if (x.isNormal()) {
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string) > 0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)>0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -272,32 +288,37 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_ge(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_ge::Compute(Rng *g, const state *st, int i, result &x)
+void string_ge::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
   }
-  if (x.isNormal()) {
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)>=0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)>=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -320,32 +341,37 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_lt(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_lt::Compute(Rng *g, const state *st, int i, result &x)
+void string_lt::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
   }
-  if (x.isNormal()) {
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string) < 0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)<0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);
@@ -368,32 +394,37 @@ public:
     DCASSERT(0==i);
     return BOOL;
   }
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 protected:
   virtual expr* MakeAnother(expr *l, expr *r) {
     return new string_le(Filename(), Linenumber(), l, r);
   }
 };
 
-void string_le::Compute(Rng *g, const state *st, int i, result &x)
+void string_le::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   result l;
   result r;
-  x.Clear();
-  SafeCompute(left, g, st, 0, l);
-  SafeCompute(right, g, st, 0, r);
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &l;
+  SafeCompute(left, x);
+  x.answer = &r;
+  SafeCompute(right, x);
+  x.answer = answer;
 
   if (l.isNull() || r.isNull()) {
-    x.setNull();
+    answer->setNull();
   }
   if (l.isError() || r.isError()) {
-    x.setError();
+    answer->setError();
   }
-  if (x.isNormal()) { 
+  if (answer->isNormal()) {
     DCASSERT(l.svalue);
     DCASSERT(r.svalue);
-    x.bvalue = (strcmp(l.svalue->string, r.svalue->string)<=0);
+    answer->bvalue = (strcmp(l.svalue->string, r.svalue->string)<=0);
   } 
   DeleteResult(STRING, l);
   DeleteResult(STRING, r);

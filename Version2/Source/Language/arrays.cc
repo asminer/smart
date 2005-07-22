@@ -35,6 +35,8 @@ array_index::array_index(const char *fn, int line, type t, char *n, expr *v)
   ALLOC("array_index", sizeof(array_index));
   values = v;
   current = NULL;
+  cd = new compute_data;
+  cd->answer = new result;
 }
 
 array_index::~array_index()
@@ -42,20 +44,21 @@ array_index::~array_index()
   FREE("array_index", sizeof(array_index));
   Delete(values);
   Delete(current);
+  delete cd->answer;
+  delete cd;
 }
 
-void array_index::Compute(Rng *r, const state *st, int i, result &x)
+void array_index::Compute(compute_data &x)
 {
-  DCASSERT(i==0);
-  DCASSERT(NULL==r);
-  DCASSERT(NULL==st);
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
   if (NULL==current) {
-    x.setNull();
+    x.answer->setNull();
     // set error condition?
     return;
   }
-  current->GetElement(index, x);
+  current->GetElement(index, x.answer);
 }
 
 void array_index::showfancy(OutputStream &s) const
@@ -199,27 +202,31 @@ symbol* array::GetCurrentReturn()
 
 void array::GetName(OutputStream &s) const
 {
+  compute_data thingy;
+  result ind;
+  thingy.answer = &ind;
   s << Name() << "[";
   int i;
   for (i=0; i<dimension; i++) {
     if (i) s << ", ";
-    result ind;
-    index_list[i]->Compute(NULL, NULL, 0, ind);
+    index_list[i]->Compute(thingy);
     PrintResult(s, index_list[i]->Type(0), ind);
   }
   s << "]";
 }
 
-void array::Compute(expr **il, result &x)
+void array::Compute(expr **il, result *x)
 {
-  x.Clear();
+  compute_data thingy;
+  result y;
+  thingy.answer = &y;
+  x->Clear();
   int i;
   array_desc *ptr = descriptor;
   for (i=0; i<dimension; i++) {
-    result y;
-    il[i]->Compute(NULL, NULL, 0, y);
+    il[i]->Compute(thingy);
     if (NULL==ptr) {
-      x.setNull();
+      x->setNull();
       return;
     }
     if (y.isNormal()||y.isInfinity()) {
@@ -232,17 +239,17 @@ void array::Compute(expr **il, result &x)
         Error << " for index " << index_list[i];
         Error << " in array " << Name();
         Error.Stop();
-	x.setError();
+	x->setError();
         return;
       }
       ptr = (array_desc*) ptr->down[ndx];
       continue;
     }
     // there is something strange with y (null, error, etc), propogate to x
-    x = y;
+    (*x) = y;
     return;
   }
-  x.other = ptr;
+  x->other = ptr;
 }
 
 void array::show(OutputStream &s) const
@@ -276,7 +283,7 @@ public:
   virtual ~acall();
   virtual type Type(int i) const;
   virtual void ClearCache();
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual expr* Substitute(int i);
   virtual int GetSymbols(int i, List <symbol> *syms=NULL);
   virtual void show(OutputStream &s) const;
@@ -317,19 +324,18 @@ void acall::ClearCache()
   for (i=0; i<numpass; i++) if (pass[i]) pass[i]->ClearCache();
 }
 
-void acall::Compute(Rng *r, const state *st, int i, result &x)
+void acall::Compute(compute_data &x)
 {
-  DCASSERT(0==i);
-  DCASSERT(NULL==r);
-  DCASSERT(NULL==st);
-  func->Compute(pass, x);
-  if (x.isNull()) return;
-  if (x.isError()) return;  // print message?
-  symbol* foo = (symbol*) x.other;
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  func->Compute(pass, x.answer);
+  if (x.answer->isNull()) return;
+  if (x.answer->isError()) return;  // print message?
+  symbol* foo = (symbol*) x.answer->other;
 #ifdef ARRAY_TRACE
   cout << "Computing " << foo << "\n";
 #endif
-  foo->Compute(r, st, 0, x);
+  foo->Compute(x);
 #ifdef ARRAY_TRACE
   cout << "Now we have " << foo << "\n";
 #endif

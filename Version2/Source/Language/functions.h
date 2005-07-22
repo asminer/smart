@@ -71,7 +71,7 @@ public:
   virtual ~formal_param();
 
   virtual void ClearCache() { } // No cache
-  virtual void Compute(Rng *r, const state *st, int i, result &x);
+  virtual void Compute(compute_data &x);
 
   /** Used to "link" the formal params to 
       a user-defined function.
@@ -286,7 +286,7 @@ public:
   virtual int GetRewardParameter() const;
 
   /// Call the function
-  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
+  virtual void Call(expr **, int np, compute_data &x);
 
   /** Call the function, for models.
       f and ln are the filename and linenumber where the model is
@@ -328,7 +328,7 @@ public:
            formal_param **pl, int np);
   virtual ~user_func();
 
-  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
+  virtual void Call(expr **, int np, compute_data &x);
 
   virtual void SetReturn(expr *e);
 
@@ -417,10 +417,10 @@ typedef bool (*link_func) (expr** p, int np);
 /** For computing internal functions.
     Use the following declaration:
 
-    void MyFunc(expr **pp, int np, Rng *r, const state *st, result &x);
+    void MyFunc(expr **pp, int np, compute_data &x);
 
  */
-typedef void (*compute_func) (expr **pp, int np, Rng *r, const state *st, result &x);
+typedef void (*compute_func) (expr **pp, int np, compute_data &x);
 
 
 /**   Class for internal functions.
@@ -464,7 +464,7 @@ public:
   internal_func(type t, char *n, compute_func c,
                 formal_param **pl, int np, int rp, const char* doc);
 
-  virtual void Call(expr **, int np, Rng *r, const state *st, result &x);
+  virtual void Call(expr **, int np, compute_data &x);
 
   virtual void show(OutputStream &s) const;
 
