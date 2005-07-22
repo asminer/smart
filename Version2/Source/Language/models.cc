@@ -771,12 +771,8 @@ model_var_stmt::model_var_stmt(const char *fn, int line, model *p, type t,
   numvars = nv;
   int i;
   for (i=0; i<numvars; i++) {
-    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
-    if (NULL==z) {
-      Internal.Start(__FILE__, __LINE__, fn, line);
-      Internal << "Bad wrapper for model variable";
-      Internal.Stop();
-    }
+    wrapper* z = smart_cast<wrapper*>(wraps[i]);
+    DCASSERT(z);
     z->mytype = vartype;
     z->who = names[i];
   }
@@ -798,7 +794,8 @@ void model_var_stmt::Execute()
 {
   int i;
   for (i=0; i<numvars; i++) {
-    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
+    wrapper* z = smart_cast<wrapper*>(wraps[i]);
+    DCASSERT(z);
     char* n = strdup(names[i]);
     z->var = parent->MakeModelVar(z->Filename(), z->Linenumber(), vartype, n);
   }
@@ -808,7 +805,8 @@ void model_var_stmt::Clear()
 {
   int i;
   for (i=0; i<numvars; i++) {
-    wrapper* z = dynamic_cast<wrapper*>(wraps[i]);
+    wrapper* z = smart_cast<wrapper*>(wraps[i]);
+    DCASSERT(z);
     delete z->var;
     z->var = NULL;
   }

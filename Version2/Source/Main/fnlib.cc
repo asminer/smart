@@ -70,15 +70,16 @@ void ShowDocs(void *x)
   }
 }
 
-void compute_help(expr **pp, int np, Rng *, const state *, result &x)
+void compute_help(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   help_search_string = "";
   DCASSERT(np==1);
   DCASSERT(pp); 
-  x.Clear();
-  SafeCompute(pp[0], NULL, NULL, 0, x);
-  if (x.isNormal()) 
-    help_search_string = x.svalue->string;
+  SafeCompute(pp[0], x);
+  if (x.answer->isNormal()) 
+    help_search_string = x.answer->svalue->string;
 
   // Help topics
   MatchTopics(help_search_string, Output, 5, 75);
@@ -104,7 +105,7 @@ void compute_help(expr **pp, int np, Rng *, const state *, result &x)
 
   Output.flush();
   // return something...
-  x.setNull();
+  x.answer->setNull();
 }
 
 void AddHelp(PtrTable *fns)
@@ -163,31 +164,36 @@ bool linkparams_print(expr **p, int np)
   return true;
 }
 
-void do_print(expr **p, int np, result &x, OutputStream &s)
+void do_print(expr **p, int np, compute_data &x, OutputStream &s)
 {
   int i;
   result y;
   for (i=0; i<np; i++) {
-    x.Clear();
-    SafeCompute(p[i], NULL, NULL, 0, x);
+    SafeCompute(p[i], x);
     int width = -1;
     int prec = -1;
     if (NumComponents(p[i])>1) {
-      y.Clear();
-      SafeCompute(p[i], NULL, NULL, 1, y);
+      result* answer = x.answer;
+      x.answer = &y;
+      x.aggregate = 1;
+      SafeCompute(p[i], x);
       if (y.isNormal()) width = y.ivalue;
       if (NumComponents(p[i])>2) {
         y.Clear();
-	SafeCompute(p[i], NULL, NULL, 2, y);
+        x.aggregate = 2;
+	SafeCompute(p[i], x);
         if (y.isNormal()) prec = y.ivalue;
       }
+      x.answer = answer;
     }
-    PrintResult(s, Type(p[i], 0), x, width, prec);
+    PrintResult(s, Type(p[i], 0), *x.answer, width, prec);
   }
 }
 
-void compute_print(expr **p, int np, Rng *, const state *, result &x)
+void compute_print(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   do_print(p, np, x, Output);
   if (IsInteractive()) Output.flush();
   else Output.Check();
@@ -206,15 +212,17 @@ void AddPrint(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-void compute_sprint(expr **p, int np, Rng *, const state *, result &x)
+void compute_sprint(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   static StringStream strbuffer;
   do_print(p, np, x, strbuffer);
-  if (!x.isNormal()) return;
+  if (!x.answer->isNormal()) return;
   char* bar = strbuffer.GetString();
   strbuffer.flush();
-  x.Clear();
-  x.svalue = new shared_string(bar);
+  x.answer->Clear();
+  x.answer->svalue = new shared_string(bar);
 }
 
 void AddSprint(PtrTable *fns)
@@ -235,30 +243,32 @@ void AddSprint(PtrTable *fns)
 // *                  Input  functions                    *
 // ********************************************************
 
-void compute_read_bool(expr **pp, int np, Rng *, const state *, result &x)
+void compute_read_bool(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==1);
 
-  SafeCompute(pp[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
+  SafeCompute(pp[0], x);
+  if (x.answer->isError()) return;
 
   char c=' ';
   while (1) {
     if (Input.IsDefault()) 
-      if (!x.isNull()) {
+      if (!x.answer->isNull()) {
         Output << "Enter the [y/n] value for ";
-        x.svalue->show(Output);
+        x.answer->svalue->show(Output);
 	Output << " : ";
         Output.flush();
       }     
     Input.Get(c);
     if (c=='y' || c=='Y' || c=='n' || c=='N') break;
   }
-  DeleteResult(STRING, x);
+  DeleteResult(STRING, *x.answer);
 
-  x.Clear();
-  x.bvalue = (c=='y' || c=='Y');
+  x.answer->Clear();
+  x.answer->bvalue = (c=='y' || c=='Y');
 }
 
 void AddReadBool(PtrTable *fns)
@@ -274,29 +284,31 @@ void AddReadBool(PtrTable *fns)
 }
 
 
-void compute_read_int(expr **pp, int np, Rng *, const state *, result &x)
+void compute_read_int(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==1);
 
-  SafeCompute(pp[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
+  SafeCompute(pp[0], x);
+  if (x.answer->isError()) return;
 
   if (Input.IsDefault()) 
-    if (!x.isNull()) {
+    if (!x.answer->isNull()) {
       Output << "Enter the (integer) value for ";
-      x.svalue->show(Output);
+      x.answer->svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   
-  DeleteResult(STRING, x);
+  DeleteResult(STRING, *x.answer);
 
-  x.Clear();
-  if (!Input.Get(x.ivalue)) {
+  x.answer->Clear();
+  if (!Input.Get(x.answer->ivalue)) {
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Expecting integer from input stream\n";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
   }
 }
 
@@ -313,29 +325,31 @@ void AddReadInt(PtrTable *fns)
 }
 
 
-void compute_read_real(expr **pp, int np, Rng *, const state *, result &x)
+void compute_read_real(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==1);
 
-  SafeCompute(pp[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
+  SafeCompute(pp[0], x);
+  if (x.answer->isError()) return;
 
   if (Input.IsDefault()) 
-    if (!x.isNull()) {
+    if (!x.answer->isNull()) {
       Output << "Enter the (real) value for ";
-      x.svalue->show(Output);
+      x.answer->svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   
-  DeleteResult(STRING, x);
+  DeleteResult(STRING, *x.answer);
 
-  x.Clear();
-  if (!Input.Get(x.rvalue)) {
+  x.answer->Clear();
+  if (!Input.Get(x.answer->rvalue)) {
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Expecting real value from input stream\n";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
   }
 }
 
@@ -353,28 +367,30 @@ void AddReadReal(PtrTable *fns)
 
 
 
-void compute_read_string(expr **pp, int np, Rng *, const state *, result &x)
+void compute_read_string(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==2);
 
-  SafeCompute(pp[1], NULL, NULL, 0, x);
-  if (x.isError()) return;
-  int length = x.ivalue;
+  SafeCompute(pp[1], x);
+  if (x.answer->isError()) return;
+  int length = x.answer->ivalue;
 
-  SafeCompute(pp[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
+  SafeCompute(pp[0], x);
+  if (x.answer->isError()) return;
 
   if (Input.IsDefault()) 
-    if (!x.isNull()) {
+    if (!x.answer->isNull()) {
       Output << "Enter the (string) value for ";
-      x.svalue->show(Output);
+      x.answer->svalue->show(Output);
       Output << " : ";
       Output.flush();
     }   
-  DeleteResult(STRING, x);
+  DeleteResult(STRING, *x.answer);
 
-  x.Clear();
+  x.answer->Clear();
   char* buffer = new char[length+2];
   char c;
   do {
@@ -382,7 +398,8 @@ void compute_read_string(expr **pp, int np, Rng *, const state *, result &x)
       Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
       Error << "End of input stream before expected string\n";
       Error.Stop();
-      x.setError();
+      x.answer->setError();
+      delete[] buffer;
       return;
     }
   } while ((c==' ') || (c=='\t') || (c=='\n'));
@@ -394,7 +411,7 @@ void compute_read_string(expr **pp, int np, Rng *, const state *, result &x)
     if ((c==' ') || (c=='\t') || (c=='\n')) c=0;
   }
   buffer[i] = 0;  // in case we go past the end
-  x.svalue = new shared_string(buffer);
+  x.answer->svalue = new shared_string(buffer);
 }
 
 void AddReadString(PtrTable *fns)
@@ -416,27 +433,28 @@ void AddReadString(PtrTable *fns)
 // *                   File functions                     *
 // ********************************************************
 
-void compute_inputfile(expr **p, int np, Rng *, const state *, result &x)
+void compute_inputfile(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==1);
   DCASSERT(p);
-  x.Clear();
-  SafeCompute(p[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
-  if (x.isNull()) {
+  SafeCompute(p[0], x);
+  if (x.answer->isError()) return;
+  if (x.answer->isNull()) {
     Input.SwitchInput(NULL);
-    x.Clear();
-    x.bvalue = true;
+    x.answer->Clear();
+    x.answer->bvalue = true;
     return;
   }
-  FILE* infile = fopen(x.svalue->string, "r");
-  DeleteResult(STRING, x); 
-  x.Clear();
+  FILE* infile = fopen(x.answer->svalue->string, "r");
+  DeleteResult(STRING, *x.answer); 
+  x.answer->Clear();
   if (NULL==infile) {
-    x.bvalue = false;
+    x.answer->bvalue = false;
   } else {
     Input.SwitchInput(infile);
-    x.bvalue = true;
+    x.answer->bvalue = true;
   }
 }
 
@@ -453,30 +471,31 @@ void AddInputFile(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-void compute_file(DisplayStream &s, expr **p, int np, result &x)
+void compute_file(DisplayStream &s, expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==1);
   DCASSERT(p);
-  x.Clear();
-  SafeCompute(p[0], NULL, NULL, 0, x);
-  if (x.isError()) return;
-  if (x.isNull()) {
+  SafeCompute(p[0], x);
+  if (x.answer->isError()) return;
+  if (x.answer->isNull()) {
     s.SwitchDisplay(NULL);
-    x.Clear();
-    x.bvalue = true;
+    x.answer->Clear();
+    x.answer->bvalue = true;
     return;
   }
-  FILE* outfile = fopen(x.svalue->string, "a");
-  DeleteResult(STRING, x);
+  FILE* outfile = fopen(x.answer->svalue->string, "a");
+  DeleteResult(STRING, *x.answer);
   if (NULL==outfile) {
-    x.bvalue = false;
+    x.answer->bvalue = false;
   } else {
     s.SwitchDisplay(outfile);
-    x.bvalue = true;
+    x.answer->bvalue = true;
   }
 }
 
-void compute_errorfile(expr **p, int np, Rng *, const state *, result &x)
+void compute_errorfile(expr **p, int np, compute_data &x)
 {
   compute_file(Error, p, np, x);
 }
@@ -495,7 +514,7 @@ void AddErrorFile(PtrTable *fns)
 }
 
 
-void compute_warningfile(expr **p, int np, Rng *, const state *, result &x)
+void compute_warningfile(expr **p, int np, compute_data &x)
 {
   compute_file(Warning, p, np, x);
 }
@@ -514,7 +533,7 @@ void AddWarningFile(PtrTable *fns)
 }
 
 
-void compute_outputfile(expr **p, int np, Rng *, const state *, result &x)
+void compute_outputfile(expr **p, int np, compute_data &x)
 {
   compute_file(Output, p, np, x);
 }
@@ -538,25 +557,30 @@ void AddOutputFile(PtrTable *fns)
 // *                                                                *
 // ******************************************************************
 
-void compute_substr(expr** p, int np, Rng *, const state *, result &x)
+void compute_substr(expr** p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(p);
   DCASSERT(np==3);
   result start;
   result stop;
+  result* answer = x.answer;
 
-  SafeCompute(p[0], NULL, NULL, 0, x);
-  if (!x.isNormal()) return;
-  char* src = x.svalue->string;
+  SafeCompute(p[0], x);
+  if (!answer->isNormal()) return;
+  char* src = answer->svalue->string;
   int srclen = strlen(src);
 
-  SafeCompute(p[1], NULL, NULL, 0, start);
+  x.answer = &start;
+  SafeCompute(p[1], x);
+  x.answer = answer;
   if (start.isInfinity()) {
     if (start.ivalue>0) {
       // +infinity: result is empty string
-      DeleteResult(STRING, x);
-      x.svalue = &empty_string;
-      Share(x.svalue);
+      DeleteResult(STRING, *answer);
+      answer->svalue = &empty_string;
+      Share(answer->svalue);
       return;
     } else {
       // -infinity is the same as 0 here
@@ -565,12 +589,14 @@ void compute_substr(expr** p, int np, Rng *, const state *, result &x)
     }
   }
   if (!start.isNormal()) {
-    DeleteResult(STRING, x);
-    x = start;
+    DeleteResult(STRING, *answer);
+    *answer = start;
     return;
   }
 
-  SafeCompute(p[2], NULL, NULL, 0, stop);
+  x.answer = &stop;
+  SafeCompute(p[2], x);
+  x.answer = answer;
   if (stop.isInfinity()) {
     if (stop.ivalue>0) {
       // +infinity is the same as the string length
@@ -578,15 +604,15 @@ void compute_substr(expr** p, int np, Rng *, const state *, result &x)
       stop.ivalue = srclen;
     } else {
       // -infinity: stop is less than start, this gives empty string
-      DeleteResult(STRING, x);
-      x.svalue = &empty_string;
-      Share(x.svalue);
+      DeleteResult(STRING, *answer);
+      answer->svalue = &empty_string;
+      Share(answer->svalue);
       return;
     }
   }
   if (!stop.isNormal()) {
-    DeleteResult(STRING, x);
-    x = stop;
+    DeleteResult(STRING, *answer);
+    *answer = stop;
     return;
   }
 
@@ -595,9 +621,9 @@ void compute_substr(expr** p, int np, Rng *, const state *, result &x)
   if (stop.ivalue<0 || 
       start.ivalue > srclen || 
       start.ivalue>stop.ivalue) {  // definitely empty string
-    DeleteResult(STRING, x);
-    x.svalue = &empty_string;
-    Share(x.svalue);
+    DeleteResult(STRING, *answer);
+    answer->svalue = &empty_string;
+    Share(answer->svalue);
     return;
   }
 
@@ -606,15 +632,16 @@ void compute_substr(expr** p, int np, Rng *, const state *, result &x)
   // is it the full string?
   if ((0==start.ivalue) && (srclen==stop.ivalue)) {
     // x is the string parameter, keep it that way
-    Share(x.svalue);
+    Share(answer->svalue);
     return;
   }
   // we are a proper substring, fill it
-  char* answer = new char[stop.ivalue - start.ivalue+2]; 
-  strncpy(answer, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
-  answer[stop.ivalue - start.ivalue + 1] = 0;
-  x.Clear();
-  x.svalue = new shared_string(answer);
+  char* sub = new char[stop.ivalue - start.ivalue+2]; 
+  strncpy(sub, src + start.ivalue, 1+(stop.ivalue-start.ivalue));
+  sub[stop.ivalue - start.ivalue + 1] = 0;
+  DeleteResult(STRING, *answer);
+  answer->Clear();
+  answer->svalue = new shared_string(sub);
 }
 
 void AddSubstr(PtrTable *fns)
@@ -646,20 +673,27 @@ void AddSubstr(PtrTable *fns)
 // x = a div b; checks errors
 // expression err is used only to obtain filename and linenumber
 // in case of an error.
-void compute_div(expr **p, int np, Rng *r, const state *st, result &x)
+void compute_div(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(2==np);
   DCASSERT(p);
   result a,b;
-  SafeCompute(p[0], r, st, 0, a);
-  x.Clear();
+  result* answer = x.answer;
+  answer->Clear();
+  x.answer = &a;
+  SafeCompute(p[0], x);
   if (a.isNull() || a.isError() || a.isUnknown()) {
-    x = a; // propogate the "error"
+    x.answer = answer;
+    *answer = a; // propogate the "error"
     return;
   }
-  SafeCompute(p[1], r, st, 0, b);
+  x.answer = &b;
+  SafeCompute(p[1], x);
+  x.answer = answer;
   if (b.isNull() || b.isError() || b.isUnknown()) {
-    x = b; // propogate the "error"
+    *answer = b; // propogate the "error"
     return;
   }
   if (a.isNormal() && b.isNormal()) {
@@ -669,11 +703,11 @@ void compute_div(expr **p, int np, Rng *r, const state *st, result &x)
       Error.Start(p[1]->Filename(), p[1]->Linenumber());
       Error << "Illegal operation: divide by 0";
       Error.Stop();
-      x.setError();
+      answer->setError();
       return;
     }
     // ordinary integer division
-    x.ivalue = a.ivalue / b.ivalue;
+    answer->ivalue = a.ivalue / b.ivalue;
     return;
   }
 
@@ -682,27 +716,27 @@ void compute_div(expr **p, int np, Rng *r, const state *st, result &x)
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
     Error << "Illegal operation: infty / infty";
     Error.Stop();
-    x.setError();
+    answer->setError();
     return;
   }
   if (b.isInfinity()) {
     // a div +-infty = 0
-    x.ivalue = 0;
+    answer->ivalue = 0;
     return;
   }
   if (a.isInfinity()) {
-    x.setInfinity();
+    answer->setInfinity();
     // infinty div b = +- infinity
     if ((a.ivalue > 0) == (b.ivalue > 0)) {
       // same sign, that's +infinity
-      x.ivalue = 1;
+      answer->ivalue = 1;
     } else {
       // opposite sign, that's -infinity
-      x.ivalue = -1;
+      answer->ivalue = -1;
     }
   }
   // still here? some type of error
-  x.setError();
+  answer->setError();
 }
 
 
@@ -748,20 +782,27 @@ void AddDiv(PtrTable *fns)
 // *                        mod                           *
 // ********************************************************
 
-void compute_mod(expr **p, int np, Rng *r, const state *s, result &x)
+void compute_mod(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(2==np);
   DCASSERT(p);
+  result* answer = x.answer;
+  answer->Clear();
   result a,b;
-  x.Clear();
-  SafeCompute(p[0], r, s, 0, a);
+  x.answer = &a;
+  SafeCompute(p[0], x);
   if (a.isNull() || a.isError() || a.isUnknown()) {
-    x = a; // propogate the "error"
+    *answer = a; // propogate the "error"
+    x.answer = answer;
     return;
   }
-  SafeCompute(p[1], r, s, 0, b);
+  x.answer = &b;
+  SafeCompute(p[1], x);
+  x.answer = answer;
   if (b.isNull() || b.isError() || b.isUnknown()) {
-    x = b; // propogate the "error"
+    *answer = b; // propogate the "error"
     return;
   }
   if (a.isNormal() && b.isNormal()) {
@@ -771,11 +812,11 @@ void compute_mod(expr **p, int np, Rng *r, const state *s, result &x)
       Error.Start(p[1]->Filename(), p[1]->Linenumber());
       Error << "Illegal operation: modulo 0";
       Error.Stop();
-      x.setError();
+      answer->setError();
       return;
     }
     // ordinary mod 
-    x.ivalue = a.ivalue % b.ivalue;
+    answer->ivalue = a.ivalue % b.ivalue;
     return;
   }
   if (a.isInfinity() && b.isInfinity()) {
@@ -783,12 +824,12 @@ void compute_mod(expr **p, int np, Rng *r, const state *s, result &x)
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
     Error << "Illegal operation: infty mod infty";
     Error.Stop();
-    x.setError();
+    answer->setError();
     return;
   }
   if (b.isInfinity()) {
     // a mod +-infty = a
-    x.ivalue = a.ivalue;  // should we check signs?
+    answer->ivalue = a.ivalue;  // should we check signs?
     return;
   }
   if (a.isInfinity()) {
@@ -797,11 +838,11 @@ void compute_mod(expr **p, int np, Rng *r, const state *s, result &x)
     Error.Start(p[1]->Filename(), p[1]->Linenumber());
     Error << "Illegal operation: infty mod " << b.ivalue;
     Error.Stop();
-    x.setError();
+    answer->setError();
     return;
   }
   // still here? some type of error
-  x.setError();
+  answer->setError();
 }
 
 
@@ -845,18 +886,20 @@ void AddMod(PtrTable *fns)
 // *                        sqrt                          *
 // ********************************************************
 
-void compute_sqrt(expr **p, int np, Rng *r, const state *s, result &x)
+void compute_sqrt(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(p);
-  SafeCompute(p[0], r, s, 0, x);
-  if (x.isUnknown() || x.isError() || x.isNull()) return;
+  SafeCompute(p[0], x);
+  if (x.answer->isUnknown() || x.answer->isError() || x.answer->isNull()) return;
 
-  if (x.isInfinity()) {
-    if (x.ivalue>0) return;  // sqrt(infty) = infty
+  if (x.answer->isInfinity()) {
+    if (x.answer->ivalue>0) return;  // sqrt(infty) = infty
   } else {
-    if (x.rvalue>=0) {
-      x.rvalue = sqrt(x.rvalue);
+    if (x.answer->rvalue>=0) {
+      x.answer->rvalue = sqrt(x.answer->rvalue);
       return;
     }
   }
@@ -865,9 +908,9 @@ void compute_sqrt(expr **p, int np, Rng *r, const state *s, result &x)
   DCASSERT(p[0]);
   Error.Start(p[0]->Filename(), p[0]->Linenumber());
   Error << "Square root with negative argument: ";
-  PrintResult(Error, REAL, x);
+  PrintResult(Error, REAL, *x.answer);
   Error.Stop();
-  x.setError();
+  x.answer->setError();
 }
 
 void AddSqrt(PtrTable *fns)
@@ -920,42 +963,45 @@ void AddSqrt(PtrTable *fns)
 // *                      Bernoulli                       *
 // ********************************************************
 
-void compute_bernoulli(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_bernoulli(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(pp);
-  SafeCompute(pp[0], r, s, 0, x);
+  SafeCompute(pp[0], x);
 
-  if (x.isNormal()) {
-    if ((x.rvalue>=0.0) && (x.rvalue<=1.0)) {
+  if (x.answer->isNormal()) {
+    if ((x.answer->rvalue>=0.0) && (x.answer->rvalue<=1.0)) {
       // p value is in legal range; do the computation.
-      if (r) {
+      if (x.stream) {
 	// We have a Rng stream, sample the value
-        x.ivalue = (r->uniform() < x.rvalue) ? 1 : 0;
+        x.answer->ivalue = (x.stream->uniform() < x.answer->rvalue) ? 1 : 0;
       } else {
 	// No Rng stream, build ph int
         Internal.Start(__FILE__, __LINE__, pp[0]->Filename(), pp[0]->Linenumber());
         Internal << "Construction of bernoulli ph int not done\n";
-        x.setNull();
+        Internal.Stop();
+        x.answer->setNull();
       }
       return;
     }
     // illegal p value
     DCASSERT(pp[0]);
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
-    Error << "Bernoulli probability " << x.rvalue << " out of range";
+    Error << "Bernoulli probability " << x.answer->rvalue << " out of range";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
     return;
   }
   // still here, x is abnormal
 
-  if (x.isInfinity()) {
+  if (x.answer->isInfinity()) {
     DCASSERT(pp[0]);
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Bernoulli probability is infinite";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
     return;
   }
   // propogate any other errors (silently).
@@ -1002,25 +1048,30 @@ void AddBernoulli(PtrTable *fns)
 // *                     Equilikely                       *
 // ********************************************************
 
-void compute_equilikely(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_equilikely(expr **pp, int np, compute_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pp);
+  result* answer = x.answer;
+  answer->Clear();
   result a,b;
-  SafeCompute(pp[0], r, s, 0, a);
-  SafeCompute(pp[1], r, s, 0, b);
-  x.Clear();
+  x.answer = &a;
+  SafeCompute(pp[0], x);
+  x.answer = &b;
+  SafeCompute(pp[1], x);
+  x.answer = answer;
   
   // Normal behavior
   if (a.isNormal() && b.isNormal()) {
-    if (r) {
+    if (x.stream) {
       // we have a Rng stream, sample it
-      x.ivalue = int(a.ivalue + (b.ivalue-a.ivalue+1)*r->uniform());
+      answer->ivalue = int(a.ivalue + (b.ivalue-a.ivalue+1)*x.stream->uniform());
     } else {
       // No Rng stream, build ph int
       Internal.Start(__FILE__, __LINE__, pp[0]->Filename(), pp[0]->Linenumber());
       Internal << "Construction of equilikely ph int not done\n";
-      x.setNull();
+      Internal.Stop();
+      answer->setNull();
     }
     return;
   }
@@ -1028,7 +1079,7 @@ void compute_equilikely(expr **pp, int np, Rng *r, const state *s, result &x)
   // Deal with abnormal cases
 
   if (a.isInfinity() || b.isInfinity()) {
-    x.setError();
+    answer->setError();
     DCASSERT(pp[0]);
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Equilikely with infinite argument";
@@ -1036,15 +1087,15 @@ void compute_equilikely(expr **pp, int np, Rng *r, const state *s, result &x)
     return;
   }
   if (a.isUnknown() || b.isUnknown()) {
-    x.setUnknown();
+    answer->setUnknown();
     return;
   }
   if (a.isNull() || b.isNull()) {
-    x.setNull();
+    answer->setNull();
     return;
   }
   // any other errors here
-  x.setError();
+  answer->setError();
 }
 
 
@@ -1092,44 +1143,47 @@ void AddEquilikely(PtrTable *fns)
 // *                      Geometric                       *
 // ********************************************************
 
-void compute_geometric(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_geometric(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(pp);
-  SafeCompute(pp[0], r, s, 0, x);
+  SafeCompute(pp[0], x);
 
-  if (x.isNormal()) {
-    if ((x.rvalue>=0.0) && (x.rvalue<=1.0)) {
+  if (x.answer->isNormal()) {
+    if ((x.answer->rvalue>=0.0) && (x.answer->rvalue<=1.0)) {
       // Legal p value
-      if (r) {
+      if (x.stream) {
 	// We have a Rng, sample
-	if (0.0 == x.rvalue) return;  	// geom(0) = const(0)
-	if (1.0 == x.rvalue) {
-	  x.setInfinity();		// geom(1) = const(infinity)
+	if (0.0 == x.answer->rvalue) return;  	// geom(0) = const(0)
+	if (1.0 == x.answer->rvalue) {
+	  x.answer->setInfinity();		// geom(1) = const(infinity)
 	  return;
 	}
-        x.ivalue = int(log(r->uniform()) / log(x.rvalue));
+        x.answer->ivalue = int(log(x.stream->uniform()) / log(x.answer->rvalue));
       } else {
 	// No Rng, build ph int
         Internal.Start(__FILE__, __LINE__, pp[0]->Filename(), pp[0]->Linenumber());
         Internal << "Construction of geometric ph int not done\n";
-        x.setNull();
+        Internal.Stop();
+        x.answer->setNull();
       }
       return;
     }
     // Illegal p value
     DCASSERT(pp[0]);
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
-    Error << "Geometric probability " << x.rvalue << " out of range";
+    Error << "Geometric probability " << x.answer->rvalue << " out of range";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
     return;
   }
-  if (x.isInfinity()) {
+  if (x.answer->isInfinity()) {
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Geometric probability is infinite";
     Error.Stop();
-    x.setError();
+    x.answer->setError();
     return;
   }
   // other strange values (error, null, unknown) may propogate
@@ -1183,22 +1237,28 @@ void AddGeometric(PtrTable *fns)
 // *                       Uniform                        *
 // ********************************************************
 
-void compute_uniform(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_uniform(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(2==np);
   DCASSERT(pp);
-  DCASSERT(r);  // we must sample this one
+  DCASSERT(x.stream);  // we must sample this one
+  result* answer = x.answer;
+  answer->Clear();
   result a,b;
-  SafeCompute(pp[0], r, s, 0, a);
-  SafeCompute(pp[1], r, s, 0, b);
-  x.Clear();
+  x.answer = &a;
+  SafeCompute(pp[0], x);
+  x.answer = &b;
+  SafeCompute(pp[1], x);
+  x.answer = answer;
   // Normal behavior
   if (a.isNormal() && b.isNormal()) {
-    x.rvalue = a.rvalue + (b.rvalue-a.rvalue)*r->uniform();
+    x.answer->rvalue = a.rvalue + (b.rvalue-a.rvalue)*x.stream->uniform();
     return;
   }
   if (a.isInfinity() || b.isInfinity()) {
-    x.setError();
+    x.answer->setError();
     DCASSERT(pp[0]);
     Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
     Error << "Uniform with infinite argument";
@@ -1206,15 +1266,15 @@ void compute_uniform(expr **pp, int np, Rng *r, const state *s, result &x)
     return;
   }
   if (a.isUnknown() || b.isUnknown()) {
-    x.setUnknown();
+    x.answer->setUnknown();
     return;
   }
   if (a.isNull() || b.isNull()) {
-    x.setNull();
+    x.answer->setNull();
     return;
   }
   // any other errors here
-  x.setError();
+  x.answer->setError();
 }
 
 void AddUniform(PtrTable *fns)
@@ -1260,44 +1320,46 @@ void AddUniform(PtrTable *fns)
 // *                         Expo                         *
 // ********************************************************
 
-void compute_expo(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_expo(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(pp);
-  SafeCompute(pp[0], r, s, 0, x);
-  if (NULL==r) return;
+  SafeCompute(pp[0], x);
+  if (NULL==x.stream) return;
 
   // If Rng stream is provided, sample
-  if (x.isNormal()) {
-    if (x.rvalue>0) {
-      x.rvalue = - log(r->uniform()) / x.rvalue;
+  if (x.answer->isNormal()) {
+    if (x.answer->rvalue>0) {
+      x.answer->rvalue = - log(x.stream->uniform()) / x.answer->rvalue;
       return;
     } 
-    if (x.rvalue<0) {
+    if (x.answer->rvalue<0) {
       DCASSERT(pp[0]);
       Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
-      Error << "expo with parameter " << x.rvalue << ", must be non-negative";
+      Error << "expo with parameter " << x.answer->rvalue << ", must be non-negative";
       Error.Stop();
-      x.setError();
+      x.answer->setError();
       return;
     } 
     // still here?  Must be expo(0) = const(infinity)
-    x.setInfinity();  
-    x.ivalue = 1;
+    x.answer->setInfinity();  
+    x.answer->ivalue = 1;
     return;
   }
-  if (x.isInfinity()) {  // expo(infintity) has mean 0
-    if (x.ivalue < 0) {
+  if (x.answer->isInfinity()) {  // expo(infintity) has mean 0
+    if (x.answer->ivalue < 0) {
       DCASSERT(pp[0]);
       Error.Start(pp[0]->Filename(), pp[0]->Linenumber());
       Error << "expo with parameter ";
-      PrintResult(Error, REAL, x);
+      PrintResult(Error, REAL, *x.answer);
       Error.Stop();
-      x.setError();
+      x.answer->setError();
       return; 
     }
-    x.Clear();
-    x.rvalue = 0.0;
+    x.answer->Clear();
+    x.answer->rvalue = 0.0;
     return;
   }
   // some other error, just propogate it
@@ -1344,20 +1406,26 @@ void AddExpo(PtrTable *fns)
 
 //#define DEBUG_AVG
 
-void compute_avg(expr **p, int np, Rng *, const state *, result &x)
+void compute_avg(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   const int N = 100000;
   // For testing right now.  Write a better version eventually.
+  Rng* oldstream = x.stream;
   Rng foo(123456789);
+  x.stream = &foo;
   
   // A bad way to compute the average...
-  x.Clear();
-  x.rvalue = 0.0;
+  result* answer = x.answer;
+  answer->Clear();
+  answer->rvalue = 0.0;
+  result sample;
+  x.answer = &sample;
   int i;
   for (i=0; i<N; i++) {
-    result sample;
     p[0]->ClearCache(); // reset samples
-    SafeCompute(p[0], &foo, NULL, 0, sample);
+    SafeCompute(p[0], x);
     
 #ifdef DEBUG_AVG
     Output << "  sampled ";
@@ -1366,32 +1434,37 @@ void compute_avg(expr **p, int np, Rng *, const state *, result &x)
 #endif
    
     if (sample.isNormal()) {
-      x.rvalue += sample.rvalue;
+      answer->rvalue += sample.rvalue;
       continue;
     }
     if (sample.isInfinity()) {
-      if (x.isInfinity()) {
+      if (answer->isInfinity()) {
 	// if signs don't match, error
-	if (SIGN(x.ivalue)!=SIGN(sample.ivalue)) {
-	  x.setError();
+	if (SIGN(answer->ivalue)!=SIGN(sample.ivalue)) {
+	  answer->setError();
 	  Error.Start(p[0]->Filename(), p[0]->Linenumber());
 	  Error << "Undefined value (infinity - infinity) in Avg";
 	  Error.Stop();
+	  x.stream = oldstream;
 	  return;
 	}
       }
-      x = sample;
+      *answer = sample;
       continue;
     }
     // if we get here we've got null or an error, bail out
-    x = sample;
+    *answer = sample;
+    x.answer = answer;
+    x.stream = oldstream;
     return;
   } // for i
 
   // Divide by N 
-  if (x.isInfinity()) return;  // unless we're infinity
+  if (answer->isInfinity()) return;  // unless we're infinity
 
-  x.rvalue /= N;
+  answer->rvalue /= N;
+  x.answer = answer;
+  x.stream = oldstream;
 }
 
 void AddAvg(PtrTable *fns)
@@ -1410,11 +1483,13 @@ void AddAvg(PtrTable *fns)
 // *               system-like  functions                 *
 // ********************************************************
 
-void compute_filename(expr **p, int np, Rng *, const state *, result &x)
+void compute_filename(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(0==np);
-  x.Clear();
-  x.svalue = new shared_string(strdup(Filename()));
+  x.answer->Clear();
+  x.answer->svalue = new shared_string(strdup(Filename()));
 }
 
 void AddFilename(PtrTable *fns)
@@ -1428,15 +1503,16 @@ void AddFilename(PtrTable *fns)
 }
 
 
-void compute_env(expr **p, int np, Rng *, const state *, result &x)
+void compute_env(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(p);
-  SafeCompute(p[0], NULL, NULL, 0, x);
-  if (!x.isNormal()) return;
-  result find = x;
+  SafeCompute(p[0], x);
+  if (!x.answer->isNormal()) return;
   if (NULL==environment) return;
-  char* key = x.svalue->string;
+  char* key = x.answer->svalue->string;
   int xlen = strlen(key);
   for (int i=0; environment[i]; i++) {
     char* equals = strstr(environment[i], "=");
@@ -1445,13 +1521,13 @@ void compute_env(expr **p, int np, Rng *, const state *, result &x)
     if (length!=xlen) continue;
     if (strncmp(environment[i], key, length)!=0) continue;  
     // match, clear out old x
-    DeleteResult(STRING, x); 
-    x.Clear();
-    x.svalue = new shared_string(strdup(equals+1));
+    DeleteResult(STRING, *x.answer); 
+    x.answer->Clear();
+    x.answer->svalue = new shared_string(strdup(equals+1));
     return;
   }
   // not found
-  DeleteResult(STRING, x); 
+  DeleteResult(STRING, *x.answer); 
 }
 
 void AddEnv(PtrTable *fns)
@@ -1466,14 +1542,16 @@ void AddEnv(PtrTable *fns)
   InsertFunction(fns, p);
 }
 
-void compute_exit(expr **p, int np, Rng *, const state *, result &x)
+void compute_exit(expr **p, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(1==np);
   DCASSERT(p);
   int code = 0;
-  SafeCompute(p[0], NULL, NULL, 0, x);
-  if (x.isNormal()) {
-    code = x.ivalue;
+  SafeCompute(p[0], x);
+  if (x.answer->isNormal()) {
+    code = x.answer->ivalue;
   }
   smart_exit();
   exit(code);
@@ -1495,19 +1573,24 @@ void AddExit(PtrTable *fns)
 // *                        cond                          *
 // ********************************************************
 
-void compute_cond(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_cond(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==3);
   result b;
-  SafeCompute(pp[0], r, s, 0, b);
+  result *answer = x.answer;
+  x.answer = &b;
+  SafeCompute(pp[0], x);
+  x.answer = answer;
   if (b.isNull() || b.isError()) {
     // error stuff?
-    x = b;
+    *answer = b;
     return;
   }
-  if (b.bvalue) SafeCompute(pp[1], r, s, 0, x);
-  else SafeCompute(pp[2], r, s, 0, x);
+  if (b.bvalue) SafeCompute(pp[1], x);
+  else SafeCompute(pp[2], x);
 }
 
 void AddCond(type bt, type t, PtrTable *fns)
@@ -1529,29 +1612,38 @@ void AddCond(type bt, type t, PtrTable *fns)
 // *                        case                          *
 // ********************************************************
 
-void compute_case(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_case(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np>1);
   result c;
-  SafeCompute(pp[0], r, s, 0, c);
+  result* answer = x.answer;
+  x.answer = &c;
+  SafeCompute(pp[0], x);
   if (c.isNull() || c.isError()) {
     // error stuff?
-    x = c;
+    *answer = c;
+    x.answer = answer;
     return;
   }
   int i;
+  result m;
+  x.answer = &m;
   for (i=2; i<np; i++) {
-    result m;
-    SafeCompute(pp[i], r, s, 0, m);
+    SafeCompute(pp[i], x);
     if (m.isNormal()) if (m.ivalue == c.ivalue) {
       // this is it!
-      SafeCompute(pp[i], r, s, 1, x);
+      x.answer = answer;
+      x.aggregate = 1;
+      SafeCompute(pp[i], x);
       return;
     }
   }
   // still here?  use the default value
-  SafeCompute(pp[1], r, s, 0, x);
+  x.answer = answer;
+  SafeCompute(pp[1], x);
 }
 
 void AddCase(type it, type t, PtrTable *fns)
@@ -1576,14 +1668,20 @@ void AddCase(type it, type t, PtrTable *fns)
 // *                      is_null                         *
 // ********************************************************
 
-void compute_is_null(expr **pp, int np, Rng *r, const state *s, result &x)
+void compute_is_null(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(pp);
   DCASSERT(np==1);
-  result y;
-  SafeCompute(pp[0], r, s, 0, y);
-  x.Clear();
-  x.bvalue = y.isNull();
+  SafeCompute(pp[0], x);
+  if (x.answer->isNull()) {
+    x.answer->Clear();
+    x.answer->bvalue = true;
+  } else {
+    x.answer->Clear();
+    x.answer->bvalue = false;
+  }
 }
 
 void AddIsNull(PtrTable *t, type paramtype)
@@ -1601,10 +1699,12 @@ void AddIsNull(PtrTable *t, type paramtype)
 // ********************************************************
 
 
-void compute_dontknow(expr **pp, int np, Rng *, const state *, result &x)
+void compute_dontknow(expr **pp, int np, compute_data &x)
 {
-  x.Clear();
-  x.setUnknown();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  x.answer->Clear();
+  x.answer->setUnknown();
 }
 
 void AddDontKnow(PtrTable *t)

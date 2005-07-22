@@ -119,7 +119,7 @@ struct compute_data {
       given for a rand expression, this should return an object that 
       can be sampled.
   */
-  Rng *rng_stream;
+  Rng *stream;
 
   /** 
       The current state.
@@ -133,7 +133,7 @@ public:
   compute_data() {
     answer = 0;
     aggregate = 0;
-    rng_stream = 0;
+    stream = 0;
     current = 0;
   }
 };

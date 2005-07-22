@@ -253,7 +253,7 @@ void compute_num_states(expr **pp, int np, compute_data &x)
   if (x.answer->isNormal()) show = x.answer->bvalue;
   x.answer->Clear();
   
-  model *m = dynamic_cast<model*> (pp[0]);
+  model *m = smart_cast<model*> (pp[0]);
   DCASSERT(m);
 
   BuildReachset(m);
@@ -486,7 +486,7 @@ void compute_num_arcs(expr **pp, int np, compute_data &x)
   DCASSERT(x.answer);
   DCASSERT(2==np);
   DCASSERT(pp);
-  model *m = dynamic_cast<model*> (pp[0]);
+  model *m = smart_cast<model*> (pp[0]);
   DCASSERT(m);
 
   BuildProcess(m);
@@ -550,9 +550,9 @@ void compute_test(expr **pp, int np, compute_data &x)
   DCASSERT(np==2);
   DCASSERT(pp);
   DCASSERT(pp[0]);
-  model *mcmod = dynamic_cast<model*> (pp[0]);
+  model *mcmod = smart_cast<model*> (pp[0]);
   DCASSERT(mcmod);
-  state_model *proc = dynamic_cast<state_model*> (mcmod->GetModel());
+  state_model *proc = smart_cast<state_model*> (mcmod->GetModel());
   DCASSERT(proc);
   Output << "Got state model " << proc << "\n";
   Output << "Testing EnabledExpr and such\n";

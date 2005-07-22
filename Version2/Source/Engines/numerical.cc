@@ -142,8 +142,11 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
   state s;
   if (!AllocState(s, 1)) return false;
   s[0].Clear();  
+  result mval;
+  compute_data foo;
+  foo.answer = &mval;
+  foo.current = &s;
   for (int m=0; m<mlist->Length(); m++) {
-    result mval;
     mval.Clear();
     double mtotal = 0.0;
     bool mok = true;
@@ -160,7 +163,7 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 	// -------------------- BOOL measures --------------------
 	for (int i=start; i<stop; i++) if (x[i]) {
           s[0].ivalue = i;
-      	  mexpr->Compute(NULL, &s, 0, mval); 
+      	  mexpr->Compute(foo); 
       	  if (mval.isNormal()) {
 	    if (mval.bvalue) mtotal += x[i];
           } else {
@@ -174,7 +177,7 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 	// -------------------- REAL measures --------------------
 	for (int i=start; i<stop; i++) if (x[i]) {
           s[0].ivalue = i;
-      	  mexpr->Compute(NULL, &s, 0, mval); 
+      	  mexpr->Compute(foo); 
       	  if (mval.isNormal()) {
  	    mtotal += mval.rvalue * x[i];
           } else {
@@ -203,8 +206,11 @@ bool	EnumRewards(int start, int stop, double* x, List <measure> *mlist)
 // return true on success, false if some error
 bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
 {
+  result mval;
+  compute_data foo;
+  foo.answer = &mval;
+  foo.current = &s;
   for (int m=0; m<mlist->Length(); m++) {
-    result mval;
     mval.Clear();
     double mtotal = 0.0;
     bool mok = true;
@@ -225,7 +231,7 @@ bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
 #else
 	  SS->GetTangible(i, s);
 #endif
-      	  mexpr->Compute(NULL, &s, 0, mval); 
+      	  mexpr->Compute(foo); 
       	  if (mval.isNormal()) {
 	    if (mval.bvalue) mtotal += x[i];
           } else {
@@ -243,7 +249,7 @@ bool ExplicitRewards(flatss *SS, state &s, double* x, List <measure> *mlist)
 #else
 	  SS->GetTangible(i, s);
 #endif
-      	  mexpr->Compute(NULL, &s, 0, mval); 
+      	  mexpr->Compute(foo); 
       	  if (mval.isNormal()) {
  	    mtotal += mval.rvalue * x[i];
           } else {

@@ -324,6 +324,8 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
   int e;
   result x;
   x.Clear();
+  compute_data foo;
+  foo.answer = &x;
 
   // compute the constant rates/weights a priori; use -1 if not const.
   for (e=0; e<dsm->NumEvents(); e++) {
@@ -332,7 +334,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
     switch (t->FireType()) {
       case E_Timed:
     	if (EXPO==t->DistroType()) {
-      	  SafeCompute(t->Distribution(), NULL, NULL, 0, x);
+      	  SafeCompute(t->Distribution(), foo);
       	  if (IllegalRateCheck(x, dsm, t)) {
        	    // bail out
 	    return false;
@@ -345,7 +347,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 
       case E_Immediate:
     	if (REAL==t->WeightType()) {
-      	  SafeCompute(t->Weight(), NULL, NULL, 0, x);
+      	  SafeCompute(t->Weight(), foo);
 	  if (x.isNormal())
 	    t->value = x.rvalue;
           else
@@ -423,6 +425,8 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
   int t_row = -1;
 
   bool current_is_vanishing = false;
+
+  foo.current = &current;
 
   // New tangible + vanishing explore loop!
   while (!error) {
@@ -615,7 +619,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 	  value = t->value;
 	} else {
 	// we must have a PROC_REAL weight
-          SafeCompute(t->Weight(), NULL, &current, 0, x);
+          SafeCompute(t->Weight(), foo);
           if (IllegalWeightCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	}
@@ -637,7 +641,7 @@ bool GenerateSandCTMC(state_model *dsm, bool eliminate,
 	// figure the rate
         if (t->value<0) {
 	  // we must have a PROC_EXPO distribution
-          SafeCompute(t->Distribution(), NULL, &current, 0, x);
+          SafeCompute(t->Distribution(), foo);
           if (IllegalRateCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	} else {

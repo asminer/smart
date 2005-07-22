@@ -238,6 +238,8 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
   
   result x;
   x.Clear();
+  compute_data foo;
+  foo.answer = &x;
   // compute the constant rates/weights a priori; use -1 if not const.
   for (e=0; e<dsm->NumEvents(); e++) {
     event* t = dsm->GetEvent(e);
@@ -249,7 +251,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  Output << "Pre-computing rate for event " << t << "\n";
 	  Output.flush();
 #endif
-      	  SafeCompute(t->Distribution(), NULL, NULL, 0, x);
+      	  SafeCompute(t->Distribution(), foo);
       	  if (IllegalRateCheck(x, dsm, t)) {
        	    // bail out
 	    return false;
@@ -266,7 +268,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  Output << "Pre-computing weight for event " << t << "\n";
 	  Output.flush();
 #endif
-      	  SafeCompute(t->Weight(), NULL, NULL, 0, x);
+      	  SafeCompute(t->Weight(), foo);
 	  if (x.isNormal())
 	    t->value = x.rvalue;
           else
@@ -317,6 +319,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
   t_exp = 0;
   int t_row = -1;
   // New tangible + vanishing explore loop!
+  foo.current = &current;
   while (!error) {
     // Get next state to explore, with priority to vanishings.
     if (v_exp < vst.NumStates()) {
@@ -545,7 +548,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	  value = t->value;
 	} else {
 	// we must have a PROC_REAL weight
-          SafeCompute(t->Weight(), NULL, &current, 0, x);
+          SafeCompute(t->Weight(), foo);
           if (IllegalWeightCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	}
@@ -563,7 +566,7 @@ bool GenerateCTMC(state_model *dsm, REACHSET *S, labeled_digraph<float>* Rtt)
 	// figure the rate
         if (t->value<0) {
 	  // we must have a PROC_EXPO distribution
-          SafeCompute(t->Distribution(), NULL, &current, 0, x);
+          SafeCompute(t->Distribution(), foo);
           if (IllegalRateCheck(x, dsm, t)) error = true;
 	  else value = x.rvalue;
 	} else {

@@ -56,7 +56,9 @@ struct spn_arcinfo {
     if (card->Type(0) == INT) {
       // constant cardinality, compute it
       result x;
-      SafeCompute(card, NULL, NULL, 0, x);
+      compute_data foo;
+      foo.answer = &x;
+      SafeCompute(card, foo);
       if (x.isNormal()) {
         const_card = x.ivalue;
         proc_card = NULL;
@@ -292,7 +294,7 @@ public:
     return PROC_BOOL;
   }
   virtual void ClearCache() { DCASSERT(0); }
-  virtual void Compute(Rng *, const state *, int i, result &x);
+  virtual void Compute(compute_data &x);
   virtual expr* Substitute(int i) { DCASSERT(0); return NULL; }
   virtual int GetProducts(int i, List <expr> *prods);
   virtual int GetSymbols(int i, List <symbol> *syms);
@@ -388,76 +390,75 @@ transition_enabled::~transition_enabled()
   Delete(guard);
 }
 
-void transition_enabled::Compute(Rng *, const state *s, int a, result &x)
+void transition_enabled::Compute(compute_data &x)
 {
-  DCASSERT(0==a);
-  DCASSERT(s);
-  x.Clear();
-  x.bvalue = false;
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(x.current);
+  x.answer->Clear();
+  x.answer->bvalue = false;
   int i;
   model_var **p = places;
   int* L = lower;
   for (i=0; i<end_lower; i++) {
-    if (L[0] > s->Read(p[0]->state_index).ivalue) return;
+    if (L[0] > x.current->Read(p[0]->state_index).ivalue) return;
     L++;
     p++;
   }
   int* U = upper;
   for (; i<end_upper; i++) {
-    if (U[0] <= s->Read(p[0]->state_index).ivalue) return;
+    if (U[0] <= x.current->Read(p[0]->state_index).ivalue) return;
     U++;
     p++;
   }
   expr** b = boundlist;
   for (; i<end_expr_lower; i++) {
-    SafeCompute(b[0], NULL, s, 0, x);
-    if (x.isNormal()) {
-      if (x.ivalue > s->Read(p[0]->state_index).ivalue) {
-        x.bvalue = false;
+    SafeCompute(b[0], x);
+    if (x.answer->isNormal()) {
+      if (x.answer->ivalue > x.current->Read(p[0]->state_index).ivalue) {
+        x.answer->bvalue = false;
+        return;
+      }
+    } else if (x.answer->isInfinity()) {
+      if (x.answer->ivalue>0) {
+        // infinity <= tk(p), definitely false
+	x.answer->Clear();
+        x.answer->bvalue = false;
         return;
       }
     } else {
-      if (x.isInfinity()) {
-        x.Clear();
-        if (x.ivalue>0) {
-	  // infinity <= tk(p), definitely false
-	  x.bvalue = false;
-	  return;
-        }
-      } else {
-        return;  
-      }
+      // some type of error
+      return;  
     }
     b++;
     p++;
   }
   for (; i<end_expr_upper; i++) {
-    SafeCompute(b[0], NULL, s, 0, x);
-    if (x.isNormal()) {
-      if (x.ivalue <= s->Read(p[0]->state_index).ivalue) {
-        x.bvalue = false;
+    SafeCompute(b[0], x);
+    if (x.answer->isNormal()) {
+      if (x.answer->ivalue <= x.current->Read(p[0]->state_index).ivalue) {
+        x.answer->bvalue = false;
         return;
       }
-    } else {
-      if (x.isInfinity()) {
-        x.Clear();
-        if (x.ivalue<0) {
-	  // -infinity > tk(p), definitely false
-	  x.bvalue = false;
-	  return;
-        }
-      } else {
-        return;  
+    } else if (x.answer->isInfinity()) {
+      if (x.answer->ivalue<0) {
+        // -infinity > tk(p), definitely false
+        x.answer->Clear();
+	x.answer->bvalue = false;
+	return;
       }
+    } else {
+      // some type of error
+      return;  
     }
     b++;
     p++;
   }
   if (guard) {
-    SafeCompute(guard, NULL, s, 0, x);
+    guard->Compute(x);
     return;
   }
-  x.bvalue = true;
+  x.answer->bvalue = true;
 }
 
 int transition_enabled::GetProducts(int a, List <expr> *prods)
@@ -821,9 +822,12 @@ void transition_fire::NextState(const state &cur, state &next, result &x)
   }
   expr** b = exprlist;
   bool* neg = negate_expr;
+  compute_data foo;
+  foo.answer = &x;
+  foo.current = &cur;
   for (; i<end_expr; i++) {
     // compute delta expression
-    SafeCompute((*b), NULL, &cur, 0, x);
+    SafeCompute((*b), foo);
     if (!x.isNormal()) return;
     if (neg[0]) x.ivalue *= -1; 
     if ( (next[p[0]->state_index].ivalue += x.ivalue) < 0) {
@@ -1315,15 +1319,17 @@ void spn_model::AddFiring(transition* t, expr* firing)
   DCASSERT(translist->Item(t->state_index) == t);
   
   result z;
+  compute_data foo;
+  foo.answer = &z;
   if (INT==firing->Type(0)) {
-    firing->Compute(NULL, NULL, 0, z);
+    firing->Compute(foo);
     if (z.isNormal() && z.ivalue==0) {
       t->SetImmediate();
       return;
     }
   } 
   if (REAL==firing->Type(0)) {
-    firing->Compute(NULL, NULL, 0, z);
+    firing->Compute(foo);
     if (z.isNormal() && z.rvalue==0.0) {
       t->SetImmediate();
       return;
@@ -1563,17 +1569,20 @@ shared_object* spn_model::BuildStateModel(const char* fn, int ln)
 // *                         init                         *
 // ********************************************************
 
-void compute_spn_init(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_init(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 #ifdef DEBUG_PN
   Output << "Inside init for pn " << spn << "\n";
 #endif
-  x.Clear();
   int i;
+  result* answer = x.answer;
+  answer->setNull();
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
@@ -1581,13 +1590,17 @@ void compute_spn_init(expr **pp, int np, Rng *, const state *, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
     Output.flush();
 #endif
+
     result pl, tk;
-    SafeCompute(pp[i], NULL, NULL, 0, pl);
+    x.answer = &pl;
+    pp[i]->Compute(x);
     DCASSERT(pl.isNormal());
-    model_var* place = dynamic_cast <model_var*> (pl.other);
+    model_var* place = smart_cast <model_var*> (pl.other);
     DCASSERT(place);
 
-    SafeCompute(pp[i], NULL, NULL, 1, tk);
+    x.answer = &tk;
+    x.aggregate = 1;
+    pp[i]->Compute(x);
     // error checking of tk here   
     if (0==tk.ivalue) continue;  // print a warning...
     spn->AddInit(place, tk.ivalue, pp[i]->Filename(), pp[i]->Linenumber());
@@ -1596,7 +1609,7 @@ void compute_spn_init(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Exiting init for pn " << spn << "\n";
   Output.flush();
 #endif
-  x.setNull();
+  x.answer = answer;
 }
 
 void Add_spn_init(PtrTable *fns)
@@ -1620,11 +1633,13 @@ void Add_spn_init(PtrTable *fns)
 // *                         arcs                         *
 // ********************************************************
 
-void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_arcs(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 
 #ifdef DEBUG_PN
@@ -1632,7 +1647,8 @@ void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
   Output.flush();
 #endif
 
-  x.Clear();
+  result* answer = x.answer;
+  answer->setNull();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
@@ -1641,11 +1657,14 @@ void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    SafeCompute(pp[i], NULL, NULL, 0, first);
+    x.answer = &first;
+    pp[i]->Compute(x);
     DCASSERT(first.isNormal());
 
     result second;
-    SafeCompute(pp[i], NULL, NULL, 1, second); 
+    x.answer = &second;
+    x.aggregate = 1;
+    pp[i]->Compute(x);
     DCASSERT(second.isNormal());
 
     // error checking of first and second here   
@@ -1657,14 +1676,14 @@ void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
     if (pp[i]->NumComponents()==3) card = pp[i]->GetComponent(2);
     switch (pp[i]->Type(0)) {
       case PLACE:
-        pl = dynamic_cast <model_var*> (first.other);
-        t = dynamic_cast <transition*> (second.other);
+        pl = smart_cast <model_var*> (first.other);
+        t = smart_cast <transition*> (second.other);
         spn->AddInput(pl, t, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
 
       case TRANS:
-        t = dynamic_cast <transition*> (first.other);
-        pl = dynamic_cast <model_var*> (second.other);
+        t = smart_cast <transition*> (first.other);
+        pl = smart_cast <model_var*> (second.other);
         spn->AddOutput(t, pl, card, pp[i]->Filename(), pp[i]->Linenumber());
         break;
       
@@ -1681,8 +1700,7 @@ void compute_spn_arcs(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Exiting arcs for pn " << spn << "\n";
   Output.flush();
 #endif
-
-  x.setNull();
+  x.answer = answer;
 }
 
 int typecheck_arcs(List <expr> *params)
@@ -1733,11 +1751,13 @@ void Add_spn_arcs(PtrTable *fns)
 // *                        inhibit                       *
 // ********************************************************
 
-void compute_spn_inhibit(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_inhibit(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 
 #ifdef DEBUG_PN
@@ -1745,7 +1765,8 @@ void compute_spn_inhibit(expr **pp, int np, Rng *, const state *, result &x)
   Output.flush();
 #endif
 
-  x.Clear();
+  result* answer = x.answer;
+  answer->setNull();
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
@@ -1754,15 +1775,18 @@ void compute_spn_inhibit(expr **pp, int np, Rng *, const state *, result &x)
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
     result first;
-    SafeCompute(pp[i], NULL, NULL, 0, first);
+    x.answer = &first;
+    pp[i]->Compute(x);
     DCASSERT(first.isNormal());
-    model_var* fv = dynamic_cast <model_var*> (first.other);
+    model_var* fv = smart_cast <model_var*> (first.other);
     DCASSERT(fv);
 
     result second;
-    SafeCompute(pp[i], NULL, NULL, 1, second); 
+    x.answer = &second;
+    x.aggregate = 1;
+    pp[i]->Compute(x); 
     DCASSERT(second.isNormal());
-    transition* sv = dynamic_cast <transition*> (second.other);
+    transition* sv = smart_cast <transition*> (second.other);
     DCASSERT(sv);
  
     expr* card = NULL;
@@ -1777,7 +1801,7 @@ void compute_spn_inhibit(expr **pp, int np, Rng *, const state *, result &x)
   Output.flush();
 #endif
 
-  x.setNull();
+  x.answer = answer;
 }
 
 
@@ -1828,27 +1852,31 @@ void Add_spn_inhibit(PtrTable *fns)
 // *                         guard                        *
 // ********************************************************
 
-void compute_spn_guard(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_guard(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 #ifdef DEBUG_PN
   Output << "Inside guard for pn " << spn << "\n";
 #endif
-  x.Clear();
+  result* answer = x.answer;
+  answer->setNull();
   int i;
+  result t;
+  x.answer = &t;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
     DCASSERT(pp[i]!=ERROR);
 #ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
-    result t;
-    SafeCompute(pp[i], NULL, NULL, 0, t);
+    pp[i]->Compute(x);
     DCASSERT(t.isNormal());
-    transition* tv = dynamic_cast <transition*> (t.other);
+    transition* tv = smart_cast <transition*> (t.other);
     DCASSERT(tv);
     
     spn->AddGuard(tv, pp[i]->GetComponent(1));
@@ -1857,7 +1885,7 @@ void compute_spn_guard(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Exiting guard for pn " << spn << "\n";
   Output.flush();
 #endif
-  x.setNull();
+  x.answer = answer;
 }
 
 void Add_spn_guard(PtrTable *fns)
@@ -1880,16 +1908,21 @@ void Add_spn_guard(PtrTable *fns)
 // *                        firing                        *
 // ********************************************************
 
-void compute_spn_firing(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_firing(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 #ifdef DEBUG_PN
   Output << "Inside firing for pn " << spn << "\n";
 #endif
-  x.Clear();
+  result* answer = x.answer;
+  answer->setNull();
+  result t;
+  x.answer = &t;
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
@@ -1897,10 +1930,9 @@ void compute_spn_firing(expr **pp, int np, Rng *, const state *, result &x)
 #ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
-    result t;
-    SafeCompute(pp[i], NULL, NULL, 0, t);
+    pp[i]->Compute(x);
     DCASSERT(t.isNormal());
-    transition* tv = dynamic_cast <transition*> (t.other);
+    transition* tv = smart_cast <transition*> (t.other);
     DCASSERT(tv);
     
     expr* c1 = pp[i]->GetComponent(1);
@@ -1910,7 +1942,7 @@ void compute_spn_firing(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Exiting firing for pn " << spn << "\n";
   Output.flush();
 #endif
-  x.setNull();
+  x.answer = answer;
 }
 
 int typecheck_firing(List <expr> *params)
@@ -1973,17 +2005,22 @@ void Add_spn_firing(PtrTable *fns)
 // *                        weight                        *
 // ********************************************************
 
-void compute_spn_weight(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_weight(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 #ifdef DEBUG_PN
   Output << "Inside weight for pn " << spn << "\n";
 #endif
   spn->wcl_current++;
-  x.Clear();
+  result* answer = x.answer;
+  answer->setNull();
+  result t;
+  x.answer = &t;
   int i;
   for (i=1; i<np; i++) {
     DCASSERT(pp[i]);
@@ -1991,10 +2028,9 @@ void compute_spn_weight(expr **pp, int np, Rng *, const state *, result &x)
 #ifdef DEBUG_PN
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
 #endif
-    result t;
-    SafeCompute(pp[i], NULL, NULL, 0, t);
+    pp[i]->Compute(x);
     DCASSERT(t.isNormal());
-    transition* tv = dynamic_cast <transition*> (t.other);
+    transition* tv = smart_cast <transition*> (t.other);
     DCASSERT(tv);
     
     spn->AddWeight(tv, pp[i]->GetComponent(1));
@@ -2003,7 +2039,7 @@ void compute_spn_weight(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Exiting weight for pn " << spn << "\n";
   Output.flush();
 #endif
-  x.setNull();
+  x.answer = answer;
 }
 
 int typecheck_weight(List <expr> *params)
@@ -2054,24 +2090,21 @@ void Add_spn_weight(PtrTable *fns)
 // *                          tk                          *
 // ********************************************************
 
-void compute_spn_tk(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_spn_tk(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(x.current);
   DCASSERT(np==2);
   DCASSERT(pp);
-  DCASSERT(m);
 #ifdef DEBUG
   Output << "Checking tk\n";
   Output.flush();
 #endif
-  x.Clear();
-  SafeCompute(pp[1], NULL, m, 0, x);
-#ifdef DEVELOPMENT_CODE
-  DCASSERT(x.isNormal());
-  model_var* place = dynamic_cast <model_var*> (x.other);
+  SafeCompute(pp[1], x);
+  DCASSERT(x.answer->isNormal());
+  model_var* place = smart_cast <model_var*> (x.answer->other);
   DCASSERT(place);
-#else 
-  model_var* place = (model_var*) x.other;
-#endif
  
 #ifdef DEBUG
   Output << "\tgot param: ";
@@ -2080,7 +2113,7 @@ void compute_spn_tk(expr **pp, int np, Rng *, const state *m, result &x)
   Output.flush();
 #endif
 
-  x = m->Read(place->state_index);
+  *x.answer = x.current->Read(place->state_index);
 }
 
 void Add_spn_tk(PtrTable *fns)
@@ -2100,45 +2133,42 @@ void Add_spn_tk(PtrTable *fns)
 // *                         rate                         *
 // ********************************************************
 
-void compute_spn_rate(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_spn_rate(expr **pp, int np, compute_data &x)
 {
-  x.Clear();
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(x.current);
   DCASSERT(np==2);
   DCASSERT(pp);
-  DCASSERT(m);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
   state_model *dsm = dynamic_cast<state_model*>(spn->GetModel());
   if (NULL==dsm) {
-    x.setNull();
+    x.answer->setNull();
     return;
   }
 
-  SafeCompute(pp[1], NULL, m, 0, x);
-#ifdef DEVELOPMENT_CODE
-  DCASSERT(x.isNormal());
-  transition* tv = dynamic_cast <transition*> (x.other);
+  SafeCompute(pp[1], x);
+  DCASSERT(x.answer->isNormal());
+  transition* tv = smart_cast <transition*> (x.answer->other);
   DCASSERT(tv);
-#else 
-  transition* tv = (transition*) x.other;
-#endif
   event* e = tv->Event();
   DCASSERT(e);
  
   // check if this transition is enabled
-  if (!dsm->GetEnabledList((*m), NULL)) {
-    x.setNull();
+  if (!dsm->GetEnabledList((*x.current), NULL)) {
+    x.answer->setNull();
     return;
   }
   if (e->misc<=0) {
-    x.rvalue = 0.0;
+    x.answer->rvalue = 0.0;
     return;
   }
   // transition is enabled, get firing rate
   switch (e->DistroType()) {
     case EXPO:
     case PROC_EXPO:
-  	SafeCompute(e->Distribution(), NULL, m, 0, x);
+  	SafeCompute(e->Distribution(), x);
 	return;
     default:
     	break;
@@ -2146,7 +2176,7 @@ void compute_spn_rate(expr **pp, int np, Rng *, const state *m, result &x)
   Error.Start(pp[1]->Filename(), pp[1]->Linenumber());
   Error << "Requesting rate of non-expo transition " << tv;
   Error.Stop();
-  x.setNull();
+  x.answer->setNull();
 }
 
 void Add_spn_rate(PtrTable *fns)
@@ -2166,11 +2196,13 @@ void Add_spn_rate(PtrTable *fns)
 // *                         prio                         *
 // ********************************************************
 
-void compute_spn_prio(expr **pp, int np, Rng *, const state *, result &x)
+void compute_spn_prio(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  spn_model *spn = dynamic_cast<spn_model*>(pp[0]);
+  spn_model *spn = smart_cast<spn_model*>(pp[0]);
   DCASSERT(spn);
 #ifdef DEBUG_PN
   Output << "Inside prio for pn " << spn << "\n";
@@ -2179,23 +2211,25 @@ void compute_spn_prio(expr **pp, int np, Rng *, const state *, result &x)
   Output << "Inside prio for pn " << spn << "\n";
 #endif
 #endif
-  x.Clear();
-
+  result* answer = x.answer;
+  answer->setNull();
   for (int i=1; i<np; i++) {
     result s1, s2;
-    SafeCompute(pp[i], NULL, NULL, 0, s1);
-    SafeCompute(pp[i], NULL, NULL, 1, s2);
+    x.answer = &s1;
+    SafeCompute(pp[i], x);
+    x.answer = &s2;
+    SafeCompute(pp[i], x);
     // error checking here
-    set_result* T1 = dynamic_cast <set_result*> (s1.other);
+    set_result* T1 = smart_cast <set_result*> (s1.other);
     DCASSERT(T1);
-    set_result* T2 = dynamic_cast <set_result*> (s2.other);
+    set_result* T2 = smart_cast <set_result*> (s2.other);
     DCASSERT(T2);
     for (int j1=0; j1<T1->Size(); j1++) {
       result x1;
       x1.Clear();
-      T1->GetElement(j1, x1);
+      T1->GetElement(j1, &x1);
       DCASSERT(x1.isNormal());
-      transition* t1 = dynamic_cast <transition*> (x1.other);
+      transition* t1 = smart_cast <transition*> (x1.other);
       DCASSERT(t1);
 #ifdef DEBUG_PRIO
       Output << "Setting priority for " << t1 << " higher than:\n\t";
@@ -2203,9 +2237,9 @@ void compute_spn_prio(expr **pp, int np, Rng *, const state *, result &x)
       for (int j2=0; j2<T2->Size(); j2++) {
         result x2;
         x2.Clear();
-        T2->GetElement(j2, x2);
+        T2->GetElement(j2, &x2);
         DCASSERT(x2.isNormal());
-        transition* t2 = dynamic_cast <transition*> (x2.other);
+        transition* t2 = smart_cast <transition*> (x2.other);
         DCASSERT(t2);
 	t1->HasPrioOver(t2);
 #ifdef DEBUG_PRIO
@@ -2219,7 +2253,7 @@ void compute_spn_prio(expr **pp, int np, Rng *, const state *, result &x)
     } // for j1
   } // for i (parameters)
 
-  x.setNull();
+  x.answer = answer;
 }
 
 void Add_prio(PtrTable *fns)

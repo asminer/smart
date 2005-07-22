@@ -115,6 +115,14 @@ template <class T> inline int SIGN(T X) { return (X<0) ? -1 : POSITIVE(X); }
   #define CHECK_RANGE(MIN, VALUE, MAX)
 #endif
 
+// Safe typecasting for development code;  fast casting otherwise
+
+#ifdef DEVELOPMENT_CODE
+#define smart_cast	dynamic_cast
+#else
+#define smart_cast	static_cast
+#endif
+
 #endif
 
 //@}

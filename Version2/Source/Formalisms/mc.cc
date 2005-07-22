@@ -464,47 +464,50 @@ shared_object* markov_model::BuildStateModel(const char* fn, int ln)
 // *                         init                         *
 // ********************************************************
 
-void compute_mc_init(expr **pp, int np, Rng *, const state *, result &x)
+void compute_mc_init(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
 
-  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  markov_model *mc = smart_cast<markov_model*>(pp[0]);
   DCASSERT(mc);
 
 #ifdef DEBUG_MC
   Output << "\tInside init for model " << mc << "\n";
 #endif
 
-  x.Clear();
+  x.answer->Clear();
   int i;
   for (i=1; i<np; i++) {
 #ifdef DEBUG_MC
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
-    Output << "\t state ";
+    Output.flush();
 #endif
-    SafeCompute(pp[i], NULL, NULL, 0, x);
-    DCASSERT(x.isNormal());
-    model_var* st = dynamic_cast<model_var*> (x.other);
+    x.aggregate = 0;
+    SafeCompute(pp[i], x);
+    DCASSERT(x.answer->isNormal());
+    model_var* st = smart_cast<model_var*> (x.answer->other);
     DCASSERT(st);
+    x.aggregate = 1;
+    SafeCompute(pp[i], x);
 #ifdef DEBUG_MC
+    Output << "\t state ";
     Output << st << "\n\t value ";
-#endif
-
-    SafeCompute(pp[i], NULL, NULL, 1, x);
-#ifdef DEBUG_MC
-    PrintResult(Output, REAL, x);
+    PrintResult(Output, REAL, *x.answer);
     Output << "\n";
+    Output.flush();
 #endif
-    double weight = x.rvalue;
-    if (!x.isNormal()) {
+    if (!x.answer->isNormal()) {
       Error.Start(pp[i]->Filename(), pp[i]->Linenumber());
       Error << "Bad weight: ";
-      PrintResult(Error, REAL, x);
+      PrintResult(Error, REAL, *x.answer);
       Error << " for state " << st << "\n";
       Error.Stop();
       continue;
     }
+    double weight = x.answer->rvalue;
     // again with the errors
 
     mc->AddInitial(st, weight, pp[i]->Filename(), pp[i]->Linenumber());
@@ -515,7 +518,7 @@ void compute_mc_init(expr **pp, int np, Rng *, const state *, result &x)
   Output.flush();
 #endif
 
-  x.setNull();
+  x.answer->setNull();
 }
 
 void Add_init(PtrTable *fns)
@@ -538,11 +541,13 @@ void Add_init(PtrTable *fns)
 // *                         arcs                         *
 // ********************************************************
 
-void compute_mc_arcs(expr **pp, int np, Rng *, const state *, result &x)
+void compute_mc_arcs(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np>1);
   DCASSERT(pp);
-  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  markov_model *mc = smart_cast<markov_model*>(pp[0]);
   DCASSERT(mc);
 
 #ifdef DEBUG_MC
@@ -550,38 +555,36 @@ void compute_mc_arcs(expr **pp, int np, Rng *, const state *, result &x)
 #endif
 
 
-  x.Clear();
+  x.answer->Clear();
   int i;
   for (i=1; i<np; i++) {
 #ifdef DEBUG_MC
     Output << "\tparameter " << i << " is " << pp[i] << "\n";
-    Output << "\t from state ";
+    Output.flush();
 #endif
-    SafeCompute(pp[i], NULL, NULL, 0, x);
-    DCASSERT(x.isNormal());
-    model_var* from = dynamic_cast<model_var*> (x.other);
+    x.aggregate = 0;
+    SafeCompute(pp[i], x);
+    DCASSERT(x.answer->isNormal());
+    model_var* from = smart_cast<model_var*> (x.answer->other);
     DCASSERT(from);
-#ifdef DEBUG_MC
-    Output << from << "\n\t to state ";
-#endif
 
-    SafeCompute(pp[i], NULL, NULL, 1, x);
-    DCASSERT(x.isNormal());
-    model_var* to = dynamic_cast<model_var*> (x.other);
+    x.aggregate = 1;
+    SafeCompute(pp[i], x);
+    DCASSERT(x.answer->isNormal());
+    model_var* to = smart_cast<model_var*> (x.answer->other);
     DCASSERT(to);
-#ifdef DEBUG_MC
-    PrintResult(Output, INT, x);
-    Output << "\n\t weight ";
-#endif
 
-    SafeCompute(pp[i], NULL, NULL, 2, x);
+    x.aggregate = 2;
+    SafeCompute(pp[i], x);
 #ifdef DEBUG_MC
-    PrintResult(Output, REAL, x);
+    Output << "\tfrom state " << from << "\n\tto state " << to << "\n\tweight ";
+    PrintResult(Output, REAL, *x.answer);
     Output << "\n";
+    Output.flush();
 #endif
-    if (!x.isNormal()) continue;  // Bad arc, skip it
+    if (!x.answer->isNormal()) continue;  // Bad arc, skip it
     // do we need an error message?
-    double weight = x.rvalue;
+    double weight = x.answer->rvalue;
     // again with the errors
 
     mc->AddArc(from, to, weight, pp[i]->Filename(), pp[i]->Linenumber());
@@ -592,7 +595,7 @@ void compute_mc_arcs(expr **pp, int np, Rng *, const state *, result &x)
   Output.flush();
 #endif
 
-  x.setNull();
+  x.answer->setNull();
 }
 
 void Add_mc_arcs(PtrTable *fns)
@@ -616,38 +619,35 @@ void Add_mc_arcs(PtrTable *fns)
 // *                        instate                       *
 // ********************************************************
 
-void compute_mc_instate(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_mc_instate(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==2);
   DCASSERT(pp);
 #ifdef DEBUG
   Output << "Checking instate\n";
   Output.flush();
 #endif
-  x.Clear();
-  SafeCompute(pp[1], NULL, m, 0, x);
-#ifdef DEVELOPMENT_CODE
-  DCASSERT(x.isNormal());
-  model_var* st = dynamic_cast<model_var*> (x.other);
+  SafeCompute(pp[1], x);
+  DCASSERT(x.answer->isNormal());
+  model_var* st = smart_cast<model_var*> (x.answer->other);
   DCASSERT(st);
-#else
-  model_var* st = (model_var*) x.other;
-#endif
 
 #ifdef DEBUG
   Output << "\tgot param: " << st << "\n";
   Output.flush();
 
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m->Read(0));
+  PrintResult(Output, INT, x.current->Read(0));
   Output << "\n";
   Output.flush();
 #endif
 
-  if (st->state_index == m->Read(0).ivalue) {
-    x.bvalue = true;
+  if (st->state_index == x.current->Read(0).ivalue) {
+    x.answer->bvalue = true;
   } else {
-    x.bvalue = false;
+    x.answer->bvalue = false;
   }
 }
 
@@ -669,44 +669,36 @@ void Add_instate(PtrTable *fns)
 // ********************************************************
 
 // Set of states version
-void compute_mc_instates(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_mc_instates(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==2);
   DCASSERT(pp);
 #ifdef DEBUG
   Output << "Checking instates\n";
   Output.flush();
 #endif
-#ifdef DEVELOPMENT_CODE
-  markov_model *mc = dynamic_cast<markov_model*>(pp[0]);
+  markov_model *mc = smart_cast<markov_model*>(pp[0]);
   DCASSERT(mc);
-#else
-  markov_model *mc = (markov_model*)(pp[0]);
-#endif
-  x.Clear();
-  SafeCompute(pp[1], NULL, m, 0, x);
-#ifdef DEVELOPMENT_CODE
-  DCASSERT(x.isNormal());
-  set_result* ss = dynamic_cast<set_result*> (x.other);
-  DCASSERT(ss);
-#else
-  set_result* ss = (set_result*) x.other;
-#endif
+  SafeCompute(pp[1], x);
+  DCASSERT(x.answer->isNormal());
+  set_result* ss = smart_cast<set_result*> (x.answer->other);
 
 #ifdef DEBUG
   Output << "\tgot param: " << ss << "\n";
   Output.flush();
 
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m->Read(0));
+  PrintResult(Output, INT, x.current->Read(0));
   Output << "\n";
   Output.flush();
 #endif
 
   result current;
   current.Clear();
-  current.other = mc->GetState4Measure(m->Read(0).ivalue);
-  x.bvalue = (ss->IndexOf(current) >= 0);
+  current.other = mc->GetState4Measure(x.current->Read(0).ivalue);
+  x.answer->bvalue = (ss->IndexOf(current) >= 0);
 }
 
 void Add_instates(PtrTable *fns)
@@ -726,18 +718,20 @@ void Add_instates(PtrTable *fns)
 // *                       transient                      *
 // ********************************************************
 
-void compute_mc_transient(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_mc_transient(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==1);
   DCASSERT(pp);
-  markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
+  markov_model *mm = smart_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  state_model *dsm = dynamic_cast<state_model*>(mm->GetModel());
+  state_model *dsm = smart_cast<state_model*>(mm->GetModel());
   DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking transient\n";
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m->Read(0));
+  PrintResult(Output, INT, x.current->Read(0));
   Output << "\n";
   Output.flush();
 #endif
@@ -745,8 +739,8 @@ void compute_mc_transient(expr **pp, int np, Rng *, const state *m, result &x)
   DCASSERT(dsm->mc);
   DCASSERT(dsm->mc->Explicit());
 
-  x.Clear();
-  x.bvalue = dsm->mc->Explicit()->isTransient(m->Read(0).ivalue);
+  x.answer->Clear();
+  x.answer->bvalue = dsm->mc->Explicit()->isTransient(x.current->Read(0).ivalue);
 }
 
 void Add_transient(PtrTable *fns)
@@ -765,18 +759,20 @@ void Add_transient(PtrTable *fns)
 // *                       absorbing                      *
 // ********************************************************
 
-void compute_mc_absorbing(expr **pp, int np, Rng *, const state *m, result &x)
+void compute_mc_absorbing(expr **pp, int np, compute_data &x)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
   DCASSERT(np==1);
   DCASSERT(pp);
-  markov_model *mm = dynamic_cast<markov_model*>(pp[0]);
+  markov_model *mm = smart_cast<markov_model*>(pp[0]);
   DCASSERT(mm);
-  state_model *dsm = dynamic_cast<state_model*>(mm->GetModel());
+  state_model *dsm = smart_cast<state_model*>(mm->GetModel());
   DCASSERT(dsm);
 #ifdef DEBUG
   Output << "Checking absorbing\n";
   Output << "\tcurrent state: ";
-  PrintResult(Output, INT, m->Read(0));
+  PrintResult(Output, INT, x.current->Read(0));
   Output << "\n";
   Output.flush();
 #endif
@@ -784,8 +780,8 @@ void compute_mc_absorbing(expr **pp, int np, Rng *, const state *m, result &x)
   DCASSERT(dsm->mc);
   DCASSERT(dsm->mc->Explicit());
 
-  x.Clear();
-  x.bvalue = dsm->mc->Explicit()->isAbsorbing(m->Read(0).ivalue);
+  x.answer->Clear();
+  x.answer->bvalue = dsm->mc->Explicit()->isAbsorbing(x.current->Read(0).ivalue);
 }
 
 void Add_absorbing(PtrTable *fns)

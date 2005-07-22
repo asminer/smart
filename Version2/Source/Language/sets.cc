@@ -742,7 +742,7 @@ void int_setexpr_interval::Compute(compute_data &x)
 {
   DCASSERT(x.answer); 
   DCASSERT(0==x.aggregate);
-  DCASSERT(NULL==x.rng_stream);
+  DCASSERT(NULL==x.stream);
   DCASSERT(NULL==x.current);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
@@ -868,12 +868,8 @@ void intset_union::Compute(compute_data &x)
       delete ans;
       return;
     }
-#ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.answer->other);
+    set_result *s = smart_cast<set_result*> (x.answer->other);
     DCASSERT(s);
-#else
-    set_result *s = (set_result*) x.answer->other;
-#endif
     for (int e=0; e<s->Size(); e++) {
       s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
@@ -924,12 +920,10 @@ void int2realset::Compute(compute_data &x)
   DCASSERT(opnd);
   opnd->Compute(x);
   if (x.answer->isNull() || x.answer->isError()) return;
-#ifdef DEVELOPMENT_CODE
-  set_result* xs = dynamic_cast<set_result*> (x.answer->other);
+
+  set_result* xs = smart_cast<set_result*> (x.answer->other);
   DCASSERT(xs);
-#else
-  set_result* xs = (set_result*) x.answer->other;
-#endif
+
   x.answer->other = new int_realset(xs);
 }
 
@@ -976,7 +970,7 @@ void real_setexpr_interval::Compute(compute_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
-  DCASSERT(NULL==x.rng_stream);
+  DCASSERT(NULL==x.stream);
   DCASSERT(NULL==x.current);
   result s,e,i;
   if (!setexpr_interval::ComputeAndCheck(s,e,i,x)) return;
@@ -1102,12 +1096,10 @@ void realset_union::Compute(compute_data &x)
       delete ans;
       return;
     }
-#ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.answer->other);
+
+    set_result *s = smart_cast<set_result*> (x.answer->other);
     DCASSERT(s);
-#else
-    set_result *s = (set_result*) x.answer->other;
-#endif
+
     for (int e=0; e<s->Size(); e++) {
       s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
@@ -1173,7 +1165,7 @@ void voidset_element::Compute(compute_data &x)
   int* order = new int[1];
   SafeCompute(opnd, x); 
   DCASSERT(x.answer->isNormal());
-  values[0] = dynamic_cast<symbol*> (x.answer->other); 
+  values[0] = smart_cast<symbol*> (x.answer->other); 
   DCASSERT(values[0]);
   order[0] = 0;
    
@@ -1230,21 +1222,13 @@ void voidset_union::Compute(compute_data &x)
       delete ans;
       return;
     }
-#ifdef DEVELOPMENT_CODE
-    set_result *s = dynamic_cast<set_result*> (x.answer->other);
+    set_result *s = smart_cast<set_result*> (x.answer->other);
     DCASSERT(s);
-#else
-    set_result *s = (set_result*) x.answer->other;
-#endif
     for (int e=0; e<s->Size(); e++) {
       s->GetElement(e, x.answer);
       DCASSERT(x.answer->isNormal());
-#ifdef DEVELOPMENT_CODE
-      symbol *xo = dynamic_cast<symbol*>(x.answer->other);
+      symbol *xo = smart_cast<symbol*>(x.answer->other);
       DCASSERT(xo);
-#else
-      symbol *xo = (symbol*) x.answer->other;
-#endif
       ans->AddElement(xo);
     } 
     Delete(s);

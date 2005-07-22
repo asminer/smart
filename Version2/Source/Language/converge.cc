@@ -296,8 +296,8 @@ void array_guess_stmt::InitialGuess()
   char* name = strdup(var->Name());
   thisvar = MakeConvergeVar(REAL, name, Filename(), Linenumber());
   var->SetCurrentReturn(thisvar);
-  cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
-  DCASSERT(v!=NULL);
+  cvgfunc* v = smart_cast <cvgfunc*> (thisvar);
+  DCASSERT(v);
   DCASSERT(v->status != CS_Computed);
 
   // Compute the guess  value
@@ -311,8 +311,8 @@ void array_guess_stmt::InitialGuess()
 void array_guess_stmt::Affix()
 {
   symbol* thisvar = var->GetCurrentReturn();
-  cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
-  DCASSERT(v!=NULL);
+  cvgfunc* v = smart_cast <cvgfunc*> (thisvar);
+  DCASSERT(v);
   v->status = CS_Computed;
   var->status = CS_Computed;
 }
@@ -380,8 +380,8 @@ void array_assign_stmt::Execute()
     thisvar = MakeConvergeVar(REAL, name, Filename(), Linenumber());
     var->SetCurrentReturn(thisvar);
   }
-  cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
-  DCASSERT(v!=NULL);
+  cvgfunc* v = smart_cast <cvgfunc*> (thisvar);
+  DCASSERT(v);
   DCASSERT(v->status != CS_Computed);
 
   // Compute the new value
@@ -395,7 +395,8 @@ void array_assign_stmt::Execute()
 bool array_assign_stmt::HasConverged()
 {
   symbol* thisvar = var->GetCurrentReturn();
-  cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
+  cvgfunc* v = smart_cast <cvgfunc*> (thisvar);
+  DCASSERT(v);
   DCASSERT(v!=NULL);
   if (!v->was_updated) v->UpdateAndCheck();
   return v->hasconverged;
@@ -404,8 +405,8 @@ bool array_assign_stmt::HasConverged()
 void array_assign_stmt::Affix()
 {
   symbol* thisvar = var->GetCurrentReturn();
-  cvgfunc* v = dynamic_cast<cvgfunc*>(thisvar);
-  DCASSERT(v!=NULL);
+  cvgfunc* v = smart_cast <cvgfunc*> (thisvar);
+  DCASSERT(v);
   v->status = CS_Computed;
   var->status = CS_Computed;
 }
