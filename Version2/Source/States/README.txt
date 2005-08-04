@@ -20,6 +20,10 @@ reachset	Class used to store a reachability set.
 			(eventually: either canonical order or lexical)
 		"evmdd", a K-level MDD with offsets stored along edges.
 
+mdds		Temporary mdd library
+
 testflat	Not included in SMART, but used to test the
 		state_array class in flatss.
+
+testmdd		Not included in SMART; used to test the mdd library
 
