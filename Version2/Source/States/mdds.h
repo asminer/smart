@@ -19,6 +19,8 @@ class node_manager {
   int a_last;
   /// Pointer to unused address list.
   int a_unused;
+  /// Tail of unused address list.
+  int a_unused_tail;
   
   /** Data for each node. 
       The following format is used:

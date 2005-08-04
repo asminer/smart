@@ -47,16 +47,37 @@ int node_manager::TempNode(int k, int sz)
     }
 }
 
+inline int digits(int a) 
+{
+  int d = 1;
+  while (a) { d++; a/=10; }
+  return d;
+}
+
 void node_manager::Dump(OutputStream &s) const
 {
-  s << "Deleted nodes list: ";
-  if (a_unused) {
-    for (int x=a_unused; x; x=addresses[x]) s << x << ' ';
-  } else {
-    s << "empty";
-  }
-  s << '\n';
-  s.flush();
+  s << "Nodes: \n";
+  int width = digits(a_last);
+  int p;
+  int x = a_unused;
+  for (p=0; p<=a_last; p++) {
+    s.Put(p, width);
+    s << ": ";
+    if (p<2) {
+      s << "terminal\n";
+      s.flush();	
+      continue;
+    }
+    if (p==x) {
+      s << "DELETED\n";
+      x=addresses[x];  // next deleted
+      s.flush();	
+      continue;
+    } 
+    s << "addr " << addresses[p] << "\n";
+    // show node details...
+    s.flush();	
+  } // for p
 }
 
 // ------------------------------------------------------------------
@@ -69,6 +90,7 @@ int node_manager::NextFreeNode()
     // grab a recycled index
     int p = a_unused;
     a_unused = addresses[p];
+    if (0==a_unused) a_unused_tail = 0;
     return p;
   }
   // new index
@@ -90,6 +112,19 @@ void node_manager::FreeNode(int p)
     a_last--;
     return;
   }
+  if (p>a_unused_tail) {
+    // Definitely the tail
+    addresses[p] = 0;
+    if (a_unused_tail) {
+      // we're at the end of an existing list
+      addresses[a_unused_tail] = p;
+      a_unused_tail = p;
+    } else {
+      // empty list
+      a_unused = a_unused_tail = p;
+    }
+    return;
+  }
   // find spot in list
   int prev = 0;
   int next = a_unused;
@@ -98,6 +133,7 @@ void node_manager::FreeNode(int p)
     next = addresses[next];
   }
   addresses[p] = next;
+  DCASSERT(next);  // we should have handled this case already
   if (prev) addresses[prev] = p;
   else a_unused = p;
 }
