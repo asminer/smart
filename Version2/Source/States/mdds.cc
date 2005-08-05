@@ -4,9 +4,11 @@
 #include "mdds.h"
 #include "../Base/errors.h"
 
+const int Add_Size = 1024;
+
 node_manager::node_manager()
 {
-  a_size = 1024;
+  a_size = Add_Size;
   addresses = (int*) malloc(a_size*sizeof(int));
   flags = (char*) malloc(a_size);
   a_last = 1;
@@ -16,8 +18,11 @@ node_manager::node_manager()
   addresses[1] = 0;
   // Also useful
   flags[0] = flags[1] = Terminal;
+#ifdef DEVELOPMENT_CODE
+  for (int f=2; f<a_size; f++) flags[f] = Deleted;
+#endif
 
-  d_size = 1024;
+  d_size = Add_Size;
   data = (int*) malloc(d_size*sizeof(int));
   d_last = 0;
   d_unused = 0;
@@ -34,7 +39,7 @@ node_manager::~node_manager()
 void node_manager::Unlink(int p)
 {
   if (p<2) return;
-  DCASSERT(isActive(p));
+  DCASSERT(isNodeActive(p));
   // decrement incoming count
   int* foo = data+addresses[p];
   DCASSERT(foo[0]>0);
@@ -196,13 +201,16 @@ int node_manager::NextFreeNode()
   // new index
   a_last++;
   if (a_last>=a_size) {
-    a_size += 1024;
+    a_size += Add_Size;
     addresses = (int*) realloc(addresses, a_size * sizeof(int));
     if (NULL==addresses)
       OutOfMemoryError("Too many MDD nodes");
     flags = (char*) realloc(flags, a_size);
     if (NULL==flags)
       OutOfMemoryError("Too many MDD nodes");
+#ifdef DEVELOPMENT_CODE
+    for (int f=a_last; f<a_size; f++) flags[f] = Deleted;
+#endif
   }
   return a_last;
 }
@@ -279,9 +287,9 @@ int node_manager::FindHole(int slots)
   // can't recycle; grab from the end
   if (d_last + slots >= d_size) {
     // not enough space, extend
-    int np = 1+ (slots / 1024);
-    d_size += np * 1024;
-    data = (int*) realloc(data, d_size);
+    int np = 1+ (slots / Add_Size);
+    d_size += np * Add_Size;
+    data = (int*) realloc(data, d_size*sizeof(int));
     if (NULL==data)
       OutOfMemoryError("No space for MDD nodes");
   }
