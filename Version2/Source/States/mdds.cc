@@ -243,10 +243,39 @@ void node_manager::FreeNode(int p)
 
 int node_manager::FindHole(int slots)
 {
+  const int min_node_size = 6;
   DCASSERT(slots>2);
-  if (d_unused) {
-    // look for a hole; implement later
-  }
+
+  // look for a hole
+  int prev = 0;
+  int curr = d_unused;
+  while (curr) {
+    if (data[curr+1] == slots) {
+      // perfect fit, remove hole completely
+      if (prev) {
+        data[prev] = data[curr];
+      } else {
+	d_unused = data[curr];
+      }
+      hole_slots -= slots;
+      return curr;
+    } 
+    if (data[curr+1] >= slots + min_node_size) {
+      // fits but creates another hole
+      if (prev) {
+        data[prev] = curr + slots;
+      } else {
+	d_unused = curr + slots;
+      }
+      data[curr+slots+1] = data[curr+1] - slots;  // new hole size
+      hole_slots -= slots;
+      return curr;
+    }
+    // this hole not large enough, try the next one
+    prev = curr;
+    curr = data[curr];
+  } // while curr
+
   // can't recycle; grab from the end
   if (d_last + slots >= d_size) {
     // not enough space, extend
