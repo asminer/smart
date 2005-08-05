@@ -6,14 +6,22 @@
 
 /* Temporary, until we have a proper mdd library. */
 
-const char Marked = 0x01;
-const char Reduced = 0x02;
-const char Sparse = 0x04;
-
 class node_manager {
+  /// Flag: terminal node.
+  static const char Terminal = 0x80;
+  /// Flag: is the node deleted.
+  static const char Deleted = 0x40;
+  /// Flag: is the node Reduced. 
+  static const char Reduced = 0x20;
+  /// Flag: is the node stored in sparse format.
+  static const char Sparse = 0x10;
+  // other flags?
+
   /** For each node, its index in the data array. */
   int* addresses;
-  /// Size of addresses array.
+  /** For each node, its flag. */
+  char* flags;
+  /// Size of addresses/flags array.
   int a_size;
   /// Last used address.
   int a_last;
@@ -23,39 +31,36 @@ class node_manager {
   int a_unused_tail;
   
   /** Data for each node. 
-      The following format is used:
- 	1 byte: flags
-	1 int: incoming reference count
-	1 int: number of cache entries
-	1 int: level
-	1 int: #full entries / #nonzeroes
-	entries follow...
+      Each node stores the following 4 integers, then the actual node data:
+	incoming reference count
+	number of cache entries
+	level
+	#full entries / #nonzeroes
+
+      For "holes", instead the 2 integers are used:
+        next hole index
+	hole size (#integers)
   */
-  char* data;
+  int* data;
   /// Size of data array.
   int d_size;
-  /// Last used data slot.  Also total number of bytes "allocated"
+  /// Last used data slot.  Also total number of ints "allocated"
   int d_last;
   /// Pointer to data holes list.
   int d_unused;
-  /// Total bytes in holes
-  int hole_bytes;
+  /// Total ints in holes
+  int hole_slots;
 
 public:
   node_manager();
   ~node_manager();
 
-  inline void Link(int p) { 
-    if (p<2) return;
-    int* refcount = (int*) (data+addresses[p]+1);
-    (*refcount) ++;
-  }  
+  inline bool isNodeActive(int p) const {
+    return ((flags[p] & Deleted)==0);
+  }
 
-  inline void Unlink(int p) {
-    if (p<2) return;
-    int* refcount = (int*) (data+addresses[p]+1);
-    DCASSERT(*refcount > 0);
-    (*refcount) --;
+  inline bool isNodeDeleted(int p) const {
+    return (flags[p] & Deleted);
   }
 
   inline bool isNodeSparse(int p) const {
@@ -66,47 +71,44 @@ public:
     return (data[addresses[p]] & Reduced);
   }
 
+  inline void Link(int p) { 
+    DCASSERT(isNodeActive(p));
+    if (p<2) return;
+    data[addresses[p]]++;
+  }  
+
+  void Unlink(int p);
+
   inline void SetArc(int p, int i, int d) {
+    DCASSERT(isNodeActive(p));
     DCASSERT(!isNodeReduced(p));
-    int* sz = (int*) (data + addresses[p] + 1 + 3*sizeof(int));
+    int* sz = data + addresses[p] + 3;
     CHECK_RANGE(0, i, sz[0]);
-    i++;
-    if (sz[i] != d) {
-      Unlink(sz[i]);  
+    sz += i+1;
+    if (sz[0] != d) {
+      Unlink(sz[0]);  
       Link(d);
-      sz[i] = d;
+      sz[0] = d;
     }
   }
 
   inline int NodeLevel(int p) const {
+    DCASSERT(isNodeActive(p));
     if (p<2) return 0;
-    int* foo = (int*) (data + addresses[p] + 1 + 2*sizeof(int));
-    return *foo;
+    return data[addresses[p]+2];
   }
 
   inline int NodeSize(int p) const {
-    int* sz = (int*) (data + addresses[p] + 1 + 3*sizeof(int));
-    return *sz; 
-  }
-
-  inline int NodeMemory(int p) const {
-    if (isNodeSparse(p)) {
-      // sparse storage
-      int* nnz = (int*) (data + addresses[p] + 1 + 3*sizeof(int));
-      return 1+(4+(*nnz)*2)*sizeof(int); 
-    } else {
-      // full storage
-      int* size = (int*) (data + addresses[p] + 1 + 3*sizeof(int));
-      return 1+(4+(*size))*sizeof(int);
-    }
+    DCASSERT(p>1);
+    DCASSERT(isNodeActive(p));
+    return data[addresses[p]+3];
   }
 
   int TempNode(int k, int sz); 
-  void DoneNode(int p);
   void Dump(OutputStream &s) const; 
 protected:
   int NextFreeNode();
   void FreeNode(int p);
-  int FindHole(int bytes);
-  void MakeHole(int addr, int bytes);
+  int FindHole(int slots);
+  void MakeHole(int addr, int slots);
 };

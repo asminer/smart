@@ -25,7 +25,7 @@ int main()
 
       case 'd':
         Input.Get(p);
-        bar.DoneNode(p);
+        bar.Unlink(p);
 	bar.Dump(Output);
 	break;
         
