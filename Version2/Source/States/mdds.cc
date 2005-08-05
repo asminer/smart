@@ -6,54 +6,37 @@
 
 node_manager::node_manager()
 {
-  a_size = 256;
+  a_size = 1024;
   addresses = (int*) malloc(a_size*sizeof(int));
+  flags = (char*) malloc(a_size);
   a_last = 1;
   a_unused = a_unused_tail = 0;
   // just in case
   addresses[0] = 0;
   addresses[1] = 0;
+  // Also useful
+  flags[0] = flags[1] = Terminal;
 
   d_size = 1024;
-  data = (char*) malloc(d_size);
+  data = (int*) malloc(d_size*sizeof(int));
   d_last = 0;
   d_unused = 0;
-  hole_bytes = 0;
+  hole_slots = 0;
 }
 
 node_manager::~node_manager()
 {
   free(addresses);
+  free(flags);
   free(data);
 }
 
-int node_manager::TempNode(int k, int sz)
-{
-    DCASSERT(sz>0);
-    int p = NextFreeNode();
-    addresses[p] = FindHole(1+(4+sz)*sizeof(int));
-    char* flags = data+addresses[p];
-    *flags = 0;
-    int* foo = (int*) (flags+1);
-    foo[0] = 1; // #incoming
-    foo++;
-    foo[0] = 0; // #cache entries
-    foo++;
-    foo[0] = k; // level
-    foo++;
-    foo[0] = sz; // size
-    // downward pointers
-    for (; sz; sz--) {
-      foo++;
-      foo[0] = 0;
-    }
-}
-
-void node_manager::DoneNode(int p)
+void node_manager::Unlink(int p)
 {
   if (p<2) return;
+  DCASSERT(isActive(p));
   // decrement incoming count
-  int* foo = (int*) (data+addresses[p]+1);
+  int* foo = data+addresses[p];
   DCASSERT(foo[0]>0);
   foo[0]--;
   if (foo[0]) return;
@@ -62,29 +45,50 @@ void node_manager::DoneNode(int p)
   // recycle this node
 
   // done with children
-  char flags = data[addresses[p]];
-  if (flags & Sparse) {
+  if (flags[p] & Sparse) {
     // Sparse encoding
     int* ptr = foo+4;
     for (int sz=foo[3]; sz; sz--) {
-      DoneNode(ptr[0]);
+      Unlink(ptr[0]);
       ptr += 2; 
     }
     // Recycle node memory
-    MakeHole(addresses[p], 1+4*sizeof(int) + foo[3]*2*sizeof(int));  
+    MakeHole(addresses[p], 4 + foo[3]*2);  
   } else {
     // Full encoding
     int* ptr = foo+4;
     for (int sz=foo[3]; sz; sz--) {
-      DoneNode(ptr[0]);
+      Unlink(ptr[0]);
       ptr++;
     }
     // Recycle node memory
-    MakeHole(addresses[p], 1+(4 + foo[3])*sizeof(int));  
+    MakeHole(addresses[p], 4 + foo[3]);  
   }
 
   // recycle the index
   FreeNode(p);
+  flags[p] = Deleted;
+}
+
+int node_manager::TempNode(int k, int sz)
+{
+  DCASSERT(sz>0);
+  int p = NextFreeNode();
+  addresses[p] = FindHole(4+sz);
+  flags[p] = 0; 
+  int* foo = (data+addresses[p]);
+  foo[0] = 1; // #incoming
+  foo++;
+  foo[0] = 0; // #cache entries
+  foo++;
+  foo[0] = k; // level
+  foo++;
+  foo[0] = sz; // size
+  // downward pointers
+  for (; sz; sz--) {
+    foo++;
+    foo[0] = 0;
+  }
 }
 
 inline int digits(int a) 
@@ -96,69 +100,83 @@ inline int digits(int a)
 
 void node_manager::Dump(OutputStream &s) const
 {
-  s << "Nodes: \n";
-  int width = digits(a_last);
+  int nwidth = digits(a_last);
+  s << "\nFirst free node: " << a_unused << "\n";
+  s << "Nodes: \n#";
+  s.Pad(' ', nwidth-1);
+  s << " \tFlags\tAddr/next\n";
   int p;
-  int x = a_unused;
   for (p=0; p<=a_last; p++) {
     s.flush();	
-    s.Put(p, width);
-    s << ": ";
-    if (p<2) {
-      s << "terminal\n";
-      continue;
-    }
-    if (p==x) {
-      s << "DELETED\n";
-      x=addresses[x];  // next deleted
-      continue;
-    } 
-    s << "addr " << addresses[p] << "\n";
+    s.Put(p, nwidth);
+    s << " \t";
+    if (flags[p] & Terminal) s << 'T'; else s << '.';  
+    if (flags[p] & Deleted)  s << 'D'; else s << '.';
+    if (flags[p] & Reduced)  s << 'R'; else s << '.';
+    if (flags[p] & Sparse)   s << 'S'; else s << 'F';
+    // other flags?
+    s << "\t" << addresses[p] << "\n";
   } // for p
   
+  s << "\nIndex of first hole: " << d_unused << "\n";
   s << "Array by record: \n";
-  width = digits(d_last);
+  int awidth = digits(d_last);
   int y = d_unused;
-  for (int a=1; a<=d_last; ) {
+  int a;
+  for (a=1; a<=d_last; ) {
     s.flush();
-    s.Put(a, width);
+    s.Put(a, awidth);
     s << ": ";
     if (a==y) {
-      s << "hole ";
-      int* d = (int*) (data+y);
-      s << d[1] << " bytes\n";
-      y = d[0];
-      a+= d[1];
+      s << "hole with " << data[a+1] << " slots; next is " << data[a] << "\n";
+      y = data[a];
+      a+= data[a+1];
       continue;
     } 
     // must be a node
-    int flags = data[a];
-    s << "flags " << flags;
-    int* foo = (int*) (data+a+1);
-    s << "   in " << foo[0];
-    s << "   cc " << foo[1];
-    s << "   level " << foo[2];
-    if (flags & Sparse) {
+    // VERY slow, but for display, we don't care
+    // Find the node index (necessary for flags)
+    for (p=0; p<=a_last; p++) {
+      if (flags[p] & Terminal) continue;
+      if (flags[p] & Deleted) continue;
+      if (addresses[p] == a) break;
+    }
+    DCASSERT(p<=a_last);
+    s << "(node ";
+    s.Put(p, nwidth);
+    s << ")   in " << data[a];
+    s << "\t cc " << data[a+1];
+    s << "\t level " << data[a+2];
+    s << "\t size " << data[a+3] << "\t";
+    if (flags[p] & Sparse) {
       s << "  (";
-      for (int nz=0; nz<foo[3]; nz++) {
-        if (nz) s << ", ";
-        s << foo[4+nz*2] << ":" << foo[3+nz*2+1];
+      a += 4; 
+      for (int nz=data[a-1]; nz; nz--) {
+        s << data[a];
+        a++;
+        s << ":" << data[a];
+ 	a++;
+        if (nz>1) s << ", ";
       }
       s << ")\n";
-      a += 1+4*sizeof(int) + 2*foo[3]*sizeof(int);
     } else {
       s << "  [";
-      for (int i=0; i<foo[3]; i++) {
-        if (i) s << "|";
-	s << foo[4+i];
+      a += 4;
+      for (int i=data[a-1]; i; i--) {
+	s << data[a];
+	a++;
+        if (i>1) s << "|";
       }
       s << "]\n";
-      a += 1+(4+foo[3])*sizeof(int);
     }
   } // for a
+  s.Put(a, awidth);
+  s << ": End\n";
+  
 
   // Some stats
-  s << "Node storage is " << d_last << " bytes with " << hole_bytes << " bytes in holes\n";
+  s << "\n" << d_last << " slots allocated, ";
+  s << hole_slots << " slots in holes\n";
   s.flush();
 }
 
@@ -178,9 +196,12 @@ int node_manager::NextFreeNode()
   // new index
   a_last++;
   if (a_last>=a_size) {
-    a_size += 256;
+    a_size += 1024;
     addresses = (int*) realloc(addresses, a_size * sizeof(int));
     if (NULL==addresses)
+      OutOfMemoryError("Too many MDD nodes");
+    flags = (char*) realloc(flags, a_size);
+    if (NULL==flags)
       OutOfMemoryError("Too many MDD nodes");
   }
   return a_last;
@@ -220,29 +241,29 @@ void node_manager::FreeNode(int p)
   else a_unused = p;
 }
 
-int node_manager::FindHole(int bytes)
+int node_manager::FindHole(int slots)
 {
-  DCASSERT(bytes>2*sizeof(int));
+  DCASSERT(slots>2);
   if (d_unused) {
     // look for a hole; implement later
   }
   // can't recycle; grab from the end
-  if (d_last + bytes >= d_size) {
+  if (d_last + slots >= d_size) {
     // not enough space, extend
-    int np = 1+ (bytes / 1024);
+    int np = 1+ (slots / 1024);
     d_size += np * 1024;
-    data = (char*) realloc(addresses, a_size);
+    data = (int*) realloc(data, d_size);
     if (NULL==data)
       OutOfMemoryError("No space for MDD nodes");
   }
   int h = d_last+1;
-  d_last += bytes;
+  d_last += slots;
   return h;
 }
 
-void node_manager::MakeHole(int addr, int bytes)
+void node_manager::MakeHole(int addr, int slots)
 {
-  hole_bytes += bytes;
+  hole_slots += slots;
 
   // search for hole placement
   int pp = 0;
@@ -251,40 +272,35 @@ void node_manager::MakeHole(int addr, int bytes)
   while (next && next < addr) {
     pp = prev;
     prev = next;
-    int* foo = (int*) (data+next);
-    next = foo[0];
+    next = data[next];
   }
 
   // Deal with addr -> next
 
-  int* ad = (int*) (data+addr);
-  if (addr+bytes == next) {
+  if (addr+slots == next) {
     // addr->next is really one big hole; merge it
-    int* nd = (int*) (data+next);
-    bytes += nd[1];
-    ad[1] = bytes;
-    ad[0] = nd[0];
+    slots += data[next+1];
+    data[addr] = data[next];
   } else {
     // addr is separated from next, set up addr hole
-    ad[1] = bytes;
-    ad[0] = next;
+    data[addr] = next;
   }
+  data[addr+1] = slots;
 
   // Deal with prev -> addr
 
   if (prev) {
-    int* pd = (int*) (data+prev);
-    if (prev + pd[1] == addr) {
+    if (prev + data[prev+1] == addr) {
       // prev->addr is one big hole; merge it
-      pd[1] += ad[1];
-      pd[0] = ad[0];
+      data[prev+1] += slots;
+      data[prev] = data[addr];
       // and for simplicity, make addr point to the new hole
       addr = prev;
-      bytes = pd[1]; 
+      slots = data[prev+1];
       prev = pp;
     } else {
       // prev is separated from addr, set up pointers
-      pd[0] = addr;
+      data[prev] = addr;
     }
   } else {
     // addr is front of list now
@@ -292,13 +308,12 @@ void node_manager::MakeHole(int addr, int bytes)
   }
 
   // if addr is the last hole, absorb into free part of array
-  if (addr+bytes-1 == d_last) {
-    d_last -= bytes;
-    hole_bytes -= bytes;
+  if (addr+slots-1 == d_last) {
+    d_last -= slots;
+    hole_slots -= slots;
     // remove last hole from list
     if (pp) {
-      int* ppd = (int*) (data+pp);
-      ppd[0] = 0;  
+      data[pp] = 0;
     } else {
       d_unused = 0;
     }
