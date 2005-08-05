@@ -9,7 +9,7 @@ node_manager::node_manager()
   a_size = 256;
   addresses = (int*) malloc(a_size*sizeof(int));
   a_last = 1;
-  a_unused = 0;
+  a_unused = a_unused_tail = 0;
   // just in case
   addresses[0] = 0;
   addresses[1] = 0;
@@ -28,6 +28,7 @@ node_manager::~node_manager()
 
 int node_manager::TempNode(int k, int sz)
 {
+    DCASSERT(sz>0);
     int p = NextFreeNode();
     addresses[p] = FindHole(1+(4+sz)*sizeof(int));
     char* flags = data+addresses[p];
@@ -39,7 +40,7 @@ int node_manager::TempNode(int k, int sz)
     foo++;
     foo[0] = k; // level
     foo++;
-    foo[0] = sz;
+    foo[0] = sz; // size
     // downward pointers
     for (; sz; sz--) {
       foo++;
@@ -136,5 +137,63 @@ void node_manager::FreeNode(int p)
   DCASSERT(next);  // we should have handled this case already
   if (prev) addresses[prev] = p;
   else a_unused = p;
+}
+
+int node_manager::FindHole(int bytes)
+{
+  DCASSERT(bytes>2*sizeof(int));
+  if (d_unused) {
+    // look for a hole; implement later
+  }
+  // can't recycle; grab from the end
+  if (d_last + bytes >= d_size) {
+    // not enough space, extend
+    int np = 1+ (bytes / 1024);
+    d_size += np * 1024;
+    data = (char*) realloc(addresses, a_size);
+    if (NULL==data)
+      OutOfMemoryError("No space for MDD nodes");
+  }
+  int h = d_last+1;
+  d_last += bytes;
+  return h;
+}
+
+void node_manager::MakeHole(int addr, int bytes)
+{
+  // search for hole placement
+  int pp = 0;
+  int prev = 0;
+  int next = d_unused;
+  while (next && next < addr) {
+    pp = prev;
+    prev = next;
+    int* foo = (int*) (data+next);
+    next = foo[0];
+  }
+
+  // Deal with addr -> next
+
+  int* ad = (int*) (data+addr);
+  if (addr+bytes == next) {
+    // addr->next is really one big hole; merge it
+    int* nd = (int*) (data+next);
+    bytes += nd[1];
+    ad[1] = bytes;
+    ad[0] = nd[0];
+  } else {
+    // addr is separated from next, set up addr hole
+    ad[1] = bytes;
+    ad[0] = next;
+  }
+
+  // Deal with prev -> addr
+
+  if (prev) {
+    // pp -> prev -> addr -> next
+    int* pd = (int*) (data+prev);
+    pd[0] = addr;
+    
+  } 
 }
 
