@@ -101,9 +101,9 @@ public:
 
   int TempNode(int k, int sz); 
   void Dump(OutputStream &s) const; 
+protected:
   int NextFreeNode();
   void FreeNode(int p);
-protected:
-  int FindHole(int bytes) { return 0; }
-  void MakeHole(int addr) { };
+  int FindHole(int bytes);
+  void MakeHole(int addr, int bytes);
 };
