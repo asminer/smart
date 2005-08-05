@@ -34,10 +34,12 @@ class node_manager {
   char* data;
   /// Size of data array.
   int d_size;
-  /// Last used data slot. 
+  /// Last used data slot.  Also total number of bytes "allocated"
   int d_last;
   /// Pointer to data holes list.
   int d_unused;
+  /// Total bytes in holes
+  int hole_bytes;
 
 public:
   node_manager();
@@ -100,6 +102,7 @@ public:
   }
 
   int TempNode(int k, int sz); 
+  void DoneNode(int p);
   void Dump(OutputStream &s) const; 
 protected:
   int NextFreeNode();

@@ -18,6 +18,7 @@ node_manager::node_manager()
   data = (char*) malloc(d_size);
   d_last = 0;
   d_unused = 0;
+  hole_bytes = 0;
 }
 
 node_manager::~node_manager()
@@ -34,7 +35,7 @@ int node_manager::TempNode(int k, int sz)
     char* flags = data+addresses[p];
     *flags = 0;
     int* foo = (int*) (flags+1);
-    foo[0] = 0; // #incoming
+    foo[0] = 1; // #incoming
     foo++;
     foo[0] = 0; // #cache entries
     foo++;
@@ -46,6 +47,44 @@ int node_manager::TempNode(int k, int sz)
       foo++;
       foo[0] = 0;
     }
+}
+
+void node_manager::DoneNode(int p)
+{
+  if (p<2) return;
+  // decrement incoming count
+  int* foo = (int*) (data+addresses[p]+1);
+  DCASSERT(foo[0]>0);
+  foo[0]--;
+  if (foo[0]) return;
+  if (foo[1]) return;  // still in a cache somewhere
+
+  // recycle this node
+
+  // done with children
+  char flags = data[addresses[p]];
+  if (flags & Sparse) {
+    // Sparse encoding
+    int* ptr = foo+4;
+    for (int sz=foo[3]; sz; sz--) {
+      DoneNode(ptr[0]);
+      ptr += 2; 
+    }
+    // Recycle node memory
+    MakeHole(addresses[p], 1+4*sizeof(int) + foo[3]*2*sizeof(int));  
+  } else {
+    // Full encoding
+    int* ptr = foo+4;
+    for (int sz=foo[3]; sz; sz--) {
+      DoneNode(ptr[0]);
+      ptr++;
+    }
+    // Recycle node memory
+    MakeHole(addresses[p], 1+(4 + foo[3])*sizeof(int));  
+  }
+
+  // recycle the index
+  FreeNode(p);
 }
 
 inline int digits(int a) 
@@ -62,23 +101,65 @@ void node_manager::Dump(OutputStream &s) const
   int p;
   int x = a_unused;
   for (p=0; p<=a_last; p++) {
+    s.flush();	
     s.Put(p, width);
     s << ": ";
     if (p<2) {
       s << "terminal\n";
-      s.flush();	
       continue;
     }
     if (p==x) {
       s << "DELETED\n";
       x=addresses[x];  // next deleted
-      s.flush();	
       continue;
     } 
     s << "addr " << addresses[p] << "\n";
-    // show node details...
-    s.flush();	
   } // for p
+  
+  s << "Array by record: \n";
+  width = digits(d_last);
+  int y = d_unused;
+  for (int a=1; a<=d_last; ) {
+    s.flush();
+    s.Put(a, width);
+    s << ": ";
+    if (a==y) {
+      s << "hole ";
+      int* d = (int*) (data+y);
+      s << d[1] << " bytes\n";
+      y = d[0];
+      a+= d[1];
+      continue;
+    } 
+    // must be a node
+    int flags = data[a];
+    s << "flags " << flags;
+    int* foo = (int*) (data+a+1);
+    s << "   in " << foo[0];
+    s << "   cc " << foo[1];
+    s << "   level " << foo[2];
+    if (flags & Sparse) {
+      s << "  (";
+      for (int nz=0; nz<foo[3]; nz++) {
+        if (nz) s << ", ";
+        s << foo[4+nz*2] << ":" << foo[3+nz*2+1];
+      }
+      s << ")\n";
+      a += 1+4*sizeof(int) + 2*foo[3]*sizeof(int);
+    } else {
+      s << "  [";
+      for (int i=0; i<foo[3]; i++) {
+        if (i) s << "|";
+	s << foo[4+i];
+      }
+      s << "]\n";
+      a += 1+(4+foo[3])*sizeof(int);
+    }
+  } // for a
+
+  // Some stats
+  s << "Node storage is " << d_last << " bytes with " << hole_bytes << " bytes in holes\n";
+  s.flush();
 }
 
 // ------------------------------------------------------------------
@@ -161,6 +242,8 @@ int node_manager::FindHole(int bytes)
 
 void node_manager::MakeHole(int addr, int bytes)
 {
+  hole_bytes += bytes;
+
   // search for hole placement
   int pp = 0;
   int prev = 0;
@@ -190,10 +273,35 @@ void node_manager::MakeHole(int addr, int bytes)
   // Deal with prev -> addr
 
   if (prev) {
-    // pp -> prev -> addr -> next
     int* pd = (int*) (data+prev);
-    pd[0] = addr;
-    
-  } 
+    if (prev + pd[1] == addr) {
+      // prev->addr is one big hole; merge it
+      pd[1] += ad[1];
+      pd[0] = ad[0];
+      // and for simplicity, make addr point to the new hole
+      addr = prev;
+      bytes = pd[1]; 
+      prev = pp;
+    } else {
+      // prev is separated from addr, set up pointers
+      pd[0] = addr;
+    }
+  } else {
+    // addr is front of list now
+    d_unused = addr;
+  }
+
+  // if addr is the last hole, absorb into free part of array
+  if (addr+bytes-1 == d_last) {
+    d_last -= bytes;
+    hole_bytes -= bytes;
+    // remove last hole from list
+    if (pp) {
+      int* ppd = (int*) (data+pp);
+      ppd[0] = 0;  
+    } else {
+      d_unused = 0;
+    }
+  }
 }
 
