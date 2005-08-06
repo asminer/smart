@@ -2,12 +2,13 @@
 // $Id$
 
 #include "mdds.h"
+#include "mdds_malloc.h"
 
 void smart_exit()
 {
 }
 
-void AddNode(node_manager &bar)
+void AddNode(mdd_node_manager &bar)
 {
   int k;
   int p;
@@ -27,7 +28,7 @@ void AddNode(node_manager &bar)
   bar.Dump(Output);
 }
 
-void DeleteNode(node_manager &bar)
+void DeleteNode(mdd_node_manager &bar)
 {
   int p;
   Input.Get(p);
@@ -37,7 +38,7 @@ void DeleteNode(node_manager &bar)
 
 int main()
 {
-  node_manager bar;
+  mdd_node_manager bar;
   Output << "Enter command sequence:\n\ta k sz\tto add a node\n\td #\t to delete a node\n";
   Output.flush();
   char cmd;

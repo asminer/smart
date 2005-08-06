@@ -39,52 +39,6 @@ node_manager::~node_manager()
   free(data);
 }
 
-void node_manager::Unlink(int p)
-{
-  if (p<2) return;
-  DCASSERT(isNodeActive(p));
-  // decrement incoming count
-  int* foo = data+address[p];
-  DCASSERT(foo[0]>0);
-  foo[0]--;
-  if (foo[0]) return;
-  if (foo[1]) return;  // still in a cache somewhere
-
-  // recycle this node
-  if (next[p]>-2) {
-#ifdef DEELOPMENT_CODE 
-    int x = unique->Remove(p);
-    DCASSERT(x==p);
-#else
-    unique->Remove(p);
-#endif
-  }
-
-  // done with children
-  if (foo[3]<0) {
-    // Sparse encoding
-    int* ptr = foo+5;
-    for (int sz = foo[3]; sz; sz++) {
-      Unlink(ptr[0]);
-      ptr += 2; 
-    }
-    // Recycle node memory
-    MakeHole(address[p], 4 -2*foo[3]);  
-  } else {
-    // Full encoding
-    int* ptr = foo+4;
-    for (int sz=foo[3]; sz; sz--) {
-      Unlink(ptr[0]);
-      ptr++;
-    }
-    // Recycle node memory
-    MakeHole(address[p], 4 + foo[3]);  
-  }
-
-  // recycle the index
-  FreeNode(p);
-}
-
 int node_manager::Reduce(int p)
 {
   DCASSERT(p>1);
@@ -143,7 +97,10 @@ int node_manager::Reduce(int p)
   }
   // check unique table here
   int q = unique->Insert(p);
-  if (q!=p) Unlink(p);
+  if (q!=p) { 
+    Link(q);
+    Unlink(p);
+  }
   return q;
 }
 
@@ -281,6 +238,44 @@ bool node_manager::equals(int h1, int h2) const
 // ------------------------------------------------------------------
 //  Protected methods
 // ------------------------------------------------------------------
+
+void node_manager::DeleteNode(int p)
+{
+  int* foo = data + address[p];
+  DCASSERT(p>1);
+  if (next[p]>-2) {
+#ifdef DEELOPMENT_CODE 
+    int x = unique->Remove(p);
+    DCASSERT(x==p);
+#else
+    unique->Remove(p);
+#endif
+  }
+
+  // done with children
+  if (foo[3]<0) {
+    // Sparse encoding
+    int* ptr = foo+5;
+    for (int sz = foo[3]; sz; sz++) {
+      Unlink(ptr[0]);
+      ptr += 2; 
+    }
+    // Recycle node memory
+    MakeHole(address[p], 4 -2*foo[3]);  
+  } else {
+    // Full encoding
+    int* ptr = foo+4;
+    for (int sz=foo[3]; sz; sz--) {
+      Unlink(ptr[0]);
+      ptr++;
+    }
+    // Recycle node memory
+    MakeHole(address[p], 4 + foo[3]);  
+  }
+
+  // recycle the index
+  FreeNode(p);
+}
 
 int node_manager::NextFreeNode()
 {
@@ -449,8 +444,8 @@ void node_manager::MakeHole(int addr, int slots)
     d_last -= slots;
     hole_slots -= slots;
     // remove last hole from list
-    if (pp) {
-      data[pp] = 0;
+    if (prev) {
+      data[prev] = 0;
     } else {
       d_unused = 0;
     }
