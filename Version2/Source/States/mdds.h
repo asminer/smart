@@ -3,32 +3,22 @@
 
 #include "../defines.h"
 #include "../Base/streams.h"
+#include "../Templates/hash.h"
 
 /* Temporary, until we have a proper mdd library. */
 
 class node_manager {
-  /// Flag: terminal node.
-  static const char Terminal = 0x80;
-  /// Flag: is the node deleted.
-  static const char Deleted = 0x40;
-  /// Flag: is the node Reduced. 
-  static const char Reduced = 0x20;
-  /// Flag: is the node stored in sparse format.
-  static const char Sparse = 0x10;
-  // other flags?
 
   /** For each node, its index in the data array. */
-  int* addresses;
-  /** For each node, its flag. */
-  char* flags;
-  /// Size of addresses/flags array.
+  int* address;
+  /** Next pointer for uniqueness table. */
+  int* next;
+  /// Size of address/next array.
   int a_size;
   /// Last used address.
   int a_last;
   /// Pointer to unused address list.
   int a_unused;
-  /// Tail of unused address list.
-  int a_unused_tail;
   
   /** Data for each node. 
       Each node stores the following 4 integers, then the actual node data:
@@ -51,30 +41,31 @@ class node_manager {
   /// Total ints in holes
   int hole_slots;
 
+
+  /// Uniqueness table
+  HashTable <node_manager> *unique;
 public:
   node_manager();
   ~node_manager();
 
   inline bool isNodeActive(int p) const {
-    return ((flags[p] & Deleted)==0);
+    if (p<2) return true;
+    return (address[p]);
   }
 
   inline bool isNodeDeleted(int p) const {
-    return (flags[p] & Deleted);
-  }
-
-  inline bool isNodeSparse(int p) const {
-    return (data[addresses[p]] & Sparse);
+    return (0==address[p]);
   }
 
   inline bool isNodeReduced(int p) const {
-    return (data[addresses[p]] & Reduced);
+    DCASSERT(address[p]);
+    return (next[p]>=-1);
   }
 
   inline void Link(int p) { 
     DCASSERT(isNodeActive(p));
     if (p<2) return;
-    data[addresses[p]]++;
+    data[address[p]]++;
   }  
 
   void Unlink(int p);
@@ -82,7 +73,8 @@ public:
   inline void SetArc(int p, int i, int d) {
     DCASSERT(isNodeActive(p));
     DCASSERT(!isNodeReduced(p));
-    int* sz = data + addresses[p] + 3;
+    int* sz = data + address[p] + 3;
+    DCASSERT(sz[0]>0);
     CHECK_RANGE(0, i, sz[0]);
     sz += i+1;
     if (sz[0] != d) {
@@ -95,17 +87,22 @@ public:
   inline int NodeLevel(int p) const {
     DCASSERT(isNodeActive(p));
     if (p<2) return 0;
-    return data[addresses[p]+2];
+    return data[address[p]+2];
   }
 
-  inline int NodeSize(int p) const {
-    DCASSERT(p>1);
-    DCASSERT(isNodeActive(p));
-    return data[addresses[p]+3];
-  }
+  int Reduce(int p);
 
   int TempNode(int k, int sz); 
   void Dump(OutputStream &s) const; 
+
+  // For uniqueness table
+public:
+  inline int getNext(int h) const { DCASSERT(address[h]); return next[h]; }
+  inline void setNext(int h, int n) const { DCASSERT(address[h]); next[h] = n; }
+  inline bool isStale(int h) const { return false; }
+  inline void show(OutputStream &s, int h) const { s.Put(h); }
+  int hash(int h, int M) const;
+  bool equals(int h1, int h2) const;
 protected:
   int NextFreeNode();
   void FreeNode(int p);
