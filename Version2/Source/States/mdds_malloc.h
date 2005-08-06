@@ -7,10 +7,16 @@
 
 /* Temporary, until we have a proper mdd library. */
 
-class node_manager {
+class mdd_node_manager {
 
-  /** For each node, its index in the data array. */
-  int* address;
+  /** Array of node pointers.
+      Each node stores the following 4 integers, then the actual node data:
+	incoming reference count
+	number of cache entries
+	level
+	#full entries (if positive) / #nonzeroes (if negative)
+  */
+  int** address;
   /** Next pointer for uniqueness table. */
   int* next;
   /// Size of address/next array.
@@ -20,32 +26,11 @@ class node_manager {
   /// Pointer to unused address list.
   int a_unused;
   
-  /** Data for each node. 
-      Each node stores the following 4 integers, then the actual node data:
-	incoming reference count
-	number of cache entries
-	level
-	#full entries / #nonzeroes
-
-      For "holes", instead the 2 integers are used:
-        next hole index
-	hole size (#integers)
-  */
-  int* data;
-  /// Size of data array.
-  int d_size;
-  /// Last used data slot.  Also total number of ints "allocated"
-  int d_last;
-  /// Pointer to data holes list.
-  int d_unused;
-  /// Total ints in holes
-  int hole_slots;
-
   /// Uniqueness table
-  HashTable <node_manager> *unique;
+  HashTable <mdd_node_manager> *unique;
 public:
-  node_manager();
-  ~node_manager();
+  mdd_node_manager();
+  ~mdd_node_manager();
 
   inline bool isNodeActive(int p) const {
     if (p<2) return true;
@@ -64,36 +49,34 @@ public:
   inline void Link(int p) { 
     DCASSERT(isNodeActive(p));
     if (p<2) return;
-    data[address[p]]++;
+    address[p][0]++;
   }  
 
   void Unlink(int p) {
     if (p<2) return;
     DCASSERT(isNodeActive(p));
     // decrement incoming count
-    int* foo = data+address[p];
-    DCASSERT(foo[0]>0);
-    foo[0]--;
-    if (foo[0]) return;
-    if (foo[1]) return;  // still in a cache somewhere
+    DCASSERT(address[p][0]>0);
+    address[p][0]--;
+    if (address[p][0]) return; 
+    if (address[p][1]) return;
     DeleteNode(p);
   }
 
   bool CacheDec(int p) {
     if (p<2) return false;
     DCASSERT(address[p]);
-    int* foo = data + address[p];
-    if (foo[0]) return false;
-    DCASSERT(foo[1]>0);
-    foo[1]--;
-    if (0==foo[1]) DeleteNode(p);
+    if (address[p][0]) return false;
+    DCASSERT(address[p][1]>0);
+    address[p][1]--;
+    if (0==address[p][1]) DeleteNode(p);
     return true;
   }
 
   inline void SetArc(int p, int i, int d) {
     DCASSERT(isNodeActive(p));
     DCASSERT(!isNodeReduced(p));
-    int* sz = data + address[p] + 3;
+    int* sz = address[p] + 3;
     DCASSERT(sz[0]>0);
     CHECK_RANGE(0, i, sz[0]);
     sz += i+1;
@@ -104,7 +87,7 @@ public:
   inline int NodeLevel(int p) const {
     DCASSERT(isNodeActive(p));
     if (p<2) return 0;
-    return data[address[p]+2];
+    return address[p][2];
   }
 
   int Reduce(int p);
@@ -124,6 +107,4 @@ protected:
   void DeleteNode(int p);
   int NextFreeNode();
   void FreeNode(int p);
-  int FindHole(int slots);
-  void MakeHole(int addr, int slots);
 };

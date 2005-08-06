@@ -35,12 +35,13 @@ stateheap.o: stateheap.h stateheap.cc
 flatss.o: flatss.h flatss.cc stateheap.h
 	$(CXX) $(CPPFLAGS) -DDEBUG_COMPACT -c flatss.cc
 
-testmdd: testmdd.o mdds.o streams.o errors.o
-	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o streams.o errors.o
+testmdd: testmdd.o mdds.o mdds_malloc.o streams.o errors.o
+	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdds_malloc.o streams.o errors.o
 
-testmdd.o: testmdd.cc mdds.h
+testmdd.o: testmdd.cc mdds.h mdds_malloc.h
 
 mdds.o: mdds.h mdds.cc
+mdds_malloc.o: mdds_malloc.h mdds_malloc.cc
 
 clean:
 	rm *.o $(EXECS)
