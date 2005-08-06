@@ -16,17 +16,19 @@
 	hash(int h, int M);
 
 	equals(int h1, int h2);
+
+	isStale(int h);	 // If true, the node will be removed
 	
 	for debugging:
-	show(int h);
+	show(OutputStream &s, int h);
 */
 
 #ifndef HASH_H
 #define HASH_H
 
-//#define DEBUG_HASH
-
 #include "list.h"
+
+//#define DEBUG_HASH
 
 const int num_hash_sizes = 29;
 const int hash_sizes[num_hash_sizes] = {
@@ -87,20 +89,18 @@ public:
     return hash_sizes[size_index];
   }
   inline int MaxChain() const { return maxchain; }
-#ifdef DEBUG_HASH
-  void Show() const {
+  void Show(OutputStream &s) const {
     int i;
     for (i=0; i<Size(); i++) {
-      Output << "[" << i << "] : ";
+      s << "[" << i << "] : ";
       for (int index = table[i]; index >= 0; index = nodes->getNext(index)) {
-	nodes->show(index);
-        Output << " ";
+	nodes->show(s, index);
+        s << " ";
       }
-      Output << "\n";
-      Output.flush();
+      s << "\n";
+      s.flush();
     }
   }
-#endif
   /// Empty the hash table into a list; returns the list.
   int ConvertToList() {
     int i;
@@ -134,7 +134,7 @@ public:
     if (size_index+1 >= num_hash_sizes) return;
 #ifdef DEBUG_HASH
     Output << "Enlarging table.  Old table:\n";
-    Show();
+    Show(Output);
 #endif
     int ptr = ConvertToList();
     int os = Size();
@@ -145,7 +145,7 @@ public:
     BuildFromList(ptr);
 #ifdef DEBUG_HASH
     Output << "New table:\n";
-    Show();
+    Show(Output);
 #endif
   }
 
@@ -167,14 +167,24 @@ public:
     CHECK_RANGE(0, h, Size());
     int parent = -1;
     int ptr;
-    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
-      if (nodes->equals(key, ptr)) break;
-      parent = ptr;
-    }
+    int next;
+    for (ptr = table[h]; ptr >= 0; ptr = next) {
+      next = nodes->getNext(ptr);
+      if (nodes->isStale(ptr)) {
+        // remove any stale entries we find
+        if (parent>=0) nodes->setNext(parent, next);
+	else table[h] = next;
+	num_entries--;
+      } else {
+	// Not stale
+        if (nodes->equals(key, ptr)) break;
+        parent = ptr;
+      }
+    } // for ptr
     if (ptr >= 0) {
       // remove from current spot
-      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
-      else table[h] = nodes->getNext(ptr);
+      if (parent >= 0) nodes->setNext(parent, next);
+      else table[h] = next;
       // move to front
       nodes->setNext(ptr, table[h]);
       table[h] = ptr;
@@ -214,17 +224,27 @@ public:
     CHECK_RANGE(0, h, Size());
     int parent = -1;
     int ptr;
+    int next;
     int thischain = 0;
-    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+    for (ptr = table[h]; ptr >= 0; ptr = next) {
+      next = nodes->getNext(ptr);
       thischain++;
-      if (nodes->equals(key, ptr)) break;
-      parent = ptr;
-    }
+      if (nodes->isStale(ptr)) {
+        // remove any stale entries we find
+        if (parent>=0) nodes->setNext(parent, next);
+	else table[h] = next;
+	num_entries--;
+      } else {
+	// Not stale
+        if (nodes->equals(key, ptr)) break;
+        parent = ptr;
+      }
+    } // for ptr
     maxchain = MAX(maxchain, thischain);
     if (ptr >= 0) {
       // remove from current spot
-      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
-      else table[h] = nodes->getNext(ptr);
+      if (parent >= 0) nodes->setNext(parent, next);
+      else table[h] = next;
       // move to front
       nodes->setNext(ptr, table[h]);
       table[h] = ptr;

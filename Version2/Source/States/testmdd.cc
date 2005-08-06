@@ -7,27 +7,45 @@ void smart_exit()
 {
 }
 
+void AddNode(node_manager &bar)
+{
+  int k;
+  int p;
+  Input.Get(k);
+  Input.Get(p);
+  int a = bar.TempNode(k, p);
+
+  Output << "Enter " << p << " pointers\n";
+  Output.flush();
+  for (int i=0; i<p; i++) {
+    int d;
+    Input.Get(d);
+    bar.SetArc(a, i, d);
+  }
+  a = bar.Reduce(a);
+  Output << "That is node " << a << "\n";
+  bar.Dump(Output);
+}
+
+void DeleteNode(node_manager &bar)
+{
+  int p;
+  Input.Get(p);
+  bar.Unlink(p);
+  bar.Dump(Output);
+}
+
 int main()
 {
   node_manager bar;
   Output << "Enter command sequence:\n\ta k sz\tto add a node\n\td #\t to delete a node\n";
   Output.flush();
   char cmd;
-  int k, p;
   while (Input.Get(cmd)) {
     switch (cmd) {
-      case 'a':
-   	Input.Get(k);
-	Input.Get(p);
-	bar.TempNode(k, p);
-	bar.Dump(Output);
-	break;
+      case 'a':	AddNode(bar);	break;
 
-      case 'd':
-        Input.Get(p);
-        bar.Unlink(p);
-	bar.Dump(Output);
-	break;
+      case 'd': DeleteNode(bar);	break;
         
       default:
 	continue;

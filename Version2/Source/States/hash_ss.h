@@ -41,7 +41,8 @@ public:
   inline bool equals(int h1, int h2) const { 
     return (0==states->Compare(h1, h2));
   }
-  inline void show(int h) const { Output << h; }
+  inline bool isStale(int h) const { return false; }
+  inline void show(OutputStream &s, int h) const { s.Put(h); }
 };
 
 class hash_states {
