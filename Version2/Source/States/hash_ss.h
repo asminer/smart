@@ -55,7 +55,7 @@ public:
   hash_states(state_array *s);
   ~hash_states();  
 
-  inline void Clear() { Table->ConvertToList(); }
+  inline void Clear() { int dumb; Table->ConvertToList(dumb); }
 
   /// Put states (indices) into the array, in order.
   void FillOrderList(int* order);
