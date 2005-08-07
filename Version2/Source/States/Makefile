@@ -11,7 +11,7 @@ CXX = g++
 CPPFLAGS = -ggdb -DDEVELOPMENT_CODE
 #CPPFLAGS = -O3
 
-EXECS = testflat
+EXECS = testflat testmdd
 
 all: $(EXECS)
 
@@ -35,13 +35,13 @@ stateheap.o: stateheap.h stateheap.cc
 flatss.o: flatss.h flatss.cc stateheap.h
 	$(CXX) $(CPPFLAGS) -DDEBUG_COMPACT -c flatss.cc
 
-testmdd: testmdd.o mdds.o mdds_malloc.o streams.o errors.o
-	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdds_malloc.o streams.o errors.o
+testmdd: testmdd.o mdds.o mdd_ops.o streams.o errors.o
+	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdd_ops.o streams.o errors.o
 
-testmdd.o: testmdd.cc mdds.h mdds_malloc.h
+testmdd.o: testmdd.cc mdds.h mdd_ops.h
 
 mdds.o: mdds.h mdds.cc
-mdds_malloc.o: mdds_malloc.h mdds_malloc.cc
+mdd_ops.o: mdds.h mdd_ops.h mdd_ops.cc
 
 clean:
 	rm *.o $(EXECS)

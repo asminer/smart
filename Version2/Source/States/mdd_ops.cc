@@ -49,11 +49,13 @@ operations::operations(node_manager* m)
 {
   mdd = m;
   union_cache = new binary_cache(mdd);
+  count_cache = new binary_cache(mdd);
 }
 
 operations::~operations()
 {
   delete union_cache;
+  delete count_cache;
 }
 
 int operations::Union(int a, int b)
@@ -86,22 +88,61 @@ int operations::Union(int a, int b)
     // a is sparse
     if (mdd->isNodeSparse(b)) {
       // b is sparse
+      csz = MAX(adown[2*mdd->nnzOf(a)-2], bdown[2*mdd->nnzOf(b)-2]);
+      c = mdd->TempNode(k, csz);
+      // Copy nonzeroes of a to c
+      for (int z = mdd->nnzOf(a)-1; z>=0; z--) {
+        mdd->Link(adown[2*z+1]);
+        mdd->SetArc(c, adown[2*z], adown[2*z+1]);
+      }
+      // Union nonzeroes of b
+      const int* cdown = mdd->NodeData(c);
+      for (int z = 0; z<mdd->nnzOf(b); z++) {
+        int i = bdown[2*z];
+        mdd->SetArc(c, i, Union(cdown[i], bdown[2*z+1]));  
+      }
       // done sparse-sparse
     } else {
       // b is full
+      csz = MAX(mdd->SizeOf(b), adown[2*mdd->nnzOf(a)-2]); 
+      c = mdd->TempNode(k, csz);
+      // Copy b to c
+      for (int i = mdd->SizeOf(b)-1; i>=0; i--) {
+        mdd->Link(bdown[i]);
+        mdd->SetArc(c, i, adown[i]);
+      }
+      // Union nonzeroes of a
+      const int* cdown = mdd->NodeData(c);
+      for (int z = 0; z<mdd->nnzOf(a); z++) {
+        int i = adown[2*z];
+        mdd->SetArc(c, i, Union(cdown[i], adown[2*z+1]));  
+      }
       // done sparse-full
     }
   } else {
     // a is full
     if (mdd->isNodeSparse(b)) {
       // b is sparse
+      csz = MAX(mdd->SizeOf(a), bdown[2*mdd->nnzOf(b)-2]); 
+      c = mdd->TempNode(k, csz);
+      // Copy a to c
+      for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
+        mdd->Link(adown[i]);
+        mdd->SetArc(c, i, adown[i]);
+      }
+      // Union nonzeroes of b
+      const int* cdown = mdd->NodeData(c);
+      for (int z = 0; z<mdd->nnzOf(b); z++) {
+        int i = bdown[2*z];
+        mdd->SetArc(c, i, Union(cdown[i], bdown[2*z+1]));  
+      }
       // done full-sparse
     } else {
       // b is full
       csz = MAX(mdd->SizeOf(a), mdd->SizeOf(b));
       c = mdd->TempNode(k, csz);
       // overlapping part of a and b
-      for (int i = MIN(mdd->SizeOf(a), mdd->SizeOf(b)); i; i--) {
+      for (int i = MIN(mdd->SizeOf(a), mdd->SizeOf(b))-1; i>=0; i--) {
         mdd->SetArc(c, i, Union(adown[i], bdown[i])); 
       } // for i
       // When a is shorter than b
@@ -121,6 +162,26 @@ int operations::Union(int a, int b)
   // common to all
   c = mdd->Reduce(c);
   union_cache->Add(a, b, c);
+  return c;
+}
+
+int operations::Count(int a)
+{
+  if (a<2) return a;
+  int c;
+  if (count_cache->Hit(a, a, c)) return c;
+  c = 0;
+  const int* adown = mdd->NodeData(a);
+  if (mdd->isNodeSparse(a)) {
+    for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
+      c += Count(adown[2*i+1]);
+    }
+  } else {
+    for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
+      c += Count(adown[i]);
+    }
+  }
+  count_cache->Add(a, a, c);
   return c;
 }
 

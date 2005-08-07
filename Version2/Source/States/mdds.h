@@ -1,6 +1,9 @@
 
 // $Id$
 
+#ifndef MDDS_H
+#define MDDS_H
+
 #include "../defines.h"
 #include "../Base/streams.h"
 #include "../Templates/hash.h"
@@ -102,6 +105,12 @@ public:
     DeleteNode(p);
   }
 
+  inline void CacheInc(int p) {
+    if (p<2) return;
+    DCASSERT(address[p]);
+    data[address[p]+1]++;
+  }
+
   inline bool CacheDec(int p) {
     if (p<2) return false;
     DCASSERT(address[p]);
@@ -150,3 +159,6 @@ protected:
   int FindHole(int slots);
   void MakeHole(int addr, int slots);
 };
+
+#endif
+

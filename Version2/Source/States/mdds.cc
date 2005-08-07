@@ -139,12 +139,16 @@ void node_manager::Dump(OutputStream &s) const
   s << "\nFirst free node: " << a_unused << "\n";
   s << "Nodes: \n#";
   s.Pad(' ', nwidth-1);
-  s << " \tAddress\tNext\n";
+  s << " \tAddress\tNext\tHash\n";
   int p;
   for (p=0; p<=a_last; p++) {
     s.flush();	
     s.Put(p, nwidth);
-    s << " \t" << address[p] << "\t" << next[p] << "\n";
+    s << " \t" << address[p] << "\t" << next[p] << "\t";
+    if (address[p]) {
+      s << hash(p, unique->Size()); 
+    }
+    s << "\n";
   } // for p
   
   s << "\nIndex of first hole: " << d_unused << "\n";
@@ -177,7 +181,8 @@ void node_manager::Dump(OutputStream &s) const
     s.Put(p, nwidth);
     s << ")   in " << data[a];
     s << "\t cc " << data[a+1];
-    s << "\t level " << data[a+2];
+    s << "\t level ";
+    if (data[a+2]<0) s << -data[a+2] << "'"; else s << data[a+2];
     s << "\t size " << data[a+3] << "\t";
     if (data[a+3]<0) {
       // sparse
@@ -214,7 +219,40 @@ void node_manager::Dump(OutputStream &s) const
 
 int node_manager::hash(int h, int M) const 
 {
-  return 0;
+  DCASSERT(h);
+  DCASSERT(M);
+  int sz = data[address[h]+3];
+  int a = 0;
+  if (sz>0) {
+    int* ptr = data + address[h] + 3 + sz;
+    int ops = -2;
+    int skip = 1;
+    for (int i=sz; i>0; i-=skip) {
+      a *= 256;
+      a += ptr[0];  
+      a %= M;
+      ops++;
+      if (ops > 2*skip) {  // accelerate through huge nodes
+        skip++;
+      } 
+      ptr -= skip;
+    }
+  }  else {
+    int* ptr = data + address[h] + 3 - 2*sz;
+    int ops = -2;
+    int skip = 1;
+    for (int i=-sz; i>0; i-=skip) {
+      a *= 256;
+      a += ptr[0];  
+      a %= M;
+      ops++;
+      if (ops > 2*skip) {  // accelerate through huge nodes
+        skip++;
+      } 
+      ptr -= 2*skip;
+    }
+  }
+  return a;
 }
 
 bool node_manager::equals(int h1, int h2) const 
