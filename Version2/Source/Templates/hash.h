@@ -102,14 +102,20 @@ public:
     }
   }
   /// Empty the hash table into a list; returns the list.
-  int ConvertToList() {
+  int ConvertToList(int& listlength) {
     int i;
+    listlength = 0;
     int front = -1;
     for (i=0; i<Size(); i++) {
       while (table[i] >= 0) {
 	int foo = nodes->getNext(table[i]);
-        nodes->setNext(table[i], front);
-	front = table[i];
+        if (nodes->isStale(table[i])) {
+          // don't add to list
+        } else {
+          nodes->setNext(table[i], front);
+	  front = table[i];
+          listlength++;
+        }
 	table[i] = foo;
 	num_entries--;
       } // while
@@ -136,12 +142,16 @@ public:
     Output << "Enlarging table.  Old table:\n";
     Show(Output);
 #endif
-    int ptr = ConvertToList();
+    int length;
+    int ptr = ConvertToList(length);
     int os = Size();
-    size_index++;
-    table = (int*) realloc(table, sizeof(int) * Size());
-    if (Size() && (NULL==table)) OutOfMemoryError("Hash table resize");
-    for (int i=os; i<Size(); i++) table[i] = -1;
+    // Don't expand if lots of stale entries were removed
+    if (length >= os) {
+      size_index++;
+      table = (int*) realloc(table, sizeof(int) * Size());
+      if (Size() && (NULL==table)) OutOfMemoryError("Hash table resize");
+      for (int i=os; i<Size(); i++) table[i] = -1;
+    }
     BuildFromList(ptr);
 #ifdef DEBUG_HASH
     Output << "New table:\n";

@@ -61,6 +61,29 @@ public:
     return (next[p]>=-1);
   }
 
+  inline bool isNodeSparse(int p) const {
+    DCASSERT(address[p]);
+    return (data[address[p]+3]<0);
+  }
+
+  inline int SizeOf(int p) const {
+    DCASSERT(address[p]);
+    DCASSERT(data[address[p]+3]>0);
+    return data[address[p]+3];
+  }
+
+  inline int nnzOf(int p) const {
+    DCASSERT(address[p]);
+    DCASSERT(data[address[p]+3]<0);
+    return -data[address[p]+3];
+  }
+
+  // this should be read--only!
+  inline const int* NodeData(int p) const {
+    DCASSERT(address[p]);
+    return data+address[p]+4;
+  }
+
   inline void Link(int p) { 
     DCASSERT(isNodeActive(p));
     if (p<2) return;
@@ -79,7 +102,7 @@ public:
     DeleteNode(p);
   }
 
-  bool CacheDec(int p) {
+  inline bool CacheDec(int p) {
     if (p<2) return false;
     DCASSERT(address[p]);
     int* foo = data + address[p];
