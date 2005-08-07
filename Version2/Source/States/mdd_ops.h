@@ -30,9 +30,9 @@ public:
 
   void Add(int a, int b, int c) {
     int h = NewNode();
-    nodeheap[h].a = a;
-    nodeheap[h].b = b;
-    nodeheap[h].c = c;
+    mdd->CacheInc(nodeheap[h].a = a);
+    mdd->CacheInc(nodeheap[h].b = b);
+    mdd->CacheInc(nodeheap[h].c = c);
 #ifdef DEVELOPMENT_CODE
     int i = table->Insert(h);
     DCASSERT(i==h);
@@ -89,9 +89,16 @@ class operations {
 
   // caches
   binary_cache* union_cache;
+  binary_cache* count_cache;
 public:
   operations(node_manager* m);
   ~operations();
 
   int Union(int a, int b);
+  inline int Upings() const { return union_cache->Pings(); }
+  inline int Uhits() const { return union_cache->Hits(); }
+
+  int Count(int a);
+
+
 };
