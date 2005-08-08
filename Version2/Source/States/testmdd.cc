@@ -11,6 +11,7 @@ node_manager bar;
 operations cruft(&bar);
 
 //#define SHOW_MXD
+//#define SHOW_FINAL
 
 void ReadMDD(const char* filename)
 {
