@@ -408,6 +408,7 @@ int node_manager::FindHole(int slots)
       } else {
 	d_unused = curr + slots;
       }
+      data[curr+slots] = data[curr];		  // next ptr
       data[curr+slots+1] = data[curr+1] - slots;  // new hole size
       hole_slots -= slots;
       return curr;

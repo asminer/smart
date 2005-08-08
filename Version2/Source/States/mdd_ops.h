@@ -90,8 +90,11 @@ class operations {
 
   // caches
   binary_cache* union_cache;
-  binary_cache* count_cache;
   binary_cache* fire_cache;
+
+  // used for counting
+  int* counts;
+  int countsize;
 
   // used by saturation
   int K;
@@ -119,5 +122,5 @@ protected:
   void TopSaturate(int p);  
   void Saturate(int p);  
   int RecFire(int p, int mxd);
-  void FireRow(int s, int pd, int row);
+  bool FireRow(int s, int pd, int row);
 };
