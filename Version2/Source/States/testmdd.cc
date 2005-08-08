@@ -3,9 +3,25 @@
 
 #include "mdds.h"
 #include "mdd_ops.h"
+#include <stdlib.h>
 
-void ReadMDD(node_manager &bar, InputStream &in)
+int* root;
+int* size;
+node_manager bar;
+operations cruft(&bar);
+
+//#define SHOW_MXD
+
+void ReadMDD(const char* filename)
 {
+  FILE* foo = fopen(filename, "r"); 
+  if (NULL==foo) {
+    Output << "Couldn't open file " << filename << "\n"; 
+    Output.flush();
+    return;
+  }
+  InputStream in(foo);
+
   // File format is:
   // index
   // level
@@ -18,12 +34,14 @@ void ReadMDD(node_manager &bar, InputStream &in)
   indexmap[1] = 1;
   
   int index;
+  int level;
   while (in.Get(index)) {
-    int k;
     int sz;
-    in.Get(k);
+    in.Get(level);
     in.Get(sz);
-    int n = bar.TempNode(k, sz);
+    if (level>0) size[level] = MAX(size[level], sz);
+    if (level<0) size[-level] = MAX(size[-level], sz);
+    int n = bar.TempNode(level, sz);
     if (index>=mapsize) {
       mapsize = (1+index/1024)*1024;
       indexmap = (int *) realloc(indexmap, mapsize*sizeof(int));
@@ -38,104 +56,70 @@ void ReadMDD(node_manager &bar, InputStream &in)
     }
     indexmap[index] = bar.Reduce(n);
   }
+  DCASSERT(0==root[level]);
+  root[level] = indexmap[index];
   free(indexmap);
 }
 
+int MakeString(int K) 
+{
+  int below = 1;
+  for (int k=1; k<=K; k++) {
+    int a = bar.TempNode(k, size[k]);
+    bar.SetArc(a, 0, below);
+    below = a;
+  }
+  return below;
+}
 
 void smart_exit()
 {
 }
 
-void AddNode(node_manager &bar)
+int main(int argc, char** argv)
 {
-  int k;
-  int p;
-  Input.Get(k);
-  Input.Get(p);
-  int a = bar.TempNode(k, p);
-
-  Output << "Enter " << p << " pointers\n";
-  Output.flush();
-  for (int i=0; i<p; i++) {
-    int d;
-    Input.Get(d);
-    bar.SetArc(a, i, d);
+  if (argc<3) {
+    Output << "Usage: " << argv[0] << " K file1 ... filen\n";
+    return 0;
   }
-  a = bar.Reduce(a);
-  Output << "That is node " << a << "\n";
-}
-
-void DeleteNode(node_manager &bar)
-{
-  int p;
-  Input.Get(p);
-  bar.Unlink(p);
-}
-
-void ReadMDD(node_manager &bar)
-{
-  char filename[50];
-  // skip whitespace
-  while (1) {
-    if (!Input.Get(filename[0])) return;
-    if (' ' == filename[0]) continue;
-    if ('\t' == filename[0]) continue;
-    if ('\n' == filename[0]) continue;
-    break;
-  }
-  int p = 1;
-  while (1) {
-    if (!Input.Get(filename[p])) break;
-    if (' ' == filename[p]) break;
-    if ('\t' == filename[p]) break;
-    if ('\n' == filename[p]) break;
-    p++;
-  }
-  filename[p] = 0; 
-
-  FILE* foo = fopen(filename, "r"); 
-  if (NULL==foo) {
-    Output << "Couldn't open file " << filename << "\n"; 
+  int K = atoi(argv[1]);
+  root = new int[K+1];
+  size = new int[K+1];
+  int i;
+  for (i=0; i<=K; i++) root[i] = size[i] = 0;
+  for (i=2; i<argc; i++) {
+    Output << "Reading " << argv[i] << "\n";
     Output.flush();
-    return;
+    ReadMDD(argv[i]);
   }
-  InputStream reader(foo);
-  ReadMDD(bar, reader);
-}
 
-void Union(operations &bar)
-{
-  int p, q, r;
-  Input.Get(p);
-  Input.Get(q);
-  r = bar.Union(p, q); 
-  Output << "Union of " << p << " and " << q << " is " << r << "\n";
-  Output << "Union cache: " << bar.Uhits() << " hits / " << bar.Upings() << " pings\n";
-}
+  while (1) {
+    if (size[K]) break;
+    if (0==K) break;
+    K--;
+  }
+  Output << "Sizes: [";
+  Output.PutArray(size+1, K);
+  Output << "]\n";
+  Output << "Transitions by level:\n";
+  for (i=K; i; i--) 
+    if (root[i]) 
+      Output << "\t" << i << " : " << root[i] << "\n";
 
-int main()
-{
-  node_manager bar;
-  operations cruft(&bar);
-  Output << "Enter command sequence:\n\ta k sz\tto add a node\n\td #\t to delete a node\n\tr file\tto read mdd from file\n";
-  Output <<"\n\tu p1 p2\tCompute set union\n";
+  int reachset = MakeString(K);
+
+#ifdef SHOW_MXD
+  Output << "Initial: " << reachset << "\n";
+  bar.Dump(Output);
+  bar.Dump(Output);
+#endif
+
+  Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
-  char cmd;
-  while (Input.Get(cmd)) {
-    switch (cmd) {
-      case 'a':	AddNode(bar);	break;
 
-      case 'd': DeleteNode(bar);	break;
-        
-      case 'r': ReadMDD(bar);	break;
+  cruft.Saturate(reachset, root, K);  
 
-      case 'u': Union(cruft);	break;
-
-      default:
-	continue;
-    }
-    bar.Dump(Output);
-  }  
+  // stats here
   Output << "Later!\n";
   return 0;
 }
