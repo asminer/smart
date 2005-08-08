@@ -104,16 +104,20 @@ public:
   ~operations();
 
   int Union(int a, int b);
-  inline int Upings() const { return union_cache->Pings(); }
-  inline int Uhits() const { return union_cache->Hits(); }
-
   int Count(int a);
 
   // Pregen saturation
   void Saturate(int init, int* roots, int* sizes, int K);
 
+  inline int Upings() const { return union_cache->Pings(); }
+  inline int Uhits() const { return union_cache->Hits(); }
+
+  inline int Fpings() const { return fire_cache->Pings(); }
+  inline int Fhits() const { return fire_cache->Hits(); }
+
 protected:
   void TopSaturate(int p);  
   void Saturate(int p);  
   int RecFire(int p, int mxd);
+  void FireRow(int s, int pd, int row);
 };
