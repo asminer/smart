@@ -29,14 +29,17 @@ errors.o: ../Base/errors.cc ../Base/errors.h
 results.o: ../Language/results.cc ../Language/results.h
 	$(CXX) $(CPPFLAGS) -c -o results.o ../Language/results.cc
 
+intset.o: ../Templates/intset.cc ../Templates/intset.h
+	$(CXX) $(CPPFLAGS) -c -o intset.o ../Templates/intset.cc
+
 stateheap.o: stateheap.h stateheap.cc
 	$(CXX) $(CPPFLAGS) -DEXTRACTED_FROM_SMART -c stateheap.cc
 
 flatss.o: flatss.h flatss.cc stateheap.h
 	$(CXX) $(CPPFLAGS) -DDEBUG_COMPACT -c flatss.cc
 
-testmdd: testmdd.o mdds.o mdd_ops.o streams.o errors.o
-	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdd_ops.o streams.o errors.o
+testmdd: testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
+	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
 
 testmdd.o: testmdd.cc mdds.h mdd_ops.h
 
