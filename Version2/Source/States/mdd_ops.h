@@ -2,6 +2,7 @@
 // $Id$
 
 #include "mdds.h"
+#include "../Templates/intset.h"
 
 class binary_cache {
   struct node {
@@ -90,10 +91,14 @@ class operations {
   // caches
   binary_cache* union_cache;
   binary_cache* count_cache;
+  binary_cache* fire_cache;
 
   // used by saturation
   int K;
   int* roots;
+  int* sizes;
+
+  int_set** Lset;
 public:
   operations(node_manager* m);
   ~operations();
@@ -105,9 +110,10 @@ public:
   int Count(int a);
 
   // Pregen saturation
-  void Saturate(int init, int* roots, int K);
+  void Saturate(int init, int* roots, int* sizes, int K);
 
 protected:
+  void TopSaturate(int p);  
   void Saturate(int p);  
-  void Fire(int p, int mxd);
+  int RecFire(int p, int mxd);
 };

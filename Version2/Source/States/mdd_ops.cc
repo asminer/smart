@@ -50,12 +50,14 @@ operations::operations(node_manager* m)
   mdd = m;
   union_cache = new binary_cache(mdd);
   count_cache = new binary_cache(mdd);
+  fire_cache = new binary_cache(mdd);
 }
 
 operations::~operations()
 {
   delete union_cache;
   delete count_cache;
+  delete fire_cache;
 }
 
 int operations::Union(int a, int b)
@@ -185,3 +187,117 @@ int operations::Count(int a)
   return c;
 }
 
+void operations::Saturate(int init, int* r, int* s, int k)
+{
+  K = k;  
+  roots = r;
+  sizes = s;
+
+  // allocate temp stuff
+  Lset = new int_set*[K+1];
+  Lset[0] = 0;
+  for (k=1; k<=K; k++) 
+    Lset[k] = new int_set;
+
+  // Start saturation
+  TopSaturate(init);
+
+  // destroy temp stuff
+  for (k=1; k<=K; k++) {
+    delete Lset[k];
+  }
+  delete[] Lset; 
+}
+
+void operations::TopSaturate(int init)
+{
+  if (init<2) return;
+  int k = mdd->NodeLevel(init);
+  DCASSERT(mdd->SizeOf(init)==sizes[k]);
+  const int* down = mdd->NodeData(init);
+  for (int i=sizes[k]-1; i>=0; i--) 
+    if (down[i]) TopSaturate(down[i]);
+  if (roots[k]) Saturate(init);
+}
+
+void operations::Saturate(int init)
+{
+  int k = mdd->NodeLevel(init);
+  DCASSERT(k>0);  
+  DCASSERT(roots[k]);
+
+  const int* down = mdd->NodeData(init);
+  const int* rowlist = mdd->NodeData(roots[k]);
+  bool rowsparse = mdd->isNodeSparse(roots[k]);
+  int rowsize;
+  Lset[k]->SetMax(sizes[k]);
+
+  if (rowsparse) { 
+    rowsize = mdd->nnzOf(roots[k]);
+    for (int z=rowsize-1; z>=0; z--) {
+      int i = rowlist[2*z];
+      if (down[i]) Lset[k]->AddElement(i);
+    } // for z
+  } else {
+    rowsize = mdd->SizeOf(roots[k]);
+    for (int i=rowsize-1; i>=0; i--) {
+      if (down[i] && rowlist[i]) Lset[k]->AddElement(i);
+    } // for i
+  } // if rowsparse
+
+  while (Lset[k]->Card()) {
+    int i = Lset[k]->RemoveElement();
+    const int* cols;
+    bool colsparse;
+    int colsize;
+    if (rowsparse) {
+      int z;
+      for (z=rowsize-1; z>=0; z--) {
+        if (rowlist[2*z] == i) break;
+      }
+      if (z<0) continue;  // not found
+      cols = mdd->NodeData(rowlist[2*z+1]);
+      colsparse = mdd->isNodeSparse(rowlist[2*z+1]);
+      colsize = mdd->nnzOf(rowlist[2*z+1]);
+    } else {
+      if (0==rowlist[i]) continue;
+      cols = mdd->NodeData(rowlist[i]);
+      colsparse = mdd->isNodeSparse(rowlist[i]);
+      colsize = mdd->SizeOf(rowlist[i]);
+    } // if rowsparse
+
+    if (colsparse) {
+      // scan through sparse column
+      for (int z=colsize-1; z>=0; z--) {
+        int j = cols[2*z];
+        int f = RecFire(down[i], cols[2*z+1]);
+        if (f) {
+	  int u = Union(f, down[j]);
+	  if (u!=down[j]) {
+	    mdd->SetArc(init, j, u);
+	    Lset[k]->AddElement(j);
+          } // if u
+        } // f 
+      } // for z
+    } else {
+      // scan through full column
+      for (int j=colsize-1; j>=0; j--) {
+        int f = RecFire(down[i], cols[j]);
+        if (f) {
+	  int u = Union(f, down[j]);
+	  if (u!=down[j]) {
+	    mdd->SetArc(init, j, u);
+	    Lset[k]->AddElement(j);
+          } // if u
+        } // f 
+      } // for j
+    } // if colsparse
+
+  } // massive while
+
+}
+
+int operations::RecFire(int p, int mxd)
+{
+  return 0;
+}

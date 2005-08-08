@@ -67,5 +67,6 @@ public:
 
 typedef Stack<void*> PtrStack;
 
+
 #endif
 

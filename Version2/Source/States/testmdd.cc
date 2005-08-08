@@ -117,7 +117,7 @@ int main(int argc, char** argv)
   Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
 
-  cruft.Saturate(reachset, root, K);  
+  cruft.Saturate(reachset, root, size, K);  
 
   // stats here
   Output << "Later!\n";
