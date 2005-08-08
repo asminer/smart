@@ -283,11 +283,14 @@ void operations::Saturate(int init)
       // scan through full column
       for (int j=colsize-1; j>=0; j--) {
         int f = RecFire(down[i], cols[j]);
-        if (f) {
+        if (f && f!=down[j]) {
 	  int u = Union(f, down[j]);
+   	  mdd->Unlink(f);
 	  if (u!=down[j]) {
 	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
+          } else {
+	    mdd->Unlink(down[j]);
           } // if u
         } // f 
       } // for j
@@ -297,7 +300,116 @@ void operations::Saturate(int init)
 
 }
 
+void operations::FireRow(int s, int pd, int row)
+{
+  if (0==row || 0==pd) return;
+  const int* sdown = mdd->NodeData(s);
+  const int* down = mdd->NodeData(row);
+  if (mdd->isNodeSparse(row)) {
+    for (int z = mdd->nnzOf(row)-1; z>=0; z--) {
+      int j = down[2*z];
+      int f = RecFire(pd, down[2*z+1]);
+      int u = Union(sdown[j], f);
+      mdd->Unlink(f);
+      mdd->SetArc(s, j, u);
+    }
+  } else {
+    for (int j = mdd->SizeOf(row)-1; j>=0; j--) {
+      int f = RecFire(pd, down[j]);
+      int u = Union(sdown[j], f);
+      mdd->Unlink(f);
+      mdd->SetArc(s, j, u);
+    }
+  }
+}
+
 int operations::RecFire(int p, int mxd)
 {
-  return 0;
+  if (0==p || 0==mxd) return 0;
+  if (1==mxd) {
+    mdd->Link(p);
+    return p;
+  }
+  DCASSERT(p>1);
+  int s;
+  if (fire_cache->Hit(p, mxd, s)) {
+    mdd->Link(s);
+    return s;
+  }
+  int k = mdd->NodeLevel(p);
+  s = mdd->TempNode(k, sizes[k]);
+  bool snonzero = false;
+
+  const int* pdown = mdd->NodeData(p);
+
+  const int* rows;
+  int rowsize;
+
+  if (mdd->NodeLevel(mxd) < k) {
+    // Identity node in mxd
+    if (mdd->isNodeSparse(p)) {
+      for (int z=mdd->nnzOf(p)-1; z>=0; z--) {
+        int d = RecFire(pdown[2*z+1], mxd);
+	if (d) {
+	  snonzero = true;
+	  mdd->SetArc(s, pdown[2*z], d);
+        }
+      } // for z
+    } else {
+      for (int i=mdd->SizeOf(p)-1; i>=0; i--) {
+        int d = RecFire(pdown[i], mxd);
+	if (d) {
+	  snonzero = true;
+	  mdd->SetArc(s, i, d);
+        }
+      } // for i
+    } // if p sparse
+  } else {
+    // Ordinary mxd node
+    rows = mdd->NodeData(mxd);
+    if (mdd->isNodeSparse(mxd)) {
+      rowsize = mdd->nnzOf(mxd);
+      if (mdd->isNodeSparse(p)) {
+	// sparse-sparse
+	int pz = mdd->nnzOf(p)-1;
+	int rz = rowsize-1;
+	while (rz>=0 && pz>=0) {
+	  if (pdown[2*pz] == rows[2*rz]) {
+	    // match, fire
+	    FireRow(s, pdown[2*pz+1], rows[2*rz+1]);
+	    rz--;	
+  	    pz--;
+	    continue;
+          }
+	  if (pdown[2*pz] > rows[2*rz]) pz--;
+	  else rz--;
+        }
+	// done sparse-sparse
+      } else { 
+	// sparse-full
+        for (int z=rowsize-1; z>=0; z--) {
+	  FireRow(s, pdown[rows[2*z]], rows[2*z+1]);
+        }
+      }
+    } else {
+      rowsize = mdd->SizeOf(mxd);
+      if (mdd->isNodeSparse(p)) {
+	// full-sparse
+        for (int z = mdd->SizeOf(p)-1; z>=0; z--) {
+	  FireRow(s, pdown[2*z+1], rows[pdown[2*z]]);
+        } 
+      } else { 
+	// full-full
+	for (int i = MIN(rowsize, mdd->SizeOf(p))-1; i>=0; i--) {
+	  FireRow(s, pdown[i], rows[i]);
+        } 
+      }
+    } // sparse rows 
+  } // if skipped level
+
+  if (snonzero) Saturate(s);
+  s = mdd->Reduce(s);
+  fire_cache->Add(p, mxd, s);
+  return s;
 }
+

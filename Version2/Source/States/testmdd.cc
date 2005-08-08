@@ -111,7 +111,6 @@ int main(int argc, char** argv)
 #ifdef SHOW_MXD
   Output << "Initial: " << reachset << "\n";
   bar.Dump(Output);
-  bar.Dump(Output);
 #endif
 
   Output << "Starting " << K << " level saturation\n"; 
@@ -119,8 +118,21 @@ int main(int argc, char** argv)
 
   cruft.Saturate(reachset, root, size, K);  
 
+#ifdef SHOW_FINAL
+  Output << "Reachset: " << reachset << "\n";
+  bar.Dump(Output);
+#endif
+  
+  int card = cruft.Count(reachset);
+
+  Output << card << " reachable states\n";
+
   // stats here
-  Output << "Later!\n";
+
+  Output.Pad('-', 60);
+  Output << "\nCache performance\n";
+  Output << "\tUnion cache\t" << cruft.Uhits() << " hits / " << cruft.Upings() << " pings\n";
+  Output << "\tFiring cache\t" << cruft.Fhits() << " hits / " << cruft.Fpings() << " pings\n";
   return 0;
 }
 
