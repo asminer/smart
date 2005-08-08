@@ -90,6 +90,10 @@ class operations {
   // caches
   binary_cache* union_cache;
   binary_cache* count_cache;
+
+  // used by saturation
+  int K;
+  int* roots;
 public:
   operations(node_manager* m);
   ~operations();
@@ -100,5 +104,10 @@ public:
 
   int Count(int a);
 
+  // Pregen saturation
+  void Saturate(int init, int* roots, int K);
 
+protected:
+  void Saturate(int p);  
+  void Fire(int p, int mxd);
 };
