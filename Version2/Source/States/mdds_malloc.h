@@ -146,6 +146,8 @@ public:
   int TempNode(int k, int sz); 
   void Dump(OutputStream &s) const; 
 
+  void ShowNode(OutputStream &s, int p) const;
+
   // For uniqueness table
 public:
   inline int getNext(int h) const { DCASSERT(address[h]); return next[h]; }

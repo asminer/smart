@@ -183,8 +183,8 @@ int operations::Union(int a, int b)
       }
       // When b is shorter than a
       for (int i = mdd->SizeOf(b); i<mdd->SizeOf(a); i++) {
-        mdd->Link(bdown[i]);
-        mdd->SetArc(c, i, bdown[i]);
+        mdd->Link(adown[i]);
+        mdd->SetArc(c, i, adown[i]);
       }
       // done full-full
     }

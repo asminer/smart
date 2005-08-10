@@ -124,44 +124,91 @@ void mdd_node_manager::Dump(OutputStream &s) const
   s << "\nFirst free node: " << a_unused << "\n";
   s << "Nodes: \n#";
   s.Pad(' ', nwidth-1);
-  s << " \tNext\tin\tcc\tlevel\tsize\tData\n";
+  s << " \tNext\tNode data\n";
   int p;
   for (p=0; p<=a_last; p++) {
     s.flush();	
     s.Put(p, nwidth);
     s << " \t" << next[p];
-    if (0==address[p]) {
-      s << "\n";
-      continue;
-    }
-    s << "\t" << address[p][0];
-    s << "\t" << address[p][1];
-    s << "\t" << address[p][2];
-    s << "\t" << address[p][3];
-    if (address[p][3]<0) {
-      // sparse
-      s << "  (";
-      for (int nz=0; nz<-address[p][3]; nz++) {
-        s << address[p][4+nz*2];
-        s << ":" << address[p][4+nz*2+1];
-        if (nz+1<-address[p][3]) s << ", ";
-      }
-      s << ")\n";
-    } else {
-      s << "  [";
-      for (int i=0; i<address[p][3]; i++) {
-	s << address[p][4+i];
-        if (i+1<address[p][3]) s << "|";
-      }
-      s << "]\n";
-    }
+    s << "\t";
+    ShowNode(s, p);
+    s << "\n";
   } // for p
   s.flush();	
 }
 
+void mdd_node_manager::ShowNode(OutputStream &s, int p) const
+{
+  if (p<2) {
+    s << "(terminal)";
+    return;
+  }
+  if (0==address[p]) {
+    s << "DELETED";
+    return;
+  }
+  s << "in: " << address[p][0];
+  s << " cc: " << address[p][1];
+  s << " level: " << ABS(address[p][2]);
+  if (address[p][2]<0) s << "'"; else s << " ";
+  if (address[p][3]<0) {
+      // sparse
+      s << "  nnz: " << -address[p][3] << " \t (";
+      const int* index = IndexesOf(p);
+      const int* down = SparseDownOf(p);
+      for (int nz=0; nz<-address[p][3]; nz++) {
+        s << index[nz];
+        s << ":" << down[nz];
+        if (nz<-address[p][3]-1) s << ", ";
+      }
+      s << ")";
+    } else {
+      s << " size: " << address[p][3] << " \t [";
+      const int* down = FullDownOf(p);
+      for (int i=0; i<address[p][3]; i++) {
+	s << down[i];
+        if (i<address[p][3]-1) s << "|";
+      }
+      s << "]";
+  }
+}
+
+
 int mdd_node_manager::hash(int h, int M) const 
 {
-  return 0;
+  DCASSERT(h);
+  DCASSERT(M);
+  DCASSERT(address[h]);
+  int sz = address[h][3];
+  int a = 0;
+  if (sz>0) {
+    const int* down = FullDownOf(h);
+    int ops = -2;
+    int skip = 1;
+    for (int i=sz-1; i>0; i-=skip) {
+      a *= 256;
+      a += down[i];  
+      a %= M;
+      ops++;
+      if (ops > 2*skip) {  // accelerate through huge nodes
+        skip++;
+      } 
+    }
+  } else {
+    const int* down = SparseDownOf(h);
+    int ops = -2;
+    int skip = 1;
+    for (int i=-sz-1; i>0; i-=skip) {
+      a *= 256;
+      a += down[i]; 
+      a %= M;
+      ops++;
+      if (ops > 2*skip) {  // accelerate through huge nodes
+        skip++;
+      } 
+    }
+  }
+  return a;
 }
 
 bool mdd_node_manager::equals(int h1, int h2) const 
