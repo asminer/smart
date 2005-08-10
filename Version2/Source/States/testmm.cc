@@ -1,13 +1,13 @@
 
 // $Id$
 
-#include "mdds.h"
-#include "mdd_ops.h"
+#include "mdds_malloc.h"
+#include "mddops_malloc.h"
 #include <stdlib.h>
 
 int* root;
 int* size;
-node_manager bar;
+mdd_node_manager bar;
 operations cruft(&bar);
 
 //#define SHOW_MXD
