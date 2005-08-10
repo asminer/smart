@@ -4,7 +4,8 @@
 #include "mdds.h"
 #include "../Base/errors.h"
 
-// #define DONT_USE_SPARSE
+//#define DONT_USE_SPARSE
+//#define DONT_USE_FULL
 
 const int Add_Size = 1024;
 
@@ -67,6 +68,9 @@ int node_manager::Reduce(int p)
 #ifdef DONT_USE_SPARSE
   nnz = size; // cheat
 #endif
+#ifdef DONT_USE_FULL
+  lnz = 2*nnz+1;
+#endif
 
   if (2*nnz < lnz) {
     // sparse is better; convert
@@ -76,6 +80,8 @@ int node_manager::Reduce(int p)
     data[newaddr+2] = data[address[p]+2];
     data[newaddr+3] = -nnz;
     int* newptr = data + newaddr + 4;
+    // can't rely on previous ptr
+    int* ptr = data + address[p] + 4;
     for (int i=0; i<size; i++) {
       if (ptr[i]) {
         newptr[0] = i;
@@ -96,7 +102,7 @@ int node_manager::Reduce(int p)
       data[newaddr+1] = data[address[p]+1];
       data[newaddr+2] = data[address[p]+2];
       data[newaddr+3] = lnz+1;
-      memcpy(data+newaddr+4, ptr, (1+lnz)*sizeof(int));
+      memcpy(data+newaddr+4, data+address[p]+4, (1+lnz)*sizeof(int));
       MakeHole(address[p], 4+size);
       address[p] = newaddr;
     }

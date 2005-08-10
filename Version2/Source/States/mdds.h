@@ -8,7 +8,7 @@
 #include "../Base/streams.h"
 #include "../Templates/hash.h"
 
-#define TRACK_DELETIONS
+//#define TRACK_DELETIONS
 
 /* Temporary, until we have a proper mdd library. */
 

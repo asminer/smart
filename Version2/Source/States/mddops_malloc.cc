@@ -1,7 +1,7 @@
 
 // $Id$
 
-#include "mdd_ops.h"
+#include "mddops_malloc.h"
 
 // #define UNION_TRACE
 // #define FIRE_TRACE
@@ -11,7 +11,7 @@
 // *                   binary_cache methods                   *
 // ************************************************************
 
-binary_cache::binary_cache(node_manager* m)
+binary_cache::binary_cache(mdd_node_manager* m)
 {
   mdd = m; 
   heapsize = 1024;
@@ -49,7 +49,7 @@ int binary_cache::NewNode()
 // *                    operations methods                    *
 // ************************************************************
 
-operations::operations(node_manager* m)
+operations::operations(mdd_node_manager* m)
 {
   mdd = m;
   union_cache = new binary_cache(mdd);
@@ -90,8 +90,8 @@ int operations::Union(int a, int b)
     mdd->Link(c);
     return c;
   }
-  DCASSERT(mdd->NodeLevel(a) == mdd->NodeLevel(b));
-  int k = mdd->NodeLevel(a);
+  DCASSERT(mdd->LevelOf(a) == mdd->LevelOf(b));
+  int k = mdd->LevelOf(a);
 #ifdef UNION_TRACE
   Output << "Starting union of ";
   Output.Put(a, 5);
@@ -106,79 +106,85 @@ int operations::Union(int a, int b)
 #endif
 
   int csz;
-  if (mdd->isNodeSparse(a)) {
+  if (mdd->isSparse(a)) {
     // a is sparse
-    if (mdd->isNodeSparse(b)) {
+    const int* aindex = mdd->IndexesOf(a);
+    const int* adown = mdd->SparseDownOf(a);
+    if (mdd->isSparse(b)) {
       // b is sparse
-      csz = MAX(mdd->Data(a, 2*mdd->nnzOf(a)-2), 
-	 	mdd->Data(b, 2*mdd->nnzOf(b)-2)) + 1;
+      const int* bindex = mdd->IndexesOf(b);
+      const int* bdown = mdd->SparseDownOf(b);
+      csz = MAX(aindex[mdd->nnzOf(a)-1], bindex[mdd->nnzOf(b)-1]) + 1;
       c = mdd->TempNode(k, csz);
+      const int* cdown = mdd->FullDownOf(c);
       // Copy nonzeroes of a to c
       for (int z = mdd->nnzOf(a)-1; z>=0; z--) {
- 	int d = mdd->Data(a, 2*z+1);
-        mdd->Link(d);
-        mdd->SetArc(c, mdd->Data(a, 2*z), d);
+        mdd->Link(adown[z]);
+        mdd->SetArc(c, aindex[z], adown[z]);
       }
       // Union nonzeroes of b
-      for (int z = 0; z<mdd->nnzOf(b); z++) {
-        int i = mdd->Data(b, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(b, 2*z+1)));  
+      for (int z = mdd->nnzOf(b)-1; z>=0; z--) {
+        int i = bindex[z];
+        mdd->SetArc(c, i, Union(cdown[i], bdown[z]));  
       }
       // done sparse-sparse
     } else {
       // b is full
-      csz = MAX(mdd->SizeOf(b), 1+mdd->Data(a, 2*mdd->nnzOf(a)-2)); 
+      const int* bdown = mdd->FullDownOf(b);
+      csz = MAX(mdd->SizeOf(b), 1+aindex[mdd->nnzOf(a)-1]); 
       c = mdd->TempNode(k, csz);
+      const int* cdown = mdd->FullDownOf(c);
       // Copy b to c
       for (int i = mdd->SizeOf(b)-1; i>=0; i--) {
-	int d = mdd->Data(b, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->Link(bdown[i]);
+        mdd->SetArc(c, i, bdown[i]);
       }
       // Union nonzeroes of a
-      for (int z = 0; z<mdd->nnzOf(a); z++) {
-        int i = mdd->Data(a, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(a, 2*z+1)));  
+      for (int z = mdd->nnzOf(a)-1; z>=0; z--) {
+        int i = aindex[z];
+        mdd->SetArc(c, i, Union(cdown[i], adown[z]));  
       }
       // done sparse-full
     }
   } else {
     // a is full
-    if (mdd->isNodeSparse(b)) {
+    const int* adown = mdd->FullDownOf(a);
+    if (mdd->isSparse(b)) {
       // b is sparse
-      csz = MAX(mdd->SizeOf(a), 1+mdd->Data(b, 2*mdd->nnzOf(b)-2)); 
+      const int* bindex = mdd->IndexesOf(b);
+      const int* bdown = mdd->SparseDownOf(b);
+      csz = MAX(mdd->SizeOf(a), 1+bindex[mdd->nnzOf(b)-1]); 
       c = mdd->TempNode(k, csz);
+      const int* cdown = mdd->FullDownOf(c);
       // Copy a to c
       for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
-	int d = mdd->Data(a, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->Link(adown[i]);
+        mdd->SetArc(c, i, adown[i]);
       }
       // Union nonzeroes of b
-      for (int z = 0; z<mdd->nnzOf(b); z++) {
-        int i = mdd->Data(b, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(b, 2*z+1)));  
+      for (int z = mdd->nnzOf(b)-1; z>=0; z--) {
+        int i = bindex[z];
+        mdd->SetArc(c, i, Union(cdown[i], bdown[z]));  
       }
       // done full-sparse
     } else {
       // b is full
+      const int* bdown = mdd->FullDownOf(b);
       csz = MAX(mdd->SizeOf(a), mdd->SizeOf(b));
       c = mdd->TempNode(k, csz);
       // overlapping part of a and b
       for (int i = MIN(mdd->SizeOf(a), mdd->SizeOf(b))-1; i>=0; i--) {
-        mdd->SetArc(c, i, Union(mdd->Data(a, i), mdd->Data(b, i))); 
+        mdd->SetArc(c, i, Union(adown[i], bdown[i])); 
       } // for i
       // When a is shorter than b
       for (int i = mdd->SizeOf(a); i<mdd->SizeOf(b); i++) {
-	int d = mdd->Data(b, i);
-        mdd->Link(d); 
-        mdd->SetArc(c, i, d);
+        mdd->Link(bdown[i]); 
+        mdd->SetArc(c, i, bdown[i]);
       }
       // When b is shorter than a
       for (int i = mdd->SizeOf(b); i<mdd->SizeOf(a); i++) {
-        int d = mdd->Data(a, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->Link(bdown[i]);
+        mdd->SetArc(c, i, bdown[i]);
       }
       // done full-full
     }
@@ -218,13 +224,15 @@ int operations::Count(int a)
     for(; oldcs<countsize; oldcs++) counts[oldcs] = 0;
   }
   if (counts[a]) return counts[a];
-  if (mdd->isNodeSparse(a)) {
+  if (mdd->isSparse(a)) {
+    const int* adown = mdd->SparseDownOf(a);
     for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
-      counts[a] += Count(mdd->Data(a, 2*i+1));
+      counts[a] += Count(adown[i]);
     }
   } else {
+    const int* adown = mdd->FullDownOf(a);
     for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
-      counts[a] += Count(mdd->Data(a, i));
+      counts[a] += Count(adown[i]);
     }
   }
   return counts[a];
@@ -255,16 +263,17 @@ void operations::Saturate(int init, int* r, int* s, int k)
 void operations::TopSaturate(int init)
 {
   if (init<2) return;
-  int k = mdd->NodeLevel(init);
+  int k = mdd->LevelOf(init);
   DCASSERT(mdd->SizeOf(init)==sizes[k]);
+  const int* down = mdd->FullDownOf(init);
   for (int i=mdd->SizeOf(init)-1; i>=0; i--) 
-    if (mdd->Data(init, i)) TopSaturate(mdd->Data(init, i));
+    if (down[i]) TopSaturate(down[i]);
   if (roots[k]) Saturate(init);
 }
 
 void operations::Saturate(int init)
 {
-  int k = mdd->NodeLevel(init);
+  int k = mdd->LevelOf(init);
   DCASSERT(k>0);  
   DCASSERT(roots[k]);
 
@@ -274,75 +283,85 @@ void operations::Saturate(int init)
   Output << "\n\n";
   Output.flush();
 #endif
+  const int* down = mdd->FullDownOf(init);
+
   int rowlist = roots[k];
-  bool rowsparse = mdd->isNodeSparse(rowlist);
+  bool rowsparse = mdd->isSparse(rowlist);
+  const int* rdown;
+  const int* rindex;
   int rowsize;
   Lset[k]->SetMax(sizes[k]);
 
   if (rowsparse) { 
     rowsize = mdd->nnzOf(rowlist);
+    rindex = mdd->IndexesOf(rowlist);
+    rdown = mdd->SparseDownOf(rowlist);
     for (int z=rowsize-1; z>=0; z--) {
-      int i = mdd->Data(rowlist, 2*z);
-      CHECK_RANGE(0, i, mdd->SizeOf(init));
-      if (mdd->Data(init, i)) Lset[k]->AddElement(i);
+      CHECK_RANGE(0, rindex[z], mdd->SizeOf(init));
+      if (down[rindex[z]]) Lset[k]->AddElement(rindex[z]);
     } // for z
   } else {
     rowsize = mdd->SizeOf(rowlist);
+#ifdef DEVELOPMENT_CODE
+    rindex = NULL;
+#endif
+    rdown = mdd->FullDownOf(rowlist);
     DCASSERT(rowsize <= mdd->SizeOf(init));
     for (int i=rowsize-1; i>=0; i--) {
-      if (mdd->Data(init, i) && mdd->Data(rowlist, i)) Lset[k]->AddElement(i);
+      if (down[i] && rdown[i]) Lset[k]->AddElement(i);
     } // for i
   } // if rowsparse
 
   while (Lset[k]->Card()) {
-    int cols;
+    int collist;
     bool colsparse;
     int colsize;
     int i = Lset[k]->RemoveElement();
     if (rowsparse) {
       int z;
       for (z=rowsize-1; z>=0; z--) {
-	int ndx = mdd->Data(rowlist, 2*z);
-        if (ndx == i) break;
-        if (ndx < i) z = 0; // will never be found
+        if (rindex[z] == i) break;
+        if (rindex[z] < i) z = 0; // will never be found
       }
       if (z<0) continue;  // not found
-      cols = mdd->Data(rowlist, 2*z+1);
-      colsparse = mdd->isNodeSparse(cols);
-      colsize = mdd->nnzOf(cols);
+      collist = rdown[z];
+      colsparse = mdd->isSparse(collist);
     } else {
       if (i>=rowsize) continue;
-      cols = mdd->Data(rowlist, i);
-      if (0==cols) continue;
-      colsparse = mdd->isNodeSparse(cols);
+      collist = rdown[i];
+      if (0==collist) continue;
+      colsparse = mdd->isSparse(collist);
     } // if rowsparse
 
     if (colsparse) {
+      const int* cindex = mdd->IndexesOf(collist);
+      const int* cdown = mdd->SparseDownOf(collist);
       // scan through sparse column
-      for (int z=mdd->nnzOf(cols)-1; z>=0; z--) {
-        int j = mdd->Data(cols, 2*z);
-        int f = RecFire(mdd->Data(init, i), mdd->Data(cols, 2*z+1));
+      for (int z=mdd->nnzOf(collist)-1; z>=0; z--) {
+        int j = cindex[z];
+        int f = RecFire(down[i], cdown[z]);
         if (f) {
-	  int u = Union(f, mdd->Data(init, j));
+	  int u = Union(f, down[j]);
    	  mdd->Unlink(f);
-	  if (u!=mdd->Data(init, j)) {
+	  if (u!=down[j]) {
 	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
           } // if u
         } // f 
       } // for z
     } else {
+      const int* cdown = mdd->FullDownOf(collist);
       // scan through full column
-      for (int j=mdd->SizeOf(cols)-1; j>=0; j--) {
-        int f = RecFire(mdd->Data(init, i), mdd->Data(cols, j));
-        if (f && f!=mdd->Data(init, j)) {
-	  int u = Union(f, mdd->Data(init, j));
+      for (int j=mdd->SizeOf(collist)-1; j>=0; j--) {
+        int f = RecFire(down[i], cdown[j]);
+        if (f && f!=down[j]) {
+	  int u = Union(f, down[j]);
    	  mdd->Unlink(f);
-	  if (u!=mdd->Data(init, j)) {
+	  if (u!=down[j]) {
 	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
           } else {
-	    mdd->Unlink(mdd->Data(init, j));
+	    mdd->Unlink(down[j]);
           } // if u
         } // f 
       } // for j
@@ -368,19 +387,23 @@ bool operations::FireRow(int s, int pd, int row)
   Output.flush();
 #endif
   bool nonzero = false;
-  if (mdd->isNodeSparse(row)) {
+  const int* sdown = mdd->FullDownOf(s);
+  if (mdd->isSparse(row)) {
+    const int* rindex = mdd->IndexesOf(row);
+    const int* rdown = mdd->SparseDownOf(row);
     for (int z = mdd->nnzOf(row)-1; z>=0; z--) {
-      int j = mdd->Data(row, 2*z);
-      int f = RecFire(pd, mdd->Data(row, 2*z+1));
-      int u = Union(mdd->Data(s, j), f);
+      int j = rindex[z];
+      int f = RecFire(pd, rdown[z]);
+      int u = Union(sdown[j], f);
       mdd->Unlink(f);
       mdd->SetArc(s, j, u);
       if (u) nonzero = true;
     }
   } else {
+    const int* rdown = mdd->FullDownOf(row);
     for (int j = mdd->SizeOf(row)-1; j>=0; j--) {
-      int f = RecFire(pd, mdd->Data(row, j));
-      int u = Union(mdd->Data(s, j), f);
+      int f = RecFire(pd, rdown[j]);
+      int u = Union(sdown[j], f);
       mdd->Unlink(f);
       mdd->SetArc(s, j, u);
       if (u) nonzero = true;
@@ -420,25 +443,27 @@ int operations::RecFire(int p, int mxd)
   Output << "\n\n";
   Output.flush();
 #endif
-  int k = mdd->NodeLevel(p);
+  int k = mdd->LevelOf(p);
   s = mdd->TempNode(k, sizes[k]);
+  const int* sdown = mdd->FullDownOf(s);
   bool snonzero = false;
 
-  int rowsize;
-
-  if (mdd->NodeLevel(mxd) < k) {
+  if (mdd->LevelOf(mxd) < k) {
     // Identity node in mxd
-    if (mdd->isNodeSparse(p)) {
+    if (mdd->isSparse(p)) {
+      const int* pindex = mdd->IndexesOf(p);
+      const int* pdown = mdd->SparseDownOf(p);
       for (int z=mdd->nnzOf(p)-1; z>=0; z--) {
-        int d = RecFire(mdd->Data(p, 2*z+1), mxd);
+        int d = RecFire(pdown[z], mxd);
 	if (d) {
 	  snonzero = true;
-	  mdd->SetArc(s, mdd->Data(p, 2*z), d);
+	  mdd->SetArc(s, pindex[z], d);
         }
       } // for z
     } else {
+      const int* pdown = mdd->FullDownOf(p);
       for (int i=mdd->SizeOf(p)-1; i>=0; i--) {
-        int d = RecFire(mdd->Data(p, i), mxd);
+        int d = RecFire(pdown[i], mxd);
 	if (d) {
 	  snonzero = true;
 	  mdd->SetArc(s, i, d);
@@ -447,48 +472,55 @@ int operations::RecFire(int p, int mxd)
     } // if p sparse
   } else {
     // Ordinary mxd node
-    if (mdd->isNodeSparse(mxd)) {
-      if (mdd->isNodeSparse(p)) {
+    if (mdd->isSparse(mxd)) {
+      const int* rindex = mdd->IndexesOf(mxd);
+      const int* rdown = mdd->SparseDownOf(mxd);
+      if (mdd->isSparse(p)) {
 	// sparse-sparse
+        const int* pindex = mdd->IndexesOf(p);
+        const int* pdown = mdd->SparseDownOf(p);
 	int pz = mdd->nnzOf(p)-1;
 	int rz = mdd->nnzOf(mxd)-1;
 	while (rz>=0 && pz>=0) {
-	  if (mdd->Data(p, 2*pz) == mdd->Data(mxd, 2*rz)) {
+	  if (pindex[pz] == rindex[rz]) {
 	    // match, fire
-	    if (FireRow(s, mdd->Data(p, 2*pz+1), mdd->Data(mxd, 2*rz+1))) 
+	    if (FireRow(s, pdown[pz], rdown[rz])) 
 		snonzero = true;
 	    rz--;	
   	    pz--;
 	    continue;
           }
-	  if (mdd->Data(p, 2*pz) > mdd->Data(mxd, 2*rz)) pz--;
+	  if (pindex[pz] > rindex[rz]) pz--;
 	  else rz--;
         }
 	// done sparse-sparse
       } else { 
 	// sparse-full
+        const int* pdown = mdd->FullDownOf(p);
         int psize = mdd->SizeOf(p);
         for (int z=0; z<mdd->nnzOf(mxd); z++) {
-          int i = mdd->Data(mxd, 2*z);
-	  if (i>=psize) break;
-	  if (FireRow(s, mdd->Data(p, i), mdd->Data(mxd, 2*z+1))) 
+	  if (rindex[z]>=psize) break;
+	  if (FireRow(s, pdown[rindex[z]], rdown[z])) 
 		snonzero = true;
         }
       }
     } else {
-      rowsize = mdd->SizeOf(mxd);
-      if (mdd->isNodeSparse(p)) {
+      int rowsize = mdd->SizeOf(mxd);
+      const int* rdown = mdd->FullDownOf(mxd);
+      if (mdd->isSparse(p)) {
 	// full-sparse
+        const int* pindex = mdd->IndexesOf(p);
+        const int* pdown = mdd->SparseDownOf(p);
         for (int z = 0; z<mdd->nnzOf(p); z++) {
-  	  int i = mdd->Data(p, 2*z);
-	  if (i>=rowsize) break;
-	  if (FireRow(s, mdd->Data(p, 2*z+1), mdd->Data(mxd, i))) 
+	  if (pindex[z]>=rowsize) break;
+	  if (FireRow(s, pdown[z], rdown[pindex[z]])) 
 		snonzero = true;
         } 
       } else { 
 	// full-full
+        const int* pdown = mdd->FullDownOf(p);
 	for (int i = MIN(rowsize, mdd->SizeOf(p))-1; i>=0; i--) {
-	  if (FireRow(s, mdd->Data(p, i), mdd->Data(mxd, i))) 
+	  if (FireRow(s, pdown[i], rdown[i])) 
 		snonzero = true;
         } 
       }

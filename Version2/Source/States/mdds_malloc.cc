@@ -65,13 +65,14 @@ int mdd_node_manager::Reduce(int p)
     newaddr[1] = address[p][1];
     newaddr[2] = address[p][2];
     newaddr[3] = -nnz;
-    int* newptr = newaddr + 4;
+    int* index = newaddr + 4;
+    int* down = newaddr + 4 + nnz;
+    int z = 0;
     for (int i=0; i<size; i++) {
       if (ptr[i]) {
-        newptr[0] = i;
-        newptr++;
-        newptr[0] = ptr[i];
-	newptr++;
+        index[z] = i;
+        down[z] = ptr[i];
+        z++;      
       }
     }
     // trash old node
@@ -99,21 +100,14 @@ int mdd_node_manager::TempNode(int k, int sz)
 {
   DCASSERT(sz>0);
   int p = NextFreeNode();
-  address[p] = (int*) malloc((4+sz)*sizeof(int));
+  // note: calloc will clear the array
+  address[p] = (int*) calloc(4+sz, sizeof(int));
   next[p] = -5; 
   int* foo = address[p];
-  foo[0] = 1; // #incoming
-  foo++;
-  foo[0] = 0; // #cache entries
-  foo++;
-  foo[0] = k; // level
-  foo++;
-  foo[0] = sz; // size
-  // downward pointers
-  for (; sz; sz--) {
-    foo++;
-    foo[0] = 0;
-  }
+  foo[0] = 1;  // #incoming
+  foo[2] = k;  // level
+  foo[3] = sz; // size
+  // all the rest are already zero
   return p;
 }
 

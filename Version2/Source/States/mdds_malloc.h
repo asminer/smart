@@ -1,6 +1,9 @@
 
 // $Id$
 
+#ifndef MDDS_MALLOC
+#define MDDS_MALLOC
+
 #include "../defines.h"
 #include "../Base/streams.h"
 #include "../Templates/hash.h"
@@ -15,6 +18,12 @@ class mdd_node_manager {
 	number of cache entries
 	level
 	#full entries (if positive) / #nonzeroes (if negative)
+
+      If the node is "full", then the remainder of the node is
+      a full array of pointers (with the specified number of entries).
+
+      If the node is "sparse", then there are two arrays filling the
+      remainder of the node: an index array and a down pointer array.
   */
   int** address;
   /** Next pointer for uniqueness table. */
@@ -32,35 +41,77 @@ public:
   mdd_node_manager();
   ~mdd_node_manager();
 
-  inline bool isNodeActive(int p) const {
+  inline bool isActive(int p) const {
     if (p<2) return true;
     return (address[p]);
   }
 
-  inline bool isNodeDeleted(int p) const {
+  inline bool isDeleted(int p) const {
     return (0==address[p]);
   }
 
-  inline bool isNodeReduced(int p) const {
+  inline bool isReduced(int p) const {
     DCASSERT(address[p]);
     return (next[p]>=-1);
   }
 
+  inline bool isSparse(int p) const {
+    DCASSERT(address[p]);
+    return (address[p][3] < 0);
+  }
+
+  inline int SizeOf(int p) const {
+    DCASSERT(!isSparse(p));
+    return address[p][3];
+  }
+
+  inline int nnzOf(int p) const {
+    DCASSERT(isSparse(p));
+    return -address[p][3];
+  }
+
+  inline const int* FullDownOf(int p) const {
+    DCASSERT(!isSparse(p));
+    return address[p]+4;
+  }
+
+  inline const int* IndexesOf(int p) const {
+    DCASSERT(isSparse(p));
+    return address[p]+4;
+  }
+
+  inline const int* SparseDownOf(int p) const {
+    DCASSERT(isSparse(p));
+    return address[p]+4+nnzOf(p);
+  }
+
+  inline int Incount(int p) const {
+    if (p<2) return 1;
+    DCASSERT(address[p]);
+    return address[p][0];
+  }
+
   inline void Link(int p) { 
-    DCASSERT(isNodeActive(p));
     if (p<2) return;
+    DCASSERT(address[p]);
     address[p][0]++;
   }  
 
   void Unlink(int p) {
     if (p<2) return;
-    DCASSERT(isNodeActive(p));
+    DCASSERT(address[p]);
     // decrement incoming count
     DCASSERT(address[p][0]>0);
     address[p][0]--;
     if (address[p][0]) return; 
     if (address[p][1]) return;
     DeleteNode(p);
+  }
+
+  inline void CacheInc(int p) {
+    if (p<2) return;
+    DCASSERT(address[p]);
+    address[p][1]++;
   }
 
   bool CacheDec(int p) {
@@ -74,8 +125,8 @@ public:
   }
 
   inline void SetArc(int p, int i, int d) {
-    DCASSERT(isNodeActive(p));
-    DCASSERT(!isNodeReduced(p));
+    DCASSERT(isActive(p));
+    DCASSERT(!isReduced(p));
     int* sz = address[p] + 3;
     DCASSERT(sz[0]>0);
     CHECK_RANGE(0, i, sz[0]);
@@ -84,8 +135,8 @@ public:
     sz[0] = d;
   }
 
-  inline int NodeLevel(int p) const {
-    DCASSERT(isNodeActive(p));
+  inline int LevelOf(int p) const {
+    DCASSERT(isActive(p));
     if (p<2) return 0;
     return address[p][2];
   }
@@ -108,3 +159,5 @@ protected:
   int NextFreeNode();
   void FreeNode(int p);
 };
+
+#endif
