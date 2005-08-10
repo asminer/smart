@@ -8,6 +8,8 @@
 #include "../Base/streams.h"
 #include "../Templates/hash.h"
 
+#define TRACK_DELETIONS
+
 /* Temporary, until we have a proper mdd library. */
 
 class node_manager {
@@ -81,16 +83,36 @@ public:
     return -data[address[p]+3];
   }
 
-  // this should be read--only!
-  inline const int* NodeData(int p) const {
+  inline int Data(int p, int i) const {
+#ifdef DEVELOPMENT_CODE
     DCASSERT(address[p]);
-    return data+address[p]+4;
+    if (isNodeSparse(p)) {
+      CHECK_RANGE(0, i, 2*nnzOf(p));
+    } else {
+      CHECK_RANGE(0, i, SizeOf(p));
+    }
+#endif
+    return data[address[p]+4+i];
+  }
+
+  inline int Incount(int p) const {
+    if (p<2) return 1;
+    DCASSERT(address[p]);
+    return data[address[p]];
   }
 
   inline void Link(int p) { 
     DCASSERT(isNodeActive(p));
     if (p<2) return;
+#ifdef TRACK_DELETIONS
+    if (0==data[address[p]]) 
+	Output << "Node " << p << " back from the dead!\n";
+#endif
     data[address[p]]++;
+#ifdef TRACK_DELETIONS
+    Output << "\t+Node " << p << " count now " << data[address[p]] << "\n";
+    Output.flush();
+#endif
   }  
 
   void Unlink(int p) {
@@ -100,8 +122,16 @@ public:
     int* foo = data+address[p];
     DCASSERT(foo[0]>0);
     foo[0]--;
+#ifdef TRACK_DELETIONS
+    Output << "\t-Node " << p << " count now " << data[address[p]] << "\n";
+    Output.flush();
+#endif
     if (foo[0]) return;
     if (foo[1]) return;  // still in a cache somewhere
+#ifdef TRACK_DELETIONS
+    Output << "Deleting node " << p << " from Unlink\n";
+    Output.flush();
+#endif
     DeleteNode(p);
   }
 
@@ -118,7 +148,13 @@ public:
     if (foo[0]) return false;
     DCASSERT(foo[1]>0);
     foo[1]--;
-    if (0==foo[1]) DeleteNode(p);
+    if (0==foo[1]) {
+#ifdef TRACK_DELETIONS
+      Output << "Deleting node " << p << " from CacheDec\n";
+      Output.flush();
+#endif
+      DeleteNode(p);
+    }
     return true;
   }
 
@@ -143,6 +179,8 @@ public:
 
   int TempNode(int k, int sz); 
   void Dump(OutputStream &s) const; 
+
+  void ShowNode(OutputStream &s, int p) const;
 
   // For uniqueness table
 public:

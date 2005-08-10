@@ -4,6 +4,8 @@
 #include "mdds.h"
 #include "../Base/errors.h"
 
+// #define DONT_USE_SPARSE
+
 const int Add_Size = 1024;
 
 node_manager::node_manager()
@@ -61,6 +63,10 @@ int node_manager::Reduce(int p)
     Unlink(p);
     return 0;
   }
+
+#ifdef DONT_USE_SPARSE
+  nnz = size; // cheat
+#endif
 
   if (2*nnz < lnz) {
     // sparse is better; convert
@@ -123,6 +129,10 @@ int node_manager::TempNode(int k, int sz)
     foo++;
     foo[0] = 0;
   }
+#ifdef TRACK_DELETIONS
+  Output << "Creating node " << p << "\n";
+  Output.flush();
+#endif
   return p;
 }
 
@@ -179,32 +189,13 @@ void node_manager::Dump(OutputStream &s) const
     DCASSERT(p<=a_last);
     s << "(node ";
     s.Put(p, nwidth);
-    s << ")   in " << data[a];
-    s << "\t cc " << data[a+1];
-    s << "\t level ";
-    if (data[a+2]<0) s << -data[a+2] << "'"; else s << data[a+2];
-    s << "\t size " << data[a+3] << "\t";
+    s << ") ";
+    ShowNode(s, p);
+    s << "\n";
     if (data[a+3]<0) {
-      // sparse
-      s << "  (";
-      a += 4; 
-      for (int nz=data[a-1]; nz; nz++) {
-        s << data[a];
-        a++;
-        s << ":" << data[a];
- 	a++;
-        if (nz<-1) s << ", ";
-      }
-      s << ")\n";
+      a += 4-2*data[a+3];
     } else {
-      s << "  [";
-      a += 4;
-      for (int i=data[a-1]; i; i--) {
-	s << data[a];
-	a++;
-        if (i>1) s << "|";
-      }
-      s << "]\n";
+      a += 4+data[a+3];
     }
   } // for a
   s.Put(a, awidth);
@@ -215,6 +206,45 @@ void node_manager::Dump(OutputStream &s) const
   s << "\n" << d_last << " slots allocated, ";
   s << hole_slots << " slots in holes\n";
   s.flush();
+}
+
+void node_manager::ShowNode(OutputStream &s, int p) const
+{
+  if (p<2) {
+    s << "(terminal)";
+    return;
+  }
+  if (0==address[p]) {
+    s << "DELETED";
+    return;
+  }
+  int a = address[p];
+  s << "in: " << data[a];
+  s << " cc: " << data[a+1];
+  s << " level: " << ABS(data[a+2]);
+  if (data[a+2]<0) s << "'";
+  if (data[a+3]<0) {
+      // sparse
+      s << " nnz: " << -data[a+3] << " \t (";
+      a += 4; 
+      for (int nz=data[a-1]; nz; nz++) {
+        s << data[a];
+        a++;
+        s << ":" << data[a];
+ 	a++;
+        if (nz<-1) s << ", ";
+      }
+      s << ")";
+    } else {
+      s << " size: " << data[a+3] << " \t [";
+      a += 4;
+      for (int i=data[a-1]; i; i--) {
+	s << data[a];
+	a++;
+        if (i>1) s << "|";
+      }
+      s << "]";
+  }
 }
 
 int node_manager::hash(int h, int M) const 
