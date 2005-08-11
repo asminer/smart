@@ -68,13 +68,14 @@ class HashTable {
 protected:
   int size_index;
   int num_entries;
+  int max_entries;
   int* table;
   MANAGER *nodes;
   // stats
   int maxchain;
 public:
   HashTable(MANAGER *n) {
-    size_index = num_entries = 0;
+    size_index = num_entries = max_entries = 0;
     table = NULL;
     nodes = n;
     maxchain = 0;
@@ -88,6 +89,8 @@ public:
     CHECK_RANGE(0, size_index, num_hash_sizes);
     return hash_sizes[size_index];
   }
+  inline int NumEntries() const { return num_entries; }
+  inline int MaxEntries() const { return max_entries; }
   inline int MaxChain() const { return maxchain; }
   void Show(OutputStream &s) const {
     int i;
@@ -134,6 +137,7 @@ public:
       front = next;
       num_entries++;
     }
+    max_entries = MAX(max_entries, num_entries);
   }
 
   void Expand() {
@@ -263,6 +267,7 @@ public:
       nodes->setNext(key, table[h]);
       table[h] = key;
       num_entries++;
+      max_entries = MAX(max_entries, num_entries);
     }
     return table[h];
   }

@@ -37,6 +37,13 @@ class mdd_node_manager {
   /// Pointer to unused address list.
   int a_unused;
   
+  /// For peak memory.
+  int peak_mem;
+  /// Current memory
+  int curr_mem;
+  /// For stats.
+  int active_nodes;
+
   /// Uniqueness table
   HashTable <mdd_node_manager> *unique;
 public:
@@ -107,6 +114,11 @@ public:
 #endif
   }  
 
+  inline int SharedCopy(int p) {
+    Link(p);
+    return p;
+  }
+
   void Unlink(int p) {
     if (p<2) return;
     DCASSERT(address[p]);
@@ -126,21 +138,20 @@ public:
     DeleteNode(p);
   }
 
-  inline void CacheInc(int p) {
+  inline void CacheAdd(int p) {
     if (p<2) return;
     DCASSERT(address[p]);
     address[p][1]++;
   }
 
-  bool CacheDec(int p) {
+  bool CacheRemove(int p) {
     if (p<2) return false;
     DCASSERT(address[p]);
-    if (address[p][0]) return false;
     DCASSERT(address[p][1]>0);
     address[p][1]--;
-    if (0==address[p][1]) {
+    if (0==address[p][1] && 0==address[p][0]) {
 #ifdef TRACK_DELETIONS
-      Output << "Deleting node " << p << " from CacheDec\n";
+      Output << "Deleting node " << p << " from CacheRemove\n";
       Output.flush();
 #endif
       DeleteNode(p);
@@ -171,6 +182,11 @@ public:
   void Dump(OutputStream &s) const; 
 
   void ShowNode(OutputStream &s, int p) const;
+
+  inline int PeakNodes() const { return a_last-1; }
+  inline int CurrentNodes() const { return active_nodes; }
+  inline int PeakMemory() const { return peak_mem; }
+  inline int CurrentMemory() const { return curr_mem; }
 
   // For uniqueness table
 public:

@@ -46,6 +46,34 @@ int binary_cache::NewNode()
   return lastnode;
 }
 
+void binary_cache::Report(const char* name, OutputStream &r) const
+{
+  r << "Report for " << name << ":\n";
+  r << "\t" << Hits() << " hits / " << Pings() << " pings\n";
+  r << "\tNumber of entries:";
+  r << "\t " << table->NumEntries() << " (current)";
+  r << "\t " << table->MaxEntries() << " (max)\n";
+  r << "\tCurrent size: " << table->Size() << "\n";
+  r << "\tMax. chain: " << table->MaxChain() << "\n";
+  r << "\n"; 
+  r.flush();
+}
+
+void binary_cache::Clear()
+{
+  int dummy;
+  // Clear the hash table
+  int list = table->ConvertToList(dummy);
+  while (list>=0) {
+    mdd->CacheRemove(nodeheap[list].a);
+    mdd->CacheRemove(nodeheap[list].b);
+    mdd->CacheRemove(nodeheap[list].c);
+    list = nodeheap[list].next;
+  }
+  unused_nodes = -1;
+  lastnode = -1;
+}
+
 // ************************************************************
 // *                    operations methods                    *
 // ************************************************************
@@ -73,12 +101,10 @@ int operations::Union(int a, int b)
   // special cases
   if (a==1 || b==1) return 1;
   if (a==0 || a==b) {
-    mdd->Link(b);
-    return b;
+    return mdd->SharedCopy(b);
   }
   if (b==0) {
-    mdd->Link(a);
-    return a;
+    return mdd->SharedCopy(a);
   }
   if (a>b) SWAP(a, b);
   int c;
@@ -88,8 +114,7 @@ int operations::Union(int a, int b)
     Output << "Union(" <<a<< ", " <<b<< ") in cache, result " <<c<< "\n";
     Output.flush();
 #endif
-    mdd->Link(c);
-    return c;
+    return mdd->SharedCopy(c);
   }
   DCASSERT(mdd->LevelOf(a) == mdd->LevelOf(b));
   int k = mdd->LevelOf(a);
@@ -211,6 +236,25 @@ int operations::Union(int a, int b)
   Output.flush();
 #endif
   return c;
+}
+
+void operations::Mark(int a, bool* marked)
+{
+  if (marked[a]) return;
+  if (a>1) {
+    if (mdd->isSparse(a)) {
+      const int* adown = mdd->SparseDownOf(a);
+      for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
+        Mark(adown[i], marked);
+      }
+    } else {
+      const int* adown = mdd->FullDownOf(a);
+      for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
+        Mark(adown[i], marked);
+      }
+    }
+  } // if a>1
+  marked[a] = true;
 }
 
 int operations::Count(int a)
@@ -356,9 +400,9 @@ void operations::Saturate(int init)
 	  int u = Union(f, down[j]);
    	  mdd->Unlink(f);
 	  if (u!=down[j]) {
-	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
           } // if u
+	  mdd->SetArc(init, j, u);
         } // f 
       } // for z
     } else {
@@ -366,15 +410,13 @@ void operations::Saturate(int init)
       // scan through full column
       for (int j=mdd->SizeOf(collist)-1; j>=0; j--) {
         int f = RecFire(down[i], cdown[j]);
-        if (f && f!=down[j]) {
+        if (f) {
 	  int u = Union(f, down[j]);
    	  mdd->Unlink(f);
 	  if (u!=down[j]) {
-	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
-          } else {
-	    mdd->Unlink(down[j]);
           } // if u
+	  mdd->SetArc(init, j, u);
         } // f 
       } // for j
     } // if colsparse
@@ -430,8 +472,7 @@ int operations::RecFire(int p, int mxd)
   DCASSERT(mdd->Incount(mxd));
   if (0==p || 0==mxd) return 0;
   if (1==mxd) {
-    mdd->Link(p);
-    return p;
+    return mdd->SharedCopy(p);
   }
   DCASSERT(p>1);
   int s;

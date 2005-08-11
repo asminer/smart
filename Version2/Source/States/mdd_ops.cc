@@ -46,6 +46,19 @@ int binary_cache::NewNode()
   return lastnode;
 }
 
+void binary_cache::Report(const char* name, OutputStream &r) const
+{
+  r << "Report for " << name << ":\n";
+  r << "\t" << Hits() << " hits / " << Pings() << " pings\n";
+  r << "\tNumber of entries:";
+  r << "\t " << table->NumEntries() << " (current)";
+  r << "\t " << table->MaxEntries() << " (max)\n";
+  r << "\tCurrent size: " << table->Size() << "\n";
+  r << "\tMax. chain: " << table->MaxChain() << "\n";
+  r << "\n"; 
+  r.flush();
+}
+
 void binary_cache::Clear()
 {
   int dummy;
@@ -88,12 +101,10 @@ int operations::Union(int a, int b)
   // special cases
   if (a==1 || b==1) return 1;
   if (a==0 || a==b) {
-    mdd->Link(b);
-    return b;
+    return mdd->SharedCopy(b);
   }
   if (b==0) {
-    mdd->Link(a);
-    return a;
+    return mdd->SharedCopy(a);
   }
   if (a>b) SWAP(a, b);
   int c;
@@ -103,8 +114,7 @@ int operations::Union(int a, int b)
     Output << "Union(" <<a<< ", " <<b<< ") in cache, result " <<c<< "\n";
     Output.flush();
 #endif
-    mdd->Link(c);
-    return c;
+    return mdd->SharedCopy(c);
   }
   DCASSERT(mdd->NodeLevel(a) == mdd->NodeLevel(b));
   int k = mdd->NodeLevel(a);
@@ -132,13 +142,13 @@ int operations::Union(int a, int b)
       // Copy nonzeroes of a to c
       for (int z = mdd->nnzOf(a)-1; z>=0; z--) {
  	int d = mdd->Data(a, 2*z+1);
-        mdd->Link(d);
-        mdd->SetArc(c, mdd->Data(a, 2*z), d);
+        mdd->SetArc(c, mdd->Data(a, 2*z), mdd->SharedCopy(d));
       }
       // Union nonzeroes of b
       for (int z = 0; z<mdd->nnzOf(b); z++) {
         int i = mdd->Data(b, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(b, 2*z+1)));  
+	int u = Union(mdd->Data(c, i), mdd->Data(b, 2*z+1));
+        mdd->SetArc(c, i, u);  
       }
       // done sparse-sparse
     } else {
@@ -148,13 +158,13 @@ int operations::Union(int a, int b)
       // Copy b to c
       for (int i = mdd->SizeOf(b)-1; i>=0; i--) {
 	int d = mdd->Data(b, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->SetArc(c, i, mdd->SharedCopy(d));
       }
       // Union nonzeroes of a
       for (int z = 0; z<mdd->nnzOf(a); z++) {
         int i = mdd->Data(a, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(a, 2*z+1)));  
+        int u = Union(mdd->Data(c, i), mdd->Data(a, 2*z+1));  
+        mdd->SetArc(c, i, u);  
       }
       // done sparse-full
     }
@@ -167,13 +177,13 @@ int operations::Union(int a, int b)
       // Copy a to c
       for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
 	int d = mdd->Data(a, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->SetArc(c, i, mdd->SharedCopy(d));
       }
       // Union nonzeroes of b
       for (int z = 0; z<mdd->nnzOf(b); z++) {
         int i = mdd->Data(b, 2*z);
-        mdd->SetArc(c, i, Union(mdd->Data(c, i), mdd->Data(b, 2*z+1)));  
+        int u = Union(mdd->Data(c, i), mdd->Data(b, 2*z+1));  
+        mdd->SetArc(c, i, u);  
       }
       // done full-sparse
     } else {
@@ -182,19 +192,18 @@ int operations::Union(int a, int b)
       c = mdd->TempNode(k, csz);
       // overlapping part of a and b
       for (int i = MIN(mdd->SizeOf(a), mdd->SizeOf(b))-1; i>=0; i--) {
-        mdd->SetArc(c, i, Union(mdd->Data(a, i), mdd->Data(b, i))); 
+        int u = Union(mdd->Data(a, i), mdd->Data(b, i)); 
+        mdd->SetArc(c, i, u); 
       } // for i
       // When a is shorter than b
       for (int i = mdd->SizeOf(a); i<mdd->SizeOf(b); i++) {
 	int d = mdd->Data(b, i);
-        mdd->Link(d); 
-        mdd->SetArc(c, i, d);
+        mdd->SetArc(c, i, mdd->SharedCopy(d));
       }
       // When b is shorter than a
       for (int i = mdd->SizeOf(b); i<mdd->SizeOf(a); i++) {
         int d = mdd->Data(a, i);
-        mdd->Link(d);
-        mdd->SetArc(c, i, d);
+        mdd->SetArc(c, i, mdd->SharedCopy(d));
       }
       // done full-full
     }
@@ -370,24 +379,22 @@ void operations::Saturate(int init)
 	  int u = Union(f, mdd->Data(init, j));
    	  mdd->Unlink(f);
 	  if (u!=mdd->Data(init, j)) {
-	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
           } // if u
+	  mdd->SetArc(init, j, u);
         } // f 
       } // for z
     } else {
       // scan through full column
       for (int j=mdd->SizeOf(cols)-1; j>=0; j--) {
         int f = RecFire(mdd->Data(init, i), mdd->Data(cols, j));
-        if (f && f!=mdd->Data(init, j)) {
+        if (f) {
 	  int u = Union(f, mdd->Data(init, j));
    	  mdd->Unlink(f);
 	  if (u!=mdd->Data(init, j)) {
-	    mdd->SetArc(init, j, u);
 	    Lset[k]->AddElement(j);
-          } else {
-	    mdd->Unlink(mdd->Data(init, j));
           } // if u
+	  mdd->SetArc(init, j, u);
         } // f 
       } // for j
     } // if colsparse
@@ -439,8 +446,7 @@ int operations::RecFire(int p, int mxd)
   DCASSERT(mdd->Incount(mxd));
   if (0==p || 0==mxd) return 0;
   if (1==mxd) {
-    mdd->Link(p);
-    return p;
+    return mdd->SharedCopy(p);
   }
   DCASSERT(p>1);
   int s;

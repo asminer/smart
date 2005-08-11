@@ -12,6 +12,7 @@ operations cruft(&bar);
 
 // #define SHOW_MXD
 // #define SHOW_FINAL
+//#define SHOW_DISCONNECTED
 
 void ReadMDD(const char* filename)
 {
@@ -128,12 +129,48 @@ int main(int argc, char** argv)
 
   Output << card << " reachable states\n";
 
-  // stats here
+  Output.Pad('-', 60);
+  Output << "\n";
+  cruft.CacheReport(Output);
+  
+  Output << "Clearing cache\n";
+  Output.flush();
+  cruft.ClearUCache();
+  cruft.ClearFCache();
+
+#ifdef SHOW_DISCONNECTED
+  Output << "Disconnected, undeleted nodes:\n";
+
+  int lm = 2+bar.PeakNodes();
+  bool* marked = new bool[lm];
+  for (i=0; i<lm; i++) marked[i] = false;
+  cruft.Mark(reachset, marked);
+  for (i=K; i; i--) cruft.Mark(root[i], marked);
+  
+  int active = 0;
+  for (i=2; i<lm; i++) {
+    if (marked[i]) {
+      active++;
+      continue;
+    }
+    if (bar.isDeleted(i)) continue;
+    Output.Put(i, 6);
+    Output << "\t";
+    bar.ShowNode(Output, i);
+    Output << "\n";
+    Output.flush();
+  }
+#endif
 
   Output.Pad('-', 60);
-  Output << "\nCache performance\n";
-  Output << "\tUnion cache\t" << cruft.Uhits() << " hits / " << cruft.Upings() << " pings\n";
-  Output << "\tFiring cache\t" << cruft.Fhits() << " hits / " << cruft.Fpings() << " pings\n";
+  Output << "\n  Peak nodes: " << bar.PeakNodes();
+  Output << "\nActive nodes: " << bar.CurrentNodes() << "\n\n";
+
+  Output << "   Peak memory: " << bar.PeakMemory() << " bytes\n";
+  Output << "Current memory: " << bar.CurrentMemory() << " bytes\n";
+
+  Output << "\n";
+
   return 0;
 }
 
