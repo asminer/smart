@@ -31,9 +31,12 @@ public:
 
   void Add(int a, int b, int c) {
     int h = NewNode();
-    mdd->CacheInc(nodeheap[h].a = a);
-    mdd->CacheInc(nodeheap[h].b = b);
-    mdd->CacheInc(nodeheap[h].c = c);
+    nodeheap[h].a = a;
+    nodeheap[h].b = b;
+    nodeheap[h].c = c;
+    mdd->CacheAdd(a);
+    mdd->CacheAdd(b);
+    mdd->CacheAdd(c);
 #ifdef DEVELOPMENT_CODE
     int i = table->Insert(h);
     DCASSERT(i==h);
@@ -59,6 +62,9 @@ public:
   inline int Pings() const { return pings; }
   inline int Hits() const { return hits; }
 
+  // Remove all entries
+  void Clear(); 
+
   // required for hash table
 public:
   inline int getNext(int h) const { return nodeheap[h].next; }
@@ -74,10 +80,13 @@ public:
     s << "(" << nodeheap[h].a << ", " << nodeheap[h].b << ", " << nodeheap[h].c << ")";
   } 
   inline bool isStale(int h) {
-    bool sa = mdd->CacheDec(nodeheap[h].a);
-    bool sb = mdd->CacheDec(nodeheap[h].b);
-    bool sc = mdd->CacheDec(nodeheap[h].c);
-    if (sa || sb || sc) {
+    if (0==mdd->Incount(nodeheap[h].a) || 
+	0==mdd->Incount(nodeheap[h].b) || 
+	0==mdd->Incount(nodeheap[h].c)) {
+    
+      mdd->CacheRemove(nodeheap[h].a);
+      mdd->CacheRemove(nodeheap[h].b);
+      mdd->CacheRemove(nodeheap[h].c);
       RecycleNode(h);
       return true;
     }
@@ -109,14 +118,18 @@ public:
   int Union(int a, int b);
   int Count(int a);
 
+  void Mark(int a, bool* marked);
+
   // Pregen saturation
   int Saturate(int init, int* roots, int* sizes, int K);
 
   inline int Upings() const { return union_cache->Pings(); }
   inline int Uhits() const { return union_cache->Hits(); }
+  inline void ClearUCache() { union_cache->Clear(); }
 
   inline int Fpings() const { return fire_cache->Pings(); }
   inline int Fhits() const { return fire_cache->Hits(); }
+  inline void ClearFCache() { fire_cache->Clear(); }
 
 protected:
   int TopSaturate(int p);  

@@ -9,6 +9,7 @@
 #include "../Templates/hash.h"
 
 //#define TRACK_DELETIONS
+//#define TRACK_CACHECOUNT
 
 /* Temporary, until we have a proper mdd library. */
 
@@ -98,6 +99,7 @@ public:
   inline int Incount(int p) const {
     if (p<2) return 1;
     DCASSERT(address[p]);
+    DCASSERT(data[address[p]]>=0);
     return data[address[p]];
   }
 
@@ -126,36 +128,44 @@ public:
     Output << "\t-Node " << p << " count now " << data[address[p]] << "\n";
     Output.flush();
 #endif
-    if (foo[0]) return;
-    if (foo[1]) return;  // still in a cache somewhere
+    if (foo[0] || foo[1]) return; // not dead yet
 #ifdef TRACK_DELETIONS
-    Output << "Deleting node " << p << " from Unlink\n";
+    Output << "Deleting node " << p << " from Unlink\t";
+    ShowNode(Output, p);
+    Output << "\n";
     Output.flush();
 #endif
     DeleteNode(p);
   }
 
-  inline void CacheInc(int p) {
+  inline void CacheAdd(int p) {
     if (p<2) return;
     DCASSERT(address[p]);
     data[address[p]+1]++;
+#ifdef TRACK_CACHECOUNT
+    Output << "+Node " << p << " is in " << data[address[p]+1] << " caches\n";
+    Output.flush();
+#endif
   }
 
-  inline bool CacheDec(int p) {
-    if (p<2) return false;
+  inline void CacheRemove(int p) {
+    if (p<2) return;
     DCASSERT(address[p]);
     int* foo = data + address[p];
-    if (foo[0]) return false;
     DCASSERT(foo[1]>0);
     foo[1]--;
-    if (0==foo[1]) {
-#ifdef TRACK_DELETIONS
-      Output << "Deleting node " << p << " from CacheDec\n";
-      Output.flush();
+#ifdef TRACK_CACHECOUNT
+    Output << "-Node " << p << " is in " << foo[1] << " caches\n";
+    Output.flush();
 #endif
-      DeleteNode(p);
-    }
-    return true;
+    if (foo[0] || foo[1]) return; // not dead yet
+#ifdef TRACK_DELETIONS
+    Output << "Deleting node " << p << " from CacheRemove\t";
+    ShowNode(Output, p);
+    Output << "\n";
+    Output.flush();
+#endif
+    DeleteNode(p);
   }
 
   inline void SetArc(int p, int i, int d) {
@@ -181,6 +191,8 @@ public:
   void Dump(OutputStream &s) const; 
 
   void ShowNode(OutputStream &s, int p) const;
+
+  inline int PeakNodes() const { return a_last-1; }
 
   // For uniqueness table
 public:
