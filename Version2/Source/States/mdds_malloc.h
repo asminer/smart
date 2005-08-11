@@ -8,6 +8,8 @@
 #include "../Base/streams.h"
 #include "../Templates/hash.h"
 
+//#define TRACK_DELETIONS
+
 /* Temporary, until we have a proper mdd library. */
 
 class mdd_node_manager {
@@ -94,7 +96,15 @@ public:
   inline void Link(int p) { 
     if (p<2) return;
     DCASSERT(address[p]);
+#ifdef TRACK_DELETIONS
+    if (0==address[p][0]) 
+	Output << "Node " << p << " back from the dead!\n";
+#endif
     address[p][0]++;
+#ifdef TRACK_DELETIONS
+    Output << "\t+Node " << p << " count now " << address[p][0] << "\n";
+    Output.flush();
+#endif
   }  
 
   void Unlink(int p) {
@@ -103,8 +113,16 @@ public:
     // decrement incoming count
     DCASSERT(address[p][0]>0);
     address[p][0]--;
+#ifdef TRACK_DELETIONS
+    Output << "\t-Node " << p << " count now " << address[p][0] << "\n";
+    Output.flush();
+#endif
     if (address[p][0]) return; 
     if (address[p][1]) return;
+#ifdef TRACK_DELETIONS
+    Output << "Deleting node " << p << " from Unlink\n";
+    Output.flush();
+#endif
     DeleteNode(p);
   }
 
@@ -120,7 +138,13 @@ public:
     if (address[p][0]) return false;
     DCASSERT(address[p][1]>0);
     address[p][1]--;
-    if (0==address[p][1]) DeleteNode(p);
+    if (0==address[p][1]) {
+#ifdef TRACK_DELETIONS
+      Output << "Deleting node " << p << " from CacheDec\n";
+      Output.flush();
+#endif
+      DeleteNode(p);
+    }
     return true;
   }
 

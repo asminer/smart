@@ -152,6 +152,15 @@ inline int digits(int a)
 void node_manager::Dump(OutputStream &s) const
 {
   int nwidth = digits(a_last);
+  for (int p=0; p<=a_last; p++) {
+    s.Put(p, nwidth);
+    s << "\t";
+    ShowNode(s, p);
+    s << "\n";
+    s.flush();
+  }
+/*
+  int nwidth = digits(a_last);
   s << "\nFirst free node: " << a_unused << "\n";
   s << "Nodes: \n#";
   s.Pad(' ', nwidth-1);
@@ -206,7 +215,7 @@ void node_manager::Dump(OutputStream &s) const
   } // for a
   s.Put(a, awidth);
   s << ": End\n";
-  
+ */ 
 
   // Some stats
   s << "\n" << d_last << " slots allocated, ";

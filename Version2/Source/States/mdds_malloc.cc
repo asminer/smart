@@ -129,7 +129,7 @@ void mdd_node_manager::Dump(OutputStream &s) const
   for (p=0; p<=a_last; p++) {
     s.flush();	
     s.Put(p, nwidth);
-    s << " \t" << next[p];
+    // s << " \t" << next[p];
     s << "\t";
     ShowNode(s, p);
     s << "\n";

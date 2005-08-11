@@ -10,8 +10,8 @@ int* size;
 node_manager bar;
 operations cruft(&bar);
 
-//#define SHOW_MXD
-//#define SHOW_FINAL
+// #define SHOW_MXD
+// #define SHOW_FINAL
 
 void ReadMDD(const char* filename)
 {
@@ -117,7 +117,7 @@ int main(int argc, char** argv)
   Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
 
-  cruft.Saturate(reachset, root, size, K);  
+  reachset = cruft.Saturate(reachset, root, size, K);  
 
 #ifdef SHOW_FINAL
   Output << "Reachset: " << reachset << "\n";
