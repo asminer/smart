@@ -6,6 +6,7 @@
 // #define UNION_TRACE
 // #define FIRE_TRACE
 // #define SATURATE_TRACE
+// #define COUNT_TRACE
 
 // ************************************************************
 // *                   binary_cache methods                   *
@@ -224,21 +225,26 @@ int operations::Count(int a)
     for(; oldcs<countsize; oldcs++) counts[oldcs] = 0;
   }
   if (counts[a]) return counts[a];
+  int answer = 0;
   if (mdd->isSparse(a)) {
     const int* adown = mdd->SparseDownOf(a);
     for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
-      counts[a] += Count(adown[i]);
+      answer += Count(adown[i]);
     }
   } else {
     const int* adown = mdd->FullDownOf(a);
     for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
-      counts[a] += Count(adown[i]);
+      answer += Count(adown[i]);
     }
   }
-  return counts[a];
+#ifdef COUNT_TRACE
+  Output << "Count of " << a << " is " << answer << "\n";
+  Output.flush();
+#endif
+  return (counts[a] = answer);
 }
 
-void operations::Saturate(int init, int* r, int* s, int k)
+int operations::Saturate(int init, int* r, int* s, int k)
 {
   K = k;  
   roots = r;
@@ -251,24 +257,30 @@ void operations::Saturate(int init, int* r, int* s, int k)
     Lset[k] = new int_set;
 
   // Start saturation
-  TopSaturate(init);
+  int thing = TopSaturate(init);
 
   // destroy temp stuff
   for (k=1; k<=K; k++) {
     delete Lset[k];
   }
   delete[] Lset; 
+  return thing;
 }
 
-void operations::TopSaturate(int init)
+int operations::TopSaturate(int init)
 {
-  if (init<2) return;
+  if (init<2) return init;
   int k = mdd->LevelOf(init);
   DCASSERT(mdd->SizeOf(init)==sizes[k]);
   const int* down = mdd->FullDownOf(init);
-  for (int i=mdd->SizeOf(init)-1; i>=0; i--) 
-    if (down[i]) TopSaturate(down[i]);
+  for (int i=mdd->SizeOf(init)-1; i>=0; i--) {
+    int d = TopSaturate(down[i]);
+    mdd->SetArc(init, i, d);
+  }
   if (roots[k]) Saturate(init);
+  int a = mdd->Reduce(init);
+  if (a==init) mdd->Link(a); // hack
+  return a;
 }
 
 void operations::Saturate(int init)
@@ -544,8 +556,12 @@ int operations::RecFire(int p, int mxd)
 #endif
 
   if (snonzero && roots[k]) Saturate(s);
-  s = mdd->Reduce(s);
-  fire_cache->Add(p, mxd, s);
-  return s;
+  int ns = mdd->Reduce(s);
+  fire_cache->Add(p, mxd, ns);
+#ifdef FIRE_TRACE
+  Output << "              Reduced: " << s << "\t got " << ns << "\n";
+  Output.flush();
+#endif
+  return ns;
 }
 

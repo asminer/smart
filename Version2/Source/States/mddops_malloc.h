@@ -110,7 +110,7 @@ public:
   int Count(int a);
 
   // Pregen saturation
-  void Saturate(int init, int* roots, int* sizes, int K);
+  int Saturate(int init, int* roots, int* sizes, int K);
 
   inline int Upings() const { return union_cache->Pings(); }
   inline int Uhits() const { return union_cache->Hits(); }
@@ -119,7 +119,7 @@ public:
   inline int Fhits() const { return fire_cache->Hits(); }
 
 protected:
-  void TopSaturate(int p);  
+  int TopSaturate(int p);  
   void Saturate(int p);  
   int RecFire(int p, int mxd);
   bool FireRow(int s, int pd, int row);

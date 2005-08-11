@@ -3,9 +3,10 @@
 
 #include "mdd_ops.h"
 
-// #define UNION_TRACE
-// #define FIRE_TRACE
-// #define SATURATE_TRACE
+//#define UNION_TRACE
+//#define FIRE_TRACE
+//#define SATURATE_TRACE
+//#define COUNT_TRACE
 
 // ************************************************************
 // *                   binary_cache methods                   *
@@ -218,19 +219,24 @@ int operations::Count(int a)
     for(; oldcs<countsize; oldcs++) counts[oldcs] = 0;
   }
   if (counts[a]) return counts[a];
+  int answer = 0;
   if (mdd->isNodeSparse(a)) {
     for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
-      counts[a] += Count(mdd->Data(a, 2*i+1));
+      answer += Count(mdd->Data(a, 2*i+1));
     }
   } else {
     for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
-      counts[a] += Count(mdd->Data(a, i));
+      answer += Count(mdd->Data(a, i));
     }
   }
-  return counts[a];
+#ifdef COUNT_TRACE
+  Output << "Count of " << a << " is " << answer << "\n";
+  Output.flush();
+#endif
+  return (counts[a]=answer);
 }
 
-void operations::Saturate(int init, int* r, int* s, int k)
+int operations::Saturate(int init, int* r, int* s, int k)
 {
   K = k;  
   roots = r;
@@ -243,23 +249,29 @@ void operations::Saturate(int init, int* r, int* s, int k)
     Lset[k] = new int_set;
 
   // Start saturation
-  TopSaturate(init);
+  int thing = TopSaturate(init);
 
   // destroy temp stuff
   for (k=1; k<=K; k++) {
     delete Lset[k];
   }
   delete[] Lset; 
+  return thing;
 }
 
-void operations::TopSaturate(int init)
+int operations::TopSaturate(int init)
 {
-  if (init<2) return;
+  if (init<2) return init;
   int k = mdd->NodeLevel(init);
   DCASSERT(mdd->SizeOf(init)==sizes[k]);
-  for (int i=mdd->SizeOf(init)-1; i>=0; i--) 
-    if (mdd->Data(init, i)) TopSaturate(mdd->Data(init, i));
+  for (int i=mdd->SizeOf(init)-1; i>=0; i--) {
+    int d = TopSaturate(mdd->Data(init, i));
+    mdd->SetArc(init, i, d);
+  }
   if (roots[k]) Saturate(init);
+  int a = mdd->Reduce(init);
+  if (a==init) mdd->Link(a);
+  return a;
 }
 
 void operations::Saturate(int init)
