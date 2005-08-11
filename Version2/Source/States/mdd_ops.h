@@ -62,6 +62,8 @@ public:
   inline int Pings() const { return pings; }
   inline int Hits() const { return hits; }
 
+  void Report(const char* cachename, OutputStream &s) const;
+
   // Remove all entries
   void Clear(); 
 
@@ -115,6 +117,8 @@ public:
   operations(node_manager* m);
   ~operations();
 
+  /** Returns a "new" set encoding the union of sets a and b.
+  */
   int Union(int a, int b);
   int Count(int a);
 
@@ -123,12 +127,13 @@ public:
   // Pregen saturation
   int Saturate(int init, int* roots, int* sizes, int K);
 
-  inline int Upings() const { return union_cache->Pings(); }
-  inline int Uhits() const { return union_cache->Hits(); }
+  void CacheReport(OutputStream &s) const {
+    union_cache->Report("Union cache", s);
+    fire_cache->Report("Firing cache", s);
+  }
+
   inline void ClearUCache() { union_cache->Clear(); }
 
-  inline int Fpings() const { return fire_cache->Pings(); }
-  inline int Fhits() const { return fire_cache->Hits(); }
   inline void ClearFCache() { fire_cache->Clear(); }
 
 protected:

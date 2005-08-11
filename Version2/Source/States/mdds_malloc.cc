@@ -22,6 +22,8 @@ mdd_node_manager::mdd_node_manager()
   for (int f=2; f<a_size; f++) address[f] = 0;
 #endif
 
+  active_nodes = peak_mem = curr_mem = 0;
+
   unique = new HashTable<mdd_node_manager> (this);
 }
 
@@ -108,6 +110,9 @@ int mdd_node_manager::TempNode(int k, int sz)
   foo[2] = k;  // level
   foo[3] = sz; // size
   // all the rest are already zero
+  // memory stats
+  curr_mem += (4+sz)*sizeof(int);
+  peak_mem = MAX(peak_mem, curr_mem);
   return p;
 }
 
@@ -254,6 +259,7 @@ void mdd_node_manager::DeleteNode(int p)
       Unlink(ptr[0]);
       ptr += 2; 
     }
+    curr_mem -= (4-2*foo[3]) * sizeof(int);
     // Recycle node memory
     free(address[p]);
   } else {
@@ -263,6 +269,7 @@ void mdd_node_manager::DeleteNode(int p)
       Unlink(ptr[0]);
       ptr++;
     }
+    curr_mem -= (4+foo[3]) * sizeof(int);
     // Recycle node memory
     free(address[p]);
   }
@@ -273,6 +280,7 @@ void mdd_node_manager::DeleteNode(int p)
 
 int mdd_node_manager::NextFreeNode()
 {
+  active_nodes++;
   if (a_unused) {
     // grab a recycled index
     int p = a_unused;
@@ -299,6 +307,7 @@ int mdd_node_manager::NextFreeNode()
 
 void mdd_node_manager::FreeNode(int p)
 {
+  active_nodes--;
   DCASSERT(p>1);
   if (p==a_last) { 
     // special case

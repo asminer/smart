@@ -47,6 +47,11 @@ class node_manager {
   /// Total ints in holes
   int hole_slots;
 
+  /// For peak memory.
+  int max_slots;
+  /// For stats.
+  int active_nodes;
+
   /// Uniqueness table
   HashTable <node_manager> *unique;
 public:
@@ -116,6 +121,11 @@ public:
     Output.flush();
 #endif
   }  
+
+  inline int SharedCopy(int p) {
+    Link(p);
+    return p;
+  }
 
   void Unlink(int p) {
     if (p<2) return;
@@ -193,6 +203,10 @@ public:
   void ShowNode(OutputStream &s, int p) const;
 
   inline int PeakNodes() const { return a_last-1; }
+  inline int CurrentNodes() const { return active_nodes; }
+  inline int PeakMemory() const { return max_slots * sizeof(int); }
+  inline int CurrentMemory() const { return d_last * sizeof(int); }
+  inline int MemoryHoles() const { return hole_slots * sizeof(int); } 
 
   // For uniqueness table
 public:

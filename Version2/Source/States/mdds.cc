@@ -29,7 +29,8 @@ node_manager::node_manager()
   data = (int*) malloc(d_size*sizeof(int));
   d_last = 0;
   d_unused = 0;
-  hole_slots = 0;
+  max_slots = hole_slots = 0;
+  active_nodes = 0;
 
   unique = new HashTable<node_manager> (this);
 }
@@ -216,11 +217,6 @@ void node_manager::Dump(OutputStream &s) const
   s.Put(a, awidth);
   s << ": End\n";
  */ 
-
-  // Some stats
-  s << "\n" << d_last << " slots allocated, ";
-  s << hole_slots << " slots in holes\n";
-  s.flush();
 }
 
 void node_manager::ShowNode(OutputStream &s, int p) const
@@ -324,6 +320,7 @@ bool node_manager::equals(int h1, int h2) const
 
 void node_manager::DeleteNode(int p)
 {
+  active_nodes--;
   int* foo = data + address[p];
   DCASSERT(p>1);
   if (next[p]>-2) {
@@ -362,6 +359,7 @@ void node_manager::DeleteNode(int p)
 
 int node_manager::NextFreeNode()
 {
+  active_nodes++;
   if (a_unused) {
     // grab a recycled index
     int p = a_unused;
@@ -474,6 +472,7 @@ int node_manager::FindHole(int slots)
   }
   int h = d_last+1;
   d_last += slots;
+  max_slots = MAX(max_slots, d_last);
   return h;
 }
 
