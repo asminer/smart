@@ -46,6 +46,21 @@ int binary_cache::NewNode()
   return lastnode;
 }
 
+void binary_cache::Clear()
+{
+  int dummy;
+  // Clear the hash table
+  int list = table->ConvertToList(dummy);
+  while (list>=0) {
+    mdd->CacheRemove(nodeheap[list].a);
+    mdd->CacheRemove(nodeheap[list].b);
+    mdd->CacheRemove(nodeheap[list].c);
+    list = nodeheap[list].next;
+  }
+  unused_nodes = -1;
+  lastnode = -1;
+}
+
 // ************************************************************
 // *                    operations methods                    *
 // ************************************************************
@@ -205,6 +220,23 @@ int operations::Union(int a, int b)
   Output.flush();
 #endif
   return c;
+}
+
+void operations::Mark(int a, bool* marked)
+{
+  if (marked[a]) return;
+  if (a>1) {
+    if (mdd->isNodeSparse(a)) {
+      for (int i = mdd->nnzOf(a)-1; i>=0; i--) {
+        Mark(mdd->Data(a, 2*i+1), marked);
+      }
+    } else {
+      for (int i = mdd->SizeOf(a)-1; i>=0; i--) {
+        Mark(mdd->Data(a, i), marked);
+      }
+    }
+  } // if a>1
+  marked[a] = true;
 }
 
 int operations::Count(int a)

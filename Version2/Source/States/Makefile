@@ -8,8 +8,8 @@
 
 CC = g++
 CXX = g++
-#CPPFLAGS = -ggdb -DDEVELOPMENT_CODE
-CPPFLAGS = -O3
+CPPFLAGS = -ggdb -DDEVELOPMENT_CODE
+#CPPFLAGS = -O3
 
 EXECS = testflat testmdd testmm
 
