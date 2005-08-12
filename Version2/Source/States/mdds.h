@@ -91,15 +91,24 @@ public:
     return -data[address[p]+3];
   }
 
-  inline int Data(int p, int i) const {
-#ifdef DEVELOPMENT_CODE
+  inline int FullDown(int p, int i) const {
     DCASSERT(address[p]);
-    if (isNodeSparse(p)) {
-      CHECK_RANGE(0, i, 2*nnzOf(p));
-    } else {
-      CHECK_RANGE(0, i, SizeOf(p));
-    }
-#endif
+    DCASSERT(!isNodeSparse(p));
+    CHECK_RANGE(0, i, SizeOf(p));
+    return data[address[p]+4+i];
+  }
+
+  inline int SparseDown(int p, int i) const {
+    DCASSERT(address[p]);
+    DCASSERT(isNodeSparse(p));
+    CHECK_RANGE(0, i, nnzOf(p));
+    return data[address[p]+4+nnzOf(p)+i];
+  }
+ 
+  inline int SparseIndex(int p, int i) const {
+    DCASSERT(address[p]);
+    DCASSERT(isNodeSparse(p));
+    CHECK_RANGE(0, i, nnzOf(p));
     return data[address[p]+4+i];
   }
 

@@ -82,15 +82,16 @@ int node_manager::Reduce(int p)
     data[newaddr+1] = data[address[p]+1];
     data[newaddr+2] = data[address[p]+2];
     data[newaddr+3] = -nnz;
-    int* newptr = data + newaddr + 4;
+    int* indexptr = data + newaddr + 4;
+    int* downptr = data + newaddr + 4 + nnz;
     // can't rely on previous ptr
     int* ptr = data + address[p] + 4;
     for (int i=0; i<size; i++) {
       if (ptr[i]) {
-        newptr[0] = i;
-        newptr++;
-        newptr[0] = ptr[i];
-	newptr++;
+        indexptr[0] = i;
+        indexptr++;
+        downptr[0] = ptr[i];
+	downptr++;
       }
     }
     // trash old node
@@ -236,25 +237,20 @@ void node_manager::ShowNode(OutputStream &s, int p) const
   s << " cc: " << data[a+1];
   s << " level: " << ABS(data[a+2]);
   if (data[a+2]<0) s << "'";
-  if (data[a+3]<0) {
+  if (isNodeSparse(p)) {
       // sparse
-      s << " nnz: " << -data[a+3] << " \t (";
-      a += 4; 
-      for (int nz=data[a-1]; nz; nz++) {
-        s << data[a];
-        a++;
-        s << ":" << data[a];
- 	a++;
-        if (nz<-1) s << ", ";
+      s << " nnz: " << nnzOf(p) << " \t (";
+      for (int z=0; z<nnzOf(p); z++) {
+        if (z) s << ", ";
+        s << SparseIndex(p, z);
+        s << ":" << SparseDown(p, z);
       }
       s << ")";
     } else {
-      s << " size: " << data[a+3] << " \t [";
-      a += 4;
-      for (int i=data[a-1]; i; i--) {
-	s << data[a];
-	a++;
-        if (i>1) s << "|";
+      s << " size: " << SizeOf(p) << " \t [";
+      for (int i=0; i<SizeOf(p); i++) {
+        if (i) s << "|";
+	s << FullDown(p, i);
       }
       s << "]";
   }
