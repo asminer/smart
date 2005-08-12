@@ -129,6 +129,7 @@ int main(int argc, char** argv)
 
   Output << card << " reachable states\n";
 
+  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
   Output.Pad('-', 60);
   Output << "\n";
   cruft.CacheReport(Output);
@@ -170,6 +171,8 @@ int main(int argc, char** argv)
   Output << "Current memory: " << bar.CurrentMemory() << " bytes\n";
   Output << " unused holes : " << bar.MemoryHoles() << " bytes\n";
   Output << " Actual memory: " << bar.CurrentMemory() - bar.MemoryHoles() << " bytes\n";
+
+  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
 
   Output << "\n";
 

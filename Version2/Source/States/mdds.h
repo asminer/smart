@@ -47,6 +47,8 @@ class node_manager {
   /// Total ints in holes
   int hole_slots;
 
+  int max_hole_chain;
+
   /// For peak memory.
   int max_slots;
   /// For stats.
@@ -207,6 +209,8 @@ public:
   inline int PeakMemory() const { return max_slots * sizeof(int); }
   inline int CurrentMemory() const { return d_last * sizeof(int); }
   inline int MemoryHoles() const { return hole_slots * sizeof(int); } 
+
+  inline int MaxHoleChain() const { return max_hole_chain; }
 
   // For uniqueness table
 public:

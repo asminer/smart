@@ -63,6 +63,7 @@ int mdd_node_manager::Reduce(int p)
   if (2*nnz < lnz) {
     // sparse is better; convert
     int* newaddr = (int*) malloc((4+2*nnz)*sizeof(int));
+    curr_mem += (4+2*nnz)*sizeof(int);
     newaddr[0] = address[p][0];
     newaddr[1] = address[p][1];
     newaddr[2] = address[p][2];
@@ -79,12 +80,14 @@ int mdd_node_manager::Reduce(int p)
     }
     // trash old node
     free(address[p]);
+    curr_mem -= (4+size)*sizeof(int);
     address[p] = newaddr;
   } else {
     // full is better
     if (lnz+1<size) {
       // truncate the trailing 0s
       address[p] = (int*) realloc(address[p], (5+lnz)*sizeof(int));
+      curr_mem -= (size-(lnz+1))*sizeof(int);
       DCASSERT(address[p]);
       address[p][3] = lnz+1;
     }
