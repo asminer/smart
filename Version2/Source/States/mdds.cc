@@ -32,6 +32,8 @@ node_manager::node_manager()
   max_slots = hole_slots = 0;
   active_nodes = 0;
 
+  max_hole_chain = 0;
+
   unique = new HashTable<node_manager> (this);
 }
 
@@ -430,6 +432,8 @@ int node_manager::FindHole(int slots)
   const int min_node_size = 6;
   DCASSERT(slots>2);
 
+  int chain = 0;
+
   // look for a hole
   int prev = 0;
   int curr = d_unused;
@@ -442,6 +446,7 @@ int node_manager::FindHole(int slots)
 	d_unused = data[curr];
       }
       hole_slots -= slots;
+      max_hole_chain = MAX(max_hole_chain, chain);
       return curr;
     } 
     if (data[curr+1] >= slots + min_node_size) {
@@ -454,12 +459,15 @@ int node_manager::FindHole(int slots)
       data[curr+slots] = data[curr];		  // next ptr
       data[curr+slots+1] = data[curr+1] - slots;  // new hole size
       hole_slots -= slots;
+      max_hole_chain = MAX(max_hole_chain, chain);
       return curr;
     }
     // this hole not large enough, try the next one
     prev = curr;
     curr = data[curr];
+    chain++;
   } // while curr
+  max_hole_chain = MAX(max_hole_chain, chain);
 
   // can't recycle; grab from the end
   if (d_last + slots >= d_size) {
