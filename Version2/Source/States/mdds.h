@@ -15,10 +15,12 @@
 
 class node_manager {
 
-  /** For each node, its index in the data array. */
+  /** Address of each node.
+      If the node is active, this is the offset (>0) in the data array.
+      If the node is deleted, this is -next deleted node 
+	(part of the unused address list).
+  */
   int* address;
-  /** Next pointer for uniqueness table. */
-  int* next;
   /// Size of address/next array.
   int a_size;
   /// Last used address.
@@ -26,24 +28,49 @@ class node_manager {
   /// Pointer to unused address list.
   int a_unused;
   
-  /** Data for each node. 
-      Each node stores the following 4 integers, then the actual node data:
-	incoming reference count
-	number of cache entries
-	level
-	#full entries / #nonzeroes
+  /** Data for each node / hole.
 
-      For "holes", instead the 2 integers are used:
-        next hole index
-	hole size (#integers)
+      If active, the node data is as follows:
+
+	[0]	incoming pointer count (>=0)
+	[1]	number of caches this node is in (>=0)
+	[2]	If this node is in the unique table,
+		the next pointer (>=-1)
+		Otherwise, a value < -1. 
+	[3]	Level.  negatives for primed variables.
+	[4]	Size.
+		If > 0, full storage is used.
+		If < 0, sparse storage is used.
+		If = 0, the node is deleted but still in caches.
+
+	Full storage:
+	[5..4+Size]	Downward pointers (>=0)
+
+	Sparse storage:
+	[5..4+nnz]		Indexes (>=0)
+	[5+nnz..4+2*nnz]	Downward pointers (>=0)
+
+      If deleted, the hole data is as follows:
+
+	[0]	-size (number of slots in hole)     
+	[1]	up
+	[2]	down	(used for size data)
+	[3]	previous pointer (nodes of same size)
+	[4]	next pointer	(nodes of same size)
+
+	[5..size-2]	Unused
+
+	[size-1]	-size
   */
   int* data;
   /// Size of data array.
   int d_size;
   /// Last used data slot.  Also total number of ints "allocated"
   int d_last;
-  /// Pointer to data holes list.
-  int d_unused;
+  /// Pointer to top of holes grid
+  int holes_top;
+  /// Pointer to bottom of holes grid
+  int holes_bottom;
   /// Total ints in holes
   int hole_slots;
 
@@ -60,57 +87,18 @@ public:
   node_manager();
   ~node_manager();
 
+  // Dealing with address
+
   inline bool isNodeActive(int p) const {
     if (p<2) return true;
-    return (address[p]);
+    return (address[p]>0);
   }
 
   inline bool isNodeDeleted(int p) const {
-    return (0==address[p]);
+    return (address[p]<=0);
   }
 
-  inline bool isNodeReduced(int p) const {
-    DCASSERT(address[p]);
-    return (next[p]>=-1);
-  }
-
-  inline bool isNodeSparse(int p) const {
-    DCASSERT(address[p]);
-    return (data[address[p]+3]<0);
-  }
-
-  inline int SizeOf(int p) const {
-    DCASSERT(address[p]);
-    DCASSERT(data[address[p]+3]>0);
-    return data[address[p]+3];
-  }
-
-  inline int nnzOf(int p) const {
-    DCASSERT(address[p]);
-    DCASSERT(data[address[p]+3]<0);
-    return -data[address[p]+3];
-  }
-
-  inline int FullDown(int p, int i) const {
-    DCASSERT(address[p]);
-    DCASSERT(!isNodeSparse(p));
-    CHECK_RANGE(0, i, SizeOf(p));
-    return data[address[p]+4+i];
-  }
-
-  inline int SparseDown(int p, int i) const {
-    DCASSERT(address[p]);
-    DCASSERT(isNodeSparse(p));
-    CHECK_RANGE(0, i, nnzOf(p));
-    return data[address[p]+4+nnzOf(p)+i];
-  }
- 
-  inline int SparseIndex(int p, int i) const {
-    DCASSERT(address[p]);
-    DCASSERT(isNodeSparse(p));
-    CHECK_RANGE(0, i, nnzOf(p));
-    return data[address[p]+4+i];
-  }
+  // Dealing with slot 0
 
   inline int Incount(int p) const {
     if (p<2) return 1;
@@ -159,6 +147,15 @@ public:
     DeleteNode(p);
   }
 
+  // Dealing with slot 1
+
+  inline int CacheCount(int p) const {
+    if (p<2) return 1;
+    DCASSERT(address[p]);
+    DCASSERT(data[address[p]+1]>=0);
+    return data[address[p]+1];
+  }
+
   inline void CacheAdd(int p) {
     if (p<2) return;
     DCASSERT(address[p]);
@@ -189,21 +186,79 @@ public:
     DeleteNode(p);
   }
 
+  // Dealing with slot 2
+
+  inline bool isNodeReduced(int p) const {
+    DCASSERT(address[p]);
+    if (p<2) return true;
+    return (data[address[p]+2]>=-1);
+  }
+
+  inline bool isNodeUnreduced(int p) const {
+    DCASSERT(address[p]);
+    if (p<2) return false;
+    return (data[address[p]+2]<-1);
+  }
+
+  // Dealing with slot 3
+
+  inline int NodeLevel(int p) const {
+    DCASSERT(isNodeActive(p));
+    if (p<2) return 0;
+    return data[address[p]+3];
+  }
+
+  // Dealing with slot 4
+
+  inline bool isNodeSparse(int p) const {
+    DCASSERT(address[p]);
+    return (data[address[p]+4]<0);
+  }
+
+  inline int SizeOf(int p) const {
+    DCASSERT(address[p]);
+    DCASSERT(data[address[p]+4]>0);
+    return data[address[p]+4];
+  }
+
+  inline int nnzOf(int p) const {
+    DCASSERT(address[p]);
+    DCASSERT(data[address[p]+4]<0);
+    return -data[address[p]+4];
+  }
+
+  // Dealing with entries
+
+  inline int FullDown(int p, int i) const {
+    DCASSERT(address[p]);
+    DCASSERT(!isNodeSparse(p));
+    CHECK_RANGE(0, i, SizeOf(p));
+    return data[address[p]+5+i];
+  }
+
+  inline int SparseDown(int p, int i) const {
+    DCASSERT(address[p]);
+    DCASSERT(isNodeSparse(p));
+    CHECK_RANGE(0, i, nnzOf(p));
+    return data[address[p]+5+nnzOf(p)+i];
+  }
+ 
+  inline int SparseIndex(int p, int i) const {
+    DCASSERT(address[p]);
+    DCASSERT(isNodeSparse(p));
+    CHECK_RANGE(0, i, nnzOf(p));
+    return data[address[p]+5+i];
+  }
+
   inline void SetArc(int p, int i, int d) {
     DCASSERT(isNodeActive(p));
     DCASSERT(!isNodeReduced(p));
-    int* sz = data + address[p] + 3;
+    int* sz = data + address[p] + 4;
     DCASSERT(sz[0]>0);
     CHECK_RANGE(0, i, sz[0]);
     sz += i+1;
     Unlink(sz[0]);
     sz[0] = d;
-  }
-
-  inline int NodeLevel(int p) const {
-    DCASSERT(isNodeActive(p));
-    if (p<2) return 0;
-    return data[address[p]+2];
   }
 
   int Reduce(int p);
@@ -224,8 +279,15 @@ public:
   // For uniqueness table
 public:
   inline int Null() const { return 0; }
-  inline int getNext(int h) const { DCASSERT(address[h]); return next[h]; }
-  inline void setNext(int h, int n) const { DCASSERT(address[h]); next[h] = n; }
+  inline int getNext(int h) const { 
+    DCASSERT(address[h]); 
+    DCASSERT(data[address[h]+2]>=-1);
+    return data[address[h]+2];
+  }
+  inline void setNext(int h, int n) const { 
+    DCASSERT(address[h]); 
+    data[address[h]+2] = n; 
+  }
   inline bool isStale(int h) const { return false; }
   inline void show(OutputStream &s, int h) const { s.Put(h); }
   int hash(int h, int M) const;

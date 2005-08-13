@@ -4,6 +4,8 @@
 #include "mdds.h"
 #include "../Base/errors.h"
 
+#define SHOW_INTERNALS
+
 //#define DONT_USE_SPARSE
 //#define DONT_USE_FULL
 
@@ -13,14 +15,11 @@ node_manager::node_manager()
 {
   a_size = Add_Size;
   address = (int*) malloc(a_size*sizeof(int));
-  next = (int*) malloc(a_size*sizeof(int));
   a_last = 1;
   a_unused = 0;
   // just in case
   address[0] = 0;
   address[1] = 0;
-  next[0] = 0;
-  next[1] = 1;
 #ifdef DEVELOPMENT_CODE
   for (int f=2; f<a_size; f++) address[f] = 0;
 #endif
@@ -28,7 +27,7 @@ node_manager::node_manager()
   d_size = Add_Size;
   data = (int*) malloc(d_size*sizeof(int));
   d_last = 0;
-  d_unused = 0;
+  holes_top = holes_bottom = 0;
   max_slots = hole_slots = 0;
   active_nodes = 0;
 
@@ -41,26 +40,28 @@ node_manager::~node_manager()
 {
   delete unique;
   free(address);
-  free(next);
   free(data);
 }
 
 int node_manager::Reduce(int p)
 {
   DCASSERT(p>1);
-  DCASSERT(next[p]<-1);
+  DCASSERT(isNodeActive(p));
+  DCASSERT(isNodeUnreduced(p));
+  DCASSERT(isNodeSparse(p));
 
   // first, compress this node
-  int size = data[address[p]+3];
+  int size = SizeOf(p);
   int nnz = 0;
-  int lnz = 0;
-  int* ptr = data + address[p] + 4;
+  int truncsize = 0;
+  int* ptr = data + address[p] + 5;
   for (int i=0; i<size; i++) {
     if (ptr[i]) {
       nnz++;
-      lnz = i;
+      truncsize = i;
     }
   }
+  truncsize++;
 
   if (0==nnz) {
     // duplicate of 0
@@ -72,20 +73,26 @@ int node_manager::Reduce(int p)
   nnz = size; // cheat
 #endif
 #ifdef DONT_USE_FULL
-  lnz = 2*nnz+1;
+  truncsize = 2*nnz+1;
 #endif
 
-  if (2*nnz < lnz) {
+  // right now, tie goes to truncated full.
+  if (2*nnz < truncsize) {
     // sparse is better; convert
     int newaddr = FindHole(4+2*nnz);
+    // incount
     data[newaddr] = data[address[p]];
+    // cachecount
     data[newaddr+1] = data[address[p]+1];
-    data[newaddr+2] = data[address[p]+2];
-    data[newaddr+3] = -nnz;
-    int* indexptr = data + newaddr + 4;
-    int* downptr = data + newaddr + 4 + nnz;
+    // don't bother with next
+    // level
+    data[newaddr+3] = data[address[p]+3];
+    // size
+    data[newaddr+4] = -nnz;
+    int* indexptr = data + newaddr + 5;
+    int* downptr = data + newaddr + 5 + nnz;
     // can't rely on previous ptr
-    int* ptr = data + address[p] + 4;
+    int* ptr = data + address[p] + 5;
     for (int i=0; i<size; i++) {
       if (ptr[i]) {
         indexptr[0] = i;
@@ -95,19 +102,26 @@ int node_manager::Reduce(int p)
       }
     }
     // trash old node
-    MakeHole(address[p], 4+size);
+    MakeHole(address[p], 5+size);
     address[p] = newaddr;
   } else {
     // full is better
-    if (lnz+1<size) {
+    if (truncsize<size) {
       // truncate the trailing 0s
-      int newaddr = FindHole(4+lnz+1);
+      int newaddr = FindHole(5+truncsize);
+      // incount
       data[newaddr] = data[address[p]];
+      // cachecount
       data[newaddr+1] = data[address[p]+1];
-      data[newaddr+2] = data[address[p]+2];
-      data[newaddr+3] = lnz+1;
-      memcpy(data+newaddr+4, data+address[p]+4, (1+lnz)*sizeof(int));
-      MakeHole(address[p], 4+size);
+      // don't bother with next
+      // level
+      data[newaddr+3] = data[address[p]+3];
+      // size
+      data[newaddr+4] = truncsize;
+      // elements
+      memcpy(data+newaddr+5, data+address[p]+5, truncsize*sizeof(int));
+      // trash old node
+      MakeHole(address[p], 5+size);
       address[p] = newaddr;
     }
   }
@@ -124,21 +138,16 @@ int node_manager::TempNode(int k, int sz)
 {
   DCASSERT(sz>0);
   int p = NextFreeNode();
-  address[p] = FindHole(4+sz);
-  next[p] = -5; 
+  address[p] = FindHole(5+sz);
   int* foo = (data+address[p]);
-  foo[0] = 1; // #incoming
-  foo++;
-  foo[0] = 0; // #cache entries
-  foo++;
-  foo[0] = k; // level
-  foo++;
-  foo[0] = sz; // size
-  // downward pointers
-  for (; sz; sz--) {
-    foo++;
-    foo[0] = 0;
-  }
+  foo[0] = 1;	// #incoming
+  foo[1] = 0;   // cache count
+  foo[2] = -5;	// unreduced next
+  foo[3] = k;	// level
+  foo[4] = sz;	// size
+  // zero out the downward pointers
+  bzero(foo+5, sz*sizeof(int)); 
+  //
 #ifdef TRACK_DELETIONS
   Output << "Creating node " << p << "\n";
   Output.flush();
@@ -155,6 +164,60 @@ inline int digits(int a)
 
 void node_manager::Dump(OutputStream &s) const
 {
+#ifdef SHOW_INTERNALS
+  s << "Internal forest storage\n";
+  s << "First unused node index: " << a_unused << "\n";
+  int awidth = digits(d_last);
+  s << " Node# :  ";
+  for (int p=0; p<=a_last; p++) {
+    if (p) s << " ";
+    s.Put(p, awidth);
+  }
+  s << "\n";
+  s << "Address: [";
+  for (int p=0; p<=a_last; p++) {
+    if (p) s << "|";
+    s.Put(address[p], awidth);
+  }
+  s << "\n\n";
+
+  s << "Data array by record: \n";
+  int a;
+  for (a=1; a<=d_last; ) {
+    s.flush();
+    s.Put(a, awidth);
+    s << " : [" << data[a];
+    for (int i=1; i<5; i++) {
+      s << "|" << data[a+i];
+    }
+    if (data[a]<0) { 
+      // hole
+      s << "| ... |";
+      a -= data[a];  
+      s << data[a-1] << "]\n";
+    } else {
+      // proper node
+      if (data[a+4]>0) {
+        // Full storage
+        for (int i=0; i<data[a+4]; i++) {
+          s << "|" << data[a+5+i];
+        }
+        a += 5+data[a+4];
+        s << "]\n";
+      } else {
+        // sparse storage
+        for (int i=0; i<-2*data[a+4]; i++) {
+          s << "|" << data[a+5+i];
+        }
+        a += 5-2*data[a+4];
+        s << "]\n";
+      }
+    }
+  } // for a
+
+  s << "Pretty view of forest storage:\n";
+  s.flush();
+#endif
   int nwidth = digits(a_last);
   for (int p=0; p<=a_last; p++) {
     s.Put(p, nwidth);
@@ -163,63 +226,6 @@ void node_manager::Dump(OutputStream &s) const
     s << "\n";
     s.flush();
   }
-/*
-  int nwidth = digits(a_last);
-  s << "\nFirst free node: " << a_unused << "\n";
-  s << "Nodes: \n#";
-  s.Pad(' ', nwidth-1);
-  s << " \tAddress\tNext\tHash\n";
-  int p;
-  for (p=0; p<=a_last; p++) {
-    s.flush();	
-    s.Put(p, nwidth);
-    s << " \t" << address[p] << "\t" << next[p] << "\t";
-    if (address[p]) {
-      s << hash(p, unique->Size()); 
-    }
-    s << "\n";
-  } // for p
-  
-  s << "\nIndex of first hole: " << d_unused << "\n";
-  s << "Array by record: \n";
-  int awidth = digits(d_last);
-  int y = d_unused;
-  int a;
-  for (a=1; a<=d_last; ) {
-    s.flush();
-    s.Put(a, awidth);
-    s << ": ";
-    if (a==y) {
-      s << "hole with " << data[a+1] << " slots; next is " << data[a] << "\n";
-      y = data[a];
-      a+= data[a+1];
-      continue;
-    } 
-    // must be a node
-    // VERY slow, but for display, we don't care
-    // Find the node index (necessary for flags)
-    for (p=0; p<=a_last; p++) {
-      if (address[p] == a) break;
-    }
-    if (p>a_last) {
-      s << " lost node?\n";
-      return;
-    }
-    DCASSERT(p<=a_last);
-    s << "(node ";
-    s.Put(p, nwidth);
-    s << ") ";
-    ShowNode(s, p);
-    s << "\n";
-    if (data[a+3]<0) {
-      a += 4-2*data[a+3];
-    } else {
-      a += 4+data[a+3];
-    }
-  } // for a
-  s.Put(a, awidth);
-  s << ": End\n";
- */ 
 }
 
 void node_manager::ShowNode(OutputStream &s, int p) const
@@ -228,18 +234,18 @@ void node_manager::ShowNode(OutputStream &s, int p) const
     s << "(terminal)";
     return;
   }
-  if (0==address[p]) {
+  if (isNodeDeleted(p)) {
     s << "DELETED";
     return;
   }
   int a = address[p];
   s << "in: " << data[a];
   s << " cc: " << data[a+1];
-  s << " level: " << ABS(data[a+2]);
-  if (data[a+2]<0) s << "'";
+  s << " level: " << ABS(data[a+3]);
+  if (data[a+3]<0) s << "'";
   if (isNodeSparse(p)) {
       // sparse
-      s << " nnz: " << nnzOf(p) << " \t (";
+      s << "  nnz: " << nnzOf(p) << " \t (";
       for (int z=0; z<nnzOf(p); z++) {
         if (z) s << ", ";
         s << SparseIndex(p, z);
@@ -260,10 +266,10 @@ int node_manager::hash(int h, int M) const
 {
   DCASSERT(h);
   DCASSERT(M);
-  int sz = data[address[h]+3];
+  int sz = data[address[h]+4];
   int a = 0;
   if (sz>0) {
-    int* ptr = data + address[h] + 3 + sz;
+    int* ptr = data + address[h] + 4 + sz;
     int ops = -2;
     int skip = 1;
     for (int i=sz; i>0; i-=skip) {
@@ -277,7 +283,7 @@ int node_manager::hash(int h, int M) const
       ptr -= skip;
     }
   }  else {
-    int* ptr = data + address[h] + 3 - 2*sz;
+    int* ptr = data + address[h] + 4 - 2*sz;
     int ops = -2;
     int skip = 1;
     for (int i=-sz; i>0; i-=skip) {
@@ -298,8 +304,8 @@ bool node_manager::equals(int h1, int h2) const
 {
   DCASSERT(h1);	
   DCASSERT(h2);
-  int* ptr1 = data + address[h1] + 2;  // points to level of h1
-  int* ptr2 = data + address[h2] + 2;  // points to level of h2
+  int* ptr1 = data + address[h1] + 3;  // points to level of h1
+  int* ptr2 = data + address[h2] + 3;  // points to level of h2
   if (ptr1[0] != ptr2[0]) return false;
   int sz1 = ptr1[1];
   int sz2 = ptr2[1];
@@ -318,10 +324,10 @@ bool node_manager::equals(int h1, int h2) const
 
 void node_manager::DeleteNode(int p)
 {
+  DCASSERT(p>1);
   active_nodes--;
   int* foo = data + address[p];
-  DCASSERT(p>1);
-  if (next[p]>-2) {
+  if (isNodeReduced(p)) {
 #ifdef DEELOPMENT_CODE 
     int x = unique->Remove(p);
     DCASSERT(x==p);
@@ -331,24 +337,24 @@ void node_manager::DeleteNode(int p)
   }
 
   // done with children
-  if (foo[3]<0) {
+  if (foo[4]<0) {
     // Sparse encoding
-    int* ptr = foo+5;
-    for (int sz = foo[3]; sz; sz++) {
-      Unlink(ptr[0]);
-      ptr += 2; 
+    int* downptr = foo + 5 - foo[4];
+    int* stop = downptr - foo[4];
+    for (; downptr < stop; downptr++) {
+      Unlink(downptr[0]);
     }
     // Recycle node memory
-    MakeHole(address[p], 4 -2*foo[3]);  
+    MakeHole(address[p], 5 -2*foo[4]);  
   } else {
     // Full encoding
-    int* ptr = foo+4;
-    for (int sz=foo[3]; sz; sz--) {
-      Unlink(ptr[0]);
-      ptr++;
+    int* downptr = foo + 5;
+    int* stop = downptr + foo[4];
+    for (; downptr < stop; downptr++) {
+      Unlink(downptr[0]);
     }
     // Recycle node memory
-    MakeHole(address[p], 4 + foo[3]);  
+    MakeHole(address[p], 5 + foo[4]);  
   }
 
   // recycle the index
@@ -361,8 +367,8 @@ int node_manager::NextFreeNode()
   if (a_unused) {
     // grab a recycled index
     int p = a_unused;
-    a_unused = next[p];
-    DCASSERT(0==address[p]);
+    DCASSERT(address[p]<1);
+    a_unused = -address[p];
     return p;
   }
   // new index
@@ -371,9 +377,6 @@ int node_manager::NextFreeNode()
     a_size += Add_Size;
     address = (int*) realloc(address, a_size * sizeof(int));
     if (NULL==address)
-      OutOfMemoryError("Too many MDD nodes");
-    next = (int*) realloc(next, a_size * sizeof(int));
-    if (NULL==next)
       OutOfMemoryError("Too many MDD nodes");
 #ifdef DEVELOPMENT_CODE
     for (int f=a_last; f<a_size; f++) address[f] = 0;
@@ -390,38 +393,11 @@ void node_manager::FreeNode(int p)
     a_last--;
     return;
   }
-  next[p] = a_unused;
-  address[p] = 0;
+  address[p] = -a_unused;
   a_unused = p;
-
-/* Old way: Sorted
-
-  if (p>a_unused_tail) {
-    // Definitely the tail
-    addresses[p] = 0;
-    if (a_unused_tail) {
-      // we're at the end of an existing list
-      addresses[a_unused_tail] = p;
-      a_unused_tail = p;
-    } else {
-      // empty list
-      a_unused = a_unused_tail = p;
-    }
-    return;
-  }
-  // find spot in list
-  int prev = 0;
-  int next = a_unused;
-  while (next && next<p) {
-    prev = next;
-    next = addresses[next];
-  }
-  addresses[p] = next;
-  DCASSERT(next);  // we should have handled this case already
-  if (prev) addresses[prev] = p;
-  else a_unused = p;
-*/
 }
+
+// HERE!!!!!!!!!!!!!
 
 int node_manager::FindHole(int slots)
 {
