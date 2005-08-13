@@ -11,7 +11,7 @@ CXX = g++
 CPPFLAGS = -ggdb -DDEVELOPMENT_CODE
 #CPPFLAGS = -O3
 
-EXECS = testflat testmdd testmm
+EXECS = testflat testmdd saturate
 
 all: $(EXECS)
 
@@ -41,16 +41,13 @@ flatss.o: flatss.h flatss.cc stateheap.h
 testmdd: testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
 	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
 
+saturate: saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o
+	$(CXX) $(CPPFLAGS) -o saturate saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o
+
+saturate.o: saturate.cc mdds.h mdd_ops.h
 testmdd.o: testmdd.cc mdds.h mdd_ops.h
 mdds.o: mdds.h mdds.cc
 mdd_ops.o: mdds.h mdd_ops.h mdd_ops.cc
-
-testmm: testmm.o mdds_malloc.o mddops_malloc.o streams.o errors.o intset.o
-	$(CXX) $(CPPFLAGS) -o testmm testmm.o mdds_malloc.o mddops_malloc.o streams.o errors.o intset.o
-
-testmm.o: testmm.cc mdds_malloc.h mddops_malloc.h
-mdds_malloc.o: mdds_malloc.h mdds_malloc.cc
-mddops_malloc.o: mdds_malloc.h mddops_malloc.h mddops_malloc.cc
 
 clean:
 	rm *.o $(EXECS)
