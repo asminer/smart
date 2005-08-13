@@ -15,94 +15,66 @@ int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b);
 
 PtrTable::PtrTable() 
 {
-    splaywrapper = new SplayWrap <splayitem>;
-    root = NULL;
-    node_count = 0;
-    node_pile = new Manager <PtrSplay::node> (16);
-    splay_pile = new Manager <splayitem> (16);
+  heapsize = 256;
+  heap = (splayitem*) malloc(heapsize * sizeof(splayitem));
+  last_item = 0;
+  root = -1;
+  splaytable = new SplayTree <PtrTable> (this);
 }
 
 PtrTable::~PtrTable()
 {
-  delete splaywrapper;
-  delete splay_pile;
-  delete node_pile;
-}
-
-void PtrTable::Traverse(PtrSplay::node *root, tablevisit visit) 
-{
-  if (NULL==root) return;
-  Traverse(root->left, visit);
-  visit(root->data);
-  Traverse(root->right, visit);
+  delete splaytable;
+  free(heap);
 }
 
 bool PtrTable::ContainsName(const char* n) 
 {
-  splayitem tmp(n, NULL);
-  return (0==splaywrapper->Splay(root, &tmp));
+  heap[last_item].name = n;
+  return (0==splaytable->Splay(root, last_item));
 }
 
 void* PtrTable::FindName(const char* n)
 {
-    splayitem tmp(n, NULL);
-    int foo = splaywrapper->Splay(root, &tmp);
-    if (foo!=0) return NULL;
-    splayitem *bar = (splayitem*) root->data;
-    return bar->ptr;
+  heap[last_item].name = n;
+  int cmp = splaytable->Splay(root, last_item);
+  if (cmp!=0) return NULL;
+  return heap[root].ptr;
 }
 
 bool PtrTable::ReplaceNull(const char* n, void *p)
 {
-  splayitem tmp(n, NULL);
-  int foo = splaywrapper->Splay(root, &tmp);
-  if (foo!=0) return false; // not found
-  splayitem *bar = (splayitem*) root->data;
-  if (bar->ptr) return false;  // not null
-  bar->ptr = p;
-  return true;
+  heap[last_item].name = n;
+  int cmp = splaytable->Splay(root, last_item);
+  if (cmp!=0) return false;  // not found
+  if (heap[root].ptr) return false; // not null
+  heap[root].ptr = p;
+  return true; 
 }
 
 void PtrTable::AddNamePtr(const char* n, void *p)
 {
-    DCASSERT(n);
-  //  splayitem *key = new splayitem(n, p);
-    splayitem *key = splay_pile->NewObject();
-    key->Set(n, p);
-    int foo = splaywrapper->Splay(root, key);
-    DCASSERT(foo!=0);
-    // PtrSplay::node *x = new PtrSplay::node;
-    PtrSplay::node *x = node_pile->NewObject();
-    x->data = key;
-    if (foo>0) {
-      // root > x
-      x->right = root; 
-      if (root) {
-        x->left = root->left;
-        root->left = NULL;
-      } else {
-	x->left = NULL;
-      }
-    } else {
-      // root < x
-      x->left = root; 
-      if (root) {
-        x->right = root->right;
-        root->right = NULL;
-      } else {
-	x->right = NULL;
-      }
-    }
-    root = x;
-    node_count++;
+  DCASSERT(n);
+  heap[last_item].Set(n, p);
+  root = splaytable->Insert(root, last_item);
+  DCASSERT(root==last_item);
+  // expand
+  last_item++;
+  if (last_item>=heapsize) {
+    heapsize += 256;
+    heap = (splayitem*) realloc(heap, heapsize * sizeof(splayitem));
+    if (NULL==heap)
+      OutOfMemoryError("Symbol table overflow");
+  }
+}
+
+void PtrTable::Traverse(tablevisit v)
+{
+  visit = v;
+  if (visit) splaytable->InorderTraverse(root);
 }
 
 // ==================================================================
-
-int Compare(PtrTable::splayitem *a, PtrTable::splayitem *b)
-{
-  return strcmp(a->name, b->name);
-}
 
 
 void InsertFunction(PtrTable *t, function *f)

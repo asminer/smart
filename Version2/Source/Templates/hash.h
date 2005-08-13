@@ -5,10 +5,12 @@
 	Hash table template class.
 
 	Operations are performed on a "node manager" object, where
-	nodes are indexed by handles >= 0.  Several hash tables can
+	nodes are indexed by handles.  Several hash tables can
 	share a single node manager if desired.
 	The node manager must provide the following methods 
 	(preferably inlined for speed):
+
+	int Null() // which integer handle to use for NULL.
 
 	getNext(int h)
 	setNext(int h, int nxt)
@@ -108,9 +110,9 @@ public:
   int ConvertToList(int& listlength) {
     int i;
     listlength = 0;
-    int front = -1;
+    int front = nodes->Null();
     for (i=0; i<Size(); i++) {
-      while (table[i] >= 0) {
+      while (table[i] != nodes->Null()) {
 	int foo = nodes->getNext(table[i]);
         if (nodes->isStale(table[i])) {
           // don't add to list
@@ -129,7 +131,7 @@ public:
   };
   /// A series of inserts; doesn't check for duplicates or expand.
   void BuildFromList(int front) {
-    while (front >= 0) {
+    while (front != nodes->Null()) {
       int next = nodes->getNext(front);
       int h = nodes->hash(front, Size());
       nodes->setNext(front, table[h]);
@@ -154,7 +156,7 @@ public:
       size_index++;
       table = (int*) realloc(table, sizeof(int) * Size());
       if (Size() && (NULL==table)) OutOfMemoryError("Hash table resize");
-      for (int i=os; i<Size(); i++) table[i] = -1;
+      for (int i=os; i<Size(); i++) table[i] = nodes->Null();
     }
     BuildFromList(ptr);
 #ifdef DEBUG_HASH
@@ -179,14 +181,14 @@ public:
   int Find(int key) {
     int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    int parent = -1;
+    int parent = nodes->Null();
     int ptr;
     int next;
-    for (ptr = table[h]; ptr >= 0; ptr = next) {
+    for (ptr = table[h]; ptr != nodes->Null(); ptr = next) {
       next = nodes->getNext(ptr);
       if (nodes->isStale(ptr)) {
         // remove any stale entries we find
-        if (parent>=0) nodes->setNext(parent, next);
+        if (parent!=nodes->Null()) nodes->setNext(parent, next);
 	else table[h] = next;
 	num_entries--;
       } else {
@@ -195,9 +197,9 @@ public:
         parent = ptr;
       }
     } // for ptr
-    if (ptr >= 0) {
+    if (ptr != nodes->Null()) {
       // remove from current spot
-      if (parent >= 0) nodes->setNext(parent, next);
+      if (parent != nodes->Null()) nodes->setNext(parent, next);
       else table[h] = next;
       // move to front
       nodes->setNext(ptr, table[h]);
@@ -212,15 +214,15 @@ public:
   int Remove(int key) {
     int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    int parent = -1;
+    int parent = nodes->Null();
     int ptr;
-    for (ptr = table[h]; ptr >= 0; ptr = nodes->getNext(ptr)) {
+    for (ptr = table[h]; ptr != nodes->Null(); ptr = nodes->getNext(ptr)) {
       if (nodes->equals(key, ptr)) break;
       parent = ptr;
     }
-    if (ptr >= 0) {
+    if (ptr != nodes->Null()) {
       // remove from current spot
-      if (parent >= 0) nodes->setNext(parent, nodes->getNext(ptr));
+      if (parent != nodes->Null()) nodes->setNext(parent, nodes->getNext(ptr));
       else table[h] = nodes->getNext(ptr);
       num_entries--;
     }
@@ -236,16 +238,16 @@ public:
     if (num_entries >= hash_sizes[size_index+2]) Expand();
     int h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
-    int parent = -1;
+    int parent = nodes->Null();
     int ptr;
     int next;
     int thischain = 0;
-    for (ptr = table[h]; ptr >= 0; ptr = next) {
+    for (ptr = table[h]; ptr != nodes->Null(); ptr = next) {
       next = nodes->getNext(ptr);
       thischain++;
       if (nodes->isStale(ptr)) {
         // remove any stale entries we find
-        if (parent>=0) nodes->setNext(parent, next);
+        if (parent != nodes->Null()) nodes->setNext(parent, next);
 	else table[h] = next;
 	num_entries--;
       } else {
@@ -255,9 +257,9 @@ public:
       }
     } // for ptr
     maxchain = MAX(maxchain, thischain);
-    if (ptr >= 0) {
+    if (ptr != nodes->Null()) {
       // remove from current spot
-      if (parent >= 0) nodes->setNext(parent, next);
+      if (parent != nodes->Null()) nodes->setNext(parent, next);
       else table[h] = next;
       // move to front
       nodes->setNext(ptr, table[h]);
