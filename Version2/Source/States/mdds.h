@@ -293,6 +293,29 @@ public:
   int hash(int h, int M) const;
   bool equals(int h1, int h2) const;
 protected:
+  void GridInsert(int p);
+  inline void MidRemove(int p) {
+    int left = data[p+3];
+    DCASSERT(left);
+    int right = data[p+4];
+    data[left+4] = right;
+    if (right) data[right+3] = left;
+  }
+  inline void IndexRemove(int p) {
+    DCASSERT(data[p+3]==0);
+    int above = data[p+1];
+    int below = data[p+2];
+    if (above) {
+        data[above+2] = below;
+    } else {
+        holes_top = below;
+    }
+    if (below) {
+        data[below+1] = above;
+    } else {
+        holes_bottom = below;
+    }
+  }
   void DeleteNode(int p);
   int NextFreeNode();
   void FreeNode(int p);

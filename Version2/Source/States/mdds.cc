@@ -397,49 +397,96 @@ void node_manager::FreeNode(int p)
   a_unused = p;
 }
 
-// HERE!!!!!!!!!!!!!
+void node_manager::GridInsert(int p)
+{
+  DCASSERT(data[p] == data[p-data[p]-1]);
+  // special case: empty
+  if (0==holes_bottom) {
+    data[p+1] = data[p+2] = data[p+3] = data[p+4] = 0;
+    holes_top = holes_bottom = p;
+    return;
+  }
+  // special case: at top
+  if (data[p] < data[holes_top]) {
+    data[p+1] = data[p+3] = data[p+4] = 0;
+    data[p+2] = holes_top;
+    holes_top = p;
+    return;
+  }
+  int above = holes_bottom;
+  int below = 0;
+  while (data[p] < data[above]) {
+    below = above;
+    above = data[below+1];
+    DCASSERT(above);  
+    DCASSERT(data[above+2] == below);
+  }
+  if (data[p] == data[above]) {
+    // Found, add this to chain
+    data[p+3] = above;
+    data[p+4] = data[above+4];
+    data[above+4] = p;
+    return; 
+  }
+  // we should have above < p < below  (remember, -sizes)
+  data[p+1] = above;
+  data[p+2] = below;
+  data[p+3] = data[p+4] = 0;
+  data[above+2] = p;
+  if (below) {
+    data[below+1] = p;
+  } else {
+    DCASSERT(above == holes_bottom);
+    holes_bottom = p;
+  }
+}
 
 int node_manager::FindHole(int slots)
 {
   const int min_node_size = 6;
-  DCASSERT(slots>2);
+  DCASSERT(slots>=min_node_size);
 
-  int chain = 0;
-
-  // look for a hole
-  int prev = 0;
-  int curr = d_unused;
+  // First, try for a hole exactly of this size
+  int curr = holes_bottom;
   while (curr) {
-    if (data[curr+1] == slots) {
-      // perfect fit, remove hole completely
-      if (prev) {
-        data[prev] = data[curr];
-      } else {
-	d_unused = data[curr];
-      }
-      hole_slots -= slots;
-      max_hole_chain = MAX(max_hole_chain, chain);
-      return curr;
-    } 
-    if (data[curr+1] >= slots + min_node_size) {
-      // fits but creates another hole
-      if (prev) {
-        data[prev] = curr + slots;
-      } else {
-	d_unused = curr + slots;
-      }
-      data[curr+slots] = data[curr];		  // next ptr
-      data[curr+slots+1] = data[curr+1] - slots;  // new hole size
-      hole_slots -= slots;
-      max_hole_chain = MAX(max_hole_chain, chain);
-      return curr;
+    if (slots == -data[curr]) break;
+    if (slots < -data[curr]) {
+      // no exact match possible
+      curr = 0;
+      break;
     }
-    // this hole not large enough, try the next one
-    prev = curr;
-    curr = data[curr];
-    chain++;
-  } // while curr
-  max_hole_chain = MAX(max_hole_chain, chain);
+    curr = data[curr+1];
+  }
+  if (curr) {
+    // perfect fit
+    // try to not remove the "index" node
+    int next = data[curr+4];
+    if (next) {
+      MidRemove(next);
+      return next;
+    }
+    IndexRemove(curr);
+    return curr;
+  }
+   
+  // No hole with exact size, try the largest hole
+  curr = holes_top;
+  if (slots < min_node_size-data[curr]) {
+    if (data[curr+4]) {
+      // remove middle node
+      curr = data[curr+4];
+      MidRemove(curr);
+    } else {
+      // remove index node
+      IndexRemove(curr);
+    }
+    int newhole = curr+slots;
+    int newsize = -data[curr] - slots;
+    data[newhole] = -newsize;
+    data[newhole+newsize-1] = -newsize;
+    GridInsert(newhole);
+    return curr;
+  }
 
   // can't recycle; grab from the end
   if (d_last + slots >= d_size) {
@@ -456,62 +503,42 @@ int node_manager::FindHole(int slots)
   return h;
 }
 
+
 void node_manager::MakeHole(int addr, int slots)
 {
   hole_slots += slots;
+  data[addr] = data[addr+slots-1] = -slots;
 
-  // search for hole placement
-  int pp = 0;
-  int prev = 0;
-  int next = d_unused;
-  while (next && next < addr) {
-    pp = prev;
-    prev = next;
-    next = data[next];
+  // Check for a hole to the left
+  if (data[addr-1]<0) {
+    // Merge!
+    int lefthole = addr + data[addr-1];
+    DCASSERT(data[lefthole] == data[addr-1]);
+    if (data[lefthole+3]) MidRemove(lefthole);
+    else IndexRemove(lefthole);
+    slots += (-data[lefthole]);
+    addr = lefthole;
+    data[addr] = data[addr+slots-1] = -slots;
   }
-
-  // Deal with addr -> next
-
-  if (addr+slots == next) {
-    // addr->next is really one big hole; merge it
-    slots += data[next+1];
-    data[addr] = data[next];
-  } else {
-    // addr is separated from next, set up addr hole
-    data[addr] = next;
-  }
-  data[addr+1] = slots;
-
-  // Deal with prev -> addr
-
-  if (prev) {
-    if (prev + data[prev+1] == addr) {
-      // prev->addr is one big hole; merge it
-      data[prev+1] += slots;
-      data[prev] = data[addr];
-      // and for simplicity, make addr point to the new hole
-      addr = prev;
-      slots = data[prev+1];
-      prev = pp;
-    } else {
-      // prev is separated from addr, set up pointers
-      data[prev] = addr;
-    }
-  } else {
-    // addr is front of list now
-    d_unused = addr;
-  }
-
+  
   // if addr is the last hole, absorb into free part of array
   if (addr+slots-1 == d_last) {
     d_last -= slots;
     hole_slots -= slots;
-    // remove last hole from list
-    if (prev) {
-      data[prev] = 0;
-    } else {
-      d_unused = 0;
-    }
+    return;
   }
+
+  // Check for a hole to the right
+  if (data[addr+slots]<0) {
+    // Merge!
+    int righthole = addr+slots;
+    if (data[righthole+3]) MidRemove(righthole);
+    else IndexRemove(righthole);
+    slots += (-data[righthole]);
+    data[addr] = data[addr+slots-1] = -slots;
+  }
+
+  // Add hole to grid
+  GridInsert(addr);
 }
 
