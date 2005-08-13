@@ -1,18 +1,18 @@
 
 // $Id$
 
-#include "mdds_malloc.h"
-#include "mddops_malloc.h"
+#include "mdds.h"
+#include "mdd_ops.h"
 #include <stdlib.h>
 
 int* root;
 int* size;
-mdd_node_manager bar;
+node_manager bar;
 operations cruft(&bar);
 
 // #define SHOW_MXD
 // #define SHOW_FINAL
-//#define SHOW_DISCONNECTED
+// #define SHOW_DISCONNECTED
 
 void ReadMDD(const char* filename)
 {
@@ -129,6 +129,7 @@ int main(int argc, char** argv)
 
   Output << card << " reachable states\n";
 
+  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
   Output.Pad('-', 60);
   Output << "\n";
   cruft.CacheReport(Output);
@@ -153,7 +154,7 @@ int main(int argc, char** argv)
       active++;
       continue;
     }
-    if (bar.isDeleted(i)) continue;
+    if (bar.isNodeDeleted(i)) continue;
     Output.Put(i, 6);
     Output << "\t";
     bar.ShowNode(Output, i);
@@ -168,6 +169,10 @@ int main(int argc, char** argv)
 
   Output << "   Peak memory: " << bar.PeakMemory() << " bytes\n";
   Output << "Current memory: " << bar.CurrentMemory() << " bytes\n";
+  Output << " unused holes : " << bar.MemoryHoles() << " bytes\n";
+  Output << " Actual memory: " << bar.CurrentMemory() - bar.MemoryHoles() << " bytes\n";
+
+  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
 
   Output << "\n";
 
