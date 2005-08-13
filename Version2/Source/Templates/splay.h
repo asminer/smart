@@ -1,60 +1,62 @@
 
 // $Id$
 
-/*
-    Minimalist splay tree classes.
-    Basically, classes around the old style of global functions;
-    this allows us to keep tighter control over the splay stack.
-
-    For complete functionality (allocation of nodes, etc.), 
-    derive a class from "SplayWrap".
-    
-    For data comparison, there must be a function Compare(DATA *a, DATA *b)
-
-    For ArraySplay, the function is Compare(const DATA &a, const DATA &b)
-*/
-
 #ifndef SPLAY_H
 #define SPLAY_H
 
 #include "../defines.h"
 #include "stack.h"
 
-class PtrSplay {
-public:
-  struct node {
-    void* data;
-    node* left;
-    node* right;
-  };
+/** Splay tree using a node manager class.
+    The class must provide the following (preferably inlined):
+
+    int Null() // which integer handle to use as null.
+
+    int getLeft(int h) 	
+    int getRight(int h)
+    void setLeft(int h, int l)
+    void setRight(int h, int r)
+    
+    int Compare(int h1, int h2)
+
+    For tree traversal:
+    void Visit(int h)
+*/
+
+template <class MANAGER>
+class SplayTree {
+  MANAGER *nodes; 
+  Stack <int> *path;
 protected:
+  inline void Push(int x) { path->Push(x); }
+  inline int Pop() { return path->Empty() ? nodes->Null() : path->Pop(); }
   /// Handy function #1 
-  void SplayRotate(node *C, node *P, node *GP) {
+  void SplayRotate(int C, int P, int GP) {
     // swap parent and child
-    if (P->left == C) {
-      P->left = C->right;
-      C->right = P;
+    if (nodes->getLeft(P) == C) {
+      nodes->setLeft(P, nodes->getRight(C));
+      nodes->setRight(C, P);
     } else {
-      DCASSERT(P->right == C);
-      P->right = C->left;
-      C->left = P;
+      DCASSERT(nodes->getRight(P) == C);
+      nodes->setRight(P, nodes->getLeft(C));
+      nodes->setLeft(C, P);
     }
-    if (GP) {
-      if (GP->left == P)
-	GP->left = C;
+    if (GP != nodes->Null()) {
+      if (nodes->getLeft(GP) == P)
+	nodes->setLeft(GP, C);
       else {
-	DCASSERT(GP->right == P);
-	GP->right = C;
+	DCASSERT(nodes->getRight(GP) == P);
+	nodes->setRight(GP, C);
       }
     }
   }
   /// Handy function #2
-  void SplayStep(node *c, node *p, node *gp, node *ggp) {
-    if (NULL==gp) {
-      SplayRotate(c, p, NULL);
+  void SplayStep(int c, int p, int gp, int ggp) {
+    if (nodes->Null() == gp) {
+      SplayRotate(c, p, nodes->Null());
     } else {
-      bool ParentIsRight = (gp->right == p);
-      bool ChildIsRight = (p->right == c);
+      bool ParentIsRight = (nodes->getRight(gp) == p);
+      bool ChildIsRight = (nodes->getRight(p) == c);
       if (ParentIsRight == ChildIsRight) {
 	SplayRotate(p, gp, ggp);
 	SplayRotate(c, p, ggp);
@@ -64,41 +66,47 @@ protected:
       }
     }
   }
-};
-
-template <class DATA>
-class SplayWrap : public PtrSplay {
-protected:
-  PtrStack *path;
-  inline void Push(node* x) { path->Push(x); }
-  inline node* Pop() { return path->Empty() ? NULL : (node*)path->Pop(); }
 public:
-  SplayWrap() { path = new PtrStack(16); }
-  ~SplayWrap() { delete path; }
+  SplayTree(MANAGER *n) {
+    nodes = n;
+    path = new Stack <int> (16);
+  }
+  ~SplayTree() {
+    delete path;
+  }
   /**
-      Perform a splay operation: find the desired node and move it to the top.
+      Perform a splay operation. 
+      After the operation, the root node will contain either the requested 
+      key value, or a value that is "close" to the requested value.  
+      I.e., if the root has value V < Key, then there are no elements 
+      in the tree between V and Key.
+     
       @param	root	The root node of the tree (will change)
-      @param	key	The item to find, or NULL to find the smallest
+      @param	key	Handle of a node, not within the tree;  we try
+			to find a node with the same data value.
+
       @return	The compare result of the root item:
       		0, the key was found (and moved to root)
 		1, an item larger than the key was moved to root
 		-1, an item smaller than the key was moved to root
   */
-  int Splay(node* &root, DATA* key) {
+  int Splay(int &root, int key) {
     int cmp = 1;
-    node* child = root;
+    int child = root;
     path->Clear();
-    while (child) {
-      if (key) cmp = Compare((DATA*)child->data, key); else cmp = 1;
+    while (child != nodes->Null()) {
+      cmp = nodes->Compare(child, key);
       if (0==cmp) break;  // found!
       Push(child);
-      if (cmp>0) child = child->left; else child = child->right;
-    }
-    if (NULL==child) child = Pop();
-    node* parent = Pop();
-    node* grandp = Pop();
-    node* greatgp = Pop();
-    while (parent) {
+      if (cmp>0) child = nodes->getLeft(child);
+	else     child = nodes->getRight(child);
+    } // while child
+    if (nodes->Null() == child) 
+	child = Pop();
+    int parent = Pop();
+    int grandp = Pop();
+    int greatgp = Pop();
+    while (parent != nodes->Null()) {
       SplayStep(child, parent, grandp, greatgp);
       parent = greatgp;
       grandp = Pop();
@@ -107,7 +115,47 @@ public:
     root = child;
     return cmp;
   }
+
+  /** Inserts key into the tree,
+      unless there is already a node with the same data value.
+      Key should have null left and right children.
+      Returns the root of the tree, which will contain the data value.
+  */
+  int Insert(int root, int key) {
+    int cmp = Splay(root, key);
+    if (0==cmp) return root;  // already in the tree
+    if (cmp>0) {
+      // root > key
+      nodes->setRight(key, root);
+      if (root != nodes->Null()) {
+        nodes->setLeft(key, nodes->getLeft(root));
+        nodes->setLeft(root, nodes->Null());
+      } 
+    } else {
+      // root < key
+      nodes->setLeft(key, root);
+      if (root != nodes->Null()) {
+        nodes->setRight(key, nodes->getRight(root));
+        nodes->setRight(root, nodes->Null());
+      } 
+    }
+    return key;
+  }
+
+  void InorderTraverse(int root);
 };
+
+template <class MANAGER>
+void SplayTree <MANAGER> :: InorderTraverse(int root)
+{
+  if (root != nodes->Null()) {
+    InorderTraverse(nodes->getLeft(root));
+    nodes->Visit(root);
+    InorderTraverse(nodes->getRight(root));
+  }
+}
+
+// ------------------------------------------------------------
 
 class ArraySplayBase {
 protected:
@@ -174,6 +222,7 @@ protected:
   }
 };
 
+// ------------------------------------------------------------
 
 template <class DATA>
 class ArraySplay : public ArraySplayBase {

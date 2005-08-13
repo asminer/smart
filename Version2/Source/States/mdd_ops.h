@@ -69,6 +69,7 @@ public:
 
   // required for hash table
 public:
+  inline int Null() const { return -1; }
   inline int getNext(int h) const { return nodeheap[h].next; }
   inline void setNext(int h, int n) { nodeheap[h].next = n; }
   inline int hash(int h, int M) { 

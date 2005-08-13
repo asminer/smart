@@ -223,6 +223,7 @@ public:
 
   // For uniqueness table
 public:
+  inline int Null() const { return 0; }
   inline int getNext(int h) const { DCASSERT(address[h]); return next[h]; }
   inline void setNext(int h, int n) const { DCASSERT(address[h]); next[h] = n; }
   inline bool isStale(int h) const { return false; }

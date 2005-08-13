@@ -29,6 +29,7 @@ public:
     DCASSERT(next->alloc > handle);
   }
   // Required for hash tables
+  inline int Null() const { return -1; }
   inline int getNext(int h) const { 
     CHECK_RANGE(0, h, next->last);
     return next->data[h]; 
