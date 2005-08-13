@@ -78,6 +78,12 @@ int binary_tree::FindPath(const state &s)
 splay_state_tree::splay_state_tree(state_array *s) : binary_tree(s)
 {
   Resize(4);
+  stree = new SplayTree <splay_state_tree> (this);
+}
+
+splay_state_tree::~splay_state_tree()
+{
+  delete stree;
 }
 
 int splay_state_tree::AddState(const state &s)
@@ -85,6 +91,18 @@ int splay_state_tree::AddState(const state &s)
   if (nodes_used >= nodes_alloc) {
     Resize( (nodes_alloc < 1024) ? (nodes_alloc*2) : (nodes_alloc+1024) );
   }
+  int h = states->AddState(s);
+  left[h] = Null();
+  right[h] = Null();
+  root = stree->Insert(root, h); 
+  if (root == h) {
+    nodes_used++;
+  } else {
+    // duplicate
+    states->PopLast();
+  }
+  return root;
+/*
   if (root<0) {
     // empty tree
     int h = states->AddState(s);
@@ -111,6 +129,16 @@ int splay_state_tree::AddState(const state &s)
     right[root] = -1;
   }
   return root = nodes_used++;
+*/
+}
+
+int splay_state_tree::FindState(const state &s)
+{
+  int h = states->AddState(s);
+  int cmp = stree->Splay(root, h);
+  states->PopLast();
+  if (0==cmp) return root;
+  return -1;
 }
 
 void splay_state_tree::Report(OutputStream &r)
@@ -133,6 +161,7 @@ void splay_state_tree::Resize(int newsize)
   if (newsize>0 && NULL==right) OutOfMemoryError("Tree resize");
   nodes_alloc = newsize;
 }
+/*
 
 int splay_state_tree::Splay(const state &s) 
 {
@@ -150,6 +179,7 @@ int splay_state_tree::Splay(const state &s)
     root = child;
     return cmp;
 }
+*/
 
 // ******************************************************************
 // *                                                                *

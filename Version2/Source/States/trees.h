@@ -5,6 +5,7 @@
 #define TREES_H
 
 #include "flatss.h"
+#include "../Templates/splay.h"
 #include "../Templates/stack.h"
 #include "../Templates/bitvector.h"
 
@@ -72,6 +73,7 @@ protected:
 };
 
 class splay_state_tree : public binary_tree {
+  SplayTree <splay_state_tree> *stree; 
 public:
   splay_state_tree(state_array *s);
   /** Insert this state into the tree.
@@ -80,6 +82,7 @@ public:
 
       @return	The handle (index) of the state.
   */
+  ~splay_state_tree();
   int AddState(const state &s);
 
   /** Find this state in the tree.
@@ -87,16 +90,19 @@ public:
       @return	The handle (index) of the state, if found;
 		otherwise, -1.
   */
-  inline int FindState(const state &s) {
-    int cmp = Splay(s);
-    states->PopLast();
-    if (0==cmp) return root;
-    return -1;
-  }
+  int FindState(const state &s);
   void Report(OutputStream &r);
+  // For splay tree
+  inline int Null() const { return -1; }
+  inline int getLeft(int h) const { return left[h]; }
+  inline void setLeft(int h, int n) { left[h] = n; }
+  inline int getRight(int h) const { return right[h]; }
+  inline void setRight(int h, int n) { right[h] = n; }
+  inline int Compare(int h1, int h2) const { return states->Compare(h1, h2); }
 protected:
   void Resize(int newsize); 
   // Copied & adapted from splay template
+/*
   inline void SplayRotate(int C, int P, int GP) {
     // swap parent and child
     if (left[P] == C) {
@@ -131,6 +137,7 @@ protected:
       }
     }
   }
+*/
   /**
       Perform a splay operation: find the desired node and move it to the top.
       @param	s	The state to find
@@ -139,7 +146,7 @@ protected:
 		1, an item larger than s was moved to root
 		-1, an item smaller than s was moved to root
   */
-  int Splay(const state &s);
+  // int Splay(const state &s);
 };
 
 
@@ -172,17 +179,5 @@ protected:
   void Resize(int newsize); 
 };
 
-/*
-class avl_state_tree : public binary_state_tree {
-  // allocate a few extra bits per node for balancing
-public:
-  
-  // Insert state s.
-  // If state s already is present, its state index is returned.
-  // Otherwise, s is added to the tree and a new state index is returned.
-  int InsertState(const state &s);
-};
-
-*/
 
 #endif
