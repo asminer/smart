@@ -7,6 +7,8 @@
 //#define DONT_USE_SPARSE
 //#define DONT_USE_FULL
 
+//#define TRACE_REDUCE
+
 // #define MEMORY_TRACE
 
 const int Add_Size = 1024;
@@ -66,6 +68,9 @@ int node_manager::Reduce(int p)
   if (0==nnz) {
     // duplicate of 0
     Unlink(p);
+#ifdef TRACE_REDUCE
+    Output << "\tReducing " << p << ", got 0\n";
+#endif
     return 0;
   }
 
@@ -77,7 +82,8 @@ int node_manager::Reduce(int p)
 #endif
 
   // right now, tie goes to truncated full.
-  if (2*nnz < truncsize) {
+  // if (2*nnz < truncsize) {
+  if (2*nnz < truncsize-1) {
     // sparse is better; convert
     int newaddr = FindHole(5+2*nnz);
     // incount
@@ -125,12 +131,18 @@ int node_manager::Reduce(int p)
       address[p] = newaddr;
     }
   }
-  // check unique table here
+#ifdef TRACE_REDUCE
+  Output << "Uniqueness table:\n";
+  unique->Show(Output);
+#endif
   int q = unique->Insert(p);
   if (q!=p) { 
     Link(q);
     Unlink(p);
   }
+#ifdef TRACE_REDUCE
+    Output << "\tReducing " << p << ", got " << q << "\n";
+#endif
   return q;
 }
 

@@ -98,7 +98,7 @@ public:
     int i;
     for (i=0; i<Size(); i++) {
       s << "[" << i << "] : ";
-      for (int index = table[i]; index >= 0; index = nodes->getNext(index)) {
+      for (int index = table[i]; index != nodes->Null(); index = nodes->getNext(index)) {
 	nodes->show(s, index);
         s << " ";
       }
@@ -209,6 +209,7 @@ public:
   }
 
   /** If table contains key, remove it and return it.
+      I.e., the exact key.
       Otherwise, return -1.
   */
   int Remove(int key) {
@@ -217,7 +218,7 @@ public:
     int parent = nodes->Null();
     int ptr;
     for (ptr = table[h]; ptr != nodes->Null(); ptr = nodes->getNext(ptr)) {
-      if (nodes->equals(key, ptr)) break;
+      if (key == ptr) break;
       parent = ptr;
     }
     if (ptr != nodes->Null()) {

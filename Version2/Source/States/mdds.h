@@ -290,7 +290,7 @@ public:
     DCASSERT(data[address[h]+2]>=-1);
     return data[address[h]+2];
   }
-  inline void setNext(int h, int n) const { 
+  inline void setNext(int h, int n) { 
     DCASSERT(address[h]); 
     data[address[h]+2] = n; 
   }
