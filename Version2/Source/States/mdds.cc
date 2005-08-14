@@ -4,10 +4,10 @@
 #include "mdds.h"
 #include "../Base/errors.h"
 
-#define SHOW_INTERNALS
-
 //#define DONT_USE_SPARSE
 //#define DONT_USE_FULL
+
+// #define MEMORY_TRACE
 
 const int Add_Size = 1024;
 
@@ -48,7 +48,7 @@ int node_manager::Reduce(int p)
   DCASSERT(p>1);
   DCASSERT(isNodeActive(p));
   DCASSERT(isNodeUnreduced(p));
-  DCASSERT(isNodeSparse(p));
+  DCASSERT(isNodeFull(p));
 
   // first, compress this node
   int size = SizeOf(p);
@@ -79,7 +79,7 @@ int node_manager::Reduce(int p)
   // right now, tie goes to truncated full.
   if (2*nnz < truncsize) {
     // sparse is better; convert
-    int newaddr = FindHole(4+2*nnz);
+    int newaddr = FindHole(5+2*nnz);
     // incount
     data[newaddr] = data[address[p]];
     // cachecount
@@ -164,7 +164,18 @@ inline int digits(int a)
 
 void node_manager::Dump(OutputStream &s) const
 {
-#ifdef SHOW_INTERNALS
+  int nwidth = digits(a_last);
+  for (int p=0; p<=a_last; p++) {
+    s.Put(p, nwidth);
+    s << "\t";
+    ShowNode(s, p);
+    s << "\n";
+    s.flush();
+  }
+}
+
+void node_manager::DumpInternal(OutputStream &s) const
+{
   s << "Internal forest storage\n";
   s << "First unused node index: " << a_unused << "\n";
   int awidth = digits(d_last);
@@ -179,8 +190,10 @@ void node_manager::Dump(OutputStream &s) const
     if (p) s << "|";
     s.Put(address[p], awidth);
   }
-  s << "\n\n";
+  s << "]\n\n";
 
+  s << "Last slot used: " << d_last << "\n";
+  s << "Grid: top = " << holes_top << "\t bottom = " << holes_bottom << "\n";
   s << "Data array by record: \n";
   int a;
   for (a=1; a<=d_last; ) {
@@ -214,18 +227,10 @@ void node_manager::Dump(OutputStream &s) const
       }
     }
   } // for a
-
-  s << "Pretty view of forest storage:\n";
+  s.Put(a, awidth);
+  s << " : free slots\n";
   s.flush();
-#endif
-  int nwidth = digits(a_last);
-  for (int p=0; p<=a_last; p++) {
-    s.Put(p, nwidth);
-    s << "\t";
-    ShowNode(s, p);
-    s << "\n";
-    s.flush();
-  }
+  DCASSERT(a == d_last+1);
 }
 
 void node_manager::ShowNode(OutputStream &s, int p) const
@@ -252,7 +257,7 @@ void node_manager::ShowNode(OutputStream &s, int p) const
         s << ":" << SparseDown(p, z);
       }
       s << ")";
-    } else {
+  } else {
       s << " size: " << SizeOf(p) << " \t [";
       for (int i=0; i<SizeOf(p); i++) {
         if (i) s << "|";
@@ -410,21 +415,27 @@ void node_manager::GridInsert(int p)
   if (data[p] < data[holes_top]) {
     data[p+1] = data[p+3] = data[p+4] = 0;
     data[p+2] = holes_top;
+    data[holes_top+1] = p;
     holes_top = p;
     return;
   }
+  int chain = 0;
   int above = holes_bottom;
   int below = 0;
   while (data[p] < data[above]) {
     below = above;
     above = data[below+1];
-    DCASSERT(above);  
+    chain++;
     DCASSERT(data[above+2] == below);
+    DCASSERT(above);  
   }
+  max_hole_chain = MAX(max_hole_chain, chain);
   if (data[p] == data[above]) {
     // Found, add this to chain
+    int right = data[above+4];
     data[p+3] = above;
-    data[p+4] = data[above+4];
+    data[p+4] = right;
+    if (right) data[right+3] = p;
     data[above+4] = p;
     return; 
   }
@@ -441,12 +452,49 @@ void node_manager::GridInsert(int p)
   }
 }
 
+void node_manager::IndexRemove(int p)
+{
+  DCASSERT(data[p+3]==0);
+  int above = data[p+1];
+  int below = data[p+2];
+  int right = data[p+4];
+  if (right) {
+    // right will replace us as index node
+    data[right+1] = above;
+    data[right+2] = below;
+    data[right+3] = 0;
+    if (above) {
+      data[above+2] = right;
+    } else {
+      holes_top = right;
+    }
+    if (below) {
+      data[below+1] = right;
+    } else {
+      holes_bottom = right;
+    }
+  } else {
+    // no replacement, this size is gone
+    if (above) {
+      data[above+2] = below;
+    } else {
+      holes_top = below;
+    }
+    if (below) {
+      data[below+1] = above;
+    } else {
+      holes_bottom = above;
+    }
+  }
+}
+
 int node_manager::FindHole(int slots)
 {
   const int min_node_size = 6;
   DCASSERT(slots>=min_node_size);
 
   // First, try for a hole exactly of this size
+  int chain = 0;
   int curr = holes_bottom;
   while (curr) {
     if (slots == -data[curr]) break;
@@ -456,22 +504,35 @@ int node_manager::FindHole(int slots)
       break;
     }
     curr = data[curr+1];
+    chain++;
   }
+  max_hole_chain = MAX(max_hole_chain, chain);
   if (curr) {
     // perfect fit
+    hole_slots -= slots;
     // try to not remove the "index" node
     int next = data[curr+4];
     if (next) {
       MidRemove(next);
+#ifdef MEMORY_TRACE
+      Output << "Removed Hole " << next << "\n";
+      DumpInternal(Output);
+#endif
       return next;
     }
     IndexRemove(curr);
+#ifdef MEMORY_TRACE
+    Output << "Removed Hole " << curr << "\n";
+    DumpInternal(Output);
+#endif
     return curr;
   }
    
   // No hole with exact size, try the largest hole
   curr = holes_top;
-  if (slots < min_node_size-data[curr]) {
+  if (slots < -data[curr] - min_node_size) {
+    // we have a hole large enough
+    hole_slots -= slots;
     if (data[curr+4]) {
       // remove middle node
       curr = data[curr+4];
@@ -480,11 +541,17 @@ int node_manager::FindHole(int slots)
       // remove index node
       IndexRemove(curr);
     }
+    // create a hole for the leftovers
     int newhole = curr+slots;
     int newsize = -data[curr] - slots;
     data[newhole] = -newsize;
     data[newhole+newsize-1] = -newsize;
-    GridInsert(newhole);
+    GridInsert(newhole); 
+#ifdef MEMORY_TRACE
+    data[curr] = -slots;  // only necessary for display
+    Output << "Removed part of hole " << curr << "\n";
+    DumpInternal(Output);
+#endif
     return curr;
   }
 
@@ -506,6 +573,9 @@ int node_manager::FindHole(int slots)
 
 void node_manager::MakeHole(int addr, int slots)
 {
+#ifdef MEMORY_TRACE
+  Output << "Calling MakeHole(" << addr << ", " << slots << ")\n";
+#endif
   hole_slots += slots;
   data[addr] = data[addr+slots-1] = -slots;
 
@@ -525,6 +595,10 @@ void node_manager::MakeHole(int addr, int slots)
   if (addr+slots-1 == d_last) {
     d_last -= slots;
     hole_slots -= slots;
+#ifdef MEMORY_TRACE
+    Output << "Made Last Hole " << addr << "\n";
+    DumpInternal(Output);
+#endif
     return;
   }
 
@@ -540,5 +614,10 @@ void node_manager::MakeHole(int addr, int slots)
 
   // Add hole to grid
   GridInsert(addr);
+
+#ifdef MEMORY_TRACE
+  Output << "Made Hole " << addr << "\n";
+  DumpInternal(Output);
+#endif
 }
 

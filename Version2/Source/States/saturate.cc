@@ -11,8 +11,8 @@ node_manager bar;
 operations cruft(&bar);
 
 // #define SHOW_MXD
-// #define SHOW_FINAL
-// #define SHOW_DISCONNECTED
+#define SHOW_FINAL
+#define SHOW_DISCONNECTED
 
 void ReadMDD(const char* filename)
 {
@@ -120,11 +120,6 @@ int main(int argc, char** argv)
 
   reachset = cruft.Saturate(reachset, root, size, K);  
 
-#ifdef SHOW_FINAL
-  Output << "Reachset: " << reachset << "\n";
-  bar.Dump(Output);
-#endif
-  
   int card = cruft.Count(reachset);
 
   Output << card << " reachable states\n";
@@ -161,6 +156,11 @@ int main(int argc, char** argv)
     Output << "\n";
     Output.flush();
   }
+#endif
+
+#ifdef SHOW_FINAL
+  Output << "Reachset: " << reachset << "\n";
+  bar.Dump(Output);
 #endif
 
   Output.Pad('-', 60);
