@@ -215,6 +215,11 @@ public:
     return (data[address[p]+4]<0);
   }
 
+  inline bool isNodeFull(int p) const {
+    DCASSERT(address[p]);
+    return (data[address[p]+4]>0);
+  }
+
   inline int SizeOf(int p) const {
     DCASSERT(address[p]);
     DCASSERT(data[address[p]+4]>0);
@@ -265,6 +270,7 @@ public:
 
   int TempNode(int k, int sz); 
   void Dump(OutputStream &s) const; 
+  void DumpInternal(OutputStream &s) const; 
 
   void ShowNode(OutputStream &s, int p) const;
 
@@ -301,21 +307,7 @@ protected:
     data[left+4] = right;
     if (right) data[right+3] = left;
   }
-  inline void IndexRemove(int p) {
-    DCASSERT(data[p+3]==0);
-    int above = data[p+1];
-    int below = data[p+2];
-    if (above) {
-        data[above+2] = below;
-    } else {
-        holes_top = below;
-    }
-    if (below) {
-        data[below+1] = above;
-    } else {
-        holes_bottom = below;
-    }
-  }
+  void IndexRemove(int p);
   void DeleteNode(int p);
   int NextFreeNode();
   void FreeNode(int p);
