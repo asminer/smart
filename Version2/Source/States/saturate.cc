@@ -128,6 +128,8 @@ int main(int argc, char** argv)
   Output.Pad('-', 60);
   Output << "\n";
   cruft.CacheReport(Output);
+
+  // bar.DumpInternal(Output);
   
   Output << "Clearing cache\n";
   Output.flush();
@@ -164,13 +166,13 @@ int main(int argc, char** argv)
 #endif
 
   Output.Pad('-', 60);
-  Output << "\n  Peak nodes: " << bar.PeakNodes();
-  Output << "\nActive nodes: " << bar.CurrentNodes() << "\n\n";
+  Output << "\nNodes: \t" << bar.PeakNodes() << " peak ";
+  Output << "\t" << bar.CurrentNodes() << " current\n";
 
-  Output << "   Peak memory: " << bar.PeakMemory() << " bytes\n";
-  Output << "Current memory: " << bar.CurrentMemory() << " bytes\n";
-  Output << " unused holes : " << bar.MemoryHoles() << " bytes\n";
-  Output << " Actual memory: " << bar.CurrentMemory() - bar.MemoryHoles() << " bytes\n";
+  Output << "Memory: \t" << bar.PeakMemory() << " peak ";
+  Output << "\t" << bar.CurrentMemory() << " current\n";
+  Output << "\t\t" << bar.CurrentMemory() - bar.MemoryHoles() << " actual ";
+  Output << "\t" << bar.MemoryHoles() << " in holes\n";
 
   Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
 
