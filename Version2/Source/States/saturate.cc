@@ -7,7 +7,7 @@
 
 int* root;
 int* size;
-node_manager bar(GC_Pessimistic);
+node_manager bar(GC_Optimistic);
 operations cruft(&bar);
 
 // #define SHOW_MXD
@@ -84,6 +84,14 @@ int main(int argc, char** argv)
     Output << "Usage: " << argv[0] << " K file1 ... filen\n";
     return 0;
   }
+  switch (bar.GPolicy()) {
+    case GC_Optimistic:
+	Output << "Using Optimistic garbage policy\n";
+	break;
+    case GC_Pessimistic:
+	Output << "Using Pessimistic garbage policy\n";
+   	break;
+  }
   int K = atoi(argv[1]);
   root = new int[K+1];
   size = new int[K+1];
@@ -115,6 +123,7 @@ int main(int argc, char** argv)
   bar.Dump(Output);
 #endif
 
+  Output << bar.CurrentNodes() << " nodes used for transitions\n";
   Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
 
