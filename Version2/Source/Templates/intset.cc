@@ -6,37 +6,22 @@
 
 int_set::int_set() 
 {
-  data = 0;
-  last = 0;
-  dsize = 0;
-  
-  contains = 0;
-  csize = 0;
+  next = NULL;
+  last = size = 0;
+  head = tail = -1; 
 }
 
 int_set::~int_set()
 {
-  free(data);
-  free(contains);
+  free(next);
 }
 
-void int_set::SetMax(int n)
+void int_set::EnlargeData(int sz)
 {
-  if (n<csize) return;
-  int lastsize = csize;
-  csize = (1+n/16)*16;
-  contains = (bool*) realloc(contains, csize * sizeof(bool));
-  if (0==contains) 
+  int dsize = (1+sz/16)*16;
+  next = (int*) realloc(next, dsize*sizeof(int));
+  if (0==next)
 	OutOfMemoryError("Integer set enlargement");
-
-  for (; lastsize<csize; lastsize++)
-	contains[lastsize] = false; 
+  for (; size<dsize; size++) next[size] = -1;
 }
 
-void int_set::EnlargeData()
-{
-  dsize += 16;
-  data = (int*) realloc(data, dsize*sizeof(int));
-  if (0==data)
-	OutOfMemoryError("Integer set enlargement");
-}

@@ -103,6 +103,8 @@ public:
   node_manager(Garbage_Policy gcp);
   ~node_manager();
 
+  inline Garbage_Policy GPolicy() const { return GCP; }
+
   // Dealing with address
 
   inline bool isNodeActive(int p) const {
