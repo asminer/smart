@@ -484,6 +484,7 @@ bool node_manager::equals(int h1, int h2) const
     for (; i<ptr1[z]; i++)  // node2 must be zeroes in between
 	if (ptr2[i]) return false;
     if (ptr2[i] != down1[z]) return false;
+    i++;
   }
   // tail of node2
   for (; i<sz2; i++)
