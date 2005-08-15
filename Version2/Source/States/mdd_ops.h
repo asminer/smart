@@ -52,6 +52,22 @@ public:
     int h = table->Find(q); 
     RecycleNode(q);
     if (h>=0) {
+      // potential hit, make sure the result is still alive
+      if (mdd->isNodeZombie(nodeheap[h].c)) {
+        // Result no longer alive, remove from cache
+#ifdef DEVELOPMENT_CODE
+	int h1 = table->Remove(h);
+    	DCASSERT(h1 == h);
+#else
+	table->Remove(h);
+#endif
+        mdd->CacheRemove(nodeheap[h].a);
+        mdd->CacheRemove(nodeheap[h].b);
+        mdd->CacheRemove(nodeheap[h].c);
+        RecycleNode(h);
+        return false;
+      }
+      // result is still good.
       c = nodeheap[h].c;
       hits++;
       return true;

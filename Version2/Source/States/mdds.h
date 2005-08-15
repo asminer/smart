@@ -11,9 +11,25 @@
 //#define TRACK_DELETIONS
 //#define TRACK_CACHECOUNT
 
+enum Garbage_Policy {
+  /// No garbage collection (lazy)
+  GC_None,
+  /// Optimistic: dead nodes can be recovered from caches.
+  GC_Optimistic,
+  /// Pessimistic: dead nodes destroyed immediately.
+  GC_Pessimistic
+};
+
 /* Temporary, until we have a proper mdd library. */
 
 class node_manager {
+  // Special next values
+  static const int Temp_node = -5;
+  static const int Zombie_node = -42;
+
+
+  /// How to recycle nodes
+  Garbage_Policy GCP;
 
   /** Address of each node.
       If the node is active, this is the offset (>0) in the data array.
@@ -84,7 +100,7 @@ class node_manager {
   /// Uniqueness table
   HashTable <node_manager> *unique;
 public:
-  node_manager();
+  node_manager(Garbage_Policy gcp);
   ~node_manager();
 
   // Dealing with address
@@ -137,6 +153,18 @@ public:
     Output << "\t-Node " << p << " count now " << data[address[p]] << "\n";
     Output.flush();
 #endif
+    if (foo[0]) return;  
+    // no incoming pointers.
+    if (foo[1] && GC_Pessimistic == GCP) {
+#ifdef TRACK_DELETIONS
+      Output << "Zombifying node " << p << " from Unlink\t";
+      ShowNode(Output, p);
+      Output << "\n";
+      Output.flush();
+#endif
+      ZombifyNode(p);
+      return;
+    }
     if (foo[0] || foo[1]) return; // not dead yet
 #ifdef TRACK_DELETIONS
     Output << "Deleting node " << p << " from Unlink\t";
@@ -198,6 +226,12 @@ public:
     DCASSERT(address[p]);
     if (p<2) return false;
     return (data[address[p]+2]<-1);
+  }
+
+  inline bool isNodeZombie(int p) const {
+    // Zombie nodes: disconnected, no children, but still in caches.
+    if (p<2) return false;
+    return Zombie_node==data[address[p]+2];
   }
 
   // Dealing with slot 3
@@ -309,6 +343,7 @@ protected:
   }
   void IndexRemove(int p);
   void DeleteNode(int p);
+  void ZombifyNode(int p);
   int NextFreeNode();
   void FreeNode(int p);
   int FindHole(int slots);
