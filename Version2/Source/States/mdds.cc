@@ -7,7 +7,7 @@
 //#define DONT_USE_SPARSE
 //#define DONT_USE_FULL
 
-//#define TRACE_REDUCE
+// #define TRACE_REDUCE
 
 // #define MEMORY_TRACE
 
@@ -45,6 +45,107 @@ node_manager::~node_manager()
   free(data);
 }
 
+// New reduction: look for duplicate, then compress
+int node_manager::Reduce(int p)
+{
+  DCASSERT(p>1);
+  DCASSERT(isNodeActive(p));
+  DCASSERT(isNodeUnreduced(p));
+  DCASSERT(isNodeFull(p));
+
+  // quick scan: is this node zero?
+  int nnz = 0;
+  int truncsize = 0;
+  int size = SizeOf(p);
+  int* ptr = data + address[p] + 5;
+  for (int i=0; i<size; i++) {
+    if (ptr[i]) {
+      nnz++;
+      truncsize = i;
+    }
+  }
+  truncsize++;
+
+  if (0==nnz) {
+    // duplicate of 0
+    Unlink(p);
+#ifdef TRACE_REDUCE
+    Output << "\tReducing " << p << ", got 0\n";
+#endif
+    return 0;
+  }
+
+  // Now, check unique table
+  int q = unique->Insert(p);
+  if (q!=p) { 
+    // duplicate
+    Link(q);
+    Unlink(p);
+#ifdef TRACE_REDUCE
+    Output << "\tReducing " << p << ", got " << q << "\n";
+#endif
+    return q;
+  }
+
+#ifdef TRACE_REDUCE
+  Output << "\tReducing " << p << ": unique, compressing\n";
+#endif
+
+#ifdef DONT_USE_SPARSE
+  nnz = size; // cheat
+#endif
+#ifdef DONT_USE_FULL
+  truncsize = 2*nnz+1;
+#endif
+
+  // right now, tie goes to truncated full.
+  // if (2*nnz < truncsize) {
+  if (2*nnz < truncsize-1) {
+    // sparse is better; convert
+    int newaddr = FindHole(5+2*nnz);
+    // copy first 4 integers: incount, cachecount, next, level
+    memcpy(data+newaddr, data+address[p], 4*sizeof(int));
+    // size
+    data[newaddr+4] = -nnz;
+    int* indexptr = data + newaddr + 5;
+    int* downptr = data + newaddr + 5 + nnz;
+    // can't rely on previous ptr
+    int* ptr = data + address[p] + 5;
+    for (int i=0; i<size; i++) {
+      if (ptr[i]) {
+        indexptr[0] = i;
+        indexptr++;
+        downptr[0] = ptr[i];
+	downptr++;
+      }
+    }
+    // trash old node
+    MakeHole(address[p], 5+size);
+    address[p] = newaddr;
+  } else {
+    // full is better
+    if (truncsize<size) {
+      // truncate the trailing 0s
+      int newaddr = FindHole(5+truncsize);
+      // copy first 4 integers: incount, cachecount, next, level
+      memcpy(data+newaddr, data+address[p], 4*sizeof(int));
+      // size
+      data[newaddr+4] = truncsize;
+      // elements
+      memcpy(data+newaddr+5, data+address[p]+5, truncsize*sizeof(int));
+      // trash old node
+      MakeHole(address[p], 5+size);
+      address[p] = newaddr;
+    }
+  }
+
+  // Sanity check that the hash value is unchanged
+  DCASSERT(unique->Find(p) == p);
+
+  return p;
+}
+
+/*  OLD REDUCTION: compress then reduce
 int node_manager::Reduce(int p)
 {
   DCASSERT(p>1);
@@ -145,6 +246,7 @@ int node_manager::Reduce(int p)
 #endif
   return q;
 }
+*/
 
 int node_manager::TempNode(int k, int sz)
 {
@@ -243,6 +345,9 @@ void node_manager::DumpInternal(OutputStream &s) const
   s << " : free slots\n";
   s.flush();
   DCASSERT(a == d_last+1);
+  s << "Uniqueness table:\n";
+  unique->Show(s); 
+  s.flush();
 }
 
 void node_manager::ShowNode(OutputStream &s, int p) const
@@ -285,34 +390,47 @@ int node_manager::hash(int h, int M) const
   DCASSERT(M);
   int sz = data[address[h]+4];
   int a = 0;
+  int skip = 1;
+  int skchange = 2;
+  int ops = -2;
   if (sz>0) {
-    int* ptr = data + address[h] + 4 + sz;
-    int ops = -2;
-    int skip = 1;
-    for (int i=sz; i>0; i-=skip) {
+    // full
+    int* ptr = data + address[h] + 5;
+    int j = skip;
+    for (int i = sz-1; i>=0; i--) {
+      if (0==ptr[i]) continue;
+      j--;
+      if (j) continue;	// accelerate through larger nodes
       a *= 256;
-      a += ptr[0];  
+      a += i;  
+      a %= M;
+      a *= 256;
+      a += ptr[i];
       a %= M;
       ops++;
-      if (ops > 2*skip) {  // accelerate through huge nodes
+      if (ops > skchange) {
         skip++;
-      } 
-      ptr -= skip;
-    }
-  }  else {
-    int* ptr = data + address[h] + 4 - 2*sz;
-    int ops = -2;
-    int skip = 1;
-    for (int i=-sz; i>0; i-=skip) {
+	skchange+=2;
+      }
+      j = skip;
+    } // for i
+  } else {
+    // sparse
+    int* down = data + address[h] + 5 -sz;
+    int* index = data + address[h] + 5;
+    for (int z = -sz-1; z>=0; z-=skip) {
       a *= 256;
-      a += ptr[0];  
+      a += index[z];
+      a %= M;
+      a *= 256;
+      a += down[z];
       a %= M;
       ops++;
-      if (ops > 2*skip) {  // accelerate through huge nodes
-        skip++;
-      } 
-      ptr -= 2*skip;
-    }
+      if (ops > skchange) {
+ 	skip++;
+	skchange+=2;
+      }
+    } // for z
   }
   return a;
 }
@@ -326,13 +444,51 @@ bool node_manager::equals(int h1, int h2) const
   if (ptr1[0] != ptr2[0]) return false;
   int sz1 = ptr1[1];
   int sz2 = ptr2[1];
-  if (sz1 != sz2) return false;
-  if (sz1<0) {
+  if (sz1<0 && sz2<0) {
     // both sparse
+    if (sz1 != sz2) return false;
     return 0==memcmp(ptr1+2, ptr2+2, -2*sz1*sizeof(int));
   }
-  // both full
-  return 0==memcmp(ptr1+2, ptr2+2, sz1*sizeof(int));
+  ptr1 += 2;
+  ptr2 += 2;
+  if (sz1>0 && sz2>0) {
+    // both full
+    int ms = MIN(sz1, sz2);
+    if (memcmp(ptr1, ptr2, ms*sizeof(int))) return false;
+    // tails must be zero.  Only one loop will go.
+    for (; ms<sz1; ms++)
+	if (ptr1[ms]) return false; 
+    for (; ms<sz2; ms++)
+	if (ptr2[ms]) return false;
+    return true;
+  }
+  if (sz1>0) {
+    // node1 is full, node2 is sparse
+    int* down2 = ptr2 - sz2;
+    int i = 0;
+    for (int z=0; z<-sz2; z++) {
+      for (; i<ptr2[z]; i++)  // node1 must be zeroes in between
+	if (ptr1[i]) return false;
+      if (ptr1[i] != down2[z]) return false;
+      i++;
+    }
+    // tail of node1
+    for (; i<sz1; i++)
+	if (ptr1[i]) return false;
+    return true;
+  }
+  // node2 is full, node1 is sparse
+  int* down1 = ptr1 - sz1;
+  int i = 0;
+  for (int z=0; z<-sz1; z++) {
+    for (; i<ptr1[z]; i++)  // node2 must be zeroes in between
+	if (ptr2[i]) return false;
+    if (ptr2[i] != down1[z]) return false;
+  }
+  // tail of node2
+  for (; i<sz2; i++)
+	if (ptr2[i]) return false;
+  return true;
 }
 
 // ------------------------------------------------------------------
