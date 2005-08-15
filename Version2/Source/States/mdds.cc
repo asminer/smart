@@ -13,8 +13,9 @@
 
 const int Add_Size = 1024;
 
-node_manager::node_manager()
+node_manager::node_manager(Garbage_Policy gcp)
 {
+  GCP = gcp;
   a_size = Add_Size;
   address = (int*) malloc(a_size*sizeof(int));
   a_last = 1;
@@ -256,7 +257,7 @@ int node_manager::TempNode(int k, int sz)
   int* foo = (data+address[p]);
   foo[0] = 1;	// #incoming
   foo[1] = 0;   // cache count
-  foo[2] = -5;	// unreduced next
+  foo[2] = Temp_node;
   foo[3] = k;	// level
   foo[4] = sz;	// size
   // zero out the downward pointers
@@ -499,8 +500,21 @@ bool node_manager::equals(int h1, int h2) const
 void node_manager::DeleteNode(int p)
 {
   DCASSERT(p>1);
-  active_nodes--;
   int* foo = data + address[p];
+
+  if (isNodeZombie(p)) {
+    // easy: just free the memory
+    if (foo[4]<0)
+    	MakeHole(address[p], 5 -2*foo[4]);  
+    else
+    	MakeHole(address[p], 5 + foo[4]);  
+    FreeNode(p);
+    return;
+  }
+
+  // non zombies.
+  active_nodes--;
+  // if reduced, remove us from the unique table.
   if (isNodeReduced(p)) {
 #ifdef DEELOPMENT_CODE 
     int x = unique->Remove(p);
@@ -533,6 +547,42 @@ void node_manager::DeleteNode(int p)
 
   // recycle the index
   FreeNode(p);
+}
+
+void node_manager::ZombifyNode(int p)
+{
+  DCASSERT(p>1);
+  active_nodes--;
+  int* foo = data + address[p];
+  if (isNodeReduced(p)) {
+#ifdef DEELOPMENT_CODE 
+    int x = unique->Remove(p);
+    DCASSERT(x==p);
+#else
+    unique->Remove(p);
+#endif
+  }
+
+  foo[2] = Zombie_node;	
+
+  // done with children
+  if (foo[4]<0) {
+    // Sparse encoding
+    int* downptr = foo + 5 - foo[4];
+    int* stop = downptr - foo[4];
+    for (; downptr < stop; downptr++) {
+      Unlink(downptr[0]);
+      downptr[0] = 0;		// not necessary
+    }
+  } else {
+    // Full encoding
+    int* downptr = foo + 5;
+    int* stop = downptr + foo[4];
+    for (; downptr < stop; downptr++) {
+      Unlink(downptr[0]);
+      downptr[0] = 0;		// not necessary
+    }
+  }
 }
 
 int node_manager::NextFreeNode()
@@ -747,6 +797,8 @@ void node_manager::MakeHole(int addr, int slots)
 #endif
   hole_slots += slots;
   data[addr] = data[addr+slots-1] = -slots;
+
+  if (GC_None == GCP) return;  
 
   // Check for a hole to the left
   if (data[addr-1]<0) {

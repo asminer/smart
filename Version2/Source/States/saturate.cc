@@ -7,7 +7,7 @@
 
 int* root;
 int* size;
-node_manager bar;
+node_manager bar(GC_Pessimistic);
 operations cruft(&bar);
 
 // #define SHOW_MXD

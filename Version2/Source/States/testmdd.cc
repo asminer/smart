@@ -2,180 +2,69 @@
 // $Id$
 
 #include "mdds.h"
-#include "mdd_ops.h"
-#include <stdlib.h>
-
-int* root;
-int* size;
-node_manager bar;
-operations cruft(&bar);
-
-// #define SHOW_MXD
-// #define SHOW_FINAL
-// #define SHOW_DISCONNECTED
-
-void ReadMDD(const char* filename)
-{
-  FILE* foo = fopen(filename, "r"); 
-  if (NULL==foo) {
-    Output << "Couldn't open file " << filename << "\n"; 
-    Output.flush();
-    return;
-  }
-  InputStream in(foo);
-
-  // File format is:
-  // index
-  // level
-  // truncated--full size
-  // entry1 ... entryn
-
-  int mapsize = 1024;
-  int* indexmap = (int*) malloc(mapsize*sizeof(int));
-  indexmap[0] = 0;
-  indexmap[1] = 1;
-  
-  int index;
-  int level;
-  while (in.Get(index)) {
-    int sz;
-    in.Get(level);
-    in.Get(sz);
-    if (level>0) size[level] = MAX(size[level], sz);
-    if (level<0) size[-level] = MAX(size[-level], sz);
-    int n = bar.TempNode(level, sz);
-    if (index>=mapsize) {
-      mapsize = (1+index/1024)*1024;
-      indexmap = (int *) realloc(indexmap, mapsize*sizeof(int));
-      DCASSERT(indexmap);
-    }
-    // read, translate, and store the pointers
-    for (int i=0; i<sz; i++) {
-      int ptr;
-      in.Get(ptr);
-      bar.Link(indexmap[ptr]);
-      bar.SetArc(n, i, indexmap[ptr]);
-    }
-    indexmap[index] = bar.Reduce(n);
-  }
-  DCASSERT(0==root[level]);
-  root[level] = indexmap[index];
-  free(indexmap);
-}
-
-int MakeString(int K) 
-{
-  int below = 1;
-  for (int k=1; k<=K; k++) {
-    int a = bar.TempNode(k, size[k]);
-    bar.SetArc(a, 0, below);
-    below = a;
-  }
-  return below;
-}
 
 void smart_exit()
 {
 }
 
-int main(int argc, char** argv)
+void AddNode(node_manager &bar)
 {
-  if (argc<3) {
-    Output << "Usage: " << argv[0] << " K file1 ... filen\n";
-    return 0;
-  }
-  int K = atoi(argv[1]);
-  root = new int[K+1];
-  size = new int[K+1];
-  int i;
-  for (i=0; i<=K; i++) root[i] = size[i] = 0;
-  for (i=2; i<argc; i++) {
-    Output << "Reading " << argv[i] << "\n";
-    Output.flush();
-    ReadMDD(argv[i]);
-  }
+  int k;
+  int p;
+  Input.Get(k);
+  Input.Get(p);
+  int a = bar.TempNode(k, p);
 
-  while (1) {
-    if (size[K]) break;
-    if (0==K) break;
-    K--;
-  }
-  Output << "Sizes: [";
-  Output.PutArray(size+1, K);
-  Output << "]\n";
-  Output << "Transitions by level:\n";
-  for (i=K; i; i--) 
-    if (root[i]) 
-      Output << "\t" << i << " : " << root[i] << "\n";
-
-  int reachset = MakeString(K);
-
-#ifdef SHOW_MXD
-  Output << "Initial: " << reachset << "\n";
-  bar.Dump(Output);
-#endif
-
-  Output << "Starting " << K << " level saturation\n"; 
+  Output << "Enter " << p << " pointers\n";
   Output.flush();
-
-  reachset = cruft.Saturate(reachset, root, size, K);  
-
-#ifdef SHOW_FINAL
-  Output << "Reachset: " << reachset << "\n";
+  for (int i=0; i<p; i++) {
+    int d;
+    Input.Get(d);
+    bar.SetArc(a, i, d);
+  }
+  a = bar.Reduce(a);
+  Output << "That is node " << a << "\n";
   bar.Dump(Output);
-#endif
-  
-  int card = cruft.Count(reachset);
+}
 
-  Output << card << " reachable states\n";
+void DeleteNode(node_manager &bar)
+{
+  int p;
+  Input.Get(p);
+  bar.Unlink(p);
+  bar.Dump(Output);
+}
 
-  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
-  Output.Pad('-', 60);
-  Output << "\n";
-  cruft.CacheReport(Output);
-  
-  Output << "Clearing cache\n";
+void CacheNode(node_manager &bar, int delta)
+{
+  int p;
+  Input.Get(p);
+  if (delta>0) bar.CacheAdd(p);
+  if (delta<0) bar.CacheRemove(p);
+  bar.Dump(Output); 
+}
+
+int main()
+{
+  node_manager bar(GC_Pessimistic);
+  Output << "Enter command sequence:\n\ta k sz\tto add a node\n\tu #\tto unlink a node\n\t+ #\tto cache add\n\t- #\tto cache subtract\n\n";
   Output.flush();
-  cruft.ClearUCache();
-  cruft.ClearFCache();
+  char cmd;
+  while (Input.Get(cmd)) {
+    switch (cmd) {
+      case 'a':	AddNode(bar);	break;
 
-#ifdef SHOW_DISCONNECTED
-  Output << "Disconnected, undeleted nodes:\n";
+      case 'u': DeleteNode(bar);	break;
 
-  int lm = 2+bar.PeakNodes();
-  bool* marked = new bool[lm];
-  for (i=0; i<lm; i++) marked[i] = false;
-  cruft.Mark(reachset, marked);
-  for (i=K; i; i--) cruft.Mark(root[i], marked);
-  
-  int active = 0;
-  for (i=2; i<lm; i++) {
-    if (marked[i]) {
-      active++;
-      continue;
+      case '+': CacheNode(bar, 1);	break;
+
+      case '-': CacheNode(bar, -1);	break;
+        
+      default:
+	continue;
     }
-    if (bar.isNodeDeleted(i)) continue;
-    Output.Put(i, 6);
-    Output << "\t";
-    bar.ShowNode(Output, i);
-    Output << "\n";
-    Output.flush();
-  }
-#endif
-
-  Output.Pad('-', 60);
-  Output << "\n  Peak nodes: " << bar.PeakNodes();
-  Output << "\nActive nodes: " << bar.CurrentNodes() << "\n\n";
-
-  Output << "   Peak memory: " << bar.PeakMemory() << " bytes\n";
-  Output << "Current memory: " << bar.CurrentMemory() << " bytes\n";
-  Output << " unused holes : " << bar.MemoryHoles() << " bytes\n";
-  Output << " Actual memory: " << bar.CurrentMemory() - bar.MemoryHoles() << " bytes\n";
-
-  Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
-
-  Output << "\n";
-
+  }  
+  Output << "Later!\n";
   return 0;
 }
 
