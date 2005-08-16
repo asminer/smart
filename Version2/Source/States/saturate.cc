@@ -4,11 +4,13 @@
 #include "mdds.h"
 #include "mdd_ops.h"
 #include <stdlib.h>
+#include "../Base/timers.h"
 
 int* root;
 int* size;
 node_manager bar(GC_Optimistic);
 operations cruft(&bar);
+timer stopwatch;
 
 // #define SHOW_MXD
 // #define SHOW_FINAL
@@ -92,6 +94,7 @@ int main(int argc, char** argv)
 	Output << "Using Pessimistic garbage policy\n";
    	break;
   }
+  stopwatch.Start();
   int K = atoi(argv[1]);
   root = new int[K+1];
   size = new int[K+1];
@@ -124,10 +127,16 @@ int main(int argc, char** argv)
 #endif
 
   Output << bar.CurrentNodes() << " nodes used for transitions\n";
+  stopwatch.Stop();
+  Output << "Reading mxds took " << stopwatch << "\n";
+
   Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
 
+  stopwatch.Start();
   reachset = cruft.Saturate(reachset, root, size, K);  
+  stopwatch.Stop();
+  Output << "Saturation took " << stopwatch << "\n";
 
   int card = cruft.Count(reachset);
 

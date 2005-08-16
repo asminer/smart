@@ -20,6 +20,9 @@ testflat: testflat.o streams.o stateheap.o flatss.o errors.o
 
 testflat.o: testflat.cc flatss.h
 
+timers.o: ../Base/timers.cc ../Base/timers.h
+	$(CXX) $(CPPFLAGS) -c -o timers.o ../Base/timers.cc
+
 streams.o: ../Base/streams.cc ../Base/streams.h
 	$(CXX) $(CPPFLAGS) -c -o streams.o ../Base/streams.cc
 
@@ -41,8 +44,8 @@ flatss.o: flatss.h flatss.cc stateheap.h
 testmdd: testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
 	$(CXX) $(CPPFLAGS) -o testmdd testmdd.o mdds.o mdd_ops.o streams.o errors.o intset.o
 
-saturate: saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o
-	$(CXX) $(CPPFLAGS) -o saturate saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o
+saturate: saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o timers.o
+	$(CXX) $(CPPFLAGS) -o saturate saturate.o mdds.o mdd_ops.o streams.o errors.o intset.o timers.o
 
 saturate.o: saturate.cc mdds.h mdd_ops.h
 testmdd.o: testmdd.cc mdds.h mdd_ops.h
