@@ -15,7 +15,7 @@
 	getNext(int h)
 	setNext(int h, int nxt)
 
-	hash(int h, int M);
+	unsigned hash(int h, unsigned M);
 
 	equals(int h1, int h2);
 
@@ -133,7 +133,8 @@ public:
   void BuildFromList(int front) {
     while (front != nodes->Null()) {
       int next = nodes->getNext(front);
-      int h = nodes->hash(front, Size());
+      unsigned h = nodes->hash(front, Size());
+      CHECK_RANGE(0, h, Size());
       nodes->setNext(front, table[h]);
       table[h] = front;
       front = next;
@@ -179,7 +180,7 @@ public:
       Returns index of the item if found, -1 otherwise.
   */
   int Find(int key) {
-    int h = nodes->hash(key, Size());
+    unsigned h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
     int parent = nodes->Null();
     int ptr;
@@ -213,7 +214,7 @@ public:
       Otherwise, return -1.
   */
   int Remove(int key) {
-    int h = nodes->hash(key, Size());
+    unsigned h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
     int parent = nodes->Null();
     int ptr;
@@ -237,7 +238,7 @@ public:
   */
   int Insert(int key) {
     if (num_entries >= hash_sizes[size_index+2]) Expand();
-    int h = nodes->hash(key, Size());
+    unsigned h = nodes->hash(key, Size());
     CHECK_RANGE(0, h, Size());
     int parent = nodes->Null();
     int ptr;

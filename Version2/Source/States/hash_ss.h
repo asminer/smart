@@ -38,7 +38,7 @@ public:
     CHECK_RANGE(0, h, next->last);
     next->data[h] = nxt; 
   } 
-  inline int hash(int h, int M) const { return states->Hash(h, M); }
+  inline unsigned hash(int h, int M) const { return states->Hash(h, M); }
   inline bool equals(int h1, int h2) const { 
     return (0==states->Compare(h1, h2));
   }
