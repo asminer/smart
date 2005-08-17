@@ -89,7 +89,10 @@ public:
   inline int getNext(int h) const { return nodeheap[h].next; }
   inline void setNext(int h, int n) { nodeheap[h].next = n; }
   inline unsigned hash(int h, int M) { 
-    return (nodeheap[h].a*256 + nodeheap[h].b) % M; 
+    unsigned foo = nodeheap[h].a*256;
+    foo += nodeheap[h].b;
+    foo %= M;
+    return foo;
   }
   inline bool equals(int h1, int h2) { 
     if (nodeheap[h1].a != nodeheap[h2].a) return false;
