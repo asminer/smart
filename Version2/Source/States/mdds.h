@@ -332,7 +332,7 @@ public:
   }
   inline bool isStale(int h) const { return false; }
   inline void show(OutputStream &s, int h) const { s.Put(h); }
-  int hash(int h, int M) const;
+  unsigned hash(int h, int M) const;
   bool equals(int h1, int h2) const;
 protected:
   void GridInsert(int p);

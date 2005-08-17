@@ -201,7 +201,7 @@ public:
 	@param M	Size of the hash table
 	@return		An integer between 0 and M-1.
   */
-  int Hash(int handle, int M) const;
+  unsigned Hash(int handle, int M) const;
 
   /**  Compares the encodings of two states.
        Note: this is done by comparing the encodings of the states

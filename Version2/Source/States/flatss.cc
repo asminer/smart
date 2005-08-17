@@ -853,7 +853,7 @@ int state_array::NextHandle(int h)
   return byteptr;
 }
 
-int state_array::Hash(int handle, int M) const 
+unsigned state_array::Hash(int handle, int M) const 
 {
     DCASSERT(map);
     CHECK_RANGE(0, handle, numstates);
@@ -862,7 +862,7 @@ int state_array::Hash(int handle, int M) const
     if (end - start > 4) end--;   // last byte is only partly full
     if (end - start > 4) start++; // first byte is encoding method
     DCASSERT(end - start >= 2);
-    unsigned int first4;
+    unsigned first4;
     if (end - start < int(sizeof(unsigned int))) {
       first4 = 0;
       for (; start < end; start++) {
@@ -878,7 +878,7 @@ int state_array::Hash(int handle, int M) const
     start += incr;
     incr++;
     // Look at remaining state
-    int answer = first4 % M;
+    unsigned answer = first4 % M;
     for (int i=start; i<end; i += incr) {
       answer += ( (answer * 256) + mem[i] );
       answer %= M;

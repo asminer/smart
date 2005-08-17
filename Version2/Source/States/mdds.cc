@@ -385,12 +385,12 @@ void node_manager::ShowNode(OutputStream &s, int p) const
   }
 }
 
-int node_manager::hash(int h, int M) const 
+unsigned node_manager::hash(int h, int M) const 
 {
   DCASSERT(h);
   DCASSERT(M);
   int sz = data[address[h]+4];
-  int a = 0;
+  unsigned a = 0;
   int skip = 1;
   int skchange = 2;
   int ops = -2;
