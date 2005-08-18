@@ -11,25 +11,23 @@
 //#define TRACK_DELETIONS
 //#define TRACK_CACHECOUNT
 
-enum Garbage_Policy {
-  /// No garbage collection (lazy)
-  GC_None,
-  /// Optimistic: dead nodes can be recovered from caches.
-  GC_Optimistic,
-  /// Pessimistic: dead nodes destroyed immediately.
-  GC_Pessimistic
-};
-
 /* Temporary, until we have a proper mdd library. */
 
 class node_manager {
+  friend class node_sorter;
+
   // Special next values
   static const int Temp_node = -5;
   static const int Zombie_node = -42;
 
+  /// Should we try to recycle holes.
+  bool hole_recycling;
 
-  /// How to recycle nodes
-  Garbage_Policy GCP;
+  /// Should we delete nodes as soon as possible.
+  bool pessimistic_caches;
+
+  /// Number of hole slots that trigger a compaction.
+  int compaction_threshold;
 
   /** Address of each node.
       If the node is active, this is the offset (>0) in the data array.
@@ -90,20 +88,44 @@ class node_manager {
   /// Total ints in holes
   int hole_slots;
 
-  int max_hole_chain;
+  // performance stats
 
   /// For peak memory.
   int max_slots;
-  /// For stats.
+  /// Number of alive nodes.
   int active_nodes;
+  /// Largest traversed height of holes grid
+  int max_hole_chain;
+  /// Total number of compactions
+  int num_compactions;
 
   /// Uniqueness table
   HashTable <node_manager> *unique;
 public:
-  node_manager(Garbage_Policy gcp);
+  node_manager();
   ~node_manager();
 
-  inline Garbage_Policy GPolicy() const { return GCP; }
+  inline bool AreHolesRecycled() const { return hole_recycling; }
+  inline bool IsPessimistic() const { return pessimistic_caches; }
+  inline int CompactionThreshold() const { return compaction_threshold; }
+
+  inline void SetHoleRecycling(bool policy) {
+    if (policy == hole_recycling) return;
+    if (policy) {
+      Compact();
+      // if we don't compact, some holes will not be tracked.
+    }
+    else {
+      // trash hole tracking mechanism
+      holes_top = holes_bottom = 0;
+    }
+    hole_recycling = policy;
+  }
+  inline void SetPessimism(bool isp) { pessimistic_caches = isp; }
+  inline void SetCompactionThreshold(int t) {
+    DCASSERT(t>1);
+    compaction_threshold = t;
+  }
 
   // Dealing with address
 
@@ -157,7 +179,7 @@ public:
 #endif
     if (foo[0]) return;  
     // no incoming pointers.
-    if (foo[1] && GC_Pessimistic == GCP) {
+    if (foo[1] && pessimistic_caches) {
 #ifdef TRACK_DELETIONS
       Output << "Zombifying node " << p << " from Unlink\t";
       ShowNode(Output, p);
@@ -317,6 +339,10 @@ public:
   inline int MemoryHoles() const { return hole_slots * sizeof(int); } 
 
   inline int MaxHoleChain() const { return max_hole_chain; }
+  inline int NumCompactions() const { return num_compactions; }
+
+  /// Move nodes so that all holes are at the end.
+  void Compact();
 
   // For uniqueness table
 public:

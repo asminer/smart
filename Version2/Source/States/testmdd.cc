@@ -20,7 +20,7 @@ void AddNode(node_manager &bar)
   for (int i=0; i<p; i++) {
     int d;
     Input.Get(d);
-    bar.SetArc(a, i, d);
+    bar.SetArc(a, i, bar.SharedCopy(d));
   }
   a = bar.Reduce(a);
   Output << "That is node " << a << "\n";
@@ -44,10 +44,18 @@ void CacheNode(node_manager &bar, int delta)
   bar.Dump(Output); 
 }
 
+void Compact(node_manager &bar)
+{
+  bar.DumpInternal(Output);
+  bar.Compact();
+  bar.DumpInternal(Output);
+  bar.Dump(Output);
+}
+
 int main()
 {
   node_manager bar(GC_Pessimistic);
-  Output << "Enter command sequence:\n\ta k sz\tto add a node\n\tu #\tto unlink a node\n\t+ #\tto cache add\n\t- #\tto cache subtract\n\n";
+  Output << "Enter command sequence:\n\ta k sz\tto add a node\n\tu #\tto unlink a node\n\t+ #\tto cache add\n\t- #\tto cache subtract\n\tC\tto compact\n";
   Output.flush();
   char cmd;
   while (Input.Get(cmd)) {
@@ -59,6 +67,8 @@ int main()
       case '+': CacheNode(bar, 1);	break;
 
       case '-': CacheNode(bar, -1);	break;
+
+      case 'C': Compact(bar);		break;
         
       default:
 	continue;
