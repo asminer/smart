@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include "../Base/timers.h"
 
+int K;
 int* root;
 int* size;
-node_manager bar(GC_Optimistic);
+node_manager bar;
 operations cruft(&bar);
 timer stopwatch;
 
@@ -80,30 +81,64 @@ void smart_exit()
 {
 }
 
-int main(int argc, char** argv)
+// returns true on success
+bool ProcessArgs(int argc, char** argv)
 {
-  if (argc<3) {
-    Output << "Usage: " << argv[0] << " K file1 ... filen\n";
-    return 0;
+  int p;
+  int T;
+  for (p=1; ; p++) {
+    if (p>=argc) return false;
+
+    if (argv[p][0] == '-') {
+      // we have an option
+      switch (argv[p][1]) {
+
+	case 'o':	// optimistic caches
+			bar.SetPessimism(false);
+			continue;
+
+	case 'p':	// pessimistic caches
+			bar.SetPessimism(true);
+			continue;
+
+        case 'r':	// recycle holes
+			bar.SetHoleRecycling(true);
+			continue;
+
+	case 'l':	// Don't recycle holes
+			bar.SetHoleRecycling(false);
+			continue;
+
+	case 'c':	// grab compaction threshold
+			p++;
+			if (p>=argc) return false;
+			T = atoi(argv[p]);	
+			if (T<=0) return false;	
+			bar.SetCompactionThreshold(T);
+			continue;
+			
+      } // switch
+
+      // bad option
+      return false;
+    } // if -
+ 
+    // should be K
+    break;
   }
-  switch (bar.GPolicy()) {
-    case GC_Optimistic:
-	Output << "Using Optimistic garbage policy\n";
-	break;
-    case GC_Pessimistic:
-	Output << "Using Pessimistic garbage policy\n";
-   	break;
-  }
-  stopwatch.Start();
-  int K = atoi(argv[1]);
-  root = new int[K+1];
+
+  if (p+2 >= argc) return false;  // not enough args left!
+
+  K = atoi(argv[p]);
+  if (K<=0) return false;
+
   size = new int[K+1];
-  int i;
-  for (i=0; i<=K; i++) root[i] = size[i] = 0;
-  for (i=2; i<argc; i++) {
-    Output << "Reading " << argv[i] << "\n";
+  root = new int[K+1];
+
+  for (p++; p<argc; p++) {
+    Output << "Reading " << argv[p] << "\n";
     Output.flush();
-    ReadMDD(argv[i]);
+    ReadMDD(argv[p]);
   }
 
   while (1) {
@@ -111,11 +146,43 @@ int main(int argc, char** argv)
     if (0==K) break;
     K--;
   }
+
+  return true;
+}
+
+int main(int argc, char** argv)
+{
+  if (!ProcessArgs(argc, argv)) {
+    Output << "Usage: " << argv[0] << " [options] K file1 ... filen\n";
+    Output << "\nOptions are (only the first char. matches):\n";
+    Output << "\t-o\tUse optimistic caches (default)\n";
+    Output << "\t-p\tUse pessimistic caches\n";
+    Output << "\n";
+    Output << "\t-r\tRecycle holes (default)\n";
+    Output << "\t-l\tLazy: Don't recycle holes\n";
+    Output << "\n";
+    Output << "\t-c #\tSet compaction threshold value\n";
+    Output << "\n";
+    return 0;
+  }
+
+  if (bar.IsPessimistic()) 
+	Output << "Using pessimistic caches\n";
+  else
+	Output << "Using optimistic caches\n";
+
+  if (bar.AreHolesRecycled())
+	Output << "Holes are recycled\n";
+  else
+	Output << "Holes are not recycled\n";
+
+  Output << "Compaction threshold is " << bar.CompactionThreshold() << " slots\n";
+
   Output << "Sizes: [";
   Output.PutArray(size+1, K);
   Output << "]\n";
   Output << "Transitions by level:\n";
-  for (i=K; i; i--) 
+  for (int i=K; i; i--) 
     if (root[i]) 
       Output << "\t" << i << " : " << root[i] << "\n";
 
@@ -127,8 +194,6 @@ int main(int argc, char** argv)
 #endif
 
   Output << bar.CurrentNodes() << " nodes used for transitions\n";
-  stopwatch.Stop();
-  Output << "Reading mxds took " << stopwatch << "\n";
 
   Output << "Starting " << K << " level saturation\n"; 
   Output.flush();
@@ -183,6 +248,8 @@ int main(int argc, char** argv)
   bar.Dump(Output);
 #endif
 
+  bar.Compact();
+
   Output.Pad('-', 60);
   Output << "\nNodes: \t" << bar.PeakNodes() << " peak ";
   Output << "\t" << bar.CurrentNodes() << " current\n";
@@ -192,7 +259,9 @@ int main(int argc, char** argv)
   Output << "\t\t" << bar.CurrentMemory() - bar.MemoryHoles() << " actual ";
   Output << "\t" << bar.MemoryHoles() << " in holes\n";
 
+  Output << "\n";
   Output << "max hole chain: " << bar.MaxHoleChain() << "\n";
+  Output << "number of compactions: " << bar.NumCompactions() << "\n";
 
   Output << "\n";
 

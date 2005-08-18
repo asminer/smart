@@ -3,19 +3,19 @@
 
 #include "mdds.h"
 #include "../Base/errors.h"
+#include "../Templates/heap.h"
 
 //#define DONT_USE_SPARSE
 //#define DONT_USE_FULL
 
 // #define TRACE_REDUCE
-
 // #define MEMORY_TRACE
+// #define DEBUG_COMPACT
 
 const int Add_Size = 1024;
 
-node_manager::node_manager(Garbage_Policy gcp)
+node_manager::node_manager()
 {
-  GCP = gcp;
   a_size = Add_Size;
   address = (int*) malloc(a_size*sizeof(int));
   a_last = 1;
@@ -35,8 +35,14 @@ node_manager::node_manager(Garbage_Policy gcp)
   active_nodes = 0;
 
   max_hole_chain = 0;
+  num_compactions = 0;
 
   unique = new HashTable<node_manager> (this);
+  
+  // default policies
+  hole_recycling = true;
+  pessimistic_caches = false;
+  compaction_threshold = 1000000000;  // effectively infinite
 }
 
 node_manager::~node_manager()
@@ -145,109 +151,6 @@ int node_manager::Reduce(int p)
 
   return p;
 }
-
-/*  OLD REDUCTION: compress then reduce
-int node_manager::Reduce(int p)
-{
-  DCASSERT(p>1);
-  DCASSERT(isNodeActive(p));
-  DCASSERT(isNodeUnreduced(p));
-  DCASSERT(isNodeFull(p));
-
-  // first, compress this node
-  int size = SizeOf(p);
-  int nnz = 0;
-  int truncsize = 0;
-  int* ptr = data + address[p] + 5;
-  for (int i=0; i<size; i++) {
-    if (ptr[i]) {
-      nnz++;
-      truncsize = i;
-    }
-  }
-  truncsize++;
-
-  if (0==nnz) {
-    // duplicate of 0
-    Unlink(p);
-#ifdef TRACE_REDUCE
-    Output << "\tReducing " << p << ", got 0\n";
-#endif
-    return 0;
-  }
-
-#ifdef DONT_USE_SPARSE
-  nnz = size; // cheat
-#endif
-#ifdef DONT_USE_FULL
-  truncsize = 2*nnz+1;
-#endif
-
-  // right now, tie goes to truncated full.
-  // if (2*nnz < truncsize) {
-  if (2*nnz < truncsize-1) {
-    // sparse is better; convert
-    int newaddr = FindHole(5+2*nnz);
-    // incount
-    data[newaddr] = data[address[p]];
-    // cachecount
-    data[newaddr+1] = data[address[p]+1];
-    // don't bother with next
-    // level
-    data[newaddr+3] = data[address[p]+3];
-    // size
-    data[newaddr+4] = -nnz;
-    int* indexptr = data + newaddr + 5;
-    int* downptr = data + newaddr + 5 + nnz;
-    // can't rely on previous ptr
-    int* ptr = data + address[p] + 5;
-    for (int i=0; i<size; i++) {
-      if (ptr[i]) {
-        indexptr[0] = i;
-        indexptr++;
-        downptr[0] = ptr[i];
-	downptr++;
-      }
-    }
-    // trash old node
-    MakeHole(address[p], 5+size);
-    address[p] = newaddr;
-  } else {
-    // full is better
-    if (truncsize<size) {
-      // truncate the trailing 0s
-      int newaddr = FindHole(5+truncsize);
-      // incount
-      data[newaddr] = data[address[p]];
-      // cachecount
-      data[newaddr+1] = data[address[p]+1];
-      // don't bother with next
-      // level
-      data[newaddr+3] = data[address[p]+3];
-      // size
-      data[newaddr+4] = truncsize;
-      // elements
-      memcpy(data+newaddr+5, data+address[p]+5, truncsize*sizeof(int));
-      // trash old node
-      MakeHole(address[p], 5+size);
-      address[p] = newaddr;
-    }
-  }
-#ifdef TRACE_REDUCE
-  Output << "Uniqueness table:\n";
-  unique->Show(Output);
-#endif
-  int q = unique->Insert(p);
-  if (q!=p) { 
-    Link(q);
-    Unlink(p);
-  }
-#ifdef TRACE_REDUCE
-    Output << "\tReducing " << p << ", got " << q << "\n";
-#endif
-  return q;
-}
-*/
 
 int node_manager::TempNode(int k, int sz)
 {
@@ -384,6 +287,71 @@ void node_manager::ShowNode(OutputStream &s, int p) const
       s << "]";
   }
 }
+
+// Used for compaction, below
+
+struct node_sorter {
+  static node_manager* nodes;
+  int index;
+// handy constructors
+  node_sorter() { index = 0; }
+  node_sorter(int i) { index = i; }
+  inline bool operator> (const node_sorter &b) {
+    DCASSERT(nodes);
+    return (nodes->address[index] > nodes->address[b.index]);
+  }
+};
+
+node_manager* node_sorter::nodes = NULL;
+
+void node_manager::Compact()
+{
+  if (0==hole_slots) return;  // Already compact
+
+  // first: sort nodes by address
+  node_sorter::nodes = this;
+  HeapOfObjects <node_sorter> foo(a_last-1);
+  for (int i=2; i<=a_last; i++) foo.Insert(node_sorter(i));
+  foo.Sort();
+  DCASSERT(foo.Size() == a_last-1);
+  node_sorter* map = foo.MakeArray();
+
+  // compact in map order
+  int front = 1;
+  for (int i=0; i<a_last-1; i++) {
+    int p = map[i].index;
+    if (address[p] <= 0) continue;  // deleted or terminal node
+    int nodesize = (isNodeSparse(p)) ? 2*nnzOf(p) : SizeOf(p);
+    nodesize += 5;
+    DCASSERT(front <= address[p]);
+    if (front < address[p]) {
+#ifdef DEBUG_COMPACT
+      Output << "Moving node " << map[i].index;
+      Output << ": " << nodesize << " slots\n";
+      Output << "\tfrom address " << address[p];
+      Output << "\tto address " << front << "\n";
+      Output.flush();
+#endif
+      memmove(data+front, data+address[p], nodesize * sizeof(int));
+      address[p] = front;
+    } // if front < address[p]
+    front += nodesize;
+  }
+
+  // set up hole pointers and such
+  d_last = front-1; 
+  holes_top = holes_bottom = 0;
+  hole_slots = 0;
+
+  // done with map
+  free(map);
+
+  num_compactions++;
+}
+
+// ------------------------------------------------------------------
+//  For uniqueness table
+// ------------------------------------------------------------------
 
 unsigned node_manager::hash(int h, int M) const 
 {
@@ -712,6 +680,9 @@ int node_manager::FindHole(int slots)
   const int min_node_size = 6;
   DCASSERT(slots>=min_node_size);
 
+  // Do compaction here
+  if (hole_slots > compaction_threshold) Compact();
+
   // First, try for a hole exactly of this size
   int chain = 0;
   int curr = holes_bottom;
@@ -798,7 +769,7 @@ void node_manager::MakeHole(int addr, int slots)
   hole_slots += slots;
   data[addr] = data[addr+slots-1] = -slots;
 
-  if (GC_None == GCP) return;  
+  if (!hole_recycling) return;
 
   // Check for a hole to the left
   if (data[addr-1]<0) {
