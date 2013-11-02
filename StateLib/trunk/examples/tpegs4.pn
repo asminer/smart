@@ -1,0 +1,150 @@
+# 42
+
+# $Id$
+#
+#  Triangular peg jumping game.
+#
+#  Note the model considers the triangle as a "right" one,
+#  with the shape:
+#
+#  row 1:	X
+#
+#  row 2:	X   X
+#
+#  row 3:	X   X   X
+#
+#  row 4:	X   X   X   X
+#
+
+PN
+PLACES
+	p11,
+	p21, p22,
+	p31, p32, p33,
+	p41, p42, p43, p44;
+
+INIT
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1;
+
+BOUNDS
+	p11 : 1,
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1;
+
+#
+# jumps to the north
+#
+  TRANS	
+	n11, n21,
+	n22;
+
+  ARCS
+	n11 : p11, p21 : n11, p31 : n11,
+	n21 : p21, p31 : n21, p41 : n21,
+
+	n22 : p22, p32 : n22, p42 : n22;
+
+  INHIBITORS
+	p11 : n11,
+	p21 : n21,
+
+	p22 : n22;
+
+#
+# jumps to the south
+#
+  TRANS	
+	s31, s41,
+	s42;
+
+  ARCS
+	p11 : s31, p21 : s31, s31 : p31,
+	p21 : s41, p31 : s41, s41 : p41,
+
+	p22 : s42, p32 : s42, s42 : p42;
+
+  INHIBITORS
+	p31 : s31,
+	p41 : s41,
+
+	p42 : s42;
+
+#
+# jumps to the east
+#
+  TRANS
+	e33, e43,
+	e44;
+
+  ARCS
+	p31 : e33, p32 : e33, e33 : p33,
+	p41 : e43, p42 : e43, e43 : p43,
+
+	p42 : e44, p43 : e44, e44 : p44;
+	
+  INHIBITORS
+	p33 : e33,
+	p43 : e43,
+
+	p44 : e44;
+
+#
+# jumps to the west
+#
+  TRANS
+	w31, w41,
+	w42;
+
+  ARCS
+	w31 : p31,  p32 : w31, p33 : w31,
+	w41 : p41,  p42 : w41, p43 : w41,
+
+	w42 : p42,  p43 : w42, p44 : w42;
+
+  INHIBITORS
+	p31 : w31,
+	p41 : w41,
+
+	p42 : w42;
+
+#
+# jumps to the north west
+#
+  TRANS
+	nw11, nw21,
+        nw22;
+
+  ARCS
+	nw11 : p11, p22 : nw11, p33 : nw11,
+	nw21 : p21, p32 : nw21, p43 : nw21,
+
+	nw22 : p22, p33 : nw22, p44 : nw22;
+
+  INHIBITORS
+	p11 : nw11,
+	p21 : nw21,
+
+	p22 : nw22;
+
+#
+# jumps to the south east
+#
+  TRANS
+	se33, se43, 
+	se44;
+
+  ARCS
+	p11 : se33, p22 : se33, se33 : p33,
+	p21 : se43, p32 : se43, se43 : p43,
+
+	p22 : se44, p33 : se44, se44 : p44;
+
+  INHIBITORS
+	p33 : se33,
+	p43 : se43,
+
+	p44 : se44;
+END

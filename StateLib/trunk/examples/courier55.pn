@@ -1,0 +1,78 @@
+# 21447000 Tangible states
+
+# $Id$
+
+#
+#  A model of Courier Protocol Software.
+#  Taken from "Performance Petri Net Analysis of Communications Protocol
+#  Software by Delay-Equivalent Aggregation" by Woodside and Li, PNPM '91
+#
+
+PN
+
+PLACES
+  	p1, p2, p3, p4, p5, p6, p8, p9, p10,
+        p11, p12, p13, p14, p15, p16, p17,
+	p18, p19, p20, p21, p22, p23, p24, p25, p26,
+	p27, p28, p29, p30, p31, p32, p33, p34, p35,
+	p36, p37, p38, p39, p40, p41, p42, p43, p44, p45, p46;
+
+INIT
+	p1 : 1,
+	p3 : 1,
+	p6 : 1, 
+	p10 : 1, 
+	p12 : 1, 
+	p14 : 5, # n  
+	p17 : 5, # m 
+       	p32 : 1, 
+	p37 : 1, 
+	p39 : 1, 
+	p41 : 1, 
+	p44 : 1, 
+	p46 : 1;
+	
+IMMEDIATE
+	 t2, t5, t8, t9, t13, t14, t15,
+	t22, t23, t24, t27, t29, t32;
+
+TRANS
+	 t1, t3, t4, t6, t7, t10, t11, t12, t16, t17, t18,
+	t19, t20, t21, t25, t26, t28, t30, t31, t33, t34;
+
+ARCS
+  	p1:t1, t1:p2,
+	p2:t2, p3:t2, t2:p1, t2:p4,
+	p4:t3, p6:t3, t3:p3, t3:p5,
+	p5:t4, t4:p8,
+	p8:t5, p10:t5, t5:p6, t5:p9,
+	p9:t6, p12:t6, p17:t6, t6:p10, t6:p11,
+	p11:t7, t7:p12, t7:p13,
+	p13:t8, p12:t8, p14:t8, t8:p13, t8:p15,
+	p13:t9, p12:t9, p14:t9, t9:p16,
+	p15:t10, t10:p12, t10:p18,
+	p16:t11, t11:p12, t11:p19,
+	p20:t12, t12:p12, t12:p14,
+	p18:t13, p12:t13, t13:p21,
+	p19:t14, p12:t14, t14:p22,
+	p23:t15, p12:t15, t15:p20,
+	p21:t16, t16:p12, t16:p24,
+	p22:t17, t17:p12, t17:p17, t17:p25,
+	p26:t18, t18:p23,
+	p27:t19, t19:p32, t19:p26,
+	p24:t20, t20:p28,
+	p25:t21, t21:p29,
+	p32:t22, p33:t22, t22:p27,
+	p32:t23, p28:t23, t23:p30,
+	p32:t24, p29:t24, t24:p31,
+	p30:t25, t25:p32, t25:p33,
+	p31:t26, t26:p32, t26:p34,
+	p32:t27, p34:t27, t27:p33, t27:p35,
+	p35:t28, p37:t28, t28:p32, t28:p36,
+	p36:t29, p39:t29, t29:p38, t29:p37,
+	p38:t30, p41:t30, t30:p40, t30:p39,
+	p40:t31, t31:p42,
+	p42:t32, p44:t32, t32:p43, t32:p41,
+	p43:t33, p46:t33, t33:p45, t33:p44,
+	p45:t34, t34:p46;
+END

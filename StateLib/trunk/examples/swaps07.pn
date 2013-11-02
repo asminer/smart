@@ -1,0 +1,41 @@
+# 5040
+
+# $Id$
+
+# Swaps model, as discussed in
+#	"Saturation for a general class of models"
+#	by A. Miner, IEEE TSE, 32(8):559-570, 2006
+#
+
+PN
+PLACES
+	p0, p1, p2, p3, p4, p5, p6;
+INIT
+	p0 : 1,
+	p1 : 2,
+	p2 : 3,
+	p3 : 4,
+	p4 : 5,
+	p5 : 6,
+	p6 : 7;
+
+BOUNDS
+	p0 : 7,
+	p1 : 7,
+	p2 : 7,
+	p3 : 7,
+	p4 : 7,
+	p5 : 7,
+	p6 : 7;
+
+TRANS
+	t1, t2, t3, t4, t5, t6;
+
+ARCS
+	p0 : t1 : p0,	p1 : t1 : p1,	t1 : p1 : p0,	t1 : p0 : p1,
+	p1 : t2 : p1,	p2 : t2 : p2,	t2 : p2 : p1,	t2 : p1 : p2,
+	p2 : t3 : p2,	p3 : t3 : p3,	t3 : p3 : p2,	t3 : p2 : p3,
+	p3 : t4 : p3,	p4 : t4 : p4,	t4 : p4 : p3,	t4 : p3 : p4,
+	p4 : t5 : p4,	p5 : t5 : p5,	t5 : p5 : p4,	t5 : p4 : p5,
+	p5 : t6 : p5,	p6 : t6 : p6,	t6 : p6 : p5,	t6 : p5 : p6;
+END 

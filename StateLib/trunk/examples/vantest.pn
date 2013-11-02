@@ -1,0 +1,32 @@
+# 34
+
+# $Id$
+
+# Essentially, we are testing a relatively large number of 
+# vanishing markings reachable from one tangible state.
+
+PN
+PLACES 
+	S, AA, B, C, d, e, f, g, h, j, k;
+INIT
+	S : 1;
+IMMEDIATE
+	i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12;
+TRANS
+	T1, T2;
+ARCS
+	S : T1,		T1 : d : 16,
+	S : T2,		T2 : f : 16,
+	d : i1,		i1 : e,
+	e : i2,		i2 : C,
+	d : i3,		i3 : g,
+	e : i4,		i4 : h,
+	f : i5,		i5 : g,
+	g : i6,		i6 : h,
+	f : i7,		i7 : j,
+	g : i8,		i8 : k,
+	h : i9,		i9 : B,
+	j : i10,	i10: k,
+	k : i11,	i11: B,
+	j : i12,	i12: AA;
+END

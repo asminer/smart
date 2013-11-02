@@ -1,0 +1,60 @@
+# 160
+# 
+# $Id$
+# 
+#
+#  The kanban manufacturing system example
+#
+
+PN
+
+PLACES
+  pm1, pback1, pkan1, pout1,
+  pm2, pback2, pkan2, pout2,
+  pm3, pback3, pkan3, pout3,
+  pm4, pback4, pkan4, pout4;
+
+INIT
+  pkan1 : 1,
+  pkan2 : 1,
+  pkan3 : 1,
+  pkan4 : 1;
+
+BOUNDS
+  pm1 :  1,   pback1 :  1,   pkan1 :  1,   pout1 :  1,
+  pm2 :  1,   pback2 :  1,   pkan2 :  1,   pout2 :  1,
+  pm3 :  1,   pback3 :  1,   pkan3 :  1,   pout3 :  1,
+  pm4 :  1,   pback4 :  1,   pkan4 :  1,   pout4 :  1;
+
+TRANS
+  tin1,	tredo1,	tok1, tback1, 
+  tin2,	tredo2,	tok2, tback2,	tout2,
+  	tredo3, tok3, tback3, 
+  	tredo4,	tok4, tback4, 	tout4;
+
+ARCS
+  pkan1 : tin1, tin1 : pm1,
+  pm1 : tredo1, tredo1 : pback1,
+  pm1 : tok1, tok1 : pout1,
+  pback1 : tback1, tback1 : pm1,
+
+  pout1 : tin2, tin2 : pkan1,
+  pkan2 : tin2, tin2 : pm2,
+  pm2 : tredo2, tredo2 : pback2,
+  pm2 : tok2, tok2 : pout2,
+  pback2 : tback2, tback2 : pm2,
+  pout2 : tout2, tout2 : pkan2,
+
+  pkan3 : tin2, tin2 : pm3,
+  pm3 : tredo3, tredo3 : pback3,
+  pm3 : tok3, tok3 : pout3,
+  pback3 : tback3, tback3 : pm3,
+  pout3 : tout2, tout2 : pkan3,
+
+  pkan4 : tout2, tout2 : pm4,
+  pm4 : tredo4, tredo4 : pback4,
+  pm4 : tok4, tok4 : pout4,
+  pback4 : tback4, tback4 : pm4,
+  pout4 : tout4, tout4 : pkan4;
+
+END
