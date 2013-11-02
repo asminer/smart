@@ -6,8 +6,8 @@ BINS=tester.o oz_test.o bssq_test.o sms_test.o
 
 all: $(EXES)
 
-INCPATH=-I../src -I../../../RngLib/trunk/include
-LIBPATH=-L../src -L../../../RngLib/trunk/lib
+INCPATH=-I../src -I../../RngLib/include
+LIBPATH=-L../src -L../../RngLib/lib
 
 dice: dice.cc ../src/libsim.a
 	g++ $(CXXFLAGS) $(INCPATH) dice.cc $(LIBPATH) -lsim -o dice

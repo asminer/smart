@@ -10,8 +10,8 @@ clean:
 install: libstate.a
 	cp libstate.a ../lib
 	cp statelib.h ../include
-	cp libstate.a ../../../lib
-	cp statelib.h ../../../include
+	cp libstate.a ../../lib
+	cp statelib.h ../../include
 
 revno:
 	./BuildRevNo

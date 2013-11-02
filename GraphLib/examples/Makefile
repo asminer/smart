@@ -1,8 +1,8 @@
 
 # $Id$
 
-INCPATH=-I../src -I../../../IntSets/trunk/include
-LIBPATH=-L../src -L../../../IntSets/trunk/lib
+INCPATH=-I../src -I../../IntSets/include
+LIBPATH=-L../src -L../../IntSets/lib
 
 EXES = grtest
 OBJS =

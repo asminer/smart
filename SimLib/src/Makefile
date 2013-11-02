@@ -11,8 +11,8 @@ clean:
 install: libsim.a
 	cp libsim.a ../lib
 	cp sim.h ../include
-	cp libsim.a ../../../lib
-	cp sim.h ../../../include
+	cp libsim.a ../../lib
+	cp sim.h ../../include
 
 revno:
 	./BuildRevNo

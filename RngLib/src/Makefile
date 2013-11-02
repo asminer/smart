@@ -6,8 +6,8 @@ all: revno librng.a
 install:
 	cp librng.a ../lib
 	cp rng.h ../include
-	cp librng.a ../../../lib
-	cp rng.h ../../../include
+	cp librng.a ../../lib
+	cp rng.h ../../include
 
 clean:
 	touch rng.o librng.a; rm *.o librng.a

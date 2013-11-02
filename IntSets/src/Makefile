@@ -14,8 +14,8 @@ clean:
 install: $(LIBS)
 	cp $(LIBS) ../lib
 	cp $(HEADERS) ../include
-	cp $(LIBS) ../../../lib
-	cp $(HEADERS) ../../../include
+	cp libintset.a ../../lib
+	cp intset.h ../../include
 
 
 

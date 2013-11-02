@@ -1,7 +1,7 @@
 
 # $Id$
 
-INCPATH=-I../../../IntSets/trunk/include
+INCPATH=-I../../IntSets/include
 
 OBJS= graphlib.o sccs.o 
 
@@ -10,8 +10,8 @@ all: revno libgraph.a
 install: revno libgraph.a
 	cp libgraph.a ../lib
 	cp graphlib.h ../include
-	cp libgraph.a ../../../lib
-	cp graphlib.h ../../../include
+	cp libgraph.a ../../lib
+	cp graphlib.h ../../include
 
 clean:
 	touch $(OBJS) libgraph.a; rm $(OBJS) libgraph.a

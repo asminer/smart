@@ -10,8 +10,8 @@ clean:
 install:
 	cp libls.a ../lib
 	cp lslib.h ../include
-	cp libls.a ../../../lib
-	cp lslib.h ../../../include
+	cp libls.a ../../lib
+	cp lslib.h ../../include
 
 revno:
 	./BuildRevNo

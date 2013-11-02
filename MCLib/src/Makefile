@@ -2,7 +2,7 @@
 # $Id$
 
 
-INCPATH=-I../../../LSLib/trunk/include -I../../../IntSets/trunk/include -I../../../GraphLib/trunk/include -I../../../RngLib/trunk/include
+INCPATH=-I../../LSLib/include -I../../IntSets/include -I../../GraphLib/include -I../../RngLib/include
 
 OBJS= mclib.o mcbase.o mc_irred.o mc_absorb.o mc_general.o \
 	vanish.o hyper.o poiss.o 
@@ -13,8 +13,8 @@ all: revno libmc.a
 install: libmc.a
 	cp libmc.a ../lib
 	cp mclib.h ../include
-	cp libmc.a ../../../lib
-	cp mclib.h ../../../include
+	cp libmc.a ../../lib
+	cp mclib.h ../../include
 
 clean:
 	touch $(OBJS) libmc.a; rm $(OBJS) libmc.a
