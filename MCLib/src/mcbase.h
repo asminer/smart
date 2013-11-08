@@ -133,6 +133,8 @@ public:
   virtual void computeSteady(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
   virtual void computeTTA(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
   virtual void computeClassProbs(const LS_Vector &p0, double* nc, const LS_Options &opt, LS_Output &out) const;
+  virtual void computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double e, double* &dist, int &N) const;
+  virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const;
   virtual long randomWalk(rng_stream &rng, long &state, const intset* final,
                             long maxt, double q) const;
   virtual double randomWalk(rng_stream &rng, long &state, const intset* final,

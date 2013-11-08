@@ -817,6 +817,33 @@ void mc_base::computeClassProbs(const LS_Vector &p0, double* nc,
   for (long a=getFirstAbsorbing(); a<num_states; a++) nc[a] /= total;
 }
 
+
+void 
+mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, 
+            double epsilon, double* &dist, int &N) const
+{
+  if (!finished) {
+    throw MCLib::error(MCLib::error::Finished_Mismatch);
+  }
+  if (0==c) throw MCLib::error(MCLib::error::Bad_Class);
+  // TBD
+  throw MCLib::error(MCLib::error::Not_Implemented);
+}
+
+double
+mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, 
+            double dist[], int N) const
+{
+  if (!finished) {
+    throw MCLib::error(MCLib::error::Finished_Mismatch);
+  }
+  if (0==c) throw MCLib::error(MCLib::error::Bad_Class);
+  // TBD
+  throw MCLib::error(MCLib::error::Not_Implemented);
+  return 0.0;
+}
+
+
 long
 mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
                             long maxt, double q) const

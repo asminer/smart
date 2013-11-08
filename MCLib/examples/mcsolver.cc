@@ -14,6 +14,8 @@
 
 #include "timers.h"
 
+// #define CHECK_CLASSES
+
 template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
 
 // ******************************************************************
@@ -495,6 +497,14 @@ bool solver_parser::doneEdges()
       default:
           fprintf(errlog, "erroneous\n");
     } // switch
+#ifdef CHECK_CLASSES
+    fprintf(errlog, "Mapping from state to class#:\n\t[");
+    for (int i=0; i<mc->getNumStates(); i++) {
+      if (i) fprintf(errlog, ", ");
+      fprintf(errlog, "%d", mc->getClassOfState(i));
+    }
+    fprintf(errlog, "]\n");
+#endif
     fprintf(errlog, "Chain finalization took %lf seconds\n", sw.User_Seconds());
   } // if !quiet
 

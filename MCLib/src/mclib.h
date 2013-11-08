@@ -135,6 +135,7 @@ namespace MCLib {
       Error_type
     };
 
+
     /// Options for finishing Markov chains.
     struct finish_options : public GraphLib::generic_graph::finish_options {
 
@@ -171,6 +172,7 @@ namespace MCLib {
         Use_Compact_Sets = false;
       }
     };
+
 
     /** How to renumber states for a finished Markov chain.
 
@@ -241,6 +243,7 @@ namespace MCLib {
         }
     };
 
+
     /// Options and such for transient analysis.
     struct transopts {
       /// Uniformization constant to use (if possible)
@@ -272,6 +275,25 @@ namespace MCLib {
       }
     };
 
+
+    /// Options and such for building TTA distributions.
+    struct distopts {
+      /// Uniformization constant to use (if possible)
+      double q;
+      /// Should the auxiliary vector(s) be destroyed?
+      bool kill_aux_vectors;
+      /// Vector to hold result of vector-matrix multiply
+      double* vm_result;
+      /// Probability vector
+      double* probvect;
+      /// Constructor; sets reasonable defaults
+      distopts() {
+        q = 0.0;
+        kill_aux_vectors = true;
+        vm_result = 0;
+        probvect = 0;
+      }
+    };
 
 
   private:
@@ -629,6 +651,59 @@ namespace MCLib {
         @param  out   Linear solver status information as output.
     */
     virtual void computeClassProbs(const LS_Vector &p0, double* nc, const LS_Options &opt, LS_Output &out) const = 0;
+
+    /** Compute the (discrete) distribution for "time to reach class c".
+        The chain must be "finished".
+
+        @param  p0      Initial distribution.
+
+        @param  opts    Options
+
+        @param  c       Class we wish to enter.  See "getClassOfState".
+                        If positive, this is a recurrent class.
+                        If negative, this is an absorbing state.
+                        Should never be zero, for transient states.
+
+        @param  epsilon Build as much of the distribution as necessary,
+                        but no more, such that the remaining probabilities
+                        sum to less than epsilon.
+
+        @param  dist    Output: malloc'd array of doubles to hold the
+                        computed distribution.
+
+        @param  N       Output: length of the \a dist array.
+
+        @throw          Various errors: 
+                          Out_Of_Memory if malloc fails.
+                          Bad_Class if \a c is zero.
+    */
+    virtual void computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double epsilon, double* &dist, int &N) const = 0;
+
+    /** Compute the (discrete) distribution for "time to reach class c".
+        The chain must be "finished".
+
+        @param  p0      Initial distribution.
+
+        @param  opts    Options
+
+        @param  c       Class we wish to enter.  See "getClassOfState".
+                        If positive, this is a recurrent class.
+                        If negative, this is an absorbing state.
+                        Should never be zero, for transient states.
+
+        @param  dist    Fixed array of doubles to hold the
+                        computed distribution.
+
+        @param  N       Length of the \a dist array.
+
+        @return         The "achieved precision", i.e., the sum of the
+                        remaining probabilities.
+
+        @throw          Various errors: 
+                          Out_Of_Memory if malloc fails.
+                          Bad_Class if \a c is zero.
+    */
+    virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const = 0;
 
     /** Simulate a random walk through the chain.
         The chain must be finished and must be stored "by rows".
