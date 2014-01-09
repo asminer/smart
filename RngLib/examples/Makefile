@@ -1,7 +1,7 @@
 
 # $Id$
 
-EXES= rawtest jumptest grid uniftest expotest autocorr
+EXES= rawtest jumptest grid uniftest expotest autocorr shuffle
 
 all: $(EXES)
 
@@ -28,3 +28,5 @@ uniftest: uniftest.cc
 expotest: expotest.cc
 	g++ $(CXXFLAGS) -I../src expotest.cc -L../src -lrng -o expotest
 
+shuffle: shuffle.cc
+	g++ $(CXXFLAGS) -I../src/ shuffle.cc -L../src -lrng -o shuffle

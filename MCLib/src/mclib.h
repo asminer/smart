@@ -286,7 +286,7 @@ namespace MCLib {
       double* vm_result;
       /// Probability vector
       double* probvect;
-      /// Constructor; sets reasonable defaults
+      /// Constructor - sets reasonable defaults
       distopts() {
         q = 0.0;
         kill_aux_vectors = true;
@@ -651,6 +651,7 @@ namespace MCLib {
         @param  out   Linear solver status information as output.
     */
     virtual void computeClassProbs(const LS_Vector &p0, double* nc, const LS_Options &opt, LS_Output &out) const = 0;
+
 
     /** Compute the (discrete) distribution for "time to reach class c".
         The chain must be "finished".

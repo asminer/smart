@@ -48,6 +48,37 @@ public:
 */
 class mc_base : public MCLib::Markov_chain {
 protected:
+  /// Options for internal computation of discrete distributions
+  struct extra_distopts : public distopts {
+      /// Fixed distribution
+      double* fixed_dist;
+      /// Size of fixed distribution array
+      int fixed_dist_size;
+
+      /// Variable distribution, will expand as necessary
+      double* var_dist;
+      /// Size of variable distribution array
+      int var_dist_size;
+
+      /// Distribution "precision"
+      double epsilon;
+    public:
+      extra_distopts(const distopts &d) : distopts(d) {
+        fixed_dist = 0;
+        fixed_dist_size = 0;
+        var_dist = 0;
+        var_dist_size = 0;
+        epsilon = 0;
+      }
+      void setFixed(double dist[], int N) {
+        fixed_dist = dist;
+        fixed_dist_size = N;
+      }
+      void setVariable(double eps) {
+        epsilon = eps;
+      }
+  };
+protected:
   static const int MAX_NODE_ADD = 1024;
 
   /// Graph of edges, except transient to recurrent.
@@ -76,6 +107,7 @@ protected:
 
   /// magnitude of largest diagonal element
   double maxdiag;
+
 public:
   /** Constructor.
       @param  disc  Are we discrete-time?
@@ -133,6 +165,9 @@ public:
   virtual void computeSteady(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
   virtual void computeTTA(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
   virtual void computeClassProbs(const LS_Vector &p0, double* nc, const LS_Options &opt, LS_Output &out) const;
+protected:
+  void internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int c) const;
+public:
   virtual void computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double e, double* &dist, int &N) const;
   virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const;
   virtual long randomWalk(rng_stream &rng, long &state, const intset* final,
@@ -157,6 +192,34 @@ protected:
   void accCTMC(double t, const double* p0, double* n0t, transopts &opts) const;
 
   int stepForward(int n, double q, double* p, double* aux, double delta) const;
+
+  static inline void fillFullVector(double* x, long n, const LS_Vector &p0) {
+    for (long i=0; i<n; i++) x[i] = 0.0;
+    if (p0.index) {
+      // Sparse storage
+      if (p0.d_value) {
+        for (long z=0; z<p0.size; z++)
+          if (p0.index[z] < n)
+            x[p0.index[z]] += p0.d_value[z];
+      } else {
+        for (long z=0; z<p0.size; z++)
+          if (p0.index[z] < n)
+            x[p0.index[z]] += p0.f_value[z];
+      }
+    } else {
+      // Full storage 
+      if (p0.size < n) {
+        n = p0.size;
+      }
+      if (p0.d_value) 
+        for (long i=0; i<n; i++)
+          x[i] += p0.d_value[i];
+      else 
+        for (long i=0; i<n; i++)
+          x[i] += p0.f_value[i];
+    }
+  }
+
 
   void oneStep(const LS_Matrix &Qtt, double q, double* p, double* aux) const {
     // vector-matrix multiply

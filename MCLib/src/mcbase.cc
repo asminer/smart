@@ -817,30 +817,128 @@ void mc_base::computeClassProbs(const LS_Vector &p0, double* nc,
   for (long a=getFirstAbsorbing(); a<num_states; a++) nc[a] /= total;
 }
 
+void
+mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int c) const
+{
+  if (!finished) {
+    throw MCLib::error(MCLib::error::Finished_Mismatch);
+  }
+  if (0==c || c>num_classes || c<-getNumAbsorbing()) {
+    throw MCLib::error(MCLib::error::Bad_Class);
+  }
+
+  /* Initialize matrix stuff */
+  LS_Matrix Qtt;
+  exportQtt(Qtt);
+  Qtt.start = 0;
+  Qtt.stop = stop_index[num_classes];
+  if (0==opts.q) opts.q = 1.0;
+
+
+  /* Initialize vectors if necessary */
+  if (0==opts.probvect) {
+    opts.probvect = new double[num_states];
+  }
+  if (0==opts.vm_result) {
+    opts.vm_result = new double[num_states];
+  }
+  if (0==opts.vm_result || 0==opts.probvect) {
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } 
+  fillFullVector(opts.probvect, num_states, p0);
+
+
+  /* Save the state indexes for this class */
+  long start_class, stop_class;
+  if (c>0) {
+    // recurrent class
+    start_class = getFirstRecurrent(c);
+    stop_class = start_class + getRecurrentSize(c);
+  } else {
+    // absorbing state
+    start_class = stop_index[num_classes]-1-c;
+    stop_class = start_class+1;
+  }
+
+
+  for (int i=0; ;) {
+    // get the probability that we just entered class c
+    double dist = 0;
+    for (int s=start_class; s<stop_class; s++) {
+      dist += opts.probvect[s];
+    }
+    if (opts.fixed_dist) {
+      opts.fixed_dist[i] = dist;
+    } else {
+      // Expand if necessary
+      if (i>=opts.var_dist_size) {
+        opts.var_dist_size += 256;
+        opts.var_dist = (double*) realloc(opts.var_dist, opts.var_dist_size * sizeof(double));
+        if (0==opts.var_dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+      }
+      opts.var_dist[i] = dist;
+    }
+
+    i++; 
+
+    // Check stopping criteria
+    if (opts.fixed_dist) {
+      if (i >= opts.fixed_dist_size) {
+        /* Compute error */
+        opts.epsilon = 0.0;
+        for (int s=0; s<stop_index[0]; s++) {
+          opts.epsilon += opts.probvect[s];
+        }
+        break;
+      }
+    } else {
+      /* Determine "error": total mass still in transient states */
+      double error = 0.0;
+      for (int s=0; s<stop_index[0]; s++) {
+        error += opts.probvect[s];
+        if (error >= opts.epsilon) break;
+      }
+      if (error < opts.epsilon) break; 
+    }
+
+    // Build the next vector
+    //  (a) zero the non-transient probs
+    for (int s=stop_index[0]; s<num_states; s++) {
+      opts.probvect[s] = 0.0;
+    }
+    //  (b) advance
+    oneStep(Qtt, opts.q, opts.probvect, opts.vm_result);
+    SWAP(opts.probvect, opts.vm_result);
+  }
+
+  /* Cleanup vectors as necessary */
+  if (opts.kill_aux_vectors) {
+    delete[] opts.probvect;
+    delete[] opts.vm_result;
+    opts.probvect = 0;
+    opts.vm_result = 0;
+  } 
+}
 
 void 
 mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, 
             double epsilon, double* &dist, int &N) const
 {
-  if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
-  }
-  if (0==c) throw MCLib::error(MCLib::error::Bad_Class);
-  // TBD
-  throw MCLib::error(MCLib::error::Not_Implemented);
+  extra_distopts eo(opts);
+  eo.setVariable(epsilon);
+  internalDiscreteDistTTA(p0, eo, c);
+  dist = eo.var_dist;
+  N = eo.var_dist_size;
 }
 
 double
 mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, 
             double dist[], int N) const
 {
-  if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
-  }
-  if (0==c) throw MCLib::error(MCLib::error::Bad_Class);
-  // TBD
-  throw MCLib::error(MCLib::error::Not_Implemented);
-  return 0.0;
+  extra_distopts eo = opts;
+  eo.setFixed(dist, N);
+  internalDiscreteDistTTA(p0, eo, c);
+  return eo.epsilon;
 }
 
 
