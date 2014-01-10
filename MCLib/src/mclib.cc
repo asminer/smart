@@ -9,7 +9,7 @@
 #include "revision.h"
 
 const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 0;
+const int MINOR_VERSION = 1;
 
 // ******************************************************************
 // *                       Macros and such                          *
