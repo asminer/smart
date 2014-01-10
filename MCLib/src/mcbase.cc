@@ -17,6 +17,8 @@
 // #define DEBUG_UNIF
 // #define DEBUG_SSDETECT
 // #define DEBUG_REDUC_STEADY
+// #define DEBUG_DDIST_TTA
+// #define DEBUG_CDIST_TTA
 
 
 // ******************************************************************
@@ -470,9 +472,6 @@ void mc_base::computeTransient(double t, double* p, transopts &opts) const
 #ifdef DEBUG_UNIF
   printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
 #endif
-  if ((0==poisson) && (R-L>=0)) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
-  }
 
   if (0==opts.vm_result)
     opts.vm_result = (double*) malloc(num_states * sizeof(double));
@@ -616,7 +615,7 @@ mc_base::accDTMC(double t, const double* p0, double* n0t, transopts &opts) const
 
   for (; t>=1.0; t-=1.0) {
     for (long s=0; s<num_states; s++) n0t[s] += opts.accumulator[s];
-    oneStep(Qtt, 1.0, opts.accumulator, opts.vm_result);
+    oneStep(Qtt, 1.0, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
     opts.Steps++;
   }
@@ -657,7 +656,7 @@ mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
   for (int i=0; i<L; i++) {
     opts.Steps++;
     for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
-    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result);
+    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
   } // for i
   for (int i=0; ; i++) {
@@ -665,7 +664,7 @@ mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
     adj = poisson[i] / opts.q;
     for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
     if (i>=R-L) break;
-    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result);
+    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
   } // for i
   
@@ -832,7 +831,6 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
   exportQtt(Qtt);
   Qtt.start = 0;
   Qtt.stop = stop_index[num_classes];
-  if (0==opts.q) opts.q = 1.0;
 
 
   /* Initialize vectors if necessary */
@@ -860,8 +858,17 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     stop_class = start_class+1;
   }
 
+#ifdef DEBUG_DDIST_TTA
+  printf("Starting DiscreteDistTTA computation\n");
+#endif
 
   for (int i=0; ;) {
+#ifdef DEBUG_DDIST_TTA
+    printf("Time %d\n", i);
+    printf("\tVector: ");
+    ShowVector(opts.probvect, num_states);
+    printf("\n");
+#endif
     // get the probability that we just entered class c
     double dist = 0;
     for (int s=start_class; s<stop_class; s++) {
@@ -879,6 +886,21 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       opts.var_dist[i] = dist;
     }
 
+    // Update "error" part of distribution, if necessary
+    if (opts.need_error) {
+      // Expand if we need to
+      if (i>=opts.error_dist_size) {
+        opts.error_dist_size += 256;
+        opts.error_dist = (double*) realloc(opts.error_dist, opts.error_dist_size * sizeof(double));
+        if (0==opts.error_dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+      }
+      // Determine error
+      opts.error_dist[i] = 0.0;
+      for (int s=0; s<stop_index[0]; s++) {
+        opts.error_dist[i] += opts.probvect[s];
+      }
+    }
+
     i++; 
 
     // Check stopping criteria
@@ -893,12 +915,30 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       }
     } else {
       /* Determine "error": total mass still in transient states */
-      double error = 0.0;
-      for (int s=0; s<stop_index[0]; s++) {
-        error += opts.probvect[s];
-        if (error >= opts.epsilon) break;
+      // Did we compute this already?
+      double error;
+      if (opts.need_error) {
+        error = opts.error_dist[i-1];
+      } else {
+        // Compute as much of the error as we need
+        for (int s=0; s<stop_index[0]; s++) {
+          error += opts.probvect[s];
+          if (error >= opts.epsilon) break;
+        }
       }
-      if (error < opts.epsilon) break; 
+      if (error < opts.epsilon) { // done!
+        if (i < opts.var_dist_size) {
+          // Shrink the distribution array
+          opts.var_dist = (double*) realloc(opts.var_dist, i*sizeof(double));
+          opts.var_dist_size = i;
+        }
+        if (i < opts.error_dist_size) {
+          // Shrink the error array
+          opts.error_dist = (double*) realloc(opts.error_dist, i*sizeof(double));
+          opts.error_dist_size = i;
+        }
+        break; 
+      }
     }
 
     // Build the next vector
@@ -906,8 +946,13 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     for (int s=stop_index[0]; s<num_states; s++) {
       opts.probvect[s] = 0.0;
     }
+#ifdef DEBUG_DDIST_TTA
+    printf("\tmodif : ");
+    ShowVector(opts.probvect, num_states);
+    printf("\n");
+#endif
     //  (b) advance
-    oneStep(Qtt, opts.q, opts.probvect, opts.vm_result);
+    oneStep(Qtt, opts.q, opts.probvect, opts.vm_result, false);
     SWAP(opts.probvect, opts.vm_result);
   }
 
@@ -926,6 +971,7 @@ mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c,
 {
   extra_distopts eo(opts);
   eo.setVariable(epsilon);
+  eo.q = 1;
   internalDiscreteDistTTA(p0, eo, c);
   dist = eo.var_dist;
   N = eo.var_dist_size;
@@ -935,12 +981,107 @@ double
 mc_base::computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, 
             double dist[], int N) const
 {
-  extra_distopts eo = opts;
+  extra_distopts eo(opts);
   eo.setFixed(dist, N);
+  eo.q = 1;
   internalDiscreteDistTTA(p0, eo, c);
   return eo.epsilon;
 }
 
+
+void 
+mc_base::computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c, 
+            double dt, double epsilon, double* &dist, int &N) const
+{
+#ifdef DEBUG_CDIST_TTA
+  printf("Inside computeContinuousDistTTA\n");
+#endif
+  // Initialize
+  dist = 0;
+  N = 0;
+
+  /*
+    Build discrete (uniformized) distribution
+  */
+  extra_distopts eo(opts);
+  eo.setVariable(epsilon);
+  eo.q = MAX(eo.q, getUniformizationConst());
+  eo.need_error = true;
+  internalDiscreteDistTTA(p0, eo, c);
+#ifdef DEBUG_CDIST_TTA
+  printf("Using q=%lf\n", eo.q);
+  printf("Got discrete dist: ");
+  ShowVector(eo.var_dist, eo.var_dist_size);
+  printf("\nGot error dist: ");
+  ShowVector(eo.error_dist, eo.error_dist_size);
+  printf("\n");
+#endif
+
+  /*
+    Loop over continuous times
+  */
+  for (int i=1; ; i++) {
+    
+    // Do we need to enlarge the distribution?
+    if (i >= N) {
+      N += 256;
+      dist = (double*) realloc(dist, N*sizeof(double));
+      if (0==dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+    }
+
+    // Determine poisson distribution
+    double t = i*dt;
+    double qt = t * eo.q;
+#ifdef DEBUG_CDIST_TTA
+    printf("TIME %lf\n", t);
+#endif
+    int L;
+    int R;
+    double* poisson = MCLib::computePoissonPDF(qt, epsilon, L, R);
+    const double* poissML = poisson - L;
+#ifdef DEBUG_CDIST_TTA
+    printf("    Computed poisson with qt=%lf; got left=%d, right=%d\n", qt, L, R);
+#endif
+
+    // this data point is q * sum_n (poisson[n] * ddist[n+1])
+    // DDist * poisson = this data point
+    dist[i] = 0;
+    for (int s=L; s<R; s++) {
+      if (s+1>=eo.var_dist_size) break;
+      dist[i] += poissML[s] * eo.var_dist[s+1];
+    }
+    dist[i] *= eo.q;
+
+    // error * poisson = current error value
+    double error = 0;
+    for (int s=L; s<R; s++) {
+      if (s>=eo.error_dist_size) break;
+      error += eo.error_dist[s] * poissML[s];
+#ifndef DEBUG_CDIST_TTA
+      if (error > epsilon) break;
+#endif
+    }
+#ifdef DEBUG_CDIST_TTA
+    printf("    computed `error' %lf\n", error);
+#endif
+    
+    // cleanup
+    free(poisson);
+
+    if (error >= epsilon) continue;
+
+    // Shrink distribution and bail out
+    dist = (double*) realloc(dist, (i+1)*sizeof(double));
+    N=i+1;
+    break;
+  }
+
+  if (dist) dist[0] = eo.var_dist[0];
+
+  // cleanup
+  free(eo.var_dist);
+  free(eo.error_dist);
+}
 
 long
 mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
@@ -1146,7 +1287,7 @@ int mc_base::stepForward(int n, double q, double* p, double* aux, double delta) 
   double* myp = p;
   int i;
   for (i=0; i<n; i++) {
-    oneStep(Qtt, q, myp, aux);
+    oneStep(Qtt, q, myp, aux, true);
     SWAP(aux, myp);
     if (delta <= 0) continue;
     // check for convergence

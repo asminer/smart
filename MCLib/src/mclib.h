@@ -706,6 +706,39 @@ namespace MCLib {
     */
     virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const = 0;
 
+
+    /** Compute the (continuous) distribution for "time to reach class c".
+        The chain must be "finished".
+
+        @param  p0      Initial distribution.
+
+        @param  opts    Options
+
+        @param  c       Class we wish to enter.  See "getClassOfState".
+                        If positive, this is a recurrent class.
+                        If negative, this is an absorbing state.
+                        Should never be zero, for transient states.
+
+        @param  dt      Time increment.  We compute the PDF at times
+                        0, dt, 2*dt, 3*dt, ...
+
+        @param  epsilon Build as much of the distribution as necessary,
+                        but no more, such that the probability of remaining
+                        in a transient state at the final time point
+                        is less than epsilon.
+
+        @param  dist    Output: malloc'd array of doubles to hold the
+                        computed distribution.  dist[i] holds the PDF
+                        for time point i*dt.
+
+        @param  N       Output: length of the \a dist array.
+
+        @throw          Various errors: 
+                          Out_Of_Memory if malloc fails.
+                          Bad_Class if \a c is zero.
+    */
+    virtual void computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c, double dt, double epsilon, double* &dist, int &N) const = 0;
+
     /** Simulate a random walk through the chain.
         The chain must be finished and must be stored "by rows".
         The random walk proceeds until we reach a "final" state,

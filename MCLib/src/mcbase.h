@@ -62,6 +62,15 @@ protected:
 
       /// Distribution "precision"
       double epsilon;
+
+      /// Should we save the error at each step?
+      bool need_error;
+
+      /// Error at each step, will expand as necessary
+      double* error_dist;
+      /// Size of the error_dist array
+      int error_dist_size;
+
     public:
       extra_distopts(const distopts &d) : distopts(d) {
         fixed_dist = 0;
@@ -69,6 +78,9 @@ protected:
         var_dist = 0;
         var_dist_size = 0;
         epsilon = 0;
+        need_error = 0;
+        error_dist = 0;
+        error_dist_size = 0;
       }
       void setFixed(double dist[], int N) {
         fixed_dist = dist;
@@ -170,6 +182,7 @@ protected:
 public:
   virtual void computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double e, double* &dist, int &N) const;
   virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const;
+  virtual void computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c, double dt, double e, double* &dist, int &N) const;
   virtual long randomWalk(rng_stream &rng, long &state, const intset* final,
                             long maxt, double q) const;
   virtual double randomWalk(rng_stream &rng, long &state, const intset* final,
@@ -221,7 +234,7 @@ protected:
   }
 
 
-  void oneStep(const LS_Matrix &Qtt, double q, double* p, double* aux) const {
+  void oneStep(const LS_Matrix &Qtt, double q, double* p, double* aux, bool normalize) const {
     // vector-matrix multiply
     for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
     Qtt.VectorMatrixMultiply(aux, p);
@@ -245,10 +258,15 @@ protected:
       aux[s] += q*p[s];
     }
 
-    // normalize (right now we are off by a factor of q)
-    double total = 0.0;
-    for (long s=num_states-1; s>=0; s--)   total += aux[s];
-    for (long s=num_states-1; s>=0; s--)  aux[s] /= total;
+    if (normalize) {
+      // normalize (also handles dividing by q)
+      double total = 0.0;
+      for (long s=num_states-1; s>=0; s--)   total += aux[s];
+      for (long s=num_states-1; s>=0; s--)  aux[s] /= total;
+    } else {
+      // divide by q
+      for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
+    }
   }
 
 public:
