@@ -899,6 +899,9 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       for (int s=0; s<stop_index[0]; s++) {
         opts.error_dist[i] += opts.probvect[s];
       }
+#ifdef DEBUG_DDIST_TTA
+      printf("\terror[%d]: %lf\n", i, opts.error_dist[i]);
+#endif
     }
 
     i++; 
@@ -911,6 +914,9 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
         for (int s=0; s<stop_index[0]; s++) {
           opts.epsilon += opts.probvect[s];
         }
+#ifdef DEBUG_DDIST_TTA
+        printf("Finished, error: %lf\n", opts.epsilon);
+#endif
         break;
       }
     } else {
@@ -921,11 +927,15 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
         error = opts.error_dist[i-1];
       } else {
         // Compute as much of the error as we need
+        error = 0;
         for (int s=0; s<stop_index[0]; s++) {
           error += opts.probvect[s];
           if (error >= opts.epsilon) break;
         }
       }
+#ifdef DEBUG_DDIST_TTA
+      printf("\tChecking error %lf < %lf\n", error, opts.epsilon);
+#endif
       if (error < opts.epsilon) { // done!
         if (i < opts.var_dist_size) {
           // Shrink the distribution array
