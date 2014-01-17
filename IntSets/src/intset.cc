@@ -121,6 +121,9 @@ public:
   /// does This \cup B = 1?
   bool FullUnion(const bitvector &B) const;
 
+  /// Is This the empty set?
+  bool Empty() const;
+
 #ifdef INTSET_DEVELOPMENT_CODE
   void dump(FILE* s) const;
 #endif
@@ -484,6 +487,13 @@ inline bool intset::bitvector::FullUnion(const bitvector &B) const
     return FirstUnsetAfter(B.size-1) < 0;
 }
 
+inline bool intset::bitvector::Empty() const
+{
+  for (long w = NumWords()-1; w>=0; w--)
+    if (data[w]) return false;
+  return true;
+}
+
 
 #ifdef INTSET_DEVELOPMENT_CODE
 void intset::bitvector::dump(FILE* strm) const
@@ -549,6 +559,12 @@ long intset::cardinality() const
   while ((n=data->FirstSetAfter(n)) >= 0) c++;
   if (flip)   return size - c;
   else        return c;
+}
+
+bool intset::isEmpty() const
+{
+  DCASSERT(data);
+  return data->Empty();
 }
 
 void intset::addElement(long n)

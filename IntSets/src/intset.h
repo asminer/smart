@@ -41,6 +41,11 @@ public:
   */
   long cardinality() const;
 
+  /** Is the set empty?
+      Usually more efficent than "cardinality() == 0"
+  */
+  bool isEmpty() const;
+
   // element manipulation
 
   /** Complement the set.
