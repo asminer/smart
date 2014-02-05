@@ -1,0 +1,163 @@
+
+// $Id$
+
+/* 
+   Partial rubik's cube.
+
+   Just the corners; one transition per rotation.
+
+   Partition: states on top of rotations.
+   
+*/
+
+int onethree(int a) := 4-a;
+int onetwo(int a) := cond(a==3, 3, 3-a);
+
+pn rubik := {
+
+  place wog, wbo, wrb, wgr, ygo, yob, ybr, yrg,
+        wog_r, wbo_r, wrb_r, wgr_r, ygo_r, yob_r, ybr_r, yrg_r;
+
+  init(
+    wog:1, wbo:2, wrb:3, wgr:4, ygo:5, yob:6, ybr:7, yrg:8,
+    wog_r:1, wbo_r:1, wrb_r:1, wgr_r:1, ygo_r:1, yob_r:1, ybr_r:1, yrg_r:1
+  );
+
+  bound({wog, wbo, wrb, wgr, ygo, yob, ybr, yrg} : 8);
+  bound({wog_r, wbo_r, wrb_r, wgr_r, ygo_r, yob_r, ybr_r, yrg_r} : 3);
+
+  partition(
+    wgr, wrb, wog, wbo, yob, ygo, yrg, ybr,
+    // optimised:
+    wog_r, wbo_r, ygo_r, yob_r, yrg_r, wgr_r, wrb_r, ybr_r
+  );
+
+  trans
+  // Clockwise
+    white, orange, green, blue, red, yellow;
+  
+  arcs(
+        // Clockwise rotations:
+
+      wog_r : white : tk(wog_r),
+      wbo_r : white : tk(wbo_r),
+      wrb_r : white : tk(wrb_r),
+      wgr_r : white : tk(wgr_r),
+      wog : white : tk(wog),
+      wbo : white : tk(wbo),
+      wrb : white : tk(wrb),
+      wgr : white : tk(wgr),
+  
+      white : wog_r : tk(wgr_r),
+      white : wbo_r : tk(wog_r),
+      white : wrb_r : tk(wbo_r),
+      white : wgr_r : tk(wrb_r),
+      white : wog : tk(wgr),
+      white : wbo : tk(wog),
+      white : wrb : tk(wbo),
+      white : wgr : tk(wrb),
+
+
+      wog_r : orange : tk(wog_r),
+      wbo_r : orange : tk(wbo_r),
+      ygo_r : orange : tk(ygo_r),
+      yob_r : orange : tk(yob_r),
+      wog : orange : tk(wog),
+      wbo : orange : tk(wbo),
+      ygo : orange : tk(ygo),
+      yob : orange : tk(yob),
+  
+      orange : wog_r : onethree(tk(wbo_r)),
+      orange : wbo_r : onethree(tk(yob_r)),
+      orange : ygo_r : onethree(tk(wog_r)),
+      orange : yob_r : onethree(tk(ygo_r)),
+      orange : wog : tk(wbo),
+      orange : wbo : tk(yob),
+      orange : ygo : tk(wog),
+      orange : yob : tk(ygo),
+
+
+      wog_r : green : tk(wog_r),
+      wgr_r : green : tk(wgr_r),
+      yrg_r : green : tk(yrg_r),
+      ygo_r : green : tk(ygo_r),
+      wog : green : tk(wog),
+      wgr : green : tk(wgr),
+      yrg : green : tk(yrg),
+      ygo : green : tk(ygo),
+  
+      green : wog_r : onetwo(tk(ygo_r)),
+      green : wgr_r : onetwo(tk(wog_r)),
+      green : yrg_r : onetwo(tk(wgr_r)),
+      green : ygo_r : onetwo(tk(yrg_r)),
+      green : wog : tk(ygo),
+      green : wgr : tk(wog),
+      green : yrg : tk(wgr),
+      green : ygo : tk(yrg),
+
+
+      wrb_r : blue : tk(wrb_r),
+      wbo_r : blue : tk(wbo_r),
+      yob_r : blue : tk(yob_r),
+      ybr_r : blue : tk(ybr_r),
+      wrb : blue : tk(wrb),
+      wbo : blue : tk(wbo),
+      yob : blue : tk(yob),
+      ybr : blue : tk(ybr),
+  
+      blue : wrb_r : onetwo(tk(ybr_r)),
+      blue : wbo_r : onetwo(tk(wrb_r)),
+      blue : yob_r : onetwo(tk(wbo_r)),
+      blue : ybr_r : onetwo(tk(yob_r)),
+      blue : wrb : tk(ybr),
+      blue : wbo : tk(wrb),
+      blue : yob : tk(wbo),
+      blue : ybr : tk(yob),
+
+
+      wgr_r : red : tk(wgr_r),
+      wrb_r : red : tk(wrb_r),
+      ybr_r : red : tk(ybr_r),
+      yrg_r : red : tk(yrg_r),
+      wgr : red : tk(wgr),
+      wrb : red : tk(wrb),
+      ybr : red : tk(ybr),
+      yrg : red : tk(yrg),
+  
+      red : wgr_r : onethree(tk(yrg_r)),
+      red : wrb_r : onethree(tk(wgr_r)),
+      red : ybr_r : onethree(tk(wrb_r)),
+      red : yrg_r : onethree(tk(ybr_r)),
+      red : wgr : tk(yrg),
+      red : wrb : tk(wgr),
+      red : ybr : tk(wrb),
+      red : yrg : tk(ybr),
+
+
+      ygo_r : yellow : tk(ygo_r),
+      yrg_r : yellow : tk(yrg_r),
+      ybr_r : yellow : tk(ybr_r),
+      yob_r : yellow : tk(yob_r),
+      ygo : yellow : tk(ygo),
+      yrg : yellow : tk(yrg),
+      ybr : yellow : tk(ybr),
+      yob : yellow : tk(yob),
+  
+      yellow : ygo_r : tk(yob_r),
+      yellow : yrg_r : tk(ygo_r),
+      yellow : ybr_r : tk(yrg_r),
+      yellow : yob_r : tk(ybr_r),
+      yellow : ygo : tk(yob),
+      yellow : yrg : tk(ygo),
+      yellow : ybr : tk(yrg),
+      yellow : yob : tk(ybr)
+
+  );
+  
+  bigint m1 := num_states(false);
+};
+
+#Report + procgen
+
+print(rubik.m1, " states for 3x3x3 Rubik's, corners only\n");
+

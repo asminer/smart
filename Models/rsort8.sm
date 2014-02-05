@@ -1,0 +1,60 @@
+
+dtmc sort8 := {
+  for (int i in {1..8}, int j in {1..8}, int k in {1..8}, int l in {1..8}, int m in {1..8}, int n in {1..8}, int o in {1..8}, int p in {1..8}) {
+    state s[i][j][k][l][m][n][o][p];
+    init (s[i][j][k][l][m][n][o][p] : 1);
+  }
+  for (int i in {1..8}, int j in {1..8}, int k in {1..8}, int l in {1..8}, int m in {1..8}, int n in {1..8}, int o in {1..8}, int p in {1..8}) {
+    cond (i>j, 
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[j][i][k][l][m][n][o][p] : 1
+      ),
+      null
+    );
+    cond (j>k,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][k][j][l][m][n][o][p] : 1
+      ),
+      null
+    );
+    cond (k>l,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][j][l][k][m][n][o][p] : 1
+      ),
+      null
+    );
+    cond (l>m,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][j][k][m][l][n][o][p] : 1
+      ),
+      null
+    );
+    cond (m>n,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][j][k][l][n][m][o][p] : 1
+      ),
+      null
+    );
+    cond (n>o,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][j][k][l][m][o][n][p] : 1
+      ),
+      null
+    );
+    cond (o>p,
+      arcs(
+        s[i][j][k][l][m][n][o][p] : s[i][j][k][l][m][n][p][o] : 1
+      ),
+      null
+    );
+  }
+  real tta := prob_acc(transient, 0, infinity);
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+};
+
+#Report + mc_solve
+
+print("MC has ", sort8.ns, " states, ", sort8.na, " edges\n");
+print("Average #swaps to sort: ", sort8.tta, "\n");

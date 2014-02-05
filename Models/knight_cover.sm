@@ -1,0 +1,61 @@
+
+// $Id$
+
+/*
+    Determine the set of solutions to the Knight Cover Problem:
+    Given an NxN chessboard, place enough knights on the board
+    so that no other piece may be placed on the board without
+    being attacked by one of the knights.
+
+    State: 
+      k: for each square, does it contain a knight or not.
+      c: for each square, is it covered?
+*/
+
+evm knights(int N) := {
+  for (int i in {1..N}, int j in {1..N}) {
+    intvar k[i][j], c[i][j];
+    partition( k[i][j], c[i][j] );
+    range({k[i][j], c[i][j]} : {0..1});
+    event put[i][j];
+  }
+  for (int i in {1..N}, int j in {1..N}) {
+    guard(  put[i][j] : eval(k[i][j])==0,
+            put[i][j] :
+                        cond( i>2   &  j>1  , eval(c[i-2][j-1])<1, false) |
+                        cond( i>2   &  j<N  , eval(c[i-2][j+1])<1, false) |
+                        cond( i>1   &  j>2  , eval(c[i-1][j-2])<1, false) |
+                        cond( i>1   &  j<N-1, eval(c[i-1][j+2])<1, false) |
+                        cond( i<N   &  j>2  , eval(c[i+1][j-2])<1, false) |
+                        cond( i<N   &  j<N-1, eval(c[i+1][j+2])<1, false) |
+                        cond( i<N-1 &  j>1  , eval(c[i+2][j-1])<1, false) |
+                        cond( i<N-1 &  j<N  , eval(c[i+2][j+1])<1, false)
+    );
+
+    assign( k[i][j] : put[i][j] : 1, c[i][j] : put[i][j] : 1 );
+
+    cond( i>2   & j>1   , assign( c[i-2][j-1] : put[i][j] : 1), null );
+    cond( i>2   & j<N   , assign( c[i-2][j+1] : put[i][j] : 1), null );
+    cond( i>1   & j>2   , assign( c[i-1][j-2] : put[i][j] : 1), null );
+    cond( i>1   & j<N-1 , assign( c[i-1][j+2] : put[i][j] : 1), null );
+    cond( i<N   & j>2   , assign( c[i+1][j-2] : put[i][j] : 1), null );
+    cond( i<N   & j<N-1 , assign( c[i+1][j+2] : put[i][j] : 1), null );
+    cond( i<N-1 & j>1   , assign( c[i+2][j-1] : put[i][j] : 1), null );
+    cond( i<N-1 & j<N   , assign( c[i+2][j+1] : put[i][j] : 1), null );
+
+  } 
+  int ne := num_events(true);
+  bigint ns := num_states(false);
+};
+
+# StateDisplayOrder LEXICAL
+# Report + procgen
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+int N := read_int("the board dimension");
+compute(N);
+
+print("\n", N, "x", N, " knight cover problem\n");
+
+knights(N).ns;

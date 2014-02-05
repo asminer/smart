@@ -1,0 +1,48 @@
+
+dtmc sort6 := {
+  for (int i in {1..6}, int j in {1..6}, int k in {1..6}, int l in {1..6}, int m in {1..6}, int n in {1..6}) {
+    state s[i][j][k][l][m][n];
+    init (s[i][j][k][l][m][n] : 1);
+  }
+  for (int i in {1..6}, int j in {1..6}, int k in {1..6}, int l in {1..6}, int m in {1..6}, int n in {1..6}) {
+    cond (i>j, 
+      arcs(
+        s[i][j][k][l][m][n] : s[j][i][k][l][m][n] : 1
+      ),
+      null
+    );
+    cond (j>k,
+      arcs(
+        s[i][j][k][l][m][n] : s[i][k][j][l][m][n] : 1
+      ),
+      null
+    );
+    cond (k>l,
+      arcs(
+        s[i][j][k][l][m][n] : s[i][j][l][k][m][n] : 1
+      ),
+      null
+    );
+    cond (l>m,
+      arcs(
+        s[i][j][k][l][m][n] : s[i][j][k][m][l][n] : 1
+      ),
+      null
+    );
+    cond (m>n,
+      arcs(
+        s[i][j][k][l][m][n] : s[i][j][k][l][n][m] : 1
+      ),
+      null
+    );
+  }
+  real tta := prob_acc(transient, 0, infinity);
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+};
+
+#Report + mc_solve
+
+print("MC has ", sort6.ns, " states, ", sort6.na, " edges\n");
+print("Average #swaps to sort: ", sort6.tta, "\n");

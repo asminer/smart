@@ -1,0 +1,25 @@
+
+$Id$
+
+New autotools version of Smart (since revision 1339)
+
+See the INSTALL file for build instructions.
+
+Note: we have two binary directories, one for development code
+(debugging) and one for release.  Binary directories are not
+separated out by architecture; hopefully, autotools will help
+with porting across systems.  If you absolutely must have different
+directories for different architectures (e.g., a common filesystem
+for multiple architectures), the easiest thing to do is to check
+out multiple copies from the repository, one for each architecture.
+
+
+Subdirectories and what they are for.
+
+Models/       Example models that we like to use.
+Tests/        Regression tests
+bin-devel/    Binaries for testing during development
+bin-release/  Binaries for release
+doxy/         Documentation
+src/          Source code
+

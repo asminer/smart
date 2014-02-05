@@ -1,0 +1,15 @@
+
+// $Id$
+
+/*
+  A simple test for large state spaces.
+*/
+
+// # ReportThousandSeparator ","
+
+int x1 in {1 .. 202};
+int x2 in {1 .. 220};
+int x3 in {1 .. 220};
+int x4 in {1 .. 220};
+
+maximize sumdigits := x1 + x2 + x3 + x4;

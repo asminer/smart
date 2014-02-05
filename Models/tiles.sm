@@ -1,0 +1,72 @@
+
+// $Id$
+
+/*
+
+   n * m rectangular puzzle with movable tiles
+
+*/
+
+bigint factby2(int n) := cond(n<3, 1, n*factby2(n-1));
+
+bigint theory(int n, int m) := cond(1==n, m, cond(1==m, m, factby2(n*m)));
+
+evm tiles(int n, int m) := {
+  for (int i in {1..n}, int j in {1..m}) {
+    intvar p[i][j];
+    range(p[i][j] : {0..n*m-1});
+    init(p[i][j] : (i-1)*m + (j-1));
+
+    partition(p[i][j]); // for use with MDDs
+  }
+  for (int i in {1..n-1}, int j in {1..m}) {
+    event up[i][j], dn[i][j];
+    guard(
+      dn[i][j] : eval(p[i+1][j])==0,
+      up[i][j] : eval(p[i][j])==0
+    );
+    assign(
+      p[i][j]   : dn[i][j] : 0,
+      p[i+1][j] : dn[i][j] : eval(p[i][j]),
+      p[i][j]   : up[i][j] : eval(p[i+1][j]),
+      p[i+1][j] : up[i][j] : 0
+    );
+  }
+  for (int i in {1..n}, int j in {1..m-1}) {
+    event lt[i][j], rt[i][j];
+    guard(
+      rt[i][j] : eval(p[i][j+1])==0,
+      lt[i][j] : eval(p[i][j])==0
+    );
+    assign(
+      p[i][j]   : rt[i][j] : 0,
+      p[i][j+1] : rt[i][j] : eval(p[i][j]),
+      p[i][j]   : lt[i][j] : eval(p[i][j+1]),
+      p[i][j+1] : lt[i][j] : 0
+    );
+  }
+
+  bigint m1 := num_states(false);
+};
+
+# EVMStateStyle VECTOR
+
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+// # Debug + procgen
+# Report + procgen
+
+int N := read_int("N");
+int M := read_int("M");
+compute(N);
+compute(M);
+
+print("Expecting ", theory(N, M), " states\n");
+
+model game := tiles(N, M);
+
+compute(game.m1);
+
+print(N, " by ", M, " tile game has ", game.m1, " states\n");
+

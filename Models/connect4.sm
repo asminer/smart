@@ -1,0 +1,191 @@
+
+// $Id$
+
+// Connect 4 game
+
+# Report + procgen //, num_paths
+
+# EVMStateStyle VECTOR
+
+# ReportThousandSeparator ","
+# OutputThousandSeparator ","
+
+evm connect4(int height, int width) := {
+  for (int i in {0..height-1}, int j in {0..width-1}) {
+    intvar b[i][j];
+    range(b[i][j] : {0..2});
+  } // for i,j
+  intvar turn;
+  range(turn : {1, 2});
+  intvar vwin, hwin, dwin;
+  range({vwin, hwin, dwin} : {0..2});
+
+  assert(eval(vwin)+eval(hwin) != 3);
+  assert(eval(vwin)+eval(dwin) != 3);
+  assert(eval(hwin)+eval(dwin) != 3);
+
+  for (int i in {0..height-1}, int j in {0..width-1}) {
+    event try[i][j];
+    guard(try[i][j] : 
+            0==eval(b[i][j]) & 
+            0==eval(vwin) & 
+            0==eval(hwin) & 
+            0==eval(dwin)
+    );
+    cond(i>0, 
+      guard(try[i][j] : 0!=eval(b[i-1][j])), null
+    );
+    assign(b[i][j] : try[i][j] : eval(turn));
+    assign(turn : try[i][j] : 3-eval(turn));
+    assign(vwin : try[i][j] : // vertical win
+      cond(
+        ( (i>2) & eval(b[i-1][j])==eval(turn) 
+                & eval(b[i-2][j])==eval(turn) 
+                & eval(b[i-3][j])==eval(turn) )
+        , eval(turn), 0
+      )
+    );
+    assign(hwin : try[i][j] : // horizontal wins
+      cond(
+        ( (j>2) & eval(b[i][j-3])==eval(turn) 
+                & eval(b[i][j-2])==eval(turn) 
+                & eval(b[i][j-1])==eval(turn) )
+        |
+        ( (j>1) & (j+1<width) & eval(b[i][j-2])==eval(turn) 
+                              & eval(b[i][j-1])==eval(turn) 
+                              & eval(b[i][j+1])==eval(turn) )
+        |
+        ( (j>0) & (j+2<width) & eval(b[i][j-1])==eval(turn) 
+                              & eval(b[i][j+1])==eval(turn) 
+                              & eval(b[i][j+2])==eval(turn) )
+        |
+        ( (j+3<width) & eval(b[i][j+1])==eval(turn) 
+                      & eval(b[i][j+2])==eval(turn) 
+                      & eval(b[i][j+3])==eval(turn) )
+        , eval(turn), 0
+      )
+    );
+    assign(dwin : try[i][j] : // diagonal wins
+      cond( 
+        // "forward" diagonal
+        ( (j>2) & (i>2) & eval(b[i-3][j-3])==eval(turn) 
+                        & eval(b[i-2][j-2])==eval(turn) 
+                        & eval(b[i-1][j-1])==eval(turn) )
+        |
+        ( (j>1) & (j+1<width) &
+          (i>1) & (i+1<height)  & eval(b[i-2][j-2])==eval(turn) 
+                                & eval(b[i-1][j-1])==eval(turn) 
+                                & eval(b[i+1][j+1])==eval(turn) )
+        |
+        ( (j>0) & (j+2<width) &
+          (i>0) & (i+2<height)  & eval(b[i-1][j-1])==eval(turn) 
+                                & eval(b[i+1][j+1])==eval(turn) 
+                                & eval(b[i+2][j+2])==eval(turn) )
+        |
+        ( (j+3<width) & (i+3<height)  & eval(b[i+1][j+1])==eval(turn) 
+                                      & eval(b[i+2][j+2])==eval(turn) 
+                                      & eval(b[i+3][j+3])==eval(turn) )
+        |
+        // "backward" diagonal
+        ( (j+3<width) & (i>2) & eval(b[i-3][j+3])==eval(turn) 
+                              & eval(b[i-2][j+2])==eval(turn) 
+                              & eval(b[i-1][j+1])==eval(turn) )
+        |
+        ( (j>0) & (j+2<width) & 
+          (i>1) & (i+1<height)  & eval(b[i-2][j+2])==eval(turn) 
+                                & eval(b[i-1][j+1])==eval(turn) 
+                                & eval(b[i+1][j-1])==eval(turn) )
+        |
+        ( (j>1) & (j+1<width) & 
+          (i>0) & (i+2<height)  & eval(b[i-1][j+1])==eval(turn) 
+                                & eval(b[i+1][j-1])==eval(turn) 
+                                & eval(b[i+2][j-2])==eval(turn) )
+        |
+        ( (j>2) & (i+3<height)  & eval(b[i+1][j-1])==eval(turn) 
+                                & eval(b[i+2][j-2])==eval(turn) 
+                                & eval(b[i+3][j-3])==eval(turn) )
+        , eval(turn), 0
+      )
+    );
+  } // for i,j
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+
+  stateset p1win := reachable & potential(eval(hwin)==1 | eval(vwin)==1 | eval(dwin)==1);
+
+  stateset p1wh := reachable & potential(eval(hwin)==1);
+  stateset p1wv := reachable & potential(eval(vwin)==1);
+  stateset p1wd := reachable & potential(eval(dwin)==1);
+  stateset p1wm := (p1wh & p1wv) | (p1wd & p1wv) | (p1wd & p1wh);
+
+  stateset p2win := reachable & potential(eval(hwin)==2 | eval(vwin)==2 | eval(dwin)==2);
+  stateset p2wh := reachable & potential(eval(hwin)==2);
+  stateset p2wv := reachable & potential(eval(vwin)==2);
+  stateset p2wd := reachable & potential(eval(dwin)==2);
+  stateset p2wm := (p2wh & p2wv) | (p2wd & p2wv) | (p2wd & p2wh);
+
+  stateset hasnext := EX(reachable) & reachable;
+  stateset deadlock := reachable & !hasnext;
+
+  stateset stale := deadlock & !p1win & !p2win;
+
+  bigint ng := num_paths(initial, deadlock);
+  bigint ngp1 := num_paths(initial, p1win);
+  bigint ngp2 := num_paths(initial, p2win);
+  bigint ngst := num_paths(initial, stale);
+
+  stateset p1turn := potential(eval(turn)==1);
+  stateset p2turn := potential(eval(turn)==2);
+
+  stateset force1 := AEF(p1turn, p1win);
+  stateset force2 := AEF(p2turn, p2win);
+
+  stateset unfair1 := force1 & initial;
+  stateset unfair2 := force2 & initial;
+};
+
+int W := read_int("board width (canonical=7)");
+compute(W);
+int H := read_int("board height (canonical=6)");
+compute(H);
+
+model c4 := connect4(H, W);
+
+compute(c4.ns);
+compute(c4.na);
+
+print("For a board with width ", W, " and height ", H, "\n");
+
+print("Win states for player 1:\n");
+print("\tTotal       : ", card(c4.p1win), "\n");
+print("\tHorizontal  : ", card(c4.p1wh), "\n");
+print("\tVertical    : ", card(c4.p1wv), "\n");
+print("\tDiagonal    : ", card(c4.p1wd), "\n");
+print("\tSimultaneous: ", card(c4.p1wm), "\n");
+
+print("Win states for player 2:\n");
+print("\tTotal       : ", card(c4.p2win), "\n");
+print("\tHorizontal  : ", card(c4.p2wh), "\n");
+print("\tVertical    : ", card(c4.p2wv), "\n");
+print("\tDiagonal    : ", card(c4.p2wd), "\n");
+print("\tSimultaneous: ", card(c4.p2wm), "\n");
+
+print("#Stalemates: ", card(c4.stale), "\n");
+
+print("Number of distinct games         : ", c4.ng, "\n");
+print("Number of games with player 1 win: ", c4.ngp1, "\n");
+print("Number of games with player 2 win: ", c4.ngp2, "\n");
+print("Number of games with stalemate   : ", c4.ngst, "\n");
+
+print("Computing p1, p2 force wins\n");
+start_timer(0);
+compute(c4.force1);
+compute(c4.force2);
+print("Done, took ", stop_timer(0), " seconds\n");
+
+print("#States where p1 can force a win: ", card(c4.force1), "\n");
+print("#States where p2 can force a win: ", card(c4.force2), "\n");
+
+print("#initial where p1 can force a win: ", card(c4.unfair1), "\n");
+print("#initial where p2 can force a win: ", card(c4.unfair2), "\n");

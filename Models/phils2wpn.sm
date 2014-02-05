@@ -1,0 +1,61 @@
+
+// $Id$
+
+/* Script (sure, Smart works quite well) to generate
+   N dining philosophers 
+   as a "wimpy" PN model.
+*/
+
+int N := read_int("N");
+compute(N);
+
+string of := read_string("Output file", 80);
+cond(output_file(of), null, print("Couldn't write to ", of, "\n"); exit(1));
+
+
+print("#\n#\n#\n# This file generated automatically by phils2wpn.sm\n#\n");
+print("# ", N, " dining philosophers model\n#\n");
+print("PN\n");
+print("PLACES\n");
+for (int i in {0..N-1}) {
+  print("  Idle_", i, ", WaitL_", i, ", WaitR_", i);
+  print(", HasL_", i, ", HasR_", i, ", Fork_", i);
+  cond (i < N-1, print(",\n"), print(";\n\n"));
+}
+print("BOUNDS\n");
+for (int i in {0..N-1}) {
+  print("  Idle_", i, " : 1, WaitL_", i, " : 1, WaitR_", i);
+  print(" : 1, HasL_", i, " : 1, HasR_", i, " : 1, Fork_", i);
+  cond (i < N-1, print(" : 1,\n"), print(" : 1;\n\n"));
+}
+print("INIT\n");
+for (int i in {0..N-1}) {
+  print("  Idle_", i, " : 1, Fork_", i);
+  cond (i < N-1, print(" : 1,\n"), print(" : 1;\n\n"));
+}
+print("TRANS\n");
+for (int i in {0..N-1}) {
+  print("  GoEat_", i, ", GetL_", i, ", GetR_", i);
+  print(", Release_", i);
+  cond (i < N-1, print(",\n"), print(";\n\n"));
+}
+print("ARCS\n");
+for (int i in {0..N-1}) {
+  print("# Behavior of philosopher ", i, "\n");
+  print("  Idle_", i, " : GoEat_", i);
+  print(", GoEat_", i, " : WaitL_", i);
+  print(", GoEat_", i, " : WaitR_", i);
+  print(",\n  WaitL_", i, " : GetL_", i);
+  print(", Fork_", i, " : GetL_", i);
+  print(", GetL_", i, " : HasL_", i);
+  print(",\n  WaitR_", i, " : GetR_", i);
+  print(", Fork_", (i+1) % N, " : GetR_", i);
+  print(", GetR_", i, " : HasR_", i);
+  print(",\n  HasL_", i, " : Release_", i);
+  print(", HasR_", i, " : Release_", i);
+  print(", Release_", i, " : Idle_", i);
+  print(",\n  Release_", i, " : Fork_", i);
+  print(", Release_", i, " : Fork_", (i+1) % N);
+  cond (i < N-1, print(",\n\n"), print(";\n\n"));
+}
+print("END\n\n");

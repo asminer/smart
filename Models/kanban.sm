@@ -1,0 +1,128 @@
+
+// $Id$
+
+/*
+  Kanban manufacturing model, taken from
+  various places.
+*/
+
+
+bigint poly1(bigint x) := div(x*x*x+6*x*x+11*x+6, 6);
+
+bigint poly2(bigint x) := 
+  div(3*x*x*x*x*x + 30*x*x*x*x + 115*x*x*x + 210*x*x + 182*x + 60, 60);
+
+bigint square(bigint n) := n*n;
+
+bigint theory(bigint n) := square(poly1(n)) * poly2(n);
+
+pn kanban(int n) := {
+  place pm1, pb1, pkan1, pout1,
+  pm2, pb2, pkan2, pout2,
+  pm3, pb3, pkan3, pout3,
+  pm4, pb4, pkan4, pout4;
+  
+  init(pkan1:n, pkan2:n, pkan3:n, pkan4:n);
+
+  partition(
+	  pout4, pkan4, pb4, pm4,
+	  pout3, pkan3, pb3, pm3,
+	  pout2, pkan2, pb2, pm2,
+	  pout1, pkan1, pb1, pm1
+  );
+
+  bound( {pm1, pb1, pkan1, pout1} : n);
+  bound( {pm2, pb2, pkan2, pout2} : n);
+  bound( {pm3, pb3, pkan3, pout3} : n);
+  bound( {pm4, pb4, pkan4, pout4} : n);
+
+  trans  tin1, tr1, tb1, tg1, 
+  ts1_23,
+  tr2, tb2, tg2,
+  tr3, tb3, tg3,
+  ts23_4,
+  tr4, tb4, tg4, tout4;
+
+/*
+  firing(
+      tin1    : expo(1.0),
+      tr1     : expo(0.36),
+      tg1     : expo(0.84),
+      tb1     : expo(0.30),
+      ts1_23  : expo(0.40),
+      tr2     : expo(0.42),
+      tg2     : expo(0.98),
+      tb2     : expo(0.30),
+      tr3     : expo(0.39),
+      tg3     : expo(0.91),
+      tb3     : expo(0.30),
+      ts23_4  : expo(0.50),
+      tr4     : expo(0.33),
+      tg4     : expo(0.77),
+      tb4     : expo(0.30),
+      tout4   : expo(0.90)
+  );
+  */
+
+  arcs(
+      pkan1 : tin1, tin1 : pm1,
+      pm1 : tr1, tr1 : pb1,
+      pb1 : tb1, tb1 : pm1,
+      pm1 : tg1, tg1 : pout1,
+      pout1 : ts1_23, ts1_23 : pkan1,
+
+      pkan2 : ts1_23, ts1_23 : pm2,
+      pm2 : tr2, tr2 : pb2,
+      pb2 : tb2, tb2 : pm2,
+      pm2 : tg2, tg2 : pout2,
+      pout2 : ts23_4, ts23_4 : pkan2,
+
+      pkan3 : ts1_23, ts1_23 : pm3,
+      pm3 : tr3, tr3 : pb3,
+      pb3 : tb3, tb3 : pm3,
+      pm3 : tg3, tg3 : pout3,
+      pout3 : ts23_4, ts23_4 : pkan3,
+
+      pkan4 : ts23_4, ts23_4 : pm4,
+      pm4 : tr4, tr4 : pb4,
+      pb4 : tb4, tb4 : pm4,
+      pm4 : tg4, tg4 : pout4,
+      pout4 : tout4, tout4 : pkan4
+  );
+
+  bigint m1 := num_states(false);
+  bigint m2 := num_arcs(false);
+
+  real e1 := avg_ss(tk(pm1) + tk(pb1) + tk(pout1));
+  real e2 := avg_ss(tk(pm2) + tk(pb2) + tk(pout2));
+  real e3 := avg_ss(tk(pm3) + tk(pb3) + tk(pout3));
+  real e4 := avg_ss(tk(pm4) + tk(pb4) + tk(pout4));
+};
+
+# Report + procgen, mc_solve, exact_solver
+# MCSolver GAUSS_SEIDEL
+# MCSolverPrecision 1e-7
+# MCSolverRelaxation 0.9
+
+# StateDisplayOrder LEXICAL
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+int N := read_int("N");
+compute(N);
+print("For N=", N, ", expecting ", theory(N), " states\n");
+compute(kanban(N).m2);
+
+print("Kanban model with N=", N, " has\n\t", kanban(N).m1, " states\n");
+print("\t", kanban(N).m2, " arcs\n\f");
+
+/*
+compute(kanban(N).e1);
+
+print("Measures:\n");
+print("\te1: ", kanban(N).e1, "\n");
+print("\te2: ", kanban(N).e2, "\n");
+print("\te3: ", kanban(N).e3, "\n");
+print("\te4: ", kanban(N).e4, "\n");
+
+*/

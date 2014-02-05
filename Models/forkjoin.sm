@@ -1,0 +1,32 @@
+
+// $Id$
+
+// Fork join model as it appears in my lecture notes for 556.
+
+pn forkjoin(int n) := {
+  place p1, p2, p3, p4, p5;
+//  partition(p1, p2, p3, p4, p5);
+  partition(p5, p4, p3, p2, p1);
+  init(p1:n);
+  bound(p1:n, p2:n, p3:n, p4:n, p5:n);
+  trans t1, t2, t3, t4, t5;
+  arcs(
+    p1 : t1, t1 : p2, t1 : p4,
+    p2 : t2, t2 : p3,
+    p5 : t3, t3 : p4,
+    p4 : t4, t4 : p5,
+    p3 : t5, p5 : t5, t5 : p1
+  );
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+};
+
+# Report + procgen
+
+int n := read_int("N");
+compute(n);
+compute(forkjoin(n).na);
+
+print("Fork join model with ", n, " customers\n");
+print("\t", forkjoin(n).ns, " states\n");
+print("\t", forkjoin(n).na, " edges\n");

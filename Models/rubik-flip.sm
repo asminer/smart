@@ -1,0 +1,168 @@
+
+// $Id$
+
+/* 
+   Rubik's cube.
+
+   Partition: states on top of rotations,
+              edges on top of corners.
+
+   The model is restricted to "double turns".
+   
+*/
+
+int onethree(int a) := 4-a;
+int onetwo(int a) := cond(a==3, 3, 3-a);
+
+evm rubik_fliponly := {
+
+  intvar wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg,
+      wo_r, wg_r, wr_r, wb_r, yo_r, yg_r, yr_r, yb_r, ob_r, og_r, rb_r, rg_r;
+
+  intvar wog, wbo, wrb, wgr, ygo, yob, ybr, yrg,
+      wog_r, wbo_r, wrb_r, wgr_r, ygo_r, yob_r, ybr_r, yrg_r;
+
+  range({wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg} : {1..12});
+
+  range({wo_r, wg_r, wr_r, wb_r, 
+         yo_r, yg_r, yr_r, yb_r, 
+         ob_r, og_r, rb_r, rg_r} : {1..2});
+
+  range({wog, wbo, wrb, wgr, ygo, yob, ybr, yrg} : {1..8});
+
+  range({wog_r, wbo_r, wrb_r, wgr_r, ygo_r, yob_r, ybr_r, yrg_r} : {1..3});
+
+  init(
+    wo:1, wg:2, wr:3, wb:4, 
+    yo:5, yg:6, yr:7, yb:8, 
+    wo_r:1, wg_r:1, wr_r:1, wb_r:1, 
+    yo_r:1, yg_r:1, yr_r:1, yb_r:1, 
+    ob_r:1, og_r:1, rb_r:1, rg_r:1,
+    ob:9, og:10, rb:11, rg:12,
+    wog:1, wbo:2, wrb:3, wgr:4, ygo:5, yob:6, ybr:7, yrg:8,
+    wog_r:1, wbo_r:1, wrb_r:1, wgr_r:1, ygo_r:1, yob_r:1, ybr_r:1, yrg_r:1
+  );
+
+  partition(
+    wo, wg, og, wr, rg, wb, ob, rb, yo, yg, yr, yb,
+    wo_r, og_r, wg_r, wb_r, ob_r, wr_r, rg_r, rb_r, yo_r, yg_r, yr_r, yb_r,
+    wgr, wrb, wog, wbo, yob, ygo, yrg, ybr,
+    wog_r, wbo_r, ygo_r, yob_r, yrg_r, wgr_r, wrb_r, ybr_r
+  );
+
+
+  event
+    // Double turns.
+    white, orange, green, blue, red, yellow;
+  
+  assign(
+        wo : white : eval(wr),
+        wg : white : eval(wb),
+        wr : white : eval(wo),
+        wb : white : eval(wg),
+      wo_r : white : eval(wr_r),
+      wg_r : white : eval(wb_r),
+      wr_r : white : eval(wo_r),
+      wb_r : white : eval(wg_r),
+       wog : white : eval(wrb),
+       wgr : white : eval(wbo),
+       wrb : white : eval(wog),
+       wbo : white : eval(wgr),
+     wog_r : white : eval(wrb_r),
+     wgr_r : white : eval(wbo_r),
+     wrb_r : white : eval(wog_r),
+     wbo_r : white : eval(wgr_r),
+
+        wo : orange : eval(yo),
+        ob : orange : eval(og),
+        yo : orange : eval(wo),
+        og : orange : eval(ob),
+      wo_r : orange : onetwo(onetwo(eval(yo_r))),
+      ob_r : orange : onetwo(onetwo(eval(og_r))),
+      yo_r : orange : onetwo(onetwo(eval(wo_r))),
+      og_r : orange : onetwo(onetwo(eval(ob_r))),
+       wog : orange : eval(yob),
+       wbo : orange : eval(ygo),
+       yob : orange : eval(wog),
+       ygo : orange : eval(wbo),
+     wog_r : orange : onethree(onethree(eval(yob_r))),
+     wbo_r : orange : onethree(onethree(eval(ygo_r))),
+     yob_r : orange : onethree(onethree(eval(wog_r))),
+     ygo_r : orange : onethree(onethree(eval(wbo_r))),
+    
+        wg : green : eval(yg),
+        og : green : eval(rg),
+        yg : green : eval(wg),
+        rg : green : eval(og),
+      wg_r : green : eval(yg_r),
+      og_r : green : eval(rg_r),
+      yg_r : green : eval(wg_r),
+      rg_r : green : eval(og_r),
+       wog : green : eval(yrg),
+       ygo : green : eval(wgr),
+       yrg : green : eval(wog),
+       wgr : green : eval(ygo),
+     wog_r : green : onetwo(onetwo(eval(yrg_r))),
+     ygo_r : green : onetwo(onetwo(eval(wgr_r))),
+     yrg_r : green : onetwo(onetwo(eval(wog_r))),
+     wgr_r : green : onetwo(onetwo(eval(ygo_r))),
+
+        wb : blue : eval(yb),
+        rb : blue : eval(ob),
+        yb : blue : eval(wb),
+        ob : blue : eval(rb),
+      wb_r : blue : eval(yb_r),
+      rb_r : blue : eval(ob_r),
+      yb_r : blue : eval(wb_r),
+      ob_r : blue : eval(rb_r),
+       wrb : blue : eval(yob),
+       ybr : blue : eval(wbo),
+       yob : blue : eval(wrb),
+       wbo : blue : eval(ybr),
+     wrb_r : blue : onetwo(onetwo(eval(yob_r))),
+     ybr_r : blue : onetwo(onetwo(eval(wbo_r))),
+     yob_r : blue : onetwo(onetwo(eval(wrb_r))),
+     wbo_r : blue : onetwo(onetwo(eval(ybr_r))),
+
+        wr : red : eval(yr),
+        rg : red : eval(rb),
+        yr : red : eval(wr),
+        rb : red : eval(rg),
+      wr_r : red : onetwo(onetwo(eval(yr_r))),
+      rg_r : red : onetwo(onetwo(eval(rb_r))),
+      yr_r : red : onetwo(onetwo(eval(wr_r))),
+      rb_r : red : onetwo(onetwo(eval(rg_r))),
+       wgr : red : eval(ybr),
+       yrg : red : eval(wrb),
+       ybr : red : eval(wgr),
+       wrb : red : eval(yrg),
+     wgr_r : red : onethree(onethree(eval(ybr_r))),
+     yrg_r : red : onethree(onethree(eval(wrb_r))),
+     ybr_r : red : onethree(onethree(eval(wgr_r))),
+     wrb_r : red : onethree(onethree(eval(yrg_r))),
+
+        yo : yellow : eval(yr),
+        yb : yellow : eval(yg),
+        yr : yellow : eval(yo),
+        yg : yellow : eval(yb),
+      yo_r : yellow : eval(yr_r),
+      yb_r : yellow : eval(yg_r),
+      yr_r : yellow : eval(yo_r),
+      yg_r : yellow : eval(yb_r),
+       ygo : yellow : eval(ybr),
+       yob : yellow : eval(yrg),
+       ybr : yellow : eval(ygo),
+       yrg : yellow : eval(yob),
+     ygo_r : yellow : eval(ybr_r),
+     yob_r : yellow : eval(yrg_r),
+     ybr_r : yellow : eval(ygo_r),
+     yrg_r : yellow : eval(yob_r)
+  );
+
+  bigint m1 := num_states(false);
+};
+
+#Report + procgen
+
+rubik_fliponly.m1;
+

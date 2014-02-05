@@ -1,0 +1,218 @@
+
+// $Id$
+
+// # Debug + evms
+
+/*
+    Simple model for ordinary "tic tac toe".
+
+    Note: uses new "event & variable" formalism.
+*/
+
+# EVMStateStyle VECTOR
+// # StatesetPrintIndexes false
+// # Report + num_paths
+
+# ExplicitUnfairAEF   specialized
+// # ExplicitUnfairAEF   iterative
+
+
+evm ttt := {
+
+  intvar  b11, b12, b13,
+          b21, b22, b23,
+          b31, b32, b33;
+
+  intvar turn;
+
+  intvar winner;
+
+  range({b11, b12, b13, b21, b22, b23, b31, b32, b33, winner} : {0..2},
+        turn : {1, 2}
+  );
+
+  event m11, m12, m13,
+        m21, m22, m23,
+        m31, m32, m33;
+
+  guard( {m11, m12, m13, m21, m22, m23, m31, m32, m33} : 0==eval(winner) );
+
+  // Center
+
+  guard(  m22 : 0==eval(b22) );
+
+  assign(   b22 : m22 : eval(turn),
+            turn: m22 : 3-eval(turn),
+            winner : m22 : cond(
+              (eval(b11)==eval(turn) & eval(b33)==eval(turn)) | 
+              (eval(b12)==eval(turn) & eval(b32)==eval(turn)) |
+              (eval(b21)==eval(turn) & eval(b23)==eval(turn)) |
+              (eval(b31)==eval(turn) & eval(b13)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+  // Corners
+
+  guard(  m11 : 0==eval(b11) );
+
+  assign(   b11 : m11 : eval(turn),
+            turn: m11 : 3-eval(turn),
+            winner : m11 : cond(
+              (eval(b12)==eval(turn) & eval(b13)==eval(turn)) | 
+              (eval(b21)==eval(turn) & eval(b31)==eval(turn)) |
+              (eval(b22)==eval(turn) & eval(b33)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m13 : 0==eval(b13) );
+
+  assign(   b13 : m13 : eval(turn),
+            turn: m13 : 3-eval(turn),
+            winner : m13 : cond(
+              (eval(b12)==eval(turn) & eval(b11)==eval(turn)) | 
+              (eval(b23)==eval(turn) & eval(b33)==eval(turn)) |
+              (eval(b22)==eval(turn) & eval(b31)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m31 : 0==eval(b31) );
+
+  assign(   b31 : m31 : eval(turn),
+            turn: m31 : 3-eval(turn),
+            winner : m31 : cond(
+              (eval(b21)==eval(turn) & eval(b11)==eval(turn)) | 
+              (eval(b32)==eval(turn) & eval(b33)==eval(turn)) |
+              (eval(b22)==eval(turn) & eval(b13)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m33 : 0==eval(b33) );
+
+  assign(   b33 : m33 : eval(turn),
+            turn: m33 : 3-eval(turn),
+            winner : m33 : cond(
+              (eval(b32)==eval(turn) & eval(b31)==eval(turn)) | 
+              (eval(b23)==eval(turn) & eval(b13)==eval(turn)) |
+              (eval(b22)==eval(turn) & eval(b11)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+  // Edges
+
+  guard(  m12 : 0==eval(b12) );
+
+  assign(   b12 : m12 : eval(turn),
+            turn: m12 : 3-eval(turn),
+            winner : m12 : cond(
+              (eval(b22)==eval(turn) & eval(b32)==eval(turn)) |
+              (eval(b11)==eval(turn) & eval(b13)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m32 : 0==eval(b32) );
+
+  assign(   b32 : m32 : eval(turn),
+            turn: m32 : 3-eval(turn),
+            winner : m32 : cond(
+              (eval(b22)==eval(turn) & eval(b12)==eval(turn)) |
+              (eval(b31)==eval(turn) & eval(b33)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m21 : 0==eval(b21) );
+
+  assign(   b21 : m21 : eval(turn),
+            turn: m21 : 3-eval(turn),
+            winner : m21 : cond(
+              (eval(b22)==eval(turn) & eval(b23)==eval(turn)) |
+              (eval(b11)==eval(turn) & eval(b31)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+
+  guard(  m23 : 0==eval(b23) );
+
+  assign(   b23 : m23 : eval(turn),
+            turn: m23 : 3-eval(turn),
+            winner : m23 : cond(
+              (eval(b22)==eval(turn) & eval(b21)==eval(turn)) |
+              (eval(b13)==eval(turn) & eval(b33)==eval(turn)),
+              eval(turn), 0
+            )
+  );
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+
+  stateset xwins := potential(eval(winner)==1) & reachable;
+  stateset owins := potential(eval(winner)==2) & reachable;
+  stateset stale := reachable & potential(
+                      eval(winner)==0 &
+                      eval(b11)>0 & eval(b12)>0 & eval(b13)>0 &
+                      eval(b21)>0 & eval(b22)>0 & eval(b23)>0 &
+                      eval(b31)>0 & eval(b32)>0 & eval(b33)>0 
+                    );
+
+  bigint xwg := num_paths(initial, xwins);
+  bigint owg := num_paths(initial, owins);
+  bigint smg := num_paths(initial, stale);
+
+  stateset xturn := potential(eval(turn)==1);
+  stateset oturn := potential(eval(turn)==2);
+
+  stateset xforce := AEF(xturn, xwins);
+  stateset oforce := AEF(oturn, owins);
+
+  stateset unfairx := xforce & initial;
+  stateset unfairo := oforce & initial;
+};
+
+print("States for tic tac toe games:\n");
+compute(ttt.na);
+print(ttt.ns, " states total\n");
+
+print("    # X win states: ", card(ttt.xwins), "\n");
+print("    # O win states: ", card(ttt.owins), "\n");
+print("# stalemate states: ", card(ttt.stale), "\n");
+
+print("\n");
+
+print(ttt.xwg:6, " games where x wins\n");
+print(ttt.owg:6, " games where o wins\n");
+print(ttt.smg:6, " stalemate games\n");
+print(ttt.xwg+ttt.owg+ttt.smg:6, " distinct games\n");
+
+print("Computing X force wins\n");
+start_timer(0);
+compute(ttt.xforce);
+print("Done in ", stop_timer(0), " seconds\n");
+
+print("Computing O force wins\n");
+start_timer(0);
+compute(ttt.oforce);
+print("Done in ", stop_timer(0), " seconds\n");
+
+print("# States where x can force a win: ", card(ttt.xforce), "\n");
+print("# States where o can force a win: ", card(ttt.oforce), "\n");
+print("# states where both can win (should be 0): ", card(ttt.xforce & ttt.oforce), "\n");
+
+print("# initial states where x can force a win: ", card(ttt.unfairx), "\n");
+print("# initial states where o can force a win: ", card(ttt.unfairo), "\n");
+
+/*
+print("X states:\n", ttt.xforce, "\n");
+print("O states:\n", ttt.oforce, "\n");
+*/

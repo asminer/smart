@@ -1,0 +1,8 @@
+
+# MinExpr IMPLICIT
+# MaxExpr IMPLICIT
+# SatExpr IMPLICIT
+
+# Debug + implicit_dcp_gen
+
+# MeddlyConstraintCombinationMethod ACCUMULATE

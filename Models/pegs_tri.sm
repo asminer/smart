@@ -1,0 +1,129 @@
+
+// $Id$
+
+/*
+   Triangular peg jumping game.
+   Can be increased in size (N rows)
+
+   Note the model considers the triangle as a "right" one,
+   with the shape:
+
+   row 1:  X
+   
+   row 2:  X   X
+ 
+   row 3:  X   X   X
+ 
+   row 4:  X   X   X   X
+
+   etc.
+*/
+
+pn pegs_tri(int N) := {
+  place count;
+  partition(count);
+  init(count : div(N*(N+1), 2)-1);
+  bound(count: div(N*(N+1), 2)  );
+  for (int i in {1..N}, int j in {1..i}) {
+    place peg[i][j];
+    partition(peg[i][j]);
+    bound(peg[i][j]:1);
+  }
+  for (int i in {2..N}, int j in {1..i}) {
+    init(peg[i][j] : 1);
+  }
+  // jumps to the south
+  for (int i in {3..N}, int j in {1..i-2}) {
+    trans s[i][j];
+    arcs(
+      peg[i-2][j] : s[i][j],
+      peg[i-1][j] : s[i][j],
+      count : s[i][j],
+      s[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : s[i][j]
+    );
+  }
+  // jumps to the north
+  for (int i in {1..N-2}, int j in {1..i}) {
+    trans n[i][j];
+    arcs(
+      peg[i+1][j] : n[i][j],
+      peg[i+2][j] : n[i][j],
+      count : n[i][j],
+      n[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : n[i][j]
+    );
+  }
+  // jumps to the east
+  for (int i in {3..N}, int j in {3..i}) {
+    trans e[i][j];
+    arcs(
+      peg[i][j-1] : e[i][j],
+      peg[i][j-2] : e[i][j],
+      count : e[i][j],
+      e[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : e[i][j]
+    );
+  }
+  // jumps to the west
+  for (int i in {3..N}, int j in {1..i-2}) {
+    trans w[i][j];
+    arcs(
+      peg[i][j+1] : w[i][j],
+      peg[i][j+2] : w[i][j],
+      count : w[i][j],
+      w[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : w[i][j]
+    );
+  }
+  // jumps to the north west
+  for (int i in {1..N-2}, int j in {1..i}) {
+    trans nw[i][j];
+    arcs(
+      peg[i+1][j+1] : nw[i][j],
+      peg[i+2][j+2] : nw[i][j],
+      count : nw[i][j],
+      nw[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : nw[i][j]
+    );
+  }
+  // jumps to the south east
+  for (int i in {3..N}, int j in {3..i}) {
+    trans se[i][j];
+    arcs(
+      peg[i-1][j-1] : se[i][j],
+      peg[i-2][j-2] : se[i][j],
+      count : se[i][j],
+      se[i][j] : peg[i][j]
+    );
+    inhibit(
+      peg[i][j] : se[i][j]
+    );
+  }
+  bigint m1 := num_states(false);
+  int nl := num_levels(true);
+};
+
+print("Triangle peg jumping game\n");
+int N := read_int("N");
+
+# StateDisplayOrder LEXICAL
+#PNMarkingStyle VECTOR
+
+# Report + procgen
+
+compute(pegs_tri(N).nl);
+
+compute(pegs_tri(N).m1);
+print("There are ", pegs_tri(N).m1, " reachable combinations\n");
+

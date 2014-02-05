@@ -1,0 +1,40 @@
+
+$Id$
+
+Instructions to build
+
+0.  autoreconf --install
+
+    This step is necessary for the first build, and anytime
+    configure.ac or any Makefile.am changes.
+
+1.  ./Config-devel  &&  ./Config-release
+
+    System-specific configuration.
+    You can set environment variables to change the locations
+    of the libraries, e.g.,
+      
+    # env MDD_LIB=/alternate/mdd/location ./Config-devel
+
+2.  cd bin-devel   OR   cd bin-release
+
+3.  make
+
+    This builds everything
+
+4.  make check  OR  make check-old
+
+    Run regression tests.  
+    
+    make check:       Requires automake version 1.12 or higher.
+    make check-old:   Should always work
+
+5.  make bench
+
+    Run timing tests.  More important for release code.
+
+6.  make install
+
+    Copies binaries into bin
+    (otherwise they are in src/Apps)
+

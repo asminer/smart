@@ -1,0 +1,222 @@
+
+// $Id$
+
+/*
+    A SAN model of a fault-tolerant multiprocessor system,
+    converted to a Petri net.
+    Taken from "Dependability Evaluation Using Composed SAN-Based Reward
+    Models", by Sanders and Malhis, JPDC, vol 15, no 3, July 1992, p238-254.
+
+    Translation is as faithful as possible:
+    Each transition corresponds to one case of one action.
+
+    Transitions are split to ensure product-form.
+*/
+
+pn ftmps(int N) := {
+  // N = number of replicated computers.
+  // We use 3 CPUs, 2 I/O ports, 3 memory modules
+ 
+  place comp_failed;
+
+  for (int i in {1..N}) {
+    place mem_failed[i], cpus[i], ioports[i], errorhandlers[i];
+
+    init(cpus[i] : 3, ioports[i] : 2, errorhandlers[i] : 2);
+
+    // memory "module"
+    for (int m in {1..3}) {
+        place memchips[i][m], intchips[i][m];
+
+        trans mcf1[i][m], mcf2a[i][m], mcf2b[i][m], mcf3a[i][m], mcf3b[i][m], mcf3c[i][m], mcf3d[i][m], mcf4[i][m],  // memory chip failures
+                icf1a[i][m], icf1b[i][m], icf2a[i][m], icf2b[i][m], icf2c[i][m], icf2d[i][m], icf3[i][m];  // interface chip failures
+
+        partition(memchips[i][m], intchips[i][m]);
+
+        init(memchips[i][m]:41, intchips[i][m]:2);
+
+        guard(
+          mcf1[i][m]  : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i]) < 2,
+          mcf2a[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i]) < 2  &  tk(mem_failed[i]) > 0,
+          mcf2b[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i]) == 0,
+          mcf3a[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i])==1 & tk(comp_failed)<=N-2,
+          mcf3b[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i])==1 & tk(comp_failed)>N-2,
+          mcf3c[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i])==0 & tk(comp_failed)<=N-2,
+          mcf3d[i][m] : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i])==0 & tk(comp_failed)>N-2,
+          mcf4[i][m]  : tk(memchips[i][m]) > 38  &  tk(comp_failed) < N  &  tk(mem_failed[i]) < 2,
+
+          icf1a[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i]) < 2  &  tk(mem_failed[i]) > 0,
+          icf1b[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i]) == 0,
+          icf2a[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i])==1 & tk(comp_failed)<=N-2,
+          icf2b[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i])==1 & tk(comp_failed)>N-2,
+          icf2c[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i])==0 & tk(comp_failed)<=N-2,
+          icf2d[i][m] : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i])==0 & tk(comp_failed)>N-2,
+          icf3[i][m]  : tk(intchips[i][m]) > 1   &  tk(comp_failed) < N  &  tk(mem_failed[i]) < 2
+        );
+
+        arcs(
+          memchips[i][m] : mcf1[i][m] : 40,                     // if memchips > 39 then ...
+          mcf1[i][m] : memchips[i][m] : 39,                     // memchips--
+
+          memchips[i][m] : mcf2a[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf2a[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf2a[i][m] : comp_failed,                            // comp_failed++
+          mcf2a[i][m] : mem_failed[i],                          // mem_failed++
+
+          memchips[i][m] : mcf2b[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf2b[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf2b[i][m] : mem_failed[i],                          // mem_failed++
+
+          memchips[i][m] : mcf3a[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf3a[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf3a[i][m] : comp_failed : N - tk(comp_failed),      // comp_failed <- N
+          mcf3a[i][m] : mem_failed[i],                          // mem_failed <- 2  (since it was 1 before)
+
+          memchips[i][m] : mcf3b[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf3b[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf3b[i][m] : comp_failed,                            // comp_failed++
+          mcf3b[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : mcf3c[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf3c[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf3c[i][m] : comp_failed,                            // comp_failed++
+          mcf3c[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : mcf3d[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : mcf3d[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          mcf3d[i][m] : comp_failed,                            // comp_failed++
+          mcf3d[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : mcf4[i][m] : tk(memchips[i][m]),     // memchips <- 0
+          intchips[i][m] : mcf4[i][m] : tk(intchips[i][m]),     // intchips <- 0
+          mcf4[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),   // mem_failed <- 2
+          mcf4[i][m] : comp_failed : N - tk(comp_failed),       // comp_failed <- N
+
+          memchips[i][m] : icf1a[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf1a[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf1a[i][m] : mem_failed[i],                          // mem_failed++
+          icf1a[i][m] : comp_failed,                            // comp_failed++
+
+          memchips[i][m] : icf1b[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf1b[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf1b[i][m] : mem_failed[i],                          // mem_failed++
+
+          memchips[i][m] : icf2a[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf2a[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf2a[i][m] : comp_failed : N - tk(comp_failed),      // comp_failed <- N
+          icf2a[i][m] : mem_failed[i],                          // mem_failed <- 2  (since it was 1 before)
+
+          memchips[i][m] : icf2b[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf2b[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf2b[i][m] : comp_failed,                            // comp_failed++
+          icf2b[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : icf2c[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf2c[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf2c[i][m] : comp_failed,                            // comp_failed++
+          icf2c[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : icf2d[i][m] : tk(memchips[i][m]),    // memchips <- 0
+          intchips[i][m] : icf2d[i][m] : tk(intchips[i][m]),    // intchips <- 0
+          icf2d[i][m] : comp_failed,                            // comp_failed++
+          icf2d[i][m] : mem_failed[i] : 2 - tk(mem_failed[i]),  // mem_failed <- 2
+
+          memchips[i][m] : icf3[i][m] : tk(memchips[i][m]),     // memchips <- 0
+          intchips[i][m] : icf3[i][m] : tk(intchips[i][m]),     // intchips <- 0
+          icf3[i][m] : comp_failed : N - tk(comp_failed),       // comp_failed <- N
+          icf3[i][m] : mem_failed[i] : 2 - tk(mem_failed[i])    // mem_failed <- 2
+        );
+    }
+    partition(mem_failed[i], cpus[i], ioports[i], errorhandlers[i]);
+
+
+  // cpu module
+  trans cm1[i], cm2[i], cm3[i];
+
+  guard(
+    cm1[i] : tk(cpus[i]) > 1  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N,
+    cm2[i] : tk(cpus[i]) > 1  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N,
+    cm3[i] : tk(cpus[i]) > 1  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N
+  );
+
+  arcs(
+    cpus[i] : cm1[i] : 3,                               // if cpus == 3 then
+    cm1[i]  : cpus[i] : 2,                              // cpus--
+
+    cpus[i] : cm2[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : cm2[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : cm2[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    cm2[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    cm2[i] : comp_failed,                               // comp_failed++
+
+    cpus[i] : cm3[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : cm3[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : cm3[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    cm3[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    cm3[i] : comp_failed : N - tk(comp_failed)          // comp_failed <- N
+  );
+
+
+  // ioports module
+  trans io1[i], io2[i], io3[i];
+
+  guard(
+    io1[i] : tk(ioports[i]) > 0  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N,
+    io2[i] : tk(ioports[i]) > 0  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N,
+    io3[i] : tk(ioports[i]) > 0  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N
+  );
+
+  arcs(
+    ioports[i] : io1[i] : 2,  io1[i] : ioports[i],      // if ioports == 2 then ioports--
+
+    cpus[i] : io2[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : io2[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : io2[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    io2[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    io2[i] : comp_failed,                               // comp_failed++
+
+    cpus[i] : io3[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : io3[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : io3[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    io3[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    io3[i] : comp_failed : N - tk(comp_failed)          // comp_failed <- N
+  );
+
+
+  // errorhandler module
+  trans eh1[i], eh2[i];
+
+  guard(
+    eh1[i] : tk(errorhandlers[i]) == 2  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N,
+    eh2[i] : tk(errorhandlers[i]) == 2  &  tk(mem_failed[i]) < 2  &  tk(comp_failed) < N
+  );
+
+  arcs(
+    cpus[i] : eh1[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : eh1[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : eh1[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    eh1[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    eh1[i] : comp_failed,                               // comp_failed++
+
+    cpus[i] : eh2[i] : tk(cpus[i]),                     // cpus <- 0
+    ioports[i] : eh2[i] : tk(ioports[i]),               // ioports <- 0
+    errorhandlers[i] : eh2[i] : tk(errorhandlers[i]),   // errorhandlers <- 0
+    eh2[i] : mem_failed[i] : 2 - tk(mem_failed[i]),     // mem_failed <- 2
+    eh2[i] : comp_failed : N - tk(comp_failed)          // comp_failed <- N
+  );
+
+  }
+  
+  partition(comp_failed);
+
+  bigint m1 := num_states(false);
+};
+
+# Report + procgen
+
+// # Dump_MDD true
+
+int N := read_int("N");
+
+ftmps(N).m1;
+

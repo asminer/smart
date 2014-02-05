@@ -1,0 +1,71 @@
+
+// $Id$
+
+/* 
+   N queens problem, as an "event & variable" model.
+ 
+   This is really a benchmark model, but we include it also as a test.
+   Also useful to test "heavy duty" CTL stuff.
+*/
+
+evm queens(int N) := {
+  for (int i in {1..N}) {
+    intvar row[i];
+    partition(i: row[i] );
+    range(row[i] : {0..N});
+
+    for (int j in {1..N}) {
+      event put[i][j];
+      assign( row[i] : put[i][j] : j );
+
+      // sequential placement, makes later guards easier
+      //
+      cond (i>1,
+        guard(  put[i][j] : eval(row[i-1])>0  ),
+        null
+      );
+
+      // no row attacks
+      //
+      guard(  put[i][j] : 0==eval(row[i]) );
+
+      for (int k in {1..i-1}) {
+
+        // no col attacks
+        guard(  put[i][j] : eval(row[k])    != j );
+
+        // no diagonal left attacks
+        cond( j>k, 
+          guard( put[i][j] : eval(row[i-k])  != j-k ), 
+          null
+        );
+
+        // no diagonal right attacks
+        cond (j+k <= N,
+          guard( put[i][j] : eval(row[i-k])  != j+k ),
+          null
+        );
+
+      } // for k
+    } // for j
+  } // for i
+
+  bigint numstates := num_states(false);
+  stateset solutions := reachable & potential(eval(row[N])!=0);
+};
+
+
+# StateDisplayOrder LEXICAL
+# Report + procgen
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+int N := read_int("the board dimension and number of queens");
+compute(N);
+
+print("\n", N, "x", N, " queens problem\n");
+
+compute(queens(N).solutions);
+print("model states: ", queens(N).numstates, "\n");
+print("   solutions: ", card(queens(N).solutions), "\n");
+

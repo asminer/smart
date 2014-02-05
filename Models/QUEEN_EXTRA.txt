@@ -1,0 +1,38 @@
+Covers of N x N sub-board, with queens placed on N+1 x N+1 board.
+
+We check if there are any "proper" covers (queens only in the N x N part),
+and if there are any covers that use the extra row or column.
+
+Sub-Board size    Q            #combs   Proper?   Extra?
+  1 x   1         1                 5     Y         Y
+  2 x   2         1                10     Y         N
+  3 x   3         1                17     Y         N
+
+  4 x   4         1                26     N         N
+  4 x   4         2               276     Y         N
+
+  5 x   5         2               577     N         N
+  5 x   5         3             4,897     Y         Y
+
+  6 x   6         2             1,079     N         N
+  6 x   6         3            13,084     Y         N 
+
+  7 x   7         3            30,529     N         N
+  7 x   7         4           317,249     Y         N
+
+  8 x   8         4           890,920     N         N
+  8 x   8         5         8,331,094     Y         Y
+
+  9 x   9         4         2,224,601     N         N
+  9 x   9         5        27,424,601     Y         Y
+
+ 10 x  10         4         5,057,922     N         N
+ 10 x  10         5        79,463,484     Y         N
+
+ 11 x  11         4        10,654,129     N         N
+ 11 x  11         5       207,729,073     Y         N
+
+ 12 x  12         5       498,916,900     N         N
+ 12 x  12         6     8,781,721,144     y*        ?
+
+* theory says there must be one

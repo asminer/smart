@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Generate an instance of N-queens in ICP format
+#
+if [ $# -lt 1 ]; then
+  printf "Usage: %s N\n" $0
+  exit 1
+fi
+printf "\n// \$Id$ \n\n/*\n    %d Queens problem.\n\n" $1
+printf "    Encoding: each integer variable tells which column to place\n"
+printf "    the queen, for the given row.\n*/\n\n"
+printf "int r01"
+n="2"
+while [ $n -le $1 ]; do
+  printf ", r%02d" $n
+  n=$[n + 1]
+done
+printf " in {1..%d};\n\n" $1
+printf "// prevent row attacks: already handled, since we have one queen per row.\n"
+printf "\n// prevent column attacks:\n"
+
+n="1"
+while [ $n -lt $1 ]; do
+  printf "\n"
+  m=$[n + 1]
+  while [ $m -le $1 ]; do
+    printf "r%02d != r%02d;\n" $n $m
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+
+printf "\n// prevent diagonal-right attacks:\n"
+
+n="1"
+while [ $n -lt $1 ]; do
+  printf "\n"
+  m=$[n + 1]
+  d="1"
+  while [ $m -le $1 ]; do
+    printf "r%02d + %2d != r%02d;\n" $n $d $m
+    m=$[m + 1]
+    d=$[d + 1]
+  done
+  n=$[n + 1]
+done
+
+printf "\n// prevent diagonal-left attacks:\n"
+
+n="1"
+while [ $n -lt $1 ]; do
+  printf "\n"
+  m=$[n + 1]
+  d="1"
+  while [ $m -le $1 ]; do
+    printf "r%02d - %2d != r%02d;\n" $n $d $m
+    m=$[m + 1]
+    d=$[d + 1]
+  done
+  n=$[n + 1]
+done
+
+printf "\n// get solution\nsatisfiable solve := true;\n\n"

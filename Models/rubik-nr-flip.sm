@@ -1,0 +1,105 @@
+
+// $Id$
+
+/* 
+   Rubik's cube.
+
+   Partition: states on top of rotations,
+              edges on top of corners.
+
+   No rotations.
+
+   The model is restricted to "double turns".
+   
+*/
+
+evm rubik_norot_fliponly := {
+
+  intvar wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg;
+
+  intvar wog, wbo, wrb, wgr, ygo, yob, ybr, yrg;
+
+  range({wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg} : {1..12});
+  
+  range({wog, wbo, wrb, wgr, ygo, yob, ybr, yrg} : {1..8});
+
+  init(
+    wo:1, wg:2, wr:3, wb:4, 
+    yo:5, yg:6, yr:7, yb:8, 
+    ob:9, og:10, rb:11, rg:12,
+    wog:1, wbo:2, wrb:3, wgr:4, ygo:5, yob:6, ybr:7, yrg:8
+  );
+
+  partition(
+    wo, wg, og, wr, rg, wb, ob, rb, yo, yg, yr, yb,
+    wgr, wrb, wog, wbo, yob, ygo, yrg, ybr
+  );
+
+
+  event
+    // Double turns.
+    white, orange, green, blue, red, yellow;
+  
+  assign(
+    wo : white : eval(wr),
+    wg : white : eval(wb),
+    wr : white : eval(wo),
+    wb : white : eval(wg),
+    wog : white : eval(wrb),
+    wgr : white : eval(wbo),
+    wrb : white : eval(wog),
+    wbo : white : eval(wgr),
+
+    wo : orange : eval(yo),
+    ob : orange : eval(og),
+    yo : orange : eval(wo),
+    og : orange : eval(ob),
+    wog : orange : eval(yob),
+    wbo : orange : eval(ygo),
+    yob : orange : eval(wog),
+    ygo : orange : eval(wbo),
+
+    wg : green : eval(yg),
+    og : green : eval(rg),
+    yg : green : eval(wg),
+    rg : green : eval(og),
+    wog : green : eval(yrg),
+    ygo : green : eval(wgr),
+    yrg : green : eval(wog),
+    wgr : green : eval(ygo),
+
+    wb : blue : eval(yb),
+    rb : blue : eval(ob),
+    yb : blue : eval(wb),
+    ob : blue : eval(rb),
+    wrb : blue : eval(yob),
+    ybr : blue : eval(wbo),
+    yob : blue : eval(wrb),
+    wbo : blue : eval(ybr),
+
+    wr : red : eval(yr),
+    rg : red : eval(rb),
+    yr : red : eval(wr),
+    rb : red : eval(rg),
+    wgr : red : eval(ybr),
+    yrg : red : eval(wrb),
+    ybr : red : eval(wgr),
+    wrb : red : eval(yrg),
+
+    yo : yellow : eval(yr),
+    yb : yellow : eval(yg),
+    yr : yellow : eval(yo),
+    yg : yellow : eval(yb),
+    ygo : yellow : eval(ybr),
+    yob : yellow : eval(yrg),
+    ybr : yellow : eval(ygo),
+    yrg : yellow : eval(yob)
+  );
+
+  bigint m1 := num_states(false);
+};
+
+#Report + procgen
+
+rubik_norot_fliponly.m1;
+

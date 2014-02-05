@@ -1,0 +1,119 @@
+
+// $Id$
+
+/*
+    Determine the set of solutions to the Queen Cover Problem:
+    Given an NxN chessboard, place enough queens on the board
+    so that no other piece may be placed on the board without
+    being attacked by one of the queens.
+
+    Since we can always put one queen per row, we search for
+    solutions with fewer than Q queens.
+
+    State: 
+      q: for each row, position of the queen (or 0 for none)
+      c: for each square, is it covered?
+      sol: is this a solution?
+      avail: number of queens left to place.
+*/
+
+bigint prod_from(int a, int b) := 
+  cond(a>b, 1, cond(a<b, a*prod_from(a+1, b), a));
+
+bigint pow(int x, int a) :=
+  cond(a>0, x*pow(x, a-1), 1);
+
+bigint placed_exactly(int n, int q) :=
+  div(prod_from(n-q+1, n), prod_from(1, q)) * pow(n, q);
+
+bigint placed_atleast(int n, int q) :=
+  cond(q>0, placed_atleast(n, q-1), 0) + placed_exactly(n, q);
+
+bigint choose(int n, int a) :=
+  cond(a<=0, 1, n*choose(n-1, a-1));
+
+evm queen(int N, int Q) := {
+  for (int i in {1..N}) {
+    intvar q[i];
+    range( q[i] : {0..N});
+    partition(q[i]);
+    for (int j in {1..N}) {
+      intvar c[i][j];
+      range( c[i][j] : {0..1});
+      event put[i][j];
+    }
+  }
+  intvar avail;
+  range(avail : {Q..0..-1});
+  partition(avail);
+  for (int i in {1..N}, int j in {1..N}) {
+    partition(c[i][j]);
+  }
+  intvar sol;
+  range(sol : {0..1});
+  partition(sol);
+
+  // Queen placement
+  for (int i in {1..N}, int j in {1..N}) {
+    guard( put[i][j] : eval(avail)>0 );
+    guard( put[i][j] : eval(q[i])==0 );
+    assign( avail : put[i][j] : eval(avail)-1,
+            q[i] : put[i][j] : j,
+            c[i][j] : put[i][j] : 1
+    );
+    for (int k in {1..N}) {
+      cond(k != j, assign( c[i][k] : put[i][j] : 1 ), null);
+      cond(k != i, assign( c[k][j] : put[i][j] : 1 ), null);
+    }
+    for (int k in {1..min(i,j)-1}) {
+      assign( c[i-k][j-k] : put[i][j] : 1 );
+    }
+    for (int k in {1..min(i-1, N-j)}) {
+      assign( c[i-k][j+k] : put[i][j] : 1 );
+    }
+    for (int k in {1..min(N-i, j-1)}) {
+      assign( c[i+k][j-k] : put[i][j] : 1 );
+    }
+    for (int k in {1..min(N-i, N-j)}) {
+      assign( c[i+k][j+k] : put[i][j] : 1 );
+    }
+  }
+
+  // Check if we are covered
+  event covered;
+  hide(covered);
+  guard( covered : eval(avail)==0 & eval(sol)==0 );
+  for (int i in {1..N}, int j in {1..N}) {
+    guard( covered : eval(c[i][j])>0 );
+  }
+  assign(sol : covered : 1 );
+
+  int ne := num_events(true);
+  bigint ntry := num_states(false);
+  bigint nsol := card(reachable & potential(eval(sol)==1));
+  stateset answer := reachable & potential(eval(sol)==1);
+};
+
+# StateDisplayOrder LEXICAL
+# Report + procgen
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+# StatesetPrintIndexes false
+
+int N := read_int("the board dimension");
+compute(N);
+int Q := read_int("the number of queens to place");
+compute(Q);
+
+print("\nFor a ", N, "x", N, " chessboard with ", Q, " queens:\n");
+print("Checking ", placed_atleast(N, Q), " combinations\n");
+print("Instead of ", choose(N*N, Q), " combinations\n");
+
+compute(queen(N, Q).ntry);
+compute(queen(N, Q).nsol);
+print("\nChecked ", queen(N, Q).ntry, " states\n");
+print("Found   ", queen(N, Q).nsol, " covers\n\n");
+
+/*
+print(queen(N, Q).answer, "\n");
+*/

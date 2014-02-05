@@ -1,0 +1,39 @@
+
+// $Id$
+
+/*
+    Simple model used to test large state spaces.
+
+    The state space should be all combinations of D digits
+    that can take values from 0 to N-1.
+*/
+
+pn digits(int D, int N) := {
+
+  for (int d in {1..D}) {
+    place p[d];
+    trans sub[d];
+    init (p[d]:N-1);
+    arcs( p[d] : sub[d] );
+  }
+
+  bigint ns := num_states(false);
+};
+
+# PNMarkingStyle VECTOR
+# Report + rsgen
+# OutputThousandSeparator ","
+
+int D := read_int("Number of digits");
+int N := read_int("Value of digits");
+
+compute(D);
+compute(N);
+
+bigint pow(bigint x, int n) := cond(0==n, 1, x*pow(x, n-1));
+
+print("Model should have ", pow(N, D), " states, generating them...\n\f");
+
+compute(digits(D, N).ns);
+
+print("Model has ", digits(D, N).ns, " states\n");

@@ -1,0 +1,44 @@
+
+// $Id$
+
+/* Land of Oz model */
+
+dtmc oz := {
+  state r, n, s;
+
+  init(n:1);
+
+  arcs(
+    r:r: 1/2,  r:n: 1/4,  r:s: 1/4,
+    n:r: 1/2,             n:s: 1/2,
+    s:r: 1/4,  s:n: 1/4,  s:s: 1/2
+  );
+
+  real r_t3 := prob_at(in_state(r), 3);
+  real n_t3 := prob_at(in_state(n), 3);
+  real s_t3 := prob_at(in_state(s), 3);
+
+  real r_ss := prob_ss(in_state(r));
+  real n_ss := prob_ss(in_state(n));
+  real s_ss := prob_ss(in_state(s));
+
+  real temp_ss := avg_ss(cond(in_state(r), 
+                              50, 
+                              cond(in_state(s), 25, 80)
+                              )
+      );
+};
+
+print("At time 3, the weather is\n");
+print("\trainy with probability ", oz.r_t3, "\n");
+print("\tnice  with probability ", oz.n_t3, "\n");
+print("\tsnowy with probability ", oz.s_t3, "\n");
+
+
+print("In steady-state, the weather is\n");
+print("\trainy with probability ", oz.r_ss, "\n");
+print("\tnice  with probability ", oz.n_ss, "\n");
+print("\tsnowy with probability ", oz.s_ss, "\n");
+
+print("The expected steady-state temperature is: ", oz.temp_ss, "\n");
+

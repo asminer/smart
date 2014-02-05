@@ -1,0 +1,69 @@
+
+// $Id$
+
+/*
+
+   n * m rectangular puzzle with movable tiles
+
+*/
+
+bigint factby2(int n) := cond(n<3, 1, n*factby2(n-1));
+
+bigint theory(int n, int m) := cond(1==n, m, cond(1==m, m, factby2(n*m)));
+
+pn tiles(int n, int m) := {
+  for (int i in {1..n}, int j in {1..m}) {
+    place p[i][j];
+    init(p[i][j] : (i-1)*m + (j-1));
+
+    partition(p[i][j]);
+
+    bound(p[i][j] : n*m);
+  }
+  for (int i in {1..n-1}, int j in {1..m}) {
+    trans up[i][j], dn[i][j];
+    arcs(
+      p[i][j] : dn[i][j] : tk(p[i][j]), dn[i][j] : p[i+1][j] : tk(p[i][j]),
+      p[i+1][j] : up[i][j] : tk(p[i+1][j]), up[i][j] : p[i][j] : tk(p[i+1][j])
+    );
+    inhibit(
+      p[i+1][j] : dn[i][j], p[i][j] : up[i][j]
+    );
+  }
+  for (int i in {1..n}, int j in {1..m-1}) {
+    trans lt[i][j], rt[i][j];
+    arcs(
+      p[i][j] : rt[i][j] : tk(p[i][j]), rt[i][j] : p[i][j+1] : tk(p[i][j]),
+      p[i][j+1] : lt[i][j] : tk(p[i][j+1]), lt[i][j] : p[i][j] : tk(p[i][j+1])
+    );
+    inhibit(
+      p[i][j+1] : rt[i][j], p[i][j] : lt[i][j]
+    );
+  }
+
+  bigint m1 := num_states(false);
+};
+
+# Warning - pn_zero_init
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+// # Debug + rsgen
+
+// # PNMarkingStyle VECTOR
+
+int N := read_int("N");
+int M := read_int("M");
+compute(N);
+compute(M);
+
+print("Expecting ", theory(N, M), " states\n");
+
+model game := tiles(N, M);
+
+# Report + procgen
+
+compute(game.m1);
+
+print(N, " by ", M, " tile game has ", game.m1, " states\n");
+

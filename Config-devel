@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# $Id$
+
+. Config-funcs
+
+echo Configuring development version
+
+export CXXFLAGS="-ggdb -DDEVELOPMENT_CODE" 
+export LDFLAGS="" 
+export CPPFLAGS=""
+
+findlibs || exit 1
+
+cd bin-devel
+../configure --prefix=$PWD
