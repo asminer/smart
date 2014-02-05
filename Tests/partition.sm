@@ -1,0 +1,101 @@
+
+// $Id$
+
+/* Tests of model "partitions"
+*/
+
+dtmc mc1 := {
+  state a,b,c;
+  init(a:1);
+  void sl := show_levels;
+};
+
+print("Levels for a Markov chain:\n");
+mc1.sl;
+
+pn flat := {
+  place a, b, c, d;
+  trans t;
+  init(a:1);
+  void sl := show_levels;
+};
+
+print("Levels for a flat Petri net:\n");
+flat.sl;
+
+pn type1 := {
+  place a, b, c, d, e, f;
+  trans t;
+  init(a:1);
+
+  partition({a, b});
+  partition({c, f}, {d, e});
+
+  void sl := show_levels;
+};
+
+print("Using the un-numbered version:\n");
+type1.sl;
+
+pn type2 := {
+  for (int i in {1..5}) {
+    place a[i], b[i], c[i];
+    partition({a[i], b[i]}: i);
+    partition({c[i]}: i);
+  }
+  trans t;
+  init(a[1]:1);
+
+  void sl := show_levels;
+};
+
+print("Using the numbered version:\n");
+type2.sl;
+
+pn deflt1 := {
+  place a, b, c, d, e, f, g, h;
+  trans t;
+  init(a:1);
+
+  partition({a, b});
+  partition({c, f}, {d, e});
+
+  void sl := show_levels;
+};
+
+print("Testing default for un-numbered version (there should be warnings):\n");
+deflt1.sl;
+
+pn deflt2 := {
+  for (int i in {1..5}) {
+    place a[i], b[i], c[i];
+    partition({a[i], b[i]}: i);
+  }
+  trans t;
+  init(a[1]:1);
+
+  void sl := show_levels;
+};
+
+print("Testing default for numbered version (there should be warnings):\n");
+deflt2.sl;
+
+
+pn foo := {
+  place a, b, c, d, e, f, g;
+  trans t;
+  init(a:1);
+
+  partition({a, c, e});
+
+  partition({a, b, d});
+
+  partition({c, d, e, f});
+
+  void sl := show_levels;
+};
+
+print("Testing mixed, and re-assigning (lots of warnings):\n");
+foo.sl;
+
+print("Done\n");

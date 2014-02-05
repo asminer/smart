@@ -1,0 +1,39 @@
+
+// $Id$
+
+/*
+	Tests of marking-dependent rates
+*/
+
+pn mmkqueue(int servers, int capacity) := {
+  place queue;
+  trans arrive, depart;
+
+  arcs(
+	  arrive : queue,
+	  queue : depart
+  );
+  inhibit(
+	  queue : arrive : capacity
+  );
+  firing(
+	  arrive : expo(4.2),
+	  depart : expo(1.1 * min(tk(queue), servers))
+  );
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+  bigint ns := num_states;
+  bigint na := num_arcs;
+};
+
+int K := 6;
+int C := 10;
+
+#PNMarkingStyle INDEXED
+#GraphDisplayStyle OUTGOING
+
+print("Reachable states:\n");
+mmkqueue(K, C).show_rs;
+print("Number of states: ", mmkqueue(K, C).ns, "\n");
+mmkqueue(K, C).show_rg;
+print("Number of arcs: ", mmkqueue(K, C).na, "\n");

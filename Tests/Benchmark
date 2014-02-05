@@ -1,0 +1,131 @@
+#!/bin/bash
+
+#
+# $Id$
+#
+# Usage: Test execdir srcdir file1 ... filen
+#
+# Like regression testing, except we display the CPU time.
+#
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <exec> test1 test2 ..."
+  echo "Runs executable on each test file and compares execution times."
+  exit
+fi
+
+btotal="0"
+utotal="0"
+
+prefix=`mktemp /tmp/prefix.XXXXXXXX`
+suffix=`mktemp /tmp/suffix.XXXXXXXX`
+
+#
+# Helper function:
+# 	Runs the input file passed as an argument,
+#	and displays the time required to run.
+#
+TimeOne()
+{
+  current=`pwd`
+  d=`dirname $1`
+  b=`basename $1`
+  cd $SRCDIR/$d
+  printf "  %-30s  " $1
+  if [ -f $TESTDIR/$b.time ]; then
+    read btime < $TESTDIR/$b.time
+    printf "(%6d ms )    " $btime
+    btotal=$[ $btotal + $btime ]
+  else
+    btime=" "
+    printf "(          )    "
+  fi
+  utime=`$current/$SMART $prefix $b $suffix`
+  if [ ! -f $TESTDIR/$b.time ]; then
+    echo $utime > $TESTDIR/$b.time
+  fi
+  printf " %6d ms      " $utime
+  utotal=$[ $utotal + $utime ]
+
+# Compare times and give alerts for changes
+  if [ "$btime" != " " ]; then
+    delta=$[ $utime - $btime ]
+    dten=$[ $delta * 10 ]
+    dnten=$[ $delta * -10 ]
+    if [ "$dten" -gt 10 -a "$dten" -gt "$btime" ]; then
+	printf ">"
+    fi
+    if [ "$dnten" -gt 10 -a "$dnten" -gt "$btime" ]; then
+        printf "<"
+    fi 
+  fi
+  printf "\n"
+  cd $current
+}
+
+#
+# determine executable paths
+#
+SMART=$1/smart
+ICP=$1/icp
+shift
+
+#
+# determine source path
+#
+SRCDIR=$1
+shift
+
+#
+# determine test path
+#
+TESTDIR=`pwd`
+
+
+if [ ! -f $SMART ]; then
+  printf "Smart executable not found: $SMART\n"
+  exit 1
+fi
+
+cat <<EOF > $prefix
+cond(error_file("/dev/null"),null,exit(1));
+cond(warning_file("/dev/null"),null,exit(1));
+cond(output_file("/dev/null"),null,exit(1));
+start_timer(0);
+EOF
+
+cat <<EOF > $suffix
+compute(output_file(null));
+print(int(1000.0*stop_timer(0)), "\n");
+EOF
+
+# Run the tests
+for file in $@
+do
+# only benchmarks for smart at the moment...
+  ext=`echo $file | awk -F. '{print $NF}'`
+  if [ "$ext" != "sm" ]; then
+    continue
+  fi
+  fullfile=$SRCDIR/$file
+
+  if [ -f "$fullfile.out" ]; then
+    if [ -f "$file.diffs" ]; then
+      continue
+    fi
+    if [ -f "$file.test" ]; then
+      continue
+    fi
+    TimeOne $file
+  fi
+done
+
+printf "  %-30s  ============     =========\n" "========================="
+printf "  %-30s  " "Total: "
+printf "(%6d ms )    " $btotal
+printf " %6d ms\n" $utotal
+
+# Cleanup
+rm -f $prefix $suffix
+
+echo Done!

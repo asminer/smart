@@ -1,0 +1,52 @@
+
+// $Id$
+
+// Simple test of transient analysis for CTMCs
+
+real thry(real lambda, real t) := exp(-lambda * t);
+
+real thry(real lambda, real t1, real t2) := (exp(-lambda*t1)-exp(-lambda*t2))/lambda;
+
+real tof(int i) :=  case(i, null, 
+                      1 : 0.25,
+                      2 : 0.5,
+                      3 : 1.0,
+                      4 : 2.0,
+                      5 : 4.0,
+                      6 : 8.0,
+                      7 : infinity
+                    );
+
+ctmc foo(real lambda) := {
+  state a, b;
+  init(b:1);
+  arcs(b:a:lambda);
+
+  for (int i in {1..7}) {
+    real inb[i] := prob_at(in_state(b), tof(i));
+  }
+
+  for (int i in {1..3}, int j in {4..7}) {
+    real accb[i][j] := prob_acc(in_state(b), tof(i), tof(j));
+  }
+
+};
+
+// #Report + mc_solve
+
+for (real L in {0.5, 0.75, 1.0, 1.5, 2.0}) {
+
+    print("Measures for lambda = ", L, "\n");
+
+    print("Time":-10, "measure":-15, "theory":-15, "\n");
+    for (int i in {1..7}) {
+      print(tof(i):-10, foo(L).inb[i]:-15:6, thry(L, tof(i)):-15:6, "\n");
+    }
+    print("\n");
+
+    print("t1":-6, "t2":-10, "measure":-15, "theory":-15, "\n");
+    for (int i in {1..3}, int j in {4..7}) {
+      print(tof(i):-6, tof(j):-10, foo(L).accb[i][j]:-15, thry(L, tof(i), tof(j)):-15, "\n");
+    }
+    print("\n");
+}

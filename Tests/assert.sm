@@ -1,0 +1,43 @@
+
+// $Id$
+
+/*
+    Checks assertions in Petri net models
+*/
+
+pn foo(bool timed, int m, int n) := {
+  place p;
+  trans t;
+  init(p:m);
+
+  cond(timed, 
+    firing(t:expo(1)), null
+  );
+
+  arcs(t:p);
+  inhibit(p:t:256);
+
+  assert(tk(p) > 1);
+  assert(tk(p) < n);
+
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
+};
+
+
+print("\nAssertion failures in initial state, reachset generation\n\n");
+foo(false, 1, 5).m1;
+foo(true,  1, 5).m1;
+
+print("\nAssertion failures during reachset generation\n\n");
+foo(false, 2, 5).m1;
+foo(true,  2, 5).m1;
+
+print("\nAssertion failures in initial state, process generation\n\n");
+foo(false, 1, 5).m2;
+foo(true,  1, 5).m2;
+
+print("\nAssertion failures during process generation\n\n");
+foo(false, 2, 5).m2;
+foo(true,  2, 5).m2;
+

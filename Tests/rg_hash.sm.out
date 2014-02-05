@@ -1,0 +1,5205 @@
+Checking actual reachability graph for Kanban, N=1
+Reachability set:
+State 0: [pkan4:1, pkan3:1, pkan2:1, pkan1:1]
+State 1: [pkan4:1, pkan3:1, pkan2:1, pm1:1]
+State 2: [pkan4:1, pkan3:1, pkan2:1, pb1:1]
+State 3: [pkan4:1, pkan3:1, pkan2:1, pout1:1]
+State 4: [pkan4:1, pm3:1, pm2:1, pkan1:1]
+State 5: [pkan4:1, pm3:1, pm2:1, pm1:1]
+State 6: [pkan4:1, pm3:1, pb2:1, pkan1:1]
+State 7: [pkan4:1, pm3:1, pout2:1, pkan1:1]
+State 8: [pkan4:1, pb3:1, pm2:1, pkan1:1]
+State 9: [pkan4:1, pout3:1, pm2:1, pkan1:1]
+State 10: [pkan4:1, pm3:1, pm2:1, pb1:1]
+State 11: [pkan4:1, pm3:1, pm2:1, pout1:1]
+State 12: [pkan4:1, pm3:1, pb2:1, pm1:1]
+State 13: [pkan4:1, pm3:1, pout2:1, pm1:1]
+State 14: [pkan4:1, pb3:1, pm2:1, pm1:1]
+State 15: [pkan4:1, pout3:1, pm2:1, pm1:1]
+State 16: [pkan4:1, pb3:1, pb2:1, pkan1:1]
+State 17: [pkan4:1, pout3:1, pb2:1, pkan1:1]
+State 18: [pkan4:1, pb3:1, pout2:1, pkan1:1]
+State 19: [pkan4:1, pout3:1, pout2:1, pkan1:1]
+State 20: [pkan4:1, pm3:1, pb2:1, pb1:1]
+State 21: [pkan4:1, pm3:1, pout2:1, pb1:1]
+State 22: [pkan4:1, pb3:1, pm2:1, pb1:1]
+State 23: [pkan4:1, pout3:1, pm2:1, pb1:1]
+State 24: [pkan4:1, pm3:1, pb2:1, pout1:1]
+State 25: [pkan4:1, pm3:1, pout2:1, pout1:1]
+State 26: [pkan4:1, pb3:1, pm2:1, pout1:1]
+State 27: [pkan4:1, pout3:1, pm2:1, pout1:1]
+State 28: [pkan4:1, pb3:1, pb2:1, pm1:1]
+State 29: [pkan4:1, pout3:1, pb2:1, pm1:1]
+State 30: [pkan4:1, pb3:1, pout2:1, pm1:1]
+State 31: [pkan4:1, pout3:1, pout2:1, pm1:1]
+State 32: [pm4:1, pkan3:1, pkan2:1, pkan1:1]
+State 33: [pkan4:1, pb3:1, pb2:1, pb1:1]
+State 34: [pkan4:1, pout3:1, pb2:1, pb1:1]
+State 35: [pkan4:1, pb3:1, pout2:1, pb1:1]
+State 36: [pkan4:1, pout3:1, pout2:1, pb1:1]
+State 37: [pkan4:1, pb3:1, pb2:1, pout1:1]
+State 38: [pkan4:1, pout3:1, pb2:1, pout1:1]
+State 39: [pkan4:1, pb3:1, pout2:1, pout1:1]
+State 40: [pkan4:1, pout3:1, pout2:1, pout1:1]
+State 41: [pm4:1, pkan3:1, pkan2:1, pm1:1]
+State 42: [pb4:1, pkan3:1, pkan2:1, pkan1:1]
+State 43: [pout4:1, pkan3:1, pkan2:1, pkan1:1]
+State 44: [pm4:1, pkan3:1, pkan2:1, pb1:1]
+State 45: [pm4:1, pkan3:1, pkan2:1, pout1:1]
+State 46: [pb4:1, pkan3:1, pkan2:1, pm1:1]
+State 47: [pout4:1, pkan3:1, pkan2:1, pm1:1]
+State 48: [pb4:1, pkan3:1, pkan2:1, pb1:1]
+State 49: [pout4:1, pkan3:1, pkan2:1, pb1:1]
+State 50: [pm4:1, pm3:1, pm2:1, pkan1:1]
+State 51: [pb4:1, pkan3:1, pkan2:1, pout1:1]
+State 52: [pout4:1, pkan3:1, pkan2:1, pout1:1]
+State 53: [pm4:1, pm3:1, pm2:1, pm1:1]
+State 54: [pm4:1, pm3:1, pb2:1, pkan1:1]
+State 55: [pm4:1, pm3:1, pout2:1, pkan1:1]
+State 56: [pm4:1, pb3:1, pm2:1, pkan1:1]
+State 57: [pm4:1, pout3:1, pm2:1, pkan1:1]
+State 58: [pb4:1, pm3:1, pm2:1, pkan1:1]
+State 59: [pout4:1, pm3:1, pm2:1, pkan1:1]
+State 60: [pm4:1, pm3:1, pm2:1, pb1:1]
+State 61: [pm4:1, pm3:1, pm2:1, pout1:1]
+State 62: [pm4:1, pm3:1, pb2:1, pm1:1]
+State 63: [pm4:1, pm3:1, pout2:1, pm1:1]
+State 64: [pm4:1, pb3:1, pm2:1, pm1:1]
+State 65: [pm4:1, pout3:1, pm2:1, pm1:1]
+State 66: [pb4:1, pm3:1, pm2:1, pm1:1]
+State 67: [pout4:1, pm3:1, pm2:1, pm1:1]
+State 68: [pm4:1, pb3:1, pb2:1, pkan1:1]
+State 69: [pm4:1, pout3:1, pb2:1, pkan1:1]
+State 70: [pb4:1, pm3:1, pb2:1, pkan1:1]
+State 71: [pout4:1, pm3:1, pb2:1, pkan1:1]
+State 72: [pm4:1, pb3:1, pout2:1, pkan1:1]
+State 73: [pm4:1, pout3:1, pout2:1, pkan1:1]
+State 74: [pb4:1, pm3:1, pout2:1, pkan1:1]
+State 75: [pout4:1, pm3:1, pout2:1, pkan1:1]
+State 76: [pb4:1, pb3:1, pm2:1, pkan1:1]
+State 77: [pout4:1, pb3:1, pm2:1, pkan1:1]
+State 78: [pb4:1, pout3:1, pm2:1, pkan1:1]
+State 79: [pout4:1, pout3:1, pm2:1, pkan1:1]
+State 80: [pm4:1, pm3:1, pb2:1, pb1:1]
+State 81: [pm4:1, pm3:1, pout2:1, pb1:1]
+State 82: [pm4:1, pb3:1, pm2:1, pb1:1]
+State 83: [pm4:1, pout3:1, pm2:1, pb1:1]
+State 84: [pb4:1, pm3:1, pm2:1, pb1:1]
+State 85: [pout4:1, pm3:1, pm2:1, pb1:1]
+State 86: [pm4:1, pm3:1, pb2:1, pout1:1]
+State 87: [pm4:1, pm3:1, pout2:1, pout1:1]
+State 88: [pm4:1, pb3:1, pm2:1, pout1:1]
+State 89: [pm4:1, pout3:1, pm2:1, pout1:1]
+State 90: [pb4:1, pm3:1, pm2:1, pout1:1]
+State 91: [pout4:1, pm3:1, pm2:1, pout1:1]
+State 92: [pm4:1, pb3:1, pb2:1, pm1:1]
+State 93: [pm4:1, pout3:1, pb2:1, pm1:1]
+State 94: [pb4:1, pm3:1, pb2:1, pm1:1]
+State 95: [pout4:1, pm3:1, pb2:1, pm1:1]
+State 96: [pm4:1, pb3:1, pout2:1, pm1:1]
+State 97: [pm4:1, pout3:1, pout2:1, pm1:1]
+State 98: [pb4:1, pm3:1, pout2:1, pm1:1]
+State 99: [pout4:1, pm3:1, pout2:1, pm1:1]
+State 100: [pb4:1, pb3:1, pm2:1, pm1:1]
+State 101: [pout4:1, pb3:1, pm2:1, pm1:1]
+State 102: [pb4:1, pout3:1, pm2:1, pm1:1]
+State 103: [pout4:1, pout3:1, pm2:1, pm1:1]
+State 104: [pb4:1, pb3:1, pb2:1, pkan1:1]
+State 105: [pout4:1, pb3:1, pb2:1, pkan1:1]
+State 106: [pb4:1, pout3:1, pb2:1, pkan1:1]
+State 107: [pout4:1, pout3:1, pb2:1, pkan1:1]
+State 108: [pb4:1, pb3:1, pout2:1, pkan1:1]
+State 109: [pout4:1, pb3:1, pout2:1, pkan1:1]
+State 110: [pb4:1, pout3:1, pout2:1, pkan1:1]
+State 111: [pout4:1, pout3:1, pout2:1, pkan1:1]
+State 112: [pm4:1, pb3:1, pb2:1, pb1:1]
+State 113: [pm4:1, pout3:1, pb2:1, pb1:1]
+State 114: [pb4:1, pm3:1, pb2:1, pb1:1]
+State 115: [pout4:1, pm3:1, pb2:1, pb1:1]
+State 116: [pm4:1, pb3:1, pout2:1, pb1:1]
+State 117: [pm4:1, pout3:1, pout2:1, pb1:1]
+State 118: [pb4:1, pm3:1, pout2:1, pb1:1]
+State 119: [pout4:1, pm3:1, pout2:1, pb1:1]
+State 120: [pb4:1, pb3:1, pm2:1, pb1:1]
+State 121: [pout4:1, pb3:1, pm2:1, pb1:1]
+State 122: [pb4:1, pout3:1, pm2:1, pb1:1]
+State 123: [pout4:1, pout3:1, pm2:1, pb1:1]
+State 124: [pm4:1, pb3:1, pb2:1, pout1:1]
+State 125: [pm4:1, pout3:1, pb2:1, pout1:1]
+State 126: [pb4:1, pm3:1, pb2:1, pout1:1]
+State 127: [pout4:1, pm3:1, pb2:1, pout1:1]
+State 128: [pm4:1, pb3:1, pout2:1, pout1:1]
+State 129: [pm4:1, pout3:1, pout2:1, pout1:1]
+State 130: [pb4:1, pm3:1, pout2:1, pout1:1]
+State 131: [pout4:1, pm3:1, pout2:1, pout1:1]
+State 132: [pb4:1, pb3:1, pm2:1, pout1:1]
+State 133: [pout4:1, pb3:1, pm2:1, pout1:1]
+State 134: [pb4:1, pout3:1, pm2:1, pout1:1]
+State 135: [pout4:1, pout3:1, pm2:1, pout1:1]
+State 136: [pb4:1, pb3:1, pb2:1, pm1:1]
+State 137: [pout4:1, pb3:1, pb2:1, pm1:1]
+State 138: [pb4:1, pout3:1, pb2:1, pm1:1]
+State 139: [pout4:1, pout3:1, pb2:1, pm1:1]
+State 140: [pb4:1, pb3:1, pout2:1, pm1:1]
+State 141: [pout4:1, pb3:1, pout2:1, pm1:1]
+State 142: [pb4:1, pout3:1, pout2:1, pm1:1]
+State 143: [pout4:1, pout3:1, pout2:1, pm1:1]
+State 144: [pb4:1, pb3:1, pb2:1, pb1:1]
+State 145: [pout4:1, pb3:1, pb2:1, pb1:1]
+State 146: [pb4:1, pout3:1, pb2:1, pb1:1]
+State 147: [pout4:1, pout3:1, pb2:1, pb1:1]
+State 148: [pb4:1, pb3:1, pout2:1, pb1:1]
+State 149: [pout4:1, pb3:1, pout2:1, pb1:1]
+State 150: [pb4:1, pout3:1, pout2:1, pb1:1]
+State 151: [pout4:1, pout3:1, pout2:1, pb1:1]
+State 152: [pb4:1, pb3:1, pb2:1, pout1:1]
+State 153: [pout4:1, pb3:1, pb2:1, pout1:1]
+State 154: [pb4:1, pout3:1, pb2:1, pout1:1]
+State 155: [pout4:1, pout3:1, pb2:1, pout1:1]
+State 156: [pb4:1, pb3:1, pout2:1, pout1:1]
+State 157: [pout4:1, pb3:1, pout2:1, pout1:1]
+State 158: [pb4:1, pout3:1, pout2:1, pout1:1]
+State 159: [pout4:1, pout3:1, pout2:1, pout1:1]
+Reachability graph:
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 2
+	To state 3
+From state 2:
+	To state 1
+From state 3:
+	To state 4
+From state 4:
+	To state 5
+	To state 6
+	To state 7
+	To state 8
+	To state 9
+From state 5:
+	To state 10
+	To state 11
+	To state 12
+	To state 13
+	To state 14
+	To state 15
+From state 6:
+	To state 4
+	To state 12
+	To state 16
+	To state 17
+From state 7:
+	To state 13
+	To state 18
+	To state 19
+From state 8:
+	To state 4
+	To state 14
+	To state 16
+	To state 18
+From state 9:
+	To state 15
+	To state 17
+	To state 19
+From state 10:
+	To state 5
+	To state 20
+	To state 21
+	To state 22
+	To state 23
+From state 11:
+	To state 24
+	To state 25
+	To state 26
+	To state 27
+From state 12:
+	To state 5
+	To state 20
+	To state 24
+	To state 28
+	To state 29
+From state 13:
+	To state 21
+	To state 25
+	To state 30
+	To state 31
+From state 14:
+	To state 5
+	To state 22
+	To state 26
+	To state 28
+	To state 30
+From state 15:
+	To state 23
+	To state 27
+	To state 29
+	To state 31
+From state 16:
+	To state 6
+	To state 8
+	To state 28
+From state 17:
+	To state 9
+	To state 29
+From state 18:
+	To state 7
+	To state 30
+From state 19:
+	To state 31
+	To state 32
+From state 20:
+	To state 10
+	To state 12
+	To state 33
+	To state 34
+From state 21:
+	To state 13
+	To state 35
+	To state 36
+From state 22:
+	To state 10
+	To state 14
+	To state 33
+	To state 35
+From state 23:
+	To state 15
+	To state 34
+	To state 36
+From state 24:
+	To state 11
+	To state 37
+	To state 38
+From state 25:
+	To state 39
+	To state 40
+From state 26:
+	To state 11
+	To state 37
+	To state 39
+From state 27:
+	To state 38
+	To state 40
+From state 28:
+	To state 12
+	To state 14
+	To state 33
+	To state 37
+From state 29:
+	To state 15
+	To state 34
+	To state 38
+From state 30:
+	To state 13
+	To state 35
+	To state 39
+From state 31:
+	To state 36
+	To state 40
+	To state 41
+From state 32:
+	To state 41
+	To state 42
+	To state 43
+From state 33:
+	To state 20
+	To state 22
+	To state 28
+From state 34:
+	To state 23
+	To state 29
+From state 35:
+	To state 21
+	To state 30
+From state 36:
+	To state 31
+	To state 44
+From state 37:
+	To state 24
+	To state 26
+From state 38:
+	To state 27
+From state 39:
+	To state 25
+From state 40:
+	To state 45
+From state 41:
+	To state 44
+	To state 45
+	To state 46
+	To state 47
+From state 42:
+	To state 32
+	To state 46
+From state 43:
+	To state 0
+	To state 47
+From state 44:
+	To state 41
+	To state 48
+	To state 49
+From state 45:
+	To state 50
+	To state 51
+	To state 52
+From state 46:
+	To state 41
+	To state 48
+	To state 51
+From state 47:
+	To state 1
+	To state 49
+	To state 52
+From state 48:
+	To state 44
+	To state 46
+From state 49:
+	To state 2
+	To state 47
+From state 50:
+	To state 53
+	To state 54
+	To state 55
+	To state 56
+	To state 57
+	To state 58
+	To state 59
+From state 51:
+	To state 45
+	To state 58
+From state 52:
+	To state 3
+	To state 59
+From state 53:
+	To state 60
+	To state 61
+	To state 62
+	To state 63
+	To state 64
+	To state 65
+	To state 66
+	To state 67
+From state 54:
+	To state 50
+	To state 62
+	To state 68
+	To state 69
+	To state 70
+	To state 71
+From state 55:
+	To state 63
+	To state 72
+	To state 73
+	To state 74
+	To state 75
+From state 56:
+	To state 50
+	To state 64
+	To state 68
+	To state 72
+	To state 76
+	To state 77
+From state 57:
+	To state 65
+	To state 69
+	To state 73
+	To state 78
+	To state 79
+From state 58:
+	To state 50
+	To state 66
+	To state 70
+	To state 74
+	To state 76
+	To state 78
+From state 59:
+	To state 4
+	To state 67
+	To state 71
+	To state 75
+	To state 77
+	To state 79
+From state 60:
+	To state 53
+	To state 80
+	To state 81
+	To state 82
+	To state 83
+	To state 84
+	To state 85
+From state 61:
+	To state 86
+	To state 87
+	To state 88
+	To state 89
+	To state 90
+	To state 91
+From state 62:
+	To state 53
+	To state 80
+	To state 86
+	To state 92
+	To state 93
+	To state 94
+	To state 95
+From state 63:
+	To state 81
+	To state 87
+	To state 96
+	To state 97
+	To state 98
+	To state 99
+From state 64:
+	To state 53
+	To state 82
+	To state 88
+	To state 92
+	To state 96
+	To state 100
+	To state 101
+From state 65:
+	To state 83
+	To state 89
+	To state 93
+	To state 97
+	To state 102
+	To state 103
+From state 66:
+	To state 53
+	To state 84
+	To state 90
+	To state 94
+	To state 98
+	To state 100
+	To state 102
+From state 67:
+	To state 5
+	To state 85
+	To state 91
+	To state 95
+	To state 99
+	To state 101
+	To state 103
+From state 68:
+	To state 54
+	To state 56
+	To state 92
+	To state 104
+	To state 105
+From state 69:
+	To state 57
+	To state 93
+	To state 106
+	To state 107
+From state 70:
+	To state 54
+	To state 58
+	To state 94
+	To state 104
+	To state 106
+From state 71:
+	To state 6
+	To state 59
+	To state 95
+	To state 105
+	To state 107
+From state 72:
+	To state 55
+	To state 96
+	To state 108
+	To state 109
+From state 73:
+	To state 97
+	To state 110
+	To state 111
+From state 74:
+	To state 55
+	To state 98
+	To state 108
+	To state 110
+From state 75:
+	To state 7
+	To state 99
+	To state 109
+	To state 111
+From state 76:
+	To state 56
+	To state 58
+	To state 100
+	To state 104
+	To state 108
+From state 77:
+	To state 8
+	To state 59
+	To state 101
+	To state 105
+	To state 109
+From state 78:
+	To state 57
+	To state 102
+	To state 106
+	To state 110
+From state 79:
+	To state 9
+	To state 103
+	To state 107
+	To state 111
+From state 80:
+	To state 60
+	To state 62
+	To state 112
+	To state 113
+	To state 114
+	To state 115
+From state 81:
+	To state 63
+	To state 116
+	To state 117
+	To state 118
+	To state 119
+From state 82:
+	To state 60
+	To state 64
+	To state 112
+	To state 116
+	To state 120
+	To state 121
+From state 83:
+	To state 65
+	To state 113
+	To state 117
+	To state 122
+	To state 123
+From state 84:
+	To state 60
+	To state 66
+	To state 114
+	To state 118
+	To state 120
+	To state 122
+From state 85:
+	To state 10
+	To state 67
+	To state 115
+	To state 119
+	To state 121
+	To state 123
+From state 86:
+	To state 61
+	To state 124
+	To state 125
+	To state 126
+	To state 127
+From state 87:
+	To state 128
+	To state 129
+	To state 130
+	To state 131
+From state 88:
+	To state 61
+	To state 124
+	To state 128
+	To state 132
+	To state 133
+From state 89:
+	To state 125
+	To state 129
+	To state 134
+	To state 135
+From state 90:
+	To state 61
+	To state 126
+	To state 130
+	To state 132
+	To state 134
+From state 91:
+	To state 11
+	To state 127
+	To state 131
+	To state 133
+	To state 135
+From state 92:
+	To state 62
+	To state 64
+	To state 112
+	To state 124
+	To state 136
+	To state 137
+From state 93:
+	To state 65
+	To state 113
+	To state 125
+	To state 138
+	To state 139
+From state 94:
+	To state 62
+	To state 66
+	To state 114
+	To state 126
+	To state 136
+	To state 138
+From state 95:
+	To state 12
+	To state 67
+	To state 115
+	To state 127
+	To state 137
+	To state 139
+From state 96:
+	To state 63
+	To state 116
+	To state 128
+	To state 140
+	To state 141
+From state 97:
+	To state 117
+	To state 129
+	To state 142
+	To state 143
+From state 98:
+	To state 63
+	To state 118
+	To state 130
+	To state 140
+	To state 142
+From state 99:
+	To state 13
+	To state 119
+	To state 131
+	To state 141
+	To state 143
+From state 100:
+	To state 64
+	To state 66
+	To state 120
+	To state 132
+	To state 136
+	To state 140
+From state 101:
+	To state 14
+	To state 67
+	To state 121
+	To state 133
+	To state 137
+	To state 141
+From state 102:
+	To state 65
+	To state 122
+	To state 134
+	To state 138
+	To state 142
+From state 103:
+	To state 15
+	To state 123
+	To state 135
+	To state 139
+	To state 143
+From state 104:
+	To state 68
+	To state 70
+	To state 76
+	To state 136
+From state 105:
+	To state 16
+	To state 71
+	To state 77
+	To state 137
+From state 106:
+	To state 69
+	To state 78
+	To state 138
+From state 107:
+	To state 17
+	To state 79
+	To state 139
+From state 108:
+	To state 72
+	To state 74
+	To state 140
+From state 109:
+	To state 18
+	To state 75
+	To state 141
+From state 110:
+	To state 73
+	To state 142
+From state 111:
+	To state 19
+	To state 143
+From state 112:
+	To state 80
+	To state 82
+	To state 92
+	To state 144
+	To state 145
+From state 113:
+	To state 83
+	To state 93
+	To state 146
+	To state 147
+From state 114:
+	To state 80
+	To state 84
+	To state 94
+	To state 144
+	To state 146
+From state 115:
+	To state 20
+	To state 85
+	To state 95
+	To state 145
+	To state 147
+From state 116:
+	To state 81
+	To state 96
+	To state 148
+	To state 149
+From state 117:
+	To state 97
+	To state 150
+	To state 151
+From state 118:
+	To state 81
+	To state 98
+	To state 148
+	To state 150
+From state 119:
+	To state 21
+	To state 99
+	To state 149
+	To state 151
+From state 120:
+	To state 82
+	To state 84
+	To state 100
+	To state 144
+	To state 148
+From state 121:
+	To state 22
+	To state 85
+	To state 101
+	To state 145
+	To state 149
+From state 122:
+	To state 83
+	To state 102
+	To state 146
+	To state 150
+From state 123:
+	To state 23
+	To state 103
+	To state 147
+	To state 151
+From state 124:
+	To state 86
+	To state 88
+	To state 152
+	To state 153
+From state 125:
+	To state 89
+	To state 154
+	To state 155
+From state 126:
+	To state 86
+	To state 90
+	To state 152
+	To state 154
+From state 127:
+	To state 24
+	To state 91
+	To state 153
+	To state 155
+From state 128:
+	To state 87
+	To state 156
+	To state 157
+From state 129:
+	To state 158
+	To state 159
+From state 130:
+	To state 87
+	To state 156
+	To state 158
+From state 131:
+	To state 25
+	To state 157
+	To state 159
+From state 132:
+	To state 88
+	To state 90
+	To state 152
+	To state 156
+From state 133:
+	To state 26
+	To state 91
+	To state 153
+	To state 157
+From state 134:
+	To state 89
+	To state 154
+	To state 158
+From state 135:
+	To state 27
+	To state 155
+	To state 159
+From state 136:
+	To state 92
+	To state 94
+	To state 100
+	To state 144
+	To state 152
+From state 137:
+	To state 28
+	To state 95
+	To state 101
+	To state 145
+	To state 153
+From state 138:
+	To state 93
+	To state 102
+	To state 146
+	To state 154
+From state 139:
+	To state 29
+	To state 103
+	To state 147
+	To state 155
+From state 140:
+	To state 96
+	To state 98
+	To state 148
+	To state 156
+From state 141:
+	To state 30
+	To state 99
+	To state 149
+	To state 157
+From state 142:
+	To state 97
+	To state 150
+	To state 158
+From state 143:
+	To state 31
+	To state 151
+	To state 159
+From state 144:
+	To state 112
+	To state 114
+	To state 120
+	To state 136
+From state 145:
+	To state 33
+	To state 115
+	To state 121
+	To state 137
+From state 146:
+	To state 113
+	To state 122
+	To state 138
+From state 147:
+	To state 34
+	To state 123
+	To state 139
+From state 148:
+	To state 116
+	To state 118
+	To state 140
+From state 149:
+	To state 35
+	To state 119
+	To state 141
+From state 150:
+	To state 117
+	To state 142
+From state 151:
+	To state 36
+	To state 143
+From state 152:
+	To state 124
+	To state 126
+	To state 132
+From state 153:
+	To state 37
+	To state 127
+	To state 133
+From state 154:
+	To state 125
+	To state 134
+From state 155:
+	To state 38
+	To state 135
+From state 156:
+	To state 128
+	To state 130
+From state 157:
+	To state 39
+	To state 131
+From state 158:
+	To state 129
+From state 159:
+	To state 40
+Checking actual reachability graph for 4 philosophers
+Reachability set:
+State 0: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 1: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 2: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 3: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 4: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 5: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 6: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 7: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 8: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 9: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 10: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 11: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 12: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 13: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 14: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 15: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 16: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 17: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 18: [Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 19: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 20: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 21: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 22: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 23: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 24: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 25: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 26: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 27: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 28: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 29: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 30: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 31: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 32: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 33: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 34: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 35: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 36: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 37: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 38: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 39: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 40: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 41: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 42: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 43: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 44: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 45: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 46: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 47: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 48: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 49: [Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 50: [Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 51: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 52: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 53: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 54: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 55: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 56: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 57: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 58: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 59: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 60: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 61: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 62: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 63: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 64: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 65: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 66: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 67: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 68: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 69: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 70: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 71: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 72: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 73: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 74: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 75: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 76: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 77: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 78: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 79: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 80: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 81: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 82: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 83: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 84: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 85: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 86: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 87: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 88: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 89: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 90: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 91: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 92: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 93: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 94: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 95: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 96: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 97: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 98: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 99: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 100: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 101: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 102: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 103: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 104: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 105: [Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 106: [Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 107: [Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 108: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 109: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 110: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 111: [HasL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 112: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 113: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 114: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 115: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+State 116: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 117: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 118: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 119: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 120: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 121: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 122: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 123: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 124: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 125: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 126: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 127: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 128: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 129: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 130: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 131: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 132: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 133: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 134: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 135: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 136: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 137: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 138: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 139: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 140: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 141: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 142: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 143: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 144: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 145: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 146: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 147: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 148: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 149: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 150: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 151: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 152: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 153: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 154: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 155: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 156: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 157: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 158: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 159: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 160: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 161: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 162: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 163: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 164: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 165: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 166: [Idle[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 167: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 168: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 169: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 170: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 171: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 172: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 173: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 174: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 175: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 176: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 177: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 178: [Fork[0]:1, Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 179: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 180: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 181: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 182: [Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 183: [Idle[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 184: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 185: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 186: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 187: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 188: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 189: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 190: [HasL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 191: [HasL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 192: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 193: [HasL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 194: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 195: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 196: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, Idle[3]:1]
+State 197: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 198: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 199: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 200: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 201: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 202: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 203: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 204: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 205: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 206: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 207: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 208: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 209: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 210: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 211: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 212: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 213: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 214: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 215: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 216: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 217: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 218: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 219: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 220: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 221: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 222: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 223: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 224: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 225: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 226: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 227: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 228: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 229: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 230: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 231: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 232: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 233: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 234: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 235: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 236: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 237: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 238: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 239: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 240: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 241: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 242: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 243: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 244: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 245: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 246: [Fork[0]:1, Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 247: [Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 248: [Idle[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 249: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 250: [Fork[0]:1, Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 251: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 252: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 253: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 254: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 255: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 256: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 257: [Idle[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 258: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 259: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 260: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 261: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 262: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 263: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 264: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 265: [HasL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 266: [HasL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 267: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, Idle[3]:1]
+State 268: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 269: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
+State 270: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, Idle[3]:1]
+State 271: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
+State 272: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 273: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 274: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 275: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 276: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 277: [HasL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 278: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 279: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 280: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 281: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 282: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 283: [Fork[0]:1, WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 284: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 285: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 286: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 287: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 288: [WaitL[0]:1, HasR[0]:1, Idle[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 289: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 290: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 291: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 292: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, Idle[2]:1, HasL[3]:1, HasR[3]:1]
+State 293: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 294: [Fork[0]:1, WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 295: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, Fork[3]:1, WaitL[3]:1, HasR[3]:1]
+State 296: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 297: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, Fork[2]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 298: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 299: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 300: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 301: [WaitL[0]:1, WaitR[0]:1, Fork[1]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 302: [Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 303: [Idle[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 304: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 305: [Idle[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 306: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 307: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 308: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 309: [HasL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 310: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 311: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 312: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, WaitR[3]:1]
+State 313: [HasL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, WaitR[3]:1]
+State 314: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 315: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 316: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 317: [WaitL[0]:1, HasR[0]:1, WaitL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 318: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 319: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, HasR[1]:1, WaitL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+State 320: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, HasR[2]:1, WaitL[3]:1, HasR[3]:1]
+State 321: [WaitL[0]:1, WaitR[0]:1, HasL[1]:1, WaitR[1]:1, HasL[2]:1, WaitR[2]:1, HasL[3]:1, HasR[3]:1]
+Reachability graph:
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+	To state 3
+	To state 4
+From state 1:
+	To state 5
+	To state 6
+	To state 7
+	To state 8
+	To state 9
+From state 2:
+	To state 7
+	To state 10
+	To state 11
+	To state 12
+	To state 13
+From state 3:
+	To state 8
+	To state 12
+	To state 14
+	To state 15
+	To state 16
+From state 4:
+	To state 9
+	To state 13
+	To state 16
+	To state 17
+	To state 18
+From state 5:
+	To state 19
+	To state 20
+	To state 21
+	To state 22
+From state 6:
+	To state 19
+	To state 23
+	To state 24
+	To state 25
+From state 7:
+	To state 20
+	To state 23
+	To state 26
+	To state 27
+	To state 28
+	To state 29
+From state 8:
+	To state 21
+	To state 24
+	To state 28
+	To state 30
+	To state 31
+	To state 32
+From state 9:
+	To state 22
+	To state 25
+	To state 29
+	To state 32
+	To state 33
+	To state 34
+From state 10:
+	To state 26
+	To state 35
+	To state 36
+	To state 37
+From state 11:
+	To state 27
+	To state 35
+	To state 38
+	To state 39
+From state 12:
+	To state 28
+	To state 36
+	To state 38
+	To state 40
+	To state 41
+	To state 42
+From state 13:
+	To state 29
+	To state 37
+	To state 39
+	To state 42
+	To state 43
+	To state 44
+From state 14:
+	To state 30
+	To state 40
+	To state 45
+	To state 46
+From state 15:
+	To state 31
+	To state 41
+	To state 45
+	To state 47
+From state 16:
+	To state 32
+	To state 42
+	To state 46
+	To state 47
+	To state 48
+	To state 49
+From state 17:
+	To state 33
+	To state 43
+	To state 48
+	To state 50
+From state 18:
+	To state 34
+	To state 44
+	To state 49
+	To state 50
+From state 19:
+	To state 0
+	To state 51
+	To state 52
+	To state 53
+From state 20:
+	To state 51
+	To state 54
+	To state 55
+	To state 56
+	To state 57
+From state 21:
+	To state 52
+	To state 56
+	To state 58
+	To state 59
+	To state 60
+From state 22:
+	To state 53
+	To state 57
+	To state 60
+	To state 61
+From state 23:
+	To state 51
+	To state 62
+	To state 63
+	To state 64
+From state 24:
+	To state 52
+	To state 63
+	To state 65
+	To state 66
+	To state 67
+From state 25:
+	To state 53
+	To state 64
+	To state 67
+	To state 68
+	To state 69
+From state 26:
+	To state 54
+	To state 70
+	To state 71
+	To state 72
+From state 27:
+	To state 55
+	To state 62
+	To state 70
+	To state 73
+	To state 74
+From state 28:
+	To state 56
+	To state 63
+	To state 71
+	To state 73
+	To state 75
+	To state 76
+	To state 77
+From state 29:
+	To state 57
+	To state 64
+	To state 72
+	To state 74
+	To state 77
+	To state 78
+	To state 79
+From state 30:
+	To state 58
+	To state 65
+	To state 75
+	To state 80
+	To state 81
+From state 31:
+	To state 59
+	To state 66
+	To state 76
+	To state 80
+	To state 82
+From state 32:
+	To state 60
+	To state 67
+	To state 77
+	To state 81
+	To state 82
+	To state 83
+	To state 84
+From state 33:
+	To state 61
+	To state 68
+	To state 78
+	To state 83
+	To state 85
+From state 34:
+	To state 69
+	To state 79
+	To state 84
+	To state 85
+From state 35:
+	To state 0
+	To state 70
+	To state 86
+	To state 87
+From state 36:
+	To state 71
+	To state 86
+	To state 88
+	To state 89
+	To state 90
+From state 37:
+	To state 72
+	To state 87
+	To state 90
+	To state 91
+	To state 92
+From state 38:
+	To state 73
+	To state 86
+	To state 93
+	To state 94
+From state 39:
+	To state 74
+	To state 87
+	To state 94
+	To state 95
+	To state 96
+From state 40:
+	To state 75
+	To state 88
+	To state 97
+	To state 98
+From state 41:
+	To state 76
+	To state 89
+	To state 93
+	To state 97
+	To state 99
+From state 42:
+	To state 77
+	To state 90
+	To state 94
+	To state 98
+	To state 99
+	To state 100
+	To state 101
+From state 43:
+	To state 78
+	To state 91
+	To state 95
+	To state 100
+	To state 102
+From state 44:
+	To state 79
+	To state 92
+	To state 96
+	To state 101
+	To state 102
+From state 45:
+	To state 0
+	To state 80
+	To state 97
+	To state 103
+From state 46:
+	To state 81
+	To state 98
+	To state 103
+	To state 104
+	To state 105
+From state 47:
+	To state 82
+	To state 99
+	To state 103
+	To state 106
+From state 48:
+	To state 83
+	To state 100
+	To state 104
+	To state 107
+From state 49:
+	To state 84
+	To state 101
+	To state 105
+	To state 106
+	To state 107
+From state 50:
+	To state 0
+	To state 85
+	To state 102
+	To state 107
+From state 51:
+	To state 2
+	To state 108
+	To state 109
+	To state 110
+From state 52:
+	To state 3
+	To state 109
+	To state 111
+	To state 112
+	To state 113
+From state 53:
+	To state 4
+	To state 110
+	To state 113
+	To state 114
+From state 54:
+	To state 115
+	To state 116
+	To state 117
+From state 55:
+	To state 108
+	To state 115
+	To state 118
+	To state 119
+From state 56:
+	To state 109
+	To state 116
+	To state 118
+	To state 120
+	To state 121
+	To state 122
+From state 57:
+	To state 110
+	To state 117
+	To state 119
+	To state 122
+	To state 123
+From state 58:
+	To state 111
+	To state 120
+	To state 124
+	To state 125
+From state 59:
+	To state 112
+	To state 121
+	To state 124
+	To state 126
+From state 60:
+	To state 113
+	To state 122
+	To state 125
+	To state 126
+	To state 127
+From state 61:
+	To state 114
+	To state 123
+	To state 127
+From state 62:
+	To state 108
+	To state 128
+	To state 129
+From state 63:
+	To state 109
+	To state 128
+	To state 130
+	To state 131
+	To state 132
+From state 64:
+	To state 110
+	To state 129
+	To state 132
+	To state 133
+	To state 134
+From state 65:
+	To state 111
+	To state 130
+	To state 135
+	To state 136
+From state 66:
+	To state 112
+	To state 131
+	To state 135
+	To state 137
+From state 67:
+	To state 113
+	To state 132
+	To state 136
+	To state 137
+	To state 138
+	To state 139
+From state 68:
+	To state 114
+	To state 133
+	To state 138
+	To state 140
+From state 69:
+	To state 134
+	To state 139
+	To state 140
+From state 70:
+	To state 1
+	To state 115
+	To state 141
+	To state 142
+From state 71:
+	To state 116
+	To state 141
+	To state 143
+	To state 144
+	To state 145
+From state 72:
+	To state 117
+	To state 142
+	To state 145
+	To state 146
+	To state 147
+From state 73:
+	To state 118
+	To state 128
+	To state 141
+	To state 148
+	To state 149
+From state 74:
+	To state 119
+	To state 129
+	To state 142
+	To state 149
+	To state 150
+	To state 151
+From state 75:
+	To state 120
+	To state 130
+	To state 143
+	To state 152
+	To state 153
+From state 76:
+	To state 121
+	To state 131
+	To state 144
+	To state 148
+	To state 152
+	To state 154
+From state 77:
+	To state 122
+	To state 132
+	To state 145
+	To state 149
+	To state 153
+	To state 154
+	To state 155
+	To state 156
+From state 78:
+	To state 123
+	To state 133
+	To state 146
+	To state 150
+	To state 155
+	To state 157
+From state 79:
+	To state 134
+	To state 147
+	To state 151
+	To state 156
+	To state 157
+From state 80:
+	To state 1
+	To state 124
+	To state 135
+	To state 152
+	To state 158
+From state 81:
+	To state 125
+	To state 136
+	To state 153
+	To state 158
+	To state 159
+	To state 160
+From state 82:
+	To state 126
+	To state 137
+	To state 154
+	To state 158
+	To state 161
+From state 83:
+	To state 127
+	To state 138
+	To state 155
+	To state 159
+	To state 162
+From state 84:
+	To state 139
+	To state 156
+	To state 160
+	To state 161
+	To state 162
+From state 85:
+	To state 1
+	To state 140
+	To state 157
+	To state 162
+From state 86:
+	To state 3
+	To state 141
+	To state 163
+	To state 164
+From state 87:
+	To state 4
+	To state 142
+	To state 164
+	To state 165
+	To state 166
+From state 88:
+	To state 143
+	To state 167
+	To state 168
+From state 89:
+	To state 144
+	To state 163
+	To state 167
+	To state 169
+From state 90:
+	To state 145
+	To state 164
+	To state 168
+	To state 169
+	To state 170
+	To state 171
+From state 91:
+	To state 146
+	To state 165
+	To state 170
+	To state 172
+From state 92:
+	To state 147
+	To state 166
+	To state 171
+	To state 172
+From state 93:
+	To state 148
+	To state 163
+	To state 173
+From state 94:
+	To state 149
+	To state 164
+	To state 173
+	To state 174
+	To state 175
+From state 95:
+	To state 150
+	To state 165
+	To state 174
+	To state 176
+From state 96:
+	To state 151
+	To state 166
+	To state 175
+	To state 176
+From state 97:
+	To state 2
+	To state 152
+	To state 167
+	To state 177
+From state 98:
+	To state 153
+	To state 168
+	To state 177
+	To state 178
+	To state 179
+From state 99:
+	To state 154
+	To state 169
+	To state 173
+	To state 177
+	To state 180
+From state 100:
+	To state 155
+	To state 170
+	To state 174
+	To state 178
+	To state 181
+From state 101:
+	To state 156
+	To state 171
+	To state 175
+	To state 179
+	To state 180
+	To state 181
+From state 102:
+	To state 2
+	To state 157
+	To state 172
+	To state 176
+	To state 181
+From state 103:
+	To state 4
+	To state 158
+	To state 177
+	To state 182
+From state 104:
+	To state 159
+	To state 178
+	To state 183
+From state 105:
+	To state 160
+	To state 179
+	To state 182
+	To state 183
+From state 106:
+	To state 161
+	To state 180
+	To state 182
+From state 107:
+	To state 3
+	To state 162
+	To state 181
+	To state 183
+From state 108:
+	To state 11
+	To state 184
+	To state 185
+From state 109:
+	To state 12
+	To state 184
+	To state 186
+	To state 187
+	To state 188
+From state 110:
+	To state 13
+	To state 185
+	To state 188
+	To state 189
+From state 111:
+	To state 14
+	To state 186
+	To state 190
+	To state 191
+From state 112:
+	To state 15
+	To state 187
+	To state 190
+	To state 192
+From state 113:
+	To state 16
+	To state 188
+	To state 191
+	To state 192
+	To state 193
+From state 114:
+	To state 17
+	To state 189
+	To state 193
+From state 115:
+	To state 5
+	To state 194
+	To state 195
+From state 116:
+	To state 194
+	To state 196
+	To state 197
+	To state 198
+From state 117:
+	To state 195
+	To state 198
+	To state 199
+From state 118:
+	To state 184
+	To state 194
+	To state 200
+	To state 201
+From state 119:
+	To state 185
+	To state 195
+	To state 201
+	To state 202
+From state 120:
+	To state 186
+	To state 196
+	To state 203
+	To state 204
+From state 121:
+	To state 187
+	To state 197
+	To state 200
+	To state 203
+	To state 205
+From state 122:
+	To state 188
+	To state 198
+	To state 201
+	To state 204
+	To state 205
+	To state 206
+From state 123:
+	To state 189
+	To state 199
+	To state 202
+	To state 206
+From state 124:
+	To state 5
+	To state 190
+	To state 203
+	To state 207
+From state 125:
+	To state 191
+	To state 204
+	To state 207
+	To state 208
+From state 126:
+	To state 192
+	To state 205
+	To state 207
+From state 127:
+	To state 193
+	To state 206
+	To state 208
+From state 128:
+	To state 184
+	To state 209
+	To state 210
+From state 129:
+	To state 185
+	To state 210
+	To state 211
+	To state 212
+From state 130:
+	To state 186
+	To state 213
+	To state 214
+From state 131:
+	To state 187
+	To state 209
+	To state 213
+	To state 215
+From state 132:
+	To state 188
+	To state 210
+	To state 214
+	To state 215
+	To state 216
+	To state 217
+From state 133:
+	To state 189
+	To state 211
+	To state 216
+	To state 218
+From state 134:
+	To state 212
+	To state 217
+	To state 218
+From state 135:
+	To state 6
+	To state 190
+	To state 213
+	To state 219
+From state 136:
+	To state 191
+	To state 214
+	To state 219
+	To state 220
+	To state 221
+From state 137:
+	To state 192
+	To state 215
+	To state 219
+	To state 222
+From state 138:
+	To state 193
+	To state 216
+	To state 220
+	To state 223
+From state 139:
+	To state 217
+	To state 221
+	To state 222
+	To state 223
+From state 140:
+	To state 6
+	To state 218
+	To state 223
+From state 141:
+	To state 8
+	To state 194
+	To state 224
+	To state 225
+From state 142:
+	To state 9
+	To state 195
+	To state 225
+	To state 226
+	To state 227
+From state 143:
+	To state 196
+	To state 228
+	To state 229
+From state 144:
+	To state 197
+	To state 224
+	To state 228
+	To state 230
+From state 145:
+	To state 198
+	To state 225
+	To state 229
+	To state 230
+	To state 231
+	To state 232
+From state 146:
+	To state 199
+	To state 226
+	To state 231
+	To state 233
+From state 147:
+	To state 227
+	To state 232
+	To state 233
+From state 148:
+	To state 200
+	To state 209
+	To state 224
+	To state 234
+From state 149:
+	To state 201
+	To state 210
+	To state 225
+	To state 234
+	To state 235
+	To state 236
+From state 150:
+	To state 202
+	To state 211
+	To state 226
+	To state 235
+	To state 237
+From state 151:
+	To state 212
+	To state 227
+	To state 236
+	To state 237
+From state 152:
+	To state 7
+	To state 203
+	To state 213
+	To state 228
+	To state 238
+From state 153:
+	To state 204
+	To state 214
+	To state 229
+	To state 238
+	To state 239
+	To state 240
+From state 154:
+	To state 205
+	To state 215
+	To state 230
+	To state 234
+	To state 238
+	To state 241
+From state 155:
+	To state 206
+	To state 216
+	To state 231
+	To state 235
+	To state 239
+	To state 242
+From state 156:
+	To state 217
+	To state 232
+	To state 236
+	To state 240
+	To state 241
+	To state 242
+From state 157:
+	To state 7
+	To state 218
+	To state 233
+	To state 237
+	To state 242
+From state 158:
+	To state 9
+	To state 207
+	To state 219
+	To state 238
+	To state 243
+From state 159:
+	To state 208
+	To state 220
+	To state 239
+	To state 244
+From state 160:
+	To state 221
+	To state 240
+	To state 243
+	To state 244
+From state 161:
+	To state 222
+	To state 241
+	To state 243
+From state 162:
+	To state 8
+	To state 223
+	To state 242
+	To state 244
+From state 163:
+	To state 15
+	To state 224
+	To state 245
+From state 164:
+	To state 16
+	To state 225
+	To state 245
+	To state 246
+	To state 247
+From state 165:
+	To state 17
+	To state 226
+	To state 246
+	To state 248
+From state 166:
+	To state 18
+	To state 227
+	To state 247
+	To state 248
+From state 167:
+	To state 10
+	To state 228
+	To state 249
+From state 168:
+	To state 229
+	To state 249
+	To state 250
+	To state 251
+From state 169:
+	To state 230
+	To state 245
+	To state 249
+	To state 252
+From state 170:
+	To state 231
+	To state 246
+	To state 250
+	To state 253
+From state 171:
+	To state 232
+	To state 247
+	To state 251
+	To state 252
+	To state 253
+From state 172:
+	To state 10
+	To state 233
+	To state 248
+	To state 253
+From state 173:
+	To state 234
+	To state 245
+	To state 254
+From state 174:
+	To state 235
+	To state 246
+	To state 255
+From state 175:
+	To state 236
+	To state 247
+	To state 254
+	To state 255
+From state 176:
+	To state 11
+	To state 237
+	To state 248
+	To state 255
+From state 177:
+	To state 13
+	To state 238
+	To state 249
+	To state 256
+From state 178:
+	To state 239
+	To state 250
+	To state 257
+From state 179:
+	To state 240
+	To state 251
+	To state 256
+	To state 257
+From state 180:
+	To state 241
+	To state 252
+	To state 254
+	To state 256
+From state 181:
+	To state 12
+	To state 242
+	To state 253
+	To state 255
+	To state 257
+From state 182:
+	To state 18
+	To state 243
+	To state 256
+From state 183:
+	To state 14
+	To state 244
+	To state 257
+From state 184:
+	To state 38
+	To state 258
+	To state 259
+From state 185:
+	To state 39
+	To state 259
+	To state 260
+From state 186:
+	To state 40
+	To state 261
+	To state 262
+From state 187:
+	To state 41
+	To state 258
+	To state 261
+	To state 263
+From state 188:
+	To state 42
+	To state 259
+	To state 262
+	To state 263
+	To state 264
+From state 189:
+	To state 43
+	To state 260
+	To state 264
+From state 190:
+	To state 19
+	To state 45
+	To state 261
+	To state 265
+From state 191:
+	To state 46
+	To state 262
+	To state 265
+	To state 266
+From state 192:
+	To state 47
+	To state 263
+	To state 265
+From state 193:
+	To state 48
+	To state 264
+	To state 266
+From state 194:
+	To state 21
+	To state 267
+	To state 268
+From state 195:
+	To state 22
+	To state 268
+	To state 269
+From state 196:
+	To state 270
+	To state 271
+From state 197:
+	To state 267
+	To state 270
+	To state 272
+From state 198:
+	To state 268
+	To state 271
+	To state 272
+	To state 273
+From state 199:
+	To state 269
+	To state 273
+From state 200:
+	To state 258
+	To state 267
+	To state 274
+From state 201:
+	To state 259
+	To state 268
+	To state 274
+	To state 275
+From state 202:
+	To state 260
+	To state 269
+	To state 275
+From state 203:
+	To state 20
+	To state 261
+	To state 270
+	To state 276
+From state 204:
+	To state 262
+	To state 271
+	To state 276
+	To state 277
+From state 205:
+	To state 263
+	To state 272
+	To state 274
+	To state 276
+From state 206:
+	To state 264
+	To state 273
+	To state 275
+	To state 277
+From state 207:
+	To state 22
+	To state 265
+	To state 276
+From state 208:
+	To state 266
+	To state 277
+From state 209:
+	To state 258
+	To state 278
+From state 210:
+	To state 259
+	To state 278
+	To state 279
+	To state 280
+From state 211:
+	To state 260
+	To state 279
+	To state 281
+From state 212:
+	To state 280
+	To state 281
+From state 213:
+	To state 23
+	To state 261
+	To state 282
+From state 214:
+	To state 262
+	To state 282
+	To state 283
+	To state 284
+From state 215:
+	To state 263
+	To state 278
+	To state 282
+	To state 285
+From state 216:
+	To state 264
+	To state 279
+	To state 283
+	To state 286
+From state 217:
+	To state 280
+	To state 284
+	To state 285
+	To state 286
+From state 218:
+	To state 23
+	To state 281
+	To state 286
+From state 219:
+	To state 25
+	To state 265
+	To state 282
+	To state 287
+From state 220:
+	To state 266
+	To state 283
+	To state 288
+From state 221:
+	To state 284
+	To state 287
+	To state 288
+From state 222:
+	To state 285
+	To state 287
+From state 223:
+	To state 24
+	To state 286
+	To state 288
+From state 224:
+	To state 31
+	To state 267
+	To state 289
+From state 225:
+	To state 32
+	To state 268
+	To state 289
+	To state 290
+	To state 291
+From state 226:
+	To state 33
+	To state 269
+	To state 290
+	To state 292
+From state 227:
+	To state 34
+	To state 291
+	To state 292
+From state 228:
+	To state 26
+	To state 270
+	To state 293
+From state 229:
+	To state 271
+	To state 293
+	To state 294
+	To state 295
+From state 230:
+	To state 272
+	To state 289
+	To state 293
+	To state 296
+From state 231:
+	To state 273
+	To state 290
+	To state 294
+	To state 297
+From state 232:
+	To state 291
+	To state 295
+	To state 296
+	To state 297
+From state 233:
+	To state 26
+	To state 292
+	To state 297
+From state 234:
+	To state 274
+	To state 278
+	To state 289
+	To state 298
+From state 235:
+	To state 275
+	To state 279
+	To state 290
+	To state 299
+From state 236:
+	To state 280
+	To state 291
+	To state 298
+	To state 299
+From state 237:
+	To state 27
+	To state 281
+	To state 292
+	To state 299
+From state 238:
+	To state 29
+	To state 276
+	To state 282
+	To state 293
+	To state 300
+From state 239:
+	To state 277
+	To state 283
+	To state 294
+	To state 301
+From state 240:
+	To state 284
+	To state 295
+	To state 300
+	To state 301
+From state 241:
+	To state 285
+	To state 296
+	To state 298
+	To state 300
+From state 242:
+	To state 28
+	To state 286
+	To state 297
+	To state 299
+	To state 301
+From state 243:
+	To state 34
+	To state 287
+	To state 300
+From state 244:
+	To state 30
+	To state 288
+	To state 301
+From state 245:
+	To state 47
+	To state 289
+	To state 302
+From state 246:
+	To state 48
+	To state 290
+	To state 303
+From state 247:
+	To state 49
+	To state 291
+	To state 302
+	To state 303
+From state 248:
+	To state 35
+	To state 50
+	To state 292
+	To state 303
+From state 249:
+	To state 37
+	To state 293
+	To state 304
+From state 250:
+	To state 294
+	To state 305
+From state 251:
+	To state 295
+	To state 304
+	To state 305
+From state 252:
+	To state 296
+	To state 302
+	To state 304
+From state 253:
+	To state 36
+	To state 297
+	To state 303
+	To state 305
+From state 254:
+	To state 298
+	To state 302
+From state 255:
+	To state 38
+	To state 299
+	To state 303
+From state 256:
+	To state 44
+	To state 300
+	To state 304
+From state 257:
+	To state 40
+	To state 301
+	To state 305
+From state 258:
+	To state 93
+	To state 306
+From state 259:
+	To state 94
+	To state 306
+	To state 307
+From state 260:
+	To state 95
+	To state 307
+From state 261:
+	To state 51
+	To state 97
+	To state 308
+From state 262:
+	To state 98
+	To state 308
+	To state 309
+From state 263:
+	To state 99
+	To state 306
+	To state 308
+From state 264:
+	To state 100
+	To state 307
+	To state 309
+From state 265:
+	To state 53
+	To state 103
+	To state 308
+From state 266:
+	To state 104
+	To state 309
+From state 267:
+	To state 59
+	To state 310
+From state 268:
+	To state 60
+	To state 310
+	To state 311
+From state 269:
+	To state 61
+	To state 311
+From state 270:
+	To state 54
+	To state 312
+From state 271:
+	To state 312
+	To state 313
+From state 272:
+	To state 310
+	To state 312
+From state 273:
+	To state 311
+	To state 313
+From state 274:
+	To state 306
+	To state 310
+From state 275:
+	To state 307
+	To state 311
+From state 276:
+	To state 57
+	To state 308
+	To state 312
+From state 277:
+	To state 309
+	To state 313
+From state 278:
+	To state 306
+	To state 314
+From state 279:
+	To state 307
+	To state 315
+From state 280:
+	To state 314
+	To state 315
+From state 281:
+	To state 62
+	To state 315
+From state 282:
+	To state 64
+	To state 308
+	To state 316
+From state 283:
+	To state 309
+	To state 317
+From state 284:
+	To state 316
+	To state 317
+From state 285:
+	To state 314
+	To state 316
+From state 286:
+	To state 63
+	To state 315
+	To state 317
+From state 287:
+	To state 69
+	To state 316
+From state 288:
+	To state 65
+	To state 317
+From state 289:
+	To state 82
+	To state 310
+	To state 318
+From state 290:
+	To state 83
+	To state 311
+	To state 319
+From state 291:
+	To state 84
+	To state 318
+	To state 319
+From state 292:
+	To state 70
+	To state 85
+	To state 319
+From state 293:
+	To state 72
+	To state 312
+	To state 320
+From state 294:
+	To state 313
+	To state 321
+From state 295:
+	To state 320
+	To state 321
+From state 296:
+	To state 318
+	To state 320
+From state 297:
+	To state 71
+	To state 319
+	To state 321
+From state 298:
+	To state 314
+	To state 318
+From state 299:
+	To state 73
+	To state 315
+	To state 319
+From state 300:
+	To state 79
+	To state 316
+	To state 320
+From state 301:
+	To state 75
+	To state 317
+	To state 321
+From state 302:
+	To state 106
+	To state 318
+From state 303:
+	To state 86
+	To state 107
+	To state 319
+From state 304:
+	To state 92
+	To state 320
+From state 305:
+	To state 88
+	To state 321
+From state 306:
+	To state 173
+From state 307:
+	To state 174
+From state 308:
+	To state 110
+	To state 177
+From state 309:
+	To state 178
+From state 310:
+	To state 126
+From state 311:
+	To state 127
+From state 312:
+	To state 117
+From state 313:
+From state 314:
+From state 315:
+	To state 128
+From state 316:
+	To state 134
+From state 317:
+	To state 130
+From state 318:
+	To state 161
+From state 319:
+	To state 141
+	To state 162
+From state 320:
+	To state 147
+From state 321:
+	To state 143
+Checking actual reachability graph for 7 queens
+Reachability set:
+State 0: []
+State 1: [row[1]:1]
+State 2: [row[1]:2]
+State 3: [row[1]:3]
+State 4: [row[1]:4]
+State 5: [row[1]:5]
+State 6: [row[1]:6]
+State 7: [row[1]:7]
+State 8: [row[2]:3, row[1]:1]
+State 9: [row[2]:4, row[1]:1]
+State 10: [row[2]:5, row[1]:1]
+State 11: [row[2]:6, row[1]:1]
+State 12: [row[2]:7, row[1]:1]
+State 13: [row[2]:4, row[1]:2]
+State 14: [row[2]:5, row[1]:2]
+State 15: [row[2]:6, row[1]:2]
+State 16: [row[2]:7, row[1]:2]
+State 17: [row[2]:1, row[1]:3]
+State 18: [row[2]:5, row[1]:3]
+State 19: [row[2]:6, row[1]:3]
+State 20: [row[2]:7, row[1]:3]
+State 21: [row[2]:1, row[1]:4]
+State 22: [row[2]:2, row[1]:4]
+State 23: [row[2]:6, row[1]:4]
+State 24: [row[2]:7, row[1]:4]
+State 25: [row[2]:1, row[1]:5]
+State 26: [row[2]:2, row[1]:5]
+State 27: [row[2]:3, row[1]:5]
+State 28: [row[2]:7, row[1]:5]
+State 29: [row[2]:1, row[1]:6]
+State 30: [row[2]:2, row[1]:6]
+State 31: [row[2]:3, row[1]:6]
+State 32: [row[2]:4, row[1]:6]
+State 33: [row[2]:1, row[1]:7]
+State 34: [row[2]:2, row[1]:7]
+State 35: [row[2]:3, row[1]:7]
+State 36: [row[2]:4, row[1]:7]
+State 37: [row[2]:5, row[1]:7]
+State 38: [row[3]:5, row[2]:3, row[1]:1]
+State 39: [row[3]:6, row[2]:3, row[1]:1]
+State 40: [row[3]:7, row[2]:3, row[1]:1]
+State 41: [row[3]:2, row[2]:4, row[1]:1]
+State 42: [row[3]:6, row[2]:4, row[1]:1]
+State 43: [row[3]:7, row[2]:4, row[1]:1]
+State 44: [row[3]:2, row[2]:5, row[1]:1]
+State 45: [row[3]:7, row[2]:5, row[1]:1]
+State 46: [row[3]:2, row[2]:6, row[1]:1]
+State 47: [row[3]:4, row[2]:6, row[1]:1]
+State 48: [row[3]:2, row[2]:7, row[1]:1]
+State 49: [row[3]:4, row[2]:7, row[1]:1]
+State 50: [row[3]:5, row[2]:7, row[1]:1]
+State 51: [row[3]:1, row[2]:4, row[1]:2]
+State 52: [row[3]:6, row[2]:4, row[1]:2]
+State 53: [row[3]:7, row[2]:4, row[1]:2]
+State 54: [row[3]:1, row[2]:5, row[1]:2]
+State 55: [row[3]:3, row[2]:5, row[1]:2]
+State 56: [row[3]:7, row[2]:5, row[1]:2]
+State 57: [row[3]:1, row[2]:6, row[1]:2]
+State 58: [row[3]:3, row[2]:6, row[1]:2]
+State 59: [row[3]:1, row[2]:7, row[1]:2]
+State 60: [row[3]:3, row[2]:7, row[1]:2]
+State 61: [row[3]:5, row[2]:7, row[1]:2]
+State 62: [row[3]:4, row[2]:1, row[1]:3]
+State 63: [row[3]:6, row[2]:1, row[1]:3]
+State 64: [row[3]:7, row[2]:1, row[1]:3]
+State 65: [row[3]:2, row[2]:5, row[1]:3]
+State 66: [row[3]:7, row[2]:5, row[1]:3]
+State 67: [row[3]:2, row[2]:6, row[1]:3]
+State 68: [row[3]:4, row[2]:6, row[1]:3]
+State 69: [row[3]:2, row[2]:7, row[1]:3]
+State 70: [row[3]:4, row[2]:7, row[1]:3]
+State 71: [row[3]:3, row[2]:1, row[1]:4]
+State 72: [row[3]:5, row[2]:1, row[1]:4]
+State 73: [row[3]:7, row[2]:1, row[1]:4]
+State 74: [row[3]:5, row[2]:2, row[1]:4]
+State 75: [row[3]:7, row[2]:2, row[1]:4]
+State 76: [row[3]:1, row[2]:6, row[1]:4]
+State 77: [row[3]:3, row[2]:6, row[1]:4]
+State 78: [row[3]:1, row[2]:7, row[1]:4]
+State 79: [row[3]:3, row[2]:7, row[1]:4]
+State 80: [row[3]:5, row[2]:7, row[1]:4]
+State 81: [row[3]:4, row[2]:1, row[1]:5]
+State 82: [row[3]:6, row[2]:1, row[1]:5]
+State 83: [row[3]:4, row[2]:2, row[1]:5]
+State 84: [row[3]:6, row[2]:2, row[1]:5]
+State 85: [row[3]:1, row[2]:3, row[1]:5]
+State 86: [row[3]:6, row[2]:3, row[1]:5]
+State 87: [row[3]:1, row[2]:7, row[1]:5]
+State 88: [row[3]:2, row[2]:7, row[1]:5]
+State 89: [row[3]:4, row[2]:7, row[1]:5]
+State 90: [row[3]:3, row[2]:1, row[1]:6]
+State 91: [row[3]:5, row[2]:1, row[1]:6]
+State 92: [row[3]:7, row[2]:1, row[1]:6]
+State 93: [row[3]:5, row[2]:2, row[1]:6]
+State 94: [row[3]:7, row[2]:2, row[1]:6]
+State 95: [row[3]:1, row[2]:3, row[1]:6]
+State 96: [row[3]:5, row[2]:3, row[1]:6]
+State 97: [row[3]:7, row[2]:3, row[1]:6]
+State 98: [row[3]:1, row[2]:4, row[1]:6]
+State 99: [row[3]:2, row[2]:4, row[1]:6]
+State 100: [row[3]:7, row[2]:4, row[1]:6]
+State 101: [row[3]:3, row[2]:1, row[1]:7]
+State 102: [row[3]:4, row[2]:1, row[1]:7]
+State 103: [row[3]:6, row[2]:1, row[1]:7]
+State 104: [row[3]:4, row[2]:2, row[1]:7]
+State 105: [row[3]:6, row[2]:2, row[1]:7]
+State 106: [row[3]:1, row[2]:3, row[1]:7]
+State 107: [row[3]:6, row[2]:3, row[1]:7]
+State 108: [row[3]:1, row[2]:4, row[1]:7]
+State 109: [row[3]:2, row[2]:4, row[1]:7]
+State 110: [row[3]:6, row[2]:4, row[1]:7]
+State 111: [row[3]:1, row[2]:5, row[1]:7]
+State 112: [row[3]:2, row[2]:5, row[1]:7]
+State 113: [row[3]:3, row[2]:5, row[1]:7]
+State 114: [row[4]:2, row[3]:5, row[2]:3, row[1]:1]
+State 115: [row[4]:7, row[3]:5, row[2]:3, row[1]:1]
+State 116: [row[4]:2, row[3]:6, row[2]:3, row[1]:1]
+State 117: [row[4]:2, row[3]:7, row[2]:3, row[1]:1]
+State 118: [row[4]:5, row[3]:2, row[2]:4, row[1]:1]
+State 119: [row[4]:7, row[3]:2, row[2]:4, row[1]:1]
+State 120: [row[4]:3, row[3]:6, row[2]:4, row[1]:1]
+State 121: [row[4]:3, row[3]:7, row[2]:4, row[1]:1]
+State 122: [row[4]:5, row[3]:7, row[2]:4, row[1]:1]
+State 123: [row[4]:6, row[3]:2, row[2]:5, row[1]:1]
+State 124: [row[4]:2, row[3]:7, row[2]:5, row[1]:1]
+State 125: [row[4]:5, row[3]:2, row[2]:6, row[1]:1]
+State 126: [row[4]:7, row[3]:2, row[2]:6, row[1]:1]
+State 127: [row[4]:2, row[3]:4, row[2]:6, row[1]:1]
+State 128: [row[4]:7, row[3]:4, row[2]:6, row[1]:1]
+State 129: [row[4]:6, row[3]:2, row[2]:7, row[1]:1]
+State 130: [row[4]:2, row[3]:4, row[2]:7, row[1]:1]
+State 131: [row[4]:6, row[3]:4, row[2]:7, row[1]:1]
+State 132: [row[4]:2, row[3]:5, row[2]:7, row[1]:1]
+State 133: [row[4]:3, row[3]:5, row[2]:7, row[1]:1]
+State 134: [row[4]:3, row[3]:1, row[2]:4, row[1]:2]
+State 135: [row[4]:7, row[3]:1, row[2]:4, row[1]:2]
+State 136: [row[4]:1, row[3]:6, row[2]:4, row[1]:2]
+State 137: [row[4]:3, row[3]:6, row[2]:4, row[1]:2]
+State 138: [row[4]:1, row[3]:7, row[2]:4, row[1]:2]
+State 139: [row[4]:3, row[3]:7, row[2]:4, row[1]:2]
+State 140: [row[4]:4, row[3]:1, row[2]:5, row[1]:2]
+State 141: [row[4]:6, row[3]:1, row[2]:5, row[1]:2]
+State 142: [row[4]:1, row[3]:3, row[2]:5, row[1]:2]
+State 143: [row[4]:6, row[3]:3, row[2]:5, row[1]:2]
+State 144: [row[4]:1, row[3]:7, row[2]:5, row[1]:2]
+State 145: [row[4]:4, row[3]:7, row[2]:5, row[1]:2]
+State 146: [row[4]:3, row[3]:1, row[2]:6, row[1]:2]
+State 147: [row[4]:7, row[3]:1, row[2]:6, row[1]:2]
+State 148: [row[4]:1, row[3]:3, row[2]:6, row[1]:2]
+State 149: [row[4]:7, row[3]:3, row[2]:6, row[1]:2]
+State 150: [row[4]:3, row[3]:1, row[2]:7, row[1]:2]
+State 151: [row[4]:4, row[3]:1, row[2]:7, row[1]:2]
+State 152: [row[4]:6, row[3]:1, row[2]:7, row[1]:2]
+State 153: [row[4]:1, row[3]:3, row[2]:7, row[1]:2]
+State 154: [row[4]:6, row[3]:3, row[2]:7, row[1]:2]
+State 155: [row[4]:1, row[3]:5, row[2]:7, row[1]:2]
+State 156: [row[4]:3, row[3]:5, row[2]:7, row[1]:2]
+State 157: [row[4]:2, row[3]:4, row[2]:1, row[1]:3]
+State 158: [row[4]:7, row[3]:4, row[2]:1, row[1]:3]
+State 159: [row[4]:2, row[3]:6, row[2]:1, row[1]:3]
+State 160: [row[4]:4, row[3]:6, row[2]:1, row[1]:3]
+State 161: [row[4]:2, row[3]:7, row[2]:1, row[1]:3]
+State 162: [row[4]:4, row[3]:7, row[2]:1, row[1]:3]
+State 163: [row[4]:5, row[3]:7, row[2]:1, row[1]:3]
+State 164: [row[4]:4, row[3]:2, row[2]:5, row[1]:3]
+State 165: [row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 166: [row[4]:2, row[3]:7, row[2]:5, row[1]:3]
+State 167: [row[4]:4, row[3]:7, row[2]:5, row[1]:3]
+State 168: [row[4]:5, row[3]:2, row[2]:6, row[1]:3]
+State 169: [row[4]:7, row[3]:2, row[2]:6, row[1]:3]
+State 170: [row[4]:1, row[3]:4, row[2]:6, row[1]:3]
+State 171: [row[4]:2, row[3]:4, row[2]:6, row[1]:3]
+State 172: [row[4]:7, row[3]:4, row[2]:6, row[1]:3]
+State 173: [row[4]:4, row[3]:2, row[2]:7, row[1]:3]
+State 174: [row[4]:1, row[3]:4, row[2]:7, row[1]:3]
+State 175: [row[4]:2, row[3]:4, row[2]:7, row[1]:3]
+State 176: [row[4]:5, row[3]:3, row[2]:1, row[1]:4]
+State 177: [row[4]:6, row[3]:3, row[2]:1, row[1]:4]
+State 178: [row[4]:2, row[3]:5, row[2]:1, row[1]:4]
+State 179: [row[4]:2, row[3]:7, row[2]:1, row[1]:4]
+State 180: [row[4]:5, row[3]:7, row[2]:1, row[1]:4]
+State 181: [row[4]:3, row[3]:5, row[2]:2, row[1]:4]
+State 182: [row[4]:3, row[3]:7, row[2]:2, row[1]:4]
+State 183: [row[4]:5, row[3]:7, row[2]:2, row[1]:4]
+State 184: [row[4]:3, row[3]:1, row[2]:6, row[1]:4]
+State 185: [row[4]:5, row[3]:1, row[2]:6, row[1]:4]
+State 186: [row[4]:5, row[3]:3, row[2]:6, row[1]:4]
+State 187: [row[4]:3, row[3]:1, row[2]:7, row[1]:4]
+State 188: [row[4]:6, row[3]:1, row[2]:7, row[1]:4]
+State 189: [row[4]:6, row[3]:3, row[2]:7, row[1]:4]
+State 190: [row[4]:2, row[3]:5, row[2]:7, row[1]:4]
+State 191: [row[4]:3, row[3]:5, row[2]:7, row[1]:4]
+State 192: [row[4]:6, row[3]:4, row[2]:1, row[1]:5]
+State 193: [row[4]:7, row[3]:4, row[2]:1, row[1]:5]
+State 194: [row[4]:4, row[3]:6, row[2]:1, row[1]:5]
+State 195: [row[4]:1, row[3]:4, row[2]:2, row[1]:5]
+State 196: [row[4]:6, row[3]:4, row[2]:2, row[1]:5]
+State 197: [row[4]:7, row[3]:4, row[2]:2, row[1]:5]
+State 198: [row[4]:1, row[3]:6, row[2]:2, row[1]:5]
+State 199: [row[4]:3, row[3]:6, row[2]:2, row[1]:5]
+State 200: [row[4]:4, row[3]:1, row[2]:3, row[1]:5]
+State 201: [row[4]:6, row[3]:1, row[2]:3, row[1]:5]
+State 202: [row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 203: [row[4]:4, row[3]:6, row[2]:3, row[1]:5]
+State 204: [row[4]:3, row[3]:1, row[2]:7, row[1]:5]
+State 205: [row[4]:4, row[3]:1, row[2]:7, row[1]:5]
+State 206: [row[4]:6, row[3]:1, row[2]:7, row[1]:5]
+State 207: [row[4]:4, row[3]:2, row[2]:7, row[1]:5]
+State 208: [row[4]:6, row[3]:2, row[2]:7, row[1]:5]
+State 209: [row[4]:1, row[3]:4, row[2]:7, row[1]:5]
+State 210: [row[4]:6, row[3]:4, row[2]:7, row[1]:5]
+State 211: [row[4]:5, row[3]:3, row[2]:1, row[1]:6]
+State 212: [row[4]:7, row[3]:3, row[2]:1, row[1]:6]
+State 213: [row[4]:2, row[3]:5, row[2]:1, row[1]:6]
+State 214: [row[4]:7, row[3]:5, row[2]:1, row[1]:6]
+State 215: [row[4]:2, row[3]:7, row[2]:1, row[1]:6]
+State 216: [row[4]:4, row[3]:7, row[2]:1, row[1]:6]
+State 217: [row[4]:5, row[3]:7, row[2]:1, row[1]:6]
+State 218: [row[4]:1, row[3]:5, row[2]:2, row[1]:6]
+State 219: [row[4]:7, row[3]:5, row[2]:2, row[1]:6]
+State 220: [row[4]:1, row[3]:7, row[2]:2, row[1]:6]
+State 221: [row[4]:5, row[3]:7, row[2]:2, row[1]:6]
+State 222: [row[4]:4, row[3]:1, row[2]:3, row[1]:6]
+State 223: [row[4]:7, row[3]:1, row[2]:3, row[1]:6]
+State 224: [row[4]:2, row[3]:5, row[2]:3, row[1]:6]
+State 225: [row[4]:7, row[3]:5, row[2]:3, row[1]:6]
+State 226: [row[4]:2, row[3]:7, row[2]:3, row[1]:6]
+State 227: [row[4]:4, row[3]:7, row[2]:3, row[1]:6]
+State 228: [row[4]:5, row[3]:1, row[2]:4, row[1]:6]
+State 229: [row[4]:7, row[3]:1, row[2]:4, row[1]:6]
+State 230: [row[4]:5, row[3]:2, row[2]:4, row[1]:6]
+State 231: [row[4]:7, row[3]:2, row[2]:4, row[1]:6]
+State 232: [row[4]:1, row[3]:7, row[2]:4, row[1]:6]
+State 233: [row[4]:5, row[3]:7, row[2]:4, row[1]:6]
+State 234: [row[4]:5, row[3]:3, row[2]:1, row[1]:7]
+State 235: [row[4]:6, row[3]:3, row[2]:1, row[1]:7]
+State 236: [row[4]:2, row[3]:4, row[2]:1, row[1]:7]
+State 237: [row[4]:6, row[3]:4, row[2]:1, row[1]:7]
+State 238: [row[4]:2, row[3]:6, row[2]:1, row[1]:7]
+State 239: [row[4]:1, row[3]:4, row[2]:2, row[1]:7]
+State 240: [row[4]:6, row[3]:4, row[2]:2, row[1]:7]
+State 241: [row[4]:1, row[3]:6, row[2]:2, row[1]:7]
+State 242: [row[4]:3, row[3]:6, row[2]:2, row[1]:7]
+State 243: [row[4]:6, row[3]:1, row[2]:3, row[1]:7]
+State 244: [row[4]:2, row[3]:6, row[2]:3, row[1]:7]
+State 245: [row[4]:3, row[3]:1, row[2]:4, row[1]:7]
+State 246: [row[4]:5, row[3]:1, row[2]:4, row[1]:7]
+State 247: [row[4]:5, row[3]:2, row[2]:4, row[1]:7]
+State 248: [row[4]:1, row[3]:6, row[2]:4, row[1]:7]
+State 249: [row[4]:3, row[3]:6, row[2]:4, row[1]:7]
+State 250: [row[4]:6, row[3]:1, row[2]:5, row[1]:7]
+State 251: [row[4]:6, row[3]:2, row[2]:5, row[1]:7]
+State 252: [row[4]:1, row[3]:3, row[2]:5, row[1]:7]
+State 253: [row[4]:6, row[3]:3, row[2]:5, row[1]:7]
+State 254: [row[5]:4, row[4]:2, row[3]:5, row[2]:3, row[1]:1]
+State 255: [row[5]:2, row[4]:7, row[3]:5, row[2]:3, row[1]:1]
+State 256: [row[5]:4, row[4]:7, row[3]:5, row[2]:3, row[1]:1]
+State 257: [row[5]:7, row[4]:2, row[3]:6, row[2]:3, row[1]:1]
+State 258: [row[5]:4, row[4]:2, row[3]:7, row[2]:3, row[1]:1]
+State 259: [row[5]:3, row[4]:5, row[3]:2, row[2]:4, row[1]:1]
+State 260: [row[5]:3, row[4]:7, row[3]:2, row[2]:4, row[1]:1]
+State 261: [row[5]:6, row[4]:3, row[3]:7, row[2]:4, row[1]:1]
+State 262: [row[5]:2, row[4]:5, row[3]:7, row[2]:4, row[1]:1]
+State 263: [row[5]:3, row[4]:5, row[3]:7, row[2]:4, row[1]:1]
+State 264: [row[5]:3, row[4]:6, row[3]:2, row[2]:5, row[1]:1]
+State 265: [row[5]:4, row[4]:2, row[3]:7, row[2]:5, row[1]:1]
+State 266: [row[5]:6, row[4]:2, row[3]:7, row[2]:5, row[1]:1]
+State 267: [row[5]:7, row[4]:5, row[3]:2, row[2]:6, row[1]:1]
+State 268: [row[5]:7, row[4]:2, row[3]:4, row[2]:6, row[1]:1]
+State 269: [row[5]:3, row[4]:6, row[3]:2, row[2]:7, row[1]:1]
+State 270: [row[5]:3, row[4]:6, row[3]:4, row[2]:7, row[1]:1]
+State 271: [row[5]:6, row[4]:2, row[3]:5, row[2]:7, row[1]:1]
+State 272: [row[5]:6, row[4]:3, row[3]:5, row[2]:7, row[1]:1]
+State 273: [row[5]:5, row[4]:3, row[3]:1, row[2]:4, row[1]:2]
+State 274: [row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:2]
+State 275: [row[5]:3, row[4]:1, row[3]:6, row[2]:4, row[1]:2]
+State 276: [row[5]:5, row[4]:1, row[3]:6, row[2]:4, row[1]:2]
+State 277: [row[5]:5, row[4]:3, row[3]:6, row[2]:4, row[1]:2]
+State 278: [row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:2]
+State 279: [row[5]:7, row[4]:4, row[3]:1, row[2]:5, row[1]:2]
+State 280: [row[5]:4, row[4]:6, row[3]:1, row[2]:5, row[1]:2]
+State 281: [row[5]:4, row[4]:1, row[3]:3, row[2]:5, row[1]:2]
+State 282: [row[5]:7, row[4]:1, row[3]:3, row[2]:5, row[1]:2]
+State 283: [row[5]:4, row[4]:6, row[3]:3, row[2]:5, row[1]:2]
+State 284: [row[5]:3, row[4]:1, row[3]:7, row[2]:5, row[1]:2]
+State 285: [row[5]:4, row[4]:1, row[3]:7, row[2]:5, row[1]:2]
+State 286: [row[5]:1, row[4]:4, row[3]:7, row[2]:5, row[1]:2]
+State 287: [row[5]:5, row[4]:3, row[3]:1, row[2]:6, row[1]:2]
+State 288: [row[5]:7, row[4]:3, row[3]:1, row[2]:6, row[1]:2]
+State 289: [row[5]:4, row[4]:7, row[3]:1, row[2]:6, row[1]:2]
+State 290: [row[5]:5, row[4]:7, row[3]:1, row[2]:6, row[1]:2]
+State 291: [row[5]:4, row[4]:1, row[3]:3, row[2]:6, row[1]:2]
+State 292: [row[5]:7, row[4]:1, row[3]:3, row[2]:6, row[1]:2]
+State 293: [row[5]:4, row[4]:7, row[3]:3, row[2]:6, row[1]:2]
+State 294: [row[5]:5, row[4]:3, row[3]:1, row[2]:7, row[1]:2]
+State 295: [row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:2]
+State 296: [row[5]:5, row[4]:2, row[3]:4, row[2]:1, row[1]:3]
+State 297: [row[5]:5, row[4]:7, row[3]:4, row[2]:1, row[1]:3]
+State 298: [row[5]:5, row[4]:2, row[3]:6, row[2]:1, row[1]:3]
+State 299: [row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:3]
+State 300: [row[5]:6, row[4]:2, row[3]:7, row[2]:1, row[1]:3]
+State 301: [row[5]:2, row[4]:4, row[3]:7, row[2]:1, row[1]:3]
+State 302: [row[5]:6, row[4]:4, row[3]:7, row[2]:1, row[1]:3]
+State 303: [row[5]:2, row[4]:5, row[3]:7, row[2]:1, row[1]:3]
+State 304: [row[5]:1, row[4]:4, row[3]:2, row[2]:5, row[1]:3]
+State 305: [row[5]:6, row[4]:4, row[3]:2, row[2]:5, row[1]:3]
+State 306: [row[5]:4, row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 307: [row[5]:6, row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 308: [row[5]:4, row[4]:2, row[3]:7, row[2]:5, row[1]:3]
+State 309: [row[5]:6, row[4]:2, row[3]:7, row[2]:5, row[1]:3]
+State 310: [row[5]:1, row[4]:4, row[3]:7, row[2]:5, row[1]:3]
+State 311: [row[5]:6, row[4]:4, row[3]:7, row[2]:5, row[1]:3]
+State 312: [row[5]:1, row[4]:5, row[3]:2, row[2]:6, row[1]:3]
+State 313: [row[5]:1, row[4]:7, row[3]:2, row[2]:6, row[1]:3]
+State 314: [row[5]:5, row[4]:7, row[3]:2, row[2]:6, row[1]:3]
+State 315: [row[5]:5, row[4]:1, row[3]:4, row[2]:6, row[1]:3]
+State 316: [row[5]:5, row[4]:2, row[3]:4, row[2]:6, row[1]:3]
+State 317: [row[5]:1, row[4]:7, row[3]:4, row[2]:6, row[1]:3]
+State 318: [row[5]:5, row[4]:7, row[3]:4, row[2]:6, row[1]:3]
+State 319: [row[5]:1, row[4]:4, row[3]:2, row[2]:7, row[1]:3]
+State 320: [row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:3]
+State 321: [row[5]:5, row[4]:1, row[3]:4, row[2]:7, row[1]:3]
+State 322: [row[5]:5, row[4]:2, row[3]:4, row[2]:7, row[1]:3]
+State 323: [row[5]:2, row[4]:5, row[3]:3, row[2]:1, row[1]:4]
+State 324: [row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:4]
+State 325: [row[5]:2, row[4]:6, row[3]:3, row[2]:1, row[1]:4]
+State 326: [row[5]:6, row[4]:2, row[3]:5, row[2]:1, row[1]:4]
+State 327: [row[5]:6, row[4]:2, row[3]:7, row[2]:1, row[1]:4]
+State 328: [row[5]:2, row[4]:5, row[3]:7, row[2]:1, row[1]:4]
+State 329: [row[5]:3, row[4]:5, row[3]:7, row[2]:1, row[1]:4]
+State 330: [row[5]:1, row[4]:3, row[3]:5, row[2]:2, row[1]:4]
+State 331: [row[5]:6, row[4]:3, row[3]:5, row[2]:2, row[1]:4]
+State 332: [row[5]:1, row[4]:3, row[3]:7, row[2]:2, row[1]:4]
+State 333: [row[5]:6, row[4]:3, row[3]:7, row[2]:2, row[1]:4]
+State 334: [row[5]:1, row[4]:5, row[3]:7, row[2]:2, row[1]:4]
+State 335: [row[5]:3, row[4]:5, row[3]:7, row[2]:2, row[1]:4]
+State 336: [row[5]:5, row[4]:3, row[3]:1, row[2]:6, row[1]:4]
+State 337: [row[5]:7, row[4]:3, row[3]:1, row[2]:6, row[1]:4]
+State 338: [row[5]:2, row[4]:5, row[3]:1, row[2]:6, row[1]:4]
+State 339: [row[5]:7, row[4]:5, row[3]:1, row[2]:6, row[1]:4]
+State 340: [row[5]:2, row[4]:5, row[3]:3, row[2]:6, row[1]:4]
+State 341: [row[5]:7, row[4]:5, row[3]:3, row[2]:6, row[1]:4]
+State 342: [row[5]:5, row[4]:3, row[3]:1, row[2]:7, row[1]:4]
+State 343: [row[5]:6, row[4]:3, row[3]:1, row[2]:7, row[1]:4]
+State 344: [row[5]:2, row[4]:6, row[3]:1, row[2]:7, row[1]:4]
+State 345: [row[5]:2, row[4]:6, row[3]:3, row[2]:7, row[1]:4]
+State 346: [row[5]:6, row[4]:2, row[3]:5, row[2]:7, row[1]:4]
+State 347: [row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:4]
+State 348: [row[5]:6, row[4]:3, row[3]:5, row[2]:7, row[1]:4]
+State 349: [row[5]:3, row[4]:6, row[3]:4, row[2]:1, row[1]:5]
+State 350: [row[5]:3, row[4]:7, row[3]:4, row[2]:1, row[1]:5]
+State 351: [row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:5]
+State 352: [row[5]:7, row[4]:4, row[3]:6, row[2]:1, row[1]:5]
+State 353: [row[5]:3, row[4]:1, row[3]:4, row[2]:2, row[1]:5]
+State 354: [row[5]:7, row[4]:1, row[3]:4, row[2]:2, row[1]:5]
+State 355: [row[5]:3, row[4]:6, row[3]:4, row[2]:2, row[1]:5]
+State 356: [row[5]:3, row[4]:7, row[3]:4, row[2]:2, row[1]:5]
+State 357: [row[5]:3, row[4]:1, row[3]:6, row[2]:2, row[1]:5]
+State 358: [row[5]:7, row[4]:1, row[3]:6, row[2]:2, row[1]:5]
+State 359: [row[5]:7, row[4]:3, row[3]:6, row[2]:2, row[1]:5]
+State 360: [row[5]:2, row[4]:4, row[3]:1, row[2]:3, row[1]:5]
+State 361: [row[5]:7, row[4]:4, row[3]:1, row[2]:3, row[1]:5]
+State 362: [row[5]:2, row[4]:6, row[3]:1, row[2]:3, row[1]:5]
+State 363: [row[5]:4, row[4]:6, row[3]:1, row[2]:3, row[1]:5]
+State 364: [row[5]:2, row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 365: [row[5]:4, row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 366: [row[5]:2, row[4]:4, row[3]:6, row[2]:3, row[1]:5]
+State 367: [row[5]:7, row[4]:4, row[3]:6, row[2]:3, row[1]:5]
+State 368: [row[5]:6, row[4]:3, row[3]:1, row[2]:7, row[1]:5]
+State 369: [row[5]:2, row[4]:4, row[3]:1, row[2]:7, row[1]:5]
+State 370: [row[5]:6, row[4]:4, row[3]:1, row[2]:7, row[1]:5]
+State 371: [row[5]:2, row[4]:6, row[3]:1, row[2]:7, row[1]:5]
+State 372: [row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:5]
+State 373: [row[5]:3, row[4]:6, row[3]:2, row[2]:7, row[1]:5]
+State 374: [row[5]:3, row[4]:1, row[3]:4, row[2]:7, row[1]:5]
+State 375: [row[5]:3, row[4]:6, row[3]:4, row[2]:7, row[1]:5]
+State 376: [row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:6]
+State 377: [row[5]:3, row[4]:5, row[3]:7, row[2]:1, row[1]:6]
+State 378: [row[5]:4, row[4]:1, row[3]:5, row[2]:2, row[1]:6]
+State 379: [row[5]:1, row[4]:7, row[3]:5, row[2]:2, row[1]:6]
+State 380: [row[5]:4, row[4]:7, row[3]:5, row[2]:2, row[1]:6]
+State 381: [row[5]:3, row[4]:1, row[3]:7, row[2]:2, row[1]:6]
+State 382: [row[5]:4, row[4]:1, row[3]:7, row[2]:2, row[1]:6]
+State 383: [row[5]:1, row[4]:5, row[3]:7, row[2]:2, row[1]:6]
+State 384: [row[5]:3, row[4]:5, row[3]:7, row[2]:2, row[1]:6]
+State 385: [row[5]:7, row[4]:4, row[3]:1, row[2]:3, row[1]:6]
+State 386: [row[5]:4, row[4]:7, row[3]:1, row[2]:3, row[1]:6]
+State 387: [row[5]:5, row[4]:7, row[3]:1, row[2]:3, row[1]:6]
+State 388: [row[5]:4, row[4]:2, row[3]:5, row[2]:3, row[1]:6]
+State 389: [row[5]:1, row[4]:7, row[3]:5, row[2]:3, row[1]:6]
+State 390: [row[5]:4, row[4]:7, row[3]:5, row[2]:3, row[1]:6]
+State 391: [row[5]:4, row[4]:2, row[3]:7, row[2]:3, row[1]:6]
+State 392: [row[5]:1, row[4]:4, row[3]:7, row[2]:3, row[1]:6]
+State 393: [row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:6]
+State 394: [row[5]:3, row[4]:5, row[3]:2, row[2]:4, row[1]:6]
+State 395: [row[5]:3, row[4]:7, row[3]:2, row[2]:4, row[1]:6]
+State 396: [row[5]:5, row[4]:7, row[3]:2, row[2]:4, row[1]:6]
+State 397: [row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:6]
+State 398: [row[5]:3, row[4]:5, row[3]:7, row[2]:4, row[1]:6]
+State 399: [row[5]:2, row[4]:5, row[3]:3, row[2]:1, row[1]:7]
+State 400: [row[5]:2, row[4]:6, row[3]:3, row[2]:1, row[1]:7]
+State 401: [row[5]:5, row[4]:2, row[3]:4, row[2]:1, row[1]:7]
+State 402: [row[5]:5, row[4]:2, row[3]:6, row[2]:1, row[1]:7]
+State 403: [row[5]:1, row[4]:6, row[3]:4, row[2]:2, row[1]:7]
+State 404: [row[5]:1, row[4]:3, row[3]:6, row[2]:2, row[1]:7]
+State 405: [row[5]:2, row[4]:6, row[3]:1, row[2]:3, row[1]:7]
+State 406: [row[5]:4, row[4]:6, row[3]:1, row[2]:3, row[1]:7]
+State 407: [row[5]:5, row[4]:2, row[3]:6, row[2]:3, row[1]:7]
+State 408: [row[5]:5, row[4]:3, row[3]:1, row[2]:4, row[1]:7]
+State 409: [row[5]:6, row[4]:3, row[3]:1, row[2]:4, row[1]:7]
+State 410: [row[5]:2, row[4]:5, row[3]:1, row[2]:4, row[1]:7]
+State 411: [row[5]:5, row[4]:1, row[3]:6, row[2]:4, row[1]:7]
+State 412: [row[5]:5, row[4]:3, row[3]:6, row[2]:4, row[1]:7]
+State 413: [row[5]:4, row[4]:6, row[3]:1, row[2]:5, row[1]:7]
+State 414: [row[5]:1, row[4]:6, row[3]:2, row[2]:5, row[1]:7]
+State 415: [row[5]:4, row[4]:1, row[3]:3, row[2]:5, row[1]:7]
+State 416: [row[5]:6, row[4]:1, row[3]:3, row[2]:5, row[1]:7]
+State 417: [row[5]:4, row[4]:6, row[3]:3, row[2]:5, row[1]:7]
+State 418: [row[6]:4, row[5]:2, row[4]:7, row[3]:5, row[2]:3, row[1]:1]
+State 419: [row[6]:5, row[5]:7, row[4]:2, row[3]:6, row[2]:3, row[1]:1]
+State 420: [row[6]:2, row[5]:6, row[4]:3, row[3]:7, row[2]:4, row[1]:1]
+State 421: [row[6]:7, row[5]:3, row[4]:6, row[3]:2, row[2]:5, row[1]:1]
+State 422: [row[6]:3, row[5]:6, row[4]:2, row[3]:7, row[2]:5, row[1]:1]
+State 423: [row[6]:4, row[5]:7, row[4]:5, row[3]:2, row[2]:6, row[1]:1]
+State 424: [row[6]:3, row[5]:7, row[4]:2, row[3]:4, row[2]:6, row[1]:1]
+State 425: [row[6]:5, row[5]:7, row[4]:2, row[3]:4, row[2]:6, row[1]:1]
+State 426: [row[6]:5, row[5]:3, row[4]:6, row[3]:4, row[2]:7, row[1]:1]
+State 427: [row[6]:4, row[5]:6, row[4]:3, row[3]:5, row[2]:7, row[1]:1]
+State 428: [row[6]:3, row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:2]
+State 429: [row[6]:5, row[5]:3, row[4]:1, row[3]:6, row[2]:4, row[1]:2]
+State 430: [row[6]:5, row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:2]
+State 431: [row[6]:6, row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:2]
+State 432: [row[6]:3, row[5]:7, row[4]:4, row[3]:1, row[2]:5, row[1]:2]
+State 433: [row[6]:4, row[5]:7, row[4]:1, row[3]:3, row[2]:5, row[1]:2]
+State 434: [row[6]:6, row[5]:3, row[4]:1, row[3]:7, row[2]:5, row[1]:2]
+State 435: [row[6]:6, row[5]:4, row[4]:1, row[3]:7, row[2]:5, row[1]:2]
+State 436: [row[6]:3, row[5]:1, row[4]:4, row[3]:7, row[2]:5, row[1]:2]
+State 437: [row[6]:3, row[5]:5, row[4]:7, row[3]:1, row[2]:6, row[1]:2]
+State 438: [row[6]:4, row[5]:7, row[4]:1, row[3]:3, row[2]:6, row[1]:2]
+State 439: [row[6]:5, row[5]:7, row[4]:1, row[3]:3, row[2]:6, row[1]:2]
+State 440: [row[6]:1, row[5]:4, row[4]:7, row[3]:3, row[2]:6, row[1]:2]
+State 441: [row[6]:4, row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:2]
+State 442: [row[6]:6, row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:2]
+State 443: [row[6]:2, row[5]:5, row[4]:7, row[3]:4, row[2]:1, row[1]:3]
+State 444: [row[6]:7, row[5]:5, row[4]:2, row[3]:6, row[2]:1, row[1]:3]
+State 445: [row[6]:7, row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:3]
+State 446: [row[6]:6, row[5]:2, row[4]:5, row[3]:7, row[2]:1, row[1]:3]
+State 447: [row[6]:7, row[5]:1, row[4]:4, row[3]:2, row[2]:5, row[1]:3]
+State 448: [row[6]:2, row[5]:4, row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 449: [row[6]:6, row[5]:4, row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 450: [row[6]:2, row[5]:6, row[4]:1, row[3]:7, row[2]:5, row[1]:3]
+State 451: [row[6]:6, row[5]:4, row[4]:2, row[3]:7, row[2]:5, row[1]:3]
+State 452: [row[6]:4, row[5]:1, row[4]:5, row[3]:2, row[2]:6, row[1]:3]
+State 453: [row[6]:4, row[5]:1, row[4]:7, row[3]:2, row[2]:6, row[1]:3]
+State 454: [row[6]:1, row[5]:5, row[4]:7, row[3]:2, row[2]:6, row[1]:3]
+State 455: [row[6]:1, row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:3]
+State 456: [row[6]:2, row[5]:5, row[4]:1, row[3]:4, row[2]:7, row[1]:3]
+State 457: [row[6]:2, row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:4]
+State 458: [row[6]:7, row[5]:2, row[4]:6, row[3]:3, row[2]:1, row[1]:4]
+State 459: [row[6]:3, row[5]:6, row[4]:2, row[3]:5, row[2]:1, row[1]:4]
+State 460: [row[6]:3, row[5]:6, row[4]:2, row[3]:7, row[2]:1, row[1]:4]
+State 461: [row[6]:6, row[5]:2, row[4]:5, row[3]:7, row[2]:1, row[1]:4]
+State 462: [row[6]:6, row[5]:3, row[4]:5, row[3]:7, row[2]:1, row[1]:4]
+State 463: [row[6]:7, row[5]:1, row[4]:3, row[3]:5, row[2]:2, row[1]:4]
+State 464: [row[6]:1, row[5]:3, row[4]:5, row[3]:7, row[2]:2, row[1]:4]
+State 465: [row[6]:7, row[5]:5, row[4]:3, row[3]:1, row[2]:6, row[1]:4]
+State 466: [row[6]:1, row[5]:7, row[4]:5, row[3]:3, row[2]:6, row[1]:4]
+State 467: [row[6]:2, row[5]:5, row[4]:3, row[3]:1, row[2]:7, row[1]:4]
+State 468: [row[6]:2, row[5]:6, row[4]:3, row[3]:1, row[2]:7, row[1]:4]
+State 469: [row[6]:5, row[5]:2, row[4]:6, row[3]:1, row[2]:7, row[1]:4]
+State 470: [row[6]:5, row[5]:2, row[4]:6, row[3]:3, row[2]:7, row[1]:4]
+State 471: [row[6]:1, row[5]:6, row[4]:2, row[3]:5, row[2]:7, row[1]:4]
+State 472: [row[6]:6, row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:4]
+State 473: [row[6]:6, row[5]:3, row[4]:7, row[3]:4, row[2]:1, row[1]:5]
+State 474: [row[6]:7, row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:5]
+State 475: [row[6]:7, row[5]:3, row[4]:1, row[3]:6, row[2]:2, row[1]:5]
+State 476: [row[6]:4, row[5]:7, row[4]:1, row[3]:6, row[2]:2, row[1]:5]
+State 477: [row[6]:4, row[5]:7, row[4]:3, row[3]:6, row[2]:2, row[1]:5]
+State 478: [row[6]:2, row[5]:4, row[4]:6, row[3]:1, row[2]:3, row[1]:5]
+State 479: [row[6]:6, row[5]:2, row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 480: [row[6]:2, row[5]:4, row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 481: [row[6]:6, row[5]:4, row[4]:7, row[3]:1, row[2]:3, row[1]:5]
+State 482: [row[6]:1, row[5]:7, row[4]:4, row[3]:6, row[2]:3, row[1]:5]
+State 483: [row[6]:2, row[5]:6, row[4]:3, row[3]:1, row[2]:7, row[1]:5]
+State 484: [row[6]:1, row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:5]
+State 485: [row[6]:1, row[5]:3, row[4]:6, row[3]:2, row[2]:7, row[1]:5]
+State 486: [row[6]:6, row[5]:3, row[4]:1, row[3]:4, row[2]:7, row[1]:5]
+State 487: [row[6]:2, row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:6]
+State 488: [row[6]:4, row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:6]
+State 489: [row[6]:7, row[5]:4, row[4]:1, row[3]:5, row[2]:2, row[1]:6]
+State 490: [row[6]:3, row[5]:1, row[4]:7, row[3]:5, row[2]:2, row[1]:6]
+State 491: [row[6]:4, row[5]:1, row[4]:7, row[3]:5, row[2]:2, row[1]:6]
+State 492: [row[6]:5, row[5]:3, row[4]:1, row[3]:7, row[2]:2, row[1]:6]
+State 493: [row[6]:5, row[5]:7, row[4]:4, row[3]:1, row[2]:3, row[1]:6]
+State 494: [row[6]:2, row[5]:4, row[4]:7, row[3]:1, row[2]:3, row[1]:6]
+State 495: [row[6]:2, row[5]:5, row[4]:7, row[3]:1, row[2]:3, row[1]:6]
+State 496: [row[6]:4, row[5]:1, row[4]:7, row[3]:5, row[2]:3, row[1]:6]
+State 497: [row[6]:5, row[5]:1, row[4]:4, row[3]:7, row[2]:3, row[1]:6]
+State 498: [row[6]:2, row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:6]
+State 499: [row[6]:3, row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:6]
+State 500: [row[6]:3, row[5]:5, row[4]:7, row[3]:2, row[2]:4, row[1]:6]
+State 501: [row[6]:5, row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:6]
+State 502: [row[6]:4, row[5]:2, row[4]:5, row[3]:3, row[2]:1, row[1]:7]
+State 503: [row[6]:3, row[5]:5, row[4]:2, row[3]:4, row[2]:1, row[1]:7]
+State 504: [row[6]:3, row[5]:1, row[4]:6, row[3]:4, row[2]:2, row[1]:7]
+State 505: [row[6]:5, row[5]:1, row[4]:6, row[3]:4, row[2]:2, row[1]:7]
+State 506: [row[6]:4, row[5]:1, row[4]:3, row[3]:6, row[2]:2, row[1]:7]
+State 507: [row[6]:5, row[5]:2, row[4]:6, row[3]:1, row[2]:3, row[1]:7]
+State 508: [row[6]:1, row[5]:5, row[4]:2, row[3]:6, row[2]:3, row[1]:7]
+State 509: [row[6]:6, row[5]:2, row[4]:5, row[3]:1, row[2]:4, row[1]:7]
+State 510: [row[6]:3, row[5]:1, row[4]:6, row[3]:2, row[2]:5, row[1]:7]
+State 511: [row[6]:4, row[5]:6, row[4]:1, row[3]:3, row[2]:5, row[1]:7]
+State 512: [row[7]:6, row[6]:4, row[5]:2, row[4]:7, row[3]:5, row[2]:3, row[1]:1]
+State 513: [row[7]:5, row[6]:2, row[5]:6, row[4]:3, row[3]:7, row[2]:4, row[1]:1]
+State 514: [row[7]:4, row[6]:7, row[5]:3, row[4]:6, row[3]:2, row[2]:5, row[1]:1]
+State 515: [row[7]:3, row[6]:5, row[5]:7, row[4]:2, row[3]:4, row[2]:6, row[1]:1]
+State 516: [row[7]:6, row[6]:3, row[5]:5, row[4]:7, row[3]:1, row[2]:4, row[1]:2]
+State 517: [row[7]:7, row[6]:5, row[5]:3, row[4]:1, row[3]:6, row[2]:4, row[1]:2]
+State 518: [row[7]:6, row[6]:3, row[5]:7, row[4]:4, row[3]:1, row[2]:5, row[1]:2]
+State 519: [row[7]:6, row[6]:4, row[5]:7, row[4]:1, row[3]:3, row[2]:5, row[1]:2]
+State 520: [row[7]:6, row[6]:3, row[5]:1, row[4]:4, row[3]:7, row[2]:5, row[1]:2]
+State 521: [row[7]:5, row[6]:1, row[5]:4, row[4]:7, row[3]:3, row[2]:6, row[1]:2]
+State 522: [row[7]:4, row[6]:6, row[5]:1, row[4]:3, row[3]:5, row[2]:7, row[1]:2]
+State 523: [row[7]:4, row[6]:7, row[5]:5, row[4]:2, row[3]:6, row[2]:1, row[1]:3]
+State 524: [row[7]:5, row[6]:7, row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:3]
+State 525: [row[7]:1, row[6]:6, row[5]:4, row[4]:2, row[3]:7, row[2]:5, row[1]:3]
+State 526: [row[7]:7, row[6]:4, row[5]:1, row[4]:5, row[3]:2, row[2]:6, row[1]:3]
+State 527: [row[7]:5, row[6]:1, row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:3]
+State 528: [row[7]:6, row[6]:2, row[5]:5, row[4]:1, row[3]:4, row[2]:7, row[1]:3]
+State 529: [row[7]:5, row[6]:7, row[5]:2, row[4]:6, row[3]:3, row[2]:1, row[1]:4]
+State 530: [row[7]:7, row[6]:3, row[5]:6, row[4]:2, row[3]:5, row[2]:1, row[1]:4]
+State 531: [row[7]:6, row[6]:1, row[5]:3, row[4]:5, row[3]:7, row[2]:2, row[1]:4]
+State 532: [row[7]:2, row[6]:7, row[5]:5, row[4]:3, row[3]:1, row[2]:6, row[1]:4]
+State 533: [row[7]:1, row[6]:5, row[5]:2, row[4]:6, row[3]:3, row[2]:7, row[1]:4]
+State 534: [row[7]:3, row[6]:1, row[5]:6, row[4]:2, row[3]:5, row[2]:7, row[1]:4]
+State 535: [row[7]:2, row[6]:6, row[5]:3, row[4]:7, row[3]:4, row[2]:1, row[1]:5]
+State 536: [row[7]:3, row[6]:7, row[5]:2, row[4]:4, row[3]:6, row[2]:1, row[1]:5]
+State 537: [row[7]:1, row[6]:4, row[5]:7, row[4]:3, row[3]:6, row[2]:2, row[1]:5]
+State 538: [row[7]:7, row[6]:2, row[5]:4, row[4]:6, row[3]:1, row[2]:3, row[1]:5]
+State 539: [row[7]:3, row[6]:1, row[5]:6, row[4]:4, row[3]:2, row[2]:7, row[1]:5]
+State 540: [row[7]:4, row[6]:1, row[5]:3, row[4]:6, row[3]:2, row[2]:7, row[1]:5]
+State 541: [row[7]:4, row[6]:2, row[5]:7, row[4]:5, row[3]:3, row[2]:1, row[1]:6]
+State 542: [row[7]:3, row[6]:7, row[5]:4, row[4]:1, row[3]:5, row[2]:2, row[1]:6]
+State 543: [row[7]:2, row[6]:5, row[5]:7, row[4]:4, row[3]:1, row[2]:3, row[1]:6]
+State 544: [row[7]:2, row[6]:4, row[5]:1, row[4]:7, row[3]:5, row[2]:3, row[1]:6]
+State 545: [row[7]:2, row[6]:5, row[5]:1, row[4]:4, row[3]:7, row[2]:3, row[1]:6]
+State 546: [row[7]:1, row[6]:3, row[5]:5, row[4]:7, row[3]:2, row[2]:4, row[1]:6]
+State 547: [row[7]:2, row[6]:5, row[5]:3, row[4]:1, row[3]:7, row[2]:4, row[1]:6]
+State 548: [row[7]:5, row[6]:3, row[5]:1, row[4]:6, row[3]:4, row[2]:2, row[1]:7]
+State 549: [row[7]:4, row[6]:1, row[5]:5, row[4]:2, row[3]:6, row[2]:3, row[1]:7]
+State 550: [row[7]:3, row[6]:6, row[5]:2, row[4]:5, row[3]:1, row[2]:4, row[1]:7]
+State 551: [row[7]:2, row[6]:4, row[5]:6, row[4]:1, row[3]:3, row[2]:5, row[1]:7]
+Reachability graph:
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+	To state 3
+	To state 4
+	To state 5
+	To state 6
+	To state 7
+From state 1:
+	To state 8
+	To state 9
+	To state 10
+	To state 11
+	To state 12
+From state 2:
+	To state 13
+	To state 14
+	To state 15
+	To state 16
+From state 3:
+	To state 17
+	To state 18
+	To state 19
+	To state 20
+From state 4:
+	To state 21
+	To state 22
+	To state 23
+	To state 24
+From state 5:
+	To state 25
+	To state 26
+	To state 27
+	To state 28
+From state 6:
+	To state 29
+	To state 30
+	To state 31
+	To state 32
+From state 7:
+	To state 33
+	To state 34
+	To state 35
+	To state 36
+	To state 37
+From state 8:
+	To state 38
+	To state 39
+	To state 40
+From state 9:
+	To state 41
+	To state 42
+	To state 43
+From state 10:
+	To state 44
+	To state 45
+From state 11:
+	To state 46
+	To state 47
+From state 12:
+	To state 48
+	To state 49
+	To state 50
+From state 13:
+	To state 51
+	To state 52
+	To state 53
+From state 14:
+	To state 54
+	To state 55
+	To state 56
+From state 15:
+	To state 57
+	To state 58
+From state 16:
+	To state 59
+	To state 60
+	To state 61
+From state 17:
+	To state 62
+	To state 63
+	To state 64
+From state 18:
+	To state 65
+	To state 66
+From state 19:
+	To state 67
+	To state 68
+From state 20:
+	To state 69
+	To state 70
+From state 21:
+	To state 71
+	To state 72
+	To state 73
+From state 22:
+	To state 74
+	To state 75
+From state 23:
+	To state 76
+	To state 77
+From state 24:
+	To state 78
+	To state 79
+	To state 80
+From state 25:
+	To state 81
+	To state 82
+From state 26:
+	To state 83
+	To state 84
+From state 27:
+	To state 85
+	To state 86
+From state 28:
+	To state 87
+	To state 88
+	To state 89
+From state 29:
+	To state 90
+	To state 91
+	To state 92
+From state 30:
+	To state 93
+	To state 94
+From state 31:
+	To state 95
+	To state 96
+	To state 97
+From state 32:
+	To state 98
+	To state 99
+	To state 100
+From state 33:
+	To state 101
+	To state 102
+	To state 103
+From state 34:
+	To state 104
+	To state 105
+From state 35:
+	To state 106
+	To state 107
+From state 36:
+	To state 108
+	To state 109
+	To state 110
+From state 37:
+	To state 111
+	To state 112
+	To state 113
+From state 38:
+	To state 114
+	To state 115
+From state 39:
+	To state 116
+From state 40:
+	To state 117
+From state 41:
+	To state 118
+	To state 119
+From state 42:
+	To state 120
+From state 43:
+	To state 121
+	To state 122
+From state 44:
+	To state 123
+From state 45:
+	To state 124
+From state 46:
+	To state 125
+	To state 126
+From state 47:
+	To state 127
+	To state 128
+From state 48:
+	To state 129
+From state 49:
+	To state 130
+	To state 131
+From state 50:
+	To state 132
+	To state 133
+From state 51:
+	To state 134
+	To state 135
+From state 52:
+	To state 136
+	To state 137
+From state 53:
+	To state 138
+	To state 139
+From state 54:
+	To state 140
+	To state 141
+From state 55:
+	To state 142
+	To state 143
+From state 56:
+	To state 144
+	To state 145
+From state 57:
+	To state 146
+	To state 147
+From state 58:
+	To state 148
+	To state 149
+From state 59:
+	To state 150
+	To state 151
+	To state 152
+From state 60:
+	To state 153
+	To state 154
+From state 61:
+	To state 155
+	To state 156
+From state 62:
+	To state 157
+	To state 158
+From state 63:
+	To state 159
+	To state 160
+From state 64:
+	To state 161
+	To state 162
+	To state 163
+From state 65:
+	To state 164
+From state 66:
+	To state 165
+	To state 166
+	To state 167
+From state 67:
+	To state 168
+	To state 169
+From state 68:
+	To state 170
+	To state 171
+	To state 172
+From state 69:
+	To state 173
+From state 70:
+	To state 174
+	To state 175
+From state 71:
+	To state 176
+	To state 177
+From state 72:
+	To state 178
+From state 73:
+	To state 179
+	To state 180
+From state 74:
+	To state 181
+From state 75:
+	To state 182
+	To state 183
+From state 76:
+	To state 184
+	To state 185
+From state 77:
+	To state 186
+From state 78:
+	To state 187
+	To state 188
+From state 79:
+	To state 189
+From state 80:
+	To state 190
+	To state 191
+From state 81:
+	To state 192
+	To state 193
+From state 82:
+	To state 194
+From state 83:
+	To state 195
+	To state 196
+	To state 197
+From state 84:
+	To state 198
+	To state 199
+From state 85:
+	To state 200
+	To state 201
+	To state 202
+From state 86:
+	To state 203
+From state 87:
+	To state 204
+	To state 205
+	To state 206
+From state 88:
+	To state 207
+	To state 208
+From state 89:
+	To state 209
+	To state 210
+From state 90:
+	To state 211
+	To state 212
+From state 91:
+	To state 213
+	To state 214
+From state 92:
+	To state 215
+	To state 216
+	To state 217
+From state 93:
+	To state 218
+	To state 219
+From state 94:
+	To state 220
+	To state 221
+From state 95:
+	To state 222
+	To state 223
+From state 96:
+	To state 224
+	To state 225
+From state 97:
+	To state 226
+	To state 227
+From state 98:
+	To state 228
+	To state 229
+From state 99:
+	To state 230
+	To state 231
+From state 100:
+	To state 232
+	To state 233
+From state 101:
+	To state 234
+	To state 235
+From state 102:
+	To state 236
+	To state 237
+From state 103:
+	To state 238
+From state 104:
+	To state 239
+	To state 240
+From state 105:
+	To state 241
+	To state 242
+From state 106:
+	To state 243
+From state 107:
+	To state 244
+From state 108:
+	To state 245
+	To state 246
+From state 109:
+	To state 247
+From state 110:
+	To state 248
+	To state 249
+From state 111:
+	To state 250
+From state 112:
+	To state 251
+From state 113:
+	To state 252
+	To state 253
+From state 114:
+	To state 254
+From state 115:
+	To state 255
+	To state 256
+From state 116:
+	To state 257
+From state 117:
+	To state 258
+From state 118:
+	To state 259
+From state 119:
+	To state 260
+From state 120:
+From state 121:
+	To state 261
+From state 122:
+	To state 262
+	To state 263
+From state 123:
+	To state 264
+From state 124:
+	To state 265
+	To state 266
+From state 125:
+	To state 267
+From state 126:
+From state 127:
+	To state 268
+From state 128:
+From state 129:
+	To state 269
+From state 130:
+From state 131:
+	To state 270
+From state 132:
+	To state 271
+From state 133:
+	To state 272
+From state 134:
+	To state 273
+From state 135:
+	To state 274
+From state 136:
+	To state 275
+	To state 276
+From state 137:
+	To state 277
+From state 138:
+	To state 278
+From state 139:
+From state 140:
+	To state 279
+From state 141:
+	To state 280
+From state 142:
+	To state 281
+	To state 282
+From state 143:
+	To state 283
+From state 144:
+	To state 284
+	To state 285
+From state 145:
+	To state 286
+From state 146:
+	To state 287
+	To state 288
+From state 147:
+	To state 289
+	To state 290
+From state 148:
+	To state 291
+	To state 292
+From state 149:
+	To state 293
+From state 150:
+	To state 294
+From state 151:
+From state 152:
+From state 153:
+From state 154:
+From state 155:
+From state 156:
+	To state 295
+From state 157:
+	To state 296
+From state 158:
+	To state 297
+From state 159:
+	To state 298
+From state 160:
+	To state 299
+From state 161:
+	To state 300
+From state 162:
+	To state 301
+	To state 302
+From state 163:
+	To state 303
+From state 164:
+	To state 304
+	To state 305
+From state 165:
+	To state 306
+	To state 307
+From state 166:
+	To state 308
+	To state 309
+From state 167:
+	To state 310
+	To state 311
+From state 168:
+	To state 312
+From state 169:
+	To state 313
+	To state 314
+From state 170:
+	To state 315
+From state 171:
+	To state 316
+From state 172:
+	To state 317
+	To state 318
+From state 173:
+	To state 319
+	To state 320
+From state 174:
+	To state 321
+From state 175:
+	To state 322
+From state 176:
+	To state 323
+	To state 324
+From state 177:
+	To state 325
+From state 178:
+	To state 326
+From state 179:
+	To state 327
+From state 180:
+	To state 328
+	To state 329
+From state 181:
+	To state 330
+	To state 331
+From state 182:
+	To state 332
+	To state 333
+From state 183:
+	To state 334
+	To state 335
+From state 184:
+	To state 336
+	To state 337
+From state 185:
+	To state 338
+	To state 339
+From state 186:
+	To state 340
+	To state 341
+From state 187:
+	To state 342
+	To state 343
+From state 188:
+	To state 344
+From state 189:
+	To state 345
+From state 190:
+	To state 346
+From state 191:
+	To state 347
+	To state 348
+From state 192:
+	To state 349
+From state 193:
+	To state 350
+From state 194:
+	To state 351
+	To state 352
+From state 195:
+	To state 353
+	To state 354
+From state 196:
+	To state 355
+From state 197:
+	To state 356
+From state 198:
+	To state 357
+	To state 358
+From state 199:
+	To state 359
+From state 200:
+	To state 360
+	To state 361
+From state 201:
+	To state 362
+	To state 363
+From state 202:
+	To state 364
+	To state 365
+From state 203:
+	To state 366
+	To state 367
+From state 204:
+	To state 368
+From state 205:
+	To state 369
+	To state 370
+From state 206:
+	To state 371
+From state 207:
+	To state 372
+From state 208:
+	To state 373
+From state 209:
+	To state 374
+From state 210:
+	To state 375
+From state 211:
+	To state 376
+From state 212:
+From state 213:
+From state 214:
+From state 215:
+From state 216:
+From state 217:
+	To state 377
+From state 218:
+	To state 378
+From state 219:
+	To state 379
+	To state 380
+From state 220:
+	To state 381
+	To state 382
+From state 221:
+	To state 383
+	To state 384
+From state 222:
+	To state 385
+From state 223:
+	To state 386
+	To state 387
+From state 224:
+	To state 388
+From state 225:
+	To state 389
+	To state 390
+From state 226:
+	To state 391
+From state 227:
+	To state 392
+From state 228:
+From state 229:
+	To state 393
+From state 230:
+	To state 394
+From state 231:
+	To state 395
+	To state 396
+From state 232:
+	To state 397
+From state 233:
+	To state 398
+From state 234:
+	To state 399
+From state 235:
+	To state 400
+From state 236:
+	To state 401
+From state 237:
+From state 238:
+	To state 402
+From state 239:
+From state 240:
+	To state 403
+From state 241:
+From state 242:
+	To state 404
+From state 243:
+	To state 405
+	To state 406
+From state 244:
+	To state 407
+From state 245:
+	To state 408
+	To state 409
+From state 246:
+	To state 410
+From state 247:
+From state 248:
+	To state 411
+From state 249:
+	To state 412
+From state 250:
+	To state 413
+From state 251:
+	To state 414
+From state 252:
+	To state 415
+	To state 416
+From state 253:
+	To state 417
+From state 254:
+From state 255:
+	To state 418
+From state 256:
+From state 257:
+	To state 419
+From state 258:
+From state 259:
+From state 260:
+From state 261:
+	To state 420
+From state 262:
+From state 263:
+From state 264:
+	To state 421
+From state 265:
+From state 266:
+	To state 422
+From state 267:
+	To state 423
+From state 268:
+	To state 424
+	To state 425
+From state 269:
+From state 270:
+	To state 426
+From state 271:
+From state 272:
+	To state 427
+From state 273:
+From state 274:
+	To state 428
+From state 275:
+	To state 429
+From state 276:
+From state 277:
+From state 278:
+	To state 430
+	To state 431
+From state 279:
+	To state 432
+From state 280:
+From state 281:
+From state 282:
+	To state 433
+From state 283:
+From state 284:
+	To state 434
+From state 285:
+	To state 435
+From state 286:
+	To state 436
+From state 287:
+From state 288:
+From state 289:
+From state 290:
+	To state 437
+From state 291:
+From state 292:
+	To state 438
+	To state 439
+From state 293:
+	To state 440
+From state 294:
+From state 295:
+	To state 441
+	To state 442
+From state 296:
+From state 297:
+	To state 443
+From state 298:
+	To state 444
+From state 299:
+	To state 445
+From state 300:
+From state 301:
+From state 302:
+From state 303:
+	To state 446
+From state 304:
+	To state 447
+From state 305:
+From state 306:
+	To state 448
+	To state 449
+From state 307:
+	To state 450
+From state 308:
+	To state 451
+From state 309:
+From state 310:
+From state 311:
+From state 312:
+	To state 452
+From state 313:
+	To state 453
+From state 314:
+	To state 454
+From state 315:
+From state 316:
+From state 317:
+From state 318:
+From state 319:
+From state 320:
+	To state 455
+From state 321:
+	To state 456
+From state 322:
+From state 323:
+From state 324:
+	To state 457
+From state 325:
+	To state 458
+From state 326:
+	To state 459
+From state 327:
+	To state 460
+From state 328:
+	To state 461
+From state 329:
+	To state 462
+From state 330:
+	To state 463
+From state 331:
+From state 332:
+From state 333:
+From state 334:
+From state 335:
+	To state 464
+From state 336:
+	To state 465
+From state 337:
+From state 338:
+From state 339:
+From state 340:
+From state 341:
+	To state 466
+From state 342:
+	To state 467
+From state 343:
+	To state 468
+From state 344:
+	To state 469
+From state 345:
+	To state 470
+From state 346:
+	To state 471
+From state 347:
+	To state 472
+From state 348:
+From state 349:
+From state 350:
+	To state 473
+From state 351:
+	To state 474
+From state 352:
+From state 353:
+From state 354:
+From state 355:
+From state 356:
+From state 357:
+	To state 475
+From state 358:
+	To state 476
+From state 359:
+	To state 477
+From state 360:
+From state 361:
+From state 362:
+From state 363:
+	To state 478
+From state 364:
+	To state 479
+From state 365:
+	To state 480
+	To state 481
+From state 366:
+From state 367:
+	To state 482
+From state 368:
+	To state 483
+From state 369:
+From state 370:
+From state 371:
+From state 372:
+	To state 484
+From state 373:
+	To state 485
+From state 374:
+	To state 486
+From state 375:
+From state 376:
+	To state 487
+	To state 488
+From state 377:
+From state 378:
+	To state 489
+From state 379:
+	To state 490
+	To state 491
+From state 380:
+From state 381:
+	To state 492
+From state 382:
+From state 383:
+From state 384:
+From state 385:
+	To state 493
+From state 386:
+	To state 494
+From state 387:
+	To state 495
+From state 388:
+From state 389:
+	To state 496
+From state 390:
+From state 391:
+From state 392:
+	To state 497
+From state 393:
+	To state 498
+	To state 499
+From state 394:
+From state 395:
+From state 396:
+	To state 500
+From state 397:
+	To state 501
+From state 398:
+From state 399:
+	To state 502
+From state 400:
+From state 401:
+	To state 503
+From state 402:
+From state 403:
+	To state 504
+	To state 505
+From state 404:
+	To state 506
+From state 405:
+	To state 507
+From state 406:
+From state 407:
+	To state 508
+From state 408:
+From state 409:
+From state 410:
+	To state 509
+From state 411:
+From state 412:
+From state 413:
+From state 414:
+	To state 510
+From state 415:
+From state 416:
+	To state 511
+From state 417:
+From state 418:
+	To state 512
+From state 419:
+From state 420:
+	To state 513
+From state 421:
+	To state 514
+From state 422:
+From state 423:
+From state 424:
+From state 425:
+	To state 515
+From state 426:
+From state 427:
+From state 428:
+	To state 516
+From state 429:
+	To state 517
+From state 430:
+From state 431:
+From state 432:
+	To state 518
+From state 433:
+	To state 519
+From state 434:
+From state 435:
+From state 436:
+	To state 520
+From state 437:
+From state 438:
+From state 439:
+From state 440:
+	To state 521
+From state 441:
+From state 442:
+	To state 522
+From state 443:
+From state 444:
+	To state 523
+From state 445:
+	To state 524
+From state 446:
+From state 447:
+From state 448:
+From state 449:
+From state 450:
+From state 451:
+	To state 525
+From state 452:
+	To state 526
+From state 453:
+From state 454:
+From state 455:
+	To state 527
+From state 456:
+	To state 528
+From state 457:
+From state 458:
+	To state 529
+From state 459:
+	To state 530
+From state 460:
+From state 461:
+From state 462:
+From state 463:
+From state 464:
+	To state 531
+From state 465:
+	To state 532
+From state 466:
+From state 467:
+From state 468:
+From state 469:
+From state 470:
+	To state 533
+From state 471:
+	To state 534
+From state 472:
+From state 473:
+	To state 535
+From state 474:
+	To state 536
+From state 475:
+From state 476:
+From state 477:
+	To state 537
+From state 478:
+	To state 538
+From state 479:
+From state 480:
+From state 481:
+From state 482:
+From state 483:
+From state 484:
+	To state 539
+From state 485:
+	To state 540
+From state 486:
+From state 487:
+	To state 541
+From state 488:
+From state 489:
+	To state 542
+From state 490:
+From state 491:
+From state 492:
+From state 493:
+	To state 543
+From state 494:
+From state 495:
+From state 496:
+	To state 544
+From state 497:
+	To state 545
+From state 498:
+From state 499:
+From state 500:
+	To state 546
+From state 501:
+	To state 547
+From state 502:
+From state 503:
+From state 504:
+	To state 548
+From state 505:
+From state 506:
+From state 507:
+From state 508:
+	To state 549
+From state 509:
+	To state 550
+From state 510:
+From state 511:
+	To state 551
+From state 512:
+From state 513:
+From state 514:
+From state 515:
+From state 516:
+From state 517:
+From state 518:
+From state 519:
+From state 520:
+From state 521:
+From state 522:
+From state 523:
+From state 524:
+From state 525:
+From state 526:
+From state 527:
+From state 528:
+From state 529:
+From state 530:
+From state 531:
+From state 532:
+From state 533:
+From state 534:
+From state 535:
+From state 536:
+From state 537:
+From state 538:
+From state 539:
+From state 540:
+From state 541:
+From state 542:
+From state 543:
+From state 544:
+From state 545:
+From state 546:
+From state 547:
+From state 548:
+From state 549:
+From state 550:
+From state 551:
+Checking actual reachability graph for swaps, N=5
+Reachability set:
+State 0: [a[1]:1, a[2]:2, a[3]:3, a[4]:4, a[5]:5]
+State 1: [a[1]:2, a[2]:1, a[3]:3, a[4]:4, a[5]:5]
+State 2: [a[1]:1, a[2]:3, a[3]:2, a[4]:4, a[5]:5]
+State 3: [a[1]:1, a[2]:2, a[3]:4, a[4]:3, a[5]:5]
+State 4: [a[1]:1, a[2]:2, a[3]:3, a[4]:5, a[5]:4]
+State 5: [a[1]:2, a[2]:3, a[3]:1, a[4]:4, a[5]:5]
+State 6: [a[1]:2, a[2]:1, a[3]:4, a[4]:3, a[5]:5]
+State 7: [a[1]:2, a[2]:1, a[3]:3, a[4]:5, a[5]:4]
+State 8: [a[1]:3, a[2]:1, a[3]:2, a[4]:4, a[5]:5]
+State 9: [a[1]:1, a[2]:3, a[3]:4, a[4]:2, a[5]:5]
+State 10: [a[1]:1, a[2]:3, a[3]:2, a[4]:5, a[5]:4]
+State 11: [a[1]:1, a[2]:4, a[3]:2, a[4]:3, a[5]:5]
+State 12: [a[1]:1, a[2]:2, a[3]:4, a[4]:5, a[5]:3]
+State 13: [a[1]:1, a[2]:2, a[3]:5, a[4]:3, a[5]:4]
+State 14: [a[1]:3, a[2]:2, a[3]:1, a[4]:4, a[5]:5]
+State 15: [a[1]:2, a[2]:3, a[3]:4, a[4]:1, a[5]:5]
+State 16: [a[1]:2, a[2]:3, a[3]:1, a[4]:5, a[5]:4]
+State 17: [a[1]:2, a[2]:4, a[3]:1, a[4]:3, a[5]:5]
+State 18: [a[1]:2, a[2]:1, a[3]:4, a[4]:5, a[5]:3]
+State 19: [a[1]:2, a[2]:1, a[3]:5, a[4]:3, a[5]:4]
+State 20: [a[1]:3, a[2]:1, a[3]:4, a[4]:2, a[5]:5]
+State 21: [a[1]:3, a[2]:1, a[3]:2, a[4]:5, a[5]:4]
+State 22: [a[1]:1, a[2]:4, a[3]:3, a[4]:2, a[5]:5]
+State 23: [a[1]:1, a[2]:3, a[3]:4, a[4]:5, a[5]:2]
+State 24: [a[1]:1, a[2]:3, a[3]:5, a[4]:2, a[5]:4]
+State 25: [a[1]:4, a[2]:1, a[3]:2, a[4]:3, a[5]:5]
+State 26: [a[1]:1, a[2]:4, a[3]:2, a[4]:5, a[5]:3]
+State 27: [a[1]:1, a[2]:2, a[3]:5, a[4]:4, a[5]:3]
+State 28: [a[1]:1, a[2]:5, a[3]:2, a[4]:3, a[5]:4]
+State 29: [a[1]:3, a[2]:2, a[3]:4, a[4]:1, a[5]:5]
+State 30: [a[1]:3, a[2]:2, a[3]:1, a[4]:5, a[5]:4]
+State 31: [a[1]:2, a[2]:4, a[3]:3, a[4]:1, a[5]:5]
+State 32: [a[1]:2, a[2]:3, a[3]:4, a[4]:5, a[5]:1]
+State 33: [a[1]:2, a[2]:3, a[3]:5, a[4]:1, a[5]:4]
+State 34: [a[1]:4, a[2]:2, a[3]:1, a[4]:3, a[5]:5]
+State 35: [a[1]:2, a[2]:4, a[3]:1, a[4]:5, a[5]:3]
+State 36: [a[1]:2, a[2]:1, a[3]:5, a[4]:4, a[5]:3]
+State 37: [a[1]:2, a[2]:5, a[3]:1, a[4]:3, a[5]:4]
+State 38: [a[1]:3, a[2]:4, a[3]:1, a[4]:2, a[5]:5]
+State 39: [a[1]:3, a[2]:1, a[3]:4, a[4]:5, a[5]:2]
+State 40: [a[1]:3, a[2]:1, a[3]:5, a[4]:2, a[5]:4]
+State 41: [a[1]:4, a[2]:1, a[3]:3, a[4]:2, a[5]:5]
+State 42: [a[1]:1, a[2]:4, a[3]:3, a[4]:5, a[5]:2]
+State 43: [a[1]:1, a[2]:3, a[3]:5, a[4]:4, a[5]:2]
+State 44: [a[1]:1, a[2]:5, a[3]:3, a[4]:2, a[5]:4]
+State 45: [a[1]:4, a[2]:1, a[3]:2, a[4]:5, a[5]:3]
+State 46: [a[1]:1, a[2]:4, a[3]:5, a[4]:2, a[5]:3]
+State 47: [a[1]:1, a[2]:5, a[3]:2, a[4]:4, a[5]:3]
+State 48: [a[1]:5, a[2]:1, a[3]:2, a[4]:3, a[5]:4]
+State 49: [a[1]:3, a[2]:4, a[3]:2, a[4]:1, a[5]:5]
+State 50: [a[1]:3, a[2]:2, a[3]:4, a[4]:5, a[5]:1]
+State 51: [a[1]:3, a[2]:2, a[3]:5, a[4]:1, a[5]:4]
+State 52: [a[1]:4, a[2]:2, a[3]:3, a[4]:1, a[5]:5]
+State 53: [a[1]:2, a[2]:4, a[3]:3, a[4]:5, a[5]:1]
+State 54: [a[1]:2, a[2]:3, a[3]:5, a[4]:4, a[5]:1]
+State 55: [a[1]:2, a[2]:5, a[3]:3, a[4]:1, a[5]:4]
+State 56: [a[1]:4, a[2]:2, a[3]:1, a[4]:5, a[5]:3]
+State 57: [a[1]:2, a[2]:4, a[3]:5, a[4]:1, a[5]:3]
+State 58: [a[1]:2, a[2]:5, a[3]:1, a[4]:4, a[5]:3]
+State 59: [a[1]:5, a[2]:2, a[3]:1, a[4]:3, a[5]:4]
+State 60: [a[1]:4, a[2]:3, a[3]:1, a[4]:2, a[5]:5]
+State 61: [a[1]:3, a[2]:4, a[3]:1, a[4]:5, a[5]:2]
+State 62: [a[1]:3, a[2]:1, a[3]:5, a[4]:4, a[5]:2]
+State 63: [a[1]:3, a[2]:5, a[3]:1, a[4]:2, a[5]:4]
+State 64: [a[1]:4, a[2]:1, a[3]:3, a[4]:5, a[5]:2]
+State 65: [a[1]:1, a[2]:4, a[3]:5, a[4]:3, a[5]:2]
+State 66: [a[1]:1, a[2]:5, a[3]:3, a[4]:4, a[5]:2]
+State 67: [a[1]:5, a[2]:1, a[3]:3, a[4]:2, a[5]:4]
+State 68: [a[1]:4, a[2]:1, a[3]:5, a[4]:2, a[5]:3]
+State 69: [a[1]:1, a[2]:5, a[3]:4, a[4]:2, a[5]:3]
+State 70: [a[1]:5, a[2]:1, a[3]:2, a[4]:4, a[5]:3]
+State 71: [a[1]:4, a[2]:3, a[3]:2, a[4]:1, a[5]:5]
+State 72: [a[1]:3, a[2]:4, a[3]:2, a[4]:5, a[5]:1]
+State 73: [a[1]:3, a[2]:2, a[3]:5, a[4]:4, a[5]:1]
+State 74: [a[1]:3, a[2]:5, a[3]:2, a[4]:1, a[5]:4]
+State 75: [a[1]:4, a[2]:2, a[3]:3, a[4]:5, a[5]:1]
+State 76: [a[1]:2, a[2]:4, a[3]:5, a[4]:3, a[5]:1]
+State 77: [a[1]:2, a[2]:5, a[3]:3, a[4]:4, a[5]:1]
+State 78: [a[1]:5, a[2]:2, a[3]:3, a[4]:1, a[5]:4]
+State 79: [a[1]:4, a[2]:2, a[3]:5, a[4]:1, a[5]:3]
+State 80: [a[1]:2, a[2]:5, a[3]:4, a[4]:1, a[5]:3]
+State 81: [a[1]:5, a[2]:2, a[3]:1, a[4]:4, a[5]:3]
+State 82: [a[1]:4, a[2]:3, a[3]:1, a[4]:5, a[5]:2]
+State 83: [a[1]:3, a[2]:4, a[3]:5, a[4]:1, a[5]:2]
+State 84: [a[1]:3, a[2]:5, a[3]:1, a[4]:4, a[5]:2]
+State 85: [a[1]:5, a[2]:3, a[3]:1, a[4]:2, a[5]:4]
+State 86: [a[1]:4, a[2]:1, a[3]:5, a[4]:3, a[5]:2]
+State 87: [a[1]:1, a[2]:5, a[3]:4, a[4]:3, a[5]:2]
+State 88: [a[1]:5, a[2]:1, a[3]:3, a[4]:4, a[5]:2]
+State 89: [a[1]:4, a[2]:5, a[3]:1, a[4]:2, a[5]:3]
+State 90: [a[1]:5, a[2]:1, a[3]:4, a[4]:2, a[5]:3]
+State 91: [a[1]:4, a[2]:3, a[3]:2, a[4]:5, a[5]:1]
+State 92: [a[1]:3, a[2]:4, a[3]:5, a[4]:2, a[5]:1]
+State 93: [a[1]:3, a[2]:5, a[3]:2, a[4]:4, a[5]:1]
+State 94: [a[1]:5, a[2]:3, a[3]:2, a[4]:1, a[5]:4]
+State 95: [a[1]:4, a[2]:2, a[3]:5, a[4]:3, a[5]:1]
+State 96: [a[1]:2, a[2]:5, a[3]:4, a[4]:3, a[5]:1]
+State 97: [a[1]:5, a[2]:2, a[3]:3, a[4]:4, a[5]:1]
+State 98: [a[1]:4, a[2]:5, a[3]:2, a[4]:1, a[5]:3]
+State 99: [a[1]:5, a[2]:2, a[3]:4, a[4]:1, a[5]:3]
+State 100: [a[1]:4, a[2]:3, a[3]:5, a[4]:1, a[5]:2]
+State 101: [a[1]:3, a[2]:5, a[3]:4, a[4]:1, a[5]:2]
+State 102: [a[1]:5, a[2]:3, a[3]:1, a[4]:4, a[5]:2]
+State 103: [a[1]:4, a[2]:5, a[3]:1, a[4]:3, a[5]:2]
+State 104: [a[1]:5, a[2]:1, a[3]:4, a[4]:3, a[5]:2]
+State 105: [a[1]:5, a[2]:4, a[3]:1, a[4]:2, a[5]:3]
+State 106: [a[1]:4, a[2]:3, a[3]:5, a[4]:2, a[5]:1]
+State 107: [a[1]:3, a[2]:5, a[3]:4, a[4]:2, a[5]:1]
+State 108: [a[1]:5, a[2]:3, a[3]:2, a[4]:4, a[5]:1]
+State 109: [a[1]:4, a[2]:5, a[3]:2, a[4]:3, a[5]:1]
+State 110: [a[1]:5, a[2]:2, a[3]:4, a[4]:3, a[5]:1]
+State 111: [a[1]:5, a[2]:4, a[3]:2, a[4]:1, a[5]:3]
+State 112: [a[1]:4, a[2]:5, a[3]:3, a[4]:1, a[5]:2]
+State 113: [a[1]:5, a[2]:3, a[3]:4, a[4]:1, a[5]:2]
+State 114: [a[1]:5, a[2]:4, a[3]:1, a[4]:3, a[5]:2]
+State 115: [a[1]:4, a[2]:5, a[3]:3, a[4]:2, a[5]:1]
+State 116: [a[1]:5, a[2]:3, a[3]:4, a[4]:2, a[5]:1]
+State 117: [a[1]:5, a[2]:4, a[3]:2, a[4]:3, a[5]:1]
+State 118: [a[1]:5, a[2]:4, a[3]:3, a[4]:1, a[5]:2]
+State 119: [a[1]:5, a[2]:4, a[3]:3, a[4]:2, a[5]:1]
+Reachability graph:
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+	To state 3
+	To state 4
+From state 1:
+	To state 0
+	To state 5
+	To state 6
+	To state 7
+From state 2:
+	To state 0
+	To state 8
+	To state 9
+	To state 10
+From state 3:
+	To state 0
+	To state 6
+	To state 11
+	To state 12
+From state 4:
+	To state 0
+	To state 7
+	To state 10
+	To state 13
+From state 5:
+	To state 1
+	To state 14
+	To state 15
+	To state 16
+From state 6:
+	To state 1
+	To state 3
+	To state 17
+	To state 18
+From state 7:
+	To state 1
+	To state 4
+	To state 16
+	To state 19
+From state 8:
+	To state 2
+	To state 14
+	To state 20
+	To state 21
+From state 9:
+	To state 2
+	To state 20
+	To state 22
+	To state 23
+From state 10:
+	To state 2
+	To state 4
+	To state 21
+	To state 24
+From state 11:
+	To state 3
+	To state 22
+	To state 25
+	To state 26
+From state 12:
+	To state 3
+	To state 18
+	To state 26
+	To state 27
+From state 13:
+	To state 4
+	To state 19
+	To state 27
+	To state 28
+From state 14:
+	To state 5
+	To state 8
+	To state 29
+	To state 30
+From state 15:
+	To state 5
+	To state 29
+	To state 31
+	To state 32
+From state 16:
+	To state 5
+	To state 7
+	To state 30
+	To state 33
+From state 17:
+	To state 6
+	To state 31
+	To state 34
+	To state 35
+From state 18:
+	To state 6
+	To state 12
+	To state 35
+	To state 36
+From state 19:
+	To state 7
+	To state 13
+	To state 36
+	To state 37
+From state 20:
+	To state 8
+	To state 9
+	To state 38
+	To state 39
+From state 21:
+	To state 8
+	To state 10
+	To state 30
+	To state 40
+From state 22:
+	To state 9
+	To state 11
+	To state 41
+	To state 42
+From state 23:
+	To state 9
+	To state 39
+	To state 42
+	To state 43
+From state 24:
+	To state 10
+	To state 40
+	To state 43
+	To state 44
+From state 25:
+	To state 11
+	To state 34
+	To state 41
+	To state 45
+From state 26:
+	To state 11
+	To state 12
+	To state 45
+	To state 46
+From state 27:
+	To state 12
+	To state 13
+	To state 36
+	To state 47
+From state 28:
+	To state 13
+	To state 44
+	To state 47
+	To state 48
+From state 29:
+	To state 14
+	To state 15
+	To state 49
+	To state 50
+From state 30:
+	To state 14
+	To state 16
+	To state 21
+	To state 51
+From state 31:
+	To state 15
+	To state 17
+	To state 52
+	To state 53
+From state 32:
+	To state 15
+	To state 50
+	To state 53
+	To state 54
+From state 33:
+	To state 16
+	To state 51
+	To state 54
+	To state 55
+From state 34:
+	To state 17
+	To state 25
+	To state 52
+	To state 56
+From state 35:
+	To state 17
+	To state 18
+	To state 56
+	To state 57
+From state 36:
+	To state 18
+	To state 19
+	To state 27
+	To state 58
+From state 37:
+	To state 19
+	To state 55
+	To state 58
+	To state 59
+From state 38:
+	To state 20
+	To state 49
+	To state 60
+	To state 61
+From state 39:
+	To state 20
+	To state 23
+	To state 61
+	To state 62
+From state 40:
+	To state 21
+	To state 24
+	To state 62
+	To state 63
+From state 41:
+	To state 22
+	To state 25
+	To state 60
+	To state 64
+From state 42:
+	To state 22
+	To state 23
+	To state 64
+	To state 65
+From state 43:
+	To state 23
+	To state 24
+	To state 62
+	To state 66
+From state 44:
+	To state 24
+	To state 28
+	To state 66
+	To state 67
+From state 45:
+	To state 25
+	To state 26
+	To state 56
+	To state 68
+From state 46:
+	To state 26
+	To state 65
+	To state 68
+	To state 69
+From state 47:
+	To state 27
+	To state 28
+	To state 69
+	To state 70
+From state 48:
+	To state 28
+	To state 59
+	To state 67
+	To state 70
+From state 49:
+	To state 29
+	To state 38
+	To state 71
+	To state 72
+From state 50:
+	To state 29
+	To state 32
+	To state 72
+	To state 73
+From state 51:
+	To state 30
+	To state 33
+	To state 73
+	To state 74
+From state 52:
+	To state 31
+	To state 34
+	To state 71
+	To state 75
+From state 53:
+	To state 31
+	To state 32
+	To state 75
+	To state 76
+From state 54:
+	To state 32
+	To state 33
+	To state 73
+	To state 77
+From state 55:
+	To state 33
+	To state 37
+	To state 77
+	To state 78
+From state 56:
+	To state 34
+	To state 35
+	To state 45
+	To state 79
+From state 57:
+	To state 35
+	To state 76
+	To state 79
+	To state 80
+From state 58:
+	To state 36
+	To state 37
+	To state 80
+	To state 81
+From state 59:
+	To state 37
+	To state 48
+	To state 78
+	To state 81
+From state 60:
+	To state 38
+	To state 41
+	To state 71
+	To state 82
+From state 61:
+	To state 38
+	To state 39
+	To state 82
+	To state 83
+From state 62:
+	To state 39
+	To state 40
+	To state 43
+	To state 84
+From state 63:
+	To state 40
+	To state 74
+	To state 84
+	To state 85
+From state 64:
+	To state 41
+	To state 42
+	To state 82
+	To state 86
+From state 65:
+	To state 42
+	To state 46
+	To state 86
+	To state 87
+From state 66:
+	To state 43
+	To state 44
+	To state 87
+	To state 88
+From state 67:
+	To state 44
+	To state 48
+	To state 85
+	To state 88
+From state 68:
+	To state 45
+	To state 46
+	To state 86
+	To state 89
+From state 69:
+	To state 46
+	To state 47
+	To state 87
+	To state 90
+From state 70:
+	To state 47
+	To state 48
+	To state 81
+	To state 90
+From state 71:
+	To state 49
+	To state 52
+	To state 60
+	To state 91
+From state 72:
+	To state 49
+	To state 50
+	To state 91
+	To state 92
+From state 73:
+	To state 50
+	To state 51
+	To state 54
+	To state 93
+From state 74:
+	To state 51
+	To state 63
+	To state 93
+	To state 94
+From state 75:
+	To state 52
+	To state 53
+	To state 91
+	To state 95
+From state 76:
+	To state 53
+	To state 57
+	To state 95
+	To state 96
+From state 77:
+	To state 54
+	To state 55
+	To state 96
+	To state 97
+From state 78:
+	To state 55
+	To state 59
+	To state 94
+	To state 97
+From state 79:
+	To state 56
+	To state 57
+	To state 95
+	To state 98
+From state 80:
+	To state 57
+	To state 58
+	To state 96
+	To state 99
+From state 81:
+	To state 58
+	To state 59
+	To state 70
+	To state 99
+From state 82:
+	To state 60
+	To state 61
+	To state 64
+	To state 100
+From state 83:
+	To state 61
+	To state 92
+	To state 100
+	To state 101
+From state 84:
+	To state 62
+	To state 63
+	To state 101
+	To state 102
+From state 85:
+	To state 63
+	To state 67
+	To state 94
+	To state 102
+From state 86:
+	To state 64
+	To state 65
+	To state 68
+	To state 103
+From state 87:
+	To state 65
+	To state 66
+	To state 69
+	To state 104
+From state 88:
+	To state 66
+	To state 67
+	To state 102
+	To state 104
+From state 89:
+	To state 68
+	To state 98
+	To state 103
+	To state 105
+From state 90:
+	To state 69
+	To state 70
+	To state 104
+	To state 105
+From state 91:
+	To state 71
+	To state 72
+	To state 75
+	To state 106
+From state 92:
+	To state 72
+	To state 83
+	To state 106
+	To state 107
+From state 93:
+	To state 73
+	To state 74
+	To state 107
+	To state 108
+From state 94:
+	To state 74
+	To state 78
+	To state 85
+	To state 108
+From state 95:
+	To state 75
+	To state 76
+	To state 79
+	To state 109
+From state 96:
+	To state 76
+	To state 77
+	To state 80
+	To state 110
+From state 97:
+	To state 77
+	To state 78
+	To state 108
+	To state 110
+From state 98:
+	To state 79
+	To state 89
+	To state 109
+	To state 111
+From state 99:
+	To state 80
+	To state 81
+	To state 110
+	To state 111
+From state 100:
+	To state 82
+	To state 83
+	To state 106
+	To state 112
+From state 101:
+	To state 83
+	To state 84
+	To state 107
+	To state 113
+From state 102:
+	To state 84
+	To state 85
+	To state 88
+	To state 113
+From state 103:
+	To state 86
+	To state 89
+	To state 112
+	To state 114
+From state 104:
+	To state 87
+	To state 88
+	To state 90
+	To state 114
+From state 105:
+	To state 89
+	To state 90
+	To state 111
+	To state 114
+From state 106:
+	To state 91
+	To state 92
+	To state 100
+	To state 115
+From state 107:
+	To state 92
+	To state 93
+	To state 101
+	To state 116
+From state 108:
+	To state 93
+	To state 94
+	To state 97
+	To state 116
+From state 109:
+	To state 95
+	To state 98
+	To state 115
+	To state 117
+From state 110:
+	To state 96
+	To state 97
+	To state 99
+	To state 117
+From state 111:
+	To state 98
+	To state 99
+	To state 105
+	To state 117
+From state 112:
+	To state 100
+	To state 103
+	To state 115
+	To state 118
+From state 113:
+	To state 101
+	To state 102
+	To state 116
+	To state 118
+From state 114:
+	To state 103
+	To state 104
+	To state 105
+	To state 118
+From state 115:
+	To state 106
+	To state 109
+	To state 112
+	To state 119
+From state 116:
+	To state 107
+	To state 108
+	To state 113
+	To state 119
+From state 117:
+	To state 109
+	To state 110
+	To state 111
+	To state 119
+From state 118:
+	To state 112
+	To state 113
+	To state 114
+	To state 119
+From state 119:
+	To state 115
+	To state 116
+	To state 117
+	To state 118
+Checking single-pass rs,rg construction:
+Kanban Model
+	N=1, should be 160 states: 160 states, 616 edges
+	N=2, should be 4600 states: 4600 states, 28120 edges
+Philosophers Model
+	N=4, should be 322 states: 322 states, 1204 edges
+	N=5, should be 1364 states: 1364 states, 6375 edges
+	N=6, should be 5778 states: 5778 states, 32406 edges
+N-queens Model
+	N=7: 552 states, 551 edges
+	N=8: 2057 states, 2056 edges
+Swaps Model
+	N=5, should be 120 states: 120 states, 480 edges
+	N=6, should be 720 states: 720 states, 3600 edges
+	N=7, should be 5040 states: 5040 states, 30240 edges
+Checking double-pass rs,rg construction:
+Kanban Model
+	N=1, should be 160 states: 160 states, 616 edges
+	N=2, should be 4600 states: 4600 states, 28120 edges
+Philosophers Model
+	N=4, should be 322 states: 322 states, 1204 edges
+	N=5, should be 1364 states: 1364 states, 6375 edges
+	N=6, should be 5778 states: 5778 states, 32406 edges
+N-queens Model
+	N=7: 552 states, 551 edges
+	N=8: 2057 states, 2056 edges
+Swaps Model
+	N=5, should be 120 states: 120 states, 480 edges
+	N=6, should be 720 states: 720 states, 3600 edges
+	N=7, should be 5040 states: 5040 states, 30240 edges

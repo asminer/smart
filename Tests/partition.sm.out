@@ -1,0 +1,69 @@
+Levels for a Markov chain:
+Level 1:
+	state
+Levels for a flat Petri net:
+Level 1:
+	a, b, c, d
+Using the un-numbered version:
+Level 3:
+	a, b
+Level 2:
+	c, f
+Level 1:
+	d, e
+Using the numbered version:
+Level 5:
+	a[5], b[5], c[5]
+Level 4:
+	a[4], b[4], c[4]
+Level 3:
+	a[3], b[3], c[3]
+Level 2:
+	a[2], b[2], c[2]
+Level 1:
+	a[1], b[1], c[1]
+Testing default for un-numbered version (there should be warnings):
+WARNING:
+	Places {h, g} default to group 0
+	within model deflt1 built in file partition.sm near line 67
+Level 4:
+	g, h
+Level 3:
+	a, b
+Level 2:
+	c, f
+Level 1:
+	d, e
+Testing default for numbered version (there should be warnings):
+WARNING:
+	Places {c[5], c[4], c[3], c[2], c[1]} default to group 0
+	within model deflt2 built in file partition.sm near line 81
+Level 6:
+	a[5], b[5]
+Level 5:
+	a[4], b[4]
+Level 4:
+	a[3], b[3]
+Level 3:
+	a[2], b[2]
+Level 2:
+	a[1], b[1]
+Level 1:
+	c[1], c[2], c[3], c[4], c[5]
+Testing mixed, and re-assigning (lots of warnings):
+WARNING in file partition.sm near line 91:
+	Moving {a} into group -2
+	within model foo built in file partition.sm near line 99
+WARNING in file partition.sm near line 93:
+	Moving {c, d, e} into group -3
+	within model foo built in file partition.sm near line 99
+WARNING:
+	Places {g} default to group 0
+	within model foo built in file partition.sm near line 99
+Level 3:
+	g
+Level 2:
+	a, b
+Level 1:
+	c, d, e, f
+Done

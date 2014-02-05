@@ -1,0 +1,240 @@
+Random variable real(ci1) has range: [1, 1]
+      above range for ci1 should be: [1, 1]
+
+Random variable real(ci2) has range: [infinity, infinity]
+      above range for ci2 should be: [infinity, infinity]
+
+Random variable real(ci3) has range: (null, null)
+      above range for ci3 should be: (null, null)
+
+Random variable real(ci4) has range: (?, ?)
+      above range for ci4 should be: (?, ?)
+
+Random variable cr1 has range: [1.1, 1.1]
+above range for cr1 should be: [1.1, 1.1]
+
+Random variable cr2 has range: [infinity, infinity]
+above range for cr2 should be: [infinity, infinity]
+
+Random variable cr3 has range: (null, null)
+above range for cr3 should be: (null, null)
+
+Random variable cr4 has range: (?, ?)
+above range for cr4 should be: (?, ?)
+
+Random variable rand real(ri01) has range: [2, 2]
+           above range for ri01 should be: [2, 2]
+
+Random variable rand real(ri02) has range: [infinity, infinity]
+           above range for ri02 should be: [infinity, infinity]
+
+Random variable rand real(ri03) has range: null
+           above range for ri03 should be: null
+
+Random variable rand real(ri04) has range: (?, ?)
+           above range for ri04 should be: (?, ?)
+
+Random variable rand real(ri05) has range: [0, infinity)
+           above range for ri05 should be: [0, infinity)
+
+Random variable rand real(ri06) has range: [0, infinity)
+           above range for ri06 should be: [0, infinity)
+
+Random variable rand real(ri07) has range: [1, 4]
+           above range for ri07 should be: [1, 4]
+
+Random variable rand real(ri08) has range: [8, 10]
+           above range for ri08 should be: [1, 8]
+
+Random variable rand real(ri09) has range: [1, 10]
+           above range for ri09 should be: [1, 10]
+
+Random variable rand real(ri10) has range: null
+           above range for ri10 should be: null
+
+Random variable rand real(ri11) has range: [0, infinity)
+           above range for ri11 should be: [0, infinity)
+
+Random variable rand real(ri2c2) has range: [infinity, infinity]
+           above range for ri2c2 should be: [infinity, infinity]
+
+Random variable rand real(ri2c3) has range: (null, null)
+           above range for ri2c3 should be: (null, null)
+
+Random variable rand real(ri2c4) has range: (?, infinity]
+           above range for ri2c4 should be: (?, infinity]
+
+Random variable rand real(ri2c5) has range: [0, infinity]
+           above range for ri2c5 should be: [0, infinity]
+
+Random variable rand real(ri2c7) has range: [1, infinity]
+           above range for ri2c7 should be: [1, infinity]
+
+Random variable rand real(ri3c2) has range: (null, null)
+           above range for ri3c2 should be: (null, null)
+
+Random variable rand real(ri3c3) has range: (null, null)
+           above range for ri3c3 should be: (null, null)
+
+Random variable rand real(ri3c4) has range: (null, null)
+           above range for ri3c4 should be: (null, null)
+
+Random variable rand real(ri3c5) has range: (null, null)
+           above range for ri3c5 should be: (null, null)
+
+Random variable rand real(ri3c7) has range: (null, null)
+           above range for ri3c7 should be: (null, null)
+
+Random variable rand real(ri4c2) has range: (?, infinity]
+           above range for ri4c2 should be: (?, infinity]
+
+Random variable rand real(ri4c3) has range: (null, null)
+           above range for ri4c3 should be: (null, null)
+
+Random variable rand real(ri4c4) has range: (?, ?)
+           above range for ri4c4 should be: (?, ?)
+
+Random variable rand real(ri4c5) has range: (?, infinity)
+           above range for ri4c5 should be: (?, infinity)
+
+Random variable rand real(ri4c7) has range: (?, ?)
+           above range for ri4c7 should be: (?, ?)
+
+Random variable rand real(ri5c2) has range: [0, infinity]
+           above range for ri5c2 should be: [0, infinity]
+
+Random variable rand real(ri5c3) has range: (null, null)
+           above range for ri5c3 should be: (null, null)
+
+Random variable rand real(ri5c4) has range: (?, infinity)
+           above range for ri5c4 should be: (?, infinity)
+
+Random variable rand real(ri5c5) has range: [0, infinity)
+           above range for ri5c5 should be: [0, infinity)
+
+Random variable rand real(ri5c7) has range: [0, infinity)
+           above range for ri5c7 should be: [0, infinity)
+
+Random variable rand real(ri7c2) has range: [1, infinity]
+           above range for ri7c2 should be: [1, infinity]
+
+Random variable rand real(ri7c3) has range: (null, null)
+           above range for ri7c3 should be: (null, null)
+
+Random variable rand real(ri7c4) has range: (?, ?)
+           above range for ri7c4 should be: (?, ?)
+
+Random variable rand real(ri7c5) has range: [0, infinity)
+           above range for ri7c5 should be: [0, infinity)
+
+Random variable rand real(ri7c7) has range: [1, 4]
+           above range for ri7c7 should be: [1, 4]
+
+Random variable rr01 has range: [2.5, 2.5]
+above range for rr01 should be: [2.5, 2.5]
+
+Random variable rr02 has range: [infinity, infinity]
+above range for rr02 should be: [infinity, infinity]
+
+Random variable rr03 has range: null
+above range for rr03 should be: null
+
+Random variable rr04 has range: (?, ?)
+above range for rr04 should be: (?, ?)
+
+Random variable rr05 has range: (0, infinity)
+above range for rr05 should be: (0, infinity)
+
+Random variable rr06 has range: (0, infinity)
+above range for rr06 should be: (0, infinity)
+
+Random variable rr07 has range: (1, 4)
+above range for rr07 should be: (1, 4)
+
+Random variable rr08 has range: (8.2, 9.8)
+above range for rr08 should be: (8.2, 9.8)
+
+Random variable rr09 has range: (1, 9.8)
+above range for rr09 should be: (1, 9.8)
+
+Random variable rr10 has range: null
+above range for rr10 should be: null
+
+Random variable rr11 has range: (0, infinity)
+above range for rr11 should be: (0, infinity)
+
+Random variable rr2c2 has range: [infinity, infinity]
+above range for rr2c2 should be: [infinity, infinity]
+
+Random variable rr2c3 has range: (null, null)
+above range for rr2c3 should be: (null, null)
+
+Random variable rr2c4 has range: (?, infinity]
+above range for rr2c4 should be: (?, infinity]
+
+Random variable rr2c5 has range: (0, infinity]
+above range for rr2c5 should be: (0, infinity]
+
+Random variable rr2c7 has range: (1, infinity]
+above range for rr2c7 should be: (1, infinity]
+
+Random variable rr3c2 has range: (null, null)
+above range for rr3c2 should be: (null, null)
+
+Random variable rr3c3 has range: (null, null)
+above range for rr3c3 should be: (null, null)
+
+Random variable rr3c4 has range: (null, null)
+above range for rr3c4 should be: (null, null)
+
+Random variable rr3c5 has range: (null, null)
+above range for rr3c5 should be: (null, null)
+
+Random variable rr3c7 has range: (null, null)
+above range for rr3c7 should be: (null, null)
+
+Random variable rr4c2 has range: (?, infinity]
+above range for rr4c2 should be: (?, infinity]
+
+Random variable rr4c3 has range: (null, null)
+above range for rr4c3 should be: (null, null)
+
+Random variable rr4c4 has range: (?, ?)
+above range for rr4c4 should be: (?, ?)
+
+Random variable rr4c5 has range: (?, infinity)
+above range for rr4c5 should be: (?, infinity)
+
+Random variable rr4c7 has range: (?, ?)
+above range for rr4c7 should be: (?, ?)
+
+Random variable rr5c2 has range: (0, infinity]
+above range for rr5c2 should be: (0, infinity]
+
+Random variable rr5c3 has range: (null, null)
+above range for rr5c3 should be: (null, null)
+
+Random variable rr5c4 has range: (?, infinity)
+above range for rr5c4 should be: (?, infinity)
+
+Random variable rr5c5 has range: (0, infinity)
+above range for rr5c5 should be: (0, infinity)
+
+Random variable rr5c7 has range: (0, infinity)
+above range for rr5c7 should be: (0, infinity)
+
+Random variable rr7c2 has range: (1, infinity]
+above range for rr7c2 should be: (1, infinity]
+
+Random variable rr7c3 has range: (null, null)
+above range for rr7c3 should be: (null, null)
+
+Random variable rr7c4 has range: (?, ?)
+above range for rr7c4 should be: (?, ?)
+
+Random variable rr7c5 has range: (0, infinity)
+above range for rr7c5 should be: (0, infinity)
+
+Random variable rr7c7 has range: (1, 4)
+above range for rr7c7 should be: (1, 4)
+

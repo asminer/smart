@@ -1,0 +1,70 @@
+
+// $Id$
+
+/*
+	Bridge crossing optimization problem, it goes something like this.
+	There are 3 people that must cross an old bridge at night,
+	and only 1 flashlight.  2 people can cross the bridge at a time.
+	Each person walks at a different speed.  What is the fastest
+	we can get everyone across the bridge?
+
+	People start on the left side and go to the right side.
+
+	We identify people by their speeds, so the speeds
+	need to be unique.
+*/
+
+int L1a in {1};		// speed of person 1
+int L1b in {2};		// speed of person 2
+int L1c in {5}; 	// speed of person 3
+
+int L2a, R2a, R2b	in {1, 2, 5};	// after 1 l-r cross
+int L3a, L3b, R3a	in {1, 2, 5};	// l-r, r-l
+int R4a, R4b, R4c	in {1, 2, 5};	// l-r, r-l, l-r
+
+// First, we make sure that everyone is accounted for at each state.
+
+// State 1 unique
+L1a != L1b;
+L1a != L1c;
+L1b != L1c;
+
+// State 2 unique
+L2a != R2a;
+L2a != R2b;
+R2a != R2b;
+
+// State 3 unique
+L3a != L3b;
+L3a != R3a;
+L3b != R3a;
+
+// State 4 unique
+R4a != R4b;
+R4a != R4c;
+R4b != R4c;
+
+// First crossing
+(R2a == L1a) | (R2a == L1b) | (R2a == L1c);
+(R2b == L1a) | (R2b == L1b) | (R2b == L1c);
+(L2a == L1a) | (L2a == L1b) | (L2a == L1c);
+
+// Second crossing
+L3a == L2a;
+(L3b == R2a) | (L3b == R2b);
+(R3a == R2a) | (R3a == R2b);
+
+// Third crossing
+R4a == R3a;
+(R4b == L3a) | (R4b == L3b);
+(R4c == L3a) | (R4c == L3b);
+
+
+// These are used to eliminate symmetries, 
+// and to make the "reward" function easier to write.
+
+R2a < R2b;	// the two people who crossed;
+R4b < R4c;	// WLOG we can order them.
+
+minimize cost := R2b + L3b + R4c;
+

@@ -1,0 +1,284 @@
+Testing arrays with gaps; odd indexes should generate range errors
+gap1[0] = 0
+gap1[1] = ERROR in file arrays.sm near line 26:
+	Bad value: 1 for index i in array gap1
+null
+gap1[2] = 2
+gap1[3] = ERROR in file arrays.sm near line 26:
+	Bad value: 3 for index i in array gap1
+null
+gap1[4] = 4
+gap1[5] = ERROR in file arrays.sm near line 26:
+	Bad value: 5 for index i in array gap1
+null
+gap1[6] = 6
+gap2[0] = 0
+gap2[1] = ERROR in file arrays.sm near line 29:
+	Bad value: 1 for index i in array gap2
+null
+gap2[2] = 2
+gap2[3] = ERROR in file arrays.sm near line 29:
+	Bad value: 3 for index i in array gap2
+null
+gap2[4] = 4
+gap2[5] = ERROR in file arrays.sm near line 29:
+	Bad value: 5 for index i in array gap2
+null
+gap2[6] = 6
+Testing factorial array, everything after index 20 is an error
+ 25! = ERROR in file arrays.sm near line 34:
+	Bad value: 25 for index i in array fact
+null
+ 24! = ERROR in file arrays.sm near line 34:
+	Bad value: 24 for index i in array fact
+null
+ 23! = ERROR in file arrays.sm near line 34:
+	Bad value: 23 for index i in array fact
+null
+ 22! = ERROR in file arrays.sm near line 34:
+	Bad value: 22 for index i in array fact
+null
+ 21! = ERROR in file arrays.sm near line 34:
+	Bad value: 21 for index i in array fact
+null
+ 20! = 2.4329e+18
+ 19! = 1.21645e+17
+ 18! = 6.40237e+15
+ 17! = 3.55687e+14
+ 16! = 2.09228e+13
+ 15! = 1.30767e+12
+ 14! = 8.71783e+10
+ 13! = 6.22702e+09
+ 12! = 4.79002e+08
+ 11! = 3.99168e+07
+ 10! = 3.6288e+06
+  9! = 362880
+  8! = 40320
+  7! = 5040
+  6! = 720
+  5! = 120
+  4! = 24
+  3! = 6
+  2! = 2
+  1! = 1
+  0! = 1
+Testing fibonacci array, valid from 0..30
+ 32th fib:ERROR in file arrays.sm near line 44:
+	Bad value: 32 for index i in array fib
+null
+ 31th fib:ERROR in file arrays.sm near line 44:
+	Bad value: 31 for index i in array fib
+null
+ 30th fib:1346269
+ 29th fib:832040
+ 28th fib:514229
+ 27th fib:317811
+ 26th fib:196418
+ 25th fib:121393
+ 24th fib:75025
+ 23th fib:46368
+ 22th fib:28657
+ 21th fib:17711
+ 20th fib:10946
+ 19th fib:6765
+ 18th fib:4181
+ 17th fib:2584
+ 16th fib:1597
+ 15th fib:987
+ 14th fib:610
+ 13th fib:377
+ 12th fib:233
+ 11th fib:144
+ 10th fib:89
+  9th fib:55
+  8th fib:34
+  7th fib:21
+  6th fib:13
+  5th fib:8
+  4th fib:5
+  3th fib:3
+  2th fib:2
+  1th fib:1
+  0th fib:1
+ -1th fib:ERROR in file arrays.sm near line 44:
+	Bad value: -1 for index i in array fib
+null
+ -2th fib:ERROR in file arrays.sm near line 44:
+	Bad value: -2 for index i in array fib
+null
+Assign f[1] = 1
+Assign f[2] = 2
+Assign f[3] = 3
+Assign f[4] = 4
+Assign f[5] = 5
+Assign f[6] = 6
+Assign f[10] = 10
+Assign f[9] = 9
+Assign f[8] = 8
+Assign f[7] = 7
+Assign g1[1][1][1] = 1
+Assign g1[1][2][1] = 1
+Assign g1[1][2][2] = 2
+Assign g1[1][3][1] = 1
+Assign g1[1][3][2] = 2
+Assign g1[1][3][3] = 3
+Assign g1[1][4][1] = 1
+Assign g1[1][4][2] = 2
+Assign g1[1][4][3] = 3
+Assign g1[1][4][4] = 4
+Assign g1[1][5][1] = 1
+Assign g1[1][5][2] = 2
+Assign g1[1][5][3] = 3
+Assign g1[1][5][4] = 4
+Assign g1[1][5][5] = 5
+Assign g1[2][2][2] = 2
+Assign g1[2][3][2] = 2
+Assign g1[2][3][3] = 3
+Assign g1[2][4][2] = 2
+Assign g1[2][4][3] = 3
+Assign g1[2][4][4] = 4
+Assign g1[2][5][2] = 2
+Assign g1[2][5][3] = 3
+Assign g1[2][5][4] = 4
+Assign g1[2][5][5] = 5
+Assign g1[3][3][3] = 3
+Assign g1[3][4][3] = 3
+Assign g1[3][4][4] = 4
+Assign g1[3][5][3] = 3
+Assign g1[3][5][4] = 4
+Assign g1[3][5][5] = 5
+Assign g1[4][4][4] = 4
+Assign g1[4][5][4] = 4
+Assign g1[4][5][5] = 5
+Assign g1[5][5][5] = 5
+2
+5
+Range error:
+ERROR in file arrays.sm near line 67:
+	Bad value: 3 for index k in array g1
+null
+Test of array index order:
+ERROR in file arrays.sm near line 77:
+	Array g2 expecting index i, got j
+ERROR in file arrays.sm near line 83:
+	Unknown array g2
+ERROR in file arrays.sm near line 83:
+	No match for print(error, string)
+Assign tr[0.1] = 0.1
+Assign tr[0.2] = 0.2
+Assign tr[0.3] = 0.3
+Assign g[0.1] = 0.1
+These should be range errors:
+ERROR in file arrays.sm near line 108:
+	Bad value: 0.3 for index x in array g
+null
+ERROR in file arrays.sm near line 109:
+	Bad value: 0.2 for index x in array g
+null
+ERROR in file arrays.sm near line 110:
+	Bad value: 0.15 for index x in array g
+null
+ERROR in file arrays.sm near line 111:
+	Bad value: 0.13 for index x in array g
+null
+ERROR in file arrays.sm near line 112:
+	Bad value: 0.12 for index x in array g
+null
+ERROR in file arrays.sm near line 113:
+	Bad value: 0.11 for index x in array g
+null
+ERROR in file arrays.sm near line 114:
+	Bad value: 0.105 for index x in array g
+null
+ERROR in file arrays.sm near line 115:
+	Bad value: 0.102 for index x in array g
+null
+ERROR in file arrays.sm near line 116:
+	Bad value: 0.101 for index x in array g
+null
+These should go to g[0.1]:
+0.1
+0.1
+0.1
+0.1
+0.1
+0.1
+0.1
+0.1
+0.1
+Assign xki[0.1][1][3] = 0.3
+Assign xki[0.1][2][3] = 0.6
+Assign xki[0.1][3][3] = 0.9
+Assign xki[0.1][4][3] = 1.2
+Assign xki[0.1][5][3] = 1.5
+Assign xki[0.2][1][3] = 0.6
+Assign xki[0.2][2][3] = 1.2
+Assign xki[0.2][3][3] = 1.8
+Assign xki[0.2][4][3] = 2.4
+Assign xki[0.2][5][3] = 3
+Assign xyz[0.2][0.2][0.2] = 0.2
+Assign xyz[0.2][0.4][0.2] = 0.2
+Assign xyz[0.2][0.4][0.28] = 0.28
+Assign xyz[0.2][0.4][0.36] = 0.36
+Assign xyz[0.2][0.6][0.2] = 0.2
+Assign xyz[0.2][0.6][0.32] = 0.32
+Assign xyz[0.2][0.6][0.44] = 0.44
+Assign xyz[0.2][0.6][0.56] = 0.56
+Assign xyz[0.2][0.8][0.2] = 0.2
+Assign xyz[0.2][0.8][0.36] = 0.36
+Assign xyz[0.2][0.8][0.52] = 0.52
+Assign xyz[0.2][0.8][0.68] = 0.68
+Assign xyz[0.4][0.4][0.4] = 0.4
+Assign xyz[0.4][0.6][0.4] = 0.4
+Assign xyz[0.4][0.8][0.4] = 0.4
+Assign xyz[0.4][0.8][0.72] = 0.72
+Assign xyz[0.6][0.6][0.6] = 0.6
+Assign xyz[0.6][0.8][0.6] = 0.6
+Assign xyz[0.8][0.8][0.8] = 0.8
+0.2
+0.32
+0.72
+These should be range errors:
+null
+ERROR in file arrays.sm near line 155:
+	Bad value: 0.7 for index y in array xyz
+null
+ERROR in file arrays.sm near line 156:
+	Bad value: 0.8 for index z in array xyz
+null
+Testing number of array indices:
+ERROR in file arrays.sm near line 164:
+	Array wrongind has dimension 3
+ERROR in file arrays.sm near line 165:
+	Array wrongind has dimension 3
+Testing wrong index names:
+ERROR in file arrays.sm near line 174:
+	Array wrongorder expecting index i, got j
+ERROR in file arrays.sm near line 175:
+	Array wrongname1 expecting index j, got k
+ERROR in file arrays.sm near line 176:
+	Array wrongname2 expecting index i, got m
+
+
+Just for kicks:
+
+                                                           1
+                                                        1     1
+                                                     1     2     1
+                                                  1     3     3     1
+                                               1     4     6     4     1
+                                            1     5    10    10     5     1
+                                         1     6    15    20    15     6     1
+                                      1     7    21    35    35    21     7     1
+                                   1     8    28    56    70    56    28     8     1
+                                1     9    36    84   126   126    84    36     9     1
+                             1    10    45   120   210   252   210   120    45    10     1
+                          1    11    55   165   330   462   462   330   165    55    11     1
+                       1    12    66   220   495   792   924   792   495   220    66    12     1
+                    1    13    78   286   715  1287  1716  1716  1287   715   286    78    13     1
+                 1    14    91   364  1001  2002  3003  3432  3003  2002  1001   364    91    14     1
+              1    15   105   455  1365  3003  5005  6435  6435  5005  3003  1365   455   105    15     1
+           1    16   120   560  1820  4368  8008 11440 12870 11440  8008  4368  1820   560   120    16     1
+        1    17   136   680  2380  6188 12376 19448 24310 24310 19448 12376  6188  2380   680   136    17     1
+     1    18   153   816  3060  8568 18564 31824 43758 48620 43758 31824 18564  8568  3060   816   153    18     1
+  1    19   171   969  3876 11628 27132 50388 75582 92378 92378 75582 50388 27132 11628  3876   969   171    19     1

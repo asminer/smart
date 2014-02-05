@@ -1,0 +1,118 @@
+
+// $Id$
+
+/*
+    For speed, put the known squares at the top, and unknown below that.
+*/
+
+// known vars
+
+int x12 in {6};
+int x14 in {1};
+int x16 in {4};
+int x18 in {5};
+
+int x23 in {8};
+int x24 in {3};
+int x26 in {5};
+int x27 in {6};
+
+int x31 in {2};
+int x39 in {1};
+
+int x41 in {8};
+int x44 in {4};
+int x46 in {7};
+int x49 in {6};
+
+int x53 in {6};
+int x57 in {3};
+
+int x61 in {7};
+int x64 in {9};
+int x66 in {1};
+int x69 in {4};
+
+int x71 in {5};
+int x79 in {2};
+
+int x83 in {7};
+int x84 in {2};
+int x86 in {6};
+int x87 in {9};
+
+int x92 in {4};
+int x94 in {5};
+int x96 in {8};
+int x98 in {7};
+
+// Unknowns
+int x11, x13, x15, x17, x19,
+    x21, x22, x25, x28, x29,
+    x32, x33, x34, x35, x36, x37, x38,
+    x42, x43, x45, x47, x48,
+    x51, x52, x54, x55, x56, x58, x59,
+    x62, x63, x65, x67, x68,
+    x72, x73, x74, x75, x76, x77, x78,
+    x81, x82, x85, x88, x89,
+    x91, x93, x95, x97, x99 in {1 .. 9};
+
+// rows are unique
+
+unique(x11, x12, x13, x14, x15, x16, x17, x18, x19);
+unique(x21, x22, x23, x24, x25, x26, x27, x28, x29);
+unique(x31, x32, x33, x34, x35, x36, x37, x38, x39);
+unique(x41, x42, x43, x44, x45, x46, x47, x48, x49);
+unique(x51, x52, x53, x54, x55, x56, x57, x58, x59);
+unique(x61, x62, x63, x64, x65, x66, x67, x68, x69);
+unique(x71, x72, x73, x74, x75, x76, x77, x78, x79);
+unique(x81, x82, x83, x84, x85, x86, x87, x88, x89);
+unique(x91, x92, x93, x94, x95, x96, x97, x98, x99);
+
+// columns are unique
+
+unique(x11, x21, x31, x41, x51, x61, x71, x81, x91);
+unique(x12, x22, x32, x42, x52, x62, x72, x82, x92);
+unique(x13, x23, x33, x43, x53, x63, x73, x83, x93);
+unique(x14, x24, x34, x44, x54, x64, x74, x84, x94);
+unique(x15, x25, x35, x45, x55, x65, x75, x85, x95);
+unique(x16, x26, x36, x46, x56, x66, x76, x86, x96);
+unique(x17, x27, x37, x47, x57, x67, x77, x87, x97);
+unique(x18, x28, x38, x48, x58, x68, x78, x88, x98);
+unique(x19, x29, x39, x49, x59, x69, x79, x89, x99);
+
+// boxes are unique
+
+unique( x11, x12, x13, x21, x22, x23, x31, x32, x33);
+unique( x14, x15, x16, x24, x25, x26, x34, x35, x36);
+unique( x17, x18, x19, x27, x28, x29, x37, x38, x39);
+
+unique( x41, x42, x43, x51, x52, x53, x61, x62, x63);
+unique( x44, x45, x46, x54, x55, x56, x64, x65, x66);
+unique( x47, x48, x49, x57, x58, x59, x67, x68, x69);
+
+unique( x71, x72, x73, x81, x82, x83, x91, x92, x93);
+unique( x74, x75, x76, x84, x85, x86, x94, x95, x96);
+unique( x77, x78, x79, x87, x88, x89, x97, x98, x99);
+
+satisfiable solution := true;
+
+satisfiable verify :=
+  x11 == 9 & x12 == 6 & x13 == 3 & x14 == 1 & x15 == 7 & x16 == 4 & 
+  x17 == 2 & x18 == 5 & x19 == 8 & 
+  x21 == 1 & x22 == 7 & x23 == 8 & x24 == 3 & x25 == 2 & x26 == 5 & 
+  x27 == 6 & x28 == 4 & x29 == 9 & 
+  x31 == 2 & x32 == 5 & x33 == 4 & x34 == 6 & x35 == 8 & x36 == 9 & 
+  x37 == 7 & x38 == 3 & x39 == 1 & 
+  x41 == 8 & x42 == 2 & x43 == 1 & x44 == 4 & x45 == 3 & x46 == 7 & 
+  x47 == 5 & x48 == 9 & x49 == 6 & 
+  x51 == 4 & x52 == 9 & x53 == 6 & x54 == 8 & x55 == 5 & x56 == 2 & 
+  x58 == 1 & x57 == 3 & x59 == 7 & 
+  x61 == 7 & x62 == 3 & x63 == 5 & x64 == 9 & x65 == 6 & x66 == 1 & 
+  x67 == 8 & x68 == 2 & x69 == 4 & 
+  x71 == 5 & x72 == 8 & x73 == 9 & x74 == 7 & x75 == 1 & x76 == 3 & 
+  x77 == 4 & x78 == 6 & x79 == 2 & 
+  x81 == 3 & x82 == 1 & x83 == 7 & x84 == 2 & x85 == 4 & x86 == 6 & 
+  x87 == 9 & x88 == 8 & x89 == 5 & 
+  x91 == 6 & x92 == 4 & x93 == 2 & x94 == 5 & x95 == 9 & x96 == 8 & 
+  x97 == 1 & x98 == 7 & x99 == 3;

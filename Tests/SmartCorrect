@@ -1,0 +1,55 @@
+#!/bin/sh
+
+#
+# $Id$
+#
+# Usage: Correct smart_exec test_files
+#
+# Sets the output on the test files as "correct".
+#
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <smart_exec> test1 test2 ..."
+  echo "Runs executable on each test file and saves the output."
+  exit
+fi
+
+okcount="0"
+chcount="0"
+fcount="0"
+
+#
+# Helper function: generate redirect string
+# argument 1: output file name
+Redirect()
+{
+  printf "cond(error_file(\"%s\"),null,exit(1)); cond(warning_file(\"%s\"),null,exit(1)); cond(output_file(\"%s\"),null,exit(1));" $1 $1 $1
+}
+
+#
+# Helper function:
+# 	Runs the input file passed as an argument
+#
+TestOne()
+{
+  current=`pwd`
+  d=`dirname $1`
+  b=`basename $1`
+  cd $d
+  REDIRECT=`Redirect $b.out`
+  rm -f $b.out
+  echo $REDIRECT | $current/$SMART - $b
+  cd $current
+}
+
+SMART=$1
+shift
+if [ ! -f $SMART ]; then
+  printf "Smart executable not found: $SMART\n"
+  exit 1
+fi
+
+for file in $@
+do
+  TestOne $file
+done

@@ -1,0 +1,543 @@
+//==================================================================\\
+||                                                                  ||
+||               Checking `choose' for discrete phase               ||
+||                                                                  ||
+\\==================================================================//
+These distributions should be isomorphic:
+------------------------------------------------------------
+Information for phase type Bernoulli(0.2)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.2
+	State 1 prob 0.8
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+Information for phase type choose((0 : 0.8, 1 : 0.2)
+Discrete phase type, state has dimension 3
+Reachable states:
+State 0: [2, a, 1]
+State 1: [3, a, a]
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.2
+	State 1 prob 0.8
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+------------------------------------------------------------
+=======================================
+Building equilikely(1,2) `by hand'
+=======================================
+Information for phase type choose((1 : 0.5, 2 : 0.5)
+Discrete phase type, state has dimension 3
+Reachable states:
+State 0: [1, 1, a]
+State 1: [2, a, 1]
+State 2: [2, a, 2]
+State 3: [3, a, a]
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 0.5
+	State 1 prob 0.5
+Markov chain:
+Row 0:
+	3 : 1
+Row 1:
+	2 : 1
+Row 2:
+	3 : 1
+Row 3:
+	3 : 1
+3 edges total
+End of information for phase type
+
+=======================================
+Building equilikely(0,2) `by hand'
+=======================================
+Information for phase type choose((0 : 0.333333, 1 : 0.333333, 2 : 0.333333)
+Discrete phase type, state has dimension 4
+Reachable states:
+State 0: [2, a, 1, a]
+State 1: [3, a, a, 1]
+State 2: [3, a, a, 2]
+State 3: [4, a, a, a]
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 0.333333
+	State 1 prob 0.333333
+	State 3 prob 0.333333
+Markov chain:
+Row 0:
+	3 : 1
+Row 1:
+	2 : 1
+Row 2:
+	3 : 1
+Row 3:
+	3 : 1
+3 edges total
+End of information for phase type
+
+=======================================
+Building equilikely(1,4) `by hand'
+=======================================
+Information for phase type choose((1 : 0.25, 2 : 0.25, 3 : 0.25, 4 : 0.25)
+Discrete phase type, state has dimension 5
+Reachable states:
+State 0: [1, 1, a, a, a]
+State 1: [2, a, 1, a, a]
+State 2: [3, a, a, 1, a]
+State 3: [4, a, a, a, 1]
+State 4: [2, a, 2, a, a]
+State 5: [3, a, a, 2, a]
+State 6: [4, a, a, a, 2]
+State 7: [3, a, a, 3, a]
+State 8: [4, a, a, a, 3]
+State 9: [4, a, a, a, 4]
+State 10: [5, a, a, a, a]
+11 states total
+Accepting state index: 10
+No trap state
+Initial distribution:
+	State 0 prob 0.25
+	State 1 prob 0.25
+	State 2 prob 0.25
+	State 3 prob 0.25
+Markov chain:
+Row 0:
+	10 : 1
+Row 1:
+	4 : 1
+Row 2:
+	5 : 1
+Row 3:
+	6 : 1
+Row 4:
+	10 : 1
+Row 5:
+	7 : 1
+Row 6:
+	8 : 1
+Row 7:
+	10 : 1
+Row 8:
+	9 : 1
+Row 9:
+	10 : 1
+Row 10:
+	10 : 1
+10 edges total
+End of information for phase type
+
+=======================================
+Building `2 dice' by hand
+=======================================
+Information for phase type choose((2 : 0.0277778, 3 : 0.0555556, 4 : 0.0833333, 5 : 0.111111, 6 : 0.138889, 7 : 0.166667, 8 : 0.138889, 9 : 0.111111, 10 : 0.0833333, 11 : 0.0555556, 12 : 0.0277778)
+Discrete phase type, state has dimension 12
+Reachable states:
+State 0: [1, 1, a, a, a, a, a, a, a, a, a, a]
+State 1: [2, a, 1, a, a, a, a, a, a, a, a, a]
+State 2: [3, a, a, 1, a, a, a, a, a, a, a, a]
+State 3: [4, a, a, a, 1, a, a, a, a, a, a, a]
+State 4: [5, a, a, a, a, 1, a, a, a, a, a, a]
+State 5: [6, a, a, a, a, a, 1, a, a, a, a, a]
+State 6: [7, a, a, a, a, a, a, 1, a, a, a, a]
+State 7: [8, a, a, a, a, a, a, a, 1, a, a, a]
+State 8: [9, a, a, a, a, a, a, a, a, 1, a, a]
+State 9: [10, a, a, a, a, a, a, a, a, a, 1, a]
+State 10: [11, a, a, a, a, a, a, a, a, a, a, 1]
+State 11: [1, 2, a, a, a, a, a, a, a, a, a, a]
+State 12: [2, a, 2, a, a, a, a, a, a, a, a, a]
+State 13: [3, a, a, 2, a, a, a, a, a, a, a, a]
+State 14: [4, a, a, a, 2, a, a, a, a, a, a, a]
+State 15: [5, a, a, a, a, 2, a, a, a, a, a, a]
+State 16: [6, a, a, a, a, a, 2, a, a, a, a, a]
+State 17: [7, a, a, a, a, a, a, 2, a, a, a, a]
+State 18: [8, a, a, a, a, a, a, a, 2, a, a, a]
+State 19: [9, a, a, a, a, a, a, a, a, 2, a, a]
+State 20: [10, a, a, a, a, a, a, a, a, a, 2, a]
+State 21: [11, a, a, a, a, a, a, a, a, a, a, 2]
+State 22: [2, a, 3, a, a, a, a, a, a, a, a, a]
+State 23: [3, a, a, 3, a, a, a, a, a, a, a, a]
+State 24: [4, a, a, a, 3, a, a, a, a, a, a, a]
+State 25: [5, a, a, a, a, 3, a, a, a, a, a, a]
+State 26: [6, a, a, a, a, a, 3, a, a, a, a, a]
+State 27: [7, a, a, a, a, a, a, 3, a, a, a, a]
+State 28: [8, a, a, a, a, a, a, a, 3, a, a, a]
+State 29: [9, a, a, a, a, a, a, a, a, 3, a, a]
+State 30: [10, a, a, a, a, a, a, a, a, a, 3, a]
+State 31: [11, a, a, a, a, a, a, a, a, a, a, 3]
+State 32: [3, a, a, 4, a, a, a, a, a, a, a, a]
+State 33: [4, a, a, a, 4, a, a, a, a, a, a, a]
+State 34: [5, a, a, a, a, 4, a, a, a, a, a, a]
+State 35: [6, a, a, a, a, a, 4, a, a, a, a, a]
+State 36: [7, a, a, a, a, a, a, 4, a, a, a, a]
+State 37: [8, a, a, a, a, a, a, a, 4, a, a, a]
+State 38: [9, a, a, a, a, a, a, a, a, 4, a, a]
+State 39: [10, a, a, a, a, a, a, a, a, a, 4, a]
+State 40: [11, a, a, a, a, a, a, a, a, a, a, 4]
+State 41: [4, a, a, a, 5, a, a, a, a, a, a, a]
+State 42: [5, a, a, a, a, 5, a, a, a, a, a, a]
+State 43: [6, a, a, a, a, a, 5, a, a, a, a, a]
+State 44: [7, a, a, a, a, a, a, 5, a, a, a, a]
+State 45: [8, a, a, a, a, a, a, a, 5, a, a, a]
+State 46: [9, a, a, a, a, a, a, a, a, 5, a, a]
+State 47: [10, a, a, a, a, a, a, a, a, a, 5, a]
+State 48: [11, a, a, a, a, a, a, a, a, a, a, 5]
+State 49: [5, a, a, a, a, 6, a, a, a, a, a, a]
+State 50: [6, a, a, a, a, a, 6, a, a, a, a, a]
+State 51: [7, a, a, a, a, a, a, 6, a, a, a, a]
+State 52: [8, a, a, a, a, a, a, a, 6, a, a, a]
+State 53: [9, a, a, a, a, a, a, a, a, 6, a, a]
+State 54: [10, a, a, a, a, a, a, a, a, a, 6, a]
+State 55: [11, a, a, a, a, a, a, a, a, a, a, 6]
+State 56: [6, a, a, a, a, a, 7, a, a, a, a, a]
+State 57: [7, a, a, a, a, a, a, 7, a, a, a, a]
+State 58: [8, a, a, a, a, a, a, a, 7, a, a, a]
+State 59: [9, a, a, a, a, a, a, a, a, 7, a, a]
+State 60: [10, a, a, a, a, a, a, a, a, a, 7, a]
+State 61: [11, a, a, a, a, a, a, a, a, a, a, 7]
+State 62: [7, a, a, a, a, a, a, 8, a, a, a, a]
+State 63: [8, a, a, a, a, a, a, a, 8, a, a, a]
+State 64: [9, a, a, a, a, a, a, a, a, 8, a, a]
+State 65: [10, a, a, a, a, a, a, a, a, a, 8, a]
+State 66: [11, a, a, a, a, a, a, a, a, a, a, 8]
+State 67: [8, a, a, a, a, a, a, a, 9, a, a, a]
+State 68: [9, a, a, a, a, a, a, a, a, 9, a, a]
+State 69: [10, a, a, a, a, a, a, a, a, a, 9, a]
+State 70: [11, a, a, a, a, a, a, a, a, a, a, 9]
+State 71: [9, a, a, a, a, a, a, a, a, 10, a, a]
+State 72: [10, a, a, a, a, a, a, a, a, a, 10, a]
+State 73: [11, a, a, a, a, a, a, a, a, a, a, 10]
+State 74: [10, a, a, a, a, a, a, a, a, a, 11, a]
+State 75: [11, a, a, a, a, a, a, a, a, a, a, 11]
+State 76: [11, a, a, a, a, a, a, a, a, a, a, 12]
+State 77: [12, a, a, a, a, a, a, a, a, a, a, a]
+78 states total
+Accepting state index: 77
+No trap state
+Initial distribution:
+	State 0 prob 0.0277778
+	State 1 prob 0.0555556
+	State 2 prob 0.0833333
+	State 3 prob 0.111111
+	State 4 prob 0.138889
+	State 5 prob 0.166667
+	State 6 prob 0.138889
+	State 7 prob 0.111111
+	State 8 prob 0.0833333
+	State 9 prob 0.0555556
+	State 10 prob 0.0277778
+Markov chain:
+Row 0:
+	11 : 1
+Row 1:
+	12 : 1
+Row 2:
+	13 : 1
+Row 3:
+	14 : 1
+Row 4:
+	15 : 1
+Row 5:
+	16 : 1
+Row 6:
+	17 : 1
+Row 7:
+	18 : 1
+Row 8:
+	19 : 1
+Row 9:
+	20 : 1
+Row 10:
+	21 : 1
+Row 11:
+	77 : 1
+Row 12:
+	22 : 1
+Row 13:
+	23 : 1
+Row 14:
+	24 : 1
+Row 15:
+	25 : 1
+Row 16:
+	26 : 1
+Row 17:
+	27 : 1
+Row 18:
+	28 : 1
+Row 19:
+	29 : 1
+Row 20:
+	30 : 1
+Row 21:
+	31 : 1
+Row 22:
+	77 : 1
+Row 23:
+	32 : 1
+Row 24:
+	33 : 1
+Row 25:
+	34 : 1
+Row 26:
+	35 : 1
+Row 27:
+	36 : 1
+Row 28:
+	37 : 1
+Row 29:
+	38 : 1
+Row 30:
+	39 : 1
+Row 31:
+	40 : 1
+Row 32:
+	77 : 1
+Row 33:
+	41 : 1
+Row 34:
+	42 : 1
+Row 35:
+	43 : 1
+Row 36:
+	44 : 1
+Row 37:
+	45 : 1
+Row 38:
+	46 : 1
+Row 39:
+	47 : 1
+Row 40:
+	48 : 1
+Row 41:
+	77 : 1
+Row 42:
+	49 : 1
+Row 43:
+	50 : 1
+Row 44:
+	51 : 1
+Row 45:
+	52 : 1
+Row 46:
+	53 : 1
+Row 47:
+	54 : 1
+Row 48:
+	55 : 1
+Row 49:
+	77 : 1
+Row 50:
+	56 : 1
+Row 51:
+	57 : 1
+Row 52:
+	58 : 1
+Row 53:
+	59 : 1
+Row 54:
+	60 : 1
+Row 55:
+	61 : 1
+Row 56:
+	77 : 1
+Row 57:
+	62 : 1
+Row 58:
+	63 : 1
+Row 59:
+	64 : 1
+Row 60:
+	65 : 1
+Row 61:
+	66 : 1
+Row 62:
+	77 : 1
+Row 63:
+	67 : 1
+Row 64:
+	68 : 1
+Row 65:
+	69 : 1
+Row 66:
+	70 : 1
+Row 67:
+	77 : 1
+Row 68:
+	71 : 1
+Row 69:
+	72 : 1
+Row 70:
+	73 : 1
+Row 71:
+	77 : 1
+Row 72:
+	74 : 1
+Row 73:
+	75 : 1
+Row 74:
+	77 : 1
+Row 75:
+	76 : 1
+Row 76:
+	77 : 1
+Row 77:
+	77 : 1
+77 edges total
+End of information for phase type
+
+=======================================
+Choice of geometrics
+=======================================
+Information for phase type Geometric(0.2)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.2
+	State 1 prob 0.8
+Markov chain:
+Row 0:
+	0 : 0.2
+	1 : 0.8
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+Information for phase type Geometric(0.25)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.25
+	State 1 prob 0.75
+Markov chain:
+Row 0:
+	0 : 0.25
+	1 : 0.75
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+Information for phase type choose((Geometric(0.2) : 0.4, Geometric(0.25) : 0.6)
+Discrete phase type, state has dimension 3
+Reachable states:
+State 0: [1, 1, a]
+State 1: [2, a, 1]
+State 2: [3, a, a]
+3 states total
+Accepting state index: 2
+No trap state
+Initial distribution:
+	State 0 prob 0.08
+	State 1 prob 0.15
+	State 2 prob 0.77
+Markov chain:
+Row 0:
+	0 : 0.2
+	2 : 0.8
+Row 1:
+	1 : 0.25
+	2 : 0.75
+Row 2:
+	2 : 1
+2 edges total
+End of information for phase type
+
+//==================================================================\\
+||                                                                  ||
+||              Checking `choose' for continuous phase              ||
+||                                                                  ||
+\\==================================================================//
+=======================================
+Simple expo choice
+=======================================
+Information for phase type choose((expo(1.1) : 0.25, expo(2.2) : 0.75)
+Continuous phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, a]
+State 1: [2, a, 0]
+State 2: [3, a, a]
+3 states total
+Accepting state index: 2
+No trap state
+Initial distribution:
+	State 0 prob 0.25
+	State 1 prob 0.75
+Markov chain:
+Row 0:
+	2 : 1.1
+Row 1:
+	2 : 2.2
+Row 2:
+2 edges total
+End of information for phase type
+
+=======================================
+Simple Erlang choice
+=======================================
+Information for phase type choose((erlang(2, 1.1) : 0.4, erlang(3, 2.2) : 0.6)
+Continuous phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, a]
+State 1: [2, a, 0]
+State 2: [1, 1, a]
+State 3: [2, a, 1]
+State 4: [2, a, 2]
+State 5: [3, a, a]
+6 states total
+Accepting state index: 5
+No trap state
+Initial distribution:
+	State 0 prob 0.4
+	State 1 prob 0.6
+Markov chain:
+Row 0:
+	2 : 1.1
+Row 1:
+	3 : 2.2
+Row 2:
+	5 : 1.1
+Row 3:
+	4 : 2.2
+Row 4:
+	5 : 2.2
+Row 5:
+5 edges total
+End of information for phase type
+

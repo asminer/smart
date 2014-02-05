@@ -1,0 +1,30 @@
+
+5x5 queens problem
+         sequential placement:     54 total combs
+                             :     10 final combs
+             random placement:    462 total combs
+                             :     10 final combs
+
+6x6 queens problem
+         sequential placement:    153 total combs
+                             :      4 final combs
+             random placement:   2635 total combs
+                             :      4 final combs
+
+7x7 queens problem
+         sequential placement:    552 total combs
+                             :     40 final combs
+             random placement:  16870 total combs
+                             :     40 final combs
+
+8x8 queens problem
+         sequential placement:   2057 total combs
+                             :     92 final combs
+
+9x9 queens problem
+         sequential placement:   8394 total combs
+                             :    352 final combs
+
+10x10 queens problem
+         sequential placement:  35539 total combs
+                             :    724 final combs

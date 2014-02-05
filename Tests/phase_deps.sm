@@ -1,0 +1,44 @@
+
+// $Id$
+
+ph int zero   := 0;
+ph int one    := 1;
+ph int two    := 2;
+
+ph int zpo    := zero + one;
+ph int zpopt  := zero + one + two;
+
+print_deps(zero);
+print_deps(one);
+print_deps(two);
+
+print_deps(zpo);
+print_deps(zpopt);
+
+ph int zoo    := choose(zero:1, one:2);
+ph int zooot  := choose(zero:1, one:2, two:1);
+
+ph int mzo    := max(zero, one);
+
+print_deps(zoo);
+print_deps(zooot);
+print_deps(mzo);
+
+ph int zpinf  := zero + infinity;
+ph int opinf  := one + infinity;
+
+print_deps(zpinf);
+print_deps(opinf);
+
+ph int tricky1 := zpinf + opinf;
+
+print_deps(tricky1);
+
+print("These should print warnings:\n");
+
+ph int warn1 := zpo + zpopt;
+ph int warn2 := zoo + zooot;
+ph int warn3 := zpo + zooot;
+ph int warn4 := choose(zpo:1, zooot:2);
+ph int warn5 := max(zpo, zero, one);
+ph int warn6 := min(zoo, zooot);

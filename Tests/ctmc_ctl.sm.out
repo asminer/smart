@@ -1,0 +1,264 @@
+
+EX tests:
+--------------------------------------------------
+Should be {B, I, J}:
+          {B, I, J}
+Should be {A, D, K}:
+          {A, D, K}
+Should be {B, I, J}:
+          {B, I, J}
+Should be {G}:
+          {G}
+Should be {H, E[5]}:
+          {H, E[5]}
+
+EY tests:
+--------------------------------------------------
+Should be {I}:
+          {I}
+Should be {D, K}:
+          {D, K}
+Should be {I, J}:
+          {I, J}
+Should be {G}:
+          {G}
+Should be {H}:
+          {H}
+Should be {}:
+          {}
+Should be {A, D, K}:
+          {A, D, K}
+
+EF tests:
+--------------------------------------------------
+Reaches D, should be {A, B, D, I, J, K}:
+                     {A, B, D, I, J, K}
+Reaches H, should be {A, B, C, F, G, H}:
+                     {A, B, C, F, G, H}
+Reaches E[5], should be {A, B, E[1], E[2], E[3], E[4], E[5]}:
+                        {A, B, E[1], E[2], E[3], E[4], E[5]}
+Should be {}:
+          {}
+
+EP tests:
+--------------------------------------------------
+Reachable from D, should be {D, I, J, K}:
+                            {D, I, J, K}
+Reachable from H, should be {H}:
+                            {H}
+Should be {}:
+          {}
+SCC containing B {A, B}:
+                 {A, B}
+SCC containing D {D, I, J, K}:
+                 {D, I, J, K}
+SCC containing E[5] {E[5]}:
+                    {E[5]}
+SCC containing F {F}:
+                 {F}
+
+EU tests:
+--------------------------------------------------
+Reaches D without passing through K,
+  should be {A, B, D, I, J}:
+            {A, B, D, I, J}
+Reaches H without going along a path that reaches E[5],
+  should be {C, F, G, H}:
+            {C, F, G, H}
+
+ES tests:
+--------------------------------------------------
+Reachable from D without passing through K,
+  should be {D, I}:
+            {D, I}
+Reachable from H without going along a path that reaches E[5],
+  should be {H}:
+            {H}
+
+EG tests:
+--------------------------------------------------
+Should be {}:
+          {}
+EG(EF(D)), should be {A, B, D, I, J, K}:
+                     {A, B, D, I, J, K}
+EG(EF(E[5])), should be {A, B, E[1], E[2], E[3], E[4], E[5]}:
+                        {A, B, E[1], E[2], E[3], E[4], E[5]}
+Paths not containing H:
+  should be {A, B, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+            {A, B, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+EG(EF(H)), should be {A, B, C, F, G, H}:
+                     {A, B, C, F, G, H}
+
+EH tests:
+--------------------------------------------------
+Should be {A, B, D, I}:
+          {A, B, D, I}
+EH(EF(D)), should be {A, B, D, I, J, K}:
+                     {A, B, D, I, J, K}
+EH(EF(E[5])), should be {A, B, E[1], E[2], E[3], E[4], E[5]}:
+                        {A, B, E[1], E[2], E[3], E[4], E[5]}
+Past history not containing H:
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+EH(EF(H)), should be {A, B, C, F, G, H}:
+                     {A, B, C, F, G, H}
+
+AX tests:
+--------------------------------------------------
+Should be {G, H, E[5]}:
+          {G, H, E[5]}
+Should be {F, G, E[4], H, E[5]}:
+          {F, G, E[4], H, E[5]}
+Should be {I, J}:
+          {I, J}
+
+AY tests:
+--------------------------------------------------
+Should be {I}:
+          {I}
+Should be {}:
+          {}
+
+AF tests:
+--------------------------------------------------
+Should be {C, F, G, H}:
+          {C, F, G, H}
+Should be {D, I, J, K}:
+          {D, I, J, K}
+Should be {E[1], E[2], E[3], E[4], E[5]}:
+          {E[1], E[2], E[3], E[4], E[5]}
+
+AP tests:
+--------------------------------------------------
+Should be {F, G}:
+          {F, G}
+Should be {D, I, J, K}:
+          {D, I, J, K}
+Should be {A, B, C, F, G, E[1], E[2], E[3], E[4]}:
+          {A, B, C, F, G, E[1], E[2], E[3], E[4]}
+
+AU tests:
+--------------------------------------------------
+Should be {I, J, K}:
+          {I, J, K}
+Should be {D}:
+          {D}
+Should be {C, F, G, H}:
+          {C, F, G, H}
+
+AS tests:
+--------------------------------------------------
+Should be {D, I}:
+          {D, I}
+All past paths include B, without K,
+  should be {B, C, F, G, E[1], E[2], E[3], E[4]}:
+            {B, C, F, G, E[1], E[2], E[3], E[4]}
+
+AG tests:
+--------------------------------------------------
+Guaranteed to not get to H,
+  should be {E[1], E[2], E[3], E[4], D, I, J, K, E[5]}:
+            {E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+Guaranteed to not get to K,
+  should be {C, F, G, E[1], E[2], E[3], E[4], H, E[5]}:
+            {C, F, G, E[1], E[2], E[3], E[4], H, E[5]}
+Guaranteed to not get to E[5]:
+  should be {C, F, G, D, I, J, K, H}:
+            {C, F, G, D, I, J, K, H}
+AG(reachable),
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}:
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}
+
+AH tests:
+--------------------------------------------------
+States guaranteed not to come from B,
+  should be {}:
+            {}
+States guaranteed not to come from K,:
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5]}:
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5]}
+States guaranteed not to come from E[5],
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H}
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H}
+AH(reachable),
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}:
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}
+
+Errors:
+--------------------------------------------------
+ERROR in file ctmc_ctl.sm near line 356:
+	Statesets in union are from different model instances
+null
+ERROR in file ctmc_ctl.sm near line 175:
+	Stateset in EX expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 176:
+	Stateset in EY expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 177:
+	Stateset in EF expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 178:
+	Stateset in EP expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 179:
+	Stateset in EU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 180:
+	Stateset in EU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 181:
+	Stateset in EU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 182:
+	Stateset in ES expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 183:
+	Stateset in ES expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 184:
+	Stateset in ES expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 185:
+	Stateset in EG expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 186:
+	Stateset in EH expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 188:
+	Stateset in AX expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 189:
+	Stateset in AY expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 190:
+	Stateset in AF expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 191:
+	Stateset in AP expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 192:
+	Stateset in AU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 193:
+	Stateset in AU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 194:
+	Stateset in AU expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 195:
+	Stateset in AS expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 196:
+	Stateset in AS expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 197:
+	Stateset in AS expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 198:
+	Stateset in AG expression is from a different model
+null
+ERROR in file ctmc_ctl.sm near line 199:
+	Stateset in AH expression is from a different model
+null
+Done!

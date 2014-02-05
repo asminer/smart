@@ -1,0 +1,128 @@
+
+// $Id$
+
+/*
+    8 Queens problem.
+
+    Encoding: each integer variable tells which column to place
+    the queen, for the given row.
+*/
+
+int r01, r02, r03, r04, r05, r06, r07, r08 in {1..8};
+
+// prevent row attacks: already handled, since we have one queen per row.
+
+// prevent column attacks:
+
+r01 != r02;
+r01 != r03;
+r01 != r04;
+r01 != r05;
+r01 != r06;
+r01 != r07;
+r01 != r08;
+
+r02 != r03;
+r02 != r04;
+r02 != r05;
+r02 != r06;
+r02 != r07;
+r02 != r08;
+
+r03 != r04;
+r03 != r05;
+r03 != r06;
+r03 != r07;
+r03 != r08;
+
+r04 != r05;
+r04 != r06;
+r04 != r07;
+r04 != r08;
+
+r05 != r06;
+r05 != r07;
+r05 != r08;
+
+r06 != r07;
+r06 != r08;
+
+r07 != r08;
+
+// prevent diagonal-right attacks:
+
+r01 + 1 != r02;
+r01 + 2 != r03;
+r01 + 3 != r04;
+r01 + 4 != r05;
+r01 + 5 != r06;
+r01 + 6 != r07;
+r01 + 7 != r08;
+
+r02 + 1 != r03;
+r02 + 2 != r04;
+r02 + 3 != r05;
+r02 + 4 != r06;
+r02 + 5 != r07;
+r02 + 6 != r08;
+
+r03 + 1 != r04;
+r03 + 2 != r05;
+r03 + 3 != r06;
+r03 + 4 != r07;
+r03 + 5 != r08;
+
+r04 + 1 != r05;
+r04 + 2 != r06;
+r04 + 3 != r07;
+r04 + 4 != r08;
+
+r05 + 1 != r06;
+r05 + 2 != r07;
+r05 + 3 != r08;
+
+r06 + 1 != r07;
+r06 + 2 != r08;
+
+r07 + 1 != r08;
+
+// prevent diagonal-left attacks:
+
+r01 - 1 != r02;
+r01 - 2 != r03;
+r01 - 3 != r04;
+r01 - 4 != r05;
+r01 - 5 != r06;
+r01 - 6 != r07;
+r01 - 7 != r08;
+
+r02 - 1 != r03;
+r02 - 2 != r04;
+r02 - 3 != r05;
+r02 - 4 != r06;
+r02 - 5 != r07;
+r02 - 6 != r08;
+
+r03 - 1 != r04;
+r03 - 2 != r05;
+r03 - 3 != r06;
+r03 - 4 != r07;
+r03 - 5 != r08;
+
+r04 - 1 != r05;
+r04 - 2 != r06;
+r04 - 3 != r07;
+r04 - 4 != r08;
+
+r05 - 1 != r06;
+r05 - 2 != r07;
+r05 - 3 != r08;
+
+r06 - 1 != r07;
+r06 - 2 != r08;
+
+r07 - 1 != r08;
+
+// get solution
+satisfiable solve := true;
+

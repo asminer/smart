@@ -1,0 +1,172 @@
+3.14159
+These should be errors:
+ERROR in file funcs.sm near line 10:
+	Re-definition of constant pi
+ERROR in file funcs.sm near line 11:
+	Re-definition of constant pi
+ERROR in file funcs.sm near line 12:
+	Re-definition of constant pi
+should get 8: 8
+should get 8.01: 8.01
+should get 8.01: 8.01
+should get 15: 15
+should get 3: 3
+Duplication errors:
+ERROR in file funcs.sm near line 26:
+	Function declaration conflicts with existing identifier:
+	int plus(int a, int b)
+	declared in file funcs.sm near line 16
+ERROR in file funcs.sm near line 26:
+	Unknown identifier: a
+ERROR in file funcs.sm near line 26:
+	Unknown identifier: b
+ERROR in file funcs.sm near line 27:
+	Function declaration conflicts with existing identifier:
+	int times(int a, int b:=1)
+	declared in file funcs.sm near line 18
+ERROR in file funcs.sm near line 27:
+	Unknown identifier: x
+ERROR in file funcs.sm near line 27:
+	Unknown identifier: y
+ERROR in file funcs.sm near line 28:
+	Duplicate formal parameter named a
+ERROR in file funcs.sm near line 28:
+	Duplicate formal parameter named a
+Bad function calls:
+ERROR in file funcs.sm near line 31:
+	No match for plus(int, int, int)
+ERROR in file funcs.sm near line 32:
+	No match for times(real, real)
+ERROR in file funcs.sm near line 33:
+	No match for times(int)
+ERROR in file funcs.sm near line 33:
+	No match for plus(error, int)
+Nesting:
+should get 12: 12
+should get 10: 10
+should get 10: 10
+should be 5.0: 5.0
+should be 5.1: 5.1
+This should be an error:
+ERROR in file funcs.sm near line 52:
+	Return type for function foo should be int
+Factorials:
+  0! is 1
+  1! is 1
+  2! is 2
+  3! is 6
+  4! is 24
+  5! is 120
+  6! is 720
+  7! is 5040
+  8! is 40320
+  9! is 362880
+ 10! is 3628800
+ 11! is 39916800
+ 12! is 479001600
+ 13! is 6227020800
+ 14! is 87178291200
+ 15! is 1307674368000
+ 16! is 20922789888000
+ 17! is 355687428096000
+ 18! is 6402373705728000
+ 19! is 121645100408832000
+ 20! is 2432902008176640000
+Fibonacci:
+  0th Fibonacci: 1
+  1th Fibonacci: 1
+  2th Fibonacci: 2
+  3th Fibonacci: 3
+  4th Fibonacci: 5
+  5th Fibonacci: 8
+  6th Fibonacci: 13
+  7th Fibonacci: 21
+  8th Fibonacci: 34
+  9th Fibonacci: 55
+ 10th Fibonacci: 89
+ 11th Fibonacci: 144
+ 12th Fibonacci: 233
+ 13th Fibonacci: 377
+ 14th Fibonacci: 610
+ 15th Fibonacci: 987
+ 16th Fibonacci: 1597
+ 17th Fibonacci: 2584
+ 18th Fibonacci: 4181
+ 19th Fibonacci: 6765
+ 20th Fibonacci: 10946
+ 21th Fibonacci: 17711
+ 22th Fibonacci: 28657
+ 23th Fibonacci: 46368
+ 24th Fibonacci: 75025
+ 25th Fibonacci: 121393
+Another duplication error:
+ERROR in file funcs.sm near line 71:
+	Function declaration conflicts with existing identifier:
+	real promote2(int c, real d)
+	declared in file funcs.sm near line 43
+ERROR in file funcs.sm near line 71:
+	Unknown identifier: c
+ERROR in file funcs.sm near line 71:
+	Unknown identifier: d
+Should be ok
+Checking unused, null parameters:
+should get 42: 42
+Testing forward function declarations
+Should be 0..20..2:
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+20
+Not yet defined:
+null
+defined:
+7
+This is an error:
+ERROR in file funcs.sm near line 120:
+	No match for myfoo(default, int)
+Trying to define functions in a for loop:
+ERROR in file funcs.sm near line 129:
+	Function forplus defined within a for/converge
+ERROR in file funcs.sm near line 129:
+	Unknown identifier: a
+ERROR in file funcs.sm near line 129:
+	Unknown identifier: b
+ERROR in file funcs.sm near line 130:
+	Function foriplus defined within a for/converge
+ERROR in file funcs.sm near line 130:
+	Unknown identifier: a
+Trying to define functions in a converge:
+ERROR in file funcs.sm near line 135:
+	Function cvgplus defined within a for/converge
+ERROR in file funcs.sm near line 135:
+	Unknown identifier: x
+ERROR in file funcs.sm near line 135:
+	Unknown identifier: y
+ERROR in file funcs.sm near line 137:
+	Function cvgzplus defined within a for/converge
+ERROR in file funcs.sm near line 137:
+	Unknown identifier: x
+
+
+Just for kicks:
+
+                                      1
+                                   1     1
+                                1     2     1
+                             1     3     3     1
+                          1     4     6     4     1
+                       1     5    10    10     5     1
+                    1     6    15    20    15     6     1
+                 1     7    21    35    35    21     7     1
+              1     8    28    56    70    56    28     8     1
+           1     9    36    84   126   126    84    36     9     1
+        1    10    45   120   210   252   210   120    45    10     1
+     1    11    55   165   330   462   462   330   165    55    11     1
+  1    12    66   220   495   792   924   792   495   220    66    12     1

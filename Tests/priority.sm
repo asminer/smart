@@ -1,0 +1,80 @@
+
+// $Id$
+
+// Same model, different priority mechanisms...
+
+pn test1(int n) := {
+  place p, q, r, err;
+  trans t, u, v, w;
+  init(p:n);
+  arcs(
+    p:t, t:q,
+    p:v, v:err,
+    q:u, u:r,
+    q:w, w:err
+  );
+  priority({t, u}:1);
+
+  void show_rs := show_states;
+};
+
+print("Should have 3 states:\n");
+test1(1).show_rs;
+print("Should have 6 states:\n");
+test1(2).show_rs;
+
+pn test2(int n) := {
+  place p, q, r, err;
+  trans t, u, v, w;
+  init(p:n);
+  arcs(
+    p:t, t:q,
+    p:v, v:err,
+    q:u, u:r,
+    q:w, w:err
+  );
+  priority(t:v, u:w);
+
+  void show_rs := show_states;
+};
+
+print("Should have 3 states:\n");
+test2(1).show_rs;
+print("Should have 6 states:\n");
+test2(2).show_rs;
+
+
+pn test3(int n) := {
+  place p, q, r, err;
+  trans t, u, v, w;
+  init(p:n);
+  arcs(
+    p:t, t:q,
+    p:v, v:err,
+    q:u, u:r,
+    q:w, w:err
+  );
+  priority(u:1);
+  priority(t:v);
+
+  void show_rs := show_states;
+};
+
+print("Should have 3 states:\n");
+test3(1).show_rs;
+print("Should have 5 states:\n");
+test3(2).show_rs;
+
+// "Error" tests
+
+pn ignored := {
+  place p;
+  trans a, b, c, d;
+  priority(a:c, d:b);
+  priority({a, b}:1, {c, d}:2);
+  bigint ns := num_states;
+};
+
+print("Should give an ignore warning:\n");
+compute(ignored.ns);
+

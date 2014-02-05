@@ -1,0 +1,15 @@
+
+// $Id$
+
+// Test of includes and line numbers
+
+print("Starting in file ", file_name, "; currently on line ", line_number, " (6)\n");
+#include "inc-a.sm"
+print("Back to file ", file_name, "; on line ", line_number, " (8)\n");
+#include "inc-b.sm"
+print("Back to file ", file_name, "; on line ", line_number, " (10)\n");
+
+print("Circular include, should cause an error:\n");
+#include "include.sm"
+
+print("done; last line of file is ", line_number, "\n");

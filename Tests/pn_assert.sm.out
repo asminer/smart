@@ -1,0 +1,71 @@
+
+Assertion failures in initial state, reachset generation
+
+ERROR in file pn_assert.sm near line 20:
+	Assertion (tk(p)>1) failed in state [p:1]
+	within model foo instantiated in file pn_assert.sm near line 29
+ERROR in file pn_assert.sm near line 23:
+	Couldn't build state space: Assertion failure
+Evaluated statement foo(false, 1, 5).m1, got: null
+ERROR in file pn_assert.sm near line 20:
+	Assertion (tk(p)>1) failed in state [p:1]
+	within model foo instantiated in file pn_assert.sm near line 30
+ERROR in file pn_assert.sm near line 23:
+	Couldn't build state space: Assertion failure
+Evaluated statement foo(true, 1, 5).m1, got: null
+
+Assertion failures during reachset generation
+
+ERROR in file pn_assert.sm near line 21:
+	Assertion (tk(p)<5) failed in state [p:5]
+	within model foo instantiated in file pn_assert.sm near line 33
+ERROR in file pn_assert.sm near line 23:
+	Couldn't build state space: Assertion failure
+Evaluated statement foo(false, 2, 5).m1, got: null
+ERROR in file pn_assert.sm near line 21:
+	Assertion (tk(p)<5) failed in state [p:5]
+	within model foo instantiated in file pn_assert.sm near line 34
+ERROR in file pn_assert.sm near line 23:
+	Couldn't build state space: Assertion failure
+Evaluated statement foo(true, 2, 5).m1, got: null
+
+Assertion failures in initial state, process generation
+
+ERROR in file pn_assert.sm near line 20:
+	Assertion (tk(p)>1) failed in state [p:1]
+	within model foo instantiated in file pn_assert.sm near line 37
+ERROR in file pn_assert.sm near line 24:
+	Couldn't build reachability graph: Assertion failure
+Evaluated statement foo(false, 1, 5).m2, got: null
+ERROR in file pn_assert.sm near line 20:
+	Assertion (tk(p)>1) failed in state [p:1]
+	within model foo instantiated in file pn_assert.sm near line 38
+ERROR in file pn_assert.sm near line 24:
+	Couldn't build reachability graph: Assertion failure
+Evaluated statement foo(true, 1, 5).m2, got: null
+
+Assertion failures during process generation
+
+ERROR in file pn_assert.sm near line 21:
+	Assertion (tk(p)<5) failed in state [p:5]
+	within model foo instantiated in file pn_assert.sm near line 41
+ERROR in file pn_assert.sm near line 24:
+	Couldn't build reachability graph: Assertion failure
+Evaluated statement foo(false, 2, 5).m2, got: null
+ERROR in file pn_assert.sm near line 21:
+	Assertion (tk(p)<5) failed in state [p:5]
+	within model foo instantiated in file pn_assert.sm near line 42
+ERROR in file pn_assert.sm near line 24:
+	Couldn't build reachability graph: Assertion failure
+Evaluated statement foo(true, 2, 5).m2, got: null
+
+Bound failures during process generation
+
+ERROR:
+	Bad next-state expression for event t during process generation:
+	state variable q assigned value 5,
+	which falls out of bounds {0..4}
+	within model bar instantiated in file pn_assert.sm near line 59
+ERROR in file pn_assert.sm near line 54:
+	Couldn't build state space: Engine failed
+Evaluated statement bar(5).ns, got: null

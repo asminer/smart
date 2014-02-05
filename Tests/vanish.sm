@@ -1,0 +1,155 @@
+
+// $Id$
+
+/*
+    Test of PNs with vanishing markings
+*/
+
+# GraphDisplayStyle INCOMING
+# Warning - pn_no_weight
+# PNMarkingStyle SAFE
+
+//
+// Vanishing elimination for RGs
+//
+
+pn rgfoo(int n) := {
+  place p1, p2, p3, p4, p5, p6, p7, p8;
+  init(p1:n);
+
+  trans T1, T2, T3, T4, t5, t6, T7, t8, t9, T10, t11;
+
+  hide(t5, t6, t8, t9, t11);
+
+  arcs( 
+	  p2 : T1, T1 : p1,
+	  p1 : T2, T2 : p2,
+	  p1 : T3, T3 : p3,
+	  p4 : T4, T4 : p2,
+	  p3 : t5, t5 : p4,
+	  p3 : t6, t6 : p5,
+	  p6 : T7, T7 : p4,
+	  p5 : t8, t8 : p6,
+	  p5 : t9, t9 : p7,
+	  p8 : T10, T10 : p6,
+	  p7 : t11, t11 : p8
+  );
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+};
+
+print("Tangible only:\n");
+rgfoo(1).show_rs;
+rgfoo(1).show_rg;
+print("Resetting, ignore this:\n");
+rgfoo(0).show_rs;
+print("Building RG & RS simultaneously:\n");
+rgfoo(1).show_rg;
+
+//
+// Vanishing elimination for MCs
+//
+
+pn mcfoo(int n) := {
+  place p1, p2, p3, p4, p5, p6, p7, p8;
+  init(p1:n);
+
+  trans T1, T2, T3, T4, t5, t6, T7, t8, t9, T10, t11;
+
+  firing(
+	  T1 : expo(1.0),
+	  T2 : expo(2.1),
+	  T3 : expo(3.2),
+	  T4 : expo(4.0),
+	  t5 : 0,
+	  t6 : 0,
+	  T7 : expo(7.1),
+	  t8 : 0,
+	  t9 : 0,
+	  T10 : expo(10.0),
+	  t11 : 0
+  );
+
+  weight(t5 : 1.0, t6 : 1.0);
+  weight(t8 : 1.0, t9 : 1.0);
+  // t11 by itself, shouldn't need weight
+
+  arcs( 
+	  p2 : T1, T1 : p1,
+	  p1 : T2, T2 : p2,
+	  p1 : T3, T3 : p3,
+	  p4 : T4, T4 : p2,
+	  p3 : t5, t5 : p4,
+	  p3 : t6, t6 : p5,
+	  p6 : T7, T7 : p4,
+	  p5 : t8, t8 : p6,
+	  p5 : t9, t9 : p7,
+	  p8 : T10, T10 : p6,
+	  p7 : t11, t11 : p8
+  );
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+};
+
+print("Tangible only:\n");
+mcfoo(1).show_rs;
+mcfoo(1).show_rg;
+print("Resetting, ignore this:\n");
+mcfoo(0).show_rs;
+print("Building RG & RS simultaneously:\n");
+mcfoo(1).show_rg;
+
+//
+// Test of vanishing loops
+//
+
+pn bar(bool can_escape) := {
+  place p1, p2, p3, p4, p5, p6;
+  init(p1:1);
+
+  trans T1, t2, t3, t4, t5, Tt6, T7;
+  
+  firing(
+	  T1 : expo(2.0),
+  	t2 : 0,
+	  t3 : 0,
+	  t4 : 0,
+	  t5 : 0,
+	  T7 : expo(7.1)
+  );
+  cond(can_escape,
+	  { firing(Tt6 : 0); weight(t5 : 1.0, Tt6 : 1.0); },
+ 	  firing(Tt6 : expo(6.1))
+  );
+  arcs(
+	  p1 : T1, T1 : p3,
+	  p3 : t2, t2 : p5,
+	  p5 : t3, t3 : p6,
+	  p6 : t4, t4 : p4,
+	  p4 : t5, t5 : p3,
+	  p4 : Tt6, Tt6 : p2,
+	  p2 : T7, T7 : p1
+  );
+  
+  void show_rs := { print("Tangible:\n"); show_states; };
+  void show_mc := show_arcs;
+};
+
+print("A Vanishing Loop that can be escaped\n");
+bar(true).show_rs;
+bar(true).show_mc;
+
+print("A Vanishing Loop that cannot be escaped\n");
+bar(false).show_rs;
+bar(false).show_mc;
+
+
+print("Same test for MC & RS simultaneously\n");
+
+print("A Vanishing Loop that can be escaped\n");
+bar(true).show_mc;
+print("A Vanishing Loop that cannot be escaped\n");
+bar(false).show_mc;
+

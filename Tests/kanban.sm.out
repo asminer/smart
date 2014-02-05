@@ -1,0 +1,9 @@
+Kanban model with N=1
+	states: 160
+	 edges: 616
+Kanban model with N=2
+	states: 4600
+	 edges: 28120
+Kanban model with N=3
+	states: 58400
+	 edges: 446400

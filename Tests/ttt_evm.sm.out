@@ -1,0 +1,5 @@
+States for tic tac toe games:
+5478 states total
+   # X wins: 626
+   # O wins: 316
+# stalemate: 16

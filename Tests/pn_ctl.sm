@@ -1,0 +1,350 @@
+
+// $Id$
+
+/* 
+    Test of explicit CTL model checking,
+    on a simple PN model.
+
+    The Petri net generates the following FSM:
+
+	               A
+                  |
+                ^ |
+                | v
+                |
+        +------- B ----------+
+        |        |           |
+        |        |           |
+        v        v           v
+
+        C        D <--+     E:n
+        |         |   |      |
+        |       ^ |   |      |
+        v       | v   |      v
+   +-->         |     |
+   +--- F        I    |      .  
+        |        |    |      . 
+        |        |    |      . 
+        v        v    |       
+                      |      |  
+        G        K    |      |
+        |         |   |      v
+        |       ^ |   |       
+        v       | v   |     E:2
+                |     |      |
+        H --+    J ---+      |
+        ^   |                v
+        |   |
+        +---+               E:1
+
+*/
+
+#StatesetPrintIndexes false
+#PNMarkingStyle SAFE
+#StateDisplayOrder LEXICAL
+#DisplayGraphNodeNames true
+
+
+pn cruft(int n) := {
+  
+  place K, J, I, H, G, F, E, D, C, B, A;
+
+  partition(K, J, I, H, G, F, E, D, C, B, A);
+  bound(A:1, B:1, C:1, D:1, E:n, F:1, G:1, H:1, I:1, J:1, K:1);
+
+  init(A:1);
+
+  trans tAB, tBA, tBC, tBD, tBE, tCF, tDI, tE,
+        tFF, tFG, tGH, tHH, 
+        tID, tIK, tKJ, tJK, tJD;
+
+  arcs(
+    A : tAB, tAB : B,
+    B : tBA, tBA : A,
+    B : tBC, tBC : C,
+    B : tBD, tBD : D,
+    B : tBE, tBE : E : n,
+    C : tCF, tCF : F,
+    D : tDI, tDI : I,
+    E : tE : 2, tE : E,
+    F : tFF, tFF : F,
+    F : tFG, tFG : G,
+    G : tGH, tGH : H,
+    H : tHH, tHH : H,
+    I : tID, tID : D,
+    I : tIK, tIK : K,
+    K : tKJ, tKJ : J,
+    J : tJK, tJK : K,
+    J : tJD, tJD : D
+  );
+  
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+  bigint na := num_arcs;
+
+  stateset rs := reachable;
+  stateset apB := reachable & potential(tk(B)>0);
+  stateset apD := reachable & potential(tk(D)>0);
+  stateset apF := reachable & potential(tk(F)>0);
+  stateset apH := reachable & potential(tk(H)>0);
+  stateset apK := reachable & potential(tk(K)>0);
+  stateset apEn:= reachable & potential(tk(E)==1);
+
+  // Existentials
+  
+  stateset prop1 := EX(apD);
+  stateset prop2 := EX(EX(apD));
+  stateset prop3 := EX(EX(EX(apD)));
+
+  stateset prop4 := EX(apH);
+
+  stateset prop5 := !EX(reachable);
+
+  stateset prop6 := EY(apD);
+  stateset prop7 := EY(EY(apD));
+  stateset prop8 := EY(EY(EY(apD)));
+
+  stateset prop9 := EY(apF);
+  stateset prop10:= EY(EY(apF));
+  stateset prop11:= EY(EY(EY(apF)));
+
+  stateset prop12:= EX(EX(EX(EY(EY(EY(initial))))));
+
+  stateset prop13:= EF(apD);
+  stateset prop14:= EF(apH);
+  stateset prop15:= EF(apEn);
+
+  stateset prop16:= reachable \ (prop13 | prop14 | prop15);
+
+  stateset prop17:= EP(apD);
+  stateset prop18:= EP(apH);
+  stateset prop19:= reachable \ EP(initial);
+
+  stateset prop20:= EF(apB) & EP(apB);
+  stateset prop21:= EF(apD) & EP(apD);
+  stateset prop22:= EF(apEn) & EP(apEn); 
+  stateset prop23:= EF(apF) & EP(apF);
+
+  stateset abdij:= EU(!apK, apD); // !apK U apD
+  stateset prop25:= EU(!prop15, apH);
+  stateset prop26:= ES(!apK, apD); // !apK S apD
+  stateset prop27:= ES(!prop15, apH);
+
+  stateset prop28:= EG(abdij);
+  stateset prop29:= EG(EF(apD));
+
+  stateset prop30:= EG(EF(apEn));
+
+  stateset prop31:= EG(!apH);
+  stateset prop32:= EG(EF(apH));
+
+  stateset prop33:= EH(abdij);
+  stateset prop34:= EH(EF(apD));
+
+  stateset prop35:= EH(EF(apEn));
+
+  stateset prop36:= EH(!apH);
+  stateset prop37:= EH(EF(apH));
+ 
+  // Universals
+
+  stateset prop38:= AX(apH);
+  stateset prop39:= AX(AX(apH));
+  stateset prop40:= !AX(!apK);
+
+  stateset prop41 := AY(apD);
+  stateset prop42 := AY(AY(apD));
+
+  stateset prop43 := AF(apH);
+  stateset prop44 := AF(apD);
+  stateset prop45 := AF(apEn);
+
+  stateset prop46 := AP(apF);
+  stateset prop47 := AP(apD);
+  stateset prop48 := AP(initial);
+
+  stateset prop49 := reachable \ AU(!apK, apH | apD | apEn);
+  stateset prop50 := AU(!apK, apD);
+  stateset prop51 := AU(!apB, apH);
+
+  stateset prop52 := AS(!apK, apD);
+  stateset prop53 := AS(!apK, apB);
+  
+  stateset prop54 := AG(!apH);
+  stateset prop55 := AG(!apK);
+  stateset prop56 := AG(!apEn);
+  stateset all := AG(reachable);
+
+  stateset prop57 := AH(!apB);
+  stateset prop58 := AH(!apK);
+  stateset prop59 := AH(!apEn);
+  stateset allH := AH(reachable);
+
+};
+
+print("Reachable states:\n");
+compute(cruft(5).show_rs);
+print("State graph:\n");
+compute(cruft(5).show_rg);
+
+print("\nEX tests:\n--------------------------------------------------\n");
+
+print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop1, "\n");
+print("Should be {[A], [D], [K]}:\n          ", cruft(5).prop2, "\n");
+print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop3, "\n");
+print(     "Should be {[G], [H]}:\n          ", cruft(5).prop4, "\n");
+print(          "Should be {[E]}:\n          ", cruft(5).prop5, "\n");
+
+print("\nEY tests:\n--------------------------------------------------\n");
+
+print(                         "Should be {[I]}:\n          ", cruft(5).prop6, "\n");
+print(                    "Should be {[D], [K]}:\n          ", cruft(5).prop7, "\n");
+print(                    "Should be {[I], [J]}:\n          ", cruft(5).prop8, "\n");
+print(                    "Should be {[F], [G]}:\n          ", cruft(5).prop9, "\n");
+print(               "Should be {[F], [G], [H]}:\n          ", cruft(5).prop10, "\n");
+print(               "Should be {[F], [G], [H]}:\n          ", cruft(5).prop11, "\n");
+print("Should be {[A], [B], [C], [D], [F], [K]}:\n          ", cruft(5).prop12, "\n");
+
+print("\nEF tests:\n--------------------------------------------------\n");
+
+print("Reaches D, should be {[A], [B], [D], [I], [J], [K]}:\n");
+print("                     ", cruft(5).prop13, "\n");
+print("Reaches H, should be {[A], [B], [C], [F], [G], [H]}:\n");
+print("                     ", cruft(5).prop14, "\n");
+print("Reaches E, should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("                     ", cruft(5).prop15, "\n");
+print("Should be {}:\n          ", cruft(5).prop16, "\n");
+
+print("\nEP tests:\n--------------------------------------------------\n");
+
+print("Reachable from D, should be {[D], [I], [J], [K]}:\n");
+print("                            ", cruft(5).prop17, "\n");
+print("Reachable from H, should be {[H]}:\n");
+print("                            ", cruft(5).prop18, "\n");
+print("Should be {}:\n          ", cruft(5).prop19, "\n");
+
+print("SCC containing B {[A], [B]}:\n                 ", cruft(5).prop20, "\n");
+print("SCC containing D {[D], [I], [J], [K]}:\n");
+print("                 ", cruft(5).prop21, "\n");
+print("SCC containing E {[E]}:\n                 ", cruft(5).prop22, "\n");
+print("SCC containing F {[F]}:\n                 ", cruft(5).prop23, "\n");
+
+print("\nEU tests:\n--------------------------------------------------\n");
+
+print("Reaches D without passing through K,\n");
+print("  should be {[A], [B], [D], [I], [J]}:\n");
+print("            ", cruft(5).abdij, "\n");
+print("Reaches H without going along a path that reaches E,\n");
+print("  should be {[C], [F], [G], [H]}:\n");
+print("            ", cruft(5).prop25, "\n");
+
+print("\nES tests:\n--------------------------------------------------\n");
+
+print("Reachable from D without passing through K,\n");
+print("  should be {[D], [I]}:\n");
+print("            ", cruft(5).prop26, "\n");
+print("Reachable from H without going along a path that reaches E,\n");
+print("  should be {[H]}:\n");
+print("            ", cruft(5).prop27, "\n");
+
+print("\nEG tests:\n--------------------------------------------------\n");
+
+print("Should be {[A], [B], [D], [I], [J]}:\n");
+print("          ", cruft(5).prop28, "\n");
+print("EG(EF(D)), should be {[A], [B], [D], [I], [J], [K]}:\n");
+print("                     ", cruft(5).prop29, "\n");
+print("EG(EF(E)), should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("                     ", cruft(5).prop30, "\n");
+print("Paths not containing H:\n");
+print("  should be {[A], [B], [C], [D], [F], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}\n");
+print("            ", cruft(5).prop31, "\n");
+print("EG(EF(H)), should be {[A], [B], [C], [F], [G], [H]}:\n");
+print("                     ", cruft(5).prop32, "\n");
+
+print("\nEH tests:\n--------------------------------------------------\n");
+
+print("Should be {[A], [B], [D], [I]}:\n");
+print("          ", cruft(6).prop33, "\n");	// again, to reset measures
+print("EH(EF(D)), should be {[A], [B], [D], [I], [J], [K]}:\n");
+print("                     ", cruft(5).prop34, "\n");
+print("EH(EF(E)), should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("                     ", cruft(5).prop35, "\n");
+print("Past history not containing H:\n");
+print("  should be {[A], [B], [C], [D], [F], [G], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}\n");
+print("            ", cruft(5).prop36, "\n");
+print("EH(EF(H)), should be {[A], [B], [C], [F], [G], [H]}:\n");
+print("                     ", cruft(5).prop37, "\n");
+
+print("\nAX tests:\n--------------------------------------------------\n");
+
+print("Should be {[G], [H], [E]}:\n          ", cruft(5).prop38, "\n");
+print("Should be {[G], [H], [E:2], [E]}:\n          ", cruft(5).prop39, "\n");
+print("Should be {[I], [J]}:\n          ", cruft(5).prop40, "\n");
+
+print("\nAY tests:\n--------------------------------------------------\n");
+
+print("Should be {[I]}:\n          ", cruft(5).prop41, "\n");
+print( "Should be {}:\n          ", cruft(5).prop42, "\n");
+
+print("\nAF tests:\n--------------------------------------------------\n");
+
+print("Should be {[G], [H]}:\n          ", cruft(5).prop43, "\n");
+print("Should be {[D]}:\n          ", cruft(5).prop44, "\n");
+print("Should be {[E:5], [E:4], [E:3], [E:2], [E]}:\n          ", cruft(5).prop45, "\n");
+
+print("\nAP tests:\n--------------------------------------------------\n");
+
+print("Should be {[F], [G]}:\n          ", cruft(5).prop46, "\n");
+print("Should be {[D], [I]}:\n          ", cruft(5).prop47, "\n");
+print("Should be {[A], [B], [C], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("          ", cruft(5).prop48, "\n");
+
+print("\nAU tests:\n--------------------------------------------------\n");
+
+compute(cruft(6).na);
+print("Should be {[A], [B], [C], [F], [I], [J], [K]}:\n          ", cruft(6).prop49, "\n");
+compute(cruft(5).na);
+print("Should be {[D]}:\n          ", cruft(5).prop50, "\n");
+print("Should be {[G], [H]}:\n          ", cruft(5).prop51, "\n");
+
+print("\nAS tests:\n--------------------------------------------------\n");
+
+compute(cruft(6).na);
+print("Should be {[D], [I]}:\n          ", cruft(6).prop52, "\n");
+compute(cruft(5).na);
+print("All past paths include B, without K,\n");
+print("  should be {[B], [C], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("            ", cruft(5).prop53, "\n");
+
+print("\nAG tests:\n--------------------------------------------------\n");
+
+print("Guaranteed to not get to H,\n");
+print("  should be {[D], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("            ", cruft(5).prop54, "\n");
+print("Guaranteed to not get to K,\n");
+print("  should be {[C], [F], [G], [H], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("            ", cruft(5).prop55, "\n");
+print("Guaranteed to not get to E:\n");
+print("  should be {[C], [D], [F], [G], [H], [I], [J], [K]}:\n");
+print("            ", cruft(5).prop56, "\n");
+print("AG(reachable),\n");
+print("  should be ", cruft(5).rs, ":\n            ", cruft(5).all, "\n");
+
+print("\nAH tests:\n--------------------------------------------------\n");
+
+print("States guaranteed not to come from B,\n");
+print("  should be {}:\n");
+print("            ", cruft(5).prop57, "\n");
+print("States guaranteed not to come from K,:\n");
+print("  should be {[A], [B], [C], [F], [G], [H], [E:5], [E:4], [E:3], [E:2], [E]}:\n");
+print("            ", cruft(5).prop58, "\n");
+print("States guaranteed not to come from E,\n");
+print("  should be ", cruft(5).rs \ cruft(5).apEn, "\n");
+print("            ", cruft(5).prop59, "\n");
+print("AH(reachable),\n");
+print("  should be ", cruft(5).rs, ":\n            ", cruft(5).allH, "\n");
+
+print("\nErrors:\n--------------------------------------------------\n");
+print(cruft(5).prop1 | cruft(4).prop1, "\n");
+
+print("Done!\n");

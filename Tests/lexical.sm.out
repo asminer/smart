@@ -1,0 +1,224 @@
+Natural order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Reachability graph:
+To state 0:
+	From state 4
+To state 1:
+	From state 0
+	From state 2
+To state 2:
+	From state 1
+To state 3:
+	From state 1
+	From state 4
+To state 4:
+	From state 2
+	From state 3
+Natural order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Markov chain:
+Column 0:
+	4 : 5.1
+Column 1:
+	0 : 1.1
+	2 : 2.1
+Column 2:
+	1 : 3.1
+Column 3:
+	1 : 4.1
+	4 : 2.1
+Column 4:
+	2 : 4.1
+	3 : 3.1
+Lexical order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Reachability graph:
+To state 0:
+	From state 1
+To state 1:
+	From state 2
+	From state 3
+To state 2:
+	From state 4
+To state 3:
+	From state 1
+	From state 4
+To state 4:
+	From state 0
+	From state 2
+Lexical order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Markov chain:
+Column 0:
+	1 : 5.1
+Column 1:
+	2 : 4.1
+	3 : 3.1
+Column 2:
+	4 : 3.1
+Column 3:
+	1 : 2.1
+	4 : 4.1
+Column 4:
+	0 : 1.1
+	2 : 2.1
+Natural order of states and reachability graph
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+From state 1:
+From state 2:
+	To state 3
+	To state 4
+From state 3:
+	To state 5
+From state 4:
+	To state 6
+From state 5:
+	To state 3
+From state 6:
+	To state 0
+Natural order of states and Markov chain
+State 0: [a]
+State 1: [b]
+State 2: [c]
+State 3: [d]
+State 4: [f]
+State 5: [g]
+State 6: [e]
+Markov chain:
+Row 0:
+	1 : 8
+	6 : 4
+Row 1:
+	2 : 7
+	4 : 3
+Row 2:
+	3 : 6
+Row 3:
+	0 : 5
+Row 4:
+	5 : 2
+Row 5:
+	4 : 1
+Row 6:
+Discovery order of states and reachability graph
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+From state 1:
+From state 2:
+	To state 3
+	To state 4
+From state 3:
+	To state 5
+From state 4:
+	To state 6
+From state 5:
+	To state 3
+From state 6:
+	To state 0
+Discovery order of states and Markov chain
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Markov chain:
+Row 0:
+	1 : 4
+	2 : 8
+Row 1:
+Row 2:
+	3 : 3
+	4 : 7
+Row 3:
+	5 : 2
+Row 4:
+	6 : 6
+Row 5:
+	3 : 1
+Row 6:
+	0 : 5
+Lexical order of states and reachability graph
+State 0: [g]
+State 1: [f]
+State 2: [e]
+State 3: [d]
+State 4: [c]
+State 5: [b]
+State 6: [a]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+From state 2:
+From state 3:
+	To state 6
+From state 4:
+	To state 3
+From state 5:
+	To state 1
+	To state 4
+From state 6:
+	To state 2
+	To state 5
+Lexical order of states and Markov chain
+State 0: [g]
+State 1: [f]
+State 2: [e]
+State 3: [d]
+State 4: [c]
+State 5: [b]
+State 6: [a]
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	0 : 2
+Row 2:
+Row 3:
+	6 : 5
+Row 4:
+	3 : 6
+Row 5:
+	1 : 3
+	4 : 7
+Row 6:
+	2 : 4
+	5 : 8

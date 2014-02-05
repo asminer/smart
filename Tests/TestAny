@@ -1,0 +1,217 @@
+#!/bin/bash
+
+#
+# $Id$
+#
+# Usage: TestAny exec_dir src_dir test_files
+#
+# Combines regression testing for several applications,
+# based on the extension of the input file.
+#
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <exec_dir> test1 test2 ..."
+  echo "Runs appropriate executable on each test file and compares with saved output."
+  exit
+fi
+
+sm_okcount="0"
+sm_chcount="0"
+sm_fcount="0"
+icp_okcount="0"
+icp_chcount="0"
+icp_fcount="0"
+outfile=`mktemp /tmp/test.XXXXXXXX`
+
+OK=" [1;32m   OK   [0;39m"
+CHANGE=" [1;33m CHANGE [0;39m"
+FAILED=" [1;31m FAILED [0;39m"
+
+#
+#
+# Helper function: build redirect command for a given stream
+#	Argument 1: which stream
+#
+MakeRedirectString()
+{
+  printf "cond(%s_file(%c%s%c), null, exit(1));" $1 '"' $outfile '"'
+}
+
+
+SM_REDIRECT=`MakeRedirectString "error"; MakeRedirectString "warning"; MakeRedirectString "output"`
+
+#
+# Helper function: Process "OK"
+#	Argument 1: test file
+#
+ProcessOK()
+{
+  printf "$OK\n"
+  rm -f $TESTDIR/$1.diffs
+  rm -f $TESTDIR/$1.test
+}
+
+#
+# Helper function: Process "CHANGE"
+#	Argument 1: test file
+#
+ProcessChange()
+{
+  printf "$CHANGE\n\tOutput has changed, differences written to $1.diffs\n"
+  rm -f $TESTDIR/$1.test
+}
+
+#
+# Helper function: Process "FAILED"
+#	Argument 1: test file
+#	Argument 2: output file
+#
+ProcessFailed()
+{
+  printf "$FAILED\n\tRun failed, output written to $1.test\n"
+  cp $2 $TESTDIR/$1.test
+}
+
+#
+# Big helper function: test a SMART input file
+#	Argument 1: test file
+#
+TestSmart()
+{
+  if [ ! -f $SMART ]; then
+    printf "Smart executable not found: $SMART\n"
+    exit 1
+  fi
+  current=`pwd`
+  d=`dirname $1`
+  b=`basename $1`
+  cd $SRCDIR/$d
+  printf "  %-40s  " $b
+  rm -f $outfile
+  if echo $SM_REDIRECT | $current/$SMART - $b; then
+    # Run was successful.
+    if [ -f $b.out.$SMART_PLATFORM ]; then
+      cmpfile="$b.out.$SMART_PLATFORM"
+    else
+      cmpfile="$b.out"
+    fi
+    if diff -b $cmpfile $outfile > $TESTDIR/$b.diffs; then
+      ProcessOK $b
+      sm_okcount=$[ $sm_okcount + 1 ]
+    else
+      ProcessChange $b
+      sm_chcount=$[ $sm_chcount + 1 ]
+    fi
+  else
+    # Run failed
+    ProcessFailed $b $outfile
+    sm_fcount=$[ $sm_fcount + 1 ]
+  fi
+  cd $current
+}
+
+
+#
+# Big helper function: test an ICP input file
+#	Argument 1: test file
+#
+TestICP()
+{
+  if [ ! -f $ICP ]; then
+    printf "ICP executable not found: $ICP\n"
+    exit 1
+  fi
+  current=`pwd`
+  d=`dirname $1`
+  b=`basename $1`
+  cd $SRCDIR/$d
+  printf "  %-40s  " $b
+  rm -f $outfile
+  if $current/$ICP $b > $outfile; then
+    # Run was successful.
+    if [ -f $b.out.$SMART_PLATFORM ]; then
+      cmpfile="$b.out.$SMART_PLATFORM"
+    else
+      cmpfile="$b.out"
+    fi
+    if diff -b $cmpfile $outfile > $TESTDIR/$b.diffs; then
+      ProcessOK $b
+      icp_okcount=$[ $icp_okcount + 1 ]
+    else
+      ProcessChange $b
+      icp_chcount=$[ $icp_chcount + 1 ]
+    fi
+  else
+    # Run failed
+    ProcessFailed $b $outfile
+    icp_fcount=$[ $icp_fcount + 1 ]
+  fi
+  cd $current
+}
+
+#
+# Helper function: print summary for a given tool
+#	Argument 1: tool name
+#	Argument 2: count of "OKs"
+#	Argument 3: count of "CHANGEs"
+#	Argument 4: count of "FAILEDs"
+#
+PrintSummary()
+{
+  total=$[ $2 + $3 + $4 ]
+  if [ "$total" -eq 0 ]; then
+    return
+  fi
+  printf "  Summary for %s: \n" $1
+  if [ "$2" -gt 0 ]; then
+    printf "  $OK: %3d\n" $2
+  fi
+  if [ "$3" -gt 0 ]; then
+    printf "  $CHANGE: %3d\n" $3
+  fi
+  if [ "$4" -gt 0 ]; then
+    printf "  $FAILED: %3d\n" $4
+  fi
+}
+
+#
+# determine executable paths
+#
+SMART=$1/smart
+ICP=$1/icp
+shift
+
+#
+# determine source path
+#
+SRCDIR=$1
+shift
+
+#
+# determine test path
+#
+TESTDIR=`pwd`
+
+# Run the tests
+printf "  %-40s    ======\n" "========================="
+for file in $@
+do
+  fullfile=$SRCDIR/$file
+  if [ -f "$fullfile.out" -o -f "$fullfile.out.$SMART_PLATFORM" ]; then
+    ext=`echo $file | awk -F. '{print $NF}'`
+    if   [ "$ext" == "sm" ]; then
+      TestSmart $file
+    elif [ "$ext" == "icp" ]; then
+      TestICP $file
+    fi
+  fi
+done
+printf "  %-40s    ======\n" "========================="
+
+PrintSummary `basename $SMART` $sm_okcount $sm_chcount $sm_fcount
+PrintSummary `basename $ICP` $icp_okcount $icp_chcount $icp_fcount
+
+rm -f $outfile
+
+echo "Done!"
+

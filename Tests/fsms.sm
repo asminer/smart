@@ -1,0 +1,166 @@
+
+// $Id$
+
+/* 
+   Tests for fsm formalism and internal stuff
+*/
+
+#GraphDisplayStyle OUTGOING
+
+// A small simple one to check the num_states and num_arcs functions
+
+fsm d0 := {
+  state a,b;
+  init({a});
+  arcs(
+  	a:a,
+	a:b,
+	b:a
+  );
+
+  void show := { 
+    print("d0 states:\n"); 
+    show_states; 
+    print("d0 ");
+    show_arcs;
+  };
+};
+
+d0.show;
+
+//
+// Check state errors
+//
+
+print("Some bad state name errors:\n");
+
+fsm d1 := {
+  state a,b,a;
+  init({a});
+  arcs(
+  	a:c
+  );
+};
+
+// 
+// Warnings for duplicate arcs and such
+//
+
+fsm d2 := {
+  state a,b,c;
+  init({a, b, a});  // no error
+  arcs(
+    a:b,
+    a:c,
+    a:b
+  );
+  bigint m1 := num_states;
+};
+
+print("Warnings for duplicates:\n");
+print(d2.m1, "\n");
+
+//
+// No classification for FSMs
+//
+
+fsm d3(int dummy) := {
+  state a, 	// absorbing
+        b,c,d,	// recurrent class
+	e,f,	// recurrent class
+	g,h,i,j;  // transients
+
+  init ({i});
+
+  arcs(
+  	i : g,
+	g : h,
+	h : i,
+
+	g : a,
+	h : b,
+	i : j, j : e,
+
+	e : e, e : f,
+	f : e,
+
+	b : c, b : d,
+	c : d,
+	d : b
+  );
+
+  void show := { 
+    print("d3 states:\n"); 
+    show_states; 
+    print("d3 ");
+    show_arcs;
+  };
+};
+
+# StateDisplayOrder LEXICAL
+print("States should appear in definition order: a,b,c,d,e,f,g,h,i,j:\n");
+d3(1).show;
+
+# StateDisplayOrder NATURAL
+print("States should still appear in definition order: a,b,c,d,e,f,g,h,i,j:\n");
+d3(2).show;
+
+
+//
+// Simple array of states test
+//
+
+fsm d4(int N) := {
+  for (int i in {1..N}) {
+    state s[i];
+  }
+  init({s[1]});
+  for (int i in {2..N}) {
+    arcs(s[i-1] : s[i], s[i] : s[i-1]);
+  }
+  void show := { 
+    show_states; 
+    show_arcs;
+  };
+};
+
+for (int n in {1..5}) {
+  print("Birth death with ", n, " states:\n");
+  d4(n).show;
+}
+
+//
+// crazy stuff that should not be allowed
+// 
+
+fsm foo1(state a, state b) := {
+  state c, d, e;
+  init({b, c});
+  arcs(
+  	a:b, a:c,
+	b:c, b:d,
+	c:d, c:e,
+	d:e,
+	e:a
+  );
+  bigint m1 := num_states;
+  stateset m2 := potential(in_state(a));
+  stateset m3 := potential(in_state({a, b}));
+};
+
+fsm bar1 := {
+  state x, y;
+  init({x});
+  bigint m1 := foo1(x, y).m1;
+  stateset m2 := foo1(x, y).m2;
+  stateset m3 := foo1(x, y).m3;
+};
+
+print("Should generate meaningful warnings:\n");
+compute(bar1.m1);
+print("This should be emptyset:\n");
+print(bar1.m2, "\n");
+print("This should be emptyset:\n");
+print(bar1.m3, "\n");
+
+print("Done with fsm tests.\n");

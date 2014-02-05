@@ -1,0 +1,93 @@
+
+// $Id$
+
+#include "rgmodels.sm"
+
+#ExplicitStateStorage SPLAY
+
+print("Checking actual reachability graph for Kanban, N=1\n");
+compute(kanban_fine(1).na);
+print("Reachability set:\n");
+kanban_fine(1).show_rs;
+print("Reachability graph:\n");
+kanban_fine(1).show_rg;
+
+print("Checking actual reachability graph for 4 philosophers\n");
+compute(phils_fine(4).na);
+print("Reachability set:\n");
+phils_fine(4).show_rs;
+print("Reachability graph:\n");
+phils_fine(4).show_rg;
+
+print("Checking actual reachability graph for 7 queens\n");
+compute(queens(7).na);
+print("Reachability set:\n");
+queens(7).show_rs;
+print("Reachability graph:\n");
+queens(7).show_rg;
+
+print("Checking actual reachability graph for swaps, N=5\n");
+compute(swaps(5).na);
+print("Reachability set:\n");
+swaps(5).show_rs;
+print("Reachability graph:\n");
+swaps(5).show_rg;
+
+// Summaries
+
+print("Checking single-pass rs,rg construction:\n");
+
+print("Kanban Model\n");
+for (int N in {1..2}) {
+  print("\tN=", N, ", should be ", kanban_fine(N).theory_ns, " states: ");
+  compute(kanban_fine(N).na);
+  print(kanban_fine(N).ns, " states, ", kanban_fine(N).na, " edges\n");
+}
+
+print("Philosophers Model\n");
+for (int N in {4..6}) {
+  print("\tN=", N, ", should be ", phils_fine(N).theory_ns, " states: ");
+  compute(phils_fine(N).na);
+  print(phils_fine(N).ns, " states, ", phils_fine(N).na, " edges\n");
+}
+
+print("N-queens Model\n");
+for (int N in {7..8}) {
+  print("\tN=", N, ": ");
+  compute(queens(N).na);
+  print(queens(N).ns, " states, ", queens(N).na, " edges\n");
+}
+
+print("Swaps Model\n");
+for (int N in {5..7}) {
+  print("\tN=", N, ", should be ", swaps(N).theory_ns, " states: ");
+  compute(swaps(N).na);
+  print(swaps(N).ns, " states, ", swaps(N).na, " edges\n");
+}
+
+print("Checking double-pass rs,rg construction:\n");
+
+print("Kanban Model\n");
+for (int N in {1..2}) {
+  print("\tN=", N, ", should be ", kanban_fine(N).theory_ns, " states: ");
+  print(kanban_fine(N).ns, " states, ", kanban_fine(N).na, " edges\n");
+}
+
+print("Philosophers Model\n");
+for (int N in {4..6}) {
+  print("\tN=", N, ", should be ", phils_fine(N).theory_ns, " states: ");
+  print(phils_fine(N).ns, " states, ", phils_fine(N).na, " edges\n");
+}
+
+print("N-queens Model\n");
+for (int N in {7..8}) {
+  print("\tN=", N, ": ");
+  print(queens(N).ns, " states, ", queens(N).na, " edges\n");
+}
+
+print("Swaps Model\n");
+for (int N in {5..7}) {
+  print("\tN=", N, ", should be ", swaps(N).theory_ns, " states: ");
+  print(swaps(N).ns, " states, ", swaps(N).na, " edges\n");
+}
+

@@ -1,0 +1,60 @@
+
+// $Id$
+
+#SeedRng 123456789
+
+print("\n----------------------------------------------------------------\n");
+rand int zero := 0;
+print("Average for const(0): ", avg(zero), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int one := 1;
+print("Average for const(1): ", avg(one), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int inf := infinity;
+print("Average for const(oo): ", avg(inf), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int die := equilikely(1,6);
+print("Average for equilikely(1,6): ", avg(die), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int dice := equilikely(1,6) + equilikely(1,6);
+print("Average for dice: ", avg(dice), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int coin := bernoulli(0.6);
+print("Average for bernoulli(0.6): ", avg(coin), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int howmany := geometric(0.6);
+print("Average for geometric(0.6): ", avg(howmany), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int pascal := geometric(0.6) + geometric(0.6) + geometric(0.6);
+print("Average for pascal(3, 0.6): ", avg(pascal), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int coins := binomial(3, 0.6);
+print("Average for binomial(3, 0.6): ", avg(coins), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand int altcoins := bernoulli(0.6) + bernoulli(0.6) + bernoulli(0.6);
+print("Average for sum of 3 bernoulli's: ", avg(altcoins), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand real x := expo(5);
+print("Average for expo(5): ", avg(x), "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph real xx := expo(5);
+rand real y := xx;
+print("Average for ph real expo(5): ", avg(y), "\n");
+
+print("\n----------------------------------------------------------------\n");
+rand real earl := erlang(3, 5);
+print("Average for erlang(3, 5): ", avg(earl), "\n");
+
+
+print("\n");

@@ -1,0 +1,132 @@
+
+// $Id$
+
+// Test of math functions
+
+print("\n\npow tests\n\n");
+
+real p1(int i) := case(i, null, 
+                        1:-infinity, 
+                        2:-3, 
+                        3:-0.5, 
+                        4:0, 
+                        5:0.5,
+                        6:3, 
+                        7:infinity);
+
+int p2(int j) := case(j, null, 1:-infinity, 2:-2, 3:-1, 4:0, 5:1, 6:2, 7:infinity);
+
+for (int i in {1..7}, int j in {1..7}) {
+  real ptest[i][j] := pow(p1(i), p2(j));
+  compute(ptest[i][j]);
+}
+
+print("Should be         0: ",  ptest[1][1]:9, "\n");
+print("Should be         0: ",  ptest[1][2]:9, "\n");
+print("Should be         0: ",  ptest[1][3]:9, "\n");
+print("Should be      null: ",  ptest[1][4]:9, "\n");
+print("Should be -infinity: ",  ptest[1][5]:9, "\n");
+print("Should be  infinity: ",  ptest[1][6]:9, "\n");
+print("Should be      null: ",  ptest[1][7]:9, "\n");
+print("\n");
+print("Should be         0: ",  ptest[2][1]:9, "\n");
+print("Should be  0.111111: ",  ptest[2][2]:9, "\n");
+print("Should be -0.333333: ",  ptest[2][3]:9, "\n");
+print("Should be         1: ",  ptest[2][4]:9, "\n");
+print("Should be        -3: ",  ptest[2][5]:9, "\n");
+print("Should be         9: ",  ptest[2][6]:9, "\n");
+print("Should be      null: ",  ptest[2][7]:9, "\n");
+print("\n");
+print("Should be      null: ",  ptest[3][1]:9, "\n");
+print("Should be         4: ",  ptest[3][2]:9, "\n");
+print("Should be        -2: ",  ptest[3][3]:9, "\n");
+print("Should be         1: ",  ptest[3][4]:9, "\n");
+print("Should be      -0.5: ",  ptest[3][5]:9, "\n");
+print("Should be      0.25: ",  ptest[3][6]:9, "\n");
+print("Should be         0: ",  ptest[3][7]:9, "\n");
+print("\n");
+print("Should be      null: ",  ptest[4][1]:9, "\n");
+print("Should be      null: ",  ptest[4][2]:9, "\n");
+print("Should be      null: ",  ptest[4][3]:9, "\n");
+print("Should be      null: ",  ptest[4][4]:9, "\n");
+print("Should be         0: ",  ptest[4][5]:9, "\n");
+print("Should be         0: ",  ptest[4][6]:9, "\n");
+print("Should be      null: ",  ptest[4][7]:9, "\n");
+print("\n");
+print("Should be  infinity: ",  ptest[5][1]:9, "\n");
+print("Should be         4: ",  ptest[5][2]:9, "\n");
+print("Should be         2: ",  ptest[5][3]:9, "\n");
+print("Should be         1: ",  ptest[5][4]:9, "\n");
+print("Should be       0.5: ",  ptest[5][5]:9, "\n");
+print("Should be      0.25: ",  ptest[5][6]:9, "\n");
+print("Should be         0: ",  ptest[5][7]:9, "\n");
+print("\n");
+print("Should be         0: ",  ptest[6][1]:9, "\n");
+print("Should be  0.111111: ",  ptest[6][2]:9, "\n");
+print("Should be  0.333333: ",  ptest[6][3]:9, "\n");
+print("Should be         1: ",  ptest[6][4]:9, "\n");
+print("Should be         3: ",  ptest[6][5]:9, "\n");
+print("Should be         9: ",  ptest[6][6]:9, "\n");
+print("Should be  infinity: ",  ptest[6][7]:9, "\n");
+print("\n");
+print("Should be         0: ",  ptest[7][1]:9, "\n");
+print("Should be         0: ",  ptest[7][2]:9, "\n");
+print("Should be         0: ",  ptest[7][3]:9, "\n");
+print("Should be      null: ",  ptest[7][4]:9, "\n");
+print("Should be  infinity: ",  ptest[7][5]:9, "\n");
+print("Should be  infinity: ",  ptest[7][6]:9, "\n");
+print("Should be  infinity: ",  ptest[7][7]:9, "\n");
+
+
+print("\n\nexp tests\n\n");
+
+for (int i in {1..7}) {
+  real etest[i] := exp(p2(i));
+  compute(etest[i]);
+}
+
+print("Should be        0: ", etest[1]:9, "\n");
+print("Should be 0.135335: ", etest[2]:9, "\n");
+print("Should be 0.367879: ", etest[3]:9, "\n");
+print("Should be        1: ", etest[4]:9, "\n");
+print("Should be  2.71828: ", etest[5]:9, "\n");
+print("Should be  7.38906: ", etest[6]:9, "\n");
+print("Should be infinity: ", etest[7]:9, "\n");
+
+print("\n\nln tests\n\n");
+
+real p3(int j) := case(j, null, 1:-infinity, 2:-1, 3:0, 4:0.5, 5:1, 6:1.5, 7:exp(1),  8:exp(2), 9:infinity);
+
+for (int i in {1..9}) {
+  real ltest[i] := ln(p3(i));
+  compute(ltest[i]);
+}
+
+print("Should be      null: ", ltest[1]:9, "\n");
+print("Should be      null: ", ltest[2]:9, "\n");
+print("Should be -infinity: ", ltest[3]:9, "\n");
+print("Should be -0.693147: ", ltest[4]:9, "\n");
+print("Should be         0: ", ltest[5]:9, "\n");
+print("Should be  0.405465: ", ltest[6]:9, "\n");
+print("Should be         1: ", ltest[7]:9, "\n");
+print("Should be         2: ", ltest[8]:9, "\n");
+print("Should be  infinity: ", ltest[9]:9, "\n");
+
+print("\n\nsqrt tests\n\n");
+
+real p4(int j) := case(j, null, 1:-infinity, 2:-1, 3:0, 4:0.25, 5:1, 6:4, 7:infinity);
+
+for (int i in {1..7}) {
+  real stest[i] := sqrt(p4(i));
+  compute(stest[i]);
+}
+
+print("Should be      null: ", stest[1]:9, "\n");
+print("Should be      null: ", stest[2]:9, "\n");
+print("Should be         0: ", stest[3]:9, "\n");
+print("Should be       0.5: ", stest[4]:9, "\n");
+print("Should be         1: ", stest[5]:9, "\n");
+print("Should be         2: ", stest[6]:9, "\n");
+print("Should be  infinity: ", stest[7]:9, "\n");
+
+

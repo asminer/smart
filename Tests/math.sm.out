@@ -1,0 +1,122 @@
+
+
+pow tests
+
+ERROR in file math.sm near line 20:
+	pow(-infinity, 0) is undefined
+ERROR in file math.sm near line 20:
+	pow(-infinity, infinity) is undefined
+ERROR in file math.sm near line 20:
+	pow(-3, infinity) is undefined
+ERROR in file math.sm near line 20:
+	pow(-0.5, -infinity) is undefined
+ERROR in file math.sm near line 20:
+	pow(0, -infinity) is undefined
+ERROR in file math.sm near line 20:
+	pow(0, -2) is undefined
+ERROR in file math.sm near line 20:
+	pow(0, -1) is undefined
+ERROR in file math.sm near line 20:
+	pow(0, 0) is undefined
+ERROR in file math.sm near line 20:
+	pow(0, infinity) is undefined
+ERROR in file math.sm near line 20:
+	pow(infinity, 0) is undefined
+Should be         0:         0
+Should be         0:         0
+Should be         0:         0
+Should be      null:      null
+Should be -infinity: -infinity
+Should be  infinity:  infinity
+Should be      null:      null
+
+Should be         0:         0
+Should be  0.111111:  0.111111
+Should be -0.333333: -0.333333
+Should be         1:         1
+Should be        -3:        -3
+Should be         9:         9
+Should be      null:      null
+
+Should be      null:      null
+Should be         4:         4
+Should be        -2:        -2
+Should be         1:         1
+Should be      -0.5:      -0.5
+Should be      0.25:      0.25
+Should be         0:         0
+
+Should be      null:      null
+Should be      null:      null
+Should be      null:      null
+Should be      null:      null
+Should be         0:         0
+Should be         0:         0
+Should be      null:      null
+
+Should be  infinity:  infinity
+Should be         4:         4
+Should be         2:         2
+Should be         1:         1
+Should be       0.5:       0.5
+Should be      0.25:      0.25
+Should be         0:         0
+
+Should be         0:         0
+Should be  0.111111:  0.111111
+Should be  0.333333:  0.333333
+Should be         1:         1
+Should be         3:         3
+Should be         9:         9
+Should be  infinity:  infinity
+
+Should be         0:         0
+Should be         0:         0
+Should be         0:         0
+Should be      null:      null
+Should be  infinity:  infinity
+Should be  infinity:  infinity
+Should be  infinity:  infinity
+
+
+exp tests
+
+Should be        0:         0
+Should be 0.135335:  0.135335
+Should be 0.367879:  0.367879
+Should be        1:         1
+Should be  2.71828:   2.71828
+Should be  7.38906:   7.38906
+Should be infinity:  infinity
+
+
+ln tests
+
+ERROR in file math.sm near line 101:
+	log with negative argument: -infinity
+ERROR in file math.sm near line 101:
+	log with negative argument: -1
+Should be      null:      null
+Should be      null:      null
+Should be -infinity: -infinity
+Should be -0.693147: -0.693147
+Should be         0:         0
+Should be  0.405465:  0.405465
+Should be         1:         1
+Should be         2:         2
+Should be  infinity:  infinity
+
+
+sqrt tests
+
+ERROR in file math.sm near line 120:
+	Square root with negative argument: -infinity
+ERROR in file math.sm near line 120:
+	Square root with negative argument: -1
+Should be      null:      null
+Should be      null:      null
+Should be         0:         0
+Should be       0.5:       0.5
+Should be         1:         1
+Should be         2:         2
+Should be  infinity:  infinity

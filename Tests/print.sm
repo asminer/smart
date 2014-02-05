@@ -1,0 +1,197 @@
+
+// $Id$ 
+	
+/*
+
+Tests for print
+	
+*/
+	
+int one := 1;
+
+real ten2n(int n) := cond (n==0, 1.0, cond (n<0, 1.0 / ten2n(-n), 10.0*ten2n(n-1)));
+
+print("This should be like pascal, ", one, " would hope\n");
+
+print("Here's a test of the width specifier for strings\n");
+
+for (int i in {1..10}) {
+  print("XXX":i, "\n");
+}
+
+print("Here's a test of the width specifier for integers\n");
+
+for (int i in {1..10}) {
+  print(one:i, "\n");
+}
+
+print("Testing tabs\n");
+
+print("N\tN^2\tN^3\n");
+print("--\t---\t----\n");
+
+for (int i in {1..11}) {
+  print(i, "\t", i*i, "\t", i*i*i, "\n");
+}
+
+print("Using SCIENTIFIC\n");
+
+# OutputRealFormat SCIENTIFIC
+
+print("Width and precision specifiers for reals\n");
+for (int i in {-9..9}) {
+  print(5+ten2n(i):20:10+i, "\n");
+}
+
+print("Only width specifier for reals\n");
+for (int i in {-9..9}) {
+  print(5+ten2n(i):20+i, "\n");
+}
+
+print("Using FIXED\n");
+
+# OutputRealFormat FIXED
+
+print("Width and precision specifiers for reals\n");
+for (int i in {-9..9}) {
+  print(5+ten2n(i):20:10+i, "\n");
+}
+
+print("Only width specifier for reals\n");
+for (int i in {-9..9}) {
+  print(5+ten2n(i):20+i, "\n");
+}
+
+print("Using GENERAL\n");
+
+# OutputRealFormat GENERAL
+print("Precision specifiers for reals\n");
+for (int i in {1..9}) {
+  print(i, ": ", 5+ten2n(6):1:i, "\n");
+}
+
+print("Precision specifiers for reals without second ':field'\n");
+for (int i in {1..9}) {
+  print(i, ": ", 5+ten2n(6):1, "\n");
+}
+
+print("Examples for the manual\n");
+# OutputRealFormat FIXED
+print(123.8:4:2,"\n");
+print(123.8:12:2,"\n");
+print(123.87654321:12,"\n");
+print(123.87654321,"\n");
+# OutputRealFormat SCIENTIFIC
+print(123.8:4:2,"\n");
+print(123.8:12:2,"\n");
+print(123.87654321:12,"\n");
+print(123.87654321,"\n");
+# OutputRealFormat GENERAL
+print(123.8:4:2,"\n");
+print(123.8:12:8,"\n");
+print(123.87654321:12,"\n");
+print(123.87654321,"\n");
+
+real x := 123.8;
+# OutputRealFormat FIXED
+print("FIXED\n");
+for (int p in {2..7}) {
+  print("p=",p,"\t");
+  for (int w in {4..8}) {
+    print("w=",w," [",x:w:p,"]\t");
+  }
+  print("\n");
+}
+# OutputRealFormat SCIENTIFIC
+print("SCIENTIFIC\n");
+for (int p in {2..7}) {
+  print("p=",p,"\t");
+  for (int w in {4..8}) {
+    print("w=",w," [",x:w:p,"]\t");
+  }
+  print("\n");
+}
+# OutputRealFormat GENERAL
+print("GENERAL\n");
+for (int p in {2..7}) {
+  print("p=",p,"\t");
+  for (int w in {4..8}) {
+    print("w=",w," [",x:w:p,"]\t");
+  }
+  print("\n");
+}
+
+print("testing spacing: this is an error","X":5:3,"\n");
+
+print("testing spacing: this","abcdef":5,"should take 6 positions, not 5\n");
+print("testing spacing: this","X":5,"should take 5 positions\n");
+print("testing spacing: this",2:5,"should take 5 positions\n");
+print("testing spacing: this",2.0:5,"should take 5 positions\n");
+print("testing spacing: this",2.0:5:3,"should take 5 positions\n");
+print("testing spacing: this",2.3333333:5:3,"should take 5 positions\n");
+
+print("New and improved left justification with negative widths:\n");
+
+
+print("integers\n");
+int digits(int n) := cond(n==1, 1, digits(n-1)*10+n);
+
+for(int i in {1..9}) {
+  print("left  |", digits(i):-10, "|\n");
+}
+for(int i in {1..9}) {
+  print("right |", digits(i):10, "|\n");
+}
+
+print("strings\n");
+
+string letter(int n) := case(n, " ", 1:"a", 2:"b", 3:"c", 4:"d", 5:"e", 6:"f", 7:"g", 8:"h", 9:"i", 10:"j");
+
+string letters(int n) := cond(n==1, "a", letters(n-1)+letter(n));
+
+for(int i in {1..9}) {
+  print("left  |", letters(i):-10, "|\n");
+}
+for(int i in {1..9}) {
+  print("right |", letters(i):10, "|\n");
+}
+
+print("reals\n");
+
+real decimals(int n) := cond(n==1, 0.1, decimals(n-1)+n/ten2n(n));
+
+for(int i in {1..7}) {
+  print("left  |", decimals(i):-10:8, "|\n");
+}
+for(int i in {1..7}) {
+  print("right |", decimals(i):10:8, "|\n");
+}
+
+
+print("Thousand separators for integers:\n");
+
+#OutputThousandSeparator ","
+
+for (int i in {9..1..-1}) {
+  print(-digits(i), "\n");
+}
+for (int i in {1..9}) {
+  print(digits(i), "\n");
+}
+
+print("Thousand separators with width:\n");
+
+for(int i in {7..1..-1}) {
+  print("left  |", -digits(i):-10, "|\n");
+}
+for(int i in {1..8}) {
+  print("left  |", digits(i):-10, "|\n");
+}
+
+for(int i in {7..1..-1}) {
+  print("right |", -digits(i):10, "|\n");
+}
+for(int i in {1..8}) {
+  print("right |", digits(i):10, "|\n");
+}
+
