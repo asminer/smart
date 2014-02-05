@@ -1,0 +1,42 @@
+Should have 3 states:
+State 0: [p:1]
+State 1: [q:1]
+State 2: [r:1]
+Should have 6 states:
+State 0: [p:2]
+State 1: [p:1, q:1]
+State 2: [q:2]
+State 3: [p:1, r:1]
+State 4: [q:1, r:1]
+State 5: [r:2]
+Should have 3 states:
+State 0: [p:1]
+State 1: [q:1]
+State 2: [r:1]
+Should have 6 states:
+State 0: [p:2]
+State 1: [p:1, q:1]
+State 2: [q:2]
+State 3: [p:1, r:1]
+State 4: [q:1, r:1]
+State 5: [r:2]
+Should have 3 states:
+State 0: [p:1]
+State 1: [q:1]
+State 2: [r:1]
+Should have 5 states:
+State 0: [p:2]
+State 1: [p:1, q:1]
+State 2: [p:1, r:1]
+State 3: [q:1, r:1]
+State 4: [r:2]
+Should give an ignore warning:
+WARNING:
+	No initial marking given, assuming zero
+	within model ignored built in file priority.sm near line 79
+WARNING:
+	Ignoring priority pairs across priority levels:
+		{d} : b
+		{a} : c
+	
+	within model ignored instantiated in file priority.sm near line 79

@@ -1,0 +1,117 @@
+
+// $Id$
+
+// start with something simple
+print("Simple tests for bigint:\n");
+
+bigint a := 2;
+
+print(a, "\n");
+
+bigint b := a+a;
+
+print(b, "\n");
+
+bigint c := b+b+b+b;
+
+print(c, "\n");
+
+bigint d := a*b*c;
+
+print(d, "\n");
+
+// bigint constants
+print("\nLarge integer tests:\n");
+
+bigint e := 27182818284590452353602874713526625;
+
+print("Should get 27182818284590452353602874713526625: \n");
+print("           ", e, "\n");
+
+bigint f := 340282366920938463463374607431768211456;  // 2^128
+
+print("2^128 is ", f, "\n");
+
+// Functions
+
+bigint two_n(int n) := cond(0==n, 1, 2*two_n(n-1));
+
+print("2^128 is ", two_n(128), "\n");
+
+print("\nFactorial function tests:\n");
+
+bigint factorial(int n) := cond(n<1, 1, n*factorial(n-1));
+for (int i in {0..100..10}) {
+  print(i, "! = ", factorial(i), "\n");
+}
+
+// conversions to real
+real approx_fact(int n) := real(factorial(n));
+
+print("\nbigint to real conversions:\n");
+
+for (int i in {0..300..100}) {
+  cond (i<180, 
+    print(i, "! = ", approx_fact(i), " (approximately) \n"),
+    print(i, "! = ", approx_fact(i), " (should overflow) \n")
+  );
+}
+
+// Division: an extremely inefficient way to compute "n".
+
+print("\ndivisions:\n");
+
+real firstdiv(int n) := ( 1+factorial(n) ) / factorial(n-1);
+bigint seconddiv(int n) := div(factorial(n), factorial(n-1));
+
+for (int i in {2,3,4,5,6,7,8,9,10,15,20,25,50,75,100,150,200}) {
+  print("Roughly ", i, ": ", firstdiv(i), "\t exactly: ", seconddiv(i), "\n");
+}
+
+print("\nfactors using mod:\n");
+
+void factor(bigint a, bigint i) := 
+  cond ( i*i > a, print(a, "\n"),
+         cond( (a % i) == 0, 
+		            { print(i, " "); factor(div(a,i), i); } ,
+		            factor(a, i+1)
+             )
+       );
+
+#StackSize 1000000
+
+for (int i in {1..11}) {
+  bigint composite[i] := cond(i==1, 1, 10*composite[i-1] + i % 10);
+  print("Factors of ", composite[i], ": ");
+  factor(composite[i], 2);
+}
+
+
+// Arrays
+
+print("\nbigint arrays:\n");
+
+for (int i in {0..200}) {
+  bigint fibonacci[i] := cond(i<2, i, fibonacci[i-1]+fibonacci[i-2]);
+}
+
+for (int i in {0..200..10}) {
+  print("Fib(", i, ") = ", fibonacci[i], "\n");
+}
+
+// conversions to int
+
+print("\nbigint conversions to int:\n");
+
+int small_fib(int n) := int(fibonacci[n]);
+for (int i in {0..40..10, 120..200..10}) {
+  print("Integer Fib(", i, ") = ", small_fib(i), "\n");
+}
+
+// bigint infinities
+
+bigint i := infinity;
+
+print("infinities: ", i, " ", i+a+b, " ", a+i+b, " ", a+b+i, "\n");
+
+

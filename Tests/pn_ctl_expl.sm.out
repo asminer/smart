@@ -1,0 +1,245 @@
+Reachable states:
+State 0: [A]
+State 1: [B]
+State 2: [C]
+State 3: [D]
+State 4: [E]
+State 5: [E:2]
+State 6: [E:3]
+State 7: [E:4]
+State 8: [E:5]
+State 9: [F]
+State 10: [G]
+State 11: [H]
+State 12: [I]
+State 13: [J]
+State 14: [K]
+State graph:
+Reachability graph:
+From state [A]:
+	To state [B]
+From state [B]:
+	To state [A]
+	To state [C]
+	To state [D]
+	To state [E:5]
+From state [C]:
+	To state [F]
+From state [D]:
+	To state [I]
+From state [E]:
+From state [E:2]:
+	To state [E]
+From state [E:3]:
+	To state [E:2]
+From state [E:4]:
+	To state [E:3]
+From state [E:5]:
+	To state [E:4]
+From state [F]:
+	To state [F]
+	To state [G]
+From state [G]:
+	To state [H]
+From state [H]:
+	To state [H]
+From state [I]:
+	To state [D]
+	To state [K]
+From state [J]:
+	To state [D]
+	To state [K]
+From state [K]:
+	To state [J]
+
+EX tests:
+--------------------------------------------------
+Should be {[B], [I], [J]}:
+          {[B], [I], [J]}
+Should be {[A], [D], [K]}:
+          {[A], [D], [K]}
+Should be {[B], [I], [J]}:
+          {[B], [I], [J]}
+Should be {[G], [H]}:
+          {[G], [H]}
+Should be {[E]}:
+          {[E]}
+
+EY tests:
+--------------------------------------------------
+Should be {[I]}:
+          {[I]}
+Should be {[D], [K]}:
+          {[D], [K]}
+Should be {[I], [J]}:
+          {[I], [J]}
+Should be {[F], [G]}:
+          {[F], [G]}
+Should be {[F], [G], [H]}:
+          {[F], [G], [H]}
+Should be {[F], [G], [H]}:
+          {[F], [G], [H]}
+Should be {[A], [B], [C], [D], [F], [K]}:
+          {[A], [B], [C], [D], [F], [K]}
+
+EF tests:
+--------------------------------------------------
+Reaches D, should be {[A], [B], [D], [I], [J], [K]}:
+                     {[A], [B], [D], [I], [K], [J]}
+Reaches H, should be {[A], [B], [C], [F], [G], [H]}:
+                     {[A], [B], [C], [F], [G], [H]}
+Reaches E, should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:
+                     {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}
+Should be {}:
+          {}
+
+EP tests:
+--------------------------------------------------
+Reachable from D, should be {[D], [I], [J], [K]}:
+                            {[D], [I], [K], [J]}
+Reachable from H, should be {[H]}:
+                            {[H]}
+Should be {}:
+          {}
+SCC containing B {[A], [B]}:
+                 {[A], [B]}
+SCC containing D {[D], [I], [J], [K]}:
+                 {[D], [I], [K], [J]}
+SCC containing E {[E]}:
+                 {[E]}
+SCC containing F {[F]}:
+                 {[F]}
+
+EU tests:
+--------------------------------------------------
+Reaches D without passing through K,
+  should be {[A], [B], [D], [I], [J]}:
+            {[A], [B], [D], [I], [J]}
+Reaches H without going along a path that reaches E,
+  should be {[C], [F], [G], [H]}:
+            {[C], [F], [G], [H]}
+
+ES tests:
+--------------------------------------------------
+Reachable from D without passing through K,
+  should be {[D], [I]}:
+            {[D], [I]}
+Reachable from H without going along a path that reaches E,
+  should be {[H]}:
+            {[H]}
+
+EG tests:
+--------------------------------------------------
+Should be {[A], [B], [D], [I], [J]}:
+          {[A], [B], [D], [I], [J]}
+EG(EF(D)), should be {[A], [B], [D], [I], [J], [K]}:
+                     {[A], [B], [D], [I], [K], [J]}
+EG(EF(E)), should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:
+                     {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}
+Paths not containing H:
+  should be {[A], [B], [C], [D], [F], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}
+            {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [K], [E:3], [J], [E:2], [E]}
+EG(EF(H)), should be {[A], [B], [C], [F], [G], [H]}:
+                     {[A], [B], [C], [F], [G], [H]}
+
+EH tests:
+--------------------------------------------------
+Should be {[A], [B], [D], [I]}:
+          {[A], [B], [D], [I]}
+EH(EF(D)), should be {[A], [B], [D], [I], [J], [K]}:
+                     {[A], [B], [D], [I], [K], [J]}
+EH(EF(E)), should be {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}:
+                     {[A], [B], [E:5], [E:4], [E:3], [E:2], [E]}
+Past history not containing H:
+  should be {[A], [B], [C], [D], [F], [G], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}
+            {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [J], [E:2], [E]}
+EH(EF(H)), should be {[A], [B], [C], [F], [G], [H]}:
+                     {[A], [B], [C], [F], [G], [H]}
+
+AX tests:
+--------------------------------------------------
+Should be {[G], [H], [E]}:
+          {[G], [H], [E]}
+Should be {[G], [H], [E:2], [E]}:
+          {[G], [H], [E:2], [E]}
+Should be {[I], [J]}:
+          {[I], [J]}
+
+AY tests:
+--------------------------------------------------
+Should be {[I]}:
+          {[I]}
+Should be {}:
+          {}
+
+AF tests:
+--------------------------------------------------
+Should be {[G], [H]}:
+          {[G], [H]}
+Should be {[D]}:
+          {[D]}
+Should be {[E:5], [E:4], [E:3], [E:2], [E]}:
+          {[E:5], [E:4], [E:3], [E:2], [E]}
+
+AP tests:
+--------------------------------------------------
+Should be {[F], [G]}:
+          {[F], [G]}
+Should be {[D], [I]}:
+          {[D], [I]}
+Should be {[A], [B], [C], [E:5], [E:4], [E:3], [E:2], [E]}:
+          {[A], [B], [C], [E:5], [E:4], [E:3], [E:2], [E]}
+
+AU tests:
+--------------------------------------------------
+Should be {[A], [B], [C], [F], [I], [J], [K]}:
+          {[A], [B], [C], [F], [I], [K], [J]}
+Should be {[D]}:
+          {[D]}
+Should be {[G], [H]}:
+          {[G], [H]}
+
+AS tests:
+--------------------------------------------------
+Should be {[D], [I]}:
+          {[D], [I]}
+All past paths include B, without K,
+  should be {[B], [C], [E:5], [E:4], [E:3], [E:2], [E]}:
+            {[B], [C], [E:5], [E:4], [E:3], [E:2], [E]}
+
+AG tests:
+--------------------------------------------------
+Guaranteed to not get to H,
+  should be {[D], [I], [J], [K], [E:5], [E:4], [E:3], [E:2], [E]}:
+            {[D], [E:5], [I], [E:4], [K], [E:3], [J], [E:2], [E]}
+Guaranteed to not get to K,
+  should be {[C], [F], [G], [H], [E:5], [E:4], [E:3], [E:2], [E]}:
+            {[C], [E:5], [F], [E:4], [G], [E:3], [H], [E:2], [E]}
+Guaranteed to not get to E:
+  should be {[C], [D], [F], [G], [H], [I], [J], [K]}:
+            {[C], [D], [F], [I], [G], [K], [H], [J]}
+AG(reachable),
+  should be {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2], [E]}:
+            {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2], [E]}
+
+AH tests:
+--------------------------------------------------
+States guaranteed not to come from B,
+  should be {}:
+            {}
+States guaranteed not to come from K,:
+  should be {[A], [B], [C], [F], [G], [H], [E:5], [E:4], [E:3], [E:2], [E]}:
+            {[A], [B], [C], [E:5], [F], [E:4], [G], [E:3], [H], [E:2], [E]}
+States guaranteed not to come from E,
+  should be {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2]}
+            {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2]}
+AH(reachable),
+  should be {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2], [E]}:
+            {[A], [B], [C], [D], [E:5], [F], [I], [E:4], [G], [K], [E:3], [H], [J], [E:2], [E]}
+
+Errors:
+--------------------------------------------------
+ERROR in file pn_ctl.sm near line 348:
+	Statesets in union are from different model instances
+null
+Done!

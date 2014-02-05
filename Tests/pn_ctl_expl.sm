@@ -1,0 +1,7 @@
+
+// $Id$
+
+#ProcessGeneration EXPLICIT
+
+#include "pn_ctl.sm"
+

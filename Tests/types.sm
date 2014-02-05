@@ -1,0 +1,96 @@
+
+// $Id$
+
+print("\nThese should all have type void:\n\n");
+
+print_type(print(null));
+print_type(print("foo\n"));
+print_type(cond(true, print("bar\n"), null));
+
+print("\nThese should have type int:\n\n");
+
+int a := 3;
+int b := 4;
+print_type(2);
+print_type(a);
+print_type(2+a);
+print_type(b-a);
+print_type(a*b);
+
+print("\nThese should have type real:\n\n");
+
+real c := 4.2;
+print_type(5.1);
+print_type(5.1 + a);
+print_type(b+c);
+print_type(b-c);
+print_type(b*c);
+print_type(b/c);
+print_type(a/b);
+
+// Will want to add ph and rand tests here...
+
+print("\nAggregate types:\n\n");
+
+print_type(a:b:c);
+print_type(3:4:null);
+
+print("\nTesting function promotions:\n\n");
+
+int myfunc(int n) := n*n+1;
+real myfunc(real x) := sqrt(x+1);
+rand int R := equilikely(1, 6);
+rand real X := uniform(1.0, 6.0);
+
+print("Should be int:\n");
+print_type(myfunc(3));
+print("Should be rand int:\n");
+print_type(myfunc(R));
+print("Should be real:\n");
+print_type(myfunc(3.5));
+print("Should be rand real:\n");
+print_type(myfunc(X));
+
+real myfunc(rand real x) := avg(x+1);
+
+print("Definitely real:\n");
+print_type(myfunc(X));
+print("Depends on promotion distances, currently real:\n");
+print_type(myfunc(R));
+
+print("\nTesting max() function promotions\n\n");
+
+print("Should be int:\n");
+print_type(max(3, 4, 5));
+print("Should be real:\n");
+print_type(max(3, 4.1, 5.0));
+print("Should be ph int:\n");
+print_type(max(3, 4, equilikely(5, 6)));
+print("Should be ph real:\n");
+print_type(max(0, expo(5.0)));
+print("Should be ph real:\n");
+print_type(max(erlang(3, 4.0), expo(5.0)));
+print("Should be rand int:\n");
+print_type(max(3, bernoulli(0.5), R));
+print("Should be rand real:\n");
+print_type(max(erlang(3, 4.0), expo(5.0), X));
+
+print("\nTesting ord() promotions\n\n");
+
+print("Should be int:\n");
+print_type(ord(2, 1, 3, 5));
+print("Should be real:\n");
+print_type(ord(2, 1.1, 3.3, 5.5));
+print("Should be ph int:\n");
+print_type(ord(2, equilikely(1, 5), 3, 4));
+print("Should be ph real:\n");
+print_type(ord(2, erlang(1, 1.0), erlang(2, 2.0), erlang(3, 3.0)));
+print("Should be rand int:\n");
+print_type(ord(equilikely(1,3), 2, 4, 6));
+print_type(ord(equilikely(1,3), 2, 4, R));
+print("Should be rand real:\n");
+print_type(ord(equilikely(1,3), 2.1, 4.2, 6.3));
+print_type(ord(equilikely(1,3), 2, 4, X));
+
+
+print("\nThe end\n");

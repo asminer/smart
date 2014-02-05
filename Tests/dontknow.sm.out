@@ -1,0 +1,73 @@
+These should all be ?:
+????????????????????????????????????????????????????????
+These should be true:
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+These should be false:
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+These should be 0:
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+These should be infinity:
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+infinity
+These should be -infinity:
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity
+-infinity

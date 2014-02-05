@@ -1,0 +1,38 @@
+
+// $Id$
+
+
+print("=======================================\n");
+print("Checking 3*equilikely(1,2)\n");
+print("=======================================\n");
+print_ph(equilikely(1,2));
+print_ph(3*equilikely(1,2));
+
+print("=======================================\n");
+print("Checking 3*equilikely(0,2)\n");
+print("=======================================\n");
+print_ph(equilikely(0,2));
+print_ph(3*equilikely(0,2));
+
+print("=======================================\n");
+print("Checking 5*geometric(0.2)\n");
+print("=======================================\n");
+print_ph(geometric(0.2));
+print_ph(5*geometric(0.2));
+
+print("=======================================\n");
+print("Checking 5*(geometric(0.5)+geometric(0.2))\n");
+print("=======================================\n");
+print_ph(geometric(0.5)+geometric(0.2));
+print("(Natural order)\n");
+print_ph(5*(geometric(0.5)+geometric(0.2)));
+print("(Lexical order)\n");
+#StateDisplayOrder LEXICAL
+print_ph(5*(geometric(0.5)+geometric(0.2)));
+#StateDisplayOrder NATURAL
+
+
+
+
+
+

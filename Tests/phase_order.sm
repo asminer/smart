@@ -1,0 +1,82 @@
+
+// $Id$
+
+/*
+  Checks order statistics for phase types
+*/
+
+/*
+  Example from lecture notes...
+*/
+
+dtmc mygeom := {
+  state s1, s0;
+  init (s1:1);
+  arcs(
+    s1:s1:3, s1:s0:1
+  );
+
+  ph int make := tta(in_state(s0));
+};
+
+dtmc myequi := {
+  state s3, s2, s1, s0;
+  init(s3:1, s2:1, s1:1);
+  arcs(
+    s3:s2:1, s2:s1:1, s1:s0:1
+  );
+  ph int make := tta(in_state(s0));
+};
+
+ph int g14 := mygeom.make;
+ph int eq13 := myequi.make;
+
+print_ph(g14);
+print_ph(eq13);
+
+// example 27.10
+
+print_ph(max(g14, eq13));
+
+// example 21.11
+
+print_ph(min(g14, eq13));
+
+
+/*
+  Similar examples, but using our phase representation
+*/
+
+print_ph(geometric(0.25));
+print_ph(equilikely(1, 3));
+
+print_ph(max(geometric(0.25), equilikely(1, 3)));
+print_ph(min(geometric(0.25), equilikely(1, 3)));
+
+
+/*
+  Some easy, multi-dimensional, test cases
+*/
+
+ph int one := 1;
+ph int two := 2;
+ph int three := 3;
+ph int four := 4;
+
+print_ph(max(one, two, three, four));
+print_ph(min(one, two, three, four));
+
+/*
+  Continuous tests
+*/
+
+ph real Ca := expo(3.5);
+ph real Cb := expo(2.0);
+
+print_ph(max(Ca, Cb));
+print_ph(min(Ca, Cb));
+// note we get memoryless for free here!
+
+print_ph(max(erlang(2, 2.2), erlang(3, 3.3)));
+print_ph(min(erlang(2, 2.2), erlang(3, 3.3)));
+

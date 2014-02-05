@@ -1,0 +1,84 @@
+Phase type distribution zero has 1 variable dependencies:
+	zero
+Phase type distribution one has 1 variable dependencies:
+	one
+Phase type distribution two has 1 variable dependencies:
+	two
+Phase type distribution zpo has 3 variable dependencies:
+	zpo
+	zero
+	one
+Phase type distribution zpopt has 4 variable dependencies:
+	zpopt
+	zero
+	one
+	two
+Phase type distribution zoo has 3 variable dependencies:
+	zoo
+	zero
+	one
+Phase type distribution zooot has 4 variable dependencies:
+	zooot
+	zero
+	one
+	two
+Phase type distribution mzo has 3 variable dependencies:
+	mzo
+	zero
+	one
+Phase type distribution zpinf has 3 variable dependencies:
+	zpinf
+	zero
+	infinity (ignored)
+Phase type distribution opinf has 3 variable dependencies:
+	opinf
+	one
+	infinity (ignored)
+Phase type distribution tricky1 has 7 variable dependencies:
+	tricky1
+	zpinf
+	zero
+	infinity (ignored)
+	opinf
+	one
+	infinity (ignored)
+These should print warnings:
+WARNING in file phase_deps.sm near line 39:
+	operands in phase-type addition are not independent;
+	phase-type model will incorrectly treat them as such.
+	Common dependencies:
+		zero
+		one
+WARNING in file phase_deps.sm near line 40:
+	operands in phase-type addition are not independent;
+	phase-type model will incorrectly treat them as such.
+	Common dependencies:
+		zero
+		one
+WARNING in file phase_deps.sm near line 41:
+	operands in phase-type addition are not independent;
+	phase-type model will incorrectly treat them as such.
+	Common dependencies:
+		zero
+		one
+WARNING:
+	Common dependencies in parameters to choose():
+		zero
+		one
+WARNING in file phase_deps.sm near line 42:
+	Function choose requires independent parameters.
+	Phase-type model will be incorrect.
+WARNING:
+	Common dependencies in parameters to max():
+		zero
+		one
+WARNING in file phase_deps.sm near line 43:
+	Function max requires independent parameters.
+	Phase-type model will be incorrect.
+WARNING:
+	Common dependencies in parameters to min():
+		zero
+		one
+WARNING in file phase_deps.sm near line 44:
+	Function min requires independent parameters.
+	Phase-type model will be incorrect.

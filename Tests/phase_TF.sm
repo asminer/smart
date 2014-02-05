@@ -1,0 +1,140 @@
+
+// $Id$
+
+print("============================================================\n");
+print("\nOz TF  example\nShould look like:\n");
+print(" r -> s;   r -> a\n");
+print(" s -> r;   s -> a\n\n");
+print("-------------------------------------------------------\n");
+
+dtmc oz := {
+  state r, n, s;
+  init(r:1);
+  arcs(
+    r:r:2, r:n:1, r:s:1,
+    n:r:1, n:s:1,
+    s:r:1, s:n:1, s:s:2
+  );
+
+  ph int ttnice := phi_TF(potential(in_state(n)));
+  ph real error := phr_TF(potential(in_state(n)));
+  real pnice := PF(potential(in_state(n)));
+};
+
+ph int foo := oz.ttnice;
+
+print_ph(foo);
+print("Should be 1: ", oz.pnice, "\n");
+
+
+print("============================================================\n");
+print("\nExample 2\nShould look like:\n");
+print(" i -> x;   i -> t\n");
+print(" x -> a;\n\n");
+print("-------------------------------------------------------\n");
+
+dtmc ex2 := {
+  state i, t, x, y, a;
+  init(i:1);
+  arcs(
+    i:t:1, i:x:1,
+    x:y:1,
+    y:a:1
+  );
+
+  ph int tty := phi_TF(potential(in_state(y)));
+  ph real error := phr_TF(potential(in_state(y)));
+  real py := PF(potential(in_state(y)));
+};
+
+print_ph(ex2.tty);
+print("Should be 0.5: ", ex2.py, "\n");
+
+print("============================================================\n");
+print("\nExample 3\nShould look like:\n");
+print(" i -> x;   i -> t\n");
+print(" x -> a;\n\n");
+print("-------------------------------------------------------\n");
+
+dtmc ex3 := {
+  state i, t1, t2, x, y;
+  init(i:1);
+  arcs(
+    i:t1:1, i:x:1,
+    t1:t2:1,
+    t2:t1:1,
+    x:y:1,
+    y:t2:1
+  );
+
+  ph int tty := phi_TF(potential(in_state(y)));
+  ph real tty := phr_TF(potential(in_state(y)));
+  real py := PF(potential(in_state(y)));
+};
+
+print_ph(ex3.tty);
+print("Should be 0.5: ", ex3.py, "\n");
+
+
+print("============================================================\n");
+print("\nExample 4\nShould look like:\n");
+print(" x1 -> t;  x1 -> x2;  x1 -> y1\n");
+print(" x2 -> t;  x2 -> x3;  x2 -> y2\n");
+print(" x3 -> t;  x3 -> a;\n");
+print(" y1 -> y2; y2 -> a;\n\n");
+print("-------------------------------------------------------\n");
+
+dtmc ex4 := {
+  state x1, x2, x3, t1, t2, t3, a1, a2, a3;
+  init(x1:1);
+  arcs(
+    x1:t1:1, x1:a1:1, x1:x2:2,
+    x2:t2:1, x2:a2:1, x2:x3:2,
+    x3:t3:1, x3:a3:1,
+    t1:t2:1, t2:t3:1, t3:t1:1,
+    a1:a2:1, a2:a3:1, a3:a2:1
+  );
+
+  ph int tt := phi_TF(potential(in_state(a3)));
+  ph real error := phr_TF(potential(in_state(a3)));
+  real pa3 := PF(potential(in_state(a3)));
+};
+
+print_ph(ex4.tt);
+print("Should be 0.5: ", ex4.pa3, "\n");
+
+print("============================================================\n");
+print("\nExample 5\nShould look like:\n");
+print(" x1 -> t;  x1 -> x2;  x1 -> y1\n");
+print(" x2 -> t;  x2 -> x3;  x2 -> y2\n");
+print(" x3 -> t;  x3 -> a;\n");
+print(" y1 -> y2; y2 -> a;\n\n");
+print("-------------------------------------------------------\n");
+
+ctmc ex5 := {
+  state x1, x2, x3, t1, t2, t3, a1, a2, a3;
+  init(x1:1);
+  arcs(
+    x1:t1:1, x1:a1:1, x1:x2:2,
+    x2:t2:1, x2:a2:1, x2:x3:2,
+    x3:t3:1, x3:a3:1,
+    t1:t2:1, t2:t3:1, t3:t1:1,
+    a1:a2:1, a2:a3:1, a3:a2:1
+  );
+
+  ph real tt := phr_TF(potential(in_state(a3)));
+  ph int error := phi_TF(potential(in_state(a3)));
+  real pa3 := PF(potential(in_state(a3)));
+};
+
+print_ph(ex5.tt);
+print("Should be 0.5: ", ex4.pa3, "\n");
+
+print("============================================================\n");
+print("\nThese should generate error messages:\n\n");
+print_ph(oz.error);
+print_ph(ex2.error);
+print_ph(ex3.error);
+print_ph(ex4.error);
+print_ph(ex5.error);
+

@@ -1,0 +1,111 @@
+
+// $Id$
+
+// # Debug + procgen
+// # Debug + exact_solver
+
+print("\n----------------------------------------------------------------\n");
+ph int zero := 0;
+print("Average for const(0):\n");
+print("\tcomputed: ", avg(zero), "\n");
+print("\t  theory: ", 0.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int one := 1;
+print("Average for const(1):\n");
+print("\tcomputed: ", avg(one), "\n");
+print("\t  theory: ", 1.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int inf := infinity;
+print("Average for const(oo):\n");
+print("\tcomputed: ", avg(inf), "\n");
+print("\t  theory: ", infinity, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int die := equilikely(1,6);
+print("Average for equilikely(1,6):\n");
+print("\tcomputed: ", avg(die), "\n");
+print("\t  theory: ", (6.0+1.0)/2, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int dice := equilikely(1,6) + equilikely(1,6);
+print("Average for dice:\n");
+print("\tcomputed: ", avg(dice), "\n");
+print("\t  theory: ", 2*(6.0+1.0)/2, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int coin := bernoulli(0.6);
+print("Average for bernoulli(0.6):\n");
+print("\tcomputed: ", avg(coin), "\n");
+print("\t  theory: ", 0.6, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int howmany := geometric(0.6);
+print("Average for geometric(0.6):\n");
+print("\tcomputed: ", avg(howmany), "\n");
+print("\t  theory: ", 0.6 / (1-0.6), "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int pascal := geometric(0.6) + geometric(0.6) + geometric(0.6);
+print("Average for pascal(3, 0.6):\n");
+print("\tcomputed: ", avg(pascal), "\n");
+print("\t  theory: ", 3*0.6 / (1-0.6), "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int coins := binomial(3, 0.6);
+print("Average for binomial(3, 0.6):\n");
+print("\tcomputed: ", avg(coins), "\n");
+print("\t  theory: ", 3 * 0.6, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int altcoins := bernoulli(0.6) + bernoulli(0.6) + bernoulli(0.6);
+print("Average for sum of 3 bernoulli's:\n");
+print("\tcomputed: ", avg(altcoins), "\n");
+print("\t  theory: ", 3 * 0.6, "\n");
+
+print("\n----------------------------------------------------------------\n");
+print("Average for expo(5):\n");
+print("\tcomputed: ", avg(expo(5)), "\n");
+print("\t  theory: ", 1.0/5.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph real x := expo(5);
+print("Average for ph real expo(5):\n");
+print("\tcomputed: ", avg(x), "\n");
+print("\t  theory: ", 1.0/5.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph real earl := erlang(3, 5);
+print("Average for erlang(3, 5):\n");
+print("\tcomputed: ", avg(earl), "\n");
+print("\t  theory: ", 3.0/5.0, "\n");
+
+
+print("\n----------------------------------------------------------------\n");
+print("Prob 0 < infinity:\n");
+print("\tcomputed: ", prob_finite(zero), "\n");
+print("\t  theory: ", 1.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+print("Prob 1 < infinity:\n");
+print("\tcomputed: ", prob_finite(one), "\n");
+print("\t  theory: ", 1.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+print("Prob infinity < infinity:\n");
+print("\tcomputed: ", prob_finite(inf), "\n");
+print("\t  theory: ", 0.0, "\n");
+
+print("\n----------------------------------------------------------------\n");
+ph int flip := choose(0:1, infinity:1);
+print("Prob flip < infinity:\n");
+print("\tcomputed: ", prob_finite(flip), "\n");
+print("\t  theory: ", 0.5, "\n");
+
+print("\n----------------------------------------------------------------\n");
+print("Average of flip:\n");
+print("\tcomputed: ", avg(flip), "\n");
+print("\t  theory: ", infinity, "\n");
+
+print("\n");

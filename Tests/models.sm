@@ -1,0 +1,288 @@
+
+// $Id$
+
+/*
+	Test of the new model type!
+*/
+
+ctmc birthdeath(int n) := {
+  print("Building birthdeath ", n, "\n");
+  for (int i in {0..n}) {
+    state s[i];
+    real pi[i] := prob_ss(in_state(s[i]));
+  }
+  init(s[0]:1);
+  for (int i in {1..n}) {
+    arcs(
+      s[i]:s[i-1]: 1,
+      s[i-1]:s[i]: 1
+    );
+  }
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
+};
+
+// #Solver GAUSS_SEIDEL
+
+model f1 := birthdeath(1);
+model f2 := birthdeath(2);
+model f3 := birthdeath(3);
+model f4 := birthdeath(4);
+
+compute(f1.pi[1]);
+compute(f2.pi[1]);
+compute(f3.pi[1]);
+compute(f4.pi[1]);
+
+print("model 1 states: ", f1.m1, "\n");
+print("model 2 states: ", f2.m1, "\n");
+print("model 3 states: ", f3.m1, "\n");
+print("model 4 states: ", f4.m1, "\n");
+
+int f1m2 := int(f1.m2);
+int f2m2 := int(f2.m2);
+int f3m2 := int(f3.m2);
+int f4m2 := int(f4.m2);
+
+print("model 1 arcs: ", f1m2, "\n");
+print("model 2 arcs: ", f2m2, "\n");
+print("model 3 arcs: ", f3m2, "\n");
+print("model 4 arcs: ", f4m2, "\n");
+
+real rn := null;
+real theory(int m, int i) := cond(i>m, rn, 1.0 / (m+1.0));
+
+print("Testing array measures; some will cause array out of bounds\n");
+
+for (int i in {0..4}) {
+  print ("model 1 pi[", i, "] = ", f1.pi[i]);
+  print (" (should be ", theory(1, i), ")\n");
+  print ("model 2 pi[", i, "] = ", f2.pi[i]);
+  print (" (should be ", theory(2, i), ")\n");
+  print ("model 3 pi[", i, "] = ", f3.pi[i]);
+  print (" (should be ", theory(3, i), ")\n");
+  print ("model 4 pi[", i, "] = ", f4.pi[i]);
+  print (" (should be ", theory(4, i), ")\n");
+}
+
+print("Deleting models...\n");
+
+delete(f1);
+delete(f2);
+delete(f3);
+delete(f4);
+
+print("These should be errors:\n");
+
+print("(deleted) model 1 states: ", f1.m1, "\n");
+print("(deleted) model 2 states: ", f2.m1, "\n");
+print("(deleted) model 3 states: ", f3.m1, "\n");
+print("(deleted) model 4 states: ", f4.m1, "\n");
+
+print("End of delete errors\n");
+
+/*
+	Models in cond and such...
+*/
+
+model bdcond := cond(true, birthdeath(5), birthdeath(1000));
+model bdcase := case(5, birthdeath(0), 2:birthdeath(2), 7:birthdeath(7));
+
+compute(bdcond.m1);
+compute(bdcase.m1);
+
+print("Should be 6: ");
+print(bdcond.m1);
+print("\nShould be 1: ");
+print(bdcase.m1);
+print("\n");
+
+dtmc dtri := {
+  state a, b, c;
+  init(a:1);
+  arcs(
+    a:a:1,
+    a:b:1, 
+    a:c:1,
+    b:b:1,
+    b:c:1,
+    c:a:1
+  );
+  real aprob := prob_ss(in_state(a));
+  real bprob := prob_ss(in_state(b));
+  real cprob := prob_ss(in_state(c));
+};
+
+model m_dtri := dtri;
+
+ctmc csq := {
+  state a, b, c, d;
+  init(a:1);
+  arcs(
+    a:b:1,
+    b:c:1,
+    c:d:1,
+    d:a:1
+  );
+  real pa := prob_ss(in_state(a));
+  real pb := prob_ss(in_state(b));
+  real pc := prob_ss(in_state(c));
+  real pd := prob_ss(in_state(d));
+};
+
+model m_csq := csq;
+
+print("These should generate errors:\n");
+
+model cond_model(bool disc) := cond(disc, m_dtri, m_csq);
+model case_model(int n) := case(n, m_csq, 1:birthdeath(1), 3:birthdeath(3));
+
+bool dummyb := false;
+int dummyi := 7;
+
+model foo1 := cond(dummyb, m_dtri, m_csq);
+model foo2 := cond(dummyb, m_csq, birthdeath(2));
+model foo3 := case(dummyi, birthdeath(dummyi), 1:m_csq);
+model foo4 := case(dummyi, birthdeath(dummyi), 0:m_dtri, 1:m_csq);
+
+print("End of generated errors\n");
+
+/*
+	Arrays of models here.
+*/
+
+for (int i in {1..5}) {
+  model ma[i] := birthdeath(i);
+  bigint bdstates[i] := ma[i].m1;
+}
+
+for (int i in {1..5}) {
+  print(ma[i].m1, " states for i=", i, "\n");
+}
+
+int ma1m2 := int(ma[1].m2);
+int ma2m2 := int(ma[2].m2);
+int ma3m2 := int(ma[3].m2);
+int ma4m2 := int(ma[4].m2);
+int ma5m2 := int(ma[5].m2);
+int ma6m2 := int(ma[6].m2);	// will cause range error
+
+print(ma1m2, " arcs for i=1\n");
+print(ma2m2, " arcs for i=2\n");
+print(ma3m2, " arcs for i=3\n");
+print(ma4m2, " arcs for i=4\n");
+print(ma5m2, " arcs for i=5\n");
+
+print("This should generate a range error:\n");
+print(ma6m2, " should be null\n");
+
+for (int i in {1..5}) {
+  print(bdstates[i], " (bigint) states for i=", i, "\n");
+}
+
+// arrays of arrays
+
+for (int i in {1..5}) {
+  print("Probabilities for birthdeath ", i+1, ":\n");
+  print("[", ma[i].pi[0]);
+  for (int j in {1..i}) {
+    print(", ", ma[i].pi[j]);
+  }
+  print("]\n");
+}
+
+for (int i in {1..5}, int j in {0..i}) {
+  real bdprob[i][j] := ma[i].pi[j];
+}
+
+for (int i in {1..5}) {
+  print("Probabilities for birthdeath (different array) ", i+1, ":\n");
+  print("[", bdprob[i][0]);
+  for (int j in {1..i}) {
+    print(", ", bdprob[i][j]);
+  }
+  print("]\n");
+}
+
+
+print("More errors:\n");
+compute(ma.m1);
+compute(ma.foo);
+compute(ma[3].foo);
+compute(ma[10].m1);
+compute(ma[10].pi);
+print("index out of bounds errors:\n");
+for (int i in {0..6}) {
+  print(ma[i].pi[i+1], "\n");
+}
+print("end of errors\n");
+
+/*
+  Functions inside models, done nicely :^)
+*/
+
+print("Starting model function test\n");
+
+bool larger(int n) := n>0;
+
+print("This may generate a warning, but should be ok:\n");
+
+ctmc another_bd(int n) := {
+  for (int i in {0..n}) {
+    state s[i];
+  }
+  init(s[0]:1);
+  for (int i in {1..n}) {
+    arcs(
+      s[i]:s[i-1]:1,
+      s[i-1]:s[i]:1
+    );
+  }
+  proc bool lesseq(int n) := cond(n<0, false, in_state(s[n]) | lesseq(n-1));
+  proc bool larger(int i) := cond(i>n, false, in_state(s[i]) | larger(i+1));
+
+  for (int i in {0..n}) {
+    real left[i] := prob_ss(lesseq(i-1));
+    real right[i] := prob_ss(larger(i+1));
+    real pi[i] := prob_ss(in_state(s[i]));
+  }
+
+};
+
+print("Instantiating model\n");
+
+int abdsize := 4;
+model abd4 := another_bd(abdsize);
+
+print("Distribution (should be uniform): [");
+for (int i in {0..abdsize}) {
+  cond(i>0, print(", "), null);
+  print(abd4.pi[i]);
+}
+print("]\n");
+print("Left (sum of dist to the left)  : [");
+for (int i in {0..abdsize}) {
+  cond(i>0, print(", "), null);
+  print(abd4.left[i]);
+}
+print("]\n");
+print("Right (sum of dist to the right): [");
+for (int i in {0..abdsize}) {
+  cond(i>0, print(", "), null);
+  print(abd4.right[i]);
+}
+print("]\n");
+print("Total (should be all ones)      : [");
+for (int i in {0..abdsize}) {
+  cond(i>0, print(", "), null);
+  print(abd4.left[i] + abd4.pi[i] + abd4.right[i]);
+}
+print("]\n");
+
+print("This should cause a compile error:\n");
+dtmc foobar := {
+  real bad1 := prob_ss(lesseq(3));
+};
+print("Done with model function test\n");
+
+print("Done!\n");

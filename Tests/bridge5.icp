@@ -1,0 +1,187 @@
+
+// $Id$
+
+/*
+	Bridge crossing optimization problem, it goes something like this.
+	There are 5 people that must cross an old bridge at night,
+	and only 1 flashlight.  2 people can cross the bridge at a time.
+	Each person walks at a different speed.  What is the fastest
+	we can get everyone across the bridge?
+
+	People start on the left side and go to the right side.
+
+	We identify people by their speeds, so the speeds
+	need to be unique.
+*/
+
+int L1a in {1};		// speed of person 1
+int L1b in {2};		// speed of person 2
+int L1c in {5}; 	// speed of person 3
+int L1d in {8};	  // speed of person 4
+int L1e in {10};	// speed of person 5
+
+int L2a, L2b, L2c, R2a, R2b	in {1, 2, 5, 8, 10};	
+int L3a, L3b, L3c, L3d, R3a	in {1, 2, 5, 8, 10};	
+int L4a, L4b, R4a, R4b, R4c	in {1, 2, 5, 8, 10};	
+int L5a, L5b, L5c, R5a, R5b	in {1, 2, 5, 8, 10};	
+int L6a, R6a, R6b, R6c, R6d	in {1, 2, 5, 8, 10};	
+int L7a, L7b, R7a, R7b, R7c	in {1, 2, 5, 8, 10};	
+int R8a, R8b, R8c, R8d, R8e	in {1, 2, 5, 8, 10};	
+
+// First, we make sure that everyone is accounted for at each state.
+
+// State 1 unique
+L1a != L1b;
+L1a != L1c;
+L1a != L1d;
+L1a != L1e;
+L1b != L1c;
+L1b != L1d;
+L1b != L1e;
+L1c != L1d;
+L1c != L1e;
+L1d != L1e;
+
+// State 2 unique
+L2a != L2b;
+L2a != L2c;
+L2a != R2a;
+L2a != R2b;
+L2b != L2c;
+L2b != R2a;
+L2b != R2b;
+L2c != R2a;
+L2c != R2b;
+R2a != R2b;
+
+// State 3 unique
+L3a != L3b;
+L3a != L3c;
+L3a != L3d;
+L3a != R3a;
+L3b != L3c;
+L3b != L3d;
+L3b != R3a;
+L3c != L3d;
+L3c != R3a;
+L3d != R3a;
+
+// State 4 unique
+L4a != L4b;
+L4a != R4a;
+L4a != R4b;
+L4a != R4c;
+L4b != R4a;
+L4a != R4b;
+L4a != R4c;
+R4a != R4b;
+R4a != R4c;
+R4b != R4c;
+
+// State 5 unique
+L5a != L5b;
+L5a != L5c;
+L5a != R5a;
+L5a != R5b;
+L5b != L5c;
+L5b != R5a;
+L5b != R5b;
+L5c != R5a;
+L5c != R5b;
+R5a != R5b;
+
+// State 6 unique
+L6a != R6a;
+L6a != R6b;
+L6a != R6c;
+L6a != R6d;
+R6a != R6b;
+R6a != R6c;
+R6a != R6d;
+R6b != R6c;
+R6b != R6d;
+R6c != R6d;
+
+// State 7 unique
+L7a != L7b;
+L7a != R7a;
+L7a != R7b;
+L7a != R7c;
+L7b != R7a;
+L7b != R7b;
+L7b != R7c;
+R7a != R7b;
+R7a != R7c;
+R7b != R7c;
+
+// State 8 unique
+R8a != R8b;
+R8a != R8c;
+R8a != R8d;
+R8a != R8e;
+R8b != R8c;
+R8b != R8d;
+R8b != R8e;
+R8c != R8d;
+R8c != R8e;
+R8d != R8e;
+
+// First crossing
+(R2a == L1a) | (R2a == L1b) | (R2a == L1c) | (R2a == L1d) | (R2a == L1e);
+(R2b == L1a) | (R2b == L1b) | (R2b == L1c) | (R2b == L1d) | (R2b == L1e);
+(L2a == L1a) | (L2a == L1b) | (L2a == L1c) | (L2a == L1d) | (L2a == L1e);
+(L2b == L1a) | (L2b == L1b) | (L2b == L1c) | (L2b == L1d) | (L2b == L1e);
+(L2c == L1a) | (L2c == L1b) | (L2c == L1c) | (L2c == L1d) | (L2c == L1e);
+
+// Second crossing
+L3a == L2a;
+L3b == L2b;
+L3c == L2c;
+(L3d == R2a) | (L3d == R2b);
+(R3a == R2a) | (R3a == R2b);
+
+// Third crossing
+(L4a == L3a) | (L4a == L3b) | (L4a == L3c) | (L4a == L3d);
+(L4b == L3a) | (L4b == L3b) | (L4b == L3c) | (L4b == L3d);
+R4a == R3a;
+(R4b == L3a) | (R4b == L3b) | (R4b == L3c) | (R4b == L3d);
+(R4c == L3a) | (R4c == L3b) | (R4c == L3c) | (R4c == L3d);
+
+// Fourth crossing
+L5a == L4a;
+L5b == L4b;
+(L5c == R4a) | (L5c == R4b) | (L5c == R4c);
+(R5a == R4a) | (R5a == R4b) | (R5a == R4c);
+(R5b == R4a) | (R5b == R4b) | (R5b == R4c);
+
+// Fifth crossing
+(L6a == L5a) | (L6a == L5b) | (L6a == L5c);
+R6a == R5a;
+R6b == R5b;
+(R6c == L5a) | (R6c == L5b) | (R6c == L5c);
+(R6d == L5a) | (R6d == L5b) | (R6c == L5c);
+
+// Sixth crossing
+L7a == L6a;
+(L7b == R6a) | (L7b == R6b) | (L7b == R6c) | (L7b == R6d);
+(R7a == R6a) | (R7a == R6b) | (R7a == R6c) | (R7a == R6d);
+(R7b == R6a) | (R7b == R6b) | (R7b == R6c) | (R7b == R6d);
+(R7c == R6a) | (R7c == R6b) | (R7c == R6c) | (R7c == R6d);
+
+// Seventh crossing
+R8a == R7a;
+R8b == R7b;
+R8c == R7c;
+(R8d == L7a) | (R8d == L7b);
+(R8e == L7a) | (R8e == L7b);
+
+// These are used to eliminate symmetries, 
+// and to make the "reward" function easier to write.
+
+R2a < R2b;	// the two people who crossed;
+R4b < R4c;	// WLOG we can order them.
+R6c < R6d;
+R8d < R8e;
+
+minimize cost := R2b + L3d + R4c + L5c + R6d + L7b + R8e;
+

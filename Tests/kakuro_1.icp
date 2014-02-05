@@ -1,0 +1,138 @@
+
+// $Id$
+
+/*
+  Kakuro puzzle 4/16/2008
+
+  Variables are of the form "xy"
+    x is the row letter.
+    y is the column letter.
+*/
+
+// variable declarations
+
+int     ab, ac, ad,         ag, ah,     aj, ak  in {1..9};
+int ba, bb, bc, bd, be,     bg, bh, bi, bj, bk  in {1..9};
+int ca, cb,     cd, ce, cf, cg, ch, ci          in {1..9};
+int da, db, dc,         df, dg,         dj, dk  in {1..9};
+int     eb, ec, ed, ee, ef,         ei, ej, ek  in {1..9};
+int         fc, fd, fe, ff, fg, fh, fi          in {1..9};
+int ga, gb, gc,         gf, gg, gh, gi, gj      in {1..9};
+int ha, hb,         he, hf,         hi, hj, hk  in {1..9};
+int         ic, id, ie, if, ig, ih,     ij, ik  in {1..9};
+int ja, jb, jc, jd, je,     jg, jh, ji, jj, jk  in {1..9};
+int ka, kb,     kd, ke,         kh, ki, kj      in {1..9};
+
+// Row sums 
+
+     11 == ab + ac + ad;      13 == ag + ah; 14 == aj + ak;
+34 == ba + bb + bc + bd + be; 20 == bg + bh + bi + bj + bk;
+12 == ca + cb; 22 == cd + ce + cf + cg + ch + ci;
+ 9 == da + db + dc;       3 == df + dg;       5 == dj + dk;
+     34 == eb + ec + ed + ee + ef;      21 == ei + ej + ek;
+          37 == fc + fd + fe + ff + fg + fh + fi;
+ 9 == ga + gb + gc;      15 == gf + gg + gh + gi + gj;
+10 == ha + hb;       5 == he + hf;      18 == hi + hj + hk;
+          38 == ic + id + ie + if + ig + ih;  7 == ij + ik;
+15 == ja + jb + jc + jd + je; 26 == jg + jh + ji + jj + jk;
+11 == ka + kb;  3 == kd + ke;      10 == kh + ki + kj;
+
+// Column sums
+
+ka + ja == 14; ha + ga == 3;       da + ca + ba == 23;
+kb + jb == 3;  hb + gb == 11; eb + db + cb + bb + ab == 16;
+     jc + ic == 12; gc + fc + ec + dc == 24; bc + ac == 17;
+kd + jd + id == 8;       fd + ed == 7;  cd + bd + ad == 7; 
+ke + je + ie + he == 10; fe + ee == 15; ce + be == 11;
+          if + hf + gf + ff + ef + df + cf == 41;
+     jg + ig == 7;  gg + fg == 6;  dg + cg + bg + ag == 10;
+kh + jh + ih == 10; gh + fh == 8;       ch + bh + ah == 14;
+ki + ji == 10; hi + gi + fi + ei == 10; ci + bi == 13;
+kj + jj + ij + hj + gj == 34; ej + dj == 9;  bj + aj == 14;
+     jk + ik + hk == 16;      ek + dk == 13; bk + ak == 6;
+
+// Row constraints
+
+unique(ab, ac, ad);
+unique(ag, ah);
+unique(aj, ak);
+unique(ba, bb, bc, bd, be);
+unique(bg, bh, bi, bj, bk);
+unique(ca, cb);
+unique(cd, ce, cf, cg, ch, ci);
+unique(da, db, dc);
+unique(df, dg);
+unique(dj, dk);
+unique(eb, ec, ed, ee, ef);
+unique(ei, ej, ek);
+unique(fc, fd, fe, ff, fg, fh, fi);
+unique(ga, gb, gc);
+unique(gf, gg, gh, gi, gj);
+unique(ha, hb);
+unique(he, hf);
+unique(hi, hj, hk);
+unique(ic, id, ie, if, ig, ih);
+unique(ij, ik);
+unique(ja, jb, jc, jd, je);
+unique(jg, jh, ji, jj, jk);
+unique(ka, kb);
+unique(kd, ke);
+unique(kh, ki, kj);
+
+// Column constraints
+
+unique(ka, ja);
+unique(ha, ga);
+unique(da, ca, ba);
+unique(kb, jb);
+unique(hb, gb);
+unique(eb, db, cb, bb, ab);
+unique(jc, ic);
+unique(gc, fc, ec, dc);
+unique(bc, ac);
+unique(kd, jd, id);
+unique(fd, ed);
+unique(cd, bd, ad);
+unique(ke, je, ie, he);
+unique(fe, ee);
+unique(ce, be);
+unique(if, hf, gf, ff, ef, df, cf);
+unique(jg, ig);
+unique(gg, fg);
+unique(dg, cg, bg, ag);
+unique(kh, jh, ih);
+unique(gh, fh);
+unique(ch, bh, ah);
+unique(ki, ji);
+unique(hi, gi, fi, ei);
+unique(ci, bi);
+unique(kj, jj, ij, hj, gj);
+unique(ej, dj);
+unique(bj, aj);
+unique(jk, ik, hk);
+unique(ek, dk);
+unique(bk, ak);
+
+// Measure
+
+satisfiable solution := true;
+
+satisfiable verify :=
+  ab == 2 & ac == 8 & ad == 1 & ag == 4 & ah == 9 & aj == 9 & ak == 5 &
+  ba == 8 & bb == 6 & bc == 9 & bd == 4 & be == 7 & bg == 2 & bh == 4 & 
+  bi == 8 & bj == 5 & bk == 1 &
+  ca == 9 & cb == 3 & cd == 2 & ce == 4 & cf == 7 & cg == 3 & ch == 1 & 
+  ci == 5 & 
+  da == 6 & db == 1 & dc == 2 & df == 2 & dg == 1 & dj == 1 & dk == 4 &
+  eb == 4 & ec == 8 & ed == 6 & ee == 7 & ef == 9 & ei == 4 & ej == 8 &
+  ek == 9 &
+  fc == 9 & fd == 1 & fe == 8 & ff == 6 & fg == 4 & fh == 7 & fi == 2 &
+  ga == 1 & gb == 3 & gc == 5 & gf == 5 & gg == 2 & gh == 1 & gi == 3 &
+  gj == 4 &
+  ha == 2 & hb == 8 & he == 1 & hf == 4 & hi == 1 & hj == 8 & hk == 9 &
+  ic == 9 & id == 5 & ie == 3 & if == 8 & ig == 6 & ih == 7 & ij == 6 &
+  ik == 1 &
+  ja == 5 & jb == 1 & jc == 3 & jd == 2 & je == 4 & jg == 1 & jh == 2 &
+  ji == 8 & jj == 9 & jk == 6 &
+  ka == 9 & kb == 2 & kd == 1 & ke == 2 & kh == 1 & ki == 2 & kj == 7;
+

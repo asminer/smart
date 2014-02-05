@@ -1,0 +1,126 @@
+#!/bin/bash -f
+#
+# $Id$
+#
+# Fancy test script for smart input files
+
+# Globals -- these will be set when we process input arguments
+TEST_NAME=""
+LOG_FILE=""
+TRS_FILE=""
+INFILE=""
+
+#
+# Helper: use color tests
+# 
+color_yes() {
+  OK=" [1;32m  PASS  [0;39m"
+  CHANGE=" [1;33m CHANGE [0;39m"
+  FAILED=" [1;31m FAILED [0;39m"
+}
+
+#
+# Helper: do not use color tests
+# 
+color_no() {
+      OK="   PASS   "
+  CHANGE="  CHANGE  "
+  FAILED="  FAILED  "
+}
+
+#
+ProcessOK()
+{
+  printf "$OK\n"
+  echo ":test-result: PASS $TEST_NAME" > $TRS_FILE
+}
+
+#
+ProcessChange()
+{
+  printf "$CHANGE\n"
+  echo ":test-result: FAIL $TEST_NAME" > $TRS_FILE
+}
+
+#
+ProcessFail()
+{
+  printf "$FAIL\n"
+  echo ":test-result: ERROR $TEST_NAME" > $TRS_FILE
+}
+
+#
+# Parse arguments
+#
+while [ $# -gt "0" ]; do
+  if [ "$1" == "--test-name" ]; then
+    shift
+    TEST_NAME=$1
+    shift
+    continue
+  fi
+  if [ "$1" == "--log-file" ]; then
+    shift
+    LOG_FILE=`pwd`/$1
+    shift
+    continue
+  fi
+  if [ "$1" == "--trs-file" ]; then
+    shift
+    TRS_FILE=`pwd`/$1
+    shift
+    continue
+  fi
+  if [ "$1" == "--color-tests" ]; then
+    shift
+    if [ "$1" == "no" ]; then
+      color_no
+    else
+      color_yes
+    fi
+    shift
+    continue
+  fi
+  if [ "$1" == "--" ]; then
+    shift
+    INFILE=$1
+    shift 
+    continue
+  fi
+  # everything else: unknown or ignored switch
+  shift
+done
+
+#
+# Run program 
+#
+ICP="`pwd`/../src/Apps/icp"
+TESTDIR="`pwd`"
+if [ ! -f $ICP ]; then
+    printf "ICP executable not found: $ICP\n"
+    exit 1
+fi
+path=`dirname $INFILE`
+file=`basename $INFILE`
+cd $path
+printf "  %-40s  " $TEST_NAME
+rm -f $LOG_FILE
+if $ICP $file > $LOG_FILE; then
+    # Run was successful.
+    if [ -f $file.out.$SMART_PLATFORM ]; then
+      cmpfile="$file.out.$SMART_PLATFORM"
+    else
+      cmpfile="$file.out"
+    fi
+    if diff -b $cmpfile $LOG_FILE > $TESTDIR/$file.diffs; then
+      rm -f $TESTDIR/$file.diffs
+      ProcessOK
+    else
+      ProcessChange
+      echo "        Differences written to $file.diffs"
+    fi
+else
+    # Run failed
+    ProcessFail
+fi
+

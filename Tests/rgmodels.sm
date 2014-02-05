@@ -1,0 +1,316 @@
+
+// $Id$
+
+/*
+  Models for testing reachability graph generation
+*/
+
+/*
+  Kanban model with one place per level
+*/
+pn kanban_fine(int n) := {
+  place pm1, pb1, pkan1, pout1,
+        pm2, pb2, pkan2, pout2,
+        pm3, pb3, pkan3, pout3,
+        pm4, pb4, pkan4, pout4;
+  
+  init(pkan1:n, pkan2:n, pkan3:n, pkan4:n);
+
+  partition(
+	  pout4, pkan4, pb4, pm4,
+	  pout3, pkan3, pb3, pm3,
+	  pout2, pkan2, pb2, pm2,
+	  pout1, pkan1, pb1, pm1
+  );
+
+  bound( {pm1, pb1, pkan1, pout1} : n);
+  bound( {pm2, pb2, pkan2, pout2} : n);
+  bound( {pm3, pb3, pkan3, pout3} : n);
+  bound( {pm4, pb4, pkan4, pout4} : n);
+
+  trans   tin1, tr1, tb1, tg1, 
+          ts1_23,
+          tr2, tb2, tg2,
+          tr3, tb3, tg3,
+          ts23_4,
+          tr4, tb4, tg4, tout4;
+
+  arcs(
+      pkan1 : tin1, tin1 : pm1,
+      pm1 : tr1, tr1 : pb1,
+      pb1 : tb1, tb1 : pm1,
+      pm1 : tg1, tg1 : pout1,
+      pout1 : ts1_23, ts1_23 : pkan1,
+
+      pkan2 : ts1_23, ts1_23 : pm2,
+      pm2 : tr2, tr2 : pb2,
+      pb2 : tb2, tb2 : pm2,
+      pm2 : tg2, tg2 : pout2,
+      pout2 : ts23_4, ts23_4 : pkan2,
+
+      pkan3 : ts1_23, ts1_23 : pm3,
+      pm3 : tr3, tr3 : pb3,
+      pb3 : tb3, tb3 : pm3,
+      pm3 : tg3, tg3 : pout3,
+      pout3 : ts23_4, ts23_4 : pkan3,
+
+      pkan4 : ts23_4, ts23_4 : pm4,
+      pm4 : tr4, tr4 : pb4,
+      pb4 : tb4, tb4 : pm4,
+      pm4 : tg4, tg4 : pout4,
+      pout4 : tout4, tout4 : pkan4
+  );
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+
+// For computing theoretical number of states:
+
+  bigint square(bigint n) := n*n;
+
+  bigint poly1(bigint x) := div(x*x*x+6*x*x+11*x+6, 6);
+
+  bigint poly2(bigint x) := 
+    div(3*x*x*x*x*x + 30*x*x*x*x + 115*x*x*x + 210*x*x + 182*x + 60, 60);
+
+  bigint theory_ns := square(poly1(n)) * poly2(n);
+};
+
+
+/*
+  Kanban model with submodels grouped together
+*/
+pn kanban_coarse(int n) := {
+  place pm1, pb1, pkan1, pout1,
+        pm2, pb2, pkan2, pout2,
+        pm3, pb3, pkan3, pout3,
+        pm4, pb4, pkan4, pout4;
+  
+  init(pkan1:n, pkan2:n, pkan3:n, pkan4:n);
+
+  partition(
+	  {pout4, pkan4, pb4, pm4},
+	  {pout3, pkan3, pb3, pm3},
+	  {pout2, pkan2, pb2, pm2},
+	  {pout1, pkan1, pb1, pm1}
+  );
+
+  bound( {pm1, pb1, pkan1, pout1} : n);
+  bound( {pm2, pb2, pkan2, pout2} : n);
+  bound( {pm3, pb3, pkan3, pout3} : n);
+  bound( {pm4, pb4, pkan4, pout4} : n);
+
+  trans   tin1, tr1, tb1, tg1, 
+          ts1_23,
+          tr2, tb2, tg2,
+          tr3, tb3, tg3,
+          ts23_4,
+          tr4, tb4, tg4, tout4;
+
+  arcs(
+      pkan1 : tin1, tin1 : pm1,
+      pm1 : tr1, tr1 : pb1,
+      pb1 : tb1, tb1 : pm1,
+      pm1 : tg1, tg1 : pout1,
+      pout1 : ts1_23, ts1_23 : pkan1,
+
+      pkan2 : ts1_23, ts1_23 : pm2,
+      pm2 : tr2, tr2 : pb2,
+      pb2 : tb2, tb2 : pm2,
+      pm2 : tg2, tg2 : pout2,
+      pout2 : ts23_4, ts23_4 : pkan2,
+
+      pkan3 : ts1_23, ts1_23 : pm3,
+      pm3 : tr3, tr3 : pb3,
+      pb3 : tb3, tb3 : pm3,
+      pm3 : tg3, tg3 : pout3,
+      pout3 : ts23_4, ts23_4 : pkan3,
+
+      pkan4 : ts23_4, ts23_4 : pm4,
+      pm4 : tr4, tr4 : pb4,
+      pb4 : tb4, tb4 : pm4,
+      pm4 : tg4, tg4 : pout4,
+      pout4 : tout4, tout4 : pkan4
+  );
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+
+// For computing theoretical number of states:
+
+  bigint square(bigint n) := n*n;
+
+  bigint poly1(bigint x) := div(x*x*x+6*x*x+11*x+6, 6);
+
+  bigint poly2(bigint x) := 
+    div(3*x*x*x*x*x + 30*x*x*x*x + 115*x*x*x + 210*x*x + 182*x + 60, 60);
+
+  bigint theory_ns := square(poly1(n)) * poly2(n);
+};
+
+
+/*
+  Dining philosophers, one place per level
+*/
+pn phils_fine(int N) := { 
+  for (int i in {0..N-1}) {
+    place Fork[i], Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i];
+    trans GoEat[i], GetL[i], GetR[i], Release[i]; 
+    init(Idle[i]:1, Fork[i]:1);       
+    partition(Fork[i]);
+    partition(Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i]);
+
+    bound(Idle[i]:1, WaitL[i]:1, WaitR[i]:1, HasL[i]:1, HasR[i]:1);
+    bound(Fork[i]:1);
+  }
+  for (int i in {0..N-1}) {
+    arcs(Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i],
+         WaitL[i]:GetL[i], Fork[i]:GetL[i], GetL[i]:HasL[i],
+         WaitR[i]:GetR[i], Fork[(i+1) % N]:GetR[i], GetR[i]:HasR[i],
+         HasL[i]:Release[i], HasR[i]:Release[i], Release[i]:Idle[i], 
+         Release[i]:Fork[i], Release[i]:Fork[(i+1) % N]);
+  } 
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+
+// For computing theoretical number of states:
+
+  for (int i in {1..3*N+1}) {
+    bigint fib[i] := cond(i<3, 1, fib[i-1] + fib[i-2]);
+  }
+
+  bigint theory_ns := fib[3*N+1] + fib[3*N-1];
+};
+
+
+/*
+  Dining philosophers, places for philosopher state are grouped
+*/
+pn phils_coarse(int N) := { 
+  for (int i in {0..N-1}) {
+    place Fork[i], Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i];
+    trans GoEat[i], GetL[i], GetR[i], Release[i]; 
+    init(Idle[i]:1, Fork[i]:1);       
+    partition(Fork[i]);
+    partition({Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i]});
+
+    bound(Idle[i]:1, WaitL[i]:1, WaitR[i]:1, HasL[i]:1, HasR[i]:1);
+    bound(Fork[i]:1);
+  }
+  for (int i in {0..N-1}) {
+    arcs(Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i],
+         WaitL[i]:GetL[i], Fork[i]:GetL[i], GetL[i]:HasL[i],
+         WaitR[i]:GetR[i], Fork[(i+1) % N]:GetR[i], GetR[i]:HasR[i],
+         HasL[i]:Release[i], HasR[i]:Release[i], Release[i]:Idle[i], 
+         Release[i]:Fork[i], Release[i]:Fork[(i+1) % N]);
+  } 
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+
+// For computing theoretical number of states:
+
+  for (int i in {1..3*N+1}) {
+    bigint fib[i] := cond(i<3, 1, fib[i-1] + fib[i-2]);
+  }
+
+  bigint theory_ns := fib[3*N+1] + fib[3*N-1];
+};
+
+
+/*
+  N-queens problem, sequential placement
+*/
+evm queens(int N) := {
+  for (int i in {1..N}) {
+    intvar row[i];
+    partition(row[i]: i );
+    range(row[i] : {0..N});
+
+    for (int j in {1..N}) {
+      event put[i][j];
+      assign( row[i] : put[i][j] : j );
+
+      // sequential placement, makes later guards easier
+      //
+      cond (i>1,
+        guard(  put[i][j] : eval(row[i-1])>0  ),
+        null
+      );
+
+      // no row attacks
+      //
+      guard(  put[i][j] : 0==eval(row[i]) );
+
+      for (int k in {1..i-1}) {
+
+        // no col attacks
+        guard(  put[i][j] : eval(row[k])    != j );
+
+        // no diagonal left attacks
+        cond( j>k, 
+          guard( put[i][j] : eval(row[i-k])  != j-k ), 
+          null
+        );
+
+        // no diagonal right attacks
+        cond (j+k <= N,
+          guard( put[i][j] : eval(row[i-k])  != j+k ),
+          null
+        );
+
+      } // for k
+    } // for j
+  } // for i
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+};
+
+
+/*
+  Neighbor swap model.
+*/
+evm swaps(int N) := {
+  for (int i in {1..N}) {
+    intvar a[i];
+    range(a[i] : {1..N});
+    init(a[i] : i);
+    partition(a[i]);
+  }
+  for (int i in {1..N-1}) {
+    event exch[i];
+    assign(a[i]   : exch[i] : eval(a[i+1]),
+           a[i+1] : exch[i] : eval(a[i])  );
+  }
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+  void show_rs := show_states;
+  void show_rg := show_arcs;
+
+// For computing theoretical number of states:
+
+  bigint fact(int n) := cond (n<1, 1, n*fact(n-1));
+
+  bigint theory_ns := fact(N);
+};
+
+

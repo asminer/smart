@@ -1,0 +1,100 @@
+
+// $Id$
+
+/* 
+   N queens problem, as a Petri net.
+ 
+   This is really a benchmark model, but we include it also as a test.
+   Also useful to test "heavy duty" CTL stuff.
+*/
+
+// SEQUENTIAL version
+
+pn queensSEQ(int N) := {
+  for (int i in {1..N}) {
+    // i-th queen is in p[i][0] until placed on the [1..N]*[1..N] chessboard
+    for (int j in {0..N}) { 
+      place p[i][j]; 
+      partition(p[i][j]);
+      bound(p[i][j]:1);
+    }
+    init(p[i][0]:1);
+    for (int j in {1..N}) { trans t[i][j]; }
+  }
+  for (int i in {1..N}, int j in {1..N}) {
+    arcs(p[i][0]:t[i][j], t[i][j]:p[i][j]);
+  } 
+  for (int i in {2..N}, int j in {1..N}) {
+    inhibit(p[i-1][0]:t[i][j]);                       // order-enforcing
+    for (int k in {1..i-1}) {
+      inhibit(p[i-k][j]:t[i][j]);                     // vertical
+      cond(j-k>=1,inhibit(p[i-k][j-k]:t[i][j]),null); // lower left diagonal
+      cond(j+k<=N,inhibit(p[i-k][j+k]:t[i][j]),null); // lower right diagonal
+    }
+  }
+  bigint numstates := num_states;
+  stateset final := potential(tk(p[N][0])==0);
+  bigint countFin  := card(final & reachable);
+  bigint na := num_arcs;
+};
+
+// RANDOM version
+
+pn queensRND(int N) := {
+  place down;
+  for (int i in {1..N}) {
+    // i-th queen is in p[i][0] until placed on the [1..N]*[1..N] chessboard
+    for (int j in {0..N}) { 
+      place p[i][j]; 
+      partition(p[i][j]);
+      bound(p[i][j]:1);
+    }
+    init(p[i][0]:1);
+    for (int j in {1..N}) { trans t[i][j]; }
+  }
+  partition(down);
+  bound(down:N);
+  for (int i in {1..N}, int j in {1..N}) {
+    arcs(p[i][0]:t[i][j]
+         , t[i][j]:p[i][j]
+         , t[i][j]:down
+    );
+  } 
+  for (int i in {2..N}, int j in {1..N}) {
+    for (int k in {1..i-1}) {
+      inhibit(p[i-k][j]:t[i][j]);                     // vertical
+      cond(j-k>=1,inhibit(p[i-k][j-k]:t[i][j]),null); // lower left diagonal
+      cond(j+k<=N,inhibit(p[i-k][j+k]:t[i][j]),null); // lower right diagonal
+    }
+  }
+  for (int i in {1..N-1}, int j in {1..N}) {
+    for (int k in {1..N-i}) {
+      inhibit(p[i+k][j]:t[i][j]);                     // vertical
+      cond(j-k>=1,inhibit(p[i+k][j-k]:t[i][j]),null); // upper left diagonal
+      cond(j+k<=N,inhibit(p[i+k][j+k]:t[i][j]),null); // upper right diagonal
+    }
+  }
+  bigint numstates := num_states;
+  stateset final := potential(tk(down)==N);
+  bigint countFin  := card(final & reachable);
+  bigint na := num_arcs;
+};
+
+for (int N in {5, 6, 7, 8, 9, 10}) {
+  print("\n", N, "x", N, " queens problem\n");
+  compute(queensSEQ(N).na);
+  compute(queensSEQ(N).countFin);
+  print("sequential placement:":30, queensSEQ(N).numstates:7, " total combs\n");
+  print(":":30, queensSEQ(N).countFin:7, " final combs\n");
+  cond(N<8, 
+    {
+      compute(queensRND(N).na);
+      compute(queensRND(N).countFin);
+      print("random placement:":30, queensRND(N).numstates:7, " total combs\n");
+      print(":":30, queensRND(N).countFin:7, " final combs\n");
+    }
+  , 
+    null
+  );
+}
+

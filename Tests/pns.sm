@@ -1,0 +1,133 @@
+
+// $Id$
+
+/* 
+   Petri net test file.
+*/
+
+// #Warning + pn_ALL
+
+#GraphDisplayStyle OUTGOING
+
+print("Simple first net to check:\n",
+"              p2 --> t2 --> p4\n",
+"             /                \\\n",
+"            /                  \\\n",
+"   p1 --> t1                    t5  ---> (p1)\n",
+"	    \\                  /\n",
+"             \\   --> t3 -->   /\n",
+"              p3            p5\n",
+"                 <-- t4 <--\n\n");
+
+pn net1(int N) := {
+  place p1, p2, p3, p4, p5, p6;
+
+  trans t1, t2, t3, t4, t5;
+
+  init(p1:N);
+
+  arcs(
+	p1 : t1,
+	t1 : p2, t1 : p3,
+        p2 : t2, t2 : p4,
+        p3 : t3, t3 : p5,
+	p5 : t4, t4 : p3,
+	p4 : t5, p5 : t5, t5 : p1
+  );
+
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
+
+  void show_rs := { print("States:\n"); show_states; };
+  void show_rg := show_arcs;
+};
+
+string states1(int n) := sprint(net1(n).m1, " states total");
+string arcs1(int n) := sprint(net1(n).m2, " arcs total");
+
+void run(int n) := {
+  net1(n).show_rs;
+  net1(n).show_rg;
+  print(states1(n), "\n", arcs1(n), "\n");
+};
+
+print("N=1, safe markings:\n");
+#PNMarkingStyle SAFE
+run(1);
+
+print("N=2, indexed markings:\n");
+#PNMarkingStyle INDEXED
+run(2);
+
+print("N=3, vector markings:\n");
+#PNMarkingStyle VECTOR
+run(3);
+
+print("Should be simultaneous RG/S construction:\n");
+net1(1).show_rg;
+print(arcs1(1), "\n");
+
+print("Clear: ", arcs1(0), "\n");
+print("Lexical ordering test\n");
+#StateDisplayOrder LEXICAL
+run(1);
+
+print("Various PN warnings:\n");
+
+pn net2 := {
+  place p, p;
+  trans t, t, t;
+  print("Duplicate init warning should follow:\n");
+  init(p:2, p:3);
+  print("Duplicate arc warning should follow:\n");
+  arcs(p:t, p:t);
+  bigint m := num_states;
+};
+  
+print(net2.m - net2.m, " should be 0\n");
+
+
+//
+// crazy stuff that should not be allowed
+// 
+
+pn foo1(place pa, trans ta) := {
+  place pb, pc;
+  init(pa:1, pb:1);
+  
+  trans tb, tc;
+  firing(	ta:expo(3.0),
+		tb:expo(2.0),
+		tc:expo(1.0)
+  );
+
+  arcs(
+	pa : ta, ta : pb,
+ 	pb : tb, tb : pc,
+	pc : tc, tc : pa
+  );
+
+  bigint m1 := num_states;
+
+  real m2 := avg_ss(tk(pa));
+  real m3 := avg_ss(rate(ta));
+};
+
+pn bar1 := {
+  place x;
+  trans y;
+  bigint m1 := foo1(x, y).m1;
+  real m2 := foo1(x, y).m2;
+  real m3 := foo1(x, y).m3;
+};
+
+print("Should generate meaningful warnings:\n");
+compute(bar1.m1);
+
+print("Should get errors and null measures:\n");
+compute(bar1.m2);
+compute(bar1.m3);
+print("got measures: ", bar1.m2, " ", bar1.m3, "\n");
+
+print("Done with pn tests.\n");
+

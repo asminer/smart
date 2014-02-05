@@ -1,0 +1,91 @@
+
+// $Id$
+
+// # Debug + procgen
+
+ph int zero   := 0;
+ph int one    := 1;
+ph int two    := 2;
+ph int three  := 3;
+ph int piinf  := infinity;
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for zero:\n");
+print_ph(zero );
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for one:\n");
+print_ph(one  );
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for two:\n");
+print_ph(two  );
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for three:\n");
+print_ph(three);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for infinity:\n");
+print_ph(piinf);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for zero + one:\n");
+print_ph(zero + one);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for zero + one + two:\n");
+print_ph(zero + one + two);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for one + infinity:\n");
+print_ph(one + piinf);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for two + infinity:\n");
+print_ph(two + piinf);
+
+ph int zero_one := equilikely(0, 1);
+ph int zero_two := equilikely(0, 2);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for equilikely(0, 1):\n");
+print_ph(zero_one);
+
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for equilikely(0, 2):\n");
+print_ph(zero_two);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for equilikely(0, 1) + equilikely(0, 2):\n");
+print_ph(zero_one + zero_two);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for equilikely(0, 2) + equilikely(0, 1):\n");
+print_ph(zero_two + zero_one);
+
+
+ph int foo := choose(0:1, 1:2, 2:2, infinity:1);
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for foo:\n");
+print_ph(foo);
+
+
+ph int bar := two + foo;
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for bar:\n");
+print_ph(bar);
+
+ph real earl := erlang(3, 4.2);
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for erlang(3, 4.2):\n");
+print_ph(earl);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for by hand erlang:\n");
+print_ph(expo(4.2)+expo(4.2)+expo(4.2));
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for sum of erlangs:\n");
+print_ph(earl + erlang(4, 5.6));

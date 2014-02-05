@@ -1,0 +1,140 @@
+
+// $Id$
+
+/*
+    A test of lexical ordering for the state space.
+    Used only for display purposes.
+*/
+
+#PNMarkingStyle VECTOR
+#GraphDisplayStyle INCOMING
+
+// Simple PN, look familiar?
+
+pn molloy(bool mc, int n) := {
+  // places, not in the usual order, to test lexical ordering
+  place p1, p2, p3, p4, p5;
+  init(p3:n);
+
+  trans t1, t2, t3, t4, t5;
+  cond(mc, 
+    firing(t1 : expo(1.1), 
+	   t2 : expo(2.1), 
+	   t3 : expo(3.1), 
+	   t4 : expo(4.1), 
+	   t5 : expo(5.1)
+	  ), 
+    null
+  );
+
+  arcs(
+	  p3 : t1, t1 : p1, t1 : p4,
+	  p2 : t2, t2 : p1,
+	  p1 : t3, t3 : p2,
+	  p4 : t4, t4 : p5,
+	  p2 : t5, p5 : t5, t5 : p3
+  );
+
+  void ss := show_states;
+  void sa := show_arcs;
+};
+
+#StateDisplayOrder NATURAL
+
+print("Natural order of states and reachability graph\n");
+molloy(false, 1).ss;
+molloy(false, 1).sa;
+
+print("Natural order of states and Markov chain\n");
+molloy(true, 1).ss;
+molloy(true, 1).sa;
+
+#StateDisplayOrder LEXICAL
+
+print("Lexical order of states and reachability graph\n");
+molloy(false, 1).ss;
+molloy(false, 1).sa;
+
+print("Lexical order of states and Markov chain\n");
+molloy(true, 1).ss;
+molloy(true, 1).sa;
+
+
+pn foo(bool times) := {
+  place a, b, c, d, e, f, g;
+  trans S, T, U, V, W, X, Y, Z;
+
+  cond(times, 
+    firing(
+      S : expo(1),
+      T : expo(2),
+      U : expo(3),
+      V : expo(4),
+      W : expo(5),
+      X : expo(6),
+      Y : expo(7),
+      Z : expo(8)
+    ),
+    null
+  );
+
+  init(a:1);
+
+  arcs(
+    a:Z, Z:b,
+    b:Y, Y:c,
+    c:X, X:d,
+    d:W, W:a,
+    a:V, V:e,
+    b:U, U:f,
+    f:T, T:g,
+    g:S, S:f
+  );
+
+  bigint gen := num_arcs;
+  void ss := show_states;
+  void sa := show_arcs;
+};
+
+# PNMarkingStyle SAFE
+
+#StateDisplayOrder NATURAL
+#GraphDisplayStyle OUTGOING
+
+compute(foo(false).gen);
+print("Natural order of states and reachability graph\n");
+foo(false).ss;
+foo(false).sa;
+
+compute(foo(true).gen);
+print("Natural order of states and Markov chain\n");
+foo(true).ss;
+foo(true).sa;
+
+
+#StateDisplayOrder DISCOVERY
+
+compute(foo(false).gen);
+print("Discovery order of states and reachability graph\n");
+foo(false).ss;
+foo(false).sa;
+
+compute(foo(true).gen);
+print("Discovery order of states and Markov chain\n");
+foo(true).ss;
+foo(true).sa;
+
+
+#StateDisplayOrder LEXICAL
+
+compute(foo(false).gen);
+print("Lexical order of states and reachability graph\n");
+foo(false).ss;
+foo(false).sa;
+
+compute(foo(true).gen);
+print("Lexical order of states and Markov chain\n");
+foo(true).ss;
+foo(true).sa;
+
+

@@ -1,0 +1,228 @@
+
+dtmc dex1 := {
+  state s, t, a;
+  init(s:1);
+  arcs(
+    s:s:2, s:t:1, s:a:1,
+    t:s:1,
+    a:s:1
+  );
+  ph int x := phi_TU(potential(in_state(s)), potential(in_state(a)));
+  ph real error := phr_TU(potential(in_state(s)), potential(in_state(a)));
+  real px := PU(potential(in_state(s)), potential(in_state(a)));
+};
+
+print("\n============================================================\n");
+print("\ndtmc example 1\n\n");
+print("-------------------------------------------------------\n");
+print_ph(dex1.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", dex1.px, "\n");
+print("\n");
+
+
+dtmc dex2 := {
+  state s1, s2, s3, a;
+  init(s1:1);
+  arcs(
+    s1:s2:1, s1:a:1,
+    s2:s3:1, 
+    s3:s2:1, s3:s3:1
+  );
+  ph int x := phi_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  ph real error := phr_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+};
+
+print("============================================================\n");
+print("\ndtmc example 2\n\n");
+print("-------------------------------------------------------\n");
+print_ph(dex2.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", dex2.px, "\n");
+print("\n");
+
+
+dtmc dex3 := {
+  state s1, s2, s3, t, a;
+  init(s1:1);
+  arcs(
+    s1:s2:1, s1:t:1,
+    s2:a:1, 
+    t:s3:1,
+    s3:a:1
+  );
+  ph int x := phi_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  ph real error := phr_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+};
+
+print("============================================================\n");
+print("\ndtmc example 3\n\n");
+print("-------------------------------------------------------\n");
+print_ph(dex3.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("\t1 -> 3;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", dex3.px, "\n");
+print("\n");
+
+
+dtmc dex4 := {
+  state s1, s2, t, a;
+  init(s1:1);
+  arcs(
+    s1:s1:1, s1:s2:3, s1:t:1,
+    s2:s2:1, s2:a:3, s2:t:1
+  );
+  ph int x := phi_TU(potential(in_state({s1, s2})), potential(in_state(a)));
+  ph real error := phr_TU(potential(in_state({s1, s2})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2})), potential(in_state(a)));
+};
+
+
+print("============================================================\n");
+print("\ndtmc example 4\n\n");
+print("-------------------------------------------------------\n");
+print_ph(dex4.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("\t1 -> 2;\n"); 
+print("\t1 -> 3;\n"); 
+print("-------------------------------------------------------\n");
+print("\tShould be ", 9/16, ": ", dex4.px, "\n");
+print("\n");
+
+
+ctmc cex1 := {
+  state s, t, a;
+  init(s:1);
+  arcs(
+    s:s:2, s:t:1, s:a:1,
+    t:s:1,
+    a:s:1
+  );
+  ph int error := phi_TU(potential(in_state(s)), potential(in_state(a)));
+  ph real x := phr_TU(potential(in_state(s)), potential(in_state(a)));
+  real px := PU(potential(in_state(s)), potential(in_state(a)));
+};
+
+print("\n============================================================\n");
+print("\nctmc example 1\n\n");
+print("-------------------------------------------------------\n");
+print_ph(cex1.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", cex1.px, "\n");
+print("\n");
+
+
+ctmc cex2 := {
+  state s1, s2, s3, a;
+  init(s1:1);
+  arcs(
+    s1:s2:1, s1:a:1,
+    s2:s3:1, 
+    s3:s2:1, s3:s3:1
+  );
+  ph int error := phi_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  ph real x := phr_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+};
+
+print("============================================================\n");
+print("\nctmc example 2\n\n");
+print("-------------------------------------------------------\n");
+print_ph(cex2.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", cex2.px, "\n");
+print("\n");
+
+
+ctmc cex3 := {
+  state s1, s2, s3, t, a;
+  init(s1:1);
+  arcs(
+    s1:s2:1, s1:t:1,
+    s2:a:1, 
+    t:s3:1,
+    s3:a:1
+  );
+  ph int error := phi_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  ph real x := phr_TU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2, s3})), potential(in_state(a)));
+};
+
+print("============================================================\n");
+print("\nctmc example 3\n\n");
+print("-------------------------------------------------------\n");
+print_ph(cex3.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("\t1 -> 3;\n");
+print("-------------------------------------------------------\n");
+print("\tShould be 0.5: ", cex2.px, "\n");
+print("\n");
+
+
+ctmc cex4 := {
+  state s1, s2, t, a;
+  init(s1:1);
+  arcs(
+    s1:s1:1, s1:s2:3, s1:t:1,
+    s2:s2:1, s2:a:3, s2:t:1
+  );
+  ph int error := phi_TU(potential(in_state({s1, s2})), potential(in_state(a)));
+  ph real x := phr_TU(potential(in_state({s1, s2})), potential(in_state(a)));
+  real px := PU(potential(in_state({s1, s2})), potential(in_state(a)));
+};
+
+
+print("============================================================\n");
+print("\nctmc example 4\n\n");
+print("-------------------------------------------------------\n");
+print_ph(cex4.x);
+print("-------------------------------------------------------\n");
+print("\tShould look like:\n");
+print("\t0 -> 1;\n"); 
+print("\t0 -> 2;\n");
+print("\t1 -> 2;\n"); 
+print("\t1 -> 3;\n"); 
+print("-------------------------------------------------------\n");
+print("\tShould be ", 9/16, ": ", cex4.px, "\n");
+print("\n");
+
+
+print("============================================================\n");
+print("\nerrors:\n\n");
+print("-------------------------------------------------------\n");
+print_ph(dex1.error);
+print_ph(dex2.error);
+print_ph(dex3.error);
+print_ph(dex4.error);
+print_ph(cex1.error);
+print_ph(cex2.error);
+print_ph(cex3.error);
+print_ph(cex4.error);

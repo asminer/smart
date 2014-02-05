@@ -1,0 +1,2 @@
+// $Id$
+print("2-lines; file is ", file_name, "; on line ", line_number, " (2)\n");

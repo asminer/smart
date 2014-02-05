@@ -1,0 +1,138 @@
+#!/bin/bash
+
+#
+# $Id$
+#
+# Usage: SmartTest smart_exec test_files
+#
+# New bash script for regression testing
+#
+# Improvements over the old csh scripts:
+#
+#  * Contained in a single file (improved elegance)
+#
+#  * Separate redirection file
+#
+#  * Better path independence for test files
+#
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <smart_exec> test1 test2 ..."
+  echo "Runs executable on each test file and compares with saved output."
+  exit
+fi
+
+okcount="0"
+chcount="0"
+fcount="0"
+outfile=`mktemp /tmp/smarttest.XXXXXXXX`
+
+#
+#
+# Helper function: build redirect command for a given stream
+#	Argument 1: which stream
+#
+MakeRedirectString()
+{
+  printf "cond(%s_file(%c%s%c), null, exit(1));" $1 '"' $outfile '"'
+}
+
+
+REDIRECT=`MakeRedirectString "error"; MakeRedirectString "warning"; MakeRedirectString "output"`
+
+#
+# Helper function: Compare output.
+#	Argument 1: test file
+#	Argument 2: output file
+#
+CheckOutput()
+{
+#  printf "Checking %s against %s\n" $1 $2
+  if diff -b $2 $outfile > $1.diffs; then
+    printf "$OK \n"
+    rm -f $1.diffs
+    rm -f $1.test
+    okcount=$[ $okcount + 1 ]
+  else
+    printf "$CHANGE \n\tOutput has changed, differences written to $1.diffs\n"
+    rm -f $1.test
+    chcount=$[ $chcount + 1 ]
+  fi
+}
+
+
+#
+# Helper function:
+# 	Tests the input file passed as an argument
+#
+TestOne()
+{
+  current=`pwd`
+  d=`dirname $1`
+  b=`basename $1`
+  cd $d
+  rm -f $outfile
+  printf "  %-40s  " $b
+  if echo $REDIRECT | $current/$SMART - $b; then
+    # Run was successful.
+    if [ -f $b.out.$SMART_PLATFORM ]; then
+      # Check against platform-dependent output
+      CheckOutput $b $b.out.$SMART_PLATFORM
+    else
+      # Check against generic output
+      CheckOutput $b $b.out
+    fi
+  else
+    # Run failed
+    printf "$FAILED \n\tCompile failed, output written to $1.test\n"
+    cp $outfile $b.test
+    fcount=$[ $fcount + 1 ]
+  fi
+  cd $current
+}
+
+# Should we use fancy-schmancy color?
+# linux=`env | grep "SMART_PLATFORM" | grep "linux" | wc -c`
+# if [ $linux -gt 0 ]; then
+      OK=" [1;32m   OK   [0;39m"
+  CHANGE=" [1;33m CHANGE [0;39m"
+  FAILED=" [1;31m FAILED [0;39m"
+#else 
+    # OK="   ok   "
+# CHANGE=" CHANGE "
+# FAILED=" FAILED "
+#fi
+
+SMART=$1
+shift
+if [ ! -f $SMART ]; then
+  printf "Smart executable not found: $SMART\n"
+  exit 1
+fi
+
+# Run the tests
+printf "  %-40s    ======\n" "========================="
+for file in $@
+do
+  if [ -f "$file.out" -o -f "$file.out.$SMART_PLATFORM" ]; then
+    TestOne $file
+  fi
+done
+printf "  %-40s    ======\n" "========================="
+
+TOOL=`basename $SMART`
+printf "  Summary for %s: \n" $TOOL
+if [ "$okcount" -gt 0 ]; then
+  printf "  $OK: %3d\n" $okcount
+fi
+if [ "$chcount" -gt 0 ]; then
+  printf "  $CHANGE: %3d\n" $chcount
+fi
+if [ "$fcount" -gt 0 ]; then
+  printf "  $FAILED: %3d\n" $fcount
+fi
+
+rm -f $outfile
+
+echo "Done!"
+

@@ -1,0 +1,24 @@
+
+// $Id$
+
+
+print("=======================================\n");
+print("Checking 3*expo(3.6)\n");
+print("=======================================\n");
+ph real X := expo(3.6);
+print_ph(X);
+print_ph(3.0*X);
+
+print("=======================================\n");
+print("Checking 2*erlang(4, 2.8)\n");
+print("=======================================\n");
+print_ph(erlang(4, 2.8));
+print_ph(2*erlang(4, 2.8));
+
+print("=======================================\n");
+print("Multiplication by simple choice\n");
+print("=======================================\n");
+ph real Y := choose(expo(1.1):1, expo(2.2):3);
+print_ph(Y);
+print_ph(Y*1.1);
+

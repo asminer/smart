@@ -1,0 +1,100 @@
+
+/*
+   $Id$
+*/
+
+/*
+ *   Tests a for statement within a converge statement
+ */
+
+	
+/*
+
+  x[i] = i
+	
+*/
+
+// # Verbose true
+	
+# ConvergePrecision 1e-7	
+
+print("Linear system using gauss-seidel, by hand\n");
+# UseCurrent true
+	
+converge {
+  print("[");
+  for (int i in {1..10}) {
+    real x[i] guess i*100;
+    real x[i] := cond (i==1, (15-x[10])/5, (6*i-1-x[i-1])/5); 
+    print(x[i], cond(i<10, ", ", "")); 
+  }
+  print("]\n");
+}
+
+print("Array x has converged to: [");
+
+for (int i in {1..10}) {
+  print(x[i], cond(i<10, ", ", "")); 
+}
+print("]\n");
+	
+
+print("Linear system using Jacobi, by hand\n");
+# UseCurrent false
+	
+converge {
+  print("[");
+  for (int i in {1..10}) {
+    real y[i] guess i*100;
+    real y[i] := cond (i==1, (15-y[10])/5, (6*i-1-y[i-1])/5); 
+    print(y[i], cond(i<10, ", ", "")); 
+  } 
+  print("]\n");
+}
+	
+print("Array y has converged to: [");
+
+for (int i in {1..10}) {
+  print(y[i], cond(i<10, ", ", "")); 
+}
+print("]\n");
+	
+print("Multiple guess error:\n");
+converge {
+  for (int i in {8..10}) {
+    real w[i] guess i*10;
+    real w[i] guess i*10+5;
+    real w[i] := sqrt(w[i]);
+  }
+  for (int i in {8..10}) {
+    real v[i] := sqrt(w[i]);
+    real v[i] guess i*10;
+  }
+}
+
+/*
+   This is a problem because arrays are *very* tightly coupled
+   to their surrounding iterators.
+   So, although the below makes sense, it is illegal.
+*/
+print("Bad split #1:\n");
+converge {
+  for (int i in {8..10}) {
+    real u[i] guess i*10;
+  }
+  for (int i in {8..10}) {
+    real u[i] := sqrt(u[i]);
+  }
+}
+
+print("Bad split #2:\n");
+converge {
+  for (int i in {8..10}) {
+    real t[i] guess i*10;
+  }
+}
+converge {
+  for (int i in {8..10}) {
+    real t[i] := sqrt(t[i]);
+  }
+}

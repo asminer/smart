@@ -1,0 +1,65 @@
+
+// $Id$
+
+// # Debug + procgen
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for const(0):\n");
+ph int zero := 0;
+print_ph(zero);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for const(1):\n");
+ph int one := 1;
+print_ph(one);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for const(oo):\n");
+ph int inf := infinity;
+print_ph(inf);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for die:\n");
+ph int die := equilikely(1,6);
+print_ph(die);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for 2 dice:\n");
+ph int dice := equilikely(1,6) + equilikely(1,6);
+print_ph(dice);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for bernoulli(0.4):\n");
+ph int coin := bernoulli(0.4);
+print_ph(coin);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for geometric(0.4):\n");
+ph int howmany := geometric(0.4);
+print_ph(howmany);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for pascal(3, 0.4):\n");
+ph int pascal := geometric(0.4) + geometric(0.4) + geometric(0.4);
+print_ph(pascal);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for binomial(3, 0.4):\n");
+ph int coins := binomial(3, 0.4);
+print_ph(coins);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for sum of 3 bernoulli's:\n");
+ph int altcoins := bernoulli(0.4) + bernoulli(0.4) + bernoulli(0.4);
+print_ph(altcoins);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for expo(4.2):\n");
+ph real easy := expo(4.2);
+print_ph(easy);
+
+print("\n----------------------------------------------------------------\n");
+print("Internal rep for erlang(3, 4.2):\n");
+ph real earl := erlang(3, 4.2);
+print_ph(earl);
+

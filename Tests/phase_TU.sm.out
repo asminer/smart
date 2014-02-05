@@ -1,0 +1,318 @@
+
+============================================================
+
+dtmc example 1
+
+-------------------------------------------------------
+Information for phase type tta(dex1, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: t
+State 2: a
+3 states total
+Accepting state index: 2
+Trap state index: 1
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	0 : 0.5
+	1 : 0.25
+	2 : 0.25
+Row 1:
+	1 : 1
+Row 2:
+	2 : 1
+2 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+dtmc example 2
+
+-------------------------------------------------------
+Information for phase type tta(dex2, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: t
+State 2: a
+3 states total
+Accepting state index: 2
+Trap state index: 1
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 0.5
+	2 : 0.5
+Row 1:
+	1 : 1
+Row 2:
+	2 : 1
+2 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+dtmc example 3
+
+-------------------------------------------------------
+Information for phase type tta(dex3, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 0.5
+	2 : 0.5
+Row 1:
+	3 : 1
+Row 2:
+	2 : 1
+Row 3:
+	3 : 1
+3 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+	1 -> 3;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+dtmc example 4
+
+-------------------------------------------------------
+Information for phase type tta(dex4, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	0 : 0.2
+	1 : 0.6
+	2 : 0.2
+Row 1:
+	1 : 0.2
+	2 : 0.2
+	3 : 0.6
+Row 2:
+	2 : 1
+Row 3:
+	3 : 1
+4 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+	1 -> 2;
+	1 -> 3;
+-------------------------------------------------------
+	Should be 0.5625: 0.5625
+
+
+============================================================
+
+ctmc example 1
+
+-------------------------------------------------------
+Information for phase type tta(cex1, ...)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: t
+State 2: a
+3 states total
+Accepting state index: 2
+Trap state index: 1
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 1
+	2 : 1
+Row 1:
+Row 2:
+2 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+ctmc example 2
+
+-------------------------------------------------------
+Information for phase type tta(cex2, ...)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: t
+State 2: a
+3 states total
+Accepting state index: 2
+Trap state index: 1
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 1
+	2 : 1
+Row 1:
+Row 2:
+2 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+ctmc example 3
+
+-------------------------------------------------------
+Information for phase type tta(cex3, ...)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 1
+	2 : 1
+Row 1:
+	3 : 1
+Row 2:
+Row 3:
+3 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+	1 -> 3;
+-------------------------------------------------------
+	Should be 0.5: 0.5
+
+============================================================
+
+ctmc example 4
+
+-------------------------------------------------------
+Information for phase type tta(cex4, ...)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 3
+	2 : 1
+Row 1:
+	2 : 1
+	3 : 3
+Row 2:
+Row 3:
+4 edges total
+End of information for phase type
+
+-------------------------------------------------------
+	Should look like:
+	0 -> 1;
+	0 -> 2;
+	1 -> 2;
+	1 -> 3;
+-------------------------------------------------------
+	Should be 0.5625: 0.5625
+
+============================================================
+
+errors:
+
+-------------------------------------------------------
+ERROR in file phase_TU.sm near line 11:
+	Underlying distribution is ph int instead of ph real
+null phase type
+ERROR in file phase_TU.sm near line 37:
+	Underlying distribution is ph int instead of ph real
+null phase type
+ERROR in file phase_TU.sm near line 64:
+	Underlying distribution is ph int instead of ph real
+null phase type
+ERROR in file phase_TU.sm near line 90:
+	Underlying distribution is ph int instead of ph real
+null phase type
+ERROR in file phase_TU.sm near line 118:
+	Underlying distribution is ph real instead of ph int
+null phase type
+ERROR in file phase_TU.sm near line 144:
+	Underlying distribution is ph real instead of ph int
+null phase type
+ERROR in file phase_TU.sm near line 171:
+	Underlying distribution is ph real instead of ph int
+null phase type
+ERROR in file phase_TU.sm near line 197:
+	Underlying distribution is ph real instead of ph int
+null phase type

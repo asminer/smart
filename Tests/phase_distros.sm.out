@@ -1,0 +1,352 @@
+
+----------------------------------------------------------------
+Internal rep for const(0):
+Information for phase type 0
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: a
+1 states total
+Accepting state index: 0
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	0 : 1
+0 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for const(1):
+Information for phase type 1
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for const(oo):
+Information for phase type infinity
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: t
+1 states total
+No accepting state
+Trap state index: 0
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	0 : 1
+0 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for die:
+Information for phase type Equilikely(1, 6)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: 2
+State 2: 3
+State 3: 4
+State 4: 5
+State 5: 6
+State 6: a
+7 states total
+Accepting state index: 6
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 0.833333
+	6 : 0.166667
+Row 1:
+	2 : 0.8
+	6 : 0.2
+Row 2:
+	3 : 0.75
+	6 : 0.25
+Row 3:
+	4 : 0.666667
+	6 : 0.333333
+Row 4:
+	5 : 0.5
+	6 : 0.5
+Row 5:
+	6 : 1
+Row 6:
+	6 : 1
+11 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for 2 dice:
+Information for phase type (Equilikely(1, 6) + Equilikely(1, 6))
+Discrete phase type, state has dimension 2
+Reachable states:
+State 0: [1, 1]
+State 1: [2, 1]
+State 2: [a, 1]
+State 3: [3, 1]
+State 4: [a, 2]
+State 5: [4, 1]
+State 6: [a, 3]
+State 7: [5, 1]
+State 8: [a, 4]
+State 9: [6, 1]
+State 10: [a, 5]
+State 11: [a, 6]
+State 12: [a, a]
+13 states total
+Accepting state index: 12
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 0.833333
+	2 : 0.166667
+Row 1:
+	2 : 0.2
+	3 : 0.8
+Row 2:
+	4 : 0.833333
+	12 : 0.166667
+Row 3:
+	2 : 0.25
+	5 : 0.75
+Row 4:
+	6 : 0.8
+	12 : 0.2
+Row 5:
+	2 : 0.333333
+	7 : 0.666667
+Row 6:
+	8 : 0.75
+	12 : 0.25
+Row 7:
+	2 : 0.5
+	9 : 0.5
+Row 8:
+	10 : 0.666667
+	12 : 0.333333
+Row 9:
+	2 : 1
+Row 10:
+	11 : 0.5
+	12 : 0.5
+Row 11:
+	12 : 1
+Row 12:
+	12 : 1
+22 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for bernoulli(0.4):
+Information for phase type Bernoulli(0.4)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.4
+	State 1 prob 0.6
+Markov chain:
+Row 0:
+	1 : 1
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for geometric(0.4):
+Information for phase type Geometric(0.4)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 0.4
+	State 1 prob 0.6
+Markov chain:
+Row 0:
+	0 : 0.4
+	1 : 0.6
+Row 1:
+	1 : 1
+1 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for pascal(3, 0.4):
+Information for phase type (Geometric(0.4) + Geometric(0.4) + Geometric(0.4))
+Discrete phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, 0]
+State 1: [a, 1, 0]
+State 2: [a, a, 1]
+State 3: [a, a, a]
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 0.4
+	State 1 prob 0.24
+	State 2 prob 0.144
+	State 3 prob 0.216
+Markov chain:
+Row 0:
+	0 : 0.4
+	1 : 0.24
+	2 : 0.144
+	3 : 0.216
+Row 1:
+	1 : 0.4
+	2 : 0.24
+	3 : 0.36
+Row 2:
+	2 : 0.4
+	3 : 0.6
+Row 3:
+	3 : 1
+6 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for binomial(3, 0.4):
+Information for phase type Binomial(3, 0.4)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 1
+State 1: 2
+State 2: 3
+State 3: a
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 0.784
+	State 3 prob 0.216
+Markov chain:
+Row 0:
+	1 : 0.44898
+	3 : 0.55102
+Row 1:
+	2 : 0.181818
+	3 : 0.818182
+Row 2:
+	3 : 1
+Row 3:
+	3 : 1
+5 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for sum of 3 bernoulli's:
+Information for phase type (Bernoulli(0.4) + Bernoulli(0.4) + Bernoulli(0.4))
+Discrete phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, 0]
+State 1: [a, 1, 0]
+State 2: [a, a, 1]
+State 3: [a, a, a]
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 0.4
+	State 1 prob 0.24
+	State 2 prob 0.144
+	State 3 prob 0.216
+Markov chain:
+Row 0:
+	1 : 0.4
+	2 : 0.24
+	3 : 0.36
+Row 1:
+	2 : 0.4
+	3 : 0.6
+Row 2:
+	3 : 1
+Row 3:
+	3 : 1
+6 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for expo(4.2):
+Information for phase type expo(4.2)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 4.2
+Row 1:
+1 edges total
+End of information for phase type
+
+
+----------------------------------------------------------------
+Internal rep for erlang(3, 4.2):
+Information for phase type erlang(3, 4.2)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: 2
+State 3: a
+4 states total
+Accepting state index: 3
+No trap state
+Initial distribution:
+	State 0 prob 1
+Markov chain:
+Row 0:
+	1 : 4.2
+Row 1:
+	2 : 4.2
+Row 2:
+	3 : 4.2
+Row 3:
+3 edges total
+End of information for phase type
+

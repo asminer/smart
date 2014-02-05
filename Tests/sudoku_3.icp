@@ -1,0 +1,109 @@
+
+// $Id$
+
+/*
+    Known variables are first.
+*/
+
+int x12 in {8};
+int x14 in {6};
+int x18 in {2};
+
+int x21 in {2};
+int x24 in {3};
+int x29 in {4};
+
+int x32 in {6};
+int x38 in {5};
+
+int x48 in {9};
+int x49 in {7};
+
+int x54 in {4};
+int x55 in {2};
+int x56 in {9};
+
+int x61 in {1};
+int x62 in {3};
+
+int x72 in {2};
+int x78 in {4};
+
+int x81 in {7};
+int x86 in {5};
+int x89 in {1};
+
+int x92 in {4};
+int x96 in {6};
+int x98 in {8};
+
+int x11, x13, x15, x16, x17, x19,
+    x22, x23, x25, x26, x27, x28,
+    x31, x33, x34, x35, x36, x37, x39,
+    x41, x42, x43, x44, x45, x46, x47,
+    x51, x52, x53, x57, x58, x59,
+    x63, x64, x65, x66, x67, x68, x69,
+    x71, x73, x74, x75, x76, x77, x79,
+    x82, x83, x84, x85, x87, x88,
+    x91, x93, x94, x95, x97, x99 in {1 .. 9};
+
+// rows are unique
+
+unique(x11, x12, x13, x14, x15, x16, x17, x18, x19);
+unique(x21, x22, x23, x24, x25, x26, x27, x28, x29);
+unique(x31, x32, x33, x34, x35, x36, x37, x38, x39);
+unique(x41, x42, x43, x44, x45, x46, x47, x48, x49);
+unique(x51, x52, x53, x54, x55, x56, x57, x58, x59);
+unique(x61, x62, x63, x64, x65, x66, x67, x68, x69);
+unique(x71, x72, x73, x74, x75, x76, x77, x78, x79);
+unique(x81, x82, x83, x84, x85, x86, x87, x88, x89);
+unique(x91, x92, x93, x94, x95, x96, x97, x98, x99);
+
+// columns are unique
+
+unique(x11, x21, x31, x41, x51, x61, x71, x81, x91);
+unique(x12, x22, x32, x42, x52, x62, x72, x82, x92);
+unique(x13, x23, x33, x43, x53, x63, x73, x83, x93);
+unique(x14, x24, x34, x44, x54, x64, x74, x84, x94);
+unique(x15, x25, x35, x45, x55, x65, x75, x85, x95);
+unique(x16, x26, x36, x46, x56, x66, x76, x86, x96);
+unique(x17, x27, x37, x47, x57, x67, x77, x87, x97);
+unique(x18, x28, x38, x48, x58, x68, x78, x88, x98);
+unique(x19, x29, x39, x49, x59, x69, x79, x89, x99);
+
+// boxes are unique
+
+unique( x11, x12, x13, x21, x22, x23, x31, x32, x33);
+unique( x14, x15, x16, x24, x25, x26, x34, x35, x36);
+unique( x17, x18, x19, x27, x28, x29, x37, x38, x39);
+
+unique( x41, x42, x43, x51, x52, x53, x61, x62, x63);
+unique( x44, x45, x46, x54, x55, x56, x64, x65, x66);
+unique( x47, x48, x49, x57, x58, x59, x67, x68, x69);
+
+unique( x71, x72, x73, x81, x82, x83, x91, x92, x93);
+unique( x74, x75, x76, x84, x85, x86, x94, x95, x96);
+unique( x77, x78, x79, x87, x88, x89, x97, x98, x99);
+
+satisfiable solution := true;
+
+satisfiable verify :=
+  x11 == 9 & x12 == 8 & x13 == 7 & x14 == 6 & x15 == 5 & x16 == 4 &
+  x17 == 1 & x18 == 2 & x19 == 3 &
+  x21 == 2 & x22 == 1 & x23 == 5 & x24 == 3 & x25 == 9 & x26 == 8 &
+  x27 == 6 & x28 == 7 & x29 == 4 &
+  x31 == 3 & x32 == 6 & x33 == 4 & x34 == 7 & x35 == 1 & x36 == 2 &
+  x37 == 9 & x38 == 5 & x39 == 8 &
+  x41 == 4 & x42 == 5 & x43 == 2 & x44 == 1 & x45 == 6 & x46 == 3 &
+  x47 == 8 & x48 == 9 & x49 == 7 &
+  x51 == 6 & x52 == 7 & x53 == 8 & x54 == 4 & x55 == 2 & x56 == 9 &
+  x57 == 3 & x58 == 1 & x59 == 5 &
+  x61 == 1 & x62 == 3 & x63 == 9 & x64 == 5 & x65 == 8 & x66 == 7 &
+  x67 == 4 & x68 == 6 & x69 == 2 &
+  x71 == 8 & x72 == 2 & x73 == 3 & x74 == 9 & x75 == 7 & x76 == 1 &
+  x77 == 5 & x78 == 4 & x79 == 6 &
+  x81 == 7 & x82 == 9 & x83 == 6 & x84 == 8 & x85 == 4 & x86 == 5 &
+  x87 == 2 & x88 == 3 & x89 == 1 &
+  x91 == 5 & x92 == 4 & x93 == 1 & x94 == 2 & x95 == 3 & x96 == 6 &
+  x97 == 7 & x98 == 8 & x99 == 9;
+

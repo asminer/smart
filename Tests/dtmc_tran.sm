@@ -1,0 +1,44 @@
+
+// $Id$
+
+// Simple test of transient analysis for DTMCs
+
+real point(real alpha, int t) := pow(alpha, t);
+
+real acc(real alpha, int t1, int t2) := ( pow(alpha, t1) - pow(alpha, t2+1) ) / (1-alpha); 
+
+int time1(int i) := case(i, null, 0:0, 1:1, 2:2, 3:4, 4:8, 5:16, 6:infinity);
+
+dtmc foo(real alpha) := {
+  state a, b;
+  init(b:1);
+  arcs(b:a:1-alpha, b:b:alpha);
+
+  for (int j in {0..6}) {
+    real inb[j] := prob_at(in_state(b), time1(j));
+  }
+
+  for (int i in {0..3}, int j in {3..6}) {
+    real accb[i][j] := prob_acc(in_state(b), time1(i), time1(j));
+  }
+};
+
+// #Report + mc_solve
+
+for (real A in {0.25, 0.5, 0.75, 0.8, 0.9}) {
+
+    print("Measures for alpha = ", A, "\n");
+
+    print("Time":-10, "measure":-15, "theory":-15, "\n");
+    for (int i in {0..6}) {
+      print(time1(i):-10, foo(A).inb[i]:-15:6, point(A, time1(i)):-15:6, "\n");
+    }
+    print("\n");
+
+    print("t1":-6, "t2":-10, "measure":-15, "theory":-15, "\n");
+    for (int i in {0..3}, int j in {3..6}) {
+      print(time1(i):-6, time1(j):-10, foo(A).accb[i][j]:-15, acc(A, time1(i), time1(j)-1):-15, "\n");
+    }
+    print("\n");
+}
+

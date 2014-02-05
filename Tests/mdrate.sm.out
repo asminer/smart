@@ -1,0 +1,49 @@
+Reachable states:
+WARNING:
+	No initial marking given, assuming zero
+	within model mmkqueue built in file mdrate.sm near line 36
+State 0: [queue:0]
+State 1: [queue:1]
+State 2: [queue:2]
+State 3: [queue:3]
+State 4: [queue:4]
+State 5: [queue:5]
+State 6: [queue:6]
+State 7: [queue:7]
+State 8: [queue:8]
+State 9: [queue:9]
+State 10: [queue:10]
+Number of states: 11
+Markov chain:
+Row 0:
+	1 : 4.2
+Row 1:
+	0 : 1.1
+	2 : 4.2
+Row 2:
+	1 : 2.2
+	3 : 4.2
+Row 3:
+	2 : 3.3
+	4 : 4.2
+Row 4:
+	3 : 4.4
+	5 : 4.2
+Row 5:
+	4 : 5.5
+	6 : 4.2
+Row 6:
+	5 : 6.6
+	7 : 4.2
+Row 7:
+	6 : 6.6
+	8 : 4.2
+Row 8:
+	7 : 6.6
+	9 : 4.2
+Row 9:
+	8 : 6.6
+	10 : 4.2
+Row 10:
+	9 : 6.6
+Number of arcs: 20

@@ -1,0 +1,290 @@
+
+// $Id$
+
+// Tests the ranges of various distributions.
+
+// Integer constants:
+
+int ci1 := 1;
+int ci2 := infinity;
+int ci3 := null;
+int ci4 := DontKnow;
+
+print_range(ci1);
+print("      above range for ci1 should be: [1, 1]\n\n");
+print_range(ci2);
+print("      above range for ci2 should be: [infinity, infinity]\n\n");
+print_range(ci3);
+print("      above range for ci3 should be: (null, null)\n\n");
+print_range(ci4);
+print("      above range for ci4 should be: (?, ?)\n\n");
+
+// Real constants:
+
+real cr1 := 1.1;
+real cr2 := infinity;
+real cr3 := null;
+real cr4 := DontKnow;
+
+print_range(cr1);
+print("above range for cr1 should be: [1.1, 1.1]\n\n");
+print_range(cr2);
+print("above range for cr2 should be: [infinity, infinity]\n\n");
+print_range(cr3);
+print("above range for cr3 should be: (null, null)\n\n");
+print_range(cr4);
+print("above range for cr4 should be: (?, ?)\n\n");
+
+// Rand ints
+
+rand int ri01 := 2;
+rand int ri02 := infinity;
+rand int ri03 := null;
+rand int ri04 := DontKnow;
+rand int ri05 := geometric(0.5);
+rand int ri06 := geometric(DontKnow);
+
+rand int ri07 := equilikely(1, 4);
+rand int ri08 := equilikely(8, 10);
+rand int ri09 := equilikely(ri07, ri08);
+rand int ri10 := equilikely(ri03, ri04);
+rand int ri11 := equilikely(0, ri05);
+
+print_range(ri01);
+print("           above range for ri01 should be: [2, 2]\n\n");
+print_range(ri02);
+print("           above range for ri02 should be: [infinity, infinity]\n\n");
+print_range(ri03);
+print("           above range for ri03 should be: null\n\n");
+print_range(ri04);
+print("           above range for ri04 should be: (?, ?)\n\n");
+print_range(ri05);
+print("           above range for ri05 should be: [0, infinity)\n\n");
+print_range(ri06);
+print("           above range for ri06 should be: [0, infinity)\n\n");
+print_range(ri07);
+print("           above range for ri07 should be: [1, 4]\n\n");
+print_range(ri08);
+print("           above range for ri08 should be: [1, 8]\n\n");
+print_range(ri09);
+print("           above range for ri09 should be: [1, 10]\n\n");
+print_range(ri10);
+print("           above range for ri10 should be: null\n\n");
+print_range(ri11);
+print("           above range for ri11 should be: [0, infinity)\n\n");
+
+// evil rand ints
+
+rand bool rb := ( ri05 < 4 );
+
+rand int ri2c2 := cond(rb, ri02, ri02);
+rand int ri2c3 := cond(rb, ri02, ri03);
+rand int ri2c4 := cond(rb, ri02, ri04);
+rand int ri2c5 := cond(rb, ri02, ri05);
+rand int ri2c7 := cond(rb, ri02, ri07);
+
+rand int ri3c2 := cond(rb, ri03, ri02);
+rand int ri3c3 := cond(rb, ri03, ri03);
+rand int ri3c4 := cond(rb, ri03, ri04);
+rand int ri3c5 := cond(rb, ri03, ri05);
+rand int ri3c7 := cond(rb, ri03, ri07);
+
+rand int ri4c2 := cond(rb, ri04, ri02);
+rand int ri4c3 := cond(rb, ri04, ri03);
+rand int ri4c4 := cond(rb, ri04, ri04);
+rand int ri4c5 := cond(rb, ri04, ri05);
+rand int ri4c7 := cond(rb, ri04, ri07);
+
+rand int ri5c2 := cond(rb, ri05, ri02);
+rand int ri5c3 := cond(rb, ri05, ri03);
+rand int ri5c4 := cond(rb, ri05, ri04);
+rand int ri5c5 := cond(rb, ri05, ri05);
+rand int ri5c7 := cond(rb, ri05, ri07);
+
+rand int ri7c2 := cond(rb, ri07, ri02);
+rand int ri7c3 := cond(rb, ri07, ri03);
+rand int ri7c4 := cond(rb, ri07, ri04);
+rand int ri7c5 := cond(rb, ri07, ri05);
+rand int ri7c7 := cond(rb, ri07, ri07);
+
+print_range(ri2c2);
+print("           above range for ri2c2 should be: [infinity, infinity]\n\n");
+print_range(ri2c3);
+print("           above range for ri2c3 should be: (null, null)\n\n");
+print_range(ri2c4);
+print("           above range for ri2c4 should be: (?, infinity]\n\n");
+print_range(ri2c5);
+print("           above range for ri2c5 should be: [0, infinity]\n\n");
+print_range(ri2c7);
+print("           above range for ri2c7 should be: [1, infinity]\n\n");
+
+print_range(ri3c2);
+print("           above range for ri3c2 should be: (null, null)\n\n");
+print_range(ri3c3);
+print("           above range for ri3c3 should be: (null, null)\n\n");
+print_range(ri3c4);
+print("           above range for ri3c4 should be: (null, null)\n\n");
+print_range(ri3c5);
+print("           above range for ri3c5 should be: (null, null)\n\n");
+print_range(ri3c7);
+print("           above range for ri3c7 should be: (null, null)\n\n");
+
+print_range(ri4c2);
+print("           above range for ri4c2 should be: (?, infinity]\n\n");
+print_range(ri4c3);
+print("           above range for ri4c3 should be: (null, null)\n\n");
+print_range(ri4c4);
+print("           above range for ri4c4 should be: (?, ?)\n\n");
+print_range(ri4c5);
+print("           above range for ri4c5 should be: (?, infinity)\n\n");
+print_range(ri4c7);
+print("           above range for ri4c7 should be: (?, ?)\n\n");
+
+print_range(ri5c2);
+print("           above range for ri5c2 should be: [0, infinity]\n\n");
+print_range(ri5c3);
+print("           above range for ri5c3 should be: (null, null)\n\n");
+print_range(ri5c4);
+print("           above range for ri5c4 should be: (?, infinity)\n\n");
+print_range(ri5c5);
+print("           above range for ri5c5 should be: [0, infinity)\n\n");
+print_range(ri5c7);
+print("           above range for ri5c7 should be: [0, infinity)\n\n");
+
+print_range(ri7c2);
+print("           above range for ri7c2 should be: [1, infinity]\n\n");
+print_range(ri7c3);
+print("           above range for ri7c3 should be: (null, null)\n\n");
+print_range(ri7c4);
+print("           above range for ri7c4 should be: (?, ?)\n\n");
+print_range(ri7c5);
+print("           above range for ri7c5 should be: [0, infinity)\n\n");
+print_range(ri7c7);
+print("           above range for ri7c7 should be: [1, 4]\n\n");
+
+// Rand reals
+
+rand real rr01 := 2.5;
+rand real rr02 := infinity;
+rand real rr03 := null;
+rand real rr04 := DontKnow;
+rand real rr05 := expo(0.5);
+rand real rr06 := expo(DontKnow);
+
+rand real rr07 := uniform(1, 4);
+rand real rr08 := uniform(8.2, 9.8);
+rand real rr09 := uniform(rr07, rr08);
+rand real rr10 := uniform(rr03, rr04);
+rand real rr11 := uniform(0, rr05);
+
+print_range(rr01);
+print("above range for rr01 should be: [2.5, 2.5]\n\n");
+print_range(rr02);
+print("above range for rr02 should be: [infinity, infinity]\n\n");
+print_range(rr03);
+print("above range for rr03 should be: null\n\n");
+print_range(rr04);
+print("above range for rr04 should be: (?, ?)\n\n");
+print_range(rr05);
+print("above range for rr05 should be: (0, infinity)\n\n");
+print_range(rr06);
+print("above range for rr06 should be: (0, infinity)\n\n");
+print_range(rr07);
+print("above range for rr07 should be: (1, 4)\n\n");
+print_range(rr08);
+print("above range for rr08 should be: (8.2, 9.8)\n\n");
+print_range(rr09);
+print("above range for rr09 should be: (1, 9.8)\n\n");
+print_range(rr10);
+print("above range for rr10 should be: null\n\n");
+print_range(rr11);
+print("above range for rr11 should be: (0, infinity)\n\n");
+
+// evil rand reals
+
+rand real rr2c2 := cond(rb, rr02, rr02);
+rand real rr2c3 := cond(rb, rr02, rr03);
+rand real rr2c4 := cond(rb, rr02, rr04);
+rand real rr2c5 := cond(rb, rr02, rr05);
+rand real rr2c7 := cond(rb, rr02, rr07);
+
+rand real rr3c2 := cond(rb, rr03, rr02);
+rand real rr3c3 := cond(rb, rr03, rr03);
+rand real rr3c4 := cond(rb, rr03, rr04);
+rand real rr3c5 := cond(rb, rr03, rr05);
+rand real rr3c7 := cond(rb, rr03, rr07);
+
+rand real rr4c2 := cond(rb, rr04, rr02);
+rand real rr4c3 := cond(rb, rr04, rr03);
+rand real rr4c4 := cond(rb, rr04, rr04);
+rand real rr4c5 := cond(rb, rr04, rr05);
+rand real rr4c7 := cond(rb, rr04, rr07);
+
+rand real rr5c2 := cond(rb, rr05, rr02);
+rand real rr5c3 := cond(rb, rr05, rr03);
+rand real rr5c4 := cond(rb, rr05, rr04);
+rand real rr5c5 := cond(rb, rr05, rr05);
+rand real rr5c7 := cond(rb, rr05, rr07);
+
+rand real rr7c2 := cond(rb, rr07, rr02);
+rand real rr7c3 := cond(rb, rr07, rr03);
+rand real rr7c4 := cond(rb, rr07, rr04);
+rand real rr7c5 := cond(rb, rr07, rr05);
+rand real rr7c7 := cond(rb, rr07, rr07);
+
+print_range(rr2c2);
+print("above range for rr2c2 should be: [infinity, infinity]\n\n");
+print_range(rr2c3);
+print("above range for rr2c3 should be: (null, null)\n\n");
+print_range(rr2c4);
+print("above range for rr2c4 should be: (?, infinity]\n\n");
+print_range(rr2c5);
+print("above range for rr2c5 should be: (0, infinity]\n\n");
+print_range(rr2c7);
+print("above range for rr2c7 should be: (1, infinity]\n\n");
+
+print_range(rr3c2);
+print("above range for rr3c2 should be: (null, null)\n\n");
+print_range(rr3c3);
+print("above range for rr3c3 should be: (null, null)\n\n");
+print_range(rr3c4);
+print("above range for rr3c4 should be: (null, null)\n\n");
+print_range(rr3c5);
+print("above range for rr3c5 should be: (null, null)\n\n");
+print_range(rr3c7);
+print("above range for rr3c7 should be: (null, null)\n\n");
+
+print_range(rr4c2);
+print("above range for rr4c2 should be: (?, infinity]\n\n");
+print_range(rr4c3);
+print("above range for rr4c3 should be: (null, null)\n\n");
+print_range(rr4c4);
+print("above range for rr4c4 should be: (?, ?)\n\n");
+print_range(rr4c5);
+print("above range for rr4c5 should be: (?, infinity)\n\n");
+print_range(rr4c7);
+print("above range for rr4c7 should be: (?, ?)\n\n");
+
+print_range(rr5c2);
+print("above range for rr5c2 should be: (0, infinity]\n\n");
+print_range(rr5c3);
+print("above range for rr5c3 should be: (null, null)\n\n");
+print_range(rr5c4);
+print("above range for rr5c4 should be: (?, infinity)\n\n");
+print_range(rr5c5);
+print("above range for rr5c5 should be: (0, infinity)\n\n");
+print_range(rr5c7);
+print("above range for rr5c7 should be: (0, infinity)\n\n");
+
+print_range(rr7c2);
+print("above range for rr7c2 should be: (1, infinity]\n\n");
+print_range(rr7c3);
+print("above range for rr7c3 should be: (null, null)\n\n");
+print_range(rr7c4);
+print("above range for rr7c4 should be: (?, ?)\n\n");
+print_range(rr7c5);
+print("above range for rr7c5 should be: (0, infinity)\n\n");
+print_range(rr7c7);
+print("above range for rr7c7 should be: (1, 4)\n\n");
+
+

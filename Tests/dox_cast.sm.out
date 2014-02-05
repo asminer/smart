@@ -1,0 +1,212 @@
+
+Help topic: promotions
+    If necessary, Smart will attempt to promote expressions to other 
+    types. Each promotion has an associated "distance", and Smart will 
+    normally choose the promotion with least distance (or give an error if 
+    it is unable to decide). A type promotion can be forced using an 
+    explicit cast, see the help topic on "casting" for details. Smart uses 
+    the following promotions:
+    
+    null:
+        void               (distance 1)
+        bool               (distance 1)
+        int                (distance 1)
+        real               (distance 1)
+        model              (distance 1)
+        next state         (distance 1)
+        proc bool          (distance 1)
+        proc int           (distance 1)
+        proc real          (distance 1)
+        {int}              (distance 1)
+        {real}             (distance 1)
+        expo               (distance 1)
+        proc expo          (distance 1)
+        ph int             (distance 1)
+        proc ph int        (distance 1)
+        ph real            (distance 1)
+        proc ph real       (distance 1)
+        rand bool          (distance 1)
+        proc rand bool     (distance 1)
+        rand int           (distance 1)
+        proc rand int      (distance 1)
+        rand real          (distance 1)
+        proc rand real     (distance 1)
+        string             (distance 1)
+        bigint             (distance 1)
+        stateset           (distance 1)
+        fsm                (distance 1)
+        state              (distance 1)
+        {state}            (distance 1)
+        dtmc               (distance 1)
+        ctmc               (distance 1)
+        pn                 (distance 1)
+        place              (distance 1)
+        {place}            (distance 1)
+        trans              (distance 1)
+        {trans}            (distance 1)
+        intvar             (distance 1)
+        {intvar}           (distance 1)
+        event              (distance 1)
+        {event}            (distance 1)
+        evm                (distance 1)
+        tile               (distance 1)
+        {tile}             (distance 1)
+        glue               (distance 1)
+        {glue}             (distance 1)
+        border             (distance 1)
+        tam                (distance 1)
+    
+    bool:
+        rand bool          (distance 6)
+        proc bool          (distance 9)
+        proc rand bool     (distance 15)
+    
+    int:
+        bigint             (distance 1)
+        real               (distance 2)
+        ph int             (distance 3)
+        ph real            (distance 5)
+        rand int           (distance 6)
+        rand real          (distance 8)
+        proc int           (distance 9)
+        proc real          (distance 11)
+        proc ph int        (distance 12)
+        proc ph real       (distance 14)
+        proc rand int      (distance 15)
+        proc rand real     (distance 17)
+        {int}              (distance 20)
+        {real}             (distance 22)
+    
+    real:
+        ph real            (distance 3)
+        rand real          (distance 6)
+        proc real          (distance 9)
+        proc ph real       (distance 12)
+        proc rand real     (distance 15)
+        {real}             (distance 20)
+    
+    proc bool:
+        proc rand bool     (distance 6)
+    
+    proc int:
+        proc real          (distance 2)
+        proc ph int        (distance 3)
+        proc ph real       (distance 5)
+        proc rand int      (distance 6)
+        proc rand real     (distance 8)
+    
+    proc real:
+        proc ph real       (distance 3)
+        proc rand real     (distance 6)
+    
+    {int}:
+        {real}             (distance 2)
+    
+    expo:
+        ph real            (distance 3)
+        rand real          (distance 6)
+        proc expo          (distance 9)
+        proc ph real       (distance 12)
+        proc rand real     (distance 15)
+    
+    proc expo:
+        proc ph real       (distance 3)
+        proc rand real     (distance 6)
+    
+    ph int:
+        rand int           (distance 6)
+        rand real          (distance 8)
+        proc ph int        (distance 9)
+        proc rand int      (distance 15)
+        proc rand real     (distance 17)
+    
+    proc ph int:
+        proc rand int      (distance 6)
+        proc rand real     (distance 8)
+    
+    ph real:
+        rand real          (distance 6)
+        proc ph real       (distance 9)
+        proc rand real     (distance 15)
+    
+    proc ph real:
+        proc rand real     (distance 6)
+    
+    rand bool:
+        proc rand bool     (distance 9)
+    
+    rand int:
+        rand real          (distance 2)
+        proc rand int      (distance 9)
+        proc rand real     (distance 11)
+    
+    proc rand int:
+        proc rand real     (distance 2)
+    
+    rand real:
+        proc rand real     (distance 9)
+    
+    state:
+        {state}            (distance 20)
+    
+    place:
+        {place}            (distance 20)
+    
+    trans:
+        {trans}            (distance 20)
+    
+    intvar:
+        {intvar}           (distance 20)
+    
+    event:
+        {event}            (distance 20)
+    
+    tile:
+        {tile}             (distance 20)
+    
+    glue:
+        {glue}             (distance 20)
+
+Help topic: casting
+    An expression can be cast to a different using new_type(expr). This 
+    can be done to force promotion of an expression, or to change its 
+    type. For example:
+    
+        rand real x := ...;
+        rand int i := rand int(x);
+        
+    An expression can be explicitly cast from type A to type B if it can 
+    be promoted from type A to type B (see help topic "promotions"). In 
+    addition, the following conversions are allowed:
+    
+        from real to int
+        from real to proc int
+        from real to {int}
+        from real to ph int
+        from real to proc ph int
+        from real to rand int
+        from real to proc rand int
+        from proc real to proc int
+        from proc real to proc ph int
+        from proc real to proc rand int
+        from {real} to {int}
+        from ph real to rand int
+        from ph real to proc rand int
+        from proc ph real to proc rand int
+        from rand real to rand int
+        from rand real to proc rand int
+        from proc rand real to proc rand int
+        from bigint to int
+        from bigint to real
+        from bigint to proc int
+        from bigint to proc real
+        from bigint to {int}
+        from bigint to {real}
+        from bigint to ph int
+        from bigint to proc ph int
+        from bigint to ph real
+        from bigint to proc ph real
+        from bigint to rand int
+        from bigint to proc rand int
+        from bigint to rand real
+        from bigint to proc rand real

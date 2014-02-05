@@ -1,0 +1,68 @@
+
+// $Id$
+
+/*
+    6 Queens problem.
+
+    Encoding: each integer variable tells which column to place
+    the queen, for the given row.
+*/
+
+int r1, r2, r3, r4, r5, r6 in {1..6};
+
+// prevent row attacks: already handled, since we have one queen per row.
+
+// prevent column attacks:
+
+r1 != r2;
+r1 != r3;
+r1 != r4;
+r1 != r5;
+r1 != r6;
+r2 != r3;
+r2 != r4;
+r2 != r5;
+r2 != r6;
+r3 != r4;
+r3 != r5;
+r3 != r6;
+r4 != r5;
+r4 != r6;
+r5 != r6;
+
+// prevent diagonal-right attacks:
+r1 + 1 != r2;
+r1 + 2 != r3;
+r1 + 3 != r4;
+r1 + 4 != r5;
+r1 + 5 != r6;
+r2 + 1 != r3;
+r2 + 2 != r4;
+r2 + 3 != r5;
+r2 + 4 != r6;
+r3 + 1 != r4;
+r3 + 2 != r5;
+r3 + 3 != r6;
+r4 + 1 != r5;
+r4 + 2 != r6;
+r5 + 1 != r6;
+
+// prevent diagonal-left attacks:
+r1 - 1 != r2;
+r1 - 2 != r3;
+r1 - 3 != r4;
+r1 - 4 != r5;
+r1 - 5 != r6;
+r2 - 1 != r3;
+r2 - 2 != r4;
+r2 - 3 != r5;
+r2 - 4 != r6;
+r3 - 1 != r4;
+r3 - 2 != r5;
+r3 - 3 != r6;
+r4 - 1 != r5;
+r4 - 2 != r6;
+r5 - 1 != r6;
+
+// get solution
+satisfiable solve := true;
