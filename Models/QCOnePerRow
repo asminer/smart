@@ -1,0 +1,144 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Generate an instance of the queen cover problem
+#
+
+#1 : i
+#2 : j
+orqueenat()
+{
+  if [ $p -gt 0 ]; then
+    printf " | "
+  else
+    p="1"
+  fi
+  printf "(q_%d==%d)" $1 $2
+}
+
+#1 : i
+#2 : j
+#3 : N
+cover()
+{
+  p="0"
+#  printf "\n// Make sure we cover square %d,%d\n\n" $1 $2
+# check column
+  i="1"
+  while [ $i -le $3 ]; do
+    if [ $i -ne $1 ]; then
+      orqueenat $i $2
+    fi
+    i=$[i + 1]
+  done
+# check diagonal: NW
+  i=$1
+  j=$2
+  while [ $i -gt 1 -a $j -gt 1 ]; do
+    i=$[i - 1]
+    j=$[j - 1]
+    orqueenat $i $j
+  done
+# check diagonal: SE
+  i=$1
+  j=$2
+  while [ $i -lt $3 -a $j -lt $3 ]; do
+    i=$[i + 1]
+    j=$[j + 1]
+    orqueenat $i $j
+  done
+# check diagonal: NE
+  i=$1
+  j=$2
+  while [ $i -gt 1 -a $j -lt $3 ]; do
+    i=$[i - 1]
+    j=$[j + 1]
+    orqueenat $i $j
+  done
+# check diagonal: SW
+  i=$1
+  j=$2
+  while [ $i -lt $3 -a $j -gt 1 ]; do
+    i=$[i + 1]
+    j=$[j - 1]
+    orqueenat $i $j
+  done
+}
+
+#1 : i
+#2 : N
+cover_row()
+{
+  printf "\n// Make sure we cover row %d\n\n" $1
+  printf "(q_%d>0) | (\n" $1
+  m="1"
+  while [ $m -le $2 ]; do
+    printf "  ( "
+    cover $1 $m $2
+    printf " )"
+    if [ $m -lt $2 ]; then
+      printf " & ";
+    fi
+    printf "\n";
+    m=$[m + 1]
+  done
+
+  printf ");\n"
+}
+
+
+
+if [ $# -lt 1 ]; then
+  printf "Usage: %s N\nwhere:\n\tN is the dimension of the board\n" $0
+  exit 1
+fi
+printf "\n/*\n    Queen cover problem.\n\n"
+printf "    Try to put queens onto a %d x %d chessboard so that\n" $1 $1
+printf "    all empty squares are attacked by some queen.\n"
+printf "    We only search for solutions with at most one queen per row.\n*/\n\n"
+
+printf "// Define the state:\n"
+printf "//    q: position of queen in each row (0 if none)\n"
+printf "//    r: is there a queen in this row?\n\n";
+n="1"
+while [ $n -le $1 ]; do
+  printf "int q_%d in {0..%d};\n" $n $1
+  printf "int r_%d in {0..1};\n" $n
+  n=$[n + 1]
+done
+
+printf "\n\n// Force synchronization between q and r\n\n"
+
+n="1"
+while [ $n -le $1 ]; do
+  printf "(q_%d>0) == (r_%d>0);\n" $n $n
+  n=$[n + 1]
+done
+
+n="1"
+while [ $n -le $1 ]; do
+  cover_row $n $1
+  n=$[n + 1]
+done
+
+m="1"
+while [ $m -lt $1 ]; do
+  printf "\n\n// Get solution for %d queens\n\n" $m
+  printf "satisfiable cover_with_%d := (" $m
+
+  n="1"
+  p="0"
+  while [ $n -le $1 ]; do
+    if [ $p -gt 0 ]; then
+      printf " + "
+    else
+      p="1"
+    fi
+    printf "r_%d" $n
+    n=$[n + 1]
+  done
+  printf " == %d);\n" $m
+  m=$[m + 1]
+done
+

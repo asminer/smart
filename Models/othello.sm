@@ -1,0 +1,617 @@
+
+// $Id$
+
+// NxM Othello model
+
+// # Debug + evms
+
+// # Debug + rsgen
+# Report + procgen
+
+# EVMStateStyle VECTOR
+
+# ReportThousandSeparator ","
+# OutputThousandSeparator ","
+
+evm othello(int N, int M) := {
+
+  for (int i in {1..N}, int j in {1..M}) {
+    // board squares: 
+    // 0=empty, 1=white, 2=black, -1=try white, -2=try black
+    intvar b[i][j];
+    range(b[i][j] : {0, 1, 2, -1, -2});
+  }
+
+  intvar turn;  // whose turn is it
+  range(turn : {1..2});
+  intvar try;   // are we "trying" a move somewhere
+  range(try : {0..1});
+
+  intvar total1s, total2s;
+  range({total1s, total2s} : {0..N*M});
+
+  // auxiliary vars, to check if we can flip pieces, by direction.
+  // values: 0=empty, 1=try, 2=success, 3=fail
+  intvar an, as, ae, aw, anw, ane, asw, ase;
+  range({an, as, ae, aw, anw, ane, asw, ase} : {0..3});
+
+  
+  // Events; "rules" of the game
+  for (int i in {1..N}, int j in {1..M}) {
+
+    //
+    // Start: try to put a piece at i,j
+    //
+    event start[i][j];
+    guard(start[i][j] : 0==eval(b[i][j]));
+    guard(start[i][j] : 0==eval(try));
+    assign(try : start[i][j] : 1);
+    assign(b[i][j] : start[i][j] : -eval(turn));
+    assign(an : start[i][j] : 1);
+    assign(as : start[i][j] : 1);
+    assign(ae : start[i][j] : 1);
+    assign(aw : start[i][j] : 1);
+    assign(anw: start[i][j] : 1);
+    assign(ane: start[i][j] : 1);
+    assign(asw: start[i][j] : 1);
+    assign(ase: start[i][j] : 1);
+    assert( eval(b[i][j])>=0  |  eval(try)>0 );   // sanity check
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the north?
+    //
+    for (int k in {2..i-1}) {
+      // successfull to the north, up to our piece at b[i-k][j].
+      event sfn[i][j][k];    
+      hide(sfn[i][j][k]);
+      guard(sfn[i][j][k] : eval(an) == 1);
+      assign(an : sfn[i][j][k] : 2);
+      guard(sfn[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfn[i][j][k] : eval(b[i-k][j]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfn[i][j][k] : eval(b[i-z][j]) == 3-eval(turn)); 
+        assign(b[i-z][j] : sfn[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfn[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfn[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the north, either
+    //    wrong piece one spot above us, or
+    //    not enough spaces to the north of us to "flank"
+    event u1fn[i][j];
+    hide(u1fn[i][j]);
+    guard(u1fn[i][j] : eval(an) == 1);
+    assign(an : u1fn[i][j] : 3);
+    guard(u1fn[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (i>2, 
+      guard(u1fn[i][j] : eval(b[i-1][j])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..i-1}) {
+      // unsuccessful to the north, due to wrong piece at b[i-k][j].
+      event ufn[i][j][k];
+      hide(ufn[i][j][k]);
+      guard(ufn[i][j][k] : eval(an) == 1);
+      assign(an : ufn[i][j][k] : 3);
+      guard(ufn[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufn[i][j][k] : eval(b[i-z][j]) == 3-eval(turn)); 
+      }
+      cond(k<i-1,
+        guard(ufn[i][j][k] : eval(b[i-k][j]) == 0),
+        guard(ufn[i][j][k] : eval(b[i-k][j]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the south?
+    //
+    for (int k in {2..N-i}) {
+      // successfull to the south, up to our piece at b[i+k][j].
+      event sfs[i][j][k];    
+      hide(sfs[i][j][k]);
+      guard(sfs[i][j][k] : eval(an) != 1);  // wait for north, fewer states
+      guard(sfs[i][j][k] : eval(as) == 1);
+      assign(as : sfs[i][j][k] : 2);
+      guard(sfs[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfs[i][j][k] : eval(b[i+k][j]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfs[i][j][k] : eval(b[i+z][j]) == 3-eval(turn)); 
+        assign(b[i+z][j] : sfs[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfs[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfs[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the south, either
+    //    wrong piece one spot below us, or
+    //    not enough spaces to the south of us to "flank"
+    event u1fs[i][j];
+    hide(u1fs[i][j]);
+    guard(u1fs[i][j] : eval(an) != 1);  // wait for north, fewer states
+    guard(u1fs[i][j] : eval(as) == 1);
+    assign(as : u1fs[i][j] : 3);
+    guard(u1fs[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (i<N-1, 
+      guard(u1fs[i][j] : eval(b[i+1][j])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..N-i}) {
+      // unsuccessful to the south, due to wrong piece at b[i+k][j].
+      event ufs[i][j][k];
+      hide(ufs[i][j][k]);
+      guard(ufs[i][j][k] : eval(an) != 1);  // wait for north, fewer states
+      guard(ufs[i][j][k] : eval(as) == 1);
+      assign(as : ufs[i][j][k] : 3);
+      guard(ufs[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufs[i][j][k] : eval(b[i+z][j]) == 3-eval(turn)); 
+      }
+      cond(k<N-i,
+        guard(ufs[i][j][k] : eval(b[i+k][j]) == 0),
+        guard(ufs[i][j][k] : eval(b[i+k][j]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the east?
+    //
+    for (int k in {2..M-j}) {
+      // successfull to the east, to our piece at b[i][j+k].
+      event sfe[i][j][k];    
+      hide(sfe[i][j][k]);
+      guard(sfe[i][j][k] : eval(as) != 1);  // wait for south, fewer states
+      guard(sfe[i][j][k] : eval(ae) == 1);
+      assign(ae : sfe[i][j][k] : 2);
+      guard(sfe[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfe[i][j][k] : eval(b[i][j+k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfe[i][j][k] : eval(b[i][j+z]) == 3-eval(turn)); 
+        assign(b[i][j+z] : sfe[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfe[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfe[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the east, either
+    //    wrong piece one spot right of us, or
+    //    not enough spaces to the east of us to "flank"
+    event u1fe[i][j];
+    hide(u1fe[i][j]);
+    guard(u1fe[i][j] : eval(as) != 1);  // wait for south, fewer states
+    guard(u1fe[i][j] : eval(ae) == 1);
+    assign(ae : u1fe[i][j] : 3);
+    guard(u1fe[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (j<M-1, 
+      guard(u1fe[i][j] : eval(b[i][j+1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..M-j}) {
+      // unsuccessful to the east, due to wrong piece at b[i][j+k].
+      event ufe[i][j][k];
+      hide(ufe[i][j][k]);
+      guard(ufe[i][j][k] : eval(as) != 1);  // wait for south, fewer states
+      guard(ufe[i][j][k] : eval(ae) == 1);
+      assign(ae : ufe[i][j][k] : 3);
+      guard(ufe[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufe[i][j][k] : eval(b[i][j+z]) == 3-eval(turn)); 
+      }
+      cond(k<M-j,
+        guard(ufe[i][j][k] : eval(b[i][j+k]) == 0),
+        guard(ufe[i][j][k] : eval(b[i][j+k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the west?
+    //
+    for (int k in {2..j-1}) {
+      // successfull to the west, to our piece at b[i][j-k].
+      event sfw[i][j][k];    
+      hide(sfw[i][j][k]);
+      guard(sfw[i][j][k] : eval(ae) != 1);  // wait for east, fewer states
+      guard(sfw[i][j][k] : eval(aw) == 1);
+      assign(aw : sfw[i][j][k] : 2);
+      guard(sfw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfw[i][j][k] : eval(b[i][j-k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfw[i][j][k] : eval(b[i][j-z]) == 3-eval(turn)); 
+        assign(b[i][j-z] : sfw[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfw[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfw[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the west, either
+    //    wrong piece one spot left of us, or
+    //    not enough spaces to the west of us to "flank"
+    event u1fw[i][j];
+    hide(u1fw[i][j]);
+    guard(u1fw[i][j] : eval(ae) != 1);  // wait for east, fewer states
+    guard(u1fw[i][j] : eval(aw) == 1);
+    assign(aw : u1fw[i][j] : 3);
+    guard(u1fw[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (j>2, 
+      guard(u1fw[i][j] : eval(b[i][j-1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..j-1}) {
+      // unsuccessful to the west, due to wrong piece at b[i][j-k].
+      event ufw[i][j][k];
+      hide(ufw[i][j][k]);
+      guard(ufw[i][j][k] : eval(ae) != 1);  // wait for east, fewer states
+      guard(ufw[i][j][k] : eval(aw) == 1);
+      assign(aw : ufw[i][j][k] : 3);
+      guard(ufw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufw[i][j][k] : eval(b[i][j-z]) == 3-eval(turn)); 
+      }
+      cond(k<j-1,
+        guard(ufw[i][j][k] : eval(b[i][j-k]) == 0),
+        guard(ufw[i][j][k] : eval(b[i][j-k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the north-west?
+    //
+    for (int k in {2..min(i,j)-1}) {
+      // successfull to the north-west, up to our piece at b[i-k][j-k].
+      event sfnw[i][j][k];    
+      hide(sfnw[i][j][k]);
+      guard(sfnw[i][j][k] : eval(aw) != 1); // wait for west, fewer states
+      guard(sfnw[i][j][k] : eval(anw) == 1);
+      assign(anw : sfnw[i][j][k] : 2);
+      guard(sfnw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfnw[i][j][k] : eval(b[i-k][j-k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfnw[i][j][k] : eval(b[i-z][j-z]) == 3-eval(turn)); 
+        assign(b[i-z][j-z] : sfnw[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfnw[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfnw[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the north-west, either
+    //    wrong piece one spot nw of us, or
+    //    not enough spaces to the north-west of us to "flank"
+    event u1fnw[i][j];
+    hide(u1fnw[i][j]);
+    guard(u1fnw[i][j] : eval(aw) != 1); // wait for west, fewer states
+    guard(u1fnw[i][j] : eval(anw) == 1);
+    assign(anw : u1fnw[i][j] : 3);
+    guard(u1fnw[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (min(i,j)>2, 
+      guard(u1fnw[i][j] : eval(b[i-1][j-1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..min(i,j)-1}) {
+      // unsuccessful to the north-west, due to wrong piece at b[i-k][j-k].
+      event ufnw[i][j][k];
+      hide(ufnw[i][j][k]);
+      guard(ufnw[i][j][k] : eval(aw) != 1); // wait for west, fewer states
+      guard(ufnw[i][j][k] : eval(anw) == 1);
+      assign(anw : ufnw[i][j][k] : 3);
+      guard(ufnw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufnw[i][j][k] : eval(b[i-z][j-z]) == 3-eval(turn)); 
+      }
+      cond(k<min(i,j)-1, 
+        guard(ufnw[i][j][k] : eval(b[i-k][j-k]) == 0),
+        guard(ufnw[i][j][k] : eval(b[i-k][j-k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the north-east?
+    //
+    for (int k in {2..min(i,M+1-j)-1}) {
+      // successfull to the north-east, up to our piece at b[i-k][j+k].
+      event sfne[i][j][k];    
+      hide(sfne[i][j][k]);
+      guard(sfne[i][j][k] : eval(anw) != 1);  // wait for nw, fewer states
+      guard(sfne[i][j][k] : eval(ane) == 1);
+      assign(ane : sfne[i][j][k] : 2);
+      guard(sfne[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfne[i][j][k] : eval(b[i-k][j+k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfne[i][j][k] : eval(b[i-z][j+z]) == 3-eval(turn)); 
+        assign(b[i-z][j+z] : sfne[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfne[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfne[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the north-east, either
+    //    wrong piece one spot ne of us, or
+    //    not enough spaces to the north-east of us to "flank"
+    event u1fne[i][j];
+    hide(u1fne[i][j]);
+    guard(u1fne[i][j] : eval(anw) != 1);  // wait for nw, fewer states
+    guard(u1fne[i][j] : eval(ane) == 1);
+    assign(ane : u1fne[i][j] : 3);
+    guard(u1fne[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (min(i,M+1-j)>2, 
+      guard(u1fne[i][j] : eval(b[i-1][j+1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..min(i,M+1-j)-1}) {
+      // unsuccessful to the north-east, due to wrong piece at b[i-k][j+k].
+      event ufne[i][j][k];
+      hide(ufne[i][j][k]);
+      guard(ufne[i][j][k] : eval(anw) != 1);  // wait for nw, fewer states
+      guard(ufne[i][j][k] : eval(ane) == 1);
+      assign(ane : ufne[i][j][k] : 3);
+      guard(ufne[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufne[i][j][k] : eval(b[i-z][j+z]) == 3-eval(turn)); 
+      }
+      cond(k<min(i,M+1-j)-1, 
+        guard(ufne[i][j][k] : eval(b[i-k][j+k]) == 0),
+        guard(ufne[i][j][k] : eval(b[i-k][j+k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the south-east?
+    //
+    for (int k in {2..min(N-i,M-j)}) {
+      // successfull to the south-east, down to our piece at b[i+k][j+k].
+      event sfse[i][j][k];    
+      hide(sfse[i][j][k]);
+      guard(sfse[i][j][k] : eval(ane) != 1);  // wait for ne, fewer states
+      guard(sfse[i][j][k] : eval(ase) == 1);
+      assign(ase : sfse[i][j][k] : 2);
+      guard(sfse[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfse[i][j][k] : eval(b[i+k][j+k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfse[i][j][k] : eval(b[i+z][j+z]) == 3-eval(turn)); 
+        assign(b[i+z][j+z] : sfse[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfse[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfse[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the south-east, either
+    //    wrong piece one spot se of us, or
+    //    not enough spaces to the south-east of us to "flank"
+    event u1fse[i][j];
+    hide(u1fse[i][j]);
+    guard(u1fse[i][j] : eval(ane) != 1);  // wait for ne, fewer states
+    guard(u1fse[i][j] : eval(ase) == 1);
+    assign(ase : u1fse[i][j] : 3);
+    guard(u1fse[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (min(N+1-i,M+1-j)>2, 
+      guard(u1fse[i][j] : eval(b[i+1][j+1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..min(N-i,M-j)}) {
+      // unsuccessful to the south-east, due to wrong piece at b[i+k][j+k].
+      event ufse[i][j][k];
+      hide(ufse[i][j][k]);
+      guard(ufse[i][j][k] : eval(ane) != 1);  // wait for ne, fewer states
+      guard(ufse[i][j][k] : eval(ase) == 1);
+      assign(ase : ufse[i][j][k] : 3);
+      guard(ufse[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufse[i][j][k] : eval(b[i+z][j+z]) == 3-eval(turn)); 
+      }
+      cond(k<min(N-i,M-j), 
+        guard(ufse[i][j][k] : eval(b[i+k][j+k]) == 0),
+        guard(ufse[i][j][k] : eval(b[i+k][j+k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Check: for proposed move, do we flip anything to the south-west?
+    //
+    for (int k in {2..min(N+1-i,j)-1}) {
+      // successfull to the south-west, down to our piece at b[i+k][j-k].
+      event sfsw[i][j][k];    
+      hide(sfsw[i][j][k]);
+      guard(sfsw[i][j][k] : eval(ase) != 1);  // wait for se, fewer states
+      guard(sfsw[i][j][k] : eval(asw) == 1);
+      assign(asw : sfsw[i][j][k] : 2);
+      guard(sfsw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      guard(sfsw[i][j][k] : eval(b[i+k][j-k]) == eval(turn));
+      for (int z in {1..k-1}) {
+        guard(sfsw[i][j][k] : eval(b[i+z][j-z]) == 3-eval(turn)); 
+        assign(b[i+z][j-z] : sfsw[i][j][k] : eval(turn));
+      } // for z
+      assign(total1s : sfsw[i][j][k] : eval(total1s)+(k-1)*(3-2*eval(turn)));
+      assign(total2s : sfsw[i][j][k] : eval(total2s)-(k-1)*(3-2*eval(turn)));
+    } // for k
+    // unsuccessful to the south-west, either
+    //    wrong piece one spot sw of us, or
+    //    not enough spaces to the south-west of us to "flank"
+    event u1fsw[i][j];
+    hide(u1fsw[i][j]);
+    guard(u1fsw[i][j] : eval(ase) != 1);  // wait for se, fewer states
+    guard(u1fsw[i][j] : eval(asw) == 1);
+    assign(asw : u1fsw[i][j] : 3);
+    guard(u1fsw[i][j] : eval(b[i][j]) == -eval(turn));
+    cond (min(N+1-i,j)>2,
+      guard(u1fsw[i][j] : eval(b[i+1][j-1])!= 3-eval(turn)),
+      null
+    );
+    for (int k in {2..min(N+1-i,j)-1}) {
+      // unsuccessful to the south-west, due to wrong piece at b[i+k][j-k].
+      event ufsw[i][j][k];
+      hide(ufsw[i][j][k]);
+      guard(ufsw[i][j][k] : eval(ase) != 1);  // wait for se, fewer states
+      guard(ufsw[i][j][k] : eval(asw) == 1);
+      assign(asw : ufsw[i][j][k] : 3);
+      guard(ufsw[i][j][k] : eval(b[i][j]) == -eval(turn));
+      for (int z in {1..k-1}) {
+        guard(ufsw[i][j][k] : eval(b[i+z][j-z]) == 3-eval(turn)); 
+      }
+      cond(k<min(N+1-i,j)-1,
+        guard(ufsw[i][j][k] : eval(b[i+k][j-k]) == 0),
+        guard(ufsw[i][j][k] : eval(b[i+k][j-k]) != eval(turn))
+      );
+    } // for k
+
+
+
+    //
+    // Finish: determine if move was successful or not.
+    //
+    event finish[i][j];
+    hide(finish[i][j]);
+    guard(finish[i][j] : eval(try)>0);
+    guard(finish[i][j] : eval(b[i][j])<0);
+    guard(finish[i][j] : eval(an) > 1);
+    guard(finish[i][j] : eval(as) > 1);
+    guard(finish[i][j] : eval(ae) > 1);
+    guard(finish[i][j] : eval(aw) > 1);
+    guard(finish[i][j] : eval(anw) > 1);
+    guard(finish[i][j] : eval(ane) > 1);
+    guard(finish[i][j] : eval(asw) > 1);
+    guard(finish[i][j] : eval(ase) > 1);
+    assign(try : finish[i][j] : 0);
+    assign(turn : finish[i][j] : 3-eval(turn));
+    assign(an : finish[i][j] : 0);
+    assign(as : finish[i][j] : 0);
+    assign(ae : finish[i][j] : 0);
+    assign(aw : finish[i][j] : 0);
+    assign(anw: finish[i][j] : 0);
+    assign(ane: finish[i][j] : 0);
+    assign(asw: finish[i][j] : 0);
+    assign(ase: finish[i][j] : 0);
+    assign(b[i][j] : finish[i][j] :
+      cond (
+        eval(an)==2 | eval(as)==2 | eval(ae)==2 | eval(aw)==2 |
+        eval(anw)==2 | eval(ane)==2 | eval(ase)==2 | eval(asw)==2, 
+        eval(turn),   // successful
+        0             // nope, remove piece
+      )
+    );
+    assign(total1s : finish[i][j] :
+      cond (
+        eval(an)==2 | eval(as)==2 | eval(ae)==2 | eval(aw)==2 |
+        eval(anw)==2 | eval(ane)==2 | eval(ase)==2 | eval(asw)==2, 
+        eval(total1s)+2-eval(turn), // add one, if turn==1
+        eval(total1s)               // unsuccessful, don't change
+      )
+    );
+    assign(total2s : finish[i][j] :
+      cond (
+        eval(an)==2 | eval(as)==2 | eval(ae)==2 | eval(aw)==2 |
+        eval(anw)==2 | eval(ane)==2 | eval(ase)==2 | eval(asw)==2, 
+        eval(total2s)+eval(turn)-1, // add one, if turn==2
+        eval(total2s)               // unsuccessful, don't change
+      )
+    );
+  } // for i,j
+
+  //
+  // Initial board configuration
+  //
+  init({b[div(N, 2)][div(M, 2)], b[div(N, 2)+1][div(M, 2)+1]} : 1);
+  init({b[div(N, 2)][div(M, 2)+1], b[div(N, 2)+1][div(M, 2)]} : 2);
+  init({total1s, total2s} : 2);
+
+  //
+  // Measures
+  //
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+
+  for(int f in {4..N*M}) {
+
+    stateset pieces[f] := potential(eval(total1s)+eval(total2s)==f) & reachable;
+
+    stateset finals[f] := AG(potential(eval(total1s)+eval(total2s)==f)) & reachable;
+    stateset acc_final[f] := cond(f==4, finals[4], finals[f] | acc_final[f-1]);
+  }
+  stateset end_of_game := acc_final[N*M];
+
+  stateset p1ahead := potential(eval(total1s) > eval(total2s));
+  stateset p2ahead := potential(eval(total2s) > eval(total1s));
+  stateset tied := potential(eval(total1s) == eval(total2s));
+
+  stateset p1force := AEF(potential(eval(turn)==1), p1ahead & end_of_game);
+  stateset p2force := AEF(potential(eval(turn)==2), p2ahead & end_of_game);
+
+  stateset unfair1 := p1force & initial;
+  stateset unfair2 := p2force & initial;
+};
+
+int bw := read_int("board width");
+int bh := read_int("board height");
+compute(bw);
+compute(bh);
+
+print("Analyzing othello with ", bw, "x", bh, " board\n\f");
+
+model oth := othello(bh, bw);
+compute(oth.na);
+compute(oth.ns);
+
+print("There are ", oth.ns, " states\n");
+
+print("Breakdown of possible end-of-game (final state):\n");
+for (int f in {4..bw*bh}) {
+  cond(card(oth.finals[f])>0, 
+    print("\t", card(oth.finals[f]), " final states w/", f, " pieces\n"),
+    null
+  );
+  cond(card(oth.finals[f] & oth.p1ahead)>0,
+    print("\t\t", card(oth.finals[f] & oth.p1ahead), " with p1 win\n"),
+    null
+  );
+  cond(card(oth.finals[f] & oth.p2ahead)>0,
+    print("\t\t", card(oth.finals[f] & oth.p2ahead), " with p2 win\n"),
+    null
+  );
+  cond(card(oth.finals[f] & oth.tied)>0,
+    print("\t\t", card(oth.finals[f] & oth.tied), " tied\n"),
+    null
+  );
+}
+
+print("TOTAL:\n");
+print(card(oth.end_of_game), " end of game states\n");
+print(card(oth.end_of_game & oth.p1ahead), " wins for player 1\n");
+print(card(oth.end_of_game & oth.p2ahead), " wins for player 2\n");
+print(card(oth.end_of_game & oth.tied), " tied games\n");
+
+print("Except for full board, need to divide end-of-game states by two\n");
+
+start_timer(0);
+print("Computing force win states\n");
+compute(oth.p1force);
+compute(oth.p2force);
+print("Done, AEF algorithms took ", stop_timer(0), " seconds\n");
+print(card(oth.p1force), " states where player 1 can force a win\n");
+print(card(oth.p2force), " states where player 2 can force a win\n");
+
+for (int f in {4..bw*bh}) {
+  cond(card(oth.p1force & oth.pieces[f])>0,
+    print("\t", card(oth.p1force & oth.pieces[f]), " force wins for player 1, with ", f, " pieces\n"),
+    null
+  );
+}
+
+for (int f in {4..bw*bh}) {
+  cond(card(oth.p2force & oth.pieces[f])>0,
+    print("\t", card(oth.p1force & oth.pieces[f]), " force wins for player 2, with ", f, " pieces\n"),
+    null
+  );
+}
+
+print(card(oth.unfair1), " initial states where player 1 can force a win\n");
+print(card(oth.unfair2), " initial states where player 2 can force a win\n");
+

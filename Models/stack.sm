@@ -1,0 +1,72 @@
+
+// $Id$
+
+// Stack model.
+// Nasty version for saturation: push and pop modify every state variable!
+//
+
+pn stack(int depth, int vals) := {
+  for (int i in {1..depth}) {
+    place p[i];
+    bound(p[i]: vals-1);
+    partition(i:p[i]);
+  }
+  trans inc, dec, push, pop;
+  arcs(
+    inc : p[1],
+    p[1] : dec
+  );
+  inhibit(
+    p[1] : inc : vals-1,
+    p[depth] : push
+  );
+  for (int i in {1..depth}) {
+    arcs(
+      p[i] : push : tk(p[i]),
+      p[i] : pop  : tk(p[i])
+    );
+  }
+  for (int i in {2..depth}) {
+    arcs(
+      push  : p[i]    : tk(p[i-1]),
+      pop   : p[i-1]  : tk(p[i])
+    );
+  }
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+};
+
+# Warning - pn_no_init
+# Report + procgen
+# PNMarkingStyle VECTOR
+
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+bigint states(int d, int v) := cond(d==0, 1, v*states(d-1, v));
+bigint edges(int d, int v) :=
+  states(d,v) +           // can always pop
+  states(d-1, v) +        // can push when p[depth] is 0
+  states(d-1, v)*(v-1) +  // increments
+  states(d-1, v)*(v-1)-2; // decrements, less duplicates:
+                          // dec of [0, .., 0, 1] same as pop,
+                          // dec of [1, ..., 1, 1] same as push.
+
+
+int v := read_int("values");
+int d := read_int("depth");
+compute(v);
+compute(d);
+print("Stack with ", v, " values, depth ", d, "\n");
+print("Expecting ", states(d, v), " states and ", edges(d,v), " edges\n");
+compute(stack(d,v).na);
+print(stack(d,v).ns, " reachable states\n");
+print(stack(d,v).na, " edges\n\n");
+
+cond(states(d,v) != stack(d,v).ns,
+  print("We didn't get the expected number of states!\n\n"), 
+  cond(edges(d,v) != stack(d,v).na,
+    print("We didn't get the expected number of edges!\n\n"), 
+    print("Everything matched theory :^)\n\n")
+  )
+);

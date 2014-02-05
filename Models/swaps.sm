@@ -1,0 +1,40 @@
+
+// $Id$
+
+/*
+    Model of a list of N distinct integers, where operations are
+    to exchange two neighboring integers (giving N! reachable states).
+*/
+
+bigint fact(int n) := cond(n<2, 1, n*fact(n-1));
+
+pn swaps(int N) := {
+  for (int i in {1..N}) {
+    place a[i];
+    init(a[i]:i);
+    partition(a[i]);
+    bound(a[i]:N);
+  }
+  for (int i in {2..N}) {
+    trans t[i];
+    arcs(
+      a[i-1] : t[i] : tk(a[i-1]),   a[i] : t[i] : tk(a[i]),
+      t[i] : a[i-1] : tk(a[i]),     t[i] : a[i] : tk(a[i-1])
+    );
+  }
+  bigint ns := num_states(false);
+};
+
+# StateDisplayOrder LEXICAL
+# Report + procgen
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+
+int N := read_int("the array size");
+compute(N);
+
+print("Expecting ", fact(N), " states\n");
+
+compute(swaps(N).ns);
+
+print("Swaps ", N, " has ", swaps(N).ns, " states\n");

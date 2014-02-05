@@ -1,0 +1,149 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Generate an instance of the queen cover problem
+#
+
+#1 : i
+#2 : j
+#3 : N
+cover()
+{
+  printf "\n// Make sure we cover square %d,%d\n\n" $1 $2
+# check column
+  i="1"
+  while [ $i -le $3 ]; do
+    if [ $i -ne $1 ]; then
+      printf "(q_%d_%d>0) | " $i $2
+    fi
+    i=$[i + 1]
+  done
+  printf "\n"
+# check row
+  j="1"
+  while [ $j -le $3 ]; do
+    if [ $j -ne $2 ]; then
+      printf "(q_%d_%d>0) | " $1 $j
+    fi
+    j=$[j + 1]
+  done
+  printf "\n"
+# check diagonal: NW
+  i=$1
+  j=$2
+  p="0"
+  while [ $i -gt 1 -a $j -gt 1 ]; do
+    i=$[i - 1]
+    j=$[j - 1]
+    printf "(q_%d_%d>0) | " $i $j
+    p="1"
+  done
+  if [ $p -gt 0 ]; then
+    printf "\n"
+  fi
+# check diagonal: SE
+  i=$1
+  j=$2
+  p="0"
+  while [ $i -lt $3 -a $j -lt $3 ]; do
+    i=$[i + 1]
+    j=$[j + 1]
+    printf "(q_%d_%d>0) | " $i $j
+    p="1"
+  done
+  if [ $p -gt 0 ]; then
+    printf "\n"
+  fi
+# check diagonal: NE
+  i=$1
+  j=$2
+  p="0"
+  while [ $i -gt 1 -a $j -lt $3 ]; do
+    i=$[i - 1]
+    j=$[j + 1]
+    printf "(q_%d_%d>0) | " $i $j
+    p="1"
+  done
+  if [ $p -gt 0 ]; then
+    printf "\n"
+  fi
+# check diagonal: SW
+  i=$1
+  j=$2
+  p="0"
+  while [ $i -lt $3 -a $j -gt 1 ]; do
+    i=$[i + 1]
+    j=$[j - 1]
+    printf "(q_%d_%d>0) | " $i $j
+    p="1"
+  done
+  if [ $p -gt 0 ]; then
+    printf "\n"
+  fi
+# ourself
+  printf "(q_%d_%d>0);\n" $1 $2
+}
+
+
+if [ $# -lt 1 ]; then
+  printf "Usage: %s N\nwhere:\n\tN is the dimension of the board\n" $0
+  exit 1
+fi
+printf "\n/*\n    Queen cover problem.\n\n"
+printf "    Try to put queens onto a %d x %d chessboard so that\n" $1 $1
+printf "    all empty squares are attacked by some queen\n*/\n\n"
+
+printf "// Define the state: for each square, count number of queens\n"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\nint ";
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $m -gt 1 ]; then
+      printf ", "
+    fi
+    printf "q_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  printf " in {0..1};"
+  n=$[n + 1]
+done
+
+printf "\n"
+
+n="1"
+while [ $n -le $1 ]; do
+  m="1"
+  while [ $m -le $1 ]; do
+    cover $n $m $1
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+
+q="1"
+while [ $q -lt $1 ]; do
+  printf "\n\n// Get solution for %d queens\n\n" $q
+  printf "satisfiable cover_with_%d :=" $q
+  n="1"
+  p="0"
+  while [ $n -le $1 ]; do
+    printf "\n"
+    m="1"
+    while [ $m -le $1 ]; do
+      if [ $p -gt 0 ]; then
+        printf "   + "
+      else
+        printf "     "
+        p="1"
+      fi
+      printf "q_%d_%d" $n $m
+      m=$[m + 1]
+    done
+    n=$[n + 1]
+  done
+  printf " == %d;\n" $q
+  q=$[q + 1]
+done
+

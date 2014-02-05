@@ -1,0 +1,226 @@
+
+// $Id$
+
+/* 
+   Rubik's cube.
+
+   Partition: states on top of rotations,
+              edges on top of corners.
+
+   No rotations.
+   
+*/
+
+evm rubik_norot := {
+
+  intvar wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg;
+
+  intvar wog, wbo, wrb, wgr, ygo, yob, ybr, yrg;
+
+  range({wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg} : {1..12});
+  
+  range({wog, wbo, wrb, wgr, ygo, yob, ybr, yrg} : {1..8});
+
+  init(
+    wo:1, wg:2, wr:3, wb:4, 
+    yo:5, yg:6, yr:7, yb:8, 
+    ob:9, og:10, rb:11, rg:12,
+    wog:1, wbo:2, wrb:3, wgr:4, ygo:5, yob:6, ybr:7, yrg:8
+  );
+
+  partition(
+    wo, wg, og, wr, rg, wb, ob, rb, yo, yg, yr, yb,
+    wgr, wrb, wog, wbo, yob, ygo, yrg, ybr
+  );
+
+  event
+    // Clockwise
+    white_1, orange_1, green_1, blue_1, red_1, yellow_1,
+    // flips
+    white_2, orange_2, green_2, blue_2, red_2, yellow_2,
+    // counter clockwise
+    white_3, orange_3, green_3, blue_3, red_3, yellow_3;
+  
+  assign(
+    //
+    // Clockwise rotations:
+    //
+
+    wo : white_1 : eval(wg),
+    wg : white_1 : eval(wr),
+    wr : white_1 : eval(wb),
+    wb : white_1 : eval(wo),
+    wog : white_1 : eval(wgr),
+    wgr : white_1 : eval(wrb),
+    wrb : white_1 : eval(wbo),
+    wbo : white_1 : eval(wog),
+
+    wo : orange_1 : eval(ob),
+    ob : orange_1 : eval(yo),
+    yo : orange_1 : eval(og),
+    og : orange_1 : eval(wo),
+    wog : orange_1 : eval(wbo),
+    wbo : orange_1 : eval(yob),
+    yob : orange_1 : eval(ygo),
+    ygo : orange_1 : eval(wog),
+
+    wg : green_1 : eval(og),
+    og : green_1 : eval(yg),
+    yg : green_1 : eval(rg),
+    rg : green_1 : eval(wg),
+    wog : green_1 : eval(ygo),
+    ygo : green_1 : eval(yrg),
+    yrg : green_1 : eval(wgr),
+    wgr : green_1 : eval(wog),
+
+    wb : blue_1 : eval(rb),
+    rb : blue_1 : eval(yb),
+    yb : blue_1 : eval(ob),
+    ob : blue_1 : eval(wb),
+    wrb : blue_1 : eval(ybr),
+    ybr : blue_1 : eval(yob),
+    yob : blue_1 : eval(wbo),
+    wbo : blue_1 : eval(wrb),
+
+    wr : red_1 : eval(rg),
+    rg : red_1 : eval(yr),
+    yr : red_1 : eval(rb),
+    rb : red_1 : eval(wr),
+    wgr : red_1 : eval(yrg),
+    yrg : red_1 : eval(ybr),
+    ybr : red_1 : eval(wrb),
+    wrb : red_1 : eval(wgr),
+
+    yo : yellow_1: eval(yb),
+    yb : yellow_1: eval(yr),
+    yr : yellow_1: eval(yg),
+    yg : yellow_1: eval(yo),
+    ygo : yellow_1: eval(yob),
+    yob : yellow_1: eval(ybr),
+    ybr : yellow_1: eval(yrg),
+    yrg : yellow_1: eval(ygo),
+
+    //
+    // Double rotations:
+    //
+
+    wo : white_2 : eval(wr),
+    wg : white_2 : eval(wb),
+    wr : white_2 : eval(wo),
+    wb : white_2 : eval(wg),
+    wog : white_2 : eval(wrb),
+    wgr : white_2 : eval(wbo),
+    wrb : white_2 : eval(wog),
+    wbo : white_2 : eval(wgr),
+
+    wo : orange_2 : eval(yo),
+    ob : orange_2 : eval(og),
+    yo : orange_2 : eval(wo),
+    og : orange_2 : eval(ob),
+    wog : orange_2 : eval(yob),
+    wbo : orange_2 : eval(ygo),
+    yob : orange_2 : eval(wog),
+    ygo : orange_2 : eval(wbo),
+
+    wg : green_2 : eval(yg),
+    og : green_2 : eval(rg),
+    yg : green_2 : eval(wg),
+    rg : green_2 : eval(og),
+    wog : green_2 : eval(yrg),
+    ygo : green_2 : eval(wgr),
+    yrg : green_2 : eval(wog),
+    wgr : green_2 : eval(ygo),
+
+    wb : blue_2 : eval(yb),
+    rb : blue_2 : eval(ob),
+    yb : blue_2 : eval(wb),
+    ob : blue_2 : eval(rb),
+    wrb : blue_2 : eval(yob),
+    ybr : blue_2 : eval(wbo),
+    yob : blue_2 : eval(wrb),
+    wbo : blue_2 : eval(ybr),
+
+    wr : red_2 : eval(yr),
+    rg : red_2 : eval(rb),
+    yr : red_2 : eval(wr),
+    rb : red_2 : eval(rg),
+    wgr : red_2 : eval(ybr),
+    yrg : red_2 : eval(wrb),
+    ybr : red_2 : eval(wgr),
+    wrb : red_2 : eval(yrg),
+
+    yo : yellow_2 : eval(yr),
+    yb : yellow_2 : eval(yg),
+    yr : yellow_2 : eval(yo),
+    yg : yellow_2 : eval(yb),
+    ygo : yellow_2 : eval(ybr),
+    yob : yellow_2 : eval(yrg),
+    ybr : yellow_2 : eval(ygo),
+    yrg : yellow_2 : eval(yob),
+
+    //
+    // Counter clockwise rotations:
+    //
+
+    wo : white_3 : eval(wb),
+    wg : white_3 : eval(wo),
+    wr : white_3 : eval(wg),
+    wb : white_3 : eval(wr),
+    wog : white_3 : eval(wbo),
+    wgr : white_3 : eval(wog),
+    wrb : white_3 : eval(wgr),
+    wbo : white_3 : eval(wrb),
+
+    wo : orange_3 : eval(og),
+    ob : orange_3 : eval(wo),
+    yo : orange_3 : eval(ob),
+    og : orange_3 : eval(yo),
+    wog : orange_3 : eval(ygo),
+    wbo : orange_3 : eval(wog),
+    yob : orange_3 : eval(wbo),
+    ygo : orange_3 : eval(yob),
+
+    wg : green_3 : eval(rg),
+    og : green_3 : eval(wg),
+    yg : green_3 : eval(og),
+    rg : green_3 : eval(yg),
+    wog : green_3 : eval(wgr),
+    ygo : green_3 : eval(wog),
+    yrg : green_3 : eval(ygo),
+    wgr : green_3 : eval(yrg),
+
+    wb : blue_3 : eval(ob),
+    rb : blue_3 : eval(wb),
+    yb : blue_3 : eval(rb),
+    ob : blue_3 : eval(yb),
+    wrb : blue_3 : eval(wbo),
+    ybr : blue_3 : eval(wrb),
+    yob : blue_3 : eval(ybr),
+    wbo : blue_3 : eval(yob),
+
+    wr : red_3 : eval(rb),
+    rg : red_3 : eval(wr),
+    yr : red_3 : eval(rg),
+    rb : red_3 : eval(yr),
+    wgr : red_3 : eval(wrb),
+    yrg : red_3 : eval(wgr),
+    ybr : red_3 : eval(yrg),
+    wrb : red_3 : eval(ybr),
+
+    yo : yellow_3 : eval(yg),
+    yb : yellow_3 : eval(yo),
+    yr : yellow_3 : eval(yb),
+    yg : yellow_3 : eval(yr),
+    ygo : yellow_3 : eval(yrg),
+    yob : yellow_3 : eval(ygo),
+    ybr : yellow_3 : eval(yob),
+    yrg : yellow_3 : eval(ybr)
+  );
+  
+  bigint m1 := num_states(false);
+};
+
+#Report + procgen
+
+rubik_norot.m1;
+

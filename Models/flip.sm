@@ -1,0 +1,45 @@
+
+// $Id$
+
+//
+//  Simple model: N bits, each can be flipped once.
+//  Useful because we know the theoretical answers :^)
+//
+
+bigint two2i(int i) := cond(i<1, 1, 2*two2i(i-1));
+bigint fact(int i) := cond(i<2, 1, i*fact(i-1));
+
+pn flip(int n) := {
+ place dumb;
+ init(dumb:n);
+ for (int i in {1..n}) {
+    place p[i];
+    trans t[i];
+    arcs(dumb:t[i], t[i] : p[i]);
+    inhibit(p[i]:t[i]);
+  }
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+  bigint np := num_paths(initial, potential(tk(dumb)==0));
+};
+
+int N := read_int("N");
+compute(N);
+
+# OutputThousandSeparator ","
+
+print("Theoretical:\n",
+      two2i(N), " states\n",
+      N*two2i(N-1), " arcs\n",
+      fact(N), " paths\n");
+
+print("Computing...\n\f");
+
+# Report + procgen, num_paths
+compute(flip(N).na);
+compute(flip(N).np);
+
+print("Measured:\n");
+print(flip(N).ns, " states\n");
+print(flip(N).na, " arcs\n");
+print(flip(N).np, " paths\n");

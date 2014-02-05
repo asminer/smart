@@ -1,0 +1,109 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Generate an instance of maximal N-knights in ICP format
+#
+
+# $1 is i
+# $2 is j
+# $3 is N
+no_attacks()
+{
+  rpo=$[ $1 + 1 ]
+  rpt=$[ $1 + 2 ]
+  jmt=$[ $2 - 2 ]
+  jmo=$[ $2 - 1 ]
+  jpo=$[ $2 + 1 ]
+  jpt=$[ $2 + 2 ]
+  if [ $rpo -le $3 ]; then
+    if [ $jmt -gt 0 ]; then
+      printf "k_%d_%d + k_%d_%d < 2;  " $1 $2 $rpo $jmt
+    fi
+    if [ $jpt -le $3 ]; then
+      printf "k_%d_%d + k_%d_%d < 2;  " $1 $2 $rpo $jpt
+    fi
+  fi
+  if [ $rpt -le $3 ]; then
+    if [ $jmo -gt 0 ]; then
+      printf "k_%d_%d + k_%d_%d < 2;  " $1 $2 $rpt $jmo
+    fi
+    if [ $jpo -le $3 ]; then
+      printf "k_%d_%d + k_%d_%d < 2;  " $1 $2 $rpt $jpo
+    fi
+  fi
+  printf "\n"
+}
+
+if [ $# -lt 1 ]; then
+  printf "Usage: %s N\n" $0
+  exit 1
+fi
+printf "\n// \$Id$ \n\n/*\n    %d Knights (maximize) problem.\n\n" $1
+printf "    Try to put as many knights onto a chessboard with none attacking\n"
+printf "    Encoding: for each square, count the number of knights\n*/\n\n"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\nint ";
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $m -gt 1 ]; then
+      printf ", "
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  printf " in {0..1};"
+  n=$[n + 1]
+done
+printf "\n\n// No attacks:\n\n"
+n="1"
+while [ $n -lt $1 ]; do
+  m="1"
+  while [ $m -le $1 ]; do
+    no_attacks $n $m $1
+    m=$[m + 1]
+  done
+  printf "\n"
+  n=$[n + 1]
+done
+printf "// Make sure we get at least the trivial solution\n"
+p="0"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\n"
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $p -gt "0" ]; then
+      printf " + ";
+    else
+      printf "   ";
+      p="1"
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+half=$[ ( $1 * $1 ) / 2 ]
+printf " >= %d;\n\n" $half
+printf "// Get solution\n"
+printf "maximize most_knights := "
+p="0"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\n"
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $p -gt "0" ]; then
+      printf " + ";
+    else
+      printf "   ";
+      p="1"
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+printf ";\n\n"

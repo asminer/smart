@@ -1,0 +1,468 @@
+
+// $Id$
+
+/*
+    For speed, put the known squares at the top, and unknown below that.
+*/
+
+// known vars
+
+int x01 in {12};
+int x03 in { 6};
+int x08 in { 0};
+int x09 in {11};
+int x0a in {10};
+int x0c in { 5};
+
+int x12 in { 5};
+int x15 in { 4};
+int x17 in { 0};
+int x19 in { 2};
+int x1a in { 1};
+int x1b in {14};
+int x1d in {13};
+int x1f in { 7};
+
+int x20 in {14};
+int x22 in {13};
+int x26 in { 7};
+int x27 in { 6};
+int x2a in { 5};
+int x2b in {12};
+int x2c in { 1};
+
+int x30 in { 0};
+int x36 in { 5};
+int x38 in { 8};
+int x39 in {13};
+int x3f in {11};
+
+int x41 in {14};
+int x44 in { 5};
+int x45 in { 1};
+int x47 in { 3};
+int x4a in {11};
+int x4e in { 4};
+int x4f in { 8};
+
+int x53 in { 2};
+int x55 in { 6};
+int x59 in { 1};
+int x5a in { 4};
+int x5b in {15};
+int x5c in { 7};
+int x5d in { 5};
+int x5e in {12};
+
+int x62 in { 7};
+int x64 in { 4};
+int x68 in { 6};
+int x6d in { 9};
+int x6f in {13};
+
+int x73 in { 9};
+int x74 in {11};
+int x76 in {15};
+int x7b in { 2};
+int x7e in {10};
+
+int x81 in {13};
+int x84 in {15};
+int x89 in {10};
+int x8b in { 5};
+int x8c in { 6};
+
+int x90 in { 2};
+int x92 in { 4};
+int x97 in { 8};
+int x9b in { 3};
+int x9d in {11};
+
+int xa1 in { 5};
+int xa2 in {11};
+int xa3 in {12};
+int xa4 in { 7};
+int xa5 in { 2};
+int xa6 in { 3};
+int xaa in {14};
+int xac in {13};
+
+int xb0 in { 8};
+int xb1 in {10};
+int xb5 in { 0};
+int xb8 in {13};
+int xba in { 2};
+int xbb in { 9};
+int xbe in { 7};
+
+int xc0 in { 4};
+int xc6 in { 9};
+int xc7 in { 7};
+int xc9 in {14};
+int xcf in {15};
+
+int xd3 in {10};
+int xd4 in { 8};
+int xd5 in {14};
+int xd8 in { 3};
+int xd9 in {15};
+int xdd in { 0};
+int xdf in { 6};
+
+int xe0 in {11};
+int xe2 in { 8};
+int xe4 in { 3};
+int xe5 in {10};
+int xe6 in { 4};
+int xe8 in { 1};
+int xea in { 9};
+int xed in { 7};
+
+int xf3 in { 7};
+int xf5 in {15};
+int xf6 in { 0};
+int xf7 in { 5};
+int xfc in { 8};
+int xfe in {11};
+
+// Unknowns
+int
+  x00,      x02,      x04, x05, x06, x07,                x0b,      x0d, x0e, x0f,
+  x10, x11,      x13, x14,      x16,      x18,                x1c,      x1e,     
+       x21,      x23, x24, x25,           x28, x29,                x2d, x2e, x2f,
+       x31, x32, x33, x34, x35,      x37,           x3a, x3b, x3c, x3d, x3e,     
+  x40,      x42, x43,           x46,      x48, x49,      x4b, x4c, x4d,          
+  x50, x51, x52,      x54,      x56, x57, x58,                               x5f,
+  x60, x61,      x63,      x65, x66, x67,      x69, x6a, x6b, x6c,      x6e,     
+  x70, x71, x72,           x75,      x77, x78, x79, x7a,      x7c, x7d,      x7f,
+  x80,      x82, x83,      x85, x86, x87, x88,      x8a,           x8d, x8e, x8f,
+       x91,      x93, x94, x95, x96,      x98, x99, x9a,      x9c,      x9e, x9f,
+  xa0,                               xa7, xa8, xa9,      xab,      xad, xae, xaf,
+            xb2, xb3, xb4,      xb6, xb7,      xb9,           xbc, xbd,      xbf,
+       xc1, xc2, xc3, xc4, xc5,           xc8,      xca, xcb, xcc, xcd, xce,     
+  xd0, xd1, xd2,                xd6, xd7,           xda, xdb, xdc,      xde,     
+       xe1,      xe3,                xe7,      xe9,      xeb, xec,      xee, xef,
+  xf0, xf1, xf2,      xf4,                xf8, xf9, xfa, xfb,      xfd,      xff
+  in {0..15};
+
+// rows have no duplicates
+
+unique(x00, x01, x02, x03, x04, x05, x06, x07, x08, x09, x0a, x0b, x0c, x0d, x0e, x0f);
+unique(x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x1a, x1b, x1c, x1d, x1e, x1f);
+unique(x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x2a, x2b, x2c, x2d, x2e, x2f);
+unique(x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x3a, x3b, x3c, x3d, x3e, x3f);
+unique(x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x4a, x4b, x4c, x4d, x4e, x4f);
+unique(x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x5a, x5b, x5c, x5d, x5e, x5f);
+unique(x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x6a, x6b, x6c, x6d, x6e, x6f);
+unique(x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x7a, x7b, x7c, x7d, x7e, x7f);
+unique(x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x8a, x8b, x8c, x8d, x8e, x8f);
+unique(x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x9a, x9b, x9c, x9d, x9e, x9f);
+unique(xa0, xa1, xa2, xa3, xa4, xa5, xa6, xa7, xa8, xa9, xaa, xab, xac, xad, xae, xaf);
+unique(xb0, xb1, xb2, xb3, xb4, xb5, xb6, xb7, xb8, xb9, xba, xbb, xbc, xbd, xbe, xbf);
+unique(xc0, xc1, xc2, xc3, xc4, xc5, xc6, xc7, xc8, xc9, xca, xcb, xcc, xcd, xce, xcf);
+unique(xd0, xd1, xd2, xd3, xd4, xd5, xd6, xd7, xd8, xd9, xda, xdb, xdc, xdd, xde, xdf);
+unique(xe0, xe1, xe2, xe3, xe4, xe5, xe6, xe7, xe8, xe9, xea, xeb, xec, xed, xee, xef);
+unique(xf0, xf1, xf2, xf3, xf4, xf5, xf6, xf7, xf8, xf9, xfa, xfb, xfc, xfd, xfe, xff);
+
+// columns have no duplicates
+
+unique(x00, x10, x20, x30, x40, x50, x60, x70, x80, x90, xa0, xb0, xc0, xd0, xe0, xf0);
+unique(x01, x11, x21, x31, x41, x51, x61, x71, x81, x91, xa1, xb1, xc1, xd1, xe1, xf1);
+unique(x02, x12, x22, x32, x42, x52, x62, x72, x82, x92, xa2, xb2, xc2, xd2, xe2, xf2);
+unique(x03, x13, x23, x33, x43, x53, x63, x73, x83, x93, xa3, xb3, xc3, xd3, xe3, xf3);
+unique(x04, x14, x24, x34, x44, x54, x64, x74, x84, x94, xa4, xb4, xc4, xd4, xe4, xf4);
+unique(x05, x15, x25, x35, x45, x55, x65, x75, x85, x95, xa5, xb5, xc5, xd5, xe5, xf5);
+unique(x06, x16, x26, x36, x46, x56, x66, x76, x86, x96, xa6, xb6, xc6, xd6, xe6, xf6);
+unique(x07, x17, x27, x37, x47, x57, x67, x77, x87, x97, xa7, xb7, xc7, xd7, xe7, xf7);
+unique(x08, x18, x28, x38, x48, x58, x68, x78, x88, x98, xa8, xb8, xc8, xd8, xe8, xf8);
+unique(x09, x19, x29, x39, x49, x59, x69, x79, x89, x99, xa9, xb9, xc9, xd9, xe9, xf9);
+unique(x0a, x1a, x2a, x3a, x4a, x5a, x6a, x7a, x8a, x9a, xaa, xba, xca, xda, xea, xfa);
+unique(x0b, x1b, x2b, x3b, x4b, x5b, x6b, x7b, x8b, x9b, xab, xbb, xcb, xdb, xeb, xfb);
+unique(x0c, x1c, x2c, x3c, x4c, x5c, x6c, x7c, x8c, x9c, xac, xbc, xcc, xdc, xec, xfc);
+unique(x0d, x1d, x2d, x3d, x4d, x5d, x6d, x7d, x8d, x9d, xad, xbd, xcd, xdd, xed, xfd);
+unique(x0e, x1e, x2e, x3e, x4e, x5e, x6e, x7e, x8e, x9e, xae, xbe, xce, xde, xee, xfe);
+unique(x0f, x1f, x2f, x3f, x4f, x5f, x6f, x7f, x8f, x9f, xaf, xbf, xcf, xdf, xef, xff);
+
+// boxes have no duplicates
+
+unique( x00, x01, x02, x03, x10, x11, x12, x13, x20, x21, x22, x23, x30, x31, x32, x33);
+unique( x04, x05, x06, x07, x14, x15, x16, x17, x24, x25, x26, x27, x34, x35, x36, x37);
+unique( x08, x09, x0a, x0b, x18, x19, x1a, x1b, x28, x29, x2a, x2b, x38, x39, x3a, x3b);
+unique( x0c, x0d, x0e, x0f, x1c, x1d, x1e, x1f, x2c, x2d, x2e, x2f, x3c, x3d, x3e, x3f);
+unique( x40, x41, x42, x43, x50, x51, x52, x53, x60, x61, x62, x63, x70, x71, x72, x73);
+unique( x44, x45, x46, x47, x54, x55, x56, x57, x64, x65, x66, x67, x74, x75, x76, x77);
+unique( x48, x49, x4a, x4b, x58, x59, x5a, x5b, x68, x69, x6a, x6b, x78, x79, x7a, x7b);
+unique( x4c, x4d, x4e, x4f, x5c, x5d, x5e, x5f, x6c, x6d, x6e, x6f, x7c, x7d, x7e, x7f);
+unique( x80, x81, x82, x83, x90, x91, x92, x93, xa0, xa1, xa2, xa3, xb0, xb1, xb2, xb3);
+unique( x84, x85, x86, x87, x94, x95, x96, x97, xa4, xa5, xa6, xa7, xb4, xb5, xb6, xb7);
+unique( x88, x89, x8a, x8b, x98, x99, x9a, x9b, xa8, xa9, xaa, xab, xb8, xb9, xba, xbb);
+unique( x8c, x8d, x8e, x8f, x9c, x9d, x9e, x9f, xac, xad, xae, xaf, xbc, xbd, xbe, xbf);
+unique( xc0, xc1, xc2, xc3, xd0, xd1, xd2, xd3, xe0, xe1, xe2, xe3, xf0, xf1, xf2, xf3);
+unique( xc4, xc5, xc6, xc7, xd4, xd5, xd6, xd7, xe4, xe5, xe6, xe7, xf4, xf5, xf6, xf7);
+unique( xc8, xc9, xca, xcb, xd8, xd9, xda, xdb, xe8, xe9, xea, xeb, xf8, xf9, xfa, xfb);
+unique( xcc, xcd, xce, xcf, xdc, xdd, xde, xdf, xec, xed, xee, xef, xfc, xfd, xfe, xff);
+
+// Measure
+
+satisfiable findsol := true;
+
+// check correctness
+
+satisfiable verifysol :=
+    (x00 == 9) & 
+    (x01 == 12) & 
+    (x02 == 1) & 
+    (x03 == 6) & 
+    (x04 == 2) & 
+    (x05 == 13) & 
+    (x06 == 14) & 
+    (x07 == 15) & 
+    (x08 == 0) & 
+    (x09 == 11) & 
+    (x0a == 10) & 
+    (x0b == 7) & 
+    (x0c == 5) & 
+    (x0d == 3) & 
+    (x0e == 8) & 
+    (x0f == 4) & 
+    (x10 == 10) & 
+    (x11 == 3) & 
+    (x12 == 5) & 
+    (x13 == 8) & 
+    (x14 == 12) & 
+    (x15 == 4) & 
+    (x16 == 11) & 
+    (x17 == 0) & 
+    (x18 == 9) & 
+    (x19 == 2) & 
+    (x1a == 1) & 
+    (x1b == 14) & 
+    (x1c == 15) & 
+    (x1d == 13) & 
+    (x1e == 6) & 
+    (x1f == 7) & 
+    (x20 == 14) & 
+    (x21 == 15) & 
+    (x22 == 13) & 
+    (x23 == 11) & 
+    (x24 == 9) & 
+    (x25 == 8) & 
+    (x26 == 7) & 
+    (x27 == 6) & 
+    (x28 == 4) & 
+    (x29 == 3) & 
+    (x2a == 5) & 
+    (x2b == 12) & 
+    (x2c == 1) & 
+    (x2d == 2) & 
+    (x2e == 0) & 
+    (x2f == 10) & 
+    (x30 == 0) & 
+    (x31 == 7) & 
+    (x32 == 2) & 
+    (x33 == 4) & 
+    (x34 == 10) & 
+    (x35 == 3) & 
+    (x36 == 5) & 
+    (x37 == 1) & 
+    (x38 == 8) & 
+    (x39 == 13) & 
+    (x3a == 15) & 
+    (x3b == 6) & 
+    (x3c == 9) & 
+    (x3d == 12) & 
+    (x3e == 14) & 
+    (x3f == 11) & 
+    (x40 == 12) & 
+    (x41 == 14) & 
+    (x42 == 6) & 
+    (x43 == 0) & 
+    (x44 == 5) & 
+    (x45 == 1) & 
+    (x46 == 10) & 
+    (x47 == 3) & 
+    (x48 == 7) & 
+    (x49 == 9) & 
+    (x4a == 11) & 
+    (x4b == 13) & 
+    (x4c == 2) & 
+    (x4d == 15) & 
+    (x4e == 4) & 
+    (x4f == 8) & 
+    (x50 == 13) & 
+    (x51 == 11) & 
+    (x52 == 10) & 
+    (x53 == 2) & 
+    (x54 == 0) & 
+    (x55 == 6) & 
+    (x56 == 8) & 
+    (x57 == 9) & 
+    (x58 == 14) & 
+    (x59 == 1) & 
+    (x5a == 4) & 
+    (x5b == 15) & 
+    (x5c == 7) & 
+    (x5d == 5) & 
+    (x5e == 12) & 
+    (x5f == 3) & 
+    (x60 == 15) & 
+    (x61 == 8) & 
+    (x62 == 7) & 
+    (x63 == 5) & 
+    (x64 == 4) & 
+    (x65 == 12) & 
+    (x66 == 2) & 
+    (x67 == 14) & 
+    (x68 == 6) & 
+    (x69 == 0) & 
+    (x6a == 3) & 
+    (x6b == 10) & 
+    (x6c == 11) & 
+    (x6d == 9) & 
+    (x6e == 1) & 
+    (x6f == 13) & 
+    (x70 == 1) & 
+    (x71 == 4) & 
+    (x72 == 3) & 
+    (x73 == 9) & 
+    (x74 == 11) & 
+    (x75 == 7) & 
+    (x76 == 15) & 
+    (x77 == 13) & 
+    (x78 == 5) & 
+    (x79 == 8) & 
+    (x7a == 12) & 
+    (x7b == 2) & 
+    (x7c == 0) & 
+    (x7d == 6) & 
+    (x7e == 10) & 
+    (x7f == 14) & 
+    (x80 == 7) & 
+    (x81 == 13) & 
+    (x82 == 0) & 
+    (x83 == 1) & 
+    (x84 == 15) & 
+    (x85 == 9) & 
+    (x86 == 12) & 
+    (x87 == 4) & 
+    (x88 == 11) & 
+    (x89 == 10) & 
+    (x8a == 8) & 
+    (x8b == 5) & 
+    (x8c == 6) & 
+    (x8d == 14) & 
+    (x8e == 3) & 
+    (x8f == 2) & 
+    (x90 == 2) & 
+    (x91 == 9) & 
+    (x92 == 4) & 
+    (x93 == 14) & 
+    (x94 == 13) & 
+    (x95 == 5) & 
+    (x96 == 6) & 
+    (x97 == 8) & 
+    (x98 == 12) & 
+    (x99 == 7) & 
+    (x9a == 0) & 
+    (x9b == 3) & 
+    (x9c == 10) & 
+    (x9d == 11) & 
+    (x9e == 15) & 
+    (x9f == 1) & 
+    (xa0 == 6) & 
+    (xa1 == 5) & 
+    (xa2 == 11) & 
+    (xa3 == 12) & 
+    (xa4 == 7) & 
+    (xa5 == 2) & 
+    (xa6 == 3) & 
+    (xa7 == 10) & 
+    (xa8 == 15) & 
+    (xa9 == 4) & 
+    (xaa == 14) & 
+    (xab == 1) & 
+    (xac == 13) & 
+    (xad == 8) & 
+    (xae == 9) & 
+    (xaf == 0) & 
+    (xb0 == 8) & 
+    (xb1 == 10) & 
+    (xb2 == 15) & 
+    (xb3 == 3) & 
+    (xb4 == 14) & 
+    (xb5 == 0) & 
+    (xb6 == 1) & 
+    (xb7 == 11) & 
+    (xb8 == 13) & 
+    (xb9 == 6) & 
+    (xba == 2) & 
+    (xbb == 9) & 
+    (xbc == 12) & 
+    (xbd == 4) & 
+    (xbe == 7) & 
+    (xbf == 5) & 
+    (xc0 == 4) & 
+    (xc1 == 0) & 
+    (xc2 == 12) & 
+    (xc3 == 13) & 
+    (xc4 == 1) & 
+    (xc5 == 11) & 
+    (xc6 == 9) & 
+    (xc7 == 7) & 
+    (xc8 == 2) & 
+    (xc9 == 14) & 
+    (xca == 6) & 
+    (xcb == 8) & 
+    (xcc == 3) & 
+    (xcd == 10) & 
+    (xce == 5) & 
+    (xcf == 15) & 
+    (xd0 == 5) & 
+    (xd1 == 1) & 
+    (xd2 == 9) & 
+    (xd3 == 10) & 
+    (xd4 == 8) & 
+    (xd5 == 14) & 
+    (xd6 == 13) & 
+    (xd7 == 12) & 
+    (xd8 == 3) & 
+    (xd9 == 15) & 
+    (xda == 7) & 
+    (xdb == 11) & 
+    (xdc == 4) & 
+    (xdd == 0) & 
+    (xde == 2) & 
+    (xdf == 6) & 
+    (xe0 == 11) & 
+    (xe1 == 6) & 
+    (xe2 == 8) & 
+    (xe3 == 15) & 
+    (xe4 == 3) & 
+    (xe5 == 10) & 
+    (xe6 == 4) & 
+    (xe7 == 2) & 
+    (xe8 == 1) & 
+    (xe9 == 5) & 
+    (xea == 9) & 
+    (xeb == 0) & 
+    (xec == 14) & 
+    (xed == 7) & 
+    (xee == 13) & 
+    (xef == 12) & 
+    (xf0 == 3) & 
+    (xf1 == 2) & 
+    (xf2 == 14) & 
+    (xf3 == 7) & 
+    (xf4 == 6) & 
+    (xf5 == 15) & 
+    (xf6 == 0) & 
+    (xf7 == 5) & 
+    (xf8 == 10) & 
+    (xf9 == 12) & 
+    (xfa == 13) & 
+    (xfb == 4) & 
+    (xfc == 8) & 
+    (xfd == 1) & 
+    (xfe == 11) & 
+    (xff == 9);
+

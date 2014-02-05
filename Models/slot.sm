@@ -1,0 +1,43 @@
+// FILE: slot.sm
+// An example of state-space generation.
+
+print("Slotted ring network model with one slot per level\n\n");
+
+pn slot(int N) := {
+  for (int i in {0..N-1}) {
+    place pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]; 
+    trans other[i], owner[i], write[i], go[i], give[i], put[i], used[i],
+          free[i]; 
+//    partition({pA[i],pB[i],pC[i],pD[i],pE[i],pF[i],pG[i],pH[i]});
+    partition(
+      pH[i], pG[i], pF[i], pE[i], pD[i], pC[i], pB[i], pA[i]
+      // pH[i], pC[i], pE[i], pG[i], pF[i], pD[i], pB[i], pA[i]
+    );
+    bound(
+      {pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]} : 1
+    );
+    init(pC[i]:1, pE[i]:1);
+  } 
+  for (int i in {0..N-1}) {
+    arcs(
+      used[(i+1)%N]:pA[i], pA[i]:other[i], pA[i]:owner[i],
+	    free[(i+1)%N]:pB[i], owner[i]:pB[i], pB[i]:go[i], pB[i]:write[i],
+      give[i]:pC[i], put[i]:pC[i], pC[i]:free[(i+1)%N], pC[i]:used[(i+1)%N],
+	    write[i]:pD[i], other[i]:pD[i], pD[i]:put[i], 
+      give[i]:pE[i], pE[i]:free[i], 
+      free[i]:pF[i], used[i]:pF[i], pF[i]:give[i], pF[i]:put[i], 
+      put[i]:pG[i], pG[i]:used[i],
+      go[i]:pH[i], pH[i]:give[i]
+    );
+  }
+  bigint m1 := num_states(false);
+};
+
+# Report + procgen
+
+int N := read_int("number of slots"); 
+compute(slot(N).m1);
+
+print("Number of states for slotted-ring, N=", N, ":\n");
+print("\t", slot(N).m1, "\n");
+

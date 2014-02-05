@@ -1,0 +1,90 @@
+
+// $Id$
+
+/*
+    Game of nim:
+
+    We have k piles of sticks, and at each turn, you remove some sticks
+    from one of the piles (at least one stick, but as many as you like).
+    If all piles of sticks are empty at the start of your turn, you lose.
+
+    For this model, we assume each pile initially contains N sticks.
+*/
+
+pn nim(int k, int N) := {
+  place choose, turn;
+  init(choose:1, turn:1);
+  for (int j in {1..k}) {
+    place a[j], remove[j];
+    init(a[j]:N);
+    bound(a[j]:N, remove[j]:1);
+    partition(a[j], remove[j]);
+    trans select[j], another[j], done[j];
+    hide(another[j], done[j]);
+    arcs(
+      a[j] : select[j], choose : select[j], select[j] : remove[j],
+      a[j] : another[j], remove[j] : another[j], another[j] : remove[j],
+      remove[j] : done[j], done[j] : choose,
+      turn : done[j] : tk(turn), done[j] : turn : tk(turn)%2 + 1
+    );
+
+    stateset empty[j] := cond(j==1, 
+                                potential( tk(a[j])==0 ),
+                                potential( tk(a[j])==0 ) & empty[j-1] );
+  }
+  partition(turn, choose);
+  bound(turn:2, choose:1);
+
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+
+  stateset p1turn := potential(tk(turn)==1);
+  stateset p2turn := potential(tk(turn)==2);
+
+  stateset p1wins := p2turn & empty[k];
+  stateset p2wins := p1turn & empty[k];
+
+  stateset force1 := reachable & AEF(p1turn, p1wins);
+  stateset force2 := reachable & AEF(p2turn, p2wins);
+  stateset stalemate := reachable \ (force1 | force2);
+
+  stateset unfair1 := force1 & initial;
+  stateset unfair2 := force2 & initial;
+};
+
+# Report + procgen //, num_paths
+
+# ReportThousandSeparator ","
+# OutputThousandSeparator ","
+
+# ExplicitUnfairAEF   specialized
+// # ExplicitUnfairAEF   iterative
+
+
+bigint pow(bigint x, int n) := cond(0==n, 1, x*pow(x,n-1));
+
+print("Game of Nim\n");
+int K := read_int("Number of piles");
+compute(K);
+int N := read_int("Number of sticks per pile");
+compute(N);
+
+cond(N==0, 
+  print("Only 1 state\n"),
+  print("Expecting ", 2*pow(N+1, K) - pow(2, K), " states\n")
+);
+
+model m := nim(K, N);
+compute(m.na);
+
+print("Reachable states: ", m.ns, "\n");
+print("#P1 win states: ", card(m.p1wins), "\n");
+print("#P2 win states: ", card(m.p2wins), "\n");
+/*
+print("P1 can win in: ", m.force1, "\n");
+print("P2 can win in: ", m.force2, "\n");
+*/
+print("Stalemates  : ", m.stalemate, "\n");
+
+cond(card(m.unfair1)>0, print("P1 can win from initial state\n"), null);
+cond(card(m.unfair2)>0, print("P2 can win from initial state\n"), null);

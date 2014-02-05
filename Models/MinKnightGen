@@ -1,0 +1,134 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Generate an instance of minimal N-knights in ICP format
+#
+
+# $1 is i
+# $2 is j
+# $3 is N
+num_attacks()
+{
+  rmt=$[ $1 - 2 ]
+  rmo=$[ $1 - 1 ]
+  rpo=$[ $1 + 1 ]
+  rpt=$[ $1 + 2 ]
+  jmt=$[ $2 - 2 ]
+  jmo=$[ $2 - 1 ]
+  jpo=$[ $2 + 1 ]
+  jpt=$[ $2 + 2 ]
+# two rows up
+  if [ $rmt -gt 0 ]; then
+    if [ $jmo -gt 0 ]; then
+      printf " + k_%d_%d" $rmt $jmo
+    fi
+    if [ $jpo -le $3 ]; then
+      printf " + k_%d_%d" $rmt $jpo
+    fi
+  fi
+# one row up
+  if [ $rmo -gt 0 ]; then
+    if [ $jmt -gt 0 ]; then
+      printf " + k_%d_%d" $rmo $jmt
+    fi
+    if [ $jpt -le $3 ]; then
+      printf " + k_%d_%d" $rmo $jpt
+    fi
+  fi
+# one row down
+  if [ $rpo -le $3 ]; then
+    if [ $jmt -gt 0 ]; then
+      printf " + k_%d_%d" $rpo $jmt
+    fi
+    if [ $jpt -le $3 ]; then
+      printf " + k_%d_%d" $rpo $jpt
+    fi
+  fi
+# two rows down
+  if [ $rpt -le $3 ]; then
+    if [ $jmo -gt 0 ]; then
+      printf " + k_%d_%d" $rpt $jmo
+    fi
+    if [ $jpo -le $3 ]; then
+      printf " + k_%d_%d" $rpt $jpo
+    fi
+  fi
+# done
+  printf " > 0;\n"
+}
+
+if [ $# -lt 1 ]; then
+  printf "Usage: %s N\n" $0
+  exit 1
+fi
+printf "\n// \$Id$ \n\n/*\n    %d Knights (maximize) problem.\n\n" $1
+printf "    Try to put as few knights onto a chessboard so that every square\n"
+printf "    either has a knight on it, or\n"
+printf "    is attacked by a knight\n*/\n\n"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\nint ";
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $m -gt 1 ]; then
+      printf ", "
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  printf " in {0..1};"
+  n=$[n + 1]
+done
+printf "\n\n// For each square, make sure it is covered:\n\n"
+n="1"
+while [ $n -le $1 ]; do
+  m="1"
+  while [ $m -le $1 ]; do
+    printf "k_%d_%d" $n $m
+    num_attacks $n $m $1
+    m=$[m + 1]
+  done
+  printf "\n"
+  n=$[n + 1]
+done
+printf "// Limit number of knights\n"
+p="0"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\n"
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $p -gt "0" ]; then
+      printf " + ";
+    else
+      printf "   ";
+      p="1"
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+max=$[ $1 * $1 / 2 ]
+printf " < %d;\n\n" $max
+printf "// Get solution\n"
+printf "minimize fewest_knights := "
+p="0"
+n="1"
+while [ $n -le $1 ]; do
+  printf "\n"
+  m="1"
+  while [ $m -le $1 ]; do
+    if [ $p -gt "0" ]; then
+      printf " + ";
+    else
+      printf "   ";
+      p="1"
+    fi
+    printf "k_%d_%d" $n $m
+    m=$[m + 1]
+  done
+  n=$[n + 1]
+done
+printf ";\n\n"

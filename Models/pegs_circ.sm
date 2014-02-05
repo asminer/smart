@@ -1,0 +1,36 @@
+
+/* $Id$
+
+   Jumping pegs on a circular board.
+
+*/
+
+pn circ(int N) := {
+  for (int i in {0..N-1}) {
+    place hole[i];
+    trans left_to[i], right_to[i];
+  }
+  for (int i in {1..N-1}) {
+    init(hole[i] : 1);
+  }
+  for (int i in {0..N-1}) {
+    arcs(
+      hole[mod(i+N-2, N)] : right_to[i],
+      hole[mod(i+N-1, N)] : right_to[i],
+      right_to[i] : hole[i],
+
+      hole[mod(i+2, N)] : left_to[i],
+      hole[mod(i+1, N)] : left_to[i],
+      left_to[i] : hole[i]
+    );
+    inhibit(
+      hole[i] : right_to[i],
+      hole[i] : left_to[i]
+    );
+  }
+  
+  int ns := num_states(false);
+};
+
+int n := read_int("n");
+print(circ(n).ns, " states\n");

@@ -1,0 +1,9 @@
+
+# Debug + procgen
+
+# MeddlyProcessGeneration FRONTIER
+# MeddlyVariableStyle BOUNDED
+# MeddlyNSFNodeDeletion PESSIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL
+

@@ -1,0 +1,26 @@
+
+// $Id$
+
+pn rw(int n) := {
+  place think, waitr, waitw, reading, writing, synch;
+
+  trans pickr, pickw, lockr, lockw, relr, relw;
+
+  init(think:n, synch:n);
+
+  arcs(
+    think : pickr, pickr : waitr,
+    waitr : lockr, synch : lockr, lockr : reading,
+    reading : relr, relr : synch, relr : think,
+    think : pickw, pickw : waitw,
+    waitw : lockw, synch : lockw : n, lockw : writing,
+    writing : relw, relw : synch : n, relw : think
+  );
+
+  bigint ns := num_states(false);
+};
+
+
+for (int i in {0..10}) {
+  print(i, " ", rw(i).ns, "\n");
+}
