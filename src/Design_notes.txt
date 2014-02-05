@@ -1,0 +1,68 @@
+
+# $Id$
+
+------------------------------------------------------------
+SMART VERSION 2 "Grand Library Yank"
+External (stand alone) libraries:
+
+    RNG
+    Linear solvers
+    Sparse vectors
+    State storage (explicit)
+    Markov chains (explicit)
+    Semi-Markov processes?  (handle "immediate" transitions)
+    Finite state machines?  (with CTL stuff)
+    Simulation?
+    MDD library
+
+
+------------------------------------------------------------
+Internal Smart "libraries" (or "modules"):
+
+    Expressions & Statements
+      * use hooks for model solution engines
+        e.g., RegisterEngine(engtype, function)
+
+      * use hooks for non-basic operators
+        e.g., addition of phase-types
+        use function (registered?) to build expression
+
+    Parser (symbol tables, syntax)
+
+    (separate or together:)
+    State space generation engine
+    Reach graph generation engine
+    MC generation engine
+
+    I/O and documentation formatting
+
+    Options?
+
+    Model checking engine?
+
+    Simulation?
+
+
+------------------------------------------------------------
+State space options:
+
+  * Potential    State space is the cross-product
+        of all possible values for each
+        state variable.  Note that this is
+        used for Markov chains, where there
+        is only one "enumerated" state var.
+        And, of course, we need to know the
+        possible values for each variable.
+
+  * Potential with constraints?
+        Like above, but we give a boolean
+        expression that tells if a given state
+        is present or not.
+        Can we merge with Potential efficiently?
+
+  * Explicit    
+
+  * MDD
+
+------------------------------------------------------------
+

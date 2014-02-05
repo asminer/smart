@@ -1,0 +1,17 @@
+
+# $Id$
+
+To do list for builtin function module:
+
+*  Should we allow users to pick and choose
+   which functions they want in the symbol table?
+   Or, which classes of functions?
+
+*  Need a way to link the function "exit"
+   to other behaviors, like the old "smart_exit".
+
+   Should we move "io_environ" to a more generic
+   "environ" class, outside of the stream module,
+   that behaves a lot like the old io_environ but
+   includes special things like "exit"?
+

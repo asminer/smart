@@ -1,0 +1,14 @@
+
+# $Id$
+
+TO DO LIST:
+
+Slight "ProcessGeneration" reorganization
+
+  * MeddlyStateGeneration should be MeddlyProcessGeneration
+
+  * convert saturation, etc. to same style as explicit, i.e.,
+    same algorithm with parameter for "states only" or not
+
+  * then add "EXPLICIT" MeddlyProcessGeneration algorithm :^)
+

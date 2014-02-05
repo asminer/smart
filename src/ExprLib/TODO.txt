@@ -1,0 +1,95 @@
+
+# $Id$
+
+To do for expression library:
+
+** Re-write "dd_front" interface: no pointer creation every time
+    e.g.,
+      shared_object* makeEdge();
+      error_code makeConstant(long value, shared_object* answer);
+      error_code buildBinary(const shared_object* left, opcode, 
+                            const shared_object* right, shared_object* answer)
+
+** model_vars: do they need bounds explicitly stored?
+   abstract interface may be enough; derived classes can store as needed.
+
+** Function promotion (AND ARRAYS!) as necessary:
+  rand real x := sqrt( uniform(3, 5) );
+
+  i.e., from real sqrt(real)
+  we should automatically promote to, as necessary:
+    rand real sqrt(rand real);
+    proc real sqrt(proc real);
+
+  When should type modification be allowed?
+
+  (1) The modification is only allowed to be
+    addition of rand
+    addition of proc
+    addition of proc and rand.
+
+  (2) The modification can be performed on *every* parameter
+
+    real func1(ph int x, real y);
+    real func2(rand int x, real y);
+    real func3(bool b, real x);
+    int func4(string s, int n);
+
+    func1(rand int, rand real) --> not allowed,
+      can't add rand to ph int.
+
+    func2(rand int, rand real) --> not allowed,
+      can't add rand to rand int.
+
+    func3(rand bool, rand real) --> rand real
+    func3(rand bool, real) --> rand real
+      (formal parameter x will be promoted to rand real)
+
+    int func4(string, rand int) --> not allowed
+
+  (3) The return type of the function can accept the modification
+
+    rand int foobar(int x) := equilikely(x, x*x);
+    void printfoo(int x);
+
+    foobar(rand int) --> not allowed, 
+      can't add rand to the return type.
+      In this case, the user should define
+      rand int foobar(rand int x) instead.
+
+    printfoo(rand int x) --> not allowed, 
+      there is no "rand void".
+
+
+
+  How to handle the promotions internally:
+
+    rand:  should be a no-op typecast around the function call.
+      in the original function computation,
+      none of the parameters requires a RNG stream.
+      in the promoted function computation,
+      all of the parameters will require a RNG stream.
+      but this would be provided anyway by the caller,
+      since the surrounding expression is "rand".
+
+    proc:  same argument, replace "RNG stream" 
+      with "current state"
+
+
+  New type checking algorithm for function calls:
+    When checking each parameter, keep track of:
+    (a) will fit without modification
+    (b) will fit if formal param adds "rand" (assuming it can)
+    (c) will fit if formal param adds "proc" (assuming it can)
+    (d) will fit if f.p. adds "proc rand" (assuming it can)
+    (e) otherwise
+
+    Find the first letter above that all parameters satisfy.
+    (Note that a->b, a->c, b->d, c->d, d->e for any parameter.)
+
+    If (a) then do an ordinary call.
+    If (b), and return type can add "rand", then promote.
+    If (c), and return type can add "proc", then promote.
+    If (d), and return type can add "proc rand", then promote.
+    If (e), then do an ordinary "doesn't match".
+

@@ -1,0 +1,17 @@
+
+# $Id$
+
+Features to do list:
+
+Separate "show" from "num" functions, internally.
+
+E.g., "num_states(bool show)" should be replaced by
+
+  num_states();
+  show_states();
+
+
+Do this for:
+  number of states
+  number of arcs
+  number of classes
