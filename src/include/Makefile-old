@@ -1,0 +1,280 @@
+
+# $Id$
+
+EXTRN_LINKED = lslib.h rng.h sim.h statelib.h \
+		graphlib.h mclib.h intset.h \
+		meddly.h meddly_expert.h
+
+INTRN_LINKED = timers.h streams.h options.h \
+		expr.h exprman.h type.h result.h \
+		casting.h unary.h binary.h assoc.h \
+		symbols.h functions.h measures.h \
+		sets.h mod_def.h mod_vars.h mod_inst.h \
+		strings.h intervals.h engine.h formalism.h \
+		dd_front.h \
+		\
+		symtabs.h \
+		\
+		parse_sm.h parse_icp.h \
+		
+
+all: $(INTRN_LINKED) $(EXTRN_LINKED) revno
+
+clean:
+	rm $(INTRN_LINKED)
+
+empty:
+	rm $(INTRN_LINKED) $(EXTRN_LINKED)
+
+# Revison number, for whoever wants it.
+
+revno:
+	./BuildRevNo
+
+revision.h:
+	./BuildRevNo
+
+# internal links: easy
+
+timers.h:
+	ln -s ../Timers/timers.h .
+
+
+streams.h:
+	ln -s ../Streams/streams.h .
+
+
+options.h:
+	ln -s ../Options/options.h .
+
+
+expr.h:
+	ln -s ../ExprLib/expr.h .
+exprman.h:
+	ln -s ../ExprLib/exprman.h .
+type.h:
+	ln -s ../ExprLib/type.h .
+result.h:
+	ln -s ../ExprLib/result.h .
+casting.h:
+	ln -s ../ExprLib/casting.h .
+unary.h:
+	ln -s ../ExprLib/unary.h .
+binary.h:
+	ln -s ../ExprLib/binary.h .
+assoc.h:
+	ln -s ../ExprLib/assoc.h .
+symbols.h:
+	ln -s ../ExprLib/symbols.h .
+functions.h:
+	ln -s ../ExprLib/functions.h .
+measures.h:
+	ln -s ../ExprLib/measures.h .
+sets.h:
+	ln -s ../ExprLib/sets.h .
+mod_def.h:
+	ln -s ../ExprLib/mod_def.h .
+mod_vars.h:
+	ln -s ../ExprLib/mod_vars.h .
+mod_inst.h:
+	ln -s ../ExprLib/mod_inst.h .
+strings.h:
+	ln -s ../ExprLib/strings.h .
+intervals.h:
+	ln -s ../ExprLib/intervals.h .
+engine.h:
+	ln -s ../ExprLib/engine.h .
+formalism.h:
+	ln -s ../ExprLib/formalism.h .
+dd_front.h:
+	ln -s ../ExprLib/dd_front.h .
+
+symtabs.h:
+	ln -s ../SymTabs/symtabs.h .
+
+
+parse_sm.h:
+	ln -s ../ParseSM/parse_sm.h .
+
+
+parse_icp.h:
+	ln -s ../ParseICP/parse_icp.h .
+
+
+
+# external links: tricky
+
+# ----------------------------------------------------------------
+# Simulation library:
+
+SIMLIBCMD='printf "\nTrying $(SIM_LIBRARY) ..."; \
+	  if [ -f $(SIM_LIBRARY)/include/sim.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(SIM_LIBRARY)/include/sim.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/SimLib ..."; \
+	  if [ -f $(HOME)/SimLib/include/sim.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/SimLib/include/sim.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Simulation Library\n"; \
+	  printf "Link by hand or set environment SIM_LIBRARY\n"; \
+	  exit 1'
+
+sim.h:
+	echo $(SIMLIBCMD) | bash	
+
+
+
+# ----------------------------------------------------------------
+# Random number generator library:
+
+RNGLIBCMD='printf "\nTrying $(RNG_LIBRARY) ..."; \
+	  if [ -f $(RNG_LIBRARY)/include/rng.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(RNG_LIBRARY)/include/rng.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/RngLib ..."; \
+	  if [ -f $(HOME)/RngLib/include/rng.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/RngLib/include/rng.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find RNG Library\n"; \
+	  printf "Link by hand or set environment RNG_LIBRARY\n"; \
+	  exit 1'
+
+rng.h:
+	echo $(RNGLIBCMD) | bash	
+
+
+
+# ----------------------------------------------------------------
+# Linear solver library:
+
+LSLIBCMD='printf "\nTrying $(LS_LIBRARY) ..."; \
+	  if [ -f $(LS_LIBRARY)/include/lslib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(LS_LIBRARY)/include/lslib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/LSLib ..."; \
+	  if [ -f $(HOME)/LSLib/include/lslib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/LSLib/include/lslib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Linear Solver Library\n"; \
+	  printf "Link by hand or set environment LS_LIBRARY\n"; \
+	  exit 1'
+
+lslib.h:
+	echo $(LSLIBCMD) | bash	
+
+
+# ----------------------------------------------------------------
+# Explicit state storage library:
+
+STATELIBCMD='printf "\nTrying $(STATE_LIB) ..."; \
+	  if [ -f $(STATE_LIB)/include/statelib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(STATE_LIB)/include/statelib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/StateLib ..."; \
+	  if [ -f $(HOME)/StateLib/include/statelib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/StateLib/include/statelib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Explicit State Storage Library\n"; \
+	  printf "Link by hand or set environment STATE_LIB\n"; \
+	  exit 1'
+
+statelib.h:
+	echo $(STATELIBCMD) | bash	
+
+
+# ----------------------------------------------------------------
+# Explicit graph library:
+
+GRAPHLIBCMD='printf "\nTrying $(GRAPH_LIB) ..."; \
+	  if [ -f $(GRAPH_LIB)/include/graphlib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(GRAPH_LIB)/include/graphlib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/GraphLib ..."; \
+	  if [ -f $(HOME)/GraphLib/include/graphlib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/GraphLib/include/graphlib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Explicit Markov chain Library\n"; \
+	  printf "Link by hand or set environment GRAPH_LIB\n"; \
+	  exit 1'
+
+graphlib.h:
+	echo $(GRAPHLIBCMD) | bash	
+
+
+# ----------------------------------------------------------------
+# Explicit Markov chain library:
+
+MCLIBCMD='printf "\nTrying $(MC_LIB) ..."; \
+	  if [ -f $(MC_LIB)/include/mclib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(MC_LIB)/include/mclib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/MCLib ..."; \
+	  if [ -f $(HOME)/MCLib/include/mclib.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/MCLib/include/mclib.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Explicit Markov chain Library\n"; \
+	  printf "Link by hand or set environment MC_LIB\n"; \
+	  exit 1'
+
+mclib.h:
+	echo $(MCLIBCMD) | bash	
+
+
+# ----------------------------------------------------------------
+# Explicit Integer set library:
+
+ISLIBCMD='printf "\nTrying $(IS_LIB) ..."; \
+	  if [ -f $(IS_LIB)/include/intset.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(IS_LIB)/include/intset.h .; exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/IntSets ..."; \
+	  if [ -f $(HOME)/IntSets/include/intset.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/IntSets/include/intset.h .; exit 0; \
+	  fi; \
+	  printf " not found\nCannot find Explicit Integer Set Library\n"; \
+	  printf "Link by hand or set environment IS_LIB\n"; \
+	  exit 1'
+
+intset.h:
+	echo $(ISLIBCMD) | bash	
+
+
+# ----------------------------------------------------------------
+# MDD Library:
+
+MDDLIBCMD='printf "\nTrying $(MDD_LIB) ..."; \
+	  if [ -f $(MDD_LIB)/include/meddly.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(MDD_LIB)/include/meddly.h .; \
+	    ln -s $(MDD_LIB)/include/meddly_expert.h .; \
+      exit 0; \
+	  fi; \
+	  printf " not found\nTrying $(HOME)/Meddly/trunk ..."; \
+	  if [ -f $(HOME)/Meddly/trunk/include/meddly.h ]; then \
+	    printf " success\n"; \
+	    ln -s $(HOME)/Meddly/trunk/include/meddly.h .; \
+	    ln -s $(HOME)/Meddly/trunk/include/meddly_expert.h .; \
+      exit 0; \
+	  fi; \
+	  printf " not found\nCannot find MDD Library\n"; \
+	  printf "Link by hand or set environment MDD_LIB\n"; \
+	  exit 1'
+
+meddly_expert.h meddly.h:
+	echo $(MDDLIBCMD) | bash	
+
+
