@@ -129,7 +129,7 @@ void meddly_states::buildIndexSet()
   DCASSERT(vars);
 
   MEDDLY::forest* evF = vars->createForest(
-    false, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS
+    false, MEDDLY::forest::INTEGER, MEDDLY::forest::INDEX_SET
   );
   DCASSERT(evF);
 
