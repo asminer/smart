@@ -204,7 +204,7 @@ void meddly_mc::buildDiagonals()
     one[i] = 1;
   }
 
-  MEDDLY::numerical_operation* MV = MEDDLY::MATR_VECT_MULT->buildOperation(
+  MEDDLY::numerical_operation* MV = MEDDLY::MATR_EXPLVECT_MULT->buildOperation(
     process->state_indexes->E, process->proc->E, process->state_indexes->E
   );
   MV->compute(diagonals, one);
@@ -444,7 +444,7 @@ bool meddly_mc::computeSteadyState(double* probs) const
   for (long i=dsize-1; i>=0; i--) probs[i] = 1;
   startSteadyReport();
   LS_Output outdata;
-  MEDDLY::numerical_operation* vm = MEDDLY::VECT_MATR_MULT->buildOperation(
+  MEDDLY::numerical_operation* vm = MEDDLY::EXPLVECT_MATR_MULT->buildOperation(
     process->state_indexes->E, process->proc->E, process->state_indexes->E
   );
   LS_wrapper foo(vm, diagonals, dsize);
