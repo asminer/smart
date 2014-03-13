@@ -931,7 +931,7 @@ private:
     int newsz = oldsz;
     while (newsz < N) newsz += 256;
     set.resetSize(newsz);
-    set.removeRange(oldsz, newsz);
+    set.removeRange(oldsz, newsz-1);
   }
 protected:
   subengine::error exploreEnabling(deplist &dl, int k, bool has_unexp);
