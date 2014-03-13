@@ -203,6 +203,8 @@ inline void intset::bitvector::Set(long n)
   DCASSERT(n>=0);
   DCASSERT(n<size);
   DCASSERT(1==links);
+  DCASSERT(n/bitwidth>=0);
+  DCASSERT(n/bitwidth < NumWords());
   data[n/bitwidth] |= (msbit >> n%bitwidth); // set bit n
 }
 
@@ -212,6 +214,9 @@ inline void intset::bitvector::Unset(long n)
   DCASSERT(n>=0);
   DCASSERT(n<size);
   DCASSERT(1==links);
+  DCASSERT(n/bitwidth>=0);
+  DCASSERT(n/bitwidth < NumWords());
+  // printf("Unset(%d) bitwidth %d NumWords %d\n", n, bitwidth, NumWords());
   data[n/bitwidth] &= ~(msbit >> n%bitwidth); // clear bit n      
 }
 
@@ -272,6 +277,7 @@ inline void intset::bitvector::SetRange(long b1, long b2)
 
 inline void intset::bitvector::UnsetRange(long b1, long b2) 
 {
+  // printf("UnsetRange(%d,%d)\n", b1, b2);
   DCASSERT(b1>=0);
   DCASSERT(b1<size);
   DCASSERT(b1>=b1);
