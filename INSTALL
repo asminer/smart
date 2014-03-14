@@ -16,6 +16,9 @@ Instructions to build
       
     # env MDD_LIB=/alternate/mdd/location ./Config-devel
 
+    Any arguments passed to these scripts, are in turn passed
+    on to the ./configure script.
+
 2.  cd bin-devel   OR   cd bin-release
 
 3.  make

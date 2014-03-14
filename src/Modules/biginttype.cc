@@ -18,6 +18,8 @@
 // *                                                                *
 // ******************************************************************
 
+#ifdef HAVE_LIBGMP
+
 class gmp_lib : public library {
   char* version;
 public:
@@ -53,12 +55,17 @@ void gmp_lib::printCopyright(OutputStream &s) const
 
 gmp_lib gmp_lib_data;
 
+#endif
+
+
 // ******************************************************************
 // *                         bigint methods                         *
 // ******************************************************************
 
 char* bigint::buffer = 0;
 int bigint::bufsize = 0;
+
+#ifdef HAVE_LIBGMP
 
 bigint::bigint() : shared_object()
 {
@@ -117,6 +124,57 @@ bool bigint::Equals(const shared_object *o) const
   if (0==b) return false;
   return (0 == mpz_cmp(value, b->value));
 }
+
+#else
+
+bigint::bigint() : shared_object()
+{
+}
+
+bigint::bigint(long x) : shared_object()
+{
+  value = x;
+}
+
+bigint::bigint(const char* c) : shared_object()
+{
+  value = atol(c);
+}
+
+bigint::bigint(const bigint& b) : shared_object()
+{
+  value = b.value;
+}
+
+bigint::~bigint()
+{
+}
+
+bool bigint::Print(OutputStream &s, int width) const
+{
+  if (bufsize < 24) {
+    char* newbuf = (char*) realloc(buffer, 24);
+    if (newbuf) {
+      buffer = newbuf;
+      bufsize = 24;
+    } else {
+      s.Put("memory overflow");
+      return true;
+    }
+  }
+  snprintf(buffer, bufsize, "%ld", value);
+  s.PutInteger(buffer, width);
+  return true;
+}
+
+bool bigint::Equals(const shared_object *o) const
+{
+  const bigint* b = dynamic_cast <const bigint*> (o);
+  if (0==b) return false;
+  return (value == b->value);
+}
+
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -262,12 +320,16 @@ void bigint2int::converter::Compute(traverse_data &x)
   if (x.answer->isNormal()) {
     const bigint* a = smart_cast <const bigint*> (x.answer->getPtr());
     DCASSERT(a);
+#ifdef HAVE_LIBGMP
     if (mpz_fits_slong_p(a->value)) {
       long z = mpz_get_si(a->value);
       x.answer->setInt(z);
     } else {
       x.answer->setNull();
     }
+#else
+    x.answer->setInt(a->value);
+#endif
   }
 }
 
@@ -332,7 +394,11 @@ void bigint2real::converter::Compute(traverse_data &x)
   if (x.answer->isNormal()) {
     const bigint* a = smart_cast <const bigint*> (x.answer->getPtr());
     DCASSERT(a);
+#ifdef HAVE_LIBGMP
     double d = mpz_get_d(a->value);
+#else
+    double d = a->value;
+#endif
     if ((d >= HUGE_VAL) || (d <= -HUGE_VAL)) {
       x.answer->setNull();
     } else {
@@ -401,7 +467,7 @@ void bigint_neg::Compute(traverse_data &x)
     const bigint* a = smart_cast <bigint*>(x.answer->getPtr());
     DCASSERT(a);
     bigint* z = new bigint;
-    mpz_neg(z->value, a->value);
+    z->neg(*a);
     x.answer->setPtr(z);
   } else if (x.answer->isInfinity()) {
     x.answer->setInfinity(-x.answer->signInfinity());
@@ -460,10 +526,11 @@ void bigint_add::Compute(traverse_data &x)
         if (sum->getPtr()) {
           const bigint* a = smart_cast <bigint*> (foo.getPtr());
           DCASSERT(a);
-          if (flip && flip[i])
-            mpz_sub(bi_sum->value, bi_sum->value, a->value);
-          else
-            mpz_add(bi_sum->value, bi_sum->value, a->value);
+          if (flip && flip[i]) {
+            bi_sum->sub(*bi_sum, *a);
+          } else {
+            bi_sum->add(*bi_sum, *a);
+          }
         } // if sum->getPtr()
         continue;
       }
@@ -590,18 +657,18 @@ void bigint_mult::Compute(traverse_data &x)
       if (foo.isNormal()) {
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
-        if (0==mpz_cmp_si(a->value, 0)) {
+        if (0==a->cmp_si(0)) {
           prod->setPtr(new bigint(0L));
           unknown = false;
           break;  // change state
         } 
         // normal finite multiply
-        mpz_mul(bi_prod->value, bi_prod->value, a->value);
+        bi_prod->mul(*bi_prod, *a);
         continue;
       }
       if (foo.isInfinity()) {
         // fix sign and change state
-        int prodsign = SIGN(mpz_cmp_si(bi_prod->value, 0));
+        int prodsign = SIGN(bi_prod->cmp_si(0));
         prod->setInfinity(foo.signInfinity() * prodsign);
         break;
       }
@@ -631,7 +698,7 @@ void bigint_mult::Compute(traverse_data &x)
       if (foo.isNormal()) {
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
-        if (0==mpz_cmp_si(a->value, 0)) {
+        if (0==a->cmp_si(0)) {
           zeroTimesInfty(operands[i]); // 0 * infinity, error
           prod->setNull();
           x.answer = prod;
@@ -665,7 +732,7 @@ void bigint_mult::Compute(traverse_data &x)
     // Check the remaining operands, if any, and throw an
     // error if we have infinity * 0.
     for (i++; i<opnd_count; i++) {
-      DCASSERT(0==mpz_cmp_si(bi_prod->value, 0));
+      DCASSERT(0==bi_prod->cmp_si(0));
       DCASSERT(operands[i]);
       operands[i]->Compute(x);
       if (foo.isNormal()) continue;
@@ -764,7 +831,7 @@ void bigint_multdiv::Compute(traverse_data &x)
       if (foo.isNormal()) {
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
-        if (0==mpz_cmp_si(a->value, 0)) {
+        if (0==a->cmp_si(0)) {
           Delete(numer);
           Delete(denom);
           numer = 0;
@@ -780,15 +847,15 @@ void bigint_multdiv::Compute(traverse_data &x)
           break;  // change state
         } // if 0
         // normal finite multiply or divide
-        if (flip[i])  mpz_mul(denom->value, denom->value, a->value);
-        else          mpz_mul(numer->value, numer->value, a->value);
+        if (flip[i])  denom->mul(*denom, *a);
+        else          numer->mul(*numer, *a);
         continue;
       } // if foo.isNormal()
 
       if (foo.isInfinity()) {
         // fix sign and change state
-        int numsign = SIGN(mpz_cmp_si(numer->value, 0));
-        int densign = SIGN(mpz_cmp_si(denom->value, 0));
+        int numsign = SIGN(numer->cmp_si(0));
+        int densign = SIGN(denom->cmp_si(0));
         prod->setInfinity(foo.signInfinity() * numsign * densign);
         Delete(numer);
         Delete(denom);
@@ -831,7 +898,7 @@ void bigint_multdiv::Compute(traverse_data &x)
       if (foo.isNormal()) {
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
-        int asign = mpz_cmp_si(a->value, 0);
+        int asign = a->cmp_si(0);
         if (0==asign) {
           // infinity * 0 or infinity / 0, error
           inftyTimesZero(flip[i], operands[i]);
@@ -881,7 +948,7 @@ void bigint_multdiv::Compute(traverse_data &x)
       if (foo.isNormal()) {
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
-        if (0==mpz_cmp_si(a->value, 0)) {
+        if (0==a->cmp_si(0)) {
           if (flip[i]) {
             divideByZero(operands[i]);
             prod->setNull();
@@ -925,6 +992,7 @@ void bigint_multdiv::Compute(traverse_data &x)
     // answer is numer / denom
     DCASSERT(denom);
     DCASSERT(prod->isNormal());
+#ifdef HAVE_LIBGMP
     mpq_t q;
     mpq_init(q);
     mpq_set_num(q, numer->value);
@@ -932,6 +1000,11 @@ void bigint_multdiv::Compute(traverse_data &x)
     mpq_canonicalize(q);
     prod->setReal(mpq_get_d(q));
     mpq_clear(q);
+#else
+    double d = numer->value;
+    d /= denom->value;
+    prod->setReal(d);
+#endif
     Delete(numer);
     Delete(denom);
 
@@ -977,12 +1050,12 @@ void bigint_mod::Compute(traverse_data &x)
   if (l.isNormal() && r.isNormal()) {
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
-    if (mpz_cmp_si(br->value, 0)) {
+    if (br->cmp_si(0)) {
       // normal modulo
       const bigint* bl = smart_cast <bigint*> (l.getPtr());
       DCASSERT(bl);
       bigint* c = new bigint;
-      mpz_tdiv_r(c->value, bl->value, br->value);
+      c->div_r(*bl, *br);
       x.answer->setPtr(c);
     } else {
       // mod 0 error
@@ -1069,7 +1142,7 @@ void bigint_equal::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) == 0);
+    x.answer->setBool(bl->cmp(*br) == 0);
   } else {
     Special(l, r, x);
   }
@@ -1113,7 +1186,7 @@ void bigint_neq::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) != 0);
+    x.answer->setBool(bl->cmp(*br) != 0);
   } else {
     Special(l, r, x);
   }
@@ -1156,7 +1229,7 @@ void bigint_gt::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) > 0);
+    x.answer->setBool(bl->cmp(*br) > 0);
   } else {
     Special(l, r, x);
   }
@@ -1199,7 +1272,7 @@ void bigint_ge::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) >= 0);
+    x.answer->setBool(bl->cmp(*br) >= 0);
   } else {
     Special(l, r, x);
   }
@@ -1242,7 +1315,7 @@ void bigint_lt::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) < 0);
+    x.answer->setBool(bl->cmp(*br) < 0);
   } else {
     Special(l, r, x);
   }
@@ -1285,7 +1358,7 @@ void bigint_le::Compute(traverse_data &x)
     // normal comparison
     const bigint* bl = smart_cast <bigint*> (l.getPtr());  DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());   DCASSERT(br);
-    x.answer->setBool(mpz_cmp(bl->value, br->value) <= 0);
+    x.answer->setBool(bl->cmp(*br) <= 0);
   } else {
     Special(l, r, x);
   }
@@ -1961,7 +2034,7 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
   if (r.isNormal()) {  // Handle the divide by zero case first
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
-    if (0==mpz_cmp_si(br->value, 0)) {
+    if (0==br->cmp_si(0)) {
       if (em->startError()) {
         em->causedBy(x.parent);
         em->cerr() << "Undefined operation (divide by 0)";
@@ -1980,7 +2053,7 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
     
-    mpz_tdiv_q(c->value, bl->value, br->value);
+    c->div_q(*bl, *br);
     return;
   }
 
@@ -1998,7 +2071,7 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
     // infinity / finite, check sign only
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
-    answer->setInfinity(l.signInfinity() * SIGN(mpz_cmp_si(br->value, 0)));
+    answer->setInfinity(l.signInfinity() * SIGN(br->cmp_si(0)));
     return;
   }
   if (r.isInfinity()) {
@@ -2027,7 +2100,9 @@ void InitBigintType(exprman* em, symbol_table* st)
   if (0==em)  return;
   
   // Library registry
+#ifdef HAVE_LIBGMP
   em->registerLibrary(  &gmp_lib_data  );
+#endif
 
   // Type registry
   simple_type* t_bigint = new bigint_type;
