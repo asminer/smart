@@ -10,7 +10,7 @@ export CXXFLAGS="-ggdb -DDEVELOPMENT_CODE"
 export LDFLAGS="" 
 export CPPFLAGS=""
 
-findlibs || exit 1
+findlibs $@ || exit 1
 
 cd bin-devel
-../configure --prefix=$PWD
+../configure --prefix=$PWD $@

@@ -544,8 +544,7 @@ void explicit_fsm
     DCASSERT(rg.colindex);
   }
 
-  mpz_t acc;
-  mpz_init(acc);
+  bigint acc;
 
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Counting paths\n";
@@ -617,25 +616,25 @@ void explicit_fsm
     if (shortpc[visit] != VISITING) continue; // already know #paths from here
 
     // should have #paths computed for all children, add them up   
-    mpz_set_si(acc, 0);
+    acc.set_si(0);
     for (long z=rg.rowptr[visit]; z<rg.rowptr[visit+1]; z++) {
       long next = rg.colindex[z];
       if (shortpc[next] >= 0) {
-        mpz_add_ui(acc, acc, shortpc[next]);
+        acc.add_ui(shortpc[next]);
         continue;
       }
       if ((VISITING == shortpc[next]) || (UNBOUNDED == shortpc[next])) {
-        mpz_set_si(acc, UNBOUNDED);
+        acc.set_si(UNBOUNDED);
         break;
       }
       DCASSERT(AS_BIGINT == shortpc[next]);
       DCASSERT(paths[next]);
-      mpz_add(acc, acc, paths[next]->value);
+      acc.add(acc, *paths[next]);
     } // for z
     
     // save the result
-    if (mpz_fits_slong_p(acc)) {
-      shortpc[visit] = mpz_get_si(acc);
+    if (acc.fits_slong()) {
+      shortpc[visit] = acc.get_si();
     } else {
       shortpc[visit] = AS_BIGINT;
       paths[visit] = new bigint(acc);
@@ -644,20 +643,20 @@ void explicit_fsm
 
  
   // Have #paths for every state, add them up for src states
-  mpz_set_si(acc, 0);
+  acc.set_si(0);
   for (long s=src.getSmallestAfter(-1); s>=0; s=src.getSmallestAfter(s)) {
     if (shortpc[s] >= 0) {
-      mpz_add_ui(acc, acc, shortpc[s]);
+      acc.add_ui(shortpc[s]);
       continue;
     }
     DCASSERT(VISITING != shortpc[s]);
     if (UNBOUNDED == shortpc[s]) {
-      mpz_set_si(acc, UNBOUNDED);
+      acc.set_si(UNBOUNDED);
       break;
     }
     DCASSERT(AS_BIGINT == shortpc[s]);
     DCASSERT(paths[s]);
-    mpz_add(acc, acc, paths[s]->value);
+    acc.add(acc, *paths[s]);
   } // for s
 
   if (numpaths_report.startReport()) {
@@ -683,12 +682,11 @@ void explicit_fsm
   }
   doneTimer(sw);
 
-  if (mpz_cmp_si(acc, 0) < 0) {
+  if (acc.cmp_si(0) < 0) {
     count.setInfinity(1);
   } else {
     count.setPtr(new bigint(acc));
   }
-  mpz_clear(acc);
 }
 
 

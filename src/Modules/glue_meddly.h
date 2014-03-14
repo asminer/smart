@@ -11,7 +11,10 @@
 #define GLUE_MEDDLY_H
 
 #include "../ExprLib/dd_front.h"
+#include "config.h"
+#ifdef HAVE_LIBGMP
 #include <gmp.h>
+#endif
 #include "meddly.h"
 
 // ******************************************************************

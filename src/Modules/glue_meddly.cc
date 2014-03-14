@@ -631,16 +631,24 @@ sv_encoder::error meddly_encoder
 {
   const shared_ddedge* S = dynamic_cast<const shared_ddedge*> (x);
   if (0==S) return Invalid_Edge;
+#ifdef HAVE_LIBGMP
   mpz_t mpz_card;
   mpz_init(mpz_card);
+#else
+  long mpz_card;
+#endif
   try {
     MEDDLY::apply(MEDDLY::CARDINALITY, S->E, mpz_card);
     card.setPtr(new bigint(mpz_card));
+#ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
+#endif
     return Success;
   } 
   catch (MEDDLY::error e) {
+#ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
+#endif
     card.setNull();
     return convert(e);
   }

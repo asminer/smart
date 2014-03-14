@@ -6,6 +6,19 @@
 
 # ============================================================
 
+contains()
+{
+  key=$1
+  shift
+  for a; do
+    if [ $a == $key ]; then return 0;
+    fi
+  done
+  return 1
+}
+
+# ============================================================
+
 try_gmp() {
   if [ -f $1/include/gmp.h ]; then
     printf "gmp found at $1\n"
@@ -184,12 +197,16 @@ find_islib() {
 # ============================================================
 
 findlibs() {
-
   export CC=g++
   export CXX=g++
   export CXXFLAGS="$CXXFLAGS -Wall"
 
-  find_gmp || return 1
+  if contains "--without-gmp" $@; then
+    # nothing
+    echo "Building without GMP library"
+  else
+    find_gmp || return 1
+  fi
   find_mddlib || return 1
 
 #

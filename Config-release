@@ -10,7 +10,7 @@ export CXXFLAGS="-O3"
 export LDFLAGS="" 
 export CPPFLAGS=""
 
-findlibs || return 1
+findlibs $@ || return 1
 
 cd bin-release
-../configure --prefix=$PWD
+../configure --prefix=$PWD $@
