@@ -85,11 +85,11 @@ class meddly_explgen : public meddly_procgen {
   friend void InitializeExplicitMeddly(exprman* em);
   static long batch_size;
   static bool use_qrmxds;
-  static long level_change;
   static bool maximize_batch_refills;
   bool states_only_this_time;
 
 protected:
+  static long level_change;
   meddly_states* ms;
 public:
   meddly_explgen();
