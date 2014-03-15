@@ -5,19 +5,20 @@ Instructions to build
 
 0.  autoreconf --install
 
-    This step is necessary for the first build, and anytime
-    configure.ac or any Makefile.am changes.
+    This step is necessary for the first build, and anytime configure.ac
+    or any Makefile.am changes.
 
 1.  ./Config-devel  &&  ./Config-release
 
-    System-specific configuration.
-    You can set environment variables to change the locations
-    of the libraries, e.g.,
+    System-specific configuration.  You can set environment variables to
+    change the locations of the libraries, e.g.,
       
     # env MDD_LIB=/alternate/mdd/location ./Config-devel
 
-    Any arguments passed to these scripts, are in turn passed
-    on to the ./configure script.
+    Any arguments passed to these scripts, are in turn passed on to the
+    ./configure script.  Useful arguments:
+
+        --without-gmp     Disables GMP support
 
 2.  cd bin-devel   OR   cd bin-release
 
@@ -38,6 +39,5 @@ Instructions to build
 
 6.  make install
 
-    Copies binaries into bin
-    (otherwise they are in src/Apps)
+    Copies binaries into bin (otherwise they are in src/Apps)
 
