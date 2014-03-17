@@ -234,7 +234,7 @@ bool CTL_expl_eng::AppliesToModelType(hldsm::model_type mt) const
 class EX_expl_eng : public CTL_expl_eng {
 public:
   EX_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 EX_expl_eng the_EX_expl_eng;
@@ -243,7 +243,7 @@ EX_expl_eng::EX_expl_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error EX_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
+void EX_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pass[0].isNormal());
@@ -260,7 +260,6 @@ subengine::error EX_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   if (pass[0].getBool()) mdl->forward(p->getExplicit(), r->changeExplicit());
   else                   mdl->backward(p->getExplicit(), r->changeExplicit());  
   x.answer->setPtr(r);
-  return Success;
 }
 
 // **************************************************************************
@@ -272,7 +271,7 @@ subengine::error EX_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 class EU_expl_eng : public CTL_expl_eng {
 public:
   EU_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 EU_expl_eng the_EU_expl_eng;
@@ -281,7 +280,7 @@ EU_expl_eng::EU_expl_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
+void EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
   DCASSERT(pass[0].isNormal());
@@ -318,7 +317,6 @@ subengine::error EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   }
   
   x.answer->setPtr(r);
-  return Success;
 }
 
 // **************************************************************************
@@ -330,7 +328,7 @@ subengine::error EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 class unfairEG_expl_eng : public CTL_expl_eng {
 public:
   unfairEG_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 unfairEG_expl_eng the_unfairEG_expl_eng;
@@ -339,7 +337,7 @@ unfairEG_expl_eng::unfairEG_expl_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
+void unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pass[0].isNormal());
@@ -363,7 +361,6 @@ subengine::error unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_dat
     unfair_EG(mdl, *p, *r, tmp);
   }
   x.answer->setPtr(r);
-  return Success;
 }
 
 // **************************************************************************
@@ -375,7 +372,7 @@ subengine::error unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_dat
 class fairEG_expl_eng : public CTL_expl_eng {
 public:
   fairEG_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 fairEG_expl_eng the_fairEG_expl_eng;
@@ -384,7 +381,7 @@ fairEG_expl_eng::fairEG_expl_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
+void fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pass[0].isNormal());
@@ -442,7 +439,6 @@ subengine::error fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data 
     } // if init
   }
   x.answer->setPtr(r);
-  return Success;
 }
 
 // **************************************************************************
@@ -454,7 +450,7 @@ subengine::error fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data 
 class unfairAEF_expl_eng : public CTL_expl_eng {
 public:
   unfairAEF_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 unfairAEF_expl_eng the_unfairAEF_expl_eng;
@@ -463,7 +459,7 @@ unfairAEF_expl_eng::unfairAEF_expl_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error 
+void 
 unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
@@ -521,7 +517,6 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   Delete(r);
 
   x.answer->setPtr(ans);
-  return Success;
 }
 
 // **************************************************************************
@@ -533,7 +528,7 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 class specializedAEF_eng : public CTL_expl_eng {
 public:
   specializedAEF_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 specializedAEF_eng the_specializedAEF_eng;
@@ -542,7 +537,7 @@ specializedAEF_eng::specializedAEF_eng() : CTL_expl_eng()
 {
 }
 
-subengine::error 
+void 
 specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
@@ -560,7 +555,7 @@ specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
       em->cerr() << "Couldn't transpose graph\n";
       em->stopIO();
     }
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
@@ -588,7 +583,7 @@ specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
       em->stopIO();
     }
     delete[] required;
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   // adjust for goal, controllable, and deadlocked states.
@@ -645,7 +640,6 @@ specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
   delete[] required;
   delete[] queue;
   x.answer->setPtr(ans);
-  return Success;
 }
 
 // **************************************************************************

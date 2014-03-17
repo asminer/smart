@@ -70,45 +70,44 @@ public:
     vandb.Clear();
     van_unexp = 0;
   }
-  inline subengine::error eliminateVanishing() {
+  inline void eliminateVanishing() {
     clearVanishing();
-    return subengine::Success;
   }
   inline static bool statesOnly() {
     return true;
   }
   // required but not used
-  inline static subengine::error addInitial(long) { 
+  inline static void addInitial(long) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addInitialVanishing(long, double) { 
+  inline static void addInitialVanishing(long, double) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addInitialTangible(long, double) { 
+  inline static void addInitialTangible(long, double) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addEdge(long, long) { 
+  inline static void addEdge(long, long) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addVVEdge(long, long, double) { 
+  inline static void addVVEdge(long, long, double) { 
     DCASSERT(0);
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addVTEdge(long, long, double) { 
+  inline static void addVTEdge(long, long, double) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addTVEdge(long, long, double) { 
+  inline static void addTVEdge(long, long, double) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  inline static subengine::error addTTEdge(long, long, double) { 
+  inline static void addTTEdge(long, long, double) { 
     DCASSERT(0); 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
 };
 
@@ -136,35 +135,31 @@ public:
   inline static bool statesOnly() {
     return false;
   }
-  inline subengine::error addInitial(long st) {
+  inline void addInitial(long st) {
     DCASSERT(initlist);
     initlist->Append(st);
-    return subengine::Success;
   }
-  inline subengine::error enlarge(long st) {
-    if (st < rg.getNumNodes()) return subengine::Success;
-    try {
-      rg.addNodes(st+1-rg.getNumNodes());
-      return subengine::Success;
-    }
-    catch (GraphLib::error e) {
-      return convert(e);
-    }
+  inline void enlarge(long st) {
+    if (st < rg.getNumNodes()) return;
+    rg.addNodes(st+1-rg.getNumNodes());
   }
-  inline subengine::error addEdge(long from, long to) {
-    subengine::error e = enlarge(MAX(from, to));
-    if (e) return e;
+  inline void addEdge(long from, long to) {
     try {
+      enlarge(MAX(from, to));
       rg.addEdge(from, to);
-      return subengine::Success;
     }
     catch (GraphLib::error e) {
-      return convert(e);
+      throw convert(e);
     }
   }
   // handy
-  inline subengine::error finish() {
-    return enlarge(tandb.Size()-1);
+  inline void finish() {
+    try {
+      enlarge(tandb.Size()-1);
+    }
+    catch (GraphLib::error e) {
+      throw convert(e);
+    }
   }
   inline subengine::error convert(GraphLib::error e) const {
     switch (e.getCode()) {
@@ -234,13 +229,12 @@ public:
           return subengine::Engine_Failed;
     } // switch e
   }
-  inline subengine::error exportInitial(LS_Vector &s0) {
+  inline void exportInitial(LS_Vector &s0) {
     try {
       smp.getInitialVector(s0);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "build initial vector");
+      throw convert(e, "build initial vector");
     }
   }
 
@@ -270,68 +264,61 @@ public:
   inline static bool statesOnly() {
     return false;
   }
-  inline subengine::error eliminateVanishing() {
+  inline void eliminateVanishing() {
     clearVanishing();
     try {
       smp.eliminateVanishing(vansolver);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "eliminate vanishings");
+      throw convert(e, "eliminate vanishings");
     }
   }
-  inline subengine::error addInitialVanishing(long st, double wt) {
+  inline void addInitialVanishing(long st, double wt) {
     try {
       smp.addInitialVanishing(st, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add initial state");
+      throw convert(e, "add initial state");
     }
   }
-  inline subengine::error addInitialTangible(long st, double wt) {
+  inline void addInitialTangible(long st, double wt) {
     try {
       smp.addInitialTangible(st, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add initial state");
+      throw convert(e, "add initial state");
     }
   }
-  inline subengine::error addTTEdge(long from, long to, double wt) {
+  inline void addTTEdge(long from, long to, double wt) {
     try {
       smp.addTTedge(from, to, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add edge");
+      throw convert(e, "add edge");
     }
   }
-  inline subengine::error addTVEdge(long from, long to, double wt) {
+  inline void addTVEdge(long from, long to, double wt) {
     try {
       smp.addTVedge(from, to, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add edge");
+      throw convert(e, "add edge");
     }
   }
-  inline subengine::error addVTEdge(long from, long to, double wt) {
+  inline void addVTEdge(long from, long to, double wt) {
     try {
       smp.addVTedge(from, to, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add edge");
+      throw convert(e, "add edge");
     }
   }
-  inline subengine::error addVVEdge(long from, long to, double wt) {
+  inline void addVVEdge(long from, long to, double wt) {
     try {
       smp.addVVedge(from, to, wt);
-      return subengine::Success;
     }
     catch (MCLib::error e) {
-      return convert(e, "add edge");
+      throw convert(e, "add edge");
     }
   }
 };
@@ -357,7 +344,7 @@ public:
   as_procgen(const exp_state_lib* sl);
   
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(hldsm* m, result &);
+  virtual void RunEngine(hldsm* m, result &);
 
 protected:
   /** Build the reachability set and (maybe) graph.
@@ -366,9 +353,9 @@ protected:
         @param  s0  Initial states; will be filled in IF rg is not 0.
         @param  rg  Graph goes here.  If 0, we only generate states!
 
-        @return Appropriate error code.
+        @throw  Appropriate error code.
   */
-  error generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::digraph* rg) const;
+  void generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::digraph* rg) const;
 
   /** Build the reachability set and (maybe) Markov chain.
         @param  m   High-level model.
@@ -376,9 +363,9 @@ protected:
         @param  s0  Initial distribution; will be filled in IF smp is not 0.
         @param  smp Vanishing chain goes here.  If 0, we only generate states!
 
-        @return Appropriate error code.
+        @throw  Appropriate error code.
   */
-  error generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, MCLib::vanishing_chain* smp) const;
+  void generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, MCLib::vanishing_chain* smp) const;
 
 
   inline void initial_distro(const LS_Vector &init) const {
@@ -410,15 +397,15 @@ bool as_procgen::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::Asynch_Events == mt);
 }
 
-as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
+void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
   lldsm* lm = hm->GetProcess();
   if (lm) {
     subengine* e = lm->getCompletionEngine();
-    if (0==e)                 return Success;
-    if (statesonly.getBool()) return Success;
+    if (0==e)                 return;
+    if (statesonly.getBool()) return;
     if (e!=this)              return e->RunEngine(hm, statesonly);
   }
   StateLib::state_db* rss = 0;
@@ -477,12 +464,20 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
   init.d_value = 0;
 
   // Generate process
-  error foo;
   dsde_hlm* dsm = smart_cast <dsde_hlm*> (hm);
   DCASSERT(dsm);
   em->waitTerm();
-  if (nondeterm)  foo = generateRG(dsm, rss, init, rg);
-  else            foo = generateMC(dsm, rss, init, vc);
+  bool procOK = true;
+  error bailOut;
+  try {
+    if (nondeterm)  generateRG(dsm, rss, init, rg);
+    else            generateMC(dsm, rss, init, vc);
+  }
+  catch (error e) {
+    procOK = false;
+    bailOut = e;
+  }
+
   if (vc) {
     mc = vc->grabTTandClear();
     DCASSERT(mc);
@@ -490,7 +485,7 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Report on generation
-  if (stopGen(foo, hm->Name(), the_proc, watch)) {
+  if (stopGen(procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
       em->report().Put('\t');
       em->report().PutMemoryCount(rss->ReportMemTotal(), 3);
@@ -514,7 +509,7 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
   em->resumeTerm();
 
   // Did we succeed so far?
-  if (foo != Success) {
+  if (!procOK) {
     delete rg;
     delete mc;
     if (lm) {
@@ -523,7 +518,8 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
       delete rss;
       hm->SetProcess(MakeErrorModel());
     }
-    return foo;
+    doneTimer(watch);
+    throw bailOut;
   }
 
   // Set process as known so far
@@ -541,7 +537,7 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
   if (statesonly.getBool()) {
     lm->setCompletionEngine(this);
     doneTimer(watch);
-    return Success;
+    return;
   }
 
   // Start reporting on compaction
@@ -566,40 +562,33 @@ as_procgen::error as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // We've generated the entire process now.
   lm->setCompletionEngine(0);
-
-  return Success;
 }
 
 
-subengine::error as_procgen
-::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, LS_Vector &s0, GraphLib::digraph* rg) const
+void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, 
+  LS_Vector &s0, GraphLib::digraph* rg) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);
 
   StateLib::state_db* vandb = statelib->createStateDB(true, false);
 
-  subengine::error e;
-
   if (rg) {
     indexed_reachgraph myrg(*tandb, *vandb, *rg);
-    e = generateIndexedRG(debug, *dsm, myrg);
-    if (Success == e) {
-      myrg.exportInitial(s0);
-      e = myrg.finish();
-    }
+    generateIndexedRG(debug, *dsm, myrg);
+    myrg.exportInitial(s0);
+    myrg.finish();
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    e = generateIndexedRG(debug, *dsm, myrs);
+    generateIndexedRG(debug, *dsm, myrs);
   }
 
   delete vandb;
-  return e;
 }
 
 
-subengine::error as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb, 
-                                  LS_Vector &s0, MCLib::vanishing_chain* smp) const
+void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb, 
+  LS_Vector &s0, MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);
@@ -610,22 +599,17 @@ subengine::error as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb
 
   StateLib::state_db* vandb = statelib->createStateDB(true, false);
 
-  subengine::error e;
-
   if (smp) {
     indexed_smp mysmp(*dsm, *tandb, *vandb, vansolver, *smp);
-    e = generateIndexedSMP(debug, *dsm, mysmp);
-    if (Success == e) {
-      e = mysmp.exportInitial(s0);
-      initial_distro(s0);
-    }
+    generateIndexedSMP(debug, *dsm, mysmp);
+    mysmp.exportInitial(s0);
+    initial_distro(s0);
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    e = generateIndexedSMP(debug, *dsm, myrs);
+    generateIndexedSMP(debug, *dsm, myrs);
   }
 
   delete vandb;
-  return e;
 }
 
 

@@ -125,14 +125,14 @@ public:
   inline bool wasBuiltOK() const { return built_ok; }
 
   /// Build initial states and other initializations.
-  virtual subengine::error initializeVars();
+  virtual void initializeVars();
 
 protected:
   static char* buildVarName(const hldsm::partinfo &part, int k);
 
 public:
   /// Any pre-processing for the next-state function goes here.
-  virtual subengine::error initializeEvents(named_msg &debug) = 0;
+  virtual void initializeEvents(named_msg &debug) = 0;
 
   inline const MEDDLY::dd_edge& getEventEnabling(int ev_index) const {
     DCASSERT(event_enabling);
@@ -155,10 +155,9 @@ public:
                         level i.  If the array is 0 then we
                         assume cl[i] is true for all i.
 
-        @return   An appropriate error code.
+        @throws   An appropriate error code.
   */
-  virtual subengine::error 
-  updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl) = 0;
+  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl) = 0;
    
   /// For the given set, determine which levels have "changed".
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl) = 0;

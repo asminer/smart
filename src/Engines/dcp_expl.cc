@@ -90,9 +90,9 @@ public:
   virtual~ icp_stategen();
 
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(hldsm* m, result &);
+  virtual void RunEngine(hldsm* m, result &);
 private:
-  error Generate_NE_rec(int k);
+  void Generate_NE_rec(int k);
   // variables used by Generate_NE_rec
   int N;                // num vars
   int* bounds;          // bounds per variable
@@ -135,13 +135,13 @@ protected:
     } 
     return false;
   }
-  inline error terminateError() const {
+  inline void terminateError() const {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Process construction prematurely terminated";
       em->stopIO();
     }
-    return Terminated;
+    throw Terminated;
   }
 };
 named_msg icp_stategen::report;
@@ -166,11 +166,11 @@ bool icp_stategen::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::No_Events == mt);
 }
 
-subengine::error icp_stategen::RunEngine(hldsm* hm, result &)
+void icp_stategen::RunEngine(hldsm* hm, result &)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
-  if (hm->GetProcess())  return Success;  // already has SS?
+  if (hm->GetProcess())  return;  // already has SS?
 
   nem = smart_cast <no_event_model*> (hm);
   DCASSERT(nem);
@@ -195,9 +195,17 @@ subengine::error icp_stategen::RunEngine(hldsm* hm, result &)
  
   em->waitTerm();
   states = StateLib::CreateCollection(false, false);
-  error foo = Generate_NE_rec(0);
+  bool OK = true;
+  error foo;
+  try {
+    Generate_NE_rec(0);
+  }
+  catch (error e) {
+    OK = false;
+    foo = e;
+  }
 
-  if (stopGen(foo, hm->Name(), watch, 
+  if (stopGen(!OK, hm->Name(), watch, 
               states->ReportMemTotal(), states->Size())) {
     em->stopIO();
     doneTimer(watch);
@@ -207,15 +215,15 @@ subengine::error icp_stategen::RunEngine(hldsm* hm, result &)
   delete[] current;
   delete[] bounds;
 
-  if (Success == foo) {
+  if (OK) {
     hm->SetProcess(new expl_states_only(states));
   } else {
     hm->SetProcess(MakeErrorModel());
+    throw foo;
   }
-  return foo; 
 }
 
-icp_stategen::error icp_stategen::Generate_NE_rec(int k)
+void icp_stategen::Generate_NE_rec(int k)
 {
   if (k>=N) {
     // visit this state
@@ -225,7 +233,7 @@ icp_stategen::error icp_stategen::Generate_NE_rec(int k)
         em->cerr() << "Out of memory when adding to state space";
         nem->DoneError();
       }
-      return Out_Of_Memory; 
+      throw Out_Of_Memory; 
     }
     if (debug.startReport()) {
       debug.report() << "Valid state: ";
@@ -233,7 +241,7 @@ icp_stategen::error icp_stategen::Generate_NE_rec(int k)
       debug.report() << "\n";
       debug.stopIO();
     }
-    return Success;
+    return;
   }
   for (current[k] = 0; current[k] < bounds[k]; current[k]++) {
     // Check for sigterm
@@ -241,11 +249,9 @@ icp_stategen::error icp_stategen::Generate_NE_rec(int k)
 
     nem->GetVar(k)->SetToValueNumber(current[k]);
     if (nem->SatisfiesConstraintsAt(k)) {
-      error e = Generate_NE_rec(k+1);
-      if (e != Success) return e;
+      Generate_NE_rec(k+1);
     }
   }
-  return Success;
 }
 
 // **************************************************************************
@@ -261,9 +267,9 @@ class icp_ss_analyzer : public subengine {
 public:
   icp_ss_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasure(hldsm* m, measure* what);
 protected:
-  virtual error SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem, 
     const StateLib::state_coll* sc, measure* what) = 0;
 };
 
@@ -278,7 +284,7 @@ bool icp_ss_analyzer::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::No_Events == mt);
 }
 
-subengine::error icp_ss_analyzer::SolveMeasure(hldsm* hm, measure* what)
+void icp_ss_analyzer::SolveMeasure(hldsm* hm, measure* what)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
@@ -287,12 +293,10 @@ subengine::error icp_ss_analyzer::SolveMeasure(hldsm* hm, measure* what)
 #ifdef DEVELOPMENT_CODE
   dummy.setNull();
 #endif
-  error e = SSGen ? SSGen->runEngine(hm, dummy) : No_Engine;
-  if (e) {
-    return e;
-  }
+  if (!SSGen) throw No_Engine;
+  SSGen->runEngine(hm, dummy);
   if (0==hm->GetProcess()) {
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   no_event_model* nem = smart_cast <no_event_model*> (hm);
@@ -309,7 +313,7 @@ subengine::error icp_ss_analyzer::SolveMeasure(hldsm* hm, measure* what)
   // constraints are in the wrong format.
   // TBD: Print an error message.
 
-  return No_Engine;
+  throw No_Engine;
 }
 
 
@@ -323,7 +327,7 @@ class icp_minimize : public icp_ss_analyzer {
 public:
   icp_minimize();
 protected:
-  virtual error SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem, 
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -333,8 +337,7 @@ icp_minimize::icp_minimize() : icp_ss_analyzer()
 {
 }
 
-subengine::error 
-icp_minimize ::SolveExplicit(no_event_model* nem, 
+void icp_minimize ::SolveExplicit(no_event_model* nem, 
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
@@ -343,7 +346,7 @@ icp_minimize ::SolveExplicit(no_event_model* nem,
 
   if (0==sc->Size()) {
     what->SetNull();
-    return Success;
+    return;
   }
 
   int N = nem->NumVars();
@@ -379,7 +382,6 @@ icp_minimize ::SolveExplicit(no_event_model* nem,
   em->cout() << "\n";
 
   delete[] current;
-  return Success; 
 }
 
 
@@ -394,7 +396,7 @@ class icp_maximize : public icp_ss_analyzer {
 public:
   icp_maximize();
 protected:
-  virtual error SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem, 
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -404,8 +406,7 @@ icp_maximize::icp_maximize() : icp_ss_analyzer()
 {
 }
 
-subengine::error 
-icp_maximize::SolveExplicit(no_event_model* nem, 
+void icp_maximize::SolveExplicit(no_event_model* nem, 
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
@@ -414,7 +415,7 @@ icp_maximize::SolveExplicit(no_event_model* nem,
   
   if (0==sc->Size()) {
     what->SetNull();
-    return Success;
+    return;
   }
 
   int N = nem->NumVars();
@@ -450,7 +451,6 @@ icp_maximize::SolveExplicit(no_event_model* nem,
   em->cout() << "\n";
 
   delete[] current;
-  return Success; 
 }
 
 
@@ -465,7 +465,7 @@ class icp_satisfiable : public icp_ss_analyzer {
 public:
   icp_satisfiable();
 protected:
-  virtual error SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem, 
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -475,8 +475,7 @@ icp_satisfiable::icp_satisfiable() : icp_ss_analyzer()
 {
 }
 
-subengine::error 
-icp_satisfiable::SolveExplicit(no_event_model* nem, 
+void icp_satisfiable::SolveExplicit(no_event_model* nem, 
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
@@ -508,7 +507,6 @@ icp_satisfiable::SolveExplicit(no_event_model* nem,
   }
 
   delete[] current;
-  return Success; 
 }
 
 // **************************************************************************

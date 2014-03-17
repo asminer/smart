@@ -57,19 +57,22 @@ protected:
 
   inline lldsm* BuildRG(hldsm* hlm, const expr* err) const {
     if (0==hlm)  return 0;
-    subengine::error e;
     result f;
     f.setBool(false);
 
-    lldsm* llm = hlm->GetProcess();
-    if (llm) {
-      subengine* gen = llm->getCompletionEngine();
-      if (0==gen) return llm;
-      e = gen->RunEngine(hlm, f);
-    } else {
-      e = ProcGen ? ProcGen->runEngine(hlm, f) : subengine::No_Engine;
-    }
-    if (e) {
+    try {
+      lldsm* llm = hlm->GetProcess();
+      if (llm) {
+        subengine* gen = llm->getCompletionEngine();
+        if (0==gen) return llm;
+        gen->RunEngine(hlm, f);
+      } else {
+        if (!ProcGen) throw subengine::No_Engine;
+        ProcGen->runEngine(hlm, f);
+      }
+      return hlm->GetProcess();
+    } // try
+    catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
         em->cerr() << "Couldn't build reachability graph: ";
@@ -77,8 +80,7 @@ protected:
         em->stopIO();
       }
       return 0;
-    }
-    return hlm->GetProcess();
+    } // catch
   }
 
   inline checkable_lldsm* getLLM(traverse_data &x, expr* p) const {
@@ -121,8 +123,11 @@ protected:
   }
 
   inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
-    subengine::error e = et ? et->runEngine(pass, np, x) : subengine::No_Engine;
-    if (e) {
+    try {
+      if (et)   et->runEngine(pass, np,x);
+      else      throw subengine::No_Engine;
+    }
+    catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(x.parent);
         em->cerr() << "Couldn't compute " << Name() << ": ";

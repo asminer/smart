@@ -2052,7 +2052,7 @@ class avg_rand : public func_engine {
 public:
   avg_rand(const type* xtype, engtype* w);
 protected:
-  virtual subengine::error BuildParams(traverse_data &x, expr** pass, int np);
+  virtual void BuildParams(traverse_data &x, expr** pass, int np);
 };
 
 avg_rand::avg_rand(const type* xtype, engtype* w)
@@ -2062,12 +2062,11 @@ avg_rand::avg_rand(const type* xtype, engtype* w)
   SetDocumentation("Determines the expected value of random variable x.  Unless the variance is not needed, var(x) should be computed before avg(x).");
 }
 
-subengine::error avg_rand::BuildParams(traverse_data &x, expr** pass, int np)
+void avg_rand::BuildParams(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(1==np);
   DCASSERT(x.answer);
   setParam(0).setPtr(Share(pass[0]));
-  return subengine::Success;
 }
 
 // ******************************************************************

@@ -30,20 +30,23 @@ public:
 
   inline lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err) {
     if (0==hlm)  return 0;
-    subengine::error e;
     result so;
     so.setBool(states_only);
 
-    lldsm* llm = hlm->GetProcess();
-    if (llm) {
-      subengine* gen = llm->getCompletionEngine();
-      if (0==gen) return llm;
-      e = gen->RunEngine(hlm, so);
-    } else {
-      e = ProcGen ? ProcGen->runEngine(hlm, so) : subengine::No_Engine;
-    }
+    try {
+      lldsm* llm = hlm->GetProcess();
+      if (llm) {
+        subengine* gen = llm->getCompletionEngine();
+        if (0==gen) return llm;
+        gen->RunEngine(hlm, so);
+      } else {
+        if (!ProcGen) throw subengine::No_Engine;
+        ProcGen->runEngine(hlm, so);
+      }
+      return hlm->GetProcess();
+    } // try
     
-    if (e) {
+    catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
         em->cerr() << "Couldn't build ";
@@ -52,8 +55,7 @@ public:
         em->stopIO();
       }
       return 0;
-    }
-    return hlm->GetProcess();
+    } // catch
   }
 };
 

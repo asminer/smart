@@ -41,10 +41,8 @@ class engine_tree;
 */
 class subengine {
 public:
-  /// Error codes
+  /// Error codes, thrown as exceptions.
   enum error {
-    /// The operation was successful.
-    Success = 0,
     /// Operation required finalization but we aren't, or vice-versa.
     Finalized,
     /// No solution engine available!
@@ -78,10 +76,10 @@ public:
   */
   virtual bool AppliesToModelType(hldsm::model_type mt) const = 0;
 
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
-  virtual error RunEngine(hldsm* m, result &parm);
-  virtual error SolveMeasure(hldsm* m, measure* what);
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(hldsm* m, result &parm);
+  virtual void SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 
   /** Produce a "human-readable" name for an error.
         @param  e  The engine error.
@@ -134,52 +132,56 @@ public:
     return Compare(n2);
   }
 
-  inline subengine::error RunEngine(result* pass, int np, traverse_data &x) {
+  inline void RunEngine(result* pass, int np, traverse_data &x) {
     DCASSERT(children);
     if (children[0]) {
       DCASSERT(children[0]->AppliesToModelType(hldsm::Nothing));
-      return children[0]->RunEngine(pass, np, x);
+      children[0]->RunEngine(pass, np, x);
+    } else {
+      throw subengine::No_Engine;
     }
-    return subengine::No_Engine;
   }
 
-  inline subengine::error RunEngine(hldsm* m, result &parm) {
-    if (0==m) return subengine::Success;
+  inline void RunEngine(hldsm* m, result &parm) {
+    if (0==m) return;
     DCASSERT(children);
     int i = int(m->Type());
-    if (i<0) return subengine::Success;
+    if (i<0) return;
     CHECK_RANGE(0, i, num_hlm_types);
     if (children[i]) {
       DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      return children[i]->RunEngine(m, parm);
+      children[i]->RunEngine(m, parm);
+    } else {
+      throw subengine::No_Engine;
     }
-    return subengine::No_Engine;
   }
 
-  inline subengine::error SolveMeasure(hldsm* m, measure* what) {
-    if (0==m) return subengine::Success;
+  inline void SolveMeasure(hldsm* m, measure* what) {
+    if (0==m) return;
     DCASSERT(children);
     int i = int(m->Type());
-    if (i<0) return subengine::Success;
+    if (i<0) return;
     CHECK_RANGE(0, i, num_hlm_types);
     if (children[i]) {
       DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      return children[i]->SolveMeasure(m, what);
+      children[i]->SolveMeasure(m, what);
+    } else {
+      throw subengine::No_Engine;
     }
-    return subengine::No_Engine;
   }
 
-  inline subengine::error SolveMeasures(hldsm* m, set_of_measures* list) {
-    if (0==m) return subengine::Success;
+  inline void SolveMeasures(hldsm* m, set_of_measures* list) {
+    if (0==m) return;
     DCASSERT(children);
     int i = int(m->Type());
-    if (i<0) return subengine::Success;
+    if (i<0) return;
     CHECK_RANGE(0, i, num_hlm_types);
     if (children[i]) {
       DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      return children[i]->SolveMeasures(m, list);
+      children[i]->SolveMeasures(m, list);
+    } else {
+      throw subengine::No_Engine;
     }
-    return subengine::No_Engine;
   }
 
   friend class engtype;
@@ -267,8 +269,8 @@ public:
 
   inline int getIndex() const { return index; }
 
-  /// Register a solution engine.
-  subengine::error registerEngine(engine* e);
+  /// Register a solution engine. 
+  void registerEngine(engine* e);
 
   /** Reset the default engine.
       If this is never called, then the first registered engine 
@@ -279,18 +281,18 @@ public:
                     If 0 and no more engines are registered, 
                     then some engine will be arbitrarily chosen as default.
 
-        @return An appropriate error code.
+        @throws An appropriate error code.
   */
-  subengine::error setDefaultEngine(engine* d);
+  void setDefaultEngine(engine* d);
 
   /** Register a solution sub-engine.
       Registry must not be finalized.
         @param  engname   Name of the engine that \a se should belong to.
                           An error occurs if no such engine can be found.
         @param  se        Subengine.
-        @return An appropriate error code.
+        @throws An appropriate error code.
   */
-  subengine::error registerSubengine(const char* engname, subengine* se);
+  void registerSubengine(const char* engname, subengine* se);
 
   /// Call when we are done registering engines.
   void finalizeRegistry(option_manager* om);
@@ -301,9 +303,9 @@ public:
         @param  pass  The parameters to pass to the engine.
         @param  np    Number of passed parameters.
         @param  x     Where to place the solution and such.
-        @return An appopriate error code, or Success on success.
+        @throws An appopriate error code
   */
-  subengine::error runEngine(result* pass, int np, traverse_data &x);
+  void runEngine(result* pass, int np, traverse_data &x);
 
   /** Run an engine on a model.
       Call this for engines of form "Model".
@@ -311,27 +313,27 @@ public:
         @param  m   The model to analyze.
                     (The solution, if any, is stored in the
                     model itself.)
-        @return An appopriate error code, or Success on success.
+        @throws An appopriate error code
   */
-  subengine::error runEngine(hldsm* m, result &p);
+  void runEngine(hldsm* m, result &p);
 
   /** Solve a single measure.
       Call this for engines of form "Single".
       Finds the currently-selected solution engine, and launches it.
         @param  m     The model to analyze.
         @param  what  The measure to compute.
-        @return An appopriate error code, or Success on success.
+        @throws An appopriate error code
   */
-  subengine::error solveMeasure(hldsm* m, measure* what);
+  void solveMeasure(hldsm* m, measure* what);
 
   /** Solve a group of measures with the same engine type.
       Call this for engines of form "Grouped".
       Finds the currently-selected solution engine, and launches it.
         @param  m     The model to analyze.
         @param  list  Set of measures to compute.
-        @return An appopriate error code, or Success on success.
+        @throws An appopriate error code
   */
-  subengine::error solveMeasures(hldsm* m, set_of_measures* list);
+  void solveMeasures(hldsm* m, set_of_measures* list);
 
   /** Build a measure set for this engine type.
       Default behavior is to return 0.
@@ -381,8 +383,7 @@ public:
   virtual ~func_engine();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 protected:
-  virtual subengine::error 
-  BuildParams(traverse_data &x, expr** pass, int np) = 0;
+  virtual void BuildParams(traverse_data &x, expr** pass, int np) = 0;
 
   inline result& setParam(int i) { 
     CHECK_RANGE(0, i, formals.getLength());
@@ -443,7 +444,7 @@ inline void RegisterEngine(engtype* et, engine* e)
     delete e;
     return;
   }
-  CHECK_RETURN( et->registerEngine(e), subengine::Success );
+  et->registerEngine(e);
 }
 
 inline void RegisterEngine(exprman* em, const char* etname, engine* e)
@@ -459,7 +460,7 @@ RegisterEngine(engtype* et, const char* name, const char* doc, subengine* se)
 {
   if (0==se || 0==et) return;
   engine* e = new engine(name, doc);
-  CHECK_RETURN( et->registerEngine(e), subengine::Success );
+  et->registerEngine(e);
   e->AddSubEngine(se);
 }
 
@@ -478,7 +479,7 @@ inline void
 RegisterSubengine(engtype* et, const char* engname, subengine* se)
 {
   if (0==se || 0==et) return;
-  CHECK_RETURN( et->registerSubengine(engname, se), subengine::Success );
+  et->registerSubengine(engname, se);
 }
 
 inline void
