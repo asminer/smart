@@ -2,19 +2,18 @@
 // $Id$
 
 /*
-    Explicit generation template functions based on state indexes.
+    Explicit generation template functions.
 
-    I.e., explicit generation engine for any data structure
-    that allows us to immediately index states as they are discovered.
+    States are "indexed" by a unique identifier.
 */
-
-
-
 
 
 /**
     Generate reachability graph from a discrete-event high-level model.
-    This is a template function.
+    This is a template function, where parameter RG is a generic
+    RG class (see required methods, below) and UID is the type of the
+    unique identifier per states.
+
 
     @param  debug Debugging channel
     @param  dsm   High-level model
@@ -22,22 +21,23 @@
     @param  rg    State sets and reachability graph.
                   The following methods are required.
 
-                  bool addVanishing(shared_state*, long &index);
-                  bool addTangible(shared_state*, long &index);
+                  bool add(bool isVanishing, const shared_state*, UID &id);
                   bool hasUnexploredVanishing();
                   bool hasUnexploredTangible();
-                  long getUnexploredVanishing(shared_state*);
-                  long getUnexploredTangible(shared_state*);
-                  void clearVanishing();
+                  UID  getUnexploredVanishing(shared_state*);
+                  UID  getUnexploredTangible(shared_state*);
+                  void clearVanishing(named_msg &debug);
                   bool statesOnly();
-                  subengine::error addInitial(long init_index);
-                  subengine::error addEdge(long from_index, long to_index);
+                  void addInitial(const UID id);
+                  void addEdge(UID from, UID to);
+                  void show(OutputStream &s, bool isVanishing, const UID id, const shared_state* st);
+                  UID  illegalID();
 
     @throws An appropriate error code
 
 */
-template <class RG>
-void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
+template <class RG, typename UID>
+void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg)
 {
   // allocate temporary states
   shared_state* curr_st = new shared_state(&dsm);
@@ -69,26 +69,14 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
         }
         throw subengine::Engine_Failed;
       }
-      long ind;
-      bool newinit;
-      if (xans.getBool()) {
-        newinit = rg.addVanishing(curr_st, ind);
-      } else {
-        newinit = rg.addTangible(curr_st, ind);
-        if (!rg.statesOnly()) {
-          rg.addInitial(ind);
-        }
+      UID id;
+      bool newinit = rg.add(xans.getBool(), curr_st, id);
+      if (!xans.getBool()) {
+        rg.addInitial(id);
       }
       if (debug.startReport()) {
-        debug.report() << "Adding initial";
-        if (xans.getBool()) {
-          debug.report() << " vanishing state# ";
-        } else {
-          debug.report() << " tangible  state# ";
-        }
-        debug.report().Put(ind, 4);
-        debug.report() << " : ";
-        curr_st->Print(debug.report(), 0);
+        debug.report() << "Adding initial ";
+        rg.show(debug.report(), xans.getBool(), id, curr_st);
         debug.report() << "\n";
         debug.stopIO();
       }
@@ -102,13 +90,13 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
     //
     // Done with initial states, start exploration loop
     //
-    long from_ind = -1;
+    UID from_id;
+    rg.makeIllegalID(from_id);
+    bool valid_from = false;
     bool current_is_vanishing = false;
 
     // Combined tangible + vanishing explore loop!
     for (;;) {
-      long exp_index;
-  
       //
       // Check for signals
       //
@@ -123,42 +111,31 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
       //
       // Get next state to explore, with priority to vanishings.
       //
+      UID exp_id;
       if (rg.hasUnexploredVanishing()) {
         // explore next vanishing
-        exp_index = rg.getUnexploredVanishing(curr_st);
+        exp_id = rg.getUnexploredVanishing(curr_st);
         current_is_vanishing = true;
       } else {
         // No unexplored vanishing; safe to trash them, if desired
         if (current_is_vanishing) { // assumes we want to eliminate vanishing...
-          if (debug.startReport()) {
-            debug.report() << "Eliminating vanishing states\n";
-            debug.stopIO();
-          }
-          rg.clearVanishing();
+          rg.clearVanishing(debug);
         }
         current_is_vanishing = false;
         // find next tangible to explore; if none, break out
         if (rg.hasUnexploredTangible()) {
-          exp_index = rg.getUnexploredTangible(curr_st);
-          from_ind = exp_index;
+          from_id = exp_id = rg.getUnexploredTangible(curr_st);
+          valid_from = true;
         } else {
-          break;
+          break;  // done exploring!
         }
       }
       if (debug.startReport()) {
-        debug.report() << "Exploring";
-        if (current_is_vanishing) {
-          debug.report() << " vanishing state# ";
-        } else {
-          debug.report() << " tangible  state# ";
-        }
-        debug.report().Put(exp_index, 4);
-        debug.report() << " : ";
-        curr_st->Print(debug.report(), 0);
+        debug.report() << "Exploring ";
+        rg.show(debug.report(), current_is_vanishing, exp_id, curr_st);
         debug.report() << "\n";
         debug.stopIO();
       }
-
 
       //
       // Make enabling list
@@ -183,10 +160,6 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
         model_event* t = enabled.Item(e);
         DCASSERT(t);
         DCASSERT(t->actsLikeImmediate() == current_is_vanishing);
-        /*
-        if (0==t->getNextstate())
-          continue;  // firing is "no-op", don't bother
-        */
 
         //
         // t is enabled, fire and get new state
@@ -223,28 +196,17 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
         //
         // add reached state to appropriate set
         //
-        long newindex;
         bool next_is_new;
-        bool next_is_vanishing;
-        if ( (next_is_vanishing = xans.getBool()) ) {
-          next_is_new = rg.addVanishing(next_st, newindex);
-        } else {
-          next_is_new = rg.addTangible(next_st, newindex);
-        }
+        UID next_id;
+        bool next_is_vanishing = xans.getBool();
+        next_is_new = rg.add(next_is_vanishing, next_st, next_id);
 
         //
         // Debug info
         //
         if (debug.startReport()) {
           debug.report() << "\t via event " << t->Name() << " to ";
-          if (next_is_vanishing) {
-            debug.report() << " vanishing state #";
-          } else {
-            debug.report() << " tangible  state #";
-          }
-          debug.report().Put(newindex, 4);
-          debug.report() << " : ";
-          next_st->Print(debug.report(), 0);
+          rg.show(debug.report(), next_is_vanishing, next_id, next_st);
           debug.report() << "\n";
           debug.stopIO();
         }
@@ -266,12 +228,15 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
         //
         // Add edge to RG
         //
-        if (from_ind < 0) { // exploring from initial vanishing
-          rg.addInitial(newindex);
+        if (valid_from) {
+          rg.addEdge(from_id, next_id);
         } else {
-          rg.addEdge(from_ind, newindex);
+          // Must be exploring an initial vanishing state
+          rg.addInitial(next_id);
         } 
+
       } // for e
+
 
     } // infinite loop
 
@@ -280,7 +245,6 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
     //
     Nullify(x.current_state);
     Nullify(x.next_state);
-
   } // try
 
   catch (subengine::error e) {
@@ -297,36 +261,46 @@ void generateIndexedRG(named_msg &debug, dsde_hlm &dsm, RG &rg)
 
 
 
+
+
+
+
+
+
 /**
-    Generate reachability graph from a discrete-event high-level model.
-    This is a template function.
+    Generate semi-Markov process (vanishing chain) 
+    from a discrete-event high-level model.
+    This is a template function, where parameter SMP is a generic
+    SMP class (see required methods, below) and UID is the type of the
+    unique identifier per states.
+
 
     @param  debug Debugging channel
     @param  dsm   High-level model
 
-    @param  smp   State sets and semi-Markov process.
+    @param  rg    State sets and semi-Markov process.
                   The following methods are required.
 
-                  bool addVanishing(shared_state*, long &index);
-                  bool addTangible(shared_state*, long &index);
+                  bool add(bool isVanishing, const shared_state*, UID &id);
                   bool hasUnexploredVanishing();
                   bool hasUnexploredTangible();
-                  long getUnexploredVanishing(shared_state*);
-                  long getUnexploredTangible(shared_state*);
-                  subengine::error eliminateVanishing();
+                  UID  getUnexploredVanishing(shared_state*);
+                  UID  getUnexploredTangible(shared_state*);
+                  void eliminateVanishing(named_msg &debug);
                   bool statesOnly();
-                  subengine::error addInitialVanishing(long index, double wt);
-                  subengine::error addInitialTangible(long index, double wt);
-                  subengine::error addTTEdge(long from, long to, double wt);
-                  subengine::error addTVEdge(long from, long to, double wt);
-                  subengine::error addVTEdge(long from, long to, double wt);
-                  subengine::error addVVEdge(long from, long to, double wt);
+                  void addInitial(bool isVanishing, const UID id, double wt);
+                  void addTTEdge(UID from, UID to, double wt);
+                  void addTVEdge(UID from, UID to, double wt);
+                  void addVTEdge(UID from, UID to, double wt);
+                  void addVVEdge(UID from, UID to, double wt);
+                  void show(OutputStream &s, bool isVanishing, const UID id, const shared_state* st);
+                  UID  illegalID();
 
     @throws An appropriate error code
 
 */
-template <class SMP>
-void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
+template <class SMP, typename UID>
+void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp)
 {
   // allocate temporary states
   shared_state* curr_st = new shared_state(&dsm);
@@ -358,26 +332,13 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
         }
         throw subengine::Engine_Failed;
       }
-      long ind;
-      bool newinit;
-      if (xans.getBool()) {
-        newinit = smp.addVanishing(curr_st, ind);
-        if (!smp.statesOnly()) smp.addInitialVanishing(ind, wt);
-      } else {
-        newinit = smp.addTangible(curr_st, ind);
-        if (!smp.statesOnly()) smp.addInitialTangible(ind, wt);
-      }
+      UID id;
+      bool newinit = smp.add(xans.getBool(), curr_st, id);
+      smp.addInitial(xans.getBool(), id, wt);
       if (debug.startReport()) {
-        debug.report() << "Adding initial";
-        if (xans.getBool()) {
-          debug.report() << " vanishing state# ";
-        } else {
-          debug.report() << " tangible  state# ";
-        }
-        debug.report().Put(ind, 4);
-        debug.report() << " : ";
-        curr_st->Print(debug.report(), 0);
-        debug.report() << "\n";
+        debug.report() << "Adding initial ";
+        smp.show(debug.report(), xans.getBool(), id, curr_st);
+        debug.report() << " wt " << wt << "\n";
         debug.stopIO();
       }
       if (!newinit) continue;
@@ -396,7 +357,7 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
 
     // Combined tangible + vanishing explore loop!
     for (;;) {
-      long exp_index;
+      UID from_id;
 
       //
       // Check for signals
@@ -409,45 +370,32 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
         throw subengine::Terminated;
       }
 
-
       //
       // Get next state to explore, with priority to vanishings.
       //
       if (smp.hasUnexploredVanishing()) {
         // explore next vanishing
-        exp_index = smp.getUnexploredVanishing(curr_st);
+        from_id = smp.getUnexploredVanishing(curr_st);
         current_is_vanishing = true;
       } else {
         // No unexplored vanishing; safe to trash them, if desired
         if (current_is_vanishing) { // assumes we want to eliminate vanishing...
-          if (debug.startReport()) {
-            debug.report() << "Eliminating vanishing states\n";
-            debug.stopIO();
-          }
-          smp.eliminateVanishing();
+          smp.eliminateVanishing(debug);
         }
         current_is_vanishing = false;
         // find next tangible to explore; if none, break out
         if (smp.hasUnexploredTangible()) {
-          exp_index = smp.getUnexploredTangible(curr_st);
+          from_id = smp.getUnexploredTangible(curr_st);
         } else {
-          break;
+          break;  // done exploring!
         }
       }
       if (debug.startReport()) {
-        debug.report() << "Exploring";
-        if (current_is_vanishing) {
-          debug.report() << " vanishing state# ";
-        } else {
-          debug.report() << " tangible  state# ";
-        }
-        debug.report().Put(exp_index, 4);
-        debug.report() << " : ";
-        curr_st->Print(debug.report(), 0);
+        debug.report() << "Exploring ";
+        smp.show(debug.report(), current_is_vanishing, from_id, curr_st);
         debug.report() << "\n";
         debug.stopIO();
       }
-
 
       //
       // Make enabling list
@@ -463,9 +411,7 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
           dsm.DoneError();
         }
         throw subengine::Engine_Failed;
-        continue;
       }
-
 
       // 
       // Traverse enabled events
@@ -491,9 +437,7 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
             dsm.DoneError();
           }
           throw subengine::Engine_Failed;
-          break;
         }
-
 
         //
         // get the firing weight (if necessary)
@@ -549,13 +493,21 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
         //
         // add reached state to appropriate set
         //
-        long newindex;
+        UID to_id;
         bool next_is_new;
-        bool next_is_vanishing;
-        if ( (next_is_vanishing = xans.getBool()) ) {
-          next_is_new = smp.addVanishing(next_st, newindex);
-        } else {
-          next_is_new = smp.addTangible(next_st, newindex);
+        bool next_is_vanishing = xans.getBool();
+        next_is_new = smp.add(next_is_vanishing, next_st, to_id);
+
+        //
+        // Debug info
+        //
+        if (debug.startReport()) {
+          debug.report() << "\t via event " << t->Name();
+          if (!smp.statesOnly()) debug.report() << " (" << weight << ")";
+          debug.report() << " to ";
+          smp.show(debug.report(), next_is_vanishing, to_id, next_st);
+          debug.report() << "\n";
+          debug.stopIO();
         }
 
         //
@@ -577,20 +529,19 @@ void generateIndexedSMP(named_msg &debug, dsde_hlm &dsm, SMP &smp)
         //
         if (current_is_vanishing) {
             if (next_is_vanishing)
-                smp.addVVEdge(exp_index, newindex, weight);
+                smp.addVVEdge(from_id, to_id, weight);
             else
-                smp.addVTEdge(exp_index, newindex, weight);
+                smp.addVTEdge(from_id, to_id, weight);
         } else {
             if (next_is_vanishing)
-                smp.addTVEdge(exp_index, newindex, weight);
+                smp.addTVEdge(from_id, to_id, weight);
             else
-                smp.addTTEdge(exp_index, newindex, weight);
+                smp.addTTEdge(from_id, to_id, weight);
         }
 
       } // for e
 
     } // infinite loop
-
 
     //
     // Cleanup

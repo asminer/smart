@@ -30,7 +30,7 @@
 #include "../Modules/glue_meddly.h"
 
 // Generation templates
-#include "gen_abstr.h"
+#include "gen_templ.h"
 
 #include <limits.h>
 
@@ -147,7 +147,7 @@ public: // for explicit generation
   inline bool statesOnly() const { 
     return states_only_this_time; 
   }
-  inline void addInitial(void*) {
+  inline void addInitial(const int*) {
     // wasn't this built already?
   }
 };
@@ -334,7 +334,7 @@ void meddly_explgen::preprocess(dsde_hlm &m)
 
     bool hasUnexplored();
     int* getUnexplored(shared_state *);
-    int* addState(shared_state *, bool &isnew);
+    bool addState(shared_state *, int* &id);
     void reportStats(DisplayStream &out, const char* name) const;
     shared_ddedge* shareS();
 
@@ -389,30 +389,41 @@ public:  // required for generation engines
     if (tangible->getLevelChange() > level_change) {
       em->cout() << "Level change\n";
     }
-    int* foo = tangible->getUnexplored(s);
     s->Print(em->cout(), 0);
     em->cout() << "\n";
     em->cout().flush();
-    return foo;
-#else
-    return tangible->getUnexplored(s);
 #endif
+    return tangible->getUnexplored(s);
   }
-  inline int* addVanishing(shared_state*s, bool &isnew) {
-    DCASSERT(vanishing);
-    return vanishing->addState(s, isnew);
+  inline bool add(bool isVan, const shared_state* s,int* &id) {
+    if (isVan) {
+      DCASSERT(vanishing);
+      return vanishing->addState(s, id);
+    } else {
+      DCASSERT(tangible);
+      return tangible->addState(s, id);
+    }
   }
-  inline int* addTangible(shared_state*s, bool &isnew) {
-    DCASSERT(tangible);
-    return tangible->addState(s, isnew);
-  }
-  inline void clearVanishing() {
+  inline void clearVanishing(named_msg &debug) {
+    if (debug.startReport()) {
+      debug.report() << "Eliminating vanishing states\n";
+      debug.stopIO();
+    }
     DCASSERT(vanishing);
     vanishing->clear();
   }
-  inline void addTTedge(void* from, void* to) {
+  inline void addEdge(int* from, int* to) {
     DCASSERT(tan2tan);
-    return tan2tan->addEdge( (int*)from, (int*)to );
+    return tan2tan->addEdge(from, to);
+  }
+  inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
+  {
+    if (isVan) s << "vanishing state: ";
+    else       s << "tangible  state: ";
+    curr->Print(s, 0);
+  }
+  static inline void makeIllegalID(int* &id) {
+    id = 0;
   }
 };
 
@@ -442,7 +453,7 @@ void meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
     }
     throw subengine::Engine_Failed;
   }
-  generateUnindexedRG(debug, dsm, *this);
+  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
   DCASSERT(!vanishing->hasUnexplored());
   DCASSERT(!tangible->hasUnexplored());
   ms->states = tangible->shareS();
@@ -462,7 +473,7 @@ template <class TG, class VG, class EG>
 void meddly_expl<TG, VG, EG>::generateProc(dsde_hlm &dsm)
 {
   DCASSERT(ms->mdd_wrap);
-  generateUnindexedRG(debug, dsm, *this);
+  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
   DCASSERT(!vanishing->hasUnexplored());
   DCASSERT(tan2tan);
   tan2tan->addBatch();
@@ -715,7 +726,7 @@ public:
     return s_iter;
   }
   int* getUnexplored(shared_state *);
-  int* addState(shared_state *, bool &isnew);
+  bool addState(const shared_state *, int* &id);
 
   inline void reportStats(DisplayStream &out, const char* name) const { }
   inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
@@ -754,16 +765,16 @@ mt_known_stategroup
   return exploring;
 }
 
-int*
+bool
 mt_known_stategroup
-::addState(shared_state *s, bool &isnew)
+::addState(const shared_state *s, int* &id)
 {
   DCASSERT(discovering);
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
-  isnew = false;
   convert(wrap.state2minterm(s, discovering));
-  return discovering;
+  id = discovering;
+  return false;
 }
 
 // **************************************************************************
@@ -800,7 +811,7 @@ public:
     return (used>0) || U->E.getNode();
   }
   int* getUnexplored(shared_state *);
-  int* addState(shared_state *, bool &isnew);
+  bool addState(const shared_state *, int* &id);
 
   inline void reportStats(DisplayStream &out, const char* name) const {
     out << "\tBatch for " << name << " required ";
@@ -911,14 +922,14 @@ mt_sr_stategroup
   }
 }
 
-int*
+bool
 mt_sr_stategroup
-::addState(shared_state *s, bool &isnew)
+::addState(const shared_state *s, int* &id)
 {
   DCASSERT(discovering);
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
-  isnew = false;
+  id = discovering;
   convert(wrap.state2minterm(s, discovering));
   bool seen;
   try {
@@ -927,14 +938,13 @@ mt_sr_stategroup
   catch (MEDDLY::error e) {
     return 0;
   }
-  if (seen) return discovering;
-  isnew = true;
+  if (seen) return false;
   batch[used] = mp.shareMinterm(discovering);
   used++;
   if (used >= alloc) {
     addBatch();
   }
-  return discovering;
+  return true;
 }
 
 
