@@ -98,7 +98,7 @@ meddly_varoption::~meddly_varoption()
   }
 }
 
-subengine::error meddly_varoption::initializeVars()
+void meddly_varoption::initializeVars()
 {
   // We're good, just need to set the initial states
   DCASSERT(ms.mdd_wrap);
@@ -133,9 +133,9 @@ subengine::error meddly_varoption::initializeVars()
   Delete(st);
 
   switch (e) {
-    case sv_encoder::Success:         return subengine::Success;
-    case sv_encoder::Out_Of_Memory:   return subengine::Out_Of_Memory;
-    default:                          return subengine::Engine_Failed;
+    case sv_encoder::Success:         return;
+    case sv_encoder::Out_Of_Memory:   throw subengine::Out_Of_Memory;
+    default:                          throw subengine::Engine_Failed;
   }
 }
 
@@ -346,20 +346,18 @@ public:
 
   virtual ~bounded_varoption();
 
-  virtual subengine::error initializeEvents(named_msg &d);
+  virtual void initializeEvents(named_msg &d);
 
-  virtual subengine::error updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 
   virtual void reportStats(DisplayStream &out) const;
 
 protected: // in the following, dd is an mxd edge.
-  subengine::error 
-  encodeExpr(expr* e, MEDDLY::dd_edge &dd, const char *what, const char* who);
+  void encodeExpr(expr* e, MEDDLY::dd_edge &dd, const char *what, const char* who);
 
-  subengine::error
-  buildNoChange(const model_event &e, MEDDLY::dd_edge &dd);
+  void buildNoChange(const model_event &e, MEDDLY::dd_edge &dd);
 
 private:
   void checkBounds(const exprman* em);
@@ -394,15 +392,12 @@ bounded_varoption::~bounded_varoption()
   Delete(mtmxd_wrap);
 }
 
-subengine::error 
-bounded_varoption::initializeEvents(named_msg &d)
+void bounded_varoption::initializeEvents(named_msg &d)
 {
   // Nothing to do?
-  return subengine::Success;
 }
 
-subengine::error 
-bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
+void bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 {
   DCASSERT(built_ok);
   DCASSERT(nsf);
@@ -411,8 +406,6 @@ bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
   MEDDLY::forest* f = nsf->getForest();
   DCASSERT(f);
   MEDDLY::dd_edge mask(f);
-
-  subengine::error err = subengine::Success;
 
   // For now, don't bother checking cl; just build everything
 
@@ -431,10 +424,9 @@ bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
     }
 
     if (0==event_enabling[i]) event_enabling[i] = new MEDDLY::dd_edge(f);
-    err = encodeExpr(
+    encodeExpr(
       e->getEnabling(), *event_enabling[i], "enabling of event", e->Name()
     );
-    if (err) return err;
 
     //
     // Build firing for this event
@@ -447,14 +439,12 @@ bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
     }
 
     if (0==event_firing[i])   event_firing[i]   = new MEDDLY::dd_edge(f);
-    err = encodeExpr(
+    encodeExpr(
       e->getNextstate(), *event_firing[i], "firing of event", e->Name()
     );
-    if (err) return err;
 
     // Build "don't change" mask for this event; "AND" it with firing
-    err = buildNoChange(*e, mask);
-    if (err) return err;
+    buildNoChange(*e, mask);
 
 #ifdef DEBUG_EVENT_CONSTR
     printf("Don't change mask for event %s (#%d):\n", e->Name(), i);
@@ -470,8 +460,6 @@ bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
     event_firing[i]->show(stdout, 2);
 #endif
   } // for i
-
-  return err;
 }
 
 bool bounded_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
@@ -502,14 +490,14 @@ void bounded_varoption::reportStats(DisplayStream &out) const
 
 }
 
-subengine::error bounded_varoption
+void bounded_varoption
 ::encodeExpr(expr* e, MEDDLY::dd_edge &dd, const char* what, const char* who)
 {
   DCASSERT(mtmxd_wrap);
   if (0==e) {
     MEDDLY::forest* f = dd.getForest();
     f->createEdge(true, dd);
-    return subengine::Success;
+    return;
   }
   DCASSERT(e);
   result foo;
@@ -526,7 +514,7 @@ subengine::error bounded_varoption
       parent.SendError(who);
       parent.DoneError();
     }
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
   shared_ddedge* me = smart_cast <shared_ddedge*>(foo.getPtr());
   DCASSERT(me);
@@ -542,7 +530,7 @@ subengine::error bounded_varoption
   // now, copy it into the MXD
   try {
     MEDDLY::apply(MEDDLY::COPY, me->E, dd);
-    return subengine::Success;
+    return;
   }
   catch (MEDDLY::error ce) {
     // An error occurred, report it...
@@ -557,14 +545,13 @@ subengine::error bounded_varoption
 
     // ...and figure out which one
     if (MEDDLY::error::INSUFFICIENT_MEMORY == ce.getCode())
-      return subengine::Out_Of_Memory;
+      throw subengine::Out_Of_Memory;
 
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
 }
 
-subengine::error
-bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
+void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
 {
   DCASSERT(minterm);
   DCASSERT(mtmxd_wrap);
@@ -583,8 +570,8 @@ bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
   }
   catch (MEDDLY::error fe) {
     if (MEDDLY::error::INSUFFICIENT_MEMORY == fe.getCode()) 
-      return subengine::Out_Of_Memory;
-    return subengine::Engine_Failed;
+      throw subengine::Out_Of_Memory;
+    throw subengine::Engine_Failed;
   }
 
   // Now, "and" in the "don't change" variables
@@ -639,7 +626,7 @@ bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
     dd.show(stdout, 2);
 #endif
 
-    return subengine::Success;
+    return;
   } // try
   catch (MEDDLY::error e) {
     // cleanup, just in case
@@ -655,9 +642,9 @@ bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
     }
     // ...and figure out which one
     if (MEDDLY::error::INSUFFICIENT_MEMORY == e.getCode()) {
-      return subengine::Out_Of_Memory;
+      throw subengine::Out_Of_Memory;
     } else {
-      return subengine::Engine_Failed;
+      throw subengine::Engine_Failed;
     }
   } // catch
 }
@@ -917,8 +904,8 @@ public:
   substate_varoption(meddly_states &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
   virtual ~substate_varoption();
-  virtual subengine::error initializeVars();
-  virtual subengine::error initializeEvents(named_msg &d);
+  virtual void initializeVars();
+  virtual void initializeEvents(named_msg &d);
   virtual void reportStats(DisplayStream &out) const;
 private:
   void initDomain(const exprman* em);
@@ -934,14 +921,14 @@ private:
     set.removeRange(oldsz, newsz-1);
   }
 protected:
-  subengine::error exploreEnabling(deplist &dl, int k, bool has_unexp);
-  subengine::error exploreNextstate(deplist &dl, int k, bool has_unexp);
+  void exploreEnabling(deplist &dl, int k, bool has_unexp);
+  void exploreNextstate(deplist &dl, int k, bool has_unexp);
 
-  inline subengine::error exploreEnabling(deplist *dl) {
+  inline void exploreEnabling(deplist *dl) {
     DCASSERT(dl);
     return exploreEnabling(*dl, dl->level_deps.getSmallestAfter(0), false);
   }
-  inline subengine::error exploreNextstate(deplist *dl) {
+  inline void exploreNextstate(deplist *dl) {
     DCASSERT(dl);
     return exploreNextstate(*dl, dl->level_deps.getSmallestAfter(0), false);
   }
@@ -1098,20 +1085,18 @@ substate_varoption::~substate_varoption()
   delete td.answer;
 }
 
-subengine::error substate_varoption::initializeVars()
+void substate_varoption::initializeVars()
 {
-  subengine::error e = meddly_varoption::initializeVars();
-  if (e) return e;
+  meddly_varoption::initializeVars();
   // confirm the initial substates
   for (int k=num_levels; k; k--) {
     int N = colls->getMaxIndex(k);
     enlarge(confirmed[k], N);
     confirmed[k].addRange(0, N-1);
   } // for k
-  return subengine::Success;
 }
   
-subengine::error 
+void 
 substate_varoption::initializeEvents(named_msg &d)
 {
   if (d.startReport()) {
@@ -1130,7 +1115,7 @@ substate_varoption::initializeEvents(named_msg &d)
     DCASSERT(fire_deps[i]->termlist);
   } // for i
 
-  if (!d.startReport()) return subengine::Success;
+  if (!d.startReport()) return;
   d.report() << "done preprocessing event expressions\n";
 
   for (int i=0; i<parent.getNumEvents(); i++) {
@@ -1167,7 +1152,6 @@ substate_varoption::initializeEvents(named_msg &d)
   } // for i
 
   d.stopIO();
-  return subengine::Success;
 }
 
 void substate_varoption::reportStats(DisplayStream &out) const
@@ -1332,28 +1316,8 @@ substate_varoption::clearList(deplist* &L)
   L=0;
 }
 
-/*
-subengine::error substate_varoption::addBufferToEdge(deplist &dl, dd_edge &tmp)
-{
-  if (0==buffer_used) return subengine::Success;
-  forest* f = tmp.getForest();
-  forest::error fe = f->createEdge(from_buffer, to_buffer, buffer_used, tmp);
-  buffer_used = 0;
-  if (forest::SUCCESS != fe) {
-    if (forest::INSUFFICIENT_MEMORY == fe)  return subengine::Out_Of_Memory;
-    return subengine::Engine_Failed;
-  }
-  if (0==dl.dd) {
-    dl.dd = new dd_edge(tmp);
-  } else {
-    *(dl.dd) += tmp;
-  }
 
-  return subengine::Success;
-}
-*/
-
-subengine::error substate_varoption
+void substate_varoption
 ::exploreEnabling(deplist &dl, int k, bool has_unexp)
 {
   DCASSERT(k>0);
@@ -1367,7 +1331,7 @@ subengine::error substate_varoption
          i = confirmed[k].getSmallestAfter(i)) 
     {
       int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
-      if (foo<0) return subengine::Engine_Failed;
+      if (foo<0) throw subengine::Engine_Failed;
 
       // 
       // option for short circuiting here...
@@ -1378,7 +1342,7 @@ subengine::error substate_varoption
     } // for i
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
-    return subengine::Success;
+    return;
   } 
 
   // this is the "bottom level"
@@ -1391,7 +1355,7 @@ subengine::error substate_varoption
     if (!has_unexp && explored[k].contains(i)) continue;
 
     int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
-    if (foo<0) return subengine::Engine_Failed;
+    if (foo<0) throw subengine::Engine_Failed;
 
     from_minterm[k] = i;
 
@@ -1434,15 +1398,14 @@ subengine::error substate_varoption
     if (!is_enabled) continue;
 
     // enabled; add minterm to buffer
-    if (!dl.addMinterm(from_minterm)) return subengine::Out_Of_Memory;
+    if (!dl.addMinterm(from_minterm)) throw subengine::Out_Of_Memory;
 
   } // for i
   from_minterm[k] = -1;
   tdcurr->set_substate_unknown(k);
-  return subengine::Success;
 }
 
-subengine::error substate_varoption
+void substate_varoption
 ::exploreNextstate(deplist &dl, int k, bool has_unexp)
 {
   DCASSERT(k>0);
@@ -1457,7 +1420,7 @@ subengine::error substate_varoption
          i = confirmed[k].getSmallestAfter(i)) 
     {
       int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
-      if (foo<0) return subengine::Engine_Failed;
+      if (foo<0) throw subengine::Engine_Failed;
       colls->getSubstate(k, i, tdnext->writeSubstate(k), ssz);
 
       // 
@@ -1470,7 +1433,7 @@ subengine::error substate_varoption
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
     tdnext->set_substate_unknown(k);
-    return subengine::Success;
+    return;
   } 
 
   // this is the "bottom level"
@@ -1484,7 +1447,7 @@ subengine::error substate_varoption
     if (!has_unexp && explored[k].contains(i)) continue;
 
     int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
-    if (foo<0) return subengine::Engine_Failed;
+    if (foo<0) throw subengine::Engine_Failed;
     colls->getSubstate(k, i, tdnext->writeSubstate(k), ssz);
 
     from_minterm[k] = i;
@@ -1535,8 +1498,8 @@ subengine::error substate_varoption
       );
     
       if (to_minterm[kk]>=0) continue;
-      if (-2==to_minterm[kk]) return subengine::Out_Of_Memory;
-      return subengine::Engine_Failed;
+      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      throw subengine::Engine_Failed;
     } // for kk
 #ifdef DEBUG_EXPLORE_FIRING
     dump << "firing\n\tto state ";
@@ -1550,7 +1513,7 @@ subengine::error substate_varoption
     // add minterm to queue
     //
     if (!dl.addMinterm(from_minterm, to_minterm)) 
-      return subengine::Out_Of_Memory;
+      throw subengine::Out_Of_Memory;
 
     // clear out minterm
     //
@@ -1564,7 +1527,7 @@ subengine::error substate_varoption
   from_minterm[k] = -1;
   tdcurr->set_substate_unknown(k);
   tdnext->set_substate_unknown(k);
-  return subengine::Success;
+  return;
 }
 
 #ifdef SHOW_SUBSTATES
@@ -1599,7 +1562,7 @@ public:
   pregen_varoption(meddly_states &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
 
-  virtual subengine::error updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 };
@@ -1617,7 +1580,7 @@ pregen_varoption
 {
 }
 
-subengine::error 
+void 
 pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 {
   MEDDLY::forest* f = nsf->getForest();
@@ -1655,7 +1618,7 @@ pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 #endif
 
   
-  return subengine::Engine_Failed;
+  throw subengine::Engine_Failed;
 }
 
 bool pregen_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
@@ -1675,7 +1638,7 @@ public:
   onthefly_varoption(meddly_states &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
 
-  virtual subengine::error updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 };
@@ -1693,10 +1656,9 @@ onthefly_varoption
 {
 }
 
-subengine::error 
-onthefly_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
+void onthefly_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 {
-  return subengine::Engine_Failed;
+  throw subengine::Engine_Failed;
 }
 
 bool onthefly_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)

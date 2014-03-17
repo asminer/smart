@@ -293,13 +293,13 @@ class CTL_symb_eng : public subengine {
 public:
   CTL_symb_eng();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  inline static error convert(sv_encoder::error e) {
+  inline static void convert(sv_encoder::error e) {
     switch (e) {
-      case sv_encoder::Success        :   return Success;
-      case sv_encoder::Out_Of_Memory  :   return Out_Of_Memory;
-      default                         :   return Engine_Failed;
+      case sv_encoder::Success        :   return;
+      case sv_encoder::Out_Of_Memory  :   throw Out_Of_Memory;
+      default                         :   throw Engine_Failed;
     };
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 };
 
@@ -322,7 +322,7 @@ bool CTL_symb_eng::AppliesToModelType(hldsm::model_type mt) const
 class EX_symb_eng : public CTL_symb_eng {
 public:
   EX_symb_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 EX_symb_eng the_EX_symb_eng;
@@ -331,7 +331,7 @@ EX_symb_eng::EX_symb_eng() : CTL_symb_eng()
 {
 }
 
-subengine::error EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
+void EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pass[0].isNormal());
@@ -359,7 +359,6 @@ subengine::error EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
         Share(p->getRelationForest()), Share(p->getRelationDD())
     )
   );
-  return Success;
 }
 
 // **************************************************************************
@@ -371,7 +370,7 @@ subengine::error EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
 class EU_symb_eng : public CTL_symb_eng {
 public:
   EU_symb_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 EU_symb_eng the_EU_symb_eng;
@@ -380,7 +379,7 @@ EU_symb_eng::EU_symb_eng() : CTL_symb_eng()
 {
 }
 
-subengine::error EU_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
+void EU_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
   DCASSERT(pass[0].isNormal());
@@ -438,7 +437,7 @@ subengine::error EU_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
 class unfairEG_symb_eng : public CTL_symb_eng {
 public:
   unfairEG_symb_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 unfairEG_symb_eng the_unfairEG_symb_eng;
@@ -447,7 +446,7 @@ unfairEG_symb_eng::unfairEG_symb_eng() : CTL_symb_eng()
 {
 }
 
-subengine::error unfairEG_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
+void unfairEG_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(2==np);
   DCASSERT(pass[0].isNormal());

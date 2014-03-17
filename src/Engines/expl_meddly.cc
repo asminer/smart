@@ -49,20 +49,20 @@
 
 // Handy stuff
 
-inline subengine::error convert(MEDDLY::error ce) 
+inline void convert(MEDDLY::error ce) 
 {
   switch (ce.getCode()) {
-    case MEDDLY::error::INSUFFICIENT_MEMORY:  return subengine::Out_Of_Memory;
-    default:                                  return subengine::Engine_Failed;
+    case MEDDLY::error::INSUFFICIENT_MEMORY:  throw  subengine::Out_Of_Memory;
+    default:                                  throw  subengine::Engine_Failed;
   }
 }
 
-inline subengine::error convert(sv_encoder::error sve) 
+inline void convert(sv_encoder::error sve) 
 {
   switch (sve) {
-    case sv_encoder::Success:           return subengine::Success;
-    case sv_encoder::Out_Of_Memory:     return subengine::Out_Of_Memory;
-    default:                            return subengine::Engine_Failed;
+    case sv_encoder::Success:           return;
+    case sv_encoder::Out_Of_Memory:     throw  subengine::Out_Of_Memory;
+    default:                            throw  subengine::Engine_Failed;
   }
 }
 
@@ -94,7 +94,7 @@ protected:
 public:
   meddly_explgen();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(hldsm* m, result &states_only); 
+  virtual void RunEngine(hldsm* m, result &states_only); 
 
   inline static int getBatchSize() { return batch_size; }
   inline static bool getMBR() { return maximize_batch_refills; }
@@ -102,15 +102,15 @@ public:
   virtual MEDDLY::forest::policies buildRSSPolicies() const;
 
 protected:
-  virtual error generateRSS(dsde_hlm &dsm) = 0;
-  virtual error generateProc(dsde_hlm &dsm) = 0;
+  virtual void generateRSS(dsde_hlm &dsm) = 0;
+  virtual void generateProc(dsde_hlm &dsm) = 0;
   virtual const char* getAlgName() const = 0;
 
   virtual void AllocBuffers(const dsde_hlm* dhm) = 0;
   virtual void DoneBuffers() = 0;
   virtual void reportStats(DisplayStream &out, bool err) const = 0;
 
-  static error preprocess(dsde_hlm &m);
+  static void preprocess(dsde_hlm &m);
 
   inline bool startGen(const hldsm &hm, const char* proc) const {
     if (!meddly_procgen::startGen(hm, proc)) return false;
@@ -147,9 +147,8 @@ public: // for explicit generation
   inline bool statesOnly() const { 
     return states_only_this_time; 
   }
-  inline subengine::error addInitial(void*) {
+  inline void addInitial(void*) {
     // wasn't this built already?
-    return subengine::Success;
   }
 };
 
@@ -175,20 +174,18 @@ bool meddly_explgen::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::Asynch_Events == mt);
 }
 
-subengine::error 
-meddly_explgen::RunEngine(hldsm* hm, result &states_only)
+void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
   DCASSERT(states_only.isNormal());
-  error status = Success;
   states_only_this_time = states_only.getBool();
   lldsm* lm = hm->GetProcess();
   if (lm) {
     // we already have something, deal with it
     subengine* e = lm->getCompletionEngine();
-    if (0==e)                   return Success;
-    if (states_only.getBool())  return Success;
+    if (0==e)                   return;
+    if (states_only.getBool())  return;
     if (e!=this)                return e->RunEngine(hm, states_only);
   } 
 
@@ -196,10 +193,12 @@ meddly_explgen::RunEngine(hldsm* hm, result &states_only)
   DCASSERT(dhm);
   if (0==lm) { 
     // Preprocess
-    status = preprocess(*dhm);
-    if (Success != status) {
+    try {
+      preprocess(*dhm);
+    }
+    catch (error status) {
       hm->SetProcess(MakeErrorModel());
-      return status;
+      throw status;
     }
   }
   
@@ -218,10 +217,19 @@ meddly_explgen::RunEngine(hldsm* hm, result &states_only)
     ms = new meddly_states;
     meddly_varoption* mvo = makeVariableOption(*dhm, *ms);
     DCASSERT(mvo);
-    status = mvo->initializeVars();
-    DCASSERT(ms->mdd_wrap);
-    DCASSERT(ms->mxd_wrap);
-    delete mvo;
+    try {
+      mvo->initializeVars();
+      DCASSERT(ms->mdd_wrap);
+      DCASSERT(ms->mxd_wrap);
+      delete mvo;
+    }
+    catch (error e) {
+      delete mvo;
+      stopGen(true, *hm, which, watch);
+      Delete(ms);
+      doneTimer(watch);
+      throw e;
+    }
   } else {
     ms = Share(GrabMeddlyFSMStates(lm));
     DCASSERT(ms);
@@ -232,16 +240,14 @@ meddly_explgen::RunEngine(hldsm* hm, result &states_only)
   AllocBuffers(dhm);
 
   // Generate process
-  if (Success == status) {
-    if (lm) status = generateProc(*dhm);
-    else    status = generateRSS(*dhm);
-  }
+  try {
+    if (lm) generateProc(*dhm);
+    else    generateRSS(*dhm);
 
-  // Final report on generation
-  stopGen(status, *hm, which, watch);
+    // Final report on generation
+    stopGen(false, *hm, which, watch);
 
-  // Set process
-  if (Success == status) {
+    // Set process
     if (0==lm) {
       lm = StartMeddlyFSM(ms);
       Share(ms);
@@ -257,21 +263,30 @@ meddly_explgen::RunEngine(hldsm* hm, result &states_only)
       lm->setCompletionEngine(specifyCompletionEngine());
     }
     // explicit: always use actual edges
-  } else {
+
+    // Cleanup
+    DoneBuffers();
+
+    Delete(ms);
+    doneTimer(watch);
+
+  } // try 
+  catch (error status) {
+    stopGen(false, *hm, which, watch);
     if (0==lm) {
       dhm->SetProcess(MakeErrorModel());
     } else {
       lm->setCompletionEngine(0);
     }
+
+    // Cleanup
+    DoneBuffers();
+
+    Delete(ms);
+    doneTimer(watch);
+
+    throw status;
   }
-
-  // Cleanup
-  DoneBuffers();
-
-  Delete(ms);
-  doneTimer(watch);
-
-  return status;
 }
 
 MEDDLY::forest::policies 
@@ -284,15 +299,14 @@ meddly_explgen::buildRSSPolicies() const
   return p;
 }
 
-subengine::error 
-meddly_explgen::preprocess(dsde_hlm &m) 
+void meddly_explgen::preprocess(dsde_hlm &m) 
 {
-  if (m.hasPartInfo()) return Success;
+  if (m.hasPartInfo()) return;
   if (m.StartError(0)) {
     em->cerr() << "Meddly requires a structured model (try partitioning)";
     m.DoneError();
   }
-  return Engine_Failed;
+  throw Engine_Failed;
 }
 
 // **************************************************************************
@@ -319,15 +333,15 @@ meddly_explgen::preprocess(dsde_hlm &m)
     TANGROUP and VANGROUP classes need methods:
 
     bool hasUnexplored();
-    int* getUnexplored(shared_state *, subengine::error &e);
-    int* addState(shared_state *, bool &isnew, subengine::error &e);
+    int* getUnexplored(shared_state *);
+    int* addState(shared_state *, bool &isnew);
     void reportStats(DisplayStream &out, const char* name) const;
     shared_ddedge* shareS();
 
     EDGEGROUP class needs methods:
 
-    subengine::error addBatch();
-    subengine::error addEdge(int* from, int* to);
+    void addBatch();
+    void addEdge(int* from, int* to);
     void reportStats(DisplayStream &out, const char* name) const;
     shared_ddedge* shareProc();
 
@@ -344,8 +358,8 @@ public:
   meddly_expl();
 
 protected:
-  virtual error generateRSS(dsde_hlm &dsm);
-  virtual error generateProc(dsde_hlm &dsm);
+  virtual void generateRSS(dsde_hlm &dsm);
+  virtual void generateProc(dsde_hlm &dsm);
 
   virtual void reportStats(DisplayStream &out, bool err) const;
 
@@ -360,44 +374,43 @@ public:  // required for generation engines
     DCASSERT(tangible);
     return tangible->hasUnexplored();
   }
-  inline int* getUnexploredVanishing(shared_state*s, subengine::error &e) {
+  inline int* getUnexploredVanishing(shared_state*s) {
     DCASSERT(vanishing);
-    return vanishing->getUnexplored(s, e);
+    return vanishing->getUnexplored(s);
   }
-  inline int* getUnexploredTangible(shared_state*s, subengine::error &e) {
+  inline int* getUnexploredTangible(shared_state*s) {
     DCASSERT(tangible);
     if (tan2tan) {
       if (tangible->getLevelChange() > level_change) {
-        e = tan2tan->addBatch();
-        if (e) return 0;
+        tan2tan->addBatch();
       }
     }
 #ifdef DEBUG_FREQ
     if (tangible->getLevelChange() > level_change) {
       em->cout() << "Level change\n";
     }
-    int* foo = tangible->getUnexplored(s, e);
+    int* foo = tangible->getUnexplored(s);
     s->Print(em->cout(), 0);
     em->cout() << "\n";
     em->cout().flush();
     return foo;
 #else
-    return tangible->getUnexplored(s, e);
+    return tangible->getUnexplored(s);
 #endif
   }
-  inline int* addVanishing(shared_state*s, bool &isnew, subengine::error &e) {
+  inline int* addVanishing(shared_state*s, bool &isnew) {
     DCASSERT(vanishing);
-    return vanishing->addState(s, isnew, e);
+    return vanishing->addState(s, isnew);
   }
-  inline int* addTangible(shared_state*s, bool &isnew, subengine::error &e) {
+  inline int* addTangible(shared_state*s, bool &isnew) {
     DCASSERT(tangible);
-    return tangible->addState(s, isnew, e);
+    return tangible->addState(s, isnew);
   }
   inline void clearVanishing() {
     DCASSERT(vanishing);
     vanishing->clear();
   }
-  inline subengine::error addTTedge(void* from, void* to) {
+  inline void addTTedge(void* from, void* to) {
     DCASSERT(tan2tan);
     return tan2tan->addEdge( (int*)from, (int*)to );
   }
@@ -418,7 +431,7 @@ meddly_expl<TG, VG, EG>::meddly_expl() : meddly_explgen()
 }
 
 template <class TG, class VG, class EG>
-subengine::error meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
+void meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
 {
   DCASSERT(ms->mdd_wrap);
   if (!statesOnly() && 0==tan2tan) {
@@ -427,41 +440,39 @@ subengine::error meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
       em->cerr() << getAlgName();
       dsm.DoneError();
     }
-    return subengine::Engine_Failed;
+    throw subengine::Engine_Failed;
   }
-  subengine::error e = generateUnindexedRG(debug, dsm, *this);
-  if (e) return e;
+  generateUnindexedRG(debug, dsm, *this);
   DCASSERT(!vanishing->hasUnexplored());
   DCASSERT(!tangible->hasUnexplored());
   ms->states = tangible->shareS();
-  if (statesOnly()) return e;
+  if (statesOnly()) return;
   DCASSERT(tan2tan);
-  e = tan2tan->addBatch();
+  tan2tan->addBatch();
   ms->nsf = tan2tan->shareProc();
-  if (ms->nsf) return e;
+  if (ms->nsf) return;
   if (dsm.StartError(0)) {
     em->cerr() << "Could not obtain final RG using " << getAlgName();
     dsm.DoneError();
   }
-  return subengine::Engine_Failed;
+  throw subengine::Engine_Failed;
 }
 
 template <class TG, class VG, class EG>
-subengine::error meddly_expl<TG, VG, EG>::generateProc(dsde_hlm &dsm)
+void meddly_expl<TG, VG, EG>::generateProc(dsde_hlm &dsm)
 {
   DCASSERT(ms->mdd_wrap);
-  subengine::error e = generateUnindexedRG(debug, dsm, *this);
-  if (e) return e;
+  generateUnindexedRG(debug, dsm, *this);
   DCASSERT(!vanishing->hasUnexplored());
   DCASSERT(tan2tan);
-  e = tan2tan->addBatch();
+  tan2tan->addBatch();
   ms->nsf = tan2tan->shareProc();
-  if (ms->nsf) return e;
+  if (ms->nsf) return;
   if (dsm.StartError(0)) {
     em->cerr() << "Could not obtain final RG using " << getAlgName();
     dsm.DoneError();
   }
-  return subengine::Engine_Failed;
+  throw subengine::Engine_Failed;
 }
 
 template <class TG, class VG, class EG>
@@ -529,9 +540,9 @@ public:
 
   inline shared_ddedge* shareProc() { return Share(Edges); }
 
-  subengine::error addBatch();
+  void addBatch();
 
-  inline subengine::error addEdge(int* from, int* to) {
+  inline void addEdge(int* from, int* to) {
 #ifdef MEASURE_TIMES
     clock->reset();
 #endif
@@ -541,8 +552,8 @@ public:
 #ifdef MEASURE_TIMES
     time_mtadd += clock->elapsed();
 #endif
-    if (used < alloc) return subengine::Success;
-    return addBatch();  
+    if (used < alloc) return;
+    addBatch();  
   }
 };
 
@@ -616,9 +627,9 @@ void edge_minterms::reportStats(DisplayStream &out, const char* who) const
 #endif
 }
 
-subengine::error edge_minterms::addBatch()
+void edge_minterms::addBatch()
 {
-  if (0==used) return subengine::Success;
+  if (0==used) return;
 
 #ifdef MEASURE_TIMES
   clock->reset();
@@ -628,8 +639,8 @@ subengine::error edge_minterms::addBatch()
   time_create += clock->elapsed();
 #endif
   if (e) {
-    if (e==sv_encoder::Out_Of_Memory) return subengine::Out_Of_Memory;
-    return subengine::Engine_Failed;
+    if (e==sv_encoder::Out_Of_Memory) throw subengine::Out_Of_Memory;
+    throw subengine::Engine_Failed;
   }
 #ifdef MEASURE_TIMES
   clock->reset();
@@ -655,7 +666,6 @@ subengine::error edge_minterms::addBatch()
   num_batches++;
 #endif
   used = 0;
-  return subengine::Success;
 }
 
 
@@ -704,8 +714,8 @@ public:
   inline bool hasUnexplored() const {
     return s_iter;
   }
-  int* getUnexplored(shared_state *, subengine::error &e);
-  int* addState(shared_state *, bool &isnew, subengine::error &e);
+  int* getUnexplored(shared_state *);
+  int* addState(shared_state *, bool &isnew);
 
   inline void reportStats(DisplayStream &out, const char* name) const { }
   inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
@@ -732,7 +742,7 @@ mt_known_stategroup::~mt_known_stategroup()
 
 int*
 mt_known_stategroup
-::getUnexplored(shared_state *s, subengine::error &e)
+::getUnexplored(shared_state *s)
 {
   DCASSERT(s_iter);
   DCASSERT(exploring);
@@ -740,21 +750,19 @@ mt_known_stategroup
   exploring = mp.getMinterm();
   mp.fillMinterm(exploring, s_iter.getAssignments());
   ++s_iter;
-  e = convert( wrap.minterm2state(exploring, s) );
-  if (e) return 0;
+  convert( wrap.minterm2state(exploring, s) );
   return exploring;
 }
 
 int*
 mt_known_stategroup
-::addState(shared_state *s, bool &isnew, subengine::error &e)
+::addState(shared_state *s, bool &isnew)
 {
   DCASSERT(discovering);
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
   isnew = false;
-  e = convert(wrap.state2minterm(s, discovering));
-  if (e) return 0;
+  convert(wrap.state2minterm(s, discovering));
   return discovering;
 }
 
@@ -791,8 +799,8 @@ public:
     DCASSERT(U);
     return (used>0) || U->E.getNode();
   }
-  int* getUnexplored(shared_state *, subengine::error &e);
-  int* addState(shared_state *, bool &isnew, subengine::error &e);
+  int* getUnexplored(shared_state *);
+  int* addState(shared_state *, bool &isnew);
 
   inline void reportStats(DisplayStream &out, const char* name) const {
     out << "\tBatch for " << name << " required ";
@@ -820,8 +828,8 @@ public:
   }
 
 protected:
-  inline subengine::error addBatch() {
-    if (0==used) return subengine::Success;
+  inline void addBatch() {
+    if (0==used) return;
     sv_encoder::error e = wrap.createMinterms(batch, used, tempedge);
     S->E += tempedge->E;
     U->E += tempedge->E;
@@ -836,7 +844,7 @@ protected:
     num_additions += used;
 #endif
     used = 0;
-    return convert(e);
+    convert(e);
   }
 };
 
@@ -878,22 +886,20 @@ mt_sr_stategroup::~mt_sr_stategroup()
 
 int*
 mt_sr_stategroup
-::getUnexplored(shared_state *s, subengine::error &e)
+::getUnexplored(shared_state *s)
 {
   DCASSERT(exploring);
   mp.doneMinterm(exploring);
   exploring = mp.getMinterm();
   if (0==U->E.getNode()) {
-    e = addBatch();
-    if (e) return 0;
+    addBatch();
   }
   DCASSERT(U->E.getNode());
   try {
     // wrap.getForest()->findFirstElement(U->E, exploring);
     MEDDLY::enumerator first(U->E);
-    e = convert(wrap.minterm2state(first.getAssignments(), s));
+    convert(wrap.minterm2state(first.getAssignments(), s));
     // e = convert(wrap.minterm2state(exploring, s));
-    if (e) return 0;
     MEDDLY::dd_edge temp(wrap.getForest());
     wrap.getForest()->createEdge(&exploring, 1, temp);
     U->E -= temp;
@@ -907,14 +913,13 @@ mt_sr_stategroup
 
 int*
 mt_sr_stategroup
-::addState(shared_state *s, bool &isnew, subengine::error &e)
+::addState(shared_state *s, bool &isnew)
 {
   DCASSERT(discovering);
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
   isnew = false;
-  e = convert(wrap.state2minterm(s, discovering));
-  if (e) return 0;
+  convert(wrap.state2minterm(s, discovering));
   bool seen;
   try {
     wrap.getForest()->evaluate(S->E, discovering, seen);
@@ -927,8 +932,7 @@ mt_sr_stategroup
   batch[used] = mp.shareMinterm(discovering);
   used++;
   if (used >= alloc) {
-    e = addBatch();
-    if (e) return 0;
+    addBatch();
   }
   return discovering;
 }
@@ -957,7 +961,7 @@ public:
     DCASSERT(U);
     return (used>0) || U->E.getNode();
   }
-  int* getUnexplored(shared_state *, subengine::error &e);
+  int* getUnexplored(shared_state *);
 
 #ifdef MEASURE_STATS
   inline void reportStats(DisplayStream &out, const char* name) const {
@@ -991,13 +995,12 @@ mt_br_stategroup::~mt_br_stategroup()
 
 int*
 mt_br_stategroup
-::getUnexplored(shared_state *s, subengine::error &e)
+::getUnexplored(shared_state *s)
 {
   if (!b_iter) {
     // need to refill B
     if (0==U->E.getNode() || maximize_refills) {
-      e = addBatch();
-      if (e) return 0;
+      addBatch();
     }
     DCASSERT(U->E.getNode());
     // set B=U, U=0
@@ -1015,8 +1018,7 @@ mt_br_stategroup
   exploring = mp.getMinterm();
   mp.fillMinterm(exploring, b_iter.getAssignments());
   ++b_iter;
-  e = convert(wrap.minterm2state(exploring, s));
-  if (e) return 0;
+  convert(wrap.minterm2state(exploring, s));
   return exploring;
 }
 
@@ -1396,9 +1398,9 @@ public:
   // copy into meddly forest
   shared_ddedge* shareProc(); 
 
-  subengine::error addBatch();
+  void addBatch();
 
-  subengine::error addEdge(int* from, int* to);
+  void addEdge(int* from, int* to);
 protected:
   void Accumulate(submatrix* root, const submatrix* canonical);
   submatrix* NewTempMatrix(int k);
@@ -1676,9 +1678,9 @@ shared_ddedge* edge_2001_cmds::shareProc()
   return 0;
 }
 
-subengine::error edge_2001_cmds::addBatch()
+void edge_2001_cmds::addBatch()
 {
-  if (0==batch) return subengine::Success;
+  if (0==batch) return;
 #ifdef MEASURE_TIMES
   clock->reset();
 #endif
@@ -1703,10 +1705,9 @@ subengine::error edge_2001_cmds::addBatch()
 #ifdef MEASURE_TIMES
   time_misc += clock->elapsed();
 #endif
-  return subengine::Success;
 }
 
-subengine::error edge_2001_cmds::addEdge(int* from, int* to)
+void edge_2001_cmds::addEdge(int* from, int* to)
 {
 #ifdef MEASURE_TIMES
   clock->reset();
@@ -1737,8 +1738,7 @@ subengine::error edge_2001_cmds::addEdge(int* from, int* to)
 #ifdef MEASURE_TIMES
   time_mtadd += clock->elapsed();
 #endif
-  if (curr_batch >= batch_size) return addBatch();
-  return subengine::Success;
+  if (curr_batch >= batch_size) addBatch();
 }
 
 // protected

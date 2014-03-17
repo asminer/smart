@@ -281,7 +281,7 @@ public:
   }
 
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(hldsm* m, result &);
+  virtual void RunEngine(hldsm* m, result &);
 
   // shared_ddedge* ProcessConjunct(expr** cl, int K, traverse_data &x) const;
 
@@ -431,11 +431,11 @@ bool icp_symbgen::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::No_Events == mt);
 }
 
-subengine::error icp_symbgen::RunEngine(hldsm* hm, result &)
+void icp_symbgen::RunEngine(hldsm* hm, result &)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
-  if (hm->GetProcess())  return Success;  // already has SS?
+  if (hm->GetProcess())  return;  // already has SS?
 
   no_event_model* nem = smart_cast <no_event_model*> (hm);
   DCASSERT(nem);
@@ -474,7 +474,7 @@ subengine::error icp_symbgen::RunEngine(hldsm* hm, result &)
       hm->DoneError();
     }
     MEDDLY::destroyDomain(d);
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
 #ifdef DEBUG_STUFF
@@ -544,7 +544,6 @@ subengine::error icp_symbgen::RunEngine(hldsm* hm, result &)
   }
 
   hm->SetProcess(new mdd_states_only(ddlwrap, d, constraints));
-  return Success; 
 }
 
 shared_ddedge* icp_symbgen
@@ -603,9 +602,9 @@ class icp_mdd_analyzer : public subengine {
 public:
   icp_mdd_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasure(hldsm* m, measure* what);
 protected:
-  virtual error SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem, 
                               mdd_states_only* mdd, measure* what) = 0;
 };
 
@@ -620,7 +619,7 @@ bool icp_mdd_analyzer::AppliesToModelType(hldsm::model_type mt) const
   return (hldsm::No_Events == mt);
 }
 
-subengine::error icp_mdd_analyzer::SolveMeasure(hldsm* hm, measure* what)
+void icp_mdd_analyzer::SolveMeasure(hldsm* hm, measure* what)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
@@ -629,12 +628,10 @@ subengine::error icp_mdd_analyzer::SolveMeasure(hldsm* hm, measure* what)
 #ifdef DEVELOPMENT_CODE
   dummy.setNull();
 #endif
-  error e = SSGen ? SSGen->runEngine(hm, dummy) : No_Engine;
-  if (e) {
-    return e;
-  }
+  if (!SSGen) throw No_Engine;
+  SSGen->runEngine(hm, dummy);
   if (0==hm->GetProcess()) {
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   no_event_model* nem = smart_cast <no_event_model*> (hm);
@@ -650,7 +647,7 @@ subengine::error icp_mdd_analyzer::SolveMeasure(hldsm* hm, measure* what)
   // constraints are in the wrong format.
   // TBD: Print an error message.
 
-  return No_Engine;
+  throw No_Engine;
 }
 
 // **************************************************************************
@@ -669,7 +666,7 @@ public:
     return thing;
   }
 protected:
-  virtual error SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem, 
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -677,7 +674,7 @@ icp_mdd_min::icp_mdd_min() : icp_mdd_analyzer()
 {
 }
 
-subengine::error icp_mdd_min
+void icp_mdd_min
 ::SolveImplicit(no_event_model* nem, mdd_states_only* mdd, measure* what)
 {
   DCASSERT(mdd);
@@ -691,13 +688,13 @@ subengine::error icp_mdd_min
   what->TraverseRHS(x);
   if (foo.isNull()) {
     what->SetNull();
-    return Success;
+    return;
   }
 
   shared_ddedge* me = Share(dynamic_cast <shared_ddedge*> (foo.getPtr()));
   if (0==me) {
     em->cout() << "\t\tUnexpected result, not dd edge?\n";
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   // Find minimum value, over constraints
@@ -705,7 +702,7 @@ subengine::error icp_mdd_min
   if (mdd->legal_states.getNode()==0) {
     // constraints cannot be satisfied
     what->SetNull();
-    return Success;
+    return;
   }
 
   long a, z;
@@ -771,7 +768,6 @@ subengine::error icp_mdd_min
   em->cout() << "\n";
   
   Delete(me);
-  return Success;
 }
 
 
@@ -790,7 +786,7 @@ public:
     return thing;
   }
 protected:
-  virtual error SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem, 
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -798,7 +794,7 @@ icp_mdd_max::icp_mdd_max() : icp_mdd_analyzer()
 {
 }
 
-subengine::error icp_mdd_max
+void icp_mdd_max
 ::SolveImplicit(no_event_model* nem, mdd_states_only* mdd, measure* what)
 {
   DCASSERT(mdd);
@@ -812,13 +808,13 @@ subengine::error icp_mdd_max
   what->TraverseRHS(x);
   if (foo.isNull()) {
     what->SetNull();
-    return Success;
+    return;
   }
 
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (foo.getPtr());
   if (0==me) {
     em->cout() << "\t\tUnexpected result, not dd edge?\n";
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   // Find maximum value, over constraints
@@ -826,7 +822,7 @@ subengine::error icp_mdd_max
   if (mdd->legal_states.getNode()==0) {
     // constraints cannot be satisfied
     what->SetNull();
-    return Success;
+    return;
   }
 
   long a, z;
@@ -881,7 +877,6 @@ subengine::error icp_mdd_max
   em->cout() << "\n";
   
   Delete(me);
-  return Success;
 }
 
 
@@ -900,7 +895,7 @@ public:
     return thing;
   }
 protected:
-  virtual error SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem, 
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -908,7 +903,7 @@ icp_mdd_sat::icp_mdd_sat() : icp_mdd_analyzer()
 {
 }
 
-subengine::error icp_mdd_sat
+void icp_mdd_sat
 ::SolveImplicit(no_event_model* nem, mdd_states_only* mdd, measure* what)
 {
   DCASSERT(mdd);
@@ -922,13 +917,13 @@ subengine::error icp_mdd_sat
   what->TraverseRHS(x);
   if (foo.isNull()) {
     what->SetNull();
-    return Success;
+    return;
   }
 
   shared_ddedge* me = Share(dynamic_cast <shared_ddedge*> (foo.getPtr()));
   if (0==me) {
     em->cout() << "\t\tUnexpected result, not dd edge?\n";
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   // AND this with the constraints
@@ -938,7 +933,7 @@ subengine::error icp_mdd_sat
   what->SetValue(foo);
   if (!foo.getBool()) {
     Delete(me);
-    return Success;
+    return;
   }
 
   // display one of the states
@@ -959,7 +954,6 @@ subengine::error icp_mdd_sat
   em->cout() << "\n";
 
   Delete(me);
-  return Success;
 }
 
 

@@ -74,9 +74,6 @@ subengine::~subengine()
 const char* subengine::getNameOfError(error e)
 {
   switch (e) {
-    case Success:
-        return "Success";
-
     case Finalized:
         return "Engine manager should / should not be finalized";
 
@@ -107,24 +104,24 @@ const char* subengine::getNameOfError(error e)
   return "Unknown error";
 }
 
-subengine::error subengine::RunEngine(result*, int, traverse_data &)
+void subengine::RunEngine(result*, int, traverse_data &)
 {
-  return Call_Mismatch;
+  throw Call_Mismatch;
 }
 
-subengine::error subengine::RunEngine(hldsm*, result &)
+void subengine::RunEngine(hldsm*, result &)
 {
-  return Call_Mismatch;
+  throw Call_Mismatch;
 }
 
-subengine::error subengine::SolveMeasure(hldsm* , measure* )
+void subengine::SolveMeasure(hldsm* , measure* )
 {
-  return Call_Mismatch;
+  throw Call_Mismatch;
 }
 
-subengine::error subengine::SolveMeasures(hldsm* , set_of_measures* )
+void subengine::SolveMeasures(hldsm* , set_of_measures* )
 {
-  return Call_Mismatch;
+  throw Call_Mismatch;
 }
 
 
@@ -200,43 +197,41 @@ engtype::~engtype()
   killEngTree();
 }
 
-subengine::error engtype::registerEngine(engine* e)
+void engtype::registerEngine(engine* e)
 {
-  if (0==e)  return subengine::No_Engine;
+  if (0==e)  throw subengine::No_Engine;
   e->etype = this;
-  if (selected_engine)  return subengine::Finalized;
+  if (selected_engine)  throw subengine::Finalized;
   if (Nothing == form) {
     if (0==default_engine) default_engine = e;
-    return subengine::Success;
+    return;
   }
   if (0==EngTree)  EngTree = new engine_tree(16, 0);
   engine* f = EngTree->Insert(e);
   if (f==e)  {
     if (0==default_engine) default_engine = e;
-    return subengine::Success;
+    return;
   }
   // there is an engine with the same name.
   delete e;
-  return subengine::Duplicate;
+  throw subengine::Duplicate;
 }
 
-subengine::error engtype::setDefaultEngine(engine* d)
+void engtype::setDefaultEngine(engine* d)
 {
-  if (selected_engine) return subengine::Finalized;
-  if (d) if (EngTree->FindIndex(d)<0) return subengine::No_Engine;
+  if (selected_engine) throw subengine::Finalized;
+  if (d) if (EngTree->FindIndex(d)<0) throw subengine::No_Engine;
   default_engine = d;
-  return subengine::Success;
 }
 
-subengine::error engtype::registerSubengine(const char* name, subengine* se)
+void engtype::registerSubengine(const char* name, subengine* se)
 {
-  if (0==se)            return subengine::Success;
-  if (0==name)          return subengine::No_Engine;
-  if (selected_engine)  return subengine::Finalized;
+  if (0==se)            return;
+  if (0==name)          throw  subengine::No_Engine;
+  if (selected_engine)  throw  subengine::Finalized;
   engine* f = EngTree->Find(name);
-  if (0==f)             return subengine::No_Engine;
+  if (0==f)             throw  subengine::No_Engine;
   f->AddSubEngine(se);
-  return subengine::Success;
 }
 
 void engtype::finalizeRegistry(option_manager* om)
@@ -275,28 +270,28 @@ void engtype::finalizeRegistry(option_manager* om)
   killEngTree();
 }
 
-subengine::error engtype::runEngine(result* pass, int np, traverse_data &x)
+void engtype::runEngine(result* pass, int np, traverse_data &x)
 {
-  if (0==selected_engine)  return subengine::No_Engine;
-  return selected_engine->RunEngine(pass, np, x);
+  if (0==selected_engine)  throw subengine::No_Engine;
+  selected_engine->RunEngine(pass, np, x);
 }
 
-subengine::error engtype::runEngine(hldsm* m, result &p)
+void engtype::runEngine(hldsm* m, result &p)
 {
-  if (0==selected_engine)  return subengine::No_Engine;
-  return selected_engine->RunEngine(m, p);
+  if (0==selected_engine)  throw  subengine::No_Engine;
+  selected_engine->RunEngine(m, p);
 }
 
-subengine::error engtype::solveMeasure(hldsm* m, measure* what)
+void engtype::solveMeasure(hldsm* m, measure* what)
 {
-  if (0==selected_engine)  return subengine::No_Engine;
-  return selected_engine->SolveMeasure(m, what);
+  if (0==selected_engine)  throw  subengine::No_Engine;
+  selected_engine->SolveMeasure(m, what);
 }
 
-subengine::error engtype::solveMeasures(hldsm* m, set_of_measures* list)
+void engtype::solveMeasures(hldsm* m, set_of_measures* list)
 {
-  if (0==selected_engine)  return subengine::No_Engine;
-  return selected_engine->SolveMeasures(m, list);
+  if (0==selected_engine)  throw  subengine::No_Engine;
+  selected_engine->SolveMeasures(m, list);
 }
 
 set_of_measures* engtype::makeMeasureSet() const
@@ -360,40 +355,40 @@ func_engine::~func_engine()
 
 void func_engine::Compute(traverse_data &x, expr** pass, int np)
 {
-  subengine::error e;
-  if (whicheng) {
-    e = BuildParams(x, pass, np);
-    if (subengine::Success == e) e = whicheng->runEngine(engpass, np, x);
-    for (int i=0; i<np; i++) engpass[i].setNull();
-  } else {
-    e = subengine::No_Engine;
-  }
+  try {
+    if (whicheng) {
+      BuildParams(x, pass, np);
+      whicheng->runEngine(engpass, np, x);
+      for (int i=0; i<np; i++) engpass[i].setNull();
+    } else {
+      throw subengine::No_Engine;
+    }
+  } // try
+  catch (subengine::error e) {
+    switch (e) {
+      case subengine::No_Engine:
+        if (em->startError()) {
+          em->causedBy(x.parent);
+          em->cerr() << "No solution engine available for " << Name();
+          formals.PrintHeader(em->cerr(), false);
+          em->stopIO();
+        };
+        break;
 
-  if (subengine::Success == e)  return;
-
-  switch (e) {
-    case subengine::No_Engine:
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "No solution engine available for " << Name();
-        formals.PrintHeader(em->cerr(), false);
-        em->stopIO();
-      };
-      break;
-
-    default:
-      if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(x.parent);
-        em->internal() << "unanticipated error: ";
-        em->internal() << subengine::getNameOfError(e);
-        em->newLine();
-        em->internal() << "for " << Name();
-        formals.PrintHeader(em->internal(), false);
-        em->internal() << " engine";
-        em->stopIO();
-      }
-  }
-  x.answer->setNull();
+      default:
+        if (em->startInternal(__FILE__, __LINE__)) {
+          em->causedBy(x.parent);
+          em->internal() << "unanticipated error: ";
+          em->internal() << subengine::getNameOfError(e);
+          em->newLine();
+          em->internal() << "for " << Name();
+          formals.PrintHeader(em->internal(), false);
+          em->internal() << " engine";
+          em->stopIO();
+        }
+    }
+    x.answer->setNull();
+  } // catch 
 }
 
 
@@ -409,10 +404,10 @@ public:
   redirect_engine(engtype* l);
 
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
-  virtual error RunEngine(hldsm* m, result &p);
-  virtual error SolveMeasure(hldsm* m, measure* what);
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(hldsm* m, result &p);
+  virtual void SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 // ******************************************************************
@@ -429,32 +424,28 @@ bool redirect_engine::AppliesToModelType(hldsm::model_type mt) const
   return true;
 }
 
-subengine::error 
-redirect_engine::RunEngine(result* p, int np, traverse_data &x)
+void redirect_engine::RunEngine(result* p, int np, traverse_data &x)
 {
   DCASSERT(link);
-  return link->runEngine(p, np, x);
+  link->runEngine(p, np, x);
 }
 
-subengine::error
-redirect_engine::RunEngine(hldsm* m, result &p)
+void redirect_engine::RunEngine(hldsm* m, result &p)
 {
   DCASSERT(link);
-  return link->runEngine(m, p);
+  link->runEngine(m, p);
 }
 
-subengine::error 
-redirect_engine::SolveMeasure(hldsm* m, measure* what)
+void redirect_engine::SolveMeasure(hldsm* m, measure* what)
 {
   DCASSERT(link);
-  return link->solveMeasure(m, what);
+  link->solveMeasure(m, what);
 }
 
-subengine::error 
-redirect_engine::SolveMeasures(hldsm* m, set_of_measures* list)
+void redirect_engine::SolveMeasures(hldsm* m, set_of_measures* list)
 {
   DCASSERT(link);
-  return link->solveMeasures(m, list);
+  link->solveMeasures(m, list);
 }
 
 
@@ -467,7 +458,7 @@ redirect_engine::SolveMeasures(hldsm* m, set_of_measures* list)
 class noop_engine : public subengine {
 public:
   virtual ~noop_engine();
-  virtual error SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasure(hldsm* m, measure* what);
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
 };
 
@@ -479,15 +470,14 @@ noop_engine::~noop_engine()
 {
 }
 
-subengine::error noop_engine::SolveMeasure(hldsm*, measure* what)
+void noop_engine::SolveMeasure(hldsm*, measure* what)
 {
-  if (0==what)  return Success;
+  if (0==what)  return;
   traverse_data x(traverse_data::Compute);
   result foo;
   x.answer = &foo;
   what->ComputeRHS(x);
   what->SetValue(foo);
-  return Success;
 }
 
 bool noop_engine::AppliesToModelType(hldsm::model_type mt) const
@@ -509,7 +499,7 @@ noop_engine the_noop_engine;
 class bogus_engine : public subengine {
 public:
   virtual ~bogus_engine();
-  virtual error SolveMeasure(hldsm* m, measure* what);
+  virtual void SolveMeasure(hldsm* m, measure* what);
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
 };
 
@@ -521,7 +511,7 @@ bogus_engine::~bogus_engine()
 {
 }
 
-subengine::error bogus_engine::SolveMeasure(hldsm*, measure* what)
+void bogus_engine::SolveMeasure(hldsm*, measure* what)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
     em->causedBy(what);
@@ -529,7 +519,7 @@ subengine::error bogus_engine::SolveMeasure(hldsm*, measure* what)
     em->stopIO();
   }
   DCASSERT(0);
-  return No_Engine;  // Probably best, if we manage to return anything
+  throw No_Engine;  // Probably best, if we manage to get here
 }
 
 bool bogus_engine::AppliesToModelType(hldsm::model_type mt) const

@@ -87,7 +87,7 @@ protected:
   };
 
 
-  error GenerateProc(hldsm* m) const;
+  void GenerateProc(hldsm* m) const;
 
   inline bool startMsrs(const char* what, const char* name) { 
     if (eng_report.startReport()) {
@@ -258,24 +258,21 @@ bool exact_mcmsr::AppliesToModelType(hldsm::model_type mt) const
     (hldsm::Synch_Events == mt);
 }
 
-subengine::error exact_mcmsr::GenerateProc(hldsm* m) const
+void exact_mcmsr::GenerateProc(hldsm* m) const
 {
   result f;
   f.setBool(false);
   lldsm* proc = m->GetProcess();
-  error e;
   if (proc) {
     subengine* gen = proc->getCompletionEngine();
-    e = gen ? gen->RunEngine(m, f) : Success;
-    if (lldsm::Error == proc->Type()) e = Engine_Failed;
+    if (gen)  gen->RunEngine(m, f);
+    if (lldsm::Error == proc->Type()) throw Engine_Failed;
   } else {
-    if (0==ProcessGeneration) return No_Engine;
-    e = ProcessGeneration->runEngine(m, f);
+    if (0==ProcessGeneration) throw No_Engine;
+    ProcessGeneration->runEngine(m, f);
     proc = m->GetProcess();
   }
-  if (e!=Success) return e;
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
-  return e;
 }
 
 
@@ -288,7 +285,7 @@ subengine::error exact_mcmsr::GenerateProc(hldsm* m) const
 class mcex_steady : public exact_mcmsr {
 public:
   mcex_steady();
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 mcex_steady the_mcex_steady;
@@ -301,7 +298,7 @@ mcex_steady::mcex_steady() : exact_mcmsr()
 {
 }
 
-subengine::error mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
+void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
@@ -311,18 +308,17 @@ subengine::error mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   timer* w = 0;
   DCASSERT(mdl);
-  error e = GenerateProc(mdl);
-  if (e!=Success) return e;
+  GenerateProc(mdl);
   const stochastic_lldsm* proc = 
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   long NS = proc->getNumStates(false);
-  if (NS < 0) return Engine_Failed;
+  if (NS < 0) throw Engine_Failed;
   double* p = 0;
   bool ok = true;
   if (NS) {
     p = (double*) malloc(NS * sizeof(double));
-    if (0==p) return Out_Of_Memory;
+    if (0==p) throw Out_Of_Memory;
     ok = proc->computeSteadyState(p);
   }
   if (ok) {
@@ -364,7 +360,7 @@ subengine::error mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.report() << "Finished exact steady-state engine\n";
     eng_debug.stopIO();
   }
-  return ok ? Success : Engine_Failed;
+  if (!ok) throw Engine_Failed;
 }
 
 // **************************************************************************
@@ -376,7 +372,7 @@ subengine::error mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
 class mcex_trans : public exact_mcmsr {
 public:
   mcex_trans();
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 mcex_trans the_mcex_trans;
@@ -389,7 +385,7 @@ mcex_trans::mcex_trans() : exact_mcmsr()
 {
 }
 
-subengine::error mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
+void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
@@ -398,14 +394,13 @@ subengine::error mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.stopIO();
   }
   DCASSERT(mdl);
-  error e = GenerateProc(mdl);
-  if (e!=Success) return e;
+  GenerateProc(mdl);
   const stochastic_lldsm* proc = 
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
   long NS = proc->getNumStates(false);
-  if (NS < 0) return Engine_Failed;
+  if (NS < 0) throw Engine_Failed;
   double* p = 0;
   double* aux1 = 0;
   double* aux2 = 0;
@@ -422,7 +417,7 @@ subengine::error mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
       free(p);
       free(aux1);
       free(aux2);
-      return Out_Of_Memory;
+      throw Out_Of_Memory;
     }
   }
   double last_time = 0.0;
@@ -472,7 +467,7 @@ subengine::error mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.report() << "Finished exact transient engine\n";
     eng_debug.stopIO();
   }
-  return ok ? Success : Engine_Failed;
+  if (!ok) throw Engine_Failed;
 }
 
 // **************************************************************************
@@ -484,7 +479,7 @@ subengine::error mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
 class mcex_acc : public exact_mcmsr {
 public:
   mcex_acc();
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 mcex_acc the_mcex_acc;
@@ -497,7 +492,7 @@ mcex_acc::mcex_acc() : exact_mcmsr()
 {
 }
 
-subengine::error mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
+void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
@@ -506,14 +501,13 @@ subengine::error mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.stopIO();
   }
   DCASSERT(mdl);
-  error e = GenerateProc(mdl);
-  if (e!=Success) return e;
+  GenerateProc(mdl);
   const stochastic_lldsm* proc = 
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
   long NS = proc->getNumStates(false);
-  if (NS < 0) return Engine_Failed;
+  if (NS < 0) throw Engine_Failed;
   double* p0 = 0;
   double* n = 0;
   double* aux1 = 0;
@@ -530,7 +524,7 @@ subengine::error mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
       free(n);
       free(aux1);
       free(aux2);
-      return Out_Of_Memory;
+      throw Out_Of_Memory;
     }
   }
   double last_start = 0.0;
@@ -588,7 +582,7 @@ subengine::error mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.report() << "Finished exact accumulated engine\n";
     eng_debug.stopIO();
   }
-  return ok ? Success : Engine_Failed;
+  if (!ok) throw Engine_Failed;
 }
 
 // **************************************************************************
@@ -600,7 +594,7 @@ subengine::error mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
 class mcex_infacc : public exact_mcmsr {
 public:
   mcex_infacc();
-  virtual error SolveMeasures(hldsm* m, set_of_measures* list);
+  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 mcex_infacc the_mcex_infacc;
@@ -613,7 +607,7 @@ mcex_infacc::mcex_infacc() : exact_mcmsr()
 {
 }
 
-subengine::error mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
+void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
@@ -622,14 +616,13 @@ subengine::error mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.stopIO();
   }
   DCASSERT(mdl);
-  error e = GenerateProc(mdl);
-  if (e!=Success) return e;
+  GenerateProc(mdl);
   const stochastic_lldsm* proc = 
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
   long NS = proc->getNumStates(false);
-  if (NS < 0) return Engine_Failed;
+  if (NS < 0) throw Engine_Failed;
   double* p0 = 0;
   double* n = 0;
   double* aux1 = 0;
@@ -653,7 +646,7 @@ subengine::error mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     free(n);
     free(aux1);
     free(aux2);
-    return Out_Of_Memory;
+    throw Out_Of_Memory;
   }
   double last_time = 0.0;
   bool not_computed = true;
@@ -710,7 +703,7 @@ subengine::error mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.report() << "Finished exact infinite accumulation engine\n";
     eng_debug.stopIO();
   }
-  return ok ? Success : Engine_Failed;
+  if (!ok) throw Engine_Failed;
 }
 
 // **************************************************************************
@@ -725,7 +718,7 @@ class exact_ph_analyze : public exact_mcmsr {
 public:
   exact_ph_analyze(bool ao);
   virtual bool AppliesToModelType(hldsm::model_type) const;
-  virtual error RunEngine(hldsm* m, result &parm);
+  virtual void RunEngine(hldsm* m, result &parm);
 };
 
 exact_ph_analyze the_exact_ph_avg(true);
@@ -746,8 +739,7 @@ bool exact_ph_analyze::AppliesToModelType(hldsm::model_type mt) const
 }
 
 
-subengine::error exact_ph_analyze
-::RunEngine(hldsm* foo, result &fls)
+void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
 {
   phase_hlm* X = smart_cast <phase_hlm*> (foo);
   DCASSERT(X);
@@ -770,7 +762,7 @@ subengine::error exact_ph_analyze
 
   if (0==proc) { 
     if (0==ProcessGeneration) {
-      return No_Engine;
+      throw No_Engine;
     }
 
     fls.setBool(false);
@@ -783,14 +775,14 @@ subengine::error exact_ph_analyze
     em->cout() << "\tCouldn't build process for ";
     foo->Print(em->cout(), 0);
     em->cout() << "\n";
-    return Success;
+    return;
   }
 
   //
   // Check if numerical solution engine was run already
   //
 
-  if (proc->knownVTTA())  return Success;
+  if (proc->knownVTTA())  return;
 
   //
   // Get process information
@@ -804,7 +796,7 @@ subengine::error exact_ph_analyze
     proc->setTrapProb(1);
     proc->setInfiniteMTTA();
     proc->setVTTA(0); 
-    return Success;
+    return;
   }
   long trap = proc->getTrapState();
   if (1==ns) {
@@ -814,7 +806,7 @@ subengine::error exact_ph_analyze
     proc->setTrapProb(0);
     proc->setMTTA(0);
     proc->setVTTA(0);
-    return Success;
+    return;
   }
   double* init = new double[ns];
   double* vx = new double[ns];
@@ -834,12 +826,12 @@ subengine::error exact_ph_analyze
   
   if (!proc->getInitialDistribution(init)) {
     doneTimer(watch);
-    return Engine_Failed;
+    throw Engine_Failed;
   }
   
   if (!proc->computeClassProbs(init, vx)) {
     doneTimer(watch);
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   if (eng_report.startReport()) {
@@ -871,7 +863,7 @@ subengine::error exact_ph_analyze
     } else {
       proc->setInfiniteVTTA();
     }
-    return Success;
+    return;
   }
 
   double mtta = 0.0;
@@ -935,7 +927,7 @@ subengine::error exact_ph_analyze
       //
       if (!proc->computeTimeInStates(init, vx)) {
         doneTimer(watch);
-        return Engine_Failed;
+        throw Engine_Failed;
       }
 
       if (eng_report.startReport()) {
@@ -971,8 +963,6 @@ subengine::error exact_ph_analyze
   //
   delete[] init;
   delete[] vx;
-
-  return Success;
 }
 
 
@@ -1154,7 +1144,7 @@ class exact_ph_var : public exact_mcmsr {
 public:
   exact_ph_var();
   virtual bool AppliesToModelType(hldsm::model_type) const;
-  virtual error RunEngine(hldsm* m, result &parm);
+  virtual void RunEngine(hldsm* m, result &parm);
 };
 
 // **************************************************************************
@@ -1171,8 +1161,7 @@ bool exact_ph_var::AppliesToModelType(hldsm::model_type mt) const
 }
 
 
-subengine::error exact_ph_var
-::RunEngine(hldsm* foo, result &fls)
+void exact_ph_var::RunEngine(hldsm* foo, result &fls)
 {
   phase_hlm* X = smart_cast <phase_hlm*> (foo);
   DCASSERT(X);

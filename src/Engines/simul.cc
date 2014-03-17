@@ -148,7 +148,7 @@ public:
   virtual ~monte_carlo_engine();
 
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 
   // Provide in derived classes:
   virtual sim_experiment* MakeExperiment(expr* e, traverse_data &x) const = 0;
@@ -175,7 +175,7 @@ bool monte_carlo_engine::AppliesToModelType(hldsm::model_type mt) const
   return (0==mt);
 }
 
-subengine::error monte_carlo_engine
+void monte_carlo_engine
 ::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -183,7 +183,7 @@ subengine::error monte_carlo_engine
   expr* e = pass ? smart_cast <expr*> (pass[0].getPtr()) : 0;
   if (0==e) {
     x.answer->setNull();
-    return Success;
+    return;
   }
   timer* watch = 0;
   if (report.isActive()) {
@@ -192,7 +192,7 @@ subengine::error monte_carlo_engine
   }
   e->PreCompute();
   sim_experiment* se = MakeExperiment(e, x);
-  if (0==se)  return Engine_Failed;
+  if (0==se)  throw Engine_Failed;
  
   rng_stream* old = x.stream;
   x.stream = rng_main;
@@ -242,7 +242,6 @@ subengine::error monte_carlo_engine
    
   x.stream = old;
   delete se;
-  return Success;
 }
 
 // **************************************************************************

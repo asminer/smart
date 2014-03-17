@@ -215,9 +215,7 @@ tta_dist
   pass[2].setPtr(Share(accept));
   engtype* eu = em->findEngineType("ExplicitEU");  
   DCASSERT(eu); 
-  CHECK_RETURN(
-    eu->runEngine(pass, 3, x), subengine::Success
-  );
+  eu->runEngine(pass, 3, x);
   pass[1].setPtr(0);
   pass[2].setPtr(0);
   // (3) final is still inverted, intersect with E (!final) U accept 

@@ -542,62 +542,63 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
   engtype* et = m->EngineType();
   DCASSERT(et);
   // handled by measure::Solve() directly:
-  subengine::error ee = subengine::Engine_Failed;
-  switch (et->getForm()) {
-    case engtype::Single:
-        if (model_debug.startReport()) {
-          model_debug.report() << "Solving measure ";
-          if (m->Name()) model_debug.report() << m->Name();
-          model_debug.report() << "\n";
-          model_debug.stopIO();
-        }
-        ee = et->solveMeasure(compiled, m);
-        break;
+  try {
+    switch (et->getForm()) {
+      case engtype::Single:
+          if (model_debug.startReport()) {
+            model_debug.report() << "Solving measure ";
+            if (m->Name()) model_debug.report() << m->Name();
+            model_debug.report() << "\n";
+            model_debug.stopIO();
+          }
+          et->solveMeasure(compiled, m);
+          return;
 
-    case engtype::Grouped: {
-        if (model_debug.startReport()) {
-          model_debug.report() << "Solving group of measures";
-          if (m->Name()) model_debug.report() << ", triggered by " << m->Name();
-          model_debug.report() << "\n";
-          model_debug.stopIO();
-        }
-        DCASSERT(mgroups[et->getIndex()]);
-        ee = et->solveMeasures(compiled, mgroups[et->getIndex()]);
-        break;
-    }
-
-    default:
-      // any other cases should already have been handled, or is an error
-      DCASSERT(0);
-      return;
-
-  } // switch et->getForm()
-
-  switch (ee) {
-    case subengine::Success:  return;
-    case subengine::Engine_Failed:  
-        if (!m->isComputed())  m->SetNull();
-        break;  // any errors should have been reported already
+      case engtype::Grouped: {
+          if (model_debug.startReport()) {
+            model_debug.report() << "Solving group of measures";
+            if (m->Name()) model_debug.report() << ", triggered by " << m->Name();
+            model_debug.report() << "\n";
+            model_debug.stopIO();
+          }
+          DCASSERT(mgroups[et->getIndex()]);
+          et->solveMeasures(compiled, mgroups[et->getIndex()]);
+          return;
+      }
   
-    case subengine::No_Engine:  
-        m->SetNull();
-        if (StartError(x.parent)) {
-          em->cerr() << "Measure " << m->Name();
-          em->cerr() << " could not be solved, no solution engine available";
-          DoneError();
-        }
-      break;
+      default:
+        // any other cases should already have been handled, or is an error
+        DCASSERT(0);
+        return;
+
+    } // switch et->getForm()
+  } // try
+  catch (subengine::error ee) {
+    switch (ee) {
+      case subengine::Engine_Failed:  
+          if (!m->isComputed())  m->SetNull();
+          break;  // any errors should have been reported already
+  
+      case subengine::No_Engine:  
+          m->SetNull();
+          if (StartError(x.parent)) {
+            em->cerr() << "Measure " << m->Name();
+            em->cerr() << " could not be solved, no solution engine available";
+            DoneError();
+          }
+        break;
       
-    default:
-        m->SetNull();
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->noCause();
-          em->internal() << subengine::getNameOfError(ee);
-          em->internal() << " on measure ";
-          em->internal() << m->Name();
-          em->stopIO();
-        }
+      default:
+          m->SetNull();
+          if (em->startInternal(__FILE__, __LINE__)) {
+            em->noCause();
+            em->internal() << subengine::getNameOfError(ee);
+            em->internal() << " on measure ";
+            em->internal() << m->Name();
+            em->stopIO();
+          }
     } // switch
+  } // catch
 }
 
 void model_instance::SetConstructionSuccess(hldsm* model)

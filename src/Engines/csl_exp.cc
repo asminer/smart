@@ -45,7 +45,7 @@ bool CSL_expl_eng::AppliesToModelType(hldsm::model_type mt) const
 class TU_generate : public CSL_expl_eng {
 public:
   TU_generate();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 };
 
 TU_generate the_TU_generator;
@@ -54,7 +54,7 @@ TU_generate::TU_generate() : CSL_expl_eng()
 {
 }
 
-subengine::error TU_generate::RunEngine(result* pass, int np, traverse_data &x)
+void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
   DCASSERT(pass[0].isNormal());
@@ -72,7 +72,7 @@ subengine::error TU_generate::RunEngine(result* pass, int np, traverse_data &x)
       em->cerr() << "TU distribution requires a stochastic model\n";
       em->stopIO();
     }
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   // Make sure it is a MC
@@ -84,7 +84,7 @@ subengine::error TU_generate::RunEngine(result* pass, int np, traverse_data &x)
         em->cerr() << "TU distribution requires an underlying Markov chain\n";
         em->stopIO();
       }
-      return Engine_Failed;
+      throw Engine_Failed;
 
     case lldsm::DTMC:
       discrete = true;
@@ -97,7 +97,7 @@ subengine::error TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     default:
       // Anything else should be impossible, right?
       DCASSERT(0);
-      return Engine_Failed;
+      throw Engine_Failed;
   };
 
   // Determine the initial distribution (sparsely)
@@ -155,11 +155,10 @@ subengine::error TU_generate::RunEngine(result* pass, int np, traverse_data &x)
       em->internal() << "Couldn't build TTA phase model\n";
       em->stopIO();
     }
-    return Engine_Failed;
+    throw Engine_Failed;
   }
 
   x.answer->setPtr(tta);
-  return Success;
 }
 
 
@@ -175,22 +174,24 @@ class PU_expl_eng : public CSL_expl_eng {
   static engtype* TUgen;
 public:
   PU_expl_eng();
-  virtual error RunEngine(result* pass, int np, traverse_data &x);
+  virtual void RunEngine(result* pass, int np, traverse_data &x);
 protected:
-  inline static subengine::error runAvgPh(hldsm* m) {
+  inline static void runAvgPh(hldsm* m) {
     if (0==AvgPh) {
       AvgPh = em->findEngineType("AvgPh");
     }
     result dummy;
-    return AvgPh ? AvgPh->runEngine(m, dummy) : subengine::No_Engine;
+    if (!AvgPh) throw No_Engine;
+    AvgPh->runEngine(m, dummy);
   }
-  inline static subengine::error 
+  inline static void 
   generateTU(result* pass, int np, traverse_data &x)
   {
     if (0==TUgen) {
       TUgen = em->findEngineType("TUgenerator");
     }
-    return TUgen ? TUgen->runEngine(pass, np, x) : subengine::No_Engine;
+    if (!TUgen) throw No_Engine;
+    TUgen->runEngine(pass, np, x);
   }
 };
 
@@ -203,7 +204,7 @@ PU_expl_eng::PU_expl_eng() : CSL_expl_eng()
 {
 }
 
-subengine::error PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
+void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   DCASSERT(3==np);
   DCASSERT(pass[0].isNormal());
@@ -212,14 +213,13 @@ subengine::error PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Build the distribution by calling the engine
   //
-  subengine::error e = generateTU(pass, np, x);
-  if (e) return e;
+  generateTU(pass, np, x);
 
   //
   // Grab the distribution
   //
   if (!x.answer->isNormal()) {
-    return Success;
+    return;
   }
   hldsm* tta = smart_cast <hldsm*>(x.answer->getPtr());
   DCASSERT(tta);
@@ -227,8 +227,7 @@ subengine::error PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // call the AvgPh engine
   //
-  e = runAvgPh(tta);
-  if (e) return e;
+  runAvgPh(tta);
 
   //
   // Grab the result
@@ -236,7 +235,6 @@ subengine::error PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (tta->GetProcess());
   DCASSERT(proc);
   x.answer->setReal( proc->getAcceptProb() );
-  return Success;
 }
 
 
