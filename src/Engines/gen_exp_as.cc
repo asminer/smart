@@ -16,7 +16,7 @@
 #include "../Modules/expl_states.h"
 
 // Generation templates
-#include "gen_index.h"
+#include "gen_templ.h"
 
 // External libs
 #include "statelib.h"
@@ -40,15 +40,25 @@ struct indexed_statedbs {
 public:
   indexed_statedbs(StateLib::state_db &tdb, StateLib::state_db &vdb);
   // required
-  inline bool addVanishing(shared_state* s, long &index) {
-    long oldsize = vandb.Size();
-    index = vandb.InsertState(s->readState(), s->getStateSize());
-    return index >= oldsize;
+  static inline void show(OutputStream &s, bool van, long id, const shared_state* curr_st)
+  {
+    if (van) {
+      s << " vanishing state# ";
+    } else {
+      s << " tangible  state# ";
+    }
+    s.Put(id, 4);
+    s << " : ";
+    curr_st->Print(s, 0);
   }
-  inline bool addTangible(shared_state* s, long &index) {
-    long oldsize = tandb.Size();
-    index = tandb.InsertState(s->readState(), s->getStateSize());
-    return index >= oldsize;
+  static inline void makeIllegalID(long &id) {
+    id = -1;
+  }
+  inline bool add(bool van, const shared_state* s, long &id) {
+    StateLib::state_db &db = van ? vandb : tandb;
+    long oldsize = db.Size();
+    id = db.InsertState(s->readState(), s->getStateSize());
+    return id >= oldsize;
   }
   inline bool hasUnexploredVanishing() const {
     return van_unexp < vandb.Size();
@@ -66,29 +76,23 @@ public:
     tandb.GetStateKnown(tan_unexp, s->writeState(), s->getStateSize());
     return tan_unexp++;
   }
-  inline void clearVanishing() {
+  inline void clearVanishing(named_msg &debug) {
+    if (debug.startReport()) {
+      debug.report() << "Eliminating vanishing states\n";
+      debug.stopIO();
+    }
     vandb.Clear();
     van_unexp = 0;
   }
-  inline void eliminateVanishing() {
-    clearVanishing();
+  inline void eliminateVanishing(named_msg &debug) {
+    clearVanishing(debug);
   }
   inline static bool statesOnly() {
     return true;
   }
-  // required but not used
-  inline static void addInitial(long) { 
-    DCASSERT(0); 
-    throw subengine::Engine_Failed;
-  }
-  inline static void addInitialVanishing(long, double) { 
-    DCASSERT(0); 
-    throw subengine::Engine_Failed;
-  }
-  inline static void addInitialTangible(long, double) { 
-    DCASSERT(0); 
-    throw subengine::Engine_Failed;
-  }
+  // required but should do nothing
+  inline static void addInitial(long) { }
+  inline static void addInitial(bool, long, double) { }
   inline static void addEdge(long, long) { 
     DCASSERT(0); 
     throw subengine::Engine_Failed;
@@ -202,17 +206,10 @@ public:
   indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
               LS_Options &vs, MCLib::vanishing_chain &smp);
   // handy
-  inline static int status2int(MCLib::error status) {
-    switch (status.getCode()) {
-      case MCLib::error::Out_Of_Memory:    return -2;
-      case MCLib::error::Bad_Index:        return -1;
-      default:                             return -4;
-    }
-  }
-  inline subengine::error convert(MCLib::error e, const char* x) {
+  inline void convert(MCLib::error e, const char* x) {
     switch (e.getCode()) {
       case MCLib::error::Out_Of_Memory:
-          return subengine::Out_Of_Memory;
+          throw subengine::Out_Of_Memory;
 
       default:
           if (model.StartError(0)) {
@@ -226,7 +223,7 @@ public:
             model.SendError(e.getString());
             model.DoneError();
           }
-          return subengine::Engine_Failed;
+          throw subengine::Engine_Failed;
     } // switch e
   }
   inline void exportInitial(LS_Vector &s0) {
@@ -234,51 +231,65 @@ public:
       smp.getInitialVector(s0);
     }
     catch (MCLib::error e) {
-      throw convert(e, "build initial vector");
+      convert(e, "build initial vector");
     }
   }
 
   // required
-  inline bool addVanishing(shared_state* s, long &index) {
+  inline bool add(bool van, const shared_state* s, long &id) {
+    if (van) return addVanishing(s, id);
+    else     return addTangible(s, id);
+  }
+  inline bool addVanishing(const shared_state* s, long &index) {
     index = vandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumVanishing()) return false;
     try {
       CHECK_RETURN(smp.addVanishing(), index);
     } 
     catch (MCLib::error e) {
-      index = status2int(e);
+      convert(e, "add vanishing state");
     }
     return true;
   }
-  inline bool addTangible(shared_state* s, long &index) {
+  inline bool addTangible(const shared_state* s, long &index) {
     index = tandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumTangible()) return false;
     try {
       CHECK_RETURN(smp.addTangible(), index);
     }
     catch (MCLib::error e) {
-      index = status2int(e);
+      convert(e, "add tangible state");
     }
     return true;
   }
   inline static bool statesOnly() {
     return false;
   }
-  inline void eliminateVanishing() {
-    clearVanishing();
+  inline void eliminateVanishing(named_msg &debug) {
+    clearVanishing(debug);
     try {
       smp.eliminateVanishing(vansolver);
     }
     catch (MCLib::error e) {
-      throw convert(e, "eliminate vanishings");
+      convert(e, "eliminate vanishings");
     }
   }
+  inline void addInitial(bool van, long st, double wt) {
+    try {
+      if (van)  smp.addInitialVanishing(st, wt);
+      else      smp.addInitialTangible(st, wt);
+    }
+    catch (MCLib::error e) {
+      convert(e, "add initial state");
+    }
+  }
+  /*
   inline void addInitialVanishing(long st, double wt) {
     try {
       smp.addInitialVanishing(st, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add initial state");
+      convert(e, "add initial state");
     }
   }
   inline void addInitialTangible(long st, double wt) {
@@ -286,15 +297,16 @@ public:
       smp.addInitialTangible(st, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add initial state");
+      convert(e, "add initial state");
     }
   }
+  */
   inline void addTTEdge(long from, long to, double wt) {
     try {
       smp.addTTedge(from, to, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add edge");
+      convert(e, "add edge");
     }
   }
   inline void addTVEdge(long from, long to, double wt) {
@@ -302,7 +314,7 @@ public:
       smp.addTVedge(from, to, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add edge");
+      convert(e, "add edge");
     }
   }
   inline void addVTEdge(long from, long to, double wt) {
@@ -310,7 +322,7 @@ public:
       smp.addVTedge(from, to, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add edge");
+      convert(e, "add edge");
     }
   }
   inline void addVVEdge(long from, long to, double wt) {
@@ -318,7 +330,7 @@ public:
       smp.addVVedge(from, to, wt);
     }
     catch (MCLib::error e) {
-      throw convert(e, "add edge");
+      convert(e, "add edge");
     }
   }
 };
@@ -575,12 +587,14 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
   if (rg) {
     indexed_reachgraph myrg(*tandb, *vandb, *rg);
-    generateIndexedRG(debug, *dsm, myrg);
+    // generateIndexedRG(debug, *dsm, myrg);
+    generateRGt<indexed_reachgraph, long>(debug, *dsm, myrg);
     myrg.exportInitial(s0);
     myrg.finish();
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    generateIndexedRG(debug, *dsm, myrs);
+    // generateIndexedRG(debug, *dsm, myrs);
+    generateRGt<indexed_statedbs, long>(debug, *dsm, myrs);
   }
 
   delete vandb;
@@ -601,12 +615,14 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
   if (smp) {
     indexed_smp mysmp(*dsm, *tandb, *vandb, vansolver, *smp);
-    generateIndexedSMP(debug, *dsm, mysmp);
+    // generateIndexedSMP(debug, *dsm, mysmp);
+    generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
     mysmp.exportInitial(s0);
     initial_distro(s0);
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    generateIndexedSMP(debug, *dsm, myrs);
+    // generateIndexedSMP(debug, *dsm, myrs);
+    generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
   }
 
   delete vandb;
