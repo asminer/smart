@@ -185,7 +185,7 @@ public:
   */
   virtual void DocumentBehavior(doc_formatter* df) const;
 
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char* keyword) const;
 
   /** Does this header match the passed one?
       Used to detect duplicate or conflicting user-defined functions.

@@ -23,7 +23,7 @@ markov_lldsm* StartMeddlyMC(meddly_states* ss);
 meddly_states* GrabMeddlyMCStates(lldsm* mc);
 
 // Finish a Meddly MC
-sv_encoder::error FinishMeddlyMC(lldsm* mc, shared_ddedge* potproc, bool pot);
+void FinishMeddlyMC(lldsm* mc, shared_ddedge* potproc, bool pot);
 
 
 #endif

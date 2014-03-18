@@ -79,7 +79,7 @@ public:
     buildDiagonals();
   }
 
-  shared_ddedge* buildActualProc(const shared_ddedge* p, sv_encoder::error &e) const;
+  shared_ddedge* buildActualProc(const shared_ddedge* p) const;
 
   virtual void visitStates(state_visitor &x) const;
 
@@ -221,7 +221,7 @@ void meddly_mc::buildDiagonals()
 }
 
 shared_ddedge* 
-meddly_mc::buildActualProc(const shared_ddedge* p, sv_encoder::error &e) const
+meddly_mc::buildActualProc(const shared_ddedge* p) const
 {
   if (0==p) return 0;
   DCASSERT(process);
@@ -231,8 +231,10 @@ meddly_mc::buildActualProc(const shared_ddedge* p, sv_encoder::error &e) const
   DCASSERT(process->proc_wrap);
   // build actual NSF
   shared_ddedge* actual = new shared_ddedge(process->mxd_wrap->getForest());
-  e = process->mxd_wrap->selectRows(process->nsf, process->states, actual);
-  if (e) {
+  try {
+    process->mxd_wrap->selectRows(process->nsf, process->states, actual);
+  }
+  catch (sv_encoder::error e) {
     Delete(actual);
     return 0;
   }
@@ -242,12 +244,10 @@ meddly_mc::buildActualProc(const shared_ddedge* p, sv_encoder::error &e) const
     MEDDLY::apply(MEDDLY::COPY, actual->E, actp->E);
   }
   catch (MEDDLY::error me) {
-    e = process->proc_wrap->convert(me);
+    process->proc_wrap->convert(me);
   }
   Delete(actual);
-  if (!e) {
-    actp->E *= p->E;
-  }
+  actp->E *= p->E;
   return actp;
 }
 
@@ -359,17 +359,18 @@ long meddly_mc::getNumArcs(bool show) const
   if (process->proc_uses_actual) {
     process->proc_wrap->getCardinality(process->proc, na);
   } else {
-    sv_encoder::error e;
-    shared_object* actual = buildActualProc(process->proc, e);
-    DCASSERT(actual);
-    if (e) {
+    shared_object* actual = 0;
+    try {
+      actual = buildActualProc(process->proc);
+      DCASSERT(actual);
+      process->proc_wrap->getCardinality(actual, na);
+    }
+    catch (sv_encoder::error e) {
       if (GetParent()->StartError(0)) {
         em->cerr() << "Couldn't build actual edges: ";
         em->cerr() << sv_encoder::getNameOfError(e);
         GetParent()->DoneError();
       }
-    } else {
-      process->proc_wrap->getCardinality(actual, na);
     }
     Delete(actual);
   }
@@ -473,30 +474,29 @@ meddly_states* GrabMeddlyMCStates(lldsm* mc)
   return mddmc->grabStates();
 }
 
-sv_encoder::error FinishMeddlyMC(lldsm* mc, shared_ddedge* potproc, bool pot)
+void FinishMeddlyMC(lldsm* mc, shared_ddedge* potproc, bool pot)
 {
   meddly_mc* mddmc = dynamic_cast <meddly_mc*> (mc);
-  sv_encoder::error e = sv_encoder::Success;
-  if (0==mddmc) return e;
+  if (0==mddmc) return;
   meddly_states* ss = mddmc->grabStates();
   if (ss->proc) {
     mddmc->finish();
-    return e;
+    return;
   }
   if (pot) {
     ss->proc = Share(potproc);
     ss->proc_uses_actual = false;
   } else {
-    ss->proc = mddmc->buildActualProc(potproc, e);
-    if (e) {
+    try {
+      ss->proc = mddmc->buildActualProc(potproc);
+      ss->proc_uses_actual = true;
+    }
+    catch (sv_encoder::error e) {
       // use potential instead
       Delete(ss->proc);
       ss->proc = Share(potproc);
       ss->proc_uses_actual = false;
-    } else {
-      ss->proc_uses_actual = true;
-    }
+    } 
   }
   mddmc->finish();
-  return e;
 }

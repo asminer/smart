@@ -37,7 +37,7 @@ notendl       [^\n]
 %%
 
 <OPTION>\n                            { BEGIN 0; return ProcessEndpnd(); }
-"//"{notendl}*\n                      { /* C++ comment, ignored */ }
+"//"{notendl}*                        { /* C++ comment, ignored */ }
 {comstart}{notcomclose}*{comclose}    { /* C comment, ignored */ }
 {comstart}{notcomclose}*              { UnclosedComment(); }
 \n                                    { /* Ignored */ }

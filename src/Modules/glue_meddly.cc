@@ -130,6 +130,7 @@ void shared_ddedge::freeIterator()
 // *                                                                *
 // ******************************************************************
 
+/*
 inline void reportMeddlyError(const exprman* em, const expr* cause,
     const char* what, MEDDLY::error e)
 {
@@ -140,6 +141,7 @@ inline void reportMeddlyError(const exprman* em, const expr* cause,
     em->stopIO();
   }
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -160,13 +162,11 @@ meddly_encoder::~meddly_encoder()
   MEDDLY::destroyForest(F);
 }
 
-sv_encoder::error 
-meddly_encoder::dumpNode(DisplayStream &s, shared_object* e) const
+void meddly_encoder::dumpNode(DisplayStream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
-  if (0==me) return Invalid_Edge;
+  if (0==me) throw  Invalid_Edge;
   s.Put(me->E.getNode());
-  return Success;
 }
 
 void meddly_encoder::dumpForest(DisplayStream &s) const
@@ -194,28 +194,25 @@ bool meddly_encoder::isValidEdge(const shared_object* x) const
   return (0 != dynamic_cast<const shared_ddedge*> (x) );
 }
 
-sv_encoder::error 
-meddly_encoder::copyEdge(const shared_object* src, shared_object* dest) const
+void meddly_encoder::copyEdge(const shared_object* src, shared_object* dest) const
 {
   const shared_ddedge* source = dynamic_cast<const shared_ddedge*> (src);
-  if (0==source) return Invalid_Edge;
+  if (0==source) throw Invalid_Edge;
   shared_ddedge* destination = dynamic_cast<shared_ddedge*> (dest);
-  if (0==destination) return Invalid_Edge;
+  if (0==destination) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (destination->numRefs()>1) return Shared_Output_Edge;
+  if (destination->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(destination);
   destination->E = source->E;
-  return Success;
 }
 
-sv_encoder::error 
-meddly_encoder::buildSymbolicConst(bool t, shared_object* ans)
+void meddly_encoder::buildSymbolicConst(bool t, shared_object* ans)
 {
   shared_ddedge* answer = dynamic_cast<shared_ddedge*> (ans);
-  if (0==answer) return Invalid_Edge;
+  if (0==answer) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (answer->numRefs()>1) return Shared_Output_Edge;
+  if (answer->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(answer);
 
@@ -223,29 +220,28 @@ meddly_encoder::buildSymbolicConst(bool t, shared_object* ans)
     switch (F->getRangeType()) {
       case MEDDLY::forest::INTEGER:
         F->createEdge(int(t), answer->E);
-        return Success;
+        return;
 
       case MEDDLY::forest::REAL:
         F->createEdge(float(t), answer->E);
-        return Success;
+        return;
 
       default:
         F->createEdge(t, answer->E);
-        return Success;
+        return;
     } // switch
   }
   catch (MEDDLY::error fe) {
-    return convert(fe);
+    convert(fe);
   }
 }
 
-sv_encoder::error 
-meddly_encoder::buildSymbolicConst(long t, shared_object* ans)
+void meddly_encoder::buildSymbolicConst(long t, shared_object* ans)
 {
   shared_ddedge* answer = dynamic_cast<shared_ddedge*> (ans);
-  if (0==answer) return Invalid_Edge;
+  if (0==answer) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (answer->numRefs()>1) return Shared_Output_Edge;
+  if (answer->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(answer);
 
@@ -255,29 +251,26 @@ meddly_encoder::buildSymbolicConst(long t, shared_object* ans)
     } else {
       F->createEdge(int(t), answer->E);
     }
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error 
-meddly_encoder::buildSymbolicConst(double t, shared_object* ans)
+void meddly_encoder::buildSymbolicConst(double t, shared_object* ans)
 {
   shared_ddedge* answer = dynamic_cast<shared_ddedge*> (ans);
-  if (0==answer) return Invalid_Edge;
+  if (0==answer) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (answer->numRefs()>1) return Shared_Output_Edge;
+  if (answer->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(answer);
 
   try {
     F->createEdge(float(t), answer->E);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
@@ -305,15 +298,14 @@ meddly_encoder::nextMinterm(shared_object* set) const
 
 
 
-sv_encoder::error
-meddly_encoder::createMinterms(const int* const* mts, int n, shared_object* answer)
+void meddly_encoder::createMinterms(const int* const* mts, int n, shared_object* answer)
 {
-  if (n<1) return Success;
-  if (0==mts) return Failed;
+  if (n<1) return;
+  if (0==mts) throw Failed;
   shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
-  if (0==dd) return Invalid_Edge;
+  if (0==dd) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (dd->numRefs()>1) return Shared_Output_Edge;
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
 #ifdef SHOW_CREATE_MINTERMS
@@ -333,23 +325,21 @@ meddly_encoder::createMinterms(const int* const* mts, int n, shared_object* answ
 
   try {
     F->createEdge(mts, n, dd->E);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
 
-sv_encoder::error
-meddly_encoder::createMinterms(const int* const* from, const int* const* to, int n, shared_object* answer)
+void meddly_encoder::createMinterms(const int* const* from, const int* const* to, int n, shared_object* answer)
 {
-  if (n<1) return Success;
-  if (0==from || 0==to) return Failed;
+  if (n<1) return;
+  if (0==from || 0==to) throw Failed;
   shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
-  if (0==dd) return Invalid_Edge;
+  if (0==dd) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (dd->numRefs()>1) return Shared_Output_Edge;
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
 #ifdef SHOW_CREATE_MINTERMS
@@ -377,23 +367,22 @@ meddly_encoder::createMinterms(const int* const* from, const int* const* to, int
 
   try {
     F->createEdge(from, to, n, dd->E);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::buildUnary(exprman::unary_opcode op, const shared_object* opnd, 
               shared_object* answer)
 {
   const shared_ddedge* opdd = dynamic_cast<const shared_ddedge*> (opnd);
-  if (0==opdd) return Invalid_Edge;
+  if (0==opdd) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (answer);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   MEDDLY::dd_edge out(F);
@@ -409,38 +398,38 @@ sv_encoder::error meddly_encoder
           MEDDLY::apply(MEDDLY::EQUAL, out, opdd->E, out);
         }
         ans->E = out;
-        return Success;
+        return;
       } 
 
       case exprman::uop_neg: {
         F->createEdge(0, out);
         out -= opdd->E;
         ans->E = out;
-        return Success;
+        return;
       }
 
       default:
-        return Failed;
+        throw Failed;
     } // switch
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::buildBinary(const shared_object* left, exprman::binary_opcode op, 
               const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
-  if (0==meL) return Invalid_Edge;
+  if (0==meL) throw Invalid_Edge;
   const shared_ddedge* meR = dynamic_cast<const shared_ddedge*> (right);
-  if (0==meR) return Invalid_Edge;
+  if (0==meR) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (answer);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   MEDDLY::dd_edge out(getForest());
@@ -494,30 +483,29 @@ sv_encoder::error meddly_encoder
         throw MEDDLY::error(MEDDLY::error::NOT_IMPLEMENTED);
 
       default:
-        return Failed;
+        throw Failed;
 
     } // switch
     ans->E = out;
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::buildAssoc(const shared_object* left, bool flip, exprman::assoc_opcode op, 
              const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
-  if (0==meL) return Invalid_Edge;
+  if (0==meL) throw Invalid_Edge;
   const shared_ddedge* meR = dynamic_cast<const shared_ddedge*> (right);
-  if (0==meR) return Invalid_Edge;
+  if (0==meR) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (answer);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   MEDDLY::dd_edge out(getForest());
@@ -576,7 +564,7 @@ sv_encoder::error meddly_encoder
         break;
 
       default:
-        return Failed;
+        throw Failed;
 
     } // switch
 
@@ -588,49 +576,46 @@ sv_encoder::error meddly_encoder
     dump.flush();
 #endif
     ans->E = out;
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::getCardinality(const shared_object* x, long &card)
 {
   const shared_ddedge* S = dynamic_cast<const shared_ddedge*> (x);
-  if (0==S) return Invalid_Edge;
+  if (0==S) throw Invalid_Edge;
 #ifdef DEBUG_CARD
   S->E.show(stderr, 3);
 #endif
   try {
     MEDDLY::apply(MEDDLY::CARDINALITY, S->E, card);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::getCardinality(const shared_object* x, double &card)
 {
   const shared_ddedge* S = dynamic_cast<const shared_ddedge*> (x);
-  if (0==S) return Invalid_Edge;
+  if (0==S) throw Invalid_Edge;
   try {
     MEDDLY::apply(MEDDLY::CARDINALITY, S->E, card);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::getCardinality(const shared_object* x, result &card)
 {
   const shared_ddedge* S = dynamic_cast<const shared_ddedge*> (x);
-  if (0==S) return Invalid_Edge;
+  if (0==S) throw Invalid_Edge;
 #ifdef HAVE_LIBGMP
   mpz_t mpz_card;
   mpz_init(mpz_card);
@@ -643,86 +628,82 @@ sv_encoder::error meddly_encoder
 #ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
 #endif
-    return Success;
   } 
   catch (MEDDLY::error e) {
 #ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
 #endif
     card.setNull();
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::isEmpty(const shared_object* x, bool &empty)
 {
   const shared_ddedge* S = dynamic_cast<const shared_ddedge*> (x);
-  if (0==S) return Invalid_Edge;
+  if (0==S) throw Invalid_Edge;
   empty = (0==S->E.getNode());
-  return Success;
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::preImage(const shared_object* x, const shared_object* E, shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
-  if (0==mex) return Invalid_Edge;
+  if (0==mex) throw Invalid_Edge;
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
     MEDDLY::apply(
       MEDDLY::PRE_IMAGE, mex->E, meE->E, ans->E
     );
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::postImage(const shared_object* x, const shared_object* E, shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
-  if (0==mex) return Invalid_Edge;
+  if (0==mex) throw Invalid_Edge;
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
     MEDDLY::apply(
       MEDDLY::POST_IMAGE, mex->E, meE->E, ans->E
     );
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::preImageStar(const shared_object* x, const shared_object* E, 
                 shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
-  if (0==mex) return Invalid_Edge;
+  if (0==mex) throw Invalid_Edge;
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
@@ -735,25 +716,24 @@ sv_encoder::error meddly_encoder
         MEDDLY::REVERSE_REACHABLE_BFS, mex->E, meE->E, ans->E
       );  
     }
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::postImageStar(const shared_object* x, const shared_object* E, 
                 shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
-  if (0==mex) return Invalid_Edge;
+  if (0==mex) throw Invalid_Edge;
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
@@ -766,25 +746,24 @@ sv_encoder::error meddly_encoder
         MEDDLY::REACHABLE_STATES_BFS, mex->E, meE->E, ans->E
       );  
     }
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::selectRows(const shared_object* E, const shared_object* rows,
               shared_object* a)
 {
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   const shared_ddedge* meRows = dynamic_cast<const shared_ddedge*> (rows);
-  if (0==meRows) return Invalid_Edge;
+  if (0==meRows) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
@@ -813,25 +792,24 @@ sv_encoder::error meddly_encoder
     } else {
       MEDDLY::apply(MEDDLY::MULTIPLY, meE->E, tmp, ans->E);
     }
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error meddly_encoder
+void meddly_encoder
 ::selectCols(const shared_object* E, const shared_object* cols,
               shared_object* a)
 {
   const shared_ddedge* meE = dynamic_cast<const shared_ddedge*> (E);
-  if (0==meE) return Invalid_Edge;
+  if (0==meE) throw Invalid_Edge;
   const shared_ddedge* meCols = dynamic_cast<const shared_ddedge*> (cols);
-  if (0==meCols) return Invalid_Edge;
+  if (0==meCols) throw Invalid_Edge;
   shared_ddedge* ans = dynamic_cast<shared_ddedge*> (a);
-  if (0==ans) return Invalid_Edge;
+  if (0==ans) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (ans->numRefs()>1) return Shared_Output_Edge;
+  if (ans->numRefs()>1) throw Shared_Output_Edge;
 #endif
 
   try {
@@ -860,10 +838,9 @@ sv_encoder::error meddly_encoder
     } else {
       MEDDLY::apply(MEDDLY::MULTIPLY, meE->E, tmp, ans->E);
     }
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 

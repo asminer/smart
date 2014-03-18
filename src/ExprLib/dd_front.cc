@@ -26,7 +26,6 @@ bool sv_encoder::Equals(const shared_object *o) const
 const char* sv_encoder::getNameOfError(error e)
 {
   switch (e) {
-    case Success:             return "Success";
     case Invalid_Edge:        return "Invalid edge";
 #ifdef DEVELOPMENT_CODE
     case Shared_Output_Edge:  return "Output edge is shared";

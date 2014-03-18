@@ -39,6 +39,7 @@ class markov_lldsm : public stochastic_lldsm {
   static const int GAUSS_SEIDEL = 0;
   static const int JACOBI       = 1;
   static const int ROW_JACOBI   = 2;
+  static const int NUM_SOLVERS  = 3;
   static named_msg report;
   static int access;
   static const int BY_COLUMNS = 0;
@@ -60,7 +61,7 @@ protected:
   void startAccumulatedReport(double t) const;
   void stopAccumulatedReport(long iters) const;
   
-  const char* getSolver() const;
+  static const char* getSolver();
 private:
   timer* watch;
 };
@@ -82,31 +83,6 @@ void InitMCLibs(exprman* em);
 */
 stochastic_lldsm* 
 MakeEnumeratedMC(const LS_Vector &init, model_enum* ss, MCLib::Markov_chain* mc);
-
-
-/** Build an explicit Markov chain model.
-      @param  i   Initial distribution
-      @param  a   Index of accepting state, or -1 for none.
-      @param  S   State space
-      @param  M   Unfinished Markov chain
-
-      @return A new low-level model.
-stochastic_lldsm* 
-MakeExplicitMC(const LS_Vector &i, long a, expl_rss_only* S, Markov_chain* M);
-*/
-
-
-
-/** Build an explicit Markov chain model.
-      @param  i   Initial distribution
-      @param  a   Index of accepting state, or -1 for none.
-      @param  ss  State space
-      @param  mc  Unfinished Markov chain
-
-      @return A new low-level model.
-stochastic_lldsm* 
-MakeExplicitMC(const LS_Vector &i, long a, state_db* ss, Markov_chain* mc);
-*/
 
 
 /** Start an explicit Markov chain model.

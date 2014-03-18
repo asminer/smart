@@ -137,6 +137,21 @@ expr* BuildOptionStatement(option* o, expr* v);
 */
 expr* BuildOptionStatement(option* o, char* n);
 
+/** Build an (enumerated) option statement, to be followed by nested options.
+      @param  o   Option to set.
+      @param  n   Name of radio button to assign to the option.
+                  Will be free()d.
+      @return A new statement, as appropriate.
+*/
+expr* StartOptionBlock(option* o, char* n);
+
+/** Finish building a nested option statement.
+      @param  os    Starting option statement.
+      @param  list  List of inner option statements.
+      @return A new statement, as appropriate.
+*/
+expr* FinishOptionBlock(expr* os, parser_list* list);
+
 /** Build a (checkbox) option statement.
       @param  o       Option to set.
       @param  check   If true, we will check lots of boxes.

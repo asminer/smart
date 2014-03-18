@@ -115,27 +115,29 @@ void meddly_varoption::initializeVars()
   for (int n=0; n<num_init; n++) {
     mt[n] = new int[ms.getNumVars()+1];
     parent.GetInitialState(n, st);
-    CHECK_RETURN(
-      ms.mdd_wrap->state2minterm(st, mt[n]),
-      sv_encoder::Success
-    );
+    ms.mdd_wrap->state2minterm(st, mt[n]);
   } // for n
 
   // Build DD from minterms
   ms.initial = smart_cast <shared_ddedge*> (ms.mdd_wrap->makeEdge(0));
   DCASSERT(ms.initial);
-  sv_encoder::error e = 
-      ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
-
-  // Cleanup
-  for (int n=0; n<num_init; n++)  delete[] mt[n];
-  delete[] mt;
-  Delete(st);
-
-  switch (e) {
-    case sv_encoder::Success:         return;
-    case sv_encoder::Out_Of_Memory:   throw subengine::Out_Of_Memory;
-    default:                          throw subengine::Engine_Failed;
+  try {
+    ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
+    // Cleanup
+    for (int n=0; n<num_init; n++)  delete[] mt[n];
+    delete[] mt;
+    Delete(st);
+    return;
+  }
+  catch (sv_encoder::error e) {
+    // Cleanup
+    for (int n=0; n<num_init; n++)  delete[] mt[n];
+    delete[] mt;
+    Delete(st);
+    switch (e) {
+      case sv_encoder::Out_Of_Memory:   throw subengine::Out_Of_Memory;
+      default:                          throw subengine::Engine_Failed;
+    }
   }
 }
 
@@ -178,11 +180,11 @@ protected:
 public:
   virtual bool arePrimedVarsSeparate() const { return false; }
   virtual int getNumDDVars() const { return parent.getPartInfo().num_levels; }
-  virtual error buildSymbolicSV(const symbol* sv, bool primed, 
+  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
                                 expr *f, shared_object* answer);
 
-  virtual error state2minterm(const shared_state* s, int* mt) const;
-  virtual error minterm2state(const int* mt, shared_state *s) const;
+  virtual void state2minterm(const shared_state* s, int* mt) const;
+  virtual void minterm2state(const int* mt, shared_state *s) const;
 
   virtual meddly_encoder* copyWithDifferentForest(const char*, MEDDLY::forest*) const;
 protected:
@@ -213,14 +215,14 @@ bounded_encoder::~bounded_encoder()
   Delete(expl_state);
 }
 
-sv_encoder::error bounded_encoder
+void bounded_encoder
 ::buildSymbolicSV(const symbol* sv, bool primed, expr* f, shared_object* answer)
 {
-  if (0==sv) return Failed;
+  if (0==sv) throw Failed;
   shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
-  if (0==dd) return Invalid_Edge;
+  if (0==dd) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (dd->numRefs()>1) return Shared_Output_Edge;
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(dd);
 
@@ -246,10 +248,9 @@ sv_encoder::error bounded_encoder
     dd->E.show(stderr, 0);
     fprintf(stderr, "\n");
 #endif
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
@@ -283,10 +284,10 @@ void bounded_encoder
   } // for v
 }
 
-sv_encoder::error 
+void 
 bounded_encoder::state2minterm(const shared_state* s, int* mt) const
 {
-  if (0==s || 0==mt) return Failed;
+  if (0==s || 0==mt) throw Failed;
 
   const hldsm::partinfo &part = parent.getPartInfo();
   int p = part.pointer[part.num_levels];
@@ -298,14 +299,12 @@ bounded_encoder::state2minterm(const shared_state* s, int* mt) const
       mt[k] += s->get(part.variable[p]->GetIndex());
     } // for p
   } // for k
-  
-  return Success;
 }
 
-sv_encoder::error
+void
 bounded_encoder::minterm2state(const int* mt, shared_state *s) const
 {
-  if (0==s || 0==mt) return Failed;
+  if (0==s || 0==mt) throw Failed;
 
   int p = 0;
   const hldsm::partinfo &part = parent.getPartInfo();
@@ -318,8 +317,6 @@ bounded_encoder::minterm2state(const int* mt, shared_state *s) const
       digit /= b;
     } // for p
   } // for k
-
-  return Success;
 }
 
 meddly_encoder* 
@@ -774,11 +771,11 @@ protected:
 public:
   virtual bool arePrimedVarsSeparate() const { return false; }
   virtual int getNumDDVars() const { return parent.getPartInfo().num_levels; }
-  virtual error buildSymbolicSV(const symbol* sv, bool primed, 
+  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
                                 expr *f, shared_object* answer);
 
-  virtual error state2minterm(const shared_state* s, int* mt) const;
-  virtual error minterm2state(const int* mt, shared_state *s) const;
+  virtual void state2minterm(const shared_state* s, int* mt) const;
+  virtual void minterm2state(const int* mt, shared_state *s) const;
 
   virtual meddly_encoder* copyWithDifferentForest(const char* n, MEDDLY::forest*) const;
 };
@@ -802,47 +799,43 @@ substate_encoder::~substate_encoder()
   Delete(colls);
 }
 
-sv_encoder::error substate_encoder
+void substate_encoder
 ::buildSymbolicSV(const symbol* sv, bool primed, expr* f, shared_object* answer)
 {
-  return Failed;
+  throw Failed;
 }
 
-sv_encoder::error 
+void 
 substate_encoder::state2minterm(const shared_state* s, int* mt) const
 {
   DCASSERT(colls);
-  if (0==s || 0==mt) return Failed;
+  if (0==s || 0==mt) throw Failed;
 
   for (int k=parent.getPartInfo().num_levels; k; k--) {
     int ssz = s->readSubstateSize(k);
     long sk = colls->addSubstate(k, s->readSubstate(k), ssz);
     if (sk<0) {
-      if (-2 == sk) return Out_Of_Memory;
-      return Failed;
+      if (-2 == sk) throw Out_Of_Memory;
+      throw Failed;
     }
     mt[k] = sk;
     // check overflow
-    if (sk != mt[k]) return Failed;
+    if (sk != mt[k]) throw Failed;
     // TBD: Should we print an error for that one?
   } // for k
-
-  return Success;
 }
 
-sv_encoder::error
+void
 substate_encoder::minterm2state(const int* mt, shared_state *s) const
 {
   DCASSERT(colls);
-  if (0==s || 0==mt) return Failed;
+  if (0==s || 0==mt) throw Failed;
 
   for (int k=parent.getPartInfo().num_levels; k; k--) {
     int ssz = s->readSubstateSize(k);
     int foo = colls->getSubstate(k, mt[k], s->writeSubstate(k), ssz);
-    if (foo<0) return Failed;
+    if (foo<0) throw Failed;
   } // for k
-
-  return Success;
 }
 
 meddly_encoder* 

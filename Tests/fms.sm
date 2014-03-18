@@ -127,8 +127,9 @@ pn fms(int N, int Np) := {
   real phi := avg_ss(400*rate(tP1) + 600*rate(tP2) + 100*rate(tP3) + 1100*rate(tP12)); 
 };
 
-# MCSolver GAUSS_SEIDEL
-# MCSolverPrecision 1e-7
+# MCSolver GAUSS_SEIDEL {
+#   Precision 1e-7
+# }
  
 int Np(int N) := div(3*N, 2);
 

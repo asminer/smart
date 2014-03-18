@@ -19,11 +19,13 @@ option_const::option_const(const char* n, const char* d)
 {
   name = n;
   doc = d;
+  settings = 0;
 }
 
 option_const::~option_const()
 {
-  // don't delete either
+  // don't delete the name or the documentation
+  // for now, don't delete the settings
 }
 
 void option_const::show(OutputStream &s) const
@@ -43,6 +45,16 @@ int option_const::Compare(const char* n) const
   return strcmp(Name(), n);
 }
 
+bool option_const::isApropos(const doc_formatter* df, const char* key) const
+{
+  if (df->Matches(name, key))  return true;
+  if (0==settings) return false;
+  for (int n=0; n<settings->NumOptions(); n++) {
+    option* rec = settings->GetOptionNumber(n);
+    if (rec->isApropos(df, key)) return true;
+  }
+  return false;
+}
 
 // **************************************************************************
 // *                          radio_button methods                          *
@@ -335,7 +347,7 @@ bool option::isApropos(const doc_formatter* df, const char* keyword) const
   return      df->Matches(Name(), keyword);
 }
 
-void option::PrintDocs(doc_formatter* df) const
+void option::PrintDocs(doc_formatter* df, const char* keyword) const
 {
   if (0==df)  return;
 #ifndef DEVELOPMENT_CODE
@@ -349,7 +361,12 @@ void option::PrintDocs(doc_formatter* df) const
   df->Out() << documentation;
   df->Out() << "\n";
   ShowRange(df);
+  RecurseDocs(df, keyword);
   df->end_indent();
+}
+
+void option::RecurseDocs(doc_formatter* df, const char* keyword) const
+{
 }
 
 // **************************************************************************
@@ -674,6 +691,7 @@ public:
   virtual void ShowHeader(OutputStream &s) const;
   virtual void ShowRange(doc_formatter* df) const;
   virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+  virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
 };
 
 // **************************************************************************
@@ -755,11 +773,34 @@ bool radio_opt::isApropos(const doc_formatter* df, const char* keyword) const
 {
   if (0==df)                          return false;
   if (df->Matches(Name(), keyword))   return true;
-  for (int i=0; i<numpossible; i++)
-  if (df->Matches(possible[i]->Name(), keyword))  return true;
+  for (int i=0; i<numpossible; i++) {
+    if (possible[i]->isApropos(df, keyword)) return true;
+  }
   return false;
 }
 
+void radio_opt::RecurseDocs(doc_formatter* df, const char* keyword) const
+{
+  if (0==df) return;
+  for (int i=0; i<numpossible; i++) {
+    if (0==possible[i]->readSettings()) continue;
+
+    if (df->Matches(possible[i]->Name(), keyword)) {
+      // Print all options
+      df->Out() << "\nAll settings for " << possible[i]->Name() << ":\n";
+      df->begin_indent();
+      possible[i]->readSettings()->DocumentOptions(df, 0);
+      df->end_indent();
+      continue;
+    }
+
+    // Ok, just print matching settings, if any
+    df->Out() << "\nMatching settings for " << possible[i]->Name() << ":\n";
+    df->begin_indent();
+    possible[i]->readSettings()->DocumentOptions(df, keyword);
+    df->end_indent();
+  }
+}
 
 option* MakeRadioOption(const char* name, const char* doc, 
                        radio_button** values, int numv,
@@ -1003,7 +1044,7 @@ void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const
   for (int i=0; i<NumSortedOptions; i++) 
     if (SortedOptions[i]->isApropos(df, keyword)) {
       df->Out() << "\n";
-      SortedOptions[i]->PrintDocs(df);
+      SortedOptions[i]->PrintDocs(df, keyword);
     }
 }
 

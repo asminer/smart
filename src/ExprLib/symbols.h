@@ -66,7 +66,7 @@ public:
   virtual void Traverse(traverse_data &x);
 
   /// Display documentation for this symbol.
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char* keyword) const;
 
   /// Add a symbol to our waiting list.
   void addToWaitList(symbol* w);
@@ -119,7 +119,7 @@ public:
 protected:
   virtual ~help_group();
 public:
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char* keyword) const;
 
   inline void addFunction(function* s) {
     if (s) funcs.Append(s);

@@ -21,6 +21,8 @@ class measure;
 class set_of_measures;
 class engine_list;
 class engine_tree;
+class radio_button;
+class option_manager;
 
 // ******************************************************************
 // *                                                                *
@@ -115,11 +117,14 @@ class engine {
   engine* next;
   static int num_hlm_types;
   subengine** children; // dimension is num_hlm_types;
+  option_manager* options; // options local to this engine
 public:
   engine(const char* n, const char* d);
   ~engine();
 
   void AddSubEngine(subengine* child);
+
+  void AddOption(option* o);
   
   inline const engtype* getType() const { return etype; }
   inline const char* Name() const { return name; }
@@ -186,6 +191,14 @@ public:
 
   friend class engtype;
   friend void InitEngines(exprman* em);
+
+private:
+  /** 
+      Build a radio button for this engine
+      Called by engtype methods, probably should not be called otherwise.
+  */
+  radio_button* BuildOptionConst(int index);
+
 };
 
 
@@ -455,20 +468,21 @@ inline void RegisterEngine(exprman* em, const char* etname, engine* e)
 /** Handy: registration of engines that consist of a single subengine.
     This is the common case.
 */
-inline void 
+inline engine*
 RegisterEngine(engtype* et, const char* name, const char* doc, subengine* se)
 {
-  if (0==se || 0==et) return;
+  if (0==se || 0==et) return 0;
   engine* e = new engine(name, doc);
   et->registerEngine(e);
   e->AddSubEngine(se);
+  return e;
 }
 
-inline void 
+inline engine*
 RegisterEngine(exprman* em, const char* etname, 
                 const char* name, const char* doc, subengine* se)
 {
-  RegisterEngine(em ? em->findEngineType(etname) : 0, name, doc, se);
+  return RegisterEngine(em ? em->findEngineType(etname) : 0, name, doc, se);
 }
 
 /** Also handy: registration of subengines with an existing engine.

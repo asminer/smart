@@ -39,10 +39,7 @@ void Show(DisplayStream &cout, const char* who, stateset &x)
   while (mt) {
     if (comma)  cout << ", ";
     else        comma = true;
-    CHECK_RETURN(
-      x.getStateForest()->minterm2state(mt, st),
-      sv_encoder::Success
-    );
+    x.getStateForest()->minterm2state(mt, st);
     x.getParent()->GetParent()->showState(cout, st);
     mt = x.getStateForest()->nextMinterm(x.changeStateDD());
   }
@@ -59,7 +56,7 @@ void Show(DisplayStream &cout, const char* who, stateset &x)
 // *                                                                        *
 // **************************************************************************
 
-inline sv_encoder::error 
+inline void 
 symbolic_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
 {
   // E p S q iterations
@@ -69,45 +66,37 @@ symbolic_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, st
   shared_object* f = ans.getStateForest()->makeEdge(0);
 
   // prev := emptyset
-  CHECK_RETURN(
-    ans.getStateForest()->buildSymbolicConst(false, prev),
-    sv_encoder::Success
-  );
+  ans.getStateForest()->buildSymbolicConst(false, prev);
 
   // ans := q
   ans.getStateForest()->copyEdge(q.getStateDD(), ans.changeStateDD());
 
-  sv_encoder::error err = sv_encoder::Success;
   while (!prev->Equals(ans.getStateDD())) {
     // f := postimage(ans, R)
-    err = ans.getStateForest()->postImage(
+    ans.getStateForest()->postImage(
               ans.getStateDD(), ans.getRelationDD(), f
-          );
-    if (err) break;
+    );
 
     // f := f ^ p
-    err = ans.getStateForest()->buildAssoc(
+    ans.getStateForest()->buildAssoc(
               f, false, exprman::aop_and, p.getStateDD(), f
-          );
-    if (err) break;
+    );
 
     // prev := answer
     ans.getStateForest()->copyEdge(ans.getStateDD(), prev);
 
     // answer := answer U f
-    err = ans.getStateForest()->buildAssoc(
+    ans.getStateForest()->buildAssoc(
             ans.getStateDD(), false, exprman::aop_or, f, ans.changeStateDD()
-          );
-    if (err) break;
+    );
   } // while
 
   // Cleanup
   Delete(f);
   Delete(prev);
-  return err;
 }
 
-inline sv_encoder::error 
+inline void 
 symbolic_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
 {
   // E p U q iterations
@@ -117,109 +106,83 @@ symbolic_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, st
   shared_object* f = ans.getStateForest()->makeEdge(0);
 
   // prev := emptyset
-  CHECK_RETURN(
-    ans.getStateForest()->buildSymbolicConst(false, prev),
-    sv_encoder::Success
-  );
+  ans.getStateForest()->buildSymbolicConst(false, prev);
 
   // ans := q
   ans.getStateForest()->copyEdge(q.getStateDD(), ans.changeStateDD());
 
-  sv_encoder::error err = sv_encoder::Success;
   while (!prev->Equals(ans.getStateDD())) {
     // f := preimage(ans, R)
-    err = ans.getStateForest()->preImage(
+    ans.getStateForest()->preImage(
               ans.getStateDD(), ans.getRelationDD(), f
-          );
-    if (err) break;
+    );
 
     // f := f ^ p
-    err = ans.getStateForest()->buildAssoc(
+    ans.getStateForest()->buildAssoc(
               f, false, exprman::aop_and, p.getStateDD(), f
-          );
-    if (err) break;
+    );
 
     // prev := answer
     ans.getStateForest()->copyEdge(ans.getStateDD(), prev);
 
     // answer := answer U f
-    err = ans.getStateForest()->buildAssoc(
+    ans.getStateForest()->buildAssoc(
             ans.getStateDD(), false, exprman::aop_or, f, ans.changeStateDD()
-          );
-    if (err) break;
+    );
   } // while
 
   // Cleanup
   Delete(f);
   Delete(prev);
-  return err;
 }
 
 
-inline sv_encoder::error 
+inline void 
 unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r)
 {
-  sv_encoder::error err = sv_encoder::Success;
-
   // Auxiliary
   shared_object* oldr = r.getStateForest()->makeEdge(0);
   shared_object* psrc = r.getStateForest()->makeEdge(0);
   shared_object* f = r.getStateForest()->makeEdge(0);
 
   // oldr := emptyset
-  CHECK_RETURN(
-    r.getStateForest()->buildSymbolicConst(false, oldr),
-    sv_encoder::Success
-  );
+  r.getStateForest()->buildSymbolicConst(false, oldr);
 
   // build set of source states satisfying p
-  err = r.getStateForest()->buildAssoc(
+  r.getStateForest()->buildAssoc(
     GrabSOInitial(mdl), false, exprman::aop_and, p.getStateDD(), psrc
   );
-  if (err) {
-    Delete(psrc);
-    Delete(oldr);
-    Delete(f);
-    return err;
-  }
 
   // r := p
-  CHECK_RETURN(
-    r.getStateForest()->copyEdge(p.getStateDD(), r.changeStateDD()),
-    sv_encoder::Success
-  );
+  r.getStateForest()->copyEdge(p.getStateDD(), r.changeStateDD());
   
   while (!oldr->Equals(r.getStateDD())) {
     // f := postimage(r, R)
-    err = r.getStateForest()->postImage(
+    r.getStateForest()->postImage(
             r.getStateDD(), r.getRelationDD(), f
-          );
-    if (err) break;
+    );
 
     // f := f + psrc
-    err = r.getStateForest()->buildAssoc(
+    r.getStateForest()->buildAssoc(
             f, false, exprman::aop_or, psrc, f
-          );
-    if (err) break;
+    );
 
     // oldr := r
-    err = r.getStateForest()->copyEdge(r.getStateDD(), oldr);
-    if (err) break;
+    r.getStateForest()->copyEdge(r.getStateDD(), oldr);
 
     // r := f * p
-    err = r.getStateForest()->buildAssoc(
+    r.getStateForest()->buildAssoc(
             f, false, exprman::aop_and, p.getStateDD(), r.changeStateDD()
-          );
+    );
   } // while
 
   // Cleanup
   Delete(psrc);
   Delete(oldr);
   Delete(f);
-  return err;
 }
 
-inline sv_encoder::error 
+inline void 
 unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r)
 {
   // Auxiliary
@@ -232,10 +195,7 @@ unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r)
   );
 
   // oldr := emptyset
-  CHECK_RETURN(
-    r.getStateForest()->buildSymbolicConst(false, oldr),
-    sv_encoder::Success
-  );
+  r.getStateForest()->buildSymbolicConst(false, oldr);
 
   // build set of deadlocked states satisfying p
   mdl->findDeadlockedStates(pdead);
@@ -246,39 +206,31 @@ unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r)
 #endif
 
   // r := p
-  CHECK_RETURN(
-    r.getStateForest()->copyEdge(p.getStateDD(), r.changeStateDD()),
-    sv_encoder::Success
-  );
+  r.getStateForest()->copyEdge(p.getStateDD(), r.changeStateDD());
   
-  sv_encoder::error err = sv_encoder::Success;
   while (!oldr->Equals(r.getStateDD())) {
     // f := preimage(r, R)
-    err = r.getStateForest()->preImage(
+    r.getStateForest()->preImage(
             r.getStateDD(), r.getRelationDD(), f
-          );
-    if (err) break;
+    );
 
     // f := f + pdead
-    err = r.getStateForest()->buildAssoc(
+    r.getStateForest()->buildAssoc(
             f, false, exprman::aop_or, pdead.getStateDD(), f
-          );
-    if (err) break;
+    );
 
     // oldr := r
-    err = r.getStateForest()->copyEdge(r.getStateDD(), oldr);
-    if (err) break;
+    r.getStateForest()->copyEdge(r.getStateDD(), oldr);
 
     // r := f * p
-    err = r.getStateForest()->buildAssoc(
+    r.getStateForest()->buildAssoc(
             f, false, exprman::aop_and, p.getStateDD(), r.changeStateDD()
-          );
+    );
   } // while
 
   // Cleanup
   Delete(oldr);
   Delete(f);
-  return err;
 }
 
 
@@ -295,7 +247,6 @@ public:
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   inline static void convert(sv_encoder::error e) {
     switch (e) {
-      case sv_encoder::Success        :   return;
       case sv_encoder::Out_Of_Memory  :   throw Out_Of_Memory;
       default                         :   throw Engine_Failed;
     };
@@ -342,23 +293,26 @@ void EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
     smart_cast <const checkable_lldsm*>(p->getParent());
   DCASSERT(mdl);
 
-  shared_object* rdd = p->getStateForest()->makeEdge(0);
-  sv_encoder::error err;
-  err = pass[0].getBool() 
-    ? p->getStateForest()->postImage(p->getStateDD(), p->getRelationDD(), rdd)
-    : p->getStateForest()->preImage(p->getStateDD(), p->getRelationDD(), rdd);
-
-  if (err) {
-    Delete(rdd);
-    x.answer->setNull();
-    return convert(err);
-  }
-  x.answer->setPtr(
-    new stateset(
+  shared_object* rdd = 0;
+  try {
+    rdd = p->getStateForest()->makeEdge(0);
+    if (pass[0].getBool()) {
+      p->getStateForest()->postImage(p->getStateDD(), p->getRelationDD(), rdd);
+    } else {
+      p->getStateForest()->preImage(p->getStateDD(), p->getRelationDD(), rdd);
+    }
+    x.answer->setPtr(
+      new stateset(
         p->getParent(), Share(p->getStateForest()), rdd,
         Share(p->getRelationForest()), Share(p->getRelationDD())
-    )
-  );
+      )
+    );
+  }
+  catch (sv_encoder::error err) {
+    Delete(rdd);
+    x.answer->setNull();
+    convert(err);
+  }
 }
 
 // **************************************************************************
@@ -406,26 +360,29 @@ void EU_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
     Share(q->getRelationDD())
   );
   x.answer->setPtr(r);
-  sv_encoder::error err;
-  if (p) {
-    if (pass[0].getBool()) {
-      err = symbolic_ES(mdl, *p, *q, *r);
+  try {
+    if (p) {
+      if (pass[0].getBool()) {
+        symbolic_ES(mdl, *p, *q, *r);
+      } else {
+        symbolic_EU(mdl, *p, *q, *r);
+      }
     } else {
-      err = symbolic_EU(mdl, *p, *q, *r);
-    }
-  } else {
-    if (pass[0].getBool()) {
-      err = q->getStateForest()->postImageStar(
-              q->getStateDD(), q->getRelationDD(), r->changeStateDD()
-            );
-    } else {
-      err = q->getStateForest()->preImageStar(
-              q->getStateDD(), q->getRelationDD(), r->changeStateDD()
-            );
+      if (pass[0].getBool()) {
+        q->getStateForest()->postImageStar(
+                q->getStateDD(), q->getRelationDD(), r->changeStateDD()
+        );
+      } else {
+        q->getStateForest()->preImageStar(
+                q->getStateDD(), q->getRelationDD(), r->changeStateDD()
+        );
+      }
     }
   }
-  if (err) x.answer->setNull();
-  return convert(err);
+  catch (sv_encoder::error err) {
+    x.answer->setNull();
+    convert(err);
+  }
 }
 
 // **************************************************************************
@@ -467,14 +424,17 @@ void unfairEG_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
   );
   x.answer->setPtr(r);
 
-  sv_encoder::error err;
-  if (pass[0].getBool()) {
-    err = unfair_EH(mdl, *p, *r);
-  } else {
-    err = unfair_EG(mdl, *p, *r);
+  try {
+    if (pass[0].getBool()) {
+      unfair_EH(mdl, *p, *r);
+    } else {
+      unfair_EG(mdl, *p, *r);
+    }
   }
-  if (err) x.answer->setNull();
-  return convert(err);
+  catch (sv_encoder::error err) {
+    x.answer->setNull();
+    convert(err);
+  }
 }
 
 // **************************************************************************

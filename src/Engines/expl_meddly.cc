@@ -60,7 +60,6 @@ inline void convert(MEDDLY::error ce)
 inline void convert(sv_encoder::error sve) 
 {
   switch (sve) {
-    case sv_encoder::Success:           return;
     case sv_encoder::Out_Of_Memory:     throw  subengine::Out_Of_Memory;
     default:                            throw  subengine::Engine_Failed;
   }
@@ -642,16 +641,17 @@ void edge_minterms::addBatch()
 {
   if (0==used) return;
 
+  try {
 #ifdef MEASURE_TIMES
-  clock->reset();
+    clock->reset();
 #endif
-  sv_encoder::error e = wrap.createMinterms(from_batch, to_batch, used, tempedge);
+    wrap.createMinterms(from_batch, to_batch, used, tempedge);
 #ifdef MEASURE_TIMES
-  time_create += clock->elapsed();
+    time_create += clock->elapsed();
 #endif
-  if (e) {
-    if (e==sv_encoder::Out_Of_Memory) throw subengine::Out_Of_Memory;
-    throw subengine::Engine_Failed;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
   }
 #ifdef MEASURE_TIMES
   clock->reset();
@@ -761,8 +761,14 @@ mt_known_stategroup
   exploring = mp.getMinterm();
   mp.fillMinterm(exploring, s_iter.getAssignments());
   ++s_iter;
-  convert( wrap.minterm2state(exploring, s) );
-  return exploring;
+  try {
+    wrap.minterm2state(exploring, s);
+    return exploring;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return 0;
+  }
 }
 
 bool
@@ -772,9 +778,15 @@ mt_known_stategroup
   DCASSERT(discovering);
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
-  convert(wrap.state2minterm(s, discovering));
-  id = discovering;
-  return false;
+  try {
+    wrap.state2minterm(s, discovering);
+    id = discovering;
+    return false;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return false;
+  }
 }
 
 // **************************************************************************
@@ -841,21 +853,25 @@ public:
 protected:
   inline void addBatch() {
     if (0==used) return;
-    sv_encoder::error e = wrap.createMinterms(batch, used, tempedge);
-    S->E += tempedge->E;
-    U->E += tempedge->E;
-    for (int i=0; i<used; i++) {
-      mp.doneMinterm(batch[i]);
-      batch[i] = 0;
-    }
+    try {
+      wrap.createMinterms(batch, used, tempedge);
+      S->E += tempedge->E;
+      U->E += tempedge->E;
+      for (int i=0; i<used; i++) {
+        mp.doneMinterm(batch[i]);
+        batch[i] = 0;
+      }
 #ifdef MEASURE_STATS
-    min_batch = MIN(min_batch, used);
-    max_batch = MAX(max_batch, used);
-    num_batches++;
-    num_additions += used;
+      min_batch = MIN(min_batch, used);
+      max_batch = MAX(max_batch, used);
+      num_batches++;
+      num_additions += used;
 #endif
-    used = 0;
-    convert(e);
+      used = 0;
+    } // try
+    catch (sv_encoder::error e) {
+      convert(e);
+    }
   }
 };
 
@@ -909,7 +925,7 @@ mt_sr_stategroup
   try {
     // wrap.getForest()->findFirstElement(U->E, exploring);
     MEDDLY::enumerator first(U->E);
-    convert(wrap.minterm2state(first.getAssignments(), s));
+    wrap.minterm2state(first.getAssignments(), s);
     // e = convert(wrap.minterm2state(exploring, s));
     MEDDLY::dd_edge temp(wrap.getForest());
     wrap.getForest()->createEdge(&exploring, 1, temp);
@@ -918,6 +934,10 @@ mt_sr_stategroup
   }
   catch (MEDDLY::error ce) {
     convert(ce);
+    return 0;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
     return 0;
   }
 }
@@ -930,13 +950,16 @@ mt_sr_stategroup
   mp.doneMinterm(discovering);
   discovering = mp.getMinterm();
   id = discovering;
-  convert(wrap.state2minterm(s, discovering));
   bool seen;
   try {
+    wrap.state2minterm(s, discovering);
     wrap.getForest()->evaluate(S->E, discovering, seen);
   }
   catch (MEDDLY::error e) {
-    return 0;
+    convert(e);
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
   }
   if (seen) return false;
   batch[used] = mp.shareMinterm(discovering);
@@ -1028,8 +1051,14 @@ mt_br_stategroup
   exploring = mp.getMinterm();
   mp.fillMinterm(exploring, b_iter.getAssignments());
   ++b_iter;
-  convert(wrap.minterm2state(exploring, s));
-  return exploring;
+  try {
+    wrap.minterm2state(exploring, s);
+    return exploring;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return 0;
+  }
 }
 
 // **************************************************************************

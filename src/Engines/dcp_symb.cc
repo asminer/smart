@@ -48,14 +48,14 @@ public:
     DCASSERT(nem);
     return nem->NumVars();
   }
-  virtual error buildSymbolicSV(const symbol* sv, bool primed,
+  virtual void buildSymbolicSV(const symbol* sv, bool primed,
                                 expr* f, shared_object* ans);
 
-  virtual error state2minterm(const shared_state* s, int* mt) const;
-  virtual error minterm2state(const int* mt, shared_state *s) const;
+  virtual void state2minterm(const shared_state* s, int* mt) const;
+  virtual void minterm2state(const int* mt, shared_state *s) const;
 
-  virtual error createMinterms(const int* const* m, int n, shared_object* a);
-  virtual error createMinterms(const int* const* f, const int* const* t,
+  virtual void createMinterms(const int* const* m, int n, shared_object* a);
+  virtual void createMinterms(const int* const* f, const int* const* t,
                                 int n, shared_object* a);
 
   virtual meddly_encoder* 
@@ -96,15 +96,15 @@ icp_encoder::~icp_encoder()
   delete[] terms;
 }
 
-sv_encoder::error icp_encoder
+void icp_encoder
 ::buildSymbolicSV(const symbol* sv, bool primed, expr* f, shared_object* answer)
 {
   DCASSERT(!primed);
-  if (0==sv) return Failed;
+  if (0==sv) throw Failed;
   shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
-  if (0==dd) return Invalid_Edge;
+  if (0==dd) throw Invalid_Edge;
 #ifdef DEVELOPMENT_CODE
-  if (dd->numRefs()>1) return Shared_Output_Edge;
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
 #endif
   DCASSERT(dd);
 
@@ -129,40 +129,35 @@ sv_encoder::error icp_encoder
 
   try {
     F->createEdgeForVar(level, false, terms, dd->E);
-    return Success;
   }
   catch (MEDDLY::error e) {
-    return convert(e);
+    convert(e);
   }
 }
 
-sv_encoder::error 
-icp_encoder::state2minterm(const shared_state* s, int* mt) const
+void icp_encoder::state2minterm(const shared_state* s, int* mt) const
 {
   DCASSERT(0);
-  return Failed;
+  throw Failed;
 }
 
-sv_encoder::error 
-icp_encoder::minterm2state(const int* mt, shared_state *s) const
+void icp_encoder::minterm2state(const int* mt, shared_state *s) const
 {
   DCASSERT(0);
-  return Failed;
+  throw Failed;
 }
 
-sv_encoder::error
-icp_encoder::createMinterms(const int* const*, int, shared_object*)
+void icp_encoder::createMinterms(const int* const*, int, shared_object*)
 {
   DCASSERT(0);
-  return Failed;
+  throw Failed;
 }
 
-sv_encoder::error
-icp_encoder::createMinterms(const int* const*, const int* const*, 
+void icp_encoder::createMinterms(const int* const*, const int* const*, 
                             int, shared_object*)
 {
   DCASSERT(0);
-  return Failed;
+  throw Failed;
 }
 
 meddly_encoder* 

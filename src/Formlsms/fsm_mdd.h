@@ -21,7 +21,7 @@ checkable_lldsm* StartMeddlyFSM(meddly_states* ss);
 meddly_states* GrabMeddlyFSMStates(lldsm* fsm);
 
 // Finish a Meddly FSM
-sv_encoder::error FinishMeddlyFSM(lldsm* fsm, bool pot);
+void FinishMeddlyFSM(lldsm* fsm, bool pot);
 
 
 #endif

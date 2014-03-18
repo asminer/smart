@@ -11,6 +11,7 @@
 
 class OutputStream;  // defined in streams.h
 class doc_formatter;   // defined in streams.h
+class option_manager;
 
 // **************************************************************************
 // *                         option_const interface                         *
@@ -18,6 +19,7 @@ class doc_formatter;   // defined in streams.h
 
 /** Abstract base class for option constants.
     Used by Radio button and checkbox type options.
+    Neat trick!  We can have suboptions for these now!
 */
 class option_const {
 private:
@@ -25,6 +27,9 @@ private:
   const char* name;
   /// Documentation.
   const char* doc;
+protected:
+  /// Settings for this button
+  const option_manager* settings;
 public:
   option_const(const char* n, const char* d);
   virtual ~option_const();
@@ -36,6 +41,11 @@ public:
 
   int Compare(const option_const* b) const;
   int Compare(const char* name) const;
+
+  inline const option_manager* readSettings() const { return settings; }
+  inline void makeSettings(const option_manager* s) { settings = s; }
+
+  bool isApropos(const doc_formatter* df, const char* keyword) const;
 };
 
 // **************************************************************************
@@ -241,7 +251,10 @@ public:
   /** Write documentation header and body for this option.
         @param  df  Document formatter; output is sent here.
   */
-  void PrintDocs(doc_formatter* df) const;
+  void PrintDocs(doc_formatter* df, const char* keyword) const;
+
+  /// Recursively document children as appropriate.
+  virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
 };
 
 // **************************************************************************

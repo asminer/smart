@@ -53,6 +53,31 @@
 // should be built by bison.
 int yyparse();
 
+//
+// Helper class - stack of options
+//
+class optstack {
+    const option_const* data[16]; // max depth
+    int top_index;
+  public:
+    optstack() {
+      top_index = 0;
+    }
+    inline bool isEmpty() const { return top_index < 0; }
+    inline const option_const* top() const { 
+      return (top_index > 0) ? data[top_index] : 0; 
+    }
+    inline bool push(const option_const* oc) {
+      if (top_index >= 15) return false;
+      data[++top_index] = oc;
+      return true;
+    }
+    inline const option_const* pop() {
+      if (top_index<0) return 0;
+      return data[top_index--];
+    }
+};
+
 /* =====================================================================
 
   Global variables.
@@ -66,6 +91,9 @@ named_msg compiler_debug;
 
 // Expression for the integer constant 1.
 expr* ONE = 0;
+
+/// Current stack of options
+optstack Options;
 
 /// Current stack of for-loop iterators
 symbol_table* Iterators = 0;
@@ -651,9 +679,10 @@ expr* BuildOptionStatement(option* o, expr* v)
 }
 
 // --------------------------------------------------------------
-expr* BuildOptionStatement(option* o, char* n)
+
+// Helper for BuildOptionStatement and StartOptionBlock
+option_const* FindOptionConstant(option* o, char* n)
 {
-  expr* foo;
   option_const* oc = o ? o->FindConstant(n) : 0;
   if (0==oc) {
     if (o && pm->startError()) {
@@ -661,13 +690,51 @@ expr* BuildOptionStatement(option* o, char* n)
       pm->cerr() << ", ignoring";
       pm->stopError();
     }
-    foo = 0;
-  } else {
-    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
-  }
+  } 
   free(n);
+  return oc;
+}
 
+// --------------------------------------------------------------
+expr* BuildOptionStatement(option* o, char* n)
+{
+  option_const* oc = FindOptionConstant(o, n);
+  expr* foo;
+  if (oc) {
+    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
+  } else {
+    foo = 0;
+  }
   return ShowNewStatement("option statement:\n", foo);
+}
+
+// --------------------------------------------------------------
+expr* StartOptionBlock(option* o, char* n)
+{
+  option_const* oc = FindOptionConstant(o, n);
+  expr* foo;
+  if (oc) {
+    if (!Options.push(oc)) {
+      if (pm->startError()) {
+        pm->cerr() << "Nesting of option statements is too deep\n";
+        pm->stopError();
+      }
+    }
+    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
+  } else {
+    foo = 0;
+  }
+  return ShowNewStatement("option statement:\n", foo);
+}
+
+// --------------------------------------------------------------
+expr* FinishOptionBlock(expr* os, parser_list* list)
+{
+  Options.pop();
+  list = PrependCircular(list, os);
+  return ShowNewStatement("option block:\n",
+    MakeStatementBlock(list)
+  );
 }
 
 // --------------------------------------------------------------
@@ -732,10 +799,21 @@ void StartConverge()
 option* BuildOptionHeader(char* name)
 {
   if (0==name) return 0;
-  option* answer = pm ? pm->findOption(name) : 0;
 
+  option* answer;
+
+  const option_const* oc = Options.top();
+
+  if (oc) {
+    const option_manager* om = oc->readSettings();
+    if (om) answer = om->FindOption(name);
+  } else {
+    answer = pm ? pm->findOption(name) : 0;
+  }
+  
   if (0==answer) if (pm->startError()) {
     pm->cerr() << "Unknown option " << name;
+    if (oc) pm->cerr() << " within " << oc->Name();
     pm->stopError();
   }
   free(name);

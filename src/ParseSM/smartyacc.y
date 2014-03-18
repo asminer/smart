@@ -42,12 +42,13 @@ NUL DEFAULT PROC
 %type <Type_ID> type model
 %type <count> for_header iterators
 
-%type <Expr> statement defn_stmt model_stmt expr term value const_expr 
+%type <Expr> statement defn_stmt opt_stmt model_stmt opt_begin
+expr term value const_expr 
 function_call model_function_call set_expr set_elem pos_param index
 doneproduct doneconj arith logic
 
-%type <List> aggexpr seqexpr statements model_stmts model_var_list idlist
-formal_params formal_indexes pos_params indexes set_elems
+%type <List> aggexpr seqexpr statements opt_stmts model_stmts model_var_list
+idlist formal_params formal_indexes pos_params indexes set_elems
 summation product conjunct disjunct
 
 %type <Symbol> iterator func_header array_header model_header formal_param
@@ -116,26 +117,11 @@ statement
   Reducing("statement : model_decl");
   $$ = 0;
 } 
-      |   opt_header const_expr ENDPND 
+      |   opt_stmt
 {
-  Reducing("statement : opt_header const_expr ENDPND");
-  $$ = BuildOptionStatement($1, $2);
+  Reducing("statement : opt_stmt");
+  $$ = $1;
 }
-      |   opt_header IDENT ENDPND
-{
-  Reducing("statement : opt_header IDENT ENDPND");
-  $$ = BuildOptionStatement($1, $2);
-}       
-      |   opt_header PLUS idlist ENDPND
-{
-  Reducing("statement : opt_header PLUS idlist ENDPND");
-  $$ = BuildOptionStatement($1, true, $3);
-}       
-      |   opt_header MINUS idlist ENDPND
-{
-  Reducing("statement : opt_header MINUS idlist ENDPND");
-  $$ = BuildOptionStatement($1, false, $3);
-}       
       |   arith SEMI
 {
   Reducing("statement : arith SEMI");
@@ -177,6 +163,35 @@ converge
 }
       ;
 
+opt_stmt
+      :   opt_header const_expr ENDPND 
+{
+  Reducing("opt_stmt : opt_header const_expr ENDPND");
+  $$ = BuildOptionStatement($1, $2);
+}
+      |   opt_header IDENT ENDPND
+{
+  Reducing("opt_stmt : opt_header IDENT ENDPND");
+  $$ = BuildOptionStatement($1, $2);
+}       
+      |   opt_header PLUS idlist ENDPND
+{
+  Reducing("opt_stmt : opt_header PLUS idlist ENDPND");
+  $$ = BuildOptionStatement($1, true, $3);
+}       
+      |   opt_header MINUS idlist ENDPND
+{
+  Reducing("opt_stmt : opt_header MINUS idlist ENDPND");
+  $$ = BuildOptionStatement($1, false, $3);
+}
+      |   opt_begin opt_stmts POUND RBRACE ENDPND
+{
+  Reducing("opt_stmt : opt_begin opt_stmts POUND RBRACE ENDPND");
+  $$ = FinishOptionBlock($1, $2);
+}
+      ;
+
+
 opt_header
       :   POUND IDENT
 {
@@ -184,6 +199,28 @@ opt_header
   $$ = BuildOptionHeader($2);
 }
       ;
+
+opt_begin
+      :   opt_header IDENT LBRACE ENDPND
+{
+  Reducing("opt_begin : opt_header IDENT LBRACE ENDPND");
+  $$ = StartOptionBlock($1, $2); 
+}
+      ;
+
+opt_stmts 
+      :   opt_stmts opt_stmt
+{
+  Reducing("opt_stmts : opt_stmts opt_stmt");
+  $$ = AppendStatement($1, $2);
+}
+      |    opt_stmt
+{
+  Reducing("opt_stmts : opt_stmt");
+  $$ = AppendStatement(0, $1);
+}
+      ;
+
 
 iterators
       :    iterators COMMA iterator 
