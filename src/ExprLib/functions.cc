@@ -257,7 +257,7 @@ void function::DocumentBehavior(doc_formatter* df) const
   DCASSERT(0);
 }
 
-void function::PrintDocs(doc_formatter* df) const
+void function::PrintDocs(doc_formatter* df, const char*) const
 {
   if (!DocumentHeader(df))  return;
   df->begin_indent();

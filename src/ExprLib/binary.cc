@@ -73,13 +73,14 @@ void binary::Traverse(traverse_data &x)
       if (x.answer->isNormal()) rdd = Share(x.answer->getPtr());
       shared_object* dd = x.ddlib->makeEdge(0);
       DCASSERT(dd);
-      if (x.ddlib->buildBinary(ldd, opcode, rdd, dd)) {
+      try {
+        x.ddlib->buildBinary(ldd, opcode, rdd, dd);
+        x.answer->setPtr(dd);
+      }
+      catch (sv_encoder::error e) {
         // an error occurred
         Delete(dd);
         x.answer->setNull();
-      } else {
-        // ok
-        x.answer->setPtr(dd);
       }
       Delete(ldd);
       Delete(rdd);

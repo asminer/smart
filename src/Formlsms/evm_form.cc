@@ -885,10 +885,7 @@ int evm_eval::Traverse(traverse_data &x, expr** pass, int np)
 
   shared_object* pldd = x.ddlib->makeEdge(0);
   DCASSERT(pldd);
-  CHECK_RETURN(
-    x.ddlib->buildSymbolicSV(pl, false, 0, pldd), 
-    sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(pl, false, 0, pldd);
   x.answer->setPtr(pldd);
   return 0;
 }

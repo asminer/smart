@@ -87,7 +87,10 @@ void assoc::Traverse(traverse_data &x)
           if (x.answer->isNormal()) tmp = Share(x.answer->getPtr());
         }
         if (tmp) {
-          if (x.ddlib->buildAssoc(dd, false, opcode, tmp, dd)) {
+          try {
+            x.ddlib->buildAssoc(dd, false, opcode, tmp, dd);
+          }
+          catch (sv_encoder::error e) {
             // error
             Delete(dd);
             dd = 0;
@@ -200,11 +203,14 @@ void flipassoc::Traverse(traverse_data &x)
         }
         if (tmp) {
           bool f = flip ? flip[i] : false;
-          if (x.ddlib->buildAssoc(dd, f, opcode, tmp, dd)) {
+          try {
+            x.ddlib->buildAssoc(dd, f, opcode, tmp, dd);
+          }
+          catch (sv_encoder::error e) {
             // error
             Delete(dd);
             dd = 0;
-          } 
+          }
           Delete(tmp);
         } else {
           Delete(dd);

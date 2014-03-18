@@ -49,7 +49,7 @@ void symbol_table::DocumentSymbols(doc_formatter* df, const char* keyword) const
     // traverse the chain, show documentation for each
     for (; chain; chain = chain->Next()) {
       df->Out() << "\n";
-      chain->PrintDocs(df);
+      chain->PrintDocs(df, keyword);
     }
   }
   delete[] list;

@@ -99,70 +99,70 @@ protected:
   virtual ~meddly_encoder();
 
 public:
-  inline static error convert(MEDDLY::error e) {
+  inline static void convert(MEDDLY::error e) {
     if (MEDDLY::error::INSUFFICIENT_MEMORY == e.getCode())
-      return Out_Of_Memory;
+      throw  Out_Of_Memory;
     else
-      return Failed;
+      throw  Failed;
   }
 
 public:
-  virtual error dumpNode(DisplayStream &s, shared_object* e) const;
+  virtual void dumpNode(DisplayStream &s, shared_object* e) const;
   virtual void dumpForest(DisplayStream &s) const;
 
   virtual shared_object* makeEdge(const shared_object* e);
 
   virtual bool isValidEdge(const shared_object* e) const;
 
-  virtual error copyEdge(const shared_object* src, shared_object* dest) const;
+  virtual void copyEdge(const shared_object* src, shared_object* dest) const;
 
-  virtual error buildSymbolicConst(bool t, shared_object* answer);
-  virtual error buildSymbolicConst(long t, shared_object* answer);
-  virtual error buildSymbolicConst(double t, shared_object* answer);
+  virtual void buildSymbolicConst(bool t, shared_object* answer);
+  virtual void buildSymbolicConst(long t, shared_object* answer);
+  virtual void buildSymbolicConst(double t, shared_object* answer);
 
   virtual const int* firstMinterm(shared_object* set) const;
   virtual const int* nextMinterm(shared_object* set) const;
 
-  virtual error createMinterms(const int* const* mt, int n, shared_object* ans);
-  virtual error createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans);
+  virtual void createMinterms(const int* const* mt, int n, shared_object* ans);
+  virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans);
 
-  virtual error buildUnary(exprman::unary_opcode op, 
+  virtual void buildUnary(exprman::unary_opcode op, 
                             const shared_object* opnd, shared_object* ans);
 
-  virtual error buildBinary(const shared_object* lt, exprman::binary_opcode op,
+  virtual void buildBinary(const shared_object* lt, exprman::binary_opcode op,
                             const shared_object* rt, shared_object* ans);
 
-  virtual error buildAssoc(const shared_object* left, 
+  virtual void buildAssoc(const shared_object* left, 
                           bool flip, exprman::assoc_opcode op, 
                           const shared_object* right, shared_object* ans);
 
-  virtual error getCardinality(const shared_object* x, long &card);
-  virtual error getCardinality(const shared_object* x, double &card);
-  virtual error getCardinality(const shared_object* x, result &card);
+  virtual void getCardinality(const shared_object* x, long &card);
+  virtual void getCardinality(const shared_object* x, double &card);
+  virtual void getCardinality(const shared_object* x, result &card);
 
-  virtual error isEmpty(const shared_object* x, bool &empty);
+  virtual void isEmpty(const shared_object* x, bool &empty);
 
-  virtual error preImage(const shared_object* x, 
+  virtual void preImage(const shared_object* x, 
                           const shared_object* E, 
                           shared_object* ans);
 
-  virtual error postImage(const shared_object* x, 
+  virtual void postImage(const shared_object* x, 
                           const shared_object* E, 
                           shared_object* ans);
 
-  virtual error preImageStar(const shared_object* x, 
+  virtual void preImageStar(const shared_object* x, 
                               const shared_object* E, 
                               shared_object* ans);
 
-  virtual error postImageStar(const shared_object* x, 
+  virtual void postImageStar(const shared_object* x, 
                               const shared_object* E, 
                               shared_object* ans);
 
-  virtual error selectRows(const shared_object* E, 
+  virtual void selectRows(const shared_object* E, 
                             const shared_object* rows,
                             shared_object* ans);
 
-  virtual error selectCols(const shared_object* E, 
+  virtual void selectCols(const shared_object* E, 
                             const shared_object* cols,
                             shared_object* ans);
 

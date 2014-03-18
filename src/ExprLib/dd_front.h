@@ -22,9 +22,8 @@ class shared_state;
 */
 class sv_encoder : public shared_object {
 public:
+  /// Error codes, thrown as exceptions
   enum error {
-    /// The operation was successful.
-    Success = 0,
     /// Bad parameter somewhere.
     Invalid_Edge,
 #ifdef DEVELOPMENT_CODE
@@ -57,8 +56,9 @@ public:
   /** For debugging, display the current node information.
         @param  s   Output stream to write to
         @param  e   Edge pointer
+        @throws     An error, as appropriate
   */
-  virtual error dumpNode(DisplayStream &s, shared_object* e) const = 0;
+  virtual void dumpNode(DisplayStream &s, shared_object* e) const = 0;
 
   /** For debugging, display the current "forest".
       Might not be supported for all backends.
@@ -97,33 +97,33 @@ public:
   /** Copy one edge to another.
         @param  src   Source edge.
         @param  dest  Destination edge. 
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error copyEdge(const shared_object* src, shared_object* dest) const = 0;
+  virtual void copyEdge(const shared_object* src, shared_object* dest) const = 0;
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Boolean constant
         @param  answer  An edge for storing the result, 
                         should have been created by makeEdge().
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error buildSymbolicConst(bool t, shared_object* answer) = 0;
+  virtual void buildSymbolicConst(bool t, shared_object* answer) = 0;
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Integer constant
         @param  answer  An edge for storing the result, 
                         should have been created by makeEdge().
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error buildSymbolicConst(long t, shared_object* answer) = 0;
+  virtual void buildSymbolicConst(long t, shared_object* answer) = 0;
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Real constant
         @param  answer  An edge for storing the result, 
                         should have been created by makeEdge().
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error buildSymbolicConst(double t, shared_object* answer) = 0;
+  virtual void buildSymbolicConst(double t, shared_object* answer) = 0;
 
   /** Build the "symbolic" representation for f(sv),
       where sv is a state variable (possibly "primed"), and
@@ -134,9 +134,9 @@ public:
                         if 0, we assume the identity function.
         @param  answer  An edge for storing the result, 
                         should have been created by makeEdge().
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error buildSymbolicSV(const symbol* sv, bool primed, 
+  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
                                 expr* f, shared_object* answer) = 0;
 
   /** Convert a state to a "minterm" (path in DD).
@@ -144,9 +144,9 @@ public:
         @param  s     A model state.
         @param  mt    An array of dimension (#levels+1),
                       minterm will be written here.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error state2minterm(const shared_state* s, int* mt) const = 0;
+  virtual void state2minterm(const shared_state* s, int* mt) const = 0;
 
   /** Convert a "minterm" (path in DD) to a state.
       Inverse operation of \a state2minterm().
@@ -156,9 +156,9 @@ public:
                       of (unprimed) variable assignments.
         @param  s     Output: corresponding state.
                       Must be allocated already.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error minterm2state(const int* mt, shared_state *s) const = 0;
+  virtual void minterm2state(const int* mt, shared_state *s) const = 0;
 
 
   /** Find the "first" element in a set.
@@ -183,9 +183,9 @@ public:
                         of (unprimed) variable assignments.
         @param  n       Number of minterms.
         @param  ans     Set of minterms encoded as a DD.
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error createMinterms(const int* const* mts, int n, shared_object* ans) = 0;
+  virtual void createMinterms(const int* const* mts, int n, shared_object* ans) = 0;
 
 
   /** Convert a set of "minterms" to a set of edges, encoded as a DD.
@@ -197,9 +197,9 @@ public:
                         of primed variable assignments.
         @param  n       Number of minterms.
         @param  ans     Set of edges encoded as a DD.
-        @return         Appropriate error code.
+        @throws         Appropriate error code.
   */
-  virtual error createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans) = 0;
+  virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans) = 0;
 
 
   /** Build a unary operation on a DD node.
@@ -208,9 +208,9 @@ public:
         @param  ans   An edge for storing the result,
                       should have been created by makeEdge().
                       Can be the same pointer as \a opnd.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error buildUnary(exprman::unary_opcode op, 
+  virtual void buildUnary(exprman::unary_opcode op, 
                             const shared_object* opnd, shared_object* ans) = 0;
 
   /** Build a binary operation on DD nodes.
@@ -220,9 +220,9 @@ public:
         @param  ans   An edge for storing the result,
                       should have been created by makeEdge().
                       Can be the same pointer as \a left or \a right.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error buildBinary(const shared_object* left, 
+  virtual void  buildBinary(const shared_object* left, 
                             exprman::binary_opcode op, 
                             const shared_object* right,
                             shared_object* ans) = 0;
@@ -235,9 +235,9 @@ public:
         @param  ans   An edge for storing the result,
                       should have been created by makeEdge().
                       Can be the same pointer as \a left or \a right.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error buildAssoc(const shared_object* left, 
+  virtual void  buildAssoc(const shared_object* left, 
                             bool flip, exprman::assoc_opcode op, 
                             const shared_object* right,
                             shared_object* ans) = 0;
@@ -250,31 +250,31 @@ public:
       cardinality of the set.
         @param  x     Set to determine.
         @param  card  Output: set cardinality; will be negative on overflow.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error getCardinality(const shared_object* x, long &card) = 0;
+  virtual void  getCardinality(const shared_object* x, long &card) = 0;
 
   /** Determine the (approximate) cardinality of a DD node.
         @param  x     Set to determine.
         @param  card  Output: set cardinality; will be INF on overflow.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error getCardinality(const shared_object* x, double &card) = 0;
+  virtual void  getCardinality(const shared_object* x, double &card) = 0;
 
   /** Determine the cardinality of a DD node.
         @param  x     Set to determine.
         @param  card  Output: set cardinality, as a bigint.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error getCardinality(const shared_object* x, result &card) = 0;
+  virtual void  getCardinality(const shared_object* x, result &card) = 0;
 
 
   /** Determine if a DD node represents the empty set.
         @param  x       Set to determine
         @param  empty   Output: true iff set x is empty
-        @return         Appropriate error code
+        @throws         Appropriate error code
   */
-  virtual error isEmpty(const shared_object* x, bool &empty) = 0;
+  virtual void  isEmpty(const shared_object* x, bool &empty) = 0;
 
   /** Pre-image operator.
       For a given set of states x and edges E,
@@ -282,9 +282,9 @@ public:
         @param  x     Target states; within this forest.
         @param  E     Set of edges; must be "compatible" with this forest.
         @param  ans   Output: source states; within this forest.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error preImage(const shared_object* x, 
+  virtual void  preImage(const shared_object* x, 
                           const shared_object* E, 
                           shared_object* ans) = 0;
 
@@ -295,9 +295,9 @@ public:
         @param  x     Source states; within this forest.
         @param  E     Set of edges; must be "compatible" with this forest.
         @param  ans   Output: target states; within this forest.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error postImage(const shared_object* x, 
+  virtual void  postImage(const shared_object* x, 
                           const shared_object* E, 
                           shared_object* ans) = 0;
 
@@ -306,9 +306,9 @@ public:
         @param  x     Target states; within this forest.
         @param  E     Set of edges; must be "compatible" with this forest.
         @param  ans   Output: source states; within this forest.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error preImageStar(const shared_object* x, 
+  virtual void  preImageStar(const shared_object* x, 
                               const shared_object* E, 
                               shared_object* ans) = 0;
 
@@ -317,9 +317,9 @@ public:
         @param  x     Source states; within this forest.
         @param  E     Set of edges; must be "compatible" with this forest.
         @param  ans   Output: target states; within this forest.
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error postImageStar(const shared_object* x, 
+  virtual void  postImageStar(const shared_object* x, 
                               const shared_object* E, 
                               shared_object* ans) = 0;
 
@@ -330,9 +330,9 @@ public:
         @param  ans   Output: new set of edges equal to
                       E & (rows X all); within this forest.
 
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error selectRows(const shared_object* E, 
+  virtual void  selectRows(const shared_object* E, 
                             const shared_object* rows,
                             shared_object* ans) = 0;
 
@@ -343,9 +343,9 @@ public:
         @param  ans   Output: new set of edges equal to
                       E & (all X cols); within this forest.
 
-        @return       Appropriate error code.
+        @throws       Appropriate error code.
   */
-  virtual error selectCols(const shared_object* E, 
+  virtual void  selectCols(const shared_object* E, 
                             const shared_object* cols,
                             shared_object* ans) = 0;
 

@@ -98,9 +98,11 @@ void symbol::Traverse(traverse_data &x)
         DCASSERT(x.ddlib);
         shared_object* dd = x.ddlib->makeEdge(0);
 
-        sv_encoder::error e = x.ddlib->buildSymbolicSV(this, false, 0, dd);
-
-        if (e) {
+        try {
+          x.ddlib->buildSymbolicSV(this, false, 0, dd);
+          x.answer->setPtr(dd);
+        }
+        catch (sv_encoder::error e) {
           if (em->startError()) {
             em->causedBy(this);
             em->cerr() << "Error while building state variable ";
@@ -110,8 +112,6 @@ void symbol::Traverse(traverse_data &x)
           }
           Delete(dd);
           x.answer->setNull();
-        } else {
-          x.answer->setPtr(dd);
         }
         return;
     }
@@ -133,7 +133,7 @@ void symbol::Traverse(traverse_data &x)
   }
 }
 
-void symbol::PrintDocs(doc_formatter* df) const
+void symbol::PrintDocs(doc_formatter* df, const char* keyword) const
 {
   if (0==df)  return;
   if (0==name)  return;
@@ -258,7 +258,7 @@ help_group::~help_group()
 {
 }
 
-void help_group::PrintDocs(doc_formatter* df) const
+void help_group::PrintDocs(doc_formatter* df, const char* keyword) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -280,7 +280,7 @@ void help_group::PrintDocs(doc_formatter* df) const
     df->begin_indent();
     for (int i=0; i<options.Length(); i++) {
       const option* o = options.ReadItem(i);
-      o->PrintDocs(df);
+      o->PrintDocs(df, keyword);
     }
     df->end_indent();
   }

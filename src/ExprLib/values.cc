@@ -105,23 +105,25 @@ void value::Traverse(traverse_data &x)
         DCASSERT(x.ddlib);
         shared_object* dd = x.ddlib->makeEdge(0);
 
-        sv_encoder::error e = sv_encoder::Success;
-        const type* bt = Type();
-        if (bt) bt = bt->getBaseType();
-        if (em->REAL == bt) {
-          e = x.ddlib->buildSymbolicConst(val.getReal(), dd);
-        } else if (em->INT == bt) {
-          e = x.ddlib->buildSymbolicConst(val.getInt(), dd);
-        } else if (em->BOOL == bt) {
-          e = x.ddlib->buildSymbolicConst(val.getBool(), dd);
-        } else {
-          if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(this);
-            em->internal() << "Unhandled type\n";
-            em->stopIO();
+        try {
+          const type* bt = Type();
+          if (bt) bt = bt->getBaseType();
+          if (em->REAL == bt) {
+            x.ddlib->buildSymbolicConst(val.getReal(), dd);
+          } else if (em->INT == bt) {
+            x.ddlib->buildSymbolicConst(val.getInt(), dd);
+          } else if (em->BOOL == bt) {
+            x.ddlib->buildSymbolicConst(val.getBool(), dd);
+          } else {
+            if (em->startInternal(__FILE__, __LINE__)) {
+              em->causedBy(this);
+              em->internal() << "Unhandled type\n";
+              em->stopIO();
+            }
           }
-        }
-        if (e) {
+          x.answer->setPtr(dd);
+        } // try
+        catch (sv_encoder::error e) {
           if (em->startError()) {
             em->causedBy(this);
             em->cerr() << "Error while building constant: ";
@@ -130,9 +132,7 @@ void value::Traverse(traverse_data &x)
           }
           Delete(dd);
           x.answer->setNull();
-        } else {
-          x.answer->setPtr(dd);
-        }
+        } // catch
         return;
     }
   

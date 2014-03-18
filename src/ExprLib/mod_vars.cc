@@ -1073,10 +1073,7 @@ void clev_op::Traverse(traverse_data &x)
 
   shared_object* ans = x.ddlib->makeEdge(0);
   DCASSERT(ans);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, this, ans), 
-      sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(sv, false, this, ans);
   x.answer->setPtr(ans);
 }
 
@@ -1181,10 +1178,7 @@ void blev_op::Traverse(traverse_data &x)
   DCASSERT(sv);
   shared_object* ans = x.ddlib->makeEdge(0);
   DCASSERT(ans);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, 0, ans), 
-      sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(sv, false, 0, ans);
   // ans := ldd <= ans
 #ifdef DEBUG_BLEVOP
   em->cout() << "Built DD for " << sv->Name() << ": ";
@@ -1196,10 +1190,7 @@ void blev_op::Traverse(traverse_data &x)
   em->cout() << "\n";
   x.ddlib->dumpForest(em->cout());
 #endif
-  CHECK_RETURN(
-      x.ddlib->buildBinary(ldd, exprman::bop_le, ans, ans),
-      sv_encoder::Success
-  );
+  x.ddlib->buildBinary(ldd, exprman::bop_le, ans, ans);
   Delete(ldd);
   x.answer->setPtr(ans);
 }
@@ -1290,11 +1281,7 @@ void vltc_op::Traverse(traverse_data &x)
 
   shared_object* ans = x.ddlib->makeEdge(0);
   DCASSERT(ans);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, this, ans), 
-      sv_encoder::Success
-  );
-
+  x.ddlib->buildSymbolicSV(sv, false, this, ans);
   x.answer->setPtr(ans);
 }
 
@@ -1399,15 +1386,9 @@ void vltb_op::Traverse(traverse_data &x)
   DCASSERT(sv);
   shared_object* ans = x.ddlib->makeEdge(0);
   DCASSERT(ans);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, 0, ans), 
-      sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(sv, false, 0, ans);
   // ans := ans < rdd
-  CHECK_RETURN(
-      x.ddlib->buildBinary(ans, exprman::bop_lt, rdd, ans),
-      sv_encoder::Success
-  );
+  x.ddlib->buildBinary(ans, exprman::bop_lt, rdd, ans);
   Delete(rdd);
   x.answer->setPtr(ans);
 }
@@ -1506,10 +1487,7 @@ void clevltc_op::Traverse(traverse_data &x)
 
   shared_object* ans = x.ddlib->makeEdge(0);
   DCASSERT(ans);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, this, ans),
-      sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(sv, false, this, ans);
   x.answer->setPtr(ans);
 }
 
@@ -1661,10 +1639,7 @@ void blevltb_op::Traverse(traverse_data &x)
   symbol* sv = smart_cast <model_var*> (middle);
   DCASSERT(sv);
   shared_object* vdd = x.ddlib->makeEdge(0);
-  CHECK_RETURN(
-      x.ddlib->buildSymbolicSV(sv, false, 0, vdd), 
-      sv_encoder::Success
-  );
+  x.ddlib->buildSymbolicSV(sv, false, 0, vdd);
 
 #ifdef DEBUG_BLEVLTBOP
   em->cout() << "Built DD for " << sv->Name() << ": ";
@@ -1682,20 +1657,11 @@ void blevltb_op::Traverse(traverse_data &x)
 #endif
 
   // ldd := ldd <= vdd
-  CHECK_RETURN(
-      x.ddlib->buildBinary(ldd, exprman::bop_le, vdd, ldd),
-      sv_encoder::Success
-  );
+  x.ddlib->buildBinary(ldd, exprman::bop_le, vdd, ldd);
   // udd := vdd < udd
-  CHECK_RETURN(
-      x.ddlib->buildBinary(vdd, exprman::bop_lt, udd, udd),
-      sv_encoder::Success
-  );
+  x.ddlib->buildBinary(vdd, exprman::bop_lt, udd, udd);
   // vdd := ldd & udd
-  CHECK_RETURN(
-      x.ddlib->buildAssoc(ldd, false, exprman::aop_and, udd, vdd),
-      sv_encoder::Success
-  );
+  x.ddlib->buildAssoc(ldd, false, exprman::aop_and, udd, vdd);
   Delete(ldd);
   Delete(udd);
   x.answer->setPtr(vdd);
@@ -1780,22 +1746,13 @@ void cupdate_op::Traverse(traverse_data &x)
 
         // v := var + delta
         shared_object* v = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, false, this, v),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, false, this, v);
 
         shared_object* vv = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, true, 0, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, true, 0, vv);
 
         // vv := vv == v
-        CHECK_RETURN(
-            x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv);
         Delete(v);
         x.answer->setPtr(vv);
         return;
@@ -1907,10 +1864,7 @@ void vupdate_op::Traverse(traverse_data &x)
           x.answer->setNull();
         } else {
           inc = x.ddlib->makeEdge(0);
-          CHECK_RETURN(
-              x.ddlib->buildSymbolicConst(0L, inc), 
-              sv_encoder::Success
-          );
+          x.ddlib->buildSymbolicConst(0L, inc);
         }
         // Build DD for dec
         shared_object* dec;
@@ -1924,40 +1878,22 @@ void vupdate_op::Traverse(traverse_data &x)
           x.answer->setNull();
         } else {
           dec = x.ddlib->makeEdge(0);
-          CHECK_RETURN(
-              x.ddlib->buildSymbolicConst(0L, dec), 
-              sv_encoder::Success
-          );
+          x.ddlib->buildSymbolicConst(0L, dec);
         }
         // inc -= dec
-        CHECK_RETURN(
-            x.ddlib->buildAssoc(inc, true, exprman::aop_plus, dec, inc),
-            sv_encoder::Success
-        );
+        x.ddlib->buildAssoc(inc, true, exprman::aop_plus, dec, inc);
         Delete(dec);
         // Build var
         shared_object* v = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, false, 0, v),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, false, 0, v);
         // var += inc
-        CHECK_RETURN(
-            x.ddlib->buildAssoc(v, false, exprman::aop_plus, inc, v),
-            sv_encoder::Success
-        );
+        x.ddlib->buildAssoc(v, false, exprman::aop_plus, inc, v);
         Delete(inc);
         // Build var'
         shared_object* vv = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, true, 0, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, true, 0, vv);
         // Build var' := var' == var
-        CHECK_RETURN(
-            x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv);
         Delete(v);
         x.answer->setPtr(vv);
         return;
@@ -2055,20 +1991,11 @@ void cassign_op::Traverse(traverse_data &x)
         DCASSERT(x.answer);
         DCASSERT(x.ddlib);
         shared_object* d = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicConst(rhs, d),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicConst(rhs, d);
         shared_object* vv = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, true, 0, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, true, 0, vv);
         // vv := (vv == d)
-        CHECK_RETURN(
-            x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv);
         Delete(d);
         x.answer->setPtr(vv);
         return;
@@ -2159,15 +2086,9 @@ void vassign_op::Traverse(traverse_data &x)
           return;
         }
         shared_object* vv = x.ddlib->makeEdge(0);
-        CHECK_RETURN(
-            x.ddlib->buildSymbolicSV(var, true, 0, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildSymbolicSV(var, true, 0, vv);
         // vv := (vv == d)
-        CHECK_RETURN(
-            x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv),
-            sv_encoder::Success
-        );
+        x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv);
         x.answer->setPtr(vv); 
         return;
     }

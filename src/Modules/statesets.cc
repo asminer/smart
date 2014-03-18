@@ -106,10 +106,7 @@ void stateset::getCardinality(long &card) const
     card = getExplicit().cardinality();
   } else {
     DCASSERT(state_forest);
-    CHECK_RETURN(
-        state_forest->getCardinality(state_dd, card),
-        sv_encoder::Success
-    );
+    state_forest->getCardinality(state_dd, card);
   }
 }
 
@@ -120,10 +117,7 @@ void stateset::getCardinality(result &x) const
     x.setPtr(new bigint(count));
   } else {
     DCASSERT(state_forest);
-    CHECK_RETURN(
-        state_forest->getCardinality(state_dd, x),
-        sv_encoder::Success
-    );
+    state_forest->getCardinality(state_dd, x);
   }
 }
 
@@ -134,10 +128,7 @@ bool stateset::isEmpty() const
   } else {
     DCASSERT(state_forest);
     bool ans;
-    CHECK_RETURN(
-        state_forest->isEmpty(state_dd, ans),
-        sv_encoder::Success
-    );
+    state_forest->isEmpty(state_dd, ans);
     return ans;
   }
 }
@@ -173,10 +164,7 @@ bool stateset::print_symbolic(OutputStream &s) const
   while (mt) {
     if (comma)  s << ", ";
     else        comma = true;
-    CHECK_RETURN(
-      state_forest->minterm2state(mt, st),
-      sv_encoder::Success
-    );
+    state_forest->minterm2state(mt, st);
     parent->GetParent()->showState(s, st);
     mt = state_forest->nextMinterm(state_dd);
   }
@@ -376,11 +364,9 @@ void stateset_diff::Compute(traverse_data &x)
       lt->getParent(), Share(lt->getStateForest()), newdd,
       Share(lt->getRelationForest()), Share(lt->getRelationDD())
     );
-    sv_encoder::error e = lt->getStateForest()->buildBinary(
+    lt->getStateForest()->buildBinary(
         lt->getStateDD(), exprman::bop_diff, rt->getStateDD(), newdd
     );
-    // TBD: better error checking
-    DCASSERT(!e);
     x.answer->setPtr(foo);
   }
   Delete(lt);
@@ -473,11 +459,10 @@ void stateset_union::Compute(traverse_data &x)
     if (is_explicit) {
       answer->changeExplicit() += curr->getExplicit();
     } else {
-      sv_encoder::error e = answer->getStateForest()->buildAssoc(
+      answer->getStateForest()->buildAssoc(
         answer->getStateDD(), false, exprman::aop_or,
         curr->getStateDD(), answer->changeStateDD()
       );
-      DCASSERT(!e);
     }
   } // for i
 
@@ -572,11 +557,10 @@ void stateset_intersect::Compute(traverse_data &x)
     if (is_explicit) {
       answer->changeExplicit() *= curr->getExplicit();
     } else {
-      sv_encoder::error e = answer->getStateForest()->buildAssoc(
+      answer->getStateForest()->buildAssoc(
         answer->getStateDD(), false, exprman::aop_and,
         curr->getStateDD(), answer->changeStateDD()
       );
-      DCASSERT(!e);
     }
   } // for i
 
@@ -928,11 +912,8 @@ stateset* Complement(exprman* em, const expr* c, stateset* ss)
     DCASSERT(rss);
     shared_object* x = ss->getStateForest()->makeEdge(0);
     DCASSERT(x);
-    CHECK_RETURN(
-        ss->getStateForest()->buildBinary(
-          rss->getStateDD(), exprman::bop_diff, ss->getStateDD(), x
-        ),
-        sv_encoder::Success
+    ss->getStateForest()->buildBinary(
+      rss->getStateDD(), exprman::bop_diff, ss->getStateDD(), x
     );
     stateset* ans = new stateset(
         ss->getParent(), Share(ss->getStateForest()), x,
@@ -969,10 +950,8 @@ stateset* Union(exprman* em, const expr* c, stateset* x, stateset* y)
     DCASSERT(x->getStateForest() == y->getStateForest());
     shared_object* z = x->getStateForest()->makeEdge(0);
     DCASSERT(z);
-    CHECK_RETURN(
-        x->getStateForest()->buildAssoc(x->getStateDD(), false, exprman::aop_or,
-                               y->getStateDD(), z),
-        sv_encoder::Success
+    x->getStateForest()->buildAssoc(
+      x->getStateDD(), false, exprman::aop_or, y->getStateDD(), z
     );
     return new stateset(
         x->getParent(), Share(x->getStateForest()), z,
@@ -1012,10 +991,8 @@ stateset* Intersection(exprman* em, const expr* c, stateset* x, stateset* y)
     DCASSERT(x->getStateForest() == y->getStateForest());
     shared_object* z = x->getStateForest()->makeEdge(0);
     DCASSERT(z);
-    CHECK_RETURN(
-      x->getStateForest()->buildAssoc(x->getStateDD(), false, exprman::aop_and, 
-                              y->getStateDD(), z),
-      sv_encoder::Success
+    x->getStateForest()->buildAssoc(
+      x->getStateDD(), false, exprman::aop_and, y->getStateDD(), z
     );
     return new stateset(
         x->getParent(), Share(x->getStateForest()), z,

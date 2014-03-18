@@ -93,14 +93,7 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
 
   rss->proc_wrap = Share(rss->mxd_wrap);
   
-  sv_encoder::error se = FinishMeddlyFSM(lm, potential);
-  if (se) if (hm->StartError(0)) {
-    em->cerr() << "Couldn't build actual edges: ";
-    em->cerr() << sv_encoder::getNameOfError(se);
-    em->newLine();
-    em->cerr() << "Using potential instead";
-    hm->DoneError();
-  }
+  FinishMeddlyFSM(lm, potential);
 
   if (report.startReport()) {
     em->report() << "Finished  FSM using Meddly, took ";
@@ -227,14 +220,7 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   } // for e
 
 
-  sv_encoder::error se = FinishMeddlyFSM(lm, potential);
-  if (se) if (hm->StartError(0)) {
-    em->cerr() << "Couldn't build actual edges: ";
-    em->cerr() << sv_encoder::getNameOfError(se);
-    em->newLine();
-    em->cerr() << "Using potential instead";
-    hm->DoneError();
-  }
+  FinishMeddlyFSM(lm, potential);
   Delete(R);
 
   if (report.startReport()) {
@@ -431,10 +417,7 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x) const
 
   shared_ddedge* N = smart_cast<shared_ddedge*>(mxd.makeEdge(0));
   DCASSERT(N);
-  CHECK_RETURN(
-      mxd.buildSymbolicConst(false, N), 
-      sv_encoder::Success 
-  );
+  mxd.buildSymbolicConst(false, N);
 
   for (long e=0; e<m.getNumEvents(); e++) {
     MEDDLY::dd_edge enable = x.getEventEnabling(e);

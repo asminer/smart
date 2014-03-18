@@ -140,12 +140,14 @@ engine::engine(const char* n, const char* d)
   next = 0;
   children = new subengine*[num_hlm_types];
   for (int i=0; i<num_hlm_types; i++) children[i] = 0;
+  options = 0;
 }
 
 engine::~engine()
 {
   // Is this ever called?
   delete[] children;
+  delete options;
 }
 
 void engine::AddSubEngine(subengine* child)
@@ -168,6 +170,15 @@ void engine::AddSubEngine(subengine* child)
   } // for i
 }
 
+void engine::AddOption(option* o)
+{
+  if (0==o) return;
+  if (0==options) {
+    options = MakeOptionManager();
+  }
+  options->AddOption(o);
+}
+
 int engine::Compare(const char* name2) const
 {
   if ( (0==name) && (0==name2) )  return 0;
@@ -176,6 +187,20 @@ int engine::Compare(const char* name2) const
   return strcmp(name, name2);
 }
 
+radio_button* engine::BuildOptionConst(int index)
+{
+  DCASSERT(Name());
+  DCASSERT(Documentation());
+
+  radio_button* rb = new engine_selection(etype, this, index);
+
+  if (options) {
+    options->DoneAddingOptions();
+    rb->makeSettings(options);
+  }
+
+  return rb;
+}
 
 // ******************************************************************
 // *                        engtype  methods                        *
@@ -256,9 +281,7 @@ void engtype::finalizeRegistry(option_manager* om)
   for (int i=0; i<N; i++) {
     engine* e = sorted_engines[i];
     DCASSERT(e);
-    DCASSERT(e->Name());
-    DCASSERT(e->Documentation());
-    values[i] = new engine_selection(this, e, i);
+    values[i] = e->BuildOptionConst(i);
     if (selected_engine == e) selected_engine_index = i;
   } // for i
   // build the option

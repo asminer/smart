@@ -22,10 +22,10 @@ class topic_topics : public help_topic {
 public:
   topic_topics(const symbol_table* s)
    : help_topic("topics", "Shows all available help topics (this list!)") { st = s; }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_topics::PrintDocs(doc_formatter* df) const
+void topic_topics::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -74,10 +74,10 @@ class topic_types : public help_topic {
 public:
   topic_types()
    : help_topic("types", "Shows the available types for declared objects") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_types::PrintDocs(doc_formatter* df) const
+void topic_types::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -178,10 +178,10 @@ class topic_promotions : public help_topic {
 public:
   topic_promotions()
    : help_topic("promotions", "Which types can be promoted to which other types") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_promotions::PrintDocs(doc_formatter* df) const
+void topic_promotions::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -238,10 +238,10 @@ class topic_casting : public help_topic {
 public:
   topic_casting()
    : help_topic("casting", "Which types can be converted to which other types") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_casting::PrintDocs(doc_formatter* df) const
+void topic_casting::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -282,10 +282,10 @@ class topic_operators : public help_topic {
 public:
   topic_operators()
    : help_topic("operators", "Information about operators") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_operators::PrintDocs(doc_formatter* df) const
+void topic_operators::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -365,17 +365,17 @@ class topic_options : public help_topic {
 public:
   topic_options()
    : help_topic("options", "How to use options") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_options::PrintDocs(doc_formatter* df) const
+void topic_options::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
   df->end_heading();
   df->begin_indent();
 
-  df->Out() << "An option statement is used to modify the behavior of Smart.  For example, there are options to control the solution algorithms (such as the precision or maximum number of iterations allowed) or the level of verbosity.  Option statements appear on a single line beginning with \"#\" (except for the \"# include\" directive, which is handled by the preprocessor).  Different options have different types, and different sets of legal values.  The following options are available, along with their current settings:\n\n";
+  df->Out() << "An option statement is used to modify the behavior of Smart.  For example, there are options to control the solution algorithms (such as the precision or maximum number of iterations allowed) or the level of verbosity.  Option statements appear on lines beginning with \"#\" (except for the \"# include\" directive, which is handled by the preprocessor).  Different options have different types, and different sets of legal values.  The following options are available, along with their current settings:\n\n";
 
   DCASSERT(em);
   DCASSERT(em->OptMan());
@@ -392,7 +392,7 @@ class topic_unaryop : public help_topic {
   exprman::unary_opcode op;
 public:
   topic_unaryop(exprman::unary_opcode u);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 topic_unaryop::topic_unaryop(exprman::unary_opcode u)
@@ -406,7 +406,7 @@ topic_unaryop::topic_unaryop(exprman::unary_opcode u)
 }
 
 
-void topic_unaryop::PrintDocs(doc_formatter* df) const
+void topic_unaryop::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -441,7 +441,7 @@ class topic_binaryop : public help_topic {
   exprman::binary_opcode op;
 public:
   topic_binaryop(exprman::binary_opcode b);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 topic_binaryop::topic_binaryop(exprman::binary_opcode b)
@@ -454,7 +454,7 @@ topic_binaryop::topic_binaryop(exprman::binary_opcode b)
   setSummary(em->documentOp(op));
 }
 
-void topic_binaryop::PrintDocs(doc_formatter* df) const
+void topic_binaryop::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -494,7 +494,7 @@ class topic_trinaryop : public help_topic {
   exprman::trinary_opcode op;
 public:
   topic_trinaryop(exprman::trinary_opcode b);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 topic_trinaryop::topic_trinaryop(exprman::trinary_opcode b)
@@ -507,7 +507,7 @@ topic_trinaryop::topic_trinaryop(exprman::trinary_opcode b)
   setSummary(em->documentOp(op));
 }
 
-void topic_trinaryop::PrintDocs(doc_formatter* df) const
+void topic_trinaryop::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -554,7 +554,7 @@ class topic_assocop : public help_topic {
   exprman::assoc_opcode op;
 public:
   topic_assocop(bool f, exprman::assoc_opcode b);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 topic_assocop::topic_assocop(bool f, exprman::assoc_opcode b)
@@ -568,7 +568,7 @@ topic_assocop::topic_assocop(bool f, exprman::assoc_opcode b)
   setSummary(em->documentOp(flipped, op));
 }
 
-void topic_assocop::PrintDocs(doc_formatter* df) const
+void topic_assocop::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -608,7 +608,7 @@ class topic_formalism : public help_topic {
   const formalism* ft;
 public:
   topic_formalism(const formalism* t);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 topic_formalism::topic_formalism(const formalism* t)
@@ -617,7 +617,7 @@ topic_formalism::topic_formalism(const formalism* t)
   ft = t;
 }
 
-void topic_formalism::PrintDocs(doc_formatter* df) const
+void topic_formalism::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());
@@ -684,10 +684,10 @@ class topic_models : public help_topic {
 public:
   topic_models()
    : help_topic("models", "Overview of models") { }
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
-void topic_models::PrintDocs(doc_formatter* df) const
+void topic_models::PrintDocs(doc_formatter* df, const char*) const
 {
   df->begin_heading();
   PrintHeader(df->Out());

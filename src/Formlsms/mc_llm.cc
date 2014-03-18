@@ -50,9 +50,10 @@ markov_lldsm::~markov_lldsm()
 const LS_Options& markov_lldsm::getSolverOptions()
 {
   DCASSERT(lsopts);
+  CHECK_RANGE(0, solver, NUM_SOLVERS);
   // fix the option values that are not automatically linked
-  lsopts->use_relaxation = (lsopts->relaxation != 1.0);
-  return *lsopts;
+  lsopts[solver].use_relaxation = (lsopts[solver].relaxation != 1.0);
+  return lsopts[solver];
 }
 
 void markov_lldsm::startTransientReport(double t) const
@@ -141,13 +142,13 @@ void markov_lldsm::stopAccumulatedReport(long iters) const
   report.stopIO();
 }
 
-const char* markov_lldsm::getSolver() const
+const char* markov_lldsm::getSolver() 
 {
-  switch (lsopts->method) {
-    case LS_Jacobi:         return "Jacobi";
-    case LS_Row_Jacobi:     return "Row Jacobi";
-    case LS_Gauss_Seidel:   return "Gauss-Seidel";
-    default:                return "unknown solver";
+  switch (solver) {
+    case GAUSS_SEIDEL:    return "Gauss-Seidel";
+    case JACOBI:          return "Jacobi";
+    case ROW_JACOBI:      return "Row Jacobi";
+    default:              return "unknown solver";
   }
 }
 
@@ -207,38 +208,6 @@ void mc_reporter::stop()
   report.stopIO();
 }
 
-
-// ******************************************************************
-// *                                                                *
-// *                     solver_selection class                     *
-// *                                                                *
-// ******************************************************************
-
-class solver_selection : public radio_button {
-  LS_Options* opt_set;
-  LS_Method which;
-public:
-  solver_selection(LS_Options* lso, LS_Method w, const char* n, const char* d, int i);
-  virtual bool AssignToMe();
-};
-
-// ******************************************************************
-// *                    solver_selection methods                    *
-// ******************************************************************
-
-solver_selection::solver_selection(LS_Options* lso, LS_Method w,
-  const char* n, const char* d, int i) : radio_button(n, d, i)
-{
-  opt_set = lso;
-  which = w;
-}
-
-bool solver_selection::AssignToMe()
-{
-  if (0==opt_set)  return false;
-  opt_set->method = which;
-  return true;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -1789,64 +1758,28 @@ void InitMCLibs(exprman* em)
 
   if (markov_lldsm::lsopts) return;
 
-  markov_lldsm::lsopts = new LS_Options;
-#ifdef DEBUG_NUMERICAL_ITERATIONS
-  markov_lldsm::lsopts->debug = true;
-#endif
-  
-  em->addOption(
-    MakeIntOption(
-      "MinMCSolverIters", 
-      "Minimum number of iterations for Markov chain linear solvers.  Guarantees that at least this many iterations will occur.",
-      markov_lldsm::lsopts->min_iters, 0, 2000000000
-    )
-  );
+  markov_lldsm::lsopts = new LS_Options[markov_lldsm::NUM_SOLVERS];
+  markov_lldsm::lsopts[markov_lldsm::GAUSS_SEIDEL].method = LS_Gauss_Seidel;
+  markov_lldsm::lsopts[markov_lldsm::JACOBI].method = LS_Jacobi;
+  markov_lldsm::lsopts[markov_lldsm::ROW_JACOBI].method = LS_Row_Jacobi;
 
-  em->addOption(
-    MakeIntOption(
-      "MaxMCSolverIters", 
-      "Maximum number of iterations for Markov chain linear solvers.  Once the minimum number of iterations has been reached, the solver will terminate if either the termination criteria has been met (see options for Precision), or the maximum number of iterations has been reached.",
-      markov_lldsm::lsopts->max_iters, 0, 2000000000
-    )
-  );
+  //
+  // Set up the radio buttons for the solvers
+  //
+  radio_button** solvers = new radio_button*[markov_lldsm::NUM_SOLVERS];
 
-  em->addOption(
-    MakeRealOption(
-      "MCSolverPrecision", 
-      "Desired precision for Markov chain linear solvers.  Solvers will run until each solution vector element has changed less than epsilon.  Relative or absolute precision may be used, see option MCSolverPrecisionTest.",
-      markov_lldsm::lsopts->precision, 
-      true, false, 0.0,
-      true, false, 1.0
-    )
+  solvers[markov_lldsm::GAUSS_SEIDEL] = new radio_button(
+      "GAUSS_SEIDEL", "Gauss-Seidel", markov_lldsm::GAUSS_SEIDEL
   );
-
-  em->addOption(
-    MakeRealOption(
-      "MCSolverRelaxation", 
-      "Relaxation parameter to use (or start with) for Markov chain linear solvers.",
-      markov_lldsm::lsopts->relaxation, 
-      true, false, 0.0,
-      true, false, 2.0
-    )
-  );
-
-
-  radio_button** solvers = new radio_button*[3];
-  solvers[markov_lldsm::GAUSS_SEIDEL] = new solver_selection(
-      markov_lldsm::lsopts, LS_Gauss_Seidel, 
-      "GAUSS_SEIDEL", "Gauss-Seidel",
-      markov_lldsm::GAUSS_SEIDEL
-  );
-  solvers[markov_lldsm::JACOBI] = new solver_selection(
-      markov_lldsm::lsopts, LS_Jacobi, 
-      "JACOBI", "Jacobi, using matrix-vector multiply",
+  solvers[markov_lldsm::JACOBI] = new radio_button(
+      "JACOBI", "Jacobi, using matrix-vector multiply", 
       markov_lldsm::JACOBI
   );
-  solvers[markov_lldsm::ROW_JACOBI] = new solver_selection(
-      markov_lldsm::lsopts, LS_Row_Jacobi, 
-      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
+  solvers[markov_lldsm::ROW_JACOBI] = new radio_button(
+      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time", 
       markov_lldsm::ROW_JACOBI
   );
+   
   markov_lldsm::solver = markov_lldsm::GAUSS_SEIDEL;
   em->addOption(
     MakeRadioOption(
@@ -1856,6 +1789,60 @@ void InitMCLibs(exprman* em)
     )
   );
   
+  //
+  // Add settings for each solver radio button (cool, huh?)
+  //
+  for (int i=0; i<markov_lldsm::NUM_SOLVERS; i++) {
+#ifdef DEBUG_NUMERICAL_ITERATIONS
+    markov_lldsm::lsopts[i].debug = true;
+#endif
+    option_manager* settings = MakeOptionManager();
+    settings->AddOption(
+      MakeIntOption(
+        "MinIters", 
+        "Minimum number of iterations.  Guarantees that at least this many iterations will occur.",
+        markov_lldsm::lsopts[i].min_iters, 0, 2000000000
+      )
+    );
+
+    settings->AddOption(
+      MakeIntOption(
+        "MaxIters", 
+        "Maximum number of iterations.  Once the minimum number of iterations has been reached, the solver will terminate if either the termination criteria has been met (see options for Precision), or the maximum number of iterations has been reached.",
+        markov_lldsm::lsopts[i].max_iters, 0, 2000000000
+      )
+    );
+
+    settings->AddOption(
+      MakeRealOption(
+        "Precision", 
+        "Desired precision.  Solvers will run until each solution vector element has changed less than epsilon.  Relative or absolute precision may be used, see option TBD.",
+        markov_lldsm::lsopts[i].precision, 
+        true, false, 0.0,
+        true, false, 1.0
+      )
+    );
+
+    settings->AddOption(
+      MakeRealOption(
+        "Relaxation", 
+        "Relaxation parameter to use (or start with).",
+        markov_lldsm::lsopts[i].relaxation, 
+        true, false, 0.0,
+        true, false, 2.0
+      )
+    );
+
+    // put these settings into the radio button
+
+    settings->DoneAddingOptions();
+    solvers[i]->makeSettings(settings);
+
+    // Memory leak, because we never clean up settings, but probably ok
+  } // for i
+
+
+
 
   option* report = em->findOption("Report");
   markov_lldsm::report.Initialize(report,

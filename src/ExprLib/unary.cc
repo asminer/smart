@@ -100,13 +100,15 @@ void negop::Traverse(traverse_data &x)
       if (!x.answer->isNormal()) return;
       shared_object* dd = x.ddlib->makeEdge(0);
       DCASSERT(dd);
-      if (x.ddlib->buildUnary(opcode, x.answer->getPtr(), dd)) {
+      try {
+        x.ddlib->buildUnary(opcode, x.answer->getPtr(), dd);
+        x.answer->setPtr(dd);
+      }
+      catch (sv_encoder::error e) {
         // there was an error
         // TBD: do we make noise?
         Delete(dd);
         x.answer->setNull();
-      } else {
-        x.answer->setPtr(dd);
       }
       return;
     }

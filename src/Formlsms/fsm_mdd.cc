@@ -34,13 +34,13 @@ protected:
 public:
   inline meddly_states*     grabStates() { return process; }
 
-  inline shared_ddedge* buildActualNSF(sv_encoder::error &e) const {
+  inline shared_ddedge* buildActualNSF() const {
     DCASSERT(process);
     DCASSERT(process->mxd_wrap);
     DCASSERT(process->nsf);
     DCASSERT(process->states);
     shared_ddedge* actual = new shared_ddedge(process->mxd_wrap->getForest());
-    e = process->mxd_wrap->selectRows(process->nsf, process->states, actual);
+    process->mxd_wrap->selectRows(process->nsf, process->states, actual);
     return actual;
   };
 
@@ -198,16 +198,17 @@ long meddly_fsm::getNumArcs(bool show) const
   if (process->proc_uses_actual) {
     process->proc_wrap->getCardinality(process->proc, na);
   } else {
-    sv_encoder::error e;
-    shared_object* actual = buildActualNSF(e);
-    if (e) {
+    shared_object* actual = 0;
+    try {
+      actual = buildActualNSF();
+      process->proc_wrap->getCardinality(actual, na);
+    }
+    catch (sv_encoder::error e) {
       if (GetParent()->StartError(0)) {
         em->cerr() << "Couldn't build actual edges: ";
         em->cerr() << sv_encoder::getNameOfError(e);
         GetParent()->DoneError();
       }
-    } else {
-      process->proc_wrap->getCardinality(actual, na);
     }
     Delete(actual);
   }
@@ -234,10 +235,7 @@ long meddly_fsm::getNumArcs(bool show) const
     const int* fmt = process->states->getIterMinterm();
     em->cout() << "From state ";
     if (display_graph_node_names) {
-      CHECK_RETURN(
-        process->mdd_wrap->minterm2state(fmt, fst),
-        sv_encoder::Success
-      );
+      process->mdd_wrap->minterm2state(fmt, fst);
       fst->Print(em->cout(), 0);
     } else {
       em->cout() << fc;
@@ -291,18 +289,18 @@ void meddly_fsm::getNumArcs(result &count) const
   } else {
     shared_object* actual = process->proc_wrap->makeEdge(0);
     DCASSERT(actual);
-    sv_encoder::error e;
-    e = process->proc_wrap->selectRows(process->proc, process->states, actual);
-    if (e) {
+    try {
+      process->proc_wrap->selectRows(process->proc, process->states, actual);
+      process->proc_wrap->getCardinality(actual, count);
+    }
+    catch (sv_encoder::error e) {
       if (GetParent()->StartError(0)) {
         em->cerr() << "Couldn't build actual edges: ";
         em->cerr() << sv_encoder::getNameOfError(e);
         GetParent()->DoneError();
       }
       count.setNull();
-    } else {
-      process->proc_wrap->getCardinality(actual, count);
-    }
+    } 
     Delete(actual);
   }
 }
@@ -327,30 +325,29 @@ meddly_states* GrabMeddlyFSMStates(lldsm* fsm)
   return mddfsm->grabStates();
 }
 
-sv_encoder::error FinishMeddlyFSM(lldsm* fsm, bool pot)
+void FinishMeddlyFSM(lldsm* fsm, bool pot)
 {
   meddly_fsm* mddfsm = dynamic_cast <meddly_fsm*> (fsm);
-  sv_encoder::error e = sv_encoder::Success;
-  if (0==mddfsm) return e;
+  if (0==mddfsm) return;
   meddly_states* ss = mddfsm->grabStates();
   if (ss->proc) {
     mddfsm->finish();
-    return e;
+    return;
   }
   if (pot) {
     ss->proc = Share(ss->nsf);
     ss->proc_uses_actual = false;
   } else {
-    ss->proc = mddfsm->buildActualNSF(e);
-    if (e) {
+    try {
+      ss->proc = mddfsm->buildActualNSF();
+      ss->proc_uses_actual = true;
+    }
+    catch (sv_encoder::error e) {
       // use potential instead
       Delete(ss->proc);
       ss->proc = Share(ss->nsf);
       ss->proc_uses_actual = false;
-    } else {
-      ss->proc_uses_actual = true;
-    }
+    } 
   }
   mddfsm->finish();
-  return e;
 }

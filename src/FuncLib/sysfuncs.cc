@@ -65,10 +65,10 @@ struct help_object {
     return Compare(x->item);
   }
 
-  void DocumentObject(doc_formatter* df) const {
+  void DocumentObject(doc_formatter* df, const char* keyword) const {
     df->Out() << "\n";
     if (0==within_models) {
-      item->PrintDocs(df);
+      item->PrintDocs(df, keyword);
       return;
     }
     const function* fitem = smart_cast <const function*> (item);
@@ -159,7 +159,7 @@ void help_base::HelpTopics(const symbol_table* st, const char* search)
       const help_topic* ht = dynamic_cast <const help_topic*> (chain);
       if (0==ht) continue;
       df->Out() << "\n";
-      ht->PrintDocs(df);
+      ht->PrintDocs(df, search);
     } // for chain
   } // for i
 }
@@ -205,7 +205,7 @@ void help_base::HelpFuncs(const symbol_table* st, const char* search)
   // Print documentation for what we collected
   for (long i=0; i<hlen; i++) {
     DCASSERT(holist[i]);
-    holist[i]->DocumentObject(df);
+    holist[i]->DocumentObject(df, search);
     delete holist[i];
     holist[i] = 0;
   } // for i

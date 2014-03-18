@@ -413,7 +413,7 @@ public:
   print_ci();
   virtual void Compute(traverse_data &x, expr** pass, int np);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  virtual void PrintDocs(doc_formatter* df) const;
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
 };
 
 print_ci::print_ci() : generic_print("print", "print(arg1, arg2, ...)")
@@ -439,7 +439,7 @@ int print_ci::Traverse(traverse_data &x, expr** pass, int np)
   }
 }
 
-void print_ci::PrintDocs(doc_formatter* df) const
+void print_ci::PrintDocs(doc_formatter* df, const char*) const
 {
   if (0==df)    return;
   df->begin_heading();
