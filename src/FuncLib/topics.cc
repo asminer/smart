@@ -375,8 +375,23 @@ void topic_options::PrintDocs(doc_formatter* df, const char*) const
   df->end_heading();
   df->begin_indent();
 
-  df->Out() << "An option statement is used to modify the behavior of Smart.  For example, there are options to control the solution algorithms (such as the precision or maximum number of iterations allowed) or the level of verbosity.  Option statements appear on lines beginning with \"#\" (except for the \"# include\" directive, which is handled by the preprocessor).  Different options have different types, and different sets of legal values.  The following options are available, along with their current settings:\n\n";
-
+  df->Out() << "An option statement is used to modify the behavior of Smart.  For example, there are options to control the solution algorithms (such as the precision or maximum number of iterations allowed) or the level of verbosity.  Option statements appear on lines beginning with \"#\" (except for the \"# include\" directive, which is handled by the preprocessor).  Different options have different types, and different sets of legal values.  Furthermore, some options are nested within other options.  The syntax of an option statement depends on the option type.  Generally, extra space in an option statement is fine, but newline characters are significant.  Basic options may be set using a statement of the form ";
+  df->begin_indent();
+  df->Out() << "# IntegerOption 42";
+  df->end_indent();
+  df->Out() << "which would set an option named \"IntegerOption\" to the value 42.  Options that are sets of switches can be set using either ";
+  df->begin_indent();
+  df->Out() << "# SwitchOption + switch1 switch2 switch3";
+  df->end_indent();
+  df->Out() << "to turn on the given switches, or ";
+  df->begin_indent();
+  df->Out() << "# SwitchOption - switch1 switch2";
+  df->end_indent();
+  df->Out() << "to turn off the given switches.  Finally, if one option selection has its own options, those may be set using braces, for example: ";
+  df->begin_indent();
+  df->Out() << "# SelectAlgorithm SUPER_FANCY {\n#~~~~MagicNumber 42\n#~~~~UseAwesomeness true\n# }";
+  df->end_indent();
+  df->Out() << "The online help can be used to display details about available options.   The following top-level options are available (shown with their current settings):\n\n";
   DCASSERT(em);
   DCASSERT(em->OptMan());
   em->OptMan()->ListOptions(df);
