@@ -199,6 +199,8 @@ private:
   */
   radio_button* BuildOptionConst(int index);
 
+  /// Are there internal options for this engine
+  inline bool hasOptions() const { return options; }
 };
 
 

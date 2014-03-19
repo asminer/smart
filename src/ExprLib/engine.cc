@@ -270,27 +270,51 @@ void engtype::finalizeRegistry(option_manager* om)
   selected_engine_index = EngTree->FindIndex(selected_engine);
   DCASSERT(selected_engine_index >= 0);
   long N = EngTree->NumElements();
-  if (1 == N || 0==om) {
-    // no need to build option
-    killEngTree();
-    return;
-  } 
+  DCASSERT(N>0);
+
+  //
+  // Convert engines into an array
+  //
   engine** sorted_engines = new engine*[N];
   EngTree->CopyToArray(sorted_engines);
-  radio_button** values = new radio_button* [N];
-  for (int i=0; i<N; i++) {
-    engine* e = sorted_engines[i];
-    DCASSERT(e);
-    values[i] = e->BuildOptionConst(i);
-    if (selected_engine == e) selected_engine_index = i;
-  } // for i
-  // build the option
-  option* foo = MakeRadioOption(Name(), Documentation(), 
-        values, N, selected_engine_index);
-  DCASSERT(om);
-  om->AddOption(foo);
-  delete[] sorted_engines;
   killEngTree();
+
+  //
+  // Check if we need an option
+  //
+  bool needsOption = N>1;
+  if (1==N) {
+    needsOption = sorted_engines[0]->hasOptions();
+  }
+  if (0==om) {
+    needsOption = false;
+  }
+
+  //
+  // Build an option, automagically, if necessary
+  //
+  if (needsOption) {
+      //
+      // Build radio buttons
+      //
+      radio_button** values = new radio_button* [N];
+      for (int i=0; i<N; i++) {
+        engine* e = sorted_engines[i];
+        DCASSERT(e);
+        values[i] = e->BuildOptionConst(i);
+        if (selected_engine == e) selected_engine_index = i;
+      } // for i
+
+      //
+      // build the option
+      //
+      option* foo = MakeRadioOption(Name(), Documentation(), 
+            values, N, selected_engine_index);
+      DCASSERT(om);
+      om->AddOption(foo);
+  }
+
+  delete[] sorted_engines;
 }
 
 void engtype::runEngine(result* pass, int np, traverse_data &x)
