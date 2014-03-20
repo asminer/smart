@@ -63,7 +63,7 @@ int usage(const char* a)
   printf("\n");
   printf("\ta <t|f> <slotA> <op> <slotB>: assert that A <op> B is true/false\n");
   printf("\t\t<op> is one of: eq, ne, gt, ge, lt, le\n");
-  return 0;
+  return 1;
 }
 
 void MakeNewSet()
@@ -213,7 +213,7 @@ void EndOfFile(const char* fn)
   fclose(input);
 }
 
-void RunFile(const char* fn)
+bool RunFile(const char* fn)
 {
   if (fn[0] == '-' && fn[1] == 0) {
     input = stdin;
@@ -221,7 +221,7 @@ void RunFile(const char* fn)
     input = fopen(fn, "r");
     if (0==input) {
       printf("Couldn't open file %s\n", fn);
-      return;
+      return false;
     }
     printf("%20s      ", fn);
   }
@@ -230,7 +230,7 @@ void RunFile(const char* fn)
   while (1) {
     int c = grabChar("nscdiua");
     switch (c) {
-      case EOF:  EndOfFile(fn);      return;
+      case EOF:  EndOfFile(fn);      return true;
       case 'n':  MakeNewSet();       break;
       case 's':  ShowSet();          break;
  
@@ -241,7 +241,7 @@ void RunFile(const char* fn)
 
       case 'a':  
         if (Assertion()) break;
-        return;
+        return false;
     }
   } // while 1
 }
@@ -250,7 +250,7 @@ int main(int argc, const char** argv)
 {
   if (argc < 2) return usage(argv[0]);
   for (int i=1; i<argc; i++) {
-    RunFile(argv[i]);
+    if (!RunFile(argv[i])) return 1;
   }
   return 0;
 }

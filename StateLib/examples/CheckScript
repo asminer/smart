@@ -9,11 +9,10 @@ OK=" [1;32m   OK   [0;39m"
 CHANGE=" [1;33m CHANGE [0;39m"
 FAILED=" [1;31m FAILED [0;39m"
 
-for inf in 1 2 3
-do
-  infile="dbin$inf.txt"
-  if [ -f $infile ]; then
+infile=$1
+if [ -f $infile ]; then
     echo $infile
+    inf=`basename $infile .txt | cut -c 5-10`
     for ih in "i" "h"
     do
       for rst in "r" "s" "t"
@@ -27,13 +26,17 @@ do
               echo $OK
             else
               echo $CHANGE
+              exit 1
             fi
           else
             echo $FAILED
+            exit 2
           fi
         fi
       done
     done
-  fi
-done
+else
+    echo "Didn't find input file $infile"
+    exit 1
+fi
 

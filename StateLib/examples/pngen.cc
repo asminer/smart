@@ -1,8 +1,20 @@
 
 // $Id$
 
-#include <unistd.h>
+#include "../../config.h"
 #include <stdio.h>
+
+#ifndef HAVE_PNFRONT_H
+
+int main()
+{
+  printf("This program requires library PNFront.\n");
+  return 0;
+}
+
+#else
+
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include "statelib.h"
@@ -725,3 +737,4 @@ int main(int argc, char** argv)
   return 0;
 }
 
+#endif // giant ifdef
