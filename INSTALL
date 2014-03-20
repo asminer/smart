@@ -1,0 +1,14 @@
+
+$Id$
+
+Instructions to build (probably...)
+
+0.  autoreconf --install
+
+    This step is necessary for the first build, and anytime some
+    configure.ac or Makefile.am changes.
+
+
+1.  ./configure
+
+    System specific configuration.

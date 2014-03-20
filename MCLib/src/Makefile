@@ -2,7 +2,7 @@
 # $Id$
 
 
-INCPATH=-I../../LSLib/include -I../../IntSets/include -I../../GraphLib/include -I../../RngLib/include
+INCPATH=-I../../include
 
 OBJS= mclib.o mcbase.o mc_irred.o mc_absorb.o mc_general.o \
 	vanish.o hyper.o poiss.o 

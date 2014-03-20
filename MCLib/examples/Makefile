@@ -6,8 +6,8 @@ CC  = g++
 
 all: birthdeath walk mcsolver
 
-INCPATH=-I../src -I../../LSLib/include -I../../GraphLib/include -I../../MCParse/include
-LIBPATH=-L../src -L../../LSLib/lib -L../../IntSets/lib -L../../GraphLib/lib -L../../MCParse/lib
+INCPATH=-I../src -I../../include 
+LIBPATH=-L../src -L../../lib
 
 LIBS=$(LIBPATH) -lmc -lls -lgraph -lintset
 

@@ -1,7 +1,7 @@
 
 # $Id$
 
-INCPATH=-I../../IntSets/include
+INCPATH=-I../../include
 
 OBJS= graphlib.o sccs.o 
 

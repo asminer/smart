@@ -9,7 +9,9 @@ clean:
 
 install:
 	cp libmcparse.a ../lib
+	cp libmcparse.a ../../lib
 	cp mcparse.h ../include
+	cp mcparse.h ../../include
 
 revno:
 	./BuildRevNo

@@ -3,8 +3,8 @@
 
 all: parsetest renumber
 
-INCPATH=-I../src -I../../GraphLib/include
-LIBPATH=-L../src -L../../GraphLib/lib -L../../IntSets/lib
+INCPATH=-I../src -I../../include
+LIBPATH=-L../src -L../../lib
 
 GENFILES= parsetest parsetest.o renumber renumber.o
 
