@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libgraph_la_SOURCES = \
-	graphlib.h \
+  graphlib.h \
   graphlib.cc \
   sccs.h \
   sccs.cc

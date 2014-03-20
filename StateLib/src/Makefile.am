@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libstate_la_SOURCES = \
-	statelib.h \
+  statelib.h \
   statelib.cc \
   coll.h \
   coll.cc \

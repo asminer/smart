@@ -14,7 +14,7 @@ istest_SOURCES = istest.cc
 istest_LDADD = ../src/libintset.la
 
 TESTS = \
-	check00.ist \
+  check00.ist \
   check01.ist \
   check02.ist \
   check03.ist 

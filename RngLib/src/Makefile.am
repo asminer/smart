@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 librng_la_SOURCES = \
-	rng.h \
+  rng.h \
   rng.cc 
 
 include_HEADERS = rng.h

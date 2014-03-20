@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libmc_la_SOURCES = \
-	mclib.h \
+  mclib.h \
   mclib.cc \
   mcbase.h \
   mcbase.cc \

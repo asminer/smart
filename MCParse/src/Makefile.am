@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libmcparse_la_SOURCES = \
-	mcparse.h \
+  mcparse.h \
   mcparse.cc 
 
 include_HEADERS = mcparse.h

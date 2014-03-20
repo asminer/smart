@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libsim_la_SOURCES = \
-	sim.h \
+  sim.h \
   sim.cc \
   normal.h \
   normal.cc \

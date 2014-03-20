@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libls_la_SOURCES = \
-	lslib.h \
+  lslib.h \
   lslib.cc 
 
 include_HEADERS = lslib.h

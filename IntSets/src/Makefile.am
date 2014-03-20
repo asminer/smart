@@ -13,7 +13,7 @@ BUILT_SOURCES = _revision revision.h
 CLEANFILES = revision.h
 
 libintset_la_SOURCES = \
-	intset.h \
+  intset.h \
   intset.cc
 
 include_HEADERS = intset.h
