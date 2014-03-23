@@ -10,7 +10,7 @@ AC_INIT([smartlibs], [3], [asminer@iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests])
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_MACRO_DIR([m4])
-AC_PREFIX_DEFAULT([$(PWD)])
+AC_PREFIX_DEFAULT([$PWD])
 
 #
 # Check for programs that we need
@@ -49,7 +49,7 @@ AC_LANG([C++])
 LIBPNFRONT=
 AS_IF([test "x$with_pnfront" != xno],
   [AC_CHECK_HEADERS([pnfront.h], [],
-    [AC_MSG_FAILURE(["Couldn't find PNFront header, try --without-pnfront"])],
+    [AC_MSG_FAILURE([Could not find PNFront header, read INSTALL file for options])],
     []
   )])
 
