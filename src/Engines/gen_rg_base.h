@@ -25,7 +25,7 @@ protected:
 public:
   process_generator();
   virtual ~process_generator();
-protected:
+// protected:
   // returns true if the report stream is open
   static bool startGen(const hldsm& mdl, const char* whatproc);
   // returns true if the report stream is open
