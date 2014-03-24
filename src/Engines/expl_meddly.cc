@@ -658,10 +658,10 @@ class gen_wrapper_templ {
     }
 
     ~gen_wrapper_templ() {
-      delete minterms;
       delete tangible;
       delete vanishing;
       delete edges;
+      delete minterms;
     }
 
     //
