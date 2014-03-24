@@ -672,6 +672,8 @@ class gen_wrapper_templ {
       generateRGt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
+      if (edges) edges->addBatch(); // add the final batch of edges
+
       // transfer everything
       if (0==ms.states) ms.states = tangible->shareS();
       if (0==ms.nsf) if (edges) ms.nsf = edges->shareProc();
@@ -905,7 +907,7 @@ protected:
 
 private:
   template <class GWRAP>
-  inline void DoRG(dsde_hlm &hm, GWRAP &G) {
+  inline void DoRS(dsde_hlm &hm, GWRAP &G) {
     //
     // Start reporting on generation
     //
@@ -933,10 +935,12 @@ private:
       lldsm* lm = StartMeddlyFSM(ms);
       Share(ms);
       hm.SetProcess(lm);
+      lm->setCompletionEngine(this);
 
       // Cleanup
       doneTimer(watch);
       Delete(ms);
+      ms = 0;
       em->resumeTerm();
       return;
     }
@@ -953,10 +957,77 @@ private:
       // Cleanup
       doneTimer(watch);
       Delete(ms);
+      ms = 0;
       em->resumeTerm();
       throw;
     }
   }
+
+
+  template <class GWRAP>
+  inline void DoRG(dsde_hlm &hm, GWRAP &G) {
+    //
+    // Start reporting on generation
+    //
+    timer* watch = 0;
+    if (startGen(hm, "reachability graph")) {
+      em->stopIO();
+      watch = makeTimer();
+    }
+
+    //
+    // Generate, in a try block
+    //
+    try {
+
+      em->waitTerm();
+      G.generateRG(debug, hm);
+
+      // Reporting
+      if (meddly_procgen::stopGen(false, hm.Name(), "reachability graph", watch)) {
+        G.reportStats(em->report());
+        em->stopIO();
+      }
+
+      // Set process
+      lldsm* lm = hm.GetProcess();
+      if (0==lm) {
+        lm = StartMeddlyFSM(ms);
+        Share(ms);
+        hm.SetProcess(lm);
+      }
+      ms->proc_wrap = Share(ms->mxd_wrap);
+      ms->proc = Share(ms->nsf);
+      ms->proc_uses_actual = true;
+      FinishMeddlyFSM(lm, true);
+      lm->setCompletionEngine(0);
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      return;
+    }
+    catch (subengine::error e) {
+      // Reporting
+      if (meddly_procgen::stopGen(true, hm.Name(), "reachability graph", watch)) {
+        G.reportStats(em->report());
+        em->stopIO();
+      }
+
+      // Set process
+      hm.SetProcess(MakeErrorModel());
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      throw;
+    }
+  }
+    
     
 };
 
@@ -1047,6 +1118,7 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
     catch (error e) {
       delete mvo;
       Delete(ms);
+      ms = 0;
       throw e;
     }
   } else {
@@ -1078,6 +1150,9 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
     1+ms->mdd_wrap->getNumDDVars()
   );
 
+  //
+  // Only 2 cases to consider :^)
+  //
 
   if (batch_removal) {
     //
@@ -1091,7 +1166,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
         (edge_minterms*) 0
       );
     
-    DoRG(hm, G);
+    DoRS(hm, G);
     return;
   } else {
     //
@@ -1105,7 +1180,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
         (edge_minterms*) 0
       );
     
-    DoRG(hm, G);
+    DoRS(hm, G);
     return;
   }
 
@@ -1113,7 +1188,83 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
 
 void meddly_explgen::generateRG(dsde_hlm &hm)
 {
-  throw Engine_Failed;
+  // Everybody uses this
+  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
+    1+ms->mdd_wrap->getNumDDVars()
+  );
+
+  //
+  // A little ugly - consider all possible cases "by hand"
+  // 
+  if (hm.GetProcess()) {
+    //
+    // Second pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+  
+        DoRG(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+    
+        DoRG(hm, G);
+        return;
+    }
+  } else {
+    //
+    // First pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+  
+        DoRG(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+    
+        DoRG(hm, G);
+        return;
+    }
+  }
+
+  // TBD - CMDs vs I/QRMxDs
 }
 
 void meddly_explgen::generateMC(dsde_hlm &hm)
