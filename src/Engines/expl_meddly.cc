@@ -47,6 +47,7 @@
 // #define FORCE_FULL
 // #define FORCE_SPARSE
 
+#define ENABLE_CMDS
 #define ENABLE_OLD_IMPLEMENTATION
 
 // Handy stuff
@@ -267,1676 +268,7 @@ void edge_minterms::addBatch()
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                       mt_known_stategroup  class                       *
-// *                                                                        *
-// **************************************************************************
-
-// Stategroups for known sets, using minterm batches
-class mt_known_stategroup {
-  meddly_encoder &wrap;
-  minterm_pool &mp;
-  MEDDLY::enumerator s_iter;
-  int* exploring;
-  int* discovering;
-public:
-  mt_known_stategroup(meddly_encoder &w, minterm_pool &m, shared_ddedge* S);
-  ~mt_known_stategroup();
-
-  inline bool hasUnexplored() const {
-    return s_iter;
-  }
-  int* getUnexplored(shared_state *);
-  bool addState(const shared_state *, int* &id);
-
-  inline void reportStats(DisplayStream &out, const char* name) const { }
-  inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
-
-  // hook for cool stuff
-  inline int getLevelChange() const { return 0; }
-};
-
-mt_known_stategroup::
-mt_known_stategroup(meddly_encoder &w, minterm_pool &m, shared_ddedge* S)
- : wrap(w), mp(m)
-{
-  DCASSERT(S);
-  s_iter.start(S->E);
-  exploring = mp.getMinterm();
-  discovering = mp.getMinterm();
-}
-
-mt_known_stategroup::~mt_known_stategroup()
-{
-  mp.doneMinterm(exploring);
-  mp.doneMinterm(discovering);
-}
-
-int*
-mt_known_stategroup
-::getUnexplored(shared_state *s)
-{
-  DCASSERT(s_iter);
-  DCASSERT(exploring);
-  mp.doneMinterm(exploring);
-  exploring = mp.getMinterm();
-  mp.fillMinterm(exploring, s_iter.getAssignments());
-  ++s_iter;
-  try {
-    wrap.minterm2state(exploring, s);
-    return exploring;
-  }
-  catch (sv_encoder::error e) {
-    convert(e);
-    return 0;
-  }
-}
-
-bool
-mt_known_stategroup
-::addState(const shared_state *s, int* &id)
-{
-  DCASSERT(discovering);
-  mp.doneMinterm(discovering);
-  discovering = mp.getMinterm();
-  try {
-    wrap.state2minterm(s, discovering);
-    id = discovering;
-    return false;
-  }
-  catch (sv_encoder::error e) {
-    convert(e);
-    return false;
-  }
-}
-
-// **************************************************************************
-// *                                                                        *
-// *                         mt_sr_stategroup class                         *
-// *                                                                        *
-// **************************************************************************
-
-// Stategroups for minterm batches, one state removed at a time.
-class mt_sr_stategroup {
-protected:
-  meddly_encoder &wrap;
-  minterm_pool &mp;
-  shared_ddedge* S;
-  shared_ddedge* U;
-  int** batch;
-  int alloc;
-  int used;
-  int* exploring;
-  int* discovering;
-  shared_ddedge* tempedge;
-#ifdef MEASURE_STATS
-  int min_batch;
-  int max_batch;
-  long num_batches;
-  long num_additions;
-#endif
-public:
-  mt_sr_stategroup(meddly_encoder &w, minterm_pool &m, int b);
-  ~mt_sr_stategroup();
-
-  inline bool hasUnexplored() const {
-    DCASSERT(U);
-    return (used>0) || U->E.getNode();
-  }
-  int* getUnexplored(shared_state *);
-  bool addState(const shared_state *, int* &id);
-
-  inline void reportStats(DisplayStream &out, const char* name) const {
-    out << "\tBatch for " << name << " required ";
-    size_t batchmem = alloc*sizeof(int);
-    out.PutMemoryCount(batchmem, 3);
-    out << "\n";
-#ifdef MEASURE_STATS
-    if (num_batches) {
-      out << "\t\t# batches: " << num_batches << "\n";
-      out << "\t\tmin batch: " << min_batch << "\n";
-      out << "\t\tmax batch: " << max_batch << "\n";
-      double avg = num_additions;
-      avg /= num_batches;
-      out << "\t\tavg batch: " << avg << "\n";
-    }
-#endif
-  }
-  inline shared_ddedge* shareS() { return Share(S); }
-
-  inline int getLevelChange() const { return 0; }
-
-  inline void clear() {
-    DCASSERT(!hasUnexplored());
-    S->E = U->E;
-  }
-
-protected:
-  inline void addBatch() {
-    if (0==used) return;
-    try {
-      wrap.createMinterms(batch, used, tempedge);
-      S->E += tempedge->E;
-      U->E += tempedge->E;
-      for (int i=0; i<used; i++) {
-        mp.doneMinterm(batch[i]);
-        batch[i] = 0;
-      }
-#ifdef MEASURE_STATS
-      min_batch = MIN(min_batch, used);
-      max_batch = MAX(max_batch, used);
-      num_batches++;
-      num_additions += used;
-#endif
-      used = 0;
-    } // try
-    catch (sv_encoder::error e) {
-      convert(e);
-    }
-  }
-};
-
-// **************************************************************************
-// *                        mt_sr_stategroup methods                        *
-// **************************************************************************
-
-mt_sr_stategroup::
-mt_sr_stategroup(meddly_encoder &w, minterm_pool &m, int bs)
- : wrap(w), mp(m)
-{
-  S = new shared_ddedge(wrap.getForest());
-  U = new shared_ddedge(wrap.getForest());
-  alloc = bs;
-  used = 0;
-  batch = new int*[alloc];
-  for (int i=0; i<alloc; i++) batch[i] = 0;
-  exploring = mp.getMinterm();
-  discovering = mp.getMinterm();
-  tempedge = new shared_ddedge(wrap.getForest());
-#ifdef MEASURE_STATS
-  min_batch = INT_MAX;
-  max_batch = 0;
-  num_batches = 0;
-  num_additions = 0;
-#endif
-}
-
-mt_sr_stategroup::~mt_sr_stategroup()
-{
-  // DON'T delete minterms
-  delete[] batch;
-  Delete(S);
-  Delete(U);
-  Delete(tempedge);
-  mp.doneMinterm(exploring);
-  mp.doneMinterm(discovering);
-}
-
-int*
-mt_sr_stategroup
-::getUnexplored(shared_state *s)
-{
-  DCASSERT(exploring);
-  mp.doneMinterm(exploring);
-  exploring = mp.getMinterm();
-  if (0==U->E.getNode()) {
-    addBatch();
-  }
-  DCASSERT(U->E.getNode());
-  try {
-    MEDDLY::enumerator first(U->E);
-    mp.fillMinterm(exploring, first.getAssignments());
-    wrap.minterm2state(exploring, s);
-    MEDDLY::dd_edge temp(wrap.getForest());
-    wrap.getForest()->createEdge(&exploring, 1, temp);
-    U->E -= temp;
-    return exploring;
-  }
-  catch (MEDDLY::error ce) {
-    convert(ce);
-    return 0;
-  }
-  catch (sv_encoder::error e) {
-    convert(e);
-    return 0;
-  }
-}
-
-bool
-mt_sr_stategroup
-::addState(const shared_state *s, int* &id)
-{
-  DCASSERT(discovering);
-  mp.doneMinterm(discovering);
-  discovering = mp.getMinterm();
-  id = discovering;
-  bool seen;
-  try {
-    wrap.state2minterm(s, discovering);
-    wrap.getForest()->evaluate(S->E, discovering, seen);
-  }
-  catch (MEDDLY::error e) {
-    convert(e);
-  }
-  catch (sv_encoder::error e) {
-    convert(e);
-  }
-  if (seen) return false;
-  batch[used] = mp.shareMinterm(discovering);
-  used++;
-  if (used >= alloc) {
-    addBatch();
-  }
-  return true;
-}
-
-
-// **************************************************************************
-// *                                                                        *
-// *                         mt_br_stategroup class                         *
-// *                                                                        *
-// **************************************************************************
-
-// Stategroups for minterm batches, several states removed at a time.
-class mt_br_stategroup : public mt_sr_stategroup {
-  shared_ddedge* B; // batch for enumerating unexplored
-  MEDDLY::enumerator b_iter;
-  bool maximize_refills;
-#ifdef MEASURE_STATS
-  long iterator_resets;
-#endif
-public:
-  mt_br_stategroup(meddly_encoder &w, minterm_pool &m, int b, bool maxref);
-  ~mt_br_stategroup();
-
-  inline bool hasUnexplored() const {
-    if (b_iter) return true;  // still traversing B
-    DCASSERT(U);
-    return (used>0) || U->E.getNode();
-  }
-  int* getUnexplored(shared_state *);
-
-#ifdef MEASURE_STATS
-  inline void reportStats(DisplayStream &out, const char* name) const {
-    mt_sr_stategroup::reportStats(out, name);
-    if (iterator_resets) {
-      out << "\t\t#iterator resets: " << iterator_resets << "\n";
-    }
-  }
-#endif
-};
-
-// **************************************************************************
-// *                        mt_br_stategroup methods                        *
-// **************************************************************************
-
-mt_br_stategroup::
-mt_br_stategroup(meddly_encoder &w, minterm_pool &m, int bs, bool maxref)
- : mt_sr_stategroup(w, m, bs)
-{
-  B = new shared_ddedge(wrap.getForest());
-  maximize_refills = maxref;
-#ifdef MEASURE_STATS
-  iterator_resets = 0;
-#endif
-}
-
-mt_br_stategroup::~mt_br_stategroup()
-{
-  Delete(B);
-}
-
-int*
-mt_br_stategroup
-::getUnexplored(shared_state *s)
-{
-  if (!b_iter) {
-    // need to refill B
-    if (0==U->E.getNode() || maximize_refills) {
-      addBatch();
-    }
-    DCASSERT(U->E.getNode());
-    // set B=U, U=0
-    SWAP(B, U);
-    wrap.getForest()->createEdge(false, U->E);
-    // restart iterator
-    b_iter.start(B->E);
-#ifdef MEASURE_STATS
-    iterator_resets++;
-#endif
-  }
-  DCASSERT(b_iter);
-  DCASSERT(exploring);
-  mp.doneMinterm(exploring);
-  exploring = mp.getMinterm();
-  mp.fillMinterm(exploring, b_iter.getAssignments());
-  ++b_iter;
-  try {
-    wrap.minterm2state(exploring, s);
-    return exploring;
-  }
-  catch (sv_encoder::error e) {
-    convert(e);
-    return 0;
-  }
-}
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// * Generator classes.  These are thin wrappers around the above classes,  *
-// * and are used when calling the reachability set / reachability graph /  *
-// * Markov chain generation engine template class.  The class interfaces   *
-// * are all similar, and are imposed by the generation template functions. *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-
-/**
-  Generic wrapper around data structures, for generation
-*/
-template <class TANGR, class VANGR, class EDGEGR>
-class gen_wrapper_templ {
-    bool states_only;
-    meddly_states &ms;
-  public:
-    minterm_pool* minterms;
-    TANGR* tangible;
-    VANGR* vanishing;
-    EDGEGR* edges;
-  public:
-    gen_wrapper_templ(bool so, meddly_states &_ms, minterm_pool* mp,
-      TANGR *t, VANGR *v, EDGEGR *e) : ms(_ms)
-    {
-      states_only = so;
-      minterms = mp;
-      tangible = t;
-      vanishing = v;
-      edges = e;
-    }
-
-    ~gen_wrapper_templ() {
-      delete tangible;
-      delete vanishing;
-      delete edges;
-      delete minterms;
-    }
-
-    //
-    // Really convenient methods
-    //
-
-    inline void generateRG(named_msg &debug, dsde_hlm &hm) {
-      generateRGt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
-        (debug, hm, *this);
-
-      if (edges) edges->addBatch(); // add the final batch of edges
-
-      // transfer everything
-      if (0==ms.states) ms.states = tangible->shareS();
-      if (0==ms.nsf) if (edges) ms.nsf = edges->shareProc();
-    }
-
-    void reportStats(DisplayStream &out) {
-      ms.reportStats(out);
-      if (minterms)   minterms->reportStats(out);
-      if (tangible)   tangible->reportStats(out, "tangible");
-      if (vanishing)  vanishing->reportStats(out, "vanishing");
-      if (edges)      edges->reportStats(out);
-    }
-
-    //
-    // required methods for RS generation
-    //
-
-    inline bool add(bool isVan, const shared_state* s, int* &id) {
-      if (isVan) {
-        DCASSERT(vanishing);
-        return vanishing->addState(s, id);
-      } else {
-        DCASSERT(tangible);
-        return tangible->addState(s, id);
-      }
-    }
-
-    inline bool hasUnexploredVanishing() const {
-      DCASSERT(vanishing);
-      return vanishing->hasUnexplored();
-    }
-
-    inline bool hasUnexploredTangible() const {
-      DCASSERT(tangible);
-      return tangible->hasUnexplored();
-    }
-
-    inline int* getUnexploredVanishing(shared_state *s) {
-      DCASSERT(vanishing);
-      return vanishing->getUnexplored(s);
-    }
-
-    inline int* getUnexploredTangible(shared_state *s) {
-      DCASSERT(tangible);
-      return tangible->getUnexplored(s);
-    }
-
-    inline void clearVanishing(named_msg &debug) {
-      if (debug.startReport()) {
-        debug.report() << "Eliminating vanishing states\n";
-        debug.stopIO();
-      }
-      DCASSERT(vanishing);
-      vanishing->clear();
-    }
-
-    inline bool statesOnly() const {
-      return states_only;
-    }
-
-    inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
-    {
-      if (isVan) s << "vanishing state: ";
-      else       s << "tangible  state: ";
-      curr->Print(s, 0);
-    }
-    static inline void makeIllegalID(int* &id) {
-      id = 0;
-    }
-
-    //
-    // required methods for RG generation
-    //
-
-    inline void addInitial(const int*) {
-      // wasn't this built already?
-    }
-
-    inline void addEdge(int* from, int* to) {
-      DCASSERT(edges);
-      return edges->addEdge(from, to);
-    }
-
-    //
-    // required methods for MC generation
-    //
-
-    inline void eliminateVanishing(named_msg &debug) {
-      if (debug.startReport()) {
-        debug.report() << "Eliminating vanishing states\n";
-        debug.stopIO();
-      }
-      DCASSERT(vanishing);
-      edges->eliminateVanishing();
-      vanishing->clear();
-    }
-
-    inline void addInitial(bool isVan, const int* id, double wt) {
-      // TBD - not sure about this one
-    }
-
-    inline void addTTEdge(int* from, int* to, double wt) {
-      DCASSERT(edges);
-      edges->addTTEdge(from, to, wt);
-    }
-
-    inline void addTVEdge(int* from, int* to, double wt) {
-      DCASSERT(edges);
-      edges->addTVEdge(from, to, wt);
-    }
-
-    inline void addVTEdge(int* from, int* to, double wt) {
-      DCASSERT(edges);
-      edges->addVTEdge(from, to, wt);
-    }
-
-    inline void addVVEdge(int* from, int* to, double wt) {
-      DCASSERT(edges);
-      edges->addVVEdge(from, to, wt);
-    }
-
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *  The actual explicit Meddly generation engine.  Implementation simply  *
-// *  builds an appropriate instance of one of the generator classes, and   *
-// *                  sends it to the generation function.                  *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                          meddly_explgen class                          *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Gigantic class for all explicit process generation with meddly.
-    States may be added in batch, where the batch size is taken
-    from an option.
-    This is the "main" engine, for when reachable states are not yet known.
-*/
-class meddly_explgen : public meddly_procgen {
-  friend void InitializeExplicitMeddly(exprman* em);
-  static long batch_size;
-  static int  matrix_style;
-  static bool batch_removal;
-  static bool maximize_batch_refills;
-  bool states_only_this_time;
-
-protected:
-  static const int CMD = 0;
-  static const int IRMXD = 1;
-  static const int QRMXD = 2;
-
-protected:
-  meddly_states* ms;
-public:
-  meddly_explgen();
-
-  virtual MEDDLY::forest::policies buildRSSPolicies() const;
-
-protected:
-  static void preprocess(dsde_hlm &m);
-
-public:
-  virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual void RunEngine(hldsm* m, result &states_only); 
-
-  inline static int getBatchSize() { return batch_size; }
-  inline static bool getMBR() { return maximize_batch_refills; }
-  inline static int getMatrixStyle() { return matrix_style; }
-
-protected:
-  inline bool startGen(const hldsm &hm, const char* proc) const {
-    if (!meddly_procgen::startGen(hm, proc)) return false;
-    em->report() << "\n";
-    em->newLine();
-    em->report() << "Using Meddly: ";
-    showAlgorithm(em->report());
-    em->report() << getStyleName() << " vars.";
-    showMatrix(em->report());
-    em->report() << "\n";
-    em->report() << "\tMax batch: " << batch_size << "\n";
-    return true;
-  }
-
-  static inline void showAlgorithm(OutputStream &s) {
-    s << "Explicit, ";
-    if (batch_removal)  s << "batch";
-    else                s << "single";
-    s << " removal, ";
-  }
-
-  inline void showMatrix(OutputStream &s) const {
-    if (states_only_this_time) return;
-    switch (matrix_style) {
-      case CMD:
-        s << ", CMDs";
-        return;
-      case IRMXD:
-        s << ", IRMxDs";
-        return;
-      case QRMXD:
-        s << ", QRMxDs";
-        return;
-      default:
-        s << ", unknown DDs";
-    }
-  }
-
-  void generateRS(dsde_hlm &hm);
-  void generateRG(dsde_hlm &hm);
-  void generateMC(dsde_hlm &hm);
-
-
-  template <class GEN>
-  inline void stopGen(bool err, const hldsm &hm, const char* what, 
-    const timer* w, const GEN &g, const minterm_pool &mp) const 
-  {
-    if (!meddly_procgen::stopGen(err, hm.Name(), what, w)) return;
-    mp.reportStats(em->report());
-    g.reportStats(em->report());
-    em->stopIO();
-  }
-
-
-private:
-  template <class GWRAP>
-  inline void DoRS(dsde_hlm &hm, GWRAP &G) {
-    //
-    // Start reporting on generation
-    //
-    timer* watch = 0;
-    if (startGen(hm, "reachability set")) {
-      em->stopIO();
-      watch = makeTimer();
-    }
-
-    //
-    // Generate, in a try block
-    //
-    try {
-
-      em->waitTerm();
-      G.generateRG(debug, hm);
-
-      // Reporting
-      if (meddly_procgen::stopGen(false, hm.Name(), "reachability set", watch)) {
-        G.reportStats(em->report());
-        em->stopIO();
-      }
-
-      // Set process
-      lldsm* lm = StartMeddlyFSM(ms);
-      Share(ms);
-      hm.SetProcess(lm);
-      lm->setCompletionEngine(this);
-
-      // Cleanup
-      doneTimer(watch);
-      Delete(ms);
-      ms = 0;
-      em->resumeTerm();
-      return;
-    }
-    catch (subengine::error e) {
-      // Reporting
-      if (meddly_procgen::stopGen(true, hm.Name(), "reachability set", watch)) {
-        G.reportStats(em->report());
-        em->stopIO();
-      }
-
-      // Set process
-      hm.SetProcess(MakeErrorModel());
-
-      // Cleanup
-      doneTimer(watch);
-      Delete(ms);
-      ms = 0;
-      em->resumeTerm();
-      throw;
-    }
-  }
-
-
-  template <class GWRAP>
-  inline void DoRG(dsde_hlm &hm, GWRAP &G) {
-    //
-    // Start reporting on generation
-    //
-    timer* watch = 0;
-    if (startGen(hm, "reachability graph")) {
-      em->stopIO();
-      watch = makeTimer();
-    }
-
-    //
-    // Generate, in a try block
-    //
-    try {
-
-      em->waitTerm();
-      G.generateRG(debug, hm);
-
-      // Reporting
-      if (meddly_procgen::stopGen(false, hm.Name(), "reachability graph", watch)) {
-        G.reportStats(em->report());
-        em->stopIO();
-      }
-
-      // Set process
-      lldsm* lm = hm.GetProcess();
-      if (0==lm) {
-        lm = StartMeddlyFSM(ms);
-        Share(ms);
-        hm.SetProcess(lm);
-      }
-      ms->proc_wrap = Share(ms->mxd_wrap);
-      ms->proc = Share(ms->nsf);
-      ms->proc_uses_actual = true;
-      FinishMeddlyFSM(lm, true);
-      lm->setCompletionEngine(0);
-
-      // Cleanup
-      doneTimer(watch);
-      Delete(ms);
-      ms = 0;
-      em->resumeTerm();
-      return;
-    }
-    catch (subengine::error e) {
-      // Reporting
-      if (meddly_procgen::stopGen(true, hm.Name(), "reachability graph", watch)) {
-        G.reportStats(em->report());
-        em->stopIO();
-      }
-
-      // Set process
-      hm.SetProcess(MakeErrorModel());
-
-      // Cleanup
-      doneTimer(watch);
-      Delete(ms);
-      ms = 0;
-      em->resumeTerm();
-      throw;
-    }
-  }
-    
-    
-};
-
-long meddly_explgen::batch_size;
-int  meddly_explgen::matrix_style;
-bool meddly_explgen::batch_removal;
-bool meddly_explgen::maximize_batch_refills;
-
-meddly_explgen the_meddly_explgen;
-
-// **************************************************************************
-// *                                                                        *
-// *                         meddly_explgen methods                         *
-// *                                                                        *
-// **************************************************************************
-
-meddly_explgen::meddly_explgen() : meddly_procgen()
-{
-  ms = 0;
-}
-
-MEDDLY::forest::policies 
-meddly_explgen::buildRSSPolicies() const
-{
-  MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
-  if (QRMXD == matrix_style) {
-    p.setQuasiReduced();
-  } 
-  return p;
-}
-
-void meddly_explgen::preprocess(dsde_hlm &m) 
-{
-  if (m.hasPartInfo()) return;
-  if (m.StartError(0)) {
-    em->cerr() << "Meddly requires a structured model (try partitioning)";
-    m.DoneError();
-  }
-  throw Engine_Failed;
-}
-
-bool meddly_explgen::AppliesToModelType(hldsm::model_type mt) const
-{
-  return (hldsm::Asynch_Events == mt);
-}
-
-void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
-{
-  DCASSERT(hm);
-  DCASSERT(AppliesToModelType(hm->Type()));
-  DCASSERT(states_only.isNormal());
-  states_only_this_time = states_only.getBool();
-  lldsm* lm = hm->GetProcess();
-  if (lm) {
-    // we already have something, deal with it
-    subengine* e = lm->getCompletionEngine();
-    if (0==e)                   return;
-    if (states_only.getBool())  return;
-    if (e!=this)                return e->RunEngine(hm, states_only);
-  } 
-
-  dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
-  DCASSERT(dhm);
-  if (0==lm) { 
-    // Preprocess
-    try {
-      preprocess(*dhm);
-    }
-    catch (error status) {
-      hm->SetProcess(MakeErrorModel());
-      throw status;
-    }
-  }
-
-  //
-  // Set up everything
-  //
-  if (0==lm) {
-    ms = new meddly_states;
-    meddly_varoption* mvo = makeVariableOption(*dhm, *ms);
-    DCASSERT(mvo);
-    try {
-      mvo->initializeVars();
-      DCASSERT(ms->mdd_wrap);
-      DCASSERT(ms->mxd_wrap);
-      delete mvo;
-    }
-    catch (error e) {
-      delete mvo;
-      Delete(ms);
-      ms = 0;
-      throw e;
-    }
-  } else {
-    ms = Share(GrabMeddlyFSMStates(lm));
-    DCASSERT(ms);
-    DCASSERT(ms->mdd_wrap);
-    DCASSERT(ms->mxd_wrap);
-  }
-
-  //
-  // Generate process
-  //
-  if (states_only_this_time) {
-    return generateRS(*dhm);
-  }
-  if (hm->GetProcessType() == lldsm::FSM) {
-    return generateRG(*dhm);
-  } else {
-    return generateMC(*dhm);
-  }
-}
-
-void meddly_explgen::generateRS(dsde_hlm &hm)
-{
-  DCASSERT(0==hm.GetProcess());
-
-  // Everybody uses this
-  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
-    1+ms->mdd_wrap->getNumDDVars()
-  );
-
-  //
-  // Only 2 cases to consider :^)
-  //
-
-  if (batch_removal) {
-    //
-    // Batch removal
-    //
-    gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
-      G(
-        true, *ms, mp,
-        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-        (edge_minterms*) 0
-      );
-    
-    DoRS(hm, G);
-    return;
-  } else {
-    //
-    // Single removal
-    //
-    gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
-      G(
-        true, *ms, mp,
-        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-        (edge_minterms*) 0
-      );
-    
-    DoRS(hm, G);
-    return;
-  }
-
-}
-
-void meddly_explgen::generateRG(dsde_hlm &hm)
-{
-  // Everybody uses this
-  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
-    1+ms->mdd_wrap->getNumDDVars()
-  );
-
-  //
-  // A little ugly - consider all possible cases "by hand"
-  // 
-  if (hm.GetProcess()) {
-    //
-    // Second pass
-    //
-    if (batch_removal) {
-        //
-        // Batch removal
-        //
-        gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
-        G(
-          false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
-        );
-  
-        DoRG(hm, G);
-        return;
-    } else {
-        //
-        // Single removal
-        //
-        gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
-        G(
-          false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
-        );
-    
-        DoRG(hm, G);
-        return;
-    }
-  } else {
-    //
-    // First pass
-    //
-    if (batch_removal) {
-        //
-        // Batch removal
-        //
-        gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
-        G(
-          false, *ms, mp,
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
-        );
-  
-        DoRG(hm, G);
-        return;
-    } else {
-        //
-        // Single removal
-        //
-        gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
-        G(
-          false, *ms, mp,
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
-        );
-    
-        DoRG(hm, G);
-        return;
-    }
-  }
-
-  // TBD - CMDs vs I/QRMxDs
-}
-
-void meddly_explgen::generateMC(dsde_hlm &hm)
-{
-  throw Engine_Failed;
-}
-
-// **************************************************************************************************************************************
-#ifdef ENABLE_OLD_IMPLEMENTATION
-// **************************************************************************************************************************************
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                        meddly_explgen_old class                        *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Abstract base class for explicit process generation with meddly.
-    States may be added in batch, where the batch size is taken
-    from an option.
-    This engine is for when the reachable states are not yet known.
-    Common stuff is implemented here :^)
-*/
-class meddly_explgen_old : public meddly_procgen {
-  friend void InitializeExplicitMeddly(exprman* em);
-  static long batch_size;
-  static bool use_qrmxds;
-  static bool maximize_batch_refills;
-  bool states_only_this_time;
-
-protected:
-  static long level_change;
-  meddly_states* ms;
-public:
-  meddly_explgen_old();
-  virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual void RunEngine(hldsm* m, result &states_only); 
-
-  inline static int getBatchSize() { return batch_size; }
-  inline static bool getMBR() { return maximize_batch_refills; }
-
-  virtual MEDDLY::forest::policies buildRSSPolicies() const;
-
-protected:
-  virtual void generateRSS(dsde_hlm &dsm) = 0;
-  virtual void generateProc(dsde_hlm &dsm) = 0;
-  virtual const char* getAlgName() const = 0;
-
-  virtual void AllocBuffers(const dsde_hlm* dhm) = 0;
-  virtual void DoneBuffers() = 0;
-  virtual void reportStats(DisplayStream &out, bool err) const = 0;
-
-  static void preprocess(dsde_hlm &m);
-
-  inline bool startGen(const hldsm &hm, const char* proc) const {
-    if (!meddly_procgen::startGen(hm, proc)) return false;
-    em->report() << "\n";
-    em->newLine();
-    em->report() << "Using Meddly: ";
-    em->report() << getAlgName() << " algorithm, ";
-    em->report() << getStyleName() << " vars.";
-    if (!states_only_this_time) {
-      if (use_qrmxds) em->report() << ", quasi-reduced MxDs";
-      else            em->report() << ", identity-reduced MxDs";
-    }
-    em->report() << "\n";
-    em->report() << "\tMax batch: " << batch_size;
-    em->report() << " \tLevel change: " << level_change << "\n";
-    return true;
-  }
-
-  inline void stopGen(bool err, const hldsm &hm, const char* proc, const timer* w) const {
-    if (!meddly_procgen::stopGen(err, hm.Name(), proc, w)) return;
-    reportStats(em->report(), err);
-    em->stopIO();
-  }
-
-  /** Must be given in derived classes.
-      Specifies which engine to call if we build the reachability set only,
-      first, and then want to build the underlying process.
-  */
-  virtual subengine* specifyCompletionEngine() = 0;
-  // virtual subengine* specifyCompletionEngine() { return this; }
-
-
-public: // for explicit generation
-  inline bool statesOnly() const { 
-    return states_only_this_time; 
-  }
-  inline void addInitial(const int*) {
-    // wasn't this built already?
-  }
-};
-
-long meddly_explgen_old::batch_size;
-long meddly_explgen_old::level_change;
-bool meddly_explgen_old::use_qrmxds;
-bool meddly_explgen_old::maximize_batch_refills;
-
-
-// **************************************************************************
-// *                                                                        *
-// *                       meddly_explgen_old methods                       *
-// *                                                                        *
-// **************************************************************************
-
-meddly_explgen_old::meddly_explgen_old() : meddly_procgen()
-{
-  ms = 0;
-}
-
-bool meddly_explgen_old::AppliesToModelType(hldsm::model_type mt) const
-{
-  return (hldsm::Asynch_Events == mt);
-}
-
-void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
-{
-  DCASSERT(hm);
-  DCASSERT(AppliesToModelType(hm->Type()));
-  DCASSERT(states_only.isNormal());
-  states_only_this_time = states_only.getBool();
-  lldsm* lm = hm->GetProcess();
-  if (lm) {
-    // we already have something, deal with it
-    subengine* e = lm->getCompletionEngine();
-    if (0==e)                   return;
-    if (states_only.getBool())  return;
-    if (e!=this)                return e->RunEngine(hm, states_only);
-  } 
-
-  dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
-  DCASSERT(dhm);
-  if (0==lm) { 
-    // Preprocess
-    try {
-      preprocess(*dhm);
-    }
-    catch (error status) {
-      hm->SetProcess(MakeErrorModel());
-      throw status;
-    }
-  }
-  
-  // Start reporting on generation
-  timer* watch = 0;
-  const char* which = states_only_this_time 
-                          ? "reachability set" 
-                          : "reachability graph";
-  if (startGen(*hm, which)) {
-    em->stopIO();
-    watch = makeTimer();
-  }
-
-  // Set up everything
-  if (0==lm) {
-    ms = new meddly_states;
-    meddly_varoption* mvo = makeVariableOption(*dhm, *ms);
-    DCASSERT(mvo);
-    try {
-      mvo->initializeVars();
-      DCASSERT(ms->mdd_wrap);
-      DCASSERT(ms->mxd_wrap);
-      delete mvo;
-    }
-    catch (error e) {
-      delete mvo;
-      stopGen(true, *hm, which, watch);
-      Delete(ms);
-      doneTimer(watch);
-      throw e;
-    }
-  } else {
-    ms = Share(GrabMeddlyFSMStates(lm));
-    DCASSERT(ms);
-    DCASSERT(ms->mdd_wrap);
-    DCASSERT(ms->mxd_wrap);
-  }
-
-  AllocBuffers(dhm);
-
-  // Generate process
-  try {
-    if (lm) generateProc(*dhm);
-    else    generateRSS(*dhm);
-
-    // Final report on generation
-    stopGen(false, *hm, which, watch);
-
-    // Set process
-    if (0==lm) {
-      lm = StartMeddlyFSM(ms);
-      Share(ms);
-      dhm->SetProcess(lm);
-    }
-    if (ms->nsf) {
-      ms->proc_wrap = Share(ms->mxd_wrap);
-      ms->proc = Share(ms->nsf);
-      ms->proc_uses_actual = true;
-      FinishMeddlyFSM(lm, true); 
-      lm->setCompletionEngine(0);
-    } else {
-      lm->setCompletionEngine(specifyCompletionEngine());
-    }
-    // explicit: always use actual edges
-
-    // Cleanup
-    DoneBuffers();
-
-    Delete(ms);
-    doneTimer(watch);
-
-  } // try 
-  catch (error status) {
-    stopGen(true, *hm, which, watch);
-    if (0==lm) {
-      dhm->SetProcess(MakeErrorModel());
-    } else {
-      lm->setCompletionEngine(0);
-    }
-
-    // Cleanup
-    DoneBuffers();
-
-    Delete(ms);
-    doneTimer(watch);
-
-    throw status;
-  }
-}
-
-MEDDLY::forest::policies 
-meddly_explgen_old::buildRSSPolicies() const
-{
-  MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
-  if (use_qrmxds) {
-    p.setQuasiReduced();
-  } 
-  return p;
-}
-
-void meddly_explgen_old::preprocess(dsde_hlm &m) 
-{
-  if (m.hasPartInfo()) return;
-  if (m.StartError(0)) {
-    em->cerr() << "Meddly requires a structured model (try partitioning)";
-    m.DoneError();
-  }
-  throw Engine_Failed;
-}
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                           meddly_expl  class                           *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-// #define DEBUG_FREQ
-
-/** Abstract base class for explicit generators.
-    This engine assumes that the tangible states are not yet known.
-
-    TANGROUP class needs method:
-
-    int getLevelChange() const;
-
-    VANGROUP class needs method:
-
-    void clear();
-
-    TANGROUP and VANGROUP classes need methods:
-
-    bool hasUnexplored();
-    int* getUnexplored(shared_state *);
-    bool addState(shared_state *, int* &id);
-    void reportStats(DisplayStream &out, const char* name) const;
-    shared_ddedge* shareS();
-
-    EDGEGROUP class needs methods:
-
-    void addBatch();
-    void addEdge(int* from, int* to);
-    void reportStats(DisplayStream &out, const char* name) const;
-    shared_ddedge* shareProc();
-
-
-*/ 
-template <class TANGROUP, class VANGROUP, class EDGEGROUP>
-class meddly_expl : public meddly_explgen_old {
-protected:
-  TANGROUP* tangible;
-  VANGROUP* vanishing;
-  EDGEGROUP* tan2tan;
-
-public:
-  meddly_expl();
-
-protected:
-  virtual void generateRSS(dsde_hlm &dsm);
-  virtual void generateProc(dsde_hlm &dsm);
-
-  virtual void reportStats(DisplayStream &out, bool err) const;
-
-  virtual void customReport(DisplayStream &out) const { };
-
-public:  // required for generation engines
-  inline bool hasUnexploredVanishing() const {
-    DCASSERT(vanishing);
-    return vanishing->hasUnexplored();
-  }
-  inline bool hasUnexploredTangible() const {
-    DCASSERT(tangible);
-    return tangible->hasUnexplored();
-  }
-  inline int* getUnexploredVanishing(shared_state*s) {
-    DCASSERT(vanishing);
-    return vanishing->getUnexplored(s);
-  }
-  inline int* getUnexploredTangible(shared_state*s) {
-    DCASSERT(tangible);
-    if (tan2tan) {
-      if (tangible->getLevelChange() > level_change) {
-        tan2tan->addBatch();
-      }
-    }
-#ifdef DEBUG_FREQ
-    if (tangible->getLevelChange() > level_change) {
-      em->cout() << "Level change\n";
-    }
-    s->Print(em->cout(), 0);
-    em->cout() << "\n";
-    em->cout().flush();
-#endif
-    return tangible->getUnexplored(s);
-  }
-  inline bool add(bool isVan, const shared_state* s,int* &id) {
-    if (isVan) {
-      DCASSERT(vanishing);
-      return vanishing->addState(s, id);
-    } else {
-      DCASSERT(tangible);
-      return tangible->addState(s, id);
-    }
-  }
-  inline void clearVanishing(named_msg &debug) {
-    if (debug.startReport()) {
-      debug.report() << "Eliminating vanishing states\n";
-      debug.stopIO();
-    }
-    DCASSERT(vanishing);
-    vanishing->clear();
-  }
-  inline void addEdge(int* from, int* to) {
-    DCASSERT(tan2tan);
-    return tan2tan->addEdge(from, to);
-  }
-  inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
-  {
-    if (isVan) s << "vanishing state: ";
-    else       s << "tangible  state: ";
-    curr->Print(s, 0);
-  }
-  static inline void makeIllegalID(int* &id) {
-    id = 0;
-  }
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                          meddly_expl  methods                          *
-// *                                                                        *
-// **************************************************************************
-
-template <class TG, class VG, class EG>
-meddly_expl<TG, VG, EG>::meddly_expl() : meddly_explgen_old()
-{
-  tangible = 0;
-  vanishing = 0;
-  tan2tan = 0;
-}
-
-template <class TG, class VG, class EG>
-void meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
-{
-  DCASSERT(ms->mdd_wrap);
-  if (!statesOnly() && 0==tan2tan) {
-    if (dsm.StartError(0)) {
-      em->cerr() << "Cannot build RG and RS simultaneously using ";
-      em->cerr() << getAlgName();
-      dsm.DoneError();
-    }
-    throw subengine::Engine_Failed;
-  }
-  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
-  DCASSERT(!vanishing->hasUnexplored());
-  DCASSERT(!tangible->hasUnexplored());
-  ms->states = tangible->shareS();
-  if (statesOnly()) return;
-  DCASSERT(tan2tan);
-  tan2tan->addBatch();
-  ms->nsf = tan2tan->shareProc();
-  if (ms->nsf) return;
-  if (dsm.StartError(0)) {
-    em->cerr() << "Could not obtain final RG using " << getAlgName();
-    dsm.DoneError();
-  }
-  throw subengine::Engine_Failed;
-}
-
-template <class TG, class VG, class EG>
-void meddly_expl<TG, VG, EG>::generateProc(dsde_hlm &dsm)
-{
-  DCASSERT(ms->mdd_wrap);
-  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
-  DCASSERT(!vanishing->hasUnexplored());
-  DCASSERT(tan2tan);
-  tan2tan->addBatch();
-  ms->nsf = tan2tan->shareProc();
-  if (ms->nsf) return;
-  if (dsm.StartError(0)) {
-    em->cerr() << "Could not obtain final RG using " << getAlgName();
-    dsm.DoneError();
-  }
-  throw subengine::Engine_Failed;
-}
-
-template <class TG, class VG, class EG>
-void meddly_expl<TG, VG, EG>::reportStats(DisplayStream &out, bool err) const
-{
-  DCASSERT(ms);
-  ms->reportStats(out);
-  customReport(out);
-  DCASSERT(tangible);
-  tangible->reportStats(out, "tangible");
-  DCASSERT(vanishing);
-  vanishing->reportStats(out, "vanishing");
-  if (tan2tan) {
-    tan2tan->reportStats(out, "reachability graph");
-  }
-}
-
-
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *              Generators based on adding lists of minterms              *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
-// **************************************************************************
-// *                                                                        *
-// *                          meddly_expl_mt class                          *
-// *                                                                        *
-// **************************************************************************
-
-/** Abstract base class for explicit generators using minterm batches.
-    We use class edge_minterms for the reachability graph.
-*/ 
-template <class TG, class VG>
-class meddly_expl_mt : public meddly_expl <TG, VG, edge_minterms> {
-protected:
-  minterm_pool* minterms;
-public:
-  meddly_expl_mt() : meddly_expl<TG, VG, edge_minterms>() { 
-    minterms = 0; 
-  }
-protected:
-  virtual void customReport(DisplayStream &out) const {
-    DCASSERT(minterms);
-    minterms->reportStats(out);
-  };
-};
-
-
-// **************************************************************************
-// *                                                                        *
-// *                        meddly_expl_mt_sr2 class                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Explicit generation using Meddly and batches of minterms.
-    We assume that the tangible states are already known.
-    In this version, unexplored states are removed one at a time.
-*/
-class meddly_expl_mt_sr2: 
-  public meddly_expl_mt <mt_known_stategroup, mt_sr_stategroup> 
-{
-protected:
-  virtual const char* getAlgName() const { return "expl_mt_sr2"; }
-  virtual void AllocBuffers(const dsde_hlm* dhm) {
-    minterms = new minterm_pool(
-      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
-    );
-    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
-    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
-    if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
-    } 
-  };
-  virtual void DoneBuffers() {
-    delete tangible;
-    delete vanishing;
-    delete tan2tan;
-    delete minterms;
-    tangible = 0;
-    vanishing = 0;
-    minterms = 0;
-    tan2tan = 0;
-  }
-  virtual subengine* specifyCompletionEngine() { return this; }
-public:
-  static meddly_expl_mt_sr2* getInstance() {
-    static meddly_expl_mt_sr2* foo = 0;
-    if (0==foo) foo = new meddly_expl_mt_sr2;
-    return foo;
-  }
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                        meddly_expl_mt_sr  class                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Explicit generation using Meddly and batches of minterms.
-    In this version, unexplored states are removed one at a time.
-*/
-class meddly_expl_mt_sr : 
-  public meddly_expl_mt <mt_sr_stategroup, mt_sr_stategroup> 
-{
-protected:
-  virtual const char* getAlgName() const { return "expl_mt_sr"; }
-  virtual void AllocBuffers(const dsde_hlm* dhm) {
-    minterms = new minterm_pool(
-      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
-    );
-    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
-    tangible = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
-    if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
-    } 
-  };
-  virtual void DoneBuffers() {
-    delete tangible;
-    delete vanishing;
-    delete tan2tan;
-    delete minterms;
-    tangible = 0;
-    vanishing = 0;
-    minterms = 0;
-    tan2tan = 0;
-  }
-  virtual subengine* specifyCompletionEngine() {
-    return meddly_expl_mt_sr2::getInstance();
-  }
-};
-
-meddly_expl_mt_sr the_meddly_expl_mt_sr;
-
-
-// **************************************************************************
-// *                                                                        *
-// *                        meddly_expl_mt_br2 class                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Explicit generation using Meddly and batches of minterms.
-    We assume that the tangible states are already known.
-    In this version, unexplored states are enumerated in batch.
-*/
-class meddly_expl_mt_br2
-: public meddly_expl_mt <mt_known_stategroup, mt_br_stategroup> 
-{
-protected:
-  virtual const char* getAlgName() const { return "expl_mt_br2"; }
-  virtual void AllocBuffers(const dsde_hlm* dhm) {
-    minterms = new minterm_pool(
-      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
-    );
-    vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
-    );
-    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
-    tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
-  };
-  virtual void DoneBuffers() {
-    delete tangible;
-    delete vanishing;
-    delete tan2tan;
-    delete minterms;
-    tangible = 0;
-    vanishing = 0;
-    minterms = 0;
-    tan2tan = 0;
-  }
-  virtual subengine* specifyCompletionEngine() { return this; }
-public:
-  static meddly_expl_mt_br2* getInstance() {
-    static meddly_expl_mt_br2* foo = 0;
-    if (0==foo) foo = new meddly_expl_mt_br2;
-    return foo;
-  }
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                        meddly_expl_mt_br  class                        *
-// *                                                                        *
-// **************************************************************************
-
-/** Explicit generation using Meddly and batches of minterms.
-    In this version, unexplored states are enumerated in batch.
-*/
-class meddly_expl_mt_br
-: public meddly_expl_mt <mt_br_stategroup, mt_br_stategroup> 
-{
-protected:
-  virtual const char* getAlgName() const { return "expl_mt_br"; }
-  virtual void AllocBuffers(const dsde_hlm* dhm) {
-    minterms = new minterm_pool(
-      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
-    );
-    vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
-    );
-    tangible = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
-    );
-    if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
-    } 
-  };
-  virtual void DoneBuffers() {
-    delete tangible;
-    delete vanishing;
-    delete tan2tan;
-    delete minterms;
-    tangible = 0;
-    vanishing = 0;
-    minterms = 0;
-    tan2tan = 0;
-  }
-  virtual subengine* specifyCompletionEngine() {
-    return meddly_expl_mt_br2::getInstance();
-  }
-};
-
-meddly_expl_mt_br the_meddly_expl_mt_br;
-
-
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *            Generators based on  the 2001 explicit CMD paper            *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
-
+#ifdef ENABLE_CMDS
 // **************************************************************************
 // *                                                                        *
 // *                          edge_2001_cmds class                          *
@@ -2621,6 +953,1762 @@ edge_2001_cmds::submatrix* edge_2001_cmds::Reduce(submatrix* n)
   return find;
 }
 
+#endif  // ifdef ENABLE_CMDS
+
+// **************************************************************************
+// *                                                                        *
+// *                       mt_known_stategroup  class                       *
+// *                                                                        *
+// **************************************************************************
+
+// Stategroups for known sets, using minterm batches
+class mt_known_stategroup {
+  meddly_encoder &wrap;
+  minterm_pool &mp;
+  MEDDLY::enumerator s_iter;
+  int* exploring;
+  int* discovering;
+public:
+  mt_known_stategroup(meddly_encoder &w, minterm_pool &m, shared_ddedge* S);
+  ~mt_known_stategroup();
+
+  inline bool hasUnexplored() const {
+    return s_iter;
+  }
+  int* getUnexplored(shared_state *);
+  bool addState(const shared_state *, int* &id);
+
+  inline void reportStats(DisplayStream &out, const char* name) const { }
+  inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
+
+  // hook for cool stuff
+  inline int getLevelChange() const { return 0; }
+};
+
+mt_known_stategroup::
+mt_known_stategroup(meddly_encoder &w, minterm_pool &m, shared_ddedge* S)
+ : wrap(w), mp(m)
+{
+  DCASSERT(S);
+  s_iter.start(S->E);
+  exploring = mp.getMinterm();
+  discovering = mp.getMinterm();
+}
+
+mt_known_stategroup::~mt_known_stategroup()
+{
+  mp.doneMinterm(exploring);
+  mp.doneMinterm(discovering);
+}
+
+int*
+mt_known_stategroup
+::getUnexplored(shared_state *s)
+{
+  DCASSERT(s_iter);
+  DCASSERT(exploring);
+  mp.doneMinterm(exploring);
+  exploring = mp.getMinterm();
+  mp.fillMinterm(exploring, s_iter.getAssignments());
+  ++s_iter;
+  try {
+    wrap.minterm2state(exploring, s);
+    return exploring;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return 0;
+  }
+}
+
+bool
+mt_known_stategroup
+::addState(const shared_state *s, int* &id)
+{
+  DCASSERT(discovering);
+  mp.doneMinterm(discovering);
+  discovering = mp.getMinterm();
+  try {
+    wrap.state2minterm(s, discovering);
+    id = discovering;
+    return false;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return false;
+  }
+}
+
+// **************************************************************************
+// *                                                                        *
+// *                         mt_sr_stategroup class                         *
+// *                                                                        *
+// **************************************************************************
+
+// Stategroups for minterm batches, one state removed at a time.
+class mt_sr_stategroup {
+protected:
+  meddly_encoder &wrap;
+  minterm_pool &mp;
+  shared_ddedge* S;
+  shared_ddedge* U;
+  int** batch;
+  int alloc;
+  int used;
+  int* exploring;
+  int* discovering;
+  shared_ddedge* tempedge;
+#ifdef MEASURE_STATS
+  int min_batch;
+  int max_batch;
+  long num_batches;
+  long num_additions;
+#endif
+public:
+  mt_sr_stategroup(meddly_encoder &w, minterm_pool &m, int b);
+  ~mt_sr_stategroup();
+
+  inline bool hasUnexplored() const {
+    DCASSERT(U);
+    return (used>0) || U->E.getNode();
+  }
+  int* getUnexplored(shared_state *);
+  bool addState(const shared_state *, int* &id);
+
+  inline void reportStats(DisplayStream &out, const char* name) const {
+    out << "\tBatch for " << name << " required ";
+    size_t batchmem = alloc*sizeof(int);
+    out.PutMemoryCount(batchmem, 3);
+    out << "\n";
+#ifdef MEASURE_STATS
+    if (num_batches) {
+      out << "\t\t# batches: " << num_batches << "\n";
+      out << "\t\tmin batch: " << min_batch << "\n";
+      out << "\t\tmax batch: " << max_batch << "\n";
+      double avg = num_additions;
+      avg /= num_batches;
+      out << "\t\tavg batch: " << avg << "\n";
+    }
+#endif
+  }
+  inline shared_ddedge* shareS() { return Share(S); }
+
+  inline int getLevelChange() const { return 0; }
+
+  inline void clear() {
+    DCASSERT(!hasUnexplored());
+    S->E = U->E;
+  }
+
+protected:
+  inline void addBatch() {
+    if (0==used) return;
+    try {
+      wrap.createMinterms(batch, used, tempedge);
+      S->E += tempedge->E;
+      U->E += tempedge->E;
+      for (int i=0; i<used; i++) {
+        mp.doneMinterm(batch[i]);
+        batch[i] = 0;
+      }
+#ifdef MEASURE_STATS
+      min_batch = MIN(min_batch, used);
+      max_batch = MAX(max_batch, used);
+      num_batches++;
+      num_additions += used;
+#endif
+      used = 0;
+    } // try
+    catch (sv_encoder::error e) {
+      convert(e);
+    }
+  }
+};
+
+// **************************************************************************
+// *                        mt_sr_stategroup methods                        *
+// **************************************************************************
+
+mt_sr_stategroup::
+mt_sr_stategroup(meddly_encoder &w, minterm_pool &m, int bs)
+ : wrap(w), mp(m)
+{
+  S = new shared_ddedge(wrap.getForest());
+  U = new shared_ddedge(wrap.getForest());
+  alloc = bs;
+  used = 0;
+  batch = new int*[alloc];
+  for (int i=0; i<alloc; i++) batch[i] = 0;
+  exploring = mp.getMinterm();
+  discovering = mp.getMinterm();
+  tempedge = new shared_ddedge(wrap.getForest());
+#ifdef MEASURE_STATS
+  min_batch = INT_MAX;
+  max_batch = 0;
+  num_batches = 0;
+  num_additions = 0;
+#endif
+}
+
+mt_sr_stategroup::~mt_sr_stategroup()
+{
+  // DON'T delete minterms
+  delete[] batch;
+  Delete(S);
+  Delete(U);
+  Delete(tempedge);
+  mp.doneMinterm(exploring);
+  mp.doneMinterm(discovering);
+}
+
+int*
+mt_sr_stategroup
+::getUnexplored(shared_state *s)
+{
+  DCASSERT(exploring);
+  mp.doneMinterm(exploring);
+  exploring = mp.getMinterm();
+  if (0==U->E.getNode()) {
+    addBatch();
+  }
+  DCASSERT(U->E.getNode());
+  try {
+    MEDDLY::enumerator first(U->E);
+    mp.fillMinterm(exploring, first.getAssignments());
+    wrap.minterm2state(exploring, s);
+    MEDDLY::dd_edge temp(wrap.getForest());
+    wrap.getForest()->createEdge(&exploring, 1, temp);
+    U->E -= temp;
+    return exploring;
+  }
+  catch (MEDDLY::error ce) {
+    convert(ce);
+    return 0;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return 0;
+  }
+}
+
+bool
+mt_sr_stategroup
+::addState(const shared_state *s, int* &id)
+{
+  DCASSERT(discovering);
+  mp.doneMinterm(discovering);
+  discovering = mp.getMinterm();
+  id = discovering;
+  bool seen;
+  try {
+    wrap.state2minterm(s, discovering);
+    wrap.getForest()->evaluate(S->E, discovering, seen);
+  }
+  catch (MEDDLY::error e) {
+    convert(e);
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+  }
+  if (seen) return false;
+  batch[used] = mp.shareMinterm(discovering);
+  used++;
+  if (used >= alloc) {
+    addBatch();
+  }
+  return true;
+}
+
+
+// **************************************************************************
+// *                                                                        *
+// *                         mt_br_stategroup class                         *
+// *                                                                        *
+// **************************************************************************
+
+// Stategroups for minterm batches, several states removed at a time.
+class mt_br_stategroup : public mt_sr_stategroup {
+  shared_ddedge* B; // batch for enumerating unexplored
+  MEDDLY::enumerator b_iter;
+  bool maximize_refills;
+#ifdef MEASURE_STATS
+  long iterator_resets;
+#endif
+public:
+  mt_br_stategroup(meddly_encoder &w, minterm_pool &m, int b, bool maxref);
+  ~mt_br_stategroup();
+
+  inline bool hasUnexplored() const {
+    if (b_iter) return true;  // still traversing B
+    DCASSERT(U);
+    return (used>0) || U->E.getNode();
+  }
+  int* getUnexplored(shared_state *);
+
+#ifdef MEASURE_STATS
+  inline void reportStats(DisplayStream &out, const char* name) const {
+    mt_sr_stategroup::reportStats(out, name);
+    if (iterator_resets) {
+      out << "\t\t#iterator resets: " << iterator_resets << "\n";
+    }
+  }
+#endif
+};
+
+// **************************************************************************
+// *                        mt_br_stategroup methods                        *
+// **************************************************************************
+
+mt_br_stategroup::
+mt_br_stategroup(meddly_encoder &w, minterm_pool &m, int bs, bool maxref)
+ : mt_sr_stategroup(w, m, bs)
+{
+  B = new shared_ddedge(wrap.getForest());
+  maximize_refills = maxref;
+#ifdef MEASURE_STATS
+  iterator_resets = 0;
+#endif
+}
+
+mt_br_stategroup::~mt_br_stategroup()
+{
+  Delete(B);
+}
+
+int*
+mt_br_stategroup
+::getUnexplored(shared_state *s)
+{
+  if (!b_iter) {
+    // need to refill B
+    if (0==U->E.getNode() || maximize_refills) {
+      addBatch();
+    }
+    DCASSERT(U->E.getNode());
+    // set B=U, U=0
+    SWAP(B, U);
+    wrap.getForest()->createEdge(false, U->E);
+    // restart iterator
+    b_iter.start(B->E);
+#ifdef MEASURE_STATS
+    iterator_resets++;
+#endif
+  }
+  DCASSERT(b_iter);
+  DCASSERT(exploring);
+  mp.doneMinterm(exploring);
+  exploring = mp.getMinterm();
+  mp.fillMinterm(exploring, b_iter.getAssignments());
+  ++b_iter;
+  try {
+    wrap.minterm2state(exploring, s);
+    return exploring;
+  }
+  catch (sv_encoder::error e) {
+    convert(e);
+    return 0;
+  }
+}
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// * Generator classes.  These are thin wrappers around the above classes,  *
+// * and are used when calling the reachability set / reachability graph /  *
+// * Markov chain generation engine template class.  The class interfaces   *
+// * are all similar, and are imposed by the generation template functions. *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+
+/**
+  Generic wrapper around data structures, for generation
+*/
+template <class TANGR, class VANGR, class EDGEGR>
+class gen_wrapper_templ {
+    bool states_only;
+    meddly_states &ms;
+  public:
+    minterm_pool* minterms;
+    TANGR* tangible;
+    VANGR* vanishing;
+    EDGEGR* edges;
+  public:
+    gen_wrapper_templ(bool so, meddly_states &_ms, minterm_pool* mp,
+      TANGR *t, VANGR *v, EDGEGR *e) : ms(_ms)
+    {
+      states_only = so;
+      minterms = mp;
+      tangible = t;
+      vanishing = v;
+      edges = e;
+    }
+
+    ~gen_wrapper_templ() {
+      delete tangible;
+      delete vanishing;
+      delete edges;
+      delete minterms;
+    }
+
+    //
+    // Really convenient methods
+    //
+
+    inline void generateRG(named_msg &debug, dsde_hlm &hm) {
+      generateRGt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
+        (debug, hm, *this);
+
+      if (edges) edges->addBatch(); // add the final batch of edges
+
+      // transfer everything
+      if (0==ms.states) ms.states = tangible->shareS();
+      if (0==ms.nsf) if (edges) {
+        ms.nsf = edges->shareProc();
+      }
+    }
+
+    void reportStats(DisplayStream &out, const char* proc) {
+      ms.reportStats(out);
+      if (minterms)   minterms->reportStats(out);
+      if (tangible)   tangible->reportStats(out, "tangible");
+      if (vanishing)  vanishing->reportStats(out, "vanishing");
+      if (edges)      edges->reportStats(out, proc);
+    }
+
+    //
+    // required methods for RS generation
+    //
+
+    inline bool add(bool isVan, const shared_state* s, int* &id) {
+      if (isVan) {
+        DCASSERT(vanishing);
+        return vanishing->addState(s, id);
+      } else {
+        DCASSERT(tangible);
+        return tangible->addState(s, id);
+      }
+    }
+
+    inline bool hasUnexploredVanishing() const {
+      DCASSERT(vanishing);
+      return vanishing->hasUnexplored();
+    }
+
+    inline bool hasUnexploredTangible() const {
+      DCASSERT(tangible);
+      return tangible->hasUnexplored();
+    }
+
+    inline int* getUnexploredVanishing(shared_state *s) {
+      DCASSERT(vanishing);
+      return vanishing->getUnexplored(s);
+    }
+
+    inline int* getUnexploredTangible(shared_state *s) {
+      DCASSERT(tangible);
+      return tangible->getUnexplored(s);
+    }
+
+    inline void clearVanishing(named_msg &debug) {
+      if (debug.startReport()) {
+        debug.report() << "Eliminating vanishing states\n";
+        debug.stopIO();
+      }
+      DCASSERT(vanishing);
+      vanishing->clear();
+    }
+
+    inline bool statesOnly() const {
+      return states_only;
+    }
+
+    inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
+    {
+      if (isVan) s << "vanishing state: ";
+      else       s << "tangible  state: ";
+      curr->Print(s, 0);
+    }
+    static inline void makeIllegalID(int* &id) {
+      id = 0;
+    }
+
+    //
+    // required methods for RG generation
+    //
+
+    inline void addInitial(const int*) {
+      // wasn't this built already?
+    }
+
+    inline void addEdge(int* from, int* to) {
+      DCASSERT(edges);
+      return edges->addEdge(from, to);
+    }
+
+    //
+    // required methods for MC generation
+    //
+
+    inline void eliminateVanishing(named_msg &debug) {
+      if (debug.startReport()) {
+        debug.report() << "Eliminating vanishing states\n";
+        debug.stopIO();
+      }
+      DCASSERT(vanishing);
+      edges->eliminateVanishing();
+      vanishing->clear();
+    }
+
+    inline void addInitial(bool isVan, const int* id, double wt) {
+      // TBD - not sure about this one
+    }
+
+    inline void addTTEdge(int* from, int* to, double wt) {
+      DCASSERT(edges);
+      edges->addTTEdge(from, to, wt);
+    }
+
+    inline void addTVEdge(int* from, int* to, double wt) {
+      DCASSERT(edges);
+      edges->addTVEdge(from, to, wt);
+    }
+
+    inline void addVTEdge(int* from, int* to, double wt) {
+      DCASSERT(edges);
+      edges->addVTEdge(from, to, wt);
+    }
+
+    inline void addVVEdge(int* from, int* to, double wt) {
+      DCASSERT(edges);
+      edges->addVVEdge(from, to, wt);
+    }
+
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *  The actual explicit Meddly generation engine.  Implementation simply  *
+// *  builds an appropriate instance of one of the generator classes, and   *
+// *                  sends it to the generation function.                  *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *                          meddly_explgen class                          *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Gigantic class for all explicit process generation with meddly.
+    States may be added in batch, where the batch size is taken
+    from an option.
+    This is the "main" engine, for when reachable states are not yet known.
+*/
+class meddly_explgen : public meddly_procgen {
+  friend void InitializeExplicitMeddly(exprman* em);
+  static long batch_size;
+  static int  matrix_style;
+  static bool batch_removal;
+  static bool maximize_batch_refills;
+  bool states_only_this_time;
+
+protected:
+#ifdef ENABLE_CMDS
+  static const int CMD = 0;
+  static const int IRMXD = 1;
+  static const int QRMXD = 2;
+  static const int NUM_MX_STYLES = 3;
+#else
+  static const int IRMXD = 0;
+  static const int QRMXD = 1;
+  static const int NUM_MX_STYLES = 2;
+#endif
+
+protected:
+  meddly_states* ms;
+public:
+  meddly_explgen();
+
+  virtual MEDDLY::forest::policies buildRSSPolicies() const;
+
+protected:
+  static void preprocess(dsde_hlm &m);
+
+public:
+  virtual bool AppliesToModelType(hldsm::model_type mt) const;
+  virtual void RunEngine(hldsm* m, result &states_only); 
+
+  inline static int getBatchSize() { return batch_size; }
+  inline static bool getMBR() { return maximize_batch_refills; }
+#ifdef ENABLE_CMDS
+  inline static bool isCMD() { return CMD == matrix_style; }
+#endif
+
+protected:
+  inline bool startGen(const hldsm &hm, const char* proc) const {
+    if (!meddly_procgen::startGen(hm, proc)) return false;
+    em->report() << "\n";
+    em->newLine();
+    em->report() << "Using Meddly: ";
+    showAlgorithm(em->report());
+    em->report() << getStyleName() << " vars.";
+    showMatrix(em->report());
+    em->report() << "\n";
+    em->report() << "\tMax batch: " << batch_size << "\n";
+    return true;
+  }
+
+  static inline void showAlgorithm(OutputStream &s) {
+    s << "Explicit, ";
+    if (batch_removal)  s << "batch";
+    else                s << "single";
+    s << " removal, ";
+  }
+
+  inline void showMatrix(OutputStream &s) const {
+    if (states_only_this_time) return;
+    switch (matrix_style) {
+      case CMD:
+        s << ", CMDs";
+        return;
+      case IRMXD:
+        s << ", IRMxDs";
+        return;
+      case QRMXD:
+        s << ", QRMxDs";
+        return;
+      default:
+        s << ", unknown DDs";
+    }
+  }
+
+  void generateRS(dsde_hlm &hm);
+  void generateRG(dsde_hlm &hm);
+  void generateMC(dsde_hlm &hm);
+
+private:
+  template <class GWRAP>
+  inline void DoRS(dsde_hlm &hm, GWRAP &G) {
+    //
+    // Start reporting on generation
+    //
+    timer* watch = 0;
+    if (startGen(hm, "reachability set")) {
+      em->stopIO();
+      watch = makeTimer();
+    }
+
+    //
+    // Generate, in a try block
+    //
+    try {
+
+      em->waitTerm();
+      G.generateRG(debug, hm);
+
+      // Reporting
+      if (meddly_procgen::stopGen(false, hm.Name(), "reachability set", watch)) {
+        G.reportStats(em->report(), 0);
+        em->stopIO();
+      }
+
+      // Set process
+      lldsm* lm = StartMeddlyFSM(ms);
+      Share(ms);
+      hm.SetProcess(lm);
+      lm->setCompletionEngine(this);
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      return;
+    }
+    catch (subengine::error e) {
+      // Reporting
+      if (meddly_procgen::stopGen(true, hm.Name(), "reachability set", watch)) {
+        G.reportStats(em->report(), 0);
+        em->stopIO();
+      }
+
+      // Set process
+      hm.SetProcess(MakeErrorModel());
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      throw;
+    }
+  }
+
+
+  template <class GWRAP>
+  inline void DoRG(dsde_hlm &hm, GWRAP &G) {
+    //
+    // Start reporting on generation
+    //
+    timer* watch = 0;
+    if (startGen(hm, "reachability graph")) {
+      em->stopIO();
+      watch = makeTimer();
+    }
+
+    //
+    // Generate, in a try block
+    //
+    try {
+
+      em->waitTerm();
+      G.generateRG(debug, hm);
+
+      // Reporting
+      if (meddly_procgen::stopGen(false, hm.Name(), "reachability graph", watch)) {
+        G.reportStats(em->report(), "reachability graph");
+        em->stopIO();
+      }
+
+      // Set process
+      lldsm* lm = hm.GetProcess();
+      if (0==lm) {
+        lm = StartMeddlyFSM(ms);
+        Share(ms);
+        hm.SetProcess(lm);
+      }
+      ms->proc_wrap = Share(ms->mxd_wrap);
+      ms->proc = Share(ms->nsf);
+      ms->proc_uses_actual = true;
+      FinishMeddlyFSM(lm, true);
+      lm->setCompletionEngine(0);
+      if (0==ms->nsf) {
+          if (hm.StartError(0)) {
+            em->cerr() << "Could not obtain final RG";
+            hm.DoneError();
+          }
+          // So we don't try to rebuild later
+          hm.SetProcess(MakeErrorModel());
+      }
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      return;
+    }
+    catch (subengine::error e) {
+      // Reporting
+      if (meddly_procgen::stopGen(true, hm.Name(), "reachability graph", watch)) {
+        G.reportStats(em->report(), "reachability graph");
+        em->stopIO();
+      }
+
+      // Set process
+      hm.SetProcess(MakeErrorModel());
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      throw;
+    }
+  }
+    
+    
+};
+
+long meddly_explgen::batch_size;
+int  meddly_explgen::matrix_style;
+bool meddly_explgen::batch_removal;
+bool meddly_explgen::maximize_batch_refills;
+
+meddly_explgen the_meddly_explgen;
+
+// **************************************************************************
+// *                                                                        *
+// *                         meddly_explgen methods                         *
+// *                                                                        *
+// **************************************************************************
+
+meddly_explgen::meddly_explgen() : meddly_procgen()
+{
+  ms = 0;
+}
+
+MEDDLY::forest::policies 
+meddly_explgen::buildRSSPolicies() const
+{
+  MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
+  if (QRMXD == matrix_style) {
+    p.setQuasiReduced();
+  } 
+  return p;
+}
+
+void meddly_explgen::preprocess(dsde_hlm &m) 
+{
+  if (m.hasPartInfo()) return;
+  if (m.StartError(0)) {
+    em->cerr() << "Meddly requires a structured model (try partitioning)";
+    m.DoneError();
+  }
+  throw Engine_Failed;
+}
+
+bool meddly_explgen::AppliesToModelType(hldsm::model_type mt) const
+{
+  return (hldsm::Asynch_Events == mt);
+}
+
+void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
+{
+  DCASSERT(hm);
+  DCASSERT(AppliesToModelType(hm->Type()));
+  DCASSERT(states_only.isNormal());
+  states_only_this_time = states_only.getBool();
+  lldsm* lm = hm->GetProcess();
+  if (lm) {
+    // we already have something, deal with it
+    subengine* e = lm->getCompletionEngine();
+    if (0==e)                   return;
+    if (states_only.getBool())  return;
+    if (e!=this)                return e->RunEngine(hm, states_only);
+  } 
+
+  dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
+  DCASSERT(dhm);
+  if (0==lm) { 
+    // Preprocess
+    try {
+      preprocess(*dhm);
+    }
+    catch (error status) {
+      hm->SetProcess(MakeErrorModel());
+      throw status;
+    }
+  }
+
+  //
+  // Set up everything
+  //
+  if (0==lm) {
+    ms = new meddly_states;
+    meddly_varoption* mvo = makeVariableOption(*dhm, *ms);
+    DCASSERT(mvo);
+    try {
+      mvo->initializeVars();
+      DCASSERT(ms->mdd_wrap);
+      DCASSERT(ms->mxd_wrap);
+      delete mvo;
+    }
+    catch (error e) {
+      delete mvo;
+      Delete(ms);
+      ms = 0;
+      throw e;
+    }
+  } else {
+    ms = Share(GrabMeddlyFSMStates(lm));
+    DCASSERT(ms);
+    DCASSERT(ms->mdd_wrap);
+    DCASSERT(ms->mxd_wrap);
+  }
+
+  //
+  // Generate process
+  //
+  if (states_only_this_time) {
+    return generateRS(*dhm);
+  }
+  if (hm->GetProcessType() == lldsm::FSM) {
+    return generateRG(*dhm);
+  } else {
+    return generateMC(*dhm);
+  }
+}
+
+void meddly_explgen::generateRS(dsde_hlm &hm)
+{
+  DCASSERT(0==hm.GetProcess());
+
+  // Everybody uses this
+  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
+    1+ms->mdd_wrap->getNumDDVars()
+  );
+
+  //
+  // Only 2 cases to consider :^)
+  //
+
+  if (batch_removal) {
+    //
+    // Batch removal
+    //
+    gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
+      G(
+        true, *ms, mp,
+        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+        (edge_minterms*) 0
+      );
+    
+    DoRS(hm, G);
+    return;
+  } else {
+    //
+    // Single removal
+    //
+    gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
+      G(
+        true, *ms, mp,
+        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+        (edge_minterms*) 0
+      );
+    
+    DoRS(hm, G);
+    return;
+  }
+
+}
+
+void meddly_explgen::generateRG(dsde_hlm &hm)
+{
+  // Everybody uses this
+  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
+    1+ms->mdd_wrap->getNumDDVars()
+  );
+
+  //
+  // A little ugly - consider all possible cases "by hand"
+  // 
+
+  //
+  // CMDs
+  //
+#ifdef ENABLE_CMDS
+  if (isCMD()) {
+    if (hm.GetProcess()) {
+      //
+      // Second pass
+      //
+      if (batch_removal) {
+          //
+          // Batch removal
+          //
+          gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+    
+          DoRG(hm, G);
+          return;
+      } else {
+        //
+          // Single removal
+          //
+          gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+      
+          DoRG(hm, G);
+          return;
+      }
+    } else {
+      //
+      // First pass
+      //
+      if (batch_removal) {
+          //
+          // Batch removal
+          //
+          gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+    
+          DoRG(hm, G);
+          return;
+      } else {
+          //
+          // Single removal
+          //
+          gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+      
+          DoRG(hm, G);
+          return;
+      }
+    }
+  }
+#endif
+
+  //
+  // "normal" matrix
+  //
+  if (hm.GetProcess()) {
+    //
+    // Second pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+  
+        DoRG(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+    
+        DoRG(hm, G);
+        return;
+    }
+  } else {
+    //
+    // First pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+  
+        DoRG(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+        );
+    
+        DoRG(hm, G);
+        return;
+    }
+  }
+}
+
+void meddly_explgen::generateMC(dsde_hlm &hm)
+{
+  throw Engine_Failed;
+}
+
+// **************************************************************************************************************************************
+#ifdef ENABLE_OLD_IMPLEMENTATION
+// **************************************************************************************************************************************
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *                        meddly_explgen_old class                        *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Abstract base class for explicit process generation with meddly.
+    States may be added in batch, where the batch size is taken
+    from an option.
+    This engine is for when the reachable states are not yet known.
+    Common stuff is implemented here :^)
+*/
+class meddly_explgen_old : public meddly_procgen {
+  friend void InitializeExplicitMeddly(exprman* em);
+  static long batch_size;
+  static bool use_qrmxds;
+  static bool maximize_batch_refills;
+  bool states_only_this_time;
+
+protected:
+  static long level_change;
+  meddly_states* ms;
+public:
+  meddly_explgen_old();
+  virtual bool AppliesToModelType(hldsm::model_type mt) const;
+  virtual void RunEngine(hldsm* m, result &states_only); 
+
+  inline static int getBatchSize() { return batch_size; }
+  inline static bool getMBR() { return maximize_batch_refills; }
+
+  virtual MEDDLY::forest::policies buildRSSPolicies() const;
+
+protected:
+  virtual void generateRSS(dsde_hlm &dsm) = 0;
+  virtual void generateProc(dsde_hlm &dsm) = 0;
+  virtual const char* getAlgName() const = 0;
+
+  virtual void AllocBuffers(const dsde_hlm* dhm) = 0;
+  virtual void DoneBuffers() = 0;
+  virtual void reportStats(DisplayStream &out, bool err) const = 0;
+
+  static void preprocess(dsde_hlm &m);
+
+  inline bool startGen(const hldsm &hm, const char* proc) const {
+    if (!meddly_procgen::startGen(hm, proc)) return false;
+    em->report() << "\n";
+    em->newLine();
+    em->report() << "Using Meddly: ";
+    em->report() << getAlgName() << " algorithm, ";
+    em->report() << getStyleName() << " vars.";
+    if (!states_only_this_time) {
+      if (use_qrmxds) em->report() << ", quasi-reduced MxDs";
+      else            em->report() << ", identity-reduced MxDs";
+    }
+    em->report() << "\n";
+    em->report() << "\tMax batch: " << batch_size;
+    em->report() << " \tLevel change: " << level_change << "\n";
+    return true;
+  }
+
+  inline void stopGen(bool err, const hldsm &hm, const char* proc, const timer* w) const {
+    if (!meddly_procgen::stopGen(err, hm.Name(), proc, w)) return;
+    reportStats(em->report(), err);
+    em->stopIO();
+  }
+
+  /** Must be given in derived classes.
+      Specifies which engine to call if we build the reachability set only,
+      first, and then want to build the underlying process.
+  */
+  virtual subengine* specifyCompletionEngine() = 0;
+  // virtual subengine* specifyCompletionEngine() { return this; }
+
+
+public: // for explicit generation
+  inline bool statesOnly() const { 
+    return states_only_this_time; 
+  }
+  inline void addInitial(const int*) {
+    // wasn't this built already?
+  }
+};
+
+long meddly_explgen_old::batch_size;
+long meddly_explgen_old::level_change;
+bool meddly_explgen_old::use_qrmxds;
+bool meddly_explgen_old::maximize_batch_refills;
+
+
+// **************************************************************************
+// *                                                                        *
+// *                       meddly_explgen_old methods                       *
+// *                                                                        *
+// **************************************************************************
+
+meddly_explgen_old::meddly_explgen_old() : meddly_procgen()
+{
+  ms = 0;
+}
+
+bool meddly_explgen_old::AppliesToModelType(hldsm::model_type mt) const
+{
+  return (hldsm::Asynch_Events == mt);
+}
+
+void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
+{
+  DCASSERT(hm);
+  DCASSERT(AppliesToModelType(hm->Type()));
+  DCASSERT(states_only.isNormal());
+  states_only_this_time = states_only.getBool();
+  lldsm* lm = hm->GetProcess();
+  if (lm) {
+    // we already have something, deal with it
+    subengine* e = lm->getCompletionEngine();
+    if (0==e)                   return;
+    if (states_only.getBool())  return;
+    if (e!=this)                return e->RunEngine(hm, states_only);
+  } 
+
+  dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
+  DCASSERT(dhm);
+  if (0==lm) { 
+    // Preprocess
+    try {
+      preprocess(*dhm);
+    }
+    catch (error status) {
+      hm->SetProcess(MakeErrorModel());
+      throw status;
+    }
+  }
+  
+  // Start reporting on generation
+  timer* watch = 0;
+  const char* which = states_only_this_time 
+                          ? "reachability set" 
+                          : "reachability graph";
+  if (startGen(*hm, which)) {
+    em->stopIO();
+    watch = makeTimer();
+  }
+
+  // Set up everything
+  if (0==lm) {
+    ms = new meddly_states;
+    meddly_varoption* mvo = makeVariableOption(*dhm, *ms);
+    DCASSERT(mvo);
+    try {
+      mvo->initializeVars();
+      DCASSERT(ms->mdd_wrap);
+      DCASSERT(ms->mxd_wrap);
+      delete mvo;
+    }
+    catch (error e) {
+      delete mvo;
+      stopGen(true, *hm, which, watch);
+      Delete(ms);
+      doneTimer(watch);
+      throw e;
+    }
+  } else {
+    ms = Share(GrabMeddlyFSMStates(lm));
+    DCASSERT(ms);
+    DCASSERT(ms->mdd_wrap);
+    DCASSERT(ms->mxd_wrap);
+  }
+
+  AllocBuffers(dhm);
+
+  // Generate process
+  try {
+    if (lm) generateProc(*dhm);
+    else    generateRSS(*dhm);
+
+    // Final report on generation
+    stopGen(false, *hm, which, watch);
+
+    // Set process
+    if (0==lm) {
+      lm = StartMeddlyFSM(ms);
+      Share(ms);
+      dhm->SetProcess(lm);
+    }
+    if (ms->nsf) {
+      ms->proc_wrap = Share(ms->mxd_wrap);
+      ms->proc = Share(ms->nsf);
+      ms->proc_uses_actual = true;
+      FinishMeddlyFSM(lm, true); 
+      lm->setCompletionEngine(0);
+    } else {
+      lm->setCompletionEngine(specifyCompletionEngine());
+    }
+    // explicit: always use actual edges
+
+    // Cleanup
+    DoneBuffers();
+
+    Delete(ms);
+    doneTimer(watch);
+
+  } // try 
+  catch (error status) {
+    stopGen(true, *hm, which, watch);
+    if (0==lm) {
+      dhm->SetProcess(MakeErrorModel());
+    } else {
+      lm->setCompletionEngine(0);
+    }
+
+    // Cleanup
+    DoneBuffers();
+
+    Delete(ms);
+    doneTimer(watch);
+
+    throw status;
+  }
+}
+
+MEDDLY::forest::policies 
+meddly_explgen_old::buildRSSPolicies() const
+{
+  MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
+  if (use_qrmxds) {
+    p.setQuasiReduced();
+  } 
+  return p;
+}
+
+void meddly_explgen_old::preprocess(dsde_hlm &m) 
+{
+  if (m.hasPartInfo()) return;
+  if (m.StartError(0)) {
+    em->cerr() << "Meddly requires a structured model (try partitioning)";
+    m.DoneError();
+  }
+  throw Engine_Failed;
+}
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *                           meddly_expl  class                           *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+// #define DEBUG_FREQ
+
+/** Abstract base class for explicit generators.
+    This engine assumes that the tangible states are not yet known.
+
+    TANGROUP class needs method:
+
+    int getLevelChange() const;
+
+    VANGROUP class needs method:
+
+    void clear();
+
+    TANGROUP and VANGROUP classes need methods:
+
+    bool hasUnexplored();
+    int* getUnexplored(shared_state *);
+    bool addState(shared_state *, int* &id);
+    void reportStats(DisplayStream &out, const char* name) const;
+    shared_ddedge* shareS();
+
+    EDGEGROUP class needs methods:
+
+    void addBatch();
+    void addEdge(int* from, int* to);
+    void reportStats(DisplayStream &out, const char* name) const;
+    shared_ddedge* shareProc();
+
+
+*/ 
+template <class TANGROUP, class VANGROUP, class EDGEGROUP>
+class meddly_expl : public meddly_explgen_old {
+protected:
+  TANGROUP* tangible;
+  VANGROUP* vanishing;
+  EDGEGROUP* tan2tan;
+
+public:
+  meddly_expl();
+
+protected:
+  virtual void generateRSS(dsde_hlm &dsm);
+  virtual void generateProc(dsde_hlm &dsm);
+
+  virtual void reportStats(DisplayStream &out, bool err) const;
+
+  virtual void customReport(DisplayStream &out) const { };
+
+public:  // required for generation engines
+  inline bool hasUnexploredVanishing() const {
+    DCASSERT(vanishing);
+    return vanishing->hasUnexplored();
+  }
+  inline bool hasUnexploredTangible() const {
+    DCASSERT(tangible);
+    return tangible->hasUnexplored();
+  }
+  inline int* getUnexploredVanishing(shared_state*s) {
+    DCASSERT(vanishing);
+    return vanishing->getUnexplored(s);
+  }
+  inline int* getUnexploredTangible(shared_state*s) {
+    DCASSERT(tangible);
+    if (tan2tan) {
+      if (tangible->getLevelChange() > level_change) {
+        tan2tan->addBatch();
+      }
+    }
+#ifdef DEBUG_FREQ
+    if (tangible->getLevelChange() > level_change) {
+      em->cout() << "Level change\n";
+    }
+    s->Print(em->cout(), 0);
+    em->cout() << "\n";
+    em->cout().flush();
+#endif
+    return tangible->getUnexplored(s);
+  }
+  inline bool add(bool isVan, const shared_state* s,int* &id) {
+    if (isVan) {
+      DCASSERT(vanishing);
+      return vanishing->addState(s, id);
+    } else {
+      DCASSERT(tangible);
+      return tangible->addState(s, id);
+    }
+  }
+  inline void clearVanishing(named_msg &debug) {
+    if (debug.startReport()) {
+      debug.report() << "Eliminating vanishing states\n";
+      debug.stopIO();
+    }
+    DCASSERT(vanishing);
+    vanishing->clear();
+  }
+  inline void addEdge(int* from, int* to) {
+    DCASSERT(tan2tan);
+    return tan2tan->addEdge(from, to);
+  }
+  inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
+  {
+    if (isVan) s << "vanishing state: ";
+    else       s << "tangible  state: ";
+    curr->Print(s, 0);
+  }
+  static inline void makeIllegalID(int* &id) {
+    id = 0;
+  }
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                          meddly_expl  methods                          *
+// *                                                                        *
+// **************************************************************************
+
+template <class TG, class VG, class EG>
+meddly_expl<TG, VG, EG>::meddly_expl() : meddly_explgen_old()
+{
+  tangible = 0;
+  vanishing = 0;
+  tan2tan = 0;
+}
+
+template <class TG, class VG, class EG>
+void meddly_expl<TG, VG, EG>::generateRSS(dsde_hlm &dsm)
+{
+  DCASSERT(ms->mdd_wrap);
+  if (!statesOnly() && 0==tan2tan) {
+    if (dsm.StartError(0)) {
+      em->cerr() << "Cannot build RG and RS simultaneously using ";
+      em->cerr() << getAlgName();
+      dsm.DoneError();
+    }
+    throw subengine::Engine_Failed;
+  }
+  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
+  DCASSERT(!vanishing->hasUnexplored());
+  DCASSERT(!tangible->hasUnexplored());
+  ms->states = tangible->shareS();
+  if (statesOnly()) return;
+  DCASSERT(tan2tan);
+  tan2tan->addBatch();
+  ms->nsf = tan2tan->shareProc();
+  if (ms->nsf) return;
+  if (dsm.StartError(0)) {
+    em->cerr() << "Could not obtain final RG using " << getAlgName();
+    dsm.DoneError();
+  }
+  throw subengine::Engine_Failed;
+}
+
+template <class TG, class VG, class EG>
+void meddly_expl<TG, VG, EG>::generateProc(dsde_hlm &dsm)
+{
+  DCASSERT(ms->mdd_wrap);
+  generateRGt<meddly_expl<TG, VG, EG>, int*>(debug, dsm, *this);
+  DCASSERT(!vanishing->hasUnexplored());
+  DCASSERT(tan2tan);
+  tan2tan->addBatch();
+  ms->nsf = tan2tan->shareProc();
+  if (ms->nsf) return;
+  if (dsm.StartError(0)) {
+    em->cerr() << "Could not obtain final RG using " << getAlgName();
+    dsm.DoneError();
+  }
+  throw subengine::Engine_Failed;
+}
+
+template <class TG, class VG, class EG>
+void meddly_expl<TG, VG, EG>::reportStats(DisplayStream &out, bool err) const
+{
+  DCASSERT(ms);
+  ms->reportStats(out);
+  customReport(out);
+  DCASSERT(tangible);
+  tangible->reportStats(out, "tangible");
+  DCASSERT(vanishing);
+  vanishing->reportStats(out, "vanishing");
+  if (tan2tan) {
+    tan2tan->reportStats(out, "reachability graph");
+  }
+}
+
+
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *              Generators based on adding lists of minterms              *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
+// **************************************************************************
+// *                                                                        *
+// *                          meddly_expl_mt class                          *
+// *                                                                        *
+// **************************************************************************
+
+/** Abstract base class for explicit generators using minterm batches.
+    We use class edge_minterms for the reachability graph.
+*/ 
+template <class TG, class VG>
+class meddly_expl_mt : public meddly_expl <TG, VG, edge_minterms> {
+protected:
+  minterm_pool* minterms;
+public:
+  meddly_expl_mt() : meddly_expl<TG, VG, edge_minterms>() { 
+    minterms = 0; 
+  }
+protected:
+  virtual void customReport(DisplayStream &out) const {
+    DCASSERT(minterms);
+    minterms->reportStats(out);
+  };
+};
+
+
+// **************************************************************************
+// *                                                                        *
+// *                        meddly_expl_mt_sr2 class                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Explicit generation using Meddly and batches of minterms.
+    We assume that the tangible states are already known.
+    In this version, unexplored states are removed one at a time.
+*/
+class meddly_expl_mt_sr2: 
+  public meddly_expl_mt <mt_known_stategroup, mt_sr_stategroup> 
+{
+protected:
+  virtual const char* getAlgName() const { return "expl_mt_sr2"; }
+  virtual void AllocBuffers(const dsde_hlm* dhm) {
+    minterms = new minterm_pool(
+      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
+    );
+    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
+    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
+    if (!statesOnly()) {
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+    } 
+  };
+  virtual void DoneBuffers() {
+    delete tangible;
+    delete vanishing;
+    delete tan2tan;
+    delete minterms;
+    tangible = 0;
+    vanishing = 0;
+    minterms = 0;
+    tan2tan = 0;
+  }
+  virtual subengine* specifyCompletionEngine() { return this; }
+public:
+  static meddly_expl_mt_sr2* getInstance() {
+    static meddly_expl_mt_sr2* foo = 0;
+    if (0==foo) foo = new meddly_expl_mt_sr2;
+    return foo;
+  }
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                        meddly_expl_mt_sr  class                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Explicit generation using Meddly and batches of minterms.
+    In this version, unexplored states are removed one at a time.
+*/
+class meddly_expl_mt_sr : 
+  public meddly_expl_mt <mt_sr_stategroup, mt_sr_stategroup> 
+{
+protected:
+  virtual const char* getAlgName() const { return "expl_mt_sr"; }
+  virtual void AllocBuffers(const dsde_hlm* dhm) {
+    minterms = new minterm_pool(
+      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
+    );
+    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
+    tangible = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
+    if (!statesOnly()) {
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+    } 
+  };
+  virtual void DoneBuffers() {
+    delete tangible;
+    delete vanishing;
+    delete tan2tan;
+    delete minterms;
+    tangible = 0;
+    vanishing = 0;
+    minterms = 0;
+    tan2tan = 0;
+  }
+  virtual subengine* specifyCompletionEngine() {
+    return meddly_expl_mt_sr2::getInstance();
+  }
+};
+
+meddly_expl_mt_sr the_meddly_expl_mt_sr;
+
+
+// **************************************************************************
+// *                                                                        *
+// *                        meddly_expl_mt_br2 class                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Explicit generation using Meddly and batches of minterms.
+    We assume that the tangible states are already known.
+    In this version, unexplored states are enumerated in batch.
+*/
+class meddly_expl_mt_br2
+: public meddly_expl_mt <mt_known_stategroup, mt_br_stategroup> 
+{
+protected:
+  virtual const char* getAlgName() const { return "expl_mt_br2"; }
+  virtual void AllocBuffers(const dsde_hlm* dhm) {
+    minterms = new minterm_pool(
+      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
+    );
+    vanishing = new mt_br_stategroup(
+      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+    );
+    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
+    tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+  };
+  virtual void DoneBuffers() {
+    delete tangible;
+    delete vanishing;
+    delete tan2tan;
+    delete minterms;
+    tangible = 0;
+    vanishing = 0;
+    minterms = 0;
+    tan2tan = 0;
+  }
+  virtual subengine* specifyCompletionEngine() { return this; }
+public:
+  static meddly_expl_mt_br2* getInstance() {
+    static meddly_expl_mt_br2* foo = 0;
+    if (0==foo) foo = new meddly_expl_mt_br2;
+    return foo;
+  }
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                        meddly_expl_mt_br  class                        *
+// *                                                                        *
+// **************************************************************************
+
+/** Explicit generation using Meddly and batches of minterms.
+    In this version, unexplored states are enumerated in batch.
+*/
+class meddly_expl_mt_br
+: public meddly_expl_mt <mt_br_stategroup, mt_br_stategroup> 
+{
+protected:
+  virtual const char* getAlgName() const { return "expl_mt_br"; }
+  virtual void AllocBuffers(const dsde_hlm* dhm) {
+    minterms = new minterm_pool(
+      6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
+    );
+    vanishing = new mt_br_stategroup(
+      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+    );
+    tangible = new mt_br_stategroup(
+      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+    );
+    if (!statesOnly()) {
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+    } 
+  };
+  virtual void DoneBuffers() {
+    delete tangible;
+    delete vanishing;
+    delete tan2tan;
+    delete minterms;
+    tangible = 0;
+    vanishing = 0;
+    minterms = 0;
+    tan2tan = 0;
+  }
+  virtual subengine* specifyCompletionEngine() {
+    return meddly_expl_mt_br2::getInstance();
+  }
+};
+
+meddly_expl_mt_br the_meddly_expl_mt_br;
+
+
+// **************************************************************************
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *            Generators based on  the 2001 explicit CMD paper            *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// *                                                                        *
+// **************************************************************************
+
 // **************************************************************************
 // *                                                                        *
 // *                         meddly_expl_cmd  class                         *
@@ -2791,22 +2879,24 @@ void InitializeExplicitMeddly(exprman* em)
   );
 
   /* Initialize matrix style option */
-  radio_button** mlist = new radio_button*[3];
+  radio_button** mlist = new radio_button*[meddly_explgen::NUM_MX_STYLES];
+#ifdef ENABLE_CMDS
+  mlist[meddly_explgen::CMD] = new radio_button(
+    "CMD", "Canonical Matrix Diagram (from 2001 paper)", meddly_explgen::CMD
+  );
+#endif
   mlist[meddly_explgen::IRMXD] = new radio_button(
     "IRMXD", "Identity-reduced matrix diagram", meddly_explgen::IRMXD
   );
   mlist[meddly_explgen::QRMXD] = new radio_button(
     "QRMXD", "Quasi-reduced matrix diagram", meddly_explgen::QRMXD
   );
-  mlist[meddly_explgen::CMD] = new radio_button(
-    "CMD", "Canonical Matrix Diagram (from 2001 paper)", meddly_explgen::CMD
-  );
   meddly_explgen::matrix_style = meddly_explgen::IRMXD;
   expl_eng->AddOption(
     MakeRadioOption(
       "MatrixStyle",
       "Data structure to use for matrix for underlying process",
-      mlist, 3, meddly_explgen::matrix_style
+      mlist, meddly_explgen::NUM_MX_STYLES, meddly_explgen::matrix_style
     )
   );
 
