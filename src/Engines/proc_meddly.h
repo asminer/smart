@@ -182,6 +182,11 @@ public:
     and such are derived from this class.
 */
 class meddly_procgen : public process_generator {
+  // storage option
+  static int proc_storage;
+  static const int EVMXD = 0;
+  static const int MTMXD = 1;
+
   // style option
   static int edge_style;
   static const int ACTUAL = 0;
@@ -227,6 +232,13 @@ protected:
   }
   inline static bool usePotentialEdges() {
     return POTENTIAL == edge_style;
+  }
+
+  inline static bool useEVMXD() {
+    return EVMXD == proc_storage;
+  }
+  inline static bool useMTMXD() {
+    return MTMXD == proc_storage;
   }
 
   /** Build a variable option class, according to option MeddlyVariables.

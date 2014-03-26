@@ -125,6 +125,7 @@ public:
 
   virtual void createMinterms(const int* const* mt, int n, shared_object* ans);
   virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans);
+  virtual void createMinterms(const int* const* from, const int* const* to, const float* v, int n, shared_object* ans);
 
   virtual void buildUnary(exprman::unary_opcode op, 
                             const shared_object* opnd, shared_object* ans);

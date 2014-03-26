@@ -43,7 +43,6 @@ pn kanban(int n) := {
   ts23_4,
   tr4, tb4, tg4, tout4;
 
-/*
   firing(
       tin1    : expo(1.0),
       tr1     : expo(0.36),
@@ -62,7 +61,6 @@ pn kanban(int n) := {
       tb4     : expo(0.30),
       tout4   : expo(0.90)
   );
-  */
 
   arcs(
       pkan1 : tin1, tin1 : pm1,
@@ -90,8 +88,8 @@ pn kanban(int n) := {
       pout4 : tout4, tout4 : pkan4
   );
 
-  bigint m1 := num_states(false);
-  bigint m2 := num_arcs(false);
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
 
   real e1 := avg_ss(tk(pm1) + tk(pb1) + tk(pout1));
   real e2 := avg_ss(tk(pm2) + tk(pb2) + tk(pout2));

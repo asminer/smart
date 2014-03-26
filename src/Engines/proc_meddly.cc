@@ -1666,6 +1666,7 @@ bool onthefly_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
 // *                                                                        *
 // **************************************************************************
 
+int meddly_procgen::proc_storage;
 int meddly_procgen::edge_style;
 int meddly_procgen::var_type;
 int meddly_procgen::nsf_ndp;
@@ -1811,10 +1812,30 @@ void InitializeProcGenMeddly(exprman* em)
   );
   RegisterEngine(em, "ProcessGeneration", meddlygen);
 
+  // EVMxD vs MTMxD option
+  meddly_procgen::proc_storage = meddly_procgen::MTMXD;
+  radio_button** styles = new radio_button*[2];
+  styles[meddly_procgen::MTMXD] = new radio_button(
+    "MTMXD",
+    "Multi-terminal MDD for matrices",
+    meddly_procgen::MTMXD
+  );
+  styles[meddly_procgen::EVMXD] = new radio_button(
+    "EVMXD",
+    "Edge-valued (using *) MDD for matrices",
+    meddly_procgen::EVMXD
+  );
+  em->addOption(
+    MakeRadioOption(
+      "MeddlyProcessStorage",
+      "Type of forest to use for process storage, using Meddly",
+      styles, 2, meddly_procgen::proc_storage
+    )
+  );
 
   // potential vs. actual edge option
   meddly_procgen::edge_style = meddly_procgen::POTENTIAL;
-  radio_button** styles = new radio_button*[2];
+  styles = new radio_button*[2];
   styles[meddly_procgen::ACTUAL] = new radio_button(
     "ACTUAL",
     "Outgoing edges only for reachable states; unreachable states have no outgoing edges",

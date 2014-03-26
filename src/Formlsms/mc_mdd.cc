@@ -226,29 +226,17 @@ meddly_mc::buildActualProc(const shared_ddedge* p) const
   if (0==p) return 0;
   DCASSERT(process);
   DCASSERT(process->states);
-  DCASSERT(process->mxd_wrap);
-  DCASSERT(process->nsf);
   DCASSERT(process->proc_wrap);
-  // build actual NSF
-  shared_ddedge* actual = new shared_ddedge(process->mxd_wrap->getForest());
+  // strip off unreachable edges from process 
+  shared_ddedge* actual = new shared_ddedge(process->proc_wrap->getForest());
   try {
-    process->mxd_wrap->selectRows(process->nsf, process->states, actual);
+    process->mxd_wrap->selectRows(process->proc, process->states, actual);
   }
   catch (sv_encoder::error e) {
     Delete(actual);
     return 0;
   }
-  // copy actual into "process forest".
-  shared_ddedge* actp = new shared_ddedge(process->proc_wrap->getForest());
-  try {
-    MEDDLY::apply(MEDDLY::COPY, actual->E, actp->E);
-  }
-  catch (MEDDLY::error me) {
-    process->proc_wrap->convert(me);
-  }
-  Delete(actual);
-  actp->E *= p->E;
-  return actp;
+  return actual;
 }
 
 void meddly_mc::visitStates(state_visitor &x) const
@@ -474,29 +462,26 @@ meddly_states* GrabMeddlyMCStates(lldsm* mc)
   return mddmc->grabStates();
 }
 
-void FinishMeddlyMC(lldsm* mc, shared_ddedge* potproc, bool pot)
+void FinishMeddlyMC(lldsm* mc, bool pot)
 {
   meddly_mc* mddmc = dynamic_cast <meddly_mc*> (mc);
   if (0==mddmc) return;
   meddly_states* ss = mddmc->grabStates();
-  if (ss->proc) {
-    mddmc->finish();
-    return;
-  }
+  shared_ddedge* potproc = Share(ss->proc);
   if (pot) {
-    ss->proc = Share(potproc);
     ss->proc_uses_actual = false;
   } else {
+    Delete(ss->proc);
     try {
       ss->proc = mddmc->buildActualProc(potproc);
       ss->proc_uses_actual = true;
     }
     catch (sv_encoder::error e) {
       // use potential instead
-      Delete(ss->proc);
       ss->proc = Share(potproc);
       ss->proc_uses_actual = false;
-    } 
+    }
   }
+  Delete(potproc);
   mddmc->finish();
 }

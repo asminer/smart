@@ -373,6 +373,47 @@ void meddly_encoder::createMinterms(const int* const* from, const int* const* to
   }
 }
 
+void meddly_encoder::createMinterms(const int* const* from, const int* const* to, const float* v, int n, shared_object* answer)
+{
+  if (n<1) return;
+  if (0==from || 0==to) throw Failed;
+  shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
+  if (0==dd) throw Invalid_Edge;
+#ifdef DEVELOPMENT_CODE
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
+#endif
+
+#ifdef SHOW_CREATE_MINTERMS
+  fprintf(stderr, "Creating edge for minterm pairs:\n");
+  for (int i=0; i<n; i++) {
+    int j = F->getDomain()->getNumVariables()-1;
+    fprintf(stderr, "\t[");
+    for (;;) {
+      fprintf(stderr, "%d", from[i][j]);
+      j--;
+      if (0==j) break;
+      fprintf(stderr, ", ");
+    }
+    fprintf(stderr, "] \t[");
+    j = F->getDomain()->getNumVariables()-1;
+    for (;;) {
+      fprintf(stderr, "%d", to[i][j]);
+      j--;
+      if (0==j) break;
+      fprintf(stderr, ", ");
+    }
+    fprintf(stderr, "] \t%f\n", v[i]);
+  }
+#endif
+
+  try {
+    F->createEdge(from, to, v, n, dd->E);
+  }
+  catch (MEDDLY::error e) {
+    convert(e);
+  }
+}
+
 void meddly_encoder
 ::buildUnary(exprman::unary_opcode op, const shared_object* opnd, 
               shared_object* answer)

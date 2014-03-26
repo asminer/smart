@@ -334,6 +334,7 @@ void FinishMeddlyFSM(lldsm* fsm, bool pot)
     mddfsm->finish();
     return;
   }
+  ss->proc_wrap = Share(ss->mxd_wrap);
   if (pot) {
     ss->proc = Share(ss->nsf);
     ss->proc_uses_actual = false;
