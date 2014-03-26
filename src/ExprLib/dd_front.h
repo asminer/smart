@@ -201,6 +201,20 @@ public:
   */
   virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans) = 0;
 
+  /** Convert a set of "minterms" and values to a matrix, encoded as a DD.
+        @param  from    From states.  Array of 
+                        arrays of dimension (#levels+1)
+                        of unprimed variable assignments.
+        @param  to      To states. Array of
+                        arrays of dimension (#levels+1)
+                        of primed variable assignments.
+        @param  values  Array of values.
+        @param  n       Number of minterms.
+        @param  ans     Set of edges encoded as a DD.
+        @throws         Appropriate error code.
+  */
+  virtual void createMinterms(const int* const* from, const int* const* to, const float* values, int n, shared_object* ans) = 0;
+
 
   /** Build a unary operation on a DD node.
         @param  op    Unary operation requested.

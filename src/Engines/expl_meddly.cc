@@ -90,6 +90,7 @@ class edge_minterms {
   shared_ddedge* Edges;
   int** from_batch;
   int** to_batch;
+  float* rate_batch;
   int alloc;
   int used;
   shared_ddedge* tempedge;
@@ -107,7 +108,7 @@ class edge_minterms {
   double time_misc;
 #endif
 public:
-  edge_minterms(meddly_encoder &w, minterm_pool &m, int alloc_size);
+  edge_minterms(meddly_encoder &w, minterm_pool &m, int alloc_size, bool needs_rates);
   ~edge_minterms();
 
   void reportStats(DisplayStream &out, const char* name="reachability graph") const;
@@ -117,6 +118,7 @@ public:
   void addBatch();
 
   inline void addEdge(int* from, int* to) {
+    DCASSERT(0==rate_batch);
 #ifdef MEASURE_TIMES
     clock->reset();
 #endif
@@ -138,8 +140,19 @@ public:
   }
 
   inline void addTTEdge(int* from, int* to, double wt) {
-    DCASSERT(0);
-    throw subengine::Engine_Failed;
+    DCASSERT(rate_batch);
+#ifdef MEASURE_TIMES
+    clock->reset();
+#endif
+    from_batch[used] = mp.shareMinterm(from);
+    to_batch[used] = mp.shareMinterm(to);
+    rate_batch[used] = wt;
+    used++;
+#ifdef MEASURE_TIMES
+    time_mtadd += clock->elapsed();
+#endif
+    if (used < alloc) return;
+    addBatch();  
   }
   inline void addTVEdge(int* from, int* to, double wt) {
     DCASSERT(0);
@@ -159,14 +172,15 @@ public:
 // *                         edge_minterms  methods                         *
 // **************************************************************************
 
-edge_minterms::edge_minterms(meddly_encoder &w, minterm_pool &m, int as)
- : wrap(w), mp(m)
+edge_minterms::edge_minterms(meddly_encoder &w, minterm_pool &m, int as, bool nr) : wrap(w), mp(m)
 {
   Edges = new shared_ddedge(wrap.getForest());
   alloc = as;
   used = 0;
   from_batch = new int*[alloc];
   to_batch = new int*[alloc];
+  if (nr) rate_batch = new float[alloc];
+  else    rate_batch = 0;
   for (int i=0; i<alloc; i++) {
     from_batch[i] = 0;
     to_batch[i] = 0;
@@ -193,6 +207,7 @@ edge_minterms::~edge_minterms()
   // DON'T delete minterms
   delete[] from_batch;
   delete[] to_batch;
+  delete[] rate_batch;
   Delete(Edges);
   Delete(tempedge);
 #ifdef MEASURE_TIMES
@@ -233,7 +248,11 @@ void edge_minterms::addBatch()
 #ifdef MEASURE_TIMES
     clock->reset();
 #endif
-    wrap.createMinterms(from_batch, to_batch, used, tempedge);
+    if (rate_batch) {
+      wrap.createMinterms(from_batch, to_batch, rate_batch, used, tempedge);
+    } else {
+      wrap.createMinterms(from_batch, to_batch, used, tempedge);
+    }
 #ifdef MEASURE_TIMES
     time_create += clock->elapsed();
 #endif
@@ -1369,6 +1388,19 @@ class gen_wrapper_templ {
       }
     }
 
+    inline void generateSMP(named_msg &debug, dsde_hlm &hm) {
+      generateSMPt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
+        (debug, hm, *this);
+
+      if (edges) edges->addBatch(); // add the final batch of edges
+
+      // transfer everything
+      if (0==ms.states) ms.states = tangible->shareS();
+      if (0==ms.proc) if (edges) {
+        ms.proc = edges->shareProc();
+      }
+    }
+
     void reportStats(DisplayStream &out, const char* proc) {
       ms.reportStats(out);
       if (minterms)   minterms->reportStats(out);
@@ -1457,7 +1489,7 @@ class gen_wrapper_templ {
         debug.stopIO();
       }
       DCASSERT(vanishing);
-      edges->eliminateVanishing();
+      // edges->eliminateVanishing();
       vanishing->clear();
     }
 
@@ -1619,7 +1651,12 @@ private:
       }
 
       // Set process
-      lldsm* lm = StartMeddlyFSM(ms);
+      lldsm* lm;
+      if (hm.GetProcessType() == lldsm::FSM) {
+        lm = StartMeddlyFSM(ms);
+      } else {
+        lm = StartMeddlyMC(ms);
+      }
       Share(ms);
       hm.SetProcess(lm);
       lm->setCompletionEngine(this);
@@ -1683,11 +1720,6 @@ private:
         Share(ms);
         hm.SetProcess(lm);
       }
-      ms->proc_wrap = Share(ms->mxd_wrap);
-      ms->proc = Share(ms->nsf);
-      ms->proc_uses_actual = true;
-      FinishMeddlyFSM(lm, true);
-      lm->setCompletionEngine(0);
       if (0==ms->nsf) {
           if (hm.StartError(0)) {
             em->cerr() << "Could not obtain final RG";
@@ -1695,6 +1727,10 @@ private:
           }
           // So we don't try to rebuild later
           hm.SetProcess(MakeErrorModel());
+      } else {
+          FinishMeddlyFSM(lm, true);
+          ms->proc_uses_actual = true;  // hack!
+          lm->setCompletionEngine(0);
       }
 
       // Cleanup
@@ -1708,6 +1744,77 @@ private:
       // Reporting
       if (meddly_procgen::stopGen(true, hm.Name(), "reachability graph", watch)) {
         G.reportStats(em->report(), "reachability graph");
+        em->stopIO();
+      }
+
+      // Set process
+      hm.SetProcess(MakeErrorModel());
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      throw;
+    }
+  }
+    
+  template <class GWRAP>
+  inline void DoMC(dsde_hlm &hm, GWRAP &G) {
+    //
+    // Start reporting on generation
+    //
+    timer* watch = 0;
+    if (startGen(hm, "Markov chain")) {
+      em->stopIO();
+      watch = makeTimer();
+    }
+
+    //
+    // Generate, in a try block
+    //
+    try {
+
+      em->waitTerm();
+      G.generateSMP(debug, hm);
+
+      // Reporting
+      if (meddly_procgen::stopGen(false, hm.Name(), "Markov chain", watch)) {
+        G.reportStats(em->report(), "Markov chain");
+        em->stopIO();
+      }
+
+      // Set process
+      lldsm* lm = hm.GetProcess();
+      if (0==lm) {
+        lm = StartMeddlyMC(ms);
+        Share(ms);
+        hm.SetProcess(lm);
+      }
+      if (0==ms->proc) {
+          if (hm.StartError(0)) {
+            em->cerr() << "Could not obtain final MC";
+            hm.DoneError();
+          }
+          // So we don't try to rebuild later
+          hm.SetProcess(MakeErrorModel());
+      } else {
+          FinishMeddlyMC(lm, true);
+          ms->proc_uses_actual = true;  // hack!
+          lm->setCompletionEngine(0);
+      }
+
+      // Cleanup
+      doneTimer(watch);
+      Delete(ms);
+      ms = 0;
+      em->resumeTerm();
+      return;
+    }
+    catch (subengine::error e) {
+      // Reporting
+      if (meddly_procgen::stopGen(true, hm.Name(), "Markov chain", watch)) {
+        G.reportStats(em->report(), "Markov chain");
         em->stopIO();
       }
 
@@ -1817,7 +1924,11 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
       throw e;
     }
   } else {
-    ms = Share(GrabMeddlyFSMStates(lm));
+    if (hm->GetProcessType() == lldsm::FSM) {
+      ms = Share(GrabMeddlyFSMStates(lm));
+    } else {
+      ms = Share(GrabMeddlyMCStates(lm));
+    }
     DCASSERT(ms);
     DCASSERT(ms->mdd_wrap);
     DCASSERT(ms->mxd_wrap);
@@ -1916,7 +2027,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           DoRG(hm, G);
           return;
       } else {
-        //
+          //
           // Single removal
           //
           gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_2001_cmds>
@@ -1983,7 +2094,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
         );
   
         DoRG(hm, G);
@@ -1997,7 +2108,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
         );
     
         DoRG(hm, G);
@@ -2016,7 +2127,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           false, *ms, mp,
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
         );
   
         DoRG(hm, G);
@@ -2030,7 +2141,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           false, *ms, mp,
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize())
+          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
         );
     
         DoRG(hm, G);
@@ -2041,6 +2152,99 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
 
 void meddly_explgen::generateMC(dsde_hlm &hm)
 {
+  //
+  // Set up forest for storing the process
+  //
+  using namespace MEDDLY;
+  domain* d = ms->vars;
+  forest* f = d->createForest(
+    true, forest::REAL, useEVMXD() ? forest::EVTIMES : forest::MULTI_TERMINAL,
+    ms->mxd_wrap->getForest()->getPolicies()
+  );
+  ms->proc_wrap = ms->mxd_wrap->copyWithDifferentForest("proc", f);
+
+  // Everybody uses this
+  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
+    1+ms->mdd_wrap->getNumDDVars()
+  );
+
+  //
+  // A little ugly - consider all possible cases "by hand"
+  // 
+
+  // TBD - ignoring CMD option for now
+
+  //
+  // "normal" matrix
+  //
+  if (hm.GetProcess()) {
+    //
+    // Second pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
+        );
+  
+        DoMC(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
+        );
+    
+        DoMC(hm, G);
+        return;
+    }
+  } else {
+    //
+    // First pass
+    //
+    if (batch_removal) {
+        //
+        // Batch removal
+        //
+        gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
+        );
+  
+        DoMC(hm, G);
+        return;
+    } else {
+        //
+        // Single removal
+        //
+        gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
+        G(
+          false, *ms, mp,
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
+        );
+    
+        DoMC(hm, G);
+        return;
+    }
+  }
+
   throw Engine_Failed;
 }
 
@@ -2543,7 +2747,7 @@ protected:
     vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
     tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
@@ -2586,7 +2790,7 @@ protected:
     vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
     tangible = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
@@ -2630,7 +2834,7 @@ protected:
       *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
     );
     tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
-    tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+    tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
   };
   virtual void DoneBuffers() {
     delete tangible;
@@ -2676,7 +2880,7 @@ protected:
       *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
     );
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize());
+      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
