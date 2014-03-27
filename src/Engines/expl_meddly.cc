@@ -972,6 +972,906 @@ edge_2001_cmds::submatrix* edge_2001_cmds::Reduce(submatrix* n)
   return find;
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                          real_2001_cmds class                          *
+// *                                                                        *
+// **************************************************************************
+
+/** New canonical matrix diagram class.
+    Yanked from the implementation for the 2001 paper,
+    complete with real values.
+ 
+    Conventions:
+
+    Levels are numbered in reverse.  The level 0 matrices are at
+    the bottom, with no downward pointers.  (We actually do have
+    downward pointers but we ignore them.)
+  
+    Limits: 
+    \begin{tabular}{lll} 
+       {\bf Spec} & {\bf Limit} & {\bf Reason} \\ \hline
+       Number of variables/levels & 65,535 & stored as unsigned short\\
+       Submatrix size & 65,535 x 65,535 & stored as unsigned short\\
+       Number of submatrices & 1,048,576 & Initialized in constructor\\
+    \end{tabular}
+ */
+class real_2001_cmds {
+  
+  /// The nodes of the md.
+  struct submatrix {
+    // required for hash table
+    submatrix* next;
+
+    /// submatrix elements.
+    struct element {
+      /// The column (if we're stored by rows).
+      unsigned short index;
+      /// Value.  Should be positive.
+      double value;
+      /** Downward pointer (submatrix number).
+          This will be zero if we're at the bottom level.
+       */
+      submatrix* down;
+      element *next;
+      //
+      void Set(int i, double v, submatrix* d, element *n) {
+        index = i; value = v; down = d; next = n;
+      }
+      bool Equals(element *e) const;
+      void Show(OutputStream &s) {
+        s << index << ":(" << value << ", " << down << ") ";
+        if (next) next->Show(s);
+        else s << "\n";
+      }
+      int Nonzeroes() {
+        if (next) return 1+next->Nonzeroes();
+        return 1;
+      }
+    }; // end of struct element
+
+    /** Only one of these makes sense at a time.
+        The value that is used is based on {\em status}.
+     */
+    union {
+      /// If we're stored by rows, the linked-list for each row.
+      element **lists;
+      /// Pointer to the matrix we've been merged with.
+      submatrix* mergedptr;
+      /// Pointer to the next matrix in recycle list.
+      submatrix* nextrecycled;
+    }; // union
+
+    /// The number of this submatrix.
+    int number;
+
+    /** The number of incoming pointers.
+        Only maintained if the state is CANONICAL.
+     */
+    int incoming;
+
+    /// The level of this submatrix.
+    unsigned short level;
+
+    /// If we're stored by rows, the number of rows.
+    unsigned short size;
+
+    /// If we're stored by rows, the number of columns.
+    // unsigned short length;
+     
+    /// Are we stored by rows?
+    // bool is_by_rows;
+
+    enum status_type {
+      BUILDING = 0,
+      CANONICAL = 1,
+      MERGED = 2,
+      RECYCLED = 3
+    };
+    /** Status of this submatrix. 
+      
+        Possible values:
+        \begin{description}
+        
+        \item[BUILDING]                The submatrix is still under construction.  
+                                {\em The submatrix must have exactly
+                                one incoming pointer!}   Otherwise we might 
+                                change something we're not supposed to!
+                                It hasn't been inserted into the uniqueness 
+                                table yet.  {\em lists} is active.
+
+        \item[CANONICAL]        The submatrix is unique, and is present in 
+                                the uniqueness table.  {\em lists} is active.
+
+        \item[MERGED]                The submatrix {\em lists} have been deleted, 
+                                because we have been merged with a canonical 
+                                submatrix.  {\em mergedptr} points to the 
+                                canonical submatrix.  Used to update pointers.
+
+        \item[RECYCLED]                The submatrix {\em lists} have been deleted.
+                                The structure is on the recycled list.  
+                                {\em nextrecycled} is a pointer to the next 
+                                recycled submatrix.
+
+        \end{description}
+    */
+    status_type state;
+
+    /** Constructor.
+        Sets state to BUILDING, and sizes to zero.
+     */
+    submatrix();
+    /// Destructor.
+    ~submatrix();
+    // Handy methods
+    void Alloc(unsigned short sz, long &memused);
+    void Free(element* &freelist, long &memused);
+    void FindInList(int l, int ind, element* &prev, element* &curr);
+    void MultiplyBy(double a);
+    void Show(OutputStream &s, bool summarize);
+    int Nonzeroes();
+    // convert to storage by columns
+    // void Transpose();
+    // required by hash table
+    int Signature(int M);
+    bool Equals(submatrix *t) const;
+
+    inline submatrix* GetNext() const { return next; }
+    inline void SetNext(submatrix* n) { next = n;    }
+  }; // end of struct submatrix
+
+  /// Precision for real comparison
+  static const double mergeprecision = 1e-7;
+
+  /// Reduced, root MxD
+  submatrix* root;
+  /// Unreduced, batch MxD
+  submatrix* batch;
+  /// List of merged submatrices
+  submatrix* merged_list;
+  /// List of recycled submatrices
+  submatrix* freed;
+  /// List of recycled elements
+  submatrix::element *oldelements;
+  
+  /// Allocation of submatrices
+  // heaparray <submatrix> *Nodes;  
+
+  /// Uniqueness table
+  HashTable <submatrix> *Table;
+
+  /// Forest for MxD
+  MEDDLY::expert_forest* mxdfor;
+
+  /// How often to accumulate
+  int batch_size;
+  /// Number of edges so far
+  long curr_batch;
+#ifdef MEASURE_STATS
+  long min_batch;
+  long max_batch;
+  long num_batches;
+  long total_edges;
+  long memused;
+  long maxused;
+  long currnodes;
+  long peaknodes;
+  long numnonzeroes;
+#endif
+#ifdef MEASURE_TIMES
+  timer* clock;
+  double time_mtadd;
+  double time_accumulate;
+  double time_reduce;
+  double time_misc;
+#endif
+  public:
+    /// constructor
+    real_2001_cmds(meddly_encoder &w, int bs);
+    /// destructor
+    ~real_2001_cmds();
+
+    void reportStats(DisplayStream &out, const char* name) const;
+
+    shared_ddedge* shareProc();
+
+    void addBatch();
+
+    void addEdge(int* from, int* to, double wt);
+
+  protected:
+    /** Adds two MDs.
+        The MDs must be at the same level and of the same sizes.
+        One MD is allowed to be canonical.  It is left untouched.
+        The other is considered an accumulator, and will be modified.
+        It must have state "BUILDING".
+        Naturally, this may generate recursive calls.
+    */
+    void Accumulate(submatrix* root, const submatrix* canonical);
+
+    submatrix* NewTempMatrix(int k);
+
+    /** Delete the specified node.
+        Of course, if we're not the last pointer to the object, we
+        won't delete it.
+    */
+    void Recycle(submatrix *n);
+  
+    /** Called before we delete a node.
+        The downward pointers of this node are counted in the nodes pointed at.
+        Before destroying the downward pointers of this node, we must
+        follow each one and subtract one from the incoming count.
+        Otherwise the incoming counts will be wrong.
+    */
+    void UnlinkDown(submatrix *n);
+
+    inline submatrix* ShallowCopy(submatrix* n) {
+      if (0==n) return 0;
+      if (submatrix::MERGED==n->state) {
+        n->mergedptr = ShallowCopy(n->mergedptr);
+        return n->mergedptr;
+      }
+      DCASSERT(submatrix::CANONICAL==n->state);
+      n->incoming++;
+      return n;
+    }
+
+    inline submatrix::element* NewElement() {
+      submatrix::element *answer;
+      if (oldelements) {
+        answer = oldelements;
+        oldelements = oldelements->next;
+      } else {
+        answer = new submatrix::element;
+      }
+#ifdef MEASURE_STATS
+      memused += sizeof(submatrix::element);
+      maxused = MAX(memused, maxused);
+#endif
+      return answer;
+    }
+
+    /** Recursively reduce the given MD.
+        If we're a top-level node, then we'll also normalize the 
+        nodes below us.
+    */
+    submatrix* Canonicalize(submatrix* root);
+
+    /// recursively scale matrices (in place)
+    double Normalize(submatrix* node);
+
+    inline void RecycleMergedList() {
+      while (merged_list) {
+        submatrix* next = merged_list->GetNext();
+        memused -= sizeof(submatrix);
+        merged_list->state = submatrix::RECYCLED;
+        merged_list->nextrecycled = freed;
+        freed = merged_list;
+        currnodes--;
+        merged_list = next;
+      }
+    }
+
+// OLD
+// OLD FROM HERE
+// OLD
+#if 0
+  protected:
+    /// Delete ourselves.
+    void Clear();
+
+  /**  Construct ourself.
+   */
+  int Build(state_model *mdl, int mergelevel);
+  
+  /// For debugging.
+  void Dump(ostream &, bool summarize = true);
+
+  /// Get the row sums.
+  void GetRowSums(vector_diagram *v);
+
+  /// Show stats.
+  void Report();
+
+  /** Compression.
+      The matrix diagram is destroyed after compression.
+   */
+  void RowCompressInto(mxd_rep *q);
+
+  /** Compression and translation into columns.
+      The matrix diagram is destroyed after compression.
+   */
+  void ColCompressInto(mxd_rep *q) {
+    Transpose();
+    RowCompressInto(q);
+  }
+
+  protected:
+  /// Convert into storage by columns.
+  void Transpose();
+
+  void KillElements();
+  
+  void AddEntry(int &root, int *from, int *to, double rate);
+
+  /// Count the number of nodes actually in use
+  int CountUsed(int &elements);
+  
+  /// Recycles all merged nodes.
+  void RecycleMerged();
+
+  
+  // Handy things
+  submatrix *GetNode(int node) {
+    if (node<1) return NULL;  // zero is special
+    return &((*Nodes)[node-1]);
+  }
+  // void RecycleNode(int node);
+  int NumNodes() {
+    return 1+Nodes->Last();
+  }
+#endif
+}; // end of real_2001_cmds
+
+
+// ******************************************************************
+// *              real_2001_cmds::submatrix Methods                 *
+// ******************************************************************
+
+bool real_2001_cmds::submatrix::element::Equals(element *e) const
+{
+  if (e->index != index) return false;
+  if (e->down != down) return false;
+  double den = MAX(e->value, value);
+  if (0.0==den) return true;
+  double reldiff = e->value - value;
+  if (reldiff<0) reldiff /= -den;
+  else reldiff /= den;
+  return reldiff < mergeprecision;
+}
+
+real_2001_cmds::submatrix::submatrix()
+{
+  state = BUILDING;
+  lists = NULL;
+  incoming = 0;
+}
+
+real_2001_cmds::submatrix::~submatrix()
+{
+  if (state==BUILDING || state==CANONICAL) if (lists) delete[] lists;
+}
+
+void real_2001_cmds::submatrix::Alloc(unsigned short sz, long &memused)
+{
+  DCASSERT(state==BUILDING || state==CANONICAL);
+  size = sz;
+  lists = new element*[size];
+  int i;
+  for (i=0; i<size; i++) lists[i] = NULL;
+  memused += size * sizeof(element*);
+}
+
+void real_2001_cmds::submatrix::Free(element* &freelist, long &memused)
+{
+  DCASSERT(state==BUILDING || state==CANONICAL);
+  DCASSERT(lists);
+  int i;
+  for (i=0; i<size; i++) {
+    element *ptr = lists[i];
+    while (ptr) {
+      element *temp = ptr->next;
+      ptr->next = freelist;
+      freelist = ptr;
+      ptr = temp;
+      memused -= sizeof(element);
+    }
+  }
+  memused -= size * sizeof(element*);
+  delete[] lists;
+  lists = NULL;
+}
+
+void real_2001_cmds::submatrix
+  ::FindInList(int l, int ind, element* &prev, element* &curr)
+  // Check list l for ind.
+  // If it exists, it will be returned in "curr".  Otherwise,
+  // "curr" will be NULL.
+  // "prev" will be set to the element immediately before "curr",
+  // regardless of whether "curr" exists.  
+  // If "prev" is NULL, then there is no element in the list before "curr".
+{
+  DCASSERT(state==BUILDING || state==CANONICAL);
+  DCASSERT(lists);
+  prev = NULL;
+  curr = lists[l];
+  while ((curr)&&(curr->index < ind)) {
+    prev = curr;
+    curr = curr->next;
+  }
+  if (curr) if (curr->index!=ind) curr = NULL;
+}
+
+void real_2001_cmds::submatrix::MultiplyBy(double a)
+{
+  int i;
+  element *ptr;
+  for (i=0; i<size; i++) 
+    for (ptr = lists[i]; ptr; ptr = ptr->next)
+      ptr->value *= a;
+}
+
+void real_2001_cmds::submatrix::Show(OutputStream &s, bool summarize)
+{
+  if (summarize) if (state==MERGED || state==RECYCLED) return;
+  s << "Submatrix #" << number << " : ";
+  switch (state) {
+    case BUILDING: s << "BUILDING\n"; break;
+    case CANONICAL: s << "CANONICAL\n"; break;
+    case MERGED: s << "MERGED"; break;
+    case RECYCLED: s << "RECYCLED"; break;
+  }
+  int i;
+  switch (state) {
+    case RECYCLED:
+      s << "\t Next : " << nextrecycled << "\n";
+      break;
+    case MERGED:
+      s << "\t with : " << mergedptr << "\n";
+      break;
+    case BUILDING:
+    case CANONICAL:
+      s << "\tLevel " << level << " \t#incoming: " << incoming << "\n";
+      // if (is_by_rows)
+        s << "\tRows: " << size << "\n";  // "\tColumns: " << length << "\n";
+      /*
+      else
+        s << "\tRows: " << length << "\tColumns: " << size << "\n";
+      */
+      if (lists) {
+        for (i=0; i<size; i++) {
+          // if (is_by_rows) 
+            s << "\tRow";
+          // else s << "\tColumn";
+          s << " " << i << " : ";
+          if (lists[i]) lists[i]->Show(s);
+          else s << "null\n";
+        }
+      } else s << "lists is null????\n";
+  }
+}
+
+int real_2001_cmds::submatrix::Nonzeroes()
+{
+  DCASSERT(state==BUILDING || state==CANONICAL);
+  DCASSERT(lists);
+  int nnz = 0;
+  int i;
+  for (i=0; i<size; i++) 
+    if (lists[i]) nnz += lists[i]->Nonzeroes();
+  return nnz;
+}
+
+int real_2001_cmds::submatrix::Signature(int M)
+  // Hashing function: position of first nonzero element in last nonzero row
+{
+  DCASSERT(state==BUILDING || state==CANONICAL);
+  DCASSERT(lists);
+  int i = size-1;
+  while (NULL==lists[i]) {
+    i--;
+    DCASSERT(i>=0);
+  }
+  int sign = i & M;
+  sign = (sign * 256 + lists[i]->index) % M;
+  sign *= 256;
+  if (lists[i]->down) sign += lists[i]->down->number;
+  sign %= M;
+  return sign;
+}
+
+bool real_2001_cmds::submatrix::Equals(submatrix *t) const
+  // assumes matrix elements are sorted
+{
+  if (level!=t->level) return false;
+  if (size!=t->size) return false;
+  int i;
+  for (i=0; i<size; i++) {
+    element *ptr = lists[i];
+    element *tptr = t->lists[i];
+    while (ptr) {
+      if (NULL==tptr) return false;
+      if (!ptr->Equals(tptr)) return false;
+      ptr = ptr->next;
+      tptr = tptr->next;
+    }
+    if (tptr) return false;
+  }
+  return true;
+}
+
+// ******************************************************************
+// *                   real_2001_cmds  Methods                      *
+// ******************************************************************
+
+real_2001_cmds::real_2001_cmds(meddly_encoder &w, int bs)
+{
+  mxdfor = smart_cast <MEDDLY::expert_forest*>(w.getForest());
+  DCASSERT(mxdfor);
+  root = 0;
+  batch = 0;
+  batch_size = bs;
+  curr_batch = 0;
+  merged_list = 0;
+  freed = 0;
+  oldelements = 0;
+  Table = new HashTable <submatrix>;
+#ifdef MEASURE_STATS
+  min_batch = LONG_MAX;
+  max_batch = 0;
+  num_batches = 0;
+  total_edges = 0;
+  memused = 0;
+  maxused = 0;
+  currnodes = 0;
+  peaknodes = 0;
+  numnonzeroes = 0;
+#endif
+#ifdef MEASURE_TIMES
+  clock = makeTimer();
+  time_mtadd = 0;
+  time_accumulate = 0;
+  time_reduce = 0;
+  time_misc = 0;
+#endif
+}
+
+real_2001_cmds::~real_2001_cmds()
+{
+  delete Table;
+#ifdef MEASURE_TIMES
+  doneTimer(clock);
+#endif
+}
+
+/*
+void real_2001_cmds::Dump(ostream &s, bool summarize)
+{
+  int i;
+  s << "Canonical matrix diagram\n";
+  s << "Submatrix #0 : zero matrix\n";
+  for (i=1; i<NumNodes(); i++) {
+    submatrix *sm = GetNode(i);
+    ASSERT(sm);
+    sm->Show(s, summarize);
+  }
+}
+*/
+
+void real_2001_cmds::reportStats(DisplayStream &out, const char* name) const
+{
+#ifdef MEASURE_STATS
+  out << "Matrix diagram report for " << name << ":\n";
+  out << "\t\t" << numnonzeroes << " elements added\n";
+  out << "\t\tCurrent memory: ";
+  out.PutMemoryCount(memused, 3);
+  out << "\n\t\tMaximum memory: ";
+  out.PutMemoryCount(maxused, 3);
+  out << "\n\t\tCurrent nodes: " << currnodes << "\n";
+  out << "\t\tMaximum nodes: " << peaknodes << "\n";
+  if (num_batches) {
+    out << "\t\t# batches: " << num_batches << "\n";
+    out << "\t\tmin batch: " << min_batch << "\n";
+    out << "\t\tmax batch: " << max_batch << "\n";
+    double avg = numnonzeroes;
+    avg /= num_batches;
+    out << "\t\tavg batch: " << avg << "\n";
+  }
+  out << "\t\tUnique table stats:\n";
+  out << "\t\t\tCurrent Size: " << Table->getSize() << "\n";
+  out << "\t\t\tMaximum Size: " << Table->getMaxSize() << "\n";
+  out << "\t\t\t# Resizes: " << Table->getNumResizes() << "\n";
+  out << "\t\t\tCurrent Elements: " << Table->getNumElements() << "\n";
+  out << "\t\t\tMaximum Elements: " << Table->getMaxElements() << "\n";
+  out << "\t\t\tMax chain: " << Table->getMaxChain() << "\n";
+#endif
+#ifdef MEASURE_TIMES
+  out << "\tCritical times for " << name << ":\n";
+  out << "\t\tAdd minterm (total): " << time_mtadd << " s\n";
+  out << "\t\tAccumulate (total): " << time_accumulate << " s\n";
+  out << "\t\tReduce (total): " << time_reduce << " s\n";
+  out << "\t\tMisc. (total): " << time_misc << " s\n";
+#endif
+}
+
+shared_ddedge* real_2001_cmds::shareProc()
+{
+  return 0;
+}
+
+void real_2001_cmds::addBatch()
+{
+  if (0==batch) return;
+#ifdef MEASURE_TIMES
+  clock->reset();
+#endif
+  Accumulate(batch, root);
+#ifdef MEASURE_TIMES
+  time_accumulate += clock->elapsed();
+  clock->reset();
+#endif
+  batch = Canonicalize(batch);
+#ifdef MEASURE_TIMES
+  time_reduce += clock->elapsed();
+  clock->reset();
+#endif
+  RecycleMergedList();
+  Recycle(root);
+  root = batch;
+  batch = 0;
+  num_batches++;
+  min_batch = MIN(min_batch, curr_batch);
+  max_batch = MAX(max_batch, curr_batch);
+  curr_batch = 0;
+#ifdef MEASURE_TIMES
+  time_misc += clock->elapsed();
+#endif
+}
+
+void real_2001_cmds::addEdge(int* from, int* to, double rate)
+{
+#ifdef MEASURE_TIMES
+  clock->reset();
+#endif
+  int k = mxdfor->getDomain()->getNumVariables();
+  if (0==batch) batch = NewTempMatrix(k);
+  submatrix* node = batch;
+  for ( ; k; k--) {
+    submatrix::element* prev, *curr;
+    node->FindInList(from[k], to[k], prev, curr);
+    if (0==curr) { // element doesn't exist, we need to add it
+      curr = NewElement();
+      double val;
+      submatrix *down;
+      submatrix::element* next;
+      if (k-1==0) {
+        down = 0;
+        val = rate;
+        numnonzeroes++;
+      } else {
+        down = NewTempMatrix(k-1);
+        val = 1.0;
+      }
+      if (prev) next = prev->next; else next = node->lists[from[k]];
+      curr->Set(to[k], val, down, next);
+      if (prev) prev->next = curr; else node->lists[from[k]] = curr;
+    } // if 0==curr
+    node = curr->down;
+  } // for k
+  curr_batch++;
+#ifdef MEASURE_TIMES
+  time_mtadd += clock->elapsed();
+#endif
+  if (curr_batch >= batch_size) addBatch();
+}
+
+
+real_2001_cmds::submatrix* real_2001_cmds::Canonicalize(submatrix* sm)
+{
+  if (sm->state == submatrix::CANONICAL) {
+    // We're already canonicalized
+    return sm;
+  }
+  if (sm->state == submatrix::MERGED) {
+    // Essentially, this is a cache hit
+    return ShallowCopy(sm->mergedptr);
+  }
+  // If we're at the top, normalize below
+  if (sm->level == mxdfor->getDomain()->getNumVariables()) {
+    Normalize(root);
+    // OutLog->getStream() << "after normalizing:\n";
+    // Dump(OutLog->getStream(), true);
+  }
+
+  // Reduce below...
+  int i;
+  for (i=0; i<sm->size; i++) {
+    submatrix::element *ptr;
+    for (ptr = sm->lists[i]; ptr; ptr = ptr->next) if (ptr->down) 
+      ptr->down = Canonicalize(ptr->down);
+  }
+  
+  submatrix *find = Table->UniqueInsert(sm);
+  if (sm==find) {
+    // We're the canonical
+    sm->state = submatrix::CANONICAL;
+    sm->incoming = 1;
+  } else {
+    // We've been merged
+    // OutLog->getStream() << "Merging " << root << " with " << find->number << "\n";
+    // sm->Show(OutLog->getStream(), true);
+
+    UnlinkDown(root);
+    sm->Free(oldelements, memused);
+    sm->state = submatrix::MERGED;
+    sm->mergedptr = find;
+    DCASSERT(find->state == submatrix::CANONICAL);
+    find->incoming++;
+    // OutLog->getStream() << "#incoming of " << find->number << " : " << find->incoming << "\n";
+  }
+  
+  return find;
+}
+
+double real_2001_cmds::Normalize(submatrix* sm)
+{
+  double scale = 0.0;
+  DCASSERT(sm);
+  // If this node is canonical, then we're already normalized
+  if (sm->state == submatrix::CANONICAL) return 1.0;
+  DCASSERT(sm->state == submatrix::BUILDING);
+  if (NULL==sm->lists) return 0.0;   // this shouldn't happen, right?
+  int i;
+  // First, normalize below us and figure out the max element
+  for (i=0; i<sm->size; i++) {
+    submatrix::element *ptr;
+    for (ptr = sm->lists[i]; ptr; ptr = ptr->next) {
+      if (ptr->down) ptr->value *= Normalize(ptr->down);
+      scale = MAX(scale, ptr->value);
+    }
+  }
+  // Don't scale ourselves at top level...
+  if (sm->level == mxdfor->getDomain()->getNumVariables()) return 1.0;
+  // Don't bother scaling if we're already...
+  if (scale==1.0) return scale;
+  // this shouldn't happen either...
+  if (scale==0.0) return scale;  
+  // Now, scale the elements so that max=1.0
+  sm->MultiplyBy(1/scale);
+  return scale;
+}
+
+
+void real_2001_cmds::Accumulate(submatrix* build, const submatrix* canon)
+ // canonical and all its children must not be changed.
+ // root and its children may be changed.
+{
+  if (0==canon) return;
+
+  // Serious probelms if any of these fail
+  DCASSERT(build);
+  DCASSERT(build->state == submatrix::BUILDING);
+  DCASSERT(build->lists);
+  DCASSERT(canon->lists);
+  DCASSERT(build->size == canon->size);
+  DCASSERT(build->level == canon->level);
+
+  int k = build->level;
+
+  int i;
+  for (i=0; i<build->size; i++) {
+    // merge the two lists, *copying* the ptrs in the canonical md.
+    submatrix::element *newptr = NULL;
+    submatrix::element *bptr = build->lists[i];
+    submatrix::element *cptr = canon->lists[i];
+    int bindex;
+    if (bptr) bindex = bptr->index;
+    else bindex = INT_MAX;
+    while (cptr) {
+      if (bindex < cptr->index) {
+        // next node is from b list
+        if (newptr) newptr->next = bptr;
+        else build->lists[i] = bptr;
+        newptr = bptr;
+        // advance b
+        bptr = bptr->next;
+        if (bptr) bindex = bptr->index;
+        else bindex = INT_MAX;
+      } else if (bindex == cptr->index) {
+        // equal index
+         if (k==1) { 
+          // bottom level, just add the values!
+          bptr->value += cptr->value;
+        } else {
+          // skip scaling if values are equal
+          if (bptr->value != cptr->value) {
+            double downscale = bptr->value / cptr->value;        
+            bptr->down->MultiplyBy(downscale);
+            bptr->value = cptr->value;
+          }
+          // Not bottom level, add recursively
+          Accumulate(bptr->down, cptr->down);
+        }
+        // next node is modified b node
+        if (newptr) newptr->next = bptr;
+        else build->lists[i] = bptr;
+        newptr = bptr;
+        // advance b
+        bptr = bptr->next;
+        if (bptr) bindex = bptr->index;
+        else bindex = INT_MAX;
+        // advance c
+        cptr = cptr->next;
+      } else { // bindex > cptr->index
+        // copy current element of c list
+        submatrix* dncpy = ShallowCopy(cptr->down);
+        submatrix::element *copy = NewElement();
+        copy->Set(cptr->index, cptr->value, dncpy, NULL);
+        if (newptr) newptr->next = copy;
+        else build->lists[i] = copy;
+        newptr = copy;
+        // advance c
+        cptr = cptr->next;
+      }
+    }
+    // we've exhausted c-list, add remainder of b-list (if any)
+    if (newptr) newptr->next = bptr;
+    else build->lists[i] = bptr;
+  }
+}
+
+void real_2001_cmds::Recycle(submatrix* sm)
+{
+  if (0==sm) return;
+  DCASSERT(sm->state == submatrix::CANONICAL);
+  DCASSERT(sm->incoming>0);
+  sm->incoming--;
+  if (sm->incoming) return;
+  // we're the last pointer, recycle the node
+  // Remove us from the hash table!
+  Table->Remove(sm);
+
+  UnlinkDown(sm);
+  memused -= sizeof(submatrix);
+  sm->Free(oldelements, memused);
+  sm->state = submatrix::RECYCLED;
+  sm->nextrecycled = freed;
+  freed = sm;
+}
+
+void real_2001_cmds::UnlinkDown(submatrix* sm)
+{
+  if (0==sm) return;
+  DCASSERT(sm->state == submatrix::BUILDING || sm->state == submatrix::CANONICAL);
+  if (sm->level) if (sm->lists) {
+    // OutLog->getStream() << "Unlinking " << node << ": ";
+    int i;
+    submatrix::element *ptr;
+    for (i=0; i<sm->size; i++) 
+      for (ptr = sm->lists[i]; ptr; ptr = ptr->next) if (ptr->down) {
+        // OutLog->getStream() << ptr->down << " ";
+        Recycle(ptr->down);
+      }
+    // OutLog->getStream() << endl;
+  }
+}
+
+
+
+real_2001_cmds::submatrix* real_2001_cmds::NewTempMatrix(int k)
+{
+  if (k<1) return 0;
+  currnodes++;
+  submatrix* next = freed;
+  if (next) {
+    //freed = (*Nodes)[next-1].nextrecycled;
+    freed = next->nextrecycled;
+  } else {
+    next = new submatrix;
+    peaknodes++;
+    next->number = peaknodes;
+  }
+  memused += sizeof(submatrix);
+  // set up by rows
+  next->state = submatrix::BUILDING;
+  next->Alloc(mxdfor->getDomain()->getVariableBound(k, false), memused);
+  next->level = k;
+  maxused = MAX(memused, maxused);
+  return next;
+}
+
+
+
 #endif  // ifdef ENABLE_CMDS
 
 // **************************************************************************
