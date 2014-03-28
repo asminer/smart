@@ -479,6 +479,23 @@ public:
   void addBatch();
 
   void addEdge(int* from, int* to);
+
+  inline void addTTEdge(int* from, int* to, double wt) {
+    DCASSERT(0);
+    throw subengine::Engine_Failed;
+  }
+  inline void addTVEdge(int* from, int* to, double wt) {
+    DCASSERT(0);
+    throw subengine::Engine_Failed;
+  }
+  inline void addVTEdge(int* from, int* to, double wt) {
+    DCASSERT(0);
+    throw subengine::Engine_Failed;
+  }
+  inline void addVVEdge(int* from, int* to, double wt) {
+    DCASSERT(0);
+    throw subengine::Engine_Failed;
+  }
 protected:
   void Accumulate(submatrix* root, const submatrix* canonical);
   submatrix* NewTempMatrix(int k);
@@ -1177,7 +1194,23 @@ class real_2001_cmds {
 
     void addBatch();
 
-    void addEdge(int* from, int* to, double wt);
+    inline void addEdge(int* from, int* to) {
+      DCASSERT(0);
+      throw subengine::Engine_Failed;
+    }
+    void addTTEdge(int* from, int* to, double wt);
+    inline void addTVEdge(int* from, int* to, double wt) {
+      DCASSERT(0);
+      throw subengine::Engine_Failed;
+    }
+    inline void addVTEdge(int* from, int* to, double wt) {
+      DCASSERT(0);
+      throw subengine::Engine_Failed;
+    }
+    inline void addVVEdge(int* from, int* to, double wt) {
+      DCASSERT(0);
+      throw subengine::Engine_Failed;
+    }
 
   protected:
     /** Adds two MDs.
@@ -1534,20 +1567,6 @@ real_2001_cmds::~real_2001_cmds()
 #endif
 }
 
-/*
-void real_2001_cmds::Dump(ostream &s, bool summarize)
-{
-  int i;
-  s << "Canonical matrix diagram\n";
-  s << "Submatrix #0 : zero matrix\n";
-  for (i=1; i<NumNodes(); i++) {
-    submatrix *sm = GetNode(i);
-    ASSERT(sm);
-    sm->Show(s, summarize);
-  }
-}
-*/
-
 void real_2001_cmds::reportStats(DisplayStream &out, const char* name) const
 {
 #ifdef MEASURE_STATS
@@ -1618,7 +1637,7 @@ void real_2001_cmds::addBatch()
 #endif
 }
 
-void real_2001_cmds::addEdge(int* from, int* to, double rate)
+void real_2001_cmds::addTTEdge(int* from, int* to, double rate)
 {
 #ifdef MEASURE_TIMES
   clock->reset();
@@ -1668,7 +1687,7 @@ real_2001_cmds::submatrix* real_2001_cmds::Canonicalize(submatrix* sm)
   }
   // If we're at the top, normalize below
   if (sm->level == mxdfor->getDomain()->getNumVariables()) {
-    Normalize(root);
+    Normalize(sm);
     // OutLog->getStream() << "after normalizing:\n";
     // Dump(OutLog->getStream(), true);
   }
@@ -1688,13 +1707,15 @@ real_2001_cmds::submatrix* real_2001_cmds::Canonicalize(submatrix* sm)
     sm->incoming = 1;
   } else {
     // We've been merged
-    // OutLog->getStream() << "Merging " << root << " with " << find->number << "\n";
+    // OutLog->getStream() << "Merging " << sm << " with " << find->number << "\n";
     // sm->Show(OutLog->getStream(), true);
 
-    UnlinkDown(root);
+    UnlinkDown(sm);
     sm->Free(oldelements, memused);
     sm->state = submatrix::MERGED;
     sm->mergedptr = find;
+    sm->SetNext(merged_list);
+    merged_list = sm;
     DCASSERT(find->state == submatrix::CANONICAL);
     find->incoming++;
     // OutLog->getStream() << "#incoming of " << find->number << " : " << find->incoming << "\n";
@@ -1753,7 +1774,7 @@ void real_2001_cmds::Accumulate(submatrix* build, const submatrix* canon)
     // merge the two lists, *copying* the ptrs in the canonical md.
     submatrix::element *newptr = NULL;
     submatrix::element *bptr = build->lists[i];
-    submatrix::element *cptr = canon->lists[i];
+    const submatrix::element *cptr = canon->lists[i];
     int bindex;
     if (bptr) bindex = bptr->index;
     else bindex = INT_MAX;
@@ -1827,6 +1848,7 @@ void real_2001_cmds::Recycle(submatrix* sm)
   sm->state = submatrix::RECYCLED;
   sm->nextrecycled = freed;
   freed = sm;
+  currnodes--;
 }
 
 void real_2001_cmds::UnlinkDown(submatrix* sm)
@@ -1854,7 +1876,6 @@ real_2001_cmds::submatrix* real_2001_cmds::NewTempMatrix(int k)
   currnodes++;
   submatrix* next = freed;
   if (next) {
-    //freed = (*Nodes)[next-1].nextrecycled;
     freed = next->nextrecycled;
   } else {
     next = new submatrix;
@@ -3072,7 +3093,80 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
   // A little ugly - consider all possible cases "by hand"
   // 
 
-  // TBD - ignoring CMD option for now
+  //
+  // CMDs
+  //
+#ifdef ENABLE_CMDS
+  if (isCMD()) {
+    if (hm.GetProcess()) {
+      //
+      // Second pass
+      //
+      if (batch_removal) {
+          //
+          // Batch removal
+          //
+          gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, real_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+    
+          DoMC(hm, G);
+          return;
+      } else {
+          //
+          // Single removal
+          //
+          gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, real_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+      
+          DoMC(hm, G);
+          return;
+      }
+    } else {
+      //
+      // First pass
+      //
+      if (batch_removal) {
+          //
+          // Batch removal
+          //
+          gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, real_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+    
+          DoMC(hm, G);
+          return;
+      } else {
+          //
+          // Single removal
+          //
+          gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, real_2001_cmds>
+          G(
+            false, *ms, mp,
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+          );
+      
+          DoMC(hm, G);
+          return;
+      }
+    }
+  }
+#endif
 
   //
   // "normal" matrix
