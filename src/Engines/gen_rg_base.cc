@@ -8,6 +8,7 @@
 #include "../ExprLib/mod_inst.h"
 #include "../Timers/timers.h"
 
+#include "../Options/options.h"
 
 // **************************************************************************
 // *                                                                        *
@@ -17,6 +18,7 @@
 
 named_msg process_generator::report;
 named_msg process_generator::debug;
+int process_generator::remove_vanishing;
 
 process_generator::process_generator()
  : subengine()
@@ -138,5 +140,29 @@ void InitializeProcGen(exprman* em)
       "Explicit process generation"
   );
   RegisterEngine(ProcessGeneration, ExplicitProcessGeneration);
+
+  /*
+    Vanishing elimiation styles - as an option
+  */
+  radio_button** rlist = new radio_button*[2];
+  rlist[process_generator::BY_PATH] = new radio_button(
+    "BY_PATH", 
+    "Recursively search vanishing paths until tangibles are reached.",
+    process_generator::BY_PATH
+  );
+  rlist[process_generator::BY_SUBGRAPH] = new radio_button(
+    "BY_SUBGRAPH",
+    "Explore vanishing portions of graph, then eliminate; can handle vanishing cycles.",
+    process_generator::BY_SUBGRAPH
+  );
+  process_generator::remove_vanishing = process_generator::BY_SUBGRAPH;
+
+  em->addOption(
+    MakeRadioOption(
+      "RemoveVanishing",
+      "Method to remove vanishing states",
+      rlist, 2, process_generator::remove_vanishing
+    )
+  );
 }
 

@@ -578,16 +578,16 @@ void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp)
     @param  mc    State sets and Markov chain.
                   The following methods are required.
 
-                  bool add(const shared_state*, UID &id);
+                  bool add(bool isVan, const shared_state*, UID &id);
                   bool hasUnexploredTangible();
                   UID  getUnexploredTangible(shared_state*);
                   bool statesOnly();
-                  void addInitial(const UID id, double wt);
+                  void addInitial(bool isVan, const UID id, double wt);
                   void addTTEdge(UID from, UID to, double wt);
                   void show(OutputStream &s, bool isVan, const UID id, const shared_state* st);
                   void show(OutputStream &s, const shared_state* st);
                   void show(OutputStream &s, const UID id);
-                  UID  illegalID();
+                  void makeIllegalID(UID &);
 
     @throws An appropriate error code
 
@@ -662,8 +662,8 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
       // Tangible
       //
       UID id;
-      mc.add(statelist[curr], id);
-      mc.addInitial(id, weightlist[curr]);
+      mc.add(false, statelist[curr], id);
+      mc.addInitial(false, id, weightlist[curr]);
       if (debug.startReport()) {
         debug.report() << "Adding initial ";
         mc.show(debug.report(), false, id, statelist[curr]);
@@ -676,9 +676,9 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
     // Done with initial states, start exploration loop
     //
     bool current_is_vanishing = false;
-    UID fromID = mc.IllegalID();
+    UID fromID;
+    mc.makeIllegalID(fromID);
     int from = -1;
-    double inrate = 0;
 
     for (;;) {
       //
@@ -698,7 +698,6 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
       if (curr) {
         // pop vanishing
         curr--;
-        inrate = weightlist[curr];
         current_is_vanishing = true;
       } else {
         // grab tangible
@@ -843,8 +842,9 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
         for (int i=next; i>curr; i--) {
           wtotal += weightlist[i];
         }
+        double inrate = weightlist[curr] / wtotal;
         for (int i=next; i>curr; i--) {
-          weightlist[i] /= wtotal;
+          weightlist[i] *= inrate;
         }
       }
 
@@ -876,7 +876,7 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
         // Add state, if tangible
         //
         if (next_is_vanishing) {
-          toID = mc.IllegalID();
+          mc.makeIllegalID(toID);
           next_is_new = true;
         } else {
           next_is_new = mc.add(false, statelist[i], toID);
@@ -907,9 +907,9 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
             mc.addTTEdge(fromID, toID, weightlist[i]);
  
             if (debug.startReport()) {
-              debug.report() << "Adding MC edge from ID ";
+              debug.report() << "Adding MC edge from ";
               mc.show(debug.report(), fromID);
-              debug.report() << " rate " << weightlist[i] << " to ID ";
+              debug.report() << " rate " << weightlist[i] << " to ";
               mc.show(debug.report(), toID);
               debug.report() << "\n";
               debug.stopIO();
