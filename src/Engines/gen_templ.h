@@ -278,7 +278,7 @@ void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg)
     @param  debug Debugging channel
     @param  dsm   High-level model
 
-    @param  rg    State sets and semi-Markov process.
+    @param  smp   State sets and semi-Markov process.
                   The following methods are required.
 
                   bool add(bool isVanishing, const shared_state*, UID &id);
@@ -559,5 +559,389 @@ void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp)
     Nullify(x.next_state);
     throw e;
   }
+}
+
+
+/**
+    Generate a Markov chain from a discrete-event high-level model.
+    Differs from the SMP version, in that, we follow vanishing
+    edges until we reach tangible states, so there cannot be any
+    cycles of vanishing states.
+    This is a template function, where parameter MC is a generic
+    MC class (see required methods, below) and UID is the type of the
+    unique identifier per states.
+
+
+    @param  debug Debugging channel
+    @param  dsm   High-level model
+
+    @param  mc    State sets and Markov chain.
+                  The following methods are required.
+
+                  bool add(const shared_state*, UID &id);
+                  bool hasUnexploredTangible();
+                  UID  getUnexploredTangible(shared_state*);
+                  bool statesOnly();
+                  void addInitial(const UID id, double wt);
+                  void addTTEdge(UID from, UID to, double wt);
+                  void show(OutputStream &s, bool isVan, const UID id, const shared_state* st);
+                  void show(OutputStream &s, const shared_state* st);
+                  void show(OutputStream &s, const UID id);
+                  UID  illegalID();
+
+    @throws An appropriate error code
+
+*/
+template <class MC, typename UID>
+void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
+{
+  //
+  // Build a buffer of states and incoming rates
+  //
+  const int BUFSIZE = 2048; // TBD - make this an option
+
+  shared_state** statelist = new shared_state*[BUFSIZE];
+  double*  weightlist = new double[BUFSIZE];
+  // bool* isvanlist = new bool[BUFSIZE];
+  for (int i=0; i<BUFSIZE; i++) {
+    statelist[i] = new shared_state(&dsm);
+  }
+  List <model_event> enabled;
+
+  int curr = 0; // index of current state in statelist
+
+  // set up traverse data and such
+  traverse_data x(traverse_data::Compute);
+  result xans;
+
+  x.answer = &xans;
+  x.next_state = 0;
+
+  try {
+    //
+    // Find and insert the initial states
+    //
+    for (int i=0; i<dsm.NumInitialStates(); i++) {
+      weightlist[curr] = dsm.GetInitialState(i, statelist[curr]);
+      x.current_state = statelist[curr];
+      dsm.checkAssertions(x);
+      if (0==xans.getBool()) {
+        throw subengine::Assertion_Failure;
+      }
+      dsm.checkVanishing(x);
+      if (!xans.isNormal()) {
+        if (dsm.StartError(0)) {
+          dsm.SendError("Couldn't determine vanishing / tangible");
+          dsm.DoneError();
+        }
+        throw subengine::Engine_Failed;
+      }
+
+      if (xans.getBool()) {
+        // 
+        // Vanishing, "push"
+        //
+        if (debug.startReport()) {
+          debug.report() << "Pushing initial vanishing ";
+          mc.show(debug.report(), statelist[curr]);
+          debug.report() << " wt " << weightlist[curr] << "\n";
+          debug.stopIO();
+        }
+        // isvanlist[curr] = true;
+        curr++; 
+        if (curr >= BUFSIZE) {
+          if (dsm.StartError(0)) {
+            dsm.SendError("Vanishing stack overflow");
+            dsm.DoneError();
+          }
+          throw subengine::Engine_Failed;
+        }
+        continue;
+      } 
+      //
+      // Tangible
+      //
+      UID id;
+      mc.add(statelist[curr], id);
+      mc.addInitial(id, weightlist[curr]);
+      if (debug.startReport()) {
+        debug.report() << "Adding initial ";
+        mc.show(debug.report(), false, id, statelist[curr]);
+        debug.report() << " wt " << weightlist[curr] << "\n";
+        debug.stopIO();
+      }
+    } // for i
+
+    //
+    // Done with initial states, start exploration loop
+    //
+    bool current_is_vanishing = false;
+    UID fromID = mc.IllegalID();
+    int from = -1;
+    double inrate = 0;
+
+    for (;;) {
+      //
+      // Check for signals
+      //
+      if (debug.caughtTerm()) {
+        if (dsm.StartError(0)) {
+          dsm.SendError("Process construction prematurely terminated");
+          dsm.DoneError();
+        }
+        throw subengine::Terminated;
+      }
+
+      //
+      // Get next state to explore, with priority to vanishing stack
+      //
+      if (curr) {
+        // pop vanishing
+        curr--;
+        inrate = weightlist[curr];
+        current_is_vanishing = true;
+      } else {
+        // grab tangible
+        if (mc.hasUnexploredTangible()) {
+          from = curr;
+          fromID = mc.getUnexploredTangible(statelist[curr]);
+          current_is_vanishing = false;
+        } else {
+          break;  // Done exploring!
+        }
+      }
+      if (debug.startReport()) {
+        debug.report() << "Exploring ";
+        mc.show(debug.report(), current_is_vanishing, fromID, statelist[curr]);
+        debug.report() << "\n";
+        debug.stopIO();
+      }
+
+      //
+      // Make enabling list
+      //
+      x.current_state = statelist[curr];
+      if (current_is_vanishing)   dsm.makeVanishingEnabledList(x, &enabled);
+      else                        dsm.makeTangibleEnabledList(x, &enabled);
+      if (!x.answer->isNormal()) {
+        DCASSERT(1 == enabled.Length());
+        if (dsm.StartError(0)) {
+          dsm.SendError("Bad enabling expression for event ");
+          dsm.SendError(enabled.Item(0)->Name());
+          dsm.SendError(" during process generation");
+          dsm.DoneError();
+        }
+        throw subengine::Engine_Failed;
+      }
+
+      //
+      // Get stack ready for new states
+      //
+      int next = curr;
+
+      // 
+      // Traverse enabled events
+      //
+      for (int e=0; e<enabled.Length(); e++) {
+        model_event* t = enabled.Item(e);
+        DCASSERT(t);
+        DCASSERT(t->hasFiringType(model_event::Immediate) == current_is_vanishing);
+        if (0==t->getNextstate())
+          continue;  // firing is "no-op", don't bother
+
+        //
+        // Next slot on the "stack"
+        //
+        next++;
+        if (next >= BUFSIZE) {
+          if (dsm.StartError(0)) {
+            dsm.SendError("Vanishing stack overflow");
+            dsm.DoneError();
+          }
+          throw subengine::Engine_Failed;
+        }
+
+        //
+        // t is enabled, fire and get new state
+        //
+        x.next_state = statelist[next];
+        statelist[next]->fillFrom(statelist[curr]);
+        t->getNextstate()->Compute(x);
+        if (!xans.isNormal()) {
+          if (dsm.StartError(0)) {
+            dsm.SendError("Bad next-state expression for event ");
+            dsm.SendError(t->Name());
+            dsm.SendError(" during process generation");
+            dsm.OutOfBoundsError(xans);
+            dsm.DoneError();
+          }
+          throw subengine::Engine_Failed;
+        }
+      
+        //
+        // get the firing weight (if necessary)
+        //
+        if (mc.statesOnly()) {
+          weightlist[next] = 1.0;
+        } else {
+          if (current_is_vanishing) {
+            if (enabled.Length()>1) {
+              SafeCompute(t->getWeight(), x);
+            } else {
+              xans.setReal(1.0);
+            } // if enabled.Length
+          } else {
+            x.which = traverse_data::ComputeExpoRate;
+            SafeComputeExpoRate(t->getDistribution(), x);
+            x.which = traverse_data::Compute;
+          } // if current_is_vanishing
+  
+          // check result
+          if (xans.isNormal() && xans.getReal() > 0.0) {
+            weightlist[next] = xans.getReal();
+          } else {
+            if (dsm.StartError(0)) {
+              dsm.SendError("Bad value ");
+              dsm.SendRealError(xans);
+              if (current_is_vanishing) {
+                dsm.SendError(" for weight of event ");
+              } else {
+                dsm.SendError(" for rate of event ");
+              }
+              dsm.SendError(t->Name());
+              dsm.DoneError();
+            }
+            throw subengine::Engine_Failed;
+          }
+
+        } // if not states only
+
+        //
+        // Debug info
+        //
+        if (debug.startReport()) {
+          debug.report() << "\t via event " << t->Name();
+          if (!mc.statesOnly()) {
+            debug.report() << " (" << weightlist[next] << ")";
+          }
+          debug.report() << " to ";
+          mc.show(debug.report(), statelist[next]);
+          debug.report() << "\n";
+          debug.stopIO();
+        }
+      } // for enabled event e
+
+      //
+      // The stack, between curr and next, are the markings just added
+      //
+
+      //
+      // For vanishing states, get the total weight and normalize
+      //
+      if (current_is_vanishing) {
+        double wtotal = 0;
+        for (int i=next; i>curr; i--) {
+          wtotal += weightlist[i];
+        }
+        for (int i=next; i>curr; i--) {
+          weightlist[i] /= wtotal;
+        }
+      }
+
+      //
+      // Process the list we just built.
+      // Vanishing states are added to the stack.
+      // Tangible states are processed as usual.
+      //
+      for (int i=curr+1; i<=next; i++) {
+        UID toID;
+        bool next_is_new;
+        bool next_is_vanishing;
+
+        //
+        // Determine vanishing/tangible
+        // 
+        x.current_state = statelist[i];
+        dsm.checkVanishing(x);
+        if (!xans.isNormal()) {
+          if (dsm.StartError(0)) {
+            dsm.SendError("Couldn't determine vanishing / tangible");
+            dsm.DoneError();
+          }
+          throw subengine::Engine_Failed;
+        }
+        next_is_vanishing = xans.getBool();
+
+        //
+        // Add state, if tangible
+        //
+        if (next_is_vanishing) {
+          toID = mc.IllegalID();
+          next_is_new = true;
+        } else {
+          next_is_new = mc.add(false, statelist[i], toID);
+        }
+
+        //
+        // check assertions
+        //
+        if (next_is_new) {
+          dsm.checkAssertions(x);
+          if (0==xans.getBool()) {
+            throw subengine::Assertion_Failure;
+          }
+        } // if next_is_new
+
+        if (next_is_vanishing) {
+          //
+          // Add to stack
+          //
+          SWAP(statelist[curr], statelist[i]);
+          weightlist[curr] = weightlist[i];
+          curr++;
+        } else {
+          //
+          // Add edge to this tangible states
+          //
+          if (!mc.statesOnly()) {
+            mc.addTTEdge(fromID, toID, weightlist[i]);
+ 
+            if (debug.startReport()) {
+              debug.report() << "Adding MC edge from ID ";
+              mc.show(debug.report(), fromID);
+              debug.report() << " rate " << weightlist[i] << " to ID ";
+              mc.show(debug.report(), toID);
+              debug.report() << "\n";
+              debug.stopIO();
+            }
+          }
+        }
+
+      } // for i
+
+    } // infinite loop
+
+    //
+    // Cleanup
+    //
+    for (int i=0; i<BUFSIZE; i++) {
+      Delete(statelist[i]);
+    }
+    delete[] statelist;
+    delete[] weightlist;
+  }
+  catch (...) {
+    //
+    // Cleanup
+    //
+    for (int i=0; i<BUFSIZE; i++) {
+      Delete(statelist[i]);
+    }
+    delete[] statelist;
+    delete[] weightlist;
+
+    throw;
+  }
+
 }
 
