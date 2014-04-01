@@ -51,6 +51,16 @@ public:
     s << " : ";
     curr_st->Print(s, 0);
   }
+  static inline void show(OutputStream &s, long id)
+  {
+    s << " state# " << id;
+  }
+  static inline void show(OutputStream &s, const shared_state* curr_st)
+  {
+    s << " state ";
+    curr_st->Print(s, 0);
+  }
+
   static inline void makeIllegalID(long &id) {
     id = -1;
   }
@@ -587,13 +597,11 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
   if (rg) {
     indexed_reachgraph myrg(*tandb, *vandb, *rg);
-    // generateIndexedRG(debug, *dsm, myrg);
     generateRGt<indexed_reachgraph, long>(debug, *dsm, myrg);
     myrg.exportInitial(s0);
     myrg.finish();
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    // generateIndexedRG(debug, *dsm, myrs);
     generateRGt<indexed_statedbs, long>(debug, *dsm, myrs);
   }
 
@@ -614,15 +622,40 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
   StateLib::state_db* vandb = statelib->createStateDB(true, false);
 
   if (smp) {
+
     indexed_smp mysmp(*dsm, *tandb, *vandb, vansolver, *smp);
-    // generateIndexedSMP(debug, *dsm, mysmp);
-    generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
+
+    switch (remove_vanishing) {
+      case BY_PATH:
+        generateMCt<indexed_smp, long>(debug, *dsm, mysmp);
+        break;
+
+      case BY_SUBGRAPH:
+        generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
+        break;
+
+      default:
+        DCASSERT(0);
+    }
     mysmp.exportInitial(s0);
     initial_distro(s0);
+
   } else {
+
     indexed_statedbs myrs(*tandb, *vandb);
-    // generateIndexedSMP(debug, *dsm, myrs);
-    generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
+
+    switch (remove_vanishing) {
+      case BY_PATH:
+        generateMCt<indexed_statedbs, long>(debug, *dsm, myrs);
+        break;
+
+      case BY_SUBGRAPH:
+        generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
+        break;
+
+      default:
+        DCASSERT(0);
+    }
   }
 
   delete vandb;

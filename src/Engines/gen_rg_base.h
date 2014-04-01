@@ -21,11 +21,15 @@ class process_generator : public subengine {
 protected:
   static named_msg report;
   static named_msg debug;
+  static int remove_vanishing;
   friend void InitializeProcGen(exprman* em);
+public:
+  static const int BY_PATH = 0;
+  static const int BY_SUBGRAPH = 1;
 public:
   process_generator();
   virtual ~process_generator();
-// protected:
+
   // returns true if the report stream is open
   static bool startGen(const hldsm& mdl, const char* whatproc);
   // returns true if the report stream is open
