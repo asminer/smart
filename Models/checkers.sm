@@ -283,8 +283,9 @@ evm checkers := {
   //
   // Measures
   //
-  bigint ns := num_states(true);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
+  void ps := show_states;
 
   stateset dead := reachable \ EX(potential(true));
 

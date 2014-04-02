@@ -94,7 +94,7 @@ evm queen(int N, int Q) := {
   assign(sol : covered : 1 );
 
   int ne := num_events(true);
-  bigint ntry := num_states(false);
+  bigint ntry := num_states;
   stateset covers := reachable & potential(eval(sol)==1);
   stateset noextrow := reachable & potential(eval(q[N+1])<1);
   for (int i in {1..N}) {

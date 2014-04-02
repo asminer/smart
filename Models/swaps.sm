@@ -22,7 +22,7 @@ pn swaps(int N) := {
       t[i] : a[i-1] : tk(a[i]),     t[i] : a[i] : tk(a[i-1])
     );
   }
-  bigint ns := num_states(false);
+  bigint ns := num_states;
 };
 
 # StateDisplayOrder LEXICAL

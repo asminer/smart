@@ -30,7 +30,7 @@ pn slot(int N) := {
       go[i]:pH[i], pH[i]:give[i]
     );
   }
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 # Report + procgen

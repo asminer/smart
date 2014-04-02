@@ -35,8 +35,8 @@ pn nim(int k, int N) := {
   partition(turn, choose);
   bound(turn:2, choose:1);
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   stateset p1turn := potential(tk(turn)==1);
   stateset p2turn := potential(tk(turn)==2);

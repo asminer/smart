@@ -25,8 +25,8 @@ tam sierp(int n) := {
   board(0, n-1, 0, n-1);
   init(0 : 0 : seed);
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   stateset dead := reachable \ EX(reachable);
 };

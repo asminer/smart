@@ -38,8 +38,8 @@ dtmc sort6 := {
   }
   real tta := prob_acc(transient, 0, infinity);
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 };
 
 #Report + mc_solve

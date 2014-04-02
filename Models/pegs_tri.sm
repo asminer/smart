@@ -110,7 +110,7 @@ pn pegs_tri(int N) := {
       peg[i][j] : se[i][j]
     );
   }
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
   int nl := num_levels(true);
 };
 

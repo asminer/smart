@@ -117,8 +117,8 @@ pn fms(int N, int Np) := {
     tP3s  : P3  : tk(P3s)
   );
 
-  bigint m1 := num_states(false);
-  bigint m2 := num_arcs(false);
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
 
   real through1 := avg_ss(rate(tP1));
   real through2 := avg_ss(rate(tP2));

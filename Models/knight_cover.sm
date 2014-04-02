@@ -45,7 +45,7 @@ evm knights(int N) := {
 
   } 
   int ne := num_events(true);
-  bigint ns := num_states(false);
+  bigint ns := num_states;
 };
 
 # StateDisplayOrder LEXICAL

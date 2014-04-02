@@ -217,7 +217,7 @@ evm rubik_norot := {
     yrg : yellow_3 : eval(ybr)
   );
   
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 #Report + procgen

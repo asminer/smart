@@ -67,7 +67,7 @@ evm queens(int N) := {
     );
   } // for i
 
-  bigint numstates := num_states(false);
+  bigint numstates := num_states;
 };
 
 

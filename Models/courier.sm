@@ -112,8 +112,8 @@ pn courier(int n, int m) := {
     p45:t34, t34:p46
   );
 
-  bigint m1 := num_states(false);
-  bigint m2 := num_arcs(false);
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
 
 };
 

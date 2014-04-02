@@ -17,7 +17,7 @@ pn digits(int D, int N) := {
     arcs( p[d] : sub[d] );
   }
 
-  bigint ns := num_states(false);
+  bigint ns := num_states;
 };
 
 # PNMarkingStyle VECTOR

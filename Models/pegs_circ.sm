@@ -29,7 +29,7 @@ pn circ(int N) := {
     );
   }
   
-  int ns := num_states(false);
+  int ns := num_states;
 };
 
 int n := read_int("n");

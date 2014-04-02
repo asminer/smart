@@ -526,8 +526,8 @@ evm othello(int N, int M) := {
   // Measures
   //
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   for(int f in {4..N*M}) {
 

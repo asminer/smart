@@ -32,8 +32,8 @@ pn stack(int depth, int vals) := {
       pop   : p[i-1]  : tk(p[i])
     );
   }
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 };
 
 # Warning - pn_no_init

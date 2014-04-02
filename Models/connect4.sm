@@ -109,8 +109,8 @@ evm connect4(int height, int width) := {
     );
   } // for i,j
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   stateset p1win := reachable & potential(eval(hwin)==1 | eval(vwin)==1 | eval(dwin)==1);
 
