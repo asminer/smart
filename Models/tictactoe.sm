@@ -154,8 +154,8 @@ evm ttt := {
             )
   );
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   stateset xwins := potential(eval(winner)==1) & reachable;
   stateset owins := potential(eval(winner)==2) & reachable;

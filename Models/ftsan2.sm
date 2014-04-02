@@ -212,7 +212,7 @@ pn ftmps(int N) := {
   
   partition(comp_failed);
 
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 # Report + procgen

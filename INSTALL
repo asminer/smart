@@ -33,6 +33,10 @@ Instructions to build
     make check:       Requires automake version 1.12 or higher.
     make check-old:   Should always work
 
+    You may need to set an environment variable
+    SMART_PLATFORM for a few platform-specific tests (or outputs).
+    Legal values are: i386-cygwin, i386-linux, i386-mac, sparc-solaris
+
 5.  make bench
 
     Run timing tests.  More important for release code.

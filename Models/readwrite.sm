@@ -17,7 +17,7 @@ pn rw(int n) := {
     writing : relw, relw : synch : n, relw : think
   );
 
-  bigint ns := num_states(false);
+  bigint ns := num_states;
 };
 
 

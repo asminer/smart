@@ -50,7 +50,7 @@ evm queens(int N) := {
     } // for j
   } // for i
 
-  bigint numstates := num_states(false);
+  bigint numstates := num_states;
   stateset solutions := reachable & potential(eval(row[N])!=0);
 };
 

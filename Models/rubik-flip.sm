@@ -159,7 +159,7 @@ evm rubik_fliponly := {
      yrg_r : yellow : eval(yob_r)
   );
 
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 #Report + procgen

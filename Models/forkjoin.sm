@@ -17,8 +17,8 @@ pn forkjoin(int n) := {
     p4 : t4, t4 : p5,
     p3 : t5, p5 : t5, t5 : p1
   );
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 };
 
 # Report + procgen

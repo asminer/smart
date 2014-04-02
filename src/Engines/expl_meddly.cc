@@ -47,6 +47,8 @@
 // #define FORCE_FULL
 // #define FORCE_SPARSE
 
+// #define DEBUG_ADD_EDGES
+
 #define ENABLE_CMDS
 // #define ENABLE_OLD_IMPLEMENTATION
 
@@ -246,6 +248,21 @@ void edge_minterms::reportStats(DisplayStream &out, const char* who) const
 void edge_minterms::addBatch()
 {
   if (0==used) return;
+
+#ifdef DEBUG_ADD_EDGES
+  fprintf(stderr, "Adding batch of edges of size %d\n", used);
+  for (int i=0; i<used; i++) {
+    fprintf(stderr, "  ");
+    mp.showMinterm(stderr, from_batch[i]);
+    if (rate_batch) {
+      fprintf(stderr, " --(%9f)--> ", rate_batch[i]);
+    } else {
+      fprintf(stderr, " ---------> ");
+    }
+    mp.showMinterm(stderr, to_batch[i]);
+    fprintf(stderr, "\n");
+  }
+#endif
 
   try {
 #ifdef MEASURE_TIMES

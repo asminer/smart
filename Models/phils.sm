@@ -22,8 +22,8 @@ pn phils(int N) := {
 //  Fork[(i+1) % N]:Release[i]
 //    );
   } 
-  bigint m1 := num_states(false);
-  bigint m2 := num_arcs(false);
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
   stateset eat  := reachable & potential(tk(HasL[0])>0 & tk(HasR[0])>0);
   stateset left := reachable & potential(tk(HasL[0])>0);
 };

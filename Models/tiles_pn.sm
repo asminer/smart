@@ -41,7 +41,7 @@ pn tiles(int n, int m) := {
     );
   }
 
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 # Warning - pn_zero_init

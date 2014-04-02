@@ -46,7 +46,7 @@ evm tiles(int n, int m) := {
     );
   }
 
-  bigint m1 := num_states(false);
+  bigint m1 := num_states;
 };
 
 # EVMStateStyle VECTOR

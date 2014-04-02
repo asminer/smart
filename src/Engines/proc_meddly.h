@@ -93,6 +93,14 @@ public:
     s.Put(']');
   }
 
+  inline void showMinterm(FILE*s, const int* m) const {
+    fprintf(s, "[%2d", m[1]);
+    for (int i=2; i<term_depth; i++) {
+      fprintf(s, ", %2d", m[i]);
+    }
+    fprintf(s, "]");
+  }
+
   inline bool equalMinterms(const int* m1, const int* m2) const {
     return 0==memcmp(m1+1, m2+1, (term_depth-1) * sizeof(int));
   }

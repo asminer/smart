@@ -18,8 +18,8 @@ pn flip(int n) := {
     arcs(dumb:t[i], t[i] : p[i]);
     inhibit(p[i]:t[i]);
   }
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
   bigint np := num_paths(initial, potential(tk(dumb)==0));
 };
 

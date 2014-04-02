@@ -148,8 +148,8 @@ pn rubik2(bool ccw, bool cw, bool dbl) := {
   ), null);
 
 
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
+  bigint ns := num_states;
+  bigint na := num_arcs;
 
   for (int d in {0..25}) {
     stateset r[d] :=  cond(d==0, 
