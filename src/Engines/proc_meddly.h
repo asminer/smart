@@ -87,10 +87,14 @@ public:
     memcpy(dest, src, term_depth * sizeof(int));
   }
 
-  inline void showMinterm(OutputStream &s, int* m) const {
+  inline void showMinterm(OutputStream &s, const int* m) const {
     s.Put('[');
     s.PutArray(m, term_depth);
     s.Put(']');
+  }
+
+  inline bool equalMinterms(const int* m1, const int* m2) const {
+    return 0==memcmp(m1+1, m2+1, (term_depth-1) * sizeof(int));
   }
 
   void reportStats(DisplayStream &out) const;

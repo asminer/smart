@@ -48,7 +48,7 @@
 // #define FORCE_SPARSE
 
 #define ENABLE_CMDS
-#define ENABLE_OLD_IMPLEMENTATION
+// #define ENABLE_OLD_IMPLEMENTATION
 
 // Handy stuff
 
@@ -140,6 +140,9 @@ public:
   }
 
   inline void addTTEdge(int* from, int* to, double wt) {
+    // Ignore self-loops:
+    if (mp.equalMinterms(from, to)) return;
+
     DCASSERT(rate_batch);
 #ifdef MEASURE_TIMES
     clock->reset();
@@ -1643,6 +1646,10 @@ void real_2001_cmds::addTTEdge(int* from, int* to, double rate)
   clock->reset();
 #endif
   int k = mxdfor->getDomain()->getNumVariables();
+
+  // Ignore self-loops:
+  if (0==memcmp(from+1, to+1, k*sizeof(int))) return;
+
   if (0==batch) batch = NewTempMatrix(k);
   submatrix* node = batch;
   for ( ; k; k--) {
@@ -2309,6 +2316,19 @@ class gen_wrapper_templ {
       }
     }
 
+    inline void generateMC(named_msg &debug, dsde_hlm &hm) {
+      generateMCt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
+        (debug, hm, *this);
+
+      if (edges) edges->addBatch(); // add the final batch of edges
+
+      // transfer everything
+      if (0==ms.states) ms.states = tangible->shareS();
+      if (0==ms.proc) if (edges) {
+        ms.proc = edges->shareProc();
+      }
+    }
+
     inline void generateSMP(named_msg &debug, dsde_hlm &hm) {
       generateSMPt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
@@ -2383,6 +2403,17 @@ class gen_wrapper_templ {
       else       s << "tangible  state: ";
       curr->Print(s, 0);
     }
+    inline void show(OutputStream &s, const int* id) const
+    {
+      s << " minterm ";
+      minterms->showMinterm(s, id);
+    }
+    inline void show(OutputStream &s, const shared_state* curr) const
+    {
+      s << " state ";
+      curr->Print(s, 0);
+    }
+
     static inline void makeIllegalID(int* &id) {
       id = 0;
     }
@@ -2697,7 +2728,19 @@ private:
     try {
 
       em->waitTerm();
-      G.generateSMP(debug, hm);
+
+      switch (remove_vanishing) {
+        case BY_PATH:
+          G.generateMC(debug, hm);
+          break;
+
+        case BY_SUBGRAPH:
+          G.generateSMP(debug, hm);
+          break;
+
+        default:
+          DCASSERT(0);
+      }
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm.Name(), "Markov chain", watch)) {
