@@ -43,9 +43,9 @@ public:
   static inline void show(OutputStream &s, bool van, long id, const shared_state* curr_st)
   {
     if (van) {
-      s << " vanishing state# ";
+      s << "vanishing state# ";
     } else {
-      s << " tangible  state# ";
+      s << "tangible  state# ";
     }
     s.Put(id, 4);
     s << " : ";

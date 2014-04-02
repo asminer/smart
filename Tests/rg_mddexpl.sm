@@ -4,9 +4,12 @@
 #include "rgmodels.sm"
 
 # ProcessGeneration MEDDLY
-# MeddlyProcessGeneration EXPLICIT_MT_BR
 # MeddlyVariableStyle BOUNDED
-# ExplicitMeddlyBatchAddSize 256
+# MeddlyProcessGeneration EXPLICIT {
+#   BatchAddSize 1024
+#   UseBatchRemoval true
+#   MatrixStyle IRMXD
+# }
 
 print("Checking actual reachability graph for Kanban, N=1\n");
 compute(kanban_fine(1).na);
