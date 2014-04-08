@@ -3,7 +3,8 @@
 
 noinst_PROGRAMS = \
   axzero \
-  axb
+  axb \
+  phase
 
 AM_CPPFLAGS = -I../src
 
@@ -12,3 +13,6 @@ axzero_LDADD = ../src/libls.la
 
 axb_SOURCES = axb.cc timers.h timers.cc matrix.h matrix.cc
 axb_LDADD = ../src/libls.la
+
+phase_SOURCES = phase.cc timers.h timers.cc
+phase_LDADD = ../src/libls.la
