@@ -24,10 +24,13 @@ int Usage(const char* name)
   cerr << "\tMatrix dimension\n";
   cerr << "\t[v, v, v, v] # Initial vector\n";
   cerr << "\tNumber of matrix edges\n";
-  cerr << "\trow, col, value;\n";
-  cerr << "\trow, col, value;\n";
+  cerr << "\tRow r:\n";
+  cerr << "\t\tcol : value\n";
+  cerr << "\t\tcol : value\n";
+  cerr << "\tRow r:\n";
   cerr << "\t...\n";
-  cerr << "\t(matrix edges should be in order)\n\n";
+  cerr << "\tEnd\n";
+  cerr << "\t(rows should be in order)\n\n";
   return 0;
 }
 
@@ -43,7 +46,7 @@ void ignoreToEol(istream &s)
   }
 }
 
-void skipUntil(istream &s, const char* expected, const char* error)
+char skipUntil(istream &s, const char* expected, const char* error)
 {
   for (;;) {
     char c = s.get();
@@ -61,7 +64,7 @@ void skipUntil(istream &s, const char* expected, const char* error)
     for (int i=0; expected[i]; i++) {
       if (expected[i] == c) {
         s.unget();
-        return;
+        return c;
       }
     }
     // Bad character
@@ -103,10 +106,26 @@ void readComma(istream &s)
   s.get();
 }
 
-void readSemi(istream &s)
+void readColon(istream &s)
 {
-  skipUntil(s, ";", "Expecting `;`");
+  skipUntil(s, ":", "Expecting `:`");
   s.get();
+}
+
+void readRow(istream &s)
+{
+  skipUntil(s, "R", "Expecting `Row'");
+  s.get();
+  if (s.get() != 'o') throw "Expecting `Row'";
+  if (s.get() != 'w') throw "Expecting `Row'";
+}
+
+void readEnd(istream &s)
+{
+  skipUntil(s, "E", "Expecting `End'");
+  s.get();
+  if (s.get() != 'n') throw "Expecting `End'";
+  if (s.get() != 'd') throw "Expecting `End'";
 }
 
 template <typename T>
@@ -135,6 +154,16 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
     initial[i] = readReal(s);
   }
   readRbrak(s);
+  //
+  // Normalize initial vector
+  //
+  double total = 0.0;
+  for (long i=0; i<N; i++) {
+    total += initial[i];
+  }
+  if (total) for (long i=0; i<N; i++) {
+    initial[i] /= total;
+  }
 #ifdef DEBUG_IO
   cerr << "Got initial vector\n";
   cerr << "Reading #matrix edges\n";
@@ -143,7 +172,6 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
 #ifdef DEBUG_IO
   cerr << "Reading " << E << " edges\n";
 #endif
-  long lastindex = -1;
   //
   // Set up A
   //
@@ -162,33 +190,44 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
   // 
   // Read the actual elements
   //
-  for (long e=0; e<E; e++) {
-    long r = readInt(s);
-    readComma(s);
-    long c = readInt(s);
-    readComma(s);
-    double v = readReal(s);
-    readSemi(s);
-
-    if (r<0 || r>=N) throw "Row out of range";
-    if (c<0 || c>=N) throw "Column out of range";
-
-    if (r < lastindex) throw "Rows not in order";
+  long rowindex = -1;
+  for (long e=0; e<E; ) {
+   
+    char next = skipUntil(s, "R0123456789", "Expecting `Row' or column integer");
+    if ('R' == next) {
+      // New row!
+      readRow(s);
+      long r = readInt(s);
+      readColon(s);
+      if (r < rowindex) throw "Rows not in order";
+      if (r < 0 || r>=N) throw "Row out of range";
+      while (rowindex < r) {
+        ++rowindex;
+        rp[rowindex] = e;
+      }
 #ifdef DEBUG_IO
-    cerr << "  edge " << r << ", " << c << ", " << v << "\n";
+      cerr << "  new row " << rowindex << "\n";
 #endif
-    // update row pointers, if row changed
-    while (lastindex<r) {
-      ++lastindex;
-      rp[lastindex] = e;
+      continue;
     }
+    // Edge
+    long c = readInt(s);
+    readColon(s);
+    double v = readReal(s);
+
+    if (c<0 || c>=N) throw "Column out of range";
+#ifdef DEBUG_IO
+    cerr << "  edge " << rowindex << ", " << c << ", " << v << "\n";
+#endif
     ci[e] = c;
     fv[e] = v;
+    ++e;
   } // for e
+  readEnd(s);
   // And, get the final row pointers set
-  while (lastindex<N) {
-    ++lastindex;
-    rp[lastindex] = E;
+  while (rowindex<N) {
+    ++rowindex;
+    rp[rowindex] = E;
   }
 #ifdef DEBUG_IO
   cerr << "Done reading matrix\n";
