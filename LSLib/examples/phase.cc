@@ -276,9 +276,9 @@ int main(int argc, char** argv)
     if (1.0 - acc < 1e-6) break;
     clearVector(y, A.stop);
     A.VectorMatrixMultiply(y, x);
-    double* t = x;
+    double* tmp = x;
     x = y;
-    y = t;
+    y = tmp;
   }
 
   return 0;
