@@ -2,7 +2,6 @@
 // $Id$
 
 #include "lslib.h"
-#include "timers.h"
 
 #include <iostream>
 #include <fstream>
@@ -10,6 +9,8 @@
 using namespace std;
 
 // #define DEBUG_IO
+
+// #define DEBUG_VMMULT
 
 int lineno;
 
@@ -112,12 +113,15 @@ void readColon(istream &s)
   s.get();
 }
 
-void readRow(istream &s)
+void readCol(istream &s)
 {
-  skipUntil(s, "R", "Expecting `Row'");
+  skipUntil(s, "C", "Expecting `Col'");
   s.get();
-  if (s.get() != 'o') throw "Expecting `Row'";
-  if (s.get() != 'w') throw "Expecting `Row'";
+  if (s.get() != 'o') throw "Expecting `Col'";
+  if (s.get() != 'l') throw "Expecting `Col'";
+#ifdef DEBUG_IO
+  cerr << "Consumed `Col'\n";
+#endif
 }
 
 void readEnd(istream &s)
@@ -175,7 +179,7 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
   //
   // Set up A
   //
-  A.is_transposed = true;
+  A.is_transposed = false;
   A.start = 0;
   A.stop = N;
   long* rp = new long[N+1];
@@ -190,44 +194,44 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
   // 
   // Read the actual elements
   //
-  long rowindex = -1;
+  long colindex = -1;
   for (long e=0; e<E; ) {
    
-    char next = skipUntil(s, "R0123456789", "Expecting `Row' or column integer");
-    if ('R' == next) {
+    char next = skipUntil(s, "C0123456789", "Expecting `Col', or row integer");
+    if ('C' == next) {
       // New row!
-      readRow(s);
-      long r = readInt(s);
+      readCol(s);
+      long c = readInt(s);
       readColon(s);
-      if (r < rowindex) throw "Rows not in order";
-      if (r < 0 || r>=N) throw "Row out of range";
-      while (rowindex < r) {
-        ++rowindex;
-        rp[rowindex] = e;
+      if (c < colindex) throw "Columns not in order";
+      if (c < 0 || c>=N) throw "Column out of range";
+      while (colindex < c) {
+        ++colindex;
+        rp[colindex] = e;
       }
 #ifdef DEBUG_IO
-      cerr << "  new row " << rowindex << "\n";
+      cerr << "  new col " << colindex << "\n";
 #endif
       continue;
     }
     // Edge
-    long c = readInt(s);
+    long r = readInt(s);
     readColon(s);
     double v = readReal(s);
 
-    if (c<0 || c>=N) throw "Column out of range";
+    if (r<0 || r>=N) throw "Row out of range";
 #ifdef DEBUG_IO
-    cerr << "  edge " << rowindex << ", " << c << ", " << v << "\n";
+    cerr << "  edge " << colindex << ", " << r << ", " << v << "\n";
 #endif
-    ci[e] = c;
+    ci[e] = r;
     fv[e] = v;
     ++e;
   } // for e
   readEnd(s);
   // And, get the final row pointers set
-  while (rowindex<N) {
-    ++rowindex;
-    rp[rowindex] = E;
+  while (colindex<N) {
+    ++colindex;
+    rp[colindex] = E;
   }
 #ifdef DEBUG_IO
   cerr << "Done reading matrix\n";
@@ -276,6 +280,11 @@ int main(int argc, char** argv)
     if (1.0 - acc < 1e-6) break;
     clearVector(y, A.stop);
     A.VectorMatrixMultiply(y, x);
+#ifdef DEBUG_VMMULT
+    cerr << "Got y vector [" << y[0];
+    for (int i=1; i<A.stop; i++) cerr << ", " << y[i];
+    cerr << "]\n";
+#endif
     double* tmp = x;
     x = y;
     y = tmp;
