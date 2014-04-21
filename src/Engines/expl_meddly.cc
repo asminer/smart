@@ -49,6 +49,7 @@
 
 // #define DEBUG_ADD_EDGES
 
+// #define DEBUG_FREQ
 #define ENABLE_CMDS
 // #define ENABLE_OLD_IMPLEMENTATION
 
@@ -1305,65 +1306,6 @@ class real_2001_cmds {
       }
     }
 
-// OLD
-// OLD FROM HERE
-// OLD
-#if 0
-  protected:
-    /// Delete ourselves.
-    void Clear();
-
-  /**  Construct ourself.
-   */
-  int Build(state_model *mdl, int mergelevel);
-  
-  /// For debugging.
-  void Dump(ostream &, bool summarize = true);
-
-  /// Get the row sums.
-  void GetRowSums(vector_diagram *v);
-
-  /// Show stats.
-  void Report();
-
-  /** Compression.
-      The matrix diagram is destroyed after compression.
-   */
-  void RowCompressInto(mxd_rep *q);
-
-  /** Compression and translation into columns.
-      The matrix diagram is destroyed after compression.
-   */
-  void ColCompressInto(mxd_rep *q) {
-    Transpose();
-    RowCompressInto(q);
-  }
-
-  protected:
-  /// Convert into storage by columns.
-  void Transpose();
-
-  void KillElements();
-  
-  void AddEntry(int &root, int *from, int *to, double rate);
-
-  /// Count the number of nodes actually in use
-  int CountUsed(int &elements);
-  
-  /// Recycles all merged nodes.
-  void RecycleMerged();
-
-  
-  // Handy things
-  submatrix *GetNode(int node) {
-    if (node<1) return NULL;  // zero is special
-    return &((*Nodes)[node-1]);
-  }
-  // void RecycleNode(int node);
-  int NumNodes() {
-    return 1+Nodes->Last();
-  }
-#endif
 }; // end of real_2001_cmds
 
 
@@ -1946,7 +1888,7 @@ public:
   inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
 
   // hook for cool stuff
-  inline int getLevelChange() const { return 0; }
+  inline int getLevelChange() const { return s_iter.levelChanged(); }
 };
 
 mt_known_stategroup::
@@ -2217,6 +2159,8 @@ public:
     }
   }
 #endif
+
+  inline int getLevelChange() const { return b_iter.levelChanged(); }
 };
 
 // **************************************************************************
@@ -2293,14 +2237,15 @@ template <class TANGR, class VANGR, class EDGEGR>
 class gen_wrapper_templ {
     bool states_only;
     meddly_states &ms;
+    long& level_change;
   public:
     minterm_pool* minterms;
     TANGR* tangible;
     VANGR* vanishing;
     EDGEGR* edges;
   public:
-    gen_wrapper_templ(bool so, meddly_states &_ms, minterm_pool* mp,
-      TANGR *t, VANGR *v, EDGEGR *e) : ms(_ms)
+    gen_wrapper_templ(long &lc, bool so, meddly_states &_ms, minterm_pool* mp,
+      TANGR *t, VANGR *v, EDGEGR *e) : ms(_ms), level_change(lc)
     {
       states_only = so;
       minterms = mp;
@@ -2398,6 +2343,16 @@ class gen_wrapper_templ {
 
     inline int* getUnexploredTangible(shared_state *s) {
       DCASSERT(tangible);
+      if (edges) {
+        if (tangible->getLevelChange() > level_change) {
+#ifdef DEBUG_FREQ
+          fprintf(stderr, "Level change %d is above threshold %ld\n",
+            tangible->getLevelChange(), level_change
+          );
+#endif
+          edges->addBatch();
+        }
+      }
       return tangible->getUnexplored(s);
     }
 
@@ -2517,6 +2472,7 @@ class meddly_explgen : public meddly_procgen {
   static int  matrix_style;
   static bool batch_removal;
   static bool maximize_batch_refills;
+  static long level_change;
   bool states_only_this_time;
 
 protected:
@@ -2818,6 +2774,7 @@ long meddly_explgen::batch_size;
 int  meddly_explgen::matrix_style;
 bool meddly_explgen::batch_removal;
 bool meddly_explgen::maximize_batch_refills;
+long meddly_explgen::level_change;
 
 meddly_explgen the_meddly_explgen;
 
@@ -2947,7 +2904,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
     //
     gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
       G(
-        true, *ms, mp,
+        level_change, true, *ms, mp,
         new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
         new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
         (edge_minterms*) 0
@@ -2961,7 +2918,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
     //
     gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
       G(
-        true, *ms, mp,
+        level_change, true, *ms, mp,
         new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
         new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
         (edge_minterms*) 0
@@ -2999,7 +2956,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3013,7 +2970,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3032,7 +2989,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3046,7 +3003,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3072,7 +3029,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
@@ -3086,7 +3043,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
@@ -3105,7 +3062,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
@@ -3119,7 +3076,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
@@ -3168,7 +3125,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, real_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3182,7 +3139,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, real_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3201,7 +3158,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, real_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
             new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3215,7 +3172,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           //
           gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, real_2001_cmds>
           G(
-            false, *ms, mp,
+            level_change, false, *ms, mp,
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
             new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
@@ -3241,7 +3198,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
@@ -3255,7 +3212,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
@@ -3274,7 +3231,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
@@ -3288,7 +3245,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         //
         gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
         G(
-          false, *ms, mp,
+          level_change, false, *ms, mp,
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
@@ -4133,6 +4090,17 @@ void InitializeExplicitMeddly(exprman* em)
       "MaximizeBatchRefills",
       "For batch removal of unexplored states, should we try to refill the batches as much as possible; otherwise, we take a more relaxed approach.",
       meddly_explgen::maximize_batch_refills
+    )
+  );
+  
+  /* Initialize LevelChange option */
+  meddly_explgen::level_change = 1000000;
+  expl_eng->AddOption(
+    MakeIntOption(
+      "LevelChange",
+      "Force process edges to be accumulated whenever the source state changes at this level or above.  Use 0 for constant accumulations, #levels for no accumulations except at the end.  Notes: (1) we are still limited by the batch size; see option BatchAddSize. (2) this may not be supported for all variations of explicit Meddly generation.",
+      meddly_explgen::level_change,
+      0, 1000000
     )
   );
 

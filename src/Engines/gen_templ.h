@@ -240,6 +240,11 @@ void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg)
 
     } // infinite loop
 
+    if (debug.startReport()) {
+      debug.report() << "Done exploring\n";
+      debug.stopIO();
+    }
+
     //
     // Cleanup
     //
@@ -542,6 +547,11 @@ void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp)
       } // for e
 
     } // infinite loop
+
+    if (debug.startReport()) {
+      debug.report() << "Done exploring\n";
+      debug.stopIO();
+    }
 
     //
     // Cleanup
@@ -920,6 +930,11 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
       } // for i
 
     } // infinite loop
+
+    if (debug.startReport()) {
+      debug.report() << "Done exploring\n";
+      debug.stopIO();
+    }
 
     //
     // Cleanup
