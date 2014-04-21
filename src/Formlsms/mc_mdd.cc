@@ -204,11 +204,21 @@ void meddly_mc::buildDiagonals()
     one[i] = 1;
   }
 
-  MEDDLY::numerical_operation* MV = MEDDLY::MATR_EXPLVECT_MULT->buildOperation(
-    process->state_indexes->E, process->proc->E, process->state_indexes->E
-  );
-  MV->compute(diagonals, one);
-  MEDDLY::destroyOperation(MV);
+  try {
+    MEDDLY::numerical_operation* MV = MEDDLY::MATR_EXPLVECT_MULT->buildOperation(
+      process->state_indexes->E, process->proc->E, process->state_indexes->E
+    );
+    MV->compute(diagonals, one);
+    MEDDLY::destroyOperation(MV);
+  }
+  catch (MEDDLY::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't build diagonals: ";
+      em->cerr() << e.getName();
+      GetParent()->DoneError();
+    }
+
+  }
   delete[] one;
 
 #ifdef DEBUG_DIAGONAL

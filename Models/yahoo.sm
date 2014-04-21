@@ -1,0 +1,87 @@
+
+// $Id$
+
+/*
+  Simple load-balancing server model.
+
+  One front-end machine, sends jobs to S back-end machines,
+  sends job to server with shortest queue.
+
+  Closed model with population of N jobs.
+*/
+
+real inrate := 8;
+real farmrate := 10;
+real servrate := 4;
+
+pn yahoo(int N, int S) := {
+
+  place pool, front;
+
+  init(pool:N);
+
+  trans arrive;
+  arcs(
+    pool : arrive, arrive : front
+  );
+  firing( arrive : expo(inrate * tk(pool)) );
+
+  for (int i in {1..S}) {
+    place server[i];
+
+    trans sendto[i], finish[i];
+
+    firing( sendto[i] : expo(farmrate),
+            finish[i] : expo(servrate - i*0.1) );
+
+
+    arcs(
+      front : sendto[i], sendto[i] : server[i],
+      server[i] : finish[i], finish[i] : pool
+    );
+  }
+
+  // deal with "send to shortest queue"
+  // using a series of transition guards :^)
+
+  for (int i in {1..S}) {
+    for (int j in {1..i-1}) {
+      guard(
+        sendto[i] : tk(server[i]) < tk(server[j])
+      );
+    }
+    for (int j in {i+1..S}) {
+      guard(
+        sendto[i] : tk(server[i]) <= tk(server[j])
+      );
+    }
+  }
+
+  bigint m1 := num_states;
+  bigint m2 := num_arcs;
+
+  void s1 := show_states;
+  void s2 := show_arcs;
+};
+
+# Warning - pn_dup_guard
+# Report + procgen
+
+int S := read_int("number of servers");
+int N := read_int("population");
+
+compute(S);
+compute(N);
+
+compute(yahoo(N, S).m2);
+
+/*
+#DisplayGraphNodeNames true
+
+// yahoo(N, S). s1;
+yahoo(N, S). s2;
+*/
+
+print("Server balancing model, with ", S, " servers and population ", N, " has\n\t");
+print(yahoo(N, S).m1, " reachable states\n\t");
+print(yahoo(N, S).m2, " Markov chain edges\n");
