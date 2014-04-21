@@ -887,7 +887,7 @@ void meddly_encoder
 
 inline void putNodes(OutputStream &out, const char* pre, const char* f, long n)
 {
-  out << "\t";
+  out << "\t    ";
   out.Put(pre, -8);
   if (f) out.Put(f);
   out << " nodes: " << n << "\n";
@@ -895,7 +895,7 @@ inline void putNodes(OutputStream &out, const char* pre, const char* f, long n)
 
 inline void putMem(OutputStream &out, const char* pre, const char* f, size_t m)
 {
-  out << "\t";
+  out << "\t    ";
   out.Put(pre, -8);
   if (f) out.Put(f);
   out << " memory: ";
@@ -906,6 +906,7 @@ inline void putMem(OutputStream &out, const char* pre, const char* f, size_t m)
 void meddly_encoder::reportStats(OutputStream &out)
 {
   if (0==F->getPeakNumNodes()) return;
+  out << "\t" << name << " forest stats:\n";
   putNodes(out, "Current", name, F->getCurrentNumNodes());
   putNodes(out, "Peak", name, F->getPeakNumNodes());
   putMem(out, "Current", name, F->getCurrentMemoryUsed());

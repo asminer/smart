@@ -166,6 +166,23 @@ void meddly_states::reportStats(OutputStream &out) const
   double card;
   mdd_wrap->getCardinality(states, card);
   out << "\tApproximately " << card << " states\n";
+  out << "\tDD Sizes for various structures:\n";
+  if (initial) {
+    long nc = initial->E.getNodeCount();
+    out << "\t    Initial set    requires " << nc << " nodes\n";
+  }
+  if (states) {
+    long nc = states->E.getNodeCount();
+    out << "\t    Reachable set  requires " << nc << " nodes\n";
+  }
+  if (nsf) {
+    long nc = nsf->E.getNodeCount();
+    out << "\t    Edge relation  requires " << nc << " nodes\n";
+  }
+  if (proc) {
+    long nc = proc->E.getNodeCount();
+    out << "\t    Stoch. process requires " << nc << " nodes\n";
+  }
   if (mdd_wrap)   mdd_wrap->reportStats(out);
   if (index_wrap) index_wrap->reportStats(out);
   if (mxd_wrap)   mxd_wrap->reportStats(out);
