@@ -1,0 +1,47 @@
+#
+# $Id$
+#
+# Model - sorting arrays of length 4, by swapping adjacent elements
+# (only if this helps).  Counts number of swaps, starting from
+# a random array.
+#
+18
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,10]
+18
+Col 0:
+  3 : 1
+Col 1:
+  9 : 1
+Col 2:
+  10 : 1
+Col 3:
+Col 4:
+  6 : 1
+Col 5:
+  7 : 1
+Col 6:
+Col 7:
+  12 : 0.5
+Col 8:
+  13 : 1
+Col 9:
+Col 10:
+  12 : 0.5
+Col 11:
+  15 : 1
+Col 12:
+Col 13:
+Col 14:
+  16 : 1
+Col 15:
+Col 16:
+Col 17:
+  0 : 1
+  1 : 1
+  2 : 1
+  4 : 1
+  5 : 1
+  8 : 1
+  11 : 1
+  14 : 1
+End
