@@ -102,19 +102,42 @@ bool shared_ddedge::Equals(const shared_object* x) const
 
 void shared_ddedge::startIterator()
 {
-  if (0==iter)    iter = new MEDDLY::enumerator;
+  using namespace MEDDLY;
+  if (iter && iter->getType() != enumerator::FULL) {
+    delete iter;
+    iter = 0;
+  }
+  if (0==iter) {
+    iter = new enumerator(enumerator::FULL, E.getForest());
+  }
   iter->start(E);
 }
 
 void shared_ddedge::startIteratorRow(const int* rmt)
 {
-  if (0==iter)    iter = new MEDDLY::enumerator;
+  using namespace MEDDLY;
+  if (iter && iter->getType() != enumerator::ROW_FIXED) {
+    delete iter;
+    iter = 0;
+  }
+
+  if (0==iter) {
+    iter = new enumerator(enumerator::ROW_FIXED, E.getForest());
+  }
   iter->startFixedRow(E, rmt);
 }
 
 void shared_ddedge::startIteratorCol(const int* cmt)
 {
-  if (0==iter)    iter = new MEDDLY::enumerator;
+  using namespace MEDDLY;
+  if (iter && iter->getType() != enumerator::COL_FIXED) {
+    delete iter;
+    iter = 0;
+  }
+
+  if (0==iter) {
+    iter = new enumerator(enumerator::COL_FIXED, E.getForest());
+  }
   iter->startFixedColumn(E, cmt);
 }
 

@@ -1896,6 +1896,7 @@ mt_known_stategroup(meddly_encoder &w, minterm_pool &m, shared_ddedge* S)
  : wrap(w), mp(m)
 {
   DCASSERT(S);
+  s_iter.init(MEDDLY::enumerator::FULL, w.getForest());
   s_iter.start(S->E);
   exploring = mp.getMinterm();
   discovering = mp.getMinterm();
@@ -2171,6 +2172,7 @@ mt_br_stategroup::
 mt_br_stategroup(meddly_encoder &w, minterm_pool &m, int bs, bool maxref)
  : mt_sr_stategroup(w, m, bs)
 {
+  b_iter.init(MEDDLY::enumerator::FULL, w.getForest());
   B = new shared_ddedge(wrap.getForest());
   maximize_refills = maxref;
 #ifdef MEASURE_STATS
