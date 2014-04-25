@@ -18,7 +18,9 @@ dtmc sort3 := {
       null
     );
   }
-  real tta := prob_acc(transient, 0, infinity);
+  real mtta := prob_acc(transient, 0, infinity);
+
+  ph int tta := tta(is_absorbed);
 
   bigint ns := num_states;
   bigint na := num_arcs;
@@ -26,5 +28,12 @@ dtmc sort3 := {
 
 #Report + mc_solve
 
+#GraphDisplayStyle INCOMING
+
+ph int x := sort3.tta;
+
 print("MC has ", sort3.ns, " states, ", sort3.na, " edges\n");
-print("Average #swaps to sort: ", sort3.tta, "\n");
+print("Average #swaps to sort: ", sort3.mtta, "\n");
+
+print_dist(x, 1e-6);
+// print_ph(x);
