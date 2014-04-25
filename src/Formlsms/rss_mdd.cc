@@ -8,6 +8,8 @@
 
 // #define DEBUG_INDEXSET
 
+// #define DUMP_PROCESS
+
 // ******************************************************************
 // *                                                                *
 // *                     meddly_states  methods                     *
@@ -182,6 +184,11 @@ void meddly_states::reportStats(OutputStream &out) const
   if (proc) {
     long nc = proc->E.getNodeCount();
     out << "\t    Stoch. process requires " << nc << " nodes\n";
+#ifdef DUMP_PROCESS
+    DisplayStream &ds = dynamic_cast<DisplayStream&>(out);
+    ds.flush();
+    proc->E.show(ds.getDisplay(), 2);
+#endif
   }
   if (mdd_wrap)   mdd_wrap->reportStats(out);
   if (index_wrap) index_wrap->reportStats(out);
