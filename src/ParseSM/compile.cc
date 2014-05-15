@@ -1543,7 +1543,8 @@ void showMatching(symbol* find, expr** pass, int np, int best_score)
 }
 
 // Function/model call scoring
-function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
+function* FindBest(symbol* f1, symbol* f2, expr** pass, 
+  int length, int first, bool no_match_error)
 {
   if (0==f1 && 0==f2) return 0;
   const char* name = f1 ? f1->Name() : f2->Name();
@@ -1561,9 +1562,8 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
     }
   }
 
-  bool bailout = false;
   if (best_score < 0) {
-    if (pm->startError()) {
+    if (no_match_error && pm->startError()) {
       pm->cerr() << "No match for " << name << "(";
       for (int i=first; i<length; i++) {
         if (i>first)  pm->cerr() << ", ";
@@ -1573,7 +1573,7 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
       pm->cerr() << ")";
       pm->stopError();
     }
-    bailout = true;
+    return 0;
   }
 
   if (tie) {
@@ -1592,12 +1592,6 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
       showMatching(f2, pass, length, best_score);
       pm->stopError();
     }
-    bailout = true; 
-  }
-
-  if (bailout) {
-    for (int i=0; i<length; i++)  Delete(pass[i]);
-    delete[] pass;
     return 0;
   }
 
@@ -1852,17 +1846,24 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
 {
   DCASSERT(newtype);
   symbol* find = Funcs->FindSymbol(newtype->getName());
-  if (0==find) return ShowWhatWeBuilt("typecast: ", 
-    em->makeTypecast(Filename(), Linenumber(), newtype, opnd)
-  );
-  // There is a function matching the type name, use that instead!
-  function* best = FindBest(find, 0, &opnd, 1, 0);
-  if (0==best)  return em->makeError();
-  expr** pass = new expr*[1];
-  pass[0] = opnd;
-  return ShowWhatWeBuilt(0,
+  function* best = find ? FindBest(find, 0, &opnd, 1, 0, false) : 0;
+
+  if (best) {
+    //
+    // Use a function call, actually
+    //
+    expr** pass = new expr*[1];
+    pass[0] = opnd;
+    return ShowWhatWeBuilt(0,
       em->makeFunctionCall(Filename(), Linenumber(), best, pass, 1)
-  );
+    );
+  } else {
+    // Either no function exists, or no parameter match
+    // Use an ordinary typecast
+    return ShowWhatWeBuilt("typecast: ", 
+      em->makeTypecast(Filename(), Linenumber(), newtype, opnd)
+    );
+  }
 }
 
 // --------------------------------------------------------------
@@ -2077,9 +2078,13 @@ shared_object* MakeModelCall(char* n, parser_list* list)
     pass = 0;
   }
 
-  function* best = FindBest(find, 0, pass, length, 0);
+  function* best = FindBest(find, 0, pass, length, 0, true);
 
-  if (0==best)  return 0;
+  if (0==best) {
+    for (int i=0; i<length; i++)  Delete(pass[i]);
+    delete[] pass;
+    return 0;
+  }
   
   // make sure this is a model!
   model_def* parent = em->isAModelDef(best);
@@ -2220,8 +2225,12 @@ expr* BuildFunctionCall(char* n, parser_list* posparams)
   }
   RecycleCircular(posparams);
 
-  function* best = FindBest(find, find2, pass, length, first);
-  if (0==best)  return em->makeError();
+  function* best = FindBest(find, find2, pass, length, first, true);
+  if (0==best) {
+    for (int i=0; i<length; i++)  Delete(pass[i]);
+    delete[] pass;
+    return em->makeError();
+  }
   return ShowWhatWeBuilt(0,
     em->makeFunctionCall(Filename(), Linenumber(), best, pass, length)
   );

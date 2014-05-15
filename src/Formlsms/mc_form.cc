@@ -785,7 +785,7 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
   // set up and register state type, if necessary
   if (!em->findType("state")) {
     DCASSERT(!em->findType("{state}"));
-    simple_type* t_state = new void_type("state");
+    simple_type* t_state = new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)");
     em->registerType(t_state);
     type* t_set_state = newSetType("{state}", t_state);
     em->registerType(t_set_state);

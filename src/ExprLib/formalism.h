@@ -23,8 +23,6 @@ class msr_func;
 class formalism : public simple_type {
   symbol_table* funcs;
   symbol_table* idents;
-  const char* short_docs;
-  const char* long_docs;
 public:
   formalism(const char* n, const char* sd, const char* ld);
   virtual ~formalism();
@@ -67,11 +65,6 @@ public:
   inline void copyIdentsToArray(const symbol** list) const {
     if (idents) idents->CopyToArray(list);
   }
-
-  // Documentation
-
-  inline const char* shortDocs() const { return short_docs; }
-  inline const char* longDocs() const { return long_docs; }
 
   // Required in derived classes:
 

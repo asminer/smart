@@ -1462,19 +1462,19 @@ void InitializeTAMs(exprman* em, List <msr_func> *common)
   if (0==em) return;
 
   // types for TAMs
-  simple_type* t_tile = new void_type("tile");
+  simple_type* t_tile = new void_type("tile", "Tile", "Tile type in a tile assembly model.");
   t_tile->setPrintable();
   type* t_set_tile = newSetType("{tile}", t_tile);
   em->registerType(t_tile);
   em->registerType(t_set_tile);
 
-  simple_type* t_glue = new void_type("glue");
+  simple_type* t_glue = new void_type("glue", "Glue", "Glue type in a tile assembly model.");
   t_glue->setPrintable();
   type* t_set_glue = newSetType("{glue}", t_glue);
   em->registerType(t_glue);
   em->registerType(t_set_glue);
 
-  simple_type* t_border = new void_type("border");
+  simple_type* t_border = new void_type("border", "Border", "Border type in a tile assembly model.");
   t_border->setPrintable();
   em->registerType(t_border);
 

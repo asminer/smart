@@ -235,8 +235,11 @@ bool typelist::Equals(const shared_object* o) const
 // *                      simple_type  methods                      *
 // ******************************************************************
 
-simple_type::simple_type(const char* n) : type(n)
+simple_type::simple_type(const char* n, const char* sd, const char* ld)
+: type (n)
 {
+  short_docs = sd;
+  long_docs = ld;
   phase_this = 0;
   rand_this = 0;
   proc_this = 0;
@@ -287,7 +290,8 @@ const type* simple_type::changeBaseType(const type* newbase) const
 // *                       void_type  methods                       *
 // ******************************************************************
 
-void_type::void_type(const char* n) : simple_type(n)
+void_type::void_type(const char* n, const char* sd, const char* ld)
+: simple_type(n, sd, ld)
 {
   setVoid();
 }

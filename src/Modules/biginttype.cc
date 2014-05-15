@@ -193,7 +193,7 @@ protected:
 // *                      bigint_type  methods                      *
 // ******************************************************************
 
-bigint_type::bigint_type() : simple_type("bigint")
+bigint_type::bigint_type() : simple_type("bigint", "Large integers", "Integers that may be larger than the machine-supportable integers; can be arbitrarily long, limited only by available memory.")
 {
   setPrintable();
 }

@@ -1245,14 +1245,14 @@ void InitializeEVMs(exprman* em, List <msr_func> *common)
   if (0==em) return;
 
   // set up and register intvar types
-  simple_type* t_intvar  = new void_type("intvar");
+  simple_type* t_intvar  = new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model.");
   t_intvar->setPrintable();
   type* t_set_intvar = newSetType("{intvar}", t_intvar);
   em->registerType(t_intvar);
   em->registerType(t_set_intvar);
 
   // set up and register trans types
-  simple_type* t_event  = new void_type("event");
+  simple_type* t_event  = new void_type("event", "Event", "Event for a generic event-variable model.");
   t_event->setPrintable();
   type* t_set_event = newSetType("{event}", t_event);
   em->registerType(t_event);

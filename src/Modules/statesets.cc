@@ -227,7 +227,7 @@ public:
 // *                     stateset_type  methods                     *
 // ******************************************************************
 
-stateset_type::stateset_type() : simple_type("stateset")
+stateset_type::stateset_type() : simple_type("stateset", "Set of states", "Type used for sets of states, used for CTL model checking and other operations.")
 {
   setPrintable();
 }

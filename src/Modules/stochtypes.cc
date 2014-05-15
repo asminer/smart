@@ -3094,7 +3094,7 @@ void InitStochastic(exprman* em, symbol_table* st)
   DCASSERT(em->INT);
   DCASSERT(em->REAL);
 
-  simple_type* t_expo  = new simple_type("expo");
+  simple_type* t_expo  = new simple_type("expo", "Exponential distribution", "Special type for the exponential distribution.");
   type* t_proc_expo  = newProcType("proc expo", t_expo);
 
   type* t_ph_int  = newModifiedType("ph int", PHASE, em->INT);

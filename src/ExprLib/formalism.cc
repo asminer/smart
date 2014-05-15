@@ -5,12 +5,10 @@
 #include "measures.h"
 
 formalism::formalism(const char* n, const char* sd, const char* ld)
- : simple_type(n)
+ : simple_type(n, sd, ld)
 {
   funcs = 0;
   idents = 0;
-  short_docs = sd;
-  long_docs = ld;
 }
 
 formalism::~formalism()
