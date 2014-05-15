@@ -1512,7 +1512,7 @@ function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 {
   function* best = 0;
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
-    function* f = smart_cast <function*> (ptr);
+    function* f = dynamic_cast <function*> (ptr);
     if (0==f)  continue;
     int score = f->TypecheckParams(pass, np);
     if (score < 0)    continue;
@@ -1533,7 +1533,7 @@ function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 void showMatching(symbol* find, expr** pass, int np, int best_score)
 {
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
-    function* f = smart_cast <function*> (ptr);
+    function* f = dynamic_cast <function*> (ptr);
     if (0==f)      continue;
     int score = f->TypecheckParams(pass, np);
     if (score != best_score)  continue;
