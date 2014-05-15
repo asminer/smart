@@ -47,7 +47,8 @@ protected:
 // *                       bool_type  methods                       *
 // ******************************************************************
 
-bool_type::bool_type() : simple_type("bool")
+bool_type::bool_type() 
+: simple_type("bool", "Boolean type", "Legal values are constants 'true' and 'false'.")
 {
   setPrintable();
 }
@@ -104,7 +105,8 @@ protected:
 // *                        int_type methods                        *
 // ******************************************************************
 
-int_type::int_type() : simple_type("int")
+int_type::int_type()
+: simple_type("int", "Integer type", "Supported range is machine dependent, probably equivalent to a C 'long'.  Can also be infinity.")
 {
   setPrintable();
 }
@@ -196,7 +198,8 @@ int real_type::report_format;
 // *                       real_type  methods                       *
 // ******************************************************************
 
-real_type::real_type() : simple_type("real")
+real_type::real_type()
+: simple_type("real", "Floating-point real type", "Legal range is machine dependent, probably equivalent to a C 'double'.  Can also be infinity.")
 {
   setPrintable();
 }
@@ -925,10 +928,10 @@ void InitTypes(exprman* em)
   simple_type* t_int   = new int_type;
   simple_type* t_real  = new real_type;
 
-  type* t_void    = new void_type("void");
-  type* t_null    = new void_type("null");
+  type* t_void    = new void_type("void", "Void type", "Type to indicate 'no value'.");
+  type* t_null    = new void_type("null", "Null type", "Type of the special 'null' value.");
   t_null->setPrintable();
-  type* t_model    = new simple_type("model");
+  type* t_model    = new simple_type("model", "Generic model", "Generic model; can be set from any formalism.");
   t_model->NoFunctions();
 
   type* t_proc_bool  = newProcType("proc bool", t_bool);

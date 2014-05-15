@@ -14,7 +14,7 @@
 
 #include "../Formlsms/stoch_llm.h"
 
-#include "stateprobs.h"
+#include "statevects.h"
 
 // ******************************************************************
 // *                                                                *
@@ -22,19 +22,19 @@
 // *                                                                *
 // ******************************************************************
 
-class sprobs_expl_printer : public lldsm::state_visitor {
+class sparse_vect_printer : public lldsm::state_visitor {
   OutputStream &out;
   const double* dist;
   bool print_indexes;
   bool comma;
 public:
-  sprobs_expl_printer(const hldsm* mdl, OutputStream &s, const double* d, bool pi);
+  sparse_vect_printer(const hldsm* mdl, OutputStream &s, const double* d, bool pi);
   virtual bool canSkipIndex();
   virtual bool visit();
 };
 
-sprobs_expl_printer
-::sprobs_expl_printer(const hldsm* m, OutputStream &s, const double* d, bool pi)
+sparse_vect_printer
+::sparse_vect_printer(const hldsm* m, OutputStream &s, const double* d, bool pi)
  : state_visitor(m), out(s)
 {
   dist = d;
@@ -42,12 +42,12 @@ sprobs_expl_printer
   comma = false;
 }
 
-bool sprobs_expl_printer::canSkipIndex()
+bool sparse_vect_printer::canSkipIndex()
 {
   return (0==dist[x.current_state_index] );
 }
 
-bool sprobs_expl_printer::visit()
+bool sparse_vect_printer::visit()
 {
   if (comma)  out << ", ";
   else        comma = true;
@@ -62,49 +62,74 @@ bool sprobs_expl_printer::visit()
 
 // ******************************************************************
 // *                                                                *
-// *                       stateprobs methods                       *
+// *                       statevect  methods                       *
 // *                                                                *
 // ******************************************************************
 
-bool stateprobs::print_indexes;
+int statevect::display_style;
 
-stateprobs::stateprobs(const stochastic_lldsm* p, double* d, long N)
+statevect::statevect(const stochastic_lldsm* p, double* d, long N)
 : shared_object()
 {
   parent = p;
-  dist = d;
+  vect = d;
   numStates = N;
 }
 
-stateprobs::~stateprobs()
+statevect::~statevect()
 {
-  delete[] dist;
+  delete[] vect;
 }
 
-bool stateprobs::Print(OutputStream &s, int width) const
+bool statevect::Print(OutputStream &s, int width) const
 {
   DCASSERT(parent);
-  DCASSERT(dist);
-  sprobs_expl_printer foo(parent->GetParent(), s, dist, print_indexes);
-  s.Put('{');
-  parent->visitStates(foo);
-  s.Put('}');
+  DCASSERT(vect);
+  if (FULL==display_style) {
+    s.Put('[');
+    s << vect[0];
+    for (int i=1; i<numStates; i++) {
+      s << ", " << vect[i];
+    }
+    s.Put(']');
+  } else {
+    sparse_vect_printer foo(parent->GetParent(), s, vect, SINDEX==display_style);
+    s.Put('(');
+    parent->visitStates(foo);
+    s.Put(')');
+  }
   return true;
 }
 
-bool stateprobs::Equals(const shared_object *o) const
+bool statevect::Equals(const shared_object *o) const
 {
-  const stateprobs* b = dynamic_cast <const stateprobs*> (o);
+  const statevect* b = dynamic_cast <const statevect*> (o);
   if (0==b) return false;
   if (parent != b->parent) return false;  // TBD: may want to allow this
   
   DCASSERT(numStates == b->numStates);
 
   for (long i=0; i<numStates; i++) {
-    if (dist[i] != b->dist[i]) return false;
+    if (vect[i] != b->vect[i]) return false;
     // TBD - check within epsilon?
   }
   return true;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      statedist_type class                      *
+// *                                                                *
+// ******************************************************************
+
+class statedist_type : public simple_type {
+public:
+  statedist_type();
+};
+
+statedist_type::statedist_type() : simple_type("statedist", "Distribution over states", "A probability distribution over a set of model states.  Elements will sum to one.")
+{
+  setPrintable();
 }
 
 // ******************************************************************
@@ -118,43 +143,26 @@ public:
   stateprobs_type();
 };
 
-// ******************************************************************
-// *                    stateprobs_type  methods                    *
-// ******************************************************************
-
-stateprobs_type::stateprobs_type() : simple_type("stateprobs")
+stateprobs_type::stateprobs_type() : simple_type("stateprobs", "Probabilities for states", "A vector of probabilities over states, specifying a probability value for each state.  Note that this is not a distribution, but rather a special case of measures for each state, so probabilities may not sum to one.")
 {
   setPrintable();
 }
 
 // ******************************************************************
 // *                                                                *
-// *                                                                *
-// *                     stateprobs expressions                     *
-// *                                                                *
+// *                      statemsrs_type class                      *
 // *                                                                *
 // ******************************************************************
 
+class statemsrs_type : public simple_type {
+public:
+  statemsrs_type();
+};
 
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                     stateprobs  operations                     *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                           Functions                            *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-
+statemsrs_type::statemsrs_type() : simple_type("statemsrs", "Measures for states", "A vector of real--valued measures over states, specifying a measure for each state.")
+{
+  setPrintable();
+}
 
 // ******************************************************************
 // *                                                                *
@@ -165,23 +173,47 @@ stateprobs_type::stateprobs_type() : simple_type("stateprobs")
 // ******************************************************************
 
 
-void InitStateprobs(exprman* em, symbol_table* st)
+void InitStatevects(exprman* em, symbol_table* st)
 {
   if (0==em)  return;
   
   // Type registry
+  simple_type* t_statedist = new statedist_type;
+  em->registerType(t_statedist);
+
   simple_type* t_stateprobs = new stateprobs_type;
   em->registerType(t_stateprobs);
+
+  simple_type* t_statemsrs = new statemsrs_type;
+  em->registerType(t_statemsrs);
+
   em->setFundamentalTypes();
 
   // Operators
 
   // Options
-  stateprobs::print_indexes = true;
+  // ------------------------------------------------------------------
+  radio_button** style = new radio_button*[3];
+  style[statevect::FULL] = new radio_button(
+      "FULL",
+      "Vectors are displayed in (raw) full.",
+      statevect::FULL
+  );
+  style[statevect::SINDEX] = new radio_button(
+      "SPARSE_INDEX",
+      "Vectors are displayed in sparse format, with state indexes.",
+      statevect::SINDEX
+  );
+  style[statevect::SSTATE] = new radio_button(
+      "SPARSE_STATE",
+      "Vectors are displayed in sparse format, with states.",
+      statevect::SSTATE
+  );
+  statevect::display_style = statevect::SINDEX; 
   em->addOption(
-    MakeBoolOption("StateprobsPrintIndexes", 
-      "If true, when a stateprobs vector is printed, state indexes are displayed; otherwise, states are displayed.",
-      stateprobs::print_indexes
+    MakeRadioOption("StatevectDisplayStyle",
+      "Style to display a statedist, stateprobs, or statemsrs vector.",
+      style, 3, statevect::display_style
     )
   );
 

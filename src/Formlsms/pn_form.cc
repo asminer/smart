@@ -2358,14 +2358,14 @@ void InitializePetriNets(exprman* em, List <msr_func> *common)
   }
 
   // set up and register place types
-  simple_type* t_place  = new void_type("place");
+  simple_type* t_place  = new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens.");
   t_place->setPrintable();
   type* t_set_place = newSetType("{place}", t_place);
   em->registerType(t_place);
   em->registerType(t_set_place);
 
   // set up and register trans types
-  simple_type* t_trans  = new void_type("trans");
+  simple_type* t_trans  = new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens.");
   t_trans->setPrintable();
   type* t_set_trans = newSetType("{trans}", t_trans);
   em->registerType(t_trans);

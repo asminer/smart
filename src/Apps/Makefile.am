@@ -28,7 +28,8 @@ smart_LDADD = \
   \
   ../Modules/stringtype.la ../Modules/biginttype.la \
   ../Modules/stochtypes.la ../Modules/glue_meddly.la \
-  ../Modules/expl_states.la ../Modules/statesets.la \
+  ../Modules/expl_states.la \
+  ../Modules/statesets.la ../Modules/statevects.la \
   \
   ../ParseSM/libsmparse.la \
   $(LS_LIBRARY)/lib/libls.a \

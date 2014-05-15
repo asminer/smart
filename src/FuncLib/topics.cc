@@ -84,7 +84,6 @@ void topic_types::PrintDocs(doc_formatter* df, const char*) const
   df->end_heading();
   df->begin_indent();
   df->Out() << "The Smart language is strictly typed; all objects have a specified type. Basic types can be further modified by *natures*, which specify if the object is deterministic or random. Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*. Types are also used for formalisms, formalism variables, and sets of objects.\n\n";
-  df->begin_indent();
   df->Out() << "Simple types:\n";
   df->begin_indent();
   for (int i=0; i<em->getNumTypes(); i++) {
@@ -138,7 +137,6 @@ void topic_types::PrintDocs(doc_formatter* df, const char*) const
     if (!t->isASet())    continue;
     df->Out() << t->getName() << "\n";
   }
-  df->end_indent();
   df->end_indent();
   df->Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
   df->end_indent();
@@ -616,6 +614,34 @@ void topic_assocop::PrintDocs(doc_formatter* df, const char*) const
 }
 
 // ******************************************************************
+// *                     topic_simpletype class                     *
+// ******************************************************************
+
+class topic_simpletype : public help_topic {
+  const simple_type* st;
+public:
+  topic_simpletype(const simple_type* t);
+  virtual void PrintDocs(doc_formatter* df, const char*) const;
+};
+
+topic_simpletype::topic_simpletype(const simple_type* t)
+ : help_topic(t->getName(), t->shortDocs()) 
+{ 
+  st = t;
+}
+
+void topic_simpletype::PrintDocs(doc_formatter* df, const char*) const
+{
+  df->begin_heading();
+  PrintHeader(df->Out());
+  df->end_heading();
+  df->begin_indent();
+  df->Out() << st->longDocs();
+  df->end_indent();
+}
+
+
+// ******************************************************************
 // *                     topic_formalism  class                     *
 // ******************************************************************
 
@@ -802,15 +828,24 @@ void AddHelpTopics(symbol_table* st, const exprman* em)
 
   st->AddSymbol(  new topic_models                              );
 
-  // neat trick...
+  //
+  // Automatically add help topics for formalisms or simple types
+  // (neat trick!)
+  //
   for (int i=0; i<em->getNumTypes(); i++) {
     const type* t = em->getTypeNumber(i);
-    if (!t->isAFormalism())    continue;
-    const formalism* ft = smart_cast <const formalism*> (t);
-    DCASSERT(ft);
-    st->AddSymbol(  new topic_formalism(ft)        );
+    if (t->getBaseType() != t) continue;
+    //
+    // t is a simple type
+    //
+    if (t->isAFormalism()) {
+      const formalism* ft = smart_cast <const formalism*> (t);
+      DCASSERT(ft);
+      st->AddSymbol(  new topic_formalism(ft)       );
+    } else {
+      st->AddSymbol(  new topic_simpletype(t->getBaseType())       );
+    }
   }
-  
 }
 
 

@@ -44,6 +44,7 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/stochtypes.h"
 #include "../Modules/statesets.h"
+#include "../Modules/statevects.h"
 #include "../Modules/glue_meddly.h"
 
 #include "../Formlsms/basic_msr.h"
@@ -107,6 +108,7 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitStringType(em);
   InitBigintType(em, st);
   InitStatesets(em, st);
+  InitStatevects(em, st);
   InitMEDDLy(em);
 
   // Critical engine types here.

@@ -245,10 +245,17 @@ class simple_type : public type {
   const type* rand_this;
   const type* proc_this;
   const type* set_this;
-
+protected:
+  const char* short_docs;
+  const char* long_docs;
 public:
-  simple_type(const char* n);
+  simple_type(const char* n, const char* sd, const char* ld);
   virtual ~simple_type();
+
+  // Documentation
+  inline const char* shortDocs() const { return short_docs; }
+  inline const char* longDocs() const { return long_docs; }
+
 
   inline void setPhase(const type* t) {
     DCASSERT(0==phase_this);
@@ -283,7 +290,7 @@ public:
 */
 class void_type : public simple_type {
 public:
-  void_type(const char* n);
+  void_type(const char* n, const char* sd, const char* ld);
   
   /// Default comparison: check addresses of "other" field pointers.
   virtual int compare(const result& a, const result& b) const;

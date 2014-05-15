@@ -27,7 +27,7 @@ protected:
 // *                      string_type  methods                      *
 // ******************************************************************
 
-string_type::string_type() : simple_type("string")
+string_type::string_type() : simple_type("string", "String of characters", "String of characters; may be built in various ways and combined with operators.")
 {
   setPrintable();
 }
