@@ -78,6 +78,7 @@ statevect::statevect(const stochastic_lldsm* p, double* d, long N)
 
 statevect::~statevect()
 {
+  // printf("Destroying state vector\n");  
   delete[] vect;
 }
 
@@ -114,6 +115,39 @@ bool statevect::Equals(const shared_object *o) const
     // TBD - check within epsilon?
   }
   return true;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       statedist  methods                       *
+// *                                                                *
+// ******************************************************************
+
+statedist::statedist(const stochastic_lldsm *p, double *d, long N)
+ : statevect(p, d, N)
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       stateprobs methods                       *
+// *                                                                *
+// ******************************************************************
+
+stateprobs::stateprobs(const stochastic_lldsm *p, double *d, long N)
+ : statevect(p, d, N)
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       statemsrs  methods                       *
+// *                                                                *
+// ******************************************************************
+
+statemsrs::statemsrs(const stochastic_lldsm *p, double *d, long N)
+ : statevect(p, d, N)
+{
 }
 
 // ******************************************************************

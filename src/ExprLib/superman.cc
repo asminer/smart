@@ -208,10 +208,11 @@ bool superman::setFundamentalTypes()
   if (!STRING)      STRING      = findSimple("string");
   if (!BIGINT)      BIGINT      = findSimple("bigint");
   if (!STATESET)    STATESET    = findSimple("stateset");
+  if (!STATEDIST)   STATEDIST   = findSimple("statedist");
   
   if (!NEXT_STATE)  NEXT_STATE  = findType("next state");
 
-  return VOID && NULTYPE && BOOL && INT && REAL && EXPO && MODEL && STRING && BIGINT && STATESET && NEXT_STATE;
+  return VOID && NULTYPE && BOOL && INT && REAL && EXPO && MODEL && STRING && BIGINT && STATESET && STATEDIST && NEXT_STATE;
 }
 
 const type* superman::findOWDType(const char* name) const
