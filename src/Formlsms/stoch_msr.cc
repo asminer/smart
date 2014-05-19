@@ -27,7 +27,7 @@ protected:
 
   friend void InitStochMeasureFuncs(exprman* em, List <msr_func> *common);
 public:
-  stoch_msr(const char* name, int np);
+  stoch_msr(const type* rettype, const char* name, int np);
 };
 
 engtype* stoch_msr::SteadyStateAverage      = 0;
@@ -35,11 +35,38 @@ engtype* stoch_msr::TransientAverage        = 0;
 engtype* stoch_msr::SteadyStateAccumulated  = 0;
 engtype* stoch_msr::TransientAccumulated    = 0;
 
-stoch_msr::stoch_msr(const char* name, int np)
- : msr_func(Stochastic, em->REAL, name, np)
+stoch_msr::stoch_msr(const type* rettype, const char* name, int np)
+ : msr_func(Stochastic, rettype, name, np)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
+}
+
+// *******************************************************************
+// *                                                                 *
+// *                            distss_si                            *
+// *                                                                 *
+// *******************************************************************
+
+class distss_si : public stoch_msr {
+public:
+  distss_si();
+  virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
+};
+
+distss_si::distss_si()
+ : stoch_msr(em->STATEDIST, "dist_ss", 1)
+{
+  SetDocumentation("Computes and returns the steady state distribution.");
+}
+
+measure* distss_si::buildMeasure(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(1==np);
+
+  if (0==SteadyStateAverage)  return 0;
+
+  return new measure(x.parent, SteadyStateAverage, x.model, 0);
 }
 
 // *******************************************************************
@@ -55,7 +82,7 @@ public:
 };
 
 basess_si::basess_si(const char* name, const type* arg)
- : stoch_msr(name, 2)
+ : stoch_msr(em->REAL, name, 2)
 {
   DCASSERT(arg);
   SetFormal(1, arg, "x");
@@ -178,7 +205,7 @@ void baseat_si::mymsr::classifyNow()
 }
 
 baseat_si::baseat_si(const char* name, const type* arg)
-: stoch_msr(name, 3)
+: stoch_msr(em->REAL, name, 3)
 {
   DCASSERT(arg);
   SetFormal(1, arg, "x");
@@ -332,7 +359,7 @@ void baseacc_si::mymsr::classifyNow()
 }
 
 baseacc_si::baseacc_si(const char* name, const type* arg)
- : stoch_msr(name, 4)
+ : stoch_msr(em->REAL, name, 4)
 {
   DCASSERT(arg);
   SetFormal(1, arg, "x");
@@ -428,6 +455,7 @@ void InitStochMeasureFuncs(exprman* em, List <msr_func> *common)
 
   common->Append(new avgss_si);
   common->Append(new probss_si);
+  common->Append(new distss_si);
   common->Append(new avgat_si);
   common->Append(new probat_si);
   common->Append(new probacc_si);

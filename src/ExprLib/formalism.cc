@@ -61,9 +61,14 @@ bool formalism::isLegalMeasureType(const type* mtype) const
   if (mtype->matches("int"))      return 1;
   if (mtype->matches("real"))     return 1;
   if (mtype->matches("bigint"))   return 1;
-  if (mtype->matches("stateset")) return 1;
-  if (mtype->matches("ph int"))   return 1;
-  if (mtype->matches("ph real"))  return 1;
+  if (includeCTL()) {
+    if (mtype->matches("stateset")) return 1;
+  }
+  if (includeStochastic()) {
+    if (mtype->matches("ph int"))     return 1;
+    if (mtype->matches("ph real"))    return 1;
+    if (mtype->matches("statedist"))  return 1;
+  }
   return 0;
 }
 

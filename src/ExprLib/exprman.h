@@ -216,6 +216,7 @@ public:
   simple_type*  STRING;
   simple_type*  BIGINT;
   simple_type*  STATESET;
+  simple_type*  STATEDIST;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
