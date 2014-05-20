@@ -68,11 +68,12 @@ bool sparse_vect_printer::visit()
 
 int statevect::display_style;
 
-statevect::statevect(const stochastic_lldsm* p, double* d, long N)
+statevect::statevect(const stochastic_lldsm* p, const double* d, long N)
 : shared_object()
 {
   parent = p;
-  vect = d;
+  vect = new double[N];
+  memcpy(vect, d, N*sizeof(double));
   numStates = N;
 }
 
@@ -123,7 +124,7 @@ bool statevect::Equals(const shared_object *o) const
 // *                                                                *
 // ******************************************************************
 
-statedist::statedist(const stochastic_lldsm *p, double *d, long N)
+statedist::statedist(const stochastic_lldsm *p, const double *d, long N)
  : statevect(p, d, N)
 {
 }
@@ -134,7 +135,7 @@ statedist::statedist(const stochastic_lldsm *p, double *d, long N)
 // *                                                                *
 // ******************************************************************
 
-stateprobs::stateprobs(const stochastic_lldsm *p, double *d, long N)
+stateprobs::stateprobs(const stochastic_lldsm *p, const double *d, long N)
  : statevect(p, d, N)
 {
 }
@@ -145,7 +146,7 @@ stateprobs::stateprobs(const stochastic_lldsm *p, double *d, long N)
 // *                                                                *
 // ******************************************************************
 
-statemsrs::statemsrs(const stochastic_lldsm *p, double *d, long N)
+statemsrs::statemsrs(const stochastic_lldsm *p, const double *d, long N)
  : statevect(p, d, N)
 {
 }

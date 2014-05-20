@@ -26,7 +26,7 @@ class statevect : public shared_object {
   double* vect;
   long numStates;
 public:
-  statevect(const stochastic_lldsm* p, double* d, long N);
+  statevect(const stochastic_lldsm* p, const double* d, long N);
   virtual ~statevect();
 public:
   inline const stochastic_lldsm* getParent() const { return parent; }
@@ -51,7 +51,7 @@ private:
 
 class statedist : public statevect {
   public:
-    statedist(const stochastic_lldsm *p, double *d, long N);
+    statedist(const stochastic_lldsm *p, const double *d, long N);
 
   // ANY difference?
 };
@@ -65,7 +65,7 @@ class statedist : public statevect {
 
 class stateprobs : public statevect {
   public:
-    stateprobs(const stochastic_lldsm *p, double *d, long N);
+    stateprobs(const stochastic_lldsm *p, const double *d, long N);
 
   // ANY difference?
 };
@@ -79,7 +79,7 @@ class stateprobs : public statevect {
 
 class statemsrs : public statevect {
   public:
-    statemsrs(const stochastic_lldsm *p, double *d, long N);
+    statemsrs(const stochastic_lldsm *p, const double *d, long N);
 
   // ANY difference?
 };
