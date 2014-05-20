@@ -44,58 +44,49 @@ stoch_msr::stoch_msr(const type* rettype, const char* name, int np)
 
 // *******************************************************************
 // *                                                                 *
-// *                            distss_si                            *
-// *                                                                 *
-// *******************************************************************
-
-class distss_si : public stoch_msr {
-public:
-  distss_si();
-  virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
-};
-
-distss_si::distss_si()
- : stoch_msr(em->STATEDIST, "dist_ss", 1)
-{
-  SetDocumentation("Computes and returns the steady state distribution.");
-}
-
-measure* distss_si::buildMeasure(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(1==np);
-
-  if (0==SteadyStateAverage)  return 0;
-
-  return new measure(x.parent, SteadyStateAverage, x.model, 0);
-}
-
-// *******************************************************************
-// *                                                                 *
 // *                            basess_si                            *
 // *                                                                 *
 // *******************************************************************
 
 class basess_si : public stoch_msr {
+  bool has_arg;
 public:
-  basess_si(const char* name, const type* arg);
+  basess_si(const type* rtype, const char* name, const type* arg);
   virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
 };
 
-basess_si::basess_si(const char* name, const type* arg)
- : stoch_msr(em->REAL, name, 2)
+basess_si::basess_si(const type* rtype, const char* name, const type* arg)
+ : stoch_msr(rtype, name, arg ? 2 : 1)
 {
-  DCASSERT(arg);
-  SetFormal(1, arg, "x");
+  has_arg = arg;
+  if (has_arg) SetFormal(1, arg, "x");
 }
 
 measure* basess_si::buildMeasure(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(pass);
-  DCASSERT(2==np);
-
   if (0==SteadyStateAverage)  return 0;
+  DCASSERT(pass);
+  if (has_arg) {
+    DCASSERT(2==np);
+    return new measure(x.parent, SteadyStateAverage, x.model, pass[1]);
+  } else {
+    DCASSERT(1==np);
+    return new measure(x.parent, SteadyStateAverage, x.model, 0);
+  }
+}
 
-  return new measure(x.parent, SteadyStateAverage, x.model, pass[1]);
+// *******************************************************************
+// *                             distss                              *
+// *******************************************************************
+
+class distss_si : public basess_si {
+public:
+  distss_si();
+};
+
+distss_si::distss_si() : basess_si(em->STATEDIST, "dist_ss", 0)
+{
+  SetDocumentation("Computes and returns the steady state distribution.");
 }
 
 // ******************************************************************
@@ -107,8 +98,7 @@ public:
   avgss_si();
 };
 
-avgss_si::avgss_si()
- : basess_si("avg_ss", em->REAL->addProc())
+avgss_si::avgss_si() : basess_si(em->REAL, "avg_ss", em->REAL->addProc())
 {
   SetDocumentation("Computes the expected value of expression x at steady-state.");
 }
@@ -122,8 +112,7 @@ public:
   probss_si();
 };
 
-probss_si::probss_si()
- : basess_si("prob_ss", em->BOOL->addProc())
+probss_si::probss_si() : basess_si(em->REAL, "prob_ss", em->BOOL->addProc())
 {
   SetDocumentation("Computes the probability of expression x at steady-state.");
 }
@@ -143,8 +132,9 @@ class baseat_si : public stoch_msr {
     virtual ~mymsr();
     virtual void classifyNow();
   };
+  bool has_arg;
 public:
-  baseat_si(const char* name, const type* arg);
+  baseat_si(const type* rtype, const char* name, const type* arg);
   virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
 };
 
@@ -204,19 +194,44 @@ void baseat_si::mymsr::classifyNow()
   }
 }
 
-baseat_si::baseat_si(const char* name, const type* arg)
-: stoch_msr(em->REAL, name, 3)
+// ******************************************************************
+
+baseat_si::baseat_si(const type* rtype, const char* name, const type* arg)
+: stoch_msr(rtype, name, arg ? 3 : 2)
 {
-  DCASSERT(arg);
-  SetFormal(1, arg, "x");
-  SetFormal(2, em->REAL, "t");
+  has_arg = arg;
+  if (has_arg) {
+    SetFormal(1, arg, "x");
+    SetFormal(2, em->REAL, "t");
+  } else {
+    SetFormal(1, em->REAL, "t");
+  }
 }
 
 measure* baseat_si::buildMeasure(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(pass);
-  DCASSERT(3==np);
-  return new mymsr(Name(), x.parent, x.model, pass[1], pass[2]);
+  if (has_arg) {
+    DCASSERT(3==np);
+    return new mymsr(Name(), x.parent, x.model, pass[1], pass[2]);
+  } else {
+    DCASSERT(2==np);
+    return new mymsr(Name(), x.parent, x.model, 0, pass[1]);
+  }
+}
+
+// *******************************************************************
+// *                             distat                              *
+// *******************************************************************
+
+class distat_si : public baseat_si {
+public:
+  distat_si();
+};
+
+distat_si::distat_si() : baseat_si(em->STATEDIST, "dist_at", 0)
+{
+  SetDocumentation("Computes and returns the distribution at time t.");
 }
 
 // ******************************************************************
@@ -228,7 +243,7 @@ public:
   avgat_si();
 };
 
-avgat_si::avgat_si() : baseat_si("avg_at", em->REAL->addProc())
+avgat_si::avgat_si() : baseat_si(em->REAL, "avg_at", em->REAL->addProc())
 {
   SetDocumentation("Computes the expected value of expression x at time t.");
 }
@@ -242,7 +257,7 @@ public:
   probat_si();
 };
 
-probat_si::probat_si() : baseat_si("prob_at", em->BOOL->addProc())
+probat_si::probat_si() : baseat_si(em->REAL, "prob_at", em->BOOL->addProc())
 {
   SetDocumentation("Computes the probability of expression x at time t.");
 }
@@ -453,9 +468,10 @@ void InitStochMeasureFuncs(exprman* em, List <msr_func> *common)
   // Add functions
   if (0==common) return;
 
+  common->Append(new distss_si);
   common->Append(new avgss_si);
   common->Append(new probss_si);
-  common->Append(new distss_si);
+  common->Append(new distat_si);
   common->Append(new avgat_si);
   common->Append(new probat_si);
   common->Append(new probacc_si);

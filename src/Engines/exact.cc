@@ -323,7 +323,6 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     p = (double*) malloc(NS * sizeof(double));
     if (0==p) throw Out_Of_Memory;
     ok = proc->computeSteadyState(p);
-    dist = new statedist(proc, p, NS);
   }
   if (ok) {
     realmsr_visitor rv(mdl);
@@ -341,7 +340,12 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
         // This is a distribution measure, just copy it!
         //
         result v;
-        v.setPtr(Share(dist));
+        if (0==dist) {
+          dist = new statedist(proc, p, NS);
+          v.setPtr(dist);
+        } else {
+          v.setPtr(Share(dist));
+        }
         m->SetValue(v);
         continue;
       }
@@ -374,7 +378,7 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
       doneTimer(w);
     }
   }
-  Delete(dist);
+  free(p);
   if (eng_debug.startReport()) {
     eng_debug.report() << "Finished exact steady-state engine\n";
     eng_debug.stopIO();
@@ -420,6 +424,7 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
   long NS = proc->getNumStates(false);
   if (NS < 0) throw Engine_Failed;
+  statevect* dist = 0;
   double* p = 0;
   double* aux1 = 0;
   double* aux2 = 0;
@@ -452,6 +457,7 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     double dt = tm->GetTime() - last_time;
     DCASSERT(dt >= 0);
     if (dt) {
+      dist = 0;
       if (eng_debug.startReport()) {
         eng_debug.report() << "time = " << tm->GetTime();
         eng_debug.report() << ", delta = " << dt << "\n";
@@ -461,6 +467,23 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
       last_time = tm->GetTime();
       if (!ok) break;
     } // if dt
+    if (em->STATEDIST == m->Type()) {
+        //
+        // This is a distribution measure, just copy it!
+        //
+        result v;
+        if (0==dist) {
+          dist = new statedist(proc, p, NS);
+          v.setPtr(dist);
+        } else {
+          v.setPtr(Share(dist));
+        }
+        m->SetValue(v);
+        continue;
+    }
+    //
+    // Ordinary measure, compute it
+    //
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
     if (mt == em->REAL) {
@@ -477,6 +500,9 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
       bv.finish();
       continue;
     }
+    //
+    // Some kind of error, null failsafe
+    //
     m->SetNull();
   } // for m
   free(p);
