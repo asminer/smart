@@ -48,7 +48,7 @@ function_call model_function_call set_expr set_elem pos_param index
 doneproduct doneconj arith logic
 
 %type <List> aggexpr seqexpr statements opt_stmts model_stmts model_var_list
-idlist formal_params formal_indexes pos_params indexes set_elems
+idlist formal_params formal_indexes passed_params pos_params indexes set_elems
 summation product conjunct disjunct
 
 %type <Symbol> iterator func_header array_header model_header formal_param
@@ -782,10 +782,10 @@ model_call
   Reducing("model_call : IDENT");
   $$ = MakeModelCall($1, 0);
 }
-      |   IDENT LPAR pos_params RPAR
+      |   IDENT passed_params
 { 
-  Reducing("model_call : IDENT LPAR pos_params RPAR");
-  $$ = MakeModelCall($1, $3);
+  Reducing("model_call : IDENT passed_params");
+  $$ = MakeModelCall($1, $2);
 }
       ;
 
@@ -806,10 +806,10 @@ function_call
   Reducing("function_call : IDENT indexes");
   $$ = BuildArrayCall($1, $2);
 }
-      |    IDENT LPAR pos_params RPAR
+      |    IDENT passed_params
 {
-  Reducing("function_call : IDENT LPAR pos_params RPAR");
-  $$ = BuildFunctionCall($1, $3);
+  Reducing("function_call : IDENT passed_params");
+  $$ = BuildFunctionCall($1, $2);
 }
       ;
 
@@ -880,14 +880,26 @@ index
 }
       ;
 
+passed_params
+      :   LPAR pos_params RPAR
+{
+  Reducing("passed_params : LPAR pos_params RPAR");
+  $$ = $2;
+}
+      |   LPAR RPAR
+{
+  Reducing("passed_params : LPAR RPAR");
+  $$ = 0;
+}
+      ;
 
 pos_params 
-      :    pos_params COMMA pos_param
+      :   pos_params COMMA pos_param
 {
   Reducing("pos_params : pos_params COMMA pos_param");
   $$ = AppendExpression(0, $1, $3);
 }
-      |    pos_param
+      |   pos_param
 {
   Reducing("pos_params : pos_param");
   $$ = AppendExpression(0, 0, $1);
@@ -895,12 +907,12 @@ pos_params
       ;
 
 pos_param 
-      :    expr  
+      :   expr  
 {
   Reducing("pos_param : expr");
   $$ = $1;
 }
-      |    DEFAULT
+      |   DEFAULT
 {
   Reducing("pos_param : DEFAULT");
   $$ = Default();
