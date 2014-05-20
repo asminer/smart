@@ -6,8 +6,8 @@
 // #include "../ExprLib/unary.h"
 // #include "../ExprLib/binary.h"
 // #include "../ExprLib/assoc.h"
-// #include "../SymTabs/symtabs.h"
-// #include "../ExprLib/functions.h"
+#include "../SymTabs/symtabs.h"
+#include "../ExprLib/functions.h"
 // #include "biginttype.h"
 #include "../ExprLib/mod_vars.h"
 // #include "../ExprLib/dd_front.h"
@@ -15,6 +15,10 @@
 #include "../Formlsms/stoch_llm.h"
 
 #include "statevects.h"
+#include "statesets.h"
+
+// External
+#include "intset.h"
 
 // ******************************************************************
 // *                                                                *
@@ -77,6 +81,20 @@ statevect::statevect(const stochastic_lldsm* p, const double* d, long N)
   numStates = N;
 }
 
+statevect::statevect(const stochastic_lldsm* p, double* d, long N, bool own)
+: shared_object()
+{
+  parent = p;
+  if (own) {
+    vect = d;
+  } else {
+    vect = new double[N];
+    memcpy(vect, d, N*sizeof(double));
+  }
+  numStates = N;
+}
+
+
 statevect::~statevect()
 {
   // printf("Destroying state vector\n");  
@@ -129,6 +147,11 @@ statedist::statedist(const stochastic_lldsm *p, const double *d, long N)
 {
 }
 
+statedist::statedist(const stochastic_lldsm *p, double *d, long N, bool own)
+ : statevect(p, d, N, own)
+{
+}
+
 // ******************************************************************
 // *                                                                *
 // *                       stateprobs methods                       *
@@ -140,6 +163,11 @@ stateprobs::stateprobs(const stochastic_lldsm *p, const double *d, long N)
 {
 }
 
+stateprobs::stateprobs(const stochastic_lldsm *p, double *d, long N, bool own)
+ : statevect(p, d, N, own)
+{
+}
+
 // ******************************************************************
 // *                                                                *
 // *                       statemsrs  methods                       *
@@ -148,6 +176,11 @@ stateprobs::stateprobs(const stochastic_lldsm *p, const double *d, long N)
 
 statemsrs::statemsrs(const stochastic_lldsm *p, const double *d, long N)
  : statevect(p, d, N)
+{
+}
+
+statemsrs::statemsrs(const stochastic_lldsm *p, double *d, long N, bool own)
+ : statevect(p, d, N, own)
 {
 }
 
@@ -198,6 +231,208 @@ statemsrs_type::statemsrs_type() : simple_type("statemsrs", "Measures for states
 {
   setPrintable();
 }
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                           Functions                            *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+// ******************************************************************
+// *                       condition_si class                       *
+// ******************************************************************
+
+class condition_si : public simple_internal {
+public:
+  condition_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+condition_si::condition_si() : simple_internal(em->STATEDIST, "condition", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEDIST);
+  SetFormal(0, em->STATEDIST, "p");
+  SetFormal(1, em->STATESET, "e");
+  SetDocumentation("Given a state distribution p, build a new distribution conditioned on the fact that a state belongs to the set e.  Will return null if the probability (according to p) of e is 0.");
+}
+
+void condition_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  statedist* p = smart_cast <statedist*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+
+  stateset* e = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  DCASSERT(e);
+
+  if (p->getParent() != e->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "State distribution and set parameters to condition()";
+      em->newLine();
+      em->cerr() << "are from different model instances";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(e);
+    x.answer->setNull();
+    return;
+  }
+
+  if (!e->isExplicit()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() doesn't work yet with DD statesets";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(e);
+    x.answer->setNull();
+    return;
+  }
+
+  //
+  // Ready to do actual computation
+  //
+
+  //
+  // Set up new distribution
+  //
+  double* qv = new double[p->size()];
+  for (long i=0; i<p->size(); i++) qv[i] = 0;
+
+  //
+  // Copy stuff over, and compute total
+  //
+  double prob = 0.0;
+  const intset eis = e->getExplicit();  
+  long i = -1;
+  while ( (i=eis.getSmallestAfter(i)) >= 0) {
+    prob += (qv[i] = p->read(i));
+  }
+
+  //
+  // Determine result
+  //
+  if (prob <= 0) {
+    // 0 prob - that's a null
+    x.answer->setNull();
+    delete[] qv;
+  } else
+  if (prob >= 1) {
+    // 1 prob - we can simply copy p
+    x.answer->setPtr(Share(p));
+    delete[] qv;
+  } else {
+    // generic case
+    // (1) normalize
+    for (long i=0; i<p->size(); i++) qv[i] /= prob;
+    // (2) set result
+    x.answer->setPtr(new statedist(p->getParent(), qv, p->size(), true));
+  }
+
+  //
+  // Cleanup 
+  //
+  Delete(p);
+  Delete(e);
+}
+
+// ******************************************************************
+// *                         prob_si  class                         *
+// ******************************************************************
+
+class prob_si : public simple_internal {
+public:
+  prob_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+prob_si::prob_si() : simple_internal(em->REAL, "prob", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEDIST);
+  SetFormal(0, em->STATEDIST, "p");
+  SetFormal(1, em->STATESET, "e");
+  SetDocumentation("Determine the probability (according to distribution p) of a state being in set e.");
+}
+
+void prob_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  statedist* p = smart_cast <statedist*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+
+  stateset* e = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  DCASSERT(e);
+
+  if (p->getParent() != e->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "State distribution and set parameters to prob()";
+      em->newLine();
+      em->cerr() << "are from different model instances";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(e);
+    x.answer->setNull();
+    return;
+  }
+
+  if (!e->isExplicit()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, prob() doesn't work yet with DD statesets";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(e);
+    x.answer->setNull();
+    return;
+  }
+
+  //
+  // Ready to do actual computation
+  //
+  double prob = 0.0;
+  const intset eis = e->getExplicit();  
+  long i = -1;
+  while ( (i=eis.getSmallestAfter(i)) >= 0) {
+    prob += p->read(i);
+  }
+  Delete(p);
+  Delete(e);
+  x.answer->setReal(prob);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -255,5 +490,7 @@ void InitStatevects(exprman* em, symbol_table* st)
   if (0==st) return;
 
   // Functions
+  st->AddSymbol(  new prob_si         );
+  st->AddSymbol(  new condition_si    );
 }
 
