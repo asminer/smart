@@ -22,46 +22,74 @@
 
 // ******************************************************************
 // *                                                                *
-// *                       expl_printer class                       *
+// *                    statevect_printer  class                    *
 // *                                                                *
 // ******************************************************************
 
-class sparse_vect_printer : public lldsm::state_visitor {
+class statevect_printer : public lldsm::state_visitor {
   OutputStream &out;
-  const double* dist;
-  bool print_indexes;
+  const statevect* dist;
+  int display_style;
+private:
+  long nextz;
   bool comma;
 public:
-  sparse_vect_printer(const hldsm* mdl, OutputStream &s, const double* d, bool pi);
+  statevect_printer(const hldsm* mdl, OutputStream &s, const statevect* d, 
+    int style);
   virtual bool canSkipIndex();
   virtual bool visit();
 };
 
-sparse_vect_printer
-::sparse_vect_printer(const hldsm* m, OutputStream &s, const double* d, bool pi)
- : state_visitor(m), out(s)
+statevect_printer::statevect_printer(const hldsm* m, OutputStream &s, 
+  const statevect* d, int style) : state_visitor(m), out(s)
 {
   dist = d;
-  print_indexes = pi;
+  display_style = style;
   comma = false;
+  nextz = 0;
 }
 
-bool sparse_vect_printer::canSkipIndex()
+bool statevect_printer::canSkipIndex()
 {
-  return (0==dist[x.current_state_index] );
+  if (statevect::FULL == display_style) return false;
+  if (dist->isSparse()) {
+    return dist->readSparseIndex(nextz) != x.current_state_index;
+  }
+  return (0==dist->readFull(x.current_state_index));
 }
 
-bool sparse_vect_printer::visit()
+bool statevect_printer::visit()
 {
   if (comma)  out << ", ";
   else        comma = true;
-  if (print_indexes) {
+  
+  if (statevect::SINDEX==display_style) {
     out.Put(x.current_state_index); 
-  } else {
-    x.current_state->Print(out, 0);
+    out.Put(':');
   }
-  out << ":" << dist[x.current_state_index];
-  return false;
+  if (statevect::SSTATE==display_style) {
+    x.current_state->Print(out, 0);
+    out.Put(':');
+  }
+
+  if (dist->isSparse()) {
+    if (x.current_state_index == nextz) {
+      out << dist->readSparseValue(nextz);
+      nextz++;
+      return (nextz >= dist->size());
+    } else {
+      // must be FULL display style
+      out << 0;
+      return false;
+    }
+  }
+  if (x.current_state_index < dist->size()) {
+    out << dist->readFull(x.current_state_index);
+  } else {
+    out << 0;
+  }
+  if (statevect::FULL == display_style) return false;
+  return (x.current_state_index >= dist->size()-1);
 }
 
 // ******************************************************************
@@ -76,48 +104,80 @@ statevect::statevect(const stochastic_lldsm* p, const double* d, long N)
 : shared_object()
 {
   parent = p;
-  vect = new double[N];
-  memcpy(vect, d, N*sizeof(double));
-  numStates = N;
+  // determine number of nonzeroes
+  long nnz = 0;
+  for (long i=0; i<N; i++) if (d[i]) nnz++;
+  if (0==nnz) {
+    // easy case
+    indexes = 0;
+    vect = 0;
+    vectsize = 0;
+    return;
+  }
+
+  // determine truncation point
+  long tsize;
+  for (tsize=N-1; tsize>=0; tsize--) {
+    if (d[tsize]) break;
+  }
+  tsize++;
+
+  //
+  // Decide how to store
+  //
+  if (tsize * sizeof(double) <= nnz * (sizeof(double)+sizeof(long))) {
+    //
+    // Truncated
+    //
+    indexes = 0;
+    vect = new double[tsize];
+    memcpy(vect, d, tsize*sizeof(double));
+    vectsize = tsize;
+  } else {
+    //
+    // Sparse
+    //
+    indexes = new long[nnz];
+    vect = new double[nnz];
+    vectsize = nnz;
+    long z = 0;
+    for (long i=0; i<N; i++) if (d[i]) {
+      indexes[z] = i;
+      vect[z] = d[i];
+      z++;
+    }
+  }
 }
 
-statevect::statevect(const stochastic_lldsm* p, double* d, long N, bool own)
+statevect::statevect(const stochastic_lldsm* p, long* I, double* D, long N)
 : shared_object()
 {
   parent = p;
-  if (own) {
-    vect = d;
-  } else {
-    vect = new double[N];
-    memcpy(vect, d, N*sizeof(double));
-  }
-  numStates = N;
+  indexes = I;
+  vect = D;
+  vectsize = N;
 }
-
 
 statevect::~statevect()
 {
   // printf("Destroying state vector\n");  
+  delete[] indexes;
   delete[] vect;
 }
 
 bool statevect::Print(OutputStream &s, int width) const
 {
   DCASSERT(parent);
-  DCASSERT(vect);
-  if (FULL==display_style) {
-    s.Put('[');
-    s << vect[0];
-    for (int i=1; i<numStates; i++) {
-      s << ", " << vect[i];
-    }
-    s.Put(']');
-  } else {
-    sparse_vect_printer foo(parent->GetParent(), s, vect, SINDEX==display_style);
-    s.Put('(');
-    parent->visitStates(foo);
-    s.Put(')');
-  }
+
+  if (FULL==display_style)  s.Put('[');
+  else                      s.Put('(');
+
+  statevect_printer foo(parent->GetParent(), s, this, display_style);
+  parent->visitStates(foo);
+
+  if (FULL==display_style)  s.Put(']');
+  else                      s.Put(')');
+
   return true;
 }
 
@@ -127,13 +187,103 @@ bool statevect::Equals(const shared_object *o) const
   if (0==b) return false;
   if (parent != b->parent) return false;  // TBD: may want to allow this
   
-  DCASSERT(numStates == b->numStates);
+  DCASSERT(vectsize == b->vectsize);
 
-  for (long i=0; i<numStates; i++) {
+  for (long i=0; i<vectsize; i++) {
     if (vect[i] != b->vect[i]) return false;
     // TBD - check within epsilon?
   }
   return true;
+}
+
+void statevect::copyRestricted(const statevect* sv, const intset* e)
+{
+  DCASSERT(sv);
+
+  long nnz = 0;
+  long tsize = 0;
+
+  if (sv->isSparse()) {
+    for (long z=0; z<sv->size(); z++) {
+      long i = sv->readSparseIndex(z);
+      if (e && !e->contains(i)) continue;
+      if (0==sv->readSparseValue(z)) continue;
+      nnz++;
+      tsize = MAX(tsize, 1+i);
+    }
+  } else {
+    for (long i=0; i<sv->size(); i++) {
+      if (0==sv->readFull(i)) continue;
+      if (e && !e->contains(i)) continue;
+      nnz++;
+      tsize = MAX(tsize, 1+i);
+    }
+  }
+
+  if (tsize * sizeof(double) <= nnz * (sizeof(double)+sizeof(long))) {
+    //
+    // Store as truncated
+    //
+    indexes = 0;
+    vect = new double[tsize];
+    vectsize = tsize;
+    //
+    if (sv->isSparse()) {
+      //
+      // Trunc <- sparse
+      //
+      for (long i=0; i<tsize; i++) vect[i] = 0;
+      for (long z=0; z<nnz; z++) {
+        long i = sv->readSparseIndex(z);
+        if (e && !e->contains(i)) continue;
+        vect[i] = sv->readSparseValue(z);
+      }
+    } else {
+      //
+      // Trunc <- trunc
+      //
+      for (long i=0; i<tsize; i++) {
+        if (e && !e->contains(i))   vect[i] = 0;
+        else                        vect[i] = sv->readFull(i);
+      }
+    }
+  } else {
+    //
+    // Store as sparse
+    //
+    indexes = new long[nnz];
+    vect = new double[nnz];
+    vectsize = nnz;
+    //
+    if (sv->isSparse()) {
+      //
+      // Sparse <- sparse
+      //
+      long zp = 0;
+      for (long z=0; z<sv->size(); z++) {
+        long i = sv->readSparseIndex(z);
+        if (e && !e->contains(i)) continue;
+        if (0==sv->readSparseValue(z)) continue;
+        indexes[zp] = i;
+        vect[zp] = sv->readSparseValue(z);
+        zp++;
+      }
+      DCASSERT(zp == nnz);
+    } else {
+      //
+      // Sparse <- trunc
+      //
+      long zp = 0;
+      for (long i=0; i<sv->size(); i++) {
+        if (0==sv->readFull(i)) continue;
+        if (e && !e->contains(i)) continue;
+        indexes[zp] = i;
+        vect[zp] = sv->readFull(i);
+        zp++;
+      }
+      DCASSERT(zp == nnz);
+    }
+  }
 }
 
 // ******************************************************************
@@ -147,9 +297,22 @@ statedist::statedist(const stochastic_lldsm *p, const double *d, long N)
 {
 }
 
-statedist::statedist(const stochastic_lldsm *p, double *d, long N, bool own)
- : statevect(p, d, N, own)
+statedist::statedist(const stochastic_lldsm* p, long* I, double* D, long N)
+ : statevect(p, I, D, N)
 {
+}
+
+double statedist::normalize()
+{
+  //
+  // This works both for sparse and truncated full :^)
+  //
+  double total = 0.0;
+  for (long i=0; i<vectsize; i++) total += vect[i];
+  if (total <= 0.0) return total;
+  if (1.0 == total) return total;
+  for (long i=0; i<vectsize; i++) vect[i] /= total;
+  return total;
 }
 
 // ******************************************************************
@@ -163,8 +326,8 @@ stateprobs::stateprobs(const stochastic_lldsm *p, const double *d, long N)
 {
 }
 
-stateprobs::stateprobs(const stochastic_lldsm *p, double *d, long N, bool own)
- : statevect(p, d, N, own)
+stateprobs::stateprobs(const stochastic_lldsm* p, long* I, double* D, long N)
+ : statevect(p, I, D, N)
 {
 }
 
@@ -179,8 +342,8 @@ statemsrs::statemsrs(const stochastic_lldsm *p, const double *d, long N)
 {
 }
 
-statemsrs::statemsrs(const stochastic_lldsm *p, double *d, long N, bool own)
- : statevect(p, d, N, own)
+statemsrs::statemsrs(const stochastic_lldsm* p, long* I, double* D, long N)
+ : statevect(p, I, D, N)
 {
 }
 
@@ -310,40 +473,23 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
 
-  //
-  // Set up new distribution
-  //
-  double* qv = new double[p->size()];
-  for (long i=0; i<p->size(); i++) qv[i] = 0;
+  statedist* q = new statedist(p->getParent(), 0, 0, 0);
+  const intset& eis = e->getExplicit();
+  q->copyRestricted(p, &eis);
 
-  //
-  // Copy stuff over, and compute total
-  //
-  double prob = 0.0;
-  const intset eis = e->getExplicit();  
-  long i = -1;
-  while ( (i=eis.getSmallestAfter(i)) >= 0) {
-    prob += (qv[i] = p->read(i));
-  }
+  double total = q->normalize();
 
-  //
-  // Determine result
-  //
-  if (prob <= 0) {
-    // 0 prob - that's a null
+  if (total <= 0) {
+    // that's a null
+    Delete(q);
     x.answer->setNull();
-    delete[] qv;
-  } else
-  if (prob >= 1) {
-    // 1 prob - we can simply copy p
+  } else if (total == 1) {
+    // q is equal to p
+    Delete(q);
     x.answer->setPtr(Share(p));
-    delete[] qv;
   } else {
     // generic case
-    // (1) normalize
-    for (long i=0; i<p->size(); i++) qv[i] /= prob;
-    // (2) set result
-    x.answer->setPtr(new statedist(p->getParent(), qv, p->size(), true));
+    x.answer->setPtr(q);
   }
 
   //
@@ -426,7 +572,7 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
   const intset eis = e->getExplicit();  
   long i = -1;
   while ( (i=eis.getSmallestAfter(i)) >= 0) {
-    prob += p->read(i);
+    prob += p->readFull(i);
   }
   Delete(p);
   Delete(e);
