@@ -6,6 +6,8 @@
 
 #include "check_llm.h"
 
+class statedist;
+
 // ******************************************************************
 // *                                                                *
 // *                     stochastic_lldsm class                     *
@@ -108,28 +110,10 @@ public:
   /** Get the initial (time 0) distribution.
       This must be provided in derived classes, the
       default behavior here is to print an error message.
-        @param  probs   An array of dimension getNumStates().
-                        On input: ignored.
-                        On output: the steady-state probability
-                        for each state, where probs[i]
-                        will be the probability for the
-                        state returned by getStateNumber(i).
-
-        @return    true on success, false otherwise.
+        @return    Shallow copy of initial distribution, or 0 on error.
   */
-  virtual bool getInitialDistribution(double* probs) const;
+  virtual statedist* getInitialDistribution() const;
 
-  /** Get the initial (time 0) distribution.
-      The distribution is stored in newly-allocated
-      arrays in a sparse representation.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  indexes   Output: newly allocated array of initial states
-        @param  probs     Output: newly allocated array of probabilities,
-                          one for each initial state.
-        @param  numinit   Output: number of states with nonzero initial prob.
-  */
-  virtual void buildInitialDistribution(long* &indexes, double* &probs, long &numinit) const;
       
   /** Get the outgoing weights from a given state.
       This really only makes sense for Markov chains

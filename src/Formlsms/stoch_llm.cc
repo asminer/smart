@@ -51,15 +51,10 @@ bool stochastic_lldsm::isTransient(long st) const
   return false;
 }
 
-bool stochastic_lldsm::getInitialDistribution(double* probs) const
+statedist* stochastic_lldsm::getInitialDistribution() const
 {
   bailOut(__FILE__, __LINE__, "Can't get initial distribution");
-  return false;
-}
-
-void stochastic_lldsm::buildInitialDistribution(long* &indexes, double* &probs, long &numinit) const
-{
-  bailOut(__FILE__, __LINE__, "Can't build (sparse) initial distribution");
+  return 0;
 }
 
 long stochastic_lldsm::getOutgoingWeights(long from, long* to, double* w, long n) const

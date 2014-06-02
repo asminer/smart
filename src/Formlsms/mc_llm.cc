@@ -11,6 +11,7 @@
 
 #include "../Modules/expl_states.h"
 #include "../Modules/statesets.h"
+#include "../Modules/statevects.h"
 
 
 // External libs
@@ -292,18 +293,20 @@ class explicit_mc : public markov_lldsm {
 
 protected:
   long num_states;
-  LS_Vector initial;
+  statedist* initial;
   MCLib::Markov_chain* chain;
   static mc_reporter* my_timer;
   friend void InitMCLibs(exprman* em);
 
 public:
-  explicit_mc(const LS_Vector& init, MCLib::Markov_chain* mc);
+  explicit_mc(LS_Vector& init, MCLib::Markov_chain* mc);
   explicit_mc(bool dtmc, long ns);
   virtual ~explicit_mc();
 
-  void setChain(const LS_Vector& init, MCLib::Markov_chain* mc);
+protected:
+  void setChain(statedist* init, MCLib::Markov_chain* mc);
 
+public:
   virtual long getNumStates(bool show) const;
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
@@ -322,8 +325,7 @@ public:
   virtual bool isFairModel() const { return true; }
   virtual void getTSCCsSatisfying(stateset &p) const;
   
-  virtual bool getInitialDistribution(double* probs) const;
-  virtual void buildInitialDistribution(long* &indexes, double* &probs, long &numinit) const;
+  virtual statedist* getInitialDistribution() const;
   virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
 
   virtual void getInitialStates(result &x) const;
@@ -359,7 +361,7 @@ protected:
   */
   virtual void ShowState(OutputStream &s, long i) const = 0;
 
-  void reorderInitial(const long* ren);
+  // void reorderInitial(const long* ren);
 
   inline bool statusOK(const LS_Output &o, const char* who) const {
     switch (o.status) {
@@ -545,29 +547,28 @@ bool explicit_mc::pot_visit::visit()
 // *                      explicit_mc  methods                      *
 // ******************************************************************
 
-explicit_mc::explicit_mc(const LS_Vector& init, MCLib::Markov_chain* mc)
+explicit_mc::explicit_mc(LS_Vector& init, MCLib::Markov_chain* mc)
  : markov_lldsm(mc->isDiscrete())
 {
   chain = mc;
-  initial = init;
+  initial = new statedist(this, init, 0);
   num_states = chain->getNumStates();
 }
 
 explicit_mc::explicit_mc(bool dtmc, long ns) : markov_lldsm(dtmc)
 {
   chain = 0;
+  initial = 0;
   num_states = ns;
 }
 
 explicit_mc::~explicit_mc()
 {
   delete chain;
-  delete[] initial.index;
-  delete[] initial.f_value;
-  delete[] initial.d_value;
+  delete initial;
 }
 
-void explicit_mc::setChain(const LS_Vector& init, MCLib::Markov_chain* mc)
+void explicit_mc::setChain(statedist* init, MCLib::Markov_chain* mc)
 {
   DCASSERT(0==chain);
   DCASSERT(mc);
@@ -735,10 +736,7 @@ void explicit_mc::showInitial() const
 {
   // build initial distribution
   double* init = new double[num_states];
-  if (!getInitialDistribution(init)) {
-    em->cout() << "Couldn't get initial distribution\n";
-    return;
-  } 
+  initial->ExportTo(init);
 
   // build state mapping
   long* map = 0;
@@ -901,73 +899,9 @@ void explicit_mc::getTSCCsSatisfying(stateset &p) const
   p.changeExplicit().complement();
 }
 
-bool explicit_mc::getInitialDistribution(double* probs) const
+statedist* explicit_mc::getInitialDistribution() const
 {
-  if (0==chain)  return false;
-  if (0==probs) return false;
-  for (long i=0; i<chain->getNumStates(); i++) probs[i] = 0.0;
-
-  if (0==initial.size) {
-    if (em->startError()) {
-      em->noCause();
-      em->cerr()<<"Initial probability vector required for Markov chain solver";
-      em->stopIO();
-    }
-    return false;
-  }
-
-  if (initial.d_value) {
-    // double precision
-    if (initial.index)   // sparse storage
-      for (long z=0; z<initial.size; z++)
-        probs[initial.index[z]] = initial.d_value[z];
-    else    // truncated full storage
-      for (long i=0; i<initial.size; i++)
-        probs[i] = initial.d_value[i];
-    return true;
-  }
-  if (initial.f_value) {
-    // float precision
-    if (initial.index)   // sparse storage
-      for (long z=0; z<initial.size; z++)
-        probs[initial.index[z]] = initial.f_value[z];
-    else    // truncated full storage
-      for (long i=0; i<initial.size; i++)
-        probs[i] = initial.f_value[i];
-    return true;
-  }
-  return false;
-}
-
-void explicit_mc::
-buildInitialDistribution(long* &indexes, double* &probs, long &numinit) const
-{
-  DCASSERT(chain);  // why?
-  numinit = initial.size;
-  if (0==numinit) {
-    if (em->startError()) {
-      em->noCause();
-      em->cerr() << "Initial probability vector required for Markov chain";
-      em->stopIO();
-    }
-    return;
-  }
-  probs = new double[numinit];
-  if (initial.index) {  // sparse storage
-    indexes = new long[numinit];
-    memcpy(indexes, initial.index, numinit*sizeof(long));
-  } else {
-    indexes = 0;
-  }
-  if (initial.d_value) {
-    memcpy(probs, initial.d_value, numinit*sizeof(double));
-    return;
-  } 
-  if (initial.f_value) {
-    for (long z=0; z<numinit; z++) probs[z] = initial.f_value[z];
-    return;
-  }
-  DCASSERT(0);
+  return Share(initial);
 }
 
 long explicit_mc::
@@ -985,25 +919,10 @@ void explicit_mc::getInitialStates(result &x) const
     x.setNull();
     return;
   }
+
   intset* initss = new intset(ns);
-  initss->removeAll();
-  
-  if (initial.index) {
-    // sparse storage
-    for (long z=0; z<initial.size; z++)
-      initss->addElement(initial.index[z]);
-  } else {
-    // truncated full storage
-    if (initial.d_value) {
-      // double precision
-      for (long i=0; i<initial.size; i++)
-        if (initial.d_value[i]) initss->addElement(i);
-    } else {
-      // float precision
-      for (long i=0; i<initial.size; i++)
-        if (initial.f_value[i]) initss->addElement(i);
-    }
-  }
+  DCASSERT(initial);
+  initial->greater_than(0, *initss);
 
   x.setPtr(new stateset(this, initss));
 }
@@ -1069,7 +988,10 @@ bool explicit_mc::computeSteadyState(double* probs) const
   startSteadyReport(); 
   LS_Output outdata;
   try {
-    chain->computeSteady(initial, probs, getSolverOptions(), outdata);
+    LS_Vector ls_init;
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeSteady(ls_init, probs, getSolverOptions(), outdata);
     stopSteadyReport(outdata.num_iters);
     return statusOK(outdata, "steady-state");
   }
@@ -1184,7 +1106,10 @@ bool explicit_mc::computeDiscreteTTA(double epsilon, double* &dist, int &N) cons
   try {
     int goal = chain->getClassOfState(acc_state);
     MCLib::Markov_chain::distopts opts;
-    chain->computeDiscreteDistTTA(initial, opts, goal, epsilon, dist, N);
+    LS_Vector ls_init;
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeDiscreteDistTTA(ls_init, opts, goal, epsilon, dist, N);
     return true;
   }
   catch (MCLib::error e) {
@@ -1223,7 +1148,10 @@ computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
   try {
     int goal = chain->getClassOfState(acc_state);
     MCLib::Markov_chain::distopts opts;
-    chain->computeContinuousDistTTA(initial, opts, goal, dt, epsilon, dist, N);
+    LS_Vector ls_init;
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeContinuousDistTTA(ls_init, opts, goal, dt, epsilon, dist, N);
     return true;
   }
   catch (MCLib::error e) {
@@ -1328,89 +1256,6 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
 }
 
 
-
-template <class REAL>
-void permute(const REAL* in, long inN, REAL* out, long outN, const long* ren)
-{
-  for (long i=0; i<inN; i++) {
-    CHECK_RANGE(0, ren[i], outN);
-    out[ren[i]] = in[i];
-  }
-}
-
-template <class REAL>
-void sparsify(const REAL* in, long inN, long* index, REAL* out, const long* ren){
-  long nnz = 0;
-  for (long i=0; i<inN; i++) if (in[i]) {
-    index[nnz] = ren[i];
-    out[nnz] = in[i];
-    nnz++;
-  }
-}
-
-void explicit_mc::reorderInitial(const long* ren)
-{
-  if (0==initial.size) return;
-  if (initial.index) {
-      // sparse storage
-      // Hack: remove "const", ugh.
-      long* newindex = (long*) initial.index;
-      for (long z=0; z<initial.size; z++) {
-        CHECK_RANGE(0, initial.index[z], chain->getNumStates());
-        newindex[z] = ren[initial.index[z]];
-      }
-      return;
-  } 
-  // truncated full storage
-
-  // get the new size
-  long maxentry = ren[0];
-  for (long z=1; z<initial.size; z++) maxentry = MAX(maxentry, ren[z]);
-  maxentry++;
-
-  // make sure truncated full makes sense
-  long nnz = 0;
-  if (initial.d_value) {
-    for (long z=0; z<initial.size; z++) if (initial.d_value[z]) nnz++;
-  } else {
-    DCASSERT(initial.f_value);
-    for (long z=0; z<initial.size; z++) if (initial.f_value[z]) nnz++;
-  }
-
-  if (maxentry < 2*nnz) {
-    // stick with truncated full
-    if (initial.d_value) {
-      double* dnew = new double[maxentry];
-      permute(initial.d_value, initial.size, dnew, maxentry, ren);
-      delete[] initial.d_value;
-      initial.d_value = dnew;
-    } else {
-      float* fnew = new float[maxentry];
-      permute(initial.f_value, initial.size, fnew, maxentry, ren);
-      delete[] initial.f_value;
-      initial.f_value = fnew;
-    }
-    initial.size = maxentry;
-    return;
-  }
-
-  // switch to sparse
-  long* index = new long[nnz];
-  if (initial.d_value) {
-    double* dnew = new double[nnz];
-    sparsify(initial.d_value, initial.size, index, dnew, ren);
-    delete[] initial.d_value;
-    initial.d_value = dnew;
-  } else {
-    float* fnew = new float[nnz];
-    sparsify(initial.f_value, initial.size, index, fnew, ren);
-    delete[] initial.f_value;
-    initial.f_value = fnew;
-  }
-  initial.size = nnz;
-  initial.index = index;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                         mc_enum  class                         *
@@ -1423,7 +1268,7 @@ protected:
   model_enum* states;
 public:
   /// Constructor for enumerated chains.
-  mc_enum(const LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st);
+  mc_enum(LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st);
   virtual ~mc_enum();
   virtual void visitStates(state_visitor &v) const;
   virtual shared_object* getEnumeratedState(long i) const;
@@ -1437,7 +1282,7 @@ protected:
 // *                        mc_enum  methods                        *
 // ******************************************************************
 
-mc_enum::mc_enum(const LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st)
+mc_enum::mc_enum(LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st)
  : explicit_mc(init, mc)
 {
   states = st;
@@ -1529,10 +1374,10 @@ public:
 protected:
   virtual ~mc_expl();
 public:
-  void FinishExpl(const LS_Vector& init, MCLib::Markov_chain* mc, 
+  void FinishExpl(LS_Vector& init, MCLib::Markov_chain* mc, 
     long acc, long trap);
 
-  inline void FinishExpl(const LS_Vector& init, MCLib::Markov_chain* mc) {
+  inline void FinishExpl(LS_Vector& init, MCLib::Markov_chain* mc) {
     FinishExpl(init, mc, -1, -1);
   }
   inline StateLib::state_db* getAllStates() { return fullstates; }
@@ -1583,12 +1428,11 @@ mc_expl::~mc_expl()
   delete[] state_handle;
 }
 
-void mc_expl::FinishExpl(const LS_Vector& init, MCLib::Markov_chain* mc, 
+void mc_expl::FinishExpl(LS_Vector& init, MCLib::Markov_chain* mc, 
   long a, long t)
 {
   accept = a;
   trap = t;
-  setChain(init, mc);
 
   // Compact states
   states = fullstates->TakeStateCollection();
@@ -1602,10 +1446,13 @@ void mc_expl::FinishExpl(const LS_Vector& init, MCLib::Markov_chain* mc,
   opts.Will_Clear = false;
   opts.report = my_timer ? my_timer->switchMe() : 0;
   MCLib::Markov_chain::renumbering r;
-  chain->finish(opts, r);
-  DCASSERT(chain->isEfficientByRows() == opts.Store_By_Rows);
+  mc->finish(opts, r);
+  DCASSERT(mc->isEfficientByRows() == opts.Store_By_Rows);
 
-  if (r.NoRenumbering())   return; 
+  if (r.NoRenumbering()) {
+    setChain(new statedist(this, init, 0), mc);
+    return;
+  }
 
   DCASSERT(r.GeneralRenumbering());
   const long* ren = r.GetGeneral();
@@ -1621,8 +1468,9 @@ void mc_expl::FinishExpl(const LS_Vector& init, MCLib::Markov_chain* mc,
     CHECK_RANGE(0, trap, states->Size());
     trap = ren[trap];
   }
-  // Renumber initial vector
-  reorderInitial(ren);
+
+  // Build initial distribution (renumbered)
+  setChain(new statedist(this, init, ren), mc);
   
   // Renumber state_handle array.
   long* aux = new long[states->Size()];
@@ -1873,7 +1721,7 @@ void InitMCLibs(exprman* em)
 }
 
 stochastic_lldsm* 
-MakeEnumeratedMC(const LS_Vector& init, model_enum* ss, MCLib::Markov_chain* mc)
+MakeEnumeratedMC(LS_Vector& init, model_enum* ss, MCLib::Markov_chain* mc)
 {
   return new mc_enum(init, mc, ss);
 }
@@ -1890,7 +1738,7 @@ StateLib::state_db* GrabExplicitMCStates(lldsm* mc)
   return xmc->getAllStates();
 }
 
-void FinishExplicitMC(lldsm* m, const LS_Vector &i, MCLib::Markov_chain* mc)
+void FinishExplicitMC(lldsm* m, LS_Vector &i, MCLib::Markov_chain* mc)
 {
   if (0==mc) return;
   mc_expl* xmc = dynamic_cast <mc_expl*> (m);
@@ -1898,7 +1746,7 @@ void FinishExplicitMC(lldsm* m, const LS_Vector &i, MCLib::Markov_chain* mc)
   xmc->FinishExpl(i, mc);
 }
 
-void FinishExplicitMC(lldsm* m, const LS_Vector &i, long acc, long trap,
+void FinishExplicitMC(lldsm* m, LS_Vector &i, long acc, long trap,
   MCLib::Markov_chain* mc)
 {
   if (0==mc) return;
