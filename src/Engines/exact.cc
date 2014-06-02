@@ -445,7 +445,9 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     }
   }
   double last_time = 0.0;
-  ok = proc->getInitialDistribution(p);
+  statedist* initial = proc->getInitialDistribution();
+  initial->ExportTo(p);
+  Delete(initial);
   realmsr_visitor rv(mdl);
   boolmsr_visitor bv(mdl);
 
@@ -574,7 +576,9 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   double last_start = 0.0;
   double last_stop = -1.0;
-  ok = proc->getInitialDistribution(p0);
+  statedist* initial = proc->getInitialDistribution();
+  initial->ExportTo(p0);
+  Delete(initial);
   realmsr_visitor rv(mdl);
   boolmsr_visitor bv(mdl);
 
@@ -695,7 +699,9 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   double last_time = 0.0;
   bool not_computed = true;
-  ok = proc->getInitialDistribution(p0);
+  statedist* initial = proc->getInitialDistribution();
+  initial->ExportTo(p0);
+  Delete(initial);
   realmsr_visitor rv(mdl);
   boolmsr_visitor bv(mdl);
 
@@ -869,10 +875,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
     watch->reset();
   }
   
-  if (!proc->getInitialDistribution(init)) {
-    doneTimer(watch);
-    throw Engine_Failed;
-  }
+  statedist* initial = proc->getInitialDistribution();
+  initial->ExportTo(init);
+  Delete(initial);
   
   if (!proc->computeClassProbs(init, vx)) {
     doneTimer(watch);

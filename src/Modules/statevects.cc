@@ -19,6 +19,7 @@
 
 // External
 #include "intset.h"
+#include "lslib.h"
 
 // ******************************************************************
 // *                                                                *
@@ -125,7 +126,7 @@ statevect::statevect(const stochastic_lldsm* p, const double* d, long N)
   //
   // Decide how to store
   //
-  if (tsize * sizeof(double) <= nnz * (sizeof(double)+sizeof(long))) {
+  if (storeAsTruncated(tsize, nnz)) {
     //
     // Truncated
     //
@@ -158,11 +159,182 @@ statevect::statevect(const stochastic_lldsm* p, long* I, double* D, long N)
   vectsize = N;
 }
 
+statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
+: shared_object()
+{
+  parent = p;
+
+  DCASSERT(V.d_value || V.f_value);
+
+  //
+  // Determine number of nonzeroes, truncation point
+  //
+  long nnz = 0;
+  long tsize = -1;
+  for (long z=0; z<V.size; z++) {
+    if (V.d_value) {
+      if (V.d_value[z]) nnz++;
+      else              continue;
+    } else {
+      if (V.f_value[z]) nnz++;
+      else              continue;
+    }
+    long i;
+    if (V.index)  i = V.index[z];
+    else          i = z;
+    if (ren)      i = ren[i];
+    tsize = MAX(tsize, i);
+  }
+  tsize++;
+
+  if (storeAsTruncated(tsize, nnz)) {
+    //
+    // Use Trunated Full
+    //
+    indexes = 0;
+    vect = new double[tsize];
+    vectsize = tsize;
+    for (long i=0; i<tsize; i++) vect[i] = 0;
+
+    if (V.index) {
+      //
+      // V is sparse - convert
+      //
+      for (long z=0; z<V.size; z++) {
+        long i = ren ? ren[V.index[z]] : V.index[z];
+        CHECK_RANGE(0, i, tsize);
+        if (V.d_value)  vect[i] = V.d_value[z];
+        else            vect[i] = V.f_value[z];
+      }
+
+    } else {
+      //
+      // V is full - copy
+      //
+      if (V.d_value) {
+        for (long i=0; i<V.size; i++) {
+          long ii = ren ? ren[i] : i;
+          CHECK_RANGE(0, i, tsize);
+          vect[ii] = V.d_value[i];
+        }
+      } else {
+        for (long i=0; i<V.size; i++) {
+          long ii = ren ? ren[i] : i;
+          CHECK_RANGE(0, i, tsize);
+          vect[ii] = V.f_value[i];
+        }
+      }
+    }
+
+  } else {
+    //
+    // Use Sparse
+    //
+    indexes = new long[nnz];
+    vect = new double[nnz];
+    vectsize = nnz;
+    
+    if (V.index) {
+      //
+      // V is sparse - copy
+      //
+      long z = 0;
+      for (long vz=0; vz<V.size; vz++) {
+        long i = ren ? ren[V.index[vz]] : V.index[vz];
+        indexes[z] = i;
+        if (V.d_value)  vect[z] = V.d_value[vz];
+        else            vect[z] = V.f_value[vz];
+        if (vect[z]) z++;
+      }
+    } else {
+      //
+      // V is full - convert
+      //
+      long z = 0;
+      if (V.d_value) {
+        for (long i=0; i<V.size; i++) if (V.d_value[i]) {
+          vect[z] = V.d_value[i];
+          indexes[z] = ren ? ren[i] : i;
+          z++;
+        }
+      } else {
+        for (long i=0; i<V.size; i++) if (V.f_value[i]) {
+          vect[z] = V.f_value[i];
+          indexes[z] = ren ? ren[i] : i;
+          z++;
+        }
+      }
+    }
+  }
+
+  delete[] V.index;
+  delete[] V.d_value;
+  delete[] V.f_value;
+}
+
 statevect::~statevect()
 {
   // printf("Destroying state vector\n");  
   delete[] indexes;
   delete[] vect;
+}
+
+bool statevect::ExportTo(LS_Vector &V) const
+{
+  V.size = vectsize;
+  V.index = indexes;
+  V.d_value = vect;
+  V.f_value = 0;
+  return true;
+}
+
+void statevect::ExportTo(double *d) const
+{
+  DCASSERT(parent);
+  long num_states = parent->getNumStates(false);
+
+  for (long i=0; i<num_states; i++) d[i] = 0;
+  
+  if (indexes) {
+    for (long z=0; z<vectsize; z++) {
+      CHECK_RANGE(0, indexes[z], num_states);
+      d[indexes[z]] = vect[z];
+    }
+  } else {
+    for (long i=0; i<vectsize; i++) {
+      d[i] = vect[i];
+    }
+  }
+}
+
+void statevect::ExportTo(long* ind, double* value) const
+{
+  long z = 0;
+
+  if (indexes) {
+    for (long i=0; i<vectsize; i++) if (vect[i]) {
+      value[z] = vect[i];
+      ind[z] = indexes[i];
+      z++;
+    }
+  } else {
+    for (long i=0; i<vectsize; i++) if (vect[i]) {
+      value[z] = vect[i];
+      ind[z] = i;
+      z++;
+    }
+  }
+}
+
+long statevect::countNNZs() const
+{
+  long nnzs = 0;
+  // same regardless of sparse/full storage
+  for (long i=0; i<vectsize; i++)
+    if (vect[i])
+      nnzs++;
+
+  return nnzs;
 }
 
 bool statevect::Print(OutputStream &s, int width) const
@@ -194,6 +366,168 @@ bool statevect::Equals(const shared_object *o) const
     // TBD - check within epsilon?
   }
   return true;
+}
+
+void statevect::greater_than(double v, intset &I) const
+{
+  if (v>=0) {
+    //
+    // skipped elements in vector - not set in I
+    // 
+    I.removeAll();
+
+    // go through vector and see what to add
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z] > v) 
+          I.addElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i] > v)
+          I.addElement(i);
+      }
+    }
+  } else {
+    //
+    // skipped elements in vector - are set in I
+    //
+    I.addAll();
+
+    // go through vector and see what to remove
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z] <= v) 
+          I.removeElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i] <= v)
+          I.removeElement(i);
+      }
+    }
+  }
+}
+
+void statevect::less_than(double v, intset &I) const
+{
+  if (v<=0) {
+    //
+    // skipped elements in vector - not set in I
+    // 
+    I.removeAll();
+
+    // go through vector and see what to add
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z] < v) 
+          I.addElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i] < v)
+          I.addElement(i);
+      }
+    }
+  } else {
+    //
+    // skipped elements in vector - are set in I
+    //
+    I.addAll();
+
+    // go through vector and see what to remove
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z] >= v) 
+          I.removeElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i] >= v)
+          I.removeElement(i);
+      }
+    }
+  }
+}
+
+void statevect::equals(double v, intset &I) const 
+{
+  //
+  // TBD - need a precision for this
+  //
+  if (v) {
+    //
+    // skipped elements in vector - not set in I
+    // 
+    I.removeAll();
+
+    // go through vector and see what to add
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z] == v) 
+          I.addElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i] == v)
+          I.addElement(i);
+      }
+    }
+  } else {
+    //
+    // special case - equal to 0
+    //
+    I.addAll();
+
+    // go through vector and see what to remove
+    if (indexes) {
+      // 
+      // sparse
+      //
+      for (long z=0; z<vectsize; z++) {
+        if (vect[z]) 
+          I.removeElement(indexes[z]);
+      }
+    } else {
+      //
+      // full
+      //
+      for (long i=0; i<vectsize; i++) {
+        if (vect[i])
+          I.removeElement(i);
+      }
+    }
+  }
 }
 
 void statevect::copyRestricted(const statevect* sv, const intset* e)
@@ -302,6 +636,11 @@ statedist::statedist(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
+statedist::statedist(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
+ : statevect(p, V, ren)
+{
+}
+
 double statedist::normalize()
 {
   //
@@ -331,6 +670,11 @@ stateprobs::stateprobs(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
+stateprobs::stateprobs(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
+ : statevect(p, V, ren)
+{
+}
+
 // ******************************************************************
 // *                                                                *
 // *                       statemsrs  methods                       *
@@ -344,6 +688,11 @@ statemsrs::statemsrs(const stochastic_lldsm *p, const double *d, long N)
 
 statemsrs::statemsrs(const stochastic_lldsm* p, long* I, double* D, long N)
  : statevect(p, I, D, N)
+{
+}
+
+statemsrs::statemsrs(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
+ : statevect(p, V, ren)
 {
 }
 

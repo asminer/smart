@@ -14,6 +14,7 @@
 #include "stoch_llm.h"
 
 #include "../Modules/statesets.h"
+#include "../Modules/statevects.h"
 
 // ******************************************************************
 // *                                                                *
@@ -122,8 +123,8 @@ class tta_dist : public phase_dist {
 protected:
   int source;
 public:
-  tta_dist(bool, long*, double*, int, stochastic_lldsm*, 
-           stateset* a, const stateset* t);
+  tta_dist(bool, statedist* init, stochastic_lldsm* mc, 
+    stateset* a, const stateset* t);
 protected:
   virtual ~tta_dist();
 public:
@@ -164,9 +165,11 @@ protected:
 };
 
 tta_dist
-:: tta_dist(bool d, long* i, double* v, int l, stochastic_lldsm* mc, 
+:: tta_dist(bool d, statedist* init, stochastic_lldsm* mc, 
   stateset* a, const stateset* t) : phase_dist(d)
 {
+  DCASSERT(init);
+
   chain = mc;
   accept = Share(a);
 
@@ -174,13 +177,13 @@ tta_dist
   DCASSERT(accept);
 
   num_states = chain->getNumStates(false);
-  init_index = i;
-  init_val = v;
-  init_len = l;
 
-  to_states = 0;
-  weights = 0;
-  out_alloc = 0;
+  init_len = init->countNNZs();
+
+  init_index = new long[init_len];
+  init_val = new double[init_len];
+  init->ExportTo(init_index, init_val);
+  Delete(init);
 
   // accumulated initial probs, for simulation
   init_acc = new double[init_len+1];
@@ -189,9 +192,13 @@ tta_dist
     init_acc[i+1] = init_acc[i] + init_val[i];
   }
 
+  to_states = 0;
+  weights = 0;
+  out_alloc = 0;
+
   // Initialize the final states
   intset* f = new intset(num_states);
-  final = new stateset(mc, f);
+  final = new stateset(chain, f);
 
   // final := trap
   if (t) {
@@ -2364,17 +2371,17 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N)
   else                            return new cph_order(k, opnds, N);
 }
 
-phase_hlm* makeTTA( bool disc, long* i, double* v, int n, 
+phase_hlm* makeTTA( bool disc, statedist* initial, 
                     shared_object* a, const shared_object* t, 
                     stochastic_lldsm* mc)
 {
   stateset* ssa = dynamic_cast<stateset*>(a);
   const stateset* sst = dynamic_cast<const stateset*>(t);
-  if (0==i || 0==v || 0==ssa || 0==mc || (sst != t)) {
-    delete[] i;
-    delete[] v;
+  DCASSERT(initial->getParent() == mc);
+  if (0==initial || 0==ssa || 0==mc || sst != t) {
+    Delete(initial);
     Delete(mc);
     return 0;
   }
-  return new tta_dist(disc, i, v, n, mc, ssa, sst);
+  return new tta_dist(disc, initial, mc, ssa, sst);
 }

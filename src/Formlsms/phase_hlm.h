@@ -8,6 +8,8 @@
 #include "rng.h"
 #include <math.h>
 
+class stateset;
+class statedist;
 class shared_state;
 class stochastic_lldsm;
 
@@ -298,9 +300,7 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N);
 
 /** Build a phase-type model as the TTA of some Markov chain.
       @param  d           Is this a discrete-time model?
-      @param  init_index  Initial state index array.
-      @param  init_val    Initial state probability array.
-      @param  init_len    Length of arrays \a init_index and \a init_val.
+      @param  initial     Initial distribution to use.
       @param  accept      Set of accepting states.
       @param  trap        Set of trap states (can be 0).
       @param  mc          Markov chain model.
@@ -308,7 +308,7 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N);
       @return 0, if the operation could not be completed;
               A new phase-type model, otherwise.
 */
-phase_hlm* makeTTA( bool d, long* init_index, double* init_val, int init_len,
+phase_hlm* makeTTA( bool d, statedist* initial,
                     shared_object* accept, const shared_object* trap, 
                     stochastic_lldsm* mc);
 

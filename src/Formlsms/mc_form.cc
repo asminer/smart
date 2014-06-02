@@ -672,14 +672,8 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  long* ind = 0;
-  double* probs = 0;
-  long num_init = 0;
-  proc->buildInitialDistribution(ind, probs, num_init);
-  DCASSERT(ind);
-  DCASSERT(probs);
-  DCASSERT(num_init>0);
-  phase_hlm* foo = makeTTA(is_disc, ind, probs, num_init, accept, 0, Share(proc));
+  statedist* init = proc->getInitialDistribution();
+  phase_hlm* foo = makeTTA(is_disc, init, accept, 0, Share(proc));
   x.answer->setPtr(foo);
 }
 

@@ -100,11 +100,8 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
       throw Engine_Failed;
   };
 
-  // Determine the initial distribution (sparsely)
-  long* init_indexes;
-  double* init_probs;
-  long init_size;
-  sm->buildInitialDistribution(init_indexes, init_probs, init_size);
+  // Determine the initial distribution
+  statedist* initial = sm->getInitialDistribution();
 
 
   //
@@ -137,15 +134,13 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     t->complement();
     stateset* trap = new stateset(sm, t);
     // build tta model
-    tta = makeTTA(discrete,
-      init_indexes, init_probs, init_size,
+    tta = makeTTA(discrete, initial,
       q, trap, Share(sm)
     );
     Delete(trap);
   } else {
     // 0 for p means "all true", so no trap states
-    tta = makeTTA(discrete,
-      init_indexes, init_probs, init_size,
+    tta = makeTTA(discrete, initial,
       q, 0, Share(sm)
     );
   }

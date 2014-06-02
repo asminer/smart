@@ -128,7 +128,7 @@ public:
   virtual ~explicit_fsm();
 
 protected:
-  void Finish(const LS_Vector& init, GraphLib::digraph* g);
+  void Finish(LS_Vector& init, GraphLib::digraph* g);
  
 public:
 
@@ -303,7 +303,7 @@ explicit_fsm::~explicit_fsm()
   delete[] initial.index;
 }
 
-void explicit_fsm::Finish(const LS_Vector& init, GraphLib::digraph* rg)
+void explicit_fsm::Finish(LS_Vector& init, GraphLib::digraph* rg)
 {
   DCASSERT(rg);
   DCASSERT(rg->getNumNodes() == num_states);
@@ -981,7 +981,7 @@ public:
 protected:
   virtual ~fsm_expl();
 public:
-  void FinishExpl(const LS_Vector& init, GraphLib::digraph* fsm);
+  void FinishExpl(LS_Vector& init, GraphLib::digraph* fsm);
   inline StateLib::state_db* getAllStates() { return fullstates; }
   virtual void visitStates(state_visitor &v) const;
   virtual void reportMemUsage(exprman* em, const char* prefix) const;
@@ -1025,7 +1025,7 @@ fsm_expl::~fsm_expl()
   delete[] state_handle;
 }
 
-void fsm_expl::FinishExpl(const LS_Vector& init, GraphLib::digraph* fsm)
+void fsm_expl::FinishExpl(LS_Vector& init, GraphLib::digraph* fsm)
 {
   // Compact states
   states = fullstates->TakeStateCollection();
@@ -1129,7 +1129,7 @@ void InitFSMLibs(exprman* em)
   }
 }
 
-checkable_lldsm* MakeEnumeratedFSM(const LS_Vector &init, model_enum* ss, GraphLib::digraph* rg)
+checkable_lldsm* MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg)
 {
   return new fsm_enum(init, rg, ss);
 }
@@ -1146,7 +1146,7 @@ StateLib::state_db* GrabExplicitFSMStates(lldsm* rg)
   return fsm->getAllStates();
 }
 
-void FinishExplicitFSM(lldsm* rs, const LS_Vector &init, GraphLib::digraph* rg)
+void FinishExplicitFSM(lldsm* rs, LS_Vector &init, GraphLib::digraph* rg)
 {
   if (0==rg) return;
   fsm_expl* fsm = dynamic_cast <fsm_expl*> (rs);

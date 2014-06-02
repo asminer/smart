@@ -32,7 +32,7 @@ namespace StateLib {
 void InitFSMLibs(exprman* em);
 
 checkable_lldsm* 
-MakeEnumeratedFSM(const LS_Vector &init, model_enum* ss, GraphLib::digraph* rg);
+MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg);
 
 // Start an explicit FSM
 checkable_lldsm* StartExplicitFSM(StateLib::state_db* ss);
@@ -41,7 +41,7 @@ checkable_lldsm* StartExplicitFSM(StateLib::state_db* ss);
 StateLib::state_db* GrabExplicitFSMStates(lldsm* rg);
 
 // Finish an explicit FSM
-void FinishExplicitFSM(lldsm* rs, const LS_Vector &init, GraphLib::digraph* rg);
+void FinishExplicitFSM(lldsm* rs, LS_Vector &init, GraphLib::digraph* rg);
 
 #endif
 

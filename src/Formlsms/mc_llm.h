@@ -82,7 +82,7 @@ void InitMCLibs(exprman* em);
       @return A new low-level model.
 */
 stochastic_lldsm* 
-MakeEnumeratedMC(const LS_Vector &init, model_enum* ss, MCLib::Markov_chain* mc);
+MakeEnumeratedMC(LS_Vector &init, model_enum* ss, MCLib::Markov_chain* mc);
 
 
 /** Start an explicit Markov chain model.
@@ -103,14 +103,14 @@ StateLib::state_db* GrabExplicitMCStates(lldsm* mc);
 /** Given a Markov chain model with only a state space,
     specify the rest of the Markov chain.
 */
-void FinishExplicitMC(lldsm* m, const LS_Vector &i, MCLib::Markov_chain* mc);
+void FinishExplicitMC(lldsm* m, LS_Vector &i, MCLib::Markov_chain* mc);
 
 /** Given a Markov chain model with only a state space,
     specify the rest of the Markov chain.
     Phase type version: we must specify the accepting and trap states
     (or -1 for none).
 */
-void FinishExplicitMC(lldsm* m, const LS_Vector &i, long acc, long trap, MCLib::Markov_chain* mc);
+void FinishExplicitMC(lldsm* m, LS_Vector &i, long acc, long trap, MCLib::Markov_chain* mc);
 
 #endif
 
