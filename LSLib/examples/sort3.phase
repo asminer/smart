@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Model - sorting arrays of length 4, by swapping adjacent elements
+# Model - sorting arrays of length 3, by swapping adjacent elements
 # (only if this helps).  Counts number of swaps, starting from
 # a random array.
 #

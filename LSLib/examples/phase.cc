@@ -270,14 +270,21 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  double acc = 0.0;
   double* y = new double[A.stop];
 
   cout << "#Time Prob\n";
   for (int t=0; ; t++) {
     cout << t << "  " << x[A.stop-1] << "\n";
-    acc += x[A.stop-1];
-    if (1.0 - acc < 1e-6) break;
+    //
+    // determine what's left in x
+    //
+    double acc = 0.0;
+    for (long i=0; i<A.stop-1; i++) acc += x[i];
+    if (acc < 1e-6) break;
+
+    //
+    // keep going
+    //
     clearVector(y, A.stop);
     A.VectorMatrixMultiply(y, x);
 #ifdef DEBUG_VMMULT
