@@ -43,10 +43,10 @@ for(int i in {1..3*N+1}) {
 print("Expecting ", fib[3*N+1] + fib[3*N-1], " states\n");
 
 model m := phils(N);
-compute(m.m1);
+compute(m.m2);
 
 print(N, " dining philosophers model\n\tstates: ", m.m1, "\n");
-// print("\tedges : ", m.m2, "\n");
+print("\tedges : ", m.m2, "\n");
 
 print("Number of have left states: ", card(m.left), "\n");
 print("Number of eating    states: ", card(m.eat ), "\n");

@@ -1536,6 +1536,131 @@ assoc* phase_mult_op
 // ******************************************************************
 
 // ******************************************************************
+// *                       cph2dph_unif class                       *
+// ******************************************************************
+
+/**
+  Uniformize a continuous phase, to produce a discrete phase.
+*/
+class cph2dph_unif : public simple_internal {
+public:
+  cph2dph_unif(const type* intype, const type* outtype);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
+};
+
+cph2dph_unif::cph2dph_unif(const type* intype, const type* outtype)
+ : simple_internal(outtype, "uniformize", 2)
+{
+  SetFormal(0, intype, "x");
+  SetFormal(1, em->REAL, "q");
+  SetDocumentation("Uniformize a continuous phase type random variable x, with uniformization constant q>0, to obtain a discrete phase type random variable.  Does not currently work within simulations.");
+}
+
+void cph2dph_unif::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(2==np);
+  DCASSERT(x.answer);
+  x.answer->setNull();
+
+  // Get the passed distribution
+  pass[0]->Compute(x);
+  if (!x.answer->isNormal()) return;
+  phase_hlm* opnd = smart_cast <phase_hlm*>(Share(x.answer->getPtr()));
+
+  // Get q
+  pass[1]->Compute(x);
+  if (x.answer->isNormal()) {
+    double q = x.answer->getReal();
+    if (q<=0) {
+      if (em->startError()) {
+        em->causedBy(x.parent);
+        em->cerr() << "Invalid uniformization constant: " << q << " (must be positive)";
+        em->stopIO();
+      } // error
+      x.answer->setNull();
+      return;
+    }
+    phase_hlm* ans = makeUniformized(opnd, q);
+    DCASSERT(ans);
+    x.answer->setPtr(ans);
+  } else {
+    Delete(opnd);
+  }
+}
+
+int cph2dph_unif::Traverse(traverse_data &x, expr** pass, int np)
+{
+  if (x.which != traverse_data::FindRange)
+        return simple_internal::Traverse(x, pass, np);
+
+  //
+  // Best we can do at this point
+  //
+  DCASSERT(x.answer);
+  interval_object* range = new interval_object;
+  range->Left().setNormal(true, 0.0);
+  range->Right().setInfinity(false, 1);
+  x.answer->setPtr(range);
+  return 0;
+}
+
+
+// ******************************************************************
+// *                      cph2dph_embed  class                      *
+// ******************************************************************
+
+/**
+  Get the discrete phase embedded in a continuous phase.
+*/
+class cph2dph_embed : public simple_internal {
+public:
+  cph2dph_embed(const type* intype, const type* outtype);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
+};
+
+cph2dph_embed::cph2dph_embed(const type* intype, const type* outtype)
+ : simple_internal(outtype, "embedding", 1)
+{
+  SetFormal(0, intype, "x");
+  SetDocumentation("Take the embedded discrete phase type random variable from a continuous phase type random variable x.  Does not currently work within simulations.");
+}
+
+void cph2dph_embed::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(1==np);
+  DCASSERT(x.answer);
+  x.answer->setNull();
+
+  // Get the passed distribution
+  pass[0]->Compute(x);
+  if (!x.answer->isNormal()) return;
+  phase_hlm* opnd = smart_cast <phase_hlm*>(Share(x.answer->getPtr()));
+
+  phase_hlm* ans = makeEmbedded(opnd);
+  DCASSERT(ans);
+  x.answer->setPtr(ans);
+}
+
+int cph2dph_embed::Traverse(traverse_data &x, expr** pass, int np)
+{
+  if (x.which != traverse_data::FindRange)
+        return simple_internal::Traverse(x, pass, np);
+
+  //
+  // Best we can do at this point
+  //
+  DCASSERT(x.answer);
+  interval_object* range = new interval_object;
+  range->Left().setNormal(true, 0.0);
+  range->Right().setInfinity(false, 1);
+  x.answer->setPtr(range);
+  return 0;
+}
+
+
+// ******************************************************************
 // *                          max_ph class                          *
 // ******************************************************************
 
@@ -3196,6 +3321,8 @@ void InitStochastic(exprman* em, symbol_table* st)
   st->AddSymbol( new choose_rand(t_rand_int)                  );
   st->AddSymbol( new choose_rand(t_rand_real)                 );
 
+  st->AddSymbol( new cph2dph_unif(t_ph_real, t_ph_int)        );
+  st->AddSymbol( new cph2dph_embed(t_ph_real, t_ph_int)       );
   st->AddSymbol( new max_ph(t_ph_int)                         );
   st->AddSymbol( new max_ph(t_ph_real)                        );
   st->AddSymbol( new min_ph(t_ph_int)                         );

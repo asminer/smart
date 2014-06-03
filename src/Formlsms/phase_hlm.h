@@ -191,7 +191,7 @@ public:
         @return The probability or rate.  If this is not greater than 0.0,
                 then the "potential" edge was in fact not possible.
   */
-  virtual double getOutgoingFromSource(long e, shared_state* t) const = 0;
+  virtual double getOutgoingFromSource(long e, shared_state* t) = 0;
 };
 
 // ******************************************************************
@@ -312,5 +312,25 @@ phase_hlm* makeTTA( bool d, statedist* initial,
                     shared_object* accept, const shared_object* trap, 
                     stochastic_lldsm* mc);
 
+/** Convert a continuous phase to a discrete phase,
+    using uniformization on the underlying Markov chain.
+      @param  cph   The continuous phase model
+      @param  q     The uniformization constant.  If this is not 
+                    large enough, there will be a runtime error.
+                    (Sorry, no easy way to determine this ahead of time.)
+
+      @return 0, if the operation could not be completed;
+              A new phase-type model, otherwise.
+*/
+phase_hlm* makeUniformized(phase_hlm* cph, double q);
+
+/** Convert a continuous phase to a discrete phase,
+    using the embedded DTMC of the underlying CTMC.
+      @param  cph   The continuous phase model
+
+      @return 0, if the operation could not be completed;
+              A new phase-type model, otherwise.
+*/
+phase_hlm* makeEmbedded(phase_hlm* cph);
 
 #endif
