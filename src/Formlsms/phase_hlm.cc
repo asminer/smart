@@ -138,7 +138,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 
 protected:
   inline void getAccept(shared_state* s) const {
@@ -367,7 +367,7 @@ void tta_dist::getSourceState(shared_state* s) const
   s->set(state_index, source);
 }
 
-double tta_dist::getOutgoingFromSource(long e, shared_state* t) const
+double tta_dist::getOutgoingFromSource(long e, shared_state* t)
 {
   if (num_states == source) {
     // vanishing initial state
@@ -412,7 +412,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 inf_or_zero_ph::inf_or_zero_ph(bool d, bool inf) : phase_dist(d)
@@ -479,7 +479,7 @@ void inf_or_zero_ph::getSourceState(shared_state* s) const
   s->set(state_index, src);
 }
 
-double inf_or_zero_ph::getOutgoingFromSource(long e, shared_state* t) const
+double inf_or_zero_ph::getOutgoingFromSource(long e, shared_state* t)
 {
   DCASSERT(t);
   t->set(state_index, src);
@@ -513,7 +513,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 geometric_dph::geometric_dph(double _p) : phase_dist(true)
@@ -581,7 +581,7 @@ void geometric_dph::getSourceState(shared_state* s) const
   s->set(state_index, source);
 }
 
-double geometric_dph::getOutgoingFromSource(long e, shared_state* t) const
+double geometric_dph::getOutgoingFromSource(long e, shared_state* t)
 {
   DCASSERT(t);
   if (source>1) {
@@ -628,7 +628,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 
   /** pdf of the distribution.
       Must be provided in derived classes.
@@ -707,7 +707,7 @@ void finite_dph::getSourceState(shared_state* s) const
   s->set(state_index, source);
 }
 
-double finite_dph::getOutgoingFromSource(long e, shared_state* t) const
+double finite_dph::getOutgoingFromSource(long e, shared_state* t)
 {
   DCASSERT(t);
   if (source>b) {
@@ -943,7 +943,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 erlang_cph::erlang_cph(long N, double L) : phase_dist(false)
@@ -1032,7 +1032,7 @@ void erlang_cph::getSourceState(shared_state* s) const
   s->set(state_index, source);
 }
 
-double erlang_cph::getOutgoingFromSource(long e, shared_state* t) const 
+double erlang_cph::getOutgoingFromSource(long e, shared_state* t)
 {
   DCASSERT(t);
   DCASSERT(source<n);
@@ -1181,7 +1181,7 @@ public:
   virtual void getInitialState(shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 phase_addition::phase_addition(phase_hlm** A, int N) : phase_cross(A, N)
@@ -1272,7 +1272,7 @@ void phase_addition::getSourceState(shared_state* s) const
   for (int i=active+1; i<num_opnds; i++) opnds[i]->getInitialState(s);
 }
 
-double phase_addition::getOutgoingFromSource(long e, shared_state* t) const
+double phase_addition::getOutgoingFromSource(long e, shared_state* t)
 {
   if (from_trap) {
     for (int i=1; i<num_opnds; i++) opnds[i]->getTrapState(t);
@@ -1407,7 +1407,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 
   inline void startInState(shared_state* t) const {
       if (original->isVanishingState(t)) {
@@ -1530,7 +1530,7 @@ void dph_multiply::getSourceState(shared_state* s) const
   original->getSourceState(s);
 }
 
-double dph_multiply::getOutgoingFromSource(long e, shared_state* t) const
+double dph_multiply::getOutgoingFromSource(long e, shared_state* t)
 {
   if (src>1) {
     t->set(state_index, src-1);
@@ -1554,6 +1554,7 @@ double dph_multiply::getOutgoingFromSource(long e, shared_state* t) const
     divided by the appropriate factor; states are exactly the same.
 */
 class cph_multiply : public phase_hlm {
+protected:
   /// Original model
   phase_hlm* original;
   /// Scaling factor
@@ -1561,7 +1562,7 @@ class cph_multiply : public phase_hlm {
   /// Is the source state vanishing?
   bool src_is_vanishing;
 public:
-  cph_multiply(phase_hlm* orig, double r);
+  cph_multiply(bool is_disc, phase_hlm* orig, double r);
 protected:
   virtual ~cph_multiply();
 public:
@@ -1581,11 +1582,12 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 
-cph_multiply::cph_multiply(phase_hlm* orig, double r) : phase_hlm(false)
+cph_multiply::cph_multiply(bool is_disc, phase_hlm* orig, double r)
+: phase_hlm(is_disc)
 {
   original = orig;
   R = r;
@@ -1678,10 +1680,138 @@ void cph_multiply::getSourceState(shared_state* s) const
   original->getSourceState(s);
 }
 
-double cph_multiply::getOutgoingFromSource(long e, shared_state* t) const
+double cph_multiply::getOutgoingFromSource(long e, shared_state* t)
 {
   if (src_is_vanishing) return original->getOutgoingFromSource(e, t);
   return original->getOutgoingFromSource(e, t) / R;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                      cph_uniformize class                      *
+// *                                                                *
+// ******************************************************************
+
+/** Class for uniformizing a continuous phase-type.
+    Very similar to cph_multiply; except, we add a self-loop
+    so that the total outgoing "rate" is one.
+*/
+class cph_uniformize : public cph_multiply {
+  long orig_outgoing;
+  double total_outgoing;
+public:
+  cph_uniformize(phase_hlm* orig, double q);
+public:
+  virtual bool Print(OutputStream &s, int) const;
+  virtual void Sample(traverse_data &x);
+
+  virtual long setSourceState(const shared_state* s);
+  virtual double getOutgoingFromSource(long e, shared_state* t);
+};
+
+cph_uniformize::cph_uniformize(phase_hlm* orig, double q)
+ : cph_multiply(true, orig, q)
+{
+}
+
+bool cph_uniformize::Print(OutputStream &s, int) const
+{
+  s << "uniformize(";
+  original->Print(s, 0);
+  s << ", " << R << ")";
+  return true;
+}
+
+void cph_uniformize::Sample(traverse_data &x)
+{
+  //
+  // TBD - not sure how to do this yet
+  //
+
+  if (StartError(0)) {
+    SendError("Cannot sample a uniformized cph, sorry");
+    DoneError();
+  }
+  DCASSERT(0);
+}
+
+long cph_uniformize::setSourceState(const shared_state* s)
+{
+  orig_outgoing = cph_multiply::setSourceState(s);
+  total_outgoing = 0.0;
+  return  src_is_vanishing  ?   orig_outgoing
+                            :   1+orig_outgoing;  // for the self-loop
+}
+
+double cph_uniformize::getOutgoingFromSource(long e, shared_state* t)
+{
+  if (e>=orig_outgoing) {
+    DCASSERT(!src_is_vanishing);
+    //
+    // add self loop if necessary
+    //
+    if (total_outgoing > 1.0) {
+      if (StartError(0)) {
+        SendError("Uniformization constant too small");
+        DoneError();
+      }
+      return -1;
+    }
+    if (total_outgoing == 1.0) return -1;
+    getSourceState(t);
+    return 1.0 - total_outgoing;
+  }
+  double p = cph_multiply::getOutgoingFromSource(e, t);
+  total_outgoing += p;
+  return p;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                       cph_embedded class                       *
+// *                                                                *
+// ******************************************************************
+
+/** Class for uniformizing a continuous phase-type.
+    We assume that whoever generates these is going to
+    normalize the discrete probabilities,
+    so this class doesn't really do anything except force the cph
+    to be considered a dph.
+*/
+class cph_embedded : public cph_multiply {
+public:
+  cph_embedded(phase_hlm* orig);
+public:
+  virtual bool Print(OutputStream &s, int) const;
+  virtual void Sample(traverse_data &x);
+};
+
+cph_embedded::cph_embedded(phase_hlm* orig)
+ : cph_multiply(true, orig, 1)
+{
+}
+
+bool cph_embedded::Print(OutputStream &s, int) const
+{
+  s << "embedding(";
+  original->Print(s, 0);
+  s << ")";
+  return true;
+}
+
+void cph_embedded::Sample(traverse_data &x)
+{
+  //
+  // TBD - not sure how to do this yet
+  //
+
+  if (StartError(0)) {
+    SendError("Cannot sample an embedded cph, sorry");
+    DoneError();
+  }
+  DCASSERT(0);
 }
 
 
@@ -1736,7 +1866,7 @@ public:
   virtual bool isTrapState(const shared_state* s) const;
   virtual long setSourceState(const shared_state* s);
   virtual void getSourceState(shared_state* s) const;
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 protected:
   inline void makeTrap(shared_state* s) const {
     s->set(state_index, num_opnds+2);
@@ -1934,7 +2064,7 @@ void phase_choice::getSourceState(shared_state* s) const
   opnds[ours]->getSourceState(s);
 }
 
-double phase_choice::getOutgoingFromSource(long e, shared_state* t) const
+double phase_choice::getOutgoingFromSource(long e, shared_state* t)
 {
   if (0==source) {
     t->set(state_index, e+1);
@@ -2120,7 +2250,7 @@ protected:
   virtual ~dph_order();
 public:
   virtual long setSourceState(const shared_state* s);
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 dph_order::dph_order(int k, phase_hlm** A, int N)
@@ -2144,7 +2274,7 @@ long dph_order::setSourceState(const shared_state* s)
   return arcs;
 }
 
-double dph_order::getOutgoingFromSource(long e, shared_state* t) const
+double dph_order::getOutgoingFromSource(long e, shared_state* t)
 {
   double v = 1.0;
   for (int i=0; i<num_opnds; i++) {
@@ -2176,7 +2306,7 @@ protected:
   virtual ~cph_order();
 public:
   virtual long setSourceState(const shared_state* s);
-  virtual double getOutgoingFromSource(long e, shared_state* t) const;
+  virtual double getOutgoingFromSource(long e, shared_state* t);
 };
 
 cph_order::cph_order(int k, phase_hlm** A, int N)
@@ -2202,7 +2332,7 @@ long cph_order::setSourceState(const shared_state* s)
   return arcs;
 }
 
-double cph_order::getOutgoingFromSource(long e, shared_state* t) const
+double cph_order::getOutgoingFromSource(long e, shared_state* t)
 {
   int i;
   double v = 0;
@@ -2324,7 +2454,7 @@ phase_hlm* makeProduct(phase_hlm* X, long n)
   if (1==n) return X;
 
   if (X->isDiscrete())  return new dph_multiply(X, n);
-  else                  return new cph_multiply(X, n);
+  else                  return new cph_multiply(false, X, n);
 }
 
 phase_hlm* makeProduct(phase_hlm* X, double n)
@@ -2334,7 +2464,7 @@ phase_hlm* makeProduct(phase_hlm* X, double n)
   if (n<0)              return 0;
   if (0==n)             return makeZero(false);
   if (1.0==n)           return X;
-  return new cph_multiply(X, n);
+  return new cph_multiply(false, X, n);
 }
 
 
@@ -2385,3 +2515,33 @@ phase_hlm* makeTTA( bool disc, statedist* initial,
   }
   return new tta_dist(disc, initial, mc, ssa, sst);
 }
+
+phase_hlm* makeUniformized(phase_hlm* cph, double q)
+{
+  //
+  // These cases are definitely bad
+  //
+  if (0==cph) return 0;
+  if (cph->isDiscrete()) return 0;
+  if (q<=0) return 0;
+
+  //
+  // That's all we can check for now
+  //
+  return new cph_uniformize(cph, q);
+}
+
+phase_hlm* makeEmbedded(phase_hlm* cph)
+{
+  //
+  // These cases are definitely bad
+  //
+  if (0==cph) return 0;
+  if (cph->isDiscrete()) return 0;
+
+  //
+  // Good to go
+  //
+  return new cph_embedded(cph);
+}
+
