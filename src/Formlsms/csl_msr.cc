@@ -4,7 +4,7 @@
 #include "csl_msr.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
-#include "check_llm.h"
+#include "stoch_llm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
@@ -83,6 +83,20 @@ protected:
     } // catch
   }
 
+  inline const lldsm* getLLM(expr* p, traverse_data &x, result &slot) const {
+    model_instance* mi = grabModelInstance(x, p);
+    if (0==mi) return 0;
+    lldsm* foo = BuildRG(mi->GetCompiledModel(), x.parent);
+    if (0==foo) return 0;
+    if (foo->Type() == lldsm::Error) return 0;
+    checkable_lldsm* llm = dynamic_cast <checkable_lldsm*>(foo);
+    if (0==llm) return 0;
+    x.answer = &slot;
+    slot.setPtr(Share(llm));
+    return llm; 
+  }
+
+  /*
   inline checkable_lldsm* getLLM(traverse_data &x, expr* p) const {
     model_instance* mi = grabModelInstance(x, p);
     if (0==mi) return 0;
@@ -91,7 +105,52 @@ protected:
     if (foo->Type() == lldsm::Error) return 0;
     return dynamic_cast <checkable_lldsm*>(foo);
   }
+  */
 
+  inline bool badStateset(const lldsm* m, expr* p, traverse_data &x, result &slot) const {
+    if (0==m || 0==p) return true;
+    x.answer = &slot;
+    p->Compute(x);
+    if (!slot.isNormal()) return true;
+    stateset* ss = smart_cast <stateset*> (slot.getPtr());
+    DCASSERT(ss);
+    if (!ss->isExplicit()) {
+      if (em->startError()) {
+        em->causedBy(x.parent);
+        em->cerr() << "Sorry, stateset in " << Name();
+        em->cerr() << " must be explicit";
+        em->stopIO();
+      }   
+      return true;
+    }
+    if (ss->getParent() == m) return false;
+    if (em->startError()) {
+      em->causedBy(x.parent);
+      em->cerr() << "Stateset in " << Name();
+      em->cerr() << " expression is from a different model";
+      em->stopIO();
+    }   
+    return 0;
+  }
+
+  inline bool badStatedist(const lldsm* m, expr* p, traverse_data &x, result &slot) const {
+    if (0==m || 0==p) return true;
+    x.answer = &slot;
+    p->Compute(x);
+    if (!slot.isNormal()) return true;
+    statedist* sd = smart_cast <statedist*> (slot.getPtr());
+    DCASSERT(sd);
+    if (sd->getParent() == m) return false;
+    if (em->startError()) {
+      em->causedBy(x.parent);
+      em->cerr() << "Statedist in " << Name();
+      em->cerr() << " expression is from a different model";
+      em->stopIO();
+    }   
+    return 0;
+  }
+
+/*
   inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
     if (0==m || 0==p) return 0;
     p->Compute(x);
@@ -108,19 +167,7 @@ protected:
     Delete(ss);
     return 0;
   }
-
-  inline bool mismatched(const stateset* p, const stateset* q, traverse_data &x) const {
-    DCASSERT(p);
-    DCASSERT(q);
-    if (p->isExplicit() == q->isExplicit()) return false;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Statesets in " << Name();
-      em->cerr() << " use different storage types";
-      em->stopIO();
-    }   
-    return true;
-  }
+  */
 
   inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
     try {
@@ -138,6 +185,10 @@ protected:
     }
   }
 
+  static inline void nullAnswer(traverse_data &x, result *ans) {
+    if (ans) ans->setNull();
+    x.answer = ans;
+  }
 
 };
 
@@ -159,17 +210,22 @@ CSL_engine::CSL_engine(const type* t, const char* name, int np)
 
 class PF_func : public CSL_engine {
 public:
-  PF_func();
+  PF_func(bool dist_param);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-PF_func::PF_func()
- : CSL_engine(em->REAL, "PF", 2)
+PF_func::PF_func(bool dist_param)
+ : CSL_engine(em->REAL, "PF", dist_param ? 3 : 2)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
-  SetDocumentation("Determine the probability that a path starting from an initial state has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...");
+  if (dist_param) {
+    SetFormal(2, em->STATEDIST, "pi0");
+    SetDocumentation("Determine the probability that a path, starting according to the initial distribution pi0, has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...");
+  } else {
+    SetDocumentation("Determine the probability that a path, starting according to the model's initial distribution, has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...");
+  }
 }
 
 void PF_func::Compute(traverse_data &x, expr** pass, int np)
@@ -177,25 +233,35 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  DCASSERT(2==np);
-  lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
+  DCASSERT(2==np || 3==np);
 
-  if (!p->isExplicit()) {
-    // TBD - error message
-    x.answer->setNull();
-    return;
-  }
-
+  result* ans = x.answer;
   result engpass[4];
-  engpass[0].setPtr(Share(llm));  // Model
-  engpass[1].setNull();           // true...
-  engpass[2].setPtr(p);           // until p
-  engpass[3].setNull();           // initial distribution
+
+  // slot 0 : model
+  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  if (0==llm) {
+    return nullAnswer(x, ans);    
+  }
+
+  // slot 1 : null (true of "true U p")
+  engpass[1].setNull();
+
+  // slot 2 : p of "true U p"
+  if (badStateset(llm, pass[1], x, engpass[2])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 3 : initial distribution
+  if (2==np) {
+    engpass[3].setNull();
+  } else {
+    if (badStatedist(llm, pass[2], x, engpass[3])) {
+      return nullAnswer(x, ans);
+    }
+  }
+
+  x.answer = ans;
   launchEngine(PU_explicit, engpass, 4, x);
 }
 
@@ -207,18 +273,23 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
 
 class PU_func : public CSL_engine {
 public:
-  PU_func();
+  PU_func(bool dist_param);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-PU_func::PU_func()
- : CSL_engine(em->REAL, "PU", 3)
+PU_func::PU_func(bool dist_param)
+ : CSL_engine(em->REAL, "PU", dist_param ? 4 : 3)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
-  SetDocumentation("Determine the probability that a path starting from an initial state has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is eventually satisfied (after zero or more states where p is satisfied).");
+  if (dist_param) {
+    SetFormal(3, em->STATEDIST, "pi0");
+    SetDocumentation("Determine the probability that a path, starting according to the initial distribution pi0, has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is eventually satisfied (after zero or more states where p is satisfied).");
+  } else {
+    SetDocumentation("Determine the probability that a path, starting according to the model's initial distribution, has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is eventually satisfied (after zero or more states where p is satisfied).");
+  }
 }
 
 void PU_func::Compute(traverse_data &x, expr** pass, int np)
@@ -226,37 +297,37 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  DCASSERT(3==np);
-  lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-  if (mismatched(p, q, x)) {
-    Delete(p);
-    Delete(q);
-    x.answer->setNull();
-    return;
-  }
+  DCASSERT(3==np || 4==np);
 
-  if (!p->isExplicit()) {
-    // TBD - error message
-    x.answer->setNull();
-    return;
-  }
-
+  result* ans = x.answer;
   result engpass[4];
-  engpass[0].setPtr(Share(llm));  // Model
-  engpass[1].setPtr(p);           // p...
-  engpass[2].setPtr(q);           // until q
-  engpass[3].setNull();           // initial distribution
+
+  // slot 0 : model
+  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  if (0==llm) {
+    return nullAnswer(x, ans);    
+  }
+
+  // slot 1 : p of "p U q"
+  if (badStateset(llm, pass[1], x, engpass[1])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 2 : q of "true U p"
+  if (badStateset(llm, pass[2], x, engpass[2])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 3 : initial distribution
+  if (3==np) {
+    engpass[3].setNull();
+  } else {
+    if (badStatedist(llm, pass[3], x, engpass[3])) {
+      return nullAnswer(x, ans);
+    }
+  }
+
+  x.answer = ans;
   launchEngine(PU_explicit, engpass, 4, x);
 }
 
@@ -269,18 +340,23 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
 class TF_func : public CSL_engine {
   lldsm::model_type llm_type;
 public:
-  TF_func(const type* rt, const char* name);
+  TF_func(const type* rt, const char* name, bool dist_param);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-TF_func::TF_func(const type* rt, const char* name)
- : CSL_engine(rt, name, 2)
+TF_func::TF_func(const type* rt, const char* name, bool dist_param)
+ : CSL_engine(rt, name, dist_param ? 3 : 2)
 {
   llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
-  SetDocumentation("Determine the time (as a distribution) until a state in the set p is reached, with a time of infinity if p is never reached.  (Compare with PF.)  Returns null if the distribution type does not match.");
+  if (dist_param) {
+    SetFormal(2, em->STATEDIST, "pi0");
+    SetDocumentation("Determine the time (as a distribution) until a state in the set p is reached, with a time of infinity if p is never reached, when the model starts according to initial distribution pi0.  (Compare with PF.)  Returns null if the distribution type does not match.");
+  } else {
+    SetDocumentation("Determine the time (as a distribution) until a state in the set p is reached, with a time of infinity if p is never reached, when the model starts according to its initial distribution.  (Compare with PF.)  Returns null if the distribution type does not match.");
+  }
 }
 
 void TF_func::Compute(traverse_data &x, expr** pass, int np)
@@ -288,25 +364,35 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  DCASSERT(2==np);
-  lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
+  DCASSERT(2==np || 3==np);
 
-  if (!p->isExplicit()) {
-    // TBD - error message
-    x.answer->setNull();
-    return;
-  }
-
+  result* ans = x.answer;
   result engpass[4];
-  engpass[0].setPtr(Share(llm));  // Model
-  engpass[1].setNull();           // true...
-  engpass[2].setPtr(p);           // until p
-  engpass[3].setNull();           // initial distribution
+
+  // slot 0 : model
+  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  if (0==llm) {
+    return nullAnswer(x, ans);    
+  }
+
+  // slot 1 : null (true of "true U p")
+  engpass[1].setNull();
+
+  // slot 2 : p of "true U p"
+  if (badStateset(llm, pass[1], x, engpass[2])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 3 : initial distribution
+  if (2==np) {
+    engpass[3].setNull();
+  } else {
+    if (badStatedist(llm, pass[2], x, engpass[3])) {
+      return nullAnswer(x, ans);
+    }
+  }
+
+  x.answer = ans;
   launchEngine(TU_generator, engpass, 4, x);
 
   // Check that the type matches
@@ -336,19 +422,24 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
 class TU_func : public CSL_engine {
   lldsm::model_type llm_type;
 public:
-  TU_func(const type* rt, const char* name);
+  TU_func(const type* rt, const char* name, bool dist_param);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-TU_func::TU_func(const type* rt, const char* name)
- : CSL_engine(rt, name, 3)
+TU_func::TU_func(const type* rt, const char* name, bool dist_param)
+ : CSL_engine(rt, name, dist_param ? 4 : 3)
 {
   llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
-  SetDocumentation("Determine the time (as a distribution) until a state in the set q is reached, along a path of states in the set p.  (Compare with PU.)  The time is infinity for paths that never reach q, or reach !p first.  Returns null if the distribution type does not match.");
+  if (dist_param) {
+    SetFormal(3, em->STATEDIST, "pi0");
+    SetDocumentation("Determine the time (as a distribution) until a state in the set q is reached, along a path of states in the set p.  (Compare with PU.)  The time is infinity for paths that never reach q, or reach !p first.  The model starts according to the initial distribution pi0.  Returns null if the distribution type does not match.");
+  } else {
+    SetDocumentation("Determine the time (as a distribution) until a state in the set q is reached, along a path of states in the set p.  (Compare with PU.)  The time is infinity for paths that never reach q, or reach !p first.  The model starts according to its initial distribution.  Returns null if the distribution type does not match.");
+  }
 }
 
 void TU_func::Compute(traverse_data &x, expr** pass, int np)
@@ -356,37 +447,37 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  DCASSERT(3==np);
-  lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-  if (mismatched(p, q, x)) {
-    Delete(p);
-    Delete(q);
-    x.answer->setNull();
-    return;
-  }
+  DCASSERT(3==np || 4==np);
 
-  if (!p->isExplicit()) {
-    // TBD - error message
-    x.answer->setNull();
-    return;
-  }
-
+  result* ans = x.answer;
   result engpass[4];
-  engpass[0].setPtr(Share(llm));  // Model
-  engpass[1].setPtr(p);           // p...
-  engpass[2].setPtr(q);           // until q
-  engpass[3].setNull();           // initial distribution
+
+  // slot 0 : model
+  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  if (0==llm) {
+    return nullAnswer(x, ans);    
+  }
+
+  // slot 1 : p of "p U q"
+  if (badStateset(llm, pass[1], x, engpass[1])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 2 : q of "true U p"
+  if (badStateset(llm, pass[2], x, engpass[2])) {
+    return nullAnswer(x, ans);
+  }
+
+  // slot 3 : initial distribution
+  if (3==np) {
+    engpass[3].setNull();
+  } else {
+    if (badStatedist(llm, pass[3], x, engpass[3])) {
+      return nullAnswer(x, ans);
+    }
+  }
+
+  x.answer = ans;
   launchEngine(TU_generator, engpass, 4, x);
 
   // Check that the type matches
@@ -446,16 +537,22 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
   const type* phint  = em->INT  ? em->INT ->modifyType(PHASE) : 0;
   const type* phreal = em->REAL ? em->REAL->modifyType(PHASE) : 0;
 
-  common->Append(new PF_func);
-  common->Append(new PU_func);
+  common->Append(new PF_func(false) );
+  common->Append(new PF_func(true ) );
+  common->Append(new PU_func(false) );
+  common->Append(new PU_func(true ) );
 
   if (phint) {
-    common->Append(new TF_func(phint, "phi_TF"));
-    common->Append(new TU_func(phint, "phi_TU"));
+    common->Append(new TF_func(phint, "phi_TF", false));
+    common->Append(new TF_func(phint, "phi_TF", true ));
+    common->Append(new TU_func(phint, "phi_TU", false));
+    common->Append(new TU_func(phint, "phi_TU", true ));
   }
   if (phreal) {
-    common->Append(new TF_func(phreal, "phr_TF"));
-    common->Append(new TU_func(phreal, "phr_TU"));
+    common->Append(new TF_func(phreal, "phr_TF", false));
+    common->Append(new TF_func(phreal, "phr_TF", true ));
+    common->Append(new TU_func(phreal, "phr_TU", false));
+    common->Append(new TU_func(phreal, "phr_TU", true ));
   }
 }
 
