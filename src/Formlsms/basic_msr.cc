@@ -1,7 +1,6 @@
 
 // $Id$
 
-#include "basic_msr.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
@@ -13,27 +12,33 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
+#define EXPERT_BASIC_MSR
+#include "basic_msr.h"
+
 // #define ALLOW_SHOW_PARAMS
 
 // ******************************************************************
 // *                                                                *
-// *                      proc_noengine  class                      *
+// *                     proc_noengine  methods                     *
 // *                                                                *
 // ******************************************************************
 
-/// Abstract class for custom engines that require the process.
-class proc_noengine : public msr_noengine {
-  static engtype* ProcGen;
-  friend void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
-public:
-  proc_noengine(const type* t, const char* name, int np);
 
-  inline lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err) {
-    if (0==hlm)  return 0;
-    result so;
-    so.setBool(states_only);
+engtype* proc_noengine::ProcGen = 0;
 
-    try {
+proc_noengine
+::proc_noengine(eng_class ect, const type* t, const char* name, int np)
+ : msr_noengine(ect, t, name, np)
+{
+}
+
+lldsm* proc_noengine::BuildProc(hldsm* hlm, bool states_only, const expr* err)
+{
+  if (0==hlm)  return 0;
+  result so;
+  so.setBool(states_only);
+
+  try {
       lldsm* llm = hlm->GetProcess();
       if (llm) {
         subengine* gen = llm->getCompletionEngine();
@@ -44,26 +49,18 @@ public:
         ProcGen->runEngine(hlm, so);
       }
       return hlm->GetProcess();
-    } // try
+  } // try
     
-    catch (subengine::error e) {
+  catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
         em->cerr() << "Couldn't build ";
-        em->cerr() << (states_only ? "state space: " : "reachability graph: ");
+        em->cerr() << (states_only ? "state space: " : "underlying process: ");
         em->cerr() << subengine::getNameOfError(e);
         em->stopIO();
       }
       return 0;
-    } // catch
-  }
-};
-
-engtype* proc_noengine::ProcGen = 0;
-
-proc_noengine::proc_noengine(const type* t, const char* name, int np)
- : msr_noengine(Nothing, t, name, np)
-{
+  } // catch
 }
 
 // ******************************************************************
@@ -79,9 +76,9 @@ public:
 
 numstates_si::numstates_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(em->BIGINT, "num_states", 2) 
+ : proc_noengine(Nothing, em->BIGINT, "num_states", 2) 
 #else
- : proc_noengine(em->BIGINT, "num_states", 1)
+ : proc_noengine(Nothing, em->BIGINT, "num_states", 1)
 #endif
 {
   SetFormal(0, em->MODEL, "m");
@@ -134,9 +131,9 @@ public:
 
 numarcs_si::numarcs_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(em->BIGINT, "num_arcs", 2)
+ : proc_noengine(Nothing, em->BIGINT, "num_arcs", 2)
 #else
- : proc_noengine(em->BIGINT, "num_arcs", 1)
+ : proc_noengine(Nothing, em->BIGINT, "num_arcs", 1)
 #endif
 {
   SetFormal(0, em->MODEL, "m");
@@ -192,9 +189,9 @@ public:
 
 numclasses_si::numclasses_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(em->BIGINT, "num_classes", 2)
+ : proc_noengine(Nothing, em->BIGINT, "num_classes", 2)
 #else
- : proc_noengine(em->BIGINT, "num_classes", 1)
+ : proc_noengine(Nothing, em->BIGINT, "num_classes", 1)
 #endif
 {
   SetFormal(0, em->MODEL, "m");
@@ -475,7 +472,7 @@ public:
 
 
 showstates_si::showstates_si()
- : proc_noengine(em->VOID, "show_states", 1)
+ : proc_noengine(Nothing, em->VOID, "show_states", 1)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
@@ -505,7 +502,7 @@ public:
 };
 
 showarcs_si::showarcs_si()
- : proc_noengine(em->VOID, "show_arcs", 1)
+ : proc_noengine(Nothing, em->VOID, "show_arcs", 1)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
@@ -540,7 +537,7 @@ public:
 };
 
 showclasses_si::showclasses_si()
- : proc_noengine(em->VOID, "show_classes", 1)
+ : proc_noengine(Nothing, em->VOID, "show_classes", 1)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
@@ -732,7 +729,7 @@ public:
 };
 
 initial_si::initial_si()
- : proc_noengine(em->STATESET, "initial", 1)
+ : proc_noengine(Nothing, em->STATESET, "initial", 1)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
@@ -767,7 +764,7 @@ public:
 };
 
 reachable_si::reachable_si()
- : proc_noengine(em->STATESET, "reachable", 1)
+ : proc_noengine(Nothing, em->STATESET, "reachable", 1)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
@@ -802,7 +799,7 @@ public:
 };
 
 potential_si::potential_si()
- : proc_noengine(em->STATESET, "potential", 2)
+ : proc_noengine(Nothing, em->STATESET, "potential", 2)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);

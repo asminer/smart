@@ -100,7 +100,7 @@ ERROR:
 	Couldn't eliminate vanishings in process: Absorbing vanishing loop
 	within model bar instantiated in file vanish.sm near line 145
 ERROR in file vanish.sm near line 137:
-	Couldn't build reachability graph: Engine failed
+	Couldn't build underlying process: Engine failed
 Same test for MC & RS simultaneously
 A Vanishing Loop that can be escaped
 Markov chain:
@@ -113,4 +113,4 @@ ERROR:
 	Couldn't eliminate vanishings in process: Absorbing vanishing loop
 	within model bar instantiated in file vanish.sm near line 154
 ERROR in file vanish.sm near line 137:
-	Couldn't build reachability graph: Engine failed
+	Couldn't build underlying process: Engine failed

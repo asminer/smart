@@ -35,13 +35,13 @@ ERROR in file pn_assert.sm near line 20:
 	Assertion (tk(p)>1) failed in state [p:1]
 	within model foo instantiated in file pn_assert.sm near line 37
 ERROR in file pn_assert.sm near line 24:
-	Couldn't build reachability graph: Assertion failure
+	Couldn't build underlying process: Assertion failure
 Evaluated statement foo(false, 1, 5).m2, got: null
 ERROR in file pn_assert.sm near line 20:
 	Assertion (tk(p)>1) failed in state [p:1]
 	within model foo instantiated in file pn_assert.sm near line 38
 ERROR in file pn_assert.sm near line 24:
-	Couldn't build reachability graph: Assertion failure
+	Couldn't build underlying process: Assertion failure
 Evaluated statement foo(true, 1, 5).m2, got: null
 
 Assertion failures during process generation
@@ -50,13 +50,13 @@ ERROR in file pn_assert.sm near line 21:
 	Assertion (tk(p)<5) failed in state [p:5]
 	within model foo instantiated in file pn_assert.sm near line 41
 ERROR in file pn_assert.sm near line 24:
-	Couldn't build reachability graph: Assertion failure
+	Couldn't build underlying process: Assertion failure
 Evaluated statement foo(false, 2, 5).m2, got: null
 ERROR in file pn_assert.sm near line 21:
 	Assertion (tk(p)<5) failed in state [p:5]
 	within model foo instantiated in file pn_assert.sm near line 42
 ERROR in file pn_assert.sm near line 24:
-	Couldn't build reachability graph: Assertion failure
+	Couldn't build underlying process: Assertion failure
 Evaluated statement foo(true, 2, 5).m2, got: null
 
 Bound failures during process generation
