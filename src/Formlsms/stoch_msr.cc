@@ -2,8 +2,48 @@
 // $Id$
 
 #include "stoch_msr.h"
+#include "stoch_llm.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
+#include "../Modules/statevects.h"
+
+#define EXPERT_BASIC_MSR
+#include "basic_msr.h"
+
+// *****************************************************************
+// *                           init_dist                           *
+// *****************************************************************
+
+class init_dist_si : public proc_noengine {
+public:
+  init_dist_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+init_dist_si::init_dist_si()
+ : proc_noengine(Stochastic, em->STATEDIST, "init_dist", 1)
+{
+  SetFormal(0, em->MODEL, "m");
+  HideFormal(0);
+  SetDocumentation("Returns the distribution over states at time 0, or null if the model is not stochastic.");
+}
+
+void init_dist_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, true, x.parent);
+  if (0==llm || lldsm::Error == llm->Type()) {
+    x.answer->setNull();
+    return;
+  }
+  const stochastic_lldsm* sllm = dynamic_cast <const stochastic_lldsm*>(llm);
+  statedist* p0 = sllm ? sllm->getInitialDistribution() : 0;
+  if (p0) x.answer->setPtr(p0);
+  else    x.answer->setNull();
+}
 
 // *******************************************************************
 // *                                                                 *
@@ -468,6 +508,7 @@ void InitStochMeasureFuncs(exprman* em, List <msr_func> *common)
   // Add functions
   if (0==common) return;
 
+  common->Append(new init_dist_si);
   common->Append(new distss_si);
   common->Append(new avgss_si);
   common->Append(new probss_si);

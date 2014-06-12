@@ -8,7 +8,7 @@
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
-
+#include "../Modules/statevects.h"
 
 // *****************************************************************
 // *                                                               *
@@ -191,11 +191,12 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setNull();
-  engpass[2].setPtr(p);
-  launchEngine(PU_explicit, engpass, 3, x);
+  result engpass[4];
+  engpass[0].setPtr(Share(llm));  // Model
+  engpass[1].setNull();           // true...
+  engpass[2].setPtr(p);           // until p
+  engpass[3].setNull();           // initial distribution
+  launchEngine(PU_explicit, engpass, 4, x);
 }
 
 // *****************************************************************
@@ -251,11 +252,12 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(PU_explicit, engpass, 3, x);
+  result engpass[4];
+  engpass[0].setPtr(Share(llm));  // Model
+  engpass[1].setPtr(p);           // p...
+  engpass[2].setPtr(q);           // until q
+  engpass[3].setNull();           // initial distribution
+  launchEngine(PU_explicit, engpass, 4, x);
 }
 
 // *****************************************************************
@@ -300,11 +302,12 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setNull();
-  engpass[2].setPtr(p);
-  launchEngine(TU_generator, engpass, 3, x);
+  result engpass[4];
+  engpass[0].setPtr(Share(llm));  // Model
+  engpass[1].setNull();           // true...
+  engpass[2].setPtr(p);           // until p
+  engpass[3].setNull();           // initial distribution
+  launchEngine(TU_generator, engpass, 4, x);
 
   // Check that the type matches
   if (!x.answer->isNormal()) return;
@@ -379,11 +382,12 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(TU_generator, engpass, 3, x);
+  result engpass[4];
+  engpass[0].setPtr(Share(llm));  // Model
+  engpass[1].setPtr(p);           // p...
+  engpass[2].setPtr(q);           // until q
+  engpass[3].setNull();           // initial distribution
+  launchEngine(TU_generator, engpass, 4, x);
 
   // Check that the type matches
   if (!x.answer->isNormal()) return;
@@ -418,12 +422,20 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
       "ExplicitPU",
       "Algorithm for explicit computation of PU formulas in CSL/PCTL.",
       engtype::FunctionCall
+      //
+      // Parameters - same as TU_generator
   );
 
   CSL_engine::TU_generator = MakeEngineType(em,
       "TUgenerator",
       "Generates the distribution for TU formulas in CSL/PCTL.",
       engtype::FunctionCall
+      //
+      // Parameter 0: the model
+      // Parameter 1: p of p U q; can be null to indicate "true"
+      // Parameter 2: q of p U q
+      // Parameter 3: the initial distribution to use;
+      //              if null, we use the initial distribution
   );
 
   CSL_engine::ProcGen = em->findEngineType("ProcessGeneration");

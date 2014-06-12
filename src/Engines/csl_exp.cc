@@ -10,6 +10,7 @@
 #include "../Formlsms/phase_hlm.h"
 
 #include "../Modules/statesets.h"
+#include "../Modules/statevects.h"
 
 #include "intset.h"
 
@@ -56,7 +57,7 @@ TU_generate::TU_generate() : CSL_expl_eng()
 
 void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
 {
-  DCASSERT(3==np);
+  DCASSERT(4==np);
   DCASSERT(pass[0].isNormal());
   DCASSERT(pass[2].isNormal());
 
@@ -100,10 +101,6 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
       throw Engine_Failed;
   };
 
-  // Determine the initial distribution
-  statedist* initial = sm->getInitialDistribution();
-
-
   //
   // Parameter 1: p of p U q
   //
@@ -122,6 +119,18 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(q);
   DCASSERT(q->getParent() == sm);
   DCASSERT(q->isExplicit());
+
+  //
+  // Parameter 3: initial distribution
+  //
+  statedist* initial = 0;
+  if (pass[3].isNormal()) {
+    initial = Share(smart_cast <statedist*>(pass[3].getPtr()));
+    DCASSERT(initial);
+    DCASSERT(initial->getParent() == sm);
+  } else {
+    initial = sm->getInitialDistribution();
+  }
 
   //
   // Build a phase-type model for p U q.
@@ -201,12 +210,8 @@ PU_expl_eng::PU_expl_eng() : CSL_expl_eng()
 
 void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
-  DCASSERT(3==np);
-  DCASSERT(pass[0].isNormal());
-  DCASSERT(pass[2].isNormal());
-
   //
-  // Build the distribution by calling the engine
+  // Build the distribution by calling the TU engine
   //
   generateTU(pass, np, x);
 

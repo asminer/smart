@@ -658,7 +658,7 @@ mc_tta::mc_tta(bool disc)
   HideFormal(0);
   SetFormal(1, em->BOOL->addProc(), "stop");
 
-  SetDocumentation("Returns the distribution corresponding to the first time that stop becomes true.");
+  SetDocumentation("Returns the distribution corresponding to the first time that stop becomes true, when starting from the initial distribution.");
 }
 
 void mc_tta::Compute(traverse_data &x, expr** pass, int np)
