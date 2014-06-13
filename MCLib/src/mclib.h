@@ -578,6 +578,21 @@ namespace MCLib {
     */
     virtual void computeTransient(int t, double* p, transopts &opts) const = 0;
 
+    /** Compute an expectation at time t, for all possible starting states.
+        The chain must be "finished".
+        Vectors are allocated so that x[s] is the expectation when the
+        chain starts in state s, for any legal state handle s.
+        Specifically, we determine
+
+            x[s] = E [ x[state at time t] ], given we start in state s
+
+        @param  t   Time
+
+        @param  x   On input: function to compute expectation over.
+                    On output: expected value for each starting state.
+    */
+    virtual void reverseTransient(int t, double* x, transopts &opts) const = 0;
+
     /** Compute the accumulated time spent in every state, up
         to and including time t.
         The chain must be "finished".

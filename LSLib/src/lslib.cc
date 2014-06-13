@@ -143,137 +143,86 @@ void DebugVector(const LS_Vector &b)
 // *                       LS_Matrix  methods                       *
 // ******************************************************************
 
-void LS_Matrix::VectorMatrixMultiply(double* y, const double* x) const
+template <typename R1, typename R2>
+inline void VMM_t(const long* rp, const long* rpstop, const long* colindex,
+  const R1* v, double* y, const R2* x)
 {
-  const long* rp = rowptr + start;
-  const long* rpstop = rowptr + stop;
   const long* ci = colindex + rp[0];
-  if (is_transposed) {
-    // multiplication, matrix by columns
-    if (d_value) {
-      const double* v = d_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-            y[ci[0]] +=x[0] * v[0];
-            ci++;
-            v++;
-        } // while ci
-        x++;
-      } // while rp
-      return;
-    }
-    if (f_value) {
-      const float* v = f_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-            y[ci[0]] +=x[0] * v[0];
-            ci++;
-            v++;
-        } // while ci
-        x++;
-      } // while rp
-      return;
-    }
-  } else {
-    // multiplication, matrix by rows
-    if (d_value) {
-      const double* v = d_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[0] +=x[ci[0]] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        y++;
-      } // while rp
-    }
-    if (f_value) {
-      const float* v = f_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[0] +=x[ci[0]] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        y++;
-      } // while rp
-    }
-  }
+  v += rp[0];
+
+  // multiplication, matrix by columns
+
+  while (rp < rpstop) {
+    rp++;
+    const long* cstop = colindex + rp[0];
+    while (ci < cstop) {
+        y[ci[0]] +=x[0] * v[0];
+        ci++;
+        v++;
+    } // while ci
+    x++;
+  } // while rp
 }
 
-void LS_Matrix::VectorMatrixMultiply(double* y, const float* x) const
+
+template <typename R1, typename R2>
+inline void VMM_r(const long* rp, const long* rpstop, const long* colindex,
+  const R1* v, double* y, const R2* x)
 {
-  const long* rp = rowptr + start;
-  const long* rpstop = rowptr + stop;
   const long* ci = colindex + rp[0];
-  if (is_transposed) {
-    // multiplication, matrix by columns
-    if (d_value) {
-      const double* v = d_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[ci[0]] +=x[0] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        x++;
-      } // while rp
-      return;
-    }
-    if (f_value) {
-      const float* v = f_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[ci[0]] +=x[0] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        x++;
-      } // while rp
-      return;
-    }
-  } else {
-    // multiplication, matrix by rows
-    if (d_value) {
-      const double* v = d_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[0] +=x[ci[0]] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        y++;
-      } // while rp
-    }
-    if (f_value) {
-      const float* v = f_value + rp[0];
-      while (rp < rpstop) {
-        rp++;
-        const long* cstop = colindex + rp[0];
-        while (ci < cstop) {
-          y[0] +=x[ci[0]] * v[0];
-          ci++;
-          v++;
-        } // while ci
-        y++;
-      } // while rp
-    }
-  }
+  v += rp[0];
+
+  // multiplication, matrix by rows
+  
+  while (rp < rpstop) {
+    rp++;
+    const long* cstop = colindex + rp[0];
+    while (ci < cstop) {
+      y[0] +=x[ci[0]] * v[0];
+      ci++;
+      v++;
+    } // while ci
+    y++;
+  } // while rp
 }
+
+
+void LS_Matrix::VMM_transposed(double *y, const double* x) const
+{
+  if (d_value) 
+    return VMM_t(rowptr + start, rowptr + stop, colindex, d_value, y, x);
+
+  if (f_value)
+    return VMM_t(rowptr + start, rowptr + stop, colindex, f_value, y, x);
+}
+
+void LS_Matrix::VMM_transposed(double *y, const float* x) const
+{
+  if (d_value) 
+    return VMM_t(rowptr + start, rowptr + stop, colindex, d_value, y, x);
+
+  if (f_value)
+    return VMM_t(rowptr + start, rowptr + stop, colindex, f_value, y, x);
+}
+
+void LS_Matrix::VMM_regular(double *y, const double* x) const
+{
+  if (d_value)
+    return VMM_r(rowptr + start, rowptr + stop, colindex, d_value, y, x);
+
+  if (f_value)
+    return VMM_r(rowptr + start, rowptr + stop, colindex, f_value, y, x);
+}
+
+void LS_Matrix::VMM_regular(double *y, const float* x) const
+{
+  if (d_value)
+    return VMM_r(rowptr + start, rowptr + stop, colindex, d_value, y, x);
+
+  if (f_value)
+    return VMM_r(rowptr + start, rowptr + stop, colindex, f_value, y, x);
+}
+
 
 // ******************************************************************
 // *                    Internal matrix template                    *

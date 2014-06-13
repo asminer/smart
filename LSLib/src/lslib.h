@@ -138,10 +138,39 @@ struct LS_Matrix {
   const double* d_one_over_diag;
 
   /// Computes y += x * this;
-  void VectorMatrixMultiply(double* y, const double* x) const;
+  inline void VectorMatrixMultiply(double* y, const double* x) const 
+  {
+    if (is_transposed)  VMM_transposed(y, x);
+    else                VMM_regular(y, x);
+  }
 
   /// Computes y += x * this;
-  void VectorMatrixMultiply(double* y, const float* x) const;
+  inline void VectorMatrixMultiply(double* y, const float* x) const
+  {
+    if (is_transposed)  VMM_transposed(y, x);
+    else                VMM_regular(y, x);
+  }
+
+  /// Computes y += this * x;
+  inline void MatrixVectorMultiply(double* y, const double* x) const
+  {
+    if (is_transposed)  VMM_regular(y, x);
+    else                VMM_transposed(y, x);
+  }
+
+  /// Computes y += this * x;
+  inline void MatrixVectorMultiply(double* y, const float* x) const
+  {
+    if (is_transposed)  VMM_regular(y, x);
+    else                VMM_transposed(y, x);
+  }
+
+private:
+  void VMM_transposed(double *y, const double* x) const; 
+  void VMM_transposed(double *y, const float* x) const; 
+
+  void VMM_regular(double *y, const double* x) const; 
+  void VMM_regular(double *y, const float* x) const; 
 };
   
 

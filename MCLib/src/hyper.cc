@@ -409,30 +409,6 @@ long hypersparse_matrix::ReportMemTotal() const
   return mem;
 }
 
-void hypersparse_matrix::VectorMatrixMultiply(double* y, const double* x) const
-{
-  // assumes Static storage
-  long z = row_pointer[0];
-  for (long r = 0; r<num_rows; r++) {
-    double xi = x[row_index[r]];
-    for (; z<row_pointer[r+1]; z++) {
-      y[column_index[z]] += value[z] * xi;
-    } // for z
-  } // for r
-}
-
-void hypersparse_matrix::VectorMatrixMultiply(double* y, const float* x) const
-{
-  // assumes Static storage
-  long z = row_pointer[0];
-  for (long r = 0; r<num_rows; r++) {
-    double xi = x[row_index[r]];
-    for (; z<row_pointer[r+1]; z++) {
-      y[column_index[z]] += value[z] * xi;
-    } // for z
-  } // for r
-}
-
 
 bool hypersparse_matrix::getForward(const intset& x, intset &y) const
 {

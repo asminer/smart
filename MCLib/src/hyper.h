@@ -243,10 +243,30 @@ public:
 
 
   /// Computes y += x * this;
-  void VectorMatrixMultiply(double* y, const double* x) const;
+  template <typename REAL>
+  inline void VectorMatrixMultiply(double* y, const REAL* x) const {
+      // assumes Static storage
+      long z = row_pointer[0];
+      for (long r = 0; r<num_rows; r++) {
+        double xi = x[row_index[r]];
+        for (; z<row_pointer[r+1]; z++) {
+          y[column_index[z]] += value[z] * xi;
+        } // for z
+      } // for r
+  }
 
-  /// Computes y += x * this;
-  void VectorMatrixMultiply(double* y, const float* x) const;
+  /// Computes y += this * x;
+  template <typename REAL>
+  inline void MatrixVectorMultiply(double* y, const REAL* x) const {
+      // assumes Static storage
+      long z = row_pointer[0];
+      for (long r = 0; r<num_rows; r++) {
+        for (; z<row_pointer[r+1]; z++) {
+          y[row_index[r]] += value[z] * x[column_index[z]];
+        } // for z
+      } // for r
+  }
+
 
   /// Computes y += x * this, in "reachability" sense.
   bool getForward(const intset& x, intset &y) const;

@@ -172,6 +172,7 @@ public:
   virtual double getUniformizationConst() const;
   virtual void computeTransient(double t, double* p, transopts &opts) const;
   virtual void computeTransient(int t, double* p, transopts &opts) const;
+  virtual void reverseTransient(int t, double* p, transopts &opts) const;
   virtual void accumulate(double t, const double* p0, double* n0t, transopts &opts) const;
 
   virtual void computeSteady(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
@@ -205,6 +206,7 @@ protected:
   void accCTMC(double t, const double* p0, double* n0t, transopts &opts) const;
 
   int stepForward(int n, double q, double* p, double* aux, double delta) const;
+  int stepBackward(int n, double q, double* p, double* aux, double delta) const;
 
   static inline void fillFullVector(double* x, long n, const LS_Vector &p0) {
     for (long i=0; i<n; i++) x[i] = 0.0;
@@ -267,6 +269,35 @@ protected:
       // divide by q
       for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
     }
+  }
+
+
+  void backStep(const LS_Matrix &Qtt, double q, double* p, double* aux) const {
+    // matrix-vector multiply
+    for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
+    Qtt.MatrixVectorMultiply(aux, p);
+    if (h) h->MatrixVectorMultiply(aux, p);
+
+    // adjust for diagonals
+    if (Qtt.d_one_over_diag) {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.d_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
+    } else {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.f_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
+    }
+
+    // finally, adjust for absorbing states
+    for (long s=Qtt.stop; s<num_states; s++) {
+      aux[s] += q*p[s];
+    }
+
+    // divide by q
+    if (q != 1) for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
   }
 
 public:

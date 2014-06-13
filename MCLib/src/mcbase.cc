@@ -564,6 +564,34 @@ void mc_base::computeTransient(int t, double* p, transopts &opts) const
   opts.Right = 0;
 }
 
+void mc_base::reverseTransient(int t, double* p, transopts &opts) const
+{
+  if (isContinuous()) {
+    throw MCLib::error(MCLib::error::Not_Implemented);
+  }
+  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
+  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+
+  if (0==opts.vm_result) {
+    opts.vm_result = (double*) malloc(num_states * sizeof(double));
+  }
+
+  if (0==opts.vm_result) {
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } 
+
+  opts.Steps = stepBackward(t, 0.0, p, opts.vm_result, opts.ssprec);
+
+  if (opts.kill_aux_vectors) {
+    free(opts.vm_result);
+    free(opts.accumulator);
+    opts.vm_result = 0;
+    opts.accumulator = 0;
+  }
+  opts.Left = 0;
+  opts.Right = 0;
+}
+
 void mc_base
 ::accumulate(double t, const double* p0, double* n0t, transopts &opts) const
 {
@@ -1316,6 +1344,43 @@ int mc_base::stepForward(int n, double q, double* p, double* aux, double delta) 
     printf("\nmax delta: %g\n", maxdelta);
 #endif
     if (maxdelta < delta) break;
+  } // for n
+  if (p != myp) memcpy(p, myp, num_states * sizeof(double));
+ 
+  return i;
+}
+
+int mc_base::stepBackward(int n, double q, double* p, double* aux, double delta) const
+{
+  LS_Matrix Qtt;
+  exportQtt(Qtt);
+  Qtt.start = 0;
+  Qtt.stop = stop_index[num_classes];
+
+  if (isDiscrete()) q = 1.0;
+  double* myp = p;
+  int i;
+  for (i=0; i<n; i++) {
+    backStep(Qtt, q, myp, aux);
+    SWAP(aux, myp);
+    if (delta <= 0) continue;
+    // check for convergence
+    double maxdelta = 0.0;
+    for (long s=num_states-1; s>=0; s--) {
+      double d = aux[s] - myp[s];
+      if (d < 0)   d = -d;
+      if (aux[s])  d /= aux[s];
+      maxdelta = MAX(maxdelta, d);
+    }
+#ifdef DEBUG_SSDETECT
+    printf("Old vector: ");
+    ShowVector(aux, num_states);
+    printf("\nNew vector: ");
+    ShowVector(myp, num_states);
+    printf("\nmax delta: %g\n", maxdelta);
+#endif
+    if (maxdelta < delta) break;
+
   } // for n
   if (p != myp) memcpy(p, myp, num_states * sizeof(double));
  
