@@ -5,7 +5,8 @@ noinst_PROGRAMS = \
   birthdeath \
   walk \
   mcsolver \
-  oz
+  oz \
+  univ
 
 AM_CPPFLAGS = -I../src -I../../LSLib/src -I../../GraphLib/src -I../../MCParse/src
 
@@ -20,6 +21,9 @@ mcsolver_LDADD = ../src/libmc.la ../../MCParse/src/libmcparse.la ../../LSLib/src
 
 oz_SOURCES = oz.cc
 oz_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+
+univ_SOURCES = univ.cc
+univ_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
 
 TESTS = \
   scc0.dtmc \

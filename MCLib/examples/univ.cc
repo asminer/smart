@@ -4,7 +4,7 @@
 /*
     Really basic test file, more or less a sanity check
     that things are working correctly.
-    This one checks ergodic DTMCs.
+    This one checks absorbing DTMCs.
 */
 
 #include "mclib.h"
@@ -17,62 +17,80 @@ using namespace MCLib;
 
 inline void showVector(double* p)
 {
-  cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "]";
+  cout << "[" << p[0];
+  for (int i=1; i<6; i++) cout << ", " << p[i];
+  cout << "]";
 }
 
-void forwardTransient(Markov_chain* ozmc, int start)
+void forwardTransient(Markov_chain* mc, int start, int T)
 {
   static Markov_chain::transopts to;
-  double p[3];
-  p[0] = p[1] = p[2] = 0;
+  double p[6];
+  p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0;
   p[start] = 1;
 
-  for (int t=0; t<10; t++) {
-    cout << "    Prob. vector for time " << t << ":  ";
+  for (int t=0; t<T; t++) {
+    cout << "    time " << t << ":  ";
     showVector(p);
     cout << "\n";
-    ozmc->computeTransient(1, p, to); 
+    mc->computeTransient(1, p, to); 
   }
 }
 
 int RunTests(bool storeByRows)
 {
-  const int R = 0;
-  const int N = 1;
-  const int S = 2;
+  // probabilities
+  const int p = 8;
+  const int r = 1;
+  const int q = 1;
 
-  cout << "Building OZ DTMC\n";
+  // states
+  const int fr = 0;
+  const int so = 1;
+  const int jr = 2;
+  const int sr = 3;
+  const int grad = -1;
+  const int fail = -2;
 
-  Markov_chain* ozmc = startIrreducibleMC(true, 3, 8);
+  cout << "Building University DTMC\n";
 
-  ozmc->addEdge(R, R, 2);   // 1/2
-  ozmc->addEdge(R, N, 1);   // 1/4
-  ozmc->addEdge(R, S, 1);   // 1/4
+  Markov_chain* univmc = startAbsorbingMC(true, 4, 2);
 
-  ozmc->addEdge(N, R, 1);   // 1/2
-  ozmc->addEdge(N, S, 1);   // 1/2
+  univmc->addEdge(fr, fr, r);
+  univmc->addEdge(fr, so, p);
+  univmc->addEdge(fr, fail, q);
 
-  ozmc->addEdge(S, R, 1);   // 1/4
-  ozmc->addEdge(S, N, 1);   // 1/4
-  ozmc->addEdge(S, S, 2);   // 1/2
+  univmc->addEdge(so, so, r);
+  univmc->addEdge(so, jr, p);
+  univmc->addEdge(so, fail, q);
 
-  cout << "Finishing OZ DTMC ";
+  univmc->addEdge(jr, jr, r);
+  univmc->addEdge(jr, sr, p);
+  univmc->addEdge(jr, fail, q);
+
+  univmc->addEdge(sr, sr, r);
+  univmc->addEdge(sr, grad, p);
+  univmc->addEdge(sr, fail, q);
+  
+  cout << "Finishing University DTMC ";
   if (storeByRows)  cout << "(by rows)\n";
   else              cout << "(by columns)\n";
 
   Markov_chain::finish_options foo;
   Markov_chain::renumbering ren;
   foo.Store_By_Rows = storeByRows;
-  ozmc->finish(foo, ren);
+  univmc->finish(foo, ren);
 
   if (ren.NoRenumbering()) {
-    cout << "No renumbering required (as expected)\n";
+    cout << "No renumbering?  That's wrong...\n";
+    return 1;
   }
 
   if (ren.AbsorbRenumbering()) {
-    cout << "Absorbing DTMC?  That's wrong...\n";
-    return 1;
+    cout << "Absorbing DTMC, as expected\n";
   }
+  const int grad_ren = 4-(1+grad);
+  const int fail_ren = 4-(1+fail);
 
   if (ren.GeneralRenumbering()) {
     cout << "General renumbering?  That's wrong...\n";
@@ -83,38 +101,35 @@ int RunTests(bool storeByRows)
   // Ordinary transient analysis
   // 
 
-  // from "rain"
+  cout << "\nStarting from freshman year:\n";
+  forwardTransient(univmc, fr, 10);
 
-  cout << "\nStarting from state \"rain\":\n";
-  forwardTransient(ozmc, R);
+  cout << "\nStarting from sophomore year:\n";
+  forwardTransient(univmc, so, 10);
 
-  // from "nice"
+  cout << "\nStarting from junior year:\n";
+  forwardTransient(univmc, jr, 10);
 
-  cout << "\nStarting from state \"nice\":\n";
-  forwardTransient(ozmc, N);
+  cout << "\nStarting from senior year:\n";
+  forwardTransient(univmc, sr, 10);
 
-  // from "snow"
-
-  cout << "\nStarting from state \"snow\":\n";
-  forwardTransient(ozmc, S);
+  cout << "\nStarting from graduated:\n";
+  forwardTransient(univmc, grad_ren, 2);
 
   //
   // Reverse transient analysis
   //
-
   static Markov_chain::transopts to;
-  double p[3];
-  p[R] = 0;
-  p[N] = 1;
-  p[S] = 0;
-  cout << "\nReverse analysis, reaching state \"nice\"\n";
+  double x[6];
+  x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = 0;
+  x[grad_ren] = 1;
+  cout << "\nReverse analysis, for graduating students\n";
   for (int t=0; t<10; t++) {
     cout << "    vector for time " << t << ":  ";
-    showVector(p);
+    showVector(x);
     cout << "\n";
-    ozmc->reverseTransient(1, p, to); 
+    univmc->reverseTransient(1, x, to); 
   }
-
   return 0;
 }
 
