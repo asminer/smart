@@ -96,17 +96,6 @@ protected:
     return llm; 
   }
 
-  /*
-  inline checkable_lldsm* getLLM(traverse_data &x, expr* p) const {
-    model_instance* mi = grabModelInstance(x, p);
-    if (0==mi) return 0;
-    lldsm* foo = BuildRG(mi->GetCompiledModel(), x.parent);
-    if (0==foo) return 0;
-    if (foo->Type() == lldsm::Error) return 0;
-    return dynamic_cast <checkable_lldsm*>(foo);
-  }
-  */
-
   inline bool badStateset(const lldsm* m, expr* p, traverse_data &x, result &slot) const {
     if (0==m || 0==p) return true;
     x.answer = &slot;
@@ -149,25 +138,6 @@ protected:
     }   
     return 0;
   }
-
-/*
-  inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
-    if (0==m || 0==p) return 0;
-    p->Compute(x);
-    if (!x.answer->isNormal()) return 0;
-    stateset* ss = smart_cast <stateset*> (Share(x.answer->getPtr()));
-    DCASSERT(ss);
-    if (ss->getParent() == m) return ss;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Stateset in " << Name();
-      em->cerr() << " expression is from a different model";
-      em->stopIO();
-    }   
-    Delete(ss);
-    return 0;
-  }
-  */
 
   inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
     try {

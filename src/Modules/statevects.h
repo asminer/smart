@@ -134,6 +134,9 @@ public:
   void less_than(double v, intset &I) const;
   void equals(double v, intset &I) const;
 
+  // handy operation
+  double dot_product(const statevect* x) const;
+
 public:
   /// this[i] = (i in e) ? (sv[i]) : 0, for all i.
   void copyRestricted(const statevect* sv, const intset* e);
