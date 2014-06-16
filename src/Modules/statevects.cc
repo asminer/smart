@@ -530,6 +530,14 @@ void statevect::equals(double v, intset &I) const
   }
 }
 
+double statevect::dot_product(const statevect* x) const
+{
+  // TBD
+
+  return 0;
+}
+
+
 void statevect::copyRestricted(const statevect* sv, const intset* e)
 {
   DCASSERT(sv);
@@ -930,6 +938,82 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
 
 
 // ******************************************************************
+// *                       expected_si  class                       *
+// ******************************************************************
+
+class expected_si : public simple_internal {
+public:
+  expected_si(const type* msrtype);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+expected_si::expected_si(const type* msrtype)
+: simple_internal(em->REAL, "expected", 2)
+{
+  DCASSERT(em->STATEDIST);
+  DCASSERT(msrtype);
+  SetFormal(0, msrtype, "x");
+  SetFormal(1, em->STATEDIST, "p");
+  SetDocumentation("Determine the expected value of x, according to distribution p.");
+}
+
+void expected_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  //
+  // Compute first parameter - the measure vector
+  //
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  statevect* vx = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  DCASSERT(vx);
+
+  //
+  // Compute second parameter - the distribution vector
+  //
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(vx);
+    return;
+  }
+
+  statedist* vp = smart_cast <statedist*>(Share(x.answer->getPtr()));
+  DCASSERT(vp);
+
+  //
+  // Make sure these are from the same model
+  //
+
+  if (vx->getParent() != vp->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Measure and distribution are from different model instances";
+      em->stopIO();
+    }
+    Delete(vx);
+    Delete(vp);
+    x.answer->setNull();
+    return;
+  }
+
+  //
+  // Ready to do actual computation
+  //
+
+  x.answer->setReal( vx->dot_product(vp) );
+  Delete(vx);
+  Delete(vp);
+}
+
+
+
+// ******************************************************************
 // *                                                                *
 // *                                                                *
 // *                           Front  end                           *
@@ -985,7 +1069,7 @@ void InitStatevects(exprman* em, symbol_table* st)
   if (0==st) return;
 
   // Functions
-  st->AddSymbol(  new prob_si         );
   st->AddSymbol(  new condition_si    );
+  st->AddSymbol(  new prob_si         );
 }
 
