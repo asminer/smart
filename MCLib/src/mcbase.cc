@@ -456,140 +456,22 @@ double mc_base::getUniformizationConst() const
 
 void mc_base::computeTransient(double t, double* p, transopts &opts) const
 {
-  if (isDiscrete()) {
-    computeTransient(int(t), p, opts);
-    return;
-  }
-  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
-  opts.q = MAX(opts.q, getUniformizationConst());
-#ifdef DEBUG_UNIF
-  printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
-#endif
-  int L;
-  int R;
-  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
-#ifdef DEBUG_UNIF
-  printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
-#endif
-
-  if (0==opts.vm_result)
-    opts.vm_result = (double*) malloc(num_states * sizeof(double));
-
-  if (0==opts.accumulator)
-    opts.accumulator = (double*) malloc(num_states * sizeof(double));
-
-  if (0==opts.vm_result || 0==opts.accumulator) {
-    free(poisson);
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
-  } else {
-      opts.Steps = stepForward(L, opts.q, p, opts.vm_result, opts.ssprec);
-      if (opts.Steps == L) {
-        // steady state not reached, and not an error; continue.
-        for (long s=num_states-1; s>=0; s--) {
-          opts.accumulator[s] = p[s] * poisson[0];
-        } // for s
-#ifdef DEBUG_UNIF
-        ShowUnifStep(L, poisson[0], p, opts.accumulator, num_states);
-#endif
-        int i;
-        for (i=1; i<=R-L; i++) {
-          if (0==stepForward(1, opts.q, p, opts.vm_result, opts.ssprec)) break;
-          opts.Steps++;
-          for (long s=num_states-1; s>=0; s--) {
-            opts.accumulator[s] += p[s] * poisson[i];
-          } // for s
-#ifdef DEBUG_UNIF
-          ShowUnifStep(L+i, poisson[i], p, opts.accumulator, num_states);
-#endif
-        } // for i 
-        // If steady state was reached, add the possion tail
-        double tail = 0.0;
-        int j = R-L;
-        while (i <= j) {
-          if (poisson[i] < poisson[j]) {
-            tail += poisson[i];
-            i++;
-          } else {
-            tail += poisson[j];
-            j--;
-          }
-        }
-        if (tail) {
-          for (long s=num_states-1; s>=0; s--) {
-            opts.accumulator[s] += p[s] * tail;
-          } // for s
-        }
-      } // if successful
-  }
-  memcpy(p, opts.accumulator, num_states * sizeof(double));
-
-  if (opts.kill_aux_vectors) {
-    free(opts.vm_result);
-    free(opts.accumulator);
-    opts.vm_result = 0;
-    opts.accumulator = 0;
-  }
-  opts.Left = L;
-  opts.Right = R;
-  free(poisson);
+  genericTransient(t, p, opts, &mc_base::forwStep);
 }
 
 void mc_base::computeTransient(int t, double* p, transopts &opts) const
 {
-  if (isContinuous()) {
-    computeTransient(double(t), p, opts);
-    return;
-  }
-  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+  genericTransient(t, p, opts, &mc_base::forwStep);
+}
 
-  if (0==opts.vm_result) {
-    opts.vm_result = (double*) malloc(num_states * sizeof(double));
-  }
-
-  if (0==opts.vm_result) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
-  } 
-
-  opts.Steps = stepForward(t, 0.0, p, opts.vm_result, opts.ssprec);
-
-  if (opts.kill_aux_vectors) {
-    free(opts.vm_result);
-    free(opts.accumulator);
-    opts.vm_result = 0;
-    opts.accumulator = 0;
-  }
-  opts.Left = 0;
-  opts.Right = 0;
+void mc_base::reverseTransient(double t, double* p, transopts &opts) const
+{
+  genericTransient(t, p, opts, &mc_base::backStep);
 }
 
 void mc_base::reverseTransient(int t, double* p, transopts &opts) const
 {
-  if (isContinuous()) {
-    throw MCLib::error(MCLib::error::Not_Implemented);
-  }
-  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
-
-  if (0==opts.vm_result) {
-    opts.vm_result = (double*) malloc(num_states * sizeof(double));
-  }
-
-  if (0==opts.vm_result) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
-  } 
-
-  opts.Steps = stepBackward(t, 0.0, p, opts.vm_result, opts.ssprec);
-
-  if (opts.kill_aux_vectors) {
-    free(opts.vm_result);
-    free(opts.accumulator);
-    opts.vm_result = 0;
-    opts.accumulator = 0;
-  }
-  opts.Left = 0;
-  opts.Right = 0;
+  genericTransient(t, p, opts, &mc_base::backStep);
 }
 
 void mc_base
@@ -643,7 +525,7 @@ mc_base::accDTMC(double t, const double* p0, double* n0t, transopts &opts) const
 
   for (; t>=1.0; t-=1.0) {
     for (long s=0; s<num_states; s++) n0t[s] += opts.accumulator[s];
-    oneStep(Qtt, 1.0, opts.accumulator, opts.vm_result, true);
+    forwStep(Qtt, 1.0, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
     opts.Steps++;
   }
@@ -684,7 +566,7 @@ mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
   for (int i=0; i<L; i++) {
     opts.Steps++;
     for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
-    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
+    forwStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
   } // for i
   for (int i=0; ; i++) {
@@ -692,7 +574,7 @@ mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
     adj = poisson[i] / opts.q;
     for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
     if (i>=R-L) break;
-    oneStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
+    forwStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
     SWAP(opts.accumulator, opts.vm_result);
   } // for i
   
@@ -990,7 +872,7 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     printf("\n");
 #endif
     //  (b) advance
-    oneStep(Qtt, opts.q, opts.probvect, opts.vm_result, false);
+    forwStep(Qtt, opts.q, opts.probvect, opts.vm_result, false);
     SWAP(opts.probvect, opts.vm_result);
   }
 
@@ -1188,6 +1070,19 @@ mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
 }
 
 
+long mc_base::ReportMemTotal() const
+{
+    long mem = 0;
+    if (g)            mem += g->ReportMemTotal();
+    if (h)            mem += h->ReportMemTotal();
+    if (stop_index)   mem += (1+num_classes) * sizeof(long);
+    if (period)       mem += (1+num_classes) * sizeof(long);
+    if (oneoverd)     mem += ood_size * sizeof(float);
+    return mem;
+}
+
+
+
 void mc_base::irredSteady(double* p, 
       const LS_Options &opt, 
       LS_Output &lo) const
@@ -1312,9 +1207,129 @@ void mc_base::reducTTA(const LS_Vector &p0,
   for (long i=0; i < stop_index[0]; i++) p[i] = -p[i];
 }
 
+//
+// private, generic stuff
+//
+
+void mc_base::genericTransient(double t, double* p, transopts &opts,
+  void (mc_base::* step)(const LS_Matrix&, double, double*, double*, bool) const
+) const
+{
+  if (isDiscrete()) {
+    genericTransient(int(t), p, opts, step);
+    return;
+  }
+  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
+  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+  opts.q = MAX(opts.q, getUniformizationConst());
+#ifdef DEBUG_UNIF
+  printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
+#endif
+  int L;
+  int R;
+  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
+#ifdef DEBUG_UNIF
+  printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
+#endif
+
+  if (0==opts.vm_result)
+    opts.vm_result = (double*) malloc(num_states * sizeof(double));
+
+  if (0==opts.accumulator)
+    opts.accumulator = (double*) malloc(num_states * sizeof(double));
+
+  if (0==opts.vm_result || 0==opts.accumulator) {
+    free(poisson);
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } else {
+      opts.Steps = stepGeneric(L, opts.q, p, opts.vm_result, opts.ssprec, step);
+      if (opts.Steps == L) {
+        // steady state not reached, and not an error; continue.
+        for (long s=num_states-1; s>=0; s--) {
+          opts.accumulator[s] = p[s] * poisson[0];
+        } // for s
+#ifdef DEBUG_UNIF
+        ShowUnifStep(L, poisson[0], p, opts.accumulator, num_states);
+#endif
+        int i;
+        for (i=1; i<=R-L; i++) {
+          if (0==stepGeneric(1, opts.q, p, opts.vm_result, opts.ssprec, step)) 
+            break;
+          opts.Steps++;
+          for (long s=num_states-1; s>=0; s--) {
+            opts.accumulator[s] += p[s] * poisson[i];
+          } // for s
+#ifdef DEBUG_UNIF
+          ShowUnifStep(L+i, poisson[i], p, opts.accumulator, num_states);
+#endif
+        } // for i 
+        // If steady state was reached, add the possion tail
+        double tail = 0.0;
+        int j = R-L;
+        while (i <= j) {
+          if (poisson[i] < poisson[j]) {
+            tail += poisson[i];
+            i++;
+          } else {
+            tail += poisson[j];
+            j--;
+          }
+        }
+        if (tail) {
+          for (long s=num_states-1; s>=0; s--) {
+            opts.accumulator[s] += p[s] * tail;
+          } // for s
+        }
+      } // if successful
+  }
+  memcpy(p, opts.accumulator, num_states * sizeof(double));
+
+  if (opts.kill_aux_vectors) {
+    free(opts.vm_result);
+    free(opts.accumulator);
+    opts.vm_result = 0;
+    opts.accumulator = 0;
+  }
+  opts.Left = L;
+  opts.Right = R;
+  free(poisson);
+}
+
+void mc_base::genericTransient(int t, double* p, transopts &opts,
+  void (mc_base::* step)(const LS_Matrix&, double, double*, double*, bool) const
+) const
+{
+  if (isContinuous()) {
+    genericTransient(double(t), p, opts, step);
+    return;
+  }
+  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
+  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+
+  if (0==opts.vm_result) {
+    opts.vm_result = (double*) malloc(num_states * sizeof(double));
+  }
+
+  if (0==opts.vm_result) {
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } 
+
+  opts.Steps = stepGeneric(t, 0.0, p, opts.vm_result, opts.ssprec, step);
+
+  if (opts.kill_aux_vectors) {
+    free(opts.vm_result);
+    free(opts.accumulator);
+    opts.vm_result = 0;
+    opts.accumulator = 0;
+  }
+  opts.Left = 0;
+  opts.Right = 0;
+}
 
 
-int mc_base::stepForward(int n, double q, double* p, double* aux, double delta) const
+int mc_base::stepGeneric(int n, double q, double* p, double* aux, double delta,
+  void (mc_base::* step)(const LS_Matrix&, double, double*, double*, bool) const
+) const
 {
   LS_Matrix Qtt;
   exportQtt(Qtt);
@@ -1325,7 +1340,7 @@ int mc_base::stepForward(int n, double q, double* p, double* aux, double delta) 
   double* myp = p;
   int i;
   for (i=0; i<n; i++) {
-    oneStep(Qtt, q, myp, aux, true);
+    (this->*step)(Qtt, q, myp, aux, true);
     SWAP(aux, myp);
     if (delta <= 0) continue;
     // check for convergence
@@ -1350,50 +1365,73 @@ int mc_base::stepForward(int n, double q, double* p, double* aux, double delta) 
   return i;
 }
 
-int mc_base::stepBackward(int n, double q, double* p, double* aux, double delta) const
-{
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-  Qtt.start = 0;
-  Qtt.stop = stop_index[num_classes];
 
-  if (isDiscrete()) q = 1.0;
-  double* myp = p;
-  int i;
-  for (i=0; i<n; i++) {
-    backStep(Qtt, q, myp, aux);
-    SWAP(aux, myp);
-    if (delta <= 0) continue;
-    // check for convergence
-    double maxdelta = 0.0;
-    for (long s=num_states-1; s>=0; s--) {
-      double d = aux[s] - myp[s];
-      if (d < 0)   d = -d;
-      if (aux[s])  d /= aux[s];
-      maxdelta = MAX(maxdelta, d);
+
+void mc_base::forwStep(const LS_Matrix &Qtt, double q, double* p, 
+  double* aux, bool normalize) const 
+{
+    // vector-matrix multiply
+    for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
+    Qtt.VectorMatrixMultiply(aux, p);
+    if (h) h->VectorMatrixMultiply(aux, p);
+
+    // adjust for diagonals
+    if (Qtt.d_one_over_diag) {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.d_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
+    } else {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.f_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
     }
-#ifdef DEBUG_SSDETECT
-    printf("Old vector: ");
-    ShowVector(aux, num_states);
-    printf("\nNew vector: ");
-    ShowVector(myp, num_states);
-    printf("\nmax delta: %g\n", maxdelta);
-#endif
-    if (maxdelta < delta) break;
 
-  } // for n
-  if (p != myp) memcpy(p, myp, num_states * sizeof(double));
- 
-  return i;
+    // finally, adjust for absorbing states
+    for (long s=Qtt.stop; s<num_states; s++) {
+      aux[s] += q*p[s];
+    }
+
+    if (normalize) {
+      // normalize (also handles dividing by q)
+      double total = 0.0;
+      for (long s=num_states-1; s>=0; s--)   total += aux[s];
+      for (long s=num_states-1; s>=0; s--)  aux[s] /= total;
+    } else {
+      // divide by q
+      for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
+    }
 }
 
-long mc_base::ReportMemTotal() const
+
+void mc_base::backStep(const LS_Matrix &Qtt, double q, double* p, 
+  double* aux, bool) const 
 {
-    long mem = 0;
-    if (g)            mem += g->ReportMemTotal();
-    if (h)            mem += h->ReportMemTotal();
-    if (stop_index)   mem += (1+num_classes) * sizeof(long);
-    if (period)       mem += (1+num_classes) * sizeof(long);
-    if (oneoverd)     mem += ood_size * sizeof(float);
-    return mem;
+    // matrix-vector multiply
+    for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
+    Qtt.MatrixVectorMultiply(aux, p);
+    if (h) h->MatrixVectorMultiply(aux, p);
+
+    // adjust for diagonals
+    if (Qtt.d_one_over_diag) {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.d_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
+    } else {
+      for (long s=Qtt.stop-1; s>=0; s--) {
+        double d = q - 1.0/Qtt.f_one_over_diag[s];
+        aux[s] += d*p[s];
+      }
+    }
+
+    // finally, adjust for absorbing states
+    for (long s=Qtt.stop; s<num_states; s++) {
+      aux[s] += q*p[s];
+    }
+
+    // divide by q
+    if (q != 1) for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
 }
+
