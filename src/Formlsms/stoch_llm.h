@@ -249,6 +249,34 @@ public:
   computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const;
 
 
+  /**
+      Compute, for each possible starting state, the probability of
+      eventually reaching the accepting state.
+
+        @param  x   Vector of size (at least) number of states,
+                    to hold the result.
+
+        @return    true on success, false otherwise.
+  */
+  virtual bool reachesAccept(double* x) const;
+
+
+  /**
+      Compute, for each possible starting state, the probability of
+      reaching the accepting state by time t.
+
+        @param  t   Time we care about.
+                    Anything less than 0 acts like 0.
+
+        @oaram  x   Vector of size (at least) number of states,
+                    to hold the result.
+
+        @return    true on success, false otherwise.
+  */
+  virtual bool reachesAcceptBy(double t, double* x) const;
+
+  
+
   /** Simulate a random walk through the process, until absorption.
       This is the discrete-time version.
         @param  st      Random stream to use

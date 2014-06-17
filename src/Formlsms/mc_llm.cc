@@ -143,6 +143,26 @@ void markov_lldsm::stopAccumulatedReport(long iters) const
   report.stopIO();
 }
 
+void markov_lldsm::startRevTransReport(double t) const
+{
+  if (!report.startReport()) return;
+  report.report() << "Starting reverse transient solver, t=" << t << "\n";
+  report.stopIO();
+  DCASSERT(watch);
+  watch->reset();
+}
+
+void markov_lldsm::stopRevTransReport(long iters) const
+{
+  if (!report.startReport()) return;
+  DCASSERT(watch);
+  report.report() << "Reverse transient solver: ";
+  report.report() << watch->elapsed() << " seconds, ";
+  report.report() << iters << " iterations\n";
+  report.stopIO();
+}
+
+
 const char* markov_lldsm::getSolver() 
 {
   switch (solver) {
@@ -339,6 +359,8 @@ public:
 
   virtual bool computeDiscreteTTA(double epsilon, double* &dist, int &N) const;
   virtual bool computeContinuousTTA(double epsilon, double dt, double* &dist, int &N) const;
+
+  virtual bool reachesAcceptBy(double t, double* x) const;
 
   virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
                           long maxt, long &elapsed);
@@ -1159,6 +1181,44 @@ computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
       em->noCause();
       em->cerr() << "Couldn't compute discrete TTA: ";
       em->cerr() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+bool explicit_mc::reachesAcceptBy(double t, double* x) const
+{
+  DCASSERT(chain);
+
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+  for (long i=0; i<num_states; i++) x[i] = 0;
+
+  long acc_state = getAcceptingState();
+  if (acc_state < 0) {
+    // Degenerate case - no accepting state,
+    // so nothing will reach it
+    return true;
+  }
+  x[acc_state] = 1;
+
+  if (t<=0) return true;
+
+  MCLib::Markov_chain::transopts opts;
+
+  try {
+    startRevTransReport(t); 
+    chain->reverseTransient(t, x, opts);
+    stopRevTransReport(opts.Steps);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
       em->stopIO();
     }
     return false;

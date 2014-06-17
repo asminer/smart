@@ -532,9 +532,82 @@ void statevect::equals(double v, intset &I) const
 
 double statevect::dot_product(const statevect* x) const
 {
-  // TBD
+  if (0==x) return 0;
 
-  return 0;
+  double answer = 0;
+
+  if (isSparse()) {
+    //
+    // We're sparse.
+    // Transform x to truncated full (if necessary) and determine product
+    // (we do this because sparse vectors do not require indexes to be sorted)
+    //
+
+    long truncsize;
+    const double* trunc;
+    double* temp = 0;
+
+    if (x->isSparse()) {
+      //
+      // Build a small truncated-full vector to hold vector x
+      // but don't bother to hold elements past our largest index
+      //
+
+      long mymax = 0;
+      for (long z=0; z<vectsize; z++) {
+        mymax = MAX(mymax, indexes[z]);
+      }
+      long xmax = 0;
+      for (long z=0; z<x->vectsize; z++) {
+        xmax = MAX(xmax, x->indexes[z]);
+      }
+
+      truncsize = 1+MIN(mymax, xmax);
+      
+      temp = new double[truncsize];
+      for (long i=0; i<truncsize; i++) temp[i] = 0;
+      for (long z=0; z<x->vectsize; z++) {
+        if (x->indexes[z] >= truncsize) continue;
+        temp[x->indexes[z]] = x->vect[z];
+      }
+      trunc = temp;
+    } else {
+      //
+      // Already truncated full, use it
+      //
+      truncsize = x->vectsize;
+      trunc = x->vect;
+    }
+
+    //
+    // sparse - full
+    //
+    for (long z=0; z<vectsize; z++) {
+      if (indexes[z] >= truncsize) continue;
+      answer += vect[z] * trunc[indexes[z]];
+    }
+
+    delete[] temp;
+  } else {
+    if (x->isSparse()) {
+      //
+      // full - sparse
+      //
+      for (long z=0; z<x->vectsize; z++) {
+        if (x->indexes[z] >= vectsize) continue;
+        answer += x->vect[z] * vect[x->indexes[z]];
+      }
+    } else {
+      //
+      // full - full
+      //
+      long zstop = MIN(vectsize, x->vectsize);
+      for (long z=0; z<zstop; z++) {
+        answer += vect[z] * x->vect[z];
+      }
+    }
+  }
+  return answer;
 }
 
 
@@ -1027,6 +1100,7 @@ void InitStatevects(exprman* em, symbol_table* st)
   if (0==em)  return;
   
   // Type registry
+  // ------------------------------------------------------------------
   simple_type* t_statedist = new statedist_type;
   em->registerType(t_statedist);
 
@@ -1039,6 +1113,7 @@ void InitStatevects(exprman* em, symbol_table* st)
   em->setFundamentalTypes();
 
   // Operators
+  // ------------------------------------------------------------------
 
   // Options
   // ------------------------------------------------------------------
@@ -1069,7 +1144,10 @@ void InitStatevects(exprman* em, symbol_table* st)
   if (0==st) return;
 
   // Functions
-  st->AddSymbol(  new condition_si    );
-  st->AddSymbol(  new prob_si         );
+  // ------------------------------------------------------------------
+  st->AddSymbol(  new condition_si              );
+  st->AddSymbol(  new prob_si                   );
+  st->AddSymbol(  new expected_si(t_stateprobs) );
+  st->AddSymbol(  new expected_si(t_statemsrs)  );
 }
 

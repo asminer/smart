@@ -20,21 +20,31 @@ class CSL_engine : public msr_noengine {
 protected:
   /** Engines for computing PU, explicitly.
       This is a "Function call" style engine.
-      parameter 0: pointer, to the stochastic model.
-      parameter 1: pointer, to stateset p; if NULL we compute PF.
-      parameter 2: pointer, to stateset q.
-      Computes probability that a path from an initial state
-      satisfies p U q, or F q if p is null.
+      Computes a stateprobs vector: for each starting state, the 
+      probability that a path from that state satisfies p U q, 
+      or F q if p is null.
+      
+      Parameter 0: the model
+      Parameter 1: p of p U q; can be null to indicate "true"
+      Parameter 2: q of p U q
+      Parameter 3: time bound; use infinity to indicate "unbounded"
+      
+      Result: a stateprobs vector.
   */
   static engtype* PU_explicit;
 
   /** Engines for building a phase type for TU.
       This is a "Function call" style engine.
-      parameter 0: pointer, to the stochastic model.
-      parameter 1: pointer, to stateset p; if NULL we compute PF.
-      parameter 2: pointer, to stateset q.
       Computes the distribution where a path from an initial state
       satisfies p U q, or F q if p is null.
+      
+      Parameter 0: the model
+      Parameter 1: p of p U q; can be null to indicate "true"
+      Parameter 2: q of p U q
+      Parameter 3: the initial distribution to use;
+                   if null, we use the initial distribution
+      
+      Result: a high-level phase-type model
   */
   static engtype* TU_generator;
 
@@ -180,22 +190,18 @@ CSL_engine::CSL_engine(const type* t, const char* name, int np)
 
 class PF_func : public CSL_engine {
 public:
-  PF_func(bool dist_param);
+  PF_func();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-PF_func::PF_func(bool dist_param)
- : CSL_engine(em->REAL, "PF", dist_param ? 3 : 2)
+PF_func::PF_func()
+ : CSL_engine(em->STATEPROBS, "PF", 3)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
-  if (dist_param) {
-    SetFormal(2, em->STATEDIST, "pi0");
-    SetDocumentation("Determine the probability that a path, starting according to the initial distribution pi0, has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...");
-  } else {
-    SetDocumentation("Determine the probability that a path, starting according to the model's initial distribution, has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...");
-  }
+  SetFormal(2, em->REAL, "t");
+  SetDocumentation("Determine for each possible state, the probability that a path starting from that state has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...\nwhere p is satisfied by time t (or with no time limit if t is infinity).");
 }
 
 void PF_func::Compute(traverse_data &x, expr** pass, int np)
@@ -222,15 +228,10 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
     return nullAnswer(x, ans);
   }
 
-  // slot 3 : initial distribution
-  if (2==np) {
-    engpass[3].setNull();
-  } else {
-    if (badStatedist(llm, pass[2], x, engpass[3])) {
-      return nullAnswer(x, ans);
-    }
-  }
-
+  // slot 3 : time
+  x.answer = &engpass[3];
+  SafeCompute(pass[2], x);
+  
   x.answer = ans;
   launchEngine(PU_explicit, engpass, 4, x);
 }
@@ -243,23 +244,19 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
 
 class PU_func : public CSL_engine {
 public:
-  PU_func(bool dist_param);
+  PU_func();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-PU_func::PU_func(bool dist_param)
- : CSL_engine(em->REAL, "PU", dist_param ? 4 : 3)
+PU_func::PU_func()
+ : CSL_engine(em->STATEPROBS, "PU", 4)
 {
   SetFormal(0, em->MODEL, "m");
   HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
-  if (dist_param) {
-    SetFormal(3, em->STATEDIST, "pi0");
-    SetDocumentation("Determine the probability that a path, starting according to the initial distribution pi0, has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is eventually satisfied (after zero or more states where p is satisfied).");
-  } else {
-    SetDocumentation("Determine the probability that a path, starting according to the model's initial distribution, has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is eventually satisfied (after zero or more states where p is satisfied).");
-  }
+  SetFormal(3, em->REAL, "t");
+  SetDocumentation("Determine for each possible state, the probability that a path starting from that state has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is satisfied by time t (or with no time limit if t is infinity).  There may be zero or more states satisfying p visited before a state satisfying q.");
 }
 
 void PU_func::Compute(traverse_data &x, expr** pass, int np)
@@ -288,14 +285,9 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
     return nullAnswer(x, ans);
   }
 
-  // slot 3 : initial distribution
-  if (3==np) {
-    engpass[3].setNull();
-  } else {
-    if (badStatedist(llm, pass[3], x, engpass[3])) {
-      return nullAnswer(x, ans);
-    }
-  }
+  // slot 3 : time
+  x.answer = &engpass[3];
+  SafeCompute(pass[3], x);
 
   x.answer = ans;
   launchEngine(PU_explicit, engpass, 4, x);
@@ -483,20 +475,12 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
       "ExplicitPU",
       "Algorithm for explicit computation of PU formulas in CSL/PCTL.",
       engtype::FunctionCall
-      //
-      // Parameters - same as TU_generator
   );
 
   CSL_engine::TU_generator = MakeEngineType(em,
       "TUgenerator",
       "Generates the distribution for TU formulas in CSL/PCTL.",
       engtype::FunctionCall
-      //
-      // Parameter 0: the model
-      // Parameter 1: p of p U q; can be null to indicate "true"
-      // Parameter 2: q of p U q
-      // Parameter 3: the initial distribution to use;
-      //              if null, we use the initial distribution
   );
 
   CSL_engine::ProcGen = em->findEngineType("ProcessGeneration");
@@ -507,10 +491,8 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
   const type* phint  = em->INT  ? em->INT ->modifyType(PHASE) : 0;
   const type* phreal = em->REAL ? em->REAL->modifyType(PHASE) : 0;
 
-  common->Append(new PF_func(false) );
-  common->Append(new PF_func(true ) );
-  common->Append(new PU_func(false) );
-  common->Append(new PU_func(true ) );
+  common->Append(new PF_func );
+  common->Append(new PU_func );
 
   if (phint) {
     common->Append(new TF_func(phint, "phi_TF", false));

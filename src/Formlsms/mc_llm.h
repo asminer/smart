@@ -60,6 +60,9 @@ protected:
   void stopTTAReport(long iters) const;
   void startAccumulatedReport(double t) const;
   void stopAccumulatedReport(long iters) const;
+
+  void startRevTransReport(double t) const;
+  void stopRevTransReport(long iters) const;
   
   static const char* getSolver();
 private:

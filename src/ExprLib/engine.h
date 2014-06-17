@@ -61,6 +61,8 @@ public:
     Terminated,
     /// A model assertion failed, and the engine terminated.
     Assertion_Failure,
+    /// Bad value for an engine parameter
+    Bad_Value,
     /// Some other fatal run-time error with the engine.
     Engine_Failed
   };

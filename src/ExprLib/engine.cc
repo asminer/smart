@@ -98,6 +98,9 @@ const char* subengine::getNameOfError(error e)
     case Assertion_Failure:
         return "Assertion failure";
 
+    case Bad_Value:
+        return "Illegal value for engine parameter";
+
     case Engine_Failed:  
         return "Engine failed";
   }
