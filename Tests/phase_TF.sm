@@ -18,7 +18,7 @@ dtmc oz := {
 
   ph int ttnice := phi_TF(potential(in_state(n)));
   ph real error := phr_TF(potential(in_state(n)));
-  real pnice := PF(potential(in_state(n)));
+  real pnice := prob_finite(ttnice);
 };
 
 ph int foo := oz.ttnice;
@@ -44,7 +44,7 @@ dtmc ex2 := {
 
   ph int tty := phi_TF(potential(in_state(y)));
   ph real error := phr_TF(potential(in_state(y)));
-  real py := PF(potential(in_state(y)));
+  real py := prob_finite(tty);
 };
 
 print_ph(ex2.tty);
@@ -68,8 +68,8 @@ dtmc ex3 := {
   );
 
   ph int tty := phi_TF(potential(in_state(y)));
-  ph real tty := phr_TF(potential(in_state(y)));
-  real py := PF(potential(in_state(y)));
+  ph real error := phr_TF(potential(in_state(y)));
+  real py := prob_finite(tty);
 };
 
 print_ph(ex3.tty);
@@ -97,7 +97,7 @@ dtmc ex4 := {
 
   ph int tt := phi_TF(potential(in_state(a3)));
   ph real error := phr_TF(potential(in_state(a3)));
-  real pa3 := PF(potential(in_state(a3)));
+  real pa3 := prob_finite(tt);
 };
 
 print_ph(ex4.tt);
@@ -124,7 +124,7 @@ ctmc ex5 := {
 
   ph real tt := phr_TF(potential(in_state(a3)));
   ph int error := phi_TF(potential(in_state(a3)));
-  real pa3 := PF(potential(in_state(a3)));
+  real pa3 := prob_finite(tt);
 };
 
 print_ph(ex5.tt);

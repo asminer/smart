@@ -74,8 +74,6 @@ Should look like:
  x -> a;
 
 -------------------------------------------------------
-ERROR in file phase_TF.sm near line 71:
-	Duplicate identifier tty within model
 Information for phase type tta(ex3, ...)
 Discrete phase type, state has dimension 1
 Reachable states:
@@ -208,10 +206,9 @@ null phase type
 ERROR in file phase_TF.sm near line 46:
 	Underlying distribution is ph int instead of ph real
 null phase type
-ERROR in file phase_TF.sm near line 137:
-	Measure error does not exist in model ex3
-ERROR in file phase_TF.sm near line 137:
-	No match for print_ph(error)
+ERROR in file phase_TF.sm near line 71:
+	Underlying distribution is ph int instead of ph real
+null phase type
 ERROR in file phase_TF.sm near line 99:
 	Underlying distribution is ph int instead of ph real
 null phase type
