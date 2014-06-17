@@ -29,14 +29,14 @@
 
 class statevect_printer : public lldsm::state_visitor {
   OutputStream &out;
-  const statevect* dist;
   int display_style;
-private:
+  double* myvect;
   long nextz;
   bool comma;
 public:
   statevect_printer(const hldsm* mdl, OutputStream &s, const statevect* d, 
     int style);
+  ~statevect_printer();
   virtual bool canSkipIndex();
   virtual bool visit();
 };
@@ -44,19 +44,24 @@ public:
 statevect_printer::statevect_printer(const hldsm* m, OutputStream &s, 
   const statevect* d, int style) : state_visitor(m), out(s)
 {
-  dist = d;
   display_style = style;
   comma = false;
   nextz = 0;
+
+  long ns = d->getParent()->getNumStates(false);
+  myvect = new double[ns];
+  d->ExportTo(myvect);
+}
+
+statevect_printer::~statevect_printer()
+{
+  delete[] myvect;
 }
 
 bool statevect_printer::canSkipIndex()
 {
   if (statevect::FULL == display_style) return false;
-  if (dist->isSparse()) {
-    return dist->readSparseIndex(nextz) != x.current_state_index;
-  }
-  return (0==dist->readFull(x.current_state_index));
+  return 0==myvect[x.current_state_index];
 }
 
 bool statevect_printer::visit()
@@ -73,24 +78,8 @@ bool statevect_printer::visit()
     out.Put(':');
   }
 
-  if (dist->isSparse()) {
-    if (x.current_state_index == nextz) {
-      out << dist->readSparseValue(nextz);
-      nextz++;
-      return (nextz >= dist->size());
-    } else {
-      // must be FULL display style
-      out << 0;
-      return false;
-    }
-  }
-  if (x.current_state_index < dist->size()) {
-    out << dist->readFull(x.current_state_index);
-  } else {
-    out << 0;
-  }
-  if (statevect::FULL == display_style) return false;
-  return (x.current_state_index >= dist->size()-1);
+  out << myvect[x.current_state_index];
+  return false;
 }
 
 // ******************************************************************
@@ -368,13 +357,14 @@ bool statevect::Equals(const shared_object *o) const
   return true;
 }
 
-void statevect::greater_than(double v, intset &I) const
+void statevect::greater_than(double v, intset* I) const
 {
+  if (0==I) return;
   if (v>=0) {
     //
     // skipped elements in vector - not set in I
     // 
-    I.removeAll();
+    I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
@@ -383,7 +373,7 @@ void statevect::greater_than(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z] > v) 
-          I.addElement(indexes[z]);
+          I->addElement(indexes[z]);
       }
     } else {
       //
@@ -391,14 +381,14 @@ void statevect::greater_than(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i] > v)
-          I.addElement(i);
+          I->addElement(i);
       }
     }
   } else {
     //
     // skipped elements in vector - are set in I
     //
-    I.addAll();
+    I->addAll();
 
     // go through vector and see what to remove
     if (indexes) {
@@ -407,7 +397,7 @@ void statevect::greater_than(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z] <= v) 
-          I.removeElement(indexes[z]);
+          I->removeElement(indexes[z]);
       }
     } else {
       //
@@ -415,19 +405,20 @@ void statevect::greater_than(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i] <= v)
-          I.removeElement(i);
+          I->removeElement(i);
       }
     }
   }
 }
 
-void statevect::less_than(double v, intset &I) const
+void statevect::less_than(double v, intset* I) const
 {
+  if (0==I) return;
   if (v<=0) {
     //
     // skipped elements in vector - not set in I
     // 
-    I.removeAll();
+    I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
@@ -436,7 +427,7 @@ void statevect::less_than(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z] < v) 
-          I.addElement(indexes[z]);
+          I->addElement(indexes[z]);
       }
     } else {
       //
@@ -444,14 +435,14 @@ void statevect::less_than(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i] < v)
-          I.addElement(i);
+          I->addElement(i);
       }
     }
   } else {
     //
     // skipped elements in vector - are set in I
     //
-    I.addAll();
+    I->addAll();
 
     // go through vector and see what to remove
     if (indexes) {
@@ -460,7 +451,7 @@ void statevect::less_than(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z] >= v) 
-          I.removeElement(indexes[z]);
+          I->removeElement(indexes[z]);
       }
     } else {
       //
@@ -468,14 +459,15 @@ void statevect::less_than(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i] >= v)
-          I.removeElement(i);
+          I->removeElement(i);
       }
     }
   }
 }
 
-void statevect::equals(double v, intset &I) const 
+void statevect::equals(double v, intset* I) const 
 {
+  if (0==I) return;
   //
   // TBD - need a precision for this
   //
@@ -483,7 +475,7 @@ void statevect::equals(double v, intset &I) const
     //
     // skipped elements in vector - not set in I
     // 
-    I.removeAll();
+    I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
@@ -492,7 +484,7 @@ void statevect::equals(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z] == v) 
-          I.addElement(indexes[z]);
+          I->addElement(indexes[z]);
       }
     } else {
       //
@@ -500,14 +492,14 @@ void statevect::equals(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i] == v)
-          I.addElement(i);
+          I->addElement(i);
       }
     }
   } else {
     //
     // special case - equal to 0
     //
-    I.addAll();
+    I->addAll();
 
     // go through vector and see what to remove
     if (indexes) {
@@ -516,7 +508,7 @@ void statevect::equals(double v, intset &I) const
       //
       for (long z=0; z<vectsize; z++) {
         if (vect[z]) 
-          I.removeElement(indexes[z]);
+          I->removeElement(indexes[z]);
       }
     } else {
       //
@@ -524,7 +516,7 @@ void statevect::equals(double v, intset &I) const
       //
       for (long i=0; i<vectsize; i++) {
         if (vect[i])
-          I.removeElement(i);
+          I->removeElement(i);
       }
     }
   }
@@ -832,6 +824,220 @@ statemsrs_type::statemsrs_type() : simple_type("statemsrs", "Measures for states
 // *                                                                *
 // *                                                                *
 // ******************************************************************
+
+// ******************************************************************
+// *                          gt_si  class                          *
+// ******************************************************************
+
+class gt_si : public simple_internal {
+public:
+  gt_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+gt_si::gt_si() : simple_internal(em->STATESET, "gt", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEPROBS);
+  SetFormal(0, em->STATEPROBS, "x");
+  SetFormal(1, em->REAL, "v");
+  SetDocumentation("Determine, the set of states whose x value is larger than v.");
+}
+
+void gt_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  stateprobs* p = smart_cast <stateprobs*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+  double v = x.answer->getReal();
+
+  //
+  // Ready to do actual computation
+  //
+  const stochastic_lldsm* llm = p->getParent();
+  long ns = llm->getNumStates(false);
+  intset* ans = new intset(ns);
+  p->greater_than(v, ans);  
+
+  //
+  // Finalize & Cleanup 
+  //
+  x.answer->setPtr( new stateset(llm, ans) );
+  Delete(p);
+}
+
+// ******************************************************************
+// *                          ge_si  class                          *
+// ******************************************************************
+
+class ge_si : public simple_internal {
+public:
+  ge_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+ge_si::ge_si() : simple_internal(em->STATESET, "ge", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEPROBS);
+  SetFormal(0, em->STATEPROBS, "x");
+  SetFormal(1, em->REAL, "v");
+  SetDocumentation("Determine, the set of states whose x value is at least v.");
+}
+
+void ge_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  stateprobs* p = smart_cast <stateprobs*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+  double v = x.answer->getReal();
+
+  //
+  // Ready to do actual computation
+  //
+  const stochastic_lldsm* llm = p->getParent();
+  long ns = llm->getNumStates(false);
+  intset* ans = new intset(ns);
+  p->less_than(v, ans);  
+  ans->complement();
+
+  //
+  // Finalize & Cleanup 
+  //
+  x.answer->setPtr( new stateset(llm, ans) );
+  Delete(p);
+}
+
+// ******************************************************************
+// *                          lt_si  class                          *
+// ******************************************************************
+
+class lt_si : public simple_internal {
+public:
+  lt_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+lt_si::lt_si() : simple_internal(em->STATESET, "lt", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEPROBS);
+  SetFormal(0, em->STATEPROBS, "x");
+  SetFormal(1, em->REAL, "v");
+  SetDocumentation("Determine, the set of states whose x value is smaller than v.");
+}
+
+void lt_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  stateprobs* p = smart_cast <stateprobs*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+  double v = x.answer->getReal();
+
+  //
+  // Ready to do actual computation
+  //
+  const stochastic_lldsm* llm = p->getParent();
+  long ns = llm->getNumStates(false);
+  intset* ans = new intset(ns);
+  p->less_than(v, ans);  
+
+  //
+  // Finalize & Cleanup 
+  //
+  x.answer->setPtr( new stateset(llm, ans) );
+  Delete(p);
+}
+
+// ******************************************************************
+// *                          le_si  class                          *
+// ******************************************************************
+
+class le_si : public simple_internal {
+public:
+  le_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+le_si::le_si() : simple_internal(em->STATESET, "le", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEPROBS);
+  SetFormal(0, em->STATEPROBS, "x");
+  SetFormal(1, em->REAL, "v");
+  SetDocumentation("Determine, the set of states whose x value is at most v.");
+}
+
+void le_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  stateprobs* p = smart_cast <stateprobs*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+  double v = x.answer->getReal();
+
+  //
+  // Ready to do actual computation
+  //
+  const stochastic_lldsm* llm = p->getParent();
+  long ns = llm->getNumStates(false);
+  intset* ans = new intset(ns);
+  p->greater_than(v, ans);  
+  ans->complement();
+
+  //
+  // Finalize & Cleanup 
+  //
+  x.answer->setPtr( new stateset(llm, ans) );
+  Delete(p);
+}
 
 // ******************************************************************
 // *                       condition_si class                       *
@@ -1145,6 +1351,11 @@ void InitStatevects(exprman* em, symbol_table* st)
 
   // Functions
   // ------------------------------------------------------------------
+  st->AddSymbol(  new gt_si                     );
+  st->AddSymbol(  new ge_si                     );
+  st->AddSymbol(  new lt_si                     );
+  st->AddSymbol(  new le_si                     );
+
   st->AddSymbol(  new condition_si              );
   st->AddSymbol(  new prob_si                   );
   st->AddSymbol(  new expected_si(t_stateprobs) );
