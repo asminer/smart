@@ -809,25 +809,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   //
   // Generate the process
   //
-  stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (X->GetProcess());
-
-  if (0==proc) { 
-    if (0==ProcessGeneration) {
-      throw No_Engine;
-    }
-
-    fls.setBool(false);
-    ProcessGeneration->runEngine(X, fls);
-
-    proc = smart_cast <stochastic_lldsm*> (X->GetProcess());
-  }
-
-  if (0==proc) {
-    em->cout() << "\tCouldn't build process for ";
-    foo->Print(em->cout(), 0);
-    em->cout() << "\n";
-    return;
-  }
+  GenerateProc(X);
+  stochastic_lldsm* proc = smart_cast<stochastic_lldsm*> (X->GetProcess());
+  DCASSERT(proc);
 
   //
   // Check if numerical solution engine was run already

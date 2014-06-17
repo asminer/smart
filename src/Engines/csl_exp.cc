@@ -5,6 +5,7 @@
 
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
+#include "../ExprLib/mod_vars.h"
 
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/phase_hlm.h"
@@ -26,7 +27,34 @@ class CSL_expl_eng : public subengine {
 public:
   CSL_expl_eng();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
+
+protected:
+  void GenerateProc(hldsm* m) const
+  {
+    result f;
+    f.setBool(false);
+    lldsm* proc = m->GetProcess();
+    if (proc) {
+      subengine* gen = proc->getCompletionEngine();
+      if (gen)  gen->RunEngine(m, f);
+      if (lldsm::Error == proc->Type()) throw Engine_Failed;
+    } else {
+      if (0==ProcessGeneration) {
+        ProcessGeneration = em->findEngineType("ProcessGeneration");
+      }
+      if (0==ProcessGeneration) throw No_Engine;
+      ProcessGeneration->runEngine(m, f);
+      proc = m->GetProcess();
+    }
+    DCASSERT(proc);
+    DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
+  }
+
+private:
+  static engtype* ProcessGeneration;
 };
+
+engtype* CSL_expl_eng::ProcessGeneration = 0;
 
 CSL_expl_eng::CSL_expl_eng() : subengine()
 {
@@ -197,6 +225,37 @@ protected:
     if (!TUgen) throw No_Engine;
     TUgen->runEngine(pass, np, x);
   }
+
+protected:
+  class reindex : public lldsm::state_visitor {
+      const double* oldvec;
+      long oldvecsize;
+      double* newvec;
+      long newvecsize;
+    public:
+      reindex(const hldsm* p, const double* ov, long os, double* nv, long ns) 
+      : lldsm::state_visitor(p)
+      {
+        oldvec = ov;
+        oldvecsize = os;
+        newvec = nv;
+        newvecsize = ns;
+      }
+      virtual ~reindex() { }
+
+      virtual bool visit() {
+        long ni = state()->get(0); 
+        if (ni >= newvecsize) return false; // must be trap or accept
+
+        fprintf(stderr, "Converting from %ld to %ld\n", index(), ni);
+        // TBD
+
+        CHECK_RANGE(0, index(), oldvecsize);
+        CHECK_RANGE(0, ni, newvecsize);
+        newvec[ni] = oldvec[index()];
+        return false;
+      }
+  };
 };
 
 engtype* PU_expl_eng::AvgPh = 0;
@@ -211,30 +270,102 @@ PU_expl_eng::PU_expl_eng() : CSL_expl_eng()
 void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 {
   //
+  // Grab the time parameter
+  //
+  bool unbounded = false;
+  double time = 0;
+  if (pass[3].isNormal()) {
+    time = pass[3].getReal();
+  } else if (pass[3].isInfinity()) {
+    if (pass[3].signInfinity() > 0) {
+      // + infinity
+      unbounded = true;
+    } else {
+      // - infinity
+      time = 0;
+    }
+  } else {
+    // null or some other bizarre thing
+    throw subengine::Bad_Value;
+  }
+
+  pass[3].setNull();
+
+  //
   // Build the distribution by calling the TU engine
   //
   generateTU(pass, np, x);
 
   //
-  // Grab the distribution
+  // Grab the phase model
   //
   if (!x.answer->isNormal()) {
     return;
   }
-  hldsm* tta = smart_cast <hldsm*>(x.answer->getPtr());
+  phase_hlm* tta = smart_cast <phase_hlm*>(x.answer->getPtr());
   DCASSERT(tta);
 
   //
-  // call the AvgPh engine
+  // Generate the process
   //
-  runAvgPh(tta);
+  GenerateProc(tta);
+  stochastic_lldsm* ttamc = smart_cast <stochastic_lldsm*> (tta->GetProcess());
+  DCASSERT(ttamc);
+
 
   //
-  // Grab the result
+  // Allocate vector for absorbing chain answer
   //
-  stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (tta->GetProcess());
-  DCASSERT(proc);
-  x.answer->setReal( proc->getAcceptProb() );
+  long ttans = ttamc->getNumStates(false);
+  double* ttax = new double[ttans];
+
+  //
+  // Do computation
+  //
+  bool ok;
+  if (unbounded)  ok = ttamc->reachesAccept(ttax);
+  else            ok = ttamc->reachesAcceptBy(time, ttax);
+  if (!ok) {
+    delete[] ttax;
+    x.answer->setNull();
+    return;
+  }
+
+  //
+  // Convert from phase model indexes back to the original model
+  //
+  const stochastic_lldsm* sm 
+  = dynamic_cast <const stochastic_lldsm*>(pass[0].getPtr());
+
+  long mns = sm->getNumStates(false);
+  double* mx = new double[mns];
+
+  reindex foo(ttamc->GetParent(), ttax, ttans, mx, mns);
+  ttamc->visitStates(foo);
+
+  //
+  // Done with ttax
+  //
+  delete[] ttax;
+  
+  //
+  // Set the accept equivalent states to 1 here
+  //
+  stateset* q = smart_cast <stateset*> (pass[2].getPtr());
+  DCASSERT(q);
+  const intset qis = q->getExplicit();
+  long i = -1;
+  while ( (i=qis.getSmallestAfter(i)) >= 0) {
+    mx[i] = 1;
+  }
+
+  //
+  // vector is set, convert it to a stateprobs
+  //
+  statedist* ans = new statedist(sm, mx, mns);
+  delete[] mx;
+
+  x.answer->setPtr(ans);
 }
 
 

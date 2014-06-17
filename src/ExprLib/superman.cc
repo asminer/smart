@@ -209,6 +209,7 @@ bool superman::setFundamentalTypes()
   if (!BIGINT)      BIGINT      = findSimple("bigint");
   if (!STATESET)    STATESET    = findSimple("stateset");
   if (!STATEDIST)   STATEDIST   = findSimple("statedist");
+  if (!STATEPROBS)  STATEPROBS  = findSimple("stateprobs");
   
   if (!NEXT_STATE)  NEXT_STATE  = findType("next state");
 

@@ -217,6 +217,7 @@ public:
   simple_type*  BIGINT;
   simple_type*  STATESET;
   simple_type*  STATEDIST;
+  simple_type*  STATEPROBS;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
