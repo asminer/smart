@@ -42,7 +42,8 @@ protected:
       Parameter 1: p of p U q; can be null to indicate "true"
       Parameter 2: q of p U q
       Parameter 3: the initial distribution to use;
-                   if null, we use the initial distribution
+                   if null, we use an equilikely distribution
+                   (useful for reverse pctl/csl stuff)
       
       Result: a high-level phase-type model
   */
@@ -93,13 +94,15 @@ protected:
     } // catch
   }
 
-  inline const lldsm* getLLM(expr* p, traverse_data &x, result &slot) const {
+  inline 
+  const stochastic_lldsm* getLLM(expr* p, traverse_data &x, result &slot) const
+  {
     model_instance* mi = grabModelInstance(x, p);
     if (0==mi) return 0;
     lldsm* foo = BuildRG(mi->GetCompiledModel(), x.parent);
     if (0==foo) return 0;
     if (foo->Type() == lldsm::Error) return 0;
-    checkable_lldsm* llm = dynamic_cast <checkable_lldsm*>(foo);
+    stochastic_lldsm* llm = dynamic_cast <stochastic_lldsm*>(foo);
     if (0==llm) return 0;
     x.answer = &slot;
     slot.setPtr(Share(llm));
@@ -332,7 +335,7 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
   result engpass[4];
 
   // slot 0 : model
-  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  const stochastic_lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
     return nullAnswer(x, ans);    
   }
@@ -347,7 +350,7 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
 
   // slot 3 : initial distribution
   if (2==np) {
-    engpass[3].setNull();
+    engpass[3].setPtr(llm->getInitialDistribution());
   } else {
     if (badStatedist(llm, pass[2], x, engpass[3])) {
       return nullAnswer(x, ans);
@@ -415,7 +418,7 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
   result engpass[4];
 
   // slot 0 : model
-  const lldsm* llm = getLLM(pass[0], x, engpass[0]);
+  const stochastic_lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
     return nullAnswer(x, ans);    
   }
@@ -432,7 +435,7 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
 
   // slot 3 : initial distribution
   if (3==np) {
-    engpass[3].setNull();
+    engpass[3].setPtr(llm->getInitialDistribution());
   } else {
     if (badStatedist(llm, pass[3], x, engpass[3])) {
       return nullAnswer(x, ans);

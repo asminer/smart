@@ -130,9 +130,9 @@ public:
 
   // for conversions to explicit statesets
 
-  void greater_than(double v, intset &I) const;
-  void less_than(double v, intset &I) const;
-  void equals(double v, intset &I) const;
+  void greater_than(double v, intset* I) const;
+  void less_than(double v, intset* I) const;
+  void equals(double v, intset* I) const;
 
   // handy operation
   double dot_product(const statevect* x) const;

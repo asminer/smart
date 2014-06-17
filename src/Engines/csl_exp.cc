@@ -149,16 +149,14 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(q->isExplicit());
 
   //
-  // Parameter 3: initial distribution
+  // Parameter 3: initial distribution, or null for uniform
   //
   statedist* initial = 0;
   if (pass[3].isNormal()) {
     initial = Share(smart_cast <statedist*>(pass[3].getPtr()));
     DCASSERT(initial);
     DCASSERT(initial->getParent() == sm);
-  } else {
-    initial = sm->getInitialDistribution();
-  }
+  } 
 
   //
   // Build a phase-type model for p U q.
@@ -171,15 +169,11 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     t->complement();
     stateset* trap = new stateset(sm, t);
     // build tta model
-    tta = makeTTA(discrete, initial,
-      q, trap, Share(sm)
-    );
+    tta = makeTTA(discrete, initial, q, trap, Share(sm));
     Delete(trap);
   } else {
     // 0 for p means "all true", so no trap states
-    tta = makeTTA(discrete, initial,
-      q, 0, Share(sm)
-    );
+    tta = makeTTA(discrete, initial, q, 0, Share(sm));
   }
   if (0==tta) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -208,14 +202,6 @@ public:
   PU_expl_eng();
   virtual void RunEngine(result* pass, int np, traverse_data &x);
 protected:
-  inline static void runAvgPh(hldsm* m) {
-    if (0==AvgPh) {
-      AvgPh = em->findEngineType("AvgPh");
-    }
-    result dummy;
-    if (!AvgPh) throw No_Engine;
-    AvgPh->runEngine(m, dummy);
-  }
   inline static void 
   generateTU(result* pass, int np, traverse_data &x)
   {
@@ -246,10 +232,7 @@ protected:
       virtual bool visit() {
         long ni = state()->get(0); 
         if (ni >= newvecsize) return false; // must be trap or accept
-
-        fprintf(stderr, "Converting from %ld to %ld\n", index(), ni);
-        // TBD
-
+        //fprintf(stderr, "Converting from %ld to %ld\n", index(), ni);
         CHECK_RANGE(0, index(), oldvecsize);
         CHECK_RANGE(0, ni, newvecsize);
         newvec[ni] = oldvec[index()];
@@ -339,6 +322,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 
   long mns = sm->getNumStates(false);
   double* mx = new double[mns];
+  for (long i=0; i<mns; i++) mx[i] = 0;
 
   reindex foo(ttamc->GetParent(), ttax, ttans, mx, mns);
   ttamc->visitStates(foo);
@@ -362,7 +346,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // vector is set, convert it to a stateprobs
   //
-  statedist* ans = new statedist(sm, mx, mns);
+  stateprobs* ans = new stateprobs(sm, mx, mns);
   delete[] mx;
 
   x.answer->setPtr(ans);

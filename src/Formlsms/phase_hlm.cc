@@ -108,10 +108,12 @@ void phase_dist::showState(OutputStream &s, const shared_state* x) const
       n+2     Unique trap state.
 */
 class tta_dist : public phase_dist {
+  // For initial distribution
   long* init_index;
   double* init_val;
   double* init_acc;
   int init_len;
+  //
   stochastic_lldsm* chain;
   stateset* accept;
   stateset* final;    // accept or trap states.
@@ -168,8 +170,6 @@ tta_dist
 :: tta_dist(bool d, statedist* init, stochastic_lldsm* mc, 
   stateset* a, const stateset* t) : phase_dist(d)
 {
-  DCASSERT(init);
-
   chain = mc;
   accept = Share(a);
 
@@ -178,18 +178,24 @@ tta_dist
 
   num_states = chain->getNumStates(false);
 
-  init_len = init->countNNZs();
+  if (init) {
+    init_len = init->countNNZs();
+    init_index = new long[init_len];
+    init_val = new double[init_len];
+    init->ExportTo(init_index, init_val);
+    Delete(init);
 
-  init_index = new long[init_len];
-  init_val = new double[init_len];
-  init->ExportTo(init_index, init_val);
-  Delete(init);
-
-  // accumulated initial probs, for simulation
-  init_acc = new double[init_len+1];
-  init_acc[0] = 0;
-  for (int i=0; i<init_len; i++) {
-    init_acc[i+1] = init_acc[i] + init_val[i];
+    // accumulated initial probs, for simulation
+    init_acc = new double[init_len+1];
+    init_acc[0] = 0;
+    for (int i=0; i<init_len; i++) {
+      init_acc[i+1] = init_acc[i] + init_val[i];
+    }
+  } else {
+    init_len = 0;
+    init_index = 0;
+    init_val = 0;
+    init_acc = 0;
   }
 
   to_states = 0;
@@ -263,14 +269,21 @@ void tta_dist::Sample(traverse_data &x)
   // Determine start state
   DCASSERT(x.stream);
   double u = x.stream->Uniform32();
-  int low = 0;
-  int high = init_len;
-  while (high-low>1) {
-    int mid = (low+high)/2;
-    if (u < init_acc[mid])  high = mid;
-    else                    low = mid;
+  long state;
+  if (0==init_len) {
+    // uniform
+    state = long((num_states+1)* u);
+  } else {
+    // specified distribution
+    int low = 0;
+    int high = init_len;
+    while (high-low>1) {
+      int mid = (low+high)/2;
+      if (u < init_acc[mid])  high = mid;
+      else                    low = mid;
+    }
+    state = init_index[low];
   }
-  long state = init_index[low];
   const long timeout = 2000000000;
   if (isDiscrete()) {
     long dt;
@@ -341,7 +354,8 @@ long tta_dist::setSourceState(const shared_state* s)
   source = s->get(state_index);
   if (num_states == source) {
     // vanishing initial state
-    return init_len;
+    if (init_len)   return  init_len;
+    else            return  num_states;
   }
   if (source > num_states) {
     return 1; 
@@ -371,10 +385,16 @@ double tta_dist::getOutgoingFromSource(long e, shared_state* t)
 {
   if (num_states == source) {
     // vanishing initial state
-    CHECK_RANGE(0, e, init_len);
-    t->set(state_index, init_index[e]);
-    uniqueify(t);
-    return init_val[e];
+    if (init_len) {
+      CHECK_RANGE(0, e, init_len);
+      t->set(state_index, init_index[e]);
+      uniqueify(t);
+      return init_val[e];
+    } else {
+      t->set(state_index, e);
+      uniqueify(t);
+      return 1.0;
+    }
   }
   if (source > num_states) {
     t->set(state_index, source);
@@ -2507,8 +2527,8 @@ phase_hlm* makeTTA( bool disc, statedist* initial,
 {
   stateset* ssa = dynamic_cast<stateset*>(a);
   const stateset* sst = dynamic_cast<const stateset*>(t);
-  DCASSERT(initial->getParent() == mc);
-  if (0==initial || 0==ssa || 0==mc || sst != t) {
+  DCASSERT(0==initial || initial->getParent() == mc);
+  if (0==ssa || 0==mc || sst != t) {
     Delete(initial);
     Delete(mc);
     return 0;

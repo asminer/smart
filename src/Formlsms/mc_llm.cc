@@ -944,7 +944,7 @@ void explicit_mc::getInitialStates(result &x) const
 
   intset* initss = new intset(ns);
   DCASSERT(initial);
-  initial->greater_than(0, *initss);
+  initial->greater_than(0, initss);
 
   x.setPtr(new stateset(this, initss));
 }
