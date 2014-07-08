@@ -15,26 +15,25 @@
 // #define DEBUG_EF
 // #define DEBUG_EU
 // #define DEBUG_EG
+// #define PROGRESS_EG
 #define DEBUG_AEF
 
-void Show(const exprman* em, const char* who, const intset &x)
+void Show(const char* who, const intset &x)
 {
-  em->cout() << who;
-  em->cout() << "{";
+  fprintf(stderr, "%s{", who);
   bool printed = false;
   for (long i=0; i<x.getSize(); i++) {
     if (!x.contains(i)) continue;
-    if (printed) em->cout() << ", ";
+    if (printed) fprintf(stderr, ", ");
     printed = true;
-    em->cout() << i;
+    fprintf(stderr, "%ld", i);
   }
-  em->cout() << "}\n";
-  em->cout().flush();
+  fprintf(stderr, "}\n");
 }
 
-inline void Show(const exprman* em, const char* who, stateset &sx)
+inline void Show(const char* who, stateset &sx)
 {
-  Show(em, who, sx.getExplicit());
+  Show(who, sx.getExplicit());
 }
 
 inline intset* GrabInitial(const checkable_lldsm* mdl)
@@ -57,12 +56,13 @@ inline intset* GrabInitial(const checkable_lldsm* mdl)
 // *                                                                        *
 // **************************************************************************
 
-inline void explicit_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
+inline long explicit_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
 {
   r.changeExplicit().assignFrom(q.getExplicit());
   // E p S q
   long lastcard = 0;
-  for (;;) {
+  long iters;
+  for (iters = 1; ; iters++) {
       tmp.changeExplicit().removeAll();
       mdl->forward(r.getExplicit(), tmp.changeExplicit());
       // intersect with p
@@ -73,19 +73,21 @@ inline void explicit_ES(const checkable_lldsm* mdl, const stateset &p, const sta
       if (newcard == lastcard) break;
       lastcard = newcard;
 #ifdef DEBUG_EU
-      Show(em, "r: ", r);
+      Show("r: ", r);
 #endif
   }
   // add back q states
   r.changeExplicit() += q.getExplicit();
+  return iters;
 }
 
-inline void explicit_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
+inline long explicit_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
 {
   r.changeExplicit().assignFrom(q.getExplicit());
   // E p U q
   long lastcard = 0;
-  for (;;) {
+  long iters;
+  for (iters = 1; ; iters++) {
       tmp.changeExplicit().removeAll();
       mdl->backward(r.getExplicit(), tmp.changeExplicit());
       // intersect with p
@@ -96,46 +98,51 @@ inline void explicit_EU(const checkable_lldsm* mdl, const stateset &p, const sta
       if (newcard == lastcard) break;
       lastcard = newcard;
 #ifdef DEBUG_EU
-      Show(em, "r: ", r);
+      Show("r: ", r);
 #endif
   }
   // add back q states
   r.changeExplicit() += q.getExplicit();
+  return iters;
 }
 
 // Forward reachable
-inline void forward_closure(const checkable_lldsm* mdl, stateset &r)
+inline long forward_closure(const checkable_lldsm* mdl, stateset &r)
 {
-  for (;;) {
+  for (long iters=1; ; iters++) {
 #ifdef DEBUG_EF
-      Show(em, "r: ", r);
+      Show("r: ", r);
 #endif
       bool change = mdl->forward(r.getExplicit(), r.changeExplicit());
-      if (!change) return;
+      if (!change) return iters;
   }
 }
 
 // Backward reachable
-inline void backward_closure(const checkable_lldsm* mdl, stateset &r)
+inline long backward_closure(const checkable_lldsm* mdl, stateset &r)
 {
-  for (;;) {
+  for (long iters=1; ; iters++) {
 #ifdef DEBUG_EF
-      Show(em, "r: ", r);
+      Show("r: ", r);
 #endif
       bool change = mdl->backward(r.getExplicit(), r.changeExplicit());
-      if (!change) return;
+      if (!change) return iters;
   }
 }
 
 
-inline void unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
+inline long unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
 {
+#ifdef PROGRESS_EG
+  fprintf(stderr, "Starting unfair_EH engine\n");
+#endif
+
   // build set of source states satisfying p
   intset* dps = GrabInitial(mdl);
   if (dps) *dps *= p.getExplicit();
   if (dps) {
 #ifdef DEBUG_EG
-    Show(em, "dps: ", dps);
+    Show("dps: ", *dps);
 #endif
     // if dps is empty, trash it.
     if (0==dps->cardinality()) {
@@ -146,37 +153,62 @@ inline void unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r
 
   r.changeExplicit().assignFrom(p.getExplicit());
   long card = 0;
+  long iters = 0;
   for (;;) {
+#ifdef PROGRESS_EG
+    fprintf(stderr, "EH checking termination condition\n");
+#endif
     long isrcard = r.getExplicit().cardinality();
     if (isrcard == card) break;
     card = isrcard;
 
-#ifdef DEBUG_EG
-    Show(em, "r: ", r);
+    iters++;
+#ifdef PROGRESS_EG
+    fprintf(stderr, "EH starting iteration %ld\n", iters);
 #endif
+#ifdef DEBUG_EG
+    Show("r: ", r);
+#endif
+
     tmp.changeExplicit().removeAll();
     mdl->forward(r.getExplicit(), tmp.changeExplicit());
     if (dps) tmp.changeExplicit() += (*dps);
 #ifdef DEBUG_EG
-    Show(em, "tmp: ", tmp);
+    Show("tmp: ", tmp);
 #endif
     r.changeExplicit() = tmp.getExplicit() * p.getExplicit();
   }
+#ifdef PROGRESS_EG
+  fprintf(stderr, "EH converged with cardinality %ld\n", card);
+#endif
   delete dps;
+  return iters;
 }
 
 
-inline void unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
+inline long unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
 {
+#ifdef PROGRESS_EG
+  fprintf(stderr, "Starting unfair_EG engine\n");
+#endif
+
   // build set of deadlocked states satisfying p
   stateset* dps = new stateset(mdl, new intset(p.getExplicit()));
   mdl->findDeadlockedStates(*dps);
+#ifdef PROGRESS_EG
+  fprintf(stderr, "EG: determined deadlocked states\n");
+#endif
+
   if (dps) {
 #ifdef DEBUG_EG
-    Show(em, "dps: ", *dps);
+    Show("dps: ", *dps);
 #endif
     // if dps is empty, trash it.
-    if (0==dps->getExplicit().cardinality()) {
+    long dcard = dps->getExplicit().cardinality();
+#ifdef PROGRESS_EG
+    fprintf(stderr, "EG: there are %ld deadlocked states\n", dcard);
+#endif
+    if (0==dcard) {
       delete dps;
       dps = 0;
     }
@@ -184,23 +216,36 @@ inline void unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r
 
   r.changeExplicit().assignFrom(p.getExplicit());
   long card = 0;
+  long iters = 0;
   for (;;) {
+#ifdef PROGRESS_EG
+    fprintf(stderr, "EG checking termination condition\n");
+#endif
     long isrcard = r.getExplicit().cardinality();
     if (isrcard == card) break;
     card = isrcard;
 
-#ifdef DEBUG_EG
-    Show(em, "r: ", r);
+    iters++;
+#ifdef PROGRESS_EG
+    fprintf(stderr, "EG starting iteration %ld\n", iters);
 #endif
+#ifdef DEBUG_EG
+    Show("r: ", r);
+#endif
+
     tmp.changeExplicit().removeAll();
     mdl->backward(r.getExplicit(), tmp.changeExplicit());
     if (dps) tmp.changeExplicit() += dps->getExplicit();
 #ifdef DEBUG_EG
-    Show(em, "tmp: ", tmp);
+    Show("tmp: ", tmp);
 #endif
     r.changeExplicit() = tmp.getExplicit() * p.getExplicit();
   }
+#ifdef PROGRESS_EG
+  fprintf(stderr, "EG converged with cardinality %ld\n", card);
+#endif
   delete dps;
+  return iters;
 }
 
 // **************************************************************************
@@ -209,12 +254,32 @@ inline void unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r
 // *                                                                        *
 // **************************************************************************
 
+//
+// TBD - 
+//
+// Define an abstract base class for all CTL engines,
+// and move the "report" option there.
+// Need to make this class visible to the symbolic CTL engines,
+// so probably put it in the header file.
+//
+
 /// Abstract base class for explicit CTL engines.
 class CTL_expl_eng : public subengine {
 public:
   CTL_expl_eng();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
+private:
+  static named_msg ctl_report;
+  friend void InitializeExplicitCTLEngines(exprman* em);
+protected:
+  inline void reportIters(const char* who, long iters) {
+    if (!ctl_report.startReport()) return;
+    ctl_report.report() << who << " required " << iters << " iterations\n";
+    em->stopIO();
+  }
 };
+
+named_msg CTL_expl_eng::ctl_report;
 
 CTL_expl_eng::CTL_expl_eng() : subengine()
 {
@@ -303,16 +368,16 @@ void EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   if (p) {
     stateset tmp(mdl, new intset(q->getExplicit().getSize()));
     if (pass[0].getBool()) {
-      explicit_ES(mdl, *p, *q, *r, tmp);
+      reportIters("ES", explicit_ES(mdl, *p, *q, *r, tmp));
     } else {
-      explicit_EU(mdl, *p, *q, *r, tmp);
+      reportIters("EU", explicit_EU(mdl, *p, *q, *r, tmp));
     }
   } else {
     r->changeExplicit() = q->getExplicit();
     if (pass[0].getBool()) {
-      forward_closure(mdl, *r);
+      reportIters("EH", forward_closure(mdl, *r));
     } else {
-      backward_closure(mdl, *r);
+      reportIters("EF", backward_closure(mdl, *r));
     }
   }
   
@@ -350,15 +415,15 @@ void unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(mdl);
 
 #ifdef DEBUG_EG
-  Show(em, "p: ", *p);
+  Show("p: ", *p);
 #endif
 
   stateset* r = new stateset(mdl, new intset(p->getExplicit().getSize()));
   stateset tmp(mdl, new intset(p->getExplicit().getSize()));
   if (pass[0].getBool()) {
-    unfair_EH(mdl, *p, *r, tmp);
+    reportIters("Unfair EH", unfair_EH(mdl, *p, *r, tmp));
   } else {
-    unfair_EG(mdl, *p, *r, tmp);
+    reportIters("Unfair EG", unfair_EG(mdl, *p, *r, tmp));
   }
   x.answer->setPtr(r);
 }
@@ -394,7 +459,7 @@ void fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(mdl);
 
 #ifdef DEBUG_EG
-  Show(em, "isp: ", *p);
+  Show("isp: ", *p);
 #endif
   stateset* r = new stateset(mdl, new intset(p->getExplicit()));
   mdl->getTSCCsSatisfying(*r);
@@ -407,7 +472,7 @@ void fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
       if (isrcard == card) break;
       card = isrcard;
 #ifdef DEBUG_EG
-      Show(em, "isr: ", *r);
+      Show("isr: ", *r);
 #endif
       tmp.changeExplicit().removeAll();
       mdl->backward(r->getExplicit(), tmp.changeExplicit());
@@ -423,14 +488,14 @@ void fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
       long card = r->getExplicit().cardinality();
       for (;;) {
 #ifdef DEBUG_EG
-        Show(em, "tmp: ", tmp);
+        Show("tmp: ", tmp);
 #endif
         r->changeExplicit() += tmp.getExplicit();
         long isrcard = r->getExplicit().cardinality();
         if (isrcard == card) break;
         card = isrcard;
 #ifdef DEBUG_EG
-        Show(em, "isr: ", isr);
+        Show("isr: ", *r);
 #endif
         tmp.changeExplicit().removeAll();
         mdl->forward(r->getExplicit(), tmp.changeExplicit());
@@ -487,7 +552,7 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   explicit_EU(mdl, *p, *q, *r, tmp);
 
 #ifdef DEBUG_AEF
-  Show(em, "r: ", *r);
+  Show("r: ", *r);
 #endif
 
   for (;;) {
@@ -501,7 +566,7 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
     ans->changeExplicit().complement();
     SWAP(ans, r);
 #ifdef DEBUG_AEF
-    Show(em, "r: ", *r);
+    Show("r: ", *r);
 #endif
 
     // ans = E isp U isr
@@ -511,7 +576,7 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
     }
     SWAP(ans, r);
 #ifdef DEBUG_AEF
-    Show(em, "r: ", *r);
+    Show("r: ", *r);
 #endif
   }
   Delete(r);
@@ -651,6 +716,13 @@ specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
 void InitializeExplicitCTLEngines(exprman* em)
 {
   if (0==em) return;
+
+  option* report = em->findOption("Report");
+  CTL_expl_eng::ctl_report.Initialize(report,
+    "CTL_engines",
+    "When set, CTL engine performance is reported.",
+    false
+  );
 
   RegisterEngine(
       em,
