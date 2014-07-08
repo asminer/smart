@@ -90,22 +90,6 @@ class explicit_fsm : public checkable_lldsm {
       }
     };
 
-    class findall : public GraphLib::generic_graph::element_visitor {
-      bool dead;
-      intset &ss;
-    public:
-      findall(bool d, intset &s) : ss(s) { dead = d; } 
-      virtual ~findall() { };
-      virtual bool visit(long from, long to, void*) {
-        long remove = dead ? from : to;
-#ifdef DEBUG_EG
-        em->cout() << "\tremoving " << remove << "\n";
-#endif
-        ss.removeElement(remove);
-        return ss.cardinality() == 0;
-      }
-    };
-
     class pot_visit : public lldsm::state_visitor {
       expr* p;
       intset &pset;
@@ -775,8 +759,7 @@ bool explicit_fsm::isDeadlocked(long st) const
 
 void explicit_fsm::findDeadlockedStates(stateset &ss) const
 {
-  findall foo(true, ss.changeExplicit());
-  edges->traverseAll(foo);
+  edges->noOutgoingEdges(ss.changeExplicit());
 }
 
 bool explicit_fsm::forward(const intset &p, intset &r) const
