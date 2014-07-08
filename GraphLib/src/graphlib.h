@@ -251,6 +251,24 @@ namespace GraphLib {
     */
     void unfinish();
 
+    /** Find nodes with no outgoing edges.
+        Faster if the graph is finished.
+          @param  x   On output, set of nodes with no outgoing edges.
+    */
+    inline void noOutgoingEdges(intset &x) const {
+      if (is_by_rows) rp_empty(x);
+      else            ci_empty(x);
+    }
+
+    /** Find nodes with no incoming edges.
+        Faster if the graph is finished.
+          @param  x   On output, set of nodes with no incoming edges.
+    */
+    inline void noIncomingEdges(intset &x) const {
+      if (is_by_rows) ci_empty(x);
+      else            rp_empty(x);
+    }
+
     /** Find states reached in one step.
         The graph must be finished.
           @param  x   Set of source states
@@ -410,6 +428,12 @@ namespace GraphLib {
 
     bool rowMult(const intset& x, intset& y) const;
     bool colMult(const intset& x, intset& y) const;
+
+    // check rp for empty edges
+    void rp_empty(intset &x) const;
+
+    // check ci for missing edges
+    void ci_empty(intset &x) const;
 
     template <class T> inline static void SWAP(T &x, T &y) { 
       T tmp=x; 

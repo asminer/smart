@@ -827,7 +827,44 @@ GraphLib::generic_graph::colMult(const intset& cols, intset& y) const
   return changed;
 }
 
+void
+GraphLib::generic_graph::rp_empty(intset& x) const
+{
+  x.removeAll();
+  if (finished) {
+    for (long r=0; r<num_nodes; r++) {
+      if (row_pointer[r] == row_pointer[r+1])
+        x.addElement(r);
+    }
+  } else {
+    // actually, just as fast
+    for (long r=0; r<num_nodes; r++) {
+      if (row_pointer[r]<0)
+        x.addElement(r);
+    }
+  }
+}
 
+void
+GraphLib::generic_graph::ci_empty(intset& x) const
+{
+  x.addAll();
+  if (finished) {
+    for (long z = row_pointer[num_nodes]-1; z>=0; z--)
+      x.removeElement(column_index[z]);
+  } else {
+    // can't be sure that all column index slots are in use, 
+    // so we need to do a proper traversal.
+    for (long r=0; r<num_nodes; r++) {
+      long ptr = row_pointer[r];
+      if (ptr < 0) continue;
+      long first = ptr;
+      do {
+        x.removeElement(column_index[ptr]);
+      } while (ptr != first);
+    }
+  }
+}
 
 long
 GraphLib::generic_graph::getFinishedReachable(long s, bool* reached, long* queue) const
