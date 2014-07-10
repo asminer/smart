@@ -14,14 +14,15 @@
 
 using namespace std;
 
-autocorrelation::autocorrelation(){
-  int count = 0;
-  double sum = 0.0;
-  double mean = 0.0;
-  double autocorre = 0.0;
-  double variance = 0.0;
-  double preData = 0.0;
-  double covariance = 0.0;  
+autocorrelation::autocorrelation()
+{
+  count = 0;
+  sum = 0.0;
+  mean = 0.0;
+  autocorre = 0.0;
+  variance = 0.0;
+  preData = 0.0;
+  covariance = 0.0;  
 }
 
 
@@ -65,13 +66,6 @@ double autocorrelation::getMean(){
 }
 
 autocorrelation::~autocorrelation(){
-  int count = 0;
-  double sum = 0.0;
-  double mean = 0.0;
-  double autocorrelation = 0.0;
-  double variance = 0.0;
-  double preData = 0.0;
-  double covariance = 0.0;  
 }
 
 //int main(){

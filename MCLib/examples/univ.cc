@@ -90,7 +90,7 @@ int RunTests(bool storeByRows)
     cout << "Absorbing DTMC, as expected\n";
   }
   const int grad_ren = 4-(1+grad);
-  const int fail_ren = 4-(1+fail);
+  //const int fail_ren = 4-(1+fail);
 
   if (ren.GeneralRenumbering()) {
     cout << "General renumbering?  That's wrong...\n";

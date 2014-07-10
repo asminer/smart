@@ -5,9 +5,6 @@
 
 #include <stdlib.h>
 
-const int MAX_NODE_ADD = 4096;
-const int MAX_EDGE_ADD = 4096;
-
 // ******************************************************************
 // *                                                                *
 // *                       Macros and such                          *

@@ -390,7 +390,6 @@ inline void intset::bitvector
 {
   DCASSERT(1==links);
   Resize(MIN(A.size, B.size));
-  long w = NumWords()-1;
   for (long w = NumWords()-1; w>=0; w--)
     data[w] = A.data[w] & B.data[w];
 }

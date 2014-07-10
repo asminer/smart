@@ -16,8 +16,6 @@ const char* DTMC = (discrete) ? "DTMC" : "CTMC";
 using namespace std;
 using namespace MCLib;
 
-const int bufsize = 16;
-
 #ifdef DEBUG
 class show_entries : public generic_graph::element_visitor {
   bool show_target;

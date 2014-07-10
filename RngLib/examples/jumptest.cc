@@ -65,7 +65,7 @@ int main()
 
   printf("Advancing by hand %lld steps\n", steps);
   if (steps>1000000000) printf("This might take a while...\n");
-  for (steps; steps; steps--) {
+  for ( ; steps; steps--) {
     s1->RandomWord();
   }
 
