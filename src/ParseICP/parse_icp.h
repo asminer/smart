@@ -18,7 +18,7 @@ class exprman;
 /// Defined in Options module.
 class option_manager;
 
-class parser_list;
+struct parser_list;
 class symbol;
 class expr;
 

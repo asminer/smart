@@ -196,7 +196,7 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
   em->waitTerm();
   states = StateLib::CreateCollection(false, false);
   bool OK = true;
-  error foo;
+  error foo = Engine_Failed;
   try {
     Generate_NE_rec(0);
   }

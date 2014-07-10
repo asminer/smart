@@ -124,8 +124,12 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
 
   // Add state to the backend MC
   try {
+#ifdef DEVELOPMENT_CODE
     long handle = mymc->addState();
     DCASSERT(handle == state_count);
+#else
+    mymc->addState();
+#endif
   }
   catch (MCLib::error e) {
     if (StartError(wrap)) {

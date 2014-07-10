@@ -14,7 +14,7 @@ class exprman;
 class symbol_table;
 class stochastic_lldsm;
 class stateset;
-class LS_Vector;
+struct LS_Vector;
 class intset;
 
 // ******************************************************************

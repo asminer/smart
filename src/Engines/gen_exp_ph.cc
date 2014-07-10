@@ -194,7 +194,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   long trap = -1;
   em->waitTerm();
   bool procOK = true;
-  error bailOut;
+  error bailOut = Engine_Failed;
   try {
     generateMC(phm, init, accept, trap, rss, vc);
   }

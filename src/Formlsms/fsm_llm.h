@@ -12,7 +12,7 @@ namespace StateLib {
   class state_db;
 };
 
-class LS_Vector;
+struct LS_Vector;
 class model_enum;
 class expl_rss_only;
 class lldsm;
