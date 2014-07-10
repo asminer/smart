@@ -11,3 +11,6 @@ check-old:
 
 bench:
 	cd Tests; make bench
+
+release: bin/smart
+	cp bin/smart smart.`bin/smart | awk '/SMART/{print $$3}'`.`gcc -dumpmachine`
