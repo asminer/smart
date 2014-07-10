@@ -43,5 +43,10 @@ Instructions to build
 
 6.  make install
 
-    Copies binaries into bin (otherwise they are in src/Apps)
+    (Optional.)  Copies binaries into bin (otherwise they are in src/Apps)
+
+7.  make release
+  
+    (Very optional.)  Creates canonical executable name with version,
+    architecture, and OS.
 
