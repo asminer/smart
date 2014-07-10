@@ -289,9 +289,9 @@ void EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(pass[1].isNormal());
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(p->getParent());
-  DCASSERT(mdl);
+  // const checkable_lldsm* mdl = 
+    // smart_cast <const checkable_lldsm*>(p->getParent());
+  // DCASSERT(mdl);
 
   shared_object* rdd = 0;
   try {

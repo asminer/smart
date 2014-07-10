@@ -28,7 +28,7 @@
 // **************************************************************************
 
 class exact_mcmsr : public subengine {
-  timer* w;
+  // timer* w;
 protected:
   static named_msg eng_debug;
   static named_msg eng_report;

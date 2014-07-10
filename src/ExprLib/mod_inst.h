@@ -514,7 +514,7 @@ public:
 
 private:
   instance_state state;
-  bool is_submodel;
+  // bool is_submodel;
 
   /// Total number of accepted measures
   int num_accepted_msrs;

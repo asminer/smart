@@ -490,7 +490,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   DCASSERT(dsm);
   em->waitTerm();
   bool procOK = true;
-  error bailOut;
+  error bailOut = Engine_Failed;
   try {
     if (nondeterm)  generateRG(dsm, rss, init, rg);
     else            generateMC(dsm, rss, init, vc);

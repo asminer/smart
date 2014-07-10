@@ -806,7 +806,7 @@ option* BuildOptionHeader(char* name)
 
   if (oc) {
     const option_manager* om = oc->readSettings();
-    if (om) answer = om->FindOption(name);
+    answer = om ? om->FindOption(name) : 0;
   } else {
     answer = pm ? pm->findOption(name) : 0;
   }

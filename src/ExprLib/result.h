@@ -31,7 +31,7 @@ class symbol;
       (A value can be null when no error occurs.)
 
 */  
-struct result {
+class result {
 protected:
   /// Are we a special case, or not?
   enum {

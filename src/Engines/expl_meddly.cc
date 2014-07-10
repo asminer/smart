@@ -1159,7 +1159,8 @@ class real_2001_cmds {
   }; // end of struct submatrix
 
   /// Precision for real comparison
-  static const double mergeprecision = 1e-7;
+  static const double mergeprecision;
+  //= 1e-7;
 
   /// Reduced, root MxD
   submatrix* root;
@@ -1308,6 +1309,7 @@ class real_2001_cmds {
 
 }; // end of real_2001_cmds
 
+const double real_2001_cmds::mergeprecision = 1e-7;
 
 // ******************************************************************
 // *              real_2001_cmds::submatrix Methods                 *

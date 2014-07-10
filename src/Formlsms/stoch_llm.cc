@@ -108,11 +108,13 @@ bool stochastic_lldsm::computeContinuousTTA(double, double, double* &, int &) co
 bool stochastic_lldsm::reachesAccept(double*) const
 {
   bailOut(__FILE__, __LINE__, "Can't compute stateprobs for reaching acceptance");
+  return false;
 }
 
 bool stochastic_lldsm::reachesAcceptBy(double, double*) const
 {
   bailOut(__FILE__, __LINE__, "Can't compute stateprobs for reaching acceptance by fixed time");
+  return false;
 }
 
 bool stochastic_lldsm

@@ -15,7 +15,7 @@ namespace StateLib {
 };
 
 class model_enum;
-class LS_Vector;
+struct LS_Vector;
 class expl_rss_only;
 class exprman;
 
@@ -29,7 +29,7 @@ namespace StateLib {
 // *                                                                *
 // ******************************************************************
 
-class LS_Options;
+struct LS_Options;
 class timer;
 
 class markov_lldsm : public stochastic_lldsm {
