@@ -58,6 +58,7 @@ bool expl_printer::visit()
   } else {
     x.current_state->Print(out, 0);
   }
+  out.can_flush();  // otherwise, huge sets will overflow the buffer
   return false;
 }
 

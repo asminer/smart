@@ -79,6 +79,7 @@ bool statevect_printer::visit()
   }
 
   out << myvect[x.current_state_index];
+  out.can_flush();  // otherwise, huge sets will overflow the buffer
   return false;
 }
 
