@@ -795,6 +795,7 @@ Help topic: binary ->
     proc rand bool -> proc bool            has type proc rand bool
     proc rand bool -> rand bool            has type proc rand bool
     proc rand bool -> proc rand bool       has type proc rand bool
+    stateset -> stateset                   has type stateset
 
 Help topic: binary /
     Operator / is used for division. It may be used on the following types 

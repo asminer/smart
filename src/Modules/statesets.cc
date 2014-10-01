@@ -381,6 +381,88 @@ expr* stateset_diff::buildAnother(expr *x, expr* y) const
 
 // ******************************************************************
 // *                                                                *
+// *                    stateset_implies  class                     *
+// *                                                                *
+// ******************************************************************
+
+/// Implication (ugh!) of two statesets.
+class stateset_implies : public binary {
+public:
+  stateset_implies(const char* fn, int line, expr *l, expr* r);
+  virtual void Compute(traverse_data &x);
+protected:
+  virtual expr* buildAnother(expr *x, expr* y) const;
+};
+
+// ******************************************************************
+// *                   stateset_implies  methods                    *
+// ******************************************************************
+
+stateset_implies::stateset_implies(const char* fn, int line, expr *l, expr* r)
+ : binary(fn, line, exprman::bop_implies, l->Type(), l, r)
+{
+}
+
+void stateset_implies::Compute(traverse_data &x)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(right, x);
+
+  if (!x.answer->isNormal()) return;
+
+  stateset* rt = smart_cast <stateset*> (Share(x.answer->getPtr()));
+  DCASSERT(rt);
+
+  SafeCompute(left, x);
+  if (!x.answer->isNormal()) {
+    Delete(rt);
+    return;
+  }
+
+  stateset* lt = smart_cast <stateset*> (Share(x.answer->getPtr()));
+  DCASSERT(lt);
+
+  if (lt->getParent() != rt->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Statesets in implication are from different model instances";
+      em->stopIO();
+    }
+    Delete(rt);
+    Delete(lt);
+    x.answer->setNull();
+    return;
+  }
+
+  if (lt->isExplicit() != rt->isExplicit()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Statesets in implication use different storage types";
+      em->stopIO();
+    }
+    Delete(rt);
+    Delete(lt);
+    x.answer->setNull();
+    return;
+  }
+
+  // L -> R   =  !L + R
+  //
+
+  x.answer->setPtr(
+    Union(em, this, Complement(em, this, lt), rt)
+  );
+}
+
+expr* stateset_implies::buildAnother(expr *x, expr* y) const
+{
+  return new stateset_implies(Filename(), Linenumber(), x, y);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                     stateset_union  class                      *
 // *                                                                *
 // ******************************************************************
@@ -627,27 +709,27 @@ unary* stateset_not_op::makeExpr(const char* fn, int ln, expr* x) const
 
 // ******************************************************************
 // *                                                                *
-// *                     stateset_diff_op class                     *
+// *                     stateset_binary  class                     *
 // *                                                                *
 // ******************************************************************
 
-class stateset_diff_op : public binary_op {
+/// Abstract base class for binary operations on statesets
+class stateset_binary : public binary_op {
 public:
-  stateset_diff_op();
+  stateset_binary(exprman::binary_opcode opc);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* lt, const type* rt) const;
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
 };
 
 // ******************************************************************
-// *                    stateset_diff_op methods                    *
+// *                    stateset_binary  methods                    *
 // ******************************************************************
 
-stateset_diff_op::stateset_diff_op() : binary_op(exprman::bop_diff)
+stateset_binary::stateset_binary(exprman::binary_opcode opc) : binary_op(opc)
 {
 }
 
-int stateset_diff_op::getPromoteDistance(const type* lt, const type* rt) const
+int stateset_binary::getPromoteDistance(const type* lt, const type* rt) const
 {
   DCASSERT(em);
   DCASSERT(em->STATESET);
@@ -658,13 +740,34 @@ int stateset_diff_op::getPromoteDistance(const type* lt, const type* rt) const
   return ld + rd;
 }
 
-const type* stateset_diff_op::getExprType(const type* l, const type* r) const
+const type* stateset_binary::getExprType(const type* l, const type* r) const
 {
   DCASSERT(em);
   DCASSERT(em->STATESET);
   if (em->NULTYPE==l) return 0;
   if (em->NULTYPE==r) return 0;
   return em->STATESET;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                     stateset_diff_op class                     *
+// *                                                                *
+// ******************************************************************
+
+class stateset_diff_op : public stateset_binary {
+public:
+  stateset_diff_op();
+  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+};
+
+// ******************************************************************
+// *                    stateset_diff_op methods                    *
+// ******************************************************************
+
+stateset_diff_op::stateset_diff_op() : stateset_binary(exprman::bop_diff)
+{
 }
 
 binary* stateset_diff_op
@@ -676,6 +779,38 @@ binary* stateset_diff_op
     return 0;
   }
   return new stateset_diff(fn, ln, l, r);
+}
+
+// ******************************************************************
+// *                                                                *
+// *                   stateset_implies_op  class                   *
+// *                                                                *
+// ******************************************************************
+
+class stateset_implies_op : public stateset_binary {
+public:
+  stateset_implies_op();
+  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+};
+
+// ******************************************************************
+// *                  stateset_implies_op  methods                  *
+// ******************************************************************
+
+stateset_implies_op::stateset_implies_op()
+: stateset_binary(exprman::bop_implies)
+{
+}
+
+binary* stateset_implies_op
+::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+{
+  if (0==l || 0==r) {
+    Delete(l);
+    Delete(r);
+    return 0;
+  }
+  return new stateset_implies(fn, ln, l, r);
 }
 
 // ******************************************************************
@@ -1022,6 +1157,7 @@ void InitStatesets(exprman* em, symbol_table* st)
   // Operators
   em->registerOperation(  new stateset_not_op         );
   em->registerOperation(  new stateset_diff_op        );
+  em->registerOperation(  new stateset_implies_op     );
   em->registerOperation(  new stateset_union_op       );
   em->registerOperation(  new stateset_intersect_op   );
 
