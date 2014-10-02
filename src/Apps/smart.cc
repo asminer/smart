@@ -81,7 +81,11 @@ const char* getVersionString()
     StringStream str;
     str << "SMART version ";
     str << MAJOR << "." << MINOR << "." << REVISION_NUMBER;
+#ifdef DEVELOPMENT_CODE
+    str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
+#else
     str << " (" << long(8*sizeof(void*)) << "-bit)";
+#endif
     version = str.GetString();
   }
   return version;
