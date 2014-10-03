@@ -19,7 +19,7 @@
 // #define DEBUG_REDUC_STEADY
 // #define DEBUG_DDIST_TTA
 // #define DEBUG_CDIST_TTA
-
+// #define DEBUG_STEP
 
 // ******************************************************************
 // *                       Macros and such                          *
@@ -1370,6 +1370,13 @@ int mc_base::stepGeneric(int n, double q, double* p, double* aux, double delta,
 void mc_base::forwStep(const LS_Matrix &Qtt, double q, double* p, 
   double* aux, bool normalize) const 
 {
+#ifdef DEBUG_STEP
+    printf("Forward step start  [%lf", p[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", p[i]);
+    }
+    printf("]\n");
+#endif
     // vector-matrix multiply
     for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
     Qtt.VectorMatrixMultiply(aux, p);
@@ -1402,16 +1409,45 @@ void mc_base::forwStep(const LS_Matrix &Qtt, double q, double* p,
       // divide by q
       for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
     }
+
+#ifdef DEBUG_STEP
+    printf("Forward step finish [%lf", aux[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
 }
 
 
 void mc_base::backStep(const LS_Matrix &Qtt, double q, double* p, 
   double* aux, bool) const 
 {
+#ifdef DEBUG_STEP
+    printf("Backward step start  [%lf", p[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", p[i]);
+    }
+    printf("]\n");
+#endif
     // matrix-vector multiply
     for (long s=num_states-1; s>=0; s--) aux[s] = 0.0;
     Qtt.MatrixVectorMultiply(aux, p);
+#ifdef DEBUG_STEP
+    printf("Backward step 1      [%lf", aux[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
     if (h) h->MatrixVectorMultiply(aux, p);
+#ifdef DEBUG_STEP
+    printf("Backward step 2      [%lf", aux[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
 
     // adjust for diagonals
     if (Qtt.d_one_over_diag) {
@@ -1433,5 +1469,13 @@ void mc_base::backStep(const LS_Matrix &Qtt, double q, double* p,
 
     // divide by q
     if (q != 1) for (long s=num_states-1; s>=0; s--)  aux[s] /= q;
+
+#ifdef DEBUG_STEP
+    printf("Backward step finish [%lf", aux[0]);
+    for (long i=1; i<num_states; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
 }
 
