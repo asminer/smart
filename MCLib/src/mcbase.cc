@@ -1280,7 +1280,13 @@ void mc_base::genericTransient(double t, double* p, transopts &opts,
             opts.accumulator[s] += p[s] * tail;
           } // for s
         }
-      } // if successful
+      } else {
+        // DTMC gets to steady state before L;
+        // final vector should equal the DTMC probability vector
+        for (long s=num_states-1; s>=0; s--) {
+          opts.accumulator[s] = p[s];
+        }
+      }
   }
   memcpy(p, opts.accumulator, num_states * sizeof(double));
 
