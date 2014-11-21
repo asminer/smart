@@ -53,6 +53,7 @@ try_mddlib() {
 }
 
 find_mddlib() {
+  try_mddlib $SMARTLIBS && return 0
   try_mddlib $MDD_LIBRARY && return 0
   try_mddlib $HOME/Meddly/trunk && return 0
   printf "Cannot find MDD Library\n"
@@ -74,6 +75,7 @@ try_simlib() {
 }
 
 find_simlib() {
+  try_simlib $SMARTLIBS && return 0
   try_simlib $SIM_LIBRARY && return 0
   try_simlib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Simulation Library\n"
@@ -93,6 +95,7 @@ try_rnglib() {
 }
 
 find_rnglib() {
+  try_rnglib $SMARTLIBS && return 0
   try_rnglib $RNG_LIBRARY && return 0
   try_rnglib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find RNG Library\n"
@@ -112,6 +115,7 @@ try_lslib() {
 }
 
 find_lslib() {
+  try_lslib $SMARTLIBS && return 0
   try_lslib $LS_LIBRARY && return 0
   try_lslib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Linear Solver Library\n"
@@ -131,6 +135,7 @@ try_statelib() {
 }
 
 find_statelib() {
+  try_statelib $SMARTLIBS && return 0
   try_statelib $STATE_LIBRARY && return 0
   try_statelib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Explicit State Storage Library\n"
@@ -150,6 +155,7 @@ try_graphlib() {
 }
 
 find_graphlib() {
+  try_graphlib $SMARTLIBS && return 0
   try_graphlib $GRAPH_LIBRARY && return 0
   try_graphlib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Explicit Graph Library\n"
@@ -169,6 +175,7 @@ try_mclib() {
 }
 
 find_mclib() {
+  try_mclib $SMARTLIBS && return 0
   try_mclib $MC_LIBRARY && return 0
   try_mclib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Explicit Markov chain Library\n"
@@ -188,6 +195,7 @@ try_islib() {
 }
 
 find_islib() {
+  try_islib $SMARTLIBS && return 0
   try_islib $IS_LIBRARY && return 0
   try_islib $HOME/SmartLibs/trunk && return 0
   printf "Cannot find Explicit Integer Set Library\n"
