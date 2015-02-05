@@ -1,0 +1,11 @@
+# Forbid non-ISU addresses for now.
+Order deny,allow
+Deny from all
+Allow from 127.0.0.1
+Allow from ::1
+Allow from .iastate.edu
+
+# Disable Directory Listings
+Options -Indexes
+
+# EOF
