@@ -1,0 +1,25 @@
+
+// $Id$
+
+ctmc bd(int n, real brate, real drate) := {
+  for (int i in {0..n}) {
+    state s[i];
+  }
+  init(s[0]:1);
+  for (int i in {1..n}) {
+    arcs(s[i]:s[i-1]:drate, s[i-1]:s[i]:brate);
+  }
+  real p_full := prob_ss(in_state(s[n]));
+  real p_empty := prob_ss(in_state(s[0]));
+};
+
+real BR := read_real("birth rate");
+real DR := read_real("death rate");
+
+compute(BR);
+compute(DR);
+
+for (int i in {0..10}) {
+  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty, 
+        " full: ", bd(i, BR, DR).p_full, "\n");
+}

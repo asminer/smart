@@ -1,0 +1,34 @@
+
+// $Id:$
+
+/*
+  Birth death model as a SPN
+*/
+
+pn bd(int n, real BR, real DR) := {
+  place pop;
+  trans birth, death;
+  
+  arcs(birth:pop, pop:death);
+  inhibit(pop:birth:n);
+
+  init(pop:1);
+
+  firing(birth: expo(BR), death: expo(DR));
+
+  real p_empty := prob_ss(tk(pop)==0);
+  real p_full  := prob_ss(tk(pop)==n);
+  real avg_pop := avg_ss(tk(pop));
+};
+
+
+real BR := read_real("birth rate");
+real DR := read_real("death rate");
+
+compute(BR);
+compute(DR);
+
+for (int i in {0..10}) {
+  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty, " full: ", 
+        bd(i, BR, DR).p_full, " avg: ", bd(i, BR, DR).avg_pop, "\n");
+}
