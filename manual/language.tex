@@ -1,0 +1,1835 @@
+% 
+% $Id$
+%
+
+\chapter{The {\smart} language} \label{SEC:Language}
+\markboth{THE SMART LANGUAGE}{}
+
+This chapter introduces the {\smart} tool, its input language, and
+its capabilities.
+After an initial overview section, three main sections describe
+how to define and manipulate deterministic quantities, random variables,
+and stochastic processes, respectively.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+
+This section describes how to run {\smart} and the general structure of
+{\smart} input files.
+We adopt the convention of using a ``\Code{.sm}'' extension for the names
+of these files, but this is not a requirement.
+
+\subsection{Running {\smart}} 
+
+Normally, {\smart} is run on one or more input files.
+The command line used to run {\smart} on input file \Code{ff.sm} is
+\begin{quote}
+\Unix{smart ff.sm}
+\end{quote}
+The input can also be partitioned over multiple files,
+and it is possible to specify the standard input stream instead
+of an ordinary file, by using ``\Code{-}''.
+For example,
+\begin{quote}
+\Unix{smart ff1.sm ff2.sm - ff3.sm - ff4.sm}
+\end{quote}
+directs {\smart} to obtain input from file \Code{ff1.sm},
+then file \Code{ff2.sm},
+then the standard input (until the end-of-file is encountered),
+then file \Code{ff3.sm}, then file \Code{ff4.sm}.
+Note that the standard input stream is closed after finding the end-of-file,
+thus the second \Code{-} specifier has no effect and files \Code{ff3.sm} and
+\Code{ff4.sm} will not be able to read from standard input
+(i.e., they cannot use functions that perform runtime input).
+
+
+Running {\smart} with no arguments will display a help screen with version
+information, as well as any command-line switches.
+An important new feature of {\smart} is its built-in \emph{help} mechanism,
+which may be invoked from the command line using the switch \Code{-h}.
+For example,
+\begin{quote}
+\Unix{smart -h ctmc}
+\end{quote}
+will display documentation about the \Code{ctmc} formalism.
+
+\subsection{Comments}
+
+A {\smart} input file can contain comments.
+Both single-line comments
+\begin{lstlisting}
+int i := 1; // a single-line comment
+\end{lstlisting}
+and bracketed comments
+\begin{lstlisting}
+int i := 1; /* a bracketed
+               comment */
+\end{lstlisting}
+can be used.
+In the first case, the comment, starting from ``\Code{//}'' until the
+end of the line, is ignored.
+In the second case, the comment, starting from ``\Code{/*}'' until the
+``\Code{*/}'', is ignored.
+
+
+\subsection{\Code{\# include} directive}
+
+{\smart} provides a file inclusion directive.
+If a line
+\begin{lstlisting}
+#include "abc.sm"
+\end{lstlisting}
+appears anywhere in an input file (except within the quotes delimiting a string
+or in a comment), the contents of file \Code{abc.sm} are read and used as if
+they appeared in place of the \Code{include} line.
+
+Inclusion directives can be recursively applied (i.e., an included file
+can contain inclusion directives), as long as no circular
+inclusions exist (e.g., if \Code{abc.sm} includes \Code{def.sm},
+\Code{def.sm} cannot include \Code{abc.sm}).
+
+
+\subsection{{\smart} statements}
+
+A {\smart} input consists of a sequence of statements.
+There are four classes of basic statements and two classes of
+compound statements, which can be nested:
+\begin{itemize}
+\item
+A {\bf \index{declaration}declaration} statement
+is used to declare a \emph{function} of some set of \emph{parameters}.
+As a special case, the set of parameters for a function can be empty,
+thus the function is a constant.
+In this sense, however, being ``constant'' should not to be confused with
+being non-random (i.e., deterministic).
+To ensure strict type-checking, the \emph{type} of the function and of
+its parameters must be defined.  
+\item
+A {\bf \index{definition}definition} statement is used to
+declare a function in the same
+way declaration statements do, but it also specifies how to compute its value.
+\item
+An {\bf expression} statement is used to print the value of an expression,
+although some function calls appearing in the expression
+can also have side-effects,
+such as generating output (see function \Code{print}),
+or terminating the program (see function \Code{exit}).
+
+\item
+An {\bf option} statement is used to modify the behavior of {\smart}.
+For example, there are options to control the solution algorithms (such
+as the precision or the maximum number of iterations) or the level
+of verbosity.
+Options statements appear on a single line beginning with ``\Code{\#}''
+(the \Code{\# include} directive also begins with a ``\Code{\#}'', but it
+should not be considered a statement).
+\item
+A \Code{for} compound statement is used to define arrays or to
+repeatedly evaluate parametric expressions.
+This is particularly useful for studies that explore how a result is
+affected by a change in the modeling assumptions, such as the rate of
+an event or the maximum size of a buffer.
+\item
+A \Code{converge} compound statement is used to specify a numerical fixpoint
+iteration of the type often employed in conjuction with approximations.
+\end{itemize}
+
+
+The {\smart} language is strictly-typed, so objects belong to a \emph{type}:
+\Code{void},
+\Code{int},
+\Code{bigint},
+\Code{real},
+\Code{bool}, or
+\Code{string}.
+All types are predefined, that is, dynamic definition of new types is not
+possible, except for the creation of (multi-dimensional) arrays.
+In addition to a type, an object also has a \emph{nature}, that is, it can
+be a \emph{deterministic quantity} (the default),
+a \emph{random variable}, or a \emph{stochastic process}.
+For example, if we are modeling a computer system,
+the number of processes waiting for the CPU as a function of time
+is a stochastic process,
+the number of processes waiting for the CPU at time 10 is a random
+variable, and the average number of processes waiting for the CPU at time 10
+is a deterministic quantity.
+The following three sections describe how to specify deterministic quantities,
+random variables, and stochastic processes.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Deterministic quantities}
+
+The {\smart} language can be used to perform ``calculator-like'' computations.
+It is important to become familiar with these simpler features of
+the language before moving onto random variables and stochastic processes.
+
+\subsection{A constant: $\pi$}
+
+An example of a simple definition is
+\begin{lstlisting}
+real pi := 3.14;
+\end{lstlisting}
+which defines the constant \Code{pi} of type \Code{real} with value
+\Code{3.14}.  Since the {\smart} language is declarative, not procedural,
+the value of \Code{pi} is now set for the rest of its life.  A second
+definition
+\begin{lstlisting}
+real pi := 3.1415;
+\end{lstlisting}
+causes an error.  Indeed, even a second occurrence of exactly the same
+definition causes an error: each function can appear exactly once on
+the left-hand side of a definition statement.
+To query the value of \Code{pi}, we use an expression statement:
+\begin{lstlisting}
+pi;
+\end{lstlisting}
+which outputs the following line to the current output stream:
+\lstset{language=output}
+\begin{lstlisting}
+3.14
+\end{lstlisting}
+\lstset{language=smart}
+If we wanted a more informational output, we could format it
+using the predefined function \Code{print}:
+\begin{lstlisting}
+print("The value of pi is ", pi, ".\n");
+\end{lstlisting}
+which would output the following line to the current output stream:
+\lstset{language=output}
+\begin{lstlisting}
+The value of pi is 3.14.
+\end{lstlisting}
+\lstset{language=smart}
+
+
+
+
+
+
+\subsection{A recursive one-parameter function: the factorial}
+\label{SEC:factorial}
+
+We can define a function to compute the factorial of an integer,
+$n! = 1 \cdot 2 \cdot \ldots \cdot n$, as
+\begin{lstlisting}
+int fact(int n) := cond(n==0,1,n*fact(n-1));
+\end{lstlisting}
+The predefined function \Code{cond} returns the value of the second or
+third parameter, according to whether the first parameter is \Code{true}
+or \Code{false}, respectively.
+
+We can call a function using either
+\emph{named} parameter notation or with \emph{positional} parameter notation.
+Thus, both \Code{fact(n:=7)} and \Code{fact(7)} evaluate to $7!$,
+i.e., \Code{5040}.
+The named parameter notation is especially useful to avoid errors and improve
+readability when a function has many parameters.
+
+\subsection{Arrays: the first ten factorial numbers}
+
+The definition of function \Code{fact} does not
+cause any computation to be performed.
+To compute and output the value of the
+first ten factorial numbers, we can use a \Code{for} statement:
+\begin{lstlisting}
+for (int i in {0..9}) {
+  fact(n:=i);
+}
+\end{lstlisting}
+but doing so requires the computation of each factorial number ``from scratch''.
+A better way to do this is to use an array \Code{f} indexed by an
+\emph{iterator} \Code{i}:
+\begin{lstlisting}
+for (int i in {0..9}) {
+  int f[i] := cond(i==0,1,i*f[i-1]);
+  f[i];
+}
+\end{lstlisting}
+This defines an array \Code{f} with an index set from \Code{0} to \Code{9},
+with a step of one (the default).  To refer to a particular value computed
+inside a \Code{for} statement from a subsequent statement, the traditional
+``square brackets'' notation is used.  
+This definition is the most efficient, since it requires only nine
+multiplications in total.
+However, it computes only the first ten factorial numbers:
+it does not help if we need to compute $12!$.
+
+A fundamental observation is appropriate at this point.
+Since {\smart} does not evaluate a function until its value is required in
+output, our array-based definition of the first ten factorial numbers
+is just as efficient when written as
+\begin{lstlisting}
+for (int i in {9..0..-1}) {
+  int f[i] := cond(i==0,1,i*f[i-1]);
+}
+for (int i in {9..0..-1}) {
+  f[i];
+}
+\end{lstlisting}
+that is, if we were counting \Code{i} down from 9 to 0
+(the step is explicitly specified to be \Code{-1} in
+the above \Code{for} statements).
+Note, however, that
+\begin{lstlisting}
+for (int i in {9..0..-1}) {
+  int f[i] := cond(i==0,1,i*f[i-1]);
+  f[i];
+}
+\end{lstlisting}
+would result in an error message because it attempts to output
+\Code{f[i]}, which requires the value of \Code{f[i-1]}, before
+\Code{f[i-1]} has been defined.
+
+
+
+
+
+\subsection{Managing large integers}
+
+Ordinary \Code{int} quantities can only store quantities in a limited
+range, $[-2^{31},2^{31}-1]$ on most machines.
+In \smart, much larger integers have to be manipulated at times,
+thus an ``arbitrary-size integer'' type, \Code{bigint}, is provided as well.
+For example, if we define the two factorial functions
+\begin{lstlisting}
+bigint bfact(int n) := cond(n==0,1,bfact(n-1)*n);
+int    ifact(int n) := cond(n==0,1,ifact(n-1)*n);
+\end{lstlisting}
+the \Code{for} statement
+\begin{lstlisting}
+for (int i in {1..20}) {
+  print("ifact(",i:2,") = ",ifact(i):11,"    bfact(",i:2,") = ",bfact(i),"\n");
+}
+\end{lstlisting}
+would produce, in output,
+\begin{lstlisting}
+ifact( 1) =           1    bfact( 1) = 1
+ifact( 2) =           2    bfact( 2) = 2
+ifact( 3) =           6    bfact( 3) = 6
+...
+ifact(10) =     3628800    bfact(10) = 3,628,800
+ifact(11) =    39916800    bfact(11) = 39,916,800
+ifact(12) =   479001600    bfact(12) = 479,001,600
+ifact(13) =  1932053504    bfact(13) = 6,227,020,800
+...
+ifact(19) =   109641728    bfact(19) = 121,645,100,408,832,000
+ifact(20) = -2102132736    bfact(20) = 2,432,902,008,176,640,000
+\end{lstlisting}
+%ifact( 1) =           1    bfact( 1) = 1
+%ifact( 2) =           2    bfact( 2) = 2
+%ifact( 3) =           6    bfact( 3) = 6
+%ifact( 4) =          24    bfact( 4) = 24
+%ifact( 5) =         120    bfact( 5) = 120
+%ifact( 6) =         720    bfact( 6) = 720
+%ifact( 7) =        5040    bfact( 7) = 5,040
+%ifact( 8) =       40320    bfact( 8) = 40,320
+%ifact( 9) =      362880    bfact( 9) = 362,880
+%ifact(10) =     3628800    bfact(10) = 3,628,800
+%ifact(11) =    39916800    bfact(11) = 39,916,800
+%ifact(12) =   479001600    bfact(12) = 479,001,600
+%ifact(13) =  1932053504    bfact(13) = 6,227,020,800
+%ifact(14) =  1278945280    bfact(14) = 87,178,291,200
+%ifact(15) =  2004310016    bfact(15) = 1,307,674,368,000
+%ifact(16) =  2004189184    bfact(16) = 20,922,789,888,000
+%ifact(17) =  -288522240    bfact(17) = 355,687,428,096,000
+%ifact(18) =  -898433024    bfact(18) = 6,402,373,705,728,000
+%ifact(19) =   109641728    bfact(19) = 121,645,100,408,832,000
+%ifact(20) = -2102132736    bfact(20) = 2,432,902,008,176,640,000
+
+Note that the \Code{int} factorial overflows from \Code{13} on,
+so that the returned values are incorrect, and can even be negative,
+as \Code{ifact(20)} illustrates.
+{\smart} does not raise an error when an overflow happens:
+this is unfortunate, but it is common integer behavior
+in modern programming languages.
+
+Using a \Code{bigint} instead of an \Code{int} ensures that the
+correct value is computed, but incurs a substantial overhead.
+Thus, {\smart} uses ordinary integers for its normal internal operations,
+and the \Code{bigint} type should be used only when needed.
+It is the responsibility of the user to decide when this is the case.
+
+\PRIVATE{Need to discuss ``\Code{,}'' in formatting of \Code{bigint}}
+
+
+\IGNORE{
+\subsection{A \Code{real} iterator}
+
+\PRIVATE{Is this something we want to forbid from future versions?
+In restrospect, it might be more trouble than it is worth it...}
+
+Array iterators can be of type \Code{real}, as in the following
+example defining a three-element array \Code{y}:
+\begin{lstlisting}
+for (real x in {O.1,O.2,0.4}) {
+  real y[x] := 3*x*x;
+}
+\end{lstlisting}
+Care must be taken to avoid indexing errors due to the finite precision of
+floating-point arithmetic.  
+To address this problem, {\smart} considers two floating-point indices to be
+equal if they are within an absolute or relative precision $\delta$.
+In the above example, {\smart} evaluates the expression \Code{y[x]} to 
+\Code{y[0.1]} for any value of \Code{x} satisfying 
+\[
+  \begin{array}{c@{~~~~}l}
+     0.1-\delta \leq \Code{x} \leq 0.1+\delta
+     & 
+     \mbox{if absolute precision is used,}
+     \\
+     0.1-0.1\delta \leq \Code{x} \leq 0.1+0.1\delta
+     &
+     \mbox{if relative precision is used.}
+  \end{array}
+\]
+The value of $\delta$ is dictated by the option \Code{IndexPrecision}
+(with a default of $10^{-5}$) and the
+type of precision test is dictated by the option \Code{IndexPrecisionTest}
+(with default value \Code{RELATIVE}, the other possible value
+being \Code{ABSOLUTE}).
+Thus, if the options are set using the statements
+\begin{lstlisting}
+# IndexPrecisionTest ABSOLUTE
+# IndexPrecision  0.015
+\end{lstlisting}
+then the expression \Code{y[0.099]} evaluates to \Code{0.03}, and the
+expression \Code{y[0.08]} results in a ``range error'' message,
+and evaluates to \Code{null}.
+}
+
+
+
+
+
+\subsection{Specifying numeric sets to be used in \Code{for} statements}
+
+A numeric set of \Code{int} or \Code{real} values can be specified by explicitly
+listing its elements, e.g., \verb%{3,4,7}% or \verb%{0.3,0.4,0.7}%.
+The type of a set defined this way is \verb%{int}% if each of its elements
+is an \Code{int}, \verb%{real}% if each of its elements is a \Code{real}.
+No mixing of \Code{int} and \Code{real} elements is allowed.  
+
+\IGNORE{
+The type of a set defined this way is \verb%{int}% if each of its elements
+is an \Code{int}, \verb%{real}% if any of its elements is a \Code{real}.
+Thus, for example, \verb%{3,4,7.0}% is of type \verb%{real}%.
+}
+
+It is also possible to specify a range of elements, instead of a single
+element,  when defining a set.
+A range has the syntax \Code{$first$..$upper$..$step$} and is equivalent
+to explicitly specifying the elements $first$, $first+step$,
+$first+step+step$, and so on, up to, but not included, the first element
+that exceeds $upper$.
+Exceptions: if $step$ evaluates to $0$, the range identifies the single
+element $first$ while, if $first > upper$ and $step > 0$,
+or $first < upper$ and $step < 0$, the range identifies no elements at all;
+in either case {\smart} issues a warning message.
+The type of the elements identified by a range
+is \Code{real} if $first$, $upper$, or $step$ is \Code{real},
+it is \Code{int} otherwise.
+When $first$ and $upper$ have type \Code{int}, $step$ can be omitted:
+it defaults to \Code{1}, thus \Code{3..7} is equivalent to \Code{3..7..1},
+they both identify the elements \Code{3,4,5,6,7}.
+However, it is an error to omit the $step$ when $first$ or $upper$
+have type \Code{real}.
+It is possible to mix the two modes of set specification, as in
+\verb%{1,3,5..10,20..50..5}%.
+Care must be taken when using \Code{real} ranges, due to the finite
+precision of floating point numbers:
+\Code{\{0.1..0.9..0.1\}} might specify either eight or nine \Code{real}
+elements, depending on whether the result of summing
+nine values \Code{0.1} is greater than \Code{0.9} or not,
+when these quantities are represented as floating-point numbers
+(one could specify \Code{\{0.1..0.91..0.1\}} to ensure that the range
+contains exactly nine elements).
+\IGNORE{
+As expected, the type of the set is \verb%{real}% if any of the elements
+specified has type \Code{real}, otherwise it is \verb%{int}%.
+}
+
+While not, strictly speaking, a set property, the order in which the elements
+are specified in the set is important in {\smart};
+for example, it affects the order in
+which a \Code{for} statement is executed.
+In turn, this order can affect correctness or efficiency.
+{\smart} respects the order specified by the user, so, for example,
+\verb%{-3..0}% and \verb%{0..-3..-1}% represent the same set,
+but with the elements in reverse order.
+Note that it is not an error to specify the same element multiple times
+in a set, but any subsequent specification is ignored.
+Thus, the two set specifications \verb%{1,3,2..6,4,8}% and
+\verb%{1,3,2,4,5,6,8}% are exactly equivalent, with respect to both the
+elements they contain and their order.
+
+\PRIVATE{We might want to drop sets of reals...}
+
+
+
+
+\subsection{Nested \Code{for} statements}
+
+Since \Code{for} statements can be nested, the dimensionality of a
+declaration is determined by the sequence of iterators, from the
+outermost to the innermost.  For example,
+\begin{lstlisting}
+for (int n in {1,2}) {
+  for (int k in {1..5}, int i in {3,7,5}) {
+    real g[n][k][i] := 0.2*n*k*i;
+  }
+}
+\end{lstlisting}
+defines a tridimensional ($2 \times 5 \times 3$)
+array \Code{g} of \Code{real} constants.
+Note that the scope of the iterators in a \Code{for} statement is local to that
+statement and to those included in it.
+
+It is an error to define objects with a smaller dimensionality than that
+corresponding to the enclosing \Code{for} statements, or with indices
+in an order other than that in which they appear as iterators
+Thus, the definition of \Code{h} in
+\begin{lstlisting}
+for (int i in {0..9}, int j in {0..9}) {
+  int h[i] := ...;
+  int f[i][j] := ...;
+  int g[j][i] := ...;
+}
+\end{lstlisting}
+is illegal because it does not have index \Code{j}, while the definition
+of \Code{g} is illegal because index \Code{i} follows index \Code{j}.
+
+Analogously, it is illegal
+to define functions with parameters within a \Code{for} statement,
+such as \Code{fact} in the following:
+\begin{lstlisting}
+for (int i in {0..9}) {
+  int fact(int n) := cond(n==0,1,n*fact(n-1));
+  int f[i] := fact(i);
+}
+\end{lstlisting}
+This is because such a function would be either independent of the
+iterators (as \Code{fact} is in the above example), or
+dependent on them;
+in the former case, it could be specified outside the \Code{for} statement,
+in the latter the semantic of calling it from outside the \Code{for}
+statement would be undefined, since the iterators have no value
+outside the \Code{for} statement.
+
+
+\subsection{Parameter defaults}
+
+Normally, each formal parameter in the definition of a function must
+correspond to an actual parameter in a function call.
+However, it is possible to set default values for the formal parameters.
+If we define
+\begin{lstlisting}
+int f2(int a:=1, int b) := a*b;
+\end{lstlisting}
+the function calls \Code{f2(a:=1,b:=3)}, \Code{f2(1,3)},
+\Code{f2(a:=default,b:=3)}, \Code{f2(default,3)}, or \Code{f2(b:=3)} are
+exactly equivalent.
+However, the call \Code{f2(3)} is illegal: named
+parameters must be used if some parameters are not listed explicitly.
+
+Note that it is possible to define a default value for each parameter
+of a function, but it is not possible to call that function with an
+implicit default for all of its parameters
+(i.e., at least one of them must be set to \Code{default} explicitly),
+since the function must be invoked with named parameters.
+
+\IGNORE{
+\subsection{A parallelizable \Code{for} statement}
+
+The \Code{for} statement is a natural candidate for parallelization.
+Indeed, {\smart} can recognize parallelism and perform
+the concurrent computation of all the values specified in a \Code{for}
+statement, provided no dependencies from one ``iteration'' to the next exist,
+
+For example, the 100 values
+\begin{lstlisting}
+for (int i in {0..9}, int j in {0..9}) {
+  int measure[i][j] := mymodel(i,j);
+}
+\end{lstlisting}
+can be computed concurrently,
+This reduces the total execution time in cases where the solution of
+\Code{mymodel}
+requires substantial computation, and multiple processors are available.
+Such situations are common in parametric modeling studies.
+}
+
+\subsection{Overloading: a \Code{real} factorial} \label{SEC:realFactorial}
+
+The {\smart} language allows identifier overloading.
+The same identifier can be used to define multiple functions, as long as
+the order, type, or name of the formal parameters can be used to
+distinguish which one is meant by a function call.  For example, we
+could define both an ``integer factorial'' and a ``real factorial'':
+\begin{lstlisting}
+int  fact(int  n) := cond(n<1,1  ,n*fact(n-1));
+real fact(real n) := cond(n<1,1.0,n*fact(n-1));
+\end{lstlisting}
+Then, \Code{fact(8)} and \Code{fact(5.4)} would call the standard
+(integer) factorial or the real factorial, respectively.
+
+\IGNORE{
+Overloading also applies to arrays.  If we defined
+\begin{lstlisting}
+for (int i in {0..9}) {
+  real f[i] := i * 1.0;
+}
+for (real i in {1.0..9.0..1.0}) {
+  real f[i] := i * 10.0;
+}
+\end{lstlisting}
+the expressions \Code{f[2]} and \Code{f[2.0]} would refer to the first and
+second array, respectively.
+}
+Furthermore, we can define arrays and functions with the same name;
+these are distinguished at the syntactical level by the use of
+``\Code{[]}'' or ``\Code{()}'', respectively.
+
+As always, common sense should be followed:
+overloading can be helpful when used judiciously, but it can become confusing
+when overused, and it can lead to ambiguous function calls altogether.
+For example, if we have defined the functions
+\begin{lstlisting}
+int f(real y) := ... ;
+int f(real x) := ... ;
+\end{lstlisting}
+we can distinguish between them with the named parameter calls
+\Code{f(x:=1.0)} and \Code{f(y:=1.0)}, but {\smart} rejects the positional
+parameter call \Code{f(1.0)} as illegal.
+Conversely, the functions
+\begin{lstlisting}
+int f(real x, int i) := ... ;
+int f(int i, real x) := ... ;
+\end{lstlisting}
+cannot be distinguished if we use the named parameter call
+\Code{f(x:=3.1,i:=1)}, but can be
+distinguished if we use the positional calls \Code{f(3.1,1)}
+and \Code{f(1,3.1)}.
+For analogous reasons, the functions
+\begin{lstlisting}
+int f(int i:=1) := ... ;
+int f(real x:=2) := ... ;
+\end{lstlisting}
+cannot be called using \Code{f(default)}.
+Finally, the type returned by a function cannot be used to resolve ambiguities
+due to overloading, thus, when {\smart} reads the second definition for \Code{f}
+in
+\begin{lstlisting}
+int f(int x):= ... ;
+real f(int x):= ... ;
+\end{lstlisting}
+it will issue an error message and ignore it.
+
+
+
+
+\subsection{Type promotions: manual or automatic?}
+
+\begin{table}
+\renewcommand{\arraystretch}{0.97}
+\begin{center}\begin{tabular}{| l | l |}
+\hline
+\multicolumn{1}{| c |}{\bf Original type} &
+\multicolumn{1}{  c |}{\bf Promoted type} \\
+\hline
+\hline
+\Code{int              }&\Code{real}\\
+\Code{int              }&\Code{bigint}\\
+\Code{bigint           }&\Code{real}\\
+\Code{rand int         }&\Code{rand real}\\
+\Code{proc int         }&\Code{proc real}\\
+\hline
+\Code{bool             }&\Code{rand bool}\\
+\Code{int              }&\Code{ph int}\\
+\Code{ph int           }&\Code{rand int}\\
+\Code{real             }&\Code{rand real}\\
+\Code{ph real          }&\Code{rand real}\\
+\hline
+\Code{rand bool        }&\Code{proc bool}\\
+\Code{rand int         }&\Code{proc int}\\
+\Code{rand real        }&\Code{proc real}\\
+\hline
+\Code{proc bool        }&\Code{bool}\\
+\Code{proc int         }&\Code{int}\\
+\Code{proc real        }&\Code{real}\\
+\hline
+\end{tabular}\end{center}
+\caption{Automatic type promotions.}
+\label{TAB:typePromotions}
+\end{table}
+
+Assume that we defined an integer constant \Code{k}, and we now want
+to call the real factorial function with \Code{k} as the actual
+parameter.  One reason for wanting to do this is that, if \Code{k} is
+large, the integer factorial function might result in an overflow,
+while the value real factorial might still fit in the floating point
+representation of the machine.
+
+We can force an automatic conversion by summing a (real) zero to
+\Code{k}, as in \Code{fact(k+0.0)}.  This method works, but is inelegant;
+a much better way is to use an explicit type conversion, \Code{fact(real(k))}.
+
+For simplicity's sake, promotions such as the \Code{int}-to-\Code{real}
+promotion for \Code{int k} in the expression \Code{k+0.0}, occur automatically.
+Table \ref{TAB:typePromotions} lists the automatic
+type promotions that can take place when evaluating an expression.
+Other promotions must be explicitly requested
+using the syntax \Code{new\_type(variable)}, where it must be possible
+to promote the type of \Code{variable} to \Code{new\_type}.
+In addition to the automatic promotions of Table \ref{TAB:typePromotions},
+the legal explicit promotions are
+from \Code{bigint} to \Code{int} and from \Code{real} to \Code{int}
+or to \Code{bigint}.
+Note that \Code{int(x)} and \Code{bigint(x)} discard the decimal portion of
+the real value \Code{x} while, if rounding to the closest integer is desired,
+\Code{round(x)} should be used instead.
+Functions \Code{floor} and \Code{ceiling} are also available.
+For example,
+\Code{int(3.2)},
+\Code{floor(3.2)}, and
+\Code{round(3.2)} evaluate to \Code{3}, while
+\Code{ceiling(3.2)} evaluates to \Code{4};
+\Code{int(-3.2)},
+\Code{round(-3.2)},
+and \Code{ceiling(-3.2)}
+evaluate to \Code{-3}, while
+\Code{floor(-3.2)}, evaluates to \Code{-4}.
+
+
+
+
+
+We observe that the \Code{real}-to-\Code{int} and \Code{bigint}-to-\Code{int}
+conversions cause an overflow if the value to be converted does not fit
+in an \Code{int} type;
+indeed, even the \Code{bigint}-to-\Code{real} conversion can overflow,
+since a \Code{bigint} can have thousands of digits 
+({\smart} issues a warning message in this case, and the value of
+the converted expression is set to \Code{null}).
+
+Also, casting an \Code{int} or \Code{bigint} into a \Code{real}
+may cause loss of precision, since the number of bits for the mantissa
+is fixed to a relatively small number in the internal representation
+of a \Code{real} (of course, no warning is issued in this case).
+
+Promotion of the actual parameters in a function call or of the
+expressions used to index an array, however, requires special
+attention, because of the possible ambiguities arising from
+overloading.  Consider for example the definitions
+\begin{lstlisting}
+real x(int i, real j) := ... ;
+real x(real i, int j) := ... ;
+\end{lstlisting}
+The function calls \Code{x(1,1.0)} and \Code{x(1.0,1)} clearly refer to
+the first and second definitions, respectively.  The call \Code{x(1,1)},
+however, could refer to either, depending on whether the first or the
+second actual parameter is promoted to \Code{real}.
+{\smart} first attempts to find a function or array requiring no promotion at
+all, that is, a function or array for which the formal parameters or indices
+exactly match the actual parameters or indices used in the expression.
+Only if this fails is promotion attempted.
+If there are multiple choices for promoting the set of parameters,
+{\smart} searches for a unique choice that requires promoting the minimum
+number of parameters: if there is such a function or array, it is chosen;
+otherwise, {\smart} issues an error message.
+The option \Code{ParameterWarnings} controls under what conditions a warning is
+issued when {\smart} automatically promotes parameters in function calls
+(see section \ref{SEC:smart-options}).
+
+\IGNORE{
+Finally, note that a set of integers, \Code{\{int\}}, cannot be promoted
+(neither automatically nor explicitly) to a set of reals, \Code{\{real\}}.
+Thus, in the following, the former works but the latter is an error:
+\begin{lstlisting}
+for (real r in {1..5..1.0}) { ... }
+for (real r in {1..5..1})   { ... }
+\end{lstlisting}
+}
+
+
+\subsection{Using iterator values to define iterators}
+
+The value of an iterator can be used to define the value of further inner
+iterators:
+\begin{lstlisting}
+for (int x in {1..9}, int y in {x*2,x**,x*8}) {
+  int v[x][y] := x*y;
+}
+\end{lstlisting}
+
+Syntactically, the iterators of a \Code{for} statement must always be
+scalars: \Code{y} depends on \Code{x} in the above examples, but its
+dependency is implicit.
+In other words, it is an error to write
+\begin{lstlisting}
+for (int x in {1..9}, int y[x] in {x*2,x*4,x*8}) {
+  int v[x][y[x]] := x*y[x];
+}
+\end{lstlisting}
+
+\subsection{The \Code{null} value}
+
+Our real factorial function defined in Section \ref{SEC:realFactorial} 
+returns \Code{1} if it is called with a negative argument.
+The integer factorial defined in Section
+\ref{SEC:factorial} has an even worse behavior: it goes into an
+infinite recursion if it is called with a negative argument.  
+To prevent these problems, we can use the special value \Code{null}, and
+modify our factorials as follows:
+\begin{lstlisting}
+int  fact(int n)  := cond(n<0,null,cond(n==0,1,  n*fact(n-1)));
+real fact(real n) := cond(n<0,null,cond(n<1, 1.0,n*fact(n-1))); 
+\end{lstlisting}
+
+Any expression where one of the operands is \Code{null},
+such as \Code{null+3} or \Code{sqrt(fact(-2))} also evaluates
+to \Code{null}.
+The only way an expression evaluating to \Code{null} can be meaningfully
+used is if it is used as the argument of a function call, and the function
+knows how to deal with a \Code{null} value.
+The predefined function \Code{cond}, for example,
+simply returns the value of the second or third parameter; if the
+selected one is \Code{null}, so is the returned value.  The same holds
+for the predefined function \Code{case}.
+The predefined function \Code{is\_null} is also available:
+it returns \Code{true} or \Code{false}
+according to whether its argument has value \Code{null} or not.
+
+Some expressions or functions might also evaluate to \Code{null}.
+For example, \Code{1/0} is undefined because we cannot determine its
+sign (see the next section, which discusses infinite values), thus
+it evaluates to \Code{null}.
+Analogoulsy, \Code{pow(-3,2.5)} is undefined because the base of the power
+function must be non-negative if the exponent is real, thus it also
+evaluates to \Code{null};
+however, \Code{pow(-3,2)} is legal and evaluates to \Code{9}.
+
+\subsection{Managing \Code{infinity}}
+
+{\smart} allows an \Code{int} or \Code{real} function to have an infinite value.
+The predefined \Code{int} value \Code{infinity} can be used for this purpose.
+The sign of \Code{infinity} is positive, thus we can express a negative
+infinite value by negating it.
+Since \Code{int} values can be promoted to \Code{real}, real
+values can have an \Code{infinity} value as well:
+\begin{lstlisting}
+int positive_infinity := infinity;
+int negative_infinity := -infinity;
+real x := negative_infinity;
+\end{lstlisting}
+Operations involving \Code{infinity} are defined as expected.
+For example, the following expressions are legal:
+\begin{lstlisting}
+-infinity + infinity * (-5) + 72;      // -infinity (of type int)
+-infinity / -3.4;                      // infinity (of type int)
+infinity > -infinity;                  // true
+pow(3,7.2*infinity);                   // infinity (of type real)
+\end{lstlisting}
+However, operations such as the following ones are undefined
+({\smart} returns \Code{null} and issues a warning):
+\begin{lstlisting}
+infinity - infinity;
+0 * infinity;                     
+infinity >= infinity;
+3.2/0;
+pow(-3,infinity);
+mod(3,infinity);
+mod(infinity,3);
+\end{lstlisting}
+When printing an \Code{int} or \Code{real} value that evaluates to
+\Code{infinity}, {\smart} uses the value of the option \Code{InfinityString},
+which has a default value of \Code{"infinity"}.
+This affects only the way an infinite value is written to output,
+not the way it must occur in input.
+Thus, for example, the input file
+\begin{lstlisting}
+# InfinityString "oo"
+print(0,",",1,",",2,",...,",infinity,"\n");
+\end{lstlisting}
+produces the output
+\begin{lstlisting}
+0,1,2,...,oo
+\end{lstlisting}
+
+
+\subsection{Fixpoint iterations: solving $x = \sqrt{x}$}
+
+An important feature of {\smart} is its ability to use numerical fixpoint
+iterative solutions, where multiple parametric models are solved repeatedly.
+The approach starts with initial guesses for their parameters, and successively
+refines them, until convergence within a given precision is achieved,
+or a maximum number of iterations is reached.
+For example, we can find the zero $x=1$ for the expression
+$x - \sqrt{x}$ by transforming it into the fixpoint equation $x = \sqrt{x}$,
+and starting with any positive guess for $x$:
+\begin{lstlisting}
+converge {
+  real x guess 100;
+  real x := sqrt(x);
+}
+\end{lstlisting}
+The value of \Code{x} after the \Code{converge} statement is the computed
+fixpoint value.  The precision $\epsilon$ to which this value is
+computed can be changed in an option statement.  The iterations are
+stopped when two subsequent values for \Code{x} are within a relative or
+absolute precision of $\epsilon$ (note that this does not guarantee that 
+\Code{x} is within $\epsilon$ of the true fixpoint solution), or when the
+number of iterations exceeds the maximum number of allowed iterations 
+defined by the option \Code{MaxConvergeIters}.
+Similar to the case of array index precision, the converge precision $\epsilon$ 
+and the type of precision used are determined by the options 
+\Code{ConvergePrecision} and \Code{ConvergePrecisionTest}.
+Note that the statement providing an initial guess for \Code{x}
+is a declaration: the definition of \Code{x} must also appear in the
+body of the \Code{converge} statement.
+However, unlike ordinary declarations, at most one \Code{guess} statement
+can appear for each \Code{x} before the definition of \Code{x},
+and none after.
+Only \Code{real} objects can be defined inside a \Code{converge}
+statement.
+
+If any variable being iterated upon by the \Code{converge} statement becomes
+\Code{null}, it will remain \Code{null} regardless of the values it might
+be assigned in further iterations.
+Thus, for example, if we wanted to find the zero of $x - \sqrt{x+1}$
+but misstyped ``\Code{x-1}'' instead of ``\Code{x+1}'' in the following
+\begin{lstlisting}
+converge {
+  real x guess 10;
+  real x := sqrt(x-1);
+}
+\end{lstlisting}
+the subsequent values assumed by \Code{x} would be
+\Code{3}, which is  \Code{sqrt(10-1)}, then
+\Code{1.41421}, which is \Code{sqrt(3-1)}, then
+\Code{0.64359}, which is \Code{sqrt(1.41421-1)}, and finally
+\Code{null}, since \Code{sqrt(0.64359-1)} is undefined.
+
+We stress that, unlike the \Code{for} statement, the \Code{converge}
+statement does not affect the dimensionality of the objects declared in it.
+
+
+
+\subsection{Multi-variable fixpoint iterations} \label{SEC:multconv}
+
+In practice, most fixpoint iterations involve several variables and
+complex dependencies among them.
+Consider the fixpoint iteration
+\begin{lstlisting}
+converge {
+  real d guess 0.5;
+  real b guess 0.3;
+  real a guess 0.2;
+  real c guess 0.7;
+  real c := fc(d,b);
+  real b := fb(d,c);
+  real a := fa(b,c);
+  real d := fd(a);
+}
+\end{lstlisting}
+The dependency graph of Fig.~\ref{FIG:NestedDep} represents this
+situation.  An arc from $x$ to $y$ signifies that the value of $y$
+depends on the value of $x$.  
+
+In this \Code{converge} statement, iterations continue until
+subsequent values for \Code{a}, \Code{b}, \Code{c}, and \Code{d} differ by
+less then $\epsilon$.
+If the option \Code{UseCurrent} is set to \Code{true} (this is the default),
+the newly computed values are used immediately, otherwise,
+the newly computed values are not used until the next iteration.  
+In our example, the computation of \Code{b}, \Code{a}, and \Code{d} is
+affected by this choice:
+with \Code{UseCurrent} set to \Code{true}, the calls
+\Code{fb}, \Code{fa}, and \Code{fd} use the most recent values
+available for their arguments.
+
+{\smart} determines whether enough guesses are provided to start the iterations.
+The rule is simple: any variable appearing on the right
+side of an assignment statement must have a value when the statement
+is executed.  If such a variable has not yet been defined, then it
+must be given an initial guess.  If the option \Code{UseCurrent} is set
+to \Code{false}, then every variable appearing on the right side of an
+assignment must be given an initial guess.
+Thus, in our example, the initial guesses for \Code{a} and \Code{c} are
+required when \Code{UseCurrent} is set to \Code{false}, while 
+they are not necessary (and are ignored) when \Code{UseCurrent}
+is set to \Code{true}.
+
+\subsection{Nested fixpoint iterations}
+
+It is often advisable to nest fixpoint iterations.
+For instance, in the \Code{converge} statement shown in the previous
+section, we might know that \Code{b} and \Code{c}
+require many iterations to stabilize, but that, fortunately, each call
+to \Code{fb} and \Code{fc} requires little computation.  Then, the
+following nested scheme might be advantageous:
+\begin{lstlisting}
+# UseCurrent true
+converge {
+  real d guess 0.5;
+  real b guess 0.3;
+  converge {
+    real c := fc(d,b);
+    real b := fb(d,c);
+  }
+  real a := fa(b,c);
+  real d := fd(a);
+}
+\end{lstlisting}
+Now, the values of \Code{b} and \Code{c} are iterated upon
+until they stabilize, for each updated guess for \Code{d}.
+
+Note that the position of the statement \Code{real b guess 0.3} causes
+the guess \Code{0.3} to be used only once: the first time the innermost
+\Code{converge} statement is executed.  The subsequent inner fixpoint
+iterations performed whenever the value of \Code{d} is updated will use the
+latest value for \Code{b}, not \Code{0.3}.  The alternative behavior, where
+\Code{b} is set to \Code{0.3} every time the innermost \Code{converge}
+statement is reached, can be obtained by moving the statement
+\Code{real b guess 0.3} inside the innermost \Code{converge} statement,
+but this would probably worsen the convergence behavior.
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.75]{NestedDep.pdf}
+  \caption{A \Code{converge} dependency graph.}
+  \label{FIG:NestedDep}
+\end{figure}
+
+\subsection{Nested \Code{for} and \Code{converge} statements}
+
+A \Code{for} statement can contain a \Code{converge} statement, as in
+\begin{lstlisting}
+for (int i in {0..5}) {
+  converge {
+    real x[i] guess 100;
+    real x[i] := sqrt(x[i] + i);
+  }
+}
+\end{lstlisting}
+This specifies the computation of the solutions to the six fixpoint
+equations $x = \sqrt{x+i}$, for $i \in \{0, \ldots, 5\}$.
+Consider now the statement
+\begin{lstlisting}
+for (int i in {0..5}) {
+  converge {
+    real x[i] guess 100;
+    real x[i] := cond(i==0,sqrt(x[0]),sqrt(x[i-1]+i));
+  }
+}
+\end{lstlisting}
+This computes the fixpoint solution \Code{x[0]=1}, as expected.
+However, for any other value of \Code{i}, no fixpoint iteration is
+specified.  For example, when \Code{i} equals one, the ``fixpoint
+iteration'' is
+\begin{lstlisting}
+real x[1] := sqrt(x[0] + 1);
+\end{lstlisting}
+This simply sets \Code{x[1]} to $\sqrt{2}$, since the value of \Code{x[0]}
+is now set to 1 (possibly with a small error, since this value is
+computed numerically with an iterative procedure).
+The use of previously computed values in a \Code{converge} statement
+can be meaningful, especially when specifying an initial guess.
+For example,
+\begin{lstlisting}
+for (int i in {0..5}) {
+  converge {
+    real x[i] guess cond(i==0,100,x[i-1]);
+    real x[i] := sqrt(x[i] + i);
+  }
+}
+\end{lstlisting}
+uses the converged value of \Code{x[i-1]} as initial guess for \Code{x[i]}.
+This is reasonable, since it could be expected that the value of the
+fixpoint changes incrementally as \Code{i} goes from \Code{0} to \Code{5}.
+Only for the first one, \Code{x[0]}, do we really need to provide a
+``wild'' guess.
+
+A \Code{converge} statement can contain a \Code{for} statement.  This is
+useful when an array has cyclic dependencies.
+For example, the linear system 
+$$
+\left\{ \begin{array}{r @{~=~} l}
+5y_1 + y_{10} &  15 \\
+y_{i-1} + 5y_i & 6i-1  ~~~ \mbox{for}~  i \in \{2, \ldots, 10\} ,
+\end{array} \right.
+$$
+whose solution is $y_i = i$ for $i \in \{1, \ldots, 10\}$,
+can be solved using the statement
+\begin{lstlisting}
+converge {
+  for (int i in {1..10}) {
+    real y[i] guess 0;
+    real y[i] := cond(i==1, (15-y[10])/5, (6*i-1-y[i-1])/5);
+  }
+}
+\end{lstlisting}
+
+\subsection{Declarations and recursion: the convolution algorithm}
+
+{\smart} allows for both declarations and definitions of functions.
+Any number of declarations
+\begin{lstlisting}
+int func(int n, real x);
+\end{lstlisting}
+can appear anywhere in the input file, but the definition of this function,
+\begin{lstlisting}
+int func(int n, real x) := ... ;
+\end{lstlisting}
+must eventually appear exactly once.
+The number, type, name, and order of the parameters in all the
+declarations and in the definition must match (otherwise they are
+assumed to refer to different, overloaded functions).
+
+Declarations accomplish the same goal as the ``forward'' keyword in
+Pascal or the templates of ANSI C.
+While the use of declarations might be \emph{desirable} for clarity
+(e.g., we might place them at the top of the input file,
+postponing the definition of their values to a later section), it is
+\emph{essential} when two functions refer to each other recursively.
+
+As an example, we now consider the computation of the
+normalization constant in a single-class closed product-form queueing
+network with load-dependent servers
+\cite{Jain1991} (readers unfamiliar with queueing networks may safely
+skip the rest of this section).
+Using the notation of
+\cite{Trivedi2002book}, assume that there are $c_i$ servers with service
+rate $\mu_i$ at node $i \in \{0, \ldots, m\}$, with relative visit
+ratio $v_i$.  Then define
+$$
+   \rho_i = v_i / \mu_i ,  ~~~~~~~~~~~~~
+\beta_i(k) = \left\{ \begin{array}{l l}
+   k!             & \mbox{if $k < c_i$} \\
+   c_i!c_i^{k-c_i} & \mbox{if $k \geq c_i$}
+               \end{array}\right. , %\}
+  ~~~~~~~~~~~~~
+r_i(k) = \left\{ \begin{array}{l l}
+   \rho_i^k / \beta_i(k)             & \mbox{if $k > 0$} \\
+   1                                 & \mbox{if $k = 0$}
+               \end{array}\right. . %\}
+$$
+If the total customer population is $n$, the joint probability of
+having $k_i$ customers at node $i \in \{0, \ldots, m\}$ is
+$$p(k_0, \ldots, k_m) = \frac{1}{C(n)} \prod_{i=0}^{m}
+  \frac{\rho_i^{k_i}}{\beta_i(k_i)} ,$$
+where the computation of the normalization constant
+$$C(n) = \sum_{k_0+\cdots+k_m = n}\left( \prod_{i=0}^{m}
+  \frac{\rho_i^{k_i}}{\beta_i(k_i)} \right) $$
+can be performed recursively defining
+$$
+C_i(j) = \left\{ \begin{array}{l l}
+   r_0(j)             & \mbox{if $i = 0$} \\
+   \displaystyle \sum_{k=0}^j C_{i-1}(j-k) r_i(k) & \mbox{if $i \neq 0$}
+               \end{array}\right. , %\}
+$$
+so that $C(n) = C_m(n)$.
+
+Let us now show how to define the value of $C(n)$ in the {\smart} language.
+The inputs $m$, $n$, $c$, $v$, and $\mu$ are read first,
+using the two functions \Code{read\_int} and \Code{read\_real}, which read an
+\Code{int} or a \Code{real} from the current input stream, respectively:
+\begin{lstlisting}
+int m := read_int("m");
+int n := read_int("n");
+for (int i in {0..m}) {
+  int  c[i]  := read_int("c[i]");
+  real v[i]  := read_real("v[i]");
+  real mu[i] := read_real("mu[i]");
+}
+\end{lstlisting}
+Then, we can define $\rho$, $\beta$, and $r$:
+\begin{lstlisting}
+real rho(int i) := v[i]/mu[i];
+real beta(int i, int k) := cond(k<c[i],fact(real(k)),fact((c[i]))*pow(c[i],k-c[i]));
+real r(int i, int k) := cond(k==0,1,pow(rho(i),k)/beta(i,k));
+\end{lstlisting}
+Finally, we can define $C$ with the following statements:
+\begin{lstlisting}
+real C(int i, int j);
+real sum(int i, int j, int k) := cond(k==0,C(i,j),sum(i,j,k-1)+C(i,j-k)*r(i,k));
+real C(int i, int j) := cond(i==0,r(0,j),sum(i-1,j,j));
+\end{lstlisting}
+Note that no computation is performed, since $C$ is defined as a
+function, not an array.  Normally, we want to save the last column of
+the tableau $C_i(j)$, hence we could define an array as follows:
+\begin{lstlisting}
+for (int j in {0..n}) {
+  real C[j] := C(m,j);
+}
+\end{lstlisting}
+
+The above definition of $C$ as a function is correct but extremely
+inefficient, because it causes {\smart} to recompute the value $C(i,j)$
+every time it is needed.  The complexity is reduced to $O(n^2m)$ if
+the values $C(i,j)$ are stored in a table that allows direct lookup.
+Hence, we should change the definitions of \Code{C} (for both the
+function and the one-dimensional array) and \Code{sum} as follows:
+\begin{lstlisting}
+real sum(int i, int j, int k);
+for (int i in {0..m}, int j in {0..n}) {
+  real C[i][j] := cond(i==0,r(0,j),sum(i-1,j,j));
+}
+real sum(int i, int j, int k) := cond(k==0,C[i][j],sum(i,j,k-1)+C[i][j-k]*r(i,k));
+\end{lstlisting}
+Now, the entries \Code{C[i][j]} for \Code{i} equal \Code{m} contain the
+desired final column of the tableau, and there is no reason to save it
+as done before.  To increase the efficiency, $r$, $\rho$, and $\beta$
+should be arrays as well.  Also, we have ignored overflows and
+underflows in this example, although we did set the type of $\beta$ to
+\Code{real} instead of \Code{int}, and used the real factorial, to
+postpone the occurrence of an overflow.
+
+
+\subsection{Strings}
+
+For convenience, the classic \Code{string} type is defined in {\smart} as well.
+One can define functions returing strings of characters, and use them
+just like any other function.
+A string constant in a {\smart} input file must be enclosed in quotes:
+\begin{lstlisting}
+string toolname := "SMART";
+\end{lstlisting}
+but, of course, the quotes are not printed in output, thus
+\begin{lstlisting}
+toolname;
+\end{lstlisting}
+produces simply
+\begin{lstlisting}
+SMART
+\end{lstlisting}
+Most strings are used to properly format output.
+For example,
+\begin{lstlisting}
+for (int i in {1..30}) { print(i:2,cond(mod(i,10)==0,"\n","  ")); }
+\end{lstlisting}
+produces
+\begin{lstlisting} 
+ 1   2   3   4   5   6   7   8   9  10
+11  12  13  14  15  16  17  18  19  20
+21  22  23  24  25  26  27  28  29  30
+\end{lstlisting}
+
+Special characters can be entered in a string by escaping them:
+a newline character is entered as \verb%\n%;
+a tab     character is entered as \verb%\t%;
+a quote   character is entered as \verb%\q%;
+a slash   character is entered as \verb%\\%; and
+a bell (alarm)    character is entered as \verb%\a%.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Random variables} \label{SEC:RandomVars}
+
+{\smart} can understand and manage random variables with discrete-time or
+continuous-time phase-type distributions (DDP or DCP).
+In \smart, these are defined using the types \Code{ph int} or \Code{ph real},
+respectively.
+Special operations are possible on them, and both numerical and Montecarlo
+simulation algorithms can be applied.
+Random variables with more general distributions are
+identified as \Code{rand int} or \Code{rand real}, but they can
+be manipulated only in restricted ways, although simulation is always
+applicable.
+For the essential definitions related to phase-type distributions,
+see Appendix~\ref{SEC:PhaseType}.
+\\
+\RELEASE{Currently, {\smart} does not support Montecarlo simulation.}
+
+\subsection{Discrete phase-type random variables}
+
+In the {\smart} language, random variables with a DDP distribution
+have type \Code{ph int}.
+Such variables can be defined using predefined functions, or can be built
+from other DDP random variables using various operators.
+Also, any positive finite \Code{int} value can be promoted to a \Code{ph int}.
+Given
+\begin{lstlisting}
+ph int X := geom(0.7);
+ph int Y := equilikely(1,5);
+\end{lstlisting}
+we can define:
+\begin{lstlisting}
+ph int sumXY    := X+Y;
+ph int prodNX   := 4*X;
+ph int chooseXY := choose(X:3,Y:7);
+ph int minXY    := min(X,Y);
+ph int maxXY    := max(X,Y);
+ph int geomX    := geom(0.1,X);
+\end{lstlisting}
+However, definitions such as:
+\begin{lstlisting}
+ph int diffXY   := X-Y;
+ph int sumRX    := 4.0+X;
+ph int prodRX   := 4.0*X;
+ph int prodXY   := X*Y;
+\end{lstlisting}
+are illegal, since DDP distributions are not closed under these
+operations.  A correct definition would be
+\begin{lstlisting}
+rand int  diffXY   := X-Y;
+rand real sumRX    := 4.0+X;
+rand real prodRX   := 4.0*X;
+rand int  prodXY   := X*Y;
+\end{lstlisting}
+
+A note about stochastic independence: every time a random variable is defined
+using predefined functions, for example \Code{Bernoulli(0.3)}
+or \Code{Binomial(0.5,8)}, it is assumed to be independent of every other
+random variable defined so far.
+On the other hand, whenever a random variable is defined using
+previously defined random variables, such as \Code{sumXY} above, it is
+dependent on them.
+Hence, in our example, \Code{X} and \Code{Y} are independent, but
+\Code{X} and \Code{sumXY} or \Code{Y} and \Code{sumXY} are not.
+{\smart} does not manage dependent random variables in the same expression,
+so it issues an error message if it encounters the definition
+\begin{lstlisting}
+ph int W :=  min(X,sumXY);
+\end{lstlisting} 
+and sets \Code{W} to \Code{null}.
+
+
+\subsection{Continuous phase-type random variables}
+
+In the {\smart} language, a random variable with a DCP distribution
+has type \Code{ph real}.
+Such variables can be defined using predefined functions, or can be built
+from other DCP random variables using various operators.
+Unlike the discrete case, a \Code{real} cannot be promoted to a \Code{ph real}.
+Given
+\begin{lstlisting}
+ph real X := expo(0.1);
+ph real Y := expo(0.2);
+\end{lstlisting} 
+we can define:
+\begin{lstlisting}
+ph real sumXY    := X+Y;
+ph real prodRX   := 4.0*X;
+ph real chooseXY := choose(X:3,Y:7);
+ph real minXY    := min(X,Y);
+ph real maxXY    := max(X,Y);
+ph real geomX    := geom(0.1,X);
+\end{lstlisting}
+However, definitions such as:
+\begin{lstlisting}
+ph real diffXY   := X-Y;
+ph real sumRX    := 4.0+X;
+ph real prodXY   := X*Y;
+\end{lstlisting}
+are illegal, since DCP distributions are not closed under these
+operations.  A correct definition would be
+\begin{lstlisting}
+rand real diffXY   := X-Y;
+rand real sumRX    := 4.0+X;
+rand real prodXY   := X*Y;
+\end{lstlisting}
+
+We stress that \Code{ph int} and \Code{ph real} values can be freely
+intermixed in an expression, but the resulting random variable is
+neither a DDP nor a DCP distribution: it has a mixture distribution,
+\Code{rand real}, which {\smart} is able to manage only through
+Montecarlo simulation.
+\\
+\RELEASE{Currently, {\smart} does not support Montecarlo simulation.}
+
+
+\subsection{Internal representation of phase-type random variables}
+
+As discussed in Appendix~\ref{SEC:PhaseType}, each DDP or DCP random
+variable can be thought of as the time to reach a particular absorbing state
+in a discrete-time or continuous time Markov chain.
+Indeed, this is the way phase-type random variables are represented internally
+in {\smart}.
+Thus, care must be taken about the possible combinatorial explosion of
+states.
+For example, the three random variables \Code{A}, \Code{B}, and \Code{C}
+defined by
+\begin{lstlisting}
+ph int A := equilikely(1,10);
+ph int B := equilikely(1,10); 
+ph int C := equilikely(1,10); 
+\end{lstlisting}
+require 11 states each for their representation, one each for the
+possible 10 time values, plus one for the final absorbing state $f$.
+However,
+\begin{lstlisting}
+ph int M := min(A,B,C);
+\end{lstlisting}
+requires $10^3+1 = 1,001$ states for its encoding, since the chain must
+contain one state for each possible combination of the time values for the
+three random variables \Code{A}, \Code{B}, and \Code{C}, plus, again,
+the final absorbing state $f$.
+
+\subsection{Generally-distributed random variables}
+
+{\smart} allows the definition of discrete (integral) or continuous random
+variables, having type \Code{rand int} and \Code{rand real}, respectively.
+We have seen some examples already, when combining \Code{ph int}
+and \Code{ph real} variables through certain operations.
+It is also possible to directly define general random variables
+using predefined functions that define distributions that
+are neither \Code{ph int} nor \Code{ph real}, as in
+\begin{lstlisting}
+rand real v := unif(0.1,3.2);
+\end{lstlisting}
+which defines a random variable \Code{v} with uniform distribution
+in the range $[0.1, 3.2]$.
+
+These general random variables can be analyzed using Montecarlo simulation.
+\\
+\RELEASE{Currently, {\smart} does not support Montecarlo simulation, thus no
+operation can be performed on functions of type
+\Code{rand int} or \Code{rand real} as of now.}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Stochastic processes} \label{SEC:StochasticProcesses}
+
+Unlike deterministic quantities and random variables,
+for which {\smart} provides a small predetermined set of types
+unlikely to change in future versions,
+the class of stochastic process objects that will eventually be
+available in {\smart} is much richer, as it is expected to grow according
+to the need of future users.
+Two aspects characterize a stochastic process object:
+\begin{itemize}
+\item
+The \emph{type of underlying stochastic process} described by the object.
+{\smart} is targeted to discrete-state systems, thus the type of
+processes we consider are \cite{Cinlar1975,Kemeny1960}
+discrete-time Markov chains,
+continuous-time Markov chains,
+and more complex process whose stochastic characteristics are determined
+by the type of distributions present in the model and their interaction,
+such as semi-regenerative processes and generalized semi-Markov processes.
+\item
+The \emph{formalism} used to describe the object.
+Currently, we can explicitly describe discrete-time or continuous-time
+Markov chains, or we can describe any of the above processes using
+stochastic Petri nets \cite{1994IEEETSE-SPNcharacterization}.
+High-level formalisms such as stochastic Petri nets can be exponentially
+more compact than explicit descriptions, thus they are the only
+practical choice for large modeling applications.
+\end{itemize}
+In this section, we discuss discrete-time and continuous-time Markov chains.
+High-level formalisms are discussed individually in the following chapters.
+
+Note that stochastic process objects can only appear at the top level,
+i.e., they cannot be declared or defined within a \Code{for} or \Code{converge}
+compound statement.
+
+
+
+\IGNORE{
+The most important characteristic of a model expressed in a given
+formalism is whether it describes a discrete-time stochastic process
+$\{X^{[k]} : k \in \Naturals\}$ or a continuous-time stochastic
+process $\{X(t) : t \geq 0\}$.  In \smart , two classes of discrete-state Markov
+processes are fundamental: discrete-time and continuous-time Markov chains.
+In discrete-time Markov chains, the state of the model is observed at each
+integer time, while, in continuous-time Markov chains, events occur at
+any time, but the amount of time elapsing
+between any two events is exponentially distributed.  Such models can
+be combined in very natural ways, and are quite general, due to the
+concept of {\em phase-type} distributions, which is applicable both to
+the discrete and the continuous case.  In both discrete-time and
+continuous-time models, the timing of events can have a mass at zero
+(immediate events) or at infinity (non-occurring events).
+The underlying discrete-time Markov chains and continuous-time Markov chains
+can be solved numerically for steady-state or transient analysis.
+Alternatively, discrete-event simulation can
+be employed for the solution.
+
+However, a model containing both discrete timing (other than zero or
+infinity) and continuous timing, defines an underlying process which
+can be independent semi-Markovian, semi-Markovian,
+semi-regenerative, or generalized semi-Markovian.  The numerical
+solution of these processes is sometimes possible depending, among
+other factors, on whether a transient or steady-state solution is
+desired.  Alternatively, discrete-event simulation is often the method
+of choice in these cases, especially for transient analysis.
+\\
+\RELEASE{Currently, {\smart} does not support discrete-event simulation.}
+}
+
+
+
+\subsection{Discrete-time Markov chains}
+
+\begin{figure}  
+  \centering
+  \includegraphics[scale=0.75]{DTMC1.pdf}
+  \caption{An example of a discrete-time Markov chain.}
+  \label{FIG:DTMC1}
+\end{figure}
+
+The following statements specify the discrete-time Markov chain
+\Code{d1} (Fig.~\ref{FIG:DTMC1}), with a parameter \Code{x},
+used to specify the value of some of the state-to-state
+transition probabilities:
+\begin{lstlisting}
+dtmc d1(real x) := {
+  state a,b,c;
+  init(a:1.0);
+  arcs(a:b:1.0, b:a:x, b:c:1-x);
+  real m1 := prob_ss(in_state(c));
+  real m2 := prob_acc(in_state(a),0,infinity);
+  real m3 := avg(pi_tta);
+};
+\end{lstlisting}
+The definition of the ``value'' of the discrete-time Markov chain
+\Code{d1} is performed via a
+``block'', that is, a sequence of statements enclosed in braces, used
+on the right-hand-side of an assignment.  The statement
+\Code{state a,b,c;} declares three ``states''.
+Since a state does not carry a value,
+the statement has the form of a declaration, but it is a definition.
+
+The two subsequent statements are just expressions.
+Since the functions called have type \Code{void}, we use
+them because of their side-effect: the first
+one specifies the initial state distribution, the second one
+specifies the probability of some state-to-state transitions.  
+The composition operator ``\Code{:}'' is used to build objects of a composite
+type (analogous to the Pascal ``record'' or the C ``struct'').
+For example, \Code{a:1.0} associates the real
+value \Code{1.0} with the state \Code{a}, while \Code{a:b:1.0}
+indicates an arc from state \Code{a} to state \Code{b} with weight \Code{1.0}
+(a probability in this case, since we are talking about a discrete time
+Markov chain).
+
+Finally, the last three statements, with a familiar syntax, define
+\emph{measures}, that is, quantities that {\smart} can compute upon request.
+For example, outside the definition of \Code{d1}, the statement
+\begin{lstlisting}
+for (real v in {0.1..0.9..0.1}) {
+  d1(v).m1;
+  d1(v).m2;
+}
+\end{lstlisting}
+outputs the nine value pairs corresponding to the steady-state probability
+of discrete-time Markov chain \Code{d1} being in state \Code{c},
+and to the accumulated time spent in state \Code{a} up to absorption, when
+its formal parameter \Code{x} varies from \Code{0.1} to \Code{0.9}
+(of course, since \Code{c} is an absorbing state while \Code{a}
+and \Code{b} are transient, \Code{d1(v).m1} has value \Code{1}
+regardless of the value of \Code{v}).
+The expression \Code{avg(pi\_tta)} evaluates to the average, or mean,
+time-to-absorption (often called ``MTTA'').
+Note that the function we use, \Code{pi\_tta}, has type \Code{ph int},
+since it is the time-to-absorption of a DTMC;
+had this been a CTMC model, we would have used \Code{pr\_tta}, with
+type \Code{ph real}.
+
+The selection operator ``\Code{.}'' acts just like in ANSI C, where it
+is used to select a field in a structure.  In our case, the ``fields''
+are the identifiers declared within the block.
+Thus, \Code{m1} denotes a \Code{real} value when it appears within
+the block defining the \Code{d1}, but the same quantity must be
+referred to as \Code{d1(x:=...).m1} outside that block.
+
+Blocks can only appear at the top level and cannot contain a
+\Code{converge} statement or other blocks within them.
+However, they can contain \Code{for} statements, which are
+extremely useful when defining large repetitive structures.
+For example,
+\begin{lstlisting} 
+dtmc d2(int n) := {
+  for (int i in {0..n-1}) {
+    state a[i];
+    real m[i] := prob_ss(in_state(a[i]));
+  }
+  init(a[0]:1.0);
+  for (int i in {0..n-1}) {
+    arcs(a[i]:a[i]:1.0, a[i]:a[mod(i+1,n)]:9.0);
+  }
+};
+\end{lstlisting}
+defines a discrete time Markov chain with an unspecified number
+\Code{n} of states connected in a circular fashion
+(to avoid periodicity, there are two transitions emanating from state
+\Code{a[i]}, one to itself and the other to the state \Code{a[i+1]},
+or \Code{a[0]} when \Code{i} equals \Code{n-1}, with weight
+\Code{1.0} and \Code{9.0}, respectively:
+{\smart} normalizes these weights, so that the resulting probabilities are
+\Code{0.1} and \Code{0.9}, respectively).
+Then, the call
+\begin{lstlisting}
+d2(10000).m[0];
+\end{lstlisting}
+instantiates the chain \Code{d2} with 10,000 states and computes the
+steady-state probability of being in state \Code{a[0]}, which, of course,
+equals \Code{0.0001}, by symmetry.
+
+Functions used to define components of a model, such as \Code{init} and
+\Code{arcs}, return a type \Code{void} and can be called with multiple
+occurrences of the appropriate parameters.
+For example,
+\begin{lstlisting}
+    arcs(a[i]:a[i]:1.0, a[i]:a[mod(i+1,n)]:9.0);
+\end{lstlisting}
+is exactly equivalent to
+\begin{lstlisting}
+    arcs(a[i]:a[i]:1.0);
+    arcs(a[i]:a[mod(i+1,n)]:9.0);
+\end{lstlisting}
+
+
+Finally, note that the structure of a model can be parameterized in essentially
+arbitrary ways by using functions such as \Code{cond} or \Code{case} on
+appropriate parameters.
+For example
+\begin{lstlisting}
+dtmc d3(bool connect) := {
+  state a,b;
+  init(a:1);
+  arcs(a:b:1);
+  cond(connect,arcs(b:a:1),null);
+  real m := prob_ss(in_state(b));
+};
+\end{lstlisting}
+defines either a DTMC where states \Code{a} and \Code{b} are recurrent
+(Fig.~\ref{FIG:DTMC3}, left),
+or a DTMC where state \Code{a} is transient and \Code{b} is absorbing
+(Fig.~\ref{FIG:DTMC3}, right), depending on the value of \Code{connect}.
+Thus, \Code{d3(true).m} evaluates to \Code{0.5}, while \Code{d3(false).m}
+evaluates to \Code{1.0}.
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.75]{DTMC3.pdf}
+  \caption{A parametrized DTMC.}
+  \label{FIG:DTMC3}
+\end{figure}
+
+
+\subsection{Continuous-time Markov chains} \label{SEC:CTMC}
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.75]{CTMC1.pdf}
+  \caption{An example of a CTMC.}
+  \label{FIG:CTMC1}
+\end{figure}
+
+
+The specification of a continuous-time Markov chain is analogous to that
+of a discrete-time Markov chain.
+The following code defines the continuous-time Markov chain
+in Fig.~\ref{FIG:CTMC1}, and defines a measure to compute the probability
+of being in state \Code{c} in steady state:
+
+\begin{lstlisting}
+ctmc c1(real lambda) := {
+  state a,b,c;
+  init(a:1.0);
+  arcs(a:b:2*lambda, b:a:1.0, b:c:lambda, c:a:0.01);
+  real m1 := avg_ss(cond(in_state(a),2,cond(in_state(b),1,0)));
+};
+\end{lstlisting}
+The compound statement defining a continuous time Markov chain can
+contain calls to the functions \Code{init} and \Code{arcs},
+defined as for the discrete time case, with two differences:
+the arc weights represent rates, not probabilities,
+hence they are not normalized, and
+arcs from a state to itself are ignored, but a warning is issued.
+
+The measure defined, \Code{m1}, is set to the steady-state expected reward rate
+when the reward rates assigned to states \Code{a}, \Code{b}, and \Code{c}
+are \Code{2}, \Code{1}, and \Code{0}, respectively.
+This value can then be computed for various
+values of \Code{lambda} using the \Code{for}-loop statement
+\begin{lstlisting}
+for (real lambda in {0.03..0.08..0.02}) {
+  print("lambda=",lambda,"   reward=",c1(lambda).m1:10:8,"\n");
+}
+\end{lstlisting}
+which results in the following output:
+\begin{lstlisting}
+lambda=0.03   reward= 1.6692913
+lambda=0.05   reward= 1.3333333
+lambda=0.07   reward= 1.0410959
+\end{lstlisting}
+
+
+\subsection{Measures}
+
+As we have seen, the way to obtain information out of a
+model is to define a measure, and then ask for its value outside the model.
+We have already seen functions, such as \Code{prob\_ss} and \Code{avg\_ss},
+that can be used to query timing or stochastic properties;
+this section discusses in detail all the functions available for this purpose.
+Functions that can be used to query state-space and temporal logic properties
+are instead discussed in Chapters \ref{SEC:SSGen} and \ref{SEC:ModelChecking}.
+
+Let $\{X(t):t\geq 0\}$ represent the stochastic process describing
+some time-dependent \Code{bool} condition \Code{x},
+such the expression \Code{in\_state(c)}
+used to define measure \Code{m1} in the DTMC model \Code{d1}.
+Then:
+\begin{itemize}
+\item
+\Code{prob\_ss(x)} is
+the probability that condition \Code{x} is \Code{true} in steady-state:
+$$\lim_{t\ \rightarrow \infty} \Pr\{X(t)\}.$$
+\item
+\Code{prob\_at(x,100)} is
+the probability that condition \Code{x} is \Code{true} at time 100:
+$$\Pr\{X(100)\}.$$
+\item
+\Code{prob\_acc(x,100,300)} is
+the accumulated probability (i.e., the expected amount of time) that condition
+\Code{x} is \Code{true} during the interval [100,300]:
+$$\int_{100}^{300} \Pr\{X(t)\} dt.$$
+\end{itemize}
+
+Let $\{Y(t):t\geq 0\}$ represent the stochastic process describing
+some time-dependent \Code{int} or \Code{real} quantity \Code{y},
+such as the expression \Code{cond(in\_state(a),2,cond(in\_state(b),1,0))}
+used to define measure \Code{m1} in the CTMC model \Code{c1}.
+Then:
+\begin{itemize}
+\item \Code{avg\_ss(y)} is
+the expected value of \Code{y} in steady-state:
+$$\lim_{t\ \rightarrow \infty} E[Y(t)].$$
+\item \Code{avg\_at(y,100)} is
+the expected value of \Code{y} at time 100:
+$$E[Y(100)].$$
+\item \Code{avg\_acc(y,100,300)} is
+the expected accumulated value of \Code{y} during the interval [100,300]:
+$$\int_{100}^{300} E[Y(t)] dt.$$
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\RELEASE{Currently, these functions must appear at the top level
+of an expression defining a measure.
+Thus,
+\begin{code}
+  \Code{real m1 := avg\_ss(cond(in\_state(a),2,cond(in\_state(b),1,0)));}
+\end{code}
+is correct, but the seemingly equivalent
+\begin{code}
+  \Code{real m1 := 2*prob\_ss(in\_state(a))+prob\_ss(in\_state(b));}
+\end{code}
+is rejected by {\smart}.
+}
+
+
+
+
+\IGNORE{
+\subsection{Independent semi-Markov processes}
+
+The arc components in an independent semi-Markov process are probabilities
+(possibly to be normalized), as in a discrete-time Markov chain, but the
+holding time in each a state can be arbitrarily
+distributed, instead of being deterministically equal one:
+\begin{lstlisting}ismp i1 := {
+  state a,b,c;
+  init(a:1);
+  arcs(a:b:1,b:a:0.9,b:c:0.1);
+  holding(a:const(3),b:expo(20.0));
+  real m1 := prob_at(in_state(c),100);
+};
+\end{lstlisting}
+The compound statement defining an independent semi-Markov process can
+contain at most one call to the functions \Code{init}, \Code{arcs},
+and \Code{assert}, defined as for a discrete-time Markov chain,
+and to \Code{holding}, defined as follows:
+\begin{itemize}
+\item
+\Code{void holding(state:$x$ s1:h1, state:$x$ s2:h2, ...);}\\
+where $x$ is \Code{ph int}, \Code{ph real}, \Code{rand int}, or
+\Code{rand real}.
+Sets the holding time for state \Code{s} to \Code{h}.
+If a state has no outgoing arcs, no holding time needs to be specified,
+the state is considered absorbing with a holding time
+equal \Code{const(infinity)}.
+%If the holding time of a non-absorbing state is not specified,
+%the default \Code{const(0)} is assumed.
+%This makes the corresponding state vanishing.
+\end{itemize}
+}
+
+\IGNORE{
+\subsection{Semi-Markov processes}
+
+The most general state-space process that can be explicitly specified
+in the {\smart} language is a semi-Markov process.
+In this case, a distribution is associated with each arc from $i$ to $j$.
+There are two ways to define a semi-Markov process:
+\begin{description}
+\item{\bf Race}:
+given that the current state is $i$, specify the distribution $F_{i,j}(t)$
+for the time required to go from
+$i$ to $j$ in isolation, that is, ignoring the other arcs leaving from $i$.
+The actual semantic is then that of a race among all the arcs leaving $i$,
+hence the holding time for $i$ is implicitly assigned the distribution of the
+minimum of these times, over all the arcs leaving state $i$.
+\item{\bf Preselection}:
+choose according to a specified probability $p_{i,j}$ the next state $j$,
+given that the current state is $i$.
+Then, sample the distribution $F_{i,j}(t)$ to select the time required
+to go from $i$ to $j$ in isolation.
+\end{description}
+While either method can specify more general stochastic processes than
+independent semi-Markov processes,
+the former method is not as general as the latter.
+Fig.~\ref{FIG:semiMarkov} shows the equivalent ways to specify simpler
+processes (discrete-time Markov chains, continuous-time Markov chains,
+or independent semi-Markov processes) as semi-Markov processes,
+with either method.
+
+\begin{figure}
+\FIG{semiMarkov}
+\caption{Equivalent semi-Markov processes.}
+\label{FIG:semiMarkov}
+\end{figure}
+
+For example, the following specifies a preselection semi-Markov process
+\Code{s1} exactly equivalent to the independent semi-Markov process
+\Code{i1} specified in the previous section:
+\begin{lstlisting}smp s1 := {
+  state a,b,c;
+  init(a:1);
+  arcs(a:b:1:const(3),b:a:0.9:expo(20.0),b:c:0.1:expo(20.0));
+  real m1 := prob(at(in_state(c),100));
+};
+\end{lstlisting}
+Alternatively, we could have used a race specification for the arcs:
+\begin{lstlisting}
+  arcs(a:b:const(3),b:a:expo(18.0),b:c:expo(2.0))
+\end{lstlisting}
+
+The race specification is often more convenient and more natural.
+However, it does not specify how to ``break the tie'', and this might be
+a problem in the presence of discrete distributions.
+\IGNORE{Is this a real limitation? Need to check (Kulkarni?)}
+
+The compound statement defining a semi-Markov process can contain at most
+one call to the functions \Code{init} and \Code{assert}, defined as
+for a discrete-time Markov chain, and \Code{arcs},
+an overloaded function:
+\begin{itemize}
+\item
+\Code{void arcs(state:state:$x$ s1:t1:v1, state:state:$x$ s2:t2:v2, ...);}\\
+where $x$ is \Code{ph int}, \Code{ph real}, \Code{rand int}, or
+\Code{rand real}.
+Sets the distribution for the time to go from state \Code{s}$i$ to state
+\Code{t}$i$ to \Code{v}$i$, according to a race semantic.
+\item
+\Code{void arcs(state:state:real:$x$ s1:t1:p1:v1, state:state:real:$x$ s2:t2:p2:v2, ...);}\\
+where $x$ is \Code{ph int}, \Code{ph real}, \Code{rand int}, or
+\Code{rand real}.
+Sets the probability and the distribution for the time to go from state
+\Code{s}$i$ to state \Code{t}$i$ to \Code{p}$i$ and \Code{v}$i$,
+respectively, according to a preselection semantic.
+\end{itemize}
+}
+

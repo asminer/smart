@@ -1,0 +1,139 @@
+%
+% $Id$
+%
+
+\section*{{\smart} overview and organization of this User Manual}
+
+The {\smart} ({\smartmeaning}) tool is a software package to study complex
+discrete-state systems. With {\smart}, it is possible to study the
+logical behavior of the system, by generating the state space
+underlying a complex model and asking temporal logic queries about
+its dynamic behavior, as done in traditional model-checking.
+Once one is satisfied that the logical behavior of the
+system is both correct and correctly captured by the model,
+performance, reliability, availability, and performability
+measures about the system can be computed with a large variety of
+state-of-the-art techniques.
+{\smart} implements exact numerical solution algorithms,
+approximate numerical solution algorithms,
+and discrete-event simulation techniques.
+These can be used in cooperation for the study of a complex
+system, since multiple interacting models are supported in a
+variety of ways, from a simple hierarchical solution of submodels
+to a built-in fixpoint iteration mechanism which may be used to
+perform sophisticated studies.
+Numerical solution
+algorithms are provided not only for the widely-used class of
+models having an underlying continuous-time \index{Markov chain}Markov chain,
+but also for the case where the underlying
+process is a discrete-time Markov chain, or, under certain
+conditions, even a Markov regenerative process arising from the
+use of both discrete and continuous
+\index{phase-type distribution}phase-type distributions in the same model.
+
+\IGNORE{
+A unifying language used to define the structure and the measures of models,
+regardless of the formalism used to express them (queueing
+networks, Markov chains, etc.) and of the type of study required
+(performance, reliability, etc.);
+
+Another way to deal with large and complex problems is the
+use multiple processors.
+This can be done in two ways
+If several independent model solutions are needed, for example
+to study a system under a range of different parameters,
+they can be assigned to the available processors and run in parallel.
+If, however, a single model is too large to be analyzed on a single processor
+due to time or memory constraints, a more complex approach, using
+a distributed algorithm, can be employed.
+Both types of parallelism are available in {\smart}.
+}
+
+\begin{description}
+
+\item{\bf Chapter \ref{SEC:Language}}
+introduces the {\smart} input language used to define models and their
+interactions.
+Two types of low-level stochastic process formalisms
+are presented, discrete-time and continuous-time
+\index{Markov chain}Markov chains. High-level models expressed in
+a formalism-specific way are instead presented in the following
+individual chapters.
+
+\RELEASE{Currently, the only high-level formalism supported by {\smart}
+is an extended class of stochastic Petri nets.
+More formalisms are planned for future versions.}
+
+\item{\bf Chapter \ref{SEC:SPN}}
+describes how to define stochastic Petri nets models.
+This is a very powerful and general formalism that can be used to model
+discrete-state systems in virtually any domain.
+
+\item{\bf Chapter \ref{SEC:SSGen}}
+describes algorithms and options available to generate the state space
+of a discrete-state model, regardless of the high-level formalism in which
+it is expressed.
+This fundamental step must occur before any model checking or
+numerical solution activity.
+
+\item{\bf Chapter \ref{SEC:ModelChecking}}
+describes algorithms and options available to perform symbolic
+model checking on a high-level model.
+
+\item{\bf Chapter \ref{SEC:Numerical}}
+describes algorithms and options available to solve the underlying
+stochastic model numerically, using either traditional (explicit) or
+symbolic (implicit) representations.
+
+\PRIVATE{
+\item{\bf Chapter \ref{SEC:Approximations}}
+describes algorithms and options available to compute approximate
+numerical solutions.
+}
+
+\PRIVATE{
+\item{\bf Chapter \ref{SEC:Simulation}}
+describes algorithms and options available to study models
+using discrete-event simulation.
+}
+
+\item{\bf Chapter \ref{SEC:Examples}}
+gives examples of {\smart} usage and reports runtimes and memory requirements
+on them.
+
+\item{\bf Appendix \ref{SEC:LanguageReference}}
+lists the predefined types, functions, and options available in \smart.
+
+\item{\bf Appendix \ref{SEC:BNF}}
+formally defines the syntax of the {\smart} language using BNF notation.
+
+\item{\bf Appendix \ref{SEC:PhaseType}}
+gives key definitions and properties of
+discrete and continuous phase-type distributions.
+
+\item{\bf Release Notes}
+at the end of this manual list information that a user of the current
+release should know.
+Other release-dependent information appears throughout this manual
+\RELEASE{in blue text}.
+
+\end{description}
+
+\vfill
+
+\section*{\centering Acknowledgments}
+
+The development of the techniques implemented in {\smart} has been partially
+supported by the
+National Aeronautics and Space Administration under grants
+NAG-1-2168 and NAG-1-02095;
+by the National Science Foundation under grants CCR-0219745 and ACI-0203971;
+by a joint STTR project with Genoa Software Systems,
+Inc., for the Army Research Office;
+and by the matching grant FED-95-011 from the Virginia Center for
+Innovative Technology.
+We are grateful to these organizations for making our research possible.
+
+Any opinions, findings, and conclusions or recommendations expressed in this
+material are those of the author(s) and do not necessarily reflect the views
+of the National Science Foundation.

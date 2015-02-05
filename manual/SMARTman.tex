@@ -5,7 +5,75 @@
 \usepackage{fullpage}
 \usepackage{makeidx}
 \usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{listings}
+\usepackage{color}
 \makeindex
+
+% ====================================================================
+
+\newcommand{\smart}{{\sc{S%
+    \kern-.11em\raise.39ex\hbox{m}%
+    \kern-.22em\raise.0ex\hbox{A}%
+    \kern-.21em\raise.39ex\hbox{r}%
+    \kern-.16em T}}}
+
+\newcommand{\smartmeaning}{Stochastic Model-checking Analyzer for Reliability and Timing}
+
+\newcommand{\IGNORE}[1]{}
+
+% For notes applying only to the current release
+\newcommand{\RELEASE}[1]{{\color{blue}#1\color{black}}}
+
+% For undocumented features
+\typein[\mantype]{Produce INTERNAL or EXTERNAL manual}
+\ifthenelse{\equal{\mantype}{INTERNAL}}{%
+  \newcommand{\PRIVATE}[1]{{\color{red}#1\color{black}}}
+}{%
+  \newcommand{\PRIVATE}[1]{}
+}
+
+% ====================================================================
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{muave}{rgb}{0.58,0,0.82}
+
+\lstdefinelanguage{smart}{%
+  keywords={for,converge,guess},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+}
+
+\lstdefinelanguage{output}{}
+
+\lstset{frame=none,   % frame=tb,
+  language=smart,
+  % aboveskip=3mm,
+  % belowskip=3mm,
+  xleftmargin=2em,
+  xrightmargin=2em,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\ttfamily},
+  % basicstyle={\small\ttfamily},
+  numbers=none,                     % line numbers
+  keywordstyle=\underbar,
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{muave},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=2
+}
+
+% for SMART code
+\newcommand{\Code}[1]{{\tt {#1}}}
+
+% for command-line stuff
+\newcommand{\Unix}[1]{{\tt {#1}}}
+
+% FOR NOW
+\newenvironment{code}{\begin{quote}}{\end{quote}}
 
 % ====================================================================
 
@@ -16,7 +84,7 @@
 \begin{center}
 \sf
 ~SMARTlogo~\\[8ex]
-\mbox{\huge ~\hspace*{-2ex}{Stochastic Model checking Analyzer for Reliability and Timing}}
+\mbox{\huge ~\hspace*{-2ex}{\smartmeaning}}
 \\[4ex]
 {\huge Version 3.2} \\[4ex]
 
@@ -32,7 +100,8 @@ TBD
 \tableofcontents
 \mainmatter
 
-\input{intro}
+\input{language}
+
 
 \end{document}
 
