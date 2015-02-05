@@ -1243,7 +1243,7 @@ void InitLLM(exprman* om)
   lldsm::display_order = lldsm::NATURAL;
   om->addOption(
     MakeRadioOption("StateDisplayOrder",
-      "The order to use for displaying states in functions num_states and num_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
+      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
       do_list, 3, lldsm::display_order
     )
   );
@@ -1276,14 +1276,14 @@ void InitLLM(exprman* om)
   graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
   om->addOption(
     MakeRadioOption("GraphDisplayStyle",
-      "Select the style to use when displaying a graph (e.g., using function num_arcs).  This does not affect the internal storage of the graph.",
+      "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
       gds_list, 3, graph_lldsm::graph_display_style
     )
   );
   // ------------------------------------------------------------------
   om->addOption(
     MakeBoolOption("DisplayGraphNodeNames",
-      "When displaying a graph (e.g., using function num_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
+      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
       graph_lldsm::display_graph_node_names
     )
   );
