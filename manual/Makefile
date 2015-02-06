@@ -3,15 +3,19 @@
 
 all: SMART-userman.pdf SMART-userman-private.pdf
 
-TEXSRC= SMARTman.tex overview.tex language.tex
+TEXSRC= SMARTman.tex overview.tex language.tex petri-nets.tex
 
 
 include figures.makefile
+include examples.makefile
 
 figures.makefile: $(TEXSRC)
 	cat $(TEXSRC) | awk -F'[{}]' 'BEGIN{print "FIGS = "};/includegraphics/{print $$2}' | tr '\n' ' ' | xargs > figures.makefile
 
-SMART-userman.pdf: $(TEXSRC) $(FIGS)
+examples.makefile: $(TEXSRC)
+	cat $(TEXSRC) | awk -F'[{}]' 'BEGIN{print "EXSM = "};/lstinputlisting/{print $$2}' | tr '\n' ' ' | xargs > examples.makefile
+
+SMART-userman.pdf: $(TEXSRC) $(FIGS) $(EXSM)
 	echo "EXTERNAL" | pdflatex SMARTman 
 	# bibtex SMARTman 
 	# makeindex SMARTman
@@ -20,7 +24,7 @@ SMART-userman.pdf: $(TEXSRC) $(FIGS)
 	mv SMARTman.pdf SMART-userman.pdf
 	
 
-SMART-userman-private.pdf: $(TEXSRC) $(FIGS)
+SMART-userman-private.pdf: $(TEXSRC) $(FIGS) $(EXSM)
 	echo "INTERNAL" | pdflatex SMARTman 
 	# bibtex SMARTman 
 	# makeindex SMARTman

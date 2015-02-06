@@ -1,0 +1,5 @@
+// $Id$
+
+for (real lambda in {0.03..0.08..0.02}) {
+  print("lambda=",lambda,"   reward=",c1(lambda).m1:10:8,"\n");
+}

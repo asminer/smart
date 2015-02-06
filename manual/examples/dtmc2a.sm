@@ -1,0 +1,12 @@
+// $Id$
+
+dtmc d2(int n) := {
+  for (int i in {0..n-1}) {
+    state a[i];
+    real m[i] := prob_ss(in_state(a[i]));
+  }
+  init(a[0]:1.0);
+  for (int i in {0..n-1}) {
+    arcs(a[i]:a[i]:1.0, a[i]:a[(i+1)%n]:9.0);
+  }
+};

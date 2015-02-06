@@ -1,0 +1,10 @@
+// $Id$
+
+pn cs1 := {
+  place   p, q;
+  trans   t, u, v;
+  arcs(p:t, t:q, q:u, u:p, p:v, v:q);
+  init(p:1, q:4);
+  firing(t:expo(0.2), u:expo(0.3), v:expo(0.1*tk(p)));
+  real    m1 := avg_ss(tk(p));
+};

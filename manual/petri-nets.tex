@@ -1,0 +1,458 @@
+%
+% $Id$
+%
+
+\chapter{Stochastic Petri nets}  \label{SEC:SPN}
+
+\PRIVATE{
+  TBD ---
+  Rewrite this chapter, make it ``Petri nets'',
+  cover both logical and stochastic aspects.
+}
+
+The \index{stochastic Petri net}stochastic Petri net
+formalism is based on a stochastic extension of
+(untimed) Petri nets \cite{Murata1989,Peterson1981,Petri1962,Reisig1985}.
+The type used to declare a stochastic Petri net in {\smart} is
+\index{pn}\Code{pn}.
+Depending on the timing associated with the transitions of the
+net and on the way they can interrupt each other,
+the underlying model can be a discrete-time Markov chain, a continuous-time
+Markov chain, a \index{semi-regenerative process}semi-regenerative process,
+or a generalized semi-Markov process
+\cite{Ajmone1984,Chiola1993b,1995StewartBook-DiscreteSPN,1993IMA-SRNs,
+1994IEEETSE-SPNcharacterization,Molloy1981,Natkin1980}.
+{\smart} automatically determines the type of underlying stochastic process,
+and uses this information to decide the solution engines that can be
+applied to it.
+The conditions for this determination are as follows (see
+Appendix \ref{SEC:PhaseType} for a discussion of DDP and DCP distributions):
+\begin{itemize}
+\item
+If all the transitions in the net have a DDP distribution
+(including, possibly, the degenerate case of a constant equal to zero),
+the underlying process is determined to be a DTMC (discrete-time Markov chain).
+\item
+If all the transitions in the net have a DCP distribution,
+(including, possibly, the degenerate case of a constant equal to zero),
+the underlying
+process is determined to be a CTMC (continuous-time Markov chain).
+\item
+If all the transitions in the net have a DDP or DCP distribution
+(including, possibly, the degenerate case of a constant equal to zero),
+and certain conditions on the concurrent enabling of the transitions
+with DDP distributions are satisfied (essentially, guaranteeing that their
+possible firing times are always synchronized modulo the time step
+\cite{Jones-NASA-00,2001PNPM-PDPN}), the underlying process is determined
+to be a SRP (\index{semi-regenerative process}semi-regenerative process), also
+called MRGP (\index{Markov-regenerative process}Markov-regenerative process).
+\item
+In all the other cases, the process is asssumed to be a GSMP
+(generalized semi-Markov process).
+\end{itemize}
+
+Note that some aspects of the timing and stochastic behavior defined for the
+model do affect its logical analysis described in Chapters \ref{SEC:SSGen}
+and \ref{SEC:ModelChecking}.
+In particular, \emph{immediate} events (transitions of the Petri net
+with a constant zero firing time distribution)
+are treated in a fundamentally different way from ordinary
+\emph{timed} events: the states in which they are enabled
+have sojourn times equal zero, and are not considered part of
+the reachable state space (\emph{tangible reachability set} in
+GSPN parlance \cite{Ajmone1995book}).
+
+
+
+\section{Defining a stochastic Petri net model in {\smart}} \label{SEC:SPNdef}
+
+An example of a \index{pn}{stochastic Petri net} definition is:
+%
+\lstinputlisting[firstline=3]{examples/pn1a.sm}
+%
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.75]{cs1.pdf}
+  ~~~~~
+  \includegraphics[scale=1]{cs1CTMC.pdf}
+  %
+  \caption{A simple Petri net (left) and its underlying CTMC (right).}
+  \label{FIG:cs1}
+\end{figure} 
+%
+The code defines the stochastic Petri net \Code{cs1} illustrated
+in Fig.~\ref{FIG:cs1} on the left.
+Since all firing times are exponentially distributed, the underlying
+process is a CTMC.
+This CTMC is shown in Fig.~\ref{FIG:cs1} on the right, where the state
+structure is given by the pair
+``(number of tokens in \Code{p}, number of tokens in \Code{q})''.
+This \Code{pn} model also defines a measure \Code{m1}, the
+expected number of tokens in place \Code{p} in steady state.
+This measure can be requested in output as usual:
+%
+\lstinputlisting[firstline=3]{examples/pn1b.sm}
+%
+will cause its value to be computed and printed to the current output stream.
+
+We observe that the declarations of \Code{p} and \Code{q}, and of \Code{t},
+\Code{u}, and \Code{v} are also definitions:
+just like type \Code{state} for discrete or continuous-time Markov chains,
+types \Code{place} and \Code{trans} cannot be assigned a value,
+they are essentially \Code{void} types.
+
+Had the distributions for the firing times been specified as
+\begin{lstlisting}
+  firing(t:geom(0.2), u:geom(0.3), v:geom(0.1*tk(p)));
+\end{lstlisting}
+the resulting underlying process would have been a DTMC and it still would
+be solvable numerically.
+\RELEASE{However, currently, \smart{} can numerically analyze only
+\Code{expo} and 0 firing times.}
+
+In the presence of mixtures of \Code{ph int} and \Code{ph real} firing time
+distributions, the result might be a semi-regenerative process.
+This is the case if we had specified
+\begin{lstlisting}
+  firing(t:geom(0.2), u:expo(0.3), v:erlang(5,0.02));
+\end{lstlisting} 
+In this case, it is still possible to compute a numerical solution.
+% In this case, {\smart} is still able to compute a numerical solution.
+\RELEASE{Again, the current version of \smart{} cannot handle this case.}
+
+In more complex cases, i.e., in the presence of complex mixtures of
+\Code{ph int} and \Code{ph real} firing time distributions,
+or of any \Code{rand int} or \Code{rand real} firing time distribution,
+the resulting process would have to be studied using discrete-event simulation.
+If a numerical solution is requested in this case, {\smart} will still
+attempt to generate the correct state space;
+as soon as it discovers a state where the required semi-regenerative behavior
+is not present, it halts and gives and gives an error.
+Thus, requiring a numerical solution when the process is not of the appropriate
+type does not lead to incorrect results, but it can cause {\smart} to run for
+a long time before issuing the correct error message.
+\\
+\RELEASE{Currently, {\smart} does not support discrete-event simulation
+of Petri nets.}
+
+
+
+
+
+
+
+\section{Marking-dependent expressions}
+\label{SEC:spn-predefined-state-functions}
+
+A \emph{current marking} is assumed when specifying the dynamic behavior
+of the stochastic Petri net.
+Thus, for example, \Code{tk(p)} is an integer quantity representing
+the number of tokens in place \Code{p} as the net evolves over time:
+we say its type is \Code{proc int}, where ``\Code{proc}'' stands
+for ``process'', since the value of \Code{tk(p)} depends on the
+state of a process evolving over time.
+
+A statement such as
+\begin{lstlisting}
+  guard(t:enabled(u)|tk(p)>5);
+\end{lstlisting}
+can be used to specify a guard
+for \Code{t} that disables \Code{t} when \Code{u} is not enabled and
+when \Code{p} contains no more than five tokens.
+Indeed, it is even possible in {\smart} to define nets having marking-dependent
+arc cardinalities \cite{1994ICATPN-Vararcs}
+(also known as \emph{self-modifying nets}):
+\begin{lstlisting}
+  arcs(p:t:tk(p));
+\end{lstlisting}
+specifies an arc from \Code{p} to \Code{t} with
+cardinality equal to the (current) number of tokens in \Code{p};
+thus, when \Code{t} fires, place \Code{p} becomes empty
+(unless there is also an output arc from \Code{t} to \Code{p}).
+When such expressions are evaluated in light of a \emph{current marking},
+they are deterministic quantities, given that this marking is known.
+
+The initial marking specification cannot be marking-dependent, thus
+a statement such as
+\begin{lstlisting}
+  init(p:1, q:4*tk(p));
+\end{lstlisting}
+is illegal.
+Also, there cannot be circular dependencies in the behavior of the
+stochastic Petri net.
+Thus, for example, we can add the statement
+\begin{lstlisting}
+  guard(t:!enabled(u));
+\end{lstlisting}
+to disable \Code{t} when \Code{u} is enabled, or add the statement
+\begin{lstlisting}
+  guard(u:!enabled(t));
+\end{lstlisting}
+to disable \Code{u} when \Code{t} is enabled.
+However, adding both statements causes the behavior to be undefined, so
+{\smart} issues an error in this case.
+
+The functions \Code{avg\_ss}, \Code{avg\_at}, \Code{avg\_acc}, and their
+``\Code{prob}'' siblings can be used to specify measures for the model.
+They require a \Code{real} expression for their first argument
+(or \Code{int}, of course, since it can be automatically promoted).
+Arbitrarily complex expressions can be used for this argument:
+in the example of Section \ref{SEC:SPNdef},
+instead of just \Code{avg\_ss(tk(p))}, the expected number of tokens
+in place \Code{p} in steady state, we could have asked for the
+steady-state average of any marking-dependent expression.
+
+The following lists the functions available to build marking-dependent
+expressions for \Code{pn} models.
+They all assume the notion of a current marking.
+For a complete,
+release-specific list of functions available for \Code{pn} models,
+see the ``pn'' help topic (e.g., \Unix{smart -h pn}).
+
+\begin{itemize}
+\item
+\PRIVATE{
+\Code{proc~bool~empty(place~p);}\\
+Returns \Code{true} if place \Code{p} is empty, \Code{false} otherwise.
+}
+
+\item
+\Code{proc~bool~enabled(trans~t);}\\
+Returns \Code{true} if transition \Code{t} is enabled,
+\Code{false} otherwise.
+
+\item
+\Code{proc~int~tk(place p);}\\
+Returns the number of tokens in place \Code{p}.
+
+\PRIVATE{
+\item
+\Code{proc~bool~fires(trans~t);}\\
+Returns \Code{true} if transition \Code{t} fires, \Code{false} otherwise.
+This is an impulse-type process, and it is required to specify timing
+aspects related to structural state changes in the net, such as the
+\Code{restart} behavior.
+}
+
+\item
+\Code{proc~real~rate(trans~t);}\\
+Returns the rate of transition \Code{t}.
+\\
+\RELEASE{Currently, it can only be used if \Code{t} has an \Code{expo}
+firing distribution.}
+
+\end{itemize}
+
+
+
+\PRIVATE{
+
+\section{Formalism-specific functions for stochastic Petri net models}
+\label{SEC:spn-predefined-builder-functions}
+
+TBD --- should we delete this list?  The \smart{} internal documentation
+is always more up to date than what we list here.
+
+
+The block defining a stochastic Petri net can contain any number
+of calls to the following predefined functions:
+
+\begin{itemize}
+
+\item
+\Code{void~init(place:int~p1:n1,~place:int~p2:n2,~...);}\\
+Sets the initial number of tokens in place \Code{p}$i$ to the value of the
+(non-marking-dependent) \Code{int} expression \Code{n}$i$.
+Any place for which an initial number of tokens is not explicitly set
+by this function is assumed to be initially empty.
+If the expression \Code{n}$i$ for a place \Code{p}$i$ evaluates to zero,
+a warning is issued (since this is already the default value).
+
+\item
+\Code{void~arcs($node$:$node$:int~a1:b1:n1,~$node$:$node$:int~a2:b2:n2,~...);}\\
+Sets the cardinality of the input (if $node$:$node$ is \Code{place:trans})
+or output (if  $node$:$node$ is \Code{trans:place}) arc
+from \Code{a}$i$ to \Code{b}$i$ to the value of the
+(possibly marking-dependent) \Code{int} expression \Code{n}$i$.
+If an arc is not listed, it is assumed to have cardinality zero
+(i.e., there is no arc).
+If a pair $node$:$node$ appears but no cardinality is specified for it, the
+corresponding arc is assumed to have cardinality one.
+
+\item
+\Code{void~inhibit(place:trans:int~a1:b1:n1,~place:trans:int~a2:b2:n2,~...);}\\
+Exactly analogous to \Code{arcs}, except that it specifies the cardinality of
+inhibitor arcs (which can only connect places to transitions) thus,
+if an arc is not listed, it is assumed to have cardinality infinity
+(i.e., there is no inhibitor arc).
+
+\PRIVATE{
+\item
+\Code{void~prio(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} TBD\\
+Sets an acyclic preselection priority relation \cite{1995StewartBook-DiscreteSPN}
+for transition \Code{t}$i$ over transition \Code{s}$i$.
+
+\item
+\Code{void~post(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} TBD\\
+Sets an acyclic postselection priority relation \cite{1995StewartBook-DiscreteSPN}
+for transition \Code{t}$i$ over transition \Code{s}$i$.
+} 
+
+\item
+\Code{void~guard(trans:bool~t1:b1,~trans:bool~t2:b2,~...);}\\
+Sets the guard for transition \Code{t}$i$ to the value of the
+(normally marking-dependent) \Code{bool} expression \Code{b}$i$.
+If a guard is not specified for a transition, it is assumed to be
+the constant \Code{true}.
+
+\PRIVATE{
+\item
+\Code{void~immediate(trans~t1,~trans~t2,~...);}\\
+Sets the firing time distribution for the argument transitions to the constant
+zero, that is, defines them as immediate transitions.
+Any transition not defined to be immediate is taken to be timed,
+that is, its firing time is positive with probability one.
+TBD --- THIS FUNCTION IS GONE NOW
+}
+
+\item
+\Code{void~firing(trans:real~t1:f1,~trans:real~t2:f2,~...);}\\
+Sets the firing time distribution for timed transition \Code{t}$i$ to the value
+of the (possibly marking-dependent) expression \Code{f}$i$.
+It is an error to set the firing distribution of an immediate transition.
+For solution methods using any \Code{StateStorage} other than \Code{SPLAY},
+each timed transition must have an exponential firing distribution,
+i,e., it must be of the form \Code{expo($e$)},
+where $e$ is a (possibly marking-dependent) \Code{real} expression,
+which must evaluate to a positive finite value in any marking
+where the transition is enabled.
+When \Code{SPLAY} is used, the firing time distribution can instead be
+\Code{ph int} or \Code{ph real} as well.
+\PRIVATE{For simulation, any \Code{rand int} or \Code{rand real} distribution
+with non-negative support can be specified.}
+\PRIVATE{We need to be explicit about what can be used for \Code{f}$i$.}
+\PRIVATE{The value \Code{const(infinity)}
+can be specified for the distribution of the firing time.
+This effectively causes the transition not to fire without being disabled.
+TRUE???}
+
+\item
+\Code{weight(trans:real~t1:r1,~trans:real~t2:r2,~...);}\\
+Sets the firing weight for transition \Code{t}$i$ to the value of the
+(possibly marking-dependent) \Code{real} expression \Code{r}$i$,
+which must evaluate to a positive and finite value in any marking
+where the transition is enabled.
+Internally, {\smart} normalizes weights so that they sum to one.
+For example, \Code{weight(t:1,u:1,v:2)} specifies that transitions
+\Code{t}, \Code{u}, and \Code{v}, have firing probability proportional
+to one, one and two, respectively, when any subset of them attempts
+to fire at the same time.
+An error occurs if a transition has weight zero.
+
+Each call to \Code{weight} defines a new ``weight class'',
+a transition can appear at most in one class,
+and weights are meaningful only within a class.
+If a transition does not appear in any class, it is assumed to be in a class
+by itself with a weight of one.
+
+Weights are meaningful only within a class.  A ``stochastic
+confusion'' arises if two transitions in different classes can fire at
+the same time, and the choice of which one to fire first affects the
+measures \cite{1996MASCOTS-StochasticConfusion}.
+{\smart} issues an error whenever
+it detects a stochastic confusion while generating the state space.
+The model must then be corrected by modifying the enabling of the
+interested transitions or their weight class specification.
+
+
+\PRIVATE{
+\item
+\Code{void~restart(trans:bool~t1:b1,~trans:bool~t2:b2,~...);}\\
+Sets the enabling policy of transition \Code{t}$i$ to the
+(normally marking-dependent) boolean \Code{b}$i$.
+The default policy for a transition \Code{t} is \Code{disabled(t)},
+that is, the firing time of a transition is restarted whenever it becomes
+disabled by the firing of some other transition.
+To specify that \Code{t} is ``restarted'' \cite{1993PNPM-DSPNs}
+only when \Code{u} or \Code{v} fire, use the entry
+\Code{t:(fires(u)|fires(v))}.
+To specify a ``continue'' \cite{1993PNPM-DSPNs},
+or ``age enabling'' \cite{Ajmone1989a}, behavior, for \Code{t}, use
+the entry \Code{t:false}.
+When transition \Code{t} itself fires, its firing time is always restarted,
+so it is not necessary to explicitly add the condition \Code{fires(t)}
+to the enabling policy of transition \Code{t}.
+Of course, for memoryless distributions (exponential, geometric with unit
+step in a \Code{pn} having an underlying discrete-time Markov chain,
+or deterministically equal zero, i.e., immediate),
+the enabling policy is irrelevant.
+}
+
+\item
+\Code{void assert(bool b1, bool b2, ...);}\\
+Defines a set of (usually marking-dependent) \Code{bool} expressions,
+or ``assertions'', which must be true in each marking.
+If, at any point in the execution, assertion \Code{b}$i$ does not hold,
+{\smart} issues an error message and exits.
+
+This is particularly useful to debug a model when using explicit state-space
+exploration techniques.
+
+\PRIVATE{
+\item
+\Code{{place}~places\_of(pn~s);}~TBD\\
+Returns the set of places of the SPN \Code{s}.
+
+\item
+\Code{{trans}~transitions\_of(pn~s);}~TBD\\
+Returns the set of transitions of the SPN \Code{s}.
+}
+
+
+\end{itemize}
+
+
+\IGNORE{
+Thus, the preselection priority relation must be acyclic:
+\Code{prio(t:u,u:t)} is illegal.}
+\IGNORE{
+More subtle errors can arise as well.
+For example, an arc \Code{p:t:if(enabled(u),0,1)} becomes illegal if
+used in conjunction with a preselection priority \Code{t:u}, since to
+determine whether \Code{t} is enabled we need to know the cardinality
+of its input arc from \Code{p}, which is zero if \Code{u} is enabled, one
+otherwise.
+But, to determine whether \Code{u} is enabled, we need to know
+whether \Code{t} itself is enabled, since \Code{t} has preselection priority
+over \Code{u}.
+}
+\IGNORE{
+I don't think this is done yet...
+{\smart} takes particular care to check against any type of cyclic
+dependency, hence a {\smart} language file is guaranteed to be semantically
+well-defined if it compiles without errors.
+}
+
+\IGNORE{
+The process underlying the \Code{ctmcSpn} \Code{cs1} remains a
+continuous-time Markov chain even if,
+instead of \Code{expo}, we use more complex predefined
+phase-type distributions, such as \Code{erlang}, \Code{hypo}, \Code{hyper}
+for the specification of one or more firing times.
+We can even recall our continuous-time Markov chain \Code{c1}
+defined in Section \ref{SEC:CTMC}
+and set the distribution of the firing time of a transition in a
+stochastic Petri net to the time to absorption of \Code{c1}.
+For example, we could change the rate of transition \Code{v}
+in the call of \Code{firing} for the stochastic Petri net \Code{cs1} to
+\begin{lstlisting}
+v:tta(c1(tk(p)*0.0004))
+\end{lstlisting}
+
+An exactly analogous discussion applies to discrete-time Markov chains
+and stochastic Petri nets whose underlying process is a discrete-time
+Markov chain: any DDP distribution can be used for the firing time of
+the transitions \cite{1995StewartBook-DiscreteSPN}.
+}
+
+}

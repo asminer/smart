@@ -1,0 +1,9 @@
+// $Id$
+
+dtmc d3(bool connect) := {
+  state a,b;
+  init(a:1);
+  arcs(a:b:1);
+  cond(connect,arcs(b:a:1),null);
+  real m := prob_ss(in_state(b));
+};
