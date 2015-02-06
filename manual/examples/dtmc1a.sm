@@ -1,0 +1,11 @@
+// $Id$
+
+dtmc d1(real x) := {
+  state a,b,c;
+  init(a:1.0);
+  arcs(a:b:1.0, b:a:x, b:c:1-x);
+  real m1 := prob_ss(in_state(c));
+  real m2 := prob_acc(in_state(a), 0, infinity);
+  real m3 := avg(tta(is_absorbed));
+};
+

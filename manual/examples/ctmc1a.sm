@@ -1,0 +1,8 @@
+// $Id$
+
+ctmc c1(real lambda) := {
+  state a,b,c;
+  init(a:1.0);
+  arcs(a:b:2*lambda, b:a:1.0, b:c:lambda, c:a:0.01);
+  real m1 := avg_ss(cond(in_state(a),2,cond(in_state(b),1,0)));
+};

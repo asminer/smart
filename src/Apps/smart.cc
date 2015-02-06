@@ -162,7 +162,7 @@ int Usage(exprman* em)
   cout << "      Use the filename `-' to denote standard input\n";
   cout << "\n";  
   cout << "For full copyright information, type `smart -c'\n";  
-  cout << "For online help, type `smart -h keywords'\n";
+  cout << "For help, view documentation with `smart -h keywords'\n";
   cout << "\n";  
   return 0;
 }
@@ -234,6 +234,15 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
 
   if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0) 
     return CmdLineHelp(em, st, argv+2, argc-2);
+  
+  if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
+    if (0==em) return 1;
+    em->startError();
+    em->noCause();
+    em->cerr() << "Help system is now -h\n";
+    em->stopIO();
+    return 1;
+  }
   
   return pm.ParseSmartFiles(argv+1, argc-1);
 }

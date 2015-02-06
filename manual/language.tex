@@ -23,16 +23,17 @@ of these files, but this is not a requirement.
 
 Normally, {\smart} is run on one or more input files.
 The command line used to run {\smart} on input file \Code{ff.sm} is
-\begin{quote}
-\Unix{smart ff.sm}
-\end{quote}
+\lstset{language=bash}
+\begin{lstlisting}
+smart ff.sm
+\end{lstlisting}
 The input can also be partitioned over multiple files,
 and it is possible to specify the standard input stream instead
 of an ordinary file, by using ``\Code{-}''.
 For example,
-\begin{quote}
-\Unix{smart ff1.sm ff2.sm - ff3.sm - ff4.sm}
-\end{quote}
+\begin{lstlisting}
+smart ff1.sm ff2.sm - ff3.sm - ff4.sm
+\end{lstlisting}
 directs {\smart} to obtain input from file \Code{ff1.sm},
 then file \Code{ff2.sm},
 then the standard input (until the end-of-file is encountered),
@@ -48,15 +49,16 @@ information, as well as any command-line switches.
 An important new feature of {\smart} is its built-in \emph{help} mechanism,
 which may be invoked from the command line using the switch \Code{-h}.
 For example,
-\begin{quote}
-\Unix{smart -h ctmc}
-\end{quote}
+\begin{lstlisting}
+smart -h ctmc
+\end{lstlisting}
 will display documentation about the \Code{ctmc} formalism.
 
 \subsection{Comments}
 
 A {\smart} input file can contain comments.
 Both single-line comments
+\lstset{language=smart}
 \begin{lstlisting}
 int i := 1; // a single-line comment
 \end{lstlisting}
@@ -120,9 +122,10 @@ An {\bf option} statement is used to modify the behavior of {\smart}.
 For example, there are options to control the solution algorithms (such
 as the precision or the maximum number of iterations) or the level
 of verbosity.
-Options statements appear on a single line beginning with ``\Code{\#}''
+Options statements appear on a line beginning with ``\Code{\#}''
 (the \Code{\# include} directive also begins with a ``\Code{\#}'', but it
 should not be considered a statement).
+
 \item
 A \Code{for} compound statement is used to define arrays or to
 repeatedly evaluate parametric expressions.
@@ -287,7 +290,8 @@ would result in an error message because it attempts to output
 \subsection{Managing large integers}
 
 Ordinary \Code{int} quantities can only store quantities in a limited
-range, $[-2^{31},2^{31}-1]$ on most machines.
+range, $[-2^{31},2^{31}-1]$ on 32-bit architectures
+and $[-2^{63}, 2^{63}-1]$ on 64-bit architectures.
 In \smart, much larger integers have to be manipulated at times,
 thus an ``arbitrary-size integer'' type, \Code{bigint}, is provided as well.
 For example, if we define the two factorial functions
@@ -335,7 +339,7 @@ ifact(20) = -2102132736    bfact(20) = 2,432,902,008,176,640,000
 %ifact(18) =  -898433024    bfact(18) = 6,402,373,705,728,000
 %ifact(19) =   109641728    bfact(19) = 121,645,100,408,832,000
 %ifact(20) = -2102132736    bfact(20) = 2,432,902,008,176,640,000
-
+on a 32-bit machine.
 Note that the \Code{int} factorial overflows from \Code{13} on,
 so that the returned values are incorrect, and can even be negative,
 as \Code{ifact(20)} illustrates.
@@ -1250,7 +1254,7 @@ from other DDP random variables using various operators.
 Also, any positive finite \Code{int} value can be promoted to a \Code{ph int}.
 Given
 \begin{lstlisting}
-ph int X := geom(0.7);
+ph int X := geometric(0.7);
 ph int Y := equilikely(1,5);
 \end{lstlisting}
 we can define:
@@ -1260,7 +1264,7 @@ ph int prodNX   := 4*X;
 ph int chooseXY := choose(X:3,Y:7);
 ph int minXY    := min(X,Y);
 ph int maxXY    := max(X,Y);
-ph int geomX    := geom(0.1,X);
+ph int geomX    := geom(0.1,X);     // Not implemented currently
 \end{lstlisting}
 However, definitions such as:
 \begin{lstlisting}
@@ -1314,7 +1318,7 @@ ph real prodRX   := 4.0*X;
 ph real chooseXY := choose(X:3,Y:7);
 ph real minXY    := min(X,Y);
 ph real maxXY    := max(X,Y);
-ph real geomX    := geom(0.1,X);
+ph real geomX    := geom(0.1,X);    // Not implemented currently
 \end{lstlisting}
 However, definitions such as:
 \begin{lstlisting}
@@ -1335,8 +1339,6 @@ intermixed in an expression, but the resulting random variable is
 neither a DDP nor a DCP distribution: it has a mixture distribution,
 \Code{rand real}, which {\smart} is able to manage only through
 Montecarlo simulation.
-\\
-\RELEASE{Currently, {\smart} does not support Montecarlo simulation.}
 
 
 \subsection{Internal representation of phase-type random variables}
@@ -1376,16 +1378,12 @@ It is also possible to directly define general random variables
 using predefined functions that define distributions that
 are neither \Code{ph int} nor \Code{ph real}, as in
 \begin{lstlisting}
-rand real v := unif(0.1,3.2);
+rand real v := uniform(0.1,3.2);
 \end{lstlisting}
 which defines a random variable \Code{v} with uniform distribution
 in the range $[0.1, 3.2]$.
 
 These general random variables can be analyzed using Montecarlo simulation.
-\\
-\RELEASE{Currently, {\smart} does not support Montecarlo simulation, thus no
-operation can be performed on functions of type
-\Code{rand int} or \Code{rand real} as of now.}
 
 
 
@@ -1474,16 +1472,9 @@ The following statements specify the discrete-time Markov chain
 \Code{d1} (Fig.~\ref{FIG:DTMC1}), with a parameter \Code{x},
 used to specify the value of some of the state-to-state
 transition probabilities:
-\begin{lstlisting}
-dtmc d1(real x) := {
-  state a,b,c;
-  init(a:1.0);
-  arcs(a:b:1.0, b:a:x, b:c:1-x);
-  real m1 := prob_ss(in_state(c));
-  real m2 := prob_acc(in_state(a),0,infinity);
-  real m3 := avg(pi_tta);
-};
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/dtmc1a.sm}
+%
 The definition of the ``value'' of the discrete-time Markov chain
 \Code{d1} is performed via a
 ``block'', that is, a sequence of statements enclosed in braces, used
@@ -1508,12 +1499,9 @@ Markov chain).
 Finally, the last three statements, with a familiar syntax, define
 \emph{measures}, that is, quantities that {\smart} can compute upon request.
 For example, outside the definition of \Code{d1}, the statement
-\begin{lstlisting}
-for (real v in {0.1..0.9..0.1}) {
-  d1(v).m1;
-  d1(v).m2;
-}
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/dtmc1b.sm}
+%
 outputs the nine value pairs corresponding to the steady-state probability
 of discrete-time Markov chain \Code{d1} being in state \Code{c},
 and to the accumulated time spent in state \Code{a} up to absorption, when
@@ -1521,12 +1509,13 @@ its formal parameter \Code{x} varies from \Code{0.1} to \Code{0.9}
 (of course, since \Code{c} is an absorbing state while \Code{a}
 and \Code{b} are transient, \Code{d1(v).m1} has value \Code{1}
 regardless of the value of \Code{v}).
-The expression \Code{avg(pi\_tta)} evaluates to the average, or mean,
+The expression \Code{avg(tta(is\_absorbed))} evaluates to the average, or mean,
 time-to-absorption (often called ``MTTA'').
-Note that the function we use, \Code{pi\_tta}, has type \Code{ph int},
-since it is the time-to-absorption of a DTMC;
-had this been a CTMC model, we would have used \Code{pr\_tta}, with
-type \Code{ph real}.
+Note that the function we use, \Code{tta}, has type \Code{ph int},
+since it is the time to reach a set of states 
+(in this case, the absorbing ones)
+in a DTMC;
+inside a CTMC model, \Code{tta} instead has type \Code{ph real}.
 
 The selection operator ``\Code{.}'' acts just like in ANSI C, where it
 is used to select a field in a structure.  In our case, the ``fields''
@@ -1540,18 +1529,9 @@ Blocks can only appear at the top level and cannot contain a
 However, they can contain \Code{for} statements, which are
 extremely useful when defining large repetitive structures.
 For example,
-\begin{lstlisting} 
-dtmc d2(int n) := {
-  for (int i in {0..n-1}) {
-    state a[i];
-    real m[i] := prob_ss(in_state(a[i]));
-  }
-  init(a[0]:1.0);
-  for (int i in {0..n-1}) {
-    arcs(a[i]:a[i]:1.0, a[i]:a[mod(i+1,n)]:9.0);
-  }
-};
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/dtmc2a.sm}
+%
 defines a discrete time Markov chain with an unspecified number
 \Code{n} of states connected in a circular fashion
 (to avoid periodicity, there are two transitions emanating from state
@@ -1561,9 +1541,9 @@ or \Code{a[0]} when \Code{i} equals \Code{n-1}, with weight
 {\smart} normalizes these weights, so that the resulting probabilities are
 \Code{0.1} and \Code{0.9}, respectively).
 Then, the call
-\begin{lstlisting}
-d2(10000).m[0];
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/dtmc2b.sm}
+%
 instantiates the chain \Code{d2} with 10,000 states and computes the
 steady-state probability of being in state \Code{a[0]}, which, of course,
 equals \Code{0.0001}, by symmetry.
@@ -1586,15 +1566,9 @@ Finally, note that the structure of a model can be parameterized in essentially
 arbitrary ways by using functions such as \Code{cond} or \Code{case} on
 appropriate parameters.
 For example
-\begin{lstlisting}
-dtmc d3(bool connect) := {
-  state a,b;
-  init(a:1);
-  arcs(a:b:1);
-  cond(connect,arcs(b:a:1),null);
-  real m := prob_ss(in_state(b));
-};
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/dtmc3.sm}
+%
 defines either a DTMC where states \Code{a} and \Code{b} are recurrent
 (Fig.~\ref{FIG:DTMC3}, left),
 or a DTMC where state \Code{a} is transient and \Code{b} is absorbing
@@ -1625,15 +1599,9 @@ of a discrete-time Markov chain.
 The following code defines the continuous-time Markov chain
 in Fig.~\ref{FIG:CTMC1}, and defines a measure to compute the probability
 of being in state \Code{c} in steady state:
-
-\begin{lstlisting}
-ctmc c1(real lambda) := {
-  state a,b,c;
-  init(a:1.0);
-  arcs(a:b:2*lambda, b:a:1.0, b:c:lambda, c:a:0.01);
-  real m1 := avg_ss(cond(in_state(a),2,cond(in_state(b),1,0)));
-};
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/ctmc1a.sm}
+%
 The compound statement defining a continuous time Markov chain can
 contain calls to the functions \Code{init} and \Code{arcs},
 defined as for the discrete time case, with two differences:
@@ -1646,11 +1614,9 @@ when the reward rates assigned to states \Code{a}, \Code{b}, and \Code{c}
 are \Code{2}, \Code{1}, and \Code{0}, respectively.
 This value can then be computed for various
 values of \Code{lambda} using the \Code{for}-loop statement
-\begin{lstlisting}
-for (real lambda in {0.03..0.08..0.02}) {
-  print("lambda=",lambda,"   reward=",c1(lambda).m1:10:8,"\n");
-}
-\end{lstlisting}
+%
+\lstinputlisting[firstline=3]{examples/ctmc1b.sm}
+%
 which results in the following output:
 \begin{lstlisting}
 lambda=0.03   reward= 1.6692913
