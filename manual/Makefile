@@ -40,7 +40,7 @@ SMART-userman-private.pdf: $(TEXSRC) $(FIGS) $(EXSM)
 	dot -Tpdf $< -o $@
 
 %.eps: %.obj
-	tgif -color -print -eps -o. $<
+	tgif -color -print -eps -ofigures $<
 
 %.pdf: %.eps
 	epstopdf $<
