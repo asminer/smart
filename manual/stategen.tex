@@ -156,16 +156,84 @@ to determine the family of algorithms to choose from:
   \item \Code{MEDDLY}:\\
   States are stored symbolically, using Meddly to support
   the decision diagram representation.
-  \RELEASE{Currently,
+  \begin{release}
+  Currently,
   this requires the user to specify a \emph{partition} for the model,
   which dictates how state variables are collected and mapped
   to decision diagram variables.
-  }
+  \end{release}
   The option \Code{MeddlyProcessGeneration} specifies
   the generation algorithm (including explicit)
   to use with Meddly.
-  \RELEASE{Some of these algorithms are not implemented yet,
-  while others have prototype implementations.}
+  \begin{release}
+  Some of these algorithms are not implemented yet,
+  while others have prototype implementations.
+  \end{release}
   Several other options exist to set parameters of Meddly.
 \end{itemize}
+
+\TBD{Expand this?}
+
+\section{Defining a partition of the model} \label{SEC:partition}
+
+\index{partition!defining|(}
+
+A partition must be defined when the value of the \Code{ProcessGeneration} option
+is set to \Code{MEDDLY}.
+Using \Code{EXPLICIT} methods is still possible when a partition is
+specified, since {\smart} simply ignores this information in this case.
+
+To illustrate how to partition a model, consider the dining philosophers
+example of the previous section.
+We can add the statement 
+\begin{lstlisting}
+  partition({Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i]} : i+1);
+\end{lstlisting}
+inside the first \Code{for} loop.
+This assigns the places belonging to philosopher~$i$ and fork~$i$ to
+partition number~$i+1$, that is, it assigns one philosopher per submodel.
+When symbolic methods are used,
+{\smart} will use the highest-numbered partition as the topmost,
+i.e., the one corresponding to the root of the MDD, 
+while the lowest-numbered partition will be the bottom level of the MDD.
+
+Note that, when directly assigning the places to a given class of the
+partition using an integer, this can be done in any order:
+the statements
+\begin{lstlisting}
+partition(p:4); partition(q:7); partition(r:4); 
+\end{lstlisting}
+are legal, in that order; however, it is illegal to assign the same
+place \Code{p} to multiple classes, as in
+\begin{lstlisting}
+partition(p:4); partition(p:7);
+\end{lstlisting}
+
+
+Instead of specifying the index of the class explicitly, we can let
+{\smart} assign indices, thus we could have used the statement
+\begin{lstlisting}
+partition({Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i]});
+\end{lstlisting}
+to define the partition instead.
+When this ``index-less'' mode is used, {\smart} puts the first
+class defined for the partition in the topmost level, the second one in
+the second topmost, and so on.
+If both partition definitions are used in the same model,
+e.g.,
+\begin{lstlisting}
+partition({p, q}); partition({r, t}:7);
+\end{lstlisting}
+then {\smart} will place all the indexed partitions above the index-less ones.
+
+
+We conclude this section by reminding the user that,
+as in any BDD-based technique, the variable ordering (and, in our case,
+the partition choice as well)
+is crucial to the efficiency of the state-space construction algorithm.
+The specification of a ``good'' partitioning is often a challenging
+task that is for the moment left to the user;
+{\smart} can only check whether a partition is ``legal''.
+
+\index{partition!defining|)}
 

@@ -1,0 +1,23 @@
+// $Id:$
+
+pn phils(int N) := {
+  for (int i in {1..N}) {
+    place Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i];
+    trans GoEat[i], GetL[i], GetR[i], Rel[i];
+    init(Idle[i]:1, Fork[i]:1);
+  }
+  for (int i in {1..N}) {
+    arcs( 
+      Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i], 
+      WaitL[i]:GetL[i], Fork[1+i%N]:GetL[i], GetL[i]:HasL[i], 
+      WaitR[i]:GetR[i], Fork[i]:GetR[i], GetR[i]:HasR[i], 
+      HasL[i]:Rel[i], HasR[i]:Rel[i], Rel[i]:Idle[i], Rel[i]:Fork[i], Rel[i]:Fork[1+i%N]
+    );
+  }
+  stateset NotAbsorb := EX(potential(true));
+  stateset Deadlocked := reachable \ NotAbsorb;
+}; 
+int N := read_int("number of philosophers");
+cond(empty(phils(N).Deadlocked),  print("No deadlock\n"),
+  print("Deadlock present.\nAbsorbing states:\n", phils(N).Deadlocked, "\n")
+);

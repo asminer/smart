@@ -1,0 +1,41 @@
+// $Id$
+
+pn ex := {
+  place a, b, c, d, e;
+  trans t1, t2, t3, t4, t5, t6;
+  arcs(a:t1, t1:b, b:t2, t2:c, c:t3, t3:a, c:t4, t4:d, d:t5, t5:e, e:t6, t6:d);
+  inhibit(d:t4, e:t4);                  // needed only for certain methods
+  init(a:1);
+  partition({a,b,c}, {d,e});
+  stateset sa   := potential(tk(a)==1);
+  stateset sb   := potential(tk(b)==1);
+  stateset sc   := potential(tk(c)==1);
+  stateset sd   := potential(tk(d)==1);
+  stateset reach := reachable;
+  stateset rsa  := sa & reach;
+  stateset EFa  := EF(sa);
+  stateset rEFa := EFa & reach;
+  stateset EGa  := EG(sa);
+  stateset rEGa := EGa & reach;
+  stateset EGs  := EG(sa | sb | sc);
+  stateset rEGs := EGs & reach;
+  stateset EcUd := EU(sc, sd) & reach;
+  stateset AcUd := AU(sc, sd) & reach;
+  stateset EsUd := EU(sa | sb | sc, sd) & reach;
+  stateset AsUd := AU(sa | sb | sc, sd) & reach;
+};
+# StatesetPrintIndexes false
+# PNMarkingStyle SAFE
+print("Reachable state space:\n",                                 ex.reach,  "\n");
+print("Potential states with a token in a:\n",                    ex.sa,     "\n");
+print("Actual states with a token in a:\n",                       ex.rsa,    "\n");
+print("Potential states satisfying EF a:\n",                      ex.EFa,    "\n");
+print("Actual states satisfying EF a:\n",                         ex.rEFa,   "\n");
+print("Potential states satisfying EG a:\n",                      ex.EGa,    "\n");
+print("Actual states satisfying EG a:\n",                         ex.rEGa,   "\n");
+print("Potential states satisfying EG(a OR b OR c):\n",           ex.EGs,    "\n");
+print("Actual states satisfying EG(a OR b OR C):\n",              ex.rEGs,   "\n");
+print("Actual states satisfying E[c U d]:\n",                     ex.EcUd,   "\n");
+print("Actual states satisfying A[c U d]:\n",                     ex.AcUd,   "\n");
+print("Actual states satisfying E[(a OR b OR c) U d]:\n",         ex.EsUd,   "\n");
+print("Actual states satisfying A[(a OR b OR c) U d]:\n",         ex.AsUd,   "\n");

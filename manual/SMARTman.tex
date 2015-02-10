@@ -9,7 +9,12 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{amssymb}
+\usepackage{comment}
 \makeindex
+
+\renewcommand{\topfraction}{0.999}
+\renewcommand{\floatpagefraction}{0.999}
+\renewcommand{\textfraction}{0.001}
 
 % ====================================================================
 
@@ -22,15 +27,24 @@
 \newcommand{\smartmeaning}{Stochastic Model-checking Analyzer for Reliability and Timing}
 
 % For notes applying only to the current release
-\newcommand{\RELEASE}[1]{{\color{blue}#1\color{black}}}
+\newenvironment{release}{\color{blue}}{\color{black}}
+
+% For shorter current release notes
+\newcommand{\RELEASE}[1]{{\color{blue}#1}}
+
+% For huge swaths of private text, including figures and other nasties
+% However, the private environment cannot be nested.
+\specialcomment{private}{\color{red}}{\color{black}}
 
 % For undocumented features
 \typein[\mantype]{Produce INTERNAL or EXTERNAL manual}
 \ifthenelse{\equal{\mantype}{INTERNAL}}{%
-  \newcommand{\PRIVATE}[1]{{\color{red}#1\color{black}}}
+  \newcommand{\PRIVATE}[1]{{\color{red}#1}}%   For short private sections
 }{%
-  \newcommand{\PRIVATE}[1]{}
+  \newcommand{\PRIVATE}[1]{}%
+  \excludecomment{private}
 }
+
 
 % ====================================================================
 
@@ -71,21 +85,25 @@
 % for command-line stuff
 \newcommand{\Unix}[1]{{\tt {#1}}}
 
-% FOR NOW
-\newenvironment{code}{\begin{quote}}{\end{quote}}
 
-
-\newcommand{\vect}[1]{\mathbf{#1}}               % does not bold lowercase greek
-\newcommand{\gvect}[1]{\mbox{\boldmath{${#1}$}}} % wrong size for scripts
 \newcommand{\Set}[1]{\mathcal{#1}}
-
 \newcommand{\eset}{\Set{E}}           % event set
 \newcommand{\nset}{\Set{N}}           % next state function (new set of states)
+\newcommand{\pset}{\Set{P}}           % generic sat set
+\newcommand{\qset}{\Set{Q}}           % generic sat set
 \newcommand{\sset}{\Set{S}}           % reachability sets (global, local)
+
+\newcommand{\pot}[1]{\widehat{#1}}    % potential (as opposed to actual)
+\newcommand{\potsset}{\pot{\sset}}    % potential state space
+\newcommand{\potnset}{\pot{\nset}}    % potential state space
+
+\newcommand{\vect}[1]{\mathbf{#1}}               % does not bold lowercase greek
 \newcommand{\vi}{\vect{i}}            % generic (from) state
 \newcommand{\vj}{\vect{j}}            % generic (to) state
 \newcommand{\vs}{\vect{s}}            % generic state
 \newcommand{\initstate}{\vs^{init}}   % initial (starting) state
+
+\newcommand{\gvect}[1]{\mbox{\boldmath{${#1}$}}} % wrong size for scripts
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Numeric sets
@@ -94,14 +112,49 @@
 \newcommand{\Integers}{\mathbb{Z}}   % integer numbers
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Petri nets
+\newcommand{\mk}[1]{{\framebox{#1}}}     % marking
+\newcommand{\goesto}[1]{{\stackrel{#1}{\rightharpoondown}}} % firing 
+\newcommand{\fires}[1]{\;\mbox{$[ #1 ]\!\!\! \Rightarrow$}\;} % firing, too
+\newcommand{\PRE}{\succ}
+\newcommand{\POST}{\succ\!\!\!\succ}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Logic symbols
+\newcommand{\THEN}{\Rightarrow}                     % implication
+\newcommand{\IFF}{\Leftrightarrow}                  % biimplication
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CTL operators
+
+\newcommand{\opA}{\mathsf{A}}                     % forall
+\newcommand{\opE}{\mathsf{E}}                     % exists
+
+\newcommand{\opF}{\mathsf{F}}                     % future
+\newcommand{\opG}{\mathsf{G}}                     % globally
+\newcommand{\opU}{\mathsf{U}}                     % until
+\newcommand{\opX}{\mathsf{X}}                     % next
+
+\newcommand{\opP}{\mathsf{P}}                     % past (reversed F)
+\newcommand{\opH}{\mathsf{H}}                     % history (reversed G)
+\newcommand{\opS}{\mathsf{S}}                     % since (reversed U)
+\newcommand{\opY}{\mathsf{Y}}                     % reversed X
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Miscellanea
 \newcommand{\IGNORE}[1]{}                        % Ignore the argument
-\newcommand{\TBD}{{\textcolor{red}{\bf TBD}}}    % To Be Done 
+\newcommand{\TBD}[1]{\PRIVATE{{\bf TBD}: #1}}    % To Be Done 
 \newcommand{\MSG}[1]{{\color{blue}#1}}    % messages
 \newcommand{\SUPST}{\mbox{$^{\mathrm{st}}$}}     % to put a ^st in text
 \newcommand{\SUPND}{\mbox{$^{\mathrm{nd}}$}}     % to put a ^nd in text
 \newcommand{\SUPRD}{\mbox{$^{\mathrm{rd}}$}}     % to put a ^rd in text
 \newcommand{\SUPTH}{\mbox{$^{\textrm{th}}$}}     % to put a ^th in text
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Temporary stuff to be eliminated
+\definecolor{lightgrey}{rgb}{0.8,0.8,0.8}
+\newcommand{\LIGHTGREY}[1]{\textcolor{lightgrey}{#1}}
+\newcommand{\BLUE}[1]{\textcolor{blue}{#1}}
 
 % ====================================================================
 
@@ -134,6 +187,16 @@ TBD
 \input{petri-nets}
 
 \input{stategen}
+\input{modelchecking}
+\begin{private}
+%\input{numerical-markov}
+\end{private}
+% \input{prob-modelchecking}
+% \begin{private}
+% \input{approximation-markov}
+% \input{simulation}
+% \end{private}
+% \input{examples}
 
 
 \end{document}

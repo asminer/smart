@@ -1,0 +1,696 @@
+%
+% $Id$
+%
+
+\chapter{Numerical solution of Markov models}  \label{SEC:Numerical}
+
+\RELEASE{This chapter is still under revision.
+More information can be obtained from the examples in
+Chapter \ref{SEC:Examples} and from the various input files provided
+with the {\smart} distribution.}
+
+
+In this chapter, we consider systems whose underlying
+stochastic process has a finite state space, and whose study can be carried
+on through numerical methods.
+Before describing the features implemented in {\smart} to solve such processes,
+we discuss briefly a few key background notions in stochastic processes and
+numerical linear algebra.
+
+%        ===========================
+\section{Discrete time Markov chains}
+%        ===========================
+A \index{discrete-time Markov chain (DTMC)}discrete-time Markov chain (DTMC)
+is completely described by its transition
+probability matrix $\P$ and its initial probability vector $\vp^{(0)}$,
+where $\P[i,j]$ defines the probability
+that a system in state $i$ will be in state $j$ at the next time step, and
+$\vp^{(t)}[i]$ is the probability that the system is in state
+$i$ at time $t \in \Naturals$.
+Once $\P$ and $\vp^{(0)}$ have been specified explicitly or constructed from a
+higher-level model, the following types of analysis are possible.
+The interested reader is referred to \cite{Ross2003book} for more details.
+
+%           =========================================
+\subsection{Instantaneous transient analysis of DTMCs}\label{SEC:powerDTMC}
+%           =========================================
+The probability of being in state $j$ at time step $t \in \Naturals$
+having started in state $i$ at time $0$ is the $(i,j)$-entry of
+the $t\SUPTH$ power of the transition probability matrix, $\P^t[i,j]$.
+However, powers of matrix $\P$ cannot be computed or stored in practice
+due to the size of $\P$.
+Thus, we make use of the knowledge of the initial probability vector
+and compute instead the probability vector at time step $t$,
+$\vp^{(t)} = \vp^{(0)} \cdot \P^t$, using the recursive relation
+\[
+  \vp^{(t+1)} = \vp^{(t)} \cdot \P.
+\]
+
+%           ======================================
+\subsection{Cumulative transient analysis of DTMCs}
+%           ======================================
+If we are interested in the total time spent in each state during the first
+$t \in \Naturals$ time steps, we compute
+\[
+   \vn^{(t)} = \sum_{y=0}^{t-1} \vp^{(y)}
+\]
+where $\vn^{(t)}[i]$ is the expected amount of time spent in state $i$
+until time step $t$.
+
+%           ==========================================
+\subsection{Instantaneous stationary analysis of DTMCs}
+%           ==========================================
+Assuming that the DTMC is aperiodic\footnote{ The \emph{period} of
+a state $i$ is the greatest common divisor of all time steps $t$
+such that the probability of returning to state $i$ in $t$ time
+steps, $\P^t[i,i]$, is nonzero. If a state has period greater than
+one, it is said to be \index{periodic Markov chain}\emph{periodic},
+otherwise it is \index{aperiodic Markov chain}\emph{aperiodic}.
+The DTMC is aperiodic if all of its states are
+aperiodic.}, {\smart} can compute the ``long-term'' probability of
+being in each state. The method used in practice to compute the
+\index{stationary probability distribution}stationary probability vector
+$\vp = \lim_{t \to\infty} \vp^{(t)}$
+depends on the properties of the DTMC.
+
+\subsubsection*{Ergodic DTMCs}
+
+\index{ergodic Markov chain}Ergodic DTMCs converge to a
+\index{stationary probability distribution}stationary (invariant) probability distribution
+independent of the initial state.  This is the case when a finite-state DTMC is aperiodic and
+\index{irreducible Markov chain}irreducible\footnote{ A
+Markov chain is irreducible if there is a path between every pair
+of states.}.  Irreducibility on a finite state space
+implies positive recurrence, which is necessary for a limiting distribution to exist.
+Then, the stationary probability distribution (vector
+$\vp$) uniquely satisfies $\vp = \vp \cdot \P$,
+$\sum_{i}\vp[i]=1$.  The solution $\vp$ is strictly positive and
+$\vp = \lim_{t \to\infty} \vp^{(t)}$.  In this case, {\smart} computes
+$\vp$ by solving the homogeneous linear system
+\[
+  \vp \cdot (\P - \I) = \0 \ \text{ subject to }\ \sum_{i}\vp[i]=1.
+\]
+
+\subsubsection{\index{absorbing Markov chain}Absorbing DTMCs}
+
+If the DTMC consists exclusively of transient and absorbing\footnote{
+A state $i$ is \emph{transient} if there exists a state $j$ reachable from $i$
+such that $i$ is not reachable from $j$.
+A state $i$ is \emph{absorbing} if no other state is reachable from it,
+that is, $\P[i,i] = 1$.
+} states, we need to compute the
+\index{stationary probability distribution}stationary probabilities only
+for the absorbing states, since the transient states have zero probability.
+However, these probabilities depend on the initial probability vector
+$\vp^{(0)}$ in general.
+Denoting the sets of absorbing and transient states by
+$\aset$ and $\tset$, respectively, {\smart} computes $\vp$ as
+\[
+ \vp[\Set{A}] = \vp^{(0)}[\Set{A}] + \vn[\Set{T}] \cdot
+ \P[\Set{T}, \Set{A}]
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \vp[\Set{T}] = \0
+\]
+where $\vn[\Set{T}]$ is described in \SectionRef{SEC:fundamental}.
+
+
+\subsubsection{Arbitrary aperiodic DTMCs}
+
+In the general case, we only require that all states of the DTMC are
+\index{aperiodic Markov chain}aperiodic.
+The DTMC can consist of transient states and classes of
+recurrent (mutually reachable) states, and can be seen as an
+\index{absorbing Markov chain}absorbing DTMC where
+each absorbing state is replaced by an \index{ergodic Markov chain}ergodic DTMC.
+The \index{stationary probability distribution}stationary probability vector $\vp$
+is then computed by first computing the stationary probability vectors of each
+\index{ergodic}ergodic class in isolation,
+then computing the probability of being absorbed in each ergodic class, and
+finally combining the stationary probability vectors of each ergodic class
+using the absorption probabilities as weights (of course, the probability
+of transient states is zero in this case as well).
+
+\subsubsection{Periodic DTMCs}
+
+For \index{periodic Markov chain}periodic DTMCs with period $\delta > 1$, $\P^t[i, j]$ does not
+have a limit as $t\to\infty$ except for $\P^t[i, j]\to 0$ when all
+state are null.  However, the limits of $\P^{t\delta+u}[i, j]$
+exist as $t\to\infty$ but depend on the initial state $i$.
+Although there exists a unique solution satisfying $$\vp = \vp
+\cdot \P,\quad \sum_{i}\vp[i]=\delta,$$ {\smart} does not check
+explicitly that the DTMC is periodic, much less compute the
+period $\delta$ needed to find the solution. Nevertheless,
+numerical methods might still give the correct answer, but in a
+time-averaged sense: the computed vector $\vp$ satisfies $\vp =
+\lim_{t \to\infty} \vn^{(t)}/t$.
+
+If the (iterative) solution methods are unable to compute a
+solution, it is simply because convergence was not obtained within
+the maximum number of iterations allowed, and a warning is issued
+in this case.  In other words, periodicity does not lead to
+incorrect answers in {\smart}.
+
+
+%           =======================================
+\subsection{Cumulative stationary analysis of DTMCs}\label{SEC:fundamental}
+%           =======================================
+We can also consider the (expected) total time spent in each state
+by computing the vector $\vn = \lim_{t \to\infty} \vn^{(t)}$. Of
+course, $\vn[i] = \infty$ for any state $i$ with a positive
+\index{stationary probability distribution}stationary probability,
+thus the entries in $\vn$ are meaningful
+only for the transient states. In this case, $\vn[i]$ is the
+expected time spent in transient state $i$ before the DTMC reaches
+an absorbing state, or a class of \index{ergodic}ergodic states. The portion of
+$\vn$ corresponding to the transient states is the solution of the
+non-homogeneous linear system
+\[
+  \vn[\Set{T}] \cdot (\P[\Set{T}, \Set{T}] - \I)
+  = -\vp^{(0)}[\Set{T}]
+\]
+where $\P[\Set{T}, \Set{T}]$ is the submatrix of $\P$
+corresponding to transitions between transient states.
+
+%        =============================
+\section{Continuous time Markov chains}
+%        =============================
+A \index{continuous-time Markov chain (CTMC)}continuous-time Markov chain (CTMC)
+is completely described by its transition
+rate matrix $\R$ and its initial probability vector
+$\gvect{\pi}^{(0)}$, where $\R[i,j]$ defines the rate of going to state
+$j$ given that the chain is in state $i$, and
+$\gvect{\pi}^{(t)}[i]$ is the probability that the system is
+in state $i$ at time $t \geq 0$.
+A transition from a state to itself is meaningless in a CTMC,
+thus, the diagonal elements of $\R$ are zero.
+The infinitesimal generator matrix, $\Q$, is identical to the matrix $\R$
+except for the diagonal elements, which are set so that each row of
+$\Q$ sums to zero: $\Q[i,i] = - \sum_{j \neq i} \R[i,j]$.
+Once $\Q$ (or $\R$) and $\gvect{\pi}^{(0)}$ have been specified explicitly
+or constructed from a higher-level model, the following types of analysis
+are possible.
+The interested reader is referred to \cite{1993IMA-SRNs,Stewart1994book}
+for more details.
+
+%           =========================================
+\subsection{Instantaneous transient analysis of CTMCs}\label{SEC:inst-trans-anal-CTMC}
+%           =========================================
+To compute $\gvect{\pi}(t)$, the probability vector at time $t$, we use a
+technique called \index{uniformization (randomization)}\emph{uniformization}
+(or \emph{randomization})
+\cite{Grassmann1991}, which constructs the ``uniformized DTMC'' defined by
+\[
+   \P = \frac{\Q}{q} + \I, \quad \vp^{(0)} = \vpi(0)
+\]
+where $q$ satisfies $q \ge \max_i\{-\Q[i,i]\}$.  Observe that with this
+choice for $q$, the CTMC will be sampled at a rate sufficient to observe the
+fastest CTMC state transitions.  This means that the DTMC is constructed such that
+states that are slower to transition to another state will have self loops.
+Consequently, the DTMC is guaranteed to be aperiodic.
+The probability vector $\gvect{\pi}(t)$ can then be written as
+\[
+  \gvect{\pi}(t) = \sum_{n=0}^{\infty} \frac{e^{-qt}(qt)^n}{n!}
+     \cdot \vp^{(n)}
+\]
+where ${e^{-qt}(qt)^n}/{n!}$ is the Poisson probability of
+observing $n$ state transitions of the CTMC ($n$ jumps of the DTMC) within time $t$,
+and $\vp^{(n)}$ is the probability distribution of state occupancy after $n$ jumps.
+Given $\P$, the vector $\vp^{(n)}$ is computed using the power method as discussed
+in \SectionRef{SEC:powerDTMC}. {\smart} computes the Poisson probabilities using the
+numerically stable Fox-Glynn algorithm \cite{Fox1988} and computes the summation
+only up to a large-enough value $N$.
+Since the absolute error of each element of $\gvect{\pi}(t)$
+is bounded by the complement of the elements of the Poisson pmf summed up to $N$:
+\[
+  \overline{p}(N) = 1 - \sum_{n=0}^{N} \frac{e^{-qt}(qt)^n}{n!}.
+\]
+{\smart} determines the value of $N$ \emph{a priori} such that $N$ is the
+smallest integer where $\overline{p}(N) \le \epsilon$
+for a desired absolute precision $\epsilon$, which is given by the
+\index{NumericalPrecision option}\Code{NumericalPrecision} option.
+
+%           ======================================
+\subsection{Cumulative transient analysis of CTMCs}\label{SEC:cumul-trans-anal-CTMC}
+%           ======================================
+{\smart} uses \index{uniformization (randomization)}uniformization also to compute $\vsigma(t) = \int_0^t
+\vpi(u) du$, the cumulative sojourn time vector up to time $t$, or in other words,
+the total amount of time spent in each state during the interval $(0,t)$.
+Using integration by parts, $\gvect{\sigma}(t)$ can be reformulated as
+$$
+  \vsigma(t)
+  = \int_{0}^{t}
+    \sum_{n=0}^{\infty} \frac{e^{-q u} (q u)^n}{n!} \vp^{[n]} d u
+  = \sum_{n=0}^{\infty} \vect{p}^{[n]}
+    \int_{0}^{t} \frac{e^{-q u} (q u)^n}{n!} d u
+  = \frac{1}{q} \sum_{n=0}^{\infty} \vp^{(n)} \sum_{k=n+1}^{\infty}
+  \frac{e^{-q t} (q t)^k}{k!} =
+  \frac{1}{q} \sum_{n=0}^{\infty} \vp^{(n)} \overline{p}(n).
+$$
+The summation is computed only up to a large-enough value $N'$ that satisfies
+\[
+  N' = \min_{k}\left\{t - \frac{1}{q} \sum_{n=0}^{k} \overline{p}(n) \right\} \leq \epsilon
+\]
+where, again, $\epsilon$ is given by the
+\index{NumericalPrecision option}\Code{NumericalPrecision} option.
+Because the complexity lies with the computation of $\vp^{(n)}$,
+{\smart} automatically computes $\vsigma(t)$ at the same time $\gvect{\pi}(t)$
+is computed.  Consequently, the actual value, $N$ or $N'$, that truncates
+the summations is $\max\{N, N'\}$.
+
+%           ======================
+\subsection{Steady-state detection}
+%           ======================
+When the boolean option \index{SSdetect option}\Code{SSdetect} = \Code{true},
+which is the default, {\smart} checks for steady-state conditions when performing
+the above transient analysis just in case the CTMC has a limiting distribution,
+$\gvect{\pi}=\lim_{u\to\infty} \gvect{\pi}(u)$, which may be dependent on the initial state.
+If the solution time $t$ is large enough then $\vp^{(n)}$ may converge to a limiting distribution
+as $n$ becomes large and before reaching the truncation point given by $\max\{N, N'\}$.
+{\smart} assumes steady-state conditions when the relative error between successive iterates,
+$\vp^{(n)}$ and $\vp^{(n+1)}$, is less than or equal to \Code{NumericalPrecision} times a
+scaling factor given by \Code{SSsens} $\in(0, 1)$.
+The scaling factor introduces a margin of error between the
+absolute relative ``distance'' $\|\vp^{(n)}-\vp^{(n+1)}\|$ and
+the continuous-time solution $\gvect{\pi}(t)$ given when $\vp^{(n)}$ is subordinated
+to the Poisson process; that is, we want the error in the latter to dominate.
+The scaling factor \index{SSsens option}\Code{SSsens}
+is a user-defined option with a default value of $0.25$.
+
+%           ==========================================
+\subsection{Instantaneous stationary analysis of CTMCs}
+%           ==========================================
+Analogous to the discrete case, we can consider the ``long-term'' probability
+of being in each state of a CTMC by computing the
+\index{stationary probability distribution}stationary probability vector
+\[
+\gvect{\pi} = \lim_{t \rightarrow \infty} \gvect{\pi}(t).
+\]
+Like DTMCs, analysis of a general CTMC requires the analysis of many
+\index{ergodic Markov chain}ergodic CTMCs and an \index{absorbing Markov chain}absorbing CTMC.
+
+\subsubsection{Ergodic CTMCs}
+
+Like ergodic DTMCs, \index{ergodic Markov chain}ergodic CTMCs also converge to a
+\index{stationary probability distribution}stationary probability distribution
+independent of the initial state.
+In this case, a finite-state CTMC need only be
+\index{irreducible Markov chain}irreducible since periodicity is not an issue
+in continuous time.  Again, irreducibility on a finite state space
+implies positive recurrence, which is necessary for a limiting distribution to exist.
+%An ergodic CTMC has the property that for all pairs of states $i$ and $j$ in
+%the CTMC, $j$ is reachable from $i$.
+Then, the stationary probability vector, $\gvect{\pi}$, uniquely satisfies
+\[
+  \gvect{\pi} \cdot \Q = \0 \ \text{ subject to }\ \sum_{i} \gvect{\pi}[i] = 1.
+\]
+
+
+\MSG{New from here.}
+Currently, {\smart} supports several different numerical algorithm to calculate the steady-state solutions
+for ergodic CTMCs, which is set by option \emph{SolutionType} and \emph{Solver}.
+
+\emph{SolutionType} has following options:
+\begin{itemize}
+\item NUMERICAL
+\item APPROXIMATE\_EVMDD
+\item EXACT\_EVMDD
+\item SIMULATION
+\end{itemize}
+
+\emph{Solver} has following options:
+\begin{itemize}
+\item POWER
+\item JACOBI
+\item GAUSS\_SEIDEL
+\end{itemize}
+
+For example, {\smart} will utilize symbolic engine and Jacobi iteration by the following options:
+
+\begin{verbatim}
+# StateStorage MDD_SATURATION_LEVEL
+# SolutionType EXACT_EVMDD
+# Solver JACOBI
+\end{verbatim}
+
+
+\subsubsection{\index{absorbing Markov chain}Absorbing CTMCs}
+
+If the CTMC consists only of transient and absorbing states,
+we can compute the \index{stationary probability distribution}stationary probabilities
+for the absorbing states by \emph{embedding} the CTMC, obtaining the DTMC
+\[
+  \P[i,j] = \left\{ \begin{array}{ll} %}
+             \frac{\Q[i,j]}{-\Q[i,i]}
+             &
+             \mbox{if $i\neq j$}
+             \\
+             0
+             &
+             \mbox{otherwise}
+                  \end{array} \right.
+\]
+with $\vp^{(0)} = \gvect{\pi}(0)$.
+We then compute $\gvect{\pi} = \vp$ in a way analogous to the
+discrete case.
+
+%           =======================================
+\subsection{Cumulative stationary analysis of CTMCs}
+%           =======================================
+Analogous the the DTMC case, we can compute the total expected time spent in
+each state of a CTMC as the limit
+\[
+\gvect{\sigma} = \lim_{t \rightarrow \infty} \vsigma(t).
+\]
+For transient states, the entries in $\gvect{\sigma}$ are finite,
+and represent the expected time spent in each transient state before
+the CTMC reaches an absorbing state (or a class of \index{ergodic}ergodic states).
+The portion of $\gvect{\sigma}$ corresponding to the transient states is the
+solution to
+\[
+  \gvect{\sigma}[\Set{T}] \cdot \Q[\Set{T}, \Set{T}]
+  = -\gvect{\pi}(0)[\Set{T}]
+\]
+where $\Q[\Set{T}, \Set{T}]$ is the submatrix of $\Q$
+corresponding to transitions from transient states to transient states.
+
+%        ===========================
+\section{Semi-regenerative processes}\label{SEC:semi-regen-processes}
+%        ===========================
+While more complex than simple Markov chains,
+\index{semi-regenerative process}semi-regenerative processes may still be analyzed using
+the traditional Markov chain methods discussed previously, but only under certain conditions.
+Essentially, given a discrete-state, discrete-event model where the events have \emph{both}
+discrete and continuous \index{phase-type distribution}phase-type distributed delays
+(\index{ph int}\Code{ph\! int} and \index{ph real}\Code{ph\! real}, respectively),
+the underlying process will be semi-regenerative
+if the \Code{ph\! int} events are always \emph{synchronized} when active.
+By \index{synchronization property}synchronized,
+we mean that the phase changes of all active \Code{ph\! int} events occur at precisely the
+same (discrete) time when active.
+Then, the regeneration times can be defined by \Code{ph\! int} events
+(simple phase changes or other state changes triggered by the event).
+The only other active events that can trigger state changes between successive regeneration times
+are of \Code{ph\! real} type.  Consequently, the subordinate processes that evolve between
+regeneration times are simple CTMCs, and, as is always the case for semi-regenerative processes,
+the embedded \index{Markov renewal process}Markov renewal process gives rise to an embedded DTMC.
+Semi-regenerative processes encountered in this way can be decomposed into
+DTMC and CTMC subproblems; however, because the DTMC and CTMC ``submodels'' interact
+with each other, they must be solved through a concerted effort.
+Note that the underlying process may still be semi-regenerative without the synchronization
+assumption, but without a decomposition into Markov chain subproblems, numerical solution
+may not be practical.
+
+At present, {\smart} is capable of numerically computing the stationary probability distribution
+of a semi-regenerative process with the synchronization assumption when
+the embedded DTMC is \index{ergodic}ergodic with a stationary solution.
+Synchronization among \Code{ph\! int} events is automatically checked while generating the
+underlying state space.  A warning is issued to the user if the requisite synchronization
+assumption is not present, which precludes a numerical solution.
+In what follows, we will only present the key formulas for computing stationary solutions
+and refer the interested reader to \cite{Jones-NASA-00}
+for a discourse on this subject and a detailed presentation of the solution algorithms.
+
+Let $\P$ be the transition matrix of the embedded DTMC with state space $\mathcal{E}$
+that evolves at each regeneration time.
+The matrix $\P$ is computed one row at a time by exploring from each known state $i\in\mathcal{E}$
+and constructing the subordinate CTMC that evolves until the next regeneration time is reached
+with new embedded states $j\in\mathcal{E}$ such that $\P[i, j]>0$.
+Actually, only values $\P[i, j] > \Code{Pruning}$ are stored where the
+user option \index{Pruning option}\Code{Pruning} is
+considered ``small enough'' with a default value of $10^{-20}$.
+Let $\Q_i$ be the infinitesimal generator matrix of the subordinate CTMC on the state space
+$\mathcal{S}_i$ originating from embedded state $i$.  Take the basic step of all \Code{ph\! int}
+to be unity.  Then, when both \Code{ph\! int} and \Code{ph\! real} events are active,
+the entries of matrix $\P$ can be computed from
+\[
+  \P[i, j] = \sum_{k\in\mathcal{S}_i} e^{\Q_i}[i, k] \matr{\Delta}[k, j]
+\]
+where the matrix $e^{\Q_i}$ is the (matrix exponential) solution of the CTMC at time one,
+which is actually computed using the \index{uniformization (randomization)}uniformization
+procedure discussed in Sections \ref{SEC:inst-trans-anal-CTMC} and \ref{SEC:cumul-trans-anal-CTMC}.
+The matrix $\matr{\Delta}[k, j]$ gives the probability of jumping from state $k$ to state $j$
+at the regeneration time and is computed automatically from the model specification.
+When only \Code{ph\! int} or only \Code{ph\! real} events are active,
+a regeneration occurs after each state transition due to the strong Markov property, and we
+simply replace $e^{\Q_i}[i, k]$ in the equation above with the indicator function $1\{i=k\}$.
+Conditioned on each $i\in\mathcal{E}$, let the matrix $\gvect{\sigma}$ be the expected sojourn time
+in each state $k\in\mathcal{S}_i$ until the next regeneration time, which is computed from
+\[
+  \gvect{\sigma}[i, k] =
+  \begin{cases}
+    \int_{0}^{1} e^{\Q_i u}[i, k]\,du
+                               & \text{if both \Code{ph\! int} and \Code{ph\! real} are active}, \\
+    1\{i=k\} (-Q_i[i, i])^{-1} & \text{if only \Code{ph\! real} events are active}, \\
+    1\{i=k\}                   & \text{if only \Code{ph\! int} events are active},  \\
+    0                          & \text{otherwise}.
+  \end{cases}
+\]
+The computation in the first case can be performed at the same time $e^{\Q_i}$ is computed.
+After constructing the matrix $\P$,
+the stationary solution, $\vp$, of the embedded DTMC is computed from $\vp \cdot (\P - \I) = \0$.
+The whole state space for the semi-regenerative process is defined by
+$\mathcal{S}\equiv\bigcup_{i\in\mathcal{E}} \mathcal{S}_i$.
+Finally, the stationary solution, $\gvect{\pi}$, of the semi-regenerative process is computed by
+considering the average time spent in any state between regeneration times
+(conditioned on each embedded state),
+\[
+  \gvect{\gamma}[k] = \sum_{i\in\mathcal{E}} \vp[i]\cdot\gvect{\sigma}[i, k],
+\]
+and then normalizing,
+\[
+  \gvect{\pi}[k] = \frac{\gvect{\gamma}[k]}{\sum_{j} \gvect{\gamma}[j]},
+\]
+to obtain the proportion of time spent in any state between regeneration times
+for each state $k\in\mathcal{S}$.
+
+\PRIVATE{
+{\smart} actually avoids having to compute and store the entire matrix
+$\gvect{\sigma}\in\Reals^{|\mathcal{E}|\times|\mathcal{S}|}$ by being ``measure driven.''
+That is, $\gvect{\sigma}[i, k]$ for each state $i\in\mathcal{E}$ in turn is used to
+``distill'' the user-defined reward functions $f : \mathcal{S}\to\Reals$
+(used to compute measures) into a new reward functions $\tilde{f} : \mathcal{E}\to\Reals$,
+\[
+  \tilde{f}(i) = \sum_{k\in\mathcal{S}_i} \gvect{\sigma}[i, k]\cdot f(k),
+\]
+defined only on the embedded state space $\mathcal{E}$, not the whole state space $\mathcal{S}$.
+This way, $\gvect{\sigma}[i, \cdot]$ can be discarded once it is used to compute $\tilde{f}(i)$.
+}
+
+We have just described the \index{embedding strategies}``embedding strategy'' used when the
+option \index{EmbedWithElim option}\Code{EmbedWithElim} = 0 is selected, which is the default.
+Alternative embedding strategies, which attempt to reduce the size of the state space $\mathcal{E}$,
+are also available that exploit the fact that oftentimes more than one embedded Markov process is
+present \cite{2001PNPM-PDPN}.
+Essentially, embedded states can be eliminated by being selective in our choice of
+which embedded Markov process to observe.  At present, there are four possible
+embedding strategies to choose from:
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|p{4.25in}|}
+\hline
+  \Code{EmbedWithElim} & \textbf{Description} \\
+  \hline
+  \hline
+  0 & most basic, the one described above, 0 embedded state are eliminated \\ \hline
+  1 & eliminate embedded states that arise when only
+      \Code{ph\! int} or only \Code{ph\! real} events are active \\ \hline
+  2 & eliminate embedded states that only record phase changes
+      when both \Code{ph\! int} and \Code{ph\! real} events are active \\ \hline
+  3 & 1+2=3, use both 1 and 2 together \\
+  \hline
+\end{tabular}
+\end{table}
+
+Another user option called
+\index{Epsilon option}\Code{Epsilon} comes into play when using embedding strategies 2 or 3.
+Embedding strategy 2 (and hence 3) tries to find \emph{all possible} regeneration times that:
+\begin{itemize}
+  \item comprise a single step in $\P$,
+  \item are (mostly) due to synchronized events with \Code{ph\! int} delays, and
+  \item it is certain that the event will trigger a state change where more than just the
+        phase component changes, such as a change in the marking in the case of \Code{spn} models.
+\end{itemize}
+Because {\smart} will try to consider the entire (pmf) support of active \Code{ph\! int} events
+in search of regeneration times with all of the above properties, a truncation point must be
+introduced in case the support is infinite in length, such as the infinite support of the
+geometric distribution.
+The user option \index{Epsilon option}\Code{Epsilon} $\in$ $(0, 1)$ provides a truncation
+point by stopping the search when the smallest pmf tail of any active \Code{ph\! int} event
+becomes less than or equal to \Code{Epsilon}. \Code{Epsilon} has a default value of $10^{-10}$.
+
+Finally, the following print options are provided that
+take boolean values $\{\Code{true}, \Code{false}\}$,
+all \Code{false} by default:
+\index{ShowEMCdata, ShowEMCprob, ShowEMCsize, ShowSpecial options}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|p{4.25in}|}
+\hline
+  \textbf{Option} & \textbf{Prints the following if \Code{true}} \\
+  \hline
+  \hline
+  \Code{ShowEMCsize} & size of the embedded state space, $|\mathcal{E}|$ \\
+  \Code{ShowEMCdata} & all nonzero entries of the transition matrix $\P\in\Reals^{|\mathcal{E}|\times|\mathcal{E}|}$ \\
+  \Code{ShowEMCprob} & $\vp[i]$ and $\sum_k\gvect{\sigma}[i, k]$ for each state $i\in\mathcal{E}$ \\
+  \Code{ShowSpecial} & data about the computational effort \\
+  \hline
+\end{tabular}
+\end{table}
+
+
+% FIX AND MOVE THIS TO AN EARLIER SECTION ON "UNDERLYING STOCHASTIC PROCESSES"...
+% Perhaps the best way to describe a semi-regenerative process is by beginning from
+%processes that are already familiar.  The simplest stochastic process is a
+%sequence of independent and identically distributed (i.i.d.) random variables
+%referred to as a renewal process.
+%Markov chains generalize renewal processes somewhat by allowing a limited amount
+%of dependency.
+%Consider now a stochastic process that starts over independently and identically
+%at certain random times forming an increasing sequence $T=\{T_n : n \geq 0\}$.
+%Processes that restart like this are called regenerative processes and the times $T$
+%are called regeneration times.
+%example with Markov chains at fixed state....
+%
+%So, regenerative processes generalize renewal processes,
+%but regenerative processes can be generalized further just like renewal processes were
+%generalized by Markov chains.
+%Semi-regenerative processes generalize regenerative processes by allowing the future
+%after regeneration times to depend on the state entered just after such times.
+%It follows that ...
+%Semi-regenerative There is an
+
+
+\PRIVATE{
+%        ======================
+\section{Solving linear systems}
+%        ======================
+For many types of analysis, {\smart} must solve a linear system of the form
+\[
+  \vx \A = \vb
+\]
+for the vector $\vx$.
+Since the matrix $\A$ is typically very large and
+quite sparse, and is not always explicitly stored, {\smart} uses
+implicit, iterative techniques \cite{Stewart1994book} for computing
+$\vx$. Since the iterative methods compute $\vx$ as a fixpoint,
+options analogous to the \index{converge option}\Code{converge} options are used to
+adjust the computation: \Code{NumericalPrecision} defines the
+desired precision $\epsilon$, \Code{NumericalPrecisionTest}
+defines the \emph{stopping criterion} (either element-wise
+relative or element-wise absolute precision), and
+\Code{MaxNumericalIters} defines the maximum number of allowed
+iterations.
+
+\MSG{discuss \Code{RELAXATION}}
+
+The type of iteration performed is specified using the
+\index{Solver option}\Code{Solver} option,
+which can be one of the following.
+
+\begin{description}
+
+\item{\Code{POWER} :}  The power method.
+This works for systems of the form $\vp = \vp \cdot \P$, and
+simply computes $\vp^{(n+1)} = \vp^{(n)} \cdot \P$ starting
+with $n=0$ and continuing until subsequent vectors are within a desired
+precision.
+
+\MSG{This can be used for transient solutions of DTMCs,...}
+
+\MSG{Does this use relaxation?}
+
+\item{\Code{JACOBI} :}  The Jacobi iteration.
+Newly computed elements of $\vx$ are not used until the next iteration.
+As a result, an auxiliary vector $\vx'$ is required to store the new
+values.
+{\smart} is able to use the Jacobi iteration when the matrix $\A$ is stored
+in a sparse format, either by rows or by columns.
+{\bf This is the default.}
+\MSG{Should it be GAUSS\_SEIDEL instead?}
+
+\PRIVATE{
+\item{\Code{BLOCK\_JACOBI} :}  An experimental block algorithm.
+  This should not be used yet, but eventually will be used with distributed
+  solutions.
+}
+
+\item{\Code{GAUSS\_SEIDEL} :}  The Gauss-Seidel iteration.
+This is similar to Jacobi, except the newly computed elements of $\vx$
+are used right away.
+As a result, the auxiliary vector required by Jacobi is not needed with
+Gauss-Seidel.
+However, this requires the computation of one element of $\vx$ at a time;
+as a result, the Gauss-Seidel iteration requires access to the columns of
+matrix $\A$.
+Therefore, Gauss-Seidel can only be used with data structures for $\A$
+that allow efficient access to the matrix columns.
+
+\MSG{Discuss relative number of iterations.}
+
+\PRIVATE{
+\item{\Code{BLOCK\_GAUSS} :}  An experimental block algorithm, just as
+experimental and not working as block Jacobi.
+}
+
+\item{\Code{SOR} :} A Gauss-Seidel iteration which adaptively adjusts the
+relaxation parameter.
+\cite{1993IMA-SRNs}
+The initial relaxation parameter is taken from the option
+\index{RELAXATION option}\Code{RELAXATION}.
+
+\PRIVATE{
+\item{\Code{BICGSTAB} :} Biconjugate Gradient Stabilizer.
+Also experimental (i.e., not thoroughly tested and debugged yet).
+}
+
+\end{description}
+
+%        ===========================
+\section{Representing large matrices}
+%        ===========================
+Since the matrices are large, blah blah blah.
+
+{\smart} can use a variety of methods for representing the transition matrix of a Markov chain.
+The methods, described below, are selected based on the option
+\index{MarkovStorage option}\Code{MarkovStorage}.
+
+%           ==============
+\subsection{Sparse storage}
+%           ==============
+Mention rows vs columns.
+Used for high-level formalisms and manipulation of phase-type vars.
+For high level models, we do a memory-efficient, two-pass approach:
+first count the number of entries in each row or column, so that we can
+allocate an array of entries instead of using linked lists.
+The second pass fills the array.
+This is the default.
+
+%           ==========
+\subsection{On the fly}
+%           ==========
+Only high-level formalisms with expo or immediate transitions.
+Only by rows.
+\cite{Deavours1997onthefly}
+
+%           =========================
+\subsection{Kronecker representations}
+%           =========================
+Only high-level formalisms with expo or \emph{local} immediate transitions.
+Mention rows vs columns.
+Options to mention: \Code{MarkovStorage}, \Code{UseHoldingArray},
+\Code{MatrixByRows}
+
+The consistent requirement.
+
+%           ===============
+\subsection{Matrix diagrams}
+%           ===============
+Only high-level formalisms.
+Mention rows vs columns.
+
+Kronecker \cite{1999PNPM-MatrixDiagrams, MinerThesis2000} vs. non-Kronecker
+\cite{Miner2001canonicalMDs}
+
+Options to mention: \Code{MarkovStorage}, \Code{UseHoldingArray},
+\Code{MergeLevel}
+
+}

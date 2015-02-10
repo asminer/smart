@@ -4,8 +4,7 @@
 
 \chapter{Stochastic Petri nets}  \label{SEC:SPN}
 
-\PRIVATE{
-  TBD ---
+\TBD{
   Rewrite this chapter, make it ``Petri nets'',
   cover both logical and stochastic aspects.
 }
@@ -107,8 +106,10 @@ Had the distributions for the firing times been specified as
 \end{lstlisting}
 the resulting underlying process would have been a DTMC and it still would
 be solvable numerically.
-\RELEASE{However, currently, \smart{} can numerically analyze only
-\Code{expo} and 0 firing times.}
+\begin{release}
+However, currently, \smart{} can numerically analyze only
+\Code{expo} and 0 firing times.
+\end{release}
 
 In the presence of mixtures of \Code{ph int} and \Code{ph real} firing time
 distributions, the result might be a semi-regenerative process.
@@ -118,7 +119,9 @@ This is the case if we had specified
 \end{lstlisting} 
 In this case, it is still possible to compute a numerical solution.
 % In this case, {\smart} is still able to compute a numerical solution.
-\RELEASE{Again, the current version of \smart{} cannot handle this case.}
+\begin{release}
+Again, the current version of \smart{} cannot handle this case.
+\end{release}
 
 In more complex cases, i.e., in the presence of complex mixtures of
 \Code{ph int} and \Code{ph real} firing time distributions,
@@ -131,9 +134,10 @@ is not present, it halts and gives and gives an error.
 Thus, requiring a numerical solution when the process is not of the appropriate
 type does not lead to incorrect results, but it can cause {\smart} to run for
 a long time before issuing the correct error message.
-\\
-\RELEASE{Currently, {\smart} does not support discrete-event simulation
-of Petri nets.}
+\begin{release}
+Currently, {\smart} does not support discrete-event simulation
+of Petri nets.
+\end{release}
 
 
 
@@ -211,10 +215,10 @@ see the ``pn'' help topic (e.g., \Unix{smart -h pn}).
 
 \begin{itemize}
 \item
-\PRIVATE{
+\begin{private}
 \Code{proc~bool~empty(place~p);}\\
 Returns \Code{true} if place \Code{p} is empty, \Code{false} otherwise.
-}
+\end{private}
 
 \item
 \Code{proc~bool~enabled(trans~t);}\\
@@ -225,34 +229,36 @@ Returns \Code{true} if transition \Code{t} is enabled,
 \Code{proc~int~tk(place p);}\\
 Returns the number of tokens in place \Code{p}.
 
-\PRIVATE{
+\begin{private}
 \item
 \Code{proc~bool~fires(trans~t);}\\
 Returns \Code{true} if transition \Code{t} fires, \Code{false} otherwise.
 This is an impulse-type process, and it is required to specify timing
 aspects related to structural state changes in the net, such as the
 \Code{restart} behavior.
-}
+\end{private}
 
 \item
 \Code{proc~real~rate(trans~t);}\\
 Returns the rate of transition \Code{t}.
-\\
-\RELEASE{Currently, it can only be used if \Code{t} has an \Code{expo}
-firing distribution.}
+\begin{release}
+Currently, it can only be used if \Code{t} has an \Code{expo}
+firing distribution.
+\end{release}
 
 \end{itemize}
 
 
 
-\PRIVATE{
+\begin{private}
 
 \section{Formalism-specific functions for stochastic Petri net models}
 \label{SEC:spn-predefined-builder-functions}
 
-TBD --- should we delete this list?  The \smart{} internal documentation
-is always more up to date than what we list here.
+\TBD{should we delete this list?  The \smart{} internal documentation
+is always more up to date than what we list here}
 
+\TBD{List needs updating, most parameters are ``proc'' now}
 
 The block defining a stochastic Petri net can contain any number
 of calls to the following predefined functions:
@@ -288,12 +294,12 @@ if an arc is not listed, it is assumed to have cardinality infinity
 
 \PRIVATE{
 \item
-\Code{void~prio(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} TBD\\
+\Code{void~prio(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} \TBD{It's ``priority'' now}\\
 Sets an acyclic preselection priority relation \cite{1995StewartBook-DiscreteSPN}
 for transition \Code{t}$i$ over transition \Code{s}$i$.
 
 \item
-\Code{void~post(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} TBD\\
+\Code{void~post(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} \TBD{not implemented}\\
 Sets an acyclic postselection priority relation \cite{1995StewartBook-DiscreteSPN}
 for transition \Code{t}$i$ over transition \Code{s}$i$.
 } 
@@ -312,7 +318,7 @@ Sets the firing time distribution for the argument transitions to the constant
 zero, that is, defines them as immediate transitions.
 Any transition not defined to be immediate is taken to be timed,
 that is, its firing time is positive with probability one.
-TBD --- THIS FUNCTION IS GONE NOW
+\TBD{THIS FUNCTION IS GONE NOW}
 }
 
 \item
@@ -389,8 +395,8 @@ the enabling policy is irrelevant.
 }
 
 \item
-\Code{void assert(bool b1, bool b2, ...);}\\
-Defines a set of (usually marking-dependent) \Code{bool} expressions,
+\Code{void assert(proc bool b1, proc bool b2, ...);}\\
+Defines a set of (usually) marking-dependent \Code{bool} expressions,
 or ``assertions'', which must be true in each marking.
 If, at any point in the execution, assertion \Code{b}$i$ does not hold,
 {\smart} issues an error message and exits.
@@ -398,15 +404,15 @@ If, at any point in the execution, assertion \Code{b}$i$ does not hold,
 This is particularly useful to debug a model when using explicit state-space
 exploration techniques.
 
-\PRIVATE{
 \item
-\Code{{place}~places\_of(pn~s);}~TBD\\
-Returns the set of places of the SPN \Code{s}.
+\Code{{place}~places();}\\
+Returns the set of places of the current model 
+(allowed inside a \Code{pn} block).
 
 \item
-\Code{{trans}~transitions\_of(pn~s);}~TBD\\
-Returns the set of transitions of the SPN \Code{s}.
-}
+\Code{{trans}~transitions();}\\
+Returns the set of transitions of the current model
+(allowed inside a \Code{pn} block).
 
 
 \end{itemize}
@@ -455,4 +461,4 @@ Markov chain: any DDP distribution can be used for the firing time of
 the transitions \cite{1995StewartBook-DiscreteSPN}.
 }
 
-}
+\end{private}
