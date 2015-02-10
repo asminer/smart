@@ -138,6 +138,7 @@ iteration of the type often employed in conjuction with approximations.
 \end{itemize}
 
 
+\TBD{Rewrite this paragraph.}
 The {\smart} language is strictly-typed, so objects belong to a \emph{type}:
 \Code{void},
 \Code{int},
@@ -353,13 +354,13 @@ Thus, {\smart} uses ordinary integers for its normal internal operations,
 and the \Code{bigint} type should be used only when needed.
 It is the responsibility of the user to decide when this is the case.
 
-\PRIVATE{Need to discuss ``\Code{,}'' in formatting of \Code{bigint}}
+\TBD{Need to discuss ``\Code{,}'' in formatting of \Code{bigint}}
 
 
-\IGNORE{
+\begin{comment}
 \subsection{A \Code{real} iterator}
 
-\PRIVATE{Is this something we want to forbid from future versions?
+\TBD{Is this something we want to forbid from future versions?
 In restrospect, it might be more trouble than it is worth it...}
 
 Array iterators can be of type \Code{real}, as in the following
@@ -399,7 +400,7 @@ Thus, if the options are set using the statements
 then the expression \Code{y[0.099]} evaluates to \Code{0.03}, and the
 expression \Code{y[0.08]} results in a ``range error'' message,
 and evaluates to \Code{null}.
-}
+\end{comment}
 
 
 
@@ -413,11 +414,11 @@ The type of a set defined this way is \verb%{int}% if each of its elements
 is an \Code{int}, \verb%{real}% if each of its elements is a \Code{real}.
 No mixing of \Code{int} and \Code{real} elements is allowed.  
 
-\IGNORE{
+\begin{comment}
 The type of a set defined this way is \verb%{int}% if each of its elements
 is an \Code{int}, \verb%{real}% if any of its elements is a \Code{real}.
 Thus, for example, \verb%{3,4,7.0}% is of type \verb%{real}%.
-}
+\end{comment}
 
 It is also possible to specify a range of elements, instead of a single
 element,  when defining a set.
@@ -447,10 +448,10 @@ nine values \Code{0.1} is greater than \Code{0.9} or not,
 when these quantities are represented as floating-point numbers
 (one could specify \Code{\{0.1..0.91..0.1\}} to ensure that the range
 contains exactly nine elements).
-\IGNORE{
+\begin{comment}
 As expected, the type of the set is \verb%{real}% if any of the elements
 specified has type \Code{real}, otherwise it is \verb%{int}%.
-}
+\end{comment}
 
 While not, strictly speaking, a set property, the order in which the elements
 are specified in the set is important in {\smart};
@@ -466,7 +467,7 @@ Thus, the two set specifications \verb%{1,3,2..6,4,8}% and
 \verb%{1,3,2,4,5,6,8}% are exactly equivalent, with respect to both the
 elements they contain and their order.
 
-\PRIVATE{We might want to drop sets of reals...}
+\TBD{We might want to drop sets of reals...}
 
 
 
@@ -541,7 +542,7 @@ implicit default for all of its parameters
 (i.e., at least one of them must be set to \Code{default} explicitly),
 since the function must be invoked with named parameters.
 
-\IGNORE{
+\begin{comment}
 \subsection{A parallelizable \Code{for} statement}
 
 The \Code{for} statement is a natural candidate for parallelization.
@@ -560,7 +561,7 @@ This reduces the total execution time in cases where the solution of
 \Code{mymodel}
 requires substantial computation, and multiple processors are available.
 Such situations are common in parametric modeling studies.
-}
+\end{comment}
 
 \subsection{Overloading: a \Code{real} factorial} \label{SEC:realFactorial}
 
@@ -576,7 +577,7 @@ real fact(real n) := cond(n<1,1.0,n*fact(n-1));
 Then, \Code{fact(8)} and \Code{fact(5.4)} would call the standard
 (integer) factorial or the real factorial, respectively.
 
-\IGNORE{
+\begin{comment}
 Overloading also applies to arrays.  If we defined
 \begin{lstlisting}
 for (int i in {0..9}) {
@@ -588,7 +589,7 @@ for (real i in {1.0..9.0..1.0}) {
 \end{lstlisting}
 the expressions \Code{f[2]} and \Code{f[2.0]} would refer to the first and
 second array, respectively.
-}
+\end{comment}
 Furthermore, we can define arrays and functions with the same name;
 these are distinguished at the syntactical level by the use of
 ``\Code{[]}'' or ``\Code{()}'', respectively.
@@ -632,6 +633,8 @@ it will issue an error message and ignore it.
 
 
 \subsection{Type promotions: manual or automatic?}
+
+\TBD{Update this}
 
 \begin{table}
 \renewcommand{\arraystretch}{0.97}
@@ -744,7 +747,7 @@ The option \Code{ParameterWarnings} controls under what conditions a warning is
 issued when {\smart} automatically promotes parameters in function calls
 (see section \ref{SEC:smart-options}).
 
-\IGNORE{
+\begin{comment}
 Finally, note that a set of integers, \Code{\{int\}}, cannot be promoted
 (neither automatically nor explicitly) to a set of reals, \Code{\{real\}}.
 Thus, in the following, the former works but the latter is an error:
@@ -752,7 +755,7 @@ Thus, in the following, the former works but the latter is an error:
 for (real r in {1..5..1.0}) { ... }
 for (real r in {1..5..1})   { ... }
 \end{lstlisting}
-}
+\end{comment}
 
 
 \subsection{Using iterator values to define iterators}
@@ -1242,8 +1245,9 @@ be manipulated only in restricted ways, although simulation is always
 applicable.
 For the essential definitions related to phase-type distributions,
 see Appendix~\ref{SEC:PhaseType}.
-\\
-\RELEASE{Currently, {\smart} does not support Montecarlo simulation.}
+\begin{release}
+Currently, {\smart} does not support Montecarlo simulation.
+\end{release}
 
 \subsection{Discrete phase-type random variables}
 
@@ -1425,7 +1429,7 @@ compound statement.
 
 
 
-\IGNORE{
+\begin{comment}
 The most important characteristic of a model expressed in a given
 formalism is whether it describes a discrete-time stochastic process
 $\{X^{[k]} : k \in \Naturals\}$ or a continuous-time stochastic
@@ -1453,10 +1457,10 @@ solution of these processes is sometimes possible depending, among
 other factors, on whether a transient or steady-state solution is
 desired.  Alternatively, discrete-event simulation is often the method
 of choice in these cases, especially for transient analysis.
-\\
-\RELEASE{Currently, {\smart} does not support discrete-event simulation.}
-}
-
+\begin{release}
+Currently, {\smart} does not support discrete-event simulation.
+\end{release}
+\end{comment}
 
 
 \subsection{Discrete-time Markov chains}
@@ -1672,24 +1676,11 @@ $$E[Y(100)].$$
 the expected accumulated value of \Code{y} during the interval [100,300]:
 $$\int_{100}^{300} E[Y(t)] dt.$$
 \end{itemize}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\RELEASE{Currently, these functions must appear at the top level
-of an expression defining a measure.
-Thus,
-\begin{code}
-  \Code{real m1 := avg\_ss(cond(in\_state(a),2,cond(in\_state(b),1,0)));}
-\end{code}
-is correct, but the seemingly equivalent
-\begin{code}
-  \Code{real m1 := 2*prob\_ss(in\_state(a))+prob\_ss(in\_state(b));}
-\end{code}
-is rejected by {\smart}.
-}
 
 
 
 
-\IGNORE{
+\begin{comment}
 \subsection{Independent semi-Markov processes}
 
 The arc components in an independent semi-Markov process are probabilities
@@ -1721,9 +1712,7 @@ equal \Code{const(infinity)}.
 %the default \Code{const(0)} is assumed.
 %This makes the corresponding state vanishing.
 \end{itemize}
-}
 
-\IGNORE{
 \subsection{Semi-Markov processes}
 
 The most general state-space process that can be explicitly specified
@@ -1797,5 +1786,6 @@ Sets the probability and the distribution for the time to go from state
 \Code{s}$i$ to state \Code{t}$i$ to \Code{p}$i$ and \Code{v}$i$,
 respectively, according to a preselection semantic.
 \end{itemize}
-}
+
+\end{comment}
 

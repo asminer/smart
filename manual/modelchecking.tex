@@ -1,0 +1,484 @@
+%
+% $Id$
+%
+
+\chapter{Model checking algorithms} \label{SEC:ModelChecking}
+
+\section{Temporal logic and model checking}
+
+Temporal logic is concerned with properties of discrete-state models and
+their evolution in time. It requires that the model define a set of states
+$\sset$, a binary relation $\goesto{~}$ on states (the temporal order),
+and a function that evaluates the truth value of any atomic proposition in
+each state. Starting from a set of atomic predicates, it is then possible
+to express more complex assertions. Let $\goesto{*}$ be the transitive and
+reflexive closure of $\goesto{~}$.
+Given a predicate~$p$ and a state $\vi$,
+we can discuss basic questions of the type :
+
+\begin{itemize}
+\item
+(in the future) $\opF{}p$ holds in~$\vi$ if and only if there exists a state $\vj$
+such that $\vi \goesto{*} \vj$ and $p$ holds in~$\vj$.
+\item
+(in the past) $\opP{}p$ holds in~$\vi$ if and only if there exists a state $\vj$
+such that $\vj \goesto{*} \vi$ and $p$ holds in~$\vj$.
+\item
+(globally) $\opG{}p$ holds in~$\vi $ if and only if~$p$ always holds in
+the future states, equivalent to~$\neg\opF{}\neg p$.
+\item
+(historically) $\opH{}p$ holds in $\vi$ if and only if~$p$ has always held in
+the past prior to $\vi$, equivalent to~$\neg\opP{}\neg p$.
+\end{itemize}
+
+The adjective ``temporal'' simply refers to the succession of events
+leading from a state to another, not to the actual time of their
+occurrence. In the literature, both \emph{linear} time logic (LTL) and
+\emph{branching} time logic (CTL) have received much attention
+\cite{Clarke1999book,McMillan1992thesis};
+{\smart} implements the latter. In CTL, operators
+occur only in pairs.  The first operator, the path quantifier, is
+either~$A$ (on all paths), or~$E$ (there exists a path), while the second
+one, the tense operator, is chosen from among~$X$ (next),~$F$ (future, or
+finally),~$G$ (globally, or generally), and~$U$ (until). 
+Fig.~\ref{FIG:CTLops} illustrates the meaning of each of the eight operator
+combinations in CTL.
+Note that {\smart} also allows the possiblity to talk about the past:
+$\opY$ is time-reversed $\opX$,
+$\opP$ is time-reversed $\opF$,
+$\opH$ is time-reversed $\opG$,
+and 
+$\opS$ is time-reversed $\opH$.
+
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.8]{figures/CTL.pdf}
+  \caption{Examples of CTL formulae. The root node satisfies the
+  corresponding formula.}
+  \label{FIG:CTLops}
+\end{figure}
+
+Given a discrete-state model, a CTL formula uniquely identifies a set of
+states that satisfy it. Thus the model checking activity can be thought of
+as the identification of the set of states satisfying the formula.
+{\smart} uses the type \Code{stateset} to refer to a set of states
+of a particular model, e.g., those states satisfying a CTL state formula.
+{\smart} supports both \emph{explicit} and \emph{symbolic} model checking.
+As discussed in Sec.~\ref{SEC:SSGen},
+the state space $\sset$ can be generated and stored explicitly or symbolically;
+if $\sset$ is stored explicitly, then all \Code{stateset}s for that model
+will also be stored explicitly,
+and explicit model checking algorithms will be used
+(options allow selection between different algorithms).
+Otherwise, if $\sset$ is stored as a decision diagram using Meddly,
+then so will all \Code{stateset}s for that model,
+and symbolic model checking algorithms will be used.
+
+
+
+\section{Model checking in {\smart}}
+
+The set of atomic propositions in {\smart} is represented by boolean
+expressions inductively constructed over a set of terms. For Petri net
+models, the set of terms includes objects of type \Code{proc bool} and
+\Code{proc int}, plus the formalism-dependent types \Code{place} and
+\Code{trans}. These terms can be combined using boolean operators
+(negation, conjuction, disjunction) between boolean subterms, relational
+(equal, less than, etc.) and arithmetic (addition, multiplication, etc.)
+operators between arithmetic subterms, and the following
+formalism-dependent functions: 
+\begin{itemize} 
+  \item \Code{proc int tk(place p)}, which returns the number of tokens in place \Code{p}. 
+  \item \Code{proc bool enabled(trans t)}, which returns \Code{true} if transition
+        \Code{t} is enabled, \Code{false} otherwise. 
+\end{itemize}
+
+{\smart} provides the type \Code{stateset} to define sets of states in a model. 
+Any set of states defined for a model is a subset of the ``universe'', 
+which for explicit storage is the set of reachable states $\sset$,
+while for symbolic storage is the set of potential states $\potsset = \sset_K \times \cdots \times \sset_1$
+(see Sec.~\ref{SEC:SSGen}).
+Hence, it is possible to define sets containing both reachable and unreachable states. 
+If desired, the
+unreachable states can be eliminated from a set by intersecting it with
+the state space $\sset$, which is specified in {\smart} as
+\Code{reachable}.
+\TBD{Do we want to make these consistent, i.e., make a stateset always be a subset
+of the reachable states?}
+
+Inside a model block, 
+a \Code{stateset} for an atomic proposition may be constructed using function
+\begin{lstlisting}
+    stateset potential(proc bool p)
+\end{lstlisting}
+where $p$ is a boolean expression that depends on the model state,
+and the resulting \Code{stateset} contains the states in which $p$
+evaluates to true.
+The eight CTL pairs shown in Fig.~\ref{FIG:CTLops},
+and their time-reversed counterparts,
+correspond to functions in {\smart} with the same name,
+that must also be called within a model block.
+For example,
+\begin{lstlisting}
+    stateset EU(stateset p, stateset q)
+\end{lstlisting}
+returns the \Code{stateset} containing states
+satisfying $\opE\,p\,\opU\,q$.
+Additionally,
+operators \Code{!} (negation / complement), \Code{\&} (conjunction / intersection), 
+\Code{|} (disjunction / union), \verb|\| (set difference), and \Code{->} (implication)
+may be applied to \Code{stateset}s,
+and are not required to be used within a model block,
+although
+it is an error to use \Code{stateset}s from different models
+(in fact, from different state spaces)
+as operands to the same operator.
+The cardinality of a \Code{stateset} may be obtained with
+\begin{lstlisting}
+    bigint card(stateset p)
+\end{lstlisting}
+which, in the case of symbolic model checking,
+may return a \emph{huge} value.
+If instead we only care if a set is empty or not,
+it is much more efficient to use
+\begin{lstlisting}
+    bool empty(stateset p)
+\end{lstlisting}
+which is (mathematically, but not computationally)
+equivalent to $0==card(p)$.
+Finally,
+the elements of a \Code{stateset} may be printed
+using the \Code{print} function;
+option \Code{StatesetPrintIndexes}
+dictates whether the set is displayed as a list of state indexes
+or a list of states.
+
+
+\begin{private}
+\section{Counterexamples and witnesses}
+
+\TBD{NOT IMPLEMENTED YET; UPDATE AFTER THAT}
+
+One of the most attractive features of model checking is its ability to provide
+counter-examples and witnesses for the properties that are checked. The
+two notions are dual. Whenever a formula prefixed with the universal path
+quantifier,~$A$, is not verified, the model checker provides the user with
+an execution trace that proves the negation of the formula (a
+\emph{counter-example}). Similarly, for a valid formula prefixed with the
+existential path quantifier,~$E$, the model checker delivers a
+\emph{witness} to that.
+
+In both cases, the execution traces are in fact proofs for
+existentially quantified formulae: $EX p$, $EF p$, $E[p~U~q]$, or $EG p$,
+where $p$ is an arbitrary CTL formula.
+Among these, only the last three cases are interesting,
+since $EX p$ is trivially computed in one step.
+$EF p$ and $E[q~U~p]$ witnesses are single finite paths that ``show'' how the
+target set of states (satisfying formula $p$ in this case) can be reached
+from the initial set of states through a sequence of valid transitions.
+In addition, for the $EU$ witness, $q$ must hold along the entire path until
+the last state, where $p$ holds.
+Finally, an $EG p$ witness is a strongly connected component (SCC) in the
+reachability graph where formula $p$ holds on all states.
+A typical (non-trivial) SCC is a cycle, with or without chords.
+In our model checker, the computation of $EG$ traces is reduced to the
+equivalent problem of finding and concatenating two $EU$ traces
+forming a cycle plus possibly a third trace leading to that cycle.
+Thus, we can limit our discussion to the traces for $EF$ and $EU$.
+
+Since a trace is usually meant to be examined by a human, it is desirable
+to compute a minimal-length one.
+However, finding such a trace for an
+arbitrary formula is an NP-complete problem, thus a sub-optimal trace is
+sought in most cases, usually the one that is found first. Due to the
+heavy computation price to be paid, our model checker does not compute the
+execution traces automatically for each CTL formula that is verified, but
+only upon request, by calling one of the three functions:
+
+\begin{itemize}
+\item 
+\LIGHTGREY{
+\Code{bool EFtrace(stateset p, stateset q)}\\
+  Finds and prints a witness for $EFq$, of shortest length, starting from
+  \Code{p}.
+  Returns \Code{true} if such a trace exists, \Code{false} otherwise. 
+}
+\item 
+\LIGHTGREY{
+\Code{bool EUtrace(stateset p, stateset q, stateset r)}\\
+  Finds and prints a minimal length witness for $E[q~ U~ r]$ that starts at
+  \Code{p}.
+  Returns \Code{true} if such a trace exists, \Code{false} otherwise. 
+}
+\item \Code{mdd EGtrace(mdd p)}\\
+  Finds and prints a shortest witness for $EGq$, starting from the initial state.
+  %Returns \Code{true} is such a strace exists, \Code{false} otherwise. 
+  \PRIVATE{{\smart} computes this trace by concatenating two traces.}
+\end{itemize}
+
+\LIGHTGREY{
+The output of the above functions is the sequence of states in the
+execution trace along with the identity of the event fired at each step.
+See Fig.~\ref{FIG:TraceOutput} for details on the output format. 
+In addition to these three functions, we provide a distance function:
+}
+\begin{itemize}
+\item 
+\LIGHTGREY{
+\Code{int} \Code{dist(stateset p, stateset q)} \\
+  Returns the length of a shortest path from any state in \Code{p}
+  to any state in \Code{q}.
+  If no such path exists, it returns \Code{infinity}.
+}
+\end{itemize}
+
+\LIGHTGREY{
+The above functions restrict the origin of the trace to a set of states
+\Code{p}.
+This is more general than assuming that the execution trace always starts
+with the initial state.
+Our format is more flexible in that it would eventually enable the
+concatenation of traces, as required when verifying nested CTL formulae.
+The original semantics of the traces is simply obtained by setting the argument
+\Code{p} of the functions to the atomic proposition \Code{initialstate}.
+}
+
+The computation of traces in {\smart} is implemented by means of symbolic
+data structures.
+The complete set of traces and the distance function can
+be computed with a standard approach that uses a forests of MDDs (with
+shared nodes, for efficiency) in conjunction with breadth-first exploration.
+A second approach using edge-valued decision diagrams (a generalized form
+of EVBDDs \cite{Lai1996EVBDDs}) is also available;
+this is much more efficient due to its ability to apply the saturation
+strategy, not just breadth-first exploration, but it can only be used to
+compute the distance function \Code{dist}, or $EF$ traces.
+A third approach uses Algebraic Decision Diagrams (ADDs \cite{Bahar1997ADDs}),
+and it, also, can use either a saturation or a breadth-first approach.
+The option \Code{TraceStorage}, with possible
+values \Code{SHMDD\_BFS}, \Code{ADD\_SAT}, \Code{ADD\_BFS},
+\Code{EVMDD\_BFS}, \Code{EVMDD\_SAT} (default) sets the data structure and
+iteration strategy used for these two functions
+(see \cite{2002FMCAD-EVMDD} for a more detailed description).
+
+Moreover, when shared MDDs are used, the type of BFS exploration is
+governed by the option \Code{BFSTrace}, with possible values
+\Code{FORWARD}, \Code{BACKWARD}, and \Code{JOIN} (default).
+For the first two values, the behavior is symmetric.
+A \Code{FORWARD} ($EF$ or $EU$) trace starts at the source and reaches the
+target by using a forward BFS exploration, which therefore yields the
+shortest length for the generated trace.
+A \Code{BACKWARD} trace starts at the target and backtracks to the source.
+The \Code{JOIN} strategy uses a divide-and-conquer handshaking algorithm
+which starts the BFS exploration at both ends and meets in the middle.
+The trace generation continues recursively on the two segments
+delimited by the junction point.
+
+We give here a very simplistic guideline to the complexity analysis of the
+three variants of trace construction. If~$d$ is the distance from the
+source to the target set of states (the length of the shortest path
+between them), then \Code{FORWARD} and \Code{BACKWARD} algorithms store
+$O(d)$ intermediate sets of states, and take $O(d)$ steps to complete,
+while the \Code{JOIN} algorithm stores only two sets of states at all
+times, but takes $O(d\log d)$ steps to compute the trace.
+The user should adjust the settings according to the desired time/space
+tradeoffs.
+Note that symbolic data structures may be
+counter-intuitive when it comes to representing sets, as the necessary
+space is determined by the number of MDD nodes, and not the number of
+encoded states (it is often the case that smaller sets take much more
+memory than larger sets).
+\end{private}
+
+\section{Examples}
+
+\begin{figure}
+  \lstinputlisting[firstline=3]{examples/phils_dead.sm}
+\caption{Printing the deadlocked states in the dining philosophers model.}
+\label{FIG:PhilsDeadlock}
+\end{figure}
+
+
+The code in Fig.~\ref{FIG:PhilsDeadlock} generates and prints
+the deadlocked states (if any exist) in the dining philosophers model. 
+The \Code{stateset} \Code{NotAbsorb} contains all potential states that have a
+some successor, thus all non absorbing states. The \Code{stateset}
+\Code{Deadlocked} contains exactly the reachable states not in \Code{NotAbsorb}, 
+that is, all reachable states with no successor.
+Outside the model,
+we check if set \Code{Deadlocked} is empty, and if not, 
+we print the deadlocked states.
+Note we could have simply printed the set;
+{\smart} will display an empty set if asked to print an empty \Code{stateset}.
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.64]{figures/kripke1.pdf}
+  \lstinputlisting[firstline=3]{examples/kripke1.sm}
+\caption{Illustrating temporal operators on a small example.}
+  \label{FIG:kripke1}
+\end{figure}
+
+The code in Fig.~\ref{FIG:kripke1} illustrates the difference between
+various temporal logic operators.
+The model is partitioned into two submodels, each containing a cycle.
+The inhibitor arcs in the {\smart} input file are added to ensure the correct
+size of the local spaces, they are needed only for methods that pre-generate
+the local state spaces in isolation.
+
+\begin{itemize}
+\item
+The potential state space is $\sset_2 \times \sset_1$,
+with $\sset_2 = \{a, b, c, \epsilon\}$ and $\sset_1 = \{\epsilon, d, e\}$,
+thus it contains $12$ states
+(by  $\epsilon$ we mean the local marking where all places are empty,
+by ``$a$'' we mean the local marking where place $a$ contains one token
+and places $b$ and $c$ are empty, and so on).
+\item
+The state space contains five states, corresponding to the token being in
+exactly one of the five places.  
+\item
+Three potential states have a token in $a$,
+$\{(a,\epsilon),(a,d),(a,e)\}$, but only one, $(a,\epsilon)$, is reachable.
+\item
+The reachable states that can reach a state with a token in $a$ are
+$\{(a,\epsilon), (b,\epsilon), (c,\epsilon)\}$.
+If we included the non-reachable states, this set would
+contain nine states (same reasoning as in the previous item).
+\item
+If we search for states that have an outgoing infinite path (i.e., states
+included in a strongly connected component) where $a$ always contains a token,
+the set $\{(a,d), (a,e)\}$ is found, but these states are non-reachable,
+so they are not printed when we show the set \Code{ex.rEGa}.
+
+\item
+Instead, if we search for a reachable strongly connected component of states
+where $a$, or $b$, or $c$ always contain a token,
+we again find nine potential states or three actual states.
+\item
+The $\opE[c~U~d]$ query finds states $(c,\epsilon)$ and $(d,\epsilon)$,
+while $\opA[c~U~d]$ finds only state $(d,\epsilon)$.
+
+
+\item
+The query $\opE[(a \vee b \vee c)~\opU~d]$ 
+finds the set of four states
+$\{(a,\epsilon), (b,\epsilon), (c,\epsilon), (d,\epsilon)\}$,
+while the query $\opA[(a \vee b \vee c)~\opU~d]$
+finds only state $(d, \epsilon)$;
+this is because it is possible for the token to circulate
+among places $a$, $b$, and $c$ indefinitely.
+If we instead use a \emph{stochastic} Petri net model,
+where transitions have firing rates,
+then the underlying structure becomes a continuous-time Markov chain
+(rather than a kripke structure),
+and since any path where the token remains indefinitely in places
+$a$, $b$, and $c$ has probability measure zero,
+in this case the query $\opA[(a \vee b \vee c)~\opU~d]$
+will return the same four states as
+$\opE[(a \vee b \vee c)~\opU~d]$.
+
+\end{itemize}
+
+
+
+
+\begin{private}
+\TBD{Need to implement execution traces!}
+
+
+\begin{figure}
+\begin{lstlisting}
+spn k(int n) := {
+  place pm1, pback1, pkan1, pout1,    pm2, pback2, pkan2, pout2,
+        pm3, pback3, pkan3, pout3,    pm4, pback4, pkan4, pout4;
+  trans tin1, tredo1, tok1, tback1,   tin2, tredo2, tok2, tback2, tout2,
+        tredo3, tok3, tback3,         tredo4, tok4, tback4, tout4;
+  partition(pm1:pback1:pkan1:pout1,   pm2:pback2:pkan2:pout2, 
+	    pm3:pback3:pkan3:pout3,   pm4:pback4:pkan4:pout4);
+  firing(tin1:expo(1.0), tredo1:expo(0.36), tok1:expo(0.84), 
+	 tback1:expo(0.3), tin2: expo(0.4), tredo2:expo(0.42), 
+	 tok2: expo(0.98), tback2:expo(0.3), tout2: expo(0.5), 
+	 tredo3:expo(0.39), tok3:expo(0.91), tback3:expo(0.3), 
+	 tredo4:expo(0.33), tok4:expo(0.77), tback4:expo(0.3), tout4:expo(0.9)
+	); 
+  arcs(pkan1:tin1, tin1:pm1, pm1:tredo1, pm1:tok1, tredo1:pback1,
+       tok1:pout1, pback1:tback1, tback1:pm1, pout1:tin2, tin2:pkan1,
+       pkan2:tin2, tin2:pm2, pm2:tredo2, pm2:tok2, tredo2:pback2,
+       tok2:pout2, pback2:tback2, tback2:pm2, pout2:tout2, tout2:pkan2,
+       pkan3:tin2, tin2:pm3, pm3:tredo3, pm3:tok3, tredo3:pback3,
+       tok3:pout3, pback3:tback3, tback3:pm3, pout3:tout2, tout2:pkan3,
+       pkan4:tout2, tout2:pm4, pm4:tredo4, pm4:tok4, tredo4:pback4,
+       tok4:pout4, pback4:tback4, tback4:pm4, pout4:tout4, tout4:pkan4);
+  init(pkan1:n, pkan2:n, pkan3:n, pkan4:n); 
+  stateset F := intersection(reachable,
+           potential(tk(pout4)==n & tk(pout1)==n & tk(pout2)==n & tk(pout3)==n));
+  int  D := dist(initialstate, F);
+  bool T := EFtrace(initialstate, F);
+};
+# StateStorage  MDD_SATURATION
+# BFSTrace FORWARD
+int N := read_int("N");
+print("Distance to the farthest state: ", k(N).D, ".\n");
+print("Execution trace:"); compute(k(N).T);
+\end{lstlisting}
+\caption{Generating CTL execution traces in {\smart}.}
+\label{FIG:KanbanTraces}
+\end{figure}
+
+
+The code in Fig.~\ref{FIG:KanbanTraces} illustrates the use of execution
+traces on a kanban manufacturing system example (see Fig.~\ref{FIG:kanban}
+for the graphical model).
+In this case, the computation of the witness is influenced by the value of the
+\Code{BFSTrace} option.
+Figure \ref{FIG:TraceOutput} shows the two different shortest-length witnesses
+obtained when this option is set to either \Code{FORWARD} or \Code{BACKWARD}.
+
+\begin{figure}
+When option \Code{BFSTrace} is set to \Code{FORWARD}:
+\begin{lstlisting}
+EF Trace of length 14
+* Starting from state 	=>  { pkan1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 1: fire event tin1	=>  { pm1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 2: fire event tok1	=>  { pout1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 3: fire event tin2	=>  { pkan1:1 pm2:1 pm3:1 pkan4:1 }
+* Step 4: fire event tin1	=>  { pm1:1 pm2:1 pm3:1 pkan4:1 }
+* Step 5: fire event tok1	=>  { pout1:1 pm2:1 pm3:1 pkan4:1 }
+* Step 6: fire event tok2	=>  { pout1:1 pout2:1 pm3:1 pkan4:1 }
+* Step 7: fire event tok3	=>  { pout1:1 pout2:1 pout3:1 pkan4:1 }
+* Step 8: fire event tout2	=>  { pout1:1 pkan2:1 pkan3:1 pm4:1 }
+* Step 9: fire event tin2	=>  { pkan1:1 pm2:1 pm3:1 pm4:1 }
+* Step 10: fire event tin1	=>  { pm1:1 pm2:1 pm3:1 pm4:1 }
+* Step 11: fire event tok1	=>  { pout1:1 pm2:1 pm3:1 pm4:1 }
+* Step 12: fire event tok2	=>  { pout1:1 pout2:1 pm3:1 pm4:1 }
+* Step 13: fire event tok3	=>  { pout1:1 pout2:1 pout3:1 pm4:1 }
+* Step 14: fire event tok4	=>  { pout1:1 pout2:1 pout3:1 pout4:1 }
+\end{lstlisting}
+
+When option \Code{BFSTrace} is set to \Code{BACKWARD}:
+\begin{lstlisting}
+EF Trace of length 14
+* Starting from state 	=>  { pkan1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 1: fire event tin1	=>  { pm1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 2: fire event tok1	=>  { pout1:1 pkan2:1 pkan3:1 pkan4:1 }
+* Step 3: fire event tin2	=>  { pkan1:1 pm2:1 pm3:1 pkan4:1 }
+* Step 4: fire event tok3	=>  { pkan1:1 pm2:1 pout3:1 pkan4:1 }
+* Step 5: fire event tok2	=>  { pkan1:1 pout2:1 pout3:1 pkan4:1 }
+* Step 6: fire event tout2	=>  { pkan1:1 pkan2:1 pkan3:1 pm4:1 }
+* Step 7: fire event tok4	=>  { pkan1:1 pkan2:1 pkan3:1 pout4:1 }
+* Step 8: fire event tin1	=>  { pm1:1 pkan2:1 pkan3:1 pout4:1 }
+* Step 9: fire event tok1	=>  { pout1:1 pkan2:1 pkan3:1 pout4:1 }
+* Step 10: fire event tin2	=>  { pkan1:1 pm2:1 pm3:1 pout4:1 }
+* Step 11: fire event tok3	=>  { pkan1:1 pm2:1 pout3:1 pout4:1 }
+* Step 12: fire event tok2	=>  { pkan1:1 pout2:1 pout3:1 pout4:1 }
+* Step 13: fire event tin1	=>  { pm1:1 pout2:1 pout3:1 pout4:1 }
+* Step 14: fire event tok1	=>  { pout1:1 pout2:1 pout3:1 pout4:1 }
+\end{lstlisting}
+\caption{The output of $EF$ witnesses, depending on the setting of the
+\Code{BFSTrace} option.}
+\label{FIG:TraceOutput}
+\end{figure}
+
+\end{private}

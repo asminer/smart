@@ -3,7 +3,8 @@
 
 all: SMART-userman.pdf SMART-userman-private.pdf
 
-TEXSRC= SMARTman.tex overview.tex language.tex petri-nets.tex stategen.tex
+TEXSRC= SMARTman.tex overview.tex language.tex petri-nets.tex stategen.tex \
+        modelchecking.tex numerical-markov.tex
 
 
 include figures.makefile

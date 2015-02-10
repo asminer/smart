@@ -2015,7 +2015,7 @@ pn_rate::pn_rate() : simple_internal(em->REAL->addProc(), "rate", 2)
   HideFormal(0);
   const type* trans = em->findType("trans");
   SetFormal(1, trans, "t");
-  SetDocumentation("In the current marking, if t is disabled, then 0; if t is enabled, the firing rate of t.  This assumes that the firing distribution of t is expo(), but marking-dependent rates are allowed.");
+  SetDocumentation("In the current marking, if t is disabled, then 0; if t is enabled, the firing rate of t.  This assumes that the firing distribution of t is expo(), but marking-dependent rates are allowed.  Returns infinity for immediate (time 0) transitions.  Otherwise, if the transition does not have an expo() firing distribution, returns null.");
 }
 
 void pn_rate::Compute(traverse_data &x, expr** pass, int np)
