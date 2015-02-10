@@ -8,6 +8,7 @@
 \usepackage{ifthen}
 \usepackage{listings}
 \usepackage{color}
+\usepackage{amssymb}
 \makeindex
 
 % ====================================================================
@@ -19,8 +20,6 @@
     \kern-.16em T}}}
 
 \newcommand{\smartmeaning}{Stochastic Model-checking Analyzer for Reliability and Timing}
-
-\newcommand{\IGNORE}[1]{}
 
 % For notes applying only to the current release
 \newcommand{\RELEASE}[1]{{\color{blue}#1\color{black}}}
@@ -75,6 +74,35 @@
 % FOR NOW
 \newenvironment{code}{\begin{quote}}{\end{quote}}
 
+
+\newcommand{\vect}[1]{\mathbf{#1}}               % does not bold lowercase greek
+\newcommand{\gvect}[1]{\mbox{\boldmath{${#1}$}}} % wrong size for scripts
+\newcommand{\Set}[1]{\mathcal{#1}}
+
+\newcommand{\eset}{\Set{E}}           % event set
+\newcommand{\nset}{\Set{N}}           % next state function (new set of states)
+\newcommand{\sset}{\Set{S}}           % reachability sets (global, local)
+\newcommand{\vi}{\vect{i}}            % generic (from) state
+\newcommand{\vj}{\vect{j}}            % generic (to) state
+\newcommand{\vs}{\vect{s}}            % generic state
+\newcommand{\initstate}{\vs^{init}}   % initial (starting) state
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Numeric sets
+\newcommand{\Reals}{\mathbb{R}}      % real numbers
+\newcommand{\Naturals}{\mathbb{N}}   % natural numbers
+\newcommand{\Integers}{\mathbb{Z}}   % integer numbers
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Miscellanea
+\newcommand{\IGNORE}[1]{}                        % Ignore the argument
+\newcommand{\TBD}{{\textcolor{red}{\bf TBD}}}    % To Be Done 
+\newcommand{\MSG}[1]{{\color{blue}#1}}    % messages
+\newcommand{\SUPST}{\mbox{$^{\mathrm{st}}$}}     % to put a ^st in text
+\newcommand{\SUPND}{\mbox{$^{\mathrm{nd}}$}}     % to put a ^nd in text
+\newcommand{\SUPRD}{\mbox{$^{\mathrm{rd}}$}}     % to put a ^rd in text
+\newcommand{\SUPTH}{\mbox{$^{\textrm{th}}$}}     % to put a ^th in text
+
 % ====================================================================
 
 \begin{document}
@@ -105,6 +133,7 @@ TBD
 \input{language}
 \input{petri-nets}
 
+\input{stategen}
 
 
 \end{document}
