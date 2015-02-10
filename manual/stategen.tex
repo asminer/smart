@@ -1,0 +1,171 @@
+%
+% $Id$
+%
+
+\chapter{State space generation algorithms} \label{SEC:SSGen}
+
+\section{Finite state spaces} \label{SEC:finite-state-spaces}
+
+A discrete-state model expressed in a high-level formalism implicitly specifies:
+\begin{itemize}
+\item $\widehat{\sset}$, the set of \emph{potential states} describing
+the ``type'' of states.
+\item $\initstate \in \widehat{\sset}$, the \emph{initial state}
+(we use boldface lower-case roman characters to denote states).
+\item $\nset : \widehat{\sset} \rightarrow 2^{\widehat{\sset}}$, the
+\emph{next--state function}, describing which states can be reached from
+a given state in a single step.
+In the formalisms we consider, $\nset$ is really expressed as a union
+$\nset = \bigcup_{e \in \eset} \nset_{e}$, where~$\eset$ is a finite set
+of \emph{events} and~$\nset_{e}$ is the next-state function associated
+with event~$e$.
+Thus, $\nset_{e}(\vi)$ is the set of states the system can enter when event $e$
+occurs, or \emph{fires}, in state $\vi$.
+In particular, $e$ is \emph{disabled} in $\vi$ if $\nset_e(\vi) = \emptyset$.
+In the case of a Petri net with exponential timing, the set $\nset_{e}(\vi)$
+can only be either empty or a singleton, since the firing of
+a given transition $e$ in a given marking $\vi$
+deterministically leads to a unique marking $\vj$.
+However, nondeterminism can be achieved, i.e., $\nset_{e}(\vi)$ can contain
+multiple elements, by using immediate transitions in the model.
+\end{itemize} 
+
+From such a high-level model, we can build its
+\emph{reachable state space}, or \emph{reachability set},
+$\sset \subseteq \widehat{\sset}$, as
+the smallest set containing the initial state $\initstate$ and
+closed with respect to~$\nset$:
+$$
+   \sset = \{\initstate\} \cup \nset(\initstate) \cup
+   \nset(\nset(\initstate)) \cup \cdots = \nset^{\ast}(\initstate).
+$$
+The \emph{reachability graph} is instead the directed graph having $\sset$
+as nodes, and an arc from $\vi$ to $\vj$ iff $\vj \in \nset(\vi)$.
+If we are interested in the event identities, we label the arc
+with the event(s) $e$ for which $\vj \in \nset(\vi)$.
+
+When discussing discrete-state systems, it is natural to consider
+a state as a collection of \emph{substates}, thus
+the potential state space $\widehat{\sset}$ is the
+cross-product of some fixed number $K$ of \emph{local state spaces},
+$$
+  \widehat{\sset} = \sset_K \times \sset_{K-1} \times \cdots \times \sset_1 .
+$$
+
+Unlike many other tools, {\smart} does not require the user to
+\emph{explicitly} define the exact composition of these local state spaces.
+For example, a marking $\vi$ of a Petri net is simply a vector of $K$
+natural numbers, where $K$ is the number of places in the net,
+but {\smart} simply needs to know this number $K$, i.e., it only needs to know
+that $\vi \in \Naturals^K$, not what the possible number of tokens
+in each place can be.
+
+This is more user-friendly than requiring the
+specification of redundant information (after all, the Petri net itself
+implicitly defines the elements of the sets $\sset_k$ for $K \geq k \geq 1$),
+but it also carries with it a responsibility:
+it is up to the user to make sure that the state space is finite,
+since $\widehat{\sset}$ is not anymore the cross-product of
+$K$ finite (explicitly enumerated by the user) sets.
+Of course, if desired, the user can still explicitly bound the local
+state spaces, without having to list them.
+For example, in a Petri net, this can be achieved by introducing inhibitor
+arcs or complementary places that limit the number of tokens
+in the places;
+however, this is often not needed, as many interesting models
+are naturally finite, as they are covered by invariants.
+
+State space exploration algorithms are available in {\smart} as
+functions that can be used to build measures.
+We use the \Code{pn} formalism for our examples, but
+the predefined functions we describe are applicable to any other
+formalism in {\smart}.
+The applicable algorithms are independent of the data structure used to
+represent the reachability set $\sset$, although the choice for the
+latter can greatly affect their memory and runtime requirements.
+The available functions are:
+
+\begin{itemize} 
+
+\item
+\Code{bigint num\_states()}\\
+Builds $\sset$ if necessary, and returns the size of $\sset$.
+Whenever $\sset$ is built,
+if \Code{procgen} is set for options \Code{Debug} and \Code{Report},
+then debugging and performance information (respectively)
+for the state space generation engine are displayed.
+
+\item
+\Code{void show\_states()}\\
+Builds $\sset$ if necessary, and explicitly lists the elements of $\sset$.
+Option \Code{MaxStateDisplay} specifies the maximum number of states
+to be displayed,
+and option \Code{StateDisplayOrder} dictates the order in which states
+are displayed.
+
+
+
+\item
+\Code{bigint num\_arcs()}\\
+Builds the reachability graph if necessary,
+and returns the number of arcs in the graph.
+{\smart} builds a state-to-state transition matrix to evaluate this function,
+hence duplicate arcs that lead from one state to the same state
+due to different events are not counted multiple times.
+Whenever the reachability graph is built,
+if \Code{procgen} is set for options \Code{Debug} and \Code{Report},
+then debugging and performance information (respectively)
+for the reachability graph generation engine are displayed.
+
+\item
+\Code{void show\_arcs()}\\
+Builds the reachability graph if necessary,
+and displays it.
+Option \Code{MaxArcDisplay} specifies the maximum number of arcs
+to be displayed,
+while options \Code{DisplayGraphNodeNames}
+and \Code{GraphDisplayStyle} control the style of the graph output.
+\end{itemize}
+
+The following is a {\smart} program that computes the number of reachable states
+for the classical model of the dining philosophers, where the number \Code{N}
+of philosophers is an input parameter:
+%
+\lstinputlisting[firstline=3]{examples/phils_states.sm}
+%
+
+
+\section{Algorithms and data structures}
+
+When the generation of the state space is required,
+{\smart} uses the value of the \Code{ProcessGeneration} option
+to determine the family of algorithms to choose from:
+\begin{itemize}
+  \item \Code{EXPLICIT}:\\
+  States are stored explicitly, using {\smart}'s specialized state storage
+  schemes.
+  Explicit algorithms perform a breadth-first search where
+  each state is stored and explored individually: for each
+  newly-discovered state, every event is tested to see whether it is enabled
+  and, if so, it is fired to obtain new states
+  \cite{1997Tools-Storage}.
+  The option \Code{ExplicitStateStorage} specifies which dictionary 
+  data structure to use for determining if a discovered state
+  is already in $\sset$ or not.
+
+  \item \Code{MEDDLY}:\\
+  States are stored symbolically, using Meddly to support
+  the decision diagram representation.
+  \RELEASE{Currently,
+  this requires the user to specify a \emph{partition} for the model,
+  which dictates how state variables are collected and mapped
+  to decision diagram variables.
+  }
+  The option \Code{MeddlyProcessGeneration} specifies
+  the generation algorithm (including explicit)
+  to use with Meddly.
+  \RELEASE{Some of these algorithms are not implemented yet,
+  while others have prototype implementations.}
+  Several other options exist to set parameters of Meddly.
+\end{itemize}
+
