@@ -27,7 +27,7 @@ public:
   virtual ~mdd_lib();
   virtual const char* getVersionString() const;
   virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(OutputStream &s) const;
+  virtual void printCopyright(doc_formatter* df) const;
 };
 
 mdd_lib::mdd_lib() : library(true)
@@ -44,11 +44,13 @@ const char* mdd_lib::getVersionString() const
   return version;
 }
 
-void mdd_lib::printCopyright(OutputStream &s) const
+void mdd_lib::printCopyright(doc_formatter* df) const
 {
-  s << "\t" << MEDDLY::getLibraryInfo(1) << "\n";
-  s << "\t" << MEDDLY::getLibraryInfo(2) << "\n";
-  s << "\t" << MEDDLY::getLibraryInfo(3) << "\n";
+  df->begin_indent();
+  df->Out() << MEDDLY::getLibraryInfo(1) << "\n";
+  df->Out() << MEDDLY::getLibraryInfo(2) << "\n";
+  df->Out() << MEDDLY::getLibraryInfo(3) << "\n";
+  df->end_indent();
 }
 
 mdd_lib mdd_lib_data;

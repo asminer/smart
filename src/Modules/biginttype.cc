@@ -27,7 +27,7 @@ public:
   virtual ~gmp_lib();
   virtual const char* getVersionString() const;
   virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(OutputStream &s) const;
+  virtual void printCopyright(doc_formatter* df) const;
 };
 
 gmp_lib::gmp_lib() : library(true)
@@ -46,11 +46,13 @@ const char* gmp_lib::getVersionString() const
   return version;
 }
 
-void gmp_lib::printCopyright(OutputStream &s) const
+void gmp_lib::printCopyright(doc_formatter* df) const
 {
-  s << "\tCopyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
-  s << "\treleased under the GNU Lesser General Public License, version 2\n";
-  s << "\thttp://gmplib.org/\n";
+  df->begin_indent();
+  df->Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
+  df->Out() << "released under the GNU Lesser General Public License, version 2\n";
+  df->Out() << "http://gmplib.org/\n";
+  df->end_indent();
 }
 
 gmp_lib gmp_lib_data;

@@ -1042,17 +1042,18 @@ void superman::printLibraryVersions(OutputStream &s) const
   }
 }
 
-void superman::printLibraryCopyrights(OutputStream &s) const
+void superman::printLibraryCopyrights(doc_formatter* df) const
 {
   for (int i=0; i<num_libs; i++) {
     DCASSERT(extlibs[i]);
     if (!extlibs[i]->hasCopyright()) continue;
+    df->Out() << "\n";
+    df->begin_heading();
     const char* v = extlibs[i]->getVersionString();
     DCASSERT(v);
-    s << v << "\n";
-    extlibs[i]->printCopyright(s);
-    s << "\n";
-    s.flush();
+    df->Out() << v;
+    df->end_heading();
+    extlibs[i]->printCopyright(df);
   }
 }
 

@@ -170,11 +170,26 @@ int Usage(exprman* em)
 int Copyrights(exprman* em)
 {
   if (0==em) return 1;
-  DisplayStream& cout = em->cout();
-  cout << "\n" << getVersionString() << "\n";
-  cout << "\tDesign: Gianfranco Ciardo and Andrew Miner\n";
-  cout << "\tImplementation: Andrew Miner\n\n";
-  em->printLibraryCopyrights(cout);
+  doc_formatter* df = MakeTextFormatter(80, em->cout());
+  df->Out() << "\n";
+  df->begin_heading();
+  df->Out() << getVersionString();
+  df->end_heading();
+  df->begin_indent();
+  df->begin_description(15);
+  df->item("Design:");
+  df->Out() << "Gianfranco Ciardo and Andrew Miner";
+  // Uncomment this when we add names to Implementation.
+  // df->item("Lead developer:");
+  //df->Out() << "Andrew Miner";
+  df->item("Implementation:");
+  // Add to and alphabetize this list of names.
+  df->Out() << "Andrew Miner";
+  df->end_description();
+  df->end_indent();
+  em->printLibraryCopyrights(df);
+  delete df;
+  em->cout() << "\n";
   return 0;
 }
 
