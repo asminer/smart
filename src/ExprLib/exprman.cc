@@ -34,7 +34,7 @@ library::~library()
 {
 }
 
-void library::printCopyright(OutputStream &s) const
+void library::printCopyright(doc_formatter* df) const
 {
   DCASSERT(0);
 }

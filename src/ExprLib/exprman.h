@@ -68,7 +68,7 @@ public:
       Otherwise, if there is copyright info, then this must be overridden
       in the derived class.
   */
-  virtual void printCopyright(OutputStream &s) const;
+  virtual void printCopyright(doc_formatter *df) const;
 };
 
 
@@ -1502,7 +1502,7 @@ public:
   virtual void printLibraryVersions(OutputStream &s) const = 0;
 
   /// Print copyright info for all registered supporting libraries.
-  virtual void printLibraryCopyrights(OutputStream &s) const = 0;
+  virtual void printLibraryCopyrights(doc_formatter* df) const = 0;
 
 protected:
   virtual ~exprman();  // don't want user to delete one...
