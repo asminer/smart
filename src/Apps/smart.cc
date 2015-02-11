@@ -71,16 +71,17 @@
 #include "../Engines/satur_meddly.h"
 #include "../Engines/expl_meddly.h"
 
-const int MAJOR = 3;
-const int MINOR = 2;
 
 const char* getVersionString()
 {
   static char* version = 0;
   if (0==version) {
     StringStream str;
-    str << "SMART version ";
-    str << MAJOR << "." << MINOR << "." << REVISION_NUMBER;
+#ifdef VERSION
+    str << "SMART version " << VERSION << "." << REVISION_NUMBER;
+#else
+    str << "SMART revision " << REVISION_NUMBER;
+#endif
 #ifdef DEVELOPMENT_CODE
     str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
 #else
@@ -186,7 +187,9 @@ int Copyrights(exprman* em)
   // Add to and alphabetize this list of names.
   df->Out() << "Andrew Miner";
   df->end_description();
-  df->Out() << "http://smart.cs.iastate.edu/\n";
+#ifdef PACKAGE_URL
+  df->Out() << PACKAGE_URL << "\n";
+#endif
   df->end_indent();
   em->printLibraryCopyrights(df);
   delete df;

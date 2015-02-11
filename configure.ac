@@ -6,7 +6,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT([smartpack], [3], [asminer@iastate.edu])
+AC_INIT([smartpack], [3.2], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests])
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR([src/README.txt])

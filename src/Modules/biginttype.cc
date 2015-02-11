@@ -51,7 +51,7 @@ void gmp_lib::printCopyright(doc_formatter* df) const
   df->begin_indent();
   df->Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
   df->Out() << "released under the GNU Lesser General Public License, version 2\n";
-  df->Out() << "http://gmplib.org/\n";
+  df->Out() << "http://gmplib.org\n";
   df->end_indent();
 }
 
