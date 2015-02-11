@@ -186,6 +186,7 @@ int Copyrights(exprman* em)
   // Add to and alphabetize this list of names.
   df->Out() << "Andrew Miner";
   df->end_description();
+  df->Out() << "http://smart.cs.iastate.edu/\n";
   df->end_indent();
   em->printLibraryCopyrights(df);
   delete df;
