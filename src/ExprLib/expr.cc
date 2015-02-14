@@ -176,6 +176,14 @@ void expr::SetType(typelist* t)
   aggtype = t;
 }
 
+void expr::SetType(const expr* t)
+{
+  DCASSERT(0 == simple);
+  DCASSERT(0 == aggtype);
+  simple = t->simple;
+  aggtype = Share(t->aggtype);
+}
+
 void expr::SetModelType(const model_def* mt)
 {
   if (0==mt) return;

@@ -558,6 +558,19 @@ symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
 
 
 /** Used primarily by compiler.
+    Build a named parameter.
+
+      @param  fn        Filename of declaration
+      @param  ln        Line number of declaration
+      @param  name      Parameter name
+      @param  pass      Expression passed to the parameter
+
+      @return An appropriate symbol.
+*/
+symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass);
+
+
+/** Used primarily by compiler.
     Build a user-function "header".
 
       @param  em        Expression manager for error reporting.
