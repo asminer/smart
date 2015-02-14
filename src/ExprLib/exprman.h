@@ -403,6 +403,10 @@ public:
     DCASSERT(io);
     io->ResumeTerm();
   }
+  inline void Exit() {
+    DCASSERT(io);
+    io->Exit();
+  }
 
   // +-----------------------------------------------------------------+
   // |                                                                 |

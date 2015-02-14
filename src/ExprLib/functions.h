@@ -189,6 +189,7 @@ public:
 
   /** Does this header match the passed one?
       Used to detect duplicate or conflicting user-defined functions.
+      Parameters must match exactly, including names.
         @param  t   Return type
         @param  fp  Formal parameter list
         @param  np  Number of parameters
@@ -199,6 +200,19 @@ public:
                   and the defaults (if any) match.
   */
   virtual bool HeadersMatch(const type* t, symbol** fp, int np) const;
+
+  /** Is there a name conflict with the given parameters?
+      I.e., if we define another function with the same name,
+      with the given parameters, can there be ambiguity
+      when calling the function with named parameters?
+        @param  fp    Formal parameter list to compare against ours.
+        @param  np    Number of parameters
+        @param  tmp   Scratch space, array with dimension at least np.
+
+        @return   true,   if the new function should not be allowed;
+                  false,  if we don't see any problems.
+  */
+  virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
 
   /** Find a formal parameter with the given name.
       Used by the compiler.
@@ -318,6 +332,9 @@ public:
   /// Do the formal params match
   bool matches(symbol** pl, int np) const;
 
+  /// Is there a name conflict between these formal param lists
+  bool hasNameConflict(symbol** pl, int np, int* tmp) const;
+
   /** Give type-checking scores for parameters.
       Each score indicuates how well the parameters match, as follows.
          0: Perfect match in type and number.
@@ -379,6 +396,11 @@ public:
 
   /// Traverse all formals.
   void traverse(traverse_data &x);
+
+private:
+  
+  // Helper for hasNameConflict
+  int findParamWithName(symbol** pl, int np, int* tmp, const char* name) const;
 };
 
 // ******************************************************************
@@ -450,6 +472,8 @@ public:
   }
 
   virtual bool IsHidden(int fpnum) const;
+
+  virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
 
   /** Set the "repeat point".
       If the function does not have repeating parameters, this
@@ -562,7 +586,7 @@ function* MakeUserFunction(const exprman* em, const char* fn, int ln,
       @param  ln        Line number of declaration
       @param  userfunc  User function to modify.
       @param  formals   Array of formal parameters
-      @param  np        Number of formal parameters
+      @param  nfp       Number of formal parameters
 */
 void ResetUserFunctionParams(const exprman* em, const char* fn, int ln, 
                               symbol* userfunc, symbol** formals, int nfp);

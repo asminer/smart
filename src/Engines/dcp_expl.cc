@@ -32,16 +32,18 @@ public:
   virtual bool hasFixedPointer() const { 
     return false; 
   }
-  virtual void printCopyright(OutputStream &s) const;
+  virtual void printCopyright(doc_formatter* df) const;
 };
 
 icp_state_lib::icp_state_lib() : library(false)
 {
 }
 
-void icp_state_lib::printCopyright(OutputStream &s) const
+void icp_state_lib::printCopyright(doc_formatter* df) const
 {
-  s << "\tState library copyright info here\n";
+  df->begin_indent();
+  df->Out() << "State library copyright info here\n";
+  df->end_indent();
 }
 
 // ******************************************************************
