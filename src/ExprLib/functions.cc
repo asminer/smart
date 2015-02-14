@@ -270,6 +270,12 @@ bool function::HeadersMatch(const type* t, symbol** pl, int np) const
   return false;
 }
 
+bool function::HasNameConflict(symbol** fp, int np, int* tmp) const
+{
+  return false;
+  // Derived classes should override this
+}
+
 symbol* function::FindFormal(const char* name) const
 {
   return 0;
@@ -641,11 +647,11 @@ bool fplist::matches(symbol** pl, int np) const
   if (np != num_formal)  return false;
   for (int i=0; i<num_formal; i++) {
     DCASSERT(formal[i]);
-    formal_param* fp = dynamic_cast <formal_param*> (pl[i]);
+    const formal_param* fp = dynamic_cast <const formal_param*> (pl[i]);
     if (0==fp)                                        return false;
     if (formal[i]->Type() != fp->Type())              return false;
     if (formal[i]->HasDefault() != fp->HasDefault())  return false;
-
+    if (strcmp(formal[i]->Name(), fp->Name()))        return false;
     if (!formal[i]->HasDefault())  continue;
 
     // Aha!
@@ -655,6 +661,85 @@ bool fplist::matches(symbol** pl, int np) const
     if (0==midef)      continue;
     if (! midef->Equals(tudef) )    return false;
   }
+  return true;
+}
+
+bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
+{
+  //
+  // Initialize scratch space - holds index of matching param
+  //
+  for (int i=0; i<np; i++) tmp[i] = -1; // no match yet
+
+  //
+  // Go through all of our parameters...
+  //
+  for (int i=0; i<num_formal; i++) {
+    //
+    // First, check for a matching name
+    //
+    int j = findParamWithName(pl, np, tmp, formal[i]->Name());
+
+    if (j>=0) tmp[j] = i;   // remember where we found this
+
+    if (formal[i]->IsHidden())    continue; // parameter won't be listed
+
+    //
+    // Still here?  Our FP must appear in a name list.
+    //
+
+
+    if (j<0) {
+      // 
+      // Same FP name cannot appear in other name list.  No conflict.
+      //
+      return false;
+    }
+
+    //
+    // Same FP name CAN appear in other name list.
+    // If it is missing in the other list, and the other list has
+    // a default, then we know to select the other function.
+    // So we can now consider only the cases where this FP name
+    // appears in both name lists.
+    //
+    if (formal[i]->Type() != pl[j]->Type()) {
+      // 
+      // Types can distinguish.  No conflict.
+      return false;
+    }
+
+    //
+    // Still here?  This FP cannot distinguish the function calls.  
+    // Keep looking.
+  }
+
+  //
+  // If we made it here, then none of OUR parameters can
+  // force a difference in a name list.
+  // Now, check if something in the other list can.
+  //
+  for (int i=0; i<np; i++) {
+
+    if (tmp[i]>=0) continue;    // this matched one of ours
+
+    // We have an unmatched parameter.
+    // If it is required to appear in a name list,
+    // then there cannot be a conflict.
+    // Otherwise, there can.
+
+    formal_param* fpli = smart_cast <formal_param*> (pl[i]);
+    if (0==fpli) continue;  // strange things afoot.
+
+    if (fpli->IsHidden()) continue;     // won't be listed
+
+    return false;
+  }
+
+  // 
+  // Every named list will be ambiguous between these two FP lists.
+  // We won't allow that.
+  //
   return true;
 }
 
@@ -827,6 +912,21 @@ void fplist::traverse(traverse_data &x)
   }
 }
 
+//
+// private
+//
+
+int fplist
+::findParamWithName(symbol** pl, int np, int* tmp, const char* name) const
+{
+  for (int i=0; i<np; i++) {
+    if (tmp[i]>=0) continue;
+    if (strcmp(pl[i]->Name(), name)) continue;
+    return i;
+  }
+  return -1;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     internal_func  methods                     *
@@ -879,6 +979,11 @@ simple_internal::~simple_internal()
 bool simple_internal::IsHidden(int fpnum) const
 {
   return formals.isHidden(fpnum);
+}
+
+bool simple_internal::HasNameConflict(symbol** fp, int np, int* tmp) const
+{
+  return formals.hasNameConflict(fp, np, tmp);
 }
 
 int simple_internal::Traverse(traverse_data &x, expr** pass, int np)
@@ -989,6 +1094,7 @@ public:
   virtual bool IsHidden(int fpnum) const;
 
   virtual bool HeadersMatch(const type* t, symbol** pl, int np) const;
+  virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
  
   virtual bool DocumentHeader(doc_formatter* df) const;
   virtual void DocumentBehavior(doc_formatter* df) const;
@@ -1059,6 +1165,12 @@ bool user_func::HeadersMatch(const type* t, symbol** pl, int np) const
   if (Type() != t)  return false;
   return formals.matches(pl, np);
 }
+
+bool user_func::HasNameConflict(symbol** fp, int np, int* tmp) const
+{
+  return formals.hasNameConflict(fp, np, tmp);
+}
+
 
 bool user_func::DocumentHeader(doc_formatter* df) const
 {

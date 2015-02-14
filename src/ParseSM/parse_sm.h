@@ -133,6 +133,10 @@ public:
     DCASSERT(em);
     if (em->hasIO()) em->stopIO();
   }
+  inline void Exit() {
+    DCASSERT(em);
+    em->Exit();
+  }
 };
 
 #endif

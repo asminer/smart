@@ -438,8 +438,9 @@ int CircularLength(parser_list* list)
 {
   if (0==list) return 0;
   int length = 1;
-  for (parser_list* ptr = list->next; ptr != list; ptr=ptr->next)
-  length++;
+  for (parser_list* ptr = list->next; ptr != list; ptr=ptr->next) {
+    length++;
+  }
   return length;
 }
 
@@ -1134,6 +1135,52 @@ void duplicationError(bool warning_only, function* f, const char* how)
   pm->stopError();
 }
 
+// Check for named parameter conflicts
+// --------------------------------------------------------------
+bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
+{
+  // Check *all* functions of this name, for function call
+  // ambiguity when passing named parameters.
+  if (0==Funcs) return false;
+
+  static int* scratch = 0;
+  static int  scrsize = 0;
+
+  if (np>scrsize) {
+    delete[] scratch;
+    scrsize = 16;
+    while (scrsize < np) scrsize *= 2;  // fails if np is huge
+    scratch = new int[scrsize];
+  }
+
+  bool conflicts = false;
+  bool errIO = false;
+  for (symbol* find = Funcs->FindSymbol(n); find; find = find->Next()) {
+    function* f = smart_cast <function*> (find);
+    if (0==f)   continue;
+    if (!f->HasNameConflict(fp, np, scratch))  continue;
+    
+    if (!conflicts) {
+      conflicts = true;
+      errIO = pm->startError();
+      if (errIO) {
+        pm->cerr() << "Parameter names for `" << n << "' are ambiguous with existing:";
+        pm->newLine();
+      }
+    }
+    if (errIO) {
+      f->PrintHeader(pm->cerr(), true);
+      pm->newLine();
+      pm->cerr() << "declared ";
+      pm->cerr().PutFile(f->Filename(), f->Linenumber());
+    }
+  }
+
+  if (errIO) pm->stopError();
+
+  return conflicts;
+}
+
 // --------------------------------------------------------------
 symbol* BuildFunction(const type* typ, char* n, parser_list* list)
 {
@@ -1187,7 +1234,21 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
     duplicationError(1, findFirstMatch(Funcs, n, (expr**) fp, nfp), "hides");
   } 
 
+  //
   // This is a brand-new function.
+  //
+  if (hasNamedParamConflicts(n, fp, nfp)) {
+    // Already printed an error message.
+    // Cleanup and bail out.
+    free(n);
+    for (int i=0; i<nfp; i++) Delete(fp[i]);
+    delete[] fp;
+    return 0;
+  }
+
+  //
+  // All clear; build the function
+  //
   function_under_construction = MakeUserFunction(
       em, Filename(), Linenumber(), typ, n, fp, nfp, model_under_construction
   );
@@ -1393,6 +1454,19 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     delete[] Formals;
     return 0;
   }
+  
+  // Check against name conflicts
+  if (hasNamedParamConflicts(n, Formals, num_Formals)) {
+    // Already printed an error message.
+    // Cleanup and bail out.
+    free(n);
+    for (int i=0; i<num_Formals; i++) {
+      Delete(Formals[i]);
+    }
+    delete[] Formals;
+    return 0;
+  }
+
 
   model_under_construction =
     em->makeModel(Filename(), Linenumber(), typ, n, Formals, num_Formals);
