@@ -48,10 +48,12 @@ function_call model_function_call set_expr set_elem pos_param index
 doneproduct doneconj arith logic
 
 %type <List> aggexpr seqexpr statements opt_stmts model_stmts model_var_list
-idlist formal_params formal_indexes passed_params pos_params indexes set_elems
-summation product conjunct disjunct
+idlist formal_params formal_indexes passed_params pos_params 
+named_params named_list indexes set_elems summation product conjunct disjunct
 
-%type <Symbol> iterator func_header array_header model_header formal_param
+%type <Symbol> iterator func_header array_header model_header 
+formal_param named_param
+
 %type <Option> opt_header
 %type <other> model_call
 
@@ -801,15 +803,20 @@ function_call
   Reducing("function_call : IDENT");
   $$ = FindIdent($1);
 }
-      |    IDENT indexes   
+      |   IDENT indexes   
 {
   Reducing("function_call : IDENT indexes");
   $$ = BuildArrayCall($1, $2);
 }
-      |    IDENT passed_params
+      |   IDENT passed_params
 {
   Reducing("function_call : IDENT passed_params");
-  $$ = BuildFunctionCall($1, $2);
+  $$ = BuildFuncCallPP($1, $2);
+}
+      |   IDENT named_params
+{
+  Reducing("function_call : IDENT named_params");
+  $$ = BuildFuncCallNP($1, $2);
 }
       ;
 
@@ -823,12 +830,12 @@ formal_params
       :   formal_params COMMA formal_param
 {
   Reducing("formal_params : formal_params COMMA formal_param");
-  $$ = AppendFormal($1, $3);
+  $$ = AppendSymbol($1, $3);
 }
       |    formal_param
 {
   Reducing("formal_params : formal_param");
-  $$ = AppendFormal(0, $1);
+  $$ = AppendSymbol(0, $1);
 }
       ;
 
@@ -920,6 +927,39 @@ pos_param
       ;
 
 
+named_params
+      :   LPAR named_list RPAR
+{
+  Reducing("named_params : LPAR named_list RPAR");
+  $$ = $2;
+}
+      ;
+
+named_list 
+      :   named_list COMMA named_param
+{
+  Reducing("named_list : named_list COMMA named_param");
+  $$ = AppendSymbol($1, $3);
+}
+      |   named_param
+{
+  Reducing("named_list : named_param");
+  $$ = AppendSymbol(0, $1);
+}
+      ;
+
+named_param
+      :   IDENT GETS expr
+{
+  Reducing("named_param : IDENT GETS expr");
+  $$ = BuildNamed($1, $3);
+}
+      |   IDENT GETS DEFAULT
+{
+  Reducing("named_param : IDENT GETS DEFAULT");
+  $$ = BuildNamed($1, Default());
+}
+      ;
 
 %%
 /*-----------------------------------------------------------------*/

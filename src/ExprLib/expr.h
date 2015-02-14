@@ -315,6 +315,14 @@ public:
   */
   void SetType(typelist* t);
 
+  /** Useful for rare cases when we do not know the expression
+      type a priori.  If this is to be used, then the expression should be
+      constructed either with type 0, or a typelist of 0 
+      (the two are equivalent).
+        @param  t  Expression to take the type from.
+  */
+  void SetType(const expr* t);
+
   /** Set the model that constructed us.
       Will also set the type if necessary.
 

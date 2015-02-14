@@ -573,7 +573,7 @@ parser_list* AppendName(parser_list* list, char* ident)
 }
 
 // --------------------------------------------------------------
-parser_list* AppendFormal(parser_list* list, symbol* p)
+parser_list* AppendSymbol(parser_list* list, symbol* p)
 {
   if (0==p || em->isError(p))  return list;
   // Check for duplicate names
@@ -1349,6 +1349,14 @@ symbol* BuildFormal(const type* typ, char* name, expr* deflt)
   return MakeFormalParam(em, Filename(), Linenumber(), 
                           typ, name, deflt, model_under_construction);
 }
+
+// --------------------------------------------------------------
+symbol* BuildNamed(char* name, expr* pass)
+{
+  symbol* s = MakeNamedParam(Filename(), Linenumber(), name, pass);
+  return ShowWhatWeBuilt("named parameter: ", s);
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -2224,7 +2232,7 @@ expr* FindIdent(char* name)
   }
 
   // Check no-parameter functions
-  return BuildFunctionCall(name, 0);
+  return BuildFuncCallPP(name, 0);
 }
 
 // --------------------------------------------------------------
@@ -2260,7 +2268,7 @@ expr* BuildArrayCall(char* n, parser_list* ind)
 }
 
 // --------------------------------------------------------------
-expr* BuildFunctionCall(char* n, parser_list* posparams)
+expr* BuildFuncCallPP(char* n, parser_list* posparams)
 {
   symbol* find = em->findFunction(ModelType, n);
   symbol* find2 = 0;
@@ -2308,6 +2316,13 @@ expr* BuildFunctionCall(char* n, parser_list* posparams)
   return ShowWhatWeBuilt(0,
     em->makeFunctionCall(Filename(), Linenumber(), best, pass, length)
   );
+}
+
+// --------------------------------------------------------------
+expr* BuildFuncCallNP(char* n, parser_list* posparams)
+{
+  // TBD!
+  return 0;
 }
 
 // --------------------------------------------------------------

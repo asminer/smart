@@ -86,12 +86,12 @@ parser_list* AppendExpression(int behv, parser_list* list, expr* item);
 */
 parser_list* AppendName(parser_list* list, char* ident);
 
-/** Add a formal parameter to our list.
-      @param  list List of formal parameters (0 for empty).
-      @param  p    Formal parameter to add.
+/** Add a symbol to our list.
+      @param  list List of symbols (0 for empty).
+      @param  p    Symbol to add.
       @return An updated list.
 */
-parser_list* AppendFormal(parser_list* list, symbol* p);
+parser_list* AppendSymbol(parser_list* list, symbol* p);
 
 /** Add a term to a list of sums or products.
       @param  list List of objects (0 for empty).
@@ -293,6 +293,12 @@ symbol* BuildFormal(const type* typ, char* name);
 */
 symbol* BuildFormal(const type* typ, char* name, expr* deflt);
 
+/** Build a named parameter
+      @param  name  Name of parameter.  Will eventually be free()d.
+      @param  pass  Expression passed to the parameter.
+      @return A new named parameter or 0 on error.
+*/
+symbol* BuildNamed(char* name, expr* pass);
 
 // ******************************************************************
 // *                                                                *
@@ -530,14 +536,21 @@ expr* FindIdent(char* name);
 */
 expr* BuildArrayCall(char* n, parser_list* ind);
 
-/** Build a function call.
+/** Build a function call with positional parameters.
     Does type checking, promotion, overloading, and everything.
       @param  n   The function name.  Will be free()d.
       @param  ind List of passed (positional) parameters
       @return A new expression as appropriate.
 */
-expr* BuildFunctionCall(char* n, parser_list* posparams);
+expr* BuildFuncCallPP(char* n, parser_list* posparams);
 
+/** Build a function call with named parameters.
+    Does type checking, promotion, overloading, and everything.
+      @param  n   The function name.  Will be free()d.
+      @param  ind List of passed (named) parameters
+      @return A new expression as appropriate.
+*/
+expr* BuildFuncCallNP(char* n, parser_list* posparams);
 
 /** Return the special "default" expression.
     Used for parameter passing.

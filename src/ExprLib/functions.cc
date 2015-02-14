@@ -283,6 +283,50 @@ symbol* function::FindFormal(const char* name) const
 
 // ******************************************************************
 // *                                                                *
+// *                       named_param  class                       *
+// *                                                                *
+// ******************************************************************
+
+/** Named parameter class.
+    Basically, a pair (name, expression).
+*/
+class named_param : public symbol {
+  expr* pass;
+public:
+  named_param(const char* fn, int line, char* n, expr* p);
+  virtual ~named_param();
+
+  virtual bool Print(OutputStream &s, int width) const;
+  // TBD the rest
+  // probably will need helpers for building function calls
+};
+
+
+named_param::named_param(const char* fn, int line, char* n, expr* p)
+ : symbol(fn, line, (const type*) 0, n)
+{
+  SetType(p);
+  pass = p;
+}
+
+named_param::~named_param()
+{
+  Delete(pass);
+}
+
+bool named_param::Print(OutputStream &s, int width) const
+{
+  if (symbol::Print(s, 0)) {
+    s.Put(":=");
+    if (0==pass)  s.Put("null");
+    else          pass->Print(s, 0);
+    return true;
+  }
+  return false;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                       formal_param class                       *
 // *                                                                *
 // ******************************************************************
@@ -1586,6 +1630,11 @@ symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
   }
   fp->SetDefault(def);
   return fp;
+}
+
+symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass)
+{
+  return new named_param(fn, ln, name, pass);
 }
 
 function* MakeUserFunction(const exprman* em, const char* fn, int ln, 
