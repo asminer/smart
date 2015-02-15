@@ -718,6 +718,8 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
   //
   // Go through all of our parameters...
   //
+  int ourExtra = 0;
+
   for (int i=0; i<num_formal; i++) {
     //
     // First, check for a matching name
@@ -735,9 +737,15 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
 
     if (j<0) {
       // 
-      // Same FP name cannot appear in other name list.  No conflict.
+      // Same FP name cannot appear in other name list.
       //
-      return false;
+
+      // If this is a required parameter, then there is never a conflict.
+      if (!formal[i]->HasDefault()) return false;
+
+      // Keep going because there might be a conflict.
+      ourExtra++;
+      continue;
     }
 
     //
@@ -759,32 +767,38 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
   }
 
   //
-  // If we made it here, then none of OUR parameters can
+  // Check if something in the other list can
   // force a difference in a name list.
-  // Now, check if something in the other list can.
   //
+  int theirExtra = 0;
   for (int i=0; i<np; i++) {
 
     if (tmp[i]>=0) continue;    // this matched one of ours
 
     // We have an unmatched parameter.
-    // If it is required to appear in a name list,
-    // then there cannot be a conflict.
-    // Otherwise, there can.
 
     formal_param* fpli = smart_cast <formal_param*> (pl[i]);
     if (0==fpli) continue;  // strange things afoot.
-
     if (fpli->IsHidden()) continue;     // won't be listed
 
-    return false;
+    // If it is required to appear in a name list,
+    // then there cannot be a conflict.
+    if (!fpli->HasDefault()) return false;
+
+    // Keep going
+    theirExtra++;
   }
 
-  // 
-  // Every named list will be ambiguous between these two FP lists.
-  // We won't allow that.
   //
-  return true;
+  // Still here?  All parameters with the same names match.
+  // Any other parameters are optional (with defaults).
+  //
+  // If some function has no extras, then that one
+  // will always have ambiguous function calls.
+  // Don't allow that.
+  //
+
+  return (0==ourExtra || 0==theirExtra);
 }
 
 void addToScores(const exprman* em, int errcode, const type* pass,
