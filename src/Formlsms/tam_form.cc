@@ -435,8 +435,7 @@ void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
   if (all_ok) return;
   StartWarning(warn, 0);
   em->warn() << "These glue types have no strength defined, using default of 0:";
-  em->newLine();
-  em->warn() << "\t";
+  em->newLine(1);
   bool printed = false;
   for (int i=0; i<num_glues; i++) {
     if (0==glueset[i]) continue;
@@ -444,6 +443,7 @@ void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
     if (printed) em->warn() << ", "; else printed = true;
     em->warn() << glueset[i]->Name();
   }
+  em->changeIndent(-1);
   DoneWarning();
 }
 
@@ -471,8 +471,7 @@ void tam_hlm::setTiles(named_msg &warn, tam_tile** ts, int nt)
   if (all_ok) return;
   StartWarning(warn, 0);
   em->warn() << "These tiles have no glue on any border:";
-  em->newLine();
-  em->warn() << "\t";
+  em->newLine(1);
   bool printed = false;
   for (int i=0; i<num_tiles; i++) {
     if (0==tileset[i]) continue;
@@ -483,6 +482,7 @@ void tam_hlm::setTiles(named_msg &warn, tam_tile** ts, int nt)
     if (printed) em->warn() << ", "; else printed = true;
     em->warn() << tileset[i]->Name();
   }
+  em->changeIndent(-1);
   DoneWarning();
 }
 

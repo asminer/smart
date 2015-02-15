@@ -582,19 +582,20 @@ void dsde_hlm::determineModelType()
       have_ignored = StartWarning(ignored_prio, 0);
       if (!have_ignored) continue;
       em->warn() << "Ignoring priority pairs across priority levels:";
-      em->newLine();
+      em->changeIndent(1);
     }
-    em->warn() << "\t{";
+    em->newLine();
+    em->warn() << "{";
     for (int j=0; j<display->Length(); j++) {
       if (j) em->warn() << ", ";
       em->warn() << display->Item(j)->Name();
     } // for j
     em->warn() << "} : " << event_data[i]->Name();
-    em->newLine();
 
     display->Clear();
   }
   if (have_ignored) {
+    em->changeIndent(-1);
     DoneWarning();
   }
   delete display;

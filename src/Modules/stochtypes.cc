@@ -95,8 +95,7 @@ void showCommonDependencies(const exprman* em, List <symbol> &shared, symbol* wh
   else 
     em->warn() << "Common dependencies:";
   for (int i=0; i<shared.Length(); i++) {
-    em->newLine();
-    em->warn() << "\t";
+    em->newLine((i>0) ? 0 : 1);
     shared.Item(i)->Print(em->warn(), 0);
   }
 }

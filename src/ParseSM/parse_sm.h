@@ -85,10 +85,14 @@ public:
     DCASSERT(em);
     return em->findModifier(s);
   }
-  inline void newLine() {
+  inline void newLine(int delta=0) {
     DCASSERT(em);
     DCASSERT(em->hasIO());
-    em->newLine();
+    em->newLine(delta);
+  }
+  inline void changeIndent(int delta) {
+    DCASSERT(em);
+    em->changeIndent(delta);
   }
   inline bool startInternal(const char* file, int line) {
     DCASSERT(em);

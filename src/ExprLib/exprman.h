@@ -351,9 +351,14 @@ public:
     DCASSERT(io);
     io->NoCause();
   }
-  inline void newLine() const {
+  inline void newLine(int delta = 0) const {
     DCASSERT(io);
+    io->ChangeIndent(delta);
     io->NewLine();
+  }
+  inline void changeIndent(int delta) const {
+    DCASSERT(io);
+    io->ChangeIndent(delta);
   }
   inline void stopIO() const {
     DCASSERT(io);
