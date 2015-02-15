@@ -189,6 +189,7 @@ class io_environ {
   int WhichError;
   int  sigx;
   bool catchterm;
+  int indents;
 public:
   InputStream Input;
   DisplayStream Output;
@@ -248,6 +249,12 @@ public:
   /** No filename or line number cause for the error.
   */
   virtual void NoCause();
+
+  /** Change the indent level.
+      Affects NewLine() methods.
+        @param  delta   Amount to add to indentation level.
+  */
+  virtual void ChangeIndent(int delta);
 
   /** Used to continue a warning/error on another line.
       This allows us to indent consistently.

@@ -1084,8 +1084,8 @@ void petri_def::FinalizeModel(OutputStream &ds)
   } // for i
   if (has_undef && (has_timed || has_immed)) if (StartWarning(no_fire, 0)) {
     em->warn() << "No firing distributions given for transitions:";
-    em->newLine();
-    em->warn() << "\t{";
+    em->newLine(1);
+    em->warn() << "{";
     bool printed = false;
     for (int i=0; i<num_trans; i++) 
       if (elist[i]->hasFiringType(model_event::Nondeterm)) {
@@ -1094,12 +1094,13 @@ void petri_def::FinalizeModel(OutputStream &ds)
         printed = true;
     }
     em->warn() << "}";
+    em->changeIndent(-1);
     DoneWarning();
   }
   if (without_wt) if (StartWarning(no_weight, 0)) {
     em->warn() << "No weight given for immediate transitions:";
-    em->newLine();
-    em->warn() << "\t{";
+    em->newLine(1);
+    em->warn() << "{";
     bool printed = false;
     for (int i=0; i<num_trans; i++) 
       if (elist[i]->hasFiringType(model_event::Immediate))
@@ -1109,6 +1110,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
           printed = true;
         }
     em->warn() << "}";
+    em->changeIndent(-1);
     DoneWarning();
   }
 

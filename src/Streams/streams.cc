@@ -596,6 +596,7 @@ io_environ::io_environ()
 
   sigx = 0;
   catchterm = false;
+  indents = 0;
 }
 
 io_environ::~io_environ()
@@ -627,6 +628,7 @@ bool io_environ::StartInternal(const char* srcfile, int srcline)
   WhichError = 3;
   Internal.Activate();
   Internal << "INTERNAL in file " << srcfile << " on line " << srcline;
+  indents = 1;
   return true;
 }
 
@@ -639,6 +641,7 @@ bool io_environ::StartError()
   WhichError = 2;
   Error.Activate();
   Error.Put("ERROR");
+  indents = 1;
   return true;
 }
 
@@ -651,6 +654,7 @@ bool io_environ::StartWarning()
   WhichError = 1;
   Warning.Activate();
   Warning.Put("WARNING");
+  indents = 1;
   return true;
 }
 
@@ -708,19 +712,28 @@ void io_environ::NoCause()
   }
 }
 
+void io_environ::ChangeIndent(int delta)
+{
+  indents += delta;
+  if (indents<0) indents = 0;
+}
+
 void io_environ::NewLine()
 {
   switch (WhichError) {
     case 3:
-        Internal.Put("\n\t");
+        Internal.Put("\n");
+        Internal.Pad(' ', indents*4);
         return;
 
     case 2:
-        Error.Put("\n\t");
+        Error.Put("\n");
+        Error.Pad(' ', indents*4);
         return;
 
     case 1:
-        Warning.Put("\n\t");
+        Warning.Put("\n");
+        Warning.Pad(' ', indents*4);
         return;
   }
 }
@@ -729,6 +742,7 @@ void io_environ::NewLine(const char* what)
 {
   Report.Put('\n');
   Report << what << ": ";
+  Report.Pad(' ', indents*4);
 }
 
 bool io_environ::StartReport(const char* what)
@@ -740,6 +754,7 @@ bool io_environ::StartReport(const char* what)
   Output.flush();
   Report.Activate();
   Report << what << ": ";
+  indents = 0;
   return true;
 }
 

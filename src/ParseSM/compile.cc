@@ -943,10 +943,11 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   if (match) {
     if (pm->startError()) {
       pm->cerr() << "Constant declaration conflicts with existing identifier:";
-      pm->newLine();
+      pm->newLine(1);
       match->PrintHeader(pm->cerr(), true);
       pm->cerr() << " declared ";
       pm->cerr().PutFile(match->Filename(), match->Linenumber());
+      pm->changeIndent(-1);
       pm->stopError();
     }
     free(id);
@@ -1127,11 +1128,12 @@ void duplicationError(bool warning_only, function* f, const char* how)
   }
   OutputStream &s = warning_only ? pm->warn() : pm->cerr();
   s << "Function declaration " << how << " existing identifier:";
-  pm->newLine();
+  pm->newLine(1);
   f->PrintHeader(s, true);
   pm->newLine();
   s << "declared ";
   s.PutFile(f->Filename(), f->Linenumber());
+  pm->changeIndent(-1);
   pm->stopError();
 }
 
@@ -1165,7 +1167,7 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
       errIO = pm->startError();
       if (errIO) {
         pm->cerr() << "Parameter names for `" << n << "' are ambiguous with existing:";
-        pm->newLine();
+        pm->newLine(1);
       }
     }
     if (errIO) {
@@ -1176,7 +1178,10 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
     }
   }
 
-  if (errIO) pm->stopError();
+  if (errIO) {
+    pm->changeIndent(-1);
+    pm->stopError();
+  }
 
   return conflicts;
 }
@@ -1428,10 +1433,11 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     if (find) {
       if (pm->startError()) {
         pm->cerr() << "Model declaration conflicts with existing identifier:";
-        pm->newLine();
+        pm->newLine(1);
         find->PrintType(pm->cerr());
         pm->cerr() << " " << find->Name() << " declared ";
         pm->cerr().PutFile(find->Filename(), find->Linenumber());
+        pm->changeIndent(-1);
         pm->stopError();
       }
       free(n);
@@ -1449,10 +1455,11 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     // perfect match, that's bad!
     if (pm->startError()) {
       pm->cerr() << "Model declaration conflicts with existing identifier:";
-      pm->newLine();
+      pm->newLine(1);
       f->PrintHeader(pm->cerr(), true);
       pm->cerr() << " declared ";
       pm->cerr().PutFile(f->Filename(), f->Linenumber());
+      pm->changeIndent(-1);
       pm->stopError();
     }
     free(n);
@@ -1669,9 +1676,10 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
       pm->cerr() << ")";
       pm->newLine();
       pm->cerr() << "Possible choices:";
-      pm->newLine();
+      pm->newLine(1);
       showMatching(f1, pass, length, best_score);
       showMatching(f2, pass, length, best_score);
+      pm->changeIndent(-1);
       pm->stopError();
     }
     return 0;
@@ -2182,10 +2190,11 @@ shared_object* MakeModelCall(char* n, parser_list* list)
           else          pm->cerr().Put("null");
         }
         pm->cerr() << "), but it matches";
-        pm->newLine();
+        pm->newLine(1);
         best->PrintHeader(pm->cerr(), true);
         pm->cerr() << " declared ";
         pm->cerr().PutFile(best->Filename(), best->Linenumber());
+        pm->changeIndent(-1);
       } // length
       pm->stopError();
     } // if startError
