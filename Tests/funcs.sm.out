@@ -1,11 +1,11 @@
 3.14159
 These should be errors:
 ERROR in file funcs.sm near line 10:
-	Re-definition of constant pi
+    Re-definition of constant pi
 ERROR in file funcs.sm near line 11:
-	Re-definition of constant pi
+    Re-definition of constant pi
 ERROR in file funcs.sm near line 12:
-	Re-definition of constant pi
+    Re-definition of constant pi
 should get 8: 8
 should get 8.01: 8.01
 should get 8.01: 8.01
@@ -13,34 +13,34 @@ should get 15: 15
 should get 3: 3
 Duplication errors:
 ERROR in file funcs.sm near line 26:
-	Function declaration conflicts with existing identifier:
-	int plus(int a, int b)
-	declared in file funcs.sm near line 16
+    Function declaration conflicts with existing identifier:
+        int plus(int a, int b)
+        declared in file funcs.sm near line 16
 ERROR in file funcs.sm near line 26:
-	Unknown identifier: a
+    Unknown identifier: a
 ERROR in file funcs.sm near line 26:
-	Unknown identifier: b
+    Unknown identifier: b
 ERROR in file funcs.sm near line 27:
-	Function declaration conflicts with existing identifier:
-	int times(int a, int b:=1)
-	declared in file funcs.sm near line 18
+    Function declaration conflicts with existing identifier:
+        int times(int a, int b:=1)
+        declared in file funcs.sm near line 18
 ERROR in file funcs.sm near line 27:
-	Unknown identifier: x
+    Unknown identifier: x
 ERROR in file funcs.sm near line 27:
-	Unknown identifier: y
+    Unknown identifier: y
 ERROR in file funcs.sm near line 28:
-	Duplicate formal parameter named a
+    Duplicate formal parameter `a'
 ERROR in file funcs.sm near line 28:
-	Duplicate formal parameter named a
+    Duplicate formal parameter `a'
 Bad function calls:
 ERROR in file funcs.sm near line 31:
-	No match for plus(int, int, int)
+    No match for plus(int, int, int)
 ERROR in file funcs.sm near line 32:
-	No match for times(real, real)
+    No match for times(real, real)
 ERROR in file funcs.sm near line 33:
-	No match for times(int)
+    No match for times(int)
 ERROR in file funcs.sm near line 33:
-	No match for plus(error, int)
+    No match for plus(error, int)
 Nesting:
 should get 12: 12
 should get 10: 10
@@ -49,7 +49,7 @@ should be 5.0: 5.0
 should be 5.1: 5.1
 This should be an error:
 ERROR in file funcs.sm near line 52:
-	Return type for function foo should be int
+    Return type for function foo should be int
 Factorials:
   0! is 1
   1! is 1
@@ -101,13 +101,13 @@ Fibonacci:
  25th Fibonacci: 121393
 Another duplication error:
 ERROR in file funcs.sm near line 71:
-	Function declaration conflicts with existing identifier:
-	real promote2(int c, real d)
-	declared in file funcs.sm near line 43
+    Function declaration conflicts with existing identifier:
+        real promote2(int c, real d)
+        declared in file funcs.sm near line 43
 ERROR in file funcs.sm near line 71:
-	Unknown identifier: c
+    Unknown identifier: c
 ERROR in file funcs.sm near line 71:
-	Unknown identifier: d
+    Unknown identifier: d
 Should be ok
 Checking unused, null parameters:
 should get 42: 42
@@ -130,29 +130,29 @@ defined:
 7
 This is an error:
 ERROR in file funcs.sm near line 120:
-	No match for myfoo(default, int)
+    No match for myfoo(default, int)
 Trying to define functions in a for loop:
 ERROR in file funcs.sm near line 129:
-	Function forplus defined within a for/converge
+    Function forplus defined within a for/converge
 ERROR in file funcs.sm near line 129:
-	Unknown identifier: a
+    Unknown identifier: a
 ERROR in file funcs.sm near line 129:
-	Unknown identifier: b
+    Unknown identifier: b
 ERROR in file funcs.sm near line 130:
-	Function foriplus defined within a for/converge
+    Function foriplus defined within a for/converge
 ERROR in file funcs.sm near line 130:
-	Unknown identifier: a
+    Unknown identifier: a
 Trying to define functions in a converge:
 ERROR in file funcs.sm near line 135:
-	Function cvgplus defined within a for/converge
+    Function cvgplus defined within a for/converge
 ERROR in file funcs.sm near line 135:
-	Unknown identifier: x
+    Unknown identifier: x
 ERROR in file funcs.sm near line 135:
-	Unknown identifier: y
+    Unknown identifier: y
 ERROR in file funcs.sm near line 137:
-	Function cvgzplus defined within a for/converge
+    Function cvgzplus defined within a for/converge
 ERROR in file funcs.sm near line 137:
-	Unknown identifier: x
+    Unknown identifier: x
 
 
 Just for kicks:

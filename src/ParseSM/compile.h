@@ -87,11 +87,12 @@ parser_list* AppendExpression(int behv, parser_list* list, expr* item);
 parser_list* AppendName(parser_list* list, char* ident);
 
 /** Add a symbol to our list.
-      @param  list List of symbols (0 for empty).
-      @param  p    Symbol to add.
+      @param  list  List of symbols (0 for empty).
+      @param  p     Symbol to add.
+      @param  kind  Kind of symbol (for error messages).
       @return An updated list.
 */
-parser_list* AppendSymbol(parser_list* list, symbol* p);
+parser_list* AppendSymbol(parser_list* list, symbol* p, const char* kind);
 
 /** Add a term to a list of sums or products.
       @param  list List of objects (0 for empty).

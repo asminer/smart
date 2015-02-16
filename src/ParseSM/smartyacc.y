@@ -830,12 +830,12 @@ formal_params
       :   formal_params COMMA formal_param
 {
   Reducing("formal_params : formal_params COMMA formal_param");
-  $$ = AppendSymbol($1, $3);
+  $$ = AppendSymbol($1, $3, "formal parameter");
 }
       |    formal_param
 {
   Reducing("formal_params : formal_param");
-  $$ = AppendSymbol(0, $1);
+  $$ = AppendSymbol(0, $1, "formal parameter");
 }
       ;
 
@@ -939,12 +939,12 @@ named_list
       :   named_list COMMA named_param
 {
   Reducing("named_list : named_list COMMA named_param");
-  $$ = AppendSymbol($1, $3);
+  $$ = AppendSymbol($1, $3, "named parameter");
 }
       |   named_param
 {
   Reducing("named_list : named_param");
-  $$ = AppendSymbol(0, $1);
+  $$ = AppendSymbol(0, $1, "named parameter");
 }
       ;
 

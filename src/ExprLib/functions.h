@@ -101,7 +101,7 @@ public:
   */
   const model_def* DetermineModelType(expr** pass, int np);
 
-  /** Give a type-checking score for parameters.
+  /** Give a type-checking score for positional parameters.
         @param  pass  Array of passed parameters, in order.
         @param  np    Number of passed parameters.
         @return A "score" for how well the parameters match, as follows.
@@ -222,6 +222,23 @@ public:
         @return 0, if not found; the formal parameter, otherwise.
   */
   virtual symbol* FindFormal(const char* name) const;
+
+
+  /**
+    
+      struct name_score {
+        int score;    
+
+        status: 
+          Success;          // result is a score
+          Wrong_Type;       // parameter# "score" has the wrong type
+          Illegal_Name;     // parameter# "score" doesn't match any fp
+          Missing_Param;    // we forgot a required param
+          Not_Allowed;      // no named params for this function
+      }
+
+      virtual void ScoreNamedList(symbol** np, int nnp, int &score, ns_status &s) const;
+  */
 };
 
 // ******************************************************************
