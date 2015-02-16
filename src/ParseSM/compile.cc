@@ -573,7 +573,7 @@ parser_list* AppendName(parser_list* list, char* ident)
 }
 
 // --------------------------------------------------------------
-parser_list* AppendSymbol(parser_list* list, symbol* p)
+parser_list* AppendSymbol(parser_list* list, symbol* p, const char* kind)
 {
   if (0==p || em->isError(p))  return list;
   // Check for duplicate names
@@ -589,7 +589,7 @@ parser_list* AppendSymbol(parser_list* list, symbol* p)
     DCASSERT(fpname);
     if (0==strcmp(pname, fpname)) {
       if (pm->startError()) {
-        pm->cerr() << "Duplicate formal parameter named " << fpname;
+        pm->cerr() << "Duplicate " << kind << " `" << fpname << "'";
         pm->stopError();
       }
       Delete(p);
