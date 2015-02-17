@@ -1,0 +1,603 @@
+%
+% $Id$
+%
+
+\chapter{Examples of {\smart} Applications} \label{SEC:Examples}
+\markboth{EXAMPLES OF SMART APPLICATIONS}{}
+
+This chapter contains a variety of examples to illustrate the various
+capabilities available in {\smart}, and how to use them.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A fixpoint iteration with repeated submodels}
+
+Fixpoint iteration schemes can become quite complex.
+In the following code, two copies of the same Petri net \Code{b} are used,
+with different parameters, together with a second Petri net, \Code{d}.
+This situation might arise when a particular Petri net models part of a system
+which is replicated multiple times with different characteristics.
+%
+\lstinputlisting[firstline=3]{examples/conv_pns.sm}
+%
+Although multiple use of the same Petri net is convenient from the
+user's point of view, it might actually cause {\smart} to perform extra work.
+This is because {\smart} remembers important, and large, data structures
+that it must build to compute a measure for a given high-level model,
+so that the data structures can be reused for successive measures.
+For example, the statement
+\begin{lstlisting}
+real x3 := d(i1:=x1, i2:=x2).o1;
+\end{lstlisting}
+causes the state space and stationary solution of Petri net \Code{d}
+to be computed, while statement
+\begin{lstlisting}
+real x4 := d(i1:=x1, i2:=x2).o2;
+\end{lstlisting}
+simply reuses the previous computation and just computes a different measure.
+However, when a model is parameterized, only the data structures
+corresponding to parameters used in the latest call are kept,
+to avoid excessive memory consumption.
+Thus, if an iteration of the \Code{converge} statement
+calls \Code{b(i1:=x3).o1} and \Code{b(i1:=x4).o1} with \Code{x3} and
+\Code{x4} set to different values, the next iteration will
+not be able to reuse work even if the value of \Code{x3}, \Code{x4},
+or both, are the same as in the previous iteration.
+
+\begin{comment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Finding the optimal value of a function}
+
+The \Code{converge} statement in {\smart} can be used to obtain the optimal
+value of a convex or concave function (or a local optimum for any function
+with continuous first derivatives).
+The idea is that, given the values $f_1$, $f_2$, $f_3$, and $f_4$
+of a convex function at four distinct points $x_1 < x_2 < x_3 < x_4$,
+we can discard the leftmost or the rightmost point (or the two leftmost
+or righmost points if the values are in monotonic order), based on these values;
+we can then iterate the search within the remaining interval,
+and stop when the four points and the four values are sufficiently close.
+The following code illustrates how to do this in {\smart}:
+\begin{code}\begin{verbatim}
+real f(real x) := x - x*x;
+# Verbose true
+# ConvergePrecision 0.00000001
+# UseCurrent false
+converge {
+  real x1 guess 0.0; real x2 guess 1/3;   real x3 guess 2/3;   real x4 guess 1.0;
+  real f1 guess f(0);real f2 guess f(1/3);real f3 guess f(2/3);real f4 guess f(1);
+  real x1 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, x3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, x2, x1));
+  real x2 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (2*x3+x4)/3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (2*x2+x3)/3, (2*x1+x2)/3));
+  real x3 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (x3+2*x4)/3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (x2+2*x3)/3, (x1+2*x2)/3));
+  real x4 := cond(f1 >= f2 & f2 >= f3 & f3 >= f4, x2,
+             cond(f1 <= f2 & f2 >= f3 & f3 >= f4, x3, x4));
+  real f1 := f(x1);  real f2 := f(x2);    real f3 := f(x3);    real f4 := f(x4);
+}
+print("The maximum value of `x-x^2' in [0,1] is ",f2,", achieved at ",x2,".\n");
+\end{verbatim}\end{code}
+Note that option \Code{UseCurrent} must be set to \Code{false} for this
+scheme to work properly, otherwise the values of $x_2$, $x_3$, and $x_4$
+would be updated using the new values computed for $x_1$, $x_2$, and $x_3$,
+which is incorrect.
+
+Of course, instead of using this scheme to discover that the maximum value
+of $x-x^2$ over the interval $[0,1]$ is $0.25$ and is achieved at $x=0.5$
+(or a close approximation of that, since this a numerical iterative method),
+we can use it, for example, to find the time at which a given measure is
+maximized in a Petri net model or the value of a rate for which the probability
+of absorption is minimized in a continuous-time model.
+
+%\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Dining philosophers}
+
+
+
+The dining philosopher model \cite{Pastor1994} is composed of $N$ subnets equal
+to the one shown in \FigureRef{FIG:dining}.
+The net represents a philosopher and the philosopher's right fork.
+The philosopher's left fork, represented by
+the dotted place $\mathit{Fork}_{(i+1) \bmod N}$, is part of the
+subnet for the next philosopher; it
+is depicted to illustrate how the subnets interact.
+The corresponding {\smart} code is as follows:
+\begin{code}
+\begin{verbatim}
+spn phils(int N) := {
+  for (int i in {1..N}) {
+    place Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i];
+    trans GoEat[i], GetL[i], GetR[i], Rel[i];
+    firing(GoEat[i]:expo(1), GetL[i]:expo(1), GetR[i]:expo(1), Rel[i]:expo(1));
+    init(Idle[i]:1, Fork[i]:1);
+  }
+  for (int i in {1..N}) {
+    arcs(Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i], WaitL[i]:GetL[i],
+      Fork[1+mod(i,N)]:GetL[i], GetL[i]:HasL[i], WaitR[i]:GetR[i],
+      Fork[i]:GetR[i], GetR[i]:HasR[i], HasL[i]:Rel[i], HasR[i]:Rel[i],
+      Rel[i]:Idle[i], Rel[i]:Fork[i], Rel[i]:Fork[1+mod(i,N)]);
+  }
+  bigint ns := num_states(false);
+  bigint na := num_arcs(false);
+};
+int N := read_int("number of philosophers");
+print("Number of reachable states: ", phils(N).ns, ".\n");
+print("Number of state-to-state transitions: ", phils(N).na, ".\n");
+\end{verbatim}
+\end{code}
+
+If we wanted to use an advanced symbolic method, we could request this with an
+option statement, which must appear before the two \Code{print} statements.
+However, this also requires to partition the model.
+We could do so by assigning \Code{M} philosophers per level:
+\begin{code}
+\begin{verbatim}
+spn phils(int N, int M) := {
+  for (int i in {1..N}) {
+    ...
+    partition(1+div(i,M):Idle[i]:WaitL[i]:WaitR[i]:HasL[i]:HasR[i]:Fork[i]);
+  }
+  for (int i in {1..N}) {
+    ...
+  }
+  ...
+};
+# StateStorage MDD_SATURATION
+int N := read_int("number of philosophers");
+int M := read_int("number of philosophers per level");
+print("Number of reachable states: ", phils(N,M).ns, ".\n");
+print("Number of state-to-state transitions: ", phils(N,M).na, ".\n");
+\end{verbatim}
+\end{code}
+Of course, if \Code{N} is not a multiple of \Code{M}, the last
+level will have fewer than \Code{M} philosophers.
+Also, a partition must define at least two levels, thus
+\Code{N} must be strictly greater than \Code{M}.
+Having more philosophers per level decreases the number of levels in the
+MDD, but increases the size of the local state spaces, hence of the
+MDD nodes.
+
+If we had used a method requiring pregeneration of the local state
+spaces, we would have to add the statement
+\begin{code}
+\begin{verbatim}
+    inhibit(Fork[1+mod(i,N)]:Rel[i], HasR[1+mod(i,N)]:Rel[i]);
+\end{verbatim}
+\end{code}
+in the second \Code{for} loop, to ensure that these local state spaces
+are finite.
+
+\begin{figure}
+  \CENTERPSSCALE{philsfig}{0.5}
+  \caption{The dining philosophers.}
+  \label{FIG:dining}
+\end{figure}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A flexible manufacturing system}
+
+The Petri net \cite{1991PNPM-Decomposition} in Fig.~\ref{FIG:fms}
+models a flexible manufacturing system (FMS).
+This model is parameterized by the initial number $N$ of tokens in
+$P_1$, $P_2$, and $P_3$.
+The {\smart} description for this net is:
+\begin{code}
+\begin{verbatim}
+spn fms(int n) := {
+  place P1, P2, P3, P12, P2s, P3s, P1s, P12s,
+        M1, M2, M3, P1wM1, P2wM2, P3M2, P12wM3,
+        P1M1, P2M2, P12M3, P1d, P2d, P1wP2, P2wP1;
+  trans tP1, tP2, tP3, tP12, tP1M1, tP2M2, tP3M2, 
+        tP12M3, tP1s, tP2s, tP3s, tP12s, tM1,
+        tM2, tM3, tx, tP1e, tP1j, tP2e, tP2j;
+  firing(tP1:expo(tk(P1)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
+    tP2:expo(tk(P2)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
+    tP3:expo(tk(P3)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
+    tP12:expo(tk(P12)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
+    tP1M1:expo(tk(P1M1)/4), tP2M2:expo(1/6), tP3M2:expo(1/2),
+    tP12M3:expo(tk(P12M3)), tP1s:expo(1/60), tP2s:expo(1/60), tP3s:expo(1/60),
+    tP12s:expo(1/60), tM1:0, tM2:0, tM3:0, tx:0, tP1e:0, tP1j:0, tP2e:0, tP2j:0); 
+  weight(tM1:1, tM2:1, tM3:1, tx:1, tP1e:0.8, tP1j:0.2, tP2e:0.6, tP2j:0.4);
+  arcs(P1:tP1, tP1:P1wM1, P1wM1:tM1, M1:tM1, tM1:P1M1, P1M1:tP1M1, tP1M1:M1,
+    tP1M1:P1d, P1d:tP1e, P1d:tP1j, tP1e:P1s, tP1j:P1wP2, P1s:tP1s:tk(P1s),
+    tP1s:P1:tk(P1s), P1wP2:tx, tx:P12, P12:tP12, tP12:P12wM3, P12wM3:tM3,
+    M3:tM3, tM3:P12M3, P12M3:tP12M3, tP12M3:M3, tP12M3:P12s, P12s:tP12s:tk(P12s),
+    tP12s:P1:tk(P12s), tP12s:P2:tk(P12s), P2:tP2, tP2:P2wM2, P2wM2:tM2, M2:tM2,
+    tM2:P2M2, P2M2:tP2M2, tP2M2:M2, tP2M2:P2d, P2d:tP2j, tP2j:P2wP1, P2wP1:tx,
+    P2d:tP2e, tP2e:P2s, P2s:tP2s:tk(P2s), tP2s:P2:tk(P2s), P3:tP3, tP3:P3M2,
+    P3M2:tP3M2, M2:tP3M2, tP3M2:P3s, tP3M2:M2, P3s:tP3s:tk(P3s), tP3s:P3:tk(P3s));
+  init(P1:n, P2:n, P3:n, M1:3, M3:2, M2:1);
+   real prod := avg_ss(400*rate(tP1)+600*rate(tP12M3)+100*rate(tP2)+1100*rate(tP3));
+};
+int N := read_int("N");
+print(N, "\n");
+fms(N).prod; 
+\end{verbatim}
+\end{code}
+
+Had we wanted to use a structural solution approach, we could have
+partitioned the model with the statement
+\begin{code}
+\begin{verbatim}
+partition(P1:P1wM1:P1M1:M1:P1d:P1s, P12s:P12M3:M3:P12wM3:P12:P1wP2:P2wP1,
+  P2:P2wM2:P2M2:M2:P2d:P2s, P3:P3M2:P3s);
+\end{verbatim}
+\end{code}
+(which defines four submodels) and used the options
+\begin{code}
+\begin{verbatim}
+# StateStorage MULTI_LEVEL_AVL
+# MarkovStorage MATRIX_DIAGRAM_GENERAL
+\end{verbatim}
+\end{code}
+Note, however, that the usually more efficient methods
+\begin{code}
+\begin{verbatim}
+# StateStorage MDD_SATURATION
+# MarkovStorage MATRIX_DIAGRAM_KRONECKER
+\end{verbatim}
+\end{code}
+cannot be used with the given partition, because some immediate transitions,
+such as \Code{tP1j}, are synchronizing (i.e., they affect multiple submodels).
+
+%We partition the model into 19 levels obtained by assigning
+%each place to a different level, with the exception of
+%the complementary places $M_1$, $M_2$, and $M_3$, placed in the same level
+%as the places $P_1M_1$, $P_2M_2$, and $P_{12}M_3$, respectively.
+
+\begin{figure}
+  \CENTERPSSCALE{FMS-smartman}{0.5}
+  \caption{A flexible manufacturing system.}
+  \label{FIG:fms}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Slotted ring}
+
+\FigureRef{FIG:slotted} shows the Petri net for a single node of a slotted
+ring network protocol \cite{Pastor1994}.
+The overall model is composed of $N$
+such subnets connected by merging transitions
+(i.e., $\mathit{Free}_{(i+1) \bmod N}$ and $\mathit{Used}_{(i+1) \bmod N}$
+really belong to the ``next'' subnet).
+The following {\smart} code shows a decomposition where each
+node of the ring is in a different level, and the requested
+measure is simply the number of states.
+\begin{code}
+\begin{verbatim}
+spn slot(int N) := {
+  for (int i in {0..N-1}) {
+    place pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]; 
+    trans other[i], owner[i], write[i], go[i], give[i], put[i], used[i], free[i];
+    firing(other[i]:expo(1), owner[i]:expo(1), write[i]:expo(1), go[i]:expo(1),
+      give[i]:expo(1), put[i]:expo(1), free[i]:expo(1), used[i]:expo(1)); 
+    partition(pA[i]:pB[i]:pC[i]:pD[i]:pE[i]:pF[i]:pG[i]:pH[i]); 
+    init(pC[i]:1, pE[i]:1);
+  } 
+  for (int i in {0..N-1}) {
+    arcs(used[mod(i+1,N)]:pA[i], pA[i]:other[i], pA[i]:owner[i],
+      free[mod(i+1,N)]:pB[i], owner[i]:pB[i], pB[i]:go[i], pB[i]:write[i],
+      write[i]:pD[i], other[i]:pD[i], pD[i]:put[i], go[i]:pH[i],
+      pH[i]:give[i], give[i]:pC[i], put[i]:pC[i], pC[i]:free[mod(i+1,N)],
+      pC[i]:used[mod(i+1,N)], free[i]:pF[i], used[i]:pF[i], pF[i]:give[i],
+      pF[i]:put[i], give[i]:pE[i], pE[i]:free[i], put[i]:pG[i], pG[i]:used[i]);
+  } 
+  bigint m1 := num_states(false);
+}; 
+# StateStorage MDD_SATURATION 
+int N := read_int("number of slots");
+slot(N).m1;
+\end{verbatim}
+\end{code}
+
+\begin{figure}
+  \CENTERPSSCALE{newslotfig}{0.5}
+  \caption{A slotted ring.}
+  \label{FIG:slotted}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A Kanban system}
+
+This model \cite{1996WMPN-SNSkanban}, shown in \FigureRef{FIG:kanban},
+is parameterized by the number $N$ of tokens initially
+in $p_{1}$, $p_{2}$, $p_{3}$, and $p_{4}$.
+The following code shows a partition into four levels, one per kanban station.
+The output measure is the number of arcs in the state-to-state transition
+matrix for $N$ varying from $1$ to a maximum specified at runtime.
+\begin{figure}
+  \CENTERPSSCALE{kanban}{0.43}
+  \caption{A kanban system.}
+  \label{FIG:kanban}
+\end{figure}
+
+\begin{code}
+\begin{verbatim}
+spn kanban(int N) := {
+  place pm1, pback1, pkan1, pout1, pm2, pback2, pkan2, pout2,
+        pm3, pback3, pkan3, pout3, pm4, pback4, pkan4, pout4;
+  trans tin1, tredo1, tok1, tback1, tin23, tredo2, tok2, tback2, tout2,
+        tredo3, tok3, tback3, tredo4, tok4, tback4, tout4;
+  partition(pm1:pback1:pkan1:pout1, pm2:pback2:pkan2:pout2,
+            pm3:pback3:pkan3:pout3, pm4:pback4:pkan4:pout4);
+  firing(tin1:expo(1.0), tredo1:expo(0.36), tok1:expo(0.84), tback1:expo(0.3),
+    tin23:expo(0.4), tredo2:expo(0.42), tok2:expo(0.98), tback2:expo(0.3),
+    tout2: expo(0.5), tredo3:expo(0.39), tok3:expo(0.91), tback3:expo(0.3),
+    tredo4:expo(0.33), tok4:expo(0.77), tback4:expo(0.3), tout4:expo(0.9));
+  arcs(pkan1:tin1, tin1:pm1, pm1:tredo1, pm1:tok1, tredo1:pback1,
+    tok1:pout1, pback1:tback1, tback1:pm1, pout1:tin23, tin23:pkan1,
+    pkan2:tin23, tin23:pm2, pm2:tredo2, pm2:tok2, tredo2:pback2,
+    tok2:pout2, pback2:tback2, tback2:pm2, pout2:tout2, tout2:pkan2,
+    pkan3:tin23, tin23:pm3, pm3:tredo3, pm3:tok3, tredo3:pback3,
+    tok3:pout3, pback3:tback3, tback3:pm3, pout3:tout2, tout2:pkan3,
+    pkan4:tout2, tout2:pm4, pm4:tredo4, pm4:tok4, tredo4:pback4,
+    tok4:pout4, pback4:tback4, tback4:pm4, pout4:tout4, tout4:pkan4);
+  init(pkan1:N, pkan2:N, pkan3:N, pkan4:N);
+  bigint m := num_arcs(false);
+};
+# StateStorage MDD_SATURATION
+int MAX := read_int("maximum number of kanban tokens");
+for (int N in {1..MAX}) {
+  print("The # of arcs in the Kanban model with N=",N," is ",kanban(N).m,".\n");
+}
+\end{verbatim}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Randomized leader election protocol}
+
+The randomized asynchronous leader election protocol in \cite{DolevKR82}
+solves the following problem: given a ring of $N$ processors, the
+participants are required to designate a unique processor as leader by
+sending messages around the ring. The ring is unidirectional, meaning that
+the processes send messages to their unique successor (e.g. the one to the
+right), and receive messages from their unique predecessor. It is known that
+if the processors are indistinguishable (no unique identifiers are
+assigned), then there is no deterministic algorithm to solve the problem.
+
+The randomized algorithm works in phases. At the beginning of every round,
+each process flips a coin to decide whether it will continue running for
+election or not. Initially all processes are valid candidates. After
+choosing a value ($0 = $ don't run this round, $1 = $ run), this is
+communicated to the neighbour to the right. A process is eliminated from the
+race only if it chose not to run and it's predecessor chose to run. After
+being eliminated from the race, a process never becomes eligible again (it
+enters the inactive state), and it is used only to relay messages between
+active nodes around the ring. They do no initiate any communication.
+Termination is detected by the active processes (at least one active node
+exists at all times) by sending a token around the ring to count the
+inactive nodes. The process that receives its own token with count $N-1$ is
+the elected leader.
+
+In our model, each processes has $5$ state variables:
+\vspace*{-4mm}
+\begin{verbatim}
+status[i]     : {start, wait, active, inactive, leader}; // init start
+preference[i] : {0, 1};                                  // init 0
+counter[i]    : 0..N-1;                                  // init 0
+sent[i]       : {none, pref, counter};                   // init none
+recv[i]       : {none, pref, counter};                   // init none
+\end{verbatim}
+
+\begin{figure}
+  \CENTERPSSCALE{leaderchart}{0.5}
+  \caption{State transition chart for the $\id{status}$ variable.}
+  \label{FIG:leaderchart}
+\end{figure}
+
+\noindent The state-transition diagram for the $\id{status}$ of a process is
+shown in Figure \ref{FIG:leaderchart}.
+
+\IGNORE{
+The Petri Net model is shown is Figure \ref{FIG:leaderfig}
+\begin{figure}
+  \CENTERPSSCALE{leaderfig}{0.5}
+  \caption{Petri net model: the subnet of process $i$.}
+  \label{FIG:leaderfig}
+\end{figure}
+}
+
+\noindent The SMART code for this model is listed below:
+\vspace*{-4mm}
+\begin{code}
+\begin{verbatim}
+spn leader(int N) := {
+  for (int i in {0..N-1}) {
+    place st_choose[i], st_wait[i], st_active[i], st_inactive[i], st_leader[i], 
+          pref[i], c[i], rec_none[i], rec_choice[i], rec_counter[i],
+          sent_none[i], sent_choice[i], sent_counter[i];
+    trans pick_value0[i], pick_value1[i], send_pref[i],
+          recv_stay_active0[i], recv_stay_active1[i], recv_become_inactive[i], 
+          send_new_counter[i], recv_counter[i], become_leader[i],
+          i_recv_pref0[i], i_recv_pref1[i], i_send_pref[i], i_send_counter[i];
+    partition(st_choose[i]:st_wait[i]:st_active[i]:st_inactive[i]:st_leader[i]:pref[i]:c[i],
+              rec_none[i]:rec_choice[i]:rec_counter[i]:
+              sent_none[i]:sent_choice[i]:sent_counter[i]);
+    init(st_choose[i]:1, sent_none[i]:1, rec_none[i]:1);
+    for (int j in {0..N-1}) { trans inc_counter[i][j]; }
+  }
+\end{verbatim}
+\end{code}
+
+\begin{code}
+\begin{verbatim}
+  for (int i in {0..N-1}) {
+    arcs(
+      st_choose[i]:pick_value0[i], pick_value0[i]:st_wait[i],
+      sent_none[i]:pick_value0[i], pick_value0[i]:sent_none[i],
+      rec_none[i]:pick_value0[i], pick_value0[i]:rec_none[i],
+      pref[i]:pick_value0[i]:tk(pref[i]),
+
+      st_choose[i]:pick_value1[i], pick_value1[i]:st_wait[i], 
+      sent_none[i]:pick_value1[i], pick_value1[i]:sent_none[i],
+      rec_none[i]:pick_value1[i], pick_value1[i]:rec_none[i],
+      pref[i]:pick_value1[i]:tk(pref[i]), pick_value1[i]:pref[i],
+
+      st_wait[i]:send_pref[i], send_pref[i]:st_wait[i],
+      sent_none[i]:send_pref[i], send_pref[i]:sent_choice[i],
+
+      st_wait[i]:recv_stay_active0[i], recv_stay_active0[i]:st_active[i], 
+      rec_none[i]:recv_stay_active0[i],  recv_stay_active0[i]:rec_choice[i],
+      sent_choice[i]:recv_stay_active0[i], recv_stay_active0[i]:sent_choice[i],
+
+      st_wait[i]:recv_stay_active1[i], rec_none[i]:recv_stay_active1[i],
+      recv_stay_active1[i]:st_active[i], recv_stay_active1[i]:rec_choice[i],
+      pref[i]:recv_stay_active1[i], recv_stay_active1[i]:pref[i],
+      sent_choice[i]:recv_stay_active1[i], recv_stay_active1[i]:sent_choice[i],
+
+      st_wait[i]:recv_become_inactive[i], rec_none[i]:recv_become_inactive[i],
+      recv_become_inactive[i]:st_inactive[i], recv_become_inactive[i]:rec_choice[i],
+      sent_choice[i]:recv_become_inactive[i], recv_become_inactive[i]:sent_choice[i],
+      pref[mod(i+1,N)]:recv_become_inactive[i], recv_become_inactive[i]:pref[mod(i+1,N)],
+
+      st_active[i]:send_new_counter[i], send_new_counter[i]:st_active[i], 
+      sent_choice[i]:send_new_counter[i], send_new_counter[i]:sent_counter[i], 
+
+      st_active[i]:recv_counter[i], recv_counter[i]:st_choose[i],
+      rec_choice[i]:recv_counter[i], recv_counter[i]:rec_none[i],
+      sent_counter[mod(i+1,N)]:recv_counter[i], recv_counter[i]:sent_none[mod(i+1,N)],
+      pref[i]:recv_counter[i]:tk(pref[i]), c[i]:recv_counter[i]:tk(c[i]),
+      c[mod(i+1,N)]:recv_counter[i]:tk(c[mod(i+1,N)]),
+
+      st_active[i]:become_leader[i], become_leader[i]:st_leader[i],
+      rec_choice[i]:become_leader[i], become_leader[i]:rec_none[i],
+      sent_counter[mod(i+1,N)]:become_leader[i], become_leader[i]:sent_none[mod(i+1,N)],
+      c[mod(i+1,N)]:become_leader[i]:N-1,
+
+      st_inactive[i]:i_recv_pref0[i], i_recv_pref0[i]:st_inactive[i], 
+      rec_none[i]:i_recv_pref0[i], i_recv_pref0[i]:rec_choice[i],
+      pref[i]:i_recv_pref0[i]:tk(pref[i]),
+      c[i]:i_recv_pref0[i]:tk(c[i]),
+
+      st_inactive[i]:i_recv_pref1[i], i_recv_pref1[i]:st_inactive[i], 
+      rec_none[i]:i_recv_pref1[i], i_recv_pref1[i]:rec_choice[i],
+      pref[mod(i+1,N)]:i_recv_pref1[i], i_recv_pref1[i]:pref[mod(i+1,N)],
+      pref[i]:i_recv_pref1[i]:tk(pref[i]), i_recv_pref1[i]:pref[i],
+      c[i]:i_recv_pref1[i]:tk(c[i]),
+\end{verbatim}
+\end{code}
+
+\begin{code}
+\begin{verbatim}
+      st_inactive[i]:i_send_pref[i], i_send_pref[i]:st_inactive[i], 
+      sent_none[i]:i_send_pref[i], i_send_pref[i]:sent_choice[i], 
+
+      st_inactive[i]:i_send_counter[i], i_send_counter[i]:st_inactive[i], 
+      rec_counter[i]:i_send_counter[i], i_send_counter[i]:rec_none[i],
+      sent_choice[i]:i_send_counter[i], i_send_counter[i]:sent_counter[i],
+      pref[i]:i_send_counter[i]:tk(pref[i])
+    );
+    for (int j in {0..N-1}) {
+      arcs(
+        st_inactive[i]:inc_counter[i][j], inc_counter[i][j]:st_inactive[i], 
+        rec_choice[i]:inc_counter[i][j], inc_counter[i][j]:rec_counter[i],
+        sent_counter[mod(i+1,N)]:inc_counter[i][j], inc_counter[i][j]:sent_none[mod(i+1,N)],
+        c[mod(i+1,N)]:inc_counter[i][j]:j, inc_counter[i][j]:c[i]:j+1);
+    }
+    inhibit(
+// needed by PREGEN methods
+      st_wait[i]:pick_value0[i], st_wait[i]:pick_value1[i],
+      sent_choice[i]:send_pref[i],
+      st_active[i]:recv_stay_active0[i], 
+        rec_choice[i]:recv_stay_active0[i],
+      st_active[i]:recv_stay_active1[i], 
+        rec_choice[i]:recv_stay_active1[i],
+      st_inactive[i]:recv_become_inactive[i], 
+        rec_choice[i]:recv_become_inactive[i],
+      sent_counter[i]:send_new_counter[i], 
+      st_leader[i]:become_leader[i],
+        rec_none[i]:become_leader[i],
+        sent_none[mod(i+1,N)]:become_leader[i],
+      st_choose[i]:recv_counter[i], 
+        rec_none[i]:recv_counter[i], 
+        sent_none[mod(i+1,N)]:recv_counter[i],
+      sent_choice[i]:i_send_pref[i],
+      sent_counter[i]:i_send_counter[i], 
+        rec_none[i]:i_send_counter[i],
+      rec_choice[i]:i_recv_pref0[i],
+      rec_choice[i]:i_recv_pref1[i],
+// needed by all methods
+      pref[mod(i+1,N)]:recv_stay_active0[i],
+      sent_none[mod(i+1,N)]:recv_stay_active0[i],
+      sent_none[mod(i+1,N)]:recv_stay_active1[i],
+      sent_none[mod(i+1,N)]:recv_become_inactive[i],
+      sent_none[mod(i+1,N)]:i_recv_pref0[i],
+      sent_none[mod(i+1,N)]:i_recv_pref1[i],
+      pref[i]:recv_become_inactive[i],
+      sent_choice[i]:recv_counter[i],
+      c[mod(i+1,N)]:recv_counter[i]:N-1,
+      pref[mod(i+1,N)]:i_recv_pref0[i],
+      rec_none[i]:i_send_pref[i]
+    );
+    for (int j in {0..N-1}) {
+      inhibit(sent_none[mod(i+1,N)]:inc_counter[i][j],
+              c[mod(i+1,N)]:inc_counter[i][j]:j+1);
+    }
+  }
+}
+\end{verbatim}
+\end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A round--robin mutual exclusion protocol}
+
+The protocol regulates the access to a shared resource (e.g. a communication
+channel) for a ring of $N$ processors. The resource manager gives permission
+to use the channel to each process in order, by moving a token around the
+ring. When a process has the token, it reads in a message from the channel and
+stores it in its own buffer. It can then release the token to the next processor 
+before reading the contents of the buffer, or read the buffer first and then 
+send the token to the neighbour.
+
+Figure \ref{FIG:robinfig} shows the subnet for process $i$. 
+Each subnet is initially marked with one token in place $\id{wait}_i$, 
+except for process $0$ which starts with one token in $\id{req}_i$, meaning 
+that it is the first process to have access when the protocol starts.
+
+\begin{figure}
+  \CENTERPSSCALE{robinfig}{0.5}
+  \caption{The round--robin mutual exclusion.}
+  \label{FIG:robinfig}
+\end{figure}
+
+\begin{code}
+\begin{verbatim}
+spn robin(int N) := {
+  place Res;
+  partition(1:Res);
+  for (int i in {0..N-1}) {
+    place
+        R[i], bufidle[i], buffull[i],
+        pwait[i], pask[i], pok[i], pload[i], psend[i];
+    trans
+        task[i], tbuf[i], t1load[i], t2load[i], t1send[i], t2send[i];
+    partition(
+        i+2:bufidle[i]:buffull[i]:pwait[i]:pask[i]:pok[i]:pload[i]:psend[i],
+        1:R[i]);
+    firing(task[i]:expo(1.0), tbuf[i]:expo(1.0), t1load[i]:expo(1.0),
+        t1send[i]:expo(1.0), t2load[i]:expo(1.0), t2send[i]:expo(1.0));
+  }
+  for (int i in {0..N-1}) {
+    arcs(Res:task[i], pask[i]:task[i], task[i]:R[i], task[i]:pok[i],
+        R[i]:tbuf[i], bufidle[i]:tbuf[i], tbuf[i]:buffull[i], tbuf[i]:Res,
+        buffull[i]:t1load[i], pok[i]:t1load[i], t1load[i]:bufidle[i], t1load[i]:psend[i],
+        buffull[i]:t2load[i], pload[i]:t2load[i], t2load[i]:bufidle[i], t2load[i]:pwait[i],
+        pok[i]:t1send[i], pwait[mod(i+1,N)]:t1send[i], 
+        t1send[i]:pload[i], t1send[i]:pask[mod(i+1,N)],
+        psend[i]:t2send[i], pwait[mod(i+1,N)]:t2send[i], 
+        t2send[i]:pwait[i], t2send[i]:pask[mod(i+1,N)]);
+  }
+  init(Res:1, pask[0]:1);
+  for (int i in {1..N-1}) {init (pwait[i]:1);}
+  for (int i in {0..N-1}) {init(bufidle[i]:1);}
+}
+\end{verbatim}
+\end{code}
+
+\end{comment}
