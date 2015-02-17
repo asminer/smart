@@ -87,9 +87,10 @@ $\vp$) uniquely satisfies $\vp = \vp \cdot \P$,
 $\sum_{i}\vp[i]=1$.  The solution $\vp$ is strictly positive and
 $\vp = \lim_{t \to\infty} \vp^{(t)}$.  In this case, {\smart} computes
 $\vp$ by solving the homogeneous linear system
-\[
-  \vp \cdot (\P - \I) = \0 \ \text{ subject to }\ \sum_{i}\vp[i]=1.
-\]
+\begin{equation}
+  \vp \cdot (\P - \I) = \0 \ \mbox{ subject to }\ \sum_{i}\vp[i]=1.
+  \label{LS:ergDTMC}
+\end{equation}
 
 \subsubsection{\index{absorbing Markov chain}Absorbing DTMCs}
 
@@ -105,12 +106,16 @@ However, these probabilities depend on the initial probability vector
 $\vp^{(0)}$ in general.
 Denoting the sets of absorbing and transient states by
 $\aset$ and $\tset$, respectively, {\smart} computes $\vp$ as
-\[
- \vp[\Set{A}] = \vp^{(0)}[\Set{A}] + \vn[\Set{T}] \cdot
- \P[\Set{T}, \Set{A}]
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \vp[\Set{T}] = \0
-\]
-where $\vn[\Set{T}]$ is described in \SectionRef{SEC:fundamental}.
+\begin{eqnarray*}
+ \vp[\Set{A}] 
+ & = & 
+ \vp^{(0)}[\Set{A}] + \vn[\Set{T}] \cdot \P[\Set{T}, \Set{A}]
+ \\
+ \vp[\Set{T}] 
+ & = &
+ \0
+\end{eqnarray*}
+where $\vn[\Set{T}]$ is described in Sec.~\ref{SEC:fundamental}.
 
 
 \subsubsection{Arbitrary aperiodic DTMCs}
@@ -163,10 +168,11 @@ expected time spent in transient state $i$ before the DTMC reaches
 an absorbing state, or a class of \index{ergodic}ergodic states. The portion of
 $\vn$ corresponding to the transient states is the solution of the
 non-homogeneous linear system
-\[
+\begin{equation}
   \vn[\Set{T}] \cdot (\P[\Set{T}, \Set{T}] - \I)
   = -\vp^{(0)}[\Set{T}]
-\]
+  \label{LS:absDTMC}
+\end{equation}
 where $\P[\Set{T}, \Set{T}]$ is the submatrix of $\P$
 corresponding to transitions between transient states.
 
@@ -207,26 +213,32 @@ fastest CTMC state transitions.  This means that the DTMC is constructed such th
 states that are slower to transition to another state will have self loops.
 Consequently, the DTMC is guaranteed to be aperiodic.
 The probability vector $\gvect{\pi}(t)$ can then be written as
-\[
+\begin{equation}
   \gvect{\pi}(t) = \sum_{n=0}^{\infty} \frac{e^{-qt}(qt)^n}{n!}
      \cdot \vp^{(n)}
-\]
+  \label{SUM:unif-inst}
+\end{equation}
 where ${e^{-qt}(qt)^n}/{n!}$ is the Poisson probability of
 observing $n$ state transitions of the CTMC ($n$ jumps of the DTMC) within time $t$,
 and $\vp^{(n)}$ is the probability distribution of state occupancy after $n$ jumps.
 Given $\P$, the vector $\vp^{(n)}$ is computed using the power method as discussed
-in \SectionRef{SEC:powerDTMC}. {\smart} computes the Poisson probabilities using the
-numerically stable Fox-Glynn algorithm \cite{Fox1988} and computes the summation
-only up to a large-enough value $N$.
-Since the absolute error of each element of $\gvect{\pi}(t)$
-is bounded by the complement of the elements of the Poisson pmf summed up to $N$:
+in Sec.~\ref{SEC:powerDTMC}. {\smart} computes the Poisson probabilities using the
+numerically stable Fox-Glynn algorithm \cite{Fox1988}, 
+which provides a value of $N$ such that
+$\overline{p}(N) \le \epsilon$
+for a desired absolute precision $\epsilon>0$,
+where $\overline{p}(N)$ is the probability that the Poisson value is larger than $N$:
 \[
   \overline{p}(N) = 1 - \sum_{n=0}^{N} \frac{e^{-qt}(qt)^n}{n!}.
 \]
-{\smart} determines the value of $N$ \emph{a priori} such that $N$ is the
-smallest integer where $\overline{p}(N) \le \epsilon$
-for a desired absolute precision $\epsilon$, which is given by the
-\index{NumericalPrecision option}\Code{NumericalPrecision} option.
+{\smart} truncates the infinite sum in Eq.~\ref{SUM:unif-inst}
+and computes instead the sum from 0 to $N$,
+which guarantees that the elements of $\gvect{\pi}(t)$
+sum to at least $1-\epsilon$.
+\RELEASE{At present, {\smart} does not have an option to specify this $\epsilon$.}
+\TBD{Add an option to specify this $\epsilon$.}
+
+
 
 %           ======================================
 \subsection{Cumulative transient analysis of CTMCs}\label{SEC:cumul-trans-anal-CTMC}
@@ -235,45 +247,43 @@ for a desired absolute precision $\epsilon$, which is given by the
 \vpi(u) du$, the cumulative sojourn time vector up to time $t$, or in other words,
 the total amount of time spent in each state during the interval $(0,t)$.
 Using integration by parts, $\gvect{\sigma}(t)$ can be reformulated as
-$$
-  \vsigma(t)
-  = \int_{0}^{t}
+\begin{eqnarray}
+  \nonumber
+  \vsigma(t) 
+  & = & \int_{0}^{t}
     \sum_{n=0}^{\infty} \frac{e^{-q u} (q u)^n}{n!} \vp^{[n]} d u
-  = \sum_{n=0}^{\infty} \vect{p}^{[n]}
+  ~ = ~ \sum_{n=0}^{\infty} \vect{p}^{[n]}
     \int_{0}^{t} \frac{e^{-q u} (q u)^n}{n!} d u
-  = \frac{1}{q} \sum_{n=0}^{\infty} \vp^{(n)} \sum_{k=n+1}^{\infty}
-  \frac{e^{-q t} (q t)^k}{k!} =
+  ~ = ~ \frac{1}{q} \sum_{n=0}^{\infty} \vp^{(n)} \sum_{k=n+1}^{\infty}
+  \frac{e^{-q t} (q t)^k}{k!} 
+  \\
+  & = &
   \frac{1}{q} \sum_{n=0}^{\infty} \vp^{(n)} \overline{p}(n).
-$$
-The summation is computed only up to a large-enough value $N'$ that satisfies
-\[
-  N' = \min_{k}\left\{t - \frac{1}{q} \sum_{n=0}^{k} \overline{p}(n) \right\} \leq \epsilon
-\]
-where, again, $\epsilon$ is given by the
-\index{NumericalPrecision option}\Code{NumericalPrecision} option.
-Because the complexity lies with the computation of $\vp^{(n)}$,
-{\smart} automatically computes $\vsigma(t)$ at the same time $\gvect{\pi}(t)$
-is computed.  Consequently, the actual value, $N$ or $N'$, that truncates
-the summations is $\max\{N, N'\}$.
+  \label{SUM:unif-acc}
+\end{eqnarray}
+Similar to the discussion in Sec.~\ref{SEC:inst-trans-anal-CTMC},
+{\smart} computes a finite sum from $0$ to $N$
+with $\overline{p}(N) \le \epsilon$,
+where $\epsilon$ is a desired absolute precision.
+\TBD{\ldots specified by option \Code{NeedToAddThisOption}.}
+
+
 
 %           ======================
 \subsection{Steady-state detection}
 %           ======================
-When the boolean option \index{SSdetect option}\Code{SSdetect} = \Code{true},
-which is the default, {\smart} checks for steady-state conditions when performing
-the above transient analysis just in case the CTMC has a limiting distribution,
+When computing the (truncated) sums in Eqs.~\ref{SUM:unif-inst} and \ref{SUM:unif-acc},
+{\smart} checks for steady-state conditions,
+just in case the CTMC has a limiting distribution,
 $\gvect{\pi}=\lim_{u\to\infty} \gvect{\pi}(u)$, which may be dependent on the initial state.
 If the solution time $t$ is large enough then $\vp^{(n)}$ may converge to a limiting distribution
-as $n$ becomes large and before reaching the truncation point given by $\max\{N, N'\}$.
+as $n$ becomes large and before reaching the truncation point $N$.
 {\smart} assumes steady-state conditions when the relative error between successive iterates,
-$\vp^{(n)}$ and $\vp^{(n+1)}$, is less than or equal to \Code{NumericalPrecision} times a
-scaling factor given by \Code{SSsens} $\in(0, 1)$.
-The scaling factor introduces a margin of error between the
-absolute relative ``distance'' $\|\vp^{(n)}-\vp^{(n+1)}\|$ and
-the continuous-time solution $\gvect{\pi}(t)$ given when $\vp^{(n)}$ is subordinated
-to the Poisson process; that is, we want the error in the latter to dominate.
-The scaling factor \index{SSsens option}\Code{SSsens}
-is a user-defined option with a default value of $0.25$.
+$\vp^{(n)}$ and $\vp^{(n+1)}$, is less than or equal to a user-specified $\epsilon$.
+\TBD{Need an option to specify this $\epsilon$.}
+\TBD{Need an option to turn this off, for speed, e.g. if $0=\epsilon$.}
+
+\TBD{HERE}
 
 %           ==========================================
 \subsection{Instantaneous stationary analysis of CTMCs}
@@ -299,9 +309,10 @@ implies positive recurrence, which is necessary for a limiting distribution to e
 %An ergodic CTMC has the property that for all pairs of states $i$ and $j$ in
 %the CTMC, $j$ is reachable from $i$.
 Then, the stationary probability vector, $\gvect{\pi}$, uniquely satisfies
-\[
-  \gvect{\pi} \cdot \Q = \0 \ \text{ subject to }\ \sum_{i} \gvect{\pi}[i] = 1.
-\]
+\begin{equation}
+  \gvect{\pi} \cdot \Q = \0 \ \mbox{ subject to }\ \sum_{i} \gvect{\pi}[i] = 1.
+  \label{LS:ergCTMC}
+\end{equation}
 
 
 \MSG{New from here.}
@@ -365,13 +376,15 @@ and represent the expected time spent in each transient state before
 the CTMC reaches an absorbing state (or a class of \index{ergodic}ergodic states).
 The portion of $\gvect{\sigma}$ corresponding to the transient states is the
 solution to
-\[
+\begin{equation}
   \gvect{\sigma}[\Set{T}] \cdot \Q[\Set{T}, \Set{T}]
   = -\gvect{\pi}(0)[\Set{T}]
-\]
+  \label{LS:absCTMC}
+\end{equation}
 where $\Q[\Set{T}, \Set{T}]$ is the submatrix of $\Q$
 corresponding to transitions from transient states to transient states.
 
+\begin{private}
 %        ===========================
 \section{Semi-regenerative processes}\label{SEC:semi-regen-processes}
 %        ===========================
@@ -380,16 +393,16 @@ While more complex than simple Markov chains,
 the traditional Markov chain methods discussed previously, but only under certain conditions.
 Essentially, given a discrete-state, discrete-event model where the events have \emph{both}
 discrete and continuous \index{phase-type distribution}phase-type distributed delays
-(\index{ph int}\Code{ph\! int} and \index{ph real}\Code{ph\! real}, respectively),
+(\index{ph int}\Code{ph int} and \index{ph real}\Code{ph real}, respectively),
 the underlying process will be semi-regenerative
-if the \Code{ph\! int} events are always \emph{synchronized} when active.
+if the \Code{ph int} events are always \emph{synchronized} when active.
 By \index{synchronization property}synchronized,
-we mean that the phase changes of all active \Code{ph\! int} events occur at precisely the
+we mean that the phase changes of all active \Code{ph int} events occur at precisely the
 same (discrete) time when active.
-Then, the regeneration times can be defined by \Code{ph\! int} events
+Then, the regeneration times can be defined by \Code{ph int} events
 (simple phase changes or other state changes triggered by the event).
 The only other active events that can trigger state changes between successive regeneration times
-are of \Code{ph\! real} type.  Consequently, the subordinate processes that evolve between
+are of \Code{ph real} type.  Consequently, the subordinate processes that evolve between
 regeneration times are simple CTMCs, and, as is always the case for semi-regenerative processes,
 the embedded \index{Markov renewal process}Markov renewal process gives rise to an embedded DTMC.
 Semi-regenerative processes encountered in this way can be decomposed into
@@ -402,7 +415,7 @@ may not be practical.
 At present, {\smart} is capable of numerically computing the stationary probability distribution
 of a semi-regenerative process with the synchronization assumption when
 the embedded DTMC is \index{ergodic}ergodic with a stationary solution.
-Synchronization among \Code{ph\! int} events is automatically checked while generating the
+Synchronization among \Code{ph int} events is automatically checked while generating the
 underlying state space.  A warning is issued to the user if the requisite synchronization
 assumption is not present, which precludes a numerical solution.
 In what follows, we will only present the key formulas for computing stationary solutions
@@ -418,8 +431,8 @@ Actually, only values $\P[i, j] > \Code{Pruning}$ are stored where the
 user option \index{Pruning option}\Code{Pruning} is
 considered ``small enough'' with a default value of $10^{-20}$.
 Let $\Q_i$ be the infinitesimal generator matrix of the subordinate CTMC on the state space
-$\mathcal{S}_i$ originating from embedded state $i$.  Take the basic step of all \Code{ph\! int}
-to be unity.  Then, when both \Code{ph\! int} and \Code{ph\! real} events are active,
+$\mathcal{S}_i$ originating from embedded state $i$.  Take the basic step of all \Code{ph int}
+to be unity.  Then, when both \Code{ph int} and \Code{ph real} events are active,
 the entries of matrix $\P$ can be computed from
 \[
   \P[i, j] = \sum_{k\in\mathcal{S}_i} e^{\Q_i}[i, k] \matr{\Delta}[k, j]
@@ -429,7 +442,7 @@ which is actually computed using the \index{uniformization (randomization)}unifo
 procedure discussed in Sections \ref{SEC:inst-trans-anal-CTMC} and \ref{SEC:cumul-trans-anal-CTMC}.
 The matrix $\matr{\Delta}[k, j]$ gives the probability of jumping from state $k$ to state $j$
 at the regeneration time and is computed automatically from the model specification.
-When only \Code{ph\! int} or only \Code{ph\! real} events are active,
+When only \Code{ph int} or only \Code{ph real} events are active,
 a regeneration occurs after each state transition due to the strong Markov property, and we
 simply replace $e^{\Q_i}[i, k]$ in the equation above with the indicator function $1\{i=k\}$.
 Conditioned on each $i\in\mathcal{E}$, let the matrix $\gvect{\sigma}$ be the expected sojourn time
@@ -438,10 +451,10 @@ in each state $k\in\mathcal{S}_i$ until the next regeneration time, which is com
   \gvect{\sigma}[i, k] =
   \begin{cases}
     \int_{0}^{1} e^{\Q_i u}[i, k]\,du
-                               & \text{if both \Code{ph\! int} and \Code{ph\! real} are active}, \\
-    1\{i=k\} (-Q_i[i, i])^{-1} & \text{if only \Code{ph\! real} events are active}, \\
-    1\{i=k\}                   & \text{if only \Code{ph\! int} events are active},  \\
-    0                          & \text{otherwise}.
+                               & \mbox{if both \Code{ph int} and \Code{ph real} are active}, \\
+    1\{i=k\} (-Q_i[i, i])^{-1} & \mbox{if only \Code{ph real} events are active}, \\
+    1\{i=k\}                   & \mbox{if only \Code{ph int} events are active},  \\
+    0                          & \mbox{otherwise}.
   \end{cases}
 \]
 The computation in the first case can be performed at the same time $e^{\Q_i}$ is computed.
@@ -492,9 +505,9 @@ embedding strategies to choose from:
   \hline
   0 & most basic, the one described above, 0 embedded state are eliminated \\ \hline
   1 & eliminate embedded states that arise when only
-      \Code{ph\! int} or only \Code{ph\! real} events are active \\ \hline
+      \Code{ph int} or only \Code{ph real} events are active \\ \hline
   2 & eliminate embedded states that only record phase changes
-      when both \Code{ph\! int} and \Code{ph\! real} events are active \\ \hline
+      when both \Code{ph int} and \Code{ph real} events are active \\ \hline
   3 & 1+2=3, use both 1 and 2 together \\
   \hline
 \end{tabular}
@@ -505,16 +518,16 @@ Another user option called
 Embedding strategy 2 (and hence 3) tries to find \emph{all possible} regeneration times that:
 \begin{itemize}
   \item comprise a single step in $\P$,
-  \item are (mostly) due to synchronized events with \Code{ph\! int} delays, and
+  \item are (mostly) due to synchronized events with \Code{ph int} delays, and
   \item it is certain that the event will trigger a state change where more than just the
         phase component changes, such as a change in the marking in the case of \Code{spn} models.
 \end{itemize}
-Because {\smart} will try to consider the entire (pmf) support of active \Code{ph\! int} events
+Because {\smart} will try to consider the entire (pmf) support of active \Code{ph int} events
 in search of regeneration times with all of the above properties, a truncation point must be
 introduced in case the support is infinite in length, such as the infinite support of the
 geometric distribution.
 The user option \index{Epsilon option}\Code{Epsilon} $\in$ $(0, 1)$ provides a truncation
-point by stopping the search when the smallest pmf tail of any active \Code{ph\! int} event
+point by stopping the search when the smallest pmf tail of any active \Code{ph int} event
 becomes less than or equal to \Code{Epsilon}. \Code{Epsilon} has a default value of $10^{-10}$.
 
 Finally, the following print options are provided that
@@ -557,7 +570,7 @@ all \Code{false} by default:
 %after regeneration times to depend on the state entered just after such times.
 %It follows that ...
 %Semi-regenerative There is an
-
+\end{private}
 
 \PRIVATE{
 %        ======================

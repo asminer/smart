@@ -1,0 +1,24 @@
+// $Id$
+
+pn b(real i1):={
+  place   p1, p2;     init(p1:3);
+  trans   t1, t2;     firing(t1:expo(0.005), t2:expo(i1));
+  arcs(p1:t1, t1:p2, p2:t2, t2:p1);
+  real o1 := avg_ss(tk(p1));
+};
+pn d(real i1, real i2):={
+  place   p1, p2;     init(p1:4);
+  trans   t1, t2;     firing(t1:expo(i1), t2:expo(i2));
+  arcs(p1:t1, t1:p2, p2:t2, t2:p1);
+  real o1 := avg_ss(tk(p1));
+  real o2 := avg_ss(tk(p2));
+};
+
+
+converge {
+  real x1 guess 0.5;  real x2 guess 0.5;
+  real x3 := d(i1:=x1, i2:=x2).o1;
+  real x4 := d(i1:=x1, i2:=x2).o2;
+  real x1 := b(i1:=x3).o1;
+  real x2 := b(i1:=x4).o1;
+}
