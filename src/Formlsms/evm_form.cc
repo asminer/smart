@@ -832,17 +832,15 @@ bool evm_formalism::canAssignType(const type* vartype) const
 // *                    evm_eval class                    *
 // ********************************************************
 
-class evm_eval : public simple_internal {
+class evm_eval : public model_internal {
 public:
   evm_eval();
   virtual void Compute(traverse_data &x, expr** pass, int np);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-evm_eval::evm_eval() : simple_internal(em->INT->addProc(), "eval", 2)
+evm_eval::evm_eval() : model_internal(em->INT->addProc(), "eval", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* intvar = em->findType("intvar");
   SetFormal(1, intvar, "v");
   SetDocumentation("The value of variable v in the current state.");
@@ -868,7 +866,7 @@ void evm_eval::Compute(traverse_data &x, expr** pass, int np)
 int evm_eval::Traverse(traverse_data &x, expr** pass, int np)
 {
   if (x.which != traverse_data::BuildDD) {
-    return simple_internal::Traverse(x, pass, np);
+    return model_internal::Traverse(x, pass, np);
   }
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -895,16 +893,14 @@ int evm_eval::Traverse(traverse_data &x, expr** pass, int np)
 // *                   evm_range  class                   *
 // ********************************************************
 
-class evm_range : public simple_internal {
+class evm_range : public model_internal {
 public:
   evm_range();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_range::evm_range() : simple_internal(em->VOID, "range", 2)
+evm_range::evm_range() : model_internal(em->VOID, "range", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* place = em->findType("intvar");
   DCASSERT(place);
@@ -960,16 +956,14 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
 // *                  evm_enabled  class                  *
 // ********************************************************
 
-class evm_enabled : public simple_internal {
+class evm_enabled : public model_internal {
 public:
   evm_enabled();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_enabled::evm_enabled() : simple_internal(em->VOID, "guard", 2)
+evm_enabled::evm_enabled() : model_internal(em->VOID, "guard", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* trans = em->findType("event");
   DCASSERT(trans);
@@ -1020,16 +1014,14 @@ void evm_enabled::Compute(traverse_data &x, expr** pass, int np)
 // *                   evm_assign class                   *
 // ********************************************************
 
-class evm_assign : public simple_internal {
+class evm_assign : public model_internal {
 public:
   evm_assign();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_assign::evm_assign() : simple_internal(em->VOID, "assign", 2)
+evm_assign::evm_assign() : model_internal(em->VOID, "assign", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(3);
   const type* place = em->findType("intvar");
   const type* trans = em->findType("event");
@@ -1084,16 +1076,14 @@ void evm_assign::Compute(traverse_data &x, expr** pass, int np)
 // *                   evm_init  class                   *
 // ********************************************************
 
-class evm_init : public simple_internal {
+class evm_init : public model_internal {
 public:
   evm_init();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_init::evm_init() : simple_internal(em->VOID, "init", 2)
+evm_init::evm_init() : model_internal(em->VOID, "init", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* place = em->findType("intvar");
   DCASSERT(place);
@@ -1152,16 +1142,14 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
 // *                    evm_hide class                    *
 // ********************************************************
 
-class evm_hide : public simple_internal {
+class evm_hide : public model_internal {
 public:
   evm_hide();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_hide::evm_hide() : simple_internal(em->VOID, "hide", 2)
+evm_hide::evm_hide() : model_internal(em->VOID, "hide", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* trans = em->findType("event");
   DCASSERT(trans);
   SetFormal(1, trans, "e");
@@ -1199,16 +1187,14 @@ void evm_hide::Compute(traverse_data &x, expr** pass, int np)
 // *                   evm_assert class                   *
 // ********************************************************
 
-class evm_assert : public simple_internal {
+class evm_assert : public model_internal {
 public:
   evm_assert();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_assert::evm_assert() : simple_internal(em->VOID, "assert", 2)
+evm_assert::evm_assert() : model_internal(em->VOID, "assert", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->BOOL->addProc(), "b");
   SetRepeat(1);
   SetDocumentation("Define a set of assertions that must be true in each state.  An error message will be displayed if an assertion does not evaluate to true in some state.");

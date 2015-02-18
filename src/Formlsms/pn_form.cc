@@ -1186,16 +1186,14 @@ bool petri_formalism::canAssignType(const type* vartype) const
 // *                    pn_init  class                    *
 // ********************************************************
 
-class pn_init : public simple_internal {
+class pn_init : public model_internal {
 public:
   pn_init();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_init::pn_init() : simple_internal(em->VOID, "init", 2)
+pn_init::pn_init() : model_internal(em->VOID, "init", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   t->SetItem(0, em->findType("place"));
   t->SetItem(1, em->INT);
@@ -1249,16 +1247,14 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
 // *                    pn_bound class                    *
 // ********************************************************
 
-class pn_bound : public simple_internal {
+class pn_bound : public model_internal {
 public:
   pn_bound();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_bound::pn_bound() : simple_internal(em->VOID, "bound", 2)
+pn_bound::pn_bound() : model_internal(em->VOID, "bound", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* place = em->findType("place");
   DCASSERT(place);
@@ -1595,16 +1591,14 @@ int pn_inhibit::Promote(expr** pass, int np) const
 // *                    pn_guard class                    *
 // ********************************************************
 
-class pn_guard : public simple_internal {
+class pn_guard : public model_internal {
 public:
   pn_guard();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_guard::pn_guard() : simple_internal(em->VOID, "guard", 2)
+pn_guard::pn_guard() : model_internal(em->VOID, "guard", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* trans = em->findType("trans");
   t->SetItem(0, trans->getSetOfThis());
@@ -1744,16 +1738,14 @@ int pn_firing::Typecheck(expr** pass, int np) const
 // *                   pn_weight  class                   *
 // ********************************************************
 
-class pn_weight : public simple_internal {
+class pn_weight : public model_internal {
 public:
   pn_weight();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_weight::pn_weight() : simple_internal(em->VOID, "weight", 2)
+pn_weight::pn_weight() : model_internal(em->VOID, "weight", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   t->SetItem(0, em->findType("trans"));
   t->SetItem(1, em->REAL->addProc());
@@ -1792,16 +1784,14 @@ void pn_weight::Compute(traverse_data &x, expr** pass, int np)
 // *                   pn_weight2 class                   *
 // ********************************************************
 
-class pn_weight2 : public simple_internal {
+class pn_weight2 : public model_internal {
 public:
   pn_weight2();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_weight2::pn_weight2() : simple_internal(em->VOID, "weight", 3)
+pn_weight2::pn_weight2() : model_internal(em->VOID, "weight", 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* trans = em->findType("trans");  DCASSERT(trans);
   SetFormal(1, trans, "c");
   typelist* t = new typelist(2);
@@ -1859,16 +1849,14 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
 // *                   pn_assert  class                   *
 // ********************************************************
 
-class pn_assert : public simple_internal {
+class pn_assert : public model_internal {
 public:
   pn_assert();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_assert::pn_assert() : simple_internal(em->VOID, "assert", 2)
+pn_assert::pn_assert() : model_internal(em->VOID, "assert", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->BOOL->addProc(), "b");
   SetRepeat(1);
   SetDocumentation("Define a set of assertions that must be true in each marking.  An error message will be displayed if an assertion does not evaluate to true in some marking.");
@@ -1897,16 +1885,14 @@ void pn_assert::Compute(traverse_data &x, expr** pass, int np)
 // *                    pn_hide  class                    *
 // ********************************************************
 
-class pn_hide : public simple_internal {
+class pn_hide : public model_internal {
 public:
   pn_hide();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_hide::pn_hide() : simple_internal(em->VOID, "hide", 2)
+pn_hide::pn_hide() : model_internal(em->VOID, "hide", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* trans = em->findType("trans");
   DCASSERT(trans);
   SetFormal(1, trans, "t");
@@ -1943,17 +1929,15 @@ void pn_hide::Compute(traverse_data &x, expr** pass, int np)
 // *                     pn_tk  class                     *
 // ********************************************************
 
-class pn_tk : public simple_internal {
+class pn_tk : public model_internal {
 public:
   pn_tk();
   virtual void Compute(traverse_data &x, expr** pass, int np);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-pn_tk::pn_tk() : simple_internal(em->INT->addProc(), "tk", 2)
+pn_tk::pn_tk() : model_internal(em->INT->addProc(), "tk", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* place = em->findType("place");
   SetFormal(1, place, "p");
   SetDocumentation("The number of tokens in place p (in the current state of the Petri net).");
@@ -1979,7 +1963,7 @@ void pn_tk::Compute(traverse_data &x, expr** pass, int np)
 int pn_tk::Traverse(traverse_data &x, expr** pass, int np)
 {
   if (x.which != traverse_data::BuildDD) {
-    return simple_internal::Traverse(x, pass, np);
+    return model_internal::Traverse(x, pass, np);
   }
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -2005,16 +1989,14 @@ int pn_tk::Traverse(traverse_data &x, expr** pass, int np)
 // *                    pn_rate  class                    *
 // ********************************************************
 
-class pn_rate : public simple_internal {
+class pn_rate : public model_internal {
 public:
   pn_rate();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_rate::pn_rate() : simple_internal(em->REAL->addProc(), "rate", 2)
+pn_rate::pn_rate() : model_internal(em->REAL->addProc(), "rate", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* trans = em->findType("trans");
   SetFormal(1, trans, "t");
   SetDocumentation("In the current marking, if t is disabled, then 0; if t is enabled, the firing rate of t.  This assumes that the firing distribution of t is expo(), but marking-dependent rates are allowed.  Returns infinity for immediate (time 0) transitions.  Otherwise, if the transition does not have an expo() firing distribution, returns null.");
@@ -2064,16 +2046,14 @@ void pn_rate::Compute(traverse_data &x, expr** pass, int np)
 // *                   pn_enabled class                   *
 // ********************************************************
 
-class pn_enabled : public simple_internal {
+class pn_enabled : public model_internal {
 public:
   pn_enabled();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_enabled::pn_enabled() : simple_internal(em->BOOL->addProc(), "enabled", 2)
+pn_enabled::pn_enabled() : model_internal(em->BOOL->addProc(), "enabled", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* trans = em->findType("trans");
   DCASSERT(trans);
   SetFormal(1, trans->getSetOfThis(), "ts");
@@ -2127,19 +2107,17 @@ void pn_enabled::Compute(traverse_data &x, expr** pass, int np)
 // *                   pn_places  class                   *
 // ********************************************************
 
-class pn_places : public simple_internal {
+class pn_places : public model_internal {
   const type* pset;
 public:
   pn_places(const type* pset);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_places::pn_places(const type* ps) : simple_internal(ps, "places", 1)
+pn_places::pn_places(const type* ps) : model_internal(ps, "places", 1)
 {
   pset = ps;
   DCASSERT(pset);
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0); 
   SetDocumentation("Returns the set of places of the Petri net.");
 }
 
@@ -2179,7 +2157,7 @@ void pn_places::Compute(traverse_data &x, expr** pass, int np)
 // *                 pn_transitions class                 *
 // ********************************************************
 
-class pn_transitions : public simple_internal {
+class pn_transitions : public model_internal {
   const type* tset;
 public:
   pn_transitions(const type* tset);
@@ -2187,12 +2165,10 @@ public:
 };
 
 pn_transitions::pn_transitions(const type* ts) 
- : simple_internal(ts, "transitions", 1)
+ : model_internal(ts, "transitions", 1)
 {
   tset = ts;
   DCASSERT(tset);
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0); // should we?
   SetDocumentation("Returns the set of transitions of the Petri net.");
 }
 

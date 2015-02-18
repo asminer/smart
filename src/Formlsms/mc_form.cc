@@ -366,16 +366,14 @@ bool markov_formalism::canAssignType(const type* vartype) const
 // *                             mc_init  class                             *
 // **************************************************************************
 
-class mc_init : public simple_internal {
+class mc_init : public model_internal {
 public:
   mc_init();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_init::mc_init() : simple_internal(em->VOID, "init", 2)
+mc_init::mc_init() : model_internal(em->VOID, "init", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   t->SetItem(0, em->findType("state"));
   t->SetItem(1, em->REAL);
@@ -440,16 +438,14 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
 // *                             mc_arcs  class                             *
 // **************************************************************************
 
-class mc_arcs : public simple_internal {
+class mc_arcs : public model_internal {
 public:
   mc_arcs();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_arcs::mc_arcs() : simple_internal(em->VOID, "arcs", 2)
+mc_arcs::mc_arcs() : model_internal(em->VOID, "arcs", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* tl = new typelist(3);
   const type* state = em->findType("state");
   tl->SetItem(0, state);
@@ -507,16 +503,14 @@ void mc_arcs::Compute(traverse_data &x, expr** pass, int np)
 // *                            mc_instate class                            *
 // **************************************************************************
 
-class mc_instate : public simple_internal {
+class mc_instate : public model_internal {
 public:
   mc_instate();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_instate::mc_instate() : simple_internal(em->BOOL->addProc(), "in_state", 2)
+mc_instate::mc_instate() : model_internal(em->BOOL->addProc(), "in_state", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* state = em->findType("state");
   SetFormal(1, state->getSetOfThis(), "sset");
   SetDocumentation("Returns true iff the Markov chain is in one of the specified states.");
@@ -547,17 +541,15 @@ void mc_instate::Compute(traverse_data &x, expr** pass, int np)
 // *                           mc_transient class                           *
 // **************************************************************************
 
-class mc_transient : public simple_internal {
+class mc_transient : public model_internal {
 public:
   mc_transient();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 mc_transient::mc_transient() 
- : simple_internal(em->BOOL->addProc(), "transient", 1)
+ : model_internal(em->BOOL->addProc(), "transient", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns true iff the Markov chain is in a transient state.");
 }
 
@@ -583,17 +575,15 @@ void mc_transient::Compute(traverse_data &x, expr** pass, int np)
 // *                           mc_absorbing class                           *
 // **************************************************************************
 
-class mc_absorbing : public simple_internal {
+class mc_absorbing : public model_internal {
 public:
   mc_absorbing();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 mc_absorbing::mc_absorbing() 
- : simple_internal(em->BOOL->addProc(), "is_absorbed", 1)
+ : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns true iff the Markov chain is in an absorbing state (this includes deadlocked states).");
 }
 
@@ -619,7 +609,7 @@ void mc_absorbing::Compute(traverse_data &x, expr** pass, int np)
 // *                              mc_tta class                              *
 // **************************************************************************
 
-class mc_tta : public simple_internal {
+class mc_tta : public model_internal {
   bool is_disc;
 public:
   mc_tta(bool disc);
@@ -652,14 +642,12 @@ public:
 };
 
 mc_tta::mc_tta(bool disc)
-: simple_internal(
+: model_internal(
     disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE), 
     "tta", 2
   )
 {
   is_disc = disc;
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->BOOL->addProc(), "stop");
 
   SetDocumentation("Returns the distribution corresponding to the first time that stop becomes true, when starting from the initial distribution.");

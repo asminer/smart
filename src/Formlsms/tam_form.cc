@@ -1084,16 +1084,14 @@ bool tam_formalism::canAssignType(const type* vartype) const
 // *                  tam_strength class                  *
 // ********************************************************
 
-class tam_strength : public simple_internal {
+class tam_strength : public model_internal {
 public:
   tam_strength();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_strength::tam_strength() : simple_internal(em->VOID, "strength", 2)
+tam_strength::tam_strength() : model_internal(em->VOID, "strength", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* t = new typelist(2);
   const type* glue = em->findType("glue");
   t->SetItem(0, glue->getSetOfThis());
@@ -1146,13 +1144,13 @@ void tam_strength::Compute(traverse_data &x, expr** pass, int np)
 // *                  tam_tiledef  class                  *
 // ********************************************************
 
-class tam_tiledef : public simple_internal {
+class tam_tiledef : public model_internal {
 public:
   tam_tiledef();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_tiledef::tam_tiledef() : simple_internal(em->VOID, "tiledef", 3)
+tam_tiledef::tam_tiledef() : model_internal(em->VOID, "tiledef", 3)
 {
   const type* tile = em->findType("tile");
   const type* border = em->findType("border");
@@ -1161,8 +1159,6 @@ tam_tiledef::tam_tiledef() : simple_internal(em->VOID, "tiledef", 3)
   DCASSERT(border);
   DCASSERT(glue);
 
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, tile, "t");
   typelist* bg = new typelist(2);
   bg->SetItem(0, border);
@@ -1216,7 +1212,7 @@ void tam_tiledef::Compute(traverse_data &x, expr** pass, int np)
 // *                   tam_board  class                   *
 // ********************************************************
 
-class tam_board : public simple_internal {
+class tam_board : public model_internal {
   result tmp;
 public:
   tam_board();
@@ -1243,9 +1239,8 @@ protected:
   }
 };
 
-tam_board::tam_board() : simple_internal(em->VOID, "board", 5)
+tam_board::tam_board() : model_internal(em->VOID, "board", 5)
 {
-  SetFormal(0, em->MODEL, "m");
   SetFormal(1, em->INT, "x_low");
   SetFormal(2, em->INT, "x_high");
   SetFormal(3, em->INT, "col_low");
@@ -1278,7 +1273,7 @@ void tam_board::Compute(traverse_data &x, expr** pass, int np)
 // *                    tam_init class                    *
 // ********************************************************
 
-class tam_init : public simple_internal {
+class tam_init : public model_internal {
 public:
   tam_init();
   virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1299,9 +1294,8 @@ protected:
   }
 };
 
-tam_init::tam_init() : simple_internal(em->VOID, "init", 2)
+tam_init::tam_init() : model_internal(em->VOID, "init", 2)
 {
-  SetFormal(0, em->MODEL, "m");
   typelist* t = new typelist(3);
   const type* tile = em->findType("tile");
   DCASSERT(tile);
@@ -1352,7 +1346,7 @@ void tam_init::Compute(traverse_data &x, expr** pass, int np)
 // *                    tam_prio class                    *
 // ********************************************************
 
-class tam_prio : public simple_internal {
+class tam_prio : public model_internal {
 public:
   tam_prio();
   virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1373,9 +1367,8 @@ protected:
   }
 };
 
-tam_prio::tam_prio() : simple_internal(em->VOID, "priority", 2)
+tam_prio::tam_prio() : model_internal(em->VOID, "priority", 2)
 {
-  SetFormal(0, em->MODEL, "m");
   typelist* t = new typelist(3);
   t->SetItem(0, em->INT);
   t->SetItem(1, em->INT);
@@ -1422,15 +1415,14 @@ void tam_prio::Compute(traverse_data &x, expr** pass, int np)
 // *                   tam_export class                   *
 // ********************************************************
 
-class tam_export: public simple_internal {
+class tam_export: public model_internal {
 public:
   tam_export();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_export::tam_export() : simple_internal(em->BOOL, "export", 1)
+tam_export::tam_export() : model_internal(em->BOOL, "export", 1)
 {
-  SetFormal(0, em->MODEL, "m");
   SetDocumentation("Export the model.  Writes the specification to the output stream in a format readable by another tool.  Returns true on success, false otherwise.");
 }
 

@@ -250,7 +250,7 @@ public:
     the virtual method buildMeasure().  No other methods must
     be provided in derived classes.
 */
-class msr_func : public simple_internal {
+class msr_func : public model_internal {
 public:
   enum eng_class {
     Nothing = 0,

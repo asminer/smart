@@ -943,17 +943,15 @@ void dsde_def::InitModel()
 // *                   dsde_part1 class                   *
 // ********************************************************
 
-class dsde_part1 : public simple_internal {
+class dsde_part1 : public model_internal {
 public:
   dsde_part1(const type* place);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dsde_part1::dsde_part1(const type* place)
-: simple_internal(em->VOID, "partition", 2)
+: model_internal(em->VOID, "partition", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   DCASSERT(place);
   SetFormal(1, place->getSetOfThis(), "vset");
   SetRepeat(1);
@@ -988,17 +986,15 @@ void dsde_part1::Compute(traverse_data &x, expr** pass, int np)
 // *                   dsde_part2 class                   *
 // ********************************************************
 
-class dsde_part2 : public simple_internal {
+class dsde_part2 : public model_internal {
 public:
   dsde_part2(const type* place);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dsde_part2::dsde_part2(const type* place)
-: simple_internal(em->VOID, "partition", 2)
+: model_internal(em->VOID, "partition", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   DCASSERT(place);
   typelist* t = new typelist(2);
   t->SetItem(0, place->getSetOfThis());
@@ -1052,17 +1048,15 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np)
 // *                   dsde_part3 class                   *
 // ********************************************************
 
-class dsde_part3 : public simple_internal {
+class dsde_part3 : public model_internal {
 public:
   dsde_part3(const type* place);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dsde_part3::dsde_part3(const type* place)
-: simple_internal(em->VOID, "partition", 2)
+: model_internal(em->VOID, "partition", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   DCASSERT(place);
   typelist* t = new typelist(2);
   t->SetItem(0, place->getSetOfThis());
@@ -1119,17 +1113,15 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np)
 // *                 dsde_priolevel class                 *
 // ********************************************************
 
-class dsde_priolevel : public simple_internal {
+class dsde_priolevel : public model_internal {
 public:
   dsde_priolevel(const type* trans);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dsde_priolevel::dsde_priolevel(const type* trans)
-: simple_internal(em->VOID, "priority", 2)
+: model_internal(em->VOID, "priority", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   DCASSERT(trans);
   typelist* t = new typelist(2);
   t->SetItem(0, trans->getSetOfThis());
@@ -1182,17 +1174,15 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np)
 // *                 dsde_priolist  class                 *
 // ********************************************************
 
-class dsde_priolist : public simple_internal {
+class dsde_priolist : public model_internal {
 public:
   dsde_priolist(const type* trans);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dsde_priolist::dsde_priolist(const type* trans)
-: simple_internal(em->VOID, "priority", 2)
+: model_internal(em->VOID, "priority", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   DCASSERT(trans);
   typelist* t = new typelist(2);
   t->SetItem(0, trans->getSetOfThis());

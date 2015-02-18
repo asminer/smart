@@ -24,8 +24,6 @@ public:
 dcp_engine::dcp_engine(const type* t, const char* name, engtype* w)
  : msr_func(DCP, t, name, 2)
 {
-  SetFormal(0, em->MODEL, "model");
-  HideFormal(0);
   whicheng = w;
 }
 
