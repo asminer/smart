@@ -81,8 +81,6 @@ numstates_si::numstates_si()
  : proc_noengine(Nothing, em->BIGINT, "num_states", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of reachable states.  If show is true, then as a side effect, the reachability set is displayed to the current output stream (unless there are too many states).");
@@ -136,8 +134,6 @@ numarcs_si::numarcs_si()
  : proc_noengine(Nothing, em->BIGINT, "num_arcs", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of arcs in the reachability graph or Markov chain.  If show is true, then as a side effect, the graph is displayed to the current output stream (unless it is too large).");
@@ -194,8 +190,6 @@ numclasses_si::numclasses_si()
  : proc_noengine(Nothing, em->BIGINT, "num_classes", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  If show is true, then as a side effect, the states in each TSCC are displayed to the current output stream.");
@@ -255,8 +249,6 @@ numlevels_si::numlevels_si()
  : msr_noengine(Nothing, em->INT, "num_levels", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of levels of a model. This is used for hierarchical state representations, including MDDs. Assignment of state variables to levels can be done using the appropriate functions for each formalism.  If parameter show is true, then as a side effect, the state variables in each level are displayed to the current output stream.");
@@ -354,8 +346,6 @@ numevents_si::numevents_si()
  : msr_noengine(Nothing, em->INT, "num_events", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of events of a model. This is useful for debugging a model. If parameter show is true, then as a side effect, information for each event is displayed to the current output stream.");
@@ -409,8 +399,6 @@ numvars_si::numvars_si()
  : msr_noengine(Nothing, em->INT, "num_vars", 1)
 #endif
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of state variables in a model. This is useful for debugging a model. If parameter show is true, then as a side effect, information for each state variable is displayed to the current output stream.");
@@ -474,8 +462,6 @@ public:
 showstates_si::showstates_si()
  : proc_noengine(Nothing, em->VOID, "show_states", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Displays the reachability set to the current output stream, unless there are too many states.  The reachability set will be constructed first, if necessary.");
 }
 
@@ -504,8 +490,6 @@ public:
 showarcs_si::showarcs_si()
  : proc_noengine(Nothing, em->VOID, "show_arcs", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream, unless it is too large.  The process will be constructed first, if necessary.");
 }
 
@@ -539,8 +523,6 @@ public:
 showclasses_si::showclasses_si()
  : proc_noengine(Nothing, em->VOID, "show_classes", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Shows the classification of states into terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain) to the current output stream.");
 }
 
@@ -578,8 +560,6 @@ public:
 showlevels_si::showlevels_si()
  : msr_noengine(Nothing, em->VOID, "show_levels", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Display the state variables by level to the current output stream.  This is used for hierarchical state representations, including MDDs.  Assignment of state variables to levels can be done using the appropriate functions for each formalism.");
 }
 
@@ -649,8 +629,6 @@ public:
 showevents_si::showevents_si()
  : msr_noengine(Nothing, em->VOID, "show_events", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Information for each model event is displayed to the current output stream.  This is useful for debugging a model.");
 }
 
@@ -682,8 +660,6 @@ public:
 showvars_si::showvars_si()
  : msr_noengine(Nothing, em->VOID, "show_vars", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Information for each state variable is displayed to the current output stream.  This is useful for debugging a model.");
 }
 
@@ -731,8 +707,6 @@ public:
 initial_si::initial_si()
  : proc_noengine(Nothing, em->STATESET, "initial", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns the set of initial states within a model.");
 }
 
@@ -766,8 +740,6 @@ public:
 reachable_si::reachable_si()
  : proc_noengine(Nothing, em->STATESET, "reachable", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns the set of reachable states within a model.");
 }
 
@@ -801,8 +773,6 @@ public:
 potential_si::potential_si()
  : proc_noengine(Nothing, em->STATESET, "potential", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->BOOL->addProc(), "p");
   SetDocumentation("Returns the set of model states satisfying p.  Note that this set could contain states thate are not reachable from the initial state(s) of the model.");
 }
@@ -837,8 +807,6 @@ public:
 writedot_si::writedot_si()
  : msr_noengine(Nothing, em->VOID, "write_dot", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STRING, "filename");
   SetDocumentation("Writes the graph representation of the model to a file named filename (or not at all if this is null), in the format of the dot graph visualization tool.  This is done upon instantiation of the model.  The file is not overwritten if it already exists.");
 }

@@ -201,17 +201,15 @@ bool dcp_form::isLegalMeasureType(const type* mtype) const
 // *                           constraint                           *
 // ******************************************************************
 
-class dcp_constraint : public simple_internal {
+class dcp_constraint : public model_internal {
 public:
   dcp_constraint(const type* t);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dcp_constraint::dcp_constraint(const type* t)
- : simple_internal(em->VOID, "constraint", 2)
+ : model_internal(em->VOID, "constraint", 2)
 {
-  SetFormal(0, t, "model");
-  HideFormal(0);
   SetFormal(1, em->BOOL, "c");
   SetRepeat(1);
   SetDocumentation("Adds constraints to the model's state variables.");
@@ -237,17 +235,15 @@ void dcp_constraint::Compute(traverse_data &x, expr** pass, int np)
 // *                             unique                             *
 // ******************************************************************
 
-class dcp_unique : public simple_internal {
+class dcp_unique : public model_internal {
 public:
   dcp_unique(const type* t);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 dcp_unique::dcp_unique(const type* t)
- : simple_internal(em->VOID, "unique", 2)
+ : model_internal(em->VOID, "unique", 2)
 {
-  SetFormal(0, t, "model");
-  HideFormal(0);
   SetFormal(1, em->INT, "v");
   SetRepeat(1);
   SetDocumentation("Adds constraints so that the passed values are all unique.");

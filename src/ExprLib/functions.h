@@ -52,6 +52,19 @@ public:
   static const int Promote_Success = 0;
   static const int Promote_MTMismatch = 1;
   static const int Promote_Dependent = 2;
+
+  enum ns_status {
+    /// Named parameters are ok
+    Success,          
+    /// Some parameter has the wrong type
+    Wrong_Type,       
+    /// Some parameter has an illegal name
+    Illegal_Name,     
+    /// Some required parameter is missing
+    Missing_Param,    
+    /// This function does not allow named parameters
+    Not_Allowed       
+  };
 public:
   function(const function* f);
   function(const char* fn, int line, const type* t, char* n);
@@ -224,21 +237,21 @@ public:
   virtual symbol* FindFormal(const char* name) const;
 
 
-  /**
-    
-      struct name_score {
-        int score;    
+  /** Give a type-checking score for named parameters.
+        @param  pass    Array of passed parameters, in order.
+        @param  np      Number of passed parameters.
+        @param  status  Output parameter: how to interpret the result.
 
-        status: 
-          Success;          // result is a score
-          Wrong_Type;       // parameter# "score" has the wrong type
-          Illegal_Name;     // parameter# "score" doesn't match any fp
-          Missing_Param;    // we forgot a required param
-          Not_Allowed;      // no named params for this function
-      }
-
-      virtual void ScoreNamedList(symbol** np, int nnp, int &score, ns_status &s) const;
+        @return If status is Success, then return the total promotion
+                distance required for the named parameters to match
+                the formal parameters.
+                If status is Not_Allowed, then the return value is
+                meaningless.
+                Otherwise, the return value is the position of the
+                (first) offending parameter.
   */
+  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
+
 };
 
 // ******************************************************************
@@ -352,7 +365,8 @@ public:
   /// Is there a name conflict between these formal param lists
   bool hasNameConflict(symbol** pl, int np, int* tmp) const;
 
-  /** Give type-checking scores for parameters.
+private:
+  /** Give type-checking scores for positional parameters.
       Each score indicuates how well the parameters match, as follows.
          0: Perfect match in type and number.
         +n: Total promotion distance required for
@@ -371,7 +385,10 @@ public:
   */
   void check(const exprman* em, expr** pass, int np, int* scores) const;
 
-  /** Give a type-checking score for parameters, and return type.
+
+
+public:
+  /** Give a type-checking score for positional parameters, and return type.
       The return type is required so we can determine if
       "formal parameter promotion" is possible or not.
 
@@ -386,6 +403,22 @@ public:
       @return The score, taking everything into account.
   */
   int check(const exprman* em, expr** pass, int np, const type* rt) const;
+
+
+  /** Give a type-checking score for named parameters, and return type.
+      The return type is required so we can determine if
+      "formal parameter promotion" is possible or not.
+
+      @param  em      Expression manager.
+      @param  pass    Array of passed parameters, in order.
+      @param  np      Number of passed parameters.
+      @param  rt      Unmodified return type.
+      @param  status  Output: status of named to positional conversion.
+
+      @return The score, taking everything into account.
+  */
+  int check(const exprman* em, symbol** pass, int np, const type* rt,
+            function::ns_status &status) const;
 
   /** Return type, based on passed parameters.
       Assumes the passed parameters will fit with some kind of 
@@ -484,9 +517,11 @@ public:
     formals.build(n, t, name);
   }
 
+  /*
   inline void HideFormal(int n) {
     formals.hide(n);
   }
+  */
 
   virtual bool IsHidden(int fpnum) const;
 
@@ -509,12 +544,35 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   virtual void PrintHeader(OutputStream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
+  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
 
   /** For model functions and "measures".
       Obtain the passed "model instance" from the first parameter.
       An error message is displayed if an error occurs.
   */
   model_instance* grabModelInstance(traverse_data &x, expr* first) const;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                      model_internal class                      *
+// *                                                                *
+// ******************************************************************
+
+/**   The base class of internal model functions with formal parameters.
+
+      Basically, a thin wrapper around simple_internal,
+      automatically adding the hidden model parameter.
+*/  
+class model_internal : public simple_internal {
+public:
+  /** Constructor.
+        @param  t     Function return type (fixed).
+        @param  name  Function name.
+        @param  nf    Number of visible formal parameters.
+  */
+  model_internal(const type* t, const char* name, int nf);
+  virtual ~model_internal();
 };
 
 // ******************************************************************

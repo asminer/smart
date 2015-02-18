@@ -233,8 +233,6 @@ public:
 EX_base::EX_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -303,8 +301,6 @@ public:
 EF_base::EF_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -374,8 +370,6 @@ public:
 EU_base::EU_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
 }
@@ -459,8 +453,6 @@ public:
 EG_base::EG_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -540,8 +532,6 @@ public:
 AX_base::AX_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -614,8 +604,6 @@ public:
 AF_base::AF_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -699,8 +687,6 @@ public:
 AG_base::AG_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
 }
 
@@ -775,8 +761,6 @@ public:
 AU_base::AU_base(const char* name, bool rt)
  : CTL_engine(em->STATESET, name, rt, 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
 }
@@ -898,8 +882,6 @@ public:
 AEF_si::AEF_si()
  : CTL_engine(em->STATESET, "AEF", false, 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
   SetDocumentation("AEF operator: build set of source states, from which we can guarantee that we reach a state in q.  For states in p, we can choose the next state; otherwise we cannot.");
@@ -952,8 +934,6 @@ public:
 num_paths::num_paths()
 : CTL_engine(em->BIGINT, "num_paths", false, 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "src");
   SetFormal(2, em->STATESET, "dest");
   SetDocumentation("Count the number of distinct paths from src states to dest states.  Will be infinite if any of these paths contains a cycle.");

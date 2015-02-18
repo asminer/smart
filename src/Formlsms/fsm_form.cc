@@ -305,16 +305,14 @@ bool fsm_formalism::canAssignType(const type* vartype) const
 // *                             fsm_init class                             *
 // **************************************************************************
 
-class fsm_init : public simple_internal {
+class fsm_init : public model_internal {
 public:
   fsm_init();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_init::fsm_init() : simple_internal(em->VOID, "init", 2)
+fsm_init::fsm_init() : model_internal(em->VOID, "init", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->findType("{state}"), "s");
   SetRepeat(1);
   SetDocumentation("Sets the initial state(s) for a finite state machine model.");
@@ -358,16 +356,14 @@ void fsm_init::Compute(traverse_data &x, expr** pass, int np)
 // *                             fsm_arcs class                             *
 // **************************************************************************
 
-class fsm_arcs : public simple_internal {
+class fsm_arcs : public model_internal {
 public:
   fsm_arcs();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_arcs::fsm_arcs() : simple_internal(em->VOID, "arcs", 2)
+fsm_arcs::fsm_arcs() : model_internal(em->VOID, "arcs", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   typelist* tl = new typelist(2);
   const type* state = em->findType("state");
   tl->SetItem(0, state);
@@ -419,16 +415,14 @@ void fsm_arcs::Compute(traverse_data &x, expr** pass, int np)
 // *                           fsm_instate  class                           *
 // **************************************************************************
 
-class fsm_instate : public simple_internal {
+class fsm_instate : public model_internal {
 public:
   fsm_instate();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_instate::fsm_instate() : simple_internal(em->BOOL->addProc(), "in_state", 2)
+fsm_instate::fsm_instate() : model_internal(em->BOOL->addProc(), "in_state", 2)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   const type* state = em->findType("state");
   SetFormal(1, state->getSetOfThis(), "sset");
   SetDocumentation("Returns true iff the finite state machine is in one of the specified states.");
@@ -460,17 +454,15 @@ void fsm_instate::Compute(traverse_data &x, expr** pass, int np)
 // *                          fsm_absorbing  class                          *
 // **************************************************************************
 
-class fsm_absorbing : public simple_internal {
+class fsm_absorbing : public model_internal {
 public:
   fsm_absorbing();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 fsm_absorbing::fsm_absorbing() 
- : simple_internal(em->BOOL->addProc(), "is_absorbed", 1)
+ : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns true iff the finite state machine is in an absorbing state (this includes deadlocked states).");
 }
 
@@ -496,17 +488,15 @@ void fsm_absorbing::Compute(traverse_data &x, expr** pass, int np)
 // *                          fsm_deadlocked class                          *
 // **************************************************************************
 
-class fsm_deadlocked : public simple_internal {
+class fsm_deadlocked : public model_internal {
 public:
   fsm_deadlocked();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 fsm_deadlocked::fsm_deadlocked() 
- : simple_internal(em->BOOL->addProc(), "is_deadlocked", 1)
+ : model_internal(em->BOOL->addProc(), "is_deadlocked", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns true iff the finite state machine is in a deadlocked state (no outgoing edges).");
 }
 

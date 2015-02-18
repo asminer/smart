@@ -430,7 +430,7 @@ void timeorder_msrs::Blocked2Next()
 // ******************************************************************
 
 msr_func::msr_func(eng_class ec, const type* t, const char* name, int nf)
- : simple_internal(t, name, nf)
+ : model_internal(t, name, nf)
 {
   ect = ec;
 }

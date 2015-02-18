@@ -200,8 +200,6 @@ public:
 PF_func::PF_func()
  : CSL_engine(em->STATEPROBS, "PF", 3)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->REAL, "t");
   SetDocumentation("Determine for each possible state, the probability that a path starting from that state has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...\nwhere p is satisfied by time t (or with no time limit if t is infinity).");
@@ -254,8 +252,6 @@ public:
 PU_func::PU_func()
  : CSL_engine(em->STATEPROBS, "PU", 4)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
   SetFormal(3, em->REAL, "t");
@@ -313,8 +309,6 @@ TF_func::TF_func(const type* rt, const char* name, bool dist_param)
  : CSL_engine(rt, name, dist_param ? 3 : 2)
 {
   llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   if (dist_param) {
     SetFormal(2, em->STATEDIST, "pi0");
@@ -395,8 +389,6 @@ TU_func::TU_func(const type* rt, const char* name, bool dist_param)
  : CSL_engine(rt, name, dist_param ? 4 : 3)
 {
   llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
   if (dist_param) {

@@ -23,8 +23,6 @@ public:
 init_dist_si::init_dist_si()
  : proc_noengine(Stochastic, em->STATEDIST, "init_dist", 1)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
   SetDocumentation("Returns the distribution over states at time 0, or null if the model is not stochastic.");
 }
 
@@ -78,8 +76,6 @@ engtype* stoch_msr::TransientAccumulated    = 0;
 stoch_msr::stoch_msr(const type* rettype, const char* name, int np)
  : msr_func(Stochastic, rettype, name, np)
 {
-  SetFormal(0, em->MODEL, "m");
-  HideFormal(0);
 }
 
 // *******************************************************************

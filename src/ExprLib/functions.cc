@@ -281,6 +281,15 @@ symbol* function::FindFormal(const char* name) const
   return 0;
 }
 
+int function::TypecheckParams(symbol**, int, ns_status &status) const
+{
+  //
+  // Safe default behavior
+  //
+  status = Not_Allowed;
+  return 0;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                       named_param  class                       *
@@ -609,6 +618,7 @@ void fplist::build(int n, const type* t, const char* name)
 {
   CHECK_RANGE(0, n, num_formal);
   DCASSERT(t);
+  DCASSERT(0==formal[n]);
   formal[n] = new formal_param(t, name);
 }
 
@@ -908,6 +918,15 @@ int fplist::check(const exprman* em, expr** pass, int np, const type* ret) const
   return scores[0];
 }
 
+int fplist::check(const exprman* em, symbol** pass, int np, const type* ret,
+    function::ns_status &status) const
+{
+  // TBD!!!!!
+  //
+  status = function::Not_Allowed;
+  return 0;
+}
+
 const type* fplist
 ::getType(const exprman* em, expr** pass, int np, const type* rt) const
 {
@@ -1075,6 +1094,13 @@ symbol* simple_internal::FindFormal(const char* name) const
   return formals.find(name);
 }
 
+int simple_internal
+::TypecheckParams(symbol** pass, int np, ns_status &status) const
+{
+  return formals.check(em, pass, np, Type(), status);
+}
+
+
 model_instance* simple_internal
  ::grabModelInstance(traverse_data &x, expr* first) const
 {
@@ -1090,6 +1116,23 @@ model_instance* simple_internal
   em->cerr() << "Function " << Name() << " is allowed only in measures";
   em->stopIO();
   return 0;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                     model_internal methods                     *
+// *                                                                *
+// ******************************************************************
+
+model_internal::model_internal(const type* t, const char* name, int nf)
+ : simple_internal(t, name, nf)
+{
+  SetFormal(0, em->MODEL, "-m");  // Impossible name!
+  formals.hide(0);
+}
+
+model_internal::~model_internal()
+{
 }
 
 // ******************************************************************
@@ -1161,6 +1204,7 @@ public:
       s.PutFile(return_expr->Filename(), return_expr->Linenumber());
     }
   };
+  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
 };
 
 user_func::user_func(function* f, formal_param** pl, int np) : function(f)
@@ -1245,6 +1289,12 @@ void user_func::DocumentBehavior(doc_formatter* df) const
   df->Out() << "Defined ";
   df->Out().PutFile(Filename(), Linenumber());
 }
+
+int user_func::TypecheckParams(symbol** pass, int np, ns_status &status) const
+{
+  return formals.check(em, pass, np, Type(), status);
+}
+
 
 
 // ******************************************************************
