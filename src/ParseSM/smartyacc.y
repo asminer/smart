@@ -893,11 +893,6 @@ passed_params
   Reducing("passed_params : LPAR pos_params RPAR");
   $$ = $2;
 }
-      |   LPAR RPAR
-{
-  Reducing("passed_params : LPAR RPAR");
-  $$ = 0;
-}
       ;
 
 pos_params 
@@ -932,6 +927,11 @@ named_params
 {
   Reducing("named_params : LPAR named_list RPAR");
   $$ = $2;
+}
+      |   LPAR RPAR
+{
+  Reducing("named_params : LPAR RPAR");
+  $$ = 0;
 }
       ;
 

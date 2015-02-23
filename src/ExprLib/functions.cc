@@ -9,6 +9,7 @@
 #include "mod_inst.h"
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>   // for INT_MIN
 
 // #define DEBUG_FUNC_WRAPPERS
 
@@ -281,13 +282,14 @@ symbol* function::FindFormal(const char* name) const
   return 0;
 }
 
-int function::TypecheckParams(symbol**, int, ns_status &status) const
+int function::maxNamedParams() const
 {
-  //
-  // Safe default behavior
-  //
-  status = Not_Allowed;
-  return 0;
+  return -1;  // don't even try with named params
+}
+
+int function::named2Positional(symbol**, int, expr**, int) const
+{
+  return INT_MIN;
 }
 
 // ******************************************************************
@@ -301,13 +303,16 @@ int function::TypecheckParams(symbol**, int, ns_status &status) const
 */
 class named_param : public symbol {
   expr* pass;
+
 public:
   named_param(const char* fn, int line, char* n, expr* p);
   virtual ~named_param();
 
   virtual bool Print(OutputStream &s, int width) const;
-  // TBD the rest
-  // probably will need helpers for building function calls
+
+  inline expr* copyPass() const {
+    return Share(pass);
+  }
 };
 
 
@@ -684,16 +689,16 @@ void fplist::PrintHeader(OutputStream &s, bool hide) const
   s << ")";
 }
 
-symbol* fplist::find(const char* name) const
+int fplist::findIndex(const char* name) const
 {
-  if (0==name) return 0;
+  if (0==name) return -1;
   for (int i=0; i<num_formal; i++) {
     DCASSERT(formal);
     DCASSERT(formal[i]);
     DCASSERT(formal[i]->Name());
-    if (0==strcmp(name, formal[i]->Name())) return formal[i];
+    if (0==strcmp(name, formal[i]->Name())) return i;
   }
-  return 0;
+  return -1;
 }
 
 bool fplist::matches(symbol** pl, int np) const
@@ -918,15 +923,6 @@ int fplist::check(const exprman* em, expr** pass, int np, const type* ret) const
   return scores[0];
 }
 
-int fplist::check(const exprman* em, symbol** pass, int np, const type* ret,
-    function::ns_status &status) const
-{
-  // TBD!!!!!
-  //
-  status = function::Not_Allowed;
-  return 0;
-}
-
 const type* fplist
 ::getType(const exprman* em, expr** pass, int np, const type* rt) const
 {
@@ -987,6 +983,43 @@ void fplist::traverse(traverse_data &x)
     DCASSERT(formal[i]);
     formal[i]->Traverse(x);
   }
+}
+
+int fplist
+::named2Positional(exprman* em, symbol** np, int nnp, 
+    expr** buffer, int bufsize) const
+{
+  // if buffer is not large enough, don't bother!
+  if (bufsize < num_formal) {
+    buffer = 0;
+    bufsize = 0;
+  }
+
+  //
+  // First, initialize everything to "default"
+  if (buffer) {
+    for (int i=0; i<num_formal; i++) {
+      buffer[i] = em->makeDefault();
+    }
+  }
+
+  //
+  // Now, copy over named stuff
+  for (int i=0; i<nnp; i++) {
+    named_param* npi = dynamic_cast <named_param*> (np[i]);
+    if (0==npi) return -1-i;
+
+    int j = findIndex(npi->Name()); 
+    if (j < 0) return -1-i; 
+    
+    if (buffer) {
+      // Replace j with our passed expression
+      Delete(buffer[j]);  // should be default
+      buffer[j] = npi->copyPass();
+    }
+  }
+
+  return num_formal;
 }
 
 //
@@ -1094,12 +1127,16 @@ symbol* simple_internal::FindFormal(const char* name) const
   return formals.find(name);
 }
 
-int simple_internal
-::TypecheckParams(symbol** pass, int np, ns_status &status) const
+int simple_internal::maxNamedParams() const
 {
-  return formals.check(em, pass, np, Type(), status);
+  return formals.getLength();
 }
 
+int simple_internal
+::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
+{
+  return formals.named2Positional(em, np, nnp, buffer, bufsize);
+}
 
 model_instance* simple_internal
  ::grabModelInstance(traverse_data &x, expr* first) const
@@ -1204,7 +1241,8 @@ public:
       s.PutFile(return_expr->Filename(), return_expr->Linenumber());
     }
   };
-  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
+  virtual int maxNamedParams() const;
+  virtual int named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const;
 };
 
 user_func::user_func(function* f, formal_param** pl, int np) : function(f)
@@ -1290,9 +1328,15 @@ void user_func::DocumentBehavior(doc_formatter* df) const
   df->Out().PutFile(Filename(), Linenumber());
 }
 
-int user_func::TypecheckParams(symbol** pass, int np, ns_status &status) const
+int user_func::maxNamedParams() const
 {
-  return formals.check(em, pass, np, Type(), status);
+  return formals.getLength();
+}
+
+int user_func
+::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
+{
+  return formals.named2Positional(em, np, nnp, buffer, bufsize);
 }
 
 
