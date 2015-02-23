@@ -226,6 +226,60 @@ inline EXPR* ShowWhatWeBuilt(const char* what, EXPR* f)
   return f;
 }
 
+void ShowPosCall(OutputStream &s, const char* name, expr** pass, int first, int length)
+{
+  s << name << "(";
+  for (int i=first; i<length; i++) {
+    if (i>first)  s << ", ";
+    if (pass[i])  pass[i]->PrintType(s);
+    else          s.Put("null");
+  }
+  s << ")";
+}
+
+void ShowNamedCall(OutputStream &s, const char* name, symbol** pass, int length)
+{
+  s << name << "(";
+  bool comma = false;
+  for (int i=0; i<length; i++) {
+    if (0==pass) continue;  // possible?
+    const char* n = pass[i]->Name();
+    if (0==n) continue;
+    if ('-' == n[0]) continue;  // hidden parameter
+    if (comma)  s << ", ";
+    pass[i]->PrintType(s);
+    s.Put(' ');
+    s.Put(n);
+    comma = true;
+  }
+  s << ")";
+}
+
+/* =====================================================================
+
+  Dealing with buffer for positional parameters
+
+   ===================================================================== */
+
+/// Global buffer for converting named to positional parameters.
+expr** temp_params = 0;
+
+/// Size of temp_params buffer.
+int temp_params_size = 0;
+
+inline void ExpandBuffer(int reqd)
+{
+  if (temp_params_size >= reqd) return;
+  temp_params_size = 16;
+  while (temp_params_size < reqd) temp_params_size *= 2;
+  temp_params = (expr**) realloc(temp_params, temp_params_size * sizeof(expr*));
+}
+
+inline void DeleteBuffer(int length)
+{
+  for (int i=0; i<length; i++) Delete(temp_params[i]);
+  // DON'T delete the actual buffer
+}
 
 /* =====================================================================
 
@@ -1596,14 +1650,30 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
 // *                                                                *
 // ******************************************************************
 
+//
+// Positional parameter matching
+// 
+
 // Helper for FindBest
 function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 {
+  if (find) if (compiler_debug.startReport()) {
+    compiler_debug.report() << "matching positional call ";
+    ShowPosCall(compiler_debug.report(), find->Name(), pass, 0, np);
+    compiler_debug.report().Put('\n');
+    compiler_debug.stopIO();
+  }
   function* best = 0;
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
     function* f = dynamic_cast <function*> (ptr);
     if (0==f)  continue;
     int score = f->TypecheckParams(pass, np);
+    if (compiler_debug.startReport()) {
+      compiler_debug.report() << "scored ";
+      f->PrintHeader(compiler_debug.report(), false);
+      compiler_debug.report() << ": " << score << "\n";
+      compiler_debug.stopIO();
+    }
     if (score < 0)    continue;
     if (score == bs)  {
       tie = true;
@@ -1631,7 +1701,7 @@ void showMatching(symbol* find, expr** pass, int np, int best_score)
   } // for ptr
 }
 
-// Function/model call scoring
+// Function/model call scoring (positional parameters)
 function* FindBest(symbol* f1, symbol* f2, expr** pass, 
   int length, int first, bool no_match_error)
 {
@@ -1653,13 +1723,8 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
 
   if (best_score < 0) {
     if (no_match_error && pm->startError()) {
-      pm->cerr() << "No match for " << name << "(";
-      for (int i=first; i<length; i++) {
-        if (i>first)  pm->cerr() << ", ";
-        if (pass[i])  pass[i]->PrintType(pm->cerr());
-        else          pm->cerr().Put("null");
-      }
-      pm->cerr() << ")";
+      pm->cerr() << "No match for ";
+      ShowPosCall(pm->cerr(), name, pass, first, length);
       pm->stopError();
     }
     return 0;
@@ -1668,12 +1733,144 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
   if (tie) {
     if (pm->startError()) {
       pm->cerr() << "Multiple promotions with distance " << best_score;
-      pm->cerr() << " for " << name << "(";
-      for (int i=first; i<length; i++) {
-        if (i>first)  pm->cerr() << ", ";
-        pass[i]->PrintType(pm->cerr());
+      pm->cerr() << " for ";
+      ShowPosCall(pm->cerr(), name, pass, first, length);
+      pm->newLine();
+      pm->cerr() << "Possible choices:";
+      pm->newLine(1);
+      showMatching(f1, pass, length, best_score);
+      showMatching(f2, pass, length, best_score);
+      pm->changeIndent(-1);
+      pm->stopError();
+    }
+    return 0;
+  }
+
+  return best;
+}
+
+
+//
+// Named parameter matching
+// 
+
+// Helper for FindBest
+function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
+{
+  if (find) if (compiler_debug.startReport()) {
+    compiler_debug.report() << "matching named call ";
+    ShowNamedCall(compiler_debug.report(), find->Name(), pass, np);
+    compiler_debug.report().Put('\n');
+    compiler_debug.stopIO();
+  }
+  function* best = 0;
+  for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
+    function* f = dynamic_cast <function*> (ptr);
+    if (0==f)  continue;
+
+    //
+    // Convert named to positional, if we can for this function
+    //
+    int mnp = f->maxNamedParams();
+    if (mnp < 0) continue;    // can't call this function with named params
+    ExpandBuffer(mnp);  
+    int ntp = f->named2Positional(pass, np, temp_params, temp_params_size);
+    if (ntp < 0) {
+      //
+      // Couldn't convert; bad name or missing something required
+      //
+      if (compiler_debug.startReport()) {
+        compiler_debug.report() << "failed conversion to ";
+        f->PrintHeader(compiler_debug.report(), false);
+        compiler_debug.report() << ": " << ntp << "\n";
+        compiler_debug.stopIO();
       }
-      pm->cerr() << ")";
+      continue;
+    }
+
+    //
+    // Now, typecheck the positional, as usual
+    //
+    int score = f->TypecheckParams(temp_params, ntp);
+    DeleteBuffer(ntp);  // cleanup
+    if (compiler_debug.startReport()) {
+      compiler_debug.report() << "scored ";
+      f->PrintHeader(compiler_debug.report(), false);
+      compiler_debug.report() << ": " << score << "\n";
+      compiler_debug.stopIO();
+    }
+    if (score < 0)    continue;
+    if (score == bs)  {
+      tie = true;
+      continue;
+    }
+    if ((bs < 0) || (score < bs)) {
+      tie = false;
+      best = f;
+      bs = score;
+    }
+  }
+  return best;
+}
+
+// Helper for FindBest
+void showMatching(symbol* find, symbol** pass, int np, int best_score)
+{
+  for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
+    function* f = dynamic_cast <function*> (ptr);
+    if (0==f)      continue;
+    //
+    // Convert named to positional, if we can for this function
+    //
+    int mnp = f->maxNamedParams();
+    if (mnp < 0) continue;    // can't call this function with named params
+    ExpandBuffer(mnp);  
+    int ntp = f->named2Positional(pass, np, temp_params, temp_params_size);
+    if (ntp < 0) continue;    // can't convert
+
+    int score = f->TypecheckParams(temp_params, ntp);
+    DeleteBuffer(ntp);
+    if (score != best_score)  continue;
+    f->PrintHeader(pm->cerr(), true);
+    pm->newLine();
+  } // for ptr
+}
+
+
+// Function/model call scoring (named parameters)
+function* FindBest(symbol* f1, symbol* f2, symbol** pass, 
+  int length, bool no_match_error)
+{
+  if (0==f1 && 0==f2) return 0;
+  const char* name = f1 ? f1->Name() : f2->Name();
+  int best_score = -1;
+  bool tie = false;
+  function* best = scoreFuncs(f1, pass, length, best_score, tie);
+  if (best_score != 0) {
+    int old_best = best_score;
+    function* best2 = scoreFuncs(f2, pass, length, best_score, tie);
+    if (best) {
+      DCASSERT(old_best>=0);
+      if (best2 && old_best < best_score) best = best2;
+    } else {
+      best = best2;
+    }
+  }
+
+  if (best_score < 0) {
+    if (no_match_error && pm->startError()) {
+      pm->cerr() << "No match for ";
+      ShowNamedCall(pm->cerr(), name, pass, length);
+      pm->stopError();
+    }
+    return 0;
+  }
+
+  if (tie) {
+    if (pm->startError()) {
+      pm->cerr() << "Multiple promotions with distance " << best_score;
+      pm->cerr() << " for ";
+      ShowNamedCall(pm->cerr(), name, pass, length);
       pm->newLine();
       pm->cerr() << "Possible choices:";
       pm->newLine(1);
@@ -2183,13 +2380,9 @@ shared_object* MakeModelCall(char* n, parser_list* list)
       if (0==length) {
         pm->cerr() << best->Name() << " is not a model";
       } else {
-        pm->cerr() << "Expected model for call " << best->Name() << "(";
-        for (int i=0; i<length; i++) {
-          if (i)        pm->cerr() << ", ";
-          if (pass[i])  pass[i]->PrintType(pm->cerr());
-          else          pm->cerr().Put("null");
-        }
-        pm->cerr() << "), but it matches";
+        pm->cerr() << "Expected model for call ";
+        ShowPosCall(pm->cerr(), best->Name(), pass, 0, length);
+        pm->cerr() << ", but it matches";
         pm->newLine(1);
         best->PrintHeader(pm->cerr(), true);
         pm->cerr() << " declared ";
@@ -2328,10 +2521,86 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
 }
 
 // --------------------------------------------------------------
-expr* BuildFuncCallNP(char* n, parser_list* posparams)
+expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 {
-  // TBD!
-  return 0;
+  //
+  // Static array for named params
+  //
+  static symbol** pass = 0;
+  static int passlen = 0;
+
+  symbol* find = em->findFunction(ModelType, n);
+  symbol* find2 = 0;
+  if (find) {
+    // we have a match within a model, add model to params
+    symbol* passmodel = BuildNamed(
+      strdup("-m"), Share((expr*) model_under_construction)
+    );
+    namedparams = PrependCircular(namedparams, passmodel);
+  } else {
+    find = ModelInternal ? ModelInternal->FindSymbol(n) : 0;
+    find2 = Funcs->FindSymbol(n);
+  }
+
+  if (0==find && 0==find2) {
+    if (pm->startError()) {
+      if (namedparams)  pm->cerr() << "Unknown function ";
+      else              pm->cerr() << "Unknown identifier: ";
+      pm->cerr() << n;
+      pm->stopError();
+    }
+    free(n);
+    DeleteCircular(namedparams);
+    return em->makeError();
+  }
+  free(n);
+
+  //
+  // Determine list length
+  //
+
+  int length = CircularLength(namedparams);
+
+  //
+  // Enlarge our static array?
+  //
+  if (length > passlen) {
+    passlen = 16;
+    while (length > passlen) passlen *= 2;
+    pass = (symbol**) realloc(pass, passlen * sizeof(symbol*));
+  }
+
+  //
+  // Dump parameters to our static array
+  //
+  
+  if (length) {
+    CopyCircular(namedparams, pass, length);
+  } 
+  RecycleCircular(namedparams);
+
+  //
+  // Find best match
+  //
+  function* best = FindBest(find, find2, pass, length, true);
+  if (0==best) {
+    for (int i=0; i<length; i++)  Delete(pass[i]);
+    return em->makeError();
+  }
+
+  //
+  // Build call and cleanup
+  //
+  int np = best->named2Positional(pass, length, temp_params, temp_params_size);
+  expr** posparams = new expr*[np];
+  for (int i=0; i<np; i++) {
+    posparams[i] = temp_params[i];
+    temp_params[i] = 0;
+  }
+  for (int i=0; i<length; i++)  Delete(pass[i]);
+  return ShowWhatWeBuilt(0,
+    em->makeFunctionCall(Filename(), Linenumber(), best, posparams, np)
+  );
 }
 
 // --------------------------------------------------------------

@@ -53,18 +53,6 @@ public:
   static const int Promote_MTMismatch = 1;
   static const int Promote_Dependent = 2;
 
-  enum ns_status {
-    /// Named parameters are ok
-    Success,          
-    /// Some parameter has the wrong type
-    Wrong_Type,       
-    /// Some parameter has an illegal name
-    Illegal_Name,     
-    /// Some required parameter is missing
-    Missing_Param,    
-    /// This function does not allow named parameters
-    Not_Allowed       
-  };
 public:
   function(const function* f);
   function(const char* fn, int line, const type* t, char* n);
@@ -237,21 +225,33 @@ public:
   virtual symbol* FindFormal(const char* name) const;
 
 
-  /** Give a type-checking score for named parameters.
-        @param  pass    Array of passed parameters, in order.
-        @param  np      Number of passed parameters.
-        @param  status  Output parameter: how to interpret the result.
+  /** Give the maximum number of named parameters that can be passed.
+      Default: returns a negative number.
 
-        @return If status is Success, then return the total promotion
-                distance required for the named parameters to match
-                the formal parameters.
-                If status is Not_Allowed, then the return value is
-                meaningless.
-                Otherwise, the return value is the position of the
-                (first) offending parameter.
+        @return negative, if this function cannot be called with named parameters;
+                max number of named parameters, otherwise.
   */
-  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
+  virtual int maxNamedParams() const;
 
+  /** Convert named parameters to positional ones.
+      Does NO typechecking; only converts based on parameter names.
+
+        @param  np      Input: Array of named parameters 
+        @param  nnp     Input: Number of named parameters
+        @param  buffer  Output: Positional parameters will be stored here
+        @param  bufsize Input: Size of buffer. Must be at least 
+                        as large as maxNamedParams().
+
+        @return non-negative:     number of positional parameters
+                -1..-nnp:         negated position of first 
+                                  named parameter not found 
+                -nnp-1..-nnp-mnp: position of required positional parameter,
+                                  not provided (negated, and decreased by nnp).
+
+                -a lot            if we cannot do it (default implementation
+                                  returns this).
+  */
+  virtual int named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const;
 };
 
 // ******************************************************************
@@ -356,8 +356,15 @@ public:
     x.answer = save;
   }
 
+  /// Find formal param with the given name.
+  int findIndex(const char* name) const;
+
   /// Is there a formal param with given name?
-  symbol* find(const char* name) const;
+  inline symbol* find(const char* name) const {
+    int i = findIndex(name);
+    if (i<0) return 0;
+    return (symbol*) formal[i];
+  }
 
   /// Do the formal params match
   bool matches(symbol** pl, int np) const;
@@ -405,21 +412,6 @@ public:
   int check(const exprman* em, expr** pass, int np, const type* rt) const;
 
 
-  /** Give a type-checking score for named parameters, and return type.
-      The return type is required so we can determine if
-      "formal parameter promotion" is possible or not.
-
-      @param  em      Expression manager.
-      @param  pass    Array of passed parameters, in order.
-      @param  np      Number of passed parameters.
-      @param  rt      Unmodified return type.
-      @param  status  Output: status of named to positional conversion.
-
-      @return The score, taking everything into account.
-  */
-  int check(const exprman* em, symbol** pass, int np, const type* rt,
-            function::ns_status &status) const;
-
   /** Return type, based on passed parameters.
       Assumes the passed parameters will fit with some kind of 
       formal parameter promotion.
@@ -446,6 +438,28 @@ public:
 
   /// Traverse all formals.
   void traverse(traverse_data &x);
+
+  /** Convert named parameters to positional ones.
+      Does NO typechecking; only converts based on parameter names.
+
+        @param  em      Expression manager; needed to build defaults.
+        @param  np      Input: Array of named parameters 
+        @param  nnp     Input: Number of named parameters
+        @param  buffer  Output: Positional parameters will be stored here
+        @param  bufsize Input: Size of buffer. Must be at least 
+                        as large as maxNamedParams().
+
+        @return non-negative:     number of positional parameters
+                -1..-nnp:         negated position of first 
+                                  named parameter not found 
+                -nnp-1..-nnp-mnp: position of required positional parameter,
+                                  not provided (negated, and decreased by nnp).
+
+                -a lot            if we cannot do it (default implementation
+                                  returns this).
+  */
+  int named2Positional(exprman* em, symbol** np, int nnp, 
+          expr** buffer, int bufsize) const;
 
 private:
   
@@ -517,12 +531,6 @@ public:
     formals.build(n, t, name);
   }
 
-  /*
-  inline void HideFormal(int n) {
-    formals.hide(n);
-  }
-  */
-
   virtual bool IsHidden(int fpnum) const;
 
   virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
@@ -544,7 +552,9 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   virtual void PrintHeader(OutputStream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
-  virtual int TypecheckParams(symbol** pass, int np, ns_status &status) const;
+
+  virtual int maxNamedParams() const;
+  virtual int named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const;
 
   /** For model functions and "measures".
       Obtain the passed "model instance" from the first parameter.
