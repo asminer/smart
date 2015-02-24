@@ -153,6 +153,62 @@ ERROR in file funcs.sm near line 137:
     Function cvgzplus defined within a for/converge
 ERROR in file funcs.sm near line 137:
     Unknown identifier: x
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Should be 8: 8
+Ambiguous:
+ERROR in file funcs.sm near line 167:
+    Multiple promotions with distance 0 for mynamed(int a)
+    Possible choices:
+        int mynamed(int a, int c:=1, int d:=1)
+        int mynamed(int a, int b:=1)
+        
+Duplicates:
+ERROR in file funcs.sm near line 177:
+    Parameter names for `mynamed' conflict with existing:
+        int mynamed(int a, int c:=1, int d:=1)
+        int mynamed(int a, int b:=1)
+        
+ERROR in file funcs.sm near line 177:
+    Unknown identifier: a
+ERROR in file funcs.sm near line 178:
+    Duplicate formal parameter `x'
+ERROR in file funcs.sm near line 178:
+    Parameter names for `mynamed' conflict with existing:
+        int mynamed(int a, int b:=1)
+        
+ERROR in file funcs.sm near line 178:
+    Unknown identifier: a
+ERROR in file funcs.sm near line 178:
+    Unknown identifier: b
+ERROR in file funcs.sm near line 178:
+    Unknown identifier: a
+ERROR in file funcs.sm near line 178:
+    Unknown identifier: x
+ERROR in file funcs.sm near line 179:
+    Parameter names for `mynamed' conflict with existing:
+        int mynamed(int a, int c:=1, int d:=1)
+        
+ERROR in file funcs.sm near line 179:
+    Unknown identifier: a
+ERROR in file funcs.sm near line 179:
+    Unknown identifier: y
+ERROR in file funcs.sm near line 179:
+    Unknown identifier: c
+ERROR in file funcs.sm near line 179:
+    Unknown identifier: d
+Not duplicates:
+Should be 8: 8
+Should be 6: 6.000000
 
 
 Just for kicks:
