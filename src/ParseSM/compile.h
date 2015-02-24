@@ -520,7 +520,14 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2);
       @param  list  List of positional parameters (or 0 for none).
       @return A data structure with information about the call.
 */
-shared_object* MakeModelCall(char* n, parser_list* list);
+shared_object* MakeModelCallPP(char* n, parser_list* list);
+
+/** Handle the first half of a model call.
+      @param  n     Name of the model to invoke.
+      @param  list  List of named parameters (or 0 for none).
+      @return A data structure with information about the call.
+*/
+shared_object* MakeModelCallNP(char* n, parser_list* list);
 
 /** Find the best "function with no parameters".
     We check formal parameters, for loop iterators, and user-defined

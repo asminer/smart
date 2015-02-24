@@ -257,32 +257,6 @@ void ShowNamedCall(OutputStream &s, const char* name, symbol** pass, int length)
 
 /* =====================================================================
 
-  Dealing with buffer for positional parameters
-
-   ===================================================================== */
-
-/// Global buffer for converting named to positional parameters.
-expr** temp_params = 0;
-
-/// Size of temp_params buffer.
-int temp_params_size = 0;
-
-inline void ExpandBuffer(int reqd)
-{
-  if (temp_params_size >= reqd) return;
-  temp_params_size = 16;
-  while (temp_params_size < reqd) temp_params_size *= 2;
-  temp_params = (expr**) realloc(temp_params, temp_params_size * sizeof(expr*));
-}
-
-inline void DeleteBuffer(int length)
-{
-  for (int i=0; i<length; i++) Delete(temp_params[i]);
-  // DON'T delete the actual buffer
-}
-
-/* =====================================================================
-
   Struct for model calls
 
    ===================================================================== */
@@ -563,6 +537,162 @@ bool BadIteratorList(char* n, parser_list* list)
   DeleteCircular(list);
   return false;
 }
+
+/* =====================================================================
+
+  Singleton class for named parameters
+
+   ===================================================================== */
+
+class named_paramarray {
+  symbol** pass;
+  int passalloc;
+  int passlen;
+
+private:
+  named_paramarray();
+  ~named_paramarray();
+
+public:
+  static named_paramarray& theNamedList() {
+    static named_paramarray* TheOne = 0;
+    if (0==TheOne) TheOne = new named_paramarray();
+    return *TheOne;
+  }
+
+  // not the best encapsulation, but better than before.
+  inline symbol** getList() const { return pass; }
+  inline int getLength() const { return passlen; }
+
+  // Initialize from a list, which is destroyed
+  void initFromList(parser_list* &namedparams);
+
+  // Recycle the current list
+  void recycle();
+};
+
+named_paramarray::named_paramarray()
+{
+  pass = 0;
+  passalloc = 0;
+  passlen = 0;
+}
+
+named_paramarray::~named_paramarray()
+{
+  free(pass);
+}
+
+void named_paramarray::initFromList(parser_list* &namedparams)
+{
+  //
+  // Determine list length
+  //
+  passlen = CircularLength(namedparams);
+
+  //
+  // Enlarge our static array?
+  //
+  if (passlen > passalloc) {
+    passalloc = 16;
+    while (passlen > passalloc) passalloc *= 2;
+    pass = (symbol**) realloc(pass, passalloc * sizeof(symbol*));
+  }
+
+  //
+  // Dump parameters to our static array
+  //
+  if (passlen) {
+    CopyCircular(namedparams, pass, passlen);
+  } 
+  RecycleCircular(namedparams);
+}
+
+void named_paramarray::recycle()
+{
+  for (int i=0; i<passlen; i++) {
+    Delete(pass[i]);
+  }
+  passlen = 0;
+}
+
+/* =====================================================================
+
+  Singleton class for positional parameters
+
+   ===================================================================== */
+
+class pos_paramarray {
+  expr** pass;
+  int passalloc;
+
+private:
+  pos_paramarray();
+  ~pos_paramarray();
+
+public:
+  static pos_paramarray& thePosList() {
+    static pos_paramarray* TheOne = 0;
+    if (0==TheOne) TheOne = new pos_paramarray();
+    return *TheOne;
+  }
+
+  inline void alloc(int reqd) {
+    if (reqd > passalloc) Expand(reqd);
+  }
+
+private:
+  void Expand(int reqd);
+
+public:
+  // not the best encapsulation, but better than before.
+  inline expr** getList() const { return pass; }
+  inline int maxList() const { return passalloc; }
+
+  expr** Compactify(int len);
+  void recycle(int len);
+};
+
+pos_paramarray::pos_paramarray()
+{
+  pass = 0;
+  passalloc = 0;
+}
+
+pos_paramarray::~pos_paramarray()
+{
+  free(pass);
+}
+
+void pos_paramarray::Expand(int reqd)
+{
+  passalloc = 16;
+  while (passalloc < reqd) passalloc *= 2;
+  pass = (expr**) realloc(pass, passalloc * sizeof(expr*));
+}
+
+expr** pos_paramarray::Compactify(int len)
+{
+  if (0==len) return 0;
+
+  DCASSERT(len <= passalloc);
+  
+  expr** compact = new expr*[len];
+  for (int i=0; i<len; i++) {
+    compact[i] = pass[i];
+    pass[i] = 0;
+  }
+  return compact;
+}
+
+void pos_paramarray::recycle(int len)
+{
+  DCASSERT(len <= passalloc);
+  for (int i=0; i<len; i++) {
+    Delete(pass[i]);
+  }
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -1755,6 +1885,8 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
 // Helper for FindBest
 function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
 {
+  pos_paramarray &ppa = pos_paramarray::thePosList();
+
   if (find) if (compiler_debug.startReport()) {
     compiler_debug.report() << "matching named call ";
     ShowNamedCall(compiler_debug.report(), find->Name(), pass, np);
@@ -1771,8 +1903,8 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
     //
     int mnp = f->maxNamedParams();
     if (mnp < 0) continue;    // can't call this function with named params
-    ExpandBuffer(mnp);  
-    int ntp = f->named2Positional(pass, np, temp_params, temp_params_size);
+    ppa.alloc(mnp);
+    int ntp = f->named2Positional(pass, np, ppa.getList(), ppa.maxList());
     if (ntp < 0) {
       //
       // Couldn't convert; bad name or missing something required
@@ -1789,8 +1921,8 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
     //
     // Now, typecheck the positional, as usual
     //
-    int score = f->TypecheckParams(temp_params, ntp);
-    DeleteBuffer(ntp);  // cleanup
+    int score = f->TypecheckParams(ppa.getList(), ntp);
+    ppa.recycle(ntp);   // cleanup
     if (compiler_debug.startReport()) {
       compiler_debug.report() << "scored ";
       f->PrintHeader(compiler_debug.report(), false);
@@ -1814,6 +1946,7 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
 // Helper for FindBest
 void showMatching(symbol* find, symbol** pass, int np, int best_score)
 {
+  pos_paramarray &ppa = pos_paramarray::thePosList();
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
     function* f = dynamic_cast <function*> (ptr);
     if (0==f)      continue;
@@ -1822,12 +1955,12 @@ void showMatching(symbol* find, symbol** pass, int np, int best_score)
     //
     int mnp = f->maxNamedParams();
     if (mnp < 0) continue;    // can't call this function with named params
-    ExpandBuffer(mnp);  
-    int ntp = f->named2Positional(pass, np, temp_params, temp_params_size);
+    ppa.alloc(mnp);
+    int ntp = f->named2Positional(pass, np, ppa.getList(), ppa.maxList());
     if (ntp < 0) continue;    // can't convert
 
-    int score = f->TypecheckParams(temp_params, ntp);
-    DeleteBuffer(ntp);
+    int score = f->TypecheckParams(ppa.getList(), ntp);
+    ppa.recycle(ntp);
     if (score != best_score)  continue;
     f->PrintHeader(pm->cerr(), true);
     pm->newLine();
@@ -2328,7 +2461,7 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
 }
 
 // --------------------------------------------------------------
-shared_object* MakeModelCall(char* n, parser_list* list)
+shared_object* MakeModelCallPP(char* n, parser_list* list)
 {
   symbol* find;
   if (0==list) {
@@ -2393,6 +2526,16 @@ shared_object* MakeModelCall(char* n, parser_list* list)
   }
 
   return new model_call_data(parent, pass, length);
+}
+
+// --------------------------------------------------------------
+shared_object* MakeModelCallNP(char* n, parser_list* list)
+{
+  if (pm->startError()) {
+    pm->cerr() << "MakeModelCallNP not implemented yet\n";
+    pm->stopError();
+  }
+  return 0;
 }
 
 // --------------------------------------------------------------
@@ -2521,11 +2664,7 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
 // --------------------------------------------------------------
 expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 {
-  //
-  // Static array for named params
-  //
-  static symbol** pass = 0;
-  static int passlen = 0;
+  named_paramarray& npa = named_paramarray::theNamedList();
 
   symbol* find = em->findFunction(ModelType, n);
   symbol* find2 = 0;
@@ -2554,48 +2693,30 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
   free(n);
 
   //
-  // Determine list length
+  // Initialize the named parameter list
   //
-
-  int length = CircularLength(namedparams);
-
-  //
-  // Enlarge our static array?
-  //
-  if (length > passlen) {
-    passlen = 16;
-    while (length > passlen) passlen *= 2;
-    pass = (symbol**) realloc(pass, passlen * sizeof(symbol*));
-  }
-
-  //
-  // Dump parameters to our static array
-  //
-  
-  if (length) {
-    CopyCircular(namedparams, pass, length);
-  } 
-  RecycleCircular(namedparams);
+  npa.initFromList(namedparams);
 
   //
   // Find best match
   //
-  function* best = FindBest(find, find2, pass, length, true);
+  function* best = FindBest(find, find2, npa.getList(), npa.getLength(), true);
   if (0==best) {
-    for (int i=0; i<length; i++)  Delete(pass[i]);
+    npa.recycle();
     return em->makeError();
   }
 
   //
   // Build call and cleanup
   //
-  int np = best->named2Positional(pass, length, temp_params, temp_params_size);
-  expr** posparams = new expr*[np];
-  for (int i=0; i<np; i++) {
-    posparams[i] = temp_params[i];
-    temp_params[i] = 0;
-  }
-  for (int i=0; i<length; i++)  Delete(pass[i]);
+  pos_paramarray& ppa = pos_paramarray::thePosList();
+  int np = best->named2Positional(
+    npa.getList(), npa.getLength(), ppa.getList(), ppa.maxList()
+  );
+  DCASSERT(ppa.maxList() >= np);
+  npa.recycle();
+
+  expr** posparams = ppa.Compactify(np);
   return ShowWhatWeBuilt(0,
     em->makeFunctionCall(Filename(), Linenumber(), best, posparams, np)
   );

@@ -782,12 +782,17 @@ model_call
       :   IDENT
 { 
   Reducing("model_call : IDENT");
-  $$ = MakeModelCall($1, 0);
+  $$ = MakeModelCallPP($1, 0);
 }
       |   IDENT passed_params
 { 
   Reducing("model_call : IDENT passed_params");
-  $$ = MakeModelCall($1, $2);
+  $$ = MakeModelCallPP($1, $2);
+}
+      |   IDENT named_params
+{ 
+  Reducing("model_call : IDENT named_params");
+  $$ = MakeModelCallNP($1, $2);
 }
       ;
 

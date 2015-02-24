@@ -543,6 +543,13 @@ of a function, but it is not possible to call that function with an
 implicit default for all of its parameters
 (i.e., at least one of them must be set to \Code{default} explicitly),
 since the function must be invoked with named parameters.
+\TBD{The above statement is now false.  It is a bit ugly, perhaps, but
+the function call \Code{f()} will use all default values,
+while \Code{f} will not.
+Perhaps worse, a ``constant'' can be called using either \Code{pi} or \Code{pi()}.
+In any event, the rule is that
+\Code{f()} uses named parameter passing, while \Code{f} uses positional 
+parameter passing.}
 
 \begin{comment}
 \subsection{A parallelizable \Code{for} statement}
@@ -668,7 +675,7 @@ of functions (adding proc and rand as necessary)}
 \Code{proc real        }&\Code{real}\\
 \hline
 \end{tabular}\end{center}
-\caption{Automatic type promotions.}
+\caption{Automatic type promotions. \TBD{Needs to be expanded.}}
 \label{TAB:typePromotions}
 \end{table}
 
