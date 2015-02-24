@@ -40,12 +40,12 @@ print("should get 10: ", plus(plus(plus(1,2), 3), 4), "\n");
 // Functions and their return types:
 
 real promote1(int a, int b) := a+b;
-real promote2(int c, real d) := c+d;
+real promote2(int c, real d) := c+d+0.1;
 
 # OutputRealFormat FIXED
 
 print("should be 5.0: ", promote1(2,3):2:1, "\n");
-print("should be 5.1: ", promote2(2,3.1):2:1, "\n");
+print("should be 5.1: ", promote2(2,3.0):2:1, "\n");
 
 print("This should be an error:\n");
 
@@ -136,6 +136,54 @@ converge {
   real z guess 10;
   real cvgzplus(real x) := x+z;
 }
+
+/*
+    Basic tests for named parameters
+*/
+
+int mynamed(int a, int b:=1) := a*b+a;
+
+print("Should be 8: ", mynamed(2, 3), "\n");
+print("Should be 8: ", mynamed(a:=2, b:=3), "\n");
+print("Should be 8: ", mynamed(b:=3, a:=2), "\n");
+print("Should be 8: ", mynamed(a:=4, b:=default), "\n");
+print("Should be 8: ", mynamed(a:=4), "\n");
+
+/*
+    Overloading and names
+*/
+
+int mynamed(int a, int c:=1, int d:=1) := a*c-a*d;
+
+print("Should be 8: ", mynamed(a:=4, b:=default), "\n");
+print("Should be 8: ", mynamed(c:=3, a:=4), "\n");
+print("Should be 8: ", mynamed(a:=4, c:=3), "\n");
+print("Should be 8: ", mynamed(d:=0, a:=8), "\n");
+print("Should be 8: ", mynamed(a:=8, d:=0), "\n");
+print("Should be 8: ", mynamed(a:=4, c:=1, d:=-1), "\n");
+print("Should be 8: ", mynamed(d:=-1, c:=1, a:=4), "\n");
+
+print("Ambiguous:\n");
+mynamed(a:=8);
+
+/*
+  Duplication errors.
+  Adding these functions would create a scenario where
+  some function would be impossible to call, because
+  all of its calls are ambiguous.
+*/
+
+print("Duplicates:\n");
+real mynamed(int a) := a/2;   
+real mynamed(real x:=0.0, int a, int b:=1, real x:=0.0) := a*b+a*x;
+real mynamed(int a, real y:=0.0, int c:=0, int d:=0) := a*y+c*d;
+
+print("Not duplicates:\n");
+real mynamed(int a, real y:=0.0, int c:=1) := a*c-y;
+real mynamed(real b:=1, int a) := a*b;
+
+print("Should be 8: ", mynamed(a:=2, b:=3), "\n");
+print("Should be 6: ", mynamed(a:=2, b:=3.0), "\n");
 
 
 /*

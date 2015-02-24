@@ -1220,15 +1220,13 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
       conflicts = true;
       errIO = pm->startError();
       if (errIO) {
-        pm->cerr() << "Parameter names for `" << n << "' are ambiguous with existing:";
+        pm->cerr() << "Parameter names for `" << n << "' conflict with existing:";
         pm->newLine(1);
       }
     }
     if (errIO) {
       f->PrintHeader(pm->cerr(), true);
       pm->newLine();
-      pm->cerr() << "declared ";
-      pm->cerr().PutFile(f->Filename(), f->Linenumber());
     }
   }
 
