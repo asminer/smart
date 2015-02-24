@@ -1,0 +1,21 @@
+// $Id$
+
+real f(real x) := x - x*x;
+# ConvergePrecision 0.00000001
+# UseCurrent false
+converge {
+  real x1 guess 0.0;    real f1 guess f(0.0);
+  real x2 guess 1/3;    real f2 guess f(1/3);
+  real x3 guess 2/3;    real f3 guess f(2/3);
+  real x4 guess 1.0;    real f4 guess f(1.0);
+  real x1 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, x3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, x2, x1));
+  real x2 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (2*x3+x4)/3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (2*x2+x3)/3, (2*x1+x2)/3));
+  real x3 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (x3+2*x4)/3,
+             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (x2+2*x3)/3, (x1+2*x2)/3));
+  real x4 := cond(f1 >= f2 & f2 >= f3 & f3 >= f4, x2,
+             cond(f1 <= f2 & f2 >= f3 & f3 >= f4, x3, x4));
+  real f1 := f(x1);  real f2 := f(x2);    real f3 := f(x3);    real f4 := f(x4);
+}
+print("The maximum value of `x-x^2' in [0,1] is ",f2,", achieved at ",x2,".\n");
