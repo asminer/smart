@@ -161,8 +161,11 @@ public:
   void PrintHeader(OutputStream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
   virtual bool IsHidden(int fpnum) const;
+  virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
   virtual void Traverse(traverse_data &x);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
+  virtual int maxNamedParams() const;
+  virtual int named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const;
 
   /// Like Compute(), but rebuild only if parameters have not changed.
   model_instance* Instantiate(traverse_data &x, expr** pass, int np);
