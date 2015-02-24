@@ -43,7 +43,6 @@ calls \Code{b(i1:=x3).o1} and \Code{b(i1:=x4).o1} with \Code{x3} and
 not be able to reuse work even if the value of \Code{x3}, \Code{x4},
 or both, are the same as in the previous iteration.
 
-\begin{comment}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Finding the optimal value of a function}
 
@@ -57,26 +56,9 @@ or righmost points if the values are in monotonic order), based on these values;
 we can then iterate the search within the remaining interval,
 and stop when the four points and the four values are sufficiently close.
 The following code illustrates how to do this in {\smart}:
-\begin{code}\begin{verbatim}
-real f(real x) := x - x*x;
-# Verbose true
-# ConvergePrecision 0.00000001
-# UseCurrent false
-converge {
-  real x1 guess 0.0; real x2 guess 1/3;   real x3 guess 2/3;   real x4 guess 1.0;
-  real f1 guess f(0);real f2 guess f(1/3);real f3 guess f(2/3);real f4 guess f(1);
-  real x1 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, x3,
-             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, x2, x1));
-  real x2 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (2*x3+x4)/3,
-             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (2*x2+x3)/3, (2*x1+x2)/3));
-  real x3 := cond(f1 <= f2 & f2 <= f3 & f3 <= f4, (x3+2*x4)/3,
-             cond(f1 <= f2 & f2 <= f3 & f3 >= f4, (x2+2*x3)/3, (x1+2*x2)/3));
-  real x4 := cond(f1 >= f2 & f2 >= f3 & f3 >= f4, x2,
-             cond(f1 <= f2 & f2 >= f3 & f3 >= f4, x3, x4));
-  real f1 := f(x1);  real f2 := f(x2);    real f3 := f(x3);    real f4 := f(x4);
-}
-print("The maximum value of `x-x^2' in [0,1] is ",f2,", achieved at ",x2,".\n");
-\end{verbatim}\end{code}
+%
+\lstinputlisting[firstline=3]{examples/maxima.sm}
+%
 Note that option \Code{UseCurrent} must be set to \Code{false} for this
 scheme to work properly, otherwise the values of $x_2$, $x_3$, and $x_4$
 would be updated using the new values computed for $x_1$, $x_2$, and $x_3$,
@@ -89,6 +71,7 @@ we can use it, for example, to find the time at which a given measure is
 maximized in a Petri net model or the value of a rate for which the probability
 of absorption is minimized in a continuous-time model.
 
+\begin{comment}
 %\newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dining philosophers}
