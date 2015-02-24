@@ -226,6 +226,11 @@ bool model_def::IsHidden(int fpnum) const
   return formals.isHidden(fpnum);
 }
 
+bool model_def::HasNameConflict(symbol** fp, int np, int* tmp) const
+{
+  return formals.hasNameConflict(fp, np, tmp);
+}
+
 void model_def::Traverse(traverse_data &x)
 {
   switch (x.which) {
@@ -262,6 +267,18 @@ int model_def::Traverse(traverse_data &x, expr** pass, int np)
         return function::Traverse(x, pass, np);
   }
 }
+
+int model_def::maxNamedParams() const
+{
+  return formals.getLength();
+}
+
+int model_def
+::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
+{
+  return formals.named2Positional(em, np, nnp, buffer, bufsize);
+}
+
 
 model_instance* model_def::Instantiate(traverse_data &x, expr** pass, int np)
 {

@@ -135,6 +135,10 @@ inline bool WithinBlock() {
   return WithinFor() || WithinConverge() || WithinModel(); 
 }
 
+inline bool ignoringBadModelDecl() {
+  return WithinModel() && (0==model_under_construction);
+}
+
 // Compiler stats:
 
 long list_depth;
@@ -1036,15 +1040,17 @@ expr* BuildFuncStmt(symbol* f, expr* r)
 // --------------------------------------------------------------
 bool IllegalModelVarName(char* ident, const char* what_am_i)
 {
-  DCASSERT(model_under_construction);
-  if (model_under_construction->FindFormal(ident)) {
-    if (pm->startError()) {
-      pm->cerr() << "Model " << what_am_i << " ";
-      pm->cerr() << ident << " has same name as parameter";
-      pm->stopError();
+  DCASSERT(WithinModel());
+  if (model_under_construction) {
+    if (model_under_construction->FindFormal(ident)) {
+      if (pm->startError()) {
+        pm->cerr() << "Model " << what_am_i << " ";
+        pm->cerr() << ident << " has same name as parameter";
+        pm->stopError();
+      }
+      free(ident);
+      return true;
     }
-    free(ident);
-    return true;
   }
   if (ModelInternal) if (ModelInternal->FindSymbol(ident)) {
     if (pm->startError()) {
@@ -1070,6 +1076,12 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
 */
 expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
 {
+  if (ignoringBadModelDecl()) {
+    free(ident);
+    Delete(rhs);
+    return 0;
+  }
+
   if (IllegalModelVarName(ident, "measure")) {
     Delete(rhs);
     return 0;
@@ -1452,6 +1464,12 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
 // --------------------------------------------------------------
 symbol* BuildMeasureArray(const type* typ, char* n, parser_list* list)
 {
+  if (ignoringBadModelDecl()) {
+    free(n);
+    DeleteCircular(list);
+    return 0;
+  }
+
   if (IllegalModelVarName(n, "measure")) {
     DeleteCircular(list);
     return 0;
@@ -1580,21 +1598,24 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
   DCASSERT(pm);
   DCASSERT(typ);
   DCASSERT(0==model_under_construction);
-  if (WithinFor() || WithinConverge()) {
-    if (pm->startError()) {
-      pm->cerr() << "Model " << n << " defined within a for/converge";
-      pm->stopError();
-    }
-    free(n);
-    DeleteCircular(list);
-    return 0;
-  }
+  DCASSERT(!WithinModel());
+
   ModelType = dynamic_cast <const formalism*> (typ);
   if (0==ModelType) {
     if (pm->startInternal(__FILE__, __LINE__)) {
       pm->internal() << "Type " << typ->getName() << " is not a formalism!";
       pm->stopError();
     }
+    return 0;
+  }
+
+  if (WithinFor() || WithinConverge()) {
+    if (pm->startError()) {
+      pm->cerr() << "Model " << n << " defined within a for/converge; ignoring";
+      pm->stopError();
+    }
+    free(n);
+    DeleteCircular(list);
     return 0;
   }
 
@@ -1681,8 +1702,10 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
 // --------------------------------------------------------------
 expr* BuildModelVarStmt(const type* typ, parser_list* list)
 {
+  DCASSERT(WithinModel());
+
   if (0==list)  return 0;
-  if (0==typ) {
+  if (0==typ || 0==model_under_construction) {
     DeleteCircular(list);
     return 0;
   }
@@ -1902,7 +1925,17 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
     // Convert named to positional, if we can for this function
     //
     int mnp = f->maxNamedParams();
-    if (mnp < 0) continue;    // can't call this function with named params
+    if (mnp < 0) {
+      if (compiler_debug.startReport()) {
+        compiler_debug.report() << "named params not supported by ";
+        f->PrintHeader(compiler_debug.report(), false);
+        compiler_debug.report() << "\n";
+        compiler_debug.stopIO();
+      }
+
+      // can't call this function with named params
+      continue;
+    }
     ppa.alloc(mnp);
     int ntp = f->named2Positional(pass, np, ppa.getList(), ppa.maxList());
     if (ntp < 0) {
@@ -2262,6 +2295,11 @@ expr* BuildUnary(int op, expr* opnd)
 // --------------------------------------------------------------
 expr* BuildTypecast(const type* newtype, expr* opnd)
 {
+  if (ignoringBadModelDecl()) {
+    Delete(opnd);
+    return 0;
+  }
+
   DCASSERT(newtype);
   symbol* find = Funcs->FindSymbol(newtype->getName());
   function* best = find ? FindBest(find, 0, &opnd, 1, 0, false) : 0;
@@ -2463,6 +2501,12 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
 // --------------------------------------------------------------
 shared_object* MakeModelCallPP(char* n, parser_list* list)
 {
+  if (ignoringBadModelDecl()) {
+    free(n);
+    DeleteCircular(list);
+    return 0;
+  }
+
   symbol* find;
   if (0==list) {
     // try vars of type "model" first...
@@ -2531,16 +2575,91 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
 // --------------------------------------------------------------
 shared_object* MakeModelCallNP(char* n, parser_list* list)
 {
-  if (pm->startError()) {
-    pm->cerr() << "MakeModelCallNP not implemented yet\n";
-    pm->stopError();
+  if (ignoringBadModelDecl()) {
+    free(n);
+    DeleteCircular(list);
+    return 0;
   }
-  return 0;
+
+  symbol* find;
+  if (0==list) {
+    // try vars of type "model" first...
+    find = Constants->FindSymbol(n);
+    if (find) {
+      free(n);
+      return new model_call_data(find);
+    }
+  }
+
+  find = Funcs->FindSymbol(n);
+  if (0==find) {
+    if (pm->startError()) {
+      pm->cerr() << "Unknown model " << n;
+      pm->stopError();
+    }
+    free(n);
+    DeleteCircular(list);
+    return 0;
+  }
+  free(n);
+
+  // Dump parameters to our temporary array
+  named_paramarray& npa = named_paramarray::theNamedList();
+  npa.initFromList(list);
+
+  //
+  // Find best match
+  //
+  function* best = FindBest(find, 0, npa.getList(), npa.getLength(), true);
+  if (0==best) {
+    npa.recycle();
+    return 0;
+  }
+  
+  //
+  // make sure this is a model!
+  //
+  model_def* parent = em->isAModelDef(best);
+  if (0==parent) {
+    if (pm->startError()) {
+      if (0==npa.getLength()) {
+        pm->cerr() << best->Name() << " is not a model";
+      } else {
+        pm->cerr() << "Expected model for call ";
+        ShowNamedCall(pm->cerr(), best->Name(), npa.getList(), npa.getLength());
+        pm->cerr() << ", but it matches";
+        pm->newLine(1);
+        best->PrintHeader(pm->cerr(), true);
+        pm->cerr() << " declared ";
+        pm->cerr().PutFile(best->Filename(), best->Linenumber());
+        pm->changeIndent(-1);
+      } // length
+      pm->stopError();
+    } // if startError
+    return 0;
+  }
+
+  //
+  // Build positional parameter equivalents
+  //
+  pos_paramarray& ppa = pos_paramarray::thePosList();
+  int np = best->named2Positional(
+    npa.getList(), npa.getLength(), ppa.getList(), ppa.maxList()
+  );
+  DCASSERT(ppa.maxList() >= np);
+  npa.recycle();
+  expr** pass = ppa.Compactify(np);
+  return new model_call_data(parent, pass, np);
 }
 
 // --------------------------------------------------------------
 expr* FindIdent(char* name)
 {
+  if (ignoringBadModelDecl()) {
+    free(name);
+    return 0;
+  }
+
   // Check for loop iterators.
   symbol* find = Iterators->FindSymbol(name);
 
@@ -2613,6 +2732,12 @@ expr* BuildArrayCall(char* n, parser_list* ind)
 // --------------------------------------------------------------
 expr* BuildFuncCallPP(char* n, parser_list* posparams)
 {
+  if (ignoringBadModelDecl()) {
+    free(n);
+    DeleteCircular(posparams);
+    return 0;
+  }
+
   symbol* find = em->findFunction(ModelType, n);
   symbol* find2 = 0;
   bool first = 0;
@@ -2664,6 +2789,12 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
 // --------------------------------------------------------------
 expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 {
+  if (ignoringBadModelDecl()) {
+    free(n);
+    DeleteCircular(namedparams);
+    return 0;
+  }
+
   named_paramarray& npa = named_paramarray::theNamedList();
 
   symbol* find = em->findFunction(ModelType, n);
