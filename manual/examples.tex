@@ -71,44 +71,31 @@ we can use it, for example, to find the time at which a given measure is
 maximized in a Petri net model or the value of a rate for which the probability
 of absorption is minimized in a continuous-time model.
 
-\begin{comment}
-%\newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dining philosophers}
 
 
 
 The dining philosopher model \cite{Pastor1994} is composed of $N$ subnets equal
-to the one shown in \FigureRef{FIG:dining}.
+to the one shown in Fig.~\ref{FIG:dining}.
 The net represents a philosopher and the philosopher's right fork.
 The philosopher's left fork, represented by
 the dotted place $\mathit{Fork}_{(i+1) \bmod N}$, is part of the
 subnet for the next philosopher; it
 is depicted to illustrate how the subnets interact.
 The corresponding {\smart} code is as follows:
-\begin{code}
-\begin{verbatim}
-spn phils(int N) := {
-  for (int i in {1..N}) {
-    place Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i];
-    trans GoEat[i], GetL[i], GetR[i], Rel[i];
-    firing(GoEat[i]:expo(1), GetL[i]:expo(1), GetR[i]:expo(1), Rel[i]:expo(1));
-    init(Idle[i]:1, Fork[i]:1);
-  }
-  for (int i in {1..N}) {
-    arcs(Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i], WaitL[i]:GetL[i],
-      Fork[1+mod(i,N)]:GetL[i], GetL[i]:HasL[i], WaitR[i]:GetR[i],
-      Fork[i]:GetR[i], GetR[i]:HasR[i], HasL[i]:Rel[i], HasR[i]:Rel[i],
-      Rel[i]:Idle[i], Rel[i]:Fork[i], Rel[i]:Fork[1+mod(i,N)]);
-  }
-  bigint ns := num_states(false);
-  bigint na := num_arcs(false);
-};
-int N := read_int("number of philosophers");
-print("Number of reachable states: ", phils(N).ns, ".\n");
-print("Number of state-to-state transitions: ", phils(N).na, ".\n");
-\end{verbatim}
-\end{code}
+%
+\lstinputlisting[firstline=3]{examples/phils_ex1.sm}
+%
+
+\begin{comment}
+
+\begin{figure}
+  \CENTERPSSCALE{philsfig}{0.5}
+  \caption{The dining philosophers.}
+  \label{FIG:dining}
+\end{figure}
+
 
 If we wanted to use an advanced symbolic method, we could request this with an
 option statement, which must appear before the two \Code{print} statements.
@@ -150,13 +137,6 @@ spaces, we would have to add the statement
 \end{code}
 in the second \Code{for} loop, to ensure that these local state spaces
 are finite.
-
-\begin{figure}
-  \CENTERPSSCALE{philsfig}{0.5}
-  \caption{The dining philosophers.}
-  \label{FIG:dining}
-\end{figure}
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
