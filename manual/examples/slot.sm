@@ -1,0 +1,21 @@
+// $Id$
+
+pn slot(int N) := {
+  for (int i in {0..N-1}) {
+    place pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]; 
+    trans other[i], owner[i], write[i], go[i], give[i], put[i], used[i], free[i];
+    partition({pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]}); 
+    init(pC[i]:1, pE[i]:1);
+  } 
+  for (int i in {0..N-1}) {
+    arcs(used[(i+1)%N]:pA[i], pA[i]:other[i], pA[i]:owner[i],
+      free[(i+1)%N]:pB[i], owner[i]:pB[i], pB[i]:go[i], pB[i]:write[i],
+      write[i]:pD[i], other[i]:pD[i], pD[i]:put[i], go[i]:pH[i],
+      pH[i]:give[i], give[i]:pC[i], put[i]:pC[i], pC[i]:free[(i+1)%N],
+      pC[i]:used[(i+1)%N], free[i]:pF[i], used[i]:pF[i], pF[i]:give[i],
+      pF[i]:put[i], give[i]:pE[i], pE[i]:free[i], put[i]:pG[i], pG[i]:used[i]);
+  } 
+  bigint m1 := num_states;
+}; 
+int N := read_int("number of slots");
+print(slot(N).m1, " reachable states\n");

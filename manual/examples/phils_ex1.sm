@@ -4,7 +4,6 @@ pn phils(int N) := {
   for (int i in {1..N}) {
     place Idle[i], WaitL[i], WaitR[i], HasL[i], HasR[i], Fork[i];
     trans GoEat[i], GetL[i], GetR[i], Rel[i];
-    firing(GoEat[i]:expo(1), GetL[i]:expo(1), GetR[i]:expo(1), Rel[i]:expo(1));
     init(Idle[i]:1, Fork[i]:1);
   }
   for (int i in {1..N}) {

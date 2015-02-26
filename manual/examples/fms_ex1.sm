@@ -1,0 +1,36 @@
+// $Id$
+
+pn fms(int n, int Np) := {
+  place   P1, P2, P3, P12, P2s, P3s, P1s, P12s, M1, M2, M3, 
+          P1wM1, P2wM2, P3M2, P12wM3, P1M1, P2M2, P12M3, P1d, P2d, P1wP2, P2wP1;
+  trans   tP1, tP2, tP3, tP12, tP1M1, tP2M2, tP3M2, tP12M3, 
+          tP1s, tP2s, tP3s, tP12s, tM1, tM2, tM3, tx, tP1e, tP1j, tP2e, tP2j;
+  init(P1:n, P2:n, P3:n, M1:3, M3:2, M2:1);
+  firing(  tP1    : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P1)),
+           tP2    : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P2)),
+           tP12   : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P12)),
+           tP3    : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P3)),
+           tP1M1  : expo(tk(P1M1) / 4),               tP12M3  : expo(tk(P12M3)),
+           tP1s   : expo(1/60),   tP2M2  : expo(1/6),   tP2s  : expo(1/60),
+           tP12s  : expo(1/60),   tP3M2  : expo(1/2),   tP3s  : expo(1/60),
+           tM1:0, tM2:0, tM3:0, tx:0, tP1e:0, tP1j:0, tP2e:0, tP2j:0  
+  );
+  weight(tM1:1, tM2:1, tM3:1, tx:1, tP1e:0.8, tP1j:0.2, tP2e:0.6, tP2j:0.4);
+  arcs(
+    P1:tP1, tP1:P1wM1, P1wM1:tM1, M1:tM1, tM1:P1M1, P1M1:tP1M1, tP1M1:M1, tP1M1:P1d, 
+    P1d:tP1e, tP1e:P1s, P1d:tP1j, tP1j:P1wP2, P1s:tP1s:tk(P1s), tP1s:P1:tk(P1s), 
+
+    P2wP1:tx, P1wP2:tx, tx:P12, P12:tP12, tP12:P12wM3, P12wM3:tM3, M3:tM3, tM3:P12M3,
+    P12M3:tP12M3, tP12M3:P12s, tP12M3:M3, 
+    P12s:tP12s:tk(P12s), tP12s:P1:tk(P12s), tP12s:P2:tk(P12s),
+
+    P2:tP2, tP2:P2wM2, P2wM2:tM2, M2:tM2, tM2:P2M2, P2M2:tP2M2, tP2M2:M2, tP2M2:P2d,
+    P2d:tP2e, tP2e:P2s, P2d:tP2j, tP2j:P2wP1, P2s:tP2s:tk(P2s), tP2s:P2:tk(P2s),
+
+    P3:tP3, tP3:P3M2, P3M2:tP3M2, M2:tP3M2, tP3M2:M2, 
+    tP3M2:P3s, P3s:tP3s:tk(P3s), tP3s:P3:tk(P3s)
+  );
+  real prod := avg_ss(400*rate(tP1)+600*rate(tP2)+100*rate(tP3)+1100*rate(tP12)); 
+};
+int N := read_int("N"); compute(N);
+print("The productivity for N=", N, " is ", fms(N, div(3*N, 2)).prod, "\n");

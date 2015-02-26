@@ -1,0 +1,130 @@
+// $Id$
+
+pn leader(int N) := {
+  for (int i in {0..N-1}) {
+    place   s_start[i], s_wait[i], s_act[i], s_inact[i], s_leader[i], 
+            pref[i], c[i], rec_none[i], rec_choice[i], rec_counter[i],
+            sent_none[i], sent_choice[i], sent_counter[i];
+    trans   pick_value0[i], pick_value1[i], send_pref[i], recv_stay_active0[i], 
+            recv_stay_active1[i], recv_become_inactive[i], send_new_counter[i], 
+            recv_counter[i], become_leader[i], 
+            i_recv_pref0[i], i_recv_pref1[i], i_send_pref[i], i_send_counter[i];
+    partition(
+      {s_start[i], s_wait[i], s_act[i], s_inact[i], s_leader[i], pref[i], c[i]},
+      {rec_none[i], rec_choice[i], rec_counter[i], 
+         sent_none[i], sent_choice[i], sent_counter[i]}
+    );
+    init(s_start[i]:1, sent_none[i]:1, rec_none[i]:1);
+    for (int j in {0..N-1}) { trans inc_counter[i][j]; }
+  }
+  for (int i in {0..N-1}) {
+    arcs(
+      s_start[i]:pick_value0[i], pick_value0[i]:s_wait[i],
+      sent_none[i]:pick_value0[i], pick_value0[i]:sent_none[i],
+      rec_none[i]:pick_value0[i], pick_value0[i]:rec_none[i],
+      pref[i]:pick_value0[i]:tk(pref[i]),
+
+      s_start[i]:pick_value1[i], pick_value1[i]:s_wait[i], 
+      sent_none[i]:pick_value1[i], pick_value1[i]:sent_none[i],
+      rec_none[i]:pick_value1[i], pick_value1[i]:rec_none[i],
+      pref[i]:pick_value1[i]:tk(pref[i]), pick_value1[i]:pref[i],
+
+      s_wait[i]:send_pref[i], send_pref[i]:s_wait[i],
+      sent_none[i]:send_pref[i], send_pref[i]:sent_choice[i],
+
+      s_wait[i]:recv_stay_active0[i], recv_stay_active0[i]:s_act[i], 
+      rec_none[i]:recv_stay_active0[i],  recv_stay_active0[i]:rec_choice[i],
+      sent_choice[i]:recv_stay_active0[i], recv_stay_active0[i]:sent_choice[i],
+
+      s_wait[i]:recv_stay_active1[i], rec_none[i]:recv_stay_active1[i],
+      recv_stay_active1[i]:s_act[i], recv_stay_active1[i]:rec_choice[i],
+      pref[i]:recv_stay_active1[i], recv_stay_active1[i]:pref[i],
+      sent_choice[i]:recv_stay_active1[i], recv_stay_active1[i]:sent_choice[i],
+
+      s_wait[i]:recv_become_inactive[i], rec_none[i]:recv_become_inactive[i],
+      recv_become_inactive[i]:s_inact[i], recv_become_inactive[i]:rec_choice[i],
+      sent_choice[i]:recv_become_inactive[i], recv_become_inactive[i]:sent_choice[i],
+      pref[(i+1)%N]:recv_become_inactive[i], recv_become_inactive[i]:pref[(i+1)%N],
+
+      s_act[i]:send_new_counter[i], send_new_counter[i]:s_act[i], 
+      sent_choice[i]:send_new_counter[i], send_new_counter[i]:sent_counter[i], 
+
+      s_act[i]:recv_counter[i], recv_counter[i]:s_start[i],
+      rec_choice[i]:recv_counter[i], recv_counter[i]:rec_none[i],
+      sent_counter[(i+1)%N]:recv_counter[i], recv_counter[i]:sent_none[(i+1)%N],
+      pref[i]:recv_counter[i]:tk(pref[i]), c[i]:recv_counter[i]:tk(c[i]),
+      c[(i+1)%N]:recv_counter[i]:tk(c[(i+1)%N]),
+
+      s_act[i]:become_leader[i], become_leader[i]:s_leader[i],
+      rec_choice[i]:become_leader[i], become_leader[i]:rec_none[i],
+      sent_counter[(i+1)%N]:become_leader[i], become_leader[i]:sent_none[(i+1)%N],
+      c[(i+1)%N]:become_leader[i]:N-1,
+
+      s_inact[i]:i_recv_pref0[i], i_recv_pref0[i]:s_inact[i], 
+      rec_none[i]:i_recv_pref0[i], i_recv_pref0[i]:rec_choice[i],
+      pref[i]:i_recv_pref0[i]:tk(pref[i]),
+      c[i]:i_recv_pref0[i]:tk(c[i]),
+
+      s_inact[i]:i_recv_pref1[i], i_recv_pref1[i]:s_inact[i], 
+      rec_none[i]:i_recv_pref1[i], i_recv_pref1[i]:rec_choice[i],
+      pref[(i+1)%N]:i_recv_pref1[i], i_recv_pref1[i]:pref[(i+1)%N],
+      pref[i]:i_recv_pref1[i]:tk(pref[i]), i_recv_pref1[i]:pref[i],
+      c[i]:i_recv_pref1[i]:tk(c[i]),
+      s_inact[i]:i_send_pref[i], i_send_pref[i]:s_inact[i], 
+      sent_none[i]:i_send_pref[i], i_send_pref[i]:sent_choice[i], 
+
+      s_inact[i]:i_send_counter[i], i_send_counter[i]:s_inact[i], 
+      rec_counter[i]:i_send_counter[i], i_send_counter[i]:rec_none[i],
+      sent_choice[i]:i_send_counter[i], i_send_counter[i]:sent_counter[i],
+      pref[i]:i_send_counter[i]:tk(pref[i])
+    );
+    for (int j in {0..N-1}) {
+      arcs(
+        s_inact[i]:inc_counter[i][j], inc_counter[i][j]:s_inact[i], 
+        rec_choice[i]:inc_counter[i][j], inc_counter[i][j]:rec_counter[i],
+        sent_counter[(i+1)%N]:inc_counter[i][j], inc_counter[i][j]:sent_none[(i+1)%N],
+        c[(i+1)%N]:inc_counter[i][j]:j, inc_counter[i][j]:c[i]:j+1);
+    }
+    inhibit(
+// needed by PREGEN methods
+      s_wait[i]:pick_value0[i], s_wait[i]:pick_value1[i],
+      sent_choice[i]:send_pref[i],
+      s_act[i]:recv_stay_active0[i], 
+        rec_choice[i]:recv_stay_active0[i],
+      s_act[i]:recv_stay_active1[i], 
+        rec_choice[i]:recv_stay_active1[i],
+      s_inact[i]:recv_become_inactive[i], 
+        rec_choice[i]:recv_become_inactive[i],
+      sent_counter[i]:send_new_counter[i], 
+      s_leader[i]:become_leader[i],
+        rec_none[i]:become_leader[i],
+        sent_none[(i+1)%N]:become_leader[i],
+      s_start[i]:recv_counter[i], 
+        rec_none[i]:recv_counter[i], 
+        sent_none[(i+1)%N]:recv_counter[i],
+      sent_choice[i]:i_send_pref[i],
+      sent_counter[i]:i_send_counter[i], 
+        rec_none[i]:i_send_counter[i],
+      rec_choice[i]:i_recv_pref0[i],
+      rec_choice[i]:i_recv_pref1[i],
+// needed by all methods
+      pref[(i+1)%N]:recv_stay_active0[i],
+      sent_none[(i+1)%N]:recv_stay_active0[i],
+      sent_none[(i+1)%N]:recv_stay_active1[i],
+      sent_none[(i+1)%N]:recv_become_inactive[i],
+      sent_none[(i+1)%N]:i_recv_pref0[i],
+      sent_none[(i+1)%N]:i_recv_pref1[i],
+      pref[i]:recv_become_inactive[i],
+      sent_choice[i]:recv_counter[i],
+      c[(i+1)%N]:recv_counter[i]:N-1,
+      pref[(i+1)%N]:i_recv_pref0[i],
+      rec_none[i]:i_send_pref[i]
+    );
+    for (int j in {0..N-1}) {
+      inhibit(sent_none[(i+1)%N]:inc_counter[i][j],
+              c[(i+1)%N]:inc_counter[i][j]:j+1);
+    }
+  }
+
+  bigint ns := num_states;
+};
