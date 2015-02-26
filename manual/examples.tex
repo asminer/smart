@@ -88,14 +88,15 @@ The corresponding {\smart} code is as follows:
 \lstinputlisting[firstline=3]{examples/phils_ex1.sm}
 %
 
-\begin{comment}
-
 \begin{figure}
-  \CENTERPSSCALE{philsfig}{0.5}
-  \caption{The dining philosophers.}
+  \centering
+  \includegraphics[scale=1]{figures/phils.pdf}
+  \caption{Model for a single dining philosopher.}
   \label{FIG:dining}
 \end{figure}
 
+
+\begin{comment}
 
 If we wanted to use an advanced symbolic method, we could request this with an
 option statement, which must appear before the two \Code{print} statements.
@@ -138,6 +139,7 @@ spaces, we would have to add the statement
 in the second \Code{for} loop, to ensure that these local state spaces
 are finite.
 
+\end{comment}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{A flexible manufacturing system}
@@ -147,39 +149,19 @@ models a flexible manufacturing system (FMS).
 This model is parameterized by the initial number $N$ of tokens in
 $P_1$, $P_2$, and $P_3$.
 The {\smart} description for this net is:
-\begin{code}
-\begin{verbatim}
-spn fms(int n) := {
-  place P1, P2, P3, P12, P2s, P3s, P1s, P12s,
-        M1, M2, M3, P1wM1, P2wM2, P3M2, P12wM3,
-        P1M1, P2M2, P12M3, P1d, P2d, P1wP2, P2wP1;
-  trans tP1, tP2, tP3, tP12, tP1M1, tP2M2, tP3M2, 
-        tP12M3, tP1s, tP2s, tP3s, tP12s, tM1,
-        tM2, tM3, tx, tP1e, tP1j, tP2e, tP2j;
-  firing(tP1:expo(tk(P1)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
-    tP2:expo(tk(P2)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
-    tP3:expo(tk(P3)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
-    tP12:expo(tk(P12)*max(1.0, div(3*n,2)/(tk(P1)+tk(P2)+tk(P3)+tk(P12)))), 
-    tP1M1:expo(tk(P1M1)/4), tP2M2:expo(1/6), tP3M2:expo(1/2),
-    tP12M3:expo(tk(P12M3)), tP1s:expo(1/60), tP2s:expo(1/60), tP3s:expo(1/60),
-    tP12s:expo(1/60), tM1:0, tM2:0, tM3:0, tx:0, tP1e:0, tP1j:0, tP2e:0, tP2j:0); 
-  weight(tM1:1, tM2:1, tM3:1, tx:1, tP1e:0.8, tP1j:0.2, tP2e:0.6, tP2j:0.4);
-  arcs(P1:tP1, tP1:P1wM1, P1wM1:tM1, M1:tM1, tM1:P1M1, P1M1:tP1M1, tP1M1:M1,
-    tP1M1:P1d, P1d:tP1e, P1d:tP1j, tP1e:P1s, tP1j:P1wP2, P1s:tP1s:tk(P1s),
-    tP1s:P1:tk(P1s), P1wP2:tx, tx:P12, P12:tP12, tP12:P12wM3, P12wM3:tM3,
-    M3:tM3, tM3:P12M3, P12M3:tP12M3, tP12M3:M3, tP12M3:P12s, P12s:tP12s:tk(P12s),
-    tP12s:P1:tk(P12s), tP12s:P2:tk(P12s), P2:tP2, tP2:P2wM2, P2wM2:tM2, M2:tM2,
-    tM2:P2M2, P2M2:tP2M2, tP2M2:M2, tP2M2:P2d, P2d:tP2j, tP2j:P2wP1, P2wP1:tx,
-    P2d:tP2e, tP2e:P2s, P2s:tP2s:tk(P2s), tP2s:P2:tk(P2s), P3:tP3, tP3:P3M2,
-    P3M2:tP3M2, M2:tP3M2, tP3M2:P3s, tP3M2:M2, P3s:tP3s:tk(P3s), tP3s:P3:tk(P3s));
-  init(P1:n, P2:n, P3:n, M1:3, M3:2, M2:1);
-   real prod := avg_ss(400*rate(tP1)+600*rate(tP12M3)+100*rate(tP2)+1100*rate(tP3));
-};
-int N := read_int("N");
-print(N, "\n");
-fms(N).prod; 
-\end{verbatim}
-\end{code}
+%
+\lstinputlisting[firstline=3]{examples/fms_ex1.sm}
+%
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.5]{figures/FMS-smartman.pdf}
+  \caption{A flexible manufacturing system.}
+  \label{FIG:fms}
+\end{figure}
+
+
+\begin{comment}
 
 Had we wanted to use a structural solution approach, we could have
 partitioned the model with the statement
@@ -211,17 +193,12 @@ such as \Code{tP1j}, are synchronizing (i.e., they affect multiple submodels).
 %the complementary places $M_1$, $M_2$, and $M_3$, placed in the same level
 %as the places $P_1M_1$, $P_2M_2$, and $P_{12}M_3$, respectively.
 
-\begin{figure}
-  \CENTERPSSCALE{FMS-smartman}{0.5}
-  \caption{A flexible manufacturing system.}
-  \label{FIG:fms}
-\end{figure}
-
+\end{comment}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Slotted ring}
 
-\FigureRef{FIG:slotted} shows the Petri net for a single node of a slotted
+Fig.~\ref{FIG:slotted} shows the Petri net for a single node of a slotted
 ring network protocol \cite{Pastor1994}.
 The overall model is composed of $N$
 such subnets connected by merging transitions
@@ -230,36 +207,14 @@ really belong to the ``next'' subnet).
 The following {\smart} code shows a decomposition where each
 node of the ring is in a different level, and the requested
 measure is simply the number of states.
-\begin{code}
-\begin{verbatim}
-spn slot(int N) := {
-  for (int i in {0..N-1}) {
-    place pA[i], pB[i], pC[i], pD[i], pE[i], pF[i], pG[i], pH[i]; 
-    trans other[i], owner[i], write[i], go[i], give[i], put[i], used[i], free[i];
-    firing(other[i]:expo(1), owner[i]:expo(1), write[i]:expo(1), go[i]:expo(1),
-      give[i]:expo(1), put[i]:expo(1), free[i]:expo(1), used[i]:expo(1)); 
-    partition(pA[i]:pB[i]:pC[i]:pD[i]:pE[i]:pF[i]:pG[i]:pH[i]); 
-    init(pC[i]:1, pE[i]:1);
-  } 
-  for (int i in {0..N-1}) {
-    arcs(used[mod(i+1,N)]:pA[i], pA[i]:other[i], pA[i]:owner[i],
-      free[mod(i+1,N)]:pB[i], owner[i]:pB[i], pB[i]:go[i], pB[i]:write[i],
-      write[i]:pD[i], other[i]:pD[i], pD[i]:put[i], go[i]:pH[i],
-      pH[i]:give[i], give[i]:pC[i], put[i]:pC[i], pC[i]:free[mod(i+1,N)],
-      pC[i]:used[mod(i+1,N)], free[i]:pF[i], used[i]:pF[i], pF[i]:give[i],
-      pF[i]:put[i], give[i]:pE[i], pE[i]:free[i], put[i]:pG[i], pG[i]:used[i]);
-  } 
-  bigint m1 := num_states(false);
-}; 
-# StateStorage MDD_SATURATION 
-int N := read_int("number of slots");
-slot(N).m1;
-\end{verbatim}
-\end{code}
+%
+\lstinputlisting[firstline=3]{examples/slot.sm}
+%
 
 \begin{figure}
-  \CENTERPSSCALE{newslotfig}{0.5}
-  \caption{A slotted ring.}
+  \centering
+  \includegraphics[scale=0.5]{figures/slot.pdf}
+  \caption{Model of a slotted ring.}
   \label{FIG:slotted}
 \end{figure}
 
@@ -267,49 +222,23 @@ slot(N).m1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{A Kanban system}
 
-This model \cite{1996WMPN-SNSkanban}, shown in \FigureRef{FIG:kanban},
+This model \cite{1996WMPN-SNSkanban}, shown in Fig.~\ref{FIG:kanban},
 is parameterized by the number $N$ of tokens initially
 in $p_{1}$, $p_{2}$, $p_{3}$, and $p_{4}$.
 The following code shows a partition into four levels, one per kanban station.
 The output measure is the number of arcs in the state-to-state transition
 matrix for $N$ varying from $1$ to a maximum specified at runtime.
 \begin{figure}
-  \CENTERPSSCALE{kanban}{0.43}
+  \centering
+  \includegraphics[scale=1]{figures/kanban.pdf}
   \caption{A kanban system.}
   \label{FIG:kanban}
 \end{figure}
+%
+\lstinputlisting[firstline=3]{examples/kanban.sm}
+%
 
-\begin{code}
-\begin{verbatim}
-spn kanban(int N) := {
-  place pm1, pback1, pkan1, pout1, pm2, pback2, pkan2, pout2,
-        pm3, pback3, pkan3, pout3, pm4, pback4, pkan4, pout4;
-  trans tin1, tredo1, tok1, tback1, tin23, tredo2, tok2, tback2, tout2,
-        tredo3, tok3, tback3, tredo4, tok4, tback4, tout4;
-  partition(pm1:pback1:pkan1:pout1, pm2:pback2:pkan2:pout2,
-            pm3:pback3:pkan3:pout3, pm4:pback4:pkan4:pout4);
-  firing(tin1:expo(1.0), tredo1:expo(0.36), tok1:expo(0.84), tback1:expo(0.3),
-    tin23:expo(0.4), tredo2:expo(0.42), tok2:expo(0.98), tback2:expo(0.3),
-    tout2: expo(0.5), tredo3:expo(0.39), tok3:expo(0.91), tback3:expo(0.3),
-    tredo4:expo(0.33), tok4:expo(0.77), tback4:expo(0.3), tout4:expo(0.9));
-  arcs(pkan1:tin1, tin1:pm1, pm1:tredo1, pm1:tok1, tredo1:pback1,
-    tok1:pout1, pback1:tback1, tback1:pm1, pout1:tin23, tin23:pkan1,
-    pkan2:tin23, tin23:pm2, pm2:tredo2, pm2:tok2, tredo2:pback2,
-    tok2:pout2, pback2:tback2, tback2:pm2, pout2:tout2, tout2:pkan2,
-    pkan3:tin23, tin23:pm3, pm3:tredo3, pm3:tok3, tredo3:pback3,
-    tok3:pout3, pback3:tback3, tback3:pm3, pout3:tout2, tout2:pkan3,
-    pkan4:tout2, tout2:pm4, pm4:tredo4, pm4:tok4, tredo4:pback4,
-    tok4:pout4, pback4:tback4, tback4:pm4, pout4:tout4, tout4:pkan4);
-  init(pkan1:N, pkan2:N, pkan3:N, pkan4:N);
-  bigint m := num_arcs(false);
-};
-# StateStorage MDD_SATURATION
-int MAX := read_int("maximum number of kanban tokens");
-for (int N in {1..MAX}) {
-  print("The # of arcs in the Kanban model with N=",N," is ",kanban(N).m,".\n");
-}
-\end{verbatim}
-\end{code}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Randomized leader election protocol}
@@ -338,22 +267,22 @@ inactive nodes. The process that receives its own token with count $N-1$ is
 the elected leader.
 
 In our model, each processes has $5$ state variables:
-\vspace*{-4mm}
-\begin{verbatim}
-status[i]     : {start, wait, active, inactive, leader}; // init start
-preference[i] : {0, 1};                                  // init 0
-counter[i]    : 0..N-1;                                  // init 0
-sent[i]       : {none, pref, counter};                   // init none
-recv[i]       : {none, pref, counter};                   // init none
-\end{verbatim}
+\begin{lstlisting}
+status[i]       : {start, wait, active, inactive, leader};      // init start
+preference[i]   : {0, 1};                                       // init 0
+counter[i]      : {0..N-1};                                     // init 0
+sent[i]         : {none, pref, counter};                        // init none
+recv[i]         : {none, pref, counter};                        // init none
+\end{lstlisting}
 
 \begin{figure}
-  \CENTERPSSCALE{leaderchart}{0.5}
-  \caption{State transition chart for the $\id{status}$ variable.}
+  \centering
+  \includegraphics[scale=0.5]{figures/leaderchart.pdf}
+  \caption{State transition chart for the \Code{status} variable.}
   \label{FIG:leaderchart}
 \end{figure}
 
-\noindent The state-transition diagram for the $\id{status}$ of a process is
+\noindent The state-transition diagram for the \Code{status} of a process is
 shown in Figure \ref{FIG:leaderchart}.
 
 \IGNORE{
@@ -366,150 +295,16 @@ The Petri Net model is shown is Figure \ref{FIG:leaderfig}
 }
 
 \noindent The SMART code for this model is listed below:
-\vspace*{-4mm}
-\begin{code}
-\begin{verbatim}
-spn leader(int N) := {
-  for (int i in {0..N-1}) {
-    place st_choose[i], st_wait[i], st_active[i], st_inactive[i], st_leader[i], 
-          pref[i], c[i], rec_none[i], rec_choice[i], rec_counter[i],
-          sent_none[i], sent_choice[i], sent_counter[i];
-    trans pick_value0[i], pick_value1[i], send_pref[i],
-          recv_stay_active0[i], recv_stay_active1[i], recv_become_inactive[i], 
-          send_new_counter[i], recv_counter[i], become_leader[i],
-          i_recv_pref0[i], i_recv_pref1[i], i_send_pref[i], i_send_counter[i];
-    partition(st_choose[i]:st_wait[i]:st_active[i]:st_inactive[i]:st_leader[i]:pref[i]:c[i],
-              rec_none[i]:rec_choice[i]:rec_counter[i]:
-              sent_none[i]:sent_choice[i]:sent_counter[i]);
-    init(st_choose[i]:1, sent_none[i]:1, rec_none[i]:1);
-    for (int j in {0..N-1}) { trans inc_counter[i][j]; }
-  }
-\end{verbatim}
-\end{code}
+%
+\lstinputlisting[firstline=3]{examples/leader.sm}
+%
 
-\begin{code}
-\begin{verbatim}
-  for (int i in {0..N-1}) {
-    arcs(
-      st_choose[i]:pick_value0[i], pick_value0[i]:st_wait[i],
-      sent_none[i]:pick_value0[i], pick_value0[i]:sent_none[i],
-      rec_none[i]:pick_value0[i], pick_value0[i]:rec_none[i],
-      pref[i]:pick_value0[i]:tk(pref[i]),
-
-      st_choose[i]:pick_value1[i], pick_value1[i]:st_wait[i], 
-      sent_none[i]:pick_value1[i], pick_value1[i]:sent_none[i],
-      rec_none[i]:pick_value1[i], pick_value1[i]:rec_none[i],
-      pref[i]:pick_value1[i]:tk(pref[i]), pick_value1[i]:pref[i],
-
-      st_wait[i]:send_pref[i], send_pref[i]:st_wait[i],
-      sent_none[i]:send_pref[i], send_pref[i]:sent_choice[i],
-
-      st_wait[i]:recv_stay_active0[i], recv_stay_active0[i]:st_active[i], 
-      rec_none[i]:recv_stay_active0[i],  recv_stay_active0[i]:rec_choice[i],
-      sent_choice[i]:recv_stay_active0[i], recv_stay_active0[i]:sent_choice[i],
-
-      st_wait[i]:recv_stay_active1[i], rec_none[i]:recv_stay_active1[i],
-      recv_stay_active1[i]:st_active[i], recv_stay_active1[i]:rec_choice[i],
-      pref[i]:recv_stay_active1[i], recv_stay_active1[i]:pref[i],
-      sent_choice[i]:recv_stay_active1[i], recv_stay_active1[i]:sent_choice[i],
-
-      st_wait[i]:recv_become_inactive[i], rec_none[i]:recv_become_inactive[i],
-      recv_become_inactive[i]:st_inactive[i], recv_become_inactive[i]:rec_choice[i],
-      sent_choice[i]:recv_become_inactive[i], recv_become_inactive[i]:sent_choice[i],
-      pref[mod(i+1,N)]:recv_become_inactive[i], recv_become_inactive[i]:pref[mod(i+1,N)],
-
-      st_active[i]:send_new_counter[i], send_new_counter[i]:st_active[i], 
-      sent_choice[i]:send_new_counter[i], send_new_counter[i]:sent_counter[i], 
-
-      st_active[i]:recv_counter[i], recv_counter[i]:st_choose[i],
-      rec_choice[i]:recv_counter[i], recv_counter[i]:rec_none[i],
-      sent_counter[mod(i+1,N)]:recv_counter[i], recv_counter[i]:sent_none[mod(i+1,N)],
-      pref[i]:recv_counter[i]:tk(pref[i]), c[i]:recv_counter[i]:tk(c[i]),
-      c[mod(i+1,N)]:recv_counter[i]:tk(c[mod(i+1,N)]),
-
-      st_active[i]:become_leader[i], become_leader[i]:st_leader[i],
-      rec_choice[i]:become_leader[i], become_leader[i]:rec_none[i],
-      sent_counter[mod(i+1,N)]:become_leader[i], become_leader[i]:sent_none[mod(i+1,N)],
-      c[mod(i+1,N)]:become_leader[i]:N-1,
-
-      st_inactive[i]:i_recv_pref0[i], i_recv_pref0[i]:st_inactive[i], 
-      rec_none[i]:i_recv_pref0[i], i_recv_pref0[i]:rec_choice[i],
-      pref[i]:i_recv_pref0[i]:tk(pref[i]),
-      c[i]:i_recv_pref0[i]:tk(c[i]),
-
-      st_inactive[i]:i_recv_pref1[i], i_recv_pref1[i]:st_inactive[i], 
-      rec_none[i]:i_recv_pref1[i], i_recv_pref1[i]:rec_choice[i],
-      pref[mod(i+1,N)]:i_recv_pref1[i], i_recv_pref1[i]:pref[mod(i+1,N)],
-      pref[i]:i_recv_pref1[i]:tk(pref[i]), i_recv_pref1[i]:pref[i],
-      c[i]:i_recv_pref1[i]:tk(c[i]),
-\end{verbatim}
-\end{code}
-
-\begin{code}
-\begin{verbatim}
-      st_inactive[i]:i_send_pref[i], i_send_pref[i]:st_inactive[i], 
-      sent_none[i]:i_send_pref[i], i_send_pref[i]:sent_choice[i], 
-
-      st_inactive[i]:i_send_counter[i], i_send_counter[i]:st_inactive[i], 
-      rec_counter[i]:i_send_counter[i], i_send_counter[i]:rec_none[i],
-      sent_choice[i]:i_send_counter[i], i_send_counter[i]:sent_counter[i],
-      pref[i]:i_send_counter[i]:tk(pref[i])
-    );
-    for (int j in {0..N-1}) {
-      arcs(
-        st_inactive[i]:inc_counter[i][j], inc_counter[i][j]:st_inactive[i], 
-        rec_choice[i]:inc_counter[i][j], inc_counter[i][j]:rec_counter[i],
-        sent_counter[mod(i+1,N)]:inc_counter[i][j], inc_counter[i][j]:sent_none[mod(i+1,N)],
-        c[mod(i+1,N)]:inc_counter[i][j]:j, inc_counter[i][j]:c[i]:j+1);
-    }
-    inhibit(
-// needed by PREGEN methods
-      st_wait[i]:pick_value0[i], st_wait[i]:pick_value1[i],
-      sent_choice[i]:send_pref[i],
-      st_active[i]:recv_stay_active0[i], 
-        rec_choice[i]:recv_stay_active0[i],
-      st_active[i]:recv_stay_active1[i], 
-        rec_choice[i]:recv_stay_active1[i],
-      st_inactive[i]:recv_become_inactive[i], 
-        rec_choice[i]:recv_become_inactive[i],
-      sent_counter[i]:send_new_counter[i], 
-      st_leader[i]:become_leader[i],
-        rec_none[i]:become_leader[i],
-        sent_none[mod(i+1,N)]:become_leader[i],
-      st_choose[i]:recv_counter[i], 
-        rec_none[i]:recv_counter[i], 
-        sent_none[mod(i+1,N)]:recv_counter[i],
-      sent_choice[i]:i_send_pref[i],
-      sent_counter[i]:i_send_counter[i], 
-        rec_none[i]:i_send_counter[i],
-      rec_choice[i]:i_recv_pref0[i],
-      rec_choice[i]:i_recv_pref1[i],
-// needed by all methods
-      pref[mod(i+1,N)]:recv_stay_active0[i],
-      sent_none[mod(i+1,N)]:recv_stay_active0[i],
-      sent_none[mod(i+1,N)]:recv_stay_active1[i],
-      sent_none[mod(i+1,N)]:recv_become_inactive[i],
-      sent_none[mod(i+1,N)]:i_recv_pref0[i],
-      sent_none[mod(i+1,N)]:i_recv_pref1[i],
-      pref[i]:recv_become_inactive[i],
-      sent_choice[i]:recv_counter[i],
-      c[mod(i+1,N)]:recv_counter[i]:N-1,
-      pref[mod(i+1,N)]:i_recv_pref0[i],
-      rec_none[i]:i_send_pref[i]
-    );
-    for (int j in {0..N-1}) {
-      inhibit(sent_none[mod(i+1,N)]:inc_counter[i][j],
-              c[mod(i+1,N)]:inc_counter[i][j]:j+1);
-    }
-  }
-}
-\end{verbatim}
-\end{code}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{A round--robin mutual exclusion protocol}
 
+\begin{comment}
 The protocol regulates the access to a shared resource (e.g. a communication
 channel) for a ring of $N$ processors. The resource manager gives permission
 to use the channel to each process in order, by moving a token around the

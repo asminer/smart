@@ -1,0 +1,33 @@
+// $Id$
+
+pn kanban(int N) := {
+  place  Pm1, Pb1, Pkan1, Pout1, Pm2, Pb2, Pkan2, Pout2,
+         Pm3, Pb3, Pkan3, Pout3, Pm4, Pb4, Pkan4, Pout4;
+  trans  Tin1,    Tr1, Tg1, Tb1, Ts1_23,    Tr2, Tg2, Tb2, 
+         Ts23_4,  Tr3, Tg3, Tb3,            Tr4, Tg4, Tb4, Tout4;
+  partition(  {Pm1, Pb1, Pkan1, Pout1},  {Pm2, Pb2, Pkan2, Pout2},
+              {Pm3, Pb3, Pkan3, Pout3},  {Pm4, Pb4, Pkan4, Pout4});
+  firing(Tin1:expo(1.0), Tr1:expo(0.36), Tg1:expo(0.84), Tb1:expo(0.3),
+    Ts1_23:expo(0.4), Tr2:expo(0.42), Tg2:expo(0.98), Tb2:expo(0.3),
+    Ts23_4: expo(0.5), Tr3:expo(0.39), Tg3:expo(0.91), Tb3:expo(0.3),
+    Tr4:expo(0.33), Tg4:expo(0.77), Tb4:expo(0.3), Tout4:expo(0.9));
+  arcs(
+    Pkan1:Tin1, Tin1:Pm1, Pm1:Tr1, Pm1:Tg1, Tr1:Pb1, Pb1:Tb1, Tb1:Pm1, 
+    Tg1:Pout1, Pout1:Ts1_23, Ts1_23:Pkan1,
+    Pkan2:Ts1_23, Ts1_23:Pm2, Pm2:Tr2, Pm2:Tg2, Tr2:Pb2, Pb2:Tb2, Tb2:Pm2, 
+    Tg2:Pout2, Pout2:Ts23_4, Ts23_4:Pkan2,
+    Pkan3:Ts1_23, Ts1_23:Pm3, Pm3:Tr3, Pm3:Tg3, Tr3:Pb3, Pb3:Tb3, Tb3:Pm3, 
+    Tg3:Pout3, Pout3:Ts23_4, Ts23_4:Pkan3,
+    Pkan4:Ts23_4, Ts23_4:Pm4, Pm4:Tr4, Pm4:Tg4, Tr4:Pb4, Pb4:Tb4, Tb4:Pm4, 
+    Tg4:Pout4, Pout4:Tout4, Tout4:Pkan4);
+  init(Pkan1:N, Pkan2:N, Pkan3:N, Pkan4:N);
+  bigint st := num_states;
+  bigint ed := num_arcs;
+};
+int MAX := read_int("maximum number of kanban tokens");
+for (int N in {1..MAX}) {
+  print("For the Kanban model with N=", N, ":\n");
+  compute(kanban(N).ed);
+  print("\t", kanban(N).st, " reachable states\n");
+  print("\t", kanban(N).ed, " edges in Markov chain\n");
+}
