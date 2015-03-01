@@ -241,7 +241,7 @@ public:
     Nothing,
     /// The engine is a function call.
     FunctionCall,
-    /// The engine is ron on a model.
+    /// The engine is run on a model.
     Model,
     /// The engine is run on a single measure (with a model).
     Single,

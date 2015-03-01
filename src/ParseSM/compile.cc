@@ -1086,21 +1086,41 @@ expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
     Delete(rhs);
     return 0;
   }
-  symbol* wrap = em->makeModelSymbol(Filename(), Linenumber(), typ, ident);
 
-  // Add measure to symbol tables
+  /* Initialize internal symbol table if necessary */
   if (0==ModelInternal) {
     ModelInternal = MakeSymbolTable();
   }
-  ModelInternal->AddSymbol(wrap);
-  
-  ModelExternal.Insert(wrap);
+  symbol* wrap = 0;
 
-  return ShowNewStatement("measure assignment:\n",
-    em->makeModelMeasureAssign(
+  if (typ && typ->hasProc()) {
+
+    /* Special case - proc "constant" in a model;
+       implement this as a function with 0 parameters */
+    wrap = MakeUserConstFunc(
+        em, Filename(), Linenumber(), typ, ident, true
+    );
+    ModelInternal->AddSymbol(wrap);
+
+    return ShowNewStatement("const func statement:\n",
+      DefineUserFunction(
+        em, Filename(), Linenumber(), wrap, rhs, model_under_construction
+      )
+    );
+
+  } else {
+
+    /* Ordinary measure */
+    wrap = em->makeModelSymbol(Filename(), Linenumber(), typ, ident);
+    ModelExternal.Insert(wrap);
+    ModelInternal->AddSymbol(wrap);
+
+    return ShowNewStatement("measure assignment:\n",
+      em->makeModelMeasureAssign(
         Filename(), Linenumber(), model_under_construction, wrap, rhs
-    )
-  );
+      )
+    );
+  }
 }
 
 // --------------------------------------------------------------
@@ -1111,7 +1131,9 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     return 0;
   }
  
-  if (WithinModel())   return BuildMeasure(typ, id, ret);
+  if (WithinModel()) {
+    return BuildMeasure(typ, id, ret);
+  }
 
   DCASSERT(typ);
   if (! typ->canDefineVarOfThis()) {
@@ -1410,7 +1432,7 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
   }
 
   int nfp = CircularLength(list);
-  symbol** fp = new symbol*[nfp];
+  symbol** fp = nfp ? new symbol*[nfp] : 0;
   CopyCircular(list, fp, nfp);
   RecycleCircular(list);
 

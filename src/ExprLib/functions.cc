@@ -222,12 +222,8 @@ void function::Compute(traverse_data &x)
 
 void function::Traverse(traverse_data &x)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
-    em->internal() << "Trying to traverse a function expression: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+  // reasonable default here
+  Traverse(x, 0, 0);
 }
 
 int function::Traverse(traverse_data &x, expr** pass, int np)
@@ -1362,6 +1358,7 @@ public:
 
   virtual void ResetFormals(formal_param** newformal, int nfp);
   virtual void Compute(traverse_data &x, expr** pass, int np);
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
 
   // friends, because of stack manipulation
   friend void InitFunctions(exprman* om);
@@ -1437,6 +1434,21 @@ void top_user_func::Compute(traverse_data &x, expr** pass, int np)
     stack[stack_top].deletePtr(); 
   }
   stackptr = old_stackptr;
+}
+
+int top_user_func::Traverse(traverse_data &x, expr** pass, int np)
+{
+  switch (x.which) {
+    case traverse_data::Substitute:
+        if (0==formals.getLength()) {
+          x.answer->setPtr(Share(return_expr));
+          return 1;
+        }
+        return user_func::Traverse(x, pass, np);
+
+    default:
+        return user_func::Traverse(x, pass, np);
+  }
 }
 
 // ******************************************************************
@@ -1767,6 +1779,16 @@ function* MakeUserFunction(const exprman* em, const char* fn, int ln,
     return new wrapped_user_func(fn, ln, t, name, (formal_param**) formals, np);
   } else {
     return new top_user_func(fn, ln, t, name, (formal_param**) formals, np);
+  }
+}
+
+function* MakeUserConstFunc(const exprman* em, const char* fn, int ln, 
+      const type* t, char* name, bool in_model)
+{
+  if (in_model) {
+    return new wrapped_user_func(fn, ln, t, name, 0, 0);
+  } else {
+    return new top_user_func(fn, ln, t, name, 0, 0);
   }
 }
 
