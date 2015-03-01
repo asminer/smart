@@ -672,6 +672,20 @@ symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass);
 function* MakeUserFunction(const exprman* em, const char* fn, int ln, 
             const type* t, char* name, symbol** formals, int np, bool in_model);
 
+/** Used primarily by compiler.
+    Build a user-defined "header" with no parameters.
+
+      @param  em        Expression manager for error reporting.
+      @param  fn        Filename of declaration
+      @param  ln        Line number of declaration
+      @param  t         Return type of function
+      @param  name      Name of function
+      @param  in_model  Is this function defined within a model?
+
+      @return An appropriate function, or 0 on error (will make noise).
+*/
+function* MakeUserConstFunc(const exprman* em, const char* fn, int ln, 
+            const type* t, char* name, bool in_model);
 
 /** Used primarily by compiler, for forward-defined functions.
     Reset the formal parameters for an existing user function.
