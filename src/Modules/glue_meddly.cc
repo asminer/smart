@@ -544,10 +544,18 @@ void meddly_encoder
         );
         break;
 
-      case exprman::bop_implies:
       case exprman::bop_mod:
-        throw MEDDLY::error(MEDDLY::error::NOT_IMPLEMENTED);
+        MEDDLY::apply(
+          MEDDLY::MODULO, meL->E, meR->E, out
+        );
+        break;
 
+      case exprman::bop_implies:
+        MEDDLY::apply(
+          MEDDLY::LESS_THAN_EQUAL, meL->E, meR->E, out
+        );
+        break;
+        
       default:
         throw Failed;
 
