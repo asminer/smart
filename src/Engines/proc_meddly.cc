@@ -858,12 +858,13 @@ protected:
     expr_node* next;
   };
   struct deplist {
-    intset level_deps;
     expr_node* termlist;
     deplist* next;
     // mxd 
-    MEDDLY::dd_edge* dd;
+    // MEDDLY::dd_edge* dd;
     // explicit storage of minterms
+  private:
+    intset level_deps;
     int** mt_from;
     int** mt_to;
     int mt_alloc;
@@ -879,13 +880,22 @@ protected:
     // show minterms
     void showMinterms(OutputStream &s, int pad);
     void showMintermPairs(OutputStream &s, int pad);
+
+    inline int getLevelAbove(int k) const {
+      return level_deps.getSmallestAfter(k);
+    }
+    inline bool sameDeps(const intset& deps) const {
+      return level_deps == deps;
+    }
+  private:
+    void expandLists();
   };
 protected:
   deplist** enable_deps;
   deplist** fire_deps;
   substate_colls* colls;
   intset* explored;     // substates that are already explored
-  intset* confirmed;    // substates that are confirmed (explored or not)
+  intset* confirmed;    // substates that are confirmed
   int num_levels;
 private:
   traverse_data td;
@@ -918,13 +928,23 @@ protected:
   void exploreNextstate(deplist &dl, int k, bool has_unexp);
 
   inline void exploreEnabling(deplist *dl) {
-    DCASSERT(dl);
-    return exploreEnabling(*dl, dl->level_deps.getSmallestAfter(0), false);
+    for (deplist* dc = dl; dc; dc = dc->next) {
+      // TBD - don't explore unless some level has an unexplored local state
+      exploreEnabling(*dc, dc->getLevelAbove(0), false);
+    }
+    // TBD - number of things we explored
   }
   inline void exploreNextstate(deplist *dl) {
-    DCASSERT(dl);
-    return exploreNextstate(*dl, dl->level_deps.getSmallestAfter(0), false);
+    for (deplist* dc = dl; dc; dc = dc->next) {
+      // TBD - don't explore unless some level has an unexplored local state
+      exploreNextstate(*dc, dc->getLevelAbove(0), false);
+    }
+    // TBD - number of things we explored
   }
+
+  // call after a round of exploring to update explored states.
+  void exploreFinishedRound();
+
 #ifdef SHOW_SUBSTATES
   void show_substates(OutputStream &s);
 #endif
@@ -940,7 +960,7 @@ substate_varoption::deplist
 ::deplist(const intset &x, expr_node* tl, deplist* n, int d) : level_deps(x) 
 { 
   termlist = tl;
-  dd = 0;
+  // dd = 0;
   next = n;
   mt_from = mt_to = 0;
   mt_alloc = mt_used = 0;
@@ -960,35 +980,19 @@ substate_varoption::deplist::~deplist()
 bool substate_varoption::deplist::addMinterm(const int* from)
 {
   if (mt_used >= mt_alloc) {
-    // resize arrays...
-    if (0==mt_alloc) {
-      mt_alloc = 8;
-      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
-      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
-    } else {
-      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
-      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
-      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
-    }
+    expandLists();
   }
-  if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
-  mt_from[mt_used] = new int[depth];
-  mt_to[mt_used] = new int[depth];
+  if (0==mt_from) return false; // malloc or realloc failed
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[depth];
+  }
   memcpy(mt_from[mt_used], from, depth * sizeof(int));
-  for (int i=depth; i>=0; i--) {
-    mt_to[mt_used][i] = -1;
+  if (0==mt_to[mt_used]) {
+    mt_to[mt_used] = new int[depth];
   }
-  /*
-  // Nice, but not portable:
-  static int negone = -1;
-  if (4==sizeof(int)) {
-    memset_pattern4(mt_to, &negone, depth * sizeof(int));
-  } else if (8==sizeof(int)) {
-    memset_pattern8(mt_to, &negone, depth * sizeof(int));
-  } else {
-      DCASSERT(0);  // FAIL
+  for (int i=0; i<depth; i++) {
+    mt_to[mt_used][i] = MEDDLY::DONT_CARE;
   }
-  */
   mt_used++;
   return true;
 }
@@ -996,21 +1000,16 @@ bool substate_varoption::deplist::addMinterm(const int* from)
 bool substate_varoption::deplist::addMinterm(const int* from, const int* to)
 {
   if (mt_used >= mt_alloc) {
-    // resize arrays...
-    if (0==mt_alloc) {
-      mt_alloc = 8;
-      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
-      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
-    } else {
-      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
-      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
-      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
-    }
+    expandLists();
   }
   if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
-  mt_from[mt_used] = new int[depth];
-  mt_to[mt_used] = new int[depth];
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[depth];
+  }
   memcpy(mt_from[mt_used], from, depth * sizeof(int));
+  if (0==mt_to[mt_used]) {
+    mt_to[mt_used] = new int[depth];
+  }
   memcpy(mt_to[mt_used], to, depth * sizeof(int));
   mt_used++;
   return true;
@@ -1024,6 +1023,11 @@ void substate_varoption::deplist::showMinterms(OutputStream &s, int pad)
     s.PutArray(mt_from[i]+1, depth-1);
     s << "]\n";
   }
+  if (next) {
+    s.Pad(' ', pad);
+    s << "(synch)\n";
+    next->showMinterms(s, pad);
+  }
 }
 
 void substate_varoption::deplist::showMintermPairs(OutputStream &s, int pad)
@@ -1036,8 +1040,31 @@ void substate_varoption::deplist::showMintermPairs(OutputStream &s, int pad)
     s.PutArray(mt_to[i]+1, depth-1);
     s << "]\n";
   }
+  if (next) {
+    s.Pad(' ', pad);
+    s << "(synch)\n";
+    next->showMintermPairs(s, pad);
+  }
 }
 
+void substate_varoption::deplist::expandLists()
+{
+  // resize arrays...
+  int old_alloc = mt_alloc;
+  if (0==mt_alloc) {
+    mt_alloc = 8;
+    mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+    mt_to = (int**) malloc(mt_alloc * sizeof(int**));
+  } else {
+    mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
+    mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+    mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
+  }
+  for (int i=old_alloc; i<mt_alloc; i++) {
+    mt_from[i] = 0;
+    mt_to[i] = 0;
+  }
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -1116,8 +1143,8 @@ substate_varoption::initializeEvents(named_msg &d)
     d.report() << "\t" << parent.readEvent(i)->Name() << " enabling:\n";
     for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
       d.report() << "\t\tlevels ";
-      int k = DL->level_deps.getSmallestAfter(0);
-      for ( ; k>0; k=DL->level_deps.getSmallestAfter(k)) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
         d.report() << k << ", ";
       } // for k
       d.report() << "\n\t\t";
@@ -1131,8 +1158,8 @@ substate_varoption::initializeEvents(named_msg &d)
     d.report() << "\t" << parent.readEvent(i)->Name() << " firing:\n";
     for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
       d.report() << "\t\tlevels ";
-      int k = DL->level_deps.getSmallestAfter(0);
-      for ( ; k>0; k=DL->level_deps.getSmallestAfter(k)) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
         d.report() << k << ", ";
       } // for k
       d.report() << "\n\t\t";
@@ -1274,7 +1301,7 @@ substate_varoption::getExprDeps(expr* x, int numlevels)
     // check deplist for any with same dependencies
     deplist* find;
     for (find = DL; find; find=find->next) {
-      if (find->level_deps == deps) break;
+      if (find->sameDeps(deps)) break;
     } // for find
 
     if (find) {
@@ -1315,7 +1342,7 @@ void substate_varoption
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
-  int next_k = dl.level_deps.getSmallestAfter(k);
+  int next_k = dl.getLevelAbove(k);
   if (next_k > 0) {
     // Not the bottom level; recurse
     tdcurr->set_substate_known(k);
@@ -1403,7 +1430,7 @@ void substate_varoption
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
-  int next_k = dl.level_deps.getSmallestAfter(k);
+  int next_k = dl.getLevelAbove(k);
   if (next_k > 0) {
     // Not the bottom level; recurse
     tdcurr->set_substate_known(k);
@@ -1483,8 +1510,8 @@ void substate_varoption
 
     // next state -> minterm
     //
-    for (int kk = dl.level_deps.getSmallestAfter(0); 
-        kk>=0; kk = dl.level_deps.getSmallestAfter(kk)) {
+    for (int kk = dl.getLevelAbove(0); 
+        kk>=0; kk = dl.getLevelAbove(kk)) {
 
       to_minterm[kk] = colls->addSubstate(kk, 
           tdnext->readSubstate(kk), tdnext->readSubstateSize(kk)
@@ -1510,8 +1537,8 @@ void substate_varoption
 
     // clear out minterm
     //
-    for (int kk = dl.level_deps.getSmallestAfter(0); 
-        kk>=0; kk = dl.level_deps.getSmallestAfter(kk)) {
+    for (int kk = dl.getLevelAbove(0); 
+        kk>=0; kk = dl.getLevelAbove(kk)) {
 
       to_minterm[kk] = -2;
     } // for kk
@@ -1523,18 +1550,31 @@ void substate_varoption
   return;
 }
 
+void substate_varoption::exploreFinishedRound()
+{
+  //
+  // Mark all confirmed states as explored
+  //
+  for (int k=num_levels; k>0; k--) {
+    enlarge(explored[k], colls->getMaxIndex(k));
+    explored[k] += confirmed[k];
+    enlarge(confirmed[k], colls->getMaxIndex(k));
+  } // for k
+}
+
 #ifdef SHOW_SUBSTATES
 void substate_varoption::show_substates(OutputStream &s)
 {
   for (int k=num_levels; k>0; k--) {
-    s << "Level " << k << " substates:\n";
+    s << "    Level " << k << " substates:\n";
     int ssz = tdcurr->readSubstateSize(k);
     tdcurr->set_substate_known(k);
     for (int i=0; i<colls->getMaxIndex(k); i++) {
       s << "\t";
       s.Put(long(i), 3);
-      if (!confirmed[k].contains(i)) s << "u: "; 
-      else if (explored[k].contains(i)) s << " : "; else s << "e: ";
+      s.Put(confirmed[k].contains(i) ? 'c' : 'u');
+      s.Put(explored[k].contains(i) ? 'e' : ' ');
+      s << ": ";
       colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
       tdcurr->Print(s, 0);
       s << "\n";
@@ -1580,6 +1620,14 @@ pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
   DCASSERT(f);
   MEDDLY::dd_edge tmp(f);
 
+#ifdef SHOW_SUBSTATES
+  if (d.startReport()) {
+    d.report() << "Initial substates:\n";
+    show_substates(d.report());
+    d.stopIO();
+  }
+#endif
+
   for (int i=0; i<parent.getNumEvents(); i++) {
     const model_event* e = parent.readEvent(i);
     if (d.startReport()) {
@@ -1602,6 +1650,13 @@ pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 
   } // for i
 
+  // mark stuff we just explored to avoid exploring twice
+  exploreFinishedRound();
+
+  // confirm everything
+  for (int k=num_levels; k>0; k--) {
+    confirmed[k].addAll();
+  }
 #ifdef SHOW_SUBSTATES
   if (d.startReport()) {
     d.report() << "Current substates:\n";
@@ -1609,6 +1664,8 @@ pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
     d.stopIO();
   }
 #endif
+
+  // TBD - loop but only on levels that we need to
 
   
   throw subengine::Engine_Failed;
