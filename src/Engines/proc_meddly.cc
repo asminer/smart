@@ -21,10 +21,8 @@
 // #define DEBUG_EVENT_OVERALL
 // #define DEBUG_NOCHANGE
 
-#define SHOW_SUBSTATES
-#define DEBUG_EXPLORE_ENABLING
-#define DEBUG_EXPLORE_FIRING
-#define SHOW_MINTERMS
+// #define SHOW_SUBSTATES
+// #define SHOW_MINTERMS
 
 // **************************************************************************
 // *                                                                        *
@@ -947,24 +945,26 @@ private:
 
   /**
       Add minterms for enabling expression.
+        @param  d         Debugging stream
         @param  dl        Chunk of function.
         @param  k         Current level
         @param  changed   0, if we have already seen an unexplored local.
                           Otherwise, zero-terminated list of levels with
                           unexplored locals to pull from.
   */
-  void exploreEnabling(deplist &dl, int k, const int* changed);
+  void exploreEnabling(named_msg &d, deplist &dl, int k, const int* changed);
   
 
   /**
       Add minterms for next-state expression.
+        @param  d         Debugging stream
         @param  dl        Chunk of function.
         @param  k         Current level
         @param  changed   0, if we have already seen an unexplored local.
                           Otherwise, zero-terminated list of levels with
                           unexplored locals to pull from.
   */
-  void exploreNextstate(deplist &dl, int k, const int* changed);
+  void exploreNextstate(named_msg &d, deplist &dl, int k, const int* changed);
   
 protected:
   /**
@@ -984,7 +984,8 @@ protected:
   */
   inline void buildLevelsToExplore(int* levels) {
     for (int k=1; k<=num_levels; k++) {
-      if (toBeExplored[k].isEmpty()) continue;
+      int first = toBeExplored[k].getSmallestAfter(-1);
+      if (first<0) continue;
       *levels = k;
       levels++;
     }
@@ -1390,7 +1391,7 @@ substate_varoption::clearList(deplist* &L)
 
 
 void substate_varoption
-::exploreEnabling(deplist &dl, int k, const int* changed)
+::exploreEnabling(named_msg &d, deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
@@ -1436,7 +1437,7 @@ void substate_varoption
       //
       
       from_minterm[k] = i;
-      exploreEnabling(dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
+      exploreEnabling(d, dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
@@ -1457,37 +1458,36 @@ void substate_varoption
 
     from_minterm[k] = i;
 
-#ifdef DEBUG_EXPLORE_ENABLING
-    DisplayStream dump(stderr);
-    dump << "enabled?\n\tstate ";
-    tdcurr->Print(dump, 0);
-    dump << "\n\tminterm [";
-    dump.PutArray(from_minterm+1, num_levels);
-    dump << "]\n";
-    dump.flush();
-#endif
+    bool start_d = d.startReport();
+    if (start_d) {
+      d.report() << "enabled?\n\tstate ";
+      tdcurr->Print(d.report(), 0);
+      d.report() << "\n\tminterm [";
+      d.report().PutArray(from_minterm+1, num_levels);
+      d.report() << "]\n";
+    }
     
     bool is_enabled = true;
     for (expr_node* n = dl.termlist; n; n=n->next) {
-#ifdef DEBUG_EXPLORE_ENABLING
-      dump << "\t";
-      n->term->Print(dump, 0);
-      dump << " : ";
-#endif
       n->term->Compute(td);
-#ifdef DEBUG_EXPLORE_ENABLING
-      if (td.answer->isNormal()) {
-        if (td.answer->getBool())
-          dump << "true";
+
+      if (start_d) {
+        d.report() << "\t";
+        n->term->Print(d.report(), 0);
+        d.report() << " : ";
+        if (td.answer->isNormal()) {
+          if (td.answer->getBool())
+            d.report() << "true";
+          else
+            d.report() << "false";
+        } else if (td.answer->isUnknown())
+          d.report() << "?";
         else
-          dump << "false";
-      } else if (td.answer->isUnknown())
-        dump << "?";
-      else
-        dump << "null";
-      dump << "\n";
-      dump.flush();
-#endif
+          d.report() << "null";
+        d.report() << "\n";
+        d.stopIO();
+      }
+
       DCASSERT(td.answer->isNormal());
       if (td.answer->getBool()) continue;
       is_enabled = false;
@@ -1505,7 +1505,7 @@ void substate_varoption
 
 
 void substate_varoption
-::exploreNextstate(deplist &dl, int k, const int* changed)
+::exploreNextstate(named_msg &d, deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
@@ -1553,7 +1553,7 @@ void substate_varoption
       //
       
       from_minterm[k] = i;
-      exploreNextstate(dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
+      exploreNextstate(d, dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
@@ -1578,36 +1578,35 @@ void substate_varoption
 
     from_minterm[k] = i;
 
-#ifdef DEBUG_EXPLORE_FIRING
-    DisplayStream dump(stderr);
-    dump << "firing?\n\tstate ";
-    tdcurr->Print(dump, 0);
-    dump << "\n\tminterm [";
-    dump.PutArray(from_minterm+1, num_levels);
-    dump << "]\n";
-    dump.flush();
-#endif
+    bool start_d = d.startReport();
+    if (start_d) {
+      d.report() << "firing?\n\tstate ";
+      tdcurr->Print(d.report(), 0);
+      d.report() << "\n\tminterm [";
+      d.report().PutArray(from_minterm+1, num_levels);
+      d.report() << "]\n";
+    }
     
     bool is_enabled = true;
     for (expr_node* n = dl.termlist; n; n=n->next) {
-#ifdef DEBUG_EXPLORE_FIRING
-      dump << "\t";
-      n->term->Print(dump, 0);
-      dump << " : ";
-#endif
       n->term->Compute(td);
-#ifdef DEBUG_EXPLORE_FIRING
-      if (td.answer->isNormal()) 
-        dump << "ok";
-      else if (td.answer->isUnknown())
-        dump << "?";
-      else if (td.answer->isOutOfBounds())
-        dump << "out of bounds";
-      else
-        dump << "null";
-      dump << "\n";
-      dump.flush();
-#endif
+
+      if (start_d) {
+        d.report() << "\t";
+        n->term->Print(d.report(), 0);
+        d.report() << " : ";
+        if (td.answer->isNormal()) 
+          d.report() << "ok";
+        else if (td.answer->isUnknown())
+          d.report() << "?";
+        else if (td.answer->isOutOfBounds())
+          d.report() << "out of bounds";
+        else
+          d.report() << "null";
+        d.report() << "\n";
+        d.stopIO();
+      }
+
       if (td.answer->isNormal()) continue;
       is_enabled = false;
       break;
@@ -1627,14 +1626,18 @@ void substate_varoption
       if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
       throw subengine::Engine_Failed;
     } // for kk
-#ifdef DEBUG_EXPLORE_FIRING
-    dump << "firing\n\tto state ";
-    tdnext->Print(dump, 0);
-    dump << "\n\tto minterm [";
-    dump.PutArray(to_minterm+1, num_levels);
-    dump << "]\n";
-    dump.flush();
-#endif
+
+    //
+    // Reporting
+    //
+    if (d.startReport()) {
+      d.report() << "firing\n\tto state ";
+      tdnext->Print(d.report(), 0);
+      d.report() << "\n\tto minterm [";
+      d.report().PutArray(to_minterm+1, num_levels);
+      d.report() << "]\n";
+      d.stopIO();
+    }
 
     // add minterm to queue
     //
@@ -1661,7 +1664,6 @@ void substate_varoption
 void substate_varoption::updateLevels(named_msg &d, const int* levels)
 {
   DCASSERT(tmpLevels);
-#ifdef DEBUG_EXPLORE_ENABLING
   if (d.startReport()) {
     d.report() << "updating for levels: ";
     for (int p=0; levels[p]; p++) {
@@ -1673,7 +1675,6 @@ void substate_varoption::updateLevels(named_msg &d, const int* levels)
     d.report() << "\n";
     d.stopIO();
   }
-#endif
   for (int i=0; i<parent.getNumEvents(); i++) {
     const model_event* e = parent.readEvent(i);
     if (d.startReport()) {
@@ -1690,7 +1691,7 @@ void substate_varoption::updateLevels(named_msg &d, const int* levels)
       if (0==tmpLevels[0]) continue;
       // need to explore these
       new_enablings = true;
-      exploreEnabling(*ed, ed->getLevelAbove(0), tmpLevels);
+      exploreEnabling(d, *ed, ed->getLevelAbove(0), tmpLevels);
     }
 
     //
@@ -1702,7 +1703,7 @@ void substate_varoption::updateLevels(named_msg &d, const int* levels)
       if (0==tmpLevels[0]) continue;
       // need to explore these
       new_firings = true;
-      exploreNextstate(*fd, fd->getLevelAbove(0), tmpLevels);
+      exploreNextstate(d, *fd, fd->getLevelAbove(0), tmpLevels);
     }
 
     if (d.startReport()) {
@@ -1827,9 +1828,9 @@ pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
     // set unconfirmed to be explored,
     // and confirm everything
     for (int k=num_levels; k>0; k--) {
-      toBeExplored[k].assignFrom(confirmed[k]);
-      toBeExplored[k].complement();
-      confirmed[k].addAll();
+      toBeExplored[k].addRange(0, colls->getMaxIndex(k)-1);
+      toBeExplored[k] -= confirmed[k];
+      confirmed[k].addRange(0, colls->getMaxIndex(k)-1);
     }
   }
 
