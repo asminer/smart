@@ -887,6 +887,26 @@ protected:
     inline bool sameDeps(const intset& deps) const {
       return level_deps == deps;
     }
+    /**
+        Given a list of levels, build the intersection
+        with the set of levels that we depend on.
+        This is unsafe - no bound checking on the arrays - so make sure
+        the arrays are large enough :^)
+
+          @param  levels_in   Zero-terminated array of levels, as input.
+          @param  levels_out  Resulting list stored here, as a
+                              zero-terminated array of levels.
+    */
+    inline void intersectLevels(const int* levels_in, int* levels_out) const {
+      while (*levels_in) {
+        if (level_deps.contains(*levels_in)) {
+          *levels_out = *levels_in;
+          levels_out++;
+        }
+        levels_in++;
+      }
+      *levels_out = 0;
+    }
   private:
     void expandLists();
   };
@@ -894,8 +914,8 @@ protected:
   deplist** enable_deps;
   deplist** fire_deps;
   substate_colls* colls;
-  intset* explored;     // substates that are already explored
   intset* confirmed;    // substates that are confirmed
+  intset* toBeExplored; // substates to explore next round
   int num_levels;
 private:
   traverse_data td;
@@ -903,6 +923,7 @@ private:
   shared_state* tdnext;
   int* from_minterm;
   int* to_minterm;
+  int* tmpLevels;   // array of size num_levels+1
 public:
   substate_varoption(meddly_states &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
@@ -923,27 +944,52 @@ private:
     set.resetSize(newsz);
     set.removeRange(oldsz, newsz-1);
   }
+
+  /**
+      Add minterms for enabling expression.
+        @param  dl        Chunk of function.
+        @param  k         Current level
+        @param  changed   0, if we have already seen an unexplored local.
+                          Otherwise, zero-terminated list of levels with
+                          unexplored locals to pull from.
+  */
+  void exploreEnabling(deplist &dl, int k, const int* changed);
+  
+
+  /**
+      Add minterms for next-state expression.
+        @param  dl        Chunk of function.
+        @param  k         Current level
+        @param  changed   0, if we have already seen an unexplored local.
+                          Otherwise, zero-terminated list of levels with
+                          unexplored locals to pull from.
+  */
+  void exploreNextstate(deplist &dl, int k, const int* changed);
+  
 protected:
-  void exploreEnabling(deplist &dl, int k, bool has_unexp);
-  void exploreNextstate(deplist &dl, int k, bool has_unexp);
+  /**
+      Update all enabling and next-state functions for the given list of 
+      modified (i.e., new local states to explore) levels.
+      The unexplored locals at those levels are then marked as explored.
+        @param  d         Debugging stream
+        @param  levels    Zero-terminated list of levels, from
+                          lowest to highest.
+  */
+  void updateLevels(named_msg &d, const int* levels);
 
-  inline void exploreEnabling(deplist *dl) {
-    for (deplist* dc = dl; dc; dc = dc->next) {
-      // TBD - don't explore unless some level has an unexplored local state
-      exploreEnabling(*dc, dc->getLevelAbove(0), false);
+  /**
+      Build the list of levels that have confirmed, unexplored locals.
+        @param  levels    Array of dimension num_levels+1 or larger.
+                          On output - a zero terminated list of levels.
+  */
+  inline void buildLevelsToExplore(int* levels) {
+    for (int k=1; k<=num_levels; k++) {
+      if (toBeExplored[k].isEmpty()) continue;
+      *levels = k;
+      levels++;
     }
-    // TBD - number of things we explored
+    *levels = 0;
   }
-  inline void exploreNextstate(deplist *dl) {
-    for (deplist* dc = dl; dc; dc = dc->next) {
-      // TBD - don't explore unless some level has an unexplored local state
-      exploreNextstate(*dc, dc->getLevelAbove(0), false);
-    }
-    // TBD - number of things we explored
-  }
-
-  // call after a round of exploring to update explored states.
-  void exploreFinishedRound();
 
 #ifdef SHOW_SUBSTATES
   void show_substates(OutputStream &s);
@@ -1080,8 +1126,8 @@ substate_varoption
   colls = 0;
   enable_deps = 0;
   fire_deps = 0;
-  explored = 0;
   confirmed = 0;
+  toBeExplored = 0;
   td.answer = new result;
   tdcurr = new shared_state(&p);
   tdnext = new shared_state(&p);
@@ -1091,18 +1137,20 @@ substate_varoption
   to_minterm = 0;
   initDomain(em);
   initEncoders(pg);
+  tmpLevels = 0;
 }
 
 substate_varoption::~substate_varoption()
 {
   Delete(colls);
-  delete[] explored;
   delete[] confirmed;
+  delete[] toBeExplored;
   delete[] from_minterm;
   delete[] to_minterm;
   Delete(tdcurr);
   Delete(tdnext);
   delete td.answer;
+  delete[] tmpLevels;
 }
 
 void substate_varoption::initializeVars()
@@ -1113,7 +1161,11 @@ void substate_varoption::initializeVars()
     int N = colls->getMaxIndex(k);
     enlarge(confirmed[k], N);
     confirmed[k].addRange(0, N-1);
+    enlarge(toBeExplored[k], N);
+    toBeExplored[k].addRange(0, N-1);
   } // for k
+  // make scratch space
+  tmpLevels = new int[num_levels+1];
 }
   
 void 
@@ -1230,8 +1282,8 @@ void substate_varoption::initDomain(const exprman* em)
   //
   // Keep track of which substates are explored, confirmed
   //
-  explored = new intset[num_levels+1];
   confirmed = new intset[num_levels+1];
+  toBeExplored = new intset[num_levels+1];
 }
 
 void substate_varoption::initEncoders(const meddly_procgen &pg)
@@ -1338,17 +1390,43 @@ substate_varoption::clearList(deplist* &L)
 
 
 void substate_varoption
-::exploreEnabling(deplist &dl, int k, bool has_unexp)
+::exploreEnabling(deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
   int next_k = dl.getLevelAbove(k);
+
+  //
+  // Are we obligated to visit unexplored states only?
+  //
+  intset* toVisit = &(confirmed[k]);
+  const int* next_changed = 0;
+  if (changed) {
+    if (k == changed[0]) {
+      next_changed = changed+1;
+    } else {
+      next_changed = changed;
+    }
+    if (0==next_changed[0]) {
+      // visit unexplored only
+      toVisit = &(toBeExplored[k]);
+    }
+  }
+  DCASSERT(toVisit);
+
+  //
+  // Start exploring.
+  // Two cases - bottom level, and not there yet.
+  //
+
   if (next_k > 0) {
+    //
     // Not the bottom level; recurse
+    //
     tdcurr->set_substate_known(k);
-    for (int i = confirmed[k].getSmallestAfter(-1);
+    for (int i = toVisit->getSmallestAfter(-1);
          i>=0;
-         i = confirmed[k].getSmallestAfter(i)) 
+         i = toVisit->getSmallestAfter(i)) 
     {
       int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
       if (foo<0) throw subengine::Engine_Failed;
@@ -1358,22 +1436,22 @@ void substate_varoption
       //
       
       from_minterm[k] = i;
-      exploreEnabling(dl, next_k, has_unexp || !explored[k].contains(i));
+      exploreEnabling(dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
     return;
   } 
 
-  // this is the "bottom level"
+  // 
+  // Bottom level
+  // Explore as usual, but instead of recursing, add the minterm.
+  //
   tdcurr->set_substate_known(k);
-  for (int i = confirmed[k].getSmallestAfter(-1);
+  for (int i = toVisit->getSmallestAfter(-1);
        i>=0;
-       i = confirmed[k].getSmallestAfter(i)) 
+       i = toVisit->getSmallestAfter(i)) 
   {
-    // skip if we've examined this (global) state already:
-    if (!has_unexp && explored[k].contains(i)) continue;
-
     int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
     if (foo<0) throw subengine::Engine_Failed;
 
@@ -1425,19 +1503,46 @@ void substate_varoption
   tdcurr->set_substate_unknown(k);
 }
 
+
 void substate_varoption
-::exploreNextstate(deplist &dl, int k, bool has_unexp)
+::exploreNextstate(deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
   int next_k = dl.getLevelAbove(k);
+
+  //
+  // Are we obligated to visit unexplored states only?
+  //
+  intset* toVisit = &(confirmed[k]);
+  const int* next_changed = 0;
+  if (changed) {
+    if (k == changed[0]) {
+      next_changed = changed+1;
+    } else {
+      next_changed = changed;
+    }
+    if (0==next_changed[0]) {
+      // visit unexplored only
+      toVisit = &(toBeExplored[k]);
+    }
+  }
+  DCASSERT(toVisit);
+
+  //
+  // Start exploring.
+  // Two cases - bottom level, and not there yet.
+  //
+
   if (next_k > 0) {
+    //
     // Not the bottom level; recurse
+    //
     tdcurr->set_substate_known(k);
     tdnext->set_substate_known(k);
-    for (int i = confirmed[k].getSmallestAfter(-1);
+    for (int i = toVisit->getSmallestAfter(-1);
          i>=0;
-         i = confirmed[k].getSmallestAfter(i)) 
+         i = toVisit->getSmallestAfter(i)) 
     {
       int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
       if (foo<0) throw subengine::Engine_Failed;
@@ -1448,7 +1553,7 @@ void substate_varoption
       //
       
       from_minterm[k] = i;
-      exploreNextstate(dl, next_k, has_unexp || !explored[k].contains(i));
+      exploreNextstate(dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
     from_minterm[k] = -1;
     tdcurr->set_substate_unknown(k);
@@ -1456,16 +1561,17 @@ void substate_varoption
     return;
   } 
 
-  // this is the "bottom level"
+  // 
+  // Bottom level
+  // Explore as usual, but instead of recursing, add the minterm.
+  //
+
   tdcurr->set_substate_known(k);
   tdnext->set_substate_known(k);
-  for (int i = confirmed[k].getSmallestAfter(-1);
+  for (int i = toVisit->getSmallestAfter(-1);
        i>=0;
-       i = confirmed[k].getSmallestAfter(i)) 
+       i = toVisit->getSmallestAfter(i)) 
   {
-    // skip if we've examined this (global) state already:
-    if (!has_unexp && explored[k].contains(i)) continue;
-
     int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
     if (foo<0) throw subengine::Engine_Failed;
     colls->getSubstate(k, i, tdnext->writeSubstate(k), ssz);
@@ -1550,16 +1656,99 @@ void substate_varoption
   return;
 }
 
-void substate_varoption::exploreFinishedRound()
+
+
+void substate_varoption::updateLevels(named_msg &d, const int* levels)
 {
+  DCASSERT(tmpLevels);
+#ifdef DEBUG_EXPLORE_ENABLING
+  if (d.startReport()) {
+    d.report() << "updating for levels: ";
+    for (int p=0; levels[p]; p++) {
+      if (p) {
+        d.report() << ", ";
+      }
+      d.report() << levels[p];
+    } 
+    d.report() << "\n";
+    d.stopIO();
+  }
+#endif
+  for (int i=0; i<parent.getNumEvents(); i++) {
+    const model_event* e = parent.readEvent(i);
+    if (d.startReport()) {
+      d.report() << "updating event " << e->Name() << "\n";
+      d.stopIO();
+    }
+
+    //
+    // Enablings
+    //
+    bool new_enablings = false;
+    for (deplist* ed = enable_deps[i]; ed; ed = ed->next) {
+      ed->intersectLevels(levels, tmpLevels);
+      if (0==tmpLevels[0]) continue;
+      // need to explore these
+      new_enablings = true;
+      exploreEnabling(*ed, ed->getLevelAbove(0), tmpLevels);
+    }
+
+    //
+    // Next state
+    //
+    bool new_firings = false;
+    for (deplist* fd = fire_deps[i]; fd; fd = fd->next) {
+      fd->intersectLevels(levels, tmpLevels);
+      if (0==tmpLevels[0]) continue;
+      // need to explore these
+      new_firings = true;
+      exploreNextstate(*fd, fd->getLevelAbove(0), tmpLevels);
+    }
+
+    if (d.startReport()) {
+      if (new_firings || new_enablings) {
+        d.report() << "event " << e->Name() << " has changed\n";
+      } else {
+        d.report() << "event " << e->Name() << " is unchanged\n";
+      }
+      d.stopIO();
+    }
+
+    if (!(new_firings || new_enablings)) continue;
+
+#ifdef SHOW_MINTERMS
+    if (d.startReport()) {
+      d.report() << "event " << e->Name() << ":\n";
+      d.report() << "\tenabling:\n";
+      enable_deps[i]->showMinterms(d.report(), 12);
+      d.report() << "\tfiring:\n";
+      fire_deps[i]->showMintermPairs(d.report(), 12);
+      d.stopIO();
+    }
+#endif
+
+    // TBD: update the edges from the minterms
+
+  } // for i
+
   //
-  // Mark all confirmed states as explored
+  // Done exploring.
+  // Mark everything in these levels as explored.
   //
-  for (int k=num_levels; k>0; k--) {
-    enlarge(explored[k], colls->getMaxIndex(k));
-    explored[k] += confirmed[k];
+  for (int p=0; levels[p]; p++) {
+    int k = levels[p];
+    enlarge(toBeExplored[k], colls->getMaxIndex(k));
+    toBeExplored[k].removeAll();
     enlarge(confirmed[k], colls->getMaxIndex(k));
   } // for k
+
+#ifdef SHOW_SUBSTATES
+  if (d.startReport()) {
+    d.report() << "Done updating.  Current substates:\n";
+    show_substates(d.report());
+    d.stopIO();
+  }
+#endif
 }
 
 #ifdef SHOW_SUBSTATES
@@ -1573,7 +1762,7 @@ void substate_varoption::show_substates(OutputStream &s)
       s << "\t";
       s.Put(long(i), 3);
       s.Put(confirmed[k].contains(i) ? 'c' : 'u');
-      s.Put(explored[k].contains(i) ? 'e' : ' ');
+      s.Put(toBeExplored[k].contains(i) ? '!' : ' ');
       s << ": ";
       colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
       tdcurr->Print(s, 0);
@@ -1616,58 +1805,36 @@ pregen_varoption
 void 
 pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
 {
-  MEDDLY::forest* f = nsf->getForest();
-  DCASSERT(f);
-  MEDDLY::dd_edge tmp(f);
+  int* updated = new int[num_levels+1];
 
-#ifdef SHOW_SUBSTATES
-  if (d.startReport()) {
-    d.report() << "Initial substates:\n";
-    show_substates(d.report());
-    d.stopIO();
-  }
-#endif
-
-  for (int i=0; i<parent.getNumEvents(); i++) {
-    const model_event* e = parent.readEvent(i);
+  for (int iter=1; ; iter++) { 
     if (d.startReport()) {
-      d.report() << "updating event " << e->Name() << "\n";
+      d.report() << "Pregenerating locals, iteration " << iter << "\n";
+#ifdef SHOW_SUBSTATES
+      d.report() << "Current substates:\n";
+      show_substates(d.report());
+#endif
       d.stopIO();
     }
-    exploreEnabling(enable_deps[i]);
-    exploreNextstate(fire_deps[i]);
-#ifdef SHOW_MINTERMS
-    if (d.startReport()) {
-      d.report() << "event " << e->Name() << ":\n";
-      d.report() << "\tenabling:\n";
-      enable_deps[i]->showMinterms(d.report(), 12);
-      d.report() << "\tfiring:\n";
-      fire_deps[i]->showMintermPairs(d.report(), 12);
-      d.stopIO();
+
+    // What levels have been updated
+    buildLevelsToExplore(updated);
+    if (0==updated[0]) break;   // nothing
+
+    // Adjust enablings, next-state functions for those levels
+    updateLevels(d, updated);
+
+    // set unconfirmed to be explored,
+    // and confirm everything
+    for (int k=num_levels; k>0; k--) {
+      toBeExplored[k].assignFrom(confirmed[k]);
+      toBeExplored[k].complement();
+      confirmed[k].addAll();
     }
-#endif
-    // TBD: update the edge from the minterms
-
-  } // for i
-
-  // mark stuff we just explored to avoid exploring twice
-  exploreFinishedRound();
-
-  // confirm everything
-  for (int k=num_levels; k>0; k--) {
-    confirmed[k].addAll();
   }
-#ifdef SHOW_SUBSTATES
-  if (d.startReport()) {
-    d.report() << "Current substates:\n";
-    show_substates(d.report());
-    d.stopIO();
-  }
-#endif
 
-  // TBD - loop but only on levels that we need to
-
-  
+  // Cleanup
+  delete[] updated;
   throw subengine::Engine_Failed;
 }
 
