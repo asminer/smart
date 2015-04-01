@@ -24,9 +24,9 @@
 class meddly_mc : public markov_lldsm {
   class LS_wrapper : public LS_Abstract_Matrix {
     double* diagonals;
-    MEDDLY::numerical_operation* vectmult;
+    MEDDLY::specialized_operation* vectmult;
   public:
-    LS_wrapper(MEDDLY::numerical_operation* vm, double* d, long dsize);
+    LS_wrapper(MEDDLY::specialized_operation* vm, double* d, long dsize);
     virtual ~LS_wrapper();
     virtual bool IsTransposed() const {
       return false; // not sure about this
@@ -144,7 +144,7 @@ public:
 // ******************************************************************
 
 meddly_mc::LS_wrapper
-::LS_wrapper(MEDDLY::numerical_operation* vm, double* d, long ds)
+::LS_wrapper(MEDDLY::specialized_operation* vm, double* d, long ds)
  : LS_Abstract_Matrix(ds)
 {
   vectmult = vm;
@@ -205,7 +205,8 @@ void meddly_mc::buildDiagonals()
   }
 
   try {
-    MEDDLY::numerical_operation* MV = MEDDLY::MATR_EXPLVECT_MULT->buildOperation(
+    MEDDLY::specialized_operation* MV;
+    MV = MEDDLY::MATR_EXPLVECT_MULT->buildOperation(
       process->state_indexes->E, process->proc->E, process->state_indexes->E
     );
     MV->compute(diagonals, one);
@@ -443,7 +444,8 @@ bool meddly_mc::computeSteadyState(double* probs) const
   for (long i=dsize-1; i>=0; i--) probs[i] = 1;
   startSteadyReport();
   LS_Output outdata;
-  MEDDLY::numerical_operation* vm = MEDDLY::EXPLVECT_MATR_MULT->buildOperation(
+  MEDDLY::specialized_operation* vm;
+  vm = MEDDLY::EXPLVECT_MATR_MULT->buildOperation(
     process->state_indexes->E, process->proc->E, process->state_indexes->E
   );
   LS_wrapper foo(vm, diagonals, dsize);
