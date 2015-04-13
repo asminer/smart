@@ -1,0 +1,148 @@
+
+// $Id:$ 
+
+//
+// "Pawn game" model: NxN chess board, pawns only in proper positions
+// and making proper moves / captures.  First player to promote a
+// pawn wins the game.
+//
+
+int N := 8; // number of ranks
+int M := 3; // number of files (pawns)
+
+//
+// State:
+//
+// board squares (empty, black, white)
+// whose turn:
+//    empty (we have a winner)
+//    black (black's move)
+//    white (white's move)
+//
+
+// Events:
+//  first move 2 squares
+//  move one square
+//  capture
+//  eventually - en passant capture
+//
+
+# Report + procgen
+
+// # Debug + procgen
+
+# EVMStateStyle VECTOR
+
+# ReportThousandSeparator ","
+# OutputThousandSeparator ","
+
+evm pawn_game := {
+  // state info
+  for (int i in {1..N}, int j in {1..M}) {
+    intvar b[i][j];
+    range(b[i][j] : {0..2});  // empty, white, black
+  }
+
+  // turn info
+  intvar turn;
+  range(turn : {0..2});   // none, white, black
+
+  // Initial board configuration
+  for (int j in {1..M}) {
+    init(b[2][j] : 1);    // white positions
+    init(b[N-1][j] : 2);  // black positions
+  }
+  init(turn : 1);
+
+  //
+  // Forward 1 moves, white
+  //
+  for (int i in {1..N-1}, int j in {1..M}) {
+    event wm1[i][j];
+    guard( wm1[i][j] : 1==eval(turn) & 1==eval(b[i][j]) & 0==eval(b[i+1][j]) );
+    assign(
+      b[i][j]   : wm1[i][j] : 0,
+      b[i+1][j] : wm1[i][j] : 1,
+      turn      : wm1[i][j] : cond(i<N-1, 2, 0)
+    );
+  }
+
+  //
+  // White captures to the left
+  //
+  for (int i in {1..N-1}, int j in {2..M}) {
+    event wcl[i][j];
+    guard(  wcl[i][j] : 1==eval(turn) & 1==eval(b[i][j]) & 2==eval(b[i+1][j-1]));
+    assign(
+      b[i][j]     : wcl[i][j] : 0,
+      b[i+1][j-1] : wcl[i][j] : 1,
+      turn        : wcl[i][j] : cond(i<N-1, 2, 0)
+    );
+  }
+
+  //
+  // White captures to the right
+  //
+  for (int i in {1..N-1}, int j in {1..M-1}) {
+    event wcr[i][j];
+    guard(  wcr[i][j] : 1==eval(turn) & 1==eval(b[i][j]) & 2==eval(b[i+1][j+1]));
+    assign(
+      b[i][j]     : wcr[i][j] : 0,
+      b[i+1][j+1] : wcr[i][j] : 1,
+      turn        : wcr[i][j] : cond(i<N-1, 2, 0)
+    );
+  }
+
+  //
+  // Forward 1 moves, black
+  //
+  for (int i in {2..N}, int j in {1..M}) {
+    event bm1[i][j];
+    guard( bm1[i][j] : 2==eval(turn) & 2==eval(b[i][j]) & 0==eval(b[i-1][j]) );
+    assign(
+      b[i][j]   : bm1[i][j] : 0,
+      b[i-1][j] : bm1[i][j] : 2,
+      turn      : bm1[i][j] : cond(i>2, 1, 0)
+    );
+  }
+
+  //
+  // Black captures to the left
+  //
+  for (int i in {2..N}, int j in {2..M}) {
+    event bcl[i][j];
+    guard(  bcl[i][j] : 2==eval(turn) & 2==eval(b[i][j]) & 1==eval(b[i-1][j-1]));
+    assign(
+      b[i][j]     : bcl[i][j] : 0,
+      b[i-1][j-1] : bcl[i][j] : 2,
+      turn        : bcl[i][j] : cond(i>2, 1, 0)
+    );
+  }
+
+  //
+  // Black captures to the right
+  //
+  for (int i in {2..N}, int j in {1..M-1}) {
+    event bcr[i][j];
+    guard(  bcr[i][j] : 2==eval(turn) & 2==eval(b[i][j]) & 1==eval(b[i-1][j+1]));
+    assign(
+      b[i][j]     : bcr[i][j] : 0,
+      b[i-1][j+1] : bcr[i][j] : 2,
+      turn        : bcr[i][j] : cond(i>2, 1, 0)
+    );
+  }
+
+
+  //
+  // Measures
+  //
+  bigint ns := num_states;
+  bigint na := num_arcs;
+
+};
+
+print("Examining pawn game...\n");
+compute(pawn_game.na);
+
+print("Pawn game has ", pawn_game.ns, " states\n");
+
