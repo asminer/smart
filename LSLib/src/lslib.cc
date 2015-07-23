@@ -428,21 +428,28 @@ void RowGS_Ax0(const LS_Internal_Matrix <REAL> &A,
         v++;
       }
       tmp *= A.one_over_diag[s];
+
       if (check) {
         double delta = tmp - x[s];
         if (opts.use_relative) if (tmp) delta /= tmp;
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
+
       total += (x[s] = tmp);
+      
     } // for s
-    if (total != 1.0) 
-      for (long s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (long s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) {
@@ -465,7 +472,6 @@ void RowGS_Ax0_w(const LS_Internal_Matrix <REAL> &A,
 {
   out.status = LS_No_Convergence;
   long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
@@ -482,23 +488,30 @@ void RowGS_Ax0_w(const LS_Internal_Matrix <REAL> &A,
         ci++;
         v++;
       }
-      tmp *= A.one_over_diag[s] * opts.relaxation;
-      tmp += one_minus_omega * x[s];
+
+      tmp *= A.one_over_diag[s];
+      double delta = opts.relaxation * (tmp - x[s]);
+      x[s] += delta;
+      total += x[s];
+
       if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
+        if (opts.use_relative) if (x[s]) delta /= x[s];
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
-      total += (x[s] = tmp);
+
     } // for s
-    if (total != 1.0) 
-      for (long s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (long s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) {
@@ -537,15 +550,19 @@ void RowGS_Ax0(LS_Abstract_Matrix* const &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-            if (iters < opts.max_iters)
-              check = false;
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
+                check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) {
@@ -568,7 +585,6 @@ void RowGS_Ax0_w(LS_Abstract_Matrix* const &A,
 {
   out.status = LS_No_Convergence;
   long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, 0, A->GetSize());
@@ -580,6 +596,25 @@ void RowGS_Ax0_w(LS_Abstract_Matrix* const &A,
     for ( ; s<A->GetSize(); s=news) {
       double tmp = 0.0;
       news = A->SolveRow(s, x, tmp);
+
+      double delta = opts.relaxation * (tmp - x[s]);
+      x[s] += delta;
+      total += x[s];
+
+      if (check) {
+        if (opts.use_relative) if (x[s]) delta /= x[s];
+        if (delta<0) delta = -delta;
+        if (delta > maxerror) {
+            maxerror = delta;
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
+                check = false;
+              }
+            }
+        }
+      } // if check
+
+      /* OLD
       tmp *= opts.relaxation;
       tmp += one_minus_omega * x[s];
       if (check) {
@@ -594,9 +629,13 @@ void RowGS_Ax0_w(LS_Abstract_Matrix* const &A,
         }
       } // if check
       total += (x[s] = tmp);
+      */
+
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) {
@@ -651,15 +690,19 @@ void RowJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -710,15 +753,19 @@ void RowJacobi_Ax0_w(const LS_Internal_Matrix <REAL1> &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -760,15 +807,19 @@ void RowJacobi_Ax0(LS_Abstract_Matrix* const &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -813,15 +864,19 @@ void RowJacobi_Ax0_w(LS_Abstract_Matrix* const &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -898,16 +953,20 @@ void RowVMJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A,
             if (delta<0) delta = -delta;
             if (delta > maxerror) {
                 maxerror = delta;
-                if (maxerror >= opts.precision)
-                  if (iters < opts.max_iters)
+                if (maxerror >= opts.precision) {
+                  if (iters < opts.max_iters) {
                     check = false;
+                  }
+                }
             }
           } // if check
           total += (x[s] = tmp);
       } // for s
     } // if relaxation
-    if (total != 1.0) 
-      for (s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -962,15 +1021,19 @@ void ColVMJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A.stop-1; s>=A.start; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -1026,15 +1089,19 @@ void RowVMJacobi_Ax0(LS_Abstract_Matrix* const &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
@@ -1090,15 +1157,19 @@ void ColVMJacobi_Ax0(LS_Abstract_Matrix* const &A,
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
+            if (maxerror >= opts.precision) {
+              if (iters < opts.max_iters) {
                 check = false;
+              }
+            }
         }
       } // if check
       total += (x[s] = tmp);
     } // for s
-    if (total != 1.0) 
-      for (s=A->GetSize()-1; s>=0; s--) x[s] /= total;
+    if (total != 1.0) {
+      total = 1.0 / total;
+      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
+    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) break; 
