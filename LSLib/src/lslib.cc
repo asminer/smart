@@ -287,6 +287,15 @@ struct LS_Internal_Matrix {
       old++;
     } // outer while
   }
+
+  template <class REAL2>
+  inline void ColumnDotProduct(const REAL2* x, long index, double &sum) const {
+    DEBUG_ASSERT(is_transposed);
+    long astop = rowptr[index+1];
+    for (long a = rowptr[index]; a < astop; a++) {
+      sum += x[colindex[a]] * value[a];
+    }
+  }
 };
 
 template<>
@@ -416,17 +425,10 @@ void RowGS_Ax0(const LS_Internal_Matrix <REAL> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     maxerror = 0;
     double total = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL* v = A.value + A.rowptr[A.start];
     bool check = (iters >= opts.min_iters);
     for (long s=A.start; s<A.stop; s++) {
-      const long* cstop = A.colindex + A.rowptr[s+1];
       double tmp = 0.0;
-      while (ci < cstop) {
-        tmp += x[ci[0]] * v[0];
-        ci++;
-        v++;
-      }
+      A.ColumnDotProduct(x, s, tmp);
       tmp *= A.one_over_diag[s];
 
       if (check) {
@@ -477,18 +479,20 @@ void RowGS_Ax0_w(const LS_Internal_Matrix <REAL> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     maxerror = 0;
     double total = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL* v = A.value + A.rowptr[A.start];
+    // const long* ci = A.colindex + A.rowptr[A.start];
+    // const REAL* v = A.value + A.rowptr[A.start];
     bool check = (iters >= opts.min_iters);
     for (long s=A.start; s<A.stop; s++) {
-      const long* cstop = A.colindex + A.rowptr[s+1];
       double tmp = 0.0;
+      /*
+      const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
         tmp += x[ci[0]] * v[0];
         ci++;
         v++;
       }
-
+      */
+      A.ColumnDotProduct(x, s, tmp);
       tmp *= A.one_over_diag[s];
       double delta = opts.relaxation * (tmp - x[s]);
       x[s] += delta;
