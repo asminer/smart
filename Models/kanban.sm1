@@ -83,31 +83,31 @@ spn kanban(int n) := {
   );
 
   bigint m1 := num_states(false);
-  /*
-  bigint m2 := num_arcs(false);
+  // bigint m2 := num_edges(false);
 
   real e1 := avg_ss(tk(pm1) + tk(pb1) + tk(pout1));
   real e2 := avg_ss(tk(pm2) + tk(pb2) + tk(pout2));
   real e3 := avg_ss(tk(pm3) + tk(pb3) + tk(pout3));
   real e4 := avg_ss(tk(pm4) + tk(pb4) + tk(pout4));
-  */
 };
 
-// # Report true
-// # Verbose true
+# Report true
+# Verbose true
 
-# StateStorage MDD_SATURATION_TRANSITION
+# StateStorage NEW_SPLAY
+// # StateStorage MDD_SATURATION_TRANSITION
 
 int N := read_int("N");
 compute(N);
 print("For N=", N, ", expecting ", theory(N), " states\n");
 
+/*
 compute(kanban(N).m1);
 
 print("Kanban model with N=", N, " has\n\t", kanban(N).m1, " states\n");
 
-/*
-\t", kanban(N).m2, " arcs\n\f");
+// print("\t", kanban(N).m2, " arcs\n");
+*/
 
 compute(kanban(N).e1);
 
@@ -117,4 +117,3 @@ print("\te2: ", kanban(N).e2, "\n");
 print("\te3: ", kanban(N).e3, "\n");
 print("\te4: ", kanban(N).e4, "\n");
 
-*/

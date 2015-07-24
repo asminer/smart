@@ -679,22 +679,30 @@ long explicit_mc::getNumArcs(bool show) const
   if (display_graph_node_names)   row = by_rows ? "From " : "To ";
   else                            row = by_rows ? "Row " : "Column ";
 
-  if (DOT == graph_display_style) {
-    em->cout() << "digraph mc {\n";
-    for (long i=0; i<num_states; i++) {
-      long mi = map ? map[i] : i;
-      em->cout() << "\ts" << i;
-      if (display_graph_node_names) {
-        em->cout() << " [label=\"";
-        ShowState(em->cout(), mi);
-        em->cout() << "\"]";
-      }
-      em->cout() << ";\n";
-      em->cout().Check();
-    } // for i
-    em->cout() << "\n";
-  } else {
-    em->cout() << "Markov chain:\n";
+  switch (graph_display_style) {
+    case DOT:
+        em->cout() << "digraph mc {\n";
+        for (long i=0; i<num_states; i++) {
+          long mi = map ? map[i] : i;
+          em->cout() << "\ts" << i;
+          if (display_graph_node_names) {
+            em->cout() << " [label=\"";
+            ShowState(em->cout(), mi);
+            em->cout() << "\"]";
+          }
+          em->cout() << ";\n";
+          em->cout().Check();
+        } // for i
+        em->cout() << "\n";
+        break;
+
+    case TRIPLES:
+        em->cout() << num_states << "\n";
+        em->cout() << na << "\n";
+        break;
+
+    default:
+        em->cout() << "Markov chain:\n";
   }
 
   sparse_row_elems foo(invmap);
@@ -702,11 +710,14 @@ long explicit_mc::getNumArcs(bool show) const
   for (long i=0; i<num_states; i++) {
     long h = map ? map[i] : i;
     CHECK_RANGE(0, h, num_states);
-    if (DOT != graph_display_style) {
-      em->cout() << row;
-      if (display_graph_node_names)  ShowState(em->cout(), h);
-      else        em->cout() << i;
-      em->cout() << ":\n";
+    switch (graph_display_style) {
+      case INCOMING:
+      case OUTGOING:
+          em->cout() << row;
+          if (display_graph_node_names)   ShowState(em->cout(), h);
+          else                            em->cout() << i;
+          em->cout() << ":\n";
+          break;
     }
 
     bool ok;
@@ -727,16 +738,25 @@ long explicit_mc::getNumArcs(bool show) const
     // display row/column
     for (long z=0; z<foo.last; z++) {
       em->cout().Put('\t');
-      if (DOT == graph_display_style) {
-        em->cout() << "s" << i << " -> s" << foo.index[z];
-        em->cout() << " [label=\"" << foo.value[z] << "\"];";
-      } else {
-        if (display_graph_node_names) {
-          long h = map ? map[foo.index[z]] : foo.index[z];
-          CHECK_RANGE(0, h, num_states);
-          ShowState(em->cout(), h);
-        } else em->cout() << foo.index[z];
-        em->cout() << " : " << foo.value[z];
+      switch (graph_display_style) {
+        case DOT:
+            em->cout() << "s" << i << " -> s" << foo.index[z];
+            em->cout() << " [label=\"" << foo.value[z] << "\"];";
+            break;
+
+        case TRIPLES:
+            em->cout() << i << " " << foo.index[z] << " " << foo.value[z];
+            break;
+
+        default:
+            if (display_graph_node_names) {
+              long h = map ? map[foo.index[z]] : foo.index[z];
+              CHECK_RANGE(0, h, num_states);
+              ShowState(em->cout(), h);
+            } else {
+              em->cout() << foo.index[z];
+            }
+            em->cout() << " : " << foo.value[z];
       }
       em->cout().Put('\n');
     } // for z
