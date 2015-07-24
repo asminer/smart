@@ -402,22 +402,30 @@ long explicit_fsm::getNumArcs(bool show) const
   col = "To state ";
   if (!by_rows) SWAP(row, col);
 
-  if (DOT == graph_display_style) {
-    em->cout() << "digraph fsm {\n";
-    for (long i=0; i<num_states; i++) {
-      long mi = map ? map[i] : i;
-      em->cout() << "\ts" << i;
-      if (display_graph_node_names) {
-        em->cout() << " [label=\"";
-        ShowState(em->cout(), mi);
-        em->cout() << "\"]";
-      }
-      em->cout() << ";\n";
-      em->cout().Check();
-    } // for i
-    em->cout() << "\n";
-  } else {
-    em->cout() << "Reachability graph:\n";
+  switch (graph_display_style) {
+    case DOT:
+        em->cout() << "digraph fsm {\n";
+        for (long i=0; i<num_states; i++) {
+          long mi = map ? map[i] : i;
+          em->cout() << "\ts" << i;
+          if (display_graph_node_names) {
+            em->cout() << " [label=\"";
+            ShowState(em->cout(), mi);
+            em->cout() << "\"]";
+          }
+          em->cout() << ";\n";
+          em->cout().Check();
+        } // for i
+        em->cout() << "\n";
+        break;
+
+    case TRIPLES:
+        em->cout() << num_states << "\n";
+        em->cout() << na << "\n";
+        break;
+
+    default:
+        em->cout() << "Reachability graph:\n";
   }
 
   sparse_row_elems foo(invmap);
@@ -425,11 +433,13 @@ long explicit_fsm::getNumArcs(bool show) const
   for (long i=0; i<num_states; i++) {
     long h = map ? map[i] : i;
     CHECK_RANGE(0, h, num_states);
-    if (DOT != graph_display_style) {
-      em->cout() << row;
-      if (display_graph_node_names)  ShowState(em->cout(), h);
-      else        em->cout() << i;
-      em->cout() << ":\n";
+    switch (graph_display_style) {
+      case INCOMING:
+      case OUTGOING:
+          em->cout() << row;
+          if (display_graph_node_names)   ShowState(em->cout(), h);
+          else                            em->cout() << i;
+          em->cout() << ":\n";
     }
 
     bool ok;
@@ -450,15 +460,24 @@ long explicit_fsm::getNumArcs(bool show) const
     // display row/column
     for (long z=0; z<foo.last; z++) {
       em->cout().Put('\t');
-      if (DOT == graph_display_style) {
-        em->cout() << "s" << i << " -> s" << foo.index[z] << ";";
-      } else {
-        em->cout() << col;
-        if (display_graph_node_names) {
-          long h = map ? map[foo.index[z]] : foo.index[z];
-          CHECK_RANGE(0, h, num_states);
-          ShowState(em->cout(), h);
-        } else em->cout() << foo.index[z];
+      switch (graph_display_style) {
+        case DOT:
+            em->cout() << "s" << i << " -> s" << foo.index[z] << ";";
+            break;
+
+        case TRIPLES:
+            em->cout() << i << " " << foo.index[z];
+            break;
+
+        default:
+            em->cout() << col;
+            if (display_graph_node_names) {
+              long h = map ? map[foo.index[z]] : foo.index[z];
+              CHECK_RANGE(0, h, num_states);
+              ShowState(em->cout(), h);
+            } else {
+              em->cout() << foo.index[z];
+            }
       }
       em->cout().Put('\n');
     } // for z

@@ -198,6 +198,7 @@ protected:
   static const int DOT        = 0;
   static const int INCOMING   = 1;
   static const int OUTGOING   = 2;
+  static const int TRIPLES    = 3;
   static bool display_graph_node_names;
   friend void InitLLM(exprman *em);
 public:

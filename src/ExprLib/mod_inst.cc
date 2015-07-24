@@ -1273,11 +1273,16 @@ void InitLLM(exprman* om)
       "Graphs are displayed by listing the outgoing edges for each node.",
       graph_lldsm::OUTGOING
   );
+  gds_list[graph_lldsm::TRIPLES] = new radio_button(
+      "TRIPLES", 
+      "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
+      graph_lldsm::TRIPLES
+  );
   graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
   om->addOption(
     MakeRadioOption("GraphDisplayStyle",
       "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
-      gds_list, 3, graph_lldsm::graph_display_style
+      gds_list, 4, graph_lldsm::graph_display_style
     )
   );
   // ------------------------------------------------------------------

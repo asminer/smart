@@ -98,9 +98,10 @@ pn kanban(int n) := {
 };
 
 # Report + procgen, mc_solve, exact_solver
-# MCSolver GAUSS_SEIDEL
-# MCSolverPrecision 1e-7
-# MCSolverRelaxation 0.9
+# MCSolver GAUSS_SEIDEL {
+#   Precision 1e-7
+#   Relaxation 0.9
+# }
 
 # StateDisplayOrder LEXICAL
 # OutputThousandSeparator ","
@@ -109,12 +110,14 @@ pn kanban(int n) := {
 int N := read_int("N");
 compute(N);
 print("For N=", N, ", expecting ", theory(N), " states\n");
+
+/*
 compute(kanban(N).m2);
 
 print("Kanban model with N=", N, " has\n\t", kanban(N).m1, " states\n");
 print("\t", kanban(N).m2, " arcs\n\f");
+*/
 
-/*
 compute(kanban(N).e1);
 
 print("Measures:\n");
@@ -122,5 +125,3 @@ print("\te1: ", kanban(N).e1, "\n");
 print("\te2: ", kanban(N).e2, "\n");
 print("\te3: ", kanban(N).e3, "\n");
 print("\te4: ", kanban(N).e4, "\n");
-
-*/
