@@ -395,7 +395,7 @@ long explicit_fsm::getNumArcs(bool show) const
     for (long i=0; i<num_states; i++) invmap[map[i]] = i;
   }
 
-  bool by_rows = (graph_display_style != INCOMING);
+  bool by_rows = (OUTGOING == graph_display_style);
   const char* row;
   const char* col;
   row = "From state ";
