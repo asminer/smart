@@ -1286,8 +1286,8 @@ void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     long s;
     maxerror = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
+    // const long* ci = A.colindex + A.rowptr[A.start];
+    // const REAL1* v = A.value + A.rowptr[A.start];
     int bptr = bstart;
     bool check = (iters >= opts.min_iters);
     for (s=A.start; s<A.stop; s++) {
@@ -1296,12 +1296,15 @@ void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A,
         tmp = -b.value[bptr];
         bptr++;
       }
+      A.ColumnDotProduct(x, s, tmp);
+      /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
         tmp += x[ci[0]] * v[0];
         ci++;
         v++;
       }
+      */
       tmp *= A.one_over_diag[s];
       if (check) {
         double delta = tmp - x[s];
@@ -1350,22 +1353,25 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     long s;
     maxerror = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
+    // const long* ci = A.colindex + A.rowptr[A.start];
+    // const REAL1* v = A.value + A.rowptr[A.start];
     int bptr = bstart;
     bool check = (iters >= opts.min_iters);
     for (s=A.start; s<A.stop; s++) {
       double tmp = 0.0;
       if (bptr < b.size) if (s == b.index[bptr]) {
-    tmp = -b.value[bptr];
-    bptr++;
+        tmp = -b.value[bptr];
+        bptr++;
       } 
+      A.ColumnDotProduct(x, s, tmp);
+      /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
         tmp += x[ci[0]] * v[0];
         ci++;
         v++;
       }
+      */
       tmp *= A.one_over_diag[s] * opts.relaxation;
       tmp += one_minus_omega * x[s];
       if (check) {
@@ -2086,19 +2092,22 @@ void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     long s;
     maxerror = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
+    // const long* ci = A.colindex + A.rowptr[A.start];
+    // const REAL1* v = A.value + A.rowptr[A.start];
     bool check = (iters >= opts.min_iters);
     for (s=A.start; s<A.stop; s++) {
       double tmp;
       if (s < b.size)   tmp = -b.value[s];  
       else              tmp = 0.0;
+      A.ColumnDotProduct(x, s, tmp);
+      /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
         tmp += x[ci[0]] * v[0];
         ci++;
         v++;
       }
+      */
       tmp *= A.one_over_diag[s];
       if (check) {
         double delta = tmp - x[s];
@@ -2143,19 +2152,22 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
     if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
     long s;
     maxerror = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
+    // const long* ci = A.colindex + A.rowptr[A.start];
+    // const REAL1* v = A.value + A.rowptr[A.start];
     bool check = (iters >= opts.min_iters);
     for (s=A.start; s<A.stop; s++) {
       double tmp;
       if (s < b.size)   tmp = -b.value[s];  
       else              tmp = 0.0;
+      A.ColumnDotProduct(x, s, tmp);
+      /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
         tmp += x[ci[0]] * v[0];
         ci++;
         v++;
       }
+      */
       tmp *= A.one_over_diag[s] * opts.relaxation;
       tmp += one_minus_omega * x[s];
       if (check) {
