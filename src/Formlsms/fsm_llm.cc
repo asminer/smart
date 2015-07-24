@@ -462,11 +462,11 @@ long explicit_fsm::getNumArcs(bool show) const
       em->cout().Put('\t');
       switch (graph_display_style) {
         case DOT:
-            em->cout() << "s" << i << " -> s" << foo.index[z] << ";";
+            em->cout() << "s" << foo.index[z] << " -> s" << i << ";";
             break;
 
         case TRIPLES:
-            em->cout() << i << " " << foo.index[z];
+            em->cout() << foo.index[z] << " " << i;
             break;
 
         default:

@@ -740,12 +740,12 @@ long explicit_mc::getNumArcs(bool show) const
       em->cout().Put('\t');
       switch (graph_display_style) {
         case DOT:
-            em->cout() << "s" << i << " -> s" << foo.index[z];
+            em->cout() << "s" << foo.index[z] << " -> s" << i;
             em->cout() << " [label=\"" << foo.value[z] << "\"];";
             break;
 
         case TRIPLES:
-            em->cout() << i << " " << foo.index[z] << " " << foo.value[z];
+            em->cout() << foo.index[z] << " " << i << " " << foo.value[z];
             break;
 
         default:
