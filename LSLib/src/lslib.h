@@ -196,17 +196,19 @@ struct LS_Vector {
 // experimental: what is the overhead of a generic interface?
 
 class LS_Abstract_Matrix {
+  long start;
+  long stop;
 protected:
   long size;
 public:
-  LS_Abstract_Matrix(long s);
+  LS_Abstract_Matrix(long start, long stop, long s);
   virtual ~LS_Abstract_Matrix();
 
+  inline long Start() const { return start; }
+  inline long Stop() const { return stop; }
   inline long GetSize() const { return size; }
 
   virtual bool IsTransposed() const = 0;
-
-  virtual void FirstRow(long &s) const;
 
   /** Basic operation for (most) solvers.
       Computes:
@@ -216,10 +218,8 @@ public:
       @param   r      Current row number
       @param   x      Vector to multiply by
       @param   answer Answer goes here (mind the input value)
-
-      @return  The next row (for cases where this is not in order)
   */
-  virtual long SolveRow(long r, const double* x, double& answer) const = 0;
+  virtual void SolveRow(long r, const double* x, double& answer) const = 0;
 
   /** Basic operation for (most) solvers.
       Computes:
@@ -231,10 +231,8 @@ public:
       @param   answer   Answer goes here (mind the input value)
 
       @return  The next row (for cases where this is not in order)
-
-      Default behavior: throws LS_Not_Implemented.
   */
-  virtual long SolveRow(long r, const float* x, double& answer) const = 0;
+  virtual void SolveRow(long r, const float* x, double& answer) const = 0;
 
 
   // for jacobi
@@ -246,7 +244,6 @@ public:
   /** y = (this without diagonals) * x 
   */
   // virtual void MV_NoDiag_Mult(const double* x, double* y) const = 0;
-
 
 
   /** y = (this without diagonals) * x
@@ -272,6 +269,17 @@ public:
       Default behavior: throws LS_Not_Implemented.
   */
   virtual void NoDiag_MultByCols(const double* x, double* y) const = 0;
+
+
+  /*
+      Compute y += (this without diagonals) * old
+      Call this when we don't know how the matrix is stored
+  */
+  template <class REAL2>
+  inline void Multiply(double *y, const REAL2* old) const {
+    if (IsTransposed())   NoDiag_MultByCols(old, y);
+    else                  NoDiag_MultByRows(old, y);
+  }
 
   /** Compute x[i] *= scalar / diag[i].
       Default behavior: throws LS_Not_Implemented.
@@ -306,7 +314,7 @@ void Solve_AxZero(const LS_Matrix &A, double* x, const LS_Options &opts, LS_Outp
         @param  opts  Solver options.
         @param  out   Status of solution.
 */
-void Solve_AxZero(LS_Abstract_Matrix* A, double* x, const LS_Options &opts, LS_Output &out);
+void Solve_AxZero(const LS_Abstract_Matrix &A, double* x, const LS_Options &opts, LS_Output &out);
 
 
 
@@ -333,7 +341,7 @@ void Solve_Axb(const LS_Matrix &A, double* x, const LS_Vector &b, const LS_Optio
         @param  opts  Solver options.
         @param  out   Status of solution.
 */
-void Solve_Axb(LS_Abstract_Matrix* A, double* x, const LS_Vector &b, const LS_Options &opts, LS_Output &out);
+void Solve_Axb(const LS_Abstract_Matrix &A, double* x, const LS_Vector &b, const LS_Options &opts, LS_Output &out);
 
 
 #endif

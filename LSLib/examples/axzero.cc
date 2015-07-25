@@ -17,13 +17,13 @@ class my_LS_Matrix : public LS_Abstract_Matrix {
 protected:
   LS_Matrix P;
 public:
-  my_LS_Matrix(LS_Matrix p) : LS_Abstract_Matrix(p.stop) {
+  my_LS_Matrix(LS_Matrix p) : LS_Abstract_Matrix(p.start, p.stop, p.stop) {
     P = p;
   }
   virtual ~my_LS_Matrix() { }
   virtual bool IsTransposed() const  { return P.is_transposed; }
-  virtual long SolveRow(long r, const double *x, double& answer) const;
-  virtual long SolveRow(long r, const float *x, double& answer) const;
+  virtual void SolveRow(long r, const double *x, double& answer) const;
+  virtual void SolveRow(long r, const float *x, double& answer) const;
 
   virtual void NoDiag_MultByRows(const float* x, double* y) const;
   virtual void NoDiag_MultByRows(const double* x, double* y) const;
@@ -87,16 +87,14 @@ protected:
 
 /* Methods */
 
-long my_LS_Matrix::SolveRow(long r, const double* x, double& ans) const
+void my_LS_Matrix::SolveRow(long r, const double* x, double& ans) const
 {
   MySolveRow(r, x, ans);
-  return r+1;
 }
 
-long my_LS_Matrix::SolveRow(long r, const float* x, double& ans) const
+void my_LS_Matrix::SolveRow(long r, const float* x, double& ans) const
 {
   MySolveRow(r, x, ans);
-  return r+1;
 }
 
 void my_LS_Matrix::NoDiag_MultByRows(const float* x, double* y) const
@@ -215,17 +213,19 @@ int Usage(const char* name)
 {
     cerr << "Usage: " << name << "\n\nSwitches:\n";
     cerr << "\t?: Print usage and exit\n";
-    cerr << "\tr: Jacobi by rows\n";
-    cerr << "\tj: Jacobi by vector-matrix multiply\n";
-    cerr << "\tg: Gauss-Seidel (by rows)\n";
-    cerr << "\tp: Power method\n";
     cerr << "\ta: use abstract matrix\n";
     cerr << "\tc: store matrix by columns\n";
+    cerr << "\tf: auxiliary vectors are floats\n";
+    cerr << "\tg: Gauss-Seidel (by rows)\n";
+    cerr << "\tj: Jacobi by vector-matrix multiply\n";
+    cerr << "\tp: Power method\n";
+    cerr << "\tr: Jacobi by rows\n";
     cerr << "\ts: show solution vector\n";
-    cerr << "\tw x: sets relaxation parameter (default 1.0)\n";
+    cerr << "\n";
+    cerr << "\td iters: show precision achieved after this many iterations\n";
     cerr << "\te epsilon: sets precision\n";
     cerr << "\tn iters: sets maximum number of iterations (default 10000)\n";
-    cerr << "\td iters: show precision achieved after this many iterations\n";
+    cerr << "\tw x: sets relaxation parameter (default 1.0)\n";
     return 0;
 }
 
@@ -240,8 +240,9 @@ int main(int argc, char** argv)
   bool show_solution = false;
   int deltaiters = 1000000;
   int totaliters = 10000;
+  opts.float_vectors = false;
   for (;;) {
-    ch = getopt(argc, argv, "?rjgpacsw:e:n:d:");
+    ch = getopt(argc, argv, "?acfgjprsd:e:n:w:");
     if (ch<0) break;
     switch (ch) {
       case 'a':  
@@ -250,6 +251,10 @@ int main(int argc, char** argv)
 
       case 'c':  
           by_cols = true;
+          break;
+
+      case 'f':
+          opts.float_vectors = true;
           break;
 
       case 'r':
@@ -360,7 +365,7 @@ int main(int argc, char** argv)
     if (totaliters < deltaiters) opts.max_iters = totaliters;
     if (opts.min_iters > opts.max_iters) opts.min_iters = opts.max_iters;
     totaliters -= deltaiters;
-    if (use_abstract)   Solve_AxZero(AA, x, opts, out);
+    if (use_abstract)   Solve_AxZero(*AA, x, opts, out);
     else                Solve_AxZero(A, x, opts, out);
     iters_so_far += out.num_iters;
     if (out.status == LS_Success) break;

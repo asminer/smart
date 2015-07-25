@@ -10,7 +10,11 @@
 
 #include "revision.h"
 
-// #define DEBUG
+#include "debug.hh"
+
+#include "row_gs_ax0.hh"
+#include "row_jac_ax0.hh"
+#include "vmm_jac_ax0.hh"
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 3;
@@ -20,124 +24,6 @@ template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
 /// Standard MAX "macro".
 template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
 
-/// Debugging Assertion
-#ifdef DEBUG
-#define DEBUG_ASSERT(X)  assert(X);
-#else
-#define DEBUG_ASSERT(X)
-#endif
-
-// ******************************************************************
-// *                      Iteration  debugging                      *
-// ******************************************************************
-
-void DebugIter(const char* which, long iters, double* x, long start, long stop)
-{
-  printf("Start of %s iteration %ld\n[ %f", which, iters, x[start]);
-  for (long s=start+1; s<stop; s++) printf(", %f", x[s]);
-  printf("]\n");
-}
-
-// ******************************************************************
-// *                      LS_Matrix  debugging                      *
-// ******************************************************************
-
-void DebugMatrix(const LS_Matrix &A)
-{
-  printf("Using A matrix:\n");
-  printf("  is_transposed: ");
-  if (A.is_transposed) printf("true"); else printf("false");
-  printf("\n  start: %ld\n  stop: %ld\n  rowptr: [", A.start, A.stop);
-  for (long i=0; i<=A.stop; i++) {
-    if (i) printf(", ");
-    printf("%ld", A.rowptr[i]);
-  }
-  printf("]\n  colindex: [");
-  for (long i=0; i<A.rowptr[A.stop]; i++) {
-    if (i) printf(", ");
-    printf("%ld", A.colindex[i]);
-  }
-  printf("]\n  f_value:  ");
-  if (A.f_value) {
-    printf("[");
-    for (long i=0; i<A.rowptr[A.stop]; i++) {
-      if (i) printf(", ");
-      printf("%g", A.f_value[i]);
-    }
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n  d_value:  ");
-  if (A.d_value) {
-    printf("[");
-    for (long i=0; i<A.rowptr[A.stop]; i++) {
-      if (i) printf(", ");
-      printf("%lg", A.d_value[i]);
-    }
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n  f_one_over_diag: ");
-  if (A.f_one_over_diag) {
-    printf("[");
-    for (long i=0; i<A.stop; i++) {
-      if (i) printf(", ");
-      printf("%g", A.f_one_over_diag[i]);
-    }
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n  d_one_over_diag: ");
-  if (A.d_one_over_diag) {
-    printf("[");
-    for (long i=0; i<A.stop; i++) {
-      if (i) printf(", ");
-      printf("%g", A.d_one_over_diag[i]);
-    }
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n");
-}
-
-// ******************************************************************
-// *                      LS_Vector  debugging                      *
-// ******************************************************************
-
-void DebugVector(const LS_Vector &b)
-{
-  printf("Using b vector:\n");
-  printf("  size: %ld\n", b.size);
-  printf("  index: ");
-  if (b.index) {
-    printf("[%ld", b.index[0]);
-    for (long i=1; i<b.size; i++) printf(", %ld", b.index[i]);
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n  d_value: ");
-  if (b.d_value) {
-    printf("[%lg", b.d_value[0]);
-    for (long i=1; i<b.size; i++) printf(", %lg", b.d_value[i]);
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n  f_value: ");
-  if (b.f_value) {
-    printf("[%g", b.f_value[0]);
-    for (long i=1; i<b.size; i++) printf(", %g", b.f_value[i]);
-    printf("]");
-  } else {
-    printf("null");
-  }
-  printf("\n");
-}
 
 // ******************************************************************
 // *                       LS_Matrix  methods                       *
@@ -238,6 +124,9 @@ struct LS_Internal_Matrix {
   const REAL* value;
   const REAL* one_over_diag;
 
+  inline long Start() const { return start; }
+  inline long Stop() const { return stop; }
+
   // for convenience
   inline void Fill(const LS_Matrix &A);
   inline void FillOthers(const LS_Matrix &A) {
@@ -248,6 +137,9 @@ struct LS_Internal_Matrix {
     colindex = A.colindex;
   }
 
+  /*
+      Compute y += (this without diagonals) * old
+  */
   template <class REAL2>
   void MultiplyByRows(double* y, const REAL2* old) const {
     DEBUG_ASSERT(!is_transposed);
@@ -268,6 +160,9 @@ struct LS_Internal_Matrix {
     } // outer while
   }
 
+  /*
+      Compute y += (this without diagonals) * old
+  */
   template <class REAL2>
   void MultiplyByCols(double* y, const REAL2* old) const {
     DEBUG_ASSERT(is_transposed);
@@ -288,13 +183,43 @@ struct LS_Internal_Matrix {
     } // outer while
   }
 
+  /*
+      Compute y += (this without diagonals) * old
+      Call this when we don't know how the matrix is stored
+  */
   template <class REAL2>
-  inline void ColumnDotProduct(const REAL2* x, long index, double &sum) const {
+  inline void Multiply(double *y, const REAL2* old) const {
+    if (is_transposed)  MultiplyByCols(y, old);
+    else                MultiplyByRows(y, old);
+  }
+
+
+  /*
+      Compute x[i] *= a / diagonal[i], for all i 
+  */
+  inline void DivideDiag(double* x, double a) const {
+    for (long i=start; i<stop; i++) {
+      x[i] *= one_over_diag[i] * a;
+    }
+  }
+
+
+  /*
+      Compute sum += x * (row "index" of this matrix)
+  */
+  template <class REAL2>
+  inline void ColumnDotProduct(long index, const REAL2* x, double &sum) const {
     DEBUG_ASSERT(is_transposed);
     long astop = rowptr[index+1];
     for (long a = rowptr[index]; a < astop; a++) {
       sum += x[colindex[a]] * value[a];
     }
+  }
+
+  template <class REAL2>
+  inline void SolveRow(long index, const REAL2* x, double &sum) const {
+    ColumnDotProduct(index, x, sum);
+    sum *= one_over_diag[index];
   }
 };
 
@@ -380,18 +305,15 @@ void LS_Full_Vector<float>::Fill(const LS_Vector &v)
 // *                                                                *
 // ******************************************************************
 
-LS_Abstract_Matrix::LS_Abstract_Matrix(long s)
+LS_Abstract_Matrix::LS_Abstract_Matrix(long sta, long sto, long s)
 {
+  start = sta;
+  stop = sto;
   size = s;
 }
 
 LS_Abstract_Matrix::~LS_Abstract_Matrix()
 {
-}
-
-void LS_Abstract_Matrix::FirstRow(long& r) const
-{
-  r = 0;
 }
 
 // ******************************************************************
@@ -403,790 +325,6 @@ void LS_Abstract_Matrix::FirstRow(long& r) const
 // *                                                                *
 // *                                                                *
 // ******************************************************************
-
-// ******************************************************************
-// *                                                                *
-// *                        Row Gauss-Seidel                        *
-// *                                                                *
-// ******************************************************************
-
-// ******************************************************************
-// *                    Explicit,  no relaxation                    *
-// ******************************************************************
-
-template <class REAL>
-void RowGS_Ax0(const LS_Internal_Matrix <REAL> &A, 
-    double *x, const LS_Options &opts, LS_Output &out)
-{
-  out.status = LS_No_Convergence;
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    for (long s=A.start; s<A.stop; s++) {
-      double tmp = 0.0;
-      A.ColumnDotProduct(x, s, tmp);
-      tmp *= A.one_over_diag[s];
-
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-
-      total += (x[s] = tmp);
-      
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (long s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) {
-      out.status = LS_Success;
-      break;
-    }
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = 1;
-}
-
-// ******************************************************************
-// *                      Explicit, relaxation                      *
-// ******************************************************************
-
-template <class REAL>
-void RowGS_Ax0_w(const LS_Internal_Matrix <REAL> &A, 
-    double *x, const LS_Options &opts, LS_Output &out)
-{
-  out.status = LS_No_Convergence;
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, A.start, A.stop);
-    maxerror = 0;
-    double total = 0;
-    // const long* ci = A.colindex + A.rowptr[A.start];
-    // const REAL* v = A.value + A.rowptr[A.start];
-    bool check = (iters >= opts.min_iters);
-    for (long s=A.start; s<A.stop; s++) {
-      double tmp = 0.0;
-      /*
-      const long* cstop = A.colindex + A.rowptr[s+1];
-      while (ci < cstop) {
-        tmp += x[ci[0]] * v[0];
-        ci++;
-        v++;
-      }
-      */
-      A.ColumnDotProduct(x, s, tmp);
-      tmp *= A.one_over_diag[s];
-      double delta = opts.relaxation * (tmp - x[s]);
-      x[s] += delta;
-      total += x[s];
-
-      if (check) {
-        if (opts.use_relative) if (x[s]) delta /= x[s];
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (long s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) {
-      out.status = LS_Success;
-      break;
-    }
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-}
-
-// ******************************************************************
-// *                    Abstract,  no relaxation                    *
-// ******************************************************************
-
-void RowGS_Ax0(LS_Abstract_Matrix* const &A, 
-    double *x, const LS_Options &opts, LS_Output &out)
-{
-  out.status = LS_No_Convergence;
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, 0, A->GetSize());
-    long s, news;
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    A->FirstRow(s);
-    for (; s<A->GetSize(); s=news) {
-      double tmp = 0.0;
-      news = A->SolveRow(s, x, tmp);
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) {
-      out.status = LS_Success;
-      break;
-    }
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-}
-
-
-// ******************************************************************
-// *                      Abstract, relaxation                      *
-// ******************************************************************
-
-void RowGS_Ax0_w(LS_Abstract_Matrix* const &A, 
-    double *x, const LS_Options &opts, LS_Output &out)
-{
-  out.status = LS_No_Convergence;
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Gauss-Seidel", iters, x, 0, A->GetSize());
-    long s, news;
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    A->FirstRow(s);
-    for ( ; s<A->GetSize(); s=news) {
-      double tmp = 0.0;
-      news = A->SolveRow(s, x, tmp);
-
-      double delta = opts.relaxation * (tmp - x[s]);
-      x[s] += delta;
-      total += x[s];
-
-      if (check) {
-        if (opts.use_relative) if (x[s]) delta /= x[s];
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-
-      /* OLD
-      tmp *= opts.relaxation;
-      tmp += one_minus_omega * x[s];
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision)
-              if (iters < opts.max_iters)
-                check = false;
-        }
-      } // if check
-      total += (x[s] = tmp);
-      */
-
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) {
-      out.status = LS_Success;
-      break; 
-    }
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-}
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                           Row Jacobi                           *
-// *                                                                *
-// ******************************************************************
-
-// ******************************************************************
-// *                    Explicit,  no relaxation                    *
-// ******************************************************************
-
-template <class REAL1, class REAL2>
-void RowJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A, 
-    double *x, REAL2* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, A.start, A.stop);
-    long s;
-    maxerror = 0;
-    for (s=A.stop-1; s>=A.start; s--) old[s] = x[s];
-    double total = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
-    bool check = (iters >= opts.min_iters);
-    for (s=A.start; s<A.stop; s++) {
-      const long* cstop = A.colindex + A.rowptr[s+1];
-      double tmp = 0.0;
-      while (ci < cstop) {
-        tmp += old[ci[0]] * v[0];
-        ci++;
-        v++;
-      }
-      tmp *= A.one_over_diag[s];
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = 1;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                      Explicit, relaxation                      *
-// ******************************************************************
-
-template <class REAL1, class REAL2>
-void RowJacobi_Ax0_w(const LS_Internal_Matrix <REAL1> &A, 
-    double *x, REAL2* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, A.start, A.stop);
-    long s;
-    maxerror = 0;
-    for (s=A.stop-1; s>=A.start; s--) old[s] = x[s];
-    double total = 0;
-    const long* ci = A.colindex + A.rowptr[A.start];
-    const REAL1* v = A.value + A.rowptr[A.start];
-    bool check = (iters >= opts.min_iters);
-    for (s=A.start; s<A.stop; s++) {
-      const long* cstop = A.colindex + A.rowptr[s+1];
-      double tmp = 0.0;
-      while (ci < cstop) {
-        tmp += old[ci[0]] * v[0];
-        ci++;
-        v++;
-      }
-      tmp *= A.one_over_diag[s] * opts.relaxation;
-      tmp += one_minus_omega * x[s];
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                    Abstract,  no relaxation                    *
-// ******************************************************************
-
-template <class REAL>
-void RowJacobi_Ax0(LS_Abstract_Matrix* const &A, 
-    double *x, REAL* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, 0, A->GetSize());
-    long s, news;
-    maxerror = 0;
-    for (s=A->GetSize(); s>=0; s--) old[s] = x[s];
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    A->FirstRow(s);
-    for ( ; s<A->GetSize(); s=news) {
-      double tmp = 0.0;
-      news = A->SolveRow(s, old, tmp);
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                      Abstract, relaxation                      *
-// ******************************************************************
-
-template <class REAL>
-void RowJacobi_Ax0_w(LS_Abstract_Matrix* const &A, 
-    double *x, REAL* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, 0, A->GetSize());
-    long s, news;
-    maxerror = 0;
-    for (s=A->GetSize(); s>=0; s--) old[s] = x[s];
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    A->FirstRow(s);
-    for ( ; s<A->GetSize(); s=news) {
-      double tmp = 0.0;
-      news = A->SolveRow(s, old, tmp);
-      tmp *= opts.relaxation;
-      tmp += one_minus_omega * x[s];
-      if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                            VMJacobi                            *
-// *                                                                *
-// ******************************************************************
-
-// ******************************************************************
-// *                       Explicit,  by rows                       *
-// ******************************************************************
-
-template <class REAL1, class REAL2>
-void RowVMJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A, 
-    double *x, REAL2* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Jacobi", iters, x, A.start, A.stop);
-    long s;
-    for (s=A.stop-1; s>=A.start; s--) {
-      old[s] = x[s];
-      x[s] = 0;
-    }
-   
-    // Vector-matrix multiply
-    A.MultiplyByRows(x, old);
-
-    // complete the iteration    
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    if (opts.use_relaxation) {
-      for(s=A.start; s<A.stop; s++) {
-          double tmp = x[s];
-          tmp *= A.one_over_diag[s] * opts.relaxation;
-          tmp += one_minus_omega * old[s];
-          if (check) {
-            double delta = tmp - old[s];
-            if (opts.use_relative) if (tmp) delta /= tmp;
-            if (delta<0) delta = -delta;
-            if (delta > maxerror) {
-                maxerror = delta;
-                if (maxerror >= opts.precision)
-                  if (iters < opts.max_iters)
-                    check = false;
-            }
-          } // if check
-          total += (x[s] = tmp);
-      } // for s
-    } else {
-      for(s=A.start; s<A.stop; s++) {
-          double tmp = x[s];
-          tmp *= A.one_over_diag[s];
-          if (check) {
-            double delta = tmp - old[s];
-            if (opts.use_relative) if (tmp) delta /= tmp;
-            if (delta<0) delta = -delta;
-            if (delta > maxerror) {
-                maxerror = delta;
-                if (maxerror >= opts.precision) {
-                  if (iters < opts.max_iters) {
-                    check = false;
-                  }
-                }
-            }
-          } // if check
-          total += (x[s] = tmp);
-      } // for s
-    } // if relaxation
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                      Explicit, by columns                      *
-// ******************************************************************
-
-template <class REAL1, class REAL2>
-void ColVMJacobi_Ax0(const LS_Internal_Matrix <REAL1> &A, 
-    double *x, REAL2* old, const LS_Options &opts, LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Jacobi", iters, x, A.start, A.stop);
-    long s;
-    for (s=A.stop-1; s>=A.start; s--) {
-      old[s] = x[s];
-      x[s] = 0;
-    }
-   
-    // Vector-matrix multiply
-    A.MultiplyByCols(x, old);
-
-    // Diagonal adjust
-    for (s=A.stop-1; s>=A.start; s--) {
-      x[s] *= A.one_over_diag[s] * opts.relaxation;
-    } 
-
-    // complete the iteration    
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    for(s=A.start; s<A.stop; s++) {
-      double tmp = x[s];
-      tmp += one_minus_omega * old[s];
-      if (check) {
-        double delta = tmp - old[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A.stop-1; s>=A.start; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                       Abstract,  by rows                       *
-// ******************************************************************
-
-template <class REAL>
-void RowVMJacobi_Ax0(LS_Abstract_Matrix* const &A, 
-          double* x, 
-          REAL* old,
-          const LS_Options &opts, 
-          LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Jacobi", iters, x, 0, A->GetSize());
-    long s;
-    for (s=A->GetSize()-1; s>=0; s--) {
-      old[s] = x[s];
-      x[s] = 0;
-    }
-   
-    // Vector-matrix multiply
-    A->NoDiag_MultByRows(old, x);
-
-    // diagonal adjust
-    A->DivideDiag(x, opts.relaxation);
-
-    // complete the iteration    
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    for(s=0; s<A->GetSize(); s++) {
-      double tmp = x[s];
-      tmp += one_minus_omega * old[s];
-      if (check) {
-        double delta = tmp - old[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
-
-// ******************************************************************
-// *                       Abstract,  by cols                       *
-// ******************************************************************
-
-template <class REAL>
-void ColVMJacobi_Ax0(LS_Abstract_Matrix* const &A, 
-          double* x, 
-          REAL* old,
-          const LS_Options &opts, 
-          LS_Output &out)
-{
-  long iters;
-  double one_minus_omega = 1.0 - opts.relaxation;
-  double maxerror = 0;
-  for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Jacobi", iters, x, 0, A->GetSize());
-    long s;
-    for (s=A->GetSize()-1; s>=0; s--) {
-      old[s] = x[s];
-      x[s] = 0;
-    }
-   
-    // Vector-matrix multiply
-    A->NoDiag_MultByCols(old, x);
-
-    // diagonal adjust
-    A->DivideDiag(x, opts.relaxation);
-
-    // complete the iteration    
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    for(s=0; s<A->GetSize(); s++) {
-      double tmp = x[s];
-      tmp += one_minus_omega * old[s];
-      if (check) {
-        double delta = tmp - old[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
-        if (delta<0) delta = -delta;
-        if (delta > maxerror) {
-            maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
-            }
-        }
-      } // if check
-      total += (x[s] = tmp);
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (s=A->GetSize()-1; s>=0; s--) x[s] *= total;
-    }
-
-    if (iters < opts.min_iters) continue;
-    if (maxerror < opts.precision) break; 
-  } // for iters
-  out.num_iters = iters;
-  out.precision = maxerror;
-  out.relaxation = opts.relaxation;
-  if (iters <= opts.max_iters) {
-    out.status = LS_Success;
-  } else {
-    out.status = LS_No_Convergence;
-  }
-}
 
 // ******************************************************************
 // *                                                                *
@@ -1221,7 +359,7 @@ void ColPower_Ax0(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL>
-void Power_Ax0(LS_Abstract_Matrix* const &A, 
+void Power_Ax0(const LS_Abstract_Matrix &A, 
           double* x, 
           REAL* old,
           const LS_Options &opts, 
@@ -1231,7 +369,7 @@ void Power_Ax0(LS_Abstract_Matrix* const &A,
 }
 
 template <class REAL>
-inline void RowPower_Ax0(LS_Abstract_Matrix* const &A, 
+inline void RowPower_Ax0(const LS_Abstract_Matrix &A, 
           double* x, 
           REAL* old,
           const LS_Options &opts, 
@@ -1241,7 +379,7 @@ inline void RowPower_Ax0(LS_Abstract_Matrix* const &A,
 }
 
 template <class REAL>
-inline void ColPower_Ax0(LS_Abstract_Matrix* const &A, 
+inline void ColPower_Ax0(const LS_Abstract_Matrix &A, 
           double* x, 
           REAL* old,
           const LS_Options &opts, 
@@ -1296,7 +434,7 @@ void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A,
         tmp = -b.value[bptr];
         bptr++;
       }
-      A.ColumnDotProduct(x, s, tmp);
+      A.ColumnDotProduct(s, x, tmp);
       /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
@@ -1363,7 +501,7 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
         tmp = -b.value[bptr];
         bptr++;
       } 
-      A.ColumnDotProduct(x, s, tmp);
+      A.ColumnDotProduct(s, x, tmp);
       /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
@@ -1406,10 +544,13 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL>
-void RowGS_Axb(LS_Abstract_Matrix* const &A, 
+void RowGS_Axb(const LS_Abstract_Matrix &A, 
     double *x, const LS_Sparse_Vector <REAL> &b, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
@@ -1461,6 +602,7 @@ void RowGS_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 
@@ -1469,10 +611,13 @@ void RowGS_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL>
-void RowGS_Axb_w(LS_Abstract_Matrix* const &A, 
+void RowGS_Axb_w(const LS_Abstract_Matrix &A, 
     double *x, const LS_Sparse_Vector <REAL> &b, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -1527,6 +672,7 @@ void RowGS_Axb_w(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -1674,10 +820,13 @@ void RowJacobi_Axb_w(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void RowJacobi_Axb(const LS_Abstract_Matrix &A, 
     double *x, const LS_Sparse_Vector <REAL1> &b, REAL2* old, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
@@ -1720,6 +869,7 @@ void RowJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -1727,10 +877,13 @@ void RowJacobi_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowJacobi_Axb_w(LS_Abstract_Matrix* const &A, 
+void RowJacobi_Axb_w(const LS_Abstract_Matrix &A, 
     double *x, const LS_Sparse_Vector <REAL1> &b, REAL2* old, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -1775,6 +928,8 @@ void RowJacobi_Axb_w(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+
+  */
 }
 
 
@@ -1938,13 +1093,16 @@ void ColVMJacobi_Axb(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void RowVMJacobi_Axb(const LS_Abstract_Matrix &A, 
     double* x, 
     const LS_Sparse_Vector <REAL1> &b,
     REAL2* old,
     const LS_Options &opts, 
     LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -1994,6 +1152,8 @@ void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+
+  */
 }
 
 // ******************************************************************
@@ -2001,13 +1161,15 @@ void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void ColVMJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void ColVMJacobi_Axb(const LS_Abstract_Matrix &A, 
     double* x, 
     const LS_Sparse_Vector <REAL1> &b,
     REAL2* old,
     const LS_Options &opts, 
     LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -2057,6 +1219,7 @@ void ColVMJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 
@@ -2099,7 +1262,7 @@ void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A,
       double tmp;
       if (s < b.size)   tmp = -b.value[s];  
       else              tmp = 0.0;
-      A.ColumnDotProduct(x, s, tmp);
+      A.ColumnDotProduct(s, x, tmp);
       /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
@@ -2159,7 +1322,7 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
       double tmp;
       if (s < b.size)   tmp = -b.value[s];  
       else              tmp = 0.0;
-      A.ColumnDotProduct(x, s, tmp);
+      A.ColumnDotProduct(s, x, tmp);
       /*
       const long* cstop = A.colindex + A.rowptr[s+1];
       while (ci < cstop) {
@@ -2202,10 +1365,13 @@ void RowGS_Axb_w(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL>
-void RowGS_Axb(LS_Abstract_Matrix* const &A, 
+void RowGS_Axb(const LS_Abstract_Matrix &A, 
     double *x, const LS_Full_Vector <REAL> &b, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
@@ -2244,6 +1410,7 @@ void RowGS_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 
@@ -2252,10 +1419,13 @@ void RowGS_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL>
-void RowGS_Axb_w(LS_Abstract_Matrix* const &A, 
+void RowGS_Axb_w(const LS_Abstract_Matrix &A, 
     double *x, const LS_Full_Vector <REAL> &b, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -2297,6 +1467,7 @@ void RowGS_Axb_w(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -2426,10 +1597,12 @@ void RowJacobi_Axb_w(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void RowJacobi_Axb(const LS_Abstract_Matrix &A, 
     double *x, const LS_Full_Vector <REAL1> &b, REAL2* old, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+  /*
   long iters;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
@@ -2474,6 +1647,7 @@ void RowJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -2481,10 +1655,12 @@ void RowJacobi_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowJacobi_Axb_w(LS_Abstract_Matrix* const &A, 
+void RowJacobi_Axb_w(const LS_Abstract_Matrix &A, 
     double *x, const LS_Full_Vector <REAL1> &b, REAL2* old, 
     const LS_Options &opts, LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -2532,6 +1708,7 @@ void RowJacobi_Axb_w(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 
@@ -2689,13 +1866,15 @@ void ColVMJacobi_Axb(const LS_Internal_Matrix <REAL1> &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void RowVMJacobi_Axb(const LS_Abstract_Matrix &A, 
     double* x, 
     const LS_Full_Vector <REAL1> &b,
     REAL2* old,
     const LS_Options &opts, 
     LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -2748,6 +1927,7 @@ void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -2755,13 +1935,15 @@ void RowVMJacobi_Axb(LS_Abstract_Matrix* const &A,
 // ******************************************************************
 
 template <class REAL1, class REAL2>
-void ColVMJacobi_Axb(LS_Abstract_Matrix* const &A, 
+void ColVMJacobi_Axb(const LS_Abstract_Matrix &A, 
     double* x, 
     const LS_Full_Vector <REAL1> &b,
     REAL2* old,
     const LS_Options &opts, 
     LS_Output &out)
 {
+  out.status = LS_Not_Implemented;
+  /*
   long iters;
   double one_minus_omega = 1.0 - opts.relaxation;
   double maxerror = 0;
@@ -2814,6 +1996,7 @@ void ColVMJacobi_Axb(LS_Abstract_Matrix* const &A,
   } else {
     out.status = LS_No_Convergence;
   }
+  */
 }
 
 // ******************************************************************
@@ -2865,10 +2048,17 @@ void Ax0_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               out.status = LS_Out_Of_Memory;
               return;
             } 
+            if (opts.use_relaxation) {
+                New_VMMJacobi_Ax0<true>(A, x, fold, opts, out);
+            } else {
+                New_VMMJacobi_Ax0<false>(A, x, fold, opts, out);
+            }
+            /*
             if (Ais_transposed)
               ColVMJacobi_Ax0(A, x, fold, opts, out);
             else 
               RowVMJacobi_Ax0(A, x, fold, opts, out);
+            */
             free(fold);
         } else { 
             dold = (double*) malloc(Asize * sizeof(double));
@@ -2876,10 +2066,17 @@ void Ax0_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               out.status = LS_Out_Of_Memory;
               return;
             } 
+            if (opts.use_relaxation) {
+                New_VMMJacobi_Ax0<true>(A, x, dold, opts, out);
+            } else {
+                New_VMMJacobi_Ax0<false>(A, x, dold, opts, out);
+            }
+            /*
             if (Ais_transposed)
               ColVMJacobi_Ax0(A, x, dold, opts, out);
             else 
               RowVMJacobi_Ax0(A, x, dold, opts, out);
+            */
             free(dold);
         } 
         return;    
@@ -2895,10 +2092,11 @@ void Ax0_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               out.status = LS_Out_Of_Memory;
               return;
             } 
-            if (opts.use_relaxation)
-              RowJacobi_Ax0_w(A, x, fold, opts, out);
-            else
-              RowJacobi_Ax0(A, x, fold, opts, out);
+            if (opts.use_relaxation) {
+                New_RowJacobi_Ax0<true>(A, x, fold, opts, out);
+            } else {
+                New_RowJacobi_Ax0<false>(A, x, fold, opts, out);
+            }
             free(fold);
         } else { 
             dold = (double*) malloc(Asize * sizeof(double));
@@ -2906,10 +2104,11 @@ void Ax0_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               out.status = LS_Out_Of_Memory;
               return;
             } 
-            if (opts.use_relaxation)
-              RowJacobi_Ax0_w(A, x, dold, opts, out);
-            else
-              RowJacobi_Ax0(A, x, dold, opts, out);
+            if (opts.use_relaxation) {
+                New_RowJacobi_Ax0<true>(A, x, dold, opts, out);
+            } else {
+                New_RowJacobi_Ax0<false>(A, x, dold, opts, out);
+            }
             free(dold);
         } 
         return;    
@@ -2919,10 +2118,11 @@ void Ax0_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
             out.status = LS_Wrong_Format;
             return;
         } 
-        if (opts.use_relaxation)
-            RowGS_Ax0_w(A, x, opts, out);
-        else
-            RowGS_Ax0(A, x, opts, out);
+        if (opts.use_relaxation) {
+            New_RowGS_Ax0<true>(A, x, opts, out);
+        } else {
+            New_RowGS_Ax0<false>(A, x, opts, out);
+        }
         return;    
 
     default:
@@ -3087,10 +2287,10 @@ void Solve_AxZero(const LS_Matrix &A, double* x, const LS_Options &opts, LS_Outp
   out.status = LS_Wrong_Format;
 }
 
-void Solve_AxZero(LS_Abstract_Matrix *A, double* x, const LS_Options &opts, LS_Output &out)
+void Solve_AxZero(const LS_Abstract_Matrix &A, double* x, const LS_Options &opts, LS_Output &out)
 {
-  bool ait = A->IsTransposed();
-  long asize = A->GetSize();
+  bool ait = A.IsTransposed();
+  long asize = A.GetSize();
   Ax0_Solver(A, ait, asize, x, opts, out);
 }
 
@@ -3121,10 +2321,10 @@ void Solve_Axb(const LS_Matrix &A, double* x, const LS_Vector &b, const LS_Optio
 }
 
 
-void Solve_Axb(LS_Abstract_Matrix* A, double* x, const LS_Vector &b, const LS_Options &opts, LS_Output &out)
+void Solve_Axb(const LS_Abstract_Matrix &A, double* x, const LS_Vector &b, const LS_Options &opts, LS_Output &out)
 {
-  bool ait = A->IsTransposed();
-  long asize = A->GetSize();
+  bool ait = A.IsTransposed();
+  long asize = A.GetSize();
   Axb_VectorExpand(A, ait, asize, x, b, opts, out);
 }
 

@@ -16,13 +16,13 @@ class my_LS_Matrix : public LS_Abstract_Matrix {
 protected:
   LS_Matrix P;
 public:
-  my_LS_Matrix(LS_Matrix p) : LS_Abstract_Matrix(p.stop) {
+  my_LS_Matrix(LS_Matrix p) : LS_Abstract_Matrix(p.start, p.stop, p.stop) {
     P = p;
   }
   virtual ~my_LS_Matrix() { }
   virtual bool IsTransposed() const  { return P.is_transposed; }
-  virtual long SolveRow(long r, const double *x, double& answer) const;
-  virtual long SolveRow(long r, const float *x, double& answer) const;
+  virtual void SolveRow(long r, const double *x, double& answer) const;
+  virtual void SolveRow(long r, const float *x, double& answer) const;
 
   virtual void NoDiag_MultByRows(const float* x, double* y) const;
   virtual void NoDiag_MultByRows(const double* x, double* y) const;
@@ -86,16 +86,14 @@ protected:
 
 /* Methods */
 
-long my_LS_Matrix::SolveRow(long r, const double* x, double& ans) const
+void my_LS_Matrix::SolveRow(long r, const double* x, double& ans) const
 {
   MySolveRow(r, x, ans);
-  return r+1;
 }
 
-long my_LS_Matrix::SolveRow(long r, const float* x, double& ans) const
+void my_LS_Matrix::SolveRow(long r, const float* x, double& ans) const
 {
   MySolveRow(r, x, ans);
-  return r+1;
 }
 
 void my_LS_Matrix::NoDiag_MultByRows(const float* x, double* y) const
@@ -401,7 +399,7 @@ int main(int argc, char** argv)
 
   timer watch;
   watch.Start();
-  if (use_abstract)   Solve_Axb(AA, x, b, opts, out);
+  if (use_abstract)   Solve_Axb(*AA, x, b, opts, out);
   else                Solve_Axb(A, x, b, opts, out);
   watch.Stop();
   cerr << watch.User_Seconds() << " seconds\n";
