@@ -16,6 +16,8 @@
 #include "row_jac_ax0.hh"
 #include "vmm_jac_ax0.hh"
 
+#include "row_gs_axb.hh"
+
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 3;
 
@@ -254,6 +256,17 @@ struct LS_Sparse_Vector {
     size = v.size;
     index = v.index;
   }
+  inline void FirstIndex(long &p, long start) const {
+    for (p=0; p<size; p++) {
+      if (index[p] >= start) return;
+    }
+  }
+  inline double GetNegValue(long &p, long s) const {
+    if (p<size) if (s == index[p]) {
+      return -value[p++];
+    }
+    return 0;
+  }
 };
 
 template<>
@@ -282,6 +295,13 @@ struct LS_Full_Vector {
   inline void Fill(const LS_Vector &v);
   inline void FillOthers(const LS_Vector &v) {
     size = v.size;
+  }
+  inline void FirstIndex(long &, long) const {
+    // NO-OP
+  }
+  inline double GetNegValue(long &, long s) const {
+    if (s < size) return -value[s];
+    return 0;
   }
 };
 
@@ -408,6 +428,8 @@ inline void ColPower_Ax0(const LS_Abstract_Matrix &A,
 // ******************************************************************
 // *                    Explicit,  no relaxation                    *
 // ******************************************************************
+
+#if 0
 
 template <class REAL1, class REAL2>
 void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A, 
@@ -674,6 +696,8 @@ void RowGS_Axb_w(const LS_Abstract_Matrix &A,
   }
   */
 }
+
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -1244,6 +1268,8 @@ void ColVMJacobi_Axb(const LS_Abstract_Matrix &A,
 // *                    Explicit,  no relaxation                    *
 // ******************************************************************
 
+#if 0
+
 template <class REAL1, class REAL2>
 void RowGS_Axb(const LS_Internal_Matrix <REAL1> &A, 
     double *x, const LS_Full_Vector <REAL2> &b, 
@@ -1469,6 +1495,7 @@ void RowGS_Axb_w(const LS_Abstract_Matrix &A,
   }
   */
 }
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -2202,9 +2229,9 @@ void Axb_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
             out.status = LS_Wrong_Format;
         } else {
             if (opts.use_relaxation)
-              RowGS_Axb_w(A, x, b, opts, out);
+              New_RowGS_Axb<true>(A, x, b, opts, out);
             else
-              RowGS_Axb(A, x, b, opts, out);
+              New_RowGS_Axb<false>(A, x, b, opts, out);
         }
         return;    
 
