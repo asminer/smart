@@ -30,6 +30,7 @@ public:
   virtual void NoDiag_MultByCols(const float* x, double* y) const;
   virtual void NoDiag_MultByCols(const double* x, double* y) const;
 
+  virtual void DivideDiag(double* x) const;
   virtual void DivideDiag(double* x, double scalar) const;
 
 protected:
@@ -115,6 +116,13 @@ void my_LS_Matrix::NoDiag_MultByCols(const float* x, double* y) const
 void my_LS_Matrix::NoDiag_MultByCols(const double* x, double* y) const
 {
   MyMultByCols(x, y);
+}
+
+void my_LS_Matrix::DivideDiag(double* x) const
+{
+  for (int i=0; i<size; i++) {
+    x[i] *= P.f_one_over_diag[i];
+  }
 }
 
 void my_LS_Matrix::DivideDiag(double* x, double scalar) const
