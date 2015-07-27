@@ -347,10 +347,10 @@ int main(int argc, char** argv)
         cerr << "row Jacobi\n";
         break;
     case LS_Jacobi: 
-        cerr << "with Jacobi\n";
+        cerr << "Jacobi\n";
         break;
     case LS_Power: 
-        cerr << "with Power method\n";
+        cerr << "Power method\n";
         break;
     default:
         cerr << "Unknown solver\n";
