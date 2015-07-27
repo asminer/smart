@@ -6,6 +6,7 @@
 
 #include "lslib.h"
 #include "debug.hh"
+#include "vectors.hh"
 
 /**
 

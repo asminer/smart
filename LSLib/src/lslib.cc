@@ -267,6 +267,13 @@ struct LS_Sparse_Vector {
     }
     return 0;
   }
+  inline void CopyToFull(double* x, long start, long stop) const {
+    for (long i=0; i<size; i++) {
+      if (index[i] >= stop) return;
+      if (index[i] < start) continue;
+      x[index[i]] = value[i];
+    }
+  }
 };
 
 template<>
@@ -302,6 +309,12 @@ struct LS_Full_Vector {
   inline double GetNegValue(long &, long s) const {
     if (s < size) return -value[s];
     return 0;
+  }
+  inline void CopyToFull(double *x, long start, long stop) const {
+    long istop = MIN(size, stop);
+    for (long i=MAX(long(0), start); i<istop; i++) {
+      x[i] = value[i];
+    }
   }
 };
 

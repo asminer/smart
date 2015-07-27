@@ -1,8 +1,8 @@
 
 // $Id$
 
-#ifndef ROW_JAC_AX0_HH
-#define ROW_JAC_AX0_HH
+#ifndef ROW_JAC_AXB_HH
+#define ROW_JAC_AXB_HH
 
 #include "lslib.h"
 #include "debug.hh"
@@ -10,7 +10,7 @@
 
 /**
 
-    Workhorse for Row Jacobi solving Ax=0.
+    Workhorse for Row Jacobi solving Ax=b.
 
     The MATRIX class must provide the following methods:
 
@@ -20,6 +20,11 @@
                             then ans divided by row r diagonal
 
 
+    The VECTOR class must provide the following methods:
+      
+      void CopyToFull(double* x, long start, long stop);
+
+
     @param  A     Matrix
     @param  x     Vector
     @param  xold  Auxiliary vector
@@ -27,10 +32,11 @@
     @param  out   Output information
 */
 
-template <bool RELAX, class MATRIX, class REAL>
-void New_RowJacobi_Ax0(
+template <bool RELAX, class MATRIX, class VECTOR, class REAL>
+void New_RowJacobi_Axb(
           const MATRIX &A,          // abstract matrix
           double *xnew,             // solution vector
+          const VECTOR &b,          // constant vector (right side)
           REAL *xold,               // auxiliary vector
           const LS_Options &opts,   // solver options
           LS_Output &out            // performance results
@@ -50,19 +56,19 @@ void New_RowJacobi_Ax0(
     if (opts.debug)  DebugIter("Row Jacobi", iters, x, A.Start(), A.Stop());
 
     CopyToAuxOrSwap(xold, x, A.Start(), A.Stop());
+    for (long s=A.Start(); s<A.Stop(); s++) x[s] = 0;
+    b.CopyToFull(x, A.Start(), A.Stop());
 
     maxerror = 0;
-    double total = 0;
     bool check = (iters >= opts.min_iters);
     for (long s=A.Start(); s<A.Stop(); s++) {
-      x[s] = 0.0;
+
       A.SolveRow(s, xold, x[s]);
 
       if (RELAX) {
         x[s] *= opts.relaxation;
         x[s] += one_minus_omega * xold[s];
       } 
-      total += x[s];
 
       if (check) {
         double delta = x[s] - xold[s];
@@ -79,10 +85,6 @@ void New_RowJacobi_Ax0(
       } // if check
 
     } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (long s=A.Stop()-1; s>=A.Start(); s--) x[s] *= total;
-    }
 
     if (iters < opts.min_iters) continue;
     if (maxerror < opts.precision) {
