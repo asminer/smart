@@ -37,12 +37,14 @@ void New_VMMJacobi_Ax0(
 )
 {
   out.status = LS_No_Convergence;
+  double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;
+    one_minus_omega = 1.0 - opts.relaxation;
   } else {
     out.relaxation = 1;
+    one_minus_omega = 0;
   }
-  double one_minus_omega = 1.0 - opts.relaxation;
   double* x = xnew;
   long iters;
   double maxerror = 0;
@@ -54,7 +56,11 @@ void New_VMMJacobi_Ax0(
     for (long s=A.Start(); s<A.Stop(); s++) x[s] = 0;
 
     A.Multiply(x, xold);
-    A.DivideDiag(x, opts.relaxation);
+    if (RELAX) {
+      A.DivideDiag(x, opts.relaxation);
+    } else {
+      A.DivideDiag(x);
+    }
 
     maxerror = 0;
     double total = 0;

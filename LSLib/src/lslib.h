@@ -281,10 +281,16 @@ public:
     else                  NoDiag_MultByRows(old, y);
   }
 
+  /** Compute x[i] *= 1 / diag[i].
+      Default behavior: throws LS_Not_Implemented.
+  */
+  virtual void DivideDiag(double* x) const = 0;
+
   /** Compute x[i] *= scalar / diag[i].
       Default behavior: throws LS_Not_Implemented.
   */
   virtual void DivideDiag(double* x, double scalar) const = 0;
+
 };
 
 

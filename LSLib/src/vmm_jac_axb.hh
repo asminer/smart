@@ -1,8 +1,8 @@
 
 // $Id$
 
-#ifndef ROW_JAC_AXB_HH
-#define ROW_JAC_AXB_HH
+#ifndef VMM_JAC_AXB_HH
+#define VMM_JAC_AXB_HH
 
 #include "lslib.h"
 #include "debug.hh"
@@ -10,14 +10,15 @@
 
 /**
 
-    Workhorse for Row Jacobi solving Ax=b.
+    Workhorse for vector-matrix multiplication Jacobi solving Ax=b.
 
     The MATRIX class must provide the following methods:
 
       long Start()        : index of first row
       long Stop()         : one plus index of last row
-      SolveRow(r, x, ans) : Row r times x added to ans,
-                            then ans divided by row r diagonal
+      Multiply(x, old)    : Compute matrix * old, store in x
+      DivideDiag(x)       : x[i] *= 1 / diagonal[i], for all i
+      DivideDiag(x, a)    : x[i] *= a / diagonal[i], for all i
 
 
     The VECTOR class must provide the following methods:
@@ -26,14 +27,14 @@
 
 
     @param  A     Matrix
-    @param  x     Vector
+    @param  xnew  Vector
     @param  xold  Auxiliary vector
     @param  opts  options
     @param  out   Output information
 */
 
 template <bool RELAX, class MATRIX, class VECTOR, class REAL>
-void New_RowJacobi_Axb(
+void New_VMMJacobi_Axb(
           const MATRIX &A,          // abstract matrix
           double *xnew,             // solution vector
           const VECTOR &b,          // constant vector (right side)
@@ -55,22 +56,26 @@ void New_RowJacobi_Axb(
   long iters;
   double maxerror = 0;
   for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, A.Start(), A.Stop());
+    if (opts.debug)  DebugIter("Jacobi", iters, x, A.Start(), A.Stop());
 
     CopyToAuxOrSwap(xold, x, A.Start(), A.Stop());
+
     for (long s=A.Start(); s<A.Stop(); s++) x[s] = 0;
     b.CopyNegativeToFull(x, A.Start(), A.Stop());
+
+    A.Multiply(x, xold);
+    if (RELAX) {
+      A.DivideDiag(x, opts.relaxation);
+    } else {
+      A.DivideDiag(x);
+    }
 
     maxerror = 0;
     bool check = (iters >= opts.min_iters);
     for (long s=A.Start(); s<A.Stop(); s++) {
-
-      A.SolveRow(s, xold, x[s]);
-
       if (RELAX) {
-        x[s] *= opts.relaxation;
         x[s] += one_minus_omega * xold[s];
-      } 
+      }
 
       if (check) {
         double delta = x[s] - xold[s];
