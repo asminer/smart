@@ -43,12 +43,14 @@ void New_RowJacobi_Axb(
 )
 {
   out.status = LS_No_Convergence;
+  double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;
+    one_minus_omega = 1.0 - opts.relaxation;
   } else {
     out.relaxation = 1;
+    one_minus_omega = 0;
   }
-  double one_minus_omega = 1.0 - opts.relaxation;
   double* x = xnew;
   long iters;
   double maxerror = 0;

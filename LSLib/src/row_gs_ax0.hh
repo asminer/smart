@@ -34,10 +34,13 @@ void New_RowGS_Ax0(
 )
 {
   out.status = LS_No_Convergence;
+  double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;
+    one_minus_omega = 1.0 - opts.relaxation;
   } else {
     out.relaxation = 1;
+    one_minus_omega = 0;
   }
   long iters;
   double maxerror = 0;
@@ -53,12 +56,11 @@ void New_RowGS_Ax0(
 
       double delta;
       if (RELAX) {
-        delta = opts.relaxation * (tmp - x[s]);
-        x[s] += delta;
-      } else {
-        delta = tmp - x[s];
-        x[s] = tmp;
-      }
+        tmp *= opts.relaxation;
+        tmp += one_minus_omega * x[s];
+      } 
+      delta = tmp - x[s];
+      x[s] = tmp;
       total += x[s];
 
       if (check) {

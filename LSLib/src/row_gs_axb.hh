@@ -46,12 +46,14 @@ void New_RowGS_Axb(
 )
 {
   out.status = LS_No_Convergence;
+  double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;
+    one_minus_omega = 1.0 - opts.relaxation;
   } else {
     out.relaxation = 1;
+    one_minus_omega = 0;
   }
-  double one_minus_omega = 1.0 - opts.relaxation;
   long iters;
   double maxerror = 0;
   long bstart;
@@ -67,13 +69,16 @@ void New_RowGS_Axb(
       double tmp = b.GetNegValue(bp, s);
       A.SolveRow(s, x, tmp);
 
+      double delta;
       if (RELAX) {
         tmp *= opts.relaxation;
         tmp += one_minus_omega * x[s];
-      }
+      } 
+      delta = tmp - x[s];
+      x[s] = tmp;
+
       if (check) {
-        double delta = tmp - x[s];
-        if (opts.use_relative) if (tmp) delta /= tmp;
+        if (opts.use_relative) if (x[s]) delta /= x[s];
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
@@ -82,7 +87,6 @@ void New_RowGS_Axb(
                 check = false;
         }
       }
-      x[s] = tmp;
 
     } // for s
 

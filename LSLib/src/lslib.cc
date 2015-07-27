@@ -17,6 +17,7 @@
 #include "vmm_jac_ax0.hh"
 
 #include "row_gs_axb.hh"
+#include "row_jac_axb.hh"
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 3;
@@ -722,6 +723,8 @@ void RowGS_Axb_w(const LS_Abstract_Matrix &A,
 // *                    Explicit,  no relaxation                    *
 // ******************************************************************
 
+#if 0
+
 template <class REAL1, class REAL2, class REAL3>
 void RowJacobi_Axb(const LS_Internal_Matrix <REAL1> &A, 
     double *x, const LS_Sparse_Vector <REAL2> &b, REAL3* old, 
@@ -969,7 +972,7 @@ void RowJacobi_Axb_w(const LS_Abstract_Matrix &A,
   */
 }
 
-
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -1520,6 +1523,8 @@ void RowGS_Axb_w(const LS_Abstract_Matrix &A,
 // *                    Explicit,  no relaxation                    *
 // ******************************************************************
 
+#if 0
+
 template <class REAL1, class REAL2, class REAL3>
 void RowJacobi_Axb(const LS_Internal_Matrix <REAL1> &A, 
     double *x, const LS_Full_Vector <REAL2> &b, REAL3* old, 
@@ -1751,7 +1756,7 @@ void RowJacobi_Axb_w(const LS_Abstract_Matrix &A,
   */
 }
 
-
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -2219,9 +2224,9 @@ void Axb_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               return;
             } 
             if (opts.use_relaxation)
-                RowJacobi_Axb_w(A, x, b, fold, opts, out);
+                New_RowJacobi_Axb<true>(A, x, b, fold, opts, out);
             else
-                RowJacobi_Axb(A, x, b, fold, opts, out);
+                New_RowJacobi_Axb<false>(A, x, b, fold, opts, out);
             free(fold);
         } else { 
             dold = (double*) malloc(Asize * sizeof(double));
@@ -2230,9 +2235,9 @@ void Axb_Solver(const MATRIX &A, bool Ais_transposed, long Asize,
               return;
             } 
             if (opts.use_relaxation)
-                RowJacobi_Axb_w(A, x, b, dold, opts, out);
+                New_RowJacobi_Axb<true>(A, x, b, dold, opts, out);
             else
-                RowJacobi_Axb(A, x, b, dold, opts, out);
+                New_RowJacobi_Axb<false>(A, x, b, dold, opts, out);
             free(dold);
         } 
         return;    
