@@ -56,8 +56,7 @@ void New_RowGS_Ax0(
 
       double delta;
       if (RELAX) {
-        tmp *= opts.relaxation;
-        tmp += one_minus_omega * x[s];
+        tmp = (tmp * opts.relaxation) + (x[s] * one_minus_omega);
       } 
       delta = tmp - x[s];
       x[s] = tmp;

@@ -68,8 +68,7 @@ void New_RowJacobi_Axb(
       A.SolveRow(s, xold, x[s]);
 
       if (RELAX) {
-        x[s] *= opts.relaxation;
-        x[s] += one_minus_omega * xold[s];
+        x[s] = (x[s] * opts.relaxation) + (xold[s] * one_minus_omega);
       } 
 
       if (check) {
