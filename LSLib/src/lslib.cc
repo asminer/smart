@@ -147,21 +147,12 @@ struct LS_Internal_Matrix {
   template <class REAL2>
   void MultiplyByRows(double* y, const REAL2* old) const {
     DEBUG_ASSERT(!is_transposed);
-    const long* rp = rowptr + start;
-    const long* rpstop = rowptr + stop;
-    const long* ci = colindex + rp[0];
-    const REAL* v = value + rp[0];
-    y += start;
-    while (rp < rpstop) {
-      rp++;
-      const long* cstop = colindex + rp[0];
-      while (ci < cstop) {
-        y[0] += old[ci[0]] * v[0];
-        ci++;
-        v++;
-      } // inner while
-      y++;
-    } // outer while
+    long a = rowptr[start];
+    for (long i=start; i<stop; i++) {
+      for ( ; a < rowptr[i+1]; a++) {
+        y[i] += old[colindex[a]] * value[a];
+      }
+    }
   }
 
   /*
@@ -170,21 +161,12 @@ struct LS_Internal_Matrix {
   template <class REAL2>
   void MultiplyByCols(double* y, const REAL2* old) const {
     DEBUG_ASSERT(is_transposed);
-    const long* rp = rowptr + start;
-    const long* rpstop = rowptr + stop;
-    const long* ci = colindex + rp[0];
-    const REAL* v = value + rp[0];
-    old += start;
-    while (rp < rpstop) {
-      rp++;
-      const long* cstop = colindex + rp[0];
-      while (ci < cstop) {
-        y[ci[0]] += old[0] * v[0];
-        ci++;
-        v++;
-      } // inner while
-      old++;
-    } // outer while
+    long a = rowptr[start];
+    for (long i=start; i<stop; i++) {
+      for ( ; a < rowptr[i+1]; a++) {
+        y[colindex[a]] += old[i] * value[a];
+      }
+    }
   }
 
   /*
@@ -223,8 +205,7 @@ struct LS_Internal_Matrix {
   template <class REAL2>
   inline void ColumnDotProduct(long index, const REAL2* x, double &sum) const {
     DEBUG_ASSERT(is_transposed);
-    long astop = rowptr[index+1];
-    for (long a = rowptr[index]; a < astop; a++) {
+    for (long a = rowptr[index]; a < rowptr[index+1]; a++) {
       sum += x[colindex[a]] * value[a];
     }
   }
