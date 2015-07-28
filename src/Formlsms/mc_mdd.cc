@@ -31,11 +31,9 @@ class meddly_mc : public markov_lldsm {
     virtual bool IsTransposed() const {
       return false; // not sure about this
     }
-    virtual long SolveRow(long, const float*, double &) const {
-      return -1;
+    virtual void SolveRow(long, const float*, double &) const {
     }
-    virtual long SolveRow(long, const double*, double &) const {
-      return -1;
+    virtual void SolveRow(long, const double*, double &) const {
     }
     virtual void NoDiag_MultByRows(const float* x, double* y) const {
       DCASSERT(0);
@@ -50,6 +48,11 @@ class meddly_mc : public markov_lldsm {
     virtual void NoDiag_MultByCols(const double* x, double* y) const {
       DCASSERT(0);
     };
+    virtual void DivideDiag(double* x) const {
+      for (long i=size-1; i>=0; i--) {
+        x[i] /= diagonals[i];
+      }
+    }
     virtual void DivideDiag(double* x, double scalar) const {
       for (long i=size-1; i>=0; i--) {
         x[i] *= scalar / diagonals[i];
@@ -145,7 +148,7 @@ public:
 
 meddly_mc::LS_wrapper
 ::LS_wrapper(MEDDLY::specialized_operation* vm, double* d, long ds)
- : LS_Abstract_Matrix(ds)
+ : LS_Abstract_Matrix(0, ds, ds)
 {
   vectmult = vm;
   diagonals = d;
@@ -449,7 +452,7 @@ bool meddly_mc::computeSteadyState(double* probs) const
     process->state_indexes->E, process->proc->E, process->state_indexes->E
   );
   LS_wrapper foo(vm, diagonals, dsize);
-  Solve_AxZero(&foo, probs, getSolverOptions(), outdata);
+  Solve_AxZero(foo, probs, getSolverOptions(), outdata);
   stopSteadyReport(outdata.num_iters);
   MEDDLY::destroyOperation(vm);
   return statusOK(outdata, "steady-state");
