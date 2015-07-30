@@ -9,137 +9,51 @@
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
 using namespace std;
 
-
-class my_LS_Matrix : public LS_Abstract_Matrix {
+template <class MATRIX>
+class my_Matrix : public LS_Generic_Matrix {
 protected:
-  LS_Matrix P;
+  MATRIX &A;
 public:
-  my_LS_Matrix(LS_Matrix p) : LS_Abstract_Matrix(p.start, p.stop, p.stop) {
-    P = p;
+  my_Matrix(MATRIX &p) : LS_Generic_Matrix(p.start, p.stop, p.size), A(p) {
   }
-  virtual ~my_LS_Matrix() { }
-  virtual bool IsTransposed() const  { return P.is_transposed; }
-  virtual void SolveRow(long r, const double *x, double& answer) const;
-  virtual void SolveRow(long r, const float *x, double& answer) const;
+  virtual ~my_Matrix() { }
 
-  virtual void NoDiag_MultByRows(const float* x, double* y) const;
-  virtual void NoDiag_MultByRows(const double* x, double* y) const;
-  virtual void NoDiag_MultByCols(const float* x, double* y) const;
-  virtual void NoDiag_MultByCols(const double* x, double* y) const;
-
-  virtual void DivideDiag(double* x) const;
-  virtual void DivideDiag(double* x, double scalar) const;
-
-protected:
-  template <class REAL>
-  inline void MySolveRow(int r, const REAL* x, double& ans) const {
-    const long* cstop = P.colindex + P.rowptr[r+1];
-    const long* ci = P.colindex + P.rowptr[r];
-    const float* v = P.f_value + P.rowptr[r];
-    while (ci < cstop) {
-      ans += x[ci[0]] * v[0];
-      ci++;
-      v++;
-    }
-    ans *= P.f_one_over_diag[r];
+  virtual void MatrixVectorMultiply(double *y, const float *x) const {
+    A.MatrixVectorMultiply(y, x);
+  }
+  virtual void MatrixVectorMultiply(double *y, const double *x) const {
+    A.MatrixVectorMultiply(y, x);
   }
 
-  template <class REAL>
-  inline void MyMultByRows(const REAL* x, double* y) const {
-    const long* rp = P.rowptr;
-    const long* rpstop = P.rowptr + P.stop;
-    const long* ci = P.colindex + rp[0];
-    const float* v = P.f_value + rp[0];
-    // multiplication; matrix by rows
-    while (rp < rpstop) {
-        rp++;
-        const long* cstop = P.colindex + rp[0];
-        while (ci < cstop) {
-          y[0] +=x[ci[0]] * v[0];
-          ci++;
-          v++;
-        } // inner while
-        y++;
-    } // outer while
+  virtual void DivideDiag(double* x) const {
+    A.DivideDiag(x);
   }
 
-  template <class REAL>
-  inline void MyMultByCols(const REAL* x, double* y) const {
-    const long* rp = P.rowptr;
-    const long* rpstop = P.rowptr + P.stop;
-    const long* ci = P.colindex + rp[0];
-    const float* v = P.f_value + rp[0];
-    // multiplication; matrix by columnns
-    while (rp < rpstop) {
-        rp++;
-        const long* cstop = P.colindex + rp[0];
-        while (ci < cstop) {
-          y[ci[0]] +=x[0] * v[0];
-          ci++;
-          v++;
-        } // inner while
-        x++;
-    } // outer while
+  virtual void DivideDiag(double* x, double a) const {
+    A.DivideDiag(x, a);
   }
+
+  virtual void SolveRow(long i, const float* x, double &sum) const {
+    A.SolveRow(i, x, sum);
+  }
+
+  virtual void SolveRow(long i, const double* x, double &sum) const {
+    A.SolveRow(i, x, sum);
+  }
+
 };
 
-/* Methods */
-
-void my_LS_Matrix::SolveRow(long r, const double* x, double& ans) const
-{
-  MySolveRow(r, x, ans);
-}
-
-void my_LS_Matrix::SolveRow(long r, const float* x, double& ans) const
-{
-  MySolveRow(r, x, ans);
-}
-
-void my_LS_Matrix::NoDiag_MultByRows(const float* x, double* y) const
-{
-  MyMultByRows(x, y);
-}
-
-void my_LS_Matrix::NoDiag_MultByRows(const double* x, double* y) const
-{
-  MyMultByRows(x, y);
-}
-
-void my_LS_Matrix::NoDiag_MultByCols(const float* x, double* y) const
-{
-  MyMultByCols(x, y);
-}
-
-void my_LS_Matrix::NoDiag_MultByCols(const double* x, double* y) const
-{
-  MyMultByCols(x, y);
-}
-
-void my_LS_Matrix::DivideDiag(double* x) const
-{
-  for (int i=0; i<size; i++) {
-    x[i] *= P.f_one_over_diag[i];
-  }
-}
-
-void my_LS_Matrix::DivideDiag(double* x, double scalar) const
-{
-  for (int i=0; i<size; i++) {
-    x[i] *= P.f_one_over_diag[i] * scalar;
-  }
-}
-
-/* End of methods */
 
 sparse_matrix* off_diags;
 int size;
-// float* diag;
 float* one_over_diag;
-LS_Matrix A;
-my_LS_Matrix *AA;
+LS_CRS_Matrix_float rA;
+LS_CCS_Matrix_float cA;
+LS_Generic_Matrix *AA;
 bool by_cols;
 
 void ReadInput(istream &s)
@@ -176,30 +90,17 @@ void ReadInput(istream &s)
 
   off_diags->ConvertToStatic();
 
-  off_diags->ExportTo(A);
-  A.f_one_over_diag = one_over_diag;
-  A.d_one_over_diag = NULL;
-
-  AA = new my_LS_Matrix(A);
-}
-
-void DumpInput(ostream &s)
-{
-  if (A.is_transposed) s << " Cols"; else s << " Rows";
-  s << ": [" << A.rowptr[0];
-  for (int i=1; i<=size; i++) s << ", " << A.rowptr[i];
-  s << "]\n";
-  int numarcs = A.rowptr[size];
-  if (A.is_transposed) s << " Rows"; else s << " Cols";
-  s << ": [" << A.colindex[0];
-  for (int i=1; i<numarcs; i++) s << ", " << A.colindex[i];
-  s << "]\n";
-  s << "value: [" << A.f_value[0];
-  for (int i=1; i<numarcs; i++) s << ", " << A.f_value[i];
-  s << "]\n";
-  s << "1/diags: [" << A.f_one_over_diag[0];
-  for (int i=1; i<size; i++) s << ", " << A.f_one_over_diag[i];
-  s << "]\n";
+  off_diags->ExportTo(rA);
+  off_diags->ExportTo(cA);
+  if (by_cols) {
+    rA.one_over_diag = 0;
+    cA.one_over_diag = one_over_diag;
+    AA = new my_Matrix <LS_CCS_Matrix_float>(cA);
+  } else {
+    rA.one_over_diag = one_over_diag;
+    cA.one_over_diag = 0;
+    AA = new my_Matrix <LS_CRS_Matrix_float>(rA);
+  }
 }
 
 double CompareVector(istream &s, double* x)
@@ -219,7 +120,7 @@ double CompareVector(istream &s, double* x)
 
 int Usage(const char* name)
 {
-    cerr << "Usage: " << name << "\n\nSwitches:\n";
+    cerr << "Usage: " << name << " [file]\n\nSwitches:\n";
     cerr << "\t?: Print usage and exit\n";
     cerr << "\ta: use abstract matrix\n";
     cerr << "\tc: store matrix by columns\n";
@@ -241,6 +142,8 @@ int main(int argc, char** argv)
 {
   LS_Options opts;
   char* name = argv[0];
+  char* file = 0;
+  ifstream* infile = 0;
   // process command line
   int ch;
   by_cols = false;
@@ -325,14 +228,27 @@ int main(int argc, char** argv)
           return Usage(name);
     } // switch
   } // loop to process arguments
-
+  if (optind < argc) {
+    file = argv[optind];
+    optind++;
+  }
+  if (optind < argc) {
+    return Usage(name);
+  }
   cerr << LS_LibraryVersion() << "\n\n";
-  cerr << "Reading diagonal-free, transposed Markov chain\n";
-  ReadInput(cin);
-#ifdef DEBUG
-  cerr << "Got matrix:\n";
-  DumpInput(cerr);
-#endif
+  cerr << "Reading diagonal-free, transposed Markov chain from ";
+  if (file) {
+    cerr << "`" << file << "'\n";
+    infile = new ifstream(file);
+    if (!(*infile)) {
+      cerr << "Couldn't open file\n";
+      return 1;
+    }
+    ReadInput(*infile);
+  } else {
+    cerr << "standard input\n";
+    ReadInput(cin);
+  }
   if (opts.relaxation != 1.0) {
     opts.use_relaxation = 1;
     cerr << "Using relaxation parameter " << opts.relaxation << "\n";
@@ -374,7 +290,8 @@ int main(int argc, char** argv)
     if (opts.min_iters > opts.max_iters) opts.min_iters = opts.max_iters;
     totaliters -= deltaiters;
     if (use_abstract)   Solve_AxZero(*AA, x, opts, out);
-    else                Solve_AxZero(A, x, opts, out);
+    else if (by_cols)   Solve_AxZero(cA, x, opts, out);
+    else                Solve_AxZero(rA, x, opts, out);
     iters_so_far += out.num_iters;
     if (out.status == LS_Success) break;
     iters_so_far--;
@@ -416,7 +333,7 @@ int main(int argc, char** argv)
   }
 
   cerr << "Comparing vector with input...\n";
-  double me = CompareVector(cin, x);
+  double me = infile ? CompareVector(*infile, x) : CompareVector(cin, x);
   if (me<0) {
     cerr << "No solution vector in input\n";
   } else {

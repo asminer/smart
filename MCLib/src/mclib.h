@@ -60,6 +60,8 @@ namespace MCLib {
       Bad_Linear,
       /// There is an "absorbing vanishing loop"
       Loop_Of_Vanishing,
+      /// Internal library error
+      Internal,
       /// Misc. error
       Miscellaneous
     };

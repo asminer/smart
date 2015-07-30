@@ -7,6 +7,7 @@
 #include "lslib.h"
 #include "debug.hh"
 #include "vectors.hh"
+#include <math.h>
 
 /**
 
@@ -37,6 +38,10 @@ void New_VMMJacobi_Ax0(
 )
 {
   out.status = LS_No_Convergence;
+  out.num_iters = 0;
+#ifdef NAN
+  out.precision = NAN;
+#endif
   double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;
@@ -55,7 +60,7 @@ void New_VMMJacobi_Ax0(
 
     for (long s=A.Start(); s<A.Stop(); s++) x[s] = 0;
 
-    A.Multiply(x, xold);
+    A.MatrixVectorMultiply(x, xold);
     if (RELAX) {
       A.DivideDiag(x, opts.relaxation);
     } else {

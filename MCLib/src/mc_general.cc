@@ -142,6 +142,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
     finalize(Absorbing);
     r.setNoRenumber();
     g->finish(o);
+    baseFinish();
     return;
   }
 
@@ -183,9 +184,9 @@ void mc_general::finish(const finish_options &o, renumbering &r)
     finalize(Irreducible);
   } else {
     // Count the number of asborbing states
-    for (long i=0; i<num_states; i++) 
-      if (g->RowPtr(i)<0)
-        num_absorbing++;
+    for (long i=0; i<num_states; i++) {
+      if (g->RowPtr(i)<0) num_absorbing++;
+    }
 #ifdef DEBUG_CLASSIFY
     printf("Counted %ld absorbing states\n", num_absorbing);
 #endif
@@ -202,14 +203,15 @@ void mc_general::finish(const finish_options &o, renumbering &r)
   num_classes = num_tsccs - num_absorbing;
   stop_index = new long[1+num_classes];
   for (long i=0; i<=num_classes; i++) stop_index[i] = 0;
-  for (long i=0; i<num_states; i++)
-    if (g->RowPtr(i)>=0)
-      stop_index[sccmap[i]]++;
+  for (long i=0; i<num_states; i++) {
+    if (g->RowPtr(i)>=0) stop_index[sccmap[i]]++;
+  }
 #ifdef DEBUG_CLASSIFY
   printf("Counted number of states per class:\n");
   printf("\tTransient: %ld\n", stop_index[0]);
-  for (long i=1; i<=num_classes; i++)
+  for (long i=1; i<=num_classes; i++) {
     printf("\tClass %3ld: %ld\n", i, stop_index[i]);
+  }
 #endif 
 
   // Determine starting index per class
@@ -224,18 +226,20 @@ void mc_general::finish(const finish_options &o, renumbering &r)
 
   // Renumber non-absorbing
   long num = 0;
-  for (long i=0; i<num_states; i++)
+  for (long i=0; i<num_states; i++) {
     if (g->RowPtr(i)>=0) {
       aux[i] = stop_index[sccmap[i]];
       stop_index[sccmap[i]]++;
       num++;
     }
+  }
   // Renumber absorbing
-  for (long i=0; i<num_states; i++)
+  for (long i=0; i<num_states; i++) {
     if (g->RowPtr(i)<0) {
       aux[i] = num;
       num++;
     }
+  }
   // Is renumbering necessary?
   if (IsIdentity(aux)) {
     free(aux);
@@ -321,6 +325,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
   }
 
   if (Unknown == our_type)  finalize(Reducible);
+  baseFinish();
 }
 
 void mc_general::clear()

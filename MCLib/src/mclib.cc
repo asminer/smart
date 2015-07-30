@@ -66,6 +66,7 @@ const char* MCLib::error::getString() const
     case Wrong_Format:      return "Wrong format for linear solver";
     case Bad_Linear:        return "Error in  linear solver";
     case Loop_Of_Vanishing: return "Absorbing vanishing loop";
+    case Internal:          return "Internal error";
     case Miscellaneous:     return "Misc. error";
   };
   return "Unknown error";

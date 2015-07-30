@@ -43,7 +43,7 @@ inline void ShowVector(double* p, long size)
 }
 
 #ifdef DEBUG_UNIF
-void ShowUnifStep(int steps, double poiss, double* p, double* a, long size)
+inline void ShowUnifStep(int steps, double poiss, double* p, double* a, long size)
 {
   printf("After %d steps, dtmc distribution is:\n\t", steps);
   ShowVector(p, size);
@@ -55,6 +55,336 @@ void ShowUnifStep(int steps, double poiss, double* p, double* a, long size)
 #endif
 
 
+// ******************************************************************
+// *                                                                *
+// *                     Basic transient stuff                      *
+// *                                                                *
+// ******************************************************************
+
+namespace MCLib {
+
+template <class MATRIX>
+void forwStep(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  double q, double* p, double* aux, bool normalize) 
+{
+#ifdef DEBUG_STEP
+    printf("Forward step start  [%lf", p[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", p[i]);
+    }
+    printf("]\n");
+#endif
+    // vector-matrix multiply
+    for (long s=Qtt.size-1; s>=0; s--) aux[s] = 0.0;
+    Qtt.MatrixVectorMultiply(aux, p);   // Qtt is transposed
+    if (Qta) Qta->VectorMatrixMultiply(aux, p);
+
+    // adjust for diagonals
+    for (long s=Qtt.stop-1; s>=0; s--) {
+      double d = q - 1.0/Qtt.one_over_diag[s];
+      aux[s] += d*p[s];
+    }
+
+    // finally, adjust for absorbing states
+    for (long s=Qtt.stop; s<Qtt.size; s++) {
+      aux[s] += q*p[s];
+    }
+
+    if (normalize) {
+      // normalize (also handles dividing by q)
+      double total = 0.0;
+      for (long s=Qtt.size-1; s>=0; s--)   total += aux[s];
+      for (long s=Qtt.size-1; s>=0; s--)  aux[s] /= total;
+    } else {
+      // divide by q
+      for (long s=Qtt.size-1; s>=0; s--)  aux[s] /= q;
+    }
+
+#ifdef DEBUG_STEP
+    printf("Forward step finish [%lf", aux[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
+}
+
+
+template <class MATRIX>
+void backStep(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  double q, double* p, double* aux, bool) 
+{
+#ifdef DEBUG_STEP
+    printf("Backward step start  [%lf", p[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", p[i]);
+    }
+    printf("]\n");
+#endif
+    // matrix-vector multiply
+    for (long s=Qtt.size-1; s>=0; s--) aux[s] = 0.0;
+    Qtt.VectorMatrixMultiply(aux, p); // Qtt is transposed
+#ifdef DEBUG_STEP
+    printf("Backward step 1      [%lf", aux[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
+    if (Qta) Qta->MatrixVectorMultiply(aux, p);
+#ifdef DEBUG_STEP
+    printf("Backward step 2      [%lf", aux[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
+
+    // adjust for diagonals
+    for (long s=Qtt.stop-1; s>=0; s--) {
+      double d = q - 1.0/Qtt.one_over_diag[s];
+      aux[s] += d*p[s];
+    }
+
+    // finally, adjust for absorbing states
+    for (long s=Qtt.stop; s<Qtt.size; s++) {
+      aux[s] += q*p[s];
+    }
+
+    // divide by q
+    if (q != 1) for (long s=Qtt.size-1; s>=0; s--)  aux[s] /= q;
+
+#ifdef DEBUG_STEP
+    printf("Backward step finish [%lf", aux[0]);
+    for (long i=1; i<Qtt.size; i++) {
+      printf(", %lf", aux[i]);
+    }
+    printf("]\n");
+#endif
+}
+
+template <class MATRIX>
+int stepGeneric(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  int n, double q, double* p, double* aux, double delta,
+  void (*step)(const MATRIX&, const hypersparse_matrix*, double, double*, double*, bool)
+) 
+{
+  double* myp = p;
+  int i;
+  for (i=0; i<n; i++) {
+    step(Qtt, Qta, q, myp, aux, true);
+    SWAP(aux, myp);
+    if (delta <= 0) continue;
+    // check for convergence
+    double maxdelta = 0.0;
+    for (long s=Qtt.size-1; s>=0; s--) {
+      double d = aux[s] - myp[s];
+      if (d < 0)   d = -d;
+      if (aux[s])  d /= aux[s];
+      maxdelta = MAX(maxdelta, d);
+    }
+#ifdef DEBUG_SSDETECT
+    printf("Old vector: ");
+    ShowVector(aux, Qtt.size);
+    printf("\nNew vector: ");
+    ShowVector(myp, Qtt.size);
+    printf("\nmax delta: %g\n", maxdelta);
+#endif
+    if (maxdelta < delta) break;
+  } // for n
+  if (p != myp) memcpy(p, myp, Qtt.size * sizeof(double));
+ 
+  return i;
+}
+
+template <class MATRIX>
+void genericTransientDisc(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  int t, double* p, Markov_chain::transopts &opts,
+  void (*step)(const MATRIX&, const hypersparse_matrix*, double, double*, double*, bool)
+) 
+{
+  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
+  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+
+  if (0==opts.vm_result) {
+    opts.vm_result = (double*) malloc(Qtt.size * sizeof(double));
+  }
+
+  if (0==opts.vm_result) {
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } 
+
+  opts.Steps = stepGeneric(Qtt, Qta, t, 1.0, p, opts.vm_result, opts.ssprec, step);
+
+  if (opts.kill_aux_vectors) {
+    free(opts.vm_result);
+    free(opts.accumulator);
+    opts.vm_result = 0;
+    opts.accumulator = 0;
+  }
+  opts.Left = 0;
+  opts.Right = 0;
+}
+
+template <class MATRIX>
+void genericTransientCont(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  double t, double* p, Markov_chain::transopts &opts,
+  void (*step)(const MATRIX&, const hypersparse_matrix*, double, double*, double*, bool)
+) 
+{
+  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
+  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+
+#ifdef DEBUG_UNIF
+  printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
+#endif
+  int L;
+  int R;
+  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
+#ifdef DEBUG_UNIF
+  printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
+#endif
+
+  if (0==opts.vm_result)
+    opts.vm_result = (double*) malloc(Qtt.size * sizeof(double));
+
+  if (0==opts.accumulator)
+    opts.accumulator = (double*) malloc(Qtt.size * sizeof(double));
+
+  if (0==opts.vm_result || 0==opts.accumulator) {
+    free(poisson);
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  } else {
+      opts.Steps = stepGeneric(Qtt, Qta, L, opts.q, p, opts.vm_result, opts.ssprec, step);
+      if (opts.Steps == L) {
+        // steady state not reached, and not an error; continue.
+        for (long s=Qtt.size-1; s>=0; s--) {
+          opts.accumulator[s] = p[s] * poisson[0];
+        } // for s
+#ifdef DEBUG_UNIF
+        ShowUnifStep(L, poisson[0], p, opts.accumulator, Qtt.size);
+#endif
+        int i;
+        for (i=1; i<=R-L; i++) {
+          if (0==stepGeneric(Qtt, Qta, 1, opts.q, p, opts.vm_result, opts.ssprec, step)) 
+            break;
+          opts.Steps++;
+          for (long s=Qtt.size-1; s>=0; s--) {
+            opts.accumulator[s] += p[s] * poisson[i];
+          } // for s
+#ifdef DEBUG_UNIF
+          ShowUnifStep(L+i, poisson[i], p, opts.accumulator, Qtt.size);
+#endif
+        } // for i 
+        // If steady state was reached, add the possion tail
+        double tail = 0.0;
+        int j = R-L;
+        while (i <= j) {
+          if (poisson[i] < poisson[j]) {
+            tail += poisson[i];
+            i++;
+          } else {
+            tail += poisson[j];
+            j--;
+          }
+        }
+        if (tail) {
+          for (long s=Qtt.size-1; s>=0; s--) {
+            opts.accumulator[s] += p[s] * tail;
+          } // for s
+        }
+      } else {
+        // DTMC gets to steady state before L;
+        // final vector should equal the DTMC probability vector
+        for (long s=Qtt.size-1; s>=0; s--) {
+          opts.accumulator[s] = p[s];
+        }
+      }
+  }
+  memcpy(p, opts.accumulator, Qtt.size * sizeof(double));
+
+  if (opts.kill_aux_vectors) {
+    free(opts.vm_result);
+    free(opts.accumulator);
+    opts.vm_result = 0;
+    opts.accumulator = 0;
+  }
+  opts.Left = L;
+  opts.Right = R;
+  free(poisson);
+}
+
+
+template <class MATRIX>
+void accumulateDisc(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  double t, const double* p0, double* n0t, Markov_chain::transopts &opts)
+{
+  if (p0) memcpy(opts.accumulator, p0, Qtt.size * sizeof(double));
+  else    memcpy(opts.accumulator, n0t, Qtt.size * sizeof(double));
+  for (long s=Qtt.size-1; s>=0; s--) n0t[s] = 0.0;
+
+  for (; t>=1.0; t-=1.0) {
+    for (long s=0; s<Qtt.size; s++) n0t[s] += opts.accumulator[s];
+    forwStep(Qtt, Qta, 1.0, opts.accumulator, opts.vm_result, true);
+    SWAP(opts.accumulator, opts.vm_result);
+    opts.Steps++;
+  }
+  for (long s=0; s<Qtt.size; s++) n0t[s] += t*opts.accumulator[s];
+}
+
+
+template <class MATRIX>
+void accumulateCont(
+  const MATRIX &Qtt, const hypersparse_matrix* Qta,
+  double t, const double* p0, double* n0t, Markov_chain::transopts &opts)
+{
+#ifdef DEBUG_UNIF
+  printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
+#endif
+  int L;
+  int R;
+  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
+#ifdef DEBUG_UNIF
+  printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
+#endif
+  if ((0==poisson) && (R-L>=0)) {
+    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  }
+  // convert from prob(Y=L+i) to prob(Y>L+i)
+  for (int y=0; y<R-L; y++) poisson[y] = poisson[y+1];
+  poisson[R-L] = 0.0;
+  for (int y=R-L-1; y>=0; y--) poisson[y] += poisson[y+1];
+
+  if (p0) memcpy(opts.accumulator, p0, Qtt.size * sizeof(double));
+  else    memcpy(opts.accumulator, n0t, Qtt.size * sizeof(double));
+  for (long s=0; s<Qtt.size; s++) n0t[s] = 0;
+  // before L: prob(Y>i) is effectively 1
+  double adj = 1.0 / opts.q;
+  for (int i=0; i<L; i++) {
+    opts.Steps++;
+    for (long s=0; s<Qtt.size; s++) n0t[s] += adj * opts.accumulator[s];
+    forwStep(Qtt, Qta, opts.q, opts.accumulator, opts.vm_result, true);
+    SWAP(opts.accumulator, opts.vm_result);
+  } // for i
+  for (int i=0; ; i++) {
+    opts.Steps++;
+    adj = poisson[i] / opts.q;
+    for (long s=0; s<Qtt.size; s++) n0t[s] += adj * opts.accumulator[s];
+    if (i>=R-L) break;
+    forwStep(Qtt, Qta, opts.q, opts.accumulator, opts.vm_result, true);
+    SWAP(opts.accumulator, opts.vm_result);
+  } // for i
+  
+  // cleanup
+  free(poisson);
+}
+  
 
 // ******************************************************************
 // *                                                                *
@@ -90,24 +420,24 @@ inline long GCD(long a, long b)
 
   Returns -2 for out of memory error.
 */
-long FindPeriod(const LS_Matrix &Q)
+long FindPeriod(const GraphLib::generic_graph::matrix &Q, long Qstart, long Qstop)
 {
-  if (Q.start == Q.stop)  return 0;
+  if (Qstart == Qstop)  return 0;
 #ifdef DEBUG_PERIOD
   printf("Computing period for MC\n");
   printf("Computing distances from state 0\n");
 #endif
-  long* dist = (long*) malloc((Q.stop - Q.start) * sizeof(long));
+  long* dist = (long*) malloc((Qstop - Qstart) * sizeof(long));
   if (0==dist)  return -2;
-  long* queue = (long*) malloc((Q.stop - Q.start) * sizeof(long));
+  long* queue = (long*) malloc((Qstop - Qstart) * sizeof(long));
   if (0==queue) {
     free(dist);
     return -2;
   }
   long i, a;
-  for (i=Q.stop - Q.start - 1; i; i--) dist[i] = -1;
+  for (i=Qstop - Qstart - 1; i; i--) dist[i] = -1;
   dist[0] = 0;
-  queue[0] = Q.start;
+  queue[0] = Qstart;
   long head = 1;
   long tail = 0;
   while (tail < head) {
@@ -115,9 +445,9 @@ long FindPeriod(const LS_Matrix &Q)
     tail++;
     for (a=Q.rowptr[i]; a<Q.rowptr[i+1]; a++) {
       long j = Q.colindex[a];
-      long jmst = j - Q.start;
+      long jmst = j - Qstart;
       if (dist[jmst]>=0) continue;
-      dist[jmst] = dist[i-Q.start]+1;
+      dist[jmst] = dist[i-Qstart]+1;
       queue[head] = j;
       head++;
     } // for a
@@ -125,14 +455,14 @@ long FindPeriod(const LS_Matrix &Q)
   free(queue);
 #ifdef DEBUG_PERIOD
   printf("Distances: [%d", dist[0]);
-  for (i=1; i<Q.stop-Q.start; i++) printf(", %d", dist[i]);
+  for (i=1; i<Qstop-Qstart; i++) printf(", %d", dist[i]);
   printf("]\n");
 #endif
   long period = 0;
-  a = Q.rowptr[Q.start];
-  for (i=Q.start; i<Q.stop; i++) for (; a<Q.rowptr[i+1]; a++) {
-    long imst = i-Q.start;
-    long j = Q.colindex[a] - Q.start;
+  a = Q.rowptr[Qstart];
+  for (i=Qstart; i<Qstop; i++) for (; a<Q.rowptr[i+1]; a++) {
+    long imst = i-Qstart;
+    long j = Q.colindex[a] - Qstart;
     if (dist[imst] < dist[j]) continue;
     long d = dist[imst] - dist[j] + 1;
 #ifdef DEBUG_PERIOD
@@ -149,6 +479,8 @@ long FindPeriod(const LS_Matrix &Q)
   return period;
 }
 
+
+} // namespace
 
 
 // ******************************************************************
@@ -206,6 +538,11 @@ mc_base::mc_base(bool disc, long gs, long ge) : Markov_chain(disc)
   oneoverd = 0;
   ood_size = 0;
   maxdiag = 0.0;
+
+  // rawQ
+  rawQ.rowptr = 0;
+  rawQ.colindex = 0;
+  rawQ.value = 0;
 }
 
 mc_base::~mc_base()
@@ -216,6 +553,8 @@ mc_base::~mc_base()
   free(period);
   delete g;
   delete h;
+
+  // Don't delete rawQ those were const copies
 }
 
 long mc_base::getNumArcs() const
@@ -436,10 +775,7 @@ void mc_base::computePeriodOfClass(long c)
     period[0] = 0;
   }
   if (period[c]<0) {
-    LS_Matrix Qtt;
-    exportQtt(Qtt);
-    setClass(Qtt, c);
-    period[c] = FindPeriod(Qtt);   // in utils.h
+    period[c] = MCLib::FindPeriod(rawQ, c ? stop_index[c-1] : 0, stop_index[c]);
   }
 }
 
@@ -456,22 +792,77 @@ double mc_base::getUniformizationConst() const
 
 void mc_base::computeTransient(double t, double* p, transopts &opts) const
 {
-  genericTransient(t, p, opts, &mc_base::forwStep);
+  if (isDiscrete()) {
+    return computeTransient(int(t), p, opts);
+  }
+  opts.q = MAX(opts.q, getUniformizationConst());
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::forwStep);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::forwStep);
+  }
 }
 
 void mc_base::computeTransient(int t, double* p, transopts &opts) const
 {
-  genericTransient(t, p, opts, &mc_base::forwStep);
+  if (isContinuous()) {
+    return computeTransient(double(t), p, opts);
+  }
+
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::forwStep);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::forwStep);
+  }
 }
 
 void mc_base::reverseTransient(double t, double* p, transopts &opts) const
 {
-  genericTransient(t, p, opts, &mc_base::backStep);
+  if (isDiscrete()) {
+    return reverseTransient(int(t), p, opts);
+  }
+  opts.q = MAX(opts.q, getUniformizationConst());
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::backStep);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::backStep);
+  }
 }
 
 void mc_base::reverseTransient(int t, double* p, transopts &opts) const
 {
-  genericTransient(t, p, opts, &mc_base::backStep);
+  if (isContinuous()) {
+    return reverseTransient(double(t), p, opts);
+  }
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::backStep);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::backStep);
+  }
 }
 
 void mc_base
@@ -515,71 +906,34 @@ void mc_base
 void 
 mc_base::accDTMC(double t, const double* p0, double* n0t, transopts &opts) const
 {
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-  Qtt.start = 0;
-  Qtt.stop = stop_index[num_classes];
-  if (p0) memcpy(opts.accumulator, p0, num_states * sizeof(double));
-  else    memcpy(opts.accumulator, n0t, num_states * sizeof(double));
-  for (long s=num_states-1; s>=0; s--) n0t[s] = 0.0;
-
-  for (; t>=1.0; t-=1.0) {
-    for (long s=0; s<num_states; s++) n0t[s] += opts.accumulator[s];
-    forwStep(Qtt, 1.0, opts.accumulator, opts.vm_result, true);
-    SWAP(opts.accumulator, opts.vm_result);
-    opts.Steps++;
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
   }
-  for (long s=0; s<num_states; s++) n0t[s] += t*opts.accumulator[s];
 }
 
 void
 mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
 {
-  // Get poisson distribution
   opts.q = MAX(opts.q, getUniformizationConst());
-#ifdef DEBUG_UNIF
-  printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
-#endif
-  int L;
-  int R;
-  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
-#ifdef DEBUG_UNIF
-  printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
-#endif
-  if ((0==poisson) && (R-L>=0)) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+  if (rawQ.is_transposed) { 
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useAllButAbsorbing(QT);
+    MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
   }
-  // convert from prob(Y=L+i) to prob(Y>L+i)
-  for (int y=0; y<R-L; y++) poisson[y] = poisson[y+1];
-  poisson[R-L] = 0.0;
-  for (int y=R-L-1; y>=0; y--) poisson[y] += poisson[y+1];
-
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-  Qtt.start = 0;
-  Qtt.stop = stop_index[num_classes];
-  if (p0) memcpy(opts.accumulator, p0, num_states * sizeof(double));
-  else    memcpy(opts.accumulator, n0t, num_states * sizeof(double));
-  for (long s=0; s<num_states; s++) n0t[s] = 0;
-  // before L: prob(Y>i) is effectively 1
-  double adj = 1.0 / opts.q;
-  for (int i=0; i<L; i++) {
-    opts.Steps++;
-    for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
-    forwStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
-    SWAP(opts.accumulator, opts.vm_result);
-  } // for i
-  for (int i=0; ; i++) {
-    opts.Steps++;
-    adj = poisson[i] / opts.q;
-    for (long s=0; s<num_states; s++) n0t[s] += adj * opts.accumulator[s];
-    if (i>=R-L) break;
-    forwStep(Qtt, opts.q, opts.accumulator, opts.vm_result, true);
-    SWAP(opts.accumulator, opts.vm_result);
-  } // for i
-  
-  // cleanup
-  free(poisson);
 }
 
 
@@ -736,13 +1090,6 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     throw MCLib::error(MCLib::error::Bad_Class);
   }
 
-  /* Initialize matrix stuff */
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-  Qtt.start = 0;
-  Qtt.stop = stop_index[num_classes];
-
-
   /* Initialize vectors if necessary */
   if (0==opts.probvect) {
     opts.probvect = new double[num_states];
@@ -872,7 +1219,17 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     printf("\n");
 #endif
     //  (b) advance
-    forwStep(Qtt, opts.q, opts.probvect, opts.vm_result, false);
+    if (rawQ.is_transposed) {
+      LS_CRS_Matrix_float QT;
+      exportQT(QT);
+      useAllButAbsorbing(QT);
+      MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
+    } else {
+      LS_CCS_Matrix_float QT;
+      exportQT(QT);
+      useAllButAbsorbing(QT);
+      MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
+    }
     SWAP(opts.probvect, opts.vm_result);
   }
 
@@ -1091,10 +1448,17 @@ void mc_base::irredSteady(double* p,
   p[i] = 1;
 
   if (num_states > 1) {
-    LS_Matrix Qtt;
-    exportQtt(Qtt);
-    setClass(Qtt, 1);
-    Solve_AxZero(Qtt, p, opt, lo);
+    if (rawQ.is_transposed) {
+      LS_CRS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, 1);
+      Solve_AxZero(QT, p, opt, lo);
+    } else {
+      LS_CCS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, 1);
+      Solve_AxZero(QT, p, opt, lo);
+    }
   }
 }
 
@@ -1114,24 +1478,39 @@ void mc_base::reducSteady(const LS_Vector &p0,
     return;
   }
 
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-
   if (1==num_classes && 0==getNumAbsorbing()) {
     // we are absorbed into this class with probability 1
     if (stop_index)   p[stop_index[0]] = 1;
     else              p[0] = 1;
   } else {
-    // need to figure out absorption probs for recurrent classes & absorbings
-    setClass(Qtt, 0);
-    Solve_Axb(Qtt, p, p0, opt, lo);
+    //
+    // Solve linear system to determine (negative of) 
+    // expected number of visits to each transient state
+    //
+    if (rawQ.is_transposed) {
+      LS_CRS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, 0);
+      Solve_Axb(QT, p, p0, opt, lo);
+    } else {
+      LS_CCS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, 0);
+      Solve_Axb(QT, p, p0, opt, lo);
+    }
 
     if ((LS_Success != lo.status) && (LS_No_Convergence != lo.status)) return;
 
-    // Adjust TTA solution
+    // 
+    // We actually solved for the negated solution; fix that
+    //
     for (long i=0; i < stop_index[0]; i++) p[i] = -p[i];
 
-    // Get absorption proabilities
+    //
+    // Visits to each state * rate to recurrent classes
+    // gives the absorption probabilities for each
+    // recurrent class / absorbing state
+    //
     if (h) h->VectorMatrixMultiply(p, p);
   
     // Add initial absorbing probabilities
@@ -1159,28 +1538,41 @@ void mc_base::reducSteady(const LS_Vector &p0,
     // normalize probs
     double total = 0.0;
     long i;
-    for (i=stop_index[num_classes]; i<num_states; i++)  total += p[i];
-    for (i=stop_index[num_classes]; i<num_states; i++)  p[i] /= total;
+    for (i=stop_index[0]; i<num_states; i++)  total += p[i];
+    for (i=stop_index[0]; i<num_states; i++)  p[i] /= total;
   } // if more than one recurrent class
 
   // Now, deal with each recurrent class
   for (long c=1; c<=num_classes; c++) {
     // determine the total probability of reaching this class
     double reachprob = 0.0; 
-    for (long i=stop_index[c-1]; i<stop_index[c]; i++)
+    for (long i=stop_index[c-1]; i<stop_index[c]; i++) {
       reachprob += p[i];
+    }
 #ifdef DEBUG_REDUC_STEADY
-    printf("Reach class %d with prob %f\n", c, reachprob);
+    printf("Reach class %ld with prob %f\n", c, reachprob);
 #endif
     if (0.0==reachprob) continue;
 
-    // if nonzero, determine the stationary distribution for the class
+    //
+    // probability of hitting this class is non-zero.
+    // determine stationary distribution for this class
+    // by solving linear system
     for (long i=stop_index[c-1]; i<stop_index[c]; i++) p[i] = 1;
+    if (rawQ.is_transposed) {
+      LS_CRS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, c);
+      Solve_AxZero(QT, p, opt, lo);
+    } else {
+      LS_CCS_Matrix_float QT;
+      exportQT(QT);
+      useClass(QT, c);
+      Solve_AxZero(QT, p, opt, lo);
+    }
    
-    setClass(Qtt, c);
-    Solve_AxZero(Qtt, p, opt, lo);  // Hmmmm.....
 #ifdef DEBUG_REDUC_STEADY
-    printf("%d iters, %f precision\n", lsout.num_iters, lsout.precision);
+    printf("%ld iters, %f precision\n", lo.num_iters, lo.precision);
 #endif
     // scale by the probability
     for (long i=stop_index[c-1]; i<stop_index[c]; i++) p[i] *= reachprob;
@@ -1198,18 +1590,33 @@ void mc_base::reducTTA(const LS_Vector &p0,
 {
   for (long i=stop_index[0]-1; i>=0; i--) p[i] = 0;
 
-  LS_Matrix Qtt;
-  exportQtt(Qtt);
-  setClass(Qtt, 0);
-  Solve_Axb(Qtt, p, p0, opt, lo);
+  //
+  // Solve linear system to determine (negative of) 
+  // expected number of visits to each transient state
+  //
+  if (rawQ.is_transposed) {
+    LS_CRS_Matrix_float QT;
+    exportQT(QT);
+    useClass(QT, 0);
+    Solve_Axb(QT, p, p0, opt, lo);
+  } else {
+    LS_CCS_Matrix_float QT;
+    exportQT(QT);
+    useClass(QT, 0);
+    Solve_Axb(QT, p, p0, opt, lo);
+  }
 
-  // Adjust TTA solution
+  // 
+  // We actually solved for the negated solution; fix that
+  //
   for (long i=0; i < stop_index[0]; i++) p[i] = -p[i];
 }
 
 //
 // private, generic stuff
 //
+
+#if 0
 
 void mc_base::genericTransient(double t, double* p, transopts &opts,
   void (mc_base::* step)(const LS_Matrix&, double, double*, double*, bool) const
@@ -1485,3 +1892,4 @@ void mc_base::backStep(const LS_Matrix &Qtt, double q, double* p,
 #endif
 }
 
+#endif

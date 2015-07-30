@@ -140,7 +140,7 @@ inline void showVector(ostream &s, const char* name, const T *v, long n)
   s << "]\n";
 }
 
-void parseInput(istream &s, LS_Matrix &A, double* &initial)
+void parseInput(istream &s, LS_CRS_Matrix_float &A, double* &initial)
 {
   lineno = 1;
 #ifdef DEBUG_IO
@@ -179,18 +179,16 @@ void parseInput(istream &s, LS_Matrix &A, double* &initial)
   //
   // Set up A
   //
-  A.is_transposed = false;
   A.start = 0;
   A.stop = N;
+  A.size = N;
   long* rp = new long[N+1];
   long* ci = new long[E];
   float* fv = new float[E];
-  A.rowptr = rp;
-  A.colindex = ci;
-  A.f_value = fv;
-  A.d_value = 0;
-  A.f_one_over_diag = 0;
-  A.d_one_over_diag = 0;
+  A.row_ptr = rp;
+  A.col_ind = ci;
+  A.val = fv;
+  A.one_over_diag = 0;
   // 
   // Read the actual elements
   //
@@ -250,7 +248,7 @@ int main(int argc, char** argv)
 {
   if (argc > 2) return 1+Usage(argv[0]);
 
-  LS_Matrix A;
+  LS_CRS_Matrix_float A;
   double* x;
 
   try {
@@ -286,7 +284,7 @@ int main(int argc, char** argv)
     // keep going
     //
     clearVector(y, A.stop);
-    A.VectorMatrixMultiply(y, x);
+    A.MatrixVectorMultiply(y, x);
 #ifdef DEBUG_VMMULT
     cerr << "Got y vector [" << y[0];
     for (int i=1; i<A.stop; i++) cerr << ", " << y[i];

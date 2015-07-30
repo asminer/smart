@@ -47,6 +47,9 @@ public:
 
 */
 class mc_base : public MCLib::Markov_chain {
+private:
+  GraphLib::generic_graph::matrix rawQ;
+
 protected:
   /// Options for internal computation of discrete distributions
   struct extra_distopts : public distopts {
@@ -199,6 +202,9 @@ protected:
     our_type = t;
     finished = true;
   }
+  inline void baseFinish() {
+    g->exportFinished(rawQ);
+  }
 
   void irredSteady(double* p, const LS_Options &opt, LS_Output &lo) const;
   void reducSteady(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &lo) const;
@@ -235,6 +241,47 @@ protected:
   }
 
 public:
+  /// Export (transposed) Q matrix
+  inline void exportQT(LS_CRS_Matrix_float &Q) const {
+    if (!rawQ.is_transposed) throw MCLib::error(MCLib::error::Internal);
+    Q.size = getNumStates();
+    Q.val = (float*) rawQ.value;
+    Q.col_ind = rawQ.colindex;
+    Q.row_ptr = rawQ.rowptr;
+    Q.one_over_diag = oneoverd;
+  }
+
+  /// Export (transposed) Q matrix
+  inline void exportQT(LS_CCS_Matrix_float &Q) const {
+    if (rawQ.is_transposed) throw MCLib::error(MCLib::error::Internal);
+    Q.size = getNumStates();
+    Q.val = (float*) rawQ.value;
+    Q.row_ind = rawQ.colindex;
+    Q.col_ptr = rawQ.rowptr;
+    Q.one_over_diag = oneoverd;
+  }
+
+  template <class MATRIX>
+  inline void useClass(MATRIX &Q, long c) const {
+    Q.start = c ? stop_index[c-1] : 0;
+    Q.stop = stop_index[c];
+  }
+
+  template <class MATRIX>
+  inline void useAllButAbsorbing(MATRIX &Q) const {
+    Q.start = 0;
+    Q.stop = stop_index[num_classes];
+  }
+
+/*
+  template <class MATRIX>
+  inline void useEntire(MATRIX &Q) const {
+    Q.start = 0;
+    Q.stop = Q.size;
+  }
+  */
+
+/*
   inline void exportQtt(LS_Matrix &Qtt) const {
     Qtt.d_value = 0;
     Qtt.d_one_over_diag = 0;
@@ -258,25 +305,67 @@ public:
     Qtt.start = c ? stop_index[c-1] : 0;
     Qtt.stop = stop_index[c];
   }
+*/
 
 private:
+
+#if 0
+  /*
+      Nitty gritty details from here
+  */
+
+  // Let's try this out:
+
+  template <class MATRIX>
+
+
+  // Row storage
+
   void genericTransient(double t, double* p, transopts &opts, 
-    void (mc_base::* s)(const LS_Matrix&, double, double*, double*, bool) const
+    void (mc_base::* s)(const LS_CRS_Matrix_float&, 
+    double, double*, double*, bool) const
   ) const;
 
   void genericTransient(int t, double* p, transopts &opts, 
-    void (mc_base::* s)(const LS_Matrix&, double, double*, double*, bool) const
+    void (mc_base::* s)(const LS_CRS_Matrix_float&, 
+    double, double*, double*, bool) const
   ) const;
 
   int stepGeneric(int n, double q, double* p, double* aux, double delta, 
-    void (mc_base::* s)(const LS_Matrix&, double, double*, double*, bool) const
+    void (mc_base::* s)(const LS_CRS_Matrix_float&, 
+    double, double*, double*, bool) const
   ) const;
 
-  void forwStep(const LS_Matrix &Qtt, double q, double* p, double* aux, 
-    bool normalize) const;
+  void forwStep(const LS_CRS_Matrix_float &Qtt, double q, double* p, 
+    double* aux, bool normalize) const;
 
-  void backStep(const LS_Matrix &Qtt, double q, double* p, double* aux, 
-    bool normalize) const;
+  void backStep(const LS_CRS_Matrix_float &Qtt, double q, double* p, 
+    double* aux, bool normalize) const;
+
+
+  // Column storage
+
+  void genericTransient(double t, double* p, transopts &opts, 
+    void (mc_base::* s)(const LS_CCS_Matrix_float&, 
+    double, double*, double*, bool) const
+  ) const;
+
+  void genericTransient(int t, double* p, transopts &opts, 
+    void (mc_base::* s)(const LS_CCS_Matrix_float&, 
+    double, double*, double*, bool) const
+  ) const;
+
+  int stepGeneric(int n, double q, double* p, double* aux, double delta, 
+    void (mc_base::* s)(const LS_CCS_Matrix_float&, 
+    double, double*, double*, bool) const
+  ) const;
+
+  void forwStep(const LS_CCS_Matrix_float &Qtt, double q, double* p, 
+    double* aux, bool normalize) const;
+
+  void backStep(const LS_CCS_Matrix_float &Qtt, double q, double* p, 
+    double* aux, bool normalize) const;
+#endif
 
 };
 

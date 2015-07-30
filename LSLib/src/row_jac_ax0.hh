@@ -7,6 +7,7 @@
 #include "lslib.h"
 #include "debug.hh"
 #include "vectors.hh"
+#include <math.h>
 
 /**
 
@@ -37,6 +38,10 @@ void New_RowJacobi_Ax0(
 )
 {
   out.status = LS_No_Convergence;
+  out.num_iters = 0;
+#ifdef NAN
+  out.precision = NAN;
+#endif
   double one_minus_omega;
   if (RELAX) {
     out.relaxation = opts.relaxation;

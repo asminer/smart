@@ -98,8 +98,14 @@ public:
   void ConvertToStatic();
 
   /** Export the graph into the format expected for linear solvers.
+      We must be by rows.
   */
-  void ExportTo(LS_Matrix &A) const;
+  void ExportTo(LS_CRS_Matrix_float &A) const;
+
+  /** Export the graph into the format expected for linear solvers.
+      We must be by columns.
+  */
+  void ExportTo(LS_CCS_Matrix_float &A) const;
 
 protected:
   /// Resize the row pointer array.  Returns true on success.

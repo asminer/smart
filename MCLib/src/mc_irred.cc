@@ -165,6 +165,7 @@ void mc_irred::finish(const finish_options &o, renumbering &r)
   r.setNoRenumber();
  
   finalize(Irreducible);
+  baseFinish();
 }
 
 void mc_irred::clear()

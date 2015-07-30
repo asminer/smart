@@ -177,6 +177,7 @@ void mc_absorb::finish(const finish_options &o, renumbering &r)
   if (o.report) o.report->stop();
  
   finalize(Absorbing);
+  baseFinish();
 }
 
 void mc_absorb::clear()

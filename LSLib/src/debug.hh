@@ -25,8 +25,168 @@ void DebugIter(const char* which, long iters, double* x, long start, long stop)
 }
 
 // ******************************************************************
+// *                  LS_Generic_Matrix  debugging                  *
+// ******************************************************************
+
+void DebugMatrix(const LS_Generic_Matrix &A)
+{
+  printf("Using A matrix:\n");
+  printf("\n  start: %ld\n  stop: %ld\n", A.Start(), A.Stop());
+  A.ShowDebugInfo();
+}
+
+// ******************************************************************
+// *                    LS_CRS_Matrix  debugging                    *
+// ******************************************************************
+
+template <class REAL>
+void DebugMatrix(const LS_CRS_Matrix<REAL> &A)
+{
+  printf("Using A matrix:\n");
+  printf("\n  start: %ld\n  stop: %ld\n  row_ptr: [", A.start, A.stop);
+  for (long i=0; i<=A.stop; i++) {
+    if (i) printf(", ");
+    printf("%ld", A.row_ptr[i]);
+  }
+  printf("]\n  col_ind: ");
+  if (A.col_ind) {
+    printf("[");
+    for (long i=0; i<A.row_ptr[A.stop]; i++) {
+      if (i) printf(", ");
+      printf("%ld", A.col_ind[i]);
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n  val: ");
+  if (A.val) {
+    printf("[");
+    for (long i=0; i<A.row_ptr[A.stop]; i++) {
+      if (i) printf(", ");
+      printf("%lg", double(A.val[i]));
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n  one_over_diag: ");
+  if (A.one_over_diag) {
+    printf("[");
+    for (long i=0; i<A.stop; i++) {
+      if (i) printf(", ");
+      printf("%lg", double(A.one_over_diag[i]));
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n");
+}
+
+// ******************************************************************
+// *                    LS_CCS_Matrix  debugging                    *
+// ******************************************************************
+
+template <class REAL>
+void DebugMatrix(const LS_CCS_Matrix<REAL> &A)
+{
+  printf("Using A matrix:\n");
+  printf("\n  start: %ld\n  stop: %ld\n  col_ptr: [", A.start, A.stop);
+  for (long i=0; i<=A.stop; i++) {
+    if (i) printf(", ");
+    printf("%ld", A.col_ptr[i]);
+  }
+  printf("]\n  row_ind: ");
+  if (A.row_ind) {
+    printf("[");
+    for (long i=0; i<A.col_ptr[A.stop]; i++) {
+      if (i) printf(", ");
+      printf("%ld", A.row_ind[i]);
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n  val: ");
+  if (A.val) {
+    printf("[");
+    for (long i=0; i<A.col_ptr[A.stop]; i++) {
+      if (i) printf(", ");
+      printf("%lg", double(A.val[i]));
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n  one_over_diag: ");
+  if (A.one_over_diag) {
+    printf("[");
+    for (long i=0; i<A.stop; i++) {
+      if (i) printf(", ");
+      printf("%lg", double(A.one_over_diag[i]));
+    }
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n");
+}
+
+
+// ******************************************************************
+// *                   LS_Sparse_Vector debugging                   *
+// ******************************************************************
+
+template <class REAL>
+void DebugVector(const LS_Sparse_Vector<REAL> &b)
+{
+  printf("Using sparse b vector:\n");
+  printf("  size: %ld\n", b.size);
+  printf("  index: ");
+  if (b.index) {
+    printf("[%ld", b.index[0]);
+    for (long i=1; i<b.size; i++) printf(", %ld", b.index[i]);
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n  value: ");
+  if (b.value) {
+    printf("[%lg", double(b.value[0]));
+    for (long i=1; i<b.size; i++) printf(", %lg", double(b.value[i]));
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n");
+}
+
+// ******************************************************************
+// *                    LS_Full_Vector debugging                    *
+// ******************************************************************
+
+template <class REAL>
+void DebugVector(const LS_Full_Vector<REAL> &b)
+{
+  printf("Using full b vector:\n");
+  printf("  size: %ld\n", b.size);
+  printf("  value: ");
+  if (b.value) {
+    printf("[%lg", double(b.value[0]));
+    for (long i=1; i<b.size; i++) printf(", %lg", double(b.value[i]));
+    printf("]");
+  } else {
+    printf("null");
+  }
+  printf("\n");
+}
+
+// ******************************************************************
 // *                      LS_Matrix  debugging                      *
 // ******************************************************************
+
+#if 0
 
 void DebugMatrix(const LS_Matrix &A)
 {
@@ -124,6 +284,8 @@ void DebugVector(const LS_Vector &b)
   }
   printf("\n");
 }
+#endif
+
 
 #endif
 

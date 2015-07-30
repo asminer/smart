@@ -89,25 +89,44 @@ void sparse_matrix::ConvertToStatic()
   is_static = true;
 }
 
-void sparse_matrix::ExportTo(LS_Matrix &A) const
+void sparse_matrix::ExportTo(LS_CRS_Matrix_float &A) const
 {
-  if (!IsStatic()) {
+  if (!IsStatic() || !is_by_rows) {
     A.start = 0;
     A.stop = 0;
-    A.rowptr = 0;
-    A.colindex = 0;
-    A.f_value = 0;
-    A.d_value = 0;
+    A.size = 0;
+    A.row_ptr = 0;
+    A.col_ind = 0;
+    A.val = 0;
     return;
   } 
 
-  A.is_transposed = !is_by_rows;
   A.start = 0;
   A.stop = num_nodes;
-  A.rowptr = row_pointer;
-  A.colindex = column_index;
-  A.f_value = value;
-  A.d_value = NULL;
+  A.size = num_nodes;
+  A.row_ptr = row_pointer;
+  A.col_ind = column_index;
+  A.val = value;
+}
+
+void sparse_matrix::ExportTo(LS_CCS_Matrix_float &A) const
+{
+  if (!IsStatic() || is_by_rows) {
+    A.start = 0;
+    A.stop = 0;
+    A.size = 0;
+    A.col_ptr = 0;
+    A.row_ind = 0;
+    A.val = 0;
+    return;
+  } 
+
+  A.start = 0;
+  A.stop = num_nodes;
+  A.size = num_nodes;
+  A.col_ptr = row_pointer;
+  A.row_ind = column_index;
+  A.val = value;
 }
 
 // ********** Protected **********
