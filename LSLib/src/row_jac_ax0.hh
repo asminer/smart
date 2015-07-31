@@ -50,44 +50,64 @@ void New_RowJacobi_Ax0(
     out.relaxation = 1;
     one_minus_omega = 0;
   }
-  double* x = xnew;
   long iters;
   double maxerror = 0;
+  double total = 1;
+
+  //
+  // Copy xnew into xold
+  //
+  for (long s=A.Stop()-1; s>=A.Start(); s--) {
+    xold[s] = xnew[s];
+  }
+
   for (iters=1; iters<=opts.max_iters; iters++) {
-    if (opts.debug)  DebugIter("Row Jacobi", iters, x, A.Start(), A.Stop());
+    if (opts.debug)  DebugIter("Row Jacobi", iters, xnew, A.Start(), A.Stop());
 
-    CopyToAuxOrSwap(xold, x, A.Start(), A.Stop());
-
-    maxerror = 0;
-    double total = 0;
-    bool check = (iters >= opts.min_iters);
-    for (long s=A.Start(); s<A.Stop(); s++) {
-      x[s] = 0.0;
-      A.SolveRow(s, xold, x[s]);
+    //
+    // Compute the new vector and total
+    //
+    total = 0.0;
+    for (long s=A.Start(); s<=A.Stop(); s++) {
+      double tmp = 0.0;
+      A.SolveRow(s, xold, tmp);
 
       if (RELAX) {
-        x[s] = (x[s] * opts.relaxation) + (xold[s] * one_minus_omega);
+        tmp *= opts.relaxation;
+        tmp += xold[s] * one_minus_omega;
       } 
-      total += x[s];
+      total += (xnew[s] = tmp);
+    } // for s
 
-      if (check) {
-        double delta = x[s] - xold[s];
-        if (opts.use_relative) if (x[s]) delta /= x[s];
+    //
+    // Determine current precision
+    //
+    maxerror = 0;
+    if (iters >= opts.min_iters) {
+      
+      for (long s=A.Stop()-1; s>=A.Start(); s--) {
+        double delta = xnew[s] - xold[s];
+        if (opts.use_relative) if (xnew[s]) delta /= xnew[s];
         if (delta<0) delta = -delta;
         if (delta > maxerror) {
             maxerror = delta;
-            if (maxerror >= opts.precision) {
-              if (iters < opts.max_iters) {
-                check = false;
-              }
+            if ((maxerror >= opts.precision) && (iters < opts.max_iters)) {
+              break;  
+              // We know that we haven't achieved desired precision,
+              // and we're not the last iteration, so there is no need
+              // to determine the exact precision.
             }
         }
-      } // if check
+      } // for s
 
-    } // for s
-    if (total != 1.0) {
-      total = 1.0 / total;
-      for (long s=A.Stop()-1; s>=A.Start(); s--) x[s] *= total;
+    } 
+
+    //
+    // Normalize and copy vector over
+    //
+    total = 1.0 / total;
+    for (long s=A.Stop()-1; s>=A.Start(); s--) {
+      xold[s] = xnew[s] * total;
     }
 
     if (iters < opts.min_iters) continue;
@@ -99,9 +119,11 @@ void New_RowJacobi_Ax0(
   out.num_iters = iters;
   out.precision = maxerror;
 
-  if (x != xnew) {
-      // Solution and aux vectors are swapped; copy results over
-      for (long s=A.Stop()-1; s>=A.Start(); s--) xnew[s] = x[s];
+  //
+  // Normalize answer
+  //
+  for (long s=A.Stop()-1; s>=A.Start(); s--) {
+    xnew[s] *= total;
   }
 }
 
