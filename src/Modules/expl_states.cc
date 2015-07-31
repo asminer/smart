@@ -425,7 +425,8 @@ my_exp_state_lib::my_exp_state_lib(exprman* em) : exp_state_lib()
     "States are stored in a splay tree.",
     SPLAY
   );
-  storage = SPLAY;
+  storage = HASHING;    // Default.  Currently fastest.
+  // storage = SPLAY;
   em->addOption(
     MakeRadioOption(
       "ExplicitStateStorage",
