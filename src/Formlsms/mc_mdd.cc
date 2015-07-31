@@ -22,39 +22,26 @@
 // ******************************************************************
 
 class meddly_mc : public markov_lldsm {
-  class LS_wrapper : public LS_Abstract_Matrix {
+  class LS_wrapper : public LS_Generic_Matrix {
     double* diagonals;
     MEDDLY::specialized_operation* vectmult;
   public:
     LS_wrapper(MEDDLY::specialized_operation* vm, double* d, long dsize);
     virtual ~LS_wrapper();
-    virtual bool IsTransposed() const {
-      return false; // not sure about this
+    virtual void MatrixVectorMultiply(double* y, const float* x) const {
+      throw LS_Not_Implemented;
     }
-    virtual void SolveRow(long, const float*, double &) const {
-    }
-    virtual void SolveRow(long, const double*, double &) const {
-    }
-    virtual void NoDiag_MultByRows(const float* x, double* y) const {
-      DCASSERT(0);
-    }
-    virtual void NoDiag_MultByRows(const double* x, double* y) const {
+    virtual void MatrixVectorMultiply(double* y, const double* x) const {
       DCASSERT(vectmult);
       vectmult->compute(y, x);
     };
-    virtual void NoDiag_MultByCols(const float* x, double* y) const {
-      DCASSERT(0);
-    }
-    virtual void NoDiag_MultByCols(const double* x, double* y) const {
-      DCASSERT(0);
-    };
     virtual void DivideDiag(double* x) const {
-      for (long i=size-1; i>=0; i--) {
+      for (long i=Size()-1; i>=0; i--) {
         x[i] /= diagonals[i];
       }
     }
     virtual void DivideDiag(double* x, double scalar) const {
-      for (long i=size-1; i>=0; i--) {
+      for (long i=Size()-1; i>=0; i--) {
         x[i] *= scalar / diagonals[i];
       }
     };
@@ -148,7 +135,7 @@ public:
 
 meddly_mc::LS_wrapper
 ::LS_wrapper(MEDDLY::specialized_operation* vm, double* d, long ds)
- : LS_Abstract_Matrix(0, ds, ds)
+ : LS_Generic_Matrix(0, ds, ds)
 {
   vectmult = vm;
   diagonals = d;
