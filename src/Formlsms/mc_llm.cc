@@ -1761,6 +1761,22 @@ void InitMCLibs(exprman* em)
       )
     );
 
+    // 
+    // Option for auxiliary vectors, only applies to solvers
+    // that use auxiliary vectors like JACOBI
+    //
+    if ( (markov_lldsm::JACOBI == i) || (markov_lldsm::ROW_JACOBI == i) ) {
+
+      markov_lldsm::lsopts[i].float_vectors = false;
+      settings->AddOption(
+        MakeBoolOption(
+          "FloatsForAuxVectors",
+          "Should we use floats (instead of doubles) for any auxiliary solution vectors.",
+          markov_lldsm::lsopts[i].float_vectors
+        ) 
+      );
+    }
+
     // put these settings into the radio button
 
     settings->DoneAddingOptions();
@@ -1768,6 +1784,7 @@ void InitMCLibs(exprman* em)
 
     // Memory leak, because we never clean up settings, but probably ok
   } // for i
+
 
 
 
