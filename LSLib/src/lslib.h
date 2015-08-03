@@ -145,6 +145,7 @@ struct LS_CRS_Matrix {
   /// Array of row pointers, dimension at least stop+1.
   const long* row_ptr;
 
+public:
   /// negated reciprocals of diagonals, dimension at least stop+1.
   const REAL* one_over_diag;
 
@@ -178,24 +179,6 @@ public:
   }
 
   /**
-      Compute x[i] *= -1 / diag[i], for all i
-  */
-  inline void DivideDiag(double* x) const {
-      for (long i=start; i<stop; i++) {
-        x[i] *= one_over_diag[i];
-      }
-  }
-
-  /**
-      Compute x[i] *= -a / diag[i], for all i
-  */
-  inline void DivideDiag(double* x, double a) const {
-      for (long i=start; i<stop; i++) {
-        x[i] *= a * one_over_diag[i];
-      }
-  }
-
-  /**
       Compute sum += (row i of this matrix without diagonals) * x
   */
   template <class REAL2>
@@ -205,14 +188,6 @@ public:
       }
   }
 
-  /**
-      Compute sum =  (sum + (row i without diagonals) * x) / -diag[i]
-  */
-  template <class REAL2>
-  inline void SolveRow(long i, const REAL2* x, double &sum) const {
-      RowDotProduct(i, x, sum);
-      sum *= one_over_diag[i];
-  }
 };
 
 
@@ -251,6 +226,7 @@ struct LS_CCS_Matrix {
   /// Array of col pointers, dimension at least stop+1.
   const long* col_ptr;
 
+public:
   /// negated reciprocals of diagonals, dimension at least stop+1.
   const REAL* one_over_diag;
 
@@ -283,26 +259,8 @@ public:
       throw LS_Not_Implemented;
   }
 
-  /**
-      Compute x[i] *= -1 / diag[i], for all i
-  */
-  inline void DivideDiag(double* x) const {
-      for (long i=start; i<stop; i++) {
-        x[i] *= one_over_diag[i];
-      }
-  }
-
-  /**
-      Compute x[i] *= -a / diag[i], for all i
-  */
-  inline void DivideDiag(double* x, double a) const {
-      for (long i=start; i<stop; i++) {
-        x[i] *= a * one_over_diag[i];
-      }
-  }
-
   template <class REAL2>
-  inline void SolveRow(long i, const REAL2* x, double &sum) const {
+  inline void RowDotProduct(long i, const REAL2* x, double &sum) const {
     throw LS_Wrong_Format;
   }
 };
@@ -331,6 +289,9 @@ class LS_Generic_Matrix {
   long stop;
   long size;
 public:
+  /// negated reciprocals of diagonals, must be set up by derived class!
+  const float* one_over_diag;
+public:
   LS_Generic_Matrix(long start, long stop, long size);
   virtual ~LS_Generic_Matrix();
 
@@ -358,29 +319,16 @@ public:
 
 
   /**
-      Compute x[i] *= -1 / diag[i], for all i
-      Must be overridded in derived class.
-  */
-  virtual void DivideDiag(double* x) const = 0;
-
-  /**
-      Compute x[i] *= -a / diag[i], for all i
-      Must be overridded in derived class.
-  */
-  virtual void DivideDiag(double* x, double a) const = 0;
-
-
-  /**
-      Compute sum =  (sum + (row i without diagonals) * x) / -diag[i]
+      Compute sum += (row i of this matrix without diagonals) * x
       If we cannot, then throw LS_Wrong_Format (default behavior).
   */
-  virtual void SolveRow(long i, const float* x, double &sum) const;
-  
+  virtual void RowDotProduct(long i, const float* x, double &sum) const;
+
   /**
-      Compute sum =  (sum + (row i without diagonals) * x) / -diag[i]
+      Compute sum += (row i of this matrix without diagonals) * x
       If we cannot, then throw LS_Wrong_Format (default behavior).
   */
-  virtual void SolveRow(long i, const double* x, double &sum) const;
+  virtual void RowDotProduct(long i, const double* x, double &sum) const;
 };
 
 

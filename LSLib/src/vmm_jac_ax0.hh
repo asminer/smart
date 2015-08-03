@@ -61,18 +61,16 @@ void New_VMMJacobi_Ax0(
     for (long s=A.Start(); s<A.Stop(); s++) x[s] = 0;
 
     A.MatrixVectorMultiply(x, xold);
-    if (RELAX) {
-      A.DivideDiag(x, opts.relaxation);
-    } else {
-      A.DivideDiag(x);
-    }
 
     maxerror = 0;
     double total = 0;
     bool check = (iters >= opts.min_iters);
     for (long s=A.Start(); s<A.Stop(); s++) {
       if (RELAX) {
+        x[s] *= A.one_over_diag[s] * opts.relaxation;
         x[s] += one_minus_omega * xold[s];
+      } else {
+        x[s] *= A.one_over_diag[s];
       }
       total += x[s];
 

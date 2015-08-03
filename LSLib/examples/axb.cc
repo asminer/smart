@@ -19,6 +19,7 @@ protected:
   MATRIX &A;
 public:
   my_Matrix(MATRIX &p) : LS_Generic_Matrix(p.start, p.stop, p.size), A(p) {
+    one_over_diag = A.one_over_diag;
   }
   virtual ~my_Matrix() { }
 
@@ -29,20 +30,12 @@ public:
     A.MatrixVectorMultiply(y, x);
   }
 
-  virtual void DivideDiag(double* x) const {
-    A.DivideDiag(x);
+  virtual void RowDotProduct(long i, const float* x, double &sum) const {
+    A.RowDotProduct(i, x, sum);
   }
 
-  virtual void DivideDiag(double* x, double a) const {
-    A.DivideDiag(x, a);
-  }
-
-  virtual void SolveRow(long i, const float* x, double &sum) const {
-    A.SolveRow(i, x, sum);
-  }
-
-  virtual void SolveRow(long i, const double* x, double &sum) const {
-    A.SolveRow(i, x, sum);
+  virtual void RowDotProduct(long i, const double* x, double &sum) const {
+    A.RowDotProduct(i, x, sum);
   }
 
 };

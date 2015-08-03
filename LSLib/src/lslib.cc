@@ -28,7 +28,7 @@ template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
 #include "vmm_jac_axb.hh"
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 0;
+const int MINOR_VERSION = 1;
 
 // ******************************************************************
 // *                                                                *
@@ -41,6 +41,7 @@ LS_Generic_Matrix::LS_Generic_Matrix(long sta, long sto, long siz)
   start = sta;
   stop = sto;
   size = siz;
+  one_over_diag = 0;
 }
 
 LS_Generic_Matrix::~LS_Generic_Matrix()
@@ -52,12 +53,12 @@ void LS_Generic_Matrix::ShowDebugInfo() const
   printf("  LS_Generic_Matrix\n");
 }
 
-void LS_Generic_Matrix::SolveRow(long, const float*, double &) const
+void LS_Generic_Matrix::RowDotProduct(long, const float*, double &) const
 {
   throw LS_Wrong_Format;
 }
 
-void LS_Generic_Matrix::SolveRow(long, const double*, double &) const
+void LS_Generic_Matrix::RowDotProduct(long, const double*, double &) const
 {
   throw LS_Wrong_Format;
 }

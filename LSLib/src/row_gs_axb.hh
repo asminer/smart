@@ -13,12 +13,12 @@
 
     Workhorse for Row Gauss-Seidel solving Ax=b.
 
-    The MATRIX class must provide the following methods:
-
-      long Start()        : index of first row
-      long Stop()         : one plus index of last row
-      SolveRow(r, x, ans) : Row r times x added to ans,
-                            then ans divided by row r diagonal
+    The MATRIX class must provide the following methods/members:
+      
+      one_over_diag[]           : negated reciprocals of diagonal elements
+      long Start()              : index of first row
+      long Stop()               : one plus index of last row
+      RowDotProduct(r, x, ans)  : Row r times x is added to ans,
 
     The VECTOR class must provide the following methods:
       
@@ -72,12 +72,16 @@ void New_RowGS_Axb(
     for (long s=A.Start(); s<A.Stop(); s++) {
 
       double tmp = b.GetNegValue(bp, s);
-      A.SolveRow(s, x, tmp);
+      A.RowDotProduct(s, x, tmp);
 
-      double delta;
       if (RELAX) {
-        tmp = (tmp * opts.relaxation) + (x[s] * one_minus_omega);
-      } 
+        tmp *= A.one_over_diag[s] * opts.relaxation;
+        tmp += x[s] * one_minus_omega;
+      } else {
+        tmp *= A.one_over_diag[s];
+      }
+
+      double delta = tmp - x[s];
       delta = tmp - x[s];
       x[s] = tmp;
 

@@ -13,12 +13,12 @@
 
     Workhorse for Row Jacobi solving Ax=0.
 
-    The MATRIX class must provide the following methods:
-
-      long Start()        : index of first row
-      long Stop()         : one plus index of last row
-      SolveRow(r, x, ans) : Row r times x added to ans,
-                            then ans divided by row r diagonal
+    The MATRIX class must provide the following methods/members:
+      
+      one_over_diag[]           : negated reciprocals of diagonal elements
+      long Start()              : index of first row
+      long Stop()               : one plus index of last row
+      RowDotProduct(r, x, ans)  : Row r times x is added to ans
 
 
     @param  A     Matrix
@@ -70,12 +70,15 @@ void New_RowJacobi_Ax0(
     total = 0.0;
     for (long s=A.Start(); s<=A.Stop(); s++) {
       double tmp = 0.0;
-      A.SolveRow(s, xold, tmp);
+      A.RowDotProduct(s, xold, tmp);
 
       if (RELAX) {
-        tmp *= opts.relaxation;
+        tmp *= A.one_over_diag[s] * opts.relaxation;
         tmp += xold[s] * one_minus_omega;
-      } 
+      } else {
+        tmp *= A.one_over_diag[s];
+      }
+
       total += (xnew[s] = tmp);
     } // for s
 
