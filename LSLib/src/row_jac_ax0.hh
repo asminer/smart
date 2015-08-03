@@ -68,7 +68,7 @@ void New_RowJacobi_Ax0(
     // Compute the new vector and total
     //
     total = 0.0;
-    for (long s=A.Start(); s<=A.Stop(); s++) {
+    for (long s=A.Start(); s<A.Stop(); s++) {
       double tmp = 0.0;
       A.RowDotProduct(s, xold, tmp);
 
