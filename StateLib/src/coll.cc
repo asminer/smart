@@ -445,7 +445,8 @@ long main_coll::GetStateKnown(long hndl, int* s, int size) const
         ReadInt(bs, tkbits, s[i]);
       }
       // size < np, advance thingy
-      for (; i<np; i++)  bs.Advance(tkbits);
+      // for (; i<np; i++)  bs.Advance(tkbits);
+      bs.Advance(tkbits * (np-i));
       // np < size, fill with zeroes
       for (; i<size; i++) s[i] = 0;
     break;
@@ -564,6 +565,25 @@ int main_coll::GetStateUnknown(long hndl, int* s, int size) const
   return actualsize;
 }
 
+
+const unsigned char* main_coll::GetRawState(long hndl, long &bytes) const
+{
+  long h;
+  if (hndl<0) return 0;
+  if (map) {
+    if (hndl >= numstates) return 0;
+    h = map[hndl];
+  } else {
+    if (hndl >= lasthandle) return 0;
+    h = hndl;
+  }
+
+  bytes = NextRawHandle(h);
+  bytes -= h;
+  
+  return GetPtr(h);
+}
+
 long main_coll::FirstHandle() const 
 {
   return map ? 0 : firsthandle;
@@ -571,14 +591,20 @@ long main_coll::FirstHandle() const
 
 long main_coll::NextHandle(long hndl) const
 {
-  // 
-  // Take care of easy cases first
-  //
   if (map) {
     // handles are indices
     if (hndl>=numstates) return -1;
     return hndl+1; 
   }
+  if (hndl>=lasthandle) return -1;
+  return NextRawHandle(hndl);
+}
+
+long main_coll::NextRawHandle(long hndl) const
+{
+  // 
+  // Take care of easy cases first
+  //
   if (hndl>=lasthandle) return -1;
   
   bitstream bs(hndl);

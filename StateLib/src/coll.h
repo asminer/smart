@@ -180,6 +180,9 @@ public:
   virtual int GetStateUnknown(long hndl, int* state, int size) const {
     return -1;
   }
+  virtual const unsigned char* GetRawState(long hndl, long& bytes) const {
+    return 0;
+  }
   virtual long FirstHandle() const {
     return -1;
   }
@@ -308,6 +311,10 @@ protected:
 
 protected:
   inline int Bits2Bytes(int numbits) const { return (numbits+7)/8; }
+
+  // Helper for NextHandle, GetRawState
+  long NextRawHandle(long rawh) const;
+
 public:
   main_coll(bool use_indices, bool use_sizes);
   virtual ~main_coll();
@@ -319,6 +326,7 @@ public:
   virtual bool PopLast(long hndl);
   virtual long GetStateKnown(long hndl, int* state, int size) const;
   virtual int GetStateUnknown(long hndl, int* state, int size) const;
+  virtual const unsigned char* GetRawState(long hndl, long &bytes) const;
   virtual long FirstHandle() const;
   virtual long NextHandle(long hndl) const;
   virtual int CompareHH(long h1, long h2) const;
