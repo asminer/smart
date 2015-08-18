@@ -116,7 +116,8 @@ protected:
  
 public:
 
-  virtual long getNumStates(bool show) const;
+  virtual long getNumStates() const;
+  virtual void showStates(bool internal) const;
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
   virtual void getInitialStates(result &x) const;
@@ -150,11 +151,12 @@ protected:
   virtual void BuildStateMapping(long* map) const = 0;
 
   /** Display a state.
-        @param  s   Stream to write to.
-        @param  i   Index of the state to display,
-                    according to Markov chain numbering.
+        @param  s         Stream to write to.
+        @param  i         Index of the state to display,
+                          according to Markov chain numbering.
+        @param  internal  Internal representation, or human readable?
   */
-  virtual void ShowState(OutputStream &s, long i) const = 0;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const = 0;
 
   bool transposeEdges(const named_msg* rep, bool byrows);
 };
@@ -303,28 +305,48 @@ void explicit_fsm::Finish(LS_Vector& init, GraphLib::digraph* rg)
   edges->finish(o);
 }
 
-long explicit_fsm::getNumStates(bool show) const
+long explicit_fsm::getNumStates() const
 {
-  if (!show || !em->hasIO() || 0==num_states)  return num_states;
+  return num_states;
     
-  if (tooManyStates(num_states, show)) return num_states;
-  
-  long* map = 0;
-  if (NATURAL != display_order) {
-    map = new long[num_states];
-    BuildStateMapping(map);
+}
+
+void explicit_fsm::showStates(bool internal) const
+{
+  if (!em->hasIO()) return;
+
+  if (internal) {
+
+    for (long i=0; i<num_states; i++) {
+      em->cout() << "State " << i << " internal: ";
+      ShowState(em->cout(), i, true);
+      em->cout() << "\n";
+      em->cout().Check();
+    } // for i
+    em->cout().flush();
+
+  } else {
+    if (0==num_states) return;
+    if (tooManyStates(num_states, true)) return;
+
+    long* map = 0;
+    if (NATURAL != display_order) {
+      map = new long[num_states];
+      BuildStateMapping(map);
+    }
+
+    for (long i=0; i<num_states; i++) {
+      long mi = map ? map[i] : i; 
+      em->cout() << "State " << i << ": ";
+      ShowState(em->cout(), mi, false);
+      em->cout() << "\n";
+      em->cout().Check();
+    } // for i
+    delete[] map;
+    em->cout().flush();
   }
 
-  for (long i=0; i<num_states; i++) {
-    long mi = map ? map[i] : i; 
-    em->cout() << "State " << i << ": ";
-    ShowState(em->cout(), mi);
-    em->cout() << "\n";
-    em->cout().Check();
-  } // for i
-  delete[] map;
-  em->cout().flush();
-  return num_states;
+  
 }
 
 void explicit_fsm::getReachable(result &rs) const
@@ -410,7 +432,7 @@ long explicit_fsm::getNumArcs(bool show) const
           em->cout() << "\ts" << i;
           if (display_graph_node_names) {
             em->cout() << " [label=\"";
-            ShowState(em->cout(), mi);
+            ShowState(em->cout(), mi, false);
             em->cout() << "\"]";
           }
           em->cout() << ";\n";
@@ -437,7 +459,7 @@ long explicit_fsm::getNumArcs(bool show) const
       case INCOMING:
       case OUTGOING:
           em->cout() << row;
-          if (display_graph_node_names)   ShowState(em->cout(), h);
+          if (display_graph_node_names)   ShowState(em->cout(), h, false);
           else                            em->cout() << i;
           em->cout() << ":\n";
     }
@@ -474,7 +496,7 @@ long explicit_fsm::getNumArcs(bool show) const
             if (display_graph_node_names) {
               long h = map ? map[foo.index[z]] : foo.index[z];
               CHECK_RANGE(0, h, num_states);
-              ShowState(em->cout(), h);
+              ShowState(em->cout(), h, false);
             } else {
               em->cout() << foo.index[z];
             }
@@ -800,7 +822,7 @@ bool explicit_fsm::dumpDot(OutputStream &s) const
   s << "digraph fsm {\n";
   for (long i=0; i<num_states; i++) {
     s << "\ts" << i << " [label=\"";
-    ShowState(s, i);
+    ShowState(s, i, false);
     s << "\"];\n";
     s.can_flush();
   } // for i
@@ -886,7 +908,7 @@ public:
 protected:
   const char* getClassName() const { return "fsm_enum"; }
   virtual void BuildStateMapping(long* map) const;
-  virtual void ShowState(OutputStream &s, long i) const;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const;
 };
 
 // ******************************************************************
@@ -957,10 +979,11 @@ void fsm_enum::BuildStateMapping(long* map) const
   delete[] hs;
 }
 
-void fsm_enum::ShowState(OutputStream &s, long i) const
+void fsm_enum::ShowState(OutputStream &s, long i, bool internal) const
 {
   DCASSERT(state_handle);
   CHECK_RANGE(0, i, states->NumValues());
+  if (internal) s << "(index " << state_handle[i] << ") ";
   const model_enum_value* st = states->ReadValue(state_handle[i]);
   DCASSERT(st);
   s.Put(st->Name());
@@ -990,7 +1013,7 @@ public:
 protected:
   const char* getClassName() const { return "fsm_expl"; }
   virtual void BuildStateMapping(long* map) const;
-  virtual void ShowState(OutputStream &s, long i) const;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const;
 
   inline void getState(long i, shared_state* st) const {
     DCASSERT(false == parent->containsListVar());
@@ -1004,6 +1027,18 @@ protected:
       DCASSERT(state_handle);
       states->GetStateKnown(state_handle[i], 
             st->writeState(), st->getStateSize());
+    }
+  }
+
+  inline const unsigned char* getInternal(long i, long &bytes) const {
+    DCASSERT(false == parent->containsListVar());
+    CHECK_RANGE(0, i, num_states);
+    if (fullstates) {
+      return fullstates->GetRawState(i, bytes);
+    } else {
+      DCASSERT(states);
+      DCASSERT(state_handle);
+      return states->GetRawState(state_handle[i], bytes);
     }
   }
 };
@@ -1090,12 +1125,21 @@ void fsm_expl::BuildStateMapping(long* map) const
   }
 }
 
-void fsm_expl::ShowState(OutputStream &s, long i) const
+void fsm_expl::ShowState(OutputStream &s, long i, bool internal) const
 {
-  shared_state* st = new shared_state(parent);
-  getState(i, st);
-  st->Print(s, 0);
-  Delete(st);
+  if (internal) {
+    long bytes = 0;
+    const unsigned char* ptr = getInternal(i, bytes);
+    for (long b=0; b<bytes; b++) {
+      s.PutHex(ptr[b]);
+      s.Put(' ');
+    }
+  } else {
+    shared_state* st = new shared_state(parent);
+    getState(i, st);
+    st->Print(s, 0);
+    Delete(st);
+  }
 }
 
 // ******************************************************************

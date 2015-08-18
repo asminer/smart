@@ -72,17 +72,25 @@ public:
     return mdd_wrap->getNumDDVars();
   }
 
-  // TBD: use an enum for show, e.g., what order?
-  long getNumStates(const lldsm* p, OutputStream &os, bool show);
-
-  void buildIndexSet();
-
-  void visitStates(lldsm::state_visitor &x) const;
-
   inline void getNumStates(result &count) const {
     DCASSERT(mdd_wrap);
     mdd_wrap->getCardinality(states, count);
   }
+
+  long getNumStates() const {
+    DCASSERT(mdd_wrap);
+    long ns;
+    mdd_wrap->getCardinality(states, ns);
+    return ns;
+  }
+
+
+  // TBD: use an enum for show, e.g., what order?
+  void showStates(const lldsm* p, OutputStream &os, bool internal);
+
+  void buildIndexSet();
+
+  void visitStates(lldsm::state_visitor &x) const;
 
   void reportStats(OutputStream &out) const;
 };

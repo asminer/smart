@@ -176,7 +176,7 @@ tta_dist
   DCASSERT(chain);
   DCASSERT(accept);
 
-  num_states = chain->getNumStates(false);
+  num_states = chain->getNumStates();
 
   if (init) {
     init_len = init->countNNZs();

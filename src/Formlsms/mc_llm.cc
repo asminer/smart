@@ -327,7 +327,8 @@ protected:
   void setChain(statedist* init, MCLib::Markov_chain* mc);
 
 public:
-  virtual long getNumStates(bool show) const;
+  virtual long getNumStates() const;
+  virtual void showStates(bool internal) const;
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
   virtual long getNumArcs(bool show) const;
@@ -381,7 +382,7 @@ protected:
         @param  i   Index of the state to display,
                     according to Markov chain numbering.
   */
-  virtual void ShowState(OutputStream &s, long i) const = 0;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const = 0;
 
   // void reorderInitial(const long* ren);
 
@@ -600,28 +601,46 @@ void explicit_mc::setChain(statedist* init, MCLib::Markov_chain* mc)
   initial = init;
 }
 
-long explicit_mc::getNumStates(bool show) const
+long explicit_mc::getNumStates() const
 {
-  if (!show || !em->hasIO() || 0==num_states)  return num_states;
+  return num_states;
+}
 
-  if (tooManyStates(num_states, show)) return num_states;
-  
-  long* map = 0;
-  if (NATURAL != display_order) {
-    map = new long[num_states];
-    BuildStateMapping(map);
+void explicit_mc::showStates(bool internal) const
+{
+  if (!em->hasIO()) return;
+
+  if (internal) {
+
+    for (long i=0; i<num_states; i++) {
+      em->cout() << "State " << i << " internal: ";
+      ShowState(em->cout(), i, true);
+      em->cout() << "\n";
+      em->cout().Check();
+    } // for i
+    em->cout().flush();
+
+  } else {
+    if (0==num_states) return;
+    if (tooManyStates(num_states, true)) return;
+
+    long* map = 0;
+    if (NATURAL != display_order) {
+      map = new long[num_states];
+      BuildStateMapping(map);
+    }
+
+    for (long i=0; i<num_states; i++) {
+      long mi = map ? map[i] : i; 
+      em->cout() << "State " << i << ": ";
+      ShowState(em->cout(), mi, false);
+      em->cout() << "\n";
+      em->cout().Check();
+    } // for i
+    delete[] map;
+    em->cout().flush();
   }
 
-  for (long i=0; i<num_states; i++) {
-    long mi = map ? map[i] : i; 
-    em->cout() << "State " << i << ": ";
-    ShowState(em->cout(), mi);
-    em->cout() << "\n";
-    em->cout().Check();
-  } // for i
-  delete[] map;
-  em->cout().flush();
-  return num_states;
 }
 
 void explicit_mc::getReachable(result &rs) const
@@ -687,7 +706,7 @@ long explicit_mc::getNumArcs(bool show) const
           em->cout() << "\ts" << i;
           if (display_graph_node_names) {
             em->cout() << " [label=\"";
-            ShowState(em->cout(), mi);
+            ShowState(em->cout(), mi, false);
             em->cout() << "\"]";
           }
           em->cout() << ";\n";
@@ -714,7 +733,7 @@ long explicit_mc::getNumArcs(bool show) const
       case INCOMING:
       case OUTGOING:
           em->cout() << row;
-          if (display_graph_node_names)   ShowState(em->cout(), h);
+          if (display_graph_node_names)   ShowState(em->cout(), h, false);
           else                            em->cout() << i;
           em->cout() << ":\n";
           break;
@@ -752,7 +771,7 @@ long explicit_mc::getNumArcs(bool show) const
             if (display_graph_node_names) {
               long h = map ? map[foo.index[z]] : foo.index[z];
               CHECK_RANGE(0, h, num_states);
-              ShowState(em->cout(), h);
+              ShowState(em->cout(), h, false);
             } else {
               em->cout() << foo.index[z];
             }
@@ -819,7 +838,7 @@ long explicit_mc::getNumClasses(bool show) const
     long st = chain->getFirstTransient();
     for (long i = trans; i; i--) {
       em->cout().Put('\t');
-      ShowState(em->cout(), st);
+      ShowState(em->cout(), st, false);
       em->cout().Put('\n');
       em->cout().Check();
       st++;
@@ -830,7 +849,7 @@ long explicit_mc::getNumClasses(bool show) const
     long st = chain->getFirstRecurrent(c);
     for (long i = chain->getRecurrentSize(c); i; i--) {
       em->cout().Put('\t');
-      ShowState(em->cout(), st);
+      ShowState(em->cout(), st, false);
       em->cout().Put('\n');
       em->cout().Check();
       st++;
@@ -841,7 +860,7 @@ long explicit_mc::getNumClasses(bool show) const
     long st = chain->getFirstAbsorbing();
     for (long i = na; i; i--) {
       em->cout().Put('\t');
-      ShowState(em->cout(), st);
+      ShowState(em->cout(), st, false);
       em->cout().Put('\n');
       em->cout().Check();
       st++;
@@ -1093,7 +1112,7 @@ bool explicit_mc::dumpDot(OutputStream &s) const
   s << "digraph mc {\n";
   for (long i=0; i<ns; i++) {
     s << "\ts" << i << " [label=\"";
-    ShowState(s, i);
+    ShowState(s, i, false);
     s << "\"];\n";
     s.can_flush();
   } // for i
@@ -1355,7 +1374,7 @@ public:
 protected:
   const char* getClassName() const { return "mc_enum"; }
   virtual void BuildStateMapping(long* map) const;
-  virtual void ShowState(OutputStream &s, long i) const;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const;
 };
 
 // ******************************************************************
@@ -1426,10 +1445,11 @@ void mc_enum::BuildStateMapping(long* map) const
   delete[] hs;
 }
 
-void mc_enum::ShowState(OutputStream &s, long i) const
+void mc_enum::ShowState(OutputStream &s, long i, bool internal) const
 {
   DCASSERT(state_handle);
   CHECK_RANGE(0, i, states->NumValues());
+  if (internal) s << "(index " << state_handle[i] << ") ";
   const model_enum_value* st = states->ReadValue(state_handle[i]);
   DCASSERT(st);
   s.Put(st->Name());
@@ -1468,7 +1488,7 @@ public:
 protected:
   const char* getClassName() const { return "mc_expl"; }
   virtual void BuildStateMapping(long* map) const;
-  virtual void ShowState(OutputStream &s, long i) const;
+  virtual void ShowState(OutputStream &s, long i, bool internal) const;
 
   inline void getState(long i, shared_state* st) const {
     DCASSERT(false == parent->containsListVar());
@@ -1482,6 +1502,18 @@ protected:
       DCASSERT(state_handle);
       states->GetStateKnown(state_handle[i], 
             st->writeState(), st->getStateSize());
+    }
+  }
+
+  inline const unsigned char* getInternal(long i, long &bytes) const {
+    DCASSERT(false == parent->containsListVar());
+    CHECK_RANGE(0, i, num_states);
+    if (fullstates) {
+      return fullstates->GetRawState(i, bytes);
+    } else {
+      DCASSERT(states);
+      DCASSERT(state_handle);
+      return states->GetRawState(state_handle[i], bytes);
     }
   }
 };
@@ -1616,12 +1648,21 @@ void mc_expl::BuildStateMapping(long* map) const
   }
 }
 
-void mc_expl::ShowState(OutputStream &s, long i) const
+void mc_expl::ShowState(OutputStream &s, long i, bool internal) const
 {
-  shared_state* st = new shared_state(parent);
-  getState(i, st);
-  st->Print(s, 0);
-  Delete(st);
+  if (internal) {
+    long bytes = 0;
+    const unsigned char* ptr = getInternal(i, bytes);
+    for (long b=0; b<bytes; b++) {
+      s.PutHex(ptr[b]);
+      s.Put(' ');
+    }
+  } else {
+    shared_state* st = new shared_state(parent);
+    getState(i, st);
+    st->Print(s, 0);
+    Delete(st);
+  }
 }
 
 // ******************************************************************

@@ -48,7 +48,7 @@ statevect_printer::statevect_printer(const hldsm* m, OutputStream &s,
   comma = false;
   nextz = 0;
 
-  long ns = d->getParent()->getNumStates(false);
+  long ns = d->getParent()->getNumStates();
   myvect = new double[ns];
   d->ExportTo(myvect);
 }
@@ -281,7 +281,7 @@ bool statevect::ExportTo(LS_Vector &V) const
 void statevect::ExportTo(double *d) const
 {
   DCASSERT(parent);
-  long num_states = parent->getNumStates(false);
+  long num_states = parent->getNumStates();
 
   for (long i=0; i<num_states; i++) d[i] = 0;
   
@@ -868,7 +868,7 @@ void gt_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
   const stochastic_lldsm* llm = p->getParent();
-  long ns = llm->getNumStates(false);
+  long ns = llm->getNumStates();
   intset* ans = new intset(ns);
   p->greater_than(v, ans);  
 
@@ -921,7 +921,7 @@ void ge_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
   const stochastic_lldsm* llm = p->getParent();
-  long ns = llm->getNumStates(false);
+  long ns = llm->getNumStates();
   intset* ans = new intset(ns);
   p->less_than(v, ans);  
   ans->complement();
@@ -975,7 +975,7 @@ void lt_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
   const stochastic_lldsm* llm = p->getParent();
-  long ns = llm->getNumStates(false);
+  long ns = llm->getNumStates();
   intset* ans = new intset(ns);
   p->less_than(v, ans);  
 
@@ -1028,7 +1028,7 @@ void le_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
   const stochastic_lldsm* llm = p->getParent();
-  long ns = llm->getNumStates(false);
+  long ns = llm->getNumStates();
   intset* ans = new intset(ns);
   p->greater_than(v, ans);  
   ans->complement();

@@ -299,7 +299,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Allocate vector for absorbing chain answer
   //
-  long ttans = ttamc->getNumStates(false);
+  long ttans = ttamc->getNumStates();
   double* ttax = new double[ttans];
 
   //
@@ -320,7 +320,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   const stochastic_lldsm* sm 
   = dynamic_cast <const stochastic_lldsm*>(pass[0].getPtr());
 
-  long mns = sm->getNumStates(false);
+  long mns = sm->getNumStates();
   double* mx = new double[mns];
   for (long i=0; i<mns; i++) mx[i] = 0;
 
