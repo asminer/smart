@@ -35,7 +35,7 @@ pn rgfoo(int n) := {
 	  p7 : t11, t11 : p8
   );
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 };
 
@@ -89,7 +89,7 @@ pn mcfoo(int n) := {
 	  p7 : t11, t11 : p8
   );
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 };
 
@@ -133,7 +133,7 @@ pn bar(bool can_escape) := {
 	  p2 : T7, T7 : p1
   );
   
-  void show_rs := { print("Tangible:\n"); show_states; };
+  void show_rs := { print("Tangible:\n"); show_states(false); };
   void show_mc := show_arcs;
 };
 
