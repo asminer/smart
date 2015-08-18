@@ -15,7 +15,7 @@ pn test1(int n) := {
   );
   priority({t, u}:1);
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
 };
 
 print("Should have 3 states:\n");
@@ -35,7 +35,7 @@ pn test2(int n) := {
   );
   priority(t:v, u:w);
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
 };
 
 print("Should have 3 states:\n");
@@ -57,7 +57,7 @@ pn test3(int n) := {
   priority(u:1);
   priority(t:v);
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
 };
 
 print("Should have 3 states:\n");

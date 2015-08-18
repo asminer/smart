@@ -38,7 +38,7 @@ pn net1(int N) := {
   bigint m1 := num_states;
   bigint m2 := num_arcs;
 
-  void show_rs := { print("States:\n"); show_states; };
+  void show_rs := { print("States:\n"); show_states(false); };
   void show_rg := show_arcs;
 };
 

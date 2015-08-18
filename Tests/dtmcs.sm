@@ -20,7 +20,7 @@ dtmc d0 := {
 
   void show := { 
     print("d0 states:\n"); 
-    show_states; 
+    show_states(false);
     print("d0 ");
     show_arcs;
   };
@@ -91,7 +91,7 @@ dtmc d3(int dummy) := {
 
   void show := { 
     print("d3 states:\n"); 
-    show_states; 
+    show_states(false); 
     print("d3 ");
     show_arcs;
   };
@@ -118,7 +118,7 @@ dtmc d4(int N) := {
     arcs(s[i-1] : s[i] : 1, s[i] : s[i-1] : 2);
   }
   void show := { 
-    show_states; 
+    show_states(false); 
     show_arcs;
   };
 };

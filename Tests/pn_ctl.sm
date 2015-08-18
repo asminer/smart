@@ -78,7 +78,7 @@ pn cruft(int n) := {
     J : tJD, tJD : D
   );
   
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
   bigint na := num_arcs;
 

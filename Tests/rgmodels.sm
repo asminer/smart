@@ -64,7 +64,7 @@ pn kanban_fine(int n) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 
 // For computing theoretical number of states:
@@ -139,7 +139,7 @@ pn kanban_coarse(int n) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 
 // For computing theoretical number of states:
@@ -180,7 +180,7 @@ pn phils_fine(int N) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 
 // For computing theoretical number of states:
@@ -218,7 +218,7 @@ pn phils_coarse(int N) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 
 // For computing theoretical number of states:
@@ -279,7 +279,7 @@ evm queens(int N) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 };
 
@@ -303,7 +303,7 @@ evm swaps(int N) := {
   bigint ns := num_states;
   bigint na := num_arcs;
 
-  void show_rs := show_states;
+  void show_rs := show_states(false);
   void show_rg := show_arcs;
 
 // For computing theoretical number of states:
