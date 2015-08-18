@@ -2361,8 +2361,8 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   em->cout() << "Reachable states:\n";
-  long ns = proc->getNumStates(true);
-  em->cout() << ns << " states total\n";
+  proc->showStates(false);
+  em->cout() << proc->getNumStates() << " states total\n";
 
   long goal = proc->getAcceptingState();
   if (goal < 0) em->cout() << "No accepting state\n";

@@ -85,15 +85,20 @@ bool lldsm::Equals(const shared_object* ptr) const
 
 void lldsm::getNumStates(result& x) const
 {
-  x.setInt(getNumStates(false));
+  x.setInt(getNumStates());
   if (x.getInt() < 0) {
     x.setNull();
   } 
 }
 
-long lldsm::getNumStates(bool show) const
+long lldsm::getNumStates() const
 {
   return bailOut(__FILE__, __LINE__, "Can't count states");
+}
+
+void lldsm::showStates(bool internal) const
+{
+  bailOut(__FILE__, __LINE__, "Can't dispaly states");
 }
 
 void lldsm::visitStates(state_visitor &x) const

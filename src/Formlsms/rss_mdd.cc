@@ -93,14 +93,18 @@ bool meddly_states::Equals(const shared_object* o) const
   return o == this;
 }
 
-long meddly_states::getNumStates(const lldsm* m, OutputStream &cout, bool show)
+void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal)
 {
+  //
+  // TBD: display internal representation?
+  //
+
+
   DCASSERT(m);
   DCASSERT(mdd_wrap);
   long ns;
   mdd_wrap->getCardinality(states, ns);
-  if (!show)                      return ns;
-  if (m->tooManyStates(ns, show)) return ns;
+  if (m->tooManyStates(ns, true)) return;
 
 
   // Natural order
@@ -119,7 +123,6 @@ long meddly_states::getNumStates(const lldsm* m, OutputStream &cout, bool show)
   }
   states->freeIterator();
   Delete(st);
-  return ns;
 }
 
 void meddly_states::buildIndexSet()

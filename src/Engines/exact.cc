@@ -314,7 +314,7 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
   const stochastic_lldsm* proc = 
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
-  long NS = proc->getNumStates(false);
+  long NS = proc->getNumStates();
   if (NS < 0) throw Engine_Failed;
   statevect* dist = 0;
   double* p = 0;
@@ -422,7 +422,7 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
-  long NS = proc->getNumStates(false);
+  long NS = proc->getNumStates();
   if (NS < 0) throw Engine_Failed;
   statevect* dist = 0;
   double* p = 0;
@@ -553,7 +553,7 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
-  long NS = proc->getNumStates(false);
+  long NS = proc->getNumStates();
   if (NS < 0) throw Engine_Failed;
   double* p0 = 0;
   double* n = 0;
@@ -670,7 +670,7 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
-  long NS = proc->getNumStates(false);
+  long NS = proc->getNumStates();
   if (NS < 0) throw Engine_Failed;
   double* p0 = 0;
   double* n = 0;
@@ -823,7 +823,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   // Get process information
   //
 
-  long ns = proc->getNumStates(false);
+  long ns = proc->getNumStates();
   long goal = proc->getAcceptingState();
   if (goal < 0) {
     // No goal state - we're constant infinity

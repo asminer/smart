@@ -460,9 +460,14 @@ public:
 
 
 showstates_si::showstates_si()
- : proc_noengine(Nothing, em->VOID, "show_states", 1)
+ : proc_noengine(Nothing, em->VOID, "show_states", 2)
 {
   SetDocumentation("Displays the reachability set to the current output stream, unless there are too many states.  The reachability set will be constructed first, if necessary.");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal", 
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
 }
 
 void showstates_si::Compute(traverse_data &x, expr** pass, int np)
@@ -474,7 +479,13 @@ void showstates_si::Compute(traverse_data &x, expr** pass, int np)
   model_instance* mi = grabModelInstance(x, pass[0]);
   const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 1, x.parent);
   if (0==llm || lldsm::Error == llm->Type()) return;
-  llm->getNumStates(true);
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  llm->showStates(internal);
 }
 
 // ******************************************************************

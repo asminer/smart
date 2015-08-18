@@ -81,6 +81,7 @@ public:
   void Put(long data);
   void Put(unsigned long data);
   void Put(long long data);
+  void PutHex(unsigned char data);
   void PutHex(unsigned long data);
   inline void PutAddr(void* data) { PutHex((unsigned long)data); }
   void Put(float data);

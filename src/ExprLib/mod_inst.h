@@ -133,18 +133,22 @@ public:
   virtual void getNumStates(result& count) const;
 
   /** Get the number of reachable states.
-      This version is used to implement Smart function print_states.
       This must be provided in derived classes, the
       default behavior here is to print an error message.
-
-        @param  show  If true, the states are displayed to the Output
-                      stream, unless there are too many
-                      (specifically, if we return -1, we won't display).
 
         @return  The number of reachable states, if it fits in a long;
                 -1, otherwise (on overflow).
   */
-  virtual long getNumStates(bool show) const;
+  virtual long getNumStates() const;
+
+  /** Show the reachable states.
+      This must be provided in derived classes, the
+      default behavior here is to print an error message.
+        @param  internal  If true, show internal details of state storage only.
+                          If false, show a sane list of states, unless there
+                          are too many to display.
+  */
+  virtual void showStates(bool internal) const;
 
   /// Check if ns exceeds option, if so, show "too many states" message.
   static bool tooManyStates(long ns, bool show);
