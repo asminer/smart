@@ -60,6 +60,7 @@ public:
 
   virtual long  GetStateKnown(long index, int* state, int size) const;
   virtual int GetStateUnknown(long index, int* state, int size) const;
+  virtual const unsigned char* GetRawState(long hndl, long &bytes) const;
 
   // for debugging, dump the binary search tree to a dot file
   virtual void DumpDot(FILE* out);

@@ -186,6 +186,14 @@ int bst_db::GetStateUnknown(long index, int* state, int size) const
     return states->GetStateUnknown(index, state, size);
 }
 
+const unsigned char* bst_db::GetRawState(long index, long &bytes) const
+{
+  if (index2handle)
+    return states->GetRawState(index2handle[index], bytes);
+  else
+    return states->GetRawState(index, bytes);
+}
+
 
 
 void bst_db::DumpDot(FILE* out)

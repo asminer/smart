@@ -457,6 +457,18 @@ namespace StateLib {
     */
     virtual int GetStateUnknown(long index, int* state, int size) const = 0;
 
+    /** Return a raw pointer to a state.
+        Used primarily for debugging.
+        The memory contents must not be changed.
+          
+          @param  hndl  Handle of the state to obtain.
+
+          @param  bytes (Output): number of bytes for the state
+
+          @return 0, on error;
+                  pointer to chunk of memory storing the state, otherwise.
+    */
+    virtual const unsigned char* GetRawState(long hndl, long &bytes) const = 0;
 
     /** Get the underlying state collection.
         This must not be modified.

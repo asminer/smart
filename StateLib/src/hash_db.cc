@@ -118,6 +118,14 @@ int hash_db::GetStateUnknown(long index, int* state, int size) const
     return states->GetStateUnknown(index, state, size);
 }
 
+const unsigned char* hash_db::GetRawState(long index, long &bytes) const
+{
+  if (index2handle)
+    return states->GetRawState(index2handle[index], bytes);
+  else
+    return states->GetRawState(index, bytes);
+}
+
 void hash_db::DumpDot(FILE* out)
 {
   fprintf(out, "digraph hash {\n\trankdir=LR;\n");
