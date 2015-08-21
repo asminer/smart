@@ -15,7 +15,37 @@
 #ifdef HAVE_LIBGMP
 #include <gmp.h>
 #endif
+
+#define _MEDDLY_WITHOUT_CSTDIO_
+#define _MEDDLY_WITHOUT_IOSTREAM_
 #include "meddly.h"
+
+// ******************************************************************
+// *                                                                *
+// *                       smart_output class                       *
+// *                                                                *
+// ******************************************************************
+
+/** 
+    This little widget allows us to use our own I/O stuff
+    natively inside Meddly.
+*/
+class smart_output : public MEDDLY::output {
+  public:
+    smart_output(OutputStream &DS);
+    virtual ~smart_output();
+    virtual void put(char x);
+    virtual void put(const char* x, int w);
+    virtual void put(long x, int w);
+    virtual void put_hex(unsigned long x, int w);
+    virtual void put(double x, int w, int p, char f);
+    virtual int write(int bytes, const unsigned char* buffer);
+    virtual void flush();
+
+  private:
+    OutputStream &ds;
+};
+
 
 // ******************************************************************
 // *                                                                *

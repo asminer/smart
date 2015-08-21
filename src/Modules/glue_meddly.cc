@@ -16,6 +16,76 @@
 
 // ******************************************************************
 // *                                                                *
+// *                      smart_output methods                      *
+// *                                                                *
+// ******************************************************************
+
+smart_output::smart_output(OutputStream &DS) : output(), ds(DS)
+{
+}
+
+smart_output::~smart_output()
+{
+}
+
+void smart_output::put(char x)
+{
+  ds.Put(x);
+}
+
+void smart_output::put(const char* x, int w)
+{
+  ds.Put(x, w);
+}
+
+void smart_output::put(long x, int w)
+{
+  ds.Put(x, w);
+}
+
+void smart_output::put_hex(unsigned long x, int w)
+{
+  ds.PutHex(x); // width?
+}
+
+void smart_output::put(double x, int w, int p, char f)
+{
+  OutputStream::real_format old_rf = ds.GetRealFormat();
+
+  switch (f) {
+    case 'e':
+        ds.SetRealFormat(OutputStream::RF_SCIENTIFIC);
+        break;
+
+    case 'f':
+        ds.SetRealFormat(OutputStream::RF_FIXED);
+        break;
+
+    default:
+        ds.SetRealFormat(OutputStream::RF_GENERAL);
+        break;
+  };
+  ds.Put(x, w, p); 
+
+  ds.SetRealFormat(old_rf);
+}
+
+int smart_output::write(int bytes, const unsigned char* buffer)
+{
+  // hmm.
+  for (int i=0; i<bytes; i++) {
+    ds.Put(buffer[i]);
+  }
+  return bytes; // everything will work!  no worries, right?
+}
+
+void smart_output::flush()
+{
+  ds.flush();
+}
+
+// ******************************************************************
+// *                                                                *
 // *                      mdd  library credits                      *
 // *                                                                *
 // ******************************************************************
@@ -198,8 +268,8 @@ void meddly_encoder::dumpForest(DisplayStream &s) const
 {
   s.flush();
   DCASSERT(F);
-  F->showInfo(s.getDisplay(), 1);
-  fflush(s.getDisplay());
+  smart_output sout(s);
+  F->showInfo(sout, 1);
 }
 
 shared_object* meddly_encoder::makeEdge(const shared_object* e)
