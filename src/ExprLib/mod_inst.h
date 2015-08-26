@@ -227,7 +227,16 @@ public:
         @return  The number of edges, if it fits in a long;
                 -1 otherwise (on overflow).
   */
-  virtual long getNumArcs(bool show) const;
+  virtual long getNumArcs() const;
+
+  /** Show the reachability graph or underlying process.
+      This must be provided in derived classes, the
+      default behavior here is to print an error message.
+        @param  internal  If true, show internal details of state storage only.
+                          If false, show a sane list of states, unless there
+                          are too many to display.
+  */
+  virtual void showArcs(bool internal) const;
 
   /** Show the initial state(s) of the graph.
       This must be provided in derived classes, the

@@ -22,7 +22,7 @@ fsm d0 := {
     print("d0 states:\n"); 
     show_states(false); 
     print("d0 ");
-    show_arcs;
+    show_arcs(false);
   };
 };
 
@@ -93,7 +93,7 @@ fsm d3(int dummy) := {
     print("d3 states:\n"); 
     show_states(false); 
     print("d3 ");
-    show_arcs;
+    show_arcs(false);
   };
 };
 
@@ -120,7 +120,7 @@ fsm d4(int N) := {
   }
   void show := { 
     show_states(false); 
-    show_arcs;
+    show_arcs(false);
   };
 };
 

@@ -102,6 +102,15 @@ void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal
 
   DCASSERT(m);
   DCASSERT(mdd_wrap);
+  DCASSERT(states);
+
+  if (internal) {
+    cout << "Internal state space representation (using MEDDLY):\n";
+    mdd_wrap->showNodeGraph(cout, states);
+    cout.flush();
+    return;
+  }
+
   long ns;
   mdd_wrap->getCardinality(states, ns);
   if (m->tooManyStates(ns, true)) return;

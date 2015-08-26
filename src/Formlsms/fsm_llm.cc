@@ -123,7 +123,8 @@ public:
   virtual void getInitialStates(result &x) const;
 
   // graph requirements
-  virtual long getNumArcs(bool show) const;
+  virtual long getNumArcs() const;
+  virtual void showArcs(bool internal) const;
   virtual void countPaths(const intset &src, const intset &dest, result& count);
   virtual bool requireByRows(const named_msg* rep);
   virtual bool requireByCols(const named_msg* rep);
@@ -399,14 +400,22 @@ void explicit_fsm::getInitialStates(result &x) const
   x.setPtr(new stateset(this, initss));
 }
 
-long explicit_fsm::getNumArcs(bool show) const
+long explicit_fsm::getNumArcs() const
 {
+  DCASSERT(edges);
+  return edges->getNumEdges();
+}
+
+void explicit_fsm::showArcs(bool internal) const
+{
+  // TBD - what to do for internal?
+
   DCASSERT(edges);
   long na = edges->getNumEdges();
 
-  if (!show || !em->hasIO())            return na;
-  if (tooManyStates(num_states, show))  return na;
-  if (tooManyArcs(na, show))            return na;
+  if (!em->hasIO())                     return;
+  if (tooManyStates(num_states, true))  return;
+  if (tooManyArcs(na, true))            return;
 
   long* map = 0;
   long* invmap = 0;
@@ -512,8 +521,6 @@ long explicit_fsm::getNumArcs(bool show) const
     em->cout() << "}\n";
   }
   em->cout().flush();
-
-  return na;
 }
 
 void explicit_fsm
