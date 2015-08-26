@@ -83,7 +83,8 @@ public:
 
   virtual void findDeadlockedStates(stateset &) const;
 
-  virtual long getNumArcs(bool show) const;
+  virtual long getNumArcs() const;
+  virtual void showArcs(bool internal) const;
 
   // Numerical solutions:
   virtual bool computeSteadyState(double* probs) const;
@@ -343,13 +344,10 @@ void meddly_mc::findDeadlockedStates(stateset &p) const
   pse->E -= live;
 }
 
-long meddly_mc::getNumArcs(bool show) const
+long meddly_mc::getNumArcs() const
 {
   DCASSERT(process);
   DCASSERT(process->mxd_wrap);
-
-  long ns;
-  process->mdd_wrap->getCardinality(process->states, ns);
 
   long na = -1;
   if (process->proc_uses_actual) {
@@ -371,9 +369,20 @@ long meddly_mc::getNumArcs(bool show) const
     Delete(actual);
   }
 
-  if (!show)                    return na;
-  if (tooManyStates(ns, show))  return na;
-  if (tooManyArcs(na, show))    return na;
+  return na;
+}
+
+void meddly_mc::showArcs(bool internal) const
+{
+
+  long ns = getNumStates();
+  if (ns<0) return;
+
+  long na = getNumArcs();
+  if (na<0) return;
+
+  if (tooManyStates(ns, true))  return;
+  if (tooManyArcs(na, true))    return;
 
   if (!display_graph_node_names) {
     process->buildIndexSet();
@@ -432,8 +441,6 @@ long meddly_mc::getNumArcs(bool show) const
   Delete(tst);
   DCASSERT(count_na == na);
   em->cout().flush();
-  
-  return na;
 }
 
 bool meddly_mc::computeSteadyState(double* probs) const

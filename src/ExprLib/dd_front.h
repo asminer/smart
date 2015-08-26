@@ -58,13 +58,19 @@ public:
         @param  e   Edge pointer
         @throws     An error, as appropriate
   */
-  virtual void dumpNode(DisplayStream &s, shared_object* e) const = 0;
+  virtual void dumpNode(OutputStream &s, shared_object* e) const = 0;
+
+  /**
+      For debugging, and displaying the internal representation.
+      Display the graph rooted at the given node.
+  */
+  virtual void showNodeGraph(OutputStream &s, shared_object* e) const = 0;
 
   /** For debugging, display the current "forest".
       Might not be supported for all backends.
         @param  s   Output stream to write to.
   */
-  virtual void dumpForest(DisplayStream &s) const = 0;
+  virtual void dumpForest(OutputStream &s) const = 0;
 
   /** Does the forest separate primed from unprimed vars?
       This affects numbering.

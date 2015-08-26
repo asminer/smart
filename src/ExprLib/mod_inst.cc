@@ -162,15 +162,20 @@ graph_lldsm::graph_lldsm(model_type t) : lldsm(t)
 
 void graph_lldsm::getNumArcs(result& x) const
 {
-  x.setInt(getNumArcs(false));
+  x.setInt(getNumArcs());
   if (x.getInt() < 0) {
     x.setNull();
   } 
 }
 
-long graph_lldsm::getNumArcs(bool show) const
+long graph_lldsm::getNumArcs() const
 {
   return bailOut(__FILE__, __LINE__, "Can't count arcs");
+}
+
+void graph_lldsm::showArcs(bool internal) const
+{
+  bailOut(__FILE__, __LINE__, "Can't dispaly arcs (or process)");
 }
 
 void graph_lldsm::showInitial() const

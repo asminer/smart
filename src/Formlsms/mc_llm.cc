@@ -331,7 +331,8 @@ public:
   virtual void showStates(bool internal) const;
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
-  virtual long getNumArcs(bool show) const;
+  virtual long getNumArcs() const;
+  virtual void showArcs(bool internal) const;
   virtual void showInitial() const;
   virtual long getNumClasses(bool show) const;
   virtual void getClass(long cl, intset &statelist) const;
@@ -675,14 +676,22 @@ void explicit_mc::getPotential(expr* p, result &ss) const
   }
 }
 
-long explicit_mc::getNumArcs(bool show) const
+long explicit_mc::getNumArcs() const
 {
+  DCASSERT(chain);
+  return chain->getNumArcs();
+}
+
+void explicit_mc::showArcs(bool internal) const
+{
+  // TBD - internal?
+
   DCASSERT(chain);
   long na = chain->getNumArcs();
 
-  if (!show || !em->hasIO())            return na;
-  if (tooManyStates(num_states, show))  return na;
-  if (tooManyArcs(na, show))            return na;
+  if (!em->hasIO())                     return;
+  if (tooManyStates(num_states, true))  return;
+  if (tooManyArcs(na, true))            return;
 
   long* map = 0;
   long* invmap = 0;
@@ -788,8 +797,6 @@ long explicit_mc::getNumArcs(bool show) const
     em->cout() << "}\n";
   }
   em->cout().flush();
-
-  return na;
 }
 
 

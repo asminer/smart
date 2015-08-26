@@ -61,8 +61,9 @@ public:
 
   virtual void findDeadlockedStates(stateset &) const;
 
-  virtual long getNumArcs(bool show) const;
+  virtual long getNumArcs() const;
   virtual void getNumArcs(result& count) const;
+  virtual void showArcs(bool internal) const;
 };
 
 // ******************************************************************
@@ -193,13 +194,10 @@ void meddly_fsm::findDeadlockedStates(stateset &p) const
   pse->E -= live;
 }
 
-long meddly_fsm::getNumArcs(bool show) const
+long meddly_fsm::getNumArcs() const
 {
   DCASSERT(process);
   DCASSERT(process->mxd_wrap);
-
-  long ns;
-  process->mdd_wrap->getCardinality(process->states, ns);
 
   long na = -1;
   if (process->proc_uses_actual) {
@@ -220,9 +218,21 @@ long meddly_fsm::getNumArcs(bool show) const
     Delete(actual);
   }
 
-  if (!show)                    return na;
-  if (tooManyStates(ns, show))  return na;
-  if (tooManyArcs(na, show))    return na;
+  return na;
+}
+
+void meddly_fsm::showArcs(bool internal) const
+{
+  long ns = getNumStates();
+  if (ns<0) return;
+
+  long na = getNumArcs();
+  if (na<0) return;
+
+// TBD - internal
+
+  if (tooManyStates(ns, true))  return;
+  if (tooManyArcs(na, true))    return;
 
   if (!display_graph_node_names) {
     process->buildIndexSet();
@@ -281,8 +291,6 @@ long meddly_fsm::getNumArcs(bool show) const
   Delete(tst);
   DCASSERT(na == count_na);
   em->cout().flush();
-  
-  return na;
 }
 
 void meddly_fsm::getNumArcs(result &count) const

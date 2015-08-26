@@ -257,16 +257,23 @@ meddly_encoder::~meddly_encoder()
   MEDDLY::destroyForest(F);
 }
 
-void meddly_encoder::dumpNode(DisplayStream &s, shared_object* e) const
+void meddly_encoder::dumpNode(OutputStream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
   if (0==me) throw  Invalid_Edge;
   s.Put(me->E.getNode());
 }
 
-void meddly_encoder::dumpForest(DisplayStream &s) const
+void meddly_encoder::showNodeGraph(OutputStream &s, shared_object* e) const
 {
-  s.flush();
+  shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
+  if (0==me) throw  Invalid_Edge;
+  smart_output sout(s);
+  me->E.show(sout, 2);
+}
+
+void meddly_encoder::dumpForest(OutputStream &s) const
+{
   DCASSERT(F);
   smart_output sout(s);
   F->showInfo(sout, 1);

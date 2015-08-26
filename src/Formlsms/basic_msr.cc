@@ -169,7 +169,7 @@ void numarcs_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setPtr(new bigint(na));
   }
 #ifdef ALLOW_SHOW_PARAMS
-  if (show) gllm->getNumArcs(true);
+  if (show) gllm->showArcs(false);
 #endif
 }
 
@@ -462,7 +462,7 @@ public:
 showstates_si::showstates_si()
  : proc_noengine(Nothing, em->VOID, "show_states", 2)
 {
-  SetDocumentation("Displays the reachability set to the current output stream, unless there are too many states.  The reachability set will be constructed first, if necessary.");
+  SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the states is displayed; otherwise, a storage-independent list of states is displayed (unless there are too many).");
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal", 
@@ -499,9 +499,14 @@ public:
 };
 
 showarcs_si::showarcs_si()
- : proc_noengine(Nothing, em->VOID, "show_arcs", 1)
+ : proc_noengine(Nothing, em->VOID, "show_arcs", 2)
 {
-  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream, unless it is too large.  The process will be constructed first, if necessary.");
+  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal", 
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
 }
 
 void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
@@ -518,7 +523,12 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
   DCASSERT(gllm);
 
-  gllm->getNumArcs(true);
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  gllm->showArcs(internal); 
 }
 
 // ******************************************************************

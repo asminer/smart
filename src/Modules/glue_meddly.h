@@ -137,8 +137,9 @@ public:
   }
 
 public:
-  virtual void dumpNode(DisplayStream &s, shared_object* e) const;
-  virtual void dumpForest(DisplayStream &s) const;
+  virtual void dumpNode(OutputStream &s, shared_object* e) const;
+  virtual void showNodeGraph(OutputStream &s, shared_object* e) const;
+  virtual void dumpForest(OutputStream &s) const;
 
   virtual shared_object* makeEdge(const shared_object* e);
 

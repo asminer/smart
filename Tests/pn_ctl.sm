@@ -79,7 +79,7 @@ pn cruft(int n) := {
   );
   
   void show_rs := show_states(false);
-  void show_rg := show_arcs;
+  void show_rg := show_arcs(false);
   bigint na := num_arcs;
 
   stateset rs := reachable;
