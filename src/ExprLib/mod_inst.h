@@ -44,12 +44,12 @@ class lldsm : public shared_object {
   static long max_state_display;
 protected:
   static int display_order;
-  static const int DISCOVERY   = 0;
-  static const int LEXICAL   = 1;
-  static const int NATURAL   = 2;
+  static const int DISCOVERY  = 0;
+  static const int LEXICAL    = 1;
+  static const int NATURAL    = 2;
+  static const int num_display_orders = 3;
   static const exprman* em;
   static named_msg numpaths_report;
-  friend void InitLLM(exprman *em);
 
 public:
   // class for visiting states.
@@ -103,6 +103,8 @@ protected:
   virtual ~lldsm();
   virtual const char* getClassName() const = 0;
 public:
+  static void initOptions(exprman* om);
+
   inline model_type Type() const { return type; }
   inline void SetParent(const hldsm* p) {
     DCASSERT(0==parent || p==parent); 
@@ -203,10 +205,12 @@ protected:
   static const int INCOMING   = 1;
   static const int OUTGOING   = 2;
   static const int TRIPLES    = 3;
+  static const int num_graph_display_styles = 4;
   static bool display_graph_node_names;
-  friend void InitLLM(exprman *em);
 public:
   graph_lldsm(model_type t);
+
+  static void initOptions(exprman* om);
 
   /** Get the number of edges in the reachability graph.
       The default version provided here will only work if
@@ -318,7 +322,6 @@ protected:
 class hldsm : public shared_object {
 protected:
   static const exprman* em;
-  friend void InitLLM(exprman *em);
 public:
   /** Possible types of high level models.
       Use negatives for anything that will NEVER require solution engines.
@@ -393,6 +396,7 @@ public:
 protected:
   virtual ~hldsm();
 public:
+  static void initOptions(exprman* om);
   inline model_type Type() const { return type; } 
   inline void setType(model_type t) {
     DCASSERT(Unknown == type);

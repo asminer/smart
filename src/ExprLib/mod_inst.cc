@@ -57,6 +57,55 @@ lldsm::~lldsm()
 {
 }
 
+void lldsm::initOptions(exprman* om)
+{
+  em = om;
+  if (0==om) return;
+
+  // set up options
+  // ------------------------------------------------------------------
+  om->addOption(
+    MakeIntOption(
+      max_state_display_option,
+      "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
+      max_state_display,
+      0, 1000000000
+    )
+  );
+  // ------------------------------------------------------------------
+  option* report = om->findOption("Report");
+  numpaths_report.Initialize(
+    report,
+    "num_paths",
+    "When set, performance data for counting number of paths is displayed.",
+    false
+  );
+  // ------------------------------------------------------------------
+  radio_button** do_list = new radio_button*[num_display_orders];
+  do_list[DISCOVERY] = new radio_button(
+      "DISCOVERY", 
+      "States are displayed in the order in which they are discovered (or defined), if possible.", 
+      DISCOVERY
+  );
+  do_list[LEXICAL] = new radio_button(
+      "LEXICAL", 
+      "States are sorted by lexical order.",
+      LEXICAL
+  );
+  do_list[NATURAL] = new radio_button(
+      "NATURAL", 
+      "States are displayed in the most natural order for the selected state space data structure.",
+      NATURAL
+  );
+  display_order = NATURAL;
+  om->addOption( 
+    MakeRadioOption("StateDisplayOrder",
+      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
+      do_list, num_display_orders, display_order
+    )
+  );
+}
+
 const char* lldsm::getNameOf(model_type t)
 {
   switch (t) {
@@ -160,6 +209,57 @@ graph_lldsm::graph_lldsm(model_type t) : lldsm(t)
 {
 }
 
+void graph_lldsm::initOptions(exprman* om)
+{
+  if (0==om) return;
+
+  // ------------------------------------------------------------------
+  om->addOption(
+    MakeIntOption(
+      max_arc_display_option,
+      "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
+      max_arc_display,
+      0, 1000000000
+    )
+  );
+  // ------------------------------------------------------------------
+  radio_button** gds_list = new radio_button*[num_graph_display_styles];
+  gds_list[DOT] = new radio_button(
+      "DOT", 
+      "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
+      DOT
+  );
+  gds_list[INCOMING] = new radio_button(
+      "INCOMING", 
+      "Graphs are displayed by listing the incoming edges for each node.",
+      INCOMING
+  );
+  gds_list[OUTGOING] = new radio_button(
+      "OUTGOING", 
+      "Graphs are displayed by listing the outgoing edges for each node.",
+      OUTGOING
+  );
+  gds_list[TRIPLES] = new radio_button(
+      "TRIPLES", 
+      "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
+      TRIPLES
+  );
+  graph_display_style = OUTGOING;
+  om->addOption(
+    MakeRadioOption("GraphDisplayStyle",
+      "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
+      gds_list, num_graph_display_styles, graph_display_style
+    )
+  );
+  // ------------------------------------------------------------------
+  om->addOption(
+    MakeBoolOption("DisplayGraphNodeNames",
+      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
+      display_graph_node_names
+    )
+  );
+}
+
 void graph_lldsm::getNumArcs(result& x) const
 {
   x.setInt(getNumArcs());
@@ -258,6 +358,11 @@ hldsm::~hldsm()
 {
   Delete(process);
   delete part;
+}
+
+void hldsm::initOptions(exprman* om)
+{
+  em = om;
 }
 
 bool hldsm::Print(OutputStream &s, int) const
@@ -1212,94 +1317,7 @@ hldsm* MakeEnumeratedModel(lldsm* mdl)
 
 void InitLLM(exprman* om)
 {
-  lldsm::em = om;
-  hldsm::em = om;
-
-  // set up options
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeIntOption(
-      lldsm::max_state_display_option,
-      "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
-      lldsm::max_state_display,
-      0, 1000000000
-    )
-  );
-  // ------------------------------------------------------------------
-  option* report = om->findOption("Report");
-  lldsm::numpaths_report.Initialize(
-    report,
-    "num_paths",
-    "When set, performance data for counting number of paths is displayed.",
-    false
-  );
-  // ------------------------------------------------------------------
-  radio_button** do_list = new radio_button*[3];
-  do_list[lldsm::DISCOVERY] = new radio_button(
-      "DISCOVERY", 
-      "States are displayed in the order in which they are discovered (or defined), if possible.", 
-      lldsm::DISCOVERY
-  );
-  do_list[lldsm::LEXICAL] = new radio_button(
-      "LEXICAL", 
-      "States are sorted by lexical order.",
-      lldsm::LEXICAL
-  );
-  do_list[lldsm::NATURAL] = new radio_button(
-      "NATURAL", 
-      "States are displayed in the most natural order for the selected state space data structure.",
-      lldsm::NATURAL
-  );
-  lldsm::display_order = lldsm::NATURAL;
-  om->addOption(
-    MakeRadioOption("StateDisplayOrder",
-      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
-      do_list, 3, lldsm::display_order
-    )
-  );
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeIntOption(
-      graph_lldsm::max_arc_display_option,
-      "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
-      graph_lldsm::max_arc_display,
-      0, 1000000000
-    )
-  );
-  // ------------------------------------------------------------------
-  radio_button** gds_list = new radio_button*[3];
-  gds_list[graph_lldsm::DOT] = new radio_button(
-      "DOT", 
-      "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
-      graph_lldsm::DOT
-  );
-  gds_list[graph_lldsm::INCOMING] = new radio_button(
-      "INCOMING", 
-      "Graphs are displayed by listing the incoming edges for each node.",
-      graph_lldsm::INCOMING
-  );
-  gds_list[graph_lldsm::OUTGOING] = new radio_button(
-      "OUTGOING", 
-      "Graphs are displayed by listing the outgoing edges for each node.",
-      graph_lldsm::OUTGOING
-  );
-  gds_list[graph_lldsm::TRIPLES] = new radio_button(
-      "TRIPLES", 
-      "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
-      graph_lldsm::TRIPLES
-  );
-  graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
-  om->addOption(
-    MakeRadioOption("GraphDisplayStyle",
-      "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
-      gds_list, 4, graph_lldsm::graph_display_style
-    )
-  );
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeBoolOption("DisplayGraphNodeNames",
-      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
-      graph_lldsm::display_graph_node_names
-    )
-  );
+  lldsm::initOptions(om);
+  graph_lldsm::initOptions(om);
+  hldsm::initOptions(om);
 }

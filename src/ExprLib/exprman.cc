@@ -123,6 +123,7 @@ exprman::exprman(io_environ* i, option_manager* o)
   BIGINT = 0;
   STATESET = 0;
   STATEDIST = 0;
+  STATEPROBS = 0;
 
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
