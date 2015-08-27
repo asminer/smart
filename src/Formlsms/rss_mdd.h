@@ -31,6 +31,11 @@ public:
   meddly_encoder* proc_wrap;
   shared_ddedge* proc;
   bool proc_uses_actual;
+
+  // TBD - proc should be an array of edges;
+  // monolithic with dimension 1, or 
+  // by events or other partitioning with dimension >1.
+
 public:
   meddly_states();
 protected:

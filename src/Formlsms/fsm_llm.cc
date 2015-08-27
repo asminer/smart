@@ -408,9 +408,32 @@ long explicit_fsm::getNumArcs() const
 
 void explicit_fsm::showArcs(bool internal) const
 {
+  DCASSERT(edges);
+  if (internal) {
+    em->cout() << "Internal representation for graph:\n";
+
+    GraphLib::digraph::matrix m;
+    if (!edges->exportFinished(m)) {
+      em->cout() << "  Couldn't export graph to matrix\n";
+      return;
+    } 
+
+    const char* rptr = (m.is_transposed) ? "column pointers" : "row pointers";
+    const char* cind = (m.is_transposed) ? "row index      " : "column index";
+
+    em->cout() << "  " << rptr << ": [";
+    em->cout().PutArray(m.rowptr, num_states+1);
+    em->cout() << "]\n";
+
+    em->cout() << "  " << cind << ": [";
+    em->cout().PutArray(m.colindex, edges->getNumEdges());
+    em->cout() << "]\n";
+    
+    return;
+  }
+
   // TBD - what to do for internal?
 
-  DCASSERT(edges);
   long na = edges->getNumEdges();
 
   if (!em->hasIO())                     return;
