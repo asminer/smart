@@ -223,13 +223,22 @@ long meddly_fsm::getNumArcs() const
 
 void meddly_fsm::showArcs(bool internal) const
 {
+  if (internal) {
+    DCASSERT(process->proc_wrap);
+    DCASSERT(process->proc);
+
+    em->cout() << "Internal process representation (using MEDDLY):\n";
+    process->proc_wrap->showNodeGraph(em->cout(), process->proc);
+    em->cout().flush();
+
+    return;
+  }
+
   long ns = getNumStates();
   if (ns<0) return;
 
   long na = getNumArcs();
   if (na<0) return;
-
-// TBD - internal
 
   if (tooManyStates(ns, true))  return;
   if (tooManyArcs(na, true))    return;

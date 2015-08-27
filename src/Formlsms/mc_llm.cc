@@ -684,12 +684,20 @@ long explicit_mc::getNumArcs() const
 
 void explicit_mc::showArcs(bool internal) const
 {
-  // TBD - internal?
+  if (!em->hasIO()) {
+    return;
+  }
+
+  if (internal) {
+    em->cout() << "Internal Markov chain representation:\n";
+    // TBD - internal?
+    em->cout() << "  cannot display, sorry\n";
+    return;
+  }
 
   DCASSERT(chain);
   long na = chain->getNumArcs();
 
-  if (!em->hasIO())                     return;
   if (tooManyStates(num_states, true))  return;
   if (tooManyArcs(na, true))            return;
 
