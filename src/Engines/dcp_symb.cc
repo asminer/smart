@@ -4,7 +4,6 @@
 #include "dcp_symb.h"
 
 #include "../Options/options.h"
-#include "../Timers/timers.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
@@ -19,6 +18,8 @@
 
 // Templates
 #include "../include/radixsort.h"
+
+#include "timerlib.h"
 
 // #define DEBUG_STUFF
 // #define DEBUG_OVERALL
@@ -306,14 +307,12 @@ protected:
     return false;
   };
 
-  inline bool stopGen(const char* n, const timer* w, long mem) {
+  inline bool stopGen(const char* n, const timer &w, long mem) {
     if (report.startReport()) {
       report.report() << "Generated ";
       report.report() << " reachability set for model " << n << "\n";
-      if (w) {
-        report.report() << "\t" << w->elapsed() << " seconds ";
-        report.report() << "required for generation\n";
-      }
+      report.report() << "\t" << w.elapsed_seconds() << " seconds ";
+      report.report() << "required for generation\n";
       if (mem >= 0) {
         report.report().Put('\t');
         report.report().PutMemoryCount(mem, 3);
@@ -436,11 +435,10 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
   DCASSERT(nem);
   DCASSERT(nem->NumVars()>0);
 
-  timer* watch = 0;
+  timer watch;
   if (startGen(hm->Name())) {
     em->report().Put('\n');
     em->stopIO();
-    watch = makeTimer();
   }
 
   int N = nem->NumVars();
@@ -535,7 +533,6 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
     em->report() << "\n";
     em->stopIO();
     // constraints.show(em->Fstdout(), 1);
-    doneTimer(watch);
   }
 
   hm->SetProcess(new mdd_states_only(ddlwrap, d, constraints));

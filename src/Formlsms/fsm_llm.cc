@@ -3,7 +3,6 @@
 
 #include "fsm_llm.h"
 #include "check_llm.h"
-#include "../Timers/timers.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
@@ -19,6 +18,7 @@
 #include "graphlib.h"
 #include "lslib.h"
 #include "intset.h"
+#include "timerlib.h"
 
 // #define DEBUG_EG
 
@@ -556,11 +556,10 @@ void explicit_fsm
   }
 
   // build backward set from dest, with card "nb".
-  timer* sw = makeTimer();
+  timer sw;
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Building backward set\n";
     numpaths_report.stopIO();
-    sw->reset();
   }
   intset back(num_states);
   long nb = 0;
@@ -575,7 +574,7 @@ void explicit_fsm
     nb = back.cardinality();
   } // else not by columns
   if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Built    backward set, took " << sw->elapsed();
+    numpaths_report.report() << "Built    backward set, took " << sw.elapsed_seconds();
     numpaths_report.report() << " seconds\n";
     numpaths_report.stopIO();
   }
@@ -601,10 +600,10 @@ void explicit_fsm
 
   bigint acc;
 
+  sw.reset();
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Counting paths\n";
     numpaths_report.stopIO();
-    sw->reset();
   }
 
   // Initialize paths
@@ -716,15 +715,15 @@ void explicit_fsm
 
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Counted  paths, took ";
-    numpaths_report.report() << sw->elapsed() << " seconds\n";
+    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
     numpaths_report.stopIO();
   }
 
   // cleanup
+  sw.reset();
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Cleaning up\n";
     numpaths_report.stopIO();
-    sw->reset();
   }
   delete[] stack;
   for (long i=0; i<num_states; i++) Delete(paths[i]);
@@ -732,10 +731,9 @@ void explicit_fsm
   delete[] shortpc;
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Cleanup took ";
-    numpaths_report.report() << sw->elapsed() << " seconds\n";
+    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
     numpaths_report.stopIO();
   }
-  doneTimer(sw);
 
   if (acc.cmp_si(0) < 0) {
     count.setInfinity(1);
@@ -884,11 +882,10 @@ bool explicit_fsm::dumpDot(OutputStream &s) const
 
 bool explicit_fsm::transposeEdges(const named_msg* rep, bool byrows)
 {
-  timer* sw = 0;
+  timer sw;
   if (rep && rep->startReport()) {
     rep->report() << "Transposing edges\n";
     rep->stopIO();
-    sw = makeTimer();
   }
 
   // transpose edges 
@@ -899,11 +896,10 @@ bool explicit_fsm::transposeEdges(const named_msg* rep, bool byrows)
   try {
     edges->finish(fo);
     if (rep && rep->startReport()) {
-      rep->report() << "Transposed  edges, took " << sw->elapsed();
+      rep->report() << "Transposed  edges, took " << sw.elapsed_seconds();
       rep->report() << " seconds\n";
       rep->stopIO();
     }
-    doneTimer(sw);
     return true;
   }
   catch (GraphLib::error e) {
@@ -913,7 +909,6 @@ bool explicit_fsm::transposeEdges(const named_msg* rep, bool byrows)
       em->cerr() << e.getString() << "\n";
       em->stopIO();
     }
-    doneTimer(sw);
     return false;
   }
 }

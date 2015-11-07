@@ -2,7 +2,6 @@
 // $Id$
 
 #include "mc_llm.h"
-#include "../Timers/timers.h"
 #include "../Options/options.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
@@ -20,6 +19,7 @@
 #include "statelib.h"
 #include "intset.h"
 #include "rng.h"
+#include "timerlib.h"
 
 // #define DEBUG
 // #define DEBUG_EG
@@ -40,12 +40,10 @@ int markov_lldsm::access = markov_lldsm::BY_COLUMNS;
 
 markov_lldsm::markov_lldsm(bool discr) : stochastic_lldsm(discr ? DTMC : CTMC)
 {
-  watch = makeTimer();
 }
 
 markov_lldsm::~markov_lldsm()
 {
-  doneTimer(watch);
 }
 
 const LS_Options& markov_lldsm::getSolverOptions()
@@ -57,41 +55,37 @@ const LS_Options& markov_lldsm::getSolverOptions()
   return lsopts[solver];
 }
 
-void markov_lldsm::startTransientReport(double t) const
+void markov_lldsm::startTransientReport(timer& watch, double t) const
 {
   if (!report.startReport()) return;
   report.report() << "Starting transient solver, t=" << t << "\n";
   report.stopIO();
-  DCASSERT(watch);
-  watch->reset();
+  watch.reset();
 }
 
-void markov_lldsm::stopTransientReport(long iters) const
+void markov_lldsm::stopTransientReport(timer& watch, long iters) const
 {
   if (!report.startReport()) return;
-  DCASSERT(watch);
   report.report() << "Transient solver: ";
-  report.report() << watch->elapsed() << " seconds, ";
+  report.report() << watch.elapsed_seconds() << " seconds, ";
   report.report() << iters << " iterations\n";
   report.stopIO();
 }
 
-void markov_lldsm::startSteadyReport() const
+void markov_lldsm::startSteadyReport(timer& watch) const
 {
   if (!report.startReport()) return;
   report.report() << "Solving steady-state distribution using ";
   report.report() << getSolver() << "\n";
   report.stopIO();
-  DCASSERT(watch);
-  watch->reset();
+  watch.reset();
 }
 
-void markov_lldsm::stopSteadyReport(long iters) const
+void markov_lldsm::stopSteadyReport(timer& watch, long iters) const
 {
   if (!report.startReport()) return;
-  DCASSERT(watch);
   report.report() << "Solved  steady-state distribution\n";
-  report.report() << "\t" << watch->elapsed() << " seconds";
+  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
   report.report() << " required for " << getSolver() << "\n";
   if (iters > 0) {
     report.report() << "\t" << iters << " iterations";
@@ -100,22 +94,20 @@ void markov_lldsm::stopSteadyReport(long iters) const
   em->stopIO();
 }
 
-void markov_lldsm::startTTAReport() const
+void markov_lldsm::startTTAReport(timer& watch) const
 {
   if (!report.startReport()) return;
   report.report() << "Solving time to absorption using ";
   report.report() << getSolver() << "\n";
   report.stopIO();
-  DCASSERT(watch);
-  watch->reset();
+  watch.reset();
 }
 
-void markov_lldsm::stopTTAReport(long iters) const
+void markov_lldsm::stopTTAReport(timer& watch, long iters) const
 {
   if (!report.startReport()) return;
-  DCASSERT(watch);
   report.report() << "Solved  time to absorption\n";
-  report.report() << "\t" << watch->elapsed() << " seconds";
+  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
   report.report() << " required for " << getSolver() << "\n";
   if (iters > 0) {
     report.report() << "\t" << iters << " iterations";
@@ -124,40 +116,36 @@ void markov_lldsm::stopTTAReport(long iters) const
   report.stopIO();
 }
 
-void markov_lldsm::startAccumulatedReport(double t) const
+void markov_lldsm::startAccumulatedReport(timer& watch, double t) const
 {
   if (!report.startReport()) return;
   report.report() << "Starting accumulated solver, t=" << t << "\n";
   report.stopIO();
-  DCASSERT(watch);
-  watch->reset();
+  watch.reset();
 }
 
-void markov_lldsm::stopAccumulatedReport(long iters) const
+void markov_lldsm::stopAccumulatedReport(timer& watch, long iters) const
 {
   if (!report.startReport()) return;
-  DCASSERT(watch);
   report.report() << "Accumulated solver: ";
-  report.report() << watch->elapsed() << " seconds, ";
+  report.report() << watch.elapsed_seconds() << " seconds, ";
   report.report() << iters << " iterations\n";
   report.stopIO();
 }
 
-void markov_lldsm::startRevTransReport(double t) const
+void markov_lldsm::startRevTransReport(timer& watch, double t) const
 {
   if (!report.startReport()) return;
   report.report() << "Starting reverse transient solver, t=" << t << "\n";
   report.stopIO();
-  DCASSERT(watch);
-  watch->reset();
+  watch.reset();
 }
 
-void markov_lldsm::stopRevTransReport(long iters) const
+void markov_lldsm::stopRevTransReport(timer& watch, long iters) const
 {
   if (!report.startReport()) return;
-  DCASSERT(watch);
   report.report() << "Reverse transient solver: ";
-  report.report() << watch->elapsed() << " seconds, ";
+  report.report() << watch.elapsed_seconds() << " seconds, ";
   report.report() << iters << " iterations\n";
   report.stopIO();
 }
@@ -179,10 +167,10 @@ const char* markov_lldsm::getSolver()
 // *                                                                *
 // ******************************************************************
 
-class mc_reporter : public GraphLib::generic_graph::timer {
+class mc_reporter : public GraphLib::generic_graph::timer_hook {
   const exprman* em;
   named_msg report;
-  ::timer* watch;
+  timer watch;
 public:
   mc_reporter(const exprman* The_em);
   virtual ~mc_reporter();
@@ -193,7 +181,7 @@ public:
 };
 
 mc_reporter::mc_reporter(const exprman* The_em) 
-: GraphLib::generic_graph::timer() 
+: GraphLib::generic_graph::timer_hook() 
 {
   em = The_em;
   option* parent = em ? em->findOption("Report") : 0;
@@ -202,12 +190,10 @@ mc_reporter::mc_reporter(const exprman* The_em)
     "When set, performance details for Markov chain finalization steps are reported.",
     false
   );
-  watch = makeTimer();
 }
 
 mc_reporter::~mc_reporter()
 {
-  doneTimer(watch);
 }
 
 void mc_reporter::start(const char* w)
@@ -220,12 +206,12 @@ void mc_reporter::start(const char* w)
   report.report() << w;
   long written = strlen(w);
   report.report().Pad('.', 30-written);
-  watch->reset();
+  watch.reset();
 }
 
 void mc_reporter::stop()
 {
-  report.report() << " " << watch->elapsed() << " seconds\n";
+  report.report() << " " << watch.elapsed_seconds() << " seconds\n";
   report.stopIO();
 }
 
@@ -1013,9 +999,10 @@ bool explicit_mc
   opts.accumulator = aux2;
 
   try {
-    startTransientReport(t); 
+    timer w;
+    startTransientReport(w, t); 
     chain->computeTransient(t, probs, opts);
-    stopTransientReport(opts.Steps);
+    stopTransientReport(w, opts.Steps);
     return true;
   }
   catch (MCLib::error e) {
@@ -1040,9 +1027,10 @@ bool explicit_mc::computeAccumulated(double t, const double* p0, double* n,
   opts.kill_aux_vectors = false;
 
   try {
-    startAccumulatedReport(t);
+    timer w;
+    startAccumulatedReport(w, t);
     chain->accumulate(t, p0, n, opts);
-    stopAccumulatedReport(opts.Steps);
+    stopAccumulatedReport(w, opts.Steps);
     return true;
   }
   catch (MCLib::error e) {
@@ -1061,14 +1049,15 @@ bool explicit_mc::computeSteadyState(double* probs) const
   if (0==chain) return false;
   if (0==probs) return false;
 
-  startSteadyReport(); 
-  LS_Output outdata;
   try {
+    LS_Output outdata;
     LS_Vector ls_init;
+    timer w;
+    startSteadyReport(w); 
     DCASSERT(initial);
     initial->ExportTo(ls_init);
     chain->computeSteady(ls_init, probs, getSolverOptions(), outdata);
-    stopSteadyReport(outdata.num_iters);
+    stopSteadyReport(w, outdata.num_iters);
     return statusOK(outdata, "steady-state");
   }
   catch (MCLib::error e) {
@@ -1081,7 +1070,6 @@ bool explicit_mc
 {
   if (0==chain || 0==p0 || 0==x) return false;
 
-  startTTAReport();
   LS_Output outdata;
   LS_Vector p0vect;
   p0vect.size = chain->getNumStates();
@@ -1089,8 +1077,10 @@ bool explicit_mc
   p0vect.d_value = p0;
   p0vect.f_value = 0;
   try {
+    timer w;
+    startTTAReport(w);
     chain->computeTTA(p0vect, x, getSolverOptions(), outdata);
-    stopTTAReport(outdata.num_iters);
+    stopTTAReport(w, outdata.num_iters);
     return statusOK(outdata, "time in states");
   }
   catch (MCLib::error e) {
@@ -1103,7 +1093,6 @@ bool explicit_mc
 {
   if (0==chain || 0==p0 || 0==x) return false;
 
-  startTTAReport();
   LS_Output outdata;
   LS_Vector p0vect;
   p0vect.size = chain->getNumStates();
@@ -1111,8 +1100,10 @@ bool explicit_mc
   p0vect.d_value = p0;
   p0vect.f_value = 0;
   try {
+    timer w;
+    startTTAReport(w);
     chain->computeClassProbs(p0vect, x, getSolverOptions(), outdata);
-    stopTTAReport(outdata.num_iters);
+    stopTTAReport(w, outdata.num_iters);
     return statusOK(outdata, "class probabilities");
   }
   catch (MCLib::error e) {
@@ -1263,9 +1254,10 @@ bool explicit_mc::reachesAcceptBy(double t, double* x) const
   MCLib::Markov_chain::transopts opts;
 
   try {
-    startRevTransReport(t); 
+    timer w;
+    startRevTransReport(w, t); 
     chain->reverseTransient(t, x, opts);
-    stopRevTransReport(opts.Steps);
+    stopRevTransReport(w, opts.Steps);
     return true;
   }
   catch (MCLib::error e) {

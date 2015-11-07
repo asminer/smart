@@ -4,7 +4,6 @@
 #include "gen_exp_ph.h"
 #include "gen_rg_base.h"
 #include "../ExprLib/mod_vars.h"
-#include "../Timers/timers.h"
 
 // Formalisms and such
 #include "../Formlsms/phase_hlm.h"
@@ -17,6 +16,7 @@
 #include "statelib.h"
 #include "mclib.h"
 #include "lslib.h"
+#include "timerlib.h"
 
 // **************************************************************************
 // *                                                                        *
@@ -173,13 +173,12 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Start reporting on generation
-  timer* watch = 0;
+  timer watch;
   if (startGen(*hm, the_proc)) {
     if (!rss->IsStatic())
         em->report() << " using " << statelib->getDBMethod();
     em->report() << "\n";
     em->stopIO();
-    watch = makeTimer();
   }
 
   // set initial distribution
@@ -236,7 +235,6 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
       delete rss;
       hm->SetProcess(MakeErrorModel());
     }
-    doneTimer(watch);
     throw bailOut;
   }
 
@@ -244,7 +242,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   if (startCompact(*hm, the_proc)) {
     em->report() << "\n";
     em->stopIO();
-    watch->reset();
+    watch.reset();
   }
 
   // Compact states and finish process, if necessary
@@ -257,7 +255,6 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
     em->stopIO();
-    doneTimer(watch);
   }
 
   // Neat trick! Specify how to finish building the process:

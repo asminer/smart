@@ -9,12 +9,12 @@
 #undef CHECK_RANGE
 
 #include "expl_meddly.h"
+#include "timerlib.h"
 
 
 #define PROC_MEDDLY_DETAILS
 #include "proc_meddly.h"
 
-#include "../Timers/timers.h"
 #include "../Options/options.h"
 
 // Formalisms
@@ -2559,10 +2559,9 @@ private:
     //
     // Start reporting on generation
     //
-    timer* watch = 0;
+    timer watch;
     if (startGen(hm, "reachability set")) {
       em->stopIO();
-      watch = makeTimer();
     }
 
     //
@@ -2591,7 +2590,6 @@ private:
       lm->setCompletionEngine(this);
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -2608,7 +2606,6 @@ private:
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -2622,10 +2619,9 @@ private:
     //
     // Start reporting on generation
     //
-    timer* watch = 0;
+    timer watch;
     if (startGen(hm, "reachability graph")) {
       em->stopIO();
-      watch = makeTimer();
     }
 
     //
@@ -2663,7 +2659,6 @@ private:
       }
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -2680,7 +2675,6 @@ private:
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -2693,10 +2687,9 @@ private:
     //
     // Start reporting on generation
     //
-    timer* watch = 0;
+    timer watch;
     if (startGen(hm, "Markov chain")) {
       em->stopIO();
-      watch = makeTimer();
     }
 
     //
@@ -2746,7 +2739,6 @@ private:
       }
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -2763,7 +2755,6 @@ private:
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      doneTimer(watch);
       Delete(ms);
       ms = 0;
       em->resumeTerm();
@@ -3403,13 +3394,12 @@ void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
   }
   
   // Start reporting on generation
-  timer* watch = 0;
+  timer watch;
   const char* which = states_only_this_time 
                           ? "reachability set" 
                           : "reachability graph";
   if (startGen(*hm, which)) {
     em->stopIO();
-    watch = makeTimer();
   }
 
   // Set up everything
@@ -3427,7 +3417,6 @@ void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
       delete mvo;
       stopGen(true, *hm, which, watch);
       Delete(ms);
-      doneTimer(watch);
       throw e;
     }
   } else {
@@ -3468,7 +3457,6 @@ void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
     DoneBuffers();
 
     Delete(ms);
-    doneTimer(watch);
 
   } // try 
   catch (error status) {
@@ -3483,7 +3471,6 @@ void meddly_explgen_old::RunEngine(hldsm* hm, result &states_only)
     DoneBuffers();
 
     Delete(ms);
-    doneTimer(watch);
 
     throw status;
   }

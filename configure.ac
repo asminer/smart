@@ -102,6 +102,7 @@ AC_TYPE_SIGNAL
 # Our configuration stuff
 
 AC_SUBST(MDD_LIBRARY)
+AC_SUBST(TIMER_LIBRARY)
 AC_SUBST(SIM_LIBRARY)
 AC_SUBST(RNG_LIBRARY)
 AC_SUBST(LS_LIBRARY)
@@ -115,7 +116,6 @@ AC_SUBST(IS_LIBRARY)
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/include/Makefile
-                 src/Timers/Makefile
                  src/Streams/Makefile
                  src/Options/Makefile
                  src/ExprLib/Makefile

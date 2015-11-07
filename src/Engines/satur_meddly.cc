@@ -6,7 +6,6 @@
 #define PROC_MEDDLY_DETAILS
 #include "proc_meddly.h"
 
-#include "../Timers/timers.h"
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
@@ -20,6 +19,8 @@
 #include "../Formlsms/mc_mdd.h"
 
 #include "../Modules/glue_meddly.h"
+
+#include "timerlib.h"
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -83,7 +84,7 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   meddly_states* rss = GrabMeddlyFSMStates(lm);
   DCASSERT(rss);
 
-  timer* watch = makeTimer();
+  timer watch;
   if (report.startReport()) {
     em->report() << "Finishing FSM using Meddly\n";
     em->report() << "\tUsing ";
@@ -97,10 +98,9 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
 
   if (report.startReport()) {
     em->report() << "Finished  FSM using Meddly, took ";
-    em->report() << watch->elapsed() << " seconds\n";
+    em->report() << watch.elapsed_seconds() << " seconds\n";
     em->stopIO();
   }
-  doneTimer(watch);
 
   lm->setCompletionEngine(0);
   delete this;
@@ -156,7 +156,7 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   if (states_only.getBool())  return;
   if (e!=this)                return e->RunEngine(hm, states_only);
 
-  timer* watch = makeTimer();
+  timer watch;
   if (report.startReport()) {
     em->report() << "Finishing CTMC using Meddly\n";
     em->report() << "\tUsing ";
@@ -225,7 +225,7 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
 
   if (report.startReport()) {
     em->report() << "Finished  CTMC using Meddly, took ";
-    em->report() << watch->elapsed() << " seconds\n";
+    em->report() << watch.elapsed_seconds() << " seconds\n";
     rss->proc_wrap->reportStats(em->report());
 #ifdef DEBUG_FINAL_CTMC
     em->report() << "DD edge: " << R->E.getNode() << "\n";
@@ -234,8 +234,6 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
 #endif
     em->stopIO();
   }
-  doneTimer(watch);
-
 
   lm->setCompletionEngine(0);
   delete this;
@@ -268,7 +266,7 @@ public:
   virtual void RunEngine(hldsm* m, result &states_only); 
 
 protected:
-  virtual void generateRSS(meddly_varoption &x, timer* w) = 0;
+  virtual void generateRSS(meddly_varoption &x, timer &w) = 0;
   virtual const char* getAlgName() const = 0;
 
   // Called before we begin state generation
@@ -316,7 +314,7 @@ protected:
   }
 
   inline bool stopGen(bool err, const hldsm &hm, 
-                              const timer* w) const {
+                              const timer &w) const {
     return meddly_procgen::stopGen(err, hm.Name(), "reachability set", w);
   }
 
@@ -620,11 +618,10 @@ void meddly_implicitgen
 
 void meddly_implicitgen::buildRSS(meddly_varoption &x)
 {
-  timer* watch = 0;
-  timer* subwatch = 0;
+  timer watch;
+  timer subwatch;
   if (startGen(x.parent)) {
     em->stopIO();
-    watch = makeTimer();
   }
 
   //
@@ -632,7 +629,6 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   //
   if (report.startReport()) {
     em->report() << "Initializing forests\n";
-    subwatch = makeTimer();
     em->stopIO();
   }
 
@@ -641,7 +637,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
 
     if (report.startReport()) {
       em->report() << "Initialized  forests, took ";
-      em->report() << watch->elapsed() << " seconds\n";
+      em->report() << watch.elapsed_seconds() << " seconds\n";
       em->stopIO();
     }
 
@@ -652,7 +648,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
     //
     if (report.startReport()) {
       em->report() << "Building next-state function\n";
-      subwatch->reset();
+      subwatch.reset();
       em->stopIO();
     }
 
@@ -660,7 +656,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
 
     if (report.startReport()) {
       em->report() << "Built    next-state function, took ";
-      em->report() << subwatch->elapsed() << " seconds\n";
+      em->report() << subwatch.elapsed_seconds() << " seconds\n";
   #ifdef DEBUG_FINAL_NSF
       em->report() << "DD edge: " << x.ms.nsf->E.getNode() << "\n";
       em->report().flush();
@@ -686,7 +682,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
     if (report.startReport()) {
       em->report() << "Building reachability set\n";
       em->stopIO();
-      subwatch->reset();
+      subwatch.reset();
     }
     DCASSERT(0==x.ms.states);
     x.ms.states = new shared_ddedge(x.ms.mdd_wrap->getForest());
@@ -695,7 +691,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
 
     if (report.startReport()) {
       em->report() << "Built    reachability set, took ";
-      em->report() << subwatch->elapsed() << " seconds\n";
+      em->report() << subwatch.elapsed_seconds() << " seconds\n";
       em->stopIO();
     }
 
@@ -708,8 +704,6 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
 
   catch (subengine::error status) {
     if (stopGen(true, x.parent, watch)) em->stopIO();
-    doneTimer(watch);
-    doneTimer(subwatch);
     throw status;
   }
 }
@@ -727,7 +721,7 @@ public:
   meddly_saturation();
   virtual ~meddly_saturation();
 protected:
-  virtual void generateRSS(meddly_varoption &x, timer* w);
+  virtual void generateRSS(meddly_varoption &x, timer &w);
   virtual const char* getAlgName() const { return "saturation"; }
 };
 
@@ -745,7 +739,7 @@ meddly_saturation::~meddly_saturation()
 {
 }
 
-void meddly_saturation::generateRSS(meddly_varoption &x, timer*)
+void meddly_saturation::generateRSS(meddly_varoption &x, timer&)
 {
   try {
     MEDDLY::apply(
@@ -774,7 +768,7 @@ public:
   meddly_traditional();
   virtual ~meddly_traditional();
 protected:
-  virtual void generateRSS(meddly_varoption &x, timer* w);
+  virtual void generateRSS(meddly_varoption &x, timer &w);
   virtual const char* getAlgName() const { return "traditional"; }
 };
 
@@ -792,7 +786,7 @@ meddly_traditional::~meddly_traditional()
 {
 }
 
-void meddly_traditional::generateRSS(meddly_varoption &x, timer*)
+void meddly_traditional::generateRSS(meddly_varoption &x, timer&)
 {
   try {
     MEDDLY::apply(
@@ -873,7 +867,7 @@ public:
   meddly_frontier();
   virtual ~meddly_frontier();
 protected:
-  virtual void generateRSS(meddly_varoption &x, timer* w);
+  virtual void generateRSS(meddly_varoption &x, timer &w);
   virtual const char* getAlgName() const { return "frontier"; }
 };
 
@@ -891,7 +885,7 @@ meddly_frontier::~meddly_frontier()
 {
 }
 
-void meddly_frontier::generateRSS(meddly_varoption &x, timer* w)
+void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
 {
   MEDDLY::dd_edge F = x.ms.initial->E;
   x.ms.states->E = x.ms.initial->E;
@@ -941,7 +935,6 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer* w)
       convert(ce, "set union", x.parent);
     }
     if (debug.startReport()) {
-      DCASSERT(w);
       debug.report() << "\tdone S:=S+F  ";
       double card = x.ms.states->E.getCardinality();
       debug.report().Put(card, 13);
@@ -949,7 +942,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer* w)
       debug.newLine();
       long nodes = x.ms.mdd_wrap->getForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
-      debug.report() << w->elapsed() << " seconds total time\n";
+      debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
     }
   } // while F
@@ -969,7 +962,7 @@ public:
   meddly_nextall();
   virtual ~meddly_nextall();
 protected:
-  virtual void generateRSS(meddly_varoption &x, timer* w);
+  virtual void generateRSS(meddly_varoption &x, timer &w);
   virtual const char* getAlgName() const { return "next-all"; }
 };
 
@@ -987,7 +980,7 @@ meddly_nextall::~meddly_nextall()
 {
 }
 
-void meddly_nextall::generateRSS(meddly_varoption &x, timer* w)
+void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
 {
   MEDDLY::dd_edge Old(x.ms.mdd_wrap->getForest());
   x.ms.mdd_wrap->getForest()->createEdge(false, Old);
@@ -1024,7 +1017,6 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer* w)
       convert(ce, "set union", x.parent);
     }
     if (debug.startReport()) {
-      DCASSERT(w);
       debug.report() << "\tdone S:=S+S'  ";
       double card = x.ms.states->E.getCardinality();
       debug.report().Put(card, 13);
@@ -1032,7 +1024,7 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer* w)
       debug.newLine();
       long nodes = x.ms.mdd_wrap->getForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
-      debug.report() << w->elapsed() << " seconds total time\n";
+      debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
     }
   } // while F

@@ -5,6 +5,8 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "timerlib.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
@@ -13,7 +15,6 @@
 #include "../Options/options.h"
 #include "../ExprLib/formalism.h"
 #include "../include/splay.h"
-#include "../Timers/timers.h"
 
 // ******************************************************************
 // *                        help_base  class                        *
@@ -501,12 +502,12 @@ void exit_si::Compute(traverse_data &x, expr** pass, int np)
 
 class timer_base : public simple_internal {
 protected:
-  static timer** watches;
+  static timer* watches;
   friend void AddSysFunctions(symbol_table*, const exprman*, const char**, const char*);
 public:
   timer_base(const type* t, const char* name);
 };
-timer** timer_base::watches = 0;
+timer* timer_base::watches = 0;
 
 timer_base::timer_base(const type* t, const char* name)
  : simple_internal(t, name, 1)
@@ -538,8 +539,7 @@ void start_timer_si::Compute(traverse_data &x, expr** pass, int np)
   x.answer = &foo;
   SafeCompute(pass[0], x);
   if (foo.isNormal() && (foo.getInt() >= 0) && (foo.getInt() < 256)) {
-    if (0==watches[foo.getInt()]) watches[foo.getInt()] = makeTimer();
-    watches[foo.getInt()]->reset();
+    watches[foo.getInt()].reset();
   }
 }
 
@@ -566,9 +566,8 @@ void stop_timer_si::Compute(traverse_data &x, expr** pass, int np)
   SafeCompute(pass[0], x);
   if (x.answer->isNormal()) {
     long id = x.answer->getInt();
-    if (id >= 0 && id < 256 && watches[id]) {
-      x.answer->setReal(watches[id]->elapsed());
-      doneTimer(watches[id]);
+    if (id >= 0 && id < 256) {
+      x.answer->setReal(watches[id].elapsed_seconds());
       return;
     } 
   }
@@ -587,7 +586,7 @@ void AddSysFunctions(symbol_table* st, const exprman* em, const char** env, cons
   if (0==st || 0==em)  return;
 
   if (0==timer_base::watches) {
-    timer_base::watches = new timer*[256];
+    timer_base::watches = new timer[256];
   }
 
   st->AddSymbol(  new help_si(st)     );

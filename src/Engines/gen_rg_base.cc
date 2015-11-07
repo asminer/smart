@@ -6,9 +6,10 @@
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
-#include "../Timers/timers.h"
 
 #include "../Options/options.h"
+
+#include "timerlib.h"
 
 // **************************************************************************
 // *                                                                        *
@@ -46,10 +47,9 @@ bool process_generator::startGen(const hldsm& mdl, const char* whatproc)
 }
 
 bool process_generator::stopGen(bool err, const char* n, 
-                                const char* pr, const timer* w)
+                                const char* pr, const timer &w)
 {
   if (report.startReport()) {
-    double elapsed = (w) ? w->elapsed() : 0.0;
     if (err)  report.report() << "Incomplete ";
     else      report.report() << "Generated  ";
     if (n) {
@@ -57,11 +57,9 @@ bool process_generator::stopGen(bool err, const char* n,
     } else {
       report.report() << "\n";
     }
-    if (w) {
-      report.report() << "\t" << elapsed << " seconds ";
-      if (err)  report.report() << "until error\n";
-      else      report.report() << "required for generation\n";
-    }
+    report.report() << "\t" << w.elapsed_seconds() << " seconds ";
+    if (err)  report.report() << "until error\n";
+    else      report.report() << "required for generation\n";
     return true;
   } 
   return false;
@@ -84,20 +82,17 @@ bool process_generator::startCompact(const hldsm& mdl, const char* whatproc)
 }
 
 bool process_generator
-::stopCompact(const char* name, const char* wp, const timer* w, const lldsm* p)
+::stopCompact(const char* name, const char* wp, const timer &w, const lldsm* p)
 {
   if (report.startReport()) {
-    double elapsed = (w) ? w->elapsed() : 0.0;
     report.report() << "Finalized  " << wp;
     if (name) {
       report.report() << " for model " << name << "\n";
     } else {
       report.report() << "\n";
     }
-    if (w) {
-      report.report() << "\t" << elapsed;
-      report.report() << " seconds required for finalization\n";
-    }
+    report.report() << "\t" << w.elapsed_seconds();
+    report.report() << " seconds required for finalization\n";
     if (p) p->reportMemUsage(em, "\t");
     return true;
   } 

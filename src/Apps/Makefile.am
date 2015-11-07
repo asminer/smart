@@ -32,6 +32,7 @@ smart_LDADD = \
   ../Modules/statesets.la ../Modules/statevects.la \
   \
   ../ParseSM/libsmparse.la \
+  $(TIMER_LIBRARY)/lib/libtimer.a \
   $(LS_LIBRARY)/lib/libls.a \
   $(MC_LIBRARY)/lib/libmc.a \
   $(GRAPH_LIBRARY)/lib/libgraph.a \
@@ -44,7 +45,6 @@ smart_LDADD = \
   ../ExprLib/libexpr.la \
   ../Options/libopts.la \
   ../Streams/libstream.la \
-  ../Timers/libtimer.la \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 ## ICP   
@@ -56,11 +56,11 @@ icp_LDADD = \
   ../Engines/dcp_expl.la ../Engines/dcp_symb.la \
   ../Modules/glue_meddly.la ../Modules/biginttype.la \
   ../ParseICP/libicpparse.la \
+  $(TIMER_LIBRARY)/lib/libtimer.a \
   $(STATE_LIBRARY)/lib/libstate.a \
   ../SymTabs/libst.la \
   ../ExprLib/libexpr.la \
   ../Options/libopts.la \
   ../Streams/libstream.la \
-  ../Timers/libtimer.la \
   $(MDD_LIBRARY)/lib/libmeddly.a
 

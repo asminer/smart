@@ -9,6 +9,7 @@
 #include "../Modules/statesets.h"
 
 #include "mc_mdd.h"
+#include "timerlib.h"
 
 #include "../include/lslib.h"
 #include "../include/meddly_expert.h"
@@ -446,7 +447,8 @@ void meddly_mc::showArcs(bool internal) const
 bool meddly_mc::computeSteadyState(double* probs) const
 {
   for (long i=dsize-1; i>=0; i--) probs[i] = 1;
-  startSteadyReport();
+  timer w;
+  startSteadyReport(w);
   LS_Output outdata;
   MEDDLY::specialized_operation* vm;
   vm = MEDDLY::EXPLVECT_MATR_MULT->buildOperation(
@@ -454,7 +456,7 @@ bool meddly_mc::computeSteadyState(double* probs) const
   );
   LS_wrapper foo(vm, diagonals, dsize);
   Solve_AxZero(foo, probs, getSolverOptions(), outdata);
-  stopSteadyReport(outdata.num_iters);
+  stopSteadyReport(w, outdata.num_iters);
   MEDDLY::destroyOperation(vm);
   return statusOK(outdata, "steady-state");
 }

@@ -52,21 +52,19 @@ protected:
   virtual ~markov_lldsm();
   static const LS_Options& getSolverOptions();
   
-  void startTransientReport(double t) const;
-  void stopTransientReport(long iters) const;
-  void startSteadyReport() const;
-  void stopSteadyReport(long iters) const;
-  void startTTAReport() const;
-  void stopTTAReport(long iters) const;
-  void startAccumulatedReport(double t) const;
-  void stopAccumulatedReport(long iters) const;
+  void startTransientReport(timer& w, double t) const;
+  void stopTransientReport(timer& w, long iters) const;
+  void startSteadyReport(timer& w) const;
+  void stopSteadyReport(timer& w, long iters) const;
+  void startTTAReport(timer& w) const;
+  void stopTTAReport(timer& w, long iters) const;
+  void startAccumulatedReport(timer& w, double t) const;
+  void stopAccumulatedReport(timer& w, long iters) const;
 
-  void startRevTransReport(double t) const;
-  void stopRevTransReport(long iters) const;
+  void startRevTransReport(timer& w, double t) const;
+  void stopRevTransReport(timer& w, long iters) const;
   
   static const char* getSolver();
-private:
-  timer* watch;
 };
 
 // ******************************************************************
