@@ -4,8 +4,6 @@
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
-#include "../Timers/timers.h"
-
 // Formalisms and such
 #define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
@@ -23,7 +21,7 @@
 #include "graphlib.h"
 #include "mclib.h"
 #include "lslib.h"
-
+#include "timerlib.h"
 
 
 // **************************************************************************
@@ -469,13 +467,12 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   DCASSERT(rss);
   
   // Start reporting on generation
-  timer* watch = 0;
+  timer watch;
   if (startGen(*hm, the_proc)) {
     if (!rss->IsStatic())
         em->report() << " using " << statelib->getDBMethod();
     em->report() << "\n";
     em->stopIO();
-    watch = makeTimer();
   }
 
   // set initial distribution
@@ -540,7 +537,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
       delete rss;
       hm->SetProcess(MakeErrorModel());
     }
-    doneTimer(watch);
     throw bailOut;
   }
 
@@ -558,7 +554,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   DCASSERT(lm);
   if (statesonly.getBool()) {
     lm->setCompletionEngine(this);
-    doneTimer(watch);
     return;
   }
 
@@ -566,7 +561,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   if (startCompact(*hm, the_proc)) {
     em->report() << "\n";
     em->stopIO();
-    watch->reset();
+    watch.reset();
   }
 
   // Compact and finish process
@@ -579,7 +574,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
     em->stopIO();
-    doneTimer(watch);
   }
 
   // We've generated the entire process now.

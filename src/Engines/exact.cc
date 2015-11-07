@@ -3,8 +3,6 @@
 
 #include "exact.h"
 
-#include "../Timers/timers.h"
-
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_inst.h"
@@ -20,6 +18,7 @@
 
 #include "intset.h"
 #include "lslib.h"
+#include "timerlib.h"
 
 // **************************************************************************
 // *                                                                        *
@@ -28,7 +27,6 @@
 // **************************************************************************
 
 class exact_mcmsr : public subengine {
-  // timer* w;
 protected:
   static named_msg eng_debug;
   static named_msg eng_report;
@@ -102,7 +100,7 @@ protected:
     }
     return false;
   }
-  inline bool stopMsrs(int count, const char* what, const char* name, const timer* w) {
+  inline bool stopMsrs(int count, const char* what, const char* name, const timer &w) {
     if (eng_report.startReport()) {
       eng_report.report() << "Computed  ";
       if (what) eng_report.report() << what << " ";
@@ -112,10 +110,8 @@ protected:
       if (count) {
          eng_report.report() << "\t" << count << " measures computed\n";
       }
-      if (w) {
-        eng_report.report() << "\t" << w->elapsed();
-        eng_report.report() << " seconds required for measure computation\n";
-      }
+      eng_report.report() << "\t" << w.elapsed_seconds();
+      eng_report.report() << " seconds required for measure computation\n";
       return true;
     }
     return false;
@@ -308,7 +304,6 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     eng_debug.report() << "Running exact steady-state engine\n";
     eng_debug.stopIO();
   }
-  timer* w = 0;
   DCASSERT(mdl);
   GenerateProc(mdl);
   const stochastic_lldsm* proc = 
@@ -330,9 +325,9 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     boolmsr_visitor bv(mdl);
     bv.setVector(p, 0);
     long count = 0;
+    timer w;
     if (startMsrs("steady-state", mdl->Name())) {
       em->stopIO();
-      w = makeTimer();
     }
     for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
       if (em->STATEDIST == m->Type()) {
@@ -375,7 +370,6 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     } // for m
     if (stopMsrs(count, "steady-state", mdl->Name(), w)) {
       em->stopIO();
-      doneTimer(w);
     }
   }
   free(p);
@@ -851,12 +845,10 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   // (because we need it anyway)
   //
 
-  timer* watch = 0;
+  timer watch;
   if (eng_report.startReport()) {
     eng_report.report() << "Computing time spent in states\n";
     eng_report.stopIO();
-    watch = makeTimer();
-    watch->reset();
   }
   
   statedist* initial = proc->getInitialDistribution();
@@ -864,14 +856,12 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   Delete(initial);
   
   if (!proc->computeClassProbs(init, vx)) {
-    doneTimer(watch);
     throw Engine_Failed;
   }
 
   if (eng_report.startReport()) {
-    eng_report.report() << "computation took " << watch->elapsed() << " seconds\n";
+    eng_report.report() << "computation took " << watch.elapsed_seconds() << " seconds\n";
     eng_report.stopIO();
-    doneTimer(watch);
   }
 
   //
@@ -937,8 +927,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
       if (eng_report.startReport()) {
         eng_report.report() << "Computing variance by state\n";
         eng_report.stopIO();
-        watch = makeTimer();
-        watch->reset();
+        watch.reset();
       }
     
       //
@@ -960,14 +949,12 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
       // Compute our v vector
       //
       if (!proc->computeTimeInStates(init, vx)) {
-        doneTimer(watch);
         throw Engine_Failed;
       }
 
       if (eng_report.startReport()) {
-        eng_report.report() << "computation took " << watch->elapsed() << " seconds\n";
+        eng_report.report() << "computation took " << watch.elapsed_seconds() << " seconds\n";
         eng_report.stopIO();
-        doneTimer(watch);
       }
 
       //

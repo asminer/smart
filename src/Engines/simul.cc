@@ -6,10 +6,10 @@
 // External libs
 #include "sim.h" 
 #include "rng.h"
+#include "timerlib.h"
 
 #include "../Streams/streams.h"
 #include "../Options/options.h"
-#include "../Timers/timers.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
@@ -185,11 +185,7 @@ void monte_carlo_engine
     x.answer->setNull();
     return;
   }
-  timer* watch = 0;
-  if (report.isActive()) {
-    watch = makeTimer();
-    watch->reset();
-  }
+  timer watch;
   e->PreCompute();
   sim_experiment* se = MakeExperiment(e, x);
   if (0==se)  throw Engine_Failed;
@@ -235,9 +231,8 @@ void monte_carlo_engine
       if (avg.half_width) prec = avg.half_width / avg.average;
       report.report() << "\t" << prec << " precision\n";
       report.report() << "Monte_Carlo: Simulation took ";
-      report.report() << watch->elapsed() << " seconds\n";
+      report.report() << watch.elapsed_seconds() << " seconds\n";
       report.stopIO();
-      doneTimer(watch);
   }
    
   x.stream = old;

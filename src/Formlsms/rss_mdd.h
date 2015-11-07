@@ -27,6 +27,15 @@ public:
   // For the "next-state function".
   meddly_encoder* mxd_wrap;
   shared_ddedge* nsf;
+
+  // TBD - nsf should be an array of edges;
+  // monolithic with dimension 1, or
+  // by events or other partitioning with dimension >1.
+  
+  // OR, should we just use the MEDDLY mechanism for 
+  // partitioning nsfs on the fly?
+
+// protected:
   // For the "process"
   meddly_encoder* proc_wrap;
   shared_ddedge* proc;
@@ -35,6 +44,11 @@ public:
   // TBD - proc should be an array of edges;
   // monolithic with dimension 1, or 
   // by events or other partitioning with dimension >1.
+
+  // Also we should keep "potential" and "actual" copies,
+  // with actual built only when needed.
+  // Then eliminate "proc_uses_actual" and just switch between them
+  // outside of here.
 
 public:
   meddly_states();
@@ -96,6 +110,11 @@ public:
   void buildIndexSet();
 
   void visitStates(lldsm::state_visitor &x) const;
+
+  // TBD - void getNumArcs(result &count) const
+  // TBD - long getNumArcs() const
+  // TBD - showArcs
+  // TBD - buildActual
 
   void reportStats(OutputStream &out) const;
 };

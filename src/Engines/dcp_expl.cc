@@ -3,7 +3,6 @@
 
 #include "dcp_expl.h"
 
-#include "../Timers/timers.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -16,6 +15,7 @@
 
 // External libs
 #include "statelib.h"
+#include "timerlib.h"
 
 // **************************************************************************
 // *                                                                        *
@@ -111,17 +111,15 @@ protected:
     return false;
   }
   // returns true if the report stream is open
-  inline bool stopGen(bool err, const char* n, const timer* w, 
+  inline bool stopGen(bool err, const char* n, const timer& w, 
                                                 long mem, long ns) {
     if (report.startReport()) {
       if (err)  report.report() << "Incomplete";
       else      report.report() << "Generated ";
       report.report() << " reachability set for model " << n << "\n";
-      if (w) {
-        report.report() << "\t" << w->elapsed() << " seconds ";
-        if (err)  report.report() << "until error\n";
-        else      report.report() << "required for generation\n";
-      }
+      report.report() << "\t" << w.elapsed_seconds() << " seconds ";
+      if (err)  report.report() << "until error\n";
+      else      report.report() << "required for generation\n";
       if (mem >= 0) {
         report.report().Put('\t');
         report.report().PutMemoryCount(mem, 3);
@@ -178,11 +176,10 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
   DCASSERT(nem);
   DCASSERT(nem->NumVars()>0);
 
-  timer* watch = 0;
+  timer watch;
   if (startGen(hm->Name())) {
     em->report().Put('\n');
     em->stopIO();
-    watch = makeTimer();
   }
 
   N = nem->NumVars();
@@ -210,7 +207,6 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
   if (stopGen(!OK, hm->Name(), watch, 
               states->ReportMemTotal(), states->Size())) {
     em->stopIO();
-    doneTimer(watch);
   }
   em->resumeTerm();
 

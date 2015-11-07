@@ -33,11 +33,11 @@ public:
   // returns true if the report stream is open
   static bool startGen(const hldsm& mdl, const char* whatproc);
   // returns true if the report stream is open
-  static bool stopGen(bool err, const char* name, const char* whatproc, const timer* w);
+  static bool stopGen(bool err, const char* name, const char* whatproc, const timer &w);
   // returns true if the report stream is open
   static bool startCompact(const hldsm& mdl, const char* whatproc);
   // returns true if the report stream is open
-  static bool stopCompact(const char* name, const char* wp, const timer* w, const lldsm* proc);
+  static bool stopCompact(const char* name, const char* wp, const timer &w, const lldsm* proc);
 };
 
 
