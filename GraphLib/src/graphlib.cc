@@ -39,11 +39,11 @@ template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
 // *                                                                *
 // ******************************************************************
 
-GraphLib::generic_graph::timer::timer()
+GraphLib::generic_graph::timer_hook::timer_hook()
 {
 }
 
-GraphLib::generic_graph::timer::~timer()
+GraphLib::generic_graph::timer_hook::~timer_hook()
 {
 }
 
@@ -486,7 +486,7 @@ GraphLib::generic_graph::renumber(const long* renum)
 }
 
 void
-GraphLib::generic_graph::transpose(timer* sw)
+GraphLib::generic_graph::transpose(timer_hook* sw)
 {
   if (finished) throw GraphLib::error(GraphLib::error::Finished_Mismatch);
 
@@ -589,7 +589,7 @@ GraphLib::generic_graph::unfinish()
 }
 
 long 
-GraphLib::generic_graph::computeTSCCs(timer* sw, bool c, long* sccmap, long* aux) const
+GraphLib::generic_graph::computeTSCCs(timer_hook* sw, bool c, long* sccmap, long* aux) const
 {
   if (0==sccmap || 0==aux) 
     throw GraphLib::error(GraphLib::error::Miscellaneous);

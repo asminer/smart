@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "statelib.h"
-#include "timers.h"
+#include "timerlib.h"
 
 using namespace StateLib;
 
@@ -58,16 +58,14 @@ void PrintState(int* s, int N)
 void CountStates(int N, int M)
 {
   timer watch;
-  watch.Start();
   int* bits = new int[N];
   InitState(bits, N, M);
   long count;
   for (count=1; ; count++) {
     if (! IncState(bits, N)) break;
   }
-  watch.Stop();
   printf("There are %ld states\n", count);
-  printf("Enumeration took %lf\n", watch.User_Seconds());
+  printf("Enumeration took %lf\n", watch.elapsed_seconds());
 }
 
 
@@ -84,7 +82,6 @@ int RunTest(int N, int M, bool useind, bool storesize)
   printf("Storing sequences...");
   fflush(stdout);
   timer watch;
-  watch.Start();
 
   int* state1 = new int[N];
   InitState(state1, N, M);
@@ -101,13 +98,12 @@ int RunTest(int N, int M, bool useind, bool storesize)
     }
     if (! IncState(state1, N)) break;
   }
-  watch.Stop();
-  printf("done, took %lf seconds\n", watch.User_Seconds());
+  printf("done, took %lf seconds\n", watch.elapsed_seconds());
   printf("Checking sequences");
   if (extra_comparisons) printf(" (%d times each)", extra_comparisons+1);
   printf("...");
   fflush(stdout);
-  watch.Start();
+  watch.reset();
 
   long h = foo->FirstHandle();
   InitState(state1, N, M);
@@ -177,8 +173,7 @@ int RunTest(int N, int M, bool useind, bool storesize)
     }
 
   } // for loop
-  watch.Stop();
-  printf("done, took %lf seconds\n", watch.User_Seconds());
+  printf("done, took %lf seconds\n", watch.elapsed_seconds());
   delete[] state1;
 
   printf("Report for collection:\n");

@@ -9,13 +9,13 @@ noinst_PROGRAMS = \
   testcoll \
   pngen
 
-AM_CPPFLAGS = -I../src 
+AM_CPPFLAGS = -I../src -I../../Timer/src
 
-enum1_SOURCES = enum1.cc timers.h timers.cc
-enum1_LDADD = ../src/libstate.la
+enum1_SOURCES = enum1.cc 
+enum1_LDADD = ../src/libstate.la ../../Timer/src/libtimer.la
 
-enum2_SOURCES = enum2.cc timers.h timers.cc
-enum2_LDADD = ../src/libstate.la
+enum2_SOURCES = enum2.cc 
+enum2_LDADD = ../src/libstate.la ../../Timer/src/libtimer.la
 
 dbtest_SOURCES = dbtest.cc
 dbtest_LDADD = ../src/libstate.la
@@ -26,8 +26,8 @@ statediff_LDADD = ../src/libstate.la
 testcoll_SOURCES = testcoll.cc
 testcoll_LDADD = ../src/libstate.la
 
-pngen_SOURCES = pngen.cc timers.h timers.cc
-pngen_LDADD = ../src/libstate.la $(PNFRONT_LIB)
+pngen_SOURCES = pngen.cc 
+pngen_LDADD = ../src/libstate.la $(PNFRONT_LIB) ../../Timer/src/libtimer.la
 
 TESTS = \
   dbin1.txt \

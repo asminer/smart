@@ -7,5 +7,5 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = RngLib SimLib IntSets GraphLib LSLib MCParse MCLib StateLib
+SUBDIRS = Timer RngLib SimLib IntSets GraphLib LSLib MCParse MCLib StateLib
 

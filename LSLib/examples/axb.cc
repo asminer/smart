@@ -2,7 +2,7 @@
 // $Id$
 
 #include "lslib.h"
-#include "timers.h"
+#include "timerlib.h"
 
 #include "matrix.h"
 
@@ -340,12 +340,10 @@ int main(int argc, char** argv)
   LS_Output out;
 
   timer watch;
-  watch.Start();
   if (use_abstract)   Solve_Axb(*AA, x, b, opts, out);
   else if (by_cols)   Solve_Axb(cA, x, b, opts, out);
   else                Solve_Axb(rA, x, b, opts, out);
-  watch.Stop();
-  cerr << watch.User_Seconds() << " seconds\n";
+  cerr << watch.elapsed_seconds() << " seconds\n";
 
   switch(out.status) {
     case LS_Success:

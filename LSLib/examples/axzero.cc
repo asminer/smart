@@ -2,7 +2,7 @@
 // $Id$
 
 #include "lslib.h"
-#include "timers.h"
+#include "timerlib.h"
 
 #include "matrix.h"
 
@@ -275,7 +275,6 @@ int main(int argc, char** argv)
   LS_Output out;
 
   timer watch;
-  watch.Start();
   int iters_so_far = 0;
   opts.max_iters = deltaiters;
   while (totaliters > 0) {
@@ -291,8 +290,7 @@ int main(int argc, char** argv)
     cerr << "After " << iters_so_far << " iterations, achieved ";
     cerr << out.precision << " precision\n";
   }
-  watch.Stop();
-  cerr << watch.User_Seconds() << " seconds\n";
+  cerr << watch.elapsed_seconds() << " seconds\n";
 
   switch(out.status) {
     case LS_Success:

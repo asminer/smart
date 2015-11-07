@@ -5,6 +5,7 @@
 // Markov Chain Parsing library and the
 // Markov Chain storage and solver library
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "mcparse.h"
@@ -12,7 +13,7 @@
 #include "lslib.h"
 #include "graphlib.h"
 
-#include "timers.h"
+#include "timerlib.h"
 
 // #define CHECK_CLASSES
 
@@ -22,16 +23,15 @@ template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
 // *                         my_timer class                         *
 // ******************************************************************
 
-class my_timer : public GraphLib::generic_graph::timer {
-  stopwatch watch;
+class my_timer : public GraphLib::generic_graph::timer_hook {
+  timer watch;
 public:
   virtual void start(const char* w) {
     fprintf(stderr, "%30s...", w);
-    watch.Start();
+    watch.reset();
   }
   virtual void stop() {
-    watch.Stop();
-    fprintf(stderr, "  %lf seconds\n", watch.User_Seconds());
+    fprintf(stderr, "  %lf seconds\n", watch.elapsed_seconds());
   }
 
   static my_timer* getInstance() {
@@ -59,7 +59,7 @@ protected:
   long States;
   long SeenArcs;
 
-  stopwatch sw;
+  timer sw;
 public:
   dryrun_parser(FILE* err);
 
@@ -179,7 +179,7 @@ bool dryrun_parser::startCTMC(const char* name)
 bool dryrun_parser::specifyStates(long ns)
 {
   States = ns;
-  sw.Start();
+  sw.reset();
   return (ns>0);
 }
 
@@ -203,9 +203,8 @@ bool dryrun_parser::startEdges(long num_edges)
 
 bool dryrun_parser::doneEdges()
 {
-  sw.Stop();
   if (!quiet) {
-    fprintf(errlog, "Read %ld edges, took %lf seconds\n", SeenArcs, sw.User_Seconds());
+    fprintf(errlog, "Read %ld edges, took %lf seconds\n", SeenArcs, sw.elapsed_seconds());
   }
   return true;
 }
@@ -455,7 +454,7 @@ bool solver_parser::doneEdges()
   using namespace MCLib;
 
   dryrun_parser::doneEdges();
-  sw.Start();
+  sw.reset();
   try {
     mc->finish(Fopts, Ren);
   }
@@ -470,7 +469,6 @@ bool solver_parser::doneEdges()
     ren_map = 0;
   }
   if (!finishInitial()) return false;
-  sw.Stop();
 
   int nc = mc->getNumClasses();
   if (!quiet) {
@@ -505,7 +503,7 @@ bool solver_parser::doneEdges()
     }
     fprintf(errlog, "]\n");
 #endif
-    fprintf(errlog, "Chain finalization took %lf seconds\n", sw.User_Seconds());
+    fprintf(errlog, "Chain finalization took %lf seconds\n", sw.elapsed_seconds());
   } // if !quiet
 
   return true;
@@ -618,13 +616,12 @@ bool solver_parser::solveSteady()
       }
       fprintf(errlog,  "\n");
     }
-    sw.Start();
+    sw.reset();
     LS_Output bar;
     mc->computeSteady(p0, solvector, ssopts, bar);
-    sw.Stop();
     if (!quiet) {
       fprintf(errlog,  "Done, %ld iterations, ", bar.num_iters);
-      fprintf(errlog,  "%lf seconds\n", sw.User_Seconds());
+      fprintf(errlog,  "%lf seconds\n", sw.elapsed_seconds());
     }
     last_solved = Steady_state;
     printf("Steady:\n");
@@ -647,13 +644,12 @@ bool solver_parser::solveAccumulated()
     return true;
   }
   try {
-    sw.Start();
+    sw.reset();
     LS_Output bar;
     mc->computeTTA(p0, solvector, ssopts, bar);
-    sw.Stop();
     if (!quiet) {
       fprintf(errlog,  "Done, %ld iterations, ", bar.num_iters);
-      fprintf(errlog,  "%lf seconds\n", sw.User_Seconds());
+      fprintf(errlog,  "%lf seconds\n", sw.elapsed_seconds());
     }
     printf("Accumulated:\n");
     return true;

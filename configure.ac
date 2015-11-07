@@ -58,6 +58,8 @@ AS_IF([test "x$with_pnfront" != xno],
 # Makefiles we need to build
 #
 AC_CONFIG_FILES([Makefile
+                 Timer/Makefile
+                 Timer/src/Makefile
                  RngLib/Makefile
                  RngLib/src/Makefile
                  RngLib/examples/Makefile

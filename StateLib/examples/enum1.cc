@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "statelib.h"
-#include "timers.h"
+#include "timerlib.h"
 
 using namespace StateLib;
 
@@ -48,16 +48,14 @@ void PrintState(int* s, int N)
 void CountStates(int N)
 {
   timer watch;
-  watch.Start();
   int* bits = new int[N];
   InitState(bits, N);
   long count;
   for (count=1; ; count++) {
     if (! IncState(bits, N)) break;
   }
-  watch.Stop();
   printf("There are %ld states\n", count);
-  printf("Enumeration took %lf\n", watch.User_Seconds());
+  printf("Enumeration took %lf\n", watch.elapsed_seconds());
 }
 
 int TestFor(int N, bool useindex, bool storesizes)
@@ -72,7 +70,6 @@ int TestFor(int N, bool useindex, bool storesizes)
   printf("Storing all %d-bit states...", N);
   fflush(stdout);
   timer watch;
-  watch.Start();
   int* bits = new int[N];
   InitState(bits, N);
   for (;;) {
@@ -97,14 +94,13 @@ int TestFor(int N, bool useindex, bool storesizes)
 
     if (! IncState(bits, N)) break;
   }
-  watch.Stop();
-  printf("done, took %lf seconds\n", watch.User_Seconds());
+  printf("done, took %lf seconds\n", watch.elapsed_seconds());
 
   printf("Checking all %d-bit states", N);
   if (extra_comparisons) printf(" (%d times each)", extra_comparisons+1);
   printf("...");
   fflush(stdout);
-  watch.Start();
+  watch.reset();
 
   long h = foo->FirstHandle();
   InitState(bits, N);
@@ -176,8 +172,7 @@ int TestFor(int N, bool useindex, bool storesizes)
     }
 
   } // for loop
-  watch.Stop();
-  printf("done, took %lf seconds\n", watch.User_Seconds());
+  printf("done, took %lf seconds\n", watch.elapsed_seconds());
   delete[] bits;
 
   printf("Report for collection:\n");

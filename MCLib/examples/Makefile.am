@@ -8,22 +8,22 @@ noinst_PROGRAMS = \
   oz \
   univ
 
-AM_CPPFLAGS = -I../src -I../../LSLib/src -I../../GraphLib/src -I../../MCParse/src
+AM_CPPFLAGS = -I../src -I../../Timer/src -I../../LSLib/src -I../../GraphLib/src -I../../MCParse/src
 
-birthdeath_SOURCES = birthdeath.cc timers.h timers.cc
-birthdeath_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+birthdeath_SOURCES = birthdeath.cc 
+birthdeath_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la ../../Timer/src/libtimer.la
 
-walk_SOURCES = walk.cc timers.h timers.cc
-walk_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+walk_SOURCES = walk.cc 
+walk_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la ../../Timer/src/libtimer.la
 
-mcsolver_SOURCES = mcsolver.cc timers.h timers.cc
-mcsolver_LDADD = ../src/libmc.la ../../MCParse/src/libmcparse.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+mcsolver_SOURCES = mcsolver.cc 
+mcsolver_LDADD = ../src/libmc.la ../../MCParse/src/libmcparse.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la ../../Timer/src/libtimer.la
 
 oz_SOURCES = oz.cc
-oz_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+oz_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la ../../Timer/src/libtimer.la
 
 univ_SOURCES = univ.cc
-univ_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la
+univ_LDADD = ../src/libmc.la ../../LSLib/src/libls.la ../../GraphLib/src/libgraph.la ../../IntSets/src/libintset.la ../../Timer/src/libtimer.la
 
 TESTS = \
   scc0.dtmc \

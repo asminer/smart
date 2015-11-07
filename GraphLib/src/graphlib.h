@@ -67,10 +67,10 @@ namespace GraphLib {
   class generic_graph {
   public:
     /// Timer class, if we want to know how long critical computations take.
-    class timer {
+    class timer_hook {
     public:
-        timer();
-        virtual ~timer();
+        timer_hook();
+        virtual ~timer_hook();
         /** Will be called when a major computation starts.
             @param w  Short description of computation.
         */
@@ -116,7 +116,7 @@ namespace GraphLib {
         /** If 0 (the default), no timing information will be reported.
             Otherwise, timing information is sent here.
         */
-        timer* report;
+        timer_hook* report;
 
         /** Constructor.
             Will initialize all settings to reasonable defaults.
@@ -234,7 +234,7 @@ namespace GraphLib {
         The graph must be "unfinished".
           @param  sw  Place to report timing; nothing reported if 0.
     */
-    void transpose(timer* sw);
+    void transpose(timer_hook* sw);
 
     /** Finish building the graph.
         The graph must be "unfinished".
@@ -389,7 +389,7 @@ namespace GraphLib {
 
           @return   The number of terminal sccs (recurrent classes). 
     */
-    long computeTSCCs(timer* sw, bool cons, long* sccmap, long* aux) const;
+    long computeTSCCs(timer_hook* sw, bool cons, long* sccmap, long* aux) const;
   
 
     /// Export a finished graph.  @return true on success.

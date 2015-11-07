@@ -19,7 +19,7 @@ int main()
 #include <string.h>
 #include "statelib.h"
 #include "pnfront.h"
-#include "timers.h"
+#include "timerlib.h"
 
 // #define VERIFY_STATIC
 // #define VERIFY_DYNAMIC
@@ -356,7 +356,6 @@ long Generate(const pn_model* m, bool quiet, bool show, bool debug)
   }
 
   timer watch;
-  watch.Start();
 
   m->GetInitialMarking(current);
   // TO DO: check if initial state is vanishing
@@ -446,9 +445,8 @@ long Generate(const pn_model* m, bool quiet, bool show, bool debug)
 
   } // infinite explore loop
 
-  watch.Stop();
   if (!quiet) {
-    printf("Generation took %lf seconds\n", watch.User_Seconds());
+    printf("Generation took %lf seconds\n", watch.elapsed_seconds());
 
     Report();
   }
@@ -524,9 +522,7 @@ void VerifyStatic(const pn_model* m)
   const state_coll* collection = reachset->GetStateCollection();
   timer watch;
   fputs("Converting to static mode\n", stdout);
-  watch.Start();
   statedb_error e = reachset->ConvertToStatic(true);
-  watch.Stop();
   if (e != SDB_Success) {
     switch (e) {
       case SDB_NoMemory:
@@ -537,10 +533,10 @@ void VerifyStatic(const pn_model* m)
           return;
     }
   }
-  fprintf(stdout, "Converstion took %lf seconds\n", watch.User_Seconds());
+  fprintf(stdout, "Converstion took %lf seconds\n", watch.elapsed_seconds());
   int* current = new int[m->NumPlaces()];
   fputs("Verifying states...\n", stdout);
-  watch.Start();
+  watch.reset();
   for (long i=0; i<reachset->Size(); i++) {
     collection->GetStateKnown(i, current, m->NumPlaces());
     long where = reachset->FindState(current, m->NumPlaces());
@@ -551,8 +547,7 @@ void VerifyStatic(const pn_model* m)
         return;
     }
   }
-  watch.Stop();
-  fprintf(stdout, "Verification took %lf seconds\n", watch.User_Seconds());
+  fprintf(stdout, "Verification took %lf seconds\n", watch.elapsed_seconds());
 }
 #endif
 
@@ -562,9 +557,7 @@ void VerifyDynamic(const pn_model* m)
   const state_coll* collection = reachset->GetStateCollection();
   timer watch;
   fputs("Converting to dynamic mode\n", stdout);
-  watch.Start();
   statedb_error e = reachset->ConvertToDynamic(true);
-  watch.Stop();
   if (e != SDB_Success) {
     switch (e) {
       case SDB_NoMemory:
@@ -575,10 +568,10 @@ void VerifyDynamic(const pn_model* m)
           return;
     }
   }
-  fprintf(stdout, "Converstion took %lf seconds\n", watch.User_Seconds());
+  fprintf(stdout, "Converstion took %lf seconds\n", watch.elapsed_seconds());
   int* current = new int[m->NumPlaces()];
   fputs("Verifying states...\n", stdout);
-  watch.Start();
+  watch.reset();
   for (long i=0; i<reachset->Size(); i++) {
     collection->GetStateKnown(i, current, m->NumPlaces());
     long where = reachset->FindState(current, m->NumPlaces());
@@ -589,8 +582,7 @@ void VerifyDynamic(const pn_model* m)
         return;
     }
   }
-  watch.Stop();
-  fprintf(stdout, "Verification took %lf seconds\n", watch.User_Seconds());
+  fprintf(stdout, "Verification took %lf seconds\n", watch.elapsed_seconds());
 }
 #endif
 
