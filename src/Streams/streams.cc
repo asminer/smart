@@ -17,6 +17,8 @@
 #include <signal.h>
 #endif
 
+// #define DEBUG_STREAM
+
 // ==================================================================
 // |                                                                |
 // |                      InputStream  methods                      |
@@ -220,6 +222,9 @@ void OutputStream::Put(float data)
   }
   buftop += size;
   DCASSERT(buffer[buftop]==0);
+#ifdef DEBUG_STREAM
+  fprintf(stderr, "out << float %f\n", data);
+#endif
 }
 
 void OutputStream::Put(double data)
@@ -233,6 +238,9 @@ void OutputStream::Put(double data)
   }
   buftop += size;
   DCASSERT(buffer[buftop]==0);
+#ifdef DEBUG_STREAM
+  fprintf(stderr, "out << double %lf\n", data);
+#endif
 }
 
 void OutputStream::Put(const char* data)
@@ -283,6 +291,10 @@ void OutputStream::Put(double data, int width)
   }
   buftop += size;
   DCASSERT(buffer[buftop]==0);
+  DCASSERT(buffer[buftop]==0);
+#ifdef DEBUG_STREAM
+  fprintf(stderr, "out << double %lf witdh %d\n", data, width);
+#endif
 }
 
 void OutputStream::Put(char data, int width)
@@ -836,13 +848,17 @@ void CatchSignals(io_environ *e)
       e->Stop();
     } else {
       catcher = e;
+#ifdef SIGHUP
       signal(SIGHUP, mycatcher);
+#endif
       signal(SIGINT, mycatcher);
       signal(SIGTERM, mycatcher);
     }
   } else {
     catcher = 0;
+#ifdef SIGHUP
     signal(SIGHUP, SIG_DFL);
+#endif
     signal(SIGINT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
   }

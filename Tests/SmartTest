@@ -25,7 +25,7 @@ fi
 okcount="0"
 chcount="0"
 fcount="0"
-outfile=`mktemp /tmp/smarttest.XXXXXXXX`
+outfile=`mktemp smarttest.XXXXXXXX`
 
 #
 #
