@@ -360,9 +360,6 @@ void generic_print::compute(OutputStream &s, traverse_data &x,
     } else {
       width.setNull();
     }
-    if (!width.isNormal()) {
-      width.setInt(0);
-    }
     // Determine precision, if any
     if (pass[i]->NumComponents()>2) {
       x.answer = &prec;
@@ -371,13 +368,16 @@ void generic_print::compute(OutputStream &s, traverse_data &x,
     } else {
       prec.setNull();
     }
-    if (!prec.isNormal()) {
-      prec.setInt(-1);
-    }
 
     // Print!
     DCASSERT(pass[i]->Type(0));
-    pass[i]->Type(0)->print(s, item, width.getInt(), prec.getInt());
+    if (width.isNull()) {
+      pass[i]->Type(0)->print(s, item);
+    } else if(prec.isNull()) {
+      pass[i]->Type(0)->print(s, item, width.getInt());
+    } else {
+      pass[i]->Type(0)->print(s, item, width.getInt(), prec.getInt());
+    }
   }
   x.answer = answer;
   x.aggregate = 0;

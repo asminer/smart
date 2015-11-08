@@ -223,7 +223,7 @@ void OutputStream::Put(float data)
   buftop += size;
   DCASSERT(buffer[buftop]==0);
 #ifdef DEBUG_STREAM
-  fprintf(stderr, "out << float %f\n", data);
+  fprintf(stderr, "out << float %f format %s\n", data, floatformat);
 #endif
 }
 
@@ -239,7 +239,7 @@ void OutputStream::Put(double data)
   buftop += size;
   DCASSERT(buffer[buftop]==0);
 #ifdef DEBUG_STREAM
-  fprintf(stderr, "out << double %lf\n", data);
+  fprintf(stderr, "out << double %lf format %s\n", data, doubleformat);
 #endif
 }
 
@@ -466,23 +466,23 @@ void OutputStream::SetRealFormat(real_format rf)
   switch (rf) {
     case RF_FIXED:
         floatformat = "%f";
-        doubleformat = "%lf";
-        doublewidthformat = "%*lf";
-        doubleprecformat = "%*.*lf";
+        doubleformat = "%f";
+        doublewidthformat = "%*f";
+        doubleprecformat = "%*.*f";
         return;
 
     case RF_SCIENTIFIC:
         floatformat = "%e";
-        doubleformat = "%le";
-        doublewidthformat = "%*le";
-        doubleprecformat = "%*.*le";
+        doubleformat = "%e";
+        doublewidthformat = "%*e";
+        doubleprecformat = "%*.*e";
         return;
 
     default:  // includes RF_GENERAL
         floatformat = "%g";
-        doubleformat = "%lg";
-        doublewidthformat = "%*lg";
-        doubleprecformat = "%*.*lg";
+        doubleformat = "%g";
+        doublewidthformat = "%*g";
+        doubleprecformat = "%*.*g";
   } // switch
 }
 

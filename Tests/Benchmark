@@ -17,8 +17,8 @@ fi
 btotal="0"
 utotal="0"
 
-prefix=`mktemp /tmp/prefix.XXXXXXXX`
-suffix=`mktemp /tmp/suffix.XXXXXXXX`
+prefix=`mktemp prefix.XXXXXXXX`
+suffix=`mktemp suffix.XXXXXXXX`
 
 #
 # Helper function:

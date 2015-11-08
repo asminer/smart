@@ -19,6 +19,8 @@
 
 //#define REQUIRES_PRECOMPUTING
 
+// #define DEBUG_REAL_TYPE
+
 // ******************************************************************
 // *                                                                *
 // *                                                                *
@@ -238,6 +240,9 @@ int real_type::compare(const result& a, const result& b) const
 
 bool real_type::print_normal(OutputStream &s, const result& r) const
 {
+#ifdef DEBUG_REAL_TYPE
+  fprintf(stderr, "print_normal %lf\n", r.getReal());
+#endif
   s.Put(r.getReal());
   shared_object* o = r.getPtr(); 
   if (o) o->Print(s, 0); // confidence interval, or something similar
@@ -246,6 +251,9 @@ bool real_type::print_normal(OutputStream &s, const result& r) const
 
 bool real_type::print_normal(OutputStream &s, const result& r, int w) const
 {
+#ifdef DEBUG_REAL_TYPE
+  fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
+#endif
   s.Put(r.getReal(), w);
   shared_object* o = r.getPtr(); 
   if (o) o->Print(s, 0); // confidence interval, or something similar
@@ -254,6 +262,9 @@ bool real_type::print_normal(OutputStream &s, const result& r, int w) const
 
 bool real_type::print_normal(OutputStream &s, const result& r, int w, int p) const
 {
+#ifdef DEBUG_REAL_TYPE
+  fprintf(stderr, "print_normal %lf:%d:%d\n", r.getReal(), w, p);
+#endif
   s.Put(r.getReal(), w, p);
   shared_object* o = r.getPtr(); 
   if (o) o->Print(s, 0); // confidence interval, or something similar
