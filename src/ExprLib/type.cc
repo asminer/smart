@@ -96,7 +96,27 @@ int type::compare(const result& a, const result& b) const
   return 0;
 }
 
-bool type::print(OutputStream &s, const result& r, int width, int prec) const
+bool type::print(OutputStream &s, const result& r) const
+{
+  DCASSERT(isPrintable());
+  if (r.isUnknown()) {
+    s.Put('?');
+    return true;
+  }
+  if (r.isInfinity()) {
+    DCASSERT(infinity_string);
+    if (r.signInfinity() < 0)   s.Put('-');
+    s.Put(infinity_string);
+    return true;
+  }
+  if (r.isNull()) {
+    s.Put("null");
+    return true;
+  }
+  return print_normal(s, r);
+}
+
+bool type::print(OutputStream &s, const result& r, int width) const
 {
   DCASSERT(isPrintable());
   if (r.isUnknown()) {
@@ -115,6 +135,16 @@ bool type::print(OutputStream &s, const result& r, int width, int prec) const
   }
   if (r.isNull()) {
     s.Put("null", width);
+    return true;
+  }
+  return print_normal(s, r, width);
+}
+
+bool type::print(OutputStream &s, const result& r, int width, int prec) const
+{
+  DCASSERT(isPrintable());
+  if (r.isUnknown() || r.isInfinity() || r.isNull()) {
+    print(s, r, width);
     return true;
   }
   return print_normal(s, r, width, prec);
@@ -159,7 +189,12 @@ bool type::equals(const result &x, const result &y) const
   return false;
 }
 
-bool type::print_normal(OutputStream &s, const result& r, int w, int p) const
+bool type::print_normal(OutputStream &s, const result& r) const
+{
+  return print_normal(s, r, 0);
+}
+
+bool type::print_normal(OutputStream &s, const result& r, int w) const
 {
   shared_object* foo = r.getPtr();
   if (foo) {
@@ -168,6 +203,11 @@ bool type::print_normal(OutputStream &s, const result& r, int w, int p) const
   }
   DCASSERT(0);
   return false;
+}
+
+bool type::print_normal(OutputStream &s, const result& r, int w, int p) const
+{
+  return print_normal(s, r, w);
 }
 
 void type::show_normal(OutputStream &s, const result& r) const

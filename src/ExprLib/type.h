@@ -116,10 +116,25 @@ public:
       We must be "printable" according to isPrintable().
         @param  s  Stream to write to.
         @param  r  Result to display.
+  */
+  bool print(OutputStream &s, const result& r) const;
+
+  /** Print a result of this type.
+      We must be "printable" according to isPrintable().
+        @param  s  Stream to write to.
+        @param  r  Result to display.
+        @param  w  Width to use.
+  */
+  bool print(OutputStream &s, const result& r, int w) const;
+
+  /** Print a result of this type.
+      We must be "printable" according to isPrintable().
+        @param  s  Stream to write to.
+        @param  r  Result to display.
         @param  w  Width to use.
         @param  p  Precision to use.
   */
-  bool print(OutputStream &s, const result& r, int w=0, int p=-1) const;
+  bool print(OutputStream &s, const result& r, int w, int p) const;
 
   /** Show a result.
       Just like print(), except for strings:
@@ -154,7 +169,9 @@ public:
   virtual bool equals(const result &x, const result &y) const;
 
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r, int w=0, int p=-1) const;
+  virtual bool print_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
+  virtual bool print_normal(OutputStream &s, const result& r, int w, int p) const;
   virtual void show_normal(OutputStream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
