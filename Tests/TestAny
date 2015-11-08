@@ -21,7 +21,7 @@ sm_fcount="0"
 icp_okcount="0"
 icp_chcount="0"
 icp_fcount="0"
-outfile=`mktemp /tmp/test.XXXXXXXX`
+outfile=`mktemp test.XXXXXXXX`
 
 OK=" [1;32m   OK   [0;39m"
 CHANGE=" [1;33m CHANGE [0;39m"
