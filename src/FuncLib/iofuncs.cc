@@ -9,6 +9,8 @@
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 
+// #define DEBUG_FILE
+
 // ******************************************************************
 // *                        read_bool  class                        *
 // ******************************************************************
@@ -530,18 +532,30 @@ void generic_file::compute(DisplayStream &s, traverse_data &x, expr** pass, int 
   DCASSERT(1==np);
   SafeCompute(pass[0], x);
   if (x.answer->isNull()) {
+#ifdef DEBUG_FILE
+      fprintf(stderr, "Switching stream to normal display\n");
+#endif
       s.SwitchDisplay(0);
       x.answer->setBool(true);
       return;
   }
   shared_string* xss = smart_cast <shared_string*> (x.answer->getPtr());
   DCASSERT(xss);
+#ifdef DEBUG_FILE
+  fprintf(stderr, "Switching stream to file %s...\n", xss->getStr());
+#endif
   FILE* outfile = fopen(xss->getStr(), "a");
   if (outfile) {
       s.SwitchDisplay(outfile);
       x.answer->setBool(true);
+#ifdef DEBUG_FILE
+      fprintf(stderr, "...successful\n");
+#endif
   } else {
       x.answer->setBool(false);
+#ifdef DEBUG_FILE
+      fprintf(stderr, "...error opening\n");
+#endif
   }
 }
 
