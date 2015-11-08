@@ -37,7 +37,7 @@ class bool_type : public simple_type {
 public:
   bool_type();
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r, int w, int p) const;
+  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
   virtual void show_normal(OutputStream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
@@ -53,7 +53,7 @@ bool_type::bool_type()
   setPrintable();
 }
 
-bool bool_type::print_normal(OutputStream &s, const result& r, int w, int p) const
+bool bool_type::print_normal(OutputStream &s, const result& r, int w) const
 {
   if (r.getBool())  s.Put("true", w);
   else              s.Put("false", w);
@@ -95,7 +95,8 @@ public:
   int_type();
   virtual int compare(const result& a, const result& b) const;
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r, int w, int p) const;
+  virtual bool print_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
   virtual void show_normal(OutputStream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
@@ -131,7 +132,13 @@ int int_type::compare(const result& a, const result& b) const
   return 0;
 }
 
-bool int_type::print_normal(OutputStream &s, const result& r, int w, int p) const
+bool int_type::print_normal(OutputStream &s, const result& r) const
+{
+  s.Put(r.getInt());
+  return true;
+}
+
+bool int_type::print_normal(OutputStream &s, const result& r, int w) const
 {
   s.Put(r.getInt(), w);
   return true;
@@ -178,6 +185,8 @@ public:
   real_type();
   virtual int compare(const result& a, const result& b) const;
 protected:
+  virtual bool print_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
   virtual bool print_normal(OutputStream &s, const result& r, int w, int p) const;
   virtual void show_normal(OutputStream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
@@ -227,10 +236,25 @@ int real_type::compare(const result& a, const result& b) const
   return 0;
 }
 
+bool real_type::print_normal(OutputStream &s, const result& r) const
+{
+  s.Put(r.getReal());
+  shared_object* o = r.getPtr(); 
+  if (o) o->Print(s, 0); // confidence interval, or something similar
+  return true;
+}
+
+bool real_type::print_normal(OutputStream &s, const result& r, int w) const
+{
+  s.Put(r.getReal(), w);
+  shared_object* o = r.getPtr(); 
+  if (o) o->Print(s, 0); // confidence interval, or something similar
+  return true;
+}
+
 bool real_type::print_normal(OutputStream &s, const result& r, int w, int p) const
 {
-  if (p<0)  s.Put(r.getReal(), w);
-  else      s.Put(r.getReal(), w, p);
+  s.Put(r.getReal(), w, p);
   shared_object* o = r.getPtr(); 
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
