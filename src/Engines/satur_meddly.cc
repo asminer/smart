@@ -170,7 +170,7 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   meddly_states* rss = GrabMeddlyMCStates(lm);
   DCASSERT(rss);
   // TBD: mtmdd versus ev*mdd?
-  MEDDLY::forest* newf = rss->vars->createForest(
+  MEDDLY::forest* newf = rss->createForest(
     true, MEDDLY::forest::REAL, MEDDLY::forest::MULTI_TERMINAL
   );
   rss->proc_wrap = 

@@ -713,7 +713,7 @@ int bounded_varoption::initDomain(const exprman* em)
     built_ok = false;
     return 0;
   }
-  DCASSERT(ms.vars);
+  DCASSERT(ms.hasVars());
   return maxbound;
 }
 
@@ -723,7 +723,7 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Initialize MDD forest
   //
-  MEDDLY::forest* mdd = ms.vars->createForest(
+  MEDDLY::forest* mdd = ms.createForest(
     false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
     pg.buildRSSPolicies()
   );
@@ -731,7 +731,7 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Initialize MxD forest
   //
-  MEDDLY::forest* mxd = ms.vars->createForest(
+  MEDDLY::forest* mxd = ms.createForest(
     true, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL,
     pg.buildNSFPolicies()
   );
@@ -739,7 +739,7 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Initialize MTMxD forest
   //
-  MEDDLY::forest* mtmxd = ms.vars->createForest(
+  MEDDLY::forest* mtmxd = ms.createForest(
     true, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL,
     pg.buildNSFPolicies()
   );
@@ -1259,7 +1259,7 @@ void substate_varoption::initDomain(const exprman* em)
     built_ok = false;
     return;
   }
-  DCASSERT(ms.vars);
+  DCASSERT(ms.hasVars());
   
   from_minterm = new int[num_levels+1];
   to_minterm = new int[num_levels+1];
@@ -1294,7 +1294,7 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Initialize MDD forest
   //
-  MEDDLY::forest* mdd = ms.vars->createForest(
+  MEDDLY::forest* mdd = ms.createForest(
     false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
     pg.buildRSSPolicies()
   );
@@ -1302,7 +1302,7 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Initialize MxD forest
   //
-  MEDDLY::forest* mxd = ms.vars->createForest(
+  MEDDLY::forest* mxd = ms.createForest(
     true, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
     pg.buildNSFPolicies()
   );

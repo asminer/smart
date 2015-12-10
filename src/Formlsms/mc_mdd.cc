@@ -158,9 +158,8 @@ meddly_mc::meddly_mc(meddly_states* ss)
   process = ss;
   is_finished = false;
   // Build scratch space
-  DCASSERT(process->vars);
   DCASSERT(process->mdd_wrap);
-  MEDDLY::forest* f = process->vars->createForest(
+  MEDDLY::forest* f = process->createForest(
     false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL
   );
   mtmdd_wrap = process->mdd_wrap->copyWithDifferentForest("mtmdd", f);
