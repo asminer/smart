@@ -7,6 +7,7 @@
 #include "matrix.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
