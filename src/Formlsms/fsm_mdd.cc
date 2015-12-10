@@ -36,12 +36,7 @@ public:
 
   inline shared_ddedge* buildActualNSF() const {
     DCASSERT(process);
-    DCASSERT(process->mxd_wrap);
-    DCASSERT(process->nsf);
-    DCASSERT(process->states);
-    shared_ddedge* actual = new shared_ddedge(process->mxd_wrap->getForest());
-    process->mxd_wrap->selectRows(process->nsf, process->states, actual);
-    return actual;
+    return process->buildActualNSF();
   };
 
   inline void finish() {
@@ -77,11 +72,10 @@ meddly_fsm::meddly_fsm(meddly_states* ss)
   is_finished = false;
 
   // Build scratch space
-  DCASSERT(process->mdd_wrap);
   MEDDLY::forest* f = process->createForest(
     false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL
   );
-  mtmdd_wrap = process->mdd_wrap->copyWithDifferentForest("MTMDD", f);
+  mtmdd_wrap = process->copyMddWrapperWithDifferentForest("MTMDD", f);
   DCASSERT(mtmdd_wrap);
 }
 
@@ -118,13 +112,13 @@ void meddly_fsm::showStates(bool internal) const
 void meddly_fsm::getReachable(result &x) const
 {
   DCASSERT(is_finished);
-  if (0==process || 0==process->mdd_wrap || 0==process->states) {
+  if (0==process || !process->hasMddWrapper() || !process->hasStates()) {
     x.setNull();
     return;
   }
   x.setPtr(
-    new stateset(this, Share(process->mdd_wrap), Share(process->states),
-                       Share(process->mxd_wrap), Share(process->nsf)
+    new stateset(this, process->shareMddWrap(), process->shareStates(), 
+                       process->shareMxdWrap(), process->shareNSF()
                 )
   );
 }
@@ -132,7 +126,7 @@ void meddly_fsm::getReachable(result &x) const
 void meddly_fsm::getPotential(expr* p, result &ss) const
 {
   DCASSERT(is_finished);
-  if (0==p || 0==process || 0==process->mdd_wrap) {
+  if (0==p || 0==process || !process->hasMddWrapper()) {
     ss.setNull();
     return;
   }
@@ -147,12 +141,12 @@ void meddly_fsm::getPotential(expr* p, result &ss) const
   DCASSERT(mtans);
 
   // copy into MDD
-  shared_ddedge* ans = new shared_ddedge(process->mdd_wrap->getForest());
+  shared_ddedge* ans = process->newMddEdge();
   MEDDLY::apply(MEDDLY::COPY, mtans->E, ans->E);
 
   // This should clobber the MTMDD
-  ss.setPtr( new stateset(this, Share(process->mdd_wrap), ans,
-                                Share(process->mxd_wrap), Share(process->nsf)
+  ss.setPtr( new stateset(this, process->shareMddWrap(), ans,
+                                process->shareMxdWrap(), process->shareNSF()
                  ) 
   );
 }
@@ -160,13 +154,13 @@ void meddly_fsm::getPotential(expr* p, result &ss) const
 void meddly_fsm::getInitialStates(result &x) const
 {
   DCASSERT(is_finished);
-  if (0==process || 0==process->mdd_wrap || 0==process->initial) {
+  if (0==process || !process->hasMddWrapper() || !process->hasInitial()) {
     x.setNull();
     return;
   }
   x.setPtr(
-    new stateset(this, Share(process->mdd_wrap), Share(process->initial),
-                       Share(process->mxd_wrap), Share(process->nsf)
+    new stateset(this, process->shareMddWrap(), process->shareInitial(),
+                       process->shareMxdWrap(), process->shareNSF()
     )
   );
 }
@@ -174,10 +168,8 @@ void meddly_fsm::getInitialStates(result &x) const
 void meddly_fsm::findDeadlockedStates(stateset &p) const
 {
   DCASSERT(process);
-  DCASSERT(process->mdd_wrap);
-  DCASSERT(process->mxd_wrap);
 
-  MEDDLY::forest* f = process->mdd_wrap->getForest();
+  MEDDLY::forest* f = process->getMddForest();
   DCASSERT(f);
 
   MEDDLY::dd_edge one(f), live(f);
@@ -185,7 +177,7 @@ void meddly_fsm::findDeadlockedStates(stateset &p) const
   f->createEdge(true, one);
 
   // EX true gives all "live" states
-  MEDDLY::apply(MEDDLY::PRE_IMAGE, one, process->nsf->E, live);
+  MEDDLY::apply(MEDDLY::PRE_IMAGE, one, process->getNSF(), live);
 
   // Subtract live states from p
   shared_ddedge* pse = smart_cast <shared_ddedge*> (p.changeStateDD());
@@ -260,7 +252,7 @@ void meddly_fsm::showArcs(bool internal) const
     const int* fmt = process->states->getIterMinterm();
     em->cout() << "From state ";
     if (display_graph_node_names) {
-      process->mdd_wrap->minterm2state(fmt, fst);
+      process->MddMinterm2State(fmt, fst);
       fst->Print(em->cout(), 0);
     } else {
       em->cout() << fc;
@@ -277,7 +269,7 @@ void meddly_fsm::showArcs(bool internal) const
       const int* tmt = process->proc->getIterPrimedMinterm();
       em->cout() << "\tTo state ";
       if (display_graph_node_names) {
-        process->mdd_wrap->minterm2state(tmt, tst);
+        process->MddMinterm2State(tmt, tst);
         tst->Print(em->cout(), 0);
       } else {
         int index;

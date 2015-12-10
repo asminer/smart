@@ -2846,8 +2846,6 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
     DCASSERT(mvo);
     try {
       mvo->initializeVars();
-      DCASSERT(ms->mdd_wrap);
-      DCASSERT(ms->mxd_wrap);
       delete mvo;
     }
     catch (error e) {
@@ -2863,8 +2861,6 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
       ms = Share(GrabMeddlyMCStates(lm));
     }
     DCASSERT(ms);
-    DCASSERT(ms->mdd_wrap);
-    DCASSERT(ms->mxd_wrap);
   }
 
   //
@@ -2886,7 +2882,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
 
   // Everybody uses this
   minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
-    1+ms->mdd_wrap->getNumDDVars()
+    1+ms->getNumVars()
   );
 
   //
@@ -2900,8 +2896,8 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
     gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
       G(
         level_change, true, *ms, mp,
-        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-        new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+        new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+        new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
         (edge_minterms*) 0
       );
     
@@ -2914,8 +2910,8 @@ void meddly_explgen::generateRS(dsde_hlm &hm)
     gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
       G(
         level_change, true, *ms, mp,
-        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-        new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+        new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+        new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
         (edge_minterms*) 0
       );
     
@@ -2929,7 +2925,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
 {
   // Everybody uses this
   minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
-    1+ms->mdd_wrap->getNumDDVars()
+    1+ms->getNumVars()
   );
 
   //
@@ -2952,9 +2948,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new edge_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
     
           DoRG(hm, G);
@@ -2966,9 +2962,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new edge_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
       
           DoRG(hm, G);
@@ -2985,9 +2981,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new edge_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
     
           DoRG(hm, G);
@@ -2999,9 +2995,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
           gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new edge_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new edge_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
       
           DoRG(hm, G);
@@ -3025,9 +3021,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
+          new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+          new edge_minterms(ms->useMxdWrap(), *mp, getBatchSize(), false)
         );
   
         DoRG(hm, G);
@@ -3039,9 +3035,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
+          new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+          new edge_minterms(ms->useMxdWrap(), *mp, getBatchSize(), false)
         );
     
         DoRG(hm, G);
@@ -3058,9 +3054,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+          new edge_minterms(ms->useMxdWrap(), *mp, getBatchSize(), false)
         );
   
         DoRG(hm, G);
@@ -3072,9 +3068,9 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
         gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new edge_minterms(*ms->mxd_wrap, *mp, getBatchSize(), false)
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+          new edge_minterms(ms->useMxdWrap(), *mp, getBatchSize(), false)
         );
     
         DoRG(hm, G);
@@ -3097,7 +3093,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
 
   // Everybody uses this
   minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), 
-    1+ms->mdd_wrap->getNumDDVars()
+    1+ms->getNumVars()
   );
 
   //
@@ -3120,9 +3116,9 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, real_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new real_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
     
           DoMC(hm, G);
@@ -3134,9 +3130,9 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, real_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new real_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
       
           DoMC(hm, G);
@@ -3153,9 +3149,9 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, real_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+            new real_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
     
           DoMC(hm, G);
@@ -3167,9 +3163,9 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
           gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, real_2001_cmds>
           G(
             level_change, false, *ms, mp,
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-            new real_2001_cmds(*ms->mxd_wrap, getBatchSize())
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+            new real_2001_cmds(ms->useMxdWrap(), getBatchSize())
           );
       
           DoMC(hm, G);
@@ -3193,8 +3189,8 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         gen_wrapper_templ <mt_known_stategroup, mt_br_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
         );
   
@@ -3207,8 +3203,8 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         gen_wrapper_templ <mt_known_stategroup, mt_sr_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_known_stategroup(*ms->mdd_wrap, *mp, ms->states),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new mt_known_stategroup(ms->useMddWrap(), *mp, ms->states),
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
         );
     
@@ -3226,8 +3222,8 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         gen_wrapper_templ <mt_br_stategroup, mt_br_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
-          new mt_br_stategroup(*ms->mdd_wrap, *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
+          new mt_br_stategroup(ms->useMddWrap(), *mp, getBatchSize(), getMBR()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
         );
   
@@ -3240,8 +3236,8 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
         gen_wrapper_templ <mt_sr_stategroup, mt_sr_stategroup, edge_minterms>
         G(
           level_change, false, *ms, mp,
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
-          new mt_sr_stategroup(*ms->mdd_wrap, *mp, getBatchSize()),
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
+          new mt_sr_stategroup(ms->useMddWrap(), *mp, getBatchSize()),
           new edge_minterms(*ms->proc_wrap, *mp, getBatchSize(), true)
         );
     
@@ -3745,10 +3741,10 @@ protected:
     minterms = new minterm_pool(
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
-    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
-    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
+    vanishing = new mt_sr_stategroup(ms->useMddWrap(), *minterms, getBatchSize());
+    tangible = new mt_known_stategroup(ms->useMddWrap(), *minterms, ms->states);
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
+      tan2tan = new edge_minterms(ms->useMxdWrap(), *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
@@ -3788,10 +3784,10 @@ protected:
     minterms = new minterm_pool(
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
-    vanishing = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
-    tangible = new mt_sr_stategroup(*ms->mdd_wrap, *minterms, getBatchSize());
+    vanishing = new mt_sr_stategroup(ms->useMddWrap(), *minterms, getBatchSize());
+    tangible = new mt_sr_stategroup(ms->useMddWrap(), *minterms, getBatchSize());
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
+      tan2tan = new edge_minterms(ms->useMxdWrap(), *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
@@ -3832,10 +3828,10 @@ protected:
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
     vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
-    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
-    tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
+    tangible = new mt_known_stategroup(ms->useMddWrap(), *minterms, ms->states);
+    tan2tan = new edge_minterms(ms->useMxdWrap(), *minterms, getBatchSize(), false);
   };
   virtual void DoneBuffers() {
     delete tangible;
@@ -3875,13 +3871,13 @@ protected:
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
     vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
     tangible = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
     if (!statesOnly()) {
-      tan2tan = new edge_minterms(*ms->mxd_wrap, *minterms, getBatchSize(), false);
+      tan2tan = new edge_minterms(ms->useMxdWrap(), *minterms, getBatchSize(), false);
     } 
   };
   virtual void DoneBuffers() {
@@ -3960,10 +3956,10 @@ protected:
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
     vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
-    tangible = new mt_known_stategroup(*ms->mdd_wrap, *minterms, ms->states);
-    tan2tan = new edge_2001_cmds(*ms->mxd_wrap, getBatchSize());
+    tangible = new mt_known_stategroup(ms->useMddWrap(), *minterms, ms->states);
+    tan2tan = new edge_2001_cmds(ms->useMxdWrap(), getBatchSize());
   };
   virtual void DoneBuffers() {
     delete tangible;
@@ -4006,10 +4002,10 @@ protected:
       6+6*getBatchSize(), 1+ms->mdd_wrap->getNumDDVars()
     );
     vanishing = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
     tangible = new mt_br_stategroup(
-      *ms->mdd_wrap, *minterms, getBatchSize(), getMBR()
+      ms->useMddWrap(), *minterms, getBatchSize(), getMBR()
     );
   };
   virtual void DoneBuffers() {
