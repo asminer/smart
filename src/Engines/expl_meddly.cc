@@ -3089,8 +3089,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
   // Set up forest for storing the process
   //
   using namespace MEDDLY;
-  domain* d = ms->vars;
-  forest* f = d->createForest(
+  forest* f = ms->createForest(
     true, forest::REAL, useEVMXD() ? forest::EVTIMES : forest::MULTI_TERMINAL,
     ms->mxd_wrap->getForest()->getPolicies()
   );

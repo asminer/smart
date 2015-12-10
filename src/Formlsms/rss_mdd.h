@@ -15,9 +15,13 @@
 
 class dsde_hlm;
 
+/*
+    TBD - converting this into a proper class
+          rather than a struct as it is currently
+*/
 class meddly_states : public shared_object {
-public:
   MEDDLY::domain* vars;
+public:
   meddly_encoder* mdd_wrap;
   shared_ddedge* initial;
   shared_ddedge* states;
@@ -54,8 +58,11 @@ public:
   meddly_states();
 protected:
   virtual ~meddly_states();
+
+// Methods involving the domain
 public:
-  // handy functions
+  inline bool hasVars() const { return vars; }
+
 //  bool createVarsBottomUp(const dsde_hlm &m, int* b, int nl);
   bool createVars(const dsde_hlm &m, MEDDLY::variable** v, int nv);
 
@@ -64,6 +71,23 @@ public:
     // Includes terminal level...
     return vars->getNumVariables() + 1;
   }
+
+  inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
+    MEDDLY::forest::edge_labeling ev) 
+  {
+    DCASSERT(vars);
+    return vars->createForest(rel, t, ev);
+  }
+
+  inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
+    MEDDLY::forest::edge_labeling ev, const MEDDLY::forest::policies &p) 
+  {
+    DCASSERT(vars);
+    return vars->createForest(rel, t, ev, p);
+  }
+
+public:
+  // handy functions
 
   // required for shared_object
   virtual bool Print(OutputStream &s, int) const;
