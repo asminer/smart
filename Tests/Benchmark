@@ -17,8 +17,9 @@ fi
 btotal="0"
 utotal="0"
 
-prefix=`mktemp prefix.XXXXXXXX`
-suffix=`mktemp suffix.XXXXXXXX`
+current=`pwd`
+prefix=`mktemp $current/prefix.XXXXXXXX`
+suffix=`mktemp $current/suffix.XXXXXXXX`
 
 #
 # Helper function:
