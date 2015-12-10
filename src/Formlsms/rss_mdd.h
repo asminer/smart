@@ -20,10 +20,13 @@ class dsde_hlm;
           rather than a struct as it is currently
 */
 class meddly_states : public shared_object {
+  // Domain 
   MEDDLY::domain* vars;
-public:
+
+  // State encoder, and sets of states
   meddly_encoder* mdd_wrap;
   shared_ddedge* initial;
+public:
   shared_ddedge* states;
   // Optional: state indexes
   meddly_encoder* index_wrap;
@@ -61,8 +64,6 @@ protected:
 
 // Methods involving the domain
 public:
-  inline bool hasVars() const { return vars; }
-
 //  bool createVarsBottomUp(const dsde_hlm &m, int* b, int nl);
   bool createVars(const dsde_hlm &m, MEDDLY::variable** v, int nv);
 
@@ -86,6 +87,127 @@ public:
     return vars->createForest(rel, t, ev, p);
   }
 
+// Methods involving the states or mdd wrapper
+public:
+  inline meddly_encoder* 
+  copyMddWrapperWithDifferentForest(const char* what, MEDDLY::forest* f) const
+  {
+    DCASSERT(mdd_wrap);
+    return mdd_wrap->copyWithDifferentForest(what, f);
+  }
+
+  inline MEDDLY::forest* getMddForest() {
+    DCASSERT(mdd_wrap);
+    return mdd_wrap->getForest();
+  }
+
+  inline bool hasMddWrapper() const {
+    return mdd_wrap;
+  }
+
+  inline bool hasStates() const {
+    return states;
+  }
+
+  inline bool hasInitial() const {
+    return initial;
+  }
+
+  inline meddly_encoder* shareMddWrap() {
+    return Share(mdd_wrap);
+  }
+
+  inline shared_ddedge* shareStates() {
+    return Share(states);
+  }
+
+  inline shared_ddedge* shareInitial() {
+    return Share(initial);
+  }
+
+  inline void setMddWrap(meddly_encoder* w) {
+    DCASSERT(0==mdd_wrap);
+    mdd_wrap = w;
+  }
+
+  inline void setStates(shared_ddedge* S) {
+    DCASSERT(0==states);
+    states = S;
+  }
+
+  inline void setInitial(shared_ddedge* I) {
+    DCASSERT(0==initial);
+    initial = I;
+  }
+
+  inline const MEDDLY::dd_edge& getInitial() const {
+    DCASSERT(initial);
+    return initial->E;
+  }
+
+  inline shared_ddedge* newMddEdge() {
+    DCASSERT(mdd_wrap);
+    return new shared_ddedge(mdd_wrap->getForest());
+  }
+
+  inline void MddState2Minterm(const shared_state* s, int* mt) const {
+    DCASSERT(mdd_wrap);
+    mdd_wrap->state2minterm(s, mt);
+  }
+  inline void MddMinterm2State(const int* mt, shared_state* s) const {
+    DCASSERT(mdd_wrap);
+    mdd_wrap->minterm2state(mt, s);
+  }
+
+  inline void createMddMinterms(const int* const* mts, int n, shared_object* ans)
+  {
+    DCASSERT(mdd_wrap);
+    mdd_wrap->createMinterms(mts, n, ans);
+  }
+  
+  inline meddly_encoder& useMddWrap() {
+    DCASSERT(mdd_wrap);
+    return *mdd_wrap;
+  }
+
+// Methods involving the next-state function or mxd wrapper
+public:
+  inline shared_ddedge* buildActualNSF() const {
+    // TBD - this will become more complex when NSF isn't monolithic
+
+    DCASSERT(mxd_wrap);
+    DCASSERT(nsf);
+    DCASSERT(states);
+    shared_ddedge* actual = new shared_ddedge(mxd_wrap->getForest());
+    mxd_wrap->selectRows(nsf, states, actual);
+    return actual;
+  }
+
+  inline meddly_encoder* shareMxdWrap() {
+    return Share(mxd_wrap);
+  }
+
+  inline shared_ddedge* shareNSF() {
+    return Share(nsf);
+  }
+
+  inline void setMxdWrap(meddly_encoder* w) {
+    DCASSERT(0==mxd_wrap);
+    mxd_wrap = w;
+  }
+
+
+  inline const MEDDLY::dd_edge& getNSF() const {
+    DCASSERT(nsf);
+    return nsf->E;
+  }
+
+  inline meddly_encoder& useMxdWrap() {
+    DCASSERT(mxd_wrap);
+    return *mxd_wrap;
+  }
+
+
 public:
   // handy functions
 
@@ -93,6 +215,7 @@ public:
   virtual bool Print(OutputStream &s, int) const;
   virtual bool Equals(const shared_object *o) const;
 
+  /*
   inline const MEDDLY::dd_edge& getInit() const { 
     DCASSERT(initial);
     return initial->E;
@@ -105,10 +228,7 @@ public:
     DCASSERT(states);
     return states->E;
   }
-  inline const MEDDLY::dd_edge& getNSF() const {
-    DCASSERT(nsf);
-    return nsf->E;
-  }
+*/
 
   inline int getNumVars() const {
     DCASSERT(mdd_wrap);

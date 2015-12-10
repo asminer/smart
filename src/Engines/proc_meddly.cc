@@ -99,7 +99,6 @@ meddly_varoption::~meddly_varoption()
 void meddly_varoption::initializeVars()
 {
   // We're good, just need to set the initial states
-  DCASSERT(ms.mdd_wrap);
 
   // allocate what we need
   shared_state* st = new shared_state(&parent);
@@ -113,14 +112,19 @@ void meddly_varoption::initializeVars()
   for (int n=0; n<num_init; n++) {
     mt[n] = new int[ms.getNumVars()+1];
     parent.GetInitialState(n, st);
-    ms.mdd_wrap->state2minterm(st, mt[n]);
+    ms.MddState2Minterm(st, mt[n]);
   } // for n
 
   // Build DD from minterms
-  ms.initial = smart_cast <shared_ddedge*> (ms.mdd_wrap->makeEdge(0));
-  DCASSERT(ms.initial);
+  // ms.initial = smart_cast <shared_ddedge*> (ms.mdd_wrap->makeEdge(0));
+  // DCASSERT(ms.initial);
+  shared_ddedge* initial = ms.newMddEdge();
+  DCASSERT(initial);
   try {
-    ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
+    // ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
+    ms.createMddMinterms(mt, num_init, initial);
+    ms.setInitial(initial);
+
     // Cleanup
     for (int n=0; n<num_init; n++)  delete[] mt[n];
     delete[] mt;
@@ -713,7 +717,6 @@ int bounded_varoption::initDomain(const exprman* em)
     built_ok = false;
     return 0;
   }
-  DCASSERT(ms.hasVars());
   return maxbound;
 }
 
@@ -747,8 +750,8 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Build encoders
   //
-  ms.mdd_wrap = new bounded_encoder("MDD", mdd, parent, maxbound);
-  ms.mxd_wrap = new bounded_encoder("MxD", mxd, parent, maxbound);
+  ms.setMddWrap(new bounded_encoder("MDD", mdd, parent, maxbound));
+  ms.setMxdWrap(new bounded_encoder("MxD", mxd, parent, maxbound));
   mtmxd_wrap =  new bounded_encoder("MTMxD", mtmxd, parent, maxbound);
 }
 
@@ -1259,7 +1262,6 @@ void substate_varoption::initDomain(const exprman* em)
     built_ok = false;
     return;
   }
-  DCASSERT(ms.hasVars());
   
   from_minterm = new int[num_levels+1];
   to_minterm = new int[num_levels+1];
@@ -1311,8 +1313,8 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Build encoders
   //
-  ms.mdd_wrap = new substate_encoder("MDD", mdd, parent, Share(colls));
-  ms.mxd_wrap = new substate_encoder("MxD", mxd, parent, Share(colls));
+  ms.setMddWrap(new substate_encoder("MDD", mdd, parent, Share(colls)));
+  ms.setMxdWrap(new substate_encoder("MxD", mxd, parent, Share(colls)));
 }
 
 substate_varoption::deplist*

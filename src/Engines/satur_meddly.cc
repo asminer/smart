@@ -658,12 +658,12 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
       em->report() << "Built    next-state function, took ";
       em->report() << subwatch.elapsed_seconds() << " seconds\n";
   #ifdef DEBUG_FINAL_NSF
-      em->report() << "DD edge: " << x.ms.nsf->E.getNode() << "\n";
+      em->report() << "DD edge: " << x.ms.getNSF().getNode() << "\n";
       em->report().flush();
-      x.ms.nsf->E.show(em->Freport(), 2);
-      em->report() << "Initial state: " << x.ms.initial->E.getNode() << "\n";
+      x.ms.getNSF().show(em->Freport(), 2);
+      em->report() << "Initial state: " << x.ms.getInitial().getNode() << "\n";
       em->report().flush();
-      x.ms.initial->E.show(em->Freport(), 2);
+      x.ms.getInitial().show(em->Freport(), 2);
   #endif
   #ifdef DEBUG_REFCOUNTS
       em->report() << "Forest:\n";
@@ -684,8 +684,6 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
       em->stopIO();
       subwatch.reset();
     }
-    DCASSERT(0==x.ms.states);
-    x.ms.states = new shared_ddedge(x.ms.mdd_wrap->getForest());
 
     generateRSS(x, subwatch);
 
@@ -742,12 +740,14 @@ meddly_saturation::~meddly_saturation()
 void meddly_saturation::generateRSS(meddly_varoption &x, timer&)
 {
   try {
+    shared_ddedge* S = x.ms.newMddEdge();
     MEDDLY::apply(
       MEDDLY::REACHABLE_STATES_DFS,
-      x.ms.initial->E, 
-      x.ms.nsf->E,
-      x.ms.states->E
+      x.ms.getInitial(), 
+      x.ms.getNSF(),
+      S->E
     );
+    x.ms.setStates(S);
     checkTerm("Generation failed", x.parent);
   }
   catch (MEDDLY::error ce) {
@@ -789,12 +789,14 @@ meddly_traditional::~meddly_traditional()
 void meddly_traditional::generateRSS(meddly_varoption &x, timer&)
 {
   try {
+    shared_ddedge* S = x.ms.newMddEdge();
     MEDDLY::apply(
       MEDDLY::REACHABLE_STATES_BFS,
-      x.ms.initial->E, 
-      x.ms.nsf->E,
-      x.ms.states->E
+      x.ms.getInitial(), 
+      x.ms.getNSF(),
+      S->E
     );
+    x.ms.setStates(S);
     return checkTerm("Generation failed", x.parent);
   }
   catch (MEDDLY::error ce) {
@@ -887,8 +889,9 @@ meddly_frontier::~meddly_frontier()
 
 void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
 {
-  MEDDLY::dd_edge F = x.ms.initial->E;
-  x.ms.states->E = x.ms.initial->E;
+  MEDDLY::dd_edge F = x.ms.getInitial();
+  shared_ddedge* S = x.ms.newMddEdge();
+  S->E = x.ms.getInitial();
   while (F.getNode()) {
     iterations++;
     if (debug.startReport()) {
@@ -899,7 +902,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     // compute N(F)
     try {
-      MEDDLY::apply(MEDDLY::POST_IMAGE, F, x.ms.nsf->E, F);
+      MEDDLY::apply(MEDDLY::POST_IMAGE, F, x.ms.getNSF(), F);
       checkTerm("post-image", x.parent);
     }
     catch (MEDDLY::error ce) {
@@ -911,7 +914,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     // subtract S
     try {
-      MEDDLY::apply(MEDDLY::DIFFERENCE, F, x.ms.states->E, F);
+      MEDDLY::apply(MEDDLY::DIFFERENCE, F, S->E, F);
       checkTerm("set difference", x.parent);
     }
     catch (MEDDLY::error ce) {
@@ -927,7 +930,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     // add F to S
     try {
       MEDDLY::apply(
-        MEDDLY::UNION, x.ms.states->E, F, x.ms.states->E
+        MEDDLY::UNION, S->E, F, S->E
       );
       checkTerm("set union", x.parent);
     }
@@ -936,16 +939,17 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     if (debug.startReport()) {
       debug.report() << "\tdone S:=S+F  ";
-      double card = x.ms.states->E.getCardinality();
+      double card = S->E.getCardinality();
       debug.report().Put(card, 13);
       debug.report() << " reachable states so far";
       debug.newLine();
-      long nodes = x.ms.mdd_wrap->getForest()->getCurrentNumNodes();
+      long nodes = x.ms.getMddForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
       debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
     }
   } // while F
+  x.ms.setStates(S);
 }
 
 // **************************************************************************
@@ -982,9 +986,9 @@ meddly_nextall::~meddly_nextall()
 
 void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
 {
-  MEDDLY::dd_edge Old(x.ms.mdd_wrap->getForest());
-  x.ms.mdd_wrap->getForest()->createEdge(false, Old);
-  x.ms.states->E = x.ms.initial->E;
+  MEDDLY::dd_edge Old(x.ms.getMddForest());
+  x.ms.getMddForest()->createEdge(false, Old);
+  x.ms.states->E = x.ms.getInitial();
   while (x.ms.states->E != Old) {
     iterations++;
     if (debug.startReport()) {
@@ -997,7 +1001,7 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     // compute S = N(S)
     try {
       MEDDLY::apply(MEDDLY::POST_IMAGE, 
-                    x.ms.states->E, x.ms.nsf->E, x.ms.states->E);
+                    x.ms.states->E, x.ms.getNSF(), x.ms.states->E);
       checkTerm("post-image", x.parent);
     }
     catch (MEDDLY::error ce) {
@@ -1022,7 +1026,7 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
       debug.report().Put(card, 13);
       debug.report() << " reachable states so far";
       debug.newLine();
-      long nodes = x.ms.mdd_wrap->getForest()->getCurrentNumNodes();
+      long nodes = x.ms.getMddForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
       debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
