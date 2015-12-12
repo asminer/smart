@@ -34,6 +34,7 @@ find_gmp() {
   try_gmp /opt/local && return 0
   try_gmp /usr/local && return 0
   try_gmp /usr && return 0
+  try_gmp /mingw && return 0
   printf "Cannot find gmp Library\n"
   printf "Set environment variable GMP_LIBRARY, or\n"
   printf "use argument  --without-gmp  to disable\n"
