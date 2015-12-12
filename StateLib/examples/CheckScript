@@ -22,7 +22,7 @@ if [ -f $infile ]; then
           printf "  %-40s  " $outfile
           if ./dbtest -$ih -$rst < $infile > /tmp/foo.txt 2> /dev/null; then
             # successful run
-            if diff /tmp/foo.txt $outfile > /dev/null; then
+            if diff -b /tmp/foo.txt $outfile > /dev/null; then
               echo $OK
             else
               echo $CHANGE

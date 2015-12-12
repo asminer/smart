@@ -16,7 +16,7 @@ AC_PREFIX_DEFAULT([$PWD])
 # Check for programs that we need
 #
 AC_PROG_CXX
-AM_PROG_AR
+# AM_PROG_AR
 AM_PROG_LIBTOOL
 
 #
