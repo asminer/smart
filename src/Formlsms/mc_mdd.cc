@@ -85,6 +85,7 @@ public:
   virtual void findDeadlockedStates(stateset &) const;
 
   virtual long getNumArcs() const;
+  virtual void getNumArcs(result& count) const;
   virtual void showArcs(bool internal) const;
 
   // Numerical solutions:
@@ -227,7 +228,6 @@ meddly_mc::buildActualProc(const shared_ddedge* p) const
 {
   if (0==p) return 0;
   DCASSERT(process);
-  DCASSERT(process->states);
   DCASSERT(process->proc_wrap);
   // strip off unreachable edges from process 
   shared_ddedge* actual = new shared_ddedge(process->proc_wrap->getForest());
@@ -250,7 +250,9 @@ void meddly_mc::visitStates(state_visitor &x) const
 long meddly_mc::getNumStates() const
 {
   DCASSERT(process);
-  return process->getNumStates();
+  long count;
+  process->getNumStates(count);
+  return count;
 }
 
 void meddly_mc::getNumStates(result &count) const
@@ -344,100 +346,54 @@ void meddly_mc::findDeadlockedStates(stateset &p) const
 long meddly_mc::getNumArcs() const
 {
   DCASSERT(process);
-  DCASSERT(process->mxd_wrap);
 
   long na = -1;
-  if (process->proc_uses_actual) {
-    process->proc_wrap->getCardinality(process->proc, na);
-  } else {
-    shared_object* actual = 0;
-    try {
-      actual = buildActualProc(process->proc);
-      DCASSERT(actual);
-      process->proc_wrap->getCardinality(actual, na);
+  try {
+    process->getNumArcs(na);
+  }
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
     }
-    catch (sv_encoder::error e) {
-      if (GetParent()->StartError(0)) {
-        em->cerr() << "Couldn't build actual edges: ";
-        em->cerr() << sv_encoder::getNameOfError(e);
-        GetParent()->DoneError();
-      }
-    }
-    Delete(actual);
   }
 
   return na;
 }
 
+void meddly_mc::getNumArcs(result &count) const
+{
+  DCASSERT(process);
+
+  count.setNull();
+
+  try {
+    process->getNumArcs(count);
+  }
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
+    }
+  }
+}
+
+
 void meddly_mc::showArcs(bool internal) const
 {
-
-  long ns = getNumStates();
-  if (ns<0) return;
-
-  long na = getNumArcs();
-  if (na<0) return;
-
-  if (tooManyStates(ns, true))  return;
-  if (tooManyArcs(na, true))    return;
-
-  if (!display_graph_node_names) {
-    process->buildIndexSet();
-    DCASSERT(process->index_wrap);
-    DCASSERT(process->state_indexes);
+  DCASSERT(process);
+  try {
+    process->showArcs(this, em->cout(), internal, display_graph_node_names);
   }
-
-  long count_na = 0;
-  shared_state* fst = new shared_state(parent);
-  shared_state* tst = new shared_state(parent);
-  long fc;
-  process->states->startIterator();
-  for (fc = 0; 
-        !process->states->isIterDone(); 
-        process->states->incIter(), ++fc) 
-  {
-    const int* fmt = process->states->getIterMinterm();
-    if (display_graph_node_names) {
-      em->cout() << "From ";
-      process->MddMinterm2State(fmt, fst); // TBD: check error code
-      fst->Print(em->cout(), 0);
-    } else {
-      em->cout() << "Row " << fc;
-    }
-    em->cout() << ":\n";
-    em->cout().Check();
-
-    //
-    // Iterate directly over the selected row
-    //
-
-    process->proc->startIteratorRow(fmt);
-    for (; !process->proc->isIterDone(); process->proc->incIter() ) {
-      const int* tmt = process->proc->getIterPrimedMinterm();
-      em->cout() << "\t";
-      if (display_graph_node_names) {
-        process->MddMinterm2State(tmt, tst);
-        tst->Print(em->cout(), 0);
-      } else {
-        int index;
-        process->index_wrap->getForest()->evaluate(
-          process->state_indexes->E, tmt, index
-        );
-        em->cout() << index;
-      }
-      float rate;
-      process->proc->getForest()->evaluate(process->proc->E, fmt, tmt, rate);
-      em->cout() << " : " << rate << "\n";
-      em->cout().Check();
-      count_na++;
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build/show actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
     }
   }
-  process->proc->freeIterator();
-  process->states->freeIterator();
-  Delete(fst);
-  Delete(tst);
-  DCASSERT(count_na == na);
-  em->cout().flush();
 }
 
 bool meddly_mc::computeSteadyState(double* probs) const

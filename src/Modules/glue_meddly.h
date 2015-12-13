@@ -221,6 +221,16 @@ public:
   // particular to meddly_encoder:
 
   inline MEDDLY::forest* getForest() { return F; }
+
+  inline bool isTypeBoolean() const {
+    return MEDDLY::forest::BOOLEAN == F->getRangeType();
+  }
+  inline bool isTypeInteger() const {
+    return MEDDLY::forest::INTEGER == F->getRangeType();
+  }
+  inline bool isTypeReal() const {
+    return MEDDLY::forest::REAL == F->getRangeType();
+  }
 };
 
 

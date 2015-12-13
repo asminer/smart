@@ -100,7 +100,9 @@ void meddly_fsm::getNumStates(result &count) const
 long meddly_fsm::getNumStates() const
 {
   DCASSERT(process);
-  return process->getNumStates();
+  long count;
+  process->getNumStates(count);
+  return count;
 }
 
 void meddly_fsm::showStates(bool internal) const
@@ -188,138 +190,55 @@ void meddly_fsm::findDeadlockedStates(stateset &p) const
 long meddly_fsm::getNumArcs() const
 {
   DCASSERT(process);
-  DCASSERT(process->mxd_wrap);
 
   long na = -1;
-  if (process->proc_uses_actual) {
-    process->proc_wrap->getCardinality(process->proc, na);
-  } else {
-    shared_object* actual = 0;
-    try {
-      actual = buildActualNSF();
-      process->proc_wrap->getCardinality(actual, na);
+  try {
+    process->getNumArcs(na);
+  }
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
     }
-    catch (sv_encoder::error e) {
-      if (GetParent()->StartError(0)) {
-        em->cerr() << "Couldn't build actual edges: ";
-        em->cerr() << sv_encoder::getNameOfError(e);
-        GetParent()->DoneError();
-      }
-    }
-    Delete(actual);
   }
 
   return na;
 }
 
-void meddly_fsm::showArcs(bool internal) const
-{
-  if (internal) {
-    DCASSERT(process->proc_wrap);
-    DCASSERT(process->proc);
-
-    em->cout() << "Internal process representation (using MEDDLY):\n";
-    process->proc_wrap->showNodeGraph(em->cout(), process->proc);
-    em->cout().flush();
-
-    return;
-  }
-
-  long ns = getNumStates();
-  if (ns<0) return;
-
-  long na = getNumArcs();
-  if (na<0) return;
-
-  if (tooManyStates(ns, true))  return;
-  if (tooManyArcs(na, true))    return;
-
-  if (!display_graph_node_names) {
-    process->buildIndexSet();
-    DCASSERT(process->index_wrap);
-    DCASSERT(process->state_indexes);
-  }
-
-  long count_na = 0;
-  shared_state* fst = new shared_state(parent);
-  shared_state* tst = new shared_state(parent);
-  long fc;
-  process->states->startIterator();
-  for (fc = 0; 
-        !process->states->isIterDone(); 
-        process->states->incIter(), ++fc) 
-  {
-    const int* fmt = process->states->getIterMinterm();
-    em->cout() << "From state ";
-    if (display_graph_node_names) {
-      process->MddMinterm2State(fmt, fst);
-      fst->Print(em->cout(), 0);
-    } else {
-      em->cout() << fc;
-    }
-    em->cout() << ":\n";
-    em->cout().Check();
-
-    //
-    // Iterate directly over the selected row
-    //
-
-    process->proc->startIteratorRow(fmt);
-    for (; !process->proc->isIterDone(); process->proc->incIter() ) {
-      const int* tmt = process->proc->getIterPrimedMinterm();
-      em->cout() << "\tTo state ";
-      if (display_graph_node_names) {
-        process->MddMinterm2State(tmt, tst);
-        tst->Print(em->cout(), 0);
-      } else {
-        int index;
-        process->index_wrap->getForest()->evaluate(
-            process->state_indexes->E, tmt, index
-        );
-        em->cout() << index;
-      }
-      em->cout() << "\n";
-      em->cout().Check();
-      count_na++;
-    }
-
-  } // for fc
-
-  process->proc->freeIterator();
-  process->states->freeIterator();
-  Delete(fst);
-  Delete(tst);
-  DCASSERT(na == count_na);
-  em->cout().flush();
-}
-
 void meddly_fsm::getNumArcs(result &count) const
 {
   DCASSERT(process);
-  DCASSERT(process->proc_wrap);
-  process->proc_wrap->getCardinality(process->proc, count);
 
-  if (process->proc_uses_actual) {
-    process->proc_wrap->getCardinality(process->proc, count);
-  } else {
-    shared_object* actual = process->proc_wrap->makeEdge(0);
-    DCASSERT(actual);
-    try {
-      process->proc_wrap->selectRows(process->proc, process->states, actual);
-      process->proc_wrap->getCardinality(actual, count);
+  count.setNull();
+
+  try {
+    process->getNumArcs(count);
+  }
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
     }
-    catch (sv_encoder::error e) {
-      if (GetParent()->StartError(0)) {
-        em->cerr() << "Couldn't build actual edges: ";
-        em->cerr() << sv_encoder::getNameOfError(e);
-        GetParent()->DoneError();
-      }
-      count.setNull();
-    } 
-    Delete(actual);
   }
 }
 
+
+void meddly_fsm::showArcs(bool internal) const
+{
+  DCASSERT(process);
+  try {
+    process->showArcs(this, em->cout(), internal, display_graph_node_names);
+  }
+  catch (sv_encoder::error e) {
+    if (GetParent()->StartError(0)) {
+      em->cerr() << "Couldn't count/build/show actual edges: ";
+      em->cerr() << sv_encoder::getNameOfError(e);
+      GetParent()->DoneError();
+    }
+  }
+}
 
 // ******************************************************************
 // *                                                                *
