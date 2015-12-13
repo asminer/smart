@@ -306,7 +306,7 @@ public:
         @return true on success, false otherwise.
   */
   virtual bool dumpDot(OutputStream &s) const;
-protected:
+
   /// Check if na exceeds option, if so, show "too many arcs" message.
   static bool tooManyArcs(long na, bool show);
 };

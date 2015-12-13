@@ -95,10 +95,6 @@ bool meddly_states::Equals(const shared_object* o) const
 
 void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal)
 {
-  //
-  // TBD: display internal representation?
-  //
-
 
   DCASSERT(m);
   DCASSERT(mdd_wrap);
@@ -132,6 +128,96 @@ void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal
   }
   states->freeIterator();
   Delete(st);
+}
+
+void meddly_states
+::showArcs(const graph_lldsm* m, OutputStream &cout, bool internal, bool node_names)
+{
+  if (internal) {
+    DCASSERT(proc_wrap);
+    DCASSERT(proc);
+
+    cout << "Internal process representation (using MEDDLY):\n";
+    proc_wrap->showNodeGraph(cout, proc);
+    cout.flush();
+
+    return;
+  }
+  long ns;
+  getNumStates(ns);
+  if (ns<0) return;
+
+  long na;
+  getNumArcs(na);
+  if (na<0) return;
+
+  if (m->tooManyStates(ns, true))  return;
+  if (m->tooManyArcs(na, true))    return;
+
+  if (!node_names) {
+    buildIndexSet();
+    DCASSERT(index_wrap);
+    DCASSERT(state_indexes);
+  }
+
+  long count_na = 0;
+  shared_state* fst = new shared_state(m->GetParent());
+  shared_state* tst = new shared_state(m->GetParent());
+  long fc;
+  states->startIterator();
+  for (fc = 0; 
+        !states->isIterDone(); 
+        states->incIter(), ++fc) 
+  {
+    const int* fmt = states->getIterMinterm();
+    cout << "From state ";
+    if (node_names) {
+      MddMinterm2State(fmt, fst);
+      fst->Print(cout, 0);
+    } else {
+      cout << fc;
+    }
+    cout << ":\n";
+    cout.flush();
+
+    //
+    // Iterate directly over the selected row
+    //
+
+    proc->startIteratorRow(fmt);
+    for (; !proc->isIterDone(); proc->incIter() ) {
+      const int* tmt = proc->getIterPrimedMinterm();
+      cout << "\tTo state ";
+      if (node_names) {
+        MddMinterm2State(tmt, tst);
+        tst->Print(cout, 0);
+      } else {
+        int index;
+        index_wrap->getForest()->evaluate(
+            state_indexes->E, tmt, index
+        );
+        cout << index;
+      }
+
+      if (proc_wrap->isTypeReal()) {
+        float rate;
+        proc->getForest()->evaluate(proc->E, fmt, tmt, rate);
+        cout << " : " << rate;
+      }
+
+      cout << "\n";
+      cout.flush();
+      count_na++;
+    }
+
+  } // for fc
+
+  proc->freeIterator();
+  states->freeIterator();
+  Delete(fst);
+  Delete(tst);
+  DCASSERT(na == count_na);
+  cout.flush();
 }
 
 void meddly_states::buildIndexSet()

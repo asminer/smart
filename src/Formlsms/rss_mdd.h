@@ -26,6 +26,7 @@ class meddly_states : public shared_object {
   // State encoder, and sets of states
   meddly_encoder* mdd_wrap;
   shared_ddedge* initial;
+
 public:
   shared_ddedge* states;
   // Optional: state indexes
@@ -71,6 +72,11 @@ public:
     DCASSERT(vars);
     // Includes terminal level...
     return vars->getNumVariables() + 1;
+  }
+
+  inline int getNumVars() const {
+    DCASSERT(mdd_wrap);
+    return mdd_wrap->getNumDDVars();
   }
 
   inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
@@ -170,11 +176,22 @@ public:
     return *mdd_wrap;
   }
 
+  template <class INT>
+  inline void getNumStates(INT &count) const {
+    DCASSERT(mdd_wrap);
+    mdd_wrap->getCardinality(states, count);
+  }
+
+  // TBD: use an enum for show, e.g., what order?
+  void showStates(const lldsm* p, OutputStream &os, bool internal);
+
+  void visitStates(lldsm::state_visitor &x) const;
+
+
 // Methods involving the next-state function or mxd wrapper
 public:
   inline shared_ddedge* buildActualNSF() const {
     // TBD - this will become more complex when NSF isn't monolithic
-
     DCASSERT(mxd_wrap);
     DCASSERT(nsf);
     DCASSERT(states);
@@ -207,6 +224,24 @@ public:
     return *mxd_wrap;
   }
 
+  template <class INT>
+  void getNumArcs(INT &count) const;
+
+  // TBD: use an enum for show, e.g., what order?
+  void showArcs(const graph_lldsm* p, OutputStream &os, bool internal, bool node_names);
+
+// Methods involving the process 
+public:
+  inline shared_ddedge* buildActualProcess() const {
+    // TBD - this will become more complex when the process isn't monolithic
+    DCASSERT(proc_wrap);
+    DCASSERT(proc);
+    DCASSERT(states);
+    shared_ddedge* actual = new shared_ddedge(proc_wrap->getForest());
+    proc_wrap->selectRows(proc, states, actual);
+    return actual;
+  }
+
 
 public:
   // handy functions
@@ -230,30 +265,7 @@ public:
   }
 */
 
-  inline int getNumVars() const {
-    DCASSERT(mdd_wrap);
-    return mdd_wrap->getNumDDVars();
-  }
-
-  inline void getNumStates(result &count) const {
-    DCASSERT(mdd_wrap);
-    mdd_wrap->getCardinality(states, count);
-  }
-
-  long getNumStates() const {
-    DCASSERT(mdd_wrap);
-    long ns;
-    mdd_wrap->getCardinality(states, ns);
-    return ns;
-  }
-
-
-  // TBD: use an enum for show, e.g., what order?
-  void showStates(const lldsm* p, OutputStream &os, bool internal);
-
   void buildIndexSet();
-
-  void visitStates(lldsm::state_visitor &x) const;
 
   // TBD - void getNumArcs(result &count) const
   // TBD - long getNumArcs() const
@@ -262,5 +274,20 @@ public:
 
   void reportStats(OutputStream &out) const;
 };
+
+template <class INT>
+void meddly_states::getNumArcs(INT &count) const
+{
+  DCASSERT(proc_wrap);
+  if (proc_uses_actual) {
+    proc_wrap->getCardinality(proc, count);
+  } else {
+    // TBD - this should be the "process" not the "nsf"
+    shared_object* actual = buildActualNSF();
+    proc_wrap->getCardinality(actual, count);
+    Delete(actual);
+  }
+}
+
 
 #endif
