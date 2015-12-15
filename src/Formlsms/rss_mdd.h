@@ -18,6 +18,32 @@ class dsde_hlm;
 /*
     TBD - converting this into a proper class
           rather than a struct as it is currently
+
+    TBD - use class hierarchy for the pieces?
+          E.g., "final" nsf stored in various ways (monolithic,
+          by levels, by events).  Virtual functions for
+            CTL model checking support
+
+          E.g., final process (nsf is a subclass of this).
+            counting arcs
+            displaying arcs
+
+          Inside - proc_wrap and necessary edges
+
+          Ideally - this class hierarchy can be independent of meddly
+
+          What we need:
+            "state space" class with supporting functions?
+            "graph" class with supporting functions?
+
+          fsm_llm and fsm_mdd merge, implementation details pushed to 
+            ss/graph classes.
+
+          mc_llm and mc_mdd merge, implementation details pushed to 
+            ss/graph classes.
+
+          How do we keep states & graphs "compatible"?
+          
 */
 class meddly_states : public shared_object {
   // Domain 
