@@ -19,10 +19,6 @@ class lldsm;
 class checkable_lldsm;
 class exprman;
 
-namespace StateLib {
-  class state_db;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                           Front  end                           *

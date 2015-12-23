@@ -9,7 +9,7 @@ Generally speaking, source files have the following suffixes:
 "_form"   For registering formalisms with the expression manager.
 "_hlm"    For high-level "compiled" models (derived from hldsm).
 "_llm"    For low-level models (derived from lldsm).
-"_mdd"    For low-level models, using Meddly
+"_mdd"    For low-level models, using Meddly (TBD will change)
 
 
 Specifically we have the following formalism support:
@@ -38,3 +38,6 @@ Specifically we have the following formalism support:
 
      fsm_mdd    Low-level finite state machines, using Meddly.
 
+Stuff in progress:
+  
+         rss    Abstract base class for reachability sets, used by fsm & mc
