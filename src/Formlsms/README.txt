@@ -41,3 +41,5 @@ Stuff in progress:
   
          rss    Abstract base class for reachability sets, used by fsm & mc
     rss_enum    Enumerated (explicitly declared) reachability sets
+
+    rss_indexed Base class for rss_enum and rss_expl?  Saves some copying.

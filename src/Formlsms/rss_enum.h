@@ -6,8 +6,10 @@
 
 #include "rss.h"
 
+// External libs
+#include "lslib.h"
+
 class model_enum;
-struct LS_Vector;
 
 class enum_reachset : public reachset {
   public:
@@ -18,6 +20,13 @@ class enum_reachset : public reachset {
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
     virtual iterator& iteratorForOrder(int display_order);
+
+    virtual void getReachable(result &ss) const;
+    virtual void getPotential(expr* p, result &ss) const;
+    virtual void getInitialStates(result &x) const;
+
+
+    void setInitial(LS_Vector &init);
 
   private:
     
@@ -67,6 +76,8 @@ class enum_reachset : public reachset {
     long* state_handle;    
     iterator* natorder;
     iterator* lexorder;
+
+    LS_Vector initial;
 };
 
 #endif
