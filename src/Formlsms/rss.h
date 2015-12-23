@@ -59,6 +59,7 @@ class reachset : public shared_object {
     virtual void showInternal(OutputStream &os) const = 0;
     virtual void showState(OutputStream &os, const shared_state* st) const = 0;
     virtual iterator& iteratorForOrder(int display_order) = 0;
+    virtual iterator& easiestIterator() const = 0;
 
     virtual void getReachable(result &ss) const = 0;
     virtual void getPotential(expr* p, result &ss) const = 0;
@@ -78,6 +79,12 @@ class reachset : public shared_object {
         @param  visit_order   Order to use, same as display_order constants in lldsm.
     */
     void visitStates(lldsm::state_visitor &x, int visit_order);
+
+    /**
+      Visit all the states, in any convenient order.
+        @param  x             State visitor.
+    */
+    void visitStates(lldsm::state_visitor &x) const;
 
     // Shared object requirements
     virtual bool Print(OutputStream &s, int width) const;
