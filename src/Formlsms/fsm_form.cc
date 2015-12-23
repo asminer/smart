@@ -1,7 +1,15 @@
 
 // $Id$
 
+// #define TRY_NEW_STUFF
+
 #include "fsm_form.h"
+#ifdef TRY_NEW_STUFF
+#include "rss_enum.h"
+#endif
+#include "fsm_llm.h"
+#include "check_llm.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
@@ -9,14 +17,12 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 
-#include "fsm_llm.h"
-#include "check_llm.h"
-
 #include "../include/splay.h"
 
 // Explicit libraries
 #include "graphlib.h"
 #include "lslib.h"
+
 
 // **************************************************************************
 // *                                                                        *
@@ -239,7 +245,13 @@ void fsm_def::FinalizeModel(OutputStream &ds)
   delete initial;
   initial = 0;
 
+#ifdef TRY_NEW_STUFF
+  enum_reachset* rss = new enum_reachset(mcstate);
+  graph_lldsm* foo = StartGenericFSM(rss);
+  FinishGenericFSM(foo, init);  // TBD mygr?
+#else
   graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
+#endif
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);

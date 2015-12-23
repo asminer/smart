@@ -5,9 +5,9 @@
 #include "../ExprLib/exprman.h"
 #include "rss.h"
 
-reachset::reachset(const lldsm* p)
+reachset::reachset()
 {
-  parent = p;
+  parent = 0;
 }
 
 reachset::~reachset()
@@ -27,6 +27,8 @@ void reachset::getNumStates(result &ns) const
 
 void reachset::showStates(OutputStream &os, int display_order, shared_state* st)
 {
+  DCASSERT(parent);
+
   long num_states;
   getNumStates(num_states);
 
@@ -57,5 +59,28 @@ void reachset::visitStates(lldsm::state_visitor &v, int visit_order)
     I.copyState(v.state());
     if (v.visit()) return;
   }
+}
+
+bool reachset::Print(OutputStream &s, int width) const
+{
+  // Required for shared object, but will we ever call it?
+  s << "reachset (why is it printing?)";
+  return true;
+}
+
+bool reachset::Equals(const shared_object* o) const
+{
+  // Required for shared object, but will we ever call it?
+  fprintf(stderr, "Inside reachset::Equals, why?\n");
+  return (this == o);
+}
+
+
+reachset::iterator::iterator()
+{
+}
+
+reachset::iterator::~iterator()
+{
 }
 
