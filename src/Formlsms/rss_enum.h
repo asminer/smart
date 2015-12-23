@@ -4,14 +4,11 @@
 #ifndef RSS_ENUM_H
 #define RSS_ENUM_H
 
-#include "rss.h"
-
-// External libs
-#include "lslib.h"
+#include "rss_indx.h"
 
 class model_enum;
 
-class enum_reachset : public reachset {
+class enum_reachset : public indexed_reachset {
   public:
     enum_reachset(model_enum* ss);
     virtual ~enum_reachset();
@@ -20,13 +17,7 @@ class enum_reachset : public reachset {
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
     virtual iterator& iteratorForOrder(int display_order);
-
-    virtual void getReachable(result &ss) const;
-    virtual void getPotential(expr* p, result &ss) const;
-    virtual void getInitialStates(result &x) const;
-
-
-    void setInitial(LS_Vector &init);
+    virtual iterator& easiestIterator() const;
 
   private:
     
@@ -76,8 +67,6 @@ class enum_reachset : public reachset {
     long* state_handle;    
     iterator* natorder;
     iterator* lexorder;
-
-    LS_Vector initial;
 };
 
 #endif

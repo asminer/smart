@@ -5,12 +5,6 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
 
-#include "../Modules/statesets.h"
-
-// External libs
-#include "lslib.h"    // for LS_Vector
-#include "intset.h"   // for intset
-
 // ******************************************************************
 // *                                                                *
 // *                     enum_reachset  methods                     *
@@ -20,7 +14,7 @@
 enum_reachset::enum_reachset(model_enum* ss)
 {
   states = ss;
-  natorder = 0;
+  natorder = new natural_iter(states);
   lexorder = 0;
 
   // keep track of which state has each index
@@ -30,12 +24,6 @@ enum_reachset::enum_reachset(model_enum* ss)
     CHECK_RANGE(0, st->GetIndex(), states->NumValues());
     state_handle[st->GetIndex()] = j;
   }
-
-  // clear the initial vector
-  initial.size = 0;
-  initial.index = 0;
-  initial.d_value = 0;
-  initial.f_value = 0;
 }
 
 enum_reachset::~enum_reachset()
@@ -44,7 +32,6 @@ enum_reachset::~enum_reachset()
   delete natorder;
   delete lexorder;
   delete[] state_handle;
-  delete[] initial.index;
 }
 
 void enum_reachset::getNumStates(long &ns) const
@@ -86,46 +73,10 @@ reachset::iterator& enum_reachset::iteratorForOrder(int display_order)
   }
 }
 
-void enum_reachset::getReachable(result &rs) const
+reachset::iterator& enum_reachset::easiestIterator() const
 {
-  if (0==states || 0==states->NumValues()) {
-    rs.setNull();
-    return;
-  }
-  intset* all = new intset(states->NumValues());
-  all->addAll();
-  rs.setPtr(new stateset(getParent(), all));
-}
-
-void enum_reachset::getPotential(expr* p, result &x) const
-{
-  // TBD!
-  DCASSERT(0);
-  x.setNull();
-}
-
-void enum_reachset::getInitialStates(result &x) const
-{
-  if (0==states || 0==states->NumValues()) {
-    x.setNull();
-    return;
-  }
-  intset* initss = new intset(states->NumValues());
-  initss->removeAll();
-  
-  if (initial.index) {
-    for (long z=0; z<initial.size; z++)
-      initss->addElement(initial.index[z]);
-  } 
-
-  x.setPtr(new stateset(getParent(), initss));
-}
-
-void enum_reachset::setInitial(LS_Vector &init)
-{
-  DCASSERT(0==init.d_value);
-  DCASSERT(0==init.f_value);
-  initial = init;
+  DCASSERT(natorder);
+  return *natorder;
 }
 
 // ******************************************************************

@@ -62,6 +62,20 @@ void reachset::visitStates(lldsm::state_visitor &v, int visit_order)
   }
 }
 
+void reachset::visitStates(lldsm::state_visitor &v) const
+{
+  DCASSERT(v.state());
+
+  iterator& I = easiestIterator();
+
+  for (I.start(); I; I++) {
+    v.index() = I.index();
+    if (v.canSkipIndex()) continue;
+    I.copyState(v.state());
+    if (v.visit()) return;
+  }
+}
+
 bool reachset::Print(OutputStream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
