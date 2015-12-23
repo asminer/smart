@@ -62,9 +62,9 @@ class generic_fsm : public checkable_lldsm {
     virtual long getNumStates() const;
     virtual void getNumStates(result& count) const;
     virtual void showStates(bool internal) const;
-    // virtual void getReachable(result &ss) const;
-    // virtual void getPotential(expr* p, result &ss) const;
-    // virtual void getInitialStates(result &x) const;
+    virtual void getReachable(result &ss) const;
+    virtual void getPotential(expr* p, result &ss) const;
+    virtual void getInitialStates(result &x) const;
 
   protected:
     virtual const char* getClassName() const { return "generic_fsm"; }
@@ -72,7 +72,6 @@ class generic_fsm : public checkable_lldsm {
   private:
     reachset* RSS;
     // tbd - process here
-    // tbd - vector of initial states
 };
 
 // ******************************************************************
@@ -117,6 +116,24 @@ void generic_fsm::showStates(bool internal) const
     RSS->showStates(em->cout(), display_order, st);
     Delete(st);
   }
+}
+
+void generic_fsm::getReachable(result &ss) const
+{
+  DCASSERT(RSS);
+  RSS->getReachable(ss);
+}
+
+void generic_fsm::getPotential(expr* p, result &ss) const
+{
+  DCASSERT(RSS);
+  RSS->getPotential(p, ss);
+}
+
+void generic_fsm::getInitialStates(result &x) const
+{
+  DCASSERT(RSS);
+  RSS->getInitialStates(x);
 }
 
 // ******************************************************************

@@ -4,6 +4,7 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
 #include "rss.h"
+#include "check_llm.h"
 
 reachset::reachset()
 {
