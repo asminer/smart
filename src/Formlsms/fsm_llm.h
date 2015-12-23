@@ -18,6 +18,7 @@ class expl_rss_only;
 class lldsm;
 class checkable_lldsm;
 class exprman;
+class reachset;
 
 // ******************************************************************
 // *                                                                *
@@ -26,6 +27,30 @@ class exprman;
 // ******************************************************************
 
 void InitFSMLibs(exprman* em);
+
+//
+//
+// NEW CODE NOT 100% WORKING YET FROM HERE
+//
+//
+
+/**
+    Start a FSM when only the states are known.
+    Edges must be added later with FinishGenericFSM().
+*/
+checkable_lldsm* StartGenericFSM(reachset* rss);  
+
+/**
+    Finish a FSM.
+    It must have been started by StartGenericFSM().
+*/
+void FinishGenericFSM(lldsm* rs, LS_Vector &init);  // TBD add generic process!
+
+//
+//
+// OLD CODE TO BE RETIRED FROM HERE
+//
+//
 
 checkable_lldsm* 
 MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg);

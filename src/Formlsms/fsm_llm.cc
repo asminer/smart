@@ -12,6 +12,8 @@
 #include "../Modules/statesets.h"
 #include "../Modules/biginttype.h"
 
+// New stuff
+#include "rss.h"
 
 // External libs
 #include "statelib.h"
@@ -22,6 +24,140 @@
 
 // #define DEBUG_EG
 
+// ******************************************************************
+// *                                                                *
+// *                         fsm_lib  class                         *
+// *                                                                *
+// ******************************************************************
+
+class fsm_lib : public library {
+public:
+  fsm_lib() : library(false) { }
+  virtual const char* getVersionString() const {
+    return GraphLib::Version();
+  }
+  virtual bool hasFixedPointer() const { 
+    return true; 
+  }
+};
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                       generic_fsm  class                       *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+/**
+    New class for fsm formalisms, uses reachset and process classes.
+
+    Huge TBD here.
+*/
+class generic_fsm : public checkable_lldsm {
+  public:
+    generic_fsm(reachset* rss);
+    virtual ~generic_fsm();
+
+    virtual long getNumStates() const;
+    virtual void getNumStates(result& count) const;
+    virtual void showStates(bool internal) const;
+    // virtual void getReachable(result &ss) const;
+    // virtual void getPotential(expr* p, result &ss) const;
+    // virtual void getInitialStates(result &x) const;
+
+  protected:
+    virtual const char* getClassName() const { return "generic_fsm"; }
+
+  private:
+    reachset* RSS;
+    // tbd - process here
+    // tbd - vector of initial states
+};
+
+// ******************************************************************
+// *                                                                *
+// *                      generic_fsm  methods                      *
+// *                                                                *
+// ******************************************************************
+
+generic_fsm::generic_fsm(reachset* rss) : checkable_lldsm(FSM)
+{
+  DCASSERT(rss);
+  RSS = rss;
+  RSS->setParent(this);
+}
+
+generic_fsm::~generic_fsm()
+{
+  Delete(RSS);
+}
+
+long generic_fsm::getNumStates() const
+{
+  DCASSERT(RSS);
+  long ns;
+  RSS->getNumStates(ns);
+  return ns;
+}
+
+void generic_fsm::getNumStates(result& count) const
+{
+  DCASSERT(RSS);
+  RSS->getNumStates(count);
+}
+
+void generic_fsm::showStates(bool internal) const
+{
+  DCASSERT(RSS);
+  if (internal) {
+    RSS->showInternal(em->cout());
+  } else {
+    shared_state* st = new shared_state(parent);
+    RSS->showStates(em->cout(), display_order, st);
+    Delete(st);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                           Front  end                           *
+// *                                                                *
+// ******************************************************************
+
+void InitFSMLibs(exprman* em)
+{
+  static fsm_lib* fsml = 0;
+ 
+  if (0==fsml) {
+    fsml = new fsm_lib;
+    em->registerLibrary(fsml);
+  }
+}
+
+checkable_lldsm* StartGenericFSM(reachset* rss)
+{
+  if (0==rss) return 0;
+  return new generic_fsm(rss);
+}
+
+void FinishGenericFSM(lldsm* rs, LS_Vector &init) // TBD!
+{
+  generic_fsm* fsm = dynamic_cast <generic_fsm*> (rs);
+  if (0==fsm) return;
+  // fsm->FinishExpl(init, rg);
+  // Clever method calls here
+}
+
+// ******************************************************************
+// *                                                                *
+// * OOOOO L     DDD         SSSS TTTTT U   U FFFFF FFFFF           *
+// * O   O L     D  D       S       T   U   U F     F               *
+// * O   O L     D   D       SSS    T   U   U FFF   FFF             *
+// * O   O L     D  D           S   T   U   U F     F               *
+// * OOOOO LLLLL DDD        SSSS    T    UUU  F     F               *
+// *                                                                *
+// ******************************************************************
 
 // ******************************************************************
 // *                                                                *
@@ -1169,36 +1305,9 @@ void fsm_expl::ShowState(OutputStream &s, long i, bool internal) const
 
 // ******************************************************************
 // *                                                                *
-// *                         fsm_lib  class                         *
-// *                                                                *
-// ******************************************************************
-
-class fsm_lib : public library {
-public:
-  fsm_lib() : library(false) { }
-  virtual const char* getVersionString() const {
-    return GraphLib::Version();
-  }
-  virtual bool hasFixedPointer() const { 
-    return true; 
-  }
-};
-
-// ******************************************************************
-// *                                                                *
 // *                           Front  end                           *
 // *                                                                *
 // ******************************************************************
-
-void InitFSMLibs(exprman* em)
-{
-  static fsm_lib* fsml = 0;
- 
-  if (0==fsml) {
-    fsml = new fsm_lib;
-    em->registerLibrary(fsml);
-  }
-}
 
 checkable_lldsm* MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg)
 {

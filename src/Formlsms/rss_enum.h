@@ -11,7 +11,7 @@ struct LS_Vector;
 
 class enum_reachset : public reachset {
   public:
-    enum_reachset(const lldsm* p, LS_Vector &init, model_enum* ss);
+    enum_reachset(model_enum* ss);
     virtual ~enum_reachset();
 
     virtual void getNumStates(long &ns) const;

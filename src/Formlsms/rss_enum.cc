@@ -14,8 +14,7 @@
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::enum_reachset(const lldsm* p, LS_Vector &init, model_enum* ss)
- : reachset(p)
+enum_reachset::enum_reachset(model_enum* ss)
 {
   states = ss;
   natorder = 0;

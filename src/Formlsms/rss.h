@@ -38,8 +38,15 @@ class reachset : public shared_object {
      };
 
   public:
-    reachset(const lldsm* p);
+    reachset();
     virtual ~reachset();
+
+    inline void setParent(const lldsm* p) {
+      if (parent != p) {
+        DCASSERT(0==parent);
+        parent = p;
+      }
+    }
 
     inline const lldsm* getParent() const {
       return parent;
@@ -71,6 +78,10 @@ class reachset : public shared_object {
     // virtual void getReachable(result &ss) const = 0;
     // virtual void getPotential(expr* p, result &ss) const = 0;
     // virtual void getInitialStates(result &x) const = 0;
+
+    // Shared object requirements
+    virtual bool Print(OutputStream &s, int width) const;
+    virtual bool Equals(const shared_object* o) const;
 };
 
 #endif

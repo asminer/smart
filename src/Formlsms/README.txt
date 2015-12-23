@@ -26,7 +26,6 @@ Specifically we have the following formalism support:
     evm_form    Event-variable model formalism.
     tam_form    Tile assembly model formalism.
 
-  asynch_hlm    Asynchronous models with events (removed shortly).
     dsde_hlm    Discrete-state, discrete-event models.
   noevnt_hlm    High-level models without events.
    phase_hlm    Phase-type models.
@@ -41,3 +40,4 @@ Specifically we have the following formalism support:
 Stuff in progress:
   
          rss    Abstract base class for reachability sets, used by fsm & mc
+    rss_enum    Enumerated (explicitly declared) reachability sets
