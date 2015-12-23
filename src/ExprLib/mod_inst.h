@@ -44,10 +44,12 @@ class lldsm : public shared_object {
   static long max_state_display;
 protected:
   static int display_order;
+public:
   static const int DISCOVERY  = 0;
   static const int LEXICAL    = 1;
   static const int NATURAL    = 2;
   static const int num_display_orders = 3;
+protected:
   static const exprman* em;
   static named_msg numpaths_report;
 
