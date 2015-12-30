@@ -4,7 +4,7 @@
 #ifndef RSS_H
 #define RSS_H
 
-#include "../ExprLib/mod_inst.h"
+#include "check_llm.h"
 
 class checkable_lldsm;
 
@@ -52,6 +52,10 @@ class reachset : public shared_object {
 
     inline const checkable_lldsm* getParent() const {
       return parent;
+    }
+
+    inline const hldsm* getGrandParent() const {
+      return parent ? parent->GetParent() : 0;
     }
 
     virtual void getNumStates(result &ns) const;  // default: use a long

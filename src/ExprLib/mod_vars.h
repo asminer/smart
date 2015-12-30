@@ -194,7 +194,7 @@ public:
     index = ndx; 
   }
 
-  inline int Compare(const model_enum_value* s) {
+  inline int Compare(const model_enum_value* s) const {
     DCASSERT(s);
     return index - s->index;
   }
@@ -211,8 +211,9 @@ public:
     For instance, the state of a Markov chain.
 */
 class model_enum : public model_statevar {
+private:
+  static long* indexes; // hack - used only for MakeSortedMap().
 protected:
-  long* indexes;
   model_enum_value** values;
   int num_values;
 public:
@@ -243,17 +244,17 @@ public:
                         be written to.  On return, indexes[i] will give the
                         index of the \a i th "smallest" value (in alpha order).
   */
-  void MakeSortedMap(long* indexes);
+  void MakeSortedMap(long* indexes) const;
 
 
   // Required for sorting...
-  inline int Compare(long i, long j) {
+  inline int Compare(long i, long j) const {
     DCASSERT(indexes);
     CHECK_RANGE(0, i, num_values);
     CHECK_RANGE(0, j, num_values);
     return strcmp(values[indexes[i]]->Name(), values[indexes[j]]->Name());
   }
-  inline void Swap(long i, long j) {
+  inline void Swap(long i, long j) const {
     DCASSERT(indexes);
     CHECK_RANGE(0, i, num_values);
     CHECK_RANGE(0, j, num_values);

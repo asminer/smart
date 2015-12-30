@@ -66,6 +66,7 @@ class generic_fsm : public checkable_lldsm {
     virtual void getPotential(expr* p, result &ss) const;
     virtual void getInitialStates(result &x) const;
 
+    // TBD - more methods eventually
   protected:
     virtual const char* getClassName() const { return "generic_fsm"; }
 

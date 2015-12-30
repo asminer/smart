@@ -263,11 +263,11 @@ model_enum_value::~model_enum_value()
 // *                                                                *
 // ******************************************************************
 
+long* model_enum::indexes = 0;
+
 model_enum:: model_enum(const symbol* w, const model_instance* p, symbol* list)
  : model_statevar(w, p, 0)
 {
-  indexes = 0;
-
   // get size of list
   num_values = 0;
   symbol* ptr;
@@ -298,7 +298,7 @@ model_enum::~model_enum()
   delete[] values;
 }
 
-void model_enum::MakeSortedMap(long* I)
+void model_enum::MakeSortedMap(long* I) const
 {
   indexes = I;
   for (long i=0; i<num_values; i++)  I[i] = i;
