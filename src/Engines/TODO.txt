@@ -12,3 +12,14 @@ Slight "ProcessGeneration" reorganization
 
   * then add "EXPLICIT" MeddlyProcessGeneration algorithm :^)
 
+
+CTL / stateset reorganization
+
+  * stateset class becomes abstract with a hierarchy?
+
+      + explicit -> bitvector
+
+      + symbolic -> meddly-based, leave room for others?
+
+  * revisit CTL engine mechanism?
+

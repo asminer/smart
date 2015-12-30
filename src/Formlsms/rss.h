@@ -65,6 +65,14 @@ class reachset : public shared_object {
     virtual iterator& iteratorForOrder(int display_order) = 0;
     virtual iterator& easiestIterator() const = 0;
 
+    /*
+        TBD - these should move to the "process" class,
+        and should return a pointer to a stateset.
+
+        Longer term - 
+        adjust the stateset class?  Should we use a proper class hierarchy?
+
+    */
     virtual void getReachable(result &ss) const = 0;
     virtual void getPotential(expr* p, result &ss) const = 0;
     virtual void getInitialStates(result &x) const = 0;

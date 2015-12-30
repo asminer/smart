@@ -86,6 +86,41 @@ void smart_output::flush()
 
 // ******************************************************************
 // *                                                                *
+// *                     shared_domain  methods                     *
+// *                                                                *
+// ******************************************************************
+
+shared_domain::shared_domain(MEDDLY::variable** v, int nv)
+{
+  D = MEDDLY::createDomain(v, nv);
+}
+
+shared_domain::shared_domain(MEDDLY::domain *d)
+{
+  D = d;
+}
+
+shared_domain::~shared_domain()
+{
+  MEDDLY::destroyDomain(D);
+}
+
+bool shared_domain::Print(OutputStream &s, int) const 
+{ 
+  s << "Meddly domain";
+  return true;
+}
+  
+bool shared_domain::Equals(const shared_object* x) const
+{
+  const shared_domain* foo = dynamic_cast <const shared_domain*> (x);
+  if (0==foo) return false;
+  return D == foo->D;
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                      mdd  library credits                      *
 // *                                                                *
 // ******************************************************************

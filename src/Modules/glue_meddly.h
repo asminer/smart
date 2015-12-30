@@ -49,6 +49,50 @@ class smart_output : public MEDDLY::output {
 
 // ******************************************************************
 // *                                                                *
+// *                      shared_domain  class                      *
+// *                                                                *
+// ******************************************************************
+
+/**
+    Shared object wrapper around a MEDDLY::domain.
+    Needed so the reachable states and process objects
+    can each share the domain :^)
+*/
+class shared_domain : public shared_object {
+    MEDDLY::domain* D;
+  public:
+    shared_domain(MEDDLY::variable** v, int nv);
+    shared_domain(MEDDLY::domain* d);
+  protected:
+    virtual ~shared_domain();
+  public:
+    virtual bool Print(OutputStream &s, int) const;
+    virtual bool Equals(const shared_object* x) const;
+
+    // handy methods
+    inline int getNumLevels() const {
+      DCASSERT(D);
+      // Includes terminal level...
+      return D->getNumVariables() + 1;
+    }
+
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
+      MEDDLY::forest::edge_labeling ev)
+    {
+      DCASSERT(D);
+      return D->createForest(rel, t, ev);
+    }
+
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
+      MEDDLY::forest::edge_labeling ev, const MEDDLY::forest::policies &p)
+    {
+      DCASSERT(D);
+      return D->createForest(rel, t, ev, p);
+    }
+};
+
+// ******************************************************************
+// *                                                                *
 // *                      shared_ddedge  class                      *
 // *                                                                *
 // ******************************************************************
