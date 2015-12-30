@@ -2,8 +2,8 @@
 // $Id$
 
 #include "rss_enum.h"
-#include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
+#include "../ExprLib/mod_vars.h"
 
 // ******************************************************************
 // *                                                                *
@@ -14,7 +14,8 @@
 enum_reachset::enum_reachset(model_enum* ss)
 {
   states = ss;
-  natorder = new natural_iter(states);
+  DCASSERT(states);
+  natorder = new natural_iter(*states);
   lexorder = 0;
 
   // keep track of which state has each index
@@ -59,16 +60,17 @@ void enum_reachset::showState(OutputStream &os, const shared_state* st) const
 
 reachset::iterator& enum_reachset::iteratorForOrder(int display_order)
 {
+  DCASSERT(states);
   switch (display_order) {
 
     case lldsm::LEXICAL:
-        if (0==lexorder) lexorder = new lexical_iter(states);
+        if (0==lexorder) lexorder = new lexical_iter(*states);
         return *lexorder;
 
     case lldsm::DISCOVERY:
     case lldsm::NATURAL:
     default:
-        if (0==natorder) natorder = new natural_iter(states);
+        if (0==natorder) natorder = new natural_iter(*states);
         return *natorder;
   }
 }
@@ -85,10 +87,10 @@ reachset::iterator& enum_reachset::easiestIterator() const
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::natural_iter::natural_iter(model_enum* ss) 
+enum_reachset::natural_iter::natural_iter(const model_enum &ss) 
+ : states(ss)
 {
-  states = ss;
-  i = states->NumValues();
+  i = states.NumValues();
 }
 
 enum_reachset::natural_iter::~natural_iter()
@@ -107,7 +109,7 @@ void enum_reachset::natural_iter::operator++(int)
 
 enum_reachset::natural_iter::operator bool() const
 {
-  return i < states->NumValues();
+  return i < states.NumValues();
 }
 
 long enum_reachset::natural_iter::index() const
@@ -117,7 +119,7 @@ long enum_reachset::natural_iter::index() const
 
 void enum_reachset::natural_iter::copyState(shared_state* st) const
 {
-  st->set(states->GetIndex(), i);
+  st->set(states.GetIndex(), i);
 }
 
 // ******************************************************************
@@ -126,12 +128,12 @@ void enum_reachset::natural_iter::copyState(shared_state* st) const
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::lexical_iter::lexical_iter(model_enum* ss) 
+enum_reachset::lexical_iter::lexical_iter(const model_enum &ss) 
+ : states(ss)
 {
-  states = ss;
-  i = states->NumValues();
-  map = new long[states->NumValues()];
-  states->MakeSortedMap(map);
+  i = states.NumValues();
+  map = new long[states.NumValues()];
+  states.MakeSortedMap(map);
 }
 
 enum_reachset::lexical_iter::~lexical_iter()
@@ -151,7 +153,7 @@ void enum_reachset::lexical_iter::operator++(int)
 
 enum_reachset::lexical_iter::operator bool() const
 {
-  return i < states->NumValues();
+  return i < states.NumValues();
 }
 
 long enum_reachset::lexical_iter::index() const
@@ -161,6 +163,6 @@ long enum_reachset::lexical_iter::index() const
 
 void enum_reachset::lexical_iter::copyState(shared_state* st) const
 {
-  st->set(states->GetIndex(), map[i]);
+  st->set(states.GetIndex(), map[i]);
 }
 

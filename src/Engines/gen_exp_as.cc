@@ -1,6 +1,8 @@
 
 // $Id$
 
+// #define TRY_NEW_STUFF
+
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
@@ -9,6 +11,9 @@
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/mc_llm.h"
 #include "../Formlsms/fsm_llm.h"
+#ifdef TRY_NEW_STUFF
+#include "../Formlsms/rss_expl.h"
+#endif
 
 // Modules
 #include "../Modules/expl_states.h"
@@ -543,7 +548,12 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Set process as known so far
   if (0==lm) {
     if (nondeterm) {
+#ifdef TRY_NEW_STUFF
+      expl_reachset* ers = new expl_reachset(rss);
+      lm = StartGenericFSM(ers);
+#else
       lm = StartExplicitFSM(rss);
+#endif
     } else {
       lm = StartExplicitMC(false, rss);
     }

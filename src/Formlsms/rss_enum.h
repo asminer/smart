@@ -28,7 +28,7 @@ class enum_reachset : public indexed_reachset {
 
       // required interface
       public:
-        natural_iter(model_enum* ss);
+        natural_iter(const model_enum &ss);
         virtual ~natural_iter();
         virtual void start();
         virtual void operator++(int);
@@ -37,7 +37,7 @@ class enum_reachset : public indexed_reachset {
         virtual void copyState(shared_state* st) const;
 
       private:
-        model_enum* states;
+        const model_enum &states;
         long i;
     };
 
@@ -48,7 +48,7 @@ class enum_reachset : public indexed_reachset {
 
       // required interface
       public:
-        lexical_iter(model_enum* ss);
+        lexical_iter(const model_enum &ss);
         virtual ~lexical_iter();
         virtual void start();
         virtual void operator++(int);
@@ -57,7 +57,7 @@ class enum_reachset : public indexed_reachset {
         virtual void copyState(shared_state* st) const;
 
       private:
-        model_enum* states;
+        const model_enum &states;
         long* map;
         long i;
     };
