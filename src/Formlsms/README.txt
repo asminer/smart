@@ -37,9 +37,21 @@ Specifically we have the following formalism support:
 
      fsm_mdd    Low-level finite state machines, using Meddly.
 
-Stuff in progress:
+New reachability set stuff and process stuff:
   
          rss    Abstract base class for reachability sets, used by fsm & mc
-    rss_enum    Enumerated (explicitly declared) reachability sets
+    rss_indx    Base class for explicitly stored, indexed sets (rss_enum and rss_expl)
+    rss_enum    User enumerated (e.g. within a dtmc model) reachability sets
+    rss_expl    Explicitly stored reachability sets
+  rss_meddly    Stored as an MDD using the library MEDDLY
 
-    rss_indexed Base class for rss_enum and rss_expl?  Saves some copying.
+TBD:
+
+         rgr    Abstract base class for reachability graph storage.
+    rgr_expl    
+  rgr_meddly    Maybe split?  monolithic, etc. as separate classes?
+
+          mc    Abstract base class for Markov chain storage.
+     mc_expl    
+   mc_meddly
+
