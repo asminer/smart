@@ -15,6 +15,7 @@ INFILE=""
 # 
 color_yes() {
   OK=" [1;32m  PASS  [0;39m"
+  BAIL=" [1;33m  MISS  [0;39m"
   CHANGE=" [1;33m CHANGE [0;39m"
   FAILED=" [1;31m FAILED [0;39m"
 }
@@ -24,6 +25,7 @@ color_yes() {
 # 
 color_no() {
       OK="   PASS   "
+    BAIL="   MISS   "
   CHANGE="  CHANGE  "
   FAILED="  FAILED  "
 }
@@ -33,6 +35,13 @@ ProcessOK()
 {
   printf "$OK\n"
   echo ":test-result: PASS $TEST_NAME" > $TRS_FILE
+}
+
+#
+ProcessBAIL()
+{
+  printf "$BAIL\n\tNo matching file for $TEST_NAME.out.$MACHINE\n"
+  echo ":test-result: FAIL $TEST_NAME" > $TRS_FILE
 }
 
 #
@@ -47,6 +56,24 @@ ProcessFail()
 {
   printf "$FAIL\n"
   echo ":test-result: ERROR $TEST_NAME" > $TRS_FILE
+}
+
+#
+#
+# Helper function: find best output file to test against
+# Argument 1: input filename
+#
+FindOutputFile()
+{
+  sufx="t.$MACHINE"
+  while [ "$sufx" ]; do
+    if [ -f $1.ou$sufx ]; then
+      echo $1.ou$sufx
+      return
+    fi
+    sufx=`sed 's/\(.*\)./\1/' <<< $sufx`
+  done
+  echo ""
 }
 
 #
@@ -94,6 +121,7 @@ done
 #
 # Run program 
 #
+MACHINE="`gcc -dumpmachine`"
 ICP="`pwd`/../src/Apps/icp"
 TESTDIR="`pwd`"
 if [ ! -f $ICP ]; then
@@ -107,17 +135,17 @@ printf "  %-40s  " $TEST_NAME
 rm -f $LOG_FILE
 if $ICP $file > $LOG_FILE; then
     # Run was successful.
-    if [ -f $file.out.$SMART_PLATFORM ]; then
-      cmpfile="$file.out.$SMART_PLATFORM"
+    cmpfile=`FindOutputFile $file`
+    if [ "$cmpfile" ]; then
+      if diff -b $cmpfile $LOG_FILE > $TESTDIR/$file.diffs; then
+        rm -f $TESTDIR/$file.diffs
+        ProcessOK
+      else
+        ProcessChange
+        echo "        Differences written to $file.diffs"
+      fi
     else
-      cmpfile="$file.out"
-    fi
-    if diff -b $cmpfile $LOG_FILE > $TESTDIR/$file.diffs; then
-      rm -f $TESTDIR/$file.diffs
-      ProcessOK
-    else
-      ProcessChange
-      echo "        Differences written to $file.diffs"
+      ProcessBAIL
     fi
 else
     # Run failed
