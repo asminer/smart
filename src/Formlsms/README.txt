@@ -35,7 +35,16 @@ Specifically we have the following formalism support:
       mc_llm    Low-level Markov chain class.
    stoch_llm    Abstract base class: stochastic models.
 
-     fsm_mdd    Low-level finite state machines, using Meddly.
+     fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
+
+
+TBD: Find a better home for everything below here 
+     (except maybe rss, rss_indx, rgr, mc base classes)
+     (rss_enum can be merged into fsm_form)
+
+TBD: rss, rgr go inside checkable_lldsm class!
+     Can we then kill fsm_llm?
+     mc goes inside stochastic_lldsm class and derives from rgr
 
 New reachability set stuff and process stuff:
   

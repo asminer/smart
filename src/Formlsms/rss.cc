@@ -4,7 +4,6 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
 #include "rss.h"
-#include "check_llm.h"
 
 reachset::reachset()
 {
@@ -85,8 +84,6 @@ bool reachset::Print(OutputStream &s, int width) const
 
 bool reachset::Equals(const shared_object* o) const
 {
-  // Required for shared object, but will we ever call it?
-  fprintf(stderr, "Inside reachset::Equals, why?\n");
   return (this == o);
 }
 
