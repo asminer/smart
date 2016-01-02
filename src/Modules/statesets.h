@@ -22,7 +22,14 @@ class intset;   // external, explicit library
 // *                                                                *
 // ******************************************************************
 
-/// Both explicit and implicit together.
+/// Both explicit and implicit together.  For now.
+/*
+    TBD - this should become an abstract base class,
+    containing a reachset object and a reachgraph object.
+    Derived classes for explicit, meddly-based implementations.
+    Virtual methods in this class for union, intersection, etc.
+    Virtual methods in the reachgraph class for preimage, postimage, etc.
+*/
 class stateset : public shared_object {
   const checkable_lldsm* parent;
   bool is_explicit;

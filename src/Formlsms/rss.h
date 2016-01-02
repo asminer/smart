@@ -6,8 +6,6 @@
 
 #include "check_llm.h"
 
-class checkable_lldsm;
-
 /**
     Base class for reachable states.
     Used by several low level models.
@@ -68,6 +66,8 @@ class reachset : public shared_object {
     /*
         TBD - these should move to the "process" class,
         and should return a pointer to a stateset.
+
+        OR - add a reachgraph parameter, needed for the stateset.
 
         Longer term - 
         adjust the stateset class?  Should we use a proper class hierarchy?
