@@ -2,7 +2,7 @@
 // $Id$
 
 #include "fsm_llm.h"
-#include "check_llm.h"
+#include "graph_llm.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"

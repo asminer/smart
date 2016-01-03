@@ -4,7 +4,7 @@
 #ifndef FSM_LLM_H
 #define FSM_LLM_H
 
-#include "check_llm.h"
+#include "graph_llm.h"
 
 namespace GraphLib {
   class digraph;

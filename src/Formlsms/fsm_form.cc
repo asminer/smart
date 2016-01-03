@@ -8,7 +8,7 @@
 #include "rss_enum.h"
 #endif
 #include "fsm_llm.h"
-#include "check_llm.h"
+#include "graph_llm.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"

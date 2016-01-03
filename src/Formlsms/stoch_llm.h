@@ -4,7 +4,7 @@
 #ifndef STOCH_LLM_H
 #define STOCH_LLM_H
 
-#include "check_llm.h"
+#include "graph_llm.h"
 
 class statedist;
 

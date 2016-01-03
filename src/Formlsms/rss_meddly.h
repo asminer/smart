@@ -4,10 +4,10 @@
 #ifndef RSS_MEDDLY_H
 #define RSS_MEDDLY_H
 
-#include "rss.h"
+#include "graph_llm.h"
 #include "../Modules/glue_meddly.h"
 
-class meddly_reachset : public reachset {
+class meddly_reachset : public checkable_lldsm::reachset {
   public:
     meddly_reachset();
     virtual ~meddly_reachset();

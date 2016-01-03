@@ -12,7 +12,7 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
 
-#include "../Formlsms/check_llm.h"
+#include "../Formlsms/graph_llm.h"
 
 // external library
 #include "intset.h"
