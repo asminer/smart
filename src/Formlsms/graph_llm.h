@@ -11,11 +11,14 @@ class stateset;
 
 // ******************************************************************
 // *                                                                *
-// *                     checkable_lldsm  class                     *
+// *                       graph_lldsm  class                       *
 // *                                                                *
 // ******************************************************************
 
-/**   The base class models that are "checkable" (think CTL)
+/**   Class for graph models.
+      Essentially, kripke structures, but without the labeling function.
+      In other words, models that can be checked against properties
+      expressed in temporal logics like LTL and CTL.
 
       TBD - redesigning this class:
         
@@ -24,11 +27,11 @@ class stateset;
         some functions should be generalized 
           (with concurrent redesign of stateset class)
 */  
-class checkable_lldsm : public lldsm {
+class graph_lldsm : public lldsm {
 public:
-  checkable_lldsm(model_type t);
+  graph_lldsm(model_type t);
 
-  virtual ~checkable_lldsm();
+  virtual ~graph_lldsm();
 
 //
 // Option-related stuff
@@ -296,7 +299,7 @@ public:
       by derived classes.
   */
   class reachset : public shared_object {
-      const checkable_lldsm* parent;
+      const graph_lldsm* parent;
     public:
       /**
           Abstract base class for different state orders.
@@ -326,14 +329,14 @@ public:
       reachset();
       virtual ~reachset();
   
-      inline void setParent(const checkable_lldsm* p) {
+      inline void setParent(const graph_lldsm* p) {
         if (parent != p) {
           DCASSERT(0==parent);
           parent = p;
         }
       }
   
-      inline const checkable_lldsm* getParent() const {
+      inline const graph_lldsm* getParent() const {
         return parent;
       }
   
@@ -394,19 +397,19 @@ public:
       Basically a Kripke structure, but without the labelling function.
   */
   class reachgraph : public shared_object {
-    const checkable_lldsm* parent;
+    const graph_lldsm* parent;
   public:
     reachgraph();
     virtual ~reachgraph();
 
-    inline void setParent(const checkable_lldsm* p) {
+    inline void setParent(const graph_lldsm* p) {
       if (parent != p) {
         DCASSERT(0==parent);
         parent = p;
       }
     }
 
-    inline const checkable_lldsm* getParent() const {
+    inline const graph_lldsm* getParent() const {
       return parent;
     }
 

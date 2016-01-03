@@ -131,7 +131,7 @@ void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal
 }
 
 void meddly_states
-::showArcs(const checkable_lldsm* m, OutputStream &cout, bool internal, bool node_names)
+::showArcs(const graph_lldsm* m, OutputStream &cout, bool internal, bool node_names)
 {
   if (internal) {
     DCASSERT(proc_wrap);

@@ -58,7 +58,7 @@ void enum_reachset::showState(OutputStream &os, const shared_state* st) const
   os.Put(mev->Name());
 }
 
-checkable_lldsm::reachset::iterator& enum_reachset
+graph_lldsm::reachset::iterator& enum_reachset
 ::iteratorForOrder(int display_order)
 {
   DCASSERT(states);
@@ -76,7 +76,7 @@ checkable_lldsm::reachset::iterator& enum_reachset
   }
 }
 
-checkable_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
+graph_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;

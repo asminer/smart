@@ -74,7 +74,7 @@ public:
 
   virtual void visitStates(state_visitor &x) const;
 
-  // Required for a useful "checkable_lldsm":
+  // Required for a useful "graph_lldsm":
   virtual void getNumStates(result& count) const;
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;

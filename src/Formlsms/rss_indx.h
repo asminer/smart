@@ -15,7 +15,7 @@
     This prevents us from copying a few methods.
 
 */
-class indexed_reachset : public checkable_lldsm::reachset {
+class indexed_reachset : public graph_lldsm::reachset {
   public:
     indexed_reachset();
     virtual ~indexed_reachset();

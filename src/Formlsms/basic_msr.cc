@@ -153,8 +153,8 @@ void numarcs_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast<const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
+  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+  DCASSERT(gllm);
 
 #ifdef ALLOW_SHOW_PARAMS
   SafeCompute(pass[1], x);
@@ -162,14 +162,14 @@ void numarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) show = x.answer->getBool();
   if (!em->hasIO()) show = false;
 #endif
-  cllm->getNumArcs(*x.answer);
+  gllm->getNumArcs(*x.answer);
   if (!x.answer->isNormal())    return;
   if (!x.answer->getPtr()) {
     long na = x.answer->getInt();
     x.answer->setPtr(new bigint(na));
   }
 #ifdef ALLOW_SHOW_PARAMS
-  if (show) cllm->showArcs(false);
+  if (show) gllm->showArcs(false);
 #endif
 }
 
@@ -520,15 +520,15 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (0==llm || lldsm::Error == llm->Type()) {
     return;
   }
-  const checkable_lldsm* cllm = smart_cast<const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
+  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+  DCASSERT(gllm);
 
   bool internal = false;
   SafeCompute(pass[1], x);
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
-  cllm->showArcs(internal); 
+  gllm->showArcs(internal); 
 }
 
 // ******************************************************************
@@ -742,9 +742,9 @@ void initial_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getInitialStates(*x.answer);
+  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+  gllm->getInitialStates(*x.answer);
 }
 
 
@@ -775,9 +775,9 @@ void reachable_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getReachable(*x.answer);
+  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+  gllm->getReachable(*x.answer);
 }
 
 
@@ -809,9 +809,9 @@ void potential_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getPotential(pass[1], *x.answer);
+  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+  gllm->getPotential(pass[1], *x.answer);
 }
 
 

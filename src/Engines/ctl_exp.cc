@@ -36,7 +36,7 @@ inline void Show(const char* who, stateset &sx)
   Show(who, sx.getExplicit());
 }
 
-inline intset* GrabInitial(const checkable_lldsm* mdl)
+inline intset* GrabInitial(const graph_lldsm* mdl)
 {
   intset* iis = 0;
   result init;
@@ -56,7 +56,7 @@ inline intset* GrabInitial(const checkable_lldsm* mdl)
 // *                                                                        *
 // **************************************************************************
 
-inline long explicit_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
+inline long explicit_ES(const graph_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
 {
   r.changeExplicit().assignFrom(q.getExplicit());
   // E p S q
@@ -81,7 +81,7 @@ inline long explicit_ES(const checkable_lldsm* mdl, const stateset &p, const sta
   return iters;
 }
 
-inline long explicit_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
+inline long explicit_EU(const graph_lldsm* mdl, const stateset &p, const stateset &q, stateset &r, stateset &tmp)
 {
   r.changeExplicit().assignFrom(q.getExplicit());
   // E p U q
@@ -107,7 +107,7 @@ inline long explicit_EU(const checkable_lldsm* mdl, const stateset &p, const sta
 }
 
 // Forward reachable
-inline long forward_closure(const checkable_lldsm* mdl, stateset &r)
+inline long forward_closure(const graph_lldsm* mdl, stateset &r)
 {
   for (long iters=1; ; iters++) {
 #ifdef DEBUG_EF
@@ -119,7 +119,7 @@ inline long forward_closure(const checkable_lldsm* mdl, stateset &r)
 }
 
 // Backward reachable
-inline long backward_closure(const checkable_lldsm* mdl, stateset &r)
+inline long backward_closure(const graph_lldsm* mdl, stateset &r)
 {
   for (long iters=1; ; iters++) {
 #ifdef DEBUG_EF
@@ -131,7 +131,7 @@ inline long backward_closure(const checkable_lldsm* mdl, stateset &r)
 }
 
 
-inline long unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
+inline long unfair_EH(const graph_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
 {
 #ifdef PROGRESS_EG
   fprintf(stderr, "Starting unfair_EH engine\n");
@@ -186,7 +186,7 @@ inline long unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r
 }
 
 
-inline long unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
+inline long unfair_EG(const graph_lldsm* mdl, const stateset &p, stateset &r, stateset &tmp)
 {
 #ifdef PROGRESS_EG
   fprintf(stderr, "Starting unfair_EG engine\n");
@@ -315,8 +315,8 @@ void EX_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(pass[1].isNormal());
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(p->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(p->getParent());
   DCASSERT(mdl);
 
   intset* isr = new intset(p->getExplicit().getSize());
@@ -354,8 +354,8 @@ void EU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   stateset* q = smart_cast <stateset*> (pass[2].getPtr());
   DCASSERT(q);
   DCASSERT(q->isExplicit());
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(q->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(q->getParent());
   stateset* p = 0;
 
   if (pass[1].isNormal()) {
@@ -410,8 +410,8 @@ void unfairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
   DCASSERT(p->isExplicit());
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(p->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(p->getParent());
   DCASSERT(mdl);
 
 #ifdef DEBUG_EG
@@ -454,8 +454,8 @@ void fairEG_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
   DCASSERT(p->isExplicit());
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(p->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(p->getParent());
   DCASSERT(mdl);
 
 #ifdef DEBUG_EG
@@ -532,7 +532,7 @@ unfairAEF_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(pass[1].isNormal());
   DCASSERT(pass[2].isNormal());
 
-  checkable_lldsm* mdl = smart_cast <checkable_lldsm*> (pass[0].getPtr());
+  graph_lldsm* mdl = smart_cast <graph_lldsm*> (pass[0].getPtr());
   DCASSERT(mdl);
   
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
@@ -612,7 +612,7 @@ specializedAEF_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(x.answer);
   x.answer->setNull();
 
-  checkable_lldsm* mdl = smart_cast <checkable_lldsm*> (pass[0].getPtr());
+  graph_lldsm* mdl = smart_cast <graph_lldsm*> (pass[0].getPtr());
   DCASSERT(mdl);
   if (!mdl->requireByCols(0)) {
     if (em->startError()) {

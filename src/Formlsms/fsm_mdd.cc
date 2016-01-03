@@ -20,7 +20,7 @@
 // *                                                                *
 // ******************************************************************
 
-class meddly_fsm : public checkable_lldsm {
+class meddly_fsm : public graph_lldsm {
   bool is_finished;
   // For getPotential():
   meddly_encoder* mtmdd_wrap;
@@ -46,7 +46,7 @@ public:
 
   virtual void visitStates(state_visitor &x) const;
 
-  // Required for a useful "checkable_lldsm":
+  // Required for a useful "graph_lldsm":
   virtual void getNumStates(result& count) const;
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;
@@ -66,7 +66,7 @@ public:
 // ******************************************************************
 
 meddly_fsm::meddly_fsm(meddly_states* ss)
-: checkable_lldsm(FSM)
+: graph_lldsm(FSM)
 {
   process = ss;
   is_finished = false;
@@ -246,7 +246,7 @@ void meddly_fsm::showArcs(bool internal) const
 // *                                                                *
 // ******************************************************************
 
-checkable_lldsm* StartMeddlyFSM(meddly_states* ss)
+graph_lldsm* StartMeddlyFSM(meddly_states* ss)
 {
   if (0==ss) return 0;
   return new meddly_fsm(ss);
