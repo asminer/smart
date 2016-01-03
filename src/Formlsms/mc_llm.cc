@@ -696,18 +696,18 @@ void explicit_mc::showArcs(bool internal) const
     for (long i=0; i<num_states; i++) invmap[map[i]] = i;
   }
 
-  bool by_rows = (OUTGOING == graph_display_style);
+  bool by_rows = (OUTGOING == graphDisplayStyle());
   const char* row;
-  if (display_graph_node_names)   row = by_rows ? "From " : "To ";
+  if (displayGraphNodeNames())   row = by_rows ? "From " : "To ";
   else                            row = by_rows ? "Row " : "Column ";
 
-  switch (graph_display_style) {
+  switch (graphDisplayStyle()) {
     case DOT:
         em->cout() << "digraph mc {\n";
         for (long i=0; i<num_states; i++) {
           long mi = map ? map[i] : i;
           em->cout() << "\ts" << i;
-          if (display_graph_node_names) {
+          if (displayGraphNodeNames()) {
             em->cout() << " [label=\"";
             ShowState(em->cout(), mi, false);
             em->cout() << "\"]";
@@ -732,11 +732,11 @@ void explicit_mc::showArcs(bool internal) const
   for (long i=0; i<num_states; i++) {
     long h = map ? map[i] : i;
     CHECK_RANGE(0, h, num_states);
-    switch (graph_display_style) {
+    switch (graphDisplayStyle()) {
       case INCOMING:
       case OUTGOING:
           em->cout() << row;
-          if (display_graph_node_names)   ShowState(em->cout(), h, false);
+          if (displayGraphNodeNames())   ShowState(em->cout(), h, false);
           else                            em->cout() << i;
           em->cout() << ":\n";
           break;
@@ -760,7 +760,7 @@ void explicit_mc::showArcs(bool internal) const
     // display row/column
     for (long z=0; z<foo.last; z++) {
       em->cout().Put('\t');
-      switch (graph_display_style) {
+      switch (graphDisplayStyle()) {
         case DOT:
             em->cout() << "s" << foo.index[z] << " -> s" << i;
             em->cout() << " [label=\"" << foo.value[z] << "\"];";
@@ -771,7 +771,7 @@ void explicit_mc::showArcs(bool internal) const
             break;
 
         default:
-            if (display_graph_node_names) {
+            if (displayGraphNodeNames()) {
               long h = map ? map[foo.index[z]] : foo.index[z];
               CHECK_RANGE(0, h, num_states);
               ShowState(em->cout(), h, false);
@@ -787,7 +787,7 @@ void explicit_mc::showArcs(bool internal) const
   } // for i
   delete[] invmap;
   delete[] map;
-  if (DOT == graph_display_style) {
+  if (DOT == graphDisplayStyle()) {
     em->cout() << "}\n";
   }
   em->cout().flush();

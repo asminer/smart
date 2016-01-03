@@ -4,7 +4,7 @@
 #ifndef RSS_INDX_H
 #define RSS_INDX_H
 
-#include "rss.h"
+#include "check_llm.h"
 
 // External libs
 #include "lslib.h"
@@ -15,7 +15,7 @@
     This prevents us from copying a few methods.
 
 */
-class indexed_reachset : public reachset {
+class indexed_reachset : public checkable_lldsm::reachset {
   public:
     indexed_reachset();
     virtual ~indexed_reachset();

@@ -247,10 +247,10 @@ void fsm_def::FinalizeModel(OutputStream &ds)
 
 #ifdef TRY_NEW_STUFF
   enum_reachset* rss = new enum_reachset(mcstate);
-  graph_lldsm* foo = StartGenericFSM(rss);
+  checkable_lldsm* foo = StartGenericFSM(rss);
   FinishGenericFSM(foo, init);  // TBD mygr?
 #else
-  graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
+  checkable_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
 #endif
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);

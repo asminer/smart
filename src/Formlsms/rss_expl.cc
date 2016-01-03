@@ -80,7 +80,8 @@ void expl_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-reachset::iterator& expl_reachset::iteratorForOrder(int display_order)
+checkable_lldsm::reachset::iterator& expl_reachset
+::iteratorForOrder(int display_order)
 {
   DCASSERT(state_dictionary || (state_collection && state_handle));
 
@@ -112,7 +113,7 @@ reachset::iterator& expl_reachset::iteratorForOrder(int display_order)
   };
 }
 
-reachset::iterator& expl_reachset::easiestIterator() const
+checkable_lldsm::reachset::iterator& expl_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;

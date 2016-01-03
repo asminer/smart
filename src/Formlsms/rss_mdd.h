@@ -4,7 +4,7 @@
 #ifndef RSS_MDD_H
 #define RSS_MDD_H
 
-#include "../ExprLib/mod_inst.h"
+#include "check_llm.h"
 #include "../Modules/glue_meddly.h"
 
 // ******************************************************************
@@ -254,7 +254,7 @@ public:
   void getNumArcs(INT &count) const;
 
   // TBD: use an enum for show, e.g., what order?
-  void showArcs(const graph_lldsm* p, OutputStream &os, bool internal, bool node_names);
+  void showArcs(const checkable_lldsm* p, OutputStream &os, bool internal, bool node_names);
 
 // Methods involving the process 
 public:
