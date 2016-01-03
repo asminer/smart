@@ -7,7 +7,7 @@
 #include "graph_llm.h"
 #include "../Modules/glue_meddly.h"
 
-class meddly_reachset : public checkable_lldsm::reachset {
+class meddly_reachset : public graph_lldsm::reachset {
   public:
     meddly_reachset();
     virtual ~meddly_reachset();

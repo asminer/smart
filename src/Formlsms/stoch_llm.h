@@ -16,7 +16,7 @@ class statedist;
 
 /**   The base class for stochastic models.
 */  
-class stochastic_lldsm : public checkable_lldsm {
+class stochastic_lldsm : public graph_lldsm {
   /// probability of eventually hitting the accept state
   double accept_prob;
   /// probability of eventually hitting the trap state

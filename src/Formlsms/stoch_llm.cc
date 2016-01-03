@@ -9,7 +9,7 @@
 // *                                                                *
 // ******************************************************************
 
-stochastic_lldsm::stochastic_lldsm(model_type t) : checkable_lldsm(t)
+stochastic_lldsm::stochastic_lldsm(model_type t) : graph_lldsm(t)
 {
   accept_prob = -1;
   trap_prob = -1;

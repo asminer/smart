@@ -50,13 +50,13 @@ void meddly_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-checkable_lldsm::reachset::iterator& meddly_reachset::iteratorForOrder(int)
+graph_lldsm::reachset::iterator& meddly_reachset::iteratorForOrder(int)
 {
   DCASSERT(natorder);
   return *natorder;
 }
 
-checkable_lldsm::reachset::iterator& meddly_reachset::easiestIterator() const
+graph_lldsm::reachset::iterator& meddly_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;

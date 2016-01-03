@@ -31,8 +31,8 @@ Specifically we have the following formalism support:
    phase_hlm    Phase-type models.
 
    graph_llm    Graph-based low-level models; checkable with logics (CTL).
-     fsm_llm    Low-level finite state machines.
-      mc_llm    Low-level Markov chain class.
+     fsm_llm    Low-level finite state machines. (TBD: STILL NEEDED?)
+      mc_llm    Low-level Markov chain class. (TBD: STILL NEEDED?)
    stoch_llm    Abstract base class: stochastic models.
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!

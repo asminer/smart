@@ -70,7 +70,7 @@ bool expl_printer::visit()
 
 bool stateset::print_indexes;
 
-stateset::stateset(const checkable_lldsm* p, intset* e) : shared_object()
+stateset::stateset(const graph_lldsm* p, intset* e) : shared_object()
 {
   is_explicit = true;
   parent = p;
@@ -79,7 +79,7 @@ stateset::stateset(const checkable_lldsm* p, intset* e) : shared_object()
   state_dd = relation_dd = 0;
 }
 
-stateset::stateset(const checkable_lldsm* p, sv_encoder* sf, shared_object* s,
+stateset::stateset(const graph_lldsm* p, sv_encoder* sf, shared_object* s,
                                    sv_encoder* rf, shared_object* r)
 : shared_object()
 {
@@ -494,7 +494,7 @@ void stateset_union::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* first = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(first);
-  const checkable_lldsm* parent = first->getParent();
+  const graph_lldsm* parent = first->getParent();
   bool is_explicit = first->isExplicit();
   stateset* answer = 0;
   if (is_explicit) {
@@ -592,7 +592,7 @@ void stateset_intersect::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* first = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(first);
-  const checkable_lldsm* parent = first->getParent();
+  const graph_lldsm* parent = first->getParent();
   bool is_explicit = first->isExplicit();
   stateset* answer = 0;
   if (is_explicit) {

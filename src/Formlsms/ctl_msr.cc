@@ -142,13 +142,13 @@ public:
     } // catch
   }
 
-  inline checkable_lldsm* getLLM(traverse_data &x, expr* p) const {
+  inline graph_lldsm* getLLM(traverse_data &x, expr* p) const {
     model_instance* mi = grabModelInstance(x, p);
     if (0==mi) return 0;
     lldsm* foo = BuildRG(mi->GetCompiledModel(), x.parent);
     if (0==foo) return 0;
     if (foo->Type() == lldsm::Error) return 0;
-    return dynamic_cast <checkable_lldsm*>(foo);
+    return dynamic_cast <graph_lldsm*>(foo);
   }
 
   inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
@@ -461,7 +461,7 @@ void EG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();
@@ -612,7 +612,7 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();
@@ -770,7 +770,7 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* notp = Complement(em, x.parent, grabParam(llm, pass[1], x));
   if (0==notp) {
     x.answer->setNull();
@@ -944,7 +944,7 @@ void num_paths::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  checkable_lldsm* llm = getLLM(x, pass[0]);
+  graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();

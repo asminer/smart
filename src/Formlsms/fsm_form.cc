@@ -247,10 +247,10 @@ void fsm_def::FinalizeModel(OutputStream &ds)
 
 #ifdef TRY_NEW_STUFF
   enum_reachset* rss = new enum_reachset(mcstate);
-  checkable_lldsm* foo = StartGenericFSM(rss);
+  graph_lldsm* foo = StartGenericFSM(rss);
   FinishGenericFSM(foo, init);  // TBD mygr?
 #else
-  checkable_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
+  graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
 #endif
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
@@ -490,7 +490,7 @@ void fsm_absorbing::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(foo);
   const lldsm* bar = foo->GetProcess();
   DCASSERT(bar);
-  const checkable_lldsm* cruft = smart_cast <const checkable_lldsm*>(bar);
+  const graph_lldsm* cruft = smart_cast <const graph_lldsm*>(bar);
   DCASSERT(cruft);
 
   x.answer->setBool(cruft->isAbsorbing(x.current_state_index));
@@ -524,7 +524,7 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(foo);
   const lldsm* bar = foo->GetProcess();
   DCASSERT(bar);
-  const checkable_lldsm* cruft = smart_cast <const checkable_lldsm*>(bar);
+  const graph_lldsm* cruft = smart_cast <const graph_lldsm*>(bar);
   DCASSERT(cruft);
   
   x.answer->setBool(cruft->isDeadlocked(x.current_state_index));

@@ -51,7 +51,7 @@ public:
 
     Huge TBD here.
 */
-class generic_fsm : public checkable_lldsm {
+class generic_fsm : public graph_lldsm {
   public:
     generic_fsm(reachset* rss);
     virtual ~generic_fsm();
@@ -78,7 +78,7 @@ class generic_fsm : public checkable_lldsm {
 // *                                                                *
 // ******************************************************************
 
-generic_fsm::generic_fsm(reachset* rss) : checkable_lldsm(FSM)
+generic_fsm::generic_fsm(reachset* rss) : graph_lldsm(FSM)
 {
   DCASSERT(rss);
   RSS = rss;
@@ -150,7 +150,7 @@ void InitFSMLibs(exprman* em)
   }
 }
 
-checkable_lldsm* StartGenericFSM(checkable_lldsm::reachset* rss)
+graph_lldsm* StartGenericFSM(graph_lldsm::reachset* rss)
 {
   if (0==rss) return 0;
   return new generic_fsm(rss);
@@ -183,7 +183,7 @@ void FinishGenericFSM(lldsm* rs, LS_Vector &init) // TBD!
 // *                                                                *
 // ******************************************************************
 
-class explicit_fsm : public checkable_lldsm {
+class explicit_fsm : public graph_lldsm {
 
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
       int alloc;
@@ -413,7 +413,7 @@ bool explicit_fsm::pot_visit::visit()
 // ******************************************************************
 
 explicit_fsm::explicit_fsm(const LS_Vector& init, GraphLib::digraph* rg)
- : checkable_lldsm(FSM)
+ : graph_lldsm(FSM)
 {
   DCASSERT(rg);
   edges = rg;
@@ -426,7 +426,7 @@ explicit_fsm::explicit_fsm(const LS_Vector& init, GraphLib::digraph* rg)
   raw_edges.value = 0;
 }
 
-explicit_fsm::explicit_fsm(long ns) : checkable_lldsm(FSM)
+explicit_fsm::explicit_fsm(long ns) : graph_lldsm(FSM)
 {
   num_states = ns;
   edges = 0;
@@ -1324,12 +1324,12 @@ void fsm_expl::ShowState(OutputStream &s, long i, bool internal) const
 // *                                                                *
 // ******************************************************************
 
-checkable_lldsm* MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg)
+graph_lldsm* MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg)
 {
   return new fsm_enum(init, rg, ss);
 }
 
-checkable_lldsm* StartExplicitFSM(StateLib::state_db* ss)
+graph_lldsm* StartExplicitFSM(StateLib::state_db* ss)
 {
   return new fsm_expl(ss);
 }

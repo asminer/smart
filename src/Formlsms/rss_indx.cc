@@ -50,12 +50,11 @@ void indexed_reachset::getPotential(expr* p, result &x) const
   }
 
   intset* pset = new intset(num_states);
-  const checkable_lldsm* LM = getParent();
-  const hldsm* HM = LM ? LM->GetParent() : 0;
+  const hldsm* HM = getGrandParent();
   pot_visit pv(HM, p, *pset);
   visitStates(pv);
   if (pv.isOK()) {
-    x.setPtr(new stateset(LM, pset));
+    x.setPtr(new stateset(getParent(), pset));
   } else {
     delete pset;
     x.setNull();

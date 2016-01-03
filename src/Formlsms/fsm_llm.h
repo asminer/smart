@@ -38,7 +38,7 @@ void InitFSMLibs(exprman* em);
     Start a FSM when only the states are known.
     Edges must be added later with FinishGenericFSM().
 */
-checkable_lldsm* StartGenericFSM(checkable_lldsm::reachset* rss);  
+graph_lldsm* StartGenericFSM(graph_lldsm::reachset* rss);  
 
 /**
     Finish a FSM.
@@ -52,11 +52,11 @@ void FinishGenericFSM(lldsm* rs, LS_Vector &init);  // TBD add generic process!
 //
 //
 
-checkable_lldsm* 
+graph_lldsm* 
 MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg);
 
 // Start an explicit FSM
-checkable_lldsm* StartExplicitFSM(StateLib::state_db* ss);
+graph_lldsm* StartExplicitFSM(StateLib::state_db* ss);
 
 // Get the states from an explicit FSM (or 0 on error)
 StateLib::state_db* GrabExplicitFSMStates(lldsm* rg);

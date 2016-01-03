@@ -14,7 +14,7 @@
 
 // #define DEBUG_EG
 
-inline const shared_object* GrabSOInitial(const checkable_lldsm* mdl)
+inline const shared_object* GrabSOInitial(const graph_lldsm* mdl)
 {
   result init;
   mdl->getInitialStates(init);
@@ -57,7 +57,7 @@ void Show(DisplayStream &cout, const char* who, stateset &x)
 // **************************************************************************
 
 inline void 
-symbolic_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
+symbolic_ES(const graph_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
 {
   // E p S q iterations
 
@@ -97,7 +97,7 @@ symbolic_ES(const checkable_lldsm* mdl, const stateset &p, const stateset &q, st
 }
 
 inline void 
-symbolic_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
+symbolic_EU(const graph_lldsm* mdl, const stateset &p, const stateset &q, stateset &ans)
 {
   // E p U q iterations
 
@@ -138,7 +138,7 @@ symbolic_EU(const checkable_lldsm* mdl, const stateset &p, const stateset &q, st
 
 
 inline void 
-unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r)
+unfair_EH(const graph_lldsm* mdl, const stateset &p, stateset &r)
 {
   // Auxiliary
   shared_object* oldr = r.getStateForest()->makeEdge(0);
@@ -183,7 +183,7 @@ unfair_EH(const checkable_lldsm* mdl, const stateset &p, stateset &r)
 }
 
 inline void 
-unfair_EG(const checkable_lldsm* mdl, const stateset &p, stateset &r)
+unfair_EG(const graph_lldsm* mdl, const stateset &p, stateset &r)
 {
   // Auxiliary
   shared_object* oldr = r.getStateForest()->makeEdge(0);
@@ -289,8 +289,8 @@ void EX_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(pass[1].isNormal());
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
-  // const checkable_lldsm* mdl = 
-    // smart_cast <const checkable_lldsm*>(p->getParent());
+  // const graph_lldsm* mdl = 
+    // smart_cast <const graph_lldsm*>(p->getParent());
   // DCASSERT(mdl);
 
   shared_object* rdd = 0;
@@ -342,8 +342,8 @@ void EU_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
   stateset* q = smart_cast <stateset*> (pass[2].getPtr());
   DCASSERT(q);
   DCASSERT(q->isSymbolic());
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(q->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(q->getParent());
   stateset* p = 0;
 
   if (pass[1].isNormal()) {
@@ -411,8 +411,8 @@ void unfairEG_symb_eng::RunEngine(result* pass, int np, traverse_data &x)
   stateset* p = smart_cast <stateset*> (pass[1].getPtr());
   DCASSERT(p);
   DCASSERT(p->isSymbolic());
-  const checkable_lldsm* mdl = 
-    smart_cast <const checkable_lldsm*>(p->getParent());
+  const graph_lldsm* mdl = 
+    smart_cast <const graph_lldsm*>(p->getParent());
   DCASSERT(mdl);
 
   stateset* r = new stateset(

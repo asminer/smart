@@ -5,7 +5,7 @@
 #define FSM_MDD_H
 
 class lldsm;
-class checkable_lldsm;
+class graph_lldsm;
 class meddly_states;
 
 // ******************************************************************
@@ -15,7 +15,7 @@ class meddly_states;
 // ******************************************************************
 
 // Start a Meddly FSM
-checkable_lldsm* StartMeddlyFSM(meddly_states* ss);
+graph_lldsm* StartMeddlyFSM(meddly_states* ss);
 
 // Get the states from a Meddly FSM (or 0 on error)
 meddly_states* GrabMeddlyFSMStates(lldsm* fsm);
