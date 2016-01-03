@@ -153,8 +153,8 @@ void numarcs_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
-  DCASSERT(gllm);
+  const checkable_lldsm* cllm = smart_cast<const checkable_lldsm*>(llm);
+  DCASSERT(cllm);
 
 #ifdef ALLOW_SHOW_PARAMS
   SafeCompute(pass[1], x);
@@ -162,14 +162,14 @@ void numarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) show = x.answer->getBool();
   if (!em->hasIO()) show = false;
 #endif
-  gllm->getNumArcs(*x.answer);
+  cllm->getNumArcs(*x.answer);
   if (!x.answer->isNormal())    return;
   if (!x.answer->getPtr()) {
     long na = x.answer->getInt();
     x.answer->setPtr(new bigint(na));
   }
 #ifdef ALLOW_SHOW_PARAMS
-  if (show) gllm->showArcs(false);
+  if (show) cllm->showArcs(false);
 #endif
 }
 
@@ -520,15 +520,15 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (0==llm || lldsm::Error == llm->Type()) {
     return;
   }
-  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
-  DCASSERT(gllm);
+  const checkable_lldsm* cllm = smart_cast<const checkable_lldsm*>(llm);
+  DCASSERT(cllm);
 
   bool internal = false;
   SafeCompute(pass[1], x);
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
-  gllm->showArcs(internal); 
+  cllm->showArcs(internal); 
 }
 
 // ******************************************************************

@@ -4,6 +4,8 @@
 #ifndef FSM_LLM_H
 #define FSM_LLM_H
 
+#include "check_llm.h"
+
 namespace GraphLib {
   class digraph;
 };
@@ -16,9 +18,7 @@ struct LS_Vector;
 class model_enum;
 class expl_rss_only;
 class lldsm;
-class checkable_lldsm;
 class exprman;
-class reachset;
 
 // ******************************************************************
 // *                                                                *
@@ -38,7 +38,7 @@ void InitFSMLibs(exprman* em);
     Start a FSM when only the states are known.
     Edges must be added later with FinishGenericFSM().
 */
-checkable_lldsm* StartGenericFSM(reachset* rss);  
+checkable_lldsm* StartGenericFSM(checkable_lldsm::reachset* rss);  
 
 /**
     Finish a FSM.

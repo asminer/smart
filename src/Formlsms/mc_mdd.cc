@@ -385,7 +385,7 @@ void meddly_mc::showArcs(bool internal) const
 {
   DCASSERT(process);
   try {
-    process->showArcs(this, em->cout(), internal, display_graph_node_names);
+    process->showArcs(this, em->cout(), internal, displayGraphNodeNames());
   }
   catch (sv_encoder::error e) {
     if (GetParent()->StartError(0)) {
