@@ -1,7 +1,7 @@
 
 // $Id$
 
-#include "check_llm.h"
+#include "graph_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"

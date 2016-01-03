@@ -1,8 +1,8 @@
 
 // $Id$
 
-#ifndef CHECK_LLM_H
-#define CHECK_LLM_H
+#ifndef GRAPH_LLM_H
+#define GRAPH_LLM_H
 
 #include "../ExprLib/mod_inst.h"
 

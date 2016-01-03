@@ -4,7 +4,7 @@
 #ifndef RSS_INDX_H
 #define RSS_INDX_H
 
-#include "check_llm.h"
+#include "graph_llm.h"
 
 // External libs
 #include "lslib.h"

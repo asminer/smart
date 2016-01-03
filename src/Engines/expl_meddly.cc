@@ -20,7 +20,7 @@
 // Formalisms
 #define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/check_llm.h"
+#include "../Formlsms/graph_llm.h"
 #include "../Formlsms/rss_mdd.h"
 #include "../Formlsms/fsm_mdd.h"
 #include "../Formlsms/mc_llm.h"
