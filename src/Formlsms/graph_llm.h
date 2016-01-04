@@ -26,6 +26,9 @@ class stateset;
         some functions might be unnecessary
         some functions should be generalized 
           (with concurrent redesign of stateset class)
+
+
+      TBD - reachset stuff should move to lldsm
 */  
 class graph_lldsm : public lldsm {
 public:

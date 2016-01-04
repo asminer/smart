@@ -30,7 +30,8 @@ smart_LDADD = \
   ../Modules/stringtype.la ../Modules/biginttype.la \
   ../Modules/stochtypes.la ../Modules/glue_meddly.la \
   ../Modules/expl_states.la \
-  ../Modules/statesets.la ../Modules/statevects.la \
+  ../Modules/statesets.la ../Modules/expl_ssets.la ../Modules/meddly_ssets.la \
+  ../Modules/statevects.la \
   \
   ../ParseSM/libsmparse.la \
   $(TIMER_LIBRARY)/lib/libtimer.a \
