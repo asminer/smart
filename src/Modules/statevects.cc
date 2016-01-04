@@ -15,7 +15,7 @@
 #include "../Formlsms/stoch_llm.h"
 
 #include "statevects.h"
-#include "statesets.h"
+#include "expl_ssets.h"
 
 // External
 #include "intset.h"
@@ -875,7 +875,11 @@ void gt_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
+#ifdef NEW_STATESETS
+  x.answer->setPtr( new expl_stateset(llm, ans) );
+#else
   x.answer->setPtr( new stateset(llm, ans) );
+#endif
   Delete(p);
 }
 
@@ -929,7 +933,11 @@ void ge_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
+#ifdef NEW_STATESETS
+  x.answer->setPtr( new expl_stateset(llm, ans) );
+#else
   x.answer->setPtr( new stateset(llm, ans) );
+#endif
   Delete(p);
 }
 
@@ -982,7 +990,11 @@ void lt_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
+#ifdef NEW_STATESETS
+  x.answer->setPtr( new expl_stateset(llm, ans) );
+#else
   x.answer->setPtr( new stateset(llm, ans) );
+#endif
   Delete(p);
 }
 
@@ -1036,7 +1048,11 @@ void le_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
+#ifdef NEW_STATESETS
+  x.answer->setPtr( new expl_stateset(llm, ans) );
+#else
   x.answer->setPtr( new stateset(llm, ans) );
+#endif
   Delete(p);
 }
 
@@ -1077,10 +1093,10 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  stateset* e = smart_cast <stateset*>(Share(x.answer->getPtr()));
-  DCASSERT(e);
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  DCASSERT(ss);
 
-  if (p->getParent() != e->getParent()) {
+  if (p->getParent() != ss->getParent()) {
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "State distribution and set parameters to condition()";
@@ -1089,19 +1105,25 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
       em->stopIO();
     }
     Delete(p);
-    Delete(e);
+    Delete(ss);
     x.answer->setNull();
     return;
   }
 
-  if (!e->isExplicit()) {
+#ifdef NEW_STATESETS
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+#else
+  stateset* e = ss->isExplicit() ? ss : 0;
+#endif
+  if (!e) {
+  
     if (em->startError()) {
       em->causedBy(this);
-      em->cerr() << "Sorry, condition() doesn't work yet with DD statesets";
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
       em->stopIO();
     }
     Delete(p);
-    Delete(e);
+    Delete(ss);
     x.answer->setNull();
     return;
   }
@@ -1173,10 +1195,10 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  stateset* e = smart_cast <stateset*>(Share(x.answer->getPtr()));
-  DCASSERT(e);
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  DCASSERT(ss);
 
-  if (p->getParent() != e->getParent()) {
+  if (p->getParent() != ss->getParent()) {
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "State distribution and set parameters to prob()";
@@ -1185,19 +1207,24 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
       em->stopIO();
     }
     Delete(p);
-    Delete(e);
+    Delete(ss);
     x.answer->setNull();
     return;
   }
 
-  if (!e->isExplicit()) {
+#ifdef NEW_STATESETS
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+#else
+  stateset* e = ss->isExplicit() ? ss : 0;
+#endif
+  if (!e) {
     if (em->startError()) {
       em->causedBy(this);
-      em->cerr() << "Sorry, prob() doesn't work yet with DD statesets";
+      em->cerr() << "Sorry, prob() requires explicit statesets (for now)";
       em->stopIO();
     }
     Delete(p);
-    Delete(e);
+    Delete(ss);
     x.answer->setNull();
     return;
   }

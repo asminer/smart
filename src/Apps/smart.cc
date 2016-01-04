@@ -44,6 +44,8 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/stochtypes.h"
 #include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
+#include "../Modules/meddly_ssets.h"
 #include "../Modules/statevects.h"
 #include "../Modules/glue_meddly.h"
 
@@ -114,6 +116,8 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitStringType(em);
   InitBigintType(em, st);
   InitStatesets(em, st);
+  InitExplStatesets(em);
+  InitMeddlyStatesets(em);
   InitStatevects(em, st);
   InitMEDDLy(em);
 
