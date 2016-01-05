@@ -118,14 +118,14 @@ bool stochastic_lldsm::reachesAcceptBy(double, double*) const
 }
 
 bool stochastic_lldsm
-::randomTTA(rng_stream &, long &, const stateset &, long, long &)
+::randomTTA(rng_stream &, long &, const stateset*, long, long &)
 {
   bailOut(__FILE__, __LINE__, "Can't simulate discrete-time random walk");
   return false;
 }
 
 bool stochastic_lldsm
-::randomTTA(rng_stream &, long &, const stateset &, double, double &)
+::randomTTA(rng_stream &, long &, const stateset*, double, double &)
 {
   bailOut(__FILE__, __LINE__, "Can't simulate continuous-time random walk");
   return false;

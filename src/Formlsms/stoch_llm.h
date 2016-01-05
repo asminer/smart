@@ -288,7 +288,7 @@ public:
         @return true    on success
                 false   otherwise
   */
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           long maxt, long &elapsed);
 
   /** Simulate a random walk through the process, until absorption.
@@ -302,7 +302,7 @@ public:
         @return true    on success
                 false   otherwise
   */
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           double maxt, double &elapsed);
 
 };

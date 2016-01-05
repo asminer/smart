@@ -46,6 +46,11 @@ class expl_stateset : public stateset {
       DCASSERT(data);
       return *data;
     }
+
+    inline intset& changeExplicit() {
+      DCASSERT(data);
+      return *data;
+    }
   private:
     intset* data;
 };

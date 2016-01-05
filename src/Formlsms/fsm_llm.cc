@@ -9,7 +9,7 @@
 #include "../include/heap.h"
 
 #include "../Modules/expl_states.h"
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 #include "../Modules/biginttype.h"
 
 // External libs
@@ -59,9 +59,16 @@ class generic_fsm : public graph_lldsm {
     virtual long getNumStates() const;
     virtual void getNumStates(result& count) const;
     virtual void showStates(bool internal) const;
+
+#ifdef NEW_STATESETS
+    virtual stateset* getReachable() const;
+    virtual stateset* getPotential(expr* p) const;
+    virtual stateset* getInitialStates() const;
+#else
     virtual void getReachable(result &ss) const;
     virtual void getPotential(expr* p, result &ss) const;
     virtual void getInitialStates(result &x) const;
+#endif
 
     // TBD - more methods eventually
   protected:
@@ -116,23 +123,44 @@ void generic_fsm::showStates(bool internal) const
   }
 }
 
+#ifdef NEW_STATESETS
+
+stateset* generic_fsm::getReachable() const
+{
+  return RSS ? RSS->getReachable() : 0;
+}
+
+stateset* generic_fsm::getPotential(expr* p) const
+{
+  return RSS ? RSS->getPotential(p) : 0;
+}
+
+stateset* generic_fsm::getInitialStates() const
+{
+  return RSS ? RSS->getInitialStates() : 0;
+}
+
+#else
+
 void generic_fsm::getReachable(result &ss) const
 {
   DCASSERT(RSS);
-  RSS->getReachable(ss);
+  ss.setPtr(RSS->getReachable());
 }
 
 void generic_fsm::getPotential(expr* p, result &ss) const
 {
   DCASSERT(RSS);
-  RSS->getPotential(p, ss);
+  ss.setPtr(RSS->getPotential(p));
 }
 
 void generic_fsm::getInitialStates(result &x) const
 {
   DCASSERT(RSS);
-  RSS->getInitialStates(x);
+  x.setPtr(RSS->getInitialStates());
 }
+
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -269,14 +297,22 @@ public:
 
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;
+#ifdef NEW_STATESETS
+  virtual stateset* getReachable() const;
+  virtual stateset* getPotential(expr* p) const;
+  virtual stateset* getInitialStates() const;
+#else
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
   virtual void getInitialStates(result &x) const;
+#endif
 
   // graph requirements
   virtual long getNumArcs() const;
   virtual void showArcs(bool internal) const;
+#ifndef NEW_STATESETS
   virtual void countPaths(const intset &src, const intset &dest, result& count);
+#endif
   virtual bool requireByRows(const named_msg* rep);
   virtual bool requireByCols(const named_msg* rep);
   virtual long getOutgoingEdges(long from, ObjectList <int> *e) const;
@@ -287,9 +323,15 @@ public:
   virtual bool isAbsorbing(long st) const;
   virtual bool isDeadlocked(long st) const;
 
+#ifdef NEW_STATESETS
+  virtual void findDeadlockedStates(stateset *ss) const;
+  virtual bool forward(const stateset* p, stateset* r) const;
+  virtual bool backward(const stateset* p, stateset* r) const;
+#else
   virtual void findDeadlockedStates(stateset &ss) const;
   virtual bool forward(const intset &p, intset &r) const;
   virtual bool backward(const intset &p, intset &r) const;
+#endif
 
   virtual bool dumpDot(OutputStream &s) const;
   
@@ -501,6 +543,47 @@ void explicit_fsm::showStates(bool internal) const
   
 }
 
+#ifdef NEW_STATESETS
+
+stateset* explicit_fsm::getReachable() const
+{
+  intset* all = new intset(num_states);
+  all->addAll();
+  return new expl_stateset(this, all);
+}
+
+stateset* explicit_fsm::getPotential(expr* p) const
+{
+  intset* all = new intset(num_states);
+  if (p) {
+    pot_visit pv(GetParent(), p, *all);
+    visitStates(pv);
+    if (!pv.isOK()) {
+      delete all;
+      return 0;
+    } 
+  } else {
+    all->removeAll();
+  }
+  return new expl_stateset(this, all);
+}
+
+stateset* explicit_fsm::getInitialStates() const
+{
+  DCASSERT(edges);
+  intset* initss = new intset(num_states);
+  initss->removeAll();
+  
+  if (initial.index) {
+    for (long z=0; z<initial.size; z++)
+      initss->addElement(initial.index[z]);
+  } 
+
+  return new expl_stateset(this, initss);
+}
+
+#else
+
 void explicit_fsm::getReachable(result &rs) const
 {
   if (0==num_states) {
@@ -550,6 +633,8 @@ void explicit_fsm::getInitialStates(result &x) const
 
   x.setPtr(new stateset(this, initss));
 }
+
+#endif
 
 long explicit_fsm::getNumArcs() const
 {
@@ -696,6 +781,8 @@ void explicit_fsm::showArcs(bool internal) const
   }
   em->cout().flush();
 }
+
+#ifndef NEW_STATESETS
 
 void explicit_fsm
 ::countPaths(const intset &src, const intset &dest, result& count)
@@ -893,6 +980,7 @@ void explicit_fsm
   }
 }
 
+#endif
 
 bool explicit_fsm::requireByRows(const named_msg* rep)
 {
@@ -977,6 +1065,38 @@ bool explicit_fsm::isDeadlocked(long st) const
   return (statetype::Deadlocked == foo.status);
 }
 
+#ifdef NEW_STATESETS
+
+void explicit_fsm::findDeadlockedStates(stateset* ss) const
+{
+  expl_stateset* ess = smart_cast <expl_stateset*> (ss);
+  DCASSERT(ess);
+  edges->noOutgoingEdges(ess->changeExplicit());
+}
+
+bool explicit_fsm::forward(const stateset* p, stateset* r) const
+{
+  const expl_stateset* ep = smart_cast <const expl_stateset*> (p);
+  DCASSERT(ep);
+  expl_stateset* er = smart_cast <expl_stateset*> (r);
+  DCASSERT(er);
+  DCASSERT(edges);
+  return edges->getForward(ep->getExplicit(), er->changeExplicit());
+}
+
+bool explicit_fsm::backward(const stateset* p, stateset* r) const
+{
+  const expl_stateset* ep = smart_cast <const expl_stateset*> (p);
+  DCASSERT(ep);
+  expl_stateset* er = smart_cast <expl_stateset*> (r);
+  DCASSERT(er);
+  DCASSERT(edges);
+  return edges->getBackward(ep->getExplicit(), er->changeExplicit());
+}
+
+
+#else
+
 void explicit_fsm::findDeadlockedStates(stateset &ss) const
 {
   edges->noOutgoingEdges(ss.changeExplicit());
@@ -994,6 +1114,7 @@ bool explicit_fsm::backward(const intset &p, intset &r) const
   return edges->getBackward(p, r);
 }
 
+#endif
 
 bool explicit_fsm::dumpDot(OutputStream &s) const
 {

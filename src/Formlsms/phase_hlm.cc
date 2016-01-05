@@ -13,7 +13,7 @@
 
 #include "stoch_llm.h"
 
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
 
 // ******************************************************************
@@ -115,8 +115,13 @@ class tta_dist : public phase_dist {
   int init_len;
   //
   stochastic_lldsm* chain;
+#ifdef NEW_STATESETS
+  expl_stateset* accept;
+  expl_stateset* final;    // accept or trap states.
+#else
   stateset* accept;
   stateset* final;    // accept or trap states.
+#endif
   long num_states;
   // for outgoing edges
   long* to_states;
@@ -125,8 +130,13 @@ class tta_dist : public phase_dist {
 protected:
   int source;
 public:
+#ifdef NEW_STATESETS
+  tta_dist(bool, statedist* init, stochastic_lldsm* mc, 
+    expl_stateset* a, const expl_stateset* t);
+#else
   tta_dist(bool, statedist* init, stochastic_lldsm* mc, 
     stateset* a, const stateset* t);
+#endif
 protected:
   virtual ~tta_dist();
 public:
@@ -166,9 +176,15 @@ protected:
   };
 };
 
+#ifdef NEW_STATESETS
+tta_dist
+:: tta_dist(bool d, statedist* init, stochastic_lldsm* mc, 
+  expl_stateset* a, const expl_stateset* t) : phase_dist(d)
+#else
 tta_dist
 :: tta_dist(bool d, statedist* init, stochastic_lldsm* mc, 
   stateset* a, const stateset* t) : phase_dist(d)
+#endif
 {
   chain = mc;
   accept = Share(a);
@@ -204,19 +220,18 @@ tta_dist
 
   // Initialize the final states
   intset* f = new intset(num_states);
-  final = new stateset(chain, f);
 
   // final := trap
   if (t) {
-    final->changeExplicit().assignFrom( t->getExplicit() );
+    f->assignFrom( t->getExplicit() );
   } else {
-    final->changeExplicit().removeAll();
+    f->removeAll();
   }
 
   // Add to final states: ! E (!final) U accept
 
   // (1) invert final
-  final->changeExplicit().complement();
+  f->complement();
 
   // (2) call EU engine to determine E (!final) U accept
   result answer;
@@ -224,23 +239,38 @@ tta_dist
   x.answer = &answer;
   result pass[3];
   pass[0].setBool(false);
-  pass[1].setPtr(Share(final));
+#ifdef NEW_STATESETS
+  pass[1].setPtr(new expl_stateset(chain, f));
+#else
+  pass[1].setPtr(new stateset(chain, f));
+#endif
   pass[2].setPtr(Share(accept));
   engtype* eu = em->findEngineType("ExplicitEU");  
   DCASSERT(eu); 
   eu->runEngine(pass, 3, x);
   pass[1].setPtr(0);
   pass[2].setPtr(0);
+
   // (3) final is still inverted, intersect with E (!final) U accept 
+#ifdef NEW_STATESETS
+  expl_stateset* good = smart_cast <expl_stateset*> (answer.getPtr());
+#else
   stateset* good = smart_cast <stateset*> (answer.getPtr());
+#endif
   DCASSERT(good);
-  final->changeExplicit() *= good->getExplicit();
+  (*f) *= good->getExplicit();
   // (4) invert again
   // final is now: ! (!final and good) = final or !good
-  final->changeExplicit().complement();
+  f->complement();
 
   // Now, add the accepting states
-  final->changeExplicit() += accept->getExplicit();
+  (*f) += accept->getExplicit();
+
+#ifdef NEW_STATESETS
+  final = new expl_stateset(chain, f);
+#else
+  final = new stateset(chain, f);
+#endif
 }
 
 tta_dist::~tta_dist()
@@ -287,7 +317,7 @@ void tta_dist::Sample(traverse_data &x)
   const long timeout = 2000000000;
   if (isDiscrete()) {
     long dt;
-    bool ok = chain->randomTTA(*x.stream, state, *final, timeout, dt);
+    bool ok = chain->randomTTA(*x.stream, state, final, timeout, dt);
     if (!ok) {
       x.answer->setNull();
       return;
@@ -299,7 +329,7 @@ void tta_dist::Sample(traverse_data &x)
     }
   } else {
     double ct;
-    bool ok = chain->randomTTA(*x.stream, state, *final, timeout, ct);
+    bool ok = chain->randomTTA(*x.stream, state, final, timeout, ct);
     if (!ok) {
       x.answer->setNull();
       return;
@@ -2525,8 +2555,13 @@ phase_hlm* makeTTA( bool disc, statedist* initial,
                     shared_object* a, const shared_object* t, 
                     stochastic_lldsm* mc)
 {
+#ifdef NEW_STATESETS
+  expl_stateset* ssa = dynamic_cast<expl_stateset*>(a);
+  const expl_stateset* sst = dynamic_cast<const expl_stateset*>(t);
+#else
   stateset* ssa = dynamic_cast<stateset*>(a);
   const stateset* sst = dynamic_cast<const stateset*>(t);
+#endif
   DCASSERT(0==initial || initial->getParent() == mc);
   if (0==ssa || 0==mc || sst != t) {
     Delete(initial);

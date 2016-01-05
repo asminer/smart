@@ -631,6 +631,9 @@ public:
       DCASSERT(cruft);
 
       // make set of states
+#ifdef NEW_STATESETS
+      ss = cruft->getPotential(pass[1]);
+#else
       cruft->getPotential(pass[1], *x.answer);
       if (!x.answer->isNormal()) {
         ss = 0;
@@ -638,6 +641,7 @@ public:
         ss = x.answer->getPtr();
         DCASSERT(ss);
       }
+#endif
   }
 };
 

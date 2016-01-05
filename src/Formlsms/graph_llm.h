@@ -6,6 +6,8 @@
 
 #include "../ExprLib/mod_inst.h"
 
+#include "../Modules/statesets.h" // for now
+
 class intset;
 class stateset;
 
@@ -29,6 +31,9 @@ class stateset;
 
 
       TBD - reachset stuff should move to lldsm
+
+      TBD - forward, backward should take an op name,
+            for printing error messages 
 */  
 class graph_lldsm : public lldsm {
 public:
@@ -105,6 +110,21 @@ public:
   */
   virtual void showInitial() const;
 
+#ifdef NEW_STATESETS
+  /** Count number of paths from src to dest in reachability graph.
+      This must be provided in derived classes, the
+      default behavior here is to print an error message.
+        @param  src     Set of starting states.
+        @param  dest    Set of destination states.
+        @param  count   On return, the number of distinct paths
+                        from some starting state, that ends in
+                        a destination state.  Will be infinite
+                        if there is a loop on any path from
+                        a starting state to a destination state.
+  */
+  virtual void countPaths(const stateset* src, const stateset* dest, result& count);
+
+#else
   /** Count number of paths from src to dest in reachability graph.
       This must be provided in derived classes, the
       default behavior here is to print an error message.
@@ -117,6 +137,7 @@ public:
                         a starting state to a destination state.
   */
   virtual void countPaths(const intset &src, const intset &dest, result& count);
+#endif
 
   /** Change our internal structure so as to be efficient "by rows".
       If this is already the case, do nothing.
@@ -163,6 +184,56 @@ public:
         @return true on success, false otherwise.
   */
   virtual bool dumpDot(OutputStream &s) const;
+
+#ifdef NEW_STATESETS
+
+  /** Get the reachable states, as a stateset.
+      Default behavior here is to print an error message and return null.
+        @return   New stateset object for the reachable states,
+                  or 0 on error.
+  */
+  virtual stateset* getReachable() const;
+
+  /** Get the possible initial (time 0) states.
+      Conceptually, this tells which elements in the vector 
+      constructed by getInitialDistribution() will have 
+      non-zero probability.  This must be provided in derived 
+      classes, the default behavior here is to print an error 
+      message and return null.
+        @return   New stateset object for the initial states,
+                  or 0 on error.
+  */
+  virtual stateset* getInitialStates() const;
+
+  /** Get the (potential) states that, once entered, are never 
+      left.  This includes deadlocked states.  This must be 
+      provided in derived classes, the default behavior here 
+      is to print an error message and return null.
+        @return   New stateset object for the absorbing states,
+                  or 0 on error.
+  */
+  virtual stateset* getAbsorbingStates() const;
+
+  /** Get the (potential) deadlocked states.
+      That means states that have no outgoing edges (even to itself).
+      This must be provided in derived classes, the default behavior 
+      here is to print an error message and return null.
+        @return   New stateset object for the deadlocked states,
+                  or 0 on error.
+  */
+  virtual stateset* getDeadlockedStates() const;
+
+  /** Get the set of states satisfying a constraint.
+      Default behavior here is to print an error message and return null.
+        @param  p   Logical condition for states to satisfy.
+                    If 0, we quickly return a new empty set.
+        @return   New stateset object for states satisfying p,
+                  or 0 on error.
+  */
+  virtual stateset* getPotential(expr* p) const;
+
+
+#else
 
   /** Get the reachable states, as a stateset.
       Default behavior here is to (quietly) set the result to null.
@@ -218,6 +289,8 @@ public:
   */
   virtual void getPotential(expr* p, result &ss) const;
 
+#endif
+
   /** For CTL model checking, is this a "fair" model?
       This says that infinite paths that are based on
       making one particular choice infinitely often
@@ -229,6 +302,54 @@ public:
                 false otherwise.
   */
   virtual bool isFairModel() const;
+
+#ifdef NEW_STATESETS
+
+  /** Determine TSCCs satisfying a property.
+      This is done "in place".
+      Should only be called for "fair" models.
+      Default behavior is to print an error message.
+         @param  p  On input: property p.
+                    On output: states are removed if
+                    they are not in a TSCC, or if
+                    not all states in the TSCC satisfy p.
+  */
+  virtual void getTSCCsSatisfying(stateset* p) const;
+
+  /** Find all "deadlocked" states.
+      Default behavior is to print an error message.
+        @param  ss  If i is not a deadlocked state,
+                    then i will be removed from ss.
+  */
+  virtual void findDeadlockedStates(stateset* ss) const;
+
+  /** Get states reachable from us in one step.
+      This must be provided in derived classes, the
+      default behavior here is to print an error message.
+        @param  p     Set of source states.
+        @param  r     On output, we add any state that can be reached 
+                      from a state in p, in one "step".
+                      Note: if p and r are the same, then we might
+                      add states that are more than one "step" away.
+        @return true  If any states were added to r,
+                false otherwise.
+  */
+  virtual bool forward(const stateset* p, stateset* r) const;
+
+  /** Get states that reach us in one step.
+      This must be provided in derived classes, the
+      default behavior here is to print an error message.
+        @param  p     Set of target states.
+        @param  r     On output, we add any state that can reach
+                      a state in p, in one "step".
+                      Note: if p and r are the same, then we might
+                      add states that are more than one "step" away.
+        @return true  If any states were added to r,
+                false otherwise.
+  */
+  virtual bool backward(const stateset* p, stateset* r) const;
+
+#else
 
   /** Determine TSCCs satisfying a property.
       This is done "in place".
@@ -274,8 +395,10 @@ public:
   */
   virtual bool backward(const intset &p, intset &r) const;
 
+#endif
 
   // Hacks for explicit:
+  // TBD - move these?
 
   /** Is the given state "absorbing".
       This means that either there are no outgoing edges from this state,
@@ -360,9 +483,9 @@ public:
           TBD - adjust the stateset class and  use a proper class hierarchy.
   
       */
-      virtual void getReachable(result &ss) const = 0;
-      virtual void getPotential(expr* p, result &ss) const = 0;
-      virtual void getInitialStates(result &x) const = 0;
+      virtual stateset* getReachable() const = 0;
+      virtual stateset* getPotential(expr* p) const = 0;
+      virtual stateset* getInitialStates() const = 0;
   
       /**
         Show all the states, in the desired order.

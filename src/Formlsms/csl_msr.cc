@@ -18,7 +18,7 @@
 
 class CSL_engine : public msr_noengine {
 protected:
-  /** Engines for computing PU, explicitly.
+  /** Engines for computing PU.
       This is a "Function call" style engine.
       Computes a stateprobs vector: for each starting state, the 
       probability that a path from that state satisfies p U q, 
@@ -31,7 +31,7 @@ protected:
       
       Result: a stateprobs vector.
   */
-  static engtype* PU_explicit;
+  static engtype* PU;
 
   /** Engines for building a phase type for TU.
       This is a "Function call" style engine.
@@ -116,6 +116,7 @@ protected:
     if (!slot.isNormal()) return true;
     stateset* ss = smart_cast <stateset*> (slot.getPtr());
     DCASSERT(ss);
+    /*
     if (!ss->isExplicit()) {
       if (em->startError()) {
         em->causedBy(x.parent);
@@ -125,6 +126,7 @@ protected:
       }   
       return true;
     }
+    */
     if (ss->getParent() == m) return false;
     if (em->startError()) {
       em->causedBy(x.parent);
@@ -175,7 +177,7 @@ protected:
 
 };
 
-engtype*  CSL_engine::PU_explicit             = 0;
+engtype*  CSL_engine::PU                      = 0;
 engtype*  CSL_engine::TU_generator            = 0;
 engtype*  CSL_engine::ProcGen                 = 0;
 
@@ -234,7 +236,7 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
   SafeCompute(pass[2], x);
   
   x.answer = ans;
-  launchEngine(PU_explicit, engpass, 4, x);
+  launchEngine(PU, engpass, 4, x);
 }
 
 // *****************************************************************
@@ -289,7 +291,7 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
   SafeCompute(pass[3], x);
 
   x.answer = ans;
-  launchEngine(PU_explicit, engpass, 4, x);
+  launchEngine(PU, engpass, 4, x);
 }
 
 // *****************************************************************
@@ -466,9 +468,9 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
 {
   // Initialize engines
 
-  CSL_engine::PU_explicit = MakeEngineType(em,
-      "ExplicitPU",
-      "Algorithm for explicit computation of PU formulas in CSL/PCTL.",
+  CSL_engine::PU = MakeEngineType(em,
+      "PU_ALGORITHM",
+      "Algorithm for computation of PU formulas in CSL/PCTL.",
       engtype::FunctionCall
   );
 

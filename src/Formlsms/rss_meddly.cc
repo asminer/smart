@@ -3,6 +3,8 @@
 
 #include "rss_meddly.h"
 #include "../ExprLib/mod_vars.h"
+#include "../Modules/meddly_ssets.h"
+
 
 // ******************************************************************
 // *                                                                *
@@ -62,14 +64,16 @@ graph_lldsm::reachset::iterator& meddly_reachset::easiestIterator() const
   return *natorder;
 }
 
-void meddly_reachset::getReachable(result &ss) const
+stateset* meddly_reachset::getReachable() const
 {
-  if ((0==mdd_wrap) || (0==states)) {
-    ss.setNull();
-    return;
-  }
-  // TBD!
-  // change stateset class?
+  if (0==vars) return 0;
+  if (0==mdd_wrap) return 0;
+
+#ifdef NEW_STATESETS
+  return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), Share(states));
+#else
+  return 0;
+#endif
 }
 
 // ******************************************************************

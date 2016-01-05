@@ -8,7 +8,6 @@
 #include "rng.h"
 #include <math.h>
 
-class stateset;
 class statedist;
 class shared_state;
 class stochastic_lldsm;

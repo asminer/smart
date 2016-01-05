@@ -744,7 +744,16 @@ void initial_si::Compute(traverse_data &x, expr** pass, int np)
   }
   const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
   DCASSERT(gllm);
+#ifdef NEW_STATESETS
+  stateset* ss = gllm->getInitialStates();
+  if (ss) {
+    x.answer->setPtr(ss);
+  } else {
+    x.answer->setNull();
+  }
+#else
   gllm->getInitialStates(*x.answer);
+#endif
 }
 
 
@@ -777,7 +786,16 @@ void reachable_si::Compute(traverse_data &x, expr** pass, int np)
   }
   const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
   DCASSERT(gllm);
+#ifdef NEW_STATESETS
+  stateset* rss = gllm->getReachable();
+  if (rss) {
+    x.answer->setPtr(rss);
+  } else {
+    x.answer->setNull();
+  }
+#else
   gllm->getReachable(*x.answer);
+#endif
 }
 
 
@@ -811,7 +829,16 @@ void potential_si::Compute(traverse_data &x, expr** pass, int np)
   }
   const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
   DCASSERT(gllm);
+#ifdef NEW_STATESETS
+  stateset* ss = gllm->getPotential(pass[1]);
+  if (ss) {
+    x.answer->setPtr(ss);
+  } else {
+    x.answer->setNull();
+  }
+#else
   gllm->getPotential(pass[1], *x.answer);
+#endif
 }
 
 
