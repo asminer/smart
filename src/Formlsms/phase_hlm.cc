@@ -188,6 +188,7 @@ tta_dist
 {
   chain = mc;
   accept = Share(a);
+  final = 0;
 
   DCASSERT(chain);
   DCASSERT(accept);
