@@ -1,11 +1,11 @@
 
 // $Id$
 
-#include "hyper.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "hyper.h"
 
 // for errors
 #include "mclib.h"

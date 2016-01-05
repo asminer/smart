@@ -1,18 +1,15 @@
 
 // $Id$
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "mclib.h"
 #include "hyper.h"
 #include "mc_absorb.h"
 #include "mc_general.h"
 
-#include <stdlib.h>
-
 // #define DEBUG_VANISH
-
-#ifdef DEBUG_VANISH
-#include <stdio.h>
-#endif
 
 // ******************************************************************
 // *                                                                *

@@ -1,17 +1,17 @@
 
 // $Id$
 
+#include <stdlib.h> 
+#include <stdio.h> 
+#include <string.h>
+#include <math.h>
+
 #include "hyper.h"
 #include "mcbase.h"
 
 #include "intset.h" // Compact integer set library
 #include "lslib.h"  // Linear Solver Library
 #include "rng.h"    // RNG library
-
-#include <stdlib.h> 
-#include <stdio.h> 
-#include <string.h>
-#include <math.h>
 
 // #define DEBUG_PERIOD
 // #define DEBUG_UNIF

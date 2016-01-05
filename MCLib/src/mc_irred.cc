@@ -1,11 +1,12 @@
 
 // $Id$
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "hyper.h"
 #include "mc_irred.h"
 #include "intset.h"
-
-#include <stdlib.h>
 
 // ******************************************************************
 // *                           Front  end                           *

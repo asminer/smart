@@ -1,17 +1,14 @@
 
 // $Id$
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "hyper.h"
 #include "mc_absorb.h"
 #include "intset.h"
 
-#include <stdlib.h>
-
 // #define DEBUG_VANISH
-
-#ifdef DEBUG_VANISH
-#include <stdio.h>
-#endif
 
 // ******************************************************************
 // *                           Front  end                           *

@@ -5,11 +5,11 @@
     Interactive graph testing application.
 */
 
-#include "intset.h"
-#include "graphlib.h"
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "intset.h"
+#include "graphlib.h"
 
 using namespace GraphLib;
 

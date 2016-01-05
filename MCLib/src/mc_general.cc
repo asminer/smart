@@ -1,6 +1,9 @@
 
 // $Id$
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "hyper.h"
 #include "mc_general.h"
 
@@ -8,9 +11,6 @@
 
 // #define DEBUG_CLASSIFY
 // #define DEBUG_SPLIT
-
-#include <stdlib.h>
-#include <stdio.h>
 
 // ******************************************************************
 // *                           Front  end                           *
