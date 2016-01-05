@@ -239,10 +239,11 @@ tta_dist
   x.answer = &answer;
   result pass[3];
   pass[0].setBool(false);
+  intset* fcopy = new intset(*f);
 #ifdef NEW_STATESETS
-  pass[1].setPtr(new expl_stateset(chain, f));
+  pass[1].setPtr(new expl_stateset(chain, fcopy));
 #else
-  pass[1].setPtr(new stateset(chain, f));
+  pass[1].setPtr(new stateset(chain, fcopy));
 #endif
   pass[2].setPtr(Share(accept));
   engtype* eu = em->findEngineType("ExplicitEU");  
