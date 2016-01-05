@@ -20,9 +20,9 @@ class indexed_reachset : public graph_lldsm::reachset {
     indexed_reachset();
     virtual ~indexed_reachset();
 
-    virtual void getReachable(result &ss) const;
-    virtual void getPotential(expr* p, result &ss) const;
-    virtual void getInitialStates(result &x) const;
+    virtual stateset* getReachable() const;
+    virtual stateset* getPotential(expr* p) const;
+    virtual stateset* getInitialStates() const;
 
     void setInitial(LS_Vector &init);
 

@@ -9,7 +9,7 @@
 #include "../include/heap.h"
 
 #include "../Modules/expl_states.h"
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
 
 
@@ -315,8 +315,13 @@ protected:
 public:
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;
+#ifdef NEW_STATESETS
+  virtual stateset* getReachable() const;
+  virtual stateset* getPotential(expr* p) const;
+#else
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
+#endif
   virtual long getNumArcs() const;
   virtual void showArcs(bool internal) const;
   virtual void showInitial() const;
@@ -326,17 +331,28 @@ public:
   virtual bool isAbsorbing(long st) const;
   virtual bool isDeadlocked(long st) const;
 
+#ifdef NEW_STATESETS
+  virtual void findDeadlockedStates(stateset* ss) const;
+  virtual bool forward(const stateset* p, stateset* r) const;
+  virtual bool backward(const stateset* p, stateset* r) const;
+  virtual void getTSCCsSatisfying(stateset* p) const;
+#else
   virtual void findDeadlockedStates(stateset &ss) const;
   virtual bool forward(const intset &p, intset &r) const;
   virtual bool backward(const intset &p, intset &r) const;
+  virtual void getTSCCsSatisfying(stateset &p) const;
+#endif
 
   virtual bool isFairModel() const { return true; }
-  virtual void getTSCCsSatisfying(stateset &p) const;
   
   virtual statedist* getInitialDistribution() const;
   virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
 
+#ifdef NEW_STATESETS
+  virtual stateset* getInitialStates() const;
+#else
   virtual void getInitialStates(result &x) const;
+#endif
   virtual bool computeTransient(double t, double* p, double* a, double* b) const;
   virtual bool computeAccumulated(double t, const double* p0, double* n,
                                   double* aux, double* aux2) const;
@@ -350,9 +366,9 @@ public:
 
   virtual bool reachesAcceptBy(double t, double* x) const;
 
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           long maxt, long &elapsed);
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           double maxt, double &elapsed);
 
 protected:
@@ -630,6 +646,33 @@ void explicit_mc::showStates(bool internal) const
 
 }
 
+#ifdef NEW_STATESETS
+
+stateset* explicit_mc::getReachable() const
+{
+  intset* all = new intset(num_states);
+  all->addAll();
+  return new expl_stateset(this, all);
+}
+
+stateset* explicit_mc::getPotential(expr* p) const
+{
+  intset* all = new intset(num_states);
+  if (p) {
+    pot_visit pv(GetParent(), p, *all);
+    visitStates(pv);
+    if (!pv.isOK()) {
+      delete all;
+      return 0;
+    }
+  } else {
+    all->removeAll();
+  }
+  return new expl_stateset(this, all);
+}
+
+#else
+
 void explicit_mc::getReachable(result &rs) const
 {
   if (0==num_states) {
@@ -661,6 +704,8 @@ void explicit_mc::getPotential(expr* p, result &ss) const
     ss.setNull();
   }
 }
+
+#endif
 
 long explicit_mc::getNumArcs() const
 {
@@ -910,6 +955,74 @@ bool explicit_mc::isDeadlocked(long st) const
   return chain->isAbsorbingState(st);
 }
 
+#ifdef NEW_STATESETS
+
+void explicit_mc::findDeadlockedStates(stateset* ss) const
+{
+  expl_stateset* ess = smart_cast <expl_stateset*> (ss);
+  DCASSERT(ess);
+  DCASSERT(chain);
+  if (chain->isDiscrete()) {
+    // every state has at least one outgoing edge.
+    ess->changeExplicit().removeAll();
+  } else {
+    // a state is deadlocked iff it is absorbing.
+    long fa = chain->getFirstAbsorbing();
+    if (fa < 0)  ess->changeExplicit().removeAll();
+    else         ess->changeExplicit().removeRange(0, fa-1);
+  }
+}
+
+bool explicit_mc::forward(const stateset* p, stateset* r) const
+{
+  const expl_stateset* ep = smart_cast <const expl_stateset*> (p);
+  DCASSERT(ep);
+  expl_stateset* er = smart_cast <expl_stateset*> (r);
+  DCASSERT(er);
+  DCASSERT(chain);
+  return chain->getForward(ep->getExplicit(), er->changeExplicit());
+}
+
+bool explicit_mc::backward(const stateset* p, stateset* r) const
+{
+  const expl_stateset* ep = smart_cast <const expl_stateset*> (p);
+  DCASSERT(ep);
+  expl_stateset* er = smart_cast <expl_stateset*> (r);
+  DCASSERT(er);
+  DCASSERT(chain);
+  return chain->getBackward(ep->getExplicit(), er->changeExplicit());
+}
+
+void explicit_mc::getTSCCsSatisfying(stateset* p) const
+{
+  expl_stateset* ep = smart_cast <expl_stateset*> (p);
+  DCASSERT(ep);
+  ep->changeExplicit().complement();
+  DCASSERT(chain); 
+  long nt = chain->getNumTransient();
+  if (nt) {
+#ifdef DEBUG_EG
+    em->cout() << "Removing transients, states 0.." << nt-1 << "\n";
+#endif
+    ep->changeExplicit().addRange(0, nt-1);
+  }
+  for (long c=1; c<=chain->getNumClasses(); c++) {
+    long fs = chain->getFirstRecurrent(c);
+    long ls = fs + chain->getRecurrentSize(c) - 1;
+    long nz = ep->getExplicit().getSmallestAfter(fs-1);
+    if (nz < 0) continue;
+    if (nz > ls) continue;
+#ifdef DEBUG_EG
+    em->cout() << "Removing class "<< c <<", states "<< fs <<".."<< ls << "\n";
+#endif
+    ep->changeExplicit().addRange(fs, ls);
+  } // for c
+  ep->changeExplicit().complement();
+}
+
+
+#else 
+
 void explicit_mc::findDeadlockedStates(stateset &ss) const
 {
   DCASSERT(chain);
@@ -961,6 +1074,9 @@ void explicit_mc::getTSCCsSatisfying(stateset &p) const
   p.changeExplicit().complement();
 }
 
+#endif
+
+
 statedist* explicit_mc::getInitialDistribution() const
 {
   return Share(initial);
@@ -974,6 +1090,19 @@ getOutgoingWeights(long from, long* to, double* w, long n) const
   return thing.edges;
 }
 
+#ifdef NEW_STATESETS
+
+stateset* explicit_mc::getInitialStates() const
+{
+  long ns = chain->getNumStates();
+  intset* initss = new intset(ns);
+  DCASSERT(initial);
+  initial->greater_than(0, initss);
+  return new expl_stateset(this, initss);
+}
+
+#else
+
 void explicit_mc::getInitialStates(result &x) const
 {
   long ns = chain->getNumStates();
@@ -985,9 +1114,10 @@ void explicit_mc::getInitialStates(result &x) const
   intset* initss = new intset(ns);
   DCASSERT(initial);
   initial->greater_than(0, initss);
-
   x.setPtr(new stateset(this, initss));
 }
+
+#endif
 
 bool explicit_mc
  ::computeTransient(double t, double* probs, double* aux1, double* aux2) const
@@ -1271,9 +1401,15 @@ bool explicit_mc::reachesAcceptBy(double t, double* x) const
   }
 }
 
-bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
+bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset* F,
                           long maxt, long &elapsed)
 {
+#ifdef NEW_STATESETS
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+#else
+  const stateset* final = F;
+#endif
+  DCASSERT(final);
   DCASSERT(chain);
   if (chain->isContinuous()) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -1302,7 +1438,7 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 
   try {
-    elapsed = chain->randomWalk(st, state, &final.getExplicit(), maxt, 1.0);
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt, 1.0);
     return true;
   }
   catch (MCLib::error e) {
@@ -1316,9 +1452,14 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 }
 
-bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
+bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset* F,
                           double maxt, double &elapsed)
 {
+#ifdef NEW_STATESETS
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+#else
+  const stateset* final = F;
+#endif
   DCASSERT(chain);
   if (chain->isDiscrete()) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -1347,7 +1488,7 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 
   try {
-    elapsed = chain->randomWalk(st, state, &final.getExplicit(), maxt);
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt);
     return true;
   }
   catch (MCLib::error e) {

@@ -2,7 +2,7 @@
 // $Id$
 
 #include "rss_indx.h"
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 
 // External libs
 #include "lslib.h"    // for LS_Vector
@@ -23,61 +23,57 @@ indexed_reachset::~indexed_reachset()
   delete[] initial.index;
 }
 
-void indexed_reachset::getReachable(result &rs) const
+stateset* indexed_reachset::getReachable() const
 {
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    rs.setNull();
-    return;
-  }
   intset* all = new intset(num_states);
   all->addAll();
-  rs.setPtr(new stateset(getParent(), all));
+#ifdef NEW_STATESETS
+  return new expl_stateset(getParent(), all);
+#else
+  return new stateset(getParent(), all);
+#endif
 }
 
-void indexed_reachset::getPotential(expr* p, result &x) const
+stateset* indexed_reachset::getPotential(expr* p) const
 {
-  if (0==p) {
-    x.setNull();
-    return;
-  }
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    x.setNull();
-    return;
-  }
-
   intset* pset = new intset(num_states);
-  const hldsm* HM = getGrandParent();
-  pot_visit pv(HM, p, *pset);
-  visitStates(pv);
-  if (pv.isOK()) {
-    x.setPtr(new stateset(getParent(), pset));
+  if (p) {
+    const hldsm* HM = getGrandParent();
+    pot_visit pv(HM, p, *pset);
+    visitStates(pv);
+    if (!pv.isOK()) {
+      delete pset;
+      return 0;
+    }
   } else {
-    delete pset;
-    x.setNull();
+    pset->removeAll();
   }
+#ifdef NEW_STATESETS
+  return new expl_stateset(getParent(), pset);
+#else
+  return new stateset(getParent(), pset);
+#endif
 }
 
-void indexed_reachset::getInitialStates(result &x) const
+stateset* indexed_reachset::getInitialStates() const
 {
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    x.setNull();
-    return;
-  }
   intset* initss = new intset(num_states);
   initss->removeAll();
-  
   if (initial.index) {
     for (long z=0; z<initial.size; z++)
       initss->addElement(initial.index[z]);
   } 
-
-  x.setPtr(new stateset(getParent(), initss));
+#ifdef NEW_STATESETS
+  return new expl_stateset(getParent(), initss);
+#else
+  return new stateset(getParent(), initss);
+#endif
 }
 
 void indexed_reachset::setInitial(LS_Vector &init)

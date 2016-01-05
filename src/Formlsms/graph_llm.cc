@@ -67,11 +67,23 @@ void graph_lldsm::showInitial() const
   bailOut(__FILE__, __LINE__, "Can't show initial state(s)");
 }
 
+#ifdef NEW_STATESETS
+
+void graph_lldsm::countPaths(const stateset*, const stateset*, result& c)
+{
+  c.setNull();
+  bailOut(__FILE__, __LINE__, "Can't count paths");
+}
+
+#else
+
 void graph_lldsm::countPaths(const intset&, const intset&, result& c)
 {
   c.setNull();
   bailOut(__FILE__, __LINE__, "Can't count paths");
 }
+
+#endif
 
 bool graph_lldsm::requireByRows(const named_msg*)
 {
@@ -106,6 +118,41 @@ bool graph_lldsm::dumpDot(OutputStream &s) const
   return false;
 }
 
+#ifdef NEW_STATESETS
+
+stateset* graph_lldsm::getReachable() const 
+{
+  bailOut(__FILE__, __LINE__, "Can't get reachable states");
+  return 0;
+}
+
+stateset* graph_lldsm::getInitialStates() const
+{
+  bailOut(__FILE__, __LINE__, "Can't get initial states");
+  return 0;
+}
+
+stateset* graph_lldsm::getAbsorbingStates() const
+{
+  bailOut(__FILE__, __LINE__, "Can't get absorbing states");
+  return 0;
+}
+
+stateset* graph_lldsm::getDeadlockedStates() const
+{
+  bailOut(__FILE__, __LINE__, "Can't get deadlocked states");
+  return 0;
+}
+
+stateset* graph_lldsm::getPotential(expr*) const 
+{
+  bailOut(__FILE__, __LINE__, "Can't get potential states");
+  return 0;
+}
+
+
+#else
+
 void graph_lldsm::getReachable(result &ss) const 
 {
   bailOut(__FILE__, __LINE__, "Can't get reachable states");
@@ -136,10 +183,39 @@ void graph_lldsm::getPotential(expr* p, result &ss) const
   ss.setNull();
 }
 
+#endif
+
 bool graph_lldsm::isFairModel() const
 {
   return false;
 }
+
+#ifdef NEW_STATESETS
+
+void graph_lldsm::getTSCCsSatisfying(stateset*) const
+{
+  DCASSERT(isFairModel());
+  bailOut(__FILE__, __LINE__, "Can't get TSCCs satisfying p");
+}
+
+void graph_lldsm::findDeadlockedStates(stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't find deadlocked states");
+}
+
+bool graph_lldsm::forward(const stateset*, stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't compute forward set");
+  return false;
+}
+
+bool graph_lldsm::backward(const stateset*, stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't compute backward set");
+  return false;
+}
+
+#else
 
 void graph_lldsm::getTSCCsSatisfying(stateset &p) const
 {
@@ -164,6 +240,8 @@ bool graph_lldsm::backward(const intset &p, intset &r) const
   return false;
 }
 
+#endif
+
 bool graph_lldsm::isAbsorbing(long st) const
 {
   bailOut(__FILE__, __LINE__, "Can't check absorbing");
@@ -175,7 +253,6 @@ bool graph_lldsm::isDeadlocked(long st) const
   bailOut(__FILE__, __LINE__, "Can't check deadlocked");
   return false;
 }
-
 
 // ******************************************************************
 // *                                                                *
