@@ -59,17 +59,17 @@ void enum_reachset::showState(OutputStream &os, const shared_state* st) const
 }
 
 graph_lldsm::reachset::iterator& enum_reachset
-::iteratorForOrder(int display_order)
+::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(states);
-  switch (display_order) {
+  switch (ord) {
 
-    case lldsm::LEXICAL:
+    case state_lldsm::LEXICAL:
         if (0==lexorder) lexorder = new lexical_iter(*states);
         return *lexorder;
 
-    case lldsm::DISCOVERY:
-    case lldsm::NATURAL:
+    case state_lldsm::DISCOVERY:
+    case state_lldsm::NATURAL:
     default:
         if (0==natorder) natorder = new natural_iter(*states);
         return *natorder;
@@ -80,6 +80,12 @@ graph_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;
+}
+
+shared_object* enum_reachset::getEnumeratedState(long i) const 
+{
+  DCASSERT(state_handle);
+  return Share(states->GetValue(state_handle[i]));
 }
 
 // ******************************************************************

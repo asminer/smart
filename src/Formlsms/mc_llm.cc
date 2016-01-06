@@ -286,7 +286,7 @@ class explicit_mc : public markov_lldsm {
       }
     };
 
-    class pot_visit : public lldsm::state_visitor {
+    class pot_visit : public state_lldsm::state_visitor {
       expr* p;
       intset &pset;
       result tmp;
@@ -628,7 +628,7 @@ void explicit_mc::showStates(bool internal) const
     if (tooManyStates(num_states, true)) return;
 
     long* map = 0;
-    if (NATURAL != display_order) {
+    if (NATURAL != stateDisplayOrder()) {
       map = new long[num_states];
       BuildStateMapping(map);
     }
@@ -734,7 +734,7 @@ void explicit_mc::showArcs(bool internal) const
 
   long* map = 0;
   long* invmap = 0;
-  if (NATURAL != display_order) {
+  if (NATURAL != stateDisplayOrder()) {
     map = new long[num_states];
     BuildStateMapping(map);
     invmap = new long[num_states];
@@ -784,6 +784,10 @@ void explicit_mc::showArcs(bool internal) const
           if (displayGraphNodeNames())   ShowState(em->cout(), h, false);
           else                            em->cout() << i;
           em->cout() << ":\n";
+          break;
+
+      default:
+          // nothing
           break;
     }
 
@@ -847,7 +851,7 @@ void explicit_mc::showInitial() const
 
   // build state mapping
   long* map = 0;
-  if (NATURAL != display_order) {
+  if (NATURAL != stateDisplayOrder()) {
     map = new long[num_states];
     BuildStateMapping(map);
   }
@@ -1572,7 +1576,7 @@ void mc_enum::BuildStateMapping(long* map) const
     CHECK_RANGE(0, state_handle[i], states->NumValues());
     hs[state_handle[i]] = i;
   }
-  switch (display_order) {
+  switch (stateDisplayOrder()) {
     case NATURAL:
       DCASSERT(0);
       break;
@@ -1771,7 +1775,7 @@ void mc_expl::reportMemUsage(exprman* em, const char* prefix) const
 
 void mc_expl::BuildStateMapping(long* map) const
 {
-  switch (display_order) {
+  switch (stateDisplayOrder()) {
     case NATURAL:
       DCASSERT(0);
       return;

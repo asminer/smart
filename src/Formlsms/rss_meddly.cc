@@ -52,7 +52,8 @@ void meddly_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-graph_lldsm::reachset::iterator& meddly_reachset::iteratorForOrder(int)
+graph_lldsm::reachset::iterator& 
+meddly_reachset::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(natorder);
   return *natorder;

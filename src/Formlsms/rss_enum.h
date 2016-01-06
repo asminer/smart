@@ -16,8 +16,10 @@ class enum_reachset : public indexed_reachset {
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
-    virtual iterator& iteratorForOrder(int display_order);
+    virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
+
+    shared_object* getEnumeratedState(long i) const;
 
   private:
     

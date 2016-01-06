@@ -37,7 +37,7 @@ public:
   virtual bool AppliesToModelType(hldsm::model_type) const;
 protected:
 
-  class msr_visitor : public lldsm::state_visitor {
+  class msr_visitor : public state_lldsm::state_visitor {
   protected:
     measure *m;
     double* p;

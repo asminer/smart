@@ -6,7 +6,7 @@
 
 #ifndef INITIALIZERS_ONLY
 
-#include "../ExprLib/mod_inst.h"
+#include "state_llm.h"
 
 #include "../Modules/statesets.h" // for now
 
@@ -43,7 +43,7 @@ class stateset;
             and reachgraph implementation, so stuff those as
             virtual functions in reachgraphs.
 */  
-class graph_lldsm : public lldsm {
+class graph_lldsm : public state_lldsm {
 public:
   graph_lldsm(model_type t);
 
@@ -195,24 +195,6 @@ public:
 
 #ifdef NEW_STATESETS
 
-  /** Get the reachable states, as a stateset.
-      Default behavior here is to print an error message and return null.
-        @return   New stateset object for the reachable states,
-                  or 0 on error.
-  */
-  virtual stateset* getReachable() const;
-
-  /** Get the possible initial (time 0) states.
-      Conceptually, this tells which elements in the vector 
-      constructed by getInitialDistribution() will have 
-      non-zero probability.  This must be provided in derived 
-      classes, the default behavior here is to print an error 
-      message and return null.
-        @return   New stateset object for the initial states,
-                  or 0 on error.
-  */
-  virtual stateset* getInitialStates() const;
-
   /** Get the (potential) states that, once entered, are never 
       left.  This includes deadlocked states.  This must be 
       provided in derived classes, the default behavior here 
@@ -231,38 +213,7 @@ public:
   */
   virtual stateset* getDeadlockedStates() const;
 
-  /** Get the set of states satisfying a constraint.
-      Default behavior here is to print an error message and return null.
-        @param  p   Logical condition for states to satisfy.
-                    If 0, we quickly return a new empty set.
-        @return   New stateset object for states satisfying p,
-                  or 0 on error.
-  */
-  virtual stateset* getPotential(expr* p) const;
-
-
 #else
-
-  /** Get the reachable states, as a stateset.
-      Default behavior here is to (quietly) set the result to null.
-        @param  ss  Set of reachable states is stored here,
-                    as a "stateset".
-  */
-  virtual void getReachable(result &ss) const;
-
-  /** Get the possible initial (time 0) states.
-      Conceptually, this tells which elements in the
-      vector constructed by getInitialDistribution() 
-      will have non-zero probability.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  x   On input: ignored.
-                    On output: an appropriate "stateset"
-                    containing the set of states the model
-                    could be in at time 0.
-                    Will be a "null" result on error.
-  */
-  virtual void getInitialStates(result &x) const;
 
   /** Get the (potential) states that, once entered,
       are never left.  This includes deadlocked states.
@@ -288,14 +239,6 @@ public:
                     Will be a "null" result on error.
   */
   virtual void getDeadlockedStates(result &x) const;
-
-  /** Get the set of states satisfying a constraint.
-      Default behavior here is to (quietly) set the result to null.
-        @param  p   Logical condition for states to satisfy.
-        @param  ss  Set of "potential" states satisfying p is stored here,
-                    as a "stateset".
-  */
-  virtual void getPotential(expr* p, result &ss) const;
 
 #endif
 
@@ -489,103 +432,6 @@ public:
 public:
 
   /**
-      Reachable states.
-      Abstract base class; different implementations provided
-      by derived classes.
-  */
-  class reachset : public shared_object {
-      const graph_lldsm* parent;
-    public:
-      /**
-          Abstract base class for different state orders.
-      */
-      class iterator {
-        public:
-          iterator();
-          virtual ~iterator();
-  
-          /// Reset the iterator back to the beginning
-          virtual void start() = 0;
-  
-          /// Increment the iterator
-          virtual void operator++(int) = 0;
-  
-          /// Is the iterator still valid?
-          virtual operator bool() const = 0;
-  
-          /// Return the index of the current state.
-          virtual long index() const = 0;
-  
-          /// Copy the current state into st.
-          virtual void copyState(shared_state* st) const = 0;
-      };
-  
-    public:
-      reachset();
-      virtual ~reachset();
-  
-      inline void setParent(const graph_lldsm* p) {
-        if (parent != p) {
-          DCASSERT(0==parent);
-          parent = p;
-        }
-      }
-  
-      inline const graph_lldsm* getParent() const {
-        return parent;
-      }
-  
-      inline const hldsm* getGrandParent() const {
-        return parent ? parent->GetParent() : 0;
-      }
-  
-      virtual void getNumStates(result &ns) const;  // default: use a long
-      virtual void getNumStates(long &ns) const = 0;
-      virtual void showInternal(OutputStream &os) const = 0;
-      virtual void showState(OutputStream &os, const shared_state* st) const = 0;
-      virtual iterator& iteratorForOrder(int display_order) = 0;
-      virtual iterator& easiestIterator() const = 0;
-  
-      /*
-          TBD - add a reachgraph parameter, needed for the stateset.
-  
-          TBD - adjust the stateset class and  use a proper class hierarchy.
-  
-      */
-      virtual stateset* getReachable() const = 0;
-      virtual stateset* getPotential(expr* p) const = 0;
-      virtual stateset* getInitialStates() const = 0;
-  
-      /**
-        Show all the states, in the desired order.
-          @param  os             Output stream to write to
-          @param  display_order  Display order to use.  See class lldsm
-          @param  st             Memory space for use to use for individual states
-      */
-      void showStates(OutputStream &os, int display_order, shared_state* st);
-  
-      /**
-        Visit all the states, in the desired order.
-          @param  x             State visitor.
-          @param  visit_order   Order to use, same as display_order constants in lldsm.
-      */
-      void visitStates(lldsm::state_visitor &x, int visit_order);
-
-      /**
-        Visit all the states, in any convenient order.
-          @param  x             State visitor.
-      */
-      void visitStates(lldsm::state_visitor &x) const;
-
-      // Shared object requirements
-      virtual bool Print(OutputStream &s, int width) const;
-      virtual bool Equals(const shared_object* o) const;
-  };
-
-
-public:
-
-  /**
       Reachability graphs.
       Abstract base class; different implementations provided
       by derived classes.
@@ -651,7 +497,6 @@ public:
   };
 
 private:
-  reachset* RSS;
   reachgraph* RGR;
 
 // Options
@@ -659,8 +504,10 @@ private:
   static long max_arc_display;
   static int graph_display_style;
   static bool display_graph_node_names;
+protected:
+  static named_msg numpaths_report;
 
-  friend void InitializeCheckableLLM(exprman* em);
+  friend void InitializeGraphLLM(exprman* em);
 };
 
 #endif // INITIALIZERS_ONLY
@@ -671,7 +518,7 @@ private:
 // *                                                                        *
 // **************************************************************************
 
-void InitializeCheckableLLM(exprman* em);
+void InitializeGraphLLM(exprman* em);
 
 #endif
 

@@ -30,7 +30,8 @@ proc_noengine
 {
 }
 
-lldsm* proc_noengine::BuildProc(hldsm* hlm, bool states_only, const expr* err)
+state_lldsm* 
+proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
 {
   if (0==hlm)  return 0;
   result so;
@@ -40,13 +41,13 @@ lldsm* proc_noengine::BuildProc(hldsm* hlm, bool states_only, const expr* err)
       lldsm* llm = hlm->GetProcess();
       if (llm) {
         subengine* gen = llm->getCompletionEngine();
-        if (0==gen) return llm;
+        if (0==gen) return dynamic_cast <state_lldsm*> (llm);
         gen->RunEngine(hlm, so);
       } else {
         if (!ProcGen) throw subengine::No_Engine;
         ProcGen->runEngine(hlm, so);
       }
-      return hlm->GetProcess();
+      return dynamic_cast <state_lldsm*> (hlm->GetProcess());
   } // try
     
   catch (subengine::error e) {
@@ -93,7 +94,9 @@ void numstates_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 1, x.parent);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
   if (0==llm || lldsm::Error == llm->Type()) {
     x.answer->setNull();
     return;
@@ -475,7 +478,9 @@ void showstates_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 1, x.parent);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
   if (0==llm || lldsm::Error == llm->Type()) return;
 
   bool internal = false;

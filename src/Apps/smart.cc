@@ -54,6 +54,7 @@
 #include "../Modules/glue_meddly.h"
 
 #include "../Formlsms/basic_msr.h"
+#include "../Formlsms/state_llm.h"
 #include "../Formlsms/graph_llm.h"
 #include "../Formlsms/ctl_msr.h"
 #include "../Formlsms/stoch_msr.h"
@@ -136,7 +137,8 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitCSLMeasureFuncs(em, &CML);
 
   // Initialize formalisms here.
-  InitializeCheckableLLM(em);
+  InitializeStateLLM(em);
+  InitializeGraphLLM(em);
   InitializeDSDE(em);
   InitializeFSMs(em, &CML); 
   InitializeMarkovChains(em, &CML);

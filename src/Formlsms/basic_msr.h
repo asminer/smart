@@ -28,7 +28,7 @@ public:
   proc_noengine(eng_class ect, const type* t, const char* name, int np);
 
 protected:
-  lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
+  state_lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
 };
 
 #endif // INITIALIZERS_ONLY

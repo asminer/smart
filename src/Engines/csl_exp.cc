@@ -227,14 +227,14 @@ protected:
   }
 
 protected:
-  class reindex : public lldsm::state_visitor {
+  class reindex : public state_lldsm::state_visitor {
       const double* oldvec;
       long oldvecsize;
       double* newvec;
       long newvecsize;
     public:
       reindex(const hldsm* p, const double* ov, long os, double* nv, long ns) 
-      : lldsm::state_visitor(p)
+      : state_lldsm::state_visitor(p)
       {
         oldvec = ov;
         oldvecsize = os;
