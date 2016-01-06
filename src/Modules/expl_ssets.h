@@ -12,6 +12,8 @@
 #ifndef EXPL_SSETS_H
 #define EXPL_SSETS_H
 
+#ifndef INITIALIZERS_ONLY
+
 #ifdef NEW_STATESETS
 
 class intset;
@@ -56,6 +58,8 @@ class expl_stateset : public stateset {
 };
 
 #endif
+
+#endif  // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *

@@ -10,6 +10,8 @@
 #ifndef STATEPROBS_H
 #define STATEPROBS_H
 
+#ifndef INITIALIZERS_ONLY
+
 class exprman;
 class symbol_table;
 class stochastic_lldsm;
@@ -202,6 +204,7 @@ class statemsrs : public statevect {
   // ANY difference?
 };
 
+#endif  // INITIALIZERS_ONLY
 
 // ******************************************************************
 // *                                                                *

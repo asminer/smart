@@ -10,6 +10,8 @@
 #ifndef STATESETS_H
 #define STATESETS_H
 
+#ifndef INITIALIZERS_ONLY
+
 #include "../include/shared.h"
 
 class expr;
@@ -254,6 +256,8 @@ stateset* Union(exprman* em, const expr* c, stateset* x, stateset* y);
 stateset* Intersection(exprman* em, const expr* c, stateset* x, stateset* y);
 
 #endif
+
+#endif  // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *

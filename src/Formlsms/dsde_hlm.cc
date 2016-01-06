@@ -3,7 +3,6 @@
 
 #include "../ExprLib/exprman.h"
 
-#define DSDE_HLM_DETAILS
 #include "dsde_hlm.h"
 
 #include "../ExprLib/sets.h"

@@ -3,14 +3,12 @@
 
 #include "satur_meddly.h"
 
-#define PROC_MEDDLY_DETAILS
 #include "proc_meddly.h"
 
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/graph_llm.h"
 #include "../Formlsms/rss_mdd.h"

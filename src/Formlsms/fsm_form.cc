@@ -1,12 +1,8 @@
 
 // $Id$
 
-// #define TRY_NEW_STUFF
-
 #include "fsm_form.h"
-#ifdef TRY_NEW_STUFF
 #include "rss_enum.h"
-#endif
 #include "fsm_llm.h"
 #include "graph_llm.h"
 
@@ -245,10 +241,10 @@ void fsm_def::FinalizeModel(OutputStream &ds)
   delete initial;
   initial = 0;
 
-#ifdef TRY_NEW_STUFF
+#ifdef NEW_STATESETS
   enum_reachset* rss = new enum_reachset(mcstate);
   graph_lldsm* foo = StartGenericFSM(rss);
-  FinishGenericFSM(foo, init);  // TBD mygr?
+//   FinishGenericFSM(foo, init);  // TBD mygr?
 #else
   graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
 #endif

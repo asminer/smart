@@ -16,11 +16,7 @@ void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
 
 void InitializeDSDE(exprman* em);
 
-#endif
-
-#ifdef DSDE_HLM_DETAILS
-#ifndef DSDE_HLM_DETAIL_H
-#define DSDE_HLM_DETAIL_H
+#ifndef INITIALIZERS_ONLY
 
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
@@ -505,6 +501,6 @@ protected:
   virtual void InitModel();
 };
 
-#endif
+#endif  // INITIALIZERS_ONLY
 #endif
 

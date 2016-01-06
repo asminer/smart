@@ -7,7 +7,6 @@
 #include "../ExprLib/measures.h"
 #include "../Modules/statevects.h"
 
-#define EXPERT_BASIC_MSR
 #include "basic_msr.h"
 
 // *****************************************************************

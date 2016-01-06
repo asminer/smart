@@ -13,11 +13,7 @@ class exprman;
 /// Should be called BEFORE any other Meddly-based initializer
 void InitializeProcGenMeddly(exprman* em);
 
-#endif
-
-#ifdef PROC_MEDDLY_DETAILS
-#ifndef PROC_MEDDLY_DETAIL_H
-#define PROC_MEDDLY_DETAIL_H
+#ifndef INITIALIZERS_ONLY
 
 //
 // Detailed front-end for Meddly process generation
@@ -277,5 +273,5 @@ private:
 
 // TBD
 
-#endif
+#endif  // INITIALIZERS_ONLY
 #endif

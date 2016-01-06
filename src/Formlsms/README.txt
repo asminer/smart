@@ -37,7 +37,17 @@ Specifically we have the following formalism support:
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
 
+TBD:
 
+    state_llm   Low-level models with finite, discrete state space.
+                Move lots of stuff out of lldsm, just because.
+                Reachset class goes there.
+                Most state-related methods become inlined calls to RSS inner class.
+
+     enum_hlm   Move "llhldsm" from mod_inst.h to its own thing here,
+                it is used only by fsm_form and mc_form
+
+    
 TBD: Can we kill fsm_llm?
      mc goes inside stochastic_lldsm class and derives from rgr
 

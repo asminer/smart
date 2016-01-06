@@ -4,6 +4,8 @@
 #ifndef GRAPH_LLM_H
 #define GRAPH_LLM_H
 
+#ifndef INITIALIZERS_ONLY
+
 #include "../ExprLib/mod_inst.h"
 
 #include "../Modules/statesets.h" // for now
@@ -660,6 +662,8 @@ private:
 
   friend void InitializeCheckableLLM(exprman* em);
 };
+
+#endif // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *
