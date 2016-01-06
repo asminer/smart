@@ -30,10 +30,16 @@ class stateset;
           (with concurrent redesign of stateset class)
 
 
-      TBD - reachset stuff should move to lldsm
+      TBD - reachset stuff should move to lldsm,
+            or to a new "states_lldsm" class above this one.
 
       TBD - forward, backward should take an op name,
             for printing error messages 
+
+      TBD - add basic CTL requirements; remove CTL "engines"
+            because engines will depend on stateset implementation
+            and reachgraph implementation, so stuff those as
+            virtual functions in reachgraphs.
 */  
 class graph_lldsm : public lldsm {
 public:
@@ -314,40 +320,101 @@ public:
                     they are not in a TSCC, or if
                     not all states in the TSCC satisfy p.
   */
-  virtual void getTSCCsSatisfying(stateset* p) const;
+  // virtual void getTSCCsSatisfying(stateset* p) const;
 
   /** Find all "deadlocked" states.
       Default behavior is to print an error message.
         @param  ss  If i is not a deadlocked state,
                     then i will be removed from ss.
   */
-  virtual void findDeadlockedStates(stateset* ss) const;
+  // virtual void findDeadlockedStates(stateset* ss) const;
 
-  /** Get states reachable from us in one step.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  p     Set of source states.
-        @param  r     On output, we add any state that can be reached 
-                      from a state in p, in one "step".
-                      Note: if p and r are the same, then we might
-                      add states that are more than one "step" away.
-        @return true  If any states were added to r,
-                false otherwise.
-  */
-  virtual bool forward(const stateset* p, stateset* r) const;
+  /** Compute states satisfying EX(p).
+      The default behavior here is to print an error message and 
+      return null, so normally this method will be overridden in 
+      some derived class.
+        @param  revTime   If true, reverse time and compute EY.
 
-  /** Get states that reach us in one step.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  p     Set of target states.
-        @param  r     On output, we add any state that can reach
-                      a state in p, in one "step".
-                      Note: if p and r are the same, then we might
-                      add states that are more than one "step" away.
-        @return true  If any states were added to r,
-                false otherwise.
+        @param  p         Set of states 
+
+        @return   New set of states satisfying EX(p) or EY(p).
+                  
+                  OR, if an error occurs, prints an appropriate message
+                  and returns 0.
   */
-  virtual bool backward(const stateset* p, stateset* r) const;
+  virtual stateset* EX(bool revTime, const stateset* p) const;
+
+
+  /** Compute states satisfying E p U q.
+      The default behavior here is to print an error message and 
+      return null, so normally this method will be overridden in 
+      some derived class.
+        @param  revTime   If true, reverse time and compute ES.
+
+        @param  p         Set of states for p.  If 0, then
+                          we instead compute EF / EP.
+
+        @param  q         Set of states for q
+
+        @return   New set of states satisfying E p U q
+                  or E p S q.
+                  
+                  OR, if an error occurs, prints an appropriate message
+                  and returns 0.
+  */
+  virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
+
+  
+  /** Compute states satisfying EG(p), not restricted to fair paths.
+      The default behavior here is to print an error message and 
+      return null, so normally this method will be overridden in 
+      some derived class.
+        @param  revTime   If true, switch to unfairEH.
+        @param  p         Set of states satisfying p.
+
+        @return   New set of states satisfying EG(p).
+
+                  OR, if an error occurs, prints an appropriate message
+                  and returns 0.
+  */
+  virtual stateset* unfairEG(bool revTime, const stateset* p) const;
+
+  /** Compute states satisfying EG(p), restricted to fair paths.
+      The default behavior here is to print an error message and 
+      return null, so normally this method will be overridden in 
+      some derived class.
+        @param  revTime   If true, switch to unfairEH.
+        @param  p         Set of states satisfying p.
+
+        @return   New set of states satisfying EG(p).
+
+                  OR, if an error occurs, prints an appropriate message
+                  and returns 0.
+  */
+  virtual stateset* fairEG(bool revTime, const stateset* p) const;
+
+  /** Compute states satisfying AE p F q (made up notation).
+      This is the set of source states, from which we can guarantee that
+      we reach a state in q.  For states in p, we can choose the next state,
+      otherwise we cannot choose the next state, and unfair paths are allowed.
+      Thus AE false F q = AF q and AE true F q = EF q.
+
+      Really useful for games or other control problems.
+      
+      The default behavior here is to print an error message and 
+      return null, so normally this method will be overridden in 
+      some derived class.
+
+        @param  revTime   Why reverse time?  Because we can.
+        @param  p         Set of controlled states
+        @param  q         Set of goal states
+
+        @return   New set of states satisfying AE p F q.
+
+                  OR, if an error occurs, prints an appropriate message
+                  and returns 0.
+  */
+  virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
 
 #else
 

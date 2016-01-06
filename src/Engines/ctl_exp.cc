@@ -18,6 +18,8 @@
 // #define PROGRESS_EG
 #define DEBUG_AEF
 
+#ifndef NEW_STATESETS
+
 void Show(const char* who, const intset &x)
 {
   fprintf(stderr, "%s{", who);
@@ -768,5 +770,11 @@ void InitializeExplicitCTLEngines(exprman* em)
   );
 }
 
+#else
 
+void InitializeExplicitCTLEngines(exprman* em)
+{
+}
+
+#endif
 

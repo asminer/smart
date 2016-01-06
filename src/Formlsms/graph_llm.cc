@@ -192,6 +192,7 @@ bool graph_lldsm::isFairModel() const
 
 #ifdef NEW_STATESETS
 
+/*
 void graph_lldsm::getTSCCsSatisfying(stateset*) const
 {
   DCASSERT(isFairModel());
@@ -202,17 +203,36 @@ void graph_lldsm::findDeadlockedStates(stateset*) const
 {
   bailOut(__FILE__, __LINE__, "Can't find deadlocked states");
 }
+*/
 
-bool graph_lldsm::forward(const stateset*, stateset*) const
+stateset* graph_lldsm::EX(bool, const stateset*) const
 {
-  bailOut(__FILE__, __LINE__, "Can't compute forward set");
-  return false;
+  bailOut(__FILE__, __LINE__, "Can't compute EX");
+  return 0;
 }
 
-bool graph_lldsm::backward(const stateset*, stateset*) const
+stateset* graph_lldsm::EU(bool, const stateset*, const stateset*) const
 {
-  bailOut(__FILE__, __LINE__, "Can't compute backward set");
-  return false;
+  bailOut(__FILE__, __LINE__, "Can't compute EU");
+  return 0;
+}
+
+stateset* graph_lldsm::unfairEG(bool, const stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't compute (unfair) EG");
+  return 0;
+}
+
+stateset* graph_lldsm::fairEG(bool, const stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't compute (fair) EG");
+  return 0;
+}
+
+stateset* graph_lldsm::unfairAEF(bool, const stateset*, const stateset*) const
+{
+  bailOut(__FILE__, __LINE__, "Can't compute (unfair) AEF");
+  return 0;
 }
 
 #else
