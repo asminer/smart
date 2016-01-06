@@ -1,14 +1,12 @@
 
 // $Id$
 
-#define PROC_MEDDLY_DETAILS
 #include "proc_meddly.h"
 
 #include "../Options/options.h"
 
 #include "../Modules/glue_meddly.h"
 #include "../Modules/expl_states.h"
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_mdd.h"
 

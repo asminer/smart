@@ -3,7 +3,6 @@
 
 #include "rss_mdd.h"
 
-#define DSDE_HLM_DETAILS
 #include "dsde_hlm.h"
 
 // #define DEBUG_INDEXSET

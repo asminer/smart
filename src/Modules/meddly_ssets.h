@@ -12,6 +12,8 @@
 #ifndef MEDDLY_SSETS_H
 #define MEDDLY_SSETS_H
 
+#ifndef INITIALIZERS_ONLY
+
 #ifdef NEW_STATESETS
 
 // These are all in glue_meddly.h
@@ -52,6 +54,8 @@ class meddly_stateset : public stateset {
 };
 
 #endif
+
+#endif  // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *

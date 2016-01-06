@@ -37,6 +37,10 @@
 #include "../ParseSM/parse_sm.h"
 
 // "modules"
+//
+// Mostly we just need to call the initializers
+
+#define INITIALIZERS_ONLY
 
 #include "../FuncLib/funclib.h"
 

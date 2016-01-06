@@ -4,6 +4,8 @@
 #ifndef GEN_RG_BASE_H
 #define GEN_RG_BASE_H
 
+#ifndef INITIALIZERS_ONLY
+
 #include "../ExprLib/engine.h"
 
 class timer;
@@ -40,6 +42,7 @@ public:
   static bool stopCompact(const char* name, const char* wp, const timer &w, const lldsm* proc);
 };
 
+#endif  // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *

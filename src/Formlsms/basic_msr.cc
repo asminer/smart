@@ -6,13 +6,11 @@
 #include "../ExprLib/measures.h"
 
 #include "../Formlsms/stoch_llm.h"
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
-#define EXPERT_BASIC_MSR
 #include "basic_msr.h"
 
 // #define ALLOW_SHOW_PARAMS
