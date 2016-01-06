@@ -26,7 +26,7 @@ class intset;
 
 class expl_stateset : public stateset {
   public:
-    expl_stateset(const graph_lldsm* p, intset* e);
+    expl_stateset(const state_lldsm* p, intset* e);
   protected:
     virtual ~expl_stateset();
 

@@ -23,35 +23,8 @@ class stateset;
       Essentially, kripke structures, but without the labeling function.
       In other words, models that can be checked against properties
       expressed in temporal logics like LTL and CTL.
-
-      TBD - redesigning this class:
-        
-        some virtual functions could be provided here
-        some functions might be unnecessary
-        some functions should be generalized 
-          (with concurrent redesign of stateset class)
-
-
-      TBD - reachset stuff should move to lldsm,
-            or to a new "states_lldsm" class above this one.
-
-      TBD - forward, backward should take an op name,
-            for printing error messages 
-
-      TBD - add basic CTL requirements; remove CTL "engines"
-            because engines will depend on stateset implementation
-            and reachgraph implementation, so stuff those as
-            virtual functions in reachgraphs.
 */  
 class graph_lldsm : public state_lldsm {
-public:
-  graph_lldsm(model_type t);
-
-  virtual ~graph_lldsm();
-
-//
-// Option-related stuff
-//
 public:
   enum display_style {
     DOT        = 0,
@@ -76,41 +49,188 @@ public:
     return display_graph_node_names;
   }
 
-  /// Check if na exceeds option, if so, show "too many arcs" message.
-  static bool tooManyArcs(long na, bool show);
+public:
+
+  /**
+      Reachability graphs.
+      Abstract base class; different implementations provided
+      by derived classes.
+      Basically a Kripke structure, but without the labelling function.
+      Could be a supergraph of the actual reachability graph,
+      i.e., could contain states that are not reachable,
+      but will never have edges from reachable states
+      to unreachable ones.
+  */
+  class reachgraph : public shared_object {
+      const graph_lldsm* parent;
+    public:
+      reachgraph();
+      virtual ~reachgraph();
+
+      inline void setParent(const graph_lldsm* p) {
+        if (parent != p) {
+          DCASSERT(0==parent);
+          parent = p;
+        }
+      }
+
+      inline const graph_lldsm* getParent() const {
+        return parent;
+      }
+
+      inline const hldsm* getGrandParent() const {
+        return parent ? parent->GetParent() : 0;
+      }
+
+      /** Get the number of edges in the reachability graph.
+          The default version provided here will only work if
+          the number of edges fits in a long.
+            @param  na    Number of edges is stored here, as a "bigint" 
+      */
+      virtual void getNumArcs(result &na) const;  
+
+      /** Get the number of edges in the reachability graph.
+            @param  na    Number of edges is stored here
+      */
+      virtual void getNumArcs(long &na) const = 0;
+
+      /** Show the internal representation of the reachability graph.
+            @param  os    Output stream to write to
+      */
+      virtual void showInternal(OutputStream &os) const = 0;
+    
+      /**
+        Show all the edges, in the desired order.
+          @param  os    Output stream to write to
+          @param  ord   Display order to use.
+          @param  st    Memory space to use for individual states
+
+        TBD - reachset is needed, should it be a parameter or is it 
+        needed for so much stuff that the class keeps a pointer to it?
+
+      */
+      virtual void showArcs(OutputStream &os, state_lldsm::display_order ord, shared_state* st) const = 0;
+
+
+      /** Compute states satisfying EX(p).
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute EY.
+            @param  p         Set of states 
+            @return   New set of states satisfying EX(p) or EY(p).
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* EX(bool revTime, const stateset* p) const = 0;
+
+      /** Compute states satisfying E p U q.
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute ES.
+            @param  p         Set of states for p.  If 0, then
+                              we instead compute EF / EP.
+            @param  q         Set of states for q
+            @return   New set of states satisfying E p U q
+                      or E p S q.
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const = 0;
+
+      /** Compute states satisfying EG(p), not restricted to fair paths.
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, switch to unfairEH.
+            @param  p         Set of states satisfying p.
+            @return   New set of states satisfying EG(p).
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* unfairEG(bool revTime, const stateset* p) const = 0;
+
+      /** Compute states satisfying EG(p), restricted to fair paths.
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, switch to unfairEH.
+            @param  p         Set of states satisfying p.
+            @return   New set of states satisfying EG(p).
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* fairEG(bool revTime, const stateset* p) const = 0;
+
+      /** Compute states satisfying AE p F q (made up notation).
+          This is the set of source states, from which we can guarantee that
+          we reach a state in q.  For states in p, we can choose the next state,
+          otherwise we cannot choose the next state, and unfair paths are allowed.
+          Thus AE false F q = AF q and AE true F q = EF q.
+
+          Really useful for games or other control problems.
+      
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+
+            @param  revTime   Why reverse time?  Because we can.
+            @param  p         Set of controlled states
+            @param  q         Set of goal states
+
+            @return   New set of states satisfying AE p F q.
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const = 0;
+
+      // Shared object requirements
+      virtual bool Print(OutputStream &s, int width) const;
+      virtual bool Equals(const shared_object* o) const;
+
+    };
+    // ------------------------------------------------------------
+    // end of inner class reachset
 
 
 public:
+  graph_lldsm(model_type t);
 
-  /** Get the number of edges in the reachability graph.
-      The default version provided here will only work if
-      the number of edges fits in a long.
-        @param  count   Number of edges is stored here,
-                        as a "bigint" if that type exists and there are
-                        a large number of edges, otherwise as a long.
-  */
-  virtual void getNumArcs(result& count) const;
+  virtual ~graph_lldsm();
 
-  /** Get the number of edges in the reachability graph.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  show  If true, the graph / MC is displayed 
-                      to the Output stream, unless the function
-                      returns -1.
+  inline const reachgraph* getRGR() const {
+    return RGR;
+  }
 
-        @return  The number of edges, if it fits in a long;
-                -1 otherwise (on overflow).
-  */
-  virtual long getNumArcs() const;
+  inline void setRG(reachgraph* rgr) {
+    DCASSERT(0==RGR);
+    RGR = rgr;
+  }
+
+  inline void getNumArcs(result& count) const {
+    DCASSERT(RGR);
+    return RGR->getNumArcs(count);
+  }
+
+  virtual long getNumArcs() const {
+    DCASSERT(RGR);
+    long na;
+    RGR->getNumArcs(na);
+    return na;
+  }
+
+// TBD - rearrange from here
 
   /** Show the reachability graph or underlying process.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
         @param  internal  If true, show internal details of state storage only.
                           If false, show a sane list of states, unless there
                           are too many to display.
   */
-  virtual void showArcs(bool internal) const;
+  void showArcs(bool internal) const;
+
+  /// Check if na exceeds option, if so, show "too many arcs" message.
+  static bool tooManyArcs(long na, bool show);
 
   /** Show the initial state(s) of the graph.
       This must be provided in derived classes, the
@@ -256,110 +376,25 @@ public:
 
 #ifdef NEW_STATESETS
 
-  /** Determine TSCCs satisfying a property.
-      This is done "in place".
-      Should only be called for "fair" models.
-      Default behavior is to print an error message.
-         @param  p  On input: property p.
-                    On output: states are removed if
-                    they are not in a TSCC, or if
-                    not all states in the TSCC satisfy p.
-  */
-  // virtual void getTSCCsSatisfying(stateset* p) const;
+  inline stateset* EX(bool revTime, const stateset* p) const {
+    return RGR ? RGR->EX(revTime, p) : 0;
+  }
 
-  /** Find all "deadlocked" states.
-      Default behavior is to print an error message.
-        @param  ss  If i is not a deadlocked state,
-                    then i will be removed from ss.
-  */
-  // virtual void findDeadlockedStates(stateset* ss) const;
+  inline stateset* EU(bool revTime, const stateset* p, const stateset* q) const {
+    return RGR ? RGR->EU(revTime, p, q) : 0;
+  }
 
-  /** Compute states satisfying EX(p).
-      The default behavior here is to print an error message and 
-      return null, so normally this method will be overridden in 
-      some derived class.
-        @param  revTime   If true, reverse time and compute EY.
+  inline stateset* unfairEG(bool revTime, const stateset* p) const {
+    return RGR ? RGR->unfairEG(revTime, p) : 0;
+  }
 
-        @param  p         Set of states 
+  inline stateset* fairEG(bool revTime, const stateset* p) const {
+    return RGR ? RGR->fairEG(revTime, p) : 0;
+  }
 
-        @return   New set of states satisfying EX(p) or EY(p).
-                  
-                  OR, if an error occurs, prints an appropriate message
-                  and returns 0.
-  */
-  virtual stateset* EX(bool revTime, const stateset* p) const;
-
-
-  /** Compute states satisfying E p U q.
-      The default behavior here is to print an error message and 
-      return null, so normally this method will be overridden in 
-      some derived class.
-        @param  revTime   If true, reverse time and compute ES.
-
-        @param  p         Set of states for p.  If 0, then
-                          we instead compute EF / EP.
-
-        @param  q         Set of states for q
-
-        @return   New set of states satisfying E p U q
-                  or E p S q.
-                  
-                  OR, if an error occurs, prints an appropriate message
-                  and returns 0.
-  */
-  virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
-
-  
-  /** Compute states satisfying EG(p), not restricted to fair paths.
-      The default behavior here is to print an error message and 
-      return null, so normally this method will be overridden in 
-      some derived class.
-        @param  revTime   If true, switch to unfairEH.
-        @param  p         Set of states satisfying p.
-
-        @return   New set of states satisfying EG(p).
-
-                  OR, if an error occurs, prints an appropriate message
-                  and returns 0.
-  */
-  virtual stateset* unfairEG(bool revTime, const stateset* p) const;
-
-  /** Compute states satisfying EG(p), restricted to fair paths.
-      The default behavior here is to print an error message and 
-      return null, so normally this method will be overridden in 
-      some derived class.
-        @param  revTime   If true, switch to unfairEH.
-        @param  p         Set of states satisfying p.
-
-        @return   New set of states satisfying EG(p).
-
-                  OR, if an error occurs, prints an appropriate message
-                  and returns 0.
-  */
-  virtual stateset* fairEG(bool revTime, const stateset* p) const;
-
-  /** Compute states satisfying AE p F q (made up notation).
-      This is the set of source states, from which we can guarantee that
-      we reach a state in q.  For states in p, we can choose the next state,
-      otherwise we cannot choose the next state, and unfair paths are allowed.
-      Thus AE false F q = AF q and AE true F q = EF q.
-
-      Really useful for games or other control problems.
-      
-      The default behavior here is to print an error message and 
-      return null, so normally this method will be overridden in 
-      some derived class.
-
-        @param  revTime   Why reverse time?  Because we can.
-        @param  p         Set of controlled states
-        @param  q         Set of goal states
-
-        @return   New set of states satisfying AE p F q.
-
-                  OR, if an error occurs, prints an appropriate message
-                  and returns 0.
-  */
-  virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
+  inline stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const {
+    return RGR ? RGR->unfairAEF(revTime, p, q) : 0;
+  }
 
 #else
 
@@ -428,73 +463,6 @@ public:
         @return true, iff there are no outgoing edges from state st.
   */
   virtual bool isDeadlocked(long st) const;
-
-public:
-
-  /**
-      Reachability graphs.
-      Abstract base class; different implementations provided
-      by derived classes.
-      Basically a Kripke structure, but without the labelling function.
-  */
-  class reachgraph : public shared_object {
-    const graph_lldsm* parent;
-  public:
-    reachgraph();
-    virtual ~reachgraph();
-
-    inline void setParent(const graph_lldsm* p) {
-      if (parent != p) {
-        DCASSERT(0==parent);
-        parent = p;
-      }
-    }
-
-    inline const graph_lldsm* getParent() const {
-      return parent;
-    }
-
-    inline const hldsm* getGrandParent() const {
-      return parent ? parent->GetParent() : 0;
-    }
-
-    // What virtual functions here?
-    // virutal void getNumArcs(result &na) const;  // default: use a long
-    // virtual void getNumArcs(long &na) const = 0;
-    // virtual void showInternal(OutputStream &os);
-    
-    // which of these will belong here?
-
-    // checkable requirements
-    // virtual bool isAbsorbing(long st) const;
-    // virtual bool isDeadlocked(long st) const;
-
-    // virtual void findDeadlockedStates(stateset &ss) const;
-    // virtual bool forward(const intset &p, intset &r) const;
-    // virtual bool backward(const intset &p, intset &r) const;
-
-    // virtual bool dumpDot(OutputStream &s) const;
-
-    /**
-      Show all the edges, in the desired order.
-        @param  os    Output stream to write to
-        @param  dispo Display order to use.  See class lldsm
-        @param  st    Memory space to use for individual states
-
-      TBD - reachset is needed, should it be a parameter or is it 
-      needed for so much stuff that the class keeps a pointer to it?
-
-    */
-    void showArcs(OutputStream *os, int dispo, shared_state* st);
-
-    // TBD?
-    // void visitArcs();  to visit in any order
-
-    // Shared object requirements
-    virtual bool Print(OutputStream &s, int width) const;
-    virtual bool Equals(const shared_object* o) const;
-
-  };
 
 private:
   reachgraph* RGR;

@@ -745,17 +745,17 @@ void initial_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
-  DCASSERT(gllm);
+  const state_lldsm* sllm = smart_cast <const state_lldsm*>(llm);
+  DCASSERT(sllm);
 #ifdef NEW_STATESETS
-  stateset* ss = gllm->getInitialStates();
+  stateset* ss = sllm->getInitialStates();
   if (ss) {
     x.answer->setPtr(ss);
   } else {
     x.answer->setNull();
   }
 #else
-  gllm->getInitialStates(*x.answer);
+  sllm->getInitialStates(*x.answer);
 #endif
 }
 

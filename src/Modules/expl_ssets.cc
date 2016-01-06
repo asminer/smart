@@ -19,7 +19,7 @@
 // *                                                                *
 // ******************************************************************
 
-class expl_printer : public lldsm::state_visitor {
+class expl_printer : public state_lldsm::state_visitor {
   OutputStream &out;
   const intset &toprint;
   bool print_indexes;
@@ -62,7 +62,7 @@ bool expl_printer::visit()
 // *                                                                *
 // ******************************************************************
 
-expl_stateset::expl_stateset(const graph_lldsm* p, intset* e) : stateset(p)
+expl_stateset::expl_stateset(const state_lldsm* p, intset* e) : stateset(p)
 {
   data = e;
 }

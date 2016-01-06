@@ -29,7 +29,7 @@ class meddly_encoder;
 
 class meddly_stateset : public stateset {
   public:
-    meddly_stateset(const graph_lldsm* p, shared_domain*, meddly_encoder*, shared_ddedge*);
+    meddly_stateset(const state_lldsm* p, shared_domain*, meddly_encoder*, shared_ddedge*);
   protected:
     virtual ~meddly_stateset();
 

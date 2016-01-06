@@ -6,6 +6,7 @@
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
+#include "../Modules/biginttype.h"
 
 // ******************************************************************
 // *                                                                *
@@ -27,22 +28,16 @@ state_lldsm::~state_lldsm()
   Delete(RSS);
 }
 
-void state_lldsm::getNumStates(result& x) const
-{
-  x.setInt(getNumStates());
-  if (x.getInt() < 0) {
-    x.setNull();
-  } 
-}
-
-long state_lldsm::getNumStates() const
-{
-  return bailOut(__FILE__, __LINE__, "Can't count states");
-}
-
 void state_lldsm::showStates(bool internal) const
 {
-  bailOut(__FILE__, __LINE__, "Can't dispaly states");
+  DCASSERT(RSS);
+  if (internal) {
+    RSS->showInternal(em->cout());
+  } else {
+    shared_state* st = new shared_state(parent);
+    RSS->showStates(em->cout(), stateDisplayOrder(), st);
+    Delete(st);
+  }
 }
 
 bool state_lldsm::tooManyStates(long ns, bool show)
@@ -59,53 +54,6 @@ bool state_lldsm::tooManyStates(long ns, bool show)
   em->cout().flush();
   return true;
 }
-
-void state_lldsm::visitStates(state_visitor &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't visit states");
-}
-
-#ifdef NEW_STATESETS
-
-stateset* state_lldsm::getReachable() const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get reachable states");
-  return 0;
-}
-
-stateset* state_lldsm::getInitialStates() const
-{
-  bailOut(__FILE__, __LINE__, "Can't get initial states");
-  return 0;
-}
-
-stateset* state_lldsm::getPotential(expr*) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get potential states");
-  return 0;
-}
-
-#else
-
-void state_lldsm::getReachable(result &ss) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get reachable states");
-  ss.setNull();
-}
-
-void state_lldsm::getInitialStates(result &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get initial states");
-  x.setNull();
-}
-
-void state_lldsm::getPotential(expr* p, result &ss) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get potential states");
-  ss.setNull();
-}
-
-#endif
 
 // ******************************************************************
 // *                                                                *
@@ -145,7 +93,7 @@ void state_lldsm::reachset::getNumStates(result &ns) const
   long lns;
   getNumStates(lns);
   if (lns>=0) {
-    ns.setInt(lns);
+    ns.setPtr(new bigint(lns));
   } else {
     ns.setNull();
   }
