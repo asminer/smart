@@ -4,6 +4,7 @@
 #include "fsm_form.h"
 #include "rss_enum.h"
 #include "fsm_llm.h"
+#include "enum_hlm.h"
 #include "graph_llm.h"
 
 #include "../ExprLib/exprman.h"
@@ -446,9 +447,13 @@ void fsm_instate::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(mi);
   hldsm* foo = mi->GetCompiledModel();
   DCASSERT(foo);
-  const lldsm* bar = foo->GetProcess();
+  const state_lldsm* bar = dynamic_cast <const state_lldsm*> (foo->GetProcess());
   DCASSERT(bar);
-  result current(bar->getEnumeratedState(x.current_state_index));
+
+  const enum_reachset* rss = dynamic_cast <const enum_reachset*> (bar->getRSS());
+  DCASSERT(rss);
+
+  result current(rss->getEnumeratedState(x.current_state_index));
 
   SafeCompute(pass[1], x);
   DCASSERT(x.answer->isNormal());

@@ -81,12 +81,12 @@ void expl_reachset::showState(OutputStream &os, const shared_state* st) const
 }
 
 graph_lldsm::reachset::iterator& expl_reachset
-::iteratorForOrder(int display_order)
+::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(state_dictionary || (state_collection && state_handle));
 
-  switch (display_order) {
-    case lldsm::DISCOVERY:
+  switch (ord) {
+    case state_lldsm::DISCOVERY:
       if (needs_discorder) {
         if (0==discorder) {
           discorder = new discovery_coll_iter(*state_collection, state_handle);
@@ -96,7 +96,7 @@ graph_lldsm::reachset::iterator& expl_reachset
       DCASSERT(natorder);
       return *natorder;
 
-    case lldsm::LEXICAL:
+    case state_lldsm::LEXICAL:
       if (0==lexorder) {
         if (state_dictionary) {
           lexorder = new lexical_db_iter(getGrandParent(), *state_dictionary);
@@ -106,7 +106,7 @@ graph_lldsm::reachset::iterator& expl_reachset
       }
       return *lexorder;
       
-    case lldsm::NATURAL:
+    case state_lldsm::NATURAL:
     default:
       DCASSERT(natorder);
       return *natorder;

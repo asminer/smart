@@ -9,29 +9,10 @@
 #include "exprman.h"
 #include "arrays.h"
 #include "measures.h"
-#include "../include/list.h"
 #include "engine.h"
 #include "strings.h"
 
 // #define ARRAY_TRACE
-
-// ******************************************************************
-// *                                                                *
-// *                  lldsm::state_visitor methods                  *
-// *                                                                *
-// ******************************************************************
-
-lldsm::state_visitor::state_visitor(const hldsm* m)
- : x(traverse_data::Compute)
-{
-  DCASSERT(m);
-  x.current_state = new shared_state(m);
-}
-
-lldsm::state_visitor::~state_visitor()
-{
-  Nullify(x.current_state);
-}
 
 // ******************************************************************
 // *                                                                *
@@ -40,10 +21,6 @@ lldsm::state_visitor::~state_visitor()
 // ******************************************************************
 
 const exprman* lldsm::em = 0;
-int lldsm::display_order;
-named_msg lldsm::numpaths_report;
-long lldsm::max_state_display = 100000000;
-const char* lldsm::max_state_display_option = "MaxStateDisplay";
 
 lldsm::lldsm(model_type t)
  : shared_object()
@@ -62,48 +39,6 @@ void lldsm::initOptions(exprman* om)
   em = om;
   if (0==om) return;
 
-  // set up options
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeIntOption(
-      max_state_display_option,
-      "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
-      max_state_display,
-      0, 1000000000
-    )
-  );
-  // ------------------------------------------------------------------
-  option* report = om->findOption("Report");
-  numpaths_report.Initialize(
-    report,
-    "num_paths",
-    "When set, performance data for counting number of paths is displayed.",
-    false
-  );
-  // ------------------------------------------------------------------
-  radio_button** do_list = new radio_button*[num_display_orders];
-  do_list[DISCOVERY] = new radio_button(
-      "DISCOVERY", 
-      "States are displayed in the order in which they are discovered (or defined), if possible.", 
-      DISCOVERY
-  );
-  do_list[LEXICAL] = new radio_button(
-      "LEXICAL", 
-      "States are sorted by lexical order.",
-      LEXICAL
-  );
-  do_list[NATURAL] = new radio_button(
-      "NATURAL", 
-      "States are displayed in the most natural order for the selected state space data structure.",
-      NATURAL
-  );
-  display_order = NATURAL;
-  om->addOption( 
-    MakeRadioOption("StateDisplayOrder",
-      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
-      do_list, num_display_orders, display_order
-    )
-  );
 }
 
 const char* lldsm::getNameOf(model_type t)
@@ -132,34 +67,6 @@ bool lldsm::Equals(const shared_object* ptr) const
   return (ptr == this);
 }
 
-void lldsm::getNumStates(result& x) const
-{
-  x.setInt(getNumStates());
-  if (x.getInt() < 0) {
-    x.setNull();
-  } 
-}
-
-long lldsm::getNumStates() const
-{
-  return bailOut(__FILE__, __LINE__, "Can't count states");
-}
-
-void lldsm::showStates(bool internal) const
-{
-  bailOut(__FILE__, __LINE__, "Can't dispaly states");
-}
-
-void lldsm::visitStates(state_visitor &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't visit states");
-}
-
-shared_object* lldsm::getEnumeratedState(long i) const
-{
-  return 0;
-}
-
 void lldsm::reportMemUsage(exprman* em, const char* prefix) const
 {
 }
@@ -178,22 +85,6 @@ long lldsm::bailOut(const char* fn, int ln, const char* why) const
   }
   return -2;
 }
-
-bool lldsm::tooManyStates(long ns, bool show)
-{
-  if (ns>=0) {
-    if ((0==max_state_display) || (ns <= max_state_display)) return false;
-    if (!show) return true;
-    em->cout() << "Too many states; to display, increase option ";
-    em->cout() << max_state_display_option << ".\n";
-  } else {
-    if (!show) return true;
-    em->cout() << "Too many states.\n";
-  }
-  em->cout().flush();
-  return true;
-}
-
 
 // ******************************************************************
 // *                                                                *
@@ -692,60 +583,6 @@ error_lldsm::~error_lldsm()
 
 // ******************************************************************
 // *                                                                *
-// *                         llhldsm  class                         *
-// *                                                                *
-// ******************************************************************
-
-class llhldsm : public hldsm {
-  int index;
-public:
-  llhldsm(lldsm* mdl);
-  virtual lldsm::model_type GetProcessType() const;
-  virtual int NumStateVars() const { return 1; }
-  virtual bool containsListVar() const { return false; }
-  virtual void determineListVars(bool* ilv) const { ilv[0] = 0; }
-  virtual void reindexStateVars(int &start);
-  virtual int getNumEvents(bool show) const;
-  virtual void showState(OutputStream &s, const shared_state* x) const;
-};
-
-llhldsm::llhldsm(lldsm* mdl) : hldsm(Enumerated)
-{
-  SetProcess(mdl);
-  mdl->SetParent(this);
-  index = 0;
-}
-
-lldsm::model_type llhldsm::GetProcessType() const
-{
-  DCASSERT(process);
-  return process->Type();
-}
-
-void llhldsm::reindexStateVars(int &start)
-{
-  index = start;
-  start++;
-}
-
-int llhldsm::getNumEvents(bool show) const
-{
-  return 0;
-}
-
-void llhldsm::showState(OutputStream &s, const shared_state* x) const
-{
-  DCASSERT(x);
-  shared_object* foo = process->getEnumeratedState(x->get(index));
-  DCASSERT(foo);
-  const model_enum_value* mev = smart_cast <const model_enum_value*> (foo);
-  DCASSERT(mev);
-  s.Put(mev->Name());
-  Delete(foo);
-}
-
-// ******************************************************************
-// *                                                                *
 // *                         mi_call  class                         *
 // *                                                                *
 // ******************************************************************
@@ -1165,11 +1002,6 @@ expr* exprman::makeMeasureCall(const char* fn, int ln,
 lldsm* MakeErrorModel()
 {
   return new error_lldsm();
-}
-
-hldsm* MakeEnumeratedModel(lldsm* mdl)
-{
-  return new llhldsm(mdl);
 }
 
 void InitLLM(exprman* om)

@@ -21,9 +21,9 @@ smart_LDADD = \
   ../Formlsms/pn_form.la ../Formlsms/evm_form.la ../Formlsms/tam_form.la \
   ../Formlsms/basic_msr.la ../Formlsms/ctl_msr.la \
   ../Formlsms/stoch_msr.la ../Formlsms/csl_msr.la \
-  ../Formlsms/dsde_hlm.la ../Formlsms/phase_hlm.la \
+  ../Formlsms/enum_hlm.la ../Formlsms/dsde_hlm.la ../Formlsms/phase_hlm.la \
+  ../Formlsms/state_llm.la ../Formlsms/graph_llm.la ../Formlsms/stoch_llm.la \
   ../Formlsms/mc_llm.la ../Formlsms/fsm_llm.la \
-  ../Formlsms/stoch_llm.la ../Formlsms/graph_llm.la \
   ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la \
   ../Formlsms/rss_indx.la ../Formlsms/rss_enum.la ../Formlsms/rss_expl.la \
   \

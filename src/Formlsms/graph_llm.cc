@@ -10,6 +10,7 @@ int graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
 long graph_lldsm::max_arc_display = 100000000;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
+named_msg graph_lldsm::numpaths_report;
 
 // ******************************************************************
 // *                                                                *
@@ -17,15 +18,13 @@ const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 // *                                                                *
 // ******************************************************************
 
-graph_lldsm::graph_lldsm(model_type t) : lldsm(t)
+graph_lldsm::graph_lldsm(model_type t) : state_lldsm(t)
 {
-  RSS = 0;
   RGR = 0;
 }
 
 graph_lldsm::~graph_lldsm()
 {
-  Delete(RSS);
   Delete(RGR);
 }
 
@@ -120,18 +119,6 @@ bool graph_lldsm::dumpDot(OutputStream &s) const
 
 #ifdef NEW_STATESETS
 
-stateset* graph_lldsm::getReachable() const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get reachable states");
-  return 0;
-}
-
-stateset* graph_lldsm::getInitialStates() const
-{
-  bailOut(__FILE__, __LINE__, "Can't get initial states");
-  return 0;
-}
-
 stateset* graph_lldsm::getAbsorbingStates() const
 {
   bailOut(__FILE__, __LINE__, "Can't get absorbing states");
@@ -144,26 +131,7 @@ stateset* graph_lldsm::getDeadlockedStates() const
   return 0;
 }
 
-stateset* graph_lldsm::getPotential(expr*) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get potential states");
-  return 0;
-}
-
-
 #else
-
-void graph_lldsm::getReachable(result &ss) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get reachable states");
-  ss.setNull();
-}
-
-void graph_lldsm::getInitialStates(result &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get initial states");
-  x.setNull();
-}
 
 void graph_lldsm::getAbsorbingStates(result &x) const
 {
@@ -175,12 +143,6 @@ void graph_lldsm::getDeadlockedStates(result &x) const
 {
   bailOut(__FILE__, __LINE__, "Can't get deadlocked states");
   x.setNull();
-}
-
-void graph_lldsm::getPotential(expr* p, result &ss) const 
-{
-  bailOut(__FILE__, __LINE__, "Can't get potential states");
-  ss.setNull();
 }
 
 #endif
@@ -276,106 +238,6 @@ bool graph_lldsm::isDeadlocked(long st) const
 
 // ******************************************************************
 // *                                                                *
-// *                 graph_lldsm::reachset  methods                 *
-// *                                                                *
-// ******************************************************************
-
-graph_lldsm::reachset::reachset()
-{
-  parent = 0;
-}
-
-graph_lldsm::reachset::~reachset()
-{
-}
-
-void graph_lldsm::reachset::getNumStates(result &ns) const
-{
-  long lns;
-  getNumStates(lns);
-  if (lns>=0) {
-    ns.setInt(lns);
-  } else {
-    ns.setNull();
-  }
-}
-
-void graph_lldsm::reachset
-::showStates(OutputStream &os, int display_order, shared_state* st)
-{
-  DCASSERT(parent);
-
-  long num_states;
-  getNumStates(num_states);
-
-  if (num_states<=0) return;
-  if (parent->tooManyStates(num_states, true)) return;
-
-  iterator& I = iteratorForOrder(display_order);
-
-  long i = 0;
-  for (I.start(); I; I++, i++) {
-    os << "State " << i << ": ";
-    I.copyState(st);
-    showState(os, st);
-    os << "\n";
-    os.flush();
-  }
-}
-
-void graph_lldsm::reachset
-::visitStates(lldsm::state_visitor &v, int visit_order)
-{
-  DCASSERT(v.state());
-
-  iterator& I = iteratorForOrder(visit_order);
-
-  for (I.start(); I; I++) {
-    v.index() = I.index();
-    if (v.canSkipIndex()) continue;
-    I.copyState(v.state());
-    if (v.visit()) return;
-  }
-}
-
-void graph_lldsm::reachset::visitStates(lldsm::state_visitor &v) const
-{
-  DCASSERT(v.state());
-
-  iterator& I = easiestIterator();
-
-  for (I.start(); I; I++) {
-    v.index() = I.index();
-    if (v.canSkipIndex()) continue;
-    I.copyState(v.state());
-    if (v.visit()) return;
-  }
-}
-
-bool graph_lldsm::reachset::Print(OutputStream &s, int width) const
-{
-  // Required for shared object, but will we ever call it?
-  s << "reachset (why is it printing?)";
-  return true;
-}
-
-bool graph_lldsm::reachset::Equals(const shared_object* o) const
-{
-  return (this == o);
-}
-
-
-graph_lldsm::reachset::iterator::iterator()
-{
-}
-
-graph_lldsm::reachset::iterator::~iterator()
-{
-}
-
-
-// ******************************************************************
-// *                                                                *
 // *                graph_lldsm::reachgraph  methods                *
 // *                                                                *
 // ******************************************************************
@@ -407,9 +269,18 @@ bool graph_lldsm::reachgraph::Equals(const shared_object* o) const
 // **************************************************************************
 
 
-void InitializeCheckableLLM(exprman* om)
+void InitializeGraphLLM(exprman* om)
 {
   if (0==om) return;
+
+  // ------------------------------------------------------------------
+  option* report = om->findOption("Report");
+  graph_lldsm::numpaths_report.Initialize(
+    report,
+    "num_paths",
+    "When set, performance data for counting number of paths is displayed.",
+    false
+  );
 
   // ------------------------------------------------------------------
   om->addOption(

@@ -16,7 +16,7 @@ class meddly_reachset : public graph_lldsm::reachset {
     virtual void getNumStates(result &ns) const;  
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
-    virtual iterator& iteratorForOrder(int display_order);
+    virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
 
     virtual stateset* getReachable() const;

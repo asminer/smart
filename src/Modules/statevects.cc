@@ -27,7 +27,7 @@
 // *                                                                *
 // ******************************************************************
 
-class statevect_printer : public lldsm::state_visitor {
+class statevect_printer : public state_lldsm::state_visitor {
   OutputStream &out;
   int display_style;
   double* myvect;

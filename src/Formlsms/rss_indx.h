@@ -27,7 +27,7 @@ class indexed_reachset : public graph_lldsm::reachset {
     void setInitial(LS_Vector &init);
 
   private:
-    class pot_visit : public lldsm::state_visitor {
+    class pot_visit : public state_lldsm::state_visitor {
       expr* p;
       intset &pset;
       result tmp;

@@ -18,7 +18,7 @@ class expr;
 class result;
 class exprman;
 class symbol_table;
-class graph_lldsm;
+class state_lldsm;
 class hldsm;
 
 // #define NEW_STATESETS
@@ -39,11 +39,11 @@ class hldsm;
 */
 class stateset : public shared_object {
 public:
-  stateset(const graph_lldsm* p);
+  stateset(const state_lldsm* p);
 protected:
   virtual ~stateset();
 public:
-  inline const graph_lldsm* getParent() const { return parent; }
+  inline const state_lldsm* getParent() const { return parent; }
 
   const hldsm* getGrandparent() const;
 
@@ -123,7 +123,7 @@ protected:
 
 private:
   static exprman* em;
-  const graph_lldsm* parent;
+  const state_lldsm* parent;
   static bool print_indexes;
   friend void InitStatesets(exprman* em, symbol_table* st);
 };
@@ -148,7 +148,7 @@ class intset;   // external, explicit library
     Virtual methods in the reachgraph class for preimage, postimage, etc.
 */
 class stateset : public shared_object {
-  const graph_lldsm* parent;
+  const state_lldsm* parent;
   bool is_explicit;
   intset* expl_data;
   sv_encoder* state_forest;
@@ -156,12 +156,12 @@ class stateset : public shared_object {
   sv_encoder* relation_forest;
   shared_object* relation_dd;
 public:
-  stateset(const graph_lldsm* p, intset* e);
-  stateset(const graph_lldsm* p, sv_encoder* sf, shared_object* s,
+  stateset(const state_lldsm* p, intset* e);
+  stateset(const state_lldsm* p, sv_encoder* sf, shared_object* s,
                            sv_encoder* rf, shared_object* r);
   virtual ~stateset();
 public:
-  inline const graph_lldsm* getParent() const { return parent; }
+  inline const state_lldsm* getParent() const { return parent; }
   inline bool isExplicit() const { return is_explicit; }
   inline bool isSymbolic() const { return !is_explicit; }
   inline const intset& getExplicit() const {
