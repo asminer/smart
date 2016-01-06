@@ -14,6 +14,8 @@
 
 // #define DEBUG_EG
 
+#ifndef NEW_STATESETS
+
 inline const shared_object* GrabSOInitial(const graph_lldsm* mdl)
 {
   result init;
@@ -471,4 +473,12 @@ void InitializeSymbolicCTLEngines(exprman* em)
       &the_unfairEG_symb_eng 
   );
 }
+
+#else
+
+void InitializeSymbolicCTLEngines(exprman* em)
+{
+}
+
+#endif
 

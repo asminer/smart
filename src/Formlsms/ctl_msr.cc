@@ -20,52 +20,13 @@
 // *****************************************************************
 
 class CTL_engine : public msr_noengine {
-protected:
-  /** Engines for computing EU.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset p; if NULL we compute EF.
-      parameter 2: pointer, to stateset q.
-      Computes states satisfying E p U q, or EF q if p is null.
-  */
-  static engtype* EU;
-
-  /** Engines for computing (unfair) EG.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* unfairEG;
-
-  /** Engines for computing (fair) EG.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* fairEG;
-
-  /** Engines for computing (unfair) AEF.
-      This is a "Function call" style engine.
-      parameter 0: pointer, to low-level (graph) model.
-      parameter 1: pointer, to stateset (control states)
-      parameter 2: pointer, to stateset (goal states)
-      Determines all states from which, we can reach a goal state
-      (from control states, we can choose the next state, otherwise we cannot).
-      Special cases:
-      AEF 0, p = AF p
-      AEF 1, p = EF p
-  */
-  static engtype* unfairAEF;
-
-  static engtype* ProcGen;
- 
-  friend void InitCTLMeasureFuncs(symbol_table*, exprman*, List <msr_func> *);
-
-protected:
-  bool reverse_time;
-
 public:
   CTL_engine(const type* t, const char* name, bool rt, int np);
+
+protected:
+  inline bool revTime() const {
+    return reverse_time;
+  }
 
   inline lldsm* BuildRG(hldsm* hlm, const expr* err) const {
     if (0==hlm)  return 0;
@@ -104,6 +65,7 @@ public:
     return dynamic_cast <graph_lldsm*>(foo);
   }
 
+  /*
   inline static void Complement(result* answer) {
     if (0==answer) return;
     if (!answer->isNormal()) return;
@@ -117,8 +79,10 @@ public:
       ss->Complement();
     }
   }
+  */
 
   inline static stateset* Complement(stateset* p) {
+    if (0==p) return 0;
     stateset* NOTp = 0;
     if (p->numRefs() > 1) {
       NOTp = p->DeepCopy();
@@ -174,6 +138,7 @@ public:
     return ss;
   }
 
+  /*
   inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
     try {
       if (et) et->runEngine(pass, np, x);
@@ -189,9 +154,48 @@ public:
       x.answer->setNull();
     } // catch
   }
+  */
 
+  inline static void setAnswer(traverse_data &x, stateset* s) {
+    if (s) {
+      x.answer->setPtr(s);
+    } else {
+      x.answer->setNull();
+    }
+  }
+
+  inline static void setAndInvertAnswer(traverse_data &x, stateset* s) {
+    if (s) {
+      if (s->numRefs()>1) {
+        stateset* ns = s->DeepCopy();
+        Delete(s);
+        ns->Complement();
+        x.answer->setPtr(ns);
+      } else {
+        s->Complement();
+        x.answer->setPtr(s);
+      }
+    } else {
+      x.answer->setNull();
+    }
+  }
+
+private:
+  static engtype* ProcGen;
+ 
+  friend void InitCTLMeasureFuncs(symbol_table*, exprman*, List <msr_func> *);
+
+  bool reverse_time;
 
 };
+
+engtype*  CTL_engine::ProcGen                 = 0;
+
+CTL_engine::CTL_engine(const type* t, const char* name, bool rt, int np)
+ : msr_noengine(CTL, t, name, np)
+{
+  reverse_time = rt;
+}
 
 // *****************************************************************
 // *                                                               *
@@ -218,19 +222,7 @@ void EX_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  // Build an empty set
-  stateset* r = llm->getPotential(0); 
-  // TBD - try/catch around this, so we can set null?
-  if (reverse_time) {
-    llm->forward(p, r); 
-  } else {
-    llm->backward(p, r);
-  }
-  x.answer->setPtr(r);
+  setAnswer(x, llm->EX(revTime(), p));
   Delete(p);
 }
 
@@ -289,17 +281,10 @@ void EF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setNull();
-  engpass[2].setPtr(p);
-  launchEngine(EU, engpass, np+1, x);
+  setAnswer(x, llm->EU(revTime(), 0, p));
+  Delete(p);
 }
 
 // *****************************************************************
@@ -358,24 +343,16 @@ void EU_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();
     return;
   }
   stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(EU, engpass, np, x);
+  setAnswer(x, llm->EU(revTime(), p, q));
+  Delete(p);
+  Delete(q);
 }
 
 // *****************************************************************
@@ -435,21 +412,10 @@ void EG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* eg = 0;
-  if (llm->isFairModel()) {
-    eg = fairEG;
-  } else {
-    eg = unfairEG;
-  }
-
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(p);
-  launchEngine(eg, engpass, np, x);
+  setAnswer(x,
+    llm->isFairModel() ?  llm->fairEG(revTime(), p) : llm->unfairEG(revTime(), p)
+  );
+  Delete(p);
 }
 
 // *****************************************************************
@@ -510,24 +476,8 @@ void AX_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  if (0==NOTp) {
-    x.answer->setNull();  
-    return;
-  }
-
-  // Build an empty set
-  stateset* r = llm->getPotential(0); 
-  // TBD - try/catch around this, so we can set null?
-  if (reverse_time) {
-    llm->forward(NOTp, r); 
-  } else {
-    llm->backward(NOTp, r);
-  }
-  r->Complement();
-
-  x.answer->setPtr(r);
+  setAndInvertAnswer(x, llm->EX(revTime(), NOTp));
   Delete(NOTp);
-
   // AX p = !EX !p
 }
 
@@ -588,23 +538,10 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  if (0==NOTp) {
-    x.answer->setNull();
-    return;
-  }
-
-  engtype* eg = 0;
-  if (llm->isFairModel()) {
-    eg = fairEG;
-  } else {
-    eg = unfairEG;
-  }
-
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(NOTp);
-  launchEngine(eg, engpass, np, x);
-  Complement(x.answer);
+  setAndInvertAnswer(x,
+    llm->isFairModel() ?  llm->fairEG(revTime(), NOTp) : llm->unfairEG(revTime(), NOTp)
+  );
+  Delete(NOTp);
 
   // AF p = !EG !p
 }
@@ -664,19 +601,10 @@ void AG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  if (0==NOTp) {
-    x.answer->setNull();
-    return;
-  }
-
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setNull();
-  engpass[2].setPtr(NOTp);
-  launchEngine(EU, engpass, np+1, x);
-  Complement(x.answer);
+  setAndInvertAnswer(x, llm->EU(revTime(), 0, NOTp));
+  Delete(NOTp);
 
   // AG p = !EF !p
 }
@@ -750,36 +678,36 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  // A p U q = !E[ !q U (!p & !q) ] & !EG(!q)
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(notq);
+  stateset* notpq = 0;
   if (notp->numRefs()>1) {
-    stateset* copy = notp->DeepCopy();
+    notpq = notp->DeepCopy();
     Delete(notp);
-    notp = copy;
+  } else {
+    notpq = notp;
   }
-  notp->Intersect(pass[1], "AU", notq);
-  engpass[2].setPtr(notp);
-  launchEngine(EU, engpass, 3, x);
-  Complement(x.answer);
+  notpq->Intersect(pass[1], "AU", notq);
 
-  stateset* eupart = 0;
-  if (x.answer->isNormal()) {
-    eupart = smart_cast <stateset*> (Share(x.answer->getPtr()));
-    DCASSERT(eupart);
-  }
-  // eupart is !E[ !q U (!p & !q) ]
+  // we've computed notpq: (!p & !q)
 
-  engtype* eg = llm->isFairModel() ? fairEG : unfairEG;
-  launchEngine(eg, engpass, 2, x);
-  Complement(x.answer);
+  stateset* eupart = Complement( llm->EU(revTime(), notq, notpq) );
+  Delete(notpq);
 
-  stateset* egpart = 0;
-  if (x.answer->isNormal()) {
-    egpart = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  }
-  // egpart is !EG(!q)
+  // we've computed eupart:  !E[ !q U (!p & !q) ]
+
+  stateset* egpart = Complement(
+    llm->isFairModel() ? llm->fairEG(revTime(), notq) : llm->unfairEG(revTime(), notq)
+  );
+  Delete(notq);
+
+  // we've computed egpart: is !EG(!q)
+
+  // Now finish up, using
+  //
+  // A p U q = !E[ !q U (!p & !q) ] & !EG(!q)
+  //
+  // try to be clever about the intersection 
+  // and do it "in place" if we can
+  //
 
   if (0==egpart || 0==eupart) {
     Delete(egpart);
@@ -800,6 +728,10 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setPtr(eupart);
     return;
   } 
+
+  //
+  // neither egpart nor eupart can be modified in place
+  //
   stateset* answer = egpart->DeepCopy();
   answer->Intersect(pass[1], "AU", eupart);
   Delete(egpart);
@@ -865,24 +797,12 @@ void AEF_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
   stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(unfairAEF, engpass, 3, x);
+  setAnswer(x, llm->unfairAEF(false, p, q));
+  Delete(p);
+  Delete(q);
 }
 
 // *****************************************************************
@@ -946,40 +866,12 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
 
   if (st) st->AddSymbol(ctl_help);
 
-  //
-  // Initialize engines
-  //
-  CTL_engine::EU = MakeEngineType(em,
-      "EU_ALGORITHM",
-      "Algorithm for computation of EU formulas in CTL.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairEG = MakeEngineType(em,
-      "UNFAIR_EG_ALGORITHM",
-      "Algorithm for computation of EG formulas in CTL, ignoring fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::fairEG = MakeEngineType(em,
-      "FAIR_EG_ALGORITHM",
-      "Algorithm for computation of EG formulas in CTL, with fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairAEF = MakeEngineType(em,
-      "UNFAIR_AEF_ALGORITHM",
-      "Algorithm for computation of AEF formulas in (extended) CTL, without fairness.",
-      engtype::FunctionCall
-  );
-
   CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
 
   //
   // Declare function variables
   //
 
-  /*
   static msr_func* the_EX_si = 0;
   static msr_func* the_EY_si = 0;
   static msr_func* the_EF_si = 0;
@@ -1070,8 +962,6 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
 
   common->Append(the_AEF_si);
   common->Append(the_num_paths);
-  */
-
 }
 #else
 

@@ -24,6 +24,7 @@
 // ******************************************************************
 
 exprman* stateset::em = 0;
+bool stateset::print_indexes;
 
 stateset::stateset(const graph_lldsm* p) : shared_object()
 {

@@ -113,6 +113,15 @@ void meddly_stateset::getCardinality(result &x) const
   mdd_wrap->getCardinality(states, x);
 }
 
+bool meddly_stateset::isEmpty() const
+{
+  DCASSERT(mdd_wrap);
+  DCASSERT(states);
+  bool ans;
+  mdd_wrap->isEmpty(states, ans);
+  return ans;
+}
+
 bool meddly_stateset::Print(OutputStream &s, int) const
 {
   // TBD - option for printing indexes instead?
