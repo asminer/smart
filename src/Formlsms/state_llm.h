@@ -6,6 +6,8 @@
 
 #include "../ExprLib/mod_inst.h"
 
+#include "../Modules/statesets.h" // for now
+
 #ifndef INITIALIZERS_ONLY
 
 class stateset;
@@ -19,8 +21,8 @@ class stateset;
 /**   Class for models with finite discrete reachable state spaces.
       Mostly a base class for further functionality.
 
-      TBD - designing this class still,
-            bunch of stuff will need to be removed from lldsm.
+      This class provides methods for the reachability set,
+      and an inner class for different reachability set implementations.
 
 */
 class state_lldsm : public lldsm {
@@ -121,21 +123,49 @@ public:
           return parent ? parent->GetParent() : 0;
         }
   
-        virtual void getNumStates(result &ns) const;  // default: use a long
+        /** Get the number of reachable states.
+            This version is used to implement Smart function num_states.
+            The default version provided here will only work if
+            the number of states fits in a long.
+              @param  count   Number of states is stored here as a bigint.
+        */
+        virtual void getNumStates(result &ns) const;
+
+        /** Get the number of reachable states.
+              @return  The number of reachable states, if it fits in a long;
+                      -1, otherwise (on overflow).
+        */
         virtual void getNumStates(long &ns) const = 0;
+
+        /** Show the internal representation of the reachable states.
+              @param  os    Output stream to write to
+        */
         virtual void showInternal(OutputStream &os) const = 0;
+
+        /** Show the reachable states.
+              @param  os    Output stream to write to
+              @param  st    Space to use for unpacking states
+        */
         virtual void showState(OutputStream &os, const shared_state* st) const = 0;
+
+        /// Build an iterator for a desired order.
         virtual iterator& iteratorForOrder(state_lldsm::display_order ord) = 0;
+
+        /// Build an easy iterator, for when the order is irrelevant.
         virtual iterator& easiestIterator() const = 0;
   
-        /*
-            TBD - add a reachgraph parameter, needed for the stateset.
-  
-            TBD - adjust the stateset class and  use a proper class hierarchy.
-  
-        */
+        /// Build and return a stateset for the reachable states
         virtual stateset* getReachable() const = 0;
+
+        /** Build a stateset for states satisfying a constraint.
+              @param  p   Logical condition for states to satisfy.
+                          If 0, we quickly return a new empty set.
+              @return   New stateset object for states satisfying p,
+                        or 0 on error.
+        */
         virtual stateset* getPotential(expr* p) const = 0;
+
+        /// Build and return a stateset for the initial states
         virtual stateset* getInitialStates() const = 0;
   
         /**
@@ -149,7 +179,7 @@ public:
   
         /**
           Visit all the states, in the desired order.
-            @param  x     State visitor.
+            @param  x     State visitor, specifies what to do for each state.
             @param  ord   Order to use
         */
         void visitStates(state_lldsm::state_visitor &x, 
@@ -157,7 +187,7 @@ public:
 
         /**
           Visit all the states, in any convenient order.
-            @param  x             State visitor.
+            @param  x     State visitor, specifies what to do for each state.
         */
         void visitStates(state_lldsm::state_visitor &x) const;
 
@@ -182,104 +212,74 @@ public:
     RSS = rss;
   }
 
-  /** Get the number of reachable states.
-      This version is used to implement Smart function num_states.
-      The default version provided here will only work if
-      the number of states fits in a long.
-        @param  count   Number of states is stored here,
-                        as a "bigint" if that type exists and there are
-                        a large number of states, otherwise as a long.
-  */
-  virtual void getNumStates(result& count) const;
+  inline void getNumStates(result& count) const {
+    DCASSERT(RSS);
+    RSS->getNumStates(count);
+  }
 
-  /** Get the number of reachable states.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-
-        @return  The number of reachable states, if it fits in a long;
-                -1, otherwise (on overflow).
-  */
-  virtual long getNumStates() const;
+  inline long getNumStates() const {
+    DCASSERT(RSS);
+    long ns;
+    RSS->getNumStates(ns);
+    return ns;
+  }
 
   /** Show the reachable states.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  internal  If true, show internal details of state storage only.
-                          If false, show a sane list of states, unless there
-                          are too many to display.
+        @param  internal    If true, show the internal representation.
   */
-  virtual void showStates(bool internal) const;
+  void showStates(bool internal) const;
 
   /// Check if ns exceeds option, if so, show "too many states" message.
   static bool tooManyStates(long ns, bool show);
 
   /** Visit all our states, explicitly, in a convenient order.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
         @param  x   Specifies what we do when visiting each state.
                     In practice, will be a derived class.
   */
-  virtual void visitStates(state_visitor &x) const;
+  inline void visitStates(state_visitor &x) const {
+    DCASSERT(RSS);
+    RSS->visitStates(x);
+  }
 
 #ifdef NEW_STATESETS
 
-  /** Get the reachable states, as a stateset.
-      Default behavior here is to print an error message and return null.
-        @return   New stateset object for the reachable states,
-                  or 0 on error.
-  */
-  virtual stateset* getReachable() const;
+  inline stateset* getReachable() const {
+    return RSS ? RSS->getReachable() : 0;
+  }
 
-  /** Get the possible initial (time 0) states.
-      Conceptually, this tells which elements in the vector 
-      constructed by getInitialDistribution() will have 
-      non-zero probability.  This must be provided in derived 
-      classes, the default behavior here is to print an error 
-      message and return null.
-        @return   New stateset object for the initial states,
-                  or 0 on error.
-  */
-  virtual stateset* getInitialStates() const;
+  inline stateset* getInitialStates() const {
+    return RSS ? RSS->getInitialStates() : 0;
+  }
 
-  /** Get the set of states satisfying a constraint.
-      Default behavior here is to print an error message and return null.
-        @param  p   Logical condition for states to satisfy.
-                    If 0, we quickly return a new empty set.
-        @return   New stateset object for states satisfying p,
-                  or 0 on error.
-  */
-  virtual stateset* getPotential(expr* p) const;
+  inline stateset* getPotential(expr* p) const {
+    return RSS ? RSS->getPotential(p) : 0;
+  }
 
 #else
 
-  /** Get the reachable states, as a stateset.
-      Default behavior here is to (quietly) set the result to null.
-        @param  ss  Set of reachable states is stored here,
-                    as a "stateset".
-  */
-  virtual void getReachable(result &ss) const;
+  inline void getReachable(result &ss) const {
+    if (RSS) {
+      ss.setPtr(RSS->getReachable());
+    } else {
+      ss.setNull();
+    }
+  }
 
-  /** Get the possible initial (time 0) states.
-      Conceptually, this tells which elements in the
-      vector constructed by getInitialDistribution() 
-      will have non-zero probability.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  x   On input: ignored.
-                    On output: an appropriate "stateset"
-                    containing the set of states the model
-                    could be in at time 0.
-                    Will be a "null" result on error.
-  */
-  virtual void getInitialStates(result &x) const;
+  inline void getInitialStates(result &x) const {
+    if (RSS) {
+      x.setPtr(RSS->getInitialStates());
+    } else {
+      ss.setNull();
+    }
+  }
 
-  /** Get the set of states satisfying a constraint.
-      Default behavior here is to (quietly) set the result to null.
-        @param  p   Logical condition for states to satisfy.
-        @param  ss  Set of "potential" states satisfying p is stored here,
-                    as a "stateset".
-  */
-  virtual void getPotential(expr* p, result &ss) const;
+  inline void getPotential(expr* p, result &ss) const {
+    if (RSS) {
+      x.setPtr(RSS->getPotential(p));
+    } else {
+      ss.setNull();
+    }
+  }
 
 #endif
 

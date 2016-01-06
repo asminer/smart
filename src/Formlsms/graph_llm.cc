@@ -5,6 +5,8 @@
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
+#include "../ExprLib/mod_vars.h"
+#include "../Modules/biginttype.h"
 
 int graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
@@ -28,6 +30,18 @@ graph_lldsm::~graph_lldsm()
   Delete(RGR);
 }
 
+void graph_lldsm::showArcs(bool internal) const
+{
+  DCASSERT(RGR);
+  if (internal) {
+    RGR->showInternal(em->cout());
+  } else {
+    shared_state* st = new shared_state(parent);
+    RGR->showArcs(em->cout(), stateDisplayOrder(), st);
+    Delete(st);
+  }
+}
+
 bool graph_lldsm::tooManyArcs(long na, bool show)
 {
   if (na>=0) {
@@ -41,24 +55,6 @@ bool graph_lldsm::tooManyArcs(long na, bool show)
   }
   em->cout().flush();
   return true;
-}
-
-void graph_lldsm::getNumArcs(result& x) const
-{
-  x.setInt(getNumArcs());
-  if (x.getInt() < 0) {
-    x.setNull();
-  } 
-}
-
-long graph_lldsm::getNumArcs() const
-{
-  return bailOut(__FILE__, __LINE__, "Can't count arcs");
-}
-
-void graph_lldsm::showArcs(bool internal) const
-{
-  bailOut(__FILE__, __LINE__, "Can't dispaly arcs (or process)");
 }
 
 void graph_lldsm::showInitial() const
@@ -154,48 +150,6 @@ bool graph_lldsm::isFairModel() const
 
 #ifdef NEW_STATESETS
 
-/*
-void graph_lldsm::getTSCCsSatisfying(stateset*) const
-{
-  DCASSERT(isFairModel());
-  bailOut(__FILE__, __LINE__, "Can't get TSCCs satisfying p");
-}
-
-void graph_lldsm::findDeadlockedStates(stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't find deadlocked states");
-}
-*/
-
-stateset* graph_lldsm::EX(bool, const stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute EX");
-  return 0;
-}
-
-stateset* graph_lldsm::EU(bool, const stateset*, const stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute EU");
-  return 0;
-}
-
-stateset* graph_lldsm::unfairEG(bool, const stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute (unfair) EG");
-  return 0;
-}
-
-stateset* graph_lldsm::fairEG(bool, const stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute (fair) EG");
-  return 0;
-}
-
-stateset* graph_lldsm::unfairAEF(bool, const stateset*, const stateset*) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute (unfair) AEF");
-  return 0;
-}
 
 #else
 
@@ -248,6 +202,17 @@ graph_lldsm::reachgraph::reachgraph()
 
 graph_lldsm::reachgraph::~reachgraph()
 {
+}
+
+void graph_lldsm::reachgraph::getNumArcs(result &na) const
+{
+  long lna;
+  getNumArcs(lna);
+  if (lna>=0) {
+    na.setPtr(new bigint(lna));
+  } else {
+    na.setNull();
+  }
 }
 
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const

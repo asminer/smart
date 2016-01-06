@@ -15,7 +15,7 @@
 // *                                                                *
 // ******************************************************************
 
-meddly_stateset::meddly_stateset(const graph_lldsm* p, shared_domain* sd, 
+meddly_stateset::meddly_stateset(const state_lldsm* p, shared_domain* sd, 
   meddly_encoder* me, shared_ddedge* E) : stateset(p)
 {
   vars = sd;

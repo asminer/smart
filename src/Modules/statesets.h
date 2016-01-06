@@ -21,7 +21,7 @@ class symbol_table;
 class state_lldsm;
 class hldsm;
 
-// #define NEW_STATESETS
+#define NEW_STATESETS
 
 #ifdef NEW_STATESETS
 
