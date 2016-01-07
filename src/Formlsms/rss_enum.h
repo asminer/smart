@@ -12,6 +12,9 @@ class enum_reachset : public indexed_reachset {
   public:
     enum_reachset(model_enum* ss);
     virtual ~enum_reachset();
+    virtual const char* getClassName() const {
+      return "enum_reachset";
+    }
 
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;

@@ -12,9 +12,12 @@
 class expl_reachgraph : public graph_lldsm::reachgraph {
 
   public:
-    expl_reachgraph(state_lldsm::reachset* RSS, GraphLib::digraph* g);
+    expl_reachgraph(GraphLib::digraph* g);
+
   protected:
     virtual ~expl_reachgraph();
+    virtual const char* getClassName() const { return "expl_reachgraph"; }
+    virtual void Finish(state_lldsm::reachset*);
 
   public:
     virtual void getNumArcs(long &na) const;

@@ -110,6 +110,7 @@ public:
         reachset();
       protected:
         virtual ~reachset();
+        virtual const char* getClassName() const = 0;
   
       public:
         inline void setParent(const state_lldsm* p) {
@@ -207,7 +208,11 @@ public:
 
 public:
   state_lldsm(model_type t);
+protected:
   virtual ~state_lldsm();
+  virtual const char* getClassName() const;
+
+public:
 
   inline const reachset* getRSS() const {
     return RSS;
@@ -216,6 +221,7 @@ public:
   inline void setRSS(reachset* rss) {
     DCASSERT(0==RSS);
     RSS = rss;
+    if (RSS) RSS->setParent(this);
   }
 
   inline void getNumStates(result& count) const {

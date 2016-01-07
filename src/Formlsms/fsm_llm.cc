@@ -40,130 +40,6 @@ public:
 
 // ******************************************************************
 // *                                                                *
-// *                                                                *
-// *                       generic_fsm  class                       *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-/**
-    New class for fsm formalisms, uses reachset and process classes.
-
-    Huge TBD here.
-*/
-class generic_fsm : public graph_lldsm {
-  public:
-    generic_fsm(reachset* rss);
-    virtual ~generic_fsm();
-
-    virtual long getNumStates() const;
-    virtual void getNumStates(result& count) const;
-    virtual void showStates(bool internal) const;
-
-#ifdef NEW_STATESETS
-    virtual stateset* getReachable() const;
-    virtual stateset* getPotential(expr* p) const;
-    virtual stateset* getInitialStates() const;
-#else
-    virtual void getReachable(result &ss) const;
-    virtual void getPotential(expr* p, result &ss) const;
-    virtual void getInitialStates(result &x) const;
-#endif
-
-    // TBD - more methods eventually
-  protected:
-    virtual const char* getClassName() const { return "generic_fsm"; }
-
-  private:
-    reachset* RSS;
-    // tbd - process here
-};
-
-// ******************************************************************
-// *                                                                *
-// *                      generic_fsm  methods                      *
-// *                                                                *
-// ******************************************************************
-
-generic_fsm::generic_fsm(reachset* rss) : graph_lldsm(FSM)
-{
-  DCASSERT(rss);
-  RSS = rss;
-  RSS->setParent(this);
-}
-
-generic_fsm::~generic_fsm()
-{
-  Delete(RSS);
-}
-
-long generic_fsm::getNumStates() const
-{
-  DCASSERT(RSS);
-  long ns;
-  RSS->getNumStates(ns);
-  return ns;
-}
-
-void generic_fsm::getNumStates(result& count) const
-{
-  DCASSERT(RSS);
-  RSS->getNumStates(count);
-}
-
-void generic_fsm::showStates(bool internal) const
-{
-  DCASSERT(RSS);
-  if (internal) {
-    RSS->showInternal(em->cout());
-  } else {
-    shared_state* st = new shared_state(parent);
-    RSS->showStates(em->cout(), stateDisplayOrder(), st);
-    Delete(st);
-  }
-}
-
-#ifdef NEW_STATESETS
-
-stateset* generic_fsm::getReachable() const
-{
-  return RSS ? RSS->getReachable() : 0;
-}
-
-stateset* generic_fsm::getPotential(expr* p) const
-{
-  return RSS ? RSS->getPotential(p) : 0;
-}
-
-stateset* generic_fsm::getInitialStates() const
-{
-  return RSS ? RSS->getInitialStates() : 0;
-}
-
-#else
-
-void generic_fsm::getReachable(result &ss) const
-{
-  DCASSERT(RSS);
-  ss.setPtr(RSS->getReachable());
-}
-
-void generic_fsm::getPotential(expr* p, result &ss) const
-{
-  DCASSERT(RSS);
-  ss.setPtr(RSS->getPotential(p));
-}
-
-void generic_fsm::getInitialStates(result &x) const
-{
-  DCASSERT(RSS);
-  x.setPtr(RSS->getInitialStates());
-}
-
-#endif
-
-// ******************************************************************
-// *                                                                *
 // *                           Front  end                           *
 // *                                                                *
 // ******************************************************************
@@ -178,18 +54,19 @@ void InitFSMLibs(exprman* em)
   }
 }
 
-graph_lldsm* StartGenericFSM(graph_lldsm::reachset* rss)
+graph_lldsm* StartFSM(graph_lldsm::reachset* rss)
 {
   if (0==rss) return 0;
-  return new generic_fsm(rss);
+  graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
+  foo->setRSS(rss);
+  return foo;
 }
 
-void FinishGenericFSM(lldsm* rs, LS_Vector &init) // TBD!
+void FinishFSM(graph_lldsm* fsm, graph_lldsm::reachgraph* rgr)
 {
-  generic_fsm* fsm = dynamic_cast <generic_fsm*> (rs);
   if (0==fsm) return;
-  // fsm->FinishExpl(init, rg);
-  // Clever method calls here
+  if (0==rgr) return;
+  fsm->setRGR(rgr);
 }
 
 // ******************************************************************

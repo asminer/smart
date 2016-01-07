@@ -4,7 +4,43 @@
 #ifndef FSM_LLM_H
 #define FSM_LLM_H
 
+class exprman;
+
+// ******************************************************************
+// *                                                                *
+// *                           Front  end                           *
+// *                                                                *
+// ******************************************************************
+
+void InitFSMLibs(exprman* em);
+
+#ifndef INITIALIZERS_ONLY
+
 #include "graph_llm.h"
+
+//
+//
+// NEW CODE NOT 100% WORKING YET FROM HERE
+//
+//
+
+/**
+    Start a FSM when only the states are known.
+    Edges must be added later with FinishGenericFSM().
+*/
+graph_lldsm* StartFSM(state_lldsm::reachset* rss);  
+
+/**
+    Finish a FSM.
+    It must have been started by StartGenericFSM().
+*/
+void FinishFSM(graph_lldsm* rs, graph_lldsm::reachgraph* rgr);
+
+//
+//
+// OLD CODE TO BE RETIRED FROM HERE
+//
+//
 
 namespace GraphLib {
   class digraph;
@@ -18,40 +54,6 @@ struct LS_Vector;
 class model_enum;
 class expl_rss_only;
 class lldsm;
-class exprman;
-
-// ******************************************************************
-// *                                                                *
-// *                           Front  end                           *
-// *                                                                *
-// ******************************************************************
-
-void InitFSMLibs(exprman* em);
-
-//
-//
-// NEW CODE NOT 100% WORKING YET FROM HERE
-//
-//
-
-/**
-    Start a FSM when only the states are known.
-    Edges must be added later with FinishGenericFSM().
-*/
-graph_lldsm* StartGenericFSM(graph_lldsm::reachset* rss);  
-
-/**
-    Finish a FSM.
-    It must have been started by StartGenericFSM().
-*/
-void FinishGenericFSM(lldsm* rs, LS_Vector &init);  // TBD add generic process!
-
-//
-//
-// OLD CODE TO BE RETIRED FROM HERE
-//
-//
-
 graph_lldsm* 
 MakeEnumeratedFSM(LS_Vector &init, model_enum* ss, GraphLib::digraph* rg);
 
@@ -63,6 +65,8 @@ StateLib::state_db* GrabExplicitFSMStates(lldsm* rg);
 
 // Finish an explicit FSM
 void FinishExplicitFSM(lldsm* rs, LS_Vector &init, GraphLib::digraph* rg);
+
+#endif  // INITIALIZERS_ONLY
 
 #endif
 

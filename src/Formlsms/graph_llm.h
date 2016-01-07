@@ -69,6 +69,15 @@ public:
       reachgraph();
     protected:
       virtual ~reachgraph();
+      virtual const char* getClassName() const = 0;
+
+      /**
+          Hook for any desired preprocessing.
+          The reachable states are also given, in case finishing the 
+          reachability graph requires renumbering the states.
+          Default behavior here does nothing.
+      */
+      virtual void Finish(state_lldsm::reachset* rss);
 
     public:
       inline void setParent(const graph_lldsm* p) {
@@ -193,8 +202,10 @@ public:
 
     protected:
       static void showError(const char* str);
-      static stateset* notImplemented(const char* op);
+      stateset* notImplemented(const char* op) const;
+      stateset* incompatibleOperand(const char* op) const;
       friend void InitializeGraphLLM(exprman* em);
+      friend class graph_lldsm; // overkill
     };
     // ------------------------------------------------------------
     // end of inner class reachset
@@ -202,9 +213,11 @@ public:
 
 public:
   graph_lldsm(model_type t);
-
+protected:
   virtual ~graph_lldsm();
+  virtual const char* getClassName() const;
 
+public:
   inline const reachgraph* getRGR() const {
     return RGR;
   }
@@ -212,6 +225,10 @@ public:
   inline void setRGR(reachgraph* rgr) {
     DCASSERT(0==RGR);
     RGR = rgr;
+    if (RGR) {
+      RGR->setParent(this);
+      RGR->Finish(RSS);
+    }
   }
 
   inline void getNumArcs(result& count) const {

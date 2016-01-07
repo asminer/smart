@@ -12,16 +12,26 @@
 // *                                                                *
 // ******************************************************************
 
-expl_reachgraph::expl_reachgraph(state_lldsm::reachset* RSS, GraphLib::digraph* g)
+expl_reachgraph::expl_reachgraph(GraphLib::digraph* g)
 {
-  // We don't need RSS currently
-
   edges = g;
 }
 
 expl_reachgraph::~expl_reachgraph()
 {
   delete edges;
+}
+
+void expl_reachgraph::Finish(state_lldsm::reachset*)
+{
+  DCASSERT(edges);
+  if (edges->isFinished()) return;
+
+  // Finish the graph 
+  GraphLib::digraph::finish_options o;
+  o.Store_By_Rows = true;
+  o.Will_Clear = false;
+  edges->finish(o);
 }
 
 void expl_reachgraph::getNumArcs(long &na) const
