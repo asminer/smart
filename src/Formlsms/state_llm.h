@@ -79,6 +79,8 @@ public:
     */
     class reachset : public shared_object {
         const state_lldsm* parent;
+      protected:
+        static exprman* em;
       public:
         /**
             Abstract base class for different state orders.
@@ -106,8 +108,10 @@ public:
   
       public:
         reachset();
+      protected:
         virtual ~reachset();
   
+      public:
         inline void setParent(const state_lldsm* p) {
           if (parent != p) {
             DCASSERT(0==parent);
@@ -142,9 +146,9 @@ public:
         */
         virtual void showInternal(OutputStream &os) const = 0;
 
-        /** Show the reachable states.
+        /** Show the given state
               @param  os    Output stream to write to
-              @param  st    Space to use for unpacking states
+              @param  st    State to display
         */
         virtual void showState(OutputStream &os, const shared_state* st) const = 0;
 
@@ -194,6 +198,8 @@ public:
         // Shared object requirements
         virtual bool Print(OutputStream &s, int width) const;
         virtual bool Equals(const shared_object* o) const;
+
+        friend void InitializeStateLLM(exprman* em);
     };
     // ------------------------------------------------------------
     // end of inner class reachset
@@ -283,7 +289,7 @@ public:
 
 #endif
 
-  private:
+  protected:
     reachset* RSS;
 
   private:  

@@ -26,42 +26,27 @@ class enum_reachset : public indexed_reachset {
     /**
       Iterator for discovery, natural orders
     */
-    class natural_iter : public reachset::iterator {
+    class natural_iter : public indexed_iterator {
 
       // required interface
       public:
         natural_iter(const model_enum &ss);
         virtual ~natural_iter();
-        virtual void start();
-        virtual void operator++(int);
-        virtual operator bool() const;
-        virtual long index() const;
-        virtual void copyState(shared_state* st) const;
+        virtual void copyState(shared_state* st, long o) const;
 
       private:
         const model_enum &states;
-        long i;
     };
 
     /**
       Iterator for lexical order
     */
-    class lexical_iter : public reachset::iterator {
+    class lexical_iter : public natural_iter {
 
       // required interface
       public:
         lexical_iter(const model_enum &ss);
         virtual ~lexical_iter();
-        virtual void start();
-        virtual void operator++(int);
-        virtual operator bool() const;
-        virtual long index() const;
-        virtual void copyState(shared_state* st) const;
-
-      private:
-        const model_enum &states;
-        long* map;
-        long i;
     };
 
   private:

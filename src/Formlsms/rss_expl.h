@@ -25,63 +25,29 @@ class expl_reachset : public indexed_reachset {
     void Finish();
   
   private:
-
-    /**
-        Base class to collect common implementations
-    */
-    class base_iterator : public reachset::iterator {
-      public:
-        base_iterator();
-        virtual ~base_iterator();
-        virtual void start();
-        virtual void operator++(int);
-        virtual long index() const;
-      protected:
-        long i;
-    };
-
     /**
         Base class for state_db iterators
     */
-    class db_iterator : public base_iterator {
+    class db_iterator : public indexed_iterator {
       public:
         db_iterator(const StateLib::state_db &s);
         virtual ~db_iterator();
-        virtual operator bool() const;
-        virtual void copyState(shared_state* st) const;
-      protected:
-        // Called by derived classes.
-        inline void setMap(long* m) {
-          DCASSERT(0==map);
-          map = m;
-        }
+        virtual void copyState(shared_state* st, long o) const;
       private:
         const StateLib::state_db &states;
-        long* map;
     };
 
     /**
         Base class for state_coll iterators
     */
-    class coll_iterator : public base_iterator {
-
-      // required interface
+    class coll_iterator : public indexed_iterator {
       public:
         coll_iterator(const StateLib::state_coll &SC, const long* SH);
         virtual ~coll_iterator();
-        virtual operator bool() const;
-        virtual void copyState(shared_state* st) const;
-      protected:
-        // Called by derived classes.
-        inline void setMap(long* m) {
-          DCASSERT(0==map);
-          map = m;
-        }
-
+        virtual void copyState(shared_state* st, long o) const;
       private:
         const StateLib::state_coll &states;
         const long* state_handle;
-        long* map;
     };
 
     

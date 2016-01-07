@@ -17,6 +17,7 @@
 int state_lldsm::int_display_order;
 long state_lldsm::max_state_display = 100000000;
 const char* state_lldsm::max_state_display_option = "MaxStateDisplay";
+exprman* state_lldsm::reachset::em = 0;
 
 state_lldsm::state_lldsm(model_type t) : lldsm(t)
 {
@@ -182,6 +183,8 @@ state_lldsm::reachset::iterator::~iterator()
 void InitializeStateLLM(exprman* om)
 {
   if (0==om) return;
+
+  state_lldsm::reachset::em = om;
 
   // set up options
   // ------------------------------------------------------------------

@@ -63,10 +63,14 @@ public:
   */
   class reachgraph : public shared_object {
       const graph_lldsm* parent;
+    protected:
+      static exprman* em;
     public:
       reachgraph();
+    protected:
       virtual ~reachgraph();
 
+    public:
       inline void setParent(const graph_lldsm* p) {
         if (parent != p) {
           DCASSERT(0==parent);
@@ -102,14 +106,12 @@ public:
       /**
         Show all the edges, in the desired order.
           @param  os    Output stream to write to
-          @param  ord   Display order to use.
+          @param  RSS   Reachable states
+          @param  ord   Display order to use
           @param  st    Memory space to use for individual states
-
-        TBD - reachset is needed, should it be a parameter or is it 
-        needed for so much stuff that the class keeps a pointer to it?
-
       */
-      virtual void showArcs(OutputStream &os, state_lldsm::display_order ord, shared_state* st) const = 0;
+      virtual void showArcs(OutputStream &os, reachset* RSS, 
+        state_lldsm::display_order ord, shared_state* st) const = 0;
 
 
       /** Compute states satisfying EX(p).
@@ -122,7 +124,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EX(bool revTime, const stateset* p) const = 0;
+      virtual stateset* EX(bool revTime, const stateset* p) const;
 
       /** Compute states satisfying E p U q.
           The default behavior here is to print an error message and 
@@ -137,7 +139,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const = 0;
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
 
       /** Compute states satisfying EG(p), not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -149,7 +151,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairEG(bool revTime, const stateset* p) const = 0;
+      virtual stateset* unfairEG(bool revTime, const stateset* p) const;
 
       /** Compute states satisfying EG(p), restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -161,7 +163,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* fairEG(bool revTime, const stateset* p) const = 0;
+      virtual stateset* fairEG(bool revTime, const stateset* p) const;
 
       /** Compute states satisfying AE p F q (made up notation).
           This is the set of source states, from which we can guarantee that
@@ -183,12 +185,16 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const = 0;
+      virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
 
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
       virtual bool Equals(const shared_object* o) const;
 
+    protected:
+      static void showError(const char* str);
+      static stateset* notImplemented(const char* op);
+      friend void InitializeGraphLLM(exprman* em);
     };
     // ------------------------------------------------------------
     // end of inner class reachset
@@ -203,7 +209,7 @@ public:
     return RGR;
   }
 
-  inline void setRG(reachgraph* rgr) {
+  inline void setRGR(reachgraph* rgr) {
     DCASSERT(0==RGR);
     RGR = rgr;
   }
