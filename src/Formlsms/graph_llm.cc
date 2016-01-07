@@ -13,6 +13,7 @@ bool graph_lldsm::display_graph_node_names;
 long graph_lldsm::max_arc_display = 100000000;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 named_msg graph_lldsm::numpaths_report;
+exprman* graph_lldsm::reachgraph::em = 0;
 
 // ******************************************************************
 // *                                                                *
@@ -37,7 +38,8 @@ void graph_lldsm::showArcs(bool internal) const
     RGR->showInternal(em->cout());
   } else {
     shared_state* st = new shared_state(parent);
-    RGR->showArcs(em->cout(), stateDisplayOrder(), st);
+    DCASSERT(RSS);
+    RGR->showArcs(em->cout(), RSS, stateDisplayOrder(), st);
     Delete(st);
   }
 }
@@ -215,6 +217,33 @@ void graph_lldsm::reachgraph::getNumArcs(result &na) const
   }
 }
 
+stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p) const
+{
+  return notImplemented("EX");
+}
+
+stateset* graph_lldsm::reachgraph
+::EU(bool revTime, const stateset* p, const stateset* q) const
+{
+  return notImplemented("EU");
+}
+
+stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p) const
+{
+  return notImplemented("unfairEG");
+}
+
+stateset* graph_lldsm::reachgraph::fairEG(bool revTime, const stateset* p) const
+{
+  return notImplemented("fairEG");
+}
+
+stateset* graph_lldsm::reachgraph
+::unfairAEF(bool revTime, const stateset* p, const stateset* q) const
+{
+  return notImplemented("unfairAEF");
+}
+
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
@@ -227,6 +256,25 @@ bool graph_lldsm::reachgraph::Equals(const shared_object* o) const
   return (this == o);
 }
 
+void graph_lldsm::reachgraph::showError(const char* s)
+{
+  if (em->startError()) {
+    em->noCause();
+    em->cerr() << s;
+    em->stopIO();
+  }
+}
+
+stateset* graph_lldsm::reachgraph::notImplemented(const char* op)
+{
+  if (em->startError()) {
+    em->noCause();
+    em->cerr() << "Operation " << op << " not implemented in reachgraph";
+    em->stopIO();
+  }
+  return 0;
+}
+
 // **************************************************************************
 // *                                                                        *
 // *                               Front  end                               *
@@ -237,6 +285,8 @@ bool graph_lldsm::reachgraph::Equals(const shared_object* o) const
 void InitializeGraphLLM(exprman* om)
 {
   if (0==om) return;
+
+  graph_lldsm::reachgraph::em = om;
 
   // ------------------------------------------------------------------
   option* report = om->findOption("Report");

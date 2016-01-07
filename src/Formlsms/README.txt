@@ -26,31 +26,20 @@ Specifically we have the following formalism support:
     evm_form    Event-variable model formalism.
     tam_form    Tile assembly model formalism.
 
+    enum_hlm    Enumerated high-level models (e.g., FSMs, MCs)
     dsde_hlm    Discrete-state, discrete-event models.
   noevnt_hlm    High-level models without events.
    phase_hlm    Phase-type models.
 
+   state_llm    Models with reachable states
    graph_llm    Graph-based low-level models; checkable with logics (CTL).
      fsm_llm    Low-level finite state machines. (TBD: STILL NEEDED?)
       mc_llm    Low-level Markov chain class. (TBD: STILL NEEDED?)
-   stoch_llm    Abstract base class: stochastic models.
+   stoch_llm    Stochastic low-level models, for now Markov chains
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
 
-TBD:
-
-    state_llm   Low-level models with finite, discrete state space.
-                Move lots of stuff out of lldsm, just because.
-                Reachset class goes there.
-                Most state-related methods become inlined calls to RSS inner class.
-
-     enum_hlm   Move "llhldsm" from mod_inst.h to its own thing here,
-                it is used only by fsm_form and mc_form
-
-    
-TBD: Can we kill fsm_llm?
-     mc goes inside stochastic_lldsm class and derives from rgr
-
+TBD: Kill or severly shrink fsm_llm, mc_llm
 
 New reachability set stuff and process stuff:
   
@@ -59,10 +48,12 @@ New reachability set stuff and process stuff:
     rss_expl    Explicitly stored reachability sets
   rss_meddly    Stored as an MDD using the library MEDDLY
 
+    rgr_expl    Explicitly stored reachability graphs
+
 TBD:
 
-    rgr_expl    
-  rgr_meddly    Maybe split?  monolithic, etc. as separate classes?
+  rgr_meddly    Maybe split?  monolithic, etc. as separate classes?  
+                Abstract base class to collect options?
 
      mc_expl    
    mc_meddly

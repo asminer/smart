@@ -80,7 +80,7 @@ void expl_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-graph_lldsm::reachset::iterator& expl_reachset
+state_lldsm::reachset::iterator& expl_reachset
 ::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(state_dictionary || (state_collection && state_handle));
@@ -113,7 +113,7 @@ graph_lldsm::reachset::iterator& expl_reachset
   };
 }
 
-graph_lldsm::reachset::iterator& expl_reachset::easiestIterator() const
+state_lldsm::reachset::iterator& expl_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;
@@ -144,60 +144,22 @@ void expl_reachset::Finish()
 
 // ******************************************************************
 // *                                                                *
-// *              expl_reachset::base_iterator methods              *
-// *                                                                *
-// ******************************************************************
-
-expl_reachset::base_iterator::base_iterator()
-{
-}
-
-expl_reachset::base_iterator::~base_iterator()
-{
-}
-
-void expl_reachset::base_iterator::start()
-{
-  i = 0;
-}
-
-void expl_reachset::base_iterator::operator++(int)
-{
-  i++;
-}
-
-long expl_reachset::base_iterator::index() const
-{
-  return i;
-}
-
-// ******************************************************************
-// *                                                                *
 // *               expl_reachset::db_iterator methods               *
 // *                                                                *
 // ******************************************************************
 
 expl_reachset::db_iterator::db_iterator(const StateLib::state_db &s)
- : states(s)
+ : indexed_iterator(s.Size()), states(s)
 {
-  i = states.Size();
-  map = 0;
 }
 
 expl_reachset::db_iterator::~db_iterator()
 {
-  delete[] map;
 }
 
-expl_reachset::db_iterator::operator bool() const
+void expl_reachset::db_iterator::copyState(shared_state* st, long o) const
 {
-  return i < states.Size();
-}
-
-void expl_reachset::db_iterator::copyState(shared_state* st) const
-{
-  long mi = map ? map[i] : i;
-  states.GetStateKnown(mi, st->writeState(), st->getStateSize());
+  states.GetStateKnown(ord2index(o), st->writeState(), st->getStateSize());
 }
 
 // ******************************************************************
@@ -207,27 +169,18 @@ void expl_reachset::db_iterator::copyState(shared_state* st) const
 // ******************************************************************
 
 expl_reachset::coll_iterator::coll_iterator(const StateLib::state_coll &SC,
-  const long* SH) : states(SC), state_handle(SH)
+  const long* SH) : indexed_iterator(SC.Size()), states(SC), state_handle(SH)
 {
   DCASSERT(state_handle);
-  i = states.Size();
-  map = 0;
 }
 
 expl_reachset::coll_iterator::~coll_iterator()
 {
-  delete[] map;
 }
 
-expl_reachset::coll_iterator::operator bool() const
+void expl_reachset::coll_iterator::copyState(shared_state* st, long o) const
 {
-  return i < states.Size();
-}
-
-void expl_reachset::coll_iterator::copyState(shared_state* st) const
-{
-  long mi = map ? map[i] : i;
-  states.GetStateKnown(state_handle[mi], st->writeState(), st->getStateSize());
+  states.GetStateKnown(state_handle[ord2index(o)], st->writeState(), st->getStateSize());
 }
 
 // ******************************************************************

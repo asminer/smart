@@ -8,6 +8,11 @@
 #include "lslib.h"    // for LS_Vector
 #include "intset.h"   // for intset
 
+// ******************************************************************
+// *                                                                *
+// *                    indexed_reachset methods                    *
+// *                                                                *
+// ******************************************************************
 
 indexed_reachset::indexed_reachset()
 {
@@ -81,6 +86,63 @@ void indexed_reachset::setInitial(LS_Vector &init)
   DCASSERT(0==init.d_value);
   DCASSERT(0==init.f_value);
   initial = init;
+}
+
+// ******************************************************************
+// *           indexed_reachset::indexed_iterator methods           *
+// ******************************************************************
+
+indexed_reachset::indexed_iterator::indexed_iterator(long ns)
+{
+  num_states = ns;
+  map = 0;
+  invmap = 0;
+  I = ns;
+}
+
+indexed_reachset::indexed_iterator::~indexed_iterator()
+{
+  delete[] map;
+  delete[] invmap;
+}
+
+void indexed_reachset::indexed_iterator::start()
+{
+  I = 0;
+}
+
+void indexed_reachset::indexed_iterator::operator++(int)
+{
+  I++;
+}
+
+indexed_reachset::indexed_iterator::operator bool() const
+{
+  return I < num_states;
+}
+
+long indexed_reachset::indexed_iterator::index() const
+{
+  return getIndex();
+}
+
+void indexed_reachset::indexed_iterator::copyState(shared_state* st) const
+{
+  copyState(st, I);
+}
+
+void indexed_reachset::indexed_iterator::setMap(long* m)
+{
+  DCASSERT(0==map);
+  DCASSERT(0==invmap);
+  if (0==m) return;
+
+  map = m;
+  invmap = new long[num_states];
+  for (long i=0; i<num_states; i++) {
+    CHECK_RANGE(0, map[i], num_states);
+    invmap[map[i]] = i;
+  }
 }
 
 // ******************************************************************

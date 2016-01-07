@@ -58,7 +58,7 @@ void enum_reachset::showState(OutputStream &os, const shared_state* st) const
   os.Put(mev->Name());
 }
 
-graph_lldsm::reachset::iterator& enum_reachset
+state_lldsm::reachset::iterator& enum_reachset
 ::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(states);
@@ -76,7 +76,7 @@ graph_lldsm::reachset::iterator& enum_reachset
   }
 }
 
-graph_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
+state_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;
@@ -95,38 +95,17 @@ shared_object* enum_reachset::getEnumeratedState(long i) const
 // ******************************************************************
 
 enum_reachset::natural_iter::natural_iter(const model_enum &ss) 
- : states(ss)
+ : indexed_iterator(ss.NumValues()), states(ss)
 {
-  i = states.NumValues();
 }
 
 enum_reachset::natural_iter::~natural_iter()
 {
 }
 
-void enum_reachset::natural_iter::start()
+void enum_reachset::natural_iter::copyState(shared_state* st, long o) const
 {
-  i = 0;
-}
-
-void enum_reachset::natural_iter::operator++(int)
-{
-  i++;
-}
-
-enum_reachset::natural_iter::operator bool() const
-{
-  return i < states.NumValues();
-}
-
-long enum_reachset::natural_iter::index() const
-{
-  return i;
-}
-
-void enum_reachset::natural_iter::copyState(shared_state* st) const
-{
-  st->set(states.GetIndex(), i);
+  st->set(states.GetIndex(), ord2index(o));
 }
 
 // ******************************************************************
@@ -136,40 +115,14 @@ void enum_reachset::natural_iter::copyState(shared_state* st) const
 // ******************************************************************
 
 enum_reachset::lexical_iter::lexical_iter(const model_enum &ss) 
- : states(ss)
+ : natural_iter(ss)
 {
-  i = states.NumValues();
-  map = new long[states.NumValues()];
-  states.MakeSortedMap(map);
+  long* M = new long[ss.NumValues()];
+  ss.MakeSortedMap(M);
+  setMap(M);
 }
 
 enum_reachset::lexical_iter::~lexical_iter()
 {
-  delete[] map;
-}
-
-void enum_reachset::lexical_iter::start()
-{
-  i = 0;
-}
-
-void enum_reachset::lexical_iter::operator++(int)
-{
-  i++;
-}
-
-enum_reachset::lexical_iter::operator bool() const
-{
-  return i < states.NumValues();
-}
-
-long enum_reachset::lexical_iter::index() const
-{
-  return map[i];
-}
-
-void enum_reachset::lexical_iter::copyState(shared_state* st) const
-{
-  st->set(states.GetIndex(), map[i]);
 }
 
