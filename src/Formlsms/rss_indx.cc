@@ -69,11 +69,7 @@ stateset* indexed_reachset::getInitialStates() const
   long num_states;
   getNumStates(num_states);
   intset* initss = new intset(num_states);
-  initss->removeAll();
-  if (initial.index) {
-    for (long z=0; z<initial.size; z++)
-      initss->addElement(initial.index[z]);
-  } 
+  getInitial(*initss);
 #ifdef NEW_STATESETS
   return new expl_stateset(getParent(), initss);
 #else
@@ -86,6 +82,15 @@ void indexed_reachset::setInitial(LS_Vector &init)
   DCASSERT(0==init.d_value);
   DCASSERT(0==init.f_value);
   initial = init;
+}
+
+void indexed_reachset::getInitial(intset& init) const
+{
+  init.removeAll();
+  if (initial.index) {
+    for (long z=0; z<initial.size; z++)
+      init.addElement(initial.index[z]);
+  } 
 }
 
 // ******************************************************************

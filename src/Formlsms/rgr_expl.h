@@ -25,6 +25,19 @@ class expl_reachgraph : public graph_lldsm::reachgraph {
     virtual void showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
       state_lldsm::display_order ord, shared_state* st) const;
 
+    virtual stateset* EX(bool revTime, const stateset* p) const;
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
+    virtual stateset* unfairEG(bool revTime, const stateset* p) const;
+
+    /*
+    virtual stateset* fairEG(bool revTime, const stateset* p) const;
+    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
+    */
+
+  private:
+    long _EU(bool rt, const intset& p, const intset& q, intset &r, intset &tmp) const;
+    long unfair_EG(bool rt, const intset &p, intset &r, intset &tmp) const;
+
     // TBD - more required methods
 
   private:

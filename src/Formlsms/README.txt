@@ -33,7 +33,6 @@ Specifically we have the following formalism support:
 
    state_llm    Models with reachable states
    graph_llm    Graph-based low-level models; checkable with logics (CTL).
-     fsm_llm    Low-level finite state machines. (TBD: STILL NEEDED?)
       mc_llm    Low-level Markov chain class. (TBD: STILL NEEDED?)
    stoch_llm    Stochastic low-level models, for now Markov chains
 
@@ -58,3 +57,6 @@ TBD:
      mc_expl    
    mc_meddly
 
+DEAD CODE (remove after debugging and testing)
+
+     fsm_llm    Low-level finite state machines. 

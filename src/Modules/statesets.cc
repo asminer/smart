@@ -181,11 +181,11 @@ void stateset_diff::Compute(traverse_data &x)
   DCASSERT(notR);
 
   if (notR->numRefs() > 1) {
-    notR->Complement();
-    notR = Share(notR);
-  } else {
     notR = notR->DeepCopy();  // loses the original but x.answer still has it
     notR->Complement();
+  } else {
+    notR->Complement();
+    notR = Share(notR);
   }
 
   // 
@@ -205,8 +205,6 @@ void stateset_diff::Compute(traverse_data &x)
   // We have L
   //
 
-  stateset* foo = 0;
-
   if (stateset::parentsMatch(this, "difference", L, notR)) {
     bool ok;
     if (L->numRefs() > 1) {
@@ -218,14 +216,14 @@ void stateset_diff::Compute(traverse_data &x)
     }
     if (!ok) {
       // Intersection failed
-      Delete(foo);
-      foo = 0;
+      Delete(L);
+      L = 0;
     }
   }
   Delete(notR);
 
-  if (foo) {
-    x.answer->setPtr(foo);
+  if (L) {
+    x.answer->setPtr(L);
   } else {
     x.answer->setNull();
   }

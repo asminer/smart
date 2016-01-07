@@ -63,6 +63,7 @@ public:
   */
   class reachgraph : public shared_object {
       const graph_lldsm* parent;
+      static named_msg ctl_report;
     protected:
       static exprman* em;
     public:
@@ -201,6 +202,8 @@ public:
       virtual bool Equals(const shared_object* o) const;
 
     protected:
+      static bool reportCTL();
+      static void reportIters(const char* who, long iters);
       static void showError(const char* str);
       stateset* notImplemented(const char* op) const;
       stateset* incompatibleOperand(const char* op) const;
