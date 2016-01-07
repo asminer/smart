@@ -72,8 +72,6 @@
 #include "../Engines/gen_rg_base.h"
 #include "../Engines/gen_exp_as.h"
 #include "../Engines/gen_exp_ph.h"
-#include "../Engines/ctl_exp.h"
-#include "../Engines/ctl_symb.h"
 #include "../Engines/csl_exp.h"
 #include "../Engines/proc_meddly.h"
 #include "../Engines/satur_meddly.h"
@@ -153,8 +151,6 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitializeExactSolutionEngines(em);
   InitializeExplicitAsynchGenerators(em);
   InitializeExplicitPhaseGenerators(em);
-  InitializeExplicitCTLEngines(em);
-  InitializeSymbolicCTLEngines(em);
   InitializeExplicitCSLEngines(em);
   InitializeProcGenMeddly(em);
   InitializeSaturationMeddly(em);

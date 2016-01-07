@@ -8,11 +8,25 @@
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
 
+// ******************************************************************
+// *                                                                *
+// *                      graph_lldsm  statics                      *
+// *                                                                *
+// ******************************************************************
+
 int graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
 long graph_lldsm::max_arc_display = 100000000;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 named_msg graph_lldsm::numpaths_report;
+
+// ******************************************************************
+// *                                                                *
+// *                graph_lldsm::reachgraph  statics                *
+// *                                                                *
+// ******************************************************************
+
+named_msg graph_lldsm::reachgraph::ctl_report;
 exprman* graph_lldsm::reachgraph::em = 0;
 
 // ******************************************************************
@@ -267,6 +281,18 @@ bool graph_lldsm::reachgraph::Equals(const shared_object* o) const
   return (this == o);
 }
 
+bool graph_lldsm::reachgraph::reportCTL()
+{
+  return ctl_report.isActive();
+}
+
+void graph_lldsm::reachgraph::reportIters(const char* who, long iters)
+{
+  if (!ctl_report.startReport()) return;
+  ctl_report.report() << who << " required " << iters << " iterations\n";
+  em->stopIO();
+}
+
 void graph_lldsm::reachgraph::showError(const char* s)
 {
   if (em->startError()) {
@@ -315,6 +341,11 @@ void InitializeGraphLLM(exprman* om)
     report,
     "num_paths",
     "When set, performance data for counting number of paths is displayed.",
+    false
+  );
+  graph_lldsm::reachgraph::ctl_report.Initialize(report,
+    "CTL_engines",
+    "When set, CTL engine performance is reported.",
     false
   );
 

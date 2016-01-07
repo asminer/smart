@@ -26,6 +26,8 @@ class indexed_reachset : public state_lldsm::reachset {
 
     void setInitial(LS_Vector &init);
 
+    void getInitial(intset& init) const;
+
   public:
     class indexed_iterator : public reachset::iterator {
       public:
