@@ -31,6 +31,11 @@ graph_lldsm::~graph_lldsm()
   Delete(RGR);
 }
 
+const char* graph_lldsm::getClassName() const
+{
+  return "graph_lldsm";
+}
+
 void graph_lldsm::showArcs(bool internal) const
 {
   DCASSERT(RGR);
@@ -200,10 +205,16 @@ bool graph_lldsm::isDeadlocked(long st) const
 
 graph_lldsm::reachgraph::reachgraph()
 {
+  parent = 0;
 }
 
 graph_lldsm::reachgraph::~reachgraph()
 {
+}
+
+void graph_lldsm::reachgraph::Finish(state_lldsm::reachset*)
+{
+  // Default - do nothing
 }
 
 void graph_lldsm::reachgraph::getNumArcs(result &na) const
@@ -265,11 +276,21 @@ void graph_lldsm::reachgraph::showError(const char* s)
   }
 }
 
-stateset* graph_lldsm::reachgraph::notImplemented(const char* op)
+stateset* graph_lldsm::reachgraph::notImplemented(const char* op) const
 {
   if (em->startError()) {
     em->noCause();
-    em->cerr() << "Operation " << op << " not implemented in reachgraph";
+    em->cerr() << "Operation " << op << " not implemented in class " << getClassName();
+    em->stopIO();
+  }
+  return 0;
+}
+
+stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
+{
+  if (em->startError()) {
+    em->noCause();
+    em->cerr() << "Incompatible operand for " << op << " in class " << getClassName();
     em->stopIO();
   }
   return 0;

@@ -29,6 +29,11 @@ state_lldsm::~state_lldsm()
   Delete(RSS);
 }
 
+const char* state_lldsm::getClassName() const
+{
+  return "state_lldsm";
+}
+
 void state_lldsm::showStates(bool internal) const
 {
   DCASSERT(RSS);

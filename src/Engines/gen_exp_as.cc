@@ -9,6 +9,7 @@
 #include "../Formlsms/mc_llm.h"
 #include "../Formlsms/fsm_llm.h"
 #include "../Formlsms/rss_expl.h"
+#include "../Formlsms/rgr_expl.h"
 
 // Modules
 #include "../Modules/expl_states.h"
@@ -545,7 +546,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     if (nondeterm) {
 #ifdef NEW_STATESETS
       expl_reachset* ers = new expl_reachset(rss);
-      lm = StartGenericFSM(ers);
+      ers->setInitial(init);
+      lm = StartFSM(ers);
 #else
       lm = StartExplicitFSM(rss);
 #endif
@@ -571,7 +573,14 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Compact and finish process
   if (nondeterm) {
+#ifdef NEW_STATESETS
+    expl_reachgraph* rgr = new expl_reachgraph(rg);
+    graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
+    DCASSERT(glm);
+    FinishFSM(glm, rgr);
+#else
     FinishExplicitFSM(lm, init, rg);
+#endif
   } else {
     FinishExplicitMC(lm, init, mc);
   }

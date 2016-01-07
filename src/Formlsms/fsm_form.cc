@@ -3,6 +3,7 @@
 
 #include "fsm_form.h"
 #include "rss_enum.h"
+#include "rgr_expl.h"
 #include "fsm_llm.h"
 #include "enum_hlm.h"
 #include "graph_llm.h"
@@ -244,8 +245,10 @@ void fsm_def::FinalizeModel(OutputStream &ds)
 
 #ifdef NEW_STATESETS
   enum_reachset* rss = new enum_reachset(mcstate);
-  graph_lldsm* foo = StartGenericFSM(rss);
-//   FinishGenericFSM(foo, init);  // TBD mygr?
+  rss->setInitial(init);
+  graph_lldsm* foo = StartFSM(rss);
+  expl_reachgraph* rgr = new expl_reachgraph(mygr);
+  FinishFSM(foo, rgr); 
 #else
   graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
 #endif

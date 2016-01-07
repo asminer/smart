@@ -13,6 +13,9 @@ class expl_reachset : public indexed_reachset {
   public:
     expl_reachset(StateLib::state_db* ss);
     virtual ~expl_reachset();
+    virtual const char* getClassName() const {
+      return "expl_reachset";
+    }
 
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;
