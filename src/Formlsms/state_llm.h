@@ -12,6 +12,10 @@
 
 class stateset;
 
+namespace StateLib {
+  class state_db;
+};
+
 // ******************************************************************
 // *                                                                *
 // *                       state_lldsm  class                       *
@@ -127,6 +131,13 @@ public:
         inline const hldsm* getGrandParent() const {
           return parent ? parent->GetParent() : 0;
         }
+
+        /**
+            A bit of a hack, needed for explicit state generation.
+            Return the state database for generating the underlying process.
+            Default behavior here is to return null.
+        */
+        virtual StateLib::state_db* getStateDatabase() const;
   
         /** Get the number of reachable states.
             This version is used to implement Smart function num_states.

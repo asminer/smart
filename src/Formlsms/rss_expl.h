@@ -12,11 +12,13 @@
 class expl_reachset : public indexed_reachset {
   public:
     expl_reachset(StateLib::state_db* ss);
+  protected:
     virtual ~expl_reachset();
     virtual const char* getClassName() const {
       return "expl_reachset";
     }
-
+  public:
+    virtual StateLib::state_db* getStateDatabase() const;
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
@@ -24,7 +26,6 @@ class expl_reachset : public indexed_reachset {
     virtual iterator& easiestIterator() const;
 
     // For now: shrink the db to a more static structure
-    // TBD: probably need hooks for renumbering states
     void Finish();
   
   private:

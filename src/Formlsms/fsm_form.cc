@@ -4,7 +4,6 @@
 #include "fsm_form.h"
 #include "rss_enum.h"
 #include "rgr_expl.h"
-#include "fsm_llm.h"
 #include "enum_hlm.h"
 #include "graph_llm.h"
 
@@ -243,15 +242,16 @@ void fsm_def::FinalizeModel(OutputStream &ds)
   delete initial;
   initial = 0;
 
-#ifdef NEW_STATESETS
+// #ifdef NEW_STATESETS
   enum_reachset* rss = new enum_reachset(mcstate);
   rss->setInitial(init);
-  graph_lldsm* foo = StartFSM(rss);
   expl_reachgraph* rgr = new expl_reachgraph(mygr);
-  FinishFSM(foo, rgr); 
-#else
-  graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
-#endif
+  graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
+  foo->setRSS(rss);
+  foo->setRGR(rgr);
+// #else
+  // graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
+// #endif
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
@@ -534,6 +534,36 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
   x.answer->setBool(cruft->isDeadlocked(x.current_state_index));
 }
 
+// ******************************************************************
+// *                                                                *
+// *                         fsm_lib  class                         *
+// *                                                                *
+// ******************************************************************
+
+class fsm_lib : public library {
+public:
+  fsm_lib() : library(false) { }
+  virtual const char* getVersionString() const {
+    return GraphLib::Version();
+  }
+  virtual bool hasFixedPointer() const { 
+    return true; 
+  }
+
+  static void Init(exprman* em);
+};
+
+void fsm_lib::Init(exprman* em)
+{
+  static fsm_lib* fsml = 0;
+ 
+  if (0==fsml) {
+    fsml = new fsm_lib;
+    em->registerLibrary(fsml);
+  }
+}
+
+
 // **************************************************************************
 // *                                                                        *
 // *                               Front  end                               *
@@ -606,6 +636,6 @@ void InitializeFSMs(exprman* em, List <msr_func> *common)
   fsm->addCommonFuncs(common);
 
   // register libs
-  InitFSMLibs(em);
+  fsm_lib::Init(em);
 }
 

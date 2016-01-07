@@ -23,36 +23,9 @@
 
 // ******************************************************************
 // *                                                                *
-// *                         fsm_lib  class                         *
-// *                                                                *
-// ******************************************************************
-
-class fsm_lib : public library {
-public:
-  fsm_lib() : library(false) { }
-  virtual const char* getVersionString() const {
-    return GraphLib::Version();
-  }
-  virtual bool hasFixedPointer() const { 
-    return true; 
-  }
-};
-
-// ******************************************************************
-// *                                                                *
 // *                           Front  end                           *
 // *                                                                *
 // ******************************************************************
-
-void InitFSMLibs(exprman* em)
-{
-  static fsm_lib* fsml = 0;
- 
-  if (0==fsml) {
-    fsml = new fsm_lib;
-    em->registerLibrary(fsml);
-  }
-}
 
 graph_lldsm* StartFSM(graph_lldsm::reachset* rss)
 {
