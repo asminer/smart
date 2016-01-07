@@ -94,6 +94,11 @@ state_lldsm::reachset::~reachset()
 {
 }
 
+StateLib::state_db* state_lldsm::reachset::getStateDatabase() const
+{
+  return 0;
+}
+
 void state_lldsm::reachset::getNumStates(result &ns) const
 {
   long lns;

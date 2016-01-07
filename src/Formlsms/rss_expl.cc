@@ -41,6 +41,11 @@ expl_reachset::~expl_reachset()
   delete lexorder;
 }
 
+StateLib::state_db* expl_reachset::getStateDatabase() const
+{
+  return state_dictionary;
+}
+
 void expl_reachset::getNumStates(long &ns) const
 {
   if (state_dictionary) {

@@ -12,7 +12,8 @@ class exprman;
 // *                                                                *
 // ******************************************************************
 
-void InitFSMLibs(exprman* em);
+// NOPE MOVED!
+// void InitFSMLibs(exprman* em);
 
 #ifndef INITIALIZERS_ONLY
 

@@ -11,8 +11,9 @@ noinst_LTLIBRARIES = \
     state_llm.la graph_llm.la stoch_llm.la \
     rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
     rgr_expl.la \
-    mc_llm.la fsm_llm.la \
+    mc_llm.la \
     rss_mdd.la fsm_mdd.la mc_mdd.la \
     dcp_form.la mc_form.la fsm_form.la pn_form.la evm_form.la tam_form.la
 
 
+DEAD_CODE = fsm_llm.la

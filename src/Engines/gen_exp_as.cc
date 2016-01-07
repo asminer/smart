@@ -7,7 +7,6 @@
 // Formalisms and such
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/mc_llm.h"
-#include "../Formlsms/fsm_llm.h"
 #include "../Formlsms/rss_expl.h"
 #include "../Formlsms/rgr_expl.h"
 
@@ -437,12 +436,21 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   
   bool nondeterm = (hm->GetProcessType() == lldsm::FSM);
 
+  state_lldsm* slm = dynamic_cast <state_lldsm*> (lm);
+  if (lm && (0==slm)) {
+    hm->StartError(0);
+    hm->SendError("Couldn't complete process, unknown type for partial process");
+    hm->DoneError();
+    lm->setCompletionEngine(0);
+    return;
+  }
+
   if (nondeterm) {
     if (!statesonly.getBool()) {
       rg = new GraphLib::digraph(true); 
     }
-    if (lm) {
-      rss = GrabExplicitFSMStates(lm);
+    if (slm) {
+      rss = slm->getRSS()->getStateDatabase();
       DCASSERT(rg);
       the_proc = "reachability graph";
     } else {
@@ -451,8 +459,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
       else    the_proc = "reachability set";
     }
   } else {
-    if (lm) {
-      rss = GrabExplicitMCStates(lm);
+    if (slm) {
+      rss = slm->getRSS()->getStateDatabase();
       the_proc = "Markov chain";
     } else {
       rss = statelib->createStateDB(true, false);
@@ -542,17 +550,20 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Set process as known so far
-  if (0==lm) {
+  if (0==slm) {
     if (nondeterm) {
-#ifdef NEW_STATESETS
+// #ifdef NEW_STATESETS
       expl_reachset* ers = new expl_reachset(rss);
       ers->setInitial(init);
-      lm = StartFSM(ers);
-#else
-      lm = StartExplicitFSM(rss);
-#endif
+      slm = new graph_lldsm(lldsm::FSM);
+      slm->setRSS(ers);
+      lm = slm;
+// #else
+      // lm = StartExplicitFSM(rss);
+// #endif
     } else {
       lm = StartExplicitMC(false, rss);
+      // TBD - this will need fixin'
     }
     hm->SetProcess(lm); 
   }
@@ -573,16 +584,16 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Compact and finish process
   if (nondeterm) {
-#ifdef NEW_STATESETS
-    expl_reachgraph* rgr = new expl_reachgraph(rg);
+// #ifdef NEW_STATESETS
     graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
     DCASSERT(glm);
-    FinishFSM(glm, rgr);
-#else
-    FinishExplicitFSM(lm, init, rg);
-#endif
+    glm->setRGR(new expl_reachgraph(rg));
+// #else
+    //FinishExplicitFSM(lm, init, rg);
+//#endif
   } else {
     FinishExplicitMC(lm, init, mc);
+    // TBD - this will need fixin'
   }
   
   // Report on compaction
