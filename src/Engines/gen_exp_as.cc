@@ -554,7 +554,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     if (nondeterm) {
 // #ifdef NEW_STATESETS
       expl_reachset* ers = new expl_reachset(rss);
-      ers->setInitial(init);
       slm = new graph_lldsm(lldsm::FSM);
       slm->setRSS(ers);
       lm = slm;
@@ -587,7 +586,9 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 // #ifdef NEW_STATESETS
     graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
     DCASSERT(glm);
-    glm->setRGR(new expl_reachgraph(rg));
+    expl_reachgraph* erg = new expl_reachgraph(rg);
+    erg->setInitial(init);
+    glm->setRGR(erg);
 // #else
     //FinishExplicitFSM(lm, init, rg);
 //#endif

@@ -2,6 +2,7 @@
 // $Id$
 
 #include "rgr_expl.h"
+#include "rss_indx.h"
 
 #include "../Streams/streams.h"
 #include "../include/heap.h"
@@ -19,15 +20,33 @@
 expl_reachgraph::expl_reachgraph(GraphLib::digraph* g)
 {
   edges = g;
+  // clear the initial vector
+  initial.size = 0;
+  initial.index = 0;
+  initial.d_value = 0;
+  initial.f_value = 0;
 }
 
 expl_reachgraph::~expl_reachgraph()
 {
   delete edges;
+
+  // in case we still have it:
+  delete[] initial.index;
 }
 
-void expl_reachgraph::Finish(state_lldsm::reachset*)
+void expl_reachgraph::Finish(state_lldsm::reachset* RSS)
 {
+  // Transfer the initial state, if we can
+  if (initial.size) {
+    indexed_reachset* irs = dynamic_cast <indexed_reachset*> (RSS);
+    if (irs) {
+      irs->setInitial(initial);
+      initial.size = 0;
+      initial.index = 0;
+    }
+  }
+
   DCASSERT(edges);
   if (edges->isFinished()) return;
 
@@ -349,6 +368,13 @@ long expl_reachgraph::unfair_EG(bool rT, const intset& p, intset &r, intset &tmp
 
   delete absorbP;
   return iters;
+}
+
+void expl_reachgraph::setInitial(LS_Vector &init)
+{
+  DCASSERT(0==init.d_value);
+  DCASSERT(0==init.f_value);
+  initial = init;
 }
 
 // ******************************************************************

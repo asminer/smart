@@ -34,6 +34,9 @@ class expl_reachgraph : public graph_lldsm::reachgraph {
     virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
     */
 
+    // Hold initial until we can give it to RSS.
+    void setInitial(LS_Vector &init);
+
   private:
     long _EU(bool rt, const intset& p, const intset& q, intset &r, intset &tmp) const;
     long unfair_EG(bool rt, const intset &p, intset &r, intset &tmp) const;
@@ -42,6 +45,7 @@ class expl_reachgraph : public graph_lldsm::reachgraph {
 
   private:
     GraphLib::digraph* edges;
+    LS_Vector initial;    // hold until we can pass it to RSS
 
   private:
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
