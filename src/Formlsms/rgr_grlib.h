@@ -1,8 +1,8 @@
 
 // $Id$
 
-#ifndef RGR_EXPL_H
-#define RGR_EXPL_H
+#ifndef RGR_GRLIB_H
+#define RGR_GRLIB_H
 
 #include "rgr_ectl.h"
 #include "rss_indx.h"

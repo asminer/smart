@@ -26,7 +26,7 @@ smart_LDADD = \
   ../Formlsms/mc_llm.la ../Formlsms/fsm_llm.la \
   ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la \
   ../Formlsms/rss_indx.la ../Formlsms/rss_enum.la ../Formlsms/rss_expl.la \
-  ../Formlsms/rgr_ectl.la ../Formlsms/rgr_expl.la \
+  ../Formlsms/rgr_ectl.la ../Formlsms/rgr_grlib.la \
   \
   ../Modules/stringtype.la ../Modules/biginttype.la \
   ../Modules/stochtypes.la ../Modules/glue_meddly.la \

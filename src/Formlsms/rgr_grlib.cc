@@ -1,7 +1,7 @@
 
 // $Id$
 
-#include "rgr_expl.h"
+#include "rgr_grlib.h"
 #include "rss_indx.h"
 
 #include "../Streams/streams.h"
