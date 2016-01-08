@@ -48,7 +48,7 @@ New reachability set stuff and process stuff:
   rss_meddly    Stored as an MDD using the library MEDDLY
 
     rgr_ectl    Base class for reachgraphs that do "explicit" CTL.
-    rgr_expl    Explicitly stored reachability graphs
+   rgr_grlib    Reachability graphs based on the GraphLib data structure.
 
 TBD:
 
