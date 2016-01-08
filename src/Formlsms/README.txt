@@ -47,6 +47,7 @@ New reachability set stuff and process stuff:
     rss_expl    Explicitly stored reachability sets
   rss_meddly    Stored as an MDD using the library MEDDLY
 
+    rgr_ectl    Base class for reachgraphs that do "explicit" CTL.
     rgr_expl    Explicitly stored reachability graphs
 
 TBD:
@@ -55,7 +56,8 @@ TBD:
                 Abstract base class to collect options?
 
      mc_expl    
-   mc_meddly
+   mc_meddly    TBD - can we extend the MCLib to include support for
+                "abstract" MCs, kinda like the LSLib does?
 
 DEAD CODE (remove after debugging and testing)
 
