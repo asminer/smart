@@ -236,8 +236,8 @@ public:
   }
 
   inline void getNumStates(result& count) const {
-    DCASSERT(RSS);
-    RSS->getNumStates(count);
+    if (RSS)  RSS->getNumStates(count);
+    else      count.setNull();
   }
 
   inline long getNumStates() const {
