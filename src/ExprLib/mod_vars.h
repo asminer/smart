@@ -227,6 +227,11 @@ public:
 protected:
   virtual ~model_enum();
 public:
+  inline const model_enum_value* GetValue(int n) const {
+    CHECK_RANGE(0, n, num_values);
+    DCASSERT(values);
+    return values[n];
+  }
   inline model_enum_value* GetValue(int n) {
     CHECK_RANGE(0, n, num_values);
     DCASSERT(values);

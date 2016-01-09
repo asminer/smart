@@ -233,11 +233,13 @@ mclib_reachgraph::sparse_row_elems
   alloc = 0;
   last = 0;
   index = 0;
+  value = 0;
 }
 
 mclib_reachgraph::sparse_row_elems::~sparse_row_elems()
 {
   free(index);
+  free(value);
 }
 
 bool mclib_reachgraph::sparse_row_elems::Enlarge(int ns)
@@ -247,7 +249,8 @@ bool mclib_reachgraph::sparse_row_elems::Enlarge(int ns)
   while ((alloc < 256) && (alloc <= ns))  alloc *= 2;
   while (alloc <= ns)                     alloc += 256;
   index = (long*) realloc(index, alloc * sizeof(long));
-  if (0==index)  return false;
+  value = (double*) realloc(value, alloc * sizeof(double));
+  if (0==index || 0==value)  return false;
   return true;
 }
 
@@ -276,7 +279,7 @@ bool mclib_reachgraph::sparse_row_elems
 }
 
 bool mclib_reachgraph::sparse_row_elems
-::visit(long from, long to, void* )
+::visit(long from, long to, void* label)
 {
   if (last >= alloc) {
     if (!Enlarge(last+1)) {
@@ -288,6 +291,7 @@ bool mclib_reachgraph::sparse_row_elems
   if (incoming) z = from;
   else          z = to;
   index[last] = I.index2ord(z);
+  value[last] = ((float*) label)[0];
   last++;
   return false;
 }
