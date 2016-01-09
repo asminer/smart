@@ -1,45 +1,52 @@
 
 // $Id$
 
-#include "rgr_grlib.h"
+#include "rgr_mclib.h"
 #include "rss_indx.h"
 
 #include "../Streams/streams.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
 
+// external library
+#include "intset.h"
+
 // ******************************************************************
 // *                                                                *
-// *                    grlib_reachgraph methods                    *
+// *                    mclib_reachgraph methods                    *
 // *                                                                *
 // ******************************************************************
 
-grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g)
+mclib_reachgraph::mclib_reachgraph(MCLib::Markov_chain* mc)
 {
-  edges = g;
-  // clear the initial vector
-  initial.size = 0;
-  initial.index = 0;
-  initial.d_value = 0;
-  initial.f_value = 0;
-  // determine deadlocked states
-  DCASSERT(edges);
-  deadlocks.resetSize(edges->getNumNodes());
-  edges->noOutgoingEdges(deadlocks); 
+  chain = mc;
 }
 
-grlib_reachgraph::~grlib_reachgraph()
+mclib_reachgraph::~mclib_reachgraph()
 {
-  delete edges;
-
-  // in case we still have it:
-  delete[] initial.index;
-
-  // deadlocks should be destroyed automagically here
+// TBD PROBABLY NOT:
+//
+//  delete chain;
+//
+// ASSUMING we have another abstract class, process, owned by stoch_llm.
 }
 
-void grlib_reachgraph::Finish(state_lldsm::reachset* RSS)
+/*
+  
+  TBD : NOPE
+
+    We should have another abstract class, "process", owned by stoch_llm.
+    Interface TBD.
+    But there will be an "explicit mc" derived class that contains
+    a MCLib::Markov_chain, and likely a Finish mechanism for that
+    one also.
+
+
+*/
+/*
+void mclib_reachgraph::Finish(state_lldsm::reachset* RSS)
 {
+  
   indexed_reachset* irs = dynamic_cast <indexed_reachset*> (RSS);
 
   // Transfer the initial state, if we can
@@ -51,62 +58,46 @@ void grlib_reachgraph::Finish(state_lldsm::reachset* RSS)
     }
   }
 
-  // shrink the rss
+  // shrink RSS
   if (irs) irs->Finish();
 
-  DCASSERT(edges);
-  if (edges->isFinished()) return;
+  DCASSERT(chain);
+  if (chain->isFinished()) return;
 
-  // Finish the graph 
-  GraphLib::digraph::finish_options o;
-  o.Store_By_Rows = true;
-  o.Will_Clear = false;
-  edges->finish(o);
+  // Finish the Markov chain
+
 }
+*/
 
-void grlib_reachgraph::getNumArcs(long &na) const
+void mclib_reachgraph::getNumArcs(long &na) const
 {
-  DCASSERT(edges);
-  na = edges->getNumEdges();
+  DCASSERT(chain);
+  na = chain->getNumArcs();
 }
 
-void grlib_reachgraph::showInternal(OutputStream &os) const
+void mclib_reachgraph::showInternal(OutputStream &os) const
 {
-  os << "Internal representation for graph:\n";
-
-  GraphLib::digraph::matrix m;
-  if (!edges->exportFinished(m)) {
-    os << "  Couldn't export graph to matrix\n";
-    return;
-  } 
-
-  const char* rptr = (m.is_transposed) ? "column pointers" : "row pointers";
-  const char* cind = (m.is_transposed) ? "row index      " : "column index";
-
-  os << "  " << rptr << ": [";
-  os.PutArray(m.rowptr, edges->getNumNodes()+1);
-  os << "]\n";
-
-  os << "  " << cind << ": [";
-  os.PutArray(m.colindex, edges->getNumEdges());
-  os << "]\n";
+  os << "Internal representation for Markov chain:\n";
+  os << "  Explicit representation using MCLib.  Cannot display, sorry\n";
+  return;
 }
 
-void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
+void mclib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
   state_lldsm::display_order ord, shared_state* st) const 
 {
-  long na = edges->getNumEdges();
-  long num_states = edges->getNumNodes();
+  long na = chain->getNumArcs();
+  long num_states = chain->getNumStates();
 
   if (state_lldsm::tooManyStates(num_states, true))  return;
   if (graph_lldsm::tooManyArcs(na, true))            return;
 
   bool by_rows = (graph_lldsm::OUTGOING == graph_lldsm::graphDisplayStyle());
   const char* row;
-  const char* col;
-  row = "From state ";
-  col = "To state ";
-  if (!by_rows) SWAP(row, col);
+  if (graph_lldsm::displayGraphNodeNames()) {
+    row = by_rows ? "From " : "To ";
+  } else {
+    row = by_rows ? "Row " : "Column ";
+  }
 
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I 
@@ -115,7 +106,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
   switch (graph_lldsm::graphDisplayStyle()) {
     case graph_lldsm::DOT:
-        os << "digraph fsm {\n";
+        os << "digraph mc {\n";
         for (I.start(); I; I++) { 
           os << "\ts" << I.index();
           if (graph_lldsm::displayGraphNodeNames()) {
@@ -136,7 +127,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
         break;
 
     default:
-        os << "Reachability graph:\n";
+        os << "Markov chain:\n";
   }
 
   sparse_row_elems foo(I);
@@ -160,13 +151,13 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
     }
 
     bool ok;
-    if (by_rows)   ok = foo.buildOutgoing(edges, I.getIndex());
-    else           ok = foo.buildIncoming(edges, I.getIndex());
+    if (by_rows)   ok = foo.buildOutgoing(chain, I.getIndex());
+    else           ok = foo.buildIncoming(chain, I.getIndex());
 
     // were we successful?
     if (!ok) {
       // out of memory, bail
-      showError("Not enough memory to display reachability graph.");
+      showError("Not enough memory to display Markov chain.");
       break;
     }
 
@@ -175,21 +166,22 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
       os.Put('\t');
       switch (graph_lldsm::graphDisplayStyle()) {
         case graph_lldsm::DOT:
-            os << "s" << foo.index[z] << " -> s" << I.getI() << ";";
+            os << "s" << foo.index[z] << " -> s" << I.getI();
+            os << " [label=\"" << foo.value[z] << "\"];";
             break;
 
         case graph_lldsm::TRIPLES:
-            os << foo.index[z] << " " << I.getI();
+            os << foo.index[z] << " " << I.getI() << " " << foo.value[z];
             break;
 
         default:
-            os << col;
             if (graph_lldsm::displayGraphNodeNames()) {
               I.copyState(st, foo.index[z]);
               RSS->showState(os, st);
             } else {
               os << foo.index[z];
             }
+            os << " : " << foo.value[z];
       }
       os.Put('\n');
     } // for z
@@ -202,37 +194,39 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
   os.flush();
 }
 
-void grlib_reachgraph::setInitial(LS_Vector &init)
+bool mclib_reachgraph::forward(const intset& p, intset &r) const
 {
-  DCASSERT(0==init.d_value);
-  DCASSERT(0==init.f_value);
-  initial = init;
+  DCASSERT(chain);
+  return chain->getForward(p, r);
 }
 
-bool grlib_reachgraph::forward(const intset& p, intset &r) const
+bool mclib_reachgraph::backward(const intset& p, intset &r) const
 {
-  DCASSERT(edges);
-  return edges->getForward(p, r);
+  DCASSERT(chain);
+  return chain->getBackward(p, r);
 }
 
-bool grlib_reachgraph::backward(const intset& p, intset &r) const
+void mclib_reachgraph::absorbing(intset &r) const
 {
-  DCASSERT(edges);
-  return edges->getBackward(p, r);
-}
-
-void grlib_reachgraph::getDeadlocked(intset &r) const
-{
-  r.assignFrom(deadlocks);
+  DCASSERT(chain);
+  //
+  // Determine set of absorbing (no outgoing edges) states...
+  //
+  r.removeAll();
+  if (chain->isDiscrete()) return;
+  long fa = chain->getFirstAbsorbing();
+  if (fa < 0) return;
+  long la = chain->getNumStates();
+  r.addRange(fa, la-1);
 }
 
 // ******************************************************************
 // *                                                                *
-// *           grlib_reachgraph::sparse_row_elems methods           *
+// *           mclib_reachgraph::sparse_row_elems methods           *
 // *                                                                *
 // ******************************************************************
 
-grlib_reachgraph::sparse_row_elems
+mclib_reachgraph::sparse_row_elems
 ::sparse_row_elems(const indexed_reachset::indexed_iterator &i)
  : I(i)
 {
@@ -241,12 +235,12 @@ grlib_reachgraph::sparse_row_elems
   index = 0;
 }
 
-grlib_reachgraph::sparse_row_elems::~sparse_row_elems()
+mclib_reachgraph::sparse_row_elems::~sparse_row_elems()
 {
   free(index);
 }
 
-bool grlib_reachgraph::sparse_row_elems::Enlarge(int ns)
+bool mclib_reachgraph::sparse_row_elems::Enlarge(int ns)
 {
   if (ns < alloc)   return true;
   if (0==alloc)     alloc = 16;
@@ -257,31 +251,31 @@ bool grlib_reachgraph::sparse_row_elems::Enlarge(int ns)
   return true;
 }
 
-bool grlib_reachgraph::sparse_row_elems
-::buildIncoming(GraphLib::digraph* edges, int i)
+bool mclib_reachgraph::sparse_row_elems
+::buildIncoming(MCLib::Markov_chain* chain, int i)
 {
   overflow = false;
   incoming = true;
   last = 0;
-  edges->traverseTo(i, *this);
+  chain->traverseTo(i, *this);
   if (overflow) return false;
   HeapSortAbstract(this, last);
   return true;
 }
 
-bool grlib_reachgraph::sparse_row_elems
-::buildOutgoing(GraphLib::digraph* edges, int i)
+bool mclib_reachgraph::sparse_row_elems
+::buildOutgoing(MCLib::Markov_chain* chain, int i)
 {
   overflow = false;
   incoming = false;
   last = 0;
-  edges->traverseFrom(i, *this);
+  chain->traverseFrom(i, *this);
   if (overflow) return false;
   HeapSortAbstract(this, last);
   return true;
 }
 
-bool grlib_reachgraph::sparse_row_elems
+bool mclib_reachgraph::sparse_row_elems
 ::visit(long from, long to, void* )
 {
   if (last >= alloc) {

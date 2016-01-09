@@ -25,14 +25,19 @@ ectl_reachgraph::~ectl_reachgraph()
 {
 }
 
-void ectl_reachgraph::absorbing(intset &r) const
+void ectl_reachgraph::getDeadlocked(intset &r) const
 {
   r.removeAll();
 }
 
-void ectl_reachgraph::source(intset &r) const
+void ectl_reachgraph::getInitial(intset &r) const
 {
-  r.removeAll();
+  //
+  // Determine set of source (initial) states...
+  //
+  const indexed_reachset* irs = smart_cast <const indexed_reachset*> (getParent()->getRSS());
+  DCASSERT(irs);
+  irs->getInitial(r);
 }
 
 void ectl_reachgraph::getTSCCsSatisfying(intset &p) const
@@ -175,8 +180,8 @@ long ectl_reachgraph::_EU(bool revTime, const intset& p, const intset& q,
 
 long ectl_reachgraph::unfair_EG(bool rT, const intset& p, intset &r, intset &tmp) const
 {
-  if (rT) source(tmp);
-  else    absorbing(tmp);
+  if (rT) getInitial(tmp);
+  else    getDeadlocked(tmp);
   tmp *= p;
   intset* absorbP = tmp.isEmpty() ? 0 : new intset(tmp);
 
@@ -216,8 +221,8 @@ long ectl_reachgraph::fair_EG(bool rT, const intset& p, intset &r, intset &tmp) 
   getTSCCsSatisfying(r);
 
   // Add source / absorbing states satisfying p
-  if (rT) source(tmp);
-  else    absorbing(tmp);
+  if (rT) getInitial(tmp);
+  else    getDeadlocked(tmp);
   tmp *= p;
   r += tmp;
 

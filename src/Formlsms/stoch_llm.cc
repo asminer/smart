@@ -17,6 +17,10 @@ stochastic_lldsm::stochastic_lldsm(model_type t) : graph_lldsm(t)
   vtta = -2;
 }
 
+stochastic_lldsm::~stochastic_lldsm()
+{
+}
+
 long stochastic_lldsm::getAcceptingState() const
 {
   return -1;
@@ -129,5 +133,42 @@ bool stochastic_lldsm
 {
   bailOut(__FILE__, __LINE__, "Can't simulate continuous-time random walk");
   return false;
+}
+
+// ******************************************************************
+// *                                                                *
+// *               stochastic_lldsm::process  methods               *
+// *                                                                *
+// ******************************************************************
+
+exprman* stochastic_lldsm::process::em = 0;
+
+stochastic_lldsm::process::process()
+{
+  parent = 0;
+}
+
+stochastic_lldsm::process::~process()
+{
+}
+
+void stochastic_lldsm::process::Finish(state_lldsm::reachset* rss)
+{
+}
+
+// **************************************************************************
+// *                                                                        *
+// *                               Front  end                               *
+// *                                                                        *
+// **************************************************************************
+
+
+void InitializeStochasticLLM(exprman* om)
+{
+  if (0==om) return;
+
+  stochastic_lldsm::process::em = om;
+
+  // TBD - any options go here
 }
 

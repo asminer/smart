@@ -93,6 +93,10 @@ void indexed_reachset::getInitial(intset& init) const
   } 
 }
 
+void indexed_reachset::Finish()
+{
+}
+
 // ******************************************************************
 // *           indexed_reachset::indexed_iterator methods           *
 // ******************************************************************

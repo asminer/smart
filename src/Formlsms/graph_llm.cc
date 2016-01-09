@@ -83,24 +83,13 @@ void graph_lldsm::showInitial() const
   bailOut(__FILE__, __LINE__, "Can't show initial state(s)");
 }
 
-#ifdef NEW_STATESETS
-
 void graph_lldsm::countPaths(const stateset*, const stateset*, result& c)
 {
   c.setNull();
   bailOut(__FILE__, __LINE__, "Can't count paths");
 }
 
-#else
-
-void graph_lldsm::countPaths(const intset&, const intset&, result& c)
-{
-  c.setNull();
-  bailOut(__FILE__, __LINE__, "Can't count paths");
-}
-
-#endif
-
+/*
 bool graph_lldsm::requireByRows(const named_msg*)
 {
   return false;
@@ -128,76 +117,17 @@ bool graph_lldsm::getOutgoingCounts(long* a) const
   bailOut(__FILE__, __LINE__, "Can't get outgoing edge counts");
   return false;
 }
+*/
 
 bool graph_lldsm::dumpDot(OutputStream &s) const
 {
   return false;
 }
 
-#ifdef NEW_STATESETS
-
-stateset* graph_lldsm::getAbsorbingStates() const
-{
-  bailOut(__FILE__, __LINE__, "Can't get absorbing states");
-  return 0;
-}
-
-stateset* graph_lldsm::getDeadlockedStates() const
-{
-  bailOut(__FILE__, __LINE__, "Can't get deadlocked states");
-  return 0;
-}
-
-#else
-
-void graph_lldsm::getAbsorbingStates(result &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get absorbing states");
-  x.setNull();
-}
-
-void graph_lldsm::getDeadlockedStates(result &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get deadlocked states");
-  x.setNull();
-}
-
-#endif
-
 bool graph_lldsm::isFairModel() const
 {
   return false;
 }
-
-#ifdef NEW_STATESETS
-
-
-#else
-
-void graph_lldsm::getTSCCsSatisfying(stateset &p) const
-{
-  DCASSERT(isFairModel());
-  bailOut(__FILE__, __LINE__, "Can't get TSCCs satisfying p");
-}
-
-void graph_lldsm::findDeadlockedStates(stateset &) const
-{
-  bailOut(__FILE__, __LINE__, "Can't find deadlocked states");
-}
-
-bool graph_lldsm::forward(const intset &p, intset &r) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute forward set");
-  return false;
-}
-
-bool graph_lldsm::backward(const intset &p, intset &r) const
-{
-  bailOut(__FILE__, __LINE__, "Can't compute backward set");
-  return false;
-}
-
-#endif
 
 bool graph_lldsm::isAbsorbing(long st) const
 {
@@ -205,11 +135,6 @@ bool graph_lldsm::isAbsorbing(long st) const
   return false;
 }
 
-bool graph_lldsm::isDeadlocked(long st) const
-{
-  bailOut(__FILE__, __LINE__, "Can't check deadlocked");
-  return false;
-}
 
 // ******************************************************************
 // *                                                                *

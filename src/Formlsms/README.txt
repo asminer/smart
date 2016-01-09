@@ -38,7 +38,7 @@ Specifically we have the following formalism support:
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
 
-TBD: Kill or severly shrink fsm_llm, mc_llm
+TBD: Kill or severly shrink mc_llm
 
 New reachability set stuff and process stuff:
   
@@ -49,6 +49,7 @@ New reachability set stuff and process stuff:
 
     rgr_ectl    Base class for reachgraphs that do "explicit" CTL.
    rgr_grlib    Reachability graphs based on the GraphLib data structure.
+   rgr_mclib    Reachability graphs based on the MCLib Markov chain
 
 TBD:
 
