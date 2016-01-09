@@ -586,7 +586,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 // #ifdef NEW_STATESETS
     graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
     DCASSERT(glm);
-    expl_reachgraph* erg = new expl_reachgraph(rg);
+    grlib_reachgraph* erg = new grlib_reachgraph(rg);
     erg->setInitial(init);
     glm->setRGR(erg);
 // #else
