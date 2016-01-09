@@ -132,9 +132,6 @@ void expl_reachset::Finish()
   state_dictionary = 0;
   state_handle = state_collection->RemoveIndexHandles();
 
-  // TBD - renumbering?
-  // TBD - needs_discorder becomes true if state_handle array is not monotone increasing
-
   // Update iterators
   DCASSERT(state_collection);
   DCASSERT(state_handle);

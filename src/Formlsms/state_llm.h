@@ -264,8 +264,6 @@ public:
     RSS->visitStates(x);
   }
 
-#ifdef NEW_STATESETS
-
   inline stateset* getReachable() const {
     return RSS ? RSS->getReachable() : 0;
   }
@@ -277,34 +275,6 @@ public:
   inline stateset* getPotential(expr* p) const {
     return RSS ? RSS->getPotential(p) : 0;
   }
-
-#else
-
-  inline void getReachable(result &ss) const {
-    if (RSS) {
-      ss.setPtr(RSS->getReachable());
-    } else {
-      ss.setNull();
-    }
-  }
-
-  inline void getInitialStates(result &x) const {
-    if (RSS) {
-      x.setPtr(RSS->getInitialStates());
-    } else {
-      ss.setNull();
-    }
-  }
-
-  inline void getPotential(expr* p, result &ss) const {
-    if (RSS) {
-      x.setPtr(RSS->getPotential(p));
-    } else {
-      ss.setNull();
-    }
-  }
-
-#endif
 
   protected:
     reachset* RSS;

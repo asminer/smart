@@ -28,6 +28,10 @@ class indexed_reachset : public state_lldsm::reachset {
 
     void getInitial(intset& init) const;
 
+    // Shrink the reachset to a more static structure.
+    // Default does nothing.
+    virtual void Finish();
+
   public:
     class indexed_iterator : public reachset::iterator {
       public:

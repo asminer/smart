@@ -4,6 +4,8 @@
 #ifndef STOCH_LLM_H
 #define STOCH_LLM_H
 
+#ifndef INITIALIZERS_ONLY
+
 #include "graph_llm.h"
 
 class statedist;
@@ -15,8 +17,59 @@ class statedist;
 // ******************************************************************
 
 /**   The base class for stochastic models.
+
+      TBD - Need to redesign this.
 */  
 class stochastic_lldsm : public graph_lldsm {
+
+// TBD - move options here
+
+public:
+    /**
+    .   Stochastic processes.
+        Markov chains or other fun things as derived classes.
+
+        TBD - what goes in here?
+    */
+    class process : public shared_object {
+        const stochastic_lldsm* parent;
+      protected:
+        static exprman* em;
+      public:
+        process();
+      protected:
+        virtual ~process();
+        virtual const char* getClassName() const = 0;
+
+        /**
+          Hook for any desired preprocessing.
+          The reachable states are also given, in case finishing the 
+          reachability graph requires renumbering the states.
+          Default behavior here does nothing.
+        */
+        virtual void Finish(state_lldsm::reachset* rss);
+
+      public:
+        inline void setParent(const stochastic_lldsm* p) {
+          if (parent != p) {
+            DCASSERT(0==parent);
+            parent = p;
+          }
+        }
+
+        inline const graph_lldsm* getParent() const {
+          return parent;
+        }
+
+        inline const hldsm* getGrandParent() const {
+          return parent ? parent->GetParent() : 0;
+        }
+
+        friend void InitializeStochasticLLM(exprman* em);
+    };
+    // ------------------------------------------------------------
+    // end of inner class process
+
   /// probability of eventually hitting the accept state
   double accept_prob;
   /// probability of eventually hitting the trap state
@@ -27,8 +80,14 @@ class stochastic_lldsm : public graph_lldsm {
   double vtta;
 public:
   stochastic_lldsm(model_type t);
+protected:
+  virtual ~stochastic_lldsm();
+  virtual const char* getClassName() const { return "stochastic_lldsm"; }
 
 public: // These methods are used for phase types.
+
+  // TBD - can these go in the "process" inner class?
+
   inline void setAcceptProb(double p) { accept_prob = p; }
   inline void setTrapProb(double p)   { trap_prob = p; }
   inline void setMTTA(double v)       { mtta = v; }
@@ -307,4 +366,14 @@ public:
 
 };
 
-#endif
+#endif  // INITIALIZERS_ONLY
+
+// **************************************************************************
+// *                                                                        *
+// *                               Front  end                               *
+// *                                                                        *
+// **************************************************************************
+
+void InitializeStochasticLLM(exprman* em);
+
+#endif  

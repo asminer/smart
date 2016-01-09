@@ -25,8 +25,8 @@ class expl_reachset : public indexed_reachset {
     virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
 
-    // For now: shrink the db to a more static structure
-    void Finish();
+    // Shrink the db to a more static structure
+    virtual void Finish();
   
   private:
     /**

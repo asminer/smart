@@ -5,7 +5,7 @@
 #include "rss_enum.h"
 #include "rgr_grlib.h"
 #include "enum_hlm.h"
-#include "graph_llm.h"
+// #include "graph_llm.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -245,7 +245,7 @@ void fsm_def::FinalizeModel(OutputStream &ds)
 // #ifdef NEW_STATESETS
   enum_reachset* rss = new enum_reachset(mcstate);
   rss->setInitial(init);
-  expl_reachgraph* rgr = new expl_reachgraph(mygr);
+  grlib_reachgraph* rgr = new grlib_reachgraph(mygr);
   graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
   foo->setRSS(rss);
   foo->setRGR(rgr);
@@ -530,8 +530,10 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(bar);
   const graph_lldsm* cruft = smart_cast <const graph_lldsm*>(bar);
   DCASSERT(cruft);
+  const grlib_reachgraph* RG = smart_cast <const grlib_reachgraph*> (cruft->getRGR());
+  DCASSERT(RG);
   
-  x.answer->setBool(cruft->isDeadlocked(x.current_state_index));
+  x.answer->setBool(RG->isDeadlocked(x.current_state_index));
 }
 
 // ******************************************************************

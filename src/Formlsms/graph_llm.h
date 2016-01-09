@@ -264,7 +264,6 @@ public:
   */
   virtual void showInitial() const;
 
-#ifdef NEW_STATESETS
   /** Count number of paths from src to dest in reachability graph.
       This must be provided in derived classes, the
       default behavior here is to print an error message.
@@ -278,34 +277,19 @@ public:
   */
   virtual void countPaths(const stateset* src, const stateset* dest, result& count);
 
-#else
-  /** Count number of paths from src to dest in reachability graph.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  src     Set of starting states.
-        @param  dest    Set of destination states.
-        @param  count   On return, the number of distinct paths
-                        from some starting state, that ends in
-                        a destination state.  Will be infinite
-                        if there is a loop on any path from
-                        a starting state to a destination state.
-  */
-  virtual void countPaths(const intset &src, const intset &dest, result& count);
-#endif
-
   /** Change our internal structure so as to be efficient "by rows".
       If this is already the case, do nothing.
         @param  rep   0, or pointer to reporting structure.
         @return true, if the operation was successful.
   */
-  virtual bool requireByRows(const named_msg* rep);
+  // virtual bool requireByRows(const named_msg* rep);
 
   /** Change our internal structure so as to be efficient "by columns".
       If this is already the case, do nothing.
         @param  rep   0, or pointer to reporting structure.
         @return true, if the operation was successful.
   */
-  virtual bool requireByCols(const named_msg* rep);
+  // virtual bool requireByCols(const named_msg* rep);
 
   /** Obtain the outgoing edges from a state.
       Requires that the graph is efficient "by rows".
@@ -314,7 +298,7 @@ public:
                         destination states are added to e.
         @return Number of edges, on success; -1 on failure.
   */
-  virtual long getOutgoingEdges(long from, ObjectList <int> *e) const;
+  // virtual long getOutgoingEdges(long from, ObjectList <int> *e) const;
 
   /** Obtain the incoming edges to a state.
       Requires that the graph is efficient "by columns".
@@ -323,14 +307,14 @@ public:
                         source states are added to e.
         @return Number of edges, on success; -1 on failure.
   */
-  virtual long getIncomingEdges(long from, ObjectList <int> *e) const;
+  // virtual long getIncomingEdges(long from, ObjectList <int> *e) const;
 
   /** Obtain the number of outgoing edges for each state.
         @param  a   For each state s, add the number of
                     outgoing edges for state s to a[s].
         @return true, if successful.
   */
-  virtual bool getOutgoingCounts(long* a) const;
+  // virtual bool getOutgoingCounts(long* a) const;
 
   /** Produce a "dot" file of this model.
       Default behavior is to (quietly) return false.
@@ -339,8 +323,6 @@ public:
   */
   virtual bool dumpDot(OutputStream &s) const;
 
-#ifdef NEW_STATESETS
-
   /** Get the (potential) states that, once entered, are never 
       left.  This includes deadlocked states.  This must be 
       provided in derived classes, the default behavior here 
@@ -348,7 +330,7 @@ public:
         @return   New stateset object for the absorbing states,
                   or 0 on error.
   */
-  virtual stateset* getAbsorbingStates() const;
+  // virtual stateset* getAbsorbingStates() const;
 
   /** Get the (potential) deadlocked states.
       That means states that have no outgoing edges (even to itself).
@@ -357,36 +339,8 @@ public:
         @return   New stateset object for the deadlocked states,
                   or 0 on error.
   */
-  virtual stateset* getDeadlockedStates() const;
+  // virtual stateset* getDeadlockedStates() const;
 
-#else
-
-  /** Get the (potential) states that, once entered,
-      are never left.  This includes deadlocked states.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  x   On input: ignored.
-                    On output: an appropriate "stateset"
-                    containing the set of possible
-                    absorbing states for the model.
-                    Will be a "null" result on error.
-  */
-  virtual void getAbsorbingStates(result &x) const;
-
-  /** Get the (potential) deadlocked states.
-      That means states that have no outgoing edges
-      (even to itself).
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  x   On input: ignored.
-                    On output: an appropriate "stateset"
-                    containing the set of possible
-                    deadlocked states for the model.
-                    Will be a "null" result on error.
-  */
-  virtual void getDeadlockedStates(result &x) const;
-
-#endif
 
   /** For CTL model checking, is this a "fair" model?
       This says that infinite paths that are based on
@@ -400,7 +354,6 @@ public:
   */
   virtual bool isFairModel() const;
 
-#ifdef NEW_STATESETS
 
   inline stateset* EX(bool revTime, const stateset* p) const {
     return RGR ? RGR->EX(revTime, p) : 0;
@@ -422,56 +375,12 @@ public:
     return RGR ? RGR->unfairAEF(revTime, p, q) : 0;
   }
 
-#else
-
-  /** Determine TSCCs satisfying a property.
-      This is done "in place".
-      Should only be called for "fair" models.
-      Default behavior is to print an error message.
-         @param  p  On input: property p.
-                    On output: states are removed if
-                    they are not in a TSCC, or if
-                    not all states in the TSCC satisfy p.
-  */
-  virtual void getTSCCsSatisfying(stateset &p) const;
-
-  /** Find all "deadlocked" states.
-      Default behavior is to print an error message.
-        @param  ss  If i is not a deadlocked state,
-                    then i will be removed from ss.
-  */
-  virtual void findDeadlockedStates(stateset &ss) const;
-
-  /** Get states reachable from us in one step.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  p     Set of source states.
-        @param  r     On output, we add any state that can be reached 
-                      from a state in p, in one "step".
-                      Note: if p and r are the same, then we might
-                      add states that are more than one "step" away.
-        @return true  If any states were added to r,
-                false otherwise.
-  */
-  virtual bool forward(const intset &p, intset &r) const;
-
-  /** Get states that reach us in one step.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  p     Set of target states.
-        @param  r     On output, we add any state that can reach
-                      a state in p, in one "step".
-                      Note: if p and r are the same, then we might
-                      add states that are more than one "step" away.
-        @return true  If any states were added to r,
-                false otherwise.
-  */
-  virtual bool backward(const intset &p, intset &r) const;
-
-#endif
 
   // Hacks for explicit:
-  // TBD - move these?
+  //
+  // isAbsorbing is used (only?) by mc_form and fsm_form, so move it to reachgraph class
+  //    or better yet to the appropriate derived class
+  //
 
   /** Is the given state "absorbing".
       This means that either there are no outgoing edges from this state,
@@ -481,14 +390,6 @@ public:
         @return true, iff it is impossible to leave state st.
   */
   virtual bool isAbsorbing(long st) const;
-
-  /** Is the given state "deadlocked".
-      This means that there are no outgoing edges.
-      Default behavior is to print an error message.
-        @param  st    State (index) we are interested in.
-        @return true, iff there are no outgoing edges from state st.
-  */
-  virtual bool isDeadlocked(long st) const;
 
 private:
   reachgraph* RGR;

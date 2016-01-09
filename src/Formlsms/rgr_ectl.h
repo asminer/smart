@@ -25,13 +25,13 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     virtual bool forward(const intset& p, intset &r) const = 0;
     virtual bool backward(const intset& p, intset &r) const = 0;
     
-    // Build set of absorbing states (no outgoing edges)
+    // Build set of deadlocked states (no outgoing edges)
     // Default: builds emptyset
-    virtual void absorbing(intset &r) const;
+    virtual void getDeadlocked(intset &r) const;
 
-    // Build set of source (initial) states
-    // Default: builds emptyset
-    virtual void source(intset &r) const;
+    // Build set of initial states
+    // Default: use indexed_reachset :^)
+    virtual void getInitial(intset &r) const;
 
     /** Determine TSCCs satisfying a property (absorbing don't count).
         This is done "in place".  Should only be called for "fair" models;
