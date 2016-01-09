@@ -17,6 +17,7 @@ enum_reachset::enum_reachset(model_enum* ss)
   DCASSERT(states);
   natorder = new natural_iter(*states);
   lexorder = 0;
+  discorder = 0;
 
   // keep track of which state has each index
   state_handle = new long[states->NumValues()];
@@ -32,6 +33,7 @@ enum_reachset::~enum_reachset()
   Delete(states);
   delete natorder;
   delete lexorder;
+  delete discorder;
   delete[] state_handle;
 }
 
@@ -69,6 +71,9 @@ state_lldsm::reachset::iterator& enum_reachset
         return *lexorder;
 
     case state_lldsm::DISCOVERY:
+        if (0==discorder) discorder = new discovery_iter(*states);
+        return *discorder;
+
     case state_lldsm::NATURAL:
     default:
         if (0==natorder) natorder = new natural_iter(*states);
@@ -119,10 +124,35 @@ enum_reachset::lexical_iter::lexical_iter(const model_enum &ss)
 {
   long* M = new long[ss.NumValues()];
   ss.MakeSortedMap(M);
+  for (long i=0; i<ss.NumValues(); i++) {
+    const model_enum_value* which = ss.GetValue(M[i]);
+    M[i] = which->GetIndex();
+  }
   setMap(M);
 }
 
 enum_reachset::lexical_iter::~lexical_iter()
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *             enum_reachset::discovery_iter  methods             *
+// *                                                                *
+// ******************************************************************
+
+enum_reachset::discovery_iter::discovery_iter(const model_enum &ss) 
+ : natural_iter(ss)
+{
+  long* M = new long[ss.NumValues()];
+  for (long i=0; i<ss.NumValues(); i++) {
+    const model_enum_value* which = ss.GetValue(i);
+    M[i] = which->GetIndex();
+  }
+  setMap(M);
+}
+
+enum_reachset::discovery_iter::~discovery_iter()
 {
 }
 
