@@ -7,7 +7,8 @@
 
 // Formalisms and such
 #include "../Formlsms/phase_hlm.h"
-#include "../Formlsms/mc_llm.h"
+#include "../Formlsms/rss_expl.h"
+#include "../Formlsms/proc_mclib.h"
 
 // Modules
 #include "../Modules/expl_states.h"
@@ -159,8 +160,17 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   MCLib::Markov_chain* mc = 0;
   MCLib::vanishing_chain* vc = 0;
 
-  if (lm) {
-    rss = GrabExplicitMCStates(lm);
+  stochastic_lldsm* slm = dynamic_cast <stochastic_lldsm*> (lm);
+  if (lm && (0==slm)) {
+    hm->StartError(0);
+    hm->SendError("Couldn't complete process, unknown type for partial process");
+    hm->DoneError();
+    lm->setCompletionEngine(0);
+    return;
+  }
+
+  if (slm) {
+    rss = slm->getRSS()->getStateDatabase();
     the_proc = "Markov chain";
   } else {
     rss = statelib->createStateDB(true, false);
@@ -246,11 +256,17 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Compact states and finish process, if necessary
-  if (0==lm) {
-    lm = StartExplicitMC(phm->isDiscrete(), rss);
+  if (0==slm) {
+    slm = new stochastic_lldsm(phm->isDiscrete() ? lldsm::DTMC : lldsm::CTMC);
+    slm->setRSS( new expl_reachset(rss) );
+    lm = slm;
     hm->SetProcess(lm);
   }
-  FinishExplicitMC(lm, init, accept, trap, mc);
+  mclib_process* mcp = new mclib_process(mc);
+  mcp->setInitial(init);
+  mcp->setAcceptState(accept);
+  mcp->setTrapState(trap);
+  slm->setPROC(mcp);
 
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
