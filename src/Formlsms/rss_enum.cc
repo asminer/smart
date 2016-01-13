@@ -93,6 +93,15 @@ shared_object* enum_reachset::getEnumeratedState(long i) const
   return Share(states->GetValue(state_handle[i]));
 }
 
+void enum_reachset::Renumber(const long* ren)
+{
+  if (0==ren) return;
+  for (long i=0; i<states->NumValues(); i++) {
+    model_enum_value* st = states->GetValue(i);
+    st->SetIndex(ren[i]);
+  }
+}
+
 // ******************************************************************
 // *                                                                *
 // *              enum_reachset::natural_iter  methods              *

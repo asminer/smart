@@ -19,7 +19,7 @@ class grlib_reachgraph : public ectl_reachgraph {
   protected:
     virtual ~grlib_reachgraph();
     virtual const char* getClassName() const { return "grlib_reachgraph"; }
-    virtual void Finish(state_lldsm::reachset*);
+    virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset*);
 
   public:
     virtual void getNumArcs(long &na) const;

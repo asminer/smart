@@ -3,15 +3,15 @@
 
 #include "mc_form.h"
 #include "rss_enum.h"
+#include "proc_mclib.h"
+#include "enum_hlm.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
-
-#include "mc_llm.h"
-#include "enum_hlm.h"
 
 #include "../include/splay.h"
 
@@ -230,6 +230,28 @@ void markov_def::FinalizeModel(OutputStream &ds)
     return;
   }
 
+  DCASSERT(mcstate);
+  enum_reachset* rss = new enum_reachset(mcstate);
+
+  // TBD - initial distribution
+
+  mclib_process* proc = new mclib_process(mymc);
+
+  stochastic_lldsm* foo = new stochastic_lldsm(
+    mymc->isDiscrete() ? lldsm::DTMC : lldsm::CTMC
+  );
+
+  foo->setRSS(rss);
+  foo->setPROC(proc);
+  hldsm* bar = MakeEnumeratedModel(foo);
+  if (ds.IsActive()) foo->dumpDot(ds);
+  ConstructionSuccess(bar);
+  mymc = 0;
+
+  //
+  // OLD!
+  //
+  /*
   MCLib::Markov_chain::finish_options fo;
   fo.Store_By_Rows = markov_lldsm::storeByRows();
   fo.Will_Clear = false;
@@ -302,6 +324,7 @@ void markov_def::FinalizeModel(OutputStream &ds)
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mymc = 0;
+  */
 }
 
 
@@ -573,8 +596,10 @@ void mc_transient::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(bar);
   const stochastic_lldsm* cruft = smart_cast<const stochastic_lldsm*>(bar);
   DCASSERT(cruft);
+  const stochastic_lldsm::process* PROC = cruft->getPROC();
+  DCASSERT(PROC);
 
-  x.answer->setBool(cruft->isTransient(x.current_state_index));
+  x.answer->setBool(PROC->isTransient(x.current_state_index));
 }
 
 // **************************************************************************
@@ -675,7 +700,7 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
   }
 
   statedist* init = proc->getInitialDistribution();
-  phase_hlm* foo = makeTTA(is_disc, init, accept, 0, Share(proc));
+  phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   x.answer->setPtr(foo);
 }
 
@@ -794,6 +819,6 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
   FillSymbolTable(false,  ctmc, common);
 
   // register libs
-  InitMCLibs(em);
+  // InitMCLibs(em);
 }
 

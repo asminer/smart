@@ -116,14 +116,11 @@ public:
         virtual ~reachset();
         virtual const char* getClassName() const = 0;
   
-      public:
-        inline void setParent(const state_lldsm* p) {
-          if (parent != p) {
-            DCASSERT(0==parent);
-            parent = p;
-          }
-        }
+      protected:
+        // Hook - called when the RSS is set for a state model.
+        virtual void attachToParent(state_lldsm* p);
   
+      public:
         inline const state_lldsm* getParent() const {
           return parent;
         }
@@ -212,6 +209,7 @@ public:
         virtual bool Equals(const shared_object* o) const;
 
         friend void InitializeStateLLM(exprman* em);
+        friend class state_lldsm;   // overkill
     };
     // ------------------------------------------------------------
     // end of inner class reachset
@@ -232,7 +230,7 @@ public:
   inline void setRSS(reachset* rss) {
     DCASSERT(0==RSS);
     RSS = rss;
-    if (RSS) RSS->setParent(this);
+    if (RSS) RSS->attachToParent(this);
   }
 
   inline void getNumStates(result& count) const {

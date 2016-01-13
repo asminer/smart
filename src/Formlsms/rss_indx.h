@@ -32,6 +32,13 @@ class indexed_reachset : public state_lldsm::reachset {
     // Default does nothing.
     virtual void Finish();
 
+    // Renumber the states, for example after classifying a Markov chain.
+    // Default does nothing.
+    //  @param  ren   ren[i] gives the new number for state i
+    virtual void Renumber(const long* ren);
+
+    
+
   public:
     class indexed_iterator : public reachset::iterator {
       public:

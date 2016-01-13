@@ -94,6 +94,13 @@ state_lldsm::reachset::~reachset()
 {
 }
 
+void state_lldsm::reachset::attachToParent(state_lldsm* p)
+{
+  DCASSERT(p);
+  DCASSERT(0==parent);
+  parent = p;
+}
+
 StateLib::state_db* state_lldsm::reachset::getStateDatabase() const
 {
   return 0;

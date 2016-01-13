@@ -151,9 +151,11 @@ graph_lldsm::reachgraph::~reachgraph()
 {
 }
 
-void graph_lldsm::reachgraph::Finish(state_lldsm::reachset*)
+void graph_lldsm::reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* rss)
 {
-  // Default - do nothing
+  DCASSERT(p);
+  DCASSERT(0==parent);
+  parent = p;
 }
 
 void graph_lldsm::reachgraph::getNumArcs(result &na) const

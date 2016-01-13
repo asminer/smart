@@ -6,11 +6,11 @@
 
 #include "../ExprLib/mod_inst.h"
 #include "rng.h"
+#include "stoch_llm.h"
 #include <math.h>
 
 class statedist;
 class shared_state;
-class stochastic_lldsm;
 
 // ******************************************************************
 // *                                                                *
@@ -309,7 +309,7 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N);
 */
 phase_hlm* makeTTA( bool d, statedist* initial,
                     shared_object* accept, const shared_object* trap, 
-                    stochastic_lldsm* mc);
+                    stochastic_lldsm::process* mc);
 
 /** Convert a continuous phase to a discrete phase,
     using uniformization on the underlying Markov chain.

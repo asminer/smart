@@ -132,17 +132,9 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Parameter 1: p of p U q
   //
-#ifdef NEW_STATESETS
   expl_stateset* p = 0;
-#else
-  stateset* p = 0;
-#endif
   if (pass[1].isNormal()) {
-#ifdef NEW_STATESETS
     p = smart_cast <expl_stateset*> (pass[1].getPtr());
-#else
-    p = smart_cast <stateset*> (pass[1].getPtr());
-#endif
     DCASSERT(p);
     DCASSERT(p->getParent() == sm);
   }
@@ -150,11 +142,7 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Parameter 2: q of p U q
   //
-#ifdef NEW_STATESETS
   expl_stateset* q = smart_cast <expl_stateset*> (pass[2].getPtr());
-#else
-  stateset* q = smart_cast <stateset*> (pass[2].getPtr());
-#endif
   DCASSERT(q);
   DCASSERT(q->getParent() == sm);
 
@@ -177,17 +165,13 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     intset* t = new intset(q->getExplicit());
     (*t) += p->getExplicit();
     t->complement();
-#ifdef NEW_STATESETS
     stateset* trap = new expl_stateset(sm, t);
-#else
-    stateset* trap = new stateset(sm, t);
-#endif
     // build tta model
-    tta = makeTTA(discrete, initial, q, trap, Share(sm));
+    tta = makeTTA(discrete, initial, q, trap, sm->copyPROC());
     Delete(trap);
   } else {
     // 0 for p means "all true", so no trap states
-    tta = makeTTA(discrete, initial, q, 0, Share(sm));
+    tta = makeTTA(discrete, initial, q, 0, sm->copyPROC());
   }
   if (0==tta) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -349,11 +333,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Set the accept equivalent states to 1 here
   //
-#ifdef NEW_STATESETS
   expl_stateset* q = smart_cast <expl_stateset*> (pass[2].getPtr());
-#else
-  stateset* q = smart_cast <stateset*> (pass[2].getPtr());
-#endif
   DCASSERT(q);
   const intset& qis = q->getExplicit();
   long i = -1;

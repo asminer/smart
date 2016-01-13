@@ -49,7 +49,9 @@ New reachability set stuff and process stuff:
 
     rgr_ectl    Base class for reachgraphs that do "explicit" CTL.
    rgr_grlib    Reachability graphs based on the GraphLib data structure.
-   rgr_mclib    Reachability graphs based on the MCLib Markov chain
+
+ proc_markov    Base class for stochastic processes that are Markov chains.
+  proc_mclib    Markov chains (and reachability graphs) based on the MCLib Markov chain
 
 TBD:
 
@@ -63,3 +65,4 @@ TBD:
 DEAD CODE (remove after debugging and testing)
 
      fsm_llm    Low-level finite state machines. 
+   rgr_mclib    Reachability graphs based on the MCLib Markov chain.
