@@ -97,6 +97,10 @@ void indexed_reachset::Finish()
 {
 }
 
+void indexed_reachset::Renumber(const long* ren)
+{
+}
+
 // ******************************************************************
 // *           indexed_reachset::indexed_iterator methods           *
 // ******************************************************************

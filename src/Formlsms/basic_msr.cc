@@ -564,11 +564,14 @@ void showclasses_si::Compute(traverse_data &x, expr** pass, int np)
 
   const stochastic_lldsm* sllm = smart_cast <const stochastic_lldsm*> (llm);
   DCASSERT(sllm);
+  sllm->showClasses();
+  /*
   long foo = sllm->getNumClasses(true);
   if (foo<0) {
     em->cout() << "Graph is too large\n";
     em->cout().flush();
   }
+  */
 }
 
 // *****************************************************************

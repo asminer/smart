@@ -76,18 +76,11 @@ public:
           Hook for any desired preprocessing.
           The reachable states are also given, in case finishing the 
           reachability graph requires renumbering the states.
-          Default behavior here does nothing.
+          Default behavior simply sets the parent.
       */
-      virtual void Finish(state_lldsm::reachset* rss);
+      virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset* rss);
 
     public:
-      inline void setParent(const graph_lldsm* p) {
-        if (parent != p) {
-          DCASSERT(0==parent);
-          parent = p;
-        }
-      }
-
       inline const graph_lldsm* getParent() const {
         return parent;
       }
@@ -228,10 +221,7 @@ public:
   inline void setRGR(reachgraph* rgr) {
     DCASSERT(0==RGR);
     RGR = rgr;
-    if (RGR) {
-      RGR->setParent(this);
-      RGR->Finish(RSS);
-    }
+    if (RGR) RGR->attachToParent(this, RSS);
   }
 
   inline void getNumArcs(result& count) const {
@@ -239,7 +229,8 @@ public:
     return RGR->getNumArcs(count);
   }
 
-  virtual long getNumArcs() const {
+  inline long getNumArcs() const {
+//  virtual long getNumArcs() const {
     DCASSERT(RGR);
     long na;
     RGR->getNumArcs(na);
@@ -261,6 +252,8 @@ public:
   /** Show the initial state(s) of the graph.
       This must be provided in derived classes, the
       default behavior here is to print an error message.
+
+      TBD - where does this belong?
   */
   virtual void showInitial() const;
 
@@ -320,6 +313,8 @@ public:
       Default behavior is to (quietly) return false.
         @param  s    Stream to write to
         @return true on success, false otherwise.
+
+      TBD - where does this belong?
   */
   virtual bool dumpDot(OutputStream &s) const;
 

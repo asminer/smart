@@ -144,6 +144,24 @@ void expl_reachset::Finish()
   discorder = 0;
 }
 
+void expl_reachset::Renumber(const long* ren)
+{
+  if (0==ren) return;
+  DCASSERT(state_collection);
+  DCASSERT(state_handle);
+
+  // Renumber state_handle array
+  long* aux = new long[state_collection->Size()];
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    aux[i] = state_handle[i];
+  }
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    CHECK_RANGE(0, ren[i], state_collection->Size());
+    state_handle[ren[i]] = aux[i];
+  }
+  delete[] aux;
+}
+
 // ******************************************************************
 // *                                                                *
 // *               expl_reachset::db_iterator methods               *

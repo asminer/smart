@@ -17,3 +17,41 @@ Do this for:
   number of classes
 
 
+Architecture question:
+
+  Can we design an "initializer" class that allows things
+  to be initialized, automatically?
+
+  class initializer {
+  public:
+    initializer();
+    virtual ~initializer();
+
+    static void setEM(...);
+    static void setST(...);
+    static void ...
+
+    // destroys list (but does not delete items).
+    // Anything that threw "delay" should try again,
+    //  but bail out once nothing succeeds to avoid infinite loops.
+    static void initializeAll();
+
+    protected:
+      // Globals for initializers go here
+
+      exprman* em
+      symbol_table* st
+      const char** env
+
+      // valid for module, engines
+      // throws something: 
+      //    fail, means don't bother to try again
+      //    delay, means something else must be initialized first
+      virtual void initialize() = 0;
+    
+    private:
+      generic_initializer* next;
+      static generic_initializer* list;
+  };
+
+  

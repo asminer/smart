@@ -27,6 +27,9 @@ class expl_reachset : public indexed_reachset {
 
     // Shrink the db to a more static structure
     virtual void Finish();
+
+    // Renumber states
+    virtual void Renumber(const long* ren);
   
   private:
     /**

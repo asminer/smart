@@ -38,8 +38,10 @@ grlib_reachgraph::~grlib_reachgraph()
   // deadlocks should be destroyed automagically here
 }
 
-void grlib_reachgraph::Finish(state_lldsm::reachset* RSS)
+void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS)
 {
+  ectl_reachgraph::attachToParent(p, RSS);
+
   indexed_reachset* irs = dynamic_cast <indexed_reachset*> (RSS);
 
   // Transfer the initial state, if we can
