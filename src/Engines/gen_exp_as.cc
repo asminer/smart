@@ -6,9 +6,9 @@
 
 // Formalisms and such
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/mc_llm.h"
 #include "../Formlsms/rss_expl.h"
 #include "../Formlsms/rgr_grlib.h"
+#include "../Formlsms/proc_mclib.h"
 
 // Modules
 #include "../Modules/expl_states.h"
@@ -552,18 +552,12 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Set process as known so far
   if (0==slm) {
     if (nondeterm) {
-// #ifdef NEW_STATESETS
-      expl_reachset* ers = new expl_reachset(rss);
       slm = new graph_lldsm(lldsm::FSM);
-      slm->setRSS(ers);
-      lm = slm;
-// #else
-      // lm = StartExplicitFSM(rss);
-// #endif
     } else {
-      lm = StartExplicitMC(false, rss);
-      // TBD - this will need fixin'
+      slm = new stochastic_lldsm(lldsm::CTMC);
     }
+    slm->setRSS( new expl_reachset(rss) );
+    lm = slm;
     hm->SetProcess(lm); 
   }
 
@@ -583,18 +577,17 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Compact and finish process
   if (nondeterm) {
-// #ifdef NEW_STATESETS
     graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
     DCASSERT(glm);
     grlib_reachgraph* erg = new grlib_reachgraph(rg);
     erg->setInitial(init);
     glm->setRGR(erg);
-// #else
-    //FinishExplicitFSM(lm, init, rg);
-//#endif
   } else {
-    FinishExplicitMC(lm, init, mc);
-    // TBD - this will need fixin'
+    stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);
+    DCASSERT(glm);
+    mclib_process* mcp = new mclib_process(mc);
+    mcp->setInitial(init);
+    glm->setPROC(mcp);
   }
   
   // Report on compaction

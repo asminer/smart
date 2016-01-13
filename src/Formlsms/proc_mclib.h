@@ -34,6 +34,18 @@ class mclib_process : public markov_process {
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
 
+    void setInitial(LS_Vector init);
+
+    inline void setTrapState(long t) {
+      trap = t;
+    }
+    inline void setAcceptState(long a) {
+      accept = a;
+    }
+
+    virtual long getTrapState() const { return trap; }
+    virtual long getAcceptingState() const { return accept; }
+
   // For reachgraphs hooked into this
   public:
     inline void getNumArcs(long &na) const {
@@ -69,6 +81,9 @@ class mclib_process : public markov_process {
 
   private:
     MCLib::Markov_chain* chain;
+    LS_Vector initial;
+    long trap;
+    long accept;
 
   private:
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {

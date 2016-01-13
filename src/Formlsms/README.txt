@@ -33,7 +33,6 @@ Specifically we have the following formalism support:
 
    state_llm    Models with reachable states
    graph_llm    Graph-based low-level models; checkable with logics (CTL).
-      mc_llm    Low-level Markov chain class. (TBD: STILL NEEDED?)
    stoch_llm    Stochastic low-level models, for now Markov chains
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
@@ -65,4 +64,5 @@ TBD:
 DEAD CODE (remove after debugging and testing)
 
      fsm_llm    Low-level finite state machines. 
+      mc_llm    Low-level Markov chain class. 
    rgr_mclib    Reachability graphs based on the MCLib Markov chain.

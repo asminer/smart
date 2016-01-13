@@ -43,12 +43,12 @@ public:
         virtual ~process();
         virtual const char* getClassName() const = 0;
 
-      /**
+        /**
           Hook for any desired preprocessing.
           The reachable states are also given, in case finishing the 
           reachability graph requires renumbering the states.
           Default behavior simply sets the parent.
-      */
+        */
         virtual void attachToParent(stochastic_lldsm* p, state_lldsm::reachset* rss);
 
       public:
@@ -62,15 +62,6 @@ public:
 
         virtual long getNumStates() const = 0;
 
-        /** Get the "trap" state.
-            Currently, used only for phase types.
-            Default behavior is to return -1.
-              @return Index of the trap state, if one has been designated;
-                      -1, otherwise.
-        */
-        virtual long getTrapState() const;
-
-      
         /** Get the number of recurrent classes in the process.
             The default version provided here will only work if
             the number of recurrent classes fits in a long.
@@ -229,6 +220,15 @@ public:
       public:
         // Methods involving "the accepting state", candidates to move
         
+        /** Get the "trap" state.
+            Currently, used only for phase types.
+            Default behavior is to return -1.
+              @return Index of the trap state, if one has been designated;
+                      -1, otherwise.
+        */
+        virtual long getTrapState() const;
+
+      
         /** Get the "accepting" state.
             Currently, used only for phase types.
             TBD - should we move this into a derived class only?

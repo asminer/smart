@@ -19,11 +19,22 @@
 mclib_process::mclib_process(MCLib::Markov_chain* mc)
 {
   chain = mc;
+  // clear the initial vector
+  initial.size = 0;
+  initial.index = 0;
+  initial.d_value = 0;
+  initial.f_value = 0;
+  //
+  trap = -1;
+  accept = -1;
 }
 
 mclib_process::~mclib_process()
 {
   delete chain;
+  delete[] initial.index;
+  delete[] initial.d_value;
+  delete[] initial.f_value;
 }
 
 void mclib_process::attachToParent(stochastic_lldsm* p, state_lldsm::reachset* rss)
@@ -44,8 +55,6 @@ void mclib_process::attachToParent(stochastic_lldsm* p, state_lldsm::reachset* r
   chain->finish(opts, r);
   DCASSERT(chain->isEfficientByRows() == opts.Store_By_Rows);
 
-  // TBD - Build initial distribution
-
   if (r.GeneralRenumbering()) {
     const long* ren = r.GetGeneral();
     DCASSERT(ren);
@@ -57,13 +66,38 @@ void mclib_process::attachToParent(stochastic_lldsm* p, state_lldsm::reachset* r
 
     // TBD - renumber trap state
 
-    // TBD - renumber initial distribution
+    // Renumber initial distribution
+    if (initial.index) {
+      long* newindx = new long[initial.size];
+      for (long z=0; z<initial.size; z++) {
+        newindx[z] = ren[initial.index[z]];
+      }
+      delete[] initial.index;
+      initial.index = newindx;
+    } else {
+      DCASSERT(0);
+      // allocate new vector and copy 
+    }
   } else {
     DCASSERT(r.NoRenumbering());
   }
     
+  // Copy initial states to RSS
+  // TBD - assumes initial distribution is sparse
+  LS_Vector initcopy;
+  initcopy.size = initial.size;
+  long* copyindx = new long[initial.size];
+  initcopy.index = copyindx;
+  initcopy.d_value = 0;
+  initcopy.f_value = 0;
+  for (long z=0; z<initial.size; z++) {
+    copyindx[z] = initial.index[z];
+  }
+  irs->setInitial(initcopy); 
 
   // NEAT TRICK!!!
+  // Set the reachability graph, using 
+  // a thin wrapper around the Markov chain.
   p->setRGR( new mclib_reachgraph(this) );
 }
 
@@ -97,6 +131,12 @@ statedist* mclib_process::getInitialDistribution() const
   // TBD
   DCASSERT(0);
   return 0;
+}
+
+void mclib_process::setInitial(LS_Vector init)
+{
+  initial = init;
+  DCASSERT(initial.index);
 }
 
 

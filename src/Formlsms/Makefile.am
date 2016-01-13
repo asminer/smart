@@ -12,7 +12,7 @@ noinst_LTLIBRARIES = \
     rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
     rgr_ectl.la rgr_grlib.la \
     proc_markov.la proc_mclib.la \
-    rss_mdd.la fsm_mdd.la mc_mdd.la \
+    rss_mdd.la fsm_mdd.la \
     dcp_form.la mc_form.la fsm_form.la pn_form.la evm_form.la tam_form.la
 
 

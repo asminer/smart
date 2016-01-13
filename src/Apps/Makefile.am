@@ -14,8 +14,6 @@ smart_LDADD = \
   ../Engines/ctl_exp.la ../Engines/ctl_symb.la ../Engines/csl_exp.la \
   ../Engines/gen_rg_base.la \
   ../Engines/gen_exp_as.la ../Engines/gen_exp_ph.la \
-  ../Engines/proc_meddly.la \
-  ../Engines/satur_meddly.la ../Engines/expl_meddly.la \
   \
   ../Formlsms/mc_form.la ../Formlsms/fsm_form.la \
   ../Formlsms/pn_form.la ../Formlsms/evm_form.la ../Formlsms/tam_form.la \
@@ -49,6 +47,10 @@ smart_LDADD = \
   ../Options/libopts.la \
   ../Streams/libstream.la \
   $(MDD_LIBRARY)/lib/libmeddly.a
+
+SMART_WAIT = \
+  ../Engines/proc_meddly.la \
+  ../Engines/satur_meddly.la ../Engines/expl_meddly.la 
 
 ## ICP   
 
