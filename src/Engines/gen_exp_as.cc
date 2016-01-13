@@ -586,8 +586,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);
     DCASSERT(glm);
     mclib_process* mcp = new mclib_process(mc);
-    mcp->setInitial(init);
-    glm->setPROC(mcp);
+    glm->setPROC(init, mcp);
   }
   
   // Report on compaction

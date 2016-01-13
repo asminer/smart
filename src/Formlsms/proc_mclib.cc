@@ -6,6 +6,7 @@
 #include "../Streams/streams.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
+#include "../Modules/statevects.h"
 
 // external library
 #include "intset.h"
@@ -19,11 +20,7 @@
 mclib_process::mclib_process(MCLib::Markov_chain* mc)
 {
   chain = mc;
-  // clear the initial vector
-  initial.size = 0;
-  initial.index = 0;
-  initial.d_value = 0;
-  initial.f_value = 0;
+  initial = 0;
   //
   trap = -1;
   accept = -1;
@@ -32,14 +29,12 @@ mclib_process::mclib_process(MCLib::Markov_chain* mc)
 mclib_process::~mclib_process()
 {
   delete chain;
-  delete[] initial.index;
-  delete[] initial.d_value;
-  delete[] initial.f_value;
+  Delete(initial);
 }
 
-void mclib_process::attachToParent(stochastic_lldsm* p, state_lldsm::reachset* rss)
+void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_lldsm::reachset* rss)
 {
-  process::attachToParent(p, rss);
+  process::attachToParent(p, init, rss);
 
   // Finish rss
   indexed_reachset* irs = smart_cast <indexed_reachset*> (rss);
@@ -66,34 +61,17 @@ void mclib_process::attachToParent(stochastic_lldsm* p, state_lldsm::reachset* r
 
     // TBD - renumber trap state
 
-    // Renumber initial distribution
-    if (initial.index) {
-      long* newindx = new long[initial.size];
-      for (long z=0; z<initial.size; z++) {
-        newindx[z] = ren[initial.index[z]];
-      }
-      delete[] initial.index;
-      initial.index = newindx;
-    } else {
-      DCASSERT(0);
-      // allocate new vector and copy 
-    }
+    initial = new statedist(p, init, ren);
   } else {
     DCASSERT(r.NoRenumbering());
+
+    initial = new statedist(p, init, 0);
   }
     
   // Copy initial states to RSS
-  // TBD - assumes initial distribution is sparse
-  LS_Vector initcopy;
-  initcopy.size = initial.size;
-  long* copyindx = new long[initial.size];
-  initcopy.index = copyindx;
-  initcopy.d_value = 0;
-  initcopy.f_value = 0;
-  for (long z=0; z<initial.size; z++) {
-    copyindx[z] = initial.index[z];
-  }
-  irs->setInitial(initcopy); 
+  intset initial_set( chain->getNumStates() );  
+  initial->greater_than(0, &initial_set);
+  irs->setInitial(initial_set);
 
   // NEAT TRICK!!!
   // Set the reachability graph, using 
@@ -128,17 +106,8 @@ bool mclib_process::isTransient(long st) const
 
 statedist* mclib_process::getInitialDistribution() const
 {
-  // TBD
-  DCASSERT(0);
-  return 0;
+  return Share(initial);
 }
-
-void mclib_process::setInitial(LS_Vector init)
-{
-  initial = init;
-  DCASSERT(initial.index);
-}
-
 
 //
 // For reachgraphs

@@ -6,7 +6,6 @@
 
 // External libs
 #include "lslib.h"    // for LS_Vector
-#include "intset.h"   // for intset
 
 // ******************************************************************
 // *                                                                *
@@ -16,16 +15,10 @@
 
 indexed_reachset::indexed_reachset()
 {
-  // clear the initial vector
-  initial.size = 0;
-  initial.index = 0;
-  initial.d_value = 0;
-  initial.f_value = 0;
 }
 
 indexed_reachset::~indexed_reachset()
 {
-  delete[] initial.index;
 }
 
 stateset* indexed_reachset::getReachable() const
@@ -77,20 +70,42 @@ stateset* indexed_reachset::getInitialStates() const
 #endif
 }
 
-void indexed_reachset::setInitial(LS_Vector &init)
+void indexed_reachset::setInitial(const LS_Vector &init)
 {
-  DCASSERT(0==init.d_value);
-  DCASSERT(0==init.f_value);
+  long num_states;
+  getNumStates(num_states);
+  initial.resetSize(num_states);
+  initial.removeAll();
+  if (init.index) {
+    for (long z=0; z<init.size; z++) {
+      CHECK_RANGE(0, init.index[z], num_states);
+      initial.addElement(init.index[z]);
+    }
+  } else {
+    if (init.d_value) {
+      for (long i=0; i<init.size; i++) {
+        if (init.d_value[i]) {
+          initial.addElement(i);
+        }
+      }
+    } else if (init.f_value) {
+      for (long i=0; i<init.size; i++) {
+        if (init.f_value[i]) {
+          initial.addElement(i);
+        }
+      }
+    }
+  }
+}
+
+void indexed_reachset::setInitial(const intset& init)
+{
   initial = init;
 }
 
 void indexed_reachset::getInitial(intset& init) const
 {
-  init.removeAll();
-  if (initial.index) {
-    for (long z=0; z<initial.size; z++)
-      init.addElement(initial.index[z]);
-  } 
+  init = initial;
 }
 
 void indexed_reachset::Finish()

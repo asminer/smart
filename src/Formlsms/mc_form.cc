@@ -231,18 +231,68 @@ void markov_def::FinalizeModel(OutputStream &ds)
   }
 
   DCASSERT(mcstate);
+
+  //
+  // build initial distribution
+  //
+  state_weight** init_data;
+  long size = initial->NumElements();
+  if (size) {
+    init_data = new state_weight*[size];
+    initial->CopyToArray(init_data);
+  } else {
+    init_data = 0;
+    if (StartWarning(no_init, 0)) {
+      em->warn() << "Empty initial distribution";
+      DoneWarning();
+    }
+  }
+  delete initial;
+  initial = 0;
+
+  double total = 0;
+  for (long i=0; i<size; i++) {
+    DCASSERT(init_data[i]);
+    total += init_data[i]->weight;
+  }
+  for (long i=0; i<size; i++) {
+    DCASSERT(total > 0);
+    init_data[i]->weight /= total;
+  }
+  long* indexes = new long[size];
+  float* probs = new float[size];
+  for (long i=0; i<size; i++) {
+    indexes[i] = init_data[i]->state->GetIndex();
+    probs[i] = init_data[i]->weight;
+    delete init_data[i];
+  }
+  delete[] init_data;
+
+  LS_Vector init;
+  init.size = size;
+  init.index = indexes;
+  init.f_value = probs;
+  init.d_value = 0;
+
+  //
+  // Build reachable states
+  // 
   enum_reachset* rss = new enum_reachset(mcstate);
 
-  // TBD - initial distribution
-
+  //
+  // Build process
+  //
   mclib_process* proc = new mclib_process(mymc);
 
+  //
+  // Package everything
+  //
   stochastic_lldsm* foo = new stochastic_lldsm(
     mymc->isDiscrete() ? lldsm::DTMC : lldsm::CTMC
   );
 
   foo->setRSS(rss);
-  foo->setPROC(proc);
+  foo->setPROC(init, proc);
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
