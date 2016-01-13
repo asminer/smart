@@ -263,10 +263,9 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
     hm->SetProcess(lm);
   }
   mclib_process* mcp = new mclib_process(mc);
-  mcp->setInitial(init);
   mcp->setAcceptState(accept);
   mcp->setTrapState(trap);
-  slm->setPROC(mcp);
+  slm->setPROC(init, mcp);
 
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {

@@ -9,6 +9,7 @@
 #include "graph_llm.h"
 
 class statedist;
+struct LS_Vector;
 
 // ******************************************************************
 // *                                                                *
@@ -49,7 +50,7 @@ public:
           reachability graph requires renumbering the states.
           Default behavior simply sets the parent.
         */
-        virtual void attachToParent(stochastic_lldsm* p, state_lldsm::reachset* rss);
+        virtual void attachToParent(stochastic_lldsm* p, LS_Vector &init, state_lldsm::reachset* rss);
 
       public:
         inline const graph_lldsm* getParent() const {
@@ -343,10 +344,10 @@ public: // These methods are used for phase types.
     return Share(PROC);
   }
 
-  inline void setPROC(process* proc) {
+  inline void setPROC(LS_Vector &initial, process* proc) {
     DCASSERT(0==PROC);
     PROC = proc;
-    if (PROC) PROC->attachToParent(this, RSS);
+    if (PROC) PROC->attachToParent(this, initial, RSS);
   }
 
 

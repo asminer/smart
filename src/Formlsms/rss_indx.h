@@ -7,7 +7,8 @@
 #include "state_llm.h"
 
 // External libs
-#include "lslib.h"
+#include "lslib.h"    // for LS_Vector
+#include "intset.h"   // for intset
 
 /**
     Special case - explicit reachability sets with indexes per states.
@@ -24,7 +25,8 @@ class indexed_reachset : public state_lldsm::reachset {
     virtual stateset* getPotential(expr* p) const;
     virtual stateset* getInitialStates() const;
 
-    void setInitial(LS_Vector &init);
+    void setInitial(const LS_Vector &init);
+    void setInitial(const intset& init);
 
     void getInitial(intset& init) const;
 
@@ -89,7 +91,7 @@ class indexed_reachset : public state_lldsm::reachset {
     };
 
   private:
-    LS_Vector initial;
+    intset initial;
 };
 
 #endif

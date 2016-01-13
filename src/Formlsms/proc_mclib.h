@@ -25,7 +25,7 @@ class mclib_process : public markov_process {
   protected:
     virtual ~mclib_process();
     virtual const char* getClassName() const { return "mclib_process"; }
-    virtual void attachToParent(stochastic_lldsm* p, state_lldsm::reachset* rss);
+    virtual void attachToParent(stochastic_lldsm* p, LS_Vector &init, state_lldsm::reachset* rss);
 
   public:
     virtual long getNumStates() const;
@@ -33,8 +33,6 @@ class mclib_process : public markov_process {
     virtual void showClasses(OutputStream &os, shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
-
-    void setInitial(LS_Vector init);
 
     inline void setTrapState(long t) {
       trap = t;
@@ -81,7 +79,7 @@ class mclib_process : public markov_process {
 
   private:
     MCLib::Markov_chain* chain;
-    LS_Vector initial;
+    statedist* initial;
     long trap;
     long accept;
 

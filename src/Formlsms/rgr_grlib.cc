@@ -45,13 +45,7 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   indexed_reachset* irs = dynamic_cast <indexed_reachset*> (RSS);
 
   // Transfer the initial state, if we can
-  if (initial.size) {
-    if (irs) {
-      irs->setInitial(initial);
-      initial.size = 0;
-      initial.index = 0;
-    }
-  }
+  if (irs) irs->setInitial(initial);
 
   // shrink the rss
   if (irs) irs->Finish();
