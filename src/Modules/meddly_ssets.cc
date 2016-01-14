@@ -7,7 +7,6 @@
 #include "glue_meddly.h"
 #include "meddly_ssets.h"
 
-#ifdef NEW_STATESETS
 
 // ******************************************************************
 // *                                                                *
@@ -163,7 +162,6 @@ bool meddly_stateset::Equals(const shared_object *o) const
   }
 }
 
-#endif
 
 // **************************************************************************
 // *                                                                        *

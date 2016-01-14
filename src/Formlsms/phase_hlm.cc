@@ -219,24 +219,20 @@ tta_dist
   f->complement();
 
   // (2) call EU engine to determine E (!final) U accept
-  result answer;
-  traverse_data x(traverse_data::Compute);
-  x.answer = &answer;
-  result pass[3];
-  pass[0].setBool(false);
   intset* fcopy = new intset(*f);
-  pass[1].setPtr(new expl_stateset(chain->getParent(), fcopy));
-  pass[2].setPtr(Share(accept));
-  engtype* eu = em->findEngineType("ExplicitEU");  
-  DCASSERT(eu); 
-  eu->runEngine(pass, 3, x);
-  pass[1].setPtr(0);
-  pass[2].setPtr(0);
+  expl_stateset* notfinal = new expl_stateset(chain->getParent(), fcopy);
+  const graph_lldsm::reachgraph* RGR = chain->getParent()->getRGR();
+  DCASSERT(RGR);
+  stateset* EnotfUaccept = RGR->EU(false, notfinal, accept);
+  Delete(notfinal);
+  DCASSERT(EnotfUaccept);
 
   // (3) final is still inverted, intersect with E (!final) U accept 
-  expl_stateset* good = smart_cast <expl_stateset*> (answer.getPtr());
+  expl_stateset* good = smart_cast <expl_stateset*> (EnotfUaccept);
   DCASSERT(good);
   (*f) *= good->getExplicit();
+  Delete(EnotfUaccept);
+
   // (4) invert again
   // final is now: ! (!final and good) = final or !good
   f->complement();

@@ -21,9 +21,6 @@ class symbol_table;
 class state_lldsm;
 class hldsm;
 
-#define NEW_STATESETS
-// TBD: remove ^ because this is the future, after all old code is yanked out
-
 // ******************************************************************
 // *                                                                *
 // *                         stateset class                         *

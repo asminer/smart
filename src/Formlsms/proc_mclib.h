@@ -47,7 +47,7 @@ class mclib_process : public markov_process {
     virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
         double maxt, double &elapsed);
 
-
+  public:
 
     inline void setTrapState(long t) {
       trap = t;
@@ -58,6 +58,15 @@ class mclib_process : public markov_process {
 
     virtual long getTrapState() const { return trap; }
     virtual long getAcceptingState() const { return accept; }
+
+    virtual bool computeDiscreteTTA(double epsilon, double* &dist, int &N) const;
+
+    virtual bool computeContinuousTTA(double dt, double epsilon, double* &dist, 
+        int &N) const;
+
+    // virtual bool reachesAccept(double* x) const;
+
+    virtual bool reachesAcceptBy(double t, double* x) const;
 
   // For reachgraphs hooked into this
   public:

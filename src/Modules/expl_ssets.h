@@ -14,8 +14,6 @@
 
 #ifndef INITIALIZERS_ONLY
 
-#ifdef NEW_STATESETS
-
 class intset;
 
 // ******************************************************************
@@ -56,8 +54,6 @@ class expl_stateset : public stateset {
   private:
     intset* data;
 };
-
-#endif
 
 #endif  // INITIALIZERS_ONLY
 

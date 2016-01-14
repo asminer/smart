@@ -70,11 +70,7 @@ stateset* meddly_reachset::getReachable() const
   if (0==vars) return 0;
   if (0==mdd_wrap) return 0;
 
-#ifdef NEW_STATESETS
   return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), Share(states));
-#else
-  return 0;
-#endif
 }
 
 // ******************************************************************

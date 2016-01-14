@@ -14,8 +14,6 @@
 
 #ifndef INITIALIZERS_ONLY
 
-#ifdef NEW_STATESETS
-
 // These are all in glue_meddly.h
 class shared_domain;
 class shared_ddedge;
@@ -52,8 +50,6 @@ class meddly_stateset : public stateset {
     meddly_encoder* mdd_wrap;
     shared_ddedge* states;
 };
-
-#endif
 
 #endif  // INITIALIZERS_ONLY
 
