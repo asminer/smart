@@ -30,9 +30,24 @@ class mclib_process : public markov_process {
   public:
     virtual long getNumStates() const;
     virtual void getNumClasses(long &count) const;
-    virtual void showClasses(OutputStream &os, shared_state* st) const;
+    virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+        shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
+    virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
+    virtual bool computeTransient(double t, double* probs, 
+        double* aux, double* aux2) const;
+    virtual bool computeAccumulated(double t, const double* p0, double* n,
+        double* aux, double* aux2) const;
+    virtual bool computeSteadyState(double* probs) const;
+    virtual bool computeTimeInStates(const double* p0, double* x) const;
+    virtual bool computeClassProbs(const double* p0, double* x) const;
+    virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
+        long maxt, long &elapsed);
+    virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
+        double maxt, double &elapsed);
+
+
 
     inline void setTrapState(long t) {
       trap = t;
@@ -109,41 +124,70 @@ class mclib_process : public markov_process {
 
   private:
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
-      int alloc;
-      const indexed_reachset::indexed_iterator &I;
-      bool incoming;
-      bool overflow;
-    public:
-      int last;
-      long* index;
-      double* value;
-    public:
-      sparse_row_elems(const indexed_reachset::indexed_iterator &i);
-      virtual ~sparse_row_elems();
+        int alloc;
+        const indexed_reachset::indexed_iterator &I;
+        bool incoming;
+        bool overflow;
+      public:
+        int last;
+        long* index;
+        double* value;
+      public:
+        sparse_row_elems(const indexed_reachset::indexed_iterator &i);
+        virtual ~sparse_row_elems();
 
-    protected:
-      bool Enlarge(int ns);
-    public:
-      bool buildIncoming(MCLib::Markov_chain* chain, int i);
-      bool buildOutgoing(MCLib::Markov_chain* chain, int i);
+      protected:
+        bool Enlarge(int ns);
+      public:
+        bool buildIncoming(MCLib::Markov_chain* chain, int i);
+        bool buildOutgoing(MCLib::Markov_chain* chain, int i);
 
-    // for element_visitor
-      virtual bool visit(long from, long to, void*);    
+      // for element_visitor
+        virtual bool visit(long from, long to, void*);    
 
-    // for heapsort
-      inline int Compare(long i, long j) const {
-        CHECK_RANGE(0, i, last);
-        CHECK_RANGE(0, j, last);
-        return SIGN(index[i] - index[j]);
-      }
+      // for heapsort
+        inline int Compare(long i, long j) const {
+          CHECK_RANGE(0, i, last);
+          CHECK_RANGE(0, j, last);
+          return SIGN(index[i] - index[j]);
+        }
 
-      inline void Swap(long i, long j) {
-        CHECK_RANGE(0, i, last);
-        CHECK_RANGE(0, j, last);
-        SWAP(index[i], index[j]);
-        SWAP(value[i], value[j]);
-      }
-    };
+        inline void Swap(long i, long j) {
+          CHECK_RANGE(0, i, last);
+          CHECK_RANGE(0, j, last);
+          SWAP(index[i], index[j]);
+          SWAP(value[i], value[j]);
+        }
+    };  // inner class sparse_row_elems
+    // ----------------------------------------------------------------------
+
+  private:
+    class simple_outedges : public GraphLib::generic_graph::element_visitor {
+      public:
+          long edges;
+          long* to;
+          double* weights;
+          long edge_alloc;
+      public:
+          simple_outedges(long* t, double* w, long n) {
+            edges = 0;
+            to = t;
+            weights = w;
+            edge_alloc = n;
+          }
+          virtual bool visit(long f, long t, void* label) {
+            if (edges < edge_alloc) {
+              to[edges] = t;
+              weights[edges] = ((float*)label)[0];
+            }
+            edges++;
+            return false;
+          }
+    };  // inner class simple_outedges
+    // ----------------------------------------------------------------------
+
+
+
 };
 
 

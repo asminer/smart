@@ -76,10 +76,9 @@ public:
         virtual void getNumClasses(long &count) const = 0;
      
         /** Show the recurrent classes.
-            TBD - not sure if we need RSS to be passed or not...
-                  I'm just guessing the interface at this point.
         */
-        virtual void showClasses(OutputStream &os, shared_state* st) const = 0;
+        virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+          shared_state* st) const = 0;
 
         /** Is the given state "transient".
               @param  st  State (index) we are interested in.
