@@ -350,6 +350,7 @@ public: // These methods are used for phase types.
     if (PROC) PROC->attachToParent(this, initial, RSS);
   }
 
+  virtual bool isFairModel() const;
 
   // TBD - can these go in the "process" inner class?
 

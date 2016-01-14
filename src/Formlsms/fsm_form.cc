@@ -242,16 +242,12 @@ void fsm_def::FinalizeModel(OutputStream &ds)
   delete initial;
   initial = 0;
 
-// #ifdef NEW_STATESETS
   enum_reachset* rss = new enum_reachset(mcstate);
-  rss->setInitial(init);
   grlib_reachgraph* rgr = new grlib_reachgraph(mygr);
+  rgr->setInitial(init);
   graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
   foo->setRSS(rss);
   foo->setRGR(rgr);
-// #else
-  // graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
-// #endif
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);

@@ -77,6 +77,30 @@ class mclib_process : public markov_process {
       r.addRange(fa, la-1);
     }
 
+    inline void getTSCCsSatisfying(intset &p) const {
+      p.complement();
+      DCASSERT(chain); 
+      long nt = chain->getNumTransient();
+      if (nt) {
+#ifdef DEBUG_EG
+        em->cout() << "Removing transients, states 0.." << nt-1 << "\n";
+#endif
+        p.addRange(0, nt-1);
+      }
+      for (long c=1; c<=chain->getNumClasses(); c++) {
+        long fs = chain->getFirstRecurrent(c);
+        long ls = fs + chain->getRecurrentSize(c) - 1;
+        long nz = p.getSmallestAfter(fs-1);
+        if (nz < 0) continue;
+        if (nz > ls) continue;
+#ifdef DEBUG_EG
+        em->cout() << "Removing class "<< c <<", states "<< fs <<".."<< ls << "\n";
+#endif
+        p.addRange(fs, ls);
+      } // for c
+      p.complement();
+    }
+
   private:
     MCLib::Markov_chain* chain;
     statedist* initial;
@@ -149,6 +173,8 @@ class mclib_reachgraph : public ectl_reachgraph {
     virtual bool backward(const intset& p, intset &r) const;
     virtual void absorbing(intset &r) const;
     
+    virtual void getTSCCsSatisfying(intset &p) const;
+
   private:
     mclib_process* chain;
 };
