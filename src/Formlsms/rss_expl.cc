@@ -150,6 +150,16 @@ void expl_reachset::Renumber(const long* ren)
   DCASSERT(state_collection);
   DCASSERT(state_handle);
 
+  // Check for no-op renumbering
+  bool noop = true;
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    if (ren[i] != i) {
+      noop = false;
+      break;
+    }
+  }
+  if (noop) return;
+
   // Renumber state_handle array
   long* aux = new long[state_collection->Size()];
   for (long i=state_collection->Size()-1; i>=0; i--) {
@@ -160,6 +170,8 @@ void expl_reachset::Renumber(const long* ren)
     state_handle[ren[i]] = aux[i];
   }
   delete[] aux;
+
+  needs_discorder = true;
 }
 
 // ******************************************************************
