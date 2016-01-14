@@ -11,7 +11,6 @@
 // external library
 #include "intset.h"
 
-#ifdef NEW_STATESETS
 
 // ******************************************************************
 // *                                                                *
@@ -154,7 +153,6 @@ bool expl_stateset::Equals(const shared_object *o) const
   return (*data) == *(b->data);
 }
 
-#endif
 
 // ******************************************************************
 // *                                                                *

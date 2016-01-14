@@ -27,11 +27,7 @@ stateset* indexed_reachset::getReachable() const
   getNumStates(num_states);
   intset* all = new intset(num_states);
   all->addAll();
-#ifdef NEW_STATESETS
   return new expl_stateset(getParent(), all);
-#else
-  return new stateset(getParent(), all);
-#endif
 }
 
 stateset* indexed_reachset::getPotential(expr* p) const
@@ -50,11 +46,7 @@ stateset* indexed_reachset::getPotential(expr* p) const
   } else {
     pset->removeAll();
   }
-#ifdef NEW_STATESETS
   return new expl_stateset(getParent(), pset);
-#else
-  return new stateset(getParent(), pset);
-#endif
 }
 
 stateset* indexed_reachset::getInitialStates() const
@@ -63,11 +55,7 @@ stateset* indexed_reachset::getInitialStates() const
   getNumStates(num_states);
   intset* initss = new intset(num_states);
   getInitial(*initss);
-#ifdef NEW_STATESETS
   return new expl_stateset(getParent(), initss);
-#else
-  return new stateset(getParent(), initss);
-#endif
 }
 
 void indexed_reachset::setInitial(const LS_Vector &init)

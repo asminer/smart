@@ -424,27 +424,6 @@ public:
 
   void showClasses() const;
 
-  /** Get the states that belong to a given class.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  cl          Class number.
-                            Class 0 refers to transient states.
-                            The rest refer to terminal SCCs.
-        @param  statelist   Set of states is stored here.
-
-      TBD - should be able to eliminate this in exact.cc,
-      and instead just use 'isTransient' below.
-  */
-  // virtual void getClass(long cl, intset &statelist) const;
-  
-
-  /** Is the given state "transient".
-      Default behavior is to print an error message.
-        @param  st  State (index) we are interested in.
-        @return true, iff from this state it is possible to reach
-                      another state j, where from j we cannot reach st.
-  */
-  // virtual bool isTransient(long st) const;
 
   inline statedist* getInitialDistribution() const {
     DCASSERT(PROC);

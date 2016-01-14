@@ -78,13 +78,11 @@ public:
   virtual void getNumStates(result& count) const;
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;
-#ifndef NEW_STATESETS
   virtual void getReachable(result &ss) const;
   virtual void getPotential(expr* p, result &ss) const;
   virtual void getInitialStates(result &x) const;
 
   virtual void findDeadlockedStates(stateset &) const;
-#endif
 
   virtual long getNumArcs() const;
   virtual void getNumArcs(result& count) const;
@@ -269,7 +267,6 @@ void meddly_mc::showStates(bool internal) const
   return process->showStates(this, em->cout(), internal);
 }
 
-#ifndef NEW_STATESETS
 
 void meddly_mc::getReachable(result &x) const
 {
@@ -347,7 +344,6 @@ void meddly_mc::findDeadlockedStates(stateset &p) const
   pse->E -= live;
 }
 
-#endif
 
 long meddly_mc::getNumArcs() const
 {

@@ -454,6 +454,138 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
   }
 }
 
+//
+// For phase?
+// 
+
+bool mclib_process::computeDiscreteTTA(double epsilon, double* &dist, int &N) const
+{
+  DCASSERT(chain);
+  if (chain->isContinuous()) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Can't compute discrete TTA on a CTMC.";
+      em->stopIO();
+    }
+    return false;
+  }
+  
+  long acc_state = getAcceptingState();
+  if (acc_state < 0) {
+    // Degenerate case - no accepting state
+    // This should be a distribution of "infinity"
+    dist = 0;
+    N = 0;
+    return true;
+  }
+
+  try {
+    int goal = chain->getClassOfState(acc_state);
+    MCLib::Markov_chain::distopts opts;
+    LS_Vector ls_init;
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeDiscreteDistTTA(ls_init, opts, goal, epsilon, dist, N);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startError()) {
+      em->noCause();
+      em->cerr() << "Couldn't compute discrete TTA: ";
+      em->cerr() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+
+bool mclib_process::
+computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
+{
+  DCASSERT(chain);
+  if (chain->isDiscrete()) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Can't compute continuous TTA on a DTMC.";
+      em->stopIO();
+    }
+    return false;
+  }
+  
+  long acc_state = getAcceptingState();
+  if (acc_state < 0) {
+    // Degenerate case - no accepting state
+    // This should be a distribution of "infinity"
+    dist = 0;
+    N = 0;
+    return true;
+  }
+
+  try {
+    int goal = chain->getClassOfState(acc_state);
+    MCLib::Markov_chain::distopts opts;
+    LS_Vector ls_init;
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeContinuousDistTTA(ls_init, opts, goal, dt, epsilon, dist, N);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startError()) {
+      em->noCause();
+      em->cerr() << "Couldn't compute discrete TTA: ";
+      em->cerr() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+
+bool mclib_process::reachesAcceptBy(double t, double* x) const
+{
+  DCASSERT(chain);
+
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+  for (long i=chain->getNumStates()-1; i>=0; i--) x[i] = 0;
+
+  long acc_state = getAcceptingState();
+  if (acc_state < 0) {
+    // Degenerate case - no accepting state,
+    // so nothing will reach it
+    return true;
+  }
+  x[acc_state] = 1;
+
+  if (t<=0) return true;
+
+  MCLib::Markov_chain::transopts opts;
+
+  try {
+    timer w;
+    startRevTransReport(w, t); 
+    chain->reverseTransient(t, x, opts);
+    stopRevTransReport(w, opts.Steps);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+
+
+
+
 
 //
 // For reachgraphs

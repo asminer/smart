@@ -16,7 +16,7 @@ State 2: a
 Accepting state index: 2
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	0 : 0.5
@@ -51,7 +51,7 @@ State 3: a
 Accepting state index: 3
 Trap state index: 2
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 0.5
@@ -85,7 +85,7 @@ State 3: a
 Accepting state index: 3
 Trap state index: 2
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 0.5
@@ -124,7 +124,7 @@ State 6: a
 Accepting state index: 6
 Trap state index: 5
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 0.5
@@ -173,7 +173,7 @@ State 6: a
 Accepting state index: 6
 Trap state index: 5
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 2
@@ -201,17 +201,17 @@ Should be 0.5: 0.5
 These should generate error messages:
 
 ERROR in file phase_TF.sm near line 20:
-	Underlying distribution is ph int instead of ph real
+    Underlying distribution is ph int instead of ph real
 null phase type
 ERROR in file phase_TF.sm near line 46:
-	Underlying distribution is ph int instead of ph real
+    Underlying distribution is ph int instead of ph real
 null phase type
 ERROR in file phase_TF.sm near line 71:
-	Underlying distribution is ph int instead of ph real
+    Underlying distribution is ph int instead of ph real
 null phase type
 ERROR in file phase_TF.sm near line 99:
-	Underlying distribution is ph int instead of ph real
+    Underlying distribution is ph int instead of ph real
 null phase type
 ERROR in file phase_TF.sm near line 126:
-	Underlying distribution is ph real instead of ph int
+    Underlying distribution is ph real instead of ph int
 null phase type

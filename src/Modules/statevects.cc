@@ -875,11 +875,7 @@ void gt_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
-#ifdef NEW_STATESETS
   x.answer->setPtr( new expl_stateset(llm, ans) );
-#else
-  x.answer->setPtr( new stateset(llm, ans) );
-#endif
   Delete(p);
 }
 
@@ -933,11 +929,7 @@ void ge_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
-#ifdef NEW_STATESETS
   x.answer->setPtr( new expl_stateset(llm, ans) );
-#else
-  x.answer->setPtr( new stateset(llm, ans) );
-#endif
   Delete(p);
 }
 
@@ -990,11 +982,7 @@ void lt_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
-#ifdef NEW_STATESETS
   x.answer->setPtr( new expl_stateset(llm, ans) );
-#else
-  x.answer->setPtr( new stateset(llm, ans) );
-#endif
   Delete(p);
 }
 
@@ -1048,11 +1036,7 @@ void le_si::Compute(traverse_data &x, expr** pass, int np)
   //
   // Finalize & Cleanup 
   //
-#ifdef NEW_STATESETS
   x.answer->setPtr( new expl_stateset(llm, ans) );
-#else
-  x.answer->setPtr( new stateset(llm, ans) );
-#endif
   Delete(p);
 }
 
@@ -1110,11 +1094,7 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-#ifdef NEW_STATESETS
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
-#else
-  stateset* e = ss->isExplicit() ? ss : 0;
-#endif
   if (!e) {
   
     if (em->startError()) {
@@ -1212,11 +1192,7 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-#ifdef NEW_STATESETS
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
-#else
-  stateset* e = ss->isExplicit() ? ss : 0;
-#endif
   if (!e) {
     if (em->startError()) {
       em->causedBy(this);
