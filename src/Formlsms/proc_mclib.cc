@@ -136,10 +136,8 @@ void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_l
 
     // Renumber states
     irs->Renumber(ren);
-
-    // TBD - renumber accepting state
-
-    // TBD - renumber trap state
+    if (trap>=0)    trap = ren[trap];
+    if (accept>=0)  accept = ren[accept];
 
     initial = new statedist(p, init, ren);
   } else {

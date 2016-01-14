@@ -249,14 +249,6 @@ public:
   /// Check if na exceeds option, if so, show "too many arcs" message.
   static bool tooManyArcs(long na, bool show);
 
-  /** Show the initial state(s) of the graph.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-
-      TBD - where does this belong?
-  */
-  virtual void showInitial() const;
-
   /** Count number of paths from src to dest in reachability graph.
       This must be provided in derived classes, the
       default behavior here is to print an error message.

@@ -13,7 +13,7 @@
 # ConvergePrecision 1e-7
 
 // # Verbose true
-	
+
 /* The good old x=sqrt(x) converge */
 
 real Answer := 3;

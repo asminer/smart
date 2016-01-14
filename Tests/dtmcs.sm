@@ -13,9 +13,9 @@ dtmc d0 := {
   state a,b;
   init(a:1);
   arcs(
-  	a:a:1,
-	a:b:3,
-	b:a:1
+      a:a:1,
+      a:b:3,
+      b:a:1
   );
 
   void show := { 
@@ -38,7 +38,7 @@ dtmc d1 := {
   state a,b,a;
   init(a:1);
   arcs(
-  	a:c:1
+      a:c:1
   );
 };
 
@@ -50,9 +50,9 @@ dtmc d2 := {
   state a,b,c;
   init(a:1, b:1, a:1);
   arcs(
-    a:b:1,
-    a:c:1,
-    a:b:1
+      a:b:1,
+      a:c:1,
+      a:b:1
   );
   bigint m1 := num_states;
 };
@@ -65,28 +65,28 @@ print(d2.m1, "\n");
 //
 
 dtmc d3(int dummy) := {
-  state a, 	// absorbing
-        b,c,d,	// recurrent class
-	e,f,	// recurrent class
-	g,h,i,j;  // transients
+  state a,        // absorbing
+        g,h,i,j,  // transients
+        b,c,d,    // recurrent class
+        e,f;      // recurrent class
 
   init (i:dummy);
 
   arcs(
-  	i : g : 1,
-	g : h : 1,
-	h : i : 1,
+      i : g : 1,
+      g : h : 1,
+      h : i : 1,
 
-	g : a : 1,
-	h : b : 1,
-	i : j : 1, j : e : 1,
+      g : a : 1,
+      h : b : 1,
+      i : j : 1, j : e : 1,
 
-	e : e : 1, e : f : 1,
-	f : e : 1,
+      e : e : 1, e : f : 1,
+      f : e : 1,
 
-	b : c : 1, b : d : 1,
-	c : d : 1,
-	d : b : 1
+      b : c : 1, b : d : 1,
+      c : d : 1,
+      d : b : 1
   );
 
   void show := { 
@@ -98,12 +98,16 @@ dtmc d3(int dummy) := {
 };
 
 # StateDisplayOrder LEXICAL
-print("States should appear in definition order: a,b,c,d,e,f,g,h,i,j:\n");
+print("States should appear in lexical order: a,b,c,d,e,f,g,h,i,j:\n");
 d3(1).show;
 
 # StateDisplayOrder NATURAL
 print("Transients should appear first {g,h,i,j}, then recurrent, then a:\n");
 d3(2).show;
+
+# StateDisplayOrder DISCOVERY
+print("States should appear in definition order: a,g,h,i,j,b,c,d,e,f:\n");
+d3(1).show;
 
 //
 // Simple array of states test
@@ -136,11 +140,11 @@ dtmc foo1(state a, state b) := {
   state c, d, e;
   init(b:1, c:1);
   arcs(
-  	a:b:1, a:c:1,
-	b:c:1, b:d:1,
-	c:d:1, c:e:1,
-	d:e:1,
-	e:a:1
+      a:b:1, a:c:1,
+      b:c:1, b:d:1,
+      c:d:1, c:e:1,
+      d:e:1,
+      e:a:1
   );
   bigint m1 := num_states;
   real m2 := prob_ss(in_state(a));
@@ -163,9 +167,9 @@ print("This should be zero: ", bar1.m3, "\n");
 dtmc oz := {
   state r, n, s;
   arcs(
-    r : r : 2,  r : n : 1,  r : s : 1,
-    n : r : 1,  n : s : 1,
-    s : r : 1,  s : n : 1,  s : s : 2
+      r : r : 2,  r : n : 1,  r : s : 1,
+      n : r : 1,  n : s : 1,
+      s : r : 1,  s : n : 1,  s : s : 2
   );
   init(n:1);
   real ssr := prob_ss(in_state(r));
@@ -189,9 +193,9 @@ dtmc absorb := {
   state a, b, c, d, e, f;
   init( a:1, c:1, d:1 );
   arcs(
-    a : b : 2, a : d : 1,
-    b : c : 3, b : e : 1,
-    c : a : 4, c : f : 1
+      a : b : 2, a : d : 1,
+      b : c : 3, b : e : 1,
+      c : a : 4, c : f : 1
   );
 
   real ssa := prob_ss(in_state(a));
@@ -219,7 +223,7 @@ print("None is given, so we should get a warning and an error.\n");
 dtmc two_absorb := {
   state t, a1, a2;
   arcs(
-    t : a1 : 1, t : a2 : 2
+      t : a1 : 1, t : a2 : 2
   );
   real g1 := prob_ss(in_state(a1));
   real g2 := prob_ss(in_state(a2));
@@ -233,8 +237,8 @@ dtmc flip := {
   state a, b;
   init(a:1);
   arcs(
-    a : a : 1, a : b : 1,
-    b : a : 1
+      a : a : 1, a : b : 1,
+      b : a : 1
   );
   real sa := prob_ss(in_state(a));
   real sb := prob_ss(in_state(b));

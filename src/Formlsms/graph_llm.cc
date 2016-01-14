@@ -78,11 +78,6 @@ bool graph_lldsm::tooManyArcs(long na, bool show)
   return true;
 }
 
-void graph_lldsm::showInitial() const
-{
-  bailOut(__FILE__, __LINE__, "Can't show initial state(s)");
-}
-
 void graph_lldsm::countPaths(const stateset*, const stateset*, result& c)
 {
   c.setNull();
