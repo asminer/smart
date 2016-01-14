@@ -57,6 +57,7 @@
 #include "../Formlsms/state_llm.h"
 #include "../Formlsms/graph_llm.h"
 #include "../Formlsms/stoch_llm.h"
+#include "../Formlsms/proc_markov.h"
 #include "../Formlsms/ctl_msr.h"
 #include "../Formlsms/stoch_msr.h"
 #include "../Formlsms/csl_msr.h"
@@ -139,6 +140,7 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitializeStateLLM(em);
   InitializeGraphLLM(em);
   InitializeStochasticLLM(em);
+  InitializeMarkovProc(em);
   InitializeDSDE(em);
   InitializeFSMs(em, &CML); 
   InitializeMarkovChains(em, &CML);

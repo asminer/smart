@@ -11,6 +11,86 @@
 // external library
 #include "intset.h"
 
+bool statusOK(exprman* em, const LS_Output &o, const char* who) 
+{
+    switch (o.status) {
+      case LS_Success:
+          return true;
+
+      case LS_No_Convergence:
+          if (em->startWarning()) {
+            em->noCause();
+            em->warn() << "Markov chain linear solver (for ";
+            em->warn() << who << ") did not converge";
+            em->stopIO();
+          }
+          return true;
+
+      case LS_Out_Of_Memory:
+          if (em->startError()) {
+            em->noCause();
+            em->cerr() << "Insufficient memory for Markov chain ";
+            em->cerr() << who << " solver";
+            em->stopIO();
+          }
+          return false;
+
+      case LS_Wrong_Format:
+          if (em->startError()) {
+            em->noCause();
+            em->cerr() << "Wrong matrix format for Markov chain linear solver";
+            em->stopIO();
+          }
+          return false;
+
+      default:
+          if (em->startInternal(__FILE__, __LINE__)) {
+            em->noCause();
+            em->internal() << "Unexpected error";
+            em->stopIO();
+          }
+    } // switch
+    return false;
+}
+
+bool status(exprman* em, MCLib::error e, const char* who) 
+{
+    switch (e.getCode()) {
+      case MCLib::error::Out_Of_Memory:
+          if (em->startError()) {
+            em->noCause();
+            em->cerr() << "Insufficient memory for Markov chain ";
+            em->cerr() << who << " solver";
+            em->stopIO();
+          }
+          break;
+
+      case MCLib::error::Wrong_Format:
+          if (em->startError()) {
+            em->noCause();
+            em->cerr() << "Wrong matrix format for Markov chain linear solver";
+            em->stopIO();
+          }
+          break;
+
+      case MCLib::error::Null_Vector:
+          if (em->startError()) {
+            em->noCause();
+            em->cerr() << "Initial probability vector required for Markov chain solver";
+            em->stopIO();
+          }
+          break;
+
+      default:
+        if (em->startInternal(__FILE__, __LINE__)) {
+            em->noCause();
+            em->internal() << "Unexpected error: " << e.getString();
+            em->stopIO();
+        }
+    } // switch
+    return false;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     mclib_process  methods                     *
@@ -87,27 +167,295 @@ long mclib_process::getNumStates() const
 
 void mclib_process::getNumClasses(long &count) const
 {
-  // TBD
-  DCASSERT(0);
-  count = -1;
+  DCASSERT(chain);
+  count = chain->getNumClasses() + chain->getNumAbsorbing();
 }
 
-void mclib_process::showClasses(OutputStream &os, shared_state* st) const
+void mclib_process::showClasses(OutputStream &os, state_lldsm::reachset* RSS, 
+  shared_state* st) const
 {
   // TBD
   DCASSERT(0);
+
+  // TBD : try/catch around this
+  indexed_reachset::indexed_iterator &I = 
+    dynamic_cast <indexed_reachset::indexed_iterator &> (
+      RSS->iteratorForOrder(state_lldsm::NATURAL)
+    );
+
+  long nr = chain->getNumClasses();
+  long na = chain->getNumAbsorbing();
+
+  long trans = chain->getNumTransient();
+  if (trans) {
+    em->cout() << "Transient states:\n";
+    long snum = chain->getFirstTransient();
+    for (long i = trans; i; i--) {
+      em->cout().Put('\t');
+      I.copyState(st, snum);
+      RSS->showState(os, st);
+      em->cout().Put('\n');
+      em->cout().Check();
+      snum++;
+    }
+  }
+  if (nr) for (long c=1; c<=nr; c++) {
+    em->cout() << "Recurrent class " << c << ":\n";
+    long snum = chain->getFirstRecurrent(c);
+    for (long i = chain->getRecurrentSize(c); i; i--) {
+      em->cout().Put('\t');
+      I.copyState(st, snum);
+      RSS->showState(os, st);
+      em->cout().Put('\n');
+      em->cout().Check();
+      snum++;
+    }
+  }
+  if (na) {
+    em->cout() << "Absorbing states:\n";
+    long snum = chain->getFirstAbsorbing();
+    for (long i = na; i; i--) {
+      em->cout().Put('\t');
+      I.copyState(st, snum);
+      RSS->showState(os, st);
+      em->cout().Put('\n');
+      em->cout().Check();
+      snum++;
+    }
+  }
 }
 
 bool mclib_process::isTransient(long st) const
 {
-  // TBD
-  DCASSERT(0);
+  DCASSERT(chain);
+  return chain->isTransientState(st);
 }
 
 statedist* mclib_process::getInitialDistribution() const
 {
   return Share(initial);
 }
+
+long mclib_process::getOutgoingWeights(long from, long* to, double* w, long n) const
+{
+  simple_outedges thing(to, w, n);
+  chain->traverseFrom(from, thing);
+  return thing.edges;
+}
+
+bool mclib_process
+::computeTransient(double t, double* probs, double* aux1, double* aux2) const
+{
+  if (0==chain || 0==probs || 0==aux1)  return false;
+  MCLib::Markov_chain::transopts opts;
+  opts.kill_aux_vectors = false;
+  opts.vm_result = aux1;
+  opts.accumulator = aux2;
+
+  try {
+    timer w;
+    startTransientReport(w, t); 
+    chain->computeTransient(t, probs, opts);
+    stopTransientReport(w, opts.Steps);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
+                                  double* aux, double* aux2) const
+{
+  if (0==chain || 0==p0 || 0==n || 0==aux || 0==aux2) return false;
+
+  MCLib::Markov_chain::transopts opts;
+  opts.vm_result = aux;
+  opts.accumulator = aux2;
+  opts.kill_aux_vectors = false;
+
+  try {
+    timer w;
+    startAccumulatedReport(w, t);
+    chain->accumulate(t, p0, n, opts);
+    stopAccumulatedReport(w, opts.Steps);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+bool mclib_process::computeSteadyState(double* probs) const
+{
+  if (0==chain) return false;
+  if (0==probs) return false;
+
+  try {
+    LS_Output outdata;
+    LS_Vector ls_init;
+    timer w;
+    startSteadyReport(w); 
+    DCASSERT(initial);
+    initial->ExportTo(ls_init);
+    chain->computeSteady(ls_init, probs, getSolverOptions(), outdata);
+    stopSteadyReport(w, outdata.num_iters);
+    return statusOK(em, outdata, "steady-state");
+  }
+  catch (MCLib::error e) {
+    return status(em, e, "steady-state");
+  }
+}
+
+bool mclib_process::computeTimeInStates(const double* p0, double* x) const
+{
+  if (0==chain || 0==p0 || 0==x) return false;
+
+  LS_Output outdata;
+  LS_Vector p0vect;
+  p0vect.size = chain->getNumStates();
+  p0vect.index = 0;
+  p0vect.d_value = p0;
+  p0vect.f_value = 0;
+  try {
+    timer w;
+    startTTAReport(w);
+    chain->computeTTA(p0vect, x, getSolverOptions(), outdata);
+    stopTTAReport(w, outdata.num_iters);
+    return statusOK(em, outdata, "time in states");
+  }
+  catch (MCLib::error e) {
+    return status(em, e, "time in states");
+  }
+}
+
+bool mclib_process::computeClassProbs(const double* p0, double* x) const
+{
+  if (0==chain || 0==p0 || 0==x) return false;
+
+  LS_Output outdata;
+  LS_Vector p0vect;
+  p0vect.size = chain->getNumStates();
+  p0vect.index = 0;
+  p0vect.d_value = p0;
+  p0vect.f_value = 0;
+  try {
+    timer w;
+    startTTAReport(w);
+    chain->computeClassProbs(p0vect, x, getSolverOptions(), outdata);
+    stopTTAReport(w, outdata.num_iters);
+    return statusOK(em, outdata, "class probabilities");
+  }
+  catch (MCLib::error e) {
+    return status(em, e, "class probabilities");
+  }
+}
+
+bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
+                          long maxt, long &elapsed)
+{
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+  DCASSERT(final);
+  DCASSERT(chain);
+  if (chain->isContinuous()) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Can't simulate discrete-time random walk on a CTMC.";
+      em->stopIO();
+    }
+    return false;
+  }
+
+  // TBD: an option for this part?
+  // TBD: reporting for the transpose?
+  if (chain->isEfficientByCols()) {
+    try {
+      chain->transpose();
+    }
+    catch (MCLib::error e) {
+      if (em->startError()) {
+        em->noCause();
+        em->cerr() << "Couldn't transpose DTMC for random walk: ";
+        em->cerr() << e.getString();
+        em->stopIO();
+      }
+      return false;
+    }
+  }
+
+  try {
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt, 1.0);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startError()) {
+      em->noCause();
+      em->cerr() << "Couldn't simulate DTMC random walk: ";
+      em->cerr() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
+                          double maxt, double &elapsed)
+{
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+  DCASSERT(chain);
+  if (chain->isDiscrete()) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Can't simulate continuous-time random walk on a DTMC.";
+      em->stopIO();
+    }
+    return false;
+  }
+
+  // TBD: an option for this part?
+  // TBD: reporting for the transpose?
+  if (chain->isEfficientByCols()) {
+    try {
+      chain->transpose();
+    }
+    catch (MCLib::error e) {
+      if (em->startError()) {
+        em->noCause();
+        em->cerr() << "Couldn't transpose CTMC for random walk: ";
+        em->cerr() << e.getString();
+        em->stopIO();
+      }
+      return false;
+    }
+  }
+
+  try {
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt);
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startError()) {
+      em->noCause();
+      em->cerr() << "Couldn't simulate CTMC random walk: ";
+      em->cerr() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
 
 //
 // For reachgraphs

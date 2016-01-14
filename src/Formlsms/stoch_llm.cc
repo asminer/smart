@@ -38,8 +38,8 @@ void stochastic_lldsm::showClasses() const
 {
   DCASSERT(PROC);
   shared_state* st = new shared_state(parent);
-  // DCASSERT(RSS);
-  PROC->showClasses(em->cout(), st);
+  DCASSERT(RSS);
+  PROC->showClasses(em->cout(), RSS, st);
   Delete(st);
 }
 
