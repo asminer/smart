@@ -44,6 +44,9 @@ void enum_reachset::getNumStates(long &ns) const
 
 void enum_reachset::showInternal(OutputStream &os) const
 {
+  os << "state_handle: [";
+  os.PutArray(state_handle, states->NumValues());
+  os << "]\n";
   for (long i=0; i<states->NumValues(); i++) {
     const model_enum_value* st = states->ReadValue(i);
     os << "State " << i << " internal: (index " << st->GetIndex() << ") ";
@@ -99,6 +102,12 @@ void enum_reachset::Renumber(const long* ren)
   for (long i=0; i<states->NumValues(); i++) {
     model_enum_value* st = states->GetValue(i);
     st->SetIndex(ren[i]);
+  }
+  // Rebuild state_handle array
+  for (long j=0; j<states->NumValues(); j++) {
+    const model_enum_value* st = states->ReadValue(j);
+    CHECK_RANGE(0, st->GetIndex(), states->NumValues());
+    state_handle[st->GetIndex()] = j;
   }
 }
 

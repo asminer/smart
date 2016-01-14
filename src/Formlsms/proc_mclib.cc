@@ -362,4 +362,9 @@ void mclib_reachgraph::absorbing(intset &r) const
   chain->absorbing(r);
 }
     
+void mclib_reachgraph::getTSCCsSatisfying(intset &p) const
+{
+  DCASSERT(chain);
+  chain->getTSCCsSatisfying(p);
+}
 

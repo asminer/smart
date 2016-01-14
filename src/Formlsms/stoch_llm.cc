@@ -29,6 +29,11 @@ stochastic_lldsm::~stochastic_lldsm()
   Delete(PROC);
 }
 
+bool stochastic_lldsm::isFairModel() const
+{
+  return true;
+}
+
 void stochastic_lldsm::showClasses() const
 {
   DCASSERT(PROC);
