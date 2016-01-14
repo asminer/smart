@@ -71,12 +71,15 @@ for (int i in {2,3,4,5,6,7,8,9,10,15,20,25,50,75,100,150,200}) {
 print("\nfactors using mod:\n");
 
 void factor(bigint a, bigint i) := 
-  cond ( i*i > a, print(a, "\n"),
-         cond( (a % i) == 0, 
-		            { print(i, " "); factor(div(a,i), i); } ,
-		            factor(a, i+1)
-             )
-       );
+  cond ( 
+    i*i > a, print(a, "\n"), cond( 
+      (a % i) == 0, { 
+        print(i, " "); 
+        factor(div(a,i), i); 
+      } ,
+        factor(a, i+1)
+    )
+  );
 
 #StackSize 1000000
 

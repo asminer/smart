@@ -1,11 +1,11 @@
 /* 
-   $Id$	
+   $Id$
 */
-	
+
 /*
  *     Tests stangely shaped arrays
  */
-	
+
 /*
  *   Integer arrays
  */
@@ -103,7 +103,7 @@ for (real x in {0.1}) {
 }
 
 #IndexPrecision 1e-4
-	
+
 print("These should be range errors:\n");
 print(g[0.3],"\n");
 print(g[0.2],"\n");
@@ -185,9 +185,11 @@ print("\n\nJust for kicks:\n\n");
 int TS := 20;
 
 for (int i in {1..TS}, int j in {0..i+1}) {
-  int pascal[i][j] := cond(j==0 | j>i, 0, 
-                           cond(i==1, 1, pascal[i-1][j-1] + pascal[i-1][j])
-			  );
+  int pascal[i][j] := cond(
+    j==0 | j>i, 0, cond(
+      i==1, 1, pascal[i-1][j-1] + pascal[i-1][j]
+    )
+  );
 }
 
 

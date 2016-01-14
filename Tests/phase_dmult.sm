@@ -28,8 +28,10 @@ print("(Natural order)\n");
 print_ph(5*(geometric(0.5)+geometric(0.2)));
 print("(Lexical order)\n");
 #StateDisplayOrder LEXICAL
+#StatevectDisplayStyle SPARSE_STATE
 print_ph(5*(geometric(0.5)+geometric(0.2)));
 #StateDisplayOrder NATURAL
+#StatevectDisplayStyle SPARSE_INDEX
 
 
 
