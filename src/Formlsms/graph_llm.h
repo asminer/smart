@@ -34,6 +34,7 @@ public:
   };
   static const int num_graph_display_styles = 4;
 
+private:
   inline static display_style graphDisplayStyle() {
     switch (graph_display_style) {
       case 0 : return DOT;
@@ -45,6 +46,7 @@ public:
     return OUTGOING;
   }
 
+  public:
   inline static bool displayGraphNodeNames() {
     return display_graph_node_names;
   }
@@ -62,6 +64,13 @@ public:
       to unreachable ones.
   */
   class reachgraph : public shared_object {
+    public:
+      struct show_options {
+        state_lldsm::display_order ORDER;
+        graph_lldsm::display_style STYLE;
+        bool NODE_NAMES;
+      };
+    private:
       const graph_lldsm* parent;
     protected:
       static named_msg ctl_report;
@@ -110,12 +119,12 @@ public:
       /**
         Show all the edges, in the desired order.
           @param  os    Output stream to write to
+          @param  opt   Display options
           @param  RSS   Reachable states
-          @param  ord   Display order to use
           @param  st    Memory space to use for individual states
       */
-      virtual void showArcs(OutputStream &os, reachset* RSS, 
-        state_lldsm::display_order ord, shared_state* st) const = 0;
+      virtual void showArcs(OutputStream &os, const show_options &opt, 
+        reachset* RSS, shared_state* st) const = 0;
 
 
       /** Compute states satisfying EX(p).
@@ -264,53 +273,12 @@ public:
   /// Check if na exceeds option, if so, show "too many arcs" message.
   static bool tooManyArcs(long na, bool show);
 
-  /** Change our internal structure so as to be efficient "by rows".
-      If this is already the case, do nothing.
-        @param  rep   0, or pointer to reporting structure.
-        @return true, if the operation was successful.
-  */
-  // virtual bool requireByRows(const named_msg* rep);
-
-  /** Change our internal structure so as to be efficient "by columns".
-      If this is already the case, do nothing.
-        @param  rep   0, or pointer to reporting structure.
-        @return true, if the operation was successful.
-  */
-  // virtual bool requireByCols(const named_msg* rep);
-
-  /** Obtain the outgoing edges from a state.
-      Requires that the graph is efficient "by rows".
-        @param  from    Source state
-        @param  e       If e is a valid list (not 0), then
-                        destination states are added to e.
-        @return Number of edges, on success; -1 on failure.
-  */
-  // virtual long getOutgoingEdges(long from, ObjectList <int> *e) const;
-
-  /** Obtain the incoming edges to a state.
-      Requires that the graph is efficient "by columns".
-        @param  to      Destination state
-        @param  e       If e is a valid list (not 0), then
-                        source states are added to e.
-        @return Number of edges, on success; -1 on failure.
-  */
-  // virtual long getIncomingEdges(long from, ObjectList <int> *e) const;
-
-  /** Obtain the number of outgoing edges for each state.
-        @param  a   For each state s, add the number of
-                    outgoing edges for state s to a[s].
-        @return true, if successful.
-  */
-  // virtual bool getOutgoingCounts(long* a) const;
-
   /** Produce a "dot" file of this model.
-      Default behavior is to (quietly) return false.
-        @param  s    Stream to write to
-        @return true on success, false otherwise.
-
-      TBD - where does this belong?
+      Equivalent to showArcs with a style of DOT.
   */
-  virtual bool dumpDot(OutputStream &s) const;
+  void dumpDot(OutputStream &s) const;
+
+
 
   /** Get the (potential) states that, once entered, are never 
       left.  This includes deadlocked states.  This must be 

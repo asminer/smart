@@ -95,8 +95,8 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
   os << "]\n";
 }
 
-void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-  state_lldsm::display_order ord, shared_state* st) const 
+void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
+  state_lldsm::reachset* RSS, shared_state* st) const
 {
   long na = edges->getNumEdges();
   long num_states = edges->getNumNodes();
@@ -104,7 +104,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
   if (state_lldsm::tooManyStates(num_states, true))  return;
   if (graph_lldsm::tooManyArcs(na, true))            return;
 
-  bool by_rows = (graph_lldsm::OUTGOING == graph_lldsm::graphDisplayStyle());
+  bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
   const char* col;
   row = "From state ";
@@ -113,15 +113,15 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I 
-  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(ord));
+  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
 
 
-  switch (graph_lldsm::graphDisplayStyle()) {
+  switch (opt.STYLE) {
     case graph_lldsm::DOT:
         os << "digraph fsm {\n";
         for (I.start(); I; I++) { 
           os << "\ts" << I.index();
-          if (graph_lldsm::displayGraphNodeNames()) {
+          if (opt.NODE_NAMES) {
             I.copyState(st);
             os << " [label=\"";
             RSS->showState(os, st);
@@ -145,11 +145,11 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
   sparse_row_elems foo(I);
 
   for (I.start(); I; I++) {
-    switch (graph_lldsm::graphDisplayStyle()) {
+    switch (opt.STYLE) {
       case graph_lldsm::INCOMING:
       case graph_lldsm::OUTGOING:
           os << row;
-          if (graph_lldsm::displayGraphNodeNames()) {
+          if (opt.NODE_NAMES) {
             I.copyState(st);
             RSS->showState(os, st);
           } else {
@@ -176,7 +176,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
     // display row/column
     for (long z=0; z<foo.last; z++) {
       os.Put('\t');
-      switch (graph_lldsm::graphDisplayStyle()) {
+      switch (opt.STYLE) {
         case graph_lldsm::DOT:
             os << "s" << foo.index[z] << " -> s" << I.getI() << ";";
             break;
@@ -187,7 +187,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
         default:
             os << col;
-            if (graph_lldsm::displayGraphNodeNames()) {
+            if (opt.NODE_NAMES) {
               I.copyState(st, foo.index[z]);
               RSS->showState(os, st);
             } else {
@@ -199,7 +199,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
     os.flush();
   } // for i
-  if (graph_lldsm::DOT == graph_lldsm::graphDisplayStyle()) {
+  if (graph_lldsm::DOT == opt.STYLE) {
     os << "}\n";
   }
   os.flush();
