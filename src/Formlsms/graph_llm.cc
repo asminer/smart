@@ -56,9 +56,13 @@ void graph_lldsm::showArcs(bool internal) const
   if (internal) {
     RGR->showInternal(em->cout());
   } else {
+    reachgraph::show_options opts;
+    opts.ORDER = stateDisplayOrder();
+    opts.STYLE = graphDisplayStyle();
+    opts.NODE_NAMES = displayGraphNodeNames();
     shared_state* st = new shared_state(parent);
     DCASSERT(RSS);
-    RGR->showArcs(em->cout(), RSS, stateDisplayOrder(), st);
+    RGR->showArcs(em->cout(), opts, RSS, st);
     Delete(st);
   }
 }
@@ -78,39 +82,17 @@ bool graph_lldsm::tooManyArcs(long na, bool show)
   return true;
 }
 
-/*
-bool graph_lldsm::requireByRows(const named_msg*)
+void graph_lldsm::dumpDot(OutputStream &s) const
 {
-  return false;
-}
-
-bool graph_lldsm::requireByCols(const named_msg*)
-{
-  return false;
-}
-
-long graph_lldsm::getOutgoingEdges(long from, ObjectList <int> *e) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get outgoing edges");
-  return -1;
-}
-
-long graph_lldsm::getIncomingEdges(long from, ObjectList <int> *e) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get incoming edges");
-  return -1;
-}
-
-bool graph_lldsm::getOutgoingCounts(long* a) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get outgoing edge counts");
-  return false;
-}
-*/
-
-bool graph_lldsm::dumpDot(OutputStream &s) const
-{
-  return false;
+  DCASSERT(RGR);
+  shared_state* st = new shared_state(parent);
+  DCASSERT(RSS);
+  reachgraph::show_options opts;
+  opts.ORDER = stateDisplayOrder();
+  opts.STYLE = DOT;
+  opts.NODE_NAMES = true;
+  RGR->showArcs(s, opts, RSS, st);
+  Delete(st);
 }
 
 bool graph_lldsm::isFairModel() const

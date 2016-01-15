@@ -75,8 +75,9 @@ class mclib_process : public markov_process {
       na = chain->getNumArcs();
     }
     void showInternal(OutputStream &os) const;
-    void showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-      state_lldsm::display_order ord, shared_state* st) const;
+    virtual void showArcs(OutputStream &os, 
+      const graph_lldsm::reachgraph::show_options& opt, 
+      state_lldsm::reachset* RSS, shared_state* st) const;
 
     inline bool forward(const intset& p, intset &r) const {
       DCASSERT(chain);
@@ -218,8 +219,8 @@ class mclib_reachgraph : public ectl_reachgraph {
   public:
     virtual void getNumArcs(long &na) const;
     virtual void showInternal(OutputStream &os) const;
-    virtual void showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-      state_lldsm::display_order ord, shared_state* st) const;
+    virtual void showArcs(OutputStream &os, const show_options& opt, 
+      state_lldsm::reachset* RSS, shared_state* st) const;
 
   protected:
     virtual bool forward(const intset& p, intset &r) const;

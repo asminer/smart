@@ -24,8 +24,8 @@ class grlib_reachgraph : public ectl_reachgraph {
   public:
     virtual void getNumArcs(long &na) const;
     virtual void showInternal(OutputStream &os) const;
-    virtual void showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-      state_lldsm::display_order ord, shared_state* st) const;
+    virtual void showArcs(OutputStream &os, const show_options& opt, 
+      state_lldsm::reachset* RSS, shared_state* st) const;
 
     // Hold initial until we can give it to RSS.
     void setInitial(LS_Vector &init);

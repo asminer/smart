@@ -598,8 +598,9 @@ void mclib_process::showInternal(OutputStream &os) const
   return;
 }
 
-void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-  state_lldsm::display_order ord, shared_state* st) const 
+void mclib_process::showArcs(OutputStream &os, 
+  const graph_lldsm::reachgraph::show_options &opt, 
+  state_lldsm::reachset* RSS, shared_state* st) const
 {
   long na = chain->getNumArcs();
   long num_states = chain->getNumStates();
@@ -607,9 +608,9 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
   if (state_lldsm::tooManyStates(num_states, true))  return;
   if (graph_lldsm::tooManyArcs(na, true))            return;
 
-  bool by_rows = (graph_lldsm::OUTGOING == graph_lldsm::graphDisplayStyle());
+  bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
-  if (graph_lldsm::displayGraphNodeNames()) {
+  if (opt.NODE_NAMES) {
     row = by_rows ? "From " : "To ";
   } else {
     row = by_rows ? "Row " : "Column ";
@@ -617,15 +618,15 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I 
-  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(ord));
+  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
 
 
-  switch (graph_lldsm::graphDisplayStyle()) {
+  switch (opt.STYLE) {
     case graph_lldsm::DOT:
         os << "digraph mc {\n";
         for (I.start(); I; I++) { 
           os << "\ts" << I.index();
-          if (graph_lldsm::displayGraphNodeNames()) {
+          if (opt.NODE_NAMES) {
             I.copyState(st);
             os << " [label=\"";
             RSS->showState(os, st);
@@ -649,11 +650,11 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
   sparse_row_elems foo(I);
 
   for (I.start(); I; I++) {
-    switch (graph_lldsm::graphDisplayStyle()) {
+    switch (opt.STYLE) {
       case graph_lldsm::INCOMING:
       case graph_lldsm::OUTGOING:
           os << row;
-          if (graph_lldsm::displayGraphNodeNames()) {
+          if (opt.NODE_NAMES) {
             I.copyState(st);
             RSS->showState(os, st);
           } else {
@@ -680,7 +681,7 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
     // display row/column
     for (long z=0; z<foo.last; z++) {
       os.Put('\t');
-      switch (graph_lldsm::graphDisplayStyle()) {
+      switch (opt.STYLE) {
         case graph_lldsm::DOT:
             os << "s" << foo.index[z] << " -> s" << I.getI();
             os << " [label=\"" << foo.value[z] << "\"];";
@@ -691,7 +692,7 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
             break;
 
         default:
-            if (graph_lldsm::displayGraphNodeNames()) {
+            if (opt.NODE_NAMES) {
               I.copyState(st, foo.index[z]);
               RSS->showState(os, st);
             } else {
@@ -704,7 +705,7 @@ void mclib_process::showArcs(OutputStream &os, state_lldsm::reachset* RSS,
 
     os.flush();
   } // for i
-  if (graph_lldsm::DOT == graph_lldsm::graphDisplayStyle()) {
+  if (graph_lldsm::DOT == opt.STYLE) {
     os << "}\n";
   }
   os.flush();
@@ -815,11 +816,11 @@ void mclib_reachgraph::showInternal(OutputStream &os) const
   chain->showInternal(os);
 }
 
-void mclib_reachgraph::showArcs(OutputStream &os, state_lldsm::reachset* RSS, 
-      state_lldsm::display_order ord, shared_state* st) const
+void mclib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
+  state_lldsm::reachset* RSS, shared_state* st) const
 {
   DCASSERT(chain);
-  chain->showArcs(os, RSS, ord, st);
+  chain->showArcs(os, opt, RSS, st);
 }
 
 bool mclib_reachgraph::forward(const intset& p, intset &r) const
