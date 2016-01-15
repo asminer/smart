@@ -63,8 +63,9 @@ public:
   */
   class reachgraph : public shared_object {
       const graph_lldsm* parent;
-      static named_msg ctl_report;
     protected:
+      static named_msg ctl_report;
+      static named_msg numpaths_report;
       static exprman* em;
     public:
       reachgraph();
@@ -188,7 +189,21 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
+      virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q);
+
+      /** Count number of paths from src to dest in reachability graph.
+          This must be provided in derived classes, the
+          default behavior here is to print an error message.
+            @param  src     Set of starting states.
+            @param  dest    Set of destination states.
+            @param  count   On return, the number (as a bigint) of distinct 
+                            paths from some starting state, that ends in a 
+                            destination state.  Will be infinite if there is 
+                            a loop on any path from a starting state to a 
+                            destination state.
+      */
+      virtual void countPaths(const stateset* src, const stateset* dest, 
+          result& count);
 
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
@@ -248,19 +263,6 @@ public:
 
   /// Check if na exceeds option, if so, show "too many arcs" message.
   static bool tooManyArcs(long na, bool show);
-
-  /** Count number of paths from src to dest in reachability graph.
-      This must be provided in derived classes, the
-      default behavior here is to print an error message.
-        @param  src     Set of starting states.
-        @param  dest    Set of destination states.
-        @param  count   On return, the number of distinct paths
-                        from some starting state, that ends in
-                        a destination state.  Will be infinite
-                        if there is a loop on any path from
-                        a starting state to a destination state.
-  */
-  virtual void countPaths(const stateset* src, const stateset* dest, result& count);
 
   /** Change our internal structure so as to be efficient "by rows".
       If this is already the case, do nothing.
@@ -362,6 +364,15 @@ public:
     return RGR ? RGR->unfairAEF(revTime, p, q) : 0;
   }
 
+  inline void countPaths(const stateset* src, const stateset* dest, result& count) const
+  {
+    if (RGR) {
+      RGR->countPaths(src, dest, count);
+    } else {
+      count.setNull();
+    }
+  }
+
 
   // Hacks for explicit:
   //
@@ -386,8 +397,6 @@ private:
   static long max_arc_display;
   static int graph_display_style;
   static bool display_graph_node_names;
-protected:
-  static named_msg numpaths_report;
 
   friend void InitializeGraphLLM(exprman* em);
 };

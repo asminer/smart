@@ -18,7 +18,6 @@ int graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
 long graph_lldsm::max_arc_display = 100000000;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
-named_msg graph_lldsm::numpaths_report;
 
 // ******************************************************************
 // *                                                                *
@@ -27,6 +26,7 @@ named_msg graph_lldsm::numpaths_report;
 // ******************************************************************
 
 named_msg graph_lldsm::reachgraph::ctl_report;
+named_msg graph_lldsm::reachgraph::numpaths_report;
 exprman* graph_lldsm::reachgraph::em = 0;
 
 // ******************************************************************
@@ -76,12 +76,6 @@ bool graph_lldsm::tooManyArcs(long na, bool show)
   }
   em->cout().flush();
   return true;
-}
-
-void graph_lldsm::countPaths(const stateset*, const stateset*, result& c)
-{
-  c.setNull();
-  bailOut(__FILE__, __LINE__, "Can't count paths");
 }
 
 /*
@@ -186,9 +180,15 @@ stateset* graph_lldsm::reachgraph::fairEG(bool revTime, const stateset* p) const
 }
 
 stateset* graph_lldsm::reachgraph
-::unfairAEF(bool revTime, const stateset* p, const stateset* q) const
+::unfairAEF(bool revTime, const stateset* p, const stateset* q)
 {
   return notImplemented("unfairAEF");
+}
+
+void graph_lldsm::reachgraph::countPaths(const stateset*, const stateset*, result& c)
+{
+  notImplemented("`counting paths'");
+  c.setNull();
 }
 
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const
@@ -259,7 +259,7 @@ void InitializeGraphLLM(exprman* om)
 
   // ------------------------------------------------------------------
   option* report = om->findOption("Report");
-  graph_lldsm::numpaths_report.Initialize(
+  graph_lldsm::reachgraph::numpaths_report.Initialize(
     report,
     "num_paths",
     "When set, performance data for counting number of paths is displayed.",
