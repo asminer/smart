@@ -35,10 +35,16 @@ class grlib_reachgraph : public ectl_reachgraph {
       return deadlocks.contains(st);
     }
 
+    virtual void countPaths(const stateset* src, const stateset* dest, result& count);
+    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q);
+
   protected:
     virtual bool forward(const intset& p, intset &r) const;
     virtual bool backward(const intset& p, intset &r) const;
     virtual void getDeadlocked(intset &r) const;
+
+  private:
+    bool transposeEdges(const named_msg* rep, bool byrows);
     
   private:
     GraphLib::digraph* edges;
@@ -46,6 +52,7 @@ class grlib_reachgraph : public ectl_reachgraph {
     intset deadlocks;     // set of states with no outgoing edges
     // tbd - absorbing states
 
+  // ----------------------------------------------------------------------
   private:
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
       int alloc;
@@ -62,6 +69,7 @@ class grlib_reachgraph : public ectl_reachgraph {
     protected:
       bool Enlarge(int ns);
     public:
+      bool buildIncomingUnsorted(GraphLib::digraph* g, int i);
       bool buildIncoming(GraphLib::digraph* g, int i);
       bool buildOutgoing(GraphLib::digraph* g, int i);
 
@@ -81,7 +89,45 @@ class grlib_reachgraph : public ectl_reachgraph {
         SWAP(index[i], index[j]);
       }
     };
+  // ----------------------------------------------------------------------
+  private:
+    class outgoingCounter : public GraphLib::generic_graph::element_visitor {
+        long* count;
+      public:
+        outgoingCounter(long* c);
+        virtual ~outgoingCounter();
+        virtual bool visit(long from, long to, void*);
+    };
+  // ----------------------------------------------------------------------
+  private:
+    class incomingEdges : public GraphLib::generic_graph::element_visitor {
+        int alloc;
+        int last;
+        long* index;
+        bool overflow;
+      public:
+        incomingEdges();
+        virtual ~incomingEdges();
+        virtual bool visit(long from, long to, void*);
 
+        inline int Length() const { 
+          return last; 
+        }
+        inline long Item(int z) const {
+          CHECK_RANGE(0, z, last);
+          return index[z];
+        }
+        inline bool overflowed() const {
+          return overflow;
+        }
+        inline void Clear() {
+          last = 0;
+          overflow = false;
+        }
+
+      protected:
+        bool Enlarge(int ns);
+    };
 };
 
 #endif

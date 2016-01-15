@@ -5,8 +5,15 @@
 #include "rss_indx.h"
 
 #include "../Streams/streams.h"
+#include "../ExprLib/exprman.h"
+#include "../ExprLib/engine.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
+#include "../Modules/biginttype.h"
+
+// External libs
+
+#include "timerlib.h"
 
 // ******************************************************************
 // *                                                                *
@@ -205,6 +212,323 @@ void grlib_reachgraph::setInitial(LS_Vector &init)
   initial = init;
 }
 
+void grlib_reachgraph
+::countPaths(const stateset* src_ss, const stateset* dest_ss, result& count)
+{
+  DCASSERT(edges);
+
+  // check types of statesets
+  const expl_stateset* src_ess = dynamic_cast <const expl_stateset*> (src_ss);
+  const expl_stateset* dest_ess = dynamic_cast <const expl_stateset*> (dest_ss);
+  if (0==src_ess || 0==dest_ess) {
+    if (em->startError()) {
+      em->causedBy(0);
+      em->cerr() << "Explicit reachability graph expecting explicit statesets for path count";
+      em->stopIO();
+    }
+    count.setNull();
+    return;
+  }
+  const intset& src = src_ess->getExplicit();
+  const intset& dest = dest_ess->getExplicit();
+
+  //
+  // build backward set from dest, with card "nb".
+  //
+  timer sw;
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Building backward set\n";
+    numpaths_report.stopIO();
+  }
+  const long num_states = edges->getNumNodes();
+  intset back(num_states);
+  long nb = 0;
+  if (edges->isByCols()) {
+    back.removeAll();
+    for (long s=dest.getSmallestAfter(-1); s>=0; s=dest.getSmallestAfter(s)) {
+      nb += edges->getReachable(s, back);
+    } // for s
+  } else {
+    back = dest;
+    while (edges->getBackward(back, back));
+    nb = back.cardinality();
+  } // else not by columns
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Built    backward set, took " << sw.elapsed_seconds();
+    numpaths_report.report() << " seconds\n";
+    numpaths_report.stopIO();
+  }
+
+  // TBD - is this necessary?
+  // number of paths from src to dest equals
+  // number of paths from dest to src in transposed graph
+  //
+  // so we should be able to do this either way
+
+  // force us by rows
+  if (edges->isByCols()) {
+    if (!transposeEdges(&numpaths_report, false)) {
+      count.setNull();
+      return;
+    }
+  } 
+
+  // export graph edges
+  DCASSERT(edges->isByRows());
+  GraphLib::generic_graph::matrix rg;
+  if (!edges->exportFinished(rg)) {
+    DCASSERT(0);
+  } else {
+    DCASSERT(!rg.is_transposed);
+    DCASSERT(rg.rowptr);
+    DCASSERT(rg.colindex);
+  }
+
+  bigint acc;
+
+  sw.reset();
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Counting paths\n";
+    numpaths_report.stopIO();
+  }
+
+  // Initialize paths
+  long* shortpc = new long[num_states];
+  const long VISITING = -1;
+  const long UNBOUNDED = -2;
+  const long AS_BIGINT = -3;
+  for (long i=0; i<num_states; i++) {
+    shortpc[i] = dest.contains(i) ? 1 : 0;
+  } 
+  bigint** paths = new bigint*[num_states];
+  for (long i=0; i<num_states; i++) {
+    paths[i] = 0;
+  } 
+
+  // Initialize stack
+  long* stack = new long[1+nb];
+  long stack_top = 0;
+  for (long s=src.getSmallestAfter(-1); s>=0; s=src.getSmallestAfter(s)) {
+    if (back.contains(s)) {
+      // Push(s)
+      CHECK_RANGE(0, stack_top, 1+nb);
+      stack[stack_top++] = s;
+    }
+  } // for s
+
+
+  // Depth first search, starting from "src" states.
+  while (stack_top) {
+    // Pop(visit)
+    stack_top--;
+    CHECK_RANGE(0, stack_top, 1+nb);
+    long visit = stack[stack_top];
+
+    // null pathcount: push again, and push "reachable" children
+    if (0==shortpc[visit]) {
+      // Push(visit)
+      CHECK_RANGE(0, stack_top, 1+nb);
+      stack[stack_top++] = visit;
+
+      shortpc[visit] = VISITING;
+
+      // for all outgoing edges from this state
+      for (long z=rg.rowptr[visit]; z<rg.rowptr[visit+1]; z++) {
+        long next = rg.colindex[z];
+        if (!back.contains(next)) continue;
+        if (0==shortpc[next]) {
+          // Push(next)
+          CHECK_RANGE(0, stack_top, 1+nb);
+          stack[stack_top++] = next;
+        } else {
+          // already visited this state, check for graph cycle
+          if ((VISITING == shortpc[next]) || (UNBOUNDED == shortpc[next])) {
+            // negative: either we're still visiting next (cycle),
+            // or we've determined #paths from next is unbounded.
+            // either way, the number of paths from here is unbounded.
+            shortpc[visit] = UNBOUNDED;
+          }
+        } // else 0!=shortpc[next]
+      } // for z
+      continue;
+    } // if 0==shortpc[visit]
+
+    if (shortpc[visit] != VISITING) continue; // already know #paths from here
+
+    // should have #paths computed for all children, add them up   
+    acc.set_si(0);
+    for (long z=rg.rowptr[visit]; z<rg.rowptr[visit+1]; z++) {
+      long next = rg.colindex[z];
+      if (shortpc[next] >= 0) {
+        acc.add_ui(shortpc[next]);
+        continue;
+      }
+      if ((VISITING == shortpc[next]) || (UNBOUNDED == shortpc[next])) {
+        acc.set_si(UNBOUNDED);
+        break;
+      }
+      DCASSERT(AS_BIGINT == shortpc[next]);
+      DCASSERT(paths[next]);
+      acc.add(acc, *paths[next]);
+    } // for z
+    
+    // save the result
+    if (acc.fits_slong()) {
+      shortpc[visit] = acc.get_si();
+    } else {
+      shortpc[visit] = AS_BIGINT;
+      paths[visit] = new bigint(acc);
+    }
+  } // while stack not empty
+
+ 
+  // Have #paths for every state, add them up for src states
+  acc.set_si(0);
+  for (long s=src.getSmallestAfter(-1); s>=0; s=src.getSmallestAfter(s)) {
+    if (shortpc[s] >= 0) {
+      acc.add_ui(shortpc[s]);
+      continue;
+    }
+    DCASSERT(VISITING != shortpc[s]);
+    if (UNBOUNDED == shortpc[s]) {
+      acc.set_si(UNBOUNDED);
+      break;
+    }
+    DCASSERT(AS_BIGINT == shortpc[s]);
+    DCASSERT(paths[s]);
+    acc.add(acc, *paths[s]);
+  } // for s
+
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Counted  paths, took ";
+    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
+    numpaths_report.stopIO();
+  }
+
+  // cleanup
+  sw.reset();
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Cleaning up\n";
+    numpaths_report.stopIO();
+  }
+  delete[] stack;
+  for (long i=0; i<num_states; i++) Delete(paths[i]);
+  delete[] paths;
+  delete[] shortpc;
+  if (numpaths_report.startReport()) {
+    numpaths_report.report() << "Cleanup took ";
+    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
+    numpaths_report.stopIO();
+  }
+
+  if (acc.cmp_si(0) < 0) {
+    count.setInfinity(1);
+  } else {
+    count.setPtr(new bigint(acc));
+  }
+
+}
+
+
+
+stateset* grlib_reachgraph::unfairAEF(bool rT, const stateset* p, const stateset* q)
+{
+  if (0==p || 0==q) return 0; // propogate an earlier error
+  const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
+  const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
+  if (0==ep || 0==eq) return incompatibleOperand(rT ? "AEP" : "AEF");
+
+  const intset& ip = ep->getExplicit();
+  const intset& iq = eq->getExplicit();
+
+  if (rT == true) {
+    return notImplemented("unfairAEP");
+  }
+
+  // force us by columns
+  if (edges->isByRows()) {
+    if (!transposeEdges(&ctl_report, false)) {
+      if (em->startError()) {
+        em->noCause();
+        em->cerr() << "Couldn't transpose graph\n";
+        em->stopIO();
+      }
+      return 0;
+    }
+  } 
+
+  // initialize queue
+  long* queue = new long[ip.getSize()];
+  long qfront = 0;
+  long qtail = 0;
+
+  // initialize required notifications: arc counts.
+  long* required = new long[ip.getSize()];
+  for (long s=ip.getSize()-1; s>=0; s--) required[s] = 0;
+  outgoingCounter mycounter(required);
+  edges->traverseAll(mycounter);
+
+  // adjust for goal, controllable, and deadlocked states.
+  for (long s=ip.getSize()-1; s>=0; s--) {
+    if (0==required[s] || ip.contains(s)) {
+      required[s] = 1;
+    }
+    if (iq.contains(s)) {
+      required[s] = 0;
+      // add to queue
+      CHECK_RANGE(0, qtail, ip.getSize());
+      queue[qtail] = s;
+      qtail++;
+    }
+  } // for s
+
+  
+  // Explore loop
+  incomingEdges inList;
+  while (qfront < qtail) {
+
+    // remove some state from queue
+    CHECK_RANGE(0, qfront, ip.getSize());
+    long s = queue[qfront];
+    qfront++;
+
+    // notify all edges to state s
+    inList.Clear();
+    edges->traverseTo(s, inList);
+    for (long z=0; z<inList.Length(); z++) {
+      long r = inList.Item(z);
+      CHECK_RANGE(0, r, ip.getSize());
+      if (0==required[r]) continue;
+      required[r]--;
+      if (required[r]) continue;
+      // add r to queue
+      CHECK_RANGE(0, qtail, ip.getSize());
+      queue[qtail] = r;
+      qtail++;
+    } // for z
+
+  } // while queue not empty
+
+  
+  // everything that was ever in the queue, is a solution
+  intset* ir = new intset(ip.getSize());
+  ir->removeAll();
+  DCASSERT(qtail <= ip.getSize());
+  for (long z=0; z<qtail; z++) {
+    ir->addElement(queue[z]);
+  }
+
+  // cleanup
+  delete[] required;
+  delete[] queue;
+  return new expl_stateset(getParent(), ir);
+}
+
+
+//
+// For ectl_reachgraph
+//
+
 bool grlib_reachgraph::forward(const intset& p, intset &r) const
 {
   DCASSERT(edges);
@@ -221,6 +545,45 @@ void grlib_reachgraph::getDeadlocked(intset &r) const
 {
   r.assignFrom(deadlocks);
 }
+
+//
+// Helpers
+//
+
+bool grlib_reachgraph::transposeEdges(const named_msg* rep, bool byrows)
+{
+  timer sw;
+  if (rep && rep->startReport()) {
+    rep->report() << "Transposing edges\n";
+    rep->stopIO();
+  }
+
+  // transpose edges 
+  edges->unfinish();
+  GraphLib::generic_graph::finish_options fo;
+  fo.Store_By_Rows = byrows;
+  fo.Will_Clear = false;
+  try {
+    edges->finish(fo);
+    if (rep && rep->startReport()) {
+      rep->report() << "Transposed  edges, took " << sw.elapsed_seconds();
+      rep->report() << " seconds\n";
+      rep->stopIO();
+    }
+    return true;
+  }
+  catch (GraphLib::error e) {
+    if (em->startError()) {
+      em->noCause();
+      em->cerr() << "Couldn't transpose graph: ";
+      em->cerr() << e.getString() << "\n";
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -251,6 +614,16 @@ bool grlib_reachgraph::sparse_row_elems::Enlarge(int ns)
   index = (long*) realloc(index, alloc * sizeof(long));
   if (0==index)  return false;
   return true;
+}
+
+bool grlib_reachgraph::sparse_row_elems
+::buildIncomingUnsorted(GraphLib::digraph* edges, int i)
+{
+  overflow = false;
+  incoming = true;
+  last = 0;
+  edges->traverseTo(i, *this);
+  return !overflow;
 }
 
 bool grlib_reachgraph::sparse_row_elems
@@ -292,5 +665,69 @@ bool grlib_reachgraph::sparse_row_elems
   index[last] = I.index2ord(z);
   last++;
   return false;
+}
+
+// ******************************************************************
+// *                                                                *
+// *           grlib_reachgraph::outgoingCounter  methods           *
+// *                                                                *
+// ******************************************************************
+
+grlib_reachgraph::outgoingCounter::outgoingCounter(long* c)
+{ 
+  count = c; 
+}
+
+grlib_reachgraph::outgoingCounter::~outgoingCounter()
+{ 
+}
+
+bool grlib_reachgraph::outgoingCounter::visit(long from, long to, void*) 
+{ 
+  count[from]++; 
+  return false; 
+}
+
+// ******************************************************************
+// *                                                                *
+// *            grlib_reachgraph::incomingEdges  methods            *
+// *                                                                *
+// ******************************************************************
+
+grlib_reachgraph::incomingEdges::incomingEdges()
+{
+  alloc = 0;
+  last = 0;
+  index = 0;
+  overflow = false;
+}
+
+grlib_reachgraph::incomingEdges::~incomingEdges()
+{
+  free(index);
+}
+
+bool grlib_reachgraph::incomingEdges::visit(long from, long to, void* )
+{
+  if (last >= alloc) {
+    if (!Enlarge(last+1)) {
+      overflow = true;
+      return true;
+    }
+  }
+  index[last] = from;
+  last++;
+  return false;
+}
+
+bool grlib_reachgraph::incomingEdges::Enlarge(int ns)
+{
+  if (ns < alloc)   return true;
+  if (0==alloc)     alloc = 16;
+  while ((alloc < 256) && (alloc <= ns))  alloc *= 2;
+  while (alloc <= ns)                     alloc += 256;
+  index = (long*) realloc(index, alloc * sizeof(long));
+  if (0==index)  return false;
+  return true;
 }
 

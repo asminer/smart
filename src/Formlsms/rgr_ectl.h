@@ -44,23 +44,16 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     */
     virtual void getTSCCsSatisfying(intset &p) const;
 
-    // TBD - there will be others
-
   public:
     virtual stateset* EX(bool revTime, const stateset* p) const;
     virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
     virtual stateset* unfairEG(bool revTime, const stateset* p) const;
     virtual stateset* fairEG(bool revTime, const stateset* p) const;
-    /*
-    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const;
-    */
 
   private:
     long _EU(bool rt, const intset& p, const intset& q, intset &r, intset &tmp) const;
     long unfair_EG(bool rt, const intset &p, intset &r, intset &tmp) const;
     long fair_EG(bool rt, const intset &p, intset &r, intset &tmp) const;
-
-    // TBD - there will be others
 };
 
 #endif

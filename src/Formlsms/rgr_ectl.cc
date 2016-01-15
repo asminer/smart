@@ -153,6 +153,10 @@ stateset* ectl_reachgraph::fairEG(bool revTime, const stateset* p) const
   return new expl_stateset(p->getParent(), answer);
 }
 
+//
+// Helpers
+//
+
 long ectl_reachgraph::_EU(bool revTime, const intset& p, const intset& q,
   intset &r, intset &tmp) const
 {
@@ -230,4 +234,5 @@ long ectl_reachgraph::fair_EG(bool rT, const intset& p, intset &r, intset &tmp) 
   // along states satisfying p
   return _EU(rT, p, r, r, tmp);
 }
+
 
