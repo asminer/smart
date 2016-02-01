@@ -79,6 +79,24 @@ void meddly_reachset::reportStats(OutputStream &out) const
   //  if (index_wrap) index_wrap->reportStats(out);
 }
 
+void meddly_reachset::setStates(shared_ddedge* S) 
+{
+  if (states == S) return;  // could happen?
+
+  DCASSERT(0==states);
+  states = S;
+
+  // fix iterators
+  delete natorder;
+
+  if (states) {
+    DCASSERT(mdd_wrap);
+    natorder = new lexical_iter(*mdd_wrap, *states);
+  } else {
+    natorder = 0;
+  }
+}
+
 void meddly_reachset::getNumStates(long &ns) const
 {
   DCASSERT(mdd_wrap);
