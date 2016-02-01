@@ -21,10 +21,10 @@ void InitializeProcGenMeddly(exprman* em);
 
 #include "gen_rg_base.h"
 #include "../Modules/glue_meddly.h"
+#include "../Formlsms/rss_meddly.h"
 
 class model_event;
 class dsde_hlm;
-class meddly_states;
 class radio_button;
 
 // **************************************************************************
@@ -119,15 +119,16 @@ class meddly_varoption {
   static bool vars_named;
 
   friend void InitializeProcGenMeddly(exprman* em);
+private:
+  meddly_encoder* mxd_wrap;
+  const dsde_hlm &parent;
 protected:
   bool built_ok; 
   MEDDLY::dd_edge** event_enabling;
   MEDDLY::dd_edge** event_firing;
+  meddly_reachset &ms;
 public:
-  meddly_states &ms;
-  const dsde_hlm &parent;
-public:
-  meddly_varoption(meddly_states &x, const dsde_hlm &p);
+  meddly_varoption(meddly_reachset &x, const dsde_hlm &p);
   virtual ~meddly_varoption();
 
   inline bool wasBuiltOK() const { return built_ok; }
@@ -135,8 +136,50 @@ public:
   /// Build initial states and other initializations.
   virtual void initializeVars();
 
+  // I Think we will need this...  // TBD
+  inline meddly_encoder* shareMxdWrap() { return Share(mxd_wrap); }
+
 protected:
   static char* buildVarName(const hldsm::partinfo &part, int k);
+
+  inline void set_mxd_wrap(meddly_encoder* mxd) {
+    DCASSERT(0==mxd_wrap);
+    mxd_wrap = mxd;
+  }
+
+  inline MEDDLY::forest* get_mxd_forest() {
+    return mxd_wrap ? mxd_wrap->getForest() : 0;
+  }
+
+public:
+
+  inline shared_object* make_mxd_constant(bool value) {
+    if (!mxd_wrap) return 0;
+    shared_object* E = mxd_wrap->makeEdge(0);
+    mxd_wrap->buildSymbolicConst(value, E);
+    return E;
+  }
+
+  inline const dsde_hlm& getParent() const {
+    return parent;
+  }
+
+  inline const MEDDLY::dd_edge& getInitial() const {
+    return ms.getInitial();
+  }
+
+  inline shared_ddedge* newMddEdge() {
+    return ms.newMddEdge();
+  }
+
+  inline void setStates(shared_ddedge* S) {
+    ms.setStates(S);
+  }
+
+  inline MEDDLY::forest* getMddForest() {
+    return ms.getMddForest();
+  }
+
 
 public:
   /// Any pre-processing for the next-state function goes here.
@@ -157,7 +200,6 @@ public:
   /** Update the enabling and firing functions for all events.
       The update is driven by which levels have "changed".
         @param    d     Stream for debug info.
-        @param    nsf   Encoder to use.
         @param    cl    0, or array of dimension number of MDD levels;
                         cl[i] is true if we need to reconsider
                         level i.  If the array is 0 then we
@@ -165,7 +207,7 @@ public:
 
         @throws   An appropriate error code.
   */
-  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl) = 0;
+  virtual void updateEvents(named_msg &d, bool* cl) = 0;
    
   /// For the given set, determine which levels have "changed".
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl) = 0;
@@ -250,11 +292,11 @@ protected:
   }
 
   /** Build a variable option class, according to option MeddlyVariables.
-        @param  ms  meddly_states object, for final result (shared).
+        @param  ms  meddly_reachset object, for final result (shared).
         @return     A new object of type meddly_varoption, or 0 on error.
   */
   inline meddly_varoption* 
-  makeVariableOption(const dsde_hlm &m, meddly_states &ms) const {
+  makeVariableOption(const dsde_hlm &m, meddly_reachset &ms) const {
     switch (var_type) {
       case BOUNDED:     return makeBounded(m, ms);
       case EXPANDING:   return makeExpanding(m, ms);
@@ -265,10 +307,10 @@ protected:
   }
   
 private:
-  meddly_varoption* makeBounded(const dsde_hlm &m, meddly_states &ms) const;
-  meddly_varoption* makeExpanding(const dsde_hlm &m, meddly_states &ms) const;
-  meddly_varoption* makeOnTheFly(const dsde_hlm &m, meddly_states &ms) const;
-  meddly_varoption* makePregen(const dsde_hlm &m, meddly_states &ms) const;
+  meddly_varoption* makeBounded(const dsde_hlm &m, meddly_reachset &ms) const;
+  meddly_varoption* makeExpanding(const dsde_hlm &m, meddly_reachset &ms) const;
+  meddly_varoption* makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const;
+  meddly_varoption* makePregen(const dsde_hlm &m, meddly_reachset &ms) const;
 };
 
 // TBD

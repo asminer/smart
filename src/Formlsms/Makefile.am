@@ -10,10 +10,9 @@ noinst_LTLIBRARIES = \
     enum_hlm.la dsde_hlm.la noevnt_hlm.la phase_hlm.la \
     state_llm.la graph_llm.la stoch_llm.la \
     rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
-    rgr_ectl.la rgr_grlib.la \
+    rgr_ectl.la rgr_grlib.la rgr_meddly.la \
     proc_markov.la proc_mclib.la \
-    rss_mdd.la fsm_mdd.la \
     dcp_form.la mc_form.la fsm_form.la pn_form.la evm_form.la tam_form.la
 
 
-DEAD_CODE = fsm_llm.la
+DEAD_CODE = fsm_llm.la rss_mdd.la fsm_mdd.la 
