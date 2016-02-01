@@ -233,6 +233,10 @@ public:
     if (RSS) RSS->attachToParent(this);
   }
 
+  inline reachset* useRSS() {
+    return RSS;
+  }
+
   inline void getNumStates(result& count) const {
     if (RSS)  RSS->getNumStates(count);
     else      count.setNull();
