@@ -89,10 +89,7 @@ class meddly_reachset : public state_lldsm::reachset {
 
     void reportStats(OutputStream &out) const;
 
-    inline void setStates(shared_ddedge* S) {
-      DCASSERT(0==states);
-      states = S;
-    }
+    void setStates(shared_ddedge* S);
 
     inline const MEDDLY::dd_edge& getStates() const {
       DCASSERT(states);

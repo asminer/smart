@@ -75,9 +75,9 @@
 #include "../Engines/gen_exp_as.h"
 #include "../Engines/gen_exp_ph.h"
 #include "../Engines/csl_exp.h"
-// #include "../Engines/proc_meddly.h"
-// #include "../Engines/satur_meddly.h"
-// #include "../Engines/expl_meddly.h"
+#include "../Engines/proc_meddly.h"
+#include "../Engines/satur_meddly.h"
+#include "../Engines/expl_meddly.h"
 
 
 const char* getVersionString()
@@ -156,9 +156,9 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitializeExplicitAsynchGenerators(em);
   InitializeExplicitPhaseGenerators(em);
   InitializeExplicitCSLEngines(em);
-  // InitializeProcGenMeddly(em);
-  // InitializeSaturationMeddly(em);
-  // InitializeExplicitMeddly(em);
+  InitializeProcGenMeddly(em);
+  InitializeSaturationMeddly(em);
+  InitializeExplicitMeddly(em);
   InitializeSimEngines(em);
 }
 
