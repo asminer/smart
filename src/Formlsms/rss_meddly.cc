@@ -5,6 +5,7 @@
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/meddly_ssets.h"
 
+// #define DEBUG_INDEXSET
 
 // ******************************************************************
 // *                                                                *
@@ -20,6 +21,8 @@ meddly_reachset::meddly_reachset()
   states = 0;
   natorder = 0;
   mtmdd_wrap = 0;
+  index_wrap = 0;
+  state_indexes = 0;
 }
 
 meddly_reachset::~meddly_reachset()
@@ -28,8 +31,10 @@ meddly_reachset::~meddly_reachset()
   Delete(vars);
   Delete(initial);
   Delete(states);
+  Delete(state_indexes);
   Delete(mdd_wrap);
   Delete(mtmdd_wrap);
+  Delete(index_wrap);
 }
 
 bool meddly_reachset::createVars(MEDDLY::variable** v, int nv)
@@ -176,6 +181,31 @@ stateset* meddly_reachset::getPotential(expr* p) const
   return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), Share(ans));
 }
 
+void meddly_reachset::buildIndexSet()
+{
+  if (state_indexes)  return;
+  if (0==states)      return;
+
+  if (0==index_wrap) {
+    DCASSERT(vars);
+    MEDDLY::forest* evF = vars->createForest(
+      false, MEDDLY::forest::INTEGER, MEDDLY::forest::INDEX_SET
+    );
+    DCASSERT(evF);
+    index_wrap = mdd_wrap->copyWithDifferentForest("EV+MDD", evF);
+    DCASSERT(index_wrap);
+  }
+
+  state_indexes = new shared_ddedge(index_wrap->getForest());
+  MEDDLY::apply(
+    MEDDLY::CONVERT_TO_INDEX_SET, states->E, state_indexes->E
+  );
+
+#ifdef DEBUG_INDEXSET
+  printf("Built index set:\n");
+  state_indexes->E.show(stdout, 2);
+#endif
+}
 
 
 // ******************************************************************

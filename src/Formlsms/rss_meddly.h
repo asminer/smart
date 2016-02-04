@@ -91,14 +91,18 @@ class meddly_reachset : public state_lldsm::reachset {
 
     void setStates(shared_ddedge* S);
 
+    inline shared_ddedge* copyStates() {
+      return Share(states);
+    }
+
     inline const MEDDLY::dd_edge& getStates() const {
       DCASSERT(states);
       return states->E;
     }
 
-    //
-    // Required for reachsets
-    //
+  //
+  // Required for reachsets
+  //
   public:
     virtual void getNumStates(long &ns) const;
     virtual void getNumStates(result &ns) const;  
@@ -111,7 +115,31 @@ class meddly_reachset : public state_lldsm::reachset {
     virtual stateset* getInitialStates() const;
     virtual stateset* getPotential(expr* p) const;
 
-  private:
+
+  // 
+  // Bonus features
+  //
+  public:
+    //
+    // Build the index set, so we can quickly determine the
+    // index of a given state.
+    void buildIndexSet();
+
+    //
+    // Get the index of the specified minterm
+    //
+    inline long getMintermIndex(const int* mt) const {
+      DCASSERT(index_wrap);
+      DCASSERT(state_indexes);
+      int index;
+      index_wrap->getForest()->evaluate(state_indexes->E, mt, index);
+      return index;
+    }
+    
+
+  public: 
+
+    // TBD - we may want an abstract base class for this
     class lexical_iter : public reachset::iterator {
       public:
         lexical_iter(const meddly_encoder &w, shared_ddedge &s);
@@ -122,6 +150,11 @@ class meddly_reachset : public state_lldsm::reachset {
         virtual operator bool() const;
         virtual long index() const;
         virtual void copyState(shared_state* st) const;
+
+        inline const int* getCurrentMinterm() const {
+          DCASSERT(iter);
+          return iter->getAssignments();
+        }
 
       private:
         shared_ddedge &states;
@@ -142,9 +175,9 @@ class meddly_reachset : public state_lldsm::reachset {
     // Scratch space for getPotential()
     meddly_encoder* mtmdd_wrap;
 
-// Do we need these here?
-// meddly_encoder* index_wrap;
-// shared_ddedge* state_indexes;
+    // for indexing states
+    meddly_encoder* index_wrap;
+    shared_ddedge* state_indexes;
 };
 
 #endif

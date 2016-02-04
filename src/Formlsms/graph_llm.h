@@ -270,8 +270,16 @@ public:
   */
   void showArcs(bool internal) const;
 
-  /// Check if na exceeds option, if so, show "too many arcs" message.
-  static bool tooManyArcs(long na, bool show);
+  /** Compare number of edges with option.
+        @param  ns    Number of states
+        @param  os    If not null, display "too many arcs" message as appropriate.
+        @return true  iff the number of edges exceeds the option.
+  */
+  static bool tooManyArcs(long na, OutputStream *os);
+
+  inline bool tooManyArcs(OutputStream *os) const {
+    return tooManyArcs(getNumArcs(), os);
+  }
 
   /** Produce a "dot" file of this model.
       Equivalent to showArcs with a style of DOT.
