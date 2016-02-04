@@ -11,7 +11,7 @@ smart_SOURCES = smart.cc
 
 smart_LDADD = \
   ../Engines/simul.la ../Engines/exact.la \
-  ../Engines/ctl_exp.la ../Engines/ctl_symb.la ../Engines/csl_exp.la \
+  ../Engines/csl_exp.la \
   ../Engines/gen_rg_base.la \
   ../Engines/gen_exp_as.la ../Engines/gen_exp_ph.la \
   ../Engines/proc_meddly.la \
@@ -52,7 +52,8 @@ smart_LDADD = \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 SMART_WAIT = \
-  ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la 
+  ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la \
+  ../Engines/ctl_exp.la ../Engines/ctl_symb.la 
 
 ## ICP   
 
