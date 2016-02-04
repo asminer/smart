@@ -67,18 +67,21 @@ void graph_lldsm::showArcs(bool internal) const
   }
 }
 
-bool graph_lldsm::tooManyArcs(long na, bool show)
+bool graph_lldsm::tooManyArcs(long na, OutputStream *os)
 {
   if (na>=0) {
     if ((0==max_arc_display) || (na <= max_arc_display)) return false;
-    if (!show) return true;
-    em->cout() << "Too many arcs; to display, increase option ";
-    em->cout() << MAX_ARC_DISPLAY_OPTION << ".\n";
+    if (os) {
+      *os << "Too many arcs; to display, increase option ";
+      *os << MAX_ARC_DISPLAY_OPTION << ".\n";
+      os->flush();
+    }
   } else {
-    if (!show) return true;
-    em->cout() << "Too many arcs.\n";
+    if (os) {
+      *os << "Too many arcs.\n";
+      os->flush();
+    }
   }
-  em->cout().flush();
   return true;
 }
 

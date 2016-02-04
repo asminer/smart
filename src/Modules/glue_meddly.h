@@ -143,6 +143,10 @@ public:
     DCASSERT(iter);
     return iter->getPrimedAssignments();
   }
+  inline const int* getIterUnprimedMinterm() const {
+    DCASSERT(iter);
+    return iter->getAssignments();
+  }
 };
 
 // ******************************************************************

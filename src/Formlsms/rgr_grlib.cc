@@ -101,8 +101,8 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   long na = edges->getNumEdges();
   long num_states = edges->getNumNodes();
 
-  if (state_lldsm::tooManyStates(num_states, true))  return;
-  if (graph_lldsm::tooManyArcs(na, true))            return;
+  if (state_lldsm::tooManyStates(num_states, &os))  return;
+  if (graph_lldsm::tooManyArcs(na, &os))            return;
 
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
@@ -145,6 +145,9 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   sparse_row_elems foo(I);
 
   for (I.start(); I; I++) {
+    //
+    // Start of another row/col
+    //
     switch (opt.STYLE) {
       case graph_lldsm::INCOMING:
       case graph_lldsm::OUTGOING:
@@ -162,6 +165,9 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
           break;
     }
 
+    //
+    // Build the row/col
+    //
     bool ok;
     if (by_rows)   ok = foo.buildOutgoing(edges, I.getIndex());
     else           ok = foo.buildIncoming(edges, I.getIndex());
@@ -173,7 +179,9 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
       break;
     }
 
-    // display row/column
+    //
+    // Display row/column
+    //
     for (long z=0; z<foo.last; z++) {
       os.Put('\t');
       switch (opt.STYLE) {
@@ -198,7 +206,7 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
     } // for z
 
     os.flush();
-  } // for i
+  } // for I
   if (graph_lldsm::DOT == opt.STYLE) {
     os << "}\n";
   }

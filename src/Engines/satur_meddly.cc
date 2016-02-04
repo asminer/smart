@@ -10,9 +10,10 @@
 #include "../ExprLib/engine.h"
 
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/graph_llm.h"  // for now
+// #include "../Formlsms/graph_llm.h"  // for now
 #include "../Formlsms/stoch_llm.h"  // for now
 #include "../Formlsms/rss_meddly.h"
+#include "../Formlsms/rgr_meddly.h"
 // #include "../Formlsms/mc_llm.h"
 // #include "../Formlsms/mc_mdd.h"
 
@@ -42,23 +43,26 @@
 class mxd_fsm_finish : public process_generator {
   bool potential;
   meddly_varoption* mvo;
+  shared_ddedge* NSF;
 public:
-  mxd_fsm_finish(bool pot, meddly_varoption* mvo);
+  mxd_fsm_finish(bool pot, meddly_varoption* mvo, shared_ddedge* nsf);
   virtual ~mxd_fsm_finish();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &statesonly);
 };
 
-mxd_fsm_finish::mxd_fsm_finish(bool pot, meddly_varoption* _mvo) 
+mxd_fsm_finish::mxd_fsm_finish(bool pot, meddly_varoption* _mvo, shared_ddedge* nsf) 
 : process_generator()
 {
   potential = pot;
   mvo = _mvo;
+  NSF = Share(nsf);
 }
 
 mxd_fsm_finish::~mxd_fsm_finish()
 {
   delete mvo;
+  Delete(NSF);
 }
 
 bool mxd_fsm_finish::AppliesToModelType(hldsm::model_type mt) const
@@ -79,11 +83,8 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   if (states_only.getBool())  return;
   if (e!=this)                return e->RunEngine(hm, states_only);
 
-  // TBD
- 
-  /*
-  meddly_reachset* rss = GrabMeddlyFSMStates(lm);
-  DCASSERT(rss);
+  graph_lldsm* glm = smart_cast <graph_lldsm*> (lm);
+  DCASSERT(glm);
 
   timer watch;
   if (report.startReport()) {
@@ -93,9 +94,9 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     em->stopIO();
   }
 
-  rss->proc_wrap = Share(rss->mxd_wrap);
-  
-  FinishMeddlyFSM(lm, potential);
+
+  glm->setRGR( new meddly_monolithic_rg(mvo->shareMxdWrap(), Share(NSF), potential ) );
+
 
   if (report.startReport()) {
     em->report() << "Finished  FSM using Meddly, took ";
@@ -105,7 +106,6 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
 
   lm->setCompletionEngine(0);
   delete this;
-  */
 }
 
 // **************************************************************************
@@ -403,7 +403,7 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
   subengine* finisher = 0;
   if (hm->GetProcessType() == lldsm::FSM) {
     slm = new graph_lldsm(lldsm::FSM);
-    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo);
+    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo, NSF);
   } else {
     slm = new stochastic_lldsm(hm->GetProcessType());
     finisher = new mxd_mc_finish(usePotentialEdges(), mvo);

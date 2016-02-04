@@ -605,8 +605,8 @@ void mclib_process::showArcs(OutputStream &os,
   long na = chain->getNumArcs();
   long num_states = chain->getNumStates();
 
-  if (state_lldsm::tooManyStates(num_states, true))  return;
-  if (graph_lldsm::tooManyArcs(na, true))            return;
+  if (state_lldsm::tooManyStates(num_states, &os))  return;
+  if (graph_lldsm::tooManyArcs(na, &os))            return;
 
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;

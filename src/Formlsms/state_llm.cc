@@ -40,24 +40,31 @@ void state_lldsm::showStates(bool internal) const
   if (internal) {
     RSS->showInternal(em->cout());
   } else {
+    long num_states;
+    RSS->getNumStates(num_states);
+    if (tooManyStates(num_states, &(em->cout()))) return;
+
     shared_state* st = new shared_state(parent);
     RSS->showStates(em->cout(), stateDisplayOrder(), st);
     Delete(st);
   }
 }
 
-bool state_lldsm::tooManyStates(long ns, bool show)
+bool state_lldsm::tooManyStates(long ns, OutputStream* os)
 {
   if (ns>=0) {
     if ((0==max_state_display) || (ns <= max_state_display)) return false;
-    if (!show) return true;
-    em->cout() << "Too many states; to display, increase option ";
-    em->cout() << max_state_display_option << ".\n";
+    if (os) {
+      *os << "Too many states; to display, increase option ";
+      *os << max_state_display_option << ".\n";
+      os->flush();
+    }
   } else {
-    if (!show) return true;
-    em->cout() << "Too many states.\n";
+    if (os) {
+      *os << "Too many states.\n";
+      os->flush();
+    }
   }
-  em->cout().flush();
   return true;
 }
 
@@ -120,14 +127,6 @@ void state_lldsm::reachset::getNumStates(result &ns) const
 void state_lldsm::reachset
 ::showStates(OutputStream &os, display_order ord, shared_state* st)
 {
-  DCASSERT(parent);
-
-  long num_states;
-  getNumStates(num_states);
-
-  if (num_states<=0) return;
-  if (parent->tooManyStates(num_states, true)) return;
-
   iterator& I = iteratorForOrder(ord);
 
   long i = 0;

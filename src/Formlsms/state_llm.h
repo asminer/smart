@@ -254,8 +254,17 @@ public:
   */
   void showStates(bool internal) const;
 
-  /// Check if ns exceeds option, if so, show "too many states" message.
-  static bool tooManyStates(long ns, bool show);
+  /** Compare number of states with option.
+        @param  ns    Number of states
+        @param  os    If not null, display "too many states" message as appropriate.
+        @return true  iff the number of states exceeds the option.
+  */
+  static bool tooManyStates(long ns, OutputStream *os);
+
+  /// Check if reachable states has too many states
+  inline bool tooManyStates(OutputStream *os) const {
+    return tooManyStates(getNumStates(), os); 
+  }
 
   /** Visit all our states, explicitly, in a convenient order.
         @param  x   Specifies what we do when visiting each state.
