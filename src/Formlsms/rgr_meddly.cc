@@ -10,14 +10,13 @@
 // *                                                                *
 // ******************************************************************
 
-meddly_monolithic_rg::meddly_monolithic_rg(meddly_encoder* wrap, shared_ddedge* nsf, 
-  bool pot)
+meddly_monolithic_rg::meddly_monolithic_rg(meddly_encoder* wrap)
 {
   vars = 0;
   mxd_wrap = wrap;
-  edges = nsf;
-  uses_potential = pot;
+  edges = 0;
   states = 0;
+  convert_to_actual = false;
 }
 
 meddly_monolithic_rg::~meddly_monolithic_rg()
@@ -38,11 +37,30 @@ void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset*
   vars = mrss->shareVars();
   states = mrss->copyStates();
 
-  if (uses_potential) return;
+  if (convert_to_actual) {
+    shared_ddedge* actual = buildActualEdges();
+    Delete(edges);
+    edges = actual;
+    uses_potential = false;
+    convert_to_actual = false;
+  }
+}
 
-  shared_ddedge* actual = buildActualEdges();
-  Delete(edges);
-  edges = actual;
+void meddly_monolithic_rg::setPotential(shared_ddedge* nsf)
+{
+  edges = nsf;
+  uses_potential = true;
+}
+
+void meddly_monolithic_rg::setActual(shared_ddedge* nsf)
+{
+  edges = nsf;
+  uses_potential = false;
+}
+
+void meddly_monolithic_rg::scheduleConversionToActual()
+{
+  convert_to_actual = uses_potential;
 }
 
 void meddly_monolithic_rg::getNumArcs(result &na) const 

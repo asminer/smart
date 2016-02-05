@@ -94,8 +94,10 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     em->stopIO();
   }
 
-
-  glm->setRGR( new meddly_monolithic_rg(mvo->shareMxdWrap(), Share(NSF), potential ) );
+  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(mvo->shareMxdWrap());
+  rgr->setPotential(Share(NSF));
+  if (!potential) rgr->scheduleConversionToActual();
+  glm->setRGR( rgr );
 
 
   if (report.startReport()) {

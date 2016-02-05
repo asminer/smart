@@ -20,12 +20,19 @@ class meddly_reachset;
 */
 class meddly_monolithic_rg : public graph_lldsm::reachgraph {
   public:
-    meddly_monolithic_rg(meddly_encoder* wrap, shared_ddedge* nsf, bool pot);
+    meddly_monolithic_rg(meddly_encoder* wrap);
 
   protected:
     virtual ~meddly_monolithic_rg();
     virtual const char* getClassName() const { return "meddly_monolithic_rg"; }
     virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset* rss);
+
+  public:
+    void setPotential(shared_ddedge* nsf);
+    void setActual(shared_ddedge* nsf);
+
+    /// Indicate that when attachToParent is called, we'll convert potential to actual.
+    void scheduleConversionToActual();
 
     //
     // Required
@@ -89,6 +96,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
   private:
     bool uses_potential;
+    bool convert_to_actual;
 
     shared_domain* vars;
 
