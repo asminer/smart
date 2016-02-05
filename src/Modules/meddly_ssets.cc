@@ -22,6 +22,15 @@ meddly_stateset::meddly_stateset(const state_lldsm* p, shared_domain* sd,
   states = E;
 }
 
+meddly_stateset::meddly_stateset(const meddly_stateset* clone, shared_ddedge* set)
+ : stateset(clone)
+{
+  DCASSERT(clone);
+  vars = Share(clone->vars);
+  mdd_wrap = Share(clone->mdd_wrap);
+  states = set;
+}
+
 meddly_stateset::~meddly_stateset()
 {
   Delete(vars);

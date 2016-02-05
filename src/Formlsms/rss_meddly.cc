@@ -83,7 +83,7 @@ void meddly_reachset::reportStats(OutputStream &out) const
   }
   if (mdd_wrap)     mdd_wrap->reportStats(out);
   if (mtmdd_wrap)   mtmdd_wrap->reportStats(out);
-  //  if (index_wrap) index_wrap->reportStats(out);
+  if (index_wrap) index_wrap->reportStats(out);
 }
 
 void meddly_reachset::setStates(shared_ddedge* S) 
@@ -182,9 +182,19 @@ stateset* meddly_reachset::getPotential(expr* p) const
     return 0;
   }
 
-  shared_ddedge* ans = smart_cast <shared_ddedge*> (answer.getPtr());
+  //
+  // Copy into MDD
+  //
+  shared_ddedge* mtans = smart_cast <shared_ddedge*> (answer.getPtr());
+  DCASSERT(mtans);
+  shared_ddedge* ans = newMddEdge();
   DCASSERT(ans);
-  return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), Share(ans));
+  MEDDLY::apply(MEDDLY::COPY, mtans->E, ans->E);
+
+  //
+  // Package up the answer
+  //
+  return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
 }
 
 void meddly_reachset::buildIndexSet()
