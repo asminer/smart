@@ -136,7 +136,6 @@ public:
   /// Build initial states and other initializations.
   virtual void initializeVars();
 
-  // I Think we will need this...  // TBD
   inline meddly_encoder* shareMxdWrap() { return Share(mxd_wrap); }
 
 protected:
@@ -149,6 +148,10 @@ protected:
 
   inline MEDDLY::forest* get_mxd_forest() {
     return mxd_wrap ? mxd_wrap->getForest() : 0;
+  }
+
+  inline meddly_encoder* share_mxd_wrap() {
+    return Share(mxd_wrap);
   }
 
 public:

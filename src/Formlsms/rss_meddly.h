@@ -95,6 +95,10 @@ class meddly_reachset : public state_lldsm::reachset {
       return Share(states);
     }
 
+    inline bool hasStates() const {
+      return states;
+    }
+
     inline const MEDDLY::dd_edge& getStates() const {
       DCASSERT(states);
       return states->E;
@@ -134,6 +138,20 @@ class meddly_reachset : public state_lldsm::reachset {
       int index;
       index_wrap->getForest()->evaluate(state_indexes->E, mt, index);
       return index;
+    }
+
+    //
+    // Remember the mxd wrapper for later (explicit only)
+    //
+    inline void saveMxdWrapper(meddly_encoder* mw) {
+      DCASSERT(0==mxd_wrap);
+      mxd_wrap = mw;
+    }
+
+    inline meddly_encoder* grabMxdWrapper() {
+      meddly_encoder* foo = mxd_wrap;
+      mxd_wrap = 0;
+      return foo;
     }
     
 
@@ -178,6 +196,10 @@ class meddly_reachset : public state_lldsm::reachset {
     // for indexing states
     meddly_encoder* index_wrap;
     shared_ddedge* state_indexes;
+
+    // Total kludge for 2-phase explicit generation
+    // Remember the mxd wrapper for phase 2
+    meddly_encoder* mxd_wrap;
 };
 
 #endif

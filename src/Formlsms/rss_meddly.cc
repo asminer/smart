@@ -23,6 +23,7 @@ meddly_reachset::meddly_reachset()
   mtmdd_wrap = 0;
   index_wrap = 0;
   state_indexes = 0;
+  mxd_wrap = 0;
 }
 
 meddly_reachset::~meddly_reachset()
@@ -35,6 +36,7 @@ meddly_reachset::~meddly_reachset()
   Delete(mdd_wrap);
   Delete(mtmdd_wrap);
   Delete(index_wrap);
+  Delete(mxd_wrap);
 }
 
 bool meddly_reachset::createVars(MEDDLY::variable** v, int nv)
@@ -86,7 +88,11 @@ void meddly_reachset::reportStats(OutputStream &out) const
 
 void meddly_reachset::setStates(shared_ddedge* S) 
 {
-  if (states == S) return;  // could happen?
+  if (states == S) {
+    // could happen?
+    Delete(S);
+    return;  
+  }
 
   DCASSERT(0==states);
   states = S;

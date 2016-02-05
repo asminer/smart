@@ -84,7 +84,6 @@ inline void convert(sv_encoder::error sve)
 // **************************************************************************
 
 class edge_minterms {
-//  meddly_encoder &wrap; 
   meddly_monolithic_rg &rgr;
   minterm_pool &mp;
   shared_ddedge* Edges;
@@ -179,6 +178,7 @@ public:
 // edge_minterms::edge_minterms(meddly_encoder &w, minterm_pool &m, int as, bool nr) : wrap(w), mp(m)
 edge_minterms::edge_minterms(meddly_monolithic_rg &r, minterm_pool &m, int as, bool nr) : rgr(r), mp(m)
 {
+  // Edges = new shared_ddedge(wrap.getForest());
   Edges = rgr.newMxdEdge();
   alloc = as;
   used = 0;
@@ -190,6 +190,7 @@ edge_minterms::edge_minterms(meddly_monolithic_rg &r, minterm_pool &m, int as, b
     from_batch[i] = 0;
     to_batch[i] = 0;
   }
+  // tempedge = new shared_ddedge(wrap.getForest());
   tempedge = rgr.newMxdEdge();
 
 #ifdef MEASURE_STATS
@@ -2247,6 +2248,7 @@ class gen_wrapper_templ {
     TANGR* tangible;
     VANGR* vanishing;
     EDGEGR* edges;
+    shared_ddedge* PROC;
   public:
     gen_wrapper_templ(long &lc, bool so, meddly_reachset &rs, minterm_pool* mp, 
       TANGR *t, VANGR *v, EDGEGR *e) : rss(rs), level_change(lc)
@@ -2256,6 +2258,7 @@ class gen_wrapper_templ {
       tangible = t;
       vanishing = v;
       edges = e;
+      PROC = 0;
     }
 
     ~gen_wrapper_templ() {
@@ -2263,6 +2266,7 @@ class gen_wrapper_templ {
       delete vanishing;
       delete edges;
       delete minterms;
+      Delete(PROC);
     }
 
     //
@@ -2273,48 +2277,42 @@ class gen_wrapper_templ {
       generateRGt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
-      if (edges) edges->addBatch(); // add the final batch of edges
-
-      // TBD!
-      /*
-      // transfer everything
-      if (0==ms.states) ms.states = tangible->shareS();
-      if (0==ms.nsf) if (edges) {
-        ms.nsf = edges->shareProc();
+      if (!rss.hasStates()) {
+        rss.setStates(tangible->shareS());
       }
-      */
+
+      if (edges) {
+        edges->addBatch(); // add the final batch of edges
+        PROC = edges->shareProc();
+      }
     }
 
     inline void generateMC(named_msg &debug, dsde_hlm &hm) {
       generateMCt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
-      if (edges) edges->addBatch(); // add the final batch of edges
-
-      // TBD!
-      /*
-      // transfer everything
-      if (0==ms.states) ms.states = tangible->shareS();
-      if (0==ms.proc) if (edges) {
-        ms.proc = edges->shareProc();
+      if (!rss.hasStates()) {
+        rss.setStates(tangible->shareS());
       }
-      */
+
+      if (edges) {
+        edges->addBatch(); // add the final batch of edges
+        PROC = edges->shareProc();
+      }
     }
 
     inline void generateSMP(named_msg &debug, dsde_hlm &hm) {
       generateSMPt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
-      if (edges) edges->addBatch(); // add the final batch of edges
-
-      // TBD!
-      /*
-      // transfer everything
-      if (0==ms.states) ms.states = tangible->shareS();
-      if (0==ms.proc) if (edges) {
-        ms.proc = edges->shareProc();
+      if (!rss.hasStates()) {
+        rss.setStates(tangible->shareS());
       }
-      */
+
+      if (edges) {
+        edges->addBatch(); // add the final batch of edges
+        PROC = edges->shareProc();
+      }
     }
 
     void reportStats(DisplayStream &out, const char* proc) {
@@ -2579,6 +2577,8 @@ private:
     // Generate, in a try block
     //
     try {
+      DCASSERT(rss);
+      DCASSERT(0==rgr);
 
       em->waitTerm();
       G.generateRG(debug, hm);
@@ -2593,18 +2593,14 @@ private:
       state_lldsm* lm;
       if (hm.GetProcessType() == lldsm::FSM) {
         lm = new graph_lldsm(lldsm::FSM);
-        // lm = StartMeddlyFSM(ms);
       } else {
         lm = new stochastic_lldsm(hm.GetProcessType());
-        // lm = StartMeddlyMC(ms);
       }
-      // Share(ms);
       hm.SetProcess(lm);
       lm->setCompletionEngine(this);
       lm->setRSS(rss);
 
       // Cleanup
-      // Delete(rss);
       rss = 0;
       em->resumeTerm();
       return;
@@ -2642,6 +2638,8 @@ private:
     // Generate, in a try block
     //
     try {
+      DCASSERT(rss);
+      DCASSERT(rgr);
 
       em->waitTerm();
       G.generateRG(debug, hm);
@@ -2654,32 +2652,35 @@ private:
 
       // Set process
       lldsm* lm = hm.GetProcess();
+      graph_lldsm* glm = 0;
       if (0==lm) {
-        state_lldsm* slm = new graph_lldsm(lldsm::FSM);
-        slm->setRSS(rss);
-        Share(rss);
-        lm = slm;
+        glm = new graph_lldsm(lldsm::FSM);
+        glm->setRSS(rss);
+        rss = 0;
+        lm = glm;
         hm.SetProcess(lm);
+      } else {
+        glm = smart_cast <graph_lldsm*> (lm);
+        Delete(rss);
+        rss = 0;
       }
-      // TBD!
-      /*
-      if (0==ms->nsf) {
-          if (hm.StartError(0)) {
+
+      if (0==G.PROC) {
+        if (hm.StartError(0)) {
             em->cerr() << "Could not obtain final RG";
             hm.DoneError();
-          }
-          // So we don't try to rebuild later
-          hm.SetProcess(MakeErrorModel());
+        }
+        // So we don't try to rebuild later
+        hm.SetProcess(MakeErrorModel());
+        Delete(rgr);
       } else {
-          FinishMeddlyFSM(lm, true);
-          ms->proc_uses_actual = true;  // hack!
-          lm->setCompletionEngine(0);
+        rgr->setActual(Share(G.PROC));
+        glm->setRGR(rgr);
+        lm->setCompletionEngine(0);
       }
-      */
 
       // Cleanup
-      Delete(rss);
-      rss = 0;
+      rgr = 0;
       em->resumeTerm();
       return;
     }
@@ -2695,7 +2696,9 @@ private:
 
       // Cleanup
       Delete(rss);
+      Delete(rgr);
       rss = 0;
+      rgr = 0;
       em->resumeTerm();
       throw;
     }
@@ -2869,6 +2872,7 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
     rss = new meddly_reachset;
     meddly_varoption* mvo = makeVariableOption(*dhm, *rss);
     DCASSERT(mvo);
+    rss->saveMxdWrapper(mvo->shareMxdWrap());
     try {
       mvo->initializeVars();
       delete mvo;
@@ -2882,8 +2886,7 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
   } else {
     state_lldsm* slm = smart_cast <state_lldsm*> (lm);
     DCASSERT(slm);
-    state_lldsm::reachset* rss = slm->useRSS();
-    rss = smart_cast <meddly_reachset*> (rss);
+    rss = smart_cast <meddly_reachset*> (Share(slm->useRSS()));
     DCASSERT(rss);
   }
 
@@ -2948,6 +2951,11 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
   // Everybody uses this
   minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), rss->getNumLevels() );
 
+  //
+  // Storage for the reachgraph
+  //
+  rgr = new meddly_monolithic_rg(rss->grabMxdWrapper());
+   
   //
   // A little ugly - consider all possible cases "by hand"
   // 
@@ -3108,10 +3116,14 @@ void meddly_explgen::generateRG(dsde_hlm &hm)
 
 void meddly_explgen::generateMC(dsde_hlm &hm)
 {
+  // Everybody uses this
+  DCASSERT(rss);
+  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), rss->getNumLevels());
+
   //
-  // Set up forest for storing the process
+  // Storage for the reachgraph and process
   //
-  using namespace MEDDLY;
+  rgr = new meddly_monolithic_rg(rss->grabMxdWrapper());
   // TBD! 
   // Set this up differently, it should build the rgr
   /*
@@ -3121,11 +3133,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm)
   );
   ms->proc_wrap = ms->mxd_wrap->copyWithDifferentForest("proc", f);
   */
-
-  // Everybody uses this
-  DCASSERT(rss);
-  minterm_pool* mp = new minterm_pool(6+6*getBatchSize(), rss->getNumLevels());
-
+   
   //
   // A little ugly - consider all possible cases "by hand"
   // 
