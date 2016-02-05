@@ -36,6 +36,7 @@ class hldsm;
 class stateset : public shared_object {
 public:
   stateset(const state_lldsm* p);
+  stateset(const stateset* clone);
 protected:
   virtual ~stateset();
 public:

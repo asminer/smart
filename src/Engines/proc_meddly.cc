@@ -116,12 +116,9 @@ void meddly_varoption::initializeVars()
   } // for n
 
   // Build DD from minterms
-  // ms.initial = smart_cast <shared_ddedge*> (ms.mdd_wrap->makeEdge(0));
-  // DCASSERT(ms.initial);
   shared_ddedge* initial = ms.newMddEdge();
   DCASSERT(initial);
   try {
-    // ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
     ms.createMinterms(mt, num_init, initial);
     ms.setInitial(initial);
 

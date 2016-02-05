@@ -5,6 +5,7 @@
 #define RGR_MEDDLY_H
 
 #include "graph_llm.h"
+#include "../ExprLib/engine.h"
 #include "../Modules/glue_meddly.h"
 
 class meddly_reachset;
@@ -44,7 +45,13 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     virtual void showArcs(OutputStream &os, const show_options &opt, 
       state_lldsm::reachset* RSS, shared_state* st) const;
 
-    // Also need EX, EU, ...
+    //
+    // CTL engines
+    //
+
+    virtual stateset* EX(bool revTime, const stateset* p) const;
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
+    virtual stateset* unfairEG(bool revTime, const stateset* p) const;
 
 
   // 
@@ -94,6 +101,13 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
       }
     }
 
+    inline static subengine::error convert(sv_encoder::error e) {
+      switch (e) {
+        case sv_encoder::Out_Of_Memory:   return subengine::Out_Of_Memory;
+        default:                          return subengine::Engine_Failed;
+      }
+    }
+
   private:
     bool uses_potential;
     bool convert_to_actual;
@@ -103,6 +117,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     meddly_encoder* mxd_wrap;
     shared_ddedge* edges;
     shared_ddedge* states;
+
+    meddly_reachset* mrss;
 };
 
 #endif

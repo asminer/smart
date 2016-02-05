@@ -28,6 +28,8 @@ class meddly_encoder;
 class meddly_stateset : public stateset {
   public:
     meddly_stateset(const state_lldsm* p, shared_domain*, meddly_encoder*, shared_ddedge*);
+
+    meddly_stateset(const meddly_stateset* clone, shared_ddedge* set);
   protected:
     virtual ~meddly_stateset();
 
@@ -44,6 +46,10 @@ class meddly_stateset : public stateset {
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
+
+    inline const shared_ddedge* getStateDD() const {
+      return states;
+    }
 
   private:
     shared_domain* vars;

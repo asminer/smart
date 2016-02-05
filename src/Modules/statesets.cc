@@ -29,6 +29,12 @@ stateset::stateset(const state_lldsm* p) : shared_object()
   parent = p;
 }
 
+stateset::stateset(const stateset* clone) : shared_object()
+{
+  DCASSERT(clone);
+  parent = clone->parent;
+}
+
 stateset::~stateset()
 {
 }

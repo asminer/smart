@@ -27,7 +27,7 @@ class meddly_reachset : public state_lldsm::reachset {
     */
     bool createVars(MEDDLY::variable** v, int nv);
 
-    shared_domain* shareVars() {
+    shared_domain* shareVars() const {
       return Share(vars);
     }
 
@@ -61,13 +61,19 @@ class meddly_reachset : public state_lldsm::reachset {
       mdd_wrap->minterm2state(mt, s);
     }
 
-    inline MEDDLY::forest* getMddForest() {
+    inline MEDDLY::forest* getMddForest() const {
       DCASSERT(mdd_wrap);
       return mdd_wrap->getForest();
     }
 
-    inline shared_ddedge* newMddEdge() {
+    inline shared_ddedge* newMddEdge() const {
       return new shared_ddedge(getMddForest());
+    }
+
+    inline shared_ddedge* newMddConst(bool v) const {
+      shared_ddedge* ans = newMddEdge();
+      mdd_wrap->buildSymbolicConst(v, ans);
+      return ans;
     }
 
     inline void createMinterms(const int* const* mts, int n, shared_object* ans) {
@@ -91,7 +97,7 @@ class meddly_reachset : public state_lldsm::reachset {
 
     void setStates(shared_ddedge* S);
 
-    inline shared_ddedge* copyStates() {
+    inline shared_ddedge* copyStates() const {
       return Share(states);
     }
 
