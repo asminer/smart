@@ -63,6 +63,22 @@ public:
 
         virtual long getNumStates() const = 0;
 
+        /**
+          Show the process, in the desired order.
+            @param  os    Output stream to write to
+            @param  opt   Display options
+            @param  RSS   Reachable states
+            @param  st    Memory space to use for individual states
+        */
+        virtual void showProc(OutputStream &os, 
+          const graph_lldsm::reachgraph::show_options &opt, 
+          reachset* RSS, shared_state* st) const = 0;
+
+        /** Show the internal representation of the process.
+              @param  os    Output stream to write to
+        */
+        virtual void showInternal(OutputStream &os) const = 0;
+
         /** Get the number of recurrent classes in the process.
             The default version provided here will only work if
             the number of recurrent classes fits in a long.
@@ -332,6 +348,15 @@ public:
 protected:
   virtual ~stochastic_lldsm();
   virtual const char* getClassName() const { return "stochastic_lldsm"; }
+
+public:
+  /** Show the process.
+        @param  internal  If true, show internal details of state storage only.
+                          If false, show a sane graph, unless there
+                          are too many edges to display.
+  */
+  void showProc(bool internal) const;
+
 
 public: // These methods are used for phase types.
   

@@ -60,6 +60,7 @@ void graph_lldsm::showArcs(bool internal) const
     opts.ORDER = stateDisplayOrder();
     opts.STYLE = graphDisplayStyle();
     opts.NODE_NAMES = displayGraphNodeNames();
+    opts.RG_ONLY = true;
     shared_state* st = new shared_state(parent);
     DCASSERT(RSS);
     RGR->showArcs(em->cout(), opts, RSS, st);
@@ -94,6 +95,7 @@ void graph_lldsm::dumpDot(OutputStream &s) const
   opts.ORDER = stateDisplayOrder();
   opts.STYLE = DOT;
   opts.NODE_NAMES = true;
+  opts.RG_ONLY = true;
   RGR->showArcs(s, opts, RSS, st);
   Delete(st);
 }

@@ -94,12 +94,18 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
 
   mrss->buildIndexSet();
 
+  DCASSERT(edges);
+  /*
+  bool hasRates = edges->getForest()->isRangeType(MEDDLY::forest::REAL);
+  */
+  
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
   const char* col;
   row = "From state ";
   col = "To state ";
   if (!by_rows) SWAP(row, col);
+
 
   // TBD : try/catch around this:
   meddly_reachset::lexical_iter &I
@@ -128,7 +134,15 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
         break;
 
     default:
-        os << "Reachability graph:\n";
+        /*
+        if (hasRates) {
+          os << "Markov chain:\n";
+        } else {
+          */
+          os << "Reachability graph:\n";
+          /*
+        }
+        */
   }
 
   long i;
@@ -170,13 +184,32 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
       }
       os.Put('\t');
 
+      // TBD - get iter rate, if there is one
+      /*
+      float rate = 0;
+      if (hasRates) {
+        edges->getIterValue(rate);
+      }
+      */
+
       switch (opt.STYLE) {
         case graph_lldsm::DOT:
-            os << "s" << mrss->getMintermIndex(tmt) << " -> s" << i << ";";
+            os << "s" << mrss->getMintermIndex(tmt) << " -> s" << i;
+            /*
+            if (hasRates) {
+              os << " [label=\"" << rate << "\"]";
+            }
+            */
+            os << ";";
             break;
 
         case graph_lldsm::TRIPLES:
             os << mrss->getMintermIndex(tmt) << " " << i;
+            /*
+            if (hasRates) {
+              os << " " << rate;
+            }
+            */
             break;
 
         default:
@@ -187,6 +220,11 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
             } else {
               os << mrss->getMintermIndex(tmt);
             }
+            /*
+            if (hasRates) {
+              os << " : " << rate;
+            }
+            */
       } // switch
       os.Put('\n');
 

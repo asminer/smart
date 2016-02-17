@@ -504,7 +504,7 @@ public:
 showarcs_si::showarcs_si()
  : proc_noengine(Nothing, em->VOID, "show_arcs", 2)
 {
-  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+  SetDocumentation("Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal", 
@@ -531,6 +531,59 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
+  gllm->showArcs(internal); 
+}
+
+// ******************************************************************
+// *                            show_proc                           *
+// ******************************************************************
+
+class showproc_si : public proc_noengine {
+public:
+  showproc_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+showproc_si::showproc_si()
+ : proc_noengine(Nothing, em->VOID, "show_proc", 2)
+{
+  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal", 
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
+}
+
+void showproc_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 0, x.parent);
+  if (0==llm || lldsm::Error == llm->Type()) {
+    return;
+  }
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+
+  const stochastic_lldsm* sllm = dynamic_cast<const stochastic_lldsm*> (llm);
+  if (sllm) {
+    sllm->showProc(internal);
+    return;
+  }
+
+  // Not stochastic.  Show the reachability graph instead.
+
+  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+
   gllm->showArcs(internal); 
 }
 
@@ -894,6 +947,7 @@ void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common)
   // Process or model display
   common->Append(new showstates_si);
   common->Append(new showarcs_si);
+  common->Append(new showproc_si);
   common->Append(new showclasses_si);
   common->Append(new showlevels_si);
   common->Append(new showevents_si);

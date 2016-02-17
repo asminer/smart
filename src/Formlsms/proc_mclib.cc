@@ -598,7 +598,7 @@ void mclib_process::showInternal(OutputStream &os) const
   return;
 }
 
-void mclib_process::showArcs(OutputStream &os, 
+void mclib_process::showProc(OutputStream &os, 
   const graph_lldsm::reachgraph::show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
@@ -610,10 +610,14 @@ void mclib_process::showArcs(OutputStream &os,
 
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
-  if (opt.NODE_NAMES) {
-    row = by_rows ? "From " : "To ";
+  const char* col;
+  if (opt.RG_ONLY) {
+    row = "From state ";
+    col = "To state ";
+    if (!by_rows) SWAP(row, col);
   } else {
     row = by_rows ? "Row " : "Column ";
+    col = "";
   }
 
   // TBD : try/catch around this
@@ -644,7 +648,11 @@ void mclib_process::showArcs(OutputStream &os,
         break;
 
     default:
-        os << "Markov chain:\n";
+        if (opt.RG_ONLY) {
+          os << "Reachability graph:\n";
+        } else {
+          os << "Markov chain:\n";
+        }
   }
 
   sparse_row_elems foo(I);
@@ -684,21 +692,30 @@ void mclib_process::showArcs(OutputStream &os,
       switch (opt.STYLE) {
         case graph_lldsm::DOT:
             os << "s" << foo.index[z] << " -> s" << I.getI();
-            os << " [label=\"" << foo.value[z] << "\"];";
+            if (!opt.RG_ONLY) {
+              os << " [label=\"" << foo.value[z] << "\"]";
+            }
+            os << ";";
             break;
 
         case graph_lldsm::TRIPLES:
-            os << foo.index[z] << " " << I.getI() << " " << foo.value[z];
+            os << foo.index[z] << " " << I.getI();
+            if (!opt.RG_ONLY) {
+              os << " " << foo.value[z];
+            }
             break;
 
         default:
+            os << col;
             if (opt.NODE_NAMES) {
               I.copyState(st, foo.index[z]);
               RSS->showState(os, st);
             } else {
               os << foo.index[z];
             }
-            os << " : " << foo.value[z];
+            if (!opt.RG_ONLY) {
+              os << " : " << foo.value[z];
+            }
       }
       os.Put('\n');
     } // for z
@@ -820,7 +837,7 @@ void mclib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
   DCASSERT(chain);
-  chain->showArcs(os, opt, RSS, st);
+  chain->showProc(os, opt, RSS, st);
 }
 
 bool mclib_reachgraph::forward(const intset& p, intset &r) const
