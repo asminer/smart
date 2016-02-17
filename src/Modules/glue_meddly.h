@@ -147,6 +147,10 @@ public:
     DCASSERT(iter);
     return iter->getAssignments();
   }
+  inline void getIterValue(float &v) const {
+    DCASSERT(iter);
+    iter->getValue(v);
+  }
 };
 
 // ******************************************************************

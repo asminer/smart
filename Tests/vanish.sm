@@ -36,7 +36,7 @@ pn rgfoo(int n) := {
   );
 
   void show_rs := show_states(false);
-  void show_rg := show_arcs(false);
+  void show_rg := show_proc(false);
 };
 
 print("Tangible only:\n");
@@ -90,7 +90,7 @@ pn mcfoo(int n) := {
   );
 
   void show_rs := show_states(false);
-  void show_rg := show_arcs(false);
+  void show_rg := show_proc(false);
 };
 
 print("Tangible only:\n");
@@ -134,7 +134,7 @@ pn bar(bool can_escape) := {
   );
   
   void show_rs := { print("Tangible:\n"); show_states(false); };
-  void show_mc := show_arcs(false);
+  void show_mc := show_proc(false);
 };
 
 print("A Vanishing Loop that can be escaped\n");

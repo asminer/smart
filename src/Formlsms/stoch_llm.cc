@@ -29,6 +29,24 @@ stochastic_lldsm::~stochastic_lldsm()
   Delete(PROC);
 }
 
+void stochastic_lldsm::showProc(bool internal) const
+{
+  DCASSERT(PROC);
+  if (internal) {
+    PROC->showInternal(em->cout());
+  } else {
+    reachgraph::show_options opts;
+    opts.ORDER = graph_lldsm::stateDisplayOrder();
+    opts.STYLE = graph_lldsm::graphDisplayStyle();
+    opts.NODE_NAMES = graph_lldsm::displayGraphNodeNames();
+    opts.RG_ONLY = false;
+    shared_state* st = new shared_state(parent);
+    DCASSERT(RSS);
+    PROC->showProc(em->cout(), opts, RSS, st);
+    Delete(st);
+  }
+}
+
 bool stochastic_lldsm::isFairModel() const
 {
   return true;

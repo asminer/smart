@@ -2387,7 +2387,7 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
   em->cout() << nc << " recurrent classes\n";
 #endif
 
-  proc->showArcs(false);
+  proc->showProc(false);
   em->cout() << proc->getNumArcs() << " edges total\n";
 
   em->cout() << "End of information for phase type\n\n";

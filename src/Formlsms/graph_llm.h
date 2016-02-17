@@ -34,7 +34,7 @@ public:
   };
   static const int num_graph_display_styles = 4;
 
-private:
+public:
   inline static display_style graphDisplayStyle() {
     switch (graph_display_style) {
       case 0 : return DOT;
@@ -46,7 +46,6 @@ private:
     return OUTGOING;
   }
 
-  public:
   inline static bool displayGraphNodeNames() {
     return display_graph_node_names;
   }
@@ -69,6 +68,7 @@ public:
         state_lldsm::display_order ORDER;
         graph_lldsm::display_style STYLE;
         bool NODE_NAMES;
+        bool RG_ONLY;
       };
     private:
       const graph_lldsm* parent;
@@ -263,10 +263,10 @@ public:
 
 // TBD - rearrange from here
 
-  /** Show the reachability graph or underlying process.
+  /** Show the reachability graph.
         @param  internal  If true, show internal details of state storage only.
-                          If false, show a sane list of states, unless there
-                          are too many to display.
+                          If false, show a sane graph, unless there
+                          are too many edges to display.
   */
   void showArcs(bool internal) const;
 

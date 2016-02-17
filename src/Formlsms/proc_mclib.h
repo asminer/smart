@@ -75,7 +75,7 @@ class mclib_process : public markov_process {
       na = chain->getNumArcs();
     }
     void showInternal(OutputStream &os) const;
-    virtual void showArcs(OutputStream &os, 
+    virtual void showProc(OutputStream &os, 
       const graph_lldsm::reachgraph::show_options& opt, 
       state_lldsm::reachset* RSS, shared_state* st) const;
 
