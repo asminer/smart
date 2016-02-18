@@ -11,7 +11,7 @@ noinst_LTLIBRARIES = \
     state_llm.la graph_llm.la stoch_llm.la \
     rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
     rgr_ectl.la rgr_grlib.la rgr_meddly.la \
-    proc_markov.la proc_mclib.la \
+    proc_markov.la proc_mclib.la proc_meddly.la \
     dcp_form.la mc_form.la fsm_form.la pn_form.la evm_form.la tam_form.la
 
 
