@@ -3,8 +3,8 @@
 
 // Neat trick: both minimalist, and detailed, header information here.
 
-#ifndef PROC_MEDDLY_H
-#define PROC_MEDDLY_H
+#ifndef GEN_MEDDLY_H
+#define GEN_MEDDLY_H
 
 // Minimalist front-end for process generation, using Meddly
 

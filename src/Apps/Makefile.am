@@ -14,7 +14,7 @@ smart_LDADD = \
   ../Engines/csl_exp.la \
   ../Engines/gen_rg_base.la \
   ../Engines/gen_exp_as.la ../Engines/gen_exp_ph.la \
-  ../Engines/proc_meddly.la \
+  ../Engines/gen_meddly.la \
   ../Engines/satur_meddly.la ../Engines/expl_meddly.la \
   \
   ../Formlsms/mc_form.la ../Formlsms/fsm_form.la \
@@ -28,6 +28,7 @@ smart_LDADD = \
   ../Formlsms/rgr_ectl.la ../Formlsms/rgr_grlib.la \
   ../Formlsms/rgr_meddly.la \
   ../Formlsms/proc_markov.la ../Formlsms/proc_mclib.la \
+  ../Formlsms/proc_meddly.la \
   \
   ../Modules/stringtype.la ../Modules/biginttype.la \
   ../Modules/stochtypes.la ../Modules/glue_meddly.la \
