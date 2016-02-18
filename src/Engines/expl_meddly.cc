@@ -2243,11 +2243,22 @@ class gen_wrapper_templ {
     bool states_only;
     meddly_reachset &rss;
     long& level_change;
-  public:
+
     minterm_pool* minterms;
     TANGR* tangible;
     VANGR* vanishing;
     EDGEGR* edges;
+
+    // TBD
+    // meddly_reachset * rss;   // we own it instead?
+    // meddly_monolithic_rg * rgr;
+    // meddly_process * proc;
+    //
+    // public:
+    // void finishProcess(hldsm &);
+    // void startProcess(hldsm &, subengine* completion);
+
+  public:
     shared_ddedge* PROC;
   public:
     gen_wrapper_templ(long &lc, bool so, meddly_reachset &rs, minterm_pool* mp, 
