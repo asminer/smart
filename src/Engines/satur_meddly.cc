@@ -3,7 +3,7 @@
 
 #include "satur_meddly.h"
 
-#include "proc_meddly.h"
+#include "gen_meddly.h"
 
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
@@ -94,7 +94,7 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     em->stopIO();
   }
 
-  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(mvo->shareMxdWrap());
+  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
   rgr->setPotential(Share(NSF));
   if (!potential) rgr->scheduleConversionToActual();
   glm->setRGR( rgr );

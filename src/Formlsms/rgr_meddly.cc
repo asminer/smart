@@ -11,9 +11,9 @@
 // *                                                                *
 // ******************************************************************
 
-meddly_monolithic_rg::meddly_monolithic_rg(meddly_encoder* wrap)
+meddly_monolithic_rg::meddly_monolithic_rg(shared_domain* v, meddly_encoder* wrap)
 {
-  vars = 0;
+  vars = v;
   mxd_wrap = wrap;
   edges = 0;
   states = 0;
@@ -37,7 +37,7 @@ void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset*
   mrss = Share(smart_cast <meddly_reachset*> (rss));
   DCASSERT(mrss);
 
-  vars = mrss->shareVars();
+  if (0==vars) vars = mrss->shareVars();
   states = mrss->copyStates();
 
   if (convert_to_actual) {
@@ -49,16 +49,22 @@ void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset*
   }
 }
 
-void meddly_monolithic_rg::setPotential(shared_ddedge* nsf)
+void meddly_monolithic_rg::setEdges(shared_ddedge* nsf)
 {
-  edges = nsf;
-  uses_potential = true;
-}
+  DCASSERT(nsf);
+  if (nsf->getForest() == mxd_wrap->getForest()) {
+    edges = nsf;
+    return;
+  }
 
-void meddly_monolithic_rg::setActual(shared_ddedge* nsf)
-{
-  edges = nsf;
-  uses_potential = false;
+  //
+  // Different forests.  Make a copy.
+  //
+
+  Delete(edges);  // probably zero but this is safest
+  edges = newMxdEdge();
+  MEDDLY::apply(MEDDLY::COPY, nsf->E, edges->E);
+  Delete(nsf);
 }
 
 void meddly_monolithic_rg::scheduleConversionToActual()
@@ -78,7 +84,7 @@ void meddly_monolithic_rg::getNumArcs(long &na) const
 
 void meddly_monolithic_rg::showInternal(OutputStream &os) const 
 {
-  os << "Internal process representation (using MEDDLY):\n";
+  os << "Internal reachability graph representation (using MEDDLY):\n";
   mxd_wrap->showNodeGraph(os, edges);
   os.flush();
 }
@@ -95,9 +101,6 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
   mrss->buildIndexSet();
 
   DCASSERT(edges);
-  /*
-  bool hasRates = edges->getForest()->isRangeType(MEDDLY::forest::REAL);
-  */
   
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
@@ -134,15 +137,7 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
         break;
 
     default:
-        /*
-        if (hasRates) {
-          os << "Markov chain:\n";
-        } else {
-          */
-          os << "Reachability graph:\n";
-          /*
-        }
-        */
+        os << "Reachability graph:\n";
   }
 
   long i;
@@ -184,32 +179,13 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
       }
       os.Put('\t');
 
-      // TBD - get iter rate, if there is one
-      /*
-      float rate = 0;
-      if (hasRates) {
-        edges->getIterValue(rate);
-      }
-      */
-
       switch (opt.STYLE) {
         case graph_lldsm::DOT:
-            os << "s" << mrss->getMintermIndex(tmt) << " -> s" << i;
-            /*
-            if (hasRates) {
-              os << " [label=\"" << rate << "\"]";
-            }
-            */
-            os << ";";
+            os << "s" << mrss->getMintermIndex(tmt) << " -> s" << i << ";";
             break;
 
         case graph_lldsm::TRIPLES:
             os << mrss->getMintermIndex(tmt) << " " << i;
-            /*
-            if (hasRates) {
-              os << " " << rate;
-            }
-            */
             break;
 
         default:
@@ -220,11 +196,6 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
             } else {
               os << mrss->getMintermIndex(tmt);
             }
-            /*
-            if (hasRates) {
-              os << " : " << rate;
-            }
-            */
       } // switch
       os.Put('\n');
 
@@ -411,4 +382,14 @@ stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p) const
   Delete(f);
   return new meddly_stateset(mp, ans);
 }
+
+
+meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n, 
+  MEDDLY::forest::range_type t, MEDDLY::forest::edge_labeling ev) const
+{
+  DCASSERT(vars);
+  MEDDLY::forest* f = vars->createForest(true, t, ev, getMxdForest()->getPolicies() );
+  return mxd_wrap->copyWithDifferentForest(n, f);
+}
+
 

@@ -21,16 +21,26 @@ class meddly_reachset;
 */
 class meddly_monolithic_rg : public graph_lldsm::reachgraph {
   public:
-    meddly_monolithic_rg(meddly_encoder* wrap);
+    meddly_monolithic_rg(shared_domain* v, meddly_encoder* wrap);
 
   protected:
     virtual ~meddly_monolithic_rg();
     virtual const char* getClassName() const { return "meddly_monolithic_rg"; }
     virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset* rss);
 
+  private:
+    void setEdges(shared_ddedge* nsf);
+
   public:
-    void setPotential(shared_ddedge* nsf);
-    void setActual(shared_ddedge* nsf);
+    inline void setPotential(shared_ddedge* nsf) {
+      setEdges(nsf);
+      uses_potential = true;
+    }
+
+    inline void setActual(shared_ddedge* nsf) {
+      setEdges(nsf);
+      uses_potential = false;
+    }
 
     /// Indicate that when attachToParent is called, we'll convert potential to actual.
     void scheduleConversionToActual();
@@ -58,6 +68,14 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
   // Helpers
   //
   public:
+    meddly_encoder* newMxdWrapper(const char* n, MEDDLY::forest::range_type t,
+      MEDDLY::forest::edge_labeling ev) const;
+
+    inline meddly_encoder& useMxdWrapper() {
+      DCASSERT(mxd_wrap);
+      return *mxd_wrap;
+    }
+
     inline MEDDLY::forest* getMxdForest() const {
       DCASSERT(mxd_wrap);
       return mxd_wrap->getForest();

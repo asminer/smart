@@ -1,7 +1,7 @@
 
 // $Id$
 
-#include "proc_meddly.h"
+#include "gen_meddly.h"
 
 #include "../Options/options.h"
 
