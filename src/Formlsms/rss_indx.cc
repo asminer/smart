@@ -2,91 +2,163 @@
 // $Id$
 
 #include "rss_indx.h"
-#include "check_llm.h"
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 
 // External libs
 #include "lslib.h"    // for LS_Vector
-#include "intset.h"   // for intset
 
+// ******************************************************************
+// *                                                                *
+// *                    indexed_reachset methods                    *
+// *                                                                *
+// ******************************************************************
 
 indexed_reachset::indexed_reachset()
 {
-  // clear the initial vector
-  initial.size = 0;
-  initial.index = 0;
-  initial.d_value = 0;
-  initial.f_value = 0;
 }
 
 indexed_reachset::~indexed_reachset()
 {
-  delete[] initial.index;
 }
 
-void indexed_reachset::getReachable(result &rs) const
+stateset* indexed_reachset::getReachable() const
 {
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    rs.setNull();
-    return;
-  }
   intset* all = new intset(num_states);
   all->addAll();
-  rs.setPtr(new stateset(getParent(), all));
+  return new expl_stateset(getParent(), all);
 }
 
-void indexed_reachset::getPotential(expr* p, result &x) const
+stateset* indexed_reachset::getPotential(expr* p) const
 {
-  if (0==p) {
-    x.setNull();
-    return;
-  }
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    x.setNull();
-    return;
-  }
-
   intset* pset = new intset(num_states);
-  const checkable_lldsm* LM = getParent();
-  const hldsm* HM = LM ? LM->GetParent() : 0;
-  pot_visit pv(HM, p, *pset);
-  visitStates(pv);
-  if (pv.isOK()) {
-    x.setPtr(new stateset(LM, pset));
+  if (p) {
+    const hldsm* HM = getGrandParent();
+    pot_visit pv(HM, p, *pset);
+    visitStates(pv);
+    if (!pv.isOK()) {
+      delete pset;
+      return 0;
+    }
   } else {
-    delete pset;
-    x.setNull();
+    pset->removeAll();
   }
+  return new expl_stateset(getParent(), pset);
 }
 
-void indexed_reachset::getInitialStates(result &x) const
+stateset* indexed_reachset::getInitialStates() const
 {
   long num_states;
   getNumStates(num_states);
-  if (0==num_states) {
-    x.setNull();
-    return;
-  }
   intset* initss = new intset(num_states);
-  initss->removeAll();
-  
-  if (initial.index) {
-    for (long z=0; z<initial.size; z++)
-      initss->addElement(initial.index[z]);
-  } 
-
-  x.setPtr(new stateset(getParent(), initss));
+  getInitial(*initss);
+  return new expl_stateset(getParent(), initss);
 }
 
-void indexed_reachset::setInitial(LS_Vector &init)
+void indexed_reachset::setInitial(const LS_Vector &init)
 {
-  DCASSERT(0==init.d_value);
-  DCASSERT(0==init.f_value);
+  long num_states;
+  getNumStates(num_states);
+  initial.resetSize(num_states);
+  initial.removeAll();
+  if (init.index) {
+    for (long z=0; z<init.size; z++) {
+      CHECK_RANGE(0, init.index[z], num_states);
+      initial.addElement(init.index[z]);
+    }
+  } else {
+    if (init.d_value) {
+      for (long i=0; i<init.size; i++) {
+        if (init.d_value[i]) {
+          initial.addElement(i);
+        }
+      }
+    } else if (init.f_value) {
+      for (long i=0; i<init.size; i++) {
+        if (init.f_value[i]) {
+          initial.addElement(i);
+        }
+      }
+    }
+  }
+}
+
+void indexed_reachset::setInitial(const intset& init)
+{
   initial = init;
+}
+
+void indexed_reachset::getInitial(intset& init) const
+{
+  init = initial;
+}
+
+void indexed_reachset::Finish()
+{
+}
+
+void indexed_reachset::Renumber(const long* ren)
+{
+}
+
+// ******************************************************************
+// *           indexed_reachset::indexed_iterator methods           *
+// ******************************************************************
+
+indexed_reachset::indexed_iterator::indexed_iterator(long ns)
+{
+  num_states = ns;
+  map = 0;
+  invmap = 0;
+  I = ns;
+}
+
+indexed_reachset::indexed_iterator::~indexed_iterator()
+{
+  delete[] map;
+  delete[] invmap;
+}
+
+void indexed_reachset::indexed_iterator::start()
+{
+  I = 0;
+}
+
+void indexed_reachset::indexed_iterator::operator++(int)
+{
+  I++;
+}
+
+indexed_reachset::indexed_iterator::operator bool() const
+{
+  return I < num_states;
+}
+
+long indexed_reachset::indexed_iterator::index() const
+{
+  return getIndex();
+}
+
+void indexed_reachset::indexed_iterator::copyState(shared_state* st) const
+{
+  copyState(st, I);
+}
+
+void indexed_reachset::indexed_iterator::setMap(long* m)
+{
+  DCASSERT(0==map);
+  DCASSERT(0==invmap);
+  if (0==m) return;
+
+  map = m;
+  invmap = new long[num_states];
+  for (long i=0; i<num_states; i++) {
+    CHECK_RANGE(0, map[i], num_states);
+    invmap[map[i]] = i;
+  }
 }
 
 // ******************************************************************

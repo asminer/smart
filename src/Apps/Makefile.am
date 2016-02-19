@@ -11,27 +11,30 @@ smart_SOURCES = smart.cc
 
 smart_LDADD = \
   ../Engines/simul.la ../Engines/exact.la \
-  ../Engines/ctl_exp.la ../Engines/ctl_symb.la ../Engines/csl_exp.la \
+  ../Engines/csl_exp.la \
   ../Engines/gen_rg_base.la \
   ../Engines/gen_exp_as.la ../Engines/gen_exp_ph.la \
-  ../Engines/proc_meddly.la \
+  ../Engines/gen_meddly.la \
   ../Engines/satur_meddly.la ../Engines/expl_meddly.la \
   \
   ../Formlsms/mc_form.la ../Formlsms/fsm_form.la \
   ../Formlsms/pn_form.la ../Formlsms/evm_form.la ../Formlsms/tam_form.la \
   ../Formlsms/basic_msr.la ../Formlsms/ctl_msr.la \
   ../Formlsms/stoch_msr.la ../Formlsms/csl_msr.la \
-  ../Formlsms/dsde_hlm.la ../Formlsms/phase_hlm.la \
-  ../Formlsms/mc_llm.la ../Formlsms/fsm_llm.la \
-  ../Formlsms/stoch_llm.la ../Formlsms/check_llm.la \
-  ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la \
-  ../Formlsms/rss.la ../Formlsms/rss_indx.la ../Formlsms/rss_enum.la \
-  ../Formlsms/rss_expl.la \
+  ../Formlsms/enum_hlm.la ../Formlsms/dsde_hlm.la ../Formlsms/phase_hlm.la \
+  ../Formlsms/state_llm.la ../Formlsms/graph_llm.la ../Formlsms/stoch_llm.la \
+  ../Formlsms/rss_indx.la ../Formlsms/rss_enum.la \
+  ../Formlsms/rss_expl.la ../Formlsms/rss_meddly.la \
+  ../Formlsms/rgr_ectl.la ../Formlsms/rgr_grlib.la \
+  ../Formlsms/rgr_meddly.la \
+  ../Formlsms/proc_markov.la ../Formlsms/proc_mclib.la \
+  ../Formlsms/proc_meddly.la \
   \
   ../Modules/stringtype.la ../Modules/biginttype.la \
   ../Modules/stochtypes.la ../Modules/glue_meddly.la \
   ../Modules/expl_states.la \
-  ../Modules/statesets.la ../Modules/statevects.la \
+  ../Modules/statesets.la ../Modules/expl_ssets.la ../Modules/meddly_ssets.la \
+  ../Modules/statevects.la \
   \
   ../ParseSM/libsmparse.la \
   $(TIMER_LIBRARY)/lib/libtimer.a \
@@ -48,6 +51,10 @@ smart_LDADD = \
   ../Options/libopts.la \
   ../Streams/libstream.la \
   $(MDD_LIBRARY)/lib/libmeddly.a
+
+SMART_WAIT = \
+  ../Formlsms/rss_mdd.la ../Formlsms/fsm_mdd.la ../Formlsms/mc_mdd.la \
+  ../Engines/ctl_exp.la ../Engines/ctl_symb.la 
 
 ## ICP   
 

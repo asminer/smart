@@ -3,7 +3,6 @@
 
 #include "rss_mdd.h"
 
-#define DSDE_HLM_DETAILS
 #include "dsde_hlm.h"
 
 // #define DEBUG_INDEXSET
@@ -93,7 +92,7 @@ bool meddly_states::Equals(const shared_object* o) const
   return o == this;
 }
 
-void meddly_states::showStates(const lldsm* m, OutputStream &cout, bool internal)
+void meddly_states::showStates(const state_lldsm* m, OutputStream &cout, bool internal)
 {
 
   DCASSERT(m);
@@ -248,7 +247,7 @@ void meddly_states::buildIndexSet()
 #endif
 }
 
-void meddly_states::visitStates(lldsm::state_visitor &x) const 
+void meddly_states::visitStates(state_lldsm::state_visitor &x) const 
 {
   states->startIterator();
   for (x.index()=0; !states->isIterDone(); states->incIter(), x.index()++) {

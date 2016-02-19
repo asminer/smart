@@ -1,14 +1,11 @@
 
 // $Id$
 
-// #define TRY_NEW_STUFF
-
 #include "fsm_form.h"
-#ifdef TRY_NEW_STUFF
 #include "rss_enum.h"
-#endif
-#include "fsm_llm.h"
-#include "check_llm.h"
+#include "rgr_grlib.h"
+#include "enum_hlm.h"
+// #include "graph_llm.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -245,13 +242,12 @@ void fsm_def::FinalizeModel(OutputStream &ds)
   delete initial;
   initial = 0;
 
-#ifdef TRY_NEW_STUFF
   enum_reachset* rss = new enum_reachset(mcstate);
-  graph_lldsm* foo = StartGenericFSM(rss);
-  FinishGenericFSM(foo, init);  // TBD mygr?
-#else
-  graph_lldsm* foo = MakeEnumeratedFSM(init, mcstate, mygr);
-#endif
+  grlib_reachgraph* rgr = new grlib_reachgraph(mygr);
+  rgr->setInitial(init);
+  graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
+  foo->setRSS(rss);
+  foo->setRGR(rgr);
   hldsm* bar = MakeEnumeratedModel(foo);
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
@@ -450,9 +446,13 @@ void fsm_instate::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(mi);
   hldsm* foo = mi->GetCompiledModel();
   DCASSERT(foo);
-  const lldsm* bar = foo->GetProcess();
+  const state_lldsm* bar = dynamic_cast <const state_lldsm*> (foo->GetProcess());
   DCASSERT(bar);
-  result current(bar->getEnumeratedState(x.current_state_index));
+
+  const enum_reachset* rss = dynamic_cast <const enum_reachset*> (bar->getRSS());
+  DCASSERT(rss);
+
+  result current(rss->getEnumeratedState(x.current_state_index));
 
   SafeCompute(pass[1], x);
   DCASSERT(x.answer->isNormal());
@@ -490,7 +490,7 @@ void fsm_absorbing::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(foo);
   const lldsm* bar = foo->GetProcess();
   DCASSERT(bar);
-  const checkable_lldsm* cruft = smart_cast <const checkable_lldsm*>(bar);
+  const graph_lldsm* cruft = smart_cast <const graph_lldsm*>(bar);
   DCASSERT(cruft);
 
   x.answer->setBool(cruft->isAbsorbing(x.current_state_index));
@@ -524,11 +524,43 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(foo);
   const lldsm* bar = foo->GetProcess();
   DCASSERT(bar);
-  const checkable_lldsm* cruft = smart_cast <const checkable_lldsm*>(bar);
+  const graph_lldsm* cruft = smart_cast <const graph_lldsm*>(bar);
   DCASSERT(cruft);
+  const grlib_reachgraph* RG = smart_cast <const grlib_reachgraph*> (cruft->getRGR());
+  DCASSERT(RG);
   
-  x.answer->setBool(cruft->isDeadlocked(x.current_state_index));
+  x.answer->setBool(RG->isDeadlocked(x.current_state_index));
 }
+
+// ******************************************************************
+// *                                                                *
+// *                         fsm_lib  class                         *
+// *                                                                *
+// ******************************************************************
+
+class fsm_lib : public library {
+public:
+  fsm_lib() : library(false) { }
+  virtual const char* getVersionString() const {
+    return GraphLib::Version();
+  }
+  virtual bool hasFixedPointer() const { 
+    return true; 
+  }
+
+  static void Init(exprman* em);
+};
+
+void fsm_lib::Init(exprman* em)
+{
+  static fsm_lib* fsml = 0;
+ 
+  if (0==fsml) {
+    fsml = new fsm_lib;
+    em->registerLibrary(fsml);
+  }
+}
+
 
 // **************************************************************************
 // *                                                                        *
@@ -602,6 +634,6 @@ void InitializeFSMs(exprman* em, List <msr_func> *common)
   fsm->addCommonFuncs(common);
 
   // register libs
-  InitFSMLibs(em);
+  fsm_lib::Init(em);
 }
 

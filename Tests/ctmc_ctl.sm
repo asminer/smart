@@ -7,7 +7,7 @@
 
     Model cruft (outgoing arcs have rate 1)
 
-	         A
+                 A
                   |
                 ^ |
                 | v
@@ -58,16 +58,16 @@ ctmc cruft(int n) := {
     state E[i];
   }
   arcs(
-	A : B : 1,
-	B : A : 1,  B : C : 1,  B : D : 1,  B : E[1] : 1,
-	
-	C : F : 1,  F : G : 1,  G : H : 1,
-	
-	D : I : 1,  I : D : 1,  I : K : 1,  K : J : 1,  J : K : 1,  J : D : 1
+    A : B : 1,
+    B : A : 1,  B : C : 1,  B : D : 1,  B : E[1] : 1,
+
+    C : F : 1,  F : G : 1,  G : H : 1,
+
+    D : I : 1,  I : D : 1,  I : K : 1,  K : J : 1,  J : K : 1,  J : D : 1
   );
   for (int i in {2..n}) {
     arcs(
-	E[i-1] : E[i] : 1
+    E[i-1] : E[i] : 1
     );
   }
 
@@ -276,7 +276,7 @@ print("                     ", cruft(5).prop32, "\n");
 print("\nEH tests:\n--------------------------------------------------\n");
 
 print("Should be {A, B, D, I}:\n");
-print("          ", cruft(6).prop33, "\n");	// again, to reset measures
+print("          ", cruft(6).prop33, "\n");    // again, to reset measures
 print("EH(EF(D)), should be {A, B, D, I, J, K}:\n");
 print("                     ", cruft(5).prop34, "\n");
 print("EH(EF(E[5])), should be {A, B, E[1], E[2], E[3], E[4], E[5]}:\n");

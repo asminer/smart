@@ -37,6 +37,10 @@
 #include "../ParseSM/parse_sm.h"
 
 // "modules"
+//
+// Mostly we just need to call the initializers
+
+#define INITIALIZERS_ONLY
 
 #include "../FuncLib/funclib.h"
 
@@ -44,10 +48,16 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/stochtypes.h"
 #include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
+#include "../Modules/meddly_ssets.h"
 #include "../Modules/statevects.h"
 #include "../Modules/glue_meddly.h"
 
 #include "../Formlsms/basic_msr.h"
+#include "../Formlsms/state_llm.h"
+#include "../Formlsms/graph_llm.h"
+#include "../Formlsms/stoch_llm.h"
+#include "../Formlsms/proc_markov.h"
 #include "../Formlsms/ctl_msr.h"
 #include "../Formlsms/stoch_msr.h"
 #include "../Formlsms/csl_msr.h"
@@ -64,10 +74,8 @@
 #include "../Engines/gen_rg_base.h"
 #include "../Engines/gen_exp_as.h"
 #include "../Engines/gen_exp_ph.h"
-#include "../Engines/ctl_exp.h"
-#include "../Engines/ctl_symb.h"
 #include "../Engines/csl_exp.h"
-#include "../Engines/proc_meddly.h"
+#include "../Engines/gen_meddly.h"
 #include "../Engines/satur_meddly.h"
 #include "../Engines/expl_meddly.h"
 
@@ -113,6 +121,8 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitStringType(em);
   InitBigintType(em, st);
   InitStatesets(em, st);
+  InitExplStatesets(em);
+  InitMeddlyStatesets(em);
   InitStatevects(em, st);
   InitMEDDLy(em);
 
@@ -127,6 +137,10 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitCSLMeasureFuncs(em, &CML);
 
   // Initialize formalisms here.
+  InitializeStateLLM(em);
+  InitializeGraphLLM(em);
+  InitializeStochasticLLM(em);
+  InitializeMarkovProc(em);
   InitializeDSDE(em);
   InitializeFSMs(em, &CML); 
   InitializeMarkovChains(em, &CML);
@@ -141,8 +155,6 @@ void InitModules(exprman* em, symbol_table* st, const char** env)
   InitializeExactSolutionEngines(em);
   InitializeExplicitAsynchGenerators(em);
   InitializeExplicitPhaseGenerators(em);
-  InitializeExplicitCTLEngines(em);
-  InitializeSymbolicCTLEngines(em);
   InitializeExplicitCSLEngines(em);
   InitializeProcGenMeddly(em);
   InitializeSaturationMeddly(em);

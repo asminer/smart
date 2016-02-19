@@ -12,76 +12,49 @@
 class expl_reachset : public indexed_reachset {
   public:
     expl_reachset(StateLib::state_db* ss);
+  protected:
     virtual ~expl_reachset();
-
+    virtual const char* getClassName() const {
+      return "expl_reachset";
+    }
+  public:
+    virtual StateLib::state_db* getStateDatabase() const;
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
-    virtual iterator& iteratorForOrder(int display_order);
+    virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
 
-    // For now: shrink the db to a more static structure
-    // TBD: probably need hooks for renumbering states
-    void Finish();
+    // Shrink the db to a more static structure
+    virtual void Finish();
+
+    // Renumber states
+    virtual void Renumber(const long* ren);
   
   private:
-
-    /**
-        Base class to collect common implementations
-    */
-    class base_iterator : public reachset::iterator {
-      public:
-        base_iterator();
-        virtual ~base_iterator();
-        virtual void start();
-        virtual void operator++(int);
-        virtual long index() const;
-      protected:
-        long i;
-    };
-
     /**
         Base class for state_db iterators
     */
-    class db_iterator : public base_iterator {
+    class db_iterator : public indexed_iterator {
       public:
         db_iterator(const StateLib::state_db &s);
         virtual ~db_iterator();
-        virtual operator bool() const;
-        virtual void copyState(shared_state* st) const;
-      protected:
-        // Called by derived classes.
-        inline void setMap(long* m) {
-          DCASSERT(0==map);
-          map = m;
-        }
+        virtual void copyState(shared_state* st, long o) const;
       private:
         const StateLib::state_db &states;
-        long* map;
     };
 
     /**
         Base class for state_coll iterators
     */
-    class coll_iterator : public base_iterator {
-
-      // required interface
+    class coll_iterator : public indexed_iterator {
       public:
         coll_iterator(const StateLib::state_coll &SC, const long* SH);
         virtual ~coll_iterator();
-        virtual operator bool() const;
-        virtual void copyState(shared_state* st) const;
-      protected:
-        // Called by derived classes.
-        inline void setMap(long* m) {
-          DCASSERT(0==map);
-          map = m;
-        }
-
+        virtual void copyState(shared_state* st, long o) const;
       private:
         const StateLib::state_coll &states;
         const long* state_handle;
-        long* map;
     };
 
     

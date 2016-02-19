@@ -4,7 +4,7 @@
 #include "ctl_msr.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
-#include "check_llm.h"
+#include "graph_llm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
@@ -18,101 +18,13 @@
 // *****************************************************************
 
 class CTL_engine : public msr_noengine {
-protected:
-  /** Engines for computing EX, explicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* EX_explicit;
-
-  /** Engines for computing EX, implicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* EX_symbolic;
-
-  /** Engines for computing EU, explicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset p; if NULL we compute EF.
-      parameter 2: pointer, to stateset q.
-      Computes states satisfying E p U q, or EF q if p is null.
-  */
-  static engtype* EU_explicit;
-
-  /** Engines for computing EU, implicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset p; if NULL we compute EF.
-      parameter 2: pointer, to stateset q.
-      Computes states satisfying E p U q, or EF q if p is null.
-  */
-  static engtype* EU_symbolic;
-
-  /** Engines for computing (unfair) EG, explicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* unfairEG_explicit;
-
-  /** Engines for computing (unfair) EG, implicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* unfairEG_symbolic;
-
-  /** Engines for computing (fair) EG, explicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* fairEG_explicit;
-
-  /** Engines for computing (fair) EG, implicitly.
-      This is a "Function call" style engine.
-      parameter 0: boolean, true means "reverse time".
-      parameter 1: pointer, to stateset
-  */
-  static engtype* fairEG_symbolic;
-
-  /** Engines for computing (unfair) AEF, explicitly.
-      This is a "Function call" style engine.
-      parameter 0: pointer, to low-level (graph) model.
-      parameter 1: pointer, to stateset (control states)
-      parameter 2: pointer, to stateset (goal states)
-      Determines all states from which, we can reach a goal state
-      (from control states, we can choose the next state, otherwise we cannot).
-      Special cases:
-      AEF 0, p = AF p
-      AEF 1, p = EF p
-  */
-  static engtype* unfairAEF_explicit;
-
-  /** Engines for computing (unfair) AEF, implicitly.
-      This is a "Function call" style engine.
-      parameter 0: pointer, to low-level (graph) model.
-      parameter 1: pointer, to stateset (control states)
-      parameter 2: pointer, to stateset (goal states)
-      Determines all states from which, we can reach a goal state
-      (from control states, we can choose the next state, otherwise we cannot).
-      Special cases:
-      AEF 0, p = AF p
-      AEF 1, p = EF p
-  */
-  static engtype* unfairAEF_symbolic;
-
-  static engtype* ProcGen;
- 
-  friend void InitCTLMeasureFuncs(symbol_table*, exprman*, List <msr_func> *);
-
-protected:
-  bool reverse_time;
 public:
   CTL_engine(const type* t, const char* name, bool rt, int np);
+
+protected:
+  inline bool revTime() const {
+    return reverse_time;
+  }
 
   inline lldsm* BuildRG(hldsm* hlm, const expr* err) const {
     if (0==hlm)  return 0;
@@ -142,74 +54,105 @@ public:
     } // catch
   }
 
-  inline checkable_lldsm* getLLM(traverse_data &x, expr* p) const {
+  inline graph_lldsm* getLLM(traverse_data &x, expr* p) const {
     model_instance* mi = grabModelInstance(x, p);
     if (0==mi) return 0;
     lldsm* foo = BuildRG(mi->GetCompiledModel(), x.parent);
     if (0==foo) return 0;
     if (foo->Type() == lldsm::Error) return 0;
-    return dynamic_cast <checkable_lldsm*>(foo);
+    return dynamic_cast <graph_lldsm*>(foo);
+  }
+
+  inline static stateset* Complement(stateset* p) {
+    if (0==p) return 0;
+    stateset* NOTp = 0;
+    if (p->numRefs() > 1) {
+      NOTp = p->DeepCopy();
+      NOTp->Complement();
+      Delete(p);
+    } else {
+      NOTp = p;
+      NOTp->Complement();
+    }
+    return NOTp;
   }
 
   inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
     if (0==m || 0==p) return 0;
     p->Compute(x);
     if (!x.answer->isNormal()) return 0;
-    stateset* ss = smart_cast <stateset*> (Share(x.answer->getPtr()));
+    stateset* ss = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(ss);
-    if (ss->getParent() == m) return ss;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Stateset in " << Name();
-      em->cerr() << " expression is from a different model";
-      em->stopIO();
-    }   
-    Delete(ss);
-    return 0;
-  }
-
-  inline bool mismatched(const stateset* p, const stateset* q, traverse_data &x) const {
-    DCASSERT(p);
-    DCASSERT(q);
-    if (p->isExplicit() == q->isExplicit()) return false;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Statesets in " << Name();
-      em->cerr() << " use different storage types";
-      em->stopIO();
-    }   
-    return true;
-  }
-
-  inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
-    try {
-      if (et) et->runEngine(pass, np, x);
-      else    throw subengine::No_Engine;
-    } // try
-    catch (subengine::error e) {
+    if (ss->getParent() != m) {
       if (em->startError()) {
         em->causedBy(x.parent);
-        em->cerr() << "Couldn't compute " << Name() << ": ";
-        em->cerr() << subengine::getNameOfError(e);
+        em->cerr() << "Stateset in " << Name();
+        em->cerr() << " expression is from a different model";
         em->stopIO();
-      }
-      x.answer->setNull();
-    } // catch
+      }   
+      return 0;
+    }
+    return Share(ss);
   }
 
+  inline stateset* grabAndInvertParam(const lldsm* m, expr* p, traverse_data &x) const {
+    if (0==m || 0==p) return 0;
+    p->Compute(x);
+    if (!x.answer->isNormal()) return 0;
+    stateset* ss = smart_cast <stateset*> (x.answer->getPtr());
+    DCASSERT(ss);
+    if (ss->getParent() != m) {
+      if (em->startError()) {
+        em->causedBy(x.parent);
+        em->cerr() << "Stateset in " << Name();
+        em->cerr() << " expression is from a different model";
+        em->stopIO();
+      }   
+      return 0;
+    }
+    if (ss->numRefs() > 1) {
+      ss = ss->DeepCopy();
+      ss->Complement();
+    } else {
+      ss->Complement();
+      Share(ss);
+    }
+    return ss;
+  }
+
+  inline static void setAnswer(traverse_data &x, stateset* s) {
+    if (s) {
+      x.answer->setPtr(s);
+    } else {
+      x.answer->setNull();
+    }
+  }
+
+  inline static void setAndInvertAnswer(traverse_data &x, stateset* s) {
+    if (s) {
+      if (s->numRefs()>1) {
+        stateset* ns = s->DeepCopy();
+        Delete(s);
+        ns->Complement();
+        x.answer->setPtr(ns);
+      } else {
+        s->Complement();
+        x.answer->setPtr(s);
+      }
+    } else {
+      x.answer->setNull();
+    }
+  }
+
+private:
+  static engtype* ProcGen;
+ 
+  friend void InitCTLMeasureFuncs(symbol_table*, exprman*, List <msr_func> *);
+
+  bool reverse_time;
 
 };
 
-engtype*  CTL_engine::EX_explicit             = 0;
-engtype*  CTL_engine::EX_symbolic             = 0;
-engtype*  CTL_engine::EU_explicit             = 0;
-engtype*  CTL_engine::EU_symbolic             = 0;
-engtype*  CTL_engine::unfairEG_explicit       = 0;
-engtype*  CTL_engine::unfairEG_symbolic       = 0;
-engtype*  CTL_engine::fairEG_explicit         = 0;
-engtype*  CTL_engine::fairEG_symbolic         = 0;
-engtype*  CTL_engine::unfairAEF_explicit      = 0;
-engtype*  CTL_engine::unfairAEF_symbolic      = 0;
 engtype*  CTL_engine::ProcGen                 = 0;
 
 CTL_engine::CTL_engine(const type* t, const char* name, bool rt, int np)
@@ -241,17 +184,10 @@ void EX_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* ex = p->isExplicit() ? EX_explicit : EX_symbolic;
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(p);
-  launchEngine(ex, engpass, np, x);
+  setAnswer(x, llm->EX(revTime(), p));
+  Delete(p);
 }
 
 // *****************************************************************
@@ -309,18 +245,10 @@ void EF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* eu = p->isExplicit() ? EU_explicit : EU_symbolic;
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setNull();
-  engpass[2].setPtr(p);
-  launchEngine(eu, engpass, np+1, x);
+  setAnswer(x, llm->EU(revTime(), 0, p));
+  Delete(p);
 }
 
 // *****************************************************************
@@ -379,31 +307,16 @@ void EU_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();
     return;
   }
   stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-  if (mismatched(p, q, x)) {
-    Delete(p);
-    Delete(q);
-    x.answer->setNull();
-    return;
-  }
-
-  engtype* eu = p->isExplicit() ? EU_explicit : EU_symbolic;
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(eu, engpass, np, x);
+  setAnswer(x, llm->EU(revTime(), p, q));
+  Delete(p);
+  Delete(q);
 }
 
 // *****************************************************************
@@ -461,28 +374,12 @@ void EG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* eg = 0;
-  if (llm->isFairModel()) 
-    if (p->isExplicit())
-      eg = fairEG_explicit;
-    else
-      eg = fairEG_symbolic;
-  else
-    if (p->isExplicit())
-      eg = unfairEG_explicit;
-    else
-      eg = unfairEG_symbolic;
-
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(p);
-  launchEngine(eg, engpass, np, x);
+  setAnswer(x,
+    llm->isFairModel() ?  llm->fairEG(revTime(), p) : llm->unfairEG(revTime(), p)
+  );
+  Delete(p);
 }
 
 // *****************************************************************
@@ -517,6 +414,7 @@ EH_si::EH_si() : EG_base("EH", true)
   SetDocumentation("CTL EH operator: build the set of final states, to which some path has the form:\n~~~~... p ---> p ---> p ---> p\nNote that paths can be finite or infinite in length, and that some models (e.g., Markov chains) do not consider unfair infinite paths.");
 }
 
+
 // *****************************************************************
 // *                                                               *
 // *                            AX_base                            *
@@ -540,20 +438,10 @@ void AX_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* ex = p->isExplicit() ? EX_explicit : EX_symbolic;
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(Complement(em, x.parent, p));
-  launchEngine(ex, engpass, np, x);
-  stateset* ans = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  if (ans) x.answer->setPtr(Complement(em, x.parent, ans));
-
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
+  setAndInvertAnswer(x, llm->EX(revTime(), NOTp));
+  Delete(NOTp);
   // AX p = !EX !p
 }
 
@@ -612,30 +500,12 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-  engtype* eg = 0;
-  if (llm->isFairModel()) 
-    if (p->isExplicit())
-      eg = fairEG_explicit;
-    else
-      eg = fairEG_symbolic;
-  else
-    if (p->isExplicit())
-      eg = unfairEG_explicit;
-    else
-      eg = unfairEG_symbolic;
-
-  result engpass[2];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(Complement(em, x.parent, p));
-  launchEngine(eg, engpass, np, x);
-  stateset* ans = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  if (ans) x.answer->setPtr(Complement(em, x.parent, ans));
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
+  setAndInvertAnswer(x,
+    llm->isFairModel() ?  llm->fairEG(revTime(), NOTp) : llm->unfairEG(revTime(), NOTp)
+  );
+  Delete(NOTp);
 
   // AF p = !EG !p
 }
@@ -695,21 +565,10 @@ void AG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const lldsm* llm = getLLM(x, pass[0]);
-  stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
-
-  engtype* eu = p->isExplicit() ? EU_explicit : EU_symbolic;
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setNull();
-  engpass[2].setPtr(Complement(em, x.parent, p));
-  launchEngine(eu, engpass, np+1, x);
-  stateset* ans = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  if (ans) x.answer->setPtr(Complement(em, x.parent, ans));
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
+  setAndInvertAnswer(x, llm->EU(revTime(), 0, NOTp));
+  Delete(NOTp);
 
   // AG p = !EF !p
 }
@@ -770,68 +629,78 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  const checkable_lldsm* llm = getLLM(x, pass[0]);
-  stateset* notp = Complement(em, x.parent, grabParam(llm, pass[1], x));
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* notp = grabAndInvertParam(llm, pass[1], x);
   if (0==notp) {
     x.answer->setNull();
     return;
   }
-  stateset* notq = Complement(em, x.parent, grabParam(llm, pass[2], x));
+  stateset* notq = grabAndInvertParam(llm, pass[2], x);
   if (0==notq) {
     Delete(notp);
     x.answer->setNull();
     return;
   }
-  if (mismatched(notp, notq, x)) {
+
+  stateset* notpq = 0;
+  if (notp->numRefs()>1) {
+    notpq = notp->DeepCopy();
     Delete(notp);
-    Delete(notq);
+  } else {
+    notpq = notp;
+  }
+  notpq->Intersect(pass[1], "AU", notq);
+
+  // we've computed notpq: (!p & !q)
+
+  stateset* eupart = Complement( llm->EU(revTime(), notq, notpq) );
+  Delete(notpq);
+
+  // we've computed eupart:  !E[ !q U (!p & !q) ]
+
+  stateset* egpart = Complement(
+    llm->isFairModel() ? llm->fairEG(revTime(), notq) : llm->unfairEG(revTime(), notq)
+  );
+  Delete(notq);
+
+  // we've computed egpart: is !EG(!q)
+
+  // Now finish up, using
+  //
+  // A p U q = !E[ !q U (!p & !q) ] & !EG(!q)
+  //
+  // try to be clever about the intersection 
+  // and do it "in place" if we can
+  //
+
+  if (0==egpart || 0==eupart) {
+    Delete(egpart);
+    Delete(eupart);
     x.answer->setNull();
     return;
   }
 
-  // set engines
-  engtype* eu = 0;
-  engtype* eg = 0;
+  if (egpart->numRefs() == 1) {
+    egpart->Intersect(pass[1], "AU", eupart);
+    Delete(eupart);
+    x.answer->setPtr(egpart);
+    return;
+  } 
+  if (eupart->numRefs() == 1) {
+    eupart->Intersect(pass[1], "AU", egpart);
+    Delete(egpart);
+    x.answer->setPtr(eupart);
+    return;
+  } 
 
-  if (notp->isExplicit()) {
-    eu = EU_explicit;
-    eg = llm->isFairModel() ? fairEG_explicit : unfairEG_explicit;
-  } else {
-    eu = EU_symbolic;
-    eg = llm->isFairModel() ? fairEG_symbolic : unfairEG_symbolic;
-  }
-
-  // A p U q = !E[ !q U (!p & !q) ] & !EG(!q)
-  result engpass[3];
-  engpass[0].setBool(reverse_time);
-  engpass[1].setPtr(notq);
-  engpass[2].setPtr(Intersection(em, x.parent, notp, notq));
-  Delete(notp);
-  launchEngine(eu, engpass, 3, x);
-
-  stateset* eupart = 0;  
-  if (x.answer->isNormal()) {
-    eupart = smart_cast <stateset*> (Share(x.answer->getPtr()));
-    DCASSERT(eupart);
-    eupart = Complement(em, x.parent, eupart);
-  }
-  // eupart is !E[ !q U (!p & !q) ]
-
-  launchEngine(eg, engpass, 2, x);
-  stateset* egpart = 0;
-  if (x.answer->isNormal()) {
-    egpart = smart_cast <stateset*> (Share(x.answer->getPtr()));
-    DCASSERT(egpart);
-    egpart = Complement(em, x.parent, egpart);
-  }
-  // egpart is !EG(!q)
-
-  stateset* answer = Intersection(em, x.parent, eupart, egpart);
-  Delete(eupart);
+  //
+  // neither egpart nor eupart can be modified in place
+  //
+  stateset* answer = egpart->DeepCopy();
+  answer->Intersect(pass[1], "AU", eupart);
   Delete(egpart);
-
-  if (0==answer) x.answer->setNull();
-  else           x.answer->setPtr(answer);
+  Delete(eupart);
+  x.answer->setPtr(answer);
 }
 
 // *****************************************************************
@@ -892,31 +761,12 @@ void AEF_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  lldsm* llm = getLLM(x, pass[0]);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  if (0==p) {
-    x.answer->setNull();
-    return;
-  }
   stateset* q = grabParam(llm, pass[2], x);
-  if (0==q) {
-    Delete(p);
-    x.answer->setNull();
-    return;
-  }
-  if (mismatched(p, q, x)) {
-    Delete(p);
-    Delete(q);
-    x.answer->setNull();
-    return;
-  }
-
-  engtype* aef = p->isExplicit() ? unfairAEF_explicit : unfairAEF_symbolic;
-  result engpass[3];
-  engpass[0].setPtr(Share(llm));
-  engpass[1].setPtr(p);
-  engpass[2].setPtr(q);
-  launchEngine(aef, engpass, 3, x);
+  setAnswer(x, llm->unfairAEF(false, p, q));
+  Delete(p);
+  Delete(q);
 }
 
 // *****************************************************************
@@ -944,7 +794,7 @@ void num_paths::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  checkable_lldsm* llm = getLLM(x, pass[0]);
+  graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
   if (0==p) {
     x.answer->setNull();
@@ -956,16 +806,8 @@ void num_paths::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  if (mismatched(p, q, x)) {
-    Delete(p);
-    Delete(q);
-    x.answer->setNull();
-    return;
-  }
 
-  DCASSERT(p->isExplicit());
-  DCASSERT(q->isExplicit());
-  llm->countPaths(p->getExplicit(), q->getExplicit(), *x.answer);
+  llm->countPaths(p, q, *x.answer);
   Delete(p);
   Delete(q);
 }
@@ -988,74 +830,12 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
 
   if (st) st->AddSymbol(ctl_help);
 
-  //
-  // Initialize engines
-  //
-  CTL_engine::EX_explicit = MakeEngineType(em,
-      "ExplicitEX",
-      "Algorithm for explicit computation of EX formulas in CTL.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::EX_symbolic = MakeEngineType(em,
-      "SymbolicEX",
-      "Algorithm for symbolic (MDD-based) computation of EX formulas in CTL.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::EU_explicit = MakeEngineType(em,
-      "ExplicitEU",
-      "Algorithm for explicit computation of EU formulas in CTL.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::EU_symbolic = MakeEngineType(em,
-      "SymbolicEU",
-      "Algorithm for symbolic (MDD-based) computation of EU formulas in CTL.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairEG_explicit = MakeEngineType(em,
-      "ExplicitUnfairEG",
-      "Algorithm for explicit computation of EG formulas in CTL, ignoring fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairEG_symbolic = MakeEngineType(em,
-      "SymbolicUnfairEG",
-      "Algorithm for symbolic (MDD-based) computation of EG formulas in CTL, ignoring fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::fairEG_explicit = MakeEngineType(em,
-      "ExplicitFairEG",
-      "Algorithm for explicit computation of EG formulas in CTL, with fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::fairEG_symbolic = MakeEngineType(em,
-      "SymbolicFairEG",
-      "Algorithm for symbolic (MDD-based) computation of EG formulas in CTL, with fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairAEF_explicit = MakeEngineType(em,
-      "ExplicitUnfairAEF",
-      "Algorithm for explicit computation of AEF formulas in (extended) CTL, without fairness.",
-      engtype::FunctionCall
-  );
-
-  CTL_engine::unfairAEF_symbolic = MakeEngineType(em,
-      "SymbolicUnfairAEF",
-      "Algorithm for symbolic (MDD-based) computation of AEF formulas in (extended) CTL, without fairness.",
-      engtype::FunctionCall
-  );
-
   CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
 
   //
   // Declare function variables
   //
+
   static msr_func* the_EX_si = 0;
   static msr_func* the_EY_si = 0;
   static msr_func* the_EF_si = 0;
@@ -1147,4 +927,3 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
   common->Append(the_AEF_si);
   common->Append(the_num_paths);
 }
-

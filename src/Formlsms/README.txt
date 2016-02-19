@@ -26,41 +26,35 @@ Specifically we have the following formalism support:
     evm_form    Event-variable model formalism.
     tam_form    Tile assembly model formalism.
 
+    enum_hlm    Enumerated high-level models (e.g., FSMs, MCs)
     dsde_hlm    Discrete-state, discrete-event models.
   noevnt_hlm    High-level models without events.
    phase_hlm    Phase-type models.
 
-   check_llm    Abstract base class: models that are "checkable" (CTL).
-     fsm_llm    Low-level finite state machines.
-      mc_llm    Low-level Markov chain class.
-   stoch_llm    Abstract base class: stochastic models.
+   state_llm    Models with reachable states
+   graph_llm    Graph-based low-level models; checkable with logics (CTL).
+   stoch_llm    Stochastic low-level models, for now Markov chains
 
      fsm_mdd    Low-level finite state machines, using Meddly.  Will be obsolete soon!
 
-
-TBD: Find a better home for everything below here 
-     (except maybe rss, rss_indx, rgr, mc base classes)
-     (rss_enum can be merged into fsm_form)
-
-TBD: rss, rgr go inside checkable_lldsm class!
-     Can we then kill fsm_llm?
-     mc goes inside stochastic_lldsm class and derives from rgr
-
 New reachability set stuff and process stuff:
   
-         rss    Abstract base class for reachability sets, used by fsm & mc
     rss_indx    Base class for explicitly stored, indexed sets (rss_enum and rss_expl)
     rss_enum    User enumerated (e.g. within a dtmc model) reachability sets
     rss_expl    Explicitly stored reachability sets
-  rss_meddly    Stored as an MDD using the library MEDDLY
+  rss_meddly    Reachability sets stored as an MDD using the library MEDDLY
 
-TBD:
+    rgr_ectl    Base class for reachgraphs that do "explicit" CTL.
+   rgr_grlib    Reachability graphs based on the GraphLib data structure.
+  rgr_meddly    Reachability graphs stored using MEDDLY
 
-         rgr    Abstract base class for reachability graph storage.
-    rgr_expl    
-  rgr_meddly    Maybe split?  monolithic, etc. as separate classes?
+ proc_markov    Base class for stochastic processes that are Markov chains.
+  proc_mclib    Markov chains (and reachability graphs) based on the MCLib Markov chain
+ proc_meddly    Markov chains stored using MEDDLY
 
-          mc    Abstract base class for Markov chain storage.
-     mc_expl    
-   mc_meddly
 
+DEAD CODE (remove after debugging and testing)
+
+     fsm_llm    Low-level finite state machines. 
+      mc_llm    Low-level Markov chain class. 
+   rgr_mclib    Reachability graphs based on the MCLib Markov chain.

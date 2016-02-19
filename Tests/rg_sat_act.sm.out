@@ -161,6 +161,7 @@ State 157: [pout4:1, pout3:1, pout2:1, pb1:1]
 State 158: [pout4:1, pout3:1, pout2:1, pkan1:1]
 State 159: [pout4:1, pout3:1, pout2:1, pout1:1]
 Reachability graph:
+Reachability graph:
 From state 0:
 	To state 1
 	To state 3
@@ -1261,6 +1262,7 @@ State 318: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, WaitL[2]:1, W
 State 319: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, HasL[3]:1, WaitR[3]:1]
 State 320: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, WaitL[3]:1, WaitR[3]:1]
 State 321: [Fork[0]:1, Idle[0]:1, Fork[1]:1, Idle[1]:1, Fork[2]:1, Idle[2]:1, Fork[3]:1, Idle[3]:1]
+Reachability graph:
 Reachability graph:
 From state 0:
 	To state 288
@@ -3343,6 +3345,7 @@ State 549: [row[7]:7, row[6]:3, row[5]:6, row[4]:2, row[3]:5, row[2]:1, row[1]:4
 State 550: [row[7]:7, row[6]:4, row[5]:1, row[4]:5, row[3]:2, row[2]:6, row[1]:3]
 State 551: [row[7]:7, row[6]:5, row[5]:3, row[4]:1, row[3]:6, row[2]:4, row[1]:2]
 Reachability graph:
+Reachability graph:
 From state 0:
 	To state 1
 	To state 2
@@ -4568,6 +4571,7 @@ State 116: [a[1]:5, a[2]:4, a[3]:2, a[4]:1, a[5]:3]
 State 117: [a[1]:5, a[2]:4, a[3]:2, a[4]:3, a[5]:1]
 State 118: [a[1]:5, a[2]:4, a[3]:3, a[4]:1, a[5]:2]
 State 119: [a[1]:5, a[2]:4, a[3]:3, a[4]:2, a[5]:1]
+Reachability graph:
 Reachability graph:
 From state 0:
 	To state 1

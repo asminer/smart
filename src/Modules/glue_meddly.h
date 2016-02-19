@@ -10,6 +10,8 @@
 #ifndef GLUE_MEDDLY_H
 #define GLUE_MEDDLY_H
 
+#ifndef INITIALIZERS_ONLY
+
 #include "../ExprLib/dd_front.h"
 #include "config.h"
 #ifdef HAVE_LIBGMP
@@ -140,6 +142,14 @@ public:
   inline const int* getIterPrimedMinterm() const {
     DCASSERT(iter);
     return iter->getPrimedAssignments();
+  }
+  inline const int* getIterUnprimedMinterm() const {
+    DCASSERT(iter);
+    return iter->getAssignments();
+  }
+  inline void getIterValue(float &v) const {
+    DCASSERT(iter);
+    iter->getValue(v);
   }
 };
 
@@ -278,6 +288,7 @@ public:
 };
 
 
+#endif  // INITIALIZERS_ONLY
 
 // **************************************************************************
 // *                                                                        *

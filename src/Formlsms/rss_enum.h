@@ -12,54 +12,54 @@ class enum_reachset : public indexed_reachset {
   public:
     enum_reachset(model_enum* ss);
     virtual ~enum_reachset();
+    virtual const char* getClassName() const {
+      return "enum_reachset";
+    }
 
     virtual void getNumStates(long &ns) const;
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
-    virtual iterator& iteratorForOrder(int display_order);
+    virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
+
+    shared_object* getEnumeratedState(long i) const;
+
+    virtual void Renumber(const long* ren);
 
   private:
     
     /**
-      Iterator for discovery, natural orders
+      Iterator for natural orders
     */
-    class natural_iter : public reachset::iterator {
-
+    class natural_iter : public indexed_iterator {
       // required interface
       public:
         natural_iter(const model_enum &ss);
         virtual ~natural_iter();
-        virtual void start();
-        virtual void operator++(int);
-        virtual operator bool() const;
-        virtual long index() const;
-        virtual void copyState(shared_state* st) const;
+        virtual void copyState(shared_state* st, long o) const;
 
       private:
         const model_enum &states;
-        long i;
     };
 
     /**
       Iterator for lexical order
     */
-    class lexical_iter : public reachset::iterator {
-
+    class lexical_iter : public natural_iter {
       // required interface
       public:
         lexical_iter(const model_enum &ss);
         virtual ~lexical_iter();
-        virtual void start();
-        virtual void operator++(int);
-        virtual operator bool() const;
-        virtual long index() const;
-        virtual void copyState(shared_state* st) const;
+    };
 
-      private:
-        const model_enum &states;
-        long* map;
-        long i;
+    /**
+      Iterator for discovery order
+    */
+    class discovery_iter : public natural_iter {
+      // required interface
+      public:
+        discovery_iter(const model_enum &ss);
+        virtual ~discovery_iter();
     };
 
   private:
@@ -67,6 +67,7 @@ class enum_reachset : public indexed_reachset {
     long* state_handle;    
     iterator* natorder;
     iterator* lexorder;
+    iterator* discorder;
 };
 
 #endif

@@ -4,7 +4,7 @@
 #ifndef RSS_MDD_H
 #define RSS_MDD_H
 
-#include "../ExprLib/mod_inst.h"
+#include "graph_llm.h"
 #include "../Modules/glue_meddly.h"
 
 // ******************************************************************
@@ -209,9 +209,9 @@ public:
   }
 
   // TBD: use an enum for show, e.g., what order?
-  void showStates(const lldsm* p, OutputStream &os, bool internal);
+  void showStates(const state_lldsm* p, OutputStream &os, bool internal);
 
-  void visitStates(lldsm::state_visitor &x) const;
+  void visitStates(state_lldsm::state_visitor &x) const;
 
 
 // Methods involving the next-state function or mxd wrapper

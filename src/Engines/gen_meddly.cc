@@ -1,16 +1,14 @@
 
 // $Id$
 
-#define PROC_MEDDLY_DETAILS
-#include "proc_meddly.h"
+#include "gen_meddly.h"
 
 #include "../Options/options.h"
 
 #include "../Modules/glue_meddly.h"
 #include "../Modules/expl_states.h"
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/rss_mdd.h"
+#include "../Formlsms/rss_meddly.h"
 
 // #define DUMP_MXD
 // #define DUMP_MTMXD
@@ -73,9 +71,10 @@ void minterm_pool::reportStats(DisplayStream &out) const
 
 bool meddly_varoption::vars_named;
 
-meddly_varoption::meddly_varoption(meddly_states &x, const dsde_hlm &p)
-: ms(x), parent(p)
+meddly_varoption::meddly_varoption(meddly_reachset &x, const dsde_hlm &p)
+: parent(p), ms(x)
 {
+  mxd_wrap = 0;
   built_ok = true;
   event_enabling = new MEDDLY::dd_edge*[parent.getNumEvents()];
   event_firing = new MEDDLY::dd_edge*[parent.getNumEvents()];
@@ -94,6 +93,7 @@ meddly_varoption::~meddly_varoption()
     for (int i=0; i<parent.getNumEvents(); i++) delete event_firing[i];
     delete[] event_firing;
   }
+  Delete(mxd_wrap);
 }
 
 void meddly_varoption::initializeVars()
@@ -110,19 +110,16 @@ void meddly_varoption::initializeVars()
 
   // Convert initial states to minterms
   for (int n=0; n<num_init; n++) {
-    mt[n] = new int[ms.getNumVars()+1];
+    mt[n] = new int[ms.getNumLevels()];
     parent.GetInitialState(n, st);
     ms.MddState2Minterm(st, mt[n]);
   } // for n
 
   // Build DD from minterms
-  // ms.initial = smart_cast <shared_ddedge*> (ms.mdd_wrap->makeEdge(0));
-  // DCASSERT(ms.initial);
   shared_ddedge* initial = ms.newMddEdge();
   DCASSERT(initial);
   try {
-    // ms.mdd_wrap->createMinterms(mt, num_init, ms.initial);
-    ms.createMddMinterms(mt, num_init, initial);
+    ms.createMinterms(mt, num_init, initial);
     ms.setInitial(initial);
 
     // Cleanup
@@ -159,6 +156,7 @@ char* meddly_varoption::buildVarName(const hldsm::partinfo &part, int k)
 void meddly_varoption::reportStats(DisplayStream &out) const
 {
   ms.reportStats(out);
+  if (mxd_wrap) mxd_wrap->reportStats(out);
 }
 
 // **************************************************************************
@@ -337,17 +335,17 @@ bounded_encoder::copyWithDifferentForest(const char* n, MEDDLY::forest* nf) cons
 class bounded_varoption : public meddly_varoption {
   int* minterm; // unprimed minterm
   int* minprim; // primed minterm
-public:
+protected:
   meddly_encoder* mtmxd_wrap;
 public:
-  bounded_varoption(meddly_states &x, const dsde_hlm &p, const exprman* em,
+  bounded_varoption(meddly_reachset &x, const dsde_hlm &p, const exprman* em,
     const meddly_procgen &pg);
 
   virtual ~bounded_varoption();
 
   virtual void initializeEvents(named_msg &d);
 
-  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 
@@ -372,7 +370,7 @@ private:
 // **************************************************************************
 
 bounded_varoption
-::bounded_varoption(meddly_states &x, const dsde_hlm &p, 
+::bounded_varoption(meddly_reachset &x, const dsde_hlm &p, 
   const exprman* em, const meddly_procgen &pg) : meddly_varoption(x, p)
 {
   minterm = 0;
@@ -396,20 +394,19 @@ void bounded_varoption::initializeEvents(named_msg &d)
   // Nothing to do?
 }
 
-void bounded_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
+void bounded_varoption::updateEvents(named_msg &d, bool* cl)
 {
   DCASSERT(built_ok);
-  DCASSERT(nsf);
   DCASSERT(event_enabling);
   DCASSERT(event_firing);
-  MEDDLY::forest* f = nsf->getForest();
+  MEDDLY::forest* f = get_mxd_forest();
   DCASSERT(f);
   MEDDLY::dd_edge mask(f);
 
   // For now, don't bother checking cl; just build everything
 
-  for (int i=0; i<parent.getNumEvents(); i++) {
-    const model_event* e = parent.readEvent(i);
+  for (int i=0; i<getParent().getNumEvents(); i++) {
+    const model_event* e = getParent().readEvent(i);
     DCASSERT(e);
 
     //
@@ -507,11 +504,11 @@ void bounded_varoption
   // First, build the expr as an MTMXD
   e->Traverse(x);
   if (foo.isNull()) {
-    if (parent.StartError(0)) {
-      parent.SendError("Got null result for ");
-      parent.SendError(what);
-      parent.SendError(who);
-      parent.DoneError();
+    if (getParent().StartError(0)) {
+      getParent().SendError("Got null result for ");
+      getParent().SendError(what);
+      getParent().SendError(who);
+      getParent().DoneError();
     }
     throw subengine::Engine_Failed;
   }
@@ -519,10 +516,10 @@ void bounded_varoption
   DCASSERT(me);
 
 #ifdef DEBUG_ENCODE
-  parent.getEM()->cout() << "MTMXD encoding for expr: ";
-  e->Print(parent.getEM()->cout(), 0);
-  parent.getEM()->cout() << " is node " << me->E.getNode() << "\n";
-  parent.getEM()->cout().flush();
+  getParent().getEM()->cout() << "MTMXD encoding for expr: ";
+  e->Print(getParent().getEM()->cout(), 0);
+  getParent().getEM()->cout() << " is node " << me->E.getNode() << "\n";
+  getParent().getEM()->cout().flush();
   me->E.show(stdout, 2);
 #endif
 
@@ -533,13 +530,13 @@ void bounded_varoption
   }
   catch (MEDDLY::error ce) {
     // An error occurred, report it...
-    if (parent.StartError(0)) {
-      parent.SendError("Meddly error ");
-      parent.SendError(ce.getName());
-      parent.SendError(" for ");
-      parent.SendError(what);
-      parent.SendError(who);
-      parent.DoneError();
+    if (getParent().StartError(0)) {
+      getParent().SendError("Meddly error ");
+      getParent().SendError(ce.getName());
+      getParent().SendError(" for ");
+      getParent().SendError(what);
+      getParent().SendError(who);
+      getParent().DoneError();
     }
 
     // ...and figure out which one
@@ -554,7 +551,7 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
 {
   DCASSERT(minterm);
   DCASSERT(mtmxd_wrap);
-  const hldsm::partinfo &part = parent.getPartInfo();
+  const hldsm::partinfo &part = getParent().getPartInfo();
 
   // "don't change" levels
   for (int k=1; k<=part.num_levels; k++) {
@@ -633,11 +630,11 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
     Delete(xp);
 
     // An error occurred, report it...
-    if (parent.StartError(0)) {
-      parent.SendError("Meddly error ");
-      parent.SendError(e.getName());
-      parent.SendError(" in buildNoChange");
-      parent.DoneError();
+    if (getParent().StartError(0)) {
+      getParent().SendError("Meddly error ");
+      getParent().SendError(e.getName());
+      getParent().SendError(" in buildNoChange");
+      getParent().DoneError();
     }
     // ...and figure out which one
     if (MEDDLY::error::INSUFFICIENT_MEMORY == e.getCode()) {
@@ -659,13 +656,13 @@ void bounded_varoption::checkBounds(const exprman* em)
   // Check that all state variables are bounded
   //
   if (!built_ok) return;
-  for (int i=0; i<parent.getNumStateVars(); i++) {
-    const model_statevar* sv = parent.readStateVar(i);
+  for (int i=0; i<getParent().getNumStateVars(); i++) {
+    const model_statevar* sv = getParent().readStateVar(i);
     if (sv->HasBounds()) continue;
 
     if (built_ok) {
       built_ok = false;
-      if (!parent.StartError(0)) return;
+      if (!getParent().StartError(0)) return;
       em->cerr() << "BOUNDED setting requires bounds for state variables.";
       em->newLine();
       em->cerr() << "The following state variables do not have declared bounds:";
@@ -675,7 +672,7 @@ void bounded_varoption::checkBounds(const exprman* em)
       em->cerr() << ", " << sv->Name();
     }
   } // for i
-  if (!built_ok) parent.DoneError();
+  if (!built_ok) getParent().DoneError();
 }
 
 int bounded_varoption::initDomain(const exprman* em)
@@ -685,7 +682,7 @@ int bounded_varoption::initDomain(const exprman* em)
   //
   if (!built_ok) return 0;
   
-  const hldsm::partinfo& part = parent.getPartInfo();
+  const hldsm::partinfo& part = getParent().getPartInfo();
   minterm = new int[part.num_levels+1];
   minprim = new int[part.num_levels+1];
   minterm[0] = 1;
@@ -700,9 +697,9 @@ int bounded_varoption::initDomain(const exprman* em)
       int nv = part.variable[i]->NumPossibleValues();
       int newbnd = bnd * nv;
       if (newbnd < 1 || newbnd / nv != bnd) {
-        if (parent.StartError(0)) {
+        if (getParent().StartError(0)) {
           em->cerr() << "Overflow in size of level " << k << " for MDD";
-          parent.DoneError();
+          getParent().DoneError();
         }
         built_ok = false;
         return 0;
@@ -713,7 +710,7 @@ int bounded_varoption::initDomain(const exprman* em)
     maxbound = MAX(bnd, maxbound);
 
   } // for k
-  if (!ms.createVars(parent, vars, part.num_levels)) {
+  if (!ms.createVars(vars, part.num_levels)) {
     built_ok = false;
     return 0;
   }
@@ -750,9 +747,9 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Build encoders
   //
-  ms.setMddWrap(new bounded_encoder("MDD", mdd, parent, maxbound));
-  ms.setMxdWrap(new bounded_encoder("MxD", mxd, parent, maxbound));
-  mtmxd_wrap =  new bounded_encoder("MTMxD", mtmxd, parent, maxbound);
+  ms.setMddWrap(new bounded_encoder("MDD", mdd, getParent(), maxbound));
+  set_mxd_wrap(new bounded_encoder("MxD", mxd, getParent(), maxbound));
+  mtmxd_wrap =  new bounded_encoder("MTMxD", mtmxd, getParent(), maxbound);
 }
 
 
@@ -926,7 +923,7 @@ private:
   int* to_minterm;
   int* tmpLevels;   // array of size num_levels+1
 public:
-  substate_varoption(meddly_states &x, const dsde_hlm &p, 
+  substate_varoption(meddly_reachset &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
   virtual ~substate_varoption();
   virtual void initializeVars();
@@ -1123,7 +1120,7 @@ void substate_varoption::deplist::expandLists()
 // **************************************************************************
 
 substate_varoption
-::substate_varoption(meddly_states &x, const dsde_hlm &p, 
+::substate_varoption(meddly_reachset &x, const dsde_hlm &p, 
   const exprman* em, const meddly_procgen &pg) 
 : meddly_varoption(x, p), td(traverse_data::Compute)
 {
@@ -1179,10 +1176,10 @@ substate_varoption::initializeEvents(named_msg &d)
     d.report() << "preprocessing event expressions\n";
     d.stopIO();
   }
-  enable_deps = new deplist*[parent.getNumEvents()];
-  fire_deps = new deplist*[parent.getNumEvents()];
-  for (int i=0; i<parent.getNumEvents(); i++) {
-    const model_event* e = parent.readEvent(i);
+  enable_deps = new deplist*[getParent().getNumEvents()];
+  fire_deps = new deplist*[getParent().getNumEvents()];
+  for (int i=0; i<getParent().getNumEvents(); i++) {
+    const model_event* e = getParent().readEvent(i);
     enable_deps[i] = getExprDeps(e->getEnabling(), num_levels);
     fire_deps[i] = getExprDeps(e->getNextstate(), num_levels);
     DCASSERT(enable_deps[i]);
@@ -1194,9 +1191,9 @@ substate_varoption::initializeEvents(named_msg &d)
   if (!d.startReport()) return;
   d.report() << "done preprocessing event expressions\n";
 
-  for (int i=0; i<parent.getNumEvents(); i++) {
+  for (int i=0; i<getParent().getNumEvents(); i++) {
 
-    d.report() << "\t" << parent.readEvent(i)->Name() << " enabling:\n";
+    d.report() << "\t" << getParent().readEvent(i)->Name() << " enabling:\n";
     for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
       d.report() << "\t\tlevels ";
       int k = DL->getLevelAbove(0);
@@ -1211,7 +1208,7 @@ substate_varoption::initializeEvents(named_msg &d)
       d.report() << "\n";
     } // for DL
 
-    d.report() << "\t" << parent.readEvent(i)->Name() << " firing:\n";
+    d.report() << "\t" << getParent().readEvent(i)->Name() << " firing:\n";
     for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
       d.report() << "\t\tlevels ";
       int k = DL->getLevelAbove(0);
@@ -1235,13 +1232,6 @@ void substate_varoption::reportStats(DisplayStream &out) const
   meddly_varoption::reportStats(out);
   DCASSERT(colls);
   colls->Report(out);
-#ifdef DUMP_MXD
-  out << "NSF root in MXD: " << ms.nsf->E.getNode() << "\n";
-  out << "MXD forest:\n";
-  out.flush();
-  ms.mxd_wrap->getForest()->showInfo(out.getDisplay(), 1);
-  fflush(out.getDisplay());
-#endif
 }
 
 void substate_varoption::initDomain(const exprman* em)
@@ -1251,14 +1241,14 @@ void substate_varoption::initDomain(const exprman* em)
   //
   if (!built_ok) return;
   
-  const hldsm::partinfo& part = parent.getPartInfo();
+  const hldsm::partinfo& part = getParent().getPartInfo();
   num_levels = part.num_levels;
   MEDDLY::variable** vars = new MEDDLY::variable*[num_levels+1];
   vars[0] = 0;
   for (int k=num_levels; k; k--) {
     vars[k] = MEDDLY::createVariable(1, buildVarName(part, k));
   } // for k
-  if (!ms.createVars(parent, vars, num_levels)) {
+  if (!ms.createVars(vars, num_levels)) {
     built_ok = false;
     return;
   }
@@ -1313,8 +1303,8 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Build encoders
   //
-  ms.setMddWrap(new substate_encoder("MDD", mdd, parent, Share(colls)));
-  ms.setMxdWrap(new substate_encoder("MxD", mxd, parent, Share(colls)));
+  ms.setMddWrap(new substate_encoder("MDD", mdd, getParent(), Share(colls)));
+  set_mxd_wrap(new substate_encoder("MxD", mxd, getParent(), Share(colls)));
 }
 
 substate_varoption::deplist*
@@ -1677,8 +1667,8 @@ void substate_varoption::updateLevels(named_msg &d, const int* levels)
     d.report() << "\n";
     d.stopIO();
   }
-  for (int i=0; i<parent.getNumEvents(); i++) {
-    const model_event* e = parent.readEvent(i);
+  for (int i=0; i<getParent().getNumEvents(); i++) {
+    const model_event* e = getParent().readEvent(i);
     if (d.startReport()) {
       d.report() << "updating event " << e->Name() << "\n";
       d.stopIO();
@@ -1784,10 +1774,10 @@ void substate_varoption::show_substates(OutputStream &s)
 
 class pregen_varoption : public substate_varoption {
 public:
-  pregen_varoption(meddly_states &x, const dsde_hlm &p, 
+  pregen_varoption(meddly_reachset &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
 
-  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 };
@@ -1799,14 +1789,14 @@ public:
 // **************************************************************************
 
 pregen_varoption
-::pregen_varoption(meddly_states &x, const dsde_hlm &p, 
+::pregen_varoption(meddly_reachset &x, const dsde_hlm &p, 
   const exprman* em, const meddly_procgen &pg)
 : substate_varoption(x, p, em, pg)
 {
 }
 
 void 
-pregen_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
+pregen_varoption::updateEvents(named_msg &d, bool* cl)
 {
   int* updated = new int[num_levels+1];
 
@@ -1855,10 +1845,10 @@ bool pregen_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
 
 class onthefly_varoption : public substate_varoption {
 public:
-  onthefly_varoption(meddly_states &x, const dsde_hlm &p, 
+  onthefly_varoption(meddly_reachset &x, const dsde_hlm &p, 
     const exprman* em, const meddly_procgen &pg);
 
-  virtual void updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl);
+  virtual void updateEvents(named_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
 };
@@ -1870,13 +1860,13 @@ public:
 // **************************************************************************
 
 onthefly_varoption
-::onthefly_varoption(meddly_states &x, const dsde_hlm &p, 
+::onthefly_varoption(meddly_reachset &x, const dsde_hlm &p, 
   const exprman* em, const meddly_procgen &pg) 
  : substate_varoption(x, p, em, pg)
 {
 }
 
-void onthefly_varoption::updateEvents(named_msg &d, meddly_encoder* nsf, bool* cl)
+void onthefly_varoption::updateEvents(named_msg &d, bool* cl)
 {
   throw subengine::Engine_Failed;
 }
@@ -1909,7 +1899,7 @@ meddly_procgen::~meddly_procgen()
 }
 
 meddly_varoption* 
-meddly_procgen::makeBounded(const dsde_hlm &m, meddly_states &ms) const
+meddly_procgen::makeBounded(const dsde_hlm &m, meddly_reachset &ms) const
 {
   bounded_varoption *mvo = new bounded_varoption(ms, m, em, *this);
   if (!mvo->wasBuiltOK()) {
@@ -1921,14 +1911,14 @@ meddly_procgen::makeBounded(const dsde_hlm &m, meddly_states &ms) const
 
 
 meddly_varoption*
-meddly_procgen::makeExpanding(const dsde_hlm &m, meddly_states &ms) const
+meddly_procgen::makeExpanding(const dsde_hlm &m, meddly_reachset &ms) const
 {
   // TBD
   return 0;
 }
 
 meddly_varoption*
-meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_states &ms) const
+meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const
 {
   onthefly_varoption *mvo = new onthefly_varoption(ms, m, em, *this);
   if (!mvo->wasBuiltOK()) {
@@ -1939,7 +1929,7 @@ meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_states &ms) const
 }
 
 meddly_varoption*
-meddly_procgen::makePregen(const dsde_hlm &m, meddly_states &ms) const
+meddly_procgen::makePregen(const dsde_hlm &m, meddly_reachset &ms) const
 {
   pregen_varoption *mvo = new pregen_varoption(ms, m, em, *this);
   if (!mvo->wasBuiltOK()) {

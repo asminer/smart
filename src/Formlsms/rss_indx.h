@@ -4,10 +4,11 @@
 #ifndef RSS_INDX_H
 #define RSS_INDX_H
 
-#include "rss.h"
+#include "state_llm.h"
 
 // External libs
-#include "lslib.h"
+#include "lslib.h"    // for LS_Vector
+#include "intset.h"   // for intset
 
 /**
     Special case - explicit reachability sets with indexes per states.
@@ -15,19 +16,70 @@
     This prevents us from copying a few methods.
 
 */
-class indexed_reachset : public reachset {
+class indexed_reachset : public state_lldsm::reachset {
   public:
     indexed_reachset();
     virtual ~indexed_reachset();
 
-    virtual void getReachable(result &ss) const;
-    virtual void getPotential(expr* p, result &ss) const;
-    virtual void getInitialStates(result &x) const;
+    virtual stateset* getReachable() const;
+    virtual stateset* getPotential(expr* p) const;
+    virtual stateset* getInitialStates() const;
 
-    void setInitial(LS_Vector &init);
+    void setInitial(const LS_Vector &init);
+    void setInitial(const intset& init);
+
+    void getInitial(intset& init) const;
+
+    // Shrink the reachset to a more static structure.
+    // Default does nothing.
+    virtual void Finish();
+
+    // Renumber the states, for example after classifying a Markov chain.
+    // Default does nothing.
+    //  @param  ren   ren[i] gives the new number for state i
+    virtual void Renumber(const long* ren);
+
+    
+
+  public:
+    class indexed_iterator : public reachset::iterator {
+      public:
+        indexed_iterator(long ns);
+        virtual ~indexed_iterator();
+        
+        virtual void start();
+        virtual void operator++(int);
+        virtual operator bool() const;
+        virtual long index() const;
+
+        virtual void copyState(shared_state* st) const;
+        virtual void copyState(shared_state* st, long ord) const = 0;
+
+        inline long ord2index(long i) const {
+          CHECK_RANGE(0, i, num_states);
+          return map ? map[i] : i;
+        }
+        inline long index2ord(long i) const {
+          CHECK_RANGE(0, i, num_states);
+          return invmap ? invmap[i] : i;
+        }
+        inline long getI() const {
+          return I;
+        }
+        inline long getIndex() const {
+          return ord2index(I);
+        }
+      protected:
+        void setMap(long* m);
+      private:
+        long num_states;
+        long* map;
+        long* invmap;
+        long I;
+    };
 
   private:
-    class pot_visit : public lldsm::state_visitor {
+    class pot_visit : public state_lldsm::state_visitor {
       expr* p;
       intset &pset;
       result tmp;
@@ -39,7 +91,7 @@ class indexed_reachset : public reachset {
     };
 
   private:
-    LS_Vector initial;
+    intset initial;
 };
 
 #endif

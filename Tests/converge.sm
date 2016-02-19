@@ -7,12 +7,12 @@
  *    This program tests converge statements
  */
 
-	
+
 # UseCurrent true
 # ConvergePrecision 1e-7
 
 // # Verbose true
-	
+
 /*
 
   Checks 1d converge statement
@@ -66,11 +66,11 @@ print("y=",y,"\n");
 print("z=",z,"\n");
 
 # UseCurrent false
-	
+
 /* 
 
   Test of the UseCurrent option
-	
+
 */
 
 converge {
