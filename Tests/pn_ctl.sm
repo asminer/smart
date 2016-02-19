@@ -98,7 +98,7 @@ pn cruft(int n) := {
 
   stateset prop4 := EX(apH);
 
-  stateset prop5 := !EX(reachable);
+  stateset prop5 := reachable & !EX(reachable);
 
   stateset prop6 := EY(apD);
   stateset prop7 := EY(EY(apD));
@@ -135,7 +135,7 @@ pn cruft(int n) := {
 
   stateset prop30:= EG(EF(apEn));
 
-  stateset prop31:= EG(!apH);
+  stateset prop31:= reachable & EG(!apH);
   stateset prop32:= EG(EF(apH));
 
   stateset prop33:= EH(abdij);
@@ -143,41 +143,41 @@ pn cruft(int n) := {
 
   stateset prop35:= EH(EF(apEn));
 
-  stateset prop36:= EH(!apH);
+  stateset prop36:= reachable & EH(!apH);
   stateset prop37:= EH(EF(apH));
  
   // Universals
 
-  stateset prop38:= AX(apH);
-  stateset prop39:= AX(AX(apH));
+  stateset prop38:= reachable & AX(apH);
+  stateset prop39:= reachable & AX(AX(apH));
   stateset prop40:= !AX(!apK);
 
-  stateset prop41 := AY(apD);
-  stateset prop42 := AY(AY(apD));
+  stateset prop41 := reachable & AY(apD);
+  stateset prop42 := reachable & AY(AY(apD));
 
   stateset prop43 := AF(apH);
   stateset prop44 := AF(apD);
   stateset prop45 := AF(apEn);
 
-  stateset prop46 := AP(apF);
-  stateset prop47 := AP(apD);
-  stateset prop48 := AP(initial);
+  stateset prop46 := reachable & AP(apF);
+  stateset prop47 := reachable & AP(apD);
+  stateset prop48 := reachable & AP(initial);
 
   stateset prop49 := reachable \ AU(!apK, apH | apD | apEn);
   stateset prop50 := AU(!apK, apD);
   stateset prop51 := AU(!apB, apH);
 
-  stateset prop52 := AS(!apK, apD);
-  stateset prop53 := AS(!apK, apB);
+  stateset prop52 := reachable & AS(!apK, apD);
+  stateset prop53 := reachable & AS(!apK, apB);
   
-  stateset prop54 := AG(!apH);
-  stateset prop55 := AG(!apK);
-  stateset prop56 := AG(!apEn);
+  stateset prop54 := reachable & AG(!apH);
+  stateset prop55 := reachable & AG(!apK);
+  stateset prop56 := reachable & AG(!apEn);
   stateset all := AG(reachable);
 
-  stateset prop57 := AH(!apB);
-  stateset prop58 := AH(!apK);
-  stateset prop59 := AH(!apEn);
+  stateset prop57 := reachable & AH(!apB);
+  stateset prop58 := reachable & AH(!apK);
+  stateset prop59 := reachable & AH(!apEn);
   stateset allH := AH(reachable);
 
 };

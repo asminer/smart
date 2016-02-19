@@ -9,9 +9,12 @@
 #include "../include/heap.h"
 
 #include "../Modules/expl_states.h"
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
 
+#include "rss_enum.h"
+#include "rss_expl.h"
+#include "rgr_mclib.h"
 
 // External libs
 #include "mclib.h"
@@ -286,7 +289,8 @@ class explicit_mc : public markov_lldsm {
       }
     };
 
-    class pot_visit : public lldsm::state_visitor {
+    /*
+    class pot_visit : public state_lldsm::state_visitor {
       expr* p;
       intset &pset;
       result tmp;
@@ -296,6 +300,7 @@ class explicit_mc : public markov_lldsm {
       inline bool isOK() const { return ok; }
       virtual bool visit();
     };
+    */
 
 protected:
   long num_states;
@@ -307,18 +312,14 @@ protected:
 public:
   explicit_mc(LS_Vector& init, MCLib::Markov_chain* mc);
   explicit_mc(bool dtmc, long ns);
+protected:
   virtual ~explicit_mc();
+  const char* getClassName() const { return "explicit_mc"; }
 
 protected:
   void setChain(statedist* init, MCLib::Markov_chain* mc);
 
 public:
-  virtual long getNumStates() const;
-  virtual void showStates(bool internal) const;
-  virtual void getReachable(result &ss) const;
-  virtual void getPotential(expr* p, result &ss) const;
-  virtual long getNumArcs() const;
-  virtual void showArcs(bool internal) const;
   virtual void showInitial() const;
   virtual long getNumClasses(bool show) const;
   virtual void getClass(long cl, intset &statelist) const;
@@ -326,17 +327,11 @@ public:
   virtual bool isAbsorbing(long st) const;
   virtual bool isDeadlocked(long st) const;
 
-  virtual void findDeadlockedStates(stateset &ss) const;
-  virtual bool forward(const intset &p, intset &r) const;
-  virtual bool backward(const intset &p, intset &r) const;
-
   virtual bool isFairModel() const { return true; }
-  virtual void getTSCCsSatisfying(stateset &p) const;
   
   virtual statedist* getInitialDistribution() const;
   virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
 
-  virtual void getInitialStates(result &x) const;
   virtual bool computeTransient(double t, double* p, double* a, double* b) const;
   virtual bool computeAccumulated(double t, const double* p0, double* n,
                                   double* aux, double* aux2) const;
@@ -350,9 +345,9 @@ public:
 
   virtual bool reachesAcceptBy(double t, double* x) const;
 
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           long maxt, long &elapsed);
-  virtual bool randomTTA(rng_stream &st, long &state, const stateset &final,
+  virtual bool randomTTA(rng_stream &st, long &state, const stateset* final,
                           double maxt, double &elapsed);
 
 protected:
@@ -532,6 +527,7 @@ bool explicit_mc::sparse_row_elems
 // *                 explicit_mc::pot_visit methods                 *
 // ******************************************************************
 
+/*
 explicit_mc::pot_visit::pot_visit(const hldsm* mdl, expr* _p, intset &ps)
  : state_visitor(mdl), pset(ps)
 {
@@ -552,6 +548,7 @@ bool explicit_mc::pot_visit::visit()
   if (tmp.getBool()) pset.addElement(x.current_state_index);
   return false;
 }
+*/
 
 // ******************************************************************
 // *                      explicit_mc  methods                      *
@@ -588,210 +585,6 @@ void explicit_mc::setChain(statedist* init, MCLib::Markov_chain* mc)
   initial = init;
 }
 
-long explicit_mc::getNumStates() const
-{
-  return num_states;
-}
-
-void explicit_mc::showStates(bool internal) const
-{
-  if (!em->hasIO()) return;
-
-  if (internal) {
-
-    for (long i=0; i<num_states; i++) {
-      em->cout() << "State " << i << " internal: ";
-      ShowState(em->cout(), i, true);
-      em->cout() << "\n";
-      em->cout().Check();
-    } // for i
-    em->cout().flush();
-
-  } else {
-    if (0==num_states) return;
-    if (tooManyStates(num_states, true)) return;
-
-    long* map = 0;
-    if (NATURAL != display_order) {
-      map = new long[num_states];
-      BuildStateMapping(map);
-    }
-
-    for (long i=0; i<num_states; i++) {
-      long mi = map ? map[i] : i; 
-      em->cout() << "State " << i << ": ";
-      ShowState(em->cout(), mi, false);
-      em->cout() << "\n";
-      em->cout().Check();
-    } // for i
-    delete[] map;
-    em->cout().flush();
-  }
-
-}
-
-void explicit_mc::getReachable(result &rs) const
-{
-  if (0==num_states) {
-    rs.setNull();
-    return;
-  }
-  intset* all = new intset(num_states);
-  all->addAll();
-  rs.setPtr(new stateset(this, all));
-}
-
-void explicit_mc::getPotential(expr* p, result &ss) const
-{
-  if (0==p) {
-    ss.setNull();
-    return;
-  }
-  if (0==num_states) {
-    ss.setNull();
-    return;
-  }
-  intset* all = new intset(num_states);
-  pot_visit pv(GetParent(), p, *all);
-  visitStates(pv);
-  if (pv.isOK()) {
-    ss.setPtr(new stateset(this, all));
-  } else {
-    delete all;
-    ss.setNull();
-  }
-}
-
-long explicit_mc::getNumArcs() const
-{
-  DCASSERT(chain);
-  return chain->getNumArcs();
-}
-
-void explicit_mc::showArcs(bool internal) const
-{
-  if (!em->hasIO()) {
-    return;
-  }
-
-  if (internal) {
-    em->cout() << "Internal Markov chain representation:\n";
-    // TBD - internal?
-    em->cout() << "  cannot display, sorry\n";
-    return;
-  }
-
-  DCASSERT(chain);
-  long na = chain->getNumArcs();
-
-  if (tooManyStates(num_states, true))  return;
-  if (tooManyArcs(na, true))            return;
-
-  long* map = 0;
-  long* invmap = 0;
-  if (NATURAL != display_order) {
-    map = new long[num_states];
-    BuildStateMapping(map);
-    invmap = new long[num_states];
-    for (long i=0; i<num_states; i++) invmap[map[i]] = i;
-  }
-
-  bool by_rows = (OUTGOING == graph_display_style);
-  const char* row;
-  if (display_graph_node_names)   row = by_rows ? "From " : "To ";
-  else                            row = by_rows ? "Row " : "Column ";
-
-  switch (graph_display_style) {
-    case DOT:
-        em->cout() << "digraph mc {\n";
-        for (long i=0; i<num_states; i++) {
-          long mi = map ? map[i] : i;
-          em->cout() << "\ts" << i;
-          if (display_graph_node_names) {
-            em->cout() << " [label=\"";
-            ShowState(em->cout(), mi, false);
-            em->cout() << "\"]";
-          }
-          em->cout() << ";\n";
-          em->cout().Check();
-        } // for i
-        em->cout() << "\n";
-        break;
-
-    case TRIPLES:
-        em->cout() << num_states << "\n";
-        em->cout() << na << "\n";
-        break;
-
-    default:
-        em->cout() << "Markov chain:\n";
-  }
-
-  sparse_row_elems foo(invmap);
-
-  for (long i=0; i<num_states; i++) {
-    long h = map ? map[i] : i;
-    CHECK_RANGE(0, h, num_states);
-    switch (graph_display_style) {
-      case INCOMING:
-      case OUTGOING:
-          em->cout() << row;
-          if (display_graph_node_names)   ShowState(em->cout(), h, false);
-          else                            em->cout() << i;
-          em->cout() << ":\n";
-          break;
-    }
-
-    bool ok;
-    if (by_rows)  ok = foo.buildOutgoing(chain, h);
-    else          ok = foo.buildIncoming(chain, h);
-
-    // were we successful?
-    if (!ok) {
-      // out of memory, bail
-      if (em->startError()) {
-        em->noCause();
-        em->cerr() << "Not enough memory to display Markov chain.";
-        em->stopIO();
-      }
-      break;
-    }
-
-    // display row/column
-    for (long z=0; z<foo.last; z++) {
-      em->cout().Put('\t');
-      switch (graph_display_style) {
-        case DOT:
-            em->cout() << "s" << foo.index[z] << " -> s" << i;
-            em->cout() << " [label=\"" << foo.value[z] << "\"];";
-            break;
-
-        case TRIPLES:
-            em->cout() << foo.index[z] << " " << i << " " << foo.value[z];
-            break;
-
-        default:
-            if (display_graph_node_names) {
-              long h = map ? map[foo.index[z]] : foo.index[z];
-              CHECK_RANGE(0, h, num_states);
-              ShowState(em->cout(), h, false);
-            } else {
-              em->cout() << foo.index[z];
-            }
-            em->cout() << " : " << foo.value[z];
-      }
-      em->cout().Put('\n');
-    } // for z
-
-    em->cout().Check();
-  } // for i
-  delete[] invmap;
-  delete[] map;
-  if (DOT == graph_display_style) {
-    em->cout() << "}\n";
-  }
-  em->cout().flush();
-}
 
 
 void explicit_mc::showInitial() const
@@ -802,7 +595,7 @@ void explicit_mc::showInitial() const
 
   // build state mapping
   long* map = 0;
-  if (NATURAL != display_order) {
+  if (NATURAL != stateDisplayOrder()) {
     map = new long[num_states];
     BuildStateMapping(map);
   }
@@ -910,56 +703,7 @@ bool explicit_mc::isDeadlocked(long st) const
   return chain->isAbsorbingState(st);
 }
 
-void explicit_mc::findDeadlockedStates(stateset &ss) const
-{
-  DCASSERT(chain);
-  if (chain->isDiscrete()) {
-    // every state has at least one outgoing edge.
-    ss.changeExplicit().removeAll();
-  } else {
-    // a state is deadlocked iff it is absorbing.
-    long fa = chain->getFirstAbsorbing();
-    if (fa < 0)  ss.changeExplicit().removeAll();
-    else         ss.changeExplicit().removeRange(0, fa-1);
-  }
-}
 
-bool explicit_mc::forward(const intset &p, intset &r) const
-{
-  DCASSERT(chain);
-  return chain->getForward(p, r);
-}
-
-bool explicit_mc::backward(const intset &p, intset &r) const
-{
-  DCASSERT(chain);
-  return chain->getBackward(p, r);
-}
-
-void explicit_mc::getTSCCsSatisfying(stateset &p) const
-{
-  p.changeExplicit().complement();
-  DCASSERT(chain); 
-  long nt = chain->getNumTransient();
-  if (nt) {
-#ifdef DEBUG_EG
-    em->cout() << "Removing transients, states 0.." << nt-1 << "\n";
-#endif
-    p.changeExplicit().addRange(0, nt-1);
-  }
-  for (long c=1; c<=chain->getNumClasses(); c++) {
-    long fs = chain->getFirstRecurrent(c);
-    long ls = fs + chain->getRecurrentSize(c) - 1;
-    long nz = p.getExplicit().getSmallestAfter(fs-1);
-    if (nz < 0) continue;
-    if (nz > ls) continue;
-#ifdef DEBUG_EG
-    em->cout() << "Removing class "<< c <<", states "<< fs <<".."<< ls << "\n";
-#endif
-    p.changeExplicit().addRange(fs, ls);
-  } // for c
-  p.changeExplicit().complement();
-}
 
 statedist* explicit_mc::getInitialDistribution() const
 {
@@ -974,20 +718,6 @@ getOutgoingWeights(long from, long* to, double* w, long n) const
   return thing.edges;
 }
 
-void explicit_mc::getInitialStates(result &x) const
-{
-  long ns = chain->getNumStates();
-  if (0==ns) {
-    x.setNull();
-    return;
-  }
-
-  intset* initss = new intset(ns);
-  DCASSERT(initial);
-  initial->greater_than(0, initss);
-
-  x.setPtr(new stateset(this, initss));
-}
 
 bool explicit_mc
  ::computeTransient(double t, double* probs, double* aux1, double* aux2) const
@@ -1113,6 +843,9 @@ bool explicit_mc
 
 bool explicit_mc::dumpDot(OutputStream &s) const
 {
+  // TBD - we already have this implemented,
+  // find a clean way to call it
+
   DCASSERT(chain);
   long ns = chain->getNumStates();
   s << "digraph mc {\n";
@@ -1271,9 +1004,15 @@ bool explicit_mc::reachesAcceptBy(double t, double* x) const
   }
 }
 
-bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
+bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset* F,
                           long maxt, long &elapsed)
 {
+#ifdef NEW_STATESETS
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+#else
+  const stateset* final = F;
+#endif
+  DCASSERT(final);
   DCASSERT(chain);
   if (chain->isContinuous()) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -1302,7 +1041,7 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 
   try {
-    elapsed = chain->randomWalk(st, state, &final.getExplicit(), maxt, 1.0);
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt, 1.0);
     return true;
   }
   catch (MCLib::error e) {
@@ -1316,9 +1055,14 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 }
 
-bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
+bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset* F,
                           double maxt, double &elapsed)
 {
+#ifdef NEW_STATESETS
+  const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
+#else
+  const stateset* final = F;
+#endif
   DCASSERT(chain);
   if (chain->isDiscrete()) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -1347,7 +1091,7 @@ bool explicit_mc::randomTTA(rng_stream &st, long &state, const stateset &final,
   }
 
   try {
-    elapsed = chain->randomWalk(st, state, &final.getExplicit(), maxt);
+    elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt);
     return true;
   }
   catch (MCLib::error e) {
@@ -1376,8 +1120,8 @@ public:
   /// Constructor for enumerated chains.
   mc_enum(LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st);
   virtual ~mc_enum();
-  virtual void visitStates(state_visitor &v) const;
-  virtual shared_object* getEnumeratedState(long i) const;
+  // virtual void visitStates(state_visitor &v) const;
+  // virtual shared_object* getEnumeratedState(long i) const;
 protected:
   const char* getClassName() const { return "mc_enum"; }
   virtual void BuildStateMapping(long* map) const;
@@ -1391,7 +1135,7 @@ protected:
 mc_enum::mc_enum(LS_Vector& init, MCLib::Markov_chain* mc, model_enum* st)
  : explicit_mc(init, mc)
 {
-  states = st;
+  states = Share(st);
   state_handle = new long[states->NumValues()];
   for (long j=0; j<states->NumValues(); j++) {
     const model_enum_value* st = states->ReadValue(j);
@@ -1406,6 +1150,7 @@ mc_enum::~mc_enum()
   delete[] state_handle;
 }
 
+/*
 void mc_enum::visitStates(state_visitor &v) const
 {
   DCASSERT(states);
@@ -1416,12 +1161,15 @@ void mc_enum::visitStates(state_visitor &v) const
     if (v.visit()) return;
   }
 }
+*/
 
+/*
 shared_object* mc_enum::getEnumeratedState(long i) const
 {
   DCASSERT(state_handle);
   return Share(states->GetValue(state_handle[i]));
 }
+*/
 
 void mc_enum::BuildStateMapping(long* map) const
 {
@@ -1431,7 +1179,7 @@ void mc_enum::BuildStateMapping(long* map) const
     CHECK_RANGE(0, state_handle[i], states->NumValues());
     hs[state_handle[i]] = i;
   }
-  switch (display_order) {
+  switch (stateDisplayOrder()) {
     case NATURAL:
       DCASSERT(0);
       break;
@@ -1490,7 +1238,7 @@ public:
   inline StateLib::state_db* getAllStates() { return fullstates; }
   virtual long getAcceptingState() const { return accept; }
   virtual long getTrapState() const { return trap; }
-  virtual void visitStates(state_visitor &v) const;
+  // virtual void visitStates(state_visitor &v) const;
   virtual void reportMemUsage(exprman* em, const char* prefix) const;
 protected:
   const char* getClassName() const { return "mc_expl"; }
@@ -1603,6 +1351,7 @@ void mc_expl::FinishExpl(LS_Vector& init, MCLib::Markov_chain* mc,
   state_handle = aux;
 }
 
+/*
 void mc_expl::visitStates(state_visitor &v) const
 {
   DCASSERT(v.state());
@@ -1612,6 +1361,7 @@ void mc_expl::visitStates(state_visitor &v) const
     if (v.visit()) return;
   }
 }
+*/
 
 void mc_expl::reportMemUsage(exprman* em, const char* prefix) const
 {
@@ -1630,7 +1380,7 @@ void mc_expl::reportMemUsage(exprman* em, const char* prefix) const
 
 void mc_expl::BuildStateMapping(long* map) const
 {
-  switch (display_order) {
+  switch (stateDisplayOrder()) {
     case NATURAL:
       DCASSERT(0);
       return;
@@ -1868,12 +1618,22 @@ void InitMCLibs(exprman* em)
 stochastic_lldsm* 
 MakeEnumeratedMC(LS_Vector& init, model_enum* ss, MCLib::Markov_chain* mc)
 {
-  return new mc_enum(init, mc, ss);
+  stochastic_lldsm* foo = new mc_enum(init, mc, ss);
+  enum_reachset* rss = new enum_reachset(ss);
+  // TBD - copy init and then call
+  // rss->setInitial(init);
+  mclib_reachgraph* rgr = new mclib_reachgraph(mc);
+  foo->setRSS(rss);
+  foo->setRGR(rgr);
+  return foo;
 }
 
 stochastic_lldsm* StartExplicitMC(bool dtmc, StateLib::state_db* ss)
 {
-  return new mc_expl(dtmc, ss);
+  stochastic_lldsm* foo = new mc_expl(dtmc, ss);
+  expl_reachset* rss = new expl_reachset(ss);
+  foo->setRSS(rss);
+  return foo;
 }
 
 StateLib::state_db* GrabExplicitMCStates(lldsm* mc)
@@ -1889,6 +1649,11 @@ void FinishExplicitMC(lldsm* m, LS_Vector &i, MCLib::Markov_chain* mc)
   mc_expl* xmc = dynamic_cast <mc_expl*> (m);
   if (0==xmc) return;
   xmc->FinishExpl(i, mc);
+  // also...
+  // TBD - copy init and then call
+  // rss->setInitial(init);
+  mclib_reachgraph* rgr = new mclib_reachgraph(mc);
+  xmc->setRGR(rgr);
 }
 
 void FinishExplicitMC(lldsm* m, LS_Vector &i, long acc, long trap,

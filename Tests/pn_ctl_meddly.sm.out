@@ -15,6 +15,7 @@ State 12: [I]
 State 13: [J]
 State 14: [K]
 State graph:
+Reachability graph:
 From state [A]:
 	To state [B]
 From state [B]:

@@ -74,7 +74,7 @@ public:
 
   virtual void visitStates(state_visitor &x) const;
 
-  // Required for a useful "checkable_lldsm":
+  // Required for a useful "graph_lldsm":
   virtual void getNumStates(result& count) const;
   virtual long getNumStates() const;
   virtual void showStates(bool internal) const;
@@ -267,6 +267,7 @@ void meddly_mc::showStates(bool internal) const
   return process->showStates(this, em->cout(), internal);
 }
 
+
 void meddly_mc::getReachable(result &x) const
 {
   DCASSERT(is_finished);
@@ -343,6 +344,7 @@ void meddly_mc::findDeadlockedStates(stateset &p) const
   pse->E -= live;
 }
 
+
 long meddly_mc::getNumArcs() const
 {
   DCASSERT(process);
@@ -385,7 +387,7 @@ void meddly_mc::showArcs(bool internal) const
 {
   DCASSERT(process);
   try {
-    process->showArcs(this, em->cout(), internal, display_graph_node_names);
+    process->showArcs(this, em->cout(), internal, displayGraphNodeNames());
   }
   catch (sv_encoder::error e) {
     if (GetParent()->StartError(0)) {

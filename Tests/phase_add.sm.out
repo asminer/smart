@@ -9,7 +9,7 @@ State 0: a
 Accepting state index: 0
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	0 : 1
@@ -28,7 +28,7 @@ State 1: a
 Accepting state index: 1
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -50,7 +50,7 @@ State 2: a
 Accepting state index: 2
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -75,7 +75,7 @@ State 3: a
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -99,7 +99,7 @@ State 0: t
 No accepting state
 Trap state index: 0
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	0 : 1
@@ -118,7 +118,7 @@ State 1: [a, a]
 Accepting state index: 1
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -141,7 +141,7 @@ State 3: [a, a, a]
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -165,7 +165,7 @@ State 0: [t, t]
 No accepting state
 Trap state index: 0
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	0 : 1
@@ -183,7 +183,7 @@ State 0: [t, t]
 No accepting state
 Trap state index: 0
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	0 : 1
@@ -202,8 +202,7 @@ State 1: a
 Accepting state index: 1
 No trap state
 Initial distribution:
-	State 0 prob 0.5
-	State 1 prob 0.5
+    (0:0.5, 1:0.5)
 Markov chain:
 Row 0:
 	1 : 1
@@ -225,8 +224,7 @@ State 2: a
 Accepting state index: 2
 No trap state
 Initial distribution:
-	State 0 prob 0.666667
-	State 2 prob 0.333333
+    (0:0.666667, 2:0.333333)
 Markov chain:
 Row 0:
 	1 : 0.5
@@ -252,9 +250,7 @@ State 3: [a, a]
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 0.5
-	State 1 prob 0.333333
-	State 3 prob 0.166667
+    (0:0.5, 1:0.333333, 3:0.166667)
 Markov chain:
 Row 0:
 	1 : 0.666667
@@ -283,9 +279,7 @@ State 3: [a, a]
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 0.666667
-	State 1 prob 0.166667
-	State 3 prob 0.166667
+    (0:0.666667, 1:0.166667, 3:0.166667)
 Markov chain:
 Row 0:
 	1 : 0.25
@@ -316,10 +310,7 @@ State 4: [6, t, t, t, t]
 Accepting state index: 3
 Trap state index: 4
 Initial distribution:
-	State 0 prob 0.333333
-	State 1 prob 0.333333
-	State 3 prob 0.166667
-	State 4 prob 0.166667
+    (0:0.333333, 1:0.333333, 3:0.166667, 4:0.166667)
 Markov chain:
 Row 0:
 	3 : 1
@@ -351,7 +342,7 @@ State 6: [t, [6, t, t, t, t]]
 Accepting state index: 5
 Trap state index: 6
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 1
@@ -387,7 +378,7 @@ State 3: a
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 4.2
@@ -413,7 +404,7 @@ State 3: [a, a, a]
 Accepting state index: 3
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 4.2
@@ -443,7 +434,7 @@ State 7: [a, a]
 Accepting state index: 7
 No trap state
 Initial distribution:
-	State 0 prob 1
+    (0:1)
 Markov chain:
 Row 0:
 	1 : 4.2

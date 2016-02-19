@@ -9,29 +9,10 @@
 #include "exprman.h"
 #include "arrays.h"
 #include "measures.h"
-#include "../include/list.h"
 #include "engine.h"
 #include "strings.h"
 
 // #define ARRAY_TRACE
-
-// ******************************************************************
-// *                                                                *
-// *                  lldsm::state_visitor methods                  *
-// *                                                                *
-// ******************************************************************
-
-lldsm::state_visitor::state_visitor(const hldsm* m)
- : x(traverse_data::Compute)
-{
-  DCASSERT(m);
-  x.current_state = new shared_state(m);
-}
-
-lldsm::state_visitor::~state_visitor()
-{
-  Nullify(x.current_state);
-}
 
 // ******************************************************************
 // *                                                                *
@@ -40,10 +21,6 @@ lldsm::state_visitor::~state_visitor()
 // ******************************************************************
 
 const exprman* lldsm::em = 0;
-int lldsm::display_order;
-named_msg lldsm::numpaths_report;
-long lldsm::max_state_display = 100000000;
-const char* lldsm::max_state_display_option = "MaxStateDisplay";
 
 lldsm::lldsm(model_type t)
  : shared_object()
@@ -62,48 +39,6 @@ void lldsm::initOptions(exprman* om)
   em = om;
   if (0==om) return;
 
-  // set up options
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeIntOption(
-      max_state_display_option,
-      "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
-      max_state_display,
-      0, 1000000000
-    )
-  );
-  // ------------------------------------------------------------------
-  option* report = om->findOption("Report");
-  numpaths_report.Initialize(
-    report,
-    "num_paths",
-    "When set, performance data for counting number of paths is displayed.",
-    false
-  );
-  // ------------------------------------------------------------------
-  radio_button** do_list = new radio_button*[num_display_orders];
-  do_list[DISCOVERY] = new radio_button(
-      "DISCOVERY", 
-      "States are displayed in the order in which they are discovered (or defined), if possible.", 
-      DISCOVERY
-  );
-  do_list[LEXICAL] = new radio_button(
-      "LEXICAL", 
-      "States are sorted by lexical order.",
-      LEXICAL
-  );
-  do_list[NATURAL] = new radio_button(
-      "NATURAL", 
-      "States are displayed in the most natural order for the selected state space data structure.",
-      NATURAL
-  );
-  display_order = NATURAL;
-  om->addOption( 
-    MakeRadioOption("StateDisplayOrder",
-      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
-      do_list, num_display_orders, display_order
-    )
-  );
 }
 
 const char* lldsm::getNameOf(model_type t)
@@ -132,34 +67,6 @@ bool lldsm::Equals(const shared_object* ptr) const
   return (ptr == this);
 }
 
-void lldsm::getNumStates(result& x) const
-{
-  x.setInt(getNumStates());
-  if (x.getInt() < 0) {
-    x.setNull();
-  } 
-}
-
-long lldsm::getNumStates() const
-{
-  return bailOut(__FILE__, __LINE__, "Can't count states");
-}
-
-void lldsm::showStates(bool internal) const
-{
-  bailOut(__FILE__, __LINE__, "Can't dispaly states");
-}
-
-void lldsm::visitStates(state_visitor &x) const
-{
-  bailOut(__FILE__, __LINE__, "Can't visit states");
-}
-
-shared_object* lldsm::getEnumeratedState(long i) const
-{
-  return 0;
-}
-
 void lldsm::reportMemUsage(exprman* em, const char* prefix) const
 {
 }
@@ -178,165 +85,6 @@ long lldsm::bailOut(const char* fn, int ln, const char* why) const
   }
   return -2;
 }
-
-bool lldsm::tooManyStates(long ns, bool show)
-{
-  if (ns>=0) {
-    if ((0==max_state_display) || (ns <= max_state_display)) return false;
-    if (!show) return true;
-    em->cout() << "Too many states; to display, increase option ";
-    em->cout() << max_state_display_option << ".\n";
-  } else {
-    if (!show) return true;
-    em->cout() << "Too many states.\n";
-  }
-  em->cout().flush();
-  return true;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                      graph_lldsm  methods                      *
-// *                                                                *
-// ******************************************************************
-
-int graph_lldsm::graph_display_style;
-bool graph_lldsm::display_graph_node_names;
-long graph_lldsm::max_arc_display = 100000000;
-const char* graph_lldsm::max_arc_display_option = "MaxArcDisplay";
-
-graph_lldsm::graph_lldsm(model_type t) : lldsm(t)
-{
-}
-
-void graph_lldsm::initOptions(exprman* om)
-{
-  if (0==om) return;
-
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeIntOption(
-      max_arc_display_option,
-      "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
-      max_arc_display,
-      0, 1000000000
-    )
-  );
-  // ------------------------------------------------------------------
-  radio_button** gds_list = new radio_button*[num_graph_display_styles];
-  gds_list[DOT] = new radio_button(
-      "DOT", 
-      "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
-      DOT
-  );
-  gds_list[INCOMING] = new radio_button(
-      "INCOMING", 
-      "Graphs are displayed by listing the incoming edges for each node.",
-      INCOMING
-  );
-  gds_list[OUTGOING] = new radio_button(
-      "OUTGOING", 
-      "Graphs are displayed by listing the outgoing edges for each node.",
-      OUTGOING
-  );
-  gds_list[TRIPLES] = new radio_button(
-      "TRIPLES", 
-      "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
-      TRIPLES
-  );
-  graph_display_style = OUTGOING;
-  om->addOption(
-    MakeRadioOption("GraphDisplayStyle",
-      "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
-      gds_list, num_graph_display_styles, graph_display_style
-    )
-  );
-  // ------------------------------------------------------------------
-  om->addOption(
-    MakeBoolOption("DisplayGraphNodeNames",
-      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
-      display_graph_node_names
-    )
-  );
-}
-
-void graph_lldsm::getNumArcs(result& x) const
-{
-  x.setInt(getNumArcs());
-  if (x.getInt() < 0) {
-    x.setNull();
-  } 
-}
-
-long graph_lldsm::getNumArcs() const
-{
-  return bailOut(__FILE__, __LINE__, "Can't count arcs");
-}
-
-void graph_lldsm::showArcs(bool internal) const
-{
-  bailOut(__FILE__, __LINE__, "Can't dispaly arcs (or process)");
-}
-
-void graph_lldsm::showInitial() const
-{
-  bailOut(__FILE__, __LINE__, "Can't show initial state(s)");
-}
-
-void graph_lldsm::countPaths(const intset&, const intset&, result& c)
-{
-  c.setNull();
-  bailOut(__FILE__, __LINE__, "Can't count paths");
-}
-
-bool graph_lldsm::requireByRows(const named_msg*)
-{
-  return false;
-}
-
-bool graph_lldsm::requireByCols(const named_msg*)
-{
-  return false;
-}
-
-long graph_lldsm::getOutgoingEdges(long from, ObjectList <int> *e) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get outgoing edges");
-  return -1;
-}
-
-long graph_lldsm::getIncomingEdges(long from, ObjectList <int> *e) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get incoming edges");
-  return -1;
-}
-
-bool graph_lldsm::getOutgoingCounts(long* a) const
-{
-  bailOut(__FILE__, __LINE__, "Can't get outgoing edge counts");
-  return false;
-}
-
-bool graph_lldsm::dumpDot(OutputStream &s) const
-{
-  return false;
-}
-
-bool graph_lldsm::tooManyArcs(long na, bool show)
-{
-  if (na>=0) {
-    if ((0==max_arc_display) || (na <= max_arc_display)) return false;
-    if (!show) return true;
-    em->cout() << "Too many arcs; to display, increase option ";
-    em->cout() << max_arc_display_option << ".\n";
-  } else {
-    if (!show) return true;
-    em->cout() << "Too many arcs.\n";
-  }
-  em->cout().flush();
-  return true;
-}
-
 
 // ******************************************************************
 // *                                                                *
@@ -835,60 +583,6 @@ error_lldsm::~error_lldsm()
 
 // ******************************************************************
 // *                                                                *
-// *                         llhldsm  class                         *
-// *                                                                *
-// ******************************************************************
-
-class llhldsm : public hldsm {
-  int index;
-public:
-  llhldsm(lldsm* mdl);
-  virtual lldsm::model_type GetProcessType() const;
-  virtual int NumStateVars() const { return 1; }
-  virtual bool containsListVar() const { return false; }
-  virtual void determineListVars(bool* ilv) const { ilv[0] = 0; }
-  virtual void reindexStateVars(int &start);
-  virtual int getNumEvents(bool show) const;
-  virtual void showState(OutputStream &s, const shared_state* x) const;
-};
-
-llhldsm::llhldsm(lldsm* mdl) : hldsm(Enumerated)
-{
-  SetProcess(mdl);
-  mdl->SetParent(this);
-  index = 0;
-}
-
-lldsm::model_type llhldsm::GetProcessType() const
-{
-  DCASSERT(process);
-  return process->Type();
-}
-
-void llhldsm::reindexStateVars(int &start)
-{
-  index = start;
-  start++;
-}
-
-int llhldsm::getNumEvents(bool show) const
-{
-  return 0;
-}
-
-void llhldsm::showState(OutputStream &s, const shared_state* x) const
-{
-  DCASSERT(x);
-  shared_object* foo = process->getEnumeratedState(x->get(index));
-  DCASSERT(foo);
-  const model_enum_value* mev = smart_cast <const model_enum_value*> (foo);
-  DCASSERT(mev);
-  s.Put(mev->Name());
-  Delete(foo);
-}
-
-// ******************************************************************
-// *                                                                *
 // *                         mi_call  class                         *
 // *                                                                *
 // ******************************************************************
@@ -1310,14 +1004,8 @@ lldsm* MakeErrorModel()
   return new error_lldsm();
 }
 
-hldsm* MakeEnumeratedModel(lldsm* mdl)
-{
-  return new llhldsm(mdl);
-}
-
 void InitLLM(exprman* om)
 {
   lldsm::initOptions(om);
-  graph_lldsm::initOptions(om);
   hldsm::initOptions(om);
 }

@@ -2,14 +2,16 @@
 // $Id$
 
 #include "mc_form.h"
+#include "rss_enum.h"
+#include "proc_mclib.h"
+#include "enum_hlm.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
-
-#include "mc_llm.h"
 
 #include "../include/splay.h"
 
@@ -228,6 +230,78 @@ void markov_def::FinalizeModel(OutputStream &ds)
     return;
   }
 
+  DCASSERT(mcstate);
+
+  //
+  // build initial distribution
+  //
+  state_weight** init_data;
+  long size = initial->NumElements();
+  if (size) {
+    init_data = new state_weight*[size];
+    initial->CopyToArray(init_data);
+  } else {
+    init_data = 0;
+    if (StartWarning(no_init, 0)) {
+      em->warn() << "Empty initial distribution";
+      DoneWarning();
+    }
+  }
+  delete initial;
+  initial = 0;
+
+  double total = 0;
+  for (long i=0; i<size; i++) {
+    DCASSERT(init_data[i]);
+    total += init_data[i]->weight;
+  }
+  for (long i=0; i<size; i++) {
+    DCASSERT(total > 0);
+    init_data[i]->weight /= total;
+  }
+  long* indexes = new long[size];
+  float* probs = new float[size];
+  for (long i=0; i<size; i++) {
+    indexes[i] = init_data[i]->state->GetIndex();
+    probs[i] = init_data[i]->weight;
+    delete init_data[i];
+  }
+  delete[] init_data;
+
+  LS_Vector init;
+  init.size = size;
+  init.index = indexes;
+  init.f_value = probs;
+  init.d_value = 0;
+
+  //
+  // Build reachable states
+  // 
+  enum_reachset* rss = new enum_reachset(mcstate);
+
+  //
+  // Build process
+  //
+  mclib_process* proc = new mclib_process(mymc);
+
+  //
+  // Package everything
+  //
+  stochastic_lldsm* foo = new stochastic_lldsm(
+    mymc->isDiscrete() ? lldsm::DTMC : lldsm::CTMC
+  );
+
+  foo->setRSS(rss);
+  foo->setPROC(init, proc);
+  hldsm* bar = MakeEnumeratedModel(foo);
+  if (ds.IsActive()) foo->dumpDot(ds);
+  ConstructionSuccess(bar);
+  mymc = 0;
+
+  //
+  // OLD!
+  //
+  /*
   MCLib::Markov_chain::finish_options fo;
   fo.Store_By_Rows = markov_lldsm::storeByRows();
   fo.Will_Clear = false;
@@ -300,6 +374,7 @@ void markov_def::FinalizeModel(OutputStream &ds)
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mymc = 0;
+  */
 }
 
 
@@ -526,9 +601,13 @@ void mc_instate::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(mi);
   hldsm* foo = mi->GetCompiledModel();
   DCASSERT(foo);
-  const lldsm* bar = foo->GetProcess();
+  const state_lldsm* bar = dynamic_cast <const state_lldsm*> (foo->GetProcess());
   DCASSERT(bar);
-  result current(bar->getEnumeratedState(x.current_state_index));
+
+  const enum_reachset* rss = dynamic_cast <const enum_reachset*> (bar->getRSS());
+  DCASSERT(rss);
+
+  result current(rss->getEnumeratedState(x.current_state_index));
 
   SafeCompute(pass[1], x);
   DCASSERT(x.answer->isNormal());
@@ -567,8 +646,10 @@ void mc_transient::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(bar);
   const stochastic_lldsm* cruft = smart_cast<const stochastic_lldsm*>(bar);
   DCASSERT(cruft);
+  const stochastic_lldsm::process* PROC = cruft->getPROC();
+  DCASSERT(PROC);
 
-  x.answer->setBool(cruft->isTransient(x.current_state_index));
+  x.answer->setBool(PROC->isTransient(x.current_state_index));
 }
 
 // **************************************************************************
@@ -631,13 +712,7 @@ public:
       DCASSERT(cruft);
 
       // make set of states
-      cruft->getPotential(pass[1], *x.answer);
-      if (!x.answer->isNormal()) {
-        ss = 0;
-      } else {
-        ss = x.answer->getPtr();
-        DCASSERT(ss);
-      }
+      ss = cruft->getPotential(pass[1]);
   }
 };
 
@@ -665,7 +740,7 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
   }
 
   statedist* init = proc->getInitialDistribution();
-  phase_hlm* foo = makeTTA(is_disc, init, accept, 0, Share(proc));
+  phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   x.answer->setPtr(foo);
 }
 
@@ -784,6 +859,6 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
   FillSymbolTable(false,  ctmc, common);
 
   // register libs
-  InitMCLibs(em);
+  // InitMCLibs(em);
 }
 

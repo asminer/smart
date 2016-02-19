@@ -1,7 +1,7 @@
 
 // $Id$
 
-#include "ctl_exp.h"
+#include "csl_exp.h"
 
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
@@ -10,7 +10,7 @@
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/phase_hlm.h"
 
-#include "../Modules/statesets.h"
+#include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
 
 #include "intset.h"
@@ -132,21 +132,19 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Parameter 1: p of p U q
   //
-  stateset* p = 0;
+  expl_stateset* p = 0;
   if (pass[1].isNormal()) {
-    p = smart_cast <stateset*> (pass[1].getPtr());
+    p = smart_cast <expl_stateset*> (pass[1].getPtr());
     DCASSERT(p);
     DCASSERT(p->getParent() == sm);
-    DCASSERT(p->isExplicit());
   }
 
   //
   // Parameter 2: q of p U q
   //
-  stateset* q = smart_cast <stateset*> (pass[2].getPtr());
+  expl_stateset* q = smart_cast <expl_stateset*> (pass[2].getPtr());
   DCASSERT(q);
   DCASSERT(q->getParent() == sm);
-  DCASSERT(q->isExplicit());
 
   //
   // Parameter 3: initial distribution, or null for uniform
@@ -167,13 +165,13 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     intset* t = new intset(q->getExplicit());
     (*t) += p->getExplicit();
     t->complement();
-    stateset* trap = new stateset(sm, t);
+    stateset* trap = new expl_stateset(sm, t);
     // build tta model
-    tta = makeTTA(discrete, initial, q, trap, Share(sm));
+    tta = makeTTA(discrete, initial, q, trap, sm->copyPROC());
     Delete(trap);
   } else {
     // 0 for p means "all true", so no trap states
-    tta = makeTTA(discrete, initial, q, 0, Share(sm));
+    tta = makeTTA(discrete, initial, q, 0, sm->copyPROC());
   }
   if (0==tta) {
     if (em->startInternal(__FILE__, __LINE__)) {
@@ -213,14 +211,14 @@ protected:
   }
 
 protected:
-  class reindex : public lldsm::state_visitor {
+  class reindex : public state_lldsm::state_visitor {
       const double* oldvec;
       long oldvecsize;
       double* newvec;
       long newvecsize;
     public:
       reindex(const hldsm* p, const double* ov, long os, double* nv, long ns) 
-      : lldsm::state_visitor(p)
+      : state_lldsm::state_visitor(p)
       {
         oldvec = ov;
         oldvecsize = os;
@@ -335,9 +333,9 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Set the accept equivalent states to 1 here
   //
-  stateset* q = smart_cast <stateset*> (pass[2].getPtr());
+  expl_stateset* q = smart_cast <expl_stateset*> (pass[2].getPtr());
   DCASSERT(q);
-  const intset qis = q->getExplicit();
+  const intset& qis = q->getExplicit();
   long i = -1;
   while ( (i=qis.getSmallestAfter(i)) >= 0) {
     mx[i] = 1;

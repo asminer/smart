@@ -9,20 +9,20 @@ Row 1:
 	0 : 1
 Some bad state name errors:
 ERROR in file dtmcs.sm near line 38:
-	Duplicate identifier a within model
+    Duplicate identifier a within model
 ERROR in file dtmcs.sm near line 41:
-	Unknown identifier: c
+    Unknown identifier: c
 ERROR in file dtmcs.sm near line 42:
-	No match for arcs(error)
+    No match for arcs(error)
 Warnings for duplicates:
 WARNING in file dtmcs.sm near line 51:
-	Ignoring duplicate initial probability for state a
-	within model d2 built in file dtmcs.sm near line 61
+    Ignoring duplicate initial probability for state a
+    within model d2 built in file dtmcs.sm near line 61
 WARNING in file dtmcs.sm near line 56:
-	Summing duplicate arc from state a to b
-	within model d2 built in file dtmcs.sm near line 61
+    Summing duplicate arc from state a to b
+    within model d2 built in file dtmcs.sm near line 61
 3
-States should appear in definition order: a,b,c,d,e,f,g,h,i,j:
+States should appear in lexical order: a,b,c,d,e,f,g,h,i,j:
 d3 states:
 State 0: a
 State 1: b
@@ -98,6 +98,44 @@ Row 8:
 	7 : 1
 Row 9:
 	9 : 1
+States should appear in definition order: a,g,h,i,j,b,c,d,e,f:
+d3 states:
+State 0: a
+State 1: g
+State 2: h
+State 3: i
+State 4: j
+State 5: b
+State 6: c
+State 7: d
+State 8: e
+State 9: f
+d3 Markov chain:
+Row 0:
+	0 : 1
+Row 1:
+	0 : 0.5
+	2 : 0.5
+Row 2:
+	3 : 0.5
+	5 : 0.5
+Row 3:
+	1 : 0.5
+	4 : 0.5
+Row 4:
+	8 : 1
+Row 5:
+	6 : 0.5
+	7 : 0.5
+Row 6:
+	7 : 1
+Row 7:
+	5 : 1
+Row 8:
+	8 : 0.5
+	9 : 0.5
+Row 9:
+	8 : 1
 Birth death with 1 states:
 State 0: s[1]
 Markov chain:
@@ -160,24 +198,24 @@ Row 3:
 Row 4:
 	3 : 1
 Should generate meaningful warnings:
-WARNING in file dtmcs.sm near line 137:
-	state y is from another model, ignoring initial weight
-	within model foo1 built in file dtmcs.sm near line 153
-WARNING in file dtmcs.sm near line 139:
-	state x is from another model, ignoring arc
-	within model foo1 built in file dtmcs.sm near line 153
-WARNING in file dtmcs.sm near line 139:
-	state x is from another model, ignoring arc
-	within model foo1 built in file dtmcs.sm near line 153
-WARNING in file dtmcs.sm near line 140:
-	state y is from another model, ignoring arc
-	within model foo1 built in file dtmcs.sm near line 153
-WARNING in file dtmcs.sm near line 140:
-	state y is from another model, ignoring arc
-	within model foo1 built in file dtmcs.sm near line 153
+WARNING in file dtmcs.sm near line 141:
+    state y is from another model, ignoring initial weight
+    within model foo1 built in file dtmcs.sm near line 157
+WARNING in file dtmcs.sm near line 143:
+    state x is from another model, ignoring arc
+    within model foo1 built in file dtmcs.sm near line 157
+WARNING in file dtmcs.sm near line 143:
+    state x is from another model, ignoring arc
+    within model foo1 built in file dtmcs.sm near line 157
 WARNING in file dtmcs.sm near line 144:
-	state x is from another model, ignoring arc
-	within model foo1 built in file dtmcs.sm near line 153
+    state y is from another model, ignoring arc
+    within model foo1 built in file dtmcs.sm near line 157
+WARNING in file dtmcs.sm near line 144:
+    state y is from another model, ignoring arc
+    within model foo1 built in file dtmcs.sm near line 157
+WARNING in file dtmcs.sm near line 148:
+    state x is from another model, ignoring arc
+    within model foo1 built in file dtmcs.sm near line 157
 This should be zero: 0
 This should be zero: 0
 Ergodic steady-state tests.
@@ -196,11 +234,11 @@ Should be 1: 1
 This chain requires an initial distribution.
 None is given, so we should get a warning and an error.
 WARNING:
-	Empty initial distribution
-	within model two_absorb built in file dtmcs.sm near line 228
+    Empty initial distribution
+    within model two_absorb built in file dtmcs.sm near line 232
 ERROR:
-	Initial probability vector required for Markov chain solver
+    Initial probability vector required for Markov chain solver
 This will not converge, should print a warning:
 WARNING:
-	Markov chain linear solver (for steady-state) did not converge
+    Markov chain linear solver (for steady-state) did not converge
 Done with dtmc tests.

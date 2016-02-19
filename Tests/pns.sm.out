@@ -3,7 +3,7 @@ Simple first net to check:
              /                \
             /                  \
    p1 --> t1                    t5  ---> (p1)
-	    \                  /
+            \                  /
              \   --> t3 -->   /
               p3            p5
                  <-- t4 <--
@@ -268,11 +268,11 @@ From state 4:
 	To state 2
 8 arcs total
 Clear: WARNING in file pns.sm near line 27:
-	Ignoring initialization: zero tokens for place p1
-	within model net1 built in file pns.sm near line 46
+    Ignoring initialization: zero tokens for place p1
+    within model net1 built in file pns.sm near line 46
 WARNING:
-	No initial marking given, assuming zero
-	within model net1 built in file pns.sm near line 46
+    No initial marking given, assuming zero
+    within model net1 built in file pns.sm near line 46
 0 arcs total
 Lexical ordering test
 States:
@@ -299,46 +299,46 @@ From state 4:
 8 arcs total
 Various PN warnings:
 ERROR in file pns.sm near line 78:
-	Duplicate identifier p within model
+    Duplicate identifier p within model
 ERROR in file pns.sm near line 79:
-	Duplicate identifier t within model
+    Duplicate identifier t within model
 ERROR in file pns.sm near line 79:
-	Duplicate identifier t within model
+    Duplicate identifier t within model
 Duplicate init warning should follow:
 WARNING in file pns.sm near line 81:
-	Summing duplicate initialization for place p
-	within model net2 built in file pns.sm near line 87
+    Summing duplicate initialization for place p
+    within model net2 built in file pns.sm near line 87
 Duplicate arc warning should follow:
 WARNING in file pns.sm near line 83:
-	Summing cardinalities on duplicate arc
-	from p to t
-	within model net2 built in file pns.sm near line 87
+    Summing cardinalities on duplicate arc
+    from p to t
+    within model net2 built in file pns.sm near line 87
 0 should be 0
 Should generate meaningful warnings:
 WARNING:
-	No initial marking given, assuming zero
-	within model bar1 built in file pns.sm near line 125
+    No initial marking given, assuming zero
+    within model bar1 built in file pns.sm near line 126
 WARNING in file pns.sm near line 96:
-	place x is from another model, ignoring initial tokens
-	within model foo1 built in file pns.sm near line 119
-WARNING in file pns.sm near line 99:
-	trans y is from another model, ignoring firing distribution
-	within model foo1 built in file pns.sm near line 119
-WARNING in file pns.sm near line 105:
-	place x is from another model, ignoring arc
-	within model foo1 built in file pns.sm near line 119
-WARNING in file pns.sm near line 105:
-	trans y is from another model, ignoring arc
-	within model foo1 built in file pns.sm near line 119
-WARNING in file pns.sm near line 108:
-	place x is from another model, ignoring arc
-	within model foo1 built in file pns.sm near line 119
+    place x is from another model, ignoring initial tokens
+    within model foo1 built in file pns.sm near line 120
+WARNING in file pns.sm near line 100:
+    trans y is from another model, ignoring firing distribution
+    within model foo1 built in file pns.sm near line 120
+WARNING in file pns.sm near line 106:
+    place x is from another model, ignoring arc
+    within model foo1 built in file pns.sm near line 120
+WARNING in file pns.sm near line 106:
+    trans y is from another model, ignoring arc
+    within model foo1 built in file pns.sm near line 120
+WARNING in file pns.sm near line 109:
+    place x is from another model, ignoring arc
+    within model foo1 built in file pns.sm near line 120
 Should get errors and null measures:
+ERROR in file pns.sm near line 114:
+    transition y belongs to another model
+    within model foo1 instantiated in file pns.sm near line 120
 ERROR in file pns.sm near line 113:
-	transition y belongs to another model
-	within model foo1 instantiated in file pns.sm near line 119
-ERROR in file pns.sm near line 112:
-	state variable x belongs to another model
-	within model foo1 instantiated in file pns.sm near line 119
+    state variable x belongs to another model
+    within model foo1 instantiated in file pns.sm near line 120
 got measures: null null
 Done with pn tests.

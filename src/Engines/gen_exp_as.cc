@@ -1,19 +1,14 @@
 
 // $Id$
 
-// #define TRY_NEW_STUFF
-
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
 // Formalisms and such
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/mc_llm.h"
-#include "../Formlsms/fsm_llm.h"
-#ifdef TRY_NEW_STUFF
 #include "../Formlsms/rss_expl.h"
-#endif
+#include "../Formlsms/rgr_grlib.h"
+#include "../Formlsms/proc_mclib.h"
 
 // Modules
 #include "../Modules/expl_states.h"
@@ -441,12 +436,21 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   
   bool nondeterm = (hm->GetProcessType() == lldsm::FSM);
 
+  state_lldsm* slm = dynamic_cast <state_lldsm*> (lm);
+  if (lm && (0==slm)) {
+    hm->StartError(0);
+    hm->SendError("Couldn't complete process, unknown type for partial process");
+    hm->DoneError();
+    lm->setCompletionEngine(0);
+    return;
+  }
+
   if (nondeterm) {
     if (!statesonly.getBool()) {
       rg = new GraphLib::digraph(true); 
     }
-    if (lm) {
-      rss = GrabExplicitFSMStates(lm);
+    if (slm) {
+      rss = slm->getRSS()->getStateDatabase();
       DCASSERT(rg);
       the_proc = "reachability graph";
     } else {
@@ -455,8 +459,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
       else    the_proc = "reachability set";
     }
   } else {
-    if (lm) {
-      rss = GrabExplicitMCStates(lm);
+    if (slm) {
+      rss = slm->getRSS()->getStateDatabase();
       the_proc = "Markov chain";
     } else {
       rss = statelib->createStateDB(true, false);
@@ -546,17 +550,14 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Set process as known so far
-  if (0==lm) {
+  if (0==slm) {
     if (nondeterm) {
-#ifdef TRY_NEW_STUFF
-      expl_reachset* ers = new expl_reachset(rss);
-      lm = StartGenericFSM(ers);
-#else
-      lm = StartExplicitFSM(rss);
-#endif
+      slm = new graph_lldsm(lldsm::FSM);
     } else {
-      lm = StartExplicitMC(false, rss);
+      slm = new stochastic_lldsm(lldsm::CTMC);
     }
+    slm->setRSS( new expl_reachset(rss) );
+    lm = slm;
     hm->SetProcess(lm); 
   }
 
@@ -576,9 +577,16 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Compact and finish process
   if (nondeterm) {
-    FinishExplicitFSM(lm, init, rg);
+    graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
+    DCASSERT(glm);
+    grlib_reachgraph* erg = new grlib_reachgraph(rg);
+    erg->setInitial(init);
+    glm->setRGR(erg);
   } else {
-    FinishExplicitMC(lm, init, mc);
+    stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);
+    DCASSERT(glm);
+    mclib_process* mcp = new mclib_process(mc);
+    glm->setPROC(init, mcp);
   }
   
   // Report on compaction

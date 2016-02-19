@@ -3,24 +3,25 @@
 
 #include "satur_meddly.h"
 
-#define PROC_MEDDLY_DETAILS
-#include "proc_meddly.h"
+#include "gen_meddly.h"
 
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/check_llm.h"
-#include "../Formlsms/rss_mdd.h"
-#include "../Formlsms/fsm_mdd.h"
-#include "../Formlsms/mc_llm.h"
-#include "../Formlsms/mc_mdd.h"
+// #include "../Formlsms/graph_llm.h"  // for now
+// #include "../Formlsms/stoch_llm.h"  // for now
+#include "../Formlsms/rss_meddly.h"
+#include "../Formlsms/rgr_meddly.h"
+#include "../Formlsms/proc_meddly.h"
+// #include "../Formlsms/mc_llm.h"
+// #include "../Formlsms/mc_mdd.h"
 
 #include "../Modules/glue_meddly.h"
 
 #include "timerlib.h"
+#include "lslib.h"
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -44,23 +45,26 @@
 class mxd_fsm_finish : public process_generator {
   bool potential;
   meddly_varoption* mvo;
+  shared_ddedge* NSF;
 public:
-  mxd_fsm_finish(bool pot, meddly_varoption* mvo);
+  mxd_fsm_finish(bool pot, meddly_varoption* mvo, shared_ddedge* nsf);
   virtual ~mxd_fsm_finish();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &statesonly);
 };
 
-mxd_fsm_finish::mxd_fsm_finish(bool pot, meddly_varoption* _mvo) 
+mxd_fsm_finish::mxd_fsm_finish(bool pot, meddly_varoption* _mvo, shared_ddedge* nsf) 
 : process_generator()
 {
   potential = pot;
   mvo = _mvo;
+  NSF = nsf;
 }
 
 mxd_fsm_finish::~mxd_fsm_finish()
 {
   delete mvo;
+  Delete(NSF);
 }
 
 bool mxd_fsm_finish::AppliesToModelType(hldsm::model_type mt) const
@@ -81,8 +85,8 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   if (states_only.getBool())  return;
   if (e!=this)                return e->RunEngine(hm, states_only);
 
-  meddly_states* rss = GrabMeddlyFSMStates(lm);
-  DCASSERT(rss);
+  graph_lldsm* glm = smart_cast <graph_lldsm*> (lm);
+  DCASSERT(glm);
 
   timer watch;
   if (report.startReport()) {
@@ -92,9 +96,11 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     em->stopIO();
   }
 
-  rss->proc_wrap = Share(rss->mxd_wrap);
-  
-  FinishMeddlyFSM(lm, potential);
+  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
+  rgr->setPotential(Share(NSF));
+  if (!potential) rgr->scheduleConversionToActual();
+  glm->setRGR( rgr );
+
 
   if (report.startReport()) {
     em->report() << "Finished  FSM using Meddly, took ";
@@ -119,23 +125,26 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
 class mxd_mc_finish : public process_generator {
   bool potential;
   meddly_varoption* mvo;
+  shared_ddedge* NSF;
 public:
-  mxd_mc_finish(bool pot, meddly_varoption* mvo);
+  mxd_mc_finish(bool pot, meddly_varoption* mvo, shared_ddedge* nsf);
   virtual ~mxd_mc_finish();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &statesonly);
 };
 
-mxd_mc_finish::mxd_mc_finish(bool pot, meddly_varoption* _mvo)
+mxd_mc_finish::mxd_mc_finish(bool pot, meddly_varoption* _mvo, shared_ddedge* nsf)
 : process_generator()
 {
   potential = pot;
   mvo = _mvo;
+  NSF = nsf;
 }
 
 mxd_mc_finish::~mxd_mc_finish()
 {
   delete mvo;
+  Delete(NSF);
 }
 
 bool mxd_mc_finish::AppliesToModelType(hldsm::model_type mt) const
@@ -156,6 +165,9 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   if (states_only.getBool())  return;
   if (e!=this)                return e->RunEngine(hm, states_only);
 
+  stochastic_lldsm* slm = smart_cast <stochastic_lldsm*> (lm);
+  DCASSERT(slm);
+
   timer watch;
   if (report.startReport()) {
     em->report() << "Finishing CTMC using Meddly\n";
@@ -165,26 +177,25 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   }
 
   //
-  // Build new forest for CTMC
+  // Set reachability graph
   //
-  meddly_states* rss = GrabMeddlyMCStates(lm);
-  DCASSERT(rss);
-  // TBD: mtmdd versus ev*mdd?
-  MEDDLY::forest* newf = rss->createForest(
-    true, MEDDLY::forest::REAL, MEDDLY::forest::MULTI_TERMINAL
-  );
-  rss->proc_wrap = 
-    rss->mxd_wrap->copyWithDifferentForest("MC MTMxD", newf);
+  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
+  rgr->setPotential(Share(NSF));
+  if (!potential) rgr->scheduleConversionToActual();
+  slm->setRGR( rgr );
 
   //
-  // Build initial CTMC
+  // Build and set CTMC
   //
-  DCASSERT(mvo);
-  const dsde_hlm &m = mvo->parent;
 
-  shared_ddedge* R = smart_cast<shared_ddedge*>(rss->proc_wrap->makeEdge(0));
+  dsde_hlm* m = smart_cast <dsde_hlm*> (hm);
+  DCASSERT(m);
+
+  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL, 
+    MEDDLY::forest::MULTI_TERMINAL);
+  shared_ddedge* R = smart_cast<shared_ddedge*>(procmxd->makeEdge(0));
   DCASSERT(R);
-  rss->proc_wrap->buildSymbolicConst(0.0, R);
+  procmxd->buildSymbolicConst(0.0, R);
 
   //
   //  Add rates for each event to CTMC.
@@ -192,13 +203,13 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   traverse_data x(traverse_data::BuildDD);
   result ans;
   x.answer = &ans;
-  MEDDLY::dd_edge tmp(newf);
-  for (long e=0; e<m.getNumEvents(); e++) {
+  MEDDLY::dd_edge tmp(procmxd->getForest());
+  for (long e=0; e<m->getNumEvents(); e++) {
     // Get rate DD for this event
-    x.ddlib = rss->proc_wrap;
+    x.ddlib = procmxd;
     x.which = traverse_data::BuildExpoRateDD;
-    DCASSERT(m.readEvent(e));
-    expr* distro = m.readEvent(e)->getDistribution();
+    DCASSERT(m->readEvent(e));
+    expr* distro = m->readEvent(e)->getDistribution();
     DCASSERT(distro);
     distro->Traverse(x);
     DCASSERT(ans.isNormal());
@@ -219,19 +230,19 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
     Delete(r_e);
   } // for e
 
+  //
+  // Finalize process
+  //
 
-  FinishMeddlyFSM(lm, potential);
-  Delete(R);
+  meddly_process* PROC = new meddly_process(procmxd);
+  PROC->setActual(R);
+  // TBD!  NEED an actual initial vector!
+  LS_Vector initial;
+  slm->setPROC(initial, PROC);
 
   if (report.startReport()) {
     em->report() << "Finished  CTMC using Meddly, took ";
     em->report() << watch.elapsed_seconds() << " seconds\n";
-    rss->proc_wrap->reportStats(em->report());
-#ifdef DEBUG_FINAL_CTMC
-    em->report() << "DD edge: " << R->E.getNode() << "\n";
-    em->report().flush();
-    R->E.show(report.Freport(), 2);
-#endif
     em->stopIO();
   }
 
@@ -250,6 +261,8 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
 
 */
 class meddly_implicitgen : public meddly_procgen {
+  // TBD - change this for non-monolithic...
+  shared_ddedge* NSF;
 protected:
   static int order_policy;
   static const int ORDER_HIGH_TO_LOW = 0;
@@ -266,6 +279,11 @@ public:
   virtual void RunEngine(hldsm* m, result &states_only); 
 
 protected:
+  inline const MEDDLY::dd_edge& getNSF() const {
+    DCASSERT(NSF);
+    return NSF->E;
+  }
+
   virtual void generateRSS(meddly_varoption &x, timer &w) = 0;
   virtual const char* getAlgName() const = 0;
 
@@ -277,7 +295,7 @@ protected:
 
   virtual void reportGen(bool err, DisplayStream &s) const { };
 
-  void buildNextStateFunc(meddly_varoption &x) const;
+  void buildNextStateFunc(meddly_varoption &x);
   
   void preprocess(dsde_hlm &m);
 
@@ -334,11 +352,13 @@ meddly_implicitgen::meddly_implicitgen() : meddly_procgen()
 {
   event_order = 0;
   event_order_size = 0;
+  NSF = 0;
 }
 
 meddly_implicitgen::~meddly_implicitgen()
 {
   free(event_order);
+  Delete(NSF);
 }
 
 bool meddly_implicitgen::AppliesToModelType(hldsm::model_type mt) const
@@ -362,14 +382,14 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
     throw Engine_Failed;
   } 
   
-  meddly_states* rss = 0;
+  meddly_reachset* rss = 0;
   meddly_varoption* mvo = 0;
   try {
     dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
     DCASSERT(dhm);
     preprocess(*dhm);
     initGen();
-    rss = new meddly_states;
+    rss = new meddly_reachset;
     mvo = makeVariableOption(*dhm, *rss);
     DCASSERT(mvo);
     buildRSS(*mvo);
@@ -383,16 +403,18 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
     throw e;
   }
 
+  state_lldsm* slm = 0;
   subengine* finisher = 0;
   if (hm->GetProcessType() == lldsm::FSM) {
-    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo);
-    lm = StartMeddlyFSM(rss);
+    slm = new graph_lldsm(lldsm::FSM);
+    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo, Share(NSF));
   } else {
-    finisher = new mxd_mc_finish(usePotentialEdges(), mvo);
-    lm = StartMeddlyMC(rss);
+    slm = new stochastic_lldsm(hm->GetProcessType());
+    finisher = new mxd_mc_finish(usePotentialEdges(), mvo, Share(NSF));
   }
-  hm->SetProcess(lm);
-  lm->setCompletionEngine(finisher);
+  slm->setRSS(rss);
+  hm->SetProcess(slm);
+  slm->setCompletionEngine(finisher);
 
   if (states_only.getBool())  return;
   if (0==finisher)            throw No_Engine;
@@ -400,22 +422,17 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
   finisher->RunEngine(hm, states_only);
 }
 
-void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x) const
+void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
 {
-  DCASSERT(x.ms.mxd_wrap);
-
   if (debug.startReport()) {
     debug.report() << "Updating event DDs\n";
     debug.stopIO();
   }
-  x.updateEvents(debug, x.ms.mxd_wrap, 0);
+  x.updateEvents(debug, 0);
 
-  meddly_encoder& mxd = *(x.ms.mxd_wrap);
-  const dsde_hlm &m = x.parent;
-
-  shared_ddedge* N = smart_cast<shared_ddedge*>(mxd.makeEdge(0));
+  const dsde_hlm &m = x.getParent();
+  shared_ddedge* N = smart_cast<shared_ddedge*>(x.make_mxd_constant(false));
   DCASSERT(N);
-  mxd.buildSymbolicConst(false, N);
 
   for (long e=0; e<m.getNumEvents(); e++) {
     MEDDLY::dd_edge enable = x.getEventEnabling(e);
@@ -464,8 +481,8 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x) const
     N->E += firing;
   } // for e
  
-  Delete(x.ms.nsf);
-  x.ms.nsf = N;
+  Delete(NSF);
+  NSF = N;
 }
 
 
@@ -620,7 +637,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
 {
   timer watch;
   timer subwatch;
-  if (startGen(x.parent)) {
+  if (startGen(x.getParent())) {
     em->stopIO();
   }
 
@@ -658,12 +675,12 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
       em->report() << "Built    next-state function, took ";
       em->report() << subwatch.elapsed_seconds() << " seconds\n";
   #ifdef DEBUG_FINAL_NSF
-      em->report() << "DD edge: " << x.ms.getNSF().getNode() << "\n";
+      em->report() << "DD edge: " << getNSF().getNode() << "\n";
       em->report().flush();
-      x.ms.getNSF().show(em->Freport(), 2);
-      em->report() << "Initial state: " << x.ms.getInitial().getNode() << "\n";
+      getNSF().show(em->Freport(), 2);
+      em->report() << "Initial state: " << x.getInitial().getNode() << "\n";
       em->report().flush();
-      x.ms.getInitial().show(em->Freport(), 2);
+      x.getInitial().show(em->Freport(), 2);
   #endif
   #ifdef DEBUG_REFCOUNTS
       em->report() << "Forest:\n";
@@ -673,8 +690,6 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   #endif
       em->stopIO();
     }
-
-    DCASSERT(x.ms.nsf);
 
     //
     // Generate reachability set
@@ -693,7 +708,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
       em->stopIO();
     }
 
-    if (stopGen(false, x.parent, watch)) {
+    if (stopGen(false, x.getParent(), watch)) {
       reportGen(false, em->report());
       x.reportStats(em->report());
       em->stopIO();
@@ -701,7 +716,7 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   } // try
 
   catch (subengine::error status) {
-    if (stopGen(true, x.parent, watch)) em->stopIO();
+    if (stopGen(true, x.getParent(), watch)) em->stopIO();
     throw status;
   }
 }
@@ -740,18 +755,18 @@ meddly_saturation::~meddly_saturation()
 void meddly_saturation::generateRSS(meddly_varoption &x, timer&)
 {
   try {
-    shared_ddedge* S = x.ms.newMddEdge();
+    shared_ddedge* S = x.newMddEdge();
     MEDDLY::apply(
       MEDDLY::REACHABLE_STATES_DFS,
-      x.ms.getInitial(), 
-      x.ms.getNSF(),
+      x.getInitial(), 
+      getNSF(),
       S->E
     );
-    x.ms.setStates(S);
-    checkTerm("Generation failed", x.parent);
+    x.setStates(S);
+    checkTerm("Generation failed", x.getParent());
   }
   catch (MEDDLY::error ce) {
-    convert(ce, "Generation failed", x.parent);
+    convert(ce, "Generation failed", x.getParent());
   }
 }
 
@@ -789,18 +804,18 @@ meddly_traditional::~meddly_traditional()
 void meddly_traditional::generateRSS(meddly_varoption &x, timer&)
 {
   try {
-    shared_ddedge* S = x.ms.newMddEdge();
+    shared_ddedge* S = x.newMddEdge();
     MEDDLY::apply(
       MEDDLY::REACHABLE_STATES_BFS,
-      x.ms.getInitial(), 
-      x.ms.getNSF(),
+      x.getInitial(), 
+      getNSF(),
       S->E
     );
-    x.ms.setStates(S);
-    return checkTerm("Generation failed", x.parent);
+    x.setStates(S);
+    return checkTerm("Generation failed", x.getParent());
   }
   catch (MEDDLY::error ce) {
-    return convert(ce, "Generation failed", x.parent);
+    return convert(ce, "Generation failed", x.getParent());
   }
 }
 
@@ -889,9 +904,9 @@ meddly_frontier::~meddly_frontier()
 
 void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
 {
-  MEDDLY::dd_edge F = x.ms.getInitial();
-  shared_ddedge* S = x.ms.newMddEdge();
-  S->E = x.ms.getInitial();
+  MEDDLY::dd_edge F = x.getInitial();
+  shared_ddedge* S = x.newMddEdge();
+  S->E = x.getInitial();
   while (F.getNode()) {
     iterations++;
     if (debug.startReport()) {
@@ -902,11 +917,11 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     // compute N(F)
     try {
-      MEDDLY::apply(MEDDLY::POST_IMAGE, F, x.ms.getNSF(), F);
-      checkTerm("post-image", x.parent);
+      MEDDLY::apply(MEDDLY::POST_IMAGE, F, getNSF(), F);
+      checkTerm("post-image", x.getParent());
     }
     catch (MEDDLY::error ce) {
-      convert(ce, "post-image", x.parent);
+      convert(ce, "post-image", x.getParent());
     }
     if (debug.startReport()) {
       debug.report() << "\tdone F:=N(F)\n";
@@ -915,10 +930,10 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     // subtract S
     try {
       MEDDLY::apply(MEDDLY::DIFFERENCE, F, S->E, F);
-      checkTerm("set difference", x.parent);
+      checkTerm("set difference", x.getParent());
     }
     catch (MEDDLY::error ce) {
-      convert(ce, "set difference", x.parent);
+      convert(ce, "set difference", x.getParent());
     }
     if (debug.startReport()) {
       debug.report() << "\tdone F:=F-S  ";
@@ -932,10 +947,10 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
       MEDDLY::apply(
         MEDDLY::UNION, S->E, F, S->E
       );
-      checkTerm("set union", x.parent);
+      checkTerm("set union", x.getParent());
     }
     catch (MEDDLY::error ce) {
-      convert(ce, "set union", x.parent);
+      convert(ce, "set union", x.getParent());
     }
     if (debug.startReport()) {
       debug.report() << "\tdone S:=S+F  ";
@@ -943,13 +958,13 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
       debug.report().Put(card, 13);
       debug.report() << " reachable states so far";
       debug.newLine();
-      long nodes = x.ms.getMddForest()->getCurrentNumNodes();
+      long nodes = x.getMddForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
       debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
     }
   } // while F
-  x.ms.setStates(S);
+  x.setStates(S);
 }
 
 // **************************************************************************
@@ -986,10 +1001,11 @@ meddly_nextall::~meddly_nextall()
 
 void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
 {
-  MEDDLY::dd_edge Old(x.ms.getMddForest());
-  x.ms.getMddForest()->createEdge(false, Old);
-  x.ms.states->E = x.ms.getInitial();
-  while (x.ms.states->E != Old) {
+  MEDDLY::dd_edge Old(x.getMddForest());
+  x.getMddForest()->createEdge(false, Old);
+  shared_ddedge* S = x.newMddEdge();
+  S->E = x.getInitial();
+  while (S->E != Old) {
     iterations++;
     if (debug.startReport()) {
       debug.report() << "Starting iteration ";
@@ -997,15 +1013,15 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
       debug.report() << ":\n";
       debug.stopIO();
     }
-    Old = x.ms.states->E;
+    Old = S->E;
     // compute S = N(S)
     try {
       MEDDLY::apply(MEDDLY::POST_IMAGE, 
-                    x.ms.states->E, x.ms.getNSF(), x.ms.states->E);
-      checkTerm("post-image", x.parent);
+                    S->E, getNSF(), S->E);
+      checkTerm("post-image", x.getParent());
     }
     catch (MEDDLY::error ce) {
-      convert(ce, "post-image", x.parent);
+      convert(ce, "post-image", x.getParent());
     }
     if (debug.startReport()) {
       debug.report() << "\tdone S':=N(S)\n";
@@ -1014,24 +1030,25 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     // compute S = Old + S
     try {
       MEDDLY::apply(MEDDLY::UNION, 
-                  x.ms.states->E, Old, x.ms.states->E);
-      checkTerm("set union", x.parent);
+                  S->E, Old, S->E);
+      checkTerm("set union", x.getParent());
     }
     catch (MEDDLY::error ce) {
-      convert(ce, "set union", x.parent);
+      convert(ce, "set union", x.getParent());
     }
     if (debug.startReport()) {
       debug.report() << "\tdone S:=S+S'  ";
-      double card = x.ms.states->E.getCardinality();
+      double card = S->E.getCardinality();
       debug.report().Put(card, 13);
       debug.report() << " reachable states so far";
       debug.newLine();
-      long nodes = x.ms.getMddForest()->getCurrentNumNodes();
+      long nodes = x.getMddForest()->getCurrentNumNodes();
       debug.report() << nodes << " nodes in forest, ";
       debug.report() << w.elapsed_seconds() << " seconds total time\n";
       debug.stopIO();
     }
   } // while F
+  x.setStates(S);
 }
 
 // **************************************************************************

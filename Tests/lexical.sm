@@ -36,7 +36,7 @@ pn molloy(bool mc, int n) := {
   );
 
   void ss := show_states(false);
-  void sa := show_arcs(false);
+  void sa := show_proc(false);
 };
 
 #StateDisplayOrder NATURAL
@@ -93,7 +93,7 @@ pn foo(bool times) := {
 
   bigint gen := num_arcs;
   void ss := show_states(false);
-  void sa := show_arcs(false);
+  void sa := show_proc(false);
 };
 
 # PNMarkingStyle SAFE

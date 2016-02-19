@@ -37,23 +37,23 @@ public:
   virtual bool AppliesToModelType(hldsm::model_type) const;
 protected:
 
-  class msr_visitor : public lldsm::state_visitor {
+  class msr_visitor : public state_lldsm::state_visitor {
   protected:
     measure *m;
-    double* p;
-    intset* infmask;
+    double* &p;
+    // If proc is non-zero, then measure is infinity for recurrent states.
+    const stochastic_lldsm::process* proc;
     result tmp;
     result ans;
   public:
-    msr_visitor(const hldsm* mdl);
+    msr_visitor(const hldsm* mdl, double* &p);
+    void infinity_on_recurrent(const stochastic_lldsm::process* _proc) {
+      proc = _proc;
+    }
     inline void newMsr(measure* _m) {
       m = _m;
       m->PrecomputeRHS();
       ans.setReal(0);
-    }
-    inline void setVector(double* x, intset* mask) {
-      p = x;
-      infmask = mask;
     }
     inline void finish() {
       m->SetValue(ans);
@@ -76,13 +76,13 @@ protected:
 
   class realmsr_visitor : public msr_visitor {
   public:
-    realmsr_visitor(const hldsm* mdl);
+    realmsr_visitor(const hldsm* mdl, double* &p);
     virtual bool visit();
   };
 
   class boolmsr_visitor : public msr_visitor {
   public:
-    boolmsr_visitor(const hldsm* mdl);
+    boolmsr_visitor(const hldsm* mdl, double* &p);
     virtual bool visit();
   };
 
@@ -136,18 +136,19 @@ engtype* exact_mcmsr::ProcessGeneration = 0;
 // *                          msr_visitor  methods                          *
 // **************************************************************************
 
-exact_mcmsr::msr_visitor::msr_visitor(const hldsm* mdl)
- : state_visitor(mdl)
+exact_mcmsr::msr_visitor::msr_visitor(const hldsm* mdl, double* &_p)
+ : state_visitor(mdl), p(_p)
 {
   x.answer = &tmp;
+  proc = 0;
 }
 
 // **************************************************************************
 // *                        realmsr_visitor  methods                        *
 // **************************************************************************
 
-exact_mcmsr::realmsr_visitor::realmsr_visitor(const hldsm* mdl)
- : msr_visitor(mdl)
+exact_mcmsr::realmsr_visitor::realmsr_visitor(const hldsm* mdl, double* &_p)
+ : msr_visitor(mdl, _p)
 {
 }
 
@@ -160,7 +161,7 @@ bool exact_mcmsr::realmsr_visitor::visit()
     double term = p[x.current_state_index] * tmp.getReal();
     if (0==term) return false;
 
-    if (infmask && infmask->contains(x.current_state_index)) {
+    if (proc && !proc->isTransient(x.current_state_index)) {
       // this term is +/- infinity
       if (ans.isInfinity()) {
         // check if signs match
@@ -203,8 +204,8 @@ bool exact_mcmsr::realmsr_visitor::visit()
 // *                        boolmsr_visitor  methods                        *
 // **************************************************************************
 
-exact_mcmsr::boolmsr_visitor::boolmsr_visitor(const hldsm* mdl)
- : msr_visitor(mdl)
+exact_mcmsr::boolmsr_visitor::boolmsr_visitor(const hldsm* mdl, double* &_p)
+ : msr_visitor(mdl, _p)
 {
 }
 
@@ -215,7 +216,7 @@ bool exact_mcmsr::boolmsr_visitor::visit()
   m->ComputeRHS(x);
   if (tmp.isNormal()) {
     if (false == tmp.getBool()) return false;
-    if (infmask && infmask->contains(x.current_state_index)) {
+    if (proc && !proc->isTransient(x.current_state_index)) {
       // this term is +/- infinity
       if (ans.isInfinity()) {
         if (ans.signInfinity() != SIGN(p[x.current_state_index])) {
@@ -320,10 +321,8 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     ok = proc->computeSteadyState(p);
   }
   if (ok) {
-    realmsr_visitor rv(mdl);
-    rv.setVector(p, 0);
-    boolmsr_visitor bv(mdl);
-    bv.setVector(p, 0);
+    realmsr_visitor rv(mdl, p);
+    boolmsr_visitor bv(mdl, p);
     long count = 0;
     timer w;
     if (startMsrs("steady-state", mdl->Name())) {
@@ -442,8 +441,8 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
   statedist* initial = proc->getInitialDistribution();
   initial->ExportTo(p);
   Delete(initial);
-  realmsr_visitor rv(mdl);
-  boolmsr_visitor bv(mdl);
+  realmsr_visitor rv(mdl, p);
+  boolmsr_visitor bv(mdl, p);
 
   // go through measures
   for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
@@ -483,14 +482,12 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
     if (mt == em->REAL) {
-      rv.setVector(p, 0);
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
     if (mt == em->BOOL) {
-      bv.setVector(p, 0);
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();
@@ -573,8 +570,8 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   statedist* initial = proc->getInitialDistribution();
   initial->ExportTo(p0);
   Delete(initial);
-  realmsr_visitor rv(mdl);
-  boolmsr_visitor bv(mdl);
+  realmsr_visitor rv(mdl, n);
+  boolmsr_visitor bv(mdl, n);
 
   // go through measures
   for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
@@ -602,14 +599,12 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
     if (mt == em->REAL) {
-      rv.setVector(n, 0);
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
     if (mt == em->BOOL) {
-      bv.setVector(n, 0);
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();
@@ -670,9 +665,6 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   double* n = 0;
   double* aux1 = 0;
   double* aux2 = 0;
-  intset not_transient(NS);
-  proc->getClass(0, not_transient);
-  not_transient.complement();
   bool ok = true;
   if (NS) {
     p0 = (double*) malloc(NS * sizeof(double));
@@ -696,8 +688,10 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   statedist* initial = proc->getInitialDistribution();
   initial->ExportTo(p0);
   Delete(initial);
-  realmsr_visitor rv(mdl);
-  boolmsr_visitor bv(mdl);
+  realmsr_visitor rv(mdl, n);
+  rv.infinity_on_recurrent(proc->getPROC());
+  boolmsr_visitor bv(mdl, n);
+  bv.infinity_on_recurrent(proc->getPROC());
 
   // go through measures
   for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
@@ -725,14 +719,12 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
     if (mt == em->REAL) {
-      rv.setVector(n, &not_transient);
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
     if (mt == em->BOOL) {
-      bv.setVector(n, &not_transient);
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();

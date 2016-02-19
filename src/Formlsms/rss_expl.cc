@@ -41,6 +41,11 @@ expl_reachset::~expl_reachset()
   delete lexorder;
 }
 
+StateLib::state_db* expl_reachset::getStateDatabase() const
+{
+  return state_dictionary;
+}
+
 void expl_reachset::getNumStates(long &ns) const
 {
   if (state_dictionary) {
@@ -80,12 +85,13 @@ void expl_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-reachset::iterator& expl_reachset::iteratorForOrder(int display_order)
+state_lldsm::reachset::iterator& expl_reachset
+::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(state_dictionary || (state_collection && state_handle));
 
-  switch (display_order) {
-    case lldsm::DISCOVERY:
+  switch (ord) {
+    case state_lldsm::DISCOVERY:
       if (needs_discorder) {
         if (0==discorder) {
           discorder = new discovery_coll_iter(*state_collection, state_handle);
@@ -95,7 +101,7 @@ reachset::iterator& expl_reachset::iteratorForOrder(int display_order)
       DCASSERT(natorder);
       return *natorder;
 
-    case lldsm::LEXICAL:
+    case state_lldsm::LEXICAL:
       if (0==lexorder) {
         if (state_dictionary) {
           lexorder = new lexical_db_iter(getGrandParent(), *state_dictionary);
@@ -105,14 +111,14 @@ reachset::iterator& expl_reachset::iteratorForOrder(int display_order)
       }
       return *lexorder;
       
-    case lldsm::NATURAL:
+    case state_lldsm::NATURAL:
     default:
       DCASSERT(natorder);
       return *natorder;
   };
 }
 
-reachset::iterator& expl_reachset::easiestIterator() const
+state_lldsm::reachset::iterator& expl_reachset::easiestIterator() const
 {
   DCASSERT(natorder);
   return *natorder;
@@ -126,9 +132,6 @@ void expl_reachset::Finish()
   state_dictionary = 0;
   state_handle = state_collection->RemoveIndexHandles();
 
-  // TBD - renumbering?
-  // TBD - needs_discorder becomes true if state_handle array is not monotone increasing
-
   // Update iterators
   DCASSERT(state_collection);
   DCASSERT(state_handle);
@@ -141,33 +144,34 @@ void expl_reachset::Finish()
   discorder = 0;
 }
 
-// ******************************************************************
-// *                                                                *
-// *              expl_reachset::base_iterator methods              *
-// *                                                                *
-// ******************************************************************
-
-expl_reachset::base_iterator::base_iterator()
+void expl_reachset::Renumber(const long* ren)
 {
-}
+  if (0==ren) return;
+  DCASSERT(state_collection);
+  DCASSERT(state_handle);
 
-expl_reachset::base_iterator::~base_iterator()
-{
-}
+  // Check for no-op renumbering
+  bool noop = true;
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    if (ren[i] != i) {
+      noop = false;
+      break;
+    }
+  }
+  if (noop) return;
 
-void expl_reachset::base_iterator::start()
-{
-  i = 0;
-}
+  // Renumber state_handle array
+  long* aux = new long[state_collection->Size()];
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    aux[i] = state_handle[i];
+  }
+  for (long i=state_collection->Size()-1; i>=0; i--) {
+    CHECK_RANGE(0, ren[i], state_collection->Size());
+    state_handle[ren[i]] = aux[i];
+  }
+  delete[] aux;
 
-void expl_reachset::base_iterator::operator++(int)
-{
-  i++;
-}
-
-long expl_reachset::base_iterator::index() const
-{
-  return i;
+  needs_discorder = true;
 }
 
 // ******************************************************************
@@ -177,26 +181,17 @@ long expl_reachset::base_iterator::index() const
 // ******************************************************************
 
 expl_reachset::db_iterator::db_iterator(const StateLib::state_db &s)
- : states(s)
+ : indexed_iterator(s.Size()), states(s)
 {
-  i = states.Size();
-  map = 0;
 }
 
 expl_reachset::db_iterator::~db_iterator()
 {
-  delete[] map;
 }
 
-expl_reachset::db_iterator::operator bool() const
+void expl_reachset::db_iterator::copyState(shared_state* st, long o) const
 {
-  return i < states.Size();
-}
-
-void expl_reachset::db_iterator::copyState(shared_state* st) const
-{
-  long mi = map ? map[i] : i;
-  states.GetStateKnown(mi, st->writeState(), st->getStateSize());
+  states.GetStateKnown(ord2index(o), st->writeState(), st->getStateSize());
 }
 
 // ******************************************************************
@@ -206,27 +201,18 @@ void expl_reachset::db_iterator::copyState(shared_state* st) const
 // ******************************************************************
 
 expl_reachset::coll_iterator::coll_iterator(const StateLib::state_coll &SC,
-  const long* SH) : states(SC), state_handle(SH)
+  const long* SH) : indexed_iterator(SC.Size()), states(SC), state_handle(SH)
 {
   DCASSERT(state_handle);
-  i = states.Size();
-  map = 0;
 }
 
 expl_reachset::coll_iterator::~coll_iterator()
 {
-  delete[] map;
 }
 
-expl_reachset::coll_iterator::operator bool() const
+void expl_reachset::coll_iterator::copyState(shared_state* st, long o) const
 {
-  return i < states.Size();
-}
-
-void expl_reachset::coll_iterator::copyState(shared_state* st) const
-{
-  long mi = map ? map[i] : i;
-  states.GetStateKnown(state_handle[mi], st->writeState(), st->getStateSize());
+  states.GetStateKnown(state_handle[ord2index(o)], st->writeState(), st->getStateSize());
 }
 
 // ******************************************************************

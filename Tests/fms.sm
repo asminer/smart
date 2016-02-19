@@ -1,120 +1,120 @@
 
 // $Id$
 
-/* 	
-	FMS model taken from
- 	"A decomposition approach for stochastic reward net models"
- 	by G. Ciardo and K. Trivedi
+/* 
+    FMS model taken from
+    "A decomposition approach for stochastic reward net models"
+    by G. Ciardo and K. Trivedi
 */
 
 // proc real min(proc real a, proc real b) := cond (a<b, a, b);
 
 pn fms(int N, int Np) := {
   place
-	P1, P1wM1, P1M1, M1, P1d, P1s, P1wP2, 
-	P12, P12wM3, P12M3, M3, P12s, 
-	P2, P2wM2, P2M2, M2, P2d, P2wP1, P2s, 
-	P3, P3M2, P3s;
+    P1, P1wM1, P1M1, M1, P1d, P1s, P1wP2, 
+    P12, P12wM3, P12M3, M3, P12s, 
+    P2, P2wM2, P2M2, M2, P2d, P2wP1, P2s, 
+    P3, P3M2, P3s;
 
   init(P1 : N, P2 : N, P3 : N, M1 : 3, M2 : 1, M3 : 2);
 
   trans
-	tM1, tM2, tM3, tx, 
-	tP1e, tP1j, tP2e, tP2j, 
+    tM1, tM2, tM3, tx, 
+    tP1e, tP1j, tP2e, tP2j, 
 
-	tP1, tP1M1, tP1s, 
-	tP2, tP2M2, tP2s, 
-	tP12, tP12M3, tP12s, 
-	tP3, tP3M2, tP3s;
+    tP1, tP1M1, tP1s, 
+    tP2, tP2M2, tP2s, 
+    tP12, tP12M3, tP12s, 
+    tP3, tP3M2, tP3s;
 
   weight(
-	tM1	: 1.0	,
-	tM2	: 1.0	,
-  	tM3	: 1.0	,
-	tx	: 1.0	,
-	tP1e	: 80.0	,
-	tP1j	: 20.0	,
-	tP2e	: 60.0	,
-	tP2j	: 40.0	
+    tM1     : 1.0,
+    tM2     : 1.0,
+    tM3     : 1.0,
+    tx      : 1.0,
+    tP1e    : 80.0,
+    tP1j    : 20.0,
+    tP2e    : 60.0,
+    tP2j    : 40.0
   );
 
   firing(
-	tM1	: 0	,
-	tM2	: 0	,
-  	tM3	: 0	,
-	tx	: 0	,
-	tP1e	: 0	,
-	tP1j	: 0	,
-	tP2e	: 0	,
-	tP2j	: 0	,
-	tP1	: expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P1)),
-	tP1M1	: expo(tk(P1M1) / 4),
-	tP1s  	: expo(1/60),
-	tP2	: expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P2)),
-	tP2M2 	: expo(1/6),
-	tP2s  	: expo(1/60),
-	tP12	: expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P12)),
-	tP12M3	: expo(tk(P12M3)),
-	tP12s	: expo(1/60),
-	tP3	: expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P3)),
-	tP3M2	: expo(1/2),
-	tP3s	: expo(1/60)
+    tM1     : 0,
+    tM2     : 0,
+    tM3     : 0,
+    tx      : 0,
+    tP1e    : 0,
+    tP1j    : 0,
+    tP2e    : 0,
+    tP2j    : 0,
+    tP1     : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P1)),
+    tP1M1   : expo(tk(P1M1) / 4),
+    tP1s    : expo(1/60),
+    tP2     : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P2)),
+    tP2M2   : expo(1/6),
+    tP2s    : expo(1/60),
+    tP12    : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P12)),
+    tP12M3  : expo(tk(P12M3)),
+    tP12s   : expo(1/60),
+    tP3     : expo(min(1.0, Np/(tk(P1)+tk(P2)+tk(P3)+tk(P12))) * tk(P3)),
+    tP3M2   : expo(1/2),
+    tP3s    : expo(1/60)
   );
 
   arcs(
-  	P1	: tP1	,
-  	tP1	: P1wM1	,
-  	P1wM1	: tM1	,
-  	M1	: tM1	,
-  	tM1	: P1M1	,
-  	P1M1	: tP1M1	,
-  	tP1M1	: M1	,
-  	tP1M1	: P1d	,
-  	P1d	: tP1e	,
-  	tP1e	: P1s	,
-  	P1d	: tP1j	,
-  	tP1j	: P1wP2	,
-  	P1s	: tP1s	: tk(P1s),
-  	tP1s	: P1	: tk(P1s),
+      P1      : tP1,
+      tP1     : P1wM1,
+      P1wM1   : tM1,
+      M1      : tM1,
+      tM1     : P1M1,
+      P1M1    : tP1M1,
+      tP1M1   : M1,
+      tP1M1   : P1d,
+      P1d     : tP1e,
+      tP1e    : P1s,
+      P1d     : tP1j,
+      tP1j    : P1wP2,
+      P1s     : tP1s    : tk(P1s),
+      tP1s    : P1      : tk(P1s),
 
-  	P2	: tP2	,
-  	tP2	: P2wM2	,
-  	P2wM2	: tM2	,
-  	M2	: tM2	,
-  	tM2	: P2M2	,
-  	P2M2	: tP2M2	,
-  	tP2M2	: M2	,
-  	tP2M2	: P2d	,
-  	P2d	: tP2e	,
-  	tP2e	: P2s	,
-  	P2d	: tP2j	,
-  	tP2j	: P2wP1	,
-  	P2s	: tP2s	: tk(P2s),
-  	tP2s	: P2	: tk(P2s),
+      P2      : tP2,
+      tP2     : P2wM2,
+      P2wM2   : tM2,
+      M2      : tM2,
+      tM2     : P2M2,
+      P2M2    : tP2M2,
+      tP2M2   : M2,
+      tP2M2   : P2d,
+      P2d     : tP2e,
+      tP2e    : P2s,
+      P2d     : tP2j,
+      tP2j    : P2wP1,
+      P2s     : tP2s    : tk(P2s),
+      tP2s    : P2      : tk(P2s),
 
-  	P2wP1	: tx	,
-  	P1wP2	: tx	,
-  	tx	: P12	,
-  	P12	: tP12	,
-  	tP12	:P12wM3	,
-  	P12wM3	: tM3	,
-  	M3	: tM3	,
-  	tM3	: P12M3	,
-  	P12M3	:tP12M3	,
-  	tP12M3	: P12s	,
-  	tP12M3	: M3	,
-  	P12s	: tP12s	: tk(P12s),
-  	tP12s	: P1	: tk(P12s),
-  	tP12s	: P2	: tk(P12s),
+      P2wP1   : tx,
+      P1wP2   : tx,
+      tx      : P12,
+      P12     : tP12,
+      tP12    : P12wM3,
+      P12wM3  : tM3,
+      M3      : tM3,
+      tM3     : P12M3,
+      P12M3   : tP12M3,
+      tP12M3  : P12s,
+      tP12M3  : M3,
+      P12s    : tP12s   : tk(P12s),
+      tP12s   : P1      : tk(P12s),
+      tP12s   : P2      : tk(P12s),
 
-  	P3	: tP3	,
-  	tP3	: P3M2	,
-  	P3M2	: tP3M2	,
-  	M2	: tP3M2	,
-  	tP3M2	: M2	,
-  	tP3M2	: P3s	,
-  	P3s	: tP3s	: tk(P3s),
-  	tP3s	: P3	: tk(P3s)
+      P3      : tP3,
+      tP3     : P3M2,
+      P3M2    : tP3M2,
+      M2      : tP3M2,
+      tP3M2   : M2,
+      tP3M2   : P3s,
+      P3s     : tP3s    : tk(P3s),
+      tP3s    : P3      : tk(P3s)
   );
 
   bigint m1 := num_states;

@@ -7,12 +7,12 @@ AM_LDFLAGS = -module
 AM_DEFAULT_SOURCE_EXT = .cc
 noinst_LTLIBRARIES = \
     basic_msr.la stoch_msr.la ctl_msr.la csl_msr.la dcp_msr.la \
-    dsde_hlm.la noevnt_hlm.la phase_hlm.la \
-    check_llm.la stoch_llm.la \
-    rss.la rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
-    rgr.la \
-    mc_llm.la fsm_llm.la \
-    rss_mdd.la fsm_mdd.la mc_mdd.la \
+    enum_hlm.la dsde_hlm.la noevnt_hlm.la phase_hlm.la \
+    state_llm.la graph_llm.la stoch_llm.la \
+    rss_indx.la rss_enum.la rss_expl.la rss_meddly.la \
+    rgr_ectl.la rgr_grlib.la rgr_meddly.la \
+    proc_markov.la proc_mclib.la proc_meddly.la \
     dcp_form.la mc_form.la fsm_form.la pn_form.la evm_form.la tam_form.la
 
 
+DEAD_CODE = fsm_llm.la rss_mdd.la fsm_mdd.la 

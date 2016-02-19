@@ -11,7 +11,6 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
-#define DSDE_HLM_DETAILS
 #include "dsde_hlm.h"
 
 #include "../include/splay.h"

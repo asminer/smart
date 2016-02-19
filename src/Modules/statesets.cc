@@ -8,59 +8,12 @@
 #include "../ExprLib/assoc.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
-#include "biginttype.h"
-#include "../ExprLib/mod_vars.h"
-#include "../ExprLib/dd_front.h"
 
-#include "../Formlsms/check_llm.h"
+#include "../Formlsms/graph_llm.h"
 
-// external library
-#include "intset.h"
 
 #include "statesets.h"
 
-// ******************************************************************
-// *                                                                *
-// *                       expl_printer class                       *
-// *                                                                *
-// ******************************************************************
-
-class expl_printer : public lldsm::state_visitor {
-  OutputStream &out;
-  const intset &toprint;
-  bool print_indexes;
-  bool comma;
-public:
-  expl_printer(const hldsm* mdl, OutputStream &s, const intset &p, bool pi);
-  virtual bool canSkipIndex();
-  virtual bool visit();
-};
-
-expl_printer
-::expl_printer(const hldsm* m, OutputStream &s, const intset &p, bool pi)
- : state_visitor(m), out(s), toprint(p)
-{
-  print_indexes = pi;
-  comma = false;
-}
-
-bool expl_printer::canSkipIndex()
-{
-  return (! toprint.contains(x.current_state_index) );
-}
-
-bool expl_printer::visit()
-{
-  if (comma)  out << ", ";
-  else        comma = true;
-  if (print_indexes) {
-    out.Put(x.current_state_index); 
-  } else {
-    x.current_state->Print(out, 0);
-  }
-  out.can_flush();  // otherwise, huge sets will overflow the buffer
-  return false;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -68,150 +21,53 @@ bool expl_printer::visit()
 // *                                                                *
 // ******************************************************************
 
+exprman* stateset::em = 0;
 bool stateset::print_indexes;
 
-stateset::stateset(const checkable_lldsm* p, intset* e) : shared_object()
+stateset::stateset(const state_lldsm* p) : shared_object()
 {
-  is_explicit = true;
   parent = p;
-  expl_data = e;
-  state_forest = relation_forest = 0;
-  state_dd = relation_dd = 0;
 }
 
-stateset::stateset(const checkable_lldsm* p, sv_encoder* sf, shared_object* s,
-                                   sv_encoder* rf, shared_object* r)
-: shared_object()
+stateset::stateset(const stateset* clone) : shared_object()
 {
-  is_explicit = false;
-  parent = p;
-  expl_data = 0;
-  state_forest = sf;
-  state_dd = s;
-  relation_forest = rf;
-  relation_dd = r;
+  DCASSERT(clone);
+  parent = clone->parent;
 }
 
 stateset::~stateset()
 {
-  delete expl_data;
-  Delete(state_dd);
-  Delete(state_forest);
-  Delete(relation_dd);
-  Delete(relation_forest);
 }
 
-void stateset::getCardinality(long &card) const
+const hldsm* stateset::getGrandparent() const
 {
-  if (isExplicit()) {
-    card = getExplicit().cardinality();
-  } else {
-    DCASSERT(state_forest);
-    state_forest->getCardinality(state_dd, card);
+  return parent ? parent->GetParent() : 0;
+}
+
+bool stateset::parentsMatch(const expr* c, const char* op, stateset* A, stateset* B)
+{
+  if (0==A || 0==B) return false;
+
+  if (A->getParent() != B->getParent()) {
+    if (em->startError()) {
+      em->causedBy(c);
+      em->cerr() << "Statesets in " << op << " are from different model instances";
+      em->stopIO();
+    }
+    return false;
   }
-}
 
-void stateset::getCardinality(result &x) const
-{
-  if (isExplicit()) {
-    long count = getExplicit().cardinality();
-    x.setPtr(new bigint(count));
-  } else {
-    DCASSERT(state_forest);
-    state_forest->getCardinality(state_dd, x);
-  }
-}
-
-bool stateset::isEmpty() const
-{
-  if (isExplicit()) {
-    return getExplicit().isEmpty();
-  } else {
-    DCASSERT(state_forest);
-    bool ans;
-    state_forest->isEmpty(state_dd, ans);
-    return ans;
-  }
-}
-
-bool stateset::Print(OutputStream &s, int width) const
-{
-  if (is_explicit)  return print_explicit(s);
-  else              return print_symbolic(s);
-}
-
-bool stateset::print_explicit(OutputStream &s) const
-{
-  DCASSERT(parent);
-  DCASSERT(is_explicit);
-  DCASSERT(expl_data);
-  expl_printer foo(parent->GetParent(), s, *expl_data, print_indexes);
-  s.Put('{');
-  parent->visitStates(foo);
-  s.Put('}');
   return true;
 }
 
-bool stateset::print_symbolic(OutputStream &s) const
+void stateset::storageMismatchError(const expr* c, const char* op)
 {
-  DCASSERT(parent);
-  DCASSERT(!is_explicit);
-  DCASSERT(state_forest);
-  DCASSERT(state_dd);
-  shared_state* st = new shared_state(parent->GetParent());
-  const int* mt = state_forest->firstMinterm(state_dd);
-  s.Put('{');
-  bool comma = false;
-  while (mt) {
-    if (comma)  s << ", ";
-    else        comma = true;
-    state_forest->minterm2state(mt, st);
-    parent->GetParent()->showState(s, st);
-    mt = state_forest->nextMinterm(state_dd);
+  if (em->startError()) {
+    em->causedBy(c);
+    em->cerr() << "Statesets in " << op << " use incompatible storage types";
+    em->stopIO();
   }
-  s.Put('}');
-  Delete(st);
-  return true;
 }
-
-bool stateset::Equals(const shared_object *o) const
-{
-  const stateset* b = dynamic_cast <const stateset*> (o);
-  if (0==b) return false;
-  if (parent != b->parent) return false;  // TBD: may want to allow this
-  if (is_explicit != b->is_explicit) return false; // TBD: and this
-  
-  DCASSERT(is_explicit);
-  if (0==expl_data && 0==b->expl_data) return true;
-  if (0==expl_data || 0==b->expl_data) return false;
-  
-  // TBD: intset comparison here
-  return true;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                     intset library credits                     *
-// *                                                                *
-// ******************************************************************
-
-class intset_lib : public library {
-public:
-  intset_lib();
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return true; }
-};
-
-intset_lib::intset_lib() : library(false)
-{
-}
-
-const char* intset_lib::getVersionString() const
-{
-  return intset::getVersion();
-}
-
-intset_lib intset_lib_data;
 
 // ******************************************************************
 // *                                                                *
@@ -274,9 +130,16 @@ void stateset_not::Compute(traverse_data &x)
 
   if (!x.answer->isNormal()) return;
 
-  stateset* ss = smart_cast <stateset*> (Share(x.answer->getPtr()));
+  stateset* ss = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(ss);
-  x.answer->setPtr(Complement(em, this, ss));
+  if (ss->numRefs()>1) {
+    stateset* ans = ss->DeepCopy();
+    ans->Complement();
+    x.answer->setPtr(ans);
+  } else {
+    // in-place
+    ss->Complement();
+  }
 }
 
 expr* stateset_not::buildAnother(expr *x) const
@@ -310,68 +173,66 @@ stateset_diff::stateset_diff(const char* fn, int line, expr *l, expr* r)
 
 void stateset_diff::Compute(traverse_data &x)
 {
+  //
+  // L \ R   =  L * !R
+  //
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
 
   SafeCompute(right, x);
-
   if (!x.answer->isNormal()) return;
 
-  stateset* rt = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  DCASSERT(rt);
+  stateset* notR = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(notR);
 
-  SafeCompute(left, x);
-  if (!x.answer->isNormal()) {
-    Delete(rt);
-    return;
-  }
-
-  stateset* lt = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  DCASSERT(lt);
-
-  if (lt->getParent() != rt->getParent()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Statesets in difference are from different model instances";
-      em->stopIO();
-    }
-    Delete(rt);
-    Delete(lt);
-    x.answer->setNull();
-    return;
-  }
-
-  if (lt->isExplicit() != rt->isExplicit()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Statesets in difference use different storage types";
-      em->stopIO();
-    }
-    Delete(rt);
-    Delete(lt);
-    x.answer->setNull();
-    return;
-  }
-
-  if (lt->isExplicit()) {
-    // EXPLICIT
-    stateset* foo = new stateset(lt->getParent(), new intset);
-    foo->changeExplicit() = lt->getExplicit() - rt->getExplicit();
-    x.answer->setPtr(foo);
+  if (notR->numRefs() > 1) {
+    notR = notR->DeepCopy();  // loses the original but x.answer still has it
+    notR->Complement();
   } else {
-    // SYMBOLIC
-    shared_object* newdd = lt->getStateForest()->makeEdge(0);
-    stateset* foo = new stateset(
-      lt->getParent(), Share(lt->getStateForest()), newdd,
-      Share(lt->getRelationForest()), Share(lt->getRelationDD())
-    );
-    lt->getStateForest()->buildBinary(
-        lt->getStateDD(), exprman::bop_diff, rt->getStateDD(), newdd
-    );
-    x.answer->setPtr(foo);
+    notR->Complement();
+    notR = Share(notR);
   }
-  Delete(lt);
-  Delete(rt);
+
+  // 
+  // We have !R.
+  //
+  SafeCompute(left, x); // Deletes old x.answer
+
+  if (!x.answer->isNormal()) {
+    Delete(notR);
+    return;
+  }
+
+  stateset* L = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(L);
+
+  //
+  // We have L
+  //
+
+  if (stateset::parentsMatch(this, "difference", L, notR)) {
+    bool ok;
+    if (L->numRefs() > 1) {
+      L = L->DeepCopy();
+      ok = L->Intersect(this, "difference", notR);
+    } else {
+      ok = L->Intersect(this, "difference", notR);
+      L = Share(L);
+    }
+    if (!ok) {
+      // Intersection failed
+      Delete(L);
+      L = 0;
+    }
+  }
+  Delete(notR);
+
+  if (L) {
+    x.answer->setPtr(L);
+  } else {
+    x.answer->setNull();
+  }
 }
 
 expr* stateset_diff::buildAnother(expr *x, expr* y) const
@@ -405,55 +266,66 @@ stateset_implies::stateset_implies(const char* fn, int line, expr *l, expr* r)
 
 void stateset_implies::Compute(traverse_data &x)
 {
+  //
+  // L -> R   =  !L + R
+  //
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
 
-  SafeCompute(right, x);
+  SafeCompute(left, x);
 
   if (!x.answer->isNormal()) return;
 
-  stateset* rt = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  DCASSERT(rt);
+  stateset* notL = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(notL);
 
-  SafeCompute(left, x);
+  if (notL->numRefs() > 1) {
+    notL->Complement();
+    notL = Share(notL);
+  } else {
+    notL = notL->DeepCopy();  // loses the original but x.answer still has it
+    notL->Complement();
+  }
+
+  // 
+  // We have !L.
+  //
+  SafeCompute(right, x);      // Deletes old x.answer
   if (!x.answer->isNormal()) {
-    Delete(rt);
     return;
   }
 
-  stateset* lt = smart_cast <stateset*> (Share(x.answer->getPtr()));
-  DCASSERT(lt);
+  stateset* R = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(R);
 
-  if (lt->getParent() != rt->getParent()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Statesets in implication are from different model instances";
-      em->stopIO();
-    }
-    Delete(rt);
-    Delete(lt);
-    x.answer->setNull();
-    return;
-  }
-
-  if (lt->isExplicit() != rt->isExplicit()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Statesets in implication use different storage types";
-      em->stopIO();
-    }
-    Delete(rt);
-    Delete(lt);
-    x.answer->setNull();
-    return;
-  }
-
-  // L -> R   =  !L + R
+  //
+  // We have R
   //
 
-  x.answer->setPtr(
-    Union(em, this, Complement(em, this, lt), rt)
-  );
+  stateset* foo = 0;
+
+  if (stateset::parentsMatch(this, "implication", notL, R)) {
+    bool ok;
+    if (R->numRefs() > 1) {
+      R = R->DeepCopy();
+      ok = R->Union(this, "implication", notL);
+    } else {
+      ok = R->Union(this, "implication", notL);
+      R = Share(R);
+    }
+    if (!ok) {
+      // Union failed
+      Delete(foo);
+      foo = 0;
+    }
+  }
+  Delete(notL);
+
+  if (foo) {
+    x.answer->setPtr(foo);
+  } else {
+    x.answer->setNull();
+  }
 }
 
 expr* stateset_implies::buildAnother(expr *x, expr* y) const
@@ -492,65 +364,36 @@ void stateset_union::Compute(traverse_data &x)
   DCASSERT(0==x.aggregate);
   SafeCompute(operands[0], x);
   if (!x.answer->isNormal()) return;
-  stateset* first = smart_cast <stateset*> (x.answer->getPtr());
-  DCASSERT(first);
-  const checkable_lldsm* parent = first->getParent();
-  bool is_explicit = first->isExplicit();
-  stateset* answer = 0;
-  if (is_explicit) {
-    answer = new stateset(parent, new intset(first->getExplicit()));
+  stateset* total = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(total);
+  if (total->numRefs() > 1) {
+    total = total->DeepCopy();
   } else {
-    answer = new stateset(
-      parent, Share(first->getStateForest()), 
-      first->getStateForest()->makeEdge(first->getStateDD()),
-      Share(first->getRelationForest()), Share(first->getRelationDD())
-    );
+    total = Share(total);
   }
-  
+  DCASSERT(total);
+
   for (int i=1; i<opnd_count; i++) {
     SafeCompute(operands[i], x);
     if (!x.answer->isNormal()) {
-      Delete(answer);
+      Delete(total);
       return;
     }
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    if (curr->getParent() != parent) {
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Statesets in union are from different model instances";
-        em->stopIO();
-      }
-      Delete(answer);
+    bool ok = false;
+    if (stateset::parentsMatch(this, "union", total, curr)) {
+      ok = total->Union(this, curr);
+    } 
+    if (!ok) {
+      Delete(total);
       x.answer->setNull();
       return;
-    } // if parent
-
-    if (curr->isExplicit() != is_explicit) {
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Statesets in union use different storage types";
-        em->stopIO();
-      }
-      Delete(answer);
-      x.answer->setNull();
-      return;
-    } // if explicit
-
-    // ok, we can actually perform the union now!
-    if (is_explicit) {
-      answer->changeExplicit() += curr->getExplicit();
-    } else {
-      answer->getStateForest()->buildAssoc(
-        answer->getStateDD(), false, exprman::aop_or,
-        curr->getStateDD(), answer->changeStateDD()
-      );
     }
   } // for i
 
-  // success, cleanup
-  x.answer->setPtr(answer);
+  x.answer->setPtr(total);
 }
 
 expr* stateset_union::buildAnother(expr **x, bool* f, int n) const
@@ -590,65 +433,36 @@ void stateset_intersect::Compute(traverse_data &x)
   DCASSERT(0==x.aggregate);
   SafeCompute(operands[0], x);
   if (!x.answer->isNormal()) return;
-  stateset* first = smart_cast <stateset*> (x.answer->getPtr());
-  DCASSERT(first);
-  const checkable_lldsm* parent = first->getParent();
-  bool is_explicit = first->isExplicit();
-  stateset* answer = 0;
-  if (is_explicit) {
-    answer = new stateset(parent, new intset(first->getExplicit()));
+  stateset* total = smart_cast <stateset*> (x.answer->getPtr());
+  DCASSERT(total);
+  if (total->numRefs() > 1) {
+    total = total->DeepCopy();
   } else {
-    answer = new stateset(
-      parent, Share(first->getStateForest()), 
-      first->getStateForest()->makeEdge(first->getStateDD()),
-      Share(first->getRelationForest()), Share(first->getRelationDD())
-    );
+    total = Share(total);
   }
-  
+  DCASSERT(total);
+
   for (int i=1; i<opnd_count; i++) {
     SafeCompute(operands[i], x);
     if (!x.answer->isNormal()) {
-      Delete(answer);
+      Delete(total);
       return;
     }
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    if (curr->getParent() != parent) {
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Statesets in intersection are from different model instances";
-        em->stopIO();
-      }
-      Delete(answer);
+    bool ok = false;
+    if (stateset::parentsMatch(this, "intersection", total, curr)) {
+      ok = total->Intersect(this, curr);
+    } 
+    if (!ok) {
+      Delete(total);
       x.answer->setNull();
       return;
-    } // if parent
-
-    if (curr->isExplicit() != is_explicit) {
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Statesets in intersection use different storage types";
-        em->stopIO();
-      }
-      Delete(answer);
-      x.answer->setNull();
-      return;
-    } // if explicit
-
-    // ok, we can actually perform the intersection now!
-    if (is_explicit) {
-      answer->changeExplicit() *= curr->getExplicit();
-    } else {
-      answer->getStateForest()->buildAssoc(
-        answer->getStateDD(), false, exprman::aop_and,
-        curr->getStateDD(), answer->changeStateDD()
-      );
     }
   } // for i
 
-  // success, cleanup
-  x.answer->setPtr(answer);
+  x.answer->setPtr(total);
 }
 
 expr* stateset_intersect::buildAnother(expr **x, bool* f, int n) const
@@ -1025,129 +839,15 @@ void empty_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-stateset* Complement(exprman* em, const expr* c, stateset* ss)
-{
-  if (0==ss) return 0;
-  if (ss->isExplicit()) {
-    if (1==ss->numRefs()) {
-      ss->changeExplicit().complement();
-      return ss;
-    }
-    // make a copy and invert it
-    intset* foo = new intset;
-    *foo = !(ss->getExplicit());
-    stateset* ans = new stateset(ss->getParent(), foo);
-    Delete(ss);
-    return ans;
-  } else {
-    // symbolic complement: do "reachable - ss".
-    result reachable;
-    DCASSERT(ss->getParent());
-    ss->getParent()->getReachable(reachable);
-    stateset* rss = smart_cast <stateset*> (reachable.getPtr());
-    DCASSERT(rss);
-    shared_object* x = ss->getStateForest()->makeEdge(0);
-    DCASSERT(x);
-    ss->getStateForest()->buildBinary(
-      rss->getStateDD(), exprman::bop_diff, ss->getStateDD(), x
-    );
-    stateset* ans = new stateset(
-        ss->getParent(), Share(ss->getStateForest()), x,
-        Share(ss->getRelationForest()), Share(ss->getRelationDD())
-    );
-    Delete(ss);
-    return ans;
-  }
-}
-
-stateset* Union(exprman* em, const expr* c, stateset* x, stateset* y)
-{
-  if (0==x || 0==y) return 0;
-  
-  if (x->getParent() != y->getParent()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(c);
-        em->internal() << "Statesets in union are from different model instances";
-        em->stopIO();
-    }
-    return 0;
-  } // if parent
-
-  if (x->isExplicit() != y->isExplicit()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(c);
-        em->internal() << "Statesets in union use different storage types";
-        em->stopIO();
-    }
-    return 0;
-  } // if explicit
-
-  if (!x->isExplicit()) {
-    DCASSERT(x->getStateForest() == y->getStateForest());
-    shared_object* z = x->getStateForest()->makeEdge(0);
-    DCASSERT(z);
-    x->getStateForest()->buildAssoc(
-      x->getStateDD(), false, exprman::aop_or, y->getStateDD(), z
-    );
-    return new stateset(
-        x->getParent(), Share(x->getStateForest()), z,
-        Share(x->getRelationForest()), Share(x->getRelationDD())
-    );
-  }
-
-  intset* expl_data = new intset;
-  *expl_data = x->getExplicit() + y->getExplicit();
-
-  return new stateset(x->getParent(), expl_data);
-}
-
-stateset* Intersection(exprman* em, const expr* c, stateset* x, stateset* y)
-{
-  if (0==x || 0==y) return 0;
-  
-  if (x->getParent() != y->getParent()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(c);
-        em->internal() << "Statesets in intersection are from different model instances";
-        em->stopIO();
-    }
-    return 0;
-  } // if parent
-
-  if (x->isExplicit() != y->isExplicit()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(c);
-        em->internal() << "Statesets in intersection use different storage types";
-        em->stopIO();
-    }
-    return 0;
-  } // if explicit
-
-  if (!x->isExplicit()) {
-    DCASSERT(x->getStateForest() == y->getStateForest());
-    shared_object* z = x->getStateForest()->makeEdge(0);
-    DCASSERT(z);
-    x->getStateForest()->buildAssoc(
-      x->getStateDD(), false, exprman::aop_and, y->getStateDD(), z
-    );
-    return new stateset(
-        x->getParent(), Share(x->getStateForest()), z,
-        Share(x->getRelationForest()), Share(x->getRelationDD())
-    );
-  }
-
-  intset* expl_data = new intset;
-  *expl_data = x->getExplicit() * y->getExplicit();
-
-  return new stateset(x->getParent(), expl_data);
-}
 
 void InitStatesets(exprman* em, symbol_table* st)
 {
   if (0==em)  return;
+
+  stateset::em = em;
   
   // Library registry
-  em->registerLibrary(  &intset_lib_data );
+  // em->registerLibrary(  &intset_lib_data );
 
   // Type registry
   simple_type* t_stateset = new stateset_type;
@@ -1165,8 +865,8 @@ void InitStatesets(exprman* em, symbol_table* st)
   stateset::print_indexes = true;
   em->addOption(
     MakeBoolOption("StatesetPrintIndexes", 
-  "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
-  stateset::print_indexes
+      "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
+      stateset::print_indexes
     )
   );
 
@@ -1176,4 +876,5 @@ void InitStatesets(exprman* em, symbol_table* st)
   st->AddSymbol(  new card_si   );
   st->AddSymbol(  new empty_si  );
 }
+
 

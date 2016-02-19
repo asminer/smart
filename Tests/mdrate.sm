@@ -21,7 +21,7 @@ pn mmkqueue(int servers, int capacity) := {
 	  depart : expo(1.1 * min(tk(queue), servers))
   );
   void show_rs := show_states(false);
-  void show_rg := show_arcs(false);
+  void show_rg := show_proc(false);
   bigint ns := num_states;
   bigint na := num_arcs;
 };

@@ -12,7 +12,7 @@ class msr_func;
 void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
 
 // Kind of a hack, sorry
-#ifdef EXPERT_BASIC_MSR
+#ifndef INITIALIZERS_ONLY
 
 // ******************************************************************
 // *                                                                *
@@ -28,9 +28,9 @@ public:
   proc_noengine(eng_class ect, const type* t, const char* name, int np);
 
 protected:
-  lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
+  state_lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
 };
 
-#endif
+#endif // INITIALIZERS_ONLY
 
 #endif

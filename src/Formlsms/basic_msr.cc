@@ -6,13 +6,11 @@
 #include "../ExprLib/measures.h"
 
 #include "../Formlsms/stoch_llm.h"
-#define DSDE_HLM_DETAILS
 #include "../Formlsms/dsde_hlm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
-#define EXPERT_BASIC_MSR
 #include "basic_msr.h"
 
 // #define ALLOW_SHOW_PARAMS
@@ -32,7 +30,8 @@ proc_noengine
 {
 }
 
-lldsm* proc_noengine::BuildProc(hldsm* hlm, bool states_only, const expr* err)
+state_lldsm* 
+proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
 {
   if (0==hlm)  return 0;
   result so;
@@ -42,13 +41,13 @@ lldsm* proc_noengine::BuildProc(hldsm* hlm, bool states_only, const expr* err)
       lldsm* llm = hlm->GetProcess();
       if (llm) {
         subengine* gen = llm->getCompletionEngine();
-        if (0==gen) return llm;
+        if (0==gen) return dynamic_cast <state_lldsm*> (llm);
         gen->RunEngine(hlm, so);
       } else {
         if (!ProcGen) throw subengine::No_Engine;
         ProcGen->runEngine(hlm, so);
       }
-      return hlm->GetProcess();
+      return dynamic_cast <state_lldsm*> (hlm->GetProcess());
   } // try
     
   catch (subengine::error e) {
@@ -95,7 +94,9 @@ void numstates_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 1, x.parent);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
   if (0==llm || lldsm::Error == llm->Type()) {
     x.answer->setNull();
     return;
@@ -477,7 +478,9 @@ void showstates_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 1, x.parent);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
   if (0==llm || lldsm::Error == llm->Type()) return;
 
   bool internal = false;
@@ -501,7 +504,7 @@ public:
 showarcs_si::showarcs_si()
  : proc_noengine(Nothing, em->VOID, "show_arcs", 2)
 {
-  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+  SetDocumentation("Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal", 
@@ -528,6 +531,59 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
+  gllm->showArcs(internal); 
+}
+
+// ******************************************************************
+// *                            show_proc                           *
+// ******************************************************************
+
+class showproc_si : public proc_noengine {
+public:
+  showproc_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+showproc_si::showproc_si()
+ : proc_noengine(Nothing, em->VOID, "show_proc", 2)
+{
+  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal", 
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
+}
+
+void showproc_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 0, x.parent);
+  if (0==llm || lldsm::Error == llm->Type()) {
+    return;
+  }
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+
+  const stochastic_lldsm* sllm = dynamic_cast<const stochastic_lldsm*> (llm);
+  if (sllm) {
+    sllm->showProc(internal);
+    return;
+  }
+
+  // Not stochastic.  Show the reachability graph instead.
+
+  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+
   gllm->showArcs(internal); 
 }
 
@@ -561,11 +617,14 @@ void showclasses_si::Compute(traverse_data &x, expr** pass, int np)
 
   const stochastic_lldsm* sllm = smart_cast <const stochastic_lldsm*> (llm);
   DCASSERT(sllm);
+  sllm->showClasses();
+  /*
   long foo = sllm->getNumClasses(true);
   if (foo<0) {
     em->cout() << "Graph is too large\n";
     em->cout().flush();
   }
+  */
 }
 
 // *****************************************************************
@@ -742,9 +801,14 @@ void initial_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getInitialStates(*x.answer);
+  const state_lldsm* sllm = smart_cast <const state_lldsm*>(llm);
+  DCASSERT(sllm);
+  stateset* ss = sllm->getInitialStates();
+  if (ss) {
+    x.answer->setPtr(ss);
+  } else {
+    x.answer->setNull();
+  }
 }
 
 
@@ -775,9 +839,14 @@ void reachable_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getReachable(*x.answer);
+  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+  stateset* rss = gllm->getReachable();
+  if (rss) {
+    x.answer->setPtr(rss);
+  } else {
+    x.answer->setNull();
+  }
 }
 
 
@@ -809,9 +878,14 @@ void potential_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  const checkable_lldsm* cllm = smart_cast <const checkable_lldsm*>(llm);
-  DCASSERT(cllm);
-  cllm->getPotential(pass[1], *x.answer);
+  const graph_lldsm* gllm = smart_cast <const graph_lldsm*>(llm);
+  DCASSERT(gllm);
+  stateset* ss = gllm->getPotential(pass[1]);
+  if (ss) {
+    x.answer->setPtr(ss);
+  } else {
+    x.answer->setNull();
+  }
 }
 
 
@@ -873,6 +947,7 @@ void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common)
   // Process or model display
   common->Append(new showstates_si);
   common->Append(new showarcs_si);
+  common->Append(new showproc_si);
   common->Append(new showclasses_si);
   common->Append(new showlevels_si);
   common->Append(new showevents_si);

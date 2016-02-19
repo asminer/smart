@@ -7,20 +7,20 @@
  *   Tests a for statement within a converge statement
  */
 
-	
+
 /*
 
   x[i] = i
-	
+
 */
 
 // # Verbose true
-	
-# ConvergePrecision 1e-7	
+
+# ConvergePrecision 1e-7
 
 print("Linear system using gauss-seidel, by hand\n");
 # UseCurrent true
-	
+
 converge {
   print("[");
   for (int i in {1..10}) {
@@ -37,11 +37,11 @@ for (int i in {1..10}) {
   print(x[i], cond(i<10, ", ", "")); 
 }
 print("]\n");
-	
+
 
 print("Linear system using Jacobi, by hand\n");
 # UseCurrent false
-	
+
 converge {
   print("[");
   for (int i in {1..10}) {
@@ -51,14 +51,14 @@ converge {
   } 
   print("]\n");
 }
-	
+
 print("Array y has converged to: [");
 
 for (int i in {1..10}) {
   print(y[i], cond(i<10, ", ", "")); 
 }
 print("]\n");
-	
+
 print("Multiple guess error:\n");
 converge {
   for (int i in {8..10}) {

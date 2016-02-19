@@ -13,6 +13,7 @@
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/phase_hlm.h"
 #include "rng.h"
+#include "statevects.h"
 
 #define MATHFUNCS_DETAILED
 #include "../FuncLib/mathfuncs.h"
@@ -2372,14 +2373,21 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
   if (trap < 0) em->cout() << "No trap state\n";
   else          em->cout() << "Trap state index: " << trap << "\n";
 
-  proc->showInitial();
-
+  em->cout() << "Initial distribution:\n    ";
+  statedist* pi0 = proc->getInitialDistribution();
+  if (pi0) {
+    pi0->Print(em->cout(), 0);
+    em->cout() << "\n";
+  } else {
+    em->cout() << "(null)\n";
+  }
+  
 #ifdef PRINT_PHASE_CLASSES
   long nc = proc->getNumClasses(true);
   em->cout() << nc << " recurrent classes\n";
 #endif
 
-  proc->showArcs(false);
+  proc->showProc(false);
   em->cout() << proc->getNumArcs() << " edges total\n";
 
   em->cout() << "End of information for phase type\n\n";
