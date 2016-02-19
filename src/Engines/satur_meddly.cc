@@ -11,15 +11,17 @@
 
 #include "../Formlsms/dsde_hlm.h"
 // #include "../Formlsms/graph_llm.h"  // for now
-#include "../Formlsms/stoch_llm.h"  // for now
+// #include "../Formlsms/stoch_llm.h"  // for now
 #include "../Formlsms/rss_meddly.h"
 #include "../Formlsms/rgr_meddly.h"
+#include "../Formlsms/proc_meddly.h"
 // #include "../Formlsms/mc_llm.h"
 // #include "../Formlsms/mc_mdd.h"
 
 #include "../Modules/glue_meddly.h"
 
 #include "timerlib.h"
+#include "lslib.h"
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -56,7 +58,7 @@ mxd_fsm_finish::mxd_fsm_finish(bool pot, meddly_varoption* _mvo, shared_ddedge* 
 {
   potential = pot;
   mvo = _mvo;
-  NSF = Share(nsf);
+  NSF = nsf;
 }
 
 mxd_fsm_finish::~mxd_fsm_finish()
@@ -123,23 +125,26 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
 class mxd_mc_finish : public process_generator {
   bool potential;
   meddly_varoption* mvo;
+  shared_ddedge* NSF;
 public:
-  mxd_mc_finish(bool pot, meddly_varoption* mvo);
+  mxd_mc_finish(bool pot, meddly_varoption* mvo, shared_ddedge* nsf);
   virtual ~mxd_mc_finish();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &statesonly);
 };
 
-mxd_mc_finish::mxd_mc_finish(bool pot, meddly_varoption* _mvo)
+mxd_mc_finish::mxd_mc_finish(bool pot, meddly_varoption* _mvo, shared_ddedge* nsf)
 : process_generator()
 {
   potential = pot;
   mvo = _mvo;
+  NSF = nsf;
 }
 
 mxd_mc_finish::~mxd_mc_finish()
 {
   delete mvo;
+  Delete(NSF);
 }
 
 bool mxd_mc_finish::AppliesToModelType(hldsm::model_type mt) const
@@ -160,6 +165,9 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   if (states_only.getBool())  return;
   if (e!=this)                return e->RunEngine(hm, states_only);
 
+  stochastic_lldsm* slm = smart_cast <stochastic_lldsm*> (lm);
+  DCASSERT(slm);
+
   timer watch;
   if (report.startReport()) {
     em->report() << "Finishing CTMC using Meddly\n";
@@ -168,31 +176,26 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
     em->stopIO();
   }
 
-  // TBD
-
-  /*
-
   //
-  // Build new forest for CTMC
+  // Set reachability graph
   //
-  meddly_reachset* rss = GrabMeddlyMCStates(lm);
-  DCASSERT(rss);
-  // TBD: mtmdd versus ev*mdd?
-  MEDDLY::forest* newf = rss->createForest(
-    true, MEDDLY::forest::REAL, MEDDLY::forest::MULTI_TERMINAL
-  );
-  rss->proc_wrap = 
-    rss->mxd_wrap->copyWithDifferentForest("MC MTMxD", newf);
+  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
+  rgr->setPotential(Share(NSF));
+  if (!potential) rgr->scheduleConversionToActual();
+  slm->setRGR( rgr );
 
   //
-  // Build initial CTMC
+  // Build and set CTMC
   //
-  DCASSERT(mvo);
-  const dsde_hlm &m = mvo->parent;
 
-  shared_ddedge* R = smart_cast<shared_ddedge*>(rss->proc_wrap->makeEdge(0));
+  dsde_hlm* m = smart_cast <dsde_hlm*> (hm);
+  DCASSERT(m);
+
+  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL, 
+    MEDDLY::forest::MULTI_TERMINAL);
+  shared_ddedge* R = smart_cast<shared_ddedge*>(procmxd->makeEdge(0));
   DCASSERT(R);
-  rss->proc_wrap->buildSymbolicConst(0.0, R);
+  procmxd->buildSymbolicConst(0.0, R);
 
   //
   //  Add rates for each event to CTMC.
@@ -200,13 +203,13 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   traverse_data x(traverse_data::BuildDD);
   result ans;
   x.answer = &ans;
-  MEDDLY::dd_edge tmp(newf);
-  for (long e=0; e<m.getNumEvents(); e++) {
+  MEDDLY::dd_edge tmp(procmxd->getForest());
+  for (long e=0; e<m->getNumEvents(); e++) {
     // Get rate DD for this event
-    x.ddlib = rss->proc_wrap;
+    x.ddlib = procmxd;
     x.which = traverse_data::BuildExpoRateDD;
-    DCASSERT(m.readEvent(e));
-    expr* distro = m.readEvent(e)->getDistribution();
+    DCASSERT(m->readEvent(e));
+    expr* distro = m->readEvent(e)->getDistribution();
     DCASSERT(distro);
     distro->Traverse(x);
     DCASSERT(ans.isNormal());
@@ -227,25 +230,24 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
     Delete(r_e);
   } // for e
 
+  //
+  // Finalize process
+  //
 
-  FinishMeddlyFSM(lm, potential);
-  Delete(R);
+  meddly_process* PROC = new meddly_process(procmxd);
+  PROC->setActual(R);
+  // TBD!  NEED an actual initial vector!
+  LS_Vector initial;
+  slm->setPROC(initial, PROC);
 
   if (report.startReport()) {
     em->report() << "Finished  CTMC using Meddly, took ";
     em->report() << watch.elapsed_seconds() << " seconds\n";
-    rss->proc_wrap->reportStats(em->report());
-#ifdef DEBUG_FINAL_CTMC
-    em->report() << "DD edge: " << R->E.getNode() << "\n";
-    em->report().flush();
-    R->E.show(report.Freport(), 2);
-#endif
     em->stopIO();
   }
 
   lm->setCompletionEngine(0);
   delete this;
-  */
 }
 
 // **************************************************************************
@@ -405,10 +407,10 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
   subengine* finisher = 0;
   if (hm->GetProcessType() == lldsm::FSM) {
     slm = new graph_lldsm(lldsm::FSM);
-    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo, NSF);
+    finisher = new mxd_fsm_finish(usePotentialEdges(), mvo, Share(NSF));
   } else {
     slm = new stochastic_lldsm(hm->GetProcessType());
-    finisher = new mxd_mc_finish(usePotentialEdges(), mvo);
+    finisher = new mxd_mc_finish(usePotentialEdges(), mvo, Share(NSF));
   }
   slm->setRSS(rss);
   hm->SetProcess(slm);
