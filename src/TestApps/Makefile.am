@@ -3,7 +3,7 @@
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-bin_PROGRAMS = teststrms testsplay
+bin_PROGRAMS = teststrms testsplay testinit
 
 ## teststrms 
 
@@ -15,3 +15,7 @@ teststrms_LDADD = ../Streams/libstream.la
 testsplay_SOURCES = testsplay.cc
 testsplay_LDADD = ../Streams/libstream.la
 
+## testinit
+
+testinit_SOURCES = testinit.cc
+testinit_LDADD = ../ExprLib/libexpr.la
