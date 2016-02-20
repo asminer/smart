@@ -6,6 +6,7 @@
 noinst_LTLIBRARIES = libexpr.la
 
 libexpr_la_SOURCES = \
+  startup.h     startup.cc \
   exprman.h     exprman.cc \
   superman.h    superman.cc \
   engine.h      engine.cc \
