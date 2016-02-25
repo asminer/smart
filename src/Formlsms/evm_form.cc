@@ -3,6 +3,7 @@
 
 #include "evm_form.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/casting.h"
@@ -340,7 +341,7 @@ protected:
   static const int SPARSE  = 2;
   static const int VECTOR  = 3;
 
-  friend void InitializeEVMs(exprman* em, List <msr_func> *);
+  friend class init_evmform;
 public:
   evm_hlm(const model_instance* s, model_statevar** V, int nv, model_event** E, int ne);
   virtual ~evm_hlm();
@@ -466,7 +467,7 @@ class evm_def : public dsde_def {
   static const type* intvar_type;
   static const type* event_type;
 
-  friend void InitializeEVMs(exprman* em, List <msr_func> *);
+  friend class init_evmform;
 public:
   evm_def(const char* fn, int line, const type* t, char*n, 
       formal_param **pl, int np);
@@ -1219,15 +1220,31 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeEVMs(exprman* em, List <msr_func> *common)
+class init_evmform : public initializer {
+  public:
+    init_evmform();
+    virtual bool execute();
+};
+init_evmform the_evmform_initializer;
+
+init_evmform::init_evmform() : initializer("init_evmform")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
+}
+
+bool init_evmform::execute()
+{
+  if (0==em) return false;
 
   // set up and register intvar types
   simple_type* t_intvar  = new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model.");
@@ -1263,7 +1280,7 @@ void InitializeEVMs(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register evm type";
       em->stopIO();
     }
-    return;
+    return false;
   }
 
   // fill symbol table
@@ -1278,7 +1295,7 @@ void InitializeEVMs(exprman* em, List <msr_func> *common)
   Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
   Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
   evm->setFunctions(evmsyms); 
-  evm->addCommonFuncs(common);
+  evm->addCommonFuncs(CML);
 
 
   // Set up options
@@ -1362,4 +1379,6 @@ void InitializeEVMs(exprman* em, List <msr_func> *common)
       ms_list, 4, evm_hlm::StateStyle
     )
   );
+
+  return true;
 }

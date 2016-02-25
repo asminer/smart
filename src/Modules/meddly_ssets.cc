@@ -178,8 +178,9 @@ bool meddly_stateset::Equals(const shared_object *o) const
 // *                                                                        *
 // **************************************************************************
 
+/*
 void InitMeddlyStatesets(exprman* em)
 {
   // Nothing to do actually
 }
-
+*/

@@ -5,8 +5,8 @@
 #include "rss_enum.h"
 #include "rgr_grlib.h"
 #include "enum_hlm.h"
-// #include "graph_llm.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
@@ -44,7 +44,7 @@ class fsm_def : public model_def {
   static named_msg dup_init;
   static named_msg no_init;
   static named_msg dup_arc;
-  friend void InitializeFSMs(exprman* em, List <msr_func> *);
+  friend class init_fsms;
 public:
   fsm_def(const char* fn, int line, const type* t, char*n, 
       formal_param **pl, int np);
@@ -562,14 +562,32 @@ void fsm_lib::Init(exprman* em)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeFSMs(exprman* em, List <msr_func> *common)
+class init_fsms : public initializer {
+  public:
+    init_fsms();
+    virtual bool execute();
+};
+init_fsms the_fsm_initializer;
+
+init_fsms::init_fsms() : initializer("init_fsms")
 {
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
+}
+
+bool init_fsms::execute()
+{
+  if (0==em) return false;
+
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
@@ -607,7 +625,7 @@ void InitializeFSMs(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register fsm type";
       em->stopIO();
     }
-    return;
+    return false;
   }
 
   // set up and register state type, if necessary
@@ -631,9 +649,11 @@ void InitializeFSMs(exprman* em, List <msr_func> *common)
 
   // Set the symbol table
   fsm->setFunctions(mcsyms);
-  fsm->addCommonFuncs(common);
+  fsm->addCommonFuncs(CML);
 
   // register libs
   fsm_lib::Init(em);
+
+  return true;
 }
 

@@ -6,6 +6,6 @@
 
 class exprman;
 
-void InitializeSymbolicDCPEngines(exprman* em);
+// void InitializeSymbolicDCPEngines(exprman* em);
 
 #endif

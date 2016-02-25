@@ -10,7 +10,7 @@ class exprman;
 class msr_func;
 
 /// Initialize Markov chain formalisms.
-void InitializeMarkovChains(exprman* em, List <msr_func> *);
+// void InitializeMarkovChains(exprman* em, List <msr_func> *);
 
 #endif
 

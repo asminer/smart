@@ -12,6 +12,7 @@
 #include "expl_meddly.h"
 
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 
 // Formalisms
 #include "../Formlsms/dsde_hlm.h"
@@ -2561,7 +2562,7 @@ class gen_wrapper_templ {
     This is the "main" engine, for when reachable states are not yet known.
 */
 class meddly_explgen : public meddly_procgen {
-  friend void InitializeExplicitMeddly(exprman* em);
+  friend class init_explmeddly;
   static long batch_size;
   static int  matrix_style;
   static bool batch_removal;
@@ -3299,17 +3300,30 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
 
 
 
-// **************************************************************************
-// *                                                                        *
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeExplicitMeddly(exprman* em)
+class init_explmeddly : public initializer {
+  public:
+    init_explmeddly();
+    virtual bool execute();
+};
+init_explmeddly the_explmeddly_initializer;
+
+init_explmeddly::init_explmeddly() : initializer("init_explmeddly")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("meddlyprocgen");
+}
+
+bool init_explmeddly::execute()
+{
+  if (0==em) return false;
 
   engine* expl_eng = RegisterEngine(em,
     "MeddlyProcessGeneration",
@@ -3382,5 +3396,6 @@ void InitializeExplicitMeddly(exprman* em)
     )
   );
 
+  return true;
 }
 

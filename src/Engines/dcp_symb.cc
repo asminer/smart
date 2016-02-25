@@ -4,6 +4,7 @@
 #include "dcp_symb.h"
 
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
@@ -265,7 +266,7 @@ protected:
   static int combine_method;
   static const int ACCUMULATE = 0;
   static const int FOLD       = 1;
-  friend void InitializeSymbolicDCPEngines(exprman* em);
+  friend class init_dcpsymbolic;
 public:
   icp_symbgen();
   virtual~ icp_symbgen();
@@ -590,7 +591,7 @@ shared_ddedge* icp_symbgen
 // abstract base class for min, max, sat engines
 class icp_mdd_analyzer : public subengine {
   static engtype* SSGen;
-  friend void InitializeSymbolicDCPEngines(exprman* em);
+  friend class init_dcpsymbolic;
 public:
   icp_mdd_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -949,18 +950,33 @@ void icp_mdd_sat
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeSymbolicDCPEngines(exprman* em)
+class init_dcpsymbolic : public initializer {
+  public:
+    init_dcpsymbolic();
+    virtual bool execute();
+};
+init_dcpsymbolic the_dcpsymbolic_initializer;
+
+init_dcpsymbolic::init_dcpsymbolic() : initializer("init_dcpsymbolic")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_dcpsymbolic::execute()
+{
+  if (0==em) return false;
 
   // Initialize libraries
-  InitMEDDLy(em);
+  // InitMEDDLy(em);
 
   // Initialize options
   option* report = em->findOption("Report");
@@ -1027,6 +1043,8 @@ void InitializeSymbolicDCPEngines(exprman* em)
       "Builds constraints and expression implicitly (using MDDs), check for satisfiability",
       icp_mdd_sat::getInstance()
   );
+
+  return true;
 }
 
 

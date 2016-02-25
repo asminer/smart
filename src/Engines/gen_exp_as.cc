@@ -4,6 +4,8 @@
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
+#include "../ExprLib/startup.h"
+
 // Formalisms and such
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_expl.h"
@@ -675,15 +677,30 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeExplicitAsynchGenerators(exprman* em)
+class init_asynchgen : public initializer {
+  public:
+    init_asynchgen();
+    virtual bool execute();
+};
+init_asynchgen the_asynchgen_initializer;
+
+init_asynchgen::init_asynchgen() : initializer("init_asynchgen")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_asynchgen::execute()
+{
+  if (0==em) return false;
 
   // Initialize state library
   const exp_state_lib* sl = InitExplicitStateStorage(em);
@@ -694,6 +711,8 @@ void InitializeExplicitAsynchGenerators(exprman* em)
     "EXPLICIT",
     new as_procgen(sl)
   );
+
+  return true;
 }
 
 

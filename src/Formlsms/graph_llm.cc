@@ -4,6 +4,7 @@
 #include "graph_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
@@ -231,21 +232,34 @@ stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
   return 0;
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
+class init_graphllm : public initializer {
+  public:
+    init_graphllm();
+    virtual bool execute();
+};
+init_graphllm the_graphllm_initializer;
 
-void InitializeGraphLLM(exprman* om)
+init_graphllm::init_graphllm() : initializer("init_graphllm")
 {
-  if (0==om) return;
+  usesResource("em");
+}
 
-  graph_lldsm::reachgraph::em = om;
+bool init_graphllm::execute()
+{
+  if (0==em) return false;
+
+  graph_lldsm::reachgraph::em = em;
 
   // ------------------------------------------------------------------
-  option* report = om->findOption("Report");
+  option* report = em->findOption("Report");
   graph_lldsm::reachgraph::numpaths_report.Initialize(
     report,
     "num_paths",
@@ -259,7 +273,7 @@ void InitializeGraphLLM(exprman* om)
   );
 
   // ------------------------------------------------------------------
-  om->addOption(
+  em->addOption(
     MakeIntOption(
       MAX_ARC_DISPLAY_OPTION,
       "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
@@ -291,7 +305,7 @@ void InitializeGraphLLM(exprman* om)
       graph_lldsm::TRIPLES
   );
   graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
-  om->addOption(
+  em->addOption(
     MakeRadioOption("GraphDisplayStyle",
       "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
       gds_list, graph_lldsm::num_graph_display_styles, graph_lldsm::graph_display_style
@@ -299,12 +313,14 @@ void InitializeGraphLLM(exprman* om)
   );
 
   // ------------------------------------------------------------------
-  om->addOption(
+  em->addOption(
     MakeBoolOption("DisplayGraphNodeNames",
       "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
       graph_lldsm::display_graph_node_names
     )
   );
+
+  return true;
 }
 
 

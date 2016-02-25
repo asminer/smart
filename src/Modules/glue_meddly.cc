@@ -4,6 +4,7 @@
 #include "glue_meddly.h"
 #include "biginttype.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 
 // #define DEBUG_PLUS
 
@@ -1136,20 +1137,38 @@ shared_ddedge* meddly_encoder::accumulate(const MEDDLY::binary_opname* op,
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitMEDDLy(exprman* em)
+class init_meddly : public initializer {
+  public:
+    init_meddly();
+    virtual bool execute();
+};
+init_meddly the_meddly_initializer;
+
+init_meddly::init_meddly() : initializer("init_meddly")
 {
-  if (0==em)  return;
+  usesResource("em");
+  buildsResource("MEDDLY");
+}
+
+bool init_meddly::execute()
+{
+  if (0==em)  return false;
   
   // Library registry
   em->registerLibrary(  &mdd_lib_data  );
 
   // Options
+  //
+  // TBD - this one belongs under rgr_meddly or somewhere else
+  //
   meddly_encoder::image_star_uses_saturation = true;
   em->addOption(
     MakeBoolOption("MeddlyImageStarUsesSaturation",
@@ -1160,5 +1179,7 @@ void InitMEDDLy(exprman* em)
 
   // initialize the library.
   MEDDLY::initialize();
+
+  return true;
 }
 

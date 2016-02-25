@@ -328,7 +328,7 @@ public:
 
       protected:
         static void showError(const char* str);
-        friend void InitializeStochasticLLM(exprman* em);
+        friend class init_stochllm;
         friend class stochastic_lldsm; // overkill
     };
     // ------------------------------------------------------------
@@ -538,6 +538,6 @@ private:
 // *                                                                        *
 // **************************************************************************
 
-void InitializeStochasticLLM(exprman* em);
+// void InitializeStochasticLLM(exprman* em);
 
 #endif  

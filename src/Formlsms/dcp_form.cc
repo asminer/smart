@@ -2,6 +2,7 @@
 // $Id$
 
 #include "dcp_form.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/mod_def.h"
@@ -276,14 +277,32 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
   } // for i
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeDCPs(exprman* em, List <msr_func> *common)
+class init_dcps : public initializer {
+  public:
+    init_dcps();
+    virtual bool execute();
+};
+init_dcps the_dcp_initializer;
+
+init_dcps::init_dcps() : initializer("init_dcps")
 {
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
+}
+
+bool init_dcps::execute()
+{
+  if (0==em) return false;
+
   // Set up and register formalism
   formalism* dcp = new dcp_form("dcp", "discrete constraint program", "foobar");
   if (! em->registerType(dcp)) {
@@ -292,12 +311,14 @@ void InitializeDCPs(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register dcp type";
       em->stopIO();
     }
-    return;
+    return false;
   }
   symbol_table* dcpsyms = MakeSymbolTable();
   dcpsyms->AddSymbol(  new dcp_constraint(dcp)  );
   dcpsyms->AddSymbol(  new dcp_unique(dcp)      );
   dcp->setFunctions(dcpsyms);
-  dcp->addCommonFuncs(common);
+  dcp->addCommonFuncs(CML);
+
+  return true;
 }
 

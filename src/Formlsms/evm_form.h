@@ -10,6 +10,6 @@ class exprman;
 class msr_func;
 
 /// Initialize Event & variable formalisms.
-void InitializeEVMs(exprman* em, List <msr_func> *);
+// void InitializeEVMs(exprman* em, List <msr_func> *);
 
 #endif

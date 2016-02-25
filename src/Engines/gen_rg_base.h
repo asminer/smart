@@ -24,7 +24,7 @@ protected:
   static named_msg report;
   static named_msg debug;
   static int remove_vanishing;
-  friend void InitializeProcGen(exprman* em);
+  friend class init_procgen;
 public:
   static const int BY_PATH = 0;
   static const int BY_SUBGRAPH = 1;
@@ -54,6 +54,6 @@ public:
 
   @param  em      Expression manager.
 */
-void InitializeProcGen(exprman* em);
+// void InitializeProcGen(exprman* em);
 
 #endif

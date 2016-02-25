@@ -7,7 +7,8 @@
 
 AC_PREREQ(2.59)
 AC_INIT([smartpack], [3.2], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
-AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests])
+# AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests])
+AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR([src/README.txt])
 AC_CONFIG_MACRO_DIR([m4])
@@ -115,21 +116,26 @@ AC_SUBST(IS_LIBRARY)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 src/include/Makefile
-                 src/Streams/Makefile
-                 src/Options/Makefile
-                 src/ExprLib/Makefile
-                 src/SymTabs/Makefile
-                 src/Modules/Makefile
-                 src/Formlsms/Makefile
-                 src/Engines/Makefile
-                 src/FuncLib/Makefile
-                 src/ParseSM/Makefile
-                 src/ParseICP/Makefile
-                 src/TestApps/Makefile
-                 src/Apps/Makefile
                  Tests/Makefile
                  ])
+
+# AC_CONFIG_FILES([Makefile
+                 # src/Makefile
+                 # src/include/Makefile
+                 # src/Streams/Makefile
+                 # src/Options/Makefile
+                 # src/ExprLib/Makefile
+                 # src/SymTabs/Makefile
+                 # src/Modules/Makefile
+                 # src/Formlsms/Makefile
+                 # src/Engines/Makefile
+                 # src/FuncLib/Makefile
+                 # src/ParseSM/Makefile
+                 # src/ParseICP/Makefile
+                 # src/TestApps/Makefile
+                 # src/Apps/Makefile
+                 # Tests/Makefile
+                 # ])
 
 
 AC_OUTPUT

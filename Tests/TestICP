@@ -122,7 +122,7 @@ done
 # Run program 
 #
 MACHINE="`gcc -dumpmachine`"
-ICP="`pwd`/../src/Apps/icp"
+ICP="`pwd`/../src/icp"
 TESTDIR="`pwd`"
 if [ ! -f $ICP ]; then
     printf "ICP executable not found: $ICP\n"

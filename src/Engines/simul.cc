@@ -10,6 +10,7 @@
 
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
@@ -106,10 +107,10 @@ public:
   inline double GetPrecision() const { return Precision; }
   inline int GetType() const { return Type; }
 
-  friend void InitializeSimEngines(exprman* em);
   friend void PrintSimLibraryVersions(OutputStream &s);
   friend class jump_distance_option;
   friend class seed_rng_option;
+  friend class init_simul;
 };
 
 rng_manager* sim_engine::rngm = 0;
@@ -153,7 +154,7 @@ public:
   // Provide in derived classes:
   virtual sim_experiment* MakeExperiment(expr* e, traverse_data &x) const = 0;
 
-  friend void InitializeSimEngines(exprman* em);
+  friend class init_simul;
 };
 
 named_msg monte_carlo_engine::report;
@@ -371,18 +372,33 @@ option::error seed_rng_option::GetValue(long &v) const
   return Success;
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeSimEngines(exprman* em)
+class init_simul : public initializer {
+  public:
+    init_simul();
+    virtual bool execute();
+};
+init_simul the_simul_initializer;
+
+init_simul::init_simul() : initializer("init_simul")
+{
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_simul::execute()
 {
   //
   // Simulation options
   //
-  DCASSERT(em);
+  if (0==em) return false;
 
   sim_engine::Samples = 100000;
   em->addOption(
@@ -474,5 +490,7 @@ void InitializeSimEngines(exprman* em)
   // Register libraries
   //
   em->registerLibrary(  new rng_lib(sim_engine::rngm)  );
+
+  return true;
 }
 

@@ -16,6 +16,6 @@ class exprman;
     Nice, minimalist front-end.
       @param  em  The expression manager to use.
 */
-void InitStringType(exprman* em);
+// void InitStringType(exprman* em);
 
 #endif

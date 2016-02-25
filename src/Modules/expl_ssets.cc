@@ -1,6 +1,7 @@
 
 // $Id$
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Formlsms/graph_llm.h"
@@ -178,17 +179,32 @@ const char* intset_lib::getVersionString() const
 
 intset_lib intset_lib_data;
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitExplStatesets(exprman* em)
+class init_explssets : public initializer {
+  public:
+    init_explssets();
+    virtual bool execute();
+};
+init_explssets the_explsset_initializer;
+
+init_explssets::init_explssets() : initializer("init_explssets")
 {
-  if (0==em)  return;
+  usesResource("em");
+}
+
+bool init_explssets::execute()
+{
+  if (0==em)  return false;
   
   // Library registry
   em->registerLibrary(  &intset_lib_data );
+  return true;
 }
 

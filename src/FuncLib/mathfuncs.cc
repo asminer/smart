@@ -4,6 +4,7 @@
 #define MATHFUNCS_DETAILED
 #include "mathfuncs.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/intervals.h"
 #include "../SymTabs/symtabs.h"
@@ -998,14 +999,29 @@ void irorder_si::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
+class init_mathfuncs : public initializer {
+  public:
+    init_mathfuncs();
+    virtual bool execute();
+};
+init_mathfuncs the_mathfunc_initializer;
 
-void AddMathFunctions(symbol_table* st, const exprman* em)
+init_mathfuncs::init_mathfuncs() : initializer("init_mathfuncs")
 {
-  if (0==st || 0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("types");
+}
+
+bool init_mathfuncs::execute()
+{
+  if (0==st || 0==em)  return false;
 
   static intdiv_si  the_intdiv;           st->AddSymbol(  &the_intdiv );
   static pow_si     the_pow;              st->AddSymbol(  &the_pow    );
@@ -1018,4 +1034,6 @@ void AddMathFunctions(symbol_table* st, const exprman* em)
   static rmin_si    the_rmin;             st->AddSymbol(  &the_rmin   );
   static irorder_si the_iorder(em->INT);  st->AddSymbol(  &the_iorder );
   static irorder_si the_rorder(em->REAL); st->AddSymbol(  &the_rorder );
+
+  return true;
 }

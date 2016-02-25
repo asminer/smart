@@ -46,7 +46,7 @@ public:
   inline void copyFuncsToArray(const symbol** list) const {
     if (funcs)  funcs->CopyToArray(list);
   }
-  void addCommonFuncs(List <msr_func> *cfl);
+  void addCommonFuncs(List <msr_func> &cfl);
 
 
   // Formalism-specific identifiers

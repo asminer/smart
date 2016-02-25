@@ -15,5 +15,5 @@ class symbol_table;
 
 /** Initialize stochastic types and functions.
 */
-void InitStochastic(exprman* em, symbol_table* st);
+// void InitStochastic(exprman* em, symbol_table* st);
 

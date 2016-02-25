@@ -2,6 +2,7 @@
 // $Id$
 
 #include "ctl_msr.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
 #include "graph_llm.h"
@@ -147,7 +148,7 @@ protected:
 private:
   static engtype* ProcGen;
  
-  friend void InitCTLMeasureFuncs(symbol_table*, exprman*, List <msr_func> *);
+  friend class init_ctlmsrs;
 
   bool reverse_time;
 
@@ -814,12 +815,32 @@ void num_paths::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
+class init_ctlmsrs : public initializer {
+  public:
+    init_ctlmsrs();
+    virtual bool execute();
+};
+init_ctlmsrs the_ctlmsr_initializer;
+
+init_ctlmsrs::init_ctlmsrs() : initializer("init_ctlmsrs")
 {
+  usesResource("em");
+  usesResource("st");
+  usesResource("statesettype");
+  usesResource("biginttype");
+  buildsResource("CML");
+}
+
+bool init_ctlmsrs::execute()
+{
+  if (0==em) return false;
+
   //
   // CTL help topic
   //
@@ -831,6 +852,7 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
   if (st) st->AddSymbol(ctl_help);
 
   CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
+  DCASSERT(CTL_engine::ProcGen);
 
   //
   // Declare function variables
@@ -904,26 +926,25 @@ void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *common)
   //
   // Add functions to measure table
   //
-  if (0==common) return;
+  CML.Append(the_EX_si);
+  CML.Append(the_EY_si);
+  CML.Append(the_EF_si);
+  CML.Append(the_EP_si);
+  CML.Append(the_EU_si);
+  CML.Append(the_ES_si);
+  CML.Append(the_EG_si);
+  CML.Append(the_EH_si);
 
-  common->Append(the_EX_si);
-  common->Append(the_EY_si);
-  common->Append(the_EF_si);
-  common->Append(the_EP_si);
-  common->Append(the_EU_si);
-  common->Append(the_ES_si);
-  common->Append(the_EG_si);
-  common->Append(the_EH_si);
+  CML.Append(the_AX_si);
+  CML.Append(the_AY_si);
+  CML.Append(the_AF_si);
+  CML.Append(the_AP_si);
+  CML.Append(the_AU_si);
+  CML.Append(the_AS_si);
+  CML.Append(the_AG_si);
+  CML.Append(the_AH_si);
 
-  common->Append(the_AX_si);
-  common->Append(the_AY_si);
-  common->Append(the_AF_si);
-  common->Append(the_AP_si);
-  common->Append(the_AU_si);
-  common->Append(the_AS_si);
-  common->Append(the_AG_si);
-  common->Append(the_AH_si);
-
-  common->Append(the_AEF_si);
-  common->Append(the_num_paths);
+  CML.Append(the_AEF_si);
+  CML.Append(the_num_paths);
+  return true;
 }

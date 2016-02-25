@@ -13,7 +13,7 @@
 class symbol_table;
 class exprman;
 
-void AddHelpTopics(symbol_table* st, const exprman* em);
+// void AddHelpTopics(symbol_table* st, const exprman* em);
 
 #endif
 

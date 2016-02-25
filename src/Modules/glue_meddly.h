@@ -173,8 +173,7 @@ protected:
   /// Name, used for reporting.
   const char* name;
   static bool image_star_uses_saturation;
-  friend
-  void InitMEDDLy(exprman* em);
+  friend class init_meddly;
 public:
   /// Simple constructor.
   meddly_encoder(const char* n, MEDDLY::forest *f);
@@ -296,7 +295,9 @@ public:
 // *                                                                        *
 // **************************************************************************
 
-void InitMEDDLy(exprman* em);
+// void InitMEDDLy(exprman* em);
+//
+// TBD! move some of this to rgr_meddly
 
 #endif
 

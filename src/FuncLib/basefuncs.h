@@ -14,7 +14,7 @@
 class symbol_table;
 class exprman;
 
-void AddBaseFunctions(symbol_table* st, const exprman* em);
+// void AddBaseFunctions(symbol_table* st, const exprman* em);
 
 #endif
 

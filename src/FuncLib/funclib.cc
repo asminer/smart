@@ -15,7 +15,7 @@
 // *                                                                *
 // ******************************************************************
 
-
+/*
 void AddFunctions(symbol_table* st, const exprman* em, const char** env, const char* version)
 {
   if (0==st)  return;
@@ -26,3 +26,5 @@ void AddFunctions(symbol_table* st, const exprman* em, const char** env, const c
   AddIOFunctions(st, em);
   AddSysFunctions(st, em, env, version);
 }
+
+*/

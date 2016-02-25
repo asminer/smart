@@ -13,7 +13,7 @@
 class symbol_table;
 class exprman;
 
-void AddMathFunctions(symbol_table* st, const exprman* em);
+// void AddMathFunctions(symbol_table* st, const exprman* em);
 
 #ifdef MATHFUNCS_DETAILED
 

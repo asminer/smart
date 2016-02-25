@@ -8,6 +8,6 @@
 
 class exprman;
 
-void InitializeExplicitMeddly(exprman* em);
+// void InitializeExplicitMeddly(exprman* em);
 
 #endif

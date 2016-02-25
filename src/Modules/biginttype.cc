@@ -2,6 +2,7 @@
 // $Id$
 
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/casting.h"
 #include "../ExprLib/binary.h"
@@ -2092,14 +2093,29 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 // *                                                                *
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitBigintType(exprman* em, symbol_table* st)
+class init_bigints : public initializer {
+  public:
+    init_bigints();
+    virtual bool execute();
+};
+init_bigints the_bigint_initializer;
+
+init_bigints::init_bigints() : initializer("init_bigints")
 {
-  if (0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  buildsResource("biginttype");
+  buildsResource("types");
+}
+
+bool init_bigints::execute()
+{
+  if (0==em)  return false;
   
   // Library registry
 #ifdef HAVE_LIBGMP
@@ -2130,9 +2146,11 @@ void InitBigintType(exprman* em, symbol_table* st)
   em->registerOperation(  new bigint_lt_op      );
   em->registerOperation(  new bigint_le_op      );
 
-  if (0==st) return;
+  if (0==st) return true;
 
   // Functions
   st->AddSymbol(  new bigintdiv_si  );
+
+  return true;
 }
 

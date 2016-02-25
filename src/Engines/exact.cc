@@ -3,6 +3,7 @@
 
 #include "exact.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_inst.h"
@@ -31,7 +32,7 @@ protected:
   static named_msg eng_debug;
   static named_msg eng_report;
   static engtype* ProcessGeneration;
-  friend void InitializeExactSolutionEngines(exprman* em);
+  friend class init_exactengines;
 public:
   exact_mcmsr();
   virtual bool AppliesToModelType(hldsm::model_type) const;
@@ -979,15 +980,30 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeExactSolutionEngines(exprman* em)
+class init_exactengines : public initializer {
+  public:
+    init_exactengines();
+    virtual bool execute();
+};
+init_exactengines the_exactengine_initializer;
+
+init_exactengines::init_exactengines() : initializer("init_exactengines")
 {
-  if (0==em)  return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_exactengines::execute()
+{
+  if (0==em)  return false;
 
   option* debug = em->findOption("Debug");
   exact_mcmsr::eng_debug.Initialize(debug,
@@ -1015,5 +1031,7 @@ void InitializeExactSolutionEngines(exprman* em)
   RegisterEngine(em, "VarPh", exact, desc, &the_exact_ph_var);
 
   exact_mcmsr::ProcessGeneration = em->findEngineType("ProcessGeneration");
+
+  return true;
 }
 

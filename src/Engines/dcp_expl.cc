@@ -4,6 +4,7 @@
 #include "dcp_expl.h"
 
 #include "../Streams/streams.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
@@ -86,7 +87,7 @@ class icp_stategen : public subengine {
 protected:
   static named_msg report;
   static named_msg debug;
-  friend void InitializeDCPEngines(exprman* em);
+  friend class init_dcpengines;
 public:
   icp_stategen();
   virtual~ icp_stategen();
@@ -261,7 +262,7 @@ void icp_stategen::Generate_NE_rec(int k)
 // abstract base class for min, max, sat engines
 class icp_ss_analyzer : public subengine {
   static engtype* SSGen;
-  friend void InitializeDCPEngines(exprman* em);
+  friend class init_dcpengines;
 public:
   icp_ss_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -507,15 +508,30 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
   delete[] current;
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeDCPEngines(exprman* em)
+class init_dcpengines : public initializer {
+  public:
+    init_dcpengines();
+    virtual bool execute();
+};
+init_dcpengines the_dcpengine_initializer;
+
+init_dcpengines::init_dcpengines() : initializer("init_dcpengines")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_dcpengines::execute()
+{
+  if (0==em) return false;
 
   // Initialize libraries
   static icp_state_lib state_lib_data;
@@ -565,6 +581,8 @@ void InitializeDCPEngines(exprman* em)
       "Generates assignments satisfying constraints, explicitly, then checks them all until the expression is satisfied",
       &the_icp_satisfiable
   );
+
+  return true;
 }
 
 

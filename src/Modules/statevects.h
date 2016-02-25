@@ -151,7 +151,7 @@ private:
   static const int FULL = 0;
   static const int SINDEX = 1;
   static const int SSTATE = 2;
-  friend void InitStatevects(exprman* em, symbol_table* st);
+  friend class init_statevects;
   friend class statevect_printer;
 };
 
@@ -218,6 +218,6 @@ class statemsrs : public statevect {
       @param  st  Symbol table to add any statevects functions.
                   If 0, functions will not be added.
 */
-void InitStatevects(exprman* em, symbol_table* st);
+// void InitStatevects(exprman* em, symbol_table* st);
 
 #endif

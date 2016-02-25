@@ -3,6 +3,7 @@
 
 #include "stochtypes.h"
 #include "../SymTabs/symtabs.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/engine.h"
@@ -3213,18 +3214,34 @@ phint2randreal::phint2randreal() : specific_conv(false)
 // ******************************************************************
 // *                                                                *
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitStochastic(exprman* em, symbol_table* st)
-{
-  if (0==em) return;
+class init_stochtypes : public initializer {
+  public:
+    init_stochtypes();
+    virtual bool execute();
+};
+init_stochtypes the_stochtype_initializer;
 
-  DCASSERT(em->BOOL);
-  DCASSERT(em->INT);
-  DCASSERT(em->REAL);
+
+init_stochtypes::init_stochtypes() : initializer("init_stochtypes")
+{
+  usesResource("em");
+  usesResource("st");
+  buildsResource("stochtypes");
+  buildsResource("types");
+}
+
+bool init_stochtypes::execute()
+{
+  if (0==em)        return false;
+  if (0==st)        return false;
+  if (0==em->BOOL)  return false;
+  if (0==em->INT)   return false;
+  if (0==em->REAL)  return false;
 
   simple_type* t_expo  = new simple_type("expo", "Exponential distribution", "Special type for the exponential distribution.");
   type* t_proc_expo  = newProcType("proc expo", t_expo);
@@ -3345,4 +3362,6 @@ void InitStochastic(exprman* em, symbol_table* st)
   st->AddSymbol( new print_ddist(t_ph_int)                    );
   st->AddSymbol( new print_cdist(t_ph_real)                   );
 
+  return true;
 }
+

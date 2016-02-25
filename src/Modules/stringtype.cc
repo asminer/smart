@@ -3,6 +3,7 @@
 
 #include "stringtype.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/strings.h"
 #include "../ExprLib/binary.h"
@@ -741,14 +742,29 @@ binary* string_le_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
 // ******************************************************************
 // *                                                                *
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitStringType(exprman* em)
+class init_strings : public initializer {
+  public:
+    init_strings();
+    virtual bool execute();
+};
+init_strings the_string_initializer;
+
+init_strings::init_strings() : initializer("init_strings")
 {
-  if (0==em)  return;
+  usesResource("em");
+  buildsResource("stringtype");
+  buildsResource("types");
+}
+
+bool init_strings::execute()
+{
+  if (0==em)  return false;
+
   em->registerType(  new string_type  );
   em->setFundamentalTypes();
 
@@ -759,5 +775,7 @@ void InitStringType(exprman* em)
   em->registerOperation(  new string_ge_op    );
   em->registerOperation(  new string_lt_op    );
   em->registerOperation(  new string_le_op    );
+
+  return true;
 }
 

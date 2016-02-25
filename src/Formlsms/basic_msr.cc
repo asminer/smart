@@ -1,6 +1,7 @@
 
 // $Id$
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
@@ -928,41 +929,60 @@ void writedot_si::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common)
+class init_basicmsrs : public initializer {
+  public:
+    init_basicmsrs();
+    virtual bool execute();
+};
+init_basicmsrs the_basicmsr_initializer;
+
+init_basicmsrs::init_basicmsrs() : initializer("init_basicmsrs")
 {
-  if (0==common)  return;
+  usesResource("em");
+  usesResource("procgen");
+  usesResource("stringtype");
+  usesResource("biginttype");
+  buildsResource("CML");
+}
+
+bool init_basicmsrs::execute()
+{
+  if (0==em) return false;
 
   // Process or model properties
-  common->Append(new numstates_si);
-  common->Append(new numarcs_si);
-  common->Append(new numclasses_si);
-  common->Append(new numlevels_si);
-  common->Append(new numevents_si);
-  common->Append(new numvars_si);
+  CML.Append(new numstates_si);
+  CML.Append(new numarcs_si);
+  CML.Append(new numclasses_si);
+  CML.Append(new numlevels_si);
+  CML.Append(new numevents_si);
+  CML.Append(new numvars_si);
 
   // Process or model display
-  common->Append(new showstates_si);
-  common->Append(new showarcs_si);
-  common->Append(new showproc_si);
-  common->Append(new showclasses_si);
-  common->Append(new showlevels_si);
-  common->Append(new showevents_si);
-  common->Append(new showvars_si);
+  CML.Append(new showstates_si);
+  CML.Append(new showarcs_si);
+  CML.Append(new showproc_si);
+  CML.Append(new showclasses_si);
+  CML.Append(new showlevels_si);
+  CML.Append(new showevents_si);
+  CML.Append(new showvars_si);
 
   // Statesets
-  common->Append(new initial_si);
-  common->Append(new reachable_si);
-  common->Append(new potential_si);
+  CML.Append(new initial_si);
+  CML.Append(new reachable_si);
+  CML.Append(new potential_si);
 
   // Miscellaneous
-  common->Append(new writedot_si);
+  CML.Append(new writedot_si);
 
   // Engine types
   proc_noengine::ProcGen = em->findEngineType("ProcessGeneration");
+  return proc_noengine::ProcGen;
 }
 
 

@@ -131,7 +131,7 @@ done
 # Run program 
 #
 MACHINE="`gcc -dumpmachine`"
-SMART="`pwd`/../src/Apps/smart"
+SMART="`pwd`/../src/smart"
 TESTDIR="`pwd`"
 REDIRECT=`MakeRedirectString "error"; MakeRedirectString "warning"; MakeRedirectString "output"`
 if [ ! -f $SMART ]; then

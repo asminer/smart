@@ -11,7 +11,7 @@
 class exprman;
 
 /// Should be called BEFORE any other Meddly-based initializer
-void InitializeProcGenMeddly(exprman* em);
+// void InitializeProcGenMeddly(exprman* em);
 
 #ifndef INITIALIZERS_ONLY
 
@@ -118,7 +118,7 @@ class meddly_varoption {
   // Meddly variables: named?
   static bool vars_named;
 
-  friend void InitializeProcGenMeddly(exprman* em);
+  friend class init_genmeddly;
 private:
   meddly_encoder* mxd_wrap;
   const dsde_hlm &parent;
@@ -259,8 +259,7 @@ class meddly_procgen : public process_generator {
   static const int OPTIMISTIC   = 1;
   static const int PESSIMISTIC  = 2;
 
-  friend radio_button** makeNDPButtons(int &num_buttons);
-  friend void InitializeProcGenMeddly(exprman* em);
+  friend class init_genmeddly;
 public:
   meddly_procgen();
   virtual ~meddly_procgen();

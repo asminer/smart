@@ -208,7 +208,7 @@ public:
         virtual bool Print(OutputStream &s, int width) const;
         virtual bool Equals(const shared_object* o) const;
 
-        friend void InitializeStateLLM(exprman* em);
+        friend class init_statellm;
         friend class state_lldsm;   // overkill
     };
     // ------------------------------------------------------------
@@ -295,7 +295,7 @@ public:
     static long max_state_display;
     static int int_display_order;
 
-    friend void InitializeStateLLM(exprman* em);
+    friend class init_statellm;
 
 };
 
@@ -307,7 +307,7 @@ public:
 // *                                                                        *
 // **************************************************************************
 
-void InitializeStateLLM(exprman* em);
+// void InitializeStateLLM(exprman* em);
 
 #endif
 

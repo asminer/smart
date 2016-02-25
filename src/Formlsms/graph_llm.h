@@ -224,7 +224,7 @@ public:
       static void showError(const char* str);
       stateset* notImplemented(const char* op) const;
       stateset* incompatibleOperand(const char* op) const;
-      friend void InitializeGraphLLM(exprman* em);
+      friend class init_graphllm;
       friend class graph_lldsm; // overkill
     };
     // ------------------------------------------------------------
@@ -374,7 +374,7 @@ private:
   static int graph_display_style;
   static bool display_graph_node_names;
 
-  friend void InitializeGraphLLM(exprman* em);
+  friend class init_graphllm;
 };
 
 #endif // INITIALIZERS_ONLY
@@ -385,7 +385,7 @@ private:
 // *                                                                        *
 // **************************************************************************
 
-void InitializeGraphLLM(exprman* em);
+// void InitializeGraphLLM(exprman* em);
 
 #endif
 

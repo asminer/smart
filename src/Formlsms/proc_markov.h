@@ -77,7 +77,7 @@ class markov_process : public stochastic_lldsm::process {
     void startRevTransReport(timer& w, double t) const;
     void stopRevTransReport(timer& w, long iters) const;
 
-    friend void InitializeMarkovProc(exprman* em);
+    friend class init_markovproc;
 };
 
 #endif  // INITIALIZERS ONLY
@@ -88,6 +88,6 @@ class markov_process : public stochastic_lldsm::process {
 // *                                                                        *
 // **************************************************************************
 
-void InitializeMarkovProc(exprman* em);
+// void InitializeMarkovProc(exprman* em);
 
 #endif
