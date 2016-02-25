@@ -19,8 +19,8 @@ class exprman;
 
 typedef unsigned char  modifier;
 
-const modifier   DETERM = 0;
-const modifier   PHASE = 1;
+const modifier  DETERM = 0;
+const modifier  PHASE = 1;
 const modifier  RAND  = 2;
 const modifier  ANY_MODIFIER = 254;
 const modifier  NO_SUCH_MODIFIER = 255;

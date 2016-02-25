@@ -13,6 +13,107 @@
 #include "casting.h"
 
 #include "../Options/options.h"
+#include "../include/heap.h"
+
+// #define DEBUG_TYPE_SORTING
+
+// ******************************************************************
+
+// for ordering types
+
+int Compare(type *a, type* b)
+{
+  if (0==a && 0==b) return 0;
+  if (0==a)         return -1;
+  if (0==b)         return 1;
+
+  //
+  // Determine base types
+  //
+
+  DCASSERT(a);
+  DCASSERT(b);
+
+  const simple_type* basea = a->getBaseType();
+  const simple_type* baseb = b->getBaseType();
+
+  //
+  // Freaky types go first
+  //
+  if (0==basea && 0==baseb) {
+    return strcmp(a->getName(), b->getName());
+  }
+  if (0==basea) return -1;
+  if (0==baseb) return 1;
+
+  //
+  // a and b are both sane types
+  //
+
+  DCASSERT(basea);
+  DCASSERT(baseb);
+
+  //
+  // Check for void types next
+  // 
+
+  if (basea->isVoid() && baseb->isVoid()) {
+    int c = strcmp(basea->getName(), baseb->getName());
+    if (c) return c;
+    // equal, compare set or not
+    int aset = a->isASet() ? 1 : 0;
+    int bset = b->isASet() ? 1 : 0;
+    return aset - bset;
+  }
+  if (basea->isVoid())  return -1;
+  if (baseb->isVoid())  return 1;
+
+  //
+  // Now check for formalisms, they go last
+  //
+  if (basea->isAFormalism() && baseb->isAFormalism()) {
+    DCASSERT(a==basea);
+    DCASSERT(b==baseb);
+    return strcmp(a->getName(), b->getName());
+  }
+  if (basea->isAFormalism())  return 1;
+  if (baseb->isAFormalism())  return -1;
+
+  //
+  // Types that might have proc/ph/sets are left,
+  // sort first by base type name, then modifiers.
+  //
+  int c = strcmp(basea->getName(), baseb->getName());
+  if (c) return c;
+
+  //
+  // Same base type, sort on modifiers
+  //
+
+  //
+  // Score based as follows.
+  //
+  //   set adds 8
+  //  proc adds 4
+  //  rand adds 2
+  //    ph adds 1
+  //
+
+  int ascore = a->getModifier();
+  DCASSERT(ascore >= 0);
+  DCASSERT(ascore < 3);
+  if (a->hasProc()) ascore += 4;
+  if (a->isASet())  ascore += 8;
+
+  int bscore = b->getModifier();
+  DCASSERT(bscore >= 0);
+  DCASSERT(bscore < 3);
+  if (b->hasProc()) bscore += 4;
+  if (b->isASet())  bscore += 8;
+
+  return ascore - bscore;
+  
+}
 
 // ******************************************************************
 // *                                                                *
@@ -125,6 +226,23 @@ void superman::finalize()
   // finalize option list
   if (om) om->DoneAddingOptions();
   is_finalized = true;
+
+#ifdef DEBUG_TYPE_SORTING
+  fprintf(stderr, "Original type list:\n");
+  for (int i=0; i<last_type; i++) {
+    fprintf(stderr, "    %s\n", reg_type[i]->getName());
+  }
+#endif
+  HeapOfPointers <type> HEAP(reg_type, last_type);
+  HEAP.Sort();
+  reg_type = HEAP.MakeArray();
+  alloc_types = last_type;
+#ifdef DEBUG_TYPE_SORTING
+  fprintf(stderr, "Sorted type list:\n");
+  for (int i=0; i<last_type; i++) {
+    fprintf(stderr, "    %s\n", reg_type[i]->getName());
+  }
+#endif
 }
 
 //  
