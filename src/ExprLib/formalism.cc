@@ -17,11 +17,10 @@ formalism::~formalism()
   delete idents;
 }
 
-void formalism::addCommonFuncs(List <msr_func> *cfl)
+void formalism::addCommonFuncs(List <msr_func> &cfl)
 {
-  if (0==cfl) return;
-  for (int i=0; i<cfl->Length(); i++) {
-    msr_func* mf = cfl->Item(i);
+  for (int i=0; i<cfl.Length(); i++) {
+    msr_func* mf = cfl.Item(i);
     switch (mf->getEngClass()) {
       case msr_func::CTL:
         if (!includeCTL())  continue;

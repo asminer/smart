@@ -3,6 +3,7 @@
 
 #include <limits.h>
 #include "pn_form.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../Options/options.h"
 #include "../ExprLib/formalism.h"
@@ -430,7 +431,7 @@ protected:
   static const int SPARSE  = 2;
   static const int VECTOR  = 3;
 
-  friend void InitializePetriNets(exprman* em, List <msr_func> *);
+  friend class init_pnform;
 public:
   petri_hlm(const model_instance* s, place_sv** P, int np, model_event** T, int nt);
   virtual ~petri_hlm();
@@ -566,7 +567,7 @@ class petri_def : public dsde_def {
   static named_msg zero_init;
   static named_msg zero_bound;
 
-  friend void InitializePetriNets(exprman* em, List <msr_func> *);
+  friend class init_pnform;
 
   int weight_class;
 public:
@@ -2203,14 +2204,32 @@ void pn_transitions::Compute(traverse_data &x, expr** pass, int np)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializePetriNets(exprman* em, List <msr_func> *common)
+class init_pnform : public initializer {
+  public:
+    init_pnform();
+    virtual bool execute();
+};
+init_pnform the_pnform_initializer;
+
+init_pnform::init_pnform() : initializer("init_pnform")
 {
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
+}
+
+bool init_pnform::execute()
+{
+  if (0==em) return false;
+
   // misc. static vars
   result one(1L);
   petri_def::ONE = em->makeLiteral(0, -1, em->INT->addProc(), one);
@@ -2331,7 +2350,7 @@ void InitializePetriNets(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register pn type";
       em->stopIO();
     }
-    return;
+    return false;
   }
 
   // set up and register place types
@@ -2378,6 +2397,8 @@ void InitializePetriNets(exprman* em, List <msr_func> *common)
   Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
 
   pn->setFunctions(pnsyms); 
-  pn->addCommonFuncs(common);
+  pn->addCommonFuncs(CML);
+
+  return true;
 }
 

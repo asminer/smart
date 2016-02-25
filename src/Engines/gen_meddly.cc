@@ -5,6 +5,7 @@
 
 #include "../Options/options.h"
 
+#include "../ExprLib/startup.h"
 #include "../Modules/glue_meddly.h"
 #include "../Modules/expl_states.h"
 #include "../Formlsms/dsde_hlm.h"
@@ -1983,39 +1984,34 @@ meddly_procgen::buildRSSPolicies() const
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-radio_button** makeNDPButtons(int &num_buttons)
+class init_genmeddly : public initializer {
+  public:
+    init_genmeddly();
+    virtual bool execute();
+
+  private:
+    radio_button** makeNDPButtons(int &num_buttons);
+};
+init_genmeddly the_genmeddly_initializer;
+
+init_genmeddly::init_genmeddly() : initializer("init_genmeddly")
 {
-  num_buttons = 3;
-  radio_button** ndps = new radio_button*[num_buttons];
-  ndps[meddly_procgen::NEVER] = new radio_button(
-    "NEVER",
-    "Never delete nodes; useful for debugging",
-    meddly_procgen::NEVER
-  );
-  ndps[meddly_procgen::OPTIMISTIC] = new radio_button(
-    "OPTIMISTIC",
-    "Nodes are marked for deletion and are recycled once they do not appear in the compute table; useful when nodes are likely to be re-used",
-    meddly_procgen::OPTIMISTIC
-  );
-  ndps[meddly_procgen::PESSIMISTIC] = new radio_button(
-    "PESSIMISTIC",
-    "Nodes are recycled as soon as possible; useful when nodes are unlikely to be re-used, or to reduce memory",
-    meddly_procgen::PESSIMISTIC
-  );
-  return ndps;
+  usesResource("em");
+  usesResource("engtypes");
+  buildsResource("meddlyprocgen");
 }
 
-
-
-void InitializeProcGenMeddly(exprman* em)
+bool init_genmeddly::execute()
 {
-  if (0==em) return;
+  if (0==em) return false;
 
   engtype* rsgen = MakeEngineType(em,
     "MeddlyProcessGeneration",
@@ -2134,5 +2130,30 @@ void InitializeProcGenMeddly(exprman* em)
     )
   );
 
+  return true;
 }
+
+radio_button** init_genmeddly::makeNDPButtons(int &num_buttons)
+{
+  num_buttons = 3;
+  radio_button** ndps = new radio_button*[num_buttons];
+  ndps[meddly_procgen::NEVER] = new radio_button(
+    "NEVER",
+    "Never delete nodes; useful for debugging",
+    meddly_procgen::NEVER
+  );
+  ndps[meddly_procgen::OPTIMISTIC] = new radio_button(
+    "OPTIMISTIC",
+    "Nodes are marked for deletion and are recycled once they do not appear in the compute table; useful when nodes are likely to be re-used",
+    meddly_procgen::OPTIMISTIC
+  );
+  ndps[meddly_procgen::PESSIMISTIC] = new radio_button(
+    "PESSIMISTIC",
+    "Nodes are recycled as soon as possible; useful when nodes are unlikely to be re-used, or to reduce memory",
+    meddly_procgen::PESSIMISTIC
+  );
+  return ndps;
+}
+
+
 

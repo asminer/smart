@@ -6,6 +6,7 @@
 #include "proc_mclib.h"
 #include "enum_hlm.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
@@ -69,7 +70,7 @@ class markov_def : public model_def {
   static named_msg dup_init;
   static named_msg no_init;
   static named_msg dup_arc;
-  friend void InitializeMarkovChains(exprman* em, List <msr_func> *);
+  friend class init_mcform;
 public:
   markov_def(const char* fn, int line, const type* t, bool d, char*n, 
       formal_param **pl, int np);
@@ -745,52 +746,34 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void FillSymbolTable(bool disc, formalism* mc, List <msr_func> *common)
+class init_mcform : public initializer {
+  public:
+    init_mcform();
+    virtual bool execute();
+  private:
+    void FillSymbolTable(bool disc, formalism* mc);
+};
+init_mcform the_mcform_initializer;
+
+init_mcform::init_mcform() : initializer("init_mcform")
 {
-  // Build functions if necessary
-  static symbol*  init = 0;
-  static symbol*  arcs = 0;
-  static symbol*  instate = 0;
-  static symbol*  transient = 0;
-  static symbol*  absorbing = 0;
-  static symbol*  dTTA = 0;
-  static symbol*  cTTA = 0;
-
-  if (!init)      init = new mc_init;
-  if (!arcs)      arcs = new mc_arcs;
-  if (!instate)   instate = new mc_instate;
-  if (!transient) transient = new mc_transient;
-  if (!absorbing) absorbing = new mc_absorbing;
-
-  // Grab functions into a symbol table
-  symbol_table* mcsyms = MakeSymbolTable();
-  mcsyms->AddSymbol(  init      );
-  mcsyms->AddSymbol(  arcs      );
-  mcsyms->AddSymbol(  instate   );
-  mcsyms->AddSymbol(  transient );
-  mcsyms->AddSymbol(  absorbing );
-
-  if (disc) {
-    if (!dTTA)  dTTA = new mc_tta(true);
-    mcsyms->AddSymbol(  dTTA    );
-  } else {
-    if (!cTTA)  cTTA = new mc_tta(false);
-    mcsyms->AddSymbol(  cTTA    );
-  }
-
-  // Set the symbol table
-  mc->setFunctions(mcsyms);
-  mc->addCommonFuncs(common);
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
 }
 
-void InitializeMarkovChains(exprman* em, List <msr_func> *common)
+bool init_mcform::execute()
 {
+  if (0==em) return false;
+
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
@@ -831,7 +814,7 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register dtmc type";
       em->stopIO();
     }
-    return;
+    return false;
   }
   ok = em->registerType(ctmc);
   if (!ok) {
@@ -840,7 +823,7 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register ctmc type";
       em->stopIO();
     }
-    return;
+    return false;
   }
 
   // set up and register state type, if necessary
@@ -855,10 +838,47 @@ void InitializeMarkovChains(exprman* em, List <msr_func> *common)
   DCASSERT(em->findType("{state}"));
 
   // fill symbol tables
-  FillSymbolTable(true,   dtmc, common);
-  FillSymbolTable(false,  ctmc, common);
+  FillSymbolTable(true,   dtmc);
+  FillSymbolTable(false,  ctmc);
 
-  // register libs
-  // InitMCLibs(em);
+  return true;
+}
+
+void init_mcform::FillSymbolTable(bool disc, formalism* mc)
+{
+  // Build functions if necessary
+  static symbol*  init = 0;
+  static symbol*  arcs = 0;
+  static symbol*  instate = 0;
+  static symbol*  transient = 0;
+  static symbol*  absorbing = 0;
+  static symbol*  dTTA = 0;
+  static symbol*  cTTA = 0;
+
+  if (!init)      init = new mc_init;
+  if (!arcs)      arcs = new mc_arcs;
+  if (!instate)   instate = new mc_instate;
+  if (!transient) transient = new mc_transient;
+  if (!absorbing) absorbing = new mc_absorbing;
+
+  // Grab functions into a symbol table
+  symbol_table* mcsyms = MakeSymbolTable();
+  mcsyms->AddSymbol(  init      );
+  mcsyms->AddSymbol(  arcs      );
+  mcsyms->AddSymbol(  instate   );
+  mcsyms->AddSymbol(  transient );
+  mcsyms->AddSymbol(  absorbing );
+
+  if (disc) {
+    if (!dTTA)  dTTA = new mc_tta(true);
+    mcsyms->AddSymbol(  dTTA    );
+  } else {
+    if (!cTTA)  cTTA = new mc_tta(false);
+    mcsyms->AddSymbol(  cTTA    );
+  }
+
+  // Set the symbol table
+  mc->setFunctions(mcsyms);
+  mc->addCommonFuncs(CML);
 }
 

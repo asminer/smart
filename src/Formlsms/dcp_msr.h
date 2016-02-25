@@ -9,6 +9,6 @@
 class exprman;
 class msr_func;
 
-void InitDCPMeasureFuncs(exprman* em, List <msr_func> *common);
+// void InitDCPMeasureFuncs(exprman* em, List <msr_func> *common);
 
 #endif

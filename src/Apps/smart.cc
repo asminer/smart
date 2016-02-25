@@ -32,6 +32,7 @@
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../ParseSM/parse_sm.h"
@@ -40,6 +41,7 @@
 //
 // Mostly we just need to call the initializers
 
+/*
 #define INITIALIZERS_ONLY
 
 #include "../FuncLib/funclib.h"
@@ -78,9 +80,50 @@
 #include "../Engines/gen_meddly.h"
 #include "../Engines/satur_meddly.h"
 #include "../Engines/expl_meddly.h"
+*/
 
+// ============================================================
 
-const char* getVersionString()
+class first_init : public initializer {
+  public:
+    first_init(exprman* em, symbol_table* st, const char** env);
+    virtual bool execute();
+    static const char* getVersionString();
+  private:
+    exprman* hold_em;
+    symbol_table* hold_st;
+    const char** hold_env;
+};
+
+// ============================================================
+
+first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
+ : initializer("first_init")
+{
+  buildsResource("em");
+  buildsResource("st");
+  buildsResource("env");
+  buildsResource("version");
+  hold_em = _em;
+  hold_st = _st;
+  hold_env = _env;
+}
+
+bool first_init::execute()
+{
+  em = hold_em;
+  st = hold_st;
+  env = hold_env;
+  version = getVersionString();
+
+  DCASSERT(em);
+  DCASSERT(st);
+  DCASSERT(env);
+  DCASSERT(version);
+  return true;
+}
+
+const char* first_init::getVersionString()
 {
   static char* version = 0;
   if (0==version) {
@@ -100,6 +143,8 @@ const char* getVersionString()
   return version;
 }
 
+// ============================================================
+
 void InitOptions(option_manager* om)
 {
   if (0==om)  return;
@@ -114,59 +159,61 @@ void InitOptions(option_manager* om)
   );
 }
 
+/*
 void InitModules(exprman* em, symbol_table* st, const char** env)
 {
   // Initialize modules here.
-  InitStochastic(em, st);
-  InitStringType(em);
-  InitBigintType(em, st);
-  InitStatesets(em, st);
-  InitExplStatesets(em);
-  InitMeddlyStatesets(em);
-  InitStatevects(em, st);
-  InitMEDDLy(em);
+//  InitStochastic(em, st);
+//  InitStringType(em);
+//  InitBigintType(em, st);
+//  InitStatesets(em, st);
+//  InitExplStatesets(em);
+//  InitMeddlyStatesets(em);
+//  InitStatevects(em, st);
+//  InitMEDDLy(em);
 
   // Critical engine types here.
-  InitializeProcGen(em);
+//  InitializeProcGen(em);
 
   // Initialize measure functions here.
-  List <msr_func> CML;
-  InitBasicMeasureFuncs(em, &CML);
-  InitCTLMeasureFuncs(st, em, &CML);
-  InitStochMeasureFuncs(em, &CML);
-  InitCSLMeasureFuncs(em, &CML);
+//  List <msr_func> CML;
+//  InitBasicMeasureFuncs(em, &CML);
+//  InitCTLMeasureFuncs(st, em, &CML);
+//  InitStochMeasureFuncs(em, &CML);
+//  InitCSLMeasureFuncs(em, &CML);
 
   // Initialize formalisms here.
-  InitializeStateLLM(em);
-  InitializeGraphLLM(em);
-  InitializeStochasticLLM(em);
-  InitializeMarkovProc(em);
-  InitializeDSDE(em);
-  InitializeFSMs(em, &CML); 
-  InitializeMarkovChains(em, &CML);
-  InitializePetriNets(em, &CML);
-  InitializeEVMs(em, &CML);
-  InitializeTAMs(em, &CML);
+//  InitializeStateLLM(em);
+//  InitializeGraphLLM(em);
+//  InitializeStochasticLLM(em);
+//  InitializeMarkovProc(em);
+//  InitializeDSDE(em);
+//  InitializeFSMs(em, &CML); 
+//  InitializeMarkovChains(em, &CML);
+//  InitializePetriNets(em, &CML);
+//  InitializeEVMs(em, &CML);
+//  InitializeTAMs(em, &CML);
 
   // Builtin function initialization
-  AddFunctions(st, em, env, getVersionString());
+//  AddFunctions(st, em, env, getVersionString());
 
   // Initialize engines here.
-  InitializeExactSolutionEngines(em);
-  InitializeExplicitAsynchGenerators(em);
-  InitializeExplicitPhaseGenerators(em);
-  InitializeExplicitCSLEngines(em);
-  InitializeProcGenMeddly(em);
-  InitializeSaturationMeddly(em);
-  InitializeExplicitMeddly(em);
+//  InitializeExactSolutionEngines(em);
+//  InitializeExplicitAsynchGenerators(em);
+//  InitializeExplicitPhaseGenerators(em);
+//  InitializeExplicitCSLEngines(em);
+//  InitializeProcGenMeddly(em);
+//  InitializeSaturationMeddly(em);
+//  InitializeExplicitMeddly(em);
   InitializeSimEngines(em);
 }
+*/
 
 int Usage(exprman* em)
 {
   if (0==em) return 1;
   DisplayStream& cout = em->cout();
-  cout << "\n" << getVersionString() << "\n";
+  cout << "\n" << first_init::getVersionString() << "\n";
   cout << "\nSupporting libraries:\n";
   em->printLibraryVersions(cout);
   cout << "\n";
@@ -186,7 +233,7 @@ int Copyrights(exprman* em)
   doc_formatter* df = MakeTextFormatter(80, em->cout());
   df->Out() << "\n";
   df->begin_heading();
-  df->Out() << getVersionString();
+  df->Out() << first_init::getVersionString();
   df->end_heading();
   df->begin_indent();
   df->begin_description(15);
@@ -293,7 +340,17 @@ int main(int argc, const char** argv, const char** env)
   // Start the symbol table for builtin functions
   symbol_table* st = MakeSymbolTable(); 
 
-  InitModules(em, st, env);
+  // Bootstrap initializers, and run them
+  first_init the_first_init(em, st, env);
+  if ( ! initializer::executeAll() ) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->cerr() << "Deadlock in initializers";
+      em->stopIO();
+    }
+    return -1;
+  }
+
+  // InitModules(em, st, env);
 
   // Parser initialization
   parse_module pm(em);

@@ -3,6 +3,7 @@
 
 #include "basefuncs.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
@@ -608,14 +609,29 @@ int case_ci::Substitute(traverse_data &x, expr** pass, int np) const
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
+class init_basefuncs : public initializer {
+  public:
+    init_basefuncs();
+    virtual bool execute();
+};
+init_basefuncs the_basefunc_initializer;
 
-void AddBaseFunctions(symbol_table* st, const exprman* em)
+init_basefuncs::init_basefuncs() : initializer("init_basefuncs")
 {
-  if (0==st || 0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("types");
+}
+
+bool init_basefuncs::execute()
+{
+  if (0==st || 0==em)  return false;
 
   st->AddSymbol(  new delete_si   );
   st->AddSymbol(  new substr_si   );
@@ -623,4 +639,6 @@ void AddBaseFunctions(symbol_table* st, const exprman* em)
   st->AddSymbol(  new compute     );
   st->AddSymbol(  new cond_ci     );
   st->AddSymbol(  new case_ci     );
+
+  return true;
 }

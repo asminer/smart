@@ -10,7 +10,7 @@ class exprman;
 class msr_func;
 
 /// Initialize Petri net formalisms.
-void InitializePetriNets(exprman* em, List <msr_func> *);
+// void InitializePetriNets(exprman* em, List <msr_func> *);
 
 #endif
 

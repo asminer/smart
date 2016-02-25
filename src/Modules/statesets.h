@@ -122,7 +122,7 @@ private:
   static exprman* em;
   const state_lldsm* parent;
   static bool print_indexes;
-  friend void InitStatesets(exprman* em, symbol_table* st);
+  friend class init_statesets;
 };
 
 #endif  // INITIALIZERS_ONLY
@@ -139,6 +139,6 @@ private:
       @param  st  Symbol table to add any stateset functions.
                   If 0, functions will not be added.
 */
-void InitStatesets(exprman* em, symbol_table* st);
+// void InitStatesets(exprman* em, symbol_table* st);
 
 #endif

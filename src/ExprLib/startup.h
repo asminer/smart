@@ -43,6 +43,18 @@ class initializer {
     */
     static bool executeAll();
 
+    inline static void setDebugging() {
+      debug = true;
+    }
+
+    inline static bool isDebugging() { 
+      return debug;
+    }
+
+    inline const char* Name() const {
+      return name;
+    }
+
   private:
     // helper for executeAll
     static int executeWaiting();
@@ -61,6 +73,8 @@ class initializer {
     static initializer* completed_list;
     static initializer* failed_list;
 
+    static bool debug;
+
   protected:
     void buildsResource(const char* name);
     void usesResource(const char* name);
@@ -73,7 +87,7 @@ class initializer {
     static symbol_table* st;
     static const char** env;
     static const char* version;
-    static List <msr_func> *CML;
+    static List <msr_func> CML;
 };
 
 #endif

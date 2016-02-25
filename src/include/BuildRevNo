@@ -12,27 +12,28 @@ if [ $# -ne 1 ]; then
 fi
 
 path=$1
+revfile=$path/revision.h
 
 rev=`svn info $path | awk '/Revision/{print $2}'`
 if [ -z "$rev" ]; then
-  if [ -e revision.h ]; then
+  if [ -e $revfile ]; then
     printf "Leaving old revision number\n"
   else
     printf "Using bogus revision number\n";
-    printf "const int REVISION_NUMBER = 0 ;\n" > revision.h
+    printf "const int REVISION_NUMBER = 0 ;\n" > $revfile
   fi
 else
-  if [ -e revision.h ]; then
-    revlast=`awk '{print $5}' revision.h`
+  if [ -e $revfile ]; then
+    revlast=`awk '{print $5}' $revfile`
     if [ "$rev" -eq "$revlast" ]; then
       printf "No revision number change since last build\n";
     else
       printf "Updating revision number to %d\n" $rev
-      printf "const int REVISION_NUMBER = $rev ;\n" > revision.h
+      printf "const int REVISION_NUMBER = $rev ;\n" > $revfile
     fi
   else
     printf "Updating revision number to %d\n" $rev
-    printf "const int REVISION_NUMBER = $rev ;\n" > revision.h
+    printf "const int REVISION_NUMBER = $rev ;\n" > $revfile
   fi
 fi
 

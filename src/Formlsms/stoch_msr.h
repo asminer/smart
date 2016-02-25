@@ -9,6 +9,6 @@
 class exprman;
 class msr_func;
 
-void InitStochMeasureFuncs(exprman* em, List <msr_func> *common);
+// void InitStochMeasureFuncs(exprman* em, List <msr_func> *common);
 
 #endif

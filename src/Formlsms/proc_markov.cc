@@ -3,6 +3,7 @@
 
 #include "proc_markov.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
@@ -230,15 +231,29 @@ public:
   }
 };
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeMarkovProc(exprman* em)
+class init_markovproc : public initializer {
+  public:
+    init_markovproc();
+    virtual bool execute();
+};
+init_markovproc the_markovproc_initializer;
+
+init_markovproc::init_markovproc() : initializer("init_markovproc")
 {
-  if (0==em)  return;
+  usesResource("em");
+}
+
+bool init_markovproc::execute()
+{
+  if (0==em)  return false;
   
   static mc_lib* mcl = 0;
   static ls_lib* lsl = 0;
@@ -256,7 +271,7 @@ void InitializeMarkovProc(exprman* em)
     markov_process::my_timer = new markov_process::reporter(em);
   }
 
-  if (markov_process::lsopts) return;
+  DCASSERT(0==markov_process::lsopts);
 
   markov_process::lsopts = new LS_Options[markov_process::NUM_SOLVERS];
   markov_process::lsopts[markov_process::GAUSS_SEIDEL].method = LS_Gauss_Seidel;
@@ -387,5 +402,6 @@ void InitializeMarkovProc(exprman* em)
     )
   );
   
+  return true;
 }
 

@@ -13,7 +13,7 @@
 class symbol_table;
 class exprman;
 
-void AddIOFunctions(symbol_table* st, const exprman* em);
+// void AddIOFunctions(symbol_table* st, const exprman* em);
 
 #endif
 

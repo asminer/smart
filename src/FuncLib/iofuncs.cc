@@ -3,6 +3,7 @@
 
 #include "iofuncs.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/strings.h"
@@ -650,14 +651,29 @@ void error_file::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
+class init_iofuncs : public initializer {
+  public:
+    init_iofuncs();
+    virtual bool execute();
+};
+init_iofuncs the_iofunc_initializer;
 
-void AddIOFunctions(symbol_table* st, const exprman* em)
+init_iofuncs::init_iofuncs() : initializer("init_iofuncs")
 {
-  if (0==st || 0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("types");
+}
+
+bool init_iofuncs::execute()
+{
+  if (0==st || 0==em)  return false;
 
   st->AddSymbol(  new read_bool     );
   st->AddSymbol(  new read_int      );
@@ -672,6 +688,8 @@ void AddIOFunctions(symbol_table* st, const exprman* em)
   st->AddSymbol(  new report_file   );
   st->AddSymbol(  new warning_file  );
   st->AddSymbol(  new error_file    );
+
+  return true;
 }
 
 

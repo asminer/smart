@@ -2,6 +2,7 @@
 // $Id$
 
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 // #include "../ExprLib/unary.h"
 // #include "../ExprLib/binary.h"
@@ -1299,15 +1300,30 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 // *                                                                *
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
+class init_statevects : public initializer {
+  public:
+    init_statevects();
+    virtual bool execute();
+};
+init_statevects the_statevect_initializer;
 
-void InitStatevects(exprman* em, symbol_table* st)
+init_statevects::init_statevects() : initializer("init_statevects")
 {
-  if (0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("statesettype");
+  buildsResource("statevects");
+  buildsResource("types");
+}
+
+bool init_statevects::execute()
+{
+  if (0==em)  return false;
   
   // Type registry
   // ------------------------------------------------------------------
@@ -1351,7 +1367,7 @@ void InitStatevects(exprman* em, symbol_table* st)
     )
   );
 
-  if (0==st) return;
+  if (0==st) return false;
 
   // Functions
   // ------------------------------------------------------------------
@@ -1364,5 +1380,7 @@ void InitStatevects(exprman* em, symbol_table* st)
   st->AddSymbol(  new prob_si                   );
   st->AddSymbol(  new expected_si(t_stateprobs) );
   st->AddSymbol(  new expected_si(t_statemsrs)  );
+
+  return true;
 }
 

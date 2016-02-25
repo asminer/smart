@@ -2,6 +2,7 @@
 // $Id$
 
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/unary.h"
 #include "../ExprLib/binary.h"
@@ -834,15 +835,30 @@ void empty_si::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 // *                                                                *
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // *                                                                *
 // ******************************************************************
 
+class init_statesets : public initializer {
+  public:
+    init_statesets();
+    virtual bool execute();
+};
+init_statesets the_stateset_initializer;
 
-void InitStatesets(exprman* em, symbol_table* st)
+init_statesets::init_statesets() : initializer("init_statesets")
 {
-  if (0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("biginttype");
+  buildsResource("statesettype");
+  buildsResource("types");
+}
+
+bool init_statesets::execute()
+{
+  if (0==em)  return false;
 
   stateset::em = em;
   
@@ -870,11 +886,12 @@ void InitStatesets(exprman* em, symbol_table* st)
     )
   );
 
-  if (0==st) return;
+  if (0==st) return false;
 
   // Functions
   st->AddSymbol(  new card_si   );
   st->AddSymbol(  new empty_si  );
+  return true;
 }
 
 

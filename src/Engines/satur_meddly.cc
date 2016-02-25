@@ -6,17 +6,14 @@
 #include "gen_meddly.h"
 
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
 #include "../Formlsms/dsde_hlm.h"
-// #include "../Formlsms/graph_llm.h"  // for now
-// #include "../Formlsms/stoch_llm.h"  // for now
 #include "../Formlsms/rss_meddly.h"
 #include "../Formlsms/rgr_meddly.h"
 #include "../Formlsms/proc_meddly.h"
-// #include "../Formlsms/mc_llm.h"
-// #include "../Formlsms/mc_mdd.h"
 
 #include "../Modules/glue_meddly.h"
 
@@ -268,7 +265,7 @@ protected:
   static const int ORDER_HIGH_TO_LOW = 0;
   static const int ORDER_LOW_TO_HIGH = 1;
   static const int ORDER_MODEL = 2;
-  friend void InitializeSaturationMeddly(exprman* em);
+  friend class init_saturmeddly;
 
   int* event_order;
   int event_order_size;
@@ -1051,15 +1048,30 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
   x.setStates(S);
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeSaturationMeddly(exprman* em)
+class init_saturmeddly : public initializer {
+  public:
+    init_saturmeddly();
+    virtual bool execute();
+};
+init_saturmeddly the_saturmeddly_initializer;
+
+init_saturmeddly::init_saturmeddly() : initializer("init_saturmeddly")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("meddlyprocgen");
+}
+
+bool init_saturmeddly::execute()
+{
+  if (0==em) return false;
 
   RegisterEngine(em,
     "MeddlyProcessGeneration",
@@ -1116,4 +1128,5 @@ void InitializeSaturationMeddly(exprman* em)
     )
   );
 
+  return true;
 }

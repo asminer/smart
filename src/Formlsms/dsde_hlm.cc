@@ -5,6 +5,7 @@
 
 #include "dsde_hlm.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/sets.h"
 #include "../SymTabs/symtabs.h"
 #include "../include/heap.h"
@@ -1225,27 +1226,30 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void Add_DSDE_varfuncs(const type* svt, symbol_table* syms)
+class init_dsde : public initializer {
+  public:
+    init_dsde();
+    virtual bool execute();
+};
+init_dsde the_dsde_initializer;
+
+init_dsde::init_dsde() : initializer("init_dsde")
 {
-  syms->AddSymbol(  new dsde_part1(svt) );
-  syms->AddSymbol(  new dsde_part2(svt) );
-  syms->AddSymbol(  new dsde_part3(svt) );
+  usesResource("em");
 }
 
-void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms)
+bool init_dsde::execute()
 {
-  syms->AddSymbol(  new dsde_priolevel(evt) );
-  syms->AddSymbol(  new dsde_priolist(evt)  );
-}
+  if (0==em) return false;
 
-void InitializeDSDE(exprman* em)
-{
   option* warning = em->findOption("Warning");
   dsde_def::dup_part.Initialize(warning,
     "dup_part",
@@ -1268,6 +1272,25 @@ void InitializeDSDE(exprman* em)
     true
   );
   
+  return true;
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                               Front  end                               *
+// *                                                                        *
+// **************************************************************************
+
+void Add_DSDE_varfuncs(const type* svt, symbol_table* syms)
+{
+  syms->AddSymbol(  new dsde_part1(svt) );
+  syms->AddSymbol(  new dsde_part2(svt) );
+  syms->AddSymbol(  new dsde_part3(svt) );
+}
+
+void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms)
+{
+  syms->AddSymbol(  new dsde_priolevel(evt) );
+  syms->AddSymbol(  new dsde_priolist(evt)  );
+}
 

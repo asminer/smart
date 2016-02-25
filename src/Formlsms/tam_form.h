@@ -10,6 +10,6 @@ class exprman;
 class msr_func;
 
 /// Initialize Tile Assembly Model formalisms.
-void InitializeTAMs(exprman* em, List <msr_func> *);
+// void InitializeTAMs(exprman* em, List <msr_func> *);
 
 #endif

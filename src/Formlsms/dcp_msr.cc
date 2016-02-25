@@ -2,6 +2,7 @@
 // $Id$
 
 #include "dcp_msr.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/measures.h"
 #include "../ExprLib/engine.h"
 
@@ -83,14 +84,32 @@ dcp_satisfiable::dcp_satisfiable(engtype *w)
   SetDocumentation("Finds variables that satisfy the given expression.");
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitDCPMeasureFuncs(exprman* em, List <msr_func> *common)
+class init_dcpmeasures : public initializer {
+  public:
+    init_dcpmeasures();
+    virtual bool execute();
+};
+init_dcpmeasures the_dcpmeasure_initializer;
+
+init_dcpmeasures::init_dcpmeasures() : initializer("init_dcpmeasures")
 {
+  usesResource("em");
+  buildsResource("CML");
+  buildsResource("engtypes");
+}
+
+bool init_dcpmeasures::execute()
+{
+  if (0==em) return false;
+
   // Add engine types
   engtype* MaxExpr = MakeEngineType(em,
       "MaxExpr",
@@ -124,10 +143,9 @@ void InitDCPMeasureFuncs(exprman* em, List <msr_func> *common)
   );
 
   // Add functions
-  if (0==common) return;
-
-  common->Append( new dcp_maximize(MaxExpr) );
-  common->Append( new dcp_minimize(MinExpr) );
-  common->Append( new dcp_satisfiable(SatExpr)  );
+  CML.Append( new dcp_maximize(MaxExpr) );
+  CML.Append( new dcp_minimize(MinExpr) );
+  CML.Append( new dcp_satisfiable(SatExpr)  );
+  return true;
 }
 

@@ -3,6 +3,7 @@
 
 #include "stoch_msr.h"
 #include "stoch_llm.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
 #include "../Modules/statevects.h"
@@ -62,7 +63,7 @@ protected:
   /// Engines for computing transient accumulated averages.
   static engtype* TransientAccumulated;
 
-  friend void InitStochMeasureFuncs(exprman* em, List <msr_func> *common);
+  friend class init_stochmsrs;
 public:
   stoch_msr(const type* rettype, const char* name, int np);
 };
@@ -473,11 +474,30 @@ engtype* MakeTimeOrdered(exprman* em, const char* n, const char* d)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitStochMeasureFuncs(exprman* em, List <msr_func> *common)
+class init_stochmsrs : public initializer {
+  public:
+    init_stochmsrs();
+    virtual bool execute();
+};
+init_stochmsrs the_stochmsr_initiailzer;
+
+init_stochmsrs::init_stochmsrs() : initializer("init_stochmsrs")
+{
+  usesResource("em");
+  usesResource("st");
+  usesResource("statevects");
+  usesResource("biginttype");
+  buildsResource("CML");
+  buildsResource("engtypes");
+}
+
+bool init_stochmsrs::execute()
 {
   // Initialize engines
   stoch_msr::SteadyStateAverage = MakeUnordered(em,
@@ -500,18 +520,17 @@ void InitStochMeasureFuncs(exprman* em, List <msr_func> *common)
       "Method to use for computing finitely accumulated averages within models"
   );
 
-  // Add functions
-  if (0==common) return;
+  CML.Append(new init_dist_si);
+  CML.Append(new distss_si);
+  CML.Append(new avgss_si);
+  CML.Append(new probss_si);
+  CML.Append(new distat_si);
+  CML.Append(new avgat_si);
+  CML.Append(new probat_si);
+  CML.Append(new probacc_si);
+  CML.Append(new avgacc_si);
 
-  common->Append(new init_dist_si);
-  common->Append(new distss_si);
-  common->Append(new avgss_si);
-  common->Append(new probss_si);
-  common->Append(new distat_si);
-  common->Append(new avgat_si);
-  common->Append(new probat_si);
-  common->Append(new probacc_si);
-  common->Append(new avgacc_si);
+  return true;
 }
 
 

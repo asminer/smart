@@ -14,15 +14,39 @@
 #include "../include/revision.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ParseICP/parse_icp.h"
 
-#include "../Formlsms/dcp_msr.h"
-#include "../Formlsms/dcp_form.h"
-#include "../Engines/dcp_expl.h"
-#include "../Engines/dcp_symb.h"
-
 // #define DEBUG_MSRS
+
+// ============================================================
+
+class first_init : public initializer {
+  public:
+    first_init(exprman* em);
+    virtual bool execute();
+  private:
+    exprman* hold_em;
+};
+
+// ============================================================
+
+first_init::first_init(exprman* _em)
+ : initializer("first_init")
+{
+  buildsResource("em");
+  hold_em = _em;
+}
+
+bool first_init::execute()
+{
+  em = hold_em;
+  DCASSERT(em);
+  return true;
+}
+
+// ============================================================
 
 void InitOptions(option_manager* om)
 {
@@ -84,18 +108,19 @@ int main(int argc, const char** argv, const char** env)
   // Expression module initialization
   exprman* em = Initialize_Expressions(&myio, om);
 
-  // DCP formalism initialization
-  List <msr_func> CFL;
-  InitDCPMeasureFuncs(em, &CFL);
-  InitializeDCPs(em, &CFL);
+  // Bootstrap initializers, and run them
+  first_init the_first_init(em);
+  if ( ! initializer::executeAll() ) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->cerr() << "Deadlock in initializers";
+      em->stopIO();
+    }
+    return -1;
+  }
 
   // Parser initialization
   parse_module pm(em);
   pm.Initialize();
-
-  // Add necessary engines
-  InitializeDCPEngines(em);
-  InitializeSymbolicDCPEngines(em);
 
   // Finalize
   em->finalize();

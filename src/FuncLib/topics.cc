@@ -4,6 +4,7 @@
 #include "topics.h"
 
 #include "../include/defines.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../Options/options.h"
 #include "../include/heap.h"
@@ -768,13 +769,30 @@ void topic_models::PrintDocs(doc_formatter* df, const char*) const
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void AddHelpTopics(symbol_table* st, const exprman* em)
+class init_helpfuncs : public initializer {
+  public:
+    init_helpfuncs();
+    virtual bool execute();
+};
+init_helpfuncs the_helpfunc_initializer;
+
+init_helpfuncs::init_helpfuncs() : initializer("init_helpfuncs")
 {
-  if (0==st || 0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("types");
+  usesResource("formalisms");
+}
+
+bool init_helpfuncs::execute()
+{
+  if (0==st || 0==em)  return false;
 
   st->AddSymbol(new help_group(
     "#include",
@@ -846,6 +864,8 @@ void AddHelpTopics(symbol_table* st, const exprman* em)
       st->AddSymbol(  new topic_simpletype(t->getBaseType())       );
     }
   }
+
+  return true;
 }
 
 

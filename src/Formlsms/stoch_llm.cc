@@ -4,6 +4,7 @@
 #include "stoch_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
@@ -228,19 +229,33 @@ void stochastic_lldsm::process::showError(const char* s)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
+class init_stochllm : public initializer {
+  public:
+    init_stochllm();
+    virtual bool execute();
+};
+init_stochllm the_stochllm_initializer;
 
-void InitializeStochasticLLM(exprman* om)
+init_stochllm::init_stochllm() : initializer("init_stochllm")
 {
-  if (0==om) return;
+  usesResource("em");
+}
 
-  stochastic_lldsm::process::em = om;
+bool init_stochllm::execute()
+{
+  if (0==em) return false;
+
+  stochastic_lldsm::process::em = em;
 
   // TBD - any options go here
+  return true;
 }
 

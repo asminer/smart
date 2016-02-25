@@ -3,6 +3,7 @@
 
 #include "evm_form.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
@@ -548,7 +549,7 @@ class tam_def : public model_def {
     };
   }
 
-  friend void InitializeTAMs(exprman* em, List <msr_func> *);
+  friend class init_tamform;
 
 public:
   tam_def(const char* fn, int line, const type* t, char* n, 
@@ -1442,15 +1443,31 @@ void tam_export::Compute(traverse_data &x, expr** pass, int np)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeTAMs(exprman* em, List <msr_func> *common)
+class init_tamform : public initializer {
+  public:
+    init_tamform();
+    virtual bool execute();
+};
+init_tamform the_tamform_initializer;
+
+init_tamform::init_tamform() : initializer("init_tamform")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("CML");
+  buildsResource("formalisms");
+}
+
+bool init_tamform::execute()
+{
+  if (0==em) return false;
 
   // types for TAMs
   simple_type* t_tile = new void_type("tile", "Tile", "Tile type in a tile assembly model.");
@@ -1491,7 +1508,7 @@ void InitializeTAMs(exprman* em, List <msr_func> *common)
       em->internal() << "Couldn't register tam type";
       em->stopIO();
     }
-    return;
+    return false;
   }
 
   // fill symbol table
@@ -1503,7 +1520,7 @@ void InitializeTAMs(exprman* em, List <msr_func> *common)
   tamsyms->AddSymbol(  new tam_prio     );
   tamsyms->AddSymbol(  new tam_export   );
   tam->setFunctions(tamsyms); 
-  tam->addCommonFuncs(common);
+  tam->addCommonFuncs(CML);
 
   // fill identifier table
   symbol_table* tamids = MakeSymbolTable();
@@ -1589,4 +1606,6 @@ void InitializeTAMs(exprman* em, List <msr_func> *common)
     true
   ));
   tamwarnings.Finish(warning, "tam_ALL", "Group of all tile assembly model warnings");
+
+  return true;
 }

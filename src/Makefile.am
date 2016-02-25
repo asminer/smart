@@ -2,5 +2,249 @@
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-SUBDIRS = include Streams Options ExprLib SymTabs Modules Formlsms Engines FuncLib ParseSM ParseICP TestApps Apps
+## SUBDIRS = include Streams Options ExprLib SymTabs Modules Formlsms Engines FuncLib ParseSM ParseICP TestApps Apps
 
+##
+## Trying out: non-recursive make to avoid building convenience libraries
+## 
+
+SUBDIRS = ParseSM ParseICP
+
+bin_PROGRAMS = smart icp teststrms testsplay testinit
+
+## automatic revision numbering
+
+_revision:
+	$(srcdir)/include/BuildRevNo $(srcdir)/include
+
+include/revision.h:
+	$(srcdir)/include/BuildRevNo $(srcdir)/include
+
+BUILT_SOURCES = _revision include/revision.h
+CLEANFILES = include/revision.h
+EXTRA_DIST = include/BuildRevNo include/revision.h
+
+AM_YFLAGS = -d
+
+## ============================================================
+##
+## SMART
+##
+## ============================================================
+
+smart_SOURCES = \
+  include/revision.h \
+  \
+  Streams/streams.cc  Streams/textfmt.cc \
+  \
+  Options/options.cc \
+  \
+  ExprLib/startup.cc \
+  ExprLib/exprman.cc \
+  ExprLib/superman.cc \
+  ExprLib/engine.cc \
+  ExprLib/formalism.cc \
+  ExprLib/init_data.cc \
+  ExprLib/type.cc \
+  ExprLib/result.cc \
+  ExprLib/expr.cc \
+  ExprLib/bogus.cc \
+  ExprLib/values.cc \
+  ExprLib/symbols.cc \
+  ExprLib/iterators.cc \
+  ExprLib/arrays.cc \
+	ExprLib/stmts.cc \
+  ExprLib/forloops.cc \
+  ExprLib/functions.cc \
+  ExprLib/converge.cc \
+  ExprLib/sets.cc \
+  ExprLib/strings.cc \
+  ExprLib/intervals.cc \
+  ExprLib/unary.cc \
+  ExprLib/casting.cc \
+  ExprLib/binary.cc \
+  ExprLib/trinary.cc \
+  ExprLib/assoc.cc \
+  ExprLib/ops_bool.cc \
+  ExprLib/ops_int.cc \
+  ExprLib/ops_real.cc \
+  ExprLib/ops_set.cc \
+  ExprLib/ops_misc.cc \
+  ExprLib/dd_front.cc \
+  ExprLib/mod_def.cc \
+  ExprLib/mod_vars.cc \
+  ExprLib/mod_inst.cc \
+  ExprLib/measures.cc \
+  \
+  SymTabs/symtabs.cc \
+  \
+  Modules/biginttype.cc \
+  Modules/expl_ssets.cc \
+  Modules/expl_states.cc \
+  Modules/glue_meddly.cc \
+  Modules/meddly_ssets.cc \
+  Modules/statesets.cc \
+  Modules/statevects.cc \
+  Modules/stochtypes.cc \
+  Modules/stringtype.cc \
+  \
+  Formlsms/basic_msr.cc \
+  Formlsms/csl_msr.cc \
+  Formlsms/ctl_msr.cc \
+  Formlsms/dsde_hlm.cc \
+  Formlsms/enum_hlm.cc \
+  Formlsms/evm_form.cc \
+  Formlsms/fsm_form.cc \
+  Formlsms/graph_llm.cc \
+  Formlsms/mc_form.cc \
+  Formlsms/noevnt_hlm.cc \
+  Formlsms/phase_hlm.cc \
+  Formlsms/pn_form.cc \
+  Formlsms/proc_markov.cc \
+  Formlsms/proc_mclib.cc \
+  Formlsms/proc_meddly.cc \
+  Formlsms/rgr_ectl.cc \
+  Formlsms/rgr_grlib.cc \
+  Formlsms/rgr_meddly.cc \
+  Formlsms/rss_enum.cc \
+  Formlsms/rss_expl.cc \
+  Formlsms/rss_indx.cc \
+  Formlsms/rss_meddly.cc \
+  Formlsms/state_llm.cc \
+  Formlsms/stoch_llm.cc \
+  Formlsms/stoch_msr.cc \
+  Formlsms/tam_form.cc \
+  \
+  Engines/csl_exp.cc \
+  Engines/exact.cc \
+  Engines/expl_meddly.cc \
+  Engines/gen_exp_as.cc \
+  Engines/gen_exp_ph.cc \
+  Engines/gen_meddly.cc \
+  Engines/gen_rg_base.cc \
+  Engines/satur_meddly.cc \
+  Engines/simul.cc \
+  \
+  FuncLib/basefuncs.cc \
+  FuncLib/funclib.cc \
+  FuncLib/iofuncs.cc \
+  FuncLib/mathfuncs.cc \
+  FuncLib/sysfuncs.cc \
+  FuncLib/topics.cc \
+  \
+  Apps/smart.cc
+
+
+smart_LDADD = \
+  ParseSM/libsmparse.la \
+  $(TIMER_LIBRARY)/lib/libtimer.a \
+  $(LS_LIBRARY)/lib/libls.a \
+  $(MC_LIBRARY)/lib/libmc.a \
+  $(GRAPH_LIBRARY)/lib/libgraph.a \
+  $(STATE_LIBRARY)/lib/libstate.a \
+  $(IS_LIBRARY)/lib/libintset.a \
+  $(SIM_LIBRARY)/lib/libsim.a \
+  $(RNG_LIBRARY)/lib/librng.a \
+  $(MDD_LIBRARY)/lib/libmeddly.a
+
+
+## ============================================================
+##
+## ICP
+##
+## ============================================================
+
+
+icp_SOURCES = \
+  include/revision.h \
+  \
+  Streams/streams.cc  Streams/textfmt.cc \
+  \
+  Options/options.cc \
+  \
+  ExprLib/startup.cc \
+  ExprLib/exprman.cc \
+  ExprLib/superman.cc \
+  ExprLib/engine.cc \
+  ExprLib/formalism.cc \
+  ExprLib/init_data.cc \
+  ExprLib/type.cc \
+  ExprLib/result.cc \
+  ExprLib/expr.cc \
+  ExprLib/bogus.cc \
+  ExprLib/values.cc \
+  ExprLib/symbols.cc \
+  ExprLib/iterators.cc \
+  ExprLib/arrays.cc \
+	ExprLib/stmts.cc \
+  ExprLib/forloops.cc \
+  ExprLib/functions.cc \
+  ExprLib/converge.cc \
+  ExprLib/sets.cc \
+  ExprLib/strings.cc \
+  ExprLib/intervals.cc \
+  ExprLib/unary.cc \
+  ExprLib/casting.cc \
+  ExprLib/binary.cc \
+  ExprLib/trinary.cc \
+  ExprLib/assoc.cc \
+  ExprLib/ops_bool.cc \
+  ExprLib/ops_int.cc \
+  ExprLib/ops_real.cc \
+  ExprLib/ops_set.cc \
+  ExprLib/ops_misc.cc \
+  ExprLib/dd_front.cc \
+  ExprLib/mod_def.cc \
+  ExprLib/mod_vars.cc \
+  ExprLib/mod_inst.cc \
+  ExprLib/measures.cc \
+  \
+  SymTabs/symtabs.cc \
+  \
+  Modules/biginttype.cc \
+  Modules/glue_meddly.cc \
+  \
+  Formlsms/dcp_msr.cc \
+  Formlsms/dcp_form.cc \
+  Formlsms/noevnt_hlm.cc \
+  \
+  Engines/dcp_expl.cc \
+  Engines/dcp_symb.cc \
+  \
+  Apps/icp.cc
+
+icp_LDADD = \
+  ParseICP/libicpparse.la \
+  $(TIMER_LIBRARY)/lib/libtimer.a \
+  $(STATE_LIBRARY)/lib/libstate.a \
+  $(MDD_LIBRARY)/lib/libmeddly.a
+
+## ============================================================
+##
+## teststrms
+##
+## ============================================================
+
+teststrms_SOURCES = \
+  TestApps/teststrms.cc \
+  Streams/streams.cc  Streams/textfmt.cc 
+
+## ============================================================
+##
+## testsplay
+##
+## ============================================================
+
+testsplay_SOURCES = \
+  TestApps/testsplay.cc \
+  Streams/streams.cc  Streams/textfmt.cc 
+
+## ============================================================
+##
+## testinit 
+##
+## ============================================================
+
+testinit_SOURCES = \
+  TestApps/testinit.cc TestApps/initd.cc \
+  ExprLib/startup.cc

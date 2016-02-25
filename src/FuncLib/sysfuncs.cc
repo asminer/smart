@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "timerlib.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
@@ -503,7 +504,7 @@ void exit_si::Compute(traverse_data &x, expr** pass, int np)
 class timer_base : public simple_internal {
 protected:
   static timer* watches;
-  friend void AddSysFunctions(symbol_table*, const exprman*, const char**, const char*);
+  friend class init_sysfuncs;
 public:
   timer_base(const type* t, const char* name);
 };
@@ -577,13 +578,29 @@ void stop_timer_si::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void AddSysFunctions(symbol_table* st, const exprman* em, const char** env, const char* version)
+class init_sysfuncs : public initializer {
+  public:
+    init_sysfuncs();
+    virtual bool execute();
+};
+init_sysfuncs the_sysfunc_initializer;
+
+init_sysfuncs::init_sysfuncs() : initializer("init_sysfuncs")
 {
-  if (0==st || 0==em)  return;
+  usesResource("em");
+  usesResource("st");
+  usesResource("types");
+}
+
+bool init_sysfuncs::execute()
+{
+  if (0==st || 0==em)  return false;
 
   if (0==timer_base::watches) {
     timer_base::watches = new timer[256];
@@ -601,6 +618,8 @@ void AddSysFunctions(symbol_table* st, const exprman* em, const char** env, cons
 
   st->AddSymbol(  new start_timer_si  );
   st->AddSymbol(  new stop_timer_si   );
+
+  return true;
 }
 
 

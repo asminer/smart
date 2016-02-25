@@ -3,6 +3,7 @@
 
 #include "gen_exp_ph.h"
 #include "gen_rg_base.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/mod_vars.h"
 
 // Formalisms and such
@@ -491,15 +492,30 @@ void phase_procgen::MCError(hldsm* m, const char* what, MCLib::error e) const
   throw Engine_Failed;
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeExplicitPhaseGenerators(exprman* em)
+class init_phasegen : public initializer {
+  public:
+    init_phasegen();
+    virtual bool execute();
+};
+init_phasegen the_phasegen_initializer;
+
+init_phasegen::init_phasegen() : initializer("init_phasegen")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_phasegen::execute()
+{
+  if (0==em) return false;
 
   // Initialize state library
   const exp_state_lib* sl = InitExplicitStateStorage(em);
@@ -510,6 +526,8 @@ void InitializeExplicitPhaseGenerators(exprman* em)
     "EXPLICIT", 
     new phase_procgen(sl)
   );
+
+  return true;
 }
 
 

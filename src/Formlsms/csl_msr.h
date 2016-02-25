@@ -9,6 +9,6 @@
 class exprman;
 class msr_func;
 
-void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common);
+// void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common);
 
 #endif

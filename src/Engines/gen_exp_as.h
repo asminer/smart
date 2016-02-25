@@ -9,6 +9,6 @@
 
 class exprman;
 
-void InitializeExplicitAsynchGenerators(exprman* em);
+// void InitializeExplicitAsynchGenerators(exprman* em);
 
 #endif

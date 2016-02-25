@@ -38,7 +38,7 @@ SM_LOG_DRIVER = $(srcdir)/TestSM
 ICP_LOG_DRIVER = $(srcdir)/TestICP
 
 check-old:
-	$(srcdir)/TestAny ../src/Apps $(srcdir) $(TESTS)
+	$(srcdir)/TestAny ../src $(srcdir) $(TESTS)
 
 bench:
-	$(srcdir)/Benchmark ../src/Apps $(srcdir) $(TESTS)
+	$(srcdir)/Benchmark ../src $(srcdir) $(TESTS)

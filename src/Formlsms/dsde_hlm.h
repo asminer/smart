@@ -14,7 +14,7 @@ class symbol_table;
 void Add_DSDE_varfuncs(const type* svt, symbol_table* syms);
 void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
 
-void InitializeDSDE(exprman* em);
+// void InitializeDSDE(exprman* em);
 
 #ifndef INITIALIZERS_ONLY
 
@@ -290,7 +290,7 @@ public:
 class dsde_hlm : public hldsm {
 private:
   static named_msg ignored_prio;
-  friend void InitializeDSDE(exprman* em);
+  friend class init_dsde;
   /// Low level model type.
   lldsm::model_type lltype;
   /// Number of "levels".
@@ -477,7 +477,7 @@ class dsde_def : public model_def {
   static named_msg no_part;
   static named_msg dup_prio;
   int last_level;
-  friend void InitializeDSDE(exprman* em);
+  friend class init_dsde;
 public:
   dsde_def(const char* fn, int line, const type* t, char*n, 
       formal_param **pl, int np);

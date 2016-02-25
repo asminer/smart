@@ -150,6 +150,6 @@ public:
       @param  st  Symbol table to add any bigint functions.
                   If 0, functions will not be added.
 */
-void InitBigintType(exprman* em, symbol_table* st);
+// void InitBigintType(exprman* em, symbol_table* st);
 
 #endif

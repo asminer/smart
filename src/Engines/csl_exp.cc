@@ -3,6 +3,7 @@
 
 #include "csl_exp.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -351,15 +352,30 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeExplicitCSLEngines(exprman* em)
+class init_cslengines : public initializer {
+  public:
+    init_cslengines();
+    virtual bool execute();
+};
+init_cslengines the_cslengine_initializer;
+
+init_cslengines::init_cslengines() : initializer("init_cslengines")
 {
-  if (0==em) return;
+  usesResource("em");
+  usesResource("engtypes");
+}
+
+bool init_cslengines::execute()
+{
+  if (0==em) return false;
 
   RegisterEngine(
       em,
@@ -376,6 +392,8 @@ void InitializeExplicitCSLEngines(exprman* em)
       "Use a phase-type tta operation to compute PU",
       &the_PU_expl_eng 
   );
+
+  return true;
 }
 
 

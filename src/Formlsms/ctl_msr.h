@@ -16,6 +16,6 @@ class msr_func;
       @param  em  Expression manager.
       @param  L   List of measures we should add to.
 */
-void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *L);
+// void InitCTLMeasureFuncs(symbol_table* st, exprman* em, List <msr_func> *L);
 
 #endif

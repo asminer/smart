@@ -2,6 +2,7 @@
 // $Id$
 
 #include "csl_msr.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
 #include "stoch_llm.h"
@@ -49,9 +50,10 @@ protected:
   */
   static engtype* TU_generator;
 
+private:
   static engtype* ProcGen;
  
-  friend void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common);
+  friend class init_cslmsrs;
 
 public:
   CSL_engine(const type* t, const char* name, int np);
@@ -460,12 +462,33 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
 
 // ******************************************************************
 // *                                                                *
-// *                           front  end                           *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
 // *                                                                *
 // ******************************************************************
 
-void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
+class init_cslmsrs : public initializer {
+  public:
+    init_cslmsrs();
+    virtual bool execute();
+};
+init_cslmsrs the_cslmsr_initializer;
+
+init_cslmsrs::init_cslmsrs() : initializer("init_cslmsrs")
 {
+  usesResource("em");
+  usesResource("stochtypes");
+  usesResource("statesettype");
+  usesResource("statevects");
+  buildsResource("CML");
+  buildsResource("engtypes");
+}
+
+bool init_cslmsrs::execute()
+{
+  if (0==em) return false;
+
   // Initialize engines
 
   CSL_engine::PU = MakeEngineType(em,
@@ -481,27 +504,28 @@ void InitCSLMeasureFuncs(exprman* em, List <msr_func> *common)
   );
 
   CSL_engine::ProcGen = em->findEngineType("ProcessGeneration");
+  DCASSERT(CSL_engine::ProcGen);
 
   // Add functions
-  if (0==common) return;
-
   const type* phint  = em->INT  ? em->INT ->modifyType(PHASE) : 0;
   const type* phreal = em->REAL ? em->REAL->modifyType(PHASE) : 0;
 
-  common->Append(new PF_func );
-  common->Append(new PU_func );
+  CML.Append(new PF_func );
+  CML.Append(new PU_func );
 
   if (phint) {
-    common->Append(new TF_func(phint, "phi_TF", false));
-    common->Append(new TF_func(phint, "phi_TF", true ));
-    common->Append(new TU_func(phint, "phi_TU", false));
-    common->Append(new TU_func(phint, "phi_TU", true ));
+    CML.Append(new TF_func(phint, "phi_TF", false));
+    CML.Append(new TF_func(phint, "phi_TF", true ));
+    CML.Append(new TU_func(phint, "phi_TU", false));
+    CML.Append(new TU_func(phint, "phi_TU", true ));
   }
   if (phreal) {
-    common->Append(new TF_func(phreal, "phr_TF", false));
-    common->Append(new TF_func(phreal, "phr_TF", true ));
-    common->Append(new TU_func(phreal, "phr_TU", false));
-    common->Append(new TU_func(phreal, "phr_TU", true ));
+    CML.Append(new TF_func(phreal, "phr_TF", false));
+    CML.Append(new TF_func(phreal, "phr_TF", true ));
+    CML.Append(new TU_func(phreal, "phr_TU", false));
+    CML.Append(new TU_func(phreal, "phr_TU", true ));
   }
+
+  return true;
 }
 

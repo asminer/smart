@@ -69,7 +69,7 @@ class meddly_stateset : public stateset {
     Nice, minimalist front-end.
       @param  em  The expression manager to use.
 */
-void InitMeddlyStatesets(exprman* em);
+// void InitMeddlyStatesets(exprman* em);
 
 #endif
 

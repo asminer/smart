@@ -4,6 +4,7 @@
 #include "state_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
@@ -190,21 +191,35 @@ state_lldsm::reachset::iterator::~iterator()
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeStateLLM(exprman* om)
+class init_statellm : public initializer {
+  public:
+    init_statellm();
+    virtual bool execute();
+};
+init_statellm the_statellm_initializer;
+
+init_statellm::init_statellm() : initializer("init_statellm")
 {
-  if (0==om) return;
+  usesResource("em");
+}
 
-  state_lldsm::reachset::em = om;
+bool init_statellm::execute()
+{
+  if (0==em) return false;
+
+  state_lldsm::reachset::em = em;
 
   // set up options
   // ------------------------------------------------------------------
-  om->addOption(
+  em->addOption(
     MakeIntOption(
       state_lldsm::max_state_display_option,
       "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
@@ -231,10 +246,11 @@ void InitializeStateLLM(exprman* om)
       state_lldsm::NATURAL
   );
   state_lldsm::int_display_order = state_lldsm::NATURAL;
-  om->addOption( 
+  em->addOption( 
     MakeRadioOption("StateDisplayOrder",
       "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
       do_list, state_lldsm::num_display_orders, state_lldsm::int_display_order
     )
   );
+  return true;
 }

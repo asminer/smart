@@ -17,5 +17,5 @@ testsplay_LDADD = ../Streams/libstream.la
 
 ## testinit
 
-testinit_SOURCES = testinit.cc
+testinit_SOURCES = testinit.cc initd.cc
 testinit_LDADD = ../ExprLib/libexpr.la

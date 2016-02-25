@@ -3,6 +3,7 @@
 
 #include "gen_rg_base.h"
 
+#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
@@ -99,15 +100,31 @@ bool process_generator
   return false;
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
 
-void InitializeProcGen(exprman* em)
+class init_procgen : public initializer {
+  public:
+    init_procgen();
+    virtual bool execute();
+};
+init_procgen the_procgen_initializer;
+
+init_procgen::init_procgen() : initializer("init_procgen")
 {
-  if (0==em)         return;
+  usesResource("em");
+  buildsResource("procgen");
+  buildsResource("engtypes");
+}
+
+bool init_procgen::execute()
+{
+  if (0==em)  return false;
 
   // Initialize options
   option* report = em->findOption("Report");
@@ -159,5 +176,7 @@ void InitializeProcGen(exprman* em)
       rlist, 2, process_generator::remove_vanishing
     )
   );
+
+  return true;
 }
 

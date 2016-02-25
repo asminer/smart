@@ -9,7 +9,7 @@
 class exprman;
 class msr_func;
 
-void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
+// void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
 
 // Kind of a hack, sorry
 #ifndef INITIALIZERS_ONLY
@@ -23,7 +23,7 @@ void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
 /// Abstract class for custom engines that require the process.
 class proc_noengine : public msr_noengine {
   static engtype* ProcGen;
-  friend void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
+  friend class init_basicmsrs;
 public:
   proc_noengine(eng_class ect, const type* t, const char* name, int np);
 

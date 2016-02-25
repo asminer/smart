@@ -13,7 +13,7 @@
 class symbol_table;
 class exprman;
 
-void AddSysFunctions(symbol_table* st, const exprman* em, const char** env, const char* version);
+// void AddSysFunctions(symbol_table* st, const exprman* em, const char** env, const char* version);
 
 #endif
 
