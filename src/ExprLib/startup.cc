@@ -11,8 +11,8 @@ initializer::resource* initializer::resource_list = 0;
 initializer* initializer::waiting_list = 0;
 initializer* initializer::completed_list = 0;
 initializer* initializer::failed_list = 0;
-// bool initializer::debug = 0;
-bool initializer::debug = 1;
+bool initializer::debug = 0;
+// bool initializer::debug = 1;
 
 exprman* initializer::em = 0;
 symbol_table* initializer::st = 0;

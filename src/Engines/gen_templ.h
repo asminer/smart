@@ -688,7 +688,7 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
     bool current_is_vanishing = false;
     UID fromID;
     mc.makeIllegalID(fromID);
-    int from = -1;
+    // int from = -1;
 
     for (;;) {
       //
@@ -712,7 +712,7 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc)
       } else {
         // grab tangible
         if (mc.hasUnexploredTangible()) {
-          from = curr;
+          // from = curr;
           fromID = mc.getUnexploredTangible(statelist[curr]);
           current_is_vanishing = false;
         } else {
