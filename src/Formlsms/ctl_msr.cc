@@ -834,6 +834,7 @@ init_ctlmsrs::init_ctlmsrs() : initializer("init_ctlmsrs")
   usesResource("st");
   usesResource("statesettype");
   usesResource("biginttype");
+  usesResource("procgen");
   buildsResource("CML");
 }
 

@@ -481,6 +481,7 @@ init_cslmsrs::init_cslmsrs() : initializer("init_cslmsrs")
   usesResource("stochtypes");
   usesResource("statesettype");
   usesResource("statevects");
+  usesResource("procgen");
   buildsResource("CML");
   buildsResource("engtypes");
 }
