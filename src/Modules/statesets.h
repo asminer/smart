@@ -10,8 +10,6 @@
 #ifndef STATESETS_H
 #define STATESETS_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "../include/shared.h"
 
 class expr;
@@ -124,21 +122,5 @@ private:
   static bool print_indexes;
   friend class init_statesets;
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-/** Initialize stateset module.
-    Nice, minimalist front-end.
-      @param  em  The expression manager to use.
-      @param  st  Symbol table to add any stateset functions.
-                  If 0, functions will not be added.
-*/
-// void InitStatesets(exprman* em, symbol_table* st);
 
 #endif

@@ -12,8 +12,6 @@
 #ifndef EXPL_SSETS_H
 #define EXPL_SSETS_H
 
-#ifndef INITIALIZERS_ONLY
-
 class intset;
 
 // ******************************************************************
@@ -54,20 +52,6 @@ class expl_stateset : public stateset {
   private:
     intset* data;
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-/** Initialize explicit stateset module.
-    Nice, minimalist front-end.
-      @param  em  The expression manager to use.
-*/
-// void InitExplStatesets(exprman* em);
 
 #endif
 

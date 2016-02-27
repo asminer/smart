@@ -6,15 +6,6 @@
 #ifndef GEN_MEDDLY_H
 #define GEN_MEDDLY_H
 
-// Minimalist front-end for process generation, using Meddly
-
-class exprman;
-
-/// Should be called BEFORE any other Meddly-based initializer
-// void InitializeProcGenMeddly(exprman* em);
-
-#ifndef INITIALIZERS_ONLY
-
 //
 // Detailed front-end for Meddly process generation
 //
@@ -317,5 +308,4 @@ private:
 
 // TBD
 
-#endif  // INITIALIZERS_ONLY
 #endif

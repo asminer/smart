@@ -37,50 +37,6 @@
 #include "../SymTabs/symtabs.h"
 #include "../ParseSM/parse_sm.h"
 
-// "modules"
-//
-// Mostly we just need to call the initializers
-
-/*
-#define INITIALIZERS_ONLY
-
-#include "../FuncLib/funclib.h"
-
-#include "../Modules/stringtype.h"
-#include "../Modules/biginttype.h"
-#include "../Modules/stochtypes.h"
-#include "../Modules/statesets.h"
-#include "../Modules/expl_ssets.h"
-#include "../Modules/meddly_ssets.h"
-#include "../Modules/statevects.h"
-#include "../Modules/glue_meddly.h"
-
-#include "../Formlsms/basic_msr.h"
-#include "../Formlsms/state_llm.h"
-#include "../Formlsms/graph_llm.h"
-#include "../Formlsms/stoch_llm.h"
-#include "../Formlsms/proc_markov.h"
-#include "../Formlsms/ctl_msr.h"
-#include "../Formlsms/stoch_msr.h"
-#include "../Formlsms/csl_msr.h"
-
-#include "../Formlsms/fsm_form.h"
-#include "../Formlsms/mc_form.h"
-#include "../Formlsms/dsde_hlm.h"
-#include "../Formlsms/pn_form.h"
-#include "../Formlsms/evm_form.h"
-#include "../Formlsms/tam_form.h"
-
-#include "../Engines/simul.h"
-#include "../Engines/exact.h"
-#include "../Engines/gen_rg_base.h"
-#include "../Engines/gen_exp_as.h"
-#include "../Engines/gen_exp_ph.h"
-#include "../Engines/csl_exp.h"
-#include "../Engines/gen_meddly.h"
-#include "../Engines/satur_meddly.h"
-#include "../Engines/expl_meddly.h"
-*/
 
 // ============================================================
 
@@ -158,56 +114,6 @@ void InitOptions(option_manager* om)
     MakeChecklistOption("Warning", "Switches to control which warning messages are displayed and which are suppressed.")
   );
 }
-
-/*
-void InitModules(exprman* em, symbol_table* st, const char** env)
-{
-  // Initialize modules here.
-//  InitStochastic(em, st);
-//  InitStringType(em);
-//  InitBigintType(em, st);
-//  InitStatesets(em, st);
-//  InitExplStatesets(em);
-//  InitMeddlyStatesets(em);
-//  InitStatevects(em, st);
-//  InitMEDDLy(em);
-
-  // Critical engine types here.
-//  InitializeProcGen(em);
-
-  // Initialize measure functions here.
-//  List <msr_func> CML;
-//  InitBasicMeasureFuncs(em, &CML);
-//  InitCTLMeasureFuncs(st, em, &CML);
-//  InitStochMeasureFuncs(em, &CML);
-//  InitCSLMeasureFuncs(em, &CML);
-
-  // Initialize formalisms here.
-//  InitializeStateLLM(em);
-//  InitializeGraphLLM(em);
-//  InitializeStochasticLLM(em);
-//  InitializeMarkovProc(em);
-//  InitializeDSDE(em);
-//  InitializeFSMs(em, &CML); 
-//  InitializeMarkovChains(em, &CML);
-//  InitializePetriNets(em, &CML);
-//  InitializeEVMs(em, &CML);
-//  InitializeTAMs(em, &CML);
-
-  // Builtin function initialization
-//  AddFunctions(st, em, env, getVersionString());
-
-  // Initialize engines here.
-//  InitializeExactSolutionEngines(em);
-//  InitializeExplicitAsynchGenerators(em);
-//  InitializeExplicitPhaseGenerators(em);
-//  InitializeExplicitCSLEngines(em);
-//  InitializeProcGenMeddly(em);
-//  InitializeSaturationMeddly(em);
-//  InitializeExplicitMeddly(em);
-  InitializeSimEngines(em);
-}
-*/
 
 int Usage(exprman* em)
 {
@@ -349,8 +255,6 @@ int main(int argc, const char** argv, const char** env)
     }
     return -1;
   }
-
-  // InitModules(em, st, env);
 
   // Parser initialization
   parse_module pm(em);

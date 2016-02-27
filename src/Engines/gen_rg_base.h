@@ -4,8 +4,6 @@
 #ifndef GEN_RG_BASE_H
 #define GEN_RG_BASE_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "../ExprLib/engine.h"
 
 class timer;
@@ -41,19 +39,5 @@ public:
   // returns true if the report stream is open
   static bool stopCompact(const char* name, const char* wp, const timer &w, const lldsm* proc);
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-/** Initialize process generation engine types and such.
-
-  @param  em      Expression manager.
-*/
-// void InitializeProcGen(exprman* em);
 
 #endif
