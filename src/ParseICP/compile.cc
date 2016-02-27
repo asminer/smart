@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 // Put this one last.
-#include "icpyacc.h"
+#include "ParseICP/icpyacc.h"
 
 // #define PARSER_DEBUG
 // #define COMPILE_DEBUG
