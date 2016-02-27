@@ -4,8 +4,6 @@
 #ifndef GRAPH_LLM_H
 #define GRAPH_LLM_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "state_llm.h"
 
 #include "../Modules/statesets.h" // for now
@@ -376,16 +374,6 @@ private:
 
   friend class init_graphllm;
 };
-
-#endif // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-// void InitializeGraphLLM(exprman* em);
 
 #endif
 

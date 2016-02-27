@@ -116,6 +116,8 @@ AC_SUBST(IS_LIBRARY)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/ParseSM/Makefile
+                 src/ParseICP/Makefile
                  Tests/Makefile
                  ])
 

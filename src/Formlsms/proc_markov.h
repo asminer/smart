@@ -4,8 +4,6 @@
 #ifndef PROC_MARKOV_H
 #define PROC_MARKOV_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "stoch_llm.h"
 #include "../ExprLib/exprman.h"
 
@@ -79,15 +77,5 @@ class markov_process : public stochastic_lldsm::process {
 
     friend class init_markovproc;
 };
-
-#endif  // INITIALIZERS ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-// void InitializeMarkovProc(exprman* em);
 
 #endif

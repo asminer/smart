@@ -8,8 +8,6 @@
 
 #include "../Modules/statesets.h" // for now
 
-#ifndef INITIALIZERS_ONLY
-
 class stateset;
 
 namespace StateLib {
@@ -298,16 +296,6 @@ public:
     friend class init_statellm;
 
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-// void InitializeStateLLM(exprman* em);
 
 #endif
 

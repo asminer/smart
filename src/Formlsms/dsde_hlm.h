@@ -4,20 +4,6 @@
 #ifndef DSDE_HLM_H
 #define DSDE_HLM_H
 
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-class symbol_table;
-void Add_DSDE_varfuncs(const type* svt, symbol_table* syms);
-void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
-
-// void InitializeDSDE(exprman* em);
-
-#ifndef INITIALIZERS_ONLY
-
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
@@ -501,6 +487,16 @@ protected:
   virtual void InitModel();
 };
 
-#endif  // INITIALIZERS_ONLY
+// **************************************************************************
+// *                                                                        *
+// *                               Front  end                               *
+// *                                                                        *
+// **************************************************************************
+
+class symbol_table;
+void Add_DSDE_varfuncs(const type* svt, symbol_table* syms);
+void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
+
+
 #endif
 

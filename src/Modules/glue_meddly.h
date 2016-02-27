@@ -10,8 +10,6 @@
 #ifndef GLUE_MEDDLY_H
 #define GLUE_MEDDLY_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "../ExprLib/dd_front.h"
 #include "config.h"
 #ifdef HAVE_LIBGMP
@@ -286,18 +284,6 @@ public:
   }
 };
 
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                         Library initialization                         *
-// *                                                                        *
-// **************************************************************************
-
-// void InitMEDDLy(exprman* em);
-//
-// TBD! move some of this to rgr_meddly
 
 #endif
 

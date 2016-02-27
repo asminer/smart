@@ -10,8 +10,6 @@
 #ifndef STATEPROBS_H
 #define STATEPROBS_H
 
-#ifndef INITIALIZERS_ONLY
-
 class exprman;
 class symbol_table;
 class stochastic_lldsm;
@@ -203,21 +201,5 @@ class statemsrs : public statevect {
 
   // ANY difference?
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// ******************************************************************
-// *                                                                *
-// *                           Front  end                           *
-// *                                                                *
-// ******************************************************************
-
-/** Initialize statevects module.
-    Nice, minimalist front-end.
-      @param  em  The expression manager to use.
-      @param  st  Symbol table to add any statevects functions.
-                  If 0, functions will not be added.
-*/
-// void InitStatevects(exprman* em, symbol_table* st);
 
 #endif

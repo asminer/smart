@@ -4,8 +4,6 @@
 #ifndef STOCH_LLM_H
 #define STOCH_LLM_H
 
-#ifndef INITIALIZERS_ONLY
-
 #include "graph_llm.h"
 
 class statedist;
@@ -529,15 +527,5 @@ public:
 private:
   process* PROC;
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-// void InitializeStochasticLLM(exprman* em);
 
 #endif  

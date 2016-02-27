@@ -12,8 +12,6 @@
 #ifndef MEDDLY_SSETS_H
 #define MEDDLY_SSETS_H
 
-#ifndef INITIALIZERS_ONLY
-
 // These are all in glue_meddly.h
 class shared_domain;
 class shared_ddedge;
@@ -56,20 +54,6 @@ class meddly_stateset : public stateset {
     meddly_encoder* mdd_wrap;
     shared_ddedge* states;
 };
-
-#endif  // INITIALIZERS_ONLY
-
-// **************************************************************************
-// *                                                                        *
-// *                               Front  end                               *
-// *                                                                        *
-// **************************************************************************
-
-/** Initialize Meddly stateset module.
-    Nice, minimalist front-end.
-      @param  em  The expression manager to use.
-*/
-// void InitMeddlyStatesets(exprman* em);
 
 #endif
 

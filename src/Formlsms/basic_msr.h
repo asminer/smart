@@ -6,14 +6,6 @@
 
 #include "../include/list.h"
 
-class exprman;
-class msr_func;
-
-// void InitBasicMeasureFuncs(exprman* em, List <msr_func> *common);
-
-// Kind of a hack, sorry
-#ifndef INITIALIZERS_ONLY
-
 // ******************************************************************
 // *                                                                *
 // *                      proc_noengine  class                      *
@@ -30,7 +22,5 @@ public:
 protected:
   state_lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
 };
-
-#endif // INITIALIZERS_ONLY
 
 #endif
