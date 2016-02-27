@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 // Put this one last.
-#include "smartyacc.h"
+#include "ParseSM/smartyacc.h"
 
 // #define PARSER_DEBUG
 // #define COMPILE_DEBUG

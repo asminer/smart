@@ -11,7 +11,7 @@
 
 // Takes care of objects that are required by smart.tab.h:
 #include "compile.h"
-#include "smartyacc.h"
+#include "ParseSM/smartyacc.h"
 
 #include "parse_sm.h"
 #include "../Options/options.h"

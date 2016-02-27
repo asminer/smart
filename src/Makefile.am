@@ -2,13 +2,6 @@
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-## SUBDIRS = include Streams Options ExprLib SymTabs Modules Formlsms Engines FuncLib ParseSM ParseICP TestApps Apps
-
-##
-## Trying out: non-recursive make to avoid building convenience libraries
-## 
-
-SUBDIRS = ParseSM ParseICP
 
 bin_PROGRAMS = smart icp teststrms testsplay testinit
 
@@ -20,8 +13,15 @@ _revision:
 include/revision.h:
 	$(srcdir)/include/BuildRevNo $(srcdir)/include
 
-BUILT_SOURCES = _revision include/revision.h
-CLEANFILES = include/revision.h
+BUILT_SOURCES = \
+  _revision include/revision.h \
+  ParseSM/smartyacc.h ParseICP/icpyacc.h
+
+CLEANFILES = \
+  include/revision.h \
+  ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
+  ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
+
 EXTRA_DIST = include/BuildRevNo include/revision.h
 
 AM_YFLAGS = -d
@@ -132,11 +132,16 @@ smart_SOURCES = \
   FuncLib/sysfuncs.cc \
   FuncLib/topics.cc \
   \
+  ParseSM/smartlex.l \
+  ParseSM/smartyacc.y \
+  ParseSM/lexer.cc \
+  ParseSM/compile.cc \
+  ParseSM/parse_sm.cc \
+  \
   Apps/smart.cc
 
 
 smart_LDADD = \
-  ParseSM/libsmparse.la \
   $(TIMER_LIBRARY)/lib/libtimer.a \
   $(LS_LIBRARY)/lib/libls.a \
   $(MC_LIBRARY)/lib/libmc.a \
@@ -153,7 +158,6 @@ smart_LDADD = \
 ## ICP
 ##
 ## ============================================================
-
 
 icp_SOURCES = \
   include/revision.h \
@@ -211,10 +215,15 @@ icp_SOURCES = \
   Engines/dcp_expl.cc \
   Engines/dcp_symb.cc \
   \
+  ParseICP/icplex.l \
+  ParseICP/icpyacc.y \
+  ParseICP/lexer.cc \
+  ParseICP/compile.cc \
+  ParseICP/parse_icp.cc \
+  \
   Apps/icp.cc
 
 icp_LDADD = \
-  ParseICP/libicpparse.la \
   $(TIMER_LIBRARY)/lib/libtimer.a \
   $(STATE_LIBRARY)/lib/libstate.a \
   $(MDD_LIBRARY)/lib/libmeddly.a

@@ -11,7 +11,7 @@
 
 %{
 
-#include "lexer.h"
+#include "ParseSM/lexer.h"
 
 %}
 

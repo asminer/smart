@@ -11,7 +11,7 @@
 
 %{
 
-#include "lexer.h"
+#include "ParseICP/lexer.h"
 
 %}
 

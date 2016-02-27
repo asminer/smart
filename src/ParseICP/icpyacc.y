@@ -11,7 +11,7 @@
 
 %{
 
-#include "compile.h" // compile-time functionality 
+#include "ParseICP/compile.h" // compile-time functionality 
 
 %}
 

@@ -12,7 +12,7 @@
 
 %{
 
-#include "compile.h" // compile-time functionality 
+#include "ParseSM/compile.h" // compile-time functionality 
 
 %}
 
