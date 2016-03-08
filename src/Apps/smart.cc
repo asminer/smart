@@ -28,6 +28,7 @@
       Re-implementation of nearly everything from version 1.0
 */
 
+#include "config.h"
 #include "../include/revision.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
