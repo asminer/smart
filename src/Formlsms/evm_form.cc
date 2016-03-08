@@ -257,10 +257,10 @@ void evm_event::addEnabling(expr* guard)
 {
   DCASSERT(guard);
   DCASSERT(build_data);
-  bool answer = true;
+  // bool answer = true;
   if (0==build_data->guards) {
     build_data->guards = new List <expr>;
-    answer = false;
+    // answer = false;
   }
   build_data->guards->Append(guard);
 }
