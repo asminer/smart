@@ -192,6 +192,11 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
       // V is sparse - convert
       //
       for (long z=0; z<V.size; z++) {
+        if (V.d_value) {
+          if (0==V.d_value[z]) continue;
+        } else {
+          if (0==V.f_value[z]) continue;
+        }
         long i = ren ? ren[V.index[z]] : V.index[z];
         CHECK_RANGE(0, i, tsize);
         if (V.d_value)  vect[i] = V.d_value[z];
