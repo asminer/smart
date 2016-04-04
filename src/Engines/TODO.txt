@@ -4,23 +4,79 @@
 TO DO LIST:
 
 
-Slight "ProcessGeneration" reorganization
+Reorganize meddly generation code, after OTF is working.
 
-  * MeddlyStateGeneration should be MeddlyProcessGeneration
+  Re-do option MeddlyVariableStyle:
+      DIRECT:   meddly variable value = state variable value
+      BOUNDED:  like direct but variables can be merged;
+                requires known variable bounds
+      INDIRECT: meddly variable value = index of substate, 
+                the substate tells state variable values
+                this should be the default
 
-  * convert saturation, etc. to same style as explicit, i.e.,
-    same algorithm with parameter for "states only" or not
 
-  * then add "EXPLICIT" MeddlyProcessGeneration algorithm :^)
+  All of these should have an option to build an OTF relation;
+  we'll use that to build the relations even for pregen.
+
+  Or better: don't we just need an option to build a subfunc?
+  I.e., a factory, where parameters are list of expressions
+  and a (list of?) firing expressions
+
+  Still better: build an "enabling" subfunc and a "firing" subfunc
+
+  Eventually Need: our own "event" class that knows how to rebuilt itself
+  (for now just do conjunction of everything)
+  
+
+MeddlyProcessGeneration option: add suboption "PregenerateNSF true/false" for some
+
+  EXPLICIT: nope; otf only
+  FRONTIER: ?
+  NEXT_ALL: ?
+  TRADITIONAL: ?
+  SATURATION: default is false
 
 
-CTL / stateset reorganization
+OTF notes:
+======================================================================
 
-  * stateset class becomes abstract with a hierarchy?
+Some thoughts on implementing otf saturation in smart (from whiteboard):
 
-      + explicit -> bitvector
 
-      + symbolic -> meddly-based, leave room for others?
+Building NSFs
+------------------------------------------------------------
+* enabling (sub)expression -> MDD
+* firing (sub)expression -> MxD
 
-  * revisit CTL engine mechanism?
+
+Pregen
+------------------------------------------------------------
+  build NSF for each event
+      get enabling, firing expressions
+      split them
+      build for subexpressions
+      combine
+  if monolithic: combine all
+  if by levels: combine events based on "top"
+  call appropriate saturation engine
+  cleanup
+
+
+otf
+------------------------------------------------------------
+  derived class of MEDDLY::otf_saturation:subevent for each
+   option (direct / indirect)
+
+  build "relation" with options for monolithic/by levels/by events
+
+  call otf saturation
+
+  cleanup
+
+
+tricks:
+  (1) can derived classes for subevent re-use code used for pregen?
+OR
+  (2) once otf is working, implement pregen using otf explore + confirm
+
 

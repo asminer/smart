@@ -50,46 +50,46 @@ protected:
     throw Terminated;
   }
   inline void initial(bool tang, long num, const shared_state* st) const {
-    if (!debug.startReport()) return;
-    debug.report() << "Adding initial";
-    if (tang)   debug.report() << " tangible  state# ";
-    else        debug.report() << " vanishing state# ";
-    debug.report().Put(num, 4);
-    debug.report() << " : ";
-    st->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+    if (!Debug().startReport()) return;
+    Debug().report() << "Adding initial";
+    if (tang)   Debug().report() << " tangible  state# ";
+    else        Debug().report() << " vanishing state# ";
+    Debug().report().Put(num, 4);
+    Debug().report() << " : ";
+    st->Print(Debug().report(), 0);
+    Debug().report() << "\n";
+    Debug().stopIO();
   }
   inline void exploring(bool tang, long num, const shared_state* st) const {
-    if (!debug.startReport()) return;
-    debug.report() << "Exploring";
-    if (tang)   debug.report() << " tangible  state# ";
-    else        debug.report() << " vanishing state# ";
-    debug.report().Put(num, 4);
-    debug.report() << " : ";
-    st->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+    if (!Debug().startReport()) return;
+    Debug().report() << "Exploring";
+    if (tang)   Debug().report() << " tangible  state# ";
+    else        Debug().report() << " vanishing state# ";
+    Debug().report().Put(num, 4);
+    Debug().report() << " : ";
+    st->Print(Debug().report(), 0);
+    Debug().report() << "\n";
+    Debug().stopIO();
   }
   inline void reached(bool tang, long num, double rate, const shared_state* st) const {
-    if (!debug.startReport()) return; 
+    if (!Debug().startReport()) return; 
     if (rate) {
-      debug.report() << " (";
-      debug.report().Put(rate, 4);
-      debug.report() << ")";
+      Debug().report() << " (";
+      Debug().report().Put(rate, 4);
+      Debug().report() << ")";
     }
-    debug.report() << " --> ";
-    st->Print(debug.report(), 0);
-    if (tang)  debug.report() << " (tangible  index ";
-    else  debug.report() << " (vanishing index ";
-    debug.report().Put(num, 4);
-    debug.report() << ")\n";
-    debug.stopIO();
+    Debug().report() << " --> ";
+    st->Print(Debug().report(), 0);
+    if (tang)  Debug().report() << " (tangible  index ";
+    else  Debug().report() << " (vanishing index ";
+    Debug().report().Put(num, 4);
+    Debug().report() << ")\n";
+    Debug().stopIO();
   }
   inline void eliminating(long count) const {
-    if (!debug.startReport()) return;
-    debug.report() << "Eliminating " << count << " vanishing states\n";
-    debug.stopIO();
+    if (!Debug().startReport()) return;
+    Debug().report() << "Eliminating " << count << " vanishing states\n";
+    Debug().stopIO();
   }
   inline bool addVan(hldsm* m, MCLib::vanishing_chain* vc, long i) 
   const {
@@ -115,16 +115,16 @@ protected:
     return true;
   }
   inline void initial_distro(const LS_Vector &init) const {
-    if (!debug.startReport()) return;
-    debug.report() << "Built initial distribution [";
+    if (!Debug().startReport()) return;
+    Debug().report() << "Built initial distribution [";
     for (long z=0; z<init.size; z++) {
       DCASSERT(init.index);
       DCASSERT(init.f_value);
-      if (z) debug.report() << ", ";
-      debug.report() << init.index[z] << ":" << init.f_value[z];
+      if (z) Debug().report() << ", ";
+      Debug().report() << init.index[z] << ":" << init.f_value[z];
     }
-    debug.report() << "]\n";
-    debug.stopIO();
+    Debug().report() << "]\n";
+    Debug().stopIO();
   }
 };
 

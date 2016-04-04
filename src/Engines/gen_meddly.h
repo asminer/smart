@@ -14,6 +14,10 @@
 #include "../Modules/glue_meddly.h"
 #include "../Formlsms/rss_meddly.h"
 
+#include "meddly_expert.h"
+
+#define USING_OLD_MEDDLY_STUFF
+
 class model_event;
 class dsde_hlm;
 class radio_button;
@@ -95,6 +99,10 @@ public:
   void reportStats(DisplayStream &out) const;
 };
 
+//==========================================================================================
+#ifdef USING_OLD_MEDDLY_STUFF
+//==========================================================================================
+
 // **************************************************************************
 // *                                                                        *
 // *                         meddly_varoption class                         *
@@ -104,6 +112,8 @@ public:
 /** Variable options for Meddly.
     Abstracts away different state variable encoding and exploration 
     algorithms.
+
+    TBD - REDESIGN THIS CRAP
 */
 class meddly_varoption {
   // Meddly variables: named?
@@ -210,6 +220,22 @@ public:
   /// Show stats on completion
   virtual void reportStats(DisplayStream &s) const;
 
+
+  // TBD - redesign everything above here
+
+  //
+  // TBD - not yet
+  //
+  // virtual MEDDLY::satotf_opname::subfunc* buildSubfunc(int* v, int nv, 
+  //    
+
+  //
+  // TBD - for now
+  //
+  // Default returns 0
+  //
+  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF();
+
 };
 
 
@@ -305,6 +331,16 @@ private:
   meddly_varoption* makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const;
   meddly_varoption* makePregen(const dsde_hlm &m, meddly_reachset &ms) const;
 };
+
+//==========================================================================================
+#else
+//==========================================================================================
+// not USING_OLD_MEDDLY_STUFF
+
+//==========================================================================================
+#endif
+//==========================================================================================
+// for #ifdef USING_OLD_MEDDLY_STUFF
 
 // TBD
 

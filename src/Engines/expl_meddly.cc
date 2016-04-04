@@ -2658,7 +2658,7 @@ private:
     //
     try {
       em->waitTerm();
-      G.generateRG(debug, hm);
+      G.generateRG(Debug(), hm);
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm.Name(), "reachability set", watch)) {
@@ -2705,7 +2705,7 @@ private:
     //
     try {
       em->waitTerm();
-      G.generateRG(debug, hm);
+      G.generateRG(Debug(), hm);
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm.Name(), "reachability graph", watch)) {
@@ -2755,11 +2755,11 @@ private:
 
       switch (remove_vanishing) {
         case BY_PATH:
-          G.generateMC(debug, hm);
+          G.generateMC(Debug(), hm);
           break;
 
         case BY_SUBGRAPH:
-          G.generateSMP(debug, hm);
+          G.generateSMP(Debug(), hm);
           break;
 
         default:
