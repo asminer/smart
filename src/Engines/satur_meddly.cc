@@ -19,6 +19,7 @@
 
 #include "timerlib.h"
 #include "lslib.h"
+#include "meddly_expert.h"
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -86,11 +87,11 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   DCASSERT(glm);
 
   timer watch;
-  if (report.startReport()) {
-    em->report() << "Finishing FSM using Meddly\n";
-    em->report() << "\tUsing ";
-    em->report() << ( potential ? "potential edges\n" : "actual edges\n" );
-    em->stopIO();
+  if (Report().startReport()) {
+    Report().report() << "Finishing FSM using Meddly\n";
+    Report().report() << "\tUsing ";
+    Report().report() << ( potential ? "potential edges\n" : "actual edges\n" );
+    Report().stopIO();
   }
 
   meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
@@ -99,10 +100,10 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   glm->setRGR( rgr );
 
 
-  if (report.startReport()) {
-    em->report() << "Finished  FSM using Meddly, took ";
-    em->report() << watch.elapsed_seconds() << " seconds\n";
-    em->stopIO();
+  if (Report().startReport()) {
+    Report().report() << "Finished  FSM using Meddly, took ";
+    Report().report() << watch.elapsed_seconds() << " seconds\n";
+    Report().stopIO();
   }
 
   lm->setCompletionEngine(0);
@@ -166,11 +167,11 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   DCASSERT(slm);
 
   timer watch;
-  if (report.startReport()) {
-    em->report() << "Finishing CTMC using Meddly\n";
-    em->report() << "\tUsing ";
-    em->report() << ( potential ? "potential edges\n" : "actual edges\n" );
-    em->stopIO();
+  if (Report().startReport()) {
+    Report().report() << "Finishing CTMC using Meddly\n";
+    Report().report() << "\tUsing ";
+    Report().report() << ( potential ? "potential edges\n" : "actual edges\n" );
+    Report().stopIO();
   }
 
   //
@@ -237,10 +238,10 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   LS_Vector initial;
   slm->setPROC(initial, PROC);
 
-  if (report.startReport()) {
-    em->report() << "Finished  CTMC using Meddly, took ";
-    em->report() << watch.elapsed_seconds() << " seconds\n";
-    em->stopIO();
+  if (Report().startReport()) {
+    Report().report() << "Finished  CTMC using Meddly, took ";
+    Report().report() << watch.elapsed_seconds() << " seconds\n";
+    Report().stopIO();
   }
 
   lm->setCompletionEngine(0);
@@ -322,9 +323,9 @@ protected:
 
   inline bool startGen(const hldsm &hm) const {
     if (!meddly_procgen::startGen(hm, "reachability set")) return false;
-    em->report() << " using Meddly: ";
-    em->report() << getAlgName() << " algorithm, ";
-    em->report() << getStyleName() << " vars.\n";
+    Report().report() << " using Meddly: ";
+    Report().report() << getAlgName() << " algorithm, ";
+    Report().report() << getStyleName() << " vars.\n";
     return true;
   }
 
@@ -333,7 +334,7 @@ protected:
     return meddly_procgen::stopGen(err, hm.Name(), "reachability set", w);
   }
 
-  void buildRSS(meddly_varoption &x);
+  virtual void buildRSS(meddly_varoption &x);
 
 private:
   void radix_sort(const hldsm::partinfo &p, const dsde_hlm &m, int a, int b, int k, bool dec);
@@ -421,11 +422,11 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
 
 void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
 {
-  if (debug.startReport()) {
-    debug.report() << "Updating event DDs\n";
-    debug.stopIO();
+  if (Debug().startReport()) {
+    Debug().report() << "Updating event DDs\n";
+    Debug().stopIO();
   }
-  x.updateEvents(debug, 0);
+  x.updateEvents(Debug(), 0);
 
   const dsde_hlm &m = x.getParent();
   shared_ddedge* N = smart_cast<shared_ddedge*>(x.make_mxd_constant(false));
@@ -435,26 +436,26 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
     MEDDLY::dd_edge enable = x.getEventEnabling(e);
 
 #ifdef DEBUG_DETAILS
-    if (debug.startReport()) {
-      debug.report() << "Enabling DD for event ";
-      debug.report() << m.readEvent(e)->Name();
-      debug.report() << " DD edge: " << enable.getNode() << "\n";
-      debug.report().flush();
-      enable.show(debug.Freport(), 2);
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "Enabling DD for event ";
+      Debug().report() << m.readEvent(e)->Name();
+      Debug().report() << " DD edge: " << enable.getNode() << "\n";
+      Debug().report().flush();
+      enable.show(Debug().Freport(), 2);
+      Debug().stopIO();
     }
 #endif
 
     MEDDLY::dd_edge firing = x.getEventFiring(e);
 
 #ifdef DEBUG_DETAILS
-    if (debug.startReport()) {
-      debug.report() << "Next-state DD for event ";
-      debug.report() << m.readEvent(e)->Name();
-      debug.report() << " DD edge: " << firing.getNode() << "\n";
-      debug.report().flush();
-      firing.show(debug.Freport(), 2);
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "Next-state DD for event ";
+      Debug().report() << m.readEvent(e)->Name();
+      Debug().report() << " DD edge: " << firing.getNode() << "\n";
+      Debug().report().flush();
+      firing.show(Debug().Freport(), 2);
+      Debug().stopIO();
     }
 #endif
 
@@ -464,13 +465,13 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
     firing *= enable;
 
 #ifdef DEBUG_EVENT_NSFS
-    if (debug.startReport()) {
-      debug.report() << "(final) next-state DD for event ";
-      debug.report() << m.readEvent(e)->Name();
-      debug.report() << " DD edge: " << firing.getNode() << "\n";
-      debug.report().flush();
-      firing.show(debug.Freport(), 2);
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "(final) next-state DD for event ";
+      Debug().report() << m.readEvent(e)->Name();
+      Debug().report() << " DD edge: " << firing.getNode() << "\n";
+      Debug().report().flush();
+      firing.show(Debug().Freport(), 2);
+      Debug().stopIO();
     }
 #endif
 
@@ -635,85 +636,85 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   timer watch;
   timer subwatch;
   if (startGen(x.getParent())) {
-    em->stopIO();
+    Report().stopIO();
   }
 
   //
   // Build the initial state set, and other initializations
   //
-  if (report.startReport()) {
-    em->report() << "Initializing forests\n";
-    em->stopIO();
+  if (Report().startReport()) {
+    Report().report() << "Initializing forests\n";
+    Report().stopIO();
   }
 
   try {
     x.initializeVars();
 
-    if (report.startReport()) {
-      em->report() << "Initialized  forests, took ";
-      em->report() << watch.elapsed_seconds() << " seconds\n";
-      em->stopIO();
+    if (Report().startReport()) {
+      Report().report() << "Initialized  forests, took ";
+      Report().report() << watch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
     }
 
-    x.initializeEvents(debug);
+    x.initializeEvents(Debug());
 
     // 
     // Build next-state function
     //
-    if (report.startReport()) {
-      em->report() << "Building next-state function\n";
+    if (Report().startReport()) {
+      Report().report() << "Building next-state function\n";
       subwatch.reset();
-      em->stopIO();
+      Report().stopIO();
     }
 
     buildNextStateFunc(x);
 
-    if (report.startReport()) {
-      em->report() << "Built    next-state function, took ";
-      em->report() << subwatch.elapsed_seconds() << " seconds\n";
+    if (Report().startReport()) {
+      Report().report() << "Built    next-state function, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
   #ifdef DEBUG_FINAL_NSF
-      em->report() << "DD edge: " << getNSF().getNode() << "\n";
-      em->report().flush();
-      getNSF().show(em->Freport(), 2);
-      em->report() << "Initial state: " << x.getInitial().getNode() << "\n";
-      em->report().flush();
-      x.getInitial().show(em->Freport(), 2);
+      Report().report() << "DD edge: " << getNSF().getNode() << "\n";
+      Report().report().flush();
+      getNSF().show(Report().Freport(), 2);
+      Report().report() << "Initial state: " << x.getInitial().getNode() << "\n";
+      Report().report().flush();
+      x.getInitial().show(Report().Freport(), 2);
   #endif
   #ifdef DEBUG_REFCOUNTS
-      em->report() << "Forest:\n";
-      em->report().flush();
-      x.ms.mxd_wrap->getForest()->showInfo(em->Freport(), 1);
-      fflush(em->Freport());
+      Report().report() << "Forest:\n";
+      Report().report().flush();
+      x.ms.mxd_wrap->getForest()->showInfo(Report().Freport(), 1);
+      fflush(Report().Freport());
   #endif
-      em->stopIO();
+      Report().stopIO();
     }
 
     //
     // Generate reachability set
     //
-    if (report.startReport()) {
-      em->report() << "Building reachability set\n";
-      em->stopIO();
+    if (Report().startReport()) {
+      Report().report() << "Building reachability set\n";
+      Report().stopIO();
       subwatch.reset();
     }
 
     generateRSS(x, subwatch);
 
-    if (report.startReport()) {
-      em->report() << "Built    reachability set, took ";
-      em->report() << subwatch.elapsed_seconds() << " seconds\n";
-      em->stopIO();
+    if (Report().startReport()) {
+      Report().report() << "Built    reachability set, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
     }
 
     if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, em->report());
-      x.reportStats(em->report());
-      em->stopIO();
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      Report().stopIO();
     }
   } // try
 
   catch (subengine::error status) {
-    if (stopGen(true, x.getParent(), watch)) em->stopIO();
+    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
     throw status;
   }
 }
@@ -766,6 +767,161 @@ void meddly_saturation::generateRSS(meddly_varoption &x, timer&)
     convert(ce, "Generation failed", x.getParent());
   }
 }
+
+// **************************************************************************
+// *                                                                        *
+// *                          meddly_otfsat  class                          *
+// *                                                                        *
+// **************************************************************************
+
+/** On-the-fly saturation using Meddly.
+
+    HACK!  
+    RE-DESIGN THIS CLASS AND EVERYTHING ELSE IN HERE!
+    IT'S ALL CRAP!
+
+*/
+class meddly_otfsat : public meddly_implicitgen {
+public:
+  meddly_otfsat();
+  virtual ~meddly_otfsat();
+protected:
+  virtual void buildRSS(meddly_varoption &x);
+  virtual void generateRSS(meddly_varoption &x, timer &w) {
+    DCASSERT(0);
+  }
+  virtual const char* getAlgName() const { return "on the fly saturation"; }
+private:
+  MEDDLY::satotf_opname::otf_relation*  buildNSF(meddly_varoption &x);
+  void generateRSS(meddly_varoption &x, MEDDLY::satotf_opname::otf_relation* NSF);
+};
+
+meddly_otfsat the_meddly_otfsat;
+
+meddly_otfsat::meddly_otfsat() : meddly_implicitgen()
+{
+}
+
+meddly_otfsat::~meddly_otfsat()
+{
+}
+
+void meddly_otfsat::buildRSS(meddly_varoption &x)
+{
+  timer watch;
+  timer subwatch;
+  if (startGen(x.getParent())) {
+    Report().stopIO();
+  }
+
+  //
+  // Build the initial state set, and other initializations
+  //
+  if (Report().startReport()) {
+    Report().report() << "Initializing forests\n";
+    Report().stopIO();
+  }
+
+  try {
+    x.initializeVars();
+
+    if (Report().startReport()) {
+      Report().report() << "Initialized  forests, took ";
+      Report().report() << watch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+
+    x.initializeEvents(Debug());
+
+    // 
+    // Build next-state function
+    //
+    if (Report().startReport()) {
+      Report().report() << "Initializing next-state function builder\n";
+      subwatch.reset();
+      Report().stopIO();
+    }
+
+    MEDDLY::satotf_opname::otf_relation* NSF = buildNSF(x);
+    DCASSERT(NSF);
+
+    if (Report().startReport()) {
+      Report().report() << "Initialized  next-state function builder, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+
+    //
+    // Generate reachability set
+    //
+    if (Report().startReport()) {
+      Report().report() << "Building reachability set\n";
+      Report().stopIO();
+      subwatch.reset();
+    }
+
+    generateRSS(x, NSF);
+
+    if (Report().startReport()) {
+      Report().report() << "Built    reachability set, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+
+    if (stopGen(false, x.getParent(), watch)) {
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      Report().stopIO();
+    }
+  } // try
+
+  catch (subengine::error status) {
+    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    throw status;
+  }
+}
+
+MEDDLY::satotf_opname::otf_relation*  
+meddly_otfsat::buildNSF(meddly_varoption &x)
+{
+  // FOR NOW!
+  // TBD!
+
+  return x.buildNSF_OTF();
+}
+
+void meddly_otfsat::generateRSS(meddly_varoption &x, 
+    MEDDLY::satotf_opname::otf_relation* NSF)
+{
+  using namespace MEDDLY;
+
+  DCASSERT(NSF);
+  DCASSERT(SATURATION_OTF);
+
+  try {
+    //
+    // TBD: Fix this
+    //
+    specialized_operation* satop = SATURATION_OTF->buildOperation(0);
+    // specialized_operation* satop = SATURATION_OTF->buildOperation(NSF);
+    DCASSERT(satop);
+
+    shared_ddedge* S = x.newMddEdge();
+    satop->compute(x.getInitial(), S->E);
+
+    // TBD - reindex?
+    // TBD - grab NSF for model checking
+    // TBD - after that, delete NSF?
+
+    x.setStates(S);
+    checkTerm("Generation failed", x.getParent());
+  }
+  catch (MEDDLY::error ce) {
+    convert(ce, "Generation failed", x.getParent());
+  }
+}
+
+
 
 // **************************************************************************
 // *                                                                        *
@@ -906,11 +1062,11 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
   S->E = x.getInitial();
   while (F.getNode()) {
     iterations++;
-    if (debug.startReport()) {
-      debug.report() << "Starting iteration ";
-      debug.report().Put(iterations, 5);
-      debug.report() << ":\n";
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "Starting iteration ";
+      Debug().report().Put(iterations, 5);
+      Debug().report() << ":\n";
+      Debug().stopIO();
     }
     // compute N(F)
     try {
@@ -920,9 +1076,9 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "post-image", x.getParent());
     }
-    if (debug.startReport()) {
-      debug.report() << "\tdone F:=N(F)\n";
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "\tdone F:=N(F)\n";
+      Debug().stopIO();
     }
     // subtract S
     try {
@@ -932,12 +1088,12 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set difference", x.getParent());
     }
-    if (debug.startReport()) {
-      debug.report() << "\tdone F:=F-S  ";
+    if (Debug().startReport()) {
+      Debug().report() << "\tdone F:=F-S  ";
       double card = F.getCardinality();
-      debug.report().Put(card, 13);
-      debug.report() << " states in frontier set\n";
-      debug.stopIO();
+      Debug().report().Put(card, 13);
+      Debug().report() << " states in frontier set\n";
+      Debug().stopIO();
     }
     // add F to S
     try {
@@ -949,16 +1105,16 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set union", x.getParent());
     }
-    if (debug.startReport()) {
-      debug.report() << "\tdone S:=S+F  ";
+    if (Debug().startReport()) {
+      Debug().report() << "\tdone S:=S+F  ";
       double card = S->E.getCardinality();
-      debug.report().Put(card, 13);
-      debug.report() << " reachable states so far";
-      debug.newLine();
+      Debug().report().Put(card, 13);
+      Debug().report() << " reachable states so far";
+      Debug().newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();
-      debug.report() << nodes << " nodes in forest, ";
-      debug.report() << w.elapsed_seconds() << " seconds total time\n";
-      debug.stopIO();
+      Debug().report() << nodes << " nodes in forest, ";
+      Debug().report() << w.elapsed_seconds() << " seconds total time\n";
+      Debug().stopIO();
     }
   } // while F
   x.setStates(S);
@@ -1004,11 +1160,11 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
   S->E = x.getInitial();
   while (S->E != Old) {
     iterations++;
-    if (debug.startReport()) {
-      debug.report() << "Starting iteration ";
-      debug.report().Put(iterations, 5);
-      debug.report() << ":\n";
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "Starting iteration ";
+      Debug().report().Put(iterations, 5);
+      Debug().report() << ":\n";
+      Debug().stopIO();
     }
     Old = S->E;
     // compute S = N(S)
@@ -1020,9 +1176,9 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "post-image", x.getParent());
     }
-    if (debug.startReport()) {
-      debug.report() << "\tdone S':=N(S)\n";
-      debug.stopIO();
+    if (Debug().startReport()) {
+      Debug().report() << "\tdone S':=N(S)\n";
+      Debug().stopIO();
     }
     // compute S = Old + S
     try {
@@ -1033,16 +1189,16 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set union", x.getParent());
     }
-    if (debug.startReport()) {
-      debug.report() << "\tdone S:=S+S'  ";
+    if (Debug().startReport()) {
+      Debug().report() << "\tdone S:=S+S'  ";
       double card = S->E.getCardinality();
-      debug.report().Put(card, 13);
-      debug.report() << " reachable states so far";
-      debug.newLine();
+      Debug().report().Put(card, 13);
+      Debug().report() << " reachable states so far";
+      Debug().newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();
-      debug.report() << nodes << " nodes in forest, ";
-      debug.report() << w.elapsed_seconds() << " seconds total time\n";
-      debug.stopIO();
+      Debug().report() << nodes << " nodes in forest, ";
+      Debug().report() << w.elapsed_seconds() << " seconds total time\n";
+      Debug().stopIO();
     }
   } // while F
   x.setStates(S);
@@ -1079,6 +1235,14 @@ bool init_saturmeddly::execute()
     "The Saturation algorithm, as implemented in Meddly",
     &the_meddly_saturation
   );
+
+  RegisterEngine(em,
+    "MeddlyProcessGeneration",
+    "OTF_SATURATION",
+    "The On-the-fly Saturation algorithm, as implemented in Meddly",
+    &the_meddly_otfsat
+  );
+
 
   RegisterEngine(em,
     "MeddlyProcessGeneration",

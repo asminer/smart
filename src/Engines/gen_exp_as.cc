@@ -391,16 +391,16 @@ protected:
 
 
   inline void initial_distro(const LS_Vector &init) const {
-    if (!debug.startReport()) return;
-    debug.report() << "Built initial distribution [";
+    if (!Debug().startReport()) return;
+    Debug().report() << "Built initial distribution [";
     for (long z=0; z<init.size; z++) {
       DCASSERT(init.index);
       DCASSERT(init.f_value);
-      if (z) debug.report() << ", ";
-      debug.report() << init.index[z] << ":" << init.f_value[z];
+      if (z) Debug().report() << ", ";
+      Debug().report() << init.index[z] << ":" << init.f_value[z];
     }
-    debug.report() << "]\n";
-    debug.stopIO();
+    Debug().report() << "]\n";
+    Debug().stopIO();
   }
 };
 
@@ -481,9 +481,9 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   timer watch;
   if (startGen(*hm, the_proc)) {
     if (!rss->IsStatic())
-        em->report() << " using " << statelib->getDBMethod();
-    em->report() << "\n";
-    em->stopIO();
+        Report().report() << " using " << statelib->getDBMethod();
+    Report().report() << "\n";
+    Report().stopIO();
   }
 
   // set initial distribution
@@ -517,24 +517,24 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Report on generation
   if (stopGen(!procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
-      em->report().Put('\t');
-      em->report().PutMemoryCount(rss->ReportMemTotal(), 3);
-      em->report() << " required for state space construction\n";
-      em->report() << "\t" << rss->Size() << " states generated\n";
+      Report().report().Put('\t');
+      Report().report().PutMemoryCount(rss->ReportMemTotal(), 3);
+      Report().report() << " required for state space construction\n";
+      Report().report() << "\t" << rss->Size() << " states generated\n";
     } 
     if (rg) {
-      em->report().Put('\t');
-      em->report().PutMemoryCount(rg->ReportMemTotal(), 3);
-      em->report() << " required for reachability graph construction\n";
-      em->report() << "\t" << rg->getNumEdges() << " graph edges\n";
+      Report().report().Put('\t');
+      Report().report().PutMemoryCount(rg->ReportMemTotal(), 3);
+      Report().report() << " required for reachability graph construction\n";
+      Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
     } 
     if (mc) {
-      em->report().Put('\t');
-      em->report().PutMemoryCount(mc->ReportMemTotal(), 3);
-      em->report() << " required for Markov chain construction\n";
-      em->report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
+      Report().report().Put('\t');
+      Report().report().PutMemoryCount(mc->ReportMemTotal(), 3);
+      Report().report() << " required for Markov chain construction\n";
+      Report().report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
     }
-    em->stopIO();
+    Report().stopIO();
   }
   em->resumeTerm();
 
@@ -572,8 +572,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Start reporting on compaction
   if (startCompact(*hm, the_proc)) {
-    em->report() << "\n";
-    em->stopIO();
+    Report().report() << "\n";
+    Report().stopIO();
     watch.reset();
   }
 
@@ -593,7 +593,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
-    em->stopIO();
+    Report().stopIO();
   }
 
   // We've generated the entire process now.
@@ -611,12 +611,12 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
   if (rg) {
     indexed_reachgraph myrg(*tandb, *vandb, *rg);
-    generateRGt<indexed_reachgraph, long>(debug, *dsm, myrg);
+    generateRGt<indexed_reachgraph, long>(Debug(), *dsm, myrg);
     myrg.exportInitial(s0);
     myrg.finish();
   } else {
     indexed_statedbs myrs(*tandb, *vandb);
-    generateRGt<indexed_statedbs, long>(debug, *dsm, myrs);
+    generateRGt<indexed_statedbs, long>(Debug(), *dsm, myrs);
   }
 
   delete vandb;
@@ -641,11 +641,11 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
     switch (remove_vanishing) {
       case BY_PATH:
-        generateMCt<indexed_smp, long>(debug, *dsm, mysmp);
+        generateMCt<indexed_smp, long>(Debug(), *dsm, mysmp);
         break;
 
       case BY_SUBGRAPH:
-        generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
+        generateSMPt<indexed_smp, long>(Debug(), *dsm, mysmp);
         break;
 
       default:
@@ -660,11 +660,11 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
     switch (remove_vanishing) {
       case BY_PATH:
-        generateMCt<indexed_statedbs, long>(debug, *dsm, myrs);
+        generateMCt<indexed_statedbs, long>(Debug(), *dsm, myrs);
         break;
 
       case BY_SUBGRAPH:
-        generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
+        generateSMPt<indexed_statedbs, long>(Debug(), *dsm, myrs);
         break;
 
       default:

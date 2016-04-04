@@ -18,11 +18,11 @@ class hldsm;
 
 /// underlying process generation engine base class.
 class process_generator : public subengine {
-protected:
+  friend class init_procgen;
   static named_msg report;
   static named_msg debug;
+protected:
   static int remove_vanishing;
-  friend class init_procgen;
 public:
   static const int BY_PATH = 0;
   static const int BY_SUBGRAPH = 1;
@@ -38,6 +38,13 @@ public:
   static bool startCompact(const hldsm& mdl, const char* whatproc);
   // returns true if the report stream is open
   static bool stopCompact(const char* name, const char* wp, const timer &w, const lldsm* proc);
+
+  inline static named_msg& Debug() {
+    return debug;
+  }
+  inline static named_msg& Report() {
+    return report;
+  }
 };
 
 #endif

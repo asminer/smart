@@ -23,6 +23,8 @@
 // #define SHOW_SUBSTATES
 // #define SHOW_MINTERMS
 
+#define SHORT_CIRCUIT_ENABLING
+
 // **************************************************************************
 // *                                                                        *
 // *                          minterm_pool methods                          *
@@ -69,6 +71,8 @@ void minterm_pool::reportStats(DisplayStream &out) const
 // *                        meddly_varoption methods                        *
 // *                                                                        *
 // **************************************************************************
+
+#ifdef USING_OLD_MEDDLY_STUFF
 
 bool meddly_varoption::vars_named;
 
@@ -158,6 +162,11 @@ void meddly_varoption::reportStats(DisplayStream &out) const
 {
   ms.reportStats(out);
   if (mxd_wrap) mxd_wrap->reportStats(out);
+}
+
+MEDDLY::satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF()
+{
+  return 0;
 }
 
 // **************************************************************************
@@ -845,6 +854,261 @@ substate_encoder::copyWithDifferentForest(const char* n, MEDDLY::forest* nf) con
 
 // **************************************************************************
 // *                                                                        *
+// *                         enabling_subfunc class                         *
+// *                                                                        *
+// **************************************************************************
+
+// TBD - move this somewhere better
+//
+class enabling_subfunc : public MEDDLY::satotf_opname::subfunc {
+  public:
+    // TBD - clean up this constructor!
+    // enabling_subfunc(named_msg &d, const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
+    enabling_subfunc(const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
+    virtual ~enabling_subfunc();
+
+  protected:
+    // TBD - different interface now?
+    virtual MEDDLY::dd_edge& rebuild(const MEDDLY::satotf_opname::otf_relation &rel);
+
+  private: // helpers
+    // returns true on success
+    bool addMinterm(const int* from);
+
+    void exploreEnabling(int dpth);
+
+    inline bool maybeEnabled() {
+#ifdef SHORT_CIRCUIT_ENABLING
+      DCASSERT(is_enabled);
+      is_enabled->Compute(td);
+      if (td.answer->isNormal()) {
+        return td.answer->getBool();
+      } else if (td.answer->isUnknown()) {
+        return true;
+      } else {
+        // null?  not sure what to do here
+        return false;
+      }
+#else
+      return true;
+#endif
+    }
+
+  private:
+    expr* is_enabled;
+    int** mt_from;
+    int mt_alloc;
+    int mt_used;
+    int num_levels;
+    // some of this stuff could be shared, one per model,
+    // at the cost of re-initializing stuff every time we need to explore
+    // TBD - option to select between "optimize for speed" and "optimize for memory"
+    // (two different classes?  or make this a template <bool> class?)
+    traverse_data td;
+    shared_state* tdcurr;
+    int* from_minterm;
+
+    // used by exploreEnabling
+    int changed_k;
+    int new_index;
+
+    substate_colls* colls;
+
+    // TBD - this should be static or accessed via a parent class
+    // named_msg &debug;
+};
+
+// **************************************************************************
+// *                        enabling_subfunc methods                        *
+// **************************************************************************
+
+// enabling_subfunc::enabling_subfunc(named_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
+enabling_subfunc::enabling_subfunc(const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
+ : MEDDLY::satotf_opname::subfunc(v, nv), td(traverse_data::Compute)//, debug(d)
+{
+  is_enabled = chunk;
+  colls = c;
+
+  mt_from = 0;
+  mt_alloc = mt_used = 0;
+  num_levels = p.getPartInfo().num_levels;
+
+  td.answer = new result;
+  tdcurr = new shared_state(&p);
+  td.current_state = tdcurr;
+  from_minterm = new int[1+num_levels];
+
+  //
+  // TBD - need to know which levels affect the event,
+  // so we can set everything else to DONT_CHANGE
+  //
+  from_minterm[0] = MEDDLY::DONT_CARE;
+  for (int k=1; k<=num_levels; k++) {
+    if (event_deps.contains(k)) {
+      from_minterm[k] = MEDDLY::DONT_CARE;
+    } else {
+      from_minterm[k] = MEDDLY::DONT_CHANGE;
+    }
+    tdcurr->set_substate_unknown(k);
+  }
+}
+
+enabling_subfunc::~enabling_subfunc()
+{
+  Delete(is_enabled);
+  for (int i=0; i<mt_used; i++) {
+    delete[] mt_from[i];
+  }
+  free(mt_from);
+
+  delete td.answer;
+  Delete(tdcurr);
+  delete[] from_minterm;
+}
+
+// TBD - why a reference?
+MEDDLY::dd_edge& enabling_subfunc::rebuild(const MEDDLY::satotf_opname::otf_relation &rel)
+{
+  using namespace MEDDLY;
+
+  // TBD - how to set these?
+  changed_k = 0;
+  new_index = 0;
+
+  // Explicitly explore new states and discover minterms to add
+
+  exploreEnabling(getNumVars()-1);
+
+  // Add those minterms
+  forest* mxdf = 0;
+  // TBD grab mxdf from rel.
+  dd_edge add_to_root(mxdf);
+
+  // TBD - collect minterms, add to root and return
+  mxdf->createEdge(mt_from, mt_from, mt_used, add_to_root);
+  mt_used = 0;
+
+  add_to_root += getRoot();
+  return add_to_root;
+}
+
+bool enabling_subfunc::addMinterm(const int* from)
+{
+  if (mt_used >= mt_alloc) {
+    int old_alloc = mt_alloc;
+    if (0==mt_alloc) {
+      mt_alloc = 8;
+      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+    } else {
+      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
+      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+    }
+    if (0==mt_from) return false; // malloc or realloc failed
+    for (int i=old_alloc; i<mt_alloc; i++) {
+      mt_from[i] = 0;
+    }
+  }
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[1+num_levels];
+  }
+  memcpy(mt_from[mt_used], from, (1+num_levels) * sizeof(int));
+  mt_used++;
+  return true;
+}
+
+void enabling_subfunc::exploreEnabling(int dpth)
+{
+  if (0==dpth) {
+    /*
+    bool start_d = debug.startReport();
+    if (start_d) {
+      debug.report() << "enabled?\n\tstate ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tminterm [";
+      debug.report().PutArray(from_minterm+1, num_levels);
+      debug.report() << "]\n\t";
+      is_enabled->Print(debug.report(), 0);
+      debug.report() << " : ";
+    }
+    */
+#ifdef SHORT_CIRCUIT_ENABLING
+    td.answer->setBool(true);
+#else
+    DCASSERT(is_enabled);
+    is_enabled->Compute(td);
+#endif
+    /*
+    if (start_d) {
+      if (td.answer->isNormal()) {
+        if (td.answer->getBool())
+          debug.report() << "true";
+        else
+          debug.report() << "false";
+      } else if (td.answer->isUnknown())
+        debug.report() << "?";
+      else
+        debug.report() << "null";
+      debug.report() << "\n";
+      debug.stopIO();
+    }
+    */
+
+    DCASSERT(td.answer->isNormal());
+    if (false == td.answer->getBool()) return;
+
+    addMinterm(from_minterm);
+
+    return;
+  }
+
+  if (getVars()[dpth] == changed_k) {
+      tdcurr->set_substate_known(changed_k);
+      int ssz = tdcurr->readSubstateSize(changed_k);
+      int foo = colls->getSubstate(changed_k, new_index, tdcurr->writeSubstate(changed_k), ssz);
+      if (foo<0) throw subengine::Engine_Failed;
+
+      // 
+      // check expression and short-circuit if definitely false 
+      // tbd - what about definitely true?
+      //
+      
+      if (maybeEnabled()) {
+        from_minterm[changed_k] = new_index;
+        exploreEnabling(dpth-1); 
+      }
+
+      from_minterm[changed_k] = MEDDLY::DONT_CARE;
+      tdcurr->set_substate_unknown(changed_k);
+      return;
+  }
+
+  // regular level - explore all confirmed
+  const int k = getVars()[dpth];
+  tdcurr->set_substate_known(k);
+  for (int i = 0; i<10; i++) {
+    // TBD!
+    // the above loop should be over all confirmed states at currlevel
+
+      int ssz = tdcurr->readSubstateSize(k);
+      int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
+      if (foo<0) throw subengine::Engine_Failed;
+
+      // 
+      // check expression and short-circuit if definitely false
+      //
+      
+      if (maybeEnabled()) {
+        from_minterm[k] = i;
+        exploreEnabling(dpth-1);
+      }
+  } // for i
+  from_minterm[k] = MEDDLY::DONT_CARE;
+  tdcurr->set_substate_unknown(k);
+}
+
+
+// **************************************************************************
+// *                                                                        *
 // *                        substate_varoption class                        *
 // *                                                                        *
 // **************************************************************************
@@ -886,6 +1150,13 @@ protected:
     inline bool sameDeps(const intset& deps) const {
       return level_deps == deps;
     }
+    inline void addToDeps(intset& deps) const {
+      deps += level_deps;
+    }
+    inline int countDeps() const {
+      return level_deps.cardinality();
+    }
+
     /**
         Given a list of levels, build the intersection
         with the set of levels that we depend on.
@@ -930,6 +1201,13 @@ public:
   virtual void initializeVars();
   virtual void initializeEvents(named_msg &d);
   virtual void reportStats(DisplayStream &out) const;
+
+  //
+  // TBD - for now
+  //
+
+  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF();
+
 private:
   void initDomain(const exprman* em);
   void initEncoders(const meddly_procgen &pg);
@@ -1234,6 +1512,119 @@ void substate_varoption::reportStats(DisplayStream &out) const
   DCASSERT(colls);
   colls->Report(out);
 }
+
+
+MEDDLY::satotf_opname::otf_relation* substate_varoption::buildNSF_OTF()
+{
+  using namespace MEDDLY;
+
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
+
+  satotf_opname::event** otf_events = new
+    satotf_opname::event* [getParent().getNumEvents()];
+
+  //
+  // For each event
+  //
+  intset depends(num_levels+1);
+  for (int i=0; i<getParent().getNumEvents(); i++) {
+    //
+    // union the enabling and firing dependencies to get all levels
+    // that this event depends on
+
+    depends.removeAll();
+
+    int num_enabling = 0;
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next, num_enabling++) {
+      ptr->addToDeps(depends);
+    };
+
+    int num_firing = 0;
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, num_firing++) {
+      ptr->addToDeps(depends);
+    }
+
+    DCASSERT(num_enabling + num_firing > 0);
+
+    //
+    // Build subevents
+    //
+
+    satotf_opname::subfunc** subevents = new 
+      satotf_opname::subfunc* [num_enabling + num_firing];
+
+    //
+    // Build enabling subevents
+    //
+    int se = 0;
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next, se++) {
+      //
+      // build enabling expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
+      }
+
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+      }
+
+      // Ok, build the enabling subevent
+      subevents[se] = new enabling_subfunc(getParent(), colls, depends, chunk, v, nv);
+    }
+
+    //
+    // Build firing subevents
+    //
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
+      // TBD!
+      // Should look a lot like the previous loop for enablings though
+
+      subevents[se] = 0;
+    }
+
+    
+    //
+    // Pull these together into the event
+    //
+    otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
+  } // for i
+
+  //
+  // Build overall otf relation
+  //
+  return new satotf_opname::otf_relation(
+    ms.getMddForest(), get_mxd_forest(), ms.getMddForest(), 
+    otf_events, getParent().getNumEvents()
+  );
+}
+
 
 void substate_varoption::initDomain(const exprman* em)
 {
@@ -1869,7 +2260,7 @@ onthefly_varoption
 
 void onthefly_varoption::updateEvents(named_msg &d, bool* cl)
 {
-  throw subengine::Engine_Failed;
+  // throw subengine::Engine_Failed;
 }
 
 bool onthefly_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
@@ -2156,4 +2547,10 @@ radio_button** init_genmeddly::makeNDPButtons(int &num_buttons)
 }
 
 
+//==========================================================================================
+#else // not USING_OLD_MEDDLY_STUFF
+//==========================================================================================
 
+//==========================================================================================
+#endif
+//==========================================================================================
