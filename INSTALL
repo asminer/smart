@@ -3,7 +3,7 @@ $Id$
 
 Instructions to build
 
-0.  autoreconf --install
+0.  autoreconf --force --install
 
     This step is necessary for the first build, and anytime configure.ac
     or any Makefile.am changes.

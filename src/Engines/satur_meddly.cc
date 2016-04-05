@@ -887,7 +887,7 @@ meddly_otfsat::buildNSF(meddly_varoption &x)
   // FOR NOW!
   // TBD!
 
-  return x.buildNSF_OTF();
+  return x.buildNSF_OTF(Debug());
 }
 
 void meddly_otfsat::generateRSS(meddly_varoption &x, 
@@ -896,14 +896,10 @@ void meddly_otfsat::generateRSS(meddly_varoption &x,
   using namespace MEDDLY;
 
   DCASSERT(NSF);
-  DCASSERT(SATURATION_OTF);
+  DCASSERT(MEDDLY::SATURATION_OTF_FORWARD);
 
   try {
-    //
-    // TBD: Fix this
-    //
-    specialized_operation* satop = SATURATION_OTF->buildOperation(0);
-    // specialized_operation* satop = SATURATION_OTF->buildOperation(NSF);
+    specialized_operation* satop = SATURATION_OTF_FORWARD->buildOperation(NSF);
     DCASSERT(satop);
 
     shared_ddedge* S = x.newMddEdge();

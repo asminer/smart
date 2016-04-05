@@ -111,6 +111,7 @@ public:
   option_const* Initialize(option* owner, const char* n, const char* docs, bool act);
 
   inline bool isActive() const { return active; }
+  inline bool canWrite() const { return active && io; }
 
   inline bool startWarning() const {
     if (!active) return false;

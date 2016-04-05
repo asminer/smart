@@ -234,7 +234,7 @@ public:
   //
   // Default returns 0
   //
-  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF();
+  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
 
 };
 
