@@ -25,6 +25,8 @@
 
 #define SHORT_CIRCUIT_ENABLING
 
+using namespace MEDDLY;
+
 // **************************************************************************
 // *                                                                        *
 // *                          minterm_pool methods                          *
@@ -81,8 +83,8 @@ meddly_varoption::meddly_varoption(meddly_reachset &x, const dsde_hlm &p)
 {
   mxd_wrap = 0;
   built_ok = true;
-  event_enabling = new MEDDLY::dd_edge*[parent.getNumEvents()];
-  event_firing = new MEDDLY::dd_edge*[parent.getNumEvents()];
+  event_enabling = new dd_edge*[parent.getNumEvents()];
+  event_firing = new dd_edge*[parent.getNumEvents()];
   for (int i=0; i<parent.getNumEvents(); i++) {
     event_enabling[i] = event_firing[i] = 0;
   }
@@ -164,7 +166,7 @@ void meddly_varoption::reportStats(DisplayStream &out) const
   if (mxd_wrap) mxd_wrap->reportStats(out);
 }
 
-MEDDLY::satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF()
+satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(named_msg &debug)
 {
   return 0;
 }
@@ -184,7 +186,7 @@ class bounded_encoder : public meddly_encoder {
   const hldsm &parent;
   shared_state* expl_state;
 public:
-  bounded_encoder(const char* n, MEDDLY::forest* f, const hldsm &p, int max_var_size);
+  bounded_encoder(const char* n, forest* f, const hldsm &p, int max_var_size);
 protected:
   virtual ~bounded_encoder();
 public:
@@ -196,7 +198,7 @@ public:
   virtual void state2minterm(const shared_state* s, int* mt) const;
   virtual void minterm2state(const int* mt, shared_state *s) const;
 
-  virtual meddly_encoder* copyWithDifferentForest(const char*, MEDDLY::forest*) const;
+  virtual meddly_encoder* copyWithDifferentForest(const char*, forest*) const;
 protected:
   void FillTerms(const model_statevar* sv, int p, int &i, expr* f);
 };
@@ -208,7 +210,7 @@ protected:
 // **************************************************************************
 
 bounded_encoder
-::bounded_encoder(const char* n, MEDDLY::forest* f, const hldsm &p, int max_var_size)
+::bounded_encoder(const char* n, forest* f, const hldsm &p, int max_var_size)
 : meddly_encoder(n, f), tdx(traverse_data::Compute), parent(p)
 {
   DCASSERT(parent.hasPartInfo());
@@ -330,7 +332,7 @@ bounded_encoder::minterm2state(const int* mt, shared_state *s) const
 }
 
 meddly_encoder* 
-bounded_encoder::copyWithDifferentForest(const char* n, MEDDLY::forest* nf) const
+bounded_encoder::copyWithDifferentForest(const char* n, forest* nf) const
 {
   return new bounded_encoder(n, nf, parent, maxbound);
 }
@@ -357,14 +359,14 @@ public:
 
   virtual void updateEvents(named_msg &d, bool* cl);
 
-  virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
+  virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 
   virtual void reportStats(DisplayStream &out) const;
 
 protected: // in the following, dd is an mxd edge.
-  void encodeExpr(expr* e, MEDDLY::dd_edge &dd, const char *what, const char* who);
+  void encodeExpr(expr* e, dd_edge &dd, const char *what, const char* who);
 
-  void buildNoChange(const model_event &e, MEDDLY::dd_edge &dd);
+  void buildNoChange(const model_event &e, dd_edge &dd);
 
 private:
   void checkBounds(const exprman* em);
@@ -409,9 +411,9 @@ void bounded_varoption::updateEvents(named_msg &d, bool* cl)
   DCASSERT(built_ok);
   DCASSERT(event_enabling);
   DCASSERT(event_firing);
-  MEDDLY::forest* f = get_mxd_forest();
+  forest* f = get_mxd_forest();
   DCASSERT(f);
-  MEDDLY::dd_edge mask(f);
+  dd_edge mask(f);
 
   // For now, don't bother checking cl; just build everything
 
@@ -429,7 +431,7 @@ void bounded_varoption::updateEvents(named_msg &d, bool* cl)
       d.stopIO();
     }
 
-    if (0==event_enabling[i]) event_enabling[i] = new MEDDLY::dd_edge(f);
+    if (0==event_enabling[i]) event_enabling[i] = new dd_edge(f);
     encodeExpr(
       e->getEnabling(), *event_enabling[i], "enabling of event", e->Name()
     );
@@ -444,7 +446,7 @@ void bounded_varoption::updateEvents(named_msg &d, bool* cl)
       d.stopIO();
     }
 
-    if (0==event_firing[i])   event_firing[i]   = new MEDDLY::dd_edge(f);
+    if (0==event_firing[i])   event_firing[i]   = new dd_edge(f);
     encodeExpr(
       e->getNextstate(), *event_firing[i], "firing of event", e->Name()
     );
@@ -468,7 +470,7 @@ void bounded_varoption::updateEvents(named_msg &d, bool* cl)
   } // for i
 }
 
-bool bounded_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
+bool bounded_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 {
   return false;
 }
@@ -497,11 +499,11 @@ void bounded_varoption::reportStats(DisplayStream &out) const
 }
 
 void bounded_varoption
-::encodeExpr(expr* e, MEDDLY::dd_edge &dd, const char* what, const char* who)
+::encodeExpr(expr* e, dd_edge &dd, const char* what, const char* who)
 {
   DCASSERT(mtmxd_wrap);
   if (0==e) {
-    MEDDLY::forest* f = dd.getForest();
+    forest* f = dd.getForest();
     f->createEdge(true, dd);
     return;
   }
@@ -535,10 +537,10 @@ void bounded_varoption
 
   // now, copy it into the MXD
   try {
-    MEDDLY::apply(MEDDLY::COPY, me->E, dd);
+    apply(COPY, me->E, dd);
     return;
   }
-  catch (MEDDLY::error ce) {
+  catch (error ce) {
     // An error occurred, report it...
     if (getParent().StartError(0)) {
       getParent().SendError("Meddly error ");
@@ -550,14 +552,14 @@ void bounded_varoption
     }
 
     // ...and figure out which one
-    if (MEDDLY::error::INSUFFICIENT_MEMORY == ce.getCode())
+    if (error::INSUFFICIENT_MEMORY == ce.getCode())
       throw subengine::Out_Of_Memory;
 
     throw subengine::Engine_Failed;
   }
 }
 
-void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
+void bounded_varoption::buildNoChange(const model_event &e, dd_edge &dd)
 {
   DCASSERT(minterm);
   DCASSERT(mtmxd_wrap);
@@ -565,17 +567,17 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
 
   // "don't change" levels
   for (int k=1; k<=part.num_levels; k++) {
-    minterm[k] = MEDDLY::DONT_CARE;
+    minterm[k] = DONT_CARE;
     minprim[k] = (e.nextstateDependsOnLevel(k)) 
-        ? MEDDLY::DONT_CARE 
-        : MEDDLY::DONT_CHANGE;
+        ? DONT_CARE 
+        : DONT_CHANGE;
   }
   DCASSERT(dd.getForest());
   try {
     dd.getForest()->createEdge(&minterm, &minprim, 1, dd);
   }
-  catch (MEDDLY::error fe) {
-    if (MEDDLY::error::INSUFFICIENT_MEMORY == fe.getCode()) 
+  catch (error fe) {
+    if (error::INSUFFICIENT_MEMORY == fe.getCode()) 
       throw subengine::Out_Of_Memory;
     throw subengine::Engine_Failed;
   }
@@ -587,9 +589,9 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
   DCASSERT(x);
   shared_ddedge* xp = smart_cast <shared_ddedge*>(mtmxd_wrap->makeEdge(0));
   DCASSERT(xp);
-  MEDDLY::dd_edge mask(x->E.getForest());
+  dd_edge mask(x->E.getForest());
   mask.getForest()->createEdge(1, mask);
-  MEDDLY::dd_edge noch(x->E.getForest());
+  dd_edge noch(x->E.getForest());
 
   try {
     // IMPORTANT: iterate from bottom level up, this helps
@@ -604,7 +606,7 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
         mtmxd_wrap->buildSymbolicSV(sv, false, 0, x);
         mtmxd_wrap->buildSymbolicSV(sv, true, 0, xp);
 
-        MEDDLY::apply(MEDDLY::EQUAL, x->E, xp->E, noch);
+        apply(EQUAL, x->E, xp->E, noch);
 
         mask *= noch;
       } // for p
@@ -617,8 +619,8 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
     xp=0;
 
     // copy mask into the right forest
-    MEDDLY::dd_edge mask2(dd.getForest());
-    MEDDLY::apply(MEDDLY::COPY, mask, mask2);
+    dd_edge mask2(dd.getForest());
+    apply(COPY, mask, mask2);
 
 #ifdef DEBUG_NOCHANGE
     printf("mask2:\n");
@@ -634,7 +636,7 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
 
     return;
   } // try
-  catch (MEDDLY::error e) {
+  catch (error e) {
     // cleanup, just in case
     Delete(x);
     Delete(xp);
@@ -647,7 +649,7 @@ void bounded_varoption::buildNoChange(const model_event &e, MEDDLY::dd_edge &dd)
       getParent().DoneError();
     }
     // ...and figure out which one
-    if (MEDDLY::error::INSUFFICIENT_MEMORY == e.getCode()) {
+    if (error::INSUFFICIENT_MEMORY == e.getCode()) {
       throw subengine::Out_Of_Memory;
     } else {
       throw subengine::Engine_Failed;
@@ -698,7 +700,7 @@ int bounded_varoption::initDomain(const exprman* em)
   minterm[0] = 1;
   minprim[0] = 1;
   int maxbound = 0;
-  MEDDLY::variable** vars = new MEDDLY::variable*[part.num_levels+1];
+  variable** vars = new variable*[part.num_levels+1];
   vars[0] = 0;
   for (int k=part.num_levels; k; k--) {
     int bnd = 1;
@@ -716,7 +718,7 @@ int bounded_varoption::initDomain(const exprman* em)
       }
       bnd = newbnd;
     } // for p
-    vars[k] = MEDDLY::createVariable(bnd, buildVarName(part, k));
+    vars[k] = createVariable(bnd, buildVarName(part, k));
     maxbound = MAX(bnd, maxbound);
 
   } // for k
@@ -733,24 +735,24 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
   //
   // Initialize MDD forest
   //
-  MEDDLY::forest* mdd = ms.createForest(
-    false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
+  forest* mdd = ms.createForest(
+    false, forest::BOOLEAN, forest::MULTI_TERMINAL, 
     pg.buildRSSPolicies()
   );
   DCASSERT(mdd);
   //
   // Initialize MxD forest
   //
-  MEDDLY::forest* mxd = ms.createForest(
-    true, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL,
+  forest* mxd = ms.createForest(
+    true, forest::BOOLEAN, forest::MULTI_TERMINAL,
     pg.buildNSFPolicies()
   );
   DCASSERT(mxd);
   //
   // Initialize MTMxD forest
   //
-  MEDDLY::forest* mtmxd = ms.createForest(
-    true, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL,
+  forest* mtmxd = ms.createForest(
+    true, forest::INTEGER, forest::MULTI_TERMINAL,
     pg.buildNSFPolicies()
   );
   DCASSERT(mtmxd);
@@ -773,7 +775,7 @@ class substate_encoder : public meddly_encoder {
   substate_colls* colls;
   const hldsm &parent;
 public:
-  substate_encoder(const char* n, MEDDLY::forest* f, const hldsm &p, substate_colls* c);
+  substate_encoder(const char* n, forest* f, const hldsm &p, substate_colls* c);
 protected:
   virtual ~substate_encoder();
 public:
@@ -785,7 +787,7 @@ public:
   virtual void state2minterm(const shared_state* s, int* mt) const;
   virtual void minterm2state(const int* mt, shared_state *s) const;
 
-  virtual meddly_encoder* copyWithDifferentForest(const char* n, MEDDLY::forest*) const;
+  virtual meddly_encoder* copyWithDifferentForest(const char* n, forest*) const;
 };
 
 // **************************************************************************
@@ -795,7 +797,7 @@ public:
 // **************************************************************************
 
 substate_encoder
-::substate_encoder(const char* n, MEDDLY::forest* f, const hldsm &p, substate_colls* c)
+::substate_encoder(const char* n, forest* f, const hldsm &p, substate_colls* c)
 : meddly_encoder(n, f), parent(p)
 {
   colls = c;
@@ -847,35 +849,34 @@ substate_encoder::minterm2state(const int* mt, shared_state *s) const
 }
 
 meddly_encoder* 
-substate_encoder::copyWithDifferentForest(const char* n, MEDDLY::forest* nf) const
+substate_encoder::copyWithDifferentForest(const char* n, forest* nf) const
 {
   return new substate_encoder(n, nf, parent, Share(colls));
 }
 
 // **************************************************************************
 // *                                                                        *
-// *                         enabling_subfunc class                         *
+// *                        enabling_subevent  class                        *
 // *                                                                        *
 // **************************************************************************
 
 // TBD - move this somewhere better
 //
-class enabling_subfunc : public MEDDLY::satotf_opname::subfunc {
+class enabling_subevent : public satotf_opname::subevent {
   public:
     // TBD - clean up this constructor!
-    // enabling_subfunc(named_msg &d, const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
-    enabling_subfunc(const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
-    virtual ~enabling_subfunc();
+    // enabling_subevent(named_msg &d, const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
+    enabling_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+    virtual ~enabling_subevent();
 
   protected:
-    // TBD - different interface now?
-    virtual MEDDLY::dd_edge& rebuild(const MEDDLY::satotf_opname::otf_relation &rel);
+    virtual void confirm(satotf_opname::otf_relation &rel, int v, int index);
 
   private: // helpers
     // returns true on success
     bool addMinterm(const int* from);
 
-    void exploreEnabling(int dpth);
+    void exploreEnabling(satotf_opname::otf_relation &rel, int dpth);
 
     inline bool maybeEnabled() {
 #ifdef SHORT_CIRCUIT_ENABLING
@@ -914,18 +915,22 @@ class enabling_subfunc : public MEDDLY::satotf_opname::subfunc {
 
     substate_colls* colls;
 
+    // used only for debug info?
+    const model_event* E;
+
     // TBD - this should be static or accessed via a parent class
-    // named_msg &debug;
+    named_msg &debug;
 };
 
 // **************************************************************************
-// *                        enabling_subfunc methods                        *
+// *                       enabling_subevent  methods                       *
 // **************************************************************************
 
-// enabling_subfunc::enabling_subfunc(named_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
-enabling_subfunc::enabling_subfunc(const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
- : MEDDLY::satotf_opname::subfunc(v, nv), td(traverse_data::Compute)//, debug(d)
+// enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
+enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+ : satotf_opname::subevent(f, v, nv), td(traverse_data::Compute), debug(d)
 {
+  E = Ev;
   is_enabled = chunk;
   colls = c;
 
@@ -938,22 +943,18 @@ enabling_subfunc::enabling_subfunc(const dsde_hlm &p, substate_colls* c, intset 
   td.current_state = tdcurr;
   from_minterm = new int[1+num_levels];
 
-  //
-  // TBD - need to know which levels affect the event,
-  // so we can set everything else to DONT_CHANGE
-  //
-  from_minterm[0] = MEDDLY::DONT_CARE;
+  from_minterm[0] = DONT_CARE;
   for (int k=1; k<=num_levels; k++) {
     if (event_deps.contains(k)) {
-      from_minterm[k] = MEDDLY::DONT_CARE;
+      from_minterm[k] = DONT_CARE;
     } else {
-      from_minterm[k] = MEDDLY::DONT_CHANGE;
+      from_minterm[k] = DONT_CHANGE;
     }
     tdcurr->set_substate_unknown(k);
   }
 }
 
-enabling_subfunc::~enabling_subfunc()
+enabling_subevent::~enabling_subevent()
 {
   Delete(is_enabled);
   for (int i=0; i<mt_used; i++) {
@@ -966,33 +967,43 @@ enabling_subfunc::~enabling_subfunc()
   delete[] from_minterm;
 }
 
-// TBD - why a reference?
-MEDDLY::dd_edge& enabling_subfunc::rebuild(const MEDDLY::satotf_opname::otf_relation &rel)
+void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index)
 {
-  using namespace MEDDLY;
+  DCASSERT(E);
+  if (debug.startReport()) {
+    debug.report() << "confirming level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " chunk ";
+    is_enabled->Print(debug.report(), 0);
+    debug.stopIO();
+  }
 
-  // TBD - how to set these?
-  changed_k = 0;
-  new_index = 0;
+  changed_k = k;
+  new_index = index;
 
   // Explicitly explore new states and discover minterms to add
 
-  exploreEnabling(getNumVars()-1);
+  exploreEnabling(rel, getNumVars()-1);
 
   // Add those minterms
-  forest* mxdf = 0;
-  // TBD grab mxdf from rel.
-  dd_edge add_to_root(mxdf);
-
-  // TBD - collect minterms, add to root and return
-  mxdf->createEdge(mt_from, mt_from, mt_used, add_to_root);
+  dd_edge add_to_root(getForest());
+  getForest()->createEdge(mt_from, mt_from, mt_used, add_to_root);
   mt_used = 0;
 
   add_to_root += getRoot();
-  return add_to_root;
+//  setRoot(add_to_root);
+// TBD ^^^^^
+
+  if (debug.startReport()) {
+    debug.report() << "confirmed  level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " chunk ";
+    is_enabled->Print(debug.report(), 0);
+    debug.newLine();
+    debug.report() << "New root: " << add_to_root.getNode() << "\n";
+    debug.stopIO();
+  }
 }
 
-bool enabling_subfunc::addMinterm(const int* from)
+bool enabling_subevent::addMinterm(const int* from)
 {
   if (mt_used >= mt_alloc) {
     int old_alloc = mt_alloc;
@@ -1016,10 +1027,9 @@ bool enabling_subfunc::addMinterm(const int* from)
   return true;
 }
 
-void enabling_subfunc::exploreEnabling(int dpth)
+void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dpth)
 {
   if (0==dpth) {
-    /*
     bool start_d = debug.startReport();
     if (start_d) {
       debug.report() << "enabled?\n\tstate ";
@@ -1030,14 +1040,12 @@ void enabling_subfunc::exploreEnabling(int dpth)
       is_enabled->Print(debug.report(), 0);
       debug.report() << " : ";
     }
-    */
 #ifdef SHORT_CIRCUIT_ENABLING
     td.answer->setBool(true);
 #else
     DCASSERT(is_enabled);
     is_enabled->Compute(td);
 #endif
-    /*
     if (start_d) {
       if (td.answer->isNormal()) {
         if (td.answer->getBool())
@@ -1051,7 +1059,6 @@ void enabling_subfunc::exploreEnabling(int dpth)
       debug.report() << "\n";
       debug.stopIO();
     }
-    */
 
     DCASSERT(td.answer->isNormal());
     if (false == td.answer->getBool()) return;
@@ -1074,10 +1081,10 @@ void enabling_subfunc::exploreEnabling(int dpth)
       
       if (maybeEnabled()) {
         from_minterm[changed_k] = new_index;
-        exploreEnabling(dpth-1); 
+        exploreEnabling(rel, dpth-1); 
       }
 
-      from_minterm[changed_k] = MEDDLY::DONT_CARE;
+      from_minterm[changed_k] = DONT_CARE;
       tdcurr->set_substate_unknown(changed_k);
       return;
   }
@@ -1085,9 +1092,11 @@ void enabling_subfunc::exploreEnabling(int dpth)
   // regular level - explore all confirmed
   const int k = getVars()[dpth];
   tdcurr->set_substate_known(k);
-  for (int i = 0; i<10; i++) {
-    // TBD!
-    // the above loop should be over all confirmed states at currlevel
+  // TBD: this:
+  // const int localsize = rel.numUnconfirmed(k);
+  const int localsize = 10;
+  for (int i = 0; i<localsize; i++) {
+      if (!rel.isConfirmed(k, i)) continue; // skip unconfirmed
 
       int ssz = tdcurr->readSubstateSize(k);
       int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
@@ -1099,10 +1108,10 @@ void enabling_subfunc::exploreEnabling(int dpth)
       
       if (maybeEnabled()) {
         from_minterm[k] = i;
-        exploreEnabling(dpth-1);
+        exploreEnabling(rel, dpth-1);
       }
   } // for i
-  from_minterm[k] = MEDDLY::DONT_CARE;
+  from_minterm[k] = DONT_CARE;
   tdcurr->set_substate_unknown(k);
 }
 
@@ -1124,7 +1133,7 @@ protected:
     expr_node* termlist;
     deplist* next;
     // mxd 
-    // MEDDLY::dd_edge* dd;
+    // dd_edge* dd;
     // explicit storage of minterms
   private:
     intset level_deps;
@@ -1206,7 +1215,7 @@ public:
   // TBD - for now
   //
 
-  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF();
+  virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
 
 private:
   void initDomain(const exprman* em);
@@ -1317,7 +1326,7 @@ bool substate_varoption::deplist::addMinterm(const int* from)
     mt_to[mt_used] = new int[depth];
   }
   for (int i=0; i<depth; i++) {
-    mt_to[mt_used][i] = MEDDLY::DONT_CARE;
+    mt_to[mt_used][i] = DONT_CARE;
   }
   mt_used++;
   return true;
@@ -1514,7 +1523,7 @@ void substate_varoption::reportStats(DisplayStream &out) const
 }
 
 
-MEDDLY::satotf_opname::otf_relation* substate_varoption::buildNSF_OTF()
+satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
 {
   using namespace MEDDLY;
 
@@ -1551,8 +1560,8 @@ MEDDLY::satotf_opname::otf_relation* substate_varoption::buildNSF_OTF()
     // Build subevents
     //
 
-    satotf_opname::subfunc** subevents = new 
-      satotf_opname::subfunc* [num_enabling + num_firing];
+    satotf_opname::subevent** subevents = new 
+      satotf_opname::subevent* [num_enabling + num_firing];
 
     //
     // Build enabling subevents
@@ -1596,24 +1605,28 @@ MEDDLY::satotf_opname::otf_relation* substate_varoption::buildNSF_OTF()
       }
 
       // Ok, build the enabling subevent
-      subevents[se] = new enabling_subfunc(getParent(), colls, depends, chunk, v, nv);
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new enabling_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
     }
 
     //
     // Build firing subevents
     //
+    /*
     for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
       // TBD!
       // Should look a lot like the previous loop for enablings though
 
       subevents[se] = 0;
     }
+    */
 
     
     //
     // Pull these together into the event
     //
-    otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
+    // otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
+    otf_events[i] = new satotf_opname::event(subevents, num_enabling);
   } // for i
 
   //
@@ -1635,10 +1648,10 @@ void substate_varoption::initDomain(const exprman* em)
   
   const hldsm::partinfo& part = getParent().getPartInfo();
   num_levels = part.num_levels;
-  MEDDLY::variable** vars = new MEDDLY::variable*[num_levels+1];
+  variable** vars = new variable*[num_levels+1];
   vars[0] = 0;
   for (int k=num_levels; k; k--) {
-    vars[k] = MEDDLY::createVariable(1, buildVarName(part, k));
+    vars[k] = createVariable(1, buildVarName(part, k));
   } // for k
   if (!ms.createVars(vars, num_levels)) {
     built_ok = false;
@@ -1678,16 +1691,16 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Initialize MDD forest
   //
-  MEDDLY::forest* mdd = ms.createForest(
-    false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
+  forest* mdd = ms.createForest(
+    false, forest::BOOLEAN, forest::MULTI_TERMINAL, 
     pg.buildRSSPolicies()
   );
   DCASSERT(mdd);
   //
   // Initialize MxD forest
   //
-  MEDDLY::forest* mxd = ms.createForest(
-    true, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, 
+  forest* mxd = ms.createForest(
+    true, forest::BOOLEAN, forest::MULTI_TERMINAL, 
     pg.buildNSFPolicies()
   );
   DCASSERT(mxd);
@@ -2171,7 +2184,7 @@ public:
 
   virtual void updateEvents(named_msg &d, bool* cl);
 
-  virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
+  virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 };
 
 // **************************************************************************
@@ -2223,7 +2236,7 @@ pregen_varoption::updateEvents(named_msg &d, bool* cl)
   throw subengine::Engine_Failed;
 }
 
-bool pregen_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
+bool pregen_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 {
   return false;  
 }
@@ -2242,7 +2255,7 @@ public:
 
   virtual void updateEvents(named_msg &d, bool* cl);
 
-  virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl);
+  virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 };
 
 // **************************************************************************
@@ -2263,7 +2276,7 @@ void onthefly_varoption::updateEvents(named_msg &d, bool* cl)
   // throw subengine::Engine_Failed;
 }
 
-bool onthefly_varoption::hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl)
+bool onthefly_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 {
   return false;  // for now...
 }
@@ -2331,10 +2344,10 @@ meddly_procgen::makePregen(const dsde_hlm &m, meddly_reachset &ms) const
   return mvo;
 }
 
-MEDDLY::forest::policies 
+forest::policies 
 meddly_procgen::buildNSFPolicies() const
 {
-  MEDDLY::forest::policies p(true);
+  forest::policies p(true);
   switch (nsf_ndp) {
     case NEVER:
       p.setNeverDelete(); 
@@ -2352,10 +2365,10 @@ meddly_procgen::buildNSFPolicies() const
   return p;
 }
 
-MEDDLY::forest::policies 
+forest::policies 
 meddly_procgen::buildRSSPolicies() const
 {
-  MEDDLY::forest::policies p(false);
+  forest::policies p(false);
   p.setQuasiReduced();
   switch (rss_ndp) {
     case NEVER:
