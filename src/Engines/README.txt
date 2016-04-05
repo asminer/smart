@@ -14,4 +14,5 @@ gen_exp_ph.cc     Explicit process generation for phase types
 gen_rg_base.cc    Common stuff for process generation (for consistency)
 gen_meddly.cc     Common stuff for process generation with Meddly
 satur_meddly.cc   Saturation & traditional MDD-based process generation
+order_base.cc     Common stuff for variable ordering heuristics
 simul.cc          Monte-Carlo simulation engines

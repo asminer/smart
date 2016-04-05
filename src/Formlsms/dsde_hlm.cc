@@ -294,10 +294,6 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
   SetParent(p);
   state_data = sv;
   num_vars = nv;
-  num_levels = 0;
-  for (int i=0; i<nv; i++) {
-    num_levels = MAX(num_levels, state_data[i]->GetPart());
-  }
   event_data = ed;
   num_events = ne;
   assertions = 0;
@@ -307,8 +303,6 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
   lltype = lldsm::Unknown;
   determineModelType();
   ProcessEvents();
-
-  setPartInfo(num_levels, num_vars, state_data);
 }
 
 dsde_hlm::~dsde_hlm()
@@ -372,6 +366,25 @@ void dsde_hlm::reindexStateVars(int &start)
   } // for i
 }
 
+void dsde_hlm::useDefaultVarOrder()
+{
+  int num_levels = 0;
+  for (int i=0; i<num_vars; i++) {
+    num_levels = MAX(num_levels, state_data[i]->GetPart());
+  }
+
+  if (1==num_levels) {
+    if (em->startWarning()) {
+      em->noCause();
+      em->warn() << "user-specified partition groups all variables together;";
+      em->newLine();
+      em->warn() << "possibly missing call to partition()?";
+      DoneError();
+    }
+  }
+
+  setPartInfo((const model_statevar**)state_data, num_vars);
+}
 
 void dsde_hlm::checkAssertions(traverse_data &x)
 {

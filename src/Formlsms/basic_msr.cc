@@ -63,6 +63,32 @@ proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
   } // catch
 }
 
+/*
+void proc_noengine::BuildPartition(hldsm* hlm, const expr* err)
+{
+  if (0==hlm)  return;
+  result dummy;
+
+  try {
+      if (hlm->hasPartInfo()) return;
+      if (!VarOrder) throw subengine::No_Engine;
+      result dummy;
+      VarOrder->runEngine(hlm, dummy);
+      if (hlm->hasPartInfo()) return;
+      throw subengine::Engine_Failed;
+  } // try
+    
+  catch (subengine::error e) {
+      if (em->startError()) {
+        em->causedBy(err);
+        em->cerr() << "Couldn't build variable order: ";
+        em->cerr() << subengine::getNameOfError(e);
+        em->stopIO();
+      }
+  } // catch
+}
+*/
+
 // ******************************************************************
 // *                           num_states                           *
 // ******************************************************************
@@ -266,7 +292,7 @@ void numlevels_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
+  hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
   
 #ifdef ALLOW_SHOW_PARAMS
   SafeCompute(pass[1], x);
@@ -294,6 +320,14 @@ void numlevels_si::Compute(traverse_data &x, expr** pass, int np)
         return;
   }
   
+  if (!hlm->buildPartInfo()) {
+    if (em->startError()) {
+      em->causedBy(x.parent);
+      em->cerr() << "Couldn't build variable order";
+      em->stopIO();
+    }
+  }
+
   const dsde_hlm* dsm = smart_cast <const dsde_hlm*> (hlm);
   DCASSERT(dsm);
 
@@ -651,7 +685,7 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
+  hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
   
   switch (hlm->Type()) {
     case hldsm::Enumerated:
@@ -668,6 +702,14 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
         return;
   }
   
+  if (!hlm->buildPartInfo()) {
+    if (em->startError()) {
+      em->causedBy(x.parent);
+      em->cerr() << "Couldn't build variable order";
+      em->stopIO();
+    }
+  }
+
   const dsde_hlm* dsm = smart_cast <const dsde_hlm*> (hlm);
   DCASSERT(dsm);
 

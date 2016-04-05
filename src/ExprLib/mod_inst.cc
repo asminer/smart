@@ -113,6 +113,16 @@ void hldsm::initOptions(exprman* om)
   em = om;
 }
 
+bool hldsm::buildPartInfo()
+{
+  if (part) return true;
+  engtype* VarOrder = em->findEngineType("VariableOrdering");
+  if (0==VarOrder) return false;
+  result dummy;
+  VarOrder->runEngine(this, dummy);
+  return part;
+}
+
 bool hldsm::Print(OutputStream &s, int) const
 {
   s << "high-level model";
@@ -200,11 +210,27 @@ void hldsm::bailOut(const char* fn, int ln, const char* why) const
 // *                        partinfo  methods                       *
 // ******************************************************************
 
-hldsm::partinfo::partinfo(int NL, int NV, model_statevar** vars)
+hldsm::partinfo::partinfo(const model_statevar** vars, int NV)
+{
+  num_vars = NV;
+  sort(vars);
+}
+
+hldsm::partinfo::~partinfo()
+{
+  delete[] pointer;
+  delete[] variable;
+}
+
+void hldsm::partinfo::sort(const model_statevar** vars)
 {
   DCASSERT(vars);
-  num_levels = NL;
-  num_vars = NV;
+
+  // Determine number of levels
+  num_levels = 1;
+  for (int i=0; i<num_vars; i++) {
+    num_levels = MAX(num_levels, vars[i]->GetPart());
+  }
 
   pointer = new int[num_levels+1];
   variable = new const model_statevar* [num_vars];
@@ -242,12 +268,6 @@ hldsm::partinfo::partinfo(int NL, int NV, model_statevar** vars)
     DCASSERT(0);
 #endif
   }
-}
-
-hldsm::partinfo::~partinfo()
-{
-  delete[] pointer;
-  delete[] variable;
 }
 
 
