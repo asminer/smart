@@ -972,7 +972,7 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
   DCASSERT(E);
   if (debug.startReport()) {
     debug.report() << "confirming level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " chunk ";
+    debug.report() << " event " << E->Name() << " enabling ";
     is_enabled->Print(debug.report(), 0);
     debug.stopIO();
   }
@@ -982,7 +982,7 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
 
   // Explicitly explore new states and discover minterms to add
 
-  exploreEnabling(rel, getNumVars()-1);
+  exploreEnabling(rel, getNumVars());
 
   // Add those minterms
   dd_edge add_to_root(getForest());
@@ -990,12 +990,11 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
   mt_used = 0;
 
   add_to_root += getRoot();
-//  setRoot(add_to_root);
-// TBD ^^^^^
+  setRoot(add_to_root);
 
   if (debug.startReport()) {
     debug.report() << "confirmed  level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " chunk ";
+    debug.report() << " event " << E->Name() << " enabling ";
     is_enabled->Print(debug.report(), 0);
     debug.newLine();
     debug.report() << "New root: " << add_to_root.getNode() << "\n";
@@ -1029,6 +1028,9 @@ bool enabling_subevent::addMinterm(const int* from)
 
 void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dpth)
 {
+  //
+  // Are we at the bottom?
+  //
   if (0==dpth) {
     bool start_d = debug.startReport();
     if (start_d) {
@@ -1068,7 +1070,11 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
     return;
   }
 
-  if (getVars()[dpth] == changed_k) {
+  //
+  // Are we at the level being confirmed?
+  //
+  const int k = getVars()[dpth-1];
+  if (k == changed_k) {
       tdcurr->set_substate_known(changed_k);
       int ssz = tdcurr->readSubstateSize(changed_k);
       int foo = colls->getSubstate(changed_k, new_index, tdcurr->writeSubstate(changed_k), ssz);
@@ -1089,12 +1095,11 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
       return;
   }
 
-  // regular level - explore all confirmed
-  const int k = getVars()[dpth];
+  //
+  // Regular level - explore all confirmed
+  //
   tdcurr->set_substate_known(k);
-  // TBD: this:
-  // const int localsize = rel.numUnconfirmed(k);
-  const int localsize = 10;
+  const int localsize = rel.getRelForest()->getLevelSize(k);
   for (int i = 0; i<localsize; i++) {
       if (!rel.isConfirmed(k, i)) continue; // skip unconfirmed
 
@@ -1115,6 +1120,300 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
   tdcurr->set_substate_unknown(k);
 }
 
+
+// **************************************************************************
+// *                                                                        *
+// *                         firing_subevent  class                         *
+// *                                                                        *
+// **************************************************************************
+
+// TBD - move this somewhere better
+//
+class firing_subevent : public satotf_opname::subevent {
+  public:
+    // TBD - clean up this constructor!
+    firing_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+    virtual ~firing_subevent();
+
+  protected:
+    virtual void confirm(satotf_opname::otf_relation &rel, int v, int index);
+
+  private: // helpers
+    // returns true on success
+    bool addMinterm(const int* from, const int* to);
+
+    void exploreFiring(satotf_opname::otf_relation &rel, int dpth);
+
+  private:
+    expr* fire_expr;
+    int** mt_from;
+    int** mt_to;
+    int mt_alloc;
+    int mt_used;
+    int num_levels;
+    // some of this stuff could be shared, one per model,
+    // at the cost of re-initializing stuff every time we need to explore
+    // TBD - option to select between "optimize for speed" and "optimize for memory"
+    // (two different classes?  or make this a template <bool> class?)
+    traverse_data td;
+    shared_state* tdcurr;
+    shared_state* tdnext;
+    int* from_minterm;
+    int* to_minterm;
+
+    // used by exploreFiring
+    int changed_k;
+    int new_index;
+
+    substate_colls* colls;
+
+    // used only for debug info?
+    const model_event* E;
+
+    // TBD - this should be static or accessed via a parent class
+    named_msg &debug;
+};
+
+// **************************************************************************
+// *                        firing_subevent  methods                        *
+// **************************************************************************
+
+firing_subevent::firing_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+ : satotf_opname::subevent(f, v, nv), td(traverse_data::Compute), debug(d)
+{
+  E = Ev;
+  fire_expr = chunk;
+  colls = c;
+
+  mt_from = 0;
+  mt_to = 0;
+  mt_alloc = mt_used = 0;
+  num_levels = p.getPartInfo().num_levels;
+
+  td.answer = new result;
+  tdcurr = new shared_state(&p);
+  tdnext = new shared_state(&p);
+  td.current_state = tdcurr;
+  td.next_state = tdnext;
+  from_minterm = new int[1+num_levels];
+  to_minterm = new int[1+num_levels];
+
+  from_minterm[0] = DONT_CARE;
+  to_minterm[0] = DONT_CARE;
+  for (int k=1; k<=num_levels; k++) {
+    if (event_deps.contains(k)) {
+      from_minterm[k] = DONT_CARE;
+      to_minterm[k] = DONT_CARE;
+    } else {
+      from_minterm[k] = DONT_CHANGE;
+      to_minterm[k] = DONT_CHANGE;
+    }
+    tdcurr->set_substate_unknown(k);
+    tdnext->set_substate_unknown(k);
+  }
+}
+
+firing_subevent::~firing_subevent()
+{
+  Delete(fire_expr);
+  for (int i=0; i<mt_used; i++) {
+    delete[] mt_from[i];
+    delete[] mt_to[i];
+  }
+  free(mt_from);
+  free(mt_to);
+
+  delete td.answer;
+  Delete(tdcurr);
+  Delete(tdnext);
+  delete[] from_minterm;
+  delete[] to_minterm;
+}
+
+void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index)
+{
+  DCASSERT(E);
+  if (debug.startReport()) {
+    debug.report() << "confirming level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.report(), 0);
+    debug.stopIO();
+  }
+
+  changed_k = k;
+  new_index = index;
+
+  // Explicitly explore new states and discover minterms to add
+
+  exploreFiring(rel, getNumVars());
+
+  // Add those minterms
+  dd_edge add_to_root(getForest());
+  getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
+  mt_used = 0;
+
+  add_to_root += getRoot();
+  setRoot(add_to_root);
+
+  if (debug.startReport()) {
+    debug.report() << "confirmed  level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.report(), 0);
+    debug.newLine();
+    debug.report() << "New root: " << add_to_root.getNode() << "\n";
+    debug.stopIO();
+  }
+}
+
+bool firing_subevent::addMinterm(const int* from, const int* to)
+{
+  if (mt_used >= mt_alloc) {
+    int old_alloc = mt_alloc;
+    if (0==mt_alloc) {
+      mt_alloc = 8;
+      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
+    } else {
+      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
+      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
+    }
+    if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
+    for (int i=old_alloc; i<mt_alloc; i++) {
+      mt_from[i] = 0;
+      mt_to[i] = 0;
+    }
+  }
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[1+num_levels];
+  }
+  if (0==mt_to[mt_used]) {
+    mt_to[mt_used] = new int[1+num_levels];
+  }
+  memcpy(mt_from[mt_used], from, (1+num_levels) * sizeof(int));
+  memcpy(mt_to[mt_used], to, (1+num_levels) * sizeof(int));
+  mt_used++;
+  return true;
+}
+
+void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
+{
+  //
+  // Are we at the bottom?
+  //
+  if (0==dpth) {
+    bool start_d = debug.startReport();
+    if (start_d) {
+      debug.report() << "firing?\n\tfrom state ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tfrom minterm [";
+      debug.report().PutArray(from_minterm+1, num_levels);
+      debug.report() << "]\n\t";
+      fire_expr->Print(debug.report(), 0);
+      debug.report() << " : ";
+    }
+    DCASSERT(fire_expr);
+    fire_expr->Compute(td);
+    if (start_d) {
+      if (td.answer->isNormal()) 
+        debug.report() << "ok";
+      else if (td.answer->isUnknown())
+        debug.report() << "?";
+      else if (td.answer->isOutOfBounds())
+        debug.report() << "out of bounds";
+      else
+        debug.report() << "null";
+      debug.report() << "\n";
+      debug.stopIO();
+    }
+
+    if (!td.answer->isNormal()) return; // not enabled after all
+
+    //
+    // next state -> minterm
+    for (int dd=0; dd<getNumVars(); dd++) {
+      int kk = getVars()[dd];
+      to_minterm[kk] = colls->addSubstate(kk, 
+          tdnext->readSubstate(kk), tdnext->readSubstateSize(kk)
+      );
+    
+      if (to_minterm[kk]>=0) continue;
+      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      throw subengine::Engine_Failed;
+    }
+
+    //
+    // More debug info
+    //
+    if (debug.startReport()) {
+      debug.report() << "firing\n\tto state ";
+      tdnext->Print(debug.report(), 0);
+      debug.report() << "\n\tto minterm [";
+      debug.report().PutArray(to_minterm+1, num_levels);
+      debug.report() << "]\n";
+      debug.stopIO();
+    }
+
+    // add minterm to queue
+    //
+    if (!addMinterm(from_minterm, to_minterm)) 
+      throw subengine::Out_Of_Memory;
+
+    return;
+  }
+
+  //
+  // Are we at the level being confirmed?
+  //
+  const int k = getVars()[dpth-1];
+  if (k == changed_k) {
+      tdcurr->set_substate_known(changed_k);
+      tdnext->set_substate_known(changed_k);
+      int ssz = tdcurr->readSubstateSize(changed_k);
+      int foo = colls->getSubstate(changed_k, new_index, tdcurr->writeSubstate(changed_k), ssz);
+      if (foo<0) throw subengine::Engine_Failed;
+      colls->getSubstate(changed_k, new_index, tdnext->writeSubstate(changed_k), ssz);
+
+      // 
+      // tbd - short circuit?
+      //
+      
+      from_minterm[changed_k] = new_index;
+      exploreFiring(rel, dpth-1); 
+
+      from_minterm[changed_k] = DONT_CARE;
+      to_minterm[changed_k] = DONT_CARE;
+      tdcurr->set_substate_unknown(changed_k);
+      tdnext->set_substate_unknown(changed_k);
+      return;
+  }
+
+  //
+  // Regular level - explore all confirmed
+  //
+  tdcurr->set_substate_known(k);
+  tdnext->set_substate_known(k);
+  const int localsize = rel.getRelForest()->getLevelSize(k);
+  for (int i = 0; i<localsize; i++) {
+      if (!rel.isConfirmed(k, i)) continue; // skip unconfirmed
+
+      int ssz = tdcurr->readSubstateSize(k);
+      int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
+      if (foo<0) throw subengine::Engine_Failed;
+      colls->getSubstate(k, i, tdnext->writeSubstate(k), ssz);
+
+      // 
+      // tbd - short circuit?
+      //
+      
+      from_minterm[k] = i;
+      exploreFiring(rel, dpth-1);
+  } // for i
+  from_minterm[k] = DONT_CARE;
+  to_minterm[k] = DONT_CARE;
+  tdcurr->set_substate_unknown(k);
+  tdnext->set_substate_unknown(k);
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -1612,21 +1911,53 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
     //
     // Build firing subevents
     //
-    /*
     for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
-      // TBD!
-      // Should look a lot like the previous loop for enablings though
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+      }
 
-      subevents[se] = 0;
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+      }
+
+      // Ok, build the enabling subevent
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
     }
-    */
 
     
     //
     // Pull these together into the event
     //
-    // otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
-    otf_events[i] = new satotf_opname::event(subevents, num_enabling);
+    otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
   } // for i
 
   //
