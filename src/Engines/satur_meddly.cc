@@ -487,7 +487,7 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
 void meddly_implicitgen::preprocess(dsde_hlm &m) 
 {
   // Check partition 
-  if (!m.hasPartInfo()) {
+  if (!m.buildPartInfo()) {
     if (m.StartError(0)) {
       em->cerr() << "Saturation requires a structured model (try partitioning)";
       m.DoneError();

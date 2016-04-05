@@ -157,28 +157,37 @@ public:
       matrix storage, except pointers are "in reverse".
   */
   struct partinfo {
-    /// Number of levels of state variables.
-    int num_levels;
-    /** Pointer to first state variable, per level.  
-        An array of dimension \a 1+num_levels.
-        pointer[k] gives the index of the last element in array \a variable
-        that is assigned to level k.
-        pointer[0] gives -1.
-    */
-    int* pointer;
-    /// Total number of state variables.
-    int num_vars;
-    /** State variables, ordered by level.
-        An array of dimension \a num_vars.
-    */
-    const model_statevar** variable;
+      /// Number of levels of state variables.
+      int num_levels;
+      /** Pointer to first state variable, per level.  
+          An array of dimension \a 1+num_levels.
+          pointer[k] gives the index of the last element in array \a variable
+          that is assigned to level k.
+          pointer[0] gives -1.
+      */
+      int* pointer;
+      /// Total number of state variables.
+      int num_vars;
+      /** State variables, ordered by level.
+          An array of dimension \a num_vars.
+      */
+      const model_statevar** variable;
     
-    friend class hldsm; 
+      friend class hldsm; 
     protected:
-    /// Constructor.  Sets up everything.
-    partinfo(int NL, int NV, model_statevar** vars);
-    /// Destructor.
-    ~partinfo();
+      /// Constructor.  Sets up everything.
+      partinfo(const model_statevar** vars, int NV);
+      /// Destructor.
+      ~partinfo();
+    public:
+      /// Reorder.  Rebuild if variable partition info changes!
+      inline void reorder() {
+        const model_statevar** old = variable;
+        sort(old);
+        delete[] old;
+      }
+    private:
+      void sort(const model_statevar** vars);
   };
 
 
@@ -232,16 +241,25 @@ public:
   
   virtual lldsm::model_type GetProcessType() const = 0;
 
+  //
+  // Partition tools
+  //
+
+  bool buildPartInfo();
+
   inline bool hasPartInfo() const { return part; }
   inline const partinfo& getPartInfo() const {
     DCASSERT(part);
     return *part; 
   }
+  inline void reorderPartInfo() {
+    DCASSERT(part);
+    part->reorder();
+  }
 protected:
-  /// Note: \a vars is NOT modified.
-  inline void setPartInfo(int NL, int NV, model_statevar** vars) {
+  inline void setPartInfo(const model_statevar** vars, int NV) {
     DCASSERT(0==part);
-    if (NL>1) part = new partinfo(NL, NV, vars);
+    part = new partinfo(vars, NV);
   }
 public:
 

@@ -124,6 +124,7 @@ smart_SOURCES = \
   Engines/gen_rg_base.cc \
   Engines/satur_meddly.cc \
   Engines/simul.cc \
+  Engines/order_base.cc \
   \
   FuncLib/basefuncs.cc \
   FuncLib/funclib.cc \

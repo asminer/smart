@@ -280,7 +280,7 @@ private:
   /// Low level model type.
   lldsm::model_type lltype;
   /// Number of "levels".
-  int num_levels;
+  // int num_levels;
 protected:
   /// Array of state variables.
   model_statevar** state_data;
@@ -339,8 +339,10 @@ public:
   virtual int NumStateVars() const;
   virtual bool containsListVar() const;
   virtual void determineListVars(bool* ilv) const;
-  inline int fastNumLevels() const { return num_levels; }
+  // inline int fastNumLevels() const { return num_levels; }
   virtual void reindexStateVars(int &start);
+
+  void useDefaultVarOrder();
 
   /** Set the assertions, these must be true for every reachable state.
         @param  as    Array of assertion expressions (proc bool type)

@@ -2828,7 +2828,7 @@ meddly_explgen::buildRSSPolicies() const
 
 void meddly_explgen::preprocess(dsde_hlm &m) 
 {
-  if (m.hasPartInfo()) return;
+  if (m.buildPartInfo()) return;
   if (m.StartError(0)) {
     em->cerr() << "Meddly requires a structured model (try partitioning)";
     m.DoneError();
