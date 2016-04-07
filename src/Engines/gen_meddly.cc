@@ -23,7 +23,7 @@
 // #define SHOW_SUBSTATES
 // #define SHOW_MINTERMS
 
-#define SHORT_CIRCUIT_ENABLING
+// #define SHORT_CIRCUIT_ENABLING
 
 using namespace MEDDLY;
 
@@ -874,7 +874,7 @@ class enabling_subevent : public satotf_opname::subevent {
 
   private: // helpers
     // returns true on success
-    bool addMinterm(const int* from);
+    bool addMinterm(const int* from, const int* to);
 
     void exploreEnabling(satotf_opname::otf_relation &rel, int dpth);
 
@@ -898,6 +898,7 @@ class enabling_subevent : public satotf_opname::subevent {
   private:
     expr* is_enabled;
     int** mt_from;
+    int** mt_to;
     int mt_alloc;
     int mt_used;
     int num_levels;
@@ -908,6 +909,7 @@ class enabling_subevent : public satotf_opname::subevent {
     traverse_data td;
     shared_state* tdcurr;
     int* from_minterm;
+    int* to_minterm;
 
     // used by exploreEnabling
     int changed_k;
@@ -935,6 +937,7 @@ enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, const mode
   colls = c;
 
   mt_from = 0;
+  mt_to = 0;
   mt_alloc = mt_used = 0;
   num_levels = p.getPartInfo().num_levels;
 
@@ -942,13 +945,16 @@ enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, const mode
   tdcurr = new shared_state(&p);
   td.current_state = tdcurr;
   from_minterm = new int[1+num_levels];
+  to_minterm = new int[1+num_levels];
 
   from_minterm[0] = DONT_CARE;
+  to_minterm[0] = DONT_CHANGE;
   for (int k=1; k<=num_levels; k++) {
+    from_minterm[k] = DONT_CARE;
     if (event_deps.contains(k)) {
-      from_minterm[k] = DONT_CARE;
+      to_minterm[k] = DONT_CARE;
     } else {
-      from_minterm[k] = DONT_CHANGE;
+      to_minterm[k] = DONT_CHANGE;
     }
     tdcurr->set_substate_unknown(k);
   }
@@ -959,12 +965,15 @@ enabling_subevent::~enabling_subevent()
   Delete(is_enabled);
   for (int i=0; i<mt_used; i++) {
     delete[] mt_from[i];
+    delete[] mt_to[i];
   }
   free(mt_from);
+  free(mt_to);
 
   delete td.answer;
   Delete(tdcurr);
   delete[] from_minterm;
+  delete[] to_minterm;
 }
 
 void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index)
@@ -984,9 +993,22 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
 
   exploreEnabling(rel, getNumVars());
 
+  if (0==mt_used) return;
+
   // Add those minterms
   dd_edge add_to_root(getForest());
-  getForest()->createEdge(mt_from, mt_from, mt_used, add_to_root);
+  DCASSERT(mt_from);
+  DCASSERT(mt_to);
+  
+  for (int i = 0; i < mt_used; i++) {
+    debug.report() << "\nfrom[" << i << "]: [";
+    debug.report().PutArray(mt_from[i]+1, num_levels);
+    debug.report() << "]\nto[" << i << "]: [";
+    debug.report().PutArray(mt_to[i]+1, num_levels);
+    debug.report() << "]\n";
+  }
+
+  getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
   mt_used = 0;
 
   add_to_root += getRoot();
@@ -1002,26 +1024,32 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
   }
 }
 
-bool enabling_subevent::addMinterm(const int* from)
+bool enabling_subevent::addMinterm(const int* from, const int* to)
 {
   if (mt_used >= mt_alloc) {
     int old_alloc = mt_alloc;
     if (0==mt_alloc) {
       mt_alloc = 8;
       mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
     } else {
       mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
       mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
     }
-    if (0==mt_from) return false; // malloc or realloc failed
+    if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
     for (int i=old_alloc; i<mt_alloc; i++) {
       mt_from[i] = 0;
+      mt_to[i] = 0;
     }
   }
   if (0==mt_from[mt_used]) {
     mt_from[mt_used] = new int[1+num_levels];
+    DCASSERT(0==mt_to[mt_used]);
+    mt_to[mt_used] = new int[1+num_levels];
   }
   memcpy(mt_from[mt_used], from, (1+num_levels) * sizeof(int));
+  memcpy(mt_to[mt_used], to, (1+num_levels) * sizeof(int));
   mt_used++;
   return true;
 }
@@ -1031,12 +1059,12 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
   //
   // Are we at the bottom?
   //
-  if (1==dpth) {
+  if (0==dpth) {
     bool start_d = debug.startReport();
     if (start_d) {
       debug.report() << "enabled?\n\tstate ";
       tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tminterm [";
+      debug.report() << "\n\tfrom minterm [";
       debug.report().PutArray(from_minterm+1, num_levels);
       debug.report() << "]\n\t";
       is_enabled->Print(debug.report(), 0);
@@ -1059,13 +1087,33 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
       else
         debug.report() << "null";
       debug.report() << "\n";
-      debug.stopIO();
+      //debug.stopIO();
     }
 
     DCASSERT(td.answer->isNormal());
     if (false == td.answer->getBool()) return;
 
-    addMinterm(from_minterm);
+    //
+    // next state -> minterm
+    //
+    for (int dd=0; dd<getNumVars(); dd++) {
+      int kk = getVars()[dd];
+      to_minterm[kk] = from_minterm[kk];
+    }
+
+    //
+    // More debug info
+    //
+    if (debug.startReport()) {
+      debug.report() << "enabling?\n\tstate ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tto minterm [";
+      debug.report().PutArray(to_minterm+1, num_levels);
+      debug.report() << "]\n";
+      debug.stopIO();
+    }
+
+    addMinterm(from_minterm, to_minterm);
 
     return;
   }
@@ -1201,12 +1249,10 @@ firing_subevent::firing_subevent(named_msg &d, const dsde_hlm &p, const model_ev
   from_minterm[0] = DONT_CARE;
   to_minterm[0] = DONT_CARE;
   for (int k=1; k<=num_levels; k++) {
+    from_minterm[k] = DONT_CARE;
     if (event_deps.contains(k)) {
-      from_minterm[k] = DONT_CARE;
       to_minterm[k] = DONT_CARE;
     } else {
-      //from_minterm[k] = DONT_CHANGE;
-      from_minterm[k] = DONT_CARE;
       to_minterm[k] = DONT_CHANGE;
     }
     tdcurr->set_substate_unknown(k);
@@ -1247,6 +1293,16 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
   // Explicitly explore new states and discover minterms to add
 
   exploreFiring(rel, getNumVars());
+
+  if (0==mt_used) return;
+
+  for (int i = 0; i < mt_used; i++) {
+    debug.report() << "\nfrom[" << i << "]: [";
+    debug.report().PutArray(mt_from[i]+1, num_levels);
+    debug.report() << "]\nto[" << i << "]: [";
+    debug.report().PutArray(mt_to[i]+1, num_levels);
+    debug.report() << "]\n";
+  }
 
   // Add those minterms
   dd_edge add_to_root(getForest());
@@ -1302,7 +1358,7 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
   //
   // Are we at the bottom?
   //
-  if (1==dpth) {
+  if (0==dpth) {
     bool start_d = debug.startReport();
     if (start_d) {
       debug.report() << "firing?\n\tfrom state ";
@@ -1339,7 +1395,7 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
       );
     
       if (to_minterm[kk]>=0) continue;
-      if (DONT_CHANGE==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
       throw subengine::Engine_Failed;
     }
 
@@ -2352,7 +2408,7 @@ void substate_varoption
       );
     
       if (to_minterm[kk]>=0) continue;
-      if (DONT_CHANGE==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
       throw subengine::Engine_Failed;
     } // for kk
 
