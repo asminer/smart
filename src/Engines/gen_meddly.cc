@@ -1031,7 +1031,7 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
   //
   // Are we at the bottom?
   //
-  if (0==dpth) {
+  if (1==dpth) {
     bool start_d = debug.startReport();
     if (start_d) {
       debug.report() << "enabled?\n\tstate ";
@@ -1205,7 +1205,8 @@ firing_subevent::firing_subevent(named_msg &d, const dsde_hlm &p, const model_ev
       from_minterm[k] = DONT_CARE;
       to_minterm[k] = DONT_CARE;
     } else {
-      from_minterm[k] = DONT_CHANGE;
+      //from_minterm[k] = DONT_CHANGE;
+      from_minterm[k] = DONT_CARE;
       to_minterm[k] = DONT_CHANGE;
     }
     tdcurr->set_substate_unknown(k);
@@ -1301,7 +1302,7 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
   //
   // Are we at the bottom?
   //
-  if (0==dpth) {
+  if (1==dpth) {
     bool start_d = debug.startReport();
     if (start_d) {
       debug.report() << "firing?\n\tfrom state ";
@@ -1338,7 +1339,7 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
       );
     
       if (to_minterm[kk]>=0) continue;
-      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      if (DONT_CHANGE==to_minterm[kk]) throw subengine::Out_Of_Memory;
       throw subengine::Engine_Failed;
     }
 
@@ -1991,11 +1992,11 @@ void substate_varoption::initDomain(const exprman* em)
   
   from_minterm = new int[num_levels+1];
   to_minterm = new int[num_levels+1];
-  from_minterm[0] = -1;
-  to_minterm[0] = -2;
+  from_minterm[0] = DONT_CARE;
+  to_minterm[0] = DONT_CHANGE;
   for (int k=1; k<=num_levels; k++) {
-    from_minterm[k] = -1;
-    to_minterm[k] = -2;
+    from_minterm[k] = DONT_CARE;
+    to_minterm[k] = DONT_CHANGE;
     tdcurr->set_substate_unknown(k);
     tdnext->set_substate_unknown(k);
   }
@@ -2167,7 +2168,7 @@ void substate_varoption
       from_minterm[k] = i;
       exploreEnabling(d, dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
-    from_minterm[k] = -1;
+    from_minterm[k] = DONT_CARE;
     tdcurr->set_substate_unknown(k);
     return;
   } 
@@ -2227,7 +2228,7 @@ void substate_varoption
     if (!dl.addMinterm(from_minterm)) throw subengine::Out_Of_Memory;
 
   } // for i
-  from_minterm[k] = -1;
+  from_minterm[k] = DONT_CARE;
   tdcurr->set_substate_unknown(k);
 }
 
@@ -2283,7 +2284,7 @@ void substate_varoption
       from_minterm[k] = i;
       exploreNextstate(d, dl, next_k, toBeExplored[k].contains(i) ? 0 : next_changed);
     } // for i
-    from_minterm[k] = -1;
+    from_minterm[k] = DONT_CARE;
     tdcurr->set_substate_unknown(k);
     tdnext->set_substate_unknown(k);
     return;
@@ -2351,7 +2352,7 @@ void substate_varoption
       );
     
       if (to_minterm[kk]>=0) continue;
-      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      if (DONT_CHANGE==to_minterm[kk]) throw subengine::Out_Of_Memory;
       throw subengine::Engine_Failed;
     } // for kk
 
@@ -2377,11 +2378,11 @@ void substate_varoption
     for (int kk = dl.getLevelAbove(0); 
         kk>=0; kk = dl.getLevelAbove(kk)) {
 
-      to_minterm[kk] = -2;
+      to_minterm[kk] = DONT_CHANGE;
     } // for kk
 
   } // for i
-  from_minterm[k] = -1;
+  from_minterm[k] = DONT_CARE;
   tdcurr->set_substate_unknown(k);
   tdnext->set_substate_unknown(k);
   return;

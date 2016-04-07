@@ -8,11 +8,18 @@
 
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/dsde_hlm.h"
+#include "../Formlsms/rss_meddly.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
+#include "meddly_expert.h"
+#include "timerlib.h"
+
 #include "basic_msr.h"
+
+#include <vector>
+#include <algorithm>
 
 // #define ALLOW_SHOW_PARAMS
 
@@ -92,6 +99,7 @@ void proc_noengine::BuildPartition(hldsm* hlm, const expr* err)
 // ******************************************************************
 // *                           num_states                           *
 // ******************************************************************
+
 
 class numstates_si : public proc_noengine {
 public:
@@ -258,6 +266,104 @@ void numclasses_si::Compute(traverse_data &x, expr** pass, int np)
     em->cout().flush();
   }
 #endif
+}
+
+// ******************************************************************
+// *                variable_order_transformation                   *
+// ******************************************************************
+
+// Junaid, Chuan, Ben: experiments on transforming variable orders
+
+#define VAR_PARAMS
+
+#if 0
+std::vector< std::vector<int> > getNorders(dsde_hlm& smartModel, int numOrders, int maxIter);
+#endif
+
+class var_order_transform : public proc_noengine {
+public:
+  var_order_transform();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+
+var_order_transform::var_order_transform()
+#ifdef VAR_PARAMS
+ : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 2) 
+#else
+ : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 1)
+#endif
+{
+#ifdef VAR_PARAMS
+  SetFormal(1, em->INT, "heuristic");
+  SetDocumentation("Variable Ordering Heuristic. Side effect: computes the reachability set and displays it, and returns the number of states.");
+#else
+  SetDocumentation("Variable Ordering Experiment. Side effect: computes the reachability set and returns the number of states.");
+#endif
+}
+
+void var_order_transform::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  hldsm* hi = mi ? mi->GetCompiledModel() : 0;
+  const state_lldsm* llm = BuildProc(hi, 1, x.parent);
+  if (0==llm || lldsm::Error == llm->Type()) {
+    x.answer->setNull();
+    return;
+  }
+  long heuristic = 0l;
+#ifdef VAR_PARAMS
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) heuristic = x.answer->getInt();
+  printf("Heuristic %ld\n", heuristic);
+#endif
+  llm->getNumStates(*x.answer);
+  if (!x.answer->isNormal())  return;
+  if (!x.answer->getPtr()) {
+    long ns = x.answer->getInt();
+    x.answer->setPtr(new bigint(ns));
+  }
+
+  // Call Ben's code for computing variable orders
+  if (hi != 0) {
+    dsde_hlm *dsde_instance = dynamic_cast<dsde_hlm*> (hi);
+    if (dsde_instance != 0) {
+#if 0
+      const meddly_reachset* mrs =
+        dynamic_cast<const meddly_reachset*>(llm->getRSS());
+      if (mrs != 0) {
+        std::vector< std::vector<int> > orders =
+          getNorders(*dsde_instance, 10, 100);
+
+        printf("Size of orders: %lu\n", orders.size());
+
+        // The following needs C++11
+        bool even = true;
+        for (auto i:orders) {
+          even = !even;
+          if (!even) continue;
+          printf("Order: [");
+          for (auto j:i) { printf("%d ", j); }
+          printf("]\n");
+
+          // Call Chuan's code
+          timer t;
+          ((MEDDLY::expert_forest*)f)->reorderVariables(&i[0]);
+          double s = t.elapsed_microseconds() / 1000000.0;
+          printf("Time for reordering variables: %f seconds\n", s);
+        }
+      }
+#endif
+
+    } else {
+      printf("Could not convert to dsde_instance.\n");
+    }
+  } else {
+    printf("Could not convert to hldsm.\n");
+  }
 }
 
 // *****************************************************************
@@ -1022,9 +1128,330 @@ bool init_basicmsrs::execute()
   // Miscellaneous
   CML.Append(new writedot_si);
 
+  // Junaid, Chuan, Ben: experiments on transforming variable orders.
+  CML.Append(new var_order_transform);
+
   // Engine types
   proc_noengine::ProcGen = em->findEngineType("ProcessGeneration");
   return proc_noengine::ProcGen;
 }
 
 
+#if 0
+
+// Variable Ordering Experiment
+// using namespace std;
+
+typedef size_t u64;
+const double ALPHA = .5;
+const double ALPHAM1 = 1.0 - ALPHA;
+
+struct DoubleInt {
+	double theDouble;
+	int theInt;
+};
+
+struct OrderPair {
+	int name;
+	int item;
+};
+
+struct ARC {
+	int source;
+	int target;
+	int cardinality;
+};
+
+struct MODEL {
+	int numPlaces;
+	int numTrans;
+	int numArcs;
+	int * placeInits;
+	ARC * theArcs;
+};
+
+bool comparePair(DoubleInt a, DoubleInt b) {
+	return (a.theDouble < b.theDouble);
+}
+
+bool comparePairName(OrderPair a, OrderPair b) {
+	return (a.name < b.name);
+}
+
+bool comparePairItem(OrderPair a, OrderPair b) {
+	return (a.item < b.item);
+}
+
+void randOrder(std::vector<OrderPair>& theOrder) {
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::shuffle(theOrder.begin(), theOrder.end(), std::default_random_engine(seed));
+	
+	for (unsigned index = 0; index < theOrder.size(); index++) {
+		theOrder[index].name = index;
+	}
+}
+
+double getSpanTop(MODEL theModel, std::vector<OrderPair> theOrder) {
+	int * eventMax = new int[theModel.numTrans + theModel.numPlaces];
+	int * eventMin = new int[theModel.numTrans + theModel.numPlaces];
+	for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
+		eventMax[index] = 0;
+		eventMin[index] = theModel.numPlaces;
+	}	
+	u64 tops = 0LL;
+	u64 spans = 0LL;
+	for (int index = 0; index < theModel.numArcs; index++) {
+		int source = theModel.theArcs[index].source;
+		int target = theModel.theArcs[index].target;
+		if (source < target) {
+			int currentPlace = theOrder[source].item;
+			if (eventMax[target] < currentPlace) {
+				tops += currentPlace - eventMax[target];
+				spans += currentPlace - eventMax[target];
+				eventMax[target] = currentPlace;
+			}
+			if (eventMin[target] > currentPlace) {
+				spans += eventMin[target] - currentPlace;
+				eventMin[target] = currentPlace;
+			}
+		} else {
+			int currentPlace = theOrder[target].item;
+			if (eventMax[source] < currentPlace) {
+				tops += currentPlace - eventMax[source];
+				spans += currentPlace - eventMax[source];
+				eventMax[source] = currentPlace;
+			}
+			if (eventMin[source] > currentPlace) {
+				spans += eventMin[source] - currentPlace;
+				eventMin[source] = currentPlace;
+			}
+		}
+	}
+	delete [] eventMax;
+	delete [] eventMin;
+	double result = ALPHA * (double)spans + ALPHAM1 * (double)tops;
+	return result;
+}
+
+
+u64 cogDiff(MODEL theModel, std::vector<OrderPair>& theOrder) {
+	// find the center of gravity for every variable in the model
+	int * counts = new int[theModel.numTrans + theModel.numPlaces];
+	DoubleInt * totals = new DoubleInt[theModel.numTrans + theModel.numPlaces];
+	for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
+		if (index < theModel.numPlaces) {
+			counts[index] = 1;//0;
+			totals[index].theDouble = 0.0;//(double)theModel.numPlaces;//0.0;
+		} else {
+			counts[index] = 0;
+			totals[index].theDouble = 0.0;
+		}
+		totals[index].theInt = index;	// "names" 0..numPlaces - 1 
+	}	
+	
+	// for every arc, update the cog value
+	for (int index = 0; index < theModel.numArcs; index++) {
+		int source = theModel.theArcs[index].source;
+		int target = theModel.theArcs[index].target;
+		if (source < target) {
+			// source is a place
+			int currentPlace = theOrder[source].item;
+			counts[target]++;
+			totals[target].theDouble += (double)currentPlace;
+		} else {
+			// source is the transition
+			int currentPlace = theOrder[target].item;
+			counts[source]++;
+			totals[source].theDouble += (double)currentPlace;
+		}
+	}
+	// the cog value is the average (mean)
+	for (int index = 0; index < theModel.numArcs; index++) {
+		int source = theModel.theArcs[index].source;
+		int target = theModel.theArcs[index].target;
+		if (source < target) {
+			counts[source] += counts[target];
+			totals[source].theDouble += totals[target].theDouble;
+		} else {
+			counts[target] += counts[source];
+			totals[target].theDouble += totals[source].theDouble;
+		}
+	}
+	for (int index = 0; index < theModel.numPlaces; index++) {
+		if (counts[index] != 0) {
+			totals[index].theDouble /= (double)counts[index];
+		} else {
+			totals[index].theDouble = (double)totals[index].theInt;
+		}
+		totals[index].theInt = index;
+	}	
+	
+	// sort by the cog values
+	std::vector<DoubleInt> toBeSorted;
+	toBeSorted.assign(totals, totals + theModel.numPlaces);
+	stable_sort(toBeSorted.begin(), toBeSorted.end(), comparePair);
+	
+	// update the order, and calc a quick hash
+	u64 base = theOrder.size();
+	u64 result = 0LL;
+	for (unsigned index = 0; index < theOrder.size(); index++) {
+		theOrder[index].name = index;
+		theOrder[index].item = toBeSorted[index].theInt;
+		result *= base;
+		result += theOrder[index].item;
+	}
+	
+	delete [] totals;
+	delete [] counts;
+	
+	return result;
+}
+
+u64 orderHash(std::vector<OrderPair> theOrder) {
+	u64 base = theOrder.size();
+	u64 result = 0LL;
+	for (unsigned index = 0; index < theOrder.size(); index++) {
+		result *= base;
+		result += theOrder[index].item;
+	}
+	return result;
+}
+
+u64 orderHashInt(int * theOrder, int length) {
+	u64 base = length;
+	u64 result = 0LL;
+	for (int index = 0; index < length; index++) {
+		result *= base;
+		result += theOrder[index];
+	}
+	return result;
+}
+
+
+void forceHalt(MODEL theModel, std::vector<OrderPair>& startOrder, int * resultOrder, int numIter) {
+	std::vector<OrderPair> current (startOrder);
+	double bestScore = (double)(theModel.numPlaces + 1) * (double)(theModel.numTrans + 1);
+	const int maxCycle = 11;
+	u64 * cycleCheck = new u64[maxCycle];
+	for (int index = 0; index < maxCycle; index++) {
+		cycleCheck[index] = 0;
+	}
+	int iter = 0;
+	for (iter = 0; iter < numIter; iter++) {
+		u64 theNew = cogDiff(theModel, current);
+		int hash = theNew % maxCycle;
+		if (theNew == cycleCheck[hash]) break;
+		cycleCheck[hash] = theNew;
+		
+		double score = getSpanTop(theModel, current);
+		if (score < bestScore) {
+			bestScore = score;
+			for (int index = 0; index < theModel.numPlaces; index++) {
+				resultOrder[index] = current[index].item;
+			}
+		}
+	}
+	
+	delete [] cycleCheck;
+}
+
+std::vector< std::vector<int> > generateVarOrders(MODEL theModel, int numOrders, int maxIter) {
+  printf("In %s()\n", __func__);
+
+	std::vector< std::vector<int> > result;
+	int hashSize = numOrders * 23;
+	u64 * foundCheck = new u64[hashSize];
+	for (int index = 0; index < hashSize; index++) {
+		foundCheck[index] = 0;
+	}
+	int * resultOrder = new int[theModel.numPlaces];
+	int count = 0;
+	while (count < numOrders) {
+		std::vector<OrderPair> starter;
+		for (int i = 0; i < theModel.numPlaces; i++) {
+			OrderPair t;
+			t.name = i;
+			t.item = i;
+			starter.push_back(t);
+		}
+		randOrder(starter);
+		
+		forceHalt(theModel, starter, resultOrder, maxIter);
+		u64 newHash = orderHashInt(resultOrder, theModel.numPlaces);
+		int hash = newHash % hashSize;
+		if (foundCheck[hash] == 0) {
+			foundCheck[hash] = newHash;
+			std::vector<int> found;
+      int max_found = 0;
+			for (int index = 0; index < theModel.numPlaces; index++) {
+        if (max_found < resultOrder[index] + 1)
+          max_found = resultOrder[index] + 1;
+				found.push_back(resultOrder[index] + 1);
+			}
+			result.push_back(found);
+
+      std::vector<int> found_inverse(max_found + 1);
+      found_inverse[0] = 0;
+      for (unsigned index = 0; index < found.size(); index++) {
+        found_inverse[found[index]] = index + 1;
+			}
+			result.push_back(found_inverse);
+
+			//cout << "found an order (" << count << ") hash is " << newHash << " " << hash <<  endl;
+			count++;
+		}
+	}
+	
+	delete [] resultOrder;
+	delete [] foundCheck;
+	return result;
+}
+
+MODEL translateModel(dsde_hlm& smartModel) {
+	MODEL result;
+	result.numPlaces = smartModel.getNumStateVars();
+	result.numTrans = smartModel.getNumEvents();
+	
+	std::vector<ARC> vecArcs;
+	
+	for (int index = 0; index < result.numTrans; index++) {
+		model_event * theEvent = smartModel.getEvent(index);
+		int arcTarget = index + result.numPlaces;	// using target as the transition
+		
+		expr* enabling = theEvent->getEnabling();
+		
+		List <symbol> L;	// Using the magic "List" from SMART with O(1) random access?
+		enabling->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
+		for (int i = 0; i < L.Length(); i++) {
+			symbol* s = L.Item(i);
+			model_statevar* mv = dynamic_cast <model_statevar*> (s);
+			if (0 != mv) {
+				ARC tempArc;
+				tempArc.target = arcTarget;
+				// tempArc.source = mv->GetIndex() - 1;	// - 1 due to local 0..n-1 convention vs 1..n
+				tempArc.source = mv->GetIndex(); 
+				vecArcs.push_back(tempArc);
+			} 
+		}
+	}
+
+	result.numArcs = vecArcs.size();
+	result.theArcs = new ARC[vecArcs.size()];
+	for (unsigned index = 0; index < vecArcs.size(); index++) {
+		result.theArcs[index] = vecArcs[index];
+
+    printf("p: %d, t: %d\n", vecArcs[index].source, vecArcs[index].target);
+	}
+
+  printf("In translateModel()\n");
+	
+	return result;
+}
+
+std::vector< std::vector<int> > getNorders(dsde_hlm& smartModel, int numOrders, int maxIter) {
+  MODEL theModel = translateModel(smartModel);
+  std::vector< std::vector<int> > result = generateVarOrders(theModel, numOrders, maxIter);
+  delete [] theModel.theArcs;
+  return result;
+}
+#endif
