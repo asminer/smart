@@ -845,6 +845,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     MEDDLY::satotf_opname::otf_relation* NSF = buildNSF(x);
     DCASSERT(NSF);
 
+    NSF->confirm(x.getInitial());
+
     if (Report().startReport()) {
       Report().report() << "Initialized  next-state function builder, took ";
       Report().report() << subwatch.elapsed_seconds() << " seconds\n";
