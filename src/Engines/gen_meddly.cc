@@ -983,6 +983,7 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
     debug.report() << "confirming level " << k << " index " << index;
     debug.report() << " event " << E->Name() << " enabling ";
     is_enabled->Print(debug.report(), 0);
+    debug.report() << "\n";
     debug.stopIO();
   }
 
@@ -1096,16 +1097,20 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
     //
     // next state -> minterm
     //
+    /*
+        // ASM - this should already be set!
+
     for (int dd=0; dd<getNumVars(); dd++) {
       int kk = getVars()[dd];
-      to_minterm[kk] = from_minterm[kk];
+      to_minterm[kk] = DONT_CARE;
     }
+    */
 
     //
     // More debug info
     //
     if (debug.startReport()) {
-      debug.report() << "enabling?\n\tstate ";
+      debug.report() << "enabled\n\tstate ";
       tdcurr->Print(debug.report(), 0);
       debug.report() << "\n\tto minterm [";
       debug.report().PutArray(to_minterm+1, num_levels);
@@ -1284,6 +1289,7 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
     debug.report() << "confirming level " << k << " index " << index;
     debug.report() << " event " << E->Name() << " firing ";
     fire_expr->Print(debug.report(), 0);
+    debug.report() << "\n";
     debug.stopIO();
   }
 
