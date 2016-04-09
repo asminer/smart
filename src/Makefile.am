@@ -25,6 +25,7 @@ CLEANFILES = \
 EXTRA_DIST = include/BuildRevNo include/revision.h
 
 AM_YFLAGS = -d
+AM_CXXFLAGS = -Wall
 
 ## ============================================================
 ##
