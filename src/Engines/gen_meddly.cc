@@ -25,6 +25,8 @@
 
 // #define SHORT_CIRCUIT_ENABLING
 
+#define USING_MEDDLY_ADD_MINTERM
+
 using namespace MEDDLY;
 
 // **************************************************************************
@@ -873,8 +875,10 @@ class enabling_subevent : public satotf_opname::subevent {
     virtual void confirm(satotf_opname::otf_relation &rel, int v, int index);
 
   private: // helpers
+#ifndef USING_MEDDLY_ADD_MINTERM
     // returns true on success
     bool addMinterm(const int* from, const int* to);
+#endif
 
     void exploreEnabling(satotf_opname::otf_relation &rel, int dpth);
 
@@ -994,19 +998,25 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
 
   exploreEnabling(rel, getNumVars());
 
+#ifndef USING_MEDDLY_ADD_MINTERM
   if (0==mt_used) return;
 
   // Add those minterms
   dd_edge add_to_root(getForest());
   DCASSERT(mt_from);
   DCASSERT(mt_to);
-  
-  for (int i = 0; i < mt_used; i++) {
-    debug.report() << "\nfrom[" << i << "]: [";
-    debug.report().PutArray(mt_from[i]+1, num_levels);
-    debug.report() << "]\nto[" << i << "]: [";
-    debug.report().PutArray(mt_to[i]+1, num_levels);
-    debug.report() << "]\n";
+
+  if (debug.startReport()) {
+    for (int i = 0; i < mt_used; i++) {
+      debug.report() << "\nEnabling\n";
+      debug.report() << "\nfrom[" << i << "]: [";
+      debug.report().PutArray(mt_from[i]+1, num_levels);
+      debug.report() << "]\nto[" << i << "]: [";
+      debug.report().PutArray(mt_to[i]+1, num_levels);
+      debug.report() << "]\n";
+      debug.report() << "\n\n";
+    }
+    debug.stopIO();
   }
 
   getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
@@ -1023,8 +1033,10 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
     debug.report() << "New root: " << add_to_root.getNode() << "\n";
     debug.stopIO();
   }
+#endif
 }
 
+#ifndef USING_MEDDLY_ADD_MINTERM
 bool enabling_subevent::addMinterm(const int* from, const int* to)
 {
   if (mt_used >= mt_alloc) {
@@ -1054,6 +1066,7 @@ bool enabling_subevent::addMinterm(const int* from, const int* to)
   mt_used++;
   return true;
 }
+#endif
 
 void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dpth)
 {
@@ -1192,8 +1205,10 @@ class firing_subevent : public satotf_opname::subevent {
     virtual void confirm(satotf_opname::otf_relation &rel, int v, int index);
 
   private: // helpers
+#ifndef USING_MEDDLY_ADD_MINTERM
     // returns true on success
     bool addMinterm(const int* from, const int* to);
+#endif
 
     void exploreFiring(satotf_opname::otf_relation &rel, int dpth);
 
@@ -1300,14 +1315,20 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
 
   exploreFiring(rel, getNumVars());
 
+#ifndef USING_MEDDLY_ADD_MINTERM
   if (0==mt_used) return;
 
-  for (int i = 0; i < mt_used; i++) {
-    debug.report() << "\nfrom[" << i << "]: [";
-    debug.report().PutArray(mt_from[i]+1, num_levels);
-    debug.report() << "]\nto[" << i << "]: [";
-    debug.report().PutArray(mt_to[i]+1, num_levels);
-    debug.report() << "]\n";
+  if (debug.startReport()) {
+    for (int i = 0; i < mt_used; i++) {
+      debug.report() << "\nFiring:\n";
+      debug.report() << "\nfrom[" << i << "]: [";
+      debug.report().PutArray(mt_from[i]+1, num_levels);
+      debug.report() << "]\nto[" << i << "]: [";
+      debug.report().PutArray(mt_to[i]+1, num_levels);
+      debug.report() << "]\n";
+      debug.report() << "\n\n";
+    }
+    debug.stopIO();
   }
 
   // Add those minterms
@@ -1326,8 +1347,10 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
     debug.report() << "New root: " << add_to_root.getNode() << "\n";
     debug.stopIO();
   }
+#endif
 }
 
+#ifndef USING_MEDDLY_ADD_MINTERM
 bool firing_subevent::addMinterm(const int* from, const int* to)
 {
   if (mt_used >= mt_alloc) {
@@ -1358,6 +1381,7 @@ bool firing_subevent::addMinterm(const int* from, const int* to)
   mt_used++;
   return true;
 }
+#endif
 
 void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
 {
@@ -1924,52 +1948,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
 
     satotf_opname::subevent** subevents = new 
       satotf_opname::subevent* [num_enabling + num_firing];
-
-    //
-    // Build enabling subevents
-    //
     int se = 0;
-    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next, se++) {
-      //
-      // build enabling expression from list
-      //
-      int length = 0;
-      for (expr_node* t = ptr->termlist; t; t=t->next) {
-        length++;
-      }
-      DCASSERT(length>0);
-      expr* chunk = 0;
-      if (1==length) {
-        //
-        // awesomesauce
-        //
-        chunk = Share(ptr->termlist->term);
-      } else {
-        //
-        // Build conjunction
-        //
-        expr** terms = new expr*[length];
-        int ti = 0;
-        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
-          terms[ti] = Share(t->term);
-        }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
-      }
-
-      // build list of variables this piece depends on
-      int nv = ptr->countDeps();
-      int* v = new int[nv];
-      int k = 0;
-      for (int vi = 0; vi<nv; vi++) {
-        k = ptr->getLevelAbove(k);
-        DCASSERT(k>0);
-        v[vi] = k;
-      }
-
-      // Ok, build the enabling subevent
-      const model_event* e = getParent().readEvent(i);
-      subevents[se] = new enabling_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
-    }
 
     //
     // Build firing subevents
@@ -2014,6 +1993,51 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
       // Ok, build the enabling subevent
       const model_event* e = getParent().readEvent(i);
       subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
+    }
+
+    //
+    // Build enabling subevents
+    //
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next, se++) {
+      //
+      // build enabling expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
+      }
+
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+      }
+
+      // Ok, build the enabling subevent
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new enabling_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
     }
 
     
