@@ -93,6 +93,10 @@ void meddly_reachset::setStates(shared_ddedge* S)
     Delete(S);
     return;  
   }
+  
+  if (0 != states) {
+    Delete(states);
+  }
 
   DCASSERT(0==states);
   states = S;
