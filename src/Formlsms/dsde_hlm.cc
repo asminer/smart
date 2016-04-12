@@ -10,6 +10,7 @@
 #include "../SymTabs/symtabs.h"
 #include "../include/heap.h"
 
+// #define DEBUG_PART
 // #define DEBUG_PRIO
 // #define DEBUG_ENABLED
 
@@ -383,12 +384,12 @@ void dsde_hlm::useDefaultVarOrder()
     }
   }
 
-  setPartInfo((const model_statevar**)state_data, num_vars);
+  setPartInfo(state_data, num_vars);
 }
 
 void dsde_hlm::useHeuristicVarOrder()
 {
-  setPartInfo((const model_statevar**)state_data, num_vars);
+  setPartInfo(state_data, num_vars);
 }
 
 void dsde_hlm::checkAssertions(traverse_data &x)
@@ -850,9 +851,8 @@ void dsde_def::PartitionVars(model_statevar** V, int nv)
   }
     
   // renumber the groups, from 1 to L
-  // reorder the state variables, by groups
   int gnum = 0;
-  int pnum = nv-1;
+  // int pnum = nv-1; 
   for (int i=0; i<N; i++) {
     if (0==group[i]) continue;
     gnum++;
@@ -861,9 +861,9 @@ void dsde_def::PartitionVars(model_statevar** V, int nv)
       group[i]->LinkTo(0);
       group[i]->SetPart(gnum);
       // reorder places
-      group[i]->SetIndex(pnum);
-      V[pnum] = group[i];
-      pnum--;
+      // group[i]->SetIndex(pnum);    // NO this is done by partinfo instead
+      // V[pnum] = group[i];
+      // pnum--;
       group[i] = smart_cast <model_statevar*> (next);
     }
   } // for i

@@ -171,23 +171,27 @@ public:
       /** State variables, ordered by level.
           An array of dimension \a num_vars.
       */
-      const model_statevar** variable;
+      model_statevar** variable;
     
       friend class hldsm; 
     protected:
-      /// Constructor.  Sets up everything.
-      partinfo(const model_statevar** vars, int NV);
+      /** Constructor.  Sets up everything.
+          May reorder state variables.
+      */
+      partinfo(model_statevar** vars, int NV);
       /// Destructor.
       ~partinfo();
+    /*
     public:
       /// Reorder.  Rebuild if variable partition info changes!
       inline void reorder() {
-        const model_statevar** old = variable;
+        model_statevar** old = variable;
         sort(old);
         delete[] old;
       }
+    */
     private:
-      void sort(const model_statevar** vars);
+      void sort(model_statevar** vars);
   };
 
 
@@ -252,12 +256,14 @@ public:
     DCASSERT(part);
     return *part; 
   }
+  /*
   inline void reorderPartInfo() {
     DCASSERT(part);
     part->reorder();
   }
+  */
 protected:
-  inline void setPartInfo(const model_statevar** vars, int NV) {
+  inline void setPartInfo(model_statevar** vars, int NV) {
     DCASSERT(0==part);
     part = new partinfo(vars, NV);
   }

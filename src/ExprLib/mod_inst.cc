@@ -13,6 +13,7 @@
 #include "strings.h"
 
 // #define ARRAY_TRACE
+// #define DEBUG_PARTINFO
 
 // ******************************************************************
 // *                                                                *
@@ -210,7 +211,7 @@ void hldsm::bailOut(const char* fn, int ln, const char* why) const
 // *                        partinfo  methods                       *
 // ******************************************************************
 
-hldsm::partinfo::partinfo(const model_statevar** vars, int NV)
+hldsm::partinfo::partinfo(model_statevar** vars, int NV)
 {
   num_vars = NV;
   sort(vars);
@@ -222,9 +223,16 @@ hldsm::partinfo::~partinfo()
   delete[] variable;
 }
 
-void hldsm::partinfo::sort(const model_statevar** vars)
+void hldsm::partinfo::sort(model_statevar** vars)
 {
   DCASSERT(vars);
+
+#ifdef DEBUG_PARTINFO
+  printf("Building partition info on input:\n");
+  for (int i=0; i<num_vars; i++) {
+    printf("\t%s index %d part %d\n", vars[i]->Name(), vars[i]->GetIndex(), vars[i]->GetPart());
+  }
+#endif
 
   // Determine number of levels
   num_levels = 1;
@@ -233,7 +241,7 @@ void hldsm::partinfo::sort(const model_statevar** vars)
   }
 
   pointer = new int[num_levels+1];
-  variable = new const model_statevar* [num_vars];
+  variable = new model_statevar* [num_vars];
 
   // count variables per level
   for (int i=0; i<=num_levels; i++) pointer[i] = 0;
@@ -260,6 +268,7 @@ void hldsm::partinfo::sort(const model_statevar** vars)
   for (int i=0; i<num_vars; i++) {
     DCASSERT(variable[i]);
     int lvl = variable[i]->GetPart();
+    CHECK_RANGE(1, lvl, num_levels+1);
     pointer[lvl] = i;
 #ifdef DEVELOPMENT_CODE
     if (0==i) continue;
@@ -268,6 +277,32 @@ void hldsm::partinfo::sort(const model_statevar** vars)
     DCASSERT(0);
 #endif
   }
+
+  // set state variable index order according to partition order
+  // such that top level variables have low index
+  int inum = 0;
+  for (int k=num_levels; k; k--) {
+    for (int p=pointer[k]; p>pointer[k-1]; p--) {
+      DCASSERT(k==variable[p]->GetPart());
+      variable[p]->SetIndex(inum);
+      inum++;
+    }
+  } // for k
+
+  for (int i=0; i<num_vars; i++) {
+    vars[i] = variable[i];
+  }
+
+#ifdef DEBUG_PARTINFO
+  printf("Done; new parition info:\n");
+  for (int i=0; i<num_vars; i++) {
+    printf("\t%s index %d part %d\n", variable[i]->Name(), variable[i]->GetIndex(), variable[i]->GetPart());
+  }
+  printf("Raw pointer array: [%d", pointer[0]);
+  for (int i=1; i<=num_levels; i++) printf(", %d", pointer[i]);
+  printf("]\n");
+#endif
+
 }
 
 

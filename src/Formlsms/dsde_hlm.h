@@ -342,7 +342,14 @@ public:
   // inline int fastNumLevels() const { return num_levels; }
   virtual void reindexStateVars(int &start);
 
+  /**
+      Set up state variables for a user-determined variable ordering.
+  */
   void useDefaultVarOrder();
+
+  /**
+      Set up state variables for a SMART-determined variable ordering.
+  */
   void useHeuristicVarOrder();
 
   /** Set the assertions, these must be true for every reachable state.
