@@ -866,8 +866,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     generateRSS(x, NSF);
 
     if (Report().startReport()) {
-      MEDDLY::ostream_output out(std::cout);
-      NSF->showInfo(out);
       Report().report() << "Built    reachability set, took ";
       Report().report() << subwatch.elapsed_seconds() << " seconds\n";
       Report().stopIO();
@@ -909,10 +907,6 @@ void meddly_otfsat::generateRSS(meddly_varoption &x,
 
     shared_ddedge* S = x.newMddEdge();
     satop->compute(x.getInitial(), S->E);
-
-    ostream_output out(std::cout);
-    out << "Reachable States:\n";
-    S->E.show(out, 3);
 
     // TBD - reindex?
     // TBD - grab NSF for model checking
