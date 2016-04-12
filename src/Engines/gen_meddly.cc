@@ -1400,6 +1400,7 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
       debug.report() << " : ";
     }
     DCASSERT(fire_expr);
+    td.answer->setBool(true);
     fire_expr->Compute(td);
     if (start_d) {
       if (td.answer->isNormal()) 
