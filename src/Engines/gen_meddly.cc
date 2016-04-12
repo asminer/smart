@@ -1101,7 +1101,7 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
       else
         debug.report() << "null";
       debug.report() << "\n";
-      //debug.stopIO();
+      debug.stopIO();
     }
 
     DCASSERT(td.answer->isNormal());
