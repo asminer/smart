@@ -547,13 +547,32 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha) {
 	}
 	// the score to beat
 	double bestScore = getSpanTopParam(theModel, best, paramAlpha);
+  double newScore  = 0.0;
+	
+	// reverse of the previous order
+#if 0
+	std::vector<OrderPair> reverse (theModel.numPlaces, fill);
+	for (int index = 0; index < theModel.numPlaces; index++) {
+		OrderPair temp;
+		temp.name = theModel.numPlaces - index - 1;
+		temp.item = index;
+		reverse[index] = temp;	
+	}
+	newScore = getSpanTopParam(theModel, reverse, paramAlpha);
+	if (newScore < bestScore) {
+		bestScore = newScore;
+		for (int index = 0; index < theModel.numPlaces; index++) {
+			best[index] = reverse[index];
+		}
+	}
+#endif
 	
 	int maxIter = 100;
 	std::vector<OrderPair> startOrder (best);	// try force on the given order
 	std::vector<OrderPair> forceGiven = intToPair(generateForceOrder(theModel,
         maxIter, startOrder, paramAlpha));
 	
-	double newScore = getSpanTopParam(theModel, forceGiven, paramAlpha);
+	newScore = getSpanTopParam(theModel, forceGiven, paramAlpha);
 	if (newScore < bestScore) {
 		bestScore = newScore;
 		for (int index = 0; index < theModel.numPlaces; index++) {
@@ -933,9 +952,16 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
 
   if (debug.startReport()) {
     debug.report() << "using "
-    << (heuristic == 0? "force": "noack")
-    << "-defined variable order\n";
+      << (heuristic == 0? "force": "noack")
+      << "-defined variable order\n";
 
+    debug.report() << "indexes: ";
+    for (int i = 0; i < dm->getNumStateVars(); i++) {
+      model_statevar* var = dm->getStateVar(i);
+      debug.report() << "var: " << i << " index: " << var->GetIndex() << "\n";
+    }
+
+    debug.report() << "parts: ";
     for (int i = 0; i < dm->getNumStateVars(); i++) {
       model_statevar* var = dm->getStateVar(i);
       debug.report() << "var: " << i << " part: " << var->GetPart() << "\n";
@@ -967,14 +993,19 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   std::vector<int> order = defaultOrder(model, factor);
 #endif
 
-  debug.report() << "Order: [";
   for (int j = 0; j < int(order.size()); j++) {
     dm->getStateVar(j)->SetPart(order[j]+1);
-    debug.report() << order[j] << " ";
+  }
+
+  debug.report() << "Order: \n";
+  for (int j = 0; j < int(order.size()); j++) {
+    dm->getStateVar(j)->SetPart(order[j]+1);
+    debug.report() << dm->getStateVar(j)->Name() << " " << order[j]+1 << " ";
   }
   debug.report() << "]\n";
   debug.stopIO();
 
-  dm->useDefaultVarOrder();
+  dm->useHeuristicVarOrder();
+  // dm->reorderPartInfo();
 }
 

@@ -343,6 +343,7 @@ public:
   virtual void reindexStateVars(int &start);
 
   void useDefaultVarOrder();
+  void useHeuristicVarOrder();
 
   /** Set the assertions, these must be true for every reachable state.
         @param  as    Array of assertion expressions (proc bool type)

@@ -386,6 +386,11 @@ void dsde_hlm::useDefaultVarOrder()
   setPartInfo((const model_statevar**)state_data, num_vars);
 }
 
+void dsde_hlm::useHeuristicVarOrder()
+{
+  setPartInfo((const model_statevar**)state_data, num_vars);
+}
+
 void dsde_hlm::checkAssertions(traverse_data &x)
 {
   DCASSERT(x.answer);
