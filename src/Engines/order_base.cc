@@ -968,24 +968,6 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
     }
   }
 
-  assert(dm->getNumStateVars() > 0);
-  int max = dm->getStateVar(0)->GetPart();
-  for (int i = 1; i < dm->getNumStateVars(); i++) {
-    max = MAX(max, dm->getStateVar(i)->GetPart());
-  }
-  assert(max == dm->getNumStateVars());
-
-  // TODO: throw an exception if the number of variables is not the same as the
-  //        number of partitions.
-
-#if 0
-  max++;
-  for (int i = 0; i < dm->getNumStateVars(); i++) {
-    model_statevar* var = dm->getStateVar(i);
-    var->SetPart(max - var->GetPart());
-  }
-#endif
-
   MODEL model = translateModel(*dm);
 #if 0
   std::vector<int> order = primaryOrder(model, heuristic, factor);
@@ -1000,7 +982,7 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   debug.report() << "Order: \n";
   for (int j = 0; j < int(order.size()); j++) {
     dm->getStateVar(j)->SetPart(order[j]+1);
-    debug.report() << dm->getStateVar(j)->Name() << " " << order[j]+1 << " ";
+    debug.report() << j << " " << order[j]+1 << " " << dm->getStateVar(j)->Name() << "\n";
   }
   debug.report() << "]\n";
   debug.stopIO();
