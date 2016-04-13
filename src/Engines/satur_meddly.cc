@@ -874,6 +874,7 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     if (stopGen(false, x.getParent(), watch)) {
       reportGen(false, Report().report());
       x.reportStats(Report().report());
+      Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
       Report().stopIO();
     }
   } // try
