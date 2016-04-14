@@ -246,11 +246,8 @@ struct MODEL {
 	ARC * theArcs;
 };
 
-std::vector<OrderPair> getBFSx(MODEL theModel, int start);
-double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
-    double param);
-std::vector<int> generateForceOrder(MODEL theModel, int numIter,
-    std::vector<OrderPair>& startOrder, double param);
+u64 cogFix(MODEL theModel, std::vector<int>& theOrder);
+double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param);
 
 // sort by
 bool comparePair(DoubleInt a, DoubleInt b) {
@@ -533,92 +530,45 @@ std::vector<OrderPair> intToPair(std::vector<int> asInt) {
 	return result;
 }
 
-std::vector<int> defaultOrder(MODEL theModel, double paramAlpha) {
-	// paramAlpha, default 0.5, 1.0 is all spans, 0.0 is all tops
-	
-	OrderPair fill;
-	std::vector<OrderPair> best (theModel.numPlaces, fill);
-	// start with best as the given order until found otherwise
-	for (int index = 0; index < theModel.numPlaces; index++) {
-		OrderPair temp;
-		temp.name = index;
-		temp.item = index;
-		best[index] = temp;	
-	}
-	// the score to beat
-	double bestScore = getSpanTopParam(theModel, best, paramAlpha);
-  double newScore  = 0.0;
-	
-	// reverse of the previous order
-#if 0
-	std::vector<OrderPair> reverse (theModel.numPlaces, fill);
-	for (int index = 0; index < theModel.numPlaces; index++) {
-		OrderPair temp;
-		temp.name = theModel.numPlaces - index - 1;
-		temp.item = index;
-		reverse[index] = temp;	
-	}
-	newScore = getSpanTopParam(theModel, reverse, paramAlpha);
-	if (newScore < bestScore) {
-		bestScore = newScore;
-		for (int index = 0; index < theModel.numPlaces; index++) {
-			best[index] = reverse[index];
-		}
-	}
-#endif
-	
-	int maxIter = 100;
-	std::vector<OrderPair> startOrder (best);	// try force on the given order
-	std::vector<OrderPair> forceGiven = intToPair(generateForceOrder(theModel,
-        maxIter, startOrder, paramAlpha));
-	
-	newScore = getSpanTopParam(theModel, forceGiven, paramAlpha);
-	if (newScore < bestScore) {
-		bestScore = newScore;
-		for (int index = 0; index < theModel.numPlaces; index++) {
-			best[index] = forceGiven[index];
-		}
-	}
-	
-	// try force on a number of different BFS orders
-	int bfsIters = 10;
-	for (int iter = 0; iter < bfsIters; iter++) {
-		std::vector<OrderPair> startOrderBFS = getBFSx(theModel, iter);
-		std::vector<OrderPair> forceBFS = intToPair(generateForceOrder(theModel,
-          maxIter, startOrderBFS, paramAlpha));
-		
-		newScore = getSpanTopParam(theModel, forceBFS, paramAlpha);
-		if (newScore < bestScore) {
-			bestScore = newScore;
-			for (int index = 0; index < theModel.numPlaces; index++) {
-				best[index] = forceBFS[index];
-			}
-		}
-	}
-	// try a number of random orders for FORCE here:
+// generate an order using the parameterized FORCE method
+// param should be between 0.0 and 1.0 inclusive
+std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
+  std::vector<int> current (startOrder);  // gets changed
+  std::vector<int> resultOrder (theModel.numPlaces, 0);
+  const int CYCLE = 5;
+  double bestScore = std::numeric_limits<double>::max();
 
-#if 0
-  // try noack
-  std::vector<OrderPair> noackGiven = noack(theModel); // noack with default params
-  newScore = getSpanTopParam(theModel, noackGiven, paramAlpha);
-  if (newScore < bestScore) {
-    bestScore = newScore;
-    for (int index = 0; index < theModel.numPlaces; index++) {
-      best[index] = noackGiven[index];
+  u64 * cycleCheck = new u64[CYCLE];
+  for (int index = 0; index < CYCLE; index++) {
+    cycleCheck[index] = 0;
+  }
+
+  int iter = 0; // in case # iterations wanted after a cycle breaks
+  for (iter = 0; iter < numIter; iter++) {
+    u64 theNew = cogFix(theModel, current);
+    int hash = theNew % CYCLE;
+    if (theNew == cycleCheck[hash]) break;
+    cycleCheck[hash] = theNew;
+
+    double score = getSpanTopParam(theModel, current, param);
+    if (score < bestScore) {
+      bestScore = score;
+      for (int index = 0; index < theModel.numPlaces; index++) {
+        resultOrder[index] = current[index];
+      }
     }
   }
-#endif
-  
 
-	return pairToInt(best);
+  delete [] cycleCheck;
+
+  return resultOrder;
 }
 
 
-// generate a breadth first order from the given model,
-// starting with variable "start"
-std::vector<OrderPair> getBFSx(MODEL theModel, int start) {
+// generate a breadth first order from the given model, starting with variable "start"
+std::vector<int> getBFSx(MODEL theModel, int start) {
 
-  std::vector<OrderPair> result;
+  std::vector<int> result;
 
   std::set<int> used;
   std::set<int>::iterator isUsed;
@@ -646,10 +596,7 @@ std::vector<OrderPair> getBFSx(MODEL theModel, int start) {
     std::queue<int> theQueue;
     isUsed = used.find(s);
     if (isUsed == used.end()) {
-      OrderPair opTemp;
-      opTemp.name = result.size();
-      opTemp.item = s;
-      result.push_back(opTemp);
+      result.push_back(s);
       used.insert(s);
       theQueue.push(s);
       while (!theQueue.empty()) {
@@ -657,20 +604,18 @@ std::vector<OrderPair> getBFSx(MODEL theModel, int start) {
         theQueue.pop();
         found = connections.find(c);
         if (found != connections.end()) {
-          // for (int t : connections[c]) {
-          for (std::set<int>::iterator t = connections[c].begin(); t != connections[c].end(); t++) {
-            std::map<int, std::set<int> >::iterator foundI = connections.find(*t);
+          std::set<int> cc = connections[c];
+          for (std::set<int>::iterator it = cc.begin(); it != cc.end(); ++it) {
+            std::map<int, std::set<int> >::iterator foundI = connections.find(*it);
             if (foundI != connections.end()) {
-              // for (int n : connections[*t]) {
-              for (std::set<int>::iterator n = connections[*t].begin(); n != connections[*t].end(); n++) {
-                isUsed = used.find(*n);
+              std::set<int> ct = connections[*it];
+              for (std::set<int>::iterator itt = ct.begin(); itt != ct.end(); ++itt) {
+                isUsed = used.find(*itt);
+                int n = *itt;
                 if (isUsed == used.end()) {
-                  OrderPair opTemp2;
-                  opTemp2.name = result.size();
-                  opTemp2.item = *n;
-                  result.push_back(opTemp2);
-                  theQueue.push(*n);
-                  used.insert(*n);
+                  result.push_back(n);
+                  theQueue.push(n);
+                  used.insert(n);
                 }
               }
             }
@@ -684,10 +629,96 @@ std::vector<OrderPair> getBFSx(MODEL theModel, int start) {
 }
 
 
-
 // generate a breadth-first order from the given model
-std::vector<OrderPair> getBFS(MODEL theModel) {
-	return getBFSx(theModel, 0);
+std::vector<int> getBFS(MODEL theModel) {
+  return getBFSx(theModel, 0);
+}
+
+
+// default parameters ordering
+std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
+  named_msg& out){
+  // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
+
+  std::vector<int> best (theModel.numPlaces, 0);
+  // start with best as the given order until found otherwise
+  for (int index = 0; index < theModel.numPlaces; index++) {
+    best[index] = index;  
+  }
+
+  double bestScore = getSpanTopParam(theModel, best, paramAlpha); // the score to beat
+
+  if (out.startReport()) {
+    out.report() << "Score[given-order]: " << bestScore << "\n\n";
+    out.stopIO();
+  }
+
+  std::vector<int> startOrder (best); // try force on the given order
+  std::vector<int> forceGiven = generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
+
+  double newScore = getSpanTopParam(theModel, forceGiven, paramAlpha);
+  if (newScore < bestScore) {
+    bestScore = newScore;
+    for (int index = 0; index < theModel.numPlaces; index++) {
+      best[index] = forceGiven[index];
+    }
+  }
+
+  if (out.startReport()) {
+    out.report() << "Score[force(given-order)]: " << newScore << "\n";
+    out.report() << "Best Score: " << bestScore << "\n\n";
+    out.stopIO();
+  }
+
+  forceGiven = getBFS(theModel);
+  newScore = getSpanTopParam(theModel, forceGiven, paramAlpha);
+  if (newScore < bestScore) {
+    bestScore = newScore;
+    for (int index = 0; index < theModel.numPlaces; index++) {
+      best[index] = forceGiven[index];
+    }
+  }
+
+  if (out.startReport()) {
+    out.report() << "Score[bfs]: " << newScore << "\n";
+    out.report() << "Best Score: " << bestScore << "\n\n";
+    out.stopIO();
+  }
+
+  // try force on a number of different BFS orders (bfsIters should be as many as wanted to get good results) 10??
+  for (int iter = 0; iter < bfsIters; iter++) {
+    std::vector<int> startOrderBFS = getBFSx(theModel, iter);
+    newScore = getSpanTopParam(theModel, startOrderBFS, paramAlpha);
+    if (newScore < bestScore) {
+      bestScore = newScore;
+      for (int index = 0; index < theModel.numPlaces; index++) {
+        best[index] = startOrderBFS[index];
+      }
+    }
+    if (out.startReport()) {
+      out.report() << "Score[(bfs(" << iter << ")]: " << newScore << "\n";
+      out.report() << "Best Score: " << bestScore << "\n\n";
+      out.stopIO();
+    }
+
+    std::vector<int> forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
+    newScore = getSpanTopParam(theModel, forceBFS, paramAlpha);
+    if (newScore < bestScore) {
+      bestScore = newScore;
+      for (int index = 0; index < theModel.numPlaces; index++) {
+        best[index] = forceBFS[index];
+      }
+    }
+    if (out.startReport()) {
+      out.report() << "Score[force(bfs(" << iter << "))]: " << newScore << "\n";
+      out.report() << "Best Score: " << bestScore << "\n\n";
+      out.stopIO();
+    }
+
+  }
+  // try a number of random orders for FORCE if desired here:  (probably not as good as starting with BFS)
+
+  return best;
 }
 
 
@@ -695,98 +726,147 @@ std::vector<OrderPair> getBFS(MODEL theModel) {
 
 // output an orderpair as an EDN formatted map
 void outputEDN_orderMap(std::vector<OrderPair> theOrder) {
-	std::cout << "{";
-	// for (OrderPair op : theOrder) {
+  std::cout << "{";
+  // for (OrderPair op : theOrder) {
   for (std::vector<OrderPair>::iterator op = theOrder.begin(); op != theOrder.end(); op++) {
-		std::cout << op->name << " " << op->item << ", ";
-	}
-	std::cout << "}" << std::endl;
+    std::cout << op->name << " " << op->item << ", ";
+  }
+  std::cout << "}" << std::endl;
 }
 
 // output an order std::vector as an EDN formatted std::vector
 void outputEDN_orderVec(std::vector<int> theOrder) {
-	std::cout << "[";
-	//for (auto a : theOrder) {
+  std::cout << "[";
+  //for (auto a : theOrder) {
   for (std::vector<int>::iterator a = theOrder.begin(); a != theOrder.end(); a++) {
-		std::cout << *a << " ";
-	}
-	std::cout << "]" << std::endl;
+    std::cout << *a << " ";
+  }
+  std::cout << "]" << std::endl;
 }
 
 
-// calculate the center of gravity and apply FORCE
-// return a hash value for the new order
-u64 cogDiff(MODEL theModel, std::vector<OrderPair>& theOrder) {
-	// find the center of gravity for every variable in the model
-	int * counts = new int[theModel.numTrans + theModel.numPlaces];
-	DoubleInt * totals = new DoubleInt[theModel.numTrans + theModel.numPlaces];
-	for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
-		if (index < theModel.numPlaces) {
-			counts[index] = 1;//0;
-			totals[index].theDouble = 0.0;//(double)theModel.numPlaces;//0.0;
-		} else {
-			counts[index] = 0;
-			totals[index].theDouble = 0.0;
-		}
-		totals[index].theInt = index;	// "names" 0..numPlaces - 1 
-	}	
-	
-	// for every arc, update the cog value
-	for (int index = 0; index < theModel.numArcs; index++) {
-		int source = theModel.theArcs[index].source;
-		int target = theModel.theArcs[index].target;
-		if (source < target) {
-			// source is a place
-			int currentPlace = theOrder[source].item;
-			counts[target]++;
-			totals[target].theDouble += (double)currentPlace;
-		} else {
-			// source is the transition
-			int currentPlace = theOrder[target].item;
-			counts[source]++;
-			totals[source].theDouble += (double)currentPlace;
-		}
-	}
-	// the cog value is the average (mean)
-	for (int index = 0; index < theModel.numArcs; index++) {
-		int source = theModel.theArcs[index].source;
-		int target = theModel.theArcs[index].target;
-		if (source < target) {
-			counts[source] += counts[target];
-			totals[source].theDouble += totals[target].theDouble;
-		} else {
-			counts[target] += counts[source];
-			totals[target].theDouble += totals[source].theDouble;
-		}
-	}
-	for (int index = 0; index < theModel.numPlaces; index++) {
-		if (counts[index] != 0) {
-			totals[index].theDouble /= (double)counts[index];
-		} else {
-			totals[index].theDouble = (double)totals[index].theInt;
-		}
-		totals[index].theInt = index;
-	}	
-	
-	// sort by the cog values
-	std::vector<DoubleInt> toBeSorted;
-	toBeSorted.assign(totals, totals + theModel.numPlaces);
-	stable_sort(toBeSorted.begin(), toBeSorted.end(), comparePair);
-	
-	// update the order, and calc a quick hash (FNV1a - modified)
-	u64 base = 109951168211;//theOrder.size();
-	u64 result = 14695981039346656037ULL;
-	for (int index = 0; index < int(theOrder.size()); index++) {
-		theOrder[index].name = index;
-		theOrder[index].item = toBeSorted[index].theInt;
-		result ^= theOrder[index].item;
-		result *= base;
-	}
-	
-	delete [] totals;
-	delete [] counts;
-	
-	return result;
+// calculate the center of gravity
+u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
+  // find the center of gravity for every variable in the model
+  int * counts = new int[theModel.numTrans + theModel.numPlaces];
+  DoubleInt * totals = new DoubleInt[theModel.numTrans + theModel.numPlaces];
+  for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
+    if (index < theModel.numPlaces) {
+      counts[index] = 1;//0;
+      totals[index].theDouble = 0.0;//(double)theModel.numPlaces;//0.0;
+    } else {
+      counts[index] = 0;
+      totals[index].theDouble = 0.0;
+    }
+    totals[index].theInt = index; // "names" 0..numPlaces - 1 
+  } 
+
+  // for every arc, update the cog value
+  for (int index = 0; index < theModel.numArcs; index++) {
+    int source = theModel.theArcs[index].source;
+    int target = theModel.theArcs[index].target;
+    if (source < target) {
+      // source is a place
+      int currentPlace = theOrder[source];
+      counts[target]++;
+      totals[target].theDouble += (double)currentPlace;
+    } else {
+      // source is the transition
+      int currentPlace = theOrder[target];
+      counts[source]++;
+      totals[source].theDouble += (double)currentPlace;
+    }
+  }
+  // the cog value is the average (mean)
+  for (int index = 0; index < theModel.numArcs; index++) {
+    int source = theModel.theArcs[index].source;
+    int target = theModel.theArcs[index].target;
+    if (source < target) {
+      counts[source] += counts[target];
+      totals[source].theDouble += totals[target].theDouble;
+    } else {
+      counts[target] += counts[source];
+      totals[target].theDouble += totals[source].theDouble;
+    }
+  }
+  for (int index = 0; index < theModel.numPlaces; index++) {
+    if (counts[index] != 0) {
+      totals[index].theDouble /= (double)counts[index];
+    } else {
+      totals[index].theDouble = (double)totals[index].theInt;
+    }
+    totals[index].theInt = index;
+  } 
+
+  // sort by the cog values
+  std::vector<DoubleInt> toBeSorted;
+  toBeSorted.assign(totals, totals + theModel.numPlaces);
+  std::stable_sort(toBeSorted.begin(), toBeSorted.end(), comparePair);
+
+  // update the order, and calc a quick hash (FNV1a - modified)
+  u64 base = 109951168211ULL;//theOrder.size();
+  u64 result = 14695981039346656037ULL;
+  for (int index = 0; index < int(theOrder.size()); index++) {
+    theOrder[index] = toBeSorted[index].theInt;
+    result ^= theOrder[index];
+    result *= base;
+  }
+
+  delete [] totals;
+  delete [] counts;
+
+  return result;
+}
+
+
+// calculate the combined span|top heuristic for a given ordering
+double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) {
+  {
+    std::vector<int> reverse_map(theModel.numPlaces);
+    for (int i = 0; i < theModel.numPlaces; i++) {
+      reverse_map[theOrder[i]] = i;
+    }
+
+    int * eventMax = new int[theModel.numTrans + theModel.numPlaces];
+    int * eventMin = new int[theModel.numTrans + theModel.numPlaces];
+    for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
+      eventMax[index] = 0;
+      eventMin[index] = theModel.numPlaces;
+    } 
+    u64 tops = 0LL;
+    u64 spans = 0LL;
+    for (int index = 0; index < theModel.numArcs; index++) {
+      int source = theModel.theArcs[index].source;
+      int target = theModel.theArcs[index].target;
+      if (source < target) {
+        int currentPlace = reverse_map[source];
+        if (eventMax[target] < currentPlace) {
+          tops += currentPlace - eventMax[target];
+          spans += currentPlace - eventMax[target];
+          eventMax[target] = currentPlace;
+        }
+        if (eventMin[target] > currentPlace) {
+          spans += eventMin[target] - currentPlace;
+          eventMin[target] = currentPlace;
+        }
+      } else {
+        int currentPlace = reverse_map[target];
+        if (eventMax[source] < currentPlace) {
+          tops += currentPlace - eventMax[source];
+          spans += currentPlace - eventMax[source];
+          eventMax[source] = currentPlace;
+        }
+        if (eventMin[source] > currentPlace) {
+          spans += eventMin[source] - currentPlace;
+          eventMin[source] = currentPlace;
+        }
+      }
+    }
+    delete [] eventMax;
+    delete [] eventMin;
+    double result = param * (double)spans + (1.0 - param) * (double)tops;
+    return result;
+  }
 }
 
 
@@ -836,42 +916,6 @@ double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
 
 
 
-// generate an order using the parameterized FORCE method
-// param should be between 0.0 and 1.0 inclusive
-std::vector<int> generateForceOrder(MODEL theModel, int numIter,
-    std::vector<OrderPair>& startOrder, double param) {
-  printf("In %s\n", __func__);
-	std::vector<OrderPair> current (startOrder);
-	std::vector<int> resultOrder (theModel.numPlaces, 0);
-	const int CYCLE = 5;
-	double bestScore = std::numeric_limits<double>::max();
-	
-	u64 * cycleCheck = new u64[CYCLE];
-	for (int index = 0; index < CYCLE; index++) {
-		cycleCheck[index] = 0;
-	}
-	
-	int iter = 0;	// in case # iterations wanted after a cycle breaks
-	for (iter = 0; iter < numIter; iter++) {
-		u64 theNew = cogDiff(theModel, current);
-		int hash = theNew % CYCLE;
-		if (theNew == cycleCheck[hash]) break;
-		cycleCheck[hash] = theNew;
-		
-		double score = getSpanTopParam(theModel, current, param);
-		if (score < bestScore) {
-			bestScore = score;
-			for (int index = 0; index < theModel.numPlaces; index++) {
-				resultOrder[index] = current[index].item;
-			}
-		}
-	}
-	
-	delete [] cycleCheck;
-	
-	return resultOrder;
-}
-
 
 // given a model, return an order using the given parameters
 // heuristics: {0: FORCE, 1: NOACK}
@@ -879,7 +923,8 @@ std::vector<int> primaryOrder(MODEL theModel, int heuristic, double paramAlpha) 
 	int maxIter = 10000;
 
   if (heuristic == 0) {
-    std::vector<OrderPair> startOrder = getBFS(theModel);
+    std::vector<int> startOrder = getBFS(theModel);
+
     return generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
   }
   return pairToInt(noack(theModel));	// noack with default params
@@ -897,20 +942,40 @@ MODEL translateModel(dsde_hlm& smartModel) {
 		int arcTarget = index + result.numPlaces;	// using target as the transition
 		
 		expr* enabling = theEvent->getEnabling();
+
+    if (0 != enabling) {
+      // Using the magic "List" from SMART with O(1) random access?
+      List <symbol> L;
+      enabling->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
+      for (int i = 0; i < L.Length(); i++) {
+        symbol* s = L.Item(i);
+        model_statevar* mv = dynamic_cast <model_statevar*> (s);
+        if (0 != mv) {
+          ARC tempArc;
+          tempArc.target = arcTarget;
+          tempArc.source = mv->GetIndex(); 
+          vecArcs.push_back(tempArc);
+        } 
+      }
+    }
+
+		enabling = theEvent->getNextstate();
 		
-    // Using the magic "List" from SMART with O(1) random access?
-		List <symbol> L;
-		enabling->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
-		for (int i = 0; i < L.Length(); i++) {
-			symbol* s = L.Item(i);
-			model_statevar* mv = dynamic_cast <model_statevar*> (s);
-			if (0 != mv) {
-				ARC tempArc;
-				tempArc.target = arcTarget;
-				tempArc.source = mv->GetIndex(); 
-				vecArcs.push_back(tempArc);
-			} 
-		}
+    if (0 != enabling) {
+      // Using the magic "List" from SMART with O(1) random access?
+      List <symbol> L;
+      enabling->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
+      for (int i = 0; i < L.Length(); i++) {
+        symbol* s = L.Item(i);
+        model_statevar* mv = dynamic_cast <model_statevar*> (s);
+        if (0 != mv) {
+          ARC tempArc;
+          tempArc.target = mv->GetIndex();
+          tempArc.source = arcTarget; 
+          vecArcs.push_back(tempArc);
+        } 
+      }
+    }
 	}
 
 	result.numArcs = vecArcs.size();
@@ -955,39 +1020,31 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
       << (heuristic == 0? "force": "noack")
       << "-defined variable order\n";
 
-    debug.report() << "indexes: ";
+    debug.report() << "Given Order: \n";
     for (int i = 0; i < dm->getNumStateVars(); i++) {
       model_statevar* var = dm->getStateVar(i);
-      debug.report() << "var: " << i << " index: " << var->GetIndex() << "\n";
+      debug.report() << "var: " << i << (i < 10? "  ": " ") << "part: " << var->GetPart() << (var->GetPart() < 10? "  ": " ") << var->Name() << "\n";
     }
-
-    debug.report() << "parts: ";
-    for (int i = 0; i < dm->getNumStateVars(); i++) {
-      model_statevar* var = dm->getStateVar(i);
-      debug.report() << "var: " << i << " part: " << var->GetPart() << "\n";
-    }
+    debug.stopIO();
   }
 
   MODEL model = translateModel(*dm);
-#if 0
-  std::vector<int> order = primaryOrder(model, heuristic, factor);
-#else
-  std::vector<int> order = defaultOrder(model, factor);
-#endif
+  const int nIterations = 1000;
+  const int nStartingOrders = 10;
+  std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
 
   for (int j = 0; j < int(order.size()); j++) {
-    dm->getStateVar(j)->SetPart(order[j]+1);
+    dm->getStateVar(order[j])->SetPart(j+1);
   }
-
-  debug.report() << "Order: \n";
-  for (int j = 0; j < int(order.size()); j++) {
-    dm->getStateVar(j)->SetPart(order[j]+1);
-    debug.report() << j << " " << order[j]+1 << " " << dm->getStateVar(j)->Name() << "\n";
-  }
-  debug.report() << "]\n";
-  debug.stopIO();
-
   dm->useHeuristicVarOrder();
-  // dm->reorderPartInfo();
+
+  if (debug.startReport()) {
+    debug.report() << "Generated Order: \n";
+    for (int i = 0; i < dm->getNumStateVars(); i++) {
+      model_statevar* var = dm->getStateVar(i);
+      debug.report() << "var: " << i << (i < 10? "  ": " ") << "part: " << var->GetPart() << (var->GetPart() < 10? "  ": " ") << var->Name() << "\n";
+    }
+    debug.stopIO();
+  }
 }
 
