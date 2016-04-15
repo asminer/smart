@@ -625,7 +625,12 @@ std::vector<int> getBFSx(MODEL theModel, int start) {
     }
   }
 
-  return result;
+  std::vector<int> inv_result(result.size());
+  for (int i = 0; i < int(result.size()); i++) {
+    inv_result[result[i]] = i;
+  }
+
+  return inv_result;
 }
 
 
@@ -793,7 +798,7 @@ u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
     if (counts[index] != 0) {
       totals[index].theDouble /= (double)counts[index];
     } else {
-      totals[index].theDouble = (double)totals[index].theInt;
+      totals[index].theDouble = (double)theModel.numPlaces;
     }
     totals[index].theInt = index;
   } 
@@ -807,8 +812,9 @@ u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
   u64 base = 109951168211ULL;//theOrder.size();
   u64 result = 14695981039346656037ULL;
   for (int index = 0; index < int(theOrder.size()); index++) {
-    theOrder[index] = toBeSorted[index].theInt;
-    result ^= theOrder[index];
+    //theOrder[index] = toBeSorted[index].theInt;
+    theOrder[toBeSorted[index].theInt] = index;
+    result ^= toBeSorted[index].theInt;
     result *= base;
   }
 
@@ -822,11 +828,6 @@ u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
 // calculate the combined span|top heuristic for a given ordering
 double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) {
   {
-    std::vector<int> reverse_map(theModel.numPlaces);
-    for (int i = 0; i < theModel.numPlaces; i++) {
-      reverse_map[theOrder[i]] = i;
-    }
-
     int * eventMax = new int[theModel.numTrans + theModel.numPlaces];
     int * eventMin = new int[theModel.numTrans + theModel.numPlaces];
     for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
@@ -839,7 +840,7 @@ double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) 
       int source = theModel.theArcs[index].source;
       int target = theModel.theArcs[index].target;
       if (source < target) {
-        int currentPlace = reverse_map[source];
+        int currentPlace = theOrder[source];
         if (eventMax[target] < currentPlace) {
           tops += currentPlace - eventMax[target];
           spans += currentPlace - eventMax[target];
@@ -850,7 +851,7 @@ double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) 
           eventMin[target] = currentPlace;
         }
       } else {
-        int currentPlace = reverse_map[target];
+        int currentPlace = theOrder[target];
         if (eventMax[source] < currentPlace) {
           tops += currentPlace - eventMax[source];
           spans += currentPlace - eventMax[source];
@@ -1034,7 +1035,7 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
 
   for (int j = 0; j < int(order.size()); j++) {
-    dm->getStateVar(order[j])->SetPart(j+1);
+    dm->getStateVar(j)->SetPart(order[j]+1);
   }
   dm->useHeuristicVarOrder();
 
