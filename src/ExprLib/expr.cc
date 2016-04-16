@@ -345,6 +345,13 @@ void expr::Traverse(traverse_data &x)
     case traverse_data::Block:
         return;
 
+    case traverse_data::GetProducts:
+        if (x.elist) {
+          x.elist->Append(this);
+        }
+        x.answer->setInt(x.answer->getInt()+1);
+        return;
+
     default:
         break;
   }
