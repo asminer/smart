@@ -1859,8 +1859,11 @@ substate_varoption::initializeEvents(named_msg &d)
     fire_deps[i] = getExprDeps(e->getNextstate(), num_levels);
     DCASSERT(enable_deps[i]);
     DCASSERT(enable_deps[i]->termlist);
-    DCASSERT(fire_deps[i]);
-    DCASSERT(fire_deps[i]->termlist);
+#ifdef DEVELOPMENT_CODE
+    if (fire_deps[i]) {
+      DCASSERT(fire_deps[i]->termlist);
+    }
+#endif
   } // for i
 
   if (!d.startReport()) return;
