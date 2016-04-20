@@ -180,6 +180,10 @@ public:
     ms.setStates(S);
   }
 
+  inline const MEDDLY::dd_edge& getStates() {
+    return ms.getStates();
+  }
+
   inline MEDDLY::forest* getMddForest() {
     return ms.getMddForest();
   }
