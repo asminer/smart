@@ -105,7 +105,9 @@ class heuristic_varorder : public user_varorder {
 heuristic_varorder the_force_000_varorder(0, 0.0);
 heuristic_varorder the_force_025_varorder(0, 0.25);
 heuristic_varorder the_force_050_varorder(0, 0.5);
+heuristic_varorder the_force_0625_varorder(0, 0.625);
 heuristic_varorder the_force_075_varorder(0, 0.75);
+heuristic_varorder the_force_0875_varorder(0, 0.875);
 heuristic_varorder the_force_100_varorder(0, 1.0);
 heuristic_varorder the_noack_varorder(1, 0);
 
@@ -187,9 +189,23 @@ bool init_static_varorder::execute()
 
   RegisterEngine(em,
     "VariableOrdering",
+    "FORCE0625",
+    "Variable order is determined by calls to partition() in the model",
+    &the_force_0625_varorder
+  );
+
+  RegisterEngine(em,
+    "VariableOrdering",
     "FORCE075",
     "Variable order is determined by calls to partition() in the model",
     &the_force_075_varorder
+  );
+
+  RegisterEngine(em,
+    "VariableOrdering",
+    "FORCE0875",
+    "Variable order is determined by calls to partition() in the model",
+    &the_force_0875_varorder
   );
 
   RegisterEngine(em,
@@ -640,6 +656,34 @@ std::vector<int> getBFS(MODEL theModel) {
 }
 
 
+// return a vector of variable indices, sorted by how well connected
+std::vector<int> leastToMostConnected(MODEL theModel) {
+std::vector<DoubleInt> counts;
+for (int index = 0; index < theModel.numPlaces; index++) {
+DoubleInt temp;
+temp.theInt = index;
+temp.theDouble = 0.0;
+counts.push_back(temp);
+}
+for (int a = 0; a < theModel.numArcs; a++) {
+int source = theModel.theArcs[a].source;
+int target = theModel.theArcs[a].target;
+if (source < target) {
+counts[source].theDouble += 1.0;
+} else {
+counts[target].theDouble += 1.0;
+}
+}
+std::stable_sort(counts.begin(), counts.end(), comparePair);
+std::vector<int> result (theModel.numPlaces, 0);
+for (int index = 0; index < theModel.numPlaces; index++) {
+result[index] = counts[index].theInt;
+//std::cout << "LTM " << index << " is " << result[index] << " with " << counts[index].theDouble << std::endl;
+}
+return result;
+}
+
+
 // default parameters ordering
 std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
   named_msg& out){
@@ -690,9 +734,28 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     out.stopIO();
   }
 
+  // get the sorted by connections here
+  std::vector<int> ltm = leastToMostConnected(theModel);
+  int size = (ltm.size() < 6 ? ltm.size() : 6);
+  int* indices = new int[size];
+  if (size < 6) {
+    for (int i = 0; i < size; i++) {
+      indices[i] = i;
+    }
+  }
+  else {
+    indices[0] = 0;
+    indices[1] = 1;
+    indices[2] = 2;
+    indices[3] = ltm.size() - 3;
+    indices[4] = ltm.size() - 2;
+    indices[5] = ltm.size() - 1;
+  }
+  
   // try force on a number of different BFS orders (bfsIters should be as many as wanted to get good results) 10??
-  for (int iter = 0; iter < bfsIters; iter++) {
-    std::vector<int> startOrderBFS = getBFSx(theModel, iter);
+  for (int iter = 0; iter < size; iter++) {
+    std::vector<int> startOrderBFS = getBFSx(theModel, ltm[indices[iter]]);
+    
     newScore = getSpanTopParam(theModel, startOrderBFS, paramAlpha);
     if (newScore < bestScore) {
       bestScore = newScore;
@@ -719,8 +782,40 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.report() << "Best Score: " << bestScore << "\n\n";
       out.stopIO();
     }
+    
+    // reverse the order
+    std::reverse(startOrderBFS.begin(), startOrderBFS.end());
+    
+    newScore = getSpanTopParam(theModel, startOrderBFS, paramAlpha);
+    if (newScore < bestScore) {
+      bestScore = newScore;
+      for (int index = 0; index < theModel.numPlaces; index++) {
+        best[index] = startOrderBFS[index];
+      }
+    }
+    if (out.startReport()) {
+      out.report() << "Rev Score[(bfs(" << iter << ")]: " << newScore << "\n";
+      out.report() << "Best Score: " << bestScore << "\n\n";
+      out.stopIO();
+    }
 
+    forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
+    newScore = getSpanTopParam(theModel, forceBFS, paramAlpha);
+    if (newScore < bestScore) {
+      bestScore = newScore;
+      for (int index = 0; index < theModel.numPlaces; index++) {
+        best[index] = forceBFS[index];
+      }
+    }
+    if (out.startReport()) {
+      out.report() << "Rev Score[force(bfs(" << iter << "))]: " << newScore << "\n";
+      out.report() << "Best Score: " << bestScore << "\n\n";
+      out.stopIO();
+    }
   }
+  
+  delete[] indices;
+  
   // try a number of random orders for FORCE if desired here:  (probably not as good as starting with BFS)
 
   return best;
