@@ -924,6 +924,70 @@ void showvars_si::Compute(traverse_data &x, expr** pass, int np)
 }
 
 // *****************************************************************
+// *                           run_for_MCC                         *
+// *****************************************************************
+
+class run_for_MCC_si : public proc_noengine {
+public:
+  run_for_MCC_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+run_for_MCC_si::run_for_MCC_si()
+ : proc_noengine(Nothing, em->VOID, "run_for_MCC", 1)
+{
+  SetDocumentation("Specialized function for running experiments for the annual Model Checking Competition.");
+}
+
+void run_for_MCC_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
+  if (0==llm || lldsm::Error == llm->Type()) return;
+
+  // actual code here!
+
+  // TBD - call a virtual function within llm to display this
+  em->cout() << "Method: decision diagram (TBD - fix the format please!\n";
+  em->cout().flush();
+
+  //
+  // Display number of states
+  //
+  result numstates;
+  llm->getNumStates(numstates);
+  if (!numstates.isNormal()) {
+    //
+    // TBD: Error, can we print something and exit cleanly here?
+
+    return;
+  }
+
+  em->cout() << "Number of states (TBD fix format please!): ";  
+  shared_object* bigns = numstates.getPtr();
+  if (bigns) {
+    bigns->Print(em->cout(), 0);
+  } else {
+    long ns = numstates.getInt();
+    em->cout() << ns;
+  }
+  em->cout().Put('\n');
+  em->cout().flush();
+
+
+  //
+  // TBD - other things to display here
+  //
+}
+
+
+// *****************************************************************
 // *                            initial                            *
 // *****************************************************************
 
@@ -1130,6 +1194,9 @@ bool init_basicmsrs::execute()
 
   // Junaid, Chuan, Ben: experiments on transforming variable orders.
   CML.Append(new var_order_transform);
+
+  // Model Checking Competition
+  CML.Append(new run_for_MCC_si);
 
   // Engine types
   proc_noengine::ProcGen = em->findEngineType("ProcessGeneration");
