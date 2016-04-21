@@ -827,11 +827,12 @@ long meddly_otfsat::computeMaxTokensInPlace(
   long max_place = 0;
   for (int i = 0; i < num_vars; i++) {
     long temp = NSF.getNumConfirmed(i+1);
+#if 0
     if (Report().startReport()) {
       Report().report() << "Var[" << i+1 << "]:    Confirmed: " << temp << "\n";
       Report().stopIO();
     }
-
+#endif
     if (max_place < temp) max_place = temp;
   }
   return max_place;
