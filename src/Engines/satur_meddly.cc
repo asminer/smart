@@ -807,6 +807,8 @@ private:
       MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
       MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
       std::map< MEDDLY::node_handle, std::map<MEDDLY::node_handle, bigint> > &ct);
+  void clearMeddlyComputeTable(meddly_varoption &x,
+      MEDDLY::satotf_opname::otf_relation &NSF);
 };
 
 meddly_otfsat the_meddly_otfsat;
@@ -966,6 +968,15 @@ bigint meddly_otfsat::computeNumTransitions(
   return num_transitions;
 }
 
+
+void meddly_otfsat::clearMeddlyComputeTable(
+    meddly_varoption &x,
+    MEDDLY::satotf_opname::otf_relation &NSF)
+{
+  MEDDLY::operation::removeAllFromMonolithic();
+}
+
+
 void meddly_otfsat::buildRSS(meddly_varoption &x)
 {
   timer watch;
@@ -1024,6 +1035,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 
     generateRSS(x, NSF);
 
+    clearMeddlyComputeTable(x, *NSF);
+
     result numstates;
     x.getNumStates(numstates);
     if (!numstates.isNormal()) {
@@ -1057,6 +1070,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
       Report().stopIO();
     }
+
+    clearMeddlyComputeTable(x, *NSF);
 
 #if 1
     //
