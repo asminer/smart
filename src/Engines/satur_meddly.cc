@@ -22,7 +22,16 @@
 #include "lslib.h"
 #include "meddly_expert.h"
 #include <iostream>
+
+#if 0
+#include <unordered_map>
+typedef std::unordered_map< MEDDLY::node_handle, bigint > NodeIntMap;
+typedef std::unordered_map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
+#else
 #include <map>
+typedef std::map< MEDDLY::node_handle, bigint > NodeIntMap;
+typedef std::map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
+#endif
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -806,7 +815,7 @@ private:
   bigint computeNumTransitions(
       MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
       MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
-      std::map< MEDDLY::node_handle, std::map<MEDDLY::node_handle, bigint> > &ct);
+      NodeNodeIntMap &ct);
   void clearMeddlyComputeTable(meddly_varoption &x,
       MEDDLY::satotf_opname::otf_relation &NSF);
 };
@@ -852,7 +861,7 @@ long meddly_otfsat::computeMaxTokensPerMarking(
 bigint meddly_otfsat::computeNumTransitions(
     MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level, 
     MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
-    std::map< MEDDLY::node_handle, std::map<MEDDLY::node_handle, bigint> > &ct)
+    NodeNodeIntMap &ct)
 {
   if (0 == mdd || 0 == mxd) return bigint(0l);
   if (0 == level) return bigint(1l);
@@ -894,8 +903,8 @@ bigint meddly_otfsat::computeNumTransitions(
   } else {
     DCASSERT(mddLevel == level);
     // check compute table
-    std::map< MEDDLY::node_handle, std::map<MEDDLY::node_handle, bigint> >::iterator iter1 = ct.find(mdd);
-    std::map<MEDDLY::node_handle, bigint>::iterator iter2;
+    NodeNodeIntMap::iterator iter1 = ct.find(mdd);
+    NodeIntMap::iterator iter2;
     if (iter1 != ct.end()) {
       iter2 = iter1->second.find(mxd);
       if (iter2 != iter1->second.end()) {
@@ -955,9 +964,9 @@ bigint meddly_otfsat::computeNumTransitions(
   MEDDLY::node_handle mdd = RS.getNode();
 
   bigint num_transitions = 0l;
-  std::map< MEDDLY::node_handle, std::map<MEDDLY::node_handle, bigint> > ct;
   for (int i = 1; i <= num_vars; i++) {
     for (int ei = 0; ei < NSF.getNumOfEvents(i); ei++) {
+      NodeNodeIntMap ct;
       MEDDLY::node_handle mxd = NSF.getEvent(i, ei);
       bigint temp = computeNumTransitions(mdd, mxd, num_vars,
           NSF.getInForest(), NSF.getRelForest(), ct);
@@ -973,6 +982,7 @@ void meddly_otfsat::clearMeddlyComputeTable(
     meddly_varoption &x,
     MEDDLY::satotf_opname::otf_relation &NSF)
 {
+  NSF.clearMinterms();
   MEDDLY::operation::removeAllFromMonolithic();
 }
 
@@ -1035,6 +1045,19 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 
     generateRSS(x, NSF);
 
+    if (Report().startReport()) {
+      Report().report() << "Built    reachability set, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+
+    if (stopGen(false, x.getParent(), watch)) {
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      Report().stopIO();
+    }
+
     clearMeddlyComputeTable(x, *NSF);
 
     result numstates;
@@ -1057,19 +1080,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     }
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
-
-    if (Report().startReport()) {
-      Report().report() << "Built    reachability set, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
-    }
-
-    if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, Report().report());
-      x.reportStats(Report().report());
-      Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
-      Report().stopIO();
-    }
 
     clearMeddlyComputeTable(x, *NSF);
 
