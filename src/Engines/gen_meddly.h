@@ -184,6 +184,14 @@ public:
     return ms.getStates();
   }
 
+  inline void getNumStates(long &ns) const {
+    ms.getNumStates(ns);
+  }
+
+  inline void getNumStates(result &ns) const {
+    ms.getNumStates(ns);
+  }
+
   inline MEDDLY::forest* getMddForest() {
     return ms.getMddForest();
   }

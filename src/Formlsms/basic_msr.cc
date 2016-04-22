@@ -953,10 +953,10 @@ void run_for_MCC_si::Compute(traverse_data &x, expr** pass, int np)
 
   // actual code here!
 
+#if 0
   // TBD - call a virtual function within llm to display this
   em->cout() << "Method: decision diagram (TBD - fix the format please!\n";
   em->cout().flush();
-
   //
   // Display number of states
   //
@@ -979,11 +979,12 @@ void run_for_MCC_si::Compute(traverse_data &x, expr** pass, int np)
   }
   em->cout().Put('\n');
   em->cout().flush();
-
+#endif
 
   //
   // TBD - other things to display here
   //
+
 }
 
 
