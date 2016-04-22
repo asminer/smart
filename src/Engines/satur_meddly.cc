@@ -1024,6 +1024,27 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 
     generateRSS(x, NSF);
 
+    result numstates;
+    x.getNumStates(numstates);
+    if (!numstates.isNormal()) {
+      //
+      // TBD: Error, can we print something and exit cleanly here?
+      em->cout() << "CANNOT COMPUTE\n";
+      delete NSF;
+      return;
+    }
+
+    em->cout() << "STATE_SPACE STATES ";
+    shared_object* bigns = numstates.getPtr();
+    if (bigns) {
+      bigns->Print(em->cout(), 0);
+    } else {
+      long ns = numstates.getInt();
+      em->cout() << ns;
+    }
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+
     if (Report().startReport()) {
       Report().report() << "Built    reachability set, took ";
       Report().report() << subwatch.elapsed_seconds() << " seconds\n";
@@ -1037,35 +1058,34 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       Report().stopIO();
     }
 
+#if 1
     //
     // Compute maximum tokens in any place
     //
     long max_tokens_in_place = computeMaxTokensInPlace(x, *NSF);
-    if (Report().startReport()) {
-      Report().report() << "\nSTATE_SPACE MAX_TOKEN_IN_PLACE ";
-      Report().report() << max_tokens_in_place << "\n";
-      Report().stopIO();
-    }
+    em->cout() << "STATE_SPACE MAX_TOKEN_IN_PLACE " << max_tokens_in_place;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
 
     //
     // Compute the maximum number of tokens in a marking
     //
     long max_tokens_per_marking = computeMaxTokensPerMarking(x, *NSF);
-    if (Report().startReport()) {
-      Report().report() << "\nSTATE_SPACE MAX_TOKEN_PER_MARKING " << max_tokens_per_marking << "\n";
-      Report().stopIO();
-    }
+    em->cout() << "STATE_SPACE MAX_TOKEN_PER_MARKING " << max_tokens_per_marking;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
 
     //
     // Compute number of arcs
     //
     bigint num_transitions = computeNumTransitions(x.getStates(), *NSF);
-    if (Report().startReport()) {
-      Report().report() << "\nSTATE_SPACE TRANSITIONS ";
-      num_transitions.Print(Report().report(), 0);
-      Report().report() << "\n";
-      Report().stopIO();
-    }
+    em->cout() << "STATE_SPACE TRANSITIONS ";
+    num_transitions.Print(em->cout(), 0);
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#endif
+
+    delete NSF;
     
   } // try
 
