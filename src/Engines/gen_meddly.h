@@ -11,6 +11,7 @@
 //
 
 #include "gen_rg_base.h"
+#include "../Modules/expl_states.h"
 #include "../Modules/glue_meddly.h"
 #include "../Formlsms/rss_meddly.h"
 
@@ -196,10 +197,12 @@ public:
     return ms.getMddForest();
   }
 
+  virtual substate_colls* getSubstateStorage() { return 0; }
 
 public:
   /// Any pre-processing for the next-state function goes here.
   virtual void initializeEvents(named_msg &debug) = 0;
+
 
   inline const MEDDLY::dd_edge& getEventEnabling(int ev_index) const {
     DCASSERT(event_enabling);

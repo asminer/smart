@@ -834,19 +834,30 @@ long meddly_otfsat::computeMaxTokensInPlace(
     meddly_varoption &x,
     MEDDLY::satotf_opname::otf_relation &NSF)
 {
-  int num_vars = x.getMddForest()->getDomain()->getNumVariables();
-  long max_place = 0;
-  for (int i = 0; i < num_vars; i++) {
-    long temp = NSF.getNumConfirmed(i+1);
-#if 0
-    if (Report().startReport()) {
-      Report().report() << "Var[" << i+1 << "]:    Confirmed: " << temp << "\n";
-      Report().stopIO();
+  substate_colls* colls = x.getSubstateStorage();
+  if (0 == colls) return -1;
+
+  const dsde_hlm& p = x.getParent();
+  shared_state* foo = new shared_state(&p);
+  //meddly_encoder* colls = x.shareMxdWrap();
+  // int num_vars = x.getMddForest()->getDomain()->getNumVariables();
+  long max_tokens = 0;
+  for (int k = 1; k <= p.getPartInfo().num_levels; k++) {
+    long nConfirmed = NSF.getNumConfirmed(k);
+    int sz = foo->readSubstateSize(k);
+    int curr = 0;
+    for (int i = 0; i < nConfirmed; i++, curr++) {
+      while (!NSF.isConfirmed(k, curr)) curr++;
+      // std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
+      int chunk[sz];
+      colls->getSubstate(k, curr, chunk, sz);
+      for (int j = 0; j < sz; j++) {
+        // std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
+        if (max_tokens < chunk[j]) max_tokens = chunk[j];
+      }
     }
-#endif
-    if (max_place < temp) max_place = temp;
   }
-  return max_place;
+  return max_tokens;
 }
 
 long meddly_otfsat::computeMaxTokensPerMarking(

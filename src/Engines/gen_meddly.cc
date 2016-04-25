@@ -1603,6 +1603,7 @@ public:
   //
 
   virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
+  virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
   void initDomain(const exprman* em);
