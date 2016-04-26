@@ -22,8 +22,9 @@
 #include "lslib.h"
 #include "meddly_expert.h"
 #include <iostream>
+#include <vector>
 
-#if 0
+#if 1
 #include <unordered_map>
 typedef std::unordered_map< MEDDLY::node_handle, bigint > NodeIntMap;
 typedef std::unordered_map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
@@ -804,19 +805,49 @@ protected:
   }
   virtual const char* getAlgName() const { return "on the fly saturation"; }
 private:
+  // Build the otf next-state function
+  //
   MEDDLY::satotf_opname::otf_relation*  buildNSF(meddly_varoption &x);
+
+  // Build the reachable set of states
+  //
   void generateRSS(meddly_varoption &x, MEDDLY::satotf_opname::otf_relation* NSF);
+
+  // Clear Meddly's compute tables
+  //
+  void clearMeddlyComputeTable(meddly_varoption &x,
+      MEDDLY::satotf_opname::otf_relation &NSF);
+
+  // Compute the maximum number of tokens that can occur at any place in the Petri Net
+  //
   long computeMaxTokensInPlace(meddly_varoption &x,
       MEDDLY::satotf_opname::otf_relation &NSF);
-  long computeMaxTokensPerMarking(meddly_varoption &x,
-      MEDDLY::satotf_opname::otf_relation &NSF);
+
+  // Compute the number of arcs in the reachability graph
+  //
   bigint computeNumTransitions(const MEDDLY::dd_edge &RS,
       MEDDLY::satotf_opname::otf_relation &NSF);
   bigint computeNumTransitions(
       MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
       MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
       NodeNodeIntMap &ct);
-  void clearMeddlyComputeTable(meddly_varoption &x,
+
+  // Compute the maximum number of tokens in any state of the reachable set of states
+  //
+  bool computeMaxTokensPerLevel(
+      meddly_varoption &x,
+      MEDDLY::satotf_opname::otf_relation &NSF,
+      std::vector<long> &result,
+      std::vector< std::vector<long> > &level_index_to_token);
+  long computeMaxTokensPerMarking(
+      const std::vector<long> &level_to_max_tokens,
+      const std::vector< std::vector<long> > &level_index_to_token,
+      MEDDLY::expert_forest* mddf,
+      MEDDLY::node_handle mdd,
+      int level, 
+      std::unordered_map < MEDDLY::node_handle, long > &ct);
+  long computeMaxTokensPerMarking(
+      meddly_varoption &x,
       MEDDLY::satotf_opname::otf_relation &NSF);
 };
 
@@ -839,17 +870,15 @@ long meddly_otfsat::computeMaxTokensInPlace(
 
   const dsde_hlm& p = x.getParent();
   shared_state* foo = new shared_state(&p);
-  //meddly_encoder* colls = x.shareMxdWrap();
-  // int num_vars = x.getMddForest()->getDomain()->getNumVariables();
   long max_tokens = 0;
   for (int k = 1; k <= p.getPartInfo().num_levels; k++) {
     long nConfirmed = NSF.getNumConfirmed(k);
     int sz = foo->readSubstateSize(k);
+    int chunk[sz];
     int curr = 0;
     for (int i = 0; i < nConfirmed; i++, curr++) {
       while (!NSF.isConfirmed(k, curr)) curr++;
       // std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
-      int chunk[sz];
       colls->getSubstate(k, curr, chunk, sz);
       for (int j = 0; j < sz; j++) {
         // std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
@@ -860,12 +889,129 @@ long meddly_otfsat::computeMaxTokensInPlace(
   return max_tokens;
 }
 
+bool meddly_otfsat::computeMaxTokensPerLevel(
+    meddly_varoption &x,
+    MEDDLY::satotf_opname::otf_relation &NSF,
+    std::vector<long> &max_tokens,
+    std::vector< std::vector<long> > &level_index_to_token)
+{
+  substate_colls* colls = x.getSubstateStorage();
+  if (0 == colls) return false;
+
+  const dsde_hlm& p = x.getParent();
+  shared_state* foo = new shared_state(&p);
+
+  max_tokens.resize(p.getPartInfo().num_levels+1);
+  for (std::vector<long>::iterator rIter = max_tokens.begin();
+      rIter != max_tokens.end(); rIter++) {
+    *rIter = 0;
+  }
+
+  level_index_to_token.resize(p.getPartInfo().num_levels+1);
+  for (int i = 0; i < int(level_index_to_token.size()); i++) {
+    for (std::vector<long>::iterator rIter = level_index_to_token[i].begin();
+        rIter != level_index_to_token[i].end(); rIter++) {
+      *rIter = 0;
+    }
+  }
+
+  for (int k = 1; k <= p.getPartInfo().num_levels; k++) {
+    long nConfirmed = NSF.getNumConfirmed(k);
+    int sz = foo->readSubstateSize(k);
+    int chunk[sz];
+    int curr = 0;
+    for (int i = 0; i < nConfirmed; i++, curr++) {
+      //std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
+      while (!NSF.isConfirmed(k, curr)) curr++;
+      level_index_to_token[k].resize(curr+1, 0);
+      colls->getSubstate(k, curr, chunk, sz);
+      int sum = 0;
+      for (int j = 0; j < sz; j++) {
+        //std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
+        sum += chunk[j];
+      }
+      level_index_to_token[k][curr] = sum;
+      if (max_tokens[k] < sum) max_tokens[k] = sum;
+      //std::cout << "\t\t max: " << max_tokens[k] << "\n";
+    }
+  }
+
+  return true;
+}
+
+
+long meddly_otfsat::computeMaxTokensPerMarking(
+    const std::vector<long> &level_to_max_tokens,
+    const std::vector< std::vector<long> > &level_index_to_token,
+    MEDDLY::expert_forest* mddf,
+    MEDDLY::node_handle mdd,
+    int level, 
+    std::unordered_map < MEDDLY::node_handle, long > &ct)
+{
+  DCASSERT(0 != mdd);
+  if (0 == level) return 0;
+
+  int mddLevel = mddf->getNodeLevel(mdd);
+  long result = 0;
+
+  if (mddLevel < level) {
+    // if mddLevel < level
+    // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+    result = level_to_max_tokens[level] +
+      computeMaxTokensPerMarking(level_to_max_tokens, level_index_to_token,
+          mddf, mdd, level-1, ct);
+  } else {
+    // check compute table
+    std::unordered_map < MEDDLY::node_handle, long >::iterator iter = ct.find(mdd);
+    if (iter != ct.end()) {
+      return iter->second;
+    }
+
+    // expand mdd
+    MEDDLY::node_reader* mdd_nr = mddf->initNodeReader(mdd, false);
+    for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+      result = MAX( result,
+          (level_index_to_token[level][mdd_nr->i(i)] +
+           computeMaxTokensPerMarking(level_to_max_tokens, level_index_to_token,
+             mddf, mdd_nr->d(i), level-1, ct)) );
+    }
+    MEDDLY::node_reader::recycle(mdd_nr);
+
+    // insert into compute table
+    ct[mdd] = result;
+  }
+
+  return result;
+}
+
 long meddly_otfsat::computeMaxTokensPerMarking(
     meddly_varoption &x,
     MEDDLY::satotf_opname::otf_relation &NSF)
 {
   // traverse the set of reachable states
-  return -1;
+  //
+  // for all children node,
+  //    max = MAX(max, map_i_to_token(level, i) + max_marking(child[i], level-1))
+
+  const MEDDLY::dd_edge& states = x.getStates();
+  if (0 == states.getNode()) return 0;
+
+  std::vector<long> level_to_max_tokens;
+  std::vector< std::vector<long> > level_index_to_token;
+  if (!computeMaxTokensPerLevel(x, NSF, level_to_max_tokens, level_index_to_token))
+    return -1;
+  //for (int i = 0; i < int(level_to_max_tokens.size()); i++) {
+  //  em->cout() << "Level: " << i << ", max tokens: " << level_to_max_tokens[i] << "\n";
+  //}
+
+  std::unordered_map < MEDDLY::node_handle, long > ct;
+  return computeMaxTokensPerMarking(
+      level_to_max_tokens,
+      level_index_to_token,
+      smart_cast<MEDDLY::expert_forest*>(states.getForest()),
+      states.getNode(),
+      x.getParent().getPartInfo().num_levels,
+      ct);
 }
 
 
