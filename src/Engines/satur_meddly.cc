@@ -968,14 +968,14 @@ long meddly_otfsat::computeMaxTokensPerMarking(
     }
 
     // expand mdd
-    MEDDLY::node_reader* mdd_nr = mddf->initNodeReader(mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
     for (int i = 0; i < mdd_nr->getNNZs(); i++) {
       result = MAX( result,
           (level_index_to_token[level][mdd_nr->i(i)] +
            computeMaxTokensPerMarking(level_to_max_tokens, level_index_to_token,
              mddf, mdd_nr->d(i), level-1, ct)) );
     }
-    MEDDLY::node_reader::recycle(mdd_nr);
+    MEDDLY::unpacked_node::recycle(mdd_nr);
 
     // insert into compute table
     ct[mdd] = result;
@@ -1038,24 +1038,24 @@ bigint meddly_otfsat::computeNumTransitions(
     } else if (mxdLevel < 0) {
       // if mddLevel < level && ABS(mxdLevel) >= level && mxdLevel < 0
       // --- return level_size * compute(mdd, mxd[i], level-1)
-      MEDDLY::node_reader* p_nr = mxdf->initNodeReader(mxd, false);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
       for (int i = 0; i < p_nr->getNNZs(); i++) {
         result.add(result, computeNumTransitions(mdd, p_nr->d(i), level-1, mddf, mxdf, ct));
       }
-      MEDDLY::node_reader::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(p_nr);
       result.mul(bigint(levelSize), result);
     } else {
       // expand mxd
-      MEDDLY::node_reader* up_nr = mxdf->initNodeReader(mxd, false);
-      MEDDLY::node_reader* p_nr = MEDDLY::node_reader::useReader();
+      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
       for (int i = 0; i < up_nr->getNNZs(); i++) {
-        mxdf->initNodeReader(*p_nr, up_nr->d(i), false);
+        p_nr->initFromNode(mxdf, up_nr->d(i), false);
         for (int j = 0; j < p_nr->getNNZs(); j++) {
           result.add(result, computeNumTransitions(mdd, p_nr->d(j), level-1, mddf, mxdf, ct));
         }
       }
-      MEDDLY::node_reader::recycle(p_nr);
-      MEDDLY::node_reader::recycle(up_nr);
+      MEDDLY::unpacked_node::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(up_nr);
     }
   } else {
     DCASSERT(mddLevel == level);
@@ -1071,35 +1071,35 @@ bigint meddly_otfsat::computeNumTransitions(
     }
 
     // expand mdd
-    MEDDLY::node_reader* mdd_nr = mddf->initNodeReader(mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
     if (ABS(mxdLevel) < level) {
       for (int i = 0; i < mdd_nr->getNNZs(); i++) {
         result.add(result, computeNumTransitions(mdd_nr->d(i), mxd, level-1, mddf, mxdf, ct));
       }
     } else if (mxdLevel < 0) {
-      MEDDLY::node_reader* p_nr = mxdf->initNodeReader(mxd, false);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
       for (int i = 0; i < mdd_nr->getNNZs(); i++) {
         for (int j = 0; j < p_nr->getNNZs(); j++) {
           result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
         }
       }
-      MEDDLY::node_reader::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(p_nr);
     } else {
       // expand mxd
-      MEDDLY::node_reader* up_nr = mxdf->initNodeReader(mxd, true);
-      MEDDLY::node_reader* p_nr = MEDDLY::node_reader::useReader();
+      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, true);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
       for (int i = 0; i < mdd_nr->getNNZs(); i++) {
         int i_index = mdd_nr->i(i);
         if (0 == up_nr->d(i_index)) continue;
-        mxdf->initNodeReader(*p_nr, up_nr->d(i_index), false);
+        p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
         for (int j = 0; j < p_nr->getNNZs(); j++) {
           result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
         }
       }
-      MEDDLY::node_reader::recycle(p_nr);
-      MEDDLY::node_reader::recycle(up_nr);
+      MEDDLY::unpacked_node::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(up_nr);
     }
-    MEDDLY::node_reader::recycle(mdd_nr);
+    MEDDLY::unpacked_node::recycle(mdd_nr);
 
     // insert into compute table
     ct[mdd].insert(std::pair<MEDDLY::node_handle, bigint>(mxd, result));
