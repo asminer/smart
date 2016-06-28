@@ -26,7 +26,7 @@ comstart      "/*"
 comclose      "*"+"/"
 notspecial    ([^/*])
 notcomclose   ([^*]|"*"+{notspecial})
-letter        [A-Za-z]
+letter        [A-Za-z_]
 digit         [0-9]
 dec           ("."{digit}+)
 exp           ([eE][-+]?{digit}+)
