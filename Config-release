@@ -8,7 +8,7 @@ echo Configuring release version
 
 export CXXFLAGS="-O3" 
 export LDFLAGS="" 
-export CPPFLAGS=""
+export CPPFLAGS="-std=gnu++11"
 
 findlibs $@ || exit 1
 

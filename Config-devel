@@ -8,7 +8,7 @@ echo Configuring development version
 
 export CXXFLAGS="-ggdb -DDEVELOPMENT_CODE" 
 export LDFLAGS="" 
-export CPPFLAGS=""
+export CPPFLAGS="-std=gnu++11"
 
 findlibs $@ || exit 1
 
