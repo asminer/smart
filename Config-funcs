@@ -57,6 +57,7 @@ find_mddlib() {
   try_mddlib $SMARTLIBS && return 0
   try_mddlib $MDD_LIBRARY && return 0
   try_mddlib $HOME/Meddly/trunk && return 0
+  try_mddlib $HOME/Meddly && return 0
   printf "Cannot find MDD Library\n"
   printf "Set environment variable MDD_LIBRARY\n"
   return 1
@@ -77,6 +78,7 @@ find_timerlib() {
   try_timerlib $SMARTLIBS && return 0
   try_timerlib $TIMER_LIBRARY && return 0
   try_timerlib $HOME/SmartLibs/trunk && return 0
+  try_timerlib $HOME/SmartLibs && return 0
   printf "Cannot find Timer Library\n"
   printf "Set environment variable TIMER_LIBRARY\n"
   return 1
@@ -97,6 +99,7 @@ find_simlib() {
   try_simlib $SMARTLIBS && return 0
   try_simlib $SIM_LIBRARY && return 0
   try_simlib $HOME/SmartLibs/trunk && return 0
+  try_simlib $HOME/SmartLibs && return 0
   printf "Cannot find Simulation Library\n"
   printf "Set environment variable SIM_LIBRARY\n"
   return 1
@@ -117,6 +120,7 @@ find_rnglib() {
   try_rnglib $SMARTLIBS && return 0
   try_rnglib $RNG_LIBRARY && return 0
   try_rnglib $HOME/SmartLibs/trunk && return 0
+  try_rnglib $HOME/SmartLibs && return 0
   printf "Cannot find RNG Library\n"
   printf "Set environment variable RNG_LIBRARY\n"
   return 1
@@ -137,6 +141,7 @@ find_lslib() {
   try_lslib $SMARTLIBS && return 0
   try_lslib $LS_LIBRARY && return 0
   try_lslib $HOME/SmartLibs/trunk && return 0
+  try_lslib $HOME/SmartLibs && return 0
   printf "Cannot find Linear Solver Library\n"
   printf "Set environment variable LS_LIBRARY\n"
   return 1
@@ -157,6 +162,7 @@ find_statelib() {
   try_statelib $SMARTLIBS && return 0
   try_statelib $STATE_LIBRARY && return 0
   try_statelib $HOME/SmartLibs/trunk && return 0
+  try_statelib $HOME/SmartLibs && return 0
   printf "Cannot find Explicit State Storage Library\n"
   printf "Set environment variable STATE_LIBRARY\n"
   return 1
@@ -177,6 +183,7 @@ find_graphlib() {
   try_graphlib $SMARTLIBS && return 0
   try_graphlib $GRAPH_LIBRARY && return 0
   try_graphlib $HOME/SmartLibs/trunk && return 0
+  try_graphlib $HOME/SmartLibs && return 0
   printf "Cannot find Explicit Graph Library\n"
   printf "Set environment variable GRAPH_LIBRARY\n"
   return 1
@@ -197,6 +204,7 @@ find_mclib() {
   try_mclib $SMARTLIBS && return 0
   try_mclib $MC_LIBRARY && return 0
   try_mclib $HOME/SmartLibs/trunk && return 0
+  try_mclib $HOME/SmartLibs && return 0
   printf "Cannot find Explicit Markov chain Library\n"
   printf "Set environment variable MC_LIBRARY\n"
   return 1
@@ -217,6 +225,7 @@ find_islib() {
   try_islib $SMARTLIBS && return 0
   try_islib $IS_LIBRARY && return 0
   try_islib $HOME/SmartLibs/trunk && return 0
+  try_islib $HOME/SmartLibs && return 0
   printf "Cannot find Explicit Integer Set Library\n"
   printf "Set environment variable IS_LIBRARY\n"
   return 1
