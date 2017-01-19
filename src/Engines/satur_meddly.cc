@@ -454,7 +454,8 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
       Debug().report() << m.readEvent(e)->Name();
       Debug().report() << " DD edge: " << enable.getNode() << "\n";
       Debug().report().flush();
-      enable.show(Debug().Freport(), 2);
+      smart_output Drep(Debug().report());
+      enable.show(Drep, 2);
       Debug().stopIO();
     }
 #endif
@@ -467,7 +468,8 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
       Debug().report() << m.readEvent(e)->Name();
       Debug().report() << " DD edge: " << firing.getNode() << "\n";
       Debug().report().flush();
-      firing.show(Debug().Freport(), 2);
+      smart_output Drep(Debug().report());
+      firing.show(Drep, 2);
       Debug().stopIO();
     }
 #endif
@@ -483,7 +485,8 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
       Debug().report() << m.readEvent(e)->Name();
       Debug().report() << " DD edge: " << firing.getNode() << "\n";
       Debug().report().flush();
-      firing.show(Debug().Freport(), 2);
+      smart_output Drep(Debug().report());
+      firing.show(Drep, 2);
       Debug().stopIO();
     }
 #endif
@@ -589,7 +592,7 @@ void meddly_implicitgen
 #ifdef DEBUG_RADIX_SORT  
   em->cout() << "Radix Sort bit " << k << ": ";
   for (int e=a; e<b; e++) 
-    em->cout() << m.getEvent(event_order[e])->Name() << " ";
+    em->cout() << m.readEvent(event_order[e])->Name() << " ";
   em->cout() << "\n";
 #endif
   // sort based on bit k.
@@ -688,15 +691,16 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   #ifdef DEBUG_FINAL_NSF
       Report().report() << "DD edge: " << getNSF().getNode() << "\n";
       Report().report().flush();
-      getNSF().show(Report().Freport(), 2);
+      smart_output Rrep(Report().report());
+      getNSF().show(Rrep, 2);
       Report().report() << "Initial state: " << x.getInitial().getNode() << "\n";
       Report().report().flush();
-      x.getInitial().show(Report().Freport(), 2);
+      x.getInitial().show(Rrep, 2);
   #endif
   #ifdef DEBUG_REFCOUNTS
       Report().report() << "Forest:\n";
       Report().report().flush();
-      x.ms.mxd_wrap->getForest()->showInfo(Report().Freport(), 1);
+      getNSF().getForest()->showInfo(Rrep, 1);
       fflush(Report().Freport());
   #endif
       Report().stopIO();
