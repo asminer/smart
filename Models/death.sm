@@ -1,0 +1,26 @@
+
+// $Id$
+
+pn death(int n) := {
+  place p;
+  trans t;
+  init (p:n);
+  arcs(p:t);
+
+  stateset efp := EF(potential(0==tk(p)));
+  stateset afp := AF(potential(0==tk(p)));
+};
+
+int N := read_int("N");
+
+#Report + CTL_engines
+
+compute(N);
+
+start_timer(1);
+card(death(N).efp);
+stop_timer(1);
+
+start_timer(1);
+card(death(N).afp);
+stop_timer(1);
