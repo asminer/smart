@@ -77,7 +77,7 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
 {
   os << "Internal representation for graph:\n";
 
-  GraphLib::digraph::matrix m;
+  GraphLib::digraph::const_matrix m;
   if (!edges->exportFinished(m)) {
     os << "  Couldn't export graph to matrix\n";
     return;
@@ -283,7 +283,7 @@ void grlib_reachgraph
 
   // export graph edges
   DCASSERT(edges->isByRows());
-  GraphLib::generic_graph::matrix rg;
+  GraphLib::generic_graph::const_matrix rg;
   if (!edges->exportFinished(rg)) {
     DCASSERT(0);
   } else {
