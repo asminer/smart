@@ -79,15 +79,46 @@ namespace GraphLib {
         virtual void stop() = 0;
     };
     /// For exporting a finished graph.
-    struct matrix {
+    struct const_matrix {
         /// If true, the matrix is stored by columns, rather than by rows.
         bool is_transposed;
-        /// List for each row.
+        /// Number of rows.
+        long num_rows;
+        /// List for each row.  Dimension is num_rows+1.
         const long* rowptr;
         /// Column indexes.
         const long* colindex;
         /// Edge values.
         const void* value;
+        /// Size of each edge value
+        int edge_size;
+    };
+    /// For transposing a finished graph.
+    struct matrix {
+        /// If true, the matrix is stored by columns, rather than by rows.
+        bool is_transposed;
+        /// Number of rows.
+        long num_rows;
+        /// List for each row.  Dimension is num_rows+1.
+        long* rowptr;
+        /// Column indexes.
+        long* colindex;
+        /// Edge values.
+        void* value;
+        /// Size of each edge value
+        int edge_size;
+      public:
+        matrix();
+        void destroy();
+        
+        /// Fill this with a copy of m.
+        void copyFrom(const const_matrix &m);
+
+        /// Fill this with a transposed copy of m.
+        void transposeFrom(const const_matrix &m);
+
+      private:
+        void alloc(long nr, long ne);
     };
     /// For traversing the graph.
     class element_visitor {
@@ -393,7 +424,7 @@ namespace GraphLib {
   
 
     /// Export a finished graph.  @return true on success.
-    bool exportFinished(matrix &m) const;
+    bool exportFinished(const_matrix &m) const;
 
     /// Total memory required for graph storage, in bytes.
     long ReportMemTotal() const;

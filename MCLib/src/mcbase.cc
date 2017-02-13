@@ -420,7 +420,7 @@ inline long GCD(long a, long b)
 
   Returns -2 for out of memory error.
 */
-long FindPeriod(const GraphLib::generic_graph::matrix &Q, long Qstart, long Qstop)
+long FindPeriod(const GraphLib::generic_graph::const_matrix &Q, long Qstart, long Qstop)
 {
   if (Qstart == Qstop)  return 0;
 #ifdef DEBUG_PERIOD

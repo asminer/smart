@@ -2,10 +2,12 @@
 # $Id$
 
 noinst_PROGRAMS = \
-  grtest
+  grtest triples
 
-AM_CPPFLAGS = -I../src -I../../IntSets/src
+AM_CPPFLAGS = -I../src -I../../include
 
 grtest_SOURCES = grtest.cc
-grtest_LDADD = ../src/libgraph.la ../../IntSets/src/libintset.la
+grtest_LDADD = ../src/libgraph.la ../../lib/libintset.la
 
+triples_SOURCES = triples.cc
+triples_LDADD = ../src/libgraph.la ../../lib/librng.la

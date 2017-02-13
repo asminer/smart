@@ -18,6 +18,7 @@ const int MAJOR_VERSION = 2;
 const int MINOR_VERSION = 5;
 
 // #define DEBUG_DEFRAG
+// #define DEBUG_TRANSPOSE_FROM
 
 // ******************************************************************
 // *                                                                *
@@ -39,6 +40,7 @@ template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
 // *                                                                *
 // ******************************************************************
 
+
 GraphLib::generic_graph::timer_hook::timer_hook()
 {
 }
@@ -46,6 +48,170 @@ GraphLib::generic_graph::timer_hook::timer_hook()
 GraphLib::generic_graph::timer_hook::~timer_hook()
 {
 }
+
+GraphLib::generic_graph::matrix::matrix()
+{
+  num_rows = 0;
+  rowptr = 0;
+  colindex = 0;
+  value = 0;
+  edge_size = 0;
+}
+
+void GraphLib::generic_graph::matrix::destroy()
+{
+  free(rowptr);
+  free(colindex);
+  free(value);
+  rowptr = 0;
+  colindex = 0;
+  value = 0;
+}
+
+void GraphLib::generic_graph::matrix::copyFrom(const const_matrix &m)
+{
+  is_transposed = m.is_transposed;
+  edge_size = m.edge_size;
+
+  // resize arrays
+  alloc(m.num_rows, m.rowptr[m.num_rows]);
+
+  // copy arrays
+  memcpy(rowptr, m.rowptr, (num_rows+1)*sizeof(long));
+  memcpy(colindex, m.colindex, m.rowptr[m.num_rows] * sizeof(long));
+  memcpy(value, m.value, m.rowptr[m.num_rows] * m.edge_size);
+}
+
+
+void GraphLib::generic_graph::matrix::transposeFrom(const const_matrix &m)
+{
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("Inside transposeFrom\n");
+  printf("  Input matrix:\n");
+  printf("\tis_transposed: %s\n", m.is_transposed ? "true" : "false");
+  printf("\tnum_rows: %ld\n", m.num_rows);
+  printf("\trowptr: [%ld", m.rowptr[0]);
+  for (long r=1; r<=m.num_rows; r++) {
+    printf(", %ld", m.rowptr[r]);
+  }
+  printf("]\n");
+  printf("\tcolindex: [%ld", m.colindex[0]);
+  for (long e=1; e<m.rowptr[m.num_rows]; e++) {
+    printf(", %ld", m.colindex[e]);
+  }
+  printf("]\n");
+#endif
+
+  // ASSUME matrix is square
+
+  is_transposed = !m.is_transposed;
+  edge_size = m.edge_size;
+
+  // resize arrays 
+  alloc(m.num_rows, m.rowptr[m.num_rows]);
+
+  // Count entries in each transposed row
+  for (long r=0; r<=num_rows; r++) rowptr[r] = 0;
+  for (long e=0; e<m.rowptr[m.num_rows]; e++) {
+    ++rowptr[ m.colindex[e] ];
+  }
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("  index counts: [%ld", rowptr[0]);
+  for (int r=1; r<=num_rows; r++) printf(", %ld", rowptr[r]);
+  printf("]\n");
+#endif
+
+  // Accumulate, so rowptr[r] gives #entries in rows 0..r
+  for (long r=1; r<=num_rows; r++) {
+    rowptr[r] += rowptr[r-1];
+  }
+  // Shift.
+  for (long r=num_rows; r>0; r--) {
+    rowptr[r] = rowptr[r-1];
+  }
+  rowptr[0] = 0;
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("  transposed rowptr: [%ld", rowptr[0]);
+  for (int r=1; r<=num_rows; r++) printf(", %ld", rowptr[r]);
+  printf("]\n");
+#endif
+
+  //
+  // Ok, right now rowptr[r] is number of entries in rows 0..r-1.
+  // In other words, it's the starting location for row r.
+  // So we can start copying elements.
+  long e = 0;
+  for (long i=0; i<num_rows; i++) {
+    for (; e<m.rowptr[i+1]; e++) {
+      long j = m.colindex[e];
+
+      // add element i,j,value[e]
+#ifdef DEBUG_TRANSPOSE_FROM
+      printf("  adding element [%ld, %ld]\n", i, j);
+#endif
+
+      colindex[ rowptr[j] ] = i;
+      if (edge_size) {
+        memcpy((char*) value + edge_size * rowptr[j], (char*) m.value + edge_size * e, edge_size);
+      }
+      ++rowptr[j];
+    } // for e
+  } // for i
+
+  // Right now, rowptr[r] gives #entries in rows 0..r,
+  // so we need to shift again.
+  for (long r=num_rows; r>0; r--) {
+    rowptr[r] = rowptr[r-1];
+  }
+  rowptr[0] = 0;
+
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("  Output matrix:\n");
+  printf("\tis_transposed: %s\n", is_transposed ? "true" : "false");
+  printf("\tnum_rows: %ld\n", num_rows);
+  printf("\trowptr: [%ld", rowptr[0]);
+  for (long r=1; r<=num_rows; r++) {
+    printf(", %ld", rowptr[r]);
+  }
+  printf("]\n");
+  printf("\tcolindex: [%ld", colindex[0]);
+  for (long e=1; e<rowptr[num_rows]; e++) {
+    printf(", %ld", colindex[e]);
+  }
+  printf("]\n");
+#endif
+}
+
+
+void GraphLib::generic_graph::matrix::alloc(long nr, long ne)
+{
+  // row pointers
+  // hopefully realloc is fast if we give the same size?
+  long* nrp = (long*) realloc(rowptr, (nr+1)*sizeof(long));
+  if (0==nrp) {
+    free(rowptr);
+    throw error(error::Out_Of_Memory);
+  }
+  rowptr = nrp;
+  num_rows = nr;
+
+  // col indexes
+  long* nci = (long*) realloc(colindex, ne * sizeof(long)); 
+  if (rowptr[num_rows] && 0==nci) {
+    free(colindex);
+    throw error(error::Out_Of_Memory);
+  }
+  colindex = nci;
+
+  // values
+  void* nv = realloc(value, ne * edge_size);
+  if ((ne * edge_size) && 0==nv) {
+    free(value);
+    throw error(error::Out_Of_Memory);
+  }
+  value = nv;
+}
+
 
 GraphLib::generic_graph::element_visitor::element_visitor()
 {
@@ -610,13 +776,15 @@ GraphLib::generic_graph::computeTSCCs(timer_hook* sw, bool c, long* sccmap, long
 }
 
 bool 
-GraphLib::generic_graph::exportFinished(matrix &m) const
+GraphLib::generic_graph::exportFinished(const_matrix &m) const
 {
   if (!finished) return false;
   m.is_transposed = !is_by_rows;
+  m.num_rows = num_nodes;
   m.rowptr = row_pointer;
   m.colindex = column_index;
   m.value = label;
+  m.edge_size = edge_size;
   return true;
 }
 

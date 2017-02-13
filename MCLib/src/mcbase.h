@@ -48,7 +48,7 @@ public:
 */
 class mc_base : public MCLib::Markov_chain {
 private:
-  GraphLib::generic_graph::matrix rawQ;
+  GraphLib::generic_graph::const_matrix rawQ;
 
 protected:
   /// Options for internal computation of discrete distributions
@@ -292,7 +292,7 @@ public:
       Qtt.f_one_over_diag = 0;
       return;
     }
-    GraphLib::generic_graph::matrix m;
+    GraphLib::generic_graph::const_matrix m;
     g->exportFinished(m);
     Qtt.is_transposed = !m.is_transposed;
     Qtt.rowptr = m.rowptr;
