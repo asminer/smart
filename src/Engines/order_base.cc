@@ -923,14 +923,14 @@ u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
 // calculate the combined span|top heuristic for a given ordering
 double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) {
   {
-    int * eventMax = new int[theModel.numTrans + theModel.numPlaces];
-    int * eventMin = new int[theModel.numTrans + theModel.numPlaces];
-    for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
+	int count = theModel.numTrans + theModel.numPlaces;
+    int * eventMax = new int[count];
+    int * eventMin = new int[count];
+    for (int index = 0; index < (count); index++) {
       eventMax[index] = 0;
       eventMin[index] = theModel.numPlaces;
     } 
     u64 tops = 0LL;
-    u64 spans = 0LL;
     for (int index = 0; index < theModel.numArcs; index++) {
       int source = theModel.theArcs[index].source;
       int target = theModel.theArcs[index].target;
@@ -938,26 +938,26 @@ double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) 
         int currentPlace = theOrder[source];
         if (eventMax[target] < currentPlace) {
           tops += currentPlace - eventMax[target];
-          spans += currentPlace - eventMax[target];
           eventMax[target] = currentPlace;
         }
         if (eventMin[target] > currentPlace) {
-          spans += eventMin[target] - currentPlace;
           eventMin[target] = currentPlace;
         }
       } else {
         int currentPlace = theOrder[target];
         if (eventMax[source] < currentPlace) {
           tops += currentPlace - eventMax[source];
-          spans += currentPlace - eventMax[source];
           eventMax[source] = currentPlace;
         }
         if (eventMin[source] > currentPlace) {
-          spans += eventMin[source] - currentPlace;
           eventMin[source] = currentPlace;
         }
       }
     }
+	u64 spans = 0LL;
+	for (int index = theModel.numPlaces; index < count; index++) {
+	  spans += eventMax[index] - eventMin[index] + 1;
+	}
     delete [] eventMax;
     delete [] eventMin;
     double result = param * (double)spans + (1.0 - param) * (double)tops;
@@ -969,14 +969,14 @@ double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) 
 // calculate the combined span|top heuristic for a given ordering
 double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
     double param) {
-	int * eventMax = new int[theModel.numTrans + theModel.numPlaces];
-	int * eventMin = new int[theModel.numTrans + theModel.numPlaces];
-	for (int index = 0; index < theModel.numTrans + theModel.numPlaces; index++) {
+	int count = theModel.numTrans + theModel.numPlaces;
+    int * eventMax = new int[count];
+    int * eventMin = new int[count];
+    for (int index = 0; index < (count); index++) {
 		eventMax[index] = 0;
 		eventMin[index] = theModel.numPlaces;
 	}	
 	u64 tops = 0LL;
-	u64 spans = 0LL;
 	for (int index = 0; index < theModel.numArcs; index++) {
 		int source = theModel.theArcs[index].source;
 		int target = theModel.theArcs[index].target;
@@ -984,25 +984,25 @@ double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
 			int currentPlace = theOrder[source].item;
 			if (eventMax[target] < currentPlace) {
 				tops += currentPlace - eventMax[target];
-				spans += currentPlace - eventMax[target];
 				eventMax[target] = currentPlace;
 			}
 			if (eventMin[target] > currentPlace) {
-				spans += eventMin[target] - currentPlace;
 				eventMin[target] = currentPlace;
 			}
 		} else {
 			int currentPlace = theOrder[target].item;
 			if (eventMax[source] < currentPlace) {
 				tops += currentPlace - eventMax[source];
-				spans += currentPlace - eventMax[source];
 				eventMax[source] = currentPlace;
 			}
 			if (eventMin[source] > currentPlace) {
-				spans += eventMin[source] - currentPlace;
 				eventMin[source] = currentPlace;
 			}
 		}
+	}
+	u64 spans = 0LL;
+	for (int index = theModel.numPlaces; index < count; index++) {
+	  spans += eventMax[index] - eventMin[index] + 1;
 	}
 	delete [] eventMax;
 	delete [] eventMin;
