@@ -1,7 +1,6 @@
 
 // $Id$
 
-#include "ctl_msr.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
@@ -64,22 +63,6 @@ protected:
     return dynamic_cast <graph_lldsm*>(foo);
   }
 
-  /*
-  inline static stateset* Complement(stateset* p) {
-    if (0==p) return 0;
-    stateset* NOTp = 0;
-    if (p->numRefs() > 1) {
-      NOTp = p->DeepCopy();
-      NOTp->Complement();
-      Delete(p);
-    } else {
-      NOTp = p;
-      NOTp->Complement();
-    }
-    return NOTp;
-  }
-  */
-
   inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
     if (0==m || 0==p) return 0;
     p->Compute(x);
@@ -98,33 +81,6 @@ protected:
     return Share(ss);
   }
 
-  /*
-  inline stateset* grabAndInvertParam(const lldsm* m, expr* p, traverse_data &x) const {
-    if (0==m || 0==p) return 0;
-    p->Compute(x);
-    if (!x.answer->isNormal()) return 0;
-    stateset* ss = smart_cast <stateset*> (x.answer->getPtr());
-    DCASSERT(ss);
-    if (ss->getParent() != m) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Stateset in " << Name();
-        em->cerr() << " expression is from a different model";
-        em->stopIO();
-      }   
-      return 0;
-    }
-    if (ss->numRefs() > 1) {
-      ss = ss->DeepCopy();
-      ss->Complement();
-    } else {
-      ss->Complement();
-      Share(ss);
-    }
-    return ss;
-  }
-  */
-
   inline static void setAnswer(traverse_data &x, stateset* s) {
     if (s) {
       x.answer->setPtr(s);
@@ -132,24 +88,6 @@ protected:
       x.answer->setNull();
     }
   }
-
-  /*
-  inline static void setAndInvertAnswer(traverse_data &x, stateset* s) {
-    if (s) {
-      if (s->numRefs()>1) {
-        stateset* ns = s->DeepCopy();
-        Delete(s);
-        ns->Complement();
-        x.answer->setPtr(ns);
-      } else {
-        s->Complement();
-        x.answer->setPtr(s);
-      }
-    } else {
-      x.answer->setNull();
-    }
-  }
-  */
 
 private:
   static engtype* ProcGen;
@@ -449,13 +387,6 @@ void AX_base::Compute(traverse_data &x, expr** pass, int np)
   stateset* p = grabParam(llm, pass[1], x);
   setAnswer(x, llm->AX(revTime(), p));
   Delete(p);
-/*
-
-  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  setAndInvertAnswer(x, llm->EX(revTime(), NOTp));
-  Delete(NOTp);
-  // AX p = !EX !p
-  */
 }
 
 // *****************************************************************
@@ -519,14 +450,6 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
     llm->isFairModel() ?  llm->fairAU(revTime(), 0, p) :  llm->unfairAU(revTime(), 0, p)
   );
   Delete(p);
-  /*
-  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  setAndInvertAnswer(x,
-    llm->isFairModel() ?  llm->fairEG(revTime(), NOTp) : llm->unfairEG(revTime(), NOTp)
-  );
-  Delete(NOTp);
-  */
-  // AF p = !EG !p
 }
 
 // *****************************************************************
@@ -588,12 +511,6 @@ void AG_base::Compute(traverse_data &x, expr** pass, int np)
   stateset* p = grabParam(llm, pass[1], x);
   setAnswer(x, llm->AG(revTime(), p));
   Delete(p);
-  /*
-  stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
-  setAndInvertAnswer(x, llm->EU(revTime(), 0, NOTp));
-  Delete(NOTp);
-  */
-  // AG p = !EF !p
 }
 
 // *****************************************************************
@@ -664,83 +581,6 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
   );
   Delete(p);
   Delete(q);
-  /*
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
-  const graph_lldsm* llm = getLLM(x, pass[0]);
-  stateset* notp = grabAndInvertParam(llm, pass[1], x);
-  if (0==notp) {
-    x.answer->setNull();
-    return;
-  }
-  stateset* notq = grabAndInvertParam(llm, pass[2], x);
-  if (0==notq) {
-    Delete(notp);
-    x.answer->setNull();
-    return;
-  }
-
-  stateset* notpq = 0;
-  if (notp->numRefs()>1) {
-    notpq = notp->DeepCopy();
-    Delete(notp);
-  } else {
-    notpq = notp;
-  }
-  notpq->Intersect(pass[1], "AU", notq);
-
-  // we've computed notpq: (!p & !q)
-
-  stateset* eupart = Complement( llm->EU(revTime(), notq, notpq) );
-  Delete(notpq);
-
-  // we've computed eupart:  !E[ !q U (!p & !q) ]
-
-  stateset* egpart = Complement(
-    llm->isFairModel() ? llm->fairEG(revTime(), notq) : llm->unfairEG(revTime(), notq)
-  );
-  Delete(notq);
-
-  // we've computed egpart: is !EG(!q)
-
-  // Now finish up, using
-  //
-  // A p U q = !E[ !q U (!p & !q) ] & !EG(!q)
-  //
-  // try to be clever about the intersection 
-  // and do it "in place" if we can
-  //
-
-  if (0==egpart || 0==eupart) {
-    Delete(egpart);
-    Delete(eupart);
-    x.answer->setNull();
-    return;
-  }
-
-  if (egpart->numRefs() == 1) {
-    egpart->Intersect(pass[1], "AU", eupart);
-    Delete(eupart);
-    x.answer->setPtr(egpart);
-    return;
-  } 
-  if (eupart->numRefs() == 1) {
-    eupart->Intersect(pass[1], "AU", egpart);
-    Delete(egpart);
-    x.answer->setPtr(eupart);
-    return;
-  } 
-
-  //
-  // neither egpart nor eupart can be modified in place
-  //
-  stateset* answer = egpart->DeepCopy();
-  answer->Intersect(pass[1], "AU", eupart);
-  Delete(egpart);
-  Delete(eupart);
-  x.answer->setPtr(answer);
-  */
 }
 
 // *****************************************************************
