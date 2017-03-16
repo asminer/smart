@@ -204,6 +204,7 @@ void fsm_def::FinalizeModel(OutputStream &ds)
     return;
   }
 
+  /*
   GraphLib::digraph::finish_options fo;
   fo.Store_By_Rows = false;  // need option?
   fo.Will_Clear = false;
@@ -217,6 +218,7 @@ void fsm_def::FinalizeModel(OutputStream &ds)
     }
     error = true;
   }
+  */
 
   LS_Vector init;
   init.f_value = 0;

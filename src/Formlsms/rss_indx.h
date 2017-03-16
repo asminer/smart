@@ -26,9 +26,13 @@ class indexed_reachset : public state_lldsm::reachset {
     virtual stateset* getInitialStates() const;
 
     void setInitial(const LS_Vector &init);
-    void setInitial(const intset& init);
+    inline void setInitial(const intset& init) {
+      initial = init;
+    }
 
-    void getInitial(intset& init) const;
+    inline const intset& getInitial() const {
+      return initial;
+    }
 
     // Shrink the reachset to a more static structure.
     // Default does nothing.

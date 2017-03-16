@@ -100,6 +100,7 @@ stochastic_lldsm::process::process()
 
 stochastic_lldsm::process::~process()
 {
+  // DON'T delete parent
 }
 
 void stochastic_lldsm::process::attachToParent(stochastic_lldsm* p, LS_Vector &, state_lldsm::reachset*)

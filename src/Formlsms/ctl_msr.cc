@@ -64,6 +64,7 @@ protected:
     return dynamic_cast <graph_lldsm*>(foo);
   }
 
+  /*
   inline static stateset* Complement(stateset* p) {
     if (0==p) return 0;
     stateset* NOTp = 0;
@@ -77,6 +78,7 @@ protected:
     }
     return NOTp;
   }
+  */
 
   inline stateset* grabParam(const lldsm* m, expr* p, traverse_data &x) const {
     if (0==m || 0==p) return 0;
@@ -96,6 +98,7 @@ protected:
     return Share(ss);
   }
 
+  /*
   inline stateset* grabAndInvertParam(const lldsm* m, expr* p, traverse_data &x) const {
     if (0==m || 0==p) return 0;
     p->Compute(x);
@@ -120,6 +123,7 @@ protected:
     }
     return ss;
   }
+  */
 
   inline static void setAnswer(traverse_data &x, stateset* s) {
     if (s) {
@@ -129,6 +133,7 @@ protected:
     }
   }
 
+  /*
   inline static void setAndInvertAnswer(traverse_data &x, stateset* s) {
     if (s) {
       if (s->numRefs()>1) {
@@ -144,6 +149,7 @@ protected:
       x.answer->setNull();
     }
   }
+  */
 
 private:
   static engtype* ProcGen;
@@ -396,7 +402,7 @@ public:
 
 EG_si::EG_si() : EG_base("EG", false)
 {
-  SetDocumentation("CTL EG operator: build the set of starting states, from which some path has the form:\n~~~~p ---> p ---> p ---> p ...\nNote that paths can be finite or infinite in length, and that some models (e.g., Markov chains) do not consider unfair infinite paths.");
+  SetDocumentation("CTL EG operator: build the set of starting states, from which some path has the form:\n~~~~p ---> p ---> p ---> p ...\nNote that paths can be finite (if the last state is a deadlocked state) or infinite in length, and that some models (e.g., Markov chains) do not consider unfair infinite paths.");
 }
 
 // *****************************************************************
@@ -412,7 +418,7 @@ public:
 
 EH_si::EH_si() : EG_base("EH", true)
 {
-  SetDocumentation("CTL EH operator: build the set of final states, to which some path has the form:\n~~~~... p ---> p ---> p ---> p\nNote that paths can be finite or infinite in length, and that some models (e.g., Markov chains) do not consider unfair infinite paths.");
+  SetDocumentation("CTL EH operator: build the set of final states, to which some path has the form:\n~~~~... p ---> p ---> p ---> p\nNote that paths can be finite (if the first state is an initial state) or infinite in length, and that some models (e.g., Markov chains) do not consider unfair infinite paths.");
 }
 
 
@@ -440,10 +446,16 @@ void AX_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* p = grabParam(llm, pass[1], x);
+  setAnswer(x, llm->AX(revTime(), p));
+  Delete(p);
+/*
+
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
   setAndInvertAnswer(x, llm->EX(revTime(), NOTp));
   Delete(NOTp);
   // AX p = !EX !p
+  */
 }
 
 // *****************************************************************
@@ -502,12 +514,18 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* p = grabParam(llm, pass[1], x);
+  setAnswer(x, 
+    llm->isFairModel() ?  llm->fairAU(revTime(), 0, p) :  llm->unfairAU(revTime(), 0, p)
+  );
+  Delete(p);
+  /*
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
   setAndInvertAnswer(x,
     llm->isFairModel() ?  llm->fairEG(revTime(), NOTp) : llm->unfairEG(revTime(), NOTp)
   );
   Delete(NOTp);
-
+  */
   // AF p = !EG !p
 }
 
@@ -567,10 +585,14 @@ void AG_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* p = grabParam(llm, pass[1], x);
+  setAnswer(x, llm->AG(revTime(), p));
+  Delete(p);
+  /*
   stateset* NOTp = grabAndInvertParam(llm, pass[1], x);
   setAndInvertAnswer(x, llm->EU(revTime(), 0, NOTp));
   Delete(NOTp);
-
+  */
   // AG p = !EF !p
 }
 
@@ -627,6 +649,22 @@ AU_base::AU_base(const char* name, bool rt)
 
 void AU_base::Compute(traverse_data &x, expr** pass, int np)
 {
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* p = grabParam(llm, pass[1], x);
+  if (0==p) {
+    x.answer->setNull();
+    return;
+  }
+  stateset* q = grabParam(llm, pass[2], x);
+  setAnswer(x, 
+    llm->isFairModel() ?  llm->fairAU(revTime(), p, q) :  llm->unfairAU(revTime(), p, q)
+  );
+  Delete(p);
+  Delete(q);
+  /*
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
@@ -702,6 +740,7 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
   Delete(egpart);
   Delete(eupart);
   x.answer->setPtr(answer);
+  */
 }
 
 // *****************************************************************

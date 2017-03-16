@@ -11,6 +11,18 @@
 #include "graphlib.h"
 #include "intset.h"
 
+/*
+  TO DO:
+    (1) When we attach to parent, make static "by rows" 
+        and "by columns" matrices, and destroy edges.
+
+    (2) Adjust destructor
+
+    (3) Re-implement showArcs
+
+    (4) Re-implement countPaths
+*/
+
 class grlib_reachgraph : public ectl_reachgraph {
 
   public:
@@ -36,13 +48,45 @@ class grlib_reachgraph : public ectl_reachgraph {
     }
 
     virtual void countPaths(const stateset* src, const stateset* dest, result& count);
+
+  protected:
+    virtual void getDeadlocked(intset &r) const;
+    virtual void need_reverse_time();
+
+    virtual void count_edges(bool rt, traverse_helper &TH) const;
+      
+    virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const; 
+
+  private:
+    template <class EDGES>
+    inline void _traverse(bool one_step, const EDGES &E, traverse_helper &TH) const {
+        while (TH.queue_nonempty()) {
+            long s = TH.queue_pop();
+            // explore edges to/from s
+            for (long z=E.rowptr[s]; z<E.rowptr[s+1]; z++) {
+                long t = E.colindex[z];
+                if (TH.num_obligations(t) <= 0) continue;
+                TH.remove_obligation(t);
+                if (one_step) continue;
+                if (0==TH.num_obligations(t)) {
+                    TH.queue_push(t);
+                }
+            } // for z
+        } // while queue not empty
+    }
+
+  
+// OLD FROM HERE
+
+    /*
+
     virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q);
 
   protected:
     virtual bool forward(const intset& p, intset &r) const;
     virtual bool backward(const intset& p, intset &r) const;
-    virtual void getDeadlocked(intset &r) const;
 
+    */
   private:
     bool transposeEdges(const named_msg* rep, bool byrows);
     
@@ -50,10 +94,16 @@ class grlib_reachgraph : public ectl_reachgraph {
     GraphLib::digraph* edges;
     LS_Vector initial;    // hold until we can pass it to RSS
     intset deadlocks;     // set of states with no outgoing edges
-    // tbd - absorbing states
+
+    // matrix after finishing, stored by incoming edges
+    GraphLib::digraph::const_matrix InEdges; 
+
+    // matrix after finishing, stored by outgoing edges, for reverse time
+    GraphLib::digraph::matrix OutEdges;
 
   // ----------------------------------------------------------------------
   private:
+    // for displaying edges
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
       int alloc;
       const indexed_reachset::indexed_iterator &I;
@@ -90,6 +140,7 @@ class grlib_reachgraph : public ectl_reachgraph {
       }
     };
   // ----------------------------------------------------------------------
+  /*
   private:
     class outgoingCounter : public GraphLib::generic_graph::element_visitor {
         long* count;
@@ -98,7 +149,9 @@ class grlib_reachgraph : public ectl_reachgraph {
         virtual ~outgoingCounter();
         virtual bool visit(long from, long to, void*);
     };
+    */
   // ----------------------------------------------------------------------
+  /*
   private:
     class incomingEdges : public GraphLib::generic_graph::element_visitor {
         int alloc;
@@ -128,6 +181,7 @@ class grlib_reachgraph : public ectl_reachgraph {
       protected:
         bool Enlarge(int ns);
     };
+*/
 };
 
 #endif

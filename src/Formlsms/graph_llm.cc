@@ -146,25 +146,47 @@ void graph_lldsm::reachgraph::getNumArcs(result &na) const
   }
 }
 
-stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p) const
+stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p)
 {
   return notImplemented("EX");
 }
 
+stateset* graph_lldsm::reachgraph::AX(bool revTime, const stateset* p)
+{
+  return notImplemented("AX");
+}
+
 stateset* graph_lldsm::reachgraph
-::EU(bool revTime, const stateset* p, const stateset* q) const
+::EU(bool revTime, const stateset* p, const stateset* q)
 {
   return notImplemented("EU");
 }
 
-stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p) const
+stateset* graph_lldsm::reachgraph
+::unfairAU(bool revTime, const stateset* p, const stateset* q)
+{
+  return notImplemented("unfairAU");
+}
+
+stateset* graph_lldsm::reachgraph
+::fairAU(bool revTime, const stateset* p, const stateset* q)
+{
+  return notImplemented("fairAU");
+}
+
+stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p)
 {
   return notImplemented("unfairEG");
 }
 
-stateset* graph_lldsm::reachgraph::fairEG(bool revTime, const stateset* p) const
+stateset* graph_lldsm::reachgraph::fairEG(bool revTime, const stateset* p)
 {
   return notImplemented("fairEG");
+}
+
+stateset* graph_lldsm::reachgraph::AG(bool revTime, const stateset* p)
+{
+  return notImplemented("AG");
 }
 
 stateset* graph_lldsm::reachgraph

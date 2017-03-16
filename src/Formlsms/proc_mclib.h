@@ -222,12 +222,29 @@ class mclib_reachgraph : public ectl_reachgraph {
     virtual void showArcs(OutputStream &os, const show_options& opt, 
       state_lldsm::reachset* RSS, shared_state* st) const;
 
+// TBD - fix this class
+
+  protected:
+    virtual void need_reverse_time() {
+      throw "not implemented";
+    }
+
+    virtual void count_edges(bool, traverse_helper&) const {
+      throw "not implemented";
+    }
+
+    virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const {
+      throw "not implemented";
+    }
+
   protected:
     virtual bool forward(const intset& p, intset &r) const;
     virtual bool backward(const intset& p, intset &r) const;
     virtual void absorbing(intset &r) const;
     
     virtual void getTSCCsSatisfying(intset &p) const;
+
+  
 
   private:
     mclib_process* chain;

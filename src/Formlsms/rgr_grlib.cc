@@ -21,7 +21,7 @@
 // *                                                                *
 // ******************************************************************
 
-grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g)
+grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g) : OutEdges()
 {
   edges = g;
   // clear the initial vector
@@ -33,16 +33,27 @@ grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g)
   DCASSERT(edges);
   deadlocks.resetSize(edges->getNumNodes());
   edges->noOutgoingEdges(deadlocks); 
+
+  // Static incoming edges
+  InEdges.num_rows = 0;
+  InEdges.rowptr = 0;
+  InEdges.colindex = 0;
+  InEdges.value = 0;
 }
 
 grlib_reachgraph::~grlib_reachgraph()
 {
+  // in case we still have it
   delete edges;
 
   // in case we still have it:
   delete[] initial.index;
 
   // deadlocks should be destroyed automagically here
+
+  // InEdges belongs to edges, don't delete it
+
+  OutEdges.destroy();
 }
 
 void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS)
@@ -62,14 +73,33 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
 
   // Finish the graph 
   GraphLib::digraph::finish_options o;
-  o.Store_By_Rows = true;
-  o.Will_Clear = false;
+  o.Store_By_Rows = false;
   edges->finish(o);
+  
+  if (!edges->exportFinished(InEdges)) {
+    // why did this fail?
+    // we should throw something
+    DCASSERT(0);
+  }
+
+  DCASSERT(InEdges.is_transposed);
+#ifdef DEVELOPMENT_CODE
+  long ns = 0;
+  RSS->getNumStates(ns);
+  DCASSERT(ns == InEdges.num_rows);
+  if (InEdges.num_rows) {
+    DCASSERT(InEdges.rowptr);
+    if (InEdges.rowptr[InEdges.num_rows]) {
+      DCASSERT(InEdges.colindex);
+    }
+  }
+#endif
 }
 
 void grlib_reachgraph::getNumArcs(long &na) const
 {
   DCASSERT(edges);
+  DCASSERT(InEdges.rowptr);
   na = edges->getNumEdges();
 }
 
@@ -83,21 +113,25 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
     return;
   } 
 
-  const char* rptr = (m.is_transposed) ? "column pointers" : "row pointers";
-  const char* cind = (m.is_transposed) ? "row index      " : "column index";
+  const char* rptr = (InEdges.is_transposed) ? "column pointers" : "row pointers";
+  const char* cind = (InEdges.is_transposed) ? "row index      " : "column index";
 
   os << "  " << rptr << ": [";
-  os.PutArray(m.rowptr, edges->getNumNodes()+1);
+  os.PutArray(InEdges.rowptr, edges->getNumNodes()+1);
   os << "]\n";
 
   os << "  " << cind << ": [";
-  os.PutArray(m.colindex, edges->getNumEdges());
+  os.PutArray(InEdges.colindex, edges->getNumEdges());
   os << "]\n";
 }
 
 void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
+  //
+  // HUGE TBD: rewrite this using InEdges and OutEdges
+  //
+
   long na = edges->getNumEdges();
   long num_states = edges->getNumNodes();
 
@@ -223,6 +257,10 @@ void grlib_reachgraph::setInitial(LS_Vector &init)
 void grlib_reachgraph
 ::countPaths(const stateset* src_ss, const stateset* dest_ss, result& count)
 {
+  //
+  // TBD - rewrite using InEdges and OutEdges
+  //
+
   DCASSERT(edges);
 
   // check types of statesets
@@ -438,6 +476,7 @@ void grlib_reachgraph
 }
 
 
+/*
 
 stateset* grlib_reachgraph::unfairAEF(bool rT, const stateset* p, const stateset* q)
 {
@@ -554,6 +593,8 @@ void grlib_reachgraph::getDeadlocked(intset &r) const
   r.assignFrom(deadlocks);
 }
 
+*/
+
 //
 // Helpers
 //
@@ -592,6 +633,66 @@ bool grlib_reachgraph::transposeEdges(const named_msg* rep, bool byrows)
 }
 
 
+
+//
+// NEW STUFF
+//
+
+void grlib_reachgraph::getDeadlocked(intset &r) const
+{
+  r.assignFrom(deadlocks);
+}
+
+void grlib_reachgraph::need_reverse_time()
+{
+  DCASSERT(InEdges.is_transposed);
+  DCASSERT(InEdges.rowptr);
+  DCASSERT(InEdges.colindex);
+  if (0==OutEdges.num_rows) {
+    OutEdges.transposeFrom(InEdges);
+  }
+  DCASSERT(!OutEdges.is_transposed);
+  DCASSERT(OutEdges.rowptr);
+  DCASSERT(OutEdges.colindex);
+}
+
+
+void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
+{
+  if (rt) {
+    // easy peasy - use InEdges to count incoming edges
+    DCASSERT(InEdges.rowptr);
+
+    for (long i=0; i<InEdges.num_rows; i++) {
+      TH.set_obligations(i, InEdges.rowptr[i+1] - InEdges.rowptr[i]);
+    }
+    return;
+  }
+
+  if (OutEdges.rowptr) {
+    // easy peasy - use OutEdges to count outgoing edges
+
+    for (long i=0; i<OutEdges.num_rows; i++) {
+      TH.set_obligations(i, OutEdges.rowptr[i+1] - OutEdges.rowptr[i]);
+    }
+    return;
+  }
+
+  DCASSERT(InEdges.rowptr);
+  DCASSERT(InEdges.colindex);
+
+  // Dang, we have to actually count them
+  TH.fill_obligations(0);
+  for (long z=InEdges.rowptr[InEdges.num_rows]-1; z>=0; z--) {
+    TH.add_obligation( InEdges.colindex[z] );
+  }
+}
+
+void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) const
+{
+  if (rt) _traverse(one_step, OutEdges, TH);
+  else    _traverse(one_step, InEdges, TH);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -681,6 +782,7 @@ bool grlib_reachgraph::sparse_row_elems
 // *                                                                *
 // ******************************************************************
 
+/*
 grlib_reachgraph::outgoingCounter::outgoingCounter(long* c)
 { 
   count = c; 
@@ -695,6 +797,7 @@ bool grlib_reachgraph::outgoingCounter::visit(long from, long to, void*)
   count[from]++; 
   return false; 
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -702,6 +805,7 @@ bool grlib_reachgraph::outgoingCounter::visit(long from, long to, void*)
 // *                                                                *
 // ******************************************************************
 
+/*
 grlib_reachgraph::incomingEdges::incomingEdges()
 {
   alloc = 0;
@@ -738,4 +842,6 @@ bool grlib_reachgraph::incomingEdges::Enlarge(int ns)
   if (0==index)  return false;
   return true;
 }
+
+*/
 

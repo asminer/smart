@@ -135,7 +135,19 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EX(bool revTime, const stateset* p) const;
+      virtual stateset* EX(bool revTime, const stateset* p);
+
+      /** Compute states satisfying AX(p).
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute AY.
+            @param  p         Set of states 
+            @return   New set of states satisfying AX(p) or AY(p).
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* AX(bool revTime, const stateset* p);
 
       /** Compute states satisfying E p U q.
           The default behavior here is to print an error message and 
@@ -150,7 +162,39 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+
+      /** Compute states satisfying A p U q, not restricted to fair paths.
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute AS.
+            @param  p         Set of states for p.  If 0, then
+                              we instead compute AF / AP.
+            @param  q         Set of states for q
+            @return   New set of states satisfying A p U q
+                      or A p S q.
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
+
+
+      /** Compute states satisfying A p U q, restricted to fair paths.
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute AS.
+            @param  p         Set of states for p.  If 0, then
+                              we instead compute AF / AP.
+            @param  q         Set of states for q
+            @return   New set of states satisfying A p U q
+                      or A p S q.
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* fairAU(bool revTime, const stateset* p, const stateset* q);
+
 
       /** Compute states satisfying EG(p), not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -162,7 +206,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairEG(bool revTime, const stateset* p) const;
+      virtual stateset* unfairEG(bool revTime, const stateset* p);
 
       /** Compute states satisfying EG(p), restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -174,7 +218,21 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* fairEG(bool revTime, const stateset* p) const;
+      virtual stateset* fairEG(bool revTime, const stateset* p);
+
+
+      /** Compute states satisfying AG(p).
+          The default behavior here is to print an error message and 
+          return null, so normally this method will be overridden in 
+          some derived class.
+            @param  revTime   If true, reverse time and compute AH.
+            @param  p         Set of states 
+            @return   New set of states satisfying AG(p) or AH(p).
+                      OR, if an error occurs, prints an appropriate message
+                      and returns 0.
+      */
+      virtual stateset* AG(bool revTime, const stateset* p);
+
 
       /** Compute states satisfying AE p F q (made up notation).
           This is the set of source states, from which we can guarantee that
@@ -237,6 +295,10 @@ protected:
 
 public:
   inline const reachgraph* getRGR() const {
+    return RGR;
+  }
+
+  inline reachgraph* useRGR() {
     return RGR;
   }
 
@@ -333,6 +395,23 @@ public:
   inline stateset* fairEG(bool revTime, const stateset* p) const {
     return RGR ? RGR->fairEG(revTime, p) : 0;
   }
+
+  inline stateset* AX(bool revTime, const stateset* p) const {
+    return RGR ? RGR->AX(revTime, p) : 0;
+  }
+
+  inline stateset* unfairAU(bool revTime, const stateset* p, const stateset* q) const {
+    return RGR ? RGR->unfairAU(revTime, p, q) : 0;
+  }
+
+  inline stateset* fairAU(bool revTime, const stateset* p, const stateset* q) const {
+    return RGR ? RGR->fairAU(revTime, p, q) : 0;
+  }
+
+  inline stateset* AG(bool revTime, const stateset* p) const {
+    return RGR ? RGR->AG(revTime, p) : 0;
+  }
+
 
   inline stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) const {
     return RGR ? RGR->unfairAEF(revTime, p, q) : 0;

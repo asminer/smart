@@ -33,7 +33,7 @@ public:
         TBD - what goes in here?
     */
     class process : public shared_object {
-        const stochastic_lldsm* parent;
+        stochastic_lldsm* parent;
       protected:
         static exprman* em;
       public:
@@ -52,6 +52,9 @@ public:
 
       public:
         inline const graph_lldsm* getParent() const {
+          return parent;
+        }
+        inline graph_lldsm* useParent() {
           return parent;
         }
 
