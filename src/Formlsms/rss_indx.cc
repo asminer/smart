@@ -53,8 +53,7 @@ stateset* indexed_reachset::getInitialStates() const
 {
   long num_states;
   getNumStates(num_states);
-  intset* initss = new intset(num_states);
-  getInitial(*initss);
+  intset* initss = new intset(getInitial());
   return new expl_stateset(getParent(), initss);
 }
 
@@ -84,16 +83,6 @@ void indexed_reachset::setInitial(const LS_Vector &init)
       }
     }
   }
-}
-
-void indexed_reachset::setInitial(const intset& init)
-{
-  initial = init;
-}
-
-void indexed_reachset::getInitial(intset& init) const
-{
-  init = initial;
 }
 
 void indexed_reachset::Finish()

@@ -221,7 +221,7 @@ tta_dist
   // (2) call EU engine to determine E (!final) U accept
   intset* fcopy = new intset(*f);
   expl_stateset* notfinal = new expl_stateset(chain->getParent(), fcopy);
-  const graph_lldsm::reachgraph* RGR = chain->getParent()->getRGR();
+  graph_lldsm::reachgraph* RGR = chain->useParent()->useRGR();
   DCASSERT(RGR);
   stateset* EnotfUaccept = RGR->EU(false, notfinal, accept);
   Delete(notfinal);
