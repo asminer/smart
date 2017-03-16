@@ -215,7 +215,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
   private:
     traverse_helper* TH;
 
-    // TBD - need a timer
+    // TBD - need a timer, for reporting
     
   private:
     inline void startTraverse(const char* who) {
