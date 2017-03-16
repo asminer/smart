@@ -63,9 +63,11 @@ void GraphLib::generic_graph::matrix::destroy()
   free(rowptr);
   free(colindex);
   free(value);
+  num_rows = 0;
   rowptr = 0;
   colindex = 0;
   value = 0;
+  edge_size = 0;
 }
 
 void GraphLib::generic_graph::matrix::copyFrom(const const_matrix &m)
