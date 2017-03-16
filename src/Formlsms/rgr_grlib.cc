@@ -96,6 +96,9 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   free(OutEdges.value);
   OutEdges.value = 0;
 
+  delete edges;  
+  edges = 0;
+
 #ifdef DEVELOPMENT_CODE
   /*
     Sanity checks 
@@ -119,9 +122,6 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
     }
   }
 #endif
-
-// Very Soon...
-  // delete edges;  edges = 0;
 
 }
 
@@ -280,12 +280,6 @@ void grlib_reachgraph::setInitial(LS_Vector &init)
 void grlib_reachgraph
 ::countPaths(const stateset* src_ss, const stateset* dest_ss, result& count)
 {
-  //
-  // TBD - rewrite using InEdges and OutEdges
-  //
-
-  DCASSERT(edges);
-
   // check types of statesets
   const expl_stateset* src_ess = dynamic_cast <const expl_stateset*> (src_ss);
   const expl_stateset* dest_ess = dynamic_cast <const expl_stateset*> (dest_ss);
@@ -309,49 +303,27 @@ void grlib_reachgraph
     numpaths_report.report() << "Building backward set\n";
     numpaths_report.stopIO();
   }
-  const long num_states = edges->getNumNodes();
+
+  const long num_states = InEdges.num_rows;
   intset back(num_states);
-  long nb = 0;
-  if (edges->isByCols()) {
-    back.removeAll();
-    for (long s=dest.getSmallestAfter(-1); s>=0; s=dest.getSmallestAfter(s)) {
-      nb += edges->getReachable(s, back);
-    } // for s
-  } else {
-    back = dest;
-    while (edges->getBackward(back, back));
-    nb = back.cardinality();
-  } // else not by columns
+  {
+    traverse_helper TH(num_states);
+    TH.fill_obligations(1);
+    TH.init_queue_from(dest);
+    traverse(false, false, TH);
+    TH.get_met_obligations(back);
+  }
+  long nb = back.cardinality();
+
   if (numpaths_report.startReport()) {
     numpaths_report.report() << "Built    backward set, took " << sw.elapsed_seconds();
     numpaths_report.report() << " seconds\n";
     numpaths_report.stopIO();
   }
 
-  // TBD - is this necessary?
-  // number of paths from src to dest equals
-  // number of paths from dest to src in transposed graph
   //
-  // so we should be able to do this either way
-
-  // force us by rows
-  if (edges->isByCols()) {
-    if (!transposeEdges(&numpaths_report, false)) {
-      count.setNull();
-      return;
-    }
-  } 
-
-  // export graph edges
-  DCASSERT(edges->isByRows());
-  GraphLib::generic_graph::const_matrix rg;
-  if (!edges->exportFinished(rg)) {
-    DCASSERT(0);
-  } else {
-    DCASSERT(!rg.is_transposed);
-    DCASSERT(rg.rowptr);
-    DCASSERT(rg.colindex);
-  }
+  // Ok, time to start counting paths
+  //
 
   bigint acc;
 
@@ -402,8 +374,8 @@ void grlib_reachgraph
       shortpc[visit] = VISITING;
 
       // for all outgoing edges from this state
-      for (long z=rg.rowptr[visit]; z<rg.rowptr[visit+1]; z++) {
-        long next = rg.colindex[z];
+      for (long z=OutEdges.rowptr[visit]; z<OutEdges.rowptr[visit+1]; z++) {
+        long next = OutEdges.colindex[z];
         if (!back.contains(next)) continue;
         if (0==shortpc[next]) {
           // Push(next)
@@ -426,8 +398,8 @@ void grlib_reachgraph
 
     // should have #paths computed for all children, add them up   
     acc.set_si(0);
-    for (long z=rg.rowptr[visit]; z<rg.rowptr[visit+1]; z++) {
-      long next = rg.colindex[z];
+    for (long z=OutEdges.rowptr[visit]; z<OutEdges.rowptr[visit+1]; z++) {
+      long next = OutEdges.colindex[z];
       if (shortpc[next] >= 0) {
         acc.add_ui(shortpc[next]);
         continue;
@@ -498,44 +470,6 @@ void grlib_reachgraph
 
 }
 
-//
-// Helpers
-//
-
-bool grlib_reachgraph::transposeEdges(const named_msg* rep, bool byrows)
-{
-  // TBD - this will go away
-
-  timer sw;
-  if (rep && rep->startReport()) {
-    rep->report() << "Transposing edges\n";
-    rep->stopIO();
-  }
-
-  // transpose edges 
-  edges->unfinish();
-  GraphLib::generic_graph::finish_options fo;
-  fo.Store_By_Rows = byrows;
-  fo.Will_Clear = false;
-  try {
-    edges->finish(fo);
-    if (rep && rep->startReport()) {
-      rep->report() << "Transposed  edges, took " << sw.elapsed_seconds();
-      rep->report() << " seconds\n";
-      rep->stopIO();
-    }
-    return true;
-  }
-  catch (GraphLib::error e) {
-    if (em->startError()) {
-      em->noCause();
-      em->cerr() << "Couldn't transpose graph: ";
-      em->cerr() << e.getString() << "\n";
-      em->stopIO();
-    }
-    return false;
-  }
-}
 
 
 void grlib_reachgraph::getDeadlocked(intset &r) const
@@ -580,12 +514,12 @@ void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::digraph::
   const char* rptr = (E.is_transposed) ? "column pointers" : "row pointers";
   const char* cind = (E.is_transposed) ? "row index      " : "column index";
 
-  os << "  size: " << E.num_rows << "\n";
-  os << "  " << rptr << ": [";
+  os << "      size: " << E.num_rows << "\n";
+  os << "      " << rptr << ": [";
   os.PutArray(E.rowptr, E.num_rows+1);
   os << "]\n";
 
-  os << "  " << cind << ": [";
+  os << "      " << cind << ": [";
   os.PutArray(E.colindex, E.rowptr ? E.rowptr[E.num_rows] : 0);
   os << "]\n";
 }

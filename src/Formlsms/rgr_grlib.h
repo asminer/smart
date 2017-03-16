@@ -63,10 +63,6 @@ class grlib_reachgraph : public ectl_reachgraph {
 
 
   private:
-    // Kill this!  TBD
-    bool transposeEdges(const named_msg* rep, bool byrows);
-    
-  private:
     GraphLib::digraph* edges; // hold until attachToParent
     LS_Vector initial;    // hold until we can pass it to RSS
     intset deadlocks;     // set of states with no outgoing edges
