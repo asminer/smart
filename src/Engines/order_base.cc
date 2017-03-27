@@ -550,7 +550,7 @@ std::vector<OrderPair> intToPair(std::vector<int> asInt) {
 // param should be between 0.0 and 1.0 inclusive
 std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
   std::vector<int> current (startOrder);  // gets changed
-  std::vector<int> resultOrder (theModel.numPlaces, 0);
+  std::vector<int> resultOrder (startOrder);
   const int CYCLE = 5;
   double bestScore = std::numeric_limits<double>::max();
 
@@ -579,6 +579,50 @@ std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int
 
   return resultOrder;
 }
+
+std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
+  std::vector<int> current (startOrder);  // gets changed
+  std::vector<int> resultOrder (startOrder);
+
+  std::vector<int> inverse (theModel.numPlaces, 0);
+  for (int index = 0; index < theModel.numPlaces; index++) {
+    inverse[current[index]] = index;
+  }
+
+  double bestScore = getSpanTopParam(theModel, current, param); // find the score to beat
+
+  for (int index = 0; index < (theModel.numPlaces - 1); index++) {
+    for (int swap = index + 1; swap < theModel.numPlaces; swap++) {
+      int tempA = inverse[index];
+      int tempB = inverse[swap];
+      
+      // swap in current
+      current[tempA] = swap;
+      current[tempB] = index;
+
+      // measure
+      double score = getSpanTopParam(theModel, current, param);
+      if (score < bestScore) {
+        bestScore = score;
+        for (int index = 0; index < theModel.numPlaces; index++) {
+          resultOrder[index] = current[index];
+        }
+        // "fix" the swap (make it permanent)
+        int temp = inverse[index];
+        inverse[index] = inverse[swap];
+        inverse[swap] = temp;
+      } else {
+        // undo the swap
+        current[tempA] = index;
+        current[tempB] = swap;
+      }
+    }
+  }
+  // output score?
+
+  return resultOrder;
+}
+
 
 
 // generate a breadth first order from the given model, starting with variable "start"
@@ -921,7 +965,7 @@ u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
 
 
 // calculate the combined span|top heuristic for a given ordering
-double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param) {
+double getSpanTopParam(MODEL & theModel, std::vector<int> & theOrder, double param) {
   {
 	int count = theModel.numTrans + theModel.numPlaces;
     int * eventMax = new int[count];
