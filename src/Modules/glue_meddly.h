@@ -17,7 +17,7 @@
 #endif
 
 #define _MEDDLY_WITHOUT_CSTDIO_
-#define _MEDDLY_WITHOUT_IOSTREAM_
+// #define _MEDDLY_WITHOUT_IOSTREAM_
 #include "meddly.h"
 
 // ******************************************************************

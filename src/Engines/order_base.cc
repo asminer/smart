@@ -97,10 +97,11 @@ class heuristic_varorder : public user_varorder {
     heuristic_varorder(int heuristic, double factor);
     virtual ~heuristic_varorder();
     virtual void RunEngine(hldsm* m, result &);
-
+    static double alphaParameter;
   private:
-    int heuristic;
     double factor;
+    int heuristic;
+    
 };
 heuristic_varorder the_force_000_varorder(0, 0.0);
 heuristic_varorder the_force_025_varorder(0, 0.25);
@@ -110,6 +111,8 @@ heuristic_varorder the_force_075_varorder(0, 0.75);
 heuristic_varorder the_force_0875_varorder(0, 0.875);
 heuristic_varorder the_force_100_varorder(0, 1.0);
 heuristic_varorder the_noack_varorder(1, 0);
+heuristic_varorder the_force_param(0, 0.0);
+double heuristic_varorder::alphaParameter = -1.0;
 
 // ******************************************************************
 // *                                                                *
@@ -215,6 +218,31 @@ bool init_static_varorder::execute()
     &the_force_100_varorder
   );
 
+
+  // BEGIN EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
+  
+  engine* variable_engine = RegisterEngine(em,
+    "VariableOrdering",
+    "FORCEPARAM",
+    "Variable order is determined by calls to partition() in the model",
+    &the_force_param
+  );
+  //heuristic_varorder::alphaParameter = -1.0;
+  variable_engine->AddOption(
+    MakeRealOption(
+      "SosSotAlpha",
+      "Weight given to sum of spans vs. sum of tops.",
+      heuristic_varorder::alphaParameter,
+      true, true, 0.0,
+      true, true, 1.0
+    )
+  );
+  //settings->DoneAddingOptions();
+
+  
+  // END EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
+
+
   RegisterEngine(em,
     "VariableOrdering",
     "NOACK",
@@ -262,8 +290,8 @@ struct MODEL {
 	ARC * theArcs;
 };
 
-u64 cogFix(MODEL theModel, std::vector<int>& theOrder);
-double getSpanTopParam(MODEL theModel, std::vector<int> theOrder, double param);
+u64 cogFix(MODEL & theModel, std::vector<int>& theOrder);
+double getSpanTopParam(MODEL & theModel, std::vector<int> & theOrder, double param);
 
 // sort by
 bool comparePair(DoubleInt a, DoubleInt b) {
@@ -583,7 +611,7 @@ std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int
 std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
   std::vector<int> current (startOrder);  // gets changed
   std::vector<int> resultOrder (startOrder);
-
+  /*
   std::vector<int> inverse (theModel.numPlaces, 0);
   for (int index = 0; index < theModel.numPlaces; index++) {
     inverse[current[index]] = index;
@@ -619,6 +647,59 @@ std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> 
     }
   }
   // output score?
+  */
+
+  return resultOrder;
+}
+
+
+std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
+  std::vector<int> current (startOrder);  // gets changed
+  std::vector<int> resultOrder (startOrder);
+  /*
+  std::vector<int> inverse (theModel.numPlaces, 0);
+  for (int index = 0; index < theModel.numPlaces; index++) {
+    inverse[current[index]] = index;
+  }
+
+  double bestScore = getSpanTopParam(theModel, current, param); // find the score to beat
+  
+  int changes = 0;
+  do {
+    int swapA = 0;
+    int swapB = 0;
+    double currentBest = bestScore;
+    changes = 0;
+
+    for (int index = 0; index < (theModel.numPlaces - 1); index++) {
+      for (int swap = index + 1; swap < theModel.numPlaces; swap++) {
+        int tempA = inverse[index];
+        int tempB = inverse[swap];
+      
+        // swap in current
+        current[tempA] = swap;
+        current[tempB] = index;
+
+        // measure
+        double score = getSpanTopParam(theModel, current, param);
+        if (score < currentBest) {
+          currentBest = score;
+          changes++;
+          swapA = index;
+          swapB = swap;
+        } 
+        // undo the swap
+        current[tempA] = index;
+        current[tempB] = swap;
+      }
+    }
+    // swap the best swap
+    int temp = 
+    
+    
+  } while (changes != 0);
+
+  */
 
   return resultOrder;
 }
@@ -737,6 +818,11 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   // start with best as the given order until found otherwise
   for (int index = 0; index < theModel.numPlaces; index++) {
     best[index] = index;  
+  }
+
+  if (out.startReport()) {
+    out.report() << "In default order : " << paramAlpha << "\n\n";
+    out.stopIO();
   }
 
   double bestScore = getSpanTopParam(theModel, best, paramAlpha); // the score to beat
@@ -890,7 +976,7 @@ void outputEDN_orderVec(std::vector<int> theOrder) {
 
 
 // calculate the center of gravity
-u64 cogFix(MODEL theModel, std::vector<int>& theOrder) {
+u64 cogFix(MODEL & theModel, std::vector<int>& theOrder) {
   // find the center of gravity for every variable in the model
   int * counts = new int[theModel.numTrans + theModel.numPlaces];
   DoubleInt * totals = new DoubleInt[theModel.numTrans + theModel.numPlaces];
@@ -1011,7 +1097,7 @@ double getSpanTopParam(MODEL & theModel, std::vector<int> & theOrder, double par
 
 
 // calculate the combined span|top heuristic for a given ordering
-double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
+double getSpanTopParam(MODEL & theModel, std::vector<OrderPair> & theOrder,
     double param) {
 	int count = theModel.numTrans + theModel.numPlaces;
     int * eventMax = new int[count];
@@ -1053,6 +1139,61 @@ double getSpanTopParam(MODEL theModel, std::vector<OrderPair> theOrder,
 	double result = param * (double)spans + (1.0 - param) * (double)tops;
 	return result;
 }
+
+// calculate the saturation cost heuristic for a given ordering
+// experimental, may overflow double for large enough models
+// TODO
+double getSatCostParam(MODEL & theModel, std::vector<int> & theOrder, double param) {
+  {
+  	int count = theModel.numTrans + theModel.numPlaces;
+    std::vector<int> eventMax(count, 0);
+    std::vector<int> eventMin(count, theModel.numPlaces);
+    
+    // get the sums and tops for all transitions
+    for (int index = 0; index < theModel.numArcs; index++) {
+      int source = theModel.theArcs[index].source;
+      int target = theModel.theArcs[index].target;
+      if (source < target) {
+        int currentPlace = theOrder[source];
+        if (eventMax[target] < currentPlace) {
+          eventMax[target] = currentPlace;
+        }
+        if (eventMin[target] > currentPlace) {
+          eventMin[target] = currentPlace;
+        }
+      } else {
+        int currentPlace = theOrder[target];
+        if (eventMax[source] < currentPlace) {
+          eventMax[source] = currentPlace;
+        }
+        if (eventMin[source] > currentPlace) {
+          eventMin[source] = currentPlace;
+        }
+      }
+    }
+    // calculate union costs (alpha fixed to 1 until further testing)
+    std::vector<double> unionCosts(theModel.numPlaces + 1, 1.0);
+    for (int index = 0; index < theModel.numPlaces + 1; index++) {
+      unionCosts[index] = index + 1; // level ^ alpha after verified
+    }
+    std::vector<double> satCosts(theModel.numPlaces + 1, 0.0);
+    std::vector<double> sumSatCosts(theModel.numPlaces + 1, 1.0);
+    std::vector<double> fireCosts(count, 0);
+    for (int level = 0; level < theModel.numPlaces + 1; level++) {
+      double currentCost = 0.0;
+      for (int event = theModel.numPlaces; level < count; level++) {
+        if (eventMax[event] == level) {
+
+        }
+      }
+    }
+
+   
+    double result = 0;
+    return result;
+  }
+}
+
 
 
 
@@ -1171,7 +1312,11 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   MODEL model = translateModel(*dm);
   const int nIterations = 1000;
   const int nStartingOrders = 10;
-  std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
+
+
+
+  //std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
+  std::vector<int> order = defaultOrder(model, ((heuristic_varorder::alphaParameter >= 0.0) ? heuristic_varorder::alphaParameter : factor), nIterations, nStartingOrders, debug);
 
   for (int j = 0; j < int(order.size()); j++) {
     dm->getStateVar(j)->SetPart(order[j]+1);
