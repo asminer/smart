@@ -112,7 +112,6 @@ heuristic_varorder the_force_0875_varorder(0, 0.875);
 heuristic_varorder the_force_100_varorder(0, 1.0);
 heuristic_varorder the_noack_varorder(1, 0);
 heuristic_varorder the_force_param(0, 0.0);
-double heuristic_varorder::alphaParameter = -1.0;
 
 // ******************************************************************
 // *                                                                *
@@ -227,7 +226,7 @@ bool init_static_varorder::execute()
     "Variable order is determined by calls to partition() in the model",
     &the_force_param
   );
-  //heuristic_varorder::alphaParameter = -1.0;
+  heuristic_varorder::alphaParameter = -1.0;
   variable_engine->AddOption(
     MakeRealOption(
       "SosSotAlpha",
@@ -695,11 +694,11 @@ std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int>
     }
     // swap the best swap
     int temp = 
-    
+    */
     
   } while (changes != 0);
 
-  */
+  
 
   return resultOrder;
 }
@@ -1312,6 +1311,8 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   MODEL model = translateModel(*dm);
   const int nIterations = 1000;
   const int nStartingOrders = 10;
+  std::vector<int> order = defaultOrder(model, ((alphaParameter >= 0.0) ? alphaParameter : factor), nIterations, nStartingOrders, debug);
+  
 
 
 
