@@ -1095,9 +1095,13 @@ bigint meddly_otfsat::computeNumTransitions(
       for (int i = 0; i < mdd_nr->getNNZs(); i++) {
         int i_index = mdd_nr->i(i);
         if (0 == up_nr->d(i_index)) continue;
-        p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
-        for (int j = 0; j < p_nr->getNNZs(); j++) {
-          result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
+        if (-1 == up_nr->d(i_index)) {
+          result.add(result, computeNumTransitions(mdd_nr->d(i), -1, level-1, mddf, mxdf, ct));
+        } else {
+          p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
+          for (int j = 0; j < p_nr->getNNZs(); j++) {
+            result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
+          }
         }
       }
       MEDDLY::unpacked_node::recycle(p_nr);

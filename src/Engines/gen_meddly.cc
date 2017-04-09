@@ -934,7 +934,7 @@ class enabling_subevent : public satotf_opname::subevent {
 
 // enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
 enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
- : satotf_opname::subevent(f, v, nv), td(traverse_data::Compute), debug(d)
+ : satotf_opname::subevent(f, v, nv, false), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
   is_enabled = chunk;
@@ -1247,7 +1247,7 @@ class firing_subevent : public satotf_opname::subevent {
 // **************************************************************************
 
 firing_subevent::firing_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
- : satotf_opname::subevent(f, v, nv), td(traverse_data::Compute), debug(d)
+ : satotf_opname::subevent(f, v, nv, true), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
   fire_expr = chunk;
