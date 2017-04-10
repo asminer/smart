@@ -655,50 +655,44 @@ std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> 
 std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
   std::vector<int> current (startOrder);  // gets changed
   std::vector<int> resultOrder (startOrder);
-  /*
-  std::vector<int> inverse (theModel.numPlaces, 0);
-  for (int index = 0; index < theModel.numPlaces; index++) {
-    inverse[current[index]] = index;
-  }
 
-  double bestScore = getSpanTopParam(theModel, current, param); // find the score to beat
+  double currentBest = getSpanTopParam(theModel, current, param); // find the score to beat
   
   int changes = 0;
+  int iters = 0;
   do {
-    int swapA = 0;
-    int swapB = 0;
-    double currentBest = bestScore;
     changes = 0;
 
     for (int index = 0; index < (theModel.numPlaces - 1); index++) {
       for (int swap = index + 1; swap < theModel.numPlaces; swap++) {
-        int tempA = inverse[index];
-        int tempB = inverse[swap];
-      
+        
         // swap in current
-        current[tempA] = swap;
-        current[tempB] = index;
+        int temp = current[index];
+        current[index] = current[swap];
+        current[swap] = temp;
 
-        // measure
+        // measure, keep if better
         double score = getSpanTopParam(theModel, current, param);
         if (score < currentBest) {
           currentBest = score;
           changes++;
-          swapA = index;
-          swapB = swap;
+          for (int i = 0; i < theModel.numPlaces; i++) {
+            resultOrder[i] = current[i];
+          }
         } 
         // undo the swap
-        current[tempA] = index;
-        current[tempB] = swap;
+        temp = current[index];
+        current[index] = current[swap];
+        current[swap] = temp;
       }
     }
-    // swap the best swap
-    int temp = 
     */
     
-  } while (changes != 0);
-
-  
+    for (int i = 0; i < theModel.numPlaces; i++) {
+      current[i] = resultOrder[i];
+    }
+    iters++;
+  } while ((changes != 0) && (iters < numIter));
 
   return resultOrder;
 }
@@ -913,7 +907,10 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     }
     
     // reverse the order
-    std::reverse(startOrderBFS.begin(), startOrderBFS.end());
+    //std::reverse(startOrderBFS.begin(), startOrderBFS.end());
+    for (int fixrev = 0; fixrev < theModel.numPlaces; fixrev++) {
+      startOrderBFS[fixrev] = (theModel.numPlaces - 1) - startOrderBFS[fixrev];
+    }
     
     newScore = getSpanTopParam(theModel, startOrderBFS, paramAlpha);
     if (newScore < bestScore) {
@@ -941,6 +938,24 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.report() << "Best Score: " << bestScore << "\n\n";
       out.stopIO();
     }
+
+    
+  }
+
+  // do a local search on the best found order
+  int swapIter = theModel.numPlaces;
+  std::vector<int> searched = swapPositionAlpha(theModel, swapIter, best, paramAlpha);
+  newScore = getSpanTopParam(theModel, searched, paramAlpha);
+  if (newScore < bestScore) {
+    bestScore = newScore;
+    for (int index = 0; index < theModel.numPlaces; index++) {
+      best[index] = searched[index];
+    }
+  }
+  if (out.startReport()) {
+    out.report() << "Score[searched(best)]: " << newScore << "\n";
+    out.report() << "Best Score: " << bestScore << "\n\n";
+    out.stopIO();
   }
   
   delete[] indices;
