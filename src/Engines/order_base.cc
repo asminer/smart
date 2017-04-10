@@ -686,7 +686,7 @@ std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int>
         current[swap] = temp;
       }
     }
-    */
+    
     
     for (int i = 0; i < theModel.numPlaces; i++) {
       current[i] = resultOrder[i];
