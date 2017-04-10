@@ -112,7 +112,7 @@ heuristic_varorder the_force_0875_varorder(0, 0.875);
 heuristic_varorder the_force_100_varorder(0, 1.0);
 heuristic_varorder the_noack_varorder(1, 0);
 heuristic_varorder the_force_param(0, 0.0);
-
+double heuristic_varorder::alphaParameter = -1.0;
 // ******************************************************************
 // *                                                                *
 // *                                                                *
@@ -226,7 +226,7 @@ bool init_static_varorder::execute()
     "Variable order is determined by calls to partition() in the model",
     &the_force_param
   );
-  heuristic_varorder::alphaParameter = -1.0;
+  //
   variable_engine->AddOption(
     MakeRealOption(
       "SosSotAlpha",
@@ -1332,7 +1332,7 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
 
 
   //std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
-  std::vector<int> order = defaultOrder(model, ((heuristic_varorder::alphaParameter >= 0.0) ? heuristic_varorder::alphaParameter : factor), nIterations, nStartingOrders, debug);
+  //std::vector<int> order = defaultOrder(model, ((heuristic_varorder::alphaParameter >= 0.0) ? heuristic_varorder::alphaParameter : factor), nIterations, nStartingOrders, debug);
 
   for (int j = 0; j < int(order.size()); j++) {
     dm->getStateVar(j)->SetPart(order[j]+1);
