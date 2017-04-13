@@ -7,20 +7,8 @@
 echo Configuring release version
 
 export CXXFLAGS="-O3" 
-export LDFLAGS="-Wl,-rpath,/usr/local/lib64"
+export LDFLAGS=""
 export CPPFLAGS="-std=gnu++11"
-
-MEDDLY_HOME=$HOME/testing-meddly/meddly/trunk
-SMARTLIBS_HOME=$HOME/testing-smart3/SmartLibs/trunk
-export MDD_LIBRARY=$MEDDLY_HOME
-export SIM_LIBRARY=$SMARTLIBS_HOME
-export RNG_LIBRARY=$SMARTLIBS_HOME
-export LS_LIBRARY=$SMARTLIBS_HOME
-export STATE_LIBRARY=$SMARTLIBS_HOME
-export GRAPH_LIBRARY=$SMARTLIBS_HOME
-export MC_LIBRARY=$SMARTLIBS_HOME
-export IS_LIBRARY=$SMARTLIBS_HOME
-export TIMER_LIBRARY=$SMARTLIBS_HOME
 
 findlibs $@ || exit 1
 
