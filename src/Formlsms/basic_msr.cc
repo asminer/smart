@@ -1078,7 +1078,7 @@ potential_si::potential_si()
  : proc_noengine(Nothing, em->STATESET, "potential", 2)
 {
   SetFormal(1, em->BOOL->addProc(), "p");
-  SetDocumentation("Returns the set of model states satisfying p.  Note that this set could contain states thate are not reachable from the initial state(s) of the model.");
+  SetDocumentation("Returns the set of model states satisfying p.  Note that this set could contain states that are not reachable from the initial state(s) of the model.");
 }
 
 void potential_si::Compute(traverse_data &x, expr** pass, int np)
