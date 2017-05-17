@@ -13,7 +13,7 @@ pn death(int n) := {
 
 int N := read_int("N");
 
-#Report + CTL_engines
+#Report + procgen, CTL_engines
 
 compute(N);
 
