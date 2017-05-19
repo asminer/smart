@@ -12,3 +12,4 @@ Makefile.in
 missing
 test-driver
 ylwrap
+bin-devel

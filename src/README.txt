@@ -1,7 +1,4 @@
 
-# $Id$
-
-
 Module          Description
 --------------  --------------------------------------------------
 Apps            Top-level applications.  
@@ -32,6 +29,8 @@ SymTabs         Symbol tables.
 
 TestApps        Test applications, for testing individual 
                 or groups of modules together.
+
+_LSLib          Semi-standalone linear solver library.
 
 include         Templates and other headers.
 
