@@ -1,12 +1,15 @@
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-## List any subdirectories where we might want to run make
-SUBDIRS = _LSLib
+## List any subdirectories where we might want/need to run make
+SUBDIRS = _LSLib _RngLib
 
+
+## List executables that we build
 bin_PROGRAMS = smart icp teststrms testsplay testinit
 
-## automatic revision numbering
+
+## automatic revision numbering (TBD - fix this!)
 
 _revision:
 	$(srcdir)/include/BuildRevNo $(srcdir)/include
@@ -40,6 +43,8 @@ smart_SOURCES = \
   _Timer/timerlib.cc \
   \
   _LSLib/lslib.cc \
+  \
+  _RngLib/rng.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -154,7 +159,6 @@ smart_LDADD = \
   $(STATE_LIBRARY)/lib/libstate.a \
   $(IS_LIBRARY)/lib/libintset.a \
   $(SIM_LIBRARY)/lib/libsim.a \
-  $(RNG_LIBRARY)/lib/librng.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 

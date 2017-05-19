@@ -1,6 +1,4 @@
 
-# $Id$
-
 Future development plans:
 
 * Do we need rng performance functions, e.g.,

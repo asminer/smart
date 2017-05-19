@@ -1,5 +1,0 @@
-
-# $Id$
-
-SUBDIRS = src 
-

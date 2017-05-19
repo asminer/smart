@@ -1,13 +1,9 @@
 
-// $Id$
-
 #include "rng.h"
 
 #include <stdlib.h> 
 #include <stdio.h> 
 #include <string.h>
-
-#include "revision.h"
 
 #ifdef DCASSERTS_ON 
 #define DCASSERT(X) assert(X)
@@ -215,8 +211,10 @@ well1024a_manager_32::well1024a_manager_32(int jd)
 
   const int bsize = 80;
   buffer = new char[bsize];
-  snprintf(buffer, bsize, "Rng library version %d.%d.%d (WELL 1024a, 32-bit)",
-     MAJOR_VERSION, MINOR_VERSION,  REVISION_NUMBER);
+  snprintf(buffer, bsize, "Rng library version %d.%d (WELL 1024a, 32-bit)",
+     MAJOR_VERSION, MINOR_VERSION);
+
+  // TBD - revision number?
 }
 
 well1024a_manager_32::~well1024a_manager_32()
