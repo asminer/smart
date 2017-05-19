@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*! \file rng.h
     Random Number Generator Library.
 */

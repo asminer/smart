@@ -115,6 +115,8 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/_LSLib/Makefile
                  src/_LSLib/examples/Makefile
+                 src/_RngLib/Makefile
+                 src/_RngLib/examples/Makefile
                  Tests/Makefile
                  ])
 
