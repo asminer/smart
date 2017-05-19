@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../src/intset.h"
+#include "intset.h"
 
 
 const int max_slots = 16;

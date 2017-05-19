@@ -120,6 +120,8 @@ AC_CONFIG_FILES([Makefile
                  src/_RngLib/examples/Makefile
                  src/_SimLib/Makefile
                  src/_SimLib/examples/Makefile
+                 src/_IntSets/Makefile
+                 src/_IntSets/examples/Makefile
                  Tests/Makefile
                  ])
 

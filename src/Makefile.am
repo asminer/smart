@@ -2,7 +2,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
 ## List any subdirectories where we might want/need to run make
-SUBDIRS = _LSLib _RngLib _SimLib
+SUBDIRS = _LSLib _RngLib _SimLib _IntSets
 
 
 ## List executables that we build
@@ -47,6 +47,8 @@ smart_SOURCES = \
   _RngLib/rng.cc \
   \
   _SimLib/sim.cc _SimLib/normal.cc _SimLib/autocorrelation.cc \
+  \
+  _IntSets/intset.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -159,7 +161,6 @@ smart_LDADD = \
   $(MC_LIBRARY)/lib/libmc.a \
   $(GRAPH_LIBRARY)/lib/libgraph.a \
   $(STATE_LIBRARY)/lib/libstate.a \
-  $(IS_LIBRARY)/lib/libintset.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 
