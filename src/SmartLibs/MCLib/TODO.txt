@@ -1,0 +1,24 @@
+
+# $Id$
+
+Things to do for Markov chain library.
+
+Library:
+
+* finish and test vanishing chains
+
+* Add user specified auxiliary vectors for steady state.
+
+* Add more analysis functions to interface, e.g.
+
+  ComputeTTA(const p0, double* tta)
+
+  double ComputeClassProb(const double* tta)
+
+  ComputeAbsorbProbs(const* tta, double* full)
+
+  ComputeAbsorbProbs(const* tta, sparse vector* p)
+
+* Add lumping options.
+
+* Add options to select the SCC algorithm (3, 2, or 1).

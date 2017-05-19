@@ -1,0 +1,130 @@
+# 1814400 States (10!/2)
+#
+# $Id$
+#
+# 5x2 tile game, the board looks like:
+#
+#   x11  x12
+#
+#   x21  x22
+#
+#   x31  x32
+#
+#   x41  x42
+#
+#   x51  x52
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12,
+	x21, x22,
+	x31, x32,
+	x41, x42,
+	x51, x52;
+	
+INIT
+	x11 :  0, x12 :  1,
+	x21 :  2, x22 :  3,
+	x31 :  4, x32 :  5,
+	x41 :  6, x42 :  7,
+	x51 :  8, x52 :  9;
+
+BOUNDS
+	x11 :  9, x12 :  9,
+	x21 :  9, x22 :  9,
+	x31 :  9, x32 :  9,
+	x41 :  9, x42 :  9,
+	x51 :  9, x52 :  9;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, 
+	n21, n22, 
+	n31, n32, 
+	n41, n42; 
+
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+
+	x31 : n21 : x31,   n21 : x21 : x31,   
+	x32 : n22 : x32,   n22 : x22 : x32,   
+
+	x41 : n31 : x41,   n31 : x31 : x41,   
+	x42 : n32 : x42,   n32 : x32 : x42,   
+
+	x51 : n41 : x51,   n41 : x41 : x51,   
+	x52 : n42 : x52,   n42 : x42 : x52;
+
+  INHIBITORS
+	x11 : n11,   x12 : n12,
+	x21 : n21,   x22 : n22,
+	x31 : n31,   x32 : n32,
+	x41 : n41,   x42 : n42;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22,
+	s31, s32,
+	s41, s42,
+	s51, s52;
+
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+
+	x21 : s31 : x21,   s31 : x31 : x21,   
+	x22 : s32 : x22,   s32 : x32 : x22,   
+
+	x31 : s41 : x31,   s41 : x41 : x31,   
+	x32 : s42 : x32,   s42 : x42 : x32,   
+
+	x41 : s51 : x41,   s51 : x51 : x41,   
+	x42 : s52 : x42,   s52 : x52 : x42;
+
+  INHIBITORS
+	x21 : s21,   x22 : s22,
+	x31 : s31,   x32 : s32,
+	x41 : s41,   x42 : s42,
+	x51 : s51,   x52 : s52;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e22, e32, e42, e52; 
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x31 : e32 : x31,   e32 : x32 : x31,
+	x41 : e42 : x41,   e42 : x42 : x41,
+	x51 : e52 : x51,   e52 : x52 : x51;
+
+  INHIBITORS
+	x12 : e12,   x22 : e22,   x32 : e32,   x42 : e42,   x52 : e52;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w21, w31, w41, w51; 
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x32 : w31 : x32,   w31 : x31 : x32,
+	x42 : w41 : x42,   w41 : x41 : x42,
+	x52 : w51 : x52,   w51 : x51 : x52;
+
+  INHIBITORS
+	x11 : w11,   x21 : w21,   x31 : w31,   x41 : w41,   x51 : w51;   
+
+END

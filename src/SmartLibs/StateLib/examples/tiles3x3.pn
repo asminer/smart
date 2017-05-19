@@ -1,0 +1,118 @@
+# 181440 States (9!/2)
+#
+# $Id$
+#
+# 3x3 tile game, the board looks like:
+#
+#   x11  x12  x13
+#
+#   x21  x22  x23
+#
+#   x31  x32  x33
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12, x13, 
+	x21, x22, x23, 
+	x31, x32, x33;
+	
+INIT
+	x11 :  0, x12 :  1, x13 :  2, 
+	x21 :  3, x22 :  4, x23 :  5, 
+	x31 :  6, x32 :  7, x33 :  8;
+
+BOUNDS
+	x11 :  8, x12 :  8, x13 :  8, 
+	x21 :  8, x22 :  8, x23 :  8, 
+	x31 :  8, x32 :  8, x33 :  8;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, n13, 
+	n21, n22, n23;
+
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+	x23 : n13 : x23,   n13 : x13 : x23,   
+
+	x31 : n21 : x31,   n21 : x21 : x31,   
+	x32 : n22 : x32,   n22 : x22 : x32,   
+	x33 : n23 : x33,   n23 : x23 : x33;
+
+  INHIBITORS
+	x11 : n11,   x12 : n12,   x13 : n13,
+	x21 : n21,   x22 : n22,   x23 : n23;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22, s23,
+	s31, s32, s33;
+
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+	x13 : s23 : x13,   s23 : x23 : x13,   
+
+	x21 : s31 : x21,   s31 : x31 : x21,   
+	x22 : s32 : x22,   s32 : x32 : x22,   
+	x23 : s33 : x23,   s33 : x33 : x23;
+
+  INHIBITORS
+	x21 : s21,   x22 : s22,   x23 : s23,
+	x31 : s31,   x32 : s32,   x33 : s33;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e13, 
+	e22, e23, 
+	e32, e33;
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x12 : e13 : x12,   e13 : x13 : x12,
+
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x22 : e23 : x22,   e23 : x23 : x22,
+
+	x31 : e32 : x31,   e32 : x32 : x31,
+	x32 : e33 : x32,   e33 : x33 : x32;
+
+  INHIBITORS
+	x12 : e12,   x13 : e13,
+	x22 : e22,   x23 : e23,
+	x32 : e32,   x33 : e33;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w12,
+	w21, w22,
+	w31, w32;
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x13 : w12 : x13,   w12 : x12 : x13,
+
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x23 : w22 : x23,   w22 : x22 : x23,
+
+	x32 : w31 : x32,   w31 : x31 : x32,
+	x33 : w32 : x33,   w32 : x32 : x33;
+
+  INHIBITORS
+	x11 : w11,   x12 : w12,
+	x21 : w21,   x22 : w22,
+	x31 : w31,   x32 : w32;
+
+END

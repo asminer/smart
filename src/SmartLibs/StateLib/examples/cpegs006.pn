@@ -1,0 +1,58 @@
+# 13
+
+# $Id$
+
+PN
+PLACES
+  hole00,
+  hole01,
+  hole02,
+  hole03,
+  hole04,
+  hole05;
+
+INIT
+  hole01 : 1,
+  hole02 : 1,
+  hole03 : 1,
+  hole04 : 1,
+  hole05 : 1;
+
+TRANS
+  left00,
+  left01,
+  left02,
+  left03,
+  left04,
+  left05,
+  right00,
+  right01,
+  right02,
+  right03,
+  right04,
+  right05;
+
+ARCS
+  left00 : hole00, hole01 : left00, hole02 : left00,
+  left01 : hole01, hole02 : left01, hole03 : left01,
+  left02 : hole02, hole03 : left02, hole04 : left02,
+  left03 : hole03, hole04 : left03, hole05 : left03,
+  left04 : hole04, hole05 : left04, hole00 : left04,
+  left05 : hole05, hole00 : left05, hole01 : left05,
+
+  right00 : hole00, hole04 : right00, hole05 : right00,
+  right01 : hole01, hole05 : right01, hole00 : right01,
+  right02 : hole02, hole00 : right02, hole01 : right02,
+  right03 : hole03, hole01 : right03, hole02 : right03,
+  right04 : hole04, hole02 : right04, hole03 : right04,
+  right05 : hole05, hole03 : right05, hole04 : right05;
+
+INHIBITORS
+  hole00 : left00, hole00 : right00,
+  hole01 : left01, hole01 : right01,
+  hole02 : left02, hole02 : right02,
+  hole03 : left03, hole03 : right03,
+  hole04 : left04, hole04 : right04,
+  hole05 : left05, hole05 : right05;
+
+END

@@ -1,0 +1,19 @@
+
+# $Id$
+
+CTMC
+STATES 2
+INIT
+  0 : 1
+ARCS 2
+  0 : 1 : 0.6
+  1 : 0 : 0.6
+END
+TIME 1.25
+TIME 2.5
+TIME 5
+TIME 10
+# TIME 20
+# TIME 40
+TIME 80
+

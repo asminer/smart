@@ -1,0 +1,15 @@
+
+# $Id$
+
+Future development plans:
+
+* Do we need rng performance functions, e.g.,
+      double MIN_RANDOM() { return 1 / m; }
+      double MAX_RANDOM() { return (m-1) / m; }
+
+      int resolution() { number of "bits of resolution" (e.g., 32) }
+
+
+* Develop a 64-bit version for 64-bit processors
+  (will get a speed increase for jumping)
+

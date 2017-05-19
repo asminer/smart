@@ -1,0 +1,20 @@
+# 141141
+
+# $Id$
+
+# Machine shop model
+#
+# all timed transitions
+
+PN
+PLACES	up, down, techs, vacation;
+INIT 	up : 1000, techs : 140;
+TRANS 	fail, repair_continue, repair_leave, return;
+ARCS
+	up : fail, fail : down,
+	down : repair_continue, techs : repair_continue,
+	repair_continue : up, repair_continue : techs,
+	down : repair_leave, techs : repair_leave,
+	repair_leave : up, repair_leave : vacation,
+	vacation : return, return : techs;
+END

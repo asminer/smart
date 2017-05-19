@@ -1,0 +1,209 @@
+# 3016
+
+# $Id$
+#
+#  Triangular peg jumping game.
+#
+#  Note the model considers the triangle as a "right" one,
+#  with the shape:
+#
+#  row 1:	X
+#
+#  row 2:	X   X
+#
+#  row 3:	X   X   X
+#
+#  row 4:	X   X   X   X
+#
+#  row 5:	X   X   X   X   X
+#
+
+PN
+PLACES
+	p11,
+	p21, p22,
+	p31, p32, p33,
+	p41, p42, p43, p44,
+	p51, p52, p53, p54, p55;
+
+INIT
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1,
+	p51 : 1, p52 : 1, p53 : 1, p54 : 1, p55 : 1;
+
+BOUNDS
+	p11 : 1,
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1,
+	p51 : 1, p52 : 1, p53 : 1, p54 : 1, p55 : 1;
+
+#
+# jumps to the north
+#
+  TRANS	
+	n11, n21, n31,
+	n22, n32,
+	n33;
+
+  ARCS
+	n11 : p11, p21 : n11, p31 : n11,
+	n21 : p21, p31 : n21, p41 : n21,
+	n31 : p31, p41 : n31, p51 : n31,
+
+	n22 : p22, p32 : n22, p42 : n22,
+	n32 : p32, p42 : n32, p52 : n32,
+
+	n33 : p33, p43 : n33, p53 : n33;
+
+  INHIBITORS
+	p11 : n11,
+	p21 : n21,
+	p31 : n31,
+
+	p22 : n22,
+	p32 : n32,
+
+	p33 : n33;
+
+#
+# jumps to the south
+#
+  TRANS	
+	s31, s41, s51,
+	s42, s52,
+	s53;
+
+  ARCS
+	p11 : s31, p21 : s31, s31 : p31,
+	p21 : s41, p31 : s41, s41 : p41,
+	p31 : s51, p41 : s51, s51 : p51,
+
+	p22 : s42, p32 : s42, s42 : p42,
+	p32 : s52, p42 : s52, s52 : p52,
+
+	p33 : s53, p43 : s53, s53 : p53;
+
+  INHIBITORS
+	p31 : s31,
+	p41 : s41,
+	p51 : s51,
+
+	p42 : s42,
+	p52 : s52,
+
+	p53 : s53;
+
+#
+# jumps to the east
+#
+  TRANS
+	e33, e43, e53,
+	e44, e54,
+	e55;
+
+  ARCS
+	p31 : e33, p32 : e33, e33 : p33,
+	p41 : e43, p42 : e43, e43 : p43,
+	p51 : e53, p52 : e53, e53 : p53,
+
+	p42 : e44, p43 : e44, e44 : p44,
+	p52 : e54, p53 : e54, e54 : p54,
+
+	p53 : e55, p54 : e55, e55 : p55;
+	
+  INHIBITORS
+	p33 : e33,
+	p43 : e43,
+	p53 : e53,
+
+	p44 : e44,
+	p54 : e54,
+
+	p55 : e55;
+
+#
+# jumps to the west
+#
+  TRANS
+	w31, w41, w51,
+	w42, w52,
+	w53;
+
+  ARCS
+	w31 : p31,  p32 : w31, p33 : w31,
+	w41 : p41,  p42 : w41, p43 : w41,
+	w51 : p51,  p52 : w51, p53 : w51,
+
+	w42 : p42,  p43 : w42, p44 : w42,
+	w52 : p52,  p53 : w52, p54 : w52,
+
+	w53 : p53,  p54 : w53, p55 : w53;
+
+  INHIBITORS
+	p31 : w31,
+	p41 : w41,
+	p51 : w51,
+
+	p42 : w42,
+	p52 : w52,
+
+	p53 : w53;
+
+#
+# jumps to the north west
+#
+  TRANS
+	nw11, nw21, nw31,
+        nw22, nw32,
+	nw33;
+
+  ARCS
+	nw11 : p11, p22 : nw11, p33 : nw11,
+	nw21 : p21, p32 : nw21, p43 : nw21,
+	nw31 : p31, p42 : nw31, p53 : nw31,
+
+	nw22 : p22, p33 : nw22, p44 : nw22,
+	nw32 : p32, p43 : nw32, p54 : nw32,
+
+	nw33 : p33, p44 : nw33, p55 : nw33;
+
+  INHIBITORS
+	p11 : nw11,
+	p21 : nw21,
+	p31 : nw31,
+
+	p22 : nw22,
+	p32 : nw32,
+
+	p33 : nw33;
+
+#
+# jumps to the south east
+#
+  TRANS
+	se33, se43, se53,
+	se44, se54,
+	se55;
+
+  ARCS
+	p11 : se33, p22 : se33, se33 : p33,
+	p21 : se43, p32 : se43, se43 : p43,
+	p31 : se53, p42 : se53, se53 : p53,
+
+	p22 : se44, p33 : se44, se44 : p44,
+	p32 : se54, p43 : se54, se54 : p54,
+
+	p33 : se55, p44 : se55, se55 : p55;
+
+  INHIBITORS
+	p33 : se33,
+	p43 : se43,
+	p53 : se53,
+
+	p44 : se44,
+	p54 : se54,
+
+	p55 : se55;
+END

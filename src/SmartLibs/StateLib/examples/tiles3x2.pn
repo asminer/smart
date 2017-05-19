@@ -1,0 +1,96 @@
+# 360 States (6!/2)
+#
+# $Id$
+#
+# 3x2 tile game, the board looks like:
+#
+#   x11  x12
+#
+#   x21  x22
+#
+#   x31  x32
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12,
+	x21, x22,
+	x31, x32;
+	
+INIT
+	x11 :  0, x12 :  1,
+	x21 :  2, x22 :  3,
+	x31 :  4, x32 :  5;
+
+BOUNDS
+	x11 :  5, x12 :  5,
+	x21 :  5, x22 :  5,
+	x31 :  5, x32 :  5;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, 
+	n21, n22;
+
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+
+	x31 : n21 : x31,   n21 : x21 : x31,   
+	x32 : n22 : x32,   n22 : x22 : x32;
+
+  INHIBITORS
+	x11 : n11,   x12 : n12,
+	x21 : n21,   x22 : n22;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22,
+	s31, s32;
+
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+
+	x21 : s31 : x21,   s31 : x31 : x21,   
+	x22 : s32 : x22,   s32 : x32 : x22;
+
+  INHIBITORS
+	x21 : s21,   x22 : s22,
+	x31 : s31,   x32 : s32;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e22, e32;
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x31 : e32 : x31,   e32 : x32 : x31;
+
+  INHIBITORS
+	x12 : e12,   x22 : e22,   x32 : e32;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w21, w31;
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x32 : w31 : x32,   w31 : x31 : x32;
+
+  INHIBITORS
+	x11 : w11,   x21 : w21,   x31 : w31;
+
+END
