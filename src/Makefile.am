@@ -2,7 +2,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
 ## List any subdirectories where we might want/need to run make
-SUBDIRS = _LSLib _RngLib _SimLib _IntSets
+SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib
 
 
 ## List executables that we build
@@ -49,6 +49,9 @@ smart_SOURCES = \
   _SimLib/sim.cc _SimLib/normal.cc _SimLib/autocorrelation.cc \
   \
   _IntSets/intset.cc \
+  \
+  _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
+  _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -160,7 +163,6 @@ smart_SOURCES = \
 smart_LDADD = \
   $(MC_LIBRARY)/lib/libmc.a \
   $(GRAPH_LIBRARY)/lib/libgraph.a \
-  $(STATE_LIBRARY)/lib/libstate.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 
@@ -174,6 +176,9 @@ icp_SOURCES = \
   include/revision.h \
   \
   _Timer/timerlib.cc \
+  \
+  _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
+  _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -237,7 +242,6 @@ icp_SOURCES = \
   Apps/icp.cc
 
 icp_LDADD = \
-  $(STATE_LIBRARY)/lib/libstate.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 ## ============================================================

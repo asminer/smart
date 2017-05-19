@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-# $Id$
 
 . Config-funcs
 
@@ -12,5 +11,8 @@ export CPPFLAGS="-std=gnu++11"
 
 findlibs $@ || exit 1
 
+if [ ! -d bin-release ]; then
+  mkdir bin-release
+fi
 cd bin-release
 ../configure --prefix=$PWD $@
