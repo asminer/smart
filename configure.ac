@@ -1,5 +1,3 @@
-# $Id$
-#
 #
 # Process this file with autoconf to produce a configure script.
 # See the README file for more details.
@@ -115,6 +113,8 @@ AC_SUBST(IS_LIBRARY)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/_LSLib/Makefile
+                 src/_LSLib/examples/Makefile
                  Tests/Makefile
                  ])
 

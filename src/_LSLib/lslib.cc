@@ -1,14 +1,10 @@
 
-// $Id$
-
 #include "lslib.h"
 
 #include <stdlib.h> 
 #include <stdio.h> 
 #include <string.h>
 #include <assert.h>
-
-#include "revision.h"
 
 /// Standard MIN "macro".
 template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
@@ -261,9 +257,11 @@ void Axb_VectorExpand(const MATRIX &A, double *x, const LS_Vector &b,
 const char* LS_LibraryVersion()
 {
   static char buffer[100];
-  snprintf(buffer, sizeof(buffer), "Linear Solver Library, version %d.%d.%d",
-     MAJOR_VERSION, MINOR_VERSION,  REVISION_NUMBER);
+  snprintf(buffer, sizeof(buffer), "Linear Solver Library, version %d.%d",
+     MAJOR_VERSION, MINOR_VERSION);
   return buffer;
+
+  // TBD - revision number mechanism
 }
 
 // ******************************************************************

@@ -1,6 +1,4 @@
 
-$Id$
-
 Instructions to build
 
 0.  autoreconf --force --install

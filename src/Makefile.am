@@ -1,7 +1,8 @@
-## $Id$
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
+## List any subdirectories where we might want to run make
+SUBDIRS = _LSLib
 
 bin_PROGRAMS = smart icp teststrms testsplay testinit
 
@@ -35,6 +36,10 @@ AM_CXXFLAGS = -Wall
 
 smart_SOURCES = \
   include/revision.h \
+  \
+  _Timer/timerlib.cc \
+  \
+  _LSLib/lslib.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -144,8 +149,6 @@ smart_SOURCES = \
 
 
 smart_LDADD = \
-  $(TIMER_LIBRARY)/lib/libtimer.a \
-  $(LS_LIBRARY)/lib/libls.a \
   $(MC_LIBRARY)/lib/libmc.a \
   $(GRAPH_LIBRARY)/lib/libgraph.a \
   $(STATE_LIBRARY)/lib/libstate.a \
@@ -163,6 +166,8 @@ smart_LDADD = \
 
 icp_SOURCES = \
   include/revision.h \
+  \
+  _Timer/timerlib.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -226,7 +231,6 @@ icp_SOURCES = \
   Apps/icp.cc
 
 icp_LDADD = \
-  $(TIMER_LIBRARY)/lib/libtimer.a \
   $(STATE_LIBRARY)/lib/libstate.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
