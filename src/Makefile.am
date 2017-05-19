@@ -2,7 +2,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
 ## List any subdirectories where we might want/need to run make
-SUBDIRS = _LSLib _RngLib
+SUBDIRS = _LSLib _RngLib _SimLib
 
 
 ## List executables that we build
