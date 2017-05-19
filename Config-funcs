@@ -249,7 +249,7 @@ findlibs() {
 #
 
 #  find_timerlib || return 1
-  find_simlib || return 1
+#  find_simlib || return 1
   # find_rnglib || return 1
 #  find_lslib || return 1
   find_statelib || return 1
@@ -261,7 +261,7 @@ findlibs() {
 # Build -I path list for Smart Libs, and exclude duplicates
 #
   # IncludePath=`echo "-I$TIMER_LIBRARY/include -I$SIM_LIBRARY/include -I$RNG_LIBRARY/include -I$LS_LIBRARY/include -I$STATE_LIBRARY/include -I$GRAPH_LIBRARY/include -I$MC_LIBRARY/include -I$IS_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
-  IncludePath=`echo "-I$SIM_LIBRARY/include -I$STATE_LIBRARY/include -I$GRAPH_LIBRARY/include -I$MC_LIBRARY/include -I$IS_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
+  IncludePath=`echo "-I$STATE_LIBRARY/include -I$GRAPH_LIBRARY/include -I$MC_LIBRARY/include -I$IS_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
   
   CPPFLAGS="$IncludePath $CPPFLAGS"
 
