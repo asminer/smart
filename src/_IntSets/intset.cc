@@ -1,10 +1,7 @@
 
-// $Id$
-
 #include <stdio.h>
 #include "intset.h"
 
-#include "revision.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -550,10 +547,12 @@ const char* intset::getVersion()
 {
   if (0==version) {
     version = new char[80];
-    snprintf(version, 80, "Compact integer set library, version %d.%d.%d",
-      MAJOR_VERSION, MINOR_VERSION, REVISION_NUMBER);
+    snprintf(version, 80, "Compact integer set library, version %d.%d",
+      MAJOR_VERSION, MINOR_VERSION);
   }
   return version;
+
+  // TBD - revision number?
 }
 
 long intset::cardinality() const
