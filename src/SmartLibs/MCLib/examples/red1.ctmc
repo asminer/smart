@@ -1,0 +1,17 @@
+
+# $Id$
+
+# Simple reducible CTMC for testing.
+
+CTMC
+STATES 4
+INIT
+	0 : 1
+ARCS 4
+	0 : 1 : 1
+	0 : 3 : 1
+	1 : 2 : 1
+	2 : 1 : 1
+END
+STEADY
+
