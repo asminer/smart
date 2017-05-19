@@ -1,1 +1,14 @@
+aclocal.m4
+ar-lib
+autom4te.cache
+compile
+config.*
+configure
+depcomp
+install-sh
+ltmain.sh
+m4/
 Makefile.in
+missing
+test-driver
+ylwrap
