@@ -15,6 +15,7 @@ AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX(11)
 AM_PROG_LEX
 AC_PROG_YACC
+AM_PROG_AR
 AM_PROG_LIBTOOL
 
 #
@@ -117,6 +118,8 @@ AC_CONFIG_FILES([Makefile
                  src/_LSLib/examples/Makefile
                  src/_RngLib/Makefile
                  src/_RngLib/examples/Makefile
+                 src/_SimLib/Makefile
+                 src/_SimLib/examples/Makefile
                  Tests/Makefile
                  ])
 

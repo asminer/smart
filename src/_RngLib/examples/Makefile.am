@@ -10,16 +10,29 @@ noinst_PROGRAMS = \
 
 AM_CPPFLAGS = -I../
 
-rawtest_SOURCES = rawtest.cc ../rng.cc
+rawtest_SOURCES = rawtest.cc
+rawtest_LDADD = ../librng.la
 
-jumptest_SOURCES = jumptest.cc ../rng.cc
 
-grid_SOURCES = grid.cc ../rng.cc
+jumptest_SOURCES = jumptest.cc
+jumptest_LDADD = ../librng.la
 
-uniftest_SOURCES = uniftest.cc ../rng.cc
 
-expotest_SOURCES = expotest.cc ../rng.cc
+grid_SOURCES = grid.cc
+grid_LDADD = ../librng.la
 
-autocorr_SOURCES = autocorr.cc ../rng.cc
 
-shuffle_SOURCES = shuffle.cc ../rng.cc
+uniftest_SOURCES = uniftest.cc 
+uniftest_LDADD = ../librng.la
+
+
+expotest_SOURCES = expotest.cc
+expotest_LDADD = ../librng.la
+
+
+autocorr_SOURCES = autocorr.cc
+autocorr_LDADD = ../librng.la
+
+
+shuffle_SOURCES = shuffle.cc
+shuffle_LDADD = ../librng.la

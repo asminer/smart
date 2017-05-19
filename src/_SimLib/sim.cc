@@ -1,9 +1,6 @@
 
-// $Id$
-
 #include "sim.h"
 
-#include "revision.h"
 #include "normal.h"
 
 #include <stdlib.h>
@@ -82,9 +79,11 @@ inline int DecideIterations(double estimated_iters)
 const char* SIM_LibraryVersion()
 {
   static char buffer[100];
-  snprintf(buffer, sizeof(buffer), "Simulation library version %d.%d.%d", 
-    MAJOR_VERSION, MINOR_VERSION, REVISION_NUMBER);
+  snprintf(buffer, sizeof(buffer), "Simulation library version %d.%d", 
+    MAJOR_VERSION, MINOR_VERSION);
   return buffer;
+
+  // TBD - revision number?
 }
 
 
