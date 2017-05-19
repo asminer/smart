@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "revision.h"
 #include "sccs.h"
 
 // External libraries
@@ -1167,8 +1166,10 @@ void GraphLib::digraph::DefragSwap(long i, long j)
 const char* GraphLib::Version()
 {
   static char buffer[100];
-  snprintf(buffer, sizeof(buffer), "Large (sparse) graph Library, version %d.%d.%d",
-     MAJOR_VERSION, MINOR_VERSION, REVISION_NUMBER);
+  snprintf(buffer, sizeof(buffer), "Large (sparse) graph Library, version %d.%d",
+     MAJOR_VERSION, MINOR_VERSION);
   return buffer;
+
+  // TBD - revision number?
 }
 
