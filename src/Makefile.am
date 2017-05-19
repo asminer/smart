@@ -46,6 +46,8 @@ smart_SOURCES = \
   \
   _RngLib/rng.cc \
   \
+  _SimLib/sim.cc _SimLib/normal.cc _SimLib/autocorrelation.cc \
+  \
   Streams/streams.cc  Streams/textfmt.cc \
   \
   Options/options.cc \
@@ -158,7 +160,6 @@ smart_LDADD = \
   $(GRAPH_LIBRARY)/lib/libgraph.a \
   $(STATE_LIBRARY)/lib/libstate.a \
   $(IS_LIBRARY)/lib/libintset.a \
-  $(SIM_LIBRARY)/lib/libsim.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 
