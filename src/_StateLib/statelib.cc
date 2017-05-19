@@ -9,7 +9,6 @@
 #include "splaydb.h"
 #include "rb_db.h"
 #include "hash_db.h"
-#include "revision.h"
 
 const int MAJOR_VERSION = 2;  // interface changes
 const int MINOR_VERSION = 0;  // (significant) backend algorithm changes
@@ -84,9 +83,11 @@ long* StateLib::state_db::TakeIndexMap()
 const char* StateLib::LibraryVersion()
 {
   static char buffer[100];
-  snprintf(buffer, sizeof(buffer), "State library version %d.%d.%d", 
-    MAJOR_VERSION, MINOR_VERSION, REVISION_NUMBER);
+  snprintf(buffer, sizeof(buffer), "State library version %d.%d", 
+    MAJOR_VERSION, MINOR_VERSION);
   return buffer;
+
+  // TBD - revision number?
 }
 
 StateLib::state_coll*  
