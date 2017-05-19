@@ -124,6 +124,8 @@ AC_CONFIG_FILES([Makefile
                  src/_IntSets/examples/Makefile
                  src/_StateLib/Makefile
                  src/_StateLib/examples/Makefile
+                 src/_GraphLib/Makefile
+                 src/_GraphLib/examples/Makefile
                  Tests/Makefile
                  ])
 

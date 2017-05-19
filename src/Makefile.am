@@ -2,7 +2,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
 ## List any subdirectories where we might want/need to run make
-SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib
+SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib
 
 
 ## List executables that we build
@@ -52,6 +52,8 @@ smart_SOURCES = \
   \
   _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
   _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
+  \
+  _GraphLib/graphlib.cc _GraphLib/sccs.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -162,7 +164,6 @@ smart_SOURCES = \
 
 smart_LDADD = \
   $(MC_LIBRARY)/lib/libmc.a \
-  $(GRAPH_LIBRARY)/lib/libgraph.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 
