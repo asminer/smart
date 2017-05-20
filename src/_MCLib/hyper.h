@@ -4,9 +4,9 @@
 #ifndef HYPER_H
 #define HYPER_H
 
-#include "graphlib.h"
-#include "lslib.h"
-#include "intset.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_LSLib/lslib.h"
+#include "../_IntSets/intset.h"
 
 /** Hyper-sparse, by rows, matrix storage.
     Conceptually: list of non-empty rows,

@@ -1,6 +1,8 @@
 aclocal.m4
 ar-lib
 autom4te.cache
+bin-devel/
+bin-release/
 compile
 config.*
 configure
@@ -12,4 +14,3 @@ Makefile.in
 missing
 test-driver
 ylwrap
-bin-devel

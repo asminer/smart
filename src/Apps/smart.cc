@@ -29,7 +29,6 @@
 */
 
 #include "config.h"
-#include "../include/revision.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/exprman.h"
@@ -85,10 +84,9 @@ const char* first_init::getVersionString()
   static char* version = 0;
   if (0==version) {
     StringStream str;
+    str << "SMART";
 #ifdef VERSION
-    str << "SMART version " << VERSION << "." << REVISION_NUMBER;
-#else
-    str << "SMART revision " << REVISION_NUMBER;
+    str << " version " << VERSION;
 #endif
 #ifdef DEVELOPMENT_CODE
     str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
