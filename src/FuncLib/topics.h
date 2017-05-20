@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file topics.h
 
   Help topics, except for formalism-specific ones.

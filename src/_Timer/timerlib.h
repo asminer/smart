@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef TIMERLIB_H
 #define TIMERLIB_H
 

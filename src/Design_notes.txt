@@ -1,6 +1,4 @@
 
-# $Id$
-
 ------------------------------------------------------------
 SMART VERSION 2 "Grand Library Yank"
 External (stand alone) libraries:

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rgr_meddly.h"
 #include "rss_meddly.h"
 #include "../Modules/meddly_ssets.h"

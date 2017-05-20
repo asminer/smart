@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* 
   Test of a simple bounded queue.
 */

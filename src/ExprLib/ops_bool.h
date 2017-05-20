@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef OPS_BOOL_H
 #define OPS_BOOL_H
 

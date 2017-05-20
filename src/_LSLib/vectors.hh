@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef VECTORS_HH
 #define VECTORS_HH
 

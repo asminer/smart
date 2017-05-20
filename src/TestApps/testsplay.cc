@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
 	Test of the splay tree class.
 */

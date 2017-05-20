@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef SPLAYDB_H
 #define SPLAYDB_H
 

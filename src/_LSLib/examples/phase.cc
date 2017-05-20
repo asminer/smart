@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "lslib.h"
 
 #include <iostream>

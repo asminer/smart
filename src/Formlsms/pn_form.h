@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef PN_FORM_H
 #define PN_FORM_H
 

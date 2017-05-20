@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"

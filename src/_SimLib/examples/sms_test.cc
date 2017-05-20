@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*  Test of a simple machine shop model.
 
     This model utilizes event "speeds".

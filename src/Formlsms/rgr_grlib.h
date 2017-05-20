@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RGR_GRLIB_H
 #define RGR_GRLIB_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*  Model version of a single queue with multiple servers.
 */
 

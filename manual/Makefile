@@ -1,4 +1,3 @@
-# $Id$
 #
 
 all: SMART-userman.pdf SMART-userman-private.pdf

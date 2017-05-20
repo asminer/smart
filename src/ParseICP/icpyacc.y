@@ -1,8 +1,6 @@
 
 /*
  *
- * $Id$
- *
  *
  * Yacc file (actually, bison) for Integer Constraint Programming.
  *

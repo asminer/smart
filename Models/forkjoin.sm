@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Fork join model as it appears in my lecture notes for 556.
 
 pn forkjoin(int n) := {

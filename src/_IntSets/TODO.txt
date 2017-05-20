@@ -1,6 +1,4 @@
 
-# $Id$
-
 To do list for vector library:
 
 * intset class

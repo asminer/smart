@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*! \file statelib.h
 
     State storage library.

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "glue_meddly.h"
 #include "biginttype.h"
 #include "../Options/options.h"

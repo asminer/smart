@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**  \file vectlib.h
   Library for large, sparse vectors.
 

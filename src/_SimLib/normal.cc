@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "normal.h"
 
 #include <math.h>

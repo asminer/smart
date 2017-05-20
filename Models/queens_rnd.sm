@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* 
    N queens problem, as an "event & variable" model.
  

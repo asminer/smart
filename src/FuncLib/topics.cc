@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "topics.h"
 
 #include "../include/defines.h"

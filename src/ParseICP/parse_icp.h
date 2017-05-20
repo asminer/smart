@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file parse_icp.h
 
     Minimalist front-end parser for ICP language files.

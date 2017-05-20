@@ -1,6 +1,4 @@
 
-# $Id$
-
 README file for "Modules".
 
 These are intended as add-on modules for types and other basic language

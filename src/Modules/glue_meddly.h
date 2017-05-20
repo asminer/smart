@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file glue_meddly.h
 
     Thin wrapper and interface glue for our Multi-terminal

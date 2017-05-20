@@ -1,6 +1,4 @@
 
-# $Id$
-
 Things to do for Markov chain library.
 
 Library:

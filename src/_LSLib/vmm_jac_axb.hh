@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef VMM_JAC_AXB_HH
 #define VMM_JAC_AXB_HH
 

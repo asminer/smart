@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Stack model.
 // Nasty version for saturation: push and pop modify every state variable!
 //

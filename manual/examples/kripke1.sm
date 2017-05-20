@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn ex := {
   place a, b, c, d, e;

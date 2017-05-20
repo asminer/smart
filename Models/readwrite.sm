@@ -1,6 +1,4 @@
 
-// $Id$
-
 pn rw(int n) := {
   place think, waitr, waitw, reading, writing, synch;
 

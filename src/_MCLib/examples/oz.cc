@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Really basic test file, more or less a sanity check
     that things are working correctly.

@@ -7,7 +7,7 @@
 
 */
 
-// $Id$
+
 
 bool absolute_path := (substr(file_name, 0, 0) == "/");
 

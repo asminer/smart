@@ -1,6 +1,4 @@
 
-# $Id$
-
 Library for constructing large, sparse graphs.
 
 Contents of the directories:

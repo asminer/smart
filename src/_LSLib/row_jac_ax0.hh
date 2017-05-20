@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ROW_JAC_AX0_HH
 #define ROW_JAC_AX0_HH
 

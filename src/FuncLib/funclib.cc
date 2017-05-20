@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "funclib.h"
 
 #include "topics.h"

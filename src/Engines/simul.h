@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef SIMUL_H
 #define SIMUL_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef SPLAY_H
 #define SPLAY_H
 

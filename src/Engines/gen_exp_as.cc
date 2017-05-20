@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 

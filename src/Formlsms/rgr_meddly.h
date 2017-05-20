@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RGR_MEDDLY_H
 #define RGR_MEDDLY_H
 

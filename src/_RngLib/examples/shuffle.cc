@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /*
   Simple utility to randomly shuffle arguments and print them
 */

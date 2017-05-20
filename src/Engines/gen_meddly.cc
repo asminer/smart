@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_meddly.h"
 
 #include "../Options/options.h"

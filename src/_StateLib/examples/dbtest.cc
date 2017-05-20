@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Interactive test of state database class.
 
 #include <unistd.h>

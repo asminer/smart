@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /* 
     RNG Library test: 
     compare the jump matrix to slow-but-sure stream advancement.

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rgr_grlib.h"
 #include "rss_indx.h"
 

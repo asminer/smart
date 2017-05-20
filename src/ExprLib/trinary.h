@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef TRINARY_H
 #define TRINARY_H
 

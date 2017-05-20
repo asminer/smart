@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Random testing for graph library
 */

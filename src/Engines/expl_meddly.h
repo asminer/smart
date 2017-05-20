@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Minimalist front-end for explicit process generation, using Meddly
 
 #ifndef EXPL_MEDDLY_H

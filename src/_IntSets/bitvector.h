@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef BITVECTOR_H
 #define BITVECTOR_H
 

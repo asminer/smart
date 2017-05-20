@@ -1,5 +1,4 @@
 
-# $Id$
 #
 # This file is processed by autoreconf.
 # Please see the README and INSTALL files for more details.

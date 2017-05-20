@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef DCP_EXPL_H
 #define DCP_EXPL_H
 

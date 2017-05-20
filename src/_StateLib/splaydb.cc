@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "splaydb.h"
 
 #include <stdio.h>

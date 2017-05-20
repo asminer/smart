@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file statevects.h
 
     Module for statevects.

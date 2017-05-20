@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "vectlib.h"
 #include "revision.h"
 #include <stdio.h>

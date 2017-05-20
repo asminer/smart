@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef DEBUG_HH
 #define DEBUG_HH
 

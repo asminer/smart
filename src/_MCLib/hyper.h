@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef HYPER_H
 #define HYPER_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Model of a list of N distinct integers, where operations are
     to exchange two neighboring integers (giving N! reachable states).

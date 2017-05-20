@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RSS_INDX_H
 #define RSS_INDX_H
 

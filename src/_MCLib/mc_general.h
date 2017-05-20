@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_GENERAL
 #define MC_GENERAL
 

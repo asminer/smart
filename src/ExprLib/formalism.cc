@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "formalism.h"
 #include "measures.h"
 

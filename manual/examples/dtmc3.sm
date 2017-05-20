@@ -1,4 +1,4 @@
-// $Id$
+
 
 dtmc d3(bool connect) := {
   state a,b;

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "init_data.h"
 #include "../Options/options.h"
 #include "exprman.h"

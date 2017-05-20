@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef PHASE_HLM_H
 #define PHASE_HLM_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Classic algorithm to find all primes between 2 and a constant N,
     based on the sieve of Eratosthenes.

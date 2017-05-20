@@ -1,6 +1,4 @@
 
-// $Id:$
-
 #include "../ExprLib/startup.h"
 
 #include <cstdio>

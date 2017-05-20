@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef BST_DB_H
 #define BST_DB_H
 

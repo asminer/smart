@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*  Extremely simple (monte carlo) simulation test:
 
     Rolling 6-sided dice

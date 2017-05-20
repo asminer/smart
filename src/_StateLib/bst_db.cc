@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "bst_db.h"
 
 #include <stdio.h>
