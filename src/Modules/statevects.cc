@@ -19,8 +19,8 @@
 #include "expl_ssets.h"
 
 // External
-#include "intset.h"
-#include "lslib.h"
+#include "../_IntSets/intset.h"
+#include "../_LSLib/lslib.h"
 
 // ******************************************************************
 // *                                                                *

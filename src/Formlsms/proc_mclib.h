@@ -8,8 +8,8 @@
 #include "rss_indx.h"
 #include "rgr_ectl.h"
 
-#include "mclib.h"
-#include "intset.h"
+#include "../_MCLib/mclib.h"
+#include "../_IntSets/intset.h"
 
 // ******************************************************************
 // *                                                                *

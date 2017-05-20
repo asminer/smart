@@ -5,7 +5,7 @@ noinst_PROGRAMS = \
   bssq_test \
   sms_test
 
-AM_CPPFLAGS = -I.. -I../../_RngLib
+AM_CPPFLAGS = -I$(srcdir)/.. -I$(srcdir)/../../_RngLib
 
 dice_SOURCES = dice.cc 
 dice_LDADD = ../libsim.la

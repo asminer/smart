@@ -19,8 +19,8 @@
 #include "../Formlsms/phase_hlm.h"
 
 // Explicit Markov chain library
-#include "mclib.h"
-#include "lslib.h"
+#include "../_MCLib/mclib.h"
+#include "../_LSLib/lslib.h"
 
 
 // **************************************************************************

@@ -6,7 +6,7 @@ noinst_PROGRAMS = \
   statediff \
   testcoll 
 
-AM_CPPFLAGS = -I../ -I../../_Timer/
+AM_CPPFLAGS = -I$(srcdir)/../ -I$(srcdir)/../../_Timer/
 
 enum1_SOURCES = enum1.cc ../../_Timer/timerlib.cc
 enum1_LDADD = ../libstate.la 

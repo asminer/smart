@@ -244,26 +244,5 @@ findlibs() {
   fi
   find_mddlib || return 1
 
-#
-# Look for Smart Libs
-#
-
-#  find_timerlib || return 1
-#  find_simlib || return 1
-  # find_rnglib || return 1
-#  find_lslib || return 1
-#  find_statelib || return 1
-  # find_graphlib || return 1
-  find_mclib || return 1
-#  find_islib || return 1
-
-#
-# Build -I path list for Smart Libs, and exclude duplicates
-#
-  # IncludePath=`echo "-I$TIMER_LIBRARY/include -I$SIM_LIBRARY/include -I$RNG_LIBRARY/include -I$LS_LIBRARY/include -I$STATE_LIBRARY/include -I$GRAPH_LIBRARY/include -I$MC_LIBRARY/include -I$IS_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
-  IncludePath=`echo "-I$MC_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
-  
-  CPPFLAGS="$IncludePath $CPPFLAGS"
-
   return 0
 }

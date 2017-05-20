@@ -17,8 +17,8 @@
 #include "../include/splay.h"
 
 // Explicit libraries
-#include "graphlib.h"
-#include "lslib.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_LSLib/lslib.h"
 
 
 // **************************************************************************

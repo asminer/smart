@@ -8,8 +8,8 @@
 #include "rss_indx.h"
 
 // external libraries
-#include "graphlib.h"
-#include "intset.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_IntSets/intset.h"
 
 class grlib_reachgraph : public ectl_reachgraph {
 

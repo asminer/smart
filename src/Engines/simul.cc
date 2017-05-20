@@ -4,9 +4,9 @@
 #include "simul.h"
 
 // External libs
-#include "sim.h" 
-#include "rng.h"
-#include "timerlib.h"
+#include "../_SimLib/sim.h" 
+#include "../_RngLib/rng.h"
+#include "../_Timer/timerlib.h"
 
 #include "../Streams/streams.h"
 #include "../Options/options.h"

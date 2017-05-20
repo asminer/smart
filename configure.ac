@@ -35,54 +35,6 @@ AS_IF([test "x$with_gmp" != xno],
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([sys/time.h unistd.h])
 
-#
-# Check for SimLib
-#
-AC_CHECK_HEADER([sim.h], [],
-    [AC_MSG_FAILURE(["Couldn't find SimLib header"])],
-    [])
-
-#
-# Check for RngLib
-#
-AC_CHECK_HEADER([rng.h], [],
-    [AC_MSG_FAILURE(["Couldn't find RngLib header"])],
-    [])
-
-#
-# Check for LSLib
-#
-AC_CHECK_HEADER([lslib.h], [],
-    [AC_MSG_FAILURE(["Couldn't find LSLib header"])],
-    [])
-
-#
-# Check for StateLib
-#
-AC_CHECK_HEADER([statelib.h], [],
-    [AC_MSG_FAILURE(["Couldn't find StateLib header"])],
-    [])
-
-#
-# Check for GraphLib
-#
-AC_CHECK_HEADER([graphlib.h], [],
-    [AC_MSG_FAILURE(["Couldn't find GraphLib header"])],
-    [])
-
-#
-# Check for MCLib
-#
-AC_CHECK_HEADER([mclib.h], [],
-    [AC_MSG_FAILURE(["Couldn't find MCLib header"])],
-    [])
-
-#
-# Check for IntSets
-#
-AC_CHECK_HEADER([intset.h], [],
-    [AC_MSG_FAILURE(["Couldn't find IntSets header"])],
-    [])
 
 #
 # Check for MDD Library
@@ -126,6 +78,8 @@ AC_CONFIG_FILES([Makefile
                  src/_StateLib/examples/Makefile
                  src/_GraphLib/Makefile
                  src/_GraphLib/examples/Makefile
+                 src/_MCLib/Makefile
+                 src/_MCLib/examples/Makefile
                  Tests/Makefile
                  ])
 

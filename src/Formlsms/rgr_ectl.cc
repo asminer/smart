@@ -9,7 +9,7 @@
 #include "../Modules/expl_ssets.h"
 
 // external library
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 // ******************************************************************
 // *                                                                *
