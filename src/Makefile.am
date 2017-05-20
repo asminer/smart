@@ -9,24 +9,12 @@ SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib
 bin_PROGRAMS = smart icp teststrms testsplay testinit
 
 
-## automatic revision numbering (TBD - fix this!)
-
-_revision:
-	$(srcdir)/include/BuildRevNo $(srcdir)/include
-
-include/revision.h:
-	$(srcdir)/include/BuildRevNo $(srcdir)/include
-
 BUILT_SOURCES = \
-  _revision include/revision.h \
   ParseSM/smartyacc.h ParseICP/icpyacc.h
 
 CLEANFILES = \
-  include/revision.h \
   ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
   ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
-
-EXTRA_DIST = include/BuildRevNo include/revision.h
 
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
@@ -38,8 +26,6 @@ AM_CXXFLAGS = -Wall
 ## ============================================================
 
 smart_SOURCES = \
-  include/revision.h \
-  \
   _Timer/timerlib.cc \
   \
   _LSLib/lslib.cc \
@@ -176,8 +162,6 @@ smart_LDADD = \
 ## ============================================================
 
 icp_SOURCES = \
-  include/revision.h \
-  \
   _Timer/timerlib.cc \
   \
   _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
