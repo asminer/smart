@@ -6,7 +6,7 @@
 
 #include "hyper.h"
 #include "mc_irred.h"
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 // ******************************************************************
 // *                           Front  end                           *

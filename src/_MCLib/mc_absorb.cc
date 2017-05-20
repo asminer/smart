@@ -6,7 +6,7 @@
 
 #include "hyper.h"
 #include "mc_absorb.h"
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 // #define DEBUG_VANISH
 

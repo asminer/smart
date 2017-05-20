@@ -9,9 +9,9 @@
 #include "hyper.h"
 #include "mcbase.h"
 
-#include "intset.h" // Compact integer set library
-#include "lslib.h"  // Linear Solver Library
-#include "rng.h"    // RNG library
+#include "../_IntSets/intset.h" // Compact integer set library
+#include "../_LSLib/lslib.h"    // Linear Solver Library
+#include "../_RngLib/rng.h"     // RNG library
 
 // #define DEBUG_PERIOD
 // #define DEBUG_UNIF
