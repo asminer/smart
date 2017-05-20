@@ -5,7 +5,7 @@
 #define MC_IRRED
 
 #include "mcbase.h"
-#include "graphlib.h"
+#include "../_GraphLib/graphlib.h"
 
 // ******************************************************************
 // *                                                                *

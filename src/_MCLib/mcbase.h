@@ -5,8 +5,8 @@
 #define MCBASE_H
 
 #include "mclib.h"
-#include "lslib.h"
-#include "graphlib.h"
+#include "../_LSLib/lslib.h"
+#include "../_GraphLib/graphlib.h"
 #include <stdlib.h>
 
 class hypersparse_matrix;

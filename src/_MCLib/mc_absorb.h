@@ -5,7 +5,7 @@
 #define MC_ABSORB
 
 #include "mcbase.h"
-#include "graphlib.h"
+#include "../_GraphLib/graphlib.h"
 
 // ******************************************************************
 // *                                                                *
