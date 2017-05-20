@@ -12,7 +12,8 @@
 # Values that contain spaces should be placed between quotes (" ")
 
 
-INPUT  = ../src/Engines 
+INPUT  = ../src/Apps
+INPUT += ../src/Engines 
 INPUT += ../src/ExprLib 
 INPUT += ../src/Formlsms 
 INPUT += ../src/FuncLib
@@ -22,7 +23,16 @@ INPUT += ../src/ParseICP
 INPUT += ../src/ParseSM
 INPUT += ../src/Streams
 INPUT += ../src/SymTabs
-INPUT += ../src/Timers
+INPUT += ../src/TestApps
+INPUT += ../src/_GraphLib
+INPUT += ../src/_IntSets
+INPUT += ../src/_LSLib
+INPUT += ../src/_MCLib
+INPUT += ../src/_RngLib
+INPUT += ../src/_SimLib
+INPUT += ../src/_StateLib
+INPUT += ../src/_Timer
+INPUT += ../src/include
 
 #---------------------------------------------------------------------------
 # Project related configuration options
@@ -31,7 +41,7 @@ INPUT += ../src/Timers
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = 
+PROJECT_NAME           = SMART
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
