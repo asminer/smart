@@ -18,8 +18,8 @@
 #include "../Modules/glue_meddly.h"
 #include "../Modules/biginttype.h"
 
-#include "timerlib.h"
-#include "lslib.h"
+#include "../_Timer/timerlib.h"
+#include "../_LSLib/lslib.h"
 #include "meddly_expert.h"
 #include <iostream>
 #include <vector>

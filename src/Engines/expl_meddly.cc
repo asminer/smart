@@ -32,8 +32,8 @@
 
 // external libs
 
-#include "timerlib.h"
-#include "lslib.h"
+#include "../_Timer/timerlib.h"
+#include "../_LSLib/lslib.h"
 
 // For matrix diagrams
 

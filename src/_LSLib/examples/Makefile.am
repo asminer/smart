@@ -4,7 +4,7 @@ noinst_PROGRAMS = \
   axb \
   phase
 
-AM_CPPFLAGS = -I.. -I../../_Timer
+AM_CPPFLAGS = -I$(srcdir)/.. -I$(srcdir)/../../_Timer
 
 axzero_SOURCES = axzero.cc matrix.h matrix.cc ../lslib.cc ../../_Timer/timerlib.cc
 

@@ -3,7 +3,7 @@ noinst_PROGRAMS = \
   sieve \
   istest
 
-AM_CPPFLAGS = -I../
+AM_CPPFLAGS = -I$(srcdir)/../
 
 sieve_SOURCES = sieve.cc ../intset.cc
 

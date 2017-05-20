@@ -15,8 +15,8 @@
 #include "../Formlsms/noevnt_hlm.h"
 
 // External libs
-#include "statelib.h"
-#include "timerlib.h"
+#include "../_StateLib/statelib.h"
+#include "../_Timer/timerlib.h"
 
 // **************************************************************************
 // *                                                                        *

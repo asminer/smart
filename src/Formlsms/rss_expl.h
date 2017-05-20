@@ -7,7 +7,7 @@
 #include "rss_indx.h"
 
 // External libs
-#include "statelib.h"
+#include "../_StateLib/statelib.h"
 
 class expl_reachset : public indexed_reachset {
   public:

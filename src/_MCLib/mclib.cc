@@ -6,8 +6,6 @@
 #include <stdio.h> 
 #include <string.h>
 
-#include "revision.h"
-
 const int MAJOR_VERSION = 3;
 const int MINOR_VERSION = 1;
 
@@ -145,9 +143,11 @@ MCLib::vanishing_chain::~vanishing_chain()
 const char* MCLib::Version()
 {
   static char buffer[100];
-  snprintf(buffer, sizeof(buffer), "Markov chain Library, version %d.%d.%d",
-     MAJOR_VERSION, MINOR_VERSION, REVISION_NUMBER);
+  snprintf(buffer, sizeof(buffer), "Markov chain Library, version %d.%d",
+     MAJOR_VERSION, MINOR_VERSION);
   return buffer;
+
+  // TBD - revision number?
 }
 
 

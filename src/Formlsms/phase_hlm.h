@@ -5,7 +5,7 @@
 #define PHASE_HLM_H
 
 #include "../ExprLib/mod_inst.h"
-#include "rng.h"
+#include "../_RngLib/rng.h"
 #include "stoch_llm.h"
 #include <math.h>
 

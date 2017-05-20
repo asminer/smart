@@ -8,7 +8,7 @@ noinst_PROGRAMS = \
   autocorr \
   shuffle
 
-AM_CPPFLAGS = -I../
+AM_CPPFLAGS = -I$(srcdir)/../
 
 rawtest_SOURCES = rawtest.cc
 rawtest_LDADD = ../librng.la

@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "mcparse.h"
-#include "revision.h"
 
 const char* mc_builder::getParserVersion()
 {
   static char buffer[100];
-  snprintf(buffer, 99, "Markov Chain Parser, version 0.5.%d", REVISION_NUMBER);
+  snprintf(buffer, 99, "Markov Chain Parser, version 0.5");
   return buffer;
+
+  // TBD - revision number?
 }
 
 mc_builder::mc_builder(FILE* err)

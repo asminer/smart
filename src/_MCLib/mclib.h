@@ -10,7 +10,7 @@
 #ifndef MCLIB_H
 #define MCLIB_H
 
-#include "graphlib.h"  // we'll see how this goes
+#include "../_GraphLib/graphlib.h"  // we'll see how this goes
 
 /// Defined in linear solver library: linear solver options.
 struct LS_Options;
