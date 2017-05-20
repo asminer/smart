@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "fsm_form.h"
 #include "rss_enum.h"
 #include "rgr_grlib.h"

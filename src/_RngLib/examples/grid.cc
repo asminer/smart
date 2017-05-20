@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /* 
     RNG Library test: 
     generate a random sequence of (x,y) pairs

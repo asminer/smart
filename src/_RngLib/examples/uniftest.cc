@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /* 
     RNG Library test: 
     generate a large sample of Uniform(0, 1) variates,

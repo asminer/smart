@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "graph_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "ops_set.h"
 #include "trinary.h"
 #include "sets.h"

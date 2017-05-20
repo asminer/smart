@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dd_front.h"
 
 sv_encoder::sv_encoder()

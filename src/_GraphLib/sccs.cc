@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "sccs.h"
 #include "graphlib.h"
 

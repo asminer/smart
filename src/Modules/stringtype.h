@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file stringtype.h
 
     Module for strings.

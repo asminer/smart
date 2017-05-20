@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MEASURES_H
 #define MEASURES_H
 

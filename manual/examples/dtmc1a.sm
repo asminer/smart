@@ -1,4 +1,4 @@
-// $Id$
+
 
 dtmc d1(real x) := {
   state a,b,c;

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RB_DB_H
 #define RB_DB_H
 

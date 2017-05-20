@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_IRRED
 #define MC_IRRED
 

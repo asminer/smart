@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef HASH_DB_H
 #define HASH_DB_H
 

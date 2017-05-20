@@ -1,6 +1,4 @@
 
-# $Id$
-
 To do list for builtin function module:
 
 *  Should we allow users to pick and choose

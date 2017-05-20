@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include <math.h>
 #include <stdlib.h>
 

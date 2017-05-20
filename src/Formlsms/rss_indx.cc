@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rss_indx.h"
 #include "../Modules/expl_ssets.h"
 

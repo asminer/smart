@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file statesets.h
 
     Module for statesets.

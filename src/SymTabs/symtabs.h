@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file symtabs.h
 
   New symbol table module.

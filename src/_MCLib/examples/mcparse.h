@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MCPARSE_H
 #define MCPARSE_H
 

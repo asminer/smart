@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file funclib.h
 
   Built-in functions.

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Main program for integer constraint programming.
     

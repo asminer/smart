@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mclib.h"
 
 #include <stdio.h> 

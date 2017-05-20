@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef NOEVENT_HLM_H
 #define NOEVENT_HLM_H
 

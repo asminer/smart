@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "timerlib.h"
 
 /*

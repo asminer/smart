@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**   \file lslib.h
       Library for linear solvers.
 */

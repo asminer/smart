@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef SUPERMAN_H
 #define SUPERMAN_H
 

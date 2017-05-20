@@ -1,6 +1,4 @@
 
-// $Id$
-
 // A (hopefully) thin layer of glue between the
 // Markov Chain Parsing library and the
 // Markov Chain storage and solver library

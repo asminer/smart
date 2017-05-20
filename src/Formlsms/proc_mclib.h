@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef PROC_MCLIB_H
 #define PROC_MCLIB_H
 

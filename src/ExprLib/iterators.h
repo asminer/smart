@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ITERATORS_H
 #define ITERATORS_H
 

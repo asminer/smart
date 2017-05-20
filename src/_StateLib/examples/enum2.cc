@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* 
   Simple test of state storage:
   stores all combinations of N (nonnegative) integers

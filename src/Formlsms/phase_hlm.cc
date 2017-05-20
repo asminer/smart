@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../_IntSets/intset.h"
 
 #include "phase_hlm.h"

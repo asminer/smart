@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file intervals.h
 
     Module for intervals.

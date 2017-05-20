@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** @name defines.h
     @type File
     @args \ 

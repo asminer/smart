@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /*! \file sim.h
 
     \brief Simulation Library Header File.

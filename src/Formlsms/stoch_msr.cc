@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "stoch_msr.h"
 #include "stoch_llm.h"
 #include "../ExprLib/startup.h"

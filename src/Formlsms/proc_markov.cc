@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "proc_markov.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"

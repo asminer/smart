@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "exact.h"
 
 #include "../ExprLib/startup.h"

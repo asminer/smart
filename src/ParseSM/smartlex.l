@@ -1,8 +1,6 @@
 
 /*
  *
- * $Id$
- *
  *
  * Lex file used to generate tokens for smart.
  *

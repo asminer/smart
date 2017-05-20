@@ -1,6 +1,4 @@
 
-# $Id$
-
 Features to do list:
 
 Separate "show" from "num" functions, internally.

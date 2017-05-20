@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dcp_symb.h"
 
 #include "../Options/options.h"

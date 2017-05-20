@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include <stdio.h>
 
 #include "statelib.h"

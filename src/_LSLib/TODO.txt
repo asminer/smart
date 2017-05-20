@@ -1,6 +1,4 @@
 
-# $Id$
-
 List of things to do:
 
 * Implement power method for Ax=0

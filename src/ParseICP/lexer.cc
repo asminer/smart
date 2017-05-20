@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../Streams/streams.h"
 #include "../include/defines.h"
 #include "lexer.h"

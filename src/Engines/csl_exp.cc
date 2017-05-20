@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "csl_exp.h"
 
 #include "../ExprLib/startup.h"

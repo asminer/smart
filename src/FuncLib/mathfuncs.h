@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file mathfuncs.h
 
   Mathematical functions.

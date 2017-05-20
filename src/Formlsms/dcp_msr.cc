@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dcp_msr.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/measures.h"

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ROW_GS_AX0_HH
 #define ROW_GS_AX0_HH
 

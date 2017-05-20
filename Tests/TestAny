@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #
-# $Id$
 #
 # Usage: TestAny exec_dir src_dir test_files
 #

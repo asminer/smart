@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "converge.h"
 #include "../Options/options.h"
 #include "../Streams/streams.h"

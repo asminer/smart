@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mc_llm.h"
 #include "rss_mdd.h"
 #include "../ExprLib/mod_vars.h"

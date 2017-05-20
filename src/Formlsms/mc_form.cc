@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mc_form.h"
 #include "rss_enum.h"
 #include "proc_mclib.h"

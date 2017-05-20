@@ -1,6 +1,4 @@
 
-// $Id$
-
 ctmc bd(int n, real brate, real drate) := {
   for (int i in {0..n}) {
     state s[i];

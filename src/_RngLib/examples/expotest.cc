@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /* 
   RNG Library test: 
   generate a large sample of Exponential(1) variates,

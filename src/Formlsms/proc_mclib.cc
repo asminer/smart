@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "proc_mclib.h"
 
 #include "../Streams/streams.h"

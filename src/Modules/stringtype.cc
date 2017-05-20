@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "stringtype.h"
 
 #include "../ExprLib/startup.h"

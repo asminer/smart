@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_MDD_H
 #define MC_MDD_H
 

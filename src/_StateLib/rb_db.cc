@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rb_db.h"
 
 #include <stdio.h>

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MCBASE_H
 #define MCBASE_H
 

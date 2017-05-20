@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dcp_expl.h"
 
 #include "../Streams/streams.h"

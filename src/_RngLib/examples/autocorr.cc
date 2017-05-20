@@ -1,6 +1,4 @@
 
-/* $Id$ */
-
 /*
     Test application for RNG:
     checks the autocorrelation of the raw Uniform(0,1) sequence.

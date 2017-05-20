@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rgr_ectl.h"
 #include "rss_indx.h"
 

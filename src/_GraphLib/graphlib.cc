@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "graphlib.h"
 
 #include <stdio.h> 

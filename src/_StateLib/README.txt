@@ -1,6 +1,4 @@
 
-# $Id$
-
 Standalone state storage library.
 
 Right now, this is an experiment.  Can it be done efficiently as

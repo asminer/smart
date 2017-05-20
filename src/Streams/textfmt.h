@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef TEXTFMT_H
 #define TEXTFMT_H
 

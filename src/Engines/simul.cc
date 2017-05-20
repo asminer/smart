@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "simul.h"
 
 // External libs

@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-# $Id$
 #
 # Generate an instance of minimal N-knights in ICP format
 #
@@ -62,7 +61,7 @@ if [ $# -lt 1 ]; then
   printf "Usage: %s N\n" $0
   exit 1
 fi
-printf "\n// \$Id$ \n\n/*\n    %d Knights (maximize) problem.\n\n" $1
+printf "\n/*\n    %d Knights (maximize) problem.\n\n" $1
 printf "    Try to put as few knights onto a chessboard so that every square\n"
 printf "    either has a knight on it, or\n"
 printf "    is attacked by a knight\n*/\n\n"

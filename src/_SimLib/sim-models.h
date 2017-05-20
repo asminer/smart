@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*! \file sim-models.h
     
     Model simulation library.

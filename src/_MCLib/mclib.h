@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file mclib.h
     Markov chain library.
     Allows construction and analysis of Markov chains

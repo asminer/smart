@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef CIRCULAR_H
 #define CIRCULAR_H
 

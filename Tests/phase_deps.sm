@@ -1,5 +1,5 @@
 
-// $Id$
+
 
 ph int zero   := 0;
 ph int one    := 1;

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef PROC_MARKOV_H
 #define PROC_MARKOV_H
 

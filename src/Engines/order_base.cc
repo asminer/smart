@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "order_base.h"
 
 #include "../ExprLib/startup.h"

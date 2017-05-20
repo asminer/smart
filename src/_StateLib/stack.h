@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     New array-based stack templates.
 */

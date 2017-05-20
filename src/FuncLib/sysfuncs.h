@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file sysfuncs.h
 
   System related functions.

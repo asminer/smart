@@ -1,5 +1,5 @@
 
-// $Id$
+
 
 // start with something simple
 print("Simple tests for bigint:\n");

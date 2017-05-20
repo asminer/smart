@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "unary.h"
 #include "exprman.h"
 #include "result.h"

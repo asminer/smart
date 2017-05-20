@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "intervals.h"
 #include "exprman.h"
 

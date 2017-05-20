@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
   Sparse integer vector test.
   Reads standard input and gives a histogram of input sequences.

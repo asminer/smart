@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* 
   Simple test of state storage:
   stores all 2^n combinations of n-bit states, in order,

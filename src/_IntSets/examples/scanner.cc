@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
   Another bitvector test, based on
   reading input files.

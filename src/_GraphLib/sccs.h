@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef SCCS_H
 #define SCCS_H
 

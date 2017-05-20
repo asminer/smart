@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "sysfuncs.h"
 
 #include <string.h>

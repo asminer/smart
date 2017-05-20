@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "compile.h"
 #include "lexer.h"
 #include "../Options/options.h"

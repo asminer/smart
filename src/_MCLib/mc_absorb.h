@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_ABSORB
 #define MC_ABSORB
 

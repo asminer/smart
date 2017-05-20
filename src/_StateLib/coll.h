@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef COLL_H
 #define COLL_H
 

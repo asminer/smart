@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mc_llm.h"
 #include "../Options/options.h"
 #include "../ExprLib/mod_inst.h"

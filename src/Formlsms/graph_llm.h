@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef GRAPH_LLM_H
 #define GRAPH_LLM_H
 

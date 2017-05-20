@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rng.h"
 
 #include <stdio.h>

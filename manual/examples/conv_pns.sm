@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn b(real i1):={
   place   p1, p2;     init(p1:3);

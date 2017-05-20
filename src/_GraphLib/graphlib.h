@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**  \file graphlib.h
       Graph library.
       Allows construction of large, sparse graphs.

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_exp_ph.h"
 #include "gen_rg_base.h"
 #include "../ExprLib/startup.h"

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "satur_meddly.h"
 
 #include "gen_meddly.h"

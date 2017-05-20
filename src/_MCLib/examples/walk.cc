@@ -1,7 +1,4 @@
 
-
-// $Id$
-
 #include "mclib.h"
 #include "lslib.h"
 

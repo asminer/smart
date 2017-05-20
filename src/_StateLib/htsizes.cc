@@ -1,6 +1,4 @@
 
-// $Id$
-
 // 
 // Not part of the library, but used to determine
 // hard-coded hash table sizes.

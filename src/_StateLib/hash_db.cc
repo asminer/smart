@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include <limits.h>
 #include "hash_db.h"
 #include <stdio.h>

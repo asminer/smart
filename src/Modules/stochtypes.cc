@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "stochtypes.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/startup.h"

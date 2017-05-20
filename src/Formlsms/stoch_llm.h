@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef STOCH_LLM_H
 #define STOCH_LLM_H
 

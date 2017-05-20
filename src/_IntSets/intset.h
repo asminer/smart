@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef INTSET_H
 #define INTSET_H
 

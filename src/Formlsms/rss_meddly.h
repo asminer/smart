@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RSS_MEDDLY_H
 #define RSS_MEDDLY_H
 

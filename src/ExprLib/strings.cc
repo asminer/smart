@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../Streams/streams.h"
 #include "strings.h"
 #include <string.h>
