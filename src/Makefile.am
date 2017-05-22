@@ -10,7 +10,8 @@ bin_PROGRAMS = smart icp teststrms testsplay testinit
 
 
 BUILT_SOURCES = \
-  ParseSM/smartyacc.h ParseICP/icpyacc.h
+  ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
+  ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
 
 CLEANFILES = \
   ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
