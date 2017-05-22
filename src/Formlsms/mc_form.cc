@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mc_form.h"
 #include "rss_enum.h"
 #include "proc_mclib.h"
@@ -19,8 +17,8 @@
 #include "../Formlsms/phase_hlm.h"
 
 // Explicit Markov chain library
-#include "mclib.h"
-#include "lslib.h"
+#include "../_MCLib/mclib.h"
+#include "../_LSLib/lslib.h"
 
 
 // **************************************************************************

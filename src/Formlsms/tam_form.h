@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef TAM_FORM_H
 #define TAM_FORM_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Explicit generators (reachset, reachgraph, Markov chain) 
 // for asynchronous models
 

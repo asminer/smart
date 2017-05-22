@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef PROC_MEDDLY_H
 #define PROC_MEDDLY_H
 

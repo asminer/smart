@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn fms(int n, int Np) := {
   place   P1, P2, P3, P12, P2s, P3s, P1s, P12s, M1, M2, M3, 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**
   \file formalism.h
   The formalism interface is specified here.

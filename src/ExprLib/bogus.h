@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef BOGUS_H
 #define BOGUS_H
 

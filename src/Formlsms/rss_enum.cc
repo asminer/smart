@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rss_enum.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"

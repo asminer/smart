@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "forloops.h"
 #include "exprman.h"
 #include "iterators.h"

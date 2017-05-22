@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** 
   \file engine.h
   The engine interface is specified here.

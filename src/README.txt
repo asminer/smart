@@ -1,7 +1,4 @@
 
-# $Id$
-
-
 Module          Description
 --------------  --------------------------------------------------
 Apps            Top-level applications.  
@@ -34,4 +31,9 @@ TestApps        Test applications, for testing individual
                 or groups of modules together.
 
 include         Templates and other headers.
+
+_LSLib          Semi-standalone linear solver library.
+                Contains test programs in examples/ subdirectory.
+
+_Timer          Semi-standalone timer library.
 

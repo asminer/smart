@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file parse_sm.h
 
     Minimalist front-end parser for smart language files.

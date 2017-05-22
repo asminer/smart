@@ -1,6 +1,4 @@
 
-# $Id$
-
 README file for ExprLib module.
 
 Overall:

@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Minimalist front-end for exact solution engines
 
 #ifndef EXACT_H

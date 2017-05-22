@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dcp_form.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"

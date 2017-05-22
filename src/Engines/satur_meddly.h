@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Minimalist front-end for saturation engines, using Meddly
 
 #ifndef SATUR_MEDDLY_H

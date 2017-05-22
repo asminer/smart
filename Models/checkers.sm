@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Checkers board model
 
 int N := 4; // board size

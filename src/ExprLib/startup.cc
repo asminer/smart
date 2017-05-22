@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "startup.h"
 #include <string.h>
 #include <cstdio>

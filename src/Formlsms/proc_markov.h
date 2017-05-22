@@ -1,14 +1,12 @@
 
-// $Id$
-
 #ifndef PROC_MARKOV_H
 #define PROC_MARKOV_H
 
 #include "stoch_llm.h"
 #include "../ExprLib/exprman.h"
 
-#include "graphlib.h"
-#include "timerlib.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_Timer/timerlib.h"
 
 namespace MCLib {
   class Markov_chain;

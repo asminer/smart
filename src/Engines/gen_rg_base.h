@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef GEN_RG_BASE_H
 #define GEN_RG_BASE_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef STATE_LLM_H
 #define STATE_LLM_H
 

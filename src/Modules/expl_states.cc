@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "expl_states.h"
 #include "../Options/options.h"
 #include "../ExprLib/mod_vars.h"
@@ -8,7 +6,7 @@
 #include "../include/heap.h"
 
 // External libs
-#include "statelib.h"
+#include "../_StateLib/statelib.h"
 
 // **************************************************************************
 // *                         substate_colls methods                         *

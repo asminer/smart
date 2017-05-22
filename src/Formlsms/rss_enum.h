@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RSS_ENUM_H
 #define RSS_ENUM_H
 

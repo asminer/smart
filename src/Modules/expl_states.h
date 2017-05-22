@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file expl_states.h
 
     Thin wrapper around explicit state storage library.

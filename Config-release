@@ -1,16 +1,18 @@
 #!/bin/bash
 #
-# $Id$
 
 . Config-funcs
 
 echo Configuring release version
 
 export CXXFLAGS="-O3" 
-export LDFLAGS="" 
+export LDFLAGS=""
 export CPPFLAGS="-std=gnu++11"
 
 findlibs $@ || exit 1
 
+if [ ! -d bin-release ]; then
+  mkdir bin-release
+fi
 cd bin-release
 ../configure --prefix=$PWD $@

@@ -1,11 +1,9 @@
 
-// $Id$
-
 #include "rss_indx.h"
 #include "../Modules/expl_ssets.h"
 
 // External libs
-#include "lslib.h"    // for LS_Vector
+#include "../_LSLib/lslib.h"    // for LS_Vector
 
 // ******************************************************************
 // *                                                                *

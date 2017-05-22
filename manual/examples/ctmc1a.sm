@@ -1,4 +1,4 @@
-// $Id$
+
 
 ctmc c1(real lambda) := {
   state a,b,c;

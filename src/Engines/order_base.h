@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ORDER_BASE_H
 #define ORDER_BASE_H
 

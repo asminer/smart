@@ -1,13 +1,11 @@
 
-// $Id$
-
 #ifndef DSDE_HLM_H
 #define DSDE_HLM_H
 
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 // **************************************************************************
 // *                                                                        *

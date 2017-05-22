@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* Land of Oz model */
 
 dtmc oz := {

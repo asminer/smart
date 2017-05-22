@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef STMTS_H
 #define STMTS_H
 

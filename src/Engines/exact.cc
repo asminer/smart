@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "exact.h"
 
 #include "../ExprLib/startup.h"
@@ -17,9 +15,9 @@
 
 // external
 
-#include "intset.h"
-#include "lslib.h"
-#include "timerlib.h"
+#include "../_IntSets/intset.h"
+#include "../_LSLib/lslib.h"
+#include "../_Timer/timerlib.h"
 
 // **************************************************************************
 // *                                                                        *

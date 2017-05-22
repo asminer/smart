@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-# $Id$
 #
 # Generate an instance of N-queens in ICP format
 #
@@ -8,7 +7,7 @@ if [ $# -lt 1 ]; then
   printf "Usage: %s N\n" $0
   exit 1
 fi
-printf "\n// \$Id$ \n\n/*\n    %d Queens problem.\n\n" $1
+printf "\n/*\n    %d Queens problem.\n\n" $1
 printf "    Encoding: each integer variable tells which column to place\n"
 printf "    the queen, for the given row.\n*/\n\n"
 printf "int r01"

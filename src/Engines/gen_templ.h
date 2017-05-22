@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Explicit generation template functions.
 

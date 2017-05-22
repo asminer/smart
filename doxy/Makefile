@@ -1,6 +1,4 @@
 
-# $Id$
-
 all: docs
 
 clean:

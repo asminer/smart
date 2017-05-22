@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "arrays.h"
 #include "exprman.h"
 #include "../Streams/streams.h"

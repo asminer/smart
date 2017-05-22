@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RGR_GRLIB_H
 #define RGR_GRLIB_H
 
@@ -8,8 +6,8 @@
 #include "rss_indx.h"
 
 // external libraries
-#include "graphlib.h"
-#include "intset.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_IntSets/intset.h"
 
 /*
   TO DO:

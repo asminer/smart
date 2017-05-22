@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "stochtypes.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/startup.h"
@@ -13,7 +11,7 @@
 #include "../ExprLib/casting.h"
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/phase_hlm.h"
-#include "rng.h"
+#include "../_RngLib/rng.h"
 #include "statevects.h"
 
 #define MATHFUNCS_DETAILED

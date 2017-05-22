@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
@@ -19,8 +17,8 @@
 #include "expl_ssets.h"
 
 // External
-#include "intset.h"
-#include "lslib.h"
+#include "../_IntSets/intset.h"
+#include "../_LSLib/lslib.h"
 
 // ******************************************************************
 // *                                                                *

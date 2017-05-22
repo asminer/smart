@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rgr_grlib.h"
 #include "rss_indx.h"
 
@@ -16,7 +14,7 @@
 
 // External libs
 
-#include "timerlib.h"
+#include "../_Timer/timerlib.h"
 
 // ******************************************************************
 // *                                                                *

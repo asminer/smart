@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef DCP_MSR_H
 #define DCP_MSR_H
 

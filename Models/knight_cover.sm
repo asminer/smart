@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Determine the set of solutions to the Knight Cover Problem:
     Given an NxN chessboard, place enough knights on the board

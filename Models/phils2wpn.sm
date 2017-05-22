@@ -1,6 +1,4 @@
 
-// $Id$
-
 /* Script (sure, Smart works quite well) to generate
    N dining philosophers 
    as a "wimpy" PN model.

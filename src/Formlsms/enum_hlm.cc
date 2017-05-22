@@ -1,6 +1,4 @@
 
-// $Id$
-
 // #include "../ExprLib/mod_inst.h"
 
 #include "../Streams/streams.h"

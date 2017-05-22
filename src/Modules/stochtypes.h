@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../ExprLib/result.h"
 
 class exprman;

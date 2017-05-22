@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef DD_FRONT_H
 #define DD_FRONT_H
 

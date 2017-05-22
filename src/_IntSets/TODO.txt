@@ -1,0 +1,13 @@
+
+To do list for vector library:
+
+* intset class
+  + merge bitvector into intset.cc
+  + robustify all functions (deal with sets of differing sizes)
+
+* sparse vector of integers (for multisets)
+
+* sparse vector of doubles
+
+* Allow forests of vectors within a class?  
+  (better memory sharing)

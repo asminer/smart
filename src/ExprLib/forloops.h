@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef FORLOOPS_H
 #define FORLOOPS_H
 

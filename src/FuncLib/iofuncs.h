@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file iofuncs.h
 
   I/O related functions.

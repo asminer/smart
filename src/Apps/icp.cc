@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Main program for integer constraint programming.
     
@@ -11,7 +9,6 @@
       (4)  Cleanup
 */
 
-#include "../include/revision.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
@@ -132,7 +129,7 @@ int main(int argc, const char** argv, const char** env)
   int code = 0;
   if (argc < 2) {
     // ==================================================================
-    cout << "\nICP version 0.1." << REVISION_NUMBER << "\n";
+    cout << "\nICP version 0.1\n";
     cout << "\nSupporting libraries:\n";
     if (em)   em->printLibraryVersions(cout);
     else      cout << "\nERROR, no expression manager available\n";

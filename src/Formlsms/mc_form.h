@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_FORM_H
 #define MC_FORM_H
 

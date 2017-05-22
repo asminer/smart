@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**
     A centralized set of classes to handle I/O streams in Smart.
 */

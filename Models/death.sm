@@ -1,6 +1,4 @@
 
-// $Id$
-
 pn death(int n) := {
   place p;
   trans t;

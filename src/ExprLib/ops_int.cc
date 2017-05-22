@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "ops_int.h"
 #include "../Streams/streams.h"
 #include "exprman.h"

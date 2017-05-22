@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# $Id:$
+
+      OK=" [1;32m   OK   [0;39m"
+  FAILED=" [1;31m FAILED [0;39m"
+
+while [ $# -gt 0 ]; do
+  if ./mcsolver -q $1; then
+    echo "  " $1 "  " $OK
+  else
+    echo "  " $1 "  " $FAILED
+  fi
+  shift
+done

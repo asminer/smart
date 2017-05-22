@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file biginttype.h
 
     Module for arbirary-precision integers.

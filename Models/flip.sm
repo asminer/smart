@@ -1,6 +1,4 @@
 
-// $Id$
-
 //
 //  Simple model: N bits, each can be flipped once.
 //  Useful because we know the theoretical answers :^)

@@ -1,14 +1,12 @@
 
-// $Id$
-
 #ifndef RSS_INDX_H
 #define RSS_INDX_H
 
 #include "state_llm.h"
 
 // External libs
-#include "lslib.h"    // for LS_Vector
-#include "intset.h"   // for intset
+#include "../_LSLib/lslib.h"      // for LS_Vector
+#include "../_IntSets/intset.h"   // for intset
 
 /**
     Special case - explicit reachability sets with indexes per states.

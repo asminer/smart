@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file expl_ssets.h
 
     Module for statesets, implemented explicity with a bitvector.

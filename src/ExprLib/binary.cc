@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "binary.h"
 #include "dd_front.h"
 

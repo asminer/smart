@@ -1,0 +1,48 @@
+
+# $Id$
+
+#
+# This corresponds to the "university graduation rate" DTMC.
+#
+#  States:
+#	0 = flunk out
+#	1 = first year
+#	2 = second year
+#	3 = third year
+#	4 = fourth year
+#	5 = graduated
+
+DTMC
+STATES 6 
+INIT
+	1 : 7	# start as first-year with probability 7/10
+	2 : 3	# start as second-year with probability 3/10
+ARCS 12
+	# Nothing from state 0, it is absorbing.
+	# From state 1 (first year)
+	1 : 0 : 1	
+	1 : 1 : 1
+	1 : 2 : 8
+	# From state 2 (second year)
+	2 : 0 : 1
+	2 : 2 : 2
+	2 : 3 : 7
+	# From state 3 (third year)
+	3 : 0 : 1
+	3 : 3 : 2
+	3 : 4 : 7
+	# From state 4 (fourth year)
+	4 : 0 : 1
+	4 : 4 : 1
+	4 : 5 : 8
+	# State 5 is absorbing
+END
+TIME 0
+# TIME 1
+# TIME 2
+# TIME 3
+# TIME 4
+TIME 5
+STEADY
+ACCUMULATED
+

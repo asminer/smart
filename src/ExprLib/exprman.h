@@ -1,6 +1,4 @@
 
-// $Id$
-
 /**
   This is a first step towards the ultimate goal of
   a completely general, extensible expression library.

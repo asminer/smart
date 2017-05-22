@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Determine the set of solutions to the Queen Cover Problem:
     Given an NxN chessboard, place enough queens on the board

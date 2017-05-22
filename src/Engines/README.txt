@@ -1,6 +1,4 @@
 
-# $Id$
-
 Back-end solution engines:
 
 ctl_exp.cc        Explicit solvers for CTL formulas

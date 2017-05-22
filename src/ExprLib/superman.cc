@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "superman.h"
 #include "bogus.h"
 #include "engine.h"

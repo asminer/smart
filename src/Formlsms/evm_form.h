@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef EVM_FORM_H
 #define EVM_FORM_H
 
