@@ -1,6 +1,4 @@
 
-// $Id$
-
 #define MATHFUNCS_DETAILED
 #include "mathfuncs.h"
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
@@ -19,11 +17,11 @@
 #include "gen_templ.h"
 
 // External libs
-#include "statelib.h"
-#include "graphlib.h"
-#include "mclib.h"
-#include "lslib.h"
-#include "timerlib.h"
+#include "../_StateLib/statelib.h"
+#include "../_GraphLib/graphlib.h"
+#include "../_MCLib/mclib.h"
+#include "../_LSLib/lslib.h"
+#include "../_Timer/timerlib.h"
 
 
 // **************************************************************************

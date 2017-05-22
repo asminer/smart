@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MC_LLM_H
 #define MC_LLM_H
 

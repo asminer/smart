@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "symbols.h"
 #include "exprman.h"
 #include "strings.h"

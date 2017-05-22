@@ -1,4 +1,4 @@
-// $Id$
+
 print("in file ", file_name, "; on line ", line_number, " (2)\n");
 #include "inc-a.sm"
 print("leaving file ", file_name, "; on line ", line_number, " (4)\n");

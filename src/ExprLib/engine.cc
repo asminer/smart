@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "engine.h"
 #include "../include/splay.h"
 #include "../Options/options.h"

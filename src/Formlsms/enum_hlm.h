@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ENUM_HLM_H
 #define ENUM_HLM_H
 

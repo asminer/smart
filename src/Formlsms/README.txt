@@ -1,6 +1,4 @@
 
-# $Id$
-
 A collection of modeling formalism "modules".
 
 Generally speaking, source files have the following suffixes:

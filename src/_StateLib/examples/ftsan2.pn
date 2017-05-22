@@ -1,0 +1,762 @@
+# 256932 Reachable states
+# 
+# $Id$
+# 
+#
+#  A SAN model of a fault-tolerant multiprocessor system,
+#  converted to a Petri net.
+#  Taken from "Dependability Evaluation Using Composed SAN-Based Reward
+#  Models", by Sanders and Malhis, JPDC, vol 15, no 3, July 1992, p238-254.
+#
+#  Translation is as faithful as possible:
+#  Each transition corresponds to one case of one action.
+#
+#
+
+PN
+
+PLACES
+
+  comp_failed,
+
+  mem_failed_1, cpus_1, ioports_1, errorhandlers_1,
+  memchips_1_1, intchips_1_1,
+  memchips_1_2, intchips_1_2,
+  memchips_1_3, intchips_1_3,
+
+  mem_failed_2, cpus_2, ioports_2, errorhandlers_2,
+  memchips_2_1, intchips_2_1,
+  memchips_2_2, intchips_2_2,
+  memchips_2_3, intchips_2_3;
+
+INIT
+  cpus_1 : 3, ioports_1 : 2, errorhandlers_1 : 2,
+  memchips_1_1 : 3, intchips_1_1 : 2,
+  memchips_1_2 : 3, intchips_1_2 : 2,
+  memchips_1_3 : 3, intchips_1_3 : 2,
+
+  cpus_2 : 3, ioports_2 : 2, errorhandlers_2 : 2,
+  memchips_2_1 : 3, intchips_2_1 : 2,
+  memchips_2_2 : 3, intchips_2_2 : 2,
+  memchips_2_3 : 3, intchips_2_3 : 2;
+
+TRANS
+  # Computer 1
+  # Memory failure cases
+  mcf1_1_1, mcf2a_1_1, mcf2b_1_1, mcf3a_1_1, mcf3b_1_1, mcf3c_1_1, mcf3d_1_1, mcf4_1_1,
+  mcf1_1_2, mcf2a_1_2, mcf2b_1_2, mcf3a_1_2, mcf3b_1_2, mcf3c_1_2, mcf3d_1_2, mcf4_1_2,
+  mcf1_1_3, mcf2a_1_3, mcf2b_1_3, mcf3a_1_3, mcf3b_1_3, mcf3c_1_3, mcf3d_1_3, mcf4_1_3,
+  
+  # Interface chip failures
+  icf1a_1_1, icf1b_1_1, icf2a_1_1, icf2b_1_1, icf2c_1_1, icf2d_1_1, icf3_1_1,
+  icf1a_1_2, icf1b_1_2, icf2a_1_2, icf2b_1_2, icf2c_1_2, icf2d_1_2, icf3_1_2,
+  icf1a_1_3, icf1b_1_3, icf2a_1_3, icf2b_1_3, icf2c_1_3, icf2d_1_3, icf3_1_3,
+
+  # CPU module
+  cm1_1, cm2_1, cm3_1,
+
+  # IOPorts module
+  io1_1, io2_1, io3_1,
+
+  # errorhandler module
+  eh1_1, eh2_1,
+
+  # Computer 2
+  # Memory failure cases
+  mcf1_2_1, mcf2a_2_1, mcf2b_2_1, mcf3a_2_1, mcf3b_2_1, mcf3c_2_1, mcf3d_2_1, mcf4_2_1,
+  mcf1_2_2, mcf2a_2_2, mcf2b_2_2, mcf3a_2_2, mcf3b_2_2, mcf3c_2_2, mcf3d_2_2, mcf4_2_2,
+  mcf1_2_3, mcf2a_2_3, mcf2b_2_3, mcf3a_2_3, mcf3b_2_3, mcf3c_2_3, mcf3d_2_3, mcf4_2_3,
+  
+  # Interface chip failures
+  icf1a_2_1, icf1b_2_1, icf2a_2_1, icf2b_2_1, icf2c_2_1, icf2d_2_1, icf3_2_1,
+  icf1a_2_2, icf1b_2_2, icf2a_2_2, icf2b_2_2, icf2c_2_2, icf2d_2_2, icf3_2_2,
+  icf1a_2_3, icf1b_2_3, icf2a_2_3, icf2b_2_3, icf2c_2_3, icf2d_2_3, icf3_2_3,
+
+  # CPU module
+  cm1_2, cm2_2, cm3_2,
+
+  # IOPorts module
+  io1_2, io2_2, io3_2,
+
+  # errorhandler module
+  eh1_2, eh2_2;
+
+ARCS
+  # Memory failure, computer 1 mem module 1
+
+	memchips_1_1 : mcf1_1_1 : 2,  	# if memchips > 1 then ...
+	mcf1_1_1 : memchips_1_1 : 1,	# memchips--
+
+	memchips_1_1 : mcf2a_1_1 : memchips_1_1, 	# memchips <- 0
+	intchips_1_1 : mcf2a_1_1 : intchips_1_1,	# intchips <- 0
+	mcf2a_1_1 : comp_failed,			# comp_failed++
+	mcf2a_1_1 : mem_failed_1,			# mem_failed++
+
+	memchips_1_1 : mcf2b_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : mcf2b_1_1 : intchips_1_1,	# intchips <- 0
+	mcf2b_1_1 : mem_failed_1,			# mem_failed++
+
+	memchips_1_1 : mcf3a_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : mcf3a_1_1 : intchips_1_1,	# intchips <- 0
+	mcf3a_1_1 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_1_1 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_1 : mcf3b_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : mcf3b_1_1 : intchips_1_1,	# intchips <- 0
+	mcf3b_1_1 : comp_failed,  			# comp_failed++
+	mcf3b_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : mcf3c_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : mcf3c_1_1 : intchips_1_1,	# intchips <- 0
+	mcf3c_1_1 : comp_failed,  			# comp_failed++
+	mcf3c_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : mcf3d_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : mcf3d_1_1 : intchips_1_1,	# intchips <- 0
+	mcf3d_1_1 : comp_failed,  			# comp_failed++
+	mcf3d_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : mcf4_1_1 : memchips_1_1, 	# memchips <- 0
+	intchips_1_1 : mcf4_1_1 : intchips_1_1,		# intchips <- 0
+	mcf4_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+	mcf4_1_1 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_1_1 : icf1a_1_1 : memchips_1_1,   	# memchips <- 0
+	intchips_1_1 : icf1a_1_1 : intchips_1_1,   	# intchips <- 0
+	icf1a_1_1 : mem_failed_1,		 	# mem_failed++
+	icf1a_1_1 : comp_failed,    			# comp_failed++
+
+	memchips_1_1 : icf1b_1_1 : memchips_1_1,   	# memchips <- 0
+	intchips_1_1 : icf1b_1_1 : intchips_1_1,   	# intchips <- 0
+	icf1b_1_1 : mem_failed_1,		 	# mem_failed++
+
+	memchips_1_1 : icf2a_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : icf2a_1_1 : intchips_1_1,	# intchips <- 0
+	icf2a_1_1 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_1_1 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_1 : icf2b_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : icf2b_1_1 : intchips_1_1,	# intchips <- 0
+	icf2b_1_1 : comp_failed,		  	# comp_failed++
+	icf2b_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : icf2c_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : icf2c_1_1 : intchips_1_1,	# intchips <- 0
+	icf2c_1_1 : comp_failed,		  	# comp_failed++
+	icf2c_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : icf2d_1_1 : memchips_1_1,  	# memchips <- 0
+	intchips_1_1 : icf2d_1_1 : intchips_1_1,	# intchips <- 0
+	icf2d_1_1 : comp_failed,		  	# comp_failed++
+	icf2d_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_1 : icf3_1_1 : memchips_1_1, 	# memchips <- 0
+	intchips_1_1 : icf3_1_1 : intchips_1_1,		# intchips <- 0
+	icf3_1_1 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_1_1 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+  # Memory failure, computer 1 mem module 2
+
+	memchips_1_2 : mcf1_1_2 : 2,  	# if memchips > 1 then ...
+	mcf1_1_2 : memchips_1_2 : 1,	# memchips--
+
+	memchips_1_2 : mcf2a_1_2 : memchips_1_2, 	# memchips <- 0
+	intchips_1_2 : mcf2a_1_2 : intchips_1_2,	# intchips <- 0
+	mcf2a_1_2 : comp_failed,			# comp_failed++
+	mcf2a_1_2 : mem_failed_1,			# mem_failed++
+
+	memchips_1_2 : mcf2b_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : mcf2b_1_2 : intchips_1_2,	# intchips <- 0
+	mcf2b_1_2 : mem_failed_1,			# mem_failed++
+
+	memchips_1_2 : mcf3a_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : mcf3a_1_2 : intchips_1_2,	# intchips <- 0
+	mcf3a_1_2 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_1_2 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_2 : mcf3b_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : mcf3b_1_2 : intchips_1_2,	# intchips <- 0
+	mcf3b_1_2 : comp_failed,  			# comp_failed++
+	mcf3b_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : mcf3c_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : mcf3c_1_2 : intchips_1_2,	# intchips <- 0
+	mcf3c_1_2 : comp_failed,  			# comp_failed++
+	mcf3c_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : mcf3d_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : mcf3d_1_2 : intchips_1_2,	# intchips <- 0
+	mcf3d_1_2 : comp_failed,  			# comp_failed++
+	mcf3d_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : mcf4_1_2 : memchips_1_2, 	# memchips <- 0
+	intchips_1_2 : mcf4_1_2 : intchips_1_2,		# intchips <- 0
+	mcf4_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+	mcf4_1_2 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_1_2 : icf1a_1_2 : memchips_1_2,   	# memchips <- 0
+	intchips_1_2 : icf1a_1_2 : intchips_1_2,   	# intchips <- 0
+	icf1a_1_2 : mem_failed_1,		 	# mem_failed++
+	icf1a_1_2 : comp_failed,    			# comp_failed++
+
+	memchips_1_2 : icf1b_1_2 : memchips_1_2,   	# memchips <- 0
+	intchips_1_2 : icf1b_1_2 : intchips_1_2,   	# intchips <- 0
+	icf1b_1_2 : mem_failed_1,		 	# mem_failed++
+
+	memchips_1_2 : icf2a_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : icf2a_1_2 : intchips_1_2,	# intchips <- 0
+	icf2a_1_2 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_1_2 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_2 : icf2b_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : icf2b_1_2 : intchips_1_2,	# intchips <- 0
+	icf2b_1_2 : comp_failed,		  	# comp_failed++
+	icf2b_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : icf2c_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : icf2c_1_2 : intchips_1_2,	# intchips <- 0
+	icf2c_1_2 : comp_failed,		  	# comp_failed++
+	icf2c_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : icf2d_1_2 : memchips_1_2,  	# memchips <- 0
+	intchips_1_2 : icf2d_1_2 : intchips_1_2,	# intchips <- 0
+	icf2d_1_2 : comp_failed,		  	# comp_failed++
+	icf2d_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_2 : icf3_1_2 : memchips_1_2, 	# memchips <- 0
+	intchips_1_2 : icf3_1_2 : intchips_1_2,		# intchips <- 0
+	icf3_1_2 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_1_2 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+  # Memory failure, computer 1 mem module 3
+
+	memchips_1_3 : mcf1_1_3 : 2,  	# if memchips > 1 then ...
+	mcf1_1_3 : memchips_1_3 : 1,	# memchips--
+
+	memchips_1_3 : mcf2a_1_3 : memchips_1_3, 	# memchips <- 0
+	intchips_1_3 : mcf2a_1_3 : intchips_1_3,	# intchips <- 0
+	mcf2a_1_3 : comp_failed,			# comp_failed++
+	mcf2a_1_3 : mem_failed_1,			# mem_failed++
+
+	memchips_1_3 : mcf2b_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : mcf2b_1_3 : intchips_1_3,	# intchips <- 0
+	mcf2b_1_3 : mem_failed_1,			# mem_failed++
+
+	memchips_1_3 : mcf3a_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : mcf3a_1_3 : intchips_1_3,	# intchips <- 0
+	mcf3a_1_3 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_1_3 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_3 : mcf3b_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : mcf3b_1_3 : intchips_1_3,	# intchips <- 0
+	mcf3b_1_3 : comp_failed,  			# comp_failed++
+	mcf3b_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : mcf3c_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : mcf3c_1_3 : intchips_1_3,	# intchips <- 0
+	mcf3c_1_3 : comp_failed,  			# comp_failed++
+	mcf3c_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : mcf3d_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : mcf3d_1_3 : intchips_1_3,	# intchips <- 0
+	mcf3d_1_3 : comp_failed,  			# comp_failed++
+	mcf3d_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : mcf4_1_3 : memchips_1_3, 	# memchips <- 0
+	intchips_1_3 : mcf4_1_3 : intchips_1_3,		# intchips <- 0
+	mcf4_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+	mcf4_1_3 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_1_3 : icf1a_1_3 : memchips_1_3,   	# memchips <- 0
+	intchips_1_3 : icf1a_1_3 : intchips_1_3,   	# intchips <- 0
+	icf1a_1_3 : mem_failed_1,		 	# mem_failed++
+	icf1a_1_3 : comp_failed,    			# comp_failed++
+
+	memchips_1_3 : icf1b_1_3 : memchips_1_3,   	# memchips <- 0
+	intchips_1_3 : icf1b_1_3 : intchips_1_3,   	# intchips <- 0
+	icf1b_1_3 : mem_failed_1,		 	# mem_failed++
+
+	memchips_1_3 : icf2a_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : icf2a_1_3 : intchips_1_3,	# intchips <- 0
+	icf2a_1_3 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_1_3 : mem_failed_1,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_1_3 : icf2b_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : icf2b_1_3 : intchips_1_3,	# intchips <- 0
+	icf2b_1_3 : comp_failed,		  	# comp_failed++
+	icf2b_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : icf2c_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : icf2c_1_3 : intchips_1_3,	# intchips <- 0
+	icf2c_1_3 : comp_failed,		  	# comp_failed++
+	icf2c_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : icf2d_1_3 : memchips_1_3,  	# memchips <- 0
+	intchips_1_3 : icf2d_1_3 : intchips_1_3,	# intchips <- 0
+	icf2d_1_3 : comp_failed,		  	# comp_failed++
+	icf2d_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+	memchips_1_3 : icf3_1_3 : memchips_1_3, 	# memchips <- 0
+	intchips_1_3 : icf3_1_3 : intchips_1_3,		# intchips <- 0
+	icf3_1_3 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_1_3 : mem_failed_1 : 2 - mem_failed_1,	# mem_failed <- 2
+
+  # CPU module, computer 1
+
+	cpus_1 : cm1_1 : 3,  		# if cpus == 3 then
+	cm1_1 : cpus_1 : 2,		# cpus--
+
+	cpus_1 : cm2_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : cm2_1 : ioports_1, 			# ioports <- 0
+	errorhandlers_1 : cm2_1 : errorhandlers_1,	# errorhandlers <- 0
+	cm2_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	cm2_1 : comp_failed,				# comp_failed++
+
+	cpus_1 : cm3_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : cm3_1 : ioports_1,  		# ioports <- 0
+	errorhandlers_1 : cm3_1 : errorhandlers_1,	# errorhandlers <- 0
+	cm3_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	cm3_1 : comp_failed : 2 - comp_failed,		# comp_failed <- N
+
+  # IOPorts module, computer 1
+
+	ioports_1 : io1_1 : 2,  io1_1 : ioports_1,	# if ioports == 2 then ioports--
+
+	cpus_1 : io2_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : io2_1 : ioports_1, 			# ioports <- 0
+	errorhandlers_1 : io2_1 : errorhandlers_1,	# errorhandlers <- 0
+	io2_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	io2_1 : comp_failed,				# comp_failed++
+
+	cpus_1 : io3_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : io3_1 : ioports_1,  		# ioports <- 0
+	errorhandlers_1 : io3_1 : errorhandlers_1,	# errorhandlers <- 0
+	io3_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	io3_1 : comp_failed : 2 - comp_failed,		# comp_failed <- N
+
+  # Errorhandler module, computer 1
+
+	cpus_1 : eh1_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : eh1_1 : ioports_1, 			# ioports <- 0
+	errorhandlers_1 : eh1_1 : errorhandlers_1,	# errorhandlers <- 0
+	eh1_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	eh1_1 : comp_failed,				# comp_failed++
+
+	cpus_1 : eh2_1 : cpus_1,  			# cpus <- 0
+	ioports_1 : eh2_1 : ioports_1,  		# ioports <- 0
+	errorhandlers_1 : eh2_1 : errorhandlers_1,	# errorhandlers <- 0
+	eh2_1 : mem_failed_1 : 2 - mem_failed_1, 	# mem_failed <- 2
+	eh2_1 : comp_failed : 2 - comp_failed,		# comp_failed <- N
+
+  # Memory failure, computer 2 mem module 1
+
+	memchips_2_1 : mcf1_2_1 : 2,  	# if memchips > 1 then ...
+	mcf1_2_1 : memchips_2_1 : 1,	# memchips--
+
+	memchips_2_1 : mcf2a_2_1 : memchips_2_1, 	# memchips <- 0
+	intchips_2_1 : mcf2a_2_1 : intchips_2_1,	# intchips <- 0
+	mcf2a_2_1 : comp_failed,			# comp_failed++
+	mcf2a_2_1 : mem_failed_2,			# mem_failed++
+
+	memchips_2_1 : mcf2b_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : mcf2b_2_1 : intchips_2_1,	# intchips <- 0
+	mcf2b_2_1 : mem_failed_2,			# mem_failed++
+
+	memchips_2_1 : mcf3a_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : mcf3a_2_1 : intchips_2_1,	# intchips <- 0
+	mcf3a_2_1 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_2_1 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_1 : mcf3b_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : mcf3b_2_1 : intchips_2_1,	# intchips <- 0
+	mcf3b_2_1 : comp_failed,  			# comp_failed++
+	mcf3b_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : mcf3c_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : mcf3c_2_1 : intchips_2_1,	# intchips <- 0
+	mcf3c_2_1 : comp_failed,  			# comp_failed++
+	mcf3c_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : mcf3d_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : mcf3d_2_1 : intchips_2_1,	# intchips <- 0
+	mcf3d_2_1 : comp_failed,  			# comp_failed++
+	mcf3d_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : mcf4_2_1 : memchips_2_1, 	# memchips <- 0
+	intchips_2_1 : mcf4_2_1 : intchips_2_1,		# intchips <- 0
+	mcf4_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+	mcf4_2_1 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_2_1 : icf1a_2_1 : memchips_2_1,   	# memchips <- 0
+	intchips_2_1 : icf1a_2_1 : intchips_2_1,   	# intchips <- 0
+	icf1a_2_1 : mem_failed_2,		 	# mem_failed++
+	icf1a_2_1 : comp_failed,    			# comp_failed++
+
+	memchips_2_1 : icf1b_2_1 : memchips_2_1,   	# memchips <- 0
+	intchips_2_1 : icf1b_2_1 : intchips_2_1,   	# intchips <- 0
+	icf1b_2_1 : mem_failed_2,		 	# mem_failed++
+
+	memchips_2_1 : icf2a_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : icf2a_2_1 : intchips_2_1,	# intchips <- 0
+	icf2a_2_1 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_2_1 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_1 : icf2b_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : icf2b_2_1 : intchips_2_1,	# intchips <- 0
+	icf2b_2_1 : comp_failed,		  	# comp_failed++
+	icf2b_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : icf2c_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : icf2c_2_1 : intchips_2_1,	# intchips <- 0
+	icf2c_2_1 : comp_failed,		  	# comp_failed++
+	icf2c_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : icf2d_2_1 : memchips_2_1,  	# memchips <- 0
+	intchips_2_1 : icf2d_2_1 : intchips_2_1,	# intchips <- 0
+	icf2d_2_1 : comp_failed,		  	# comp_failed++
+	icf2d_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_1 : icf3_2_1 : memchips_2_1, 	# memchips <- 0
+	intchips_2_1 : icf3_2_1 : intchips_2_1,		# intchips <- 0
+	icf3_2_1 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_2_1 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+  # Memory failure, computer 2 mem module 2
+
+	memchips_2_2 : mcf1_2_2 : 2,  	# if memchips > 1 then ...
+	mcf1_2_2 : memchips_2_2 : 1,	# memchips--
+
+	memchips_2_2 : mcf2a_2_2 : memchips_2_2, 	# memchips <- 0
+	intchips_2_2 : mcf2a_2_2 : intchips_2_2,	# intchips <- 0
+	mcf2a_2_2 : comp_failed,			# comp_failed++
+	mcf2a_2_2 : mem_failed_2,			# mem_failed++
+
+	memchips_2_2 : mcf2b_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : mcf2b_2_2 : intchips_2_2,	# intchips <- 0
+	mcf2b_2_2 : mem_failed_2,			# mem_failed++
+
+	memchips_2_2 : mcf3a_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : mcf3a_2_2 : intchips_2_2,	# intchips <- 0
+	mcf3a_2_2 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_2_2 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_2 : mcf3b_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : mcf3b_2_2 : intchips_2_2,	# intchips <- 0
+	mcf3b_2_2 : comp_failed,  			# comp_failed++
+	mcf3b_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : mcf3c_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : mcf3c_2_2 : intchips_2_2,	# intchips <- 0
+	mcf3c_2_2 : comp_failed,  			# comp_failed++
+	mcf3c_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : mcf3d_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : mcf3d_2_2 : intchips_2_2,	# intchips <- 0
+	mcf3d_2_2 : comp_failed,  			# comp_failed++
+	mcf3d_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : mcf4_2_2 : memchips_2_2, 	# memchips <- 0
+	intchips_2_2 : mcf4_2_2 : intchips_2_2,		# intchips <- 0
+	mcf4_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+	mcf4_2_2 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_2_2 : icf1a_2_2 : memchips_2_2,   	# memchips <- 0
+	intchips_2_2 : icf1a_2_2 : intchips_2_2,   	# intchips <- 0
+	icf1a_2_2 : mem_failed_2,		 	# mem_failed++
+	icf1a_2_2 : comp_failed,    			# comp_failed++
+
+	memchips_2_2 : icf1b_2_2 : memchips_2_2,   	# memchips <- 0
+	intchips_2_2 : icf1b_2_2 : intchips_2_2,   	# intchips <- 0
+	icf1b_2_2 : mem_failed_2,		 	# mem_failed++
+
+	memchips_2_2 : icf2a_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : icf2a_2_2 : intchips_2_2,	# intchips <- 0
+	icf2a_2_2 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_2_2 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_2 : icf2b_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : icf2b_2_2 : intchips_2_2,	# intchips <- 0
+	icf2b_2_2 : comp_failed,		  	# comp_failed++
+	icf2b_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : icf2c_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : icf2c_2_2 : intchips_2_2,	# intchips <- 0
+	icf2c_2_2 : comp_failed,		  	# comp_failed++
+	icf2c_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : icf2d_2_2 : memchips_2_2,  	# memchips <- 0
+	intchips_2_2 : icf2d_2_2 : intchips_2_2,	# intchips <- 0
+	icf2d_2_2 : comp_failed,		  	# comp_failed++
+	icf2d_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_2 : icf3_2_2 : memchips_2_2, 	# memchips <- 0
+	intchips_2_2 : icf3_2_2 : intchips_2_2,		# intchips <- 0
+	icf3_2_2 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_2_2 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+  # Memory failure, computer 2 mem module 3
+
+	memchips_2_3 : mcf1_2_3 : 2,  	# if memchips > 1 then ...
+	mcf1_2_3 : memchips_2_3 : 1,	# memchips--
+
+	memchips_2_3 : mcf2a_2_3 : memchips_2_3, 	# memchips <- 0
+	intchips_2_3 : mcf2a_2_3 : intchips_2_3,	# intchips <- 0
+	mcf2a_2_3 : comp_failed,			# comp_failed++
+	mcf2a_2_3 : mem_failed_2,			# mem_failed++
+
+	memchips_2_3 : mcf2b_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : mcf2b_2_3 : intchips_2_3,	# intchips <- 0
+	mcf2b_2_3 : mem_failed_2,			# mem_failed++
+
+	memchips_2_3 : mcf3a_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : mcf3a_2_3 : intchips_2_3,	# intchips <- 0
+	mcf3a_2_3 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	mcf3a_2_3 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_3 : mcf3b_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : mcf3b_2_3 : intchips_2_3,	# intchips <- 0
+	mcf3b_2_3 : comp_failed,  			# comp_failed++
+	mcf3b_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : mcf3c_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : mcf3c_2_3 : intchips_2_3,	# intchips <- 0
+	mcf3c_2_3 : comp_failed,  			# comp_failed++
+	mcf3c_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : mcf3d_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : mcf3d_2_3 : intchips_2_3,	# intchips <- 0
+	mcf3d_2_3 : comp_failed,  			# comp_failed++
+	mcf3d_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : mcf4_2_3 : memchips_2_3, 	# memchips <- 0
+	intchips_2_3 : mcf4_2_3 : intchips_2_3,		# intchips <- 0
+	mcf4_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+	mcf4_2_3 : comp_failed : 2 - comp_failed,	# comp_failed <- N
+
+	memchips_2_3 : icf1a_2_3 : memchips_2_3,   	# memchips <- 0
+	intchips_2_3 : icf1a_2_3 : intchips_2_3,   	# intchips <- 0
+	icf1a_2_3 : mem_failed_2,		 	# mem_failed++
+	icf1a_2_3 : comp_failed,    			# comp_failed++
+
+	memchips_2_3 : icf1b_2_3 : memchips_2_3,   	# memchips <- 0
+	intchips_2_3 : icf1b_2_3 : intchips_2_3,   	# intchips <- 0
+	icf1b_2_3 : mem_failed_2,		 	# mem_failed++
+
+	memchips_2_3 : icf2a_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : icf2a_2_3 : intchips_2_3,	# intchips <- 0
+	icf2a_2_3 : comp_failed : 2 - comp_failed, 	# comp_failed <- N
+	icf2a_2_3 : mem_failed_2,			# mem_failed <- 2  (since it was 1 before)
+
+	memchips_2_3 : icf2b_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : icf2b_2_3 : intchips_2_3,	# intchips <- 0
+	icf2b_2_3 : comp_failed,		  	# comp_failed++
+	icf2b_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : icf2c_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : icf2c_2_3 : intchips_2_3,	# intchips <- 0
+	icf2c_2_3 : comp_failed,		  	# comp_failed++
+	icf2c_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : icf2d_2_3 : memchips_2_3,  	# memchips <- 0
+	intchips_2_3 : icf2d_2_3 : intchips_2_3,	# intchips <- 0
+	icf2d_2_3 : comp_failed,		  	# comp_failed++
+	icf2d_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+	memchips_2_3 : icf3_2_3 : memchips_2_3, 	# memchips <- 0
+	intchips_2_3 : icf3_2_3 : intchips_2_3,		# intchips <- 0
+	icf3_2_3 : comp_failed : 2 - comp_failed,  	# comp_failed <- N
+	icf3_2_3 : mem_failed_2 : 2 - mem_failed_2,	# mem_failed <- 2
+
+  # CPU module, computer 2
+
+	cpus_2 : cm1_2 : 3,  		# if cpus == 3 then
+	cm1_2 : cpus_2 : 2,		# cpus--
+
+	cpus_2 : cm2_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : cm2_2 : ioports_2, 			# ioports <- 0
+	errorhandlers_2 : cm2_2 : errorhandlers_2,	# errorhandlers <- 0
+	cm2_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	cm2_2 : comp_failed,				# comp_failed++
+
+	cpus_2 : cm3_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : cm3_2 : ioports_2,  		# ioports <- 0
+	errorhandlers_2 : cm3_2 : errorhandlers_2,	# errorhandlers <- 0
+	cm3_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	cm3_2 : comp_failed : 2 - comp_failed,		# comp_failed <- N
+
+  # IOPorts module, computer 2
+
+	ioports_2 : io1_2 : 2,  io1_2 : ioports_2,	# if ioports == 2 then ioports--
+
+	cpus_2 : io2_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : io2_2 : ioports_2, 			# ioports <- 0
+	errorhandlers_2 : io2_2 : errorhandlers_2,	# errorhandlers <- 0
+	io2_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	io2_2 : comp_failed,				# comp_failed++
+
+	cpus_2 : io3_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : io3_2 : ioports_2,  		# ioports <- 0
+	errorhandlers_2 : io3_2 : errorhandlers_2,	# errorhandlers <- 0
+	io3_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	io3_2 : comp_failed : 2 - comp_failed,		# comp_failed <- N
+
+  # Errorhandler module, computer 2
+
+	cpus_2 : eh1_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : eh1_2 : ioports_2, 			# ioports <- 0
+	errorhandlers_2 : eh1_2 : errorhandlers_2,	# errorhandlers <- 0
+	eh1_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	eh1_2 : comp_failed,				# comp_failed++
+
+	cpus_2 : eh2_2 : cpus_2,  			# cpus <- 0
+	ioports_2 : eh2_2 : ioports_2,  		# ioports <- 0
+	errorhandlers_2 : eh2_2 : errorhandlers_2,	# errorhandlers <- 0
+	eh2_2 : mem_failed_2 : 2 - mem_failed_2, 	# mem_failed <- 2
+	eh2_2 : comp_failed : 2 - comp_failed;		# comp_failed <- N
+
+GUARDS
+  # Memory failure, computer 1 mem module 1
+
+	mcf1_1_1 :  memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+    	mcf2a_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	mcf2b_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1 == 0,
+    	mcf3a_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+    	mcf3b_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	mcf3c_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	mcf3d_1_1 : memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	mcf4_1_1 :  memchips_1_1 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+
+	icf1a_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	icf1b_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1 == 0,
+    	icf2a_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+	icf2b_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	icf2c_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	icf2d_1_1 : intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	icf3_1_1 :  intchips_1_1 > 1   &  comp_failed < 2  &  mem_failed_1 < 2,
+
+  # Memory failure, computer 1 mem module 2
+
+	mcf1_1_2 :  memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+    	mcf2a_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	mcf2b_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1 == 0,
+    	mcf3a_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+    	mcf3b_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	mcf3c_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	mcf3d_1_2 : memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	mcf4_1_2 :  memchips_1_2 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+
+	icf1a_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	icf1b_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1 == 0,
+    	icf2a_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+	icf2b_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	icf2c_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	icf2d_1_2 : intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	icf3_1_2 :  intchips_1_2 > 1   &  comp_failed < 2  &  mem_failed_1 < 2,
+
+  # Memory failure, computer 1 mem module 3
+
+	mcf1_1_3 :  memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+    	mcf2a_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	mcf2b_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1 == 0,
+    	mcf3a_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+    	mcf3b_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	mcf3c_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	mcf3d_1_3 : memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	mcf4_1_3 :  memchips_1_3 > 0  &  comp_failed < 2  &  mem_failed_1 < 2,
+
+	icf1a_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1 < 2  &  mem_failed_1 > 0,
+    	icf1b_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1 == 0,
+    	icf2a_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed<=2-2,
+	icf2b_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1==1 & comp_failed>2-2,
+    	icf2c_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed<=2-2,
+    	icf2d_1_3 : intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1==0 & comp_failed>2-2,
+    	icf3_1_3 :  intchips_1_3 > 1   &  comp_failed < 2  &  mem_failed_1 < 2,
+
+  # CPU module, computer 1
+	cm1_1 : cpus_1 > 1  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+	cm2_1 : cpus_1 > 1  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+	cm3_1 : cpus_1 > 1  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+
+  # IOPorts module, computer 1
+	io1_1 : ioports_1 > 0  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+	io2_1 : ioports_1 > 0  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+	io3_1 : ioports_1 > 0  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+
+  # Errorhandler module, computer 1
+	eh1_1 : errorhandlers_1 == 2  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+	eh2_1 : errorhandlers_1 == 2  &  mem_failed_1 < 2  &  comp_failed < 2,	# comp_failed < N
+
+
+  # Memory failure, computer 2 mem module 1
+
+	mcf1_2_1 :  memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+    	mcf2a_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	mcf2b_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2 == 0,
+    	mcf3a_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+    	mcf3b_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	mcf3c_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	mcf3d_2_1 : memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	mcf4_2_1 :  memchips_2_1 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+
+	icf1a_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	icf1b_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2 == 0,
+    	icf2a_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+	icf2b_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	icf2c_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	icf2d_2_1 : intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	icf3_2_1 :  intchips_2_1 > 1   &  comp_failed < 2  &  mem_failed_2 < 2,
+
+  # Memory failure, computer 2 mem module 2
+
+	mcf1_2_2 :  memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+    	mcf2a_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	mcf2b_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2 == 0,
+    	mcf3a_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+    	mcf3b_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	mcf3c_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	mcf3d_2_2 : memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	mcf4_2_2 :  memchips_2_2 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+
+	icf1a_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	icf1b_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2 == 0,
+    	icf2a_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+	icf2b_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	icf2c_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	icf2d_2_2 : intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	icf3_2_2 :  intchips_2_2 > 1   &  comp_failed < 2  &  mem_failed_2 < 2,
+
+  # Memory failure, computer 2 mem module 3
+
+	mcf1_2_3 :  memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+    	mcf2a_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	mcf2b_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2 == 0,
+    	mcf3a_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+    	mcf3b_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	mcf3c_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	mcf3d_2_3 : memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	mcf4_2_3 :  memchips_2_3 > 0  &  comp_failed < 2  &  mem_failed_2 < 2,
+
+	icf1a_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2 < 2  &  mem_failed_2 > 0,
+    	icf1b_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2 == 0,
+    	icf2a_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed<=2-2,
+	icf2b_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2==1 & comp_failed>2-2,
+    	icf2c_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed<=2-2,
+    	icf2d_2_3 : intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2==0 & comp_failed>2-2,
+    	icf3_2_3 :  intchips_2_3 > 1   &  comp_failed < 2  &  mem_failed_2 < 2,
+
+  # CPU module, computer 2
+	cm1_2 : cpus_2 > 1  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+	cm2_2 : cpus_2 > 1  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+	cm3_2 : cpus_2 > 1  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+
+  # IOPorts module, computer 2
+	io1_2 : ioports_2 > 0  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+	io2_2 : ioports_2 > 0  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+	io3_2 : ioports_2 > 0  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+
+  # Errorhandler module, computer 2
+	eh1_2 : errorhandlers_2 == 2  &  mem_failed_2 < 2  &  comp_failed < 2,	# comp_failed < N
+	eh2_2 : errorhandlers_2 == 2  &  mem_failed_2 < 2  &  comp_failed < 2;	# comp_failed < N
+
+END
+

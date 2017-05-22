@@ -1,0 +1,8 @@
+
+* Red-black database:
+  
+  + Convert from Static to Dynamic
+
+
+* Implement hash database
+

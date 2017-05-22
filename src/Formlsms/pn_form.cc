@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include <limits.h>
 #include "pn_form.h"
 #include "../ExprLib/startup.h"

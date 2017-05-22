@@ -1,6 +1,4 @@
 
-// $Id$
-
 class exprman;
 
 /** Initialize fundamental types.

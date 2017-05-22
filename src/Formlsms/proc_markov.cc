@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "proc_markov.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
@@ -9,9 +7,9 @@
 #include "../ExprLib/exprman.h"
 
 // External libs
-#include "mclib.h"
-#include "lslib.h"
-#include "timerlib.h"
+#include "../_MCLib/mclib.h"
+#include "../_LSLib/lslib.h"
+#include "../_Timer/timerlib.h"
 
 // ******************************************************************
 // *                                                                *

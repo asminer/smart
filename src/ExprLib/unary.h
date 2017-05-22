@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef UNARY_H
 #define UNARY_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -10,7 +8,7 @@
 #include "biginttype.h"
 
 // external library
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 
 // ******************************************************************

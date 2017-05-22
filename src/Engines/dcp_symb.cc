@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "dcp_symb.h"
 
 #include "../Options/options.h"
@@ -20,7 +18,7 @@
 // Templates
 #include "../include/radixsort.h"
 
-#include "timerlib.h"
+#include "../_Timer/timerlib.h"
 
 // #define DEBUG_STUFF
 // #define DEBUG_OVERALL

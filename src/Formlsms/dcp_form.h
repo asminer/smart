@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef DCP_FORM_H
 #define DCP_FORM_H
 

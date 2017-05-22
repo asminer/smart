@@ -1,6 +1,4 @@
 
-// $Id:$ 
-
 //
 // "Pawn game" model: NxN chess board, pawns only in proper positions
 // and making proper moves / captures.  First player to promote a

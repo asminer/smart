@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RGR_ECTL_H
 #define RGR_ECTL_H
 

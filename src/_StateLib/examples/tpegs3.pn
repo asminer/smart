@@ -1,0 +1,91 @@
+# 6
+
+# $Id$
+#
+#  Triangular peg jumping game.
+#
+#  Note the model considers the triangle as a "right" one,
+#  with the shape:
+#
+#  row 1:	X
+#
+#  row 2:	X   X
+#
+#  row 3:	X   X   X
+#
+
+PN
+PLACES
+	p11,
+	p21, p22,
+	p31, p32, p33;
+
+INIT
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1;
+
+BOUNDS
+	p11 : 1,
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1;
+
+#
+# jumps to the north
+#
+  TRANS	
+	n11; 
+  ARCS
+	n11 : p11, p21 : n11, p31 : n11;
+  INHIBITORS
+	p11 : n11;
+
+#
+# jumps to the south
+#
+  TRANS	
+	s31;
+  ARCS
+	p11 : s31, p21 : s31, s31 : p31;
+  INHIBITORS
+	p31 : s31;
+
+#
+# jumps to the east
+#
+  TRANS
+	e33;
+  ARCS
+	p31 : e33, p32 : e33, e33 : p33;
+  INHIBITORS
+	p33 : e33;
+
+#
+# jumps to the west
+#
+  TRANS
+	w31;
+  ARCS
+	w31 : p31,  p32 : w31, p33 : w31;
+  INHIBITORS
+	p31 : w31;
+
+#
+# jumps to the north west
+#
+  TRANS
+	nw11;
+  ARCS
+	nw11 : p11, p22 : nw11, p33 : nw11;
+  INHIBITORS
+	p11 : nw11;
+
+#
+# jumps to the south east
+#
+  TRANS
+	se33;
+  ARCS
+	p11 : se33, p22 : se33, se33 : p33;
+  INHIBITORS
+	p33 : se33;
+END

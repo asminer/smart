@@ -1,28 +1,20 @@
-## $Id$
 
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
+## List any subdirectories where we might want/need to run make
+SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib
 
+
+## List executables that we build
 bin_PROGRAMS = smart icp teststrms testsplay testinit
 
-## automatic revision numbering
-
-_revision:
-	$(srcdir)/include/BuildRevNo $(srcdir)/include
-
-include/revision.h:
-	$(srcdir)/include/BuildRevNo $(srcdir)/include
 
 BUILT_SOURCES = \
-  _revision include/revision.h \
   ParseSM/smartyacc.h ParseICP/icpyacc.h
 
 CLEANFILES = \
-  include/revision.h \
   ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
   ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
-
-EXTRA_DIST = include/BuildRevNo include/revision.h
 
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
@@ -34,7 +26,23 @@ AM_CXXFLAGS = -Wall
 ## ============================================================
 
 smart_SOURCES = \
-  include/revision.h \
+  _Timer/timerlib.cc \
+  \
+  _LSLib/lslib.cc \
+  \
+  _RngLib/rng.cc \
+  \
+  _SimLib/sim.cc _SimLib/normal.cc _SimLib/autocorrelation.cc \
+  \
+  _IntSets/intset.cc \
+  \
+  _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
+  _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
+  \
+  _GraphLib/graphlib.cc _GraphLib/sccs.cc \
+  \
+  _MCLib/mclib.cc _MCLib/mcbase.cc _MCLib/mc_irred.cc _MCLib/mc_absorb.cc \
+  _MCLib/mc_general.cc _MCLib/vanish.cc _MCLib/hyper.cc _MCLib/poiss.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -144,14 +152,6 @@ smart_SOURCES = \
 
 
 smart_LDADD = \
-  $(TIMER_LIBRARY)/lib/libtimer.a \
-  $(LS_LIBRARY)/lib/libls.a \
-  $(MC_LIBRARY)/lib/libmc.a \
-  $(GRAPH_LIBRARY)/lib/libgraph.a \
-  $(STATE_LIBRARY)/lib/libstate.a \
-  $(IS_LIBRARY)/lib/libintset.a \
-  $(SIM_LIBRARY)/lib/libsim.a \
-  $(RNG_LIBRARY)/lib/librng.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 
@@ -162,7 +162,10 @@ smart_LDADD = \
 ## ============================================================
 
 icp_SOURCES = \
-  include/revision.h \
+  _Timer/timerlib.cc \
+  \
+  _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
+  _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -226,8 +229,6 @@ icp_SOURCES = \
   Apps/icp.cc
 
 icp_LDADD = \
-  $(TIMER_LIBRARY)/lib/libtimer.a \
-  $(STATE_LIBRARY)/lib/libstate.a \
   $(MDD_LIBRARY)/lib/libmeddly.a
 
 ## ============================================================

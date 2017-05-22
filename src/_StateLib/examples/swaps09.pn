@@ -1,0 +1,47 @@
+# 362880
+
+# $Id$
+
+# Swaps model, as discussed in
+#	"Saturation for a general class of models"
+#	by A. Miner, IEEE TSE, 32(8):559-570, 2006
+#
+
+PN
+PLACES
+	p0, p1, p2, p3, p4, p5, p6, p7, p8;
+INIT
+	p0 : 1,
+	p1 : 2,
+	p2 : 3,
+	p3 : 4,
+	p4 : 5,
+	p5 : 6,
+	p6 : 7,
+	p7 : 8,
+	p8 : 9;
+
+BOUNDS
+	p0 : 9,
+	p1 : 9,
+	p2 : 9,
+	p3 : 9,
+	p4 : 9,
+	p5 : 9,
+	p6 : 9,
+	p7 : 9,
+	p8 : 9;
+
+TRANS
+	t1, t2, t3, t4, t5, t6, t7, t8;
+
+ARCS
+	p0 : t1 : p0,	p1 : t1 : p1,	t1 : p1 : p0,	t1 : p0 : p1,
+	p1 : t2 : p1,	p2 : t2 : p2,	t2 : p2 : p1,	t2 : p1 : p2,
+	p2 : t3 : p2,	p3 : t3 : p3,	t3 : p3 : p2,	t3 : p2 : p3,
+	p3 : t4 : p3,	p4 : t4 : p4,	t4 : p4 : p3,	t4 : p3 : p4,
+	p4 : t5 : p4,	p5 : t5 : p5,	t5 : p5 : p4,	t5 : p4 : p5,
+	p5 : t6 : p5,	p6 : t6 : p6,	t6 : p6 : p5,	t6 : p5 : p6,
+	p6 : t7 : p6,	p7 : t7 : p7,	t7 : p7 : p6,	t7 : p6 : p7,
+	p7 : t8 : p7,	p8 : t8 : p8,	t8 : p8 : p7,	t8 : p7 : p8;
+END 

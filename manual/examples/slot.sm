@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn slot(int N) := {
   for (int i in {0..N-1}) {

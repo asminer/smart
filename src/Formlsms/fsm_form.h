@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef FSM_FORM_H
 #define FSM_FORM_H
 

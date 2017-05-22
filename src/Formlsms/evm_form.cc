@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "evm_form.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"

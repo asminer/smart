@@ -1,6 +1,4 @@
 #
-# $Id$
-#
 # Common shell functions for custom Config scripts
 #
 
@@ -54,180 +52,11 @@ try_mddlib() {
 }
 
 find_mddlib() {
-  try_mddlib $SMARTLIBS && return 0
   try_mddlib $MDD_LIBRARY && return 0
   try_mddlib $HOME/Meddly/trunk && return 0
   try_mddlib $HOME/Meddly && return 0
   printf "Cannot find MDD Library\n"
   printf "Set environment variable MDD_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_timerlib() {
-  if [ -f $1/include/timerlib.h ]; then
-    printf "TimerLib found at $1\n"
-    export TIMER_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_timerlib() {
-  try_timerlib $SMARTLIBS && return 0
-  try_timerlib $TIMER_LIBRARY && return 0
-  try_timerlib $HOME/SmartLibs/trunk && return 0
-  try_timerlib $HOME/SmartLibs && return 0
-  printf "Cannot find Timer Library\n"
-  printf "Set environment variable TIMER_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_simlib() {
-  if [ -f $1/include/sim.h ]; then
-    printf "SimLib found at $1\n"
-    export SIM_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_simlib() {
-  try_simlib $SMARTLIBS && return 0
-  try_simlib $SIM_LIBRARY && return 0
-  try_simlib $HOME/SmartLibs/trunk && return 0
-  try_simlib $HOME/SmartLibs && return 0
-  printf "Cannot find Simulation Library\n"
-  printf "Set environment variable SIM_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_rnglib() {
-  if [ -f $1/include/rng.h ]; then
-    printf "RngLib found at $1\n"
-    export RNG_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_rnglib() {
-  try_rnglib $SMARTLIBS && return 0
-  try_rnglib $RNG_LIBRARY && return 0
-  try_rnglib $HOME/SmartLibs/trunk && return 0
-  try_rnglib $HOME/SmartLibs && return 0
-  printf "Cannot find RNG Library\n"
-  printf "Set environment variable RNG_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_lslib() {
-  if [ -f $1/include/lslib.h ]; then
-    printf "LSLib found at $1\n"
-    export LS_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_lslib() {
-  try_lslib $SMARTLIBS && return 0
-  try_lslib $LS_LIBRARY && return 0
-  try_lslib $HOME/SmartLibs/trunk && return 0
-  try_lslib $HOME/SmartLibs && return 0
-  printf "Cannot find Linear Solver Library\n"
-  printf "Set environment variable LS_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_statelib() {
-  if [ -f $1/include/statelib.h ]; then
-    printf "StateLib found at $1\n"
-    export STATE_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_statelib() {
-  try_statelib $SMARTLIBS && return 0
-  try_statelib $STATE_LIBRARY && return 0
-  try_statelib $HOME/SmartLibs/trunk && return 0
-  try_statelib $HOME/SmartLibs && return 0
-  printf "Cannot find Explicit State Storage Library\n"
-  printf "Set environment variable STATE_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_graphlib() {
-  if [ -f $1/include/graphlib.h ]; then
-    printf "GraphLib found at $1\n"
-    export GRAPH_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_graphlib() {
-  try_graphlib $SMARTLIBS && return 0
-  try_graphlib $GRAPH_LIBRARY && return 0
-  try_graphlib $HOME/SmartLibs/trunk && return 0
-  try_graphlib $HOME/SmartLibs && return 0
-  printf "Cannot find Explicit Graph Library\n"
-  printf "Set environment variable GRAPH_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_mclib() {
-  if [ -f $1/include/mclib.h ]; then
-    printf "MCLib found at $1\n"
-    export MC_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_mclib() {
-  try_mclib $SMARTLIBS && return 0
-  try_mclib $MC_LIBRARY && return 0
-  try_mclib $HOME/SmartLibs/trunk && return 0
-  try_mclib $HOME/SmartLibs && return 0
-  printf "Cannot find Explicit Markov chain Library\n"
-  printf "Set environment variable MC_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
-try_islib() {
-  if [ -f $1/include/intset.h ]; then
-    printf "IntSets found at $1\n"
-    export IS_LIBRARY="$1"
-    return 0
-  fi
-  return 1
-}
-
-find_islib() {
-  try_islib $SMARTLIBS && return 0
-  try_islib $IS_LIBRARY && return 0
-  try_islib $HOME/SmartLibs/trunk && return 0
-  try_islib $HOME/SmartLibs && return 0
-  printf "Cannot find Explicit Integer Set Library\n"
-  printf "Set environment variable IS_LIBRARY\n"
   return 1
 }
 
@@ -245,26 +74,6 @@ findlibs() {
     find_gmp || return 1
   fi
   find_mddlib || return 1
-
-#
-# Look for Smart Libs
-#
-
-  find_timerlib || return 1
-  find_simlib || return 1
-  find_rnglib || return 1
-  find_lslib || return 1
-  find_statelib || return 1
-  find_graphlib || return 1
-  find_mclib || return 1
-  find_islib || return 1
-
-#
-# Build -I path list for Smart Libs, and exclude duplicates
-#
-  IncludePath=`echo "-I$TIMER_LIBRARY/include -I$SIM_LIBRARY/include -I$RNG_LIBRARY/include -I$LS_LIBRARY/include -I$STATE_LIBRARY/include -I$GRAPH_LIBRARY/include -I$MC_LIBRARY/include -I$IS_LIBRARY/include" | xargs -n 1 | sort -u | xargs`
-  
-  CPPFLAGS="$IncludePath $CPPFLAGS"
 
   return 0
 }

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file basefuncs.h
 
   Base functions.

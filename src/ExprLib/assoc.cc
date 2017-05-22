@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "assoc.h"
 #include "../Streams/streams.h"
 #include "result.h"

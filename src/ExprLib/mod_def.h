@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef MOD_DEF_H
 #define MOD_DEF_H
 

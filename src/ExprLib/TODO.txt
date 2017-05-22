@@ -1,6 +1,4 @@
 
-# $Id$
-
 To do for expression library:
 
 ** Re-write "dd_front" interface: no pointer creation every time

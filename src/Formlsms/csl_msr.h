@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef CSL_MSR_H
 #define CSL_MSR_H
 

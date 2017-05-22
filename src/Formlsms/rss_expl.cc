@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include <cstdio>
 #include "rss_expl.h"
 #include "../ExprLib/exprman.h"

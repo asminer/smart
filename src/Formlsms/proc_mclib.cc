@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "proc_mclib.h"
 
 #include "../Streams/streams.h"
@@ -9,7 +7,7 @@
 #include "../Modules/statevects.h"
 
 // external library
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 bool statusOK(exprman* em, const LS_Output &o, const char* who) 
 {

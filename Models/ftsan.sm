@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     A SAN model of a fault-tolerant multiprocessor system,
     converted to a Petri net.

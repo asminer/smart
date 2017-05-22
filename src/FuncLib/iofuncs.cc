@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "iofuncs.h"
 
 #include "../ExprLib/startup.h"

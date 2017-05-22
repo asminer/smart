@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file options.h
 
     New option interface.

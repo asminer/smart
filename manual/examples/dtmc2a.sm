@@ -1,4 +1,4 @@
-// $Id$
+
 
 dtmc d2(int n) := {
   for (int i in {0..n-1}) {

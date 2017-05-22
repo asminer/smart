@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Formlsms/graph_llm.h"

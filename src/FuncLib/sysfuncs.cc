@@ -1,11 +1,9 @@
 
-// $Id$
-
 #include "sysfuncs.h"
 
 #include <string.h>
 #include <stdlib.h>
-#include "timerlib.h"
+#include "../_Timer/timerlib.h"
 
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"

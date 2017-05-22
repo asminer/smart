@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_exp_ph.h"
 #include "gen_rg_base.h"
 #include "../ExprLib/startup.h"
@@ -15,10 +13,10 @@
 #include "../Modules/expl_states.h"
 
 // External libs
-#include "statelib.h"
-#include "mclib.h"
-#include "lslib.h"
-#include "timerlib.h"
+#include "../_StateLib/statelib.h"
+#include "../_MCLib/mclib.h"
+#include "../_LSLib/lslib.h"
+#include "../_Timer/timerlib.h"
 
 // **************************************************************************
 // *                                                                        *

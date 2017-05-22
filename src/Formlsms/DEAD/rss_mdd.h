@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef RSS_MDD_H
 #define RSS_MDD_H
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Neat trick: both minimalist, and detailed, header information here.
 
 #ifndef GEN_MEDDLY_H

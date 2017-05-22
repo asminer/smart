@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "gen_rg_base.h"
 
 #include "../ExprLib/startup.h"
@@ -10,7 +8,7 @@
 
 #include "../Options/options.h"
 
-#include "timerlib.h"
+#include "../_Timer/timerlib.h"
 
 // **************************************************************************
 // *                                                                        *

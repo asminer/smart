@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "textfmt.h"
 #include "streams.h"
 

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "csl_exp.h"
 
 #include "../ExprLib/startup.h"
@@ -14,7 +12,7 @@
 #include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
 
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 
 // **************************************************************************

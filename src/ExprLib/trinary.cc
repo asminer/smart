@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "trinary.h"
 #include "exprman.h"
 

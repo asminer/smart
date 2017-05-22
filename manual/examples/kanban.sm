@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn kanban(int N) := {
   place  Pm1, Pb1, Pkan1, Pout1, Pm2, Pb2, Pkan2, Pout2,

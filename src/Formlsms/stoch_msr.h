@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef STOCH_MSR_H
 #define STOCH_MSR_H
 

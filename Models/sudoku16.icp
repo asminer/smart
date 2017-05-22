@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     For speed, put the known squares at the top, and unknown below that.
 */

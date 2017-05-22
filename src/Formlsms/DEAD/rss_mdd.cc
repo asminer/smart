@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "rss_mdd.h"
 
 #include "dsde_hlm.h"

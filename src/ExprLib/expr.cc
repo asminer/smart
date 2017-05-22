@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
   Implementation of the base classes defined in exprlib.h
 */

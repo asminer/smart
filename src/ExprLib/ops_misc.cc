@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "ops_misc.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"

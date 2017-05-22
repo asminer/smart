@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef BASIC_MSR_H
 #define BASIC_MSR_H
 

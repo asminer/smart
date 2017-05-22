@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-# $Id$
 #
 # Generate an instance of maximal N-knights in ICP format
 #
@@ -39,7 +38,7 @@ if [ $# -lt 1 ]; then
   printf "Usage: %s N\n" $0
   exit 1
 fi
-printf "\n// \$Id$ \n\n/*\n    %d Knights (maximize) problem.\n\n" $1
+printf "\n/*\n    %d Knights (maximize) problem.\n\n" $1
 printf "    Try to put as many knights onto a chessboard with none attacking\n"
 printf "    Encoding: for each square, count the number of knights\n*/\n\n"
 n="1"

@@ -1,6 +1,4 @@
 
-// $Id$
-
 #include "mod_def.h"
 #include "mod_inst.h"
 #include "mod_vars.h"

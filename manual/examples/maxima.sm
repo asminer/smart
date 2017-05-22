@@ -1,4 +1,4 @@
-// $Id$
+
 
 real f(real x) := x - x*x;
 # ConvergePrecision 0.00000001

@@ -1,6 +1,4 @@
 
-// $Id$
-
 /** \file compile.h
   
     Functions for use by "compiler" (i.e., parser) are here.

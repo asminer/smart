@@ -1,4 +1,4 @@
-// $Id$
+
 
 pn phils(int N) := {
   for (int i in {1..N}) {

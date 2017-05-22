@@ -1,6 +1,4 @@
 
-// $Id$
-
 #ifndef ASSOC_H
 #define ASSOC_H
 

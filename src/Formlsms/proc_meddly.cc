@@ -1,6 +1,4 @@
 
-// $Id$ 
-
 #include "proc_meddly.h"
 #include "rss_meddly.h"
 

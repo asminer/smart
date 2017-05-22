@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
   Test the clever initializer class :^)
 */

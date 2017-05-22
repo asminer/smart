@@ -1,6 +1,4 @@
 
-// $Id$
-
 // Explicit generators (reachset, Markov chain) 
 // for Phase-type models
 
