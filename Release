@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+if [ $# -ne 1 ]; then
+  printf "\nUsage: $0 revision-name\n\nCreates a release with the given name.\n"
+  printf "Automatically updates the revision-name in the source, and creates\n"
+  printf "an annotated tag of the form v[version].[revision-name].\n\n"
+  exit 0
+fi
+
+version=`awk '/AC_INIT/{print $2}' configure.ac | tr -d '[],'`
+
+printf "Setting revision to $1\n"
+
+echo "const char* REVISION = \"$1\";" > src/include/revision.h
+
+tag="v$version.$1"
+
+printf "Creating tag $tag\n"
+
+git tag -a $tag -m "Script $0 tagging release $tag"
+
+printf "\nDone, you may now want to run \'git push origin $tag\'\n\n"
