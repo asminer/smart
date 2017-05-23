@@ -152,8 +152,10 @@ smart_SOURCES = \
   Apps/smart.cc
 
 
+if LINK_MEDDLY
 smart_LDADD = \
   $(MDD_LIBRARY)/lib/libmeddly.a
+endif
 
 
 ## ============================================================
@@ -229,8 +231,10 @@ icp_SOURCES = \
   \
   Apps/icp.cc
 
+if LINK_MEDDLY
 icp_LDADD = \
   $(MDD_LIBRARY)/lib/libmeddly.a
+endif
 
 ## ============================================================
 ##

@@ -6,6 +6,8 @@
 #include "../ExprLib/engine.h"
 #include "../Modules/glue_meddly.h"
 
+#ifdef HAVE_MEDDLY_H
+
 class meddly_reachset;
 
 // ******************************************************************
@@ -137,5 +139,6 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     meddly_reachset* mrss;
 };
 
+#endif
 #endif
 

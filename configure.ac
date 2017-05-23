@@ -42,7 +42,7 @@ AS_IF([test "x$with_meddly" != xno],
   [AC_CHECK_HEADERS([meddly.h], [],
     [AC_MSG_FAILURE(["Couldn't find MDD Library header (--without-meddly to disable)"])], [])],
   [])
-
+AM_CONDITIONAL([LINK_MEDDLY], [test "x$with_meddly" != xno])
 
 # Check for header files.
 AC_HEADER_SYS_WAIT
