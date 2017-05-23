@@ -1,9 +1,7 @@
 
 #include <string.h>
 
-// Modules
-#include "../Modules/glue_meddly.h"
-
+#include "config.h"
 #ifdef HAVE_MEDDLY_H
 
 #include "meddly.h"
@@ -16,6 +14,9 @@
 
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
+
+// Modules
+#include "../Modules/glue_meddly.h"
 
 // Formalisms
 #include "../Formlsms/dsde_hlm.h"
