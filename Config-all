@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+# New and hopefully very much easier configuration script
+#
+
+# ============================================================
+
+AddAM() {
+  while read path; do
+    if [ "$path" ]; then
+      echo "configure: $path.am"
+    fi
+  done
+}
+
+# ============================================================
+
+contains()
+{
+  key=$1
+  shift
+  for a; do
+    if [ $a == $key ]; then return 0;
+    fi
+  done
+  return 1
+}
+
+# ============================================================
+
+try_gmp() {
+  if [ -f $1/include/gmp.h ]; then
+    printf "gmp found at $1\n"
+    CPPFLAGS="-I$1/include $CPPFLAGS"
+    LDFLAGS="-L$1/lib $LDFLAGS"
+    return 0
+  fi
+  return 1
+}
+
+find_gmp() {
+  try_gmp $GMP_LIBRARY && return 0
+  try_gmp /opt/local && return 0
+  try_gmp /usr/local && return 0
+  try_gmp /usr && return 0
+  try_gmp /mingw && return 0
+  printf "Could not find gmp Library, switching to --without-gmp\n"
+  printf "(Or use environment variable GMP_LIBRARY to specify its path)\n"
+  return 1
+}
+
+# ============================================================
+
+try_mddlib() {
+  if [ -f $1/include/meddly.h ]; then
+    printf "MDD Library found at $1\n"
+    CPPFLAGS="-I$1/include $CPPFLAGS"
+    export MDD_LIBRARY="$1"
+    return 0
+  fi
+  return 1
+}
+
+find_mddlib() {
+  try_mddlib $MDD_LIBRARY && return 0
+  try_mddlib $HOME/Meddly/trunk && return 0
+  try_mddlib $HOME/Meddly && return 0
+  printf "Cannot find MDD Library, switching to --without-meddly\n"
+  printf "(Or use environment variable MDD_LIBRARY to specify its path)\n"
+  return 1
+}
+
+# ============================================================
+
+
+printf "\n------------------------------------------------------------\n"
+printf "Building configure script"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+tmpmf=`mktemp`
+printf "configure: configure.ac\n\tautoreconf --force --install\n\n" > $tmpmf
+
+awk '/AC_CONFIG_FILES/{p=1} {if (p) print} /\]\)/{p=0}' configure.ac | sed 's/AC_CONFIG_FILES(\[//' | tr -d ')]' | AddAM >> $tmpmf
+
+make -f $tmpmf
+if [ "$?" -ne "0" ]; then 
+  printf "\nCouldn't build configure script, bailing out.\n\n"
+  rm $tmpmf
+  exit 1
+fi
+rm $tmpmf
+
+
+printf "\n------------------------------------------------------------\n"
+printf "Checking for libraries"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+export CC=g++
+export CXX=g++
+export CXXFLAGS="$CXXFLAGS -Wall"
+export LDFLAGS="" 
+export CPPFLAGS="-std=gnu++11"
+
+
+GMP_STATUS=""
+MEDDLY_STATUS=""
+
+if contains "--without-gmp" $@; then
+  echo "Building without GMP library"
+  GMP_STATUS="--without-gmp"
+else
+  find_gmp || GMP_STATUS="without"
+fi
+
+if contains "--without-meddly" $@; then
+  echo "Building without MEDDLY"
+  MEDDLY_STATUS="--without-meddly"
+else
+  find_mddlib || MEDDLY_STATUS="--without-meddly"
+fi
+
+printf "\n"
+printf "\n------------------------------------------------------------\n"
+printf "Configuring development version"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+if [ ! -d bin-devel ]; then
+  mkdir bin-devel
+fi
+cd bin-devel
+
+COMMON_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="-ggdb -DDEVELOPMENT_CODE $COMMON_CXXFLAGS"
+../configure --prefix=$PWD $@ $GMP_STATUS $MEDDLY_STATUS
+ok="$?"
+cd ..
+
+if [ "$ok" != "0" ]; then
+  exit 1
+fi
+
+printf "\n"
+printf "\n------------------------------------------------------------\n"
+printf "Configuring release version"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+if [ ! -d bin-release ]; then
+  mkdir bin-release
+fi
+cd bin-release
+CXXFLAGS="-O3 $COMMON_CXXFLAGS"
+../configure --prefix=$PWD $@ $GMP_STATUS $MEDDLY_STATUS
+ok="$?"
+cd ..
+
+if [ "$ok" != "0" ]; then
+  exit 1
+fi
+
+printf "\n"
+printf "\n------------------------------------------------------------\n"
+printf "Summary"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+if [ "$GMP_STATUS" ]; then
+  echo "GMP library: NOT FOUND.  Some features will be missing!"
+else
+  echo "GMP library: found"
+fi
+
+if [ "$MEDDLY_STATUS" ]; then
+  echo "MEDDLY: NOT FOUND.  Some features will be missing!"
+else
+  echo "MEDDLY: found"
+fi
+
+printf "\n"
