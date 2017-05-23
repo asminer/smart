@@ -63,7 +63,7 @@ smart_SOURCES = \
   ExprLib/symbols.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
-	ExprLib/stmts.cc \
+  ExprLib/stmts.cc \
   ExprLib/forloops.cc \
   ExprLib/functions.cc \
   ExprLib/converge.cc \
@@ -153,8 +153,7 @@ smart_SOURCES = \
 
 
 if LINK_MEDDLY
-smart_LDADD = \
-  $(MDD_LIBRARY)/lib/libmeddly.a
+smart_LDADD = $(MDD_LIBRARY)/libmeddly.a
 endif
 
 
@@ -188,7 +187,7 @@ icp_SOURCES = \
   ExprLib/symbols.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
-	ExprLib/stmts.cc \
+  ExprLib/stmts.cc \
   ExprLib/forloops.cc \
   ExprLib/functions.cc \
   ExprLib/converge.cc \
@@ -232,8 +231,7 @@ icp_SOURCES = \
   Apps/icp.cc
 
 if LINK_MEDDLY
-icp_LDADD = \
-  $(MDD_LIBRARY)/lib/libmeddly.a
+icp_LDADD = $(MDD_LIBRARY)/libmeddly.a
 endif
 
 ## ============================================================

@@ -29,44 +29,57 @@ contains()
 # ============================================================
 
 try_gmp() {
-  if [ -f $1/include/gmp.h ]; then
-    printf "gmp found at $1\n"
-    CPPFLAGS="-I$1/include $CPPFLAGS"
-    LDFLAGS="-L$1/lib $LDFLAGS"
-    return 0
+  if [ -f $1/gmp.h ]; then
+    if [ -f $2/libgmp.a ]; then
+      printf "GMP Library found\n"
+      printf "    gmp.h found at $1\n"
+      printf "    libgmp.a found at $2\n"
+
+      CPPFLAGS="-I$1 $CPPFLAGS"
+      LDFLAGS="-L$2 $LDFLAGS"
+      return 0
+    fi
   fi
   return 1
 }
 
 find_gmp() {
-  try_gmp $GMP_LIBRARY && return 0
-  try_gmp /opt/local && return 0
-  try_gmp /usr/local && return 0
-  try_gmp /usr && return 0
-  try_gmp /mingw && return 0
-  printf "Could not find gmp Library, switching to --without-gmp\n"
-  printf "(Or use environment variable GMP_LIBRARY to specify its path)\n"
+  try_gmp $GMP_INCLUDE $GMP_LIBRARY && return 0
+  try_gmp /opt/local/include /opt/local/lib && return 0
+  try_gmp /usr/local/include /usr/local/lib && return 0
+  try_gmp /usr/include /usr/lib && return 0
+  try_gmp /usr/include/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu && return 0
+  try_gmp /mingw/include /mingw/lib && return 0
+  printf "Could not find gmp Library, switching to --without-gmp.\n"
+  printf "You can specify the location using environment variables\n"
+  printf "GMP_INCLUDE (the path to gmp.h) and GMP_LIBRARY.\n\n"
   return 1
 }
 
 # ============================================================
 
 try_mddlib() {
-  if [ -f $1/include/meddly.h ]; then
-    printf "MDD Library found at $1\n"
-    CPPFLAGS="-I$1/include $CPPFLAGS"
-    export MDD_LIBRARY="$1"
-    return 0
+  if [ -f $1/meddly.h ]; then
+     if [ -f $2/libmeddly.a ]; then
+        printf "MDD Library found\n"
+        printf "    meddly.h found at $1\n"
+        printf "    libmeddly.a found at $2\n"
+        CPPFLAGS="-I$1 $CPPFLAGS"
+        LDFLAGS="-L$2 $LDFLAGS"
+        export MDD_LIBRARY="$2"
+        return 0
+    fi
   fi
   return 1
 }
 
 find_mddlib() {
-  try_mddlib $MDD_LIBRARY && return 0
-  try_mddlib $HOME/Meddly/trunk && return 0
-  try_mddlib $HOME/Meddly && return 0
-  printf "Cannot find MDD Library, switching to --without-meddly\n"
-  printf "(Or use environment variable MDD_LIBRARY to specify its path)\n"
+  try_mddlib $MDD_INCLUDE $MDD_LIBRARY && return 0
+  try_mddlib $HOME/Meddly/trunk/include $HOME/Meddly/trunk/lib && return 0
+  try_mddlib $HOME/Meddly/include $HOME/Meddly/lib && return 0
+  printf "Cannot find MDD Library, switching to --without-meddly.\n"
+  printf "You can specify the location using environment variables\n"
+  printf "MDD_INCLUDE (the path to meddly.h) and MDD_LIBRARY\n"
   return 1
 }
 
