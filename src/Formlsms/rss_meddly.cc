@@ -1,5 +1,7 @@
 
 #include "rss_meddly.h"
+#ifdef HAVE_MEDDLY_H
+
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/meddly_ssets.h"
 
@@ -274,4 +276,6 @@ void meddly_reachset::lexical_iter::copyState(shared_state* st) const
   const int* minterm = iter->getAssignments();
   wrapper.minterm2state(minterm, st);
 }
+
+#endif
 
