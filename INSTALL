@@ -20,9 +20,9 @@ Packages required to build:
 Packages strongly recommended to build:
 ----------------------------------------------------------------------
 
-* GMP, for very large integer support
+* GMP, for very large integer support.  See https://gmplib.org
 
-* MEDDLY, for decision diagram support
+* MEDDLY, for decision diagram support.  See http://meddly.sourceforge.net
 
 
 ----------------------------------------------------------------------
