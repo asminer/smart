@@ -45,7 +45,7 @@ try_gmp() {
       printf "    libgmp.so found at $2\n"
 
       CPPFLAGS="-I$1 $CPPFLAGS"
-      LDFLAGS="-L$2 $LDFLAGS"
+      GLDFLAGS="-L$2 $LDFLAGS"
       return 0
     fi
   fi
@@ -200,9 +200,24 @@ else
 fi
 
 if [ "$MEDDLY_STATUS" ]; then
-  echo "MEDDLY: NOT FOUND.  Some features will be missing!"
+  printf "MEDDLY: NOT FOUND.  Some features will be missing!\n"
 else
-  echo "MEDDLY: found"
+  printf "MEDDLY: found"
+#
+# See if we can determine if MEDDLY was built --without-gmp
+#
+  if [ -f $MDD_LIBRARY/../config.h ]; then
+    if grep -q "#define HAVE_LIBGMP" $MDD_LIBRARY/../config.h; then
+      printf ", built with GMP support\n"
+    else
+      printf ", built without GMP support.\n"
+      if [ ! "$GMP_STATUS" ]; then
+        printf "\tTHIS COULD CAUSE LINKER ERRORS.\n"
+      fi
+    fi
+  else
+    printf "\n"
+  fi
 fi
 
 printf "\n"
