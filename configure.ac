@@ -30,6 +30,7 @@ AS_IF(
   [test "x$with_gmp" != xno], 
     [AC_CHECK_LIB([gmp], [__gmpz_init], [], [AC_MSG_FAILURE(["gmp test failed (--without-gmp to disable)"])], [])],
   [])
+AM_CONDITIONAL([LINK_GMP], [test "x$with_gmp" != xno])
 
 #
 # Check for MDD Library
