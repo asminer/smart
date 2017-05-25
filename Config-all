@@ -39,6 +39,15 @@ try_gmp() {
       LDFLAGS="-L$2 $LDFLAGS"
       return 0
     fi
+    if [ -f $2/libgmp.so ]; then
+      printf "GMP Library found\n"
+      printf "    gmp.h found at $1\n"
+      printf "    libgmp.so found at $2\n"
+
+      CPPFLAGS="-I$1 $CPPFLAGS"
+      LDFLAGS="-L$2 $LDFLAGS"
+      return 0
+    fi
   fi
   return 1
 }
@@ -47,7 +56,9 @@ find_gmp() {
   try_gmp $GMP_INCLUDE $GMP_LIBRARY && return 0
   try_gmp /opt/local/include /opt/local/lib && return 0
   try_gmp /usr/local/include /usr/local/lib && return 0
+  try_gmp /usr/local/include /usr/local/lib64 && return 0
   try_gmp /usr/include /usr/lib && return 0
+  try_gmp /usr/include /usr/lib64 && return 0
   try_gmp /usr/include/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu && return 0
   try_gmp /mingw/include /mingw/lib && return 0
   printf "Could not find gmp Library, switching to --without-gmp.\n"
@@ -126,7 +137,7 @@ if contains "--without-gmp" $@; then
   echo "Building without GMP library"
   GMP_STATUS="--without-gmp"
 else
-  find_gmp || GMP_STATUS="without"
+  find_gmp || GMP_STATUS="--without-gmp"
 fi
 
 if contains "--without-meddly" $@; then
