@@ -30,24 +30,17 @@ contains()
 
 try_gmp() {
   if [ -f $1/gmp.h ]; then
-    if [ -f $2/libgmp.a ]; then
-      printf "GMP Library found\n"
-      printf "    gmp.h found at $1\n"
-      printf "    libgmp.a found at $2\n"
+    for gmplib in libgmp.a libgmp.so libgmp.dll.a; do
+      if [ -f $2/$gmplib ]; then
+        printf "GMP Library found\n"
+        printf "    gmp.h found at $1\n"
+        printf "    %s found at $2\n" "$gmplib"
 
-      CPPFLAGS="-I$1 $CPPFLAGS"
-      LDFLAGS="-L$2 $LDFLAGS"
-      return 0
-    fi
-    if [ -f $2/libgmp.so ]; then
-      printf "GMP Library found\n"
-      printf "    gmp.h found at $1\n"
-      printf "    libgmp.so found at $2\n"
-
-      CPPFLAGS="-I$1 $CPPFLAGS"
-      GLDFLAGS="-L$2 $LDFLAGS"
-      return 0
-    fi
+        CPPFLAGS="-I$1 $CPPFLAGS"
+        LDFLAGS="-L$2 $LDFLAGS"
+        return 0
+      fi
+    done
   fi
   return 1
 }
