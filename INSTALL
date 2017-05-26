@@ -1,46 +1,83 @@
 
+----------------------------------------------------------------------
+Packages required to build:
+----------------------------------------------------------------------
+
+* gcc and g++, or other C/C++ compiler with support for C++11
+
+* automake
+
+* autoconfig
+
+* libtool
+
+* flex
+
+* bison
+
+
+----------------------------------------------------------------------
+Packages strongly recommended to build:
+----------------------------------------------------------------------
+
+* GMP, for very large integer support.  See https://gmplib.org
+
+* MEDDLY, for decision diagram support.  See http://meddly.sourceforge.net
+
+
+----------------------------------------------------------------------
 Instructions to build
+----------------------------------------------------------------------
 
-0.  autoreconf --force --install
+0.  ./Config-all
 
-    This step is necessary for the first build, and anytime configure.ac
-    or any Makefile.am changes.
+    This step is necessary for the first build, and anytime
+    configure.ac or any Makefile.am changes.  The script performs
+    system-specific configuration.  You can set environment variables
+    to change the locations of the libraries, e.g.,
 
-1.  ./Config-devel  &&  ./Config-release
+    env MDD_LIBRARY=/alternate/mdd/location ./Config-devel
 
-    System-specific configuration.  You can set environment variables to
-    change the locations of the libraries, e.g.,
+    Any arguments passed to these scripts, are in turn passed on to
+    the ./configure script.  Useful arguments:
+
+        --without-gmp       Disables GMP support
+        --without-meddly    Disables MEDDLY support
+
+    This script will build appropriate makefiles in directories:
+        bin-devel/      (for development / debugging executables)
+        bin-release/    (for production executables)
+
       
-    # env MDD_LIB=/alternate/mdd/location ./Config-devel
+1.  cd bin-devel   OR   cd bin-release
 
-    Any arguments passed to these scripts, are in turn passed on to the
-    ./configure script.  Useful arguments:
+    You need to run make within the appropriate directory.
 
-        --without-gmp     Disables GMP support
+2.  make
 
-2.  cd bin-devel   OR   cd bin-release
+    This builds everything.
 
-3.  make
-
-    This builds everything
-
-4.  make check  OR  make check-old
+3.  make check  OR  make check-old
 
     Run regression tests.  
     
-    make check:       Requires automake version 1.12 or higher.
-    make check-old:   Should always work
+        make check:       Requires automake version 1.12 or higher.
+        make check-old:   Should always work
 
-5.  make bench
+4.  make bench
 
+    (Optional.)
     Run timing tests.  More important for release code.
 
-6.  make install
+5.  make install
 
-    (Optional.)  Copies binaries into bin (otherwise they are in src/Apps)
+    (Optional.)  
+    Copies binaries into bin (otherwise they are in src/Apps)
 
-7.  make release
+6.  make release
   
-    (Very optional.)  Creates canonical executable name with version,
-    architecture, and OS.
+    (Very optional.)  
+    Creates canonical executable name with version, architecture, and
+    OS.  See the "Release" script to help with official releases.
+
 

@@ -5,9 +5,11 @@
 #include "proc_markov.h"
 #include "../Modules/glue_meddly.h"
 
+#ifdef HAVE_MEDDLY_H
+
 // ******************************************************************
 // *                                                                *
-// *                      meddly_process  class                      *
+// *                      meddly_process class                      *
 // *                                                                *
 // ******************************************************************
 
@@ -56,5 +58,6 @@ class meddly_process : public markov_process {
 };
 
 
+#endif
 #endif
 

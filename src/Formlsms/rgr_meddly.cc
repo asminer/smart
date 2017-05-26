@@ -3,6 +3,8 @@
 #include "rss_meddly.h"
 #include "../Modules/meddly_ssets.h"
 
+#ifdef HAVE_MEDDLY_H
+
 // ******************************************************************
 // *                                                                *
 // *                  meddly_monolithic_rg methods                  *
@@ -390,4 +392,4 @@ meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n,
   return mxd_wrap->copyWithDifferentForest(n, f);
 }
 
-
+#endif

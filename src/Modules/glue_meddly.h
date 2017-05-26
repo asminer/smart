@@ -14,6 +14,13 @@
 #include <gmp.h>
 #endif
 
+#include "config.h"
+#ifdef HAVE_MEDDLY_H
+
+/*
+  No point of any of this, without MEDDLY.
+*/
+
 #define _MEDDLY_WITHOUT_CSTDIO_
 // #define _MEDDLY_WITHOUT_IOSTREAM_
 #include "meddly.h"
@@ -282,6 +289,7 @@ public:
   }
 };
 
+#endif // If we have meddly.h
 
 #endif
 

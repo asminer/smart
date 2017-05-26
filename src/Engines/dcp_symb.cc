@@ -1,4 +1,9 @@
 
+// MDD stuff
+#include "../Modules/glue_meddly.h"
+
+#ifdef HAVE_MEDDLY_H
+
 #include "dcp_symb.h"
 
 #include "../Options/options.h"
@@ -11,9 +16,6 @@
 
 // Formalisms and such
 #include "../Formlsms/noevnt_hlm.h"
-
-// MDD stuff
-#include "../Modules/glue_meddly.h"
 
 // Templates
 #include "../include/radixsort.h"
@@ -1046,4 +1048,4 @@ bool init_dcpsymbolic::execute()
 }
 
 
-
+#endif // HAVE_MEDDLY_H
