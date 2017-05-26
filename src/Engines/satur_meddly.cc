@@ -1,4 +1,8 @@
 
+#include "../Modules/glue_meddly.h"
+
+#ifdef HAVE_MEDDLY_H
+
 #include "satur_meddly.h"
 
 #include "gen_meddly.h"
@@ -13,7 +17,6 @@
 #include "../Formlsms/rgr_meddly.h"
 #include "../Formlsms/proc_meddly.h"
 
-#include "../Modules/glue_meddly.h"
 #include "../Modules/biginttype.h"
 
 #include "../_Timer/timerlib.h"
@@ -1692,3 +1695,5 @@ bool init_saturmeddly::execute()
 
   return true;
 }
+
+#endif // HAVE_MEDDLY_H

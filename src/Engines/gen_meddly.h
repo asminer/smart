@@ -8,9 +8,12 @@
 // Detailed front-end for Meddly process generation
 //
 
+#include "../Modules/glue_meddly.h"
+
+#ifdef HAVE_MEDDLY_H
+
 #include "gen_rg_base.h"
 #include "../Modules/expl_states.h"
-#include "../Modules/glue_meddly.h"
 #include "../Formlsms/rss_meddly.h"
 
 #include "meddly_expert.h"
@@ -358,3 +361,5 @@ private:
 // TBD
 
 #endif
+
+#endif // HAVE_MEDDLY_H

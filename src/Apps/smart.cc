@@ -35,6 +35,7 @@
 #include "../SymTabs/symtabs.h"
 #include "../ParseSM/parse_sm.h"
 
+#include "../include/revision.h"
 
 // ============================================================
 
@@ -84,7 +85,7 @@ const char* first_init::getVersionString()
     StringStream str;
     str << "SMART";
 #ifdef VERSION
-    str << " version " << VERSION;
+    str << " version " << VERSION << "." << REVISION;
 #endif
 #ifdef DEVELOPMENT_CODE
     str << " (" << long(8*sizeof(void*)) << "-bit devel.)";

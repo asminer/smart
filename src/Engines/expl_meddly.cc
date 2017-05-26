@@ -1,6 +1,9 @@
 
 #include <string.h>
 
+#include "config.h"
+#ifdef HAVE_MEDDLY_H
+
 #include "meddly.h"
 #include "meddly_expert.h"
 
@@ -12,6 +15,9 @@
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 
+// Modules
+#include "../Modules/glue_meddly.h"
+
 // Formalisms
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/graph_llm.h"
@@ -19,9 +25,6 @@
 #include "../Formlsms/rss_meddly.h"
 #include "../Formlsms/rgr_meddly.h"
 #include "../Formlsms/proc_meddly.h"
-
-// Modules
-#include "../Modules/glue_meddly.h"
 
 // Generation templates
 #include "gen_templ.h"
@@ -3397,3 +3400,4 @@ bool init_explmeddly::execute()
   return true;
 }
 
+#endif

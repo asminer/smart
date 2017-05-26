@@ -4,7 +4,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT([smartpack], [3.2], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
+AC_INIT([smartpack], [3.3], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR([src/README.txt])
@@ -15,7 +15,8 @@ AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX(11)
 AM_PROG_LEX
 AC_PROG_YACC
-AM_PROG_AR
+# Use AM_PROG_AR if we can...
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AM_PROG_LIBTOOL
 
 #
@@ -25,24 +26,29 @@ AC_ARG_WITH([gmp],
   [AS_HELP_STRING([--without-gmp], [disable support for gmp])],
   [],
   [with_gmp=yes])
-LIBGMP=
-AS_IF([test "x$with_gmp" != xno],
-  [AC_CHECK_LIB([gmp], [__gmpz_init], [],
-    [AC_MSG_FAILURE([gmp test failed (--without-gmp to disable)])],
-    [])])
-
-# Check for header files.
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([sys/time.h unistd.h])
-
+# LIBGMP=
+AS_IF(
+  [test "x$with_gmp" != xno], 
+    [AC_CHECK_LIB([gmp], [__gmpz_init], [], [AC_MSG_FAILURE(["gmp test failed (--without-gmp to disable)"])], [])],
+  [])
+AM_CONDITIONAL([LINK_GMP], [test "x$with_gmp" != xno])
 
 #
 # Check for MDD Library
 #
-AC_CHECK_HEADER([meddly.h], [],
-    [AC_MSG_FAILURE(["Couldn't find MDD Library header"])],
-    [])
+AC_ARG_WITH([meddly],
+  [AS_HELP_STRING([--without-meddly], [disable support for Meddly])],
+  [],
+  [with_meddly=yes])
+AS_IF([test "x$with_meddly" != xno],
+  [AC_CHECK_HEADERS([meddly.h], [],
+    [AC_MSG_FAILURE(["Couldn't find MDD Library header (--without-meddly to disable)"])], [])],
+  [])
+AM_CONDITIONAL([LINK_MEDDLY], [test "x$with_meddly" != xno])
 
+# Check for header files.
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS([sys/time.h unistd.h])
 
 # Checks for library functions.
 AC_FUNC_MALLOC
@@ -53,14 +59,6 @@ AC_TYPE_SIGNAL
 # Our configuration stuff
 
 AC_SUBST(MDD_LIBRARY)
-AC_SUBST(TIMER_LIBRARY)
-AC_SUBST(SIM_LIBRARY)
-AC_SUBST(RNG_LIBRARY)
-AC_SUBST(LS_LIBRARY)
-AC_SUBST(STATE_LIBRARY)
-AC_SUBST(GRAPH_LIBRARY)
-AC_SUBST(MC_LIBRARY)
-AC_SUBST(IS_LIBRARY)
 
 # Makefiles we need to build
 
