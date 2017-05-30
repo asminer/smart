@@ -36,7 +36,7 @@ Instructions to build
     system-specific configuration.  You can set environment variables
     to change the locations of the libraries, e.g.,
 
-    env MDD_LIBRARY=/alternate/mdd/location ./Config-devel
+    env MDD_LIBRARY=/alternate/mdd/location/lib MDD_INCLUDE=/alternate/mdd/location/include ./Config-all
 
     Any arguments passed to these scripts, are in turn passed on to
     the ./configure script.  Useful arguments:
