@@ -130,6 +130,114 @@ void showGraph(digraph* g)
 //======================================================================================================================================================
 #else
 
+class forwd_reachable : public BF_graph_traversal {
+  public:
+    forwd_reachable(long init, intset &_reachable);
+    virtual ~forwd_reachable();
+
+    virtual bool hasStatesToExplore();
+    virtual long getNextToExplore();
+    virtual bool visit(long src, long dest, void*);
+
+  private:
+    long* queue;
+    long queue_head;
+    long queue_tail;
+    intset &reachable;
+};
+
+// ----------
+
+forwd_reachable::forwd_reachable(long init, intset &_reachable)
+ : reachable(_reachable)
+ {
+   queue = new long[reachable.getSize()];
+   queue[0] = init;
+   queue_head = 0;
+   queue_tail = 1;
+   reachable.removeAll();
+   reachable.addElement(init);
+ }
+
+forwd_reachable::~forwd_reachable()
+{
+  delete[] queue;
+}
+
+bool forwd_reachable::hasStatesToExplore()
+{
+  return queue_tail > queue_head;
+}
+
+long forwd_reachable::getNextToExplore()
+{
+  return queue[queue_head++];
+}
+
+bool forwd_reachable::visit(long, long dest, void*)
+{
+  if (!reachable.contains(dest)) {
+    reachable.addElement(dest);
+    if (queue_tail >= reachable.getSize()) {
+      throw 44;
+    }
+    queue[queue_tail++] = dest;
+  }
+  return false;
+}
+
+// ----------
+
+class show_traverse : public BF_graph_traversal {
+    bool show;
+    long& count;
+    long init;
+  public:
+    show_traverse(bool sh, long& c);
+    virtual bool hasStatesToExplore();
+    virtual long getNextToExplore();
+    virtual bool visit(long, long to, void*);
+
+    void reset(long new_init);
+};
+
+// ----------
+
+show_traverse::show_traverse(bool sh, long& c)
+ : count(c)
+{
+  show = sh;
+  reset(-1);
+}
+
+bool show_traverse::hasStatesToExplore()
+{
+  return init >= 0;
+}
+
+long show_traverse::getNextToExplore()
+{
+  long next = init;
+  init = -1;
+  return next;
+}
+
+bool show_traverse::visit(long, long to, void*)
+{
+  if (show) printf("\t\tTo state %ld\n", to);
+  count++;
+  return false;
+}
+
+void show_traverse::reset(long new_init)
+{
+  init = new_init;
+  count = 0;
+}
+
+// ----------
+
+
 void addGraphNode(dynamic_digraph* g)
 {
   try {
@@ -176,11 +284,10 @@ void reachableGraph(dynamic_digraph* g)
   long hfrom;
   scanf("%ld", &hfrom);
   intset rs(g->getNumNodes());
-  rs.removeAll();
-  if (g->getReachable(hfrom, rs) < 0) {
-    printf("Not enough memory\n");
-    return;
-  }
+
+  forwd_reachable ft(hfrom, rs); 
+  g->traverse(ft);
+
   printf("{");
   long z = rs.getSmallestAfter(-1);
   if (z>=0) {
@@ -198,14 +305,15 @@ void showGraph(dynamic_digraph* g)
 {
   printf("Current graph:\n");
   long count;
-  counter foo(count);
-  row_visit bar;
+  show_traverse counter(false, count);
+  show_traverse shower(true, count);
   for (int n=0; n<g->getNumNodes(); n++) {
-    count = 0;
-    g->traverseFrom(n, foo);
+    counter.reset(n);
+    g->traverse(counter);
     if (count <= 0) continue;
+    shower.reset(n);
     printf("\tFrom state %d:\n", n);
-    g->traverseFrom(n, bar);
+    g->traverse(shower);
   } // for n
 }
 
@@ -231,7 +339,11 @@ int main()
   puts(GraphLib::Version());
   showMenu();
 
+#ifdef USE_OLD_INTERFACE
   digraph* g = new digraph(true);
+#else
+  dynamic_digraph* g = new dynamic_digraph(true);
+#endif
   if (0==g) {
     printf("Got null graph\n");
     return 0;
