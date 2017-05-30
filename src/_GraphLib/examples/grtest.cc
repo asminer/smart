@@ -11,6 +11,12 @@
 
 using namespace GraphLib;
 
+// #define USE_OLD_INTERFACE
+
+
+//======================================================================================================================================================
+#ifdef USE_OLD_INTERFACE
+
 class counter : public generic_graph::element_visitor {
   long& count;
 public:
@@ -26,19 +32,6 @@ public:
     return false;
   }
 };
-
-void showMenu()
-{
-  printf("Interactive graph testing\n\n");
-  printf("\t?: print this menu\n");
-  printf("\tA: add graph node\n"); 
-  printf("\tE: <from> <to> add graph edge\n"); 
-  printf("\tF: finish graph\n"); 
-  printf("\tU: unfinish graph\n"); 
-  printf("\tR: <source> show nodes reachable from source\n");
-  printf("\tS: show graph\n");
-  printf("\n\tQ: quit\n");
-}
 
 void addGraphNode(digraph* g)
 {
@@ -133,6 +126,105 @@ void showGraph(digraph* g)
     g->traverseFrom(n, bar);
   } // for n
 }
+
+//======================================================================================================================================================
+#else
+
+void addGraphNode(dynamic_digraph* g)
+{
+  try {
+    g->addNode();
+  }
+  catch (GraphLib::error e) {
+    printf("Couldn't add graph node: %s\n", e.getString());
+    return;
+  }
+  printf("Added graph node %ld\n", g->getNumNodes()-1);
+}
+
+void addGraphEdge(dynamic_digraph* g)
+{
+  long hfrom, hto;
+  scanf("%ld", &hfrom);
+  scanf("%ld", &hto);
+  bool dupedge;
+  try {
+    dupedge = g->addEdge(hfrom, hto);
+  }
+  catch (GraphLib::error e) {
+    printf("Couldn't add graph edge: %s\n", e.getString());
+    return;
+  }
+  if (dupedge) 
+    printf("Added duplicate edge from %ld to %ld\n", hfrom, hto);
+  else
+    printf("Added edge from %ld to %ld\n", hfrom, hto);
+}
+
+void finishGraph(dynamic_digraph* g)
+{
+  printf("New interface: no finishing\n");
+}
+
+void unfinishGraph(dynamic_digraph* g)
+{
+  printf("New interface: no unfinishing\n");
+}
+
+void reachableGraph(dynamic_digraph* g)
+{
+  long hfrom;
+  scanf("%ld", &hfrom);
+  intset rs(g->getNumNodes());
+  rs.removeAll();
+  if (g->getReachable(hfrom, rs) < 0) {
+    printf("Not enough memory\n");
+    return;
+  }
+  printf("{");
+  long z = rs.getSmallestAfter(-1);
+  if (z>=0) {
+    printf("%ld", z);
+    for(;;) {
+      z = rs.getSmallestAfter(z);
+      if (z<0) break;
+      printf(", %ld", z);
+    }
+  }
+  printf("}\n");
+}
+
+void showGraph(dynamic_digraph* g)
+{
+  printf("Current graph:\n");
+  long count;
+  counter foo(count);
+  row_visit bar;
+  for (int n=0; n<g->getNumNodes(); n++) {
+    count = 0;
+    g->traverseFrom(n, foo);
+    if (count <= 0) continue;
+    printf("\tFrom state %d:\n", n);
+    g->traverseFrom(n, bar);
+  } // for n
+}
+
+//======================================================================================================================================================
+#endif
+
+void showMenu()
+{
+  printf("Interactive graph testing\n\n");
+  printf("\t?: print this menu\n");
+  printf("\tA: add graph node\n"); 
+  printf("\tE: <from> <to> add graph edge\n"); 
+  printf("\tF: finish graph\n"); 
+  printf("\tU: unfinish graph\n"); 
+  printf("\tR: <source> show nodes reachable from source\n");
+  printf("\tS: show graph\n");
+  printf("\n\tQ: quit\n");
+}
+
 
 int main()
 {

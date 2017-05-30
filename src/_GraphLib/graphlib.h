@@ -50,6 +50,390 @@ namespace GraphLib {
     code errcode;
   };
 
+
+  // ======================================================================
+  // |                                                                    |
+  // |                          timer_hook class                          |
+  // |                                                                    |
+  // ======================================================================
+  /**
+    Timer class.
+    Use if you want to report how long critical computations take.
+  */
+  class timer_hook {
+    public:
+        timer_hook();
+        virtual ~timer_hook();
+        /** Will be called when a major computation starts.
+            @param w  Short description of computation.
+        */
+        virtual void start(const char* w) = 0;
+        /// Will be called when a major computation stops.
+        virtual void stop() = 0;
+  };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                      BF_graph_traversal class                      |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+        Class for arbitrary breadth-first graph traversals.
+
+        Conceptually, this class maintains a queue of states
+        to explore (hidden from the traversal), and defines
+        what to do when a state is visited.
+        In practice, the "queue" could be an actual queue,
+        or something trivial like a single state.
+  */
+  class BF_graph_traversal {
+      public:
+          BF_graph_traversal();
+          virtual ~BF_graph_traversal();
+
+          /// Do we need to explore any more states?
+          virtual bool hasStatesToExplore() = 0;
+
+          /// Return the next state to explore.
+          virtual long getNextToExplore() = 0;
+
+          /**
+              Visit a state.
+                @param  src     The state causing the visit, because
+                                of an outgoing/incoming edge.
+                @param  dest    The state being visited.
+                @param  wt      The weight (if any) on the edge
+                                causing the visit.
+
+                @return true,   If we should stop the traversal now.
+          */
+          virtual bool visit(long src, long dest, void* wt) = 0;
+  };
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                         static_graph class                         |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+    Really generic, static graph.
+    Stored in compressed row or column sparse format,
+    depending on whether we are "by rows" or not.
+  */
+  class static_graph {
+
+    public:
+      /// Default constructor: Build an empty graph.
+      static_graph(); 
+      ~static_graph();
+
+      /** Fill this with a transposed copy of m.
+          I.e., make this a copy of g, except
+          it will be "by columns" if g is "by rows"
+          and vice versa.
+      */
+      void transposeFrom(const static_graph &g);
+      
+
+      /// @return true if we can efficiently enumerate "by rows".
+      inline bool isByRows() const { return is_by_rows; }
+
+      /// @return true if we can efficiently enumerate "by columns".
+      inline bool isByCols() const { return !is_by_rows; }
+
+      /// @return The current number of graph nodes.
+      inline long getNumNodes() const { return num_nodes; }
+
+      /// @return The current number of graph edges.
+      inline long getNumEdges() const { return num_edges; }
+
+      /** Determine which rows are empty.
+          If the graph is instead "by columns", then
+          determine which columns are empty.
+          In other words, if we're by rows,
+          determine which states have no outgoing edges;
+          otherwise, determine states with no incoming edges.
+            @param  x   On input: ignored.
+                        On output, set of nodes with no 
+                        incoming/outgoing edges.
+      */
+      void emptyRows(intset &x) const;
+
+      /**
+          Run graph traversal t.
+          If the graph is by rows, then we traverse outgoing edges;
+          otherwise, we traverse incoming edges.
+
+            @param  t   Traversal, which determines the
+                        (possibly changing) list of states to explore,
+                        and how to visit edges.
+
+            @return true, iff a call to t.visit returned true
+                          and we stopped traversal early.
+      */
+      bool traverse(BF_graph_traversal &t) const;
+
+      /// Total memory required for graph storage, in bytes.
+      size_t getMemTotal() const;
+
+    private:
+      void allocate(long nodes, long edges);
+
+    private:
+      /// Starting point of each row.  Dimension #nodes+1.
+      long* row_pointer;
+
+      /// Column index of each edge.  Dimension #edges.
+      long* column_index;
+
+      /// Label of each edge.  Size is #edges * (bytes per edgeval)
+      unsigned char* label;
+
+      /// Total number of nodes.
+      long num_nodes;
+
+      /// Total number of edges.
+      long num_edges;
+
+      /// Number of bytes for each edge label (can be 0).
+      unsigned char edge_bytes;
+
+      /** Do we have efficient row access?  Otherwise it's columns.
+          Data structure names above assume we are stored by rows.
+      */
+      bool is_by_rows;
+
+      
+      friend class dynamic_graph;
+  };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                        dynamic_graph  class                        |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+    Really generic, dynamic graph.
+    Edges are handled using "memcpy" and the like.
+    Some useful front-end wrappers (below) are 
+    derived from this class.
+  */
+  class dynamic_graph {
+    public:
+      /**
+        Constructor.
+          @param  es    Number of bytes for edge weights (0 if none).
+          @param  ksl   Keep self loops?  If not, they are discarded.
+          @param  md    Merge duplicate edges?
+      */
+      dynamic_graph(unsigned char es, bool ksl, bool md); 
+      virtual ~dynamic_graph();
+
+      /// @return true if we can efficiently enumerate "by rows".
+      inline bool isByRows() const { return is_by_rows; }
+
+      /// @return true if we can efficiently enumerate "by columns".
+      inline bool isByCols() const { return !is_by_rows; }
+
+      /// @return The current number of graph nodes.
+      inline long getNumNodes() const { return num_nodes; }
+
+      /// @return The current number of graph edges.
+      inline long getNumEdges() const { return num_edges; }
+
+
+      /// Add several new nodes to the graph.
+      void addNodes(long count);
+
+      /// Add a new node to the graph.
+      inline void addNode() { addNodes(1); }
+
+      /** Add a new edge to the graph.
+            @return true  iff this is a duplicate edge.
+      */
+      bool addEdge(long from, long to, const void* wt);
+
+      /** Batch removal of edges.
+            @param  t   We do a breadth-first traversal,
+                        and for each edge, if t(edge) returns true,
+                        then the edge will be removed from the graph.
+      */
+      void removeEdges(BF_graph_traversal &t);
+
+
+      /** Renumber graph nodes.
+            @param  newid   Old node number i is numbered newid[i].
+      */
+      void renumber(const long* newid);
+
+      /** Reverse direction of all edges.
+          Or, equivalently, flip storage between
+          "store by outgoing edges" and "store by incoming edges".
+            @param  sw  Place to report timing; nothing reported if 0.
+      */
+      void transpose(timer_hook* sw);
+
+      /** Compute the terminal sccs.
+          Useful for Markov chain state classification, or
+          CTL model checking with "fairness".
+          Currently, this is much faster if the graph is stored "by rows".
+  
+            @param  sw      Where to report timing information (nowhere if 0).
+  
+            @param  cons    If true, conserve memory, at a cost of 
+                            (usually, slightly) increased CPU time.
+
+            @param  sccmap  An array of dimension #nodes (at least).
+                            ON OUTPUT:
+                            sccmap[k] is 0 if node k is "transient",
+                            between 1 and #classes if k is "recurrent".
+
+            @param  aux     Auxiliary array, will be overwritten.
+                            Dimension is #nodes (at least).
+
+            @return   The number of terminal sccs (recurrent classes). 
+      */
+      long computeTSCCs(timer_hook* sw, bool cons, long* sccmap, long* aux) const;
+  
+
+      /**
+          Export to a static graph.
+          The static graph will be stored by rows iff this
+          graph is stored by rows.
+            @param  g   Place to store the static graph
+                        (will be clobbered).
+
+            @param  sw  Where to report timing information (nowhere if 0).
+      */
+      void exportToStatic(static_graph &g, timer_hook *sw);
+
+
+      /**
+          Export to a static graph and destroy this graph.
+          The static graph will be stored by rows iff this
+          graph is stored by rows.
+            @param  g   Place to store the static graph
+                        (will be clobbered).
+
+            @param  sw  Where to report timing information (nowhere if 0).
+      */
+      void exportAndDestroy(static_graph &g, timer_hook *sw);
+
+
+      /// Total memory required for graph storage, in bytes.
+      size_t getMemTotal() const;
+
+
+      /** Clear the current graph.
+
+          This operation is similar to, but more efficient than,
+          calling the destructor and then re-constructing an
+          empty graph.  Memory may be retained.
+          (The intent is to allow users to build and analyze
+          several different small graphs without having to
+          re-allocate memory each time.)
+      */
+      void clear();
+
+      /**
+          Run graph traversal t.
+          If the graph is by rows, then we traverse outgoing edges;
+          otherwise, we traverse incoming edges.
+
+            @param  t   Traversal, which determines the
+                        (possibly changing) list of states to explore,
+                        and how to visit edges.
+
+            @return true, iff a call to t.visit returned true
+                          and we stopped traversal early.
+      */
+      bool traverse(BF_graph_traversal &t) const;
+
+    protected:
+      /**
+          Define how to merge edge labels.
+          Must be provided in derived classes.
+            @param  ev    Edge label, will be modified in place.
+            @param  nv    Edge label. will be "added to" ev,
+                          where "added to" can be defined however.
+      */
+      virtual void merge_edges(void* ev, const void* nv) const = 0;
+
+    private:
+      // Return true if the edge was added; false if it was a duplicate.
+      bool AddToMergedCircularList(long &list, long ptr);
+      void AddToUnmergedCircularList(long &list, long ptr);
+
+      long Defragment(long);
+
+
+    // for SCC computation
+    private:
+      inline long getFirstEdgeFor(long s) const {
+        return row_pointer[s];
+      }
+      inline void readEdgeInfo(long z, long &col, long &nxt) const {
+        col = column_index[z];
+        nxt = next[z];
+      }
+
+      friend class scc_data;
+
+
+    private:
+      long* row_pointer;
+      long* column_index;
+      long* next;
+      unsigned char* label;
+      long nodes_alloc;
+      long edges_alloc;
+      long num_nodes;
+      long num_edges;
+      unsigned char edge_size;
+      bool keep_self_loops;
+      bool merge_duplicates;
+      bool is_by_rows;
+  };
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                       dynamic_digraph  class                       |
+  // |                                                                    |
+  // ======================================================================
+
+  /// Directed graphs with unlabeled edges.
+  class dynamic_digraph : public dynamic_graph {
+  public:
+    dynamic_digraph(bool keep_self);
+  
+    inline bool addEdge(long from, long to) { 
+      return dynamic_graph::addEdge(from, to, 0); 
+    }
+  protected:
+    virtual void merge_edges(void* ev, const void* nv) const;
+  };
+
+
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// OLD INTERFACE BELOW, will eventually be discarded!
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+
+#define ALLOW_OLD_GRAPH_INTERFACE
+#ifdef  ALLOW_OLD_GRAPH_INTERFACE
+
   // ======================================================================
   // |                                                                    |
   // |                      Generic Graph  interface                      |
@@ -64,18 +448,6 @@ namespace GraphLib {
   */
   class generic_graph {
   public:
-    /// Timer class, if we want to know how long critical computations take.
-    class timer_hook {
-    public:
-        timer_hook();
-        virtual ~timer_hook();
-        /** Will be called when a major computation starts.
-            @param w  Short description of computation.
-        */
-        virtual void start(const char* w) = 0;
-        /// Will be called when a major computation stops.
-        virtual void stop() = 0;
-    };
     /// For exporting a finished graph.
     struct const_matrix {
         /// If true, the matrix is stored by columns, rather than by rows.
@@ -612,6 +984,7 @@ namespace GraphLib {
   };
 
 
+#endif // ALLOW_OLD_GRAPH_INTERFACE
 
   // ======================================================================
   // |                                                                    |

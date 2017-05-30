@@ -18,7 +18,7 @@ class timer;
 
 class markov_process : public stochastic_lldsm::process {
   protected:
-    class reporter : public GraphLib::generic_graph::timer_hook {
+    class reporter : public GraphLib::timer_hook {
       const exprman* em;
       named_msg report;
       timer watch;
