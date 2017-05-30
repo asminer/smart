@@ -24,12 +24,805 @@ const int MINOR_VERSION = 5;
 // ******************************************************************
 
 /// Standard MAX "macro".
-template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
+template <class T> 
+inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
 
 /// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
+template <class T> 
+inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
+
+/**
+    Standard SWAP "macro".
+    It's here because a derived template class needs it.
+*/
+template <class T> 
+inline void SWAP(T &x, T &y)
+{ 
+    T tmp=x; 
+    x=y; 
+    y=tmp; 
+}
 
 
+inline void ShowArray(const char* name, const long* ptr, long N)
+{
+  if (0==ptr) {
+    printf("%s: null\n", name);
+    return;
+  }
+  printf("%s: [%ld", name, ptr[0]);
+  for (long i=1; i<N; i++) printf(", %ld", ptr[i]);
+  printf("]\n");
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         error  methods                         *
+// *                                                                *
+// ******************************************************************
+
+const char* GraphLib::error::getString() const
+{
+  switch (errcode) {
+    case Not_Implemented:   return "Not implemented";
+    case Bad_Index:         return "Bad index";
+    case Out_Of_Memory:     return "Out of memory";
+    case Finished_Mismatch: return "Finished graph";
+    case Miscellaneous:     return "Misc. error";
+  };
+  return "Unknown error";
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                       timer_hook methods                       *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::timer_hook::timer_hook()
+{
+}
+
+GraphLib::timer_hook::~timer_hook()
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *                   BF_graph_traversal methods                   *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::BF_graph_traversal::BF_graph_traversal()
+{
+}
+
+GraphLib::BF_graph_traversal::~BF_graph_traversal()
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      static_graph methods                      *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::static_graph::static_graph()
+{
+  num_nodes = 0;
+  num_edges = 0;
+  row_pointer = 0;
+  column_index = 0;
+  edge_bytes = 0;
+  label = 0;
+  is_by_rows = true;    // Arbitrary and useless
+}
+
+// ******************************************************************
+
+GraphLib::static_graph::~static_graph()
+{
+  free(row_pointer);
+  free(column_index);
+  free(label);
+}
+
+// ******************************************************************
+
+void GraphLib::static_graph::transposeFrom(const static_graph &m)
+{
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("Inside transposeFrom\n");
+  printf("  Input graph:\n");
+  printf("\tis_by_rows: %s\n", m.is_by_rows ? "true" : "false");
+  printf("\tnum_nodes: %ld\n", m.num_nodes);
+  printf("\trow_pointer: ");
+  ShowArray("\trow_pointer", m.row_pointer, m.num_nodes+1);
+  ShowArray("\tcolumn_index: ", m.column_index, m.num_edges);
+#endif
+
+  is_by_rows = !m.is_by_rows;
+
+  // resize arrays 
+  allocate(m.num_nodes, m.num_edges);
+
+  // Count entries in each transposed row
+  for (long r=0; r<=num_nodes; r++) row_pointer[r] = 0;
+  for (long e=0; e<m.row_pointer[m.num_nodes]; e++) {
+    ++row_pointer[ m.column_index[e] ];
+  }
+#ifdef DEBUG_TRANSPOSE_FROM
+  ShowArray("  index counts", row_pointer, num_nodes+1);
+#endif
+
+  // Accumulate, so row_pointer[r] gives #entries in rows 0..r
+  for (long r=1; r<=num_nodes; r++) {
+    row_pointer[r] += row_pointer[r-1];
+  }
+  // Shift.
+  for (long r=num_nodes; r>0; r--) {
+    row_pointer[r] = row_pointer[r-1];
+  }
+  row_pointer[0] = 0;
+#ifdef DEBUG_TRANSPOSE_FROM
+  ShowArray("  transposed row_pointer", row_pointer, num_nodes+1);
+#endif
+
+  //
+  // Ok, right now row_pointer[r] is number of entries in rows 0..r-1.
+  // In other words, it's the starting location for row r.
+  // So we can start copying elements.
+  long e = 0;
+  for (long i=0; i<num_nodes; i++) {
+    for (; e<m.row_pointer[i+1]; e++) {
+      long j = m.column_index[e];
+
+      // add element i,j,value[e]
+#ifdef DEBUG_TRANSPOSE_FROM
+      printf("  adding element [%ld, %ld]\n", i, j);
+#endif
+
+      column_index[ row_pointer[j] ] = i;
+      if (edge_bytes) {
+        memcpy(label + edge_bytes * row_pointer[j], m.label + edge_bytes * e, edge_bytes);
+      }
+      ++row_pointer[j];
+    } // for e
+  } // for i
+
+  // Right now, row_pointer[r] gives #entries in rows 0..r,
+  // so we need to shift again.
+  for (long r=num_nodes; r>0; r--) {
+    row_pointer[r] = row_pointer[r-1];
+  }
+  row_pointer[0] = 0;
+
+#ifdef DEBUG_TRANSPOSE_FROM
+  printf("  Output matrix:\n");
+  printf("\tis_by_rows: %s\n", is_by_rows ? "true" : "false");
+  printf("\tnum_nodes: %ld\n", num_nodes);
+  ShowArray("\trow_pointer", row_pointer, num_nodes+1);
+  ShowArray("\tcolumn_index", column_index, num_edges);
+#endif
+}
+
+// ******************************************************************
+
+void GraphLib::static_graph::emptyRows(intset &x) const
+{
+  x.removeAll();
+  for (long s=0; s<num_nodes; s++) {
+    if (row_pointer[s] == row_pointer[s+1]) {
+      x.addElement(s);
+    }
+  }
+}
+
+// ******************************************************************
+
+bool GraphLib::static_graph::traverse(BF_graph_traversal &t) const
+{
+  while (t.hasStatesToExplore()) {
+      long s = t.getNextToExplore();
+
+      if (s<0 || s>=num_nodes) {
+        throw GraphLib::error(GraphLib::error::Bad_Index);
+      }
+
+      // explore edges to/from s
+      for (long z=row_pointer[s]; z<row_pointer[s+1]; z++) {
+        if (t.visit(s, column_index[z], label + z*edge_bytes)) return true;
+      } // for z
+  } // while
+  return false;
+}
+
+// ******************************************************************
+
+size_t GraphLib::static_graph::getMemTotal() const
+{
+  long mem = 0;
+  if (row_pointer)  mem += (num_nodes+1) * sizeof(long);
+  if (column_index) mem += num_edges * sizeof(long);
+  if (label)        mem += num_edges * edge_bytes;
+  return mem;
+}
+
+// ******************************************************************
+
+void GraphLib::static_graph::allocate(long nodes, long edges)
+{
+  // row pointers
+  // hopefully realloc is fast if we give the same size?
+  long* nrp = (long*) realloc(row_pointer, (nodes+1)*sizeof(long));
+  if (0==nrp) {
+    throw error(error::Out_Of_Memory);
+  }
+  row_pointer = nrp;
+  num_nodes = nodes;
+
+  // column indexes
+  long* nci = (long*) realloc(column_index, edges * sizeof(long)); 
+  if (edges && 0==nci) {
+    throw error(error::Out_Of_Memory);
+  }
+  column_index = nci;
+  num_edges = edges;
+
+  // labels
+  unsigned char* nl = (unsigned char*) realloc(label, edges * edge_bytes);
+  if ((edges * edge_bytes) && 0==nl) {
+    throw error(error::Out_Of_Memory);
+  }
+  label = nl;
+}
+
+
+
+// ******************************************************************
+// *                                                                *
+// *                     dynamic_graph  methods                     *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::dynamic_graph::dynamic_graph(unsigned char es, bool ksl, bool md)
+{
+  edge_size = es;
+  keep_self_loops = ksl;
+  merge_duplicates = md;
+  is_by_rows = true;
+  nodes_alloc = 0;
+  row_pointer = 0;
+  edges_alloc = 0;
+  column_index = 0;
+  next = 0;
+  label = 0;
+  num_nodes = 0;
+  num_edges = 0;
+}
+
+// ******************************************************************
+
+GraphLib::dynamic_graph::~dynamic_graph()
+{
+  free(row_pointer);
+  free(column_index);
+  free(next);
+  free(label);
+}
+
+// ******************************************************************
+
+void 
+GraphLib::dynamic_graph::addNodes(long count)
+{
+  const int MAX_NODE_ADD = 1024;
+
+  long final_nodes = num_nodes+count;
+  if (final_nodes > nodes_alloc) {
+    long newnodes = nodes_alloc+1;
+    while (newnodes <= final_nodes) {
+      newnodes = MIN(2*newnodes, newnodes + MAX_NODE_ADD);
+      newnodes = MAX(newnodes, 8L);
+    }
+    long* foo = (long*) realloc(row_pointer, newnodes*sizeof(long));
+    if (0==foo) throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+    row_pointer = foo;
+    nodes_alloc = newnodes-1;
+  }
+  for (; count; count--) {
+    row_pointer[num_nodes] = -1;
+    num_nodes++;
+  }
+}
+
+// ******************************************************************
+
+bool 
+GraphLib::dynamic_graph::addEdge(long from, long to, const void* wt)
+{
+  const int MAX_EDGE_ADD = 1024;
+
+  if (from == to && !keep_self_loops) return false;
+  if (!is_by_rows) SWAP(from, to);
+  if (from < 0 || from >= num_nodes || to < 0 || to >= num_nodes) {
+    throw GraphLib::error(GraphLib::error::Bad_Index);
+  }
+
+  // get a new edge from "end"; allocate more space if necessary
+  if (num_edges >= edges_alloc) {
+    long newedges = MIN(2*edges_alloc, edges_alloc + MAX_EDGE_ADD);
+    newedges = MAX(newedges, 16L);
+    long* nci = (long *) realloc(column_index, newedges*sizeof(long));
+    long* nn = (long *) realloc(next, newedges*sizeof(long));
+    void* nl = 0;
+    if (edge_size) {
+      nl = realloc(label, newedges*edge_size);
+      if (0==nl) throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+    }
+    if ( (0==nci) || (0==nn) )
+      throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+    column_index = nci;
+    next = nn;
+    label = (unsigned char*) nl;
+    edges_alloc = newedges;
+  }
+  
+  // fix the edge
+  column_index[num_edges] = to;
+  if (edge_size) memcpy(label+num_edges*edge_size, wt, edge_size);
+
+  // add the new edge to the list.
+  if (merge_duplicates) {
+    if (!AddToMergedCircularList(row_pointer[from], num_edges))
+      return true;
+  } else {
+    AddToUnmergedCircularList(row_pointer[from], num_edges);
+  }
+  num_edges++;
+  return false;
+}
+
+
+// ******************************************************************
+
+void 
+GraphLib::dynamic_graph::removeEdges(BF_graph_traversal &t)
+{
+  while (t.hasStatesToExplore()) {
+      long s = t.getNextToExplore();
+
+      // Switch to linked lists, for simplicity
+      if (row_pointer[s]<0) continue;  // it is empty
+      long tail = row_pointer[s];
+      row_pointer[s] = next[tail];
+      next[tail] = -1;
+
+      // traverse chain
+      long prev = -1;
+      long curr = row_pointer[s];
+      while (curr >= 0) {
+        if (t.visit(s, column_index[curr], label+curr*edge_size)) {
+          curr = next[curr];
+          if (prev>=0)   next[prev] = curr;
+          else           row_pointer[s] = curr;
+        } else {
+          prev = curr;
+          curr = next[curr];
+        }
+      } // while curr
+
+      // switch back to circular lists
+      if (row_pointer[s] < 0) continue;  // empty list
+      if (prev < 0) {
+        // list has one element, close the circle.
+        next[row_pointer[s]] = row_pointer[s];
+      } else {
+        // prev is the tail, close the circle.
+        next[prev] = row_pointer[s];
+        row_pointer[s] = prev;
+      }
+  } // while
+}
+
+// ******************************************************************
+
+void
+GraphLib::dynamic_graph::renumber(const long* renum)
+{
+  if (0==renum) throw GraphLib::error(GraphLib::error::Miscellaneous);
+  
+  bool* fixme = (bool*) malloc(num_nodes * sizeof(bool));
+  if (0==fixme) throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+
+  long s;
+  for (s=num_nodes-1; s>=0; s--) fixme[s] = (s!=renum[s]);
+
+  // re-arrange row lists, by in-place swaps
+  for (s=0; s<num_nodes; s++) if (fixme[s]) {
+    long last = row_pointer[s];
+    long p = s;
+    while (1) {
+      p = renum[p];
+      SWAP(last, row_pointer[p]);
+      fixme[p] = false;
+      if (p==s) break;
+    } // while 1
+  } // for s's that need fixin'
+  free(fixme);
+
+  // re-arrange columns
+  for (s=0; s<num_nodes; s++) {
+    if (row_pointer[s]<0) continue;  // empty row
+    long ptr = row_pointer[s];
+    long first = ptr;
+    do {
+      column_index[ptr] = renum[column_index[ptr]];
+      ptr = next[ptr];
+    } while (ptr != first);
+  } // for s
+
+  // Column indexes may be out of order now.
+  // A single transpose will put us right, though.
+}
+
+// ******************************************************************
+
+void
+GraphLib::dynamic_graph::transpose(timer_hook* sw)
+{
+  // we need another row_pointer array; everything else is "in place"
+  long* old_row_pointer = (long *) malloc((num_nodes+1)*sizeof(long));
+  if (0==old_row_pointer) 
+    throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+
+  if (sw) sw->start("Transposing");
+
+  long s;
+  for (s=0; s<=num_nodes; s++) old_row_pointer[s] = -1;
+  SWAP(row_pointer, old_row_pointer);
+  nodes_alloc = num_nodes;
+
+  // Convert old row lists into column lists
+  for (s=0; s<num_nodes; s++) {
+    // convert old list from circular to linear
+    if (old_row_pointer[s]<0) continue;  // it is empty
+    long tail = old_row_pointer[s];
+    old_row_pointer[s] = next[tail];
+    next[tail] = -1;
+    // traverse linear list
+    while (old_row_pointer[s]>=0) {
+      long ptr = old_row_pointer[s];
+      old_row_pointer[s] = next[ptr];
+      // change column index to row
+      long col = column_index[ptr];
+      column_index[ptr] = s;
+      AddToUnmergedCircularList(row_pointer[col], ptr);
+    } // while
+  } // for s
+
+  // done with old matrix
+  free(old_row_pointer);
+
+  // toggle
+  is_by_rows = !(is_by_rows);
+
+  if (sw) sw->stop();
+}
+
+// ******************************************************************
+
+long 
+GraphLib::dynamic_graph::computeTSCCs(timer_hook* sw, bool c, long* sccmap, long* aux) const
+{
+  if (0==sccmap || 0==aux) 
+    throw GraphLib::error(GraphLib::error::Miscellaneous);
+
+  // All these functions are implemented in sccs.cc
+  if (sw) sw->start("Finding SCCs");
+  long count = find_sccs(this, c, sccmap, aux);
+  if (sw) sw->stop();
+
+  if (sw) sw->start("Finding terminal SCCs");
+  find_tsccs(this, sccmap, aux, count);
+  if (sw) sw->stop();
+
+  if (sw) sw->start("Renumbering SCCs");
+  count = compact(this, sccmap, aux, count);
+  if (sw) sw->stop();
+  return count;
+}
+
+// ******************************************************************
+
+void
+GraphLib::dynamic_graph::exportToStatic(static_graph &g, timer_hook *sw)
+{
+  if (sw) sw->start("Defragmenting graph");
+  num_edges = Defragment(0);
+  if (sw) sw->stop();
+
+  if (sw) sw->start("Exporting graph");
+
+  // Make space for g
+  g.edge_bytes = edge_size;
+  g.allocate(num_nodes, num_edges);
+
+  // Copy everything over
+  g.is_by_rows = is_by_rows;
+  memcpy(g.row_pointer, row_pointer, (1+num_nodes) * sizeof(long));
+  memcpy(g.column_index, column_index, num_edges * sizeof(long));
+  if (edge_size) {
+    memcpy(g.label, label, num_edges * edge_size);
+  }
+
+  if (sw) sw->stop();
+}
+
+
+// ******************************************************************
+
+void
+GraphLib::dynamic_graph::exportAndDestroy(static_graph &g, timer_hook *sw)
+{
+  if (sw) sw->start("Defragmenting graph");
+  num_edges = Defragment(0);
+  if (sw) sw->stop();
+
+  if (sw) sw->start("Exporting graph");
+
+  // Clean out any old g
+  g.allocate(0, 0);
+
+  // resize arrays
+  if (nodes_alloc > num_nodes) {
+    row_pointer = (long*) realloc(row_pointer, (1+num_nodes)*sizeof(long));
+  } 
+  if (edges_alloc > num_edges) {
+    column_index = (long*) realloc(column_index, num_edges*sizeof(long));
+    label = (unsigned char*) realloc(label, num_edges*edge_size);
+  } 
+  // Transfer things over
+  g.edge_bytes = edge_size;
+  g.is_by_rows = is_by_rows;
+  g.row_pointer = row_pointer;
+  g.column_index = column_index;
+  g.label = label;
+
+  // Destroy our pointers
+  row_pointer = 0;
+  column_index = 0;
+  label = 0;
+  free(next);
+  next = 0;
+
+  nodes_alloc = 0;
+  edges_alloc = 0;
+  num_nodes = 0;
+  num_edges = 0;
+
+  if (sw) sw->stop();
+}
+
+// ******************************************************************
+
+size_t
+GraphLib::dynamic_graph::getMemTotal() const
+{
+  long mem = 0;
+  if (row_pointer)  mem += (nodes_alloc+1) * sizeof(long);
+  if (column_index) mem += edges_alloc * sizeof(long);
+  if (next)         mem += edges_alloc * sizeof(long);
+  if (label)        mem += edges_alloc * edge_size;
+  return mem;
+}
+
+// ******************************************************************
+
+void 
+GraphLib::dynamic_graph::clear()
+{
+  num_nodes = 0;
+  num_edges = 0;
+}
+
+// ******************************************************************
+
+bool
+GraphLib::dynamic_graph::traverse(BF_graph_traversal &t) const
+{
+  while (t.hasStatesToExplore()) {
+    long s = t.getNextToExplore();
+
+    if (row_pointer[s] < 0)  continue;  // empty row
+    long ptr = next[row_pointer[s]];
+    long first = ptr;
+    do {
+      if (t.visit(s, column_index[ptr], label+ptr*edge_size)) return true;
+      ptr = next[ptr];
+    } while (ptr != first);
+
+  } // while t
+  return false;
+}
+
+// ******************************************************************
+
+bool 
+GraphLib::dynamic_graph::AddToMergedCircularList(long &list, long ptr)
+{
+  // Is the row empty?
+  if (list < 0) {
+    next[ptr] = ptr;  
+    list = ptr;
+    return true;
+  } 
+  long prev = list;
+  // Is the new item past the tail?  (Most common case)
+  if (column_index[ptr] > column_index[prev]) {
+    next[ptr] = next[prev];
+    next[prev] = ptr;
+    list = ptr;
+    return true;
+  }
+  // Is the new item equal to the tail?
+  if (column_index[ptr] == column_index[prev]) {
+    // Duplicate
+    if (edge_size) merge_edges(label+prev*edge_size, label+ptr*edge_size);
+    return false;
+  }
+  // Need to add somewhere in the middle.  Find the correct spot.
+  while (1) {
+    long curr = next[prev];
+    if (column_index[ptr] < column_index[curr]) {
+      // edge goes here!
+      next[ptr] = curr;
+      next[prev] = ptr;
+      return true;
+    }
+    if (column_index[ptr] == column_index[curr]) {
+      // Duplicate
+      if (edge_size) merge_edges(label+curr*edge_size, label+ptr*edge_size);
+      return false;
+    }
+    prev = curr;
+  } // while 1
+  // Never get here; keep compiler happy
+  return false;
+}
+
+// ******************************************************************
+
+void
+GraphLib::dynamic_graph::AddToUnmergedCircularList(long &list, long ptr)
+{
+  // Is the row empty?
+  if (list < 0) {
+    next[ptr] = ptr;  
+    list = ptr;
+    return;
+  } 
+  long prev = list;
+  // Is the new item past the tail?  (Most common case)
+  if (column_index[ptr] >= column_index[prev]) {
+    next[ptr] = next[prev];
+    next[prev] = ptr;
+    list = ptr;
+    return;
+  }
+  // Need to add somewhere in the middle.  Find the correct spot.
+  while (1) {
+    long curr = next[prev];
+    if (column_index[ptr] < column_index[curr]) {
+      // edge goes here!
+      next[ptr] = curr;
+      next[prev] = ptr;
+      break;
+    }
+    prev = curr;
+  } // while 1
+}
+
+// ******************************************************************
+
+long
+GraphLib::dynamic_graph::Defragment(long first_slot)
+{
+  // make lists contiguous by swapping, forwarding pointers
+  long i = first_slot; // everything before i is contiguous, after i is linked
+  long s;
+
+  unsigned char* tmp_label = (edge_size) ? (unsigned char*) malloc(edge_size) : 0;
+
+  // convert everything from circular to linear
+  for (s=0; s<num_nodes; s++) {
+    long list = row_pointer[s];
+    if (list<0) continue;
+    row_pointer[s] = next[list];
+    next[list] = -1;
+  }
+#ifdef DEBUG_DEFRAG
+  printf("Pre-defrag lists:\n");
+  ShowArray("row_pointer", row_pointer, num_nodes);
+  ShowArray("col_index  ", column_index, num_edges);
+  ShowArray("next       ", next, num_edges);
+#endif
+  for (s=0; s<num_nodes; s++) {
+    long list = row_pointer[s];
+    row_pointer[s] = i;
+    // defragment the list
+    while (list >= 0) {
+      // traverse forwarding arcs if necessary...
+      while (list<i) list = next[list];
+      long nextlist = next[list];
+      if (i!=list) {
+        //
+        // SWAP i and list
+        //
+
+        // Swap column indexes
+        SWAP(column_index[i], column_index[list]);
+
+        // Swap labels if any
+        if (edge_size) {
+          memcpy(tmp_label, label+i*edge_size, edge_size);
+          memcpy(label+i*edge_size, label+list*edge_size, edge_size);
+          memcpy(label+list*edge_size, tmp_label, edge_size);
+        }
+
+        // Set up forwarding information
+        next[list] = next[i];
+        next[i] = list;  // forwarding info
+
+      } // if
+
+      list = nextlist;
+      i++;
+    } // while list
+  } // for s
+  row_pointer[num_nodes] = i;
+  free(tmp_label);
+#ifdef DEBUG_DEFRAG
+  printf("Post-defrag lists:\n");
+  ShowArray("row_pointer", row_pointer, 1+num_nodes);
+  ShowArray("col_index  ", column_index, num_edges);
+  ShowArray("next       ", next, num_edges);
+#endif
+  return i;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    dynamic_digraph  methods                    *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::dynamic_digraph::dynamic_digraph(bool keep_self)
+: dynamic_graph(0, keep_self, true)
+{
+  // nothing to do
+}
+
+void GraphLib::dynamic_digraph::merge_edges(void* ev, const void* nv) const
+{
+  // no edge labels
+}
+
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// OLD INTERFACE BELOW, will eventually be discarded!
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+
+
+#ifdef  ALLOW_OLD_GRAPH_INTERFACE
 
 // ******************************************************************
 // *                                                                *
@@ -37,14 +830,6 @@ template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
 // *                                                                *
 // ******************************************************************
 
-
-GraphLib::generic_graph::timer_hook::timer_hook()
-{
-}
-
-GraphLib::generic_graph::timer_hook::~timer_hook()
-{
-}
 
 GraphLib::generic_graph::matrix::matrix()
 {
@@ -218,24 +1003,6 @@ GraphLib::generic_graph::element_visitor::element_visitor()
 
 GraphLib::generic_graph::element_visitor::~element_visitor()
 {
-}
-
-// ******************************************************************
-// *                                                                *
-// *                         error  methods                         *
-// *                                                                *
-// ******************************************************************
-
-const char* GraphLib::error::getString() const
-{
-  switch (errcode) {
-    case Not_Implemented:   return "Not implemented";
-    case Bad_Index:         return "Bad index";
-    case Out_Of_Memory:     return "Out of memory";
-    case Finished_Mismatch: return "Finished graph";
-    case Miscellaneous:     return "Misc. error";
-  };
-  return "Unknown error";
 }
 
 // ******************************************************************
@@ -1150,6 +1917,8 @@ void GraphLib::digraph::DefragSwap(long i, long j)
   next[j] = next[i];
   next[i] = j;  // forwarding info
 }
+
+#endif // ALLOW_OLD_GRAPH_INTERFACE
 
 // ******************************************************************
 // *                                                                *

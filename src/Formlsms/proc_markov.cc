@@ -159,7 +159,7 @@ const char* markov_process::getSolver()
 // ******************************************************************
 
 markov_process::reporter::reporter(const exprman* The_em) 
-: GraphLib::generic_graph::timer_hook() 
+: GraphLib::timer_hook() 
 {
   em = The_em;
   option* parent = em ? em->findOption("Report") : 0;

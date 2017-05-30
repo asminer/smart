@@ -21,7 +21,7 @@ template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
 // *                         my_timer class                         *
 // ******************************************************************
 
-class my_timer : public GraphLib::generic_graph::timer_hook {
+class my_timer : public GraphLib::timer_hook {
   timer watch;
 public:
   virtual void start(const char* w) {
