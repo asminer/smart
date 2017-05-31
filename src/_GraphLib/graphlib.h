@@ -144,11 +144,16 @@ namespace GraphLib {
       /// @return true if we can efficiently enumerate "by columns".
       inline bool isByCols() const { return !is_by_rows; }
 
-      /// @return The current number of graph nodes.
+      /// @return The number of graph nodes.
       inline long getNumNodes() const { return num_nodes; }
 
-      /// @return The current number of graph edges.
+      /// @return The total number of graph edges.
       inline long getNumEdges() const { return num_edges; }
+
+      /// @return The number of graph edges for state s.
+      inline long getNumEdgesFor(long s) const {
+        return row_pointer[s+1] - row_pointer[s];
+      }
 
       /** Determine which rows are empty.
           If the graph is instead "by columns", then
@@ -178,6 +183,14 @@ namespace GraphLib {
 
       /// Total memory required for graph storage, in bytes.
       size_t getMemTotal() const;
+
+    public:
+      // Read-only access to internal storage
+
+      const long* RowPointer() const { return row_pointer; }
+      const long* ColumnIndex() const { return column_index; }
+      const void* Labels() const { return label; } 
+      unsigned char EdgeBytes() const { return edge_bytes; }
 
     private:
       void allocate(long nodes, long edges);

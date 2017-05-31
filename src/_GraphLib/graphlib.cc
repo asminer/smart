@@ -584,6 +584,8 @@ GraphLib::dynamic_graph::exportAndDestroy(static_graph &g, timer_hook *sw)
     label = (unsigned char*) realloc(label, num_edges*edge_size);
   } 
   // Transfer things over
+  g.num_nodes = num_nodes;
+  g.num_edges = num_edges;
   g.edge_bytes = edge_size;
   g.is_by_rows = is_by_rows;
   g.row_pointer = row_pointer;

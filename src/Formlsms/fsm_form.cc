@@ -18,7 +18,6 @@
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
 
-
 // **************************************************************************
 // *                                                                        *
 // *                             fsm_def  class                             *
@@ -34,7 +33,11 @@ class fsm_def : public model_def {
 
   SplayOfPointers <model_enum_value> *initial;
 
+#ifdef USE_OLD_GRAPH_INTERFACE
   GraphLib::digraph* mygr;
+#else
+  GraphLib::dynamic_digraph* mygr;
+#endif
 
   bool error;
 
@@ -180,8 +183,11 @@ void fsm_def::InitModel()
   statelist = 0; 
   state_count = 0;
   DCASSERT(0==mygr);
-  // mygr = startDirectedGraph(0);
+#ifdef USE_OLD_GRAPH_INTERFACE
   mygr = new GraphLib::digraph(true);
+#else
+  mygr = new GraphLib::dynamic_digraph(true);
+#endif
   DCASSERT(mygr);
   DCASSERT(0==initial);
   initial = new SplayOfPointers <model_enum_value> (16, 0);
