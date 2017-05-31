@@ -316,11 +316,7 @@ void grlib_display_incoming::show_edge(long src, long dest)
 // *                                                                *
 // ******************************************************************
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g) : InEdges(), OutEdges()
-#else
 grlib_reachgraph::grlib_reachgraph(GraphLib::dynamic_digraph* g) : InEdges(), OutEdges()
-#endif
 {
   edges = g;
   // clear the initial vector
@@ -329,35 +325,20 @@ grlib_reachgraph::grlib_reachgraph(GraphLib::dynamic_digraph* g) : InEdges(), Ou
   initial.d_value = 0;
   initial.f_value = 0;
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-  DCASSERT(0==InEdges.num_rows);
-  DCASSERT(0==OutEdges.num_rows);
-
-  // determine deadlocked states
-  DCASSERT(edges);
-  deadlocks.resetSize(edges->getNumNodes());
-  edges->noOutgoingEdges(deadlocks); 
-#else 
   DCASSERT(0==InEdges.getNumNodes());
   DCASSERT(0==OutEdges.getNumNodes());
-#endif
 }
 
 grlib_reachgraph::~grlib_reachgraph()
 {
-#ifdef USE_OLD_GRAPH_INTERFACE
-  InEdges.destroy();
-  OutEdges.destroy();
-#endif
-
   // in case we still have it
   delete edges;
 
   // in case we still have it:
   delete[] initial.index;
 
-  // deadlocks should be destroyed automagically here;
-  // no need to do anything special, right?
+  // deadlocks, InEdges, and OutEdges should be destroyed 
+  // automagically here; no need to do anything special, right?
 }
 
 void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS)
@@ -374,58 +355,6 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
 
   DCASSERT(edges);
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-  if (!edges->isFinished()) {
-    // Finish the graph 
-    GraphLib::digraph::finish_options o;
-    edges->finish(o);
-  }
-
-  GraphLib::digraph::const_matrix cE;
-  if (!edges->exportFinished(cE)) {
-    // why did this fail?
-    // we should throw something
-    // or fail with an internal error message
-    DCASSERT(0);
-  }
-
-  if (cE.is_transposed) {
-    InEdges.copyFrom(cE);
-    OutEdges.transposeFrom(cE);
-  } else {
-    InEdges.transposeFrom(cE);
-    OutEdges.copyFrom(cE);
-  }
-
-  free(InEdges.value);
-  InEdges.value = 0;
-  free(OutEdges.value);
-  OutEdges.value = 0;
-  #ifdef DEVELOPMENT_CODE
-  /*
-    Sanity checks 
-  */
-  DCASSERT(InEdges.is_transposed);
-  DCASSERT(!OutEdges.is_transposed);
-  long ns = 0;
-  RSS->getNumStates(ns);
-  DCASSERT(ns == InEdges.num_rows);
-  DCASSERT(ns == OutEdges.num_rows);
-  if (InEdges.num_rows) {
-    DCASSERT(InEdges.rowptr);
-    if (InEdges.rowptr[InEdges.num_rows]) {
-      DCASSERT(InEdges.colindex);
-    }
-  }
-  if (OutEdges.num_rows) {
-    DCASSERT(OutEdges.rowptr);
-    if (OutEdges.rowptr[OutEdges.num_rows]) {
-      DCASSERT(OutEdges.colindex);
-    }
-  }
-  #endif
-
-#else
   if (edges->isByRows()) {
     edges->exportAndDestroy(OutEdges, 0);
     InEdges.transposeFrom(OutEdges);
@@ -436,7 +365,6 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   // determine deadlocked states
   deadlocks.resetSize(OutEdges.getNumNodes());
   OutEdges.emptyRows(deadlocks);
-#endif
 
   delete edges;  
   edges = 0;
@@ -445,17 +373,7 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
 
 void grlib_reachgraph::getNumArcs(long &na) const
 {
-#ifdef USE_OLD_GRAPH_INTERFACE
-  if (InEdges.num_rows) {
-    DCASSERT(InEdges.rowptr);
-    na = InEdges.rowptr[InEdges.num_rows];
-  } else {
-    // no states.  could happen I guess.
-    na = 0;
-  }
-#else
   na = OutEdges.getNumEdges();
-#endif
 }
 
 void grlib_reachgraph::showInternal(OutputStream &os) const
@@ -472,127 +390,6 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
 void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
-#ifdef USE_OLD_GRAPH_INTERFACE
-  //
-  // HUGE TBD: rewrite this using InEdges and OutEdges
-  //
-
-  long num_states = InEdges.num_rows;
-  if (state_lldsm::tooManyStates(num_states, &os))  return;
-
-  long na;
-  getNumArcs(na);
-  if (graph_lldsm::tooManyArcs(na, &os))            return;
-
-  bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
-  const char* row;
-  const char* col;
-  row = "From state ";
-  col = "To state ";
-  if (!by_rows) SWAP(row, col);
-
-  const GraphLib::digraph::matrix &Edges = by_rows ? OutEdges : InEdges;
-
-  // TBD : try/catch around this
-  indexed_reachset::indexed_iterator &I 
-  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
-
-
-  switch (opt.STYLE) {
-    case graph_lldsm::DOT:
-        os << "digraph fsm {\n";
-        for (I.start(); I; I++) { 
-          os << "\ts" << I.index();
-          if (opt.NODE_NAMES) {
-            I.copyState(st);
-            os << " [label=\"";
-            RSS->showState(os, st);
-            os << "\"]";
-          }
-          os << ";\n";
-          os.flush();
-        } // for i
-        os << "\n";
-        break;
-
-    case graph_lldsm::TRIPLES:
-        os << num_states << "\n";
-        os << na << "\n";
-        break;
-
-    default:
-        os << "Reachability graph:\n";
-  }
-
-
-  // Sorted list for current row/col
-  std::set<long> coll;
-
-  for (I.start(); I; I++) {
-    //
-    // Start of another row/col
-    //
-    switch (opt.STYLE) {
-      case graph_lldsm::INCOMING:
-      case graph_lldsm::OUTGOING:
-          os << row;
-          if (opt.NODE_NAMES) {
-            I.copyState(st);
-            RSS->showState(os, st);
-          } else {
-            os << I.getI();
-          }
-          os << ":\n";
-
-      default:
-          // nothing
-          break;
-    }
-
-    //
-    // Build the row/col
-    //
-    coll.clear();
-    CHECK_RANGE(0, I.getIndex(), Edges.num_rows);
-    for (long z=Edges.rowptr[I.getIndex()]; z<Edges.rowptr[I.getIndex()+1]; z++) {
-      coll.insert( I.index2ord(Edges.colindex[z]) );
-    } // for z
-
-    //
-    // Display row/column
-    //
-    std::set<long>::const_iterator pos;
-    for (pos=coll.begin(); pos != coll.end(); ++pos) {
-      os.Put('\t');
-      switch (opt.STYLE) {
-        case graph_lldsm::DOT:
-            os << "s" << I.getI() << " -> s" << *pos << ";";
-            break;
-
-        case graph_lldsm::TRIPLES:
-            os << I.getI() << " " << *pos;
-            break;
-
-        default:
-            os << col;
-            if (opt.NODE_NAMES) {
-              I.copyState(st, *pos);
-              RSS->showState(os, st);
-            } else {
-              os << *pos;
-            }
-      }
-      os.Put('\n');
-    } // for z
-
-    os.flush();
-  } // for I
-  if (graph_lldsm::DOT == opt.STYLE) {
-    os << "}\n";
-  }
-  os.flush();
-
-#else // ====================================================================================================
 
   if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), &os))    return;
   if (graph_lldsm::tooManyArcs(OutEdges.getNumEdges(), &os))      return;
@@ -666,7 +463,6 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   //
 
   delete display;
-#endif
 }
 
 void grlib_reachgraph::setInitial(LS_Vector &init)
@@ -703,11 +499,7 @@ void grlib_reachgraph
     numpaths_report.stopIO();
   }
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-  const long num_states = InEdges.num_rows;
-#else
   const long num_states = InEdges.getNumNodes();
-#endif
   intset back(num_states);
   {
     traverse_helper TH(num_states);
@@ -760,13 +552,8 @@ void grlib_reachgraph
     }
   } // for s
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-  const long* outrowptr = OutEdges.rowptr;
-  const long* outcolindex = OutEdges.colindex;
-#else
   const long* outrowptr = OutEdges.RowPointer();
   const long* outcolindex = OutEdges.ColumnIndex();
-#endif
 
   // Depth first search, starting from "src" states.
   while (stack_top) {
@@ -895,24 +682,6 @@ void grlib_reachgraph::need_reverse_time()
 
 void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
 {
-#ifdef USE_OLD_GRAPH_INTERFACE
-  if (rt) {
-    // easy peasy - use InEdges to count incoming edges
-    DCASSERT(InEdges.rowptr);
-
-    for (long i=0; i<InEdges.num_rows; i++) {
-      TH.set_obligations(i, InEdges.rowptr[i+1] - InEdges.rowptr[i]);
-    }
-
-  } else {
-    // easy peasy - use OutEdges to count outgoing edges
-    DCASSERT(OutEdges.rowptr);
-
-    for (long i=0; i<OutEdges.num_rows; i++) {
-      TH.set_obligations(i, OutEdges.rowptr[i+1] - OutEdges.rowptr[i]);
-    }
-  }
-#else
   if (rt) {
     for (long i=0; i<InEdges.getNumNodes(); i++) {
       TH.set_obligations(i, InEdges.getNumEdgesFor(i));
@@ -922,7 +691,6 @@ void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
       TH.set_obligations(i, OutEdges.getNumEdgesFor(i));
     }
   }
-#endif
 }
 
 void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) const
@@ -931,22 +699,6 @@ void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) con
   else    _traverse(one_step, InEdges, TH);
 }
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::digraph::matrix &E)
-{
-  const char* rptr = (E.is_transposed) ? "column pointers" : "row pointers";
-  const char* cind = (E.is_transposed) ? "row index      " : "column index";
-
-  os << "      size: " << E.num_rows << "\n";
-  os << "      " << rptr << ": [";
-  os.PutArray(E.rowptr, E.num_rows+1);
-  os << "]\n";
-
-  os << "      " << cind << ": [";
-  os.PutArray(E.colindex, E.rowptr ? E.rowptr[E.num_rows] : 0);
-  os << "]\n";
-}
-#else
 void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_graph &E)
 {
   const char* rptr = (E.isByCols()) ? "column pointers" : "row pointers";
@@ -961,28 +713,8 @@ void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_gr
   os.PutArray(E.ColumnIndex(), E.getNumEdges());
   os << "]\n";
 }
-#endif
 
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-void grlib_reachgraph::_traverse(bool one_step, const GraphLib::digraph::matrix &E,
-  ectl_reachgraph::traverse_helper &TH)
-{
-        while (TH.queue_nonempty()) {
-            long s = TH.queue_pop();
-            // explore edges to/from s
-            for (long z=E.rowptr[s]; z<E.rowptr[s+1]; z++) {
-                long t = E.colindex[z];
-                if (TH.num_obligations(t) <= 0) continue;
-                TH.remove_obligation(t);
-                if (one_step) continue;
-                if (0==TH.num_obligations(t)) {
-                    TH.queue_push(t);
-                }
-            } // for z
-        } // while queue not empty
-}
-#else
 void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
   ectl_reachgraph::traverse_helper &TH)
 {
@@ -994,15 +726,12 @@ void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
     E.traverse(foo);
   }
 }
-#endif
 
 // ******************************************************************
 // *                                                                *
 // *           grlib_reachgraph::mygraphtraverse  methods           *
 // *                                                                *
 // ******************************************************************
-
-#ifndef USE_OLD_GRAPH_INTERFACE
 
 template <bool ONESTEP>
 grlib_reachgraph::mygraphtraverse<ONESTEP>::mygraphtraverse(traverse_helper &th)
@@ -1033,6 +762,4 @@ bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, void*)
   }
   return false;
 }
-
-#endif
 
