@@ -17,12 +17,310 @@
 #include "../_Timer/timerlib.h"
 
 // ******************************************************************
+// *                    grlib_display_row  class                    *
+// ******************************************************************
+
+
+class grlib_display_row : public GraphLib::BF_graph_traversal {
+  public:
+    grlib_display_row(indexed_reachset::indexed_iterator &_I, std::set<long> &_coll);
+
+    void set_row(long r);
+
+    virtual bool hasStatesToExplore();
+    virtual long getNextToExplore();
+
+    virtual bool visit(long, long dest, void*);
+
+  private:
+    indexed_reachset::indexed_iterator &I;
+    std::set<long> &coll;
+
+    long row;
+};
+
+// ******************************************************************
+// *                   grlib_display_row  methods                   *
+// ******************************************************************
+
+grlib_display_row::grlib_display_row(indexed_reachset::indexed_iterator &_I, 
+  std::set<long> &_coll) : I(_I), coll(_coll)
+{
+  row = -1;
+}
+
+void grlib_display_row::set_row(long r)
+{
+  row = r;
+  coll.clear();
+}
+
+bool grlib_display_row::hasStatesToExplore()
+{
+  return row >= 0;
+}
+
+long grlib_display_row::getNextToExplore()
+{
+  long next = row;
+  row = -1;
+  return next;
+}
+
+bool grlib_display_row::visit(long, long dest, void*)
+{
+  coll.insert( I.index2ord(dest) );
+  return false;
+}
+
+// ******************************************************************
+// *                   grlib_display_style  class                   *
+// ******************************************************************
+
+/**
+  For displaying graphs in various styles.
+  Defaults are here, in the base class.
+*/
+class grlib_display_style {
+  public:
+    grlib_display_style(OutputStream &_os, state_lldsm::reachset* _RSS,
+      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
+      bool state_names);
+
+    virtual ~grlib_display_style();
+
+    virtual void header();
+    virtual void start_row(long row);
+    virtual void show_edge(long src, long dest);
+    virtual void finish_row();
+    virtual void footer();
+
+  protected:
+    inline OutputStream &out() { return os; }
+
+    virtual void showState(long s);
+     
+  protected:
+    indexed_reachset::indexed_iterator &I;
+    bool show_state_names;
+  private:
+    OutputStream &os;
+    state_lldsm::reachset* RSS;
+    shared_state* st;
+};
+
+// ******************************************************************
+// *                  grlib_display_style  methods                  *
+// ******************************************************************
+
+grlib_display_style::grlib_display_style(OutputStream &_os, 
+  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
+  shared_state* _st, bool state_names) : I(_I), os(_os)
+{
+  RSS = _RSS;
+  st = _st;
+  show_state_names = state_names;
+}
+
+grlib_display_style::~grlib_display_style()
+{
+}
+
+void grlib_display_style::header()
+{
+  out() << "Reachability graph:\n";
+}
+
+void grlib_display_style::start_row(long row)
+{
+  out() << "From state ";
+  showState(row);
+  out() << ":\n";
+}
+
+void grlib_display_style::show_edge(long src, long dest)
+{
+  out() << "\tTo state ";
+  showState(dest);
+  out() << "\n";
+}
+
+void grlib_display_style::finish_row()
+{
+  out().flush();
+}
+
+void grlib_display_style::footer()
+{
+}
+
+void grlib_display_style::showState(long s)
+{
+  // s is the state, native to the graph
+  if (show_state_names) {
+    I.copyState(st, s);
+    RSS->showState(os, st);
+  } else {
+    out() << s;
+  }
+}
+
+// ******************************************************************
+// *                    grlib_display_dot  class                    *
+// ******************************************************************
+
+class grlib_display_dot : public grlib_display_style {
+  public:
+    grlib_display_dot(OutputStream &_os, state_lldsm::reachset* _RSS,
+      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
+      bool state_names);
+
+    virtual void header();
+    virtual void start_row(long row);
+    virtual void show_edge(long src, long dest);
+    virtual void footer();
+};
+
+// ******************************************************************
+// *                   grlib_display_dot  methods                   *
+// ******************************************************************
+
+grlib_display_dot::grlib_display_dot(OutputStream &_os, 
+  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
+  shared_state* _st, bool state_names)
+ : grlib_display_style(_os, _RSS, _I, _st, state_names)
+{
+}
+
+void grlib_display_dot::header()
+{
+  out() << "digraph fsm {\n";
+  for (I.start(); I; I++) { 
+    out() << "\ts" << I.index();
+    out() << " [label=\"";
+    showState(I.index());
+    out() << "\"];\n";
+    out().flush();
+  } // for i
+  out() << "\n";
+}
+
+void grlib_display_dot::start_row(long row)
+{
+}
+
+void grlib_display_dot::show_edge(long src, long dest)
+{
+  out() << "\ts" << src << " -> s" << dest << ";\n";
+}
+
+void grlib_display_dot::footer()
+{
+  out() << "}\n";
+  out().flush();
+}
+
+
+// ******************************************************************
+// *                  grlib_display_triples  class                  *
+// ******************************************************************
+
+class grlib_display_triples : public grlib_display_style {
+  public:
+    grlib_display_triples(OutputStream &_os, state_lldsm::reachset* _RSS,
+      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
+      long _num_states, long _num_arcs);
+
+    virtual void header();
+    virtual void start_row(long row);
+    virtual void show_edge(long src, long dest);
+
+  private:
+    long num_states;
+    long num_arcs;
+};
+
+// ******************************************************************
+// *                 grlib_display_triples  methods                 *
+// ******************************************************************
+
+grlib_display_triples::grlib_display_triples(OutputStream &_os, 
+  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
+  shared_state* _st, long _num_states, long _num_arcs)
+ : grlib_display_style(_os, _RSS, _I, _st, false)
+{
+  num_states = _num_states;
+  num_arcs = _num_arcs;
+}
+
+void grlib_display_triples::header()
+{
+  out() << num_states << "\n";
+  out() << num_arcs << "\n";
+}
+
+void grlib_display_triples::start_row(long row)
+{
+}
+
+void grlib_display_triples::show_edge(long src, long dest)
+{
+  out() << "\t" << src << " " << dest << "\n";
+}
+
+
+// ******************************************************************
+// *                  grlib_display_incoming class                  *
+// ******************************************************************
+
+class grlib_display_incoming : public grlib_display_style {
+  public:
+    grlib_display_incoming(OutputStream &_os, state_lldsm::reachset* _RSS,
+      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
+      bool _show_states);
+
+    virtual void start_row(long row);
+    virtual void show_edge(long src, long dest);
+};
+
+// ******************************************************************
+// *                 grlib_display_incoming methods                 *
+// ******************************************************************
+
+grlib_display_incoming::grlib_display_incoming(OutputStream &_os, 
+  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
+  shared_state* _st, bool state_names)
+: grlib_display_style(_os, _RSS, _I, _st, state_names)
+{
+}
+
+void grlib_display_incoming::start_row(long row)
+{
+  out() << "To state ";
+  showState(row);
+  out() << ":\n";
+}
+
+void grlib_display_incoming::show_edge(long src, long dest)
+{
+  out() << "\tFrom state ";
+  showState(dest);
+  out() << "\n";
+}
+
+
+
+// ******************************************************************
 // *                                                                *
 // *                    grlib_reachgraph methods                    *
 // *                                                                *
 // ******************************************************************
 
+#ifdef USE_OLD_GRAPH_INTERFACE
 grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g) : InEdges(), OutEdges()
+#else
+grlib_reachgraph::grlib_reachgraph(GraphLib::dynamic_digraph* g) : InEdges(), OutEdges()
+#endif
 {
   edges = g;
   // clear the initial vector
@@ -30,19 +328,27 @@ grlib_reachgraph::grlib_reachgraph(GraphLib::digraph* g) : InEdges(), OutEdges()
   initial.index = 0;
   initial.d_value = 0;
   initial.f_value = 0;
+
+#ifdef USE_OLD_GRAPH_INTERFACE
+  DCASSERT(0==InEdges.num_rows);
+  DCASSERT(0==OutEdges.num_rows);
+
   // determine deadlocked states
   DCASSERT(edges);
   deadlocks.resetSize(edges->getNumNodes());
   edges->noOutgoingEdges(deadlocks); 
-
-  DCASSERT(0==InEdges.num_rows);
-  DCASSERT(0==OutEdges.num_rows);
+#else 
+  DCASSERT(0==InEdges.getNumNodes());
+  DCASSERT(0==OutEdges.getNumNodes());
+#endif
 }
 
 grlib_reachgraph::~grlib_reachgraph()
 {
+#ifdef USE_OLD_GRAPH_INTERFACE
   InEdges.destroy();
   OutEdges.destroy();
+#endif
 
   // in case we still have it
   delete edges;
@@ -67,6 +373,8 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   if (irs) irs->Finish();
 
   DCASSERT(edges);
+
+#ifdef USE_OLD_GRAPH_INTERFACE
   if (!edges->isFinished()) {
     // Finish the graph 
     GraphLib::digraph::finish_options o;
@@ -93,11 +401,7 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   InEdges.value = 0;
   free(OutEdges.value);
   OutEdges.value = 0;
-
-  delete edges;  
-  edges = 0;
-
-#ifdef DEVELOPMENT_CODE
+  #ifdef DEVELOPMENT_CODE
   /*
     Sanity checks 
   */
@@ -119,12 +423,29 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
       DCASSERT(OutEdges.colindex);
     }
   }
+  #endif
+
+#else
+  if (edges->isByRows()) {
+    edges->exportAndDestroy(OutEdges, 0);
+    InEdges.transposeFrom(OutEdges);
+  } else {
+    edges->exportAndDestroy(InEdges, 0);
+    OutEdges.transposeFrom(InEdges);
+  }
+  // determine deadlocked states
+  deadlocks.resetSize(OutEdges.getNumNodes());
+  OutEdges.emptyRows(deadlocks);
 #endif
+
+  delete edges;  
+  edges = 0;
 
 }
 
 void grlib_reachgraph::getNumArcs(long &na) const
 {
+#ifdef USE_OLD_GRAPH_INTERFACE
   if (InEdges.num_rows) {
     DCASSERT(InEdges.rowptr);
     na = InEdges.rowptr[InEdges.num_rows];
@@ -132,6 +453,9 @@ void grlib_reachgraph::getNumArcs(long &na) const
     // no states.  could happen I guess.
     na = 0;
   }
+#else
+  na = OutEdges.getNumEdges();
+#endif
 }
 
 void grlib_reachgraph::showInternal(OutputStream &os) const
@@ -148,6 +472,7 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
 void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
+#ifdef USE_OLD_GRAPH_INTERFACE
   //
   // HUGE TBD: rewrite this using InEdges and OutEdges
   //
@@ -266,6 +591,82 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
     os << "}\n";
   }
   os.flush();
+
+#else // ====================================================================================================
+
+  if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), &os))    return;
+  if (graph_lldsm::tooManyArcs(OutEdges.getNumEdges(), &os))      return;
+
+  bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
+  const GraphLib::static_graph &Edges = by_rows ? OutEdges : InEdges;
+
+  // TBD : try/catch around this
+  indexed_reachset::indexed_iterator &I 
+  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
+
+  //
+  // Set up the display style.
+  // This cleans up the code below.
+  //
+  grlib_display_style* display = 0;
+  switch (opt.STYLE) {
+    case graph_lldsm::DOT:
+      display = new grlib_display_dot(os, RSS, I, st, opt.NODE_NAMES);
+      break;
+
+    case graph_lldsm::TRIPLES:
+      display = new grlib_display_triples(os, RSS, I, st, 
+          OutEdges.getNumNodes(), OutEdges.getNumEdges());
+      break;
+
+    case graph_lldsm::INCOMING:
+      display = new grlib_display_incoming(os, RSS, I, st, opt.NODE_NAMES);
+      break;
+
+    // case graph_lldsm::OUTGOING:
+    default:
+      display = new grlib_display_style(os, RSS, I, st, opt.NODE_NAMES); 
+  }
+
+  //
+  // Stuff for building the current row/col
+  //
+  std::set<long> coll;
+  grlib_display_row rowbuild(I, coll);
+
+
+  //
+  // Ready to display graph
+  //
+
+  display->header();
+
+  for (I.start(); I; I++) {
+    // 
+    // Start of another row/col
+    //
+    display->start_row(I.getI());
+    rowbuild.set_row(I.index());
+    Edges.traverse(rowbuild);
+
+    //
+    // Display row/column
+    //
+    std::set<long>::const_iterator pos;
+    for (pos=coll.begin(); pos != coll.end(); ++pos) {
+      display->show_edge(I.getI(), *pos);
+    }
+
+    display->finish_row();
+  } // for I
+  display->footer();
+
+  //
+  // Cleanup
+  //
+
+  delete display;
+#endif
 }
 
 void grlib_reachgraph::setInitial(LS_Vector &init)
@@ -302,7 +703,11 @@ void grlib_reachgraph
     numpaths_report.stopIO();
   }
 
+#ifdef USE_OLD_GRAPH_INTERFACE
   const long num_states = InEdges.num_rows;
+#else
+  const long num_states = InEdges.getNumNodes();
+#endif
   intset back(num_states);
   {
     traverse_helper TH(num_states);
@@ -355,6 +760,13 @@ void grlib_reachgraph
     }
   } // for s
 
+#ifdef USE_OLD_GRAPH_INTERFACE
+  const long* outrowptr = OutEdges.rowptr;
+  const long* outcolindex = OutEdges.colindex;
+#else
+  const long* outrowptr = OutEdges.RowPointer();
+  const long* outcolindex = OutEdges.ColumnIndex();
+#endif
 
   // Depth first search, starting from "src" states.
   while (stack_top) {
@@ -372,8 +784,8 @@ void grlib_reachgraph
       shortpc[visit] = VISITING;
 
       // for all outgoing edges from this state
-      for (long z=OutEdges.rowptr[visit]; z<OutEdges.rowptr[visit+1]; z++) {
-        long next = OutEdges.colindex[z];
+      for (long z=outrowptr[visit]; z<outrowptr[visit+1]; z++) {
+        long next = outcolindex[z];
         if (!back.contains(next)) continue;
         if (0==shortpc[next]) {
           // Push(next)
@@ -396,8 +808,8 @@ void grlib_reachgraph
 
     // should have #paths computed for all children, add them up   
     acc.set_si(0);
-    for (long z=OutEdges.rowptr[visit]; z<OutEdges.rowptr[visit+1]; z++) {
-      long next = OutEdges.colindex[z];
+    for (long z=outrowptr[visit]; z<outrowptr[visit+1]; z++) {
+      long next = outcolindex[z];
       if (shortpc[next] >= 0) {
         acc.add_ui(shortpc[next]);
         continue;
@@ -483,6 +895,7 @@ void grlib_reachgraph::need_reverse_time()
 
 void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
 {
+#ifdef USE_OLD_GRAPH_INTERFACE
   if (rt) {
     // easy peasy - use InEdges to count incoming edges
     DCASSERT(InEdges.rowptr);
@@ -499,6 +912,17 @@ void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
       TH.set_obligations(i, OutEdges.rowptr[i+1] - OutEdges.rowptr[i]);
     }
   }
+#else
+  if (rt) {
+    for (long i=0; i<InEdges.getNumNodes(); i++) {
+      TH.set_obligations(i, InEdges.getNumEdgesFor(i));
+    }
+  } else {
+    for (long i=0; i<OutEdges.getNumNodes(); i++) {
+      TH.set_obligations(i, OutEdges.getNumEdgesFor(i));
+    }
+  }
+#endif
 }
 
 void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) const
@@ -507,6 +931,7 @@ void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) con
   else    _traverse(one_step, InEdges, TH);
 }
 
+#ifdef USE_OLD_GRAPH_INTERFACE
 void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::digraph::matrix &E)
 {
   const char* rptr = (E.is_transposed) ? "column pointers" : "row pointers";
@@ -521,7 +946,25 @@ void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::digraph::
   os.PutArray(E.colindex, E.rowptr ? E.rowptr[E.num_rows] : 0);
   os << "]\n";
 }
+#else
+void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_graph &E)
+{
+  const char* rptr = (E.isByCols()) ? "column pointers" : "row pointers";
+  const char* cind = (E.isByCols()) ? "row index      " : "column index";
 
+  os << "      size: " << E.getNumNodes() << "\n";
+  os << "      " << rptr << ": [";
+  os.PutArray(E.RowPointer(), E.getNumNodes()+1);
+  os << "]\n";
+
+  os << "      " << cind << ": [";
+  os.PutArray(E.ColumnIndex(), E.getNumEdges());
+  os << "]\n";
+}
+#endif
+
+
+#ifdef USE_OLD_GRAPH_INTERFACE
 void grlib_reachgraph::_traverse(bool one_step, const GraphLib::digraph::matrix &E,
   ectl_reachgraph::traverse_helper &TH)
 {
@@ -539,5 +982,57 @@ void grlib_reachgraph::_traverse(bool one_step, const GraphLib::digraph::matrix 
             } // for z
         } // while queue not empty
 }
+#else
+void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
+  ectl_reachgraph::traverse_helper &TH)
+{
+  if (one_step) {
+    mygraphtraverse<true> foo(TH);
+    E.traverse(foo);
+  } else {
+    mygraphtraverse<false> foo(TH);
+    E.traverse(foo);
+  }
+}
+#endif
 
+// ******************************************************************
+// *                                                                *
+// *           grlib_reachgraph::mygraphtraverse  methods           *
+// *                                                                *
+// ******************************************************************
+
+#ifndef USE_OLD_GRAPH_INTERFACE
+
+template <bool ONESTEP>
+grlib_reachgraph::mygraphtraverse<ONESTEP>::mygraphtraverse(traverse_helper &th)
+ : TH(th)
+{
+}
+
+template <bool ONESTEP>
+bool grlib_reachgraph::mygraphtraverse<ONESTEP>::hasStatesToExplore()
+{
+  return TH.queue_nonempty();
+}
+
+template <bool ONESTEP>
+long grlib_reachgraph::mygraphtraverse<ONESTEP>::getNextToExplore()
+{
+  return TH.queue_pop();
+}
+
+template <bool ONESTEP>
+bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, void*)
+{
+  if (TH.num_obligations(dest) <= 0) return false;
+  TH.remove_obligation(dest);
+  if (ONESTEP) return false;
+  if (0==TH.num_obligations(dest)) {
+    TH.queue_push(dest);
+  }
+  return false;
+}
+
+#endif
 

@@ -138,10 +138,18 @@ indexed_statedbs
 // **************************************************************************
 
 struct indexed_reachgraph : public indexed_statedbs {
+#ifdef USE_OLD_GRAPH_INTERFACE
   GraphLib::digraph &rg;
+#else
+  GraphLib::dynamic_digraph &rg;
+#endif
   ObjectList <long> *initlist;
 public:
+#ifdef USE_OLD_GRAPH_INTERFACE
   indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::digraph &rg);
+#else
+  indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::dynamic_digraph &rg);
+#endif
   ~indexed_reachgraph();
   // required
   inline static bool statesOnly() {
@@ -188,8 +196,13 @@ public:
 };
 
 
+#ifdef USE_OLD_GRAPH_INTERFACE
 indexed_reachgraph
 ::indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::digraph &therg)
+#else
+indexed_reachgraph
+::indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::dynamic_digraph &therg)
+#endif
  :indexed_statedbs(tdb, vdb), rg(therg)
 {
   initlist = new ObjectList <long>;
@@ -375,7 +388,11 @@ protected:
 
         @throw  Appropriate error code.
   */
+#ifdef USE_OLD_GRAPH_INTERFACE
   void generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::digraph* rg) const;
+#else
+  void generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::dynamic_digraph* rg) const;
+#endif
 
   /** Build the reachability set and (maybe) Markov chain.
         @param  m   High-level model.
@@ -429,7 +446,11 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     if (e!=this)              return e->RunEngine(hm, statesonly);
   }
   StateLib::state_db* rss = 0;
+#ifdef USE_OLD_GRAPH_INTERFACE
   GraphLib::digraph* rg = 0;
+#else
+  GraphLib::dynamic_digraph* rg = 0;
+#endif
   MCLib::Markov_chain* mc = 0;
   MCLib::vanishing_chain* vc = 0;
   const char* the_proc = 0;
@@ -447,7 +468,11 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   if (nondeterm) {
     if (!statesonly.getBool()) {
+#ifdef USE_OLD_GRAPH_INTERFACE
       rg = new GraphLib::digraph(true); 
+#else
+      rg = new GraphLib::dynamic_digraph(true); 
+#endif
     }
     if (slm) {
       rss = slm->getRSS()->getStateDatabase();
@@ -522,7 +547,11 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     } 
     if (rg) {
       Report().report().Put('\t');
+#ifdef USE_OLD_GRAPH_INTERFACE
       Report().report().PutMemoryCount(rg->ReportMemTotal(), 3);
+#else
+      Report().report().PutMemoryCount(rg->getMemTotal(), 3);
+#endif
       Report().report() << " required for reachability graph construction\n";
       Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
     } 
@@ -599,8 +628,13 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 }
 
 
+#ifdef USE_OLD_GRAPH_INTERFACE
 void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, 
   LS_Vector &s0, GraphLib::digraph* rg) const
+#else
+void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, 
+  LS_Vector &s0, GraphLib::dynamic_digraph* rg) const
+#endif
 {
   DCASSERT(dsm);
   DCASSERT(tandb);
