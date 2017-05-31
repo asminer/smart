@@ -33,11 +33,7 @@ class fsm_def : public model_def {
 
   SplayOfPointers <model_enum_value> *initial;
 
-#ifdef USE_OLD_GRAPH_INTERFACE
-  GraphLib::digraph* mygr;
-#else
   GraphLib::dynamic_digraph* mygr;
-#endif
 
   bool error;
 
@@ -183,11 +179,7 @@ void fsm_def::InitModel()
   statelist = 0; 
   state_count = 0;
   DCASSERT(0==mygr);
-#ifdef USE_OLD_GRAPH_INTERFACE
-  mygr = new GraphLib::digraph(true);
-#else
   mygr = new GraphLib::dynamic_digraph(true);
-#endif
   DCASSERT(mygr);
   DCASSERT(0==initial);
   initial = new SplayOfPointers <model_enum_value> (16, 0);
@@ -207,22 +199,6 @@ void fsm_def::FinalizeModel(OutputStream &ds)
     ConstructionError();
     return;
   }
-
-  /*
-  GraphLib::digraph::finish_options fo;
-  fo.Store_By_Rows = false;  // need option?
-  fo.Will_Clear = false;
-  try {
-    if (!error) mygr->finish(fo);
-  }
-  catch (GraphLib::error e) {
-    if (StartError(0)) {
-      em->cerr() << e.getString() << " when finalizing finite state machine";
-      DoneError();
-    }
-    error = true;
-  }
-  */
 
   LS_Vector init;
   init.f_value = 0;
