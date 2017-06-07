@@ -135,7 +135,7 @@ class forwd_reachable : public BF_graph_traversal {
     forwd_reachable(long init, intset &_reachable);
     virtual ~forwd_reachable();
 
-    virtual bool hasStatesToExplore();
+    virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
     virtual bool visit(long src, long dest, void*);
 
@@ -164,7 +164,7 @@ forwd_reachable::~forwd_reachable()
   delete[] queue;
 }
 
-bool forwd_reachable::hasStatesToExplore()
+bool forwd_reachable::hasNodesToExplore()
 {
   return queue_tail > queue_head;
 }
@@ -194,7 +194,7 @@ class show_traverse : public BF_graph_traversal {
     long init;
   public:
     show_traverse(bool sh, long& c);
-    virtual bool hasStatesToExplore();
+    virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
     virtual bool visit(long, long to, void*);
 
@@ -210,7 +210,7 @@ show_traverse::show_traverse(bool sh, long& c)
   reset(-1);
 }
 
-bool show_traverse::hasStatesToExplore()
+bool show_traverse::hasNodesToExplore()
 {
   return init >= 0;
 }

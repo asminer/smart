@@ -67,7 +67,7 @@ class grlib_reachgraph : public ectl_reachgraph {
       public:
         mygraphtraverse(traverse_helper &_th);
 
-        virtual bool hasStatesToExplore();
+        virtual bool hasNodesToExplore();
         virtual long getNextToExplore();
         virtual bool visit(long, long dest, void*);
       private:
