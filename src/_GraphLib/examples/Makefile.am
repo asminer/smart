@@ -2,6 +2,12 @@
 noinst_PROGRAMS = \
   grtest triples
 
+check_PROGRAMS = \
+  renumber
+
+TESTS = \
+  renumber
+
 AM_CPPFLAGS = -I$(srcdir)/../ -I$(srcdir)/../../_IntSets -I$(srcdir)/../../_RngLib -I$(srcdir)/../../_GraphLib
 
 grtest_SOURCES = grtest.cc ../graphlib.cc ../sccs.cc ../../_IntSets/intset.cc
@@ -9,3 +15,6 @@ grtest_SOURCES = grtest.cc ../graphlib.cc ../sccs.cc ../../_IntSets/intset.cc
 
 triples_SOURCES = triples.cc ../graphlib.cc ../sccs.cc ../../_IntSets/intset.cc
 triples_LDADD = ../../_RngLib/librng.la
+
+renumber_SOURCES = renumber.cc ../graphlib.cc ../sccs.cc ../../_IntSets/intset.cc
+

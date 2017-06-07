@@ -27,7 +27,7 @@ class grlib_display_row : public GraphLib::BF_graph_traversal {
 
     void set_row(long r);
 
-    virtual bool hasStatesToExplore();
+    virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
 
     virtual bool visit(long, long dest, void*);
@@ -55,7 +55,7 @@ void grlib_display_row::set_row(long r)
   coll.clear();
 }
 
-bool grlib_display_row::hasStatesToExplore()
+bool grlib_display_row::hasNodesToExplore()
 {
   return row >= 0;
 }
@@ -740,7 +740,7 @@ grlib_reachgraph::mygraphtraverse<ONESTEP>::mygraphtraverse(traverse_helper &th)
 }
 
 template <bool ONESTEP>
-bool grlib_reachgraph::mygraphtraverse<ONESTEP>::hasStatesToExplore()
+bool grlib_reachgraph::mygraphtraverse<ONESTEP>::hasNodesToExplore()
 {
   return TH.queue_nonempty();
 }

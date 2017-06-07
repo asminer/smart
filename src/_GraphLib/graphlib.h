@@ -25,9 +25,9 @@ namespace GraphLib {
     enum code {
       /// Not implemented yet.
       Not_Implemented,
-      /// Bad state index
+      /// Bad node index
       Bad_Index,
-      /// Insufficient memory (e.g., for adding state or edge)
+      /// Insufficient memory (e.g., for adding node or edge)
       Out_Of_Memory,
       /// Operation finished requirement does not match graph's finished state.
       Finished_Mismatch,
@@ -81,34 +81,195 @@ namespace GraphLib {
   /**
         Class for arbitrary breadth-first graph traversals.
 
-        Conceptually, this class maintains a queue of states
-        to explore (hidden from the traversal), and defines
-        what to do when a state is visited.
-        In practice, the "queue" could be an actual queue,
-        or something trivial like a single state.
+        Conceptually, this class maintains a queue (hidden from the traversal)
+        of nodes whose outgoing edges should be explored, and defines what to
+        do when an edge is visited.  In practice, the "queue" could be an
+        actual queue, or something trivial like a single node.
+
   */
   class BF_graph_traversal {
       public:
           BF_graph_traversal();
           virtual ~BF_graph_traversal();
 
-          /// Do we need to explore any more states?
-          virtual bool hasStatesToExplore() = 0;
+          /// Do we need to explore any more nodes?
+          virtual bool hasNodesToExplore() = 0;
 
-          /// Return the next state to explore.
+          /// Return the next node to explore.
           virtual long getNextToExplore() = 0;
 
           /**
-              Visit a state.
-                @param  src     The state causing the visit, because
+              Visit an edge.
+                @param  src     The node causing the visit, because
                                 of an outgoing/incoming edge.
-                @param  dest    The state being visited.
+                @param  dest    The node being visited.
                 @param  wt      The weight (if any) on the edge
                                 causing the visit.
 
                 @return true,   If we should stop the traversal now.
           */
           virtual bool visit(long src, long dest, void* wt) = 0;
+  };
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                       node_renumberer  class                       |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      Abstract class for node renumbering in a graph.
+  */
+  class node_renumberer {
+    public:
+      node_renumberer();
+      virtual ~node_renumberer();
+
+      virtual long new_number(long s) const = 0;
+  };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                       array_renumberer class                       |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      Node renumbering using an array.
+      The easiest and most common case, so we provide it for convenience.
+  */
+  class array_renumberer : public node_renumberer {
+    public:
+      array_renumberer(long* nn);
+
+      // Will destroy the array using delete[].
+      virtual ~array_renumberer();
+
+      // Will simply return newnumber[s].
+      virtual long new_number(long s) const;
+
+    protected:
+      long* newnumber;
+  };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                      static_classifier  class                      |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      Helper class for classes of contiguous nodes in a graph.
+      
+      Classes must be numbered contiguously 0, 1, ..., NC-1
+      but a class can have size zero (i.e., no nodes assigned to it).
+
+      Nodes in each class must be numbered contiguously.
+      Since the first state must be numbered 0, it sufficies to specify
+      the number of classes and the size of each class.
+
+  */
+  class static_classifier {
+    public:
+      static_classifier();
+      ~static_classifier();
+
+      inline long numClasses() const { return num_classes; }
+
+      inline long sizeOfClass(long c) const {
+        // TBD - CHECK_RANGE(...)
+        return class_start[c+1] - class_start[c];
+      }
+
+      inline long firstNodeOfClass(long c) const {
+        return class_start[c];
+      }
+
+      inline long lastNodeOfClass(long c) const {
+        return class_start[c+1]-1;
+      }
+
+      long classOfNode(long s) const;
+
+    private:
+      /**
+        Rebuild the classifier.
+        Called by abstract_classifier when exporting.
+          @param  nc      Number of classes.
+          @param  sizes   Array of dimension nc+1 where
+                            sizes[i] is the size of class i, for 0 <= i < nc,
+                            and sizes[nc] is ignored.
+                          (The array is reused in the class, and the extra
+                          element is required.)
+      */
+      void rebuild(long nc, long* sizes);
+
+      friend class abstract_classifier;
+
+    private:
+      long num_classes;
+      long* class_start;
+  };
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                     abstract_classifier  class                     |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+    Abstract class for defining classes of nodes in a graph.
+    Typically used for SCCs and TSCCs, such as for classifying
+    states in a Markov chain.
+    
+    For this classifer, nodes within a class do not need to be
+    numbered contiguously, and we can generate a renumberer
+    if we need to renumber the nodes so that they are contiguous.
+    For example, if we have the following classes for nodes:
+      0:3 1:1 2:0 3:1 4:1 5:1 6:2 7:2 8:0 9:1
+    Then we might reorder the nodes by class
+      2:0 8:0 1:1 3:1 4:1 5:1 9:1 6:2 7:2 0:3
+    which would give a renumbering
+      0->9, 1->2, 2->0, 3->3, 4->4, 5->5, 6->7, 8->1, 9->6
+
+    This is an abstract base class.
+    The idea is that different classification methods could use
+    different derived classes.
+
+    Classes must be numbered 0, 1, ..., NC-1
+    but a class can have size zero (i.e., no nodes assigned to it).
+  */
+  class abstract_classifier {
+    public:
+      abstract_classifier(long ns, long nc);
+      virtual ~abstract_classifier();
+
+      inline long numClasses() const { return num_classes; }
+      inline long numNodes() const { return num_nodes; }
+
+      /// For a given node s, return its class.
+      virtual long classOfNode(long s) const = 0;
+
+      /// For a given class c, return its size.
+      virtual long sizeOf(long c) const = 0;
+
+      /**
+          Build and return a renumbering scheme.
+          If the graph is renumbered in this way, then
+          the classes will be contiguous.
+      */
+      virtual node_renumberer* buildRenumberer() const = 0;
+
+      /**
+          Build a static classifier based on this dynamic one.
+      */
+      void exportToStatic(static_classifier &C) const;
+
+    private:
+      long num_nodes;
+      long num_classes;
   };
 
 
@@ -150,7 +311,7 @@ namespace GraphLib {
       /// @return The total number of graph edges.
       inline long getNumEdges() const { return num_edges; }
 
-      /// @return The number of graph edges for state s.
+      /// @return The number of graph edges for node s.
       inline long getNumEdgesFor(long s) const {
         return row_pointer[s+1] - row_pointer[s];
       }
@@ -159,8 +320,8 @@ namespace GraphLib {
           If the graph is instead "by columns", then
           determine which columns are empty.
           In other words, if we're by rows,
-          determine which states have no outgoing edges;
-          otherwise, determine states with no incoming edges.
+          determine which nodes have no outgoing edges;
+          otherwise, determine nodes with no incoming edges.
             @param  x   On input: ignored.
                         On output, set of nodes with no 
                         incoming/outgoing edges.
@@ -173,7 +334,7 @@ namespace GraphLib {
           otherwise, we traverse incoming edges.
 
             @param  t   Traversal, which determines the
-                        (possibly changing) list of states to explore,
+                        (possibly changing) list of nodes to explore,
                         and how to visit edges.
 
             @return true, iff a call to t.visit returned true
@@ -278,17 +439,20 @@ namespace GraphLib {
       void removeEdges(BF_graph_traversal &t);
 
 
-      /** Renumber graph nodes.
-            @param  newid   Old node number i is numbered newid[i].
+      /**
+          Renumber nodes in the graph.
+            @param  r   Node renumbering scheme.  Node i in the graph will be
+                        renumbered to r.new_number(i).
       */
-      void renumber(const long* newid);
+      void renumberNodes(const node_renumberer &r);
+
 
       /** Reverse direction of all edges.
           Or, equivalently, flip storage between
           "store by outgoing edges" and "store by incoming edges".
             @param  sw  Place to report timing; nothing reported if 0.
       */
-      void transpose(timer_hook* sw);
+      // void transpose(timer_hook* sw);
 
       /** Compute the terminal sccs.
           Useful for Markov chain state classification, or
@@ -358,7 +522,7 @@ namespace GraphLib {
           otherwise, we traverse incoming edges.
 
             @param  t   Traversal, which determines the
-                        (possibly changing) list of states to explore,
+                        (possibly changing) list of nodes to explore,
                         and how to visit edges.
 
             @return true, iff a call to t.visit returned true
@@ -382,7 +546,6 @@ namespace GraphLib {
       void AddToUnmergedCircularList(long &list, long ptr);
 
       long Defragment(long);
-
 
     // for SCC computation
     private:

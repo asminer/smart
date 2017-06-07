@@ -104,6 +104,123 @@ GraphLib::BF_graph_traversal::~BF_graph_traversal()
 
 // ******************************************************************
 // *                                                                *
+// *                    node_renumberer  methods                    *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::node_renumberer::node_renumberer()
+{
+}
+
+GraphLib::node_renumberer::~node_renumberer()
+{
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    array_renumberer methods                    *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::array_renumberer::array_renumberer(long* nn)
+{
+  newnumber = nn;
+}
+
+GraphLib::array_renumberer::~array_renumberer()
+{
+  delete[] newnumber;
+}
+
+long GraphLib::array_renumberer::new_number(long s) const
+{
+  return newnumber[s];
+}
+
+// ******************************************************************
+// *                                                                *
+// *                   static_classifier  methods                   *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::static_classifier::static_classifier() 
+{
+  num_classes = 0;
+  class_start = 0;
+}
+
+GraphLib::static_classifier::~static_classifier()
+{
+  delete[] class_start;
+}
+
+void GraphLib::static_classifier::rebuild(long nc, long* sizes)
+{
+  delete[] class_start;
+  class_start = sizes;
+  num_classes = nc;
+  // Shift everything to the right,
+  // so that class_start[i] is the size of class i-1
+  for (long c=num_classes; c>0; c--) {
+    class_start[c] = class_start[c-1];
+  }
+  class_start[0] = 0;
+  //
+  // Accumulate, so that class_start[i] is equal to
+  // the sum from j=0 to i-1 of size of class j
+  //
+  for (long c=2; c<=num_classes; c++) {
+    class_start[c] += class_start[c-1];
+  }
+}
+
+long GraphLib::static_classifier::classOfNode(long s) const 
+{
+  // Insane values:
+  if (s<class_start[0]) return -1;
+  if (s>=class_start[num_classes]) return num_classes;
+  // Binary search
+  // Find c such that class_start[c] <= s < class_start[c+1].
+  // Invariant: class_start[low] <= s < class_start[high].
+  // Stop when low + 1 == high.
+  long low = 0; 
+  long high = num_classes;
+  while (high>low+1) {
+    long mid = (high+low)/2;
+    if (s< class_start[mid])  high = mid;
+    else                      low = mid;
+  }
+  return low;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                  abstract_classifier  methods                  *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::abstract_classifier::abstract_classifier(long ns, long nc)
+{
+  num_nodes = ns;
+  num_classes = nc;
+}
+
+GraphLib::abstract_classifier::~abstract_classifier()
+{
+}
+
+void GraphLib::abstract_classifier::exportToStatic(static_classifier &C) const
+{
+  long* sizes = new long[num_classes+1];
+  for (long c=0; c<num_classes; c++) {
+    sizes[c] = sizeOf(c);
+  }
+  C.rebuild(num_classes, sizes);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                      static_graph methods                      *
 // *                                                                *
 // ******************************************************************
@@ -223,7 +340,7 @@ void GraphLib::static_graph::emptyRows(intset &x) const
 
 bool GraphLib::static_graph::traverse(BF_graph_traversal &t) const
 {
-  while (t.hasStatesToExplore()) {
+  while (t.hasNodesToExplore()) {
       long s = t.getNextToExplore();
 
       if (s<0 || s>=num_nodes) {
@@ -390,7 +507,7 @@ GraphLib::dynamic_graph::addEdge(long from, long to, const void* wt)
 void 
 GraphLib::dynamic_graph::removeEdges(BF_graph_traversal &t)
 {
-  while (t.hasStatesToExplore()) {
+  while (t.hasNodesToExplore()) {
       long s = t.getNextToExplore();
 
       // Switch to linked lists, for simplicity
@@ -429,46 +546,89 @@ GraphLib::dynamic_graph::removeEdges(BF_graph_traversal &t)
 // ******************************************************************
 
 void
-GraphLib::dynamic_graph::renumber(const long* renum)
+GraphLib::dynamic_graph::renumberNodes(const node_renumberer &r)
 {
-  if (0==renum) throw GraphLib::error(GraphLib::error::Miscellaneous);
-  
-  bool* fixme = (bool*) malloc(num_nodes * sizeof(bool));
-  if (0==fixme) throw GraphLib::error(GraphLib::error::Out_Of_Memory);
+  //
+  // We need another row_pointer array; everything else is "in place"
+  //
+  long* tmp_row_lists = new long[num_nodes];
+  for (long s=0; s<num_nodes; s++) tmp_row_lists[s] = -1;
 
-  long s;
-  for (s=num_nodes-1; s>=0; s--) fixme[s] = (s!=renum[s]);
+  //
+  // Do a transpose + renumber.
+  // Convert old row lists into column lists, renumbering as we go.
+  //
+  for (long s=0; s<num_nodes; s++) {
+    if (row_pointer[s]<0) continue; // empty row; skip
+    // Convert current list from circular to linear
+    long tail = row_pointer[s];
+    row_pointer[s] = next[tail];
+    next[tail] = -1;
+    // Now, traverse the list, and do the transpose.
+    // We won't bother to order the lists;
+    // a second transpose will make that right.
 
-  // re-arrange row lists, by in-place swaps
-  for (s=0; s<num_nodes; s++) if (fixme[s]) {
-    long last = row_pointer[s];
-    long p = s;
-    while (1) {
-      p = renum[p];
-      SWAP(last, row_pointer[p]);
-      fixme[p] = false;
-      if (p==s) break;
-    } // while 1
-  } // for s's that need fixin'
-  free(fixme);
+    long nc = r.new_number(s);  // new column
+    long ptrnext = -1;
+    for (long ptr=row_pointer[s]; ptr>=0; ptr=ptrnext) {
+      ptrnext = next[ptr];  // we're going to clobber next[ptr], so save it
 
-  // re-arrange columns
-  for (s=0; s<num_nodes; s++) {
-    if (row_pointer[s]<0) continue;  // empty row
-    long ptr = row_pointer[s];
-    long first = ptr;
-    do {
-      column_index[ptr] = renum[column_index[ptr]];
-      ptr = next[ptr];
-    } while (ptr != first);
-  } // for s
+      long nr = r.new_number(column_index[ptr]);  // new row
+      //
+      // Change edge ptr from (colindex, value) in list s
+      // to (nc, value) in list nr
+      //
+      column_index[ptr] = nc;
+      
+      // Ok, add this to list tmp_row_lists[nr]
 
-  // Column indexes may be out of order now.
-  // A single transpose will put us right, though.
+      next[ptr] = tmp_row_lists[nr];
+      tmp_row_lists[nr] = ptr;
+    }
+    row_pointer[s] = -1;
+  }
+
+  //
+  // Graph is renumbered, but transposed.
+  // Transpose back, which will ensure the edges are in order.
+  // Also, note that tmp_row_lists are (non-circular) linked lists.
+  //
+  long ptrnext = -1;
+  for (long s=0; s<num_nodes; s++) {
+    for (long ptr=tmp_row_lists[s]; ptr>=0; ptr=ptrnext) {
+      ptrnext = next[ptr];  
+
+      // Current edge is (colindex[ptr], value[ptr]) in list s;
+      // Change it to (s, value[ptr]) in circular list colindex[ptr].
+
+      long nr = column_index[ptr];
+      column_index[ptr] = s;
+
+      // Edge is good; add it to the appropriate list
+
+      if (row_pointer[nr] < 0) {
+        // Empty row; build one
+        next[ptr] = ptr;
+        row_pointer[nr] = ptr;
+      } else {
+        // Non-empty row; add past the tail
+        long tail = row_pointer[nr];
+        next[ptr] = next[tail];
+        next[tail] = ptr;
+        row_pointer[nr] = ptr;
+      }
+    }
+  }
+
+  // Cleanup
+  delete[] tmp_row_lists;
 }
+
+
 
 // ******************************************************************
 
+/*
 void
 GraphLib::dynamic_graph::transpose(timer_hook* sw)
 {
@@ -510,6 +670,7 @@ GraphLib::dynamic_graph::transpose(timer_hook* sw)
 
   if (sw) sw->stop();
 }
+*/
 
 // ******************************************************************
 
@@ -634,7 +795,7 @@ GraphLib::dynamic_graph::clear()
 bool
 GraphLib::dynamic_graph::traverse(BF_graph_traversal &t) const
 {
-  while (t.hasStatesToExplore()) {
+  while (t.hasNodesToExplore()) {
     long s = t.getNextToExplore();
 
     if (row_pointer[s] < 0)  continue;  // empty row
