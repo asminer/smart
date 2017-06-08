@@ -192,6 +192,7 @@ GraphLib::dynamic_graph::determineSCCs(long nonterminal, long sinks,
     //
 
     aux[c] = termcount;
+    sccmap[i] = aux[c];
 
     //
     // Increment SCC number, skipping over special values
