@@ -13,21 +13,6 @@
 const int MAX_NODE_ADD = 4096;
 const int MAX_EDGE_ADD = 4096;
 
-// ******************************************************************
-// *                                                                *
-// *                       Macros and such                          *
-// *                                                                *
-// ******************************************************************
-
-/// SWAP "macro".
-template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
-
-/// Standard MAX "macro".
-template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
-
-/// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
 #include "circular.h"
 
 // ******************************************************************

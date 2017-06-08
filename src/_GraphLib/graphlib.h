@@ -7,6 +7,8 @@
 #ifndef GRAPHLIB_H
 #define GRAPHLIB_H
 
+#include "../include/defines.h"
+
 #include <stdlib.h>
 
 class intset;  // defined in another library
@@ -29,6 +31,8 @@ namespace GraphLib {
       Bad_Index,
       /// Insufficient memory (e.g., for adding node or edge)
       Out_Of_Memory,
+      /// Operation required by rows and graph is by columns, or vice versa
+      Format_Mismatch,
       /// Operation finished requirement does not match graph's finished state.
       Finished_Mismatch,
       /// Misc. error
@@ -178,15 +182,17 @@ namespace GraphLib {
       inline long numClasses() const { return num_classes; }
 
       inline long sizeOfClass(long c) const {
-        // TBD - CHECK_RANGE(...)
+        CHECK_RANGE(0, c, num_classes);
         return class_start[c+1] - class_start[c];
       }
 
       inline long firstNodeOfClass(long c) const {
+        CHECK_RANGE(0, c, num_classes);
         return class_start[c];
       }
 
       inline long lastNodeOfClass(long c) const {
+        CHECK_RANGE(0, c, num_classes);
         return class_start[c+1]-1;
       }
 
@@ -204,6 +210,17 @@ namespace GraphLib {
                           element is required.)
       */
       void rebuild(long nc, long* sizes);
+
+      /**
+        Replace the classifier.
+        Called by abstract_classifier when exporting.
+          @param  nc      Number of classes.
+          @param  starts  Array of dimension nc+1 where
+                            starts[i] is the index of the 
+                            first node in class i.
+      */
+      void replace(long nc, long* starts);
+
 
       friend class abstract_classifier;
 
@@ -252,26 +269,79 @@ namespace GraphLib {
       /// For a given node s, return its class.
       virtual long classOfNode(long s) const = 0;
 
-      /// For a given class c, return its size.
-      virtual long sizeOf(long c) const = 0;
-
       /**
-          Build and return a renumbering scheme.
-          If the graph is renumbered in this way, then
-          the classes will be contiguous.
-      */
-      virtual node_renumberer* buildRenumberer() const = 0;
+          Build a renumbering scheme and static classifier.
+          Must be provided by derived classes.
 
-      /**
-          Build a static classifier based on this dynamic one.
+            @param  C     Static classifier based on this one.
+                          The static classifier will work only if nodes are
+                          renumbered according to the node_renumberer
+                          returned by this method.
+
+            @return       A node_renumberer that will cause classes to
+                          be contiguous.  Specifically, new node numbers
+                          will be such that nodes belonging to class 0
+                          appear first, followed by nodes belonging to 
+                          class 1, then class 2, and so on.
       */
-      void exportToStatic(static_classifier &C) const;
+      virtual node_renumberer* buildRenumbererAndStatic(static_classifier &C) const = 0;
+
+    protected:
+      /* 
+          Helpers, will be needed by derived classes when exporting.
+      */
+
+      inline void rebuild_classifier(static_classifier &C, long nc, 
+        long* sizes) const
+      {
+        C.rebuild(nc, sizes);
+      }
+
+      inline void replace_classifier(static_classifier &C, long nc,
+        long* starts) const
+      {
+        C.replace(nc, starts);
+      }
 
     private:
       long num_nodes;
       long num_classes;
   };
 
+
+  // ======================================================================
+  // |                                                                    |
+  // |                      general_classifier class                      |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      General classifier using an array.
+  */
+  class general_classifier : public abstract_classifier {
+    public:
+      /**
+          Build a classifier.
+            @param  C   Array of dimension number of nodes, where
+                        C[n] gives the class of node n.
+                        The destructor will destroy this array using delete[].
+
+            @param  ns  Number of nodes.
+
+            @param  nc  Number of classes.  Array C must contain
+                        values in the range 0, 1, ..., nc-1.
+      */
+      general_classifier(long* C, long ns, long nc);
+      virtual ~general_classifier();
+
+      // Required interface:
+
+      virtual long classOfNode(long s) const;
+      virtual node_renumberer* buildRenumbererAndStatic(static_classifier &C) const;
+
+    private:
+      long* class_of_node;
+  };
 
   // ======================================================================
   // |                                                                    |
@@ -454,27 +524,45 @@ namespace GraphLib {
       */
       // void transpose(timer_hook* sw);
 
+
       /** Compute the terminal sccs.
           Useful for Markov chain state classification, or
           CTL model checking with "fairness".
           Currently, this is much faster if the graph is stored "by rows".
+
+          Implementation is in sccs.cc
   
-            @param  sw      Where to report timing information (nowhere if 0).
+            @param  nonterminal   Index to use for nonterminal SCCs
+                                  (we will merge them all together),
+                                  or -1 if nonterminal SCCs should be
+                                  kept separated.
+
+            @param  sinks         Index to use for single sink state SCCs
+                                  (we will merge them all together),
+                                  or -1 if each sink state should be its
+                                  own SCC.
+
+            @param  cons          If true, conserve memory, at a cost of 
+                                  (usually, slightly) increased CPU time.
+
+            @param  sw            Where to report timing information 
+                                  (nowhere if 0).
   
-            @param  cons    If true, conserve memory, at a cost of 
-                            (usually, slightly) increased CPU time.
 
-            @param  sccmap  An array of dimension #nodes (at least).
-                            ON OUTPUT:
-                            sccmap[k] is 0 if node k is "transient",
-                            between 1 and #classes if k is "recurrent".
-
-            @param  aux     Auxiliary array, will be overwritten.
-                            Dimension is #nodes (at least).
-
-            @return   The number of terminal sccs (recurrent classes). 
+            @return   A classification for each node.  SCCs will be 
+                      numbered "densely" from 0 to a maximum number, with 
+                      nonterminals grouped together (if specified) and sinks
+                      grouped together (if specified).  If we ask it but
+                      there are none, then those classes will be empty.  If 
+                      we specify a large index for nonterminal or sinks, 
+                      and there are not enough SCCs, then there will be
+                      empty classes in between.  (For example, if we
+                      specify "nonterminal = 50" and "sinks = 35", 
+                      and there are no other SCCs, then classes 0..34
+                      and 36..49 will be empty.)
       */
-      long computeTSCCs(timer_hook* sw, bool cons, long* sccmap, long* aux) const;
+      abstract_classifier* determineSCCs(long nonterminal, long sinks, 
+        bool cons, timer_hook* sw) const;
   
 
       /**
@@ -547,18 +635,11 @@ namespace GraphLib {
 
       long Defragment(long);
 
-    // for SCC computation
+
     private:
-      inline long getFirstEdgeFor(long s) const {
-        return row_pointer[s];
-      }
-      inline void readEdgeInfo(long z, long &col, long &nxt) const {
-        col = column_index[z];
-        nxt = next[z];
-      }
-
-      friend class scc_data;
-
+      // Details for SCC computation, see sccs.h and sccs.cc
+      class scc_traversal;
+      // friend class dynamic_graph::scc_traversal;
 
     private:
       long* row_pointer;

@@ -23,15 +23,6 @@
 // *                       Macros and such                          *
 // ******************************************************************
 
-/// SWAP "macro".
-template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
-
-/// Standard MAX "macro".
-template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
-
-/// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
 inline void ShowVector(double* p, long size)
 {
   printf("[%f", p[0]);

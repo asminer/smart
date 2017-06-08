@@ -3,9 +3,6 @@
 
 #include <stdio.h>
 
-/// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
 // ******************************************************************
 // *                                                                *
 // *                        bst_db methods                          *
