@@ -23,27 +23,6 @@ const int MINOR_VERSION = 5;
 // *                                                                *
 // ******************************************************************
 
-/// Standard MAX "macro".
-template <class T> 
-inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
-
-/// Standard MIN "macro".
-template <class T> 
-inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
-/**
-    Standard SWAP "macro".
-    It's here because a derived template class needs it.
-*/
-template <class T> 
-inline void SWAP(T &x, T &y)
-{ 
-    T tmp=x; 
-    x=y; 
-    y=tmp; 
-}
-
-
 inline void ShowArray(const char* name, const long* ptr, long N)
 {
   if (0==ptr) {
@@ -67,6 +46,7 @@ const char* GraphLib::error::getString() const
     case Not_Implemented:   return "Not implemented";
     case Bad_Index:         return "Bad index";
     case Out_Of_Memory:     return "Out of memory";
+    case Format_Mismatch:   return "Format mismatch";
     case Finished_Mismatch: return "Finished graph";
     case Miscellaneous:     return "Misc. error";
   };
@@ -154,6 +134,25 @@ GraphLib::static_classifier::~static_classifier()
   delete[] class_start;
 }
 
+long GraphLib::static_classifier::classOfNode(long s) const 
+{
+  // Insane values:
+  if (s<class_start[0]) return -1;
+  if (s>=class_start[num_classes]) return num_classes;
+  // Binary search
+  // Find c such that class_start[c] <= s < class_start[c+1].
+  // Invariant: class_start[low] <= s < class_start[high].
+  // Stop when low + 1 == high.
+  long low = 0; 
+  long high = num_classes;
+  while (high>low+1) {
+    long mid = (high+low)/2;
+    if (s< class_start[mid])  high = mid;
+    else                      low = mid;
+  }
+  return low;
+}
+
 void GraphLib::static_classifier::rebuild(long nc, long* sizes)
 {
   delete[] class_start;
@@ -174,25 +173,13 @@ void GraphLib::static_classifier::rebuild(long nc, long* sizes)
   }
 }
 
-long GraphLib::static_classifier::classOfNode(long s) const 
+void GraphLib::static_classifier::replace(long nc, long* starts)
 {
-  // Insane values:
-  if (s<class_start[0]) return -1;
-  if (s>=class_start[num_classes]) return num_classes;
-  // Binary search
-  // Find c such that class_start[c] <= s < class_start[c+1].
-  // Invariant: class_start[low] <= s < class_start[high].
-  // Stop when low + 1 == high.
-  long low = 0; 
-  long high = num_classes;
-  while (high>low+1) {
-    long mid = (high+low)/2;
-    if (s< class_start[mid])  high = mid;
-    else                      low = mid;
-  }
-  return low;
+  delete[] class_start;
+  class_start = starts;
+  num_classes = nc;
+  // TBD - should we check the array?
 }
-
 
 // ******************************************************************
 // *                                                                *
@@ -210,13 +197,80 @@ GraphLib::abstract_classifier::~abstract_classifier()
 {
 }
 
-void GraphLib::abstract_classifier::exportToStatic(static_classifier &C) const
+// ******************************************************************
+// *                                                                *
+// *                   general_classifier methods                   *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::general_classifier::general_classifier(long* C, long ns, long nc)
+ : abstract_classifier(ns, nc)
 {
-  long* sizes = new long[num_classes+1];
-  for (long c=0; c<num_classes; c++) {
-    sizes[c] = sizeOf(c);
+  class_of_node = C;
+}
+
+GraphLib::general_classifier::~general_classifier()
+{
+  delete[] class_of_node;
+}
+
+long GraphLib::general_classifier::classOfNode(long s) const
+{
+  // TBD?
+  // CHECK_RANGE(0, s, getNumNodes());
+  return class_of_node[s];
+}
+
+GraphLib::node_renumberer*
+GraphLib::general_classifier::buildRenumbererAndStatic(static_classifier &C) const
+{
+  //
+  // First, count the number of states in each class.
+  // Use an extra element because eventually these will be converted
+  // to start indexes as needed for the static_classifier.
+  //
+  long* starts = new long[1+numClasses()];
+  for (long i=0; i<=numClasses(); i++) {
+    starts[i] = 0;
   }
-  C.rebuild(num_classes, sizes);
+  for (long i=0; i<numNodes(); i++) {
+    starts[class_of_node[i]]++;
+  }
+
+  //
+  // Determine starting index per class
+  //
+  for (long i=1; i<=numClasses(); i++) {
+    starts[i] += starts[i-1];
+  }
+  for (long i=numClasses(); i; i--) {
+    starts[i] = starts[i-1];
+  }
+  starts[0] = 0;
+
+  //
+  // Build the renumbering array.
+  // For node s, its new number is the current index of its class
+  // (and we increment the index).
+  //
+  long* renumber = new long[numNodes()];
+  for (long i=0; i<numNodes(); i++) {
+    renumber[i] = starts[ class_of_node[i] ]++;
+  }
+
+  //
+  // Shift the sizes array to get the correct "starts" array
+  //
+  for (long i=numClasses(); i; i--) {
+    starts[i] = starts[i-1];
+  }
+  starts[0] = 0;
+
+  //
+  // Package everything
+  //
+  replace_classifier(C, numClasses(), starts);
+  return new array_renumberer(renumber);
 }
 
 // ******************************************************************
@@ -671,29 +725,6 @@ GraphLib::dynamic_graph::transpose(timer_hook* sw)
   if (sw) sw->stop();
 }
 */
-
-// ******************************************************************
-
-long 
-GraphLib::dynamic_graph::computeTSCCs(timer_hook* sw, bool c, long* sccmap, long* aux) const
-{
-  if (0==sccmap || 0==aux) 
-    throw GraphLib::error(GraphLib::error::Miscellaneous);
-
-  // All these functions are implemented in sccs.cc
-  if (sw) sw->start("Finding SCCs");
-  long count = find_sccs(this, c, sccmap, aux);
-  if (sw) sw->stop();
-
-  if (sw) sw->start("Finding terminal SCCs");
-  find_tsccs(this, sccmap, aux, count);
-  if (sw) sw->stop();
-
-  if (sw) sw->start("Renumbering SCCs");
-  count = compact(this, sccmap, aux, count);
-  if (sw) sw->stop();
-  return count;
-}
 
 // ******************************************************************
 

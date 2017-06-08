@@ -1,5 +1,9 @@
 
-Things to do for the graph library.
+Things to do for the graph library:
 
-* copy constructors
+* Test new SCC mechanism, in examples/
+  + hard code graphs as list of pairs in a struct?
+  + test with/without transient merging, absorbing merging
+
+* (After new MCLib): remove old interface
 
