@@ -196,6 +196,11 @@ namespace GraphLib {
         return class_start[c+1]-1;
       }
 
+      inline bool isNodeInClass(long n, long c) const {
+        CHECK_RANGE(0, c, num_classes);
+        return (n >= class_start[c]) && (n<class_start[c+1]-1);
+      }
+
       long classOfNode(long s) const;
 
     private:
@@ -587,6 +592,38 @@ namespace GraphLib {
             @param  sw  Where to report timing information (nowhere if 0).
       */
       void exportAndDestroy(static_graph &g, timer_hook *sw);
+
+
+      /**
+          Export to two static graphs, based on node classification.
+          Graphs will have the same nodes but differ in the edges:
+          all edges within a class will be copied into the first graph, 
+          and the others will be copied into the second graph.
+          The static graphs will be stored by rows iff this graph
+          is stored by rows.
+            @param  c       State classifier.
+
+            @param  g_diag  On output, will contain a copy of this graph
+                            but only with edges that are between two nodes
+                            belonging to the same class.
+                            If the graph incidence matrix is viewed as a
+                            block-structured matrix (with blocks 
+                            corresponding to classes), then this will be 
+                            a block diagonal matrix.
+
+
+            @param  g_off   On output, will contain a copy of this graph
+                            but only with edges that are between two nodes
+                            belonging to different classes.
+                            If the graph incidence matrix is viewed as a
+                            block-structured matrix (with blocks 
+                            corresponding to classes), then this matrix
+                            will have zeroes on the block diagonals.
+
+            @param  sw  Where to report timing information (nowhere if 0).
+      */
+      void splitAndExport(const static_classifier &c, static_graph &g_diag, 
+        static_graph &g_off, timer_hook *sw);
 
 
       /// Total memory required for graph storage, in bytes.
