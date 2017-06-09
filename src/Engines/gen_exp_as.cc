@@ -209,14 +209,14 @@ indexed_reachgraph::~indexed_reachgraph()
 struct indexed_smp : public indexed_statedbs {
   hldsm &model;
   LS_Options &vansolver;
-  MCLib::vanishing_chain &smp;
+  Old_MCLib::vanishing_chain &smp;
 public:
   indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
-              LS_Options &vs, MCLib::vanishing_chain &smp);
+              LS_Options &vs, Old_MCLib::vanishing_chain &smp);
   // handy
-  inline void convert(MCLib::error e, const char* x) {
+  inline void convert(Old_MCLib::error e, const char* x) {
     switch (e.getCode()) {
-      case MCLib::error::Out_Of_Memory:
+      case Old_MCLib::error::Out_Of_Memory:
           throw subengine::Out_Of_Memory;
 
       default:
@@ -238,7 +238,7 @@ public:
     try {
       smp.getInitialVector(s0);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "build initial vector");
     }
   }
@@ -254,7 +254,7 @@ public:
     try {
       CHECK_RETURN(smp.addVanishing(), index);
     } 
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add vanishing state");
     }
     return true;
@@ -265,7 +265,7 @@ public:
     try {
       CHECK_RETURN(smp.addTangible(), index);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add tangible state");
     }
     return true;
@@ -278,7 +278,7 @@ public:
     try {
       smp.eliminateVanishing(vansolver);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "eliminate vanishings");
     }
   }
@@ -287,7 +287,7 @@ public:
       if (van)  smp.addInitialVanishing(st, wt);
       else      smp.addInitialTangible(st, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -296,7 +296,7 @@ public:
     try {
       smp.addInitialVanishing(st, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -304,7 +304,7 @@ public:
     try {
       smp.addInitialTangible(st, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -313,7 +313,7 @@ public:
     try {
       smp.addTTedge(from, to, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -321,7 +321,7 @@ public:
     try {
       smp.addTVedge(from, to, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -329,7 +329,7 @@ public:
     try {
       smp.addVTedge(from, to, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -337,7 +337,7 @@ public:
     try {
       smp.addVVedge(from, to, wt);
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -346,7 +346,7 @@ public:
 
 indexed_smp
 ::indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
-              LS_Options &vs, MCLib::vanishing_chain &the_smp)
+              LS_Options &vs, Old_MCLib::vanishing_chain &the_smp)
  : indexed_statedbs(tdb, vdb), model(m), vansolver(vs), smp(the_smp)
 {
 }
@@ -385,7 +385,7 @@ protected:
 
         @throw  Appropriate error code.
   */
-  void generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, MCLib::vanishing_chain* smp) const;
+  void generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, Old_MCLib::vanishing_chain* smp) const;
 
 
   inline void initial_distro(const LS_Vector &init) const {
@@ -430,8 +430,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
   StateLib::state_db* rss = 0;
   GraphLib::dynamic_digraph* rg = 0;
-  MCLib::Markov_chain* mc = 0;
-  MCLib::vanishing_chain* vc = 0;
+  Old_MCLib::Markov_chain* mc = 0;
+  Old_MCLib::vanishing_chain* vc = 0;
   const char* the_proc = 0;
   
   bool nondeterm = (hm->GetProcessType() == lldsm::FSM);
@@ -469,7 +469,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     }
     DCASSERT(rss);
     if (!statesonly.getBool()) {
-      vc = MCLib::startVanishingChain(false, rss->Size(), 0);
+      vc = Old_MCLib::startVanishingChain(false, rss->Size(), 0);
     }
   }
 
@@ -622,7 +622,7 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 
 void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb, 
-  LS_Vector &s0, MCLib::vanishing_chain* smp) const
+  LS_Vector &s0, Old_MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);

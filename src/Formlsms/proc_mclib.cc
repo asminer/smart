@@ -51,10 +51,10 @@ bool statusOK(exprman* em, const LS_Output &o, const char* who)
     return false;
 }
 
-bool status(exprman* em, MCLib::error e, const char* who) 
+bool status(exprman* em, Old_MCLib::error e, const char* who) 
 {
     switch (e.getCode()) {
-      case MCLib::error::Out_Of_Memory:
+      case Old_MCLib::error::Out_Of_Memory:
           if (em->startError()) {
             em->noCause();
             em->cerr() << "Insufficient memory for Markov chain ";
@@ -63,7 +63,7 @@ bool status(exprman* em, MCLib::error e, const char* who)
           }
           break;
 
-      case MCLib::error::Wrong_Format:
+      case Old_MCLib::error::Wrong_Format:
           if (em->startError()) {
             em->noCause();
             em->cerr() << "Wrong matrix format for Markov chain linear solver";
@@ -71,7 +71,7 @@ bool status(exprman* em, MCLib::error e, const char* who)
           }
           break;
 
-      case MCLib::error::Null_Vector:
+      case Old_MCLib::error::Null_Vector:
           if (em->startError()) {
             em->noCause();
             em->cerr() << "Initial probability vector required for Markov chain solver";
@@ -95,7 +95,7 @@ bool status(exprman* em, MCLib::error e, const char* who)
 // *                                                                *
 // ******************************************************************
 
-mclib_process::mclib_process(MCLib::Markov_chain* mc)
+mclib_process::mclib_process(Old_MCLib::Markov_chain* mc)
 {
   chain = mc;
   initial = 0;
@@ -120,11 +120,11 @@ void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_l
   irs->Finish();
 
   // Finish MC
-  MCLib::Markov_chain::finish_options opts;
+  Old_MCLib::Markov_chain::finish_options opts;
   opts.Store_By_Rows = storeByRows();
   opts.Will_Clear = false;
   opts.report = my_timer ? my_timer->switchMe() : 0;
-  MCLib::Markov_chain::renumbering r;
+  Old_MCLib::Markov_chain::renumbering r;
   chain->finish(opts, r);
   DCASSERT(chain->isEfficientByRows() == opts.Store_By_Rows);
 
@@ -243,7 +243,7 @@ bool mclib_process
 ::computeTransient(double t, double* probs, double* aux1, double* aux2) const
 {
   if (0==chain || 0==probs || 0==aux1)  return false;
-  MCLib::Markov_chain::transopts opts;
+  Old_MCLib::Markov_chain::transopts opts;
   opts.kill_aux_vectors = false;
   opts.vm_result = aux1;
   opts.accumulator = aux2;
@@ -255,7 +255,7 @@ bool mclib_process
     stopTransientReport(w, opts.Steps);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -271,7 +271,7 @@ bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
 {
   if (0==chain || 0==p0 || 0==n || 0==aux || 0==aux2) return false;
 
-  MCLib::Markov_chain::transopts opts;
+  Old_MCLib::Markov_chain::transopts opts;
   opts.vm_result = aux;
   opts.accumulator = aux2;
   opts.kill_aux_vectors = false;
@@ -283,7 +283,7 @@ bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
     stopAccumulatedReport(w, opts.Steps);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -310,7 +310,7 @@ bool mclib_process::computeSteadyState(double* probs) const
     stopSteadyReport(w, outdata.num_iters);
     return statusOK(em, outdata, "steady-state");
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     return status(em, e, "steady-state");
   }
 }
@@ -332,7 +332,7 @@ bool mclib_process::computeTimeInStates(const double* p0, double* x) const
     stopTTAReport(w, outdata.num_iters);
     return statusOK(em, outdata, "time in states");
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     return status(em, e, "time in states");
   }
 }
@@ -354,7 +354,7 @@ bool mclib_process::computeClassProbs(const double* p0, double* x) const
     stopTTAReport(w, outdata.num_iters);
     return statusOK(em, outdata, "class probabilities");
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     return status(em, e, "class probabilities");
   }
 }
@@ -380,7 +380,7 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     try {
       chain->transpose();
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       if (em->startError()) {
         em->noCause();
         em->cerr() << "Couldn't transpose DTMC for random walk: ";
@@ -395,7 +395,7 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt, 1.0);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't simulate DTMC random walk: ";
@@ -426,7 +426,7 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     try {
       chain->transpose();
     }
-    catch (MCLib::error e) {
+    catch (Old_MCLib::error e) {
       if (em->startError()) {
         em->noCause();
         em->cerr() << "Couldn't transpose CTMC for random walk: ";
@@ -441,7 +441,7 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't simulate CTMC random walk: ";
@@ -479,14 +479,14 @@ bool mclib_process::computeDiscreteTTA(double epsilon, double* &dist, int &N) co
 
   try {
     int goal = chain->getClassOfState(acc_state);
-    MCLib::Markov_chain::distopts opts;
+    Old_MCLib::Markov_chain::distopts opts;
     LS_Vector ls_init;
     DCASSERT(initial);
     initial->ExportTo(ls_init);
     chain->computeDiscreteDistTTA(ls_init, opts, goal, epsilon, dist, N);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't compute discrete TTA: ";
@@ -522,14 +522,14 @@ computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
 
   try {
     int goal = chain->getClassOfState(acc_state);
-    MCLib::Markov_chain::distopts opts;
+    Old_MCLib::Markov_chain::distopts opts;
     LS_Vector ls_init;
     DCASSERT(initial);
     initial->ExportTo(ls_init);
     chain->computeContinuousDistTTA(ls_init, opts, goal, dt, epsilon, dist, N);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't compute discrete TTA: ";
@@ -560,7 +560,7 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
 
   if (t<=0) return true;
 
-  MCLib::Markov_chain::transopts opts;
+  Old_MCLib::Markov_chain::transopts opts;
 
   try {
     timer w;
@@ -569,7 +569,7 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
     stopRevTransReport(w, opts.Steps);
     return true;
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -761,7 +761,7 @@ bool mclib_process::sparse_row_elems::Enlarge(int ns)
 }
 
 bool mclib_process::sparse_row_elems
-::buildIncoming(MCLib::Markov_chain* chain, int i)
+::buildIncoming(Old_MCLib::Markov_chain* chain, int i)
 {
   overflow = false;
   incoming = true;
@@ -773,7 +773,7 @@ bool mclib_process::sparse_row_elems
 }
 
 bool mclib_process::sparse_row_elems
-::buildOutgoing(MCLib::Markov_chain* chain, int i)
+::buildOutgoing(Old_MCLib::Markov_chain* chain, int i)
 {
   overflow = false;
   incoming = false;

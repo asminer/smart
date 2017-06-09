@@ -38,7 +38,7 @@ void ShowUnifStep(int steps, double poiss, double* p, double* a, long size)
 // *                                                                *
 // ******************************************************************
 
-const char* MCLib::error::getString() const
+const char* Old_MCLib::error::getString() const
 {
   switch (errcode) {
     case Not_Implemented:   return "Not implemented";
@@ -66,7 +66,7 @@ const char* MCLib::error::getString() const
 // *                                                                *
 // ******************************************************************
 
-MCLib::Markov_chain::Markov_chain(bool disc)
+Old_MCLib::Markov_chain::Markov_chain(bool disc)
 {
   discrete = disc;
   finished = false;
@@ -75,7 +75,7 @@ MCLib::Markov_chain::Markov_chain(bool disc)
   num_classes = -1;
 }
 
-MCLib::Markov_chain::~Markov_chain()
+Old_MCLib::Markov_chain::~Markov_chain()
 {
 }
 
@@ -85,18 +85,18 @@ MCLib::Markov_chain::~Markov_chain()
 // *                                                                *
 // ******************************************************************
 
-MCLib::Markov_chain::renumbering::renumbering()
+Old_MCLib::Markov_chain::renumbering::renumbering()
 {
   type = 'N';
   newhandle = 0;
 }
 
-MCLib::Markov_chain::renumbering::~renumbering()
+Old_MCLib::Markov_chain::renumbering::~renumbering()
 {
   free(newhandle);
 }
 
-void MCLib::Markov_chain::renumbering::clear()
+void Old_MCLib::Markov_chain::renumbering::clear()
 {
   free(newhandle);
   type = 'N';
@@ -109,14 +109,14 @@ void MCLib::Markov_chain::renumbering::clear()
 // *                                                                *
 // ******************************************************************
 
-MCLib::vanishing_chain::vanishing_chain(bool disc, long nt, long nv)
+Old_MCLib::vanishing_chain::vanishing_chain(bool disc, long nt, long nv)
 {
   discrete = disc;
   num_tangible = nt;
   num_vanishing = nv;
 }
 
-MCLib::vanishing_chain::~vanishing_chain()
+Old_MCLib::vanishing_chain::~vanishing_chain()
 {
 }
 
@@ -129,7 +129,7 @@ MCLib::vanishing_chain::~vanishing_chain()
 // ******************************************************************
 
 
-const char* MCLib::Version()
+const char* Old_MCLib::Version()
 {
   static char buffer[100];
   snprintf(buffer, sizeof(buffer), "Markov chain Library, version %d.%d",

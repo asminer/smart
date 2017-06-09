@@ -11,7 +11,7 @@ const bool discrete = false;
 const char* DTMC = (discrete) ? "DTMC" : "CTMC";
 
 using namespace std;
-using namespace MCLib;
+using namespace Old_MCLib;
 
 #ifdef DEBUG
 class show_entries : public generic_graph::element_visitor {
@@ -211,7 +211,7 @@ int main()
   try {
     DoEverything();
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     cout << "Got MCLib error: " << e.getString() << "\n";
   }
   return 0;

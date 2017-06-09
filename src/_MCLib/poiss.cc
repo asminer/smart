@@ -55,14 +55,14 @@ int PoissonLeft(double lambda, double epsilon)
   }  
 }
 
-double* MCLib::computePoissonPDF(double lambda, double epsilon, int &L, int &R)
+double* Old_MCLib::computePoissonPDF(double lambda, double epsilon, int &L, int &R)
 {
   R = PoissonRight(lambda, epsilon);
   L = PoissonLeft(lambda, epsilon);
 
   double* pdf = (double*) malloc((R-L+1)*sizeof(double));
   if ((0==pdf) && (R-L+1>0)) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   }
 
   double* pdfshift = pdf - L;

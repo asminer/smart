@@ -8,7 +8,7 @@
 #include "../_GraphLib/graphlib.h"
 #include "../_Timer/timerlib.h"
 
-namespace MCLib {
+namespace Old_MCLib {
   class Markov_chain;
 };
 

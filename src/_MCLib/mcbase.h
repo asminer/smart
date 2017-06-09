@@ -44,7 +44,7 @@ public:
   ..., then all absorbing states).
 
 */
-class mc_base : public MCLib::Markov_chain {
+class mc_base : public Old_MCLib::Markov_chain {
 private:
   GraphLib::generic_graph::const_matrix rawQ;
 
@@ -137,9 +137,9 @@ protected:
     long a = (rowsums_alloc >= MAX_NODE_ADD) 
                 ? rowsums_alloc + MAX_NODE_ADD 
                 : rowsums_alloc * 2;
-    if (a<=0) throw MCLib::error(MCLib::error::Out_Of_Memory);
+    if (a<=0) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     double* r = (double*) realloc(rowsums, a*sizeof(double));
-    if (0==r) throw MCLib::error(MCLib::error::Out_Of_Memory);
+    if (0==r) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     rowsums = r;
     rowsums_alloc = a;
   }
@@ -241,7 +241,7 @@ protected:
 public:
   /// Export (transposed) Q matrix
   inline void exportQT(LS_CRS_Matrix_float &Q) const {
-    if (!rawQ.is_transposed) throw MCLib::error(MCLib::error::Internal);
+    if (!rawQ.is_transposed) throw Old_MCLib::error(Old_MCLib::error::Internal);
     Q.size = getNumStates();
     Q.val = (float*) rawQ.value;
     Q.col_ind = rawQ.colindex;
@@ -251,7 +251,7 @@ public:
 
   /// Export (transposed) Q matrix
   inline void exportQT(LS_CCS_Matrix_float &Q) const {
-    if (rawQ.is_transposed) throw MCLib::error(MCLib::error::Internal);
+    if (rawQ.is_transposed) throw Old_MCLib::error(Old_MCLib::error::Internal);
     Q.size = getNumStates();
     Q.val = (float*) rawQ.value;
     Q.row_ind = rawQ.colindex;

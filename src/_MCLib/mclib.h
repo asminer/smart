@@ -22,7 +22,7 @@ struct LS_Vector;
 /// Defined in RNG library: random number stream.
 class rng_stream;
 
-namespace MCLib {
+namespace Old_MCLib {
 
   // ======================================================================
   // |                                                                    |
@@ -1034,6 +1034,6 @@ namespace MCLib {
   vanishing_chain* 
   startVanishingChain(bool is_disc, long num_tang, long num_van);
 
-}; // namespace MCLib
+}; // namespace Old_MCLib
 
 #endif

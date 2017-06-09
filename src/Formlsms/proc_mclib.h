@@ -18,7 +18,7 @@
 class mclib_process : public markov_process {
 
   public:
-    mclib_process(MCLib::Markov_chain* mc);
+    mclib_process(Old_MCLib::Markov_chain* mc);
 
   protected:
     virtual ~mclib_process();
@@ -125,7 +125,7 @@ class mclib_process : public markov_process {
     }
 
   private:
-    MCLib::Markov_chain* chain;
+    Old_MCLib::Markov_chain* chain;
     statedist* initial;
     long trap;
     long accept;
@@ -147,8 +147,8 @@ class mclib_process : public markov_process {
       protected:
         bool Enlarge(int ns);
       public:
-        bool buildIncoming(MCLib::Markov_chain* chain, int i);
-        bool buildOutgoing(MCLib::Markov_chain* chain, int i);
+        bool buildIncoming(Old_MCLib::Markov_chain* chain, int i);
+        bool buildOutgoing(Old_MCLib::Markov_chain* chain, int i);
 
       // for element_visitor
         virtual bool visit(long from, long to, void*);    
