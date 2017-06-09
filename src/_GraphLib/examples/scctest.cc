@@ -6,7 +6,7 @@
 #include <iostream>
 #include "graphlib.h"
 
-#define VERBOSE
+// #define VERBOSE
 
 using namespace GraphLib;
 using namespace std;
@@ -103,6 +103,33 @@ const long scc3_01[] = { 0, 0, 0, 0, 0, 2, 2, 2, 2, 1, 0, 0, 3, 3, 2, 2, 2, 2, 0
 const long scc3_10[] = { 1, 1, 1, 1, 1, 2, 2, 2, 2, 0, 1, 1, 3, 3, 2, 2, 2, 2, 1, 4, 4, 4, 4, 4, 4, 4};
 
 
+// ==============================> Graph 4 <==============================
+
+const long nodes4 = 18;
+
+const edge graph4[] = {
+  {5, 9}, {9, 8}, {8, 5},
+  {5, 2}, {9, 13}, {8, 11},
+  {2, 4}, {4, 11}, {11, 12}, {12, 13}, {13, 6}, {6, 2},
+  {2, 0}, {2, 1}, {2, 3},
+  {4, 1}, {4, 7},
+  {6, 3}, {6, 10},
+  {11, 7}, {11, 14}, {11, 15},
+  {12, 15}, {12, 16},
+  {13, 10}, {13, 16}, {13, 17},
+  {14, 14},
+  {15, 15},
+  {16, 16},
+  {17, 17},
+  {-1, -1}
+};
+
+// st long scc4_nn[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}
+const long scc4_nn[] = {0, 1, 2, 3, 2, 4, 2, 5, 4, 4, 6, 2, 2, 2, 7, 8, 9, 10};
+const long scc4_n1[] = {1, 1, 0, 1, 0, 2, 0, 1, 2, 2, 1, 0, 0, 0, 1, 1, 1, 1};
+const long scc4_1n[] = {0, 2, 1, 3, 1, 1, 1, 4, 1, 1, 5, 1, 1, 1, 6, 7, 8, 9};
+const long scc4_35[] = {5, 5, 3, 5, 3, 3, 3, 5, 3, 3, 5, 3, 3, 3, 5, 5, 5, 5};
+
 // =======================================================================
 
 
@@ -187,6 +214,11 @@ int main()
   if (!testGraph("graph3 test4", nodes3, graph3, 0, 0, scc3_00)) return 1;
   if (!testGraph("graph3 test5", nodes3, graph3, 0, 1, scc3_01)) return 1;
   if (!testGraph("graph3 test6", nodes3, graph3, 1, 0, scc3_10)) return 1;
+
+  if (!testGraph("graph4 test1", nodes4, graph4, -1, -1, scc4_nn)) return 1;
+  if (!testGraph("graph4 test2", nodes4, graph4, -1, 1, scc4_n1)) return 1;
+  if (!testGraph("graph4 test3", nodes4, graph4, 1, -1, scc4_1n)) return 1;
+  if (!testGraph("graph4 test4", nodes4, graph4, 3, 5, scc4_35)) return 1;
 
   return 0;
 }
