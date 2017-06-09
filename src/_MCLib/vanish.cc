@@ -15,15 +15,15 @@
 // *                                                                *
 // ******************************************************************
 
-class my_vanish : public MCLib::vanishing_chain {
+class my_vanish : public Old_MCLib::vanishing_chain {
   hypersparse_matrix* initial;
   mc_general* TT_proc;
   mc_absorb* V_proc;
   hypersparse_matrix* TV_rates;
 
   // stuff for eliminating vanishings
-  MCLib::Markov_chain::finish_options fopts;
-  MCLib::Markov_chain::renumbering mcrenumb;
+  Old_MCLib::Markov_chain::finish_options fopts;
+  Old_MCLib::Markov_chain::renumbering mcrenumb;
   double* vtime;
   long vt_alloc;
 public:
@@ -44,7 +44,7 @@ public:
   virtual void eliminateVanishing(const LS_Options &opt);
 
   virtual void getInitialVector(LS_Vector &init);
-  virtual MCLib::Markov_chain* grabTTandClear();
+  virtual Old_MCLib::Markov_chain* grabTTandClear();
 };
 
 
@@ -53,8 +53,8 @@ public:
 // *                           Front  end                           *
 // ******************************************************************
 
-MCLib::vanishing_chain* 
-MCLib::startVanishingChain(bool disc, long nt, long nv)
+Old_MCLib::vanishing_chain* 
+Old_MCLib::startVanishingChain(bool disc, long nt, long nv)
 {
   return new my_vanish(disc, nt, nv);
 }
@@ -90,7 +90,7 @@ long my_vanish::addTangible()
 {
   long handle = TT_proc->addState();
   long h2 = V_proc->addAbsorbing();
-  if (-handle-1 != h2) throw MCLib::error(MCLib::error::Miscellaneous);
+  if (-handle-1 != h2) throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
   num_tangible++;
   return handle;
 }
@@ -140,9 +140,9 @@ void my_vanish::eliminateVanishing(const LS_Options &opt)
     V_proc->finish(fopts, mcrenumb);
   }
   // 2. if not absorbing then throw "absorbing_loop" error
-  catch (MCLib::error e) {
-    if (e.getCode() == MCLib::error::Wrong_Type)
-      throw MCLib::error(MCLib::error::Loop_Of_Vanishing);
+  catch (Old_MCLib::error e) {
+    if (e.getCode() == Old_MCLib::error::Wrong_Type)
+      throw Old_MCLib::error(Old_MCLib::error::Loop_Of_Vanishing);
     else
       throw e;
   }
@@ -187,7 +187,7 @@ void my_vanish::eliminateVanishing(const LS_Options &opt)
   if (vt_alloc < num_vanishing) {
     vt_alloc = num_vanishing;
     vtime = (double*) realloc(vtime, vt_alloc * sizeof(double));
-    if (0==vtime) throw MCLib::error(MCLib::error::Out_Of_Memory);
+    if (0==vtime) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   }
 
   // 3. for each non-empty row of rv do
@@ -213,7 +213,7 @@ void my_vanish::eliminateVanishing(const LS_Options &opt)
     LS_Output out;
     V_proc->computeTTA(inittmp, vtime, opt, out);
     if (out.status != LS_Success) {
-      throw MCLib::error(MCLib::error::Miscellaneous);
+      throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
     }
 
 #ifdef DEBUG_VANISH
@@ -245,9 +245,9 @@ void my_vanish::getInitialVector(LS_Vector &init)
   initial->ExportRowCopy(0, init);
 }
 
-MCLib::Markov_chain* my_vanish::grabTTandClear()
+Old_MCLib::Markov_chain* my_vanish::grabTTandClear()
 {
-  MCLib::Markov_chain* mc = TT_proc;
+  Old_MCLib::Markov_chain* mc = TT_proc;
   TT_proc = 0;
   V_proc->clear();
   return mc;

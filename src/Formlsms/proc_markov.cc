@@ -205,7 +205,7 @@ class mc_lib : public library {
 public:
   mc_lib() : library(false) { }
   virtual const char* getVersionString() const {
-    return MCLib::Version();
+    return Old_MCLib::Version();
   }
   virtual bool hasFixedPointer() const { 
     return true; 

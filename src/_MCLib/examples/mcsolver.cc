@@ -48,7 +48,7 @@ protected:
   // switches
   static bool quiet;
   static LS_Options ssopts;
-  static MCLib::Markov_chain::finish_options Fopts;
+  static Old_MCLib::Markov_chain::finish_options Fopts;
 
 protected:
   bool is_discrete;
@@ -146,7 +146,7 @@ public:
 
 bool dryrun_parser::quiet = false;
 LS_Options dryrun_parser::ssopts;
-MCLib::Markov_chain::finish_options dryrun_parser::Fopts;
+Old_MCLib::Markov_chain::finish_options dryrun_parser::Fopts;
 
 // ******************************************************************
 // *                     dryrun_parser  methods                     *
@@ -210,8 +210,8 @@ bool dryrun_parser::doneEdges()
 // ******************************************************************
 
 class solver_parser : public dryrun_parser {
-  MCLib::Markov_chain* mc;   // Markov chain
-  MCLib::Markov_chain::renumbering Ren;
+  Old_MCLib::Markov_chain* mc;   // Markov chain
+  Old_MCLib::Markov_chain::renumbering Ren;
   const long* ren_map;
   float* initial;    // initial vector.
   long initsize;    // dimension of initial vector.
@@ -414,7 +414,7 @@ bool solver_parser::finishInitial()
 bool solver_parser::startEdges(long num_edges)
 {
   if (num_edges<0) num_edges = 0;
-  mc = MCLib::startUnknownMC(is_discrete, States, num_edges);
+  mc = Old_MCLib::startUnknownMC(is_discrete, States, num_edges);
   if (0==mc) {
     fprintf(errlog, "Couldn't start Markov chain\n");
     return false;
@@ -437,7 +437,7 @@ bool solver_parser::addEdge(long fs, long ts, double p)
     fprintf(errlog, "\n");
     return dryrun_parser::addEdge(fs, ts, p);
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     startError();
     fprintf(errlog, "MCLib: %s", e.getString());
     doneError();
@@ -447,7 +447,7 @@ bool solver_parser::addEdge(long fs, long ts, double p)
 
 bool solver_parser::doneEdges()
 {
-  using namespace MCLib;
+  using namespace Old_MCLib;
 
   dryrun_parser::doneEdges();
   sw.reset();
@@ -521,7 +521,7 @@ void solver_parser::fillInit()
 
 bool solver_parser::solveDTMCTransient(int n)
 {
-  using namespace MCLib;
+  using namespace Old_MCLib;
   if (n<0) return false;
   try {
     Markov_chain::transopts foo;
@@ -554,7 +554,7 @@ bool solver_parser::solveDTMCTransient(int n)
 
 bool solver_parser::solveCTMCTransient(double t)
 {
-  using namespace MCLib;
+  using namespace Old_MCLib;
   if (t<0) return false;
   try {
     Markov_chain::transopts foo;
@@ -589,7 +589,7 @@ bool solver_parser::solveCTMCTransient(double t)
 
 bool solver_parser::solveSteady()
 {
-  using namespace MCLib;
+  using namespace Old_MCLib;
   if (Steady_state == last_solved) return true;
   try {
     if (!quiet) {
@@ -631,7 +631,7 @@ bool solver_parser::solveSteady()
 
 bool solver_parser::solveAccumulated()
 {
-  using namespace MCLib;
+  using namespace Old_MCLib;
   if (Accumulated == last_solved) return true;
   last_solved = Accumulated;
 
@@ -845,7 +845,7 @@ int Usage(const char* name)
   fprintf(stderr, "\nMarkov chain solver\n");
   fprintf(stderr, "\t%s\n", GraphLib::Version());
   fprintf(stderr, "\t%s\n", LS_LibraryVersion());
-  fprintf(stderr, "\t%s\n", MCLib::Version());
+  fprintf(stderr, "\t%s\n", Old_MCLib::Version());
   fprintf(stderr, "\t%s\n", mc_builder::getParserVersion());
   fprintf(stderr, "\nUsage: %s [-switches] <files>\n", name);
   fprintf(stderr, "\tIf no files are specified, then input is taken from standard input\n");

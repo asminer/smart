@@ -59,7 +59,7 @@ class markov_def : public model_def {
 
   SplayOfPointers <state_weight> *initial;
 
-  MCLib::Markov_chain* mymc;
+  Old_MCLib::Markov_chain* mymc;
 
   bool error;
   bool discrete;
@@ -132,7 +132,7 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     mymc->addState();
 #endif
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (StartError(wrap)) {
       em->cerr() << e.getString() << " when adding state " << wrap->Name();
       DoneError();
@@ -193,7 +193,7 @@ void markov_def::AddEdge(const expr* cause,
       DoneWarning();
     }
   } 
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (StartError(cause)) {
       em->cerr() << e.getString() << " when adding edge from ";
       em->cerr() << f->Name() << " to " << t->Name();
@@ -208,7 +208,7 @@ void markov_def::InitModel()
   statelist = 0; 
   state_count = 0;
   DCASSERT(0==mymc);
-  mymc = MCLib::startUnknownMC(isDiscrete(), 0, 0);
+  mymc = Old_MCLib::startUnknownMC(isDiscrete(), 0, 0);
   DCASSERT(mymc);
   DCASSERT(0==initial);
   initial = new SplayOfPointers <state_weight> (16, 0);
@@ -301,14 +301,14 @@ void markov_def::FinalizeModel(OutputStream &ds)
   // OLD!
   //
   /*
-  MCLib::Markov_chain::finish_options fo;
+  Old_MCLib::Markov_chain::finish_options fo;
   fo.Store_By_Rows = markov_lldsm::storeByRows();
   fo.Will_Clear = false;
-  MCLib::Markov_chain::renumbering r;
+  Old_MCLib::Markov_chain::renumbering r;
   try {
     if (!error) mymc->finish(fo, r);
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     if (StartError(0)) {
       em->cerr() << e.getString() << " when finalizing Markov chain";
       DoneError();

@@ -11,7 +11,7 @@
 #include <iostream>
 
 using namespace std;
-using namespace MCLib;
+using namespace Old_MCLib;
 
 inline void showVector(double* p)
 {
@@ -159,7 +159,7 @@ int main(int argc, const char** argv)
   try {
     return RunTests(by_rows);
   }
-  catch (MCLib::error e) {
+  catch (Old_MCLib::error e) {
     cout << "Caught MCLib error: " << e.getString() << "\n";
     return 1;
   }

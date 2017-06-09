@@ -50,7 +50,7 @@ inline void ShowUnifStep(int steps, double poiss, double* p, double* a, long siz
 // *                                                                *
 // ******************************************************************
 
-namespace MCLib {
+namespace Old_MCLib {
 
 template <class MATRIX>
 void forwStep(
@@ -196,15 +196,15 @@ void genericTransientDisc(
   void (*step)(const MATRIX&, const hypersparse_matrix*, double, double*, double*, bool)
 ) 
 {
-  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+  if (0==p) throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
+  if (t<0)  throw Old_MCLib::error(Old_MCLib::error::Bad_Time);
 
   if (0==opts.vm_result) {
     opts.vm_result = (double*) malloc(Qtt.size * sizeof(double));
   }
 
   if (0==opts.vm_result) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   } 
 
   opts.Steps = stepGeneric(Qtt, Qta, t, 1.0, p, opts.vm_result, opts.ssprec, step);
@@ -226,15 +226,15 @@ void genericTransientCont(
   void (*step)(const MATRIX&, const hypersparse_matrix*, double, double*, double*, bool)
 ) 
 {
-  if (0==p) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)  throw MCLib::error(MCLib::error::Bad_Time);
+  if (0==p) throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
+  if (t<0)  throw Old_MCLib::error(Old_MCLib::error::Bad_Time);
 
 #ifdef DEBUG_UNIF
   printf("Starting uniformization, q=%f, t=%f\n", opts.q, t);
 #endif
   int L;
   int R;
-  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
+  double* poisson = Old_MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
 #ifdef DEBUG_UNIF
   printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
 #endif
@@ -247,7 +247,7 @@ void genericTransientCont(
 
   if (0==opts.vm_result || 0==opts.accumulator) {
     free(poisson);
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   } else {
       opts.Steps = stepGeneric(Qtt, Qta, L, opts.q, p, opts.vm_result, opts.ssprec, step);
       if (opts.Steps == L) {
@@ -338,12 +338,12 @@ void accumulateCont(
 #endif
   int L;
   int R;
-  double* poisson = MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
+  double* poisson = Old_MCLib::computePoissonPDF(opts.q*t, opts.epsilon, L, R);
 #ifdef DEBUG_UNIF
   printf("Computed poisson with epsilon=%e; got left=%d, right=%d\n", opts.epsilon, L, R);
 #endif
   if ((0==poisson) && (R-L>=0)) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   }
   // convert from prob(Y=L+i) to prob(Y>L+i)
   for (int y=0; y<R-L; y++) poisson[y] = poisson[y+1];
@@ -564,7 +564,7 @@ void mc_base::transpose()
     g->transpose(0);
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 }
 
@@ -748,30 +748,30 @@ bool mc_base::isStateInClass(long s, long c) const
 void mc_base::computePeriodOfClass(long c)
 {
   if (!finished)  
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
 
   if ((c<0) || (c>num_classes))
-    throw MCLib::error(MCLib::error::Bad_Class);
+    throw Old_MCLib::error(Old_MCLib::error::Bad_Class);
 
   if (Error_type == our_type)
-    throw MCLib::error(MCLib::error::Miscellaneous);
+    throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
 
   // compute away
   if (0==period) {
     period = (long*) malloc((num_classes+1)*sizeof(long));
-    if (0==period) throw MCLib::error(MCLib::error::Out_Of_Memory);
+    if (0==period) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     for (long i=1; i<= num_classes; i++) period[i] = -1;
     period[0] = 0;
   }
   if (period[c]<0) {
-    period[c] = MCLib::FindPeriod(rawQ, c ? stop_index[c-1] : 0, stop_index[c]);
+    period[c] = Old_MCLib::FindPeriod(rawQ, c ? stop_index[c-1] : 0, stop_index[c]);
   }
 }
 
 long mc_base::getPeriodOfClass(long c) const
 {
   if (period)  return period[c];
-  throw MCLib::error(MCLib::error::Miscellaneous);
+  throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
 }
 
 double mc_base::getUniformizationConst() const
@@ -789,12 +789,12 @@ void mc_base::computeTransient(double t, double* p, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::forwStep);
+    Old_MCLib::genericTransientCont(QT, h, t, p, opts, Old_MCLib::forwStep);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::forwStep);
+    Old_MCLib::genericTransientCont(QT, h, t, p, opts, Old_MCLib::forwStep);
   }
 }
 
@@ -808,12 +808,12 @@ void mc_base::computeTransient(int t, double* p, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::forwStep);
+    Old_MCLib::genericTransientDisc(QT, h, t, p, opts, Old_MCLib::forwStep);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::forwStep);
+    Old_MCLib::genericTransientDisc(QT, h, t, p, opts, Old_MCLib::forwStep);
   }
 }
 
@@ -827,12 +827,12 @@ void mc_base::reverseTransient(double t, double* p, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::backStep);
+    Old_MCLib::genericTransientCont(QT, h, t, p, opts, Old_MCLib::backStep);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientCont(QT, h, t, p, opts, MCLib::backStep);
+    Old_MCLib::genericTransientCont(QT, h, t, p, opts, Old_MCLib::backStep);
   }
 }
 
@@ -845,20 +845,20 @@ void mc_base::reverseTransient(int t, double* p, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::backStep);
+    Old_MCLib::genericTransientDisc(QT, h, t, p, opts, Old_MCLib::backStep);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::genericTransientDisc(QT, h, t, p, opts, MCLib::backStep);
+    Old_MCLib::genericTransientDisc(QT, h, t, p, opts, Old_MCLib::backStep);
   }
 }
 
 void mc_base
 ::accumulate(double t, const double* p0, double* n0t, transopts &opts) const
 {
-  if (0==n0t) throw MCLib::error(MCLib::error::Null_Vector);
-  if (t<0)    throw MCLib::error(MCLib::error::Bad_Time);
+  if (0==n0t) throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
+  if (t<0)    throw Old_MCLib::error(Old_MCLib::error::Bad_Time);
   if (0==t) {
     for (long s=0; s<num_states; s++) n0t[s] = 0;
     return;
@@ -873,7 +873,7 @@ void mc_base
   }
 
   if (0==opts.vm_result || 0==opts.accumulator)  {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   } 
 
   if (isDiscrete()) {
@@ -899,12 +899,12 @@ mc_base::accDTMC(double t, const double* p0, double* n0t, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
+    Old_MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
+    Old_MCLib::accumulateDisc(QT, h, t, p0, n0t, opts);
   }
 }
 
@@ -916,12 +916,12 @@ mc_base::accCTMC(double t, const double* p0, double* n0t, transopts &opts) const
     LS_CRS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
+    Old_MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
   } else {
     LS_CCS_Matrix_float QT;
     exportQT(QT);
     useAllButAbsorbing(QT);
-    MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
+    Old_MCLib::accumulateCont(QT, h, t, p0, n0t, opts);
   }
 }
 
@@ -932,10 +932,10 @@ void mc_base::computeSteady(const LS_Vector &p0,
       LS_Output &out) const
 {
   if (0==p) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   if (0==p0.size) if (getNumClasses() + getNumAbsorbing() > 1) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   switch (our_type) {
     case Irreducible:
@@ -948,10 +948,10 @@ void mc_base::computeSteady(const LS_Vector &p0,
         break;
  
     case Unknown:
-        throw MCLib::error(MCLib::error::Finished_Mismatch);
+        throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   
     default:
-        throw MCLib::error(MCLib::error::Miscellaneous);
+        throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
   };
 }
 
@@ -961,10 +961,10 @@ void mc_base::computeTTA(const LS_Vector &p0,
       LS_Output &out) const
 {
   if (0==p) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   if (0==p0.size && getNumTransient() > 0) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   switch (our_type) {
     case Irreducible:
@@ -980,10 +980,10 @@ void mc_base::computeTTA(const LS_Vector &p0,
         break;
  
     case Unknown:
-        throw MCLib::error(MCLib::error::Finished_Mismatch);
+        throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   
     default:
-        throw MCLib::error(MCLib::error::Miscellaneous);
+        throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
   };
 }
 
@@ -992,10 +992,10 @@ void mc_base::computeClassProbs(const LS_Vector &p0, double* nc,
                                 const LS_Options &opt, LS_Output &out) const
 {
   if (0==nc) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   if (0==p0.size && stop_index[0] > 0) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
   // trivial case: irreducible chain, one class
   if (Irreducible == our_type) {
@@ -1007,7 +1007,7 @@ void mc_base::computeClassProbs(const LS_Vector &p0, double* nc,
     return;
   }
   if (Unknown == our_type) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
 
   if (stop_index[0]>0) {  
@@ -1073,10 +1073,10 @@ void
 mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int c) const
 {
   if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (0==c || c>num_classes || c<-getNumAbsorbing()) {
-    throw MCLib::error(MCLib::error::Bad_Class);
+    throw Old_MCLib::error(Old_MCLib::error::Bad_Class);
   }
 
   /* Initialize vectors if necessary */
@@ -1087,7 +1087,7 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
     opts.vm_result = new double[num_states];
   }
   if (0==opts.vm_result || 0==opts.probvect) {
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   } 
   fillFullVector(opts.probvect, num_states, p0);
 
@@ -1127,7 +1127,7 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       if (i>=opts.var_dist_size) {
         opts.var_dist_size += 256;
         opts.var_dist = (double*) realloc(opts.var_dist, opts.var_dist_size * sizeof(double));
-        if (0==opts.var_dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+        if (0==opts.var_dist) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
       }
       opts.var_dist[i] = dist;
     }
@@ -1138,7 +1138,7 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       if (i>=opts.error_dist_size) {
         opts.error_dist_size += 256;
         opts.error_dist = (double*) realloc(opts.error_dist, opts.error_dist_size * sizeof(double));
-        if (0==opts.error_dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+        if (0==opts.error_dist) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
       }
       // Determine error
       opts.error_dist[i] = 0.0;
@@ -1212,12 +1212,12 @@ mc_base::internalDiscreteDistTTA(const LS_Vector &p0, extra_distopts &opts, int 
       LS_CRS_Matrix_float QT;
       exportQT(QT);
       useAllButAbsorbing(QT);
-      MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
+      Old_MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
     } else {
       LS_CCS_Matrix_float QT;
       exportQT(QT);
       useAllButAbsorbing(QT);
-      MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
+      Old_MCLib::forwStep(QT, h, opts.q, opts.probvect, opts.vm_result, false);
     }
     SWAP(opts.probvect, opts.vm_result);
   }
@@ -1292,7 +1292,7 @@ mc_base::computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c,
     if (i >= N) {
       N += 256;
       dist = (double*) realloc(dist, N*sizeof(double));
-      if (0==dist) throw MCLib::error(MCLib::error::Out_Of_Memory);
+      if (0==dist) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     }
 
     // Determine poisson distribution
@@ -1303,7 +1303,7 @@ mc_base::computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c,
 #endif
     int L;
     int R;
-    double* poisson = MCLib::computePoissonPDF(qt, epsilon, L, R);
+    double* poisson = Old_MCLib::computePoissonPDF(qt, epsilon, L, R);
     const double* poissML = poisson - L;
 #ifdef DEBUG_CDIST_TTA
     printf("    Computed poisson with qt=%lf; got left=%d, right=%d\n", qt, L, R);
@@ -1354,10 +1354,10 @@ mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
                             long maxt, double q) const
 {
   if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (g->isByCols()) {
-    throw MCLib::error(MCLib::error::Wrong_Format);
+    throw Old_MCLib::error(Old_MCLib::error::Wrong_Format);
   }
 
   long elapsed;
@@ -1381,13 +1381,13 @@ mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
                             double maxt) const
 {
   if (isDiscrete()) {
-    throw MCLib::error(MCLib::error::Wrong_Type);
+    throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
   }
   if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (g->isByCols()) {
-    throw MCLib::error(MCLib::error::Wrong_Format);
+    throw Old_MCLib::error(Old_MCLib::error::Wrong_Format);
   }
 
   double elapsed = 0;
@@ -1396,7 +1396,7 @@ mc_base::randomWalk(rng_stream &rng, long &state, const intset* final,
     if (isAbsorbingState(state))          return elapsed;
 
     if (state >= ood_size) {
-      throw MCLib::error(MCLib::error::Miscellaneous);
+      throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
       // this shouldn't happen
     }
 

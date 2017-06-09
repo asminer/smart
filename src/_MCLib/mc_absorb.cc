@@ -12,7 +12,7 @@
 // *                           Front  end                           *
 // ******************************************************************
 
-MCLib::Markov_chain* MCLib::startAbsorbingMC(bool disc, long nt, long na)
+Old_MCLib::Markov_chain* Old_MCLib::startAbsorbingMC(bool disc, long nt, long na)
 {
   return new mc_absorb(disc, nt, na);
 }
@@ -43,13 +43,13 @@ mc_absorb::~mc_absorb()
 long mc_absorb::addState()
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   try {
     g->addNode();
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
   long handle = stop_index[0];
   num_states++;
@@ -64,7 +64,7 @@ long mc_absorb::addState()
 long mc_absorb::addAbsorbing()
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   num_absorbing++;
   num_states++;
@@ -74,13 +74,13 @@ long mc_absorb::addAbsorbing()
 bool mc_absorb::addEdge(long from, long to, double v)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (v<=0) {
-    throw MCLib::error(MCLib::error::Bad_Rate);
+    throw Old_MCLib::error(Old_MCLib::error::Bad_Rate);
   }
   if ( from<0 ) {
-    throw MCLib::error(MCLib::error::Wrong_Type);
+    throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
   }
 
   if ( to < 0 ) {
@@ -97,14 +97,14 @@ bool mc_absorb::addEdge(long from, long to, double v)
     return ok;
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 }
 
 void mc_absorb::finish(const finish_options &o, renumbering &r)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
 
   if (o.report) o.report->start("Converting TA to static");
@@ -161,7 +161,7 @@ void mc_absorb::finish(const finish_options &o, renumbering &r)
     g->finish(o);
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 
   if (o.report) o.report->start("Renumbering states");
@@ -193,10 +193,10 @@ void mc_absorb
 ::AbsorbingRatesToMCRow(const double* n, long from, Markov_chain* R) const
 {
   if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (0==n) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
 
   // Vector matrix multiply
@@ -222,10 +222,10 @@ void mc_absorb
 ::AbsorbingRatesToRow(const double* n, long from, hypersparse_matrix* A) const
 {
   if (!finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (0==n) {
-    throw MCLib::error(MCLib::error::Null_Vector);
+    throw Old_MCLib::error(Old_MCLib::error::Null_Vector);
   }
 
   // Vector matrix multiply
@@ -255,7 +255,7 @@ void mc_absorb::checkAbsorbing(const finish_options &o)
     intset reaches(stop_index[0]);
     queue = (long*) malloc(stop_index[0] * sizeof(long));
     if (0==queue) {
-      throw MCLib::error(MCLib::error::Out_Of_Memory);
+      throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     }
     reaches.removeAll();
     for (long i=h->num_rows-1; i>=0; i--) {
@@ -267,7 +267,7 @@ void mc_absorb::checkAbsorbing(const finish_options &o)
     if (0==reaches || 0==queue) {
       free(reaches);
       free(queue);
-      throw MCLib::error(MCLib::error::Out_Of_Memory);
+      throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     }
     for (long i=stop_index[0]-1; i>=0; i--) reaches[i] = false;
     for (long i=h->num_rows-1; i>=0; i--) {
@@ -279,6 +279,6 @@ void mc_absorb::checkAbsorbing(const finish_options &o)
   
   if (count >= stop_index[0]) return;
   finalize(Error_type);
-  throw MCLib::error(MCLib::error::Wrong_Type);
+  throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
 }
 

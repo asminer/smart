@@ -55,7 +55,7 @@ hypersparse_matrix::~hypersparse_matrix()
 bool hypersparse_matrix::AddElement(long from, long to, float wt)
 {
   if (IsStatic()) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
 
   long rptr = GetRow(from);
@@ -309,7 +309,7 @@ void hypersparse_matrix::ExportRow(long i, long& row, LS_Vector* A) const
 
 void hypersparse_matrix::ExportRowCopy(long i, LS_Vector &A) const
 {
-  if (!IsStatic()) throw MCLib::error(MCLib::error::Finished_Mismatch);
+  if (!IsStatic()) throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   A.d_value = 0;
   A.size = (row_pointer[i+1] - row_pointer[i]);
   if (0==A.size) {
@@ -322,7 +322,7 @@ void hypersparse_matrix::ExportRowCopy(long i, LS_Vector &A) const
   if (0==index || 0==fval) {
     free(index);
     free(fval);
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   }
   memcpy(index, column_index + row_pointer[i], A.size * sizeof(long));
   memcpy(fval, value + row_pointer[i], A.size * sizeof(float));
@@ -476,13 +476,13 @@ long hypersparse_matrix::GetRow(long ri)
     if (num_rows+1 >= rows_alloc) {
       long newrows = MIN(2*rows_alloc, rows_alloc + MAX_NODE_ADD);
       if (newrows < 0) {
-        throw MCLib::error(MCLib::error::Out_Of_Memory);
+        throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
       }
       long* nri = (long*) realloc(row_index, newrows * sizeof(long));
       long* nrp = (long*) realloc(row_pointer, newrows * sizeof(long));
       long* nnr = (long*) realloc(next_row, newrows * sizeof(long));
       if ((0==nri) || (0==nrp) || (0==nnr)) {
-        throw MCLib::error(MCLib::error::Out_Of_Memory);
+        throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
       }
       rows_alloc = newrows;
       row_index = nri;
@@ -508,14 +508,14 @@ long hypersparse_matrix::GetRow(long ri)
 void hypersparse_matrix::ResizeEdges(long new_edges)
 {
   if (IsStatic()) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   long* nci = (long *) realloc(column_index, new_edges*sizeof(long));
   float* nv = (float *) realloc(value, new_edges*sizeof(float));
   long* nn = (long *) realloc(next, new_edges*sizeof(long));
   if (new_edges) {
     if ((0==nci) || (0==nn) || (0==nv)) {
-      throw MCLib::error(MCLib::error::Out_Of_Memory);
+      throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
     }
   }
   column_index = nci;

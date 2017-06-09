@@ -14,8 +14,8 @@
 // *                           Front  end                           *
 // ******************************************************************
 
-MCLib::Markov_chain* 
-MCLib::startUnknownMC(bool disc, long states, long edges)
+Old_MCLib::Markov_chain* 
+Old_MCLib::startUnknownMC(bool disc, long states, long edges)
 {
   return new mc_general(disc, states, edges);
 }
@@ -71,13 +71,13 @@ mc_general::~mc_general()
 long mc_general::addState()
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   try {
     g->addNode();
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
   long handle = num_states;
   num_states++;
@@ -96,10 +96,10 @@ long mc_general::addAbsorbing()
 bool mc_general::addEdge(long from, long to, double v)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (v<=0) {
-    throw MCLib::error(MCLib::error::Bad_Rate);
+    throw Old_MCLib::error(Old_MCLib::error::Bad_Rate);
   }
   try {
     bool ok = g->addEdge(from, to, v);
@@ -107,14 +107,14 @@ bool mc_general::addEdge(long from, long to, double v)
     return ok;
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 }
 
 void mc_general::finish(const finish_options &o, renumbering &r)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
 
   if (!g->isByRows()) {
@@ -151,7 +151,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
     free(sccmap);
     free(aux);
     finalize(Error_type);
-    throw MCLib::error(MCLib::error::Out_Of_Memory);
+    throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
   }
   long num_tsccs;
   try {
@@ -161,7 +161,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
     finalize(Error_type);
     free(sccmap);
     free(aux);
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 
 #ifdef DEBUG_CLASSIFY
@@ -272,7 +272,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
   }
   catch (GraphLib::error e) {
     finalize(Error_type);
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 
   if (o.report) {
@@ -312,7 +312,7 @@ void mc_general::finish(const finish_options &o, renumbering &r)
   }
   catch (GraphLib::error e) {
     finalize(Error_type);
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 
   // Finish transient to recurrent, if present

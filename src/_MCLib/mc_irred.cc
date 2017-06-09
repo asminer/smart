@@ -10,8 +10,8 @@
 // *                           Front  end                           *
 // ******************************************************************
 
-MCLib::Markov_chain* 
-MCLib::startIrreducibleMC(bool disc, long numStates, long numEdges)
+Old_MCLib::Markov_chain* 
+Old_MCLib::startIrreducibleMC(bool disc, long numStates, long numEdges)
 {
   return new mc_irred(disc, numStates, numEdges);
 }
@@ -35,13 +35,13 @@ mc_irred::~mc_irred()
 long mc_irred::addState()
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   try {
     g->addNode();
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
   long handle = num_states;
   num_states++;
@@ -55,16 +55,16 @@ long mc_irred::addState()
 
 long mc_irred::addAbsorbing()
 {
-  throw MCLib::error(MCLib::error::Wrong_Type);
+  throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
 }
 
 bool mc_irred::addEdge(long from, long to, double v)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
   if (v<=0) {
-    throw MCLib::error(MCLib::error::Bad_Rate);
+    throw Old_MCLib::error(Old_MCLib::error::Bad_Rate);
   }
 
   try {
@@ -73,14 +73,14 @@ bool mc_irred::addEdge(long from, long to, double v)
     return ok;
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 }
 
 void mc_irred::finish(const finish_options &o, renumbering &r)
 {
   if (finished) {
-    throw MCLib::error(MCLib::error::Finished_Mismatch);
+    throw Old_MCLib::error(Old_MCLib::error::Finished_Mismatch);
   }
 
   if (!g->isByRows()) {
@@ -123,7 +123,7 @@ void mc_irred::finish(const finish_options &o, renumbering &r)
     } else {
       rs_bv = (bool*) malloc(g->getNumNodes() * sizeof(bool));
       if (0==rs_bv) {
-        throw MCLib::error(MCLib::error::Out_Of_Memory);
+        throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
       }
       for (long i=g->getNumNodes()-1; i>=0; i--) rs_bv[i] = false;
       ok = (g->getReachable(0, rs_bv) == g->getNumNodes());
@@ -132,7 +132,7 @@ void mc_irred::finish(const finish_options &o, renumbering &r)
     if (!ok) {
       finalize(Error_type);
       free(rs_bv);
-      throw MCLib::error(MCLib::error::Wrong_Type);
+      throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
     }
 
     g->transpose(o.report);
@@ -149,7 +149,7 @@ void mc_irred::finish(const finish_options &o, renumbering &r)
     if (o.report) o.report->stop();
     if (!ok) {
       finalize(Error_type);
-      throw MCLib::error(MCLib::error::Wrong_Type);
+      throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
     }
   } // if Verify
 
@@ -157,7 +157,7 @@ void mc_irred::finish(const finish_options &o, renumbering &r)
     g->finish(o);
   }
   catch (GraphLib::error e) {
-    throw MCLib::error(e);
+    throw Old_MCLib::error(e);
   }
 
   // no state renumbering necessary
