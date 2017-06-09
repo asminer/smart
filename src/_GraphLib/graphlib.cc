@@ -801,6 +801,97 @@ GraphLib::dynamic_graph::exportAndDestroy(static_graph &g, timer_hook *sw)
 
 // ******************************************************************
 
+void
+GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph &g_diag, 
+  static_graph &g_off, timer_hook *sw)
+{
+  if (sw) sw->start("Defragmenting graph");
+  num_edges = Defragment(0);
+  if (sw) sw->stop();
+
+  if (sw) sw->start("Exporting graphs");
+
+  //
+  // We know the total number of edges.
+  // Determine how many of these are "diagonal" edges
+  // (i.e., are between nodes in the same class)
+  // and how many are "off diagonal" edges
+  // (as a sanity check; sum should be number of edges).
+  //
+  // Do that by iterating over classes, then iterating
+  // over states in the class, and examining the outgoing
+  // edges for that state.
+  //
+  long diag_edges = 0;
+  long off_edges = 0;
+  for (long c=0; c<C.numClasses(); c++) {
+    for (long s=C.firstNodeOfClass(c); s<=C.lastNodeOfClass(c); s++) {
+      for (long edge=row_pointer[s]; edge<row_pointer[s+1]; edge++) {
+        if (C.isNodeInClass(column_index[edge], c)) {
+          diag_edges++;
+        } else {
+          off_edges++;
+        }
+      } // for edge
+    } // for s
+  } // for c
+  DCASSERT(diag_edges + off_edges == num_edges);
+
+  //
+  // Allocate space for g_diag and g_off
+  //
+  g_diag.is_by_rows = is_by_rows;
+  g_diag.edge_bytes = edge_size;
+  g_diag.allocate(num_nodes, diag_edges);
+
+  g_off.is_by_rows = is_by_rows;
+  g_off.edge_bytes = edge_size;
+  g_off.allocate(num_nodes, off_edges);
+  
+
+  //
+  // Copy edges over, using an iteration similar to the one where we
+  // counted edges.
+  //
+  diag_edges = 0;
+  off_edges = 0;
+  for (long c=0; c<C.numClasses(); c++) {
+    for (long s=C.firstNodeOfClass(c); s<=C.lastNodeOfClass(c); s++) {
+      g_diag.row_pointer[s] = diag_edges;
+      g_off.row_pointer[s] = off_edges;
+      for (long edge=row_pointer[s]; edge<row_pointer[s+1]; edge++) {
+        if (C.isNodeInClass(column_index[edge], c)) {
+          // copy the edge over to g_diag
+          g_diag.column_index[diag_edges] = column_index[edge];
+          if (edge_size) {
+            memcpy(g_diag.label+diag_edges*edge_size, 
+                    label+edge*edge_size, edge_size);
+          }
+          // and count it
+          diag_edges++;
+        } else {
+          // copy the edge over to g_off
+          g_off.column_index[off_edges] = column_index[edge];
+          if (edge_size) {
+            memcpy(g_off.label+off_edges*edge_size, 
+                    label+edge*edge_size, edge_size);
+          }
+          // and count it
+          off_edges++;
+        }
+      } // for edge
+    } // for s
+  } // for c
+  g_diag.row_pointer[num_nodes] = diag_edges;
+  g_off.row_pointer[num_nodes] = off_edges;
+  DCASSERT(g_diag.getNumEdges() == diag_edges);
+  DCASSERT(g_off.getNumEdges() == off_edges);
+
+  if (sw) sw->stop();
+}
+
+// ******************************************************************
+
 size_t
 GraphLib::dynamic_graph::getMemTotal() const
 {
