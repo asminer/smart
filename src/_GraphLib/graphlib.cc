@@ -11,8 +11,17 @@
 
 #include "intset.h"
 
+#ifdef ALLOW_OLD_GRAPH_INTERFACE
+
 const int MAJOR_VERSION = 2;
 const int MINOR_VERSION = 5;
+
+#else
+
+const int MAJOR_VERSION = 3;
+const int MINOR_VERSION = 0;
+
+#endif
 
 // #define DEBUG_DEFRAG
 // #define DEBUG_TRANSPOSE_FROM
@@ -129,6 +138,13 @@ GraphLib::static_classifier::static_classifier()
   class_start = 0;
 }
 
+GraphLib::static_classifier::static_classifier(const static_classifier &SC)
+{
+  num_classes = 0;
+  class_start = 0;
+  replace(SC);
+}
+
 GraphLib::static_classifier::~static_classifier()
 {
   delete[] class_start;
@@ -151,6 +167,11 @@ long GraphLib::static_classifier::classOfNode(long s) const
     else                      low = mid;
   }
   return low;
+}
+
+size_t GraphLib::static_classifier::getMemTotal() const
+{
+  return (1+num_classes)*sizeof(long);
 }
 
 void GraphLib::static_classifier::rebuild(long nc, long* sizes)
@@ -179,6 +200,14 @@ void GraphLib::static_classifier::replace(long nc, long* starts)
   class_start = starts;
   num_classes = nc;
   // TBD - should we check the array?
+}
+
+void GraphLib::static_classifier::replace(const static_classifier &SC)
+{
+  delete[] class_start;
+  num_classes = SC.num_classes;
+  class_start = new long[num_classes+1];
+  memcpy(class_start, SC.class_start, (1+num_classes)*sizeof(long));
 }
 
 // ******************************************************************
@@ -229,21 +258,21 @@ GraphLib::general_classifier::buildRenumbererAndStatic(static_classifier &C) con
   // Use an extra element because eventually these will be converted
   // to start indexes as needed for the static_classifier.
   //
-  long* starts = new long[1+numClasses()];
-  for (long i=0; i<=numClasses(); i++) {
+  long* starts = new long[1+getNumClasses()];
+  for (long i=0; i<=getNumClasses(); i++) {
     starts[i] = 0;
   }
-  for (long i=0; i<numNodes(); i++) {
+  for (long i=0; i<getNumNodes(); i++) {
     starts[class_of_node[i]]++;
   }
 
   //
   // Determine starting index per class
   //
-  for (long i=1; i<=numClasses(); i++) {
+  for (long i=1; i<=getNumClasses(); i++) {
     starts[i] += starts[i-1];
   }
-  for (long i=numClasses(); i; i--) {
+  for (long i=getNumClasses(); i; i--) {
     starts[i] = starts[i-1];
   }
   starts[0] = 0;
@@ -253,15 +282,15 @@ GraphLib::general_classifier::buildRenumbererAndStatic(static_classifier &C) con
   // For node s, its new number is the current index of its class
   // (and we increment the index).
   //
-  long* renumber = new long[numNodes()];
-  for (long i=0; i<numNodes(); i++) {
+  long* renumber = new long[getNumNodes()];
+  for (long i=0; i<getNumNodes(); i++) {
     renumber[i] = starts[ class_of_node[i] ]++;
   }
 
   //
   // Shift the sizes array to get the correct "starts" array
   //
-  for (long i=numClasses(); i; i--) {
+  for (long i=getNumClasses(); i; i--) {
     starts[i] = starts[i-1];
   }
   starts[0] = 0;
@@ -269,7 +298,7 @@ GraphLib::general_classifier::buildRenumbererAndStatic(static_classifier &C) con
   //
   // Package everything
   //
-  replace_classifier(C, numClasses(), starts);
+  replace_classifier(C, getNumClasses(), starts);
   return new array_renumberer(renumber);
 }
 
@@ -802,8 +831,8 @@ GraphLib::dynamic_graph::exportAndDestroy(static_graph &g, timer_hook *sw)
 // ******************************************************************
 
 void
-GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph &g_diag, 
-  static_graph &g_off, timer_hook *sw)
+GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, bool ksl,
+  static_graph &g_diag, static_graph &g_off, timer_hook *sw)
 {
   if (sw) sw->start("Defragmenting graph");
   num_edges = Defragment(0);
@@ -815,8 +844,7 @@ GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph
   // We know the total number of edges.
   // Determine how many of these are "diagonal" edges
   // (i.e., are between nodes in the same class)
-  // and how many are "off diagonal" edges
-  // (as a sanity check; sum should be number of edges).
+  // and how many are "off diagonal" edges.
   //
   // Do that by iterating over classes, then iterating
   // over states in the class, and examining the outgoing
@@ -824,9 +852,10 @@ GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph
   //
   long diag_edges = 0;
   long off_edges = 0;
-  for (long c=0; c<C.numClasses(); c++) {
+  for (long c=0; c<C.getNumClasses(); c++) {
     for (long s=C.firstNodeOfClass(c); s<=C.lastNodeOfClass(c); s++) {
       for (long edge=row_pointer[s]; edge<row_pointer[s+1]; edge++) {
+        if (!ksl && s == column_index[edge]) continue;
         if (C.isNodeInClass(column_index[edge], c)) {
           diag_edges++;
         } else {
@@ -835,7 +864,7 @@ GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph
       } // for edge
     } // for s
   } // for c
-  DCASSERT(diag_edges + off_edges == num_edges);
+  DCASSERT(diag_edges + off_edges <= num_edges);
 
   //
   // Allocate space for g_diag and g_off
@@ -855,11 +884,12 @@ GraphLib::dynamic_graph::splitAndExport(const static_classifier &C, static_graph
   //
   diag_edges = 0;
   off_edges = 0;
-  for (long c=0; c<C.numClasses(); c++) {
+  for (long c=0; c<C.getNumClasses(); c++) {
     for (long s=C.firstNodeOfClass(c); s<=C.lastNodeOfClass(c); s++) {
       g_diag.row_pointer[s] = diag_edges;
       g_off.row_pointer[s] = off_edges;
       for (long edge=row_pointer[s]; edge<row_pointer[s+1]; edge++) {
+        if (!ksl && s == column_index[edge]) continue;
         if (C.isNodeInClass(column_index[edge], c)) {
           // copy the edge over to g_diag
           g_diag.column_index[diag_edges] = column_index[edge];

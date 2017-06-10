@@ -112,7 +112,7 @@ namespace GraphLib {
 
                 @return true,   If we should stop the traversal now.
           */
-          virtual bool visit(long src, long dest, void* wt) = 0;
+          virtual bool visit(long src, long dest, const void* wt) = 0;
   };
 
 
@@ -176,10 +176,16 @@ namespace GraphLib {
   */
   class static_classifier {
     public:
+      /// Empty constructor.
       static_classifier();
+
+      /// Copy constructor.
+      static_classifier(const static_classifier &SC);
+
+      /// Destructor.
       ~static_classifier();
 
-      inline long numClasses() const { return num_classes; }
+      inline long getNumClasses() const { return num_classes; }
 
       inline long sizeOfClass(long c) const {
         CHECK_RANGE(0, c, num_classes);
@@ -202,6 +208,9 @@ namespace GraphLib {
       }
 
       long classOfNode(long s) const;
+
+      /// Total memory required for this classifier, in bytes.
+      size_t getMemTotal() const;
 
     private:
       /**
@@ -226,6 +235,8 @@ namespace GraphLib {
       */
       void replace(long nc, long* starts);
 
+      /// Replace the classifier with an existing one.
+      void replace(const static_classifier &SC);
 
       friend class abstract_classifier;
 
@@ -268,8 +279,8 @@ namespace GraphLib {
       abstract_classifier(long ns, long nc);
       virtual ~abstract_classifier();
 
-      inline long numClasses() const { return num_classes; }
-      inline long numNodes() const { return num_nodes; }
+      inline long getNumClasses() const { return num_classes; }
+      inline long getNumNodes() const { return num_nodes; }
 
       /// For a given node s, return its class.
       virtual long classOfNode(long s) const = 0;
@@ -278,7 +289,7 @@ namespace GraphLib {
           Build a renumbering scheme and static classifier.
           Must be provided by derived classes.
 
-            @param  C     Static classifier based on this one.
+            @param  C     On output: static classifier based on this one.
                           The static classifier will work only if nodes are
                           renumbered according to the node_renumberer
                           returned by this method.
@@ -288,6 +299,7 @@ namespace GraphLib {
                           will be such that nodes belonging to class 0
                           appear first, followed by nodes belonging to 
                           class 1, then class 2, and so on.
+                          If 0, then no renumbering is necessary.
       */
       virtual node_renumberer* buildRenumbererAndStatic(static_classifier &C) const = 0;
 
@@ -423,10 +435,23 @@ namespace GraphLib {
     public:
       // Read-only access to internal storage
 
-      const long* RowPointer() const { return row_pointer; }
-      const long* ColumnIndex() const { return column_index; }
-      const void* Labels() const { return label; } 
-      unsigned char EdgeBytes() const { return edge_bytes; }
+      inline const long* RowPointer() const { return row_pointer; }
+      inline const long* ColumnIndex() const { return column_index; }
+      inline const void* Labels() const { return label; } 
+      inline unsigned char EdgeBytes() const { return edge_bytes; }
+
+      inline long RowPointer(long s) const {
+        CHECK_RANGE(0, s, num_nodes+1); 
+        return row_pointer[s];
+      }
+      inline long ColumnIndex(long e) const {
+        CHECK_RANGE(0, e, num_edges); 
+        return column_index[e];
+      }
+      inline const void* Label(long e) const {
+        CHECK_RANGE(0, e, num_edges); 
+        return label + e*edge_bytes;
+      }
 
     private:
       void allocate(long nodes, long edges);
@@ -533,7 +558,7 @@ namespace GraphLib {
       /** Compute the terminal sccs.
           Useful for Markov chain state classification, or
           CTL model checking with "fairness".
-          Currently, this is much faster if the graph is stored "by rows".
+          Currently, this assumes the graph is stored "by rows".
 
           Implementation is in sccs.cc
   
@@ -603,6 +628,10 @@ namespace GraphLib {
           is stored by rows.
             @param  c       State classifier.
 
+            @param  ksl     Should we keep any self loops, i.e., should
+                            edges from a state s to itself be copied into
+                            g_diag?  If not, then those edges are discarded.
+
             @param  g_diag  On output, will contain a copy of this graph
                             but only with edges that are between two nodes
                             belonging to the same class.
@@ -622,8 +651,8 @@ namespace GraphLib {
 
             @param  sw  Where to report timing information (nowhere if 0).
       */
-      void splitAndExport(const static_classifier &c, static_graph &g_diag, 
-        static_graph &g_off, timer_hook *sw);
+      void splitAndExport(const static_classifier &c, bool ksl,
+        static_graph &g_diag, static_graph &g_off, timer_hook *sw);
 
 
       /// Total memory required for graph storage, in bytes.
@@ -664,6 +693,30 @@ namespace GraphLib {
                           where "added to" can be defined however.
       */
       virtual void merge_edges(void* ev, const void* nv) const = 0;
+
+
+    protected:
+      // Read-only access to internal storage
+      inline long RowPointer(long s) const {
+        CHECK_RANGE(0, s, num_nodes+1); 
+        return row_pointer[s];
+      }
+      inline long ColumnIndex(long e) const {
+        CHECK_RANGE(0, e, num_edges); 
+        return column_index[e];
+      }
+      inline long Next(long e) const {
+        CHECK_RANGE(0, e, num_edges); 
+        return next[e];
+      }
+      inline const void* Label(long e) const {
+        CHECK_RANGE(0, e, num_edges); 
+        return label + e*edge_size;
+      }
+      inline void* WriteLabel(long e) {
+        CHECK_RANGE(0, e, num_edges); 
+        return label + e*edge_size;
+      }
 
     private:
       // Return true if the edge was added; false if it was a duplicate.
@@ -711,6 +764,112 @@ namespace GraphLib {
   protected:
     virtual void merge_edges(void* ev, const void* nv) const;
   };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                   dynamic_weighted_digraph class                   |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      Directed graphs with summable edge weights.
+  */
+  template <class TYPE>
+  class dynamic_summable : public dynamic_graph {
+  public:
+    dynamic_summable(bool ksl, bool merge)
+    : dynamic_graph(sizeof(TYPE), ksl, merge) { };
+
+    inline bool addEdge(long from, long to, const TYPE &val) {
+      return dynamic_graph::addEdge(from, to, &val);
+    }
+
+    inline TYPE Value(long e) const {
+      return * (static_cast <const TYPE*>(Label(e)));
+    }
+    inline TYPE& WriteValue(long e) {
+      return * (static_cast <TYPE*>(WriteLabel(e)));
+    }
+
+    /**
+        Add row sums to array sums.
+          @param  sums    Array of dimension at least num_nodes.
+                          We do NOT zero out the array first,
+                          so take care that this array is initialized
+                          before calling this method.
+    */
+    template <class ACC>
+    inline void addRowSums(ACC* sums) const {
+      if (isByRows()) {
+        for (long s=0; s<getNumNodes(); s++) {
+          long ptr = RowPointer(s);
+          if (ptr<0) continue;
+          // loop over edges
+          do {
+            sums[s] += Value(ptr);
+            ptr = Next(ptr);
+          } while (ptr != RowPointer(s));
+        } // for s
+      } else {
+        for (long s=0; s<getNumNodes(); s++) {
+          long ptr = RowPointer(s);
+          if (ptr<0) continue;
+          // loop over edges
+          do {
+            sums[ ColumnIndex(ptr) ] += Value(ptr);
+            ptr = Next(ptr);
+          } while (ptr != RowPointer(s));
+        } // for s
+      }
+    };
+
+
+    /**
+        Divide values based on rows.
+        Specifically, for each edge (i, j, value),
+        divide value by A[i] unless it is zero.
+          @param  A     Array of dimension at least num_nodes,
+                        Divide all edges from state i by A[i],
+                        unless A[i] is zero.
+    */
+    template <class ACC>
+    inline void divideRows(const ACC* A) {
+      if (isByRows()) {
+        for (long s=0; s<getNumNodes(); s++) {
+          if (0==A[s]) continue;  // no point looping over edges
+          long ptr = RowPointer(s);
+          if (ptr<0) continue;
+          // loop over edges
+          do {
+            WriteValue(ptr) /= A[s];
+            ptr = Next(ptr);
+          } while (ptr != RowPointer(s));
+        } // for s
+      } else {
+        for (long s=0; s<getNumNodes(); s++) {
+          long ptr = RowPointer(s);
+          if (ptr<0) continue;
+          // loop over edges
+          do {
+            if (A[ColumnIndex(ptr)]) {
+              WriteValue(ptr) /= A[ColumnIndex(ptr)];
+            }
+            ptr = Next(ptr);
+          } while (ptr != RowPointer(s));
+        } // for s
+      }
+    };
+
+    protected:
+      virtual void merge_edges(void* ev, const void* nv) const {
+        TYPE* tev = (TYPE*) ev;
+        TYPE* tnv = (TYPE*) nv;
+        *tev += *tnv;
+      }
+
+  };  // dynamic_weighted_digraph
+
+
 
 
 // ==========================================================================================================================================================================
