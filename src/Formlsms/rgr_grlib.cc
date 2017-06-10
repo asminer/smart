@@ -30,7 +30,7 @@ class grlib_display_row : public GraphLib::BF_graph_traversal {
     virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
 
-    virtual bool visit(long, long dest, void*);
+    virtual bool visit(long, long dest, const void*);
 
   private:
     indexed_reachset::indexed_iterator &I;
@@ -67,7 +67,7 @@ long grlib_display_row::getNextToExplore()
   return next;
 }
 
-bool grlib_display_row::visit(long, long dest, void*)
+bool grlib_display_row::visit(long, long dest, const void*)
 {
   coll.insert( I.index2ord(dest) );
   return false;
@@ -752,7 +752,7 @@ long grlib_reachgraph::mygraphtraverse<ONESTEP>::getNextToExplore()
 }
 
 template <bool ONESTEP>
-bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, void*)
+bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, const void*)
 {
   if (TH.num_obligations(dest) <= 0) return false;
   TH.remove_obligation(dest);

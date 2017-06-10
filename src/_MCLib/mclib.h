@@ -8,6 +8,224 @@
 #ifndef MCLIB_H
 #define MCLIB_H
 
+#include "../_GraphLib/graphlib.h"
+
+namespace MCLib {
+
+  // ======================================================================
+  // |                                                                    |
+  // |                            error  class                            |
+  // |                                                                    |
+  // ======================================================================
+
+  /** 
+      Error codes.
+      Implemented in error.cc 
+      (for consistency; there's not much to implement)
+  */
+  class error {
+  public:
+    enum code {
+      /// Not implemented yet.
+      Not_Implemented,
+      /// Null vector.
+      Null_Vector,
+      /// Operation and type of chain are incompatible.
+      Wrong_Type,
+      /// Insufficient memory (e.g., for adding state or edge)
+      Out_Of_Memory,
+      /// Bad time for transient analysis.
+      Bad_Time,
+      /// Error in linear solver (for steady-state)
+      Bad_Linear,
+      /// There is an "absorbing vanishing loop"
+      Loop_Of_Vanishing,
+      /// Internal library error
+      Internal,
+      /// Misc. error
+      Miscellaneous
+    };
+
+  public:
+    error(code c);
+
+    /** Obtain a human-readable error string for this error.
+        For convenience.
+          @return     An appropriate error string.  It
+                      should not be modified or deleted.
+    */
+    const char*  getString() const;
+
+    /// Grab the error code
+    inline code getCode() const { return errcode; }
+  private:
+    code errcode;
+  };  // class error
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                                                                    |
+  // |                         Markov_chain class                         |
+  // |                                                                    |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+    Markov chain class.
+
+    Built from a graph.  Most methods are for analysis.
+    We store the graphs twice, one by rows and once by columns.
+
+    Implemented in markov_chain.cc
+  */
+  class Markov_chain {
+    public:
+      /**
+          Constructor.
+          Fill this Markov chain based on the given graph
+          and known state classification (see GraphLib for
+          ways to determine this).
+
+            @param  discrete    True iff this is a discrete time
+                                Markov chain; otherwise it is a
+                                continuous time Markov chain.
+
+            @param  G           Graph to build from. 
+                                Edge weights should be floats or doubles,
+                                and indicate probabilities (DTMCs)
+                                or rates (CTMCs).
+                                Nodes should be numbered consistently
+                                with TSCCinfo.
+
+            @param  TSCCinfo    State classification, such that
+                                class 0 contains all transient states,
+                                class 1 contains all absorbing states,
+                                and remaining classes correspond
+                                to recurrent classes.
+
+            @param  sw  Where to report timing information (nowhere if 0).
+      */
+      Markov_chain(bool discrete, GraphLib::dynamic_summable<double> &G, 
+        const GraphLib::static_classifier &TSCCinfo,
+        GraphLib::timer_hook *sw);  
+
+
+      // TBD - make a version for GraphLib::dynamic_summable<float> &G.
+
+      /// Destructor.
+      virtual ~Markov_chain();
+
+      // TBD ^ ^ ^ ^ do we have any other virtual methods?
+
+    public:
+      /// Is this a discrete-time chain?
+      inline bool isDiscrete() const { return is_discrete; }
+
+      /// Is this a continuous-time chain?
+      inline bool isContinuous() const { return !is_discrete; }
+
+      /// @return Total memory required to store the chain, in bytes.
+      size_t getMemTotal() const;
+
+      /** 
+            Get state classification information for the chain.
+            Will be a copy of the one passed to the constructor.
+
+            @return State classification information for the chain.
+      */
+      const GraphLib::static_classifier& getStateClassification() const {
+        return stateClass;
+      }
+
+      /** 
+            Get the Markov chain's nniformization constant.
+
+            @return   The largest row sum.
+                      For CTMCs, this is the smallest constant that may
+                      be used for uniformization.
+      */
+      inline double getUniformizationConst() const {
+        return uniformization_const;
+      }
+
+
+      /**
+          Run graph traversal t, on outgoing edges.
+
+            @param  t   Traversal, which determines the
+                        (possibly changing) list of nodes to explore,
+                        and how to visit edges.
+
+            @return true, iff a call to t.visit returned true
+                          and we stopped traversal early.
+      */
+      bool traverseOutgoing(GraphLib::BF_graph_traversal &t) const;
+
+      /**
+          Run graph traversal t, on incoming edges.
+
+            @param  t   Traversal, which determines the
+                        (possibly changing) list of nodes to explore,
+                        and how to visit edges.
+
+            @return true, iff a call to t.visit returned true
+                          and we stopped traversal early.
+      */
+      bool traverseIncoming(GraphLib::BF_graph_traversal &t) const;
+
+
+      /** Compute the period for a given class.
+          For CTMCs, gives the period of the embedded DTMC.
+
+            @param  c   The recurrent class to check.
+
+            @return     The period of class c.
+                        If c does not refer to a recurrent class,
+                        or to the group of absorbing states
+                        (for example, if c is too large),
+                        then we return zero.
+      */
+      long computePeriodOfClass(long c) const;
+
+    // TBD - copy stuff from old interface
+
+    private:
+      float* one_over_rowsums;
+      double uniformization_const;
+
+      /// How states are classified (transient, recurrent class 1, etc.)
+      GraphLib::static_classifier stateClass; 
+
+      /// Edges between nodes in the same class, stored by rows
+      GraphLib::static_graph  Q_byrows_diag;
+      /// Edges from transient states to recurrent, stored by rows
+      GraphLib::static_graph  Q_byrows_off;
+
+      /// Edges between nodes in the same class, stored by columns
+      GraphLib::static_graph  Q_bycols_diag;
+      /// Edges from transient states to recurrent, stored by columns
+      GraphLib::static_graph  Q_bycols_off;
+      
+      /// DTMC?
+      bool is_discrete;
+
+  };  // class Markov_chain
+
+};  // namespace MCLib
+
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// OLD INTERFACE BELOW, will eventually be discarded!
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+// ==========================================================================================================================================================================
+
 #include "../_GraphLib/graphlib.h"  // we'll see how this goes
 
 /// Defined in linear solver library: linear solver options.

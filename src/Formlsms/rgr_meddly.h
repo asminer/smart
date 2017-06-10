@@ -59,9 +59,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // CTL engines
     //
 
-    virtual stateset* EX(bool revTime, const stateset* p) const;
-    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q) const;
-    virtual stateset* unfairEG(bool revTime, const stateset* p) const;
+    virtual stateset* EX(bool revTime, const stateset* p);
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+    virtual stateset* unfairEG(bool revTime, const stateset* p);
 
 
   // 

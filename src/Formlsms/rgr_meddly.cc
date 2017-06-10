@@ -211,7 +211,7 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
 }
 
 
-stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) const
+stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) 
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
@@ -235,7 +235,7 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) const
 }
 
 stateset* meddly_monolithic_rg
-::EU(bool revTime, const stateset* p, const stateset* q) const
+::EU(bool revTime, const stateset* p, const stateset* q)
 {
   //
   // Grab p in a form we can use
@@ -316,7 +316,7 @@ stateset* meddly_monolithic_rg
   return new meddly_stateset(mq, ans);
 }
 
-stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p) const
+stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EH" : "EG");

@@ -21,7 +21,10 @@ class counter : public generic_graph::element_visitor {
   long& count;
 public:
   counter(long& c) : count(c) { }
-  virtual bool visit(long from, long to, void* wt) { count++; return false; }
+  virtual bool visit(long from, long to, void* wt) { 
+    count++; 
+    return false; 
+  }
 };
 
 class row_visit : public generic_graph::element_visitor {
@@ -137,7 +140,7 @@ class forwd_reachable : public BF_graph_traversal {
 
     virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
-    virtual bool visit(long src, long dest, void*);
+    virtual bool visit(long src, long dest, const void*);
 
   private:
     long* queue;
@@ -174,7 +177,7 @@ long forwd_reachable::getNextToExplore()
   return queue[queue_head++];
 }
 
-bool forwd_reachable::visit(long, long dest, void*)
+bool forwd_reachable::visit(long, long dest, const void*)
 {
   if (!reachable.contains(dest)) {
     reachable.addElement(dest);
@@ -196,7 +199,7 @@ class show_traverse : public BF_graph_traversal {
     show_traverse(bool sh, long& c);
     virtual bool hasNodesToExplore();
     virtual long getNextToExplore();
-    virtual bool visit(long, long to, void*);
+    virtual bool visit(long, long to, const void*);
 
     void reset(long new_init);
 };
@@ -222,7 +225,7 @@ long show_traverse::getNextToExplore()
   return next;
 }
 
-bool show_traverse::visit(long, long to, void*)
+bool show_traverse::visit(long, long to, const void*)
 {
   if (show) printf("\t\tTo state %ld\n", to);
   count++;
