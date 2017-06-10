@@ -118,6 +118,48 @@ namespace GraphLib {
 
   // ======================================================================
   // |                                                                    |
+  // |                        BF_with_queue  class                        |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+        Breadth first traversals that use a queue.
+  */
+  class BF_with_queue : public BF_graph_traversal {
+      public:
+          BF_with_queue(long max_queue);
+          virtual ~BF_with_queue();
+
+          inline bool queueEmpty() const {
+            return queue_head == queue_tail;
+          }
+          inline long queuePop() {
+            long pop = queue[queue_head];
+            queue_head = (queue_head+1) % queue_alloc;
+            return pop;
+          }
+          inline void queuePush(long v) {
+            queue[queue_tail] = v;
+            queue_tail = (queue_tail+1) % queue_alloc;
+            if (queue_tail == queue_head) {
+              // we've overflowed
+              throw error(error::Out_Of_Memory);
+            }
+          }
+          inline void queueReset() {
+            queue_head = queue_tail = 0;
+          }
+
+          virtual bool hasNodesToExplore();
+          virtual long getNextToExplore();
+      private:
+          long* queue;
+          long queue_head;
+          long queue_tail;
+          long queue_alloc;
+  };
+  // ======================================================================
+  // |                                                                    |
   // |                       node_renumberer  class                       |
   // |                                                                    |
   // ======================================================================

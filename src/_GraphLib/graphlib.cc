@@ -93,6 +93,35 @@ GraphLib::BF_graph_traversal::~BF_graph_traversal()
 
 // ******************************************************************
 // *                                                                *
+// *                     BF_with_queue  methods                     *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::BF_with_queue::BF_with_queue(long max_queue)
+ : BF_graph_traversal()
+{
+  queue_alloc = max_queue;
+  queue = new long[max_queue];
+  queueReset();
+}
+
+GraphLib::BF_with_queue::~BF_with_queue()
+{
+  delete[] queue;
+}
+
+bool GraphLib::BF_with_queue::hasNodesToExplore()
+{
+  return !queueEmpty();
+}
+
+long GraphLib::BF_with_queue::getNextToExplore()
+{
+  return queuePop();
+}
+
+// ******************************************************************
+// *                                                                *
 // *                    node_renumberer  methods                    *
 // *                                                                *
 // ******************************************************************

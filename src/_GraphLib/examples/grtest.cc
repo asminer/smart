@@ -133,58 +133,36 @@ void showGraph(digraph* g)
 //======================================================================================================================================================
 #else
 
-class forwd_reachable : public BF_graph_traversal {
+class forwd_reachable : public BF_with_queue {
   public:
     forwd_reachable(long init, intset &_reachable);
     virtual ~forwd_reachable();
 
-    virtual bool hasNodesToExplore();
-    virtual long getNextToExplore();
     virtual bool visit(long src, long dest, const void*);
 
   private:
-    long* queue;
-    long queue_head;
-    long queue_tail;
     intset &reachable;
 };
 
 // ----------
 
 forwd_reachable::forwd_reachable(long init, intset &_reachable)
- : reachable(_reachable)
+ : BF_with_queue(_reachable.getSize()), reachable(_reachable)
  {
-   queue = new long[reachable.getSize()];
-   queue[0] = init;
-   queue_head = 0;
-   queue_tail = 1;
+   queuePush(init);
    reachable.removeAll();
    reachable.addElement(init);
  }
 
 forwd_reachable::~forwd_reachable()
 {
-  delete[] queue;
-}
-
-bool forwd_reachable::hasNodesToExplore()
-{
-  return queue_tail > queue_head;
-}
-
-long forwd_reachable::getNextToExplore()
-{
-  return queue[queue_head++];
 }
 
 bool forwd_reachable::visit(long, long dest, const void*)
 {
   if (!reachable.contains(dest)) {
     reachable.addElement(dest);
-    if (queue_tail >= reachable.getSize()) {
-      throw 44;
-    }
-    queue[queue_tail++] = dest;
+    queuePush(dest);
   }
   return false;
 }
