@@ -1,14 +1,26 @@
 
-# $Id$
-
 noinst_PROGRAMS = \
   birthdeath \
-  walk \
   mcsolver \
+  period \
   oz \
-  univ
+  univ \
+  walk 
 
-MY_SOURCES = ../../_LSLib/lslib.cc ../../_GraphLib/graphlib.cc ../../_GraphLib/sccs.cc ../../_IntSets/intset.cc ../../_Timer/timerlib.cc
+check_PROGRAMS = \
+  period
+
+TESTS = \
+  period
+
+
+MY_SOURCES = \
+  ../../_LSLib/lslib.cc \
+  ../../_GraphLib/graphlib.cc ../../_GraphLib/sccs.cc \
+  ../../_IntSets/intset.cc ../../_Timer/timerlib.cc 
+
+MC_SOURCES = \
+  ../markov_chain.cc
 
 AM_CPPFLAGS = -I$(srcdir)/../ -I$(srcdir)/../../_Timer -I$(srcdir)/../../_LSLib -I$(srcdir)/../../_GraphLib 
 
@@ -27,11 +39,15 @@ oz_LDADD = ../libmc.la
 univ_SOURCES = univ.cc $(MY_SOURCES)
 univ_LDADD = ../libmc.la 
 
-TESTS = \
-  scc0.dtmc \
-  scc1.dtmc \
-  scc2.dtmc \
-  scc3.dtmc
+period_SOURCES = period.cc $(MC_SOURCES) $(MY_SOURCES)
+# period_LDADD = ../libmc.la
 
-LOG_COMPILER = ./mcsolver
-AM_LOG_FLAGS = -q
+# 
+# TESTS = \
+  # scc0.dtmc \
+  # scc1.dtmc \
+  # scc2.dtmc \
+  # scc3.dtmc
+# 
+# LOG_COMPILER = ./mcsolver
+# AM_LOG_FLAGS = -q

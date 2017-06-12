@@ -5,6 +5,71 @@
 
 #include "mclib.h"
 
+// #define DEBUG_CONSTRUCTOR
+// #define DEBUG_PERIOD
+
+#ifdef DEBUG_PERIOD
+  #define USES_IOSTREAM
+#endif
+
+#ifdef DEBUG_CONSTRUCTOR
+  #define USES_IOSTREAM
+#endif
+
+#ifdef USES_IOSTREAM
+#include <iostream>
+
+using namespace std;
+
+template <class TYPE>
+void showArray(const TYPE* A, long size)
+{
+  cout << "[";
+  cout << A[0];
+  for (long i=1; i<size; i++) cout << ", " << A[i];
+  cout << "]\n";
+}
+
+void showGraph(GraphLib::static_graph &G)
+{
+  cout << "    #nodes: " << G.getNumNodes() << "\n";
+  cout << "    #edges: " << G.getNumEdges() << "\n";
+  cout << "    row pointer: ";
+  showArray(G.RowPointer(), G.getNumNodes()+1);
+  cout << "    column index: ";
+  showArray(G.ColumnIndex(), G.getNumEdges());
+}
+
+#endif  // #ifdef USES_IOSTREAM
+
+template <class TYPE>
+inline void zeroArray(TYPE* A, long size)
+{
+  for (long i=0; i<size; i++) A[i] = 0;
+}
+
+void float_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
+{
+  for (long s=0; s<G.getNumNodes(); s++) {
+    double sum = 0;
+    for (long e=G.RowPointer(s); e<G.RowPointer(s+1); e++) {
+      sum += *((float*) G.Label(e));
+    } // for e
+    rowsums[s] += sum;
+  } // for s
+}
+  
+void double_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
+{
+  for (long s=0; s<G.getNumNodes(); s++) {
+    double sum = 0;
+    for (long e=G.RowPointer(s); e<G.RowPointer(s+1); e++) {
+      sum += *((double*) G.Label(e));
+    } // for e
+    rowsums[s] += sum;
+  } // for s
+}
+  
 // ======================================================================
 // |                                                                    |
 // |                        Markov_chain methods                        |
@@ -16,29 +81,21 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   const GraphLib::static_classifier &TSCCinfo,
   GraphLib::timer_hook *sw) : stateClass(TSCCinfo)
 {
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "Inside Markov_chain constructor.\n";
+#endif
   //
-  // Build row sums
+  // Allocate row sum array
   //
   double* rowsums = new double[G.getNumNodes()];
-  for (long i=0; i<G.getNumNodes(); i++) {
-    rowsums[i] = 0;
-  }
-  G.addRowSums(rowsums);
 
   //
-  // Normalize rows if we're a DTMC;
-  // determine uniformization constant if we're a CTMC.
+  // If we're a DTMC, normalize rows
   //
   if (discrete) {
+    zeroArray(rowsums, G.getNumNodes());
+    G.addRowSums(rowsums);
     G.divideRows(rowsums);
-    uniformization_const = 1.0; 
-  } else {
-    uniformization_const = rowsums[0];
-    for (long i=1; i<G.getNumNodes(); i++) {
-      if (rowsums[i] > uniformization_const) {
-        uniformization_const = rowsums[i];
-      }
-    }
   }
 
   //
@@ -56,12 +113,55 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   }
 
   //
+  // Determine rowsums from split graphs
+  //
+  zeroArray(rowsums, G.getNumNodes());
+  double_graph_rowsums(Q_byrows_diag, rowsums);
+  double_graph_rowsums(Q_byrows_off, rowsums);
+
+
+  //
+  // Uniformization constant
+  //
+  if (discrete) {
+    // 
+    // DTMCs: set uniformization constant to 1
+    // (TBD - should we do the same as CTMCs?)
+    //
+    uniformization_const = 1;
+  } else {
+    //
+    // CTMCs: determine uniformization constant from rowsums
+    //
+    uniformization_const = rowsums[0];
+    for (long i=1; i<G.getNumNodes(); i++) {
+      if (rowsums[i] > uniformization_const) {
+        uniformization_const = rowsums[i];
+      }
+    }
+  }
+
+  //
   // Sanity checks
   //
   DCASSERT(Q_byrows_diag.getNumNodes() == G.getNumNodes());
   DCASSERT(Q_byrows_off.getNumNodes() == G.getNumNodes());
   DCASSERT(Q_bycols_diag.getNumNodes() == G.getNumNodes());
   DCASSERT(Q_bycols_off.getNumNodes() == G.getNumNodes());
+
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "  Q_byrows_diag:\n";
+  showGraph(Q_byrows_diag);
+  cout << "  Q_byrows_off:\n";
+  showGraph(Q_byrows_off);
+  cout << "  Q_bycols_diag:\n";
+  showGraph(Q_bycols_diag);
+  cout << "  Q_bycols_off:\n";
+  showGraph(Q_bycols_off);
+  cout << "  rowsums:\n";
+  cout << "    ";
+  showArray(rowsums, Q_byrows_diag.getNumNodes());
+#endif
 
   //
   // Build one_over_rowsums array, used for linear solvers
@@ -75,6 +175,13 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   // Cleanup
   //
   delete[] rowsums;
+
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "  one_over_rowsums:\n";
+  cout << "    ";
+  showArray(one_over_rowsums, G.getNumNodes());
+  cout << "Exiting Markov_chain constructor.\n";
+#endif
 }
 
 // ******************************************************************
@@ -185,6 +292,7 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
     The following helper class magically does most of this.
   */
 
+  // ======================================================================
   class BF_period : public GraphLib::BF_with_queue {
       public:
           // Constructor.
@@ -203,6 +311,9 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
               // note that distance[first] is the same as raw_dist[0]
               queuePush(first);
               first_pass = true;
+#ifdef DEBUG_PERIOD
+              cout << "Computing period, first pass.\n";
+#endif
           }
           virtual ~BF_period() {
               delete[] raw_dist;
@@ -212,16 +323,32 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
                   if (distance[dest]>=0) return false;
                   distance[dest] = distance[src]+1;
                   queuePush(dest);
+#ifdef DEBUG_PERIOD
+                  cout << "  edge " << src << " -> " << dest << " updates distance\n";
+                  cout << "      of " << dest << " to " << distance[dest] << "\n";
+#endif
               } else {
                   long d = distance[src] - distance[dest] + 1;
                   if (d) {
                       if (period) period = GCD(period, d);
                       else        period = d;
+#ifdef DEBUG_PERIOD
+                  cout << "  edge " << src << " -> " << dest << " has d=" ;
+                  cout << distance[src] << "-" << distance[dest] << "+1=" << d << "\n";
+                  cout << "      updating period to " << period << "\n";
+#endif
                   }
               }
               return false;
           }
           inline void secondPass(long first, long size) {
+#ifdef DEBUG_PERIOD
+              cout << "First pass completed, distances:\n  [" << distance[first];
+              for (long i=1; i<size; i++) {
+                cout << ", " << distance[first+i];
+              }
+              cout << "]\n";
+#endif
               queueReset();
               first_pass = false;
               for (long i=0; i<size; i++) {
@@ -238,6 +365,7 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
         long period;
         bool first_pass;
   };  // class BF_distances
+  // ======================================================================
 
   //
   // Special case: absorbing states
@@ -249,6 +377,13 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
   //
   if (c<1)  return 0;
   if (c>= stateClass.getNumClasses()) return 0;
+
+  //
+  // Easy case - if we have a self loop, then the period must be 1
+  //
+  for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
+    if (one_over_rowsums[i] != 1.0) return 1;
+  }
 
   // First pass: forward reachability search from
   // start state, track state distances.

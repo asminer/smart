@@ -191,6 +191,11 @@ namespace MCLib {
     // TBD - copy stuff from old interface
 
     private:
+      /**
+          Array of dimension number of states.
+          For each state s, one_over_rowsums[s] gives
+          1/(sum of outgoing edges from state s, discarding any self loops)
+      */
       float* one_over_rowsums;
       double uniformization_const;
 

@@ -208,7 +208,7 @@ GraphLib::dynamic_graph::determineSCCs(long nonterminal, long sinks,
   // so that all classes are within the range 
   //      0, 1, 2, ..., numclasses-1
   //
-  long num_classes = MAX(scc_count, nonterminal+1);
+  long num_classes = MAX(termcount, nonterminal+1);
   num_classes = MAX(num_classes, sinks+1);
 
   if (sw) sw->stop();
