@@ -1,6 +1,6 @@
 
 noinst_PROGRAMS = \
-  grtest triples
+  grtest triples renumber scctest
 
 check_PROGRAMS = \
   renumber scctest

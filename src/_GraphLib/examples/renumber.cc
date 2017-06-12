@@ -65,7 +65,7 @@ class graph_display : public GraphLib::BF_graph_traversal {
       return current++;
     }
 
-    virtual bool visit(long src, long dest, void*) {
+    virtual bool visit(long src, long dest, const void*) {
       std::cout << "    " << src << " -> " << dest << "\n";
       return false;
     }
@@ -98,7 +98,7 @@ class graph_renumber : public GraphLib::BF_graph_traversal {
       return current++;
     }
 
-    virtual bool visit(long src, long dest, void*) {
+    virtual bool visit(long src, long dest, const void*) {
       G.addEdge(renumber[src], renumber[dest]);
       return false;
     }

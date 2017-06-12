@@ -134,17 +134,14 @@ namespace GraphLib {
             return queue_head == queue_tail;
           }
           inline long queuePop() {
-            long pop = queue[queue_head];
-            queue_head = (queue_head+1) % queue_alloc;
-            return pop;
+            return queue[queue_head++];
           }
           inline void queuePush(long v) {
-            queue[queue_tail] = v;
-            queue_tail = (queue_tail+1) % queue_alloc;
-            if (queue_tail == queue_head) {
+            if (queue_tail >= queue_alloc) {
               // we've overflowed
               throw error(error::Out_Of_Memory);
             }
+            queue[queue_tail++] = v;
           }
           inline void queueReset() {
             queue_head = queue_tail = 0;
@@ -246,7 +243,7 @@ namespace GraphLib {
 
       inline bool isNodeInClass(long n, long c) const {
         CHECK_RANGE(0, c, num_classes);
-        return (n >= class_start[c]) && (n<class_start[c+1]-1);
+        return (n >= class_start[c]) && (n<class_start[c+1]);
       }
 
       long classOfNode(long s) const;
