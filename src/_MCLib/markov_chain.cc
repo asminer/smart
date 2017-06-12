@@ -38,6 +38,17 @@ void showGraph(GraphLib::static_graph &G)
   showArray(G.RowPointer(), G.getNumNodes()+1);
   cout << "    column index: ";
   showArray(G.ColumnIndex(), G.getNumEdges());
+  if (G.EdgeBytes() == sizeof(double)) {
+    cout << "    value (doubles): ";
+    showArray( (const double*) G.Labels(), G.getNumEdges());
+  }
+  if (G.EdgeBytes() == sizeof(float)) {
+    cout << "    value (floats): ";
+    showArray( (const float*) G.Labels(), G.getNumEdges());
+  }
+  if (G.EdgeBytes() == 0) {
+    cout << "    no values\n";
+  }
 }
 
 #endif  // #ifdef USES_IOSTREAM
@@ -69,6 +80,34 @@ void double_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
     rowsums[s] += sum;
   } // for s
 }
+
+template <class REAL>
+inline void graphToMatrix(const GraphLib::static_graph &G, LS_CCS_Matrix<REAL> &M)
+{
+  M.start = 0;
+  M.stop = G.getNumNodes();
+  M.size = G.getNumNodes();
+
+  M.val = (const REAL*) G.Labels();
+  M.row_ind = G.ColumnIndex();
+  M.col_ptr = G.RowPointer();
+
+  M.one_over_diag = 0;  // We'll do this by hand later
+}
+  
+template <class REAL>
+inline void graphToMatrix(const GraphLib::static_graph &G, LS_CRS_Matrix<REAL> &M)
+{
+  M.start = 0;
+  M.stop = G.getNumNodes();
+  M.size = G.getNumNodes();
+
+  M.val = (const REAL*) G.Labels();
+  M.col_ind = G.ColumnIndex();
+  M.row_ptr = G.RowPointer();
+
+  M.one_over_diag = 0;  // We'll do this by hand later
+}
   
 // ======================================================================
 // |                                                                    |
@@ -84,6 +123,10 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
 #ifdef DEBUG_CONSTRUCTOR
   cout << "Inside Markov_chain constructor.\n";
 #endif
+
+  is_discrete = discrete;
+  double_graphs = true;
+
   //
   // Allocate row sum array
   //
@@ -103,21 +146,21 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
 
   if (G.isByRows()) {
-    G.splitAndExport(TSCCinfo, false, Q_byrows_diag, Q_byrows_off, sw);
-    Q_bycols_diag.transposeFrom(Q_byrows_diag);
-    Q_bycols_off.transposeFrom(Q_byrows_off);
+    G.splitAndExport(TSCCinfo, false, G_byrows_diag, G_byrows_off, sw);
+    G_bycols_diag.transposeFrom(G_byrows_diag);
+    G_bycols_off.transposeFrom(G_byrows_off);
   } else {
-    G.splitAndExport(TSCCinfo, false, Q_bycols_diag, Q_bycols_off, sw);
-    Q_byrows_diag.transposeFrom(Q_bycols_diag);
-    Q_byrows_off.transposeFrom(Q_bycols_off);
+    G.splitAndExport(TSCCinfo, false, G_bycols_diag, G_bycols_off, sw);
+    G_byrows_diag.transposeFrom(G_bycols_diag);
+    G_byrows_off.transposeFrom(G_bycols_off);
   }
 
   //
   // Determine rowsums from split graphs
   //
   zeroArray(rowsums, G.getNumNodes());
-  double_graph_rowsums(Q_byrows_diag, rowsums);
-  double_graph_rowsums(Q_byrows_off, rowsums);
+  double_graph_rowsums(G_byrows_diag, rowsums);
+  double_graph_rowsums(G_byrows_off, rowsums);
 
 
   //
@@ -144,64 +187,109 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
   // Sanity checks
   //
-  DCASSERT(Q_byrows_diag.getNumNodes() == G.getNumNodes());
-  DCASSERT(Q_byrows_off.getNumNodes() == G.getNumNodes());
-  DCASSERT(Q_bycols_diag.getNumNodes() == G.getNumNodes());
-  DCASSERT(Q_bycols_off.getNumNodes() == G.getNumNodes());
+  DCASSERT(G_byrows_diag.getNumNodes() == G.getNumNodes());
+  DCASSERT(G_byrows_off.getNumNodes() == G.getNumNodes());
+  DCASSERT(G_bycols_diag.getNumNodes() == G.getNumNodes());
+  DCASSERT(G_bycols_off.getNumNodes() == G.getNumNodes());
 
 #ifdef DEBUG_CONSTRUCTOR
-  cout << "  Q_byrows_diag:\n";
-  showGraph(Q_byrows_diag);
-  cout << "  Q_byrows_off:\n";
-  showGraph(Q_byrows_off);
-  cout << "  Q_bycols_diag:\n";
-  showGraph(Q_bycols_diag);
-  cout << "  Q_bycols_off:\n";
-  showGraph(Q_bycols_off);
+  cout << "  G_byrows_diag:\n";
+  showGraph(G_byrows_diag);
+  cout << "  G_byrows_off:\n";
+  showGraph(G_byrows_off);
+  cout << "  G_bycols_diag:\n";
+  showGraph(G_bycols_diag);
+  cout << "  G_bycols_off:\n";
+  showGraph(G_bycols_off);
   cout << "  rowsums:\n";
   cout << "    ";
-  showArray(rowsums, Q_byrows_diag.getNumNodes());
+  showArray(rowsums, G_byrows_diag.getNumNodes());
 #endif
 
   //
-  // Build one_over_rowsums array, used for linear solvers
+  // Build one_over_rowsums_d array, used for linear solvers
   //
-  one_over_rowsums = new float[Q_byrows_diag.getNumNodes()];
-  for (long i=0; i<Q_byrows_diag.getNumNodes(); i++) {
-    one_over_rowsums[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
+  one_over_rowsums_f = 0;
+  one_over_rowsums_d = new double[G_byrows_diag.getNumNodes()];
+  for (long i=0; i<G_byrows_diag.getNumNodes(); i++) {
+    one_over_rowsums_d[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
   }
 
+  // TBD - for CSL, we will need one_over_colsums arrays, right?  :(
+
   //
-  // Cleanup
+  // Cleanup rowsums
   //
   delete[] rowsums;
 
 #ifdef DEBUG_CONSTRUCTOR
-  cout << "  one_over_rowsums:\n";
-  cout << "    ";
-  showArray(one_over_rowsums, G.getNumNodes());
+  if (one_over_rowsums_d) {
+    cout << "  one_over_rowsums_d:\n";
+    cout << "    ";
+    showArray(one_over_rowsums_d, G.getNumNodes());
+  }
   cout << "Exiting Markov_chain constructor.\n";
 #endif
+
+  //
+  // Build matrices.
+  // Shallow copy: pointers in the structs are to what we already have
+  //
+
+/*
+  QT_bycols_diag_f = 0;
+  QT_bycols_off_f = 0;
+  QT_byrows_diag_f = 0;
+  QT_byrows_off_f = 0;
+
+  QT_bycols_diag_d = new LS_CCS_Matrix_double;
+  graphToMatrix(G_byrows_diag, *QT_bycols_diag_d);
+
+  QT_bycols_off_d = new LS_CCS_Matrix_double;
+  graphToMatrix(G_byrows_off, *QT_bycols_off_d);
+
+  QT_byrows_diag_d = new LS_CRS_Matrix_double;
+  graphToMatrix(G_bycols_diag, *QT_byrows_diag_d);
+
+  QT_byrows_off_d = new LS_CRS_Matrix_double;
+  graphToMatrix(G_byrows_off, *QT_byrows_off_d);
+  */
 }
 
 // ******************************************************************
 
 MCLib::Markov_chain::~Markov_chain()
 {
-  delete[] one_over_rowsums;
+  delete[] one_over_rowsums_d;
+  delete[] one_over_rowsums_f;
+
+/*
+  delete QT_bycols_diag_f;
+  delete QT_bycols_diag_d;
+  delete QT_bycols_off_f;
+  delete QT_bycols_off_d;
+  delete QT_byrows_diag_f;
+  delete QT_byrows_diag_d;
+  delete QT_byrows_off_f;
+  delete QT_byrows_off_d;
+  */
 }
 
 // ******************************************************************
 
 size_t MCLib::Markov_chain::getMemTotal() const
 {
-  return 
-    Q_byrows_diag.getNumNodes() * sizeof(float) + // for one_over_rowsums
+  size_t mem = 
     stateClass.getMemTotal() +
-    Q_byrows_diag.getMemTotal() +
-    Q_byrows_off.getMemTotal() +
-    Q_bycols_diag.getMemTotal() +
-    Q_bycols_off.getMemTotal(); 
+    G_byrows_diag.getMemTotal() +
+    G_byrows_off.getMemTotal() +
+    G_bycols_diag.getMemTotal() +
+    G_bycols_off.getMemTotal(); 
+
+  if (one_over_rowsums_d) mem += getNumStates() * sizeof(double);
+  if (one_over_rowsums_f) mem += getNumStates() * sizeof(float);
+
+  return mem;
 }
 
 // ******************************************************************
@@ -212,24 +300,24 @@ const
   while (t.hasNodesToExplore()) {
       long s = t.getNextToExplore();
 
-      if (s<0 || s>=Q_byrows_diag.getNumNodes()) {
+      if (s<0 || s>=G_byrows_diag.getNumNodes()) {
         throw GraphLib::error(GraphLib::error::Bad_Index);
       }
 
       // Explore diagonal edges from s
-      for (long z=Q_byrows_diag.RowPointer(s); 
-            z<Q_byrows_diag.RowPointer(s+1); z++) 
+      for (long z=G_byrows_diag.RowPointer(s); 
+            z<G_byrows_diag.RowPointer(s+1); z++) 
       {
-        if (t.visit(s, Q_byrows_diag.ColumnIndex(z), Q_byrows_diag.Label(z))) {
+        if (t.visit(s, G_byrows_diag.ColumnIndex(z), G_byrows_diag.Label(z))) {
           return true;
         }
       }
 
       // Explore off-diagonal edges from s
-      for (long z=Q_byrows_off.RowPointer(s); 
-            z<Q_byrows_off.RowPointer(s+1); z++) 
+      for (long z=G_byrows_off.RowPointer(s); 
+            z<G_byrows_off.RowPointer(s+1); z++) 
       {
-        if (t.visit(s, Q_byrows_off.ColumnIndex(z), Q_byrows_off.Label(z))) {
+        if (t.visit(s, G_byrows_off.ColumnIndex(z), G_byrows_off.Label(z))) {
           return true;
         }
       }
@@ -246,24 +334,24 @@ const
   while (t.hasNodesToExplore()) {
       long s = t.getNextToExplore();
 
-      if (s<0 || s>=Q_bycols_diag.getNumNodes()) {
+      if (s<0 || s>=G_bycols_diag.getNumNodes()) {
         throw GraphLib::error(GraphLib::error::Bad_Index);
       }
 
       // Explore diagonal edges from s
-      for (long z=Q_bycols_diag.RowPointer(s); 
-            z<Q_bycols_diag.RowPointer(s+1); z++) 
+      for (long z=G_bycols_diag.RowPointer(s); 
+            z<G_bycols_diag.RowPointer(s+1); z++) 
       {
-        if (t.visit(s, Q_bycols_diag.ColumnIndex(z), Q_bycols_diag.Label(z))) {
+        if (t.visit(s, G_bycols_diag.ColumnIndex(z), G_bycols_diag.Label(z))) {
           return true;
         }
       }
 
       // Explore off-diagonal edges from s
-      for (long z=Q_bycols_off.RowPointer(s); 
-            z<Q_bycols_off.RowPointer(s+1); z++) 
+      for (long z=G_bycols_off.RowPointer(s); 
+            z<G_bycols_off.RowPointer(s+1); z++) 
       {
-        if (t.visit(s, Q_bycols_off.ColumnIndex(z), Q_bycols_off.Label(z))) {
+        if (t.visit(s, G_bycols_off.ColumnIndex(z), G_bycols_off.Label(z))) {
           return true;
         }
       }
@@ -381,20 +469,111 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
   //
   // Easy case - if we have a self loop, then the period must be 1
   //
-  for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
-    if (one_over_rowsums[i] != 1.0) return 1;
+  if (one_over_rowsums_d) {
+    for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
+      if (one_over_rowsums_d[i] != 1.0) return 1;
+    }
+  }
+  if (one_over_rowsums_f) {
+    for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
+      if (one_over_rowsums_f[i] != 1.0) return 1;
+    }
   }
 
   // First pass: forward reachability search from
   // start state, track state distances.
   BF_period T(stateClass.firstNodeOfClass(c), stateClass.sizeOfClass(c));
-  Q_byrows_diag.traverse(T); 
+  G_byrows_diag.traverse(T); 
 
   // Second pass: check all edges, and update period
   // based on (3) above.
   T.secondPass(stateClass.firstNodeOfClass(c), stateClass.sizeOfClass(c));
-  Q_byrows_diag.traverse(T); 
+  G_byrows_diag.traverse(T); 
 
   return T.getPeriod();
 }
 
+// ******************************************************************
+
+// STUFF WILL GO HERE
+
+
+// ******************************************************************
+
+void MCLib::Markov_chain::computeTTA(const LS_Vector &p0, double* p, 
+    const LS_Options &opt, LS_Output &out) const
+{
+  //
+  // Trivial case: no transient states
+  //
+  if (0==stateClass.sizeOfClass(0)) {
+    out.status = LS_Success;
+    out.num_iters = 0;
+    out.relaxation = 0;
+    out.precision = 0;
+    return;
+  }
+
+  //
+  // At least one transient state.  Have to do real work.
+  // Check vectors.
+  //
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (0==p0.size) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+
+  //
+  // Clear out p
+  //
+  for (long i=stateClass.firstNodeOfClass(0); i<=stateClass.lastNodeOfClass(0); i++) {
+    p[i] = 0;
+  } // for i
+
+  //
+  // Solve linear system of equations:
+  //    n * Qtt = -p0
+  // where n gives the expected time spent in each state.
+  // Note: since we actually use p0, we need to negate n when we're done.
+
+  if (double_graphs) {
+    //
+    // Set up matrix (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qtt;
+    graphToMatrix(G_bycols_diag, Qtt);
+    Qtt.start = stateClass.firstNodeOfClass(0);
+    Qtt.stop  = 1+stateClass.lastNodeOfClass(0);
+    Qtt.one_over_diag = one_over_rowsums_d;
+
+    //
+    // Call the linear solver
+    //
+    Solve_Axb(Qtt, p, p0, opt, out);
+  } else {
+    //
+    // Set up matrix (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qtt;
+    graphToMatrix(G_bycols_diag, Qtt);
+    Qtt.start = stateClass.firstNodeOfClass(0);
+    Qtt.stop  = 1+stateClass.lastNodeOfClass(0);
+    Qtt.one_over_diag = one_over_rowsums_f;
+
+    //
+    // Call the linear solver
+    //
+    Solve_Axb(Qtt, p, p0, opt, out);
+  }
+
+  //
+  // Negate our solution
+  //
+  for (long i=stateClass.firstNodeOfClass(0); i<=stateClass.lastNodeOfClass(0); i++) {
+    p[i] = -p[i];
+  } // for i
+}
+
+// ******************************************************************
