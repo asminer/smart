@@ -9,6 +9,7 @@
 #define MCLIB_H
 
 #include "../_GraphLib/graphlib.h"
+#include "../_LSLib/lslib.h"
 
 namespace MCLib {
 
@@ -125,6 +126,9 @@ namespace MCLib {
       /// Is this a continuous-time chain?
       inline bool isContinuous() const { return !is_discrete; }
 
+      /// Number of states in the chain
+      inline long getNumStates() const { return G_byrows_diag.getNumNodes(); }
+
       /// @return Total memory required to store the chain, in bytes.
       size_t getMemTotal() const;
 
@@ -188,7 +192,27 @@ namespace MCLib {
       */
       long computePeriodOfClass(long c) const;
 
-    // TBD - copy stuff from old interface
+      // TBD - transient, forward time and backward time
+      // TBD - accumulated transient, forward time
+
+      /** Compute the time to absorption.
+          Vectors are allocated so that x[s] is the total time for state s,
+          for any legal state handle s.
+
+          @param  p0    Initial distribution.
+
+          @param  p     Answer stored here.
+                        If s is transient, then 
+                          p[s] = expected time spent in state s;
+                        otherwise, 
+                          p[s] is unchanged.
+
+          @param  opt   Options for linear solver.
+
+          @param  out   Linear solver status information as output.
+      */
+      void computeTTA(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
+
 
     private:
       /**
@@ -196,25 +220,30 @@ namespace MCLib {
           For each state s, one_over_rowsums[s] gives
           1/(sum of outgoing edges from state s, discarding any self loops)
       */
-      float* one_over_rowsums;
+      double* one_over_rowsums_d;
+      float * one_over_rowsums_f;
       double uniformization_const;
 
       /// How states are classified (transient, recurrent class 1, etc.)
       GraphLib::static_classifier stateClass; 
 
-      /// Edges between nodes in the same class, stored by rows
-      GraphLib::static_graph  Q_byrows_diag;
-      /// Edges from transient states to recurrent, stored by rows
-      GraphLib::static_graph  Q_byrows_off;
+      /// Edges between nodes in the same class, stored as a row graph
+      GraphLib::static_graph  G_byrows_diag;
 
-      /// Edges between nodes in the same class, stored by columns
-      GraphLib::static_graph  Q_bycols_diag;
-      /// Edges from transient states to recurrent, stored by columns
-      GraphLib::static_graph  Q_bycols_off;
+      /// Edges from transient states to recurrent, stored as a row graph
+      GraphLib::static_graph  G_byrows_off;
+
+      /// Edges between nodes in the same class, stored as a column graph
+      GraphLib::static_graph  G_bycols_diag;
+
+      /// Edges from transient states to recurrent, stored as a column graph
+      GraphLib::static_graph  G_bycols_off;
       
       /// DTMC?
       bool is_discrete;
 
+      /// Did we build from a graph of doubles?
+      bool double_graphs;
   };  // class Markov_chain
 
 };  // namespace MCLib

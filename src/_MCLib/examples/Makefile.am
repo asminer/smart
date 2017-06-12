@@ -4,14 +4,17 @@ noinst_PROGRAMS = \
   mcsolver \
   period \
   oz \
+  tta_test \
   univ \
   walk 
 
 check_PROGRAMS = \
-  period
+  period \
+  tta_test
 
 TESTS = \
-  period
+  period \
+  tta_test
 
 
 MY_SOURCES = \
@@ -39,8 +42,11 @@ oz_LDADD = ../libmc.la
 univ_SOURCES = univ.cc $(MY_SOURCES)
 univ_LDADD = ../libmc.la 
 
-period_SOURCES = period.cc $(MC_SOURCES) $(MY_SOURCES)
-# period_LDADD = ../libmc.la
+period_SOURCES = period.cc $(MY_SOURCES)
+period_LDADD = ../libmc.la
+
+tta_test_SOURCES = tta_test.cc $(MY_SOURCES)
+tta_test_LDADD = ../libmc.la
 
 # 
 # TESTS = \

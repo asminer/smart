@@ -372,6 +372,7 @@ void GraphLib::static_graph::transposeFrom(const static_graph &m)
 #endif
 
   is_by_rows = !m.is_by_rows;
+  edge_bytes = m.edge_bytes;
 
   // resize arrays 
   allocate(m.num_nodes, m.num_edges);
