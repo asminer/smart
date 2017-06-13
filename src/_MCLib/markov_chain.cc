@@ -606,25 +606,20 @@ void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0,
       graphToMatrix(G_byrows_off, Qta);
       
       //
-      // Multiply np += np * Qta if we're a DTMC
-      // If we're a CTMC then multiply each row of Qta by one_over_rowsums
+      // Multiply np += np * Qta 
       //
-      if (is_discrete) {
-        Qta.VectorMatrixMultiply(np, np);
-      } else {
-        Qta.VectorVectorMatrixMultiply(np, np, one_over_rowsums_d);
-      }
-       
-      // Qtt.one_over_diag = one_over_rowsums_d;
-
-      // multiply!
-
+      Qta.VectorMatrixMultiply(np, np);
     } else {
       //
       // Set up matrix (shallow copies here)
       //
       LS_CRS_Matrix_float Qta;
       graphToMatrix(G_byrows_off, Qta);
+
+      //
+      // Multiply np += np * Qta 
+      //
+      Qta.VectorMatrixMultiply(np, np);
     }
 
   } // if there are transient states
