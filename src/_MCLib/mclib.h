@@ -10,6 +10,8 @@
 
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
+#include "../_RngLib/rng.h"
+#include "../_IntSets/intset.h"
 
 namespace MCLib {
 
@@ -293,19 +295,82 @@ namespace MCLib {
       void computeInfinityDistribution(const LS_Vector &p0, double* p, 
         const LS_Options &opt, LS_Output &out) const;
 
+
+      // Methods that build TTA distributions here.
+      // (TBD - design a nice distribution class, and use it for poisson.
+      // unsure if it goes here or in its own "library".)
+
+
+      /** Simulate a random walk through the chain.
+          The random walk proceeds until we timeout,
+          or we reach a state that is absorbing or in the set F.
+
+          @param  rng     Random number stream
+          @param  state   Input: the initial state; Output: the final state
+          @param  F       Set of final states, or 0 for empty set
+          @param  maxt    Maximum number of state changes to let the walk go.
+          @param  q       Uniformization constant, if this is a CTMC.
+                          Ignored completely if this is a DTMC.
+
+          @return Number of state changes.
+      */
+      long randomWalk(rng_stream &rng, long &state, const intset* F,
+                              long maxt, double q) const;
+
+      /** Simulate a random walk through the chain.
+          The chain must be continuous time.
+          The random walk proceeds until we timeout,
+          or we reach a state that is absorbing or in the set F.
+
+          @param  rng     Random number stream
+          @param  state   Input: the initial state; Output: the final state
+          @param  F       Set of final states, or 0 for empty set
+          @param  maxt    Maximum time to let the walk go.
+
+          @return Time when the walk terminates.
+      */
+      double randomWalk(rng_stream &rng, long &state, 
+                              const intset* F, double maxt) const;
+
+
     private:
       // Helper methods
-      void finish_construction(double* rowsums, GraphLib::dynamic_graph &G,
+
+      /**
+          Things common to both constructors.
+          Moved here to eliminate code duplication.
+      */
+      void finish_construction(GraphLib::dynamic_graph &G, 
         GraphLib::timer_hook *sw);
 
     private:
       /**
-          Array of dimension number of states.
-          For each state s, one_over_rowsums[s] gives
-          1/(sum of outgoing edges from state s, discarding any self loops)
+          Row sums.
+          For each state s,
+          rowsums[s] gives the sum of outgoing edges from state s
+          (discarding any self loops).
+          For a DTMC, 1-rowsum[s] gives the probability
+          of remaining in state s in one step.
+      */
+      double* rowsums;
+
+      /**
+          Array of dimension number of states, stored as doubles.
+          For each state s, one_over_rowsums_d[s] gives 1/rowsums[s], 
+          unless rowsums[s] is zero, in which case 
+          one_over_rowsums_d[s] is also zero.
+          Used only if the graphs are stored with doubles.
       */
       double* one_over_rowsums_d;
+      /** 
+          Same as one_over_rowsums_d, but stored as floats.
+          Used only if the graphs are stored with floats.
+      */
       float * one_over_rowsums_f;
+
+      /**
+          Maximum row sum if we're a CTMC; otherwise, 1.
+      */
       double uniformization_const;
 
       /// How states are classified (transient, recurrent class 1, etc.)
