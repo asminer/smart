@@ -6,7 +6,7 @@
 #include <iostream>
 #include "mclib.h"
 
-#define VERBOSE
+// #define VERBOSE
 
 using namespace GraphLib;
 using namespace std;
@@ -29,6 +29,7 @@ const edge graph1[] = {
   {-1, -1, -1}
 };
 
+const bool discrete1 = true;
 const long num_nodes1 = 6;
 
 const double init1[] = {1.0/3.0, 0, 1.0/3.0, 1.0/3.0, 0, 0};
@@ -60,10 +61,12 @@ class my_timer : public timer_hook {
     bool active;
 };
 
-bool run_test(const char* name, const edge graph[], const long num_nodes, 
-  const double init[], const double tta[])
+bool run_test(const char* name, const bool discrete, const edge graph[], 
+  const long num_nodes, const double init[], const double tta[])
 {
-  cout << "Testing Markov chain " << name << "\n";
+  cout << "Testing ";
+  if (discrete) cout << "DTMC "; else cout << "CTMC ";
+  cout << name << "\n";
 #ifdef VERBOSE
   my_timer T(true);
 #else
@@ -115,7 +118,7 @@ bool run_test(const char* name, const edge graph[], const long num_nodes,
   }
 #endif
 
-  Markov_chain MC(true, *G, C, &T);
+  Markov_chain MC(discrete, *G, C, &T);
   delete R;
   delete SCCs;
   delete G;
@@ -144,7 +147,7 @@ bool run_test(const char* name, const edge graph[], const long num_nodes,
   double* sol = new double[num_nodes];
 
   try {
-    MC.computeTTA(p0, sol, opt, out);
+    MC.computeFirstRecurrentProbs(p0, sol, opt, out);
   }
   catch (GraphLib::error e) {
     cout << "    Caught graph library error: ";
@@ -168,18 +171,35 @@ bool run_test(const char* name, const edge graph[], const long num_nodes,
   }
 #endif
 
-  cout << "Got solution vector: [" << sol[0];
+  cout << "  Got solution vector: [" << sol[0];
   for (long i=1; i<num_nodes; i++) cout << ", " << sol[i];
   cout << "]\n";
+  cout << "  Expected     vector: [" << tta[0];
+  for (long i=1; i<num_nodes; i++) cout << ", " << tta[i];
+  cout << "]\n";
+  double rel_diff = 0.0;
+  for (long i=0; i<num_nodes; i++) {
+    double d = tta[i] - sol[i];
+    if (tta[i]) d /= tta[i];
+    if (d > rel_diff) rel_diff = d;
+  }
+  cout << "  Relative difference: " << rel_diff;
 
-  // TBD compare vector
-  return true;
+  bool ok = rel_diff < 1e-5;
+
+  if (ok) cout << " (OK)\n";
+  else    cout << " too large!\n";
+
+  return ok;
 }
 
 
 int main()
 {
-  if (!run_test("abcdef", graph1, num_nodes1, init1, tta1)) return 1;
+  if (!run_test("abcdef", discrete1, graph1, num_nodes1, init1, tta1)) {
+    return 1;
+  }
+
   return 0;
 }
 
