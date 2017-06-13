@@ -5,6 +5,8 @@
 
 #include "mclib.h"
 
+#include <math.h>
+
 // #define DEBUG_CONSTRUCTOR
 // #define DEBUG_PERIOD
 
@@ -59,6 +61,9 @@ inline void zeroArray(TYPE* A, long size)
   for (long i=0; i<size; i++) A[i] = 0;
 }
 
+//
+// Compute rowsums on a float graph
+//
 void float_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
 {
   for (long s=0; s<G.getNumNodes(); s++) {
@@ -70,6 +75,9 @@ void float_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
   } // for s
 }
   
+//
+// Compute rowsums on a double graph
+//
 void double_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
 {
   for (long s=0; s<G.getNumNodes(); s++) {
@@ -79,6 +87,48 @@ void double_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
     } // for e
     rowsums[s] += sum;
   } // for s
+}
+
+//
+// In a double graph, find the first edge from state s
+// such that (sum of edge probabilities/rates) > u.
+//    @param  G       The graph, must have double edge weights.
+//    @param  s       State.
+//    @param  u       Value.
+//    @param  total   Total so far, caller needs this if we fail
+//    @return         Destination state of that edge, or -1 if none
+long double_graph_edge_idf(const GraphLib::static_graph &G, long s, 
+        double u, double &total)
+{
+    DCASSERT(G.EdgeBytes() == sizeof(double));
+    for (long e=G.RowPointer(s); e<G.RowPointer(s+1); e++) {
+      total += *((double*) G.Label(e));
+      if (total > u) {
+        return G.ColumnIndex(e);
+      }
+    }
+    return -1;
+}
+
+//
+// In a float  graph, find the first edge from state s
+// such that (sum of edge probabilities/rates) > u.
+//    @param  G       The graph, must have double edge weights.
+//    @param  s       State.
+//    @param  u       Value.
+//    @param  total   Total so far, caller needs this if we fail
+//    @return         Destination state of that edge, or -1 if none
+long float_graph_edge_idf(const GraphLib::static_graph &G, long s, 
+        double u, double &total)
+{
+    DCASSERT(G.EdgeBytes() == sizeof(float));
+    for (long e=G.RowPointer(s); e<G.RowPointer(s+1); e++) {
+      total += *((float*) G.Label(e));
+      if (total > u) {
+        return G.ColumnIndex(e);
+      }
+    }
+    return -1;
 }
 
 template <class REAL>
@@ -134,7 +184,7 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
   // Allocate row sum array
   //
-  double* rowsums = new double[G.getNumNodes()];
+  rowsums = new double[G.getNumNodes()];
 
   //
   // If we're a DTMC, normalize rows
@@ -148,7 +198,7 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
   // Common stuff (to double/float graphs) here
   //
-  finish_construction(rowsums, G, sw);
+  finish_construction(G, sw);
 
 #ifdef DEBUG_CONSTRUCTOR
   cout << "Exiting Markov_chain (double) constructor.\n";
@@ -172,7 +222,7 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
   // Allocate row sum array
   //
-  double* rowsums = new double[G.getNumNodes()];
+  rowsums = new double[G.getNumNodes()];
 
   //
   // If we're a DTMC, normalize rows
@@ -186,7 +236,7 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   //
   // Common stuff (to double/float graphs) here
   //
-  finish_construction(rowsums, G, sw);
+  finish_construction(G, sw);
 
 #ifdef DEBUG_CONSTRUCTOR
   cout << "Exiting Markov_chain (float) constructor.\n";
@@ -197,14 +247,15 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
 
 MCLib::Markov_chain::~Markov_chain()
 {
+  delete[] rowsums;
   delete[] one_over_rowsums_d;
   delete[] one_over_rowsums_f;
 }
 
 // ******************************************************************
 
-void MCLib::Markov_chain::finish_construction(double* rowsums, 
-  GraphLib::dynamic_graph &G, GraphLib::timer_hook *sw)
+void MCLib::Markov_chain::finish_construction(GraphLib::dynamic_graph &G,
+    GraphLib::timer_hook *sw)
 {
   //
   // Build subgraphs and remove any self loops
@@ -295,11 +346,6 @@ void MCLib::Markov_chain::finish_construction(double* rowsums,
 
   // TBD - for CSL, we will need one_over_colsums arrays, right?  :(
 
-  //
-  // Cleanup rowsums
-  //
-  delete[] rowsums;
-
 #ifdef DEBUG_CONSTRUCTOR
   if (one_over_rowsums_f) {
     cout << "  one_over_rowsums_f:\n";
@@ -325,6 +371,7 @@ size_t MCLib::Markov_chain::getMemTotal() const
     G_bycols_diag.getMemTotal() +
     G_bycols_off.getMemTotal(); 
 
+  if (rowsums)            mem += getNumStates() * sizeof(double);
   if (one_over_rowsums_d) mem += getNumStates() * sizeof(double);
   if (one_over_rowsums_f) mem += getNumStates() * sizeof(float);
 
@@ -508,14 +555,13 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
   //
   // Easy case - if we have a self loop, then the period must be 1
   //
-  if (one_over_rowsums_d) {
+  DCASSERT(rowsums);
+  if (isDiscrete()) {
     for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
-      if (one_over_rowsums_d[i] != 1.0) return 1;
-    }
-  }
-  if (one_over_rowsums_f) {
-    for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
-      if (one_over_rowsums_f[i] != 1.0) return 1;
+      if (rowsums[i] < 1.0) return 1;
+      // TBD - what if rowsums[i] is 1-epsilon?  Ugh...
+      // Safer - for DTMCs, keep a bitvector for "has self loop",
+      // which we can extract when we split the graph
     }
   }
 
@@ -711,4 +757,161 @@ void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0,
 }
 
 // ******************************************************************
+
+// TBD - more missing stuff
+
+// ******************************************************************
+
+long MCLib::Markov_chain::randomWalk(rng_stream &rng, long &state, 
+        const intset* F, long maxt, double q) const
+{
+  long elapsed;
+  for (elapsed = 0; elapsed < maxt; elapsed++) {
+
+    //
+    // Check stopping conditions
+    //
+    if (F && F->contains(state)) {
+      return elapsed;
+    }
+    if (stateClass.isNodeInClass(state, 1)) {
+      // 1 is the class of absorbing states
+      return elapsed;
+    }
+
+    //
+    // Take an edge in the Markov chain,
+    // with the same probability as the Markov chain.
+    //
+    // Sample a value...
+    //
+    double u;
+    if (isDiscrete())   u = rng.Uniform32();
+    else                u = q * rng.Uniform32();
+    //
+    // ...and select the "first" edge where
+    // u < sum of edges so far
+    //
+
+    //
+    // First, check diagonal block
+    //
+    long next;
+    double total = 0;
+    if (double_graphs) {
+      next = double_graph_edge_idf(G_byrows_diag, state, u, total);
+    } else {
+      next = float_graph_edge_idf(G_byrows_diag, state, u, total);
+    }
+    if (next >= 0) {
+      state = next;
+      continue;
+    }
+
+    //
+    // Not found, try off-diagonal block
+    //
+    if (double_graphs) {
+      next = double_graph_edge_idf(G_byrows_off, state, u, total);
+    } else {
+      next = float_graph_edge_idf(G_byrows_off, state, u, total);
+    }
+    if (next >= 0) {
+      state = next;
+    }
+    //
+    // If still not found, we must have selected the self loop,
+    // and the state remains the same
+    //
+  }
+  return elapsed;
+}
+
+// ******************************************************************
+
+double MCLib::Markov_chain::randomWalk(rng_stream &rng, long &state, 
+        const intset* F, double maxt) const
+{
+  if (isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  double elapsed = 0;
+  for (;;) {
+
+    //
+    // Check stopping conditions
+    //
+    if (F && F->contains(state)) {
+      return elapsed;
+    }
+    if (stateClass.isNodeInClass(state, 1)) {
+      // 1 is the class of absorbing states
+      return elapsed;
+    }
+
+    //
+    // Sample time of next state change
+    //
+    if (double_graphs) {
+      DCASSERT(one_over_rowsums_d);
+      elapsed += -log(rng.Uniform32()) * one_over_rowsums_d[state];
+    } else {
+      DCASSERT(one_over_rowsums_f);
+      elapsed += -log(rng.Uniform32()) * one_over_rowsums_f[state];
+    }
+    if (elapsed >= maxt) {
+      return maxt;
+    }
+
+    //
+    // Take an edge in the Markov chain,
+    // with the same probability as the Markov chain.
+    //
+    // Sample a Uniform(0, sum of outgoing rates)...
+    //
+    DCASSERT(rowsums);
+    double u = rng.Uniform32() * rowsums[state];
+
+    //
+    // ...and select the "first" edge where
+    // u < sum of edges so far
+    //
+
+    //
+    // First, check diagonal block
+    //
+    long next;
+    double total = 0;
+    if (double_graphs) {
+      next = double_graph_edge_idf(G_byrows_diag, state, u, total);
+    } else {
+      next = float_graph_edge_idf(G_byrows_diag, state, u, total);
+    }
+    if (next >= 0) {
+      state = next;
+      continue;
+    }
+
+    //
+    // Not found, try off-diagonal block
+    //
+    if (double_graphs) {
+      next = double_graph_edge_idf(G_byrows_off, state, u, total);
+    } else {
+      next = float_graph_edge_idf(G_byrows_off, state, u, total);
+    }
+    if (next >= 0) {
+      state = next;
+      continue;
+    }
+
+    // Impossible to be not found.  
+    // But in practice maybe floating point roundoff error?
+    // Anyway not sure what to do yet, if we get here
+    DCASSERT(0);
+  }
+  return elapsed;
+}
+
 
