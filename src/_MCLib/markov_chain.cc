@@ -125,7 +125,7 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   GraphLib::timer_hook *sw) : stateClass(TSCCinfo)
 {
 #ifdef DEBUG_CONSTRUCTOR
-  cout << "Inside Markov_chain constructor.\n";
+  cout << "Inside Markov_chain (double) constructor.\n";
 #endif
 
   is_discrete = discrete;
@@ -146,15 +146,76 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   }
 
   //
+  // Common stuff (to double/float graphs) here
+  //
+  finish_construction(rowsums, G, sw);
+
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "Exiting Markov_chain (double) constructor.\n";
+#endif
+}
+
+// ******************************************************************
+
+MCLib::Markov_chain::Markov_chain(bool discrete, 
+  GraphLib::dynamic_summable<float> &G, 
+  const GraphLib::static_classifier &TSCCinfo,
+  GraphLib::timer_hook *sw) : stateClass(TSCCinfo)
+{
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "Inside Markov_chain (float) constructor.\n";
+#endif
+
+  is_discrete = discrete;
+  double_graphs = false;
+
+  //
+  // Allocate row sum array
+  //
+  double* rowsums = new double[G.getNumNodes()];
+
+  //
+  // If we're a DTMC, normalize rows
+  //
+  if (discrete) {
+    zeroArray(rowsums, G.getNumNodes());
+    G.addRowSums(rowsums);
+    G.divideRows(rowsums);
+  }
+
+  //
+  // Common stuff (to double/float graphs) here
+  //
+  finish_construction(rowsums, G, sw);
+
+#ifdef DEBUG_CONSTRUCTOR
+  cout << "Exiting Markov_chain (float) constructor.\n";
+#endif
+}
+
+// ******************************************************************
+
+MCLib::Markov_chain::~Markov_chain()
+{
+  delete[] one_over_rowsums_d;
+  delete[] one_over_rowsums_f;
+}
+
+// ******************************************************************
+
+void MCLib::Markov_chain::finish_construction(double* rowsums, 
+  GraphLib::dynamic_graph &G, GraphLib::timer_hook *sw)
+{
+  //
   // Build subgraphs and remove any self loops
   //
 
   if (G.isByRows()) {
-    G.splitAndExport(TSCCinfo, false, G_byrows_diag, G_byrows_off, sw);
+    G.splitAndExport(stateClass, false, G_byrows_diag, G_byrows_off, sw);
     G_bycols_diag.transposeFrom(G_byrows_diag);
     G_bycols_off.transposeFrom(G_byrows_off);
   } else {
-    G.splitAndExport(TSCCinfo, false, G_bycols_diag, G_bycols_off, sw);
+    G.splitAndExport(stateClass, false, G_bycols_diag, G_bycols_off, sw);
     G_byrows_diag.transposeFrom(G_bycols_diag);
     G_byrows_off.transposeFrom(G_bycols_off);
   }
@@ -163,14 +224,19 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   // Determine rowsums from split graphs
   //
   zeroArray(rowsums, G.getNumNodes());
-  double_graph_rowsums(G_byrows_diag, rowsums);
-  double_graph_rowsums(G_byrows_off, rowsums);
+  if (double_graphs) {
+    double_graph_rowsums(G_byrows_diag, rowsums);
+    double_graph_rowsums(G_byrows_off, rowsums);
+  } else {
+    float_graph_rowsums(G_byrows_diag, rowsums);
+    float_graph_rowsums(G_byrows_off, rowsums);
+  }
 
 
   //
   // Uniformization constant
   //
-  if (discrete) {
+  if (isDiscrete()) {
     // 
     // DTMCs: set uniformization constant to 1
     // (TBD - should we do the same as CTMCs?)
@@ -207,16 +273,24 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   showGraph(G_bycols_off);
   cout << "  rowsums:\n";
   cout << "    ";
-  showArray(rowsums, G_byrows_diag.getNumNodes());
+  showArray(rowsums, getNumStates());
 #endif
 
   //
   // Build one_over_rowsums_d array, used for linear solvers
   //
-  one_over_rowsums_f = 0;
-  one_over_rowsums_d = new double[G_byrows_diag.getNumNodes()];
-  for (long i=0; i<G_byrows_diag.getNumNodes(); i++) {
-    one_over_rowsums_d[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
+  if (double_graphs) {
+    one_over_rowsums_f = 0;
+    one_over_rowsums_d = new double[getNumStates()];
+    for (long i=0; i<G_byrows_diag.getNumNodes(); i++) {
+      one_over_rowsums_d[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
+    }
+  } else {
+    one_over_rowsums_d = 0;
+    one_over_rowsums_f = new float[getNumStates()];
+    for (long i=0; i<G_byrows_diag.getNumNodes(); i++) {
+      one_over_rowsums_f[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
+    }
   }
 
   // TBD - for CSL, we will need one_over_colsums arrays, right?  :(
@@ -227,56 +301,17 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   delete[] rowsums;
 
 #ifdef DEBUG_CONSTRUCTOR
+  if (one_over_rowsums_f) {
+    cout << "  one_over_rowsums_f:\n";
+    cout << "    ";
+    showArray(one_over_rowsums_f, getNumStates());
+  }
   if (one_over_rowsums_d) {
     cout << "  one_over_rowsums_d:\n";
     cout << "    ";
-    showArray(one_over_rowsums_d, G.getNumNodes());
+    showArray(one_over_rowsums_d, getNumStates());
   }
-  cout << "Exiting Markov_chain constructor.\n";
 #endif
-
-  //
-  // Build matrices.
-  // Shallow copy: pointers in the structs are to what we already have
-  //
-
-/*
-  QT_bycols_diag_f = 0;
-  QT_bycols_off_f = 0;
-  QT_byrows_diag_f = 0;
-  QT_byrows_off_f = 0;
-
-  QT_bycols_diag_d = new LS_CCS_Matrix_double;
-  graphToMatrix(G_byrows_diag, *QT_bycols_diag_d);
-
-  QT_bycols_off_d = new LS_CCS_Matrix_double;
-  graphToMatrix(G_byrows_off, *QT_bycols_off_d);
-
-  QT_byrows_diag_d = new LS_CRS_Matrix_double;
-  graphToMatrix(G_bycols_diag, *QT_byrows_diag_d);
-
-  QT_byrows_off_d = new LS_CRS_Matrix_double;
-  graphToMatrix(G_byrows_off, *QT_byrows_off_d);
-  */
-}
-
-// ******************************************************************
-
-MCLib::Markov_chain::~Markov_chain()
-{
-  delete[] one_over_rowsums_d;
-  delete[] one_over_rowsums_f;
-
-/*
-  delete QT_bycols_diag_f;
-  delete QT_bycols_diag_d;
-  delete QT_bycols_off_f;
-  delete QT_bycols_off_d;
-  delete QT_byrows_diag_f;
-  delete QT_byrows_diag_d;
-  delete QT_byrows_off_f;
-  delete QT_byrows_off_d;
-  */
 }
 
 // ******************************************************************

@@ -190,19 +190,17 @@ class my_timer : public timer_hook {
     bool active;
 };
 
-bool run_test(const char* name, const bool discrete, const edge graph[], 
-  const long num_nodes, const double init[], const double tta[])
+// =======================================================================
+
+Markov_chain* build_double(const bool discrete, const edge graph[], 
+  const long num_nodes)
 {
-  cout << "Testing ";
-  if (discrete) cout << "DTMC "; else cout << "CTMC ";
-  cout << name << "\n";
 #ifdef VERBOSE
   my_timer T(true);
 #else
   my_timer T(false);
 #endif
 
-  
   //
   // Build graph from list of edges
   //
@@ -247,10 +245,129 @@ bool run_test(const char* name, const bool discrete, const edge graph[],
   }
 #endif
 
-  Markov_chain MC(discrete, *G, C, &T);
+  Markov_chain* MC = new Markov_chain(discrete, *G, C, &T);
   delete R;
   delete SCCs;
   delete G;
+  return MC;
+}
+
+// =======================================================================
+
+Markov_chain* build_float(const bool discrete, const edge graph[], 
+  const long num_nodes)
+{
+#ifdef VERBOSE
+  my_timer T(true);
+#else
+  my_timer T(false);
+#endif
+
+  //
+  // Build graph from list of edges
+  //
+  dynamic_summable<float>* G = new dynamic_summable<float>(true, true);
+  G->addNodes(num_nodes);
+
+  for (long i=0; graph[i].from >= 0; i++) {
+    G->addEdge(graph[i].from, graph[i].to, graph[i].rate);
+#ifdef VERBOSE
+    cout << "\t" << graph[i].from << " -> " << graph[i].to;
+    cout << " rate " << graph[i].rate << "\n";
+#endif
+  }
+
+  //
+  // Construct Markov chain
+  //
+  abstract_classifier* SCCs = G->determineSCCs(0, 1, true, &T);
+  static_classifier C;
+  node_renumberer* R = SCCs->buildRenumbererAndStatic(C);
+
+#ifdef VERBOSE
+  if (0==R) {
+    cout << "Null renumbering:\n";
+  } else {
+    cout << "Got renumbering:\n";
+    for (long i=0; i<num_nodes; i++) {
+      cout << "    " << i << " -> " << R->new_number(i) << "\n";
+    }
+  }
+  
+  cout << "Got static classifier:\n";
+  cout << "    #classes: " << C.getNumClasses() << "\n";
+  for (long c=0; c<C.getNumClasses(); c++) {
+    cout << "    class " << c << ": ";
+    if (C.firstNodeOfClass(c) <= C.lastNodeOfClass(c)) {
+      cout << " [" << C.firstNodeOfClass(c) << ".." << C.lastNodeOfClass(c) << "]";
+    } else {
+      cout << " []";
+    }
+    cout << " size " << C.sizeOfClass(c) << "\n";
+  }
+#endif
+
+  Markov_chain* MC = new Markov_chain(discrete, *G, C, &T);
+  delete R;
+  delete SCCs;
+  delete G;
+  return MC;
+}
+
+// =======================================================================
+
+void show_LS_output(const char* name, const LS_Output &out)
+{
+#ifdef VERBOSE
+  cout << name << " linear solver output:\n";
+  cout << "    number of iterations: " << out.num_iters << "\n";
+  cout << "    relaxation: " << out.relaxation << "\n";
+  cout << "    precision: " << out.precision << "\n";
+  cout << "    status: ";
+  switch (out.status) {
+    case LS_Success:          cout << "LS_Success\n";           break;
+    case LS_Wrong_Format:     cout << "LS_Wrong_Format\n";      break;
+    case LS_Illegal_Method:   cout << "LS_Illegal_Method\n";    break;
+    case LS_Out_Of_Memory:    cout << "LS_Out_Of_Memory\n";     break;
+    case LS_No_Convergence:   cout << "LS_No_Convergence\n";    break;
+    case LS_Not_Implemented:  cout << "LS_Not_Implemented\n";   break;
+  }
+#endif
+}
+
+// =======================================================================
+
+void show_vector(const char* name, const double* x, long size)
+{
+  cout << "  " << name << ": [" << x[0];
+  for (long i=1; i<size; i++) cout << ", " << x[i];
+  cout << "]\n";
+}
+
+// =======================================================================
+
+double diff_vector(const double* A, const double* B, long size)
+{
+  double rel_diff = 0.0;
+  for (long i=0; i<size; i++) {
+    double d = A[i] - B[i];
+    if (A[i]) d /= A[i];
+    if (d > rel_diff) rel_diff = d;
+  }
+  return rel_diff;
+}
+
+// =======================================================================
+
+bool run_test(const char* name, const bool discrete, const edge graph[], 
+  const long num_nodes, const double init[], const double tta[])
+{
+  cout << "Testing ";
+  if (discrete) cout << "DTMC "; else cout << "CTMC ";
+  cout << name << "\n";
+
+  Markov_chain* MCd = build_double(discrete, graph, num_nodes);  
+  Markov_chain* MCf = build_float(discrete, graph, num_nodes);  
 
   //
   // Set up initial vector
@@ -268,15 +385,21 @@ bool run_test(const char* name, const bool discrete, const edge graph[],
 //  opt.debug = true;
   opt.method = LS_Gauss_Seidel;
 
-  LS_Output out;
+  //
+  // Catch LS outputs
+  //
+  LS_Output outd;
+  LS_Output outf;
 
   //
-  // Solve TTA (for now...)
+  // Solve TTA and first hitting probs
   //
-  double* sol = new double[num_nodes];
+  double* sold = new double[num_nodes];
+  double* solf = new double[num_nodes];
 
   try {
-    MC.computeFirstRecurrentProbs(p0, sol, opt, out);
+    MCd->computeFirstRecurrentProbs(p0, sold, opt, outd);
+    MCf->computeFirstRecurrentProbs(p0, solf, opt, outd);
   }
   catch (GraphLib::error e) {
     cout << "    Caught graph library error: ";
@@ -284,44 +407,41 @@ bool run_test(const char* name, const bool discrete, const edge graph[],
     return false;
   }
 
-#ifdef VERBOSE
-  cout << "Linear solver output:\n";
-  cout << "    number of iterations: " << out.num_iters << "\n";
-  cout << "    relaxation: " << out.relaxation << "\n";
-  cout << "    precision: " << out.precision << "\n";
-  cout << "    status: ";
-  switch (out.status) {
-    case LS_Success:          cout << "LS_Success\n";           break;
-    case LS_Wrong_Format:     cout << "LS_Wrong_Format\n";      break;
-    case LS_Illegal_Method:   cout << "LS_Illegal_Method\n";    break;
-    case LS_Out_Of_Memory:    cout << "LS_Out_Of_Memory\n";     break;
-    case LS_No_Convergence:   cout << "LS_No_Convergence\n";    break;
-    case LS_Not_Implemented:  cout << "LS_Not_Implemented\n";   break;
-  }
-#endif
+  show_LS_output("double Markov chain", outd);
+  show_LS_output("float  Markov chain", outf);
 
-  cout << "  Got solution vector: [" << sol[0];
-  for (long i=1; i<num_nodes; i++) cout << ", " << sol[i];
-  cout << "]\n";
-  cout << "  Expected     vector: [" << tta[0];
-  for (long i=1; i<num_nodes; i++) cout << ", " << tta[i];
-  cout << "]\n";
-  double rel_diff = 0.0;
-  for (long i=0; i<num_nodes; i++) {
-    double d = tta[i] - sol[i];
-    if (tta[i]) d /= tta[i];
-    if (d > rel_diff) rel_diff = d;
-  }
-  cout << "  Relative difference: " << rel_diff;
+  show_vector("MCd solution vector", sold, num_nodes);
+  show_vector("MCf solution vector", solf, num_nodes);
+  show_vector("Expected     vector", tta, num_nodes);
 
-  bool ok = rel_diff < 1e-5;
+  double diff_d = diff_vector(tta, sold, num_nodes);
+  double diff_f = diff_vector(tta, solf, num_nodes);
 
-  if (ok) cout << " (OK)\n";
-  else    cout << " too large!\n";
+  cout << "  MCd relative difference: " << diff_d;
 
-  return ok;
+  bool okd = diff_d < 1e-5;
+
+  if (okd)  cout << " (OK)\n";
+  else      cout << " too large!\n";
+
+  cout << "  MCf relative difference: " << diff_f;
+
+  bool okf = diff_f < 1e-5;
+
+  if (okf)  cout << " (OK)\n";
+  else      cout << " too large!\n";
+
+
+  // Cleanup
+  delete MCd;
+  delete MCf;
+  delete[] sold;
+  delete[] solf;
+
+  return okd && okf;
 }
 
+// =======================================================================
 
 int main()
 {

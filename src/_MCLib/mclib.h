@@ -112,7 +112,36 @@ namespace MCLib {
         GraphLib::timer_hook *sw);  
 
 
-      // TBD - make a version for GraphLib::dynamic_summable<float> &G.
+      /**
+          Constructor.
+          Fill this Markov chain based on the given graph
+          and known state classification (see GraphLib for
+          ways to determine this).
+
+            @param  discrete    True iff this is a discrete time
+                                Markov chain; otherwise it is a
+                                continuous time Markov chain.
+
+            @param  G           Graph to build from. 
+                                Edge weights should be floats or doubles,
+                                and indicate probabilities (DTMCs)
+                                or rates (CTMCs).
+                                Nodes should be numbered consistently
+                                with TSCCinfo.
+
+            @param  TSCCinfo    State classification, such that
+                                class 0 contains all transient states,
+                                class 1 contains all absorbing states,
+                                and remaining classes correspond
+                                to recurrent classes.
+
+            @param  sw  Where to report timing information (nowhere if 0).
+      */
+      Markov_chain(bool discrete, GraphLib::dynamic_summable<float> &G, 
+        const GraphLib::static_classifier &TSCCinfo,
+        GraphLib::timer_hook *sw);  
+
+
 
       /// Destructor.
       virtual ~Markov_chain();
@@ -244,6 +273,30 @@ namespace MCLib {
         const LS_Options &opt, LS_Output &out) const;
 
 
+      /** Compute the probability distribution at time infinity.
+          For an ergodic chain, this is the steady-state distribution;
+          otherwise, we depend on the initial distribution.
+          Vectors are allocated so that x[s] is the probability for state s,
+          for any legal state handle s.
+
+          @param  p0    Initial distribution.
+
+          @param  p     Answer stored here.
+                        Note that if s is transient, then p[s] will be 0.
+                        In any case, p[s] is the probability that the
+                        chain is in state s, as time goes to infinity.
+
+          @param  opt   Options for linear solver.
+
+          @param  out   Linear solver status information as output.
+      */
+      void computeInfinityDistribution(const LS_Vector &p0, double* p, 
+        const LS_Options &opt, LS_Output &out) const;
+
+    private:
+      // Helper methods
+      void finish_construction(double* rowsums, GraphLib::dynamic_graph &G,
+        GraphLib::timer_hook *sw);
 
     private:
       /**
