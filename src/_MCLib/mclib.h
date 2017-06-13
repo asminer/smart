@@ -211,7 +211,38 @@ namespace MCLib {
 
           @param  out   Linear solver status information as output.
       */
-      void computeTTA(const LS_Vector &p0, double* p, const LS_Options &opt, LS_Output &out) const;
+      void computeTTA(const LS_Vector &p0, double* p, const LS_Options &opt, 
+        LS_Output &out) const;
+
+
+      /** Compute the probability of starting in each recurent state.
+          More formally, if run the Markov chain until it is not in a
+          transient state, we will be in some recurrent state
+          (either because we started there, or because it was the first
+          one hit after leaving the transient ones).  This method
+          determines, for each recurrent state, the probability of 
+          hitting that one first.
+
+          @param  p0    Initial distribution.
+
+          @param  np    A vector of dimension number of states.
+                        On output, np[i] gives the expected time spent
+                        in state i, if state i is transient (we have to
+                        compute this anyway).
+                        Otherwise, i is recurrent, and np[i] gives the 
+                        probability that i is the first recurrent state 
+                        visited in the Markov chain.
+                        Note that one can obtain the probability of reaching
+                        a given recurrent class by summing np[i] over all
+                        states i in the recurrent class.
+
+          @param  opt   Options for linear solver.
+
+          @param  out   Linear solver status information as output.
+      */
+      void computeFirstRecurrentProbs(const LS_Vector &p0, double* nc, 
+        const LS_Options &opt, LS_Output &out) const;
+
 
 
     private:

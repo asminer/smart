@@ -172,9 +172,28 @@ public:
   */
   template <class REAL2>
   inline void VectorMatrixMultiply(double *y, const REAL2* x) const {
-      // TBD
-      throw LS_Not_Implemented;
+      long a = row_ptr[start];
+      for (long i=start; i<stop; i++) {
+        for ( ; a < row_ptr[i+1]; a++) {
+          y[col_ind[a]] += x[i] * val[a];
+        }
+      }
   }
+
+  /**
+      Compute y += x * Diag(d) * (this without diagonals) 
+  */
+  template <class REAL2, class REAL3>
+  inline void VectorVectorMatrixMultiply(double *y, const REAL2* x, const REAL3* d) const {
+      long a = row_ptr[start];
+      for (long i=start; i<stop; i++) {
+        long xd = x[i] * d[i];
+        for ( ; a < row_ptr[i+1]; a++) {
+          y[col_ind[a]] += xd * val[a];
+        }
+      }
+  }
+
 
   /**
       Compute sum += (row i of this matrix without diagonals) * x

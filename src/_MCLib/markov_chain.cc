@@ -84,6 +84,8 @@ void double_graph_rowsums(const GraphLib::static_graph &G, double* rowsums)
 template <class REAL>
 inline void graphToMatrix(const GraphLib::static_graph &G, LS_CCS_Matrix<REAL> &M)
 {
+  DCASSERT(G.EdgeBytes() == sizeof(REAL));
+
   M.start = 0;
   M.stop = G.getNumNodes();
   M.size = G.getNumNodes();
@@ -98,6 +100,8 @@ inline void graphToMatrix(const GraphLib::static_graph &G, LS_CCS_Matrix<REAL> &
 template <class REAL>
 inline void graphToMatrix(const GraphLib::static_graph &G, LS_CRS_Matrix<REAL> &M)
 {
+  DCASSERT(G.EdgeBytes() == sizeof(REAL));
+
   M.start = 0;
   M.stop = G.getNumNodes();
   M.size = G.getNumNodes();
@@ -577,3 +581,104 @@ void MCLib::Markov_chain::computeTTA(const LS_Vector &p0, double* p,
 }
 
 // ******************************************************************
+
+void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0, 
+    double* np, const LS_Options &opt, LS_Output &out) const
+{
+  for (long i=0; i<getNumStates(); i++) {
+    np[i] = 0;
+  }
+  if (stateClass.sizeOfClass(0)) {
+    // 
+    // Determine time spent in each transient state
+    //
+    computeTTA(p0, np, opt, out);
+
+    //
+    // Multiply np by  Pta
+    //
+
+    if (double_graphs) {
+      //
+      // Set up matrix (shallow copies here)
+      //
+      LS_CRS_Matrix_double Qta;
+      graphToMatrix(G_byrows_off, Qta);
+      
+      //
+      // Multiply np += np * Qta if we're a DTMC
+      // If we're a CTMC then multiply each row of Qta by one_over_rowsums
+      //
+      if (is_discrete) {
+        Qta.VectorMatrixMultiply(np, np);
+      } else {
+        Qta.VectorVectorMatrixMultiply(np, np, one_over_rowsums_d);
+      }
+       
+      // Qtt.one_over_diag = one_over_rowsums_d;
+
+      // multiply!
+
+    } else {
+      //
+      // Set up matrix (shallow copies here)
+      //
+      LS_CRS_Matrix_float Qta;
+      graphToMatrix(G_byrows_off, Qta);
+    }
+
+  } // if there are transient states
+
+  //
+  // Add initial probabilities
+  //
+  if (p0.index) {
+    //
+    // p0 is sparse
+    //
+    if (p0.d_value) {
+      for (long z=0; z<p0.size; z++) {
+        if (p0.index[z] > stateClass.lastNodeOfClass(0)) {
+          np[p0.index[z]] += p0.d_value[z];
+        }
+      }
+    } else {
+      DCASSERT(p0.f_value);
+      for (long z=0; z<p0.size; z++) {
+        if (p0.index[z] > stateClass.lastNodeOfClass(0)) {
+          np[p0.index[z]] += p0.f_value[z];
+        }
+      }
+    }
+  } else {
+    //
+    // p0 is (truncated) full
+    //
+    if (p0.d_value) {
+      for (long i=stateClass.firstNodeOfClass(1); i<p0.size; i++) {
+        np[i] += p0.d_value[i];
+      }
+    } else {
+      DCASSERT(p0.f_value);
+      for (long i=stateClass.firstNodeOfClass(1); i<p0.size; i++) {
+        np[i] += p0.f_value[i];
+      }
+    }
+  }
+
+  //
+  // Normalize probs for recurrent states 
+  //
+  double total = 0.0;
+  for (long i=stateClass.firstNodeOfClass(1); i<getNumStates(); i++) {
+    total += np[i];
+  }
+  DCASSERT(total>0);
+  if (0==total) return;   // Should be impossible
+  for (long i=stateClass.firstNodeOfClass(1); i<getNumStates(); i++) {
+    np[i] /= total;
+  }
+}
+
+// ******************************************************************
+
