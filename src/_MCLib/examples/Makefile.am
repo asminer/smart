@@ -4,16 +4,19 @@ noinst_PROGRAMS = \
   mcsolver \
   period \
   oz \
+  ss_test \
   tta_test \
   univ \
   walk 
 
 check_PROGRAMS = \
   period \
+  ss_test \
   tta_test
 
 TESTS = \
   period \
+  ss_test \
   tta_test
 
 
@@ -47,6 +50,9 @@ period_LDADD = ../libmc.la
 
 tta_test_SOURCES = tta_test.cc $(MY_SOURCES)
 tta_test_LDADD = ../libmc.la
+
+ss_test_SOURCES = ss_test.cc $(MY_SOURCES)
+ss_test_LDADD = ../libmc.la
 
 # 
 # TESTS = \
