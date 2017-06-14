@@ -758,7 +758,11 @@ void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0,
 
 // ******************************************************************
 
-// TBD - more missing stuff
+void MCLib::Markov_chain::computeInfinityDistribution(const LS_Vector &p0, 
+        double* p, const LS_Options &opt, LS_Output &out) const
+{
+  // TBD!
+}
 
 // ******************************************************************
 

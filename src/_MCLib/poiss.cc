@@ -15,6 +15,8 @@
   Currently: reckless disregard for underflow or overflow.
 */
 
+namespace Old_MCLib {
+
 const double TAU = 1.0e-30;
 const double OMEGA = 1.0e+30;
 const double sqrt2pi = sqrt(2.0*M_PI);
@@ -55,7 +57,7 @@ int PoissonLeft(double lambda, double epsilon)
   }  
 }
 
-double* Old_MCLib::computePoissonPDF(double lambda, double epsilon, int &L, int &R)
+double* computePoissonPDF(double lambda, double epsilon, int &L, int &R)
 {
   R = PoissonRight(lambda, epsilon);
   L = PoissonLeft(lambda, epsilon);
@@ -103,3 +105,5 @@ double* Old_MCLib::computePoissonPDF(double lambda, double epsilon, int &L, int 
   return pdf;
 }
 
+
+} // Namespace
