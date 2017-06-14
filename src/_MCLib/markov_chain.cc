@@ -761,7 +761,103 @@ void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0,
 void MCLib::Markov_chain::computeInfinityDistribution(const LS_Vector &p0, 
         double* p, const LS_Options &opt, LS_Output &out) const
 {
-  // TBD!
+  //
+  // Start with first hitting probabilities,
+  // we will use it to determine the probability of reaching
+  // each of the recurrent classes.
+  //
+  computeFirstRecurrentProbs(p0, p, opt, out);
+  
+  //
+  // Bail out if that went badly.
+  //
+  if ((LS_Success != out.status) && (LS_No_Convergence != out.status))  return;
+
+  //
+  //  For each recurrent class (except absorbing states, those are done :^)
+  //    (1) determine total probability of hitting the class by summing
+  //    (2) if this is non-zero, determine stationary distro for the class
+  //    (3) scale this by the hitting probability
+  //
+  for (long c=2; c<stateClass.getNumClasses(); c++) {
+
+    //
+    // Determine probability of reaching class c
+    //
+    double reachprob = 0.0;
+    for (long i=stateClass.firstNodeOfClass(c); 
+      i<=stateClass.lastNodeOfClass(c); i++) 
+    {
+      reachprob += p[i];
+    } // for i
+
+    if (0==reachprob) continue; // nothing to do
+
+    //
+    // Solve linear system p*Q_cc = 0, for block of Q restricted to class c.
+    //
+
+    //
+    // Set p to uniform distribution; required for linear solver
+    //
+    for (long i=stateClass.firstNodeOfClass(c); 
+      i<=stateClass.lastNodeOfClass(c); i++) 
+    {
+      p[i] = 1;
+    } // for i
+
+    if (double_graphs) {
+      //
+      // Set up matrix (shallow copies here)
+      //
+      LS_CRS_Matrix_double Qcc;
+      graphToMatrix(G_bycols_diag, Qcc);
+      Qcc.start = stateClass.firstNodeOfClass(c);
+      Qcc.stop  = 1+stateClass.lastNodeOfClass(c);
+      Qcc.one_over_diag = one_over_rowsums_d;
+
+      //
+      // Call the linear solver
+      //
+      Solve_AxZero(Qcc, p, opt, out);
+    } else {
+      //
+      // Set up matrix (shallow copies here)
+      //
+      LS_CRS_Matrix_float Qcc;
+      graphToMatrix(G_bycols_diag, Qcc);
+      Qcc.start = stateClass.firstNodeOfClass(c);
+      Qcc.stop  = 1+stateClass.lastNodeOfClass(c);
+      Qcc.one_over_diag = one_over_rowsums_f;
+
+      //
+      // Call the linear solver
+      //
+      Solve_AxZero(Qcc, p, opt, out);
+    }
+
+    //
+    // We have conditional probabilities:
+    //   given we start in class c, what is the steady-state
+    //   probability for state i.
+    // Fix that by multiplying by the probability to reach class c.
+    //
+    for (long i=stateClass.firstNodeOfClass(c); 
+      i<=stateClass.lastNodeOfClass(c); i++) 
+    {
+      p[i] *= reachprob;
+    } // for i
+
+  } // for c
+
+  //
+  // Done, just need to zero out the transient part
+  //
+  for (long i=stateClass.firstNodeOfClass(0); 
+      i<=stateClass.lastNodeOfClass(0); i++) 
+  {
+      p[i] = 0;
+  } // for i
 }
 
 // ******************************************************************
