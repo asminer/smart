@@ -6,6 +6,7 @@
 #include "mclib.h"
 
 #include <math.h>
+#include <string.h>
 
 // #define DEBUG_CONSTRUCTOR
 // #define DEBUG_PERIOD
@@ -161,6 +162,56 @@ inline void graphToMatrix(const GraphLib::static_graph &G, LS_CRS_Matrix<REAL> &
   M.row_ptr = G.RowPointer();
 
   M.one_over_diag = 0;  // We'll do this by hand later
+}
+
+/**
+    Multiply by diagonals, where diagonals are determined implicitly
+    based on rowsums.
+      
+      @param  x     Solution vector
+      @param  in    Input vector
+      @param  q     Uniformization constant or 1
+      @param  rs    Rowsums
+      @param  size  Vector size
+*/
+inline void adjustDiagonals(double* x, const double* in, double q, 
+  const double* rs, const long size)
+{
+  for (long i=0; i<size; i++) {
+    x[i] += (q - rs[i]) * in[i];
+  }
+}
+
+/**
+    Return true iff the given vectors are within a relative precision
+    of epsilon of each other.
+*/
+bool vectorsWithinEpsilon(const double* A, const double* B, const long size,
+  const double epsilon)
+{
+  for (long i=0; i<size; i++) {
+    double d = A[i] - B[i];
+    if (d < 0) d = -d;
+    if (A[i]) d /= A[i];
+    if (d > epsilon) return false;
+  }
+  return true;
+}
+
+/**
+    Normalize a vector so that its elements sum to one.
+    (Unless the vector contains all zeroes.)
+*/
+inline void normalizeVector(double* A, const long size)
+{
+  double total = 0;
+  for (long i=0; i<size; i++) {
+    total += A[i];
+  }
+  if (0==total) return;
+  for (long i=0; i<size; i++) {
+    A[i] /= total;
+  }
 }
   
 // ======================================================================
@@ -328,7 +379,7 @@ void MCLib::Markov_chain::finish_construction(GraphLib::dynamic_graph &G,
 #endif
 
   //
-  // Build one_over_rowsums_d array, used for linear solvers
+  // Build one_over_rowsums_d/f array, used for linear solvers
   //
   if (double_graphs) {
     one_over_rowsums_f = 0;
@@ -580,6 +631,86 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
 
 // ******************************************************************
 
+namespace MCLib {
+  template <class MATRIX>
+  void templ_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
+    int t, double* p, long size, bool normalize, Markov_chain::DTMC_transient_options &opts)
+  {
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+
+      double* aux = opts.vm_result;
+
+      for (int i=0; i<t; i++) {
+        // VM multiply
+        zeroArray(aux, size);
+        Qdiag.VectorMatrixMultiply(aux, p);
+        Qoff.VectorMatrixMultiply(aux, p);
+        adjustDiagonals(aux, p, 1, rowsums, size);
+
+        if (normalize) normalizeVector(aux, size);
+
+        // aux is now the distribution after one step.
+
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) break;
+    
+        SWAP(aux, p);
+      } // for i
+
+      // we're done.  p is our answer.
+      // Since we swapped pointers around, p might be different
+      // from the original p.  Check for that:
+      if (aux != opts.vm_result) {
+        // aux is the original p.  Copy into p.
+        memcpy(aux, p, size * sizeof(double));
+      }
+  }
+}
+
+// ******************************************************************
+
+void MCLib::Markov_chain::computeTransient(int t, double* p, 
+  DTMC_transient_options &opts) const
+{
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+  }
+}
+
+
+// ******************************************************************
+
 // STUFF WILL GO HERE
 
 
@@ -745,15 +876,10 @@ void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0,
   //
   // Normalize probs for recurrent states 
   //
-  double total = 0.0;
-  for (long i=stateClass.firstNodeOfClass(1); i<getNumStates(); i++) {
-    total += np[i];
-  }
-  DCASSERT(total>0);
-  if (0==total) return;   // Should be impossible
-  for (long i=stateClass.firstNodeOfClass(1); i<getNumStates(); i++) {
-    np[i] /= total;
-  }
+  normalizeVector(
+    np+stateClass.firstNodeOfClass(1), 
+    getNumStates()-stateClass.firstNodeOfClass(1)
+  );
 }
 
 // ******************************************************************

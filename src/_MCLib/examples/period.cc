@@ -170,6 +170,11 @@ int main()
     cout << e.getString() << "\n";
     return 1;
   }
+  catch (MCLib::error e) {
+    cout << "    Caught Markov chain library error: ";
+    cout << e.getString() << "\n";
+    return 1;
+  }
 
   return 0;
 }
