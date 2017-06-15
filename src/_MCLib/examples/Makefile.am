@@ -5,6 +5,7 @@ noinst_PROGRAMS = \
   period \
   oz \
   ss_test \
+  trans_test \
   tta_test \
   univ \
   walk 
@@ -12,11 +13,13 @@ noinst_PROGRAMS = \
 check_PROGRAMS = \
   period \
   ss_test \
+  trans_test \
   tta_test
 
 TESTS = \
   period \
   ss_test \
+  trans_test \
   tta_test
 
 
@@ -25,8 +28,8 @@ MY_SOURCES = \
   ../../_GraphLib/graphlib.cc ../../_GraphLib/sccs.cc \
   ../../_IntSets/intset.cc ../../_Timer/timerlib.cc 
 
-MC_SOURCES = \
-  ../markov_chain.cc
+# MC_SOURCES = \
+#  ../markov_chain.cc
 
 AM_CPPFLAGS = -I$(srcdir)/../ -I$(srcdir)/../../_Timer -I$(srcdir)/../../_LSLib -I$(srcdir)/../../_GraphLib 
 
@@ -53,6 +56,9 @@ tta_test_LDADD = ../libmc.la
 
 ss_test_SOURCES = ss_test.cc $(MY_SOURCES)
 ss_test_LDADD = ../libmc.la
+
+trans_test_SOURCES = trans_test.cc $(MY_SOURCES)
+trans_test_LDADD = ../libmc.la
 
 # 
 # TESTS = \

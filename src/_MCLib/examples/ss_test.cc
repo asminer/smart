@@ -477,6 +477,11 @@ bool run_test(const char* name, const bool discrete, const edge graph[],
     cout << e.getString() << "\n";
     return false;
   }
+  catch (MCLib::error e) {
+    cout << "    Caught Markov chain library error: ";
+    cout << e.getString() << "\n";
+    return false;
+  }
 
   show_LS_output("double Markov chain", outd);
   show_LS_output("float  Markov chain", outf);

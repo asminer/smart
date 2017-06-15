@@ -84,6 +84,36 @@ namespace MCLib {
   */
   class Markov_chain {
     public:
+
+      /// Options and for transient analysis of DTMCs.
+      struct DTMC_transient_options {
+        /// Precision for detection of steady-state (use 0 to not check)
+        double ssprec;
+        /// Vector to hold result of vector-matrix multiply
+        double* vm_result;
+        /// Vector to accumulate sum, if necessary
+        double* accumulator;
+
+        /** 
+          Constructor; sets reasonable defaults
+        */
+        DTMC_transient_options() {
+          ssprec = 1e-10;
+          vm_result = 0;
+          accumulator = 0;
+        }
+        /** 
+          Destructor; destroys auxiliary vectors.
+          If you don't want this to happen, set the pointers to 0.
+        */
+        ~DTMC_transient_options() {
+          delete[] vm_result;
+          delete[] accumulator;
+        }
+      };
+
+
+    public:
       /**
           Constructor.
           Fill this Markov chain based on the given graph
@@ -146,9 +176,7 @@ namespace MCLib {
 
 
       /// Destructor.
-      virtual ~Markov_chain();
-
-      // TBD ^ ^ ^ ^ do we have any other virtual methods?
+      ~Markov_chain();
 
     public:
       /// Is this a discrete-time chain?
@@ -225,6 +253,24 @@ namespace MCLib {
 
       // TBD - transient, forward time and backward time
       // TBD - accumulated transient, forward time
+
+      /** Compute the distribution at time t, given the starting distribution.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the probability for state s,
+          for any legal state handle s.
+
+          @param  t       Time.
+                          TBD - should we use negatives to go backwards?
+                          Or add a boolean "reverse"?
+
+          @param  p       On input: distribution at time 0.
+                          On output: distribution at time t.
+
+          @param  opts    Options and auxiliary vectors.
+      */
+      void computeTransient(int t, double* p, DTMC_transient_options &opts) 
+      const;
+
 
       /** Compute the time to absorption.
           Vectors are allocated so that x[s] is the total time for state s,
