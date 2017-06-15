@@ -709,7 +709,7 @@ bool solver_parser::doneMeasureCollection()
         for (long i=0; i<States; i++) {
           if (i) printf(", ");
           long j = (ren_map) ? ren_map[i] : i;
-          printf("%lf", solvector[j]);
+          printf("%2.8lf", solvector[j]);
         }
         printf("]\n");
         return true;

@@ -26,7 +26,7 @@ TESTS = \
 MY_SOURCES = \
   ../../_LSLib/lslib.cc \
   ../../_GraphLib/graphlib.cc ../../_GraphLib/sccs.cc \
-  ../../_IntSets/intset.cc ../../_Timer/timerlib.cc 
+  ../../_IntSets/intset.cc ../../_Timer/timerlib.cc ../../_Distros/distros.cc
 
 # MC_SOURCES = \
 #  ../markov_chain.cc

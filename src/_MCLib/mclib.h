@@ -85,7 +85,7 @@ namespace MCLib {
   class Markov_chain {
     public:
 
-      /// Options and for transient analysis of DTMCs.
+      /// Options and auxiliary vectors for transient analysis of DTMCs.
       struct DTMC_transient_options {
         /// Precision for detection of steady-state (use 0 to not check)
         double ssprec;
@@ -93,6 +93,8 @@ namespace MCLib {
         double* vm_result;
         /// Vector to accumulate sum, if necessary
         double* accumulator;
+        /// Output: number of vector matrix multiplies required.
+        long multiplications;
 
         /** 
           Constructor; sets reasonable defaults
@@ -107,6 +109,48 @@ namespace MCLib {
           If you don't want this to happen, set the pointers to 0.
         */
         ~DTMC_transient_options() {
+          delete[] vm_result;
+          delete[] accumulator;
+        }
+      };
+
+    public:
+
+      /// Options and auxiliary vectors for transient analysis of CTMCs.
+      struct CTMC_transient_options {
+        /** Uniformization constant to use (if possible).
+            If not large enough, we will change the value.
+        */
+        double q;
+        /// Precision for poisson distribution
+        double epsilon;
+        /// Precision for detection of steady-state
+        double ssprec;
+        /// Vector to hold result of vector-matrix multiply
+        double* vm_result;
+        /// Vector to accumulate sum of poisson * distribution.
+        double* accumulator;
+        /// Output: number of vector matrix multiplies required.
+        long multiplications;
+        /// Output: right truncation point of poisson.
+        long poisson_right;
+        
+        /** 
+          Constructor; sets reasonable defaults
+        */
+        CTMC_transient_options() {
+          q = 0;  // Use smallest possible.
+          epsilon = 1e-20;
+          ssprec = 1e-10;
+          vm_result = 0;
+          accumulator = 0;
+        }
+
+        /** 
+          Destructor; destroys auxiliary vectors.
+          If you don't want this to happen, set the pointers to 0.
+        */
+        ~CTMC_transient_options() {
           delete[] vm_result;
           delete[] accumulator;
         }
@@ -260,8 +304,6 @@ namespace MCLib {
           for any legal state handle s.
 
           @param  t       Time.
-                          TBD - should we use negatives to go backwards?
-                          Or add a boolean "reverse"?
 
           @param  p       On input: distribution at time 0.
                           On output: distribution at time t.
@@ -269,6 +311,21 @@ namespace MCLib {
           @param  opts    Options and auxiliary vectors.
       */
       void computeTransient(int t, double* p, DTMC_transient_options &opts) 
+      const;
+
+      /** Compute the distribution at time t, given the starting distribution.
+          Must be a CTMC.
+          Vectors are allocated so that x[s] is the probability for state s,
+          for any legal state handle s.
+
+          @param  t       Time.
+
+          @param  p       On input: distribution at time 0.
+                          On output: distribution at time t.
+
+          @param  opts    Options and auxiliary vectors.
+      */
+      void computeTransient(double t, double* p, CTMC_transient_options &opts) 
       const;
 
 
