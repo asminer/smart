@@ -70,6 +70,48 @@ const double e2_d[] = {0.3136, 0.588, 0.7672, 0.8888, 1, 0};
 const double e2_e[] = {0.50176, 0.65464, 0.7756, 0.88888, 1, 0};
 const double e2_f[] = {49.0/81.0, 49.0/72.0, 7.0/9.0, 8.0/9.0, 1, 0};
 
+// ==============================> Graph 3 <==============================
+/*
+  Transient analysis CTMC from lecture notes
+*/
+const edge graph3[] = {
+  {0, 1, 0.6},
+  {1, 2, 0.6},
+  {2, 1, 0.6},
+  // End 
+  {-1, -1, -1}
+};
+
+const long num_nodes3 = 3;
+
+const double final3a[] = {1, 0, 0};
+const double e3_a10[] = {0.0024787522, 0, 0};
+const double final3b[] = {0, 1, 0};
+const double e3_b10[] = {0.49999693, 0.50000307, 0.49999693};
+
+
+// ==============================> Graph 4 <==============================
+
+/*
+  Land of oz, as a ctmc.
+*/
+const edge graph4[] = {
+  {0, 0, 0.5},    {0, 1, 0.25},   {0, 2, 0.25},
+  {1, 0, 0.5},                    {1, 2, 0.5},
+  {2, 0, 0.25},   {2, 1, 0.25},   {2, 2, 0.5},
+  // End 
+  {-1, -1, -1}
+};
+
+const long num_nodes4 = 3;
+
+const double final4[] = {0, 1, 0}; 
+const double e4_a[] = {0.14269904, 0.42920384, 0.14269904};
+const double e4_b[] = {0.183583, 0.265668, 0.183583};
+const double e4_c[] = {0.19865241, 0.20539036, 0.19865241};
+const double e4_d[] = {1.0/5.0, 1.0/5.0, 1.0/5.0};
+
+
 // =======================================================================
 
 class my_timer : public timer_hook {
@@ -442,33 +484,35 @@ int main()
     return 1;
   }
 
-/*
 
   //
   // CTMC tests
   //
-  if (!run_ctmc_test("Transient", 0.6, graph3, num_nodes3, p3_0, 10, p3_10)) {
+  if (!run_ctmc_test("Transient", 0.6, graph3, num_nodes3, final3a, 10, e3_a10)) {
     return 1;
   }
-  if (!run_ctmc_test("Transient", 0.8, graph3, num_nodes3, p3_0, 10, p3_10)) {
+  if (!run_ctmc_test("Transient", 0.8, graph3, num_nodes3, final3a, 10, e3_a10)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t1", 0, graph4, num_nodes4, p4_0, 1, p4_1)) {
+  if (!run_ctmc_test("Transient", 0.6, graph3, num_nodes3, final3b, 10, e3_b10)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t2", 0, graph4, num_nodes4, p4_0, 2, p4_2)) {
+  if (!run_ctmc_test("Transient", 0.8, graph3, num_nodes3, final3b, 10, e3_b10)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t4", 0, graph4, num_nodes4, p4_0, 4, p4_4)) {
+
+  if (!run_ctmc_test("Oz t1", 0, graph4, num_nodes4, final4, 1, e4_a)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t8", 0, graph4, num_nodes4, p4_0, 8, p4_8)) {
+  if (!run_ctmc_test("Oz t2", 0, graph4, num_nodes4, final4, 2, e4_b)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t100", 0, graph4, num_nodes4, p4_0, 100, p4_ss)) {
+  if (!run_ctmc_test("Oz t4", 0, graph4, num_nodes4, final4, 4, e4_c)) {
     return 1;
   }
-*/
+  if (!run_ctmc_test("Oz t1000", 0, graph4, num_nodes4, final4, 1000, e4_d)) {
+    return 1;
+  }
 
   return 0;
 }
