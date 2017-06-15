@@ -754,6 +754,43 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
 
 // ******************************************************************
 
+void MCLib::Markov_chain::reverseTransient(int t, double* p, 
+  DTMC_transient_options &opts) const
+{
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+  }
+}
+
+
+// ******************************************************************
+
 namespace MCLib {
   template <class MATRIX>
   void templ_ctmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
@@ -877,6 +914,45 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
     // And pass everything to our nice template function :^)
     //
     templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+  }
+}
+
+
+// ******************************************************************
+
+void MCLib::Markov_chain::reverseTransient(double t, double* p, 
+  CTMC_transient_options &opts) const
+{
+  if (isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  opts.q = MAX(opts.q, getUniformizationConst());
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
   }
 }
 

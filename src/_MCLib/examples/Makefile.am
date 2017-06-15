@@ -4,6 +4,7 @@ noinst_PROGRAMS = \
   mcsolver \
   period \
   oz \
+  revtr_test \
   ss_test \
   trans_test \
   tta_test \
@@ -12,12 +13,14 @@ noinst_PROGRAMS = \
 
 check_PROGRAMS = \
   period \
+  revtr_test \
   ss_test \
   trans_test \
   tta_test
 
 TESTS = \
   period \
+  revtr_test \
   ss_test \
   trans_test \
   tta_test
@@ -59,6 +62,9 @@ ss_test_LDADD = ../libmc.la
 
 trans_test_SOURCES = trans_test.cc $(MY_SOURCES)
 trans_test_LDADD = ../libmc.la
+
+revtr_test_SOURCES = revtr_test.cc $(MY_SOURCES)
+revtr_test_LDADD = ../libmc.la
 
 # 
 # TESTS = \

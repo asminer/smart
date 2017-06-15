@@ -295,7 +295,7 @@ namespace MCLib {
       */
       long computePeriodOfClass(long c) const;
 
-      // TBD - transient, forward time and backward time
+      // TBD - transient backward time
       // TBD - accumulated transient, forward time
 
       /** Compute the distribution at time t, given the starting distribution.
@@ -327,6 +327,43 @@ namespace MCLib {
       */
       void computeTransient(double t, double* p, CTMC_transient_options &opts) 
       const;
+
+
+
+      /** Compute an expectation at time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expectation when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            x[s] = E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+      */
+      void reverseTransient(int t, double* x, DTMC_transient_options &opts)
+      const;
+
+      /** Compute an expectation at time t, for all possible starting states.
+          Must be a CTMC.
+          Vectors are allocated so that x[s] is the expectation when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            x[s] = E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+      */
+      void reverseTransient(double t, double* x, CTMC_transient_options &opts)
+      const;
+
+
+
 
 
       /** Compute the time to absorption.
