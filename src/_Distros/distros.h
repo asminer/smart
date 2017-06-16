@@ -56,7 +56,8 @@ class discrete_pdf {
     /**
         Probability mass function.
           @param  i   Desired value
-          @return     The probability that the RV takes value i.
+          @return     The probability that the RV takes value i:
+                      Pr( X == i).
     */
     double f(long i) const { 
       if (i<Left) return 0;
@@ -81,6 +82,142 @@ class discrete_pdf {
     long Left;
     long Right;
 
+    friend class discrete_cdf;
+    friend class discrete_1mcdf;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                     discrete_cdf  class                        *
+// *                                                                *
+// ******************************************************************
+
+/**
+  CDF of a discrete random variable.
+  Stored explicitly,
+  so works only for finite distributions.
+*/
+class discrete_cdf {
+  public:
+    discrete_cdf();
+
+    ~discrete_cdf();
+
+    void setFromPDF(const discrete_pdf &d);
+
+    /**
+        Left truncation point L.
+        The probability that the RV takes a value
+        less than L is negligible.
+    */
+    inline long left_trunc() const {
+      return Left;
+    }
+
+    /**
+        Right truncation point R.
+        The probability that the RV takes a value
+        greater than R is negligible.
+    */
+    inline long right_trunc() const {
+      return Right;
+    }
+
+    /**
+        Cumulative distribution function.
+          @param  i   Desired value
+          @return     The probability that the RV takes value less or equal i:
+                      Pr( X <= i).
+    */
+    double f(long i) const { 
+      if (i<Left) return 0;
+      if (i>Right) return 1;
+      return probs[i];
+    }
+
+    /**
+        Cumulative distribution function, shifted.
+          @param  i   Desired value
+          @return     The probability that the RV takes value less or equal L+i.
+    */
+    double shifted_f(long i) const {
+      if (i<0) return 0;
+      if (i>Right+Left) return 1;
+      return probs_shifted[i];
+    }
+
+  private:
+    double* probs_shifted;
+    double* probs;
+    long Left;
+    long Right;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                    discrete_1mcdf  class                       *
+// *                                                                *
+// ******************************************************************
+
+/**
+  One minus CDF of a discrete random variable.
+  Stored explicitly,
+  so works only for finite distributions.
+*/
+class discrete_1mcdf {
+  public:
+    discrete_1mcdf();
+
+    ~discrete_1mcdf();
+
+    void setFromPDF(const discrete_pdf &d);
+
+    /**
+        Left truncation point L.
+        The probability that the RV takes a value
+        less than L is negligible.
+    */
+    inline long left_trunc() const {
+      return Left;
+    }
+
+    /**
+        Right truncation point R.
+        The probability that the RV takes a value
+        greater than R is negligible.
+    */
+    inline long right_trunc() const {
+      return Right;
+    }
+
+    /**
+        One minus the cumulative distribution function.
+          @param  i   Desired value
+          @return     The probability that the RV takes value greater than i:
+                      Pr( X > i).
+    */
+    double f(long i) const { 
+      if (i<Left) return 1;
+      if (i>Right) return 0;
+      return probs[i];
+    }
+
+    /**
+        One minus the cumulative distribution function, shifted.
+          @param  i   Desired value
+          @return     The probability that the RV takes value greater than L+i.
+    */
+    double shifted_f(long i) const {
+      if (i<0) return 1;
+      if (i>Right+Left) return 0;
+      return probs_shifted[i];
+    }
+
+  private:
+    double* probs_shifted;
+    double* probs;
+    long Left;
+    long Right;
 };
 
 // ******************************************************************

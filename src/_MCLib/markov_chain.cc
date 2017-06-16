@@ -13,6 +13,7 @@
 // #define DEBUG_CONSTRUCTOR
 // #define DEBUG_PERIOD
 // #define DEBUG_UNIFORMIZATION
+// #define DEBUG_ACCUMULATE
 
 //------------------------------------------------------------
 
@@ -25,6 +26,10 @@
 #endif
 
 #ifdef DEBUG_UNIFORMIZATION
+  #define USES_IOSTREAM
+#endif
+
+#ifdef DEBUG_ACCUMULATE
   #define USES_IOSTREAM
 #endif
 
@@ -68,6 +73,14 @@ void showUnifStep(int steps, double poiss, double* p, double* a, long size)
   cout << "After " << steps << " steps, dtmc distribution is:\n\t";
   showArray(p, size);
   cout << "\tPoisson: " << poiss << "\n";
+  cout << "accumulator so far:\n\t";
+  showArray(a, size);
+}
+
+void showAccStep(int steps, double* p, double* a, long size)
+{
+  cout << "After " << steps << " steps, dtmc distribution is:\n\t";
+  showArray(p, size);
   cout << "accumulator so far:\n\t";
   showArray(a, size);
 }
@@ -251,6 +264,17 @@ inline void addToVector(double* A, const double b, const double* x,
 {
   for (long i=0; i<size; i++) {
     A[i] += b*x[i];
+  }
+}
+  
+/**
+    Add to vector.
+    Specifically, does A[i] += x[i] for all i.
+*/
+inline void addToVector(double* A, const double* x, const long size)
+{
+  for (long i=0; i<size; i++) {
+    A[i] += x[i];
   }
 }
   
@@ -674,8 +698,9 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
 namespace MCLib {
   template <class MATRIX>
   void templ_dtmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
-    int t, double* p, long size, bool normalize, Markov_chain::DTMC_transient_options &opts)
+    int t, double* p, bool normalize, Markov_chain::DTMC_transient_options &opts)
   {
+      const long size = Qdiag.Size();
       //
       // Set up auxiliary vectors if necessary
       //
@@ -735,7 +760,7 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, true, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -747,7 +772,7 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, true, opts);
   }
 }
 
@@ -772,7 +797,7 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, false, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -784,7 +809,7 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, false, opts);
   }
 }
 
@@ -792,11 +817,12 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
 // ******************************************************************
 
 namespace MCLib {
-  template <class MATRIX>
+  template <class MATRIX, class DISTRO>
   void templ_ctmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
-    double t, double* p, long size, bool normalize, 
+    double t, double* p, bool normalize, const DISTRO &dist,
     Markov_chain::CTMC_transient_options &opts)
   {
+      const long size = Qdiag.Size();
       //
       // Set up auxiliary vectors if necessary
       //
@@ -807,12 +833,7 @@ namespace MCLib {
         opts.accumulator = new double[size];
       }
 
-      //
-      // Set up poisson distribution
-      //
-      discrete_pdf poisson_pdf;
-      computePoissonPDF(opts.q * t, opts.epsilon, poisson_pdf);
-      opts.poisson_right = poisson_pdf.right_trunc();
+      opts.poisson_right = dist.right_trunc();
 
       //
       // Initialize vectors
@@ -824,9 +845,9 @@ namespace MCLib {
       // 
       // Add initial distribution
       //
-      addToVector(opts.accumulator, poisson_pdf.f(0), p, size);
+      addToVector(opts.accumulator, dist.f(0), p, size);
 #ifdef DEBUG_UNIFORMIZATION
-      showUnifStep(0, poisson_pdf.f(0), p, opts.accumulator, size);
+      showUnifStep(0, dist.f(0), p, opts.accumulator, size);
 #endif
 
       //
@@ -834,7 +855,7 @@ namespace MCLib {
       //
       opts.multiplications = 0;
       long i;
-      for (i=0; i<poisson_pdf.right_trunc(); i++) {
+      for (i=0; i<dist.right_trunc(); i++) {
         // VM multiply
         zeroArray(aux, size);
         Qdiag.VectorMatrixMultiply(aux, myp);
@@ -851,10 +872,10 @@ namespace MCLib {
         if (vectorsWithinEpsilon(myp, aux, size, opts.ssprec)) break;
 
         // Add to accumulator
-        addToVector(opts.accumulator, poisson_pdf.f(i+1), aux, size);
+        addToVector(opts.accumulator, dist.f(i+1), aux, size);
 
 #ifdef DEBUG_UNIFORMIZATION
-        showUnifStep(i+1, poisson_pdf.f(i+1), aux, opts.accumulator, size);
+        showUnifStep(i+1, dist.f(i+1), aux, opts.accumulator, size);
 #endif
     
         SWAP(aux, myp);
@@ -863,13 +884,13 @@ namespace MCLib {
       // If we detected steady state, then finish the computation
       // assuming aux vector does not change.
       double remaining_probs = 0;
-      for (; i<poisson_pdf.right_trunc(); i++) {
-        remaining_probs += poisson_pdf.f(i+1);
+      for (; i<dist.right_trunc(); i++) {
+        remaining_probs += dist.f(i+1);
       }
       if (remaining_probs) {
         addToVector(opts.accumulator, remaining_probs, aux, size);
 #ifdef DEBUG_UNIFORMIZATION
-        showUnifStep(poisson_pdf.right_trunc(), remaining_probs, aux, opts.accumulator, size);
+        showUnifStep(dist.right_trunc(), remaining_probs, aux, opts.accumulator, size);
 #endif
       }
 
@@ -890,6 +911,12 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
 
   opts.q = MAX(opts.q, getUniformizationConst());
 
+  //
+  // Set up poisson distribution
+  //
+  discrete_pdf poisson_pdf;
+  computePoissonPDF(opts.q * t, opts.epsilon, poisson_pdf);
+
   if (double_graphs) {
     //
     // Set up matrices (shallow copies here)
@@ -901,7 +928,7 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -913,7 +940,7 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), true, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, opts);
   }
 }
 
@@ -929,6 +956,12 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
 
   opts.q = MAX(opts.q, getUniformizationConst());
 
+  //
+  // Set up poisson distribution
+  //
+  discrete_pdf poisson_pdf;
+  computePoissonPDF(opts.q * t, opts.epsilon, poisson_pdf);
+
   if (double_graphs) {
     //
     // Set up matrices (shallow copies here)
@@ -940,7 +973,7 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -952,14 +985,129 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, getNumStates(), false, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, opts);
   }
 }
 
 
 // ******************************************************************
 
-// STUFF WILL GO HERE
+namespace MCLib {
+  template <class MATRIX>
+  void templ_dtmc_accumulate(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
+    int t, double* n, Markov_chain::DTMC_transient_options &opts)
+  {
+      const long size = Qdiag.Size();
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      if (0== opts.accumulator) {
+        opts.accumulator = new double[size];
+      }
+      zeroArray(opts.accumulator, size);
+
+      double* aux = opts.vm_result;
+      double* myp = n;
+
+      addToVector(opts.accumulator, n, size);
+#ifdef DEBUG_ACCUMULATE
+      showAccStep(0, n, opts.accumulator, size);
+#endif
+
+      for (opts.multiplications=0; opts.multiplications<t; opts.multiplications++) {
+        // VM multiply
+        zeroArray(aux, size);
+        Qdiag.VectorMatrixMultiply(aux, myp);
+        Qoff.VectorMatrixMultiply(aux, myp);
+        adjustDiagonals(aux, myp, 1, rowsums, size);
+
+        normalizeVector(aux, size);
+
+        // aux is now the distribution after one step.
+        // Add it to the accumulator.
+        addToVector(opts.accumulator, aux, size);
+
+#ifdef DEBUG_ACCUMULATE
+        showAccStep(1+opts.multiplications, aux, opts.accumulator, size);
+#endif
+
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(myp, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+    
+        SWAP(aux, myp);
+      } // for opts.multiplications
+
+      //
+      // If we bailed out early because aux has converged,
+      // add aux the appropriate number of times to the accumulator
+      //
+      if (opts.multiplications<t) {
+        addToVector(opts.accumulator, t-opts.multiplications, aux, size);
+#ifdef DEBUG_ACCUMULATE
+        showAccStep(t, aux, opts.accumulator, size);
+#endif
+      }
+
+      // we're done.  accumulator is our answer.
+      // Copy it into n.
+      memcpy(n, opts.accumulator, size * sizeof(double));
+  }
+}
+
+// ******************************************************************
+
+void MCLib::Markov_chain::accumulate(int t, const double* p0, double* n0t,
+    DTMC_transient_options &opts) const
+{
+  if (0==n0t) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (p0) {
+    memcpy(n0t, p0, getNumStates() * sizeof(double));
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulate(Qdiag, Qoff, rowsums, t, n0t, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulate(Qdiag, Qoff, rowsums, t, n0t, opts);
+  }
+
+}
+
+// ******************************************************************
+
+// continuous accumulate goes here
+// can use our ctmc transient template function :^)
 
 
 // ******************************************************************
