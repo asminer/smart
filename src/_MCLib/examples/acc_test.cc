@@ -80,47 +80,68 @@ const double acc2_b[] = {1.0/3.0, 5.0/6.0, 1.0/2.0, 1.0/3.0, 0};
 const double acc2_c[] = {1.0/3.0, 4.0/3.0, 1.0/2.0, 1.0/2.0, 1.0/3.0};
 const double acc2_d[] = {1.0/3.0, 11.0/6.0, 5.0/6.0, 1.0/2.0, 1.0/2.0};
 
+
 // ==============================> Graph 3 <==============================
 
 /*
-  Transient analysis CTMC from lecture notes
+  The "university" DTMC.
+    States 0,1,2,3 are transient.
+    States 4,5 are absorbing.
 */
 const edge graph3[] = {
-  {0, 1, 0.6},
-  {1, 2, 0.6},
-  {2, 1, 0.6},
+  {0, 0, 1},  // repeat fr prob 1/10
+  {0, 5, 1},  // flunk out fr prob 1/10
+  {0, 1, 8},  // pass fr prob 8/10
+  {1, 1, 2},  // repeat soph prob 2/10
+  {1, 5, 1},  // flunk out soph prob 1/10
+  {1, 2, 7},  // pass soph prob 7/10
+  {2, 2, 2},  // repeat jr prob 2/10
+  {2, 5, 1},  // flunk out jr prob 1/10
+  {2, 3, 7},  // pass jr prob 7/10
+  {3, 3, 1},  // repeat sr prob 1/10
+  {3, 5, 1},  // flunk out sr prob 1/10
+  {3, 4, 8},  // pass sr prob 8/10
   // End 
   {-1, -1, -1}
 };
 
-const long num_nodes3 = 3;
+const long num_nodes3 = 6;
 
-const double p3_0[] = {1, 0, 0};
-const double p3_10[] = {0.0024787522, 0.49999693, 0.49752432};
+const double init3[] = {0.7, 0.3, 0, 0, 0, 0};
+const double acc3[] =  {7.0/9.0, 83.0/72.0, 581.0/576.0, 4067.0/5184.0,     60.653043, 36.623192};
 
 // ==============================> Graph 4 <==============================
 
 /*
-  Land of oz as a CTMC.
+  Simple two-state CTMC with rate lambda = 2.
 */
 const edge graph4[] = {
-  {0, 0, 0.5},  {0, 1, 0.25}, {0, 2, 0.25},
-  {1, 0, 0.5},                {1, 2, 0.5},
-  {2, 0, 0.25}, {2, 1, 0.25}, {2, 2, 0.5},
+  {0, 1, 2.0},
   // End 
   {-1, -1, -1}
 };
 
-const long num_nodes4 = 3;
+const long num_nodes4 = 2;
 
-const double p4_0[] = {0, 1, 0}; 
-const double p4_1[] = {0.28539808, 0.42920384, 0.28539808};
-const double p4_2[] = {0.36716600, 0.26566800, 0.36716600};
-const double p4_4[] = {0.39730482, 0.20539036, 0.39730482};
-const double p4_8[] = {0.39998184, 0.20003632, 0.39998184};
+const double init4[] = {1, 0};
 
+// 
+// accumulated up to time t vector should be 
+//      [ 1/2 - 1/2 exp(-2t),  *]
+// where * is such that the vector elements sum to t.
+//
 
-const double p4_ss[] = {2.0/5.0, 1.0/5.0, 2.0/5.0};
+// time 0
+const double acc4_a[] = {0, 0};
+
+// time 1/2
+const double acc4_b[] = { 0.3160602794142788, 0.1839397205857212};
+// time 1
+const double acc4_c[] = { 0.4323323583816937, 0.5676676416183063};
+// time 2
+const double acc4_d[] = { 0.4908421805556329, 1.5091578194443671};
+// time 50
+const double acc4_e[] = { 0.5, 49.5 };
 
 
 // =======================================================================
@@ -375,7 +396,6 @@ bool run_dtmc_test(const char* name, const edge graph[],
 
 // =======================================================================
 
-/*
 bool run_ctmc_test(const char* name, const double q, const edge graph[], 
   const long num_nodes, const double init[], const double time, const double pt[])
 {
@@ -450,7 +470,6 @@ bool run_ctmc_test(const char* name, const double q, const edge graph[],
 
   return okd && okf;
 }
-*/
 
 // =======================================================================
 
@@ -499,33 +518,40 @@ int main()
   if (!run_dtmc_test("Periodic t3", graph2, num_nodes2, init2, 3, acc2_d)) {
     return 1;
   }
-  /*
+
+
+  if (!run_dtmc_test("University t100", graph3, num_nodes3, init3, 100, acc3)) {
+    return 1;
+  }
 
   //
   // CTMC tests
   //
-  if (!run_ctmc_test("Transient", 0.6, graph3, num_nodes3, p3_0, 10, p3_10)) {
+
+  if (!run_ctmc_test("2-state t0", 2, graph4, num_nodes4, init4, 0, acc4_a)) {
     return 1;
   }
-  if (!run_ctmc_test("Transient", 0.8, graph3, num_nodes3, p3_0, 10, p3_10)) {
+  if (!run_ctmc_test("2-state t0.5", 2, graph4, num_nodes4, init4, 0.5, acc4_b)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t1", 0, graph4, num_nodes4, p4_0, 1, p4_1)) {
+  if (!run_ctmc_test("2-state t1", 2, graph4, num_nodes4, init4, 1, acc4_c)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t2", 0, graph4, num_nodes4, p4_0, 2, p4_2)) {
+  if (!run_ctmc_test("2-state t1", 3, graph4, num_nodes4, init4, 1, acc4_c)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t4", 0, graph4, num_nodes4, p4_0, 4, p4_4)) {
+  if (!run_ctmc_test("2-state t2", 2, graph4, num_nodes4, init4, 2, acc4_d)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t8", 0, graph4, num_nodes4, p4_0, 8, p4_8)) {
+  if (!run_ctmc_test("2-state t2", 3, graph4, num_nodes4, init4, 2, acc4_d)) {
     return 1;
   }
-  if (!run_ctmc_test("Oz t100", 0, graph4, num_nodes4, p4_0, 100, p4_ss)) {
+  if (!run_ctmc_test("2-state t50", 2, graph4, num_nodes4, init4, 50, acc4_e)) {
     return 1;
   }
-  */
+  if (!run_ctmc_test("2-state t50", 3, graph4, num_nodes4, init4, 50, acc4_e)) {
+    return 1;
+  }
 
   return 0;
 }

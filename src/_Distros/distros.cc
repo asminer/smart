@@ -126,14 +126,14 @@ void discrete_1mcdf::setFromPDF(const discrete_pdf &P)
     memcpy(probs_shifted, P.probs_shifted, (Right-Left+1) * sizeof(double));
     probs = probs_shifted - Left;
 
-    // convert to almost 1-CDF, Prob(X >= i)
+    // convert to  1-CDF, Prob(X > i)
+    for (long i=Left; i<Right; i++) {
+      probs[i] = probs[i+1];
+    }
+    probs[Right] = 0;
     for (long i=Right-1; i>=Left; i--) {
       probs[i] += probs[i+1];
     }
-    // move everything by one to get Prob(X > i)
-    Left--;
-    Right--;
-    probs--;
   }
 }
 
