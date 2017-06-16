@@ -57,6 +57,89 @@ void discrete_pdf::reset(long L, long R, double* shifted)
 
 // ******************************************************************
 // *                                                                *
+// *                    discrete_cdf  methods                       *
+// *                                                                *
+// ******************************************************************
+
+discrete_cdf::discrete_cdf()
+{
+  Left=-1;
+  Right=-2;
+  probs = 0;
+  probs_shifted = 0;
+}
+
+discrete_cdf::~discrete_cdf()
+{
+  delete[] probs_shifted;
+}
+
+void discrete_cdf::setFromPDF(const discrete_pdf &P)
+{
+  Left = P.Left;
+  Right = P.Right;
+
+  if (0==P.probs) {
+    probs = 0;
+    probs_shifted = 0;
+  } else {
+    probs_shifted = new double[Right-Left+1];
+    memcpy(probs_shifted, P.probs_shifted, (Right-Left+1) * sizeof(double));
+    probs = probs_shifted - Left;
+
+    // convert to CDF using F(i) = F(i-1) + f(i)
+    for (long i=Left+1; i<=Right; i++) {
+      probs[i] += probs[i-1];
+    }
+  }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                   discrete_1mcdf  methods                      *
+// *                                                                *
+// ******************************************************************
+
+discrete_1mcdf::discrete_1mcdf()
+{
+  Left=-1;
+  Right=-2;
+  probs = 0;
+  probs_shifted = 0;
+}
+
+discrete_1mcdf::~discrete_1mcdf()
+{
+  delete[] probs_shifted;
+}
+
+void discrete_1mcdf::setFromPDF(const discrete_pdf &P)
+{
+  Left = P.Left;
+  Right = P.Right;
+
+  if (0==P.probs) {
+    probs = 0;
+    probs_shifted = 0;
+  } else {
+    probs_shifted = new double[Right-Left+1];
+    memcpy(probs_shifted, P.probs_shifted, (Right-Left+1) * sizeof(double));
+    probs = probs_shifted - Left;
+
+    // convert to almost 1-CDF, Prob(X >= i)
+    for (long i=Right-1; i>=Left; i--) {
+      probs[i] += probs[i+1];
+    }
+    // move everything by one to get Prob(X > i)
+    Left--;
+    Right--;
+    probs--;
+  }
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                    Poisson  distribution                       *
 // *                                                                *
 // ******************************************************************

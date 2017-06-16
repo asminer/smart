@@ -2,16 +2,18 @@
 noinst_PROGRAMS = \
   birthdeath \
   mcsolver \
-  period \
   oz \
+  univ \
+  walk \
+  acc_test \
+  period \
   revtr_test \
   ss_test \
   trans_test \
-  tta_test \
-  univ \
-  walk 
+  tta_test 
 
 check_PROGRAMS = \
+  acc_test \
   period \
   revtr_test \
   ss_test \
@@ -19,6 +21,7 @@ check_PROGRAMS = \
   tta_test
 
 TESTS = \
+  acc_test \
   period \
   revtr_test \
   ss_test \
@@ -65,6 +68,9 @@ trans_test_LDADD = ../libmc.la
 
 revtr_test_SOURCES = revtr_test.cc $(MY_SOURCES)
 revtr_test_LDADD = ../libmc.la
+
+acc_test_SOURCES = acc_test.cc $(MY_SOURCES)
+acc_test_LDADD = ../libmc.la
 
 # 
 # TESTS = \
