@@ -745,6 +745,9 @@ namespace MCLib {
 void MCLib::Markov_chain::computeTransient(int t, double* p, 
   DTMC_transient_options &opts) const
 {
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
   if (!isDiscrete()) {
     throw MCLib::error(MCLib::error::Wrong_Type);
   }
@@ -782,6 +785,9 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
 void MCLib::Markov_chain::reverseTransient(int t, double* p, 
   DTMC_transient_options &opts) const
 {
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
   if (!isDiscrete()) {
     throw MCLib::error(MCLib::error::Wrong_Type);
   }
@@ -819,7 +825,7 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
 namespace MCLib {
   template <class MATRIX, class DISTRO>
   void templ_ctmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
-    double t, double* p, bool normalize, const DISTRO &dist,
+    double t, double* p, bool normalize, const DISTRO &dist, double dadj,
     Markov_chain::CTMC_transient_options &opts)
   {
       const long size = Qdiag.Size();
@@ -845,9 +851,9 @@ namespace MCLib {
       // 
       // Add initial distribution
       //
-      addToVector(opts.accumulator, dist.f(0), p, size);
+      addToVector(opts.accumulator, dist.f(0)/dadj, p, size);
 #ifdef DEBUG_UNIFORMIZATION
-      showUnifStep(0, dist.f(0), p, opts.accumulator, size);
+      showUnifStep(0, dist.f(0)/dadj, p, opts.accumulator, size);
 #endif
 
       //
@@ -872,10 +878,10 @@ namespace MCLib {
         if (vectorsWithinEpsilon(myp, aux, size, opts.ssprec)) break;
 
         // Add to accumulator
-        addToVector(opts.accumulator, dist.f(i+1), aux, size);
+        addToVector(opts.accumulator, dist.f(i+1)/dadj, aux, size);
 
 #ifdef DEBUG_UNIFORMIZATION
-        showUnifStep(i+1, dist.f(i+1), aux, opts.accumulator, size);
+        showUnifStep(i+1, dist.f(i+1)/dadj, aux, opts.accumulator, size);
 #endif
     
         SWAP(aux, myp);
@@ -888,9 +894,9 @@ namespace MCLib {
         remaining_probs += dist.f(i+1);
       }
       if (remaining_probs) {
-        addToVector(opts.accumulator, remaining_probs, aux, size);
+        addToVector(opts.accumulator, remaining_probs/dadj, aux, size);
 #ifdef DEBUG_UNIFORMIZATION
-        showUnifStep(dist.right_trunc(), remaining_probs, aux, opts.accumulator, size);
+        showUnifStep(dist.right_trunc(), remaining_probs/dadj, aux, opts.accumulator, size);
 #endif
       }
 
@@ -905,6 +911,9 @@ namespace MCLib {
 void MCLib::Markov_chain::computeTransient(double t, double* p, 
   CTMC_transient_options &opts) const
 {
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
   if (isDiscrete()) {
     throw MCLib::error(MCLib::error::Wrong_Type);
   }
@@ -928,7 +937,7 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, 1, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -940,7 +949,7 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, true, poisson_pdf, 1, opts);
   }
 }
 
@@ -950,6 +959,9 @@ void MCLib::Markov_chain::computeTransient(double t, double* p,
 void MCLib::Markov_chain::reverseTransient(double t, double* p, 
   CTMC_transient_options &opts) const
 {
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
   if (isDiscrete()) {
     throw MCLib::error(MCLib::error::Wrong_Type);
   }
@@ -973,7 +985,7 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, 1, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -985,7 +997,7 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, opts);
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, 1, opts);
   }
 }
 
@@ -1106,8 +1118,74 @@ void MCLib::Markov_chain::accumulate(int t, const double* p0, double* n0t,
 
 // ******************************************************************
 
-// continuous accumulate goes here
-// can use our ctmc transient template function :^)
+void MCLib::Markov_chain::accumulate(double t, const double* p0, double* n0t,
+    CTMC_transient_options &opts) const
+{
+  if (0==n0t) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  opts.q = MAX(opts.q, getUniformizationConst());
+
+  //
+  // Set up poisson distribution
+  //
+  discrete_pdf poisson_pdf;
+  computePoissonPDF(opts.q * t, opts.epsilon, poisson_pdf);
+  discrete_1mcdf poisson_1mcdf;
+  poisson_1mcdf.setFromPDF(poisson_pdf);
+
+#ifdef DEBUG_UNIFORMIZATION
+  cout << "Poisson " << opts.q*t << " distribution (Prob x = i):\n\t" << poisson_pdf.f(0);
+  for (int i=1; i<=poisson_pdf.right_trunc(); i++) {
+    cout << ", " << poisson_pdf.f(i);
+  }
+  cout << "\n";
+  cout << "Poisson " << opts.q*t << " distribution (Prob x > i):\n\t" << poisson_1mcdf.f(0);
+  for (int i=1; i<=poisson_1mcdf.right_trunc(); i++) {
+    cout << ", " << poisson_1mcdf.f(i);
+  }
+  cout << "\n";
+#endif
+
+  //
+  // Set up n0t
+  //
+  if (p0) {
+    memcpy(n0t, p0, getNumStates() * sizeof(double));
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, n0t, true, poisson_1mcdf, opts.q, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_ctmc_transient(Qdiag, Qoff, rowsums, t, n0t, true, poisson_1mcdf, opts.q, opts);
+  }
+}
+
+
 
 
 // ******************************************************************

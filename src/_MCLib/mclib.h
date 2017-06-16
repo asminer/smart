@@ -385,6 +385,28 @@ namespace MCLib {
       void accumulate(int t, const double* p0, double* n0t, 
         DTMC_transient_options &opts) const;
 
+
+      /** Compute the accumulated time spent in every state, up
+          to and including time t.
+          Must be a CTMC.
+
+          @param  t     Time.
+
+          @param  p0    Distribution at time 0.
+                        If this is a null pointer, then
+                        the initial distribution will instead
+                        be taken from the initial value of \a n0t.
+
+          @param  n0t   On input: ignored if \a p0 is non-null;
+                        otherwise, the distribution at time 0.
+                        On output: accumulated time spent in each
+                        state until time t.
+
+          @param  opts  Options and such.
+      */
+      void accumulate(double t, const double* p0, double* n0t, 
+        CTMC_transient_options &opts) const;
+
       
       // TBD - accumulate for CTMCs.
 
