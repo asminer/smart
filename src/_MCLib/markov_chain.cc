@@ -1490,6 +1490,8 @@ namespace MCLib {
   {
       const long size = Qdiag.Size();
 
+      double prob_infinity = 0;
+
       long time;
       for (time=0; ; ) {
 
@@ -1506,6 +1508,23 @@ namespace MCLib {
         // Add to distribution
         //
         opts.distro[time] = just_entered;
+
+        //
+        // Get the probability that we just entered all other classes.
+        //
+        just_entered = 0;
+        for (long s=num_transient; s<cstart; s++) {
+          just_entered += opts.prob_vect[s];
+        }
+        for (long s=cstop; s<size; s++) {
+          just_entered += opts.prob_vect[s];
+        }
+        //
+        // Once we get to another class, we cannot possibly reach c.
+        // Call that the probability of infinity.
+        //
+        prob_infinity += just_entered;
+
 
         time++;
 
@@ -1560,7 +1579,7 @@ namespace MCLib {
       // Answer is in opts.distro,
       // convert it to a proper distribution.
       //
-      dist.copyFromAndTruncate(opts.distro, time);
+      dist.copyFromAndTruncate(opts.distro, time, prob_infinity);
   }
 }
 // ******************************************************************

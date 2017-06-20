@@ -30,9 +30,11 @@ const edge graph1[] = {
 };
 
 const long num_nodes1 = 5;
+const long accept1 = 1;
 
 const double init1[] = {0.25, 0.25, 0.25, 0.25, 0};
 const double distro1[] = {0, 0.25, 0.25, 0.25, 0.25, -1};
+const double infty1 = 0;
 
 
 // ==============================> Graph 2 <==============================
@@ -52,9 +54,11 @@ const edge graph2[] = {
 };
 
 const long num_nodes2 = 5;
+const long accept2 = 1;
 
 const double init2[] = {1, 0, 0, 0, 0};
 const double distro2[] = {0, 0.25, 0.25, 0.25, 0.25, -1};
+const double infty2 = 0;
 
 
 // ==============================> Graph 3 <==============================
@@ -70,6 +74,7 @@ const edge graph3[] = {
 };
 
 const long num_nodes3 = 2;
+const long accept3 = 1;
 
 const double init3[] = {1, 0};
 const double distro3[] = {0, 
@@ -84,14 +89,42 @@ const double distro3[] = {0,
   3.0/262144.0,
   3.0/1048576.0,
 -1};
+const double infty3 = 0;
+
+
+// ==============================> Graph 4 <==============================
+
+/*
+  0, with prob 1/4
+  1, with prob 1/4
+  2, with prob 1/4
+  infinity, with prob 1/4
+*/
+const edge graph4[] = {
+  {0,1,1},
+  {1,2,1},
+  // End 
+  {-1, -1, -1}
+};
+
+const long num_nodes4 = 4;
+const long accept4 = -2;
+
+const double init4[] = {0.25, 0.25, 0.25, 0.25};
+const double distro4[] = {0.25, 0.25, 0.25, -1};
+const double infty4 = 0.25;
+
 
 
 // =======================================================================
 
-void show_distro(const char* name, const double* x)
+void show_distro(const char* name, const double* x, const double infty)
 {
   cout << "  " << name << ": " << x[0];
   for (long i=1; x[i]>=0; i++) cout << ", " << x[i];
+  if (infty) {
+    cout << ", 0, 0, ...; " << infty << ".";
+  }
   cout << "\n";
 }
 
@@ -100,15 +133,24 @@ void show_distro(const char* name, const double* x)
 void show_distro(const char* name, discrete_pdf &x)
 {
   cout << "  " << name << ": " << x.f(0);
-  for (long i=1; i<=x.right_trunc(); i++) cout << ", " << x.f(i);
+  for (long i=1; i<=x.right_trunc(); i++) {
+    if (i!=x.left_trunc()) cout << ", "; else cout << "; ";
+    cout << x.f(i);
+  }
+  if (x.f_infinity()) {
+    cout << ", 0, 0, ...; " << x.f_infinity() << ".";
+  }
   cout << "\n";
 }
 
 // =======================================================================
 
-double diff_distro(const double* A, discrete_pdf &B)
+double diff_distro(const double* A, double inftyA, discrete_pdf &B)
 {
-  double rel_diff = 0;
+  double rel_diff = inftyA - B.f_infinity();
+  if (rel_diff<0) rel_diff *= -1;
+  if (inftyA) rel_diff /= inftyA;
+
   for (long i=0; A[i]>=0; i++) {
     double d = A[i] - B.f(i);
     if (d<0) d*=-1;
@@ -121,7 +163,8 @@ double diff_distro(const double* A, discrete_pdf &B)
 // =======================================================================
 
 bool run_dtmc_test(const char* name, const edge graph[], 
-  const long num_nodes, const double init[], const double distro[])
+  const long num_nodes, const long accept, const double init[], 
+  const double distro[], const double infty)
 {
 #ifdef VERBOSE
   const bool verbose = true;
@@ -156,8 +199,8 @@ bool run_dtmc_test(const char* name, const edge graph[],
   discrete_pdf distd, distf;
 
   try {
-    MCd->computeDiscreteDistTTA(opt, p0, 1, distd);
-    MCf->computeDiscreteDistTTA(opt, p0, 1, distf);
+    MCd->computeDiscreteDistTTA(opt, p0, accept, distd);
+    MCf->computeDiscreteDistTTA(opt, p0, accept, distf);
   }
   catch (GraphLib::error e) {
     cout << "    Caught graph library error: ";
@@ -176,10 +219,10 @@ bool run_dtmc_test(const char* name, const edge graph[],
 
   show_distro("MCd distribution", distd);
   show_distro("MCf distribution", distf);
-  show_distro("Expected  distro", distro);
+  show_distro("Expected  distro", distro, infty);
 
-  double diff_d = diff_distro(distro, distd);
-  double diff_f = diff_distro(distro, distf);
+  double diff_d = diff_distro(distro, infty, distd);
+  double diff_f = diff_distro(distro, infty, distf);
 
   cout << "  MCd relative difference: " << diff_d;
 
@@ -213,13 +256,16 @@ int main()
   //
   // DTMC tests
   //
-  if (!run_dtmc_test("Equilikely 1,4 1", graph1, num_nodes1, init1, distro1)) {
+  if (!run_dtmc_test("Equilikely 1,4 1", graph1, num_nodes1, accept1, init1, distro1, infty1)) {
     return 1;
   }
-  if (!run_dtmc_test("Equilikely 1,4 2", graph2, num_nodes2, init2, distro2)) {
+  if (!run_dtmc_test("Equilikely 1,4 2", graph2, num_nodes2, accept2, init2, distro2, infty2)) {
     return 1;
   }
-  if (!run_dtmc_test("Geometric 1/4", graph3, num_nodes3, init3, distro3)) {
+  if (!run_dtmc_test("Geometric 1/4", graph3, num_nodes3, accept3, init3, distro3, infty3)) {
+    return 1;
+  }
+  if (!run_dtmc_test("0, 1, 2, or infinity", graph4, num_nodes4, accept4, init4, distro4, infty4)) {
     return 1;
   }
 

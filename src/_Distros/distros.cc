@@ -16,12 +16,14 @@ discrete_pdf::discrete_pdf()
   Right=-2;
   probs = 0;
   probs_shifted = 0;
+  prob_infinity = 0;
 }
 
 discrete_pdf::discrete_pdf(const discrete_pdf &P)
 {
   Left = P.Left;
   Right = P.Right;
+  prob_infinity = P.prob_infinity;
 
   if (0==P.probs) {
     probs = 0;
@@ -33,11 +35,11 @@ discrete_pdf::discrete_pdf(const discrete_pdf &P)
   }
 }
 
-discrete_pdf::discrete_pdf(long L, long R, double* shifted)
+discrete_pdf::discrete_pdf(long L, long R, double* shifted, double infinity)
 {
   probs = 0;
   probs_shifted = 0;
-  reset(L, R, shifted);
+  reset(L, R, shifted, infinity);
 }
 
 discrete_pdf::~discrete_pdf()
@@ -45,7 +47,7 @@ discrete_pdf::~discrete_pdf()
   delete[] probs_shifted;
 }
 
-void discrete_pdf::reset(long L, long R, double* shifted)
+void discrete_pdf::reset(long L, long R, double* shifted, double infinity)
 {
   delete[] probs_shifted;
 
@@ -53,10 +55,14 @@ void discrete_pdf::reset(long L, long R, double* shifted)
   Right = R;
   probs_shifted = shifted;
   probs = probs_shifted - Left;
+  prob_infinity = infinity;
 }
 
-void discrete_pdf::copyFromAndTruncate(const double* pdf, long size)
+void discrete_pdf::copyFromAndTruncate(const double* pdf, long size, 
+  double infinity)
 {
+  prob_infinity = infinity;
+
   delete[] probs_shifted;
 
   // 
@@ -276,7 +282,7 @@ void computePoissonPDF(double lambda, double epsilon, discrete_pdf &P)
     pdf[j] /= total;
   }
 
-  P.reset(L, R, shifted_pdf);
+  P.reset(L, R, shifted_pdf, 0);
 }
 
 
