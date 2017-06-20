@@ -19,7 +19,7 @@
   Stored explicitly,
   so works only for finite distributions.
 
-  TBD - should we add an "infinity probability"?
+  There can be a non-zero probability for "infinity".
 */
 class discrete_pdf {
   public:
@@ -30,17 +30,21 @@ class discrete_pdf {
         @param  L         Left truncation point
         @param  R         Right truncation point
         @param  shifted   shifted_f probabilities.
+        @param  infinity  Probability of infinity.
     */
-    discrete_pdf(long L, long R, double* shifted);
+    discrete_pdf(long L, long R, double* shifted, double infinity);
 
     ~discrete_pdf();
 
-    void reset(long L, long R, double* shifted);
+    /**
+      Destroys the current distribution and resets it to the given one.
+    */
+    void reset(long L, long R, double* shifted, double infinity);
 
     /**
         Build a new distribution from an array of probabilities.
     */
-    void copyFromAndTruncate(const double* pdf, long size);
+    void copyFromAndTruncate(const double* pdf, long size, double infinity);
 
     /**
         Left truncation point L.
@@ -66,7 +70,7 @@ class discrete_pdf {
           @return     The probability that the RV takes value i:
                       Pr( X == i).
     */
-    double f(long i) const { 
+    inline double f(long i) const { 
       if (i<Left) return 0;
       if (i>Right) return 0;
       return probs[i];
@@ -77,15 +81,24 @@ class discrete_pdf {
           @param  i   Desired value
           @return     The probability that the RV takes value L+i.
     */
-    double shifted_f(long i) const {
+    inline double shifted_f(long i) const {
       if (i<0) return 0;
       if (i>Right+Left) return 0;
       return probs_shifted[i];
     }
 
+    /**
+        Probability mass function, at infinity.
+        In other words, the probability that the RV takes value infinity.
+    */
+    inline double f_infinity() const {
+      return prob_infinity;
+    }
+
   private:
     double* probs_shifted;
     double* probs;
+    double  prob_infinity;
     long Left;
     long Right;
 
