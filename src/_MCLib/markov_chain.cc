@@ -5,8 +5,6 @@
 
 #include "mclib.h"
 
-#include "../_Distros/distros.h"
-
 #include <math.h>
 #include <string.h>
 
@@ -278,6 +276,27 @@ inline void addToVector(double* A, const double* x, const long size)
   }
 }
   
+// ======================================================================
+// |                                                                    |
+// |          Markov_chain::DTMC_distribution_options  methods          |
+// |                                                                    |
+// ======================================================================
+
+void MCLib::Markov_chain::DTMC_distribution_options
+::setMaxSize(long ms)
+{
+  if (ms<0) {
+    ms = 0;
+    // TBD - or should we throw a fit?
+  }
+  double* newdistro = (double*) realloc(distro, ms * sizeof(double));
+  if (ms>0 && 0==newdistro) {
+    throw MCLib::error(error::Out_Of_Memory);
+  }
+  max_size = ms;
+  distro = newdistro;
+}
+
 // ======================================================================
 // |                                                                    |
 // |                        Markov_chain methods                        |
@@ -1459,6 +1478,208 @@ void MCLib::Markov_chain::computeInfinityDistribution(const LS_Vector &p0,
       p[i] = 0;
   } // for i
 }
+
+// ******************************************************************
+
+namespace MCLib {
+  template <class MATRIX>
+  void templ_dtmc_distro(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
+    Markov_chain::DTMC_distribution_options &opts, 
+    long cstart, long cstop, long num_transient,
+    discrete_pdf &dist)
+  {
+      const long size = Qdiag.Size();
+
+      long time;
+      for (time=0; ; ) {
+
+        // 
+        // Get the probability that we just entered class c,
+        // by summing the probabilities for class c.
+        //
+        double just_entered = 0;
+        for (long s=cstart; s<cstop; s++) {
+          just_entered += opts.prob_vect[s];
+        }
+
+        // 
+        // Add to distribution
+        //
+        opts.distro[time] = just_entered;
+
+        time++;
+
+        //
+        // Did we timeout?  If so, determine error and break.
+        //
+        if (time >= opts.max_size) {
+          opts.epsilon = 0;
+          for (long s=0; s<num_transient; s++) {
+            opts.epsilon += opts.prob_vect[s];
+          }
+
+          break;
+        }
+
+        //
+        // Check if error is below epsilon;
+        // if so, we can stop.
+        //
+        double error = 0;
+        for (long s=0; s<num_transient; s++) {
+          error += opts.prob_vect[s];
+          if (error > opts.epsilon) break;
+        }
+        if (error <= opts.epsilon) break;
+
+        //
+        // Determine probability distribution at next time.
+        // Except, and this is the clever bit, we'll
+        // first set the probabilities to zero for non-transient states,
+        // that way we capture the probability of entering
+        // at exactly this time.
+        //
+        for (long s=num_transient; s<size; s++) {
+          opts.prob_vect[s] = 0;
+        }
+        zeroArray(opts.vm_result, size);
+        Qdiag.VectorMatrixMultiply(opts.vm_result, opts.prob_vect);
+        Qoff.VectorMatrixMultiply(opts.vm_result, opts.prob_vect);
+        adjustDiagonals(opts.vm_result, opts.prob_vect, 1, rowsums, size);
+
+        // TBD - should we normalize, or not???
+        // It appears that the old implementation did NOT.
+        // Perhaps for numerical stability?
+
+        SWAP(opts.prob_vect, opts.vm_result);
+
+      } // for time
+
+      //
+      // Done.
+      // Answer is in opts.distro,
+      // convert it to a proper distribution.
+      //
+      dist.copyFromAndTruncate(opts.distro, time);
+  }
+}
+// ******************************************************************
+
+void MCLib::Markov_chain::computeDiscreteDistTTA(
+  DTMC_distribution_options &opts,
+  const LS_Vector &p0,
+  long c,
+  discrete_pdf &dist) const
+{
+  if (!isDiscrete()) {
+    throw MCLib::error(error::Wrong_Type);
+  }
+  if (0==p0.size) {
+    throw MCLib::error(error::Null_Vector);
+  }
+  if (0==opts.max_size) {
+    throw MCLib::error(error::Null_Vector);
+  }
+  long cstart, cstop;
+  if (c<=0) {
+    // want a single state -c
+    cstart = -c;
+    cstop = cstart+1;
+    // Make sure it is an absorbing state
+    if (!stateClass.isNodeInClass(cstart, 1)) {
+      throw MCLib::error(error::Bad_Class);
+    }
+  } else {
+    // want an entire class c
+    if (c >= stateClass.getNumClasses()) {
+      throw MCLib::error(error::Bad_Class);
+    }
+    cstart = stateClass.firstNodeOfClass(c);
+    cstop = 1+stateClass.lastNodeOfClass(c);
+  }
+
+  //
+  // Set up auxiliary vectors if necessary
+  //
+  if (0== opts.vm_result) {
+    opts.vm_result = new double[getNumStates()];
+  }
+  if (0== opts.prob_vect) {
+    opts.prob_vect = new double[getNumStates()];
+  }
+
+  //
+  // Fill opts.prob_vect with initial distribution
+  //
+  zeroArray(opts.prob_vect, getNumStates());
+  if (p0.index) {
+    //
+    // p0 is sparse
+    //
+    if (p0.d_value) {
+      for (long z=0; z<p0.size; z++) {
+        opts.prob_vect[p0.index[z]] = p0.d_value[z];
+      }
+    } else {
+      DCASSERT(p0.f_value);
+      for (long z=0; z<p0.size; z++) {
+        opts.prob_vect[p0.index[z]] = p0.f_value[z];
+      }
+    }
+  } else {
+    //
+    // p0 is (truncated) full
+    //
+    if (p0.d_value) {
+      for (long i=0; i<p0.size; i++) {
+        opts.prob_vect[i] = p0.d_value[i];
+      }
+    } else {
+      DCASSERT(p0.f_value);
+      for (long i=0; i<p0.size; i++) {
+        opts.prob_vect[i] = p0.f_value[i];
+      }
+    }
+  }
+
+
+  //
+  // Call template function to do the actual
+  // vector matrix multiplications and real work.
+  //
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, cstart, cstop, 
+      1+stateClass.lastNodeOfClass(0), dist);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, cstart, cstop, 
+      1+stateClass.lastNodeOfClass(0), dist);
+  }
+}
+
+// ******************************************************************
+
+// TBD - distro stuff here
 
 // ******************************************************************
 
