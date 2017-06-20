@@ -27,6 +27,7 @@ const char* MCLib::error::getString() const
     case Out_Of_Memory:     return "Out of memory";
     case Bad_Time:          return "Bad Time";
     case Bad_Linear:        return "Error in  linear solver";
+    case Bad_Class:         return "Invalid class index";
     case Loop_Of_Vanishing: return "Absorbing vanishing loop";
     case Internal:          return "Internal error";
     case Miscellaneous:     return "Misc. error";

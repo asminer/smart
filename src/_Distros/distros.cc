@@ -55,6 +55,41 @@ void discrete_pdf::reset(long L, long R, double* shifted)
   probs = probs_shifted - Left;
 }
 
+void discrete_pdf::copyFromAndTruncate(const double* pdf, long size)
+{
+  delete[] probs_shifted;
+
+  // 
+  // Determine left truncation point
+  //
+  for (Left=0; Left<size; Left++) {
+    if (pdf[Left]) break;
+  }
+  if (Left>=size) {
+    // Special and easy case:
+    // whole array is zero.  
+    Left = -1;
+    Right = -2;
+    probs = 0;
+    probs_shifted = 0;
+    return;
+  }
+
+  //
+  // Determine right truncation point
+  //
+  for (Right=size-1; Right>Left; Right--) {
+    if (pdf[Right]) break;
+  }
+
+  //
+  // Allocate array and copy over
+  //
+  probs_shifted = new double[Right-Left+1];
+  memcpy(probs_shifted, pdf+Left, (Right-Left+1) * sizeof(double));
+  probs = probs_shifted - Left;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                    discrete_cdf  methods                       *

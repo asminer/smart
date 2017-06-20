@@ -18,6 +18,8 @@
   PDF of a discrete random variable.
   Stored explicitly,
   so works only for finite distributions.
+
+  TBD - should we add an "infinity probability"?
 */
 class discrete_pdf {
   public:
@@ -34,6 +36,11 @@ class discrete_pdf {
     ~discrete_pdf();
 
     void reset(long L, long R, double* shifted);
+
+    /**
+        Build a new distribution from an array of probabilities.
+    */
+    void copyFromAndTruncate(const double* pdf, long size);
 
     /**
         Left truncation point L.

@@ -4,15 +4,13 @@
 */
 
 #include <iostream>
-#include "mclib.h"
+#include "mcbuilder.h"
 
 // #define VERBOSE
 
 using namespace GraphLib;
 using namespace std;
 using namespace MCLib;
-
-typedef struct { long from; long to; double rate; } edge;
 
 // ==============================> Graph 1 <==============================
 
@@ -111,157 +109,6 @@ const double e4_b[] = {0.183583, 0.265668, 0.183583};
 const double e4_c[] = {0.19865241, 0.20539036, 0.19865241};
 const double e4_d[] = {1.0/5.0, 1.0/5.0, 1.0/5.0};
 
-
-// =======================================================================
-
-class my_timer : public timer_hook {
-  public:
-    my_timer(bool activ) {
-      active = activ;
-    }
-    virtual ~my_timer() {
-    }
-    virtual void start(const char* w) {
-      if (active) {
-        cout << "    " << w << " ...";
-        cout.flush();
-      }
-    }
-    virtual void stop() {
-      if (active) {
-        cout << "\n";
-        cout.flush();
-      }
-    }
-
-  private:
-    bool active;
-};
-
-// =======================================================================
-
-Markov_chain* build_double(const bool discrete, const edge graph[], 
-  const long num_nodes)
-{
-#ifdef VERBOSE
-  my_timer T(true);
-#else
-  my_timer T(false);
-#endif
-
-  //
-  // Build graph from list of edges
-  //
-  dynamic_summable<double>* G = new dynamic_summable<double>(true, true);
-  G->addNodes(num_nodes);
-
-  for (long i=0; graph[i].from >= 0; i++) {
-    G->addEdge(graph[i].from, graph[i].to, graph[i].rate);
-#ifdef VERBOSE
-    cout << "\t" << graph[i].from << " -> " << graph[i].to;
-    cout << " rate " << graph[i].rate << "\n";
-#endif
-  }
-
-  //
-  // Construct Markov chain
-  //
-  abstract_classifier* SCCs = G->determineSCCs(0, 1, true, &T);
-  static_classifier C;
-  node_renumberer* R = SCCs->buildRenumbererAndStatic(C);
-
-#ifdef VERBOSE
-  if (0==R) {
-    cout << "Null renumbering:\n";
-  } else {
-    cout << "Got renumbering:\n";
-    for (long i=0; i<num_nodes; i++) {
-      cout << "    " << i << " -> " << R->new_number(i) << "\n";
-    }
-  }
-  
-  cout << "Got static classifier:\n";
-  cout << "    #classes: " << C.getNumClasses() << "\n";
-  for (long c=0; c<C.getNumClasses(); c++) {
-    cout << "    class " << c << ": ";
-    if (C.firstNodeOfClass(c) <= C.lastNodeOfClass(c)) {
-      cout << " [" << C.firstNodeOfClass(c) << ".." << C.lastNodeOfClass(c) << "]";
-    } else {
-      cout << " []";
-    }
-    cout << " size " << C.sizeOfClass(c) << "\n";
-  }
-#endif
-
-  Markov_chain* MC = new Markov_chain(discrete, *G, C, &T);
-  delete R;
-  delete SCCs;
-  delete G;
-  return MC;
-}
-
-// =======================================================================
-
-Markov_chain* build_float(const bool discrete, const edge graph[], 
-  const long num_nodes)
-{
-#ifdef VERBOSE
-  my_timer T(true);
-#else
-  my_timer T(false);
-#endif
-
-  //
-  // Build graph from list of edges
-  //
-  dynamic_summable<float>* G = new dynamic_summable<float>(true, true);
-  G->addNodes(num_nodes);
-
-  for (long i=0; graph[i].from >= 0; i++) {
-    G->addEdge(graph[i].from, graph[i].to, graph[i].rate);
-#ifdef VERBOSE
-    cout << "\t" << graph[i].from << " -> " << graph[i].to;
-    cout << " rate " << graph[i].rate << "\n";
-#endif
-  }
-
-  //
-  // Construct Markov chain
-  //
-  abstract_classifier* SCCs = G->determineSCCs(0, 1, true, &T);
-  static_classifier C;
-  node_renumberer* R = SCCs->buildRenumbererAndStatic(C);
-
-#ifdef VERBOSE
-  if (0==R) {
-    cout << "Null renumbering:\n";
-  } else {
-    cout << "Got renumbering:\n";
-    for (long i=0; i<num_nodes; i++) {
-      cout << "    " << i << " -> " << R->new_number(i) << "\n";
-    }
-  }
-  
-  cout << "Got static classifier:\n";
-  cout << "    #classes: " << C.getNumClasses() << "\n";
-  for (long c=0; c<C.getNumClasses(); c++) {
-    cout << "    class " << c << ": ";
-    if (C.firstNodeOfClass(c) <= C.lastNodeOfClass(c)) {
-      cout << " [" << C.firstNodeOfClass(c) << ".." << C.lastNodeOfClass(c) << "]";
-    } else {
-      cout << " []";
-    }
-    cout << " size " << C.sizeOfClass(c) << "\n";
-  }
-#endif
-
-  Markov_chain* MC = new Markov_chain(discrete, *G, C, &T);
-  delete R;
-  delete SCCs;
-  delete G;
-  return MC;
-}
-
 // =======================================================================
 
 void show_vector(const char* name, const double* x, long size)
@@ -290,11 +137,17 @@ double diff_vector(const double* A, const double* B, long size)
 bool run_dtmc_test(const char* name, const edge graph[], 
   const long num_nodes, const double init[], const long time, const double pt[])
 {
+#ifdef VERBOSE
+  const bool verbose = true;
+#else
+  const bool verbose = false;
+#endif
+
   cout << "Testing DTMC ";
   cout << name << "\n";
 
-  Markov_chain* MCd = build_double(true, graph, num_nodes);  
-  Markov_chain* MCf = build_float(true, graph, num_nodes);  
+  Markov_chain* MCd = build_double(true, graph, num_nodes, verbose);
+  Markov_chain* MCf = build_float(true, graph, num_nodes, verbose);  
 
   //
   // Set up options
@@ -369,11 +222,17 @@ bool run_dtmc_test(const char* name, const edge graph[],
 bool run_ctmc_test(const char* name, const double q, const edge graph[], 
   const long num_nodes, const double init[], const double time, const double pt[])
 {
+#ifdef VERBOSE
+  const bool verbose = true;
+#else
+  const bool verbose = false;
+#endif
+
   cout << "Testing CTMC ";
   cout << name << "\n";
 
-  Markov_chain* MCd = build_double(false, graph, num_nodes);  
-  Markov_chain* MCf = build_float(false, graph, num_nodes);  
+  Markov_chain* MCd = build_double(false, graph, num_nodes, verbose);
+  Markov_chain* MCf = build_float(false, graph, num_nodes, verbose);  
 
   //
   // Set up options

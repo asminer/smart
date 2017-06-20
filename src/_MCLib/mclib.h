@@ -12,6 +12,7 @@
 #include "../_LSLib/lslib.h"
 #include "../_RngLib/rng.h"
 #include "../_IntSets/intset.h"
+#include "../_Distros/distros.h"
 
 namespace MCLib {
 
@@ -41,6 +42,8 @@ namespace MCLib {
       Bad_Time,
       /// Error in linear solver (for steady-state)
       Bad_Linear,
+      /// Illegal class value
+      Bad_Class,
       /// There is an "absorbing vanishing loop"
       Loop_Of_Vanishing,
       /// Internal library error
@@ -154,6 +157,58 @@ namespace MCLib {
           delete[] vm_result;
           delete[] accumulator;
         }
+      };
+
+  public:
+
+      /// Options and auxiliary vectors for TTA distributions of DTMCs.
+      struct DTMC_distribution_options {
+        /// Vector to hold result of vector-matrix multiply
+        double* vm_result;
+        /// Probability vector at various times.
+        double* prob_vect;
+        /// Input: Desired error.  Output: achieved error.
+        double epsilon;
+
+        /** 
+          Constructor; sets reasonable defaults
+        */
+        DTMC_distribution_options() {
+          vm_result = 0;
+          prob_vect = 0;
+          distro = 0;
+          epsilon = 1e-6;
+          max_size = 0;
+        }
+
+        /** 
+          Destructor; destroys auxiliary vectors.
+          If you don't want this to happen, set the pointers to 0.
+        */
+        ~DTMC_distribution_options() {
+          delete[] vm_result;
+          delete[] prob_vect;
+          free(distro);
+        }
+
+        /**
+          Set up maximum size for distribution;
+          will allocate that much temporary space.
+          This is the preferred way to set the maximum size.
+        */
+        void setMaxSize(long ms);
+
+
+        //
+        // Yes, the following are public,
+        // but are tricker to get right, 
+        // so be careful or use the provided methods.
+        //
+        public: 
+          /// Distribution, while we're building it
+          double* distro;
+          /// Maximum distribution size.
+          long max_size;
       };
 
 
@@ -295,8 +350,6 @@ namespace MCLib {
       */
       long computePeriodOfClass(long c) const;
 
-      // TBD - transient backward time
-      // TBD - accumulated transient, forward time
 
       /** Compute the distribution at time t, given the starting distribution.
           Must be a DTMC.
@@ -408,8 +461,6 @@ namespace MCLib {
         CTMC_transient_options &opts) const;
 
       
-      // TBD - accumulate for CTMCs.
-
 
       /** Compute the time to absorption.
           Vectors are allocated so that x[s] is the total time for state s,
@@ -481,9 +532,93 @@ namespace MCLib {
         const LS_Options &opt, LS_Output &out) const;
 
 
+
+      /** Compute the (discrete) distribution for "time to reach class c".
+
+            @param  opts    Options.
+
+            @param  p0      Initial distribution.
+
+            @param  c       Class or absorbing state we wish to enter.
+                            If positive, it is a class, as specified by the
+                            static classifier given by method
+                            getStateClassification().
+                            If zero or negative, it is a state.
+                            Negate the value to get the state number.
+
+            @param  dist    Output: the distribution to the desired precision.
+
+
+            @throw          Various errors: 
+                              Out_Of_Memory if malloc fails.
+                              Bad_Class if \a c is out of range.
+      */
+      void computeDiscreteDistTTA(DTMC_distribution_options &opts, 
+          const LS_Vector &p0, long c, discrete_pdf &dist) const;
+      // TBD ^
+
+
+      /** Compute the (discrete) distribution for "time to reach class c".
+
+            @param  p0      Initial distribution.
+
+            @param  opts    Options
+
+            @param  c       Class we wish to enter.  See "getClassOfState".
+                            If positive, this is a recurrent class.
+                            If negative, this is an absorbing state.
+                            Should never be zero, for transient states.
+
+            @param  dist    Fixed array of doubles to hold the
+                            computed distribution.
+
+            @param  N       Length of the \a dist array.
+
+            @return         The "achieved precision", i.e., the sum of the
+                            remaining probabilities.
+
+            @throw          Various errors: 
+                              Out_Of_Memory if malloc fails.
+                              Bad_Class if \a c is zero.
+      */
+      // virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const = 0;
+      // TBD ^
+
+
+      /** Compute the (continuous) distribution for "time to reach class c".
+
+            @param  p0      Initial distribution.
+
+            @param  opts    Options
+
+            @param  c       Class we wish to enter.  See "getClassOfState".
+                            If positive, this is a recurrent class.
+                            If negative, this is an absorbing state.
+                            Should never be zero, for transient states.
+
+            @param  dt      Time increment.  We compute the PDF at times
+                            0, dt, 2*dt, 3*dt, ...
+
+            @param  epsilon Build as much of the distribution as necessary,
+                            but no more, such that the probability of remaining
+                            in a transient state at the final time point
+                            is less than epsilon.
+
+            @param  dist    Output: malloc'd array of doubles to hold the
+                            computed distribution.  dist[i] holds the PDF
+                            for time point i*dt.
+
+            @param  N       Output: length of the \a dist array.
+
+            @throw          Various errors: 
+                              Out_Of_Memory if malloc fails.
+                              Bad_Class if \a c is zero.
+      */
+      // virtual void computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c, double dt, double epsilon, double* &dist, int &N) const = 0;
+      // TBD ^
+
+      // TBD!
       // Methods that build TTA distributions here.
-      // (TBD - design a nice distribution class, and use it for poisson.
-      // unsure if it goes here or in its own "library".)
 
 
       /** Simulate a random walk through the chain.
