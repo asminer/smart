@@ -12,6 +12,7 @@
 // #define DEBUG_PERIOD
 // #define DEBUG_UNIFORMIZATION
 // #define DEBUG_ACCUMULATE
+// #define DEBUG_CTMCDIST
 
 //------------------------------------------------------------
 
@@ -28,6 +29,10 @@
 #endif
 
 #ifdef DEBUG_ACCUMULATE
+  #define USES_IOSTREAM
+#endif
+
+#ifdef DEBUG_CTMCDIST
   #define USES_IOSTREAM
 #endif
 
@@ -81,6 +86,23 @@ void showAccStep(int steps, double* p, double* a, long size)
   showArray(p, size);
   cout << "accumulator so far:\n\t";
   showArray(a, size);
+}
+
+void showDist(const char* name, const discrete_pdf &p)
+{
+  cout << name << ":\n"; 
+  cout << "\tLeft " << p.left_trunc() << "\n";
+  cout << "\tRight " << p.right_trunc() << "\n";
+  cout << "\tInfinity " << p.f_infinity() << "\n";
+  cout << "\tpdf ";
+  if (p.left_trunc()) cout << "..., ";
+  bool comma = false;
+  for (long i=p.left_trunc(); i<=p.right_trunc(); i++) {
+    if (comma) cout << ", ";
+    cout << p.f(i);
+    comma = true;
+  }
+  cout << "\n";
 }
 
 #endif  // #ifdef USES_IOSTREAM
@@ -1631,9 +1653,13 @@ namespace MCLib {
         Qoff.VectorMatrixMultiply(opts.vm_result, opts.prob_vect);
         adjustDiagonals(opts.vm_result, opts.prob_vect, q, rowsums, size);
 
-        // TBD - should we normalize, or not???
-        // It appears that the old implementation did NOT.
-        // Perhaps for numerical stability?
+        //
+        // Do NOT normalize.  Elements will not necessarily sum to one,
+        // because we have zeroed out the non-transient probabilities.
+        //
+        // However, we do need to divide by the uniformization constant q.
+        //
+        divideVector(opts.vm_result, q, size);
 
         SWAP(opts.prob_vect, opts.vm_result);
 
@@ -1818,6 +1844,10 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
       1+stateClass.lastNodeOfClass(0), dtmc_tta);
   }
 
+#ifdef DEBUG_CTMCDIST
+  showDist("Got DTMC distributon", dtmc_tta);
+#endif
+
   //
   // Now, build the continuous distribution for each time point,
   // by multiplying the discrete distribution (shifted by 1)
@@ -1845,6 +1875,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
       if (s+1 > dtmc_tta.right_trunc()) break;
       opts.distro[i] += poisson.f(s) * dtmc_tta.f(s+1);
     }
+    opts.distro[i] *= opts.q;
 
     //
     // Did we timeout?  If so, determine error and break.

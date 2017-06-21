@@ -10,6 +10,14 @@
 
 // #define VERBOSE
 
+// #define CTMC_RELDIFF
+/*
+
+  TBD - try a more accurate way to sum product of poisson and dtmc distro,
+  for improved accuracy
+
+*/
+
 using namespace GraphLib;
 using namespace std;
 using namespace MCLib;
@@ -133,11 +141,46 @@ const double init5[] = {1, 0};
 const double zero5 = 0;
 const double infty5 = 0;
 
-double pdf5(double t) {
+double pdf5(double t) 
+{
   return 2.0 * exp(-2.0*t);
 }
 
 const double dts5[] = { 1.6, 0.8, 0.4, 0.2, 0.1, 0.08, 0.04, 0.02, 0.01, 0};
+
+// =======================================================================
+
+/*
+  Erlang(3, 0.5)
+*/
+
+const edge graph6[] = {
+  {0, 1, 0.5},
+  {1, 2, 0.5},
+  {2, 3, 0.5},
+  {-1, -1, -1}
+};
+
+const long num_nodes6 = 4;
+const long accept6 = 1;
+
+const double init6[] = {1, 0, 0, 0};
+const double zero6 = 0;
+const double infty6 = 0;
+
+double pdf6(double t)
+{
+  // PDF for Erlang(N, L) is
+  //
+  //    L^N  x^(N-1)  e^(-Lx)
+  //  -------------------------
+  //          (N-1)!
+  //
+  return 0.5 * 0.5 * 0.5 * t * t * exp(-0.5 * t) / 2.0;
+  // return t * t * exp(-t) / 2.0;
+}
+
+const double dts6[] = { 1, 0 };
 
 // =======================================================================
 
@@ -183,10 +226,16 @@ void show_distro(const char* name, const discrete_pdf &x)
 
 // =======================================================================
 
-inline double reldiff(double targ, double val)
+inline double absdiff(double targ, double val)
 {
   double d = targ - val;
   if (d<0) d*=-1;
+  return d;
+}
+
+inline double reldiff(double targ, double val)
+{
+  double d = absdiff(targ, val);
   if (targ) d /= targ;
   return d;
 }
@@ -208,6 +257,7 @@ double diff_distro(const double* A, double inftyA, const discrete_pdf &B)
 
 double diff_distro(double (*pdf)(double), double zeroA, double inftyA, const discrete_pdf &B, double dt)
 {
+#ifdef CTMC_RELDIFF
   double rel_diff = reldiff(zeroA, B.f(0));
   double d = reldiff(inftyA, B.f_infinity());
   if (d > rel_diff) rel_diff = d;
@@ -217,6 +267,17 @@ double diff_distro(double (*pdf)(double), double zeroA, double inftyA, const dis
     if (d > rel_diff) rel_diff = d;
   }
   return rel_diff;
+#else
+  double abs_diff = absdiff(zeroA, B.f(0));
+  double d = absdiff(inftyA, B.f_infinity());
+  if (d > abs_diff) abs_diff = d;
+
+  for (long i=1; i<=B.right_trunc(); i++) {
+    d = absdiff(pdf(i*dt), B.f(i));
+    if (d > abs_diff) abs_diff = d;
+  }
+  return abs_diff;
+#endif
 }
 
 // =======================================================================
@@ -346,6 +407,7 @@ bool run_ctmc_test(const char* name, const edge graph[],
   Markov_chain::CTMC_distribution_options opt;
   opt.setMaxSize(1000);
   opt.q = q;
+  opt.epsilon = 1e-10;
 
   //
   // Compute distributions
@@ -375,13 +437,23 @@ bool run_ctmc_test(const char* name, const edge graph[],
   // Check results
   //
 
+#ifdef CTMC_RELDIFF
+  const double tolerance = 1e-5;
+#else
+  const double tolerance = 1e-10;
+#endif
+
   double diff_d = diff_distro(pdf, zero, infty, distd, dt);
   cout << "  MCd:\n";
   cout << "    prec: " << prec_d << "\n";
   cout << "    size: " << distd.right_trunc() << "\n";
+#ifdef CTMC_RELDIFF
   cout << "    relative difference: " << diff_d;
+#else
+  cout << "    absolute difference: " << diff_d;
+#endif
 
-  if (diff_d < 1e-5) {
+  if (diff_d < tolerance) {
     cout << " (OK)\n";
   }
   else {
@@ -397,9 +469,13 @@ bool run_ctmc_test(const char* name, const edge graph[],
   cout << "  MCf:\n";
   cout << "    prec: " << prec_f << "\n";
   cout << "    size: " << distf.right_trunc() << "\n";
-  cout << "    relative difference: " << diff_f;
+#ifdef CTMC_RELDIFF
+  cout << "    relative difference: " << diff_d;
+#else
+  cout << "    absolute difference: " << diff_d;
+#endif
 
-  if (diff_f < 1e-5) {
+  if (diff_f < tolerance) {
     cout << " (OK)\n";
   }
   else {
@@ -437,12 +513,24 @@ int main()
   //
   // CTMC tests
   //
+
   for (long i=0; dts5[i]; i++) {
-    if (!run_ctmc_test("Expo(2)", graph5, num_nodes5, accept5, init5, 2, dts5[i], pdf5, zero5, infty5)) {
+    if (!run_ctmc_test("Expo(2), q=2", graph5, num_nodes5, accept5, init5, 2, dts5[i], pdf5, zero5, infty5)) {
+      return 1;
+    }
+    if (!run_ctmc_test("Expo(2), q=2.2", graph5, num_nodes5, accept5, init5, 2.2, dts5[i], pdf5, zero5, infty5)) {
       return 1;
     }
   }
 
+  for (long i=0; dts6[i]; i++) {
+    if (!run_ctmc_test("Erlang(3, 0.5), q=0.5", graph6, num_nodes6, accept6, init6, 0.5, dts6[i], pdf6, zero6, infty6)) {
+      return 1;
+    }
+    if (!run_ctmc_test("Erlang(3, 0.5), q=0.6", graph6, num_nodes6, accept6, init6, 0.6, dts6[i], pdf6, zero6, infty6)) {
+      return 1;
+    }
+  }
 
   return 0;
 }
