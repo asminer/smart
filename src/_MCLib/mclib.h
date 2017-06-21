@@ -120,21 +120,13 @@ namespace MCLib {
     public:
 
       /// Options and auxiliary vectors for transient analysis of CTMCs.
-      struct CTMC_transient_options {
+      struct CTMC_transient_options : public DTMC_transient_options {
         /** Uniformization constant to use (if possible).
             If not large enough, we will change the value.
         */
         double q;
         /// Precision for poisson distribution
         double epsilon;
-        /// Precision for detection of steady-state
-        double ssprec;
-        /// Vector to hold result of vector-matrix multiply
-        double* vm_result;
-        /// Vector to accumulate sum of poisson * distribution.
-        double* accumulator;
-        /// Output: number of vector matrix multiplies required.
-        long multiplications;
         /// Output: right truncation point of poisson.
         long poisson_right;
         
@@ -144,19 +136,8 @@ namespace MCLib {
         CTMC_transient_options() {
           q = 0;  // Use smallest possible.
           epsilon = 1e-20;
-          ssprec = 1e-10;
-          vm_result = 0;
-          accumulator = 0;
         }
 
-        /** 
-          Destructor; destroys auxiliary vectors.
-          If you don't want this to happen, set the pointers to 0.
-        */
-        ~CTMC_transient_options() {
-          delete[] vm_result;
-          delete[] accumulator;
-        }
       };
 
   public:
@@ -167,8 +148,10 @@ namespace MCLib {
         double* vm_result;
         /// Probability vector at various times.
         double* prob_vect;
-        /// Input: Desired error.  Output: achieved error.
+        /// Input: Desired error.
         double epsilon;
+        /// Output: Achieved precision.
+        double precision;
 
         /** 
           Constructor; sets reasonable defaults
@@ -176,9 +159,12 @@ namespace MCLib {
         DTMC_distribution_options() {
           vm_result = 0;
           prob_vect = 0;
-          distro = 0;
           epsilon = 1e-6;
+          precision = 0;
+          distro = 0;
+          error_distro = 0;
           max_size = 0;
+          needs_error = false;
         }
 
         /** 
@@ -189,6 +175,7 @@ namespace MCLib {
           delete[] vm_result;
           delete[] prob_vect;
           free(distro);
+          free(error_distro);
         }
 
         /**
@@ -207,12 +194,36 @@ namespace MCLib {
         public: 
           /// Distribution, while we're building it
           double* distro;
+          /// Error distribution, if we need it
+          double* error_distro;
           /// Maximum distribution size.
           long max_size;
+          /// Do we use the error distribution
+          bool needs_error;
       };
 
 
-    public:
+  public:
+
+      /// Options and auxiliary vectors for TTA distributions of CTMCs.
+      struct CTMC_distribution_options : public DTMC_distribution_options {
+        /// Uniformization constant to use (if possible)
+        double q;
+        /// Precision for poisson distributions
+        double poisson_epsilon;
+
+        /**
+          Constructor; sets reasonable defaults
+        */
+        CTMC_distribution_options() {
+          q=0;
+          poisson_epsilon = 1e-20;
+          needs_error = true;
+        }
+
+      };
+
+  public:
       /**
           Constructor.
           Fill this Markov chain based on the given graph
@@ -535,7 +546,7 @@ namespace MCLib {
 
       /** Compute the (discrete) distribution for "time to reach class c".
 
-            @param  opts    Options.
+            @param  opts    Input and output: Options.
 
             @param  p0      Initial distribution.
 
@@ -548,77 +559,36 @@ namespace MCLib {
 
             @param  dist    Output: the distribution to the desired precision.
 
-
-            @throw          Various errors: 
-                              Out_Of_Memory if malloc fails.
-                              Bad_Class if \a c is out of range.
       */
       void computeDiscreteDistTTA(DTMC_distribution_options &opts, 
           const LS_Vector &p0, long c, discrete_pdf &dist) const;
-      // TBD ^
 
-
-      /** Compute the (discrete) distribution for "time to reach class c".
-
-            @param  p0      Initial distribution.
-
-            @param  opts    Options
-
-            @param  c       Class we wish to enter.  See "getClassOfState".
-                            If positive, this is a recurrent class.
-                            If negative, this is an absorbing state.
-                            Should never be zero, for transient states.
-
-            @param  dist    Fixed array of doubles to hold the
-                            computed distribution.
-
-            @param  N       Length of the \a dist array.
-
-            @return         The "achieved precision", i.e., the sum of the
-                            remaining probabilities.
-
-            @throw          Various errors: 
-                              Out_Of_Memory if malloc fails.
-                              Bad_Class if \a c is zero.
-      */
-      // virtual double computeDiscreteDistTTA(const LS_Vector &p0, distopts &opts, int c, double dist[], int N) const = 0;
-      // TBD ^
 
 
       /** Compute the (continuous) distribution for "time to reach class c".
 
-            @param  p0      Initial distribution.
-
             @param  opts    Options
 
-            @param  c       Class we wish to enter.  See "getClassOfState".
-                            If positive, this is a recurrent class.
-                            If negative, this is an absorbing state.
-                            Should never be zero, for transient states.
+            @param  p0      Initial distribution.
+
+            @param  c       Class or absorbing state we wish to enter.
+                            If positive, it is a class, as specified by the
+                            static classifier given by method
+                            getStateClassification().
+                            If zero or negative, it is a state.
+                            Negate the value to get the state number.
 
             @param  dt      Time increment.  We compute the PDF at times
                             0, dt, 2*dt, 3*dt, ...
 
-            @param  epsilon Build as much of the distribution as necessary,
-                            but no more, such that the probability of remaining
-                            in a transient state at the final time point
-                            is less than epsilon.
+            @param  dist    Output: the distribution to the desired precision,
+                            but discretized using dt.  dist.f(i) gives the
+                            PDF for time point i*dt.
 
-            @param  dist    Output: malloc'd array of doubles to hold the
-                            computed distribution.  dist[i] holds the PDF
-                            for time point i*dt.
-
-            @param  N       Output: length of the \a dist array.
-
-            @throw          Various errors: 
-                              Out_Of_Memory if malloc fails.
-                              Bad_Class if \a c is zero.
       */
-      // virtual void computeContinuousDistTTA(const LS_Vector &p0, distopts &opts, int c, double dt, double epsilon, double* &dist, int &N) const = 0;
-      // TBD ^
+      void computeContinuousDistTTA(CTMC_distribution_options &opts,
+        const LS_Vector &p0, long c, double dt, discrete_pdf &dist) const;
 
-      // TBD!
-      // Methods that build TTA distributions here.
 
 
       /** Simulate a random walk through the chain.
