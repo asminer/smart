@@ -91,6 +91,43 @@ inline void zeroArray(TYPE* A, long size)
   for (long i=0; i<size; i++) A[i] = 0;
 }
 
+
+template <class REAL>
+inline void fillVector(REAL* x, long size, const LS_Vector &y)
+{
+  zeroArray(x, size);
+  if (y.index) {
+    //
+    // y is sparse
+    //
+    if (y.d_value) {
+      for (long z=0; z<y.size; z++) {
+        x[y.index[z]] = y.d_value[z];
+      }
+    } else {
+      DCASSERT(y.f_value);
+      for (long z=0; z<y.size; z++) {
+        x[y.index[z]] = y.f_value[z];
+      }
+    }
+  } else {
+    //
+    // y is (truncated) full
+    //
+    if (y.d_value) {
+      for (long i=0; i<y.size; i++) {
+        x[i] = y.d_value[i];
+      }
+    } else {
+      DCASSERT(y.f_value);
+      for (long i=0; i<y.size; i++) {
+        x[i] = y.f_value[i];
+      }
+    }
+  }
+}
+
+
 //
 // Compute rowsums on a float graph
 //
@@ -292,6 +329,13 @@ void MCLib::Markov_chain::DTMC_distribution_options
   double* newdistro = (double*) realloc(distro, ms * sizeof(double));
   if (ms>0 && 0==newdistro) {
     throw MCLib::error(error::Out_Of_Memory);
+  }
+  if (needs_error) {
+    double* newerror = (double*) realloc(error_distro, ms * sizeof(double));
+    if (ms>0 && 0==newerror) {
+      throw MCLib::error(error::Out_Of_Memory);
+    }
+    error_distro = newerror;
   }
   max_size = ms;
   distro = newdistro;
@@ -1484,7 +1528,7 @@ void MCLib::Markov_chain::computeInfinityDistribution(const LS_Vector &p0,
 namespace MCLib {
   template <class MATRIX>
   void templ_dtmc_distro(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
-    Markov_chain::DTMC_distribution_options &opts, 
+    Markov_chain::DTMC_distribution_options &opts, double q,
     long cstart, long cstop, long num_transient,
     discrete_pdf &dist)
   {
@@ -1493,7 +1537,7 @@ namespace MCLib {
       double prob_infinity = 0;
 
       long time;
-      for (time=0; ; ) {
+      for (time=0; ; time++) {
 
         // 
         // Get the probability that we just entered class c,
@@ -1525,18 +1569,31 @@ namespace MCLib {
         //
         prob_infinity += just_entered;
 
-
-        time++;
+        if (opts.needs_error) {
+          //
+          // Keep track of the amount of probability mass 
+          // still in transient states.  Used by CTMCs
+          // to compute precision.
+          //
+          opts.error_distro[time] = 0;
+          for (long s=0; s<num_transient; s++) {
+            opts.error_distro[time] += opts.prob_vect[s];
+          }
+        }
 
         //
         // Did we timeout?  If so, determine error and break.
         //
         if (time >= opts.max_size) {
-          opts.epsilon = 0;
-          for (long s=0; s<num_transient; s++) {
-            opts.epsilon += opts.prob_vect[s];
+          if (opts.needs_error) {
+            // we already computed this!
+            opts.precision = opts.error_distro[time];
+          } else {
+            opts.precision = 0;
+            for (long s=0; s<num_transient; s++) {
+              opts.precision += opts.prob_vect[s];
+            }
           }
-
           break;
         }
 
@@ -1545,11 +1602,19 @@ namespace MCLib {
         // if so, we can stop.
         //
         double error = 0;
-        for (long s=0; s<num_transient; s++) {
-          error += opts.prob_vect[s];
-          if (error > opts.epsilon) break;
+        if (opts.needs_error) {
+          // we already computed this!
+          error = opts.error_distro[time];
+        } else {
+          for (long s=0; s<num_transient; s++) {
+            error += opts.prob_vect[s];
+            if (error > opts.epsilon) break;
+          }
         }
-        if (error <= opts.epsilon) break;
+        if (error <= opts.epsilon) {
+          opts.precision = error;
+          break;
+        }
 
         //
         // Determine probability distribution at next time.
@@ -1564,7 +1629,7 @@ namespace MCLib {
         zeroArray(opts.vm_result, size);
         Qdiag.VectorMatrixMultiply(opts.vm_result, opts.prob_vect);
         Qoff.VectorMatrixMultiply(opts.vm_result, opts.prob_vect);
-        adjustDiagonals(opts.vm_result, opts.prob_vect, 1, rowsums, size);
+        adjustDiagonals(opts.vm_result, opts.prob_vect, q, rowsums, size);
 
         // TBD - should we normalize, or not???
         // It appears that the old implementation did NOT.
@@ -1579,7 +1644,7 @@ namespace MCLib {
       // Answer is in opts.distro,
       // convert it to a proper distribution.
       //
-      dist.copyFromAndTruncate(opts.distro, time, prob_infinity);
+      dist.copyFromAndTruncate(opts.distro, time+1, prob_infinity);
   }
 }
 // ******************************************************************
@@ -1630,36 +1695,7 @@ void MCLib::Markov_chain::computeDiscreteDistTTA(
   //
   // Fill opts.prob_vect with initial distribution
   //
-  zeroArray(opts.prob_vect, getNumStates());
-  if (p0.index) {
-    //
-    // p0 is sparse
-    //
-    if (p0.d_value) {
-      for (long z=0; z<p0.size; z++) {
-        opts.prob_vect[p0.index[z]] = p0.d_value[z];
-      }
-    } else {
-      DCASSERT(p0.f_value);
-      for (long z=0; z<p0.size; z++) {
-        opts.prob_vect[p0.index[z]] = p0.f_value[z];
-      }
-    }
-  } else {
-    //
-    // p0 is (truncated) full
-    //
-    if (p0.d_value) {
-      for (long i=0; i<p0.size; i++) {
-        opts.prob_vect[i] = p0.d_value[i];
-      }
-    } else {
-      DCASSERT(p0.f_value);
-      for (long i=0; i<p0.size; i++) {
-        opts.prob_vect[i] = p0.f_value[i];
-      }
-    }
-  }
+  fillVector(opts.prob_vect, getNumStates(), p0);
 
 
   //
@@ -1678,7 +1714,7 @@ void MCLib::Markov_chain::computeDiscreteDistTTA(
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, cstart, cstop, 
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, 1, cstart, cstop, 
       1+stateClass.lastNodeOfClass(0), dist);
   } else {
     //
@@ -1691,14 +1727,165 @@ void MCLib::Markov_chain::computeDiscreteDistTTA(
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, cstart, cstop, 
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, 1, cstart, cstop, 
       1+stateClass.lastNodeOfClass(0), dist);
   }
 }
 
 // ******************************************************************
 
-// TBD - distro stuff here
+void MCLib::Markov_chain::computeContinuousDistTTA(
+  CTMC_distribution_options &opts,
+  const LS_Vector &p0,
+  long c, double dt,
+  discrete_pdf &dist) const
+{
+  if (isDiscrete()) {
+    throw MCLib::error(error::Wrong_Type);
+  }
+  if (0==p0.size) {
+    throw MCLib::error(error::Null_Vector);
+  }
+  if (0==opts.max_size) {
+    throw MCLib::error(error::Null_Vector);
+  }
+  opts.q = MAX(opts.q, getUniformizationConst());
+
+  long cstart, cstop;
+  if (c<=0) {
+    // want a single state -c
+    cstart = -c;
+    cstop = cstart+1;
+    // Make sure it is an absorbing state
+    if (!stateClass.isNodeInClass(cstart, 1)) {
+      throw MCLib::error(error::Bad_Class);
+    }
+  } else {
+    // want an entire class c
+    if (c >= stateClass.getNumClasses()) {
+      throw MCLib::error(error::Bad_Class);
+    }
+    cstart = stateClass.firstNodeOfClass(c);
+    cstop = 1+stateClass.lastNodeOfClass(c);
+  }
+
+  //
+  // Set up auxiliary vectors if necessary
+  //
+  if (0== opts.vm_result) {
+    opts.vm_result = new double[getNumStates()];
+  }
+  if (0== opts.prob_vect) {
+    opts.prob_vect = new double[getNumStates()];
+  }
+
+  //
+  // Fill opts.prob_vect with initial distribution
+  //
+  fillVector(opts.prob_vect, getNumStates(), p0);
+
+  //
+  // Call template function to build distribution
+  // for the uniformized CTMC.
+  //
+  discrete_pdf dtmc_tta;
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, opts.q, cstart, cstop, 
+      1+stateClass.lastNodeOfClass(0), dtmc_tta);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_distro(Qdiag, Qoff, rowsums, opts, opts.q, cstart, cstop, 
+      1+stateClass.lastNodeOfClass(0), dtmc_tta);
+  }
+
+  //
+  // Now, build the continuous distribution for each time point,
+  // by multiplying the discrete distribution (shifted by 1)
+  // by the appropriate poisson distribution.
+  //
+  opts.distro[0] = dtmc_tta.f(0);
+
+  long i;
+  for (i=1; ; i++) {
+    const double t = i * dt;
+    const double qt = t * opts.q;
+
+    //
+    // Compute poisson distribution
+    //
+
+    discrete_pdf poisson;
+    computePoissonPDF(qt, opts.poisson_epsilon, poisson);
+
+    //
+    // Compute this data point
+    //
+    opts.distro[i] = 0;
+    for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
+      if (s+1 > dtmc_tta.right_trunc()) break;
+      opts.distro[i] += poisson.f(s) * dtmc_tta.f(s+1);
+    }
+
+    //
+    // Did we timeout?  If so, determine error and break.
+    //
+    if (i >= opts.max_size) {
+      opts.precision = 0;
+      for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
+        if (s>=opts.max_size) break;
+        opts.precision += opts.error_distro[s] * poisson.f(s);
+      }
+      break;
+    }
+
+    //
+    // Compute current error value,
+    // which is the error distribution scaled by the poisson distribution
+    //
+    double error = 0;
+    for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
+      if (s>=opts.max_size) break;
+      error += opts.error_distro[s] * poisson.f(s);
+      if (error > opts.epsilon) break;
+    }
+
+    //
+    // See if we can stop
+    //
+    if (error <= opts.epsilon) {
+      opts.precision = error;
+      break;
+    }
+
+  } // for i
+
+  //
+  // Done.
+  // Answer is in opts.distro,
+  // convert it to a proper distribution.
+  //
+  dist.copyFromAndTruncate(opts.distro, i, dtmc_tta.f_infinity());
+}
 
 // ******************************************************************
 
