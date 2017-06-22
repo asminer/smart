@@ -11,12 +11,6 @@
 // #define VERBOSE
 
 // #define CTMC_RELDIFF
-/*
-
-  TBD - try a more accurate way to sum product of poisson and dtmc distro,
-  for improved accuracy
-
-*/
 
 using namespace GraphLib;
 using namespace std;
@@ -513,7 +507,6 @@ int main()
   //
   // CTMC tests
   //
-
   for (long i=0; dts5[i]; i++) {
     if (!run_ctmc_test("Expo(2), q=2", graph5, num_nodes5, accept5, init5, 2, dts5[i], pdf5, zero5, infty5)) {
       return 1;
@@ -522,7 +515,6 @@ int main()
       return 1;
     }
   }
-
   for (long i=0; dts6[i]; i++) {
     if (!run_ctmc_test("Erlang(3, 0.5), q=0.5", graph6, num_nodes6, accept6, init6, 0.5, dts6[i], pdf6, zero6, infty6)) {
       return 1;

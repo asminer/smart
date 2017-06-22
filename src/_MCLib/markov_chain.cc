@@ -359,6 +359,13 @@ void MCLib::Markov_chain::DTMC_distribution_options
     }
     error_distro = newerror;
   }
+  if (needs_distprod) {
+    double* newdp = (double*) realloc(distprod, ms * sizeof(double));
+    if (ms>0 && 0==newdp) {
+      throw MCLib::error(error::Out_Of_Memory);
+    }
+    distprod = newdp;
+  }
   max_size = ms;
   distro = newdistro;
 }
@@ -1868,13 +1875,35 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     computePoissonPDF(qt, opts.poisson_epsilon, poisson);
 
     //
-    // Compute this data point
+    // Compute and store product of discrete distribution and poisson
+    //
+    long dp_start = poisson.left_trunc();
+    long dp_stop = MIN(1+poisson.right_trunc(), dtmc_tta.right_trunc());
+    DCASSERT(dp_stop < opts.max_size);
+    for (long s=dp_start; s<dp_stop; s++) {
+      opts.distprod[s] = poisson.f(s) * dtmc_tta.f(s+1);
+    }
+
+    //
+    // Now, sum those products.  Instead of simply looping in order,
+    // we add the smallest elements first, frim the left and right ends.
     //
     opts.distro[i] = 0;
-    for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
-      if (s+1 > dtmc_tta.right_trunc()) break;
-      opts.distro[i] += poisson.f(s) * dtmc_tta.f(s+1);
+    long left=dp_start;
+    long right=dp_stop-1;
+    while (left<right) {
+      if (opts.distprod[left] < opts.distprod[right]) {
+        opts.distro[i] += opts.distprod[left];
+        left++;
+      } else {
+        opts.distro[i] += opts.distprod[right];
+        right--;
+      }
     }
+    if (left == right) {
+      opts.distro[i] += opts.distprod[left];
+    }
+
     opts.distro[i] *= opts.q;
 
     //
@@ -1915,7 +1944,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
   // Answer is in opts.distro,
   // convert it to a proper distribution.
   //
-  dist.copyFromAndTruncate(opts.distro, i, dtmc_tta.f_infinity());
+  dist.copyFromAndTruncate(opts.distro, i+1, dtmc_tta.f_infinity());
 }
 
 // ******************************************************************

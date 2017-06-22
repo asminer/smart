@@ -163,8 +163,10 @@ namespace MCLib {
           precision = 0;
           distro = 0;
           error_distro = 0;
+          distprod = 0;
           max_size = 0;
           needs_error = false;
+          needs_distprod = false;
         }
 
         /** 
@@ -196,10 +198,14 @@ namespace MCLib {
           double* distro;
           /// Error distribution, if we need it
           double* error_distro;
+          /// Distribution times poisson, if we need it
+          double* distprod;
           /// Maximum distribution size.
           long max_size;
           /// Do we use the error distribution
           bool needs_error;
+          /// Do we use the distprod array.
+          bool needs_distprod;
       };
 
 
@@ -219,6 +225,7 @@ namespace MCLib {
           q=0;
           poisson_epsilon = 1e-20;
           needs_error = true;
+          needs_distprod = true;
         }
 
       };
