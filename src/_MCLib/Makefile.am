@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libmc.la
 libmc_la_SOURCES = \
   error.cc \
   markov_chain.cc \
+  vanishing.cc \
   \
   mclib.cc \
   mcbase.cc \

@@ -11,7 +11,8 @@ noinst_PROGRAMS = \
   revtr_test \
   ss_test \
   trans_test \
-  tta_test 
+  tta_test \
+  vanish_test 
 
 check_PROGRAMS = \
   acc_test \
@@ -20,7 +21,8 @@ check_PROGRAMS = \
   revtr_test \
   ss_test \
   trans_test \
-  tta_test
+  tta_test \
+  vanish_test 
 
 TESTS = \
   acc_test \
@@ -29,7 +31,8 @@ TESTS = \
   revtr_test \
   ss_test \
   trans_test \
-  tta_test
+  tta_test \
+  vanish_test 
 
 
 MY_SOURCES = \
@@ -74,3 +77,5 @@ revtr_test_SOURCES = revtr_test.cc mcbuilder.cc $(MY_SOURCES)
 acc_test_SOURCES = acc_test.cc mcbuilder.cc $(MY_SOURCES)
 
 dist_test_SOURCES = dist_test.cc mcbuilder.cc $(MY_SOURCES)
+
+vanish_test_SOURCES = vanish_test.cc $(MY_SOURCES)

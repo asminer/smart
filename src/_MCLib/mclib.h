@@ -690,7 +690,224 @@ namespace MCLib {
 
       /// Did we build from a graph of doubles?
       bool double_graphs;
+
   };  // class Markov_chain
+
+
+
+
+  // ======================================================================
+  // |                                                                    |
+  // |                                                                    |
+  // |                       vanishing_chain  class                       |
+  // |                                                                    |
+  // |                                                                    |
+  // ======================================================================
+
+
+  /**
+    Class for a semi-Markov processes containing "tangible" states
+    and "vanishing" states.  The time spent in a vanishing state
+    is 0, while the time spent in a tangible state is either 
+    1 (in the discrete case) or exponentially-distributed
+    (in the continuous case).
+    This class is used to eliminate the vanishing states and
+    produce a Markov chain (as a graph) over the tangible states only.
+  */
+  class vanishing_chain {
+    public:
+      /** Constructor.
+            @param  disc  Are we discrete?
+            @param  nt    Initial number of tangible states
+            @param  nv    Initial number of vanishing states
+      */
+      vanishing_chain(bool disc, long nt, long nv);
+
+
+      /// Destructor.
+      ~vanishing_chain();
+
+      /// Is this a discrete-time chain?
+      inline bool isDiscrete() const { return discrete; }
+      /// Is this a continuous-time chain?
+      inline bool isContinuous() const { return !discrete; }
+
+      /// Add new tangible states
+      inline void addTangibles(long nt) {
+        TT_graph.addNodes(nt);
+      }
+
+      /// Add one new tangible state
+      inline void addTangible() {
+        TT_graph.addNode();
+      }
+
+      /// Add new vanishing states
+      inline void addVanishings(long nv) {
+        VV_graph.addNodes(nv);
+      }
+
+      /// Add one new vanishing state
+      inline void addVanishing() {
+        VV_graph.addNode();
+      }
+
+      /// Get number of tangible states
+      inline long getNumTangible() const { 
+        return TT_graph.getNumNodes();
+      }
+
+      /// Get number of vanishing states
+      inline long getNumVanishing() const { 
+        return VV_graph.getNumNodes();
+      }
+
+
+      /** Set an initial tangible state.
+      
+            @param  handle  Index of tangible state.
+            @param  weight  Probability "weight" to give to this state.
+      */
+      inline void addInitialTangible(long handle, double weight) {
+        Tinit.addItem(handle, weight);
+      }
+
+      /** Set an initial vanishing state.
+
+          @param  handle  Index of vanishing state.
+          @param  weight  Probability "weight" to give to this state.
+      */
+      inline void addInitialVanishing(long handle, double weight) {
+        Vinit.addItem(handle, weight);
+      }
+
+
+      /** Add an edge in the chain from tangible to tangible.
+
+          @param  from  The "source" tangible state handle.
+          @param  to    The "destination" tangible state handle.
+          @param  v     Probability, for discrete; rate, for continuous.
+      */
+      inline void addTTedge(long from, long to, double v) {
+        TT_graph.addEdge(from, to, v);
+      }
+
+      /** Add an edge in the chain from vanishing to vanishing.
+
+          @param  from  The "source" vanishing state handle.
+          @param  to    The "destination" vanishing state handle.
+          @param  v     Rate of the edge.
+      */
+      inline void addVVedge(long from, long to, double v) {
+        VV_graph.addEdge(from, to, v);
+      }
+
+      /** Add an edge in the chain from tangible to vanishing.
+
+          @param  from  The "source" tangible state handle.
+          @param  to    The "destination" vanishing state handle.
+          @param  v     Probability, for discrete; rate, for continuous.
+      */
+      inline void addTVedge(long from, long to, double v) {
+        TV_edges.addEdge(from, to, v);
+      }
+
+      /** Add an edge in the chain from vanishing to tangible.
+
+          @param  from  The "source" vanishing state handle.
+          @param  to    The "destination" tangible state handle.
+          @param  v     Rate of the edge.
+      */
+      inline void addVTedge(long from, long to, double v) {
+        VT_edges.addEdge(from, to, v);
+      }
+
+
+      /** Eliminate all vanishing states.
+          Assumes that all edges have been added for all known vanishing
+          states.  As appropriate, edges will be added between tangible
+          states.  The current "batch" of vanishing states will be removed,
+          while the tangibles will remain.
+
+          @param  opt   Linear solver options to use during elimination.
+      */
+      void eliminateVanishing(const LS_Options &opt);
+
+
+      /** Obtain the initial vector, over tangible states only.
+
+          @param  init  On output, contains the (normalized)
+                        initial probability vector as specified
+                        via addInitialTangible() and addInitialVanishing().
+      */
+      // void buildInitialVector(LS_Vector &init);
+
+
+      /** 
+          Obtain the process over tangible states only.
+    
+          @return  The tangible process, as a graph.
+      */
+      inline GraphLib::dynamic_summable<double> & TT() {
+        return TT_graph;
+      }
+
+    private:
+      struct pair {
+        long index;
+        double weight;
+      };
+      struct pairlist {
+        public:
+          pairlist();
+          ~pairlist();
+
+          void addItem(long i, double w);
+          void clear();
+        public:
+          pair* pairarray;
+          long alloc_pairs;
+          long last_pair;
+      };
+      struct edge {
+        long from;
+        long to;
+        double weight;
+      };
+      struct edgelist {
+        public:
+          edgelist();
+          ~edgelist();
+
+          void addEdge(long from, long to, double wt); 
+          void groupBySource();
+          void clear();
+        private:
+          void swapedges(long i, long j);
+
+        public:
+          edge* edgearray;
+          long alloc_edges;
+          long last_edge;
+      };
+    private:
+      GraphLib::dynamic_summable<double> TT_graph;
+      GraphLib::dynamic_summable<double> VV_graph;
+
+      pairlist Tinit;
+      pairlist Vinit;
+
+      edgelist TV_edges;
+      edgelist VT_edges;
+
+      bool discrete;
+
+  };  // class vanishing_chain
+
+
+
+
+
 
 };  // namespace MCLib
 

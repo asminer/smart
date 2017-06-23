@@ -10,6 +10,17 @@ doxy/       Documentation of front-end
 
 Source files in this directory:
 
+error.cc            Implements the error class
+markov_chain.cc     Implements the Markov_chain class
+vanishing.cc        Implements the vanishing_chain class
+mclib.cc            Implements library information function
+
+
+----------------------------------------------------------------------
+OLD IMPLEMENTATION:
+
+Source files in this directory:
+
 matrix.cc	Fancy sparse matrix storage class.
 
 mcbase.cc	Implementation of the Markov chain analysis methods,
