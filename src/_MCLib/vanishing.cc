@@ -35,8 +35,38 @@ void showSet(const intset &S)
   cout << "}";
 }
 
+void showVector(const char* name, double* v, long size)
+{
+  cout << name << ": [" << v[0];
+  for (long i=1; i<size; i++) {
+    cout << ", " << v[i];
+  }
+  cout << "]\n";
+}
+
 #endif
 
+template <class TYPE>
+inline void zeroArray(TYPE* A, long size)
+{
+  for (long i=0; i<size; i++) A[i] = 0;
+}
+
+inline double vectorTotal(double* v, long size)
+{
+  double total = 0;
+  for (long i=0; i<size; i++) {
+    total += v[i];
+  }
+  return total;
+}
+
+inline void scaleVector(double a, double* v, long size)
+{
+  for (long i=0; i<size; i++) {
+    v[i] *= a;
+  }
+}
 
 
 // ======================================================================
@@ -139,7 +169,7 @@ void MCLib::vanishing_chain::edgelist::addEdge(long from, long to, double wt)
 void MCLib::vanishing_chain::edgelist::groupBySource()
 {
 #ifdef DEBUG_GROUPBYSOURCE
-  cout << "Grouping by source.  Original edges:\n\t";  
+  cout << "  Grouping by source.  Original edges:\n\t";  
   for (long i=0; i<=last_edge; i++) {
     cout << "(" << edgearray[i].from << ", " << edgearray[i].to;
     cout << ", " << edgearray[i].weight << ") ";
@@ -177,7 +207,7 @@ void MCLib::vanishing_chain::edgelist::groupBySource()
   } // for i
 
 #ifdef DEBUG_GROUPBYSOURCE
-  cout << "Finished grouping edges by source.  Edges:\n\t";  
+  cout << "  Finished grouping edges by source.  Edges:\n\t";  
   for (long i=0; i<=last_edge; i++) {
     cout << "(" << edgearray[i].from << ", " << edgearray[i].to;
     cout << ", " << edgearray[i].weight << ") ";
@@ -221,6 +251,9 @@ MCLib::vanishing_chain::~vanishing_chain()
 
 void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
 {
+  // SUPER DUPER EASY CASE
+  if (0==getNumVanishing()) return;
+
 
   // We use the following class for graph traversal
   // ======================================================================
@@ -250,18 +283,33 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   // ======================================================================
 
   //
+  // Determine row sums (and invert for one_over_diagonals)
+  // for VV, VT graphs
+  //
+  DCASSERT(VV_graph.isByRows());
+  double* VV_one_over_diag = new double[getNumVanishing()];
+  zeroArray(VV_one_over_diag, getNumVanishing());
+  for (long i=0; i<=VT_edges.last_edge; i++) {
+    VV_one_over_diag[VT_edges.edgearray[i].from] += VT_edges.edgearray[i].weight;
+  }
+  VV_graph.addRowSums(VV_one_over_diag);
+#ifdef DEBUG_ELIMINATE
+  showVector("  VT,VV rowsums", VV_one_over_diag, getNumVanishing());
+#endif
+  // Now invert
+  for (long i=0; i<getNumVanishing(); i++) {
+    if (VV_one_over_diag[i]) {
+      VV_one_over_diag[i] = 1.0 / VV_one_over_diag[i];
+    }
+  }
+
+  //
   // Convert the VV_graph into a static matrix, by columns.
   //
   GraphLib::static_graph VV_bycols;
-  if (VV_graph.isByRows()) {
-    GraphLib::static_graph VV_byrows;
-    VV_graph.exportToStatic(VV_byrows, 0);
-    VV_bycols.transposeFrom(VV_byrows);
-  } else {
-    VV_graph.exportToStatic(VV_bycols, 0);
-  }
-
-  // TBD - do we need VV_byrows?
+  GraphLib::static_graph VV_byrows;
+  VV_graph.exportToStatic(VV_byrows, 0);
+  VV_bycols.transposeFrom(VV_byrows);
 
   //
   // Make sure that every vanishing state can eventually reach
@@ -277,7 +325,7 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   VV_bycols.traverse(foo);
   escapable.complement();
 #ifdef DEBUG_ELIMINATE
-  cout << "Vanishing states with no escape path: ";
+  cout << "  Vanishing states with no escape path: ";
   showSet(escapable);
   cout << "\n";
 #endif
@@ -286,6 +334,18 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
     // Throw an error.
     throw error(error::Loop_Of_Vanishing);
   }
+  //
+  // Build matrix for VV
+  //
+  LS_CRS_Matrix_double Mvv;
+  Mvv.start = 0;
+  Mvv.stop = getNumVanishing();
+  Mvv.size = getNumVanishing();
+  Mvv.val = (const double*) VV_bycols.Labels();
+  DCASSERT(VV_bycols.EdgeBytes() == sizeof(double));
+  Mvv.col_ind = VV_bycols.ColumnIndex();
+  Mvv.row_ptr = VV_bycols.RowPointer();
+  Mvv.one_over_diag = VV_one_over_diag;
 
 
   //
@@ -293,22 +353,93 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   //
   TV_edges.groupBySource();
 
-  // TBD - allocate an initial vector of dimension #vanishing
 
-  // loop over different TV_edge sources
-  // for each T source
-  //     fill initial vector from TV_edge destinations
-  //     solve linear system with matrix VV, for "time in v"
-  //     multiply solution vector by VT edges, will
-  //         get a vector of dimension #tangible;
-  //         nonzeroes are T destinations.
-  //         add a TT Edge for this
+  // Initial vector to use for linear system
+  double* Vinit = new double[getNumVanishing()];
+  LS_Vector V0;
+  V0.size = getNumVanishing();
+  V0.index = 0;
+  V0.d_value = Vinit;
+  V0.f_value = 0;
+  zeroArray(Vinit, getNumVanishing());
+  // Solution vector
+  double* n = new double[getNumVanishing()];
+  // New edge vector
+  double* tvvt = new double[getNumTangible()];
+
   //
+  // Get ready for first batch of source states
+  //
+  long last_src = -1;
+  if (TV_edges.last_edge>=0) {
+    last_src = TV_edges.edgearray[0].from;
+  }
+  for (long i=0; ; i++) {
+    long ifrom = (i<=TV_edges.last_edge) 
+      ? TV_edges.edgearray[i].from
+      : getNumTangible(); 
+    if (ifrom != last_src) {
+#ifdef DEBUG_ELIMINATE
+      cout << "  Determining new edges from tangible " << last_src << "\n";
+      showVector("    initial weights", Vinit, getNumVanishing());
+#endif
+      //
+      // That's it for the previous batch of source states.
+      // Normalize and negate Vinit
+      //
+      double scale = vectorTotal(Vinit, getNumVanishing());
+      if (scale) {
+        scaleVector(-1.0 / scale, Vinit, getNumVanishing());
+      } 
+      //
+      // Now, solve linear system   x * Mvv = -Vinit
+      // which will give the expected time spent in each
+      // vanishing state.
+      //
+      zeroArray(n, getNumVanishing());
+      LS_Output out;
+      Solve_Axb(Mvv, n, V0, opt, out);
+#ifdef DEBUG_ELIMINATE
+      showVector("    time per vanishing", n, getNumVanishing());
+#endif
+      //
+      // Multiply n by VT edges.  Result is dimension #tangible,
+      // and are the new edges we need to add.
+      //
+      zeroArray(tvvt, getNumTangible());
+      for (long j=0; j<=VT_edges.last_edge; j++) {
+        tvvt[VT_edges.edgearray[j].to] +=
+          n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
+      } // for j
+#ifdef DEBUG_ELIMINATE
+      showVector("    rates into tangibles", tvvt, getNumTangible());
+#endif
+      //
+      // Add new edges to TT
+      //
+      for (long j=0; j<getNumTangible(); j++) {
+        if (tvvt[j]) {
+          addTTedge(last_src, j, tvvt[j]);
+        }
+      }
 
+      //
+      // Reset for next source state
+      //
+      zeroArray(Vinit, getNumVanishing());
+      last_src = TV_edges.edgearray[i].from;
+    }
+    if (i>TV_edges.last_edge) break;
+    Vinit[ TV_edges.edgearray[i].to ] += TV_edges.edgearray[i].weight;
+  } // for i
 
   //
   // Cleanup
   //
+  delete[] tvvt;
+  delete[] n;
+  delete[] Vinit;
+  delete[] VV_one_over_diag;
   VV_graph.clear();
 }
 
