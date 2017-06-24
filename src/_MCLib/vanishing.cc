@@ -7,6 +7,7 @@
 
 #define DEBUG_GROUPBYSOURCE
 #define DEBUG_ELIMINATE
+#define DEBUG_VANLOOP
 
 //------------------------------------------------------------
 
@@ -270,9 +271,12 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
 
       virtual bool visit(long src, long dest, const void*) 
       {
-        if (!reachable.contains(src)) {
-          reachable.addElement(src);
-          queuePush(src);
+        if (!reachable.contains(dest)) {
+          reachable.addElement(dest);
+          queuePush(dest);
+#ifdef DEBUG_VANLOOP
+          cout << "      vanishing " << dest << " is ok\n";
+#endif
         }
         return false;
       }
@@ -317,14 +321,27 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   // to the explore queue.  Then do a breadth-first reverse search from
   // those states in the VV_graph, and make sure we can reach everything.
   //
+#ifdef DEBUG_VANLOOP
+  cout << "  Checking if vanishing states can all reach tangibles.\n";
+#endif
   intset escapable(getNumVanishing());
   back_reachable foo(escapable);
   for (long i=0; i<=VT_edges.last_edge; i++) {
-    foo.visit(VT_edges.edgearray[i].from, 0, 0);
+    foo.visit(0, VT_edges.edgearray[i].from, 0);
   }
+#ifdef DEBUG_VANLOOP
+  cout << "  Vanishing states with edges to tangible: ";
+  showSet(escapable);
+  cout << "\n";
+#endif
   VV_bycols.traverse(foo);
+#ifdef DEBUG_VANLOOP
+  cout << "  Vanishing states with path to tangible: ";
+  showSet(escapable);
+  cout << "\n";
+#endif
   escapable.complement();
-#ifdef DEBUG_ELIMINATE
+#ifdef DEBUG_VANLOOP
   cout << "  Vanishing states with no escape path: ";
   showSet(escapable);
   cout << "\n";
@@ -364,8 +381,6 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   zeroArray(Vinit, getNumVanishing());
   // Solution vector
   double* n = new double[getNumVanishing()];
-  // New edge vector
-  double* tvvt = new double[getNumTangible()];
 
   //
   // Get ready for first batch of source states
@@ -385,12 +400,9 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
 #endif
       //
       // That's it for the previous batch of source states.
-      // Normalize and negate Vinit
+      // Negate Vinit
       //
-      double scale = vectorTotal(Vinit, getNumVanishing());
-      if (scale) {
-        scaleVector(-1.0 / scale, Vinit, getNumVanishing());
-      } 
+      scaleVector(-1, Vinit, getNumVanishing());
       //
       // Now, solve linear system   x * Mvv = -Vinit
       // which will give the expected time spent in each
@@ -406,22 +418,16 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
       // Multiply n by VT edges.  Result is dimension #tangible,
       // and are the new edges we need to add.
       //
-      zeroArray(tvvt, getNumTangible());
       for (long j=0; j<=VT_edges.last_edge; j++) {
-        tvvt[VT_edges.edgearray[j].to] +=
-          n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
-      } // for j
+        addTTedge(last_src, VT_edges.edgearray[j].to,
+          n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight);
 #ifdef DEBUG_ELIMINATE
-      showVector("    rates into tangibles", tvvt, getNumTangible());
+        cout << "    adding TT edge " << last_src << " : ";
+        cout << VT_edges.edgearray[j].to << " : ";
+        cout << n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
+        cout << "\n";
 #endif
-      //
-      // Add new edges to TT
-      //
-      for (long j=0; j<getNumTangible(); j++) {
-        if (tvvt[j]) {
-          addTTedge(last_src, j, tvvt[j]);
-        }
-      }
+      } // for j
 
       //
       // Reset for next source state
@@ -434,9 +440,12 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   } // for i
 
   //
+  // TBD - update initial vector
+  //
+
+  //
   // Cleanup
   //
-  delete[] tvvt;
   delete[] n;
   delete[] Vinit;
   delete[] VV_one_over_diag;

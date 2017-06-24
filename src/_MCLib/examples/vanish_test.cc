@@ -49,6 +49,235 @@ bool discrete1 = true;
 const long num_tan1 = 2;
 const long num_van1 = 1;
 
+// ==============================> Graph 2 <==============================
+
+/*
+           n
+    t0 -> v0 -> t1
+          |
+          t2
+*/
+
+const edge tt2[] = {
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+const edge tv2[] = {
+  {0, 0, 1},
+  {-1, -1, -1}
+};
+
+const edge vv2[] = {
+  {0, 0, 1},
+  {-1, -1, -1}
+};
+
+const edge vt2[] = {
+  {0, 1, 1},
+  {0, 2, 1},
+  {-1, -1, -1}
+};
+
+const edge answer2[] = {
+  {0, 1, 0.5},
+  {0, 2, 0.5},
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+bool discrete2 = true;
+const long num_tan2 = 3;
+const long num_van2 = 1;
+
+// ==============================> Graph 3 <==============================
+
+/*
+    t0 -> v0 -> v1 -> t1
+*/
+
+const edge tt3[] = {
+  {1, 1, 1},
+  {-1, -1, -1}
+};
+
+const edge tv3[] = {
+  {0, 0, 1},
+  {-1, -1, -1}
+};
+
+const edge vv3[] = {
+  {0, 1, 1},
+  {-1, -1, -1}
+};
+
+const edge vt3[] = {
+  {1, 1, 1},
+  {-1, -1, -1}
+};
+
+const edge answer3[] = {
+  {0, 1, 1},
+  {1, 1, 1},
+  {-1, -1, -1}
+};
+
+bool discrete3 = true;
+const long num_tan3 = 2;
+const long num_van3 = 2;
+
+
+// ==============================> Graph 4 <==============================
+
+/*
+    t0 -> v0 -> v1
+    |     |     |
+    v     v     v
+    t1    v2 -> t2
+  
+*/
+
+const edge tt4[] = {
+  {0, 1, 0.5},
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+const edge tv4[] = {
+  {0, 0, 0.5},
+  {-1, -1, -1}
+};
+
+const edge vv4[] = {
+  {0, 1, 0.5},
+  {0, 2, 0.5},
+  {-1, -1, -1}
+};
+
+const edge vt4[] = {
+  {1, 2, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+const edge answer4[] = {
+  {0, 1, 0.5},
+  {0, 2, 0.5},
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+bool discrete4 = true;
+const long num_tan4 = 3;
+const long num_van4 = 3;
+
+
+// ==============================> Graph 5 <==============================
+
+/*
+    t0 -> v0 -> v1
+    |     ^     |
+    v     |     v
+    t1    v3 <- v2 -> t2
+  
+*/
+
+const edge tt5[] = {
+  {0, 1, 0.5},
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+const edge tv5[] = {
+  {0, 0, 0.5},
+  {-1, -1, -1}
+};
+
+const edge vv5[] = {
+  {0, 1, 1},
+  {1, 2, 1},
+  {2, 3, 0.5},
+  {3, 0, 1},
+  {-1, -1, -1}
+};
+
+const edge vt5[] = {
+  {2, 2, 0.5},
+  {-1, -1, -1}
+};
+
+const edge answer5[] = {
+  {0, 1, 0.5},
+  {0, 2, 0.5},
+  {1, 1, 1},
+  {2, 2, 1},
+  {-1, -1, -1}
+};
+
+bool discrete5 = true;
+const long num_tan5 = 3;
+const long num_van5 = 4;
+
+
+// ==============================> Graph 6 <==============================
+
+/*
+    t0 -> v0 -> v1  -> t2
+    |     ^     |  /
+    v     |     v /
+    t1 -> v3 <- v2 --> t3
+  
+*/
+
+const edge tt6[] = {
+  {0, 1, 0.5},
+  {2, 2, 1},
+  {3, 3, 1},
+  {-1, -1, -1}
+};
+
+const edge tv6[] = {
+  {0, 0, 0.5},
+  {1, 3, 1},
+  {-1, -1, -1}
+};
+
+const edge vv6[] = {
+  {0, 1, 1},
+  {1, 2, 1},
+  {2, 3, 1.0/6.0},
+  {3, 0, 0.5},
+  {3, 3, 0.5},
+  {-1, -1, -1}
+};
+
+const edge vt6[] = {
+  {2, 2, 0.5},
+  {2, 3, 1.0/3.0},
+  {-1, -1, -1}
+};
+
+const edge answer6[] = {
+  {0, 1, 0.5},
+  {0, 2, 0.3},
+  {0, 3, 0.2},
+  {1, 2, 0.6},
+  {1, 3, 0.4},
+  {2, 2, 1},
+  {3, 3, 1},
+  {-1, -1, -1}
+};
+
+bool discrete6 = true;
+const long num_tan6 = 4;
+const long num_van6 = 4;
+
+
 // =======================================================================
 
 class show_graph : public GraphLib::BF_graph_traversal {
@@ -154,6 +383,7 @@ bool checkVanishing(const char* name, bool discrete, long nt, long nv,
   //
   cout << "    Eliminating\n";
   LS_Options opt;
+  opt.method = LS_Gauss_Seidel;
   // set these?
   VC.eliminateVanishing(opt);
   // Build static eliminated graph
@@ -210,6 +440,21 @@ bool checkVanishing(const char* name, bool discrete, long nt, long nv,
 int main()
 {
   if (!checkVanishing("Test 1", discrete1, num_tan1, num_van1, tt1, tv1, vv1, vt1, answer1)) {
+    return 1;
+  }
+  if (!checkVanishing("Test 2", discrete2, num_tan2, num_van2, tt2, tv2, vv2, vt2, answer2)) {
+    return 1;
+  }
+  if (!checkVanishing("Test 3", discrete3, num_tan3, num_van3, tt3, tv3, vv3, vt3, answer3)) {
+    return 1;
+  }
+  if (!checkVanishing("Test 4", discrete4, num_tan4, num_van4, tt4, tv4, vv4, vt4, answer4)) {
+    return 1;
+  }
+  if (!checkVanishing("Test 5", discrete5, num_tan5, num_van5, tt5, tv5, vv5, vt5, answer5)) {
+    return 1;
+  }
+  if (!checkVanishing("Test 6", discrete6, num_tan6, num_van6, tt6, tv6, vv6, vt6, answer6)) {
     return 1;
   }
   return 0;
