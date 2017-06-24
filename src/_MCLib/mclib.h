@@ -769,6 +769,7 @@ namespace MCLib {
             @param  weight  Probability "weight" to give to this state.
       */
       inline void addInitialTangible(long handle, double weight) {
+        CHECK_RANGE(0, handle, getNumTangible());
         Tinit.addItem(handle, weight);
       }
 
@@ -778,6 +779,7 @@ namespace MCLib {
           @param  weight  Probability "weight" to give to this state.
       */
       inline void addInitialVanishing(long handle, double weight) {
+        CHECK_RANGE(0, handle, getNumVanishing());
         Vinit.addItem(handle, weight);
       }
 
@@ -789,6 +791,8 @@ namespace MCLib {
           @param  v     Probability, for discrete; rate, for continuous.
       */
       inline void addTTedge(long from, long to, double v) {
+        CHECK_RANGE(0, from, getNumTangible());
+        CHECK_RANGE(0, to, getNumTangible());
         TT_graph.addEdge(from, to, v);
       }
 
@@ -799,6 +803,8 @@ namespace MCLib {
           @param  v     Rate of the edge.
       */
       inline void addVVedge(long from, long to, double v) {
+        CHECK_RANGE(0, from, getNumVanishing());
+        CHECK_RANGE(0, to, getNumVanishing());
         VV_graph.addEdge(from, to, v);
       }
 
@@ -809,6 +815,8 @@ namespace MCLib {
           @param  v     Probability, for discrete; rate, for continuous.
       */
       inline void addTVedge(long from, long to, double v) {
+        CHECK_RANGE(0, from, getNumTangible());
+        CHECK_RANGE(0, to, getNumVanishing());
         TV_edges.addEdge(from, to, v);
       }
 
@@ -819,6 +827,8 @@ namespace MCLib {
           @param  v     Rate of the edge.
       */
       inline void addVTedge(long from, long to, double v) {
+        CHECK_RANGE(0, from, getNumVanishing());
+        CHECK_RANGE(0, to, getNumTangible());
         VT_edges.addEdge(from, to, v);
       }
 
