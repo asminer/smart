@@ -5,9 +5,9 @@
 
 #include "mclib.h"
 
-#define DEBUG_GROUPBYSOURCE
-#define DEBUG_ELIMINATE
-#define DEBUG_VANLOOP
+// #define DEBUG_GROUPBYSOURCE
+// #define DEBUG_ELIMINATE
+// #define DEBUG_VANLOOP
 
 //------------------------------------------------------------
 
@@ -83,10 +83,14 @@ MCLib::vanishing_chain::pairlist::pairlist()
   last_pair = -1;
 }
 
+// ******************************************************************
+
 MCLib::vanishing_chain::pairlist::~pairlist()
 {
   free(pairarray);
 }
+
+// ******************************************************************
 
 void MCLib::vanishing_chain::pairlist::addItem(long i, double wt)
 {
@@ -133,10 +137,14 @@ MCLib::vanishing_chain::edgelist::edgelist()
   last_edge = -1;
 }
 
+// ******************************************************************
+
 MCLib::vanishing_chain::edgelist::~edgelist()
 {
   free(edgearray);
 }
+
+// ******************************************************************
 
 void MCLib::vanishing_chain::edgelist::addEdge(long from, long to, double wt)
 {
@@ -217,10 +225,14 @@ void MCLib::vanishing_chain::edgelist::groupBySource()
 #endif
 }
 
+// ******************************************************************
+
 void MCLib::vanishing_chain::edgelist::clear()
 {
   last_edge = -1;
 }
+
+// ******************************************************************
 
 void MCLib::vanishing_chain::edgelist::swapedges(long i, long j)
 {
@@ -243,11 +255,15 @@ MCLib::vanishing_chain::vanishing_chain(bool disc, long nt, long nv)
   addVanishings(nv);
 }
 
+// ******************************************************************
+
 MCLib::vanishing_chain::~vanishing_chain()
 {
   // tbd
 }
 
+
+// ******************************************************************
 
 
 void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
@@ -371,14 +387,15 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   TV_edges.groupBySource();
 
 
+  LS_Output out;
   // Initial vector to use for linear system
-  double* Vinit = new double[getNumVanishing()];
+  double* Vinit_vect = new double[getNumVanishing()];
   LS_Vector V0;
   V0.size = getNumVanishing();
   V0.index = 0;
-  V0.d_value = Vinit;
+  V0.d_value = Vinit_vect;
   V0.f_value = 0;
-  zeroArray(Vinit, getNumVanishing());
+  zeroArray(Vinit_vect, getNumVanishing());
   // Solution vector
   double* n = new double[getNumVanishing()];
 
@@ -396,20 +413,19 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
     if (ifrom != last_src) {
 #ifdef DEBUG_ELIMINATE
       cout << "  Determining new edges from tangible " << last_src << "\n";
-      showVector("    initial weights", Vinit, getNumVanishing());
+      showVector("    initial weights", Vinit_vect, getNumVanishing());
 #endif
       //
       // That's it for the previous batch of source states.
-      // Negate Vinit
+      // Negate Vinit_vect
       //
-      scaleVector(-1, Vinit, getNumVanishing());
+      scaleVector(-1, Vinit_vect, getNumVanishing());
       //
-      // Now, solve linear system   x * Mvv = -Vinit
+      // Now, solve linear system   n * Mvv = -Vinit_vect
       // which will give the expected time spent in each
       // vanishing state.
       //
       zeroArray(n, getNumVanishing());
-      LS_Output out;
       Solve_Axb(Mvv, n, V0, opt, out);
 #ifdef DEBUG_ELIMINATE
       showVector("    time per vanishing", n, getNumVanishing());
@@ -419,296 +435,204 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
       // and are the new edges we need to add.
       //
       for (long j=0; j<=VT_edges.last_edge; j++) {
-        addTTedge(last_src, VT_edges.edgearray[j].to,
-          n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight);
+        double new_wt 
+          = n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
+        if (0==new_wt) continue;
 #ifdef DEBUG_ELIMINATE
         cout << "    adding TT edge " << last_src << " : ";
-        cout << VT_edges.edgearray[j].to << " : ";
-        cout << n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
+        cout << VT_edges.edgearray[j].to << " : " << new_wt;
         cout << "\n";
 #endif
+        addTTedge(last_src, VT_edges.edgearray[j].to, new_wt);
       } // for j
 
       //
       // Reset for next source state
       //
-      zeroArray(Vinit, getNumVanishing());
+      zeroArray(Vinit_vect, getNumVanishing());
       last_src = TV_edges.edgearray[i].from;
     }
     if (i>TV_edges.last_edge) break;
-    Vinit[ TV_edges.edgearray[i].to ] += TV_edges.edgearray[i].weight;
+    Vinit_vect[ TV_edges.edgearray[i].to ] += TV_edges.edgearray[i].weight;
   } // for i
 
   //
-  // TBD - update initial vector
+  // Convert vanishing initial vector to tangibles.
   //
+  // Fill Vinit_vect from Vinit
+  for (long j=0; j<=Vinit.last_pair; j++) {
+    Vinit_vect[ Vinit.pairarray[j].index ] += Vinit.pairarray[j].weight;
+  }
+#ifdef DEBUG_ELIMINATE
+  cout << "  Rebuilding initial probabilities\n";
+  showVector("    initial vanishing", Vinit_vect, getNumVanishing());
+#endif
+  scaleVector(-1, Vinit_vect, getNumVanishing());
+  //
+  // Solve n * Mvv = -Vinit_vect
+  //
+  Solve_Axb(Mvv, n, V0, opt, out);
+#ifdef DEBUG_ELIMINATE
+  showVector("    time per vanishing", n, getNumVanishing());
+#endif
+  //
+  // Multiply n by VT edges.  Result is dimension #tangible,
+  // and are the new initial probabilities to add.
+  //
+  for (long j=0; j<=VT_edges.last_edge; j++) {
+    double new_wt 
+      = n[VT_edges.edgearray[j].from] * VT_edges.edgearray[j].weight;
+    if (0==new_wt) continue;
+#ifdef DEBUG_ELIMINATE
+    cout << "    adding initial tangible ";
+    cout << VT_edges.edgearray[j].to << " : " << new_wt << "\n";
+#endif
+    addInitialTangible(VT_edges.edgearray[j].to, new_wt);
+  } // for j
 
   //
   // Cleanup
   //
   delete[] n;
-  delete[] Vinit;
+  delete[] Vinit_vect;
   delete[] VV_one_over_diag;
+
+  //
+  // Clear out old stuff
+  //
   VV_graph.clear();
+  TV_edges.clear();
+  VT_edges.clear();
+  Vinit.clear();
 }
-
-// ==========================================================================================================================================================================
-// OLD STUFF BELOW
-// ==========================================================================================================================================================================
-
-#if 0
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "mclib.h"
-#include "hyper.h"
-#include "mc_absorb.h"
-#include "mc_general.h"
-
-// #define DEBUG_VANISH
-
-// ******************************************************************
-// *                                                                *
-// *                        my_vanish  class                        *
-// *                                                                *
-// ******************************************************************
-
-class my_vanish : public Old_MCLib::vanishing_chain {
-  hypersparse_matrix* initial;
-  mc_general* TT_proc;
-  mc_absorb* V_proc;
-  hypersparse_matrix* TV_rates;
-
-  // stuff for eliminating vanishings
-  Old_MCLib::Markov_chain::finish_options fopts;
-  Old_MCLib::Markov_chain::renumbering mcrenumb;
-  double* vtime;
-  long vt_alloc;
-public:
-  my_vanish(bool disc, long nt, long nv);
-  virtual ~my_vanish();
-
-  virtual long addTangible();
-  virtual long addVanishing();
-
-  virtual bool addInitialTangible(long handle, double weight);
-  virtual bool addInitialVanishing(long handle, double weight);
-
-  virtual bool addTTedge(long from, long to, double v);
-  virtual bool addTVedge(long from, long to, double v);
-  virtual bool addVTedge(long from, long to, double v);
-  virtual bool addVVedge(long from, long to, double v);
-
-  virtual void eliminateVanishing(const LS_Options &opt);
-
-  virtual void getInitialVector(LS_Vector &init);
-  virtual Old_MCLib::Markov_chain* grabTTandClear();
-};
-
 
 
 // ******************************************************************
-// *                           Front  end                           *
-// ******************************************************************
 
-Old_MCLib::vanishing_chain* 
-Old_MCLib::startVanishingChain(bool disc, long nt, long nv)
+
+void MCLib::vanishing_chain::buildInitialVector(bool floats, LS_Vector &init) const
 {
-  return new my_vanish(disc, nt, nv);
-}
-
-// ******************************************************************
-// *                       my_vanish  methods                       *
-// ******************************************************************
-
-my_vanish::my_vanish(bool disc, long nt, long nv)
- : vanishing_chain(disc, nt, nv)
-{
-  initial = new hypersparse_matrix;
-  TT_proc = new mc_general(disc, nt, 0);
-  V_proc = new mc_absorb(false, nv, nt);
-  TV_rates = new hypersparse_matrix;
-  fopts.Verify_Absorbing = true;
-  fopts.Store_By_Rows = false;
-  fopts.Will_Clear = true;
-  vtime = 0;
-  vt_alloc = 0;
-}
-
-my_vanish::~my_vanish()
-{
-  delete initial;
-  delete TT_proc;
-  delete V_proc;
-  delete TV_rates;
-  free(vtime);
-}
-
-long my_vanish::addTangible()
-{
-  long handle = TT_proc->addState();
-  long h2 = V_proc->addAbsorbing();
-  if (-handle-1 != h2) throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
-  num_tangible++;
-  return handle;
-}
-
-long my_vanish::addVanishing()
-{
-  long handle = V_proc->addState();
-  num_vanishing++;
-  return handle;
-}
-
-bool my_vanish::addInitialTangible(long handle, double weight)
-{
-  return initial->AddElement(0, handle, weight);
-}
-
-bool my_vanish::addInitialVanishing(long handle, double weight)
-{
-  return TV_rates->AddElement(-1, handle, weight);
-}
-
-bool my_vanish::addTTedge(long from, long to, double v)
-{
-  return TT_proc->addEdge(from, to, v);
-}
-
-bool my_vanish::addTVedge(long from, long to, double v)
-{
-  return TV_rates->AddElement(from, to, v);
-}
-
-bool my_vanish::addVTedge(long from, long to, double v)
-{
-  return V_proc->addEdge(from, -to-1, v);
-}
-
-bool my_vanish::addVVedge(long from, long to, double v)
-{
-  return V_proc->addEdge(from, to, v);
-}
-
-
-void my_vanish::eliminateVanishing(const LS_Options &opt)
-{
-  // 1. finalize V_proc (into "by cols")
-  try {
-    V_proc->finish(fopts, mcrenumb);
-  }
-  // 2. if not absorbing then throw "absorbing_loop" error
-  catch (Old_MCLib::error e) {
-    if (e.getCode() == Old_MCLib::error::Wrong_Type)
-      throw Old_MCLib::error(Old_MCLib::error::Loop_Of_Vanishing);
-    else
-      throw e;
-  }
-
-#ifdef DEBUG_VANISH
-  printf("Finished vanishing process\n");
-  if (Markov_chain::Success == mcerr) {
-    LS_Matrix qtt;
-    V_proc->exportQtt(qtt);
-    V_proc->setClass(qtt, 0);
-    printf("\tvv matrix:\n"); 
-    printf("\tstart: %ld\t", qtt.start);
-    printf("\tstop: %ld\n", qtt.stop);
-    printf("\tcolptr: [");
-    for (long i=0; i<=qtt.stop; i++) {
-      if (i) printf(", ");
-      printf("%ld", qtt.rowptr[i]);
-    }
-    printf("]\n");
-    printf("\trowindex: [");
-    for (long i=0; i<qtt.rowptr[qtt.stop]; i++) {
-      if (i) printf(", ");
-      printf("%ld", qtt.colindex[i]);
-    }
-    printf("]\n");
-    printf("\tvalue: [");
-    for (long i=0; i<qtt.rowptr[qtt.stop]; i++) {
-      if (i) printf(", ");
-      printf("%lf", qtt.f_value[i]);
-    }
-    printf("]\n");
-    printf("\t1/diag: [");
-    for (long i=0; i<qtt.stop; i++) {
-      if (i) printf(", ");
-      printf("%lf", qtt.f_one_over_diag[i]);
-    }
-    printf("]\n");
-  }
+#ifdef DEBUG_ELIMINATE
+  cout << "building initial vector\n";
 #endif
 
-  // Enlarge solution vector, if necessary
-  if (vt_alloc < num_vanishing) {
-    vt_alloc = num_vanishing;
-    vtime = (double*) realloc(vtime, vt_alloc * sizeof(double));
-    if (0==vtime) throw Old_MCLib::error(Old_MCLib::error::Out_Of_Memory);
+  //
+  // Overwrite any existing vector
+  //
+  init.size = 0;
+  init.index = 0;
+  init.d_value = 0;
+  init.f_value = 0;
+
+  //
+  // First, build a full vector for the initial distribution
+  //
+  double* initial = new double[getNumTangible()];
+  zeroArray(initial, getNumTangible());
+  for (long j=0; j<=Tinit.last_pair; j++) {
+    initial[ Tinit.pairarray[j].index ] += Tinit.pairarray[j].weight;
+  } // for j
+  //
+  // Normalize the initial distribution
+  //
+  double total = vectorTotal(initial, getNumTangible());
+  if (total) scaleVector(1.0/total, initial, getNumTangible());
+
+#ifdef DEBUG_ELIMINATE
+  showVector("  initial distribution", initial, getNumTangible());
+#endif
+
+  //
+  // Now, determine if we are better off compacting the initial vector
+  // into a sparse or truncated full format.
+  //
+  long last_nz = -1;
+  long nnz = 0;
+  for (long i=0; i<getNumTangible(); i++) {
+    if (0==initial[i]) continue;
+    nnz++;
+    last_nz = i;
+  }
+  last_nz++;
+
+  if (0==nnz) {
+    // Leave init zeroed out
+    delete[] initial;
+    return;
   }
 
-  // 3. for each non-empty row of rv do
-  TV_rates->ConvertToStatic(false, false);
-  for (long rh=0; rh<TV_rates->NumRows(); rh++) {
-    // 3.1. build initial probability = scaled row of rv
-    LS_Vector inittmp;
-    long row;
-    TV_rates->ExportRow(rh, row, &inittmp);
-#ifdef DEBUG_VANISH
-    if (row < 0) printf("Examining initial distribution: [");
-    else         printf("Examining from tangible %ld: [", row);
-    for (long i=0; i<inittmp.size; i++) {
-      if (i) printf(", ");
-      if (inittmp.index) printf("%ld:", inittmp.index[i]);
-      if (inittmp.d_value) printf("%lf", inittmp.d_value[i]);
-      else                 printf("%f", inittmp.f_value[i]);
-    }
-    printf("]\n");
+#ifdef DEBUG_ELIMINATE
+  cout << "  nnz: " << nnz << "\n";
+  cout << "  last nonzero: " << last_nz << "\n";
 #endif
 
-    // 3.2. compute time per vanishing of v_proc using initial prob.
-    LS_Output out;
-    V_proc->computeTTA(inittmp, vtime, opt, out);
-    if (out.status != LS_Success) {
-      throw Old_MCLib::error(Old_MCLib::error::Miscellaneous);
-    }
+  //
+  // Get storage space for both schemes
+  //
+  const size_t real_bytes = floats ? sizeof(float) : sizeof(double);
+  const size_t index_bytes = sizeof(long);
+  const size_t trunc_bytes = last_nz * real_bytes;
+  const size_t sparse_bytes = nnz * (real_bytes + index_bytes);
 
-#ifdef DEBUG_VANISH
-    printf("Got vanishing rate*times: [%lf", vtime[0]);
-    for (long i=1; i<num_vanishing; i++) printf(", %lf", vtime[i]);
-    printf("]\n");
+  if (sparse_bytes < trunc_bytes) {
+    //
+    // Convert initial to sparse
+    //
+#ifdef DEBUG_ELIMINATE
+    cout << "  using sparse " << (floats ? "float" : "double") << " vector\n";
 #endif
-
-    // 3.3. multiply to obtain t->v->t rates...
-    if (row < 0) {
-      // ... and add "virtual edges" to initial distribution
-      V_proc->AbsorbingRatesToRow(vtime, row, initial);
+    init.size = nnz;
+    long* index = new long[nnz];
+    init.index = index;
+    long z = 0;
+    if (floats) {
+      float* fval = new float[nnz]; 
+      init.f_value = fval;
+      for (long i=0; i<last_nz; i++) {
+        if (initial[i]) {
+          index[z] = i;
+          fval[z] = initial[i];
+          z++;
+        }
+      }
     } else {
-      // ... and add edges to tt_proc
-      V_proc->AbsorbingRatesToMCRow(vtime, row, TT_proc);
+      double* dval = new double[nnz];
+      init.d_value = dval;
+      for (long i=0; i<last_nz; i++) {
+        if (initial[i]) {
+          index[z] = i;
+          dval[z] = initial[i];
+          z++;
+        }
+      }
     }
-  } // for rh
-
-  // 4. clear V_proc, TV_rates, others
-  V_proc->clearKeepAbsorbing(); 
-  TV_rates->Clear();
-  num_vanishing = 0;
-}
-
-
-void my_vanish::getInitialVector(LS_Vector &init)
-{
-  if (!initial->IsStatic()) initial->ConvertToStatic(true, false);
-  initial->ExportRowCopy(0, init);
-}
-
-Old_MCLib::Markov_chain* my_vanish::grabTTandClear()
-{
-  Old_MCLib::Markov_chain* mc = TT_proc;
-  TT_proc = 0;
-  V_proc->clear();
-  return mc;
-}
-
+  } else {
+    //
+    // Convert initial to truncated full
+    //
+#ifdef DEBUG_ELIMINATE
+    cout << "  using truncated " << (floats ? "float" : "double") << " vector\n";
 #endif
+    init.size = last_nz;
+    if (floats) {
+      float* fval = new float[last_nz];
+      init.f_value = fval;
+      for (long i=0; i<last_nz; i++) {
+        fval[i] = initial[i];
+      }
+    } else {
+      double* dval = new double[last_nz];
+      init.d_value = dval;
+      for (long i=0; i<last_nz; i++) {
+        dval[i] = initial[i];
+      }
+    }
+  }
+
+
+  //
+  // Cleanup
+  //
+  delete[] initial;
+}
+
