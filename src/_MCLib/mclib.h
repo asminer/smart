@@ -844,13 +844,19 @@ namespace MCLib {
       void eliminateVanishing(const LS_Options &opt);
 
 
-      /** Obtain the initial vector, over tangible states only.
+      /** 
+          Build the initial vector, over tangible states only.
+          Must be called after all vanishing states have been eliminated.
 
-          @param  init  On output, contains the (normalized)
-                        initial probability vector as specified
-                        via addInitialTangible() and addInitialVanishing().
+          @param  floats  Should we use float vectors?  Ohterwise it will
+                          be doubles.
+
+          @param  init    Input: ignored and colbbered (not freed).
+                          On output, contains the (normalized)
+                          initial probability vector as specified
+                          via addInitialTangible() and addInitialVanishing().
       */
-      // void buildInitialVector(LS_Vector &init);
+      void buildInitialVector(bool floats, LS_Vector &init) const;
 
 
       /** 
