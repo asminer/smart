@@ -304,6 +304,152 @@ const double vinit6[] = { 2, 0, 0, 0 };
 const double init6[] =  { 0.25, 0, 0.6/2, 0.25 + 0.4/2 };
 
 
+// ==============================> Graph 7 <==============================
+
+/*
+            
+    t0 -> v0 -> t1
+     \    |
+      \   v
+       -> t2
+*/
+
+const edge tt7[] = {
+  {0, 2, 1.5},
+  {-1, -1, -1}
+};
+
+const edge tv7[] = {
+  {0, 0, 3},
+  {-1, -1, -1}
+};
+
+const edge vv7[] = {
+  {-1, -1, -1}
+};
+
+const edge vt7[] = {
+  {0, 1, 2.0},
+  {0, 2, 1.0},
+  {-1, -1, -1}
+};
+
+const edge answer7[] = {
+  {0, 1, 2.0},
+  {0, 2, 2.5},
+  {-1, -1, -1}
+};
+
+bool discrete7 = false;
+const long num_tan7 = 3;
+const long num_van7 = 1;
+
+const double tinit7[] = { 1, 0, 0};
+const double vinit7[] = { 0 };
+const double init7[] =  { 1, 0, 0};
+
+// ==============================> Graph 8 <==============================
+
+const edge tt8[] = {
+  {-1, -1, -1}
+};
+
+const edge tv8[] = {
+  {0, 3, 12.0},
+  {-1, -1, -1}
+};
+
+const edge vv8[] = {
+  {0, 1, 2.0},  {0, 2, 2.0},
+  {1, 0, 1.0},
+  {2, 0, 3.0},
+  {3, 4, 2.0},
+  {4, 5, 1.0},
+  {5, 4, 1.0},  {5, 6, 1.0},
+  {6, 5, 1.0},  {6, 7, 1.0},
+  {7, 8, 5.0},
+  {8, 8, 10.0},
+  {-1, -1, -1}
+};
+
+const edge vt8[] = {
+  {1, 0, 1.0},
+  {2, 1, 3.0},
+  {3, 1, 1.0},
+  {7, 2, 3.0},
+  {8, 3, 1.0},
+  {-1, -1, -1}
+};
+
+const edge answer8[] = {
+  {0, 1, 4.0},
+  {0, 2, 3.0},
+  {0, 3, 5.0},
+  {-1, -1, -1}
+};
+
+bool discrete8 = false;
+const long num_tan8 = 4;
+const long num_van8 = 9;
+
+const double tinit8[] = { 0, 0, 0, 0};
+const double vinit8[] = { 1, 0, 0, 0, 0, 0, 0, 0, 0}; 
+const double init8[] =  { 0.5, 0.5, 0, 0};
+
+// ==============================> Graph 9 <==============================
+
+const edge tt9[] = {
+  {-1, -1, -1}
+};
+
+const edge tv9[] = {
+  {0, 0, 4.2},
+  {-1, -1, -1}
+};
+
+const edge vv9[] = {
+  {-1, -1, -1}
+};
+
+const edge vt9[] = {
+  {-1, -1, -1}
+};
+
+bool discrete9 = false;
+const long num_tan9 = 1;
+const long num_van9 = 1;
+
+// ==============================> Graph 10 <=============================
+
+const edge tt10[] = {
+  {0, 0, 0.5},
+  {1, 1, 1.0},
+  {-1, -1, -1}
+};
+
+const edge tv10[] = {
+  {0, 0, 0.5},
+  {-1, -1, -1}
+};
+
+const edge vv10[] = {
+  {0, 1, 1},
+  {1, 0, 0.25}, {1, 2, 0.5},
+  {2, 1, 1}, {2, 3, 2},
+  {3, 4, 1},
+  {4, 3, 1},
+  {-1, -1, -1}
+};
+
+const edge vt10[] = {
+  {1, 1, 0.25},
+  {-1, -1, -1}
+};
+
+bool discrete10 = true;
+const long num_tan10 = 2;
+const long num_van10 = 5;
+
 // =======================================================================
 
 class show_graph : public GraphLib::BF_graph_traversal {
@@ -499,6 +645,7 @@ bool checkVanishing(const char* name, bool discrete, long nt, long nv,
   cout << "    Eliminating\n";
   LS_Options opt;
   opt.method = LS_Gauss_Seidel;
+  opt.precision = 1e-8;
   // set these?
   VC.eliminateVanishing(opt);
   // Build static eliminated graph
@@ -582,8 +729,65 @@ bool checkVanishing(const char* name, bool discrete, long nt, long nv,
 
 // =======================================================================
 
+bool detectVanLoop(const char* name, bool discrete, long nt, long nv, 
+  const edge tt[], const edge tv[], const edge vv[], const edge vt[])
+{
+  cout << name << "\n";
+
+  //
+  // Build the vanishing chain
+  //
+  cout << "    Building\n";
+  vanishing_chain VC(discrete, nt, nv);
+
+  //
+  // Add edges
+  //
+
+  for (long i=0; tt[i].from >= 0; i++) {
+    VC.addTTedge(tt[i].from, tt[i].to, tt[i].rate);
+  }
+  for (long i=0; tv[i].from >= 0; i++) {
+    VC.addTVedge(tv[i].from, tv[i].to, tv[i].rate);
+  }
+  for (long i=0; vv[i].from >= 0; i++) {
+    VC.addVVedge(vv[i].from, vv[i].to, vv[i].rate);
+  }
+  for (long i=0; vt[i].from >= 0; i++) {
+    VC.addVTedge(vt[i].from, vt[i].to, vt[i].rate);
+  }
+
+  //
+  // Eliminate the vanishing states
+  //
+  cout << "    Eliminating\n";
+  LS_Options opt;
+
+  try {
+    VC.eliminateVanishing(opt);
+    cout << "    Failed to detect loop\n";
+    return false;
+  }
+  catch (MCLib::error e) {
+    if (MCLib::error::Loop_Of_Vanishing == e.getCode()) {
+      cout << "    Detected loop\n";
+      cout << "OK!\n";
+      return true;
+    }
+
+    cout << "Caught MCLib error " << e.getString() << "\n";
+    return false;
+  }
+
+}
+
+
+// =======================================================================
+
 int main()
 {
+  cout.precision(8);
+
   //
   // Discrete tests
   //
@@ -617,6 +821,33 @@ int main()
   {
     return 1;
   }
+
+  //
+  // Continuous tests
+  //
+  if (!checkVanishing("Test 7", discrete7, num_tan7, num_van7, tt7, tv7, vv7, 
+      vt7, answer7, tinit7, vinit7, init7)) 
+  {
+    return 1;
+  }
+  if (!checkVanishing("Test 8", discrete8, num_tan8, num_van8, tt8, tv8, vv8, 
+      vt8, answer8, tinit8, vinit8, init8)) 
+  {
+    return 1;
+  }
+
+  //
+  // Graphs that cannot escape (some) vanishing states
+  //
+  if (!detectVanLoop("Test 9", discrete9, num_tan9, num_van9, tt9, tv9, vv9, vt9))
+  {
+    return 1;
+  }
+  if (!detectVanLoop("Test 10", discrete10, num_tan10, num_van10, tt10, tv10, vv10, vt10))
+  {
+    return 1;
+  }
+
   return 0;
 }
 

@@ -45,6 +45,13 @@ void showVector(const char* name, double* v, long size)
   cout << "]\n";
 }
 
+void showLSout(const LS_Output &out)
+{
+  cout << "\t#iters: " << out.num_iters << "\n";
+  cout << "\trelax : " << out.relaxation << "\n";
+  cout << "\tprecis: " << out.precision << "\n";
+}
+
 #endif
 
 template <class TYPE>
@@ -428,6 +435,7 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
       zeroArray(n, getNumVanishing());
       Solve_Axb(Mvv, n, V0, opt, out);
 #ifdef DEBUG_ELIMINATE
+      showLSout(out);
       showVector("    time per vanishing", n, getNumVanishing());
 #endif
       //
@@ -471,8 +479,10 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
   //
   // Solve n * Mvv = -Vinit_vect
   //
+  zeroArray(n, getNumVanishing());
   Solve_Axb(Mvv, n, V0, opt, out);
 #ifdef DEBUG_ELIMINATE
+  showLSout(out);
   showVector("    time per vanishing", n, getNumVanishing());
 #endif
   //
