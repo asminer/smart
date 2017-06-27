@@ -11,6 +11,8 @@
 #include "../_LSLib/lslib.h"    // Linear Solver Library
 #include "../_RngLib/rng.h"     // RNG library
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // #define DEBUG_PERIOD
 // #define DEBUG_UNIF
 // #define DEBUG_SSDETECT
@@ -1882,3 +1884,5 @@ void mc_base::backStep(const LS_Matrix &Qtt, double q, double* p,
 }
 
 #endif
+
+#endif // #ifndef DISABLE_OLD_INTERFACE

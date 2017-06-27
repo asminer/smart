@@ -6,6 +6,8 @@
 #include "mc_irred.h"
 #include "../_IntSets/intset.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // ******************************************************************
 // *                           Front  end                           *
 // ******************************************************************
@@ -174,3 +176,4 @@ void mc_irred::clear()
   our_type = Unknown;
 }
 
+#endif // #ifndef DISABLE_OLD_INTERFACE

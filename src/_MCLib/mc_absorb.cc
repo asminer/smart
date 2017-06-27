@@ -6,6 +6,8 @@
 #include "mc_absorb.h"
 #include "../_IntSets/intset.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // #define DEBUG_VANISH
 
 // ******************************************************************
@@ -282,3 +284,4 @@ void mc_absorb::checkAbsorbing(const finish_options &o)
   throw Old_MCLib::error(Old_MCLib::error::Wrong_Type);
 }
 
+#endif // #ifndef DISABLE_OLD_INTERFACE

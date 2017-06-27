@@ -1363,6 +1363,11 @@ void MCLib::Markov_chain::computeTTA(const LS_Vector &p0, double* p,
 void MCLib::Markov_chain::computeFirstRecurrentProbs(const LS_Vector &p0, 
     double* np, const LS_Options &opt, LS_Output &out) const
 {
+  out.status = LS_Success;
+  out.num_iters = 0;
+  out.relaxation = 0;
+  out.precision = 0;
+
   for (long i=0; i<getNumStates(); i++) {
     np[i] = 0;
   }

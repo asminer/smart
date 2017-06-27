@@ -169,7 +169,29 @@ namespace GraphLib {
       node_renumberer();
       virtual ~node_renumberer();
 
+      /// Give the new node number for node s.
       virtual long new_number(long s) const = 0;
+
+      /// Does the renumbering scheme change the number ofat least one node?
+      virtual bool changes_something() const = 0;
+  };
+
+  // ======================================================================
+  // |                                                                    |
+  // |                     nochange_renumberer  class                     |
+  // |                                                                    |
+  // ======================================================================
+
+  /**
+      Node renumbering when we don't need to renumber.
+  */
+  class nochange_renumberer : public node_renumberer {
+    public:
+      nochange_renumberer();
+      virtual ~nochange_renumberer();
+
+      virtual long new_number(long s) const;
+      virtual bool changes_something() const;
   };
 
   // ======================================================================
@@ -184,7 +206,7 @@ namespace GraphLib {
   */
   class array_renumberer : public node_renumberer {
     public:
-      array_renumberer(long* nn);
+      array_renumberer(long* nn, long length);
 
       // Will destroy the array using delete[].
       virtual ~array_renumberer();
@@ -192,8 +214,11 @@ namespace GraphLib {
       // Will simply return newnumber[s].
       virtual long new_number(long s) const;
 
+      virtual bool changes_something() const;
     protected:
       long* newnumber;
+      long length;
+      bool not_identity;
   };
 
   // ======================================================================

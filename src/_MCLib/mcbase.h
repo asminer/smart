@@ -3,6 +3,9 @@
 #define MCBASE_H
 
 #include "mclib.h"
+
+#ifndef DISABLE_OLD_INTERFACE
+
 #include "../_LSLib/lslib.h"
 #include "../_GraphLib/graphlib.h"
 #include <stdlib.h>
@@ -366,5 +369,7 @@ private:
 #endif
 
 };
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 
 #endif

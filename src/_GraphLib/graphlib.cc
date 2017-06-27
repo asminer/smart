@@ -136,13 +136,46 @@ GraphLib::node_renumberer::~node_renumberer()
 
 // ******************************************************************
 // *                                                                *
+// *                  nochange_renumberer  methods                  *
+// *                                                                *
+// ******************************************************************
+
+GraphLib::nochange_renumberer::nochange_renumberer()
+{
+}
+
+GraphLib::nochange_renumberer::~nochange_renumberer()
+{
+}
+
+long GraphLib::nochange_renumberer::new_number(long s) const
+{
+  return s;
+}
+
+bool GraphLib::nochange_renumberer::changes_something() const
+{
+  return false;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                    array_renumberer methods                    *
 // *                                                                *
 // ******************************************************************
 
-GraphLib::array_renumberer::array_renumberer(long* nn)
+GraphLib::array_renumberer::array_renumberer(long* nn, long L)
 {
   newnumber = nn;
+  length = L;
+
+  not_identity = false;
+  for (long i=0; i<L; i++) {
+    if (nn[i] != i) {
+      not_identity = true;
+      break;
+    }
+  }
 }
 
 GraphLib::array_renumberer::~array_renumberer()
@@ -152,7 +185,13 @@ GraphLib::array_renumberer::~array_renumberer()
 
 long GraphLib::array_renumberer::new_number(long s) const
 {
+  CHECK_RANGE(0, s, length);
   return newnumber[s];
+}
+
+bool GraphLib::array_renumberer::changes_something() const
+{
+  return not_identity;
 }
 
 // ******************************************************************
@@ -328,7 +367,11 @@ GraphLib::general_classifier::buildRenumbererAndStatic(static_classifier &C) con
   // Package everything
   //
   replace_classifier(C, getNumClasses(), starts);
-  return new array_renumberer(renumber);
+  node_renumberer* R = new array_renumberer(renumber, getNumNodes());
+  if (R->changes_something()) return R;
+  // Clever bit here!
+  delete R;
+  return new nochange_renumberer;
 }
 
 // ******************************************************************
@@ -661,6 +704,14 @@ GraphLib::dynamic_graph::removeEdges(BF_graph_traversal &t)
 void
 GraphLib::dynamic_graph::renumberNodes(const node_renumberer &r)
 {
+  //
+  // Important special case
+  //
+  if (!r.changes_something()) {
+    // we don't actually renumber anything
+    return;
+  }
+
   //
   // We need another row_pointer array; everything else is "in place"
   //

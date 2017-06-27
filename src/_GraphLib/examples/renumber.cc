@@ -223,7 +223,7 @@ int main()
     //
     // Use the inverse renumbering on the second graph
     //
-    array_renumberer ar(back);  //ar now owns back
+    array_renumberer ar(back, sizes[i]);  //ar now owns back
     dsec.renumberNodes(ar);
     static_graph second;
     dsec.exportToStatic(second, 0);

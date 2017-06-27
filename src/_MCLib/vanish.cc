@@ -7,6 +7,8 @@
 #include "mc_absorb.h"
 #include "mc_general.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // #define DEBUG_VANISH
 
 // ******************************************************************
@@ -253,3 +255,4 @@ Old_MCLib::Markov_chain* my_vanish::grabTTandClear()
   return mc;
 }
 
+#endif // #ifndef DISABLE_OLD_INTERFACE
