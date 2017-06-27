@@ -1,6 +1,8 @@
 
 #include "mclib.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 #include <stdio.h> 
 #include <string.h>
 
@@ -139,4 +141,6 @@ const char* Old_MCLib::Version()
   // TBD - revision number?
 }
 
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 

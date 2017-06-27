@@ -2,6 +2,10 @@
 #ifndef HYPER_H
 #define HYPER_H
 
+#include "mclib.h"
+
+#ifndef DISABLE_OLD_INTERFACE
+
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
 #include "../_IntSets/intset.h"
@@ -326,5 +330,7 @@ protected:
   };
 
 };
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 
 #endif

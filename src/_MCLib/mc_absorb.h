@@ -3,6 +3,9 @@
 #define MC_ABSORB
 
 #include "mcbase.h"
+
+#ifndef DISABLE_OLD_INTERFACE
+
 #include "../_GraphLib/graphlib.h"
 
 // ******************************************************************
@@ -47,5 +50,7 @@ public:
 protected:
   void checkAbsorbing(const finish_options &o);
 };
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 
 #endif

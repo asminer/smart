@@ -6,6 +6,8 @@
 
 #include "mclib.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // ******************************************************************
 /*
   The following algorithm to compute the Poisson PDF is
@@ -107,3 +109,5 @@ double* computePoissonPDF(double lambda, double epsilon, int &L, int &R)
 
 
 } // Namespace
+
+#endif // #ifndef DISABLE_OLD_INTERFACE

@@ -1,6 +1,4 @@
 
-# $Id$
-
 # Test of sccs
 
 DTMC
@@ -23,7 +21,7 @@ ARCS 12
   6 : 8 : 1
 END
 
-ASSERT CLASSES 2
+ASSERT CLASSES 4
 ASSERT TRANSIENT
   0
   1

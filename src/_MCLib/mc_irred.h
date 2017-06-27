@@ -5,6 +5,8 @@
 #include "mcbase.h"
 #include "../_GraphLib/graphlib.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // ******************************************************************
 // *                                                                *
 // *                         mc_irred class                         *
@@ -22,5 +24,7 @@ public:
   virtual void finish(const finish_options &o, renumbering &r);
   virtual void clear();
 };
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 
 #endif

@@ -5,6 +5,8 @@
 #include "hyper.h"
 #include "mc_general.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // #include "sccs.h"
 
 // #define DEBUG_CLASSIFY
@@ -334,3 +336,4 @@ void mc_general::clear()
   our_type = Unknown;
 }
 
+#endif // #ifndef DISABLE_OLD_INTERFACE

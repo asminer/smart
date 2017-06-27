@@ -4,6 +4,8 @@
 
 #include "mcbase.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // ******************************************************************
 // *                                                                *
 // *                        mc_general class                        *
@@ -28,5 +30,7 @@ protected:
     return true;
   }
 };
+
+#endif // #ifndef DISABLE_OLD_INTERFACE
 
 #endif

@@ -8,6 +8,8 @@
 #ifndef MCLIB_H
 #define MCLIB_H
 
+#define DISABLE_OLD_INTERFACE
+
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
 #include "../_RngLib/rng.h"
@@ -938,6 +940,8 @@ namespace MCLib {
 // ==========================================================================================================================================================================
 // ==========================================================================================================================================================================
 // ==========================================================================================================================================================================
+
+#ifndef DISABLE_OLD_INTERFACE
 
 #include "../_GraphLib/graphlib.h"  // we'll see how this goes
 
@@ -1967,4 +1971,6 @@ namespace Old_MCLib {
 
 }; // namespace Old_MCLib
 
-#endif
+#endif // #ifndef DISABLE_OLD_INTERFACE
+
+#endif // include guard

@@ -5,6 +5,8 @@
 
 #include "hyper.h"
 
+#ifndef DISABLE_OLD_INTERFACE
+
 // for errors
 #include "mclib.h"
 
@@ -543,3 +545,4 @@ void hypersparse_matrix::CircularToTerminated()
   }
 }
 
+#endif // #ifndef DISABLE_OLD_INTERFACE
