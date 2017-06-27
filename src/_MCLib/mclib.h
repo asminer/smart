@@ -8,7 +8,7 @@
 #ifndef MCLIB_H
 #define MCLIB_H
 
-#define DISABLE_OLD_INTERFACE
+// #define DISABLE_OLD_INTERFACE
 
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
