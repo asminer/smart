@@ -15,6 +15,8 @@
 // *                                                                *
 // ******************************************************************
 
+#ifdef USE_OLD_TRAVERSE_HELPER
+
 ectl_reachgraph::traverse_helper::traverse_helper(long NS)
 {
   size = NS;
@@ -128,6 +130,114 @@ void ectl_reachgraph::traverse_helper::dump(FILE* out) const
 
 // ******************************************************************
 // *                                                                *
+// *             ectl_reachgraph::CTL_traversal methods             *
+// *                                                                *
+// ******************************************************************
+
+#else // #ifdef USE_OLD_TRAVERSE_HELPER
+
+ectl_reachgraph::CTL_traversal::CTL_traversal(long NS)
+ : BF_with_queue(NS)
+{
+  size = NS;
+  obligations = new long[NS];
+}
+
+ectl_reachgraph::CTL_traversal::~CTL_traversal()
+{
+  delete[] obligations;
+}
+
+bool ectl_reachgraph::CTL_traversal::visit(long, long dest, const void*)
+{
+  if (num_obligations(dest) <= 0) return false;
+  remove_obligation(dest);
+  if (one_step) return false;
+  if (0==num_obligations(dest)) {
+    queuePush(dest);
+  }
+  return false;
+}
+
+void ectl_reachgraph::CTL_traversal::init_queue_from(const intset &p)
+{
+  DCASSERT(obligations);
+  queueReset();
+  for (long i = p.getSmallestAfter(-1); i>=0; i = p.getSmallestAfter(i)) {
+    obligations[i] = 0;
+    queuePush(i);
+  }
+}
+
+void ectl_reachgraph::CTL_traversal::init_queue_complement(const intset &p)
+{
+  DCASSERT(obligations);
+  queueReset();
+  long next_in_rset = p.getSmallestAfter(-1);
+  for (long i=0; i<size; i++) {
+    if (i == next_in_rset) {
+      next_in_rset = p.getSmallestAfter(next_in_rset);
+      continue;
+    }
+    obligations[i] = 0;
+    queuePush(i);
+  }
+}
+
+void ectl_reachgraph::CTL_traversal::set_obligations(const intset &p, int value)
+{
+  DCASSERT(obligations);
+  for (long i = p.getSmallestAfter(-1); i>=0; i = p.getSmallestAfter(i)) {
+    obligations[i] = value;
+  }
+}
+
+void ectl_reachgraph::CTL_traversal::reset_zero_obligations(int newval)
+{
+  DCASSERT(obligations);
+  for (long i=0; i<size; i++) {
+    if (obligations[i]) continue;
+    obligations[i] = newval;
+  }
+}
+
+void ectl_reachgraph::CTL_traversal::add_obligations(const intset &p)
+{
+  DCASSERT(obligations);
+  for (long i = p.getSmallestAfter(-1); i>=0; i = p.getSmallestAfter(i)) {
+    obligations[i]++;
+  }
+}
+
+
+void ectl_reachgraph::CTL_traversal::restrict_paths(const intset &p, int value)
+{
+  DCASSERT(obligations);
+  long next_in_rset = p.getSmallestAfter(-1);
+  for (long i=0; i<size; i++) {
+    if (i == next_in_rset) {
+      next_in_rset = p.getSmallestAfter(next_in_rset);
+      continue;
+    }
+    obligations[i] = value;
+  }
+}
+
+void ectl_reachgraph::CTL_traversal::get_met_obligations(intset &x) const
+{
+  DCASSERT(obligations);
+  for (long i=0; i<size; i++) {
+    if (0==obligations[i]) {
+      x.addElement(i);
+    }
+  }
+}
+
+
+#endif  // #ifdef USE_OLD_TRAVERSE_HELPER
+
+// ******************************************************************
+// *                                                                *
 // *                    ectl_reachgraph  methods                    *
 // *                                                                *
 // ******************************************************************
@@ -171,8 +281,11 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p)
   if (0==ep) return incompatibleOperand(CTLOP);
 
   const intset& ip = ep->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
 
   // Explore from p states
   TH->init_queue_from(ip);
@@ -182,7 +295,12 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p)
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, true, *TH);
+#else
+  TH->setOneStep(true);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // Build answer
@@ -200,15 +318,27 @@ stateset* ectl_reachgraph::AX(bool revTime, const stateset* p)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
 
+  const intset& ip = ep->getExplicit(); 
+#ifdef USE_OLD_TRAVERSE_HELPER
+  if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
+
   // Explore from p states
-  TH->init_queue_from(ep->getExplicit());
+  TH->init_queue_from(ip);
 
   // set obligations AFTER we fill the queue
   count_edges(revTime, *TH);
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, true, *TH);
+#else
+  TH->setOneStep(true);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // Build answer
@@ -234,8 +364,11 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
   if (0==eq) return incompatibleOperand(CTLOP);
 
   const intset& iq = eq->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(iq.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(iq.getSize());
+#endif
 
   // obligations to 1
   TH->fill_obligations(1);
@@ -252,7 +385,12 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // Build answer
@@ -278,8 +416,11 @@ stateset* ectl_reachgraph::unfairAU(bool revTime, const stateset* p, const state
   if (0==eq) return incompatibleOperand(CTLOP);
 
   const intset& iq = eq->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(iq.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(iq.getSize());
+#endif
 
   // obligations to edge counts
   count_edges(revTime, *TH);
@@ -300,7 +441,12 @@ stateset* ectl_reachgraph::unfairAU(bool revTime, const stateset* p, const state
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // Build answer
@@ -326,8 +472,11 @@ stateset* ectl_reachgraph::fairAU(bool revTime, const stateset* p, const statese
   if (0==eq) return incompatibleOperand(CTLOP);
 
   const intset& iq = eq->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(iq.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(iq.getSize());
+#endif
 
   // Based on !A p U q =  EG !q  OR  E p!q U !p!q
 
@@ -379,7 +528,12 @@ stateset* ectl_reachgraph::fairAU(bool revTime, const stateset* p, const statese
     // Traverse
     //
     startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
     traverse(revTime, false, *TH);
+#else
+    TH->setOneStep(false);
+    traverse(revTime, *TH);
+#endif
     stopTraverse(CTLOP);
 
     // add E p!q U !p!q to answer
@@ -402,8 +556,11 @@ stateset* ectl_reachgraph::unfairEG(bool revTime, const stateset* p)
   if (0==ep) return incompatibleOperand(revTime ? "EH" : "EG");
 
   const intset& ip = ep->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
 
   // Use !AF !p
   count_edges(revTime, *TH);
@@ -419,7 +576,12 @@ stateset* ectl_reachgraph::unfairEG(bool revTime, const stateset* p)
 
   // Traverse!
   startTraverse(revTime ? "EH" : "EG");
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(revTime ? "EH" : "EG");
 
   // build answer
@@ -440,8 +602,11 @@ stateset* ectl_reachgraph::fairEG(bool revTime, const stateset* p)
   if (0==ep) return incompatibleOperand(CTLOP);
 
   const intset& ip = ep->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
 
   intset* answer = new intset(ip);
   fair_EG_helper(revTime, *answer, CTLOP);
@@ -456,8 +621,11 @@ stateset* ectl_reachgraph::AG(bool revTime, const stateset* p)
   if (0==ep) return incompatibleOperand(CTLOP);
 
   const intset& ip = ep->getExplicit(); 
-  if (revTime) need_reverse_time();
+#ifdef USE_OLD_TRAVERSE_HELPER
   if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
 
   // We're using !EF !p, so below is EF
 
@@ -469,7 +637,12 @@ stateset* ectl_reachgraph::AG(bool revTime, const stateset* p)
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // build answer
@@ -497,8 +670,11 @@ stateset* ectl_reachgraph::unfairAEF(bool revTime, const stateset* p, const stat
   const intset& ip = ep->getExplicit(); 
   const intset& iq = eq->getExplicit(); 
 
-  if (revTime) need_reverse_time();
-  if (!TH) TH = new traverse_helper(iq.getSize());
+#ifdef USE_OLD_TRAVERSE_HELPER
+  if (!TH) TH = new traverse_helper(ip.getSize());
+#else
+  if (!TH) TH = new CTL_traversal(ip.getSize());
+#endif
 
   // obligations to edge counts...
   count_edges(revTime, *TH);
@@ -512,7 +688,12 @@ stateset* ectl_reachgraph::unfairAEF(bool revTime, const stateset* p, const stat
 
   // Traverse!
   startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
   traverse(revTime, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(revTime, *TH);
+#endif
   stopTraverse(CTLOP);
 
   // Build answer

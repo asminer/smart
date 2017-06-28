@@ -51,26 +51,29 @@ void show_array(const char* name, const long* A, long n)
 }
 
 
-template <class MATRIX>
-void show_matrix(const MATRIX& m)
+void show_matrix(const static_graph &M)
 {
-  printf("is_transposed: %s\n", m.is_transposed ? "true" : "false");
-  printf("num_rows: %ld\n", m.num_rows);
-  show_array("rowptr", m.rowptr, m.num_rows+1);
-  long ne = m.rowptr ? m.rowptr[m.num_rows] : 0;
-  show_array("colindex", m.colindex, ne);
-  show_array("value", (const long*) m.value, ne);
+  printf("isByRows: %s\n", M.isByRows() ? "true" : "false");
+  printf("#nodes: %ld\n", M.getNumNodes());
+  printf("#edges: %ld\n", M.getNumEdges());
+  show_array("RowPointer", M.RowPointer(), M.getNumNodes()+1);
+  show_array("ColumnIndex", M.ColumnIndex(), M.getNumEdges());
+  show_array("Labels", (const long*) M.Labels(), M.getNumEdges());
 }
 
-bool match(const generic_graph::const_matrix &A, const generic_graph::matrix &B)
+bool match(const GraphLib::static_graph &A, const GraphLib::static_graph &B)
 {
-  if (A.is_transposed != B.is_transposed) return false;
-  if (A.num_rows != B.num_rows) return false;
-  if (memcmp(A.rowptr, B.rowptr, (A.num_rows+1) * sizeof(long))) return false;
-  long ne = A.rowptr ? A.rowptr[A.num_rows] : 0;
-  if (memcmp(A.colindex, B.colindex, ne * sizeof(long))) return false;
-  if (A.edge_size != B.edge_size) return false;
-  if (memcmp(A.value, B.value, ne * A.edge_size)) return false;
+  if (A.isByRows() != B.isByRows()) return false;
+  if (A.getNumNodes() != B.getNumNodes()) return false;
+  if (A.getNumEdges() != B.getNumEdges()) return false;
+  if (A.EdgeBytes() != B.EdgeBytes()) return false;
+  // compare arrays
+  if (memcmp(A.RowPointer(), B.RowPointer(), 
+    (A.getNumNodes()+1) * sizeof(long))) return false;
+  if (memcmp(A.ColumnIndex(), B.ColumnIndex(), 
+    A.getNumEdges() * sizeof(long))) return false;
+  if (memcmp(A.Labels(), B.Labels(), 
+    A.getNumEdges() * A.EdgeBytes())) return false;
 
   return true;
 }
@@ -87,8 +90,8 @@ bool runTest(rng_stream* rngs, int rows, int triples)
   //
 
   // Initialize two digraphs
-  merged_weighted_digraph <long> G(true);
-  merged_weighted_digraph <long> H(true);
+  dynamic_summable <long> G(true, true);
+  dynamic_summable <long> H(true, true);
   G.addNodes(rows);
   H.addNodes(rows);
 
@@ -101,48 +104,46 @@ bool runTest(rng_stream* rngs, int rows, int triples)
     H.addEdge(i, j, e);
   }
 
-  // Finish graphs
-  merged_weighted_digraph <long>::finish_options fo;
-  fo.Store_By_Rows = true;
-  G.finish(fo);
-  fo.Store_By_Rows = false;
-  H.finish(fo);
+  H.transpose(0);
 
-  // Export graphs
-  merged_weighted_digraph <long>::const_matrix cG, cH;
-  G.exportFinished(cG);
-  H.exportFinished(cH);
-
-  // Build transposes
-  merged_weighted_digraph <long>::matrix Gt, Ht;
-  Gt.transposeFrom(cG);
-  Ht.transposeFrom(cH);
-
-  // Compare Ht and cG, should match
-  if (!match(cG, Ht)) {
-    printf("cG and Ht DO NOT match\n");
-    printf("cG:\n");
-    show_matrix(cG);
-    printf("Ht:\n");
-    show_matrix(Ht);
-    return false;
-  }
-
-  // Compare Gt and cH, should match
-  if (!match(cH, Gt)) {
-    printf("Gt and cH DO NOT match\n");
-    printf("Gt:\n");
-    show_matrix(Gt);
-    printf("cH:\n");
-    show_matrix(cH);
-    return false;
-  }
-  
-  // 
-  // Cleanup
   //
-  Gt.destroy();
-  Ht.destroy();
+  // Export graphs and build transposes
+  //
+  static_graph Gr, Hr, Gc, Hc;
+  G.exportToStatic(Gr, 0);
+  Gc.transposeFrom(Gr);
+  H.exportToStatic(Hc, 0);
+  Hr.transposeFrom(Hc);
+
+  //
+  // Compare 
+  //
+  bool showall = false;
+  if (!match(Gr, Hr)) {
+    printf("Gr and Hr DO NOT match\n");
+    showall = true;
+  }
+  if (!match(Gc, Hc)) {
+    printf("Gc and Hc DO NOT match\n");
+    showall = true;
+  }
+
+  if (showall) {
+    printf("Gr:\n");
+    show_matrix(Gr);
+    printf("Hr:\n");
+    show_matrix(Hr);
+    printf("Gc:\n");
+    show_matrix(Gc);
+    printf("Hc:\n");
+    show_matrix(Hc);
+    return false;
+  }
+
+  //
+  // Everything matches
+  //
+  
   return true;
 }
 

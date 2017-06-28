@@ -44,6 +44,10 @@ using namespace std;
 template <class TYPE>
 void showArray(const TYPE* A, long size)
 {
+  if (0==A) {
+    cout << "null\n";
+    return;
+  }
   cout << "[";
   cout << A[0];
   for (long i=1; i<size; i++) cout << ", " << A[i];
@@ -253,6 +257,24 @@ inline void graphToMatrix(const GraphLib::static_graph &G, LS_CRS_Matrix<REAL> &
 }
 
 /**
+    Multiply by diagonals, where diagonals are stored explicitly.
+    Essentially, the same as element-wise product.
+    
+      @param  x     Solution vector
+      @param  in    Input vector
+      @param  d     Diagonal vector
+      @param  size  Vector size
+*/
+template <class REAL>
+inline void adjustDiagonals(double* x, const double* in, const REAL* d,
+  const long size)
+{
+  for (long i=0; i<size; i++) {
+    x[i] += in[i] * d[i];
+  }
+}
+
+/**
     Multiply by diagonals, where diagonals are determined implicitly
     based on rowsums.
       
@@ -334,6 +356,55 @@ inline void addToVector(double* A, const double* x, const long size)
     A[i] += x[i];
   }
 }
+
+
+// ======================================================================
+// |                                                                    |
+// |                        grab_diagonals class                        |
+// |                                                                    |
+// ======================================================================
+
+namespace MCLib {
+
+  template <class REAL>
+  class grab_diagonals : public GraphLib::BF_graph_traversal {
+    public:
+      grab_diagonals(long numst) {
+        diagonals = new REAL[numst];
+        zeroArray(diagonals, numst);
+        current = 0;
+        num_states = numst;
+      }
+      virtual ~grab_diagonals() {
+        delete[] diagonals;
+      }
+
+      virtual bool hasNodesToExplore() {
+        return current < num_states;
+      }
+      virtual long getNextToExplore() {
+        return current++;
+      }
+      virtual bool visit(long src, long dest, const void* wt) {
+        if (src == dest) {
+          const REAL* label = (const REAL*) wt;
+          diagonals[src] = *label;
+        }
+        return false;
+      }
+
+      REAL* takeDiags() {
+        REAL* foo = diagonals;
+        diagonals = 0;
+        return foo;
+      }
+    public:
+      long current;
+      long num_states;
+      REAL* diagonals; 
+  };
+
+};
   
 // ======================================================================
 // |                                                                    |
@@ -389,18 +460,34 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   double_graphs = true;
 
   //
+  // Defaults for selfloops arrays
+  // 
+  selfloops_d = 0;
+  selfloops_f = 0;
+
+  //
   // Allocate row sum array
   //
   rowsums = new double[G.getNumNodes()];
 
   //
-  // If we're a DTMC, normalize rows
+  // If we're a DTMC, normalize rows and grab diagonals
   //
   if (discrete) {
     zeroArray(rowsums, G.getNumNodes());
     G.addRowSums(rowsums);
     G.divideRows(rowsums);
-  }
+
+    grab_diagonals <double> foo(G.getNumNodes()); 
+    G.traverse(foo);
+    selfloops_d = foo.takeDiags();
+    // Any rowsums equal to zero?  Add a self loop.
+    for (long i=0; i<G.getNumNodes(); i++) {
+      if (0==rowsums[i]) {
+        selfloops_d[i] = 1;
+      }
+    }
+  } 
 
   //
   // Common stuff (to double/float graphs) here
@@ -427,18 +514,33 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
   double_graphs = false;
 
   //
+  // Defaults for selfloops arrays
+  // 
+  selfloops_d = 0;
+  selfloops_f = 0;
+
+  //
   // Allocate row sum array
   //
   rowsums = new double[G.getNumNodes()];
 
   //
-  // If we're a DTMC, normalize rows
+  // If we're a DTMC, normalize rows and grab diagonals
   //
   if (discrete) {
     zeroArray(rowsums, G.getNumNodes());
     G.addRowSums(rowsums);
     G.divideRows(rowsums);
-  }
+
+    grab_diagonals <float> foo(G.getNumNodes()); 
+    G.traverse(foo);
+    selfloops_f = foo.takeDiags();
+    for (long i=0; i<G.getNumNodes(); i++) {
+      if (0==rowsums[i]) {
+        selfloops_f[i] = 1;
+      }
+    }
+  } 
 
   //
   // Common stuff (to double/float graphs) here
@@ -454,6 +556,8 @@ MCLib::Markov_chain::Markov_chain(bool discrete,
 
 MCLib::Markov_chain::~Markov_chain()
 {
+  delete[] selfloops_d;
+  delete[] selfloops_f;
   delete[] rowsums;
   delete[] one_over_rowsums_d;
   delete[] one_over_rowsums_f;
@@ -554,6 +658,16 @@ void MCLib::Markov_chain::finish_construction(GraphLib::dynamic_graph &G,
   // TBD - for CSL, we will need one_over_colsums arrays, right?  :(
 
 #ifdef DEBUG_CONSTRUCTOR
+  if (selfloops_f) {
+    cout << "  selfloops_f:\n";
+    cout << "    ";
+    showArray(selfloops_f, getNumStates());
+  }
+  if (selfloops_d) {
+    cout << "  selfloops_d:\n";
+    cout << "    ";
+    showArray(selfloops_d, getNumStates());
+  }
   if (one_over_rowsums_f) {
     cout << "  one_over_rowsums_f:\n";
     cout << "    ";
@@ -565,6 +679,23 @@ void MCLib::Markov_chain::finish_construction(GraphLib::dynamic_graph &G,
     showArray(one_over_rowsums_d, getNumStates());
   }
 #endif
+}
+
+// ******************************************************************
+
+long MCLib::Markov_chain::getNumEdges() const
+{
+  long ne = G_byrows_diag.getNumEdges() + G_byrows_off.getNumEdges();
+  if (selfloops_d) {
+    for (long i=0; i<getNumStates(); i++) {
+      if (selfloops_d[i]) ne++;
+    }
+  } else if (selfloops_f) {
+    for (long i=0; i<getNumStates(); i++) {
+      if (selfloops_f[i]) ne++;
+    }
+  }
+  return ne;
 }
 
 // ******************************************************************
@@ -581,6 +712,8 @@ size_t MCLib::Markov_chain::getMemTotal() const
   if (rowsums)            mem += getNumStates() * sizeof(double);
   if (one_over_rowsums_d) mem += getNumStates() * sizeof(double);
   if (one_over_rowsums_f) mem += getNumStates() * sizeof(float);
+  if (selfloops_d)        mem += getNumStates() * sizeof(double);
+  if (selfloops_f)        mem += getNumStates() * sizeof(float);
 
   return mem;
 }
@@ -602,6 +735,18 @@ const
             z<G_byrows_diag.RowPointer(s+1); z++) 
       {
         if (t.visit(s, G_byrows_diag.ColumnIndex(z), G_byrows_diag.Label(z))) {
+          return true;
+        }
+      }
+
+      // Explore self loop edges from s
+      if (selfloops_d && selfloops_d[s]) {
+        if (t.visit(s, s, selfloops_d+s)) {
+          return true;
+        }
+      }
+      if (selfloops_f && selfloops_f[s]) {
+        if (t.visit(s, s, selfloops_f+s)) {
           return true;
         }
       }
@@ -631,7 +776,7 @@ const
         throw GraphLib::error(GraphLib::error::Bad_Index);
       }
 
-      // Explore diagonal edges from s
+      // Explore diagonal edges to s
       for (long z=G_bycols_diag.RowPointer(s); 
             z<G_bycols_diag.RowPointer(s+1); z++) 
       {
@@ -640,7 +785,19 @@ const
         }
       }
 
-      // Explore off-diagonal edges from s
+      // Explore self loop edges to s
+      if (selfloops_d && selfloops_d[s]) {
+        if (t.visit(s, s, selfloops_d+s)) {
+          return true;
+        }
+      }
+      if (selfloops_f && selfloops_f[s]) {
+        if (t.visit(s, s, selfloops_f+s)) {
+          return true;
+        }
+      }
+
+      // Explore off-diagonal edges to s
       for (long z=G_bycols_off.RowPointer(s); 
             z<G_bycols_off.RowPointer(s+1); z++) 
       {
@@ -764,11 +921,16 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
   //
   DCASSERT(rowsums);
   if (isDiscrete()) {
-    for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
-      if (rowsums[i] < 1.0) return 1;
-      // TBD - what if rowsums[i] is 1-epsilon?  Ugh...
-      // Safer - for DTMCs, keep a bitvector for "has self loop",
-      // which we can extract when we split the graph
+    if (double_graphs) {
+      DCASSERT(selfloops_d);
+      for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
+        if (selfloops_d[i]) return 1;
+      }
+    } else {
+      DCASSERT(selfloops_f);
+      for (long i=stateClass.firstNodeOfClass(c); i<=stateClass.lastNodeOfClass(c); i++) {
+        if (selfloops_f[i]) return 1;
+      }
     }
   }
 
@@ -788,10 +950,12 @@ long MCLib::Markov_chain::computePeriodOfClass(long c) const
 // ******************************************************************
 
 namespace MCLib {
-  template <class MATRIX>
-  void templ_dtmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
+  template <class MATRIX, class REAL>
+  void templ_dtmc_transient(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
     int t, double* p, bool normalize, Markov_chain::DTMC_transient_options &opts)
   {
+      DCASSERT(diags);
+
       const long size = Qdiag.Size();
       //
       // Set up auxiliary vectors if necessary
@@ -807,7 +971,7 @@ namespace MCLib {
         zeroArray(aux, size);
         Qdiag.VectorMatrixMultiply(aux, p);
         Qoff.VectorMatrixMultiply(aux, p);
-        adjustDiagonals(aux, p, 1, rowsums, size);
+        adjustDiagonals(aux, p, diags, size);
 
         if (normalize) normalizeVector(aux, size);
 
@@ -855,7 +1019,7 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, true, opts);
+    templ_dtmc_transient(Qdiag, Qoff, selfloops_d, t, p, true, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -867,7 +1031,7 @@ void MCLib::Markov_chain::computeTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, true, opts);
+    templ_dtmc_transient(Qdiag, Qoff, selfloops_f, t, p, true, opts);
   }
 }
 
@@ -895,7 +1059,7 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, false, opts);
+    templ_dtmc_transient(Qdiag, Qoff, selfloops_d, t, p, false, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -907,7 +1071,7 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_transient(Qdiag, Qoff, rowsums, t, p, false, opts);
+    templ_dtmc_transient(Qdiag, Qoff, selfloops_f, t, p, false, opts);
   }
 }
 
@@ -1097,10 +1261,11 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
 // ******************************************************************
 
 namespace MCLib {
-  template <class MATRIX>
-  void templ_dtmc_accumulate(MATRIX &Qdiag, MATRIX &Qoff, const double* rowsums,
+  template <class MATRIX, class REAL>
+  void templ_dtmc_accumulate(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
     int t, double* n, Markov_chain::DTMC_transient_options &opts)
   {
+      DCASSERT(diags);
       const long size = Qdiag.Size();
       //
       // Set up auxiliary vectors if necessary
@@ -1126,7 +1291,7 @@ namespace MCLib {
         zeroArray(aux, size);
         Qdiag.VectorMatrixMultiply(aux, myp);
         Qoff.VectorMatrixMultiply(aux, myp);
-        adjustDiagonals(aux, myp, 1, rowsums, size);
+        adjustDiagonals(aux, myp, diags, size);
 
         normalizeVector(aux, size);
 
@@ -1191,7 +1356,7 @@ void MCLib::Markov_chain::accumulate(int t, const double* p0, double* n0t,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_accumulate(Qdiag, Qoff, rowsums, t, n0t, opts);
+    templ_dtmc_accumulate(Qdiag, Qoff, selfloops_d, t, n0t, opts);
   } else {
     //
     // Set up matrices (shallow copies here)
@@ -1203,7 +1368,7 @@ void MCLib::Markov_chain::accumulate(int t, const double* p0, double* n0t,
     //
     // And pass everything to our nice template function :^)
     //
-    templ_dtmc_accumulate(Qdiag, Qoff, rowsums, t, n0t, opts);
+    templ_dtmc_accumulate(Qdiag, Qoff, selfloops_f, t, n0t, opts);
   }
 
 }

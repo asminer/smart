@@ -3,10 +3,10 @@ noinst_PROGRAMS = \
   grtest triples renumber scctest
 
 check_PROGRAMS = \
-  renumber scctest
+  renumber scctest triples
 
 TESTS = \
-  renumber scctest
+  renumber scctest triples
 
 AM_CPPFLAGS = -I$(srcdir)/../ -I$(srcdir)/../../_IntSets -I$(srcdir)/../../_RngLib -I$(srcdir)/../../_GraphLib
 

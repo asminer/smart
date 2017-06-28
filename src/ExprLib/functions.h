@@ -315,6 +315,30 @@ public:
   */
   void build(int n, typelist* t, const char* name);
 
+  /** Build a boolean formal parameter with a default.
+        @param  n     Formal parameter number to set.
+        @param  t     Type of formal parameter.
+        @param  name  Name of formal parameter.
+        @param  deflt Default value for the parameter
+  */
+  void build(int n, const type* t, const char* name, bool deflt);
+
+  /** Build an integer formal parameter with a default.
+        @param  n     Formal parameter number to set.
+        @param  t     Type of formal parameter.
+        @param  name  Name of formal parameter.
+        @param  deflt Default value for the parameter
+  */
+  void build(int n, const type* t, const char* name, long deflt);
+
+  /** Build a real formal parameter with a default.
+        @param  n     Formal parameter number to set.
+        @param  t     Type of formal parameter.
+        @param  name  Name of formal parameter.
+        @param  deflt Default value for the parameter
+  */
+  void build(int n, const type* t, const char* name, double deflt);
+
   /** Hide a formal parameter.
         @param  n  Formal parameter number to set.
   */
@@ -528,6 +552,19 @@ public:
   inline void SetFormal(int n, typelist* t, const char* name) {
     formals.build(n, t, name);
   }
+
+  inline void SetFormal(int n, const type* t, const char* name, bool deflt) {
+    formals.build(n, t, name, deflt);
+  }
+
+  inline void SetFormal(int n, const type* t, const char* name, long deflt) {
+    formals.build(n, t, name, deflt);
+  }
+
+  inline void SetFormal(int n, const type* t, const char* name, double deflt) {
+    formals.build(n, t, name, deflt);
+  }
+
 
   virtual bool IsHidden(int fpnum) const;
 

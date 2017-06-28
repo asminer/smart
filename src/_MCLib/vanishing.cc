@@ -125,11 +125,19 @@ void MCLib::vanishing_chain::pairlist::addItem(long i, double wt)
   pairarray[last_pair].weight = wt;
 }
 
+// ******************************************************************
+
 void MCLib::vanishing_chain::pairlist::clear()
 {
   last_pair = -1;
 }
 
+// ******************************************************************
+
+size_t MCLib::vanishing_chain::pairlist::getMemTotal() const
+{
+  return alloc_pairs * sizeof(pair);
+}
 
 // ======================================================================
 // |                                                                    |
@@ -181,6 +189,8 @@ void MCLib::vanishing_chain::edgelist::addEdge(long from, long to, double wt)
   edgearray[last_edge].to = to;
   edgearray[last_edge].weight = wt;
 }
+
+// ******************************************************************
 
 void MCLib::vanishing_chain::edgelist::groupBySource()
 {
@@ -241,6 +251,13 @@ void MCLib::vanishing_chain::edgelist::clear()
 
 // ******************************************************************
 
+size_t MCLib::vanishing_chain::edgelist::getMemTotal() const
+{
+  return alloc_edges * sizeof(edge);
+}
+
+// ******************************************************************
+
 void MCLib::vanishing_chain::edgelist::swapedges(long i, long j)
 {
   SWAP(edgearray[i].from, edgearray[j].from);
@@ -266,9 +283,21 @@ MCLib::vanishing_chain::vanishing_chain(bool disc, long nt, long nv)
 
 MCLib::vanishing_chain::~vanishing_chain()
 {
-  // tbd
+  // nothing dynamic!
 }
 
+// ******************************************************************
+
+size_t MCLib::vanishing_chain::getMemTotal() const
+{
+  size_t mem = TT_graph.getMemTotal();
+  mem += VV_graph.getMemTotal();
+  mem += Tinit.getMemTotal();
+  mem += Vinit.getMemTotal();
+  mem += TV_edges.getMemTotal();
+  mem += VT_edges.getMemTotal();
+  return mem;
+}
 
 // ******************************************************************
 

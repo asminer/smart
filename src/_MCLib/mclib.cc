@@ -1,13 +1,32 @@
 
 #include "mclib.h"
+#include <stdio.h> 
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
+// *                      Front-end  functions                      *
+// *                                                                *
+// *                                                                *
+// ******************************************************************
+
+const char* MCLib::Version()
+{
+  const int MAJOR_VERSION = 4;
+  const int MINOR_VERSION = 0;
+
+  static char buffer[100];
+  snprintf(buffer, sizeof(buffer), "Markov chain Library, version %d.%d",
+     MAJOR_VERSION, MINOR_VERSION);
+  return buffer;
+
+  // TBD - revision number?
+}
+
 
 #ifndef DISABLE_OLD_INTERFACE
 
-#include <stdio.h> 
 #include <string.h>
-
-const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 1;
 
 // ******************************************************************
 // *                       Macros and such                          *
@@ -133,6 +152,9 @@ Old_MCLib::vanishing_chain::~vanishing_chain()
 
 const char* Old_MCLib::Version()
 {
+  const int MAJOR_VERSION = 3;
+  const int MINOR_VERSION = 1;
+
   static char buffer[100];
   snprintf(buffer, sizeof(buffer), "Markov chain Library, version %d.%d",
      MAJOR_VERSION, MINOR_VERSION);

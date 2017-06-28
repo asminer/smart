@@ -59,7 +59,8 @@ class markov_def : public model_def {
 
   SplayOfPointers <state_weight> *initial;
 
-  Old_MCLib::Markov_chain* mymc;
+  GraphLib::dynamic_summable<double>* mymc;
+  // Old_MCLib::Markov_chain* mymc;
 
   bool error;
   bool discrete;
@@ -125,14 +126,9 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
 
   // Add state to the backend MC
   try {
-#ifdef DEVELOPMENT_CODE
-    long handle = mymc->addState();
-    DCASSERT(handle == state_count);
-#else
-    mymc->addState();
-#endif
+    mymc->addNode();
   }
-  catch (Old_MCLib::error e) {
+  catch (GraphLib::error e) {
     if (StartError(wrap)) {
       em->cerr() << e.getString() << " when adding state " << wrap->Name();
       DoneError();
@@ -193,7 +189,7 @@ void markov_def::AddEdge(const expr* cause,
       DoneWarning();
     }
   } 
-  catch (Old_MCLib::error e) {
+  catch (GraphLib::error e) {
     if (StartError(cause)) {
       em->cerr() << e.getString() << " when adding edge from ";
       em->cerr() << f->Name() << " to " << t->Name();
@@ -208,7 +204,7 @@ void markov_def::InitModel()
   statelist = 0; 
   state_count = 0;
   DCASSERT(0==mymc);
-  mymc = Old_MCLib::startUnknownMC(isDiscrete(), 0, 0);
+  mymc = new GraphLib::dynamic_summable<double> (isDiscrete(), true);
   DCASSERT(mymc);
   DCASSERT(0==initial);
   initial = new SplayOfPointers <state_weight> (16, 0);
@@ -281,13 +277,13 @@ void markov_def::FinalizeModel(OutputStream &ds)
   //
   // Build process
   //
-  mclib_process* proc = new mclib_process(mymc);
+  mclib_process* proc = new mclib_process(isDiscrete(), mymc);
 
   //
   // Package everything
   //
   stochastic_lldsm* foo = new stochastic_lldsm(
-    mymc->isDiscrete() ? lldsm::DTMC : lldsm::CTMC
+    isDiscrete() ? lldsm::DTMC : lldsm::CTMC
   );
 
   foo->setRSS(rss);
@@ -296,84 +292,6 @@ void markov_def::FinalizeModel(OutputStream &ds)
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mymc = 0;
-
-  //
-  // OLD!
-  //
-  /*
-  Old_MCLib::Markov_chain::finish_options fo;
-  fo.Store_By_Rows = markov_lldsm::storeByRows();
-  fo.Will_Clear = false;
-  Old_MCLib::Markov_chain::renumbering r;
-  try {
-    if (!error) mymc->finish(fo, r);
-  }
-  catch (Old_MCLib::error e) {
-    if (StartError(0)) {
-      em->cerr() << e.getString() << " when finalizing Markov chain";
-      DoneError();
-    }
-    error = true;
-  }
-
-  if (r.NoRenumbering()) {
-    // sweet
-  } else {
-    DCASSERT(r.GeneralRenumbering());
-    const long* map = r.GetGeneral();
-    DCASSERT(map);
-    for (long i=0; i<mcstate->NumValues(); i++) {
-      model_enum_value* st = mcstate->GetValue(i);
-      st->SetIndex(map[i]);
-    }
-  }
-
-  // build initial state vector
-  state_weight** init_data;
-  long size = initial->NumElements();
-  if (size) {
-    init_data = new state_weight*[size];
-    initial->CopyToArray(init_data);
-  } else {
-    init_data = 0;
-    if (StartWarning(no_init, 0)) {
-      em->warn() << "Empty initial distribution";
-      DoneWarning();
-    }
-  }
-  delete initial;
-  initial = 0;
-
-  double total = 0;
-  for (long i=0; i<size; i++) {
-    DCASSERT(init_data[i]);
-    total += init_data[i]->weight;
-  }
-  for (long i=0; i<size; i++) {
-    DCASSERT(total > 0);
-    init_data[i]->weight /= total;
-  }
-  long* indexes = new long[size];
-  float* probs = new float[size];
-  for (long i=0; i<size; i++) {
-    indexes[i] = init_data[i]->state->GetIndex();
-    probs[i] = init_data[i]->weight;
-    delete init_data[i];
-  }
-  delete[] init_data;
-
-  // Put everything together
-  LS_Vector init;
-  init.size = size;
-  init.index = indexes;
-  init.f_value = probs;
-  init.d_value = 0;
-  stochastic_lldsm* foo = MakeEnumeratedMC(init, mcstate, mymc);
-  hldsm* bar = MakeEnumeratedModel(foo);
-  if (ds.IsActive()) foo->dumpDot(ds);
-  ConstructionSuccess(bar);
-  mymc = 0;
-  */
 }
 
 

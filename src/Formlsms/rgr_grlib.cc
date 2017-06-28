@@ -501,13 +501,20 @@ void grlib_reachgraph
 
   const long num_states = InEdges.getNumNodes();
   intset back(num_states);
-  {
-    traverse_helper TH(num_states);
-    TH.fill_obligations(1);
-    TH.init_queue_from(dest);
-    traverse(false, false, TH);
-    TH.get_met_obligations(back);
-  }
+#ifdef USE_OLD_TRAVERSE_HELPER
+  if (!TH) TH = new traverse_helper(num_states);
+#else
+  if (!TH) TH = new CTL_traversal(num_states);
+#endif
+  TH->fill_obligations(1);
+  TH->init_queue_from(dest);
+#ifdef USE_OLD_TRAVERSE_HELPER
+  traverse(false, false, *TH);
+#else
+  TH->setOneStep(false);
+  traverse(false, *TH);
+#endif
+  TH->get_met_obligations(back);
   long nb = back.cardinality();
 
   if (numpaths_report.startReport()) {
@@ -674,11 +681,7 @@ void grlib_reachgraph::getDeadlocked(intset &r) const
   r.assignFrom(deadlocks);
 }
 
-void grlib_reachgraph::need_reverse_time()
-{
-  // Nothing
-}
-
+#ifdef USE_OLD_TRAVERSE_HELPER
 
 void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
 {
@@ -699,6 +702,30 @@ void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) con
   else    _traverse(one_step, InEdges, TH);
 }
 
+#else
+
+void grlib_reachgraph::count_edges(bool rt, CTL_traversal &TH) const
+{
+  if (rt) {
+    for (long i=0; i<InEdges.getNumNodes(); i++) {
+      TH.set_obligations(i, InEdges.getNumEdgesFor(i));
+    }
+  } else {
+    for (long i=0; i<OutEdges.getNumNodes(); i++) {
+      TH.set_obligations(i, OutEdges.getNumEdgesFor(i));
+    }
+  }
+}
+
+void grlib_reachgraph::traverse(bool rt, GraphLib::BF_graph_traversal &T) const
+{
+  if (rt) OutEdges.traverse(T);
+  else    InEdges.traverse(T);
+}
+
+
+#endif
+
 void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_graph &E)
 {
   const char* rptr = (E.isByCols()) ? "column pointers" : "row pointers";
@@ -714,6 +741,7 @@ void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_gr
   os << "]\n";
 }
 
+#ifdef USE_OLD_TRAVERSE_HELPER
 
 void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
   ectl_reachgraph::traverse_helper &TH)
@@ -727,11 +755,15 @@ void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
   }
 }
 
+#endif
+
 // ******************************************************************
 // *                                                                *
 // *           grlib_reachgraph::mygraphtraverse  methods           *
 // *                                                                *
 // ******************************************************************
+
+#ifdef USE_OLD_TRAVERSE_HELPER
 
 template <bool ONESTEP>
 grlib_reachgraph::mygraphtraverse<ONESTEP>::mygraphtraverse(traverse_helper &th)
@@ -762,4 +794,6 @@ bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, const vo
   }
   return false;
 }
+
+#endif
 

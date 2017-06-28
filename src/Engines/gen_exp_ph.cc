@@ -34,11 +34,11 @@ public:
 
 protected:
   void generateMC(phase_hlm* m, LS_Vector &s0, long &acc, long &trap,
-    StateLib::state_db* rss, Old_MCLib::vanishing_chain* smp) const;
+    StateLib::state_db* rss, MCLib::vanishing_chain* smp) const;
 
   void lostStateError(hldsm* m, const shared_state* st) const;
   void badWeightError(hldsm* m, const char* what, const result& x) const;
-  void MCError(hldsm* m, const char* what, Old_MCLib::error e) const;
+  void MCError(hldsm* m, const char* what, MCLib::error e) const;
   inline void terminateError() const {
     if (em->startError()) {
       em->noCause();
@@ -89,25 +89,26 @@ protected:
     Debug().report() << "Eliminating " << count << " vanishing states\n";
     Debug().stopIO();
   }
-  inline bool addVan(hldsm* m, Old_MCLib::vanishing_chain* vc, long i) 
+  inline bool addVan(hldsm* m, MCLib::vanishing_chain* vc, long i) 
   const {
     if (i < vc->getNumVanishing()) return false;
     try {
-      CHECK_RETURN(vc->addVanishing(), i);
+      vc->addVanishing();
       return true;
     }
-    catch (Old_MCLib::error status) {
+    catch (MCLib::error status) {
       MCError(m, "add vanishing state to", status);
     }
     return true;
   }
-  inline bool addTan(hldsm* m, Old_MCLib::vanishing_chain* vc, long i)
+  inline bool addTan(hldsm* m, MCLib::vanishing_chain* vc, long i)
   const {
     if (i < vc->getNumTangible()) return false;
     try {
-      CHECK_RETURN(vc->addTangible(), i);
+      vc->addTangible();
+      return true;
     }
-    catch (Old_MCLib::error status) {
+    catch (MCLib::error status) {
       MCError(m, "add tangible state to", status);
     }
     return true;
@@ -156,8 +157,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   DCASSERT(phm);
   StateLib::state_db* rss = 0;
   const char* the_proc = 0;
-  Old_MCLib::Markov_chain* mc = 0;
-  Old_MCLib::vanishing_chain* vc = 0;
+  MCLib::vanishing_chain* vc = 0;
 
   stochastic_lldsm* slm = dynamic_cast <stochastic_lldsm*> (lm);
   if (lm && (0==slm)) {
@@ -178,7 +178,8 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
   DCASSERT(rss);
   if (!statesonly.getBool()) {
-    vc = Old_MCLib::startVanishingChain(phm->isDiscrete(), rss->Size(), 0);
+    // vc = MCLib::startVanishingChain(phm->isDiscrete(), rss->Size(), 0);
+    vc = new MCLib::vanishing_chain(phm->isDiscrete(), rss->Size(), 0);
   }
 
   // Start reporting on generation
@@ -211,12 +212,6 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
     bailOut = e;
   }
 
-  if (vc) {
-    mc = vc->grabTTandClear();
-    DCASSERT(mc);
-    delete vc;
-  }
-
   // Report on generation
   if (stopGen(procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
@@ -225,11 +220,11 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
       em->report() << " required for state space construction\n";
       em->report() << "\t" << rss->Size() << " states generated\n";
     } 
-    if (mc) {
+    if (vc) {
       em->report().Put('\t');
-      em->report().PutMemoryCount(mc->ReportMemTotal(), 3);
+      em->report().PutMemoryCount(vc->getMemTotal(), 3);
       em->report() << " required for Markov chain construction\n";
-      em->report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
+      em->report() << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
     }
     em->stopIO();
   }
@@ -237,7 +232,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Did we succeed so far?
   if (!procOK) {
-    delete mc;
+    delete vc;
     if (lm) {
       lm->setCompletionEngine(0);
     } else {
@@ -261,7 +256,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
     lm = slm;
     hm->SetProcess(lm);
   }
-  mclib_process* mcp = new mclib_process(mc);
+  mclib_process* mcp = new mclib_process(vc);
   mcp->setAcceptState(accept);
   mcp->setTrapState(trap);
   slm->setPROC(init, mcp);
@@ -282,7 +277,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
 
 void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept, 
-  long &trap, StateLib::state_db* tandb, Old_MCLib::vanishing_chain* smp) const
+  long &trap, StateLib::state_db* tandb, MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);
@@ -351,7 +346,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
           try {
             smp->eliminateVanishing(vansolver);
           }
-          catch (Old_MCLib::error vc_status) {
+          catch (MCLib::error vc_status) {
             MCError(dsm, "eliminate vanishings in", vc_status);
           }
           vandb->Clear();
@@ -405,7 +400,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
               else
                   smp->addTTedge(t_exp, newindex, r);
         }
-        catch (Old_MCLib::error vc_status) {
+        catch (MCLib::error vc_status) {
           MCError(dsm, "add edge to", vc_status);
           break;
         }
@@ -418,10 +413,10 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
     // Build initial distribution if necessary
     if (smp) {
       try {
-        smp->getInitialVector(init);
+        smp->buildInitialVector(true, init);  // floats
         initial_distro(init);
       }
-      catch (Old_MCLib::error vc_status) {
+      catch (MCLib::error vc_status) {
         MCError(dsm, "build initial vector for", vc_status);
       }
   
@@ -477,10 +472,10 @@ void phase_procgen
   throw Engine_Failed;
 }
 
-void phase_procgen::MCError(hldsm* m, const char* what, Old_MCLib::error e) const
+void phase_procgen::MCError(hldsm* m, const char* what, MCLib::error e) const
 {
   DCASSERT(m);
-  if (e.getCode() == Old_MCLib::error::Out_Of_Memory) throw Out_Of_Memory;
+  if (e.getCode() == MCLib::error::Out_Of_Memory) throw Out_Of_Memory;
   // what kind of error is this?
   if (m->StartError(0)) {
     em->cerr() << "Couldn't " << what << " process: ";
