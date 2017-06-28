@@ -207,7 +207,7 @@ class solver_parser : public dryrun_parser {
   GraphLib::dynamic_summable<double>* G;
   MCLib::Markov_chain* mc;   // Markov chain
   GraphLib::node_renumberer* Ren;
-  GraphLib::static_classifier C;
+  // GraphLib::static_classifier C;
   float* initial;    // initial vector.
   long initsize;    // dimension of initial vector.
   long* initindex;  // indexes (or null) for initial sparse vector.
@@ -453,6 +453,7 @@ bool solver_parser::doneEdges()
   sw.reset();
   try {
     GraphLib::abstract_classifier* ac = G->determineSCCs(0, 1, true, stopwatch); 
+    GraphLib::static_classifier C;
     Ren = ac->buildRenumbererAndStatic(C);
     DCASSERT(Ren);
     delete ac;
@@ -466,6 +467,7 @@ bool solver_parser::doneEdges()
 
   if (!finishInitial()) return false;
 
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   int nc = C.getNumClasses();
   if (!quiet) {
     if (is_discrete)  fprintf(errlog, "DTMC classes:\n");
@@ -675,6 +677,7 @@ bool solver_parser::startMeasureCollection(solution_type which, double time)
 bool solver_parser::doneMeasureCollection()
 {
   if (num_msrs) return true;
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   // no measures; display vector
   switch (last_solved) {
     case Transient:
@@ -716,6 +719,7 @@ bool solver_parser::startMeasure(const char* name)
 
 bool solver_parser::addToMeasure(long state, double value) 
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   if (state<0 || state>=States) {
     printf("\n");
     startError();
@@ -743,6 +747,7 @@ bool solver_parser::doneMeasure()
 
 bool solver_parser::assertClasses(long nc)
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   if (C.getNumClasses() == nc) {
     if (!quiet) fprintf(errlog, "Assertion CLASSES %ld passed\n", nc);
     return true;
@@ -757,6 +762,7 @@ bool solver_parser::assertClasses(long nc)
 
 bool solver_parser::assertAbsorbing(long s)
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   long i = Ren ? Ren->new_number(s) : s;
   if (C.isNodeInClass(i, 1)) {
     if (!quiet) fprintf(errlog, "Assertion ABSORBING %ld passed\n", s);
@@ -769,6 +775,7 @@ bool solver_parser::assertAbsorbing(long s)
 
 bool solver_parser::assertTransient(long s)
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   long i = Ren ? Ren->new_number(s) : s;
   if (C.isNodeInClass(i, 0)) {
     if (!quiet) fprintf(errlog, "Assertion TRANSIENT %ld passed\n", s);
@@ -781,6 +788,7 @@ bool solver_parser::assertTransient(long s)
 
 bool solver_parser::assertRecurrent(long s)
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   if (first_recurrent>=0) {
     long j = Ren ? Ren->new_number(first_recurrent) : first_recurrent;
     long c = C.classOfNode(j);

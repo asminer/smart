@@ -18,12 +18,18 @@
 class mclib_process : public markov_process {
 
   public:
-    mclib_process(Old_MCLib::Markov_chain* mc);
+    mclib_process(bool discrete, GraphLib::dynamic_graph *G);
+    mclib_process(MCLib::vanishing_chain* vc);
+    
 
   protected:
     virtual ~mclib_process();
     virtual const char* getClassName() const { return "mclib_process"; }
     virtual void attachToParent(stochastic_lldsm* p, LS_Vector &init, state_lldsm::reachset* rss);
+
+  private:
+    // Helper, used by attachToParent.
+    GraphLib::node_renumberer* initChain(GraphLib::dynamic_graph *g);
 
   public:
     virtual long getNumStates() const;
@@ -32,7 +38,7 @@ class mclib_process : public markov_process {
         shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
-    virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
+    // virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
     virtual bool computeTransient(double t, double* probs, 
         double* aux, double* aux2) const;
     virtual bool computeAccumulated(double t, const double* p0, double* n,
@@ -57,26 +63,31 @@ class mclib_process : public markov_process {
     virtual long getTrapState() const { return trap; }
     virtual long getAcceptingState() const { return accept; }
 
-    virtual bool computeDiscreteTTA(double epsilon, double* &dist, int &N) const;
+    virtual bool computeDiscreteTTA(double epsilon, long maxsize, 
+      discrete_pdf &dist) const;
 
-    virtual bool computeContinuousTTA(double dt, double epsilon, double* &dist, 
-        int &N) const;
+    virtual bool computeContinuousTTA(double dt, double epsilon, 
+      long maxsize, discrete_pdf &dist) const;
 
     // virtual bool reachesAccept(double* x) const;
 
     virtual bool reachesAcceptBy(double t, double* x) const;
 
-  // For reachgraphs hooked into this
-  public:
-    inline void getNumArcs(long &na) const {
-      DCASSERT(chain);
-      na = chain->getNumArcs();
-    }
-    void showInternal(OutputStream &os) const;
+    virtual void showInternal(OutputStream &os) const;
+
     virtual void showProc(OutputStream &os, 
       const graph_lldsm::reachgraph::show_options& opt, 
       state_lldsm::reachset* RSS, shared_state* st) const;
 
+
+  // For reachgraphs hooked into this
+  public:
+    inline void getNumArcs(long &na) const {
+      DCASSERT(chain);
+      na = chain->getNumEdges();
+    }
+
+  /*
     inline bool forward(const intset& p, intset &r) const {
       DCASSERT(chain);
       return chain->getForward(p, r);
@@ -123,13 +134,25 @@ class mclib_process : public markov_process {
       } // for c
       p.complement();
     }
+  */
 
   private:
-    Old_MCLib::Markov_chain* chain;
+    bool is_discrete;
+
+    /// We hold this until attachToParent() is called.
+    GraphLib::dynamic_graph* G;
+
+    /// We hold this until attachToParent() is called.
+    MCLib::vanishing_chain* VC;
+
+    /// This is set up in attachToParent().
+    MCLib::Markov_chain* chain;
+
     statedist* initial;
     long trap;
     long accept;
 
+  /*
   private:
     class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
         int alloc;
@@ -168,7 +191,8 @@ class mclib_process : public markov_process {
         }
     };  // inner class sparse_row_elems
     // ----------------------------------------------------------------------
-
+  */
+  /*
   private:
     class simple_outedges : public GraphLib::generic_graph::element_visitor {
       public:
@@ -193,7 +217,7 @@ class mclib_process : public markov_process {
           }
     };  // inner class simple_outedges
     // ----------------------------------------------------------------------
-
+  */
 
 
 };
@@ -223,10 +247,8 @@ class mclib_reachgraph : public ectl_reachgraph {
 // TBD - fix this class
 
   protected:
-    virtual void need_reverse_time() {
-      throw "not implemented";
-    }
 
+#ifdef USE_OLD_TRAVERSE_HELPER
     virtual void count_edges(bool, traverse_helper&) const {
       throw "not implemented";
     }
@@ -234,10 +256,19 @@ class mclib_reachgraph : public ectl_reachgraph {
     virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const {
       throw "not implemented";
     }
+#else
+    virtual void count_edges(bool, CTL_traversal&) const {
+      throw "not implemented";
+    }
+
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const {
+      throw "not implemented";
+    }
+#endif
 
   protected:
-    virtual bool forward(const intset& p, intset &r) const;
-    virtual bool backward(const intset& p, intset &r) const;
+    //virtual bool forward(const intset& p, intset &r) const;
+    // virtual bool backward(const intset& p, intset &r) const;
     virtual void absorbing(intset &r) const;
     
     virtual void getTSCCsSatisfying(intset &p) const;

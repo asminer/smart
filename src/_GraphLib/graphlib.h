@@ -147,7 +147,13 @@ namespace GraphLib {
             queue_head = queue_tail = 0;
           }
 
+          /**
+              Reasonable default: checks if queue is empty.
+          */
           virtual bool hasNodesToExplore();
+          /**
+              Reasonable default: pops value off the queue.
+          */
           virtual long getNextToExplore();
       private:
           long* queue;
@@ -616,7 +622,7 @@ namespace GraphLib {
           "store by outgoing edges" and "store by incoming edges".
             @param  sw  Place to report timing; nothing reported if 0.
       */
-      // void transpose(timer_hook* sw);
+      void transpose(timer_hook* sw);
 
 
       /** Compute the terminal sccs.
@@ -948,7 +954,7 @@ namespace GraphLib {
 // ==========================================================================================================================================================================
 // ==========================================================================================================================================================================
 
-#define ALLOW_OLD_GRAPH_INTERFACE
+// #define ALLOW_OLD_GRAPH_INTERFACE
 #ifdef  ALLOW_OLD_GRAPH_INTERFACE
 
   // ======================================================================

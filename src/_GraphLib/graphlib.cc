@@ -536,17 +536,27 @@ void GraphLib::static_graph::allocate(long nodes, long edges)
   num_nodes = nodes;
 
   // column indexes
-  long* nci = (long*) realloc(column_index, edges * sizeof(long)); 
-  if (edges && 0==nci) {
-    throw error(error::Out_Of_Memory);
+  long* nci = 0;
+  if (0==edges) {
+    free(column_index);
+  } else {
+    nci = (long*) realloc(column_index, edges * sizeof(long)); 
+    if (0==nci) {
+      throw error(error::Out_Of_Memory);
+    }
   }
   column_index = nci;
   num_edges = edges;
 
   // labels
-  unsigned char* nl = (unsigned char*) realloc(label, edges * edge_bytes);
-  if ((edges * edge_bytes) && 0==nl) {
-    throw error(error::Out_Of_Memory);
+  unsigned char* nl = 0;
+  if (0==edges*edge_bytes) {
+    free(label);
+  } else {
+    nl = (unsigned char*) realloc(label, edges * edge_bytes);
+    if (0==nl) {
+      throw error(error::Out_Of_Memory);
+    }
   }
   label = nl;
 }
@@ -792,9 +802,7 @@ GraphLib::dynamic_graph::renumberNodes(const node_renumberer &r)
 
 // ******************************************************************
 
-/*
-void
-GraphLib::dynamic_graph::transpose(timer_hook* sw)
+void GraphLib::dynamic_graph::transpose(timer_hook* sw)
 {
   // we need another row_pointer array; everything else is "in place"
   long* old_row_pointer = (long *) malloc((num_nodes+1)*sizeof(long));
@@ -834,7 +842,6 @@ GraphLib::dynamic_graph::transpose(timer_hook* sw)
 
   if (sw) sw->stop();
 }
-*/
 
 // ******************************************************************
 

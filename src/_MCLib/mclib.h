@@ -8,7 +8,7 @@
 #ifndef MCLIB_H
 #define MCLIB_H
 
-// #define DISABLE_OLD_INTERFACE
+#define DISABLE_OLD_INTERFACE
 
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
@@ -306,6 +306,13 @@ namespace MCLib {
 
       /// Number of states in the chain
       inline long getNumStates() const { return G_byrows_diag.getNumNodes(); }
+
+      /** Number of edges in the chain.
+          CTMC - takes O(1) time.
+          DTMC - takes O(#states) time.
+      */
+      long getNumEdges() const;
+
 
       /// @return Total memory required to store the chain, in bytes.
       size_t getMemTotal() const;
@@ -644,12 +651,35 @@ namespace MCLib {
 
     private:
       /**
+          Self loop probabilities, as doubles.
+          In a DTMC, selfloops[s] is the probability of remaining
+          in state s in one step.
+          Note that selfloops[s] + rowsums[s] = 1 always.
+          Needed in case rowsums[s] is very close to 1
+          for numerical stability.
+          Used only if the graphs are stored with doubles.
+          For a CTMC, this will be null.
+      */
+      double* selfloops_d;
+
+      /**
+          Self loop probabilities, as floats.
+          In a DTMC, selfloops[s] is the probability of remaining
+          in state s in one step.
+          Note that selfloops[s] + rowsums[s] = 1 always.
+          Needed in case rowsums[s] is very close to 1
+          for numerical stability.
+          Used only if the graphs are stored with floats.
+          For a CTMC, this will be null.
+      */
+      float* selfloops_f;
+      
+      /**
           Row sums.
           For each state s,
           rowsums[s] gives the sum of outgoing edges from state s
           (discarding any self loops).
-          For a DTMC, 1-rowsum[s] gives the probability
-          of remaining in state s in one step.
+          Note that selfloops[s] + rowsums[s] = 1 for a DTMC.
       */
       double* rowsums;
 
@@ -728,6 +758,9 @@ namespace MCLib {
 
       /// Destructor.
       ~vanishing_chain();
+
+      /// @return Total memory required to store the chain, in bytes.
+      size_t getMemTotal() const;
 
       /// Is this a discrete-time chain?
       inline bool isDiscrete() const { return discrete; }
@@ -882,6 +915,7 @@ namespace MCLib {
 
           void addItem(long i, double w);
           void clear();
+          size_t getMemTotal() const;
         public:
           pair* pairarray;
           long alloc_pairs;
@@ -900,6 +934,7 @@ namespace MCLib {
           void addEdge(long from, long to, double wt); 
           void groupBySource();
           void clear();
+          size_t getMemTotal() const;
         private:
           void swapedges(long i, long j);
 
@@ -925,7 +960,19 @@ namespace MCLib {
 
 
 
+  // ======================================================================
+  // |                                                                    |
+  // |                        Front-end  interface                        |
+  // |                                                                    |
+  // ======================================================================
 
+  /**
+    Get the name and version info of the library.
+    The string should not be modified or deleted.
+  
+    @return    Information string.
+  */
+  const char*  Version();
 
 };  // namespace MCLib
 

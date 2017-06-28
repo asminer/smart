@@ -3,6 +3,7 @@
 #define STOCH_LLM_H
 
 #include "graph_llm.h"
+#include "../_Distros/distros.h"
 
 class statedist;
 struct LS_Vector;
@@ -261,14 +262,15 @@ public:
                                 the probability of reaching the accepting state
                                 at time N or later, is less than epsilon.
 
-              @param  dist      Output: a newly-allocated array of doubles
-                                that hold the distribution
+              @param  maxsize   Maximum size N to consider; 
+                                after that we truncate
 
-              @param  N         Output: size of array \a dist.
+              @param  dist      Output: a discrete pdf
 
               @return    true on success, false otherwise.
         */
-        virtual bool computeDiscreteTTA(double epsilon, double* &dist, int &N) const;
+        virtual bool computeDiscreteTTA(double epsilon, long maxsize, 
+          discrete_pdf &dist) const;
 
 
         /**
@@ -283,15 +285,15 @@ public:
                                 the probability of remaining in some transient state
                                 after that time, is less than epsilon.
 
-              @param  dist      Output: a newly-allocated array of doubles
-                                that hold the distribution
+              @param  maxsize   Maximum size N to consider; 
+                                after that we truncate
 
-              @param  N         Output: size of array \a dist.
+              @param  dist      Output: a discrete pdf
 
               @return    true on success, false otherwise.
         */
-        virtual bool 
-        computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const;
+        virtual bool computeContinuousTTA(double dt, double epsilon, 
+          long maxsize, discrete_pdf &dist) const;
 
         /**
             Compute, for each possible starting state, the probability of
@@ -502,16 +504,18 @@ public:
   }
 
 public:
-  inline bool computeDiscreteTTA(double epsilon, double* &dist, int &N) const {
-    DCASSERT(PROC);
-    return PROC->computeDiscreteTTA(epsilon, dist, N);
-  }
-
-  inline bool computeContinuousTTA(double dt, double epsilon, 
-    double* &dist, int &N) const 
+  inline bool computeDiscreteTTA(double epsilon, long ms, discrete_pdf &dist)
+  const 
   {
     DCASSERT(PROC);
-    return PROC->computeContinuousTTA(dt, epsilon, dist, N);
+    return PROC->computeDiscreteTTA(epsilon, ms, dist);
+  }
+
+  inline bool computeContinuousTTA(double dt, double epsilon, long ms,
+    discrete_pdf &dist) const 
+  {
+    DCASSERT(PROC);
+    return PROC->computeContinuousTTA(dt, epsilon, ms, dist);
   }
 
   inline bool reachesAccept(double* x) const {

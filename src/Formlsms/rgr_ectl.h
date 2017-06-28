@@ -3,6 +3,7 @@
 #define RGR_ECTL_H
 
 #include "graph_llm.h"
+#include "../_GraphLib/graphlib.h"
 
 // external library
 #include "../_IntSets/intset.h"
@@ -13,6 +14,8 @@
 #include <stdio.h>
 #endif
 
+// #define USE_OLD_TRAVERSE_HELPER
+
 /**
     Abstract base class, for reachgraphs that use explicit CTL stuff.
 */
@@ -20,6 +23,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 
   protected:
     
+#ifdef USE_OLD_TRAVERSE_HELPER
     // ======================================================================
     //
     // Helper class: use for the critical "traverse" method
@@ -137,7 +141,119 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     // End of traverse_helper class
     //
     // ======================================================================
+#else
+    // ======================================================================
+    //
+    // Helper class: use for the critical "traverse" method
+    //
+    class CTL_traversal : public GraphLib::BF_with_queue {
+      public:
+        CTL_traversal(long NS);
+        virtual ~CTL_traversal();
 
+        virtual bool visit(long, long dest, const void*);
+
+      public:
+        inline long getSize() const { return size; }
+
+        /**
+          Should this be a "one step only" traversal?
+            @param  os    If true, when visiting states,
+                          we do not add them to the queue.
+        */
+        inline void setOneStep(bool os) {
+          one_step = os;
+        }
+
+        //
+        // Queue initialization methods
+        //
+
+        /**
+          Add elements from the set p to the queue,
+          and sets the obligations to 0 for those elements.
+            @param  p     Set of elements to add to queue
+        */
+        void init_queue_from(const intset &p);
+
+        /**
+          Add elements NOT in the set p to the queue,
+          and sets the obligations to 0 for those elements.
+            @param  p     Set of elements NOT to add to queue
+        */
+        void init_queue_complement(const intset &p);
+
+        //
+        // Obligation counting methods
+        //
+
+        /// Anything with zero obligations, set to new value
+        void reset_zero_obligations(int newval=-1);
+
+        /// Set obligations to value for anything not in the set p.
+        void restrict_paths(const intset &p, int value=-1);
+
+        /// Set obligations to value for anything in the set p.
+        void set_obligations(const intset &p, int value=1);
+
+        /// Set all obligations to value.
+        inline void fill_obligations(int value) { 
+          DCASSERT(obligations);
+          for (long i=0; i<size; i++) obligations[i] = value;
+        }
+
+        /// Increment obligations for state i
+        inline void add_obligation(long i) { 
+          DCASSERT(obligations);
+          CHECK_RANGE(0, i, size);
+          obligations[i]++;
+        }
+
+        /// Increment obligations for states in set p
+        void add_obligations(const intset& p);
+
+        /// Decrement obligations for state i
+        inline void remove_obligation(long i) { 
+          DCASSERT(obligations);
+          CHECK_RANGE(0, i, size);
+          obligations[i]--;
+        }
+
+        /// Get current number of unmet obligations for state i
+        inline long num_obligations(long i) const { 
+          DCASSERT(obligations);
+          CHECK_RANGE(0, i, size);
+          return obligations[i];
+        }
+
+        /// Set obligations for state i
+        inline void set_obligations(long i, int value) {
+          DCASSERT(obligations);
+          CHECK_RANGE(0, i, size);
+          obligations[i] = value;
+        }
+
+
+        /**
+          If obligations[i] == 0, add i to set x.
+          Do this for all i.
+        */
+        void get_met_obligations(intset &x) const;
+
+#ifdef DEBUG_ECTL
+        void dump(FILE* out) const;
+#endif
+
+      private:
+        long* obligations;  
+        long size;
+        bool one_step;
+    };
+    //
+    // End of CTL_traversal class
+    //
+    // ======================================================================
+#endif
 
 
   public:
@@ -178,13 +294,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     */
     virtual void getTSCCsSatisfying(intset &p) const;
 
-    //
-    // Add whatever it takes for us to efficiently do
-    // reverse time CTL.
-    // Assume that forward time CTL is already set.
-    //
-    virtual void need_reverse_time() = 0;
-
+#ifdef USE_OLD_TRAVERSE_HELPER
     /**
       Count edges and set obligations in our traverse helper.
         @param  rt    Reverse time?  If true, count incoming edges;
@@ -208,10 +318,33 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     */
     virtual void traverse(bool rt, bool one_step, traverse_helper &TH) 
       const = 0; 
+#else
+    /**
+      Count edges and set obligations in our traverse helper.
+        @param  rt    Reverse time?  If true, count incoming edges;
+                      otherwise, count outgoing edges.
+        @param  CTL   CTL traversal.  On output, obligations will 
+                      be set accordingly.
+    */
+    virtual void count_edges(bool rt, CTL_traversal &CTL) const = 0;
+      
+    /**
+      Traverse graph, using the given traversal.
+        @param  rt      Should we reverse time?  If so, we traverse the
+                        outgoing edges, otherwise we traverse the
+                        incoming edges.
+        @param  T       Graph traversal to use.  
+    */
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const = 0; 
+#endif
 
 
-  private:
+  protected:
+#ifdef USE_OLD_TRAVERSE_HELPER
     traverse_helper* TH;
+#else
+    CTL_traversal* TH;
+#endif
 
     // TBD - need a timer, for reporting
     
@@ -262,7 +395,12 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 
       // Traverse!
       startTraverse(CTLOP);
+#ifdef USE_OLD_TRAVERSE_HELPER
       traverse(revTime, false, *TH);
+#else
+      TH->setOneStep(false);
+      traverse(revTime, *TH);
+#endif
       stopTraverse(CTLOP);
 
       // build answer

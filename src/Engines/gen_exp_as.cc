@@ -209,14 +209,14 @@ indexed_reachgraph::~indexed_reachgraph()
 struct indexed_smp : public indexed_statedbs {
   hldsm &model;
   LS_Options &vansolver;
-  Old_MCLib::vanishing_chain &smp;
+  MCLib::vanishing_chain &smp;
 public:
   indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
-              LS_Options &vs, Old_MCLib::vanishing_chain &smp);
+              LS_Options &vs, MCLib::vanishing_chain &smp);
   // handy
-  inline void convert(Old_MCLib::error e, const char* x) {
+  inline void convert(MCLib::error e, const char* x) {
     switch (e.getCode()) {
-      case Old_MCLib::error::Out_Of_Memory:
+      case MCLib::error::Out_Of_Memory:
           throw subengine::Out_Of_Memory;
 
       default:
@@ -236,9 +236,10 @@ public:
   }
   inline void exportInitial(LS_Vector &s0) {
     try {
-      smp.getInitialVector(s0);
+      // smp.getInitialVector(s0);
+      smp.buildInitialVector(false, s0);  // use doubles?
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "build initial vector");
     }
   }
@@ -252,9 +253,9 @@ public:
     index = vandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumVanishing()) return false;
     try {
-      CHECK_RETURN(smp.addVanishing(), index);
+      smp.addVanishing();
     } 
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add vanishing state");
     }
     return true;
@@ -263,9 +264,9 @@ public:
     index = tandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumTangible()) return false;
     try {
-      CHECK_RETURN(smp.addTangible(), index);
+      smp.addTangible();
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add tangible state");
     }
     return true;
@@ -278,7 +279,7 @@ public:
     try {
       smp.eliminateVanishing(vansolver);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "eliminate vanishings");
     }
   }
@@ -287,7 +288,7 @@ public:
       if (van)  smp.addInitialVanishing(st, wt);
       else      smp.addInitialTangible(st, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -296,7 +297,7 @@ public:
     try {
       smp.addInitialVanishing(st, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -304,7 +305,7 @@ public:
     try {
       smp.addInitialTangible(st, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add initial state");
     }
   }
@@ -313,7 +314,7 @@ public:
     try {
       smp.addTTedge(from, to, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -321,7 +322,7 @@ public:
     try {
       smp.addTVedge(from, to, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -329,7 +330,7 @@ public:
     try {
       smp.addVTedge(from, to, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -337,7 +338,7 @@ public:
     try {
       smp.addVVedge(from, to, wt);
     }
-    catch (Old_MCLib::error e) {
+    catch (MCLib::error e) {
       convert(e, "add edge");
     }
   }
@@ -346,7 +347,7 @@ public:
 
 indexed_smp
 ::indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
-              LS_Options &vs, Old_MCLib::vanishing_chain &the_smp)
+              LS_Options &vs, MCLib::vanishing_chain &the_smp)
  : indexed_statedbs(tdb, vdb), model(m), vansolver(vs), smp(the_smp)
 {
 }
@@ -385,7 +386,7 @@ protected:
 
         @throw  Appropriate error code.
   */
-  void generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, Old_MCLib::vanishing_chain* smp) const;
+  void generateMC(dsde_hlm* m, StateLib::state_db* ss, LS_Vector &s0, MCLib::vanishing_chain* smp) const;
 
 
   inline void initial_distro(const LS_Vector &init) const {
@@ -430,8 +431,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
   StateLib::state_db* rss = 0;
   GraphLib::dynamic_digraph* rg = 0;
-  Old_MCLib::Markov_chain* mc = 0;
-  Old_MCLib::vanishing_chain* vc = 0;
+  MCLib::vanishing_chain* vc = 0;
   const char* the_proc = 0;
   
   bool nondeterm = (hm->GetProcessType() == lldsm::FSM);
@@ -469,7 +469,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     }
     DCASSERT(rss);
     if (!statesonly.getBool()) {
-      vc = Old_MCLib::startVanishingChain(false, rss->Size(), 0);
+      // vc = MCLib::startVanishingChain(false, rss->Size(), 0);
+      vc = new MCLib::vanishing_chain(false, rss->Size(), 0);
     }
   }
 
@@ -506,12 +507,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     bailOut = e;
   }
 
-  if (vc) {
-    mc = vc->grabTTandClear();
-    DCASSERT(mc);
-    delete vc;
-  }
-
   // Report on generation
   if (stopGen(!procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
@@ -526,11 +521,11 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
       Report().report() << " required for reachability graph construction\n";
       Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
     } 
-    if (mc) {
+    if (vc) {
       Report().report().Put('\t');
-      Report().report().PutMemoryCount(mc->ReportMemTotal(), 3);
+      Report().report().PutMemoryCount(vc->getMemTotal(), 3);
       Report().report() << " required for Markov chain construction\n";
-      Report().report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
+      Report().report() << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
     }
     Report().stopIO();
   }
@@ -539,7 +534,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Did we succeed so far?
   if (!procOK) {
     delete rg;
-    delete mc;
+    delete vc;
     if (lm) {
       lm->setCompletionEngine(0);
     } else {
@@ -585,7 +580,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   } else {
     stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);
     DCASSERT(glm);
-    mclib_process* mcp = new mclib_process(mc);
+    mclib_process* mcp = new mclib_process(vc);
     glm->setPROC(init, mcp);
   }
   
@@ -622,7 +617,7 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 
 void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb, 
-  LS_Vector &s0, Old_MCLib::vanishing_chain* smp) const
+  LS_Vector &s0, MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);

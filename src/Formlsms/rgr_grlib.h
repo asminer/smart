@@ -38,15 +38,20 @@ class grlib_reachgraph : public ectl_reachgraph {
 
   protected:
     virtual void getDeadlocked(intset &r) const;
-    virtual void need_reverse_time();
 
+#ifdef USE_OLD_TRAVERSE_HELPER
     virtual void count_edges(bool rt, traverse_helper &TH) const;
-      
     virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const; 
+#else
+    virtual void count_edges(bool rt, CTL_traversal &CTL) const;
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const; 
+#endif
 
   private:
     static void showRawMatrix(OutputStream &os, const GraphLib::static_graph &E);
+#ifdef USE_OLD_TRAVERSE_HELPER
     static void _traverse(bool one_step, const GraphLib::static_graph &E, traverse_helper &TH);
+#endif
 
 
   private:
@@ -60,6 +65,7 @@ class grlib_reachgraph : public ectl_reachgraph {
     // Graph after finishing, stored by outgoing edges, for reverse time
     GraphLib::static_graph OutEdges;
 
+#ifdef USE_OLD_TRAVERSE_HELPER
 // New traversal stuff
 
     template <bool ONESTEP>
@@ -73,6 +79,7 @@ class grlib_reachgraph : public ectl_reachgraph {
       private:
         traverse_helper &TH;
     };
+#endif
 
 };
 

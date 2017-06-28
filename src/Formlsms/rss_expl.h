@@ -27,7 +27,7 @@ class expl_reachset : public indexed_reachset {
     virtual void Finish();
 
     // Renumber states
-    virtual void Renumber(const long* ren);
+    virtual void Renumber(const GraphLib::node_renumberer* Ren);
   
   private:
     /**

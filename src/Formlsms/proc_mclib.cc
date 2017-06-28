@@ -51,10 +51,10 @@ bool statusOK(exprman* em, const LS_Output &o, const char* who)
     return false;
 }
 
-bool status(exprman* em, Old_MCLib::error e, const char* who) 
+bool status(exprman* em, MCLib::error e, const char* who) 
 {
     switch (e.getCode()) {
-      case Old_MCLib::error::Out_Of_Memory:
+      case MCLib::error::Out_Of_Memory:
           if (em->startError()) {
             em->noCause();
             em->cerr() << "Insufficient memory for Markov chain ";
@@ -63,15 +63,7 @@ bool status(exprman* em, Old_MCLib::error e, const char* who)
           }
           break;
 
-      case Old_MCLib::error::Wrong_Format:
-          if (em->startError()) {
-            em->noCause();
-            em->cerr() << "Wrong matrix format for Markov chain linear solver";
-            em->stopIO();
-          }
-          break;
-
-      case Old_MCLib::error::Null_Vector:
+      case MCLib::error::Null_Vector:
           if (em->startError()) {
             em->noCause();
             em->cerr() << "Initial probability vector required for Markov chain solver";
@@ -95,19 +87,84 @@ bool status(exprman* em, Old_MCLib::error e, const char* who)
 // *                                                                *
 // ******************************************************************
 
-mclib_process::mclib_process(Old_MCLib::Markov_chain* mc)
+mclib_process::mclib_process(bool discrete, GraphLib::dynamic_graph* _G)
 {
-  chain = mc;
+  is_discrete = discrete;
+  G = _G;
+  VC = 0;
+
+  chain = 0;
   initial = 0;
-  //
+  
+  trap = -1;
+  accept = -1;
+}
+
+mclib_process::mclib_process(MCLib::vanishing_chain* vc)
+{
+  is_discrete = vc->isDiscrete();
+  G = 0;
+  VC = vc;
+
+  chain = 0;
+  initial = 0;
+  
   trap = -1;
   accept = -1;
 }
 
 mclib_process::~mclib_process()
 {
+  delete G;
+  delete VC;
   delete chain;
   Delete(initial);
+}
+
+GraphLib::node_renumberer* mclib_process::initChain(GraphLib::dynamic_graph *g)
+{
+  // Classify states
+  GraphLib::timer_hook *sw = my_timer ? my_timer->switchMe() : 0;
+  GraphLib::abstract_classifier* ac = g->determineSCCs(0, 1, true, sw);
+  GraphLib::static_classifier C;
+  GraphLib::node_renumberer *Ren = ac->buildRenumbererAndStatic(C);
+  
+  // Renumber states
+  DCASSERT(Ren);
+  g->renumberNodes(*Ren);
+  
+  // Build chain; try using doubles
+  GraphLib::dynamic_summable <double> *Gd = 
+    dynamic_cast < GraphLib::dynamic_summable <double> *> (g);
+
+  if (Gd) {
+    chain = new MCLib::Markov_chain(is_discrete, *Gd, C, sw);
+  }
+
+  if (0==chain) {
+    // try using floats
+    GraphLib::dynamic_summable <float> *Gf = 
+      dynamic_cast < GraphLib::dynamic_summable <float> *> (g);
+
+    if (Gf) {
+      chain = new MCLib::Markov_chain(is_discrete, *Gf, C, sw);
+    }
+  }
+    
+  if (0==chain) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+        em->noCause();
+        em->internal() << "Couldn't convert graph to Markov chain: bad graph type?\n";
+        em->stopIO();
+    }
+  }
+
+  // 
+  // Cleanup
+  //
+  delete ac;
+
+  return Ren;
 }
 
 void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_lldsm::reachset* rss)
@@ -119,31 +176,37 @@ void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_l
   DCASSERT(irs);
   irs->Finish();
 
+  //
   // Finish MC
-  Old_MCLib::Markov_chain::finish_options opts;
-  opts.Store_By_Rows = storeByRows();
-  opts.Will_Clear = false;
-  opts.report = my_timer ? my_timer->switchMe() : 0;
-  Old_MCLib::Markov_chain::renumbering r;
-  chain->finish(opts, r);
-  DCASSERT(chain->isEfficientByRows() == opts.Store_By_Rows);
-
-  if (r.GeneralRenumbering()) {
-    const long* ren = r.GetGeneral();
-    DCASSERT(ren);
-
-    // Renumber states
-    irs->Renumber(ren);
-    if (trap>=0)    trap = ren[trap];
-    if (accept>=0)  accept = ren[accept];
-
-    initial = new statedist(p, init, ren);
-  } else {
-    DCASSERT(r.NoRenumbering());
-
-    initial = new statedist(p, init, 0);
+  //
+  GraphLib::node_renumberer *Ren = 0;
+  if (G) {
+    Ren = initChain(G);
+  } else if (VC) {
+    Ren = initChain(& VC->TT() );
   }
-    
+  DCASSERT(Ren);
+
+  //
+  // Done with G, VC
+  //
+  delete G;
+  G = 0;
+  delete VC;
+  VC = 0;
+
+  //
+  // Renumber states
+  //
+  irs->Renumber(Ren);
+  if (trap >= 0) {
+    trap = Ren->new_number(trap);
+  }
+  if (accept >= 0) {
+    accept = Ren->new_number(accept);
+  }
+  initial = new statedist(p, init, Ren);
+
   // Copy initial states to RSS
   intset initial_set( chain->getNumStates() );  
   initial->greater_than(0, &initial_set);
@@ -153,6 +216,11 @@ void mclib_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_l
   // Set the reachability graph, using 
   // a thin wrapper around the Markov chain.
   p->setRGR( new mclib_reachgraph(this) );
+
+  //
+  // Done with Ren
+  //
+  delete Ren;
 }
 
 long mclib_process::getNumStates() const
@@ -164,23 +232,31 @@ long mclib_process::getNumStates() const
 void mclib_process::getNumClasses(long &count) const
 {
   DCASSERT(chain);
-  count = chain->getNumClasses() + chain->getNumAbsorbing();
+  const GraphLib::static_classifier& C = chain->getStateClassification();
+  count = C.getNumClasses() - 2 + C.sizeOfClass(1);
+  // There's always one class for all transient states (#0)
+  // and one class for all absorbing states (#1).  Subtract those,
+  // and add back the number of absorbing states.
 }
 
 void mclib_process::showClasses(OutputStream &os, state_lldsm::reachset* RSS, 
   shared_state* st) const
 {
   // TBD
+
   DCASSERT(0);
 
+/*
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I = 
     dynamic_cast <indexed_reachset::indexed_iterator &> (
       RSS->iteratorForOrder(state_lldsm::NATURAL)
     );
 
-  long nr = chain->getNumClasses();
-  long na = chain->getNumAbsorbing();
+  const GraphLib::static_classifier& C = chain->getStateClassification();
+
+  long nr = C.getNumClasses()-2;
+  long na = C.sizeOfClass(1);
 
   long trans = chain->getNumTransient();
   if (trans) {
@@ -219,12 +295,14 @@ void mclib_process::showClasses(OutputStream &os, state_lldsm::reachset* RSS,
       snum++;
     }
   }
+  */
 }
 
 bool mclib_process::isTransient(long st) const
 {
   DCASSERT(chain);
-  return chain->isTransientState(st);
+  const GraphLib::static_classifier& C = chain->getStateClassification();
+  return C.isNodeInClass(st, 0);
 }
 
 statedist* mclib_process::getInitialDistribution() const
@@ -232,30 +310,50 @@ statedist* mclib_process::getInitialDistribution() const
   return Share(initial);
 }
 
+/*
 long mclib_process::getOutgoingWeights(long from, long* to, double* w, long n) const
 {
   simple_outedges thing(to, w, n);
   chain->traverseFrom(from, thing);
   return thing.edges;
 }
+*/
 
 bool mclib_process
 ::computeTransient(double t, double* probs, double* aux1, double* aux2) const
 {
   if (0==chain || 0==probs || 0==aux1)  return false;
-  Old_MCLib::Markov_chain::transopts opts;
-  opts.kill_aux_vectors = false;
-  opts.vm_result = aux1;
-  opts.accumulator = aux2;
+
 
   try {
     timer w;
-    startTransientReport(w, t); 
-    chain->computeTransient(t, probs, opts);
-    stopTransientReport(w, opts.Steps);
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux1;
+      opts.accumulator = aux2;
+
+      int it = int(t);
+      startTransientReport(w, it);
+      chain->computeTransient(it, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux1;
+      opts.accumulator = aux2;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -271,19 +369,35 @@ bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
 {
   if (0==chain || 0==p0 || 0==n || 0==aux || 0==aux2) return false;
 
-  Old_MCLib::Markov_chain::transopts opts;
-  opts.vm_result = aux;
-  opts.accumulator = aux2;
-  opts.kill_aux_vectors = false;
-
   try {
     timer w;
-    startAccumulatedReport(w, t);
-    chain->accumulate(t, p0, n, opts);
-    stopAccumulatedReport(w, opts.Steps);
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      opts.accumulator = aux2;
+
+      int it = int(t);
+      startAccumulatedReport(w, it);
+      chain->accumulate(it, p0, n, opts);
+      stopAccumulatedReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+      opts.accumulator = aux2;
+
+      startAccumulatedReport(w, t); 
+      chain->accumulate(t, p0, n, opts);
+      stopAccumulatedReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -306,11 +420,11 @@ bool mclib_process::computeSteadyState(double* probs) const
     startSteadyReport(w); 
     DCASSERT(initial);
     initial->ExportTo(ls_init);
-    chain->computeSteady(ls_init, probs, getSolverOptions(), outdata);
+    chain->computeInfinityDistribution(ls_init, probs, getSolverOptions(), outdata);
     stopSteadyReport(w, outdata.num_iters);
     return statusOK(em, outdata, "steady-state");
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     return status(em, e, "steady-state");
   }
 }
@@ -332,7 +446,7 @@ bool mclib_process::computeTimeInStates(const double* p0, double* x) const
     stopTTAReport(w, outdata.num_iters);
     return statusOK(em, outdata, "time in states");
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     return status(em, e, "time in states");
   }
 }
@@ -350,11 +464,11 @@ bool mclib_process::computeClassProbs(const double* p0, double* x) const
   try {
     timer w;
     startTTAReport(w);
-    chain->computeClassProbs(p0vect, x, getSolverOptions(), outdata);
+    chain->computeFirstRecurrentProbs(p0vect, x, getSolverOptions(), outdata);
     stopTTAReport(w, outdata.num_iters);
     return statusOK(em, outdata, "class probabilities");
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     return status(em, e, "class probabilities");
   }
 }
@@ -374,28 +488,11 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     return false;
   }
 
-  // TBD: an option for this part?
-  // TBD: reporting for the transpose?
-  if (chain->isEfficientByCols()) {
-    try {
-      chain->transpose();
-    }
-    catch (Old_MCLib::error e) {
-      if (em->startError()) {
-        em->noCause();
-        em->cerr() << "Couldn't transpose DTMC for random walk: ";
-        em->cerr() << e.getString();
-        em->stopIO();
-      }
-      return false;
-    }
-  }
-
   try {
     elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt, 1.0);
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't simulate DTMC random walk: ";
@@ -420,28 +517,11 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     return false;
   }
 
-  // TBD: an option for this part?
-  // TBD: reporting for the transpose?
-  if (chain->isEfficientByCols()) {
-    try {
-      chain->transpose();
-    }
-    catch (Old_MCLib::error e) {
-      if (em->startError()) {
-        em->noCause();
-        em->cerr() << "Couldn't transpose CTMC for random walk: ";
-        em->cerr() << e.getString();
-        em->stopIO();
-      }
-      return false;
-    }
-  }
-
   try {
     elapsed = chain->randomWalk(st, state, &final->getExplicit(), maxt);
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't simulate CTMC random walk: ";
@@ -456,7 +536,8 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
 // For phase?
 // 
 
-bool mclib_process::computeDiscreteTTA(double epsilon, double* &dist, int &N) const
+bool mclib_process::computeDiscreteTTA(double epsilon, long maxsize, 
+  discrete_pdf &dist) const
 {
   DCASSERT(chain);
   if (chain->isContinuous()) {
@@ -472,21 +553,26 @@ bool mclib_process::computeDiscreteTTA(double epsilon, double* &dist, int &N) co
   if (acc_state < 0) {
     // Degenerate case - no accepting state
     // This should be a distribution of "infinity"
-    dist = 0;
-    N = 0;
+    dist.reset(0, -1, 0, 1.0);
     return true;
   }
 
+  const GraphLib::static_classifier& C = chain->getStateClassification();
+  DCASSERT(C.isNodeInClass(acc_state, 1));
+
   try {
-    int goal = chain->getClassOfState(acc_state);
-    Old_MCLib::Markov_chain::distopts opts;
+    // int goal = chain->getClassOfState(acc_state);
+    long goal = -acc_state;
+    MCLib::Markov_chain::DTMC_distribution_options opts;
+    opts.epsilon = epsilon;
+    opts.setMaxSize(maxsize);
     LS_Vector ls_init;
     DCASSERT(initial);
     initial->ExportTo(ls_init);
-    chain->computeDiscreteDistTTA(ls_init, opts, goal, epsilon, dist, N);
+    chain->computeDiscreteDistTTA(opts, ls_init, goal, dist);
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startError()) {
       em->noCause();
       em->cerr() << "Couldn't compute discrete TTA: ";
@@ -498,8 +584,8 @@ bool mclib_process::computeDiscreteTTA(double epsilon, double* &dist, int &N) co
 }
 
 
-bool mclib_process::
-computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
+bool mclib_process::computeContinuousTTA(double dt, double epsilon, 
+  long maxsize, discrete_pdf &dist) const
 {
   DCASSERT(chain);
   if (chain->isDiscrete()) {
@@ -515,24 +601,26 @@ computeContinuousTTA(double dt, double epsilon, double* &dist, int &N) const
   if (acc_state < 0) {
     // Degenerate case - no accepting state
     // This should be a distribution of "infinity"
-    dist = 0;
-    N = 0;
+    dist.reset(0, -1, 0, 1.0);
     return true;
   }
 
   try {
-    int goal = chain->getClassOfState(acc_state);
-    Old_MCLib::Markov_chain::distopts opts;
+    // int goal = chain->getClassOfState(acc_state);
+    long goal = -acc_state;
+    MCLib::Markov_chain::CTMC_distribution_options opts;
+    opts.epsilon = epsilon;
+    opts.setMaxSize(maxsize);
     LS_Vector ls_init;
     DCASSERT(initial);
     initial->ExportTo(ls_init);
-    chain->computeContinuousDistTTA(ls_init, opts, goal, dt, epsilon, dist, N);
+    chain->computeContinuousDistTTA(opts, ls_init, goal, dt, dist);
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startError()) {
       em->noCause();
-      em->cerr() << "Couldn't compute discrete TTA: ";
+      em->cerr() << "Couldn't compute continuous TTA: ";
       em->cerr() << e.getString();
       em->stopIO();
     }
@@ -560,16 +648,23 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
 
   if (t<=0) return true;
 
-  Old_MCLib::Markov_chain::transopts opts;
-
   try {
     timer w;
-    startRevTransReport(w, t); 
-    chain->reverseTransient(t, x, opts);
-    stopRevTransReport(w, opts.Steps);
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      int it = int(t);
+      startRevTransReport(w, it);
+      chain->reverseTransient(it, x, opts);
+      stopRevTransReport(w, opts.multiplications);
+    } else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      startRevTransReport(w, t); 
+      chain->reverseTransient(t, x, opts);
+      stopRevTransReport(w, opts.multiplications);
+    }
     return true;
   }
-  catch (Old_MCLib::error e) {
+  catch (MCLib::error e) {
     if (em->startInternal(__FILE__, __LINE__)) {
       em->noCause();
       em->internal() << "Unexpected error: ";
@@ -591,8 +686,10 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
 
 void mclib_process::showInternal(OutputStream &os) const
 {
+  // TBD
+
   os << "Internal representation for Markov chain:\n";
-  os << "  Explicit representation using MCLib.  Cannot display, sorry\n";
+  os << "  Explicit representation using MCLib.  Cannot display yet, sorry\n";
   return;
 }
 
@@ -600,6 +697,7 @@ void mclib_process::showProc(OutputStream &os,
   const graph_lldsm::reachgraph::show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
+  /*
   long na = chain->getNumArcs();
   long num_states = chain->getNumStates();
 
@@ -724,6 +822,7 @@ void mclib_process::showProc(OutputStream &os,
     os << "}\n";
   }
   os.flush();
+  */
 }
 
 // ******************************************************************
@@ -731,7 +830,7 @@ void mclib_process::showProc(OutputStream &os,
 // *            mclib_process::sparse_row_elems  methods            *
 // *                                                                *
 // ******************************************************************
-
+/*
 mclib_process::sparse_row_elems
 ::sparse_row_elems(const indexed_reachset::indexed_iterator &i)
  : I(i)
@@ -801,7 +900,7 @@ bool mclib_process::sparse_row_elems
   last++;
   return false;
 }
-
+*/
 // ******************************************************************
 // *                                                                *
 // *                    mclib_reachgraph methods                    *
@@ -838,6 +937,7 @@ void mclib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   chain->showProc(os, opt, RSS, st);
 }
 
+/*
 bool mclib_reachgraph::forward(const intset& p, intset &r) const
 {
   DCASSERT(chain);
@@ -849,16 +949,17 @@ bool mclib_reachgraph::backward(const intset& p, intset &r) const
   DCASSERT(chain);
   return chain->backward(p, r);
 }
+*/
 
 void mclib_reachgraph::absorbing(intset &r) const
 {
   DCASSERT(chain);
-  chain->absorbing(r);
+  // chain->absorbing(r);
 }
     
 void mclib_reachgraph::getTSCCsSatisfying(intset &p) const
 {
   DCASSERT(chain);
-  chain->getTSCCsSatisfying(p);
+  // chain->getTSCCsSatisfying(p);
 }
 

@@ -434,7 +434,7 @@ public:
 
 avgacc_si::avgacc_si() : baseacc_si("avg_acc", em->REAL->addProc())
 {
-  SetDocumentation("Computes the expected accumulated value of expression x between times t1 and t2.");
+  SetDocumentation("Computes the expected accumulated value of expression x for the time interval [t1, t2].");
 }
 
 // *******************************************************************
@@ -448,7 +448,7 @@ public:
 
 probacc_si::probacc_si() : baseacc_si("prob_acc", em->BOOL->addProc())
 {
-  SetDocumentation("Computes the expected amount of time that expression x is true, between times t1 and t2.");
+  SetDocumentation("Computes the expected amount of time that expression x is true, for the time interval [t1, t2].");
 }
 
 

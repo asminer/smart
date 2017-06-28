@@ -5,8 +5,9 @@
 #include "state_llm.h"
 
 // External libs
-#include "../_LSLib/lslib.h"      // for LS_Vector
-#include "../_IntSets/intset.h"   // for intset
+#include "../_LSLib/lslib.h"        // for LS_Vector
+#include "../_GraphLib/graphlib.h"  // for intset
+#include "../_IntSets/intset.h"     // for intset
 
 /**
     Special case - explicit reachability sets with indexes per states.
@@ -38,8 +39,8 @@ class indexed_reachset : public state_lldsm::reachset {
 
     // Renumber the states, for example after classifying a Markov chain.
     // Default does nothing.
-    //  @param  ren   ren[i] gives the new number for state i
-    virtual void Renumber(const long* ren);
+    //  @param  Ren   Node renumbering scheme.
+    virtual void Renumber(const GraphLib::node_renumberer* Ren);
 
     
 
