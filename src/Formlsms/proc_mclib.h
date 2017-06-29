@@ -38,7 +38,7 @@ class mclib_process : public markov_process {
         shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
-    // virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
+    virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
     virtual bool computeTransient(double t, double* probs, 
         double* aux, double* aux2) const;
     virtual bool computeAccumulated(double t, const double* p0, double* n,
@@ -87,55 +87,16 @@ class mclib_process : public markov_process {
       na = chain->getNumEdges();
     }
 
-  /*
-    inline bool forward(const intset& p, intset &r) const {
-      DCASSERT(chain);
-      return chain->getForward(p, r);
-    }
+    void getDeadlocked(intset &r) const;
+    void getTSCCsSatisfying(intset &p) const;
 
-    inline bool backward(const intset& p, intset &r) const {
-      DCASSERT(chain);
-      return chain->getBackward(p, r);
-    }
-
-    inline void absorbing(intset &r) const {
-      //
-      // Determine set of states with NO outgoing edges
-      //
-      DCASSERT(chain);
-      r.removeAll();
-      if (chain->isDiscrete()) return; 
-      long fa = chain->getFirstAbsorbing();
-      if (fa < 0) return; // no absorbing states
-      long la = chain->getNumStates();
-      r.addRange(fa, la-1);
-    }
-
-    inline void getTSCCsSatisfying(intset &p) const {
-      p.complement();
-      DCASSERT(chain); 
-      long nt = chain->getNumTransient();
-      if (nt) {
-#ifdef DEBUG_EG
-        em->cout() << "Removing transients, states 0.." << nt-1 << "\n";
+#ifdef USE_OLD_TRAVERSE_HELPER
+    void count_edges(bool, traverse_helper&) const;
+    void traverse(bool rt, bool one_step, traverse_helper &TH) const;
+#else
+    void count_edges(bool, ectl_reachgraph::CTL_traversal&) const;
+    void traverse(bool rt, GraphLib::BF_graph_traversal &T) const;
 #endif
-        p.addRange(0, nt-1);
-      }
-      for (long c=1; c<=chain->getNumClasses(); c++) {
-        long fs = chain->getFirstRecurrent(c);
-        long ls = fs + chain->getRecurrentSize(c) - 1;
-        long nz = p.getSmallestAfter(fs-1);
-        if (nz < 0) continue;
-        if (nz > ls) continue;
-#ifdef DEBUG_EG
-        em->cout() << "Removing class "<< c <<", states "<< fs <<".."<< ls << "\n";
-#endif
-        p.addRange(fs, ls);
-      } // for c
-      p.complement();
-    }
-  */
-
   private:
     bool is_discrete;
 
@@ -229,7 +190,12 @@ class mclib_process : public markov_process {
 // *                                                                *
 // ******************************************************************
 
-// Adapter, so we don't have to use the dreaded diamond.
+/**
+  Adapter, so we don't have to use the dreaded diamond.
+
+  All of these methods simply call a method with the same name 
+  in class mclib_process.
+*/
 class mclib_reachgraph : public ectl_reachgraph {
   public:
     mclib_reachgraph(mclib_process* MC);
@@ -244,36 +210,18 @@ class mclib_reachgraph : public ectl_reachgraph {
     virtual void showArcs(OutputStream &os, const show_options& opt, 
       state_lldsm::reachset* RSS, shared_state* st) const;
 
-// TBD - fix this class
-
   protected:
 
 #ifdef USE_OLD_TRAVERSE_HELPER
-    virtual void count_edges(bool, traverse_helper&) const {
-      throw "not implemented";
-    }
-
-    virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const {
-      throw "not implemented";
-    }
+    virtual void count_edges(bool, traverse_helper&) const;
+    virtual void traverse(bool rt, bool one_step, traverse_helper &TH) const;
 #else
-    virtual void count_edges(bool, CTL_traversal&) const {
-      throw "not implemented";
-    }
-
-    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const {
-      throw "not implemented";
-    }
+    virtual void count_edges(bool, CTL_traversal&) const;
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const;
 #endif
 
-  protected:
-    //virtual bool forward(const intset& p, intset &r) const;
-    // virtual bool backward(const intset& p, intset &r) const;
-    virtual void absorbing(intset &r) const;
-    
+    virtual void getDeadlocked(intset &r) const;
     virtual void getTSCCsSatisfying(intset &p) const;
-
-  
 
   private:
     mclib_process* chain;

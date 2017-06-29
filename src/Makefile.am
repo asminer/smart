@@ -122,6 +122,7 @@ smart_SOURCES = \
   Formlsms/rss_expl.cc \
   Formlsms/rss_indx.cc \
   Formlsms/rss_meddly.cc \
+  Formlsms/show_graph.cc \
   Formlsms/state_llm.cc \
   Formlsms/stoch_llm.cc \
   Formlsms/stoch_msr.cc \

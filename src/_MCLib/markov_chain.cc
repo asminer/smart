@@ -700,6 +700,29 @@ long MCLib::Markov_chain::getNumEdges() const
 
 // ******************************************************************
 
+long MCLib::Markov_chain::getNumEdgesFor(bool incoming, long i) const
+{
+  long edges = 0;
+  if (incoming) {
+    edges += G_bycols_diag.getNumEdgesFor(i);
+    edges += G_bycols_off.getNumEdgesFor(i);
+  } else {
+    edges += G_byrows_diag.getNumEdgesFor(i);
+    edges += G_byrows_off.getNumEdgesFor(i);
+  }
+  // 
+  // Add diagonals, if we have them
+  //
+  if (selfloops_d) {
+    if (selfloops_d[i]) edges++;
+  } else if (selfloops_f) {
+    if (selfloops_f[i]) edges++;
+  }
+  return edges;
+}
+
+// ******************************************************************
+
 size_t MCLib::Markov_chain::getMemTotal() const
 {
   size_t mem = 

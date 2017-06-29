@@ -313,6 +313,16 @@ namespace MCLib {
       */
       long getNumEdges() const;
 
+      /**
+          Number of edges to/from state s in the chain.
+            @param  incoming    If true, we count incoming edges.
+                                Otherwise, we count outgoing edges.
+
+            @param  state       State we care about
+
+            @return Number of edges to/from state.
+      */
+      long getNumEdgesFor(bool incoming, long state) const;
 
       /// @return Total memory required to store the chain, in bytes.
       size_t getMemTotal() const;

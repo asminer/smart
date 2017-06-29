@@ -9,17 +9,25 @@
 #include "../Modules/expl_ssets.h"
 #include "../Modules/biginttype.h"
 
-// Alas, I have succumbed to STL
-#include <set>
-
 // External libs
 
 #include "../_Timer/timerlib.h"
 
+// #define USE_OLD_GRAPH_DISPLAY
+
+#ifdef USE_OLD_GRAPH_DISPLAY
+// Alas, I have succumbed to STL
+#include <set>
+#else
+// Does most of the work to display a graph :^)
+#include "show_graph.h"
+#endif
+
+#ifdef USE_OLD_GRAPH_DISPLAY
+
 // ******************************************************************
 // *                    grlib_display_row  class                    *
 // ******************************************************************
-
 
 class grlib_display_row : public GraphLib::BF_graph_traversal {
   public:
@@ -308,7 +316,7 @@ void grlib_display_incoming::show_edge(long src, long dest)
   out() << "\n";
 }
 
-
+#endif // #ifdef USE_OLD_GRAPH_DISPLAY
 
 // ******************************************************************
 // *                                                                *
@@ -397,6 +405,8 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
   const GraphLib::static_graph &Edges = by_rows ? OutEdges : InEdges;
 
+#ifdef USE_OLD_GRAPH_DISPLAY
+
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I 
   = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
@@ -463,6 +473,21 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   //
 
   delete display;
+
+#else // #ifdef USE_OLD_GRAPH_DISPLAY
+
+  if (graph_lldsm::TRIPLES == opt.STYLE) {
+    os << "#states " << Edges.getNumNodes() << "\n";
+    os << "#edges " << Edges.getNumEdges() << "\n";
+  }
+
+  graphlib_displayer foo(os, graphlib_displayer::NONE, opt, RSS, st);
+  foo.pre_traversal();
+  Edges.traverse(foo);
+  foo.post_traversal();
+
+#endif
+
 }
 
 void grlib_reachgraph::setInitial(LS_Vector &init)
