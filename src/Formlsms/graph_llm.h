@@ -64,7 +64,7 @@ public:
         state_lldsm::display_order ORDER;
         graph_lldsm::display_style STYLE;
         bool NODE_NAMES;
-        bool RG_ONLY;
+        bool RG_ONLY;   // ?
       };
     private:
       const graph_lldsm* parent;

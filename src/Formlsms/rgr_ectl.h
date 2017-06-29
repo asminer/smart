@@ -21,7 +21,7 @@
 */
 class ectl_reachgraph : public graph_lldsm::reachgraph {
 
-  protected:
+  public:
     
 #ifdef USE_OLD_TRAVERSE_HELPER
     // ======================================================================
