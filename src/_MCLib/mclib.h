@@ -348,6 +348,14 @@ namespace MCLib {
         return uniformization_const;
       }
 
+      /**
+          Return true if the graphs use doubles.
+          We might need to know this outside the class
+          if we're doing a traversal.
+      */
+      inline bool edgesStoredAsDoubles() const {
+        return double_graphs;
+      }
 
       /**
           Run graph traversal t, on outgoing edges.

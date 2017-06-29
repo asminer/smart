@@ -20,11 +20,11 @@ To state 4:
 	From state 0
 Resetting, ignore this:
 WARNING in file vanish.sm near line 18:
-	Ignoring initialization: zero tokens for place p1
-	within model rgfoo built in file vanish.sm near line 46
+    Ignoring initialization: zero tokens for place p1
+    within model rgfoo built in file vanish.sm near line 46
 WARNING:
-	No initial marking given, assuming zero
-	within model rgfoo built in file vanish.sm near line 46
+    No initial marking given, assuming zero
+    within model rgfoo built in file vanish.sm near line 46
 State 0: []
 Building RG & RS simultaneously:
 Reachability graph:
@@ -48,69 +48,69 @@ State 2: [p4]
 State 3: [p6]
 State 4: [p8]
 Markov chain:
-Column 0:
-	1 : 1
-Column 1:
-	0 : 2.1
-	2 : 4
-Column 2:
-	0 : 1.6
-	3 : 7.1
-Column 3:
-	0 : 0.8
-	4 : 10
-Column 4:
-	0 : 0.8
+To state 0:
+	From state 1 with weight 1
+To state 1:
+	From state 0 with weight 2.1
+	From state 2 with weight 4
+To state 2:
+	From state 0 with weight 1.6
+	From state 3 with weight 7.1
+To state 3:
+	From state 0 with weight 0.8
+	From state 4 with weight 10
+To state 4:
+	From state 0 with weight 0.8
 Resetting, ignore this:
 WARNING in file vanish.sm near line 56:
-	Ignoring initialization: zero tokens for place p1
-	within model mcfoo built in file vanish.sm near line 100
+    Ignoring initialization: zero tokens for place p1
+    within model mcfoo built in file vanish.sm near line 100
 WARNING:
-	No initial marking given, assuming zero
-	within model mcfoo built in file vanish.sm near line 100
+    No initial marking given, assuming zero
+    within model mcfoo built in file vanish.sm near line 100
 State 0: []
 Building RG & RS simultaneously:
 Markov chain:
-Column 0:
-	1 : 1
-Column 1:
-	0 : 2.1
-	2 : 4
-Column 2:
-	0 : 1.6
-	3 : 7.1
-Column 3:
-	0 : 0.8
-	4 : 10
-Column 4:
-	0 : 0.8
+To state 0:
+	From state 1 with weight 1
+To state 1:
+	From state 0 with weight 2.1
+	From state 2 with weight 4
+To state 2:
+	From state 0 with weight 1.6
+	From state 3 with weight 7.1
+To state 3:
+	From state 0 with weight 0.8
+	From state 4 with weight 10
+To state 4:
+	From state 0 with weight 0.8
 A Vanishing Loop that can be escaped
 Tangible:
 State 0: [p1]
 State 1: [p2]
 Markov chain:
-Column 0:
-	1 : 7.1
-Column 1:
-	0 : 2
+To state 0:
+	From state 1 with weight 7.1
+To state 1:
+	From state 0 with weight 2
 A Vanishing Loop that cannot be escaped
 Tangible:
 State 0: [p1]
 ERROR:
-	Couldn't eliminate vanishings in process: Absorbing vanishing loop
-	within model bar instantiated in file vanish.sm near line 145
+    Couldn't eliminate vanishings in process: Absorbing vanishing loop
+    within model bar instantiated in file vanish.sm near line 145
 ERROR in file vanish.sm near line 137:
-	Couldn't build underlying process: Engine failed
+    Couldn't build underlying process: Engine failed
 Same test for MC & RS simultaneously
 A Vanishing Loop that can be escaped
 Markov chain:
-Column 0:
-	1 : 7.1
-Column 1:
-	0 : 2
+To state 0:
+	From state 1 with weight 7.1
+To state 1:
+	From state 0 with weight 2
 A Vanishing Loop that cannot be escaped
 ERROR:
-	Couldn't eliminate vanishings in process: Absorbing vanishing loop
-	within model bar instantiated in file vanish.sm near line 154
+    Couldn't eliminate vanishings in process: Absorbing vanishing loop
+    within model bar instantiated in file vanish.sm near line 154
 ERROR in file vanish.sm near line 137:
-	Couldn't build underlying process: Engine failed
+    Couldn't build underlying process: Engine failed

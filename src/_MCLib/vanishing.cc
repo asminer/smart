@@ -487,7 +487,7 @@ void MCLib::vanishing_chain::eliminateVanishing(const LS_Options &opt)
       // Reset for next source state
       //
       zeroArray(Vinit_vect, getNumVanishing());
-      last_src = TV_edges.edgearray[i].from;
+      last_src = ifrom;
     }
     if (i>TV_edges.last_edge) break;
     Vinit_vect[ TV_edges.edgearray[i].to ] += TV_edges.edgearray[i].weight;

@@ -5,9 +5,9 @@
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"
-
-// external library
 #include "../_IntSets/intset.h"
+
+#include "show_graph.h"
 
 bool statusOK(exprman* em, const LS_Output &o, const char* who) 
 {
@@ -722,13 +722,6 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
 
 
 
-
-
-
-//
-// For reachgraphs
-//
-
 // ******************************************************************
 
 void mclib_process::showInternal(OutputStream &os) const
@@ -746,13 +739,35 @@ void mclib_process::showProc(OutputStream &os,
   const graph_lldsm::reachgraph::show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
-  /*
-  long na = chain->getNumArcs();
+  DCASSERT(chain);
+
+  long na = chain->getNumEdges();
   long num_states = chain->getNumStates();
 
   if (state_lldsm::tooManyStates(num_states, &os))  return;
   if (graph_lldsm::tooManyArcs(na, &os))            return;
 
+  if (graph_lldsm::TRIPLES == opt.STYLE) {
+    os << "#states " << num_states << "\n";
+    os << "#edges " << na << "\n";
+  }
+
+  const graphlib_displayer::edge_type reals = 
+    chain->edgesStoredAsDoubles() 
+    ? graphlib_displayer::DOUBLE 
+    : graphlib_displayer::FLOAT;
+
+  graphlib_displayer foo(os, reals, opt, RSS, st);
+
+  foo.pre_traversal();
+
+  const bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
+  if (by_rows)  chain->traverseOutgoing(foo);
+  else          chain->traverseIncoming(foo);
+
+  foo.post_traversal();
+
+  /*
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
   const char* col;
@@ -873,6 +888,13 @@ void mclib_process::showProc(OutputStream &os,
   os.flush();
   */
 }
+
+
+
+
+//
+// For reachgraphs
+//
 
 // ******************************************************************
 

@@ -16,11 +16,11 @@ No trap state
 Initial distribution:
     (0:0.2, 1:0.8)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 1 with weight 1
+2 edges total
 End of information for phase type
 
 Information for phase type choose((0 : 0.8, 1 : 0.2)
@@ -34,11 +34,11 @@ No trap state
 Initial distribution:
     (0:0.2, 1:0.8)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 1 with weight 1
+2 edges total
 End of information for phase type
 
 ------------------------------------------------------------
@@ -58,15 +58,15 @@ No trap state
 Initial distribution:
     (0:0.5, 1:0.5)
 Markov chain:
-Row 0:
-	3 : 1
-Row 1:
-	2 : 1
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-3 edges total
+From state 0:
+	To state 3 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+4 edges total
 End of information for phase type
 
 =======================================
@@ -85,15 +85,15 @@ No trap state
 Initial distribution:
     (0:0.333333, 1:0.333333, 3:0.333333)
 Markov chain:
-Row 0:
-	3 : 1
-Row 1:
-	2 : 1
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-3 edges total
+From state 0:
+	To state 3 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+4 edges total
 End of information for phase type
 
 =======================================
@@ -119,29 +119,29 @@ No trap state
 Initial distribution:
     (0:0.25, 1:0.25, 2:0.25, 3:0.25)
 Markov chain:
-Row 0:
-	10 : 1
-Row 1:
-	4 : 1
-Row 2:
-	5 : 1
-Row 3:
-	6 : 1
-Row 4:
-	10 : 1
-Row 5:
-	7 : 1
-Row 6:
-	8 : 1
-Row 7:
-	10 : 1
-Row 8:
-	9 : 1
-Row 9:
-	10 : 1
-Row 10:
-	10 : 1
-10 edges total
+From state 0:
+	To state 10 with weight 1
+From state 1:
+	To state 4 with weight 1
+From state 2:
+	To state 5 with weight 1
+From state 3:
+	To state 6 with weight 1
+From state 4:
+	To state 10 with weight 1
+From state 5:
+	To state 7 with weight 1
+From state 6:
+	To state 8 with weight 1
+From state 7:
+	To state 10 with weight 1
+From state 8:
+	To state 9 with weight 1
+From state 9:
+	To state 10 with weight 1
+From state 10:
+	To state 10 with weight 1
+11 edges total
 End of information for phase type
 
 =======================================
@@ -234,163 +234,163 @@ No trap state
 Initial distribution:
     (0:0.0277778, 1:0.0555556, 2:0.0833333, 3:0.111111, 4:0.138889, 5:0.166667, 6:0.138889, 7:0.111111, 8:0.0833333, 9:0.0555556, 10:0.0277778)
 Markov chain:
-Row 0:
-	11 : 1
-Row 1:
-	12 : 1
-Row 2:
-	13 : 1
-Row 3:
-	14 : 1
-Row 4:
-	15 : 1
-Row 5:
-	16 : 1
-Row 6:
-	17 : 1
-Row 7:
-	18 : 1
-Row 8:
-	19 : 1
-Row 9:
-	20 : 1
-Row 10:
-	21 : 1
-Row 11:
-	77 : 1
-Row 12:
-	22 : 1
-Row 13:
-	23 : 1
-Row 14:
-	24 : 1
-Row 15:
-	25 : 1
-Row 16:
-	26 : 1
-Row 17:
-	27 : 1
-Row 18:
-	28 : 1
-Row 19:
-	29 : 1
-Row 20:
-	30 : 1
-Row 21:
-	31 : 1
-Row 22:
-	77 : 1
-Row 23:
-	32 : 1
-Row 24:
-	33 : 1
-Row 25:
-	34 : 1
-Row 26:
-	35 : 1
-Row 27:
-	36 : 1
-Row 28:
-	37 : 1
-Row 29:
-	38 : 1
-Row 30:
-	39 : 1
-Row 31:
-	40 : 1
-Row 32:
-	77 : 1
-Row 33:
-	41 : 1
-Row 34:
-	42 : 1
-Row 35:
-	43 : 1
-Row 36:
-	44 : 1
-Row 37:
-	45 : 1
-Row 38:
-	46 : 1
-Row 39:
-	47 : 1
-Row 40:
-	48 : 1
-Row 41:
-	77 : 1
-Row 42:
-	49 : 1
-Row 43:
-	50 : 1
-Row 44:
-	51 : 1
-Row 45:
-	52 : 1
-Row 46:
-	53 : 1
-Row 47:
-	54 : 1
-Row 48:
-	55 : 1
-Row 49:
-	77 : 1
-Row 50:
-	56 : 1
-Row 51:
-	57 : 1
-Row 52:
-	58 : 1
-Row 53:
-	59 : 1
-Row 54:
-	60 : 1
-Row 55:
-	61 : 1
-Row 56:
-	77 : 1
-Row 57:
-	62 : 1
-Row 58:
-	63 : 1
-Row 59:
-	64 : 1
-Row 60:
-	65 : 1
-Row 61:
-	66 : 1
-Row 62:
-	77 : 1
-Row 63:
-	67 : 1
-Row 64:
-	68 : 1
-Row 65:
-	69 : 1
-Row 66:
-	70 : 1
-Row 67:
-	77 : 1
-Row 68:
-	71 : 1
-Row 69:
-	72 : 1
-Row 70:
-	73 : 1
-Row 71:
-	77 : 1
-Row 72:
-	74 : 1
-Row 73:
-	75 : 1
-Row 74:
-	77 : 1
-Row 75:
-	76 : 1
-Row 76:
-	77 : 1
-Row 77:
-	77 : 1
-77 edges total
+From state 0:
+	To state 11 with weight 1
+From state 1:
+	To state 12 with weight 1
+From state 2:
+	To state 13 with weight 1
+From state 3:
+	To state 14 with weight 1
+From state 4:
+	To state 15 with weight 1
+From state 5:
+	To state 16 with weight 1
+From state 6:
+	To state 17 with weight 1
+From state 7:
+	To state 18 with weight 1
+From state 8:
+	To state 19 with weight 1
+From state 9:
+	To state 20 with weight 1
+From state 10:
+	To state 21 with weight 1
+From state 11:
+	To state 77 with weight 1
+From state 12:
+	To state 22 with weight 1
+From state 13:
+	To state 23 with weight 1
+From state 14:
+	To state 24 with weight 1
+From state 15:
+	To state 25 with weight 1
+From state 16:
+	To state 26 with weight 1
+From state 17:
+	To state 27 with weight 1
+From state 18:
+	To state 28 with weight 1
+From state 19:
+	To state 29 with weight 1
+From state 20:
+	To state 30 with weight 1
+From state 21:
+	To state 31 with weight 1
+From state 22:
+	To state 77 with weight 1
+From state 23:
+	To state 32 with weight 1
+From state 24:
+	To state 33 with weight 1
+From state 25:
+	To state 34 with weight 1
+From state 26:
+	To state 35 with weight 1
+From state 27:
+	To state 36 with weight 1
+From state 28:
+	To state 37 with weight 1
+From state 29:
+	To state 38 with weight 1
+From state 30:
+	To state 39 with weight 1
+From state 31:
+	To state 40 with weight 1
+From state 32:
+	To state 77 with weight 1
+From state 33:
+	To state 41 with weight 1
+From state 34:
+	To state 42 with weight 1
+From state 35:
+	To state 43 with weight 1
+From state 36:
+	To state 44 with weight 1
+From state 37:
+	To state 45 with weight 1
+From state 38:
+	To state 46 with weight 1
+From state 39:
+	To state 47 with weight 1
+From state 40:
+	To state 48 with weight 1
+From state 41:
+	To state 77 with weight 1
+From state 42:
+	To state 49 with weight 1
+From state 43:
+	To state 50 with weight 1
+From state 44:
+	To state 51 with weight 1
+From state 45:
+	To state 52 with weight 1
+From state 46:
+	To state 53 with weight 1
+From state 47:
+	To state 54 with weight 1
+From state 48:
+	To state 55 with weight 1
+From state 49:
+	To state 77 with weight 1
+From state 50:
+	To state 56 with weight 1
+From state 51:
+	To state 57 with weight 1
+From state 52:
+	To state 58 with weight 1
+From state 53:
+	To state 59 with weight 1
+From state 54:
+	To state 60 with weight 1
+From state 55:
+	To state 61 with weight 1
+From state 56:
+	To state 77 with weight 1
+From state 57:
+	To state 62 with weight 1
+From state 58:
+	To state 63 with weight 1
+From state 59:
+	To state 64 with weight 1
+From state 60:
+	To state 65 with weight 1
+From state 61:
+	To state 66 with weight 1
+From state 62:
+	To state 77 with weight 1
+From state 63:
+	To state 67 with weight 1
+From state 64:
+	To state 68 with weight 1
+From state 65:
+	To state 69 with weight 1
+From state 66:
+	To state 70 with weight 1
+From state 67:
+	To state 77 with weight 1
+From state 68:
+	To state 71 with weight 1
+From state 69:
+	To state 72 with weight 1
+From state 70:
+	To state 73 with weight 1
+From state 71:
+	To state 77 with weight 1
+From state 72:
+	To state 74 with weight 1
+From state 73:
+	To state 75 with weight 1
+From state 74:
+	To state 77 with weight 1
+From state 75:
+	To state 76 with weight 1
+From state 76:
+	To state 77 with weight 1
+From state 77:
+	To state 77 with weight 1
+78 edges total
 End of information for phase type
 
 =======================================
@@ -407,12 +407,12 @@ No trap state
 Initial distribution:
     (0:0.2, 1:0.8)
 Markov chain:
-Row 0:
-	0 : 0.2
-	1 : 0.8
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 0 with weight 0.2
+	To state 1 with weight 0.8
+From state 1:
+	To state 1 with weight 1
+3 edges total
 End of information for phase type
 
 Information for phase type Geometric(0.25)
@@ -426,12 +426,12 @@ No trap state
 Initial distribution:
     (0:0.25, 1:0.75)
 Markov chain:
-Row 0:
-	0 : 0.25
-	1 : 0.75
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 0 with weight 0.25
+	To state 1 with weight 0.75
+From state 1:
+	To state 1 with weight 1
+3 edges total
 End of information for phase type
 
 Information for phase type choose((Geometric(0.2) : 0.4, Geometric(0.25) : 0.6)
@@ -446,15 +446,15 @@ No trap state
 Initial distribution:
     (0:0.08, 1:0.15, 2:0.77)
 Markov chain:
-Row 0:
-	0 : 0.2
-	2 : 0.8
-Row 1:
-	1 : 0.25
-	2 : 0.75
-Row 2:
-	2 : 1
-2 edges total
+From state 0:
+	To state 0 with weight 0.2
+	To state 2 with weight 0.8
+From state 1:
+	To state 1 with weight 0.25
+	To state 2 with weight 0.75
+From state 2:
+	To state 2 with weight 1
+5 edges total
 End of information for phase type
 
 //==================================================================\\
@@ -477,11 +477,11 @@ No trap state
 Initial distribution:
     (0:0.25, 1:0.75)
 Markov chain:
-Row 0:
-	2 : 1.1
-Row 1:
-	2 : 2.2
-Row 2:
+From state 0:
+	To state 2 with weight 1.1
+From state 1:
+	To state 2 with weight 2.2
+From state 2:
 2 edges total
 End of information for phase type
 
@@ -503,17 +503,17 @@ No trap state
 Initial distribution:
     (0:0.4, 1:0.6)
 Markov chain:
-Row 0:
-	2 : 1.1
-Row 1:
-	3 : 2.2
-Row 2:
-	5 : 1.1
-Row 3:
-	4 : 2.2
-Row 4:
-	5 : 2.2
-Row 5:
+From state 0:
+	To state 2 with weight 1.1
+From state 1:
+	To state 3 with weight 2.2
+From state 2:
+	To state 5 with weight 1.1
+From state 3:
+	To state 4 with weight 2.2
+From state 4:
+	To state 5 with weight 2.2
+From state 5:
 5 edges total
 End of information for phase type
 

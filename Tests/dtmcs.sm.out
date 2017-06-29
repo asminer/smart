@@ -2,11 +2,11 @@ d0 states:
 State 0: a
 State 1: b
 d0 Markov chain:
-Row 0:
-	0 : 0.25
-	1 : 0.75
-Row 1:
-	0 : 1
+From state 0:
+	To state 0 with weight 0.25
+	To state 1 with weight 0.75
+From state 1:
+	To state 0 with weight 1
 Some bad state name errors:
 ERROR in file dtmcs.sm near line 38:
     Duplicate identifier a within model
@@ -35,69 +35,69 @@ State 7: h
 State 8: i
 State 9: j
 d3 Markov chain:
-Row 0:
-	0 : 1
-Row 1:
-	2 : 0.5
-	3 : 0.5
-Row 2:
-	3 : 1
-Row 3:
-	1 : 1
-Row 4:
-	4 : 0.5
-	5 : 0.5
-Row 5:
-	4 : 1
-Row 6:
-	0 : 0.5
-	7 : 0.5
-Row 7:
-	1 : 0.5
-	8 : 0.5
-Row 8:
-	6 : 0.5
-	9 : 0.5
-Row 9:
-	4 : 1
-Transients should appear first {g,h,i,j}, then recurrent, then a:
+From state 0:
+	To state 0 with weight 1
+From state 1:
+	To state 2 with weight 0.5
+	To state 3 with weight 0.5
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 1 with weight 1
+From state 4:
+	To state 4 with weight 0.5
+	To state 5 with weight 0.5
+From state 5:
+	To state 4 with weight 1
+From state 6:
+	To state 0 with weight 0.5
+	To state 7 with weight 0.5
+From state 7:
+	To state 1 with weight 0.5
+	To state 8 with weight 0.5
+From state 8:
+	To state 6 with weight 0.5
+	To state 9 with weight 0.5
+From state 9:
+	To state 4 with weight 1
+Transients should appear first {g,h,i,j}, then a, then recurrent
 d3 states:
 State 0: g
 State 1: h
 State 2: i
 State 3: j
-State 4: b
-State 5: c
-State 6: d
-State 7: e
-State 8: f
-State 9: a
+State 4: a
+State 5: b
+State 6: c
+State 7: d
+State 8: e
+State 9: f
 d3 Markov chain:
-Row 0:
-	1 : 0.5
-	9 : 0.5
-Row 1:
-	2 : 0.5
-	4 : 0.5
-Row 2:
-	0 : 0.5
-	3 : 0.5
-Row 3:
-	7 : 1
-Row 4:
-	5 : 0.5
-	6 : 0.5
-Row 5:
-	6 : 1
-Row 6:
-	4 : 1
-Row 7:
-	7 : 0.5
-	8 : 0.5
-Row 8:
-	7 : 1
-Row 9:
-	9 : 1
+From state 0:
+	To state 1 with weight 0.5
+	To state 4 with weight 0.5
+From state 1:
+	To state 2 with weight 0.5
+	To state 5 with weight 0.5
+From state 2:
+	To state 0 with weight 0.5
+	To state 3 with weight 0.5
+From state 3:
+	To state 8 with weight 1
+From state 4:
+	To state 4 with weight 1
+From state 5:
+	To state 6 with weight 0.5
+	To state 7 with weight 0.5
+From state 6:
+	To state 7 with weight 1
+From state 7:
+	To state 5 with weight 1
+From state 8:
+	To state 8 with weight 0.5
+	To state 9 with weight 0.5
+From state 9:
+	To state 8 with weight 1
 States should appear in definition order: a,g,h,i,j,b,c,d,e,f:
 d3 states:
 State 0: a
@@ -111,72 +111,72 @@ State 7: d
 State 8: e
 State 9: f
 d3 Markov chain:
-Row 0:
-	0 : 1
-Row 1:
-	0 : 0.5
-	2 : 0.5
-Row 2:
-	3 : 0.5
-	5 : 0.5
-Row 3:
-	1 : 0.5
-	4 : 0.5
-Row 4:
-	8 : 1
-Row 5:
-	6 : 0.5
-	7 : 0.5
-Row 6:
-	7 : 1
-Row 7:
-	5 : 1
-Row 8:
-	8 : 0.5
-	9 : 0.5
-Row 9:
-	8 : 1
+From state 0:
+	To state 0 with weight 1
+From state 1:
+	To state 0 with weight 0.5
+	To state 2 with weight 0.5
+From state 2:
+	To state 3 with weight 0.5
+	To state 5 with weight 0.5
+From state 3:
+	To state 1 with weight 0.5
+	To state 4 with weight 0.5
+From state 4:
+	To state 8 with weight 1
+From state 5:
+	To state 6 with weight 0.5
+	To state 7 with weight 0.5
+From state 6:
+	To state 7 with weight 1
+From state 7:
+	To state 5 with weight 1
+From state 8:
+	To state 8 with weight 0.5
+	To state 9 with weight 0.5
+From state 9:
+	To state 8 with weight 1
 Birth death with 1 states:
 State 0: s[1]
 Markov chain:
-Row 0:
-	0 : 1
+From state 0:
+	To state 0 with weight 1
 Birth death with 2 states:
 State 0: s[1]
 State 1: s[2]
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	0 : 1
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 0 with weight 1
 Birth death with 3 states:
 State 0: s[1]
 State 1: s[2]
 State 2: s[3]
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	0 : 0.666667
-	2 : 0.333333
-Row 2:
-	1 : 1
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 0 with weight 0.666667
+	To state 2 with weight 0.333333
+From state 2:
+	To state 1 with weight 1
 Birth death with 4 states:
 State 0: s[1]
 State 1: s[2]
 State 2: s[3]
 State 3: s[4]
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	0 : 0.666667
-	2 : 0.333333
-Row 2:
-	1 : 0.666667
-	3 : 0.333333
-Row 3:
-	2 : 1
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 0 with weight 0.666667
+	To state 2 with weight 0.333333
+From state 2:
+	To state 1 with weight 0.666667
+	To state 3 with weight 0.333333
+From state 3:
+	To state 2 with weight 1
 Birth death with 5 states:
 State 0: s[1]
 State 1: s[2]
@@ -184,19 +184,19 @@ State 2: s[3]
 State 3: s[4]
 State 4: s[5]
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	0 : 0.666667
-	2 : 0.333333
-Row 2:
-	1 : 0.666667
-	3 : 0.333333
-Row 3:
-	2 : 0.666667
-	4 : 0.333333
-Row 4:
-	3 : 1
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 0 with weight 0.666667
+	To state 2 with weight 0.333333
+From state 2:
+	To state 1 with weight 0.666667
+	To state 3 with weight 0.333333
+From state 3:
+	To state 2 with weight 0.666667
+	To state 4 with weight 0.333333
+From state 4:
+	To state 3 with weight 1
 Should generate meaningful warnings:
 WARNING in file dtmcs.sm near line 141:
     state y is from another model, ignoring initial weight

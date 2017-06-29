@@ -102,7 +102,7 @@ print("States should appear in lexical order: a,b,c,d,e,f,g,h,i,j:\n");
 d3(1).show;
 
 # StateDisplayOrder NATURAL
-print("Transients should appear first {g,h,i,j}, then recurrent, then a:\n");
+print("Transients should appear first {g,h,i,j}, then a, then recurrent\n");
 d3(2).show;
 
 # StateDisplayOrder DISCOVERY
