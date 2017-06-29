@@ -330,18 +330,71 @@ statedist* mclib_process::getInitialDistribution() const
 
 // ******************************************************************
 
+// Helper class or getOutgoingWeights
+// ======================================================================
+template <class REAL>
+class copy_edges : public GraphLib::BF_graph_traversal {
+    public:
+        copy_edges(long from, long* to, double* w, long n) {
+            dests = to;
+            weights = w;
+            array_size = n;
+
+            source = from;
+            array_needed = 0;
+        }
+        virtual ~copy_edges() {
+            // Don't delete anything!
+        }
+
+        virtual bool hasNodesToExplore() {
+            return source>=0;
+        }
+
+        virtual long getNextToExplore() {
+            long ret = source;
+            source = -1;
+            return ret;
+        }
+
+        virtual bool visit(long src, long dest, const void* wt) {
+            if (array_needed < array_size) {
+              dests[array_needed] = dest;
+              const REAL* weight = (const REAL*) wt;
+              weights[array_needed] = *weight;
+            }
+            array_needed++;
+            return false;
+        }
+
+        inline long getNeededSize() const {
+            return array_needed;
+        }
+
+    private:
+        long* dests;
+        double* weights;
+        long array_size;
+        long array_needed;
+
+        long source;
+
+}; // class copy_edges
+// ======================================================================
+
 long mclib_process::getOutgoingWeights(long from, long* to, double* w, long n) const
 {
-  DCASSERT(0);
-  return 0;
 
-  // TBD
 
-  /*
-  simple_outedges thing(to, w, n);
-  chain->traverseFrom(from, thing);
-  return thing.edges;
-  */
+  if (chain->edgesStoredAsDoubles()) {
+    copy_edges <double> T(from, to, w, n);
+    chain->traverseOutgoing(T);
+    return T.getNeededSize();
+  } else {
+    copy_edges <float> T(from, to, w, n);
+    chain->traverseOutgoing(T);
+    return T.getNeededSize();
+  }
 }
 
 // ******************************************************************
