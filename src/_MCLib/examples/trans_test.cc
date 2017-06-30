@@ -4,6 +4,7 @@
 */
 
 #include <iostream>
+#include <string.h>
 #include "mcbuilder.h"
 
 // #define VERBOSE
