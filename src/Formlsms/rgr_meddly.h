@@ -2,11 +2,14 @@
 #ifndef RGR_MEDDLY_H
 #define RGR_MEDDLY_H
 
-#include "graph_llm.h"
-#include "../ExprLib/engine.h"
 #include "../Modules/glue_meddly.h"
 
 #ifdef HAVE_MEDDLY_H
+
+#include "graph_llm.h"
+#include "../ExprLib/engine.h"
+#include "../Modules/meddly_ssets.h"
+#include "rss_meddly.h"
 
 class meddly_reachset;
 
@@ -60,8 +63,11 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     //
 
     virtual stateset* EX(bool revTime, const stateset* p);
+    virtual stateset* AX(bool revTime, const stateset* p);
     virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+    virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
     virtual stateset* unfairEG(bool revTime, const stateset* p);
+    virtual stateset* AG(bool revTime, const stateset* p);
 
 
   // 
@@ -125,6 +131,141 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         default:                          return subengine::Engine_Failed;
       }
     }
+
+  private:
+    
+    // ******************************************************************
+
+    inline void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans) 
+    {
+        if (revTime) {
+          mxd_wrap->postImage(p, edges, ans);
+        } else {
+          mxd_wrap->preImage(p, edges, ans);
+        }
+    }
+
+    // ******************************************************************
+
+    inline void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, 
+      shared_ddedge* ans) 
+    {
+        //
+        // Special case - if p=0 (means true), use saturation
+        //
+        if (0==p) {
+          if (revTime) {
+            mxd_wrap->postImageStar(q, edges, ans);
+          } else {
+            mxd_wrap->preImageStar(q, edges, ans);
+          }
+          return;
+        }
+
+        //
+        // Non trivial p, use iteration
+        // TBD - use saturation here as well
+        //
+
+        //
+        // Auxiliary sets
+        //
+        shared_ddedge* prev = mrss->newMddConst(false); // prev := emptyset
+        shared_ddedge* f = mrss->newMddEdge();
+
+        DCASSERT(prev);
+        DCASSERT(f);
+
+        // answer := q
+        ans->E = q->E;
+
+        while (prev->E != ans->E) {
+
+          // f := pre/post (answer)
+          if (revTime) {
+            mxd_wrap->postImage(ans, edges, f);
+          } else {
+            mxd_wrap->preImage(ans, edges, f);
+          }
+
+          // f := f ^ p
+          MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
+
+          // prev := answer
+          prev->E = ans->E;
+
+          // answer := answer U f
+          MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
+
+        } // iteration
+
+        // Cleanup
+        Delete(f);
+        Delete(prev);
+    }
+
+    // ******************************************************************
+
+    inline void _unfairEG(bool revTime, const shared_ddedge* p, shared_ddedge* ans) 
+    {
+        //
+        // Build set of source/deadlocked states 
+        //
+        shared_ddedge* dead = 0;
+
+        if (revTime) {
+          dead = mrss->newMddEdge();
+          DCASSERT(dead);
+          dead->E = mrss->getInitial();
+        } else {
+          // Determine deadlocked states: !EX(true)
+          dead = mrss->newMddConst(true);
+          DCASSERT(dead);
+          mxd_wrap->preImage(dead, edges, dead);
+          MEDDLY::apply( MEDDLY::COMPLEMENT, dead->E, dead->E);
+        }
+
+        //
+        // Result and auxiliary sets
+        //
+
+        shared_ddedge* prev = mrss->newMddConst(false); // prev := emptyset
+        shared_ddedge* f = mrss->newMddEdge();
+        DCASSERT(prev);
+        DCASSERT(f);
+
+        // answer := p
+        ans->E = p->E;
+
+        while (prev->E != ans->E) {
+
+          // f := pre/post (answer)
+          if (revTime) {
+            mxd_wrap->postImage(ans, edges, f);
+          } else {
+            mxd_wrap->preImage(ans, edges, f);
+          }
+
+          // f := f + dead
+          MEDDLY::apply( MEDDLY::UNION, f->E, dead->E, f->E );
+
+          // prev := answer
+          prev->E = ans->E;
+
+          // answer := f * p
+          MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, ans->E );
+
+        } // iteration
+
+        //
+        // Cleanup
+        //
+        Delete(dead);
+        Delete(prev);
+        Delete(f);
+    }
+
+    // ******************************************************************
 
   private:
     bool uses_potential;
