@@ -4,6 +4,9 @@ if [ $# -ne 1 ]; then
   printf "\nUsage: $0 revision-name\n\nCreates a release with the given name.\n"
   printf "Automatically updates the revision-name in the source, and creates\n"
   printf "an annotated tag of the form v[version].[revision-name].\n\n"
+  printf "Before running, be sure that all modified files have been committed\n"
+  printf "to the repository.  This script will change the revision number,\n"
+  printf "commit that to the repository, and then create an annotated tag.\n\n"
   exit 0
 fi
 
@@ -15,9 +18,15 @@ echo "const char* REVISION = \"$1\";" > src/include/revision.h
 
 tag="v$version.$1"
 
-printf "Creating tag $tag\n"
+printf "Committing changes\n"
+
+git add src/include/revision.h
+git commit -m "Updated revision for $tag"
+git push
+
+printf "Creating and publishing tag $tag\n"
 
 git tag -a $tag -m "Script $0 tagging release $tag"
+git push origin $tag
 
 printf "\nDone!\n"
-printf "To make this tag visible to everyone, run \'git push origin $tag\'\n\n"
