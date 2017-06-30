@@ -14,8 +14,6 @@
 #include <stdio.h>
 #endif
 
-// #define USE_OLD_TRAVERSE_HELPER
-
 /**
     Abstract base class, for reachgraphs that use explicit CTL stuff.
 */
@@ -23,125 +21,6 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 
   public:
     
-#ifdef USE_OLD_TRAVERSE_HELPER
-    // ======================================================================
-    //
-    // Helper class: use for the critical "traverse" method
-    //
-    class traverse_helper {
-      public:
-        traverse_helper(long NS);
-        ~traverse_helper();
-
-        inline long getSize() const { return size; }
-
-        // Explore Queue Methods
-
-        /**
-          Add elements from the set p to the queue,
-          and sets the obligations to 0 for those elements.
-            @param  p     Set of elements to add to queue
-        */
-        void init_queue_from(const intset &p);
-
-        /**
-          Add elements NOT in the set p to the queue,
-          and sets the obligations to 0 for those elements.
-            @param  p     Set of elements NOT to add to queue
-        */
-        void init_queue_complement(const intset &p);
-
-        inline void clear_queue() {
-          queue_head = 0;
-          queue_tail = 0;
-        }
-        inline bool queue_nonempty() const { 
-          return queue_head < queue_tail;
-        }
-        inline long queue_pop() { 
-          DCASSERT(queue);
-          DCASSERT(queue_nonempty());
-          CHECK_RANGE(0, queue_head, size);
-          return queue[queue_head++];
-        }
-        inline void queue_push(long x) { 
-          DCASSERT(queue);
-          CHECK_RANGE(0, queue_tail, size);
-          queue[queue_tail] = x;
-          queue_tail++;
-        } 
-
-        // Obligation Count Methods
-
-        /// Anything with zero obligations, set to new value
-        void reset_zero_obligations(int newval=-1);
-
-        /// Set obligations to value for anything not in the set p.
-        void restrict_paths(const intset &p, int value=-1);
-
-        /// Set obligations to value for anything in the set p.
-        void set_obligations(const intset &p, int value=1);
-
-        /// Set all obligations to value.
-        inline void fill_obligations(int value) { 
-          DCASSERT(obligations);
-          for (long i=0; i<size; i++) obligations[i] = value;
-        }
-
-        /// Increment obligations for state i
-        inline void add_obligation(long i) { 
-          DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
-          obligations[i]++;
-        }
-
-        /// Increment obligations for states in set p
-        void add_obligations(const intset& p);
-
-        /// Decrement obligations for state i
-        inline void remove_obligation(long i) { 
-          DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
-          obligations[i]--;
-        }
-
-        /// Get current number of unmet obligations for state i
-        inline long num_obligations(long i) const { 
-          DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
-          return obligations[i];
-        }
-
-        /// Set obligations for state i
-        inline void set_obligations(long i, int value) {
-          DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
-          obligations[i] = value;
-        }
-
-
-        /**
-          If obligations[i] == 0, add i to set x.
-          Do this for all i.
-        */
-        void get_met_obligations(intset &x) const;
-
-#ifdef DEBUG_ECTL
-        void dump(FILE* out) const;
-#endif
-
-      private:
-        long size;
-        long* obligations;  
-        long* queue;
-        long queue_head;  // reading end of the queue; index of next slot to read
-        long queue_tail;  // writing end of the queue; index of next slot to write
-    };
-    //
-    // End of traverse_helper class
-    //
-    // ======================================================================
-#else
     // ======================================================================
     //
     // Helper class: use for the critical "traverse" method
@@ -253,7 +132,6 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     // End of CTL_traversal class
     //
     // ======================================================================
-#endif
 
 
   public:
@@ -294,31 +172,6 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
     */
     virtual void getTSCCsSatisfying(intset &p) const;
 
-#ifdef USE_OLD_TRAVERSE_HELPER
-    /**
-      Count edges and set obligations in our traverse helper.
-        @param  rt    Reverse time?  If true, count incoming edges;
-                      otherwise, count outgoing edges.
-        @param  TH    Traverse helper.  On output, obligations will 
-                      be set accordingly.
-    */
-    virtual void count_edges(bool rt, traverse_helper &TH) const = 0;
-      
-    /**
-      Traverse graph, using the traverse helper.
-      Explore using the queue of states to explore.
-      When we visit a state, decrement its obligations.
-      When obligations become zero, add to the queue.
-      Skip over any state whose obligations are already less or equal zero.
-        @param  rt        Should we reverse time
-        @param  one_step  Just go one step?  If so, we don't add 
-                          anything new to the queue.
-        @param  TH        Traverse helper, contains a queue and 
-                          obligation counts for states
-    */
-    virtual void traverse(bool rt, bool one_step, traverse_helper &TH) 
-      const = 0; 
-#else
     /**
       Count edges and set obligations in our traverse helper.
         @param  rt    Reverse time?  If true, count incoming edges;
@@ -336,15 +189,10 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
         @param  T       Graph traversal to use.  
     */
     virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const = 0; 
-#endif
 
 
   protected:
-#ifdef USE_OLD_TRAVERSE_HELPER
-    traverse_helper* TH;
-#else
     CTL_traversal* TH;
-#endif
 
     // TBD - need a timer, for reporting
     
@@ -395,12 +243,8 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 
       // Traverse!
       startTraverse(CTLOP);
-#ifdef USE_OLD_TRAVERSE_HELPER
-      traverse(revTime, false, *TH);
-#else
       TH->setOneStep(false);
       traverse(revTime, *TH);
-#endif
       stopTraverse(CTLOP);
 
       // build answer
