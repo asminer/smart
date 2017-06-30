@@ -1,8 +1,7 @@
 
 Back-end solution engines:
 
-ctl_exp.cc        Explicit solvers for CTL formulas
-ctl_symb.cc       Implicit solvers for CTL formulas
+csl_expl.cc       Explicit CSL engines
 dcp_expl.cc       Explicit search for discrete constraint programs
 dcp_symb.cc       Implicit search (using Meddly) for discrete constraint progs.
 exact.cc          Exact solution algorithms for stochastic processes
