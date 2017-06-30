@@ -345,26 +345,6 @@ public:
   void dumpDot(OutputStream &s) const;
 
 
-
-  /** Get the (potential) states that, once entered, are never 
-      left.  This includes deadlocked states.  This must be 
-      provided in derived classes, the default behavior here 
-      is to print an error message and return null.
-        @return   New stateset object for the absorbing states,
-                  or 0 on error.
-  */
-  // virtual stateset* getAbsorbingStates() const;
-
-  /** Get the (potential) deadlocked states.
-      That means states that have no outgoing edges (even to itself).
-      This must be provided in derived classes, the default behavior 
-      here is to print an error message and return null.
-        @return   New stateset object for the deadlocked states,
-                  or 0 on error.
-  */
-  // virtual stateset* getDeadlockedStates() const;
-
-
   /** For CTL model checking, is this a "fair" model?
       This says that infinite paths that are based on
       making one particular choice infinitely often
