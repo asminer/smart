@@ -256,60 +256,37 @@ void mclib_process::getNumClasses(long &count) const
 void mclib_process::showClasses(OutputStream &os, state_lldsm::reachset* RSS, 
   shared_state* st) const
 {
-  // TBD
-
-  DCASSERT(0);
-
-/*
+  DCASSERT(chain);
+  const GraphLib::static_classifier& C = chain->getStateClassification();
   // TBD : try/catch around this
   indexed_reachset::indexed_iterator &I = 
     dynamic_cast <indexed_reachset::indexed_iterator &> (
       RSS->iteratorForOrder(state_lldsm::NATURAL)
     );
 
-  const GraphLib::static_classifier& C = chain->getStateClassification();
+  for (long c=0; c<C.getNumClasses(); c++) {
+    if (0==C.sizeOfClass(c)) continue;
 
-  long nr = C.getNumClasses()-2;
-  long na = C.sizeOfClass(1);
+    if (0==c) {
+      os << "Transient states";
+    } else if (1==c) {
+      os << "Absorbing states";
+    } else {
+      os << "Recurrent class " << c-1;
+    }
 
-  long trans = chain->getNumTransient();
-  if (trans) {
-    em->cout() << "Transient states:\n";
-    long snum = chain->getFirstTransient();
-    for (long i = trans; i; i--) {
-      em->cout().Put('\t');
-      I.copyState(st, snum);
+    os << ":\n\t{";
+    bool comma = false;
+    for (long i=C.firstNodeOfClass(c); i<=C.lastNodeOfClass(c); i++) {
+      if (comma) os << ", ";
+      comma = true;
+      I.copyState(st, i);
       RSS->showState(os, st);
-      em->cout().Put('\n');
-      em->cout().Check();
-      snum++;
+      os.flush();
     }
+    os << "}\n";
   }
-  if (nr) for (long c=1; c<=nr; c++) {
-    em->cout() << "Recurrent class " << c << ":\n";
-    long snum = chain->getFirstRecurrent(c);
-    for (long i = chain->getRecurrentSize(c); i; i--) {
-      em->cout().Put('\t');
-      I.copyState(st, snum);
-      RSS->showState(os, st);
-      em->cout().Put('\n');
-      em->cout().Check();
-      snum++;
-    }
-  }
-  if (na) {
-    em->cout() << "Absorbing states:\n";
-    long snum = chain->getFirstAbsorbing();
-    for (long i = na; i; i--) {
-      em->cout().Put('\t');
-      I.copyState(st, snum);
-      RSS->showState(os, st);
-      em->cout().Put('\n');
-      em->cout().Check();
-      snum++;
-    }
-  }
-  */
+
 }
 
 // ******************************************************************

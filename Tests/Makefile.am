@@ -18,7 +18,7 @@ TESTS +=  converge.sm courier.sm ctmc_ctl.sm ctmc_tran.sm \
           include.sm inputs.sm \
           kanban.sm \
           lexical.sm \
-          math.sm mdrate.sm models.sm \
+          math.sm mc_classes.sm mdrate.sm models.sm \
           partition.sm \
           phase_add.sm phase_choose.sm phase_cmult.sm phase_dmult.sm phase_order.sm \
           phase_distros.sm phase_tta.sm phase_TF.sm phase_TU.sm \

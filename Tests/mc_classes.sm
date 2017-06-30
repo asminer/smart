@@ -1,0 +1,116 @@
+
+
+
+/* 
+   Tests for MC state classification
+*/
+
+dtmc d1 := {
+  state R, N, S;
+  init (N:1);
+
+  arcs (
+    R:R:2, R:N:1, R:S:1,
+    N:R:1, N:S:1,
+    S:S:2, S:N:1, S:R:1
+  );
+  bigint nc := num_classes();
+  void show := show_classes();
+};
+
+print("State classification for d1:\n");
+d1.show;
+print("#recurrent classes: ", d1.nc, "\n");
+
+
+dtmc d2 := {
+  state fail;
+  state fr, so, jr, sr;
+  state grad;
+
+  init (fr:0.7, so:0.3);
+
+  arcs(
+    fail : fail : 1,
+    fr : fr : 1, fr : fail : 1, fr : so : 8,
+    so : so : 2, so : fail : 1, so : jr : 7,
+    jr : jr : 2, jr : fail : 1, jr : sr : 7,
+    sr : sr : 1, sr : fail : 1, sr : grad : 8
+  );
+
+  bigint nc := num_classes();
+  void show := show_classes();
+};
+
+
+print("\nState classification for d2:\n");
+d2.show;
+print("#recurrent classes: ", d2.nc, "\n");
+
+
+dtmc d3 := {
+  state a,        // absorbing
+        g,h,i,j,  // transients
+        b,c,d,    // recurrent class
+        e,f;      // recurrent class
+
+  init (i:1);
+
+  arcs(
+      i : g : 1,
+      g : h : 1,
+      h : i : 1,
+
+      g : a : 1,
+      h : b : 1,
+      i : j : 1, j : e : 1,
+
+      e : e : 1, e : f : 1,
+      f : e : 1,
+
+      b : c : 1, b : d : 1,
+      c : d : 1,
+      d : b : 1
+  );
+
+  bigint nc := num_classes();
+  void show := show_classes(); 
+};
+
+print("\nState classification for d3:\n");
+d3.show;
+print("#recurrent classes: ", d3.nc, "\n");
+
+ctmc c1 := {
+  state up, down;
+  init(up:1);
+  arcs(
+    up: down: 0.1,
+    down: up : 3
+  );
+
+  bigint nc := num_classes();
+  void show := show_classes();
+};
+
+print("\nState classification for c1:\n");
+c1.show;
+print("#recurrent classes: ", c1.nc, "\n");
+
+ctmc c2 := {
+  state up, down, failed;
+  init(up:1);
+  arcs(
+    up: down: 0.1,
+    down: up : 3,
+    down: failed : 0.01
+  );
+
+  bigint nc := num_classes();
+  void show := show_classes();
+};
+
+print("\nState classification for c2:\n");
+c2.show;
+print("#recurrent classes: ", c2.nc, "\n");
+
