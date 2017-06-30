@@ -123,7 +123,7 @@ pn fms(int N, int Np) := {
   real phi := avg_ss(400*rate(tP1) + 600*rate(tP2) + 100*rate(tP3) + 1100*rate(tP12)); 
 };
 
-# Report + procgen, mc_solve
+# Report + procgen, mc_solve, exact_solver
 
 int N := read_int("N");
 int Np := div(3*N, 2);
@@ -132,9 +132,10 @@ compute(fms(N, Np).m2);
 
 print("FMS model with N=", N, " has\n\t", fms(N, Np).m1, " states\n\t", fms(N, Np).m2, " arcs\n\f");
 
-# MCSolver GAUSS_SEIDEL
-# MCSolverPrecision 1e-7
-# MCSolverRelaxation 0.9
+# MCSolver GAUSS_SEIDEL {
+#   Precision 1e-7
+#   Relaxation 0.9
+# }
  
 compute(fms(N, Np).phi);
 
