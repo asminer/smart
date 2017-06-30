@@ -127,7 +127,12 @@ pn fms(int N, int Np) := {
 
 start_timer(0);
 
-# Report + procgen, mc_solve
+# Report + procgen, mc_solve, exact_solver
+# MCSolver GAUSS_SEIDEL {
+#   Precision 1e-7
+#   Relaxation 0.9
+# }
+
 
 int N := read_int("N");
 int Np := div(3*N, 2);
@@ -136,10 +141,6 @@ compute(fms(N, Np).m2);
 
 print("FMS timed model with N=", N, " has\n\t", fms(N, Np).m1, " states\n\t", fms(N, Np).m2, " arcs\n\f");
 
-# MCSolver GAUSS_SEIDEL
-# MCSolverPrecision 1e-7
-# MCSolverRelaxation 0.9
- 
 compute(fms(N, Np).phi);
 
 print("Measures:\n");
