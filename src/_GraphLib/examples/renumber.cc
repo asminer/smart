@@ -6,6 +6,7 @@
 #include "graphlib.h"
 
 #include <iostream>
+#include <string.h>
 
 // #define VERBOSE
 
