@@ -819,127 +819,6 @@ void mclib_process::showProc(OutputStream &os,
   else          chain->traverseIncoming(foo);
 
   foo.post_traversal();
-
-  /*
-  bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
-  const char* row;
-  const char* col;
-  if (opt.RG_ONLY) {
-    row = "From state ";
-    col = "To state ";
-    if (!by_rows) SWAP(row, col);
-  } else {
-    row = by_rows ? "Row " : "Column ";
-    col = "";
-  }
-
-  // TBD : try/catch around this
-  indexed_reachset::indexed_iterator &I 
-  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
-
-
-  switch (opt.STYLE) {
-    case graph_lldsm::DOT:
-        os << "digraph mc {\n";
-        for (I.start(); I; I++) { 
-          os << "\ts" << I.index();
-          if (opt.NODE_NAMES) {
-            I.copyState(st);
-            os << " [label=\"";
-            RSS->showState(os, st);
-            os << "\"]";
-          }
-          os << ";\n";
-          os.flush();
-        } // for i
-        os << "\n";
-        break;
-
-    case graph_lldsm::TRIPLES:
-        os << num_states << "\n";
-        os << na << "\n";
-        break;
-
-    default:
-        if (opt.RG_ONLY) {
-          os << "Reachability graph:\n";
-        } else {
-          os << "Markov chain:\n";
-        }
-  }
-
-  sparse_row_elems foo(I);
-
-  for (I.start(); I; I++) {
-    switch (opt.STYLE) {
-      case graph_lldsm::INCOMING:
-      case graph_lldsm::OUTGOING:
-          os << row;
-          if (opt.NODE_NAMES) {
-            I.copyState(st);
-            RSS->showState(os, st);
-          } else {
-            os << I.getI();
-          }
-          os << ":\n";
-
-      default:
-          // nothing
-          break;
-    }
-
-    bool ok;
-    if (by_rows)   ok = foo.buildOutgoing(chain, I.getIndex());
-    else           ok = foo.buildIncoming(chain, I.getIndex());
-
-    // were we successful?
-    if (!ok) {
-      // out of memory, bail
-      showError("Not enough memory to display Markov chain.");
-      break;
-    }
-
-    // display row/column
-    for (long z=0; z<foo.last; z++) {
-      os.Put('\t');
-      switch (opt.STYLE) {
-        case graph_lldsm::DOT:
-            os << "s" << foo.index[z] << " -> s" << I.getI();
-            if (!opt.RG_ONLY) {
-              os << " [label=\"" << foo.value[z] << "\"]";
-            }
-            os << ";";
-            break;
-
-        case graph_lldsm::TRIPLES:
-            os << foo.index[z] << " " << I.getI();
-            if (!opt.RG_ONLY) {
-              os << " " << foo.value[z];
-            }
-            break;
-
-        default:
-            os << col;
-            if (opt.NODE_NAMES) {
-              I.copyState(st, foo.index[z]);
-              RSS->showState(os, st);
-            } else {
-              os << foo.index[z];
-            }
-            if (!opt.RG_ONLY) {
-              os << " : " << foo.value[z];
-            }
-      }
-      os.Put('\n');
-    } // for z
-
-    os.flush();
-  } // for i
-  if (graph_lldsm::DOT == opt.STYLE) {
-    os << "}\n";
-  }
-  os.flush();
-  */
 }
 
 
@@ -1011,24 +890,6 @@ void mclib_process::getTSCCsSatisfying(intset &p) const
   p.complement();
 }
 
-#ifdef USE_OLD_TRAVERSE_HELPER
-
-// ******************************************************************
-
-void mclib_process::count_edges(bool, traverse_helper&) const 
-{
-      throw "not implemented";
-}
-
-// ******************************************************************
-
-void mclib_process::traverse(bool rt, bool one_step, traverse_helper &TH) const 
-{
-      throw "not implemented";
-}
-
-#else
-
 // ******************************************************************
 
 void mclib_process::count_edges(bool rt, ectl_reachgraph::CTL_traversal &TH) const 
@@ -1048,85 +909,8 @@ void mclib_process::traverse(bool rt, GraphLib::BF_graph_traversal &T) const
   else    chain->traverseIncoming(T);
 }
 
-#endif
 
 
-// ******************************************************************
-// *                                                                *
-// *            mclib_process::sparse_row_elems  methods            *
-// *                                                                *
-// ******************************************************************
-/*
-mclib_process::sparse_row_elems
-::sparse_row_elems(const indexed_reachset::indexed_iterator &i)
- : I(i)
-{
-  alloc = 0;
-  last = 0;
-  index = 0;
-  value = 0;
-}
-
-mclib_process::sparse_row_elems::~sparse_row_elems()
-{
-  free(index);
-  free(value);
-}
-
-bool mclib_process::sparse_row_elems::Enlarge(int ns)
-{
-  if (ns < alloc)   return true;
-  if (0==alloc)     alloc = 16;
-  while ((alloc < 256) && (alloc <= ns))  alloc *= 2;
-  while (alloc <= ns)                     alloc += 256;
-  index = (long*) realloc(index, alloc * sizeof(long));
-  value = (double*) realloc(value, alloc * sizeof(double));
-  if (0==index || 0==value)  return false;
-  return true;
-}
-
-bool mclib_process::sparse_row_elems
-::buildIncoming(Old_MCLib::Markov_chain* chain, int i)
-{
-  overflow = false;
-  incoming = true;
-  last = 0;
-  chain->traverseTo(i, *this);
-  if (overflow) return false;
-  HeapSortAbstract(this, last);
-  return true;
-}
-
-bool mclib_process::sparse_row_elems
-::buildOutgoing(Old_MCLib::Markov_chain* chain, int i)
-{
-  overflow = false;
-  incoming = false;
-  last = 0;
-  chain->traverseFrom(i, *this);
-  if (overflow) return false;
-  HeapSortAbstract(this, last);
-  return true;
-}
-
-bool mclib_process::sparse_row_elems
-::visit(long from, long to, void* label)
-{
-  if (last >= alloc) {
-    if (!Enlarge(last+1)) {
-      overflow = true;
-      return true;
-    }
-  }
-  long z;
-  if (incoming) z = from;
-  else          z = to;
-  index[last] = I.index2ord(z);
-  value[last] = ((float*) label)[0];
-  last++;
-  return false;
-}
-*/
 // ******************************************************************
 // *                                                                *
 // *                    mclib_reachgraph methods                    *
@@ -1163,21 +947,6 @@ void mclib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   chain->showProc(os, opt, RSS, st);
 }
 
-#ifdef USE_OLD_TRAVERSE_HELPER
-void mclib_reachgraph::count_edges(bool rt, traverse_helper&TH) const 
-{
-  DCASSERT(chain);
-  chain->count_edges(rt, TH);
-}
-
-void mclib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) const 
-{
-  DCASSERT(chain);
-  chain->traverse(rt, one_step, TH);
-}
-
-#else
-
 void mclib_reachgraph::count_edges(bool rt, CTL_traversal &T) const 
 {
   DCASSERT(chain);
@@ -1189,8 +958,6 @@ void mclib_reachgraph::traverse(bool rt, GraphLib::BF_graph_traversal &T) const
   DCASSERT(chain);
   chain->traverse(rt, T);
 }
-
-#endif
 
 void mclib_reachgraph::getDeadlocked(intset &r) const
 {

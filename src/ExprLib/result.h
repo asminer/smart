@@ -11,8 +11,6 @@ class option_manager;
 class engine_manager;
 class symbol;
 
-//#define OLD_INTERFACE
-
 // ******************************************************************
 // *                                                                *
 // *                          result class                          *

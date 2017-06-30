@@ -13,310 +13,9 @@
 
 #include "../_Timer/timerlib.h"
 
-// #define USE_OLD_GRAPH_DISPLAY
-
-#ifdef USE_OLD_GRAPH_DISPLAY
-// Alas, I have succumbed to STL
-#include <set>
-#else
 // Does most of the work to display a graph :^)
 #include "show_graph.h"
-#endif
 
-#ifdef USE_OLD_GRAPH_DISPLAY
-
-// ******************************************************************
-// *                    grlib_display_row  class                    *
-// ******************************************************************
-
-class grlib_display_row : public GraphLib::BF_graph_traversal {
-  public:
-    grlib_display_row(indexed_reachset::indexed_iterator &_I, std::set<long> &_coll);
-
-    void set_row(long r);
-
-    virtual bool hasNodesToExplore();
-    virtual long getNextToExplore();
-
-    virtual bool visit(long, long dest, const void*);
-
-  private:
-    indexed_reachset::indexed_iterator &I;
-    std::set<long> &coll;
-
-    long row;
-};
-
-// ******************************************************************
-// *                   grlib_display_row  methods                   *
-// ******************************************************************
-
-grlib_display_row::grlib_display_row(indexed_reachset::indexed_iterator &_I, 
-  std::set<long> &_coll) : I(_I), coll(_coll)
-{
-  row = -1;
-}
-
-void grlib_display_row::set_row(long r)
-{
-  row = r;
-  coll.clear();
-}
-
-bool grlib_display_row::hasNodesToExplore()
-{
-  return row >= 0;
-}
-
-long grlib_display_row::getNextToExplore()
-{
-  long next = row;
-  row = -1;
-  return next;
-}
-
-bool grlib_display_row::visit(long, long dest, const void*)
-{
-  coll.insert( I.index2ord(dest) );
-  return false;
-}
-
-// ******************************************************************
-// *                   grlib_display_style  class                   *
-// ******************************************************************
-
-/**
-  For displaying graphs in various styles.
-  Defaults are here, in the base class.
-*/
-class grlib_display_style {
-  public:
-    grlib_display_style(OutputStream &_os, state_lldsm::reachset* _RSS,
-      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
-      bool state_names);
-
-    virtual ~grlib_display_style();
-
-    virtual void header();
-    virtual void start_row(long row);
-    virtual void show_edge(long src, long dest);
-    virtual void finish_row();
-    virtual void footer();
-
-  protected:
-    inline OutputStream &out() { return os; }
-
-    virtual void showState(long s);
-     
-  protected:
-    indexed_reachset::indexed_iterator &I;
-    bool show_state_names;
-  private:
-    OutputStream &os;
-    state_lldsm::reachset* RSS;
-    shared_state* st;
-};
-
-// ******************************************************************
-// *                  grlib_display_style  methods                  *
-// ******************************************************************
-
-grlib_display_style::grlib_display_style(OutputStream &_os, 
-  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
-  shared_state* _st, bool state_names) : I(_I), os(_os)
-{
-  RSS = _RSS;
-  st = _st;
-  show_state_names = state_names;
-}
-
-grlib_display_style::~grlib_display_style()
-{
-}
-
-void grlib_display_style::header()
-{
-  out() << "Reachability graph:\n";
-}
-
-void grlib_display_style::start_row(long row)
-{
-  out() << "From state ";
-  showState(row);
-  out() << ":\n";
-}
-
-void grlib_display_style::show_edge(long src, long dest)
-{
-  out() << "\tTo state ";
-  showState(dest);
-  out() << "\n";
-}
-
-void grlib_display_style::finish_row()
-{
-  out().flush();
-}
-
-void grlib_display_style::footer()
-{
-}
-
-void grlib_display_style::showState(long s)
-{
-  // s is the state, native to the graph
-  if (show_state_names) {
-    I.copyState(st, s);
-    RSS->showState(os, st);
-  } else {
-    out() << s;
-  }
-}
-
-// ******************************************************************
-// *                    grlib_display_dot  class                    *
-// ******************************************************************
-
-class grlib_display_dot : public grlib_display_style {
-  public:
-    grlib_display_dot(OutputStream &_os, state_lldsm::reachset* _RSS,
-      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
-      bool state_names);
-
-    virtual void header();
-    virtual void start_row(long row);
-    virtual void show_edge(long src, long dest);
-    virtual void footer();
-};
-
-// ******************************************************************
-// *                   grlib_display_dot  methods                   *
-// ******************************************************************
-
-grlib_display_dot::grlib_display_dot(OutputStream &_os, 
-  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
-  shared_state* _st, bool state_names)
- : grlib_display_style(_os, _RSS, _I, _st, state_names)
-{
-}
-
-void grlib_display_dot::header()
-{
-  out() << "digraph fsm {\n";
-  for (I.start(); I; I++) { 
-    out() << "\ts" << I.index();
-    out() << " [label=\"";
-    showState(I.index());
-    out() << "\"];\n";
-    out().flush();
-  } // for i
-  out() << "\n";
-}
-
-void grlib_display_dot::start_row(long row)
-{
-}
-
-void grlib_display_dot::show_edge(long src, long dest)
-{
-  out() << "\ts" << src << " -> s" << dest << ";\n";
-}
-
-void grlib_display_dot::footer()
-{
-  out() << "}\n";
-  out().flush();
-}
-
-
-// ******************************************************************
-// *                  grlib_display_triples  class                  *
-// ******************************************************************
-
-class grlib_display_triples : public grlib_display_style {
-  public:
-    grlib_display_triples(OutputStream &_os, state_lldsm::reachset* _RSS,
-      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
-      long _num_states, long _num_arcs);
-
-    virtual void header();
-    virtual void start_row(long row);
-    virtual void show_edge(long src, long dest);
-
-  private:
-    long num_states;
-    long num_arcs;
-};
-
-// ******************************************************************
-// *                 grlib_display_triples  methods                 *
-// ******************************************************************
-
-grlib_display_triples::grlib_display_triples(OutputStream &_os, 
-  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
-  shared_state* _st, long _num_states, long _num_arcs)
- : grlib_display_style(_os, _RSS, _I, _st, false)
-{
-  num_states = _num_states;
-  num_arcs = _num_arcs;
-}
-
-void grlib_display_triples::header()
-{
-  out() << num_states << "\n";
-  out() << num_arcs << "\n";
-}
-
-void grlib_display_triples::start_row(long row)
-{
-}
-
-void grlib_display_triples::show_edge(long src, long dest)
-{
-  out() << "\t" << src << " " << dest << "\n";
-}
-
-
-// ******************************************************************
-// *                  grlib_display_incoming class                  *
-// ******************************************************************
-
-class grlib_display_incoming : public grlib_display_style {
-  public:
-    grlib_display_incoming(OutputStream &_os, state_lldsm::reachset* _RSS,
-      indexed_reachset::indexed_iterator &_I, shared_state* _st, 
-      bool _show_states);
-
-    virtual void start_row(long row);
-    virtual void show_edge(long src, long dest);
-};
-
-// ******************************************************************
-// *                 grlib_display_incoming methods                 *
-// ******************************************************************
-
-grlib_display_incoming::grlib_display_incoming(OutputStream &_os, 
-  state_lldsm::reachset* _RSS, indexed_reachset::indexed_iterator &_I, 
-  shared_state* _st, bool state_names)
-: grlib_display_style(_os, _RSS, _I, _st, state_names)
-{
-}
-
-void grlib_display_incoming::start_row(long row)
-{
-  out() << "To state ";
-  showState(row);
-  out() << ":\n";
-}
-
-void grlib_display_incoming::show_edge(long src, long dest)
-{
-  out() << "\tFrom state ";
-  showState(dest);
-  out() << "\n";
-}
-
-#endif // #ifdef USE_OLD_GRAPH_DISPLAY
 
 // ******************************************************************
 // *                                                                *
@@ -398,83 +97,11 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
 void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
   state_lldsm::reachset* RSS, shared_state* st) const
 {
-
   if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), &os))    return;
   if (graph_lldsm::tooManyArcs(OutEdges.getNumEdges(), &os))      return;
 
   bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
   const GraphLib::static_graph &Edges = by_rows ? OutEdges : InEdges;
-
-#ifdef USE_OLD_GRAPH_DISPLAY
-
-  // TBD : try/catch around this
-  indexed_reachset::indexed_iterator &I 
-  = dynamic_cast <indexed_reachset::indexed_iterator &> (RSS->iteratorForOrder(opt.ORDER));
-
-  //
-  // Set up the display style.
-  // This cleans up the code below.
-  //
-  grlib_display_style* display = 0;
-  switch (opt.STYLE) {
-    case graph_lldsm::DOT:
-      display = new grlib_display_dot(os, RSS, I, st, opt.NODE_NAMES);
-      break;
-
-    case graph_lldsm::TRIPLES:
-      display = new grlib_display_triples(os, RSS, I, st, 
-          OutEdges.getNumNodes(), OutEdges.getNumEdges());
-      break;
-
-    case graph_lldsm::INCOMING:
-      display = new grlib_display_incoming(os, RSS, I, st, opt.NODE_NAMES);
-      break;
-
-    // case graph_lldsm::OUTGOING:
-    default:
-      display = new grlib_display_style(os, RSS, I, st, opt.NODE_NAMES); 
-  }
-
-  //
-  // Stuff for building the current row/col
-  //
-  std::set<long> coll;
-  grlib_display_row rowbuild(I, coll);
-
-
-  //
-  // Ready to display graph
-  //
-
-  display->header();
-
-  for (I.start(); I; I++) {
-    // 
-    // Start of another row/col
-    //
-    display->start_row(I.getI());
-    rowbuild.set_row(I.index());
-    Edges.traverse(rowbuild);
-
-    //
-    // Display row/column
-    //
-    std::set<long>::const_iterator pos;
-    for (pos=coll.begin(); pos != coll.end(); ++pos) {
-      display->show_edge(I.getI(), *pos);
-    }
-
-    display->finish_row();
-  } // for I
-  display->footer();
-
-  //
-  // Cleanup
-  //
-
-  delete display;
-
-#else // #ifdef USE_OLD_GRAPH_DISPLAY
 
   if (graph_lldsm::TRIPLES == opt.STYLE) {
     os << "#states " << Edges.getNumNodes() << "\n";
@@ -485,9 +112,6 @@ void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
   foo.pre_traversal();
   Edges.traverse(foo);
   foo.post_traversal();
-
-#endif
-
 }
 
 void grlib_reachgraph::setInitial(LS_Vector &init)
@@ -526,19 +150,11 @@ void grlib_reachgraph
 
   const long num_states = InEdges.getNumNodes();
   intset back(num_states);
-#ifdef USE_OLD_TRAVERSE_HELPER
-  if (!TH) TH = new traverse_helper(num_states);
-#else
   if (!TH) TH = new CTL_traversal(num_states);
-#endif
   TH->fill_obligations(1);
   TH->init_queue_from(dest);
-#ifdef USE_OLD_TRAVERSE_HELPER
-  traverse(false, false, *TH);
-#else
   TH->setOneStep(false);
   traverse(false, *TH);
-#endif
   TH->get_met_obligations(back);
   long nb = back.cardinality();
 
@@ -706,29 +322,6 @@ void grlib_reachgraph::getDeadlocked(intset &r) const
   r.assignFrom(deadlocks);
 }
 
-#ifdef USE_OLD_TRAVERSE_HELPER
-
-void grlib_reachgraph::count_edges(bool rt, traverse_helper &TH) const
-{
-  if (rt) {
-    for (long i=0; i<InEdges.getNumNodes(); i++) {
-      TH.set_obligations(i, InEdges.getNumEdgesFor(i));
-    }
-  } else {
-    for (long i=0; i<OutEdges.getNumNodes(); i++) {
-      TH.set_obligations(i, OutEdges.getNumEdgesFor(i));
-    }
-  }
-}
-
-void grlib_reachgraph::traverse(bool rt, bool one_step, traverse_helper &TH) const
-{
-  if (rt) _traverse(one_step, OutEdges, TH);
-  else    _traverse(one_step, InEdges, TH);
-}
-
-#else
-
 void grlib_reachgraph::count_edges(bool rt, CTL_traversal &TH) const
 {
   if (rt) {
@@ -749,8 +342,6 @@ void grlib_reachgraph::traverse(bool rt, GraphLib::BF_graph_traversal &T) const
 }
 
 
-#endif
-
 void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_graph &E)
 {
   const char* rptr = (E.isByCols()) ? "column pointers" : "row pointers";
@@ -765,60 +356,4 @@ void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_gr
   os.PutArray(E.ColumnIndex(), E.getNumEdges());
   os << "]\n";
 }
-
-#ifdef USE_OLD_TRAVERSE_HELPER
-
-void grlib_reachgraph::_traverse(bool one_step, const GraphLib::static_graph &E,
-  ectl_reachgraph::traverse_helper &TH)
-{
-  if (one_step) {
-    mygraphtraverse<true> foo(TH);
-    E.traverse(foo);
-  } else {
-    mygraphtraverse<false> foo(TH);
-    E.traverse(foo);
-  }
-}
-
-#endif
-
-// ******************************************************************
-// *                                                                *
-// *           grlib_reachgraph::mygraphtraverse  methods           *
-// *                                                                *
-// ******************************************************************
-
-#ifdef USE_OLD_TRAVERSE_HELPER
-
-template <bool ONESTEP>
-grlib_reachgraph::mygraphtraverse<ONESTEP>::mygraphtraverse(traverse_helper &th)
- : TH(th)
-{
-}
-
-template <bool ONESTEP>
-bool grlib_reachgraph::mygraphtraverse<ONESTEP>::hasNodesToExplore()
-{
-  return TH.queue_nonempty();
-}
-
-template <bool ONESTEP>
-long grlib_reachgraph::mygraphtraverse<ONESTEP>::getNextToExplore()
-{
-  return TH.queue_pop();
-}
-
-template <bool ONESTEP>
-bool grlib_reachgraph::mygraphtraverse<ONESTEP>::visit(long, long dest, const void*)
-{
-  if (TH.num_obligations(dest) <= 0) return false;
-  TH.remove_obligation(dest);
-  if (ONESTEP) return false;
-  if (0==TH.num_obligations(dest)) {
-    TH.queue_push(dest);
-  }
-  return false;
-}
-
-#endif
 

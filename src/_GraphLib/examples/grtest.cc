@@ -11,127 +11,6 @@
 
 using namespace GraphLib;
 
-// #define USE_OLD_INTERFACE
-
-
-//======================================================================================================================================================
-#ifdef USE_OLD_INTERFACE
-
-class counter : public generic_graph::element_visitor {
-  long& count;
-public:
-  counter(long& c) : count(c) { }
-  virtual bool visit(long from, long to, void* wt) { 
-    count++; 
-    return false; 
-  }
-};
-
-class row_visit : public generic_graph::element_visitor {
-public:
-  row_visit() { }
-  virtual bool visit(long from, long to, void* wt) {
-    printf("\t\tTo state %ld\n", to);
-    return false;
-  }
-};
-
-void addGraphNode(digraph* g)
-{
-  try {
-    g->addNode();
-  }
-  catch (GraphLib::error e) {
-    printf("Couldn't add graph node: %s\n", e.getString());
-    return;
-  }
-  printf("Added graph node %ld\n", g->getNumNodes()-1);
-}
-
-void addGraphEdge(digraph* g)
-{
-  long hfrom, hto;
-  scanf("%ld", &hfrom);
-  scanf("%ld", &hto);
-  bool dupedge;
-  try {
-    dupedge = g->addEdge(hfrom, hto);
-  }
-  catch (GraphLib::error e) {
-    printf("Couldn't add graph edge: %s\n", e.getString());
-    return;
-  }
-  if (dupedge) 
-    printf("Added duplicate edge from %ld to %ld\n", hfrom, hto);
-  else
-    printf("Added edge from %ld to %ld\n", hfrom, hto);
-}
-
-void finishGraph(digraph* g)
-{
-  digraph::finish_options o;
-  try {
-    g->finish(o);
-  }
-  catch (GraphLib::error e) {
-    printf("Couldn't finish graph: %s\n", e.getString());
-    return;
-  }
-  printf("Finished graph\n");
-}
-
-void unfinishGraph(digraph* g)
-{
-  try {
-    g->unfinish();
-  }
-  catch (GraphLib::error e) {
-    printf("Couldn't unfinish graph: %s\n", e.getString());
-    return;
-  } 
-  printf("Unfinished graph\n");
-}
-
-void reachableGraph(digraph* g)
-{
-  long hfrom;
-  scanf("%ld", &hfrom);
-  intset rs(g->getNumNodes());
-  rs.removeAll();
-  if (g->getReachable(hfrom, rs) < 0) {
-    printf("Not enough memory\n");
-    return;
-  }
-  printf("{");
-  long z = rs.getSmallestAfter(-1);
-  if (z>=0) {
-    printf("%ld", z);
-    for(;;) {
-      z = rs.getSmallestAfter(z);
-      if (z<0) break;
-      printf(", %ld", z);
-    }
-  }
-  printf("}\n");
-}
-
-void showGraph(digraph* g)
-{
-  printf("Current graph:\n");
-  long count;
-  counter foo(count);
-  row_visit bar;
-  for (int n=0; n<g->getNumNodes(); n++) {
-    count = 0;
-    g->traverseFrom(n, foo);
-    if (count <= 0) continue;
-    printf("\tFrom state %d:\n", n);
-    g->traverseFrom(n, bar);
-  } // for n
-}
-
-//======================================================================================================================================================
-#else
 
 class forwd_reachable : public BF_with_queue {
   public:
@@ -298,8 +177,6 @@ void showGraph(dynamic_digraph* g)
   } // for n
 }
 
-//======================================================================================================================================================
-#endif
 
 void showMenu()
 {
@@ -320,11 +197,7 @@ int main()
   puts(GraphLib::Version());
   showMenu();
 
-#ifdef USE_OLD_INTERFACE
-  digraph* g = new digraph(true);
-#else
   dynamic_digraph* g = new dynamic_digraph(true);
-#endif
   if (0==g) {
     printf("Got null graph\n");
     return 0;
