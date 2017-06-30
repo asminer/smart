@@ -9,10 +9,11 @@
 #include "../_GraphLib/graphlib.h"
 #include "../_IntSets/intset.h"
 
+
 class grlib_reachgraph : public ectl_reachgraph {
 
   public:
-    grlib_reachgraph(GraphLib::digraph* g);
+    grlib_reachgraph(GraphLib::dynamic_digraph* g);
 
   protected:
     virtual ~grlib_reachgraph();
@@ -34,98 +35,26 @@ class grlib_reachgraph : public ectl_reachgraph {
     }
 
     virtual void countPaths(const stateset* src, const stateset* dest, result& count);
-    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q);
 
   protected:
-    virtual bool forward(const intset& p, intset &r) const;
-    virtual bool backward(const intset& p, intset &r) const;
     virtual void getDeadlocked(intset &r) const;
+    virtual void count_edges(bool rt, CTL_traversal &CTL) const;
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const; 
 
   private:
-    bool transposeEdges(const named_msg* rep, bool byrows);
-    
+    static void showRawMatrix(OutputStream &os, const GraphLib::static_graph &E);
+
   private:
-    GraphLib::digraph* edges;
+    GraphLib::dynamic_digraph* edges;  // hold until attachToParent
     LS_Vector initial;    // hold until we can pass it to RSS
     intset deadlocks;     // set of states with no outgoing edges
-    // tbd - absorbing states
 
-  // ----------------------------------------------------------------------
-  private:
-    class sparse_row_elems : public GraphLib::generic_graph::element_visitor {
-      int alloc;
-      const indexed_reachset::indexed_iterator &I;
-      bool incoming;
-      bool overflow;
-    public:
-      int last;
-      long* index;
-    public:
-      sparse_row_elems(const indexed_reachset::indexed_iterator &i);
-      virtual ~sparse_row_elems();
+    // Graph after finishing, stored by incoming edges
+    GraphLib::static_graph InEdges; 
 
-    protected:
-      bool Enlarge(int ns);
-    public:
-      bool buildIncomingUnsorted(GraphLib::digraph* g, int i);
-      bool buildIncoming(GraphLib::digraph* g, int i);
-      bool buildOutgoing(GraphLib::digraph* g, int i);
+    // Graph after finishing, stored by outgoing edges, for reverse time
+    GraphLib::static_graph OutEdges;
 
-    // for element_visitor
-      virtual bool visit(long from, long to, void*);    
-
-    // for heapsort
-      inline int Compare(long i, long j) const {
-        CHECK_RANGE(0, i, last);
-        CHECK_RANGE(0, j, last);
-        return SIGN(index[i] - index[j]);
-      }
-
-      inline void Swap(long i, long j) {
-        CHECK_RANGE(0, i, last);
-        CHECK_RANGE(0, j, last);
-        SWAP(index[i], index[j]);
-      }
-    };
-  // ----------------------------------------------------------------------
-  private:
-    class outgoingCounter : public GraphLib::generic_graph::element_visitor {
-        long* count;
-      public:
-        outgoingCounter(long* c);
-        virtual ~outgoingCounter();
-        virtual bool visit(long from, long to, void*);
-    };
-  // ----------------------------------------------------------------------
-  private:
-    class incomingEdges : public GraphLib::generic_graph::element_visitor {
-        int alloc;
-        int last;
-        long* index;
-        bool overflow;
-      public:
-        incomingEdges();
-        virtual ~incomingEdges();
-        virtual bool visit(long from, long to, void*);
-
-        inline int Length() const { 
-          return last; 
-        }
-        inline long Item(int z) const {
-          CHECK_RANGE(0, z, last);
-          return index[z];
-        }
-        inline bool overflowed() const {
-          return overflow;
-        }
-        inline void Clear() {
-          last = 0;
-          overflow = false;
-        }
-
-      protected:
-        bool Enlarge(int ns);
-    };
 };
 
 #endif

@@ -8,6 +8,8 @@
 #ifndef STATEPROBS_H
 #define STATEPROBS_H
 
+#include "../_GraphLib/graphlib.h"
+
 class exprman;
 class symbol_table;
 class stochastic_lldsm;
@@ -55,11 +57,10 @@ public:
     This may mean we want to change how the vector is stored.
       @param  p     Parent, can be 0 if we want to set it later
       @param  V     Vector; will be "ours" now
-      @param  ren   Renumbering map, where ren[i] is the new index
-                    of old index i.  
-                    Can be 0 to indicate ren[i] = i for all i.
+      @param  Ren   Renumbering map, or 0 to indicate no renumbering.
   */
-  statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren);
+  statevect(const stochastic_lldsm* p, LS_Vector &V, 
+    const GraphLib::node_renumberer* Ren);
 
   virtual ~statevect();
 
@@ -162,7 +163,8 @@ class statedist : public statevect {
   public:
     statedist(const stochastic_lldsm *p, const double *d, long N);
     statedist(const stochastic_lldsm* p, long* I, double* D, long N);
-    statedist(const stochastic_lldsm* p, LS_Vector &V, const long* ren);
+    statedist(const stochastic_lldsm* p, LS_Vector &V, 
+      const GraphLib::node_renumberer* Ren);
 
     /// Normalize vector if possible; returns original sum of elements.
     double normalize();
@@ -179,7 +181,8 @@ class stateprobs : public statevect {
   public:
     stateprobs(const stochastic_lldsm *p, const double *d, long N);
     stateprobs(const stochastic_lldsm* p, long* I, double* D, long N);
-    stateprobs(const stochastic_lldsm* p, LS_Vector &V, const long* ren);
+    stateprobs(const stochastic_lldsm* p, LS_Vector &V, 
+      const GraphLib::node_renumberer* Ren);
 
   // ANY difference?
 };
@@ -195,7 +198,8 @@ class statemsrs : public statevect {
   public:
     statemsrs(const stochastic_lldsm *p, const double *d, long N);
     statemsrs(const stochastic_lldsm* p, long* I, double* D, long N);
-    statemsrs(const stochastic_lldsm* p, LS_Vector &V, const long* ren);
+    statemsrs(const stochastic_lldsm* p, LS_Vector &V, 
+      const GraphLib::node_renumberer* Ren);
 
   // ANY difference?
 };

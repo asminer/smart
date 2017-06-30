@@ -138,10 +138,10 @@ indexed_statedbs
 // **************************************************************************
 
 struct indexed_reachgraph : public indexed_statedbs {
-  GraphLib::digraph &rg;
+  GraphLib::dynamic_digraph &rg;
   ObjectList <long> *initlist;
 public:
-  indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::digraph &rg);
+  indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::dynamic_digraph &rg);
   ~indexed_reachgraph();
   // required
   inline static bool statesOnly() {
@@ -189,7 +189,7 @@ public:
 
 
 indexed_reachgraph
-::indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::digraph &therg)
+::indexed_reachgraph(StateLib::state_db &tdb, StateLib::state_db &vdb, GraphLib::dynamic_digraph &therg)
  :indexed_statedbs(tdb, vdb), rg(therg)
 {
   initlist = new ObjectList <long>;
@@ -236,7 +236,8 @@ public:
   }
   inline void exportInitial(LS_Vector &s0) {
     try {
-      smp.getInitialVector(s0);
+      // smp.getInitialVector(s0);
+      smp.buildInitialVector(false, s0);  // use doubles?
     }
     catch (MCLib::error e) {
       convert(e, "build initial vector");
@@ -252,7 +253,7 @@ public:
     index = vandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumVanishing()) return false;
     try {
-      CHECK_RETURN(smp.addVanishing(), index);
+      smp.addVanishing();
     } 
     catch (MCLib::error e) {
       convert(e, "add vanishing state");
@@ -263,7 +264,7 @@ public:
     index = tandb.InsertState(s->readState(), s->getStateSize());
     if (index < smp.getNumTangible()) return false;
     try {
-      CHECK_RETURN(smp.addTangible(), index);
+      smp.addTangible();
     }
     catch (MCLib::error e) {
       convert(e, "add tangible state");
@@ -375,7 +376,7 @@ protected:
 
         @throw  Appropriate error code.
   */
-  void generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::digraph* rg) const;
+  void generateRG(dsde_hlm* m, StateLib::state_db* rss, LS_Vector &s0, GraphLib::dynamic_digraph* rg) const;
 
   /** Build the reachability set and (maybe) Markov chain.
         @param  m   High-level model.
@@ -429,8 +430,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     if (e!=this)              return e->RunEngine(hm, statesonly);
   }
   StateLib::state_db* rss = 0;
-  GraphLib::digraph* rg = 0;
-  MCLib::Markov_chain* mc = 0;
+  GraphLib::dynamic_digraph* rg = 0;
   MCLib::vanishing_chain* vc = 0;
   const char* the_proc = 0;
   
@@ -447,7 +447,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   if (nondeterm) {
     if (!statesonly.getBool()) {
-      rg = new GraphLib::digraph(true); 
+      rg = new GraphLib::dynamic_digraph(true); 
     }
     if (slm) {
       rss = slm->getRSS()->getStateDatabase();
@@ -469,7 +469,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     }
     DCASSERT(rss);
     if (!statesonly.getBool()) {
-      vc = MCLib::startVanishingChain(false, rss->Size(), 0);
+      // vc = MCLib::startVanishingChain(false, rss->Size(), 0);
+      vc = new MCLib::vanishing_chain(false, rss->Size(), 0);
     }
   }
 
@@ -506,12 +507,6 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     bailOut = e;
   }
 
-  if (vc) {
-    mc = vc->grabTTandClear();
-    DCASSERT(mc);
-    delete vc;
-  }
-
   // Report on generation
   if (stopGen(!procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
@@ -522,15 +517,15 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     } 
     if (rg) {
       Report().report().Put('\t');
-      Report().report().PutMemoryCount(rg->ReportMemTotal(), 3);
+      Report().report().PutMemoryCount(rg->getMemTotal(), 3);
       Report().report() << " required for reachability graph construction\n";
       Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
     } 
-    if (mc) {
+    if (vc) {
       Report().report().Put('\t');
-      Report().report().PutMemoryCount(mc->ReportMemTotal(), 3);
+      Report().report().PutMemoryCount(vc->getMemTotal(), 3);
       Report().report() << " required for Markov chain construction\n";
-      Report().report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
+      Report().report() << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
     }
     Report().stopIO();
   }
@@ -539,7 +534,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Did we succeed so far?
   if (!procOK) {
     delete rg;
-    delete mc;
+    delete vc;
     if (lm) {
       lm->setCompletionEngine(0);
     } else {
@@ -585,7 +580,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   } else {
     stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);
     DCASSERT(glm);
-    mclib_process* mcp = new mclib_process(mc);
+    mclib_process* mcp = new mclib_process(vc);
     glm->setPROC(init, mcp);
   }
   
@@ -600,7 +595,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
 
 void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, 
-  LS_Vector &s0, GraphLib::digraph* rg) const
+  LS_Vector &s0, GraphLib::dynamic_digraph* rg) const
 {
   DCASSERT(dsm);
   DCASSERT(tandb);

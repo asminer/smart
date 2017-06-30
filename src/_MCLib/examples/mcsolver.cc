@@ -15,13 +15,11 @@
 
 // #define CHECK_CLASSES
 
-template <class T> inline void SWAP(T &x, T &y) { T tmp=x; x=y; y=tmp; }
-
 // ******************************************************************
 // *                         my_timer class                         *
 // ******************************************************************
 
-class my_timer : public GraphLib::generic_graph::timer_hook {
+class my_timer : public GraphLib::timer_hook {
   timer watch;
 public:
   virtual void start(const char* w) {
@@ -50,7 +48,7 @@ protected:
   // switches
   static bool quiet;
   static LS_Options ssopts;
-  static MCLib::Markov_chain::finish_options Fopts;
+  static my_timer* stopwatch;
 
 protected:
   bool is_discrete;
@@ -69,13 +67,7 @@ public:
     return quiet; 
   }
   static inline void useTimer() { 
-    Fopts.report = my_timer::getInstance(); 
-  }
-  static inline void useCompactSets() {
-    Fopts.Use_Compact_Sets = true;
-  }
-  static inline void useColumns() {
-    Fopts.Store_By_Rows = true;
+    stopwatch = my_timer::getInstance(); 
   }
   static inline void useMethod(LS_Method m) {
     ssopts.method = m;
@@ -148,7 +140,7 @@ public:
 
 bool dryrun_parser::quiet = false;
 LS_Options dryrun_parser::ssopts;
-MCLib::Markov_chain::finish_options dryrun_parser::Fopts;
+my_timer* dryrun_parser::stopwatch = 0;
 
 // ******************************************************************
 // *                     dryrun_parser  methods                     *
@@ -212,9 +204,10 @@ bool dryrun_parser::doneEdges()
 // ******************************************************************
 
 class solver_parser : public dryrun_parser {
+  GraphLib::dynamic_summable<double>* G;
   MCLib::Markov_chain* mc;   // Markov chain
-  MCLib::Markov_chain::renumbering Ren;
-  const long* ren_map;
+  GraphLib::node_renumberer* Ren;
+  // GraphLib::static_classifier C;
   float* initial;    // initial vector.
   long initsize;    // dimension of initial vector.
   long* initindex;  // indexes (or null) for initial sparse vector.
@@ -294,8 +287,9 @@ protected:
 
 solver_parser::solver_parser(FILE* err) : dryrun_parser(err)
 {
+  G = 0;
   mc = 0;
-  ren_map = 0;
+  Ren = 0;
   initial = 0;
   initsize = 0;
   initindex = 0;
@@ -310,12 +304,15 @@ solver_parser::~solver_parser()
 
 void solver_parser::clearOld()
 {
-  Ren.clear();
+  delete Ren;
   free(initial);
   free(initindex);
   delete mc;
+  delete G;
   free(solvector);
+  G = 0;
   mc = 0;
+  Ren = 0;
   initial = 0;
   initindex = 0;
   initsize = 0;
@@ -365,14 +362,14 @@ bool solver_parser::finishInitial()
   double total = 0.0;
 
   // reorder the vector
-  if (ren_map) {
+  if (Ren && Ren->changes_something()) {
     bool* fixme = new bool[States];
-    for (i=States-1; i>=0; i--)  fixme[i] = (i != ren_map[i]);
+    for (i=States-1; i>=0; i--)  fixme[i] = (i != Ren->new_number(i));
     for (i=0; i<States; i++) if (fixme[i]) {
       float last = initial[i];
       long p = i;
       while (1) {
-        p = ren_map[p];
+        p = Ren->new_number(p);
         SWAP(last, initial[p]);
         fixme[p] = false;
         if (p==i) break;
@@ -416,19 +413,20 @@ bool solver_parser::finishInitial()
 bool solver_parser::startEdges(long num_edges)
 {
   if (num_edges<0) num_edges = 0;
-  mc = MCLib::startUnknownMC(is_discrete, States, num_edges);
-  if (0==mc) {
-    fprintf(errlog, "Couldn't start Markov chain\n");
+  G = new GraphLib::dynamic_summable<double> (is_discrete, true);
+  if (0==G) {
+    fprintf(errlog, "Couldn't start graph\n");
     return false;
   }
+  G->addNodes(States);
   return dryrun_parser::startEdges(num_edges);
 }
 
 bool solver_parser::addEdge(long fs, long ts, double p)
 {
-  if (0==mc) return false;
+  if (0==G) return false;
   try {
-    bool dup = mc->addEdge(fs, ts, p);
+    bool dup = G->addEdge(fs, ts, p);
     if (!dup) return dryrun_parser::addEdge(fs, ts, p);
 
     fprintf(errlog,  "Warning: summing duplicate edge %ld:%ld ", fs, ts);
@@ -454,53 +452,33 @@ bool solver_parser::doneEdges()
   dryrun_parser::doneEdges();
   sw.reset();
   try {
-    mc->finish(Fopts, Ren);
+    GraphLib::abstract_classifier* ac = G->determineSCCs(0, 1, true, stopwatch); 
+    GraphLib::static_classifier C;
+    Ren = ac->buildRenumbererAndStatic(C);
+    DCASSERT(Ren);
+    delete ac;
+    G->renumberNodes(*Ren);
+    mc = new Markov_chain(is_discrete, *G, C, stopwatch);
   }
   catch (error e) {
     fprintf(errlog, "Error finishing chain: %s\n", e.getString());
     return false;
   }
 
-  if (Ren.GeneralRenumbering()) {
-    ren_map = Ren.GetGeneral();
-  } else {
-    ren_map = 0;
-  }
   if (!finishInitial()) return false;
 
-  int nc = mc->getNumClasses();
+  const GraphLib::static_classifier &C = mc->getStateClassification();
+  int nc = C.getNumClasses();
   if (!quiet) {
-    for (int i=1; i<=nc; i++) 
-      mc->computePeriodOfClass(i);
-
-    if (is_discrete)  fprintf(errlog, "DTMC is ");
-    else              fprintf(errlog, "CTMC is ");
-    switch (mc->getType()) {
-      case Markov_chain::Irreducible:
-          fprintf(errlog, "irreducible with period ");
-          fprintf(errlog, "%ld\n", mc->getPeriodOfClass(1));
-          break;
-      case Markov_chain::Absorbing:
-          fprintf(errlog, "absorbing\n");
-          break;
-      case Markov_chain::Reducible:
-          fprintf(errlog, "reducible with %d recurrent classes\n", nc);
-          for (int i=1; i<=nc; i++) {
-            fprintf(errlog, "\tclass %d has period ", i);
-            fprintf(errlog, "%ld\n", mc->getPeriodOfClass(1));
-          }
-          break;
-      default:
-          fprintf(errlog, "erroneous\n");
-    } // switch
-#ifdef CHECK_CLASSES
-    fprintf(errlog, "Mapping from state to class#:\n\t[");
-    for (int i=0; i<mc->getNumStates(); i++) {
-      if (i) fprintf(errlog, ", ");
-      fprintf(errlog, "%d", mc->getClassOfState(i));
+    if (is_discrete)  fprintf(errlog, "DTMC classes:\n");
+    else              fprintf(errlog, "CTMC classes:\n");
+    for (long i=0; i<nc; i++) {
+      if (0==i) fprintf(errlog, "\tTransient:\n");
+      else if (1==i) fprintf(errlog, "\tAbsorbing:\n");
+      else fprintf(errlog, "\tRecurrent class %ld:\n", i);
+      fprintf(errlog, "\t\t%ld states\n", C.sizeOfClass(i));
+      if (i>1) fprintf(errlog, "\t\tperiod is %ld\n", mc->computePeriodOfClass(i));
     }
-    fprintf(errlog, "]\n");
-#endif
     fprintf(errlog, "Chain finalization took %lf seconds\n", sw.elapsed_seconds());
   } // if !quiet
 
@@ -526,7 +504,7 @@ bool solver_parser::solveDTMCTransient(int n)
   using namespace MCLib;
   if (n<0) return false;
   try {
-    Markov_chain::transopts foo;
+    Markov_chain::DTMC_transient_options foo;
     if ((Transient == last_solved) && (last_ltime <= n)) {
       if (!quiet) {
         fprintf(errlog,  "Computing distribution at time %d", n);
@@ -541,7 +519,7 @@ bool solver_parser::solveDTMCTransient(int n)
       mc->computeTransient(n, solvector, foo);
     }
     if (!quiet) {
-      fprintf(errlog,  "\tSteps: %d\n", foo.Steps);
+      fprintf(errlog,  "\tSteps: %ld\n", foo.multiplications);
     }
     printf("Time %d:\n", n);
     last_ltime = n;
@@ -559,7 +537,7 @@ bool solver_parser::solveCTMCTransient(double t)
   using namespace MCLib;
   if (t<0) return false;
   try {
-    Markov_chain::transopts foo;
+    Markov_chain::CTMC_transient_options foo;
     foo.ssprec = 1e-8;
     if ((Transient == last_solved) && (last_dtime <= t)) {
       if (!quiet) {
@@ -575,8 +553,8 @@ bool solver_parser::solveCTMCTransient(double t)
       mc->computeTransient(t, solvector, foo);
     }
     if (!quiet) {
-      fprintf(errlog, "\tq=%lf \tLeft=%d \tRight=%d \tSteps=%d\n",
-              foo.q, foo.Left, foo.Right, foo.Steps);
+      fprintf(errlog, "\tq=%lf \tRight=%ld \tSteps=%ld\n",
+              foo.q, foo.poisson_right, foo.multiplications);
     }
     printf("Time %lf\n", t );
     last_dtime = t;
@@ -616,7 +594,7 @@ bool solver_parser::solveSteady()
     }
     sw.reset();
     LS_Output bar;
-    mc->computeSteady(p0, solvector, ssopts, bar);
+    mc->computeInfinityDistribution(p0, solvector, ssopts, bar);
     if (!quiet) {
       fprintf(errlog,  "Done, %ld iterations, ", bar.num_iters);
       fprintf(errlog,  "%lf seconds\n", sw.elapsed_seconds());
@@ -637,10 +615,6 @@ bool solver_parser::solveAccumulated()
   if (Accumulated == last_solved) return true;
   last_solved = Accumulated;
 
-  if (mc->getType() == Markov_chain::Irreducible) {
-    printf("Accumulated:\n");
-    return true;
-  }
   try {
     sw.reset();
     LS_Output bar;
@@ -703,6 +677,7 @@ bool solver_parser::startMeasureCollection(solution_type which, double time)
 bool solver_parser::doneMeasureCollection()
 {
   if (num_msrs) return true;
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   // no measures; display vector
   switch (last_solved) {
     case Transient:
@@ -710,8 +685,8 @@ bool solver_parser::doneMeasureCollection()
         printf("[");
         for (long i=0; i<States; i++) {
           if (i) printf(", ");
-          long j = (ren_map) ? ren_map[i] : i;
-          printf("%lf", solvector[j]);
+          long j = (Ren) ? Ren->new_number(i) : i;
+          printf("%2.8lf", solvector[j]);
         }
         printf("]\n");
         return true;
@@ -720,9 +695,9 @@ bool solver_parser::doneMeasureCollection()
         printf("[");
         for (long i=0; i<States; i++) {
           if (i) printf(", ");
-          long j = (ren_map) ? ren_map[i] : i;
-          if (mc->isTransientState(j))  printf("%lf", solvector[j]);
-          else        printf("infinity");
+          long j = (Ren) ? Ren->new_number(i) : i;
+          if (C.isNodeInClass(j, 0))  printf("%lf", solvector[j]);
+          else                        printf("infinity");
         }
         printf("]\n");
         return true;
@@ -744,6 +719,7 @@ bool solver_parser::startMeasure(const char* name)
 
 bool solver_parser::addToMeasure(long state, double value) 
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   if (state<0 || state>=States) {
     printf("\n");
     startError();
@@ -752,10 +728,10 @@ bool solver_parser::addToMeasure(long state, double value)
     return false;
   }
   if (0==value) return true;
-  long i = ren_map ? ren_map[state] : state;
+  long i = (Ren) ? Ren->new_number(state) : state;
   if (Accumulated == last_solved) {
-    if (mc->isTransientState(i))  reward += solvector[i] * value;
-    else                          infinity_reward = true;
+    if (C.isNodeInClass(i, 0))  reward += solvector[i] * value;
+    else                        infinity_reward = true;
   } else {
     reward += solvector[i] * value;
   }
@@ -771,22 +747,24 @@ bool solver_parser::doneMeasure()
 
 bool solver_parser::assertClasses(long nc)
 {
-  if (mc->getNumClasses() == nc) {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
+  if (C.getNumClasses() == nc) {
     if (!quiet) fprintf(errlog, "Assertion CLASSES %ld passed\n", nc);
     return true;
   }
   failedAssertion();
   fprintf(errlog, 
-    "expected %ld recurrent classes (with size > 1), got %ld\n", 
-    nc, mc->getNumClasses()
+    "expected %ld classes, got %ld\n", 
+    nc, C.getNumClasses()
   );
   return false;
 }
 
 bool solver_parser::assertAbsorbing(long s)
 {
-  long i = ren_map ? ren_map[s] : s;
-  if (mc->isAbsorbingState(i)) {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
+  long i = Ren ? Ren->new_number(s) : s;
+  if (C.isNodeInClass(i, 1)) {
     if (!quiet) fprintf(errlog, "Assertion ABSORBING %ld passed\n", s);
     return true;
   }
@@ -797,8 +775,9 @@ bool solver_parser::assertAbsorbing(long s)
 
 bool solver_parser::assertTransient(long s)
 {
-  long i = ren_map ? ren_map[s] : s;
-  if (mc->isTransientState(i)) {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
+  long i = Ren ? Ren->new_number(s) : s;
+  if (C.isNodeInClass(i, 0)) {
     if (!quiet) fprintf(errlog, "Assertion TRANSIENT %ld passed\n", s);
     return true;
   }
@@ -809,16 +788,17 @@ bool solver_parser::assertTransient(long s)
 
 bool solver_parser::assertRecurrent(long s)
 {
+  const GraphLib::static_classifier &C = mc->getStateClassification();
   if (first_recurrent>=0) {
-    long j = ren_map ? ren_map[first_recurrent] : first_recurrent;
-    long c = mc->getClassOfState(j);
-    long i = ren_map ? ren_map[s] : s;
-    if (mc->getClassOfState(i) == c) {
+    long j = Ren ? Ren->new_number(first_recurrent) : first_recurrent;
+    long c = C.classOfNode(j);
+    long i = Ren ? Ren->new_number(s) : s;
+    if (C.isNodeInClass(i, c)) {
       if (!quiet) fprintf(errlog, "Assertion RECURRENT %ld passed\n", s);
       return true;
     }
     failedAssertion();
-    if (mc->isTransientState(i)) {
+    if (C.isNodeInClass(i, 0)) {
       fprintf(errlog, "state %ld is not recurrent\n", s);
     } else {
       fprintf(errlog, "state %ld is in a different recurrent class than %ld\n", s, first_recurrent);
@@ -826,8 +806,8 @@ bool solver_parser::assertRecurrent(long s)
     return false;
   }
   // just check if we're recurrent
-  long i = ren_map ? ren_map[s] : s;
-  if (mc->getClassOfState(i) < 1) {
+  long i = Ren ? Ren->new_number(s) : s;
+  if (C.classOfNode(i) < 2) {
     failedAssertion();
     fprintf(errlog, "state %ld is not recurrent\n", s);
     return false;
@@ -847,7 +827,7 @@ int Usage(const char* name)
   fprintf(stderr, "\nMarkov chain solver\n");
   fprintf(stderr, "\t%s\n", GraphLib::Version());
   fprintf(stderr, "\t%s\n", LS_LibraryVersion());
-  fprintf(stderr, "\t%s\n", MCLib::Version());
+  // fprintf(stderr, "\t%s\n", Old_MCLib::Version());
   fprintf(stderr, "\t%s\n", mc_builder::getParserVersion());
   fprintf(stderr, "\nUsage: %s [-switches] <files>\n", name);
   fprintf(stderr, "\tIf no files are specified, then input is taken from standard input\n");
@@ -856,9 +836,6 @@ int Usage(const char* name)
   fprintf(stderr, "\td: Dry run; parse the input file but do not compute anything\n");
   fprintf(stderr, "\tq: quiet (no diagnostic messages, except errors)\n");
   fprintf(stderr, "\tt: time Markov chain operations\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, "\tc: store matrix by columns\n");
-  fprintf(stderr, "\tz: compress any bitvectors used\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "\tr: Jacobi by rows\n");
   fprintf(stderr, "\tj: Jacobi by vector-matrix multiply\n");
@@ -892,14 +869,6 @@ int main(int argc, char** argv)
 
       case 't':
           dryrun_parser::useTimer();
-          continue;
-
-      case 'c':
-          dryrun_parser::useColumns();
-          continue;
-
-      case 'z':
-          dryrun_parser::useCompactSets();
           continue;
 
       case 'r':

@@ -228,7 +228,7 @@ numclasses_si::numclasses_si()
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  If show is true, then as a side effect, the states in each TSCC are displayed to the current output stream.");
 #else 
-  SetDocumentation("Computes if necessary, and returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).");
+  SetDocumentation("Computes if necessary, and returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  Note that an absorbing state is counted as its own recurrent class.");
 #endif
 }
 

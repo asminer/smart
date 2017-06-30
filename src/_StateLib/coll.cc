@@ -15,13 +15,6 @@ const int MAX_MEM_ADD = 65536;  // 64kb
 const int MAX_STATE_ADD = 2048; 
 
 
-/// Standard MAX "macro".
-template <class T> inline T MAX(T X,T Y) { return ((X>Y)?X:Y); }
-/// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
-
-
 // ******************************************************************
 // *                      coll_base  methods                        *
 // ******************************************************************

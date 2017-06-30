@@ -142,21 +142,12 @@ void expl_reachset::Finish()
   discorder = 0;
 }
 
-void expl_reachset::Renumber(const long* ren)
+void expl_reachset::Renumber(const GraphLib::node_renumberer* Ren)
 {
-  if (0==ren) return;
+  if (0==Ren) return;
+  if (!Ren->changes_something()) return;
   DCASSERT(state_collection);
   DCASSERT(state_handle);
-
-  // Check for no-op renumbering
-  bool noop = true;
-  for (long i=state_collection->Size()-1; i>=0; i--) {
-    if (ren[i] != i) {
-      noop = false;
-      break;
-    }
-  }
-  if (noop) return;
 
   // Renumber state_handle array
   long* aux = new long[state_collection->Size()];
@@ -164,8 +155,8 @@ void expl_reachset::Renumber(const long* ren)
     aux[i] = state_handle[i];
   }
   for (long i=state_collection->Size()-1; i>=0; i--) {
-    CHECK_RANGE(0, ren[i], state_collection->Size());
-    state_handle[ren[i]] = aux[i];
+    CHECK_RANGE(0, Ren->new_number(i), state_collection->Size());
+    state_handle[Ren->new_number(i)] = aux[i];
   }
   delete[] aux;
 

@@ -77,7 +77,7 @@ public:
   /** Removes a range of elements from the set.
       Equivalent to calling removeElement(a), 
       removeElement(a+1), ..., removeElement(b).
-      If b < a, then nothing is added.
+      If b < a, then nothing is removed.
         @param  a  First element to remove.
         @param  b  Last element to remove.
   */

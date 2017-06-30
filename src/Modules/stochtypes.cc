@@ -2405,16 +2405,17 @@ public:
 };
 
 print_ddist::print_ddist(const type* DPH)
- : simple_internal(em->VOID, "print_dist", 2)
+ : simple_internal(em->VOID, "print_dist", 3)
 {
   SetFormal(0, DPH, "X");
   SetFormal(1, em->REAL, "epsilon");
-  SetDocumentation("Prints the discrete distribution of X (to precision epsilon>0), to the current output stream.");
+  SetFormal(2, em->INT, "max_size", 1000L);
+  SetDocumentation("Prints the discrete distribution of X (to precision epsilon>0, limited by max_size), to the current output stream.");
 }
 
 void print_ddist::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(2==np);
+  DCASSERT(3==np);
   DCASSERT(x.answer);
   x.answer->setNull();
 
@@ -2424,6 +2425,16 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (epsilon <= 0) {
     OutOfRange(em, x, em->REAL, "print_dist epsilon value ", "");
     return;
+  }
+
+  SafeCompute(pass[2], x);
+  long maxsize = 1000;
+  if (x.answer->isNormal()) {
+    maxsize = x.answer->getInt();
+    if (maxsize <= 0) {
+      OutOfRange(em, x, em->INT, "print_dist max_size value ", "");
+      return;
+    }
   }
 
   x.answer->setNull();
@@ -2464,13 +2475,12 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  double* dist;
-  int N;
+  discrete_pdf dist;
 
   em->cout() << "#\n";
   em->cout().flush();
 
-  bool ok = proc->computeDiscreteTTA(epsilon, dist, N);
+  bool ok = proc->computeDiscreteTTA(epsilon, maxsize, dist);
   x.answer->setBool(ok);
 
   if (!ok) {
@@ -2481,52 +2491,50 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   
   // print the distribution
   
-  //
-  // Null distribution - happens for infinity
-  //
-  if (0==dist) {
-    // degenerate - infinity
-    em->cout() << "#  Distribution is constant infinity\n";
-    em->cout() << "#  so no data is printed below\n";
-    em->cout().flush();
-    return;
-  }
 
   //
-  // Sane distribution, print it
+  // Print distribution
   //
   em->cout() << "# N        Prob(reach acceptance at time N)\n";
   em->cout().flush();
-  for (long i=0; i<N; i++) {
+  for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
     em->cout() << "  ";
     em->cout().Put(i, -9);
-    em->cout() << dist[i] << "\n";
+    em->cout() << dist.f(i) << "\n";
     em->cout().flush();
+  }
+  if (dist.f_infinity()) {
+    em->cout() << "#infinity ";
+    em->cout() << dist.f_infinity() << "\n";
   }
 
   //
   // Compute mean and variance from PDF
   //
   em->cout() << "#\n#  Stats determined directly from PDF:\n";
-  double mean = 0.0;
-  double mom2 = 0.0;
-  double var  = 0.0;
-  for (long i=1; i<N; i++) {
-    double mpt = i * dist[i];
-    mean += mpt;
-    mom2 += i * mpt;
+  if (dist.f_infinity()) {
+    em->cout() << "#  E[X]  : infinity\n";
+    em->cout() << "#  E[X^2]: infinity\n";
+    em->cout() << "#  Var[X]: infinity\n";
+  } else {
+    double mean = 0.0;
+    double mom2 = 0.0;
+    double var  = 0.0;
+    for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
+      double mpt = i * dist.f(i);
+      mean += mpt;
+      mom2 += i * mpt;
+    }
+    em->cout() << "#  E[X]  : " << mean << "\n";
+    em->cout() << "#  E[X^2]: " << mom2 << "\n";
+    // hopefully more stable computation of variance
+    for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
+      double vpt = (i-mean);
+      var += vpt * vpt * dist.f(i);
+    }
+    em->cout() << "#  Var[X]: " << var << "\n";
   }
-  em->cout() << "#  E[X]  : " << mean << "\n";
-  em->cout() << "#  E[X^2]: " << mom2 << "\n";
-  // hopefully more stable computation of variance
-  for (long i=0; i<N; i++) {
-    double vpt = (i-mean);
-    var += vpt * vpt * dist[i];
-  }
-  em->cout() << "#  Var[X]: " << var << "\n";
   em->cout().flush();
-
-  delete[] dist;
 }
 
 // ******************************************************************
@@ -2540,17 +2548,18 @@ public:
 };
 
 print_cdist::print_cdist(const type* CPH)
- : simple_internal(em->VOID, "print_dist", 3)
+ : simple_internal(em->VOID, "print_dist", 4)
 {
   SetFormal(0, CPH, "X");
   SetFormal(1, em->REAL, "dt");
   SetFormal(2, em->REAL, "epsilon");
-  SetDocumentation("Prints the continuous distribution of X at time points dt, 2*dt, 3*dt, ..., (up to desired precision epsilon>0), to the current output stream.");
+  SetFormal(3, em->INT, "max_size", 1000L);
+  SetDocumentation("Prints the continuous distribution of X at time points dt, 2*dt, 3*dt, ..., (up to desired precision epsilon>0, limited by max_size), to the current output stream.");
 }
 
 void print_cdist::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(3==np);
+  DCASSERT(4==np);
   DCASSERT(x.answer);
   x.answer->setNull();
 
@@ -2568,6 +2577,16 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (epsilon <= 0) {
     OutOfRange(em, x, em->REAL, "print dist epsilon value ", "");
     return;
+  }
+
+  SafeCompute(pass[3], x);
+  long maxsize = 1000;
+  if (x.answer->isNormal()) {
+    maxsize = x.answer->getInt();
+    if (maxsize <= 0) {
+      OutOfRange(em, x, em->INT, "print_dist max_size value ", "");
+      return;
+    }
   }
 
   x.answer->setNull();
@@ -2610,36 +2629,30 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  double* dist;
-  int N;
+  discrete_pdf dist;
 
-  bool ok = proc->computeContinuousTTA(dt, epsilon, dist, N);
+  bool ok = proc->computeContinuousTTA(dt, epsilon, maxsize, dist);
   x.answer->setBool(ok);
 
   if (!ok) return;
   
   // print the distribution
   
-  //
-  // Null distribution - happens for infinity
-  //
-  if (0==dist) {
-    // degenerate - infinity
-    em->cout() << "#  Distribution is constant infinity\n";
-    em->cout() << "#  so no data is printed below\n";
-    return;
-  }
 
   //
-  // Sane distribution, print it
+  // Print distribution
   //
-  em->cout() << "#\n";
   em->cout() << "# t        PDF at t\n";
-  for (long i=1; i<N; i++) {
+  em->cout().flush();
+  for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
     em->cout() << "  ";
     em->cout().Put(i*dt, -9);
-    em->cout() << dist[i] << "\n";
+    em->cout() << dist.f(i) << "\n";
     em->cout().flush();
+  }
+  if (dist.f_infinity()) {
+    em->cout() << "#infinity ";
+    em->cout() << dist.f_infinity() << "\n";
   }
 
   //
@@ -2647,27 +2660,31 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   //
   em->cout() << "#\n#  Stats determined directly from PDF:\n";
   em->cout() << "#  (quantization error may be significant)\n";
-  double mean = 0.0;
-  double mom2 = 0.0;
-  double var  = 0.0;
-  for (long i=1; i<N; i++) {
-    double t = i * dt;
-    double mpt = t * dist[i] * dt;
-    mean += mpt;
-    mom2 += t * mpt;
+  if (dist.f_infinity()) {
+    em->cout() << "#  E[X]  : infinity\n";
+    em->cout() << "#  E[X^2]: infinity\n";
+    em->cout() << "#  Var[X]: infinity\n";
+  } else {
+    double mean = 0.0;
+    double mom2 = 0.0;
+    double var  = 0.0;
+    for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
+      double t = i * dt;
+      double mpt = t * dist.f(i) * dt;
+      mean += mpt;
+      mom2 += t * mpt;
+    }
+    em->cout() << "#  E[X]  : " << mean << "\n";
+    em->cout() << "#  E[X^2]: " << mom2 << "\n";
+    // hopefully more stable computation of variance
+    for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
+      double t = i * dt;
+      double vpt = (t-mean);
+      var += vpt * vpt * dist.f(i) * dt;
+    }
+    em->cout() << "#  Var[X]: " << var << "\n";
   }
-  em->cout() << "#  E[X]  : " << mean << "\n";
-  em->cout() << "#  E[X^2]: " << mom2 << "\n";
-  // hopefully more stable computation of variance
-  for (long i=0; i<N; i++) {
-    double t = i * dt;
-    double vpt = (t-mean);
-    var += vpt * vpt * dist[i] * dt;
-  }
-  em->cout() << "#  Var[X]: " << var << "\n";
   em->cout().flush();
-
-  delete[] dist;
 }
 
 

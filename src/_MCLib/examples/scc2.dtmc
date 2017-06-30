@@ -1,6 +1,4 @@
 
-# $Id$
-
 # Another scc test
 
 DTMC
@@ -45,7 +43,7 @@ ARCS 35
 	24 : 25 : 1
 	25 : 22 : 1
 END
-ASSERT CLASSES 3
+ASSERT CLASSES 5
 ASSERT TRANSIENT
   0 1 2 3 4 10 11 18
 ASSERT RECURRENT

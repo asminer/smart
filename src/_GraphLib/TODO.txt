@@ -1,5 +1,3 @@
 
-Things to do for the graph library.
-
-* copy constructors
+Things to do for the graph library:
 

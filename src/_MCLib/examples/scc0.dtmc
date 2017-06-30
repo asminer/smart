@@ -1,6 +1,4 @@
 
-# $Id$
-
 # Test of 1-state DTMC
 
 DTMC
@@ -10,7 +8,7 @@ INIT
 ARCS 1
   0 : 0 : 1
 END
-ASSERT CLASSES 0
+ASSERT CLASSES 2
 ASSERT ABSORBING
   0
   0

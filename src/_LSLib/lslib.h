@@ -172,8 +172,12 @@ public:
   */
   template <class REAL2>
   inline void VectorMatrixMultiply(double *y, const REAL2* x) const {
-      // TBD
-      throw LS_Not_Implemented;
+      long a = row_ptr[start];
+      for (long i=start; i<stop; i++) {
+        for ( ; a < row_ptr[i+1]; a++) {
+          y[col_ind[a]] += x[i] * val[a];
+        }
+      }
   }
 
   /**

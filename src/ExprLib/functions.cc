@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <limits.h>   // for INT_MIN
 
+#include "values.h"  // for constant defaults
+
 // #define DEBUG_FUNC_WRAPPERS
 
 // ******************************************************************
@@ -638,6 +640,40 @@ void fplist::build(int n, typelist* t, const char* name)
 #endif
   formal[n] = new formal_param(t, name);
 }
+
+void fplist::build(int n, const type* t, const char* name, bool deflt)
+{
+  build(n, t, name);
+  DCASSERT(formal[n]);
+  result c;
+  c.setBool(deflt);
+  formal[n]->SetDefault(
+    new value(0, -1, t, c)
+  );
+}
+
+void fplist::build(int n, const type* t, const char* name, long deflt)
+{
+  build(n, t, name);
+  DCASSERT(formal[n]);
+  result c;
+  c.setInt(deflt);
+  formal[n]->SetDefault(
+    new value(0, -1, t, c)
+  );
+}
+
+void fplist::build(int n, const type* t, const char* name, double deflt)
+{
+  build(n, t, name);
+  DCASSERT(formal[n]);
+  result c;
+  c.setReal(deflt);
+  formal[n]->SetDefault(
+    new value(0, -1, t, c)
+  );
+}
+
 
 void fplist::hide(int n)
 {

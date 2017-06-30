@@ -93,7 +93,7 @@ protected:
   const {
     if (i < vc->getNumVanishing()) return false;
     try {
-      CHECK_RETURN(vc->addVanishing(), i);
+      vc->addVanishing();
       return true;
     }
     catch (MCLib::error status) {
@@ -105,7 +105,8 @@ protected:
   const {
     if (i < vc->getNumTangible()) return false;
     try {
-      CHECK_RETURN(vc->addTangible(), i);
+      vc->addTangible();
+      return true;
     }
     catch (MCLib::error status) {
       MCError(m, "add tangible state to", status);
@@ -156,7 +157,6 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   DCASSERT(phm);
   StateLib::state_db* rss = 0;
   const char* the_proc = 0;
-  MCLib::Markov_chain* mc = 0;
   MCLib::vanishing_chain* vc = 0;
 
   stochastic_lldsm* slm = dynamic_cast <stochastic_lldsm*> (lm);
@@ -178,7 +178,8 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
   DCASSERT(rss);
   if (!statesonly.getBool()) {
-    vc = MCLib::startVanishingChain(phm->isDiscrete(), rss->Size(), 0);
+    // vc = MCLib::startVanishingChain(phm->isDiscrete(), rss->Size(), 0);
+    vc = new MCLib::vanishing_chain(phm->isDiscrete(), rss->Size(), 0);
   }
 
   // Start reporting on generation
@@ -211,12 +212,6 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
     bailOut = e;
   }
 
-  if (vc) {
-    mc = vc->grabTTandClear();
-    DCASSERT(mc);
-    delete vc;
-  }
-
   // Report on generation
   if (stopGen(procOK, hm->Name(), the_proc, watch)) {
     if (!rss->IsStatic()) {
@@ -225,11 +220,11 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
       em->report() << " required for state space construction\n";
       em->report() << "\t" << rss->Size() << " states generated\n";
     } 
-    if (mc) {
+    if (vc) {
       em->report().Put('\t');
-      em->report().PutMemoryCount(mc->ReportMemTotal(), 3);
+      em->report().PutMemoryCount(vc->getMemTotal(), 3);
       em->report() << " required for Markov chain construction\n";
-      em->report() << "\t" << mc->getNumArcs() << " Markov chain edges\n";
+      em->report() << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
     }
     em->stopIO();
   }
@@ -237,7 +232,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Did we succeed so far?
   if (!procOK) {
-    delete mc;
+    delete vc;
     if (lm) {
       lm->setCompletionEngine(0);
     } else {
@@ -261,7 +256,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
     lm = slm;
     hm->SetProcess(lm);
   }
-  mclib_process* mcp = new mclib_process(mc);
+  mclib_process* mcp = new mclib_process(vc);
   mcp->setAcceptState(accept);
   mcp->setTrapState(trap);
   slm->setPROC(init, mcp);
@@ -418,7 +413,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
     // Build initial distribution if necessary
     if (smp) {
       try {
-        smp->getInitialVector(init);
+        smp->buildInitialVector(true, init);  // floats
         initial_distro(init);
       }
       catch (MCLib::error vc_status) {

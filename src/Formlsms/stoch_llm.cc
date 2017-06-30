@@ -98,6 +98,7 @@ stochastic_lldsm::process::process()
 
 stochastic_lldsm::process::~process()
 {
+  // DON'T delete parent
 }
 
 void stochastic_lldsm::process::attachToParent(stochastic_lldsm* p, LS_Vector &, state_lldsm::reachset*)
@@ -181,13 +182,15 @@ long stochastic_lldsm::process::getAcceptingState() const
   return -1;
 }
 
-bool stochastic_lldsm::process::computeDiscreteTTA(double, double* &, int &) const
+bool stochastic_lldsm::process::computeDiscreteTTA(double, long, 
+  discrete_pdf &) const
 {
   parent->bailOut(__FILE__, __LINE__, "Can't compute discrete TTA");
   return false;
 }
 
-bool stochastic_lldsm::process::computeContinuousTTA(double, double, double* &, int &) const
+bool stochastic_lldsm::process::computeContinuousTTA(double, double, long, 
+  discrete_pdf &) const
 {
   parent->bailOut(__FILE__, __LINE__, "Can't compute continuous TTA");
   return false;
