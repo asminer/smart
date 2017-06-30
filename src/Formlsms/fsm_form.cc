@@ -18,7 +18,6 @@
 #include "../_GraphLib/graphlib.h"
 #include "../_LSLib/lslib.h"
 
-
 // **************************************************************************
 // *                                                                        *
 // *                             fsm_def  class                             *
@@ -34,7 +33,7 @@ class fsm_def : public model_def {
 
   SplayOfPointers <model_enum_value> *initial;
 
-  GraphLib::digraph* mygr;
+  GraphLib::dynamic_digraph* mygr;
 
   bool error;
 
@@ -180,8 +179,7 @@ void fsm_def::InitModel()
   statelist = 0; 
   state_count = 0;
   DCASSERT(0==mygr);
-  // mygr = startDirectedGraph(0);
-  mygr = new GraphLib::digraph(true);
+  mygr = new GraphLib::dynamic_digraph(true);
   DCASSERT(mygr);
   DCASSERT(0==initial);
   initial = new SplayOfPointers <model_enum_value> (16, 0);
@@ -200,20 +198,6 @@ void fsm_def::FinalizeModel(OutputStream &ds)
     mygr = 0;
     ConstructionError();
     return;
-  }
-
-  GraphLib::digraph::finish_options fo;
-  fo.Store_By_Rows = false;  // need option?
-  fo.Will_Clear = false;
-  try {
-    if (!error) mygr->finish(fo);
-  }
-  catch (GraphLib::error e) {
-    if (StartError(0)) {
-      em->cerr() << e.getString() << " when finalizing finite state machine";
-      DoneError();
-    }
-    error = true;
   }
 
   LS_Vector init;

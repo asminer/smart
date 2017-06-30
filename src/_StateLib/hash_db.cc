@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/// Standard MIN "macro".
-template <class T> inline T MIN(T X,T Y) { return ((X<Y)?X:Y); }
-
 // ******************************************************************
 // *                                                                *
 // *                       hash_db  methods                         *

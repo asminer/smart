@@ -3,27 +3,7 @@
 #define COLL_H
 
 #include "statelib.h"
-
-// ******************************************************************
-// *                                                                *
-// *                       Macros and such                          *
-// *                                                                *
-// ******************************************************************
-
-// Useful for debugging.
-#ifdef RANGE_CHECK
-  #include <assert.h>
-  #define DCASSERT(X) assert(X)
-  inline void CheckRange(int min, int value, int max)
-  {
-    assert(value<max);
-    assert(value>=min);
-  }
-  #define CHECK_RANGE(MIN, VALUE, MAX)  CheckRange(MIN, VALUE, MAX)
-#else
-  #define CHECK_RANGE(MIN, VALUE, MAX)
-  #define DCASSERT(X)
-#endif
+#include "../include/defines.h"
 
 // ******************************************************************
 // *                                                                *

@@ -37,7 +37,7 @@ for (real A in {0.25, 0.5, 0.75, 0.8, 0.9}) {
 
     print("t1":-6, "t2":-10, "measure":-15, "theory":-15, "\n");
     for (int i in {0..3}, int j in {3..6}) {
-      print(time1(i):-6, time1(j):-10, foo(A).accb[i][j]:-15, acc(A, time1(i), time1(j)-1):-15, "\n");
+      print(time1(i):-6, time1(j):-10, foo(A).accb[i][j]:-15, acc(A, time1(i), time1(j)):-15, "\n");
     }
     print("\n");
 }

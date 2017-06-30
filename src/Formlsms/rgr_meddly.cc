@@ -1,7 +1,5 @@
 
 #include "rgr_meddly.h"
-#include "rss_meddly.h"
-#include "../Modules/meddly_ssets.h"
 
 #ifdef HAVE_MEDDLY_H
 
@@ -211,7 +209,7 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
 }
 
 
-stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) const
+stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) 
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
@@ -221,11 +219,7 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) const
   shared_ddedge* ans = mrss->newMddEdge();
 
   try {
-    if (revTime) {
-      mxd_wrap->postImage(mpe, edges, ans);
-    } else {
-      mxd_wrap->preImage(mpe, edges, ans);
-    }
+    _EX(revTime, mpe, ans);
     return new meddly_stateset(mp, ans);
   } 
   catch (sv_encoder::error err) { 
@@ -234,8 +228,41 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) const
   }
 }
 
+stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p) 
+{
+  //
+  // Uses AX p = !EX !p
+  //
+
+  const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  shared_ddedge* notp = mrss->newMddEdge();
+  DCASSERT(notp);
+
+  MEDDLY::apply( MEDDLY::COMPLEMENT, mpe->E, notp->E );
+
+  shared_ddedge* ans = mrss->newMddEdge();
+  DCASSERT(ans);
+
+  try {
+    _EX(revTime, notp, ans);
+    Delete(notp);
+    notp = 0;
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans->E, ans->E );
+    return new meddly_stateset(mp, ans);
+  }
+  catch (sv_encoder::error err) { 
+    Delete(notp);
+    Delete(ans);
+    throw convert(err);
+  }
+}
+
 stateset* meddly_monolithic_rg
-::EU(bool revTime, const stateset* p, const stateset* q) const
+::EU(bool revTime, const stateset* p, const stateset* q)
 {
   //
   // Grab p in a form we can use
@@ -261,126 +288,155 @@ stateset* meddly_monolithic_rg
   shared_ddedge* ans = mrss->newMddEdge();
   DCASSERT(ans);
 
-  //
-  // Special case - if p=0 (means true), use saturation
-  //
-  if (0==mpe) {
-    if (revTime) {
-      mxd_wrap->postImageStar(mqe, edges, ans);
-    } else {
-      mxd_wrap->preImageStar(mqe, edges, ans);
-    }
+  try {
+    _EU(revTime, mpe, mqe, ans);
     return new meddly_stateset(mq, ans);
+  } 
+  catch (sv_encoder::error err) { 
+    Delete(ans);
+    throw convert(err);
+  }
+}
+
+stateset* meddly_monolithic_rg
+::unfairAU(bool revTime, const stateset* p, const stateset* q)
+{
+  //
+  // Grab p in a form we can use
+  //
+  const meddly_stateset* mp = 0;
+  const shared_ddedge* mpe = 0;
+  if (p) {
+    mp = dynamic_cast <const meddly_stateset*> (p);
+    if (0==mp) return incompatibleOperand(revTime ? "ES" : "EU");
+    mpe = mp->getStateDD();
+    DCASSERT(mpe);
   }
 
   //
-  // Non trivial p, use iteration
-  // TBD - use saturation here as well
+  // Grab q in a form we can use
+  //
+  const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (q);
+  if (0==mq) return incompatibleOperand(revTime ? "ES" : "EU");
+  const shared_ddedge* mqe = mq->getStateDD();
+  DCASSERT(mqe);
+
+  //
+  // Uses !ApUq = E (p !q) U (!p !q)  OR  EG !q
   //
 
   //
-  // Auxiliary sets
+  // First, determine EG !q
   //
-  shared_ddedge* prev = mrss->newMddConst(false); // prev := emptyset
-  shared_ddedge* f = mrss->newMddEdge();
+  shared_ddedge* notq = mrss->newMddEdge();
+  DCASSERT(notq);
+  MEDDLY::apply( MEDDLY::COMPLEMENT, mqe->E, notq->E );
 
-  DCASSERT(prev);
-  DCASSERT(f);
+  shared_ddedge* egnotq = mrss->newMddEdge();
+  DCASSERT(egnotq);
+  _unfairEG(revTime, notq, egnotq);
 
-  // answer := q
-  ans->E = mqe->E;
+  
+  if (0==mpe) {
+    //
+    // p is true, which means the set satisfying
+    // E (p!q) U (!p!q) must be empty.
+    // So, the answer is !EG!q 
+    Delete(notq);
+    MEDDLY::apply( MEDDLY::COMPLEMENT, egnotq->E, egnotq->E );
+    return new meddly_stateset(mq, egnotq);
+  }
 
-  while (prev->E != ans->E) {
 
-    // f := pre/post (answer)
-    if (revTime) {
-      mxd_wrap->postImage(ans, edges, f);
-    } else {
-      mxd_wrap->preImage(ans, edges, f);
-    }
+  //
+  // Determine E (p!q) U (!p!q)
+  //
+  shared_ddedge* pnotq = mrss->newMddEdge();
+  DCASSERT(pnotq);
+  MEDDLY::apply( MEDDLY::INTERSECTION, mpe->E, notq->E, pnotq->E );
 
-    // f := f ^ p
-    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mpe->E, f->E );
+  shared_ddedge* notpnotq = mrss->newMddEdge();
+  DCASSERT(notpnotq);
+  MEDDLY::apply( MEDDLY::COMPLEMENT, mpe->E, notpnotq->E );
+  MEDDLY::apply( MEDDLY::INTERSECTION, notpnotq->E, notq->E, notpnotq->E );
 
-    // prev := answer
-    prev->E = ans->E;
+  shared_ddedge* eupart = mrss->newMddEdge();
+  DCASSERT(eupart);
 
-    // answer := answer U f
-    MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
+  _EU(revTime, pnotq, notpnotq, eupart);
 
-  } // iteration
+  //
+  // "Or" them, and invert
+  //
+  shared_ddedge* ans = mrss->newMddEdge();
+  DCASSERT(ans);
+  MEDDLY::apply( MEDDLY::UNION, egnotq->E, eupart->E, ans->E );
+  MEDDLY::apply( MEDDLY::COMPLEMENT, ans->E, ans->E );
 
+  //
   // Cleanup
-  Delete(f);
-  Delete(prev);
+  //
+  Delete(notq);
+  Delete(pnotq);
+  Delete(notpnotq);
+  Delete(eupart);
+  Delete(egnotq);
+
   return new meddly_stateset(mq, ans);
 }
 
-stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p) const
+stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EH" : "EG");
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
 
-  //
-  // Build set of source/deadlocked states 
-  //
-  shared_ddedge* dead = 0;
+  shared_ddedge* ans = mrss->newMddEdge();
+  DCASSERT(ans);
 
-  if (revTime) {
-    dead = mrss->newMddEdge();
-    DCASSERT(dead);
-    dead->E = mrss->getInitial();
-  } else {
-    // Determine deadlocked states: !EX(true)
-    dead = mrss->newMddConst(true);
-    DCASSERT(dead);
-    mxd_wrap->preImage(dead, edges, dead);
-    MEDDLY::apply( MEDDLY::COMPLEMENT, dead->E, dead->E);
+  try {
+    _unfairEG(revTime, mpe, ans);
+    return new meddly_stateset(mp, ans);
+  } 
+  catch (sv_encoder::error err) { 
+    Delete(ans);
+    throw convert(err);
   }
   
+}
 
+stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p) 
+{
   //
-  // Result and auxiliary sets
+  // Uses AG p = !EF !p
   //
+
+  const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  shared_ddedge* notp = mrss->newMddEdge();
+  DCASSERT(notp);
+
+  MEDDLY::apply( MEDDLY::COMPLEMENT, mpe->E, notp->E );
+
   shared_ddedge* ans = mrss->newMddEdge();
-  shared_ddedge* prev = mrss->newMddConst(false); // prev := emptyset
-  shared_ddedge* f = mrss->newMddEdge();
   DCASSERT(ans);
-  DCASSERT(prev);
-  DCASSERT(f);
 
-  // answer := p
-  ans->E = mpe->E;
-
-  while (prev->E != ans->E) {
-
-    // f := pre/post (answer)
-    if (revTime) {
-      mxd_wrap->postImage(ans, edges, f);
-    } else {
-      mxd_wrap->preImage(ans, edges, f);
-    }
-
-    // f := f + dead
-    MEDDLY::apply( MEDDLY::UNION, f->E, dead->E, f->E );
-
-    // prev := answer
-    prev->E = ans->E;
-
-    // answer := f * p
-    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mpe->E, ans->E );
-
-  } // iteration
-
-  //
-  // Cleanup
-  //
-  Delete(dead);
-  Delete(prev);
-  Delete(f);
-  return new meddly_stateset(mp, ans);
+  try {
+    _EU(revTime, 0, notp, ans); // EF !p = E true U !p
+    Delete(notp);
+    notp = 0;
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans->E, ans->E );
+    return new meddly_stateset(mp, ans);
+  }
+  catch (sv_encoder::error err) { 
+    Delete(notp);
+    Delete(ans);
+    throw convert(err);
+  }
 }
 
 

@@ -148,8 +148,8 @@ statevect::statevect(const stochastic_lldsm* p, long* I, double* D, long N)
   vectsize = N;
 }
 
-statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
-: shared_object()
+statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, 
+  const GraphLib::node_renumberer *Ren) : shared_object()
 {
   parent = p;
 
@@ -171,7 +171,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
     long i;
     if (V.index)  i = V.index[z];
     else          i = z;
-    if (ren)      i = ren[i];
+    if (Ren)      i = Ren->new_number(i);
     tsize = MAX(tsize, i);
   }
   tsize++;
@@ -195,7 +195,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
         } else {
           if (0==V.f_value[z]) continue;
         }
-        long i = ren ? ren[V.index[z]] : V.index[z];
+        long i = Ren ? Ren->new_number(V.index[z]) : V.index[z];
         CHECK_RANGE(0, i, tsize);
         if (V.d_value)  vect[i] = V.d_value[z];
         else            vect[i] = V.f_value[z];
@@ -207,13 +207,13 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
       //
       if (V.d_value) {
         for (long i=0; i<V.size; i++) {
-          long ii = ren ? ren[i] : i;
+          long ii = Ren ? Ren->new_number(i) : i;
           CHECK_RANGE(0, i, tsize);
           vect[ii] = V.d_value[i];
         }
       } else {
         for (long i=0; i<V.size; i++) {
-          long ii = ren ? ren[i] : i;
+          long ii = Ren ? Ren->new_number(i) : i;
           CHECK_RANGE(0, i, tsize);
           vect[ii] = V.f_value[i];
         }
@@ -234,7 +234,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
       //
       long z = 0;
       for (long vz=0; vz<V.size; vz++) {
-        long i = ren ? ren[V.index[vz]] : V.index[vz];
+        long i = Ren ? Ren->new_number(V.index[vz]) : V.index[vz];
         indexes[z] = i;
         if (V.d_value)  vect[z] = V.d_value[vz];
         else            vect[z] = V.f_value[vz];
@@ -248,13 +248,13 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
       if (V.d_value) {
         for (long i=0; i<V.size; i++) if (V.d_value[i]) {
           vect[z] = V.d_value[i];
-          indexes[z] = ren ? ren[i] : i;
+          indexes[z] = Ren ? Ren->new_number(i) : i;
           z++;
         }
       } else {
         for (long i=0; i<V.size; i++) if (V.f_value[i]) {
           vect[z] = V.f_value[i];
-          indexes[z] = ren ? ren[i] : i;
+          indexes[z] = Ren ? Ren->new_number(i) : i;
           z++;
         }
       }
@@ -714,8 +714,8 @@ statedist::statedist(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
-statedist::statedist(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
- : statevect(p, V, ren)
+statedist::statedist(const stochastic_lldsm* p, LS_Vector &V, 
+  const GraphLib::node_renumberer* ren) : statevect(p, V, ren)
 {
 }
 
@@ -748,8 +748,8 @@ stateprobs::stateprobs(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
-stateprobs::stateprobs(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
- : statevect(p, V, ren)
+stateprobs::stateprobs(const stochastic_lldsm* p, LS_Vector &V,
+  const GraphLib::node_renumberer* ren) : statevect(p, V, ren)
 {
 }
 
@@ -769,8 +769,8 @@ statemsrs::statemsrs(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
-statemsrs::statemsrs(const stochastic_lldsm* p, LS_Vector &V, const long* ren)
- : statevect(p, V, ren)
+statemsrs::statemsrs(const stochastic_lldsm* p, LS_Vector &V, 
+  const GraphLib::node_renumberer* ren) : statevect(p, V, ren)
 {
 }
 

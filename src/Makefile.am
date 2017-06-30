@@ -42,8 +42,10 @@ smart_SOURCES = \
   \
   _GraphLib/graphlib.cc _GraphLib/sccs.cc \
   \
-  _MCLib/mclib.cc _MCLib/mcbase.cc _MCLib/mc_irred.cc _MCLib/mc_absorb.cc \
-  _MCLib/mc_general.cc _MCLib/vanish.cc _MCLib/hyper.cc _MCLib/poiss.cc \
+  _Distros/distros.cc \
+  \
+  _MCLib/mclib.cc _MCLib/error.cc _MCLib/vanishing.cc \
+  _MCLib/markov_chain.cc \
   \
   Streams/streams.cc  Streams/textfmt.cc \
   \
@@ -120,6 +122,7 @@ smart_SOURCES = \
   Formlsms/rss_expl.cc \
   Formlsms/rss_indx.cc \
   Formlsms/rss_meddly.cc \
+  Formlsms/show_graph.cc \
   Formlsms/state_llm.cc \
   Formlsms/stoch_llm.cc \
   Formlsms/stoch_msr.cc \

@@ -94,12 +94,13 @@ shared_object* enum_reachset::getEnumeratedState(long i) const
   return Share(states->GetValue(state_handle[i]));
 }
 
-void enum_reachset::Renumber(const long* ren)
+void enum_reachset::Renumber(const GraphLib::node_renumberer* Ren)
 {
-  if (0==ren) return;
+  if (0==Ren) return;
+  if (!Ren->changes_something()) return;
   for (long i=0; i<states->NumValues(); i++) {
     model_enum_value* st = states->GetValue(i);
-    st->SetIndex(ren[i]);
+    st->SetIndex(Ren->new_number(i));
   }
   // Rebuild state_handle array
   for (long j=0; j<states->NumValues(); j++) {

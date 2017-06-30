@@ -11,9 +11,9 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	0 : 1
-0 edges total
+From state 0:
+	To state 0 with weight 1
+1 edges total
 End of information for phase type
 
 
@@ -30,11 +30,11 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 1 with weight 1
+2 edges total
 End of information for phase type
 
 
@@ -52,13 +52,13 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	2 : 1
-Row 2:
-	2 : 1
-2 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 2 with weight 1
+3 edges total
 End of information for phase type
 
 
@@ -77,15 +77,15 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	2 : 1
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-3 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+4 edges total
 End of information for phase type
 
 
@@ -101,9 +101,9 @@ Trap state index: 0
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	0 : 1
-0 edges total
+From state 0:
+	To state 0 with weight 1
+1 edges total
 End of information for phase type
 
 
@@ -120,11 +120,11 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 1 with weight 1
+2 edges total
 End of information for phase type
 
 
@@ -143,15 +143,15 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	2 : 1
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-3 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+4 edges total
 End of information for phase type
 
 
@@ -167,9 +167,9 @@ Trap state index: 0
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	0 : 1
-0 edges total
+From state 0:
+	To state 0 with weight 1
+1 edges total
 End of information for phase type
 
 
@@ -185,9 +185,9 @@ Trap state index: 0
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	0 : 1
-0 edges total
+From state 0:
+	To state 0 with weight 1
+1 edges total
 End of information for phase type
 
 
@@ -204,11 +204,11 @@ No trap state
 Initial distribution:
     (0:0.5, 1:0.5)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	1 : 1
-1 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 1 with weight 1
+2 edges total
 End of information for phase type
 
 
@@ -226,14 +226,14 @@ No trap state
 Initial distribution:
     (0:0.666667, 2:0.333333)
 Markov chain:
-Row 0:
-	1 : 0.5
-	2 : 0.5
-Row 1:
-	2 : 1
-Row 2:
-	2 : 1
-3 edges total
+From state 0:
+	To state 1 with weight 0.5
+	To state 2 with weight 0.5
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 2 with weight 1
+4 edges total
 End of information for phase type
 
 
@@ -252,17 +252,17 @@ No trap state
 Initial distribution:
     (0:0.5, 1:0.333333, 3:0.166667)
 Markov chain:
-Row 0:
-	1 : 0.666667
-	3 : 0.333333
-Row 1:
-	2 : 0.5
-	3 : 0.5
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-5 edges total
+From state 0:
+	To state 1 with weight 0.666667
+	To state 3 with weight 0.333333
+From state 1:
+	To state 2 with weight 0.5
+	To state 3 with weight 0.5
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+6 edges total
 End of information for phase type
 
 
@@ -281,18 +281,18 @@ No trap state
 Initial distribution:
     (0:0.666667, 1:0.166667, 3:0.166667)
 Markov chain:
-Row 0:
-	1 : 0.25
-	2 : 0.5
-	3 : 0.25
-Row 1:
-	3 : 1
-Row 2:
-	1 : 0.5
-	3 : 0.5
-Row 3:
-	3 : 1
-6 edges total
+From state 0:
+	To state 1 with weight 0.25
+	To state 2 with weight 0.5
+	To state 3 with weight 0.25
+From state 1:
+	To state 3 with weight 1
+From state 2:
+	To state 1 with weight 0.5
+	To state 3 with weight 0.5
+From state 3:
+	To state 3 with weight 1
+7 edges total
 End of information for phase type
 
 
@@ -312,17 +312,17 @@ Trap state index: 4
 Initial distribution:
     (0:0.333333, 1:0.333333, 3:0.166667, 4:0.166667)
 Markov chain:
-Row 0:
-	3 : 1
-Row 1:
-	2 : 1
-Row 2:
-	3 : 1
-Row 3:
-	3 : 1
-Row 4:
-	4 : 1
-3 edges total
+From state 0:
+	To state 3 with weight 1
+From state 1:
+	To state 2 with weight 1
+From state 2:
+	To state 3 with weight 1
+From state 3:
+	To state 3 with weight 1
+From state 4:
+	To state 4 with weight 1
+5 edges total
 End of information for phase type
 
 
@@ -344,24 +344,24 @@ Trap state index: 6
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 1
-Row 1:
-	2 : 0.333333
-	3 : 0.333333
-	5 : 0.166667
-	6 : 0.166667
-Row 2:
-	5 : 1
-Row 3:
-	4 : 1
-Row 4:
-	5 : 1
-Row 5:
-	5 : 1
-Row 6:
-	6 : 1
-8 edges total
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 2 with weight 0.333333
+	To state 3 with weight 0.333333
+	To state 5 with weight 0.166667
+	To state 6 with weight 0.166667
+From state 2:
+	To state 5 with weight 1
+From state 3:
+	To state 4 with weight 1
+From state 4:
+	To state 5 with weight 1
+From state 5:
+	To state 5 with weight 1
+From state 6:
+	To state 6 with weight 1
+10 edges total
 End of information for phase type
 
 
@@ -380,13 +380,13 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 4.2
-Row 1:
-	2 : 4.2
-Row 2:
-	3 : 4.2
-Row 3:
+From state 0:
+	To state 1 with weight 4.2
+From state 1:
+	To state 2 with weight 4.2
+From state 2:
+	To state 3 with weight 4.2
+From state 3:
 3 edges total
 End of information for phase type
 
@@ -406,13 +406,13 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 4.2
-Row 1:
-	2 : 4.2
-Row 2:
-	3 : 4.2
-Row 3:
+From state 0:
+	To state 1 with weight 4.2
+From state 1:
+	To state 2 with weight 4.2
+From state 2:
+	To state 3 with weight 4.2
+From state 3:
 3 edges total
 End of information for phase type
 
@@ -436,21 +436,21 @@ No trap state
 Initial distribution:
     (0:1)
 Markov chain:
-Row 0:
-	1 : 4.2
-Row 1:
-	2 : 4.2
-Row 2:
-	3 : 4.2
-Row 3:
-	4 : 5.6
-Row 4:
-	5 : 5.6
-Row 5:
-	6 : 5.6
-Row 6:
-	7 : 5.6
-Row 7:
+From state 0:
+	To state 1 with weight 4.2
+From state 1:
+	To state 2 with weight 4.2
+From state 2:
+	To state 3 with weight 4.2
+From state 3:
+	To state 4 with weight 5.6
+From state 4:
+	To state 5 with weight 5.6
+From state 5:
+	To state 6 with weight 5.6
+From state 6:
+	To state 7 with weight 5.6
+From state 7:
 7 edges total
 End of information for phase type
 

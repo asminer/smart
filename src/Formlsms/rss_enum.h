@@ -22,7 +22,7 @@ class enum_reachset : public indexed_reachset {
 
     shared_object* getEnumeratedState(long i) const;
 
-    virtual void Renumber(const long* ren);
+    virtual void Renumber(const GraphLib::node_renumberer* Ren);
 
   private:
     

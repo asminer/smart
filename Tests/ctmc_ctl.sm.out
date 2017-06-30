@@ -84,8 +84,8 @@ EG(EF(D)), should be {A, B, D, I, J, K}:
 EG(EF(E[5])), should be {A, B, E[1], E[2], E[3], E[4], E[5]}:
                         {A, B, E[1], E[2], E[3], E[4], E[5]}
 Paths not containing H:
-  should be {A, B, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
-            {A, B, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+  should be {A, B, E[1], E[2], E[3], E[4], E[5], D, I, J, K}
+            {A, B, E[1], E[2], E[3], E[4], E[5], D, I, J, K}
 EG(EF(H)), should be {A, B, C, F, G, H}:
                      {A, B, C, F, G, H}
 
@@ -98,8 +98,8 @@ EH(EF(D)), should be {A, B, D, I, J, K}:
 EH(EF(E[5])), should be {A, B, E[1], E[2], E[3], E[4], E[5]}:
                         {A, B, E[1], E[2], E[3], E[4], E[5]}
 Past history not containing H:
-  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
-            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], E[5], D, I, J, K}
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], E[5], D, I, J, K}
 EH(EF(H)), should be {A, B, C, F, G, H}:
                      {A, B, C, F, G, H}
 
@@ -157,17 +157,17 @@ All past paths include B, without K,
 AG tests:
 --------------------------------------------------
 Guaranteed to not get to H,
-  should be {E[1], E[2], E[3], E[4], D, I, J, K, E[5]}:
-            {E[1], E[2], E[3], E[4], D, I, J, K, E[5]}
+  should be {E[1], E[2], E[3], E[4], E[5], D, I, J, K}:
+            {E[1], E[2], E[3], E[4], E[5], D, I, J, K}
 Guaranteed to not get to K,
   should be {C, F, G, E[1], E[2], E[3], E[4], H, E[5]}:
             {C, F, G, E[1], E[2], E[3], E[4], H, E[5]}
 Guaranteed to not get to E[5]:
-  should be {C, F, G, D, I, J, K, H}:
-            {C, F, G, D, I, J, K, H}
+  should be {C, F, G, H, D, I, J, K}:
+            {C, F, G, H, D, I, J, K}
 AG(reachable),
-  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}:
-            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5], D, I, J, K}:
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5], D, I, J, K}
 
 AH tests:
 --------------------------------------------------
@@ -178,11 +178,11 @@ States guaranteed not to come from K,:
   should be {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5]}:
             {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5]}
 States guaranteed not to come from E[5],
-  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H}
-            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H}
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], H, D, I, J, K}
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], H, D, I, J, K}
 AH(reachable),
-  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}:
-            {A, B, C, F, G, E[1], E[2], E[3], E[4], D, I, J, K, H, E[5]}
+  should be {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5], D, I, J, K}:
+            {A, B, C, F, G, E[1], E[2], E[3], E[4], H, E[5], D, I, J, K}
 
 Errors:
 --------------------------------------------------

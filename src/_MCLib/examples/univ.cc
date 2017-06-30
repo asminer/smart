@@ -20,9 +20,9 @@ inline void showVector(double* p)
   cout << "]";
 }
 
-void forwardTransient(Markov_chain* mc, int start, int T)
+void forwardTransient(const Markov_chain &mc, int start, int T)
 {
-  static Markov_chain::transopts to;
+  static Markov_chain::DTMC_transient_options to;
   double p[6];
   p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0;
   p[start] = 1;
@@ -31,11 +31,11 @@ void forwardTransient(Markov_chain* mc, int start, int T)
     cout << "    time " << t << ":  ";
     showVector(p);
     cout << "\n";
-    mc->computeTransient(1, p, to); 
+    mc.computeTransient(1, p, to); 
   }
 }
 
-int RunTests(bool storeByRows)
+int RunTests()
 {
   // probabilities
   const int p = 8;
@@ -47,53 +47,42 @@ int RunTests(bool storeByRows)
   const int so = 1;
   const int jr = 2;
   const int sr = 3;
-  const int grad = -1;
-  const int fail = -2;
+  const int grad = 4;
+  const int fail = 5;
 
   cout << "Building University DTMC\n";
 
-  Markov_chain* univmc = startAbsorbingMC(true, 4, 2);
+  GraphLib::dynamic_summable<double> G(true, true);
+  G.addNodes(6);
 
-  univmc->addEdge(fr, fr, r);
-  univmc->addEdge(fr, so, p);
-  univmc->addEdge(fr, fail, q);
+  G.addEdge(fr, fr, r);
+  G.addEdge(fr, so, p);
+  G.addEdge(fr, fail, q);
 
-  univmc->addEdge(so, so, r);
-  univmc->addEdge(so, jr, p);
-  univmc->addEdge(so, fail, q);
+  G.addEdge(so, so, r);
+  G.addEdge(so, jr, p);
+  G.addEdge(so, fail, q);
 
-  univmc->addEdge(jr, jr, r);
-  univmc->addEdge(jr, sr, p);
-  univmc->addEdge(jr, fail, q);
+  G.addEdge(jr, jr, r);
+  G.addEdge(jr, sr, p);
+  G.addEdge(jr, fail, q);
 
-  univmc->addEdge(sr, sr, r);
-  univmc->addEdge(sr, grad, p);
-  univmc->addEdge(sr, fail, q);
+  G.addEdge(sr, sr, r);
+  G.addEdge(sr, grad, p);
+  G.addEdge(sr, fail, q);
   
   cout << "Finishing University DTMC ";
-  if (storeByRows)  cout << "(by rows)\n";
-  else              cout << "(by columns)\n";
 
-  Markov_chain::finish_options foo;
-  Markov_chain::renumbering ren;
-  foo.Store_By_Rows = storeByRows;
-  univmc->finish(foo, ren);
-
-  if (ren.NoRenumbering()) {
-    cout << "No renumbering?  That's wrong...\n";
+  GraphLib::abstract_classifier* ac = G.determineSCCs(0, 1, true, 0);
+  GraphLib::static_classifier C;
+  GraphLib::node_renumberer* ren = ac->buildRenumbererAndStatic(C);
+  DCASSERT(ren);
+  if (ren->changes_something()) {
+    cout << "Non-identity node renumbering?\n";
     return 1;
   }
-
-  if (ren.AbsorbRenumbering()) {
-    cout << "Absorbing DTMC, as expected\n";
-  }
-  const int grad_ren = 4-(1+grad);
-  //const int fail_ren = 4-(1+fail);
-
-  if (ren.GeneralRenumbering()) {
-    cout << "General renumbering?  That's wrong...\n";
-    return 1;
-  }
+  delete ren;
+  Markov_chain univmc(true, G, C, 0);
 
   //
   // Ordinary transient analysis
@@ -112,67 +101,33 @@ int RunTests(bool storeByRows)
   forwardTransient(univmc, sr, 10);
 
   cout << "\nStarting from graduated:\n";
-  forwardTransient(univmc, grad_ren, 2);
+  forwardTransient(univmc, grad, 2);
 
   //
   // Reverse transient analysis
   //
-  static Markov_chain::transopts to;
+  static Markov_chain::DTMC_transient_options to;
   double x[6];
   x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = 0;
-  x[grad_ren] = 1;
+  x[grad] = 1;
   cout << "\nReverse analysis, for graduating students\n";
   for (int t=0; t<10; t++) {
     cout << "    vector for time " << t << ":  ";
     showVector(x);
     cout << "\n";
-    univmc->reverseTransient(1, x, to); 
+    univmc.reverseTransient(1, x, to); 
   }
   return 0;
 }
 
-void usage(const char* who)
+
+int main()
 {
-  cout << "\nUsage: " << who << " [options]\n\n";
-  cout << "    Switches:\n\n";
-  cout << "\t-h\tThis help screen\n";
-  cout << "\n";
-  cout << "\t-c\tStore matrix `by columns' (default)\n";
-  cout << "\t-r\tStore matrix `by rows'\n";
-  cout << "\n";
-}
-
-int main(int argc, const char** argv)
-{
-  //
-  // Process arguments
-  //
-  bool by_rows = false;
-  for (int i=1; i<argc; i++) {
-    if (argv[i][0] != '-' || argv[i][2] != 0) {
-      usage(argv[0]);
-      return 1;
-    }
-    switch (argv[i][1]) {
-      case 'c': by_rows = false;
-                continue;
-
-      case 'r': by_rows = true;
-                continue;
-
-      case 'h': usage(argv[0]);
-                return 0;
-
-      default:  usage(argv[0]);
-                return 1;
-    }
-  }
-
   //
   // Ok, now run everything
   // 
   try {
-    return RunTests(by_rows);
+    return RunTests();
   }
   catch (MCLib::error e) {
     cout << "Caught MCLib error: " << e.getString() << "\n";

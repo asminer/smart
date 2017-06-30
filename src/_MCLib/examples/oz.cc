@@ -18,9 +18,9 @@ inline void showVector(double* p)
   cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "]";
 }
 
-void forwardTransient(Markov_chain* ozmc, int start)
+void forwardTransient(const Markov_chain &ozmc, int start)
 {
-  static Markov_chain::transopts to;
+  static Markov_chain::DTMC_transient_options to;
   double p[3];
   p[0] = p[1] = p[2] = 0;
   p[start] = 1;
@@ -29,11 +29,11 @@ void forwardTransient(Markov_chain* ozmc, int start)
     cout << "    Prob. vector for time " << t << ":  ";
     showVector(p);
     cout << "\n";
-    ozmc->computeTransient(1, p, to); 
+    ozmc.computeTransient(1, p, to); 
   }
 }
 
-int RunTests(bool storeByRows)
+int RunTests()
 {
   const int R = 0;
   const int N = 1;
@@ -41,41 +41,33 @@ int RunTests(bool storeByRows)
 
   cout << "Building OZ DTMC\n";
 
-  Markov_chain* ozmc = startIrreducibleMC(true, 3, 8);
+  GraphLib::dynamic_summable<double> G(true, true);
+  G.addNodes(3);
 
-  ozmc->addEdge(R, R, 2);   // 1/2
-  ozmc->addEdge(R, N, 1);   // 1/4
-  ozmc->addEdge(R, S, 1);   // 1/4
+  G.addEdge(R, R, 2);   // 1/2
+  G.addEdge(R, N, 1);   // 1/4
+  G.addEdge(R, S, 1);   // 1/4
 
-  ozmc->addEdge(N, R, 1);   // 1/2
-  ozmc->addEdge(N, S, 1);   // 1/2
+  G.addEdge(N, R, 1);   // 1/2
+  G.addEdge(N, S, 1);   // 1/2
 
-  ozmc->addEdge(S, R, 1);   // 1/4
-  ozmc->addEdge(S, N, 1);   // 1/4
-  ozmc->addEdge(S, S, 2);   // 1/2
+  G.addEdge(S, R, 1);   // 1/4
+  G.addEdge(S, N, 1);   // 1/4
+  G.addEdge(S, S, 2);   // 1/2
 
-  cout << "Finishing OZ DTMC ";
-  if (storeByRows)  cout << "(by rows)\n";
-  else              cout << "(by columns)\n";
+  cout << "Finishing OZ DTMC\n";
 
-  Markov_chain::finish_options foo;
-  Markov_chain::renumbering ren;
-  foo.Store_By_Rows = storeByRows;
-  ozmc->finish(foo, ren);
-
-  if (ren.NoRenumbering()) {
-    cout << "No renumbering required (as expected)\n";
-  }
-
-  if (ren.AbsorbRenumbering()) {
-    cout << "Absorbing DTMC?  That's wrong...\n";
+  GraphLib::abstract_classifier* ac = G.determineSCCs(0, 1, true, 0);
+  GraphLib::static_classifier C;
+  GraphLib::node_renumberer* ren = ac->buildRenumbererAndStatic(C);
+  DCASSERT(ren);
+  if (ren->changes_something()) {
+    cout << "Non-identity node renumbering?\n";
     return 1;
   }
+  delete ren;
+  Markov_chain ozmc(true, G, C, 0);
 
-  if (ren.GeneralRenumbering()) {
-    cout << "General renumbering?  That's wrong...\n";
-    return 1;
-  }
 
   //
   // Ordinary transient analysis
@@ -100,7 +92,7 @@ int RunTests(bool storeByRows)
   // Reverse transient analysis
   //
 
-  static Markov_chain::transopts to;
+  static Markov_chain::DTMC_transient_options to;
   double p[3];
   p[R] = 0;
   p[N] = 1;
@@ -110,54 +102,19 @@ int RunTests(bool storeByRows)
     cout << "    vector for time " << t << ":  ";
     showVector(p);
     cout << "\n";
-    ozmc->reverseTransient(1, p, to); 
+    ozmc.reverseTransient(1, p, to); 
   }
 
   return 0;
 }
 
-void usage(const char* who)
+int main()
 {
-  cout << "\nUsage: " << who << " [options]\n\n";
-  cout << "    Switches:\n\n";
-  cout << "\t-h\tThis help screen\n";
-  cout << "\n";
-  cout << "\t-c\tStore matrix `by columns' (default)\n";
-  cout << "\t-r\tStore matrix `by rows'\n";
-  cout << "\n";
-}
-
-int main(int argc, const char** argv)
-{
-  //
-  // Process arguments
-  //
-  bool by_rows = false;
-  for (int i=1; i<argc; i++) {
-    if (argv[i][0] != '-' || argv[i][2] != 0) {
-      usage(argv[0]);
-      return 1;
-    }
-    switch (argv[i][1]) {
-      case 'c': by_rows = false;
-                continue;
-
-      case 'r': by_rows = true;
-                continue;
-
-      case 'h': usage(argv[0]);
-                return 0;
-
-      default:  usage(argv[0]);
-                return 1;
-    }
-  }
-
   //
   // Ok, now run everything
   // 
   try {
-    return RunTests(by_rows);
+    return RunTests();
   }
   catch (MCLib::error e) {
     cout << "Caught MCLib error: " << e.getString() << "\n";

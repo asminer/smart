@@ -1,7 +1,7 @@
 Reachable states:
 WARNING:
-	No initial marking given, assuming zero
-	within model mmkqueue built in file mdrate.sm near line 36
+    No initial marking given, assuming zero
+    within model mmkqueue built in file mdrate.sm near line 36
 State 0: [queue:0]
 State 1: [queue:1]
 State 2: [queue:2]
@@ -15,35 +15,35 @@ State 9: [queue:9]
 State 10: [queue:10]
 Number of states: 11
 Markov chain:
-Row 0:
-	1 : 4.2
-Row 1:
-	0 : 1.1
-	2 : 4.2
-Row 2:
-	1 : 2.2
-	3 : 4.2
-Row 3:
-	2 : 3.3
-	4 : 4.2
-Row 4:
-	3 : 4.4
-	5 : 4.2
-Row 5:
-	4 : 5.5
-	6 : 4.2
-Row 6:
-	5 : 6.6
-	7 : 4.2
-Row 7:
-	6 : 6.6
-	8 : 4.2
-Row 8:
-	7 : 6.6
-	9 : 4.2
-Row 9:
-	8 : 6.6
-	10 : 4.2
-Row 10:
-	9 : 6.6
+From state 0:
+	To state 1 with weight 4.2
+From state 1:
+	To state 0 with weight 1.1
+	To state 2 with weight 4.2
+From state 2:
+	To state 1 with weight 2.2
+	To state 3 with weight 4.2
+From state 3:
+	To state 2 with weight 3.3
+	To state 4 with weight 4.2
+From state 4:
+	To state 3 with weight 4.4
+	To state 5 with weight 4.2
+From state 5:
+	To state 4 with weight 5.5
+	To state 6 with weight 4.2
+From state 6:
+	To state 5 with weight 6.6
+	To state 7 with weight 4.2
+From state 7:
+	To state 6 with weight 6.6
+	To state 8 with weight 4.2
+From state 8:
+	To state 7 with weight 6.6
+	To state 9 with weight 4.2
+From state 9:
+	To state 8 with weight 6.6
+	To state 10 with weight 4.2
+From state 10:
+	To state 9 with weight 6.6
 Number of arcs: 20

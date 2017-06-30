@@ -51,8 +51,7 @@ stateset* indexed_reachset::getInitialStates() const
 {
   long num_states;
   getNumStates(num_states);
-  intset* initss = new intset(num_states);
-  getInitial(*initss);
+  intset* initss = new intset(getInitial());
   return new expl_stateset(getParent(), initss);
 }
 
@@ -84,22 +83,14 @@ void indexed_reachset::setInitial(const LS_Vector &init)
   }
 }
 
-void indexed_reachset::setInitial(const intset& init)
-{
-  initial = init;
-}
-
-void indexed_reachset::getInitial(intset& init) const
-{
-  init = initial;
-}
-
 void indexed_reachset::Finish()
 {
+  // Do-nothing default
 }
 
-void indexed_reachset::Renumber(const long* ren)
+void indexed_reachset::Renumber(const GraphLib::node_renumberer* Ren)
 {
+  // Do-nothing default
 }
 
 // ******************************************************************

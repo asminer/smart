@@ -1,0 +1,34 @@
+State classification for d1:
+Recurrent class 1:
+	{R, N, S}
+#recurrent classes: 1
+
+State classification for d2:
+Transient states:
+	{fr, so, jr, sr}
+Absorbing states:
+	{fail, grad}
+#recurrent classes: 2
+
+State classification for d3:
+Transient states:
+	{g, h, i, j}
+Absorbing states:
+	{a}
+Recurrent class 1:
+	{b, c, d}
+Recurrent class 2:
+	{e, f}
+#recurrent classes: 3
+
+State classification for c1:
+Recurrent class 1:
+	{up, down}
+#recurrent classes: 1
+
+State classification for c2:
+Transient states:
+	{up, down}
+Absorbing states:
+	{failed}
+#recurrent classes: 1

@@ -35,6 +35,20 @@ template <class T> inline bool POSITIVE(T X) { return (X>0) ? 1 : 0; }
 /// SIGN "macro".
 template <class T> inline int SIGN(T X) { return (X<0) ? -1 : POSITIVE(X); }
 
+/// Euclid's GCD algorithm
+//
+inline long GCD(long a, long b)
+{
+  long r = a % b;
+  while (r > 0) {
+    a = b;
+    b = r;
+    r = a % b;
+  }
+  return b;
+}
+
+
 /*
     There are now two modes of code generation:
        "DEVELOPMENT_CODE" and "RELEASE_CODE".
