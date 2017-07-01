@@ -10,12 +10,12 @@ bin_PROGRAMS = smart icp teststrms testsplay testinit
 
 
 BUILT_SOURCES = \
-  ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
-  ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
+  ParseSM/smartlex.cc ParseSM/smartyacc.hh ParseSM/smartyacc.cc \
+  ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc 
 
 CLEANFILES = \
-  ParseSM/smartlex.c ParseSM/smartyacc.h ParseSM/smartyacc.c \
-  ParseICP/icplex.c ParseICP/icpyacc.h ParseICP/icpyacc.c 
+  ParseSM/smartlex.cc ParseSM/smartyacc.hh ParseSM/smartyacc.cc \
+  ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc 
 
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
@@ -146,8 +146,8 @@ smart_SOURCES = \
   FuncLib/sysfuncs.cc \
   FuncLib/topics.cc \
   \
-  ParseSM/smartlex.l \
-  ParseSM/smartyacc.y \
+  ParseSM/smartlex.ll \
+  ParseSM/smartyacc.yy \
   ParseSM/lexer.cc \
   ParseSM/compile.cc \
   ParseSM/parse_sm.cc \
@@ -225,8 +225,8 @@ icp_SOURCES = \
   Engines/dcp_expl.cc \
   Engines/dcp_symb.cc \
   \
-  ParseICP/icplex.l \
-  ParseICP/icpyacc.y \
+  ParseICP/icplex.ll \
+  ParseICP/icpyacc.yy \
   ParseICP/lexer.cc \
   ParseICP/compile.cc \
   ParseICP/parse_icp.cc \

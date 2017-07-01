@@ -9,7 +9,7 @@
 
 // Takes care of objects that are required by smart.tab.h:
 #include "compile.h"
-#include "ParseICP/icpyacc.h"
+#include "ParseICP/icpyacc.hh"
 
 #include "parse_icp.h"
 #include "../Options/options.h"
