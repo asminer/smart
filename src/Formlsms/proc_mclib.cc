@@ -628,8 +628,10 @@ bool mclib_process::computeDiscreteTTA(double epsilon, long maxsize,
     return true;
   }
 
+#ifdef DEVELOPMENT_CODE
   const GraphLib::static_classifier& C = chain->getStateClassification();
   DCASSERT(C.isNodeInClass(acc_state, 1));
+#endif
 
   try {
     // int goal = chain->getClassOfState(acc_state);
