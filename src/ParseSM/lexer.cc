@@ -9,7 +9,7 @@
 
 // Takes care of objects that are required by smart.tab.h:
 #include "compile.h"
-#include "ParseSM/smartyacc.h"
+#include "ParseSM/smartyacc.hh"
 
 #include "parse_sm.h"
 #include "../Options/options.h"
