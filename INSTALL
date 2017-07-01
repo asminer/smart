@@ -55,7 +55,10 @@ Instructions to build
 
 2.  make
 
-    This builds everything.
+    This builds everything.  For recent versions of automake,
+    you can use:
+      make V=0    for silent builds
+      make V=1    for noisy builds
 
 3.  make check  OR  make check-old
 
