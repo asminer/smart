@@ -6,6 +6,8 @@
 AC_PREREQ(2.59)
 AC_INIT([smartpack], [3.3], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
+# Allow silent builds, and make it the default, if we can:
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR([src/README.txt])
 AC_CONFIG_MACRO_DIR([m4])
