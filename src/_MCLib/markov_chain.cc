@@ -423,6 +423,7 @@ void MCLib::Markov_chain::DTMC_distribution_options
   if (ms>0 && 0==newdistro) {
     throw MCLib::error(error::Out_Of_Memory);
   }
+  distro = newdistro;
   if (needs_error) {
     double* newerror = (double*) realloc(error_distro, ms * sizeof(double));
     if (ms>0 && 0==newerror) {
@@ -438,7 +439,6 @@ void MCLib::Markov_chain::DTMC_distribution_options
     distprod = newdp;
   }
   max_size = ms;
-  distro = newdistro;
 }
 
 // ======================================================================
@@ -2069,12 +2069,24 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     computePoissonPDF(qt, opts.poisson_epsilon, poisson);
 
     //
+    // Did we timeout?  If so, determine error and break.
+    //
+    if (i >= opts.max_size) {
+      opts.precision = 0;
+      for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
+        if (s>=opts.max_size) break;
+        opts.precision += opts.error_distro[s] * poisson.f(s);
+      }
+      break;
+    }
+
+    //
     // Compute and store product of discrete distribution and poisson
     //
     long dp_start = poisson.left_trunc();
     long dp_stop = MIN(1+poisson.right_trunc(), dtmc_tta.right_trunc());
-    DCASSERT(dp_stop < opts.max_size);
     for (long s=dp_start; s<dp_stop; s++) {
+      CHECK_RANGE(0, s, opts.max_size);
       opts.distprod[s] = poisson.f(s) * dtmc_tta.f(s+1);
     }
 
@@ -2082,6 +2094,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     // Now, sum those products.  Instead of simply looping in order,
     // we add the smallest elements first, frim the left and right ends.
     //
+    CHECK_RANGE(0, i, opts.max_size);
     opts.distro[i] = 0;
     long left=dp_start;
     long right=dp_stop-1;
@@ -2099,18 +2112,6 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     }
 
     opts.distro[i] *= opts.q;
-
-    //
-    // Did we timeout?  If so, determine error and break.
-    //
-    if (i >= opts.max_size) {
-      opts.precision = 0;
-      for (long s=poisson.left_trunc(); s<=poisson.right_trunc(); s++) {
-        if (s>=opts.max_size) break;
-        opts.precision += opts.error_distro[s] * poisson.f(s);
-      }
-      break;
-    }
 
     //
     // Compute current error value,
@@ -2138,7 +2139,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
   // Answer is in opts.distro,
   // convert it to a proper distribution.
   //
-  dist.copyFromAndTruncate(opts.distro, i+1, dtmc_tta.f_infinity());
+  dist.copyFromAndTruncate(opts.distro, i, dtmc_tta.f_infinity());
 }
 
 // ******************************************************************
