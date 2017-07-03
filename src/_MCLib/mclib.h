@@ -180,6 +180,7 @@ namespace MCLib {
           delete[] prob_vect;
           free(distro);
           free(error_distro);
+          free(distprod);
         }
 
         /**
