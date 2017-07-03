@@ -171,6 +171,7 @@ if [ ! -d bin-release ]; then
   mkdir bin-release
 fi
 cd bin-release
+
 CXXFLAGS="-O3 $COMMON_CXXFLAGS"
 ../configure --prefix=$PWD $@ $GMP_STATUS $MEDDLY_STATUS
 ok="$?"
