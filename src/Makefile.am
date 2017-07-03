@@ -13,10 +13,6 @@ BUILT_SOURCES = \
   ParseSM/smartlex.cc ParseSM/smartyacc.hh ParseSM/smartyacc.cc \
   ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc 
 
-CLEANFILES = \
-  ParseSM/smartlex.cc ParseSM/smartyacc.hh ParseSM/smartyacc.cc \
-  ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc 
-
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
 
