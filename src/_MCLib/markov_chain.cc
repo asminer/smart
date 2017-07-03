@@ -1773,6 +1773,7 @@ namespace MCLib {
         // 
         // Add to distribution
         //
+        CHECK_RANGE(0, time, opts.max_size);
         opts.distro[time] = just_entered;
 
         //
