@@ -8,6 +8,7 @@ noinst_PROGRAMS = \
   acc_test \
   dist_test \
   period \
+  reach_test \
   revtr_test \
   ss_test \
   trans_test \
@@ -18,6 +19,7 @@ check_PROGRAMS = \
   acc_test \
   dist_test \
   period \
+  reach_test \
   revtr_test \
   ss_test \
   trans_test \
@@ -28,6 +30,7 @@ TESTS = \
   acc_test \
   dist_test \
   period \
+  reach_test \
   revtr_test \
   ss_test \
   trans_test \
@@ -79,3 +82,5 @@ acc_test_SOURCES = acc_test.cc mcbuilder.cc $(MY_SOURCES)
 dist_test_SOURCES = dist_test.cc mcbuilder.cc $(MY_SOURCES)
 
 vanish_test_SOURCES = vanish_test.cc $(MY_SOURCES)
+
+reach_test_SOURCES = reach_test.cc mcbuilder.cc $(MY_SOURCES)

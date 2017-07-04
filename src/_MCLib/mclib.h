@@ -579,6 +579,36 @@ namespace MCLib {
 
 
 
+      /** Determine probabilities to eventually hit one of the target states.
+          More formally, we determine the probability that the first
+          non-transient state we reach belongs to the target set,
+          for each possible starting state.
+
+            @param  target    Set of target states.
+                              Any transient states in this set are ignored.
+
+            @param  p         Solution vector.  On output, p[s] will be
+                              the probability that, if we start in state s,
+                              then the first non-transient state reached
+                              will belong to the target set.
+                              Note that if s belongs to target, then p[s]
+                              will be 1, and if s is a recurrent state
+                              that does not belong to target, then p[s]
+                              will be 0.
+
+            @param  aux       Vector to use as an auxiliary vector.
+                              If null, we will allocate and free our own
+                              vector.
+          
+            @param  opt       Options for linear solver.
+
+            @param  out       Linear solver status information as output.
+      */
+      void computeProbsToReach(const intset &target, double* p, double* aux, 
+        const LS_Options &opt, LS_Output &out) const;
+        
+
+
       /** Compute the (discrete) distribution for "time to reach class c".
 
             @param  opts    Input and output: Options.

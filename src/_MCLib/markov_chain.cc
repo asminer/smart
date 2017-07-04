@@ -13,6 +13,7 @@
 // #define DEBUG_UNIFORMIZATION
 // #define DEBUG_ACCUMULATE
 // #define DEBUG_CTMCDIST
+// #define DEBUG_REACHES
 
 //------------------------------------------------------------
 
@@ -33,6 +34,10 @@
 #endif
 
 #ifdef DEBUG_CTMCDIST
+  #define USES_IOSTREAM
+#endif
+
+#ifdef DEBUG_REACHES
   #define USES_IOSTREAM
 #endif
 
@@ -654,8 +659,6 @@ void MCLib::Markov_chain::finish_construction(GraphLib::dynamic_graph &G,
       one_over_rowsums_f[i] = rowsums[i] ? (1.0/rowsums[i]) : 0.0;
     }
   }
-
-  // TBD - for CSL, we will need one_over_colsums arrays, right?  :(
 
 #ifdef DEBUG_CONSTRUCTOR
   if (selfloops_f) {
@@ -1743,6 +1746,112 @@ void MCLib::Markov_chain::computeInfinityDistribution(const LS_Vector &p0,
   {
       p[i] = 0;
   } // for i
+}
+
+// ******************************************************************
+
+void MCLib::Markov_chain::computeProbsToReach(const intset &target, double* p,
+      double* aux, const LS_Options &opt, LS_Output &out) const
+{
+  //
+  // allocate auxiliary vector, if needed
+  //
+  double* myaux;
+  if (aux) {
+    myaux = aux;
+  } else {
+    myaux = (double*) malloc(getNumStates() * sizeof(double));
+    if (0==myaux) {
+      throw error(error::Out_Of_Memory);
+    }
+  }
+
+  //
+  // set up rhs for our linear solver
+  //
+  LS_Vector b;
+  b.size = getNumStates();
+  b.index = 0;
+  b.d_value = myaux;
+  b.f_value = 0;
+
+  //
+  // Set p[i] = 1, if i is recurrent and belongs to target set; 0 otherwise
+  //
+  zeroArray(p, getNumStates());
+  long i = stateClass.lastNodeOfClass(0);
+  for (i = target.getSmallestAfter(i); i>=0 && i<=getNumStates();
+       i = target.getSmallestAfter(i))
+  {
+    p[i] = 1;
+  }  // for i
+
+#ifdef DEBUG_REACHES
+  cout << "Target set: ";
+  showArray(p, getNumStates());
+#endif
+
+  //
+  // Build b = -Qta * target, and then solve Qtt * p = b
+  //
+  zeroArray(myaux, getNumStates());
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qta;
+    LS_CRS_Matrix_double Qtt;
+    graphToMatrix(G_byrows_diag, Qtt);
+    Qtt.start = stateClass.firstNodeOfClass(0);
+    Qtt.stop  = 1+stateClass.lastNodeOfClass(0);
+    Qtt.one_over_diag = one_over_rowsums_d;
+    graphToMatrix(G_byrows_off, Qta);
+
+    //
+    // Multiply b += Qta * p, then negate it
+    //
+    Qta.MatrixVectorMultiply(myaux, p);
+    for (long i=stateClass.firstNodeOfClass(0); i<=stateClass.lastNodeOfClass(0); i++) {
+      myaux[i] = -myaux[i];
+    } // for i
+
+    //
+    // Call the linear solver
+    //
+    Solve_Axb(Qtt, p, b, opt, out);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qta;
+    LS_CRS_Matrix_float Qtt;
+    graphToMatrix(G_byrows_diag, Qtt);
+    Qtt.start = stateClass.firstNodeOfClass(0);
+    Qtt.stop  = 1+stateClass.lastNodeOfClass(0);
+    Qtt.one_over_diag = one_over_rowsums_f;
+    graphToMatrix(G_byrows_off, Qta);
+
+    //
+    // Multiply b += Qta * p, then negate it
+    //
+    Qta.MatrixVectorMultiply(myaux, p);
+    for (long i=stateClass.firstNodeOfClass(0); i<=stateClass.lastNodeOfClass(0); i++) {
+      myaux[i] = -myaux[i];
+    } // for i
+
+    //
+    // Call the linear solver
+    //
+    Solve_Axb(Qtt, p, b, opt, out);
+  }
+
+
+  //
+  // Cleanup, if needed
+  //
+  if (0==aux) {
+    free(myaux);
+  }
 }
 
 // ******************************************************************
