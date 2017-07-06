@@ -15,11 +15,33 @@ using namespace MCLib;
 // ==============================> Graph 1 <==============================
 
 /*
+    Simple DTMC.
+      States 0,1,2 are transient.
+      States 3,4 are absorbing.
+*/
+const edge graph1[] = {
+  {0, 0, 1}, {0, 1, 1}, {0, 2, 1},
+  {1, 1, 1}, {1, 3, 1},
+  {2, 2, 2}, {2, 4, 1},
+  // end
+  {-1, -1, -1}
+};
+
+const bool discrete1 = true;
+const long num_nodes1 = 5;
+
+const long target1[] = {4, -1};
+const double reaches1[] =  {1.0/2.0, 0, 1, 0, 1};
+
+
+// ==============================> Graph 2 <==============================
+
+/*
   The "university" DTMC.
     States 0,1,2,3 are transient.
     States 4,5 are absorbing.
 */
-const edge graph1[] = {
+const edge graph2[] = {
   {0, 0, 1},  // repeat fr prob 1/10
   {0, 5, 1},  // flunk out fr prob 1/10
   {0, 1, 8},  // pass fr prob 8/10
@@ -36,12 +58,48 @@ const edge graph1[] = {
   {-1, -1, -1}
 };
 
-const bool discrete1 = true;
-const long num_nodes1 = 6;
+const bool discrete2 = true;
+const long num_nodes2 = 6;
 
-const long target1[] = {4, -1};
-const double reaches1[] =  {49.0/81.0, 49.0/72.0, 7.0/9.0, 8.0/9.0, 1, 0};
+const long target2a[] = {4, -1};
+const double reaches2a[] =  {49.0/81.0, 49.0/72.0, 7.0/9.0, 8.0/9.0, 1, 0};
 
+const long target2b[] = {5, -1};
+const double reaches2b[] =  {32.0/81.0, 23.0/72.0, 2.0/9.0, 1.0/9.0, 0, 1};
+
+
+// ==============================> Graph 3 <==============================
+
+/*
+  The "university" DTMC, converted to a CTMC by scaling rows.
+    States 0,1,2,3 are transient.
+    States 4,5 are absorbing.
+*/
+const edge graph3[] = {
+  {0, 0, 1},  // repeat fr prob 1/10
+  {0, 5, 1},  // flunk out fr prob 1/10
+  {0, 1, 8},  // pass fr prob 8/10
+  {1, 1, 6},  // repeat soph prob 2/10
+  {1, 5, 3},  // flunk out soph prob 1/10
+  {1, 2, 21},  // pass soph prob 7/10
+  {2, 2, 4},  // repeat jr prob 2/10
+  {2, 5, 2},  // flunk out jr prob 1/10
+  {2, 3, 14},  // pass jr prob 7/10
+  {3, 3, 10},  // repeat sr prob 1/10
+  {3, 5, 10},  // flunk out sr prob 1/10
+  {3, 4, 80},  // pass sr prob 8/10
+  // End 
+  {-1, -1, -1}
+};
+
+const bool discrete3 = false;
+const long num_nodes3 = 6;
+
+const long target3a[] = {4, -1};
+const double reaches3a[] =  {49.0/81.0, 49.0/72.0, 7.0/9.0, 8.0/9.0, 1, 0};
+
+const long target3b[] = {5, -1};
+const double reaches3b[] =  {32.0/81.0, 23.0/72.0, 2.0/9.0, 1.0/9.0, 0, 1};
 
 
 // =======================================================================
@@ -208,7 +266,19 @@ bool run_test(const char* name, const bool discrete, const edge graph[],
 
 int main()
 {
-  if (!run_test("University dtmc", discrete1, graph1, num_nodes1, target1, reaches1)) {
+  if (!run_test("simple dtmc", discrete1, graph1, num_nodes1, target1, reaches1)) {
+    return 1;
+  }
+  if (!run_test("University dtmc graduate", discrete2, graph2, num_nodes2, target2a, reaches2a)) {
+    return 1;
+  }
+  if (!run_test("University dtmc fail", discrete2, graph2, num_nodes2, target2b, reaches2b)) {
+    return 1;
+  }
+  if (!run_test("University ctmc graduate", discrete3, graph3, num_nodes3, target3a, reaches3a)) {
+    return 1;
+  }
+  if (!run_test("University ctmc fail", discrete3, graph3, num_nodes3, target3b, reaches3b)) {
     return 1;
   }
   return 0;
