@@ -141,6 +141,28 @@ void markov_process::stopRevTransReport(timer& watch, long iters) const
   report.stopIO();
 }
 
+void markov_process::startReachAcceptReport(timer& watch) const
+{
+  if (!report.startReport()) return;
+  report.report() << "Solving `reaches accepting' probabilities using ";
+  report.report() << getSolver() << "\n";
+  report.stopIO();
+  watch.reset();
+}
+
+void markov_process::stopReachAcceptReport(timer& watch, long iters) const
+{
+  if (!report.startReport()) return;
+  report.report() << "Solved  `reaches accepting' probabilities\n";
+  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
+  report.report() << " required for " << getSolver() << "\n";
+  if (iters > 0) {
+    report.report() << "\t" << iters << " iterations";
+    report.report() << " required for " << getSolver() << "\n";
+  }
+  em->stopIO();
+}
+
 
 const char* markov_process::getSolver() 
 {

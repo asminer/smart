@@ -71,6 +71,7 @@ class mclib_process : public markov_process {
 
     // virtual bool reachesAccept(double* x) const;
 
+    virtual bool reachesAccept(double* x) const;
     virtual bool reachesAcceptBy(double t, double* x) const;
 
     virtual void showInternal(OutputStream &os) const;

@@ -491,7 +491,7 @@ bool init_cslmsrs::execute()
   // Initialize engines
 
   CSL_engine::PU = MakeEngineType(em,
-      "PU_ALGORITHM",
+      "PUalgorithm",
       "Algorithm for computation of PU formulas in CSL/PCTL.",
       engtype::FunctionCall
   );

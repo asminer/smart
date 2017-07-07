@@ -385,7 +385,7 @@ bool init_cslengines::execute()
 
   RegisterEngine(
       em,
-      "ExplicitPU",
+      "PUalgorithm",
       "phase_tta", 
       "Use a phase-type tta operation to compute PU",
       &the_PU_expl_eng 

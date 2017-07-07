@@ -1,0 +1,39 @@
+Graduation probabilities: 1 year (orig)
+	(sr:0.8, grad:1)
+Graduation probabilities: 1 year (mod) 
+	(sr:0.8, grad:1)
+
+Graduation probabilities: 2 years (orig)
+	(jr:0.56, sr:0.88, grad:1)
+Graduation probabilities: 2 years (mod) 
+	(jr:0.56, sr:0.88, grad:1)
+
+Graduation probabilities: 3 years (orig)
+	(so:0.392, jr:0.728, sr:0.888, grad:1)
+Graduation probabilities: 3 years (mod) 
+	(so:0.392, jr:0.728, sr:0.888, grad:1)
+
+Graduation probabilities: 4 years (orig)
+	(fr:0.3136, so:0.588, jr:0.7672, sr:0.8888, grad:1)
+Graduation probabilities: 4 years (mod) 
+	(fr:0.3136, so:0.588, jr:0.7672, sr:0.8888, grad:1)
+
+Graduation probabilities: 5 years (orig)
+	(fr:0.50176, so:0.65464, jr:0.7756, sr:0.88888, grad:1)
+Graduation probabilities: 5 years (mod) 
+	(fr:0.50176, so:0.65464, jr:0.7756, sr:0.88888, grad:1)
+
+Graduation probabilities: 6 years (orig)
+	(fr:0.573888, so:0.673848, jr:0.777336, sr:0.888888, grad:1)
+Graduation probabilities: 6 years (mod) 
+	(fr:0.573888, so:0.673848, jr:0.777336, sr:0.888888, grad:1)
+
+Graduation probabilities: no limit (orig)
+	(fr:0.604938, so:0.680556, jr:0.777778, sr:0.888889, grad:1)
+Graduation probabilities: no limit (mod) 
+	(fr:0.604938, so:0.680556, jr:0.777778, sr:0.888889, grad:1)
+Theory:
+	(fr:0.604938, so:0.680556, jr:0.777778, sr:0.888889, grad:1)
+
+Should be all ones: (fr:1, so:1, jr:1, sr:1, fail:1, grad:1)
+Should be all ones: (fr:1, so:1, jr:1, sr:1, fail:1, grad:1)

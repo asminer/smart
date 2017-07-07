@@ -1,0 +1,134 @@
+
+#StatevectDisplayStyle SPARSE_STATE
+
+/*
+    "Standard" university dtmc, for easy testing.
+*/
+
+dtmc univ := {
+  state fr, so, jr, sr, fail, grad;
+
+  init(fr:7, so:3);
+
+  arcs(
+    fr : fr : 1,
+    fr : so : 8,
+    fr : fail : 1,
+    so : so : 2,
+    so : jr : 7,
+    so : fail : 1,
+    jr : jr : 2,
+    jr : sr : 7,
+    jr : fail : 1,
+    sr : sr : 1,
+    sr : grad : 8,
+    sr : fail : 1
+  );
+
+  stateset F := potential(in_state(fail));
+  stateset G := potential(in_state(grad));
+
+  stateprobs gradprobs1 := PF(G, 1.0);
+  stateprobs gradprobs2 := PF(G, 2.0);
+  stateprobs gradprobs3 := PF(G, 3.0);
+  stateprobs gradprobs4 := PF(G, 4.0);
+  stateprobs gradprobs5 := PF(G, 5.0);
+  stateprobs gradprobs6 := PF(G, 6.0);
+  stateprobs gradprobs := PF(G, infinity);
+
+  stateprobs allones := PF(F | G, infinity);
+};
+
+// # Report + mc_finish, mc_solve
+
+compute(univ.gradprobs1);
+compute(univ.gradprobs2);
+compute(univ.gradprobs3);
+compute(univ.gradprobs4);
+compute(univ.gradprobs5);
+compute(univ.gradprobs6);
+compute(univ.gradprobs);
+compute(univ.allones);
+
+
+/*
+    Modified university dtmc that makes no sense:
+    there's an edge from "fail" to "graduate", 
+    so we have to use PU instead of PF.
+    Should get the same results as before though.
+*/
+dtmc moduniv := {
+  state fr, so, jr, sr, fail, grad;
+
+  init(fr:7, so:3);
+
+  arcs(
+    fr : fr : 1,
+    fr : so : 8,
+    fr : fail : 1,
+    so : so : 2,
+    so : jr : 7,
+    so : fail : 1,
+    jr : jr : 2,
+    jr : sr : 7,
+    jr : fail : 1,
+    sr : sr : 1,
+    sr : grad : 8,
+    sr : fail : 1,
+    fail : grad : 1
+  );
+
+  stateset notF := potential(!in_state(fail));
+  stateset G := potential(in_state(grad));
+
+  stateprobs gradprobs1 := PU(notF, G, 1.0);
+  stateprobs gradprobs2 := PU(notF, G, 2.0);
+  stateprobs gradprobs3 := PU(notF, G, 3.0);
+  stateprobs gradprobs4 := PU(notF, G, 4.0);
+  stateprobs gradprobs5 := PU(notF, G, 5.0);
+  stateprobs gradprobs6 := PU(notF, G, 6.0);
+  stateprobs gradprobs := PU(notF, G, infinity);
+
+  stateprobs allones := PF(G, infinity);
+};
+
+
+
+// # Report + mc_finish, mc_solve
+
+compute(moduniv.gradprobs1);
+compute(moduniv.gradprobs2);
+compute(moduniv.gradprobs3);
+compute(moduniv.gradprobs4);
+compute(moduniv.gradprobs5);
+compute(moduniv.gradprobs6);
+compute(moduniv.gradprobs);
+compute(moduniv.allones);
+
+
+print("Graduation probabilities: 1 year (orig)\n\t", univ.gradprobs1, "\n");
+print("Graduation probabilities: 1 year (mod) \n\t", moduniv.gradprobs1, "\n\n");
+
+print("Graduation probabilities: 2 years (orig)\n\t", univ.gradprobs2, "\n");
+print("Graduation probabilities: 2 years (mod) \n\t", moduniv.gradprobs2, "\n\n");
+
+print("Graduation probabilities: 3 years (orig)\n\t", univ.gradprobs3, "\n");
+print("Graduation probabilities: 3 years (mod) \n\t", moduniv.gradprobs3, "\n\n");
+
+print("Graduation probabilities: 4 years (orig)\n\t", univ.gradprobs4, "\n");
+print("Graduation probabilities: 4 years (mod) \n\t", moduniv.gradprobs4, "\n\n");
+
+print("Graduation probabilities: 5 years (orig)\n\t", univ.gradprobs5, "\n");
+print("Graduation probabilities: 5 years (mod) \n\t", moduniv.gradprobs5, "\n\n");
+
+print("Graduation probabilities: 6 years (orig)\n\t", univ.gradprobs6, "\n");
+print("Graduation probabilities: 6 years (mod) \n\t", moduniv.gradprobs6, "\n\n");
+
+print("Graduation probabilities: no limit (orig)\n\t", univ.gradprobs, "\n");
+print("Graduation probabilities: no limit (mod) \n\t", moduniv.gradprobs, "\n");
+print("Theory:\n\t(fr:", 49/81, ", so:", 49/72, ", jr:", 7/9, ", sr:", 8/9, ", grad:1)\n\n");
+
+print("Should be all ones: ", univ.allones, "\n");
+print("Should be all ones: ", moduniv.allones, "\n");
+
+
