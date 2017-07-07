@@ -705,6 +705,40 @@ bool mclib_process::computeContinuousTTA(double dt, double epsilon,
 
 
 // ******************************************************************
+bool mclib_process::reachesAccept(double* x) const
+{
+  DCASSERT(chain);
+
+  //
+  // Check for degenerate case: no accepting state
+  //
+  long acc_state = getAcceptingState();
+  if (acc_state < 0) {
+    for (long i=chain->getNumStates()-1; i>=0; i--) x[i] = 0;
+    return true;
+  }
+
+  //
+  // Build set of target states = { accept }
+  //
+  intset target(chain->getNumStates());
+  target.removeAll();
+  target.addElement(acc_state);
+
+  try {
+    LS_Output outdata;
+    timer w;
+    startReachAcceptReport(w);
+    chain->computeProbsToReach(target, x, 0, getSolverOptions(), outdata);
+    stopReachAcceptReport(w, outdata.num_iters);
+    return statusOK(em, outdata, "reaches accept");
+  }
+  catch (MCLib::error e) {
+    return status(em, e, "reaches accept");
+  }
+}
+
+// ******************************************************************
 
 bool mclib_process::reachesAcceptBy(double t, double* x) const
 {

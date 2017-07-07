@@ -1,0 +1,125 @@
+
+#StatevectDisplayStyle SPARSE_STATE
+
+/*
+    "Standard" university dtmc, converted to ctmc.
+*/
+
+ctmc univ := {
+  state fr, so, jr, sr, fail, grad;
+
+  init(fr:7, so:3);
+
+  arcs(
+    fr : so : 0.8,
+    fr : fail : 0.1,
+    so : jr : 0.7,
+    so : fail : 0.1,
+    jr : sr : 0.7,
+    jr : fail : 0.1,
+    sr : grad : 0.8,
+    sr : fail : 0.1
+  );
+
+  stateset F := potential(in_state(fail));
+  stateset G := potential(in_state(grad));
+
+  stateprobs gradprobs1 := PF(G, 1);
+  stateprobs gradprobs2 := PF(G, 2);
+  stateprobs gradprobs3 := PF(G, 3);
+  stateprobs gradprobs4 := PF(G, 4);
+  stateprobs gradprobs5 := PF(G, 5);
+  stateprobs gradprobs6 := PF(G, 6);
+  stateprobs gradprobs := PF(G, infinity);
+
+  stateprobs allones := PF(F | G, infinity);
+};
+
+// # Report + mc_finish, mc_solve
+
+compute(univ.gradprobs1);
+compute(univ.gradprobs2);
+compute(univ.gradprobs3);
+compute(univ.gradprobs4);
+compute(univ.gradprobs5);
+compute(univ.gradprobs6);
+compute(univ.gradprobs);
+compute(univ.allones);
+
+
+print("Graduation probabilities: 1 year\n\t", univ.gradprobs1, "\n");
+print("Graduation probabilities: 2 years\n\t", univ.gradprobs2, "\n");
+print("Graduation probabilities: 3 years\n\t", univ.gradprobs3, "\n");
+print("Graduation probabilities: 4 years\n\t", univ.gradprobs4, "\n");
+print("Graduation probabilities: 5 years\n\t", univ.gradprobs5, "\n");
+print("Graduation probabilities: 6 years\n\t", univ.gradprobs6, "\n");
+
+print("Graduation probabilities: no limit\n\t", univ.gradprobs, "\n");
+print("Theory:\n\t(fr:", 49/81, ", so:", 49/72, ", jr:", 7/9, ", sr:", 8/9, ", grad:1)\n\n");
+
+print("Should be all ones: ", univ.allones, "\n");
+
+
+
+/*
+    Erlang ctmc, bounded F can be determined theoretically
+*/
+
+real factorial(int n) := cond (n==0, 1, n*factorial(n-1));
+real power(real x, int n) := cond (n==0, 1, x*power(x, n-1));
+
+real erlsum(real x, real lambda, int n) := cond (n==0, 1, erlsum(x, lambda, n-1) + power(lambda*x, n) / factorial(n));
+
+real erlang_cdf(real x, real lambda, int n) := 1- exp(-lambda*x) * erlsum(x, lambda, n-1);
+
+
+ctmc erlang_ctmc(real L, int n) := {
+  for (int i in {n..0..-1}) {
+    state s[i];
+  }
+  init(s[n]:1);
+  for (int i in {1..n}) {
+    arcs( s[i] : s[i-1] : L );
+  }
+  stateset final := potential(in_state(s[0]));
+
+  stateprobs reaches1 := PF(final, 1.0);
+  stateprobs reaches2 := PF(final, 2.0);
+  stateprobs reaches3 := PF(final, 3.0);
+  stateprobs reaches4 := PF(final, 4.0);
+};
+
+model m := erlang_ctmc(1.2, 5);
+
+compute(m.reaches1);
+compute(m.reaches2);
+compute(m.reaches3);
+compute(m.reaches4);
+
+print("Erlang probabilities T=1:\n\t", m.reaches1, "\n");
+print("Theory:\n\t");
+for (int n in {5..1..-1})  {
+  print("   ", n, " :", erlang_cdf(1.0, 1.2, n), ",");
+}
+print("   0 :1\n");
+
+print("Erlang probabilities T=2:\n\t", m.reaches2, "\n");
+print("Theory:\n\t");
+for (int n in {5..1..-1})  {
+  print("   ", n, " :", erlang_cdf(2.0, 1.2, n), ",");
+}
+print("   0 :1\n");
+
+print("Erlang probabilities T=3:\n\t", m.reaches3, "\n");
+print("Theory:\n\t");
+for (int n in {5..1..-1})  {
+  print("   ", n, " :", erlang_cdf(3.0, 1.2, n), ",");
+}
+print("   0 :1\n");
+
+print("Erlang probabilities T=4:\n\t", m.reaches4, "\n");
+print("Theory:\n\t");
+for (int n in {5..1..-1})  {
+  print("   ", n, " :", erlang_cdf(4.0, 1.2, n), ",");
+}
+print("   0 :1\n");

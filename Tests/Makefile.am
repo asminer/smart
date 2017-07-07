@@ -10,10 +10,10 @@ if LINK_GMP
 TESTS +=  bigints.sm
 endif
 
-TESTS +=  converge.sm courier.sm ctmc_ctl.sm ctmc_tran.sm \
+TESTS +=  converge.sm courier.sm ctmc_csl.sm ctmc_ctl.sm ctmc_tran.sm \
           cvgcvg.sm cvgfor.sm distrange.sm dontknow.sm \
           dox_cast.sm dox_ops.sm \
-          dtmc_ctl.sm dtmc_tran.sm dtmcs.sm \
+          dtmc_csl.sm dtmc_ctl.sm dtmc_tran.sm dtmcs.sm \
           fms.sm forcvg.sm forloops.sm fsm_ctl.sm fsms.sm funcs.sm \
           include.sm inputs.sm \
           kanban.sm \

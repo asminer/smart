@@ -73,6 +73,12 @@ class markov_process : public stochastic_lldsm::process {
     void startRevTransReport(timer& w, double t) const;
     void stopRevTransReport(timer& w, long iters) const;
 
+    /*
+      CSL "reverse" probabilities of reaching an accepting state
+    */
+    void startReachAcceptReport(timer&w) const;
+    void stopReachAcceptReport(timer&w, long iters) const;
+
     friend class init_markovproc;
 };
 
