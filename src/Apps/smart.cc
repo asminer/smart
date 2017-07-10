@@ -141,10 +141,6 @@ int Copyrights(exprman* em)
   df->end_heading();
   df->begin_indent();
   df->begin_description(15);
-  if (SMART_DATE) {
-    df->item("Released:");
-    df->Out() << SMART_DATE;
-  }
   df->item("Design:");
   df->Out() << "Gianfranco Ciardo and Andrew Miner";
   // Uncomment this when we add names to Implementation.
@@ -154,6 +150,9 @@ int Copyrights(exprman* em)
   // Add to and alphabetize this list of names.
   df->Out() << "Andrew Miner";
   df->end_description();
+  if (SMART_DATE) {
+    df->Out() << "Released " << SMART_DATE << "\n";
+  }
 #ifdef PACKAGE_URL
   df->Out() << PACKAGE_URL << "\n";
 #endif
