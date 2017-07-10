@@ -1,2 +1,1 @@
-const char* REVISION = "1";
-const char* SMART_DATE = "today";
+const char* SMART_DATE = "2017 July 10";
