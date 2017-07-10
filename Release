@@ -1,32 +1,46 @@
 #!/bin/bash
 #
-if [ $# -ne 1 ]; then
-  printf "\nUsage: $0 revision-name\n\nCreates a release with the given name.\n"
-  printf "Automatically updates the revision-name in the source, and creates\n"
-  printf "an annotated tag of the form v[version].[revision-name].\n\n"
+if [ $# -ne 0 ]; then
+  printf "\nUsage: $0 \n\n"
+  printf "Creates a release based on the version number in configure.ac.\n"
+  printf "Automatically updates the revision date in the source,\n"
+  printf "and creates a branch of the form releases/v[version].\n\n"
   printf "Before running, be sure that all modified files have been committed\n"
-  printf "to the repository.  This script will change the revision number,\n"
-  printf "commit that to the repository, and then create an annotated tag.\n\n"
+  printf "to the repository.\n\n"
   exit 0
 fi
 
-version=`awk '/AC_INIT/{print $2}' configure.ac | tr -d '[],'`
+printf "Creating release for version $version\n"
 
-printf "Setting revision to $1\n"
+rdate=`date +"%Y %B %d"`
+printf "const char* SMART_DATE = \"%s\";\n" "$rdate" > src/include/revision.h
 
-echo "const char* REVISION = \"$1\";" > src/include/revision.h
+nextver=`awk -F. '{for (i=1; i<NF; i++) printf($i"."); print $NF+1}' <<< $version`
 
-tag="v$version.$1"
-
-printf "Committing changes\n"
+#
+# Save changes
+#
 
 git add src/include/revision.h
-git commit -m "Updated revision for $tag"
+git commit -m "Updated release date for $version"
 git push
 
-printf "Creating and publishing tag $tag\n"
+#
+# Create and publish a tag for $version
+#
 
-git tag -a $tag -m "Script $0 tagging release $tag"
-git push origin $tag
+git tag -a "v$version" -m "Tag for release $version"
+git push origin v$version
+ 
+#
+# Automatically bump the version number
+#
+
+printf "Updating version to $nextver\n"
+sed "/AC_INIT/s/$version/$nextver/" configure.ac > configure.new
+mv -f configure.ac configure.ac.old
+mv configure.new configure.ac
 
 printf "\nDone!\n"
+printf "You might want to check the new version number in configure.ac\n\n"
+

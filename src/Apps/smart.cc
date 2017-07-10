@@ -85,7 +85,7 @@ const char* first_init::getVersionString()
     StringStream str;
     str << "SMART";
 #ifdef VERSION
-    str << " version " << VERSION << "." << REVISION;
+    str << " version " << VERSION;
 #endif
 #ifdef DEVELOPMENT_CODE
     str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
@@ -141,6 +141,10 @@ int Copyrights(exprman* em)
   df->end_heading();
   df->begin_indent();
   df->begin_description(15);
+  if (SMART_DATE) {
+    df->item("Released:");
+    df->Out() << SMART_DATE;
+  }
   df->item("Design:");
   df->Out() << "Gianfranco Ciardo and Andrew Miner";
   // Uncomment this when we add names to Implementation.
