@@ -6,6 +6,7 @@ bin-release/
 compile
 config.*
 configure
+configure.ac.old
 depcomp
 install-sh
 ltmain.sh
