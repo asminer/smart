@@ -10,6 +10,8 @@ if [ $# -ne 0 ]; then
   exit 0
 fi
 
+version=`awk '/AC_INIT/{print $2}' configure.ac | tr -d '[],'`
+
 printf "Creating release for version $version\n"
 
 rdate=`date +"%Y %B %d"`
