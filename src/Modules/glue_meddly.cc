@@ -154,6 +154,7 @@ const char* mdd_lib::getVersionString() const
 void mdd_lib::printCopyright(doc_formatter* df) const
 {
   df->begin_indent();
+  df->Out() << "Released " << MEDDLY::getLibraryInfo(5) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(1) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(2) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(3) << "\n";
