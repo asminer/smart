@@ -508,7 +508,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   // Report on generation
-  if (stopGen(!procOK, hm->Name(), the_proc, watch)) {
+  if (stopGen(!procOK, *hm, the_proc, watch)) {
     if (!rss->IsStatic()) {
       Report().report().Put('\t');
       Report().report().PutMemoryCount(rss->ReportMemTotal(), 3);

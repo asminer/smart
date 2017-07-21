@@ -45,18 +45,19 @@ bool process_generator::startGen(const hldsm& mdl, const char* whatproc)
   return false;
 }
 
-bool process_generator::stopGen(bool err, const char* n, 
+bool process_generator::stopGen(bool err, const hldsm& mdl, 
                                 const char* pr, const timer &w)
 {
   if (report.startReport()) {
     if (err)  report.report() << "Incomplete ";
     else      report.report() << "Generated  ";
-    if (n) {
-      report.report() << pr << " for model " << n << "\n";
+    report.report() << pr << " for ";
+    if (mdl.Name()) {
+      report.report() << "model " << mdl.Name();
     } else {
-      report.report() << "\n";
+      mdl.Print(report.report(), 0);
     }
-    report.report() << "\t" << w.elapsed_seconds() << " seconds ";
+    report.report() << "\n\t" << w.elapsed_seconds() << " seconds ";
     if (err)  report.report() << "until error\n";
     else      report.report() << "required for generation\n";
     return true;
