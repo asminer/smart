@@ -2662,7 +2662,7 @@ private:
       G.generateRG(Debug(), hm);
 
       // Reporting
-      if (meddly_procgen::stopGen(false, hm.Name(), "reachability set", watch)) {
+      if (meddly_procgen::stopGen(false, hm, "reachability set", watch)) {
         G.reportStats(em->report(), 0);
         em->stopIO();
       }
@@ -2676,7 +2676,7 @@ private:
     }
     catch (subengine::error e) {
       // Reporting
-      if (meddly_procgen::stopGen(true, hm.Name(), "reachability set", watch)) {
+      if (meddly_procgen::stopGen(true, hm, "reachability set", watch)) {
         G.reportStats(em->report(), 0);
         em->stopIO();
       }
@@ -2709,7 +2709,7 @@ private:
       G.generateRG(Debug(), hm);
 
       // Reporting
-      if (meddly_procgen::stopGen(false, hm.Name(), "reachability graph", watch)) {
+      if (meddly_procgen::stopGen(false, hm, "reachability graph", watch)) {
         G.reportStats(em->report(), "reachability graph");
         em->stopIO();
       }
@@ -2723,7 +2723,7 @@ private:
     }
     catch (subengine::error e) {
       // Reporting
-      if (meddly_procgen::stopGen(true, hm.Name(), "reachability graph", watch)) {
+      if (meddly_procgen::stopGen(true, hm, "reachability graph", watch)) {
         G.reportStats(em->report(), "reachability graph");
         em->stopIO();
       }
@@ -2768,7 +2768,7 @@ private:
       }
 
       // Reporting
-      if (meddly_procgen::stopGen(false, hm.Name(), "Markov chain", watch)) {
+      if (meddly_procgen::stopGen(false, hm, "Markov chain", watch)) {
         G.reportStats(em->report(), "Markov chain");
         em->stopIO();
       }
@@ -2782,7 +2782,7 @@ private:
     }
     catch (subengine::error e) {
       // Reporting
-      if (meddly_procgen::stopGen(true, hm.Name(), "Markov chain", watch)) {
+      if (meddly_procgen::stopGen(true, hm, "Markov chain", watch)) {
         G.reportStats(em->report(), "Markov chain");
         em->stopIO();
       }
