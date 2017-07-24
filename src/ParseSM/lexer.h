@@ -17,7 +17,7 @@ const char* TokenName(int tk);
 /* =====================================================================
 
   Functions used by the lexer.
-  These are intended to be called from within smart.l
+  These are intended to be called from within smartlex.l
   and are probably of no use otherwise.
 
    ===================================================================== */
