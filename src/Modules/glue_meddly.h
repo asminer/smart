@@ -42,6 +42,7 @@ class smart_output : public MEDDLY::output {
     virtual void put(char x);
     virtual void put(const char* x, int w);
     virtual void put(long x, int w);
+    virtual void put(unsigned long x, int w);
     virtual void put_hex(unsigned long x, int w);
     virtual void put(double x, int w, int p, char f);
     virtual int write(int bytes, const unsigned char* buffer);
