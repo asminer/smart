@@ -45,6 +45,11 @@ void smart_output::put(long x, int w)
   ds.Put(x, w);
 }
 
+void smart_output::put(unsigned long x, int w)
+{
+  ds.Put(x, w);
+}
+
 void smart_output::put_hex(unsigned long x, int w)
 {
   ds.PutHex(x); // width?

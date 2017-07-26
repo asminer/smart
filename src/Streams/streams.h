@@ -88,6 +88,7 @@ public:
 
   void Put(bool data, int width);
   void Put(long data, int width);
+  void Put(unsigned long data, int width);
   void Put(double data, int width);
   void Put(char data, int width);
   void Put(const char* data, int width);

@@ -278,6 +278,19 @@ void OutputStream::Put(long data, int width)
   DCASSERT(buffer[buftop]==0);
 }
 
+void OutputStream::Put(unsigned long data, int width)
+{
+  if (!ready) return;
+#ifdef DEVELOPMENT_CODE
+  int size = snprintf(intbuf, 256, "%lu", data);
+  DCASSERT(size < 256);
+#else
+  snprintf(intbuf, 256, "%lu", data);
+#endif
+  PutInteger(intbuf, width);
+  DCASSERT(buffer[buftop]==0);
+}
+
 void OutputStream::Put(double data, int width)
 {
   if (!ready) return;
