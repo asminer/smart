@@ -345,7 +345,7 @@ protected:
 
   inline bool stopGen(bool err, const hldsm &hm, 
                               const timer &w) const {
-    return meddly_procgen::stopGen(err, hm.Name(), "reachability set", w);
+    return meddly_procgen::stopGen(err, hm, "reachability set", w);
   }
 
   virtual void buildRSS(meddly_varoption &x);
