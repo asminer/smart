@@ -1609,6 +1609,7 @@ void BuildModelStmt(symbol* m, parser_list* block)
   model_under_construction = 0;
   delete ModelInternal;
   ModelInternal = 0;
+
   ShowWhatWeBuilt("model ", m);
 }
 
