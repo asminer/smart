@@ -30,6 +30,8 @@ protected:
   // TO DO: allow "batch" processing, and return a block of statements?
 
   bool compiler_ready;
+  bool lex_temporal_operators;
+  bool temporal_operator_option;
 public:
   parse_module(exprman* em);
 
@@ -69,6 +71,20 @@ public:
 
   const char* filename() const;
   int linenumber() const;
+
+  // Are we lexing the temporal operators?
+  inline bool scanForTemporal() const {
+    return lex_temporal_operators && temporal_operator_option;
+  }
+
+  inline void stopLexingTemporal() {
+    lex_temporal_operators = false;
+  }
+
+  inline void startLexingTemporal() {
+    lex_temporal_operators = true;
+  }
+
 
 public:
   inline option* findOption(const char* name) const {

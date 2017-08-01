@@ -29,6 +29,7 @@ yy_buffer_state* yy_create_buffer(FILE*, int);
 void yy_switch_to_buffer(yy_buffer_state*);
 void yy_delete_buffer(yy_buffer_state*);
 
+
 // ******************************************************************
 // *                                                                *
 // *                        lexer_mod  class                        *
@@ -116,6 +117,19 @@ public:
 
   const char* Filename() const;
   int Linenumber() const;
+
+  inline bool scanForTemporal() const {
+    DCASSERT(parent);
+    return parent->scanForTemporal();
+  }
+  inline void stopLexingTemporal() {
+    DCASSERT(parent);
+    parent->stopLexingTemporal();
+  }
+  inline void startLexingTemporal() {
+    DCASSERT(parent);
+    parent->startLexingTemporal();
+  }
 
   void Initialize(parse_module* p);
   
@@ -292,6 +306,12 @@ const char* TokenName(int tk)
     case MODIF:       return "MODIF";
     case PROC:        return "PROC";
     case IDENT:       return "IDENT";
+    case FORALL:      return "FORALL";
+    case EXISTS:      return "EXISTS";
+    case FUTURE:      return "FUTURE";
+    case GLOBALLY:    return "GLOBALLY";
+    case UNTIL:       return "UNTIL";
+    case NEXT:        return "NEXT";
   }
   return "no such token";
 }
@@ -311,6 +331,7 @@ inline int ProcessToken(int tk)
 
 int ProcessEndpnd()
 {
+  lexdata.startLexingTemporal();
   return ProcessToken(ENDPND);
 }
 
@@ -486,6 +507,7 @@ int ProcessLe()
 
 int ProcessPound()
 {
+  lexdata.stopLexingTemporal();
   return ProcessToken(POUND);
 }
 
@@ -522,6 +544,43 @@ int ProcessString()
     yylval.name[yyleng-2] = '\0'; // erase close quote 
 
   return ProcessToken(STRCONST);
+}
+
+char isTemporalActive()
+{
+  return lexdata.scanForTemporal();
+}
+
+char isTemporalOperator(char x)
+{
+  return
+    ('A' == x) ||
+    ('E' == x) ||
+    ('F' == x) ||
+    ('G' == x) ||
+    ('U' == x) ||
+    ('X' == x)
+  ;
+}
+
+int ProcessTemporalOperator()
+{
+  switch (yytext[0]) {
+    case 'A':   return ProcessToken(FORALL);
+    case 'E':   return ProcessToken(EXISTS);
+    case 'F':   return ProcessToken(FUTURE);
+    case 'G':   return ProcessToken(GLOBALLY);
+    case 'U':   return ProcessToken(UNTIL);
+    // weak until?
+    case 'X':   return ProcessToken(NEXT);
+    default:    
+      if (lexdata.startInternal(__FILE__, __LINE__)) {
+        lexdata.internal() << "Temporal operator error, unknown operator '";
+        lexdata.internal() << yytext[0] << "'.";
+        lexdata.stopError();
+      }
+      return 0;
+  }
 }
 
 int ProcessID()

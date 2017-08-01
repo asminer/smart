@@ -55,6 +55,27 @@ int ProcessReal();
 /// quoted string token.
 int ProcessString();
 
+/** 
+    Is the parser wanting LTL and CTL operators?
+    Returns a character instead of boolean in case
+    the lexer has to be compiled as C code.
+    Zero is false and nonzero is true.
+*/
+char isTemporalActive();
+
+/** 
+    Is this character a Temporal Operator?
+    Ok, the name is horrible, because we also match path
+    quantifiers A and E.  Suggest a better one :^)
+    Returns a character instead of boolean in case
+    the lexer has to be compiled as C code.
+    Zero is false and nonzero is true.
+*/
+char isTemporalOperator(char x);
+
+/// LTL or CTL operator.
+int ProcessTemporalOperator();
+
 /// identifier.  Could be type, or modifier, or identifier.
 int ProcessID();
 

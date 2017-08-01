@@ -50,7 +50,45 @@ notendl       [^\n]
 "false"                               { return ProcessBool(); }
 "true"                                { return ProcessBool(); }
 {qstring}                             { return ProcessString(); }
-{letter}{alphanum}*                   { return ProcessID(); }
+{letter}{alphanum}*                   { 
+      /* 
+          A little heavy, but we grab temporal operator
+          characters out of identifiers "by hand".
+
+          First, if we're checking for temporal operators,
+          scan the current token text (yytext) for the first
+          temporal operator and remember its position.
+      */
+      long op = -1; 
+      if (isTemporalActive()) {
+        for (long i=0; i<yyleng; i++) {
+          if (isTemporalOperator(yytext[i])) {
+            op = i;
+            break;
+          }
+        }
+      } /* isTemporalActive() */
+      /*
+          If the temporal operator is first,
+          then that's the token we return;
+          push remaining characters back onto input stream
+          and process them later.
+      */
+      if (0==op) {
+        yyless(1);
+        return ProcessTemporalOperator();
+      }
+      /*
+          If the temporal operator is in the middle
+          or not present, then the next token is an
+          identifier; any characters from the temporal
+          operator onward are pushed back to process later.
+      */
+      if (op>0) {
+        yyless(op);
+      } 
+      return ProcessID(); 
+                                      }
 {digit}+                              { return ProcessInt(); }
 {digit}+{dec}?{exp}?                  { return ProcessReal(); } 
 "("                                   { return ProcessLpar(); }
