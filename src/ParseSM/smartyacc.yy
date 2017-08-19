@@ -44,7 +44,7 @@ FORALL EXISTS FUTURE GLOBALLY UNTIL NEXT
 %type <Expr> statement defn_stmt opt_stmt model_stmt opt_begin
 expr term value const_expr 
 function_call model_function_call set_expr set_elem pos_param index
-doneproduct doneconj arith logic
+doneproduct doneconj arith logic 
 
 %type <List> aggexpr seqexpr statements opt_stmts model_stmts model_var_list
 idlist formal_params formal_indexes passed_params pos_params 
@@ -59,7 +59,7 @@ formal_param named_param
 %left SEMI
 %left COMMA
 %left COLON
-%nonassoc DOTDOT
+%nonassoc DOTDOT 
 %left OR
 %left AND
 %left IMPLIES MOD SET_DIFF
@@ -67,6 +67,9 @@ formal_param named_param
 %left GT GE LT LE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%nonassoc UNTIL
+%right NEXT FUTURE GLOBALLY
+%right FORALL EXISTS
 %right NOT UMINUS
 %nonassoc LPAR RPAR LBRAK RBRAK
 
@@ -473,12 +476,12 @@ model_var_list
 \==================================================================*/
 
 expr
-      :    arith
+      :     arith
 {
   Reducing("expr : arith");
   $$ = $1;
 }
-      |    aggexpr
+      |     aggexpr
 {
   Reducing("expr : aggexpr");
   $$ = BuildAssociative(COLON, $1);
@@ -537,6 +540,8 @@ conjunct
 }
       ;
 
+
+
 logic
       :    summation
 {
@@ -572,6 +577,36 @@ logic
 {
   Reducing("logic : logic LE logic");
   $$ = BuildBinary($1, LE, $3);
+}
+      |     FORALL logic
+{
+  Reducing("logic : FORALL logic");
+  $$ = BuildUnary(FORALL, $2);
+}
+      |     EXISTS logic
+{
+  Reducing("logic : EXISTS logic");
+  $$ = BuildUnary(EXISTS, $2);
+}
+      |     NEXT logic
+{
+  Reducing("logic : NEXT logic");
+  $$ = BuildUnary(NEXT, $2);
+}
+      |     FUTURE logic
+{
+  Reducing("logic : FUTURE Logic");
+  $$ = BuildUnary(FUTURE, $2);
+}
+      |     GLOBALLY logic
+{
+  Reducing("logic : GLOBALLY logic");
+  $$ = BuildUnary(GLOBALLY, $2);
+}
+      |     logic UNTIL logic
+{
+  Reducing("logic : logic UNTIL logic");
+  $$ = BuildBinary($1, UNTIL, $3);
 }
       ;
 
@@ -747,6 +782,7 @@ const_expr
   $$ = BuildUnary(NOT, $2);
 }
       ;
+
 
 /*==================================================================\
 |                                                                   |
