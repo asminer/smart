@@ -67,9 +67,9 @@ formal_param named_param
 %left GT GE LT LE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%right FORALL EXISTS
 %nonassoc UNTIL
 %right NEXT FUTURE GLOBALLY
-%right FORALL EXISTS
 %right NOT UMINUS
 %nonassoc LPAR RPAR LBRAK RBRAK
 
