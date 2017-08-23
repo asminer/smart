@@ -217,6 +217,8 @@ public:
   simple_type*  STATESET;
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
+  simple_type*  PATHFORMULA;
+  simple_type*  STATEFORMULA;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
@@ -230,8 +232,18 @@ public:
     uop_not    = 0,
     /// Arithmetic negation.
     uop_neg    = 1,
+	/// FORALL(A) temporal operator.
+	uop_forall = 2,
+	/// EXISTS(E) temporal operator.
+	uop_exists = 3,
+	/// NEXT(X) temporal operator.
+	uop_next   = 4,
+	/// FUTURE(F) temporal operator.
+	uop_future = 5,
+	/// GLOBALLY(G) temporal operator.
+	uop_globally = 6,
     /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    uop_none  = 2
+    uop_none   = 7
   };
 
   /// Binary operators.

@@ -2075,6 +2075,11 @@ exprman::unary_opcode Int2Uop(int op)
   switch (op) {
     case NOT:     return exprman::uop_not;
     case MINUS:   return exprman::uop_neg;
+    case FORALL:  return exprman::uop_forall;
+    case EXISTS:  return exprman::uop_exists;
+    case NEXT:    return exprman::uop_next;
+    case FUTURE:  return exprman::uop_future;
+    case GLOBALLY: return exprman::uop_globally;
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Operator " << TokenName(op);
