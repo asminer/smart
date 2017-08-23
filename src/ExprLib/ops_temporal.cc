@@ -91,7 +91,7 @@ unary* forall_op::makeExpr(const char* fn, int ln, expr* x) const
 }
 
 forall_op::expression::expression(const char* fn, int line, expr *x)
- : unary_temporal_expr(fn, line, exprman::uop_forall, x->Type(), x)
+ : unary_temporal_expr(fn, line, exprman::uop_forall, em->STATEFORMULA, x)
 {
 }
 
@@ -142,7 +142,7 @@ unary* exists_op::makeExpr(const char* fn, int ln, expr* x) const
 }
 
 exists_op::expression::expression(const char* fn, int line, expr *x)
- : unary_temporal_expr(fn, line, exprman::uop_exists, x->Type(), x)
+ : unary_temporal_expr(fn, line, exprman::uop_exists, em->STATEFORMULA, x)
 {
 }
 
@@ -193,7 +193,7 @@ unary* next_op::makeExpr(const char* fn, int ln, expr* x) const
 }
 
 next_op::expression::expression(const char* fn, int line, expr *x)
- : unary_temporal_expr(fn, line, exprman::uop_next, x->Type(), x)
+ : unary_temporal_expr(fn, line, exprman::uop_next, em->PATHFORMULA, x)
 {
 }
 
