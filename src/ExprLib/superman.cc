@@ -326,6 +326,8 @@ bool superman::setFundamentalTypes()
   if (!STATESET)    STATESET    = findSimple("stateset");
   if (!STATEDIST)   STATEDIST   = findSimple("statedist");
   if (!STATEPROBS)  STATEPROBS  = findSimple("stateprobs");
+  if (!PATHFORMULA) PATHFORMULA = findSimple("pathformula");
+  if (!STATEFORMULA) STATEFORMULA = findSimple("stateformula");
   
   if (!NEXT_STATE)  NEXT_STATE  = findType("next state");
 
