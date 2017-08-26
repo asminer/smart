@@ -137,7 +137,11 @@ class unary_temporal_expr : public unary {
 public:
   unary_temporal_expr(const char* fn, int line, exprman::unary_opcode oc, const type* t, expr* x);
   virtual bool Print(OutputStream &s, int) const;
-  virtual void Traverse(traverse_data &x);
+
+  exprman::unary_opcode GetOpCode() const
+  {
+    return opcode;
+  }
 };
 
 #endif

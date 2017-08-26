@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include "exprman.h"
 #include "assoc.h"
+#include "functions.h"
+#include "mod_def.h"
 
 /// State temporal operator.
 class state_temporal_op : public unary_op {
@@ -111,6 +113,7 @@ class exists_op : public state_temporal_op {
   class expression : public unary_temporal_expr {
   public:
     expression(const char* fn, int line, expr *x);
+    virtual void Traverse(traverse_data &x);
     virtual void Compute(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *x) const {
@@ -146,6 +149,19 @@ exists_op::expression::expression(const char* fn, int line, expr *x)
 {
 }
 
+void exists_op::expression::Traverse(traverse_data &x)
+{
+  if (traverse_data::traversal_type::Substitute!=x.which) {
+    unary_temporal_expr::Traverse(x);
+    return;
+  }
+
+  const expr* oldp = x.parent;
+  x.parent = this;
+  opnd->Traverse(x);
+  x.parent = oldp;
+}
+
 void exists_op::expression::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -162,10 +178,22 @@ class next_op : public path_temporal_op {
   class expression : public unary_temporal_expr {
   public:
     expression(const char* fn, int line, expr *x);
+    virtual void Traverse(traverse_data &x);
     virtual void Compute(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *x) const {
       return new expression(Filename(), Linenumber(), x);
+    }
+
+    virtual void TraverseOperand(traverse_data &x) const;
+
+    inline expr* TraverseModel(traverse_data &x) const
+    {
+      traverse_data xx(traverse_data::Substitute);
+      result ans;
+      xx.answer = &ans;
+      x.model->Traverse(xx);
+      return dynamic_cast<expr*>(Share(xx.answer->getPtr()));
     }
   };
 public:
@@ -197,6 +225,52 @@ next_op::expression::expression(const char* fn, int line, expr *x)
 {
 }
 
+void next_op::expression::Traverse(traverse_data &x)
+{
+  if (traverse_data::traversal_type::Substitute!=x.which) {
+    unary_temporal_expr::Traverse(x);
+    return;
+  }
+
+  const unary_temporal_expr* texpr = dynamic_cast<const unary_temporal_expr*>(x.parent);
+  if (0==texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(traverse_data::Substitute);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->GetOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AX
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AX"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EX
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "EX"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  x.parent = tfunc;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+}
+
 void next_op::expression::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -205,6 +279,31 @@ void next_op::expression::Compute(traverse_data &x)
   opnd->Compute(x);
 
   // TODO: To be implemented
+}
+
+void next_op::expression::TraverseOperand(traverse_data &x) const
+{
+  if (em->BOOL==opnd->Type()) {
+    // Atomic
+
+    // Construct arguments
+    int np = 2;
+    // XXX: Potential memory leakage
+    expr** pass = new expr*[np];
+    pass[0] = TraverseModel(x);
+    pass[1] = dynamic_cast<expr*>(opnd);
+
+    const type* model_type = x.model->Type();
+    function* pot = dynamic_cast<function*>(em->findFunction(model_type, "potential"));
+
+    const expr* oldp = x.parent;
+    x.parent = pot;
+    pot->Traverse(x, pass, np);
+    x.parent = oldp;
+  }
+  else {
+    opnd->Traverse(x);
+  }
 }
 
 // ******************************************************************

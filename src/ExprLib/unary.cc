@@ -136,32 +136,3 @@ bool unary_temporal_expr::Print(OutputStream &s, int) const
   opnd->Print(s, 0);
   return true;
 }
-
-void unary_temporal_expr::Traverse(traverse_data &x)
-{
-  DCASSERT(opnd);
-  DCASSERT(x.answer);
-  switch (x.which) {
-    case traverse_data::BuildDD: {
-      DCASSERT(x.ddlib);
-      opnd->Traverse(x);
-      if (!x.answer->isNormal()) return;
-      shared_object* dd = x.ddlib->makeEdge(0);
-      DCASSERT(dd);
-      try {
-        x.ddlib->buildUnary(opcode, x.answer->getPtr(), dd);
-        x.answer->setPtr(dd);
-      }
-      catch (sv_encoder::error e) {
-        // there was an error
-        // TBD: do we make noise?
-        Delete(dd);
-        x.answer->setNull();
-      }
-      return;
-    }
-
-    default:
-      unary::Traverse(x);
-  }
-}
