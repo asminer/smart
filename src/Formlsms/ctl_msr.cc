@@ -3,6 +3,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
+#include "../ExprLib/mod_def.h"
 #include "graph_llm.h"
 
 #include "../Modules/biginttype.h"
@@ -691,6 +692,45 @@ void num_paths::Compute(traverse_data &x, expr** pass, int np)
   Delete(q);
 }
 
+// *****************************************************************
+// *                                                               *
+// *                            states                             *
+// *                                                               *
+// *****************************************************************
+
+class states : public CTL_engine {
+public:
+  states();
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+states::states()
+: CTL_engine(em->STATESET, "states", false, 2)
+{
+  SetFormal(1, em->STATEFORMULA, "formula");
+  SetDocumentation("Count the number of distinct paths from src states to dest states.  Will be infinite if any of these paths contains a cycle.");
+}
+
+int states::Traverse(traverse_data &x, expr** pass, int np)
+{
+  if (traverse_data::Substitute != x.which) {
+    return simple_internal::Traverse(x, pass, np);
+  }
+
+  x.answer->setPtr(pass[1]);
+  return 1;
+}
+
+void states::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  // TODO: To be implemented
+}
+
 // ******************************************************************
 // *                                                                *
 // *                                                                *
@@ -755,6 +795,7 @@ bool init_ctlmsrs::execute()
   static msr_func* the_AH_si = 0;
   static msr_func* the_AEF_si = 0;
   static msr_func* the_num_paths = 0;
+  static msr_func* the_states = 0;
 
   //
   // Initialize functions
@@ -777,6 +818,7 @@ bool init_ctlmsrs::execute()
   if (!the_AH_si)     the_AH_si     = new AH_si;
   if (!the_AEF_si)    the_AEF_si    = new AEF_si;
   if (!the_num_paths) the_num_paths = new num_paths;
+  if (!the_states)     the_states     = new states;
 
   //
   // Add functions to help topic
@@ -802,6 +844,8 @@ bool init_ctlmsrs::execute()
   ctl_help->addFunction(the_AEF_si);
   ctl_help->addFunction(the_num_paths);
 
+  ctl_help->addFunction(the_states);
+
   //
   // Add functions to measure table
   //
@@ -825,5 +869,8 @@ bool init_ctlmsrs::execute()
 
   CML.Append(the_AEF_si);
   CML.Append(the_num_paths);
+
+  CML.Append(the_states);
+
   return true;
 }
