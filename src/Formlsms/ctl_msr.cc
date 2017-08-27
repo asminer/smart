@@ -718,7 +718,13 @@ int states::Traverse(traverse_data &x, expr** pass, int np)
     return simple_internal::Traverse(x, pass, np);
   }
 
-  x.answer->setPtr(pass[1]);
+  traverse_data xx(traverse_data::Temporal);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  pass[1]->Traverse(xx);
+
+  x.answer->setPtr(Share(xx.answer->getPtr()));
   return 1;
 }
 

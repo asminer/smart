@@ -80,7 +80,9 @@ struct traverse_data {
     /// Promote parameters.  Used by functions.
     Promote,
     /// Signifies that model instantiation is complete.
-    ModelDone
+    ModelDone,
+    /// Evaluate temporal formula. Used by temporal operations.
+    Temporal
   };
 
   /// Input: Traversal type.
