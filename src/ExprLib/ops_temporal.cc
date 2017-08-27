@@ -151,7 +151,7 @@ exists_op::expression::expression(const char* fn, int line, expr *x)
 
 void exists_op::expression::Traverse(traverse_data &x)
 {
-  if (traverse_data::traversal_type::Substitute!=x.which) {
+  if (traverse_data::Temporal!=x.which) {
     unary_temporal_expr::Traverse(x);
     return;
   }
@@ -227,7 +227,7 @@ next_op::expression::expression(const char* fn, int line, expr *x)
 
 void next_op::expression::Traverse(traverse_data &x)
 {
-  if (traverse_data::traversal_type::Substitute!=x.which) {
+  if (traverse_data::Temporal!=x.which) {
     unary_temporal_expr::Traverse(x);
     return;
   }
@@ -237,7 +237,7 @@ void next_op::expression::Traverse(traverse_data &x)
     // TODO: To be implemented
   }
 
-  traverse_data xx(traverse_data::Substitute);
+  traverse_data xx(traverse_data::Temporal);
   xx.model = x.model;
   result ans;
   xx.answer = &ans;
@@ -267,8 +267,10 @@ void next_op::expression::Traverse(traverse_data &x)
 
   const expr* oldp = x.parent;
   x.parent = tfunc;
+  x.which = traverse_data::Substitute;
   tfunc->Traverse(x, pass, np);
   x.parent = oldp;
+  x.which = traverse_data::Temporal;
 }
 
 void next_op::expression::Compute(traverse_data &x)
@@ -295,11 +297,13 @@ void next_op::expression::TraverseOperand(traverse_data &x) const
 
     const type* model_type = x.model->Type();
     function* pot = dynamic_cast<function*>(em->findFunction(model_type, "potential"));
-
-    const expr* oldp = x.parent;
-    x.parent = pot;
-    pot->Traverse(x, pass, np);
-    x.parent = oldp;
+    traverse_data xx(traverse_data::Substitute);
+    xx.parent = pot;
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    pot->Traverse(xx, pass, np);
+    x.answer->setPtr(Share(xx.answer->getPtr()));
   }
   else {
     opnd->Traverse(x);
