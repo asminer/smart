@@ -708,8 +708,8 @@ public:
 states::states()
 : CTL_engine(em->STATESET, "states", false, 2)
 {
-  SetFormal(1, em->STATEFORMULA, "formula");
-  SetDocumentation("Count the number of distinct paths from src states to dest states.  Will be infinite if any of these paths contains a cycle.");
+  SetFormal(1, em->TEMPORAL, "formula");
+  SetDocumentation("Compute the stateset satisfying the given temporal formula.");
 }
 
 int states::Traverse(traverse_data &x, expr** pass, int np)
@@ -824,7 +824,7 @@ bool init_ctlmsrs::execute()
   if (!the_AH_si)     the_AH_si     = new AH_si;
   if (!the_AEF_si)    the_AEF_si    = new AEF_si;
   if (!the_num_paths) the_num_paths = new num_paths;
-  if (!the_states)     the_states     = new states;
+  if (!the_states)    the_states    = new states;
 
   //
   // Add functions to help topic

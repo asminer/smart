@@ -217,8 +217,7 @@ public:
   simple_type*  STATESET;
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
-  simple_type*  PATHFORMULA;
-  simple_type*  STATEFORMULA;
+  simple_type*  TEMPORAL;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
@@ -229,45 +228,47 @@ public:
   /// Unary operators.
   enum unary_opcode {
     /// Boolean negation.
-    uop_not    = 0,
+    uop_not       = 0,
     /// Arithmetic negation.
-    uop_neg    = 1,
-	/// FORALL(A) temporal operator.
-	uop_forall = 2,
-	/// EXISTS(E) temporal operator.
-	uop_exists = 3,
-	/// NEXT(X) temporal operator.
-	uop_next   = 4,
-	/// FUTURE(F) temporal operator.
-	uop_future = 5,
-	/// GLOBALLY(G) temporal operator.
-	uop_globally = 6,
+    uop_neg       = 1,
+    /// Temporal operator "A".
+    uop_forall    = 2,
+    /// Temporal operator "E".
+    uop_exists    = 3,
+    /// Temporal operator "F"
+    uop_future    = 4,
+    /// Temporal operator "G"
+    uop_globally  = 5,
+    /// Temporal operator "X"
+    uop_next      = 6,
     /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    uop_none   = 7
+    uop_none      = 7
   };
 
   /// Binary operators.
   enum binary_opcode {
     /// Boolean implication
-    bop_implies  = 0,
+    bop_implies   = 0,
     /// Modulo operator
-    bop_mod    = 1,
+    bop_mod       = 1,
     /// Set difference
-    bop_diff  = 2,
+    bop_diff      = 2,
     /// Check for equality
-    bop_equals  = 3,
+    bop_equals    = 3,
     /// Check for inequality
-    bop_nequal  = 4,
+    bop_nequal    = 4,
     /// Greater than
-    bop_gt    = 5,
+    bop_gt        = 5,
     /// Greater or equal
-    bop_ge    = 6,
+    bop_ge        = 6,
     /// Less than
-    bop_lt    = 7,
+    bop_lt        = 7,
     /// Less or equal
-    bop_le    = 8,
+    bop_le        = 8,
+    /// Temporal operator "U"
+    bop_until     = 9,
     /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    bop_none  = 9
+    bop_none      = 10
   };
 
   /// Trinary operators.
