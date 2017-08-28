@@ -298,9 +298,14 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
 const char* exprman::getOp(unary_opcode op)
 {
   switch (op) {
-    case uop_none:  return "no-op";
-    case uop_not:   return "!";
-    case uop_neg:   return "-";
+    case uop_none:      return "no-op";
+    case uop_not:       return "!";
+    case uop_neg:       return "-";
+    case uop_forall:    return "A";
+    case uop_exists:    return "E";
+    case uop_future:    return "F";
+    case uop_globally:  return "G";
+    case uop_next:      return "X";
     default:        return "unknown_op";
   }
   return "error";  // will never get here, keep compilers happy
@@ -319,6 +324,7 @@ const char* exprman::getOp(binary_opcode op)
     case bop_ge:      return ">=";
     case bop_lt:      return "<";
     case bop_le:      return "<=";
+    case bop_until:   return "U";
     default:          return "unknown_op";
   }
   return "error";  // will never get here, keep compilers happy

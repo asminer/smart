@@ -95,6 +95,7 @@ smart_SOURCES = \
   Modules/statevects.cc \
   Modules/stochtypes.cc \
   Modules/stringtype.cc \
+  Modules/temporal.cc \
   \
   Formlsms/basic_msr.cc \
   Formlsms/csl_msr.cc \
