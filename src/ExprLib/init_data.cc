@@ -11,7 +11,6 @@
 #include "ops_int.h"
 #include "ops_real.h"
 #include "ops_set.h"
-#include "ops_temporal.h"
 #include "ops_misc.h"
 
 #include <errno.h>
@@ -1021,7 +1020,6 @@ void InitTypes(exprman* em)
   InitIntegerOps(em);
   InitRealOps(em);
   InitSetOps(em);
-  InitTemporalOps(em);
   InitMiscOps(em);
 }
 

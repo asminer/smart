@@ -77,7 +77,6 @@ smart_SOURCES = \
   ExprLib/ops_int.cc \
   ExprLib/ops_real.cc \
   ExprLib/ops_set.cc \
-  ExprLib/ops_temporal.cc \
   ExprLib/ops_misc.cc \
   ExprLib/dd_front.cc \
   ExprLib/mod_def.cc \
@@ -96,7 +95,7 @@ smart_SOURCES = \
   Modules/statevects.cc \
   Modules/stochtypes.cc \
   Modules/stringtype.cc \
-  Modules/temporal_logic.cc \
+  Modules/temporal.cc \
   \
   Formlsms/basic_msr.cc \
   Formlsms/csl_msr.cc \
@@ -204,7 +203,6 @@ icp_SOURCES = \
   ExprLib/ops_int.cc \
   ExprLib/ops_real.cc \
   ExprLib/ops_set.cc \
-  ExprLib/ops_temporal.cc \
   ExprLib/ops_misc.cc \
   ExprLib/dd_front.cc \
   ExprLib/mod_def.cc \

@@ -2073,13 +2073,13 @@ function* FindBest(symbol* f1, symbol* f2, symbol** pass,
 exprman::unary_opcode Int2Uop(int op) 
 {
   switch (op) {
-    case NOT:     return exprman::uop_not;
-    case MINUS:   return exprman::uop_neg;
-    case FORALL:  return exprman::uop_forall;
-    case EXISTS:  return exprman::uop_exists;
-    case NEXT:    return exprman::uop_next;
-    case FUTURE:  return exprman::uop_future;
-    case GLOBALLY: return exprman::uop_globally;
+    case NOT:       return exprman::uop_not;
+    case MINUS:     return exprman::uop_neg;
+    case FORALL:    return exprman::uop_forall;
+    case EXISTS:    return exprman::uop_exists;
+    case FUTURE:    return exprman::uop_future;
+    case GLOBALLY:  return exprman::uop_globally;
+    case NEXT:      return exprman::uop_next;
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Operator " << TokenName(op);
@@ -2101,6 +2101,7 @@ exprman::binary_opcode Int2Bop(int op)
     case GE:        return exprman::bop_ge;
     case LT:        return exprman::bop_lt;
     case LE:        return exprman::bop_le;
+    case UNTIL:     return exprman::bop_until;
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Operator " << TokenName(op);
