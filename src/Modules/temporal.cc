@@ -265,6 +265,7 @@ void temporal_X::Traverse(traverse_data &x)
 class temporal_U : public binary {
   public:
     temporal_U(const char* fn, int line, const type* t, expr* l, expr* r);
+    virtual bool Print(OutputStream &s, int) const;
     virtual void Traverse(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *nl, expr *nr) const;
@@ -275,6 +276,18 @@ class temporal_U : public binary {
 temporal_U::temporal_U(const char* fn, int line, const type* t, expr *l, expr *r)
  : binary(fn, line, exprman::bop_until, t, l, r)
 {
+}
+
+bool temporal_U::Print(OutputStream &s, int) const
+{
+  s << "(";
+  DCASSERT(left);
+  left->Print(s, 0);
+  s << ")U(";
+  DCASSERT(right);
+  right->Print(s, 0);
+  s << ")";
+  return true;
 }
 
 expr* temporal_U::buildAnother(expr *l, expr *r) const
@@ -322,6 +335,40 @@ void temporal_neg::Traverse(traverse_data &x)
 
   // Fall through to parent class behavior
   opnd->Traverse(x);
+}
+
+// ******************************************************************
+// *                                                                *
+// *                temporal_implies class & methods                *
+// *                                                                *
+// ******************************************************************
+
+class temporal_implies : public binary {
+  public:
+    temporal_implies(const char* fn, int line, const type* t, expr* l, expr* r);
+    virtual void Traverse(traverse_data &x);
+  protected:
+    virtual expr* buildAnother(expr *nl, expr *nr) const;
+};
+
+// ******************************************************************
+
+temporal_implies::temporal_implies(const char* fn, int line, const type* t, 
+  expr* l, expr *r) : binary(fn, line, exprman::bop_implies, t, l, r)
+{
+}
+
+expr* temporal_implies::buildAnother(expr *l, expr *r) const
+{
+  return new temporal_implies(Filename(), Linenumber(), Type(), l, r);
+}
+
+void temporal_implies::Traverse(traverse_data &x)
+{
+  // TBD - our CTL/LTL traversals here
+
+  // Fall through to parent class behavior
+  binary::Traverse(x);
 }
 
 // ******************************************************************
@@ -640,6 +687,121 @@ unary* temporal_neg_op::makeExpr(const char* fn, int ln, expr* x) const
 
 // ******************************************************************
 // *                                                                *
+// *              temporal_implies_op  class & methods              *
+// *                                                                *
+// ******************************************************************
+
+class temporal_implies_op : public binary_op {
+  public:
+    temporal_implies_op();
+    virtual int getPromoteDistance(const type* lt, const type* rt) const;
+    virtual const type* getExprType(const type* lt, const type* rt) const;
+    virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const;
+};
+
+// ******************************************************************
+
+temporal_implies_op::temporal_implies_op() : binary_op(exprman::bop_implies)
+{
+}
+
+int temporal_implies_op::getPromoteDistance(const type* lt, const type* rt) const
+{
+  if (getExprType(lt, rt)) return 0;
+  return -1;
+}
+
+const type* temporal_implies_op::getExprType(const type* lt, const type* rt) const
+{
+  //
+  // Logicify left and right types,
+  //
+
+  const temporal_type* ltt = 0;
+  bool left_atomic = false;
+  if (isAtomicType(em, lt)) {
+    left_atomic = true;
+  } else {
+    const temporal_type* tt = dynamic_cast <const temporal_type*> (lt);
+    if (tt) ltt = tt->logicify();
+  }
+
+  const temporal_type* rtt = 0;
+  bool right_atomic = false;
+  if (isAtomicType(em, rt)) {
+    right_atomic = true;
+  } else {
+    const temporal_type* tt = dynamic_cast <const temporal_type*> (rt);
+    if (tt) rtt = tt->logicify();
+  }
+
+  //
+  // Determine what happens when we mix left and right
+  //
+
+  if (left_atomic && right_atomic) {
+    // There's already an operator for this, it's called boolean logic
+    return 0;
+  }
+
+  if (left_atomic) {
+    if (0==rtt) return 0;
+    if (rtt->isStateFormula()) return rtt;
+    if (rtt == temporal_types::t_ltl_pathform) {
+      return rtt;
+    } else {
+      return temporal_types::t_ctlstar_pathform;
+    }
+  }
+
+  if (right_atomic) {
+    if (0==ltt) return 0;
+    if (ltt->isStateFormula()) return ltt;
+    if (ltt == temporal_types::t_ltl_pathform) {
+      return ltt;
+    } else {
+      return temporal_types::t_ctlstar_pathform;
+    }
+  }
+
+  // Done with atomic cases
+
+  if (0==ltt) return 0;
+  if (0==rtt) return 0;
+
+  // We have two temporal logic formulas, make sure they're both path or state
+
+  if (ltt->isPathFormula() != rtt->isPathFormula()) return 0;
+
+  if (ltt == rtt) return ltt;
+
+  //
+  // Remaining cases - mixture of ctl, ltl, or ctlstar formulas.
+  // Result for sure is a ctlstar formula.
+  //
+
+  if (ltt->isPathFormula())   return temporal_types::t_ctlstar_pathform;
+  else                        return temporal_types::t_ctlstar_stateform;
+}
+
+binary* temporal_implies_op::makeExpr(const char* fn, int ln, expr* left, 
+  expr* right) const
+{
+  DCASSERT(left);
+  DCASSERT(right);
+
+  const type* t = getExprType(left->Type(), right->Type());
+  if (0==t) {
+    Delete(left);
+    Delete(right);
+    return 0;
+  }
+
+  return new temporal_implies(fn, ln, t, left, right);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                         Initialization                         *
 // *                                                                *
@@ -761,8 +923,8 @@ bool init_temporal::execute()
 
   // Logic
 
-  em->registerOperation(  new temporal_neg_op   );
-  // TBD: implies
+  em->registerOperation(  new temporal_neg_op       );
+  em->registerOperation(  new temporal_implies_op   );
 
   // TBD: and
   // TBD: or
