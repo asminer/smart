@@ -236,10 +236,50 @@ expr* temporal_F::buildAnother(expr *x) const
 
 void temporal_F::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal!=x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (0==texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(traverse_data::Temporal);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AF
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AF"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EF
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "EF"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = traverse_data::Temporal;
 }
 
 // ******************************************************************
@@ -270,10 +310,50 @@ expr* temporal_G::buildAnother(expr *x) const
 
 void temporal_G::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal!=x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (0==texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(traverse_data::Temporal);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AG
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AG"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EG
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "EG"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = traverse_data::Temporal;
 }
 
 // ******************************************************************
