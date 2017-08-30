@@ -268,6 +268,37 @@ public:
       virtual void countPaths(const stateset* src, const stateset* dest, 
           result& count);
 
+      /** Compute a trace verifying EX(q).
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute EY.
+            @param  p         Set of initial states (should include only one state).
+            @param  q         Set of states satisfying q.
+      */
+      virtual void traceEX(bool revTime, const stateset* p, const stateset* q);
+
+      /** Compute a trace verifying EU.
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute ES.
+            @param  p         Set of initial states (should include only one state).
+            @param  qs        List of set of states (stages).
+            @param  n         The size of qs.
+      */
+      virtual void traceEU(bool revTime, const stateset* p, const stateset** qs, int n);
+
+      /** Compute a trace verifying EG.
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute EH.
+            @param  p         Set of initial states (should include only one state).
+            @param  q         Set of states satisfying EG.
+      */
+      virtual void traceEG(bool revTime, const stateset* p, const stateset* q);
+
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
       virtual bool Equals(const shared_object* o) const;
@@ -404,6 +435,23 @@ public:
     }
   }
 
+  inline void traceEX(bool revTime, const stateset* p, const stateset* q) const {
+    if (RGR) {
+      RGR->traceEX(revTime, p, q);
+    }
+  }
+
+  inline void traceEU(bool revTime, const stateset* p, const stateset** qs, int n) const {
+    if (RGR) {
+      RGR->traceEU(revTime, p, qs, n);
+    }
+  }
+
+  inline void traceEG(bool revTime, const stateset* p, const stateset* q) const {
+    if (RGR) {
+      RGR->traceEG(revTime, p, q);
+    }
+  }
 
   // Hacks for explicit:
   //

@@ -432,13 +432,96 @@ stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p)
     MEDDLY::apply( MEDDLY::COMPLEMENT, ans->E, ans->E );
     return new meddly_stateset(mp, ans);
   }
-  catch (sv_encoder::error err) { 
+  catch (sv_encoder::error err) {
     Delete(notp);
     Delete(ans);
     throw convert(err);
   }
 }
 
+void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const stateset* q)
+{
+  const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  if (0==mp) {
+    incompatibleOperand(revTime ? "EY" : "EX");
+    return;
+  }
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (q);
+  if (0==mq) {
+    incompatibleOperand(revTime ? "EY" : "EX");
+    return;
+  }
+  const shared_ddedge* mqe = mq->getStateDD();
+  DCASSERT(mqe);
+
+  try {
+    _traceEX(revTime, mpe, mqe);
+  }
+  catch (sv_encoder::error err) {
+    throw convert(err);
+  }
+}
+
+void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const stateset** qs, int n)
+{
+  const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  if (0==mp) {
+    incompatibleOperand(revTime ? "ES" : "EU");
+    return;
+  }
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  const shared_ddedge** mqes = new const shared_ddedge*[n];
+  DCASSERT(mqes);
+  for (int i = 0; i < n; i++) {
+    const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (qs[i]);
+    if (0==mq) {
+      incompatibleOperand(revTime ? "ES" : "EU");
+      return;
+    }
+    mqes[i] = mq->getStateDD();
+    DCASSERT(mqes[i]);
+  }
+
+  try {
+    _traceEU(revTime, mpe, mqes, n);
+  }
+  catch (sv_encoder::error err) {
+    throw convert(err);
+  }
+
+  delete[] mqes;
+}
+
+void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const stateset* q)
+{
+  const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  if (0==mp) {
+    incompatibleOperand(revTime ? "EH" : "EG");
+    return;
+  }
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (q);
+  if (0==mq) {
+    incompatibleOperand(revTime ? "EH" : "EG");
+    return;
+  }
+  const shared_ddedge* mqe = mq->getStateDD();
+  DCASSERT(mqe);
+
+  try {
+    _traceEG(revTime, mpe, mqe);
+  }
+  catch (sv_encoder::error err) {
+    throw convert(err);
+  }
+}
 
 meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n, 
   MEDDLY::forest::range_type t, MEDDLY::forest::edge_labeling ev) const
