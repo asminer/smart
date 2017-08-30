@@ -69,6 +69,12 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     virtual stateset* unfairEG(bool revTime, const stateset* p);
     virtual stateset* AG(bool revTime, const stateset* p);
 
+    //
+    // CTL traces
+    //
+    virtual void traceEX(bool revTime, const stateset* p, const stateset* q);
+    virtual void traceEU(bool revTime, const stateset* p, const stateset** qs, int n);
+    virtual void traceEG(bool revTime, const stateset* p, const stateset* q);
 
   // 
   // Helpers
@@ -263,6 +269,116 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         Delete(dead);
         Delete(prev);
         Delete(f);
+    }
+
+    // ******************************************************************
+
+    inline void _traceEX(bool revTime, const shared_ddedge* p, const shared_ddedge* q)
+    {
+        shared_ddedge* f = mrss->newMddEdge();
+        DCASSERT(f);
+
+        if (revTime) {
+          mxd_wrap->preImage(p, edges, f);
+        } else {
+          mxd_wrap->postImage(p, edges, f);
+        }
+
+        // f := f ^ q
+        MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, f->E );
+        // f := select(f)
+        MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+        //
+        // Cleanup
+        //
+        Delete(f);
+    }
+
+    // ******************************************************************
+
+    inline void _traceEU(bool revTime, const shared_ddedge* p, const shared_ddedge** qs, int nqs)
+    {
+      shared_ddedge* f = mrss->newMddEdge();
+      DCASSERT(f);
+      f->E = p->E;
+
+      shared_ddedge* g = mrss->newMddEdge();
+      MEDDLY::apply( MEDDLY::INTERSECTION, f->E, qs[0]->E, g->E );
+      if (f->E!=g->E) {
+        // p must be included in qs[0]
+        return;
+      }
+      Delete(g);
+
+      for (int i = 1; i < nqs; i++) {
+        if (revTime) {
+          mxd_wrap->preImage(f, edges, f);
+        } else {
+          mxd_wrap->postImage(f, edges, f);
+        }
+
+        // f := f ^ qs[i]
+        MEDDLY::apply( MEDDLY::INTERSECTION, f->E, qs[i]->E, f->E );
+        // f := select(f)
+        MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+      }
+
+      // Cleanup
+      Delete(f);
+    }
+
+    // ******************************************************************
+
+    inline void _traceEG(bool revTime, const shared_ddedge* p, const shared_ddedge* q)
+    {
+        shared_ddedge* f = mrss->newMddEdge();
+        DCASSERT(f);
+        f->E = p->E;
+
+        shared_ddedge* visited = mrss->newMddEdge();
+        visited->E = p->E;
+        DCASSERT(visited);
+        shared_ddedge* t = mrss->newMddConst(false);
+        DCASSERT(t);
+        shared_ddedge* empty = mrss->newMddConst(false);
+        DCASSERT(empty);
+
+        MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, t->E );
+        if (f->E!=t->E) {
+          // p must be included in q
+          return;
+        }
+
+        do {
+          if (revTime) {
+            mxd_wrap->preImage(f, edges, f);
+          } else {
+            mxd_wrap->postImage(f, edges, f);
+          }
+
+          // t = f /\ visited
+          MEDDLY::apply( MEDDLY::INTERSECTION, f->E, visited->E, t->E );
+          if (t->E!=empty->E) {
+            MEDDLY::apply( MEDDLY::SELECT, t->E, t->E );
+            break;
+          }
+
+          // f := f /\ q
+          MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, f->E );
+          // f := select(f)
+          MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+          // visited = visited \/ f
+          MEDDLY::apply( MEDDLY::UNION, visited->E, f->E, visited->E);
+        } while (true);
+
+        //
+        // Cleanup
+        //
+        Delete(f);
+        Delete(t);
+        Delete(empty);
     }
 
     // ******************************************************************

@@ -199,6 +199,24 @@ void graph_lldsm::reachgraph::countPaths(const stateset*, const stateset*, resul
   c.setNull();
 }
 
+void graph_lldsm::reachgraph
+::traceEX(bool revTime, const stateset* p, const stateset* q)
+{
+  notImplemented("traceEX");
+}
+
+void graph_lldsm::reachgraph
+::traceEU(bool revTime, const stateset* p, const stateset** qs, int n)
+{
+  notImplemented("traceEU");
+}
+
+void graph_lldsm::reachgraph
+::traceEG(bool revTime, const stateset* p, const stateset* q)
+{
+  notImplemented("traceEG");
+}
+
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
