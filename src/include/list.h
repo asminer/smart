@@ -5,6 +5,7 @@
 #include "defines.h"
 #include <stdlib.h>  // for realloc
 #include <string.h>  // for memcpy
+#include <algorithm> // for reverse
 
 class voidlist {
   void** data;
@@ -51,6 +52,9 @@ public:
     CHECK_RANGE(0, n, last);
     return data[n];
   }
+  inline void Update(int n, void* x) {
+    data[n] = x;
+  }
   inline void Clear() {
     last = 0;
   }
@@ -71,6 +75,9 @@ public:
     alloc = 0;
     return foo;
   }
+  inline void Reverse() {
+    std::reverse(data, data + last);
+  }
 };
 
 template <class DATA>
@@ -89,6 +96,9 @@ public:
   inline const DATA* ReadItem(int n) const {
     return (const DATA*) L.ReadItem(n);
   }
+  inline void Update(int n, DATA* x) {
+    L.Update(n, x);
+  }
   inline void Clear() {
     L.Clear();
   }
@@ -100,6 +110,9 @@ public:
   }
   inline DATA** CopyAndClear() {
     return (DATA**) L.CopyAndClear();
+  }
+  inline void Reverse() {
+    L.Reverse();
   }
 };
 
