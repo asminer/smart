@@ -218,6 +218,7 @@ public:
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
   simple_type*  TEMPORAL;
+  simple_type*  TRACE;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
