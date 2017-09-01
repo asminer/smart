@@ -25,25 +25,24 @@
 */
 class trace : public shared_object {
 public:
-  trace(const state_lldsm* p);
-  trace(const trace* clone);
+  trace();
 
 protected:
   virtual ~trace();
 
 public:
-  const state_lldsm* getParent() const { return parent; }
-
   virtual int Length() const;
-  virtual void Append(const stateset* state);
-  virtual const stateset* getState(int i) const;
+  virtual void Append(const shared_state* state);
+  virtual const shared_state* getState(int i) const;
   virtual void Concatenate(int i, const trace* subtrace);
   virtual const trace* getSubtrace(int i) const;
 
+  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Equals(const shared_object *o) const;
+
 private:
   static exprman* em;
-  const state_lldsm* parent;
-  List<stateset> states;
+  List<shared_state> states;
   List<trace> subtraces;
 
   friend class init_trace;
