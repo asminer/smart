@@ -2,7 +2,7 @@
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/mod_vars.h"
 
 #include "../Formlsms/graph_llm.h"
 
@@ -16,39 +16,39 @@
 
 exprman* trace::em = 0;
 
-trace::trace(const state_lldsm* p) : shared_object()
+trace::trace()
 {
-  parent = p;
-}
-
-trace::trace(const trace* clone) : shared_object()
-{
-  DCASSERT(clone);
-  parent = clone->parent;
 }
 
 trace::~trace()
 {
   for (int i = 0; i < states.Length(); i++) {
-    Delete(const_cast<stateset*>(states.ReadItem(i)));
+    Delete(states.Item(i));
   }
   for (int i = 0; i < subtraces.Length(); i++) {
-    Delete(const_cast<trace*>(subtraces.ReadItem(i)));
+    Delete(subtraces.Item(i));
   }
 }
 
 int trace::Length() const
 {
-  return states.Length();
+  int length = states.Length();
+  for (int i = 0; i < subtraces.Length(); i++) {
+    const trace* st = subtraces.ReadItem(i);
+    if (0 != st) {
+      length += st->Length();
+    }
+  }
+  return length;
 }
 
-void trace::Append(const stateset* state)
+void trace::Append(const shared_state* state)
 {
-  states.Append(Share(const_cast<stateset*>(state)));
+  states.Append(Share(const_cast<shared_state*>(state)));
   subtraces.Append(nullptr);
 }
 
-const stateset* trace::getState(int i) const
+const shared_state* trace::getState(int i) const
 {
   return states.ReadItem(i);
 }
@@ -64,6 +64,18 @@ void trace::Concatenate(int i, const trace* subtrace)
 const trace* trace::getSubtrace(int i) const
 {
   return subtraces.ReadItem(i);
+}
+
+bool trace::Print(OutputStream &s, int width) const
+{
+  // TODO: To be implemented
+  return true;
+}
+
+bool trace::Equals(const shared_object *o) const
+{
+  DCASSERT(0);
+  return false;
 }
 
 // ******************************************************************
