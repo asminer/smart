@@ -9,6 +9,7 @@
 #include "graph_llm.h"
 #include "../ExprLib/engine.h"
 #include "../Modules/meddly_ssets.h"
+#include "../Modules/trace.h"
 #include "rss_meddly.h"
 
 class meddly_reachset;
@@ -64,7 +65,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     virtual stateset* EX(bool revTime, const stateset* p);
     virtual stateset* AX(bool revTime, const stateset* p);
-    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr);
     virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
     virtual stateset* unfairEG(bool revTime, const stateset* p);
     virtual stateset* AG(bool revTime, const stateset* p);
@@ -72,9 +73,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     //
     // CTL traces
     //
-    virtual void traceEX(bool revTime, const stateset* p, const stateset* q);
-    virtual void traceEU(bool revTime, const stateset* p, const stateset** qs, int n);
-    virtual void traceEG(bool revTime, const stateset* p, const stateset* q);
+    virtual void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
+    virtual void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans);
+    virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
 
   // 
   // Helpers
@@ -139,7 +140,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     }
 
   private:
-    
+
     // ******************************************************************
 
     inline void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans) 
@@ -154,7 +155,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // ******************************************************************
 
     inline void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, 
-      shared_ddedge* ans) 
+      shared_ddedge* ans, List<shared_object>* extra=nullptr)
     {
         //
         // Special case - if p=0 (means true), use saturation
@@ -184,6 +185,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
         // answer := q
         ans->E = q->E;
+        if (nullptr!=extra) {
+          extra->Append(Share(ans));
+        }
 
         while (prev->E != ans->E) {
 
@@ -196,6 +200,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
           // f := f ^ p
           MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
+          if (nullptr!=extra) {
+            extra->Append(Share(f));
+          }
 
           // prev := answer
           prev->E = ans->E;
@@ -204,6 +211,10 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
           MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
 
         } // iteration
+
+        if (nullptr!=extra) {
+          extra->Reverse();
+        }
 
         // Cleanup
         Delete(f);
@@ -273,7 +284,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEX(bool revTime, const shared_ddedge* p, const shared_ddedge* q)
+    inline void _traceEX(bool revTime, const shared_ddedge* p, const shared_ddedge* q, List<shared_ddedge>* ans)
     {
         shared_ddedge* f = mrss->newMddEdge();
         DCASSERT(f);
@@ -289,6 +300,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         // f := select(f)
         MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
 
+        ans->Append(Share(const_cast<shared_ddedge*>(p)));
+        ans->Append(Share(f));
+
         //
         // Cleanup
         //
@@ -297,31 +311,44 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEU(bool revTime, const shared_ddedge* p, const shared_ddedge** qs, int nqs)
+    inline void _traceEU(bool revTime, const shared_ddedge* p, const List<shared_object>* qs, List<shared_ddedge>* ans)
     {
       shared_ddedge* f = mrss->newMddEdge();
       DCASSERT(f);
       f->E = p->E;
 
+      DCASSERT(qs->Length() > 0);
+
+      const shared_ddedge* q = dynamic_cast<const shared_ddedge*>(qs->ReadItem(0));
+      if (0==q) {
+        // TODO: Not supported
+        return;
+      }
+
       shared_ddedge* g = mrss->newMddEdge();
-      MEDDLY::apply( MEDDLY::INTERSECTION, f->E, qs[0]->E, g->E );
+      MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, g->E );
       if (f->E!=g->E) {
         // p must be included in qs[0]
         return;
       }
       Delete(g);
 
-      for (int i = 1; i < nqs; i++) {
+      ans->Append(Share(f));
+      for (int i = 1; i < qs->Length(); i++) {
         if (revTime) {
           mxd_wrap->preImage(f, edges, f);
         } else {
           mxd_wrap->postImage(f, edges, f);
         }
 
+        q = dynamic_cast<const shared_ddedge*>(qs->ReadItem(i));
+
         // f := f ^ qs[i]
-        MEDDLY::apply( MEDDLY::INTERSECTION, f->E, qs[i]->E, f->E );
+        MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, f->E );
         // f := select(f)
         MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+        ans->Append(Share(f));
       }
 
       // Cleanup
@@ -330,7 +357,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEG(bool revTime, const shared_ddedge* p, const shared_ddedge* q)
+    inline void _traceEG(bool revTime, const shared_ddedge* p, const shared_ddedge* q, List<shared_ddedge>* ans)
     {
         shared_ddedge* f = mrss->newMddEdge();
         DCASSERT(f);
@@ -350,6 +377,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
           return;
         }
 
+        ans->Append(Share(f));
         do {
           if (revTime) {
             mxd_wrap->preImage(f, edges, f);
@@ -368,6 +396,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
           MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, f->E );
           // f := select(f)
           MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+          ans->Append(Share(f));
 
           // visited = visited \/ f
           MEDDLY::apply( MEDDLY::UNION, visited->E, f->E, visited->E);

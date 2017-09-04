@@ -155,7 +155,7 @@ stateset* graph_lldsm::reachgraph::AX(bool revTime, const stateset* p)
 }
 
 stateset* graph_lldsm::reachgraph
-::EU(bool revTime, const stateset* p, const stateset* q)
+::EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra)
 {
   return notImplemented("EU");
 }
@@ -200,19 +200,19 @@ void graph_lldsm::reachgraph::countPaths(const stateset*, const stateset*, resul
 }
 
 void graph_lldsm::reachgraph
-::traceEX(bool revTime, const stateset* p, const stateset* q)
+::traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
 {
   notImplemented("traceEX");
 }
 
 void graph_lldsm::reachgraph
-::traceEU(bool revTime, const stateset* p, const stateset** qs, int n)
+::traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans)
 {
   notImplemented("traceEU");
 }
 
 void graph_lldsm::reachgraph
-::traceEG(bool revTime, const stateset* p, const stateset* q)
+::traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
 {
   notImplemented("traceEG");
 }

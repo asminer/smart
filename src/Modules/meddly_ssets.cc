@@ -172,6 +172,16 @@ bool meddly_stateset::Equals(const shared_object *o) const
   }
 }
 
+shared_state* meddly_stateset::getSingleState() const
+{
+  const hldsm* hm = getGrandparent();
+  DCASSERT(hm);
+
+  shared_state* st = new shared_state(hm);
+  const int* mt = mdd_wrap->firstMinterm(states);
+  mdd_wrap->minterm2state(mt, st);
+  return st;
+}
 
 // **************************************************************************
 // *                                                                        *
