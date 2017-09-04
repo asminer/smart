@@ -60,6 +60,7 @@ bool formalism::isLegalMeasureType(const type* mtype) const
   if (mtype->matches("bigint"))   return 1;
   if (includeCTL()) {
     if (mtype->matches("stateset")) return 1;
+    if (mtype->matches("trace")) return 1;
   }
   if (includeStochastic()) {
     if (mtype->matches("ph int"))     return 1;

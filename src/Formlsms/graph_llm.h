@@ -5,6 +5,7 @@
 #include "state_llm.h"
 
 #include "../Modules/statesets.h" // for now
+#include "../Modules/trace.h"
 
 class intset;
 class stateset;
@@ -154,13 +155,15 @@ public:
             @param  revTime   If true, reverse time and compute ES.
             @param  p         Set of states for p.  If 0, then
                               we instead compute EF / EP.
-            @param  q         Set of states for q
+            @param  q         Set of states for q.
+            @param  extra     Extra information (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying E p U q
                       or E p S q.
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr);
 
       /** Compute states satisfying A p U q, not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -275,8 +278,9 @@ public:
             @param  revTime   If true, reverse time and compute EY.
             @param  p         Set of initial states (should include only one state).
             @param  q         Set of states satisfying q.
+            @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEX(bool revTime, const stateset* p, const stateset* q);
+      virtual void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
 
       /** Compute a trace verifying EU.
           The default behavior here is to print an error message,
@@ -284,10 +288,10 @@ public:
           some derived class.
             @param  revTime   If true, reverse time and compute ES.
             @param  p         Set of initial states (should include only one state).
-            @param  qs        List of set of states (stages).
-            @param  n         The size of qs.
+            @param  qs        List of objects which are necessary for witness generation.
+            @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEU(bool revTime, const stateset* p, const stateset** qs, int n);
+      virtual void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans);
 
       /** Compute a trace verifying EG.
           The default behavior here is to print an error message,
@@ -296,8 +300,9 @@ public:
             @param  revTime   If true, reverse time and compute EH.
             @param  p         Set of initial states (should include only one state).
             @param  q         Set of states satisfying EG.
+            @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEG(bool revTime, const stateset* p, const stateset* q);
+      virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
 
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
@@ -393,8 +398,8 @@ public:
     return RGR ? RGR->EX(revTime, p) : 0;
   }
 
-  inline stateset* EU(bool revTime, const stateset* p, const stateset* q) const {
-    return RGR ? RGR->EU(revTime, p, q) : 0;
+  inline stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr) const {
+    return RGR ? RGR->EU(revTime, p, q, extra) : 0;
   }
 
   inline stateset* unfairEG(bool revTime, const stateset* p) const {
@@ -435,21 +440,21 @@ public:
     }
   }
 
-  inline void traceEX(bool revTime, const stateset* p, const stateset* q) const {
+  inline void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEX(revTime, p, q);
+      RGR->traceEX(revTime, p, q, ans);
     }
   }
 
-  inline void traceEU(bool revTime, const stateset* p, const stateset** qs, int n) const {
+  inline void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEU(revTime, p, qs, n);
+      RGR->traceEU(revTime, p, qs, ans);
     }
   }
 
-  inline void traceEG(bool revTime, const stateset* p, const stateset* q) const {
+  inline void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEG(revTime, p, q);
+      RGR->traceEG(revTime, p, q, ans);
     }
   }
 

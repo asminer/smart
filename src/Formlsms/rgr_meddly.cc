@@ -1,4 +1,6 @@
 
+#include "../ExprLib/mod_vars.h"
+
 #include "rgr_meddly.h"
 
 #ifdef HAVE_MEDDLY_H
@@ -262,7 +264,7 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
 }
 
 stateset* meddly_monolithic_rg
-::EU(bool revTime, const stateset* p, const stateset* q)
+::EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra)
 {
   //
   // Grab p in a form we can use
@@ -289,7 +291,7 @@ stateset* meddly_monolithic_rg
   DCASSERT(ans);
 
   try {
-    _EU(revTime, mpe, mqe, ans);
+    _EU(revTime, mpe, mqe, ans, extra);
     return new meddly_stateset(mq, ans);
   } 
   catch (sv_encoder::error err) { 
@@ -439,7 +441,7 @@ stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p)
   }
 }
 
-void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const stateset* q)
+void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -458,14 +460,21 @@ void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const states
   DCASSERT(mqe);
 
   try {
-    _traceEX(revTime, mpe, mqe);
+    List<shared_ddedge> es;
+    _traceEX(revTime, mpe, mqe, &es);
+
+    for (int i = 0; i < es.Length(); i++) {
+      shared_ddedge* e = es.Item(i);
+      ans->Append(new meddly_stateset(mp, e));
+      Delete(e);
+    }
   }
   catch (sv_encoder::error err) {
     throw convert(err);
   }
 }
 
-void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const stateset** qs, int n)
+void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -475,29 +484,22 @@ void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const states
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
 
-  const shared_ddedge** mqes = new const shared_ddedge*[n];
-  DCASSERT(mqes);
-  for (int i = 0; i < n; i++) {
-    const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (qs[i]);
-    if (0==mq) {
-      incompatibleOperand(revTime ? "ES" : "EU");
-      return;
-    }
-    mqes[i] = mq->getStateDD();
-    DCASSERT(mqes[i]);
-  }
-
   try {
-    _traceEU(revTime, mpe, mqes, n);
+    List<shared_ddedge> es;
+    _traceEU(revTime, mpe, qs, &es);
+
+    for (int i = 0; i < es.Length(); i++) {
+      shared_ddedge* e = es.Item(i);
+      ans->Append(new meddly_stateset(mp, e));
+      Delete(e);
+    }
   }
   catch (sv_encoder::error err) {
     throw convert(err);
   }
-
-  delete[] mqes;
 }
 
-void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const stateset* q)
+void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -516,7 +518,14 @@ void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const states
   DCASSERT(mqe);
 
   try {
-    _traceEG(revTime, mpe, mqe);
+    List<shared_ddedge> es;
+    _traceEG(revTime, mpe, mqe, &es);
+
+    for (int i = 0; i < es.Length(); i++) {
+      shared_ddedge* e = es.Item(i);
+      ans->Append(new meddly_stateset(mp, e));
+      Delete(e);
+    }
   }
   catch (sv_encoder::error err) {
     throw convert(err);

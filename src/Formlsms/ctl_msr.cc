@@ -4,6 +4,7 @@
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
 #include "../ExprLib/mod_def.h"
+#include "../ExprLib/mod_vars.h"
 #include "graph_llm.h"
 
 #include "../Modules/biginttype.h"
@@ -739,18 +740,55 @@ void states::Compute(traverse_data &x, expr** pass, int np)
 
 // *****************************************************************
 // *                                                               *
+// *                           CTL_trace                           *
+// *                                                               *
+// *****************************************************************
+
+class CTL_trace : public CTL_engine {
+public:
+  CTL_trace(const char* name, bool rt, int np);
+protected:
+  void buildTrace(List<stateset>* ss, trace* t);
+
+  inline static void setAnswer(traverse_data &x, trace* t) {
+    if (t) {
+      x.answer->setPtr(t);
+    } else {
+      x.answer->setNull();
+    }
+  }
+};
+
+CTL_trace::CTL_trace(const char* name, bool rt, int np)
+  : CTL_engine(em->TRACE, name, rt, np)
+{
+}
+
+void CTL_trace::buildTrace(List<stateset>* ss, trace* t)
+{
+  for (int i = 0; i < ss->Length(); i++) {
+    stateset* s = ss->Item(i);
+    shared_state* st = s->getSingleState();
+    t->Append(st);
+    Delete(s);
+    Delete(st);
+  }
+}
+
+// *****************************************************************
+// *                                                               *
 // *                          EX_trace_si                          *
 // *                                                               *
 // *****************************************************************
 
-class EX_trace_si : public CTL_engine {
+class EX_trace_si : public CTL_trace {
 public:
   EX_trace_si();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 EX_trace_si::EX_trace_si()
- : CTL_engine(em->STATESET, "EX_trace", false, 3)
+ : CTL_trace("EX_trace", false, 3)
 {
   SetFormal(1, em->STATESET, "initial");
   SetFormal(2, em->STATESET, "final");
@@ -763,17 +801,23 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* initial = grabParam(llm, pass[1], x);
-  if (0==initial) {
+  if (0 == initial) {
     x.answer->setNull();
     return;
   }
   stateset* final = grabParam(llm, pass[2], x);
-  if (0==final) {
+  if (0 == final) {
     x.answer->setNull();
     return;
   }
 
-  llm->traceEX(revTime(), initial, final);
+  List<stateset> ss;
+  llm->traceEX(revTime(), initial, final, &ss);
+
+  trace* t = new trace();
+  buildTrace(&ss, t);
+
+  setAnswer(x, t);
 
   Delete(initial);
   Delete(final);
@@ -785,27 +829,27 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                               *
 // *****************************************************************
 
-class trace : public CTL_engine {
+class trace_si : public CTL_engine {
 public:
-  trace();
+  trace_si();
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-trace::trace()
-: CTL_engine(em->STATESET, "traces", false, 3)
+trace_si::trace_si()
+: CTL_engine(em->TRACE, "traces", false, 3)
 {
   SetFormal(1, em->STATESET, "initial_states");
   SetFormal(2, em->TEMPORAL, "formula");
   SetDocumentation("Compute a trace verifying the given temporal formula.");
 }
 
-int trace::Traverse(traverse_data &x, expr** pass, int np)
+int trace_si::Traverse(traverse_data &x, expr** pass, int np)
 {
   return CTL_engine::Traverse(x, pass, np);
 }
 
-void trace::Compute(traverse_data &x, expr** pass, int np)
+void trace_si::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -816,6 +860,10 @@ void trace::Compute(traverse_data &x, expr** pass, int np)
 //  stateset* q = grabParam(llm, pass[2], x);
 
   // TODO: To be implemented
+
+
+  x.answer->setPtr(new trace());
+
 
 //  Delete(p);
 }
@@ -888,7 +936,7 @@ bool init_ctlmsrs::execute()
   static msr_func* the_states = 0;
 
   static msr_func* the_EX_trace_si = 0;
-  static msr_func* the_trace = 0;
+  static msr_func* the_trace_si = 0;
 
   //
   // Initialize functions
@@ -914,7 +962,7 @@ bool init_ctlmsrs::execute()
   if (!the_states)    the_states    = new states;
 
   if (!the_EX_trace_si)  the_EX_trace_si = new EX_trace_si;
-  if (!the_trace)        the_trace       = new trace;
+  if (!the_trace_si)        the_trace_si       = new trace_si;
 
   //
   // Add functions to help topic
@@ -943,7 +991,7 @@ bool init_ctlmsrs::execute()
   ctl_help->addFunction(the_states);
 
   ctl_help->addFunction(the_EX_trace_si);
-  ctl_help->addFunction(the_trace);
+  ctl_help->addFunction(the_trace_si);
 
   //
   // Add functions to measure table
@@ -972,7 +1020,7 @@ bool init_ctlmsrs::execute()
   CML.Append(the_states);
 
   CML.Append(the_EX_trace_si);
-  CML.Append(the_trace);
+  CML.Append(the_trace_si);
 
   return true;
 }

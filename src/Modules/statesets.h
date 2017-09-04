@@ -88,6 +88,14 @@ public:
   /// Is the set empty?
   virtual bool isEmpty() const = 0;
 
+  /** Get a single state from the stateset.
+      Mostly used when the stateset contains only one state.
+      @return One state in the stateset.
+   */
+  virtual shared_state* getSingleState() const {
+    return 0;
+  }
+
   /**
       Helper: check that A and B have the same parents.
       If not, print an appropriate error message.
