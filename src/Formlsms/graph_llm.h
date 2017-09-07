@@ -129,12 +129,14 @@ public:
           return null, so normally this method will be overridden in 
           some derived class.
             @param  revTime   If true, reverse time and compute EY.
-            @param  p         Set of states 
+            @param  p         Set of states.
+            @param  td        Extra information (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying EX(p) or EY(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EX(bool revTime, const stateset* p);
+      virtual stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying AX(p).
           The default behavior here is to print an error message and 
@@ -163,7 +165,7 @@ public:
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr);
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td=nullptr);
 
       /** Compute states satisfying A p U q, not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -304,6 +306,8 @@ public:
       */
       virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
 
+      virtual trace_data* makeTraceData() const;
+
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
       virtual bool Equals(const shared_object* o) const;
@@ -394,12 +398,12 @@ public:
   virtual bool isFairModel() const;
 
 
-  inline stateset* EX(bool revTime, const stateset* p) const {
-    return RGR ? RGR->EX(revTime, p) : 0;
+  inline stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr) const {
+    return RGR ? RGR->EX(revTime, p, td) : 0;
   }
 
-  inline stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr) const {
-    return RGR ? RGR->EU(revTime, p, q, extra) : 0;
+  inline stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr) const {
+    return RGR ? RGR->EU(revTime, p, q, td) : 0;
   }
 
   inline stateset* unfairEG(bool revTime, const stateset* p) const {
@@ -456,6 +460,10 @@ public:
     if (RGR) {
       RGR->traceEG(revTime, p, q, ans);
     }
+  }
+
+  inline trace_data* makeTraceData() const {
+    return RGR ? RGR->makeTraceData() : 0;
   }
 
   // Hacks for explicit:

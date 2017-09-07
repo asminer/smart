@@ -35,7 +35,7 @@ int trace::Length() const
   int length = states.Length();
   for (int i = 0; i < subtraces.Length(); i++) {
     const trace* st = subtraces.ReadItem(i);
-    if (0 != st) {
+    if (nullptr != st) {
       length += st->Length();
     }
   }
@@ -68,11 +68,49 @@ const trace* trace::getSubtrace(int i) const
 
 bool trace::Print(OutputStream &s, int width) const
 {
-  // TODO: To be implemented
+  s << "\n";
+  for (int i = 0; i < width; i++) {
+    s << " ";
+  }
+  for (int i = 0; i < states.Length(); i++) {
+    if (i != 0) {
+      s << " -> ";
+    }
+    states.ReadItem(i)->Print(s, width);
+  }
+
+  for (int i = 0; i < subtraces.Length(); i++) {
+    const trace* st = subtraces.ReadItem(i);
+    if (nullptr != st) {
+      subtraces.ReadItem(i)->Print(s, width + 3);
+    }
+  }
   return true;
 }
 
 bool trace::Equals(const shared_object *o) const
+{
+  DCASSERT(0);
+  return false;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       trace_data  class                        *
+// *                                                                *
+// ******************************************************************
+
+trace_data::trace_data()
+{
+}
+
+bool trace_data::Print(OutputStream &s, int width) const
+{
+  // TODO: To be implemented
+  return true;
+}
+
+bool trace_data::Equals(const shared_object *o) const
 {
   DCASSERT(0);
   return false;

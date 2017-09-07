@@ -18,10 +18,7 @@
 // ******************************************************************
 
 /**
-    Abstract base class for trace.
-    Derived classes for different implementations.
-    Any expression of type trace will build an object of this type
-    (or derived class, of course).
+    Represent a tree-like trace.
 */
 class trace : public shared_object {
 public:
@@ -46,6 +43,17 @@ private:
   List<trace> subtraces;
 
   friend class init_trace;
+};
+
+/**
+    Store necessary information to generate a trace.
+*/
+class trace_data : public shared_object {
+public:
+  trace_data();
+
+  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Equals(const shared_object *o) const;
 };
 
 #endif

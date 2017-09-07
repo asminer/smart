@@ -44,6 +44,7 @@ class meddly_stateset : public stateset {
     virtual bool isEmpty() const;
 
     virtual shared_state* getSingleState() const;
+    virtual void Select();
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;

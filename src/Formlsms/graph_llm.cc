@@ -144,7 +144,7 @@ void graph_lldsm::reachgraph::getNumArcs(result &na) const
   }
 }
 
-stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p)
+stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
 {
   return notImplemented("EX");
 }
@@ -155,7 +155,7 @@ stateset* graph_lldsm::reachgraph::AX(bool revTime, const stateset* p)
 }
 
 stateset* graph_lldsm::reachgraph
-::EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra)
+::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
 {
   return notImplemented("EU");
 }
@@ -215,6 +215,13 @@ void graph_lldsm::reachgraph
 ::traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
 {
   notImplemented("traceEG");
+}
+
+trace_data* graph_lldsm::reachgraph
+::makeTraceData() const
+{
+  notImplemented("makeTraceData");
+  return 0;
 }
 
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const

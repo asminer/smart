@@ -5,6 +5,7 @@
 #include "../ExprLib/measures.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
+#include "../ExprLib/values.h"
 #include "graph_llm.h"
 
 #include "../Modules/biginttype.h"
@@ -82,7 +83,8 @@ protected:
     return Share(ss);
   }
 
-  inline static void setAnswer(traverse_data &x, stateset* s) {
+  template <typename T>
+  inline static void setAnswer(traverse_data &x, T* s) {
     if (s) {
       x.answer->setPtr(s);
     } else {
@@ -745,34 +747,68 @@ void states::Compute(traverse_data &x, expr** pass, int np)
 // *****************************************************************
 
 class CTL_trace : public CTL_engine {
+protected:
+  class CTL_trace_ex : public CTL_engine {
+  public:
+    CTL_trace_ex(const char* name, bool rt, int np)
+      : CTL_engine(em->TRACE, name, rt, np)
+    {
+    }
+
+    stateset* grabInitialState(traverse_data& x) const {
+      stateset* ss = dynamic_cast<stateset*>(x.answer->getPtr());
+      if (nullptr == ss) {
+        // TODO: To be implemented
+        return nullptr;
+      }
+      return Share(ss);
+    }
+
+    trace* grabTrace(traverse_data& x) const {
+      trace* t = dynamic_cast<trace*>(x.answer->getPtr());
+      if (nullptr == t) {
+        // TODO: To be implemented
+        return nullptr;
+      }
+      return t;
+    }
+
+    trace* buildTrace(List<stateset>* ss) const {
+      trace* t = new trace();
+      for (int i = 0; i < ss->Length(); i++) {
+        stateset* s = ss->Item(i);
+        shared_state* st = s->getSingleState();
+        t->Append(st);
+        Delete(s);
+        Delete(st);
+      }
+      return t;
+    }
+  };
+
 public:
   CTL_trace(const char* name, bool rt, int np);
-protected:
-  void buildTrace(List<stateset>* ss, trace* t);
 
-  inline static void setAnswer(traverse_data &x, trace* t) {
-    if (t) {
-      x.answer->setPtr(t);
-    } else {
-      x.answer->setNull();
-    }
-  }
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
 CTL_trace::CTL_trace(const char* name, bool rt, int np)
-  : CTL_engine(em->TRACE, name, rt, np)
+  : CTL_engine(em->STATESET, name, rt, np)
 {
 }
 
-void CTL_trace::buildTrace(List<stateset>* ss, trace* t)
+int CTL_trace::Traverse(traverse_data &x, expr** pass, int np)
 {
-  for (int i = 0; i < ss->Length(); i++) {
-    stateset* s = ss->Item(i);
-    shared_state* st = s->getSingleState();
-    t->Append(st);
-    Delete(s);
-    Delete(st);
+  if (traverse_data::Substitute != x.which) {
+    return CTL_engine::Traverse(x, pass, np);
   }
+
+  // Trace functions won't be measurified
+  const char* fn = x.parent ? x.parent->Filename() : 0;
+  int ln = x.parent ? x.parent->Linenumber() : -1;
+  expr* comp = em->makeFunctionCall(fn, ln, this, pass, np);
+  setAnswer(x, comp);
+  return 1;
 }
 
 // *****************************************************************
@@ -782,16 +818,60 @@ void CTL_trace::buildTrace(List<stateset>* ss, trace* t)
 // *****************************************************************
 
 class EX_trace_si : public CTL_trace {
+protected:
+  class EX_trace_ex : public CTL_trace_ex {
+  public:
+    EX_trace_ex()
+      : CTL_trace_ex("EX_trace_ex", false, 4)
+    {
+      SetFormal(1, em->STATESET, "the states satisfying the subformula");
+      SetFormal(2, em->VOID,     "trace data");
+      SetFormal(3, em->TRACE,    "the callback function for subformula witness generation");
+    }
+
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+  };
+
+  EX_trace_ex the_EX_trace_ex;
+
 public:
   EX_trace_si();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-EX_trace_si::EX_trace_si()
- : CTL_trace("EX_trace", false, 3)
+void EX_trace_si::EX_trace_ex::Compute(traverse_data &x, expr** pass, int np)
 {
-  SetFormal(1, em->STATESET, "initial");
-  SetFormal(2, em->STATESET, "final");
+  // The initial state
+  stateset* p = grabInitialState(x);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  // The states satisfying the subformula
+  stateset* q = grabParam(llm, pass[1], x);
+
+  List<stateset> ans;
+  llm->traceEX(revTime(), p, q, &ans);
+  DCASSERT(ans.Length() == 2);
+
+  // Set the initial state for the subformula
+  setAnswer(x, Share(ans.Item(ans.Length() - 1)));
+
+  trace* t = buildTrace(&ans);
+
+  if (nullptr != pass[3]) {
+    pass[3]->Compute(x);
+    trace* st = grabTrace(x);
+    t->Concatenate(1, st);
+  }
+
+  setAnswer(x, t);
+
+  Delete(p);
+  Delete(q);
+}
+
+EX_trace_si::EX_trace_si()
+ : CTL_trace("EX_trace", false, 2)
+{
+  SetFormal(1, em->STATESET, "states satisfying the subformula");
 }
 
 void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -799,28 +879,23 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
+
   const graph_lldsm* llm = getLLM(x, pass[0]);
-  stateset* initial = grabParam(llm, pass[1], x);
-  if (0 == initial) {
-    x.answer->setNull();
-    return;
-  }
-  stateset* final = grabParam(llm, pass[2], x);
-  if (0 == final) {
-    x.answer->setNull();
-    return;
-  }
+  stateset* p = grabParam(llm, pass[1], x);
+  trace_data* td = llm->makeTraceData();
+  stateset* ans = llm->EX(revTime(), p, td);
 
-  List<stateset> ss;
-  llm->traceEX(revTime(), initial, final, &ss);
+  // TODO: Potential memory leakage
+  const int nps = 4;
+  expr** ps = new expr*[nps];
+  ps[0] = pass[0];
+  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
+  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[3] = const_cast<expr*>(x.the_callback);
 
-  trace* t = new trace();
-  buildTrace(&ss, t);
-
-  setAnswer(x, t);
-
-  Delete(initial);
-  Delete(final);
+  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EX_trace_ex, ps, nps);
+  setAnswer(x, ans);
+  x.the_callback = fc;
 }
 
 // *****************************************************************
@@ -829,14 +904,28 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                               *
 // *****************************************************************
 
-class trace_si : public CTL_engine {
+class traces : public CTL_engine {
+protected:
+  class traces_ex : public CTL_engine {
+  public:
+    traces_ex()
+      : CTL_engine(em->TRACE, "traces_ex", false, 3)
+    {
+      SetFormal(1, em->STATESET, "initial_states");
+      SetFormal(2, em->STATESET, "states satisfying the temporal formula");
+    }
+
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+  };
+
+  traces_ex the_trace_ex;
+
 public:
-  trace_si();
+  traces();
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-trace_si::trace_si()
+traces::traces()
 : CTL_engine(em->TRACE, "traces", false, 3)
 {
   SetFormal(1, em->STATESET, "initial_states");
@@ -844,28 +933,64 @@ trace_si::trace_si()
   SetDocumentation("Compute a trace verifying the given temporal formula.");
 }
 
-int trace_si::Traverse(traverse_data &x, expr** pass, int np)
+int traces::Traverse(traverse_data &x, expr** pass, int np)
 {
-  return CTL_engine::Traverse(x, pass, np);
+  if (traverse_data::Substitute != x.which) {
+    return CTL_engine::Traverse(x, pass, np);
+  }
+
+  traverse_data xx(traverse_data::Trace);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  pass[2]->Traverse(xx);
+
+  const int newnp = 3;
+  expr** newpass = new expr*[newnp];
+  newpass[0] = pass[0];
+  newpass[1] = pass[1];
+  newpass[2] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  return the_trace_ex.Traverse(x, newpass, newnp);
 }
 
-void trace_si::Compute(traverse_data &x, expr** pass, int np)
+void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
 
-//  const graph_lldsm* llm = getLLM(x, pass[0]);
-//  stateset* p = grabParam(llm, pass[1], x);
-//  stateset* q = grabParam(llm, pass[2], x);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  // Initial states
+  stateset* p = grabParam(llm, pass[1], x);
+  // States satisfying the formula
+  stateset* q = grabParam(llm, pass[2], x);
 
-  // TODO: To be implemented
+  stateset* r = p->DeepCopy();
+  r->Intersect(this, q);
 
+  if (r->isEmpty()) {
+    // No initial states satisfying the formula
+    x.answer->setNull();
+  }
+  else {
+    r->Select();
 
-  x.answer->setPtr(new trace());
+    if (nullptr == x.the_callback) {
+      x.answer->setPtr(new trace());
+    }
+    else {
+      // The selected initial state is passed in via traverse_data
+      setAnswer(x, r);
+      expr* callback = const_cast<expr*>(x.the_callback);
+      callback->Compute(x);
+      x.the_callback = nullptr;
+      Delete(callback);
+    }
+  }
 
-
-//  Delete(p);
+  Delete(p);
+  Delete(q);
 }
 
 
@@ -936,7 +1061,7 @@ bool init_ctlmsrs::execute()
   static msr_func* the_states = 0;
 
   static msr_func* the_EX_trace_si = 0;
-  static msr_func* the_trace_si = 0;
+  static msr_func* the_traces = 0;
 
   //
   // Initialize functions
@@ -961,8 +1086,8 @@ bool init_ctlmsrs::execute()
   if (!the_num_paths) the_num_paths = new num_paths;
   if (!the_states)    the_states    = new states;
 
-  if (!the_EX_trace_si)  the_EX_trace_si = new EX_trace_si;
-  if (!the_trace_si)        the_trace_si       = new trace_si;
+  if (!the_EX_trace_si)         the_EX_trace_si = new EX_trace_si;
+  if (!the_traces)            the_traces       = new traces;
 
   //
   // Add functions to help topic
@@ -990,8 +1115,7 @@ bool init_ctlmsrs::execute()
 
   ctl_help->addFunction(the_states);
 
-  ctl_help->addFunction(the_EX_trace_si);
-  ctl_help->addFunction(the_trace_si);
+  ctl_help->addFunction(the_traces);
 
   //
   // Add functions to measure table
@@ -1020,7 +1144,7 @@ bool init_ctlmsrs::execute()
   CML.Append(the_states);
 
   CML.Append(the_EX_trace_si);
-  CML.Append(the_trace_si);
+  CML.Append(the_traces);
 
   return true;
 }

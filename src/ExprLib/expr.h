@@ -82,7 +82,9 @@ struct traverse_data {
     /// Signifies that model instantiation is complete.
     ModelDone,
     /// Evaluate temporal formula. Used by temporal operations.
-    Temporal
+    Temporal,
+    /// Generate a trace verifying a temporal formula. Used by temporal operations.
+    Trace
   };
 
   /// Input: Traversal type.
@@ -116,6 +118,9 @@ struct traverse_data {
   /// Output: model type, used by functions.
   const model_def* the_model_type;
 
+  /// Output: callback function, used by CTL witness generation.
+  const expr* the_callback;
+
   /// Used as necessary for lists of exprs.
   List <expr> *elist;
 
@@ -148,6 +153,7 @@ public:
     slist = 0;
     the_type = 0;
     the_model_type = 0;
+    the_callback = 0;
     needs_repeating = 0;
   }
 
