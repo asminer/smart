@@ -183,6 +183,11 @@ shared_state* meddly_stateset::getSingleState() const
   return st;
 }
 
+void meddly_stateset::Select()
+{
+  MEDDLY::apply(MEDDLY::SELECT, states->E, states->E);
+}
+
 // **************************************************************************
 // *                                                                        *
 // *                               Front  end                               *

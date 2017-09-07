@@ -7,6 +7,38 @@
 
 // ******************************************************************
 // *                                                                *
+// *                   meddly_trace_data methods                    *
+// *                                                                *
+// ******************************************************************
+
+meddly_trace_data::meddly_trace_data()
+{
+}
+
+meddly_trace_data::~meddly_trace_data()
+{
+  for (int i = 0; i < stages.Length(); i++) {
+    Delete(stages.Item(i));
+  }
+}
+
+void meddly_trace_data::AppendStage(shared_ddedge* s)
+{
+  stages.Append(s);
+}
+
+int meddly_trace_data::Length() const
+{
+  return stages.Length();
+}
+
+const shared_ddedge* meddly_trace_data::getStage(int i) const
+{
+  return stages.ReadItem(i);
+}
+
+// ******************************************************************
+// *                                                                *
 // *                  meddly_monolithic_rg methods                  *
 // *                                                                *
 // ******************************************************************
@@ -211,7 +243,7 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
 }
 
 
-stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p) 
+stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* td)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
@@ -221,7 +253,25 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p)
   shared_ddedge* ans = mrss->newMddEdge();
 
   try {
-    _EX(revTime, mpe, ans);
+    if (nullptr == td) {
+      _EX(revTime, mpe, ans);
+    }
+    else {
+      // Keep the necessary data for trace generation later
+      meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+      if (mtd == nullptr) {
+        // TODO: To be implemented
+        return nullptr;
+      }
+      List<shared_ddedge> qs;
+      _EX(revTime, mpe, ans, &qs);
+      for (int i = 0; i < qs.Length(); i++) {
+        shared_ddedge* sd = qs.Item(i);
+        mtd->AppendStage(Share(sd));
+        Delete(sd);
+      }
+    }
+
     return new meddly_stateset(mp, ans);
   } 
   catch (sv_encoder::error err) { 
@@ -264,7 +314,7 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
 }
 
 stateset* meddly_monolithic_rg
-::EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra)
+::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
 {
   //
   // Grab p in a form we can use
@@ -291,7 +341,25 @@ stateset* meddly_monolithic_rg
   DCASSERT(ans);
 
   try {
-    _EU(revTime, mpe, mqe, ans, extra);
+    if (nullptr == td) {
+      _EU(revTime, mpe, mqe, ans);
+    }
+    else {
+      // Keep the intermediate data for trace generation later
+      meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+      if (nullptr == mtd) {
+        // TODO: To be implemented
+        return nullptr;
+      }
+      List<shared_ddedge> qs;
+      _EU(revTime, mpe, mqe, ans, &qs);
+      for (int i = 0; i < qs.Length(); i++) {
+        shared_ddedge* sd = qs.Item(i);
+        mtd->AppendStage(Share(sd));
+        Delete(sd);
+      }
+    }
+
     return new meddly_stateset(mq, ans);
   } 
   catch (sv_encoder::error err) { 
@@ -465,7 +533,7 @@ void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const states
 
     for (int i = 0; i < es.Length(); i++) {
       shared_ddedge* e = es.Item(i);
-      ans->Append(new meddly_stateset(mp, e));
+      ans->Append(new meddly_stateset(mp, Share(e)));
       Delete(e);
     }
   }

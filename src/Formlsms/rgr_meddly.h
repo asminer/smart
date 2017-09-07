@@ -16,6 +16,28 @@ class meddly_reachset;
 
 // ******************************************************************
 // *                                                                *
+// *                     meddly_trace_data class                    *
+// *                                                                *
+// ******************************************************************
+
+class meddly_trace_data : public trace_data {
+public:
+  meddly_trace_data();
+
+protected:
+  ~meddly_trace_data();
+
+public:
+  void AppendStage(shared_ddedge* s);
+  int Length() const;
+  const shared_ddedge* getStage(int i) const;
+
+private:
+  List<shared_ddedge> stages;
+};
+
+// ******************************************************************
+// *                                                                *
 // *                   meddly_monolithic_rg class                   *
 // *                                                                *
 // ******************************************************************
@@ -63,9 +85,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // CTL engines
     //
 
-    virtual stateset* EX(bool revTime, const stateset* p);
+    virtual stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr);
     virtual stateset* AX(bool revTime, const stateset* p);
-    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, List<shared_object>* extra=nullptr);
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr);
     virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
     virtual stateset* unfairEG(bool revTime, const stateset* p);
     virtual stateset* AG(bool revTime, const stateset* p);
@@ -76,6 +98,10 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     virtual void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
     virtual void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans);
     virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
+
+    virtual inline trace_data* makeTraceData() const {
+      return new meddly_trace_data();
+    }
 
   // 
   // Helpers
@@ -143,19 +169,24 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans) 
+    inline void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra = nullptr)
     {
         if (revTime) {
           mxd_wrap->postImage(p, edges, ans);
         } else {
           mxd_wrap->preImage(p, edges, ans);
         }
+
+        if (nullptr != extra) {
+          extra->Append(Share(ans));
+          extra->Append(Share(const_cast<shared_ddedge*>(p)));
+        }
     }
 
     // ******************************************************************
 
     inline void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, 
-      shared_ddedge* ans, List<shared_object>* extra=nullptr)
+      shared_ddedge* ans, List<shared_ddedge>* extra = nullptr)
     {
         //
         // Special case - if p=0 (means true), use saturation
@@ -185,7 +216,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
         // answer := q
         ans->E = q->E;
-        if (nullptr!=extra) {
+        if (nullptr != extra) {
           extra->Append(Share(ans));
         }
 
@@ -200,7 +231,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
           // f := f ^ p
           MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
-          if (nullptr!=extra) {
+          if (nullptr != extra) {
             extra->Append(Share(f));
           }
 
@@ -209,10 +240,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
           // answer := answer U f
           MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
-
         } // iteration
 
-        if (nullptr!=extra) {
+        if (nullptr != extra) {
           extra->Reverse();
         }
 

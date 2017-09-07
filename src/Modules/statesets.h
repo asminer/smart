@@ -96,6 +96,12 @@ public:
     return 0;
   }
 
+  /** Randomly select one state.
+   */
+  virtual void Select() {
+    return;
+  }
+
   /**
       Helper: check that A and B have the same parents.
       If not, print an appropriate error message.
