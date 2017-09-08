@@ -534,7 +534,7 @@ stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p)
   }
 }
 
-void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
+void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -543,18 +543,12 @@ void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const states
   }
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
-
-  const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (q);
-  if (0==mq) {
-    incompatibleOperand(revTime ? "EY" : "EX");
-    return;
-  }
-  const shared_ddedge* mqe = mq->getStateDD();
-  DCASSERT(mqe);
+  const meddly_trace_data* mtd = dynamic_cast<const meddly_trace_data*>(td);
+  DCASSERT(mtd);
 
   try {
     List<shared_ddedge> es;
-    _traceEX(revTime, mpe, mqe, &es);
+    _traceEX(revTime, mpe, mtd, &es);
 
     for (int i = 0; i < es.Length(); i++) {
       shared_ddedge* e = es.Item(i);
