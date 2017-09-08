@@ -281,10 +281,10 @@ public:
           some derived class.
             @param  revTime   If true, reverse time and compute EY.
             @param  p         Set of initial states (should include only one state).
-            @param  q         Set of states satisfying q.
+            @param  td        Necessary data for witness generation.
             @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
+      virtual void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
 
       /** Compute a trace verifying EU.
           The default behavior here is to print an error message,
@@ -446,9 +446,9 @@ public:
     }
   }
 
-  inline void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans) const {
+  inline void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEX(revTime, p, q, ans);
+      RGR->traceEX(revTime, p, td, ans);
     }
   }
 

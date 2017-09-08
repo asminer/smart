@@ -200,7 +200,7 @@ void graph_lldsm::reachgraph::countPaths(const stateset*, const stateset*, resul
 }
 
 void graph_lldsm::reachgraph
-::traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
+::traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   notImplemented("traceEX");
 }

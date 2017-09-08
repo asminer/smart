@@ -851,9 +851,10 @@ void EX_trace_si::EX_trace_ex::Compute(traverse_data &x, expr** pass, int np)
   const graph_lldsm* llm = getLLM(x, pass[0]);
   // The states satisfying the subformula
   stateset* q = grabParam(llm, pass[1], x);
+  trace_data* td = grabTraceData(llm, pass[2], x);
 
   List<stateset> ans;
-  llm->traceEX(revTime(), p, q, &ans);
+  llm->traceEX(revTime(), p, td, &ans);
   DCASSERT(ans.Length() == 2);
 
   trace* t = buildTrace(&ans);
