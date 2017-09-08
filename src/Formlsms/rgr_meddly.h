@@ -96,7 +96,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // CTL traces
     //
     virtual void traceEX(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
-    virtual void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans);
+    virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
     virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
 
     virtual inline trace_data* makeTraceData() const {
@@ -191,7 +191,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         //
         // Special case - if p=0 (means true), use saturation
         //
-        if (0==p) {
+        if (nullptr == p && nullptr == extra) {
           if (revTime) {
             mxd_wrap->postImageStar(q, edges, ans);
           } else {
@@ -217,7 +217,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         // answer := q
         ans->E = q->E;
         if (nullptr != extra) {
-          extra->Append(Share(ans));
+          shared_ddedge* t = mrss->newMddEdge();
+          t->E = ans->E;
+          extra->Append(t);
         }
 
         while (prev->E != ans->E) {
@@ -229,10 +231,9 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
             mxd_wrap->preImage(ans, edges, f);
           }
 
-          // f := f ^ p
-          MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
-          if (nullptr != extra) {
-            extra->Append(Share(f));
+          if (nullptr != p) {
+            // f := f ^ p
+            MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
           }
 
           // prev := answer
@@ -240,6 +241,12 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
           // answer := answer U f
           MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
+
+          if (nullptr != extra) {
+            shared_ddedge* t = mrss->newMddEdge();
+            t->E = ans->E;
+            extra->Append(t);
+          }
         } // iteration
 
         if (nullptr != extra) {
@@ -341,48 +348,70 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEU(bool revTime, const shared_ddedge* p, const List<shared_object>* qs, List<shared_ddedge>* ans)
+    inline void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
     {
       shared_ddedge* f = mrss->newMddEdge();
       DCASSERT(f);
       f->E = p->E;
 
-      DCASSERT(qs->Length() > 0);
+      DCASSERT(mtd->Length() > 0);
 
-      const shared_ddedge* q = dynamic_cast<const shared_ddedge*>(qs->ReadItem(0));
-      if (0==q) {
-        // TODO: Not supported
-        return;
-      }
+      const shared_ddedge* q = mtd->getStage(0);
+      DCASSERT(q);
 
       shared_ddedge* g = mrss->newMddEdge();
       MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, g->E );
-      if (f->E!=g->E) {
-        // p must be included in qs[0]
+      if (f->E != g->E) {
+        // p must be included in mtd[0]
+        DCASSERT(false);
         return;
       }
-      Delete(g);
 
-      ans->Append(Share(f));
-      for (int i = 1; i < qs->Length(); i++) {
+      {
+        shared_ddedge* t = mrss->newMddEdge();
+        t->E = f->E;
+        ans->Append(t);
+      }
+
+      // Binary search to determine the minimum number of steps
+      // mtd[0] \superset mtd[1] \superset mtd[2] \superset ...
+      // Find a start s.t. p \in mtd[start-1] and p \not\in mtd[start]
+      int start = 1;
+      int end = mtd->Length() - 1;
+      while (start <= end) {
+        int mid = (start + end) / 2;
+        MEDDLY::apply( MEDDLY::INTERSECTION, p->E, mtd->getStage(mid)->E, g->E );
+        if (p->E == g->E) {
+          start = mid + 1;
+        }
+        else {
+          end = mid - 1;
+        }
+      }
+
+      // The state in p can reach a state in mtd[legnth-1] at exactly length-start steps
+      for (int i = start; i < mtd->Length(); i++) {
         if (revTime) {
           mxd_wrap->preImage(f, edges, f);
         } else {
           mxd_wrap->postImage(f, edges, f);
         }
 
-        q = dynamic_cast<const shared_ddedge*>(qs->ReadItem(i));
+        q = mtd->getStage(i);
 
-        // f := f ^ qs[i]
+        // f := f ^ mtd[i]
         MEDDLY::apply( MEDDLY::INTERSECTION, f->E, q->E, f->E );
         // f := select(f)
         MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
 
-        ans->Append(Share(f));
+        shared_ddedge* t = mrss->newMddEdge();
+        t->E = f->E;
+        ans->Append(t);
       }
 
       // Cleanup
       Delete(f);
+      Delete(g);
     }
 
     // ******************************************************************

@@ -236,17 +236,17 @@ expr* temporal_F::buildAnother(expr *x) const
 
 void temporal_F::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal!=x.which) {
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
     temporal_unary::Traverse(x);
     return;
   }
 
   const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
-  if (0==texpr) {
+  if (nullptr == texpr) {
     // TODO: To be implemented
   }
 
-  traverse_data xx(traverse_data::Temporal);
+  traverse_data xx(x.which);
   xx.model = x.model;
   result ans;
   xx.answer = &ans;
@@ -268,18 +268,21 @@ void temporal_F::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EF
-    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "EF"));
+    tfunc = (traverse_data::Temporal == x.which)
+      ? dynamic_cast<function*>(em->findFunction(model_type, "EF"))
+      : dynamic_cast<function*>(em->findFunction(model_type, "EF_trace"));
     break;
   default:
     break;
   }
 
   const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
   x.parent = tfunc;
   x.which = traverse_data::Substitute;
   tfunc->Traverse(x, pass, np);
   x.parent = oldp;
-  x.which = traverse_data::Temporal;
+  x.which = oldwhich;
 }
 
 // ******************************************************************
@@ -390,7 +393,7 @@ void temporal_X::Traverse(traverse_data &x)
   }
 
   const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
-  if (0==texpr) {
+  if (nullptr == texpr) {
     // TODO: To be implemented
   }
 
@@ -416,7 +419,7 @@ void temporal_X::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EX
-    tfunc = traverse_data::Temporal==x.which
+    tfunc = (traverse_data::Temporal == x.which)
       ? dynamic_cast<function*>(em->findFunction(model_type, "EX"))
       : dynamic_cast<function*>(em->findFunction(model_type, "EX_trace"));
     break;

@@ -265,6 +265,7 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
       }
       List<shared_ddedge> qs;
       _EX(revTime, mpe, ans, &qs);
+      DCASSERT(qs.Length() == 2);
       for (int i = 0; i < qs.Length(); i++) {
         shared_ddedge* sd = qs.Item(i);
         mtd->AppendStage(Share(sd));
@@ -353,7 +354,11 @@ stateset* meddly_monolithic_rg
       }
       List<shared_ddedge> qs;
       _EU(revTime, mpe, mqe, ans, &qs);
-      for (int i = 0; i < qs.Length(); i++) {
+      DCASSERT(qs.Length() >= 2);
+
+      // No need to keep the first stage due to fixed point
+      Delete(qs.Item(0));
+      for (int i = 1; i < qs.Length(); i++) {
         shared_ddedge* sd = qs.Item(i);
         mtd->AppendStage(Share(sd));
         Delete(sd);
@@ -542,7 +547,7 @@ void meddly_monolithic_rg::traceEX(bool revTime, const stateset* p, const states
   }
 }
 
-void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans)
+void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -551,14 +556,16 @@ void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const List<s
   }
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
+  const meddly_trace_data* mtd = dynamic_cast<const meddly_trace_data*>(td);
+  DCASSERT(mtd);
 
   try {
     List<shared_ddedge> es;
-    _traceEU(revTime, mpe, qs, &es);
+    _traceEU(revTime, mpe, mtd, &es);
 
     for (int i = 0; i < es.Length(); i++) {
       shared_ddedge* e = es.Item(i);
-      ans->Append(new meddly_stateset(mp, e));
+      ans->Append(new meddly_stateset(mp, Share(e)));
       Delete(e);
     }
   }
