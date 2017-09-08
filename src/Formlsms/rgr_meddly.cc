@@ -350,6 +350,7 @@ stateset* meddly_monolithic_rg
       meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
       if (nullptr == mtd) {
         // TODO: To be implemented
+        DCASSERT(false);
         return nullptr;
       }
       List<shared_ddedge> qs;
@@ -460,7 +461,7 @@ stateset* meddly_monolithic_rg
   return new meddly_stateset(mq, ans);
 }
 
-stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p)
+stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p, trace_data* td)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) return incompatibleOperand(revTime ? "EH" : "EG");
@@ -471,7 +472,26 @@ stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p)
   DCASSERT(ans);
 
   try {
-    _unfairEG(revTime, mpe, ans);
+    if (nullptr == td) {
+      _unfairEG(revTime, mpe, ans);
+    }
+    else {
+      // Keep the intermediate data for trace generation later
+      meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+      if (nullptr == mtd) {
+        // TODO: To be implemented
+        DCASSERT(false);
+        return nullptr;
+      }
+      List<shared_ddedge> qs;
+      _unfairEG(revTime, mpe, ans, &qs);
+
+      for (int i = 0; i < qs.Length(); i++) {
+        shared_ddedge* sd = qs.Item(i);
+        mtd->AppendStage(Share(sd));
+        Delete(sd);
+      }
+    }
     return new meddly_stateset(mp, ans);
   } 
   catch (sv_encoder::error err) { 
@@ -574,7 +594,7 @@ void meddly_monolithic_rg::traceEU(bool revTime, const stateset* p, const trace_
   }
 }
 
-void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
+void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   if (0==mp) {
@@ -583,22 +603,16 @@ void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const states
   }
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
-
-  const meddly_stateset* mq = dynamic_cast <const meddly_stateset*> (q);
-  if (0==mq) {
-    incompatibleOperand(revTime ? "EH" : "EG");
-    return;
-  }
-  const shared_ddedge* mqe = mq->getStateDD();
-  DCASSERT(mqe);
+  const meddly_trace_data* mtd = dynamic_cast<const meddly_trace_data*>(td);
+  DCASSERT(mtd);
 
   try {
     List<shared_ddedge> es;
-    _traceEG(revTime, mpe, mqe, &es);
+    _traceEG(revTime, mpe, mtd, &es);
 
     for (int i = 0; i < es.Length(); i++) {
       shared_ddedge* e = es.Item(i);
-      ans->Append(new meddly_stateset(mp, e));
+      ans->Append(new meddly_stateset(mp, Share(e)));
       Delete(e);
     }
   }

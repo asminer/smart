@@ -32,19 +32,24 @@ trace::~trace()
 
 int trace::Length() const
 {
+  return states.Length();
+}
+
+int trace::TotalLength() const
+{
   int length = states.Length();
   for (int i = 0; i < subtraces.Length(); i++) {
     const trace* st = subtraces.ReadItem(i);
     if (nullptr != st) {
-      length += st->Length();
+      length += st->TotalLength();
     }
   }
   return length;
 }
 
-void trace::Append(const shared_state* state)
+void trace::Append(shared_state* state)
 {
-  states.Append(Share(const_cast<shared_state*>(state)));
+  states.Append(state);
   subtraces.Append(nullptr);
 }
 

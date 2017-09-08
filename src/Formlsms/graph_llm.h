@@ -130,7 +130,7 @@ public:
           some derived class.
             @param  revTime   If true, reverse time and compute EY.
             @param  p         Set of states.
-            @param  td        Extra information (if provided) which can be
+            @param  td        On return, necessary data (if provided) which can be
                               used for witness generation later.
             @return   New set of states satisfying EX(p) or EY(p).
                       OR, if an error occurs, prints an appropriate message
@@ -158,14 +158,14 @@ public:
             @param  p         Set of states for p.  If 0, then
                               we instead compute EF / EP.
             @param  q         Set of states for q.
-            @param  extra     Extra information (if provided) which can be
+            @param  td        On return, necessary data (if provided) which can be
                               used for witness generation later.
             @return   New set of states satisfying E p U q
                       or E p S q.
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td=nullptr);
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr);
 
       /** Compute states satisfying A p U q, not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -205,11 +205,13 @@ public:
           some derived class.
             @param  revTime   If true, switch to unfairEH.
             @param  p         Set of states satisfying p.
+            @param  td        On return, necessary data (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying EG(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairEG(bool revTime, const stateset* p);
+      virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying EG(p), restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -301,10 +303,10 @@ public:
           some derived class.
             @param  revTime   If true, reverse time and compute EH.
             @param  p         Set of initial states (should include only one state).
-            @param  q         Set of states satisfying EG.
+            @param  td        Necessary data for witness generation.
             @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans);
+      virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
 
       virtual trace_data* makeTraceData() const;
 
@@ -406,8 +408,8 @@ public:
     return RGR ? RGR->EU(revTime, p, q, td) : 0;
   }
 
-  inline stateset* unfairEG(bool revTime, const stateset* p) const {
-    return RGR ? RGR->unfairEG(revTime, p) : 0;
+  inline stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr) const {
+    return RGR ? RGR->unfairEG(revTime, p, td) : 0;
   }
 
   inline stateset* fairEG(bool revTime, const stateset* p) const {
@@ -456,9 +458,9 @@ public:
     }
   }
 
-  inline void traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans) const {
+  inline void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEG(revTime, p, q, ans);
+      RGR->traceEG(revTime, p, td, ans);
     }
   }
 
