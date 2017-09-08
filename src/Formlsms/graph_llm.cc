@@ -172,7 +172,7 @@ stateset* graph_lldsm::reachgraph
   return notImplemented("fairAU");
 }
 
-stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p)
+stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p, trace_data* td)
 {
   return notImplemented("unfairEG");
 }
@@ -212,7 +212,7 @@ void graph_lldsm::reachgraph
 }
 
 void graph_lldsm::reachgraph
-::traceEG(bool revTime, const stateset* p, const stateset* q, List<stateset>* ans)
+::traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   notImplemented("traceEG");
 }

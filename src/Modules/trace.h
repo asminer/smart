@@ -28,8 +28,17 @@ protected:
   virtual ~trace();
 
 public:
+  /**
+      The length of the trace, exluding the length of subtraces.
+   */
   virtual int Length() const;
-  virtual void Append(const shared_state* state);
+
+  /**
+      The length of the entire trace, including the length of subtraces.
+   */
+  virtual int TotalLength() const;
+
+  virtual void Append(shared_state* state);
   virtual const shared_state* getState(int i) const;
   virtual void Concatenate(int i, const trace* subtrace);
   virtual const trace* getSubtrace(int i) const;
