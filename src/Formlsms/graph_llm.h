@@ -290,10 +290,10 @@ public:
           some derived class.
             @param  revTime   If true, reverse time and compute ES.
             @param  p         Set of initial states (should include only one state).
-            @param  qs        List of objects which are necessary for witness generation.
+            @param  td        Necessary data for witness generation.
             @param  ans       On return, a trace as a sequence of states.
       */
-      virtual void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans);
+      virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
 
       /** Compute a trace verifying EG.
           The default behavior here is to print an error message,
@@ -450,9 +450,9 @@ public:
     }
   }
 
-  inline void traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans) const {
+  inline void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
     if (RGR) {
-      RGR->traceEU(revTime, p, qs, ans);
+      RGR->traceEU(revTime, p, td, ans);
     }
   }
 

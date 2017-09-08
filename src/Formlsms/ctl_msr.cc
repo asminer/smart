@@ -755,6 +755,13 @@ protected:
     {
     }
 
+    trace_data* grabTraceData(const lldsm* m, expr* p, traverse_data &x) const {
+      if (nullptr == m || nullptr == p) return nullptr;
+      p->Compute(x);
+      if (!x.answer->isNormal()) return nullptr;
+      return Share(dynamic_cast<trace_data*>(x.answer->getPtr()));
+    }
+
     stateset* grabInitialState(traverse_data& x) const {
       stateset* ss = dynamic_cast<stateset*>(x.answer->getPtr());
       if (nullptr == ss) {
@@ -894,6 +901,94 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[3] = const_cast<expr*>(x.the_callback);
 
   expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EX_trace_ex, ps, nps);
+  setAnswer(x, ans);
+  x.the_callback = fc;
+}
+
+// *****************************************************************
+// *                                                               *
+// *                          EF_trace_si                          *
+// *                                                               *
+// *****************************************************************
+
+class EF_trace_si : public CTL_trace {
+protected:
+  class EF_trace_ex : public CTL_trace_ex {
+  public:
+    EF_trace_ex()
+      : CTL_trace_ex("EF_trace_ex", false, 4)
+    {
+      SetFormal(1, em->STATESET, "the states satisfying the subformula");
+      SetFormal(2, em->VOID,     "trace data");
+      SetFormal(3, em->TRACE,    "the callback function for subformula witness generation");
+    }
+
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+  };
+
+  EF_trace_ex the_EF_trace_ex;
+
+public:
+  EF_trace_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+void EF_trace_si::EF_trace_ex::Compute(traverse_data &x, expr** pass, int np)
+{
+  // The initial state
+  stateset* p = grabInitialState(x);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  // The states satisfying the subformula
+  stateset* q = grabParam(llm, pass[1], x);
+  trace_data* td = grabTraceData(llm, pass[2], x);
+
+  List<stateset> ans;
+  llm->traceEU(revTime(), p, td, &ans);
+  DCASSERT(ans.Length() > 0);
+
+  // Set the initial state for the subformula
+  setAnswer(x, Share(ans.Item(ans.Length() - 1)));
+
+  trace* t = buildTrace(&ans);
+
+  if (nullptr != pass[3]) {
+    pass[3]->Compute(x);
+    trace* st = grabTrace(x);
+    t->Concatenate(t->Length() - 1, st);
+  }
+
+  setAnswer(x, t);
+
+  Delete(p);
+  Delete(q);
+}
+
+EF_trace_si::EF_trace_si()
+ : CTL_trace("EF_trace", false, 2)
+{
+  SetFormal(1, em->STATESET, "states satisfying the subformula");
+}
+
+void EF_trace_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  stateset* p = grabParam(llm, pass[1], x);
+  trace_data* td = llm->makeTraceData();
+  stateset* ans = llm->EU(revTime(), nullptr, p, td);
+
+  // TODO: Potential memory leakage
+  const int nps = 4;
+  expr** ps = new expr*[nps];
+  ps[0] = pass[0];
+  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
+  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[3] = const_cast<expr*>(x.the_callback);
+
+  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EF_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1061,6 +1156,7 @@ bool init_ctlmsrs::execute()
   static msr_func* the_states = 0;
 
   static msr_func* the_EX_trace_si = 0;
+  static msr_func* the_EF_trace_si = 0;
   static msr_func* the_traces = 0;
 
   //
@@ -1087,7 +1183,8 @@ bool init_ctlmsrs::execute()
   if (!the_states)    the_states    = new states;
 
   if (!the_EX_trace_si)         the_EX_trace_si = new EX_trace_si;
-  if (!the_traces)            the_traces       = new traces;
+  if (!the_EF_trace_si)         the_EF_trace_si = new EF_trace_si;
+  if (!the_traces)              the_traces      = new traces;
 
   //
   // Add functions to help topic
@@ -1144,6 +1241,7 @@ bool init_ctlmsrs::execute()
   CML.Append(the_states);
 
   CML.Append(the_EX_trace_si);
+  CML.Append(the_EF_trace_si);
   CML.Append(the_traces);
 
   return true;

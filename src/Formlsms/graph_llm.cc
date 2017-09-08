@@ -206,7 +206,7 @@ void graph_lldsm::reachgraph
 }
 
 void graph_lldsm::reachgraph
-::traceEU(bool revTime, const stateset* p, const List<shared_object>* qs, List<stateset>* ans)
+::traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
 {
   notImplemented("traceEU");
 }
