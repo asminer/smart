@@ -17,6 +17,7 @@
 exprman* trace::em = 0;
 
 trace::trace()
+  : parent(nullptr)
 {
 }
 
@@ -30,6 +31,12 @@ trace::~trace()
   }
 }
 
+void trace::setParent(const trace* t)
+{
+  DCASSERT(nullptr == parent);
+  parent = t;
+}
+
 int trace::Length() const
 {
   return states.Length();
@@ -37,11 +44,11 @@ int trace::Length() const
 
 int trace::TotalLength() const
 {
-  int length = states.Length();
+  int length = Length();
   for (int i = 0; i < subtraces.Length(); i++) {
     const trace* st = subtraces.ReadItem(i);
     if (nullptr != st) {
-      length += st->TotalLength();
+      length += st->TotalLength() - 1;
     }
   }
   return length;
@@ -58,12 +65,13 @@ const shared_state* trace::getState(int i) const
   return states.ReadItem(i);
 }
 
-void trace::Concatenate(int i, const trace* subtrace)
+void trace::Concatenate(int i, trace* subtrace)
 {
   if (nullptr != subtraces.ReadItem(i)) {
     Delete(const_cast<trace*>(subtraces.ReadItem(i)));
   }
   subtraces.Update(i, Share(const_cast<trace*>(subtrace)));
+  subtrace->setParent(this);
 }
 
 const trace* trace::getSubtrace(int i) const
@@ -74,6 +82,9 @@ const trace* trace::getSubtrace(int i) const
 bool trace::Print(OutputStream &s, int width) const
 {
   s << "\n";
+  if (nullptr == parent) {
+    s << "Length: " << TotalLength() << "\n";
+  }
   for (int i = 0; i < width; i++) {
     s << " ";
   }

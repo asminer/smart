@@ -28,6 +28,8 @@ protected:
   virtual ~trace();
 
 public:
+  void setParent(const trace* t);
+
   /**
       The length of the trace, exluding the length of subtraces.
    */
@@ -40,7 +42,7 @@ public:
 
   virtual void Append(shared_state* state);
   virtual const shared_state* getState(int i) const;
-  virtual void Concatenate(int i, const trace* subtrace);
+  virtual void Concatenate(int i, trace* subtrace);
   virtual const trace* getSubtrace(int i) const;
 
   virtual bool Print(OutputStream &s, int width) const;
@@ -48,6 +50,8 @@ public:
 
 private:
   static exprman* em;
+
+  const trace* parent;
   List<shared_state> states;
   List<trace> subtraces;
 
