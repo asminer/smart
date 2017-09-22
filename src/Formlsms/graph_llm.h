@@ -310,6 +310,11 @@ public:
 
       virtual trace_data* makeTraceData() const;
 
+      /** Attach a weight to each state.
+          Used in minimum trace generation.
+       */
+      virtual stateset* attachWeight(const stateset* p) const;
+
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
       virtual bool Equals(const shared_object* o) const;
@@ -466,6 +471,10 @@ public:
 
   inline trace_data* makeTraceData() const {
     return RGR ? RGR->makeTraceData() : 0;
+  }
+
+  inline stateset* attachWeight(const stateset* p) const {
+    return RGR ? RGR->attachWeight(p) : 0;
   }
 
   // Hacks for explicit:

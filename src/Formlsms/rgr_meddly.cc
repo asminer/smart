@@ -5,6 +5,8 @@
 
 #ifdef HAVE_MEDDLY_H
 
+#include "meddly_expert.h"
+
 // ******************************************************************
 // *                                                                *
 // *                   meddly_trace_data methods                    *
@@ -615,12 +617,292 @@ void meddly_monolithic_rg::traceEG(bool revTime, const stateset* p, const trace_
   }
 }
 
+stateset* meddly_monolithic_rg::attachWeight(const stateset* p) const
+{
+  return mrss->attachWeight(p);
+}
+
 meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n, 
   MEDDLY::forest::range_type t, MEDDLY::forest::edge_labeling ev) const
 {
   DCASSERT(vars);
   MEDDLY::forest* f = vars->createForest(true, t, ev, getMxdForest()->getPolicies() );
   return mxd_wrap->copyWithDifferentForest(n, f);
+}
+
+// ******************************************************************
+// *                                                                *
+// *               meddly_monolithic_min_rg methods                 *
+// *                                                                *
+// ******************************************************************
+
+meddly_monolithic_min_rg::meddly_monolithic_min_rg(shared_domain* v, meddly_encoder* wrap)
+  : meddly_monolithic_rg(v, wrap)
+{
+}
+
+shared_ddedge* meddly_monolithic_min_rg::newEvEdge(const shared_ddedge* d) const
+{
+  shared_ddedge* evd = mrss->newEvmddEdge();
+  if (d->getForest()->isEVPlus()) {
+    evd->E = d->E;
+  }
+  else {
+    MEDDLY::apply(MEDDLY::COPY, d->E, evd->E);
+    evd->E.setEdgeValue(1);
+  }
+  return evd;
+}
+
+stateset* meddly_monolithic_min_rg::EX(bool revTime, const stateset* p, trace_data* td)
+{
+  stateset* wp = attachWeight(p);
+  meddly_stateset* mp = dynamic_cast <meddly_stateset*> (wp);
+  if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  shared_ddedge* ans = mrss->newEvmddEdge();
+
+  try {
+    // Keep the necessary data for trace generation later
+    meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+    if (mtd == nullptr) {
+      // TODO: To be implemented
+      return nullptr;
+    }
+    List<shared_ddedge> qs;
+    _EX(revTime, mpe, ans, &qs);
+    DCASSERT(qs.Length() == 2);
+    for (int i = 0; i < qs.Length(); i++) {
+      shared_ddedge* sd = qs.Item(i);
+      mtd->AppendStage(Share(sd));
+      Delete(sd);
+    }
+
+    stateset* ss = new meddly_stateset(mp, ans);
+    Delete(mp);
+    return ss;
+  }
+  catch (sv_encoder::error err) {
+    Delete(mp);
+    Delete(ans);
+    throw convert(err);
+  }
+}
+
+stateset* meddly_monolithic_min_rg
+::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
+{
+  //
+  // Grab p in a form we can use
+  //
+  meddly_stateset* mp = 0;
+  const shared_ddedge* mpe = 0;
+  if (p) {
+    stateset* wp = attachWeight(p);
+    mp = dynamic_cast<meddly_stateset*>(wp);
+    if (0==mp) return incompatibleOperand(revTime ? "ES" : "EU");
+    mpe = mp->getStateDD();
+    DCASSERT(mpe);
+  }
+
+  //
+  // Grab q in a form we can use
+  //
+  stateset* wq = attachWeight(q);
+  meddly_stateset* mq = dynamic_cast <meddly_stateset*> (wq);
+  if (0==mq) return incompatibleOperand(revTime ? "ES" : "EU");
+  const shared_ddedge* mqe = mq->getStateDD();
+  DCASSERT(mqe);
+
+  // Result
+  shared_ddedge* ans = mrss->newEvmddEdge();
+  DCASSERT(ans);
+
+  try {
+    // Keep the intermediate data for trace generation later
+    meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+    if (nullptr == mtd) {
+      // TODO: To be implemented
+      DCASSERT(false);
+      return nullptr;
+    }
+    List<shared_ddedge> qs;
+    _EU(revTime, mpe, mqe, ans, &qs);
+    DCASSERT(qs.Length() == 2);
+
+    for (int i = 0; i < qs.Length(); i++) {
+      shared_ddedge* sd = qs.Item(i);
+      mtd->AppendStage(Share(sd));
+      Delete(sd);
+    }
+
+    stateset* ss = new meddly_stateset(mq, ans);
+    Delete(mp);
+    Delete(mq);
+    return ss;
+  }
+  catch (sv_encoder::error err) {
+    Delete(mp);
+    Delete(mq);
+    Delete(ans);
+    throw convert(err);
+  }
+}
+
+void meddly_monolithic_min_rg::_EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra)
+{
+  if (revTime) {
+    mxd_wrap->postImage(p, edges, ans);
+  } else {
+    mxd_wrap->preImage(p, edges, ans);
+  }
+
+  extra->Append(Share(ans));
+  extra->Append(Share(const_cast<shared_ddedge*>(p)));
+}
+
+void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q,
+  shared_ddedge* ans, List<shared_ddedge>* extra)
+{
+  MEDDLY::minimum_witness_opname::minimum_witness_args args(p == nullptr ? nullptr : p->E.getForest(),
+      q->E.getForest(), edges->E.getForest(), ans->E.getForest());
+
+  if (revTime) {
+    // TODO: To be implemented
+    return;
+  }
+
+  MEDDLY::specialized_operation* op = MEDDLY::CONSGTRAINT_BACKWARD_DFS->buildOperation(&args);
+  op->compute(p->E, q->E, edges->E, ans->E);
+  {
+    shared_ddedge* t = mrss->newEvmddEdge();
+    t->E = p->E;
+    extra->Append(t);
+  }
+  extra->Append(Share(ans));
+}
+
+void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+{
+  DCASSERT(mtd->Length() == 2);
+
+  shared_ddedge* f = mrss->newEvmddEdge();
+  DCASSERT(f);
+
+  shared_ddedge* g = mrss->newEvmddEdge();
+  MEDDLY::apply( MEDDLY::INTERSECTION, p->E, mtd->getStage(0)->E, g->E );
+  if (p->E != g->E) {
+    // p must be included in mtd[0]
+    DCASSERT(false);
+    return;
+  }
+
+  if (revTime) {
+    mxd_wrap->preImage(p, edges, f);
+  } else {
+    mxd_wrap->postImage(p, edges, f);
+  }
+
+  long ev = -1;
+  f->E.getEdgeValue(ev);
+  DCASSERT(ev > 2);
+  f->E.setEdgeValue(ev - 2);
+
+  // f := f /\ mtd[1]
+  MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, f->E );
+  // f := select(f)
+  MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+  {
+    shared_ddedge* t = mrss->newEvmddEdge();
+    DCASSERT(t);
+    t->E = p->E;
+    ans->Append(t);
+  }
+  ans->Append(Share(f));
+
+  //
+  // Cleanup
+  //
+  Delete(f);
+}
+
+void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+{
+  DCASSERT(mtd->Length() == 2);
+
+  shared_ddedge* f = mrss->newEvmddEdge();
+  DCASSERT(f);
+  f->E = p->E;
+
+  shared_ddedge* g = mrss->newEvmddEdge();
+  MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, g->E );
+  if (f->E != g->E) {
+    // p must be included in mtd[1]
+    DCASSERT(false);
+    return;
+  }
+
+  while (true) {
+    long w1 = 0;
+    f->E.getEdgeValue(w1);
+
+    f->E.setEdgeValue(0);
+    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(0)->E, g->E );
+    if (0 == g->E.getNode()) {
+      {
+        shared_ddedge* t = mrss->newEvmddEdge();
+        DCASSERT(t);
+        t->E = f->E;
+        t->E.setEdgeValue(w1);
+        ans->Append(t);
+      }
+      break;
+    }
+
+    long w2 = 0;
+    g->E.getEdgeValue(w2);
+    if (w1 <= w2) {
+      shared_ddedge* t = mrss->newEvmddEdge();
+      DCASSERT(t);
+      t->E = f->E;
+      t->E.setEdgeValue(w1);
+      ans->Append(t);
+      break;
+    }
+    else {
+      shared_ddedge* t = mrss->newEvmddEdge();
+      DCASSERT(t);
+      t->E = f->E;
+      t->E.setEdgeValue(w2);
+      ans->Append(t);
+    }
+    f->E.setEdgeValue(w1 - w2 - 1);
+
+    if (revTime) {
+      mxd_wrap->preImage(f, edges, f);
+    } else {
+      mxd_wrap->postImage(f, edges, f);
+    }
+
+    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, f->E );
+
+    long w3 = 0;
+    f->E.getEdgeValue(w3);
+    DCASSERT(w3 >= w1 - w2);
+    if (w3 > w1 - w2) {
+      break;
+    }
+
+    // f := select(f)
+    MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+  }
+
+  // Cleanup
+  Delete(f);
+  Delete(g);
 }
 
 #endif
