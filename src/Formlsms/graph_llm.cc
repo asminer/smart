@@ -224,6 +224,12 @@ trace_data* graph_lldsm::reachgraph
   return 0;
 }
 
+stateset* graph_lldsm::reachgraph
+::attachWeight(const stateset* p) const
+{
+  return notImplemented("attachWeight");
+}
+
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const
 {
   // Required for shared object, but will we ever call it?

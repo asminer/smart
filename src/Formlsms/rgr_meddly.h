@@ -103,6 +103,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
       return new meddly_trace_data();
     }
 
+    virtual stateset* attachWeight(const stateset* p) const;
+
   // 
   // Helpers
   //
@@ -158,6 +160,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
       }
     }
 
+  protected:
     inline static subengine::error convert(sv_encoder::error e) {
       switch (e) {
         case sv_encoder::Out_Of_Memory:   return subengine::Out_Of_Memory;
@@ -165,7 +168,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
       }
     }
 
-  private:
+  protected:
 
     // ******************************************************************
 
@@ -324,7 +327,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+    virtual void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
     {
         DCASSERT(mtd->Length() == 2);
 
@@ -365,7 +368,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+    virtual void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
     {
       shared_ddedge* f = mrss->newMddEdge();
       DCASSERT(f);
@@ -507,7 +510,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-  private:
+  protected:
     bool uses_potential;
     bool convert_to_actual;
 
@@ -518,6 +521,53 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     shared_ddedge* states;
 
     meddly_reachset* mrss;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                 meddly_monolithic_min_rg class                 *
+// *                                                                *
+// ******************************************************************
+
+/**
+    Class for monolithic next state functions to compute minimum trace.
+*/
+
+class meddly_monolithic_min_rg : public meddly_monolithic_rg
+{
+public:
+  meddly_monolithic_min_rg(shared_domain* v, meddly_encoder* wrap);
+
+public:
+  //
+  // CTL engines
+  //
+  virtual stateset* EX(bool revTime, const stateset* p, trace_data* td);
+//  virtual stateset* AX(bool revTime, const stateset* p);
+  virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td);
+//  virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
+//  virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
+//  virtual stateset* AG(bool revTime, const stateset* p);
+
+  //
+  // CTL traces
+  //
+//  virtual void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+//  virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+//  virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+
+protected:
+  shared_ddedge* newEvEdge(const shared_ddedge* d) const;
+
+  virtual void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
+  virtual void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
+
+private:
+  meddly_encoder* evmdd_wrap;
+
+  void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra);
+  void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, shared_ddedge* ans,
+    List<shared_ddedge>* extra);
 };
 
 #endif

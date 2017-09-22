@@ -24,6 +24,7 @@ meddly_reachset::meddly_reachset()
   index_wrap = 0;
   state_indexes = 0;
   mxd_wrap = 0;
+  evmdd_wrap = 0;
 }
 
 meddly_reachset::~meddly_reachset()
@@ -37,6 +38,7 @@ meddly_reachset::~meddly_reachset()
   Delete(mtmdd_wrap);
   Delete(index_wrap);
   Delete(mxd_wrap);
+  Delete(evmdd_wrap);
 }
 
 bool meddly_reachset::createVars(MEDDLY::variable** v, int nv)
@@ -110,6 +112,19 @@ void meddly_reachset::setStates(shared_ddedge* S)
   } else {
     natorder = 0;
   }
+}
+
+stateset* meddly_reachset::attachWeight(const stateset* p) {
+  const meddly_stateset* mp = dynamic_cast<const meddly_stateset*>(p);
+  shared_ddedge* e = newEvmddEdge();
+  if (mp->getStateDD()->getForest()->isEVPlus()) {
+    e->E = mp->getStateDD()->E;
+  }
+  else {
+    MEDDLY::apply(MEDDLY::COPY, mp->getStateDD()->E, e->E);
+    e->E.setEdgeValue(1);
+  }
+  return new meddly_stateset(getParent(), Share(vars), Share(evmdd_wrap), e);
 }
 
 void meddly_reachset::getNumStates(long &ns) const
