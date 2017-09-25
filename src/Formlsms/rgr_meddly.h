@@ -433,7 +433,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+    virtual void _traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
     {
         shared_ddedge* f = mrss->newMddEdge();
         DCASSERT(f);
@@ -546,7 +546,7 @@ public:
 //  virtual stateset* AX(bool revTime, const stateset* p);
   virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td);
 //  virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
-//  virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
+  virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
 //  virtual stateset* AG(bool revTime, const stateset* p);
 
   //
@@ -557,17 +557,21 @@ public:
 //  virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
 
 protected:
-  shared_ddedge* newEvEdge(const shared_ddedge* d) const;
+  meddly_encoder* getEvmxdWrap();
+
+  shared_ddedge* newEvmxdEdge();
 
   virtual void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
   virtual void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
+  virtual void _traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
 
 private:
-  meddly_encoder* evmdd_wrap;
+  meddly_encoder* evmxd_wrap;
 
   void _EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra);
   void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, shared_ddedge* ans,
     List<shared_ddedge>* extra);
+  void _unfairEG(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra);
 };
 
 #endif
