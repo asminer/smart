@@ -637,21 +637,25 @@ meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n,
 // ******************************************************************
 
 meddly_monolithic_min_rg::meddly_monolithic_min_rg(shared_domain* v, meddly_encoder* wrap)
-  : meddly_monolithic_rg(v, wrap)
+  : meddly_monolithic_rg(v, wrap),
+    evmxd_wrap(nullptr)
 {
 }
 
-shared_ddedge* meddly_monolithic_min_rg::newEvEdge(const shared_ddedge* d) const
+meddly_encoder* meddly_monolithic_min_rg::getEvmxdWrap()
 {
-  shared_ddedge* evd = mrss->newEvmddEdge();
-  if (d->getForest()->isEVPlus()) {
-    evd->E = d->E;
+  if (nullptr == evmxd_wrap) {
+    MEDDLY::forest* foo = vars->createForest(
+      true, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS
+    );
+    evmxd_wrap = mxd_wrap->copyWithDifferentForest("EV+MxD", foo);
   }
-  else {
-    MEDDLY::apply(MEDDLY::COPY, d->E, evd->E);
-    evd->E.setEdgeValue(1);
-  }
-  return evd;
+  return evmxd_wrap;
+}
+
+shared_ddedge* meddly_monolithic_min_rg::newEvmxdEdge()
+{
+  return new shared_ddedge(getEvmxdWrap()->getForest());
 }
 
 stateset* meddly_monolithic_min_rg::EX(bool revTime, const stateset* p, trace_data* td)
@@ -751,6 +755,44 @@ stateset* meddly_monolithic_min_rg
   }
 }
 
+stateset* meddly_monolithic_min_rg::unfairEG(bool revTime, const stateset* p, trace_data* td)
+{
+  stateset* wp = attachWeight(p);
+  meddly_stateset* mp = dynamic_cast <meddly_stateset*> (wp);
+  if (0==mp) return incompatibleOperand(revTime ? "EH" : "EG");
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+
+  shared_ddedge* ans = mrss->newEvmddEdge();
+  DCASSERT(ans);
+
+  try {
+    // Keep the intermediate data for trace generation later
+    meddly_trace_data* mtd = dynamic_cast<meddly_trace_data*>(td);
+    if (nullptr == mtd) {
+      // TODO: To be implemented
+      DCASSERT(false);
+      return nullptr;
+    }
+    List<shared_ddedge> qs;
+    _unfairEG(revTime, mpe, ans, &qs);
+
+    for (int i = 0; i < qs.Length(); i++) {
+      shared_ddedge* sd = qs.Item(i);
+      mtd->AppendStage(Share(sd));
+      Delete(sd);
+    }
+    Delete(mp);
+    return new meddly_stateset(mp, ans);
+  }
+  catch (sv_encoder::error err) {
+    Delete(mp);
+    Delete(ans);
+    throw convert(err);
+  }
+
+}
+
 void meddly_monolithic_min_rg::_EX(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra)
 {
   if (revTime) {
@@ -782,6 +824,42 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
     extra->Append(t);
   }
   extra->Append(Share(ans));
+}
+
+void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
+    shared_ddedge* ans, List<shared_ddedge>* extra)
+{
+  if (revTime) {
+    // TODO: To be implemented
+    DCASSERT(false);
+    return;
+  }
+
+  shared_ddedge* initial = newEvmxdEdge();
+  MEDDLY::apply(MEDDLY::COPY, edges->E, initial->E);
+  initial->E.setEdgeValue(1);
+
+  shared_ddedge* tc = newEvmxdEdge();
+
+  MEDDLY::minimum_witness_opname::minimum_witness_args args(p == nullptr ? nullptr : p->E.getForest(),
+    initial->E.getForest(), edges->E.getForest(), tc->E.getForest());
+  MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS->buildOperation(&args);
+  tcOp->compute(p->E, initial->E, edges->E, tc->E);
+
+  shared_ddedge* cycles = mrss->newEvmddEdge();
+  MEDDLY::apply(MEDDLY::CYCLE, tc->E, cycles->E);
+  {
+    // Increas by 1 because of repeating states in the loop
+    long ev = 0;
+    cycles->E.getEdgeValue(ev);
+    cycles->E.setEdgeValue(ev + 1);
+  }
+
+  _EU(revTime, p, cycles, ans, extra);
+
+  extra->Append(tc);
+
+  Delete(initial);
 }
 
 void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
@@ -831,7 +909,7 @@ void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, co
 
 void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
 {
-  DCASSERT(mtd->Length() == 2);
+  DCASSERT(mtd->Length() >= 2);
 
   shared_ddedge* f = mrss->newEvmddEdge();
   DCASSERT(f);
@@ -903,6 +981,72 @@ void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, co
   // Cleanup
   Delete(f);
   Delete(g);
+}
+
+void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
+{
+  DCASSERT(mtd->Length() == 3);
+  // Generate the handle
+  _traceEU(revTime, p, mtd, ans);
+  DCASSERT(ans->Length() > 0);
+
+  shared_ddedge* end = mrss->newEvmddEdge();
+  end->E = ans->Item(ans->Length() - 1)->E;
+  end->E.setEdgeValue(1);
+
+  shared_ddedge* begin = mrss->newEvmddEdge();
+  // Compute the cost to verify the loop starting from knob
+  MEDDLY::apply( MEDDLY::INTERSECTION, end->E, mtd->getStage(1)->E, begin->E );
+
+  // Compute the loop
+  shared_ddedge* f = mrss->newEvmddEdge();
+  f->E = end->E;
+  List<shared_ddedge> cache;
+  // Backward
+  while (f->E != begin->E) {
+    {
+      shared_ddedge* t = mrss->newEvmddEdge();
+      t->E = f->E;
+      cache.Append(t);
+    }
+    mxd_wrap->preImage(f, edges, f);
+    long ev = 0;
+    f->E.getEdgeValue(ev);
+    f->E.setEdgeValue(ev - 1);
+    MEDDLY::apply( MEDDLY::PLUS, f->E, mtd->getStage(0)->E, f->E );
+  }
+  // Forward
+  f->E = begin->E;
+  for (int i = cache.Length() - 1; i >= 1; i--) {
+    long ev1 = 0;
+    f->E.getEdgeValue(ev1);
+
+    f->E.setEdgeValue(0);
+    // Compute the cost
+    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, f->E );
+    long ev2 = 0;
+    f->E.getEdgeValue(ev2);
+
+    f->E.setEdgeValue(0);
+    mxd_wrap->preImage(f, edges, f);
+    f->E.setEdgeValue(ev1 - ev2);
+
+    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, cache.ReadItem(i)->E, f->E );
+    MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+
+    {
+      shared_ddedge* t = mrss->newEvmddEdge();
+      t->E = f->E;
+      ans->Append(t);
+    }
+  }
+  ans->Append(end);
+
+  Delete(begin);
+  Delete(f);
+  for (int i = 0; i < cache.Length(); i++) {
+    Delete(cache.Item(i));
+  }
 }
 
 #endif
