@@ -809,7 +809,7 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
   shared_ddedge* ans, List<shared_ddedge>* extra)
 {
   MEDDLY::minimum_witness_opname::minimum_witness_args args(p == nullptr ? nullptr : p->E.getForest(),
-      q->E.getForest(), edges->E.getForest(), ans->E.getForest());
+    q->E.getForest(), edges->E.getForest(), ans->E.getForest());
 
   if (revTime) {
     // TODO: To be implemented
@@ -835,16 +835,14 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
     return;
   }
 
-  shared_ddedge* initial = newEvmxdEdge();
-  MEDDLY::apply(MEDDLY::COPY, edges->E, initial->E);
-  initial->E.setEdgeValue(1);
-
   shared_ddedge* tc = newEvmxdEdge();
+  MEDDLY::apply(MEDDLY::COPY, edges->E, tc->E);
+  MEDDLY::apply(MEDDLY::POST_PLUS, tc->E, p->E, tc->E);
 
-  MEDDLY::minimum_witness_opname::minimum_witness_args args(p == nullptr ? nullptr : p->E.getForest(),
-    initial->E.getForest(), edges->E.getForest(), tc->E.getForest());
+  MEDDLY::minimum_witness_opname::minimum_witness_args args(p->E.getForest(),
+    tc->E.getForest(), edges->E.getForest(), tc->E.getForest());
   MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS->buildOperation(&args);
-  tcOp->compute(p->E, initial->E, edges->E, tc->E);
+  tcOp->compute(p->E, tc->E, edges->E, tc->E);
 
   shared_ddedge* cycles = mrss->newEvmddEdge();
   MEDDLY::apply(MEDDLY::CYCLE, tc->E, cycles->E);
@@ -856,15 +854,17 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
   }
 
   _EU(revTime, p, cycles, ans, extra);
+  extra->Append(cycles);
 
-  extra->Append(tc);
-
-  Delete(initial);
+  Delete(tc);
 }
 
 void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
 {
   DCASSERT(mtd->Length() == 2);
+  // EX p
+  // mtd[0]: cost to verify st |= EX p
+  // mtd[1]: cost to verify st |= p
 
   shared_ddedge* f = mrss->newEvmddEdge();
   DCASSERT(f);
@@ -910,6 +910,9 @@ void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, co
 void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
 {
   DCASSERT(mtd->Length() >= 2);
+  // E p U q
+  // mtd[0]: cost of st |= p
+  // mtd[1]: cost of st |= E p U q
 
   shared_ddedge* f = mrss->newEvmddEdge();
   DCASSERT(f);
@@ -986,24 +989,38 @@ void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, co
 void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
 {
   DCASSERT(mtd->Length() == 3);
-  // Generate the handle
+  // EG p
+  // mtd[0]: cost to verify st |= p
+  // mtd[1]: cost to verify st |= EG p
+  // mtd[2]: cost to verify st is in a EG-p-loop
+
+  // Generate a handle trace
   _traceEU(revTime, p, mtd, ans);
   DCASSERT(ans->Length() > 0);
 
-  shared_ddedge* end = mrss->newEvmddEdge();
-  end->E = ans->Item(ans->Length() - 1)->E;
-  end->E.setEdgeValue(1);
+  // Generate a loop trace
+  // A loop is expressed as a finite sequence of states
+  // where the first and last states are the same
 
-  shared_ddedge* begin = mrss->newEvmddEdge();
-  // Compute the cost to verify the loop starting from knob
-  MEDDLY::apply( MEDDLY::INTERSECTION, end->E, mtd->getStage(1)->E, begin->E );
+  // The last state of the loop
+  shared_ddedge* last = mrss->newEvmddEdge();
+  last->E = ans->Item(ans->Length() - 1)->E;
+  last->E.setEdgeValue(1);
 
-  // Compute the loop
+  // The first state of the loop
+  shared_ddedge* first = mrss->newEvmddEdge();
+  MEDDLY::apply( MEDDLY::INTERSECTION, last->E, mtd->getStage(2)->E, first->E );
+
+  // Total cost of the loop
+  long total = 0;
+  first->E.getEdgeValue(total);
+
   shared_ddedge* f = mrss->newEvmddEdge();
-  f->E = end->E;
+  f->E = last->E;
+  shared_ddedge* g = mrss->newEvmddEdge();
   List<shared_ddedge> cache;
   // Backward
-  while (f->E != begin->E) {
+  while (g->E != first->E) {
     {
       shared_ddedge* t = mrss->newEvmddEdge();
       t->E = f->E;
@@ -1014,22 +1031,19 @@ void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, co
     f->E.getEdgeValue(ev);
     f->E.setEdgeValue(ev - 1);
     MEDDLY::apply( MEDDLY::PLUS, f->E, mtd->getStage(0)->E, f->E );
+
+    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, last->E, g->E );
   }
   // Forward
-  f->E = begin->E;
+  f->E = first->E;
+  long ev1 = 0;  // Cost of the current state
+  ans->ReadItem(ans->Length() - 1)->E.getEdgeValue(ev1);
   for (int i = cache.Length() - 1; i >= 1; i--) {
-    long ev1 = 0;
-    f->E.getEdgeValue(ev1);
-
-    f->E.setEdgeValue(0);
-    // Compute the cost
-    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, f->E );
-    long ev2 = 0;
+    long ev2 = 0;   // The remaining cost
     f->E.getEdgeValue(ev2);
 
-    f->E.setEdgeValue(0);
-    mxd_wrap->preImage(f, edges, f);
-    f->E.setEdgeValue(ev1 - ev2);
+    mxd_wrap->postImage(f, edges, f);
+    f->E.setEdgeValue(ev2 - ev1);
 
     MEDDLY::apply( MEDDLY::INTERSECTION, f->E, cache.ReadItem(i)->E, f->E );
     MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
@@ -1037,13 +1051,17 @@ void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, co
     {
       shared_ddedge* t = mrss->newEvmddEdge();
       t->E = f->E;
+      t->E.setEdgeValue(0);
+      MEDDLY::apply( MEDDLY::INTERSECTION, t->E, mtd->getStage(0)->E, t->E );
       ans->Append(t);
+      t->E.getEdgeValue(ev1);
     }
   }
-  ans->Append(end);
+  ans->Append(last);
 
-  Delete(begin);
+  Delete(first);
   Delete(f);
+  Delete(g);
   for (int i = 0; i < cache.Length(); i++) {
     Delete(cache.Item(i));
   }
