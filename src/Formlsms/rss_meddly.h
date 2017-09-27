@@ -90,6 +90,17 @@ class meddly_reachset : public state_lldsm::reachset {
       return new shared_ddedge(evmdd_wrap->getForest());
     }
 
+    inline shared_ddedge* newEvmddConst(bool v) {
+      shared_ddedge* ans = newEvmddEdge();
+      if (v) {
+        evmdd_wrap->buildSymbolicConst(v, ans);
+      }
+      else {
+        ans->E.set(0, 0);
+      }
+      return ans;
+    }
+
     inline void createMinterms(const int* const* mts, int n, shared_object* ans) {
       DCASSERT(mdd_wrap);
       mdd_wrap->createMinterms(mts, n, ans);

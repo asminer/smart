@@ -808,8 +808,11 @@ void meddly_monolithic_min_rg::_EX(bool revTime, const shared_ddedge* p, shared_
 void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q,
   shared_ddedge* ans, List<shared_ddedge>* extra)
 {
-  MEDDLY::minimum_witness_opname::minimum_witness_args args(p == nullptr ? nullptr : p->E.getForest(),
-    q->E.getForest(), edges->E.getForest(), ans->E.getForest());
+  MEDDLY::minimum_witness_opname::minimum_witness_args args(
+    p == nullptr ? ans->E.getForest() : p->E.getForest(),
+    q->E.getForest(),
+    edges->E.getForest(),
+    ans->E.getForest());
 
   if (revTime) {
     // TODO: To be implemented
@@ -817,8 +820,14 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
   }
 
   MEDDLY::specialized_operation* op = MEDDLY::CONSGTRAINT_BACKWARD_DFS->buildOperation(&args);
-  op->compute(p->E, q->E, edges->E, ans->E);
-  {
+  if (nullptr == p) {
+    shared_ddedge* t = mrss->newEvmddConst(true);
+    op->compute(t->E, q->E, edges->E, ans->E);
+    extra->Append(t);
+  }
+  else {
+    op->compute(p->E, q->E, edges->E, ans->E);
+
     shared_ddedge* t = mrss->newEvmddEdge();
     t->E = p->E;
     extra->Append(t);
