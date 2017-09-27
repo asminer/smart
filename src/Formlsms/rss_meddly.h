@@ -80,7 +80,8 @@ class meddly_reachset : public state_lldsm::reachset {
     inline shared_ddedge* newEvmddEdge() {
       if (nullptr == evmdd_wrap){
         MEDDLY::forest* foo = vars->createForest(
-          false, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS
+          false, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS,
+          mdd_wrap->getForest()->getPolicies()
         );
         evmdd_wrap = mdd_wrap->copyWithDifferentForest("EV+MDD", foo);
       }
