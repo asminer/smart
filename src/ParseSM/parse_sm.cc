@@ -16,6 +16,7 @@ parse_module::parse_module(exprman* the_em)
 
   lex_temporal_operators = true;
   temporal_operator_option = false;
+  minimum_trace_option = false;
 }
 
 void parse_module::Initialize()
@@ -30,6 +31,13 @@ void parse_module::Initialize()
       "ParseTemporalOperators",
       "Should the parser treat letters A, E, F, G, U, and X as temporal operators for CTL and LTL formulas?  If true, then these become reserved letters and may not appear in any identifier.",
       temporal_operator_option
+    )
+  );
+  em->addOption(
+    MakeBoolOption(
+      "MinimumTrace",
+      "Whether to generate the minimum trace.",
+      minimum_trace_option
     )
   );
 

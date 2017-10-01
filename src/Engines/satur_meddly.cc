@@ -35,6 +35,9 @@ typedef std::map< MEDDLY::node_handle, bigint > NodeIntMap;
 typedef std::map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
 #endif
 
+#include "../ParseSM/parse_sm.h"
+extern parse_module* pm;
+
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
 // #define DEBUG_RADIX_SORT
@@ -108,7 +111,9 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     Report().stopIO();
   }
 
-  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
+  meddly_monolithic_rg* rgr = pm->computeMinimumTrace()
+    ? new meddly_monolithic_min_rg(0, mvo->shareMxdWrap())
+    : new meddly_monolithic_rg(0, mvo->shareMxdWrap());
   rgr->setPotential(Share(NSF));
   if (!potential) rgr->scheduleConversionToActual();
   glm->setRGR( rgr );

@@ -13,6 +13,9 @@
 
 #include "../SymTabs/symtabs.h"
 
+#include "../ParseSM/parse_sm.h"
+extern parse_module* pm;
+
 // *****************************************************************
 // *                                                               *
 // *                           CTL_engine                          *
@@ -1277,6 +1280,12 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
   const graph_lldsm* llm = getLLM(x, pass[0]);
   // Initial states
   stateset* p = grabParam(llm, pass[1], x);
+  if (pm->computeMinimumTrace()) {
+    // Attach a weight to each state
+    stateset* wp = llm->attachWeight(p);
+    Delete(p);
+    p = wp;
+  }
   // States satisfying the formula
   stateset* q = grabParam(llm, pass[2], x);
 
@@ -1305,103 +1314,6 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 
   Delete(p);
   Delete(q);
-}
-
-// *****************************************************************
-// *                                                               *
-// *                            traces                             *
-// *                                                               *
-// *****************************************************************
-
-class mintraces : public CTL_engine {
-protected:
-  class mintraces_ex : public CTL_engine {
-  public:
-    mintraces_ex()
-      : CTL_engine(em->TRACE, "mintraces_ex", false, 3)
-    {
-      SetFormal(1, em->STATESET, "initial_states");
-      SetFormal(2, em->STATESET, "states satisfying the temporal formula");
-    }
-
-    virtual void Compute(traverse_data &x, expr** pass, int np);
-  };
-
-  mintraces_ex the_mintrace_ex;
-
-public:
-  mintraces();
-  virtual int Traverse(traverse_data &x, expr** pass, int np);
-};
-
-mintraces::mintraces()
-  : CTL_engine(em->TRACE, "mintraces", false, 3)
-{
-  SetFormal(1, em->STATESET, "initial_states");
-  SetFormal(2, em->TEMPORAL, "formula");
-  SetDocumentation("Compute a minimum trace verifying the given temporal formula.");
-}
-
-int mintraces::Traverse(traverse_data &x, expr** pass, int np)
-{
-  if (traverse_data::Substitute != x.which) {
-    return CTL_engine::Traverse(x, pass, np);
-  }
-
-  traverse_data xx(traverse_data::Trace);
-  xx.model = x.model;
-  result ans;
-  xx.answer = &ans;
-  pass[2]->Traverse(xx);
-
-  const int newnp = 3;
-  expr** newpass = new expr*[newnp];
-  newpass[0] = pass[0];
-  newpass[1] = pass[1];
-  newpass[2] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
-
-  return the_mintrace_ex.Traverse(x, newpass, newnp);
-}
-
-void mintraces::mintraces_ex::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
-
-  const graph_lldsm* llm = getLLM(x, pass[0]);
-  // Initial states
-  stateset* p = grabParam(llm, pass[1], x);
-  stateset* wp = llm->attachWeight(p);
-  // States satisfying the formula
-  stateset* wq = grabParam(llm, pass[2], x);
-
-  stateset* wr = wp->DeepCopy();
-  wr->Intersect(this, wq);
-
-  if (wr->isEmpty()) {
-    // No initial states satisfying the formula
-    x.answer->setNull();
-  }
-  else {
-    wr->Select();
-
-    if (nullptr == x.the_callback) {
-      x.answer->setPtr(new trace());
-    }
-    else {
-      // The selected initial state is passed in via traverse_data
-      setAnswer(x, wr);
-      expr* callback = const_cast<expr*>(x.the_callback);
-      callback->Compute(x);
-      x.the_callback = nullptr;
-      Delete(callback);
-    }
-  }
-
-  Delete(p);
-  Delete(wp);
-  Delete(wq);
 }
 
 // ******************************************************************
@@ -1475,7 +1387,6 @@ bool init_ctlmsrs::execute()
   static msr_func* the_EG_trace_si = 0;
   static msr_func* the_EU_trace_si = 0;
   static msr_func* the_traces = 0;
-  static msr_func* the_mintraces = 0;
 
   //
   // Initialize functions
@@ -1505,7 +1416,6 @@ bool init_ctlmsrs::execute()
   if (!the_EG_trace_si)         the_EG_trace_si = new EG_trace_si;
   if (!the_EU_trace_si)         the_EU_trace_si = new EU_trace_si;
   if (!the_traces)              the_traces      = new traces;
-  if (!the_mintraces)           the_mintraces   = new mintraces;
 
   //
   // Add functions to help topic
@@ -1566,7 +1476,6 @@ bool init_ctlmsrs::execute()
   CML.Append(the_EG_trace_si);
   CML.Append(the_EU_trace_si);
   CML.Append(the_traces);
-  CML.Append(the_mintraces);
 
   return true;
 }
