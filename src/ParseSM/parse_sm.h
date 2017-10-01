@@ -32,6 +32,7 @@ protected:
   bool compiler_ready;
   bool lex_temporal_operators;
   bool temporal_operator_option;
+  bool minimum_trace_option;
 public:
   parse_module(exprman* em);
 
@@ -83,6 +84,10 @@ public:
 
   inline void startLexingTemporal() {
     lex_temporal_operators = true;
+  }
+
+  inline bool computeMinimumTrace() const {
+    return temporal_operator_option & minimum_trace_option;
   }
 
 

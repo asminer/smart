@@ -833,6 +833,8 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
     extra->Append(t);
   }
   extra->Append(Share(ans));
+
+  MEDDLY::destroyOperation(op);
 }
 
 void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
@@ -853,10 +855,12 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
   MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS->buildOperation(&args);
   tcOp->compute(p->E, tc->E, edges->E, tc->E);
 
+  MEDDLY::destroyOperation(tcOp);
+
   shared_ddedge* cycles = mrss->newEvmddEdge();
   MEDDLY::apply(MEDDLY::CYCLE, tc->E, cycles->E);
   {
-    // Increas by 1 because of repeating states in the cycle
+    // Increase by 1 because of repeating states in the cycle
     long ev = 0;
     cycles->E.getEdgeValue(ev);
     cycles->E.setEdgeValue(ev + 1);

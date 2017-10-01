@@ -63,7 +63,8 @@ void meddly_reachset::setMddWrap(meddly_encoder* w)
   mdd_wrap = w;
   DCASSERT(0==mtmdd_wrap);
   MEDDLY::forest* foo = vars->createForest(
-    false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL
+    false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL,
+    mdd_wrap->getForest()->getPolicies()
   );
   mtmdd_wrap = mdd_wrap->copyWithDifferentForest("MTMDD", foo);
 }
