@@ -819,7 +819,7 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
     return;
   }
 
-  MEDDLY::specialized_operation* op = MEDDLY::CONSGTRAINT_BACKWARD_DFS->buildOperation(&args);
+  MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINT_BACKWARD_DFS->buildOperation(&args);
   if (nullptr == p) {
     shared_ddedge* t = mrss->newEvmddConst(true);
     op->compute(t->E, q->E, edges->E, ans->E);
