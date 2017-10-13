@@ -212,6 +212,11 @@ stateset* meddly_reachset::getPotential(expr* p) const
   MEDDLY::apply(MEDDLY::COPY, mtans->E, ans->E);
 
   //
+  // Reachable only
+  //
+  MEDDLY::apply(MEDDLY::INTERSECTION, ans->E, states->E, ans->E);
+
+  //
   // Package up the answer
   //
   return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
