@@ -791,8 +791,7 @@ protected:
 public:
   virtual bool arePrimedVarsSeparate() const { return false; }
   virtual int getNumDDVars() const { return parent.getPartInfo().num_levels; }
-  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
-                                expr *f, shared_object* answer);
+  virtual void buildSymbolicSV(const symbol* sv, bool primed, expr *f, shared_object* answer);
 
   virtual void state2minterm(const shared_state* s, int* mt) const;
   virtual void minterm2state(const int* mt, shared_state *s) const;
@@ -800,7 +799,7 @@ public:
   virtual meddly_encoder* copyWithDifferentForest(const char* n, forest*) const;
 
 protected:
-  void FillTerms(const model_statevar* sv, int p, int &i, expr* f);
+  void FillTerms(const model_statevar* sv, expr* f);
 };
 
 // **************************************************************************
@@ -847,14 +846,10 @@ void substate_encoder
 
   const model_statevar* mv = dynamic_cast<const model_statevar*> (sv);
   DCASSERT(mv);
-
-  int level = mv->GetPart();
-  CHECK_RANGE(1, level, 1+parent.getPartInfo().num_levels);
-
-  int i = 0;
-  FillTerms(mv, parent.getPartInfo().pointer[level], i, f);
+  FillTerms(mv, f);
 
   try {
+    int level = mv->GetPart();
     F->createEdgeForVar(level, primed, terms, dd->E);
 
 #ifdef DEBUG_BUILD_SV
@@ -912,34 +907,37 @@ substate_encoder::copyWithDifferentForest(const char* n, forest* nf) const
   return new substate_encoder(n, nf, parent, Share(colls));
 }
 
-void substate_encoder
-::FillTerms(const model_statevar* sv, int p, int &i, expr* f)
+void substate_encoder::FillTerms(const model_statevar* sv, expr* f)
 {
-  DCASSERT(sv);
-  if (parent.getPartInfo().pointer[sv->GetPart()-1] >= p) {
-    CHECK_RANGE(0, i, maxbound);
-    terms[i] = lastcomputed;
-    i++;
-    return;
+  int level = sv->GetPart();
+  CHECK_RANGE(1, level, 1+parent.getPartInfo().num_levels);
+
+  DCASSERT(parent.getPartInfo().pointer[0] == -1);
+  // Number of state variables merged into the variable at level
+  int num_sv = parent.getPartInfo().pointer[level] - parent.getPartInfo().pointer[level - 1];
+  int* minterm_sv = new int[num_sv];
+  // Index of state variable sv in minterm_sv
+  int index_sv = 0;
+  while (parent.getPartInfo().variable[parent.getPartInfo().pointer[level] - index_sv] != sv) {
+    index_sv++;
   }
-  long stop = sv->NumPossibleValues();
-  if (parent.getPartInfo().variable[p] != sv) {
-    for (long v=0; v<stop; v++) {
-      FillTerms(sv, p-1, i, f);
-    } // for v
-    return;
-  }
-  for (long v=0; v<stop; v++) {
+
+  // The bound of variable at level
+  long bound = colls->getMaxIndex(level);
+  DCASSERT(bound <= maxbound);
+  for (long i = 0; i < bound; i++) {
+    colls->getSubstate(level, i, minterm_sv, num_sv);
     if (f) {
-      sv->GetValueNumber(v, ans);
+      sv->GetValueNumber(minterm_sv[index_sv], ans);
       sv->SetNextState(tdx, expl_state, ans.getInt());
       f->Compute(tdx);
     } else {
-      sv->GetValueNumber(v, ans);
+      sv->GetValueNumber(minterm_sv[index_sv], ans);
     }
-    lastcomputed = ans.getInt();
-    FillTerms(sv, p-1, i, f);
-  } // for v
+    terms[i] = ans.getInt();
+  }
+
+  delete[] minterm_sv;
 }
 
 // **************************************************************************
