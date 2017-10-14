@@ -29,6 +29,7 @@ class expl_stateset : public stateset {
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
+    virtual bool Plus(const expr* c, const char* op, const stateset* x);
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;

@@ -36,7 +36,7 @@ OR AND SET_DIFF IMPLIES NOT
 EQUALS NEQUAL GT GE LT LE 
 FOR END CONVERGE IN GUESS
 NUL DEFAULT PROC
-FORALL EXISTS FUTURE GLOBALLY UNTIL NEXT
+FORALL EXISTS FUTURE GLOBALLY UNTIL NEXT TEMPORALAND
 
 %type <Type_ID> type model
 %type <count> for_header iterators
@@ -67,6 +67,7 @@ formal_param named_param
 %left GT GE LT LE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%left TEMPORALAND
 %right FORALL EXISTS
 %nonassoc UNTIL
 %right NEXT FUTURE GLOBALLY
@@ -577,6 +578,11 @@ logic
 {
   Reducing("logic : logic LE logic");
   $$ = BuildBinary($1, LE, $3);
+}
+      |    logic TEMPORALAND logic
+{
+  Reducing("logic : logic TEMPORALAND logic");
+  $$ = BuildBinary($1, TEMPORALAND, $3);
 }
       |     FORALL logic
 {

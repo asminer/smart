@@ -109,6 +109,11 @@ bool expl_stateset::Intersect(const expr* c, const char* op, const stateset* x)
   return true;
 }
 
+bool expl_stateset::Plus(const expr* c, const char* op, const stateset* x)
+{
+  return Intersect(c, op, x);
+}
+
 void expl_stateset::getCardinality(long &card) const
 {
   DCASSERT(data);

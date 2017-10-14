@@ -312,6 +312,7 @@ const char* TokenName(int tk)
     case GLOBALLY:    return "GLOBALLY";
     case UNTIL:       return "UNTIL";
     case NEXT:        return "NEXT";
+    case TEMPORALAND: return "TEMPORALAND";
   }
   return "no such token";
 }
@@ -509,6 +510,11 @@ int ProcessPound()
 {
   lexdata.stopLexingTemporal();
   return ProcessToken(POUND);
+}
+
+int ProcessTemporalAnd()
+{
+  return ProcessToken(TEMPORALAND);
 }
 
 int ProcessBool()

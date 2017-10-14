@@ -2102,6 +2102,7 @@ exprman::binary_opcode Int2Bop(int op)
     case LT:        return exprman::bop_lt;
     case LE:        return exprman::bop_le;
     case UNTIL:     return exprman::bop_until;
+    case TEMPORALAND:  return exprman::bop_and;
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Operator " << TokenName(op);

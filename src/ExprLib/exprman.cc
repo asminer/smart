@@ -327,6 +327,7 @@ const char* exprman::getOp(binary_opcode op)
     case bop_lt:      return "<";
     case bop_le:      return "<=";
     case bop_until:   return "U";
+    case bop_and:     return "&&";
     default:          return "unknown_op";
   }
   return "error";  // will never get here, keep compilers happy
