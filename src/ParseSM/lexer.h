@@ -166,6 +166,9 @@ int ProcessLe();
 /// Pound.
 int ProcessPound();
 
+/// Temporal And.
+int ProcessTemporalAnd();
+
 /// Process an unclosed comment
 void UnclosedComment();
 

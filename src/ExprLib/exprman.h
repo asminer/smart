@@ -268,8 +268,10 @@ public:
     bop_le        = 8,
     /// Temporal operator "U"
     bop_until     = 9,
+    /// Temporal operator "AND"
+    bop_and       = 10,
     /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    bop_none      = 10
+    bop_none      = 11
   };
 
   /// Trinary operators.

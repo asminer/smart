@@ -120,6 +120,7 @@ notendl       [^\n]
 "<"                                   { return ProcessLt(); }
 "<="                                  { return ProcessLe(); }
 "#"                                   { BEGIN OPTION;  return ProcessPound(); }
+"&&"                                  { return ProcessTemporalAnd(); }
 .                                     { IllegalToken(); }
 
 %%

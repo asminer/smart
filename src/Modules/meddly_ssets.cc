@@ -112,6 +112,39 @@ bool meddly_stateset::Intersect(const expr* c, const char* op, const stateset* x
   // TBD - use a try/catch block to check for errors
 }
 
+bool meddly_stateset::Plus(const expr* c, const char* op, const stateset* x)
+{
+  if (!mdd_wrap->getForest()->isEVPlus()) {
+    return Intersect(c, op, x);
+  }
+
+  const meddly_stateset* mx = dynamic_cast <const meddly_stateset*> (x);
+  if (0==mx) {
+    storageMismatchError(c, op);
+    return false;
+  }
+  DCASSERT(vars == mx->vars);
+  DCASSERT(mdd_wrap == mx->mdd_wrap);
+
+  // can this happen?
+  if (0==mx->states) {
+    return true;
+  }
+
+  // can this happen?
+  if (0==states) {
+    states = Share(mx->states);
+    return true;
+  }
+
+  shared_ddedge* ans = new shared_ddedge(mx->mdd_wrap->getForest());
+  mdd_wrap->buildAssoc(states, false, exprman::aop_plus, mx->states, ans);
+  Delete(states);
+  states = ans;
+  return true;
+  // TBD - use a try/catch block to check for errors
+}
+
 void meddly_stateset::getCardinality(long &card) const
 {
   mdd_wrap->getCardinality(states, card);
@@ -186,6 +219,17 @@ shared_state* meddly_stateset::getSingleState() const
 void meddly_stateset::Select()
 {
   MEDDLY::apply(MEDDLY::SELECT, states->E, states->E);
+}
+
+void meddly_stateset::Offset(int val)
+{
+  if (!mdd_wrap->getForest()->isEVPlus()) {
+    throw -1;
+  }
+
+  long ev = 0;
+  states->E.getEdgeValue(ev);
+  states->E.setEdgeValue(ev + val);
 }
 
 // **************************************************************************

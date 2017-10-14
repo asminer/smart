@@ -72,6 +72,20 @@ public:
     return Intersect(c, "intersection", x);
   }
 
+  /** Plus us with another stateset, in place.
+      If states are attached with weights, apply an element-wise plus operation.
+      Otherwise, apply an intersection operation.
+          @param  c   Expression source, for error reporting.
+          @param  op  Operation name, for error reporting.
+          @param  x   A set to plus with us; should have the same parent.
+          @return true on success, false on error.
+    */
+  virtual bool Plus(const expr* c, const char* op, const stateset* x) = 0;
+
+  inline bool Plus(const expr* c, const stateset* x) {
+    return Plus(c, "plus", x);
+  }
+
   /** Get the set cardinality, as a long.
         @param  card
             Cardinality is output here.
@@ -92,14 +106,25 @@ public:
       Mostly used when the stateset contains only one state.
       @return One state in the stateset.
    */
-  virtual shared_state* getSingleState() const {
-    return 0;
+  virtual shared_state* getSingleState() const
+  {
+    throw -1;
   }
 
-  /** Randomly select one state.
+  /** Randomly select one state, in place.
    */
-  virtual void Select() {
-    return;
+  virtual void Select()
+  {
+    throw -1;
+  }
+
+  /** Offset the weights of all states an given value.
+      Used only when states are attached with weights.
+        @param  v  An offset value.
+   */
+  virtual void Offset(int val)
+  {
+    throw -1;
   }
 
   /**
