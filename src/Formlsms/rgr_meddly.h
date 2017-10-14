@@ -471,6 +471,13 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
             mxd_wrap->postImage(f, edges, f);
           }
 
+          if (f->E == emptyset->E) {
+            // Dead-end state
+            // Treated as a state with self-loop
+            g->E = ans->ReadItem(ans->Length() - 1)->E;
+            break;
+          }
+
           // t = f /\ visited
           MEDDLY::apply( MEDDLY::INTERSECTION, f->E, visited->E, g->E );
           if (g->E != emptyset->E) {
