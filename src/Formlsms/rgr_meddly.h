@@ -472,8 +472,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
           }
 
           if (f->E == emptyset->E) {
-            // Dead-end state
-            // Treated as a state with self-loop
+            // Deadlocked state are treated as states with self-loop
             g->E = ans->ReadItem(ans->Length() - 1)->E;
             break;
           }
