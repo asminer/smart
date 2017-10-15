@@ -886,7 +886,7 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
     Delete(dead);
   }
 
-  {
+  if (0 != cycles->E.getNode()){
     // Increase by 1 because of repeating states in the cycle
     long ev = 0;
     cycles->E.getEdgeValue(ev);
