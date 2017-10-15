@@ -117,14 +117,21 @@ void meddly_reachset::setStates(shared_ddedge* S)
 
 stateset* meddly_reachset::attachWeight(const stateset* p) {
   const meddly_stateset* mp = dynamic_cast<const meddly_stateset*>(p);
-  shared_ddedge* e = newEvmddEdge();
+  shared_ddedge* e = nullptr;
+
   if (mp->getStateDD()->getForest()->isEVPlus()) {
+    e = newEvmddEdge();
     e->E = mp->getStateDD()->E;
   }
+  else if (mp->isEmpty()) {
+    e = newEvmddConst(false);
+  }
   else {
+    e = newEvmddEdge();
     MEDDLY::apply(MEDDLY::COPY, mp->getStateDD()->E, e->E);
     e->E.setEdgeValue(1);
   }
+
   return new meddly_stateset(getParent(), Share(vars), Share(evmdd_wrap), e);
 }
 

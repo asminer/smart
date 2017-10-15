@@ -227,9 +227,11 @@ void meddly_stateset::Offset(int val)
     throw -1;
   }
 
-  long ev = 0;
-  states->E.getEdgeValue(ev);
-  states->E.setEdgeValue(ev + val);
+  if (!isEmpty()) {
+    long ev = 0;
+    states->E.getEdgeValue(ev);
+    states->E.setEdgeValue(ev + val);
+  }
 }
 
 // **************************************************************************
