@@ -859,6 +859,33 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
 
   shared_ddedge* cycles = mrss->newEvmddEdge();
   MEDDLY::apply(MEDDLY::CYCLE, tc->E, cycles->E);
+
+  {
+    //
+    // Build set of source/deadlocked states
+    // Deadlocked states are treated as states with self-loop
+    //
+    shared_ddedge* dead = mrss->newEvmddEdge();
+    DCASSERT(dead);
+
+    if (revTime) {
+      MEDDLY::apply(MEDDLY::COPY, mrss->getInitial(), dead->E);
+    }
+    else {
+      // Determine deadlocked states: !EX(true)
+      shared_ddedge* mdd = mrss->newMddConst(true);
+      DCASSERT(mdd);
+      mxd_wrap->preImage(mdd, edges, mdd);
+      MEDDLY::apply(MEDDLY::COMPLEMENT, mdd->E, mdd->E);
+      MEDDLY::apply(MEDDLY::COPY, mdd->E, dead->E);
+      Delete(mdd);
+    }
+    MEDDLY::apply(MEDDLY::INTERSECTION, dead->E, p->E, dead->E);
+    MEDDLY::apply(MEDDLY::UNION, cycles->E, dead->E, cycles->E);
+
+    Delete(dead);
+  }
+
   {
     // Increase by 1 because of repeating states in the cycle
     long ev = 0;
@@ -994,6 +1021,12 @@ void meddly_monolithic_min_rg::_traceEU(bool revTime, const shared_ddedge* p, co
 
 void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans)
 {
+  if (revTime) {
+    // TODO: To be implemented
+    DCASSERT(false);
+    return;
+  }
+
   DCASSERT(mtd->Length() == 2);
   // EG p
   // mtd[0]: cost to verify st |= p
@@ -1022,55 +1055,63 @@ void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, co
   MEDDLY::apply(MEDDLY::INTERSECTION, last->E, mtd->getStage(0)->E, ans->Item(ans->Length() - 1)->E);
 
   shared_ddedge* f = mrss->newEvmddEdge();
-  f->E = last->E;
-  shared_ddedge* g = mrss->newEvmddEdge();
-  List<shared_ddedge> cache;
-  // Backward
-  while (g->E != first->E) {
-    {
-      shared_ddedge* t = mrss->newEvmddEdge();
-      t->E = f->E;
-      cache.Append(t);
+  // Check if last is a deadlocked state
+  mxd_wrap->postImage(last, edges, f);
+  if (0 != f->E.getNode()) {
+    // Not a deadlocked state
+    shared_ddedge* g = mrss->newEvmddEdge();
+    List<shared_ddedge> cache;
+
+    // Backward
+    f->E = last->E;
+    while (g->E != first->E) {
+      {
+        shared_ddedge* t = mrss->newEvmddEdge();
+        t->E = f->E;
+        cache.Append(t);
+      }
+      mxd_wrap->preImage(f, edges, f);
+      long ev = 0;
+      f->E.getEdgeValue(ev);
+      f->E.setEdgeValue(ev - 1);
+      MEDDLY::apply( MEDDLY::PLUS, f->E, mtd->getStage(0)->E, f->E );
+
+      MEDDLY::apply( MEDDLY::INTERSECTION, f->E, last->E, g->E );
     }
-    mxd_wrap->preImage(f, edges, f);
-    long ev = 0;
-    f->E.getEdgeValue(ev);
-    f->E.setEdgeValue(ev - 1);
-    MEDDLY::apply( MEDDLY::PLUS, f->E, mtd->getStage(0)->E, f->E );
 
-    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, last->E, g->E );
-  }
-  // Forward
-  f->E = first->E;
-  long ev1 = 0;  // Cost of the current state
-  ans->ReadItem(ans->Length() - 1)->E.getEdgeValue(ev1);
-  for (int i = cache.Length() - 1; i >= 1; i--) {
-    long ev2 = 0;   // The remaining cost
-    f->E.getEdgeValue(ev2);
+    // Forward
+    f->E = first->E;
+    long ev1 = 0;  // Cost of the current state
+    ans->ReadItem(ans->Length() - 1)->E.getEdgeValue(ev1);
+    for (int i = cache.Length() - 1; i >= 1; i--) {
+      long ev2 = 0;   // The remaining cost
+      f->E.getEdgeValue(ev2);
 
-    mxd_wrap->postImage(f, edges, f);
-    f->E.setEdgeValue(ev2 - ev1);
+      mxd_wrap->postImage(f, edges, f);
+      f->E.setEdgeValue(ev2 - ev1);
 
-    MEDDLY::apply( MEDDLY::INTERSECTION, f->E, cache.ReadItem(i)->E, f->E );
-    MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
+      MEDDLY::apply( MEDDLY::INTERSECTION, f->E, cache.ReadItem(i)->E, f->E );
+      MEDDLY::apply( MEDDLY::SELECT, f->E, f->E );
 
-    {
-      shared_ddedge* t = mrss->newEvmddEdge();
-      t->E = f->E;
-      t->E.setEdgeValue(0);
-      MEDDLY::apply( MEDDLY::INTERSECTION, t->E, mtd->getStage(0)->E, t->E );
-      ans->Append(t);
-      t->E.getEdgeValue(ev1);
+      {
+        shared_ddedge* t = mrss->newEvmddEdge();
+        t->E = f->E;
+        t->E.setEdgeValue(0);
+        MEDDLY::apply( MEDDLY::INTERSECTION, t->E, mtd->getStage(0)->E, t->E );
+        ans->Append(t);
+        t->E.getEdgeValue(ev1);
+      }
+    }
+
+    Delete(g);
+    for (int i = 0; i < cache.Length(); i++) {
+      Delete(cache.Item(i));
     }
   }
   ans->Append(last);
 
   Delete(first);
   Delete(f);
-  Delete(g);
-  for (int i = 0; i < cache.Length(); i++) {
-    Delete(cache.Item(i));
-  }
 }
 
 #endif
