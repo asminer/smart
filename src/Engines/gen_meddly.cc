@@ -2074,7 +2074,11 @@ void substate_varoption::initDomain(const exprman* em)
   variable** vars = new variable*[num_levels+1];
   vars[0] = 0;
   for (int k=num_levels; k; k--) {
+#ifndef USE_XDDS
     vars[k] = createVariable(1, buildVarName(part, k));
+#else
+    vars[k] = createVariable(-1, buildVarName(part, k));
+#endif
   } // for k
   if (!ms.createVars(vars, num_levels)) {
     built_ok = false;
