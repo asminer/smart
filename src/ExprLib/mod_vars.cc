@@ -1009,6 +1009,7 @@ public:
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
   virtual bool Print(OutputStream &s, int w) const;
+  virtual long getLower() const;
 protected:
   virtual expr* buildAnother(expr *r) const;
 };
@@ -1036,6 +1037,11 @@ clev_op::clev_op(const char* fn, int line, long b, model_var* v)
  : unary(fn, line, em->BOOL->addProc(), v) 
 { 
   lower = b;
+}
+
+long clev_op::getLower() const
+{
+  return lower;
 }
   
 void clev_op::Compute(traverse_data &x)
@@ -1704,6 +1710,7 @@ class cupdate_op : public expr {
 public:
   cupdate_op(const char* fn, int line, model_var* v, long  delta);
   virtual ~cupdate_op();
+  virtual long getDelta() const override;
   virtual void Traverse(traverse_data &x);
   virtual void Compute(traverse_data &x);
   virtual bool Print(OutputStream &s, int) const;
@@ -1726,6 +1733,11 @@ cupdate_op::~cupdate_op()
 {
   Delete(var);
 }
+
+long cupdate_op::getDelta() const
+  {
+      return delta;
+  }
 
 void cupdate_op::Traverse(traverse_data &x)
 {
