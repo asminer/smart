@@ -251,6 +251,7 @@ public:
   // Default returns 0
   //
   virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
+  virtual MEDDLY::satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
 
 };
 

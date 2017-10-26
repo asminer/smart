@@ -372,3 +372,12 @@ bool expr::Equals(const shared_object* o) const
   return false;
 }
 
+long expr::getDelta() const
+{
+  return 0;
+}
+
+long expr::getLower() const
+{
+  return 0;
+}
