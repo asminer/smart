@@ -10,6 +10,7 @@
 #include "../Modules/expl_states.h"
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
+#include<map>
 
 // #define DUMP_MXD
 // #define DUMP_MTMXD
@@ -169,6 +170,11 @@ void meddly_varoption::reportStats(DisplayStream &out) const
 }
 
 satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(named_msg &debug)
+{
+  return 0;
+}
+
+satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(named_msg &debug)
 {
   return 0;
 }
@@ -817,15 +823,15 @@ void substate_encoder
   throw Failed;
 }
 
-void 
+
+void
 substate_encoder::state2minterm(const shared_state* s, int* mt) const
 {
   DCASSERT(colls);
   if (0==s || 0==mt) throw Failed;
-
   for (int k=parent.getPartInfo().num_levels; k; k--) {
     int ssz = s->readSubstateSize(k);
-    long sk = colls->addSubstate(k, s->readSubstate(k), ssz);
+    long sk = colls->addSubstate(k, s->readSubstate(k), ssz);//
     if (sk<0) {
       if (-2 == sk) throw Out_Of_Memory;
       throw Failed;
@@ -835,7 +841,9 @@ substate_encoder::state2minterm(const shared_state* s, int* mt) const
     if (sk != mt[k]) throw Failed;
     // TBD: Should we print an error for that one?
   } // for k
+  
 }
+
 
 void
 substate_encoder::minterm2state(const int* mt, shared_state *s) const
@@ -1603,6 +1611,7 @@ public:
   //
 
   virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
+  virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
   virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
@@ -1672,6 +1681,78 @@ protected:
   void show_substates(OutputStream &s);
 #endif
 };
+
+// **************************************************************************
+// *                                                                        *
+// *                        relation_node class                             *
+// *                                                                        *
+// **************************************************************************
+
+//TBD - Move to someplace better
+class derive_relation_node : public satimpl_opname::relation_node {
+public:
+  // TBD - clean up this constructor!
+  derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
+  virtual ~derive_relation_node();
+  virtual long nextOf(long i) override;
+  
+private:
+  long e_delta;
+  long f_delta;
+  substate_colls* colls;
+  
+  
+  named_msg &debug;
+};
+
+
+// **************************************************************************
+// *                                                                        *
+// *                        relation_node methods                           *
+// *                                                                        *
+// **************************************************************************
+
+
+derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down), debug(dm)
+{
+  e_delta = e;
+  f_delta = f;
+  colls = c;
+}
+
+derive_relation_node::~derive_relation_node()
+{
+  //TBD
+}
+
+//Take the index : find token : update the token : return a new index
+long derive_relation_node::nextOf(long i)
+{
+  if(i>=satimpl_opname::relation_node::getPieceSize())
+    satimpl_opname::relation_node::expandTokenUpdate(i);
+   
+  
+  if(satimpl_opname::relation_node::getTokenUpdate()[i]==-2)
+    {
+    int sz = 1;
+    int chunk[sz];
+    int chunk_updated[sz];
+    int curr = 0;
+    colls->getSubstate(this->getLevel(), i, chunk, sz);
+    
+    //Token update is calculated
+    chunk_updated[0] = -1;
+    if(chunk[0]>=e_delta) chunk_updated[0] = chunk[0] + f_delta;
+    if(chunk_updated[0]<0) return -1;
+    
+    //New index is received
+    long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
+    satimpl_opname::relation_node::setTokenUpdateAtIndex(i,j);
+    }
+  
+  return satimpl_opname::relation_node::getTokenUpdate()[i];
+}
+
 
 // **************************************************************************
 // *                                                                        *
@@ -2060,6 +2141,84 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
     otf_events, getParent().getNumEvents()
   );
 }
+
+satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_msg &debug)
+{
+  using namespace MEDDLY;
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
+  substate_colls* c_pass = this->getSubstateStorage();
+  
+  satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(),ms.getMddForest());
+  
+  int max_node_count = 10;
+  int nEvents = getParent().getNumEvents();
+  int nPlaces = getParent().getNumStateVars();
+  
+  
+  int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
+  int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
+  std::vector<std::map<int, std::pair<long,long>>> event_table;
+  event_table.resize(nEvents);
+  //Holds the variables affected in the events from bottom to top
+  int** v_all_fire = (int**)malloc(nEvents*sizeof(int*));
+  //Holds the constant delta of event on certain variable
+  long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
+  
+  for(int i = 0; i<nEvents; i++) {
+    for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        std::pair<long,long> enable_alone = std::make_pair(DL->termlist->term->getLower(),0);
+        event_table[i].insert(std::pair<int, std::pair<long,long>>(k,enable_alone));
+      } // for k
+    } // for enable_deps
+    
+    
+    for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        long fst = 0;
+        std::map<int, std::pair<long,long>>::iterator fit = event_table[i].find(k);
+        if (fit != event_table[i].end()) fst = fit->second.first;
+        std::pair<long,long> fire_alone = std::make_pair(fst,DL->termlist->term->getDelta());
+        event_table[i].erase(k);
+        event_table[i].insert(std::pair<int, std::pair<long,long>>(k,fire_alone));
+      } // for k
+    } // for fire_deps
+    
+    max_node_count+=event_table[i].size();
+    std::map<int, std::pair<long,long>>::reverse_iterator rit = event_table[i].rbegin();
+    tops_of_events[i] = rit->first;
+  }// for Events
+  
+  
+  
+  derive_relation_node** rNode = (derive_relation_node**)malloc(max_node_count*sizeof(derive_relation_node*));
+  int rCtr = 0;
+  int avbl = 0;
+  
+  for(int i = 0; i < nEvents; i++)
+    {
+    unsigned long sign = 0;
+    int previous_node_handle = 1;
+    std::map<int, std::pair<long,long>>::iterator e_it = event_table[i].begin();
+    for(int j = 0; j < event_table[i].size(),e_it!=event_table[i].end(); j++,e_it++){
+      
+      int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
+      sign = sign*10 + uniq;
+      rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
+      previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
+      rCtr ++;
+    }
+    }
+
+  //
+  // Return overall implicit relation
+  //
+  return T;
+}
+
 
 
 void substate_varoption::initDomain(const exprman* em)
@@ -2704,6 +2863,44 @@ bool onthefly_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
   return false;  // for now...
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                ontheflyimplicit_varoption class                        *
+// *                                                                        *
+// **************************************************************************
+
+class ontheflyimplicit_varoption : public substate_varoption {
+public:
+  ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
+                             const exprman* em, const meddly_procgen &pg);
+  
+  virtual void updateEvents(named_msg &d, bool* cl);
+  
+  virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                 ontheflyimplicit_varoption methods                       *
+// *                                                                        *
+// **************************************************************************
+
+ontheflyimplicit_varoption
+::ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
+                             const exprman* em, const meddly_procgen &pg)
+: substate_varoption(x, p, em, pg)
+{
+}
+
+void ontheflyimplicit_varoption::updateEvents(named_msg &d, bool* cl)
+{
+  // throw subengine::Engine_Failed;
+}
+
+bool ontheflyimplicit_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
+{
+  return false;  // for now...
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -2755,6 +2952,7 @@ meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const
   }
   return mvo;
 }
+
 
 meddly_varoption*
 meddly_procgen::makePregen(const dsde_hlm &m, meddly_reachset &ms) const

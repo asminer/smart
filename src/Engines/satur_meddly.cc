@@ -1322,7 +1322,197 @@ void meddly_otfsat::generateRSS(meddly_varoption &x,
   }
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                       meddly_otfimplsat  class                         *
+// *                                                                        *
+// **************************************************************************
 
+/** On-the-fly-implicit saturation using Meddly.
+ 
+ REFERRED AS IMPLICIT-RELATION IN Meddly
+ HACK!
+ RE-DESIGN THIS CLASS AND EVERYTHING ELSE IN HERE!
+ IT'S ALL CRAP!
+ 
+ */
+
+class meddly_otfimplsat : public meddly_implicitgen {
+public:
+  meddly_otfimplsat();
+  virtual ~meddly_otfimplsat();
+protected:
+  virtual void buildRSS(meddly_varoption &x);
+  virtual void generateRSS(meddly_varoption &x, timer &w) {
+    DCASSERT(0);
+  }
+  virtual const char* getAlgName() const { return "on the fly implicit nodes saturation"; }
+private:
+  // Build the otfimpl next-state function
+  //
+  MEDDLY::satimpl_opname::implicit_relation* buildNSF(meddly_varoption &x);
+  
+  // Build the reachable set of states
+  //
+  void generateRSS(meddly_varoption &x, MEDDLY::satimpl_opname::implicit_relation* NSF);
+  // Clear Meddly's compute tables
+  //
+  void clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &NSF);
+  
+  
+};
+
+meddly_otfimplsat the_meddly_otfimplsat;
+
+meddly_otfimplsat::meddly_otfimplsat() : meddly_implicitgen()
+{
+}
+
+meddly_otfimplsat::~meddly_otfimplsat()
+{
+}
+
+void meddly_otfimplsat::buildRSS(meddly_varoption &x)
+{
+  timer watch;
+  timer subwatch;
+  if (startGen(x.getParent())) {
+    Report().stopIO();
+  }
+  
+  //
+  // Build the initial state set, and other initializations
+  //
+  if (Report().startReport()) {
+    Report().report() << "Initializing forests\n";
+    Report().stopIO();
+  }
+  
+  try {
+    x.initializeVars();
+    
+    if (Report().startReport()) {
+      Report().report() << "Initialized  forests, took ";
+      Report().report() << watch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+    
+    x.initializeEvents(Debug());
+    
+    //
+    // Build next-state function
+    //
+    if (Report().startReport()) {
+      Report().report() << "Initializing next-state function builder\n";
+      subwatch.reset();
+      Report().stopIO();
+    }
+    
+    MEDDLY::satimpl_opname::implicit_relation* NSF = buildNSF(x);
+    DCASSERT(NSF);
+    
+    
+    if (Report().startReport()) {
+      Report().report() << "Initialized  next-state function builder, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+    //
+    // Generate reachability set
+    //
+    if (Report().startReport()) {
+      Report().report() << "Building reachability set\n";
+      Report().stopIO();
+      subwatch.reset();
+    }
+    
+    generateRSS(x, NSF);
+    
+    if (Report().startReport()) {
+      Report().report() << "Built reachability set, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      smart_output Drep(Report().report());
+      MEDDLY::operation::showAllComputeTables(Drep,3);
+      Report().stopIO();
+    }
+    
+    
+    
+    if (stopGen(false, x.getParent(), watch)) {
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      Report().stopIO();
+    }
+    
+    
+    result numstates;
+    x.getNumStates(numstates);
+    if (!numstates.isNormal()) {
+      //
+      // TBD: Error, can we print something and exit cleanly here?
+      em->cout() << "CANNOT COMPUTE\n";
+      delete NSF;
+      return;
+    }
+    
+    em->cout() << "STATE_SPACE STATES ";
+    shared_object* bigns = numstates.getPtr();
+    if (bigns) {
+      bigns->Print(em->cout(), 0);
+    } else {
+      long ns = numstates.getInt();
+      em->cout() << ns;
+    }
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+    
+    clearMeddlyComputeTable(x, *NSF);
+    
+    delete NSF;
+    
+  } // try
+  
+  catch (subengine::error status) {
+    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    throw status;
+  }
+}
+
+void meddly_otfimplsat::clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &NSF)
+{
+  //NSF.clearMinterms();
+  MEDDLY::operation::removeAllFromMonolithic();
+}
+
+MEDDLY::satimpl_opname::implicit_relation*
+meddly_otfimplsat::buildNSF(meddly_varoption &x)
+{
+  // FOR NOW!
+  // TBD!
+  return x.buildNSF_IMPLICIT(Debug());
+}
+
+void meddly_otfimplsat::generateRSS(meddly_varoption &x,
+                                    MEDDLY::satimpl_opname::implicit_relation* NSF)
+{
+  using namespace MEDDLY;
+  
+  DCASSERT(NSF);
+  DCASSERT(MEDDLY::SATURATION_IMPL_FORWARD);
+  try{
+    specialized_operation* satop = SATURATION_IMPL_FORWARD->buildOperation(NSF);
+    DCASSERT(satop);
+    
+    shared_ddedge* S = x.newMddEdge();
+    satop->compute(x.getInitial(), S->E);
+    x.setStates(S);
+    checkTerm("Generation failed", x.getParent());
+  }
+  catch (MEDDLY::error ce) {
+    convert(ce, "Generation failed", x.getParent());
+  }
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -1644,6 +1834,13 @@ bool init_saturmeddly::execute()
     &the_meddly_otfsat
   );
 
+  RegisterEngine(em,
+   "MeddlyProcessGeneration",
+   "OTF_IMPLICIT_SATURATION",
+   "The On-the-fly-implicit Saturation algorithm, as implemented in Meddly",
+    &the_meddly_otfimplsat
+   );
+  
 
   RegisterEngine(em,
     "MeddlyProcessGeneration",
