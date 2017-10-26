@@ -497,6 +497,8 @@ public:
   */
   virtual void Traverse(traverse_data &x);
   virtual bool Equals(const shared_object *o) const;
+  virtual long getDelta() const;
+  virtual long getLower() const;
 
 };
 
