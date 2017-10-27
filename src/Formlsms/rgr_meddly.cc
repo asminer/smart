@@ -801,6 +801,13 @@ void meddly_monolithic_min_rg::_EX(bool revTime, const shared_ddedge* p, shared_
     mxd_wrap->preImage(p, edges, ans);
   }
 
+  // Increase the cost
+  if (0 != ans->E.getNode()) {
+    long ev = 0;
+    ans->E.getEdgeValue(ev);
+    ans->E.setEdgeValue(ev + 1);
+  }
+
   extra->Append(Share(ans));
   extra->Append(Share(const_cast<shared_ddedge*>(p)));
 }
@@ -808,7 +815,7 @@ void meddly_monolithic_min_rg::_EX(bool revTime, const shared_ddedge* p, shared_
 void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q,
   shared_ddedge* ans, List<shared_ddedge>* extra)
 {
-  MEDDLY::minimum_witness_opname::minimum_witness_args args(
+  MEDDLY::constrained_opname::constrained_args args(
     p == nullptr ? ans->E.getForest() : p->E.getForest(),
     q->E.getForest(),
     edges->E.getForest(),
@@ -819,7 +826,7 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
     return;
   }
 
-  MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINT_BACKWARD_DFS->buildOperation(&args);
+  MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINED_BACKWARD_DFS->buildOperation(&args);
   if (nullptr == p) {
     shared_ddedge* t = mrss->newEvmddConst(true);
     op->compute(t->E, q->E, edges->E, ans->E);
@@ -850,7 +857,7 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
   MEDDLY::apply(MEDDLY::COPY, edges->E, tc->E);
   MEDDLY::apply(MEDDLY::POST_PLUS, tc->E, p->E, tc->E);
 
-  MEDDLY::minimum_witness_opname::minimum_witness_args args(p->E.getForest(),
+  MEDDLY::constrained_opname::constrained_args args(p->E.getForest(),
     tc->E.getForest(), edges->E.getForest(), tc->E.getForest());
   MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS->buildOperation(&args);
   tcOp->compute(p->E, tc->E, edges->E, tc->E);
@@ -922,10 +929,10 @@ void meddly_monolithic_min_rg::_traceEX(bool revTime, const shared_ddedge* p, co
     mxd_wrap->postImage(p, edges, f);
   }
 
-  long ev = -1;
+  long ev = 0;
   f->E.getEdgeValue(ev);
-  DCASSERT(ev > 2);
-  f->E.setEdgeValue(ev - 2);
+  DCASSERT(ev >= 2);
+  f->E.setEdgeValue(ev - 1);
 
   // f := f /\ mtd[1]
   MEDDLY::apply( MEDDLY::INTERSECTION, f->E, mtd->getStage(1)->E, f->E );
@@ -1071,11 +1078,7 @@ void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, co
         cache.Append(t);
       }
       mxd_wrap->preImage(f, edges, f);
-      long ev = 0;
-      f->E.getEdgeValue(ev);
-      f->E.setEdgeValue(ev - 1);
       MEDDLY::apply( MEDDLY::PLUS, f->E, mtd->getStage(0)->E, f->E );
-
       MEDDLY::apply( MEDDLY::INTERSECTION, f->E, last->E, g->E );
     }
 
