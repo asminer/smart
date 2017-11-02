@@ -27,6 +27,7 @@
 // #define SHORT_CIRCUIT_ENABLING
 
 #define USING_MEDDLY_ADD_MINTERM
+#define USE_XDDS
 
 using namespace MEDDLY;
 
