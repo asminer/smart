@@ -82,23 +82,27 @@ const trace* trace::getSubtrace(int i) const
 bool trace::Print(OutputStream &s, int width) const
 {
   s << "\n";
+  int total = TotalLength();
   if (nullptr == parent) {
-    s << "Length: " << TotalLength() << "\n";
-  }
-  for (int i = 0; i < width; i++) {
-    s << " ";
-  }
-  for (int i = 0; i < states.Length(); i++) {
-    if (i != 0) {
-      s << " -> ";
-    }
-    states.ReadItem(i)->Print(s, width);
+    s << "Length: " << total << "\n";
   }
 
-  for (int i = 0; i < subtraces.Length(); i++) {
-    const trace* st = subtraces.ReadItem(i);
-    if (nullptr != st) {
-      subtraces.ReadItem(i)->Print(s, width + 3);
+  if (total <= 100) {
+    for (int i = 0; i < width; i++) {
+      s << " ";
+    }
+    for (int i = 0; i < states.Length(); i++) {
+      if (i != 0) {
+        s << " -> ";
+      }
+      states.ReadItem(i)->Print(s, width);
+    }
+
+    for (int i = 0; i < subtraces.Length(); i++) {
+      const trace* st = subtraces.ReadItem(i);
+      if (nullptr != st) {
+        subtraces.ReadItem(i)->Print(s, width + 3);
+      }
     }
   }
   return true;
