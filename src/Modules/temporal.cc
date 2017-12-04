@@ -6,6 +6,8 @@
 #include "../ExprLib/binary.h"
 #include "../ExprLib/unary.h"
 #include "../ExprLib/assoc.h"
+#include "../ExprLib/functions.h"
+#include "../ExprLib/mod_def.h"
 
 // ******************************************************************
 
@@ -56,6 +58,13 @@ class temporal_unary : public unary {
       const type* t, expr* x);
     virtual bool Print(OutputStream &s, int) const;
     virtual void Traverse(traverse_data &x);
+
+    exprman::unary_opcode getOpCode() const;
+
+  protected:
+    expr* TraverseModel(traverse_data &x) const;
+    void TraverseOperand(traverse_data &x) const;
+
   private:
     exprman::unary_opcode opcode;
 };
@@ -85,6 +94,46 @@ void temporal_unary::Traverse(traverse_data &x)
   unary::Traverse(x);
 }
 
+exprman::unary_opcode temporal_unary::getOpCode() const
+{
+  return opcode;
+}
+
+expr* temporal_unary::TraverseModel(traverse_data &x) const
+{
+  traverse_data xx(traverse_data::Substitute);
+  result ans;
+  xx.answer = &ans;
+  x.model->Traverse(xx);
+  return dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+}
+
+void temporal_unary::TraverseOperand(traverse_data &x) const
+{
+  if (isAtomicType(em, opnd->Type())) {
+    // Atomic
+
+    // Construct arguments
+    int np = 2;
+    // XXX: Potential memory leakage
+    expr** pass = new expr*[np];
+    pass[0] = TraverseModel(x);
+    pass[1] = opnd;
+
+    const type* model_type = x.model->Type();
+    function* pot = dynamic_cast<function*>(em->findFunction(model_type, "potential"));
+    traverse_data xx(traverse_data::Substitute);
+    xx.parent = pot;
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    pot->Traverse(xx, pass, np);
+    x.answer->setPtr(Share(xx.answer->getPtr()));
+  }
+  else {
+    opnd->Traverse(x);
+  }
+}
 
 // ******************************************************************
 // *                                                                *
@@ -148,10 +197,15 @@ expr* temporal_E::buildAnother(expr *x) const
 
 void temporal_E::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const expr* oldp = x.parent;
+  x.parent = this;
+  opnd->Traverse(x);
+  x.parent = oldp;
 }
 
 // ******************************************************************
@@ -182,10 +236,53 @@ expr* temporal_F::buildAnother(expr *x) const
 
 void temporal_F::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (nullptr == texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(x.which);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AF
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AF"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EF
+    tfunc = (traverse_data::Temporal == x.which)
+      ? dynamic_cast<function*>(em->findFunction(model_type, "EF"))
+      : dynamic_cast<function*>(em->findFunction(model_type, "EF_trace"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = oldwhich;
 }
 
 // ******************************************************************
@@ -216,10 +313,53 @@ expr* temporal_G::buildAnother(expr *x) const
 
 void temporal_G::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (nullptr == texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(x.which);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AG
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AG"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EG
+    tfunc = (traverse_data::Temporal == x.which)
+      ? dynamic_cast<function*>(em->findFunction(model_type, "EG"))
+      : dynamic_cast<function*>(em->findFunction(model_type, "EG_trace"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = oldwhich;
 }
 
 // ******************************************************************
@@ -250,10 +390,53 @@ expr* temporal_X::buildAnother(expr *x) const
 
 void temporal_X::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal!=x.which && traverse_data::Trace!=x.which) {
+    temporal_unary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  temporal_unary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (nullptr == texpr) {
+    // TODO: To be implemented
+  }
+
+  traverse_data xx(x.which);
+  xx.model = x.model;
+  result ans;
+  xx.answer = &ans;
+  TraverseOperand(xx);
+
+  // Construct arguments
+  int np = 2;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AX
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AX"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EX
+    tfunc = (traverse_data::Temporal == x.which)
+      ? dynamic_cast<function*>(em->findFunction(model_type, "EX"))
+      : dynamic_cast<function*>(em->findFunction(model_type, "EX_trace"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = oldwhich;
 }
 
 // ******************************************************************
@@ -269,6 +452,9 @@ class temporal_U : public binary {
     virtual void Traverse(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *nl, expr *nr) const;
+
+    expr* TraverseModel(traverse_data &x) const;
+    void TraverseOperand(traverse_data &x, expr* p) const;
 };
 
 // ******************************************************************
@@ -297,10 +483,98 @@ expr* temporal_U::buildAnother(expr *l, expr *r) const
 
 void temporal_U::Traverse(traverse_data &x)
 {
-  // TBD - our CTL/LTL traversals here
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+    binary::Traverse(x);
+    return;
+  }
 
-  // Fall through to parent class behavior
-  binary::Traverse(x);
+  const temporal_unary* texpr = dynamic_cast<const temporal_unary*>(x.parent);
+  if (nullptr == texpr) {
+    // TODO: To be implemented
+  }
+
+  // Construct arguments
+  int np = 3;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  {
+    traverse_data xx(x.which);
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    TraverseOperand(xx, left);
+    pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+  }
+  {
+    traverse_data xx(x.which);
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    TraverseOperand(xx, right);
+    pass[2] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+  }
+
+  function* tfunc = nullptr;
+  const type* model_type = x.model->Type();
+  switch(texpr->getOpCode()) {
+  case exprman::unary_opcode::uop_forall:
+    // AU
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "AU"));
+    break;
+  case exprman::unary_opcode::uop_exists:
+    // EU
+    tfunc = (traverse_data::Temporal == x.which)
+      ? dynamic_cast<function*>(em->findFunction(model_type, "EU"))
+      : dynamic_cast<function*>(em->findFunction(model_type, "EU_trace"));
+    break;
+  default:
+    break;
+  }
+
+  const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = oldwhich;
+}
+
+expr* temporal_U::TraverseModel(traverse_data &x) const
+{
+  traverse_data xx(traverse_data::Substitute);
+  result ans;
+  xx.answer = &ans;
+  x.model->Traverse(xx);
+  return dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+}
+
+void temporal_U::TraverseOperand(traverse_data &x, expr* p) const
+{
+  if (isAtomicType(em, p->Type())) {
+    // Atomic
+
+    // Construct arguments
+    int np = 2;
+    // XXX: Potential memory leakage
+    expr** pass = new expr*[np];
+    pass[0] = TraverseModel(x);
+    pass[1] = p;
+
+    const type* model_type = x.model->Type();
+    function* pot = dynamic_cast<function*>(em->findFunction(model_type, "potential"));
+    traverse_data xx(traverse_data::Substitute);
+    xx.parent = pot;
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    pot->Traverse(xx, pass, np);
+    x.answer->setPtr(Share(xx.answer->getPtr()));
+  }
+  else {
+    p->Traverse(x);
+  }
 }
 
 // ******************************************************************
@@ -339,6 +613,119 @@ void temporal_neg::Traverse(traverse_data &x)
 
 // ******************************************************************
 // *                                                                *
+// *                  temporal_and class & methods                  *
+// *                                                                *
+// ******************************************************************
+
+class temporal_and : public binary {
+  public:
+    temporal_and(const char* fn, int line, const type* t, expr* l, expr* r);
+    virtual void Traverse(traverse_data &x);
+  protected:
+    virtual expr* buildAnother(expr *nl, expr *nr) const;
+
+    expr* TraverseModel(traverse_data &x) const;
+    void TraverseOperand(traverse_data &x, expr* p) const;
+};
+
+// ******************************************************************
+
+temporal_and::temporal_and(const char* fn, int line, const type* t,
+  expr* l, expr *r) : binary(fn, line, exprman::bop_and, t, l, r)
+{
+}
+
+expr* temporal_and::buildAnother(expr *l, expr *r) const
+{
+  return new temporal_and(Filename(), Linenumber(), Type(), l, r);
+}
+
+void temporal_and::Traverse(traverse_data &x)
+{
+  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+    binary::Traverse(x);
+    return;
+  }
+
+  // Construct arguments
+  int np = 3;
+  // XXX: Potential memory leakage
+  expr** pass = new expr*[np];
+  pass[0] = TraverseModel(x);
+  {
+    traverse_data xx(x.which);
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    TraverseOperand(xx, left);
+    pass[1] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+  }
+  {
+    traverse_data xx(x.which);
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    TraverseOperand(xx, right);
+    pass[2] = dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+  }
+
+  const type* model_type = x.model->Type();
+  function* tfunc = nullptr;
+  if (traverse_data::Temporal == x.which) {
+    // TODO: To be implemented
+    DCASSERT(false);
+  }
+  else {
+    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "And_trace"));
+  }
+
+  const expr* oldp = x.parent;
+  traverse_data::traversal_type oldwhich = x.which;
+  x.parent = tfunc;
+  x.which = traverse_data::Substitute;
+  tfunc->Traverse(x, pass, np);
+  x.parent = oldp;
+  x.which = oldwhich;
+}
+
+expr* temporal_and::TraverseModel(traverse_data &x) const
+{
+  traverse_data xx(traverse_data::Substitute);
+  result ans;
+  xx.answer = &ans;
+  x.model->Traverse(xx);
+  return dynamic_cast<expr*>(Share(xx.answer->getPtr()));
+}
+
+void temporal_and::TraverseOperand(traverse_data &x, expr* p) const
+{
+  if (isAtomicType(em, p->Type())) {
+    // Atomic
+
+    // Construct arguments
+    int np = 2;
+    // XXX: Potential memory leakage
+    expr** pass = new expr*[np];
+    pass[0] = TraverseModel(x);
+    pass[1] = p;
+
+    const type* model_type = x.model->Type();
+    function* pot = dynamic_cast<function*>(em->findFunction(model_type, "potential"));
+    traverse_data xx(traverse_data::Substitute);
+    xx.parent = pot;
+    xx.model = x.model;
+    result ans;
+    xx.answer = &ans;
+    pot->Traverse(xx, pass, np);
+    x.answer->setPtr(Share(xx.answer->getPtr()));
+  }
+  else {
+    p->Traverse(x);
+  }
+}
+
+// ******************************************************************
+// *                                                                *
 // *                temporal_implies class & methods                *
 // *                                                                *
 // ******************************************************************
@@ -353,7 +740,7 @@ class temporal_implies : public binary {
 
 // ******************************************************************
 
-temporal_implies::temporal_implies(const char* fn, int line, const type* t, 
+temporal_implies::temporal_implies(const char* fn, int line, const type* t,
   expr* l, expr *r) : binary(fn, line, exprman::bop_implies, t, l, r)
 {
 }
@@ -684,6 +1071,120 @@ unary* temporal_neg_op::makeExpr(const char* fn, int ln, expr* x) const
   return new temporal_neg(fn, ln, t, x);
 }
 
+// ******************************************************************
+// *                                                                *
+// *                temporal_and_op  class & methods                *
+// *                                                                *
+// ******************************************************************
+
+class temporal_and_op : public binary_op {
+  public:
+    temporal_and_op();
+    virtual int getPromoteDistance(const type* lt, const type* rt) const;
+    virtual const type* getExprType(const type* lt, const type* rt) const;
+    virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const;
+};
+
+// ******************************************************************
+
+temporal_and_op::temporal_and_op() : binary_op(exprman::bop_and)
+{
+}
+
+int temporal_and_op::getPromoteDistance(const type* lt, const type* rt) const
+{
+  if (getExprType(lt, rt)) return 0;
+  return -1;
+}
+
+const type* temporal_and_op::getExprType(const type* lt, const type* rt) const
+{
+  //
+  // Logicify left and right types,
+  //
+
+  const temporal_type* ltt = 0;
+  bool left_atomic = false;
+  if (isAtomicType(em, lt)) {
+    left_atomic = true;
+  } else {
+    const temporal_type* tt = dynamic_cast <const temporal_type*> (lt);
+    if (tt) ltt = tt->logicify();
+  }
+
+  const temporal_type* rtt = 0;
+  bool right_atomic = false;
+  if (isAtomicType(em, rt)) {
+    right_atomic = true;
+  } else {
+    const temporal_type* tt = dynamic_cast <const temporal_type*> (rt);
+    if (tt) rtt = tt->logicify();
+  }
+
+  //
+  // Determine what happens when we mix left and right
+  //
+
+  if (left_atomic && right_atomic) {
+    // There's already an operator for this, it's called boolean logic
+    return 0;
+  }
+
+  if (left_atomic) {
+    if (0==rtt) return 0;
+    if (rtt->isStateFormula()) return rtt;
+    if (rtt == temporal_types::t_ltl_pathform) {
+      return rtt;
+    } else {
+      return temporal_types::t_ctlstar_pathform;
+    }
+  }
+
+  if (right_atomic) {
+    if (0==ltt) return 0;
+    if (ltt->isStateFormula()) return ltt;
+    if (ltt == temporal_types::t_ltl_pathform) {
+      return ltt;
+    } else {
+      return temporal_types::t_ctlstar_pathform;
+    }
+  }
+
+  // Done with atomic cases
+
+  if (0==ltt) return 0;
+  if (0==rtt) return 0;
+
+  // We have two temporal logic formulas, make sure they're both path or state
+
+  if (ltt->isPathFormula() != rtt->isPathFormula()) return 0;
+
+  if (ltt == rtt) return ltt;
+
+  //
+  // Remaining cases - mixture of ctl, ltl, or ctlstar formulas.
+  // Result for sure is a ctlstar formula.
+  //
+
+  if (ltt->isPathFormula())   return temporal_types::t_ctlstar_pathform;
+  else                        return temporal_types::t_ctlstar_stateform;
+}
+
+binary* temporal_and_op::makeExpr(const char* fn, int ln, expr* left,
+  expr* right) const
+{
+  DCASSERT(left);
+  DCASSERT(right);
+
+  const type* t = getExprType(left->Type(), right->Type());
+  if (0==t) {
+    Delete(left);
+    Delete(right);
+    return 0;
+  }
+
+  return new temporal_and(fn, ln, t, left, right);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -834,6 +1335,13 @@ bool init_temporal::execute()
   // Types first!
   // ******************************************************************
 
+  t_temporal = new temporal_type(
+    false, // abstract type that every temporal type can be converted into
+    "temporal_formula",
+    "Temporal formula",
+    "Temporal formula"
+  );
+
   t_single_pathop = new temporal_type(
     true, // path formula
     "tl_simple_path",
@@ -900,6 +1408,7 @@ bool init_temporal::execute()
 
   // ------------------------------------------------------------
 
+  em->registerType(t_temporal);
   em->registerType(t_single_pathop);
   em->registerType(t_ctl_pathform);
   em->registerType(t_ctl_stateform);
@@ -924,6 +1433,7 @@ bool init_temporal::execute()
   // Logic
 
   em->registerOperation(  new temporal_neg_op       );
+  em->registerOperation(  new temporal_and_op       );
   em->registerOperation(  new temporal_implies_op   );
 
   // TBD: and

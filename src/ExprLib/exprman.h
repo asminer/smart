@@ -217,6 +217,8 @@ public:
   simple_type*  STATESET;
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
+  simple_type*  TEMPORAL;
+  simple_type*  TRACE;
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
@@ -266,8 +268,10 @@ public:
     bop_le        = 8,
     /// Temporal operator "U"
     bop_until     = 9,
+    /// Temporal operator "AND"
+    bop_and       = 10,
     /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    bop_none      = 10
+    bop_none      = 11
   };
 
   /// Trinary operators.

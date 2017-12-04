@@ -11,6 +11,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
+#include "../ExprLib/sets.h"
 
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
@@ -34,6 +35,9 @@ typedef std::unordered_map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
 typedef std::map< MEDDLY::node_handle, bigint > NodeIntMap;
 typedef std::map< MEDDLY::node_handle, NodeIntMap > NodeNodeIntMap;
 #endif
+
+#include "../ParseSM/parse_sm.h"
+extern parse_module* pm;
 
 // #define DEBUG_DETAILS
 // #define DEBUG_DEPENDENCIES
@@ -108,7 +112,9 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
     Report().stopIO();
   }
 
-  meddly_monolithic_rg* rgr = new meddly_monolithic_rg(0, mvo->shareMxdWrap());
+  meddly_monolithic_rg* rgr = pm->computeMinimumTrace()
+    ? new meddly_monolithic_min_rg(0, mvo->shareMxdWrap())
+    : new meddly_monolithic_rg(0, mvo->shareMxdWrap());
   rgr->setPotential(Share(NSF));
   if (!potential) rgr->scheduleConversionToActual();
   glm->setRGR( rgr );
@@ -296,6 +302,11 @@ protected:
     return NSF->E;
   }
 
+  inline void setNSF(shared_ddedge* nsf) {
+    DCASSERT(nullptr == NSF);
+    NSF = nsf;
+  }
+
   virtual void generateRSS(meddly_varoption &x, timer &w) = 0;
   virtual const char* getAlgName() const = 0;
 
@@ -310,6 +321,8 @@ protected:
   void buildNextStateFunc(meddly_varoption &x);
   
   void preprocess(dsde_hlm &m);
+
+  virtual void postprocess(dsde_hlm &m, meddly_varoption &x) { }
 
   inline static void checkTerm(const char* errstr, const hldsm &hm) {
     if (!em->caughtTerm()) return;
@@ -405,6 +418,7 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
     mvo = makeVariableOption(*dhm, *rss);
     DCASSERT(mvo);
     buildRSS(*mvo);
+    postprocess(*dhm, *mvo);
     doneGen();
   }
   catch (subengine::error e) {
@@ -809,6 +823,7 @@ protected:
     DCASSERT(0);
   }
   virtual const char* getAlgName() const { return "on the fly saturation"; }
+  virtual void postprocess(dsde_hlm &m, meddly_varoption &x);
 private:
   // Build the otf next-state function
   //
@@ -1247,6 +1262,20 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
+    // Build a monolithic transition relation
+    int num_vars = NSF->getRelForest()->getNumVariables();
+    MEDDLY::node_handle mxd = 0;
+    MEDDLY::binary_operation* unionOp = MEDDLY::getOperation(MEDDLY::UNION,
+      NSF->getRelForest(), NSF->getRelForest(), NSF->getRelForest());
+    for (int i = 1; i <= num_vars; i++) {
+      for (int ei = 0; ei < NSF->getNumOfEvents(i); ei++) {
+        mxd = unionOp->compute(mxd, NSF->getEvent(i, ei));
+      }
+    }
+    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
+
     clearMeddlyComputeTable(x, *NSF);
 
 #if 1
@@ -1283,6 +1312,21 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
   catch (subengine::error status) {
     if (stopGen(true, x.getParent(), watch)) Report().stopIO();
     throw status;
+  }
+}
+
+void meddly_otfsat::postprocess(dsde_hlm &m, meddly_varoption &x)
+{
+  // Update variable bounds
+  const MEDDLY::domain* d = x.getMddForest()->getDomain();
+  int num_vars = m.getNumStateVars();
+  for (int i = 0; i < num_vars; i++) {
+    model_statevar* var = m.getStateVar(i);
+    if (!var->HasBounds()) {
+      int level = var->GetPart();
+      // The bound of primed variable
+      var->SetBounds(MakeRangeSet(0, d->getVariableBound(level, true), 1));
+    }
   }
 }
 

@@ -710,7 +710,8 @@ void meddly_encoder
       case exprman::aop_semi:
       case exprman::aop_and:
         DCASSERT(!flip);
-        if (MEDDLY::forest::BOOLEAN != F->getRangeType())
+        if (MEDDLY::forest::BOOLEAN != F->getRangeType()
+            && MEDDLY::forest::EVPLUS != F->getEdgeLabeling())
           MEDDLY::apply(
             MEDDLY::MINIMUM, meL->E, meR->E, out
           );

@@ -51,6 +51,7 @@ class temporal_type : public simple_type {
       return ltype;
     }
 
+    virtual const simple_type* getBaseType() const;
 
   private:
     const temporal_type* qtype;
@@ -61,6 +62,7 @@ class temporal_type : public simple_type {
 
 
 namespace temporal_types {
+  temporal_type* t_temporal;
   temporal_type* t_single_pathop;
   temporal_type* t_ctl_pathform;
   temporal_type* t_ctl_stateform;
@@ -69,6 +71,11 @@ namespace temporal_types {
   temporal_type* t_ctlstar_pathform;
   temporal_type* t_ctlstar_stateform;
 };
+
+const simple_type* temporal_type::getBaseType() const
+{
+  return temporal_types::t_temporal;
+}
 
 #endif
 

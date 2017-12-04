@@ -116,3 +116,23 @@ void negop::Traverse(traverse_data &x)
   }
 }
 
+// ******************************************************************
+// *                                                                *
+// *                    unary_temporal_op  class                    *
+// *                                                                *
+// ******************************************************************
+
+unary_temporal_expr
+::unary_temporal_expr(const char* F, int L, exprman::unary_opcode oc, const type* t, expr* x)
+ : unary(F, L, t, x)
+{
+  opcode = oc;
+}
+
+bool unary_temporal_expr::Print(OutputStream &s, int) const
+{
+  s << em->getOp(opcode);
+  DCASSERT(opnd);
+  opnd->Print(s, 0);
+  return true;
+}

@@ -326,10 +326,14 @@ bool superman::setFundamentalTypes()
   if (!STATESET)    STATESET    = findSimple("stateset");
   if (!STATEDIST)   STATEDIST   = findSimple("statedist");
   if (!STATEPROBS)  STATEPROBS  = findSimple("stateprobs");
-  
+  if (!TEMPORAL)    TEMPORAL    = findSimple("temporal_formula");
+  if (!TRACE)       TRACE       = findSimple("trace");
+
   if (!NEXT_STATE)  NEXT_STATE  = findType("next state");
 
-  return VOID && NULTYPE && BOOL && INT && REAL && EXPO && MODEL && STRING && BIGINT && STATESET && STATEDIST && NEXT_STATE;
+  return VOID && NULTYPE && BOOL && INT && REAL && EXPO
+    && MODEL && STRING && BIGINT && STATESET && STATEDIST
+    && TEMPORAL && TRACE && NEXT_STATE;
 }
 
 const type* superman::findOWDType(const char* name) const

@@ -144,7 +144,7 @@ void graph_lldsm::reachgraph::getNumArcs(result &na) const
   }
 }
 
-stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p)
+stateset* graph_lldsm::reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
 {
   return notImplemented("EX");
 }
@@ -155,7 +155,7 @@ stateset* graph_lldsm::reachgraph::AX(bool revTime, const stateset* p)
 }
 
 stateset* graph_lldsm::reachgraph
-::EU(bool revTime, const stateset* p, const stateset* q)
+::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
 {
   return notImplemented("EU");
 }
@@ -172,7 +172,7 @@ stateset* graph_lldsm::reachgraph
   return notImplemented("fairAU");
 }
 
-stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p)
+stateset* graph_lldsm::reachgraph::unfairEG(bool revTime, const stateset* p, trace_data* td)
 {
   return notImplemented("unfairEG");
 }
@@ -197,6 +197,37 @@ void graph_lldsm::reachgraph::countPaths(const stateset*, const stateset*, resul
 {
   notImplemented("`counting paths'");
   c.setNull();
+}
+
+void graph_lldsm::reachgraph
+::traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
+{
+  notImplemented("traceEX");
+}
+
+void graph_lldsm::reachgraph
+::traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
+{
+  notImplemented("traceEU");
+}
+
+void graph_lldsm::reachgraph
+::traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans)
+{
+  notImplemented("traceEG");
+}
+
+trace_data* graph_lldsm::reachgraph
+::makeTraceData() const
+{
+  notImplemented("makeTraceData");
+  return 0;
+}
+
+stateset* graph_lldsm::reachgraph
+::attachWeight(const stateset* p) const
+{
+  return notImplemented("attachWeight");
 }
 
 bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const

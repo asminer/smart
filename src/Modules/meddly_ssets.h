@@ -37,11 +37,16 @@ class meddly_stateset : public stateset {
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
+    virtual bool Plus(const expr* c, const char* op, const stateset* x);
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;
 
     virtual bool isEmpty() const;
+
+    virtual shared_state* getSingleState() const;
+    virtual void Select();
+    virtual void Offset(int offset);
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;

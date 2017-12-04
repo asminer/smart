@@ -123,6 +123,26 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
+// ******************************************************************
+// *                                                                *
+// *                    unary_temporal_op  class                    *
+// *                                                                *
+// ******************************************************************
+
+/** The base class for temporal temporal expression.
+*/
+
+class unary_temporal_expr : public unary {
+  exprman::unary_opcode opcode;
+public:
+  unary_temporal_expr(const char* fn, int line, exprman::unary_opcode oc, const type* t, expr* x);
+  virtual bool Print(OutputStream &s, int) const;
+
+  exprman::unary_opcode GetOpCode() const
+  {
+    return opcode;
+  }
+};
 
 #endif
 

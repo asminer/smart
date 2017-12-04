@@ -112,8 +112,8 @@ void fcall::Traverse(traverse_data &x)
             newpass[i] = 0;
           }
           if (newpass[i] != pass[i])  notequal = true;
-         } // for i
-        if (func->Traverse(x, newpass, numpass))  break;
+        } // for i
+        if (func->Traverse(x, newpass, numpass)) break;
         if (notequal) {
           x.answer->setPtr(new fcall(this, func, newpass, numpass));
         } else {

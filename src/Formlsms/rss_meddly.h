@@ -77,6 +77,30 @@ class meddly_reachset : public state_lldsm::reachset {
       return ans;
     }
 
+    inline shared_ddedge* newEvmddEdge() {
+      if (nullptr == evmdd_wrap){
+        MEDDLY::forest* foo = vars->createForest(
+          false, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS,
+          mdd_wrap->getForest()->getPolicies()
+        );
+        evmdd_wrap = mdd_wrap->copyWithDifferentForest("EV+MDD", foo);
+      }
+
+      DCASSERT(evmdd_wrap);
+      return new shared_ddedge(evmdd_wrap->getForest());
+    }
+
+    inline shared_ddedge* newEvmddConst(bool v) {
+      shared_ddedge* ans = newEvmddEdge();
+      if (v) {
+        evmdd_wrap->buildSymbolicConst(v, ans);
+      }
+      else {
+        ans->E.set(0, 0);
+      }
+      return ans;
+    }
+
     inline void createMinterms(const int* const* mts, int n, shared_object* ans) {
       DCASSERT(mdd_wrap);
       mdd_wrap->createMinterms(mts, n, ans);
@@ -110,6 +134,12 @@ class meddly_reachset : public state_lldsm::reachset {
       DCASSERT(states);
       return states->E;
     }
+
+    /**
+        Attach a weight value to each state in the given stateset.
+        The default weight is 1.
+     */
+    stateset* attachWeight(const stateset* p);
 
   //
   // Required for reachsets
@@ -203,6 +233,9 @@ class meddly_reachset : public state_lldsm::reachset {
     // for indexing states
     meddly_encoder* index_wrap;
     shared_ddedge* state_indexes;
+
+    // for trace generation
+    meddly_encoder* evmdd_wrap;
 
     // Total kludge for 2-phase explicit generation
     // Remember the mxd wrapper for phase 2
