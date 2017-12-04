@@ -855,6 +855,19 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
 
   shared_ddedge* tc = newEvmxdEdge();
   MEDDLY::apply(MEDDLY::COPY, edges->E, tc->E);
+  {
+    // Apply two copies to remove edge value
+    shared_ddedge* mp = mrss->newMddEdge();
+    MEDDLY::apply(MEDDLY::COPY, p->E, mp->E);
+    shared_ddedge* evp = mrss->newEvmddEdge();
+    MEDDLY::apply(MEDDLY::COPY, mp->E, evp->E);
+
+    // Constrain the "from" states in transitive closure
+    MEDDLY::apply(MEDDLY::PRE_PLUS, tc->E, evp->E, tc->E);
+
+    Delete(mp);
+    Delete(evp);
+  }
   MEDDLY::apply(MEDDLY::POST_PLUS, tc->E, p->E, tc->E);
 
   MEDDLY::constrained_opname::constrained_args args(p->E.getForest(),
