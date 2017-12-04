@@ -5,6 +5,7 @@
 #include "state_llm.h"
 
 #include "../Modules/statesets.h" // for now
+#include "../Modules/trace.h"
 
 class intset;
 class stateset;
@@ -128,12 +129,14 @@ public:
           return null, so normally this method will be overridden in 
           some derived class.
             @param  revTime   If true, reverse time and compute EY.
-            @param  p         Set of states 
+            @param  p         Set of states.
+            @param  td        On return, necessary data (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying EX(p) or EY(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EX(bool revTime, const stateset* p);
+      virtual stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying AX(p).
           The default behavior here is to print an error message and 
@@ -154,13 +157,15 @@ public:
             @param  revTime   If true, reverse time and compute ES.
             @param  p         Set of states for p.  If 0, then
                               we instead compute EF / EP.
-            @param  q         Set of states for q
+            @param  q         Set of states for q.
+            @param  td        On return, necessary data (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying E p U q
                       or E p S q.
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
+      virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr);
 
       /** Compute states satisfying A p U q, not restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -200,11 +205,13 @@ public:
           some derived class.
             @param  revTime   If true, switch to unfairEH.
             @param  p         Set of states satisfying p.
+            @param  td        On return, necessary data (if provided) which can be
+                              used for witness generation later.
             @return   New set of states satisfying EG(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
       */
-      virtual stateset* unfairEG(bool revTime, const stateset* p);
+      virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying EG(p), restricted to fair paths.
           The default behavior here is to print an error message and 
@@ -267,6 +274,46 @@ public:
       */
       virtual void countPaths(const stateset* src, const stateset* dest, 
           result& count);
+
+      /** Compute a trace verifying EX(q).
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute EY.
+            @param  p         Set of initial states (should include only one state).
+            @param  td        Necessary data for witness generation.
+            @param  ans       On return, a trace as a sequence of states.
+      */
+      virtual void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+
+      /** Compute a trace verifying EU.
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute ES.
+            @param  p         Set of initial states (should include only one state).
+            @param  td        Necessary data for witness generation.
+            @param  ans       On return, a trace as a sequence of states.
+      */
+      virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+
+      /** Compute a trace verifying EG.
+          The default behavior here is to print an error message,
+          so normally this method will be overridden in
+          some derived class.
+            @param  revTime   If true, reverse time and compute EH.
+            @param  p         Set of initial states (should include only one state).
+            @param  td        Necessary data for witness generation.
+            @param  ans       On return, a trace as a sequence of states.
+      */
+      virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+
+      virtual trace_data* makeTraceData() const;
+
+      /** Attach a weight to each state.
+          Used in minimum trace generation.
+       */
+      virtual stateset* attachWeight(const stateset* p) const;
 
       // Shared object requirements
       virtual bool Print(OutputStream &s, int width) const;
@@ -358,16 +405,16 @@ public:
   virtual bool isFairModel() const;
 
 
-  inline stateset* EX(bool revTime, const stateset* p) const {
-    return RGR ? RGR->EX(revTime, p) : 0;
+  inline stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr) const {
+    return RGR ? RGR->EX(revTime, p, td) : 0;
   }
 
-  inline stateset* EU(bool revTime, const stateset* p, const stateset* q) const {
-    return RGR ? RGR->EU(revTime, p, q) : 0;
+  inline stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr) const {
+    return RGR ? RGR->EU(revTime, p, q, td) : 0;
   }
 
-  inline stateset* unfairEG(bool revTime, const stateset* p) const {
-    return RGR ? RGR->unfairEG(revTime, p) : 0;
+  inline stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr) const {
+    return RGR ? RGR->unfairEG(revTime, p, td) : 0;
   }
 
   inline stateset* fairEG(bool revTime, const stateset* p) const {
@@ -404,6 +451,31 @@ public:
     }
   }
 
+  inline void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
+    if (RGR) {
+      RGR->traceEX(revTime, p, td, ans);
+    }
+  }
+
+  inline void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
+    if (RGR) {
+      RGR->traceEU(revTime, p, td, ans);
+    }
+  }
+
+  inline void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) const {
+    if (RGR) {
+      RGR->traceEG(revTime, p, td, ans);
+    }
+  }
+
+  inline trace_data* makeTraceData() const {
+    return RGR ? RGR->makeTraceData() : 0;
+  }
+
+  inline stateset* attachWeight(const stateset* p) const {
+    return RGR ? RGR->attachWeight(p) : 0;
+  }
 
   // Hacks for explicit:
   //

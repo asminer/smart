@@ -783,6 +783,14 @@ void bounded_varoption::initEncoders(int maxbound, const meddly_procgen &pg)
 class substate_encoder : public meddly_encoder {
   substate_colls* colls;
   const hldsm &parent;
+
+  int* terms;
+  int maxbound;
+  long lastcomputed;
+  traverse_data tdx;
+  result ans;
+  shared_state* expl_state;
+
 public:
   substate_encoder(const char* n, forest* f, const hldsm &p, substate_colls* c);
 protected:
@@ -790,13 +798,15 @@ protected:
 public:
   virtual bool arePrimedVarsSeparate() const { return false; }
   virtual int getNumDDVars() const { return parent.getPartInfo().num_levels; }
-  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
-                                expr *f, shared_object* answer);
+  virtual void buildSymbolicSV(const symbol* sv, bool primed, expr *f, shared_object* answer);
 
   virtual void state2minterm(const shared_state* s, int* mt) const;
   virtual void minterm2state(const int* mt, shared_state *s) const;
 
   virtual meddly_encoder* copyWithDifferentForest(const char* n, forest*) const;
+
+protected:
+  void FillTerms(const model_statevar* sv, expr* f);
 };
 
 // **************************************************************************
@@ -807,21 +817,62 @@ public:
 
 substate_encoder
 ::substate_encoder(const char* n, forest* f, const hldsm &p, substate_colls* c)
-: meddly_encoder(n, f), parent(p)
+: meddly_encoder(n, f), tdx(traverse_data::Compute), parent(p)
 {
   colls = c;
   DCASSERT(parent.hasPartInfo());
+
+  maxbound = MAX(parent.getPartInfo().num_levels+1, 10000);
+  terms = new int[maxbound];
+  expl_state = new shared_state(&p);
+  tdx.answer = &ans;
+  tdx.current_state = expl_state;
 }
 
 substate_encoder::~substate_encoder()
 {
   Delete(colls);
+  delete[] terms;
+  Delete(expl_state);
 }
 
 void substate_encoder
 ::buildSymbolicSV(const symbol* sv, bool primed, expr* f, shared_object* answer)
 {
-  throw Failed;
+  //
+  // TODO: The behavior can be undefined when the nodes are extensible
+  //
+
+  if (0==sv) throw Failed;
+  shared_ddedge* dd = dynamic_cast<shared_ddedge*> (answer);
+  if (0==dd) throw Invalid_Edge;
+#ifdef DEVELOPMENT_CODE
+  if (dd->numRefs()>1) throw Shared_Output_Edge;
+#endif
+  DCASSERT(dd);
+
+  const model_statevar* mv = dynamic_cast<const model_statevar*> (sv);
+  DCASSERT(mv);
+  FillTerms(mv, f);
+
+  try {
+    int level = mv->GetPart();
+    F->createEdgeForVar(level, primed, terms, dd->E);
+
+#ifdef DEBUG_BUILD_SV
+    fprintf(stderr, "%#010lx: ", (unsigned long)answer);
+    fprintf(stderr, " built variable %s", mv->Name());
+    if (primed) fprintf(stderr, "'");
+    fprintf(stderr, " (level %d", level);
+    if (primed) fprintf(stderr, "'");
+    fprintf(stderr, "): ");
+    dd->E.show(stderr, 0);
+    fprintf(stderr, "\n");
+#endif
+  }
+  catch (MEDDLY::error e) {
+    convert(e);
+  }
 }
 
 
@@ -863,6 +914,39 @@ meddly_encoder*
 substate_encoder::copyWithDifferentForest(const char* n, forest* nf) const
 {
   return new substate_encoder(n, nf, parent, Share(colls));
+}
+
+void substate_encoder::FillTerms(const model_statevar* sv, expr* f)
+{
+  int level = sv->GetPart();
+  CHECK_RANGE(1, level, 1+parent.getPartInfo().num_levels);
+
+  DCASSERT(parent.getPartInfo().pointer[0] == -1);
+  // Number of state variables merged into the variable at level
+  int num_sv = parent.getPartInfo().pointer[level] - parent.getPartInfo().pointer[level - 1];
+  int* minterm_sv = new int[num_sv];
+  // Index of state variable sv in minterm_sv
+  int index_sv = 0;
+  while (parent.getPartInfo().variable[parent.getPartInfo().pointer[level] - index_sv] != sv) {
+    index_sv++;
+  }
+
+  // The bound of variable at level
+  long bound = colls->getMaxIndex(level);
+  DCASSERT(bound <= maxbound);
+  for (long i = 0; i < bound; i++) {
+    colls->getSubstate(level, i, minterm_sv, num_sv);
+    if (f) {
+      sv->GetValueNumber(minterm_sv[index_sv], ans);
+      sv->SetNextState(tdx, expl_state, ans.getInt());
+      f->Compute(tdx);
+    } else {
+      sv->GetValueNumber(minterm_sv[index_sv], ans);
+    }
+    terms[i] = ans.getInt();
+  }
+
+  delete[] minterm_sv;
 }
 
 // **************************************************************************

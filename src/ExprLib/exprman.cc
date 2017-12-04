@@ -122,6 +122,8 @@ exprman::exprman(io_environ* i, option_manager* o)
   STATESET = 0;
   STATEDIST = 0;
   STATEPROBS = 0;
+  TEMPORAL = 0;
+  TRACE = 0;
 
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
@@ -325,6 +327,7 @@ const char* exprman::getOp(binary_opcode op)
     case bop_lt:      return "<";
     case bop_le:      return "<=";
     case bop_until:   return "U";
+    case bop_and:     return "&&";
     default:          return "unknown_op";
   }
   return "error";  // will never get here, keep compilers happy
