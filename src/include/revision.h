@@ -1,1 +1,1 @@
-const char* SMART_DATE = "2017 July 10";
+const char* SMART_DATE = "2017 December 07";

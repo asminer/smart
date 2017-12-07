@@ -80,7 +80,6 @@ Instructions to build
 6.  make release
   
     (Very optional.)  
-    Creates canonical executable name with version, architecture, and
-    OS.  See the "Release" script to help with official releases.
+    Creates canonical executable name with version, architecture, and OS.
 
 
