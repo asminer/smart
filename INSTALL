@@ -22,7 +22,7 @@ Packages strongly recommended to build:
 
 * GMP, for very large integer support.  See https://gmplib.org
 
-* MEDDLY, for decision diagram support.  See http://meddly.sourceforge.net
+* MEDDLY, for decision diagram support.  See http://meddly.sourceforge.io
 
 
 ----------------------------------------------------------------------
