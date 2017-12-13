@@ -1265,6 +1265,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     // Build a monolithic transition relation
     int num_vars = NSF->getRelForest()->getNumVariables();
     MEDDLY::node_handle mxd = 0;
+
+#if 0
     MEDDLY::binary_operation* unionOp = MEDDLY::getOperation(MEDDLY::UNION,
       NSF->getRelForest(), NSF->getRelForest(), NSF->getRelForest());
     for (int i = 1; i <= num_vars; i++) {
@@ -1272,6 +1274,10 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
         mxd = unionOp->compute(mxd, NSF->getEvent(i, ei));
       }
     }
+#else
+    mxd = NSF->getBoundedMonolithicNSF();
+#endif
+
     shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
     d->E.set(mxd);
     setNSF(d);
