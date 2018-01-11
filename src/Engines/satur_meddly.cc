@@ -1251,6 +1251,16 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       return;
     }
 
+#if 1
+    // Build a monolithic transition relation
+    NSF->bindExtensibleVariables();
+    MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
+    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
+
+    clearMeddlyComputeTable(x, *NSF);
+#else
     em->cout() << "STATE_SPACE STATES ";
     shared_object* bigns = numstates.getPtr();
     if (bigns) {
@@ -1262,29 +1272,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
-    // Build a monolithic transition relation
-    int num_vars = NSF->getRelForest()->getNumVariables();
-    MEDDLY::node_handle mxd = 0;
-
-#if 0
-    MEDDLY::binary_operation* unionOp = MEDDLY::getOperation(MEDDLY::UNION,
-      NSF->getRelForest(), NSF->getRelForest(), NSF->getRelForest());
-    for (int i = 1; i <= num_vars; i++) {
-      for (int ei = 0; ei < NSF->getNumOfEvents(i); ei++) {
-        mxd = unionOp->compute(mxd, NSF->getEvent(i, ei));
-      }
-    }
-#else
-    mxd = NSF->getBoundedMonolithicNSF();
-#endif
-
-    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
-    d->E.set(mxd);
-    setNSF(d);
-
-    clearMeddlyComputeTable(x, *NSF);
-
-#if 1
     //
     // Compute maximum tokens in any place
     //
@@ -1301,6 +1288,16 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
+    // Build a monolithic transition relation
+    NSF->bindExtensibleVariables();
+    MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
+    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
+
+    clearMeddlyComputeTable(x, *NSF);
+
+#if 0
     //
     // Compute number of arcs
     //
@@ -1309,6 +1306,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     num_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
+#endif
+
 #endif
 
     delete NSF;
