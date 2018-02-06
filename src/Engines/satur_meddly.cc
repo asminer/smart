@@ -1438,6 +1438,15 @@ private:
                                   meddly_varoption &x,
                                   MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
   
+  // Compute the number of arcs in the reachability graph using implicit relations
+  //
+  bigint computeNumTransitionsImplRel(const MEDDLY::dd_edge &RS,
+                               MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  bigint computeNumTransitionsImplRel(
+                               MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                               MEDDLY::expert_forest* mddf, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                               NodeNodeIntMap &ct);
+  
 };
 
 meddly_otfimplsat the_meddly_otfimplsat;
@@ -1564,10 +1573,21 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
+#if 0
     //
-    // Compute number of arcs
+    // Compute number of arcs using mxd
     //
-    bigint num_transitions = computeNumTransitions(x.getStates(), IMPL_NSF);
+    bigint num_transitions_rel = computeNumTransitions(x.getStates(), IMPL_NSF);
+    em->cout() << "STATE_SPACE TRANSITIONS ";
+    num_transitions_rel.Print(em->cout(), 0);
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#endif
+    
+    //
+    // Compute number of arcs using implicit relations
+    //
+    bigint num_transitions = computeNumTransitionsImplRel(x.getStates(), IMPL_NSF);
     em->cout() << "STATE_SPACE TRANSITIONS ";
     num_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
@@ -1911,6 +1931,105 @@ bigint meddly_otfimplsat::computeNumTransitions(
   num_transitions.add(num_transitions, temp);
     }
   }
+  return num_transitions;
+}
+
+
+//
+//Transition Count Implicit Relations
+//
+
+bigint meddly_otfimplsat::computeNumTransitionsImplRel(
+                                                MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                                                MEDDLY::expert_forest* mddf, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                                                NodeNodeIntMap &ct)
+{
+  if (0 == mdd || 0 == mxd) return bigint(0l);
+  if (0 == level) return bigint(1l);
+  
+  int mddLevel = mddf->getNodeLevel(mdd);
+  MEDDLY::satimpl_opname::relation_node* mxdNode = IMPL_NSF->nodeExists(mxd);
+  int mxdLevel = mxdNode->getLevel();
+  int levelSize = mddf->getLevelSize(level);
+  bigint result;
+  
+  DCASSERT(mxdLevel <= level);
+  
+  if (mddLevel < level) {
+    if (mxdLevel < level) {
+      // if mddLevel < level && mxdLevel < level
+      // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+      result.mul(bigint(levelSize), computeNumTransitionsImplRel(mdd, mxd, level-1, mddf, IMPL_NSF, ct));
+    } else {
+      // expand mxd
+      MEDDLY::node_handle downMxd = mxdNode->getDown();
+      
+      for (int i = 0; i < mxdNode->getPieceSize(); i++) {
+        if(mxdNode->getTokenUpdate()[i]>=0)
+          result.add(result, computeNumTransitionsImplRel(mdd, downMxd, level-1, mddf, IMPL_NSF, ct));
+        }
+      }
+  } else {
+    DCASSERT(mddLevel == level);
+    // check compute table
+    NodeNodeIntMap::iterator iter1 = ct.find(mdd);
+    NodeIntMap::iterator iter2;
+    if (iter1 != ct.end()) {
+      iter2 = iter1->second.find(mxd);
+      if (iter2 != iter1->second.end()) {
+        // found
+        return iter2->second;
+      }
+    }
+    
+    // expand mdd
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    if (mxdLevel < level) {
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        result.add(result, computeNumTransitionsImplRel(mdd_nr->d(i), mxd, level-1, mddf, IMPL_NSF, ct));
+      }
+    } else {
+      // expand mxd
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        int i_index = mdd_nr->i(i);
+        if (mxdNode->getTokenUpdate()[i_index]<0) continue;
+        MEDDLY::node_handle downMxd = mxdNode->getDown();
+        if(mxdNode->getTokenUpdate()[i_index]>=0)
+          result.add(result, computeNumTransitionsImplRel(mdd_nr->d(i), downMxd, level-1, mddf, IMPL_NSF, ct));
+        }
+     }
+    MEDDLY::unpacked_node::recycle(mdd_nr);
+    
+    // insert into compute table
+    ct[mdd].insert(std::pair<MEDDLY::node_handle, bigint>(mxd, result));
+  }
+  
+  return result;
+}
+
+
+bigint meddly_otfimplsat::computeNumTransitionsImplRel(
+                                                const MEDDLY::dd_edge &RS,
+                                                MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  // num_trans = 0
+  // for each event e in NSF,
+  //    num_trans += computeNumTransitions(rs, e)
+  
+  int num_vars = RS.getForest()->getDomain()->getNumVariables();
+  MEDDLY::node_handle mdd = RS.getNode();
+  
+  bigint num_transitions = 0l;
+  for (int i = 1; i <= num_vars; i++)
+    {
+    for (int ei = 0; ei < IMPL_NSF->lengthForLevel(i); ei++) 
+      {
+      NodeNodeIntMap ct;
+      bigint temp = computeNumTransitionsImplRel(mdd, IMPL_NSF->arrayForLevel(i)[ei], num_vars,
+                                          IMPL_NSF->getOutForest(), IMPL_NSF, ct);
+      num_transitions.add(num_transitions, temp);
+      }
+    }
   return num_transitions;
 }
 
