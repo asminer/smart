@@ -1251,7 +1251,7 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       return;
     }
 
-#if 1
+#if 0
     // Build a monolithic transition relation
     NSF->bindExtensibleVariables();
     MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
@@ -1297,13 +1297,23 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 
     clearMeddlyComputeTable(x, *NSF);
 
-#if 0
     //
     // Compute number of arcs
     //
-    bigint num_transitions = computeNumTransitions(x.getStates(), *NSF);
+#if 0
     em->cout() << "STATE_SPACE TRANSITIONS ";
+    bigint num_transitions = computeNumTransitions(x.getStates(), *NSF);
     num_transitions.Print(em->cout(), 0);
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#else
+    double num_transitions = NSF->getArcCount(true);
+    em->cout() << "STATE_SPACE TRANSITIONS ";
+    em->cout() << num_transitions;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    num_transitions = NSF->getArcCount(false);
+    em->cout() << "STATE_SPACE UNIQUE TRANSITIONS ";
+    em->cout() << num_transitions;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 #endif
