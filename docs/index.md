@@ -1,8 +1,5 @@
 ---
 title: "SMART: Stochastic Model-checking Analyzer for Reliability and Timing"
-layout: single
-sidebar:
-  nav: "side"
 ---
 
 
