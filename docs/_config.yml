@@ -18,3 +18,13 @@ whitelist:
   - jekyll-sitemap
   - jekyll-feed
 
+defaults:
+  # _pages
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: single
+      sidebar:
+        nav: "side"
+      
