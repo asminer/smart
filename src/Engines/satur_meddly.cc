@@ -1859,7 +1859,7 @@ bigint meddly_otfimplsat::computeNumTransitions(
   MEDDLY::forest* event_mxd = d->createForest(true, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL);
  
   MEDDLY::dd_edge nsf_ev(mxd);
-  nsf_ev = IMPL_NSF->buildEventMxd(IMPL_NSF->arrayForLevel(i)[ei],mxd,event_mxd);
+  nsf_ev = IMPL_NSF->buildEventMxd(IMPL_NSF->arrayForLevel(i)[ei],mxd);
   MEDDLY::node_handle handle_mxd = nsf_ev.getNode();//IMPL_NSF->buildMxdForest().getNode();
   bigint temp = computeNumTransitions(mdd, handle_mxd, num_vars,
                                       IMPL_NSF->getInForest(), dynamic_cast<MEDDLY::expert_forest*>(nsf_ev.getForest()), ct);
