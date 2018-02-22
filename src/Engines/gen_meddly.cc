@@ -11,6 +11,7 @@
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
 #include<map>
+#include<vector>
 
 // #define DUMP_MXD
 // #define DUMP_MTMXD
@@ -2024,9 +2025,10 @@ substate_varoption::initializeEvents(named_msg &d)
     const model_event* e = getParent().readEvent(i);
     enable_deps[i] = getExprDeps(e->getEnabling(), num_levels);
     fire_deps[i] = getExprDeps(e->getNextstate(), num_levels);
-    DCASSERT(enable_deps[i]);
-    DCASSERT(enable_deps[i]->termlist);
 #ifdef DEVELOPMENT_CODE
+    if (enable_deps[i]) {
+      DCASSERT(enable_deps[i]->termlist);
+    }
     if (fire_deps[i]) {
       DCASSERT(fire_deps[i]->termlist);
     }
@@ -2087,8 +2089,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
   exprman* em = getExpressionManager();
   DCASSERT(em);
 
-  satotf_opname::event** otf_events = new
-    satotf_opname::event* [getParent().getNumEvents()];
+  std::vector<satotf_opname::event*> otf_events;
 
   //
   // For each event
@@ -2111,7 +2112,8 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
       ptr->addToDeps(depends);
     }
 
-    DCASSERT(num_enabling + num_firing > 0);
+    // DCASSERT(num_enabling + num_firing > 0);
+    if (num_enabling + num_firing == 0) continue;
 
     //
     // Build subevents
@@ -2215,7 +2217,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
     //
     // Pull these together into the event
     //
-    otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
+    otf_events.push_back(new satotf_opname::event(subevents, num_enabling + num_firing));
   } // for i
 
   //
@@ -2223,7 +2225,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
   //
   return new satotf_opname::otf_relation(
     ms.getMddForest(), get_mxd_forest(), ms.getMddForest(), 
-    otf_events, getParent().getNumEvents()
+    otf_events.data(), (int)otf_events.size()
   );
 }
 
