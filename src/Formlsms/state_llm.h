@@ -3,6 +3,7 @@
 #define STATE_LLM_H
 
 #include "../ExprLib/mod_inst.h"
+#include<vector>
 
 #include "../Modules/statesets.h" // for now
 
@@ -146,6 +147,13 @@ public:
         */
         virtual void getNumStates(long &ns) const = 0;
 
+        /** Get the upper bound of the given set of places among reachable states.
+         @param  count   Upper bound of states is stored here as a bigint.
+         */
+        virtual void getBounds(result &ns, std::vector<int> set_of_places) const;
+        
+        virtual void getBounds(long &ns, std::vector<int> set_of_places) const = 0;
+      
         /** Show the internal representation of the reachable states.
               @param  os    Output stream to write to
         */
@@ -243,6 +251,11 @@ public:
     long ns;
     RSS->getNumStates(ns);
     return ns;
+  }
+  
+  inline void getBounds(result& count, std::vector<int> set_of_places) const {
+    if (RSS)  RSS->getBounds(count, set_of_places);
+    else      count.setNull();
   }
 
   /** Show the reachable states.

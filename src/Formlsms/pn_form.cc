@@ -11,8 +11,14 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
+#include "../ExprLib/measures.h"
 
 #include "dsde_hlm.h"
+
+#include "../Formlsms/rss_meddly.h"
+
+#include "basic_msr.h"
+
 
 #include "../include/splay.h"
 
@@ -2393,6 +2399,7 @@ bool init_pnform::execute()
   pnsyms->AddSymbol(  new pn_transitions(t_set_trans)   );
   Add_DSDE_varfuncs(petri_def::place_type, pnsyms);
   Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
+  Add_MCC_varfuncs(petri_def::place_type, pnsyms);
 
   pn->setFunctions(pnsyms); 
   pn->addCommonFuncs(CML);

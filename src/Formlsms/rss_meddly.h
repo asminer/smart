@@ -7,6 +7,8 @@
 
 #include "state_llm.h"
 #include "../Modules/glue_meddly.h"
+#include <unordered_map>
+#include "meddly_expert.h"
 
 class dsde_hlm;
 
@@ -134,6 +136,25 @@ class meddly_reachset : public state_lldsm::reachset {
       DCASSERT(states);
       return states->E;
     }
+  
+    inline void setLevel_maxTokens(std::vector<long> level_to_max_tokens)
+    {
+      Level_maxTokens = level_to_max_tokens;
+    }
+  
+    inline void setLevelIndex_token(std::vector< std::vector<long> > level_index_to_token)
+    {
+      LevelIndex_token = level_index_to_token;
+    }
+  
+    
+    long computeMaxTokensPerSet(std::vector<int> &set_of_places) const;
+    long computeMaxTokensPerSet(MEDDLY::node_handle mdd,
+                                int offset,
+                                std::unordered_map < MEDDLY::node_handle, 
+                                long > &ct,
+                                std::vector<int> &set_of_places) const;
+  
 
     /**
         Attach a weight value to each state in the given stateset.
@@ -147,6 +168,8 @@ class meddly_reachset : public state_lldsm::reachset {
   public:
     virtual void getNumStates(long &ns) const;
     virtual void getNumStates(result &ns) const;  
+    virtual void getBounds(long &ns, std::vector<int> set_of_places) const;
+    virtual void getBounds(result &ns, std::vector<int> set_of_places) const;
     virtual void showInternal(OutputStream &os) const;
     virtual void showState(OutputStream &os, const shared_state* st) const;
     virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
@@ -224,6 +247,9 @@ class meddly_reachset : public state_lldsm::reachset {
     meddly_encoder* mdd_wrap;
     shared_ddedge* initial;
     shared_ddedge* states;
+    
+    std::vector<long> Level_maxTokens;
+    std::vector< std::vector<long> > LevelIndex_token;
 
     reachset::iterator* natorder;
 

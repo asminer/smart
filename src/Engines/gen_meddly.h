@@ -185,6 +185,14 @@ public:
   inline const MEDDLY::dd_edge& getStates() {
     return ms.getStates();
   }
+  
+  inline void setLevel_maxTokens(std::vector<long> level_to_max_tokens){
+    ms.setLevel_maxTokens(level_to_max_tokens);
+  }
+  
+  inline void setLevelIndex_token(std::vector< std::vector<long> > level_index_to_token){
+    ms.setLevelIndex_token(level_index_to_token);
+  }
 
   inline void getNumStates(long &ns) const {
     ms.getNumStates(ns);

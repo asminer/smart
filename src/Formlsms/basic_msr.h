@@ -21,4 +21,9 @@ protected:
   state_lldsm* BuildProc(hldsm* hlm, bool states_only, const expr* err);
 };
 
+
+class symbol_table;
+void Add_MCC_varfuncs(const type* svt, symbol_table* syms);
+
+
 #endif
