@@ -4,6 +4,8 @@
 
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/meddly_ssets.h"
+#include "../Modules/biginttype.h"
+#include "meddly_expert.h"
 
 // #define DEBUG_INDEXSET
 
@@ -145,6 +147,95 @@ void meddly_reachset::getNumStates(result &ns) const
 {
   DCASSERT(mdd_wrap);
   mdd_wrap->getCardinality(states, ns);
+}
+
+
+void meddly_reachset::getBounds(result &ns, std::vector<int> set_of_places) const
+{
+  DCASSERT(mdd_wrap);
+  long ans = computeMaxTokensPerSet(set_of_places);
+  if (ans>=0) {
+    ns.setPtr(new bigint(ans));
+  } else {
+    ns.setNull();
+  }
+}
+
+void meddly_reachset::getBounds(long &ns, std::vector<int> set_of_places) const
+{
+  DCASSERT(mdd_wrap);
+  long ans = computeMaxTokensPerSet(set_of_places);
+  if (ans>=0) ns = ans;
+}
+
+long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
+                                               int offset, 
+                                               std::unordered_map < MEDDLY::node_handle, long > &ct,
+                                               std::vector<int> &set_of_places) const
+{
+  
+  
+  if (-1 == offset) return 0;
+  DCASSERT(0 != mdd);
+  int level = set_of_places[offset];
+  if (0 == level) return 0;
+  if(set_of_places.size()==1) return Level_maxTokens[level];
+  MEDDLY::expert_forest* mddf = smart_cast<MEDDLY::expert_forest*>(states->E.getForest());
+  int mddLevel = mddf->getNodeLevel(mdd);
+  long result = 0;
+  
+  if (mddLevel < level) {
+    // if mddLevel < level
+    // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+    result = Level_maxTokens[level] +
+    computeMaxTokensPerSet(mdd, offset-1, ct, set_of_places);
+  } else {
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    if (mddLevel > level) {
+      // if mddLevel > level
+      // --- skip the mddLevel and look down, return compute(mdd, mxd, level-1)
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        result = MAX( result, (computeMaxTokensPerSet(mdd_nr->d(i), offset, ct, set_of_places)));
+      }
+     }
+    else
+      {
+        // check compute table
+        std::unordered_map < MEDDLY::node_handle, long >::iterator iter = ct.find(mdd);
+        if (iter != ct.end()) {
+          return iter->second;
+        }
+      
+        // expand mdd
+        for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+          result = MAX( result,
+                       (LevelIndex_token[level][mdd_nr->i(i)] +
+                        computeMaxTokensPerSet(mdd_nr->d(i), offset-1, ct, set_of_places)) );
+        }
+      }
+    MEDDLY::unpacked_node::recycle(mdd_nr);
+    // insert into compute table
+    ct[mdd] = result;
+  }
+  
+  return result;
+}
+
+long meddly_reachset::computeMaxTokensPerSet(std::vector<int> &set_of_places) const
+{
+  
+  //states is of type shared_ddedge
+  if (0 == states->E.getNode()) return 0;
+
+  std::unordered_map < MEDDLY::node_handle, long > ct;
+  if((LevelIndex_token.size()>0) && (Level_maxTokens.size()>0))
+  return computeMaxTokensPerSet(states->E.getNode(),
+                                set_of_places.size() - 1,
+                                ct,
+                                set_of_places);
+  else
+    return -1;
+  
 }
 
 void meddly_reachset::showInternal(OutputStream &os) const

@@ -83,6 +83,11 @@ void indexed_reachset::setInitial(const LS_Vector &init)
   }
 }
 
+void indexed_reachset::getBounds(long &ns, std::vector<int> set_of_places) const
+{
+  // Do-nothing default
+}
+
 void indexed_reachset::Finish()
 {
   // Do-nothing default
