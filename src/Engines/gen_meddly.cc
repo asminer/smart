@@ -2253,6 +2253,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
   
   for(int i = 0; i<nEvents; i++) {
+    if(enable_deps[i])
     for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
       int k = DL->getLevelAbove(0);
       for ( ; k>0; k=DL->getLevelAbove(k)) {
@@ -2261,7 +2262,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
       } // for k
     } // for enable_deps
     
-    
+    if(fire_deps[i])
     for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
       int k = DL->getLevelAbove(0);
       for ( ; k>0; k=DL->getLevelAbove(k)) {
@@ -2275,8 +2276,11 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
     } // for fire_deps
     
     max_node_count+=event_table[i].size();
-    std::map<int, std::pair<long,long>>::reverse_iterator rit = event_table[i].rbegin();
-    tops_of_events[i] = rit->first;
+    if(event_table[i].size()>0)
+    {  
+      std::map<int, std::pair<long,long>>::reverse_iterator rit = event_table[i].rbegin();
+      tops_of_events[i] = rit->first;
+    }
   }// for Events
   
   
@@ -2290,6 +2294,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
     unsigned long sign = 0;
     int previous_node_handle = 1;
     std::map<int, std::pair<long,long>>::iterator e_it = event_table[i].begin();
+    if(event_table[i].size()>0)
     for(int j = 0; j < event_table[i].size(),e_it!=event_table[i].end(); j++,e_it++){
       
       int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
