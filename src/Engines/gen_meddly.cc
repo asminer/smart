@@ -2295,13 +2295,14 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
     int previous_node_handle = 1;
     std::map<int, std::pair<long,long>>::iterator e_it = event_table[i].begin();
     if(event_table[i].size()>0)
-    for(int j = 0; j < event_table[i].size(),e_it!=event_table[i].end(); j++,e_it++){
+    while(e_it!=event_table[i].end()){
       
       int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
       sign = sign*10 + uniq;
       rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
       previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
       rCtr ++;
+      e_it++;
     }
     }
 
