@@ -11,6 +11,7 @@
  */
 
 #include "symbols.h"
+#include "unary.h"
 
 class model_instance;
 class shared_set;
@@ -538,6 +539,54 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, expr* rhs);
       @return A new expression, or 0 if sv is 0.
 */
 expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs);
+
+
+// **************************************************************************
+// *                                                                        *
+// *                             clev_op  class                             *
+// *                                                                        *
+// **************************************************************************
+
+/** Checks c <= v.
+    c is an integer constant.
+    v is a model state variable.
+*/
+class clev_op : public unary {
+  long lower;
+public:
+  clev_op(const char* fn, int line, expr* b, model_var* v);
+  clev_op(const char* fn, int line, long b, model_var* v);
+  virtual void Compute(traverse_data &x);
+  virtual void Traverse(traverse_data &x);
+  virtual bool Print(OutputStream &s, int w) const;
+  virtual long getLower() const;
+protected:
+  virtual expr* buildAnother(expr *r) const;
+};
+
+
+// **************************************************************************
+// *                                                                        *
+// *                            cupdate_op class                            *
+// *                                                                        *
+// **************************************************************************
+
+/** Performs v := v + delta;
+    v is a state variable.
+    delta is a constant.
+*/
+class cupdate_op : public expr {
+  model_var* var;
+  long delta;
+public:
+  cupdate_op(const char* fn, int line, model_var* v, long  delta);
+  virtual ~cupdate_op();
+  virtual long getDelta() const override;
+  virtual void Traverse(traverse_data &x) override;
+  virtual void Compute(traverse_data &x) override;
+  virtual bool Print(OutputStream &s, int) const override;
+};
+
 
 #endif
 

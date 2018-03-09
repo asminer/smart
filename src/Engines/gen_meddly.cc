@@ -2124,51 +2124,6 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
     int se = 0;
 
     //
-    // Build firing subevents
-    //
-    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
-      //
-      // build firing expression from list
-      //
-      int length = 0;
-      for (expr_node* t = ptr->termlist; t; t=t->next) {
-        length++;
-      }
-      DCASSERT(length>0);
-      expr* chunk = 0;
-      if (1==length) {
-        //
-        // awesomesauce
-        //
-        chunk = Share(ptr->termlist->term);
-      } else {
-        //
-        // Build conjunction
-        //
-        expr** terms = new expr*[length];
-        int ti = 0;
-        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
-          terms[ti] = Share(t->term);
-        }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
-      }
-
-      // build list of variables this piece depends on
-      int nv = ptr->countDeps();
-      int* v = new int[nv];
-      int k = 0;
-      for (int vi = 0; vi<nv; vi++) {
-        k = ptr->getLevelAbove(k);
-        DCASSERT(k>0);
-        v[vi] = k;
-      }
-
-      // Ok, build the enabling subevent
-      const model_event* e = getParent().readEvent(i);
-      subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
-    }
-
-    //
     // Build enabling subevents
     //
     for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next, se++) {
@@ -2211,6 +2166,53 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
       // Ok, build the enabling subevent
       const model_event* e = getParent().readEvent(i);
       subevents[se] = new enabling_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
+    }
+
+
+    //
+    // Build firing subevents
+    //
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+      }
+
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+      }
+
+      // Ok, build the enabling subevent
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
     }
 
     
