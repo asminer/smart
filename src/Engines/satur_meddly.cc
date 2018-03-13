@@ -876,6 +876,7 @@ meddly_otfsat the_meddly_otfsat;
 
 meddly_otfsat::meddly_otfsat() : meddly_implicitgen()
 {
+  meddly_procgen::useXdds(true);
 }
 
 meddly_otfsat::~meddly_otfsat()
@@ -1393,6 +1394,7 @@ meddly_otfimplsat the_meddly_otfimplsat;
 
 meddly_otfimplsat::meddly_otfimplsat() : meddly_implicitgen()
 {
+  meddly_procgen::useXdds(false);
 }
 
 meddly_otfimplsat::~meddly_otfimplsat()
@@ -1496,6 +1498,7 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     
     // Build a monolithic transition relation from implicit relation
     MEDDLY::dd_edge NSF = IMPL_NSF->buildMxdForest();
+    smart_cast<MEDDLY::expert_forest*>(NSF.getForest())->linkNode(NSF.getNode());
     MEDDLY::node_handle mxd = NSF.getNode();
     shared_ddedge* d = new shared_ddedge(NSF.getForest());
     d->E.set(mxd);

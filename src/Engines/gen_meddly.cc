@@ -28,7 +28,6 @@
 // #define SHORT_CIRCUIT_ENABLING
 
 #define USING_MEDDLY_ADD_MINTERM
-#define USE_XDDS
 
 using namespace MEDDLY;
 
@@ -2327,12 +2326,9 @@ void substate_varoption::initDomain(const exprman* em)
   num_levels = part.num_levels;
   variable** vars = new variable*[num_levels+1];
   vars[0] = 0;
+  const int initial_var_bound = meddly_procgen::usesXdds()? -1 : 1 ;
   for (int k=num_levels; k; k--) {
-#ifndef USE_XDDS
-    vars[k] = createVariable(1, buildVarName(part, k));
-#else
-    vars[k] = createVariable(-1, buildVarName(part, k));
-#endif
+    vars[k] = createVariable(initial_var_bound, buildVarName(part, k));
   } // for k
   if (!ms.createVars(vars, num_levels)) {
     built_ok = false;
@@ -3012,6 +3008,7 @@ int meddly_procgen::edge_style;
 int meddly_procgen::var_type;
 int meddly_procgen::nsf_ndp;
 int meddly_procgen::rss_ndp;
+bool meddly_procgen::uses_xdds;
 
 meddly_procgen::meddly_procgen()
 {
