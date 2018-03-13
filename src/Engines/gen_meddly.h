@@ -301,6 +301,9 @@ class meddly_procgen : public process_generator {
   static const int OPTIMISTIC   = 1;
   static const int PESSIMISTIC  = 2;
 
+  // Use extensible variables in decision diagrams for on-the-fly saturation
+  static bool uses_xdds;
+
   friend class init_genmeddly;
 public:
   meddly_procgen();
@@ -317,6 +320,8 @@ public:
     return 0; // keep compilers happy
   }
 
+  inline static void useXdds(bool use) { uses_xdds = use; }
+  inline static bool usesXdds() { return uses_xdds; }
   virtual MEDDLY::forest::policies buildNSFPolicies() const;
   virtual MEDDLY::forest::policies buildRSSPolicies() const;
 
