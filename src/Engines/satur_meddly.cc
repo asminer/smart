@@ -1337,6 +1337,7 @@ protected:
     DCASSERT(0);
   }
   virtual const char* getAlgName() const { return "on the fly implicit nodes saturation"; }
+  virtual void postprocess(dsde_hlm &m, meddly_varoption &x);
 private:
   // Build the otfimpl next-state function
   //
@@ -1550,6 +1551,21 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
   catch (subengine::error status) {
     if (stopGen(true, x.getParent(), watch)) Report().stopIO();
     throw status;
+  }
+}
+
+void meddly_otfimplsat::postprocess(dsde_hlm &m, meddly_varoption &x)
+{
+  // Update variable bounds
+  const MEDDLY::domain* d = x.getMddForest()->getDomain();
+  int num_vars = m.getNumStateVars();
+  for (int i = 0; i < num_vars; i++) {
+    model_statevar* var = m.getStateVar(i);
+    if (!var->HasBounds()) {
+      int level = var->GetPart();
+      // The bound of primed variable
+      var->SetBounds(MakeRangeSet(0, d->getVariableBound(level, true), 1));
+    }
   }
 }
 
