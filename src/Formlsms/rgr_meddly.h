@@ -188,78 +188,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     // ******************************************************************
 
-    inline void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q, 
-      shared_ddedge* ans, List<shared_ddedge>* extra = nullptr)
-    {
-        //
-        // Special case - if p=0 (means true), use saturation
-        //
-        if (nullptr == p && nullptr == extra) {
-          if (revTime) {
-            mxd_wrap->postImageStar(q, edges, ans);
-          } else {
-            mxd_wrap->preImageStar(q, edges, ans);
-          }
-          return;
-        }
-
-        //
-        // Non trivial p, use iteration
-        // TBD - use saturation here as well
-        //
-
-        //
-        // Auxiliary sets
-        //
-        shared_ddedge* prev = mrss->newMddConst(false); // prev := emptyset
-        shared_ddedge* f = mrss->newMddEdge();
-
-        DCASSERT(prev);
-        DCASSERT(f);
-
-        // answer := q
-        ans->E = q->E;
-        if (nullptr != extra) {
-          shared_ddedge* t = mrss->newMddEdge();
-          t->E = ans->E;
-          extra->Append(t);
-        }
-
-        while (prev->E != ans->E) {
-
-          // f := pre/post (answer)
-          if (revTime) {
-            mxd_wrap->postImage(ans, edges, f);
-          } else {
-            mxd_wrap->preImage(ans, edges, f);
-          }
-
-          if (nullptr != p) {
-            // f := f ^ p
-            MEDDLY::apply( MEDDLY::INTERSECTION, f->E, p->E, f->E );
-          }
-
-          // prev := answer
-          prev->E = ans->E;
-
-          // answer := answer U f
-          MEDDLY::apply( MEDDLY::UNION, ans->E, f->E, ans->E );
-
-          if (nullptr != extra) {
-            shared_ddedge* t = mrss->newMddEdge();
-            t->E = ans->E;
-            extra->Append(t);
-          }
-        } // iteration
-
-        if (nullptr != extra) {
-          extra->Reverse();
-        }
-
-        // Cleanup
-        Delete(f);
-        Delete(prev);
-    }
+    void _EU(bool revTime, const shared_ddedge* p, const shared_ddedge* q,
+      shared_ddedge* ans, List<shared_ddedge>* extra = nullptr);
 
     // ******************************************************************
 
