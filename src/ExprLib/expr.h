@@ -81,10 +81,10 @@ struct traverse_data {
     Promote,
     /// Signifies that model instantiation is complete.
     ModelDone,
-    /// Evaluate temporal formula. Used by temporal operations.
-    Temporal,
-    /// Generate a trace verifying a temporal formula. Used by temporal operations.
-    Trace
+    /// Prepare for generating the set of states satisfying a temporal formula. Used by temporal operations.
+    TemporalStateSet,
+    /// Prepare for generating a trace verifying a temporal formula. Used by temporal operations.
+    TemporalTrace
   };
 
   /// Input: Traversal type.

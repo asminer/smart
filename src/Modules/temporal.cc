@@ -197,7 +197,7 @@ expr* temporal_E::buildAnother(expr *x) const
 
 void temporal_E::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+  if (traverse_data::TemporalStateSet != x.which && traverse_data::TemporalTrace != x.which) {
     temporal_unary::Traverse(x);
     return;
   }
@@ -236,7 +236,7 @@ expr* temporal_F::buildAnother(expr *x) const
 
 void temporal_F::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+  if (traverse_data::TemporalStateSet != x.which && traverse_data::TemporalTrace != x.which) {
     temporal_unary::Traverse(x);
     return;
   }
@@ -268,7 +268,7 @@ void temporal_F::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EF
-    tfunc = (traverse_data::Temporal == x.which)
+    tfunc = (traverse_data::TemporalStateSet == x.which)
       ? dynamic_cast<function*>(em->findFunction(model_type, "EF"))
       : dynamic_cast<function*>(em->findFunction(model_type, "EF_trace"));
     break;
@@ -313,7 +313,7 @@ expr* temporal_G::buildAnother(expr *x) const
 
 void temporal_G::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+  if (traverse_data::TemporalStateSet != x.which && traverse_data::TemporalTrace != x.which) {
     temporal_unary::Traverse(x);
     return;
   }
@@ -345,7 +345,7 @@ void temporal_G::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EG
-    tfunc = (traverse_data::Temporal == x.which)
+    tfunc = (traverse_data::TemporalStateSet == x.which)
       ? dynamic_cast<function*>(em->findFunction(model_type, "EG"))
       : dynamic_cast<function*>(em->findFunction(model_type, "EG_trace"));
     break;
@@ -390,7 +390,7 @@ expr* temporal_X::buildAnother(expr *x) const
 
 void temporal_X::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal!=x.which && traverse_data::Trace!=x.which) {
+  if (traverse_data::TemporalStateSet!=x.which && traverse_data::TemporalTrace!=x.which) {
     temporal_unary::Traverse(x);
     return;
   }
@@ -422,7 +422,7 @@ void temporal_X::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EX
-    tfunc = (traverse_data::Temporal == x.which)
+    tfunc = (traverse_data::TemporalStateSet == x.which)
       ? dynamic_cast<function*>(em->findFunction(model_type, "EX"))
       : dynamic_cast<function*>(em->findFunction(model_type, "EX_trace"));
     break;
@@ -483,7 +483,7 @@ expr* temporal_U::buildAnother(expr *l, expr *r) const
 
 void temporal_U::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+  if (traverse_data::TemporalStateSet != x.which && traverse_data::TemporalTrace != x.which) {
     binary::Traverse(x);
     return;
   }
@@ -524,7 +524,7 @@ void temporal_U::Traverse(traverse_data &x)
     break;
   case exprman::unary_opcode::uop_exists:
     // EU
-    tfunc = (traverse_data::Temporal == x.which)
+    tfunc = (traverse_data::TemporalStateSet == x.which)
       ? dynamic_cast<function*>(em->findFunction(model_type, "EU"))
       : dynamic_cast<function*>(em->findFunction(model_type, "EU_trace"));
     break;
@@ -642,8 +642,18 @@ expr* temporal_and::buildAnother(expr *l, expr *r) const
 
 void temporal_and::Traverse(traverse_data &x)
 {
-  if (traverse_data::Temporal != x.which && traverse_data::Trace != x.which) {
+  if (traverse_data::TemporalStateSet != x.which && traverse_data::TemporalTrace != x.which) {
     binary::Traverse(x);
+    return;
+  }
+
+  if (traverse_data::TemporalStateSet == x.which) {
+    if (!isAtomicType(em, left->Type())) {
+      left->Traverse(x);
+    }
+    if (!isAtomicType(em, right->Type())) {
+      right->Traverse(x);
+    }
     return;
   }
 
@@ -670,14 +680,7 @@ void temporal_and::Traverse(traverse_data &x)
   }
 
   const type* model_type = x.model->Type();
-  function* tfunc = nullptr;
-  if (traverse_data::Temporal == x.which) {
-    // TODO: To be implemented
-    DCASSERT(false);
-  }
-  else {
-    tfunc = dynamic_cast<function*>(em->findFunction(model_type, "And_trace"));
-  }
+  function* tfunc = dynamic_cast<function*>(em->findFunction(model_type, "And_trace"));
 
   const expr* oldp = x.parent;
   traverse_data::traversal_type oldwhich = x.which;
