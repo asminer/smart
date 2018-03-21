@@ -724,7 +724,7 @@ int states::Traverse(traverse_data &x, expr** pass, int np)
     return simple_internal::Traverse(x, pass, np);
   }
 
-  traverse_data xx(traverse_data::Temporal);
+  traverse_data xx(traverse_data::TemporalStateSet);
   xx.model = x.model;
   result ans;
   xx.answer = &ans;
@@ -736,11 +736,8 @@ int states::Traverse(traverse_data &x, expr** pass, int np)
 
 void states::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
-
-  // TODO: To be implemented
+  // Should not reach here
+  throw subengine::No_Engine;
 }
 
 // *****************************************************************
@@ -1376,7 +1373,7 @@ int traces::Traverse(traverse_data &x, expr** pass, int np)
     return CTL_engine::Traverse(x, pass, np);
   }
 
-  traverse_data xx(traverse_data::Trace);
+  traverse_data xx(traverse_data::TemporalTrace);
   xx.model = x.model;
   result ans;
   xx.answer = &ans;
