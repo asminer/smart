@@ -1395,7 +1395,8 @@ meddly_otfimplsat the_meddly_otfimplsat;
 
 meddly_otfimplsat::meddly_otfimplsat() : meddly_implicitgen()
 {
-  meddly_procgen::useXdds(false);
+  // meddly_procgen::useXdds(false);
+  meddly_procgen::useXdds(true);
 }
 
 meddly_otfimplsat::~meddly_otfimplsat()
@@ -1473,6 +1474,9 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
       Report().stopIO();
     }
+
+    // Convert extensible variables to bounded
+    IMPL_NSF->bindExtensibleVariables();
 
     result numstates;
     x.getNumStates(numstates);
