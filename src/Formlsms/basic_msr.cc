@@ -3,6 +3,7 @@
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
+#include "../ExprLib/sets.h"
 
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/dsde_hlm.h"
@@ -11,10 +12,12 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
-// #include "meddly_expert.h"
+#include "../SymTabs/symtabs.h"
+
 #include "../_Timer/timerlib.h"
 
 #include "basic_msr.h"
+#include "dsde_hlm.h"
 
 #include <vector>
 #include <algorithm>
@@ -42,7 +45,7 @@ proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
   if (0==hlm)  return 0;
   result so;
   so.setBool(states_only);
-
+  
   try {
       lldsm* llm = hlm->GetProcess();
       if (llm) {
@@ -67,6 +70,7 @@ proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
       return 0;
   } // catch
 }
+
 
 /*
 void proc_noengine::BuildPartition(hldsm* hlm, const expr* err)
@@ -589,6 +593,45 @@ void numvars_si::Compute(traverse_data &x, expr** pass, int np)
 }
 
 // ******************************************************************
+// *                           show_stateset                        *
+// ******************************************************************
+
+class showstateset_si : public proc_noengine {
+public:
+  showstateset_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+
+showstateset_si::showstateset_si()
+ : proc_noengine(Nothing, em->VOID, "show_stateset", 2)
+{
+  SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the stateset is displayed; otherwise, a storage-independent list of stateset is displayed (unless there are too many).");
+  SetFormal(1, em->STATESET, "internal"
+  );
+}
+
+void showstateset_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
+  if (0==llm || lldsm::Error == llm->Type()) return;
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  llm->showStates(internal);
+}
+
+// ******************************************************************
 // *                           show_states                          *
 // ******************************************************************
 
@@ -985,6 +1028,107 @@ void run_for_MCC_si::Compute(traverse_data &x, expr** pass, int np)
 
 }
 
+// *****************************************************************
+// *                    run_for_MCC_UPPERBOUNDS                    *
+// *****************************************************************
+
+class run_for_MCC_UPPERBOUNDS_si : public proc_noengine {
+public:
+  run_for_MCC_UPPERBOUNDS_si(const type* place);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+run_for_MCC_UPPERBOUNDS_si::run_for_MCC_UPPERBOUNDS_si(const type* place)
+: proc_noengine(Nothing, em->BIGINT, "run_for_MCC_UPPERBOUNDS", 2)
+{
+   DCASSERT(place);
+   SetFormal(1, place->getSetOfThis(), "pset");
+   SetRepeat(1);
+   SetDocumentation("Specialized function for running experiments for the annual Model Checking Competition for UPPER-BOUNDS Category.");
+}
+
+void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
+{
+ 
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  DCASSERT(np==2);
+  
+  
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+                                     mi ? mi->GetCompiledModel() : 0, 1, x.parent
+                                     );
+  if (0==llm || lldsm::Error == llm->Type()) return;
+
+
+  DCASSERT(pass[1]);
+  SafeCompute(pass[1], x);
+  shared_set* ps = smart_cast<shared_set*>(Share(x.answer->getPtr()));
+  std::vector<int> set_of_places;
+  result elem ;
+  
+  //Obtain the level for each place passed in the set
+  {
+       for (int z=0; z<ps->Size(); z++) {
+        ps->GetElement(z, elem);
+        DCASSERT(elem.isNormal());
+        model_var* foo = smart_cast <model_var*> (elem.getPtr());
+        DCASSERT(foo);
+        model_statevar* pl = dynamic_cast <model_statevar*> (foo);
+        DCASSERT(pl);
+        if (pl->GetPart()) set_of_places.insert(set_of_places.begin()+z,pl->GetPart());
+      } // for z
+   }
+
+  //Pass the set of places to get the upperbounds and return the answer in x
+  std::sort(set_of_places.begin(), set_of_places.end()); // Sorts places in order from low to high
+  llm->getBounds(*x.answer, set_of_places);
+  if (!x.answer->isNormal())    return;
+  if (!x.answer->getPtr()) {
+    long na = x.answer->getInt();
+    x.answer->setPtr(new bigint(na));
+  }
+  
+  
+  // actual code here!
+  
+#if 0
+  // TBD - call a virtual function within llm to display this
+  em->cout() << "Method: decision diagram (TBD - fix the format please!\n";
+  em->cout().flush();
+  //
+  // Display number of states
+  //
+  result numstates;
+  llm->getNumStates(numstates);
+  if (!numstates.isNormal()) {
+    //
+    // TBD: Error, can we print something and exit cleanly here?
+    
+    return;
+  }
+  
+  em->cout() << "Number of states (TBD fix format please!): ";  
+  shared_object* bigns = numstates.getPtr();
+  if (bigns) {
+    bigns->Print(em->cout(), 0);
+  } else {
+    long ns = numstates.getInt();
+    em->cout() << ns;
+  }
+  em->cout().Put('\n');
+  em->cout().flush();
+#endif
+
+  
+  //
+  // TBD - other things to display here
+  //
+  
+  
+}
 
 // *****************************************************************
 // *                            initial                            *
@@ -1176,6 +1320,7 @@ bool init_basicmsrs::execute()
 
   // Process or model display
   CML.Append(new showstates_si);
+  CML.Append(new showstateset_si);
   CML.Append(new showarcs_si);
   CML.Append(new showproc_si);
   CML.Append(new showclasses_si);
@@ -1196,12 +1341,20 @@ bool init_basicmsrs::execute()
 
   // Model Checking Competition
   CML.Append(new run_for_MCC_si);
+  
+  // Model Checking Competition
+  //CML.Append(new run_for_MCC_UPPERBOUNDS_si);
 
   // Engine types
   proc_noengine::ProcGen = em->findEngineType("ProcessGeneration");
   return proc_noengine::ProcGen;
 }
 
+
+void Add_MCC_varfuncs(const type* svt, symbol_table* syms)
+{
+    syms->AddSymbol(  new run_for_MCC_UPPERBOUNDS_si(svt) );
+}
 
 #if 0
 

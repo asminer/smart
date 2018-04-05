@@ -991,27 +991,6 @@ void measure_array_assign::Traverse(traverse_data &x)
   }
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                             clev_op  class                             *
-// *                                                                        *
-// **************************************************************************
-
-/** Checks c <= v.
-    c is an integer constant.
-    v is a model state variable.
-*/
-class clev_op : public unary {
-  long lower;
-public:
-  clev_op(const char* fn, int line, expr* b, model_var* v);
-  clev_op(const char* fn, int line, long b, model_var* v);
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int w) const;
-protected:
-  virtual expr* buildAnother(expr *r) const;
-};
 
 // ******************************************************************
 // *                        clev_op  methods                        *
@@ -1036,6 +1015,11 @@ clev_op::clev_op(const char* fn, int line, long b, model_var* v)
  : unary(fn, line, em->BOOL->addProc(), v) 
 { 
   lower = b;
+}
+
+long clev_op::getLower() const
+{
+  return lower;
 }
   
 void clev_op::Compute(traverse_data &x)
@@ -1688,26 +1672,6 @@ expr* blevltb_op::buildAnother(expr *l, expr* m, expr *r) const
   return new blevltb_op(Filename(), Linenumber(), l, pl, r);
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                            cupdate_op class                            *
-// *                                                                        *
-// **************************************************************************
-
-/** Performs v := v + delta;
-    v is a state variable.
-    delta is a constant.
-*/
-class cupdate_op : public expr {
-  model_var* var;
-  long delta;
-public:
-  cupdate_op(const char* fn, int line, model_var* v, long  delta);
-  virtual ~cupdate_op();
-  virtual void Traverse(traverse_data &x);
-  virtual void Compute(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
-};
 
 // ******************************************************************
 // *                       cupdate_op methods                       *
@@ -1726,6 +1690,11 @@ cupdate_op::~cupdate_op()
 {
   Delete(var);
 }
+
+long cupdate_op::getDelta() const
+  {
+      return delta;
+  }
 
 void cupdate_op::Traverse(traverse_data &x)
 {

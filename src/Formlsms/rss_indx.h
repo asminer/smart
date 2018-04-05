@@ -23,6 +23,7 @@ class indexed_reachset : public state_lldsm::reachset {
     virtual stateset* getReachable() const;
     virtual stateset* getPotential(expr* p) const;
     virtual stateset* getInitialStates() const;
+    virtual void getBounds(long &ns, std::vector<int> set_of_places) const;
 
     void setInitial(const LS_Vector &init);
     inline void setInitial(const intset& init) {

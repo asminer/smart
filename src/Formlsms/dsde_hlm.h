@@ -7,6 +7,7 @@
 #include "../ExprLib/mod_inst.h"
 #include "../_IntSets/intset.h"
 
+#include <vector>
 // **************************************************************************
 // *                                                                        *
 // *                           model_event  class                           *
@@ -484,7 +485,7 @@ public:
     last_level--;
     SetLevelOfStateVars(call, last_level, pset);
   }
-
+ 
   void PartitionVars(model_statevar** V, int nv);
 
   // for event priorities
