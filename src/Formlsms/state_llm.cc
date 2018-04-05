@@ -123,6 +123,18 @@ void state_lldsm::reachset::getNumStates(result &ns) const
   }
 }
 
+
+void state_lldsm::reachset::getBounds(result &ns, std::vector<int> set_of_places) const
+{
+  long lns = 0;
+  getBounds(lns, set_of_places);
+  if (lns>=0) {
+    ns.setPtr(new bigint(lns));
+  } else {
+    ns.setNull();
+  }
+}
+
 void state_lldsm::reachset
 ::showStates(OutputStream &os, display_order ord, shared_state* st)
 {

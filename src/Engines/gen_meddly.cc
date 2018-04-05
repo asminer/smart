@@ -10,6 +10,8 @@
 #include "../Modules/expl_states.h"
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
+#include<map>
+#include<vector>
 
 // #define DUMP_MXD
 // #define DUMP_MTMXD
@@ -169,6 +171,11 @@ void meddly_varoption::reportStats(DisplayStream &out) const
 }
 
 satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(named_msg &debug)
+{
+  return 0;
+}
+
+satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(named_msg &debug)
 {
   return 0;
 }
@@ -868,15 +875,15 @@ void substate_encoder
   }
 }
 
-void 
+
+void
 substate_encoder::state2minterm(const shared_state* s, int* mt) const
 {
   DCASSERT(colls);
   if (0==s || 0==mt) throw Failed;
-
   for (int k=parent.getPartInfo().num_levels; k; k--) {
     int ssz = s->readSubstateSize(k);
-    long sk = colls->addSubstate(k, s->readSubstate(k), ssz);
+    long sk = colls->addSubstate(k, s->readSubstate(k), ssz);//
     if (sk<0) {
       if (-2 == sk) throw Out_Of_Memory;
       throw Failed;
@@ -886,7 +893,9 @@ substate_encoder::state2minterm(const shared_state* s, int* mt) const
     if (sk != mt[k]) throw Failed;
     // TBD: Should we print an error for that one?
   } // for k
+  
 }
+
 
 void
 substate_encoder::minterm2state(const int* mt, shared_state *s) const
@@ -1687,6 +1696,7 @@ public:
   //
 
   virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
+  virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
   virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
@@ -1756,6 +1766,84 @@ protected:
   void show_substates(OutputStream &s);
 #endif
 };
+
+// **************************************************************************
+// *                                                                        *
+// *                        relation_node class                             *
+// *                                                                        *
+// **************************************************************************
+
+//TBD - Move to someplace better
+class derive_relation_node : public satimpl_opname::relation_node {
+public:
+  // TBD - clean up this constructor!
+  derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
+  virtual ~derive_relation_node();
+  virtual long nextOf(long i) override;
+  virtual long enableCondition() override;
+  
+private:
+  long e_delta;
+  long f_delta;
+  substate_colls* colls;
+  
+  
+  named_msg &debug;
+};
+
+
+// **************************************************************************
+// *                                                                        *
+// *                        relation_node methods                           *
+// *                                                                        *
+// **************************************************************************
+
+
+derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down), debug(dm)
+{
+  e_delta = e;
+  f_delta = f;
+  colls = c;
+}
+
+derive_relation_node::~derive_relation_node()
+{
+  //TBD
+}
+
+//Take the index : find token : update the token : return a new index
+long derive_relation_node::nextOf(long i)
+{
+  if(i>=satimpl_opname::relation_node::getPieceSize())
+    satimpl_opname::relation_node::expandTokenUpdate(i);
+   
+  
+  if(satimpl_opname::relation_node::getTokenUpdate()[i]==-2)
+    {
+    int sz = 1;
+    int chunk[sz];
+    int chunk_updated[sz];
+    int curr = 0;
+    colls->getSubstate(this->getLevel(), i, chunk, sz);
+    
+    //Token update is calculated
+    chunk_updated[0] = -1;
+    if(chunk[0]>=e_delta) chunk_updated[0] = chunk[0] + f_delta;
+    if(chunk_updated[0]<0) return -1;
+    
+    //New index is received
+    long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
+    satimpl_opname::relation_node::setTokenUpdateAtIndex(i,j);
+    }
+  
+  return satimpl_opname::relation_node::getTokenUpdate()[i];
+}
+
+long derive_relation_node::enableCondition()
+{
+  return e_delta;
+}
+
 
 // **************************************************************************
 // *                                                                        *
@@ -1942,9 +2030,10 @@ substate_varoption::initializeEvents(named_msg &d)
     const model_event* e = getParent().readEvent(i);
     enable_deps[i] = getExprDeps(e->getEnabling(), num_levels);
     fire_deps[i] = getExprDeps(e->getNextstate(), num_levels);
-    DCASSERT(enable_deps[i]);
-    DCASSERT(enable_deps[i]->termlist);
 #ifdef DEVELOPMENT_CODE
+    if (enable_deps[i]) {
+      DCASSERT(enable_deps[i]->termlist);
+    }
     if (fire_deps[i]) {
       DCASSERT(fire_deps[i]->termlist);
     }
@@ -2005,8 +2094,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
   exprman* em = getExpressionManager();
   DCASSERT(em);
 
-  satotf_opname::event** otf_events = new
-    satotf_opname::event* [getParent().getNumEvents()];
+  std::vector<satotf_opname::event*> otf_events;
 
   //
   // For each event
@@ -2029,7 +2117,8 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
       ptr->addToDeps(depends);
     }
 
-    DCASSERT(num_enabling + num_firing > 0);
+    // DCASSERT(num_enabling + num_firing > 0);
+    if (num_enabling + num_firing == 0) continue;
 
     //
     // Build subevents
@@ -2038,51 +2127,6 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
     satotf_opname::subevent** subevents = new 
       satotf_opname::subevent* [num_enabling + num_firing];
     int se = 0;
-
-    //
-    // Build firing subevents
-    //
-    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
-      //
-      // build firing expression from list
-      //
-      int length = 0;
-      for (expr_node* t = ptr->termlist; t; t=t->next) {
-        length++;
-      }
-      DCASSERT(length>0);
-      expr* chunk = 0;
-      if (1==length) {
-        //
-        // awesomesauce
-        //
-        chunk = Share(ptr->termlist->term);
-      } else {
-        //
-        // Build conjunction
-        //
-        expr** terms = new expr*[length];
-        int ti = 0;
-        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
-          terms[ti] = Share(t->term);
-        }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
-      }
-
-      // build list of variables this piece depends on
-      int nv = ptr->countDeps();
-      int* v = new int[nv];
-      int k = 0;
-      for (int vi = 0; vi<nv; vi++) {
-        k = ptr->getLevelAbove(k);
-        DCASSERT(k>0);
-        v[vi] = k;
-      }
-
-      // Ok, build the enabling subevent
-      const model_event* e = getParent().readEvent(i);
-      subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
-    }
 
     //
     // Build enabling subevents
@@ -2129,11 +2173,58 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
       subevents[se] = new enabling_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
     }
 
+
+    //
+    // Build firing subevents
+    //
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next, se++) {
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+      }
+
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+      }
+
+      // Ok, build the enabling subevent
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new firing_subevent(debug, getParent(), e, colls, depends, chunk, get_mxd_forest(), v, nv);
+    }
+
     
     //
     // Pull these together into the event
     //
-    otf_events[i] = new satotf_opname::event(subevents, num_enabling + num_firing);
+    otf_events.push_back(new satotf_opname::event(subevents, num_enabling + num_firing));
   } // for i
 
   //
@@ -2141,9 +2232,93 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
   //
   return new satotf_opname::otf_relation(
     ms.getMddForest(), get_mxd_forest(), ms.getMddForest(), 
-    otf_events, getParent().getNumEvents()
+    otf_events.data(), (int)otf_events.size()
   );
 }
+
+satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_msg &debug)
+{
+  using namespace MEDDLY;
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
+  substate_colls* c_pass = this->getSubstateStorage();
+  
+  satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(),ms.getMddForest());
+  
+  int max_node_count = 10;
+  int nEvents = getParent().getNumEvents();
+  int nPlaces = getParent().getNumStateVars();
+  
+  
+  int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
+  int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
+  std::vector<std::map<int, std::pair<long,long>>> event_table;
+  event_table.resize(nEvents);
+  //Holds the variables affected in the events from bottom to top
+  int** v_all_fire = (int**)malloc(nEvents*sizeof(int*));
+  //Holds the constant delta of event on certain variable
+  long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
+  
+  for(int i = 0; i<nEvents; i++) {
+    if(enable_deps[i])
+    for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        std::pair<long,long> enable_alone = std::make_pair(DL->termlist->term->getLower(),0);
+        event_table[i].insert(std::pair<int, std::pair<long,long>>(k,enable_alone));
+      } // for k
+    } // for enable_deps
+    
+    if(fire_deps[i])
+    for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        long fst = 0;
+        std::map<int, std::pair<long,long>>::iterator fit = event_table[i].find(k);
+        if (fit != event_table[i].end()) fst = fit->second.first;
+        std::pair<long,long> fire_alone = std::make_pair(fst,DL->termlist->term->getDelta());
+        event_table[i].erase(k);
+        event_table[i].insert(std::pair<int, std::pair<long,long>>(k,fire_alone));
+      } // for k
+    } // for fire_deps
+    
+    max_node_count+=event_table[i].size();
+    if(event_table[i].size()>0)
+    {  
+      std::map<int, std::pair<long,long>>::reverse_iterator rit = event_table[i].rbegin();
+      tops_of_events[i] = rit->first;
+    }
+  }// for Events
+  
+  
+  
+  derive_relation_node** rNode = (derive_relation_node**)malloc(max_node_count*sizeof(derive_relation_node*));
+  int rCtr = 0;
+  int avbl = 0;
+  
+  for(int i = 0; i < nEvents; i++)
+    {
+    unsigned long sign = 0;
+    int previous_node_handle = 1;
+    std::map<int, std::pair<long,long>>::iterator e_it = event_table[i].begin();
+    if(event_table[i].size()>0)
+    while(e_it!=event_table[i].end()){
+      
+      int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
+      sign = sign*10 + uniq;
+      rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
+      previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
+      rCtr ++;
+      e_it++;
+    }
+    }
+
+  //
+  // Return overall implicit relation
+  //
+  return T;
+}
+
 
 
 void substate_varoption::initDomain(const exprman* em)
@@ -2157,8 +2332,9 @@ void substate_varoption::initDomain(const exprman* em)
   num_levels = part.num_levels;
   variable** vars = new variable*[num_levels+1];
   vars[0] = 0;
+  const int initial_var_bound = meddly_procgen::usesXdds()? -1 : 1 ;
   for (int k=num_levels; k; k--) {
-    vars[k] = createVariable(1, buildVarName(part, k));
+    vars[k] = createVariable(initial_var_bound, buildVarName(part, k));
   } // for k
   if (!ms.createVars(vars, num_levels)) {
     built_ok = false;
@@ -2788,6 +2964,44 @@ bool onthefly_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
   return false;  // for now...
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                ontheflyimplicit_varoption class                        *
+// *                                                                        *
+// **************************************************************************
+
+class ontheflyimplicit_varoption : public substate_varoption {
+public:
+  ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
+                             const exprman* em, const meddly_procgen &pg);
+  
+  virtual void updateEvents(named_msg &d, bool* cl);
+  
+  virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                 ontheflyimplicit_varoption methods                       *
+// *                                                                        *
+// **************************************************************************
+
+ontheflyimplicit_varoption
+::ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
+                             const exprman* em, const meddly_procgen &pg)
+: substate_varoption(x, p, em, pg)
+{
+}
+
+void ontheflyimplicit_varoption::updateEvents(named_msg &d, bool* cl)
+{
+  // throw subengine::Engine_Failed;
+}
+
+bool ontheflyimplicit_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
+{
+  return false;  // for now...
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -2800,6 +3014,7 @@ int meddly_procgen::edge_style;
 int meddly_procgen::var_type;
 int meddly_procgen::nsf_ndp;
 int meddly_procgen::rss_ndp;
+bool meddly_procgen::uses_xdds;
 
 meddly_procgen::meddly_procgen()
 {
@@ -2839,6 +3054,7 @@ meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const
   }
   return mvo;
 }
+
 
 meddly_varoption*
 meddly_procgen::makePregen(const dsde_hlm &m, meddly_reachset &ms) const

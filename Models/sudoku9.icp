@@ -1,0 +1,231 @@
+
+/*
+    For speed, put the known squares at the top, and unknown below that.
+*/
+
+// known vars
+
+int x00 in { 5};
+//int x01 in { };
+int x02 in { 1};
+//int x03 in { };
+//int x04 in { };
+int x05 in { 3};
+//int x06 in { };
+//int x07 in { };
+//int x08 in { };
+//int x10 in { };
+int x11 in { 0};
+//int x12 in { };
+int x13 in { 8};
+//int x14 in { };
+//int x15 in { };
+int x16 in { 1};
+//int x17 in { };
+//int x18 in { };
+//int x20 in { };
+//int x21 in { };
+int x22 in { 2};
+//int x23 in { };
+//int x24 in { };
+//int x25 in { };
+//int x26 in { };
+//int x27 in { };
+int x28 in { 0};
+//int x30 in { };
+//int x31 in { };
+//int x32 in { };
+//int x33 in { };
+int x34 in { 0};
+int x35 in { 1};
+int x36 in { 4};
+int x37 in { 8};
+//int x38 in { };
+//int x40 in { };
+//int x41 in { };
+//int x42 in { };
+int x43 in { 2};
+//int x44 in { };
+//int x45 in { };
+//int x46 in { };
+int x47 in { 1};
+//int x48 in { };
+//int x50 in { };
+//int x51 in { };
+int x52 in { 3};
+//int x53 in { };
+int x54 in { 6};
+//int x55 in { };
+//int x56 in { };
+//int x57 in { };
+//int x58 in { };
+//int x60 in { };
+//int x61 in { };
+//int x62 in { };
+//int x63 in { };
+int x64 in { 8};
+int x65 in { 6};
+//int x66 in { };
+//int x67 in { };
+int x68 in { 3};
+int x70 in { 4};
+//int x71 in { };
+//int x72 in { };
+//int x73 in { };
+//int x74 in { };
+//int x75 in { };
+//int x76 in { };
+//int x77 in { };
+//int x78 in { };
+int x80 in { 8};
+//int x81 in { };
+//int x82 in { };
+//int x83 in { };
+int x84 in { 3};
+//int x85 in { };
+int x86 in { 5};
+int x87 in { 6};
+//int x88 in { };
+
+
+
+// Unknowns
+int
+     x01,      x03, x04,      x06, x07, x08,
+x10,      x12,      x14, x15,      x17, x18,
+x20, x21,      x23, x24, x25, x26, x27,     
+x30, x31, x32, x33,                     x38,
+x40, x41, x42,      x44, x45, x46,      x48,
+x50, x51,      x53,      x55, x56, x57, x58,
+x60, x61, x62, x63,           x66, x67,     
+     x71, x72, x73, x74, x75, x76, x77, x78,
+     x81, x82, x83,      x85,           x88
+  in {0..8};
+
+// rows have no duplicates
+
+unique(x00, x01, x02, x03, x04, x05, x06, x07, x08);
+unique(x10, x11, x12, x13, x14, x15, x16, x17, x18);
+unique(x20, x21, x22, x23, x24, x25, x26, x27, x28);
+unique(x30, x31, x32, x33, x34, x35, x36, x37, x38);
+unique(x40, x41, x42, x43, x44, x45, x46, x47, x48);
+unique(x50, x51, x52, x53, x54, x55, x56, x57, x58);
+unique(x60, x61, x62, x63, x64, x65, x66, x67, x68);
+unique(x70, x71, x72, x73, x74, x75, x76, x77, x78);
+unique(x80, x81, x82, x83, x84, x85, x86, x87, x88);
+
+// columns have no duplicates
+
+unique(x00, x10, x20, x30, x40, x50, x60, x70, x80);
+unique(x01, x11, x21, x31, x41, x51, x61, x71, x81);
+unique(x02, x12, x22, x32, x42, x52, x62, x72, x82);
+unique(x03, x13, x23, x33, x43, x53, x63, x73, x83);
+unique(x04, x14, x24, x34, x44, x54, x64, x74, x84);
+unique(x05, x15, x25, x35, x45, x55, x65, x75, x85);
+unique(x06, x16, x26, x36, x46, x56, x66, x76, x86);
+unique(x07, x17, x27, x37, x47, x57, x67, x77, x87);
+unique(x08, x18, x28, x38, x48, x58, x68, x78, x88);
+
+// boxes have no duplicates
+
+unique(x00, x01, x02, x10, x11, x12, x20, x21, x22);
+unique(x03, x04, x05, x13, x14, x15, x23, x24, x25);
+unique(x06, x07, x08, x16, x17, x18, x26, x27, x28);
+
+unique(x30, x31, x32, x40, x41, x42, x50, x51, x52);
+unique(x33, x34, x35, x43, x44, x45, x53, x54, x55);
+unique(x36, x37, x38, x46, x47, x48, x56, x57, x58);
+
+unique(x60, x61, x62, x70, x71, x72, x80, x81, x82);
+unique(x63, x64, x65, x73, x74, x75, x83, x84, x85);
+unique(x66, x67, x68, x76, x77, x78, x86, x87, x88);
+
+// Measure
+
+satisfiable findsol := true;
+
+// check correctness
+
+// satisfiable verifysol :=
+//     (x00 == 9) & 
+//     (x01 == 12) & 
+//     (x02 == 1) & 
+//     (x03 == 6) & 
+//     (x04 == 2) & 
+//     (x05 == 13) & 
+//     (x06 == 14) & 
+//     (x07 == 15) & 
+//     (x08 == 0) & 
+//     (x10 == 10) & 
+//     (x11 == 3) & 
+//     (x12 == 5) & 
+//     (x13 == 8) & 
+//     (x14 == 12) & 
+//     (x15 == 4) & 
+//     (x16 == 11) & 
+//     (x17 == 0) & 
+//     (x18 == 9) & 
+//     (x20 == 14) & 
+//     (x21 == 15) & 
+//     (x22 == 13) & 
+//     (x23 == 11) & 
+//     (x24 == 9) & 
+//     (x25 == 8) & 
+//     (x26 == 7) & 
+//     (x27 == 6) & 
+//     (x28 == 4) & 
+//     (x30 == 0) & 
+//     (x31 == 7) & 
+//     (x32 == 2) & 
+//     (x33 == 4) & 
+//     (x34 == 10) & 
+//     (x35 == 3) & 
+//     (x36 == 5) & 
+//     (x37 == 1) & 
+//     (x38 == 8) & 
+//     (x40 == 12) & 
+//     (x41 == 14) & 
+//     (x42 == 6) & 
+//     (x43 == 0) & 
+//     (x44 == 5) & 
+//     (x45 == 1) & 
+//     (x46 == 10) & 
+//     (x47 == 3) & 
+//     (x48 == 7) & 
+//     (x50 == 13) & 
+//     (x51 == 11) & 
+//     (x52 == 10) & 
+//     (x53 == 2) & 
+//     (x54 == 0) & 
+//     (x55 == 6) & 
+//     (x56 == 8) & 
+//     (x57 == 9) & 
+//     (x58 == 14) & 
+//     (x60 == 15) & 
+//     (x61 == 8) & 
+//     (x62 == 7) & 
+//     (x63 == 5) & 
+//     (x64 == 4) & 
+//     (x65 == 12) & 
+//     (x66 == 2) & 
+//     (x67 == 14) & 
+//     (x68 == 6) & 
+//     (x70 == 1) & 
+//     (x71 == 4) & 
+//     (x72 == 3) & 
+//     (x73 == 9) & 
+//     (x74 == 11) & 
+//     (x75 == 7) & 
+//     (x76 == 15) & 
+//     (x77 == 13) & 
+//     (x78 == 5) & 
+//     (x80 == 7) & 
+//     (x81 == 13) & 
+//     (x82 == 0) & 
+//     (x83 == 1) & 
+//     (x84 == 15) & 
+//     (x85 == 9) & 
+//     (x86 == 12) & 
+//     (x87 == 4) & 
+//     (x88 == 11);
+// 

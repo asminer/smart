@@ -49,6 +49,11 @@ extern parse_module* pm;
 // #define DEBUG_MINTERM
 // #define REPORT_INITIAL
 
+
+//MCC Experiment Category Switch
+#define MCC_STATE_SPACE 1
+#define MCC_UPPER_BOUNDS 0
+
 // **************************************************************************
 // *                                                                        *
 // *                        meddly_fsm_finish  class                        *
@@ -846,11 +851,7 @@ private:
   // Compute the number of arcs in the reachability graph
   //
   bigint computeNumTransitions(const MEDDLY::dd_edge &RS,
-      MEDDLY::satotf_opname::otf_relation &NSF);
-  bigint computeNumTransitions(
-      MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
-      MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
-      NodeNodeIntMap &ct);
+      MEDDLY::satotf_opname::otf_relation &NSF, bool count_duplicates);
 
   // Compute the maximum number of tokens in any state of the reachable set of states
   //
@@ -875,6 +876,7 @@ meddly_otfsat the_meddly_otfsat;
 
 meddly_otfsat::meddly_otfsat() : meddly_implicitgen()
 {
+  meddly_procgen::useXdds(true);
 }
 
 meddly_otfsat::~meddly_otfsat()
@@ -898,10 +900,10 @@ long meddly_otfsat::computeMaxTokensInPlace(
     int curr = 0;
     for (int i = 0; i < nConfirmed; i++, curr++) {
       while (!NSF.isConfirmed(k, curr)) curr++;
-      // std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
+       //std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
       colls->getSubstate(k, curr, chunk, sz);
       for (int j = 0; j < sz; j++) {
-        // std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
+        //std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
         if (max_tokens < chunk[j]) max_tokens = chunk[j];
       }
     }
@@ -1036,123 +1038,45 @@ long meddly_otfsat::computeMaxTokensPerMarking(
 
 
 bigint meddly_otfsat::computeNumTransitions(
-    MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level, 
-    MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
-    NodeNodeIntMap &ct)
-{
-  if (0 == mdd || 0 == mxd) return bigint(0l);
-  if (0 == level) return bigint(1l);
-
-  int mddLevel = mddf->getNodeLevel(mdd);
-  int mxdLevel = mxdf->getNodeLevel(mxd);
-  int levelSize = mddf->getLevelSize(level);
-  bigint result;
-
-  DCASSERT(ABS(mxdLevel) <= level);
-
-  if (mddLevel < level) {
-    if (ABS(mxdLevel) < level) {
-      // if mddLevel < level && ABS(mxdLevel) < level
-      // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
-      result.mul(bigint(levelSize), computeNumTransitions(mdd, mxd, level-1, mddf, mxdf, ct));
-    } else if (mxdLevel < 0) {
-      // if mddLevel < level && ABS(mxdLevel) >= level && mxdLevel < 0
-      // --- return level_size * compute(mdd, mxd[i], level-1)
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
-      for (int i = 0; i < p_nr->getNNZs(); i++) {
-        result.add(result, computeNumTransitions(mdd, p_nr->d(i), level-1, mddf, mxdf, ct));
-      }
-      MEDDLY::unpacked_node::recycle(p_nr);
-      result.mul(bigint(levelSize), result);
-    } else {
-      // expand mxd
-      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
-      for (int i = 0; i < up_nr->getNNZs(); i++) {
-        p_nr->initFromNode(mxdf, up_nr->d(i), false);
-        for (int j = 0; j < p_nr->getNNZs(); j++) {
-          result.add(result, computeNumTransitions(mdd, p_nr->d(j), level-1, mddf, mxdf, ct));
-        }
-      }
-      MEDDLY::unpacked_node::recycle(p_nr);
-      MEDDLY::unpacked_node::recycle(up_nr);
-    }
-  } else {
-    DCASSERT(mddLevel == level);
-    // check compute table
-    NodeNodeIntMap::iterator iter1 = ct.find(mdd);
-    NodeIntMap::iterator iter2;
-    if (iter1 != ct.end()) {
-      iter2 = iter1->second.find(mxd);
-      if (iter2 != iter1->second.end()) {
-        // found
-        return iter2->second;
-      }
-    }
-
-    // expand mdd
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
-    if (ABS(mxdLevel) < level) {
-      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
-        result.add(result, computeNumTransitions(mdd_nr->d(i), mxd, level-1, mddf, mxdf, ct));
-      }
-    } else if (mxdLevel < 0) {
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
-      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
-        for (int j = 0; j < p_nr->getNNZs(); j++) {
-          result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
-        }
-      }
-      MEDDLY::unpacked_node::recycle(p_nr);
-    } else {
-      // expand mxd
-      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, true);
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
-      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
-        int i_index = mdd_nr->i(i);
-        if (0 == up_nr->d(i_index)) continue;
-        if (-1 == up_nr->d(i_index)) {
-          result.add(result, computeNumTransitions(mdd_nr->d(i), -1, level-1, mddf, mxdf, ct));
-        } else {
-          p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
-          for (int j = 0; j < p_nr->getNNZs(); j++) {
-            result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
-          }
-        }
-      }
-      MEDDLY::unpacked_node::recycle(p_nr);
-      MEDDLY::unpacked_node::recycle(up_nr);
-    }
-    MEDDLY::unpacked_node::recycle(mdd_nr);
-
-    // insert into compute table
-    ct[mdd].insert(std::pair<MEDDLY::node_handle, bigint>(mxd, result));
-  }
-
-  return result;
-}
-
-
-bigint meddly_otfsat::computeNumTransitions(
     const MEDDLY::dd_edge &RS,
-    MEDDLY::satotf_opname::otf_relation &NSF)
+    MEDDLY::satotf_opname::otf_relation &NSF,
+    bool count_duplicates)
 {
   // num_trans = 0
   // for each event e in NSF,
   //    num_trans += computeNumTransitions(rs, e)
 
   int num_vars = RS.getForest()->getDomain()->getNumVariables();
-  MEDDLY::node_handle mdd = RS.getNode();
+  MEDDLY::dd_edge mxd_mask(NSF.getRelForest());
+  MEDDLY::apply(MEDDLY::CROSS, RS, RS, mxd_mask);
 
   bigint num_transitions = 0l;
-  for (int i = 1; i <= num_vars; i++) {
-    for (int ei = 0; ei < NSF.getNumOfEvents(i); ei++) {
-      NodeNodeIntMap ct;
-      MEDDLY::node_handle mxd = NSF.getEvent(i, ei);
-      bigint temp = computeNumTransitions(mdd, mxd, num_vars,
-          NSF.getInForest(), NSF.getRelForest(), ct);
-      num_transitions.add(num_transitions, temp);
+
+  if (count_duplicates) {
+    for (int i = 1; i <= num_vars; i++) {
+      for (int ei = 0; ei < NSF.getNumOfEvents(i); ei++) {
+        bigint card = 0l;
+        MEDDLY::dd_edge event_ei(NSF.getRelForest());
+        event_ei.set(NSF.getRelForest()->linkNode(NSF.getEvent(i, ei)));
+        event_ei *= mxd_mask;
+        MEDDLY::apply(MEDDLY::CARDINALITY, event_ei, card.value);
+        num_transitions.add(num_transitions, card);
+      }
     }
+  } else {
+    // build monolithic 
+    MEDDLY::dd_edge monolithic_nsf(NSF.getRelForest());
+    for (int i = 1; i <= num_vars; i++) {
+      MEDDLY::dd_edge nsf_i(NSF.getRelForest());
+      for (int ei = 0; ei < NSF.getNumOfEvents(i); ei++) {
+        MEDDLY::dd_edge event_ei(NSF.getRelForest());
+        event_ei.set(NSF.getRelForest()->linkNode(NSF.getEvent(i, ei)));
+        nsf_i += event_ei;
+      }
+      monolithic_nsf += nsf_i;
+    }
+    monolithic_nsf *= mxd_mask;
+    MEDDLY::apply(MEDDLY::CARDINALITY, monolithic_nsf, num_transitions.value);
   }
 
   return num_transitions;
@@ -1251,6 +1175,16 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       return;
     }
 
+#if 0
+    // Build a monolithic transition relation
+    NSF->bindExtensibleVariables();
+    MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
+    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
+
+    clearMeddlyComputeTable(x, *NSF);
+#else
     em->cout() << "STATE_SPACE STATES ";
     shared_object* bigns = numstates.getPtr();
     if (bigns) {
@@ -1262,23 +1196,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
-    // Build a monolithic transition relation
-    int num_vars = NSF->getRelForest()->getNumVariables();
-    MEDDLY::node_handle mxd = 0;
-    MEDDLY::binary_operation* unionOp = MEDDLY::getOperation(MEDDLY::UNION,
-      NSF->getRelForest(), NSF->getRelForest(), NSF->getRelForest());
-    for (int i = 1; i <= num_vars; i++) {
-      for (int ei = 0; ei < NSF->getNumOfEvents(i); ei++) {
-        mxd = unionOp->compute(mxd, NSF->getEvent(i, ei));
-      }
-    }
-    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
-    d->E.set(mxd);
-    setNSF(d);
-
-    clearMeddlyComputeTable(x, *NSF);
-
-#if 1
     //
     // Compute maximum tokens in any place
     //
@@ -1295,14 +1212,43 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
 
+    // Build a monolithic transition relation
+    NSF->bindExtensibleVariables();
+
     //
     // Compute number of arcs
     //
-    bigint num_transitions = computeNumTransitions(x.getStates(), *NSF);
+#if 1
     em->cout() << "STATE_SPACE TRANSITIONS ";
+    bigint num_dup_transitions = computeNumTransitions(x.getStates(), *NSF, true);
+    num_dup_transitions.Print(em->cout(), 0);
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+
+    em->cout() << "STATE_SPACE UNIQUE TRANSITIONS ";
+    bigint num_transitions = computeNumTransitions(x.getStates(), *NSF, false);
     num_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
     em->cout().flush();
+#else
+    const MEDDLY::dd_edge& states = x.getStates();
+    double num_transitions = NSF->getArcCount(states, true);
+    em->cout() << "STATE_SPACE TRANSITIONS ";
+    em->cout() << num_transitions;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    num_transitions = NSF->getArcCount(states, false);
+    em->cout() << "STATE_SPACE UNIQUE TRANSITIONS ";
+    em->cout() << num_transitions;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#endif
+
+    MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
+    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
+
+    clearMeddlyComputeTable(x, *NSF);
 #endif
 
     delete NSF;
@@ -1366,7 +1312,698 @@ void meddly_otfsat::generateRSS(meddly_varoption &x,
   }
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                       meddly_otfimplsat  class                         *
+// *                                                                        *
+// **************************************************************************
 
+/** On-the-fly-implicit saturation using Meddly.
+ 
+ REFERRED AS IMPLICIT-RELATION IN Meddly
+ HACK!
+ RE-DESIGN THIS CLASS AND EVERYTHING ELSE IN HERE!
+ IT'S ALL CRAP!
+ 
+ */
+
+class meddly_otfimplsat : public meddly_implicitgen {
+public:
+  meddly_otfimplsat();
+  virtual ~meddly_otfimplsat();
+protected:
+  virtual void buildRSS(meddly_varoption &x);
+  virtual void generateRSS(meddly_varoption &x, timer &w) {
+    DCASSERT(0);
+  }
+  virtual const char* getAlgName() const { return "on the fly implicit nodes saturation"; }
+  virtual void postprocess(dsde_hlm &m, meddly_varoption &x);
+private:
+  // Build the otfimpl next-state function
+  //
+  MEDDLY::satimpl_opname::implicit_relation* buildNSF(meddly_varoption &x);
+
+  // Build the reachable set of states
+  //
+  void generateRSS(meddly_varoption &x, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  // Clear Meddly's compute tables
+  //
+  void clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &IMPL_NSF);
+  // Compute the maximum number of tokens that can occur at any place in the Petri Net
+  //
+  long computeMaxTokensInPlace(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  
+  // Compute the number of arcs in the reachability graph
+  //
+  bigint computeNumTransitions(const MEDDLY::dd_edge &RS,
+                               MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  bigint computeNumTransitions(
+                               MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                               MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
+                               NodeNodeIntMap &ct);
+  
+  // Compute the maximum number of tokens in any state of the reachable set of states
+  //
+ bool computeMaxTokensPerLevel(
+                                meddly_varoption &x,
+                                MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                                std::vector<long> &result,
+                                std::vector< std::vector<long> > &level_index_to_token);
+  long computeMaxTokensPerMarking(
+                                  const std::vector<long> &level_to_max_tokens,
+                                  const std::vector< std::vector<long> > &level_index_to_token,
+                                  MEDDLY::expert_forest* mddf,
+                                  MEDDLY::node_handle mdd,
+                                  int level,
+                                  std::unordered_map < MEDDLY::node_handle, long > &ct);
+  long computeMaxTokensPerMarking(
+                                  meddly_varoption &x,
+                                  MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  
+  // Compute the number of arcs in the reachability graph using implicit relations
+  //
+  bigint computeNumTransitionsImplRel(const MEDDLY::dd_edge &RS,
+                               MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
+  bigint computeNumTransitionsImplRel(
+                               MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                               MEDDLY::expert_forest* mddf, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                               NodeNodeIntMap &ct);
+  
+};
+
+meddly_otfimplsat the_meddly_otfimplsat;
+
+meddly_otfimplsat::meddly_otfimplsat() : meddly_implicitgen()
+{
+  // meddly_procgen::useXdds(false);
+  meddly_procgen::useXdds(true);
+}
+
+meddly_otfimplsat::~meddly_otfimplsat()
+{
+}
+
+void meddly_otfimplsat::buildRSS(meddly_varoption &x)
+{
+  timer watch;
+  timer subwatch;
+  if (startGen(x.getParent())) {
+    Report().stopIO();
+  }
+  
+  //
+  // Build the initial state set, and other initializations
+  //
+  if (Report().startReport()) {
+    Report().report() << "Initializing forests\n";
+    Report().stopIO();
+  }
+  
+  try {
+    x.initializeVars();
+    
+    if (Report().startReport()) {
+      Report().report() << "Initialized  forests, took ";
+      Report().report() << watch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+    
+    x.initializeEvents(Debug());
+    
+    //
+    // Build next-state function
+    //
+    if (Report().startReport()) {
+      Report().report() << "Initializing next-state function builder\n";
+      subwatch.reset();
+      Report().stopIO();
+    }
+    
+    MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF = buildNSF(x);
+    DCASSERT(IMPL_NSF);
+    
+    IMPL_NSF->setConfirmedStates(x.getInitial());
+    
+    if (Report().startReport()) {
+      Report().report() << "Initialized  next-state function builder, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      Report().stopIO();
+    }
+    //
+    // Generate reachability set
+    //
+    if (Report().startReport()) {
+      Report().report() << "Building reachability set\n";
+      Report().stopIO();
+      subwatch.reset();
+    }
+    
+    generateRSS(x, IMPL_NSF);
+    
+    if (Report().startReport()) {
+      Report().report() << "Built reachability set, took ";
+      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+      smart_output Drep(Report().report());
+      MEDDLY::operation::showAllComputeTables(Drep,3);
+      Report().stopIO();
+    }
+    
+    if (stopGen(false, x.getParent(), watch)) {
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      Report().stopIO();
+    }
+
+    // Convert extensible variables to bounded
+    IMPL_NSF->bindExtensibleVariables();
+
+    result numstates;
+    x.getNumStates(numstates);
+    if (!numstates.isNormal()) {
+      //
+      // TBD: Error, can we print something and exit cleanly here?
+      em->cout() << "CANNOT COMPUTE\n";
+      delete IMPL_NSF;
+      return;
+    }
+
+#if MCC_STATE_SPACE
+    em->cout() << "STATE_SPACE STATES ";
+    shared_object* bigns = numstates.getPtr();
+    if (bigns) {
+      bigns->Print(em->cout(), 0);
+    } else {
+      long ns = numstates.getInt();
+      em->cout() << ns;
+    }
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#endif
+    
+    // Build a monolithic transition relation from implicit relation
+    MEDDLY::dd_edge NSF = IMPL_NSF->buildMxdForest();
+    smart_cast<MEDDLY::expert_forest*>(NSF.getForest())->linkNode(NSF.getNode());
+    MEDDLY::node_handle mxd = NSF.getNode();
+    shared_ddedge* d = new shared_ddedge(NSF.getForest());
+    d->E.set(mxd);
+    setNSF(d);
+    
+    
+    
+#if MCC_STATE_SPACE
+    //
+    // Compute maximum tokens in any place
+    //
+    long max_tokens_in_place = computeMaxTokensInPlace(x, IMPL_NSF);
+    em->cout() << "STATE_SPACE MAX_TOKEN_IN_PLACE " << max_tokens_in_place;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
+    em->cout().flush();
+
+    //
+    // Compute the maximum number of tokens in a marking
+    //
+    long max_tokens_per_marking = computeMaxTokensPerMarking(x, IMPL_NSF);
+    em->cout() << "STATE_SPACE MAX_TOKEN_PER_MARKING " << max_tokens_per_marking;
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
+    em->cout().flush();
+
+    //
+    // Compute number of arcs using implicit relations
+    //
+    bigint num_transitions = computeNumTransitionsImplRel(x.getStates(), IMPL_NSF);
+    em->cout() << "STATE_SPACE TRANSITIONS ";
+    num_transitions.Print(em->cout(), 0);
+    em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
+    em->cout().flush();
+#endif
+    
+#if MCC_UPPER_BOUNDS
+    std::vector<long> level_to_max_tokens;
+    std::vector< std::vector<long> > level_index_to_token;
+    if(computeMaxTokensPerLevel(x, IMPL_NSF, level_to_max_tokens, level_index_to_token))
+      {
+        x.setLevel_maxTokens(level_to_max_tokens);
+        x.setLevelIndex_token(level_index_to_token);
+      }
+#endif
+    
+
+    
+  } // try
+  
+  catch (subengine::error status) {
+    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    throw status;
+  }
+}
+
+void meddly_otfimplsat::postprocess(dsde_hlm &m, meddly_varoption &x)
+{
+  // Update variable bounds
+  const MEDDLY::domain* d = x.getMddForest()->getDomain();
+  int num_vars = m.getNumStateVars();
+  for (int i = 0; i < num_vars; i++) {
+    model_statevar* var = m.getStateVar(i);
+    if (!var->HasBounds()) {
+      int level = var->GetPart();
+      // The bound of primed variable
+      var->SetBounds(MakeRangeSet(0, d->getVariableBound(level, true), 1));
+    }
+  }
+}
+
+void meddly_otfimplsat::clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &IMPL_NSF)
+{
+  //NSF.clearMinterms();
+  MEDDLY::operation::removeAllFromMonolithic();
+}
+
+MEDDLY::satimpl_opname::implicit_relation*
+meddly_otfimplsat::buildNSF(meddly_varoption &x)
+{
+  // FOR NOW!
+  // TBD!
+  return x.buildNSF_IMPLICIT(Debug());
+}
+
+void meddly_otfimplsat::generateRSS(meddly_varoption &x,
+                                    MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  using namespace MEDDLY;
+  
+  DCASSERT(IMPL_NSF);
+  DCASSERT(MEDDLY::SATURATION_IMPL_FORWARD);
+  try{
+    specialized_operation* satop = SATURATION_IMPL_FORWARD->buildOperation(IMPL_NSF);
+    DCASSERT(satop);
+    
+    shared_ddedge* S = x.newMddEdge();
+    satop->compute(x.getInitial(), S->E);
+    x.setStates(S);
+    checkTerm("Generation failed", x.getParent());
+  }
+  catch (MEDDLY::error ce) {
+    convert(ce, "Generation failed", x.getParent());
+  }
+}
+
+//
+//Place Token Count
+//
+long meddly_otfimplsat::computeMaxTokensInPlace(
+                                            meddly_varoption &x, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  substate_colls* colls = x.getSubstateStorage();
+  if (0 == colls) return -1;
+  
+  const dsde_hlm& p = x.getParent();
+  shared_state* foo = new shared_state(&p);
+  long max_tokens = 0;
+  for (int k = 1; k <= p.getPartInfo().num_levels; k++) {
+    long nConfirmed = IMPL_NSF->getConfirmedStates(k);
+    int sz = foo->readSubstateSize(k);
+    int chunk[sz];
+    int curr = 0;
+    for (int i = 0; i < nConfirmed; i++, curr++) {
+      while (!IMPL_NSF->isConfirmedState(k, curr)) curr++;
+      // std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
+      colls->getSubstate(k, curr, chunk, sz);
+      for (int j = 0; j < sz; j++) {
+        // std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n" <<"maxtokens="<<max_tokens;
+        if (max_tokens < chunk[j]) max_tokens = chunk[j];
+      }
+    }
+  }
+  return max_tokens;
+}
+
+//
+//Marking Token Count
+//
+
+bool meddly_otfimplsat::computeMaxTokensPerLevel(
+                                             meddly_varoption &x,
+                                             MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                                             std::vector<long> &max_tokens,
+                                             std::vector< std::vector<long> > &level_index_to_token)
+{
+  substate_colls* colls = x.getSubstateStorage();
+  if (0 == colls) return false;
+  
+  const dsde_hlm& p = x.getParent();
+  shared_state* foo = new shared_state(&p);
+  
+  max_tokens.resize(p.getPartInfo().num_levels+1);
+  for (std::vector<long>::iterator rIter = max_tokens.begin();
+       rIter != max_tokens.end(); rIter++) {
+    *rIter = 0;
+  }
+  
+  level_index_to_token.resize(p.getPartInfo().num_levels+1);
+  for (int i = 0; i < int(level_index_to_token.size()); i++) {
+    for (std::vector<long>::iterator rIter = level_index_to_token[i].begin();
+         rIter != level_index_to_token[i].end(); rIter++) {
+      *rIter = 0;
+    }
+  }
+  
+  for (int k = 1; k <= p.getPartInfo().num_levels; k++) {
+    long nConfirmed = IMPL_NSF->getConfirmedStates(k);
+    int sz = foo->readSubstateSize(k);
+    int chunk[sz];
+    int curr = 0;
+    for (int i = 0; i < nConfirmed; i++, curr++) {
+      //std::cout << "k: " << k << ", i: " << i << ", curr: " << curr << ", sz:" << sz << "\n";
+      while (!IMPL_NSF->isConfirmedState(k, curr)) curr++;
+      level_index_to_token[k].resize(curr+1, 0);
+      colls->getSubstate(k, curr, chunk, sz);
+      int sum = 0;
+      for (int j = 0; j < sz; j++) {
+        //std::cout << "\t\t chunk[" << j << "]: " << chunk[j] << "\n";
+        sum += chunk[j];
+      }
+      level_index_to_token[k][curr] = sum;
+      if (max_tokens[k] < sum) max_tokens[k] = sum;
+      //std::cout << "\t\t max: " << max_tokens[k] << "\n";
+    }
+    //if(nConfirmed==0) {level_index_to_token[k].resize(1, 0); level_index_to_token[k][0] = 0; max_tokens[k] =0;}
+  }
+  return true;
+}
+
+
+long meddly_otfimplsat::computeMaxTokensPerMarking(
+                                               const std::vector<long> &level_to_max_tokens,
+                                               const std::vector< std::vector<long> > &level_index_to_token,
+                                               MEDDLY::expert_forest* mddf,
+                                               MEDDLY::node_handle mdd,
+                                               int level, 
+                                               std::unordered_map < MEDDLY::node_handle, long > &ct)
+{
+  DCASSERT(0 != mdd);
+  if (0 == level) return 0;
+  
+   
+  int mddLevel = mddf->getNodeLevel(mdd);
+  long result = 0;
+  
+  if (mddLevel < level) {
+    // if mddLevel < level
+    // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+    result = level_to_max_tokens[level] +
+    computeMaxTokensPerMarking(level_to_max_tokens, level_index_to_token,
+                               mddf, mdd, level-1, ct);
+  } else {
+    // check compute table
+    std::unordered_map < MEDDLY::node_handle, long >::iterator iter = ct.find(mdd);
+    if (iter != ct.end()) {
+      return iter->second;
+    }
+    // expand mdd
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+    result = MAX( result,
+                   (level_index_to_token[level][mdd_nr->i(i)] +
+                    computeMaxTokensPerMarking(level_to_max_tokens, level_index_to_token,
+                                               mddf, mdd_nr->d(i), level-1, ct)) );
+    }
+    MEDDLY::unpacked_node::recycle(mdd_nr);
+    // insert into compute table
+    ct[mdd] = result;
+  }
+  
+  return result;
+}
+
+long meddly_otfimplsat::computeMaxTokensPerMarking(
+                                               meddly_varoption &x,
+                                                MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  // traverse the set of reachable states
+  //
+  // for all children node,
+  //    max = MAX(max, map_i_to_token(level, i) + max_marking(child[i], level-1))
+  
+  const MEDDLY::dd_edge& states = x.getStates();
+  if (0 == states.getNode()) return 0;
+  
+  std::vector<long> level_to_max_tokens;
+  std::vector< std::vector<long> > level_index_to_token;
+  if (!computeMaxTokensPerLevel(x, IMPL_NSF, level_to_max_tokens, level_index_to_token))
+    return -1;
+  //for (int i = 0; i < int(level_to_max_tokens.size()); i++) {
+  //  em->cout() << "Level: " << i << ", max tokens: " << level_to_max_tokens[i] << "\n";
+  //}
+  
+  std::unordered_map < MEDDLY::node_handle, long > ct;
+  return computeMaxTokensPerMarking(
+                                    level_to_max_tokens,
+                                    level_index_to_token,
+                                    smart_cast<MEDDLY::expert_forest*>(states.getForest()),
+                                    states.getNode(),
+                                    x.getParent().getPartInfo().num_levels,
+                                    ct);
+}
+
+
+//
+//Transition Count
+//
+
+bigint meddly_otfimplsat::computeNumTransitions(
+                                            MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                                            MEDDLY::expert_forest* mddf, MEDDLY::expert_forest* mxdf,
+                                            NodeNodeIntMap &ct)
+{
+  if (0 == mdd || 0 == mxd) return bigint(0l);
+  if (0 == level) return bigint(1l);
+  
+  int mddLevel = mddf->getNodeLevel(mdd);
+  int mxdLevel = mxdf->getNodeLevel(mxd);
+  int levelSize = mddf->getLevelSize(level);
+  bigint result;
+  
+  DCASSERT(ABS(mxdLevel) <= level);
+  
+  if (mddLevel < level) {
+    if (ABS(mxdLevel) < level) {
+      // if mddLevel < level && ABS(mxdLevel) < level
+      // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+      result.mul(bigint(levelSize), computeNumTransitions(mdd, mxd, level-1, mddf, mxdf, ct));
+    } else if (mxdLevel < 0) {
+      // if mddLevel < level && ABS(mxdLevel) >= level && mxdLevel < 0
+      // --- return level_size * compute(mdd, mxd[i], level-1)
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      for (int i = 0; i < p_nr->getNNZs(); i++) {
+        result.add(result, computeNumTransitions(mdd, p_nr->d(i), level-1, mddf, mxdf, ct));
+      }
+      MEDDLY::unpacked_node::recycle(p_nr);
+      result.mul(bigint(levelSize), result);
+    } else {
+      // expand mxd
+      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
+      for (int i = 0; i < up_nr->getNNZs(); i++) {
+        p_nr->initFromNode(mxdf, up_nr->d(i), false);
+        for (int j = 0; j < p_nr->getNNZs(); j++) {
+          result.add(result, computeNumTransitions(mdd, p_nr->d(j), level-1, mddf, mxdf, ct));
+        }
+      }
+      MEDDLY::unpacked_node::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(up_nr);
+    }
+  } else {
+    DCASSERT(mddLevel == level);
+    // check compute table
+    NodeNodeIntMap::iterator iter1 = ct.find(mdd);
+    NodeIntMap::iterator iter2;
+    if (iter1 != ct.end()) {
+      iter2 = iter1->second.find(mxd);
+      if (iter2 != iter1->second.end()) {
+        // found
+        return iter2->second;
+      }
+    }
+    
+    // expand mdd
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    if (ABS(mxdLevel) < level) {
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        result.add(result, computeNumTransitions(mdd_nr->d(i), mxd, level-1, mddf, mxdf, ct));
+      }
+    } else if (mxdLevel < 0) {
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        for (int j = 0; j < p_nr->getNNZs(); j++) {
+          result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
+        }
+      }
+      MEDDLY::unpacked_node::recycle(p_nr);
+    } else {
+      // expand mxd
+      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, true);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        int i_index = mdd_nr->i(i);
+        if (0 == up_nr->d(i_index)) continue;
+        if (-1 == up_nr->d(i_index)) {
+          result.add(result, computeNumTransitions(mdd_nr->d(i), -1, level-1, mddf, mxdf, ct));
+        } else {
+          p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
+          for (int j = 0; j < p_nr->getNNZs(); j++) {
+            result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
+          }
+        }
+      }
+      MEDDLY::unpacked_node::recycle(p_nr);
+      MEDDLY::unpacked_node::recycle(up_nr);
+    }
+    MEDDLY::unpacked_node::recycle(mdd_nr);
+    
+    // insert into compute table
+    ct[mdd].insert(std::pair<MEDDLY::node_handle, bigint>(mxd, result));
+  }
+  
+  return result;
+}
+
+
+bigint meddly_otfimplsat::computeNumTransitions(
+                                            const MEDDLY::dd_edge &RS,
+                                                MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  // num_trans = 0
+  // for each event e in NSF,
+  //    num_trans += computeNumTransitions(rs, e)
+  
+  //build monolithic relation to compute number of transitions
+  
+  int num_vars = RS.getForest()->getDomain()->getNumVariables();
+  MEDDLY::node_handle mdd = RS.getNode();
+  
+  bigint num_transitions = 0l;
+  for (int i = 1; i <= num_vars; i++)
+    {
+  for (int ei = 0; ei < IMPL_NSF->lengthForLevel(i); ei++) 
+    {
+  NodeNodeIntMap ct;
+  MEDDLY::domain *d = IMPL_NSF->getOutForest()->useDomain();
+  MEDDLY::forest* mxd = d->createForest(true,MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL);
+ 
+  MEDDLY::dd_edge nsf_ev(mxd);
+  nsf_ev = IMPL_NSF->buildEventMxd(IMPL_NSF->arrayForLevel(i)[ei],mxd);
+  MEDDLY::node_handle handle_mxd = nsf_ev.getNode();
+  bigint temp = computeNumTransitions(mdd, handle_mxd, num_vars,
+                                      IMPL_NSF->getOutForest(), dynamic_cast<MEDDLY::expert_forest*>(nsf_ev.getForest()), ct);
+  num_transitions.add(num_transitions, temp);
+    }
+  }
+  return num_transitions;
+}
+
+
+//
+//Transition Count Implicit Relations
+//
+
+bigint meddly_otfimplsat::computeNumTransitionsImplRel(
+                                                MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
+                                                MEDDLY::expert_forest* mddf, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
+                                                NodeNodeIntMap &ct)
+{
+  if (0 == mdd || 0 == mxd) return bigint(0l);
+  if (0 == level) return bigint(1l);
+  
+  int mddLevel = mddf->getNodeLevel(mdd);
+  MEDDLY::satimpl_opname::relation_node* mxdNode = IMPL_NSF->nodeExists(mxd);
+  int mxdLevel = mxdNode->getLevel();
+  int levelSize = mddf->getLevelSize(level);
+  bigint result;
+  
+  DCASSERT(mxdLevel <= level);
+  
+  if (mddLevel < level) {
+    if (mxdLevel < level) {
+      // if mddLevel < level && mxdLevel < level
+      // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
+      result.mul(bigint(levelSize), computeNumTransitionsImplRel(mdd, mxd, level-1, mddf, IMPL_NSF, ct));
+    } else {
+      // expand mxd
+      MEDDLY::node_handle downMxd = mxdNode->getDown();
+      
+      for (int i = 0; i < mxdNode->getPieceSize(); i++) {
+        if(mxdNode->getTokenUpdate()[i]>=0)
+          result.add(result, computeNumTransitionsImplRel(mdd, downMxd, level-1, mddf, IMPL_NSF, ct));
+        }
+      }
+  } else {
+    DCASSERT(mddLevel == level);
+    // check compute table
+    NodeNodeIntMap::iterator iter1 = ct.find(mdd);
+    NodeIntMap::iterator iter2;
+    if (iter1 != ct.end()) {
+      iter2 = iter1->second.find(mxd);
+      if (iter2 != iter1->second.end()) {
+        // found
+        return iter2->second;
+      }
+    }
+    
+    // expand mdd
+    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    if (mxdLevel < level) {
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        result.add(result, computeNumTransitionsImplRel(mdd_nr->d(i), mxd, level-1, mddf, IMPL_NSF, ct));
+      }
+    } else {
+      // expand mxd
+      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        int i_index = mdd_nr->i(i);
+        if (mxdNode->getTokenUpdate()[i_index]<0) continue;
+        MEDDLY::node_handle downMxd = mxdNode->getDown();
+        if(mxdNode->getTokenUpdate()[i_index]>=0)
+          result.add(result, computeNumTransitionsImplRel(mdd_nr->d(i), downMxd, level-1, mddf, IMPL_NSF, ct));
+        }
+     }
+    MEDDLY::unpacked_node::recycle(mdd_nr);
+    
+    // insert into compute table
+    ct[mdd].insert(std::pair<MEDDLY::node_handle, bigint>(mxd, result));
+  }
+  
+  return result;
+}
+
+
+bigint meddly_otfimplsat::computeNumTransitionsImplRel(
+                                                const MEDDLY::dd_edge &RS,
+                                                MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
+{
+  // num_trans = 0
+  // for each event e in NSF,
+  //    num_trans += computeNumTransitions(rs, e)
+  
+  int num_vars = RS.getForest()->getDomain()->getNumVariables();
+  MEDDLY::node_handle mdd = RS.getNode();
+  
+  bigint num_transitions = 0l;
+  for (int i = 1; i <= num_vars; i++)
+    {
+#ifdef DEBUG_NUM_TRANS
+    em->cout() << "Level : " << i << "\t#Events: " << IMPL_NSF->lengthForLevel(i) << "\n";
+#endif
+    for (int ei = 0; ei < IMPL_NSF->lengthForLevel(i); ei++) 
+      {
+      NodeNodeIntMap ct;
+      bigint temp = computeNumTransitionsImplRel(mdd, IMPL_NSF->arrayForLevel(i)[ei], num_vars,
+                                          IMPL_NSF->getOutForest(), IMPL_NSF, ct);
+
+      num_transitions.add(num_transitions, temp);
+      }
+    }
+  return num_transitions;
+}
 
 // **************************************************************************
 // *                                                                        *
@@ -1688,6 +2325,13 @@ bool init_saturmeddly::execute()
     &the_meddly_otfsat
   );
 
+  RegisterEngine(em,
+   "MeddlyProcessGeneration",
+   "OTF_IMPLICIT_SATURATION",
+   "The On-the-fly-implicit Saturation algorithm, as implemented in Meddly",
+    &the_meddly_otfimplsat
+   );
+  
 
   RegisterEngine(em,
     "MeddlyProcessGeneration",

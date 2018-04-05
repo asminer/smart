@@ -1,0 +1,13 @@
+side:
+  - title: "Downloading"
+    url: "/downloading.html"
+
+  - title: "Building"
+    url: "/building.html"
+
+#    children: 
+#      - title: "Requirements"
+    
+  - title: "Getting Started"
+    url: "/getting_started.html"
+
