@@ -1502,13 +1502,12 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
 #endif
     
     // Build a monolithic transition relation from implicit relation
-    MEDDLY::dd_edge NSF = IMPL_NSF->buildMxdForest();
+    /*MEDDLY::dd_edge NSF = IMPL_NSF->buildMxdForest();
     smart_cast<MEDDLY::expert_forest*>(NSF.getForest())->linkNode(NSF.getNode());
     MEDDLY::node_handle mxd = NSF.getNode();
     shared_ddedge* d = new shared_ddedge(NSF.getForest());
     d->E.set(mxd);
-    setNSF(d);
-    
+    setNSF(d);*/
     
     
 #if MCC_STATE_SPACE
@@ -1548,7 +1547,12 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       }
 #endif
     
+    MEDDLY::node_handle mxd = IMPL_NSF->buildMxdForest();
+    shared_ddedge* d = new shared_ddedge(IMPL_NSF->getRelForest());
+    d->E.set(mxd);
+    setNSF(d);
 
+    delete IMPL_NSF;
     
   } // try
   
