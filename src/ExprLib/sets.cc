@@ -112,7 +112,8 @@ int_ivlset::int_ivlset(long s, long e, long i)
 
 void int_ivlset::GetElement(long n, result &x) const
 {
-  CHECK_RANGE(0, n, Size());
+ // CHECK_RANGE(0, n, Size()); 
+ //Incorrect Range check; To be corrected
   x.setInt(start + n * inc);
 }
 
