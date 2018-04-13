@@ -1133,7 +1133,7 @@ std::vector<int> leastToMostConnected(MODEL theModel) {
 std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
                               named_msg& out){
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
-  int soupsIters = 10000;
+  int soupsIters = 2000;
   
   std::vector<int> best (theModel.numPlaces, 0);
   // start with best as the given order until found otherwise
