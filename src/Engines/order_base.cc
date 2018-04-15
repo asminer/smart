@@ -324,6 +324,10 @@ bool compareArcPair(ArcPair a, ArcPair b) {
   return (a.placeToTrans < b.placeToTrans);
 }
 
+bool operator==(ArcPair a, ArcPair b) {
+  return (a.placeToTrans == b.placeToTrans) && (a.transToPlace == b.transToPlace);
+}
+
 // sort by (SOUPS uniqueness technique)
 bool compareTree(const TransTree  & a, const TransTree  & b) {
   std::map<int, ArcPair>::const_iterator itA = a.arcs.begin();
@@ -391,12 +395,20 @@ void outputTree(TransTree & a) {
 }
 
 
+int getTop(TransTree & tt) {
+  std::map<int, ArcPair>::reverse_iterator rit = tt.arcs.rbegin();
+  return rit->first;
+}
+
+
 int pointOfUnique(TransTree & a, TransTree & b) {
   if (a.arcs.empty()) {
     // a was empty
     std::map<int, ArcPair>::iterator itB = b.arcs.begin();
+    DCASSERT(itB != b.arcs.end());
     return itB->first;
   }
+  DCASSERT(!b.arcs.empty());
   
   std::map<int, ArcPair>::iterator itA = a.arcs.begin();
   int aBottom = itA->first;
@@ -433,15 +445,14 @@ int pointOfUnique(TransTree & a, TransTree & b) {
     }  
     itA = a.arcs.upper_bound(current);
     itB = b.arcs.upper_bound(current);
+    if (itA == a.arcs.end() || itB == b.arcs.end()) {
+      return getTop(a);
+    }
+    // std::cout << "itA: " << itA->second.placeToTrans << ", itB: " << itB->second.placeToTrans << "\n";
     current = std::min(itA->first, itB->first);
-  } while (true) ;
+  } while (true);
   
   return 0; // should never get here
-}
-
-int getTop(TransTree & tt) {
-  std::map<int, ArcPair>::reverse_iterator rit = tt.arcs.rbegin();
-  return rit->first;
 }
 
 int getProdSpan(TransTree & tt) {
@@ -609,7 +620,7 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
     DoubleInt SOUPS = getSOUPS(trees, prevScore); // current order and trees must always match
     if (SOUPS.theInt < score) {
       // this order is the best so far, so keep it
-      //std::cout << "SIMULATED ANNEALING FOUND NEW BEST ORDER AT ITER " << iter << " WITH SCORE: " << SOUPS.theInt << std::endl;
+      std::cout << "SIMULATED ANNEALING FOUND NEW BEST ORDER AT ITER " << iter << " WITH SCORE: " << SOUPS.theInt << std::endl;
       score = SOUPS.theInt;
       prevScore = SOUPS.theInt;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1128,12 +1139,13 @@ std::vector<int> leastToMostConnected(MODEL theModel) {
   return result;
 }
 
+#if 1
 
 // default parameters ordering
 std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
                               named_msg& out){
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
-  int soupsIters = 10000;
+  int soupsIters = 2000;
   
   std::vector<int> best (theModel.numPlaces, 0);
   // start with best as the given order until found otherwise
@@ -1155,9 +1167,13 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   
   std::vector<int> startOrder (best); // try force on the given order
   std::vector<int> forceGiven = generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
+  printf("Done generating initial forcegiven\n");
   std::vector<int> soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceGiven);
+
+  printf("Done generating initial soupsgiven\n");
   
   double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
+  printf("Done computing soupscore\n");
   if (newScore < bestScore) {
     bestScore = newScore;
     for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1173,7 +1189,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   
   forceGiven = getBFS(theModel);
   soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceGiven);
+  printf("Done generating soupsorder\n");
   newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
+  printf("Done computing soupscore\n");
   if (newScore < bestScore) {
     bestScore = newScore;
     for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1193,7 +1211,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   for (int iter = 0; (iter < 1) && (iter < theModel.numPlaces); iter++) {
     std::vector<int> startOrderBFS = getBFSx(theModel, iter);
     startOrderBFS = generateSASOUPSOrder(theModel, soupsIters, startOrderBFS);
+    printf("Done generating soupsorder\n");
     newScore = getSOUPSScore(theModel, startOrderBFS, paramAlpha);// to test soups
+    printf("Done computing soupscore\n");
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1210,7 +1230,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     
     std::vector<int> forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
+    printf("Done generating soupsorder\n");
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
+    printf("Done computing soupscore\n");
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1228,7 +1250,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       startOrderBFS[fixrev] = (theModel.numPlaces - 1) - startOrderBFS[fixrev];
     }
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, startOrderBFS);
+    printf("Done generating soupsorder\n");
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
+    printf("Done computing soupscore\n");
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1243,7 +1267,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     
     forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
+    printf("Done generating soupsorder\n");
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
+    printf("Done computing soupscore\n");
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1259,6 +1285,58 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   
   return best;
 }
+
+#else
+
+// default parameters ordering
+std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
+                              named_msg& out){
+  // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
+  // int soupsIters = 10000;
+  int soupsIters = 5000;
+  
+  std::vector<int> best (theModel.numPlaces, 0);
+  // start with best as the given order until found otherwise
+  for (int index = 0; index < theModel.numPlaces; index++) {
+    best[index] = index;  
+  }
+  
+  if (out.startReport()) {
+    out.report() << "In default order : " << paramAlpha << "\n\n";
+    out.stopIO();
+  }
+  
+  double bestScore = getSOUPSScore(theModel, best, paramAlpha);// to test soups
+  
+  if (out.startReport()) {
+    out.report() << "Score[given-order]: " << bestScore << "\n\n";
+    out.stopIO();
+  }
+  
+  std::vector<int> startOrder (best); // try force on the given order
+  std::vector<int> soupsGiven = generateSASOUPSOrder(theModel, soupsIters, startOrder);
+
+  printf("Done generating initial soupsgiven\n");
+  
+  double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
+  printf("Done computing soupscore\n");
+  if (newScore < bestScore) {
+    bestScore = newScore;
+    for (int index = 0; index < theModel.numPlaces; index++) {
+      best[index] = soupsGiven[index];
+    }
+  }
+  
+  if (out.startReport()) {
+    out.report() << "Score[SA(given-order)]: " << newScore << "\n";
+    out.report() << "Best Score: " << bestScore << "\n\n";
+    out.stopIO();
+  }
+  
+  return best;
+}
+
+#endif
 
 
 
@@ -1661,6 +1739,13 @@ MODEL translateModel(dsde_hlm& smartModel) {
   for (unsigned index = 0; index < vecArcs.size(); index++) {
     result.theArcs[index] = vecArcs[index];
   }
+
+#if 0
+  for (auto i : vecArcs) {
+    std::cout << "Src: " << i.source << " Dst: " << i.target << " Wt: "
+      << i.cardinality << "\n";
+  }
+#endif
   
   return result;
 }
@@ -1767,10 +1852,13 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   }
   
   MODEL model = translateModel(*dm);
+  printf("Done with translating model within variable-ordering code\n");
+
   const int nIterations = 1000;
   const int nStartingOrders = 10;
   std::vector<int> order = defaultOrder(model, ((alphaParameter >= 0.0) ? alphaParameter : factor), nIterations, nStartingOrders, debug);
   
+  printf("Done with building new variable-ordering\n");
   
   
   
