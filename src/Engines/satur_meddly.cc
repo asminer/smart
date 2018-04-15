@@ -1449,6 +1449,14 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       Report().report() << subwatch.elapsed_seconds() << " seconds\n";
       Report().stopIO();
     }
+
+#if 0
+    em->cout() << "Is a deadlock state reachable? ";
+    em->cout().flush();
+    em->cout() << IMPL_NSF->hasDeadlock(x.getInitial()) << "\n";
+    em->cout().flush();
+#endif
+
     //
     // Generate reachability set
     //
