@@ -620,7 +620,7 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
     DoubleInt SOUPS = getSOUPS(trees, prevScore); // current order and trees must always match
     if (SOUPS.theInt < score) {
       // this order is the best so far, so keep it
-      std::cout << "SIMULATED ANNEALING FOUND NEW BEST ORDER AT ITER " << iter << " WITH SCORE: " << SOUPS.theInt << std::endl;
+      // std::cout << "SIMULATED ANNEALING FOUND NEW BEST ORDER AT ITER " << iter << " WITH SCORE: " << SOUPS.theInt << std::endl;
       score = SOUPS.theInt;
       prevScore = SOUPS.theInt;
       for (int index = 0; index < theModel.numPlaces; index++) {
