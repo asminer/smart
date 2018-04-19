@@ -1780,6 +1780,7 @@ public:
   derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
+  virtual long valueOf(long i) override;
   virtual long enableCondition() override;
   
 private:
@@ -1809,6 +1810,17 @@ derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substa
 derive_relation_node::~derive_relation_node()
 {
   //TBD
+}
+
+
+int derive_relation_node::valueOf(long i)
+{
+    int sz = 1;
+    int chunk[sz];
+    colls->getSubstate(this->getLevel(), i, chunk, sz);
+    
+    
+  return chunk[0];
 }
 
 //Take the index : find token : update the token : return a new index
