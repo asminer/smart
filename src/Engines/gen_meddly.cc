@@ -1780,7 +1780,7 @@ public:
   derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
-  virtual long valueOf(long i) override;
+  virtual int valueOf(long i) override;
   virtual long enableCondition() override;
   
 private:
