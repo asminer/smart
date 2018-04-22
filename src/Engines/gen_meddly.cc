@@ -1781,6 +1781,7 @@ public:
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
   virtual long enableCondition() override;
+  virtual void registerIndex(long i) override;
   
 private:
   long e_delta;
@@ -1813,13 +1814,23 @@ derive_relation_node::~derive_relation_node()
   //TBD
 }
 
-
+void derive_relation_node::registerIndex(long i)
+{
+    int sz = 1;
+    int chunk[sz];
+    int chunk_updated[sz];
+    int curr = 0;
+    colls->getSubstate(this->getLevel(), i, chunk, sz); 
+    T->setValueOf(this->getLevel(),i,chunk[0]);
+    T->setIndexOf(this->getLevel(),chunk[0],i);
+}
 
 //Take the index : find token : update the token : return a new index
 long derive_relation_node::nextOf(long i)
 {
   if(i>=satimpl_opname::relation_node::getPieceSize())
     satimpl_opname::relation_node::expandTokenUpdate(i);
+  
    
   
   if(satimpl_opname::relation_node::getTokenUpdate()[i]==-2)
@@ -1829,8 +1840,8 @@ long derive_relation_node::nextOf(long i)
     int chunk_updated[sz];
     int curr = 0;
     colls->getSubstate(this->getLevel(), i, chunk, sz); 
-    T->valueOf.insert( std::pair< std::pair<int,long>, int>( std::pair<int,long>(this->getLevel(),i) ,chunk[0]) );
-    T->indexOf.insert( std::pair< std::pair<int,int>, long>( std::pair<int,int>(this->getLevel(),chunk[0]),i) );
+    T->setValueOf(this->getLevel(),i,chunk[0]);
+    T->setIndexOf(this->getLevel(),chunk[0],i);
     
     //Token update is calculated
     chunk_updated[0] = -1;
@@ -1840,8 +1851,8 @@ long derive_relation_node::nextOf(long i)
     //New index is received
     long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
     satimpl_opname::relation_node::setTokenUpdateAtIndex(i,j);
-    T->valueOf.insert( std::pair< std::pair<int,long>, int>( std::pair<int,long>(this->getLevel(),j) ,chunk_updated[0]) );
-    T->indexOf.insert( std::pair< std::pair<int,int>, long>( std::pair<int,int>(this->getLevel(),chunk_updated[0]) ,j) );
+    T->setValueOf(this->getLevel(),j,chunk_updated[0]);
+    T->setIndexOf(this->getLevel(),chunk_updated[0],j);
     
     }
   
