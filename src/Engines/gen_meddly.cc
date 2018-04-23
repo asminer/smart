@@ -1777,18 +1777,14 @@ protected:
 class derive_relation_node : public satimpl_opname::relation_node {
 public:
   // TBD - clean up this constructor!
-  derive_relation_node(named_msg &dm, long e, long f, substate_colls* c,satimpl_opname::implicit_relation* rel, unsigned long sign, int lvl, rel_node_handle down);
+  derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
-  virtual long enableCondition() override;
-  virtual void registerIndex(long i) override;
   
 private:
   long e_delta;
   long f_delta;
   substate_colls* colls;
-  satimpl_opname::implicit_relation* T;
-  
   
   named_msg &debug;
 };
@@ -1801,28 +1797,16 @@ private:
 // **************************************************************************
 
 
-derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c,satimpl_opname::implicit_relation* rel, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down), debug(dm)
+derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down), debug(dm)
 {
   e_delta = e;
   f_delta = f;
   colls = c;
-  T = rel;
 }
 
 derive_relation_node::~derive_relation_node()
 {
   //TBD
-}
-
-void derive_relation_node::registerIndex(long i)
-{
-    int sz = 1;
-    int chunk[sz];
-    int chunk_updated[sz];
-    int curr = 0;
-    colls->getSubstate(this->getLevel(), i, chunk, sz); 
-    T->setValueOf(this->getLevel(),i,chunk[0]);
-    T->setIndexOf(this->getLevel(),chunk[0],i);
 }
 
 //Take the index : find token : update the token : return a new index
@@ -1840,8 +1824,6 @@ long derive_relation_node::nextOf(long i)
     int chunk_updated[sz];
     int curr = 0;
     colls->getSubstate(this->getLevel(), i, chunk, sz); 
-    T->setValueOf(this->getLevel(),i,chunk[0]);
-    T->setIndexOf(this->getLevel(),chunk[0],i);
     
     //Token update is calculated
     chunk_updated[0] = -1;
@@ -1851,17 +1833,9 @@ long derive_relation_node::nextOf(long i)
     //New index is received
     long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
     satimpl_opname::relation_node::setTokenUpdateAtIndex(i,j);
-    T->setValueOf(this->getLevel(),j,chunk_updated[0]);
-    T->setIndexOf(this->getLevel(),chunk_updated[0],j);
-    
     }
   
   return satimpl_opname::relation_node::getTokenUpdate()[i];
-}
-
-long derive_relation_node::enableCondition()
-{
-  return e_delta;
 }
 
 
@@ -2326,7 +2300,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
       
       int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
       sign = sign*10 + uniq;
-      rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,T,sign,e_it->first,previous_node_handle);
+      rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
       previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
       rCtr ++;
       e_it++;
