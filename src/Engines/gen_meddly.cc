@@ -2347,6 +2347,8 @@ int getIndexOf(substate_colls* c_pass, int level, int tokens)
 MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
 {
   using namespace MEDDLY;
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   DCASSERT(c_pass);
   forest* mdd = getMddForest();
@@ -2408,6 +2410,13 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
       dd_edge expr(mdd);
       mdd->createEdge(minterms, j.value, expr);
 
+#ifdef DEBUG_IS_REACHABLE
+      std::cout << "\nExpr: 0 <= L" << j.level << " < " << j.value << ":\n";
+      ostream_output s(std::cout);
+      expr.show(s, 2);
+      std::cout.flush();
+#endif
+
       // Add to event's XDD
       i_union += expr;
 
@@ -2417,6 +2426,13 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
 
     } // per variable, j
 
+#ifdef DEBUG_IS_REACHABLE
+    std::cout << "\nDisabling dd_edge:\n";
+    ostream_output s(std::cout);
+    i_union.show(s, 2);
+    std::cout.flush();
+#endif
+
     // Save disabling XDD for event i (to be processed later)
     disabling_ddedges.push_back(i_union);
 
@@ -2425,8 +2441,6 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
   MEDDLY_DCASSERT(disabling_ddedges.size() > 0);
   result = disabling_ddedges[0];
   for (auto i : disabling_ddedges) {
-    // std::cout << "\nDisabling dd_edge:\n";
-    // i.show(s, 2);
     result *= i;
   }
 
