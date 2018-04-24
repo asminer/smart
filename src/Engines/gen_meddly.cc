@@ -180,6 +180,12 @@ satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(named_msg
   return 0;
 }
 
+MEDDLY::dd_edge meddly_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+{
+  MEDDLY::dd_edge result(getMddForest());
+  return result;
+}
+
 // **************************************************************************
 // *                                                                        *
 // *                         bounded_encoder  class                         *
@@ -1697,6 +1703,7 @@ public:
 
   virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
   virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
+  virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(named_msg &debug);
   virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
@@ -2311,6 +2318,120 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   // Return overall implicit relation
   //
   return T;
+}
+
+struct int_pair {
+  int level;
+  int value;
+  int_pair(int k, int v) : level(k), value(v) {}
+};
+
+
+int getIndexOf(substate_colls* c_pass, int level, int tokens)
+{
+  DCASSERT(c_pass);
+  const int sz = 1;
+  int chunk[sz];
+  chunk[0] = tokens;
+  return c_pass->addSubstate(level, chunk, sz);
+}
+
+// disabling expressions for transitions:
+// {
+// (k_a:v_a, k_b:v_b, ...), // t1: k_a < v_a | k_b < v_b | ...
+// (k_c:v_c, k_d:v_d, ...), // t2: k_c < v_c | k_d < v_d | ...
+// ...
+// }
+// 
+// potential deadlock states = conjunction of transition disabling expressions
+MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+{
+  using namespace MEDDLY;
+  substate_colls* c_pass = this->getSubstateStorage();
+  DCASSERT(c_pass);
+  forest* mdd = getMddForest();
+  DCASSERT(mdd);
+
+  // for each level, k
+  //    for each event, e, that starts at level k
+  //      traverse relation nodes and build disabling expression for e
+  //      add disabling expression to vector of disabling expressions
+  //    end for
+  //  end for
+  //  call buildPotentialDeadlockStates()
+
+  std::vector<std::vector<int_pair>> disabling_expressions;
+  const int nEvents = getParent().getNumEvents();
+
+  for (int i = 0; i < nEvents; i++) {
+    if (!enable_deps[i]) continue;
+    std::vector<int_pair> t;
+    for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        long enabling_tokens = DL->termlist->term->getLower();
+        t.emplace_back(k, enabling_tokens);
+      } // for k
+    } // for enable_deps
+    disabling_expressions.push_back(t);
+  }
+
+  dd_edge result(mdd);
+  if (disabling_expressions.size() == 0) return result;
+
+  // Build disabling XDDs per event
+  std::vector<dd_edge> disabling_ddedges;
+  for (auto i : disabling_expressions) {
+
+    // i_union accumlates the disabling XDD for event i
+    dd_edge i_union(mdd);
+
+    // for each variable j build a disabling XDD
+    for (auto j : i) {
+
+      if (j.value == 0) continue;
+
+      // Build one minterm for each value in [0, j.value)
+      // Note: map each value to its index in the local state space of
+      //        variable j.level
+      const int nVars = mdd->useDomain()->getNumVariables();
+      int** minterms = new int*[j.value];
+      for (int m = 0; m < j.value; m++) {
+        minterms[m] = new int[nVars+1];
+        for (int n = 0; n <= nVars; n++) {
+          minterms[m][n] = MEDDLY::DONT_CARE;
+        }
+        minterms[m][j.level] = getIndexOf(c_pass, j.level, m);
+      }
+
+      // Combine minterms for this variable
+      dd_edge expr(mdd);
+      mdd->createEdge(minterms, j.value, expr);
+
+      // Add to event's XDD
+      i_union += expr;
+
+      // Cleanup
+      for (int m = 0; m < j.value; m++) delete [] minterms[m];
+      delete [] minterms;
+
+    } // per variable, j
+
+    // Save disabling XDD for event i (to be processed later)
+    disabling_ddedges.push_back(i_union);
+
+  } // per event, i
+
+  MEDDLY_DCASSERT(disabling_ddedges.size() > 0);
+  result = disabling_ddedges[0];
+  for (auto i : disabling_ddedges) {
+    // std::cout << "\nDisabling dd_edge:\n";
+    // i.show(s, 2);
+    result *= i;
+  }
+
+  // Return XDD representing the potential deadlock states
+  return result;
 }
 
 
