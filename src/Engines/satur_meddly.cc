@@ -53,6 +53,7 @@ extern parse_module* pm;
 //MCC Experiment Category Switch
 #define MCC_STATE_SPACE 1
 #define MCC_UPPER_BOUNDS 0
+// #define MCC_DEADLOCK
 
 // **************************************************************************
 // *                                                                        *
@@ -1450,12 +1451,17 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       Report().stopIO();
     }
 
-#if 0
+#ifdef MCC_DEADLOCK
+    em->cout() << "Building potential deadlock states... ";
+    MEDDLY::dd_edge pot_deadlocks = x.buildPotentialDeadlockStates_IMPLICIT(Debug());
+    em->cout() << "done\n";
+
     em->cout() << "Is a deadlock state reachable? ";
     em->cout().flush();
-    em->cout() << IMPL_NSF->hasDeadlock(x.getInitial()) << "\n";
+    // em->cout() << IMPL_NSF->hasDeadlock(x.getInitial()) << "\n";
+    em->cout() << IMPL_NSF->isReachable(x.getInitial(), pot_deadlocks) << "\n";
     em->cout().flush();
-#endif
+#else
 
     //
     // Generate reachability set
@@ -1466,7 +1472,15 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       subwatch.reset();
     }
     
+#ifdef DEBUG_INITIAL
+    em->cout() << "Initial state node (before RSS generation): " << x.getInitial().getNode() << "\n";
+#endif
+    
     generateRSS(x, IMPL_NSF);
+
+#ifdef DEBUG_INITIAL
+    em->cout() << "Initial state node (after RSS generation): " << x.getInitial().getNode() << "\n";
+#endif
     
     if (Report().startReport()) {
       Report().report() << "Built reachability set, took ";
@@ -1559,6 +1573,7 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     shared_ddedge* d = new shared_ddedge(IMPL_NSF->getRelForest());
     d->E.set(mxd);
     setNSF(d);
+#endif
 
     delete IMPL_NSF;
     
@@ -1568,6 +1583,11 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     if (stopGen(true, x.getParent(), watch)) Report().stopIO();
     throw status;
   }
+
+#ifdef DEBUG_INITIAL
+  em->cout() << "Initial state node (final statement in buildRSS()): " << x.getInitial().getNode() << "\n";
+#endif
+    
 }
 
 void meddly_otfimplsat::postprocess(dsde_hlm &m, meddly_varoption &x)
@@ -1583,6 +1603,10 @@ void meddly_otfimplsat::postprocess(dsde_hlm &m, meddly_varoption &x)
       var->SetBounds(MakeRangeSet(0, d->getVariableBound(level, true), 1));
     }
   }
+#ifdef DEBUG_INITIAL
+  em->cout() << "Initial state node (final statement in postprocess()): " << x.getInitial().getNode() << "\n";
+#endif
+    
 }
 
 void meddly_otfimplsat::clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &IMPL_NSF)
