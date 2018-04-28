@@ -54,6 +54,7 @@ extern parse_module* pm;
 #define MCC_STATE_SPACE 1
 #define MCC_UPPER_BOUNDS 0
 // #define MCC_DEADLOCK
+// #define ONLY_STATE_SPACE
 
 // **************************************************************************
 // *                                                                        *
@@ -1489,6 +1490,10 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       MEDDLY::operation::showAllComputeTables(Drep,3);
       Report().stopIO();
     }
+
+#ifdef ONLY_STATE_SPACE
+    return;
+#endif
     
     if (stopGen(false, x.getParent(), watch)) {
       reportGen(false, Report().report());
