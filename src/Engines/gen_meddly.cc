@@ -28,6 +28,7 @@
 // #define SHORT_CIRCUIT_ENABLING
 
 #define USING_MEDDLY_ADD_MINTERM
+#define USE_FRMDD_FOR_BUILDING_POTENTIAL_DEADLOCK_STATES
 
 using namespace MEDDLY;
 
@@ -2344,6 +2345,211 @@ int getIndexOf(substate_colls* c_pass, int level, int tokens)
 // }
 // 
 // potential deadlock states = conjunction of transition disabling expressions
+#ifdef USE_FRMDD_FOR_BUILDING_POTENTIAL_DEADLOCK_STATES
+MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+{
+  using namespace MEDDLY;
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
+  substate_colls* c_pass = this->getSubstateStorage();
+  DCASSERT(c_pass);
+  forest* qrmdd = getMddForest();
+  DCASSERT(qrmdd);
+
+  forest::policies frmdd_policies(false);
+  frmdd_policies.setFullyReduced();
+  forest* frmdd = qrmdd->useDomain()->createForest(
+      false,
+      forest::BOOLEAN,
+      forest::MULTI_TERMINAL,
+      frmdd_policies);
+  DCASSERT(frmdd);
+
+  // for each level, k
+  //    for each event, e, that starts at level k
+  //      traverse relation nodes and build disabling expression for e
+  //      add disabling expression to vector of disabling expressions
+  //    end for
+  //  end for
+  //  call buildPotentialDeadlockStates()
+
+  std::vector<std::vector<int_pair>> disabling_expressions;
+  const int nEvents = getParent().getNumEvents();
+
+  for (int i = 0; i < nEvents; i++) {
+    if (!enable_deps[i]) continue;
+    std::vector<int_pair> t;
+    for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
+      int k = DL->getLevelAbove(0);
+      for ( ; k>0; k=DL->getLevelAbove(k)) {
+        long enabling_tokens = DL->termlist->term->getLower();
+        t.emplace_back(k, enabling_tokens);
+      } // for k
+    } // for enable_deps
+    disabling_expressions.push_back(t);
+  }
+
+  dd_edge fr_result(frmdd);
+  if (disabling_expressions.size() != 0) {
+
+    // Build disabling XDDs per event
+    std::map<int, std::vector<dd_edge>> disabling_ddedges;
+    for (auto& i : disabling_expressions) {
+
+      // i_union accumlates the disabling XDD for event i
+      dd_edge i_union(frmdd);
+
+      // for each variable j build a disabling XDD
+      for (auto& j : i) {
+
+        if (j.value == 0) continue;
+
+        // Build one minterm for each value in [0, j.value)
+        // Note: map each value to its index in the local state space of
+        //        variable j.level
+        const int nVars = frmdd->useDomain()->getNumVariables();
+        int** minterms = new int*[j.value];
+        for (int m = 0; m < j.value; m++) {
+          minterms[m] = new int[nVars+1];
+          for (int n = 0; n <= nVars; n++) {
+            minterms[m][n] = MEDDLY::DONT_CARE;
+          }
+          minterms[m][j.level] = getIndexOf(c_pass, j.level, m);
+        }
+
+        // Combine minterms for this variable
+        dd_edge expr(frmdd);
+        frmdd->createEdge(minterms, j.value, expr);
+
+#ifdef DEBUG_IS_REACHABLE
+        std::cout << "\nExpr: 0 <= L" << j.level << " < " << j.value << ":\n";
+        ostream_output s(std::cout);
+        expr.show(s, 2);
+        std::cout.flush();
+#endif
+
+        // Add to event's XDD
+        i_union += expr;
+
+        // Cleanup
+        for (int m = 0; m < j.value; m++) delete [] minterms[m];
+        delete [] minterms;
+
+      } // per variable, j
+
+#ifdef DEBUG_IS_REACHABLE
+      std::cout << "\nDisabling dd_edge:\n";
+      ostream_output s(std::cout);
+      i_union.show(s, 2);
+      std::cout.flush();
+#endif
+
+      // Save disabling XDD for event i (to be processed later)
+      (disabling_ddedges[i_union.getLevel()]).push_back(i_union);
+
+    } // per event, i
+
+#if 1
+#if 0
+    bool first_time = true;
+    for (auto& i : disabling_ddedges) {
+      fprintf(stdout, "Level %d, Size %d\n", i.first, i.second.size());
+      for (auto& j : i.second) {
+        if (first_time) {
+          fr_result = j;
+          first_time = false;
+        } else {
+          fr_result *= j;
+        }
+      }
+    }
+#else
+    for (auto& i : disabling_ddedges) {
+      if (i.second.size() == 0) continue;
+      fprintf(stdout, "Level %d, Size %d\n", i.first, i.second.size());
+      dd_edge conjunction = i.second[0];
+      int counter = 1;
+      for (auto& j : i.second) {
+        fprintf(stdout, "\rProcessing edge %d / %ld", counter++, i.second.size());
+        conjunction *= j;
+      }
+      fprintf(stdout, "\n");
+      i.second.clear();
+      i.second.push_back(conjunction);
+    }
+    bool first_time = true;
+    int counter = 1;
+    fprintf(stdout, "\nDone with intersections at each level. Combining %d levels\n", disabling_ddedges.size());
+    for (auto& i : disabling_ddedges) {
+      if (i.second.size() == 0) continue;
+      fprintf(stdout, "\rProcessing edge %d / %ld", counter++, disabling_ddedges.size());
+      if (first_time) {
+        first_time = false;
+        fr_result = i.second[0];
+      } else {
+        fr_result *= i.second[0];
+      }
+    }
+#endif
+#else
+    std::vector<dd_edge> v_disabling_edges;
+    for (auto& i : disabling_ddedges) {
+      for (auto& j : i.second) {
+        v_disabling_edges.push_back(j);
+      }
+    }
+    const int n_batches = 16;
+    const int batch_size = v_disabling_edges.size() / n_batches;
+    fprintf(stdout, "Batches %d, Batch size %d\n", n_batches, batch_size);
+    std::vector<dd_edge> batch_result;
+    bool is_zero = false;
+    for (int i = 0; i < n_batches; i++) {
+      fprintf(stdout, "Processing batch %d", i+1);
+      const int start = i * batch_size;
+      const int stop = (i+1) * batch_size;
+      dd_edge i_result = v_disabling_edges[start];
+      for (int j = start+1; j < stop; j++) {
+        fprintf(stdout, "\rProcessing batch %d: %d / %d", i+1, j-start, batch_size);
+        i_result *= v_disabling_edges[j];
+      }
+      fprintf(stdout, "\n");
+      if (i_result.getNode() == 0) { fr_result = i_result; is_zero = true; break; }
+      batch_result.push_back(i_result);
+    }
+    if (!is_zero) {
+      const int start = n_batches * batch_size;
+      if (start < v_disabling_edges.size()) {
+        fprintf(stdout, "Processing remaining ddedges");
+        dd_edge remaining_ddedges = v_disabling_edges[start];
+        for (int j = start+1; j < v_disabling_edges.size(); j++) {
+          fprintf(stdout, "\rProcessing remaining ddedges: %d / %d",
+              j-start, v_disabling_edges.size()-start);
+          remaining_ddedges *= v_disabling_edges[j];
+        }
+        batch_result[n_batches-1] *= remaining_ddedges;
+        fprintf(stdout, "\n");
+      }
+      if (batch_result[n_batches-1] == 0) {
+        fr_result = batch_result[n_batches-1]; is_zero = true;
+      } else {
+        fprintf(stdout, "Processing intermediates:");
+        fr_result = batch_result[0];
+        for (int i = 1; i < n_batches; i++) {
+          fprintf(stdout, "\rProcessing intermediates: %d / %d", i, n_batches);
+          fr_result *= batch_result[i];
+        }
+        fprintf(stdout, "\n");
+      }
+    }
+#endif
+  }
+
+  // Return XDD representing the potential deadlock states
+  dd_edge qr_result(qrmdd);
+  apply(COPY, fr_result, qr_result);
+  return qr_result;
+}
+#else
 MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
 {
   using namespace MEDDLY;
@@ -2379,74 +2585,83 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
   }
 
   dd_edge result(mdd);
-  if (disabling_expressions.size() == 0) return result;
+  if (disabling_expressions.size() != 0) {
 
-  // Build disabling XDDs per event
-  std::vector<dd_edge> disabling_ddedges;
-  for (auto i : disabling_expressions) {
+    // Build disabling XDDs per event
+    std::map<int, std::vector<dd_edge>> disabling_ddedges;
+    for (auto& i : disabling_expressions) {
 
-    // i_union accumlates the disabling XDD for event i
-    dd_edge i_union(mdd);
+      // i_union accumlates the disabling XDD for event i
+      dd_edge i_union(mdd);
 
-    // for each variable j build a disabling XDD
-    for (auto j : i) {
+      // for each variable j build a disabling XDD
+      for (auto& j : i) {
 
-      if (j.value == 0) continue;
+        if (j.value == 0) continue;
 
-      // Build one minterm for each value in [0, j.value)
-      // Note: map each value to its index in the local state space of
-      //        variable j.level
-      const int nVars = mdd->useDomain()->getNumVariables();
-      int** minterms = new int*[j.value];
-      for (int m = 0; m < j.value; m++) {
-        minterms[m] = new int[nVars+1];
-        for (int n = 0; n <= nVars; n++) {
-          minterms[m][n] = MEDDLY::DONT_CARE;
+        // Build one minterm for each value in [0, j.value)
+        // Note: map each value to its index in the local state space of
+        //        variable j.level
+        const int nVars = mdd->useDomain()->getNumVariables();
+        int** minterms = new int*[j.value];
+        for (int m = 0; m < j.value; m++) {
+          minterms[m] = new int[nVars+1];
+          for (int n = 0; n <= nVars; n++) {
+            minterms[m][n] = MEDDLY::DONT_CARE;
+          }
+          minterms[m][j.level] = getIndexOf(c_pass, j.level, m);
         }
-        minterms[m][j.level] = getIndexOf(c_pass, j.level, m);
-      }
 
-      // Combine minterms for this variable
-      dd_edge expr(mdd);
-      mdd->createEdge(minterms, j.value, expr);
+        // Combine minterms for this variable
+        dd_edge expr(mdd);
+        mdd->createEdge(minterms, j.value, expr);
 
 #ifdef DEBUG_IS_REACHABLE
-      std::cout << "\nExpr: 0 <= L" << j.level << " < " << j.value << ":\n";
+        std::cout << "\nExpr: 0 <= L" << j.level << " < " << j.value << ":\n";
+        ostream_output s(std::cout);
+        expr.show(s, 2);
+        std::cout.flush();
+#endif
+
+        // Add to event's XDD
+        i_union += expr;
+
+        // Cleanup
+        for (int m = 0; m < j.value; m++) delete [] minterms[m];
+        delete [] minterms;
+
+      } // per variable, j
+
+#ifdef DEBUG_IS_REACHABLE
+      std::cout << "\nDisabling dd_edge:\n";
       ostream_output s(std::cout);
-      expr.show(s, 2);
+      i_union.show(s, 2);
       std::cout.flush();
 #endif
 
-      // Add to event's XDD
-      i_union += expr;
+      // Save disabling XDD for event i (to be processed later)
+      (disabling_ddedges[i_union.getLevel()]).push_back(i_union);
 
-      // Cleanup
-      for (int m = 0; m < j.value; m++) delete [] minterms[m];
-      delete [] minterms;
+    } // per event, i
 
-    } // per variable, j
-
-#ifdef DEBUG_IS_REACHABLE
-    std::cout << "\nDisabling dd_edge:\n";
-    ostream_output s(std::cout);
-    i_union.show(s, 2);
-    std::cout.flush();
-#endif
-
-    // Save disabling XDD for event i (to be processed later)
-    disabling_ddedges.push_back(i_union);
-
-  } // per event, i
-
-  MEDDLY_DCASSERT(disabling_ddedges.size() > 0);
-  result = disabling_ddedges[0];
-  for (auto i : disabling_ddedges) {
-    result *= i;
+    bool first_time = true;
+    for (auto& i : disabling_ddedges) {
+      // fprintf(stdout, "Level %d, Size %d\n", i.first, i.second.size());
+      for (auto& j : i.second) {
+        if (first_time) {
+          result = j;
+          first_time = false;
+        } else {
+          result *= j;
+        }
+      }
+    }
   }
 
   // Return XDD representing the potential deadlock states
   return result;
 }
+#endif
 
 
 
