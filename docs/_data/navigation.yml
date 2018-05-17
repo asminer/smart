@@ -9,5 +9,9 @@ side:
 #      - title: "Requirements"
     
   - title: "Getting Started"
-    url: "/getting_started.html"
+    children:
+      - title: "Hello world"
+        url: "examples/hello/"
+      - title: "Help pages"
+        url: "examples/help/"
 
