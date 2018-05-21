@@ -101,24 +101,24 @@ public:
   // required but should do nothing
   inline static void addInitial(long) { }
   inline static void addInitial(bool, long, double) { }
-  inline static void addEdge(long, long) { 
-    DCASSERT(0); 
-    throw subengine::Engine_Failed;
-  }
-  inline static void addVVEdge(long, long, double) { 
+  inline static void addEdge(long, long) {
     DCASSERT(0);
     throw subengine::Engine_Failed;
   }
-  inline static void addVTEdge(long, long, double) { 
-    DCASSERT(0); 
+  inline static void addVVEdge(long, long, double) {
+    DCASSERT(0);
     throw subengine::Engine_Failed;
   }
-  inline static void addTVEdge(long, long, double) { 
-    DCASSERT(0); 
+  inline static void addVTEdge(long, long, double) {
+    DCASSERT(0);
     throw subengine::Engine_Failed;
   }
-  inline static void addTTEdge(long, long, double) { 
-    DCASSERT(0); 
+  inline static void addTVEdge(long, long, double) {
+    DCASSERT(0);
+    throw subengine::Engine_Failed;
+  }
+  inline static void addTTEdge(long, long, double) {
+    DCASSERT(0);
     throw subengine::Engine_Failed;
   }
 };
@@ -126,7 +126,7 @@ public:
 
 indexed_statedbs
 ::indexed_statedbs(StateLib::state_db &tdb, StateLib::state_db &vdb)
- : tandb(tdb), vandb(vdb) 
+ : tandb(tdb), vandb(vdb)
 {
   tan_unexp = van_unexp = 0;
 }
@@ -211,7 +211,7 @@ struct indexed_smp : public indexed_statedbs {
   LS_Options &vansolver;
   MCLib::vanishing_chain &smp;
 public:
-  indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
+  indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb,
               LS_Options &vs, MCLib::vanishing_chain &smp);
   // handy
   inline void convert(MCLib::error e, const char* x) {
@@ -254,7 +254,7 @@ public:
     if (index < smp.getNumVanishing()) return false;
     try {
       smp.addVanishing();
-    } 
+    }
     catch (MCLib::error e) {
       convert(e, "add vanishing state");
     }
@@ -346,7 +346,7 @@ public:
 
 
 indexed_smp
-::indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb, 
+::indexed_smp(hldsm &m, StateLib::state_db &tdb, StateLib::state_db &vdb,
               LS_Options &vs, MCLib::vanishing_chain &the_smp)
  : indexed_statedbs(tdb, vdb), model(m), vansolver(vs), smp(the_smp)
 {
@@ -363,7 +363,7 @@ class as_procgen : public process_generator {
   const exp_state_lib* statelib;
 public:
   as_procgen(const exp_state_lib* sl);
-  
+
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &);
 
@@ -433,7 +433,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   GraphLib::dynamic_digraph* rg = 0;
   MCLib::vanishing_chain* vc = 0;
   const char* the_proc = 0;
-  
+
   bool nondeterm = (hm->GetProcessType() == lldsm::FSM);
 
   state_lldsm* slm = dynamic_cast <state_lldsm*> (lm);
@@ -447,7 +447,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   if (nondeterm) {
     if (!statesonly.getBool()) {
-      rg = new GraphLib::dynamic_digraph(true); 
+      rg = new GraphLib::dynamic_digraph(true);
     }
     if (slm) {
       rss = slm->getRSS()->getStateDatabase();
@@ -475,7 +475,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
   }
 
   DCASSERT(rss);
-  
+
   // Start reporting on generation
   timer watch;
   if (startGen(*hm, the_proc)) {
@@ -514,13 +514,13 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
       Report().report().PutMemoryCount(rss->ReportMemTotal(), 3);
       Report().report() << " required for state space construction\n";
       Report().report() << "\t" << rss->Size() << " states generated\n";
-    } 
+    }
     if (rg) {
       Report().report().Put('\t');
       Report().report().PutMemoryCount(rg->getMemTotal(), 3);
       Report().report() << " required for reachability graph construction\n";
       Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
-    } 
+    }
     if (vc) {
       Report().report().Put('\t');
       Report().report().PutMemoryCount(vc->getMemTotal(), 3);
@@ -553,7 +553,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     }
     slm->setRSS( new expl_reachset(rss) );
     lm = slm;
-    hm->SetProcess(lm); 
+    hm->SetProcess(lm);
   }
 
   // Neat trick! Specify how to finish building the process:
@@ -583,7 +583,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
     mclib_process* mcp = new mclib_process(vc);
     glm->setPROC(init, mcp);
   }
-  
+
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
     Report().stopIO();
@@ -594,7 +594,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly)
 }
 
 
-void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb, 
+void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
   LS_Vector &s0, GraphLib::dynamic_digraph* rg) const
 {
   DCASSERT(dsm);
@@ -616,7 +616,7 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 }
 
 
-void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb, 
+void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
   LS_Vector &s0, MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
@@ -699,14 +699,16 @@ bool init_asynchgen::execute()
   const exp_state_lib* sl = InitExplicitStateStorage(em);
 
   // Register engines
-  RegisterSubengine(em, 
+  RegisterSubengine(em,
     "ProcessGeneration",
     "EXPLICIT",
     new as_procgen(sl)
   );
-
+  // Register Coverability engines
+  RegisterSubengine(em,
+    "ProcessGeneration",
+    "EXPLICITCOV",
+    new as_procgen(sl)
+  );
   return true;
 }
-
-
-

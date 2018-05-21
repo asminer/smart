@@ -79,6 +79,7 @@ try_mddlib() {
 
 find_mddlib() {
   try_mddlib $MDD_INCLUDE $MDD_LIBRARY && return 0
+  try_mddlib /home/zahra/Documents/Smart/Meddly/include /home/zahra/Documents/Smart/Meddly/lib && return 0
   try_mddlib $HOME/meddly/trunk/include $HOME/meddly/trunk/lib && return 0
   try_mddlib $HOME/Meddly/trunk/include $HOME/Meddly/trunk/lib && return 0
   try_mddlib $HOME/meddly/include $HOME/meddly/lib && return 0
