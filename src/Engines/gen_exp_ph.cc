@@ -28,7 +28,7 @@ class phase_procgen : public process_generator {
   const exp_state_lib* statelib;
 public:
   phase_procgen(const exp_state_lib* sl);
-  
+
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &);
 
@@ -70,7 +70,7 @@ protected:
     Debug().stopIO();
   }
   inline void reached(bool tang, long num, double rate, const shared_state* st) const {
-    if (!Debug().startReport()) return; 
+    if (!Debug().startReport()) return;
     if (rate) {
       Debug().report() << " (";
       Debug().report().Put(rate, 4);
@@ -89,7 +89,7 @@ protected:
     Debug().report() << "Eliminating " << count << " vanishing states\n";
     Debug().stopIO();
   }
-  inline bool addVan(hldsm* m, MCLib::vanishing_chain* vc, long i) 
+  inline bool addVan(hldsm* m, MCLib::vanishing_chain* vc, long i)
   const {
     if (i < vc->getNumVanishing()) return false;
     try {
@@ -219,7 +219,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
       em->report().PutMemoryCount(rss->ReportMemTotal(), 3);
       em->report() << " required for state space construction\n";
       em->report() << "\t" << rss->Size() << " states generated\n";
-    } 
+    }
     if (vc) {
       em->report().Put('\t');
       em->report().PutMemoryCount(vc->getMemTotal(), 3);
@@ -276,7 +276,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 }
 
 
-void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept, 
+void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
   long &trap, StateLib::state_db* tandb, MCLib::vanishing_chain* smp) const
 {
   DCASSERT(dsm);
@@ -293,7 +293,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
 
   // vanishing will be eliminated
   StateLib::state_db* vandb = statelib->createStateDB(true, false);
-  
+
   const StateLib::state_coll* tan = tandb->GetStateCollection();
   const StateLib::state_coll* van = vandb->GetStateCollection();
 
@@ -386,7 +386,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
         }
 
         if (0==smp) continue;
-      
+
         // Add appropriate edge to vanishing chain
         try {
           if (current_is_vanishing)
@@ -419,11 +419,11 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
       catch (MCLib::error vc_status) {
         MCError(dsm, "build initial vector for", vc_status);
       }
-  
+
       // get index for accepting state
       dsm->getAcceptingState(curr_st);
       accept = tandb->FindState(curr_st->readState(), stsize);
-  
+
       // get index for trap state
       dsm->getTrapState(curr_st);
       trap = tandb->FindState(curr_st->readState(), stsize);
@@ -514,13 +514,17 @@ bool init_phasegen::execute()
   const exp_state_lib* sl = InitExplicitStateStorage(em);
 
   // Register engines
-  RegisterSubengine(em, 
+  RegisterSubengine(em,
     "ProcessGeneration",
-    "EXPLICIT", 
+    "EXPLICIT",
+    new phase_procgen(sl)
+  );
+  // Register Coverability engines
+  RegisterSubengine(em,
+    "ProcessGeneration",
+    "EXPLICITCOV", 
     new phase_procgen(sl)
   );
 
   return true;
 }
-
-
