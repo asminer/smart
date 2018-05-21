@@ -45,7 +45,7 @@ bool process_generator::startGen(const hldsm& mdl, const char* whatproc)
   return false;
 }
 
-bool process_generator::stopGen(bool err, const hldsm& mdl, 
+bool process_generator::stopGen(bool err, const hldsm& mdl,
                                 const char* pr, const timer &w)
 {
   if (report.startReport()) {
@@ -61,7 +61,7 @@ bool process_generator::stopGen(bool err, const hldsm& mdl,
     if (err)  report.report() << "until error\n";
     else      report.report() << "required for generation\n";
     return true;
-  } 
+  }
   return false;
 }
 
@@ -95,7 +95,7 @@ bool process_generator
     report.report() << " seconds required for finalization\n";
     if (p) p->reportMemUsage(em, "\t");
     return true;
-  } 
+  }
   return false;
 }
 
@@ -147,17 +147,21 @@ bool init_procgen::execute()
       engtype::Model
   );
   engine* ExplicitProcessGeneration = new engine(
-      "EXPLICIT", 
+      "EXPLICIT",
       "Explicit process generation"
   );
   RegisterEngine(ProcessGeneration, ExplicitProcessGeneration);
-
+  engine* ExplicitProcessGenerationCOV = new engine(
+      "EXPLICITCOV",
+      "Explicit process generation"
+  );
+  RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
   /*
     Vanishing elimiation styles - as an option
   */
   radio_button** rlist = new radio_button*[2];
   rlist[process_generator::BY_PATH] = new radio_button(
-    "BY_PATH", 
+    "BY_PATH",
     "Recursively search vanishing paths until tangibles are reached.",
     process_generator::BY_PATH
   );
@@ -178,4 +182,3 @@ bool init_procgen::execute()
 
   return true;
 }
-
