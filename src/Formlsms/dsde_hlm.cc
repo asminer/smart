@@ -50,7 +50,7 @@ void model_event::buildDepList(expr* e, intset* ld, intset* vd)
     CHECK_RANGE(0, mv->GetIndex(), vd->getSize());
     ld->addElement(mv->GetPart());
     vd->addElement(mv->GetIndex());
-  } 
+  }
 }
 
 model_event::model_event(const symbol* wrapper, const model_instance* p)
@@ -59,7 +59,7 @@ model_event::model_event(const symbol* wrapper, const model_instance* p)
   Init();
 }
 
-model_event::model_event(const char* fn, int line, const type* t, char* n, 
+model_event::model_event(const char* fn, int line, const type* t, char* n,
   const model_instance* p) : model_var(fn, line, t, n, p)
 {
   Init();
@@ -154,7 +154,7 @@ void model_event::setTimed(expr *dist)
   if (0==dist) return;
   distro = dist;
   distro->PreCompute();
-  
+
   const type* dt = distro->Type(0);
   DCASSERT(dt);
 
@@ -254,14 +254,14 @@ void model_event::decideEnabled(traverse_data &x)
       enable_data = disabled;
       x.answer->setBool(false);
 #ifdef DEBUG_ENABLED
-      fprintf(stderr, "OUT, priority disabled event %s, enable_data is %d\n", 
+      fprintf(stderr, "OUT, priority disabled event %s, enable_data is %d\n",
               Name(), enable_data);
 #endif
       return;
     }
   } // for i
   // still here? might be enabled!
-  if (0==enabling) {  
+  if (0==enabling) {
     // Empty enabling condition means "true".
     x.answer->setBool(true);
   } else {
@@ -286,7 +286,7 @@ void model_event::decideEnabled(traverse_data &x)
 
 named_msg dsde_hlm::ignored_prio;
 
-dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv, 
+dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
                     model_event** ed, int ne)
 : hldsm(Unknown)
 {
@@ -344,7 +344,7 @@ bool dsde_hlm::containsListVar() const
     DCASSERT(state_data);
     if (state_data[i]->getStateType() == model_var::Int_List) return true;
   }
-  return false;  
+  return false;
 }
 
 void dsde_hlm::determineListVars(bool* ilv) const
@@ -425,9 +425,9 @@ void dsde_hlm::checkVanishing(traverse_data &x)
     for (; i<last_immed[pl]; i++) {
       DCASSERT(event_data[i]);
       if (event_data[i]->unknownIfEnabled()) {
-        event_data[i]->decideEnabled(x);  
+        event_data[i]->decideEnabled(x);
         if (!x.answer->isNormal())  return;
-        if (x.answer->getBool())    return;  
+        if (x.answer->getBool())    return;
         continue;
       }
       if (event_data[i]->isEnabled()) {
@@ -441,7 +441,7 @@ void dsde_hlm::checkVanishing(traverse_data &x)
     for (; i<last_timed[pl]; i++) {
       DCASSERT(event_data[i]);
       if (event_data[i]->unknownIfEnabled()) {
-        event_data[i]->decideEnabled(x);  
+        event_data[i]->decideEnabled(x);
         if (!x.answer->isNormal())  return;
         if (x.answer->getBool())    {
           x.answer->setBool(!x.answer->getBool());
@@ -472,7 +472,7 @@ void dsde_hlm::makeEnabledList(traverse_data &x, List <model_event> *EL)
       } else {
         x.answer->setBool(event_data[i]->isEnabled());
       }
-  
+
       if (!x.answer->isNormal()) {
         if (EL) {
           EL->Clear();
@@ -480,7 +480,7 @@ void dsde_hlm::makeEnabledList(traverse_data &x, List <model_event> *EL)
         }
         return;
       }
-  
+
       if (x.answer->getBool() && EL)  EL->Append(event_data[i]);
     } // for i
   } // for pl
@@ -504,7 +504,7 @@ void dsde_hlm
       } else {
         x.answer->setBool(event_data[i]->knownEnabled());
       }
-  
+
       if (!x.answer->isNormal()) {
         if (EL) {
           EL->Clear();
@@ -512,16 +512,16 @@ void dsde_hlm
         }
         return;
       } // if not normal
-  
+
       if (x.answer->getBool()) {
         has_enabled = true;
         if (EL) EL->Append(event_data[i]);
         if (first_enabled) {
           the_wc_index = i;
           first_enabled = false;
-        } else if (event_data[the_wc_index]->getWeightClass() 
+        } else if (event_data[the_wc_index]->getWeightClass()
                     != event_data[i]->getWeightClass()) {
-        
+
           // two events with different weight class, both enabled
           if (EL) {
             EL->Clear();
@@ -539,7 +539,65 @@ void dsde_hlm
     }
   } // for pl
 }
+void dsde_hlm::makeTangibleEnabledListCov(traverse_data &x,
+		List<model_event> *EL,bool* misOmega) {
+	DCASSERT(x.answer);DCASSERT(x.current_state);
+	if (EL)
+		EL->Clear();
+	ResetEnabledList();
+	int i = 0;
+	bool has_enabled = false;
+	for (int pl = 0; pl < num_priolevels; pl++) {
+		for (; i < last_immed[pl]; i++) {
+			DCASSERT(event_data[i]);
+			event_data[i]->setDisabled();
+		} // for i
 
+		for (; i < last_timed[pl]; i++) {
+			if (misOmega[i]) {
+				printf("Omega was enabled\n");
+				if (EL)
+					{
+					EL->Append(event_data[i]);
+					printf("ADDDED\n");
+					}
+
+			}
+
+
+			else if (event_data[i]->unknownIfEnabled()) {
+				printf("IN makeTangibleEnabledList0\n");
+
+				event_data[i]->decideEnabled(x);
+				printf("IN makeTangibleEnabledList1\n");
+
+			} else {
+				x.answer->setBool(event_data[i]->knownEnabled());
+				printf("IN makeTangibleEnabledList2\n");
+
+			}
+			if (!x.answer->isNormal()) {
+				if (EL) {
+					EL->Clear();
+					EL->Append(event_data[i]);
+					printf("IN makeTangibleEnabledList3\n");
+
+				}
+				return;
+			}
+			if (x.answer->getBool()) {
+				has_enabled = true;
+				if (EL)
+					if(!event_data[i]->omegaIfEnabled())
+					{EL->Append(event_data[i]);
+				printf("IN makeTangibleEnabledList4\n");}
+
+			}
+		} // for i
+		if (has_enabled)
+			return;
+	} // for pl
+}
 void dsde_hlm
 ::makeTangibleEnabledList(traverse_data &x, List <model_event> *EL)
 {
@@ -561,7 +619,7 @@ void dsde_hlm
       } else {
         x.answer->setBool(event_data[i]->knownEnabled());
       }
-  
+
       if (!x.answer->isNormal()) {
         if (EL) {
           EL->Clear();
@@ -787,7 +845,7 @@ void dsde_def
     pset->GetElement(z, elem);
     DCASSERT(elem.isNormal());
     model_var* foo = smart_cast <model_var*> (elem.getPtr());
-    DCASSERT(foo);  
+    DCASSERT(foo);
     if (!isVariableOurs(foo, call, "ignoring partition assignment")) continue;
 
     model_statevar* pl = dynamic_cast <model_statevar*> (foo);
@@ -802,7 +860,7 @@ void dsde_def
           em->warn() << "Moving {" << pl->Name();
         }
       }
-    } 
+    }
     pl->SetPart(level);
   } // for z
   if (reset_warning) {
@@ -847,10 +905,10 @@ void dsde_def::PartitionVars(model_statevar** V, int nv)
     em->warn() << "} default to group 0";
     DoneWarning();
   }
-    
+
   // renumber the groups, from 1 to L
   int gnum = 0;
-  // int pnum = nv-1; 
+  // int pnum = nv-1;
   for (int i=0; i<N; i++) {
     if (0==group[i]) continue;
     gnum++;
@@ -866,7 +924,7 @@ void dsde_def::PartitionVars(model_statevar** V, int nv)
     }
   } // for i
   delete[] group;
-  
+
 #ifdef DEBUG_PART
   for (int i=0; i<nv; i++) {
     em->cout() << V[i]->Name();
@@ -885,7 +943,7 @@ void dsde_def::SetPriorityLevel(const expr* call, int level, shared_set* tset)
     tset->GetElement(z, elem);
     DCASSERT(elem.isNormal());
     model_var* foo = smart_cast <model_var*> (elem.getPtr());
-    DCASSERT(foo);  
+    DCASSERT(foo);
     if (!isVariableOurs(foo, call, "ignoring priority assignment")) continue;
 
     model_event* t = dynamic_cast <model_event*> (foo);
@@ -982,7 +1040,7 @@ void dsde_part1::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dsde_def* mdl = smart_cast<dsde_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result pset;
@@ -1029,7 +1087,7 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dsde_def* mdl = smart_cast<dsde_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result pnum;
@@ -1090,7 +1148,7 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dsde_def* mdl = smart_cast<dsde_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result pref;
@@ -1101,10 +1159,10 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np)
     x.answer = &pref;
     SafeCompute(pass[i], x);
     model_statevar* pl = smart_cast <model_statevar*> (pref.getPtr());
-    DCASSERT(pl);  
-    if (!mdl->isVariableOurs(pl, pass[i], "ignoring partition assignment")) 
+    DCASSERT(pl);
+    if (!mdl->isVariableOurs(pl, pass[i], "ignoring partition assignment"))
       continue;
-    
+
     if (0==pl->GetPart()) {
       if (mdl->StartError(pass[i])) {
         em->cerr() << "Place " << pl->Name();
@@ -1155,7 +1213,7 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dsde_def* mdl = smart_cast<dsde_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result plev;
@@ -1216,7 +1274,7 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dsde_def* mdl = smart_cast<dsde_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result highset;
@@ -1289,7 +1347,7 @@ bool init_dsde::execute()
     "For ignored priority pairs (between events in different priority levels)",
     true
   );
-  
+
   return true;
 }
 
@@ -1311,4 +1369,3 @@ void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms)
   syms->AddSymbol(  new dsde_priolevel(evt) );
   syms->AddSymbol(  new dsde_priolist(evt)  );
 }
-

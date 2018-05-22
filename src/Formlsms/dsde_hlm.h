@@ -75,7 +75,8 @@ private:
   enum {
     disabled = -1,
     unknown = 0,
-    enabled = 1
+    enabled = 1,
+    omega=OOmega
   } enable_data;
 
   intset* enabling_level_dependencies;
@@ -85,10 +86,10 @@ private:
   intset* nextstate_variable_dependencies;
 
   static void buildDepList(expr* e, intset* ld, intset* vd);
-  
+
 public:
   model_event(const symbol* wrapper, const model_instance* p);
-  model_event(const char* fn, int line, const type* t, char* n, 
+  model_event(const char* fn, int line, const type* t, char* n,
               const model_instance* p);
 protected:
   void Init();
@@ -116,11 +117,11 @@ public:
 
   /// Build the lists of dependencies for the enabling expression
   inline void buildEnablingDependencies(int num_levels, int num_vars) {
-    if (0==enabling_level_dependencies) 
+    if (0==enabling_level_dependencies)
       enabling_level_dependencies = new intset(num_levels+1);
-    if (0==enabling_variable_dependencies) 
+    if (0==enabling_variable_dependencies)
       enabling_variable_dependencies = new intset(num_vars);
-    buildDepList(enabling, 
+    buildDepList(enabling,
       enabling_level_dependencies,
       enabling_variable_dependencies
     );
@@ -139,22 +140,22 @@ public:
   /** Set the next state expression for this event.
       For now, it is assumed that the next state is unique.
       TO DO: figure out a reasonable extension for multiple next states.
-        @param  e   An expression of type "proc state" that evaluates to 
+        @param  e   An expression of type "proc state" that evaluates to
                     the (unique) next state reached if the event fires.
                     The expression may assume that the event is enabled.
   */
   void setNextstate(expr* e);
-  
+
   /// Get the next state expression.
   inline expr* getNextstate() const { return nextstate; }
 
   /// Build the lists of dependencies for the next state expression
   inline void buildNextstateDependencies(int num_levels, int num_vars) {
-    if (0==nextstate_level_dependencies) 
+    if (0==nextstate_level_dependencies)
       nextstate_level_dependencies = new intset(num_levels+1);
-    if (0==nextstate_variable_dependencies) 
+    if (0==nextstate_variable_dependencies)
       nextstate_variable_dependencies = new intset(num_vars);
-    buildDepList(nextstate, 
+    buildDepList(nextstate,
       nextstate_level_dependencies,
       nextstate_variable_dependencies
     );
@@ -189,7 +190,7 @@ public:
   void setHidden();
 
   /** Set the firing type for this event to be Timed of some sort.
-      The exact firing type is determined from the type of the 
+      The exact firing type is determined from the type of the
       distribution expression.
       The current firing type must be "Unknown".
         @param  d   The firing distribution to use for this event.
@@ -202,14 +203,14 @@ public:
   void setImmediate();
 
   /// Get the firing distribution.
-  inline expr* getDistribution() const { 
-    DCASSERT( (Expo == FT) || (Phase_int == FT) || 
+  inline expr* getDistribution() const {
+    DCASSERT( (Expo == FT) || (Phase_int == FT) ||
               (Phase_real == FT) || (Timed_general == FT) );
-    return distro; 
+    return distro;
   }
 
   /** Set the weight and weight class for this event.
-      Unnecessary for Non-deterministic events or 
+      Unnecessary for Non-deterministic events or
       timed events with continuous distributions.
         @param  wc      The weight class of the event.
         @param  weight  Post-selection priority weight expression.
@@ -227,8 +228,8 @@ public:
 
   inline bool hasPriorityLevel()  const { return (has_prio_level); }
   inline int  getPriorityLevel()  const { return prio_level; }
-  inline void setPriorityLevel(int pl) { 
-    prio_level = pl; 
+  inline void setPriorityLevel(int pl) {
+    prio_level = pl;
     has_prio_level = true;
   }
 
@@ -254,10 +255,16 @@ public:
   inline void setDisabled() { enable_data = disabled; }
   inline bool unknownIfEnabled() const { return unknown == enable_data; }
   inline bool knownEnabled() const { return enabled == enable_data; }
+  inline bool omegaIfEnabled() const { bool res=(omega == enable_data);printf("REEES is %i\n",res);return res; }
+  inline void setOmega() { enable_data = omega; printf("SET!!,%d\n",enable_data);}
   inline bool isEnabled() const {
     DCASSERT(unknown != enable_data);
     return enabled == enable_data;
   }
+  inline bool isOmega() const {
+    // DCASSERT(unknown != enable_data);
+     return omega == enable_data;
+   }
 
 };
 
@@ -289,7 +296,7 @@ protected:
   model_event** event_data;
   /// Total number of events.
   int num_events;
-  /// Number of different priority levels 
+  /// Number of different priority levels
   int num_priolevels;
   /// Last immediate event (plus one) by priority level
   int* last_immed;
@@ -386,11 +393,11 @@ public:
 
         @param  x       On input: x.current_state is current state.
                         On output: x.answer will be a normal boolean result,
-                        if everything was fine; null or some other 
+                        if everything was fine; null or some other
                         error condition otherwise.
 
         @param  enabled On output: enabled events are added to the list,
-                        unless it is 0.  If an error occurs, the list will 
+                        unless it is 0.  If an error occurs, the list will
                         contain only the offending event(s):
                         length 1: event had bad enabling condition.
                         length 2: events enabled with different weight class
@@ -402,10 +409,11 @@ public:
 
   /// Like makeEnabledList, but we know the current state is tangible.
   void makeTangibleEnabledList(traverse_data &x, List <model_event> *en);
+  void makeTangibleEnabledListCov(traverse_data &x, List <model_event> *en, bool* misomega);
 
 
   // Things to be defined in derived classes.
-  
+
   /** Returns the number of initial states for this model.
       For a Petri net, this should be 1.
   */
@@ -425,7 +433,7 @@ public:
   inline int Compare(long i, long j) const {
     CHECK_RANGE(0, i, num_events);
     CHECK_RANGE(0, j, num_events);
-    int jmi = event_data[j]->getPriorityLevel() 
+    int jmi = event_data[j]->getPriorityLevel()
             - event_data[i]->getPriorityLevel();
     if (jmi) return jmi;
     // same priority, now put immediate first.
@@ -474,7 +482,7 @@ class dsde_def : public model_def {
   int last_level;
   friend class init_dsde;
 public:
-  dsde_def(const char* fn, int line, const type* t, char*n, 
+  dsde_def(const char* fn, int line, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~dsde_def();
@@ -485,7 +493,7 @@ public:
     last_level--;
     SetLevelOfStateVars(call, last_level, pset);
   }
- 
+
   void PartitionVars(model_statevar** V, int nv);
 
   // for event priorities
@@ -508,4 +516,3 @@ void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
 
 
 #endif
-

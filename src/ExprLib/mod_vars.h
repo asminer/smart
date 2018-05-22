@@ -16,7 +16,7 @@
 class model_instance;
 class shared_set;
 class hldsm;
-  
+
 // ******************************************************************
 // *                                                                *
 // *                        model_var  class                        *
@@ -30,6 +30,9 @@ class model_var : public symbol {
 public:
   /// Method by which this variable is stored in the global state.
   enum storage {
+    //is Omega
+    Omega,
+
     /// Don't know yet
     Unknown,
     /// Some kind of error occurred
@@ -49,7 +52,7 @@ protected:
   const model_instance* parent;
 public:
   model_var(const symbol* wrapper, const model_instance* p);
-  model_var(const char* fn, int line, const type* t, char* n, 
+  model_var(const char* fn, int line, const type* t, char* n,
             const model_instance* p);
 protected:
   virtual ~model_var();
@@ -90,7 +93,7 @@ public:
         @param  rhs Value to set in \a ns.
   */
   virtual void SetNextState(traverse_data &x, shared_state* ns, long rhs) const;
-  
+
   /** Set the next state as "unknown".
         @param  x   Traverse structure.
                     "answer" is used to catch any errors.
@@ -123,7 +126,7 @@ protected:
   int state_index;
 
   /// Partition info (for structured approaches).
-  int part_index;  
+  int part_index;
 
   /** Bounds for the variable, if any.
       NULL indicates no known bounds.
@@ -131,7 +134,7 @@ protected:
       value within the set.
   */
   shared_set* bounds;
-  
+
 public:
   model_statevar(const symbol* wrapper, const model_instance* p, shared_object* bnds);
   model_statevar(const char* fn, int line, const type* t, char* n,
@@ -188,9 +191,9 @@ protected:
 public:
 
   inline int GetIndex() const { return index; }
-  inline void SetIndex(int ndx) { 
+  inline void SetIndex(int ndx) {
     DCASSERT(ndx >= 0);
-    index = ndx; 
+    index = ndx;
   }
 
   inline int Compare(const model_enum_value* s) const {
@@ -340,10 +343,15 @@ class shared_state : public shared_object {
   */
   bool* is_unknown;
 
-  /** For each state variable, is it a list?  
+  /** For each state variable, is it a list?
       If not, it is an integer.
       If this is a null pointer, then every state variable is an integer.
   */
+  /** For Coverability we need to have omega markings.
+	 so I define is_omega variable. If it is true, then it has omega.
+	 */
+	bool* is_omega;
+
   bool* is_list;
 
   /** Pointer to data for each state variable.
@@ -376,6 +384,12 @@ class shared_state : public shared_object {
       will equal \a num_buckets.
   */
   int data_size;
+  enum statetype {
+		old, dead_end
+	};
+	/**
+	 */
+	statetype type;
 
 public:
   shared_state(const hldsm* p);
@@ -385,7 +399,7 @@ public:
   inline const hldsm* Parent() const { return parent; }
   inline const int* readState() const { return data; }
   inline int* writeState() { return data; }
-  inline int readSubstateSize(int i) const { 
+  inline int readSubstateSize(int i) const {
     DCASSERT(substate_offset);
     CHECK_RANGE(1, i, 1+num_substates);
     return substate_offset[i-1] - substate_offset[i];
@@ -419,7 +433,7 @@ public:
     DCASSERT(s);
     fillFrom(*s);
   }
-  
+
   // required for shared object
   virtual bool Print(OutputStream &, int) const;
   virtual bool Equals(const shared_object*) const;
@@ -430,13 +444,26 @@ public:
     CHECK_RANGE(0, i, num_buckets);
     return is_unknown[i];
   }
+  inline bool omega(int i) const {
 
+		if (0 == is_omega)
+			return false;CHECK_RANGE(0, i, num_buckets);
+		return is_omega[i];
+	}
   /// Get value for state variable i; must not be a list.
   inline int get(int i) const {
     DCASSERT(data);
     CHECK_RANGE(0, i, num_buckets);
     DCASSERT((0==is_unknown) || (false==is_unknown[i]));
-    if (0==is_list) return data[i];
+    if (is_omega == 0) {
+
+			return data[i];
+		}
+    if (0==is_list) {if (omega(i) == true) {
+
+				return OOmega;		//-10 ;//-10;
+			} else
+				return data[i];}
     DCASSERT(false==is_list[i]);
 
     // Not implemented yet
@@ -449,9 +476,36 @@ protected:
     DCASSERT(is_unknown);
     for (int b=num_buckets; b; is_unknown[--b]=false);
   }
-
+  inline void clear_omega() {
+		//printf("CLEAR OMEGA\n");
+		DCASSERT(is_omega);
+		for (int b = num_buckets; b; is_omega[--b] = false)
+			;
+	}
 public:
+  inline void set_omega(int i) {
+  		printf("SET OMEGA\n");
+  		CHECK_RANGE(0, i, num_buckets);
+  		if (0 == is_omega) {
+  			is_omega = new bool[num_buckets];
+  			clear_omega();
+  		}
+  		is_omega[i] = true;
+  	}
+  	inline void Unset_omega() {
+  		is_omega=0;
+  		is_omega = new bool[num_buckets];
+  		for(int i=0;i<num_buckets;i++)
+  			is_omega[i]=false;
 
+  		}
+      /// Set state type.
+	inline void set_type(int type_code) {
+		if (type_code == 0)
+			this->type = old;
+		else
+			this->type = dead_end;
+	}
   /// Set state variable i to be unknown
   inline void set_unknown(int i) {
     CHECK_RANGE(0, i, num_buckets);
@@ -589,4 +643,3 @@ public:
 
 
 #endif
-

@@ -39,13 +39,13 @@ proc_noengine
 {
 }
 
-state_lldsm* 
+state_lldsm*
 proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
 {
   if (0==hlm)  return 0;
   result so;
   so.setBool(states_only);
-  
+
   try {
       lldsm* llm = hlm->GetProcess();
       if (llm) {
@@ -58,7 +58,7 @@ proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
       }
       return dynamic_cast <state_lldsm*> (hlm->GetProcess());
   } // try
-    
+
   catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
@@ -86,7 +86,7 @@ void proc_noengine::BuildPartition(hldsm* hlm, const expr* err)
       if (hlm->hasPartInfo()) return;
       throw subengine::Engine_Failed;
   } // try
-    
+
   catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
@@ -112,7 +112,7 @@ public:
 
 numstates_si::numstates_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_states", 2) 
+ : proc_noengine(Nothing, em->BIGINT, "num_states", 2)
 #else
  : proc_noengine(Nothing, em->BIGINT, "num_states", 1)
 #endif
@@ -231,7 +231,7 @@ numclasses_si::numclasses_si()
 #ifdef ALLOW_SHOW_PARAMS
   SetFormal(1, em->BOOL, "show");
   SetDocumentation("Returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  If show is true, then as a side effect, the states in each TSCC are displayed to the current output stream.");
-#else 
+#else
   SetDocumentation("Computes if necessary, and returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  Note that an absorbing state is counted as its own recurrent class.");
 #endif
 }
@@ -291,7 +291,7 @@ public:
 
 var_order_transform::var_order_transform()
 #ifdef VAR_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 2) 
+ : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 2)
 #else
  : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 1)
 #endif
@@ -401,7 +401,7 @@ void numlevels_si::Compute(traverse_data &x, expr** pass, int np)
 
   model_instance* mi = grabModelInstance(x, pass[0]);
   hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
-  
+
 #ifdef ALLOW_SHOW_PARAMS
   SafeCompute(pass[1], x);
   bool show = false;
@@ -427,7 +427,7 @@ void numlevels_si::Compute(traverse_data &x, expr** pass, int np)
         DCASSERT(0);
         return;
   }
-  
+
   if (!hlm->buildPartInfo()) {
     if (em->startError()) {
       em->causedBy(x.parent);
@@ -505,9 +505,9 @@ void numevents_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const dsde_hlm* hlm = 
+  const dsde_hlm* hlm =
     smart_cast<const dsde_hlm*> (mi ? mi->GetCompiledModel() : 0);
-  
+
   if (hlm) {
     long ans = hlm->getNumEvents();
     DCASSERT(ans>=0);
@@ -558,9 +558,9 @@ void numvars_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const dsde_hlm* hlm = 
+  const dsde_hlm* hlm =
     smart_cast<const dsde_hlm*> (mi ? mi->GetCompiledModel() : 0);
-  
+
   if (hlm) {
     long ans = hlm->getNumStateVars();
     DCASSERT(ans>=0);
@@ -648,7 +648,7 @@ showstates_si::showstates_si()
   SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the states is displayed; otherwise, a storage-independent list of states is displayed (unless there are too many).");
   result def;
   def.setBool(false);
-  SetFormal(1, em->BOOL, "internal", 
+  SetFormal(1, em->BOOL, "internal",
     em->makeLiteral(0, -1, em->BOOL, def)
   );
 }
@@ -689,7 +689,7 @@ showarcs_si::showarcs_si()
   SetDocumentation("Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
   result def;
   def.setBool(false);
-  SetFormal(1, em->BOOL, "internal", 
+  SetFormal(1, em->BOOL, "internal",
     em->makeLiteral(0, -1, em->BOOL, def)
   );
 }
@@ -713,60 +713,92 @@ void showarcs_si::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
-  gllm->showArcs(internal); 
+  gllm->showArcs(internal);
+}
+// ******************************************************************
+// *                            showarcsCOV                         *
+// ******************************************************************
+// This class is for showing the arc in Coverability
+class showarcsCOV_si: public proc_noengine {
+public:
+	showarcsCOV_si();
+	virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+showarcsCOV_si::showarcsCOV_si() :
+		proc_noengine(Nothing, em->VOID, "show_arcsCOV", 2) {
+	SetDocumentation(
+			"Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+	result def;
+	def.setBool(false);
+	SetFormal(1, em->BOOL, "internal", em->makeLiteral(0, -1, em->BOOL, def));
+}
+
+void showarcsCOV_si::Compute(traverse_data &x, expr** pass, int np) {
+	DCASSERT(x.answer); DCASSERT(0==x.aggregate); DCASSERT(pass);
+
+	model_instance* mi = grabModelInstance(x, pass[0]);
+	const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 0, x.parent);
+	if (0 == llm || lldsm::Error == llm->Type()) {
+		return;
+	}
+	const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+	DCASSERT(gllm);
+
+	bool internal = false;
+	SafeCompute(pass[1], x);
+	if (x.answer->isNormal()) {
+		internal = x.answer->getBool();
+	}
+	//gllm->showArcs(internal); //TODO need to replace with another showArcs
 }
 
 // ******************************************************************
 // *                            show_proc                           *
 // ******************************************************************
 
-class showproc_si : public proc_noengine {
+class showproc_si: public proc_noengine {
 public:
-  showproc_si();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+	showproc_si();
+	virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-showproc_si::showproc_si()
- : proc_noengine(Nothing, em->VOID, "show_proc", 2)
-{
-  SetDocumentation("Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
-  result def;
-  def.setBool(false);
-  SetFormal(1, em->BOOL, "internal", 
-    em->makeLiteral(0, -1, em->BOOL, def)
-  );
+showproc_si::showproc_si() :
+		proc_noengine(Nothing, em->VOID, "show_proc", 2) {
+	SetDocumentation(
+			"Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
+	result def;
+	def.setBool(false);
+	SetFormal(1, em->BOOL, "internal", em->makeLiteral(0, -1, em->BOOL, def));
 }
 
-void showproc_si::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
+void showproc_si::Compute(traverse_data &x, expr** pass, int np) {
+	DCASSERT(x.answer); DCASSERT(0==x.aggregate); DCASSERT(pass);
 
-  model_instance* mi = grabModelInstance(x, pass[0]);
-  const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 0, x.parent);
-  if (0==llm || lldsm::Error == llm->Type()) {
-    return;
-  }
+	model_instance* mi = grabModelInstance(x, pass[0]);
+	const lldsm* llm = BuildProc(mi ? mi->GetCompiledModel() : 0, 0, x.parent);
+	if (0 == llm || lldsm::Error == llm->Type()) {
+		return;
+	}
 
-  bool internal = false;
-  SafeCompute(pass[1], x);
-  if (x.answer->isNormal()) {
-    internal = x.answer->getBool();
-  }
+	bool internal = false;
+	SafeCompute(pass[1], x);
+	if (x.answer->isNormal()) {
+		internal = x.answer->getBool();
+	}
 
-  const stochastic_lldsm* sllm = dynamic_cast<const stochastic_lldsm*> (llm);
-  if (sllm) {
-    sllm->showProc(internal);
-    return;
-  }
+	const stochastic_lldsm* sllm = dynamic_cast<const stochastic_lldsm*>(llm);
+	if (sllm) {
+		sllm->showProc(internal);
+		return;
+	}
 
-  // Not stochastic.  Show the reachability graph instead.
+	// Not stochastic.  Show the reachability graph instead.
 
-  const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
-  DCASSERT(gllm);
+	const graph_lldsm* gllm = smart_cast<const graph_lldsm*>(llm);
+	DCASSERT(gllm);
 
-  gllm->showArcs(internal); 
+	gllm->showArcs(internal);
 }
 
 // ******************************************************************
@@ -833,7 +865,7 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
 
   model_instance* mi = grabModelInstance(x, pass[0]);
   hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
-  
+
   switch (hlm->Type()) {
     case hldsm::Enumerated:
         em->cout() << "Level 1:\n\tstate\n";
@@ -848,7 +880,7 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
         DCASSERT(0);
         return;
   }
-  
+
   if (!hlm->buildPartInfo()) {
     if (em->startError()) {
       em->causedBy(x.parent);
@@ -909,9 +941,9 @@ void showevents_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const dsde_hlm* hlm = 
+  const dsde_hlm* hlm =
     smart_cast<const dsde_hlm*> (mi ? mi->GetCompiledModel() : 0);
-  
+
   if (hlm) {
     hlm->showEvents(em->cout());
   }
@@ -940,9 +972,9 @@ void showvars_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
-  const dsde_hlm* hlm = 
+  const dsde_hlm* hlm =
     smart_cast<const dsde_hlm*> (mi ? mi->GetCompiledModel() : 0);
-  
+
   if (hlm) {
       long ans = hlm->getNumStateVars();
       size_t nw = 14;
@@ -961,7 +993,7 @@ void showvars_si::Compute(traverse_data &x, expr** pass, int np)
         em->cout().Put(long(sv->GetPart()), 10);
         em->cout().Put('\n');
       } // for i
-  } 
+  }
 }
 
 // *****************************************************************
@@ -1010,7 +1042,7 @@ void run_for_MCC_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  em->cout() << "Number of states (TBD fix format please!): ";  
+  em->cout() << "Number of states (TBD fix format please!): ";
   shared_object* bigns = numstates.getPtr();
   if (bigns) {
     bigns->Print(em->cout(), 0);
@@ -1049,13 +1081,13 @@ run_for_MCC_UPPERBOUNDS_si::run_for_MCC_UPPERBOUNDS_si(const type* place)
 
 void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
 {
- 
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   DCASSERT(np==2);
-  
-  
+
+
   model_instance* mi = grabModelInstance(x, pass[0]);
   const state_lldsm* llm = BuildProc(
                                      mi ? mi->GetCompiledModel() : 0, 1, x.parent
@@ -1068,7 +1100,7 @@ void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
   shared_set* ps = smart_cast<shared_set*>(Share(x.answer->getPtr()));
   std::vector<int> set_of_places;
   result elem ;
-  
+
   //Obtain the level for each place passed in the set
   {
        for (int z=0; z<ps->Size(); z++) {
@@ -1090,10 +1122,10 @@ void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
     long na = x.answer->getInt();
     x.answer->setPtr(new bigint(na));
   }
-  
-  
+
+
   // actual code here!
-  
+
 #if 0
   // TBD - call a virtual function within llm to display this
   em->cout() << "Method: decision diagram (TBD - fix the format please!\n";
@@ -1106,11 +1138,11 @@ void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
   if (!numstates.isNormal()) {
     //
     // TBD: Error, can we print something and exit cleanly here?
-    
+
     return;
   }
-  
-  em->cout() << "Number of states (TBD fix format please!): ";  
+
+  em->cout() << "Number of states (TBD fix format please!): ";
   shared_object* bigns = numstates.getPtr();
   if (bigns) {
     bigns->Print(em->cout(), 0);
@@ -1122,12 +1154,12 @@ void run_for_MCC_UPPERBOUNDS_si::Compute(traverse_data &x, expr** pass, int np)
   em->cout().flush();
 #endif
 
-  
+
   //
   // TBD - other things to display here
   //
-  
-  
+
+
 }
 
 // *****************************************************************
@@ -1322,6 +1354,7 @@ bool init_basicmsrs::execute()
   CML.Append(new showstates_si);
   CML.Append(new showstateset_si);
   CML.Append(new showarcs_si);
+  CML.Append(new showarcsCOV_si);
   CML.Append(new showproc_si);
   CML.Append(new showclasses_si);
   CML.Append(new showlevels_si);
@@ -1341,7 +1374,7 @@ bool init_basicmsrs::execute()
 
   // Model Checking Competition
   CML.Append(new run_for_MCC_si);
-  
+
   // Model Checking Competition
   //CML.Append(new run_for_MCC_UPPERBOUNDS_si);
 
@@ -1404,7 +1437,7 @@ bool comparePairItem(OrderPair a, OrderPair b) {
 void randOrder(std::vector<OrderPair>& theOrder) {
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::shuffle(theOrder.begin(), theOrder.end(), std::default_random_engine(seed));
-	
+
 	for (unsigned index = 0; index < theOrder.size(); index++) {
 		theOrder[index].name = index;
 	}
@@ -1416,7 +1449,7 @@ double getSpanTop(MODEL theModel, std::vector<OrderPair> theOrder) {
 	for (int index = 0; index < (theModel.numTrans + theModel.numPlaces); index++) {
 		eventMax[index] = 0;
 		eventMin[index] = theModel.numPlaces;
-	}	
+	}
 	u64 tops = 0LL;
 	u64 spans = 0LL;
 	for (int index = 0; index < theModel.numArcs; index++) {
@@ -1465,9 +1498,9 @@ u64 cogDiff(MODEL theModel, std::vector<OrderPair>& theOrder) {
 			counts[index] = 0;
 			totals[index].theDouble = 0.0;
 		}
-		totals[index].theInt = index;	// "names" 0..numPlaces - 1 
-	}	
-	
+		totals[index].theInt = index;	// "names" 0..numPlaces - 1
+	}
+
 	// for every arc, update the cog value
 	for (int index = 0; index < theModel.numArcs; index++) {
 		int source = theModel.theArcs[index].source;
@@ -1503,13 +1536,13 @@ u64 cogDiff(MODEL theModel, std::vector<OrderPair>& theOrder) {
 			totals[index].theDouble = (double)totals[index].theInt;
 		}
 		totals[index].theInt = index;
-	}	
-	
+	}
+
 	// sort by the cog values
 	std::vector<DoubleInt> toBeSorted;
 	toBeSorted.assign(totals, totals + theModel.numPlaces);
 	stable_sort(toBeSorted.begin(), toBeSorted.end(), comparePair);
-	
+
 	// update the order, and calc a quick hash
 	u64 base = theOrder.size();
 	u64 result = 0LL;
@@ -1519,10 +1552,10 @@ u64 cogDiff(MODEL theModel, std::vector<OrderPair>& theOrder) {
 		result *= base;
 		result += theOrder[index].item;
 	}
-	
+
 	delete [] totals;
 	delete [] counts;
-	
+
 	return result;
 }
 
@@ -1561,7 +1594,7 @@ void forceHalt(MODEL theModel, std::vector<OrderPair>& startOrder, int * resultO
 		int hash = theNew % maxCycle;
 		if (theNew == cycleCheck[hash]) break;
 		cycleCheck[hash] = theNew;
-		
+
 		double score = getSpanTop(theModel, current);
 		if (score < bestScore) {
 			bestScore = score;
@@ -1570,7 +1603,7 @@ void forceHalt(MODEL theModel, std::vector<OrderPair>& startOrder, int * resultO
 			}
 		}
 	}
-	
+
 	delete [] cycleCheck;
 }
 
@@ -1594,7 +1627,7 @@ std::vector< std::vector<int> > generateVarOrders(MODEL theModel, int numOrders,
 			starter.push_back(t);
 		}
 		randOrder(starter);
-		
+
 		forceHalt(theModel, starter, resultOrder, maxIter);
 		u64 newHash = orderHashInt(resultOrder, theModel.numPlaces);
 		int hash = newHash % hashSize;
@@ -1620,7 +1653,7 @@ std::vector< std::vector<int> > generateVarOrders(MODEL theModel, int numOrders,
 			count++;
 		}
 	}
-	
+
 	delete [] resultOrder;
 	delete [] foundCheck;
 	return result;
@@ -1630,15 +1663,15 @@ MODEL translateModel(dsde_hlm& smartModel) {
 	MODEL result;
 	result.numPlaces = smartModel.getNumStateVars();
 	result.numTrans = smartModel.getNumEvents();
-	
+
 	std::vector<ARC> vecArcs;
-	
+
 	for (int index = 0; index < result.numTrans; index++) {
 		model_event * theEvent = smartModel.getEvent(index);
 		int arcTarget = index + result.numPlaces;	// using target as the transition
-		
+
 		expr* enabling = theEvent->getEnabling();
-		
+
 		List <symbol> L;	// Using the magic "List" from SMART with O(1) random access?
 		enabling->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
 		for (int i = 0; i < L.Length(); i++) {
@@ -1648,9 +1681,9 @@ MODEL translateModel(dsde_hlm& smartModel) {
 				ARC tempArc;
 				tempArc.target = arcTarget;
 				// tempArc.source = mv->GetIndex() - 1;	// - 1 due to local 0..n-1 convention vs 1..n
-				tempArc.source = mv->GetIndex(); 
+				tempArc.source = mv->GetIndex();
 				vecArcs.push_back(tempArc);
-			} 
+			}
 		}
 	}
 
@@ -1663,7 +1696,7 @@ MODEL translateModel(dsde_hlm& smartModel) {
 	}
 
   printf("In translateModel()\n");
-	
+
 	return result;
 }
 
