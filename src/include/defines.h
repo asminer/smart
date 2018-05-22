@@ -1,7 +1,7 @@
 
 /** @name defines.h
     @type File
-    @args \ 
+    @args \
 
     The base of all modules.  So if you change this, everything gets
     to recompile.
@@ -52,20 +52,22 @@ inline long GCD(long a, long b)
 /*
     There are now two modes of code generation:
        "DEVELOPMENT_CODE" and "RELEASE_CODE".
-    
-    If "DEVELOPMENT_CODE" is defined (usually done in the makefile) then 
+
+    If "DEVELOPMENT_CODE" is defined (usually done in the makefile) then
     debugging macros and assertions will be turned on.  Otherwise we assume
     that we have "RELEASE_CODE" and they are turned off.
-    
-    Macros useful for debugging "development code" that are turned off 
+
+    Macros useful for debugging "development code" that are turned off
     for release code (for speed):
 
     DCASSERT()
     CHECK_RANGE(low, x, high+1)
 */
+/// Omega
+const int OOmega=-10;
 
 #ifdef DEVELOPMENT_CODE
-  #define MEM_TRACE_ON  
+  #define MEM_TRACE_ON
   #define RANGE_CHECK_ON
   #define DCASSERTS_ON
 #endif
@@ -73,7 +75,7 @@ inline long GCD(long a, long b)
 
 // Use this for assertions that will fail only when your
 // code is wrong.  Handy for debugging.
-#ifdef DCASSERTS_ON 
+#ifdef DCASSERTS_ON
 #define DCASSERT(X) assert(X)
 #else
 #define DCASSERT(X)
@@ -113,4 +115,3 @@ inline long GCD(long a, long b)
 #endif
 
 //@}
-

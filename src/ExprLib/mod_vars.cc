@@ -20,7 +20,7 @@
 // #define DEBUG_BLEVLTB
 // #define DEBUG_VUPDATE
 
-// #define DEBUG_DDLIB 
+// #define DEBUG_DDLIB
 // #define DEBUG_BLEVOP
 // #define DEBUG_BLEVLTBOP
 
@@ -38,7 +38,7 @@ model_var::model_var(const symbol* wrapper, const model_instance* p)
   state_type = Unknown;
 }
 
-model_var::model_var(const char* fn, int line, const type* t, char* n, 
+model_var::model_var(const char* fn, int line, const type* t, char* n,
   const model_instance* p) : symbol(fn, line, t, n)
 {
   parent = p;
@@ -90,13 +90,13 @@ void model_var::SetNextUnknown(traverse_data &x, shared_state* ns) const
 
 result model_statevar::tempresult;
 
-model_statevar::model_statevar(const symbol* wrapper, const model_instance* p, 
+model_statevar::model_statevar(const symbol* wrapper, const model_instance* p,
   shared_object* bnds) : model_var(wrapper, p)
 {
   Init(bnds);
 }
 
-model_statevar::model_statevar(const char* f, int l, const type* t, char* n, 
+model_statevar::model_statevar(const char* f, int l, const type* t, char* n,
   const model_instance* p, shared_object* bnds) : model_var(f, l, t, n, p)
 {
   Init(bnds);
@@ -179,7 +179,7 @@ void model_statevar::AddToState(traverse_data &x, long delta) const
   }
 
   long newst = x.current_state->get(GetIndex()) + delta;
-  
+
   if (bounds) {
     tempresult.setInt(newst);
     if (bounds->IndexOf(tempresult) < 0) boundsError(x, newst);
@@ -195,7 +195,7 @@ void model_statevar
 {
   DCASSERT(x.answer);
   DCASSERT(x.current_state);
-  
+
   if (bounds) {
     tempresult.setInt(rhs);
     if (bounds->IndexOf(tempresult) < 0) boundsError(x, rhs);
@@ -227,7 +227,7 @@ void model_statevar::ownerError(traverse_data &x) const
   }
   DCASSERT(x.answer);
   x.answer->setNull();
-} 
+}
 
 void model_statevar::printBoundsError(const result &x) const
 {
@@ -273,7 +273,7 @@ model_enum:: model_enum(const symbol* w, const model_instance* p, symbol* list)
   for (ptr = list; ptr; ptr = ptr->Next()) {
     num_values++;
   }
-  
+
   // convert the list to the values array.
   if (num_values)
     values = new model_enum_value*[num_values];
@@ -301,7 +301,7 @@ void model_enum::MakeSortedMap(long* I) const
 {
   indexes = I;
   for (long i=0; i<num_values; i++)  I[i] = i;
-  HeapSortAbstract(this, num_values); 
+  HeapSortAbstract(this, num_values);
   indexes = 0;
 }
 
@@ -375,7 +375,7 @@ void bool_statevar::GetValueNumber(long i, result& foo) const
 
 long bool_statevar::GetValueIndex(result& foo) const
 {
-  if (foo.isNormal()) 
+  if (foo.isNormal())
     return (foo.getBool()) ? 1 : 0;
   else
     return -1;
@@ -410,7 +410,7 @@ shared_state::shared_state(const hldsm* p)
   if (p->containsListVar()) {
     is_list = (bool*) malloc(num_buckets * sizeof(bool));
     p->determineListVars(is_list);
-    
+
     // NOT IMPLEMENTED YET
     DCASSERT(0);
 
@@ -471,7 +471,7 @@ void shared_state::fillFrom(const shared_state &s)
         break;
       }
     }
-  } 
+  }
 
   // Set our unknown values appropriately.
   if (has_unknown) {
@@ -480,7 +480,7 @@ void shared_state::fillFrom(const shared_state &s)
   } else {
     if (is_unknown) clear_unknown();
   }
-  
+
   // Copy the data.
   if (isFixedSize()) {
     memcpy(data, s.data, data_size * sizeof(int));
@@ -568,22 +568,22 @@ class model_var_stmt : public expr {
 protected:
   model_def* parent;
   expr* bounds;
-  model_symbol** names; 
+  model_symbol** names;
   int numvars;
 public:
-  model_var_stmt(const char *fn, int line, model_def *p, 
+  model_var_stmt(const char *fn, int line, model_def *p,
      const type* t, expr* bnds, model_symbol** n, int nv);
 
   virtual ~model_var_stmt();
-  
+
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
 
-model_var_stmt::model_var_stmt(const char *fn, int line, model_def *p, 
+model_var_stmt::model_var_stmt(const char *fn, int line, model_def *p,
   const type* t, expr* bnds, model_symbol** n, int nv)
- : expr(fn, line, em->VOID) 
+ : expr(fn, line, em->VOID)
 {
   parent = p;
   numvars = nv;
@@ -634,7 +634,7 @@ void model_var_stmt::Compute(traverse_data &x)
   x.answer = old;
   for (int i=0; i<numvars; i++) {
     model_var* z = parent->MakeModelVar(names[i], bset.getPtr());
-    names[i]->SetLink(z);    
+    names[i]->SetLink(z);
     if (model_debug.startReport()) {
       model_debug.report() << "model " << parent->Name();
       model_debug.report() << " built symbol " << z->Name() << "\n";
@@ -646,7 +646,7 @@ void model_var_stmt::Compute(traverse_data &x)
 void model_var_stmt::Traverse(traverse_data &x)
 {
   if (traverse_data::ModelDone == x.which) {
-    for (int i=0; i<numvars; i++)  names[i]->ClearLink();    
+    for (int i=0; i<numvars; i++)  names[i]->ClearLink();
   } else {
     expr::Traverse(x);
   }
@@ -730,9 +730,9 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-model_varray_stmt::model_varray_stmt(const char *fn, int line, model_def *p, 
+model_varray_stmt::model_varray_stmt(const char *fn, int line, model_def *p,
       const type* t, model_array** a, int nv)
- : expr(fn, line, em->VOID) 
+ : expr(fn, line, em->VOID)
 {
   parent = p;
   numvars = nv;
@@ -786,7 +786,7 @@ void model_varray_stmt::Compute(traverse_data &x)
 void model_varray_stmt::Traverse(traverse_data &x)
 {
   if (traverse_data::ModelDone == x.which) {
-    for (int i=0; i<numvars; i++)  vars[i]->ClearLink();    
+    for (int i=0; i<numvars; i++)  vars[i]->ClearLink();
   } else {
     expr::Traverse(x);
   }
@@ -808,16 +808,16 @@ class measure_assign : public expr {
   int msr_slot;
   expr* retval;
 public:
-  measure_assign(const char *fn, int ln, model_def *p, 
+  measure_assign(const char *fn, int ln, model_def *p,
     model_symbol* w, expr* rhs);
-  virtual ~measure_assign(); 
+  virtual ~measure_assign();
 
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
 
-measure_assign::measure_assign(const char *fn, int ln, model_def *p, 
+measure_assign::measure_assign(const char *fn, int ln, model_def *p,
     model_symbol* w, expr* rhs) : expr(fn, ln, em->VOID)
 {
   parent = p;
@@ -907,16 +907,16 @@ class measure_array_assign : public expr {
   int msr_slot;
   expr *retval;
 public:
-  measure_array_assign(const char *fn, int l, model_def* p, 
+  measure_array_assign(const char *fn, int l, model_def* p,
       model_array* w, expr *e);
-  virtual ~measure_array_assign(); 
+  virtual ~measure_array_assign();
 
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
 
-measure_array_assign::measure_array_assign(const char *fn, int l, 
+measure_array_assign::measure_array_assign(const char *fn, int l,
   model_def *p, model_array* w, expr *e) : expr(fn, l, em->VOID)
 {
   parent = p;
@@ -997,8 +997,8 @@ void measure_array_assign::Traverse(traverse_data &x)
 // ******************************************************************
 
 clev_op::clev_op(const char* fn, int line, expr* b, model_var* v)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   DCASSERT(b);
   DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
   traverse_data x(traverse_data::Compute);
@@ -1010,10 +1010,10 @@ clev_op::clev_op(const char* fn, int line, expr* b, model_var* v)
   lower = foo.getInt();
   Delete(b);
 }
-  
+
 clev_op::clev_op(const char* fn, int line, long b, model_var* v)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   lower = b;
 }
 
@@ -1021,7 +1021,7 @@ long clev_op::getLower() const
 {
   return lower;
 }
-  
+
 void clev_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1072,7 +1072,7 @@ bool clev_op::Print(OutputStream &s, int w) const
   return true;
 }
 
-expr* clev_op::buildAnother(expr *r) const 
+expr* clev_op::buildAnother(expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(r);
   DCASSERT(pl);
@@ -1104,10 +1104,10 @@ protected:
 // ******************************************************************
 
 blev_op::blev_op(const char* fn, int line, expr* b, model_var* v)
- : binary(fn, line, exprman::bop_le, em->BOOL->addProc(), b, v) 
-{ 
+ : binary(fn, line, exprman::bop_le, em->BOOL->addProc(), b, v)
+{
 }
-  
+
 void blev_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1178,7 +1178,7 @@ void blev_op::Traverse(traverse_data &x)
   x.answer->setPtr(ans);
 }
 
-expr* blev_op::buildAnother(expr *l, expr *r) const 
+expr* blev_op::buildAnother(expr *l, expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(r);
   DCASSERT(pl);
@@ -1213,8 +1213,8 @@ protected:
 // ******************************************************************
 
 vltc_op::vltc_op(const char* fn, int line, model_var* v, expr* b)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   DCASSERT(b);
   DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
   traverse_data x(traverse_data::Compute);
@@ -1226,13 +1226,13 @@ vltc_op::vltc_op(const char* fn, int line, model_var* v, expr* b)
   upper = foo.getInt();
   Delete(b);
 }
-  
+
 vltc_op::vltc_op(const char* fn, int line, model_var* v, long b)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   upper = b;
 }
-  
+
 void vltc_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1280,7 +1280,7 @@ bool vltc_op::Print(OutputStream &s, int w) const
   return true;
 }
 
-expr* vltc_op::buildAnother(expr *r) const 
+expr* vltc_op::buildAnother(expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(r);
   DCASSERT(pl);
@@ -1312,16 +1312,16 @@ protected:
 // ******************************************************************
 
 vltb_op::vltb_op(const char* fn, int line, model_var* v, expr* b)
- : binary(fn, line, exprman::bop_lt, em->BOOL->addProc(), v, b) 
-{ 
+ : binary(fn, line, exprman::bop_lt, em->BOOL->addProc(), v, b)
+{
 }
-  
+
 void vltb_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(x.current_state);
   DCASSERT(0==x.aggregate);
- 
+
   result* answer = x.answer;
   result l;
   x.answer = &l;
@@ -1376,7 +1376,7 @@ void vltb_op::Traverse(traverse_data &x)
   x.answer->setPtr(ans);
 }
 
-expr* vltb_op::buildAnother(expr *l, expr *r) const 
+expr* vltb_op::buildAnother(expr *l, expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(l);
   DCASSERT(pl);
@@ -1409,8 +1409,8 @@ protected:
 
 clevltc_op
 ::clevltc_op(const char* fn, int line, expr* lb, model_var* v, expr* ub)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   DCASSERT(lb);
   DCASSERT(ub);
   DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0));
@@ -1429,14 +1429,14 @@ clevltc_op
   upper = foo.getInt();
   Delete(ub);
 }
-  
+
 clevltc_op::clevltc_op(const char* fn, int line, long lb, model_var* v, long ub)
- : unary(fn, line, em->BOOL->addProc(), v) 
-{ 
+ : unary(fn, line, em->BOOL->addProc(), v)
+{
   lower = lb;
   upper = ub;
 }
-  
+
 void clevltc_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1451,8 +1451,8 @@ void clevltc_op::Compute(traverse_data &x)
 
   DCASSERT(x.answer->isNormal());
 
-  x.answer->setBool( 
-      (lower <= x.answer->getInt()) && (x.answer->getInt() < upper) 
+  x.answer->setBool(
+      (lower <= x.answer->getInt()) && (x.answer->getInt() < upper)
   );
 }
 
@@ -1492,7 +1492,7 @@ bool clevltc_op::Print(OutputStream &s, int w) const
   return true;
 }
 
-expr* clevltc_op::buildAnother(expr *r) const 
+expr* clevltc_op::buildAnother(expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(r);
   DCASSERT(pl);
@@ -1527,10 +1527,10 @@ protected:
 
 blevltb_op
 :: blevltb_op(const char* fn, int line, expr* lb, model_var* v, expr* ub)
- : trinary(fn, line, em->BOOL->addProc(), lb, v, ub) 
-{ 
+ : trinary(fn, line, em->BOOL->addProc(), lb, v, ub)
+{
 }
-  
+
 void blevltb_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1665,7 +1665,7 @@ bool blevltb_op::Print(OutputStream &s, int) const
   return true;
 }
 
-expr* blevltb_op::buildAnother(expr *l, expr* m, expr *r) const 
+expr* blevltb_op::buildAnother(expr *l, expr* m, expr *r) const
 {
   model_var* pl = smart_cast <model_var*>(m);
   DCASSERT(pl);
@@ -1679,8 +1679,8 @@ expr* blevltb_op::buildAnother(expr *l, expr* m, expr *r) const
 
 cupdate_op
 :: cupdate_op(const char* fn, int line, model_var* v, long  d)
- : expr(fn, line, em->NEXT_STATE) 
-{ 
+ : expr(fn, line, em->NEXT_STATE)
+{
   var = v;
   DCASSERT(var);
   delta = d;
@@ -1730,7 +1730,7 @@ void cupdate_op::Traverse(traverse_data &x)
         expr::Traverse(x);
   }
 }
-  
+
 void cupdate_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1773,7 +1773,7 @@ bool cupdate_op::Print(OutputStream &s, int) const
 
 /** Performs v := v + inc - dec;
     v is a state variable.
-    inc is an expression. 
+    inc is an expression.
     dec is an expression.
 */
 class vupdate_op : public expr {
@@ -1794,8 +1794,8 @@ public:
 
 vupdate_op
 :: vupdate_op(const char* fn, int line, model_var* v, expr* dec, expr* inc)
- : expr(fn, line, em->NEXT_STATE) 
-{ 
+ : expr(fn, line, em->NEXT_STATE)
+{
   var = v;
   dec_amount = dec;
   inc_amount = inc;
@@ -1871,7 +1871,7 @@ void vupdate_op::Traverse(traverse_data &x)
         expr::Traverse(x);
   }
 }
-  
+
 void vupdate_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1934,8 +1934,8 @@ public:
 
 cassign_op
 :: cassign_op(const char* fn, int line, model_var* v, long  d)
- : expr(fn, line, em->NEXT_STATE) 
-{ 
+ : expr(fn, line, em->NEXT_STATE)
+{
   var = v;
   DCASSERT(var);
   rhs = d;
@@ -1973,7 +1973,7 @@ void cassign_op::Traverse(traverse_data &x)
         expr::Traverse(x);
   }
 }
-  
+
 void cassign_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -2015,8 +2015,8 @@ public:
 
 vassign_op
 :: vassign_op(const char* fn, int line, model_var* v, expr* d)
- : expr(fn, line, em->NEXT_STATE) 
-{ 
+ : expr(fn, line, em->NEXT_STATE)
+{
   var = v;
   DCASSERT(var);
   rhs = d;
@@ -2057,7 +2057,7 @@ void vassign_op::Traverse(traverse_data &x)
         x.ddlib->buildSymbolicSV(var, true, 0, vv);
         // vv := (vv == d)
         x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv);
-        x.answer->setPtr(vv); 
+        x.answer->setPtr(vv);
         return;
     }
 
@@ -2065,7 +2065,7 @@ void vassign_op::Traverse(traverse_data &x)
         expr::Traverse(x);
   }
 }
-  
+
 void vassign_op::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -2098,14 +2098,14 @@ bool vassign_op::Print(OutputStream &s, int) const
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeModelSymbol(const char* fn, int ln, const type* t, 
+symbol* exprman::makeModelSymbol(const char* fn, int ln, const type* t,
         char* name) const
 {
   return new model_symbol(fn, ln, t, name);
 }
 
 
-symbol* exprman::makeModelArray(const char* fn, int ln, const type* t, 
+symbol* exprman::makeModelArray(const char* fn, int ln, const type* t,
         char* n, symbol** indexes, int dim) const
 {
   if (0==indexes) {
@@ -2127,7 +2127,7 @@ symbol* exprman::makeModelArray(const char* fn, int ln, const type* t,
 }
 
 
-expr* exprman::makeModelVarDecs(const char* fn, int ln, model_def* p, 
+expr* exprman::makeModelVarDecs(const char* fn, int ln, model_def* p,
     const type* t, expr* bnds, symbol** names, int N) const
 {
   bool bailout = (0==names || 0 == t || 0 == p);
@@ -2175,7 +2175,7 @@ expr* exprman::makeModelVarDecs(const char* fn, int ln, model_def* p,
 }
 
 
-expr* exprman::makeModelArrayDecs(const char* fn, int ln, model_def* p, 
+expr* exprman::makeModelArrayDecs(const char* fn, int ln, model_def* p,
       const type* t, symbol** arrays, int N) const
 {
   if (0==arrays)  return 0;
@@ -2217,7 +2217,7 @@ expr* exprman::makeModelArrayDecs(const char* fn, int ln, model_def* p,
 }
 
 
-expr* exprman::makeModelMeasureAssign(const char* fn, int ln, 
+expr* exprman::makeModelMeasureAssign(const char* fn, int ln,
       model_def* p, symbol* m, expr* rhs) const
 {
   model_symbol* w = dynamic_cast <model_symbol*> (m);
@@ -2258,9 +2258,9 @@ expr* exprman::makeModelMeasureAssign(const char* fn, int ln,
   DCASSERT(! isError(rhs) );
   return new measure_assign(fn, ln, p, w, rhs);
 }
-      
 
-expr* exprman::makeModelMeasureArray(const char* fn, int ln, 
+
+expr* exprman::makeModelMeasureArray(const char* fn, int ln,
       model_def* p, symbol* am, expr* rhs) const
 {
   model_array* w = dynamic_cast <model_array*> (am);
@@ -2319,7 +2319,7 @@ expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub)
     return 0;
   }
 
-  bool lb_isconst 
+  bool lb_isconst
   = lb ? (0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0)) : 0;
   bool ub_isconst
   = ub ? (0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0)) : 0;
@@ -2337,7 +2337,7 @@ expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub)
     else
       answer = new blev_op(0, -1, lb, sv);
   } else {
-    if (lb_isconst && ub_isconst) 
+    if (lb_isconst && ub_isconst)
       answer = new clevltc_op(0, -1, lb, sv, ub);
     else
       answer = new blevltb_op(0, -1, lb, sv, ub);
@@ -2360,9 +2360,9 @@ expr* MakeVarUpdate(const exprman* em, model_var* sv, expr* dec, expr* inc)
     Delete(inc);
     return 0;
   }
-  bool dec_isconst 
+  bool dec_isconst
   = dec ? (dec->BuildExprList(traverse_data::GetSymbols, 0, 0) == 0) : 1;
-  bool inc_isconst 
+  bool inc_isconst
   = inc ? (inc->BuildExprList(traverse_data::GetSymbols, 0, 0) == 0) : 1;
   expr* answer = 0;
   if (dec_isconst && inc_isconst) {
@@ -2444,4 +2444,3 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs)
 #endif
   return answer;
 }
-

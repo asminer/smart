@@ -19,14 +19,14 @@ class symbol;
 
 
 /**   The structure used by expressions to represent values.
- 
+
       Conventions:
 
       Whenever an error occurs, the value should be set to
       null by calling setNull().
       (A value can be null when no error occurs.)
 
-*/  
+*/
 class result {
 protected:
   /// Are we a special case, or not?
@@ -40,7 +40,9 @@ protected:
     /// Unknown value
     Unknown,
     /// Variable out of bounds; used for next-state computations
-    Out_Of_Bounds
+    Out_Of_Bounds,
+	///Omega value
+	omega
   } special;
 
   /// Used by boolean and integer type
@@ -50,8 +52,8 @@ protected:
   /// Used by Out_Of_Bounds
   const symbol* var;
   /// Everything else
-  shared_object* other; 
-  
+  shared_object* other;
+
 public:
   /// Default, empty constructor.
   result();
@@ -75,10 +77,16 @@ public:
 
   /// Is this an unknown value?
   inline bool isUnknown() const { return Unknown == special; }
-  inline void setUnknown() { 
+  inline bool isOmega() const { return omega == special; }
+  inline void setOmega() {
+     Delete(other);
+     other = 0;
+     special = omega;
+   }
+  inline void setUnknown() {
     Delete(other);
     other = 0;
-    special = Unknown; 
+    special = Unknown;
   }
 
   /// Was there a bounds violation?
@@ -96,24 +104,24 @@ public:
 
   /// Are we infinite.  Sign is determined from the value.
   inline bool isInfinity() const { return Infinity == special; }
-  inline void setInfinity(int sign) { 
+  inline void setInfinity(int sign) {
     Delete(other);
     other = 0;
     DCASSERT(sign);
     ivalue = (sign<0) ? -1 : 1;
-    special = Infinity; 
+    special = Infinity;
   }
-  inline int signInfinity() const { 
-    DCASSERT(isInfinity()); 
-    return ivalue; 
+  inline int signInfinity() const {
+    DCASSERT(isInfinity());
+    return ivalue;
   }
 
-  /// Are we a null value?  
+  /// Are we a null value?
   inline bool isNull() const { return Null == special; }
-  inline void setNull() { 
+  inline void setNull() {
     Delete(other);
     other = 0;
-    special = Null; 
+    special = Null;
   }
 
   inline void setBool(bool v) {
@@ -126,7 +134,7 @@ public:
     DCASSERT(Normal == special);
     return ivalue;
   }
-  
+
   inline void setInt(long v) {
     Delete(other);
     other = 0;
@@ -193,4 +201,3 @@ void sortIntegers(result* A, int n);
 void sortReals(result* A, int n);
 
 #endif
-
