@@ -518,7 +518,15 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 				//
 				// Make enabling list
 				//
-        bool boolflag[ curr_st->getNumStateVars() ] = { false };
+        /* 
+          TBD fix the next statment
+        */
+        bool* boolflag = 0;
+        // bool boolflag[ curr_st->getNumStateVars() ] = { false };
+        /*
+            This ^ causes a compile error, because the array
+            dimension is not a constant known at compile time.
+        */
 				bool myflag=false;
 				for (int i = 0; i < curr_st->getNumStateVars(); i++) {
 					if (curr_st->omega(i)) {
