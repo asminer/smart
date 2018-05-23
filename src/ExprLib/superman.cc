@@ -1172,6 +1172,10 @@ void superman::printLibraryCopyrights(doc_formatter* df) const
     const char* v = extlibs[i]->getVersionString();
     DCASSERT(v);
     df->Out() << v;
+    if (extlibs[i]->hasReleaseDate()) {
+      df->Out() << ", released ";
+      extlibs[i]->printReleaseDate(df);
+    }
     df->end_heading();
     extlibs[i]->printCopyright(df);
   }

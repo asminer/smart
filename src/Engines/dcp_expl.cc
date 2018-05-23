@@ -34,7 +34,7 @@ public:
   virtual void printCopyright(doc_formatter* df) const;
 };
 
-icp_state_lib::icp_state_lib() : library(false)
+icp_state_lib::icp_state_lib() : library(false, false)
 {
 }
 

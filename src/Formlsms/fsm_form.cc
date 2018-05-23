@@ -522,7 +522,7 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
 
 class fsm_lib : public library {
 public:
-  fsm_lib() : library(false) { }
+  fsm_lib() : library(false, false) { }
   virtual const char* getVersionString() const {
     return GraphLib::Version();
   }
