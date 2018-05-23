@@ -11,3 +11,7 @@ or using a high-level formalism, such as a Petri net.
 Analysis engines include CTL model checking and computation of
 performance measures.
 
+
+SMART is released under the 
+[Apache License, Version 2.0](http://www.apache.org/licenses).
+

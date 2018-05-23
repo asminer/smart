@@ -1,5 +1,5 @@
 ---
-title: Downloading SMART
+title: Downloading
 ---
 
 The source code for SMART may be obtained by downloading one of the archived
