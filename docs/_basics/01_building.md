@@ -1,5 +1,5 @@
 ---
-title: "Building SMART"
+title: Building
 ---
 
 ## Packages required 
