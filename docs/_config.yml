@@ -5,6 +5,7 @@ url: "https://asminer.github.io"
 baseurl: "/smart"
 repository: asminer/SMART
 title: SMART
+title_separator: "|"
 description: Stochastic Model-checking Analyzer for Reliability and Timing
 
 plugins:
@@ -18,6 +19,14 @@ whitelist:
   - jekyll-sitemap
   - jekyll-feed
 
+collections:
+  basics:
+    output: true
+    permalink: /:collection/:path/
+  examples:
+    output: true
+    permalink: /:collection/:path/
+
 defaults:
   # _pages
   - scope:
@@ -27,4 +36,19 @@ defaults:
       layout: single
       sidebar:
         nav: "side"
-      
+  # _basics
+  - scope:
+      path: ""
+      type: basics
+    values:
+      layout: single
+      sidebar:
+        nav: "side"
+  # _examples
+  - scope:
+      path: ""
+      type: examples
+    values:
+      layout: single
+      sidebar:
+        nav: "side"
