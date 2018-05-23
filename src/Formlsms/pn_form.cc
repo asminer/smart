@@ -25,7 +25,8 @@
 #include <vector>
 #include <set>
 
-#define DEBUG_PNS
+// #define DEBUG_PNS
+// #define DEBUG_REDUCE_PN
 
 
 // **************************************************************************
@@ -1153,329 +1154,6 @@ void petri_def::InitModel()
   assertion_list = new List <expr>;
 }
 
-#define DEBUG_EXPR
-
-#if 0
-
-bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray)
-{
-  // Builds an incidence matrix if the Petri Net is a regular
-  // net with integer weighted arcs.
-  //
-  // Therefore, the PN has no:
-  // (a) Inhibitor arcs
-  // (b) Marking dependent arcs
-  // (c) Transition guards
-  // (d) Transition priorities
-
-  if (tvec.size() < 1) return false;
-  if (num_places < 1) return false;
-
-  std::map<int, place_sv*> map_index_to_place;
-  std::vector<int> tokens(num_places, 0);
-  for (int i = 0; i < num_places; i++) {
-    place_sv* p = parray[i];
-    tokens[p->GetIndex()] = p->hasInit()? p->getInit(): 0;
-    map_index_to_place[p->GetIndex()] = p;
-  }
-
-  // TODO:
-  // Identify non-regular PNs and abort reduction.
-
-  // Stores arc weights from places to transitions.
-  // This also encodes the enabling conditions for the transitions.
-
-  // Organized by transitions, (T,P,W).
-  // T: transition, P: place, W: arc weight.
-  std::vector<std::map<int,int>> Pre_T(tvec.size());
-
-  // Stores arc weights between places and transitions.
-  // This also encodes the firing effects for the transitions.
-
-  // Organized by transitions, (T,P,W).
-  // T: transition, P: place, W: arc weight.
-  std::vector<std::map<int,int>> IM_T(tvec.size());
-
-  // Organized by places, (P,T,W).
-  // T: transition, P: place, W: arc weight.
-  std::vector<std::map<int,int>> IM_P(num_places);
-
-  for (int i=0; i<tvec.size(); i++) {
-    // For each event, e
-    //    For each expression in the enabling condition
-    //      Add arc from place to e in Pre.
-    //    For each expression in the next state
-    //      Add arc from place to e in IM.
-    transition* e = tvec[i];
-
-    // TODO: find mechanism to delete arcs from a transition
-
-#if 0
-    expr* enabling = e->getEnabling();
-    if (enabling) {
-      // Assuming expressions of type: p1 >= c1 & p2 >= c2 & ...
-      List <expr> E;
-      enabling->BuildExprList(traverse_data::GetProducts, 0, &E);
-      for (int j=0; j<E.Length(); j++) {
-        expr* exp = E.Item(j);
-        clev_op* clev_exp = dynamic_cast<clev_op*>(exp);
-        if (!clev_exp) return false;
-        List <symbol> S;
-        clev_exp->BuildSymbolList(traverse_data::GetSymbols, 0, &S);
-        DCASSERT(S.Length() == 1);
-        place_sv* v = dynamic_cast<place_sv*>(S.Item(0));
-        if (!v) return false;
-        printf("%s --> %s : %ld\n", v->Name(), e->Name(), clev_exp->getLower());
-        printf("Pre[%d,%d]: %ld\n", i, v->GetIndex(), clev_exp->getLower());
-
-        Pre_T[i][v->GetIndex()] = clev_exp->getLower();
-      }
-    }
-#else
-    int num_enable = e->getNumEnablingExpr();
-    for (int j = 0; j < num_enable; j++) {
-      expr* exp = e->getEnablingExpr(j);
-      clev_op* clev_exp = dynamic_cast<clev_op*>(exp);
-      if (!clev_exp) return false;
-      List <symbol> S;
-      clev_exp->BuildSymbolList(traverse_data::GetSymbols, 0, &S);
-      DCASSERT(S.Length() == 1);
-      place_sv* v = dynamic_cast<place_sv*>(S.Item(0));
-      if (!v) return false;
-      printf("%s --> %s : %ld\n", v->Name(), e->Name(), clev_exp->getLower());
-      printf("Pre[%d,%d]: %ld\n", i, v->GetIndex(), clev_exp->getLower());
-
-      Pre_T[i][v->GetIndex()] = clev_exp->getLower();
-    }
-#endif
-
-#if 0
-    expr* firing = e->getFiring();
-    if (firing) {
-      // Assuming expressions of type: p1 >= c1 & p2 >= c2 & ...
-      StringStream out;
-      firing->Print(out, 0);
-      printf("%s: %s\n", e->Name(), out.ReadString());
-      List <expr> E;
-      firing->BuildExprList(traverse_data::GetProducts, 0, &E);
-      for (int j=0; j<E.Length(); j++) {
-        expr* exp = E.Item(j);
-        cupdate_op* cupdate_exp = dynamic_cast<cupdate_op*>(exp);
-        if (!cupdate_exp) return false;
-        List <symbol> S;
-        cupdate_exp->BuildSymbolList(traverse_data::GetSymbols, 0, &S);
-        DCASSERT(S.Length() == 1);
-        place_sv* v = dynamic_cast<place_sv*>(S.Item(0));
-        if (!v) return false;
-        long delta = cupdate_exp->getDelta();
-        printf("%s: %s' := %s %s %ld\n", e->Name(), v->Name(), v->Name(),
-            (delta >= 0? "+": "-"), (delta >= 0? delta: -delta));
-        printf("IM[%d,%d]: %ld\n", i, v->GetIndex(), delta);
-
-        IM_T[i][v->GetIndex()] = delta;
-        IM_P[v->GetIndex()][i] = delta;
-      }
-    }
-#else
-    int num_fire = e->getNumFiringExpr();
-    // Assuming expressions of type: p1 >= c1 & p2 >= c2 & ...
-    for (int j = 0; j < num_fire; j++) {
-      expr* exp = e->getFiringExpr(j);
-      cupdate_op* cupdate_exp = dynamic_cast<cupdate_op*>(exp);
-      if (!cupdate_exp) return false;
-      List <symbol> S;
-      cupdate_exp->BuildSymbolList(traverse_data::GetSymbols, 0, &S);
-      DCASSERT(S.Length() == 1);
-      place_sv* v = dynamic_cast<place_sv*>(S.Item(0));
-      if (!v) return false;
-      long delta = cupdate_exp->getDelta();
-      printf("%s: %s' := %s %s %ld\n", e->Name(), v->Name(), v->Name(),
-          (delta >= 0? "+": "-"), (delta >= 0? delta: -delta));
-      printf("IM[%d,%d]: %ld\n", i, v->GetIndex(), delta);
-
-      IM_T[i][v->GetIndex()] = delta;
-      IM_P[v->GetIndex()][i] = delta;
-    }
-#endif
-  }
-
-  // Print Pre[]
-  printf("\n\nPre_T[]: enabling conditions for each transition\n");
-  for (int i = 0; i < Pre_T.size(); i++) {
-    printf("T%d:", i);
-    for (auto j : Pre_T[i]) {
-      printf(" (P%d >= %d)", j.first, j.second);
-    }
-    printf("\n");
-  }
-  // Print IM[]
-  printf("\n\nIM_T[]: incidence matrix (row: transitions)\n");
-  for (int i = 0; i < IM_T.size(); i++) {
-    printf("T%d:", i);
-    for (auto j : IM_T[i]) {
-      printf(" (P%d += %d)", j.first, j.second);
-    }
-    printf("\n");
-  }
-  // Print IM[]
-  std::set<int> constant_places;
-  printf("\n\nIM_P[]: incidence matrix (row: places)\n");
-  for (int i = 0; i < IM_P.size(); i++) {
-    printf("P%d (init:%d):", i, tokens[i]);
-    if (IM_P[i].empty()) {
-      printf("  --- constant ---  \n");
-      constant_places.insert(i);
-    } else {
-      for (auto j : IM_P[i]) {
-        printf(" (T%d += %d)", j.first, j.second);
-      }
-      printf("\n");
-    }
-  }
-  printf("\n\n");
-
-  // Print constant places
-  printf("\n\nConstant places: ");
-  for (auto i: constant_places) {
-    printf("%d ", i);
-  }
-  printf("\n\n");
-
-  // Find Reductions!
-  std::set<int> disabled_transitions;
-  std::set<int> acc_constant_places = constant_places;
-  while (!constant_places.empty()) {
-    for (int i = 0; i < Pre_T.size(); i++) {
-      std::map<int,int>::iterator curr, next;
-      for (curr = Pre_T[i].begin(); curr != Pre_T[i].end(); curr = next) {
-        next = curr;
-        next++;
-        auto it = constant_places.find((*curr).first);
-        if (it != constant_places.end()) {
-          // found a constant place
-          printf("Found in T[%d]: P%d.", i, *it);
-          if (tokens[*it] >= (*curr).second) {
-            // since this place will always enable this transtion
-            // disconnect arcs between transition and this place.
-            printf(" P%d >= %d. Erasing\n", *it, (*curr).second); 
-            Pre_T[i].erase(curr);
-          } else {
-            // since this place will always disabled this transition
-            // disconnect arcs between transitions and all other places.
-            // note: keeping one connection to help with the
-            // variable order heuristics.
-            printf(" P%d < %d. Breaking out.\n", *it, (*curr).second); 
-            break;
-          }
-        }
-      }
-      if (curr != Pre_T[i].end()) {
-        printf("T[%d] is disabled...", i);
-        std::map<int,int> temp;
-        // disable T[i] in IM_T and IM_P
-        disabled_transitions.insert(i);
-        printf("Building new map for T[%d] with P%d >= %d.\n", i, (*curr).first, (*curr).second);
-        temp[(*curr).first] = (*curr).second;
-        Pre_T[i] = temp;
-      }
-    }
-    // Process disabled transitions
-    std::map<int,int> blank;
-    for (auto i : disabled_transitions) { IM_T[i] = blank; }
-    for (int i = 0; i < IM_P.size(); i++) {
-      std::map<int,int>& impi = IM_P[i];
-      if (impi.empty()) continue;
-      auto t_iter = disabled_transitions.begin();
-      auto curr = impi.begin();
-      while (t_iter != disabled_transitions.end() && curr != impi.end()) {
-        auto next = curr;
-        next++;
-        if (*t_iter == curr->first) {
-          impi.erase(curr);
-          t_iter++;
-          curr = next;
-        } else if (*t_iter > curr->first) {
-          curr = next;
-        } else {
-          t_iter++;
-        }
-      }
-    }
-    // Print Pre[]
-    printf("\n\nPre_T[]: enabling conditions for each transition\n");
-    for (int i = 0; i < Pre_T.size(); i++) {
-      printf("T%d:", i);
-      for (auto j : Pre_T[i]) {
-        printf(" (P%d >= %d)", j.first, j.second);
-      }
-      printf("\n");
-    }
-    // Print IM[]
-    printf("\n\nIM_T[]: incidence matrix (row: transitions)\n");
-    for (int i = 0; i < IM_T.size(); i++) {
-      printf("T%d:", i);
-      for (auto j : IM_T[i]) {
-        printf(" (P%d += %d)", j.first, j.second);
-      }
-      printf("\n");
-    }
-    // Print IM[]
-    printf("\n\nIM_P[]: incidence matrix (row: places)\n");
-    std::set<int> new_constant_places;
-    for (int i = 0; i < IM_P.size(); i++) {
-      printf("P%d (init:%d):", i, tokens[i]);
-      if (IM_P[i].empty()) {
-        printf("  --- constant ---  \n");
-        if (acc_constant_places.find(i) == acc_constant_places.end()) {
-          new_constant_places.insert(i);
-        }
-      } else {
-        for (auto j : IM_P[i]) {
-          printf(" (T%d += %d)", j.first, j.second);
-        }
-        printf("\n");
-      }
-    }
-    printf("\n\n");
-    constant_places = new_constant_places;
-    acc_constant_places.insert(constant_places.begin(), constant_places.end());
-
-    // Print constant places
-    printf("\n\nNew Constant Places: ");
-    for (auto i: constant_places) {
-      printf("%d ", i);
-    }
-    printf("\n\nAccumulated Constant Places: ");
-    for (auto i: acc_constant_places) {
-      printf("%d ", i);
-    }
-    printf("\n\n");
-  }
-
-#if 0
-  // TODO
-  // Build new enabling expressions from Pre_T[]
-  std::vector<vector<expr*>> enabling(tvec.size());
-  std::vector<vector<expr*>> firing(tvec.size());
-  for (auto& t : Pre_T) {
-    for (auto& e : t) {
-      // build expression: e.first >= e.second
-      // e.first is a place
-      // e.second is an integer
-      place_sv* p = map_index_to_place[e.first];
-      int val = e.second;
-      // clev_op* clev_exp =
-    }
-  }
-
-  // Build new firing expressions from IM_T[]
-#endif
-
-  return true;
-}
-
-#else
-
 typedef struct {
   place_sv* p;
   long val;
@@ -1545,8 +1223,10 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
       DCASSERT(S.Length() == 1);
       place_sv* v = smart_cast<place_sv*>(S.Item(0));
       DCASSERT(v);
+#ifdef DEBUG_REDUCE_PN
       printf("%s --> %s : %ld\n", v->Name(), e->Name(), clev_exp->getLower());
       printf("Pre[%d,%d]: %ld\n", i, v->GetIndex(), clev_exp->getLower());
+#endif
 
       // Pre_T[i][v->GetIndex()] = clev_exp->getLower();
       place_long_pair& enabling_j = enabling[j];
@@ -1568,9 +1248,11 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
       const int v_index = v->GetIndex();
       DCASSERT(v);
       const long delta = cupdate_exp->getDelta();
+#ifdef DEBUG_REDUCE_PN
       printf("%s: %s' := %s %s %ld\n", e->Name(), v->Name(), v->Name(),
           (delta >= 0? "+": "-"), (delta >= 0? delta: -delta));
       printf("IM[%d,%d]: %ld\n", i, v_index, delta);
+#endif
       if (delta > 0) decreasing_places[v_index] = false;
       if (delta < 0) increasing_places[v_index] = false;
 
@@ -1589,6 +1271,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
     if (disabled_transitions[i]) { tvec[i]->disable(); }
   }
 
+#ifdef DEBUG_REDUCE_PN
   // Print decreasing places
   printf("\n\nDecreasing places (index:name): ");
   for (int i = 0; i < num_places; i++) {
@@ -1611,12 +1294,12 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
   printf("\n\nDisabled transitions: ");
   for (int i = 0; i < disabled_transitions.size(); i++) {
     if (disabled_transitions[i]) {
-      tvec[i]->disable();
       printf("%s ", tvec[i]->Name());
     }
   }
 
   printf("\n\n");
+#endif
 
   // Find Reductions
   bool found_new_reduceable_place = false;
@@ -1654,8 +1337,10 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
         DCASSERT(v);
         const long exp_lower = enabling_expressions[i][j].val;
         const int v_index = v->GetIndex();
+#ifdef DEBUG_REDUCE_PN
         printf("%s --> %s : %ld\n", v->Name(), e->Name(), exp_lower);
         printf("Pre[%d,%d]: %ld\n", i, v->GetIndex(), exp_lower);
+#endif
 
         // Reduction table:
         //
@@ -1673,8 +1358,10 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
           if (decreasing_places[v_index]) {
             // t is always disabled
             // disable t
+#ifdef DEBUG_REDUCE_PN
             printf(" %s < %ld. Breaking out\n", v->Name(), exp_lower);
             printf("%s is disabled...\n", e->Name());
+#endif
             disabled_transitions[i] = true;
             // Disable all expressions in T[i] except for j
             e->disable();
@@ -1684,7 +1371,9 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
           if (increasing_places[v_index]) {
             // t is always enabled via this enabling expression
             // remove this enabling expression from t
+#ifdef DEBUG_REDUCE_PN
             printf(" %s >= %ld. Erasing\n", v->Name(), exp_lower);
+#endif
             e->ignoreEnablingExpr(j);
           }
         }
@@ -1734,6 +1423,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
       }
     }
 
+#ifdef DEBUG_REDUCE_PN
     // Print decreasing places
     printf("\n\nNew Decreasing places (index:name): ");
     for (int i = 0; i < num_places; i++) {
@@ -1774,12 +1464,12 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
       }
     }
     printf("\n\n");
+#endif
+
   }
 
   return true;
 }
-
-#endif
 
 
 void petri_def::FinalizeModel(OutputStream &ds)
