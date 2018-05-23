@@ -29,7 +29,7 @@ public:
   virtual void printCopyright(doc_formatter* df) const;
 };
 
-gmp_lib::gmp_lib() : library(true)
+gmp_lib::gmp_lib() : library(true, false)
 {
   version = new char[40];
   snprintf(version, 40, "GNU MP version %s (or higher)", gmp_version);

@@ -367,7 +367,7 @@ void unsynch_colls::Report(OutputStream &s) const
 // *                         exp_state_lib  methods                         *
 // **************************************************************************
 
-exp_state_lib::exp_state_lib() : library(false)
+exp_state_lib::exp_state_lib() : library(false, false)
 {
 }
 
