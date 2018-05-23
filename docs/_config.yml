@@ -20,6 +20,9 @@ whitelist:
   - jekyll-feed
 
 collections:
+  basics:
+    output: true
+    permalink: /:collection/:path/
   examples:
     output: true
     permalink: /:collection/:path/
@@ -29,6 +32,14 @@ defaults:
   - scope:
       path: ""
       type: pages
+    values:
+      layout: single
+      sidebar:
+        nav: "side"
+  # _basics
+  - scope:
+      path: ""
+      type: basics
     values:
       layout: single
       sidebar:

@@ -4,8 +4,6 @@ title: Hello world
 
 ## Running SMART
 
-SMART reads input from an input text file written in the SMART language,
-which is similar to C and C++ but with several significant differences.
 For a simple first program, create a text file named ```hello.sm```:
 ```c
 /*
@@ -16,13 +14,10 @@ print("Hello, world!\n");
 ```
 
 
-SMART can be run on one or more input files, from the command line,
-by passing the input files as arguments.
-To run the program above, use
+To run the program above, use:
 ```bash
 smart hello.sm
 ```
-(you may need to adjust your ```PATH```).
 This should give the output
 ```bash
 Hello, world!
