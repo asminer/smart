@@ -44,6 +44,7 @@ class first_init : public initializer {
     first_init(exprman* em, symbol_table* st, const char** env);
     virtual bool execute();
     static const char* getVersionString();
+    static const char* getLongName();
   private:
     exprman* hold_em;
     symbol_table* hold_st;
@@ -97,6 +98,11 @@ const char* first_init::getVersionString()
   return version;
 }
 
+const char* first_init::getLongName()
+{
+  return "Stochastic Model-checking Analyzer for Reliability and Timing";
+}
+
 // ============================================================
 
 void InitOptions(option_manager* om)
@@ -138,21 +144,14 @@ int Copyrights(exprman* em)
   df->Out() << "\n";
   df->begin_heading();
   df->Out() << first_init::getVersionString();
+  if (SMART_DATE) {
+    df->Out() << ", released " << SMART_DATE << "\n";
+  }
   df->end_heading();
   df->begin_indent();
-  df->begin_description(15);
-  df->item("Design:");
-  df->Out() << "Gianfranco Ciardo and Andrew Miner";
-  // Uncomment this when we add names to Implementation.
-  // df->item("Lead developer:");
-  //df->Out() << "Andrew Miner";
-  df->item("Implementation:");
-  // Add to and alphabetize this list of names.
-  df->Out() << "Andrew Miner";
-  df->end_description();
-  if (SMART_DATE) {
-    df->Out() << "Released " << SMART_DATE << "\n";
-  }
+  df->Out() << first_init::getLongName() << "\n";
+  df->Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
+  df->Out() << "Released under the Apache License, version 2\n";
 #ifdef PACKAGE_URL
   df->Out() << PACKAGE_URL << "\n";
 #endif

@@ -28,7 +28,7 @@ public:
   virtual bool hasFixedPointer() const { return false; }
 };
 
-rng_lib::rng_lib(const rng_manager* rm) : library(false)
+rng_lib::rng_lib(const rng_manager* rm) : library(false, false)
 {
   rngm = rm;
 }

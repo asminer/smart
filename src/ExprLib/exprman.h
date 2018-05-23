@@ -42,8 +42,9 @@ class specific_conv;
 */
 class library {
   bool has_copyright;
+  bool has_release_date;
 public:
-  library(bool has_cr);
+  library(bool has_cr, bool has_date);
   virtual ~library();
 
   /** Can the library be determined from the pointer address?
@@ -67,6 +68,15 @@ public:
       in the derived class.
   */
   virtual void printCopyright(doc_formatter *df) const;
+
+  /// Does the library have a release date.
+  inline bool hasReleaseDate() const { return has_release_date; }
+
+  /** Print release date for a library.
+      Default is to dump core.
+  */
+  virtual void printReleaseDate(doc_formatter *df) const;
+
 };
 
 

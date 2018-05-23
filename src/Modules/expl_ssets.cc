@@ -171,7 +171,7 @@ public:
   virtual bool hasFixedPointer() const { return true; }
 };
 
-intset_lib::intset_lib() : library(false)
+intset_lib::intset_lib() : library(false, false)
 {
 }
 

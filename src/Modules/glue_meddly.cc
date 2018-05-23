@@ -140,9 +140,10 @@ public:
   virtual const char* getVersionString() const;
   virtual bool hasFixedPointer() const { return false; }
   virtual void printCopyright(doc_formatter* df) const;
+  virtual void printReleaseDate(doc_formatter* df) const;
 };
 
-mdd_lib::mdd_lib() : library(true)
+mdd_lib::mdd_lib() : library(true, true)
 {
   version = MEDDLY::getLibraryInfo(0);
 }
@@ -159,11 +160,15 @@ const char* mdd_lib::getVersionString() const
 void mdd_lib::printCopyright(doc_formatter* df) const
 {
   df->begin_indent();
-  df->Out() << "Released " << MEDDLY::getLibraryInfo(5) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(1) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(2) << "\n";
   df->Out() << MEDDLY::getLibraryInfo(3) << "\n";
   df->end_indent();
+}
+
+void mdd_lib::printReleaseDate(doc_formatter* df) const
+{
+  df->Out() << MEDDLY::getLibraryInfo(5);
 }
 
 mdd_lib mdd_lib_data;

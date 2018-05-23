@@ -225,7 +225,7 @@ void markov_process::reporter::stop()
 
 class mc_lib : public library {
 public:
-  mc_lib() : library(false) { }
+  mc_lib() : library(false, false) { }
   virtual const char* getVersionString() const {
     return MCLib::Version();
   }
@@ -242,7 +242,7 @@ public:
 
 class ls_lib : public library {
 public:
-  ls_lib() : library(false) { }
+  ls_lib() : library(false, false) { }
   virtual const char* getVersionString() const {
     return LS_LibraryVersion();
   }
