@@ -63,8 +63,6 @@ inline long GCD(long a, long b)
     DCASSERT()
     CHECK_RANGE(low, x, high+1)
 */
-/// Omega
-const int OOmega=-10;
 
 #ifdef DEVELOPMENT_CODE
   #define MEM_TRACE_ON

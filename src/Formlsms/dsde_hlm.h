@@ -75,8 +75,7 @@ private:
   enum {
     disabled = -1,
     unknown = 0,
-    enabled = 1,
-    omega=OOmega
+    enabled = 1
   } enable_data;
 
   intset* enabling_level_dependencies;
@@ -255,16 +254,11 @@ public:
   inline void setDisabled() { enable_data = disabled; }
   inline bool unknownIfEnabled() const { return unknown == enable_data; }
   inline bool knownEnabled() const { return enabled == enable_data; }
-  inline bool omegaIfEnabled() const { bool res=(omega == enable_data);printf("REEES is %i\n",res);return res; }
-  inline void setOmega() { enable_data = omega; printf("SET!!,%d\n",enable_data);}
   inline bool isEnabled() const {
     DCASSERT(unknown != enable_data);
     return enabled == enable_data;
   }
-  inline bool isOmega() const {
-    // DCASSERT(unknown != enable_data);
-     return omega == enable_data;
-   }
+
 
 };
 
@@ -409,7 +403,6 @@ public:
 
   /// Like makeEnabledList, but we know the current state is tangible.
   void makeTangibleEnabledList(traverse_data &x, List <model_event> *en);
-  void makeTangibleEnabledListCov(traverse_data &x, List <model_event> *en, bool* misomega);
 
 
   // Things to be defined in derived classes.
