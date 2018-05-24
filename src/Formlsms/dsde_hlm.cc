@@ -539,65 +539,7 @@ void dsde_hlm
     }
   } // for pl
 }
-void dsde_hlm::makeTangibleEnabledListCov(traverse_data &x,
-		List<model_event> *EL,bool* misOmega) {
-	DCASSERT(x.answer);DCASSERT(x.current_state);
-	if (EL)
-		EL->Clear();
-	ResetEnabledList();
-	int i = 0;
-	bool has_enabled = false;
-	for (int pl = 0; pl < num_priolevels; pl++) {
-		for (; i < last_immed[pl]; i++) {
-			DCASSERT(event_data[i]);
-			event_data[i]->setDisabled();
-		} // for i
 
-		for (; i < last_timed[pl]; i++) {
-			if (misOmega[i]) {
-				printf("Omega was enabled\n");
-				if (EL)
-					{
-					EL->Append(event_data[i]);
-					printf("ADDDED\n");
-					}
-
-			}
-
-
-			else if (event_data[i]->unknownIfEnabled()) {
-				printf("IN makeTangibleEnabledList0\n");
-
-				event_data[i]->decideEnabled(x);
-				printf("IN makeTangibleEnabledList1\n");
-
-			} else {
-				x.answer->setBool(event_data[i]->knownEnabled());
-				printf("IN makeTangibleEnabledList2\n");
-
-			}
-			if (!x.answer->isNormal()) {
-				if (EL) {
-					EL->Clear();
-					EL->Append(event_data[i]);
-					printf("IN makeTangibleEnabledList3\n");
-
-				}
-				return;
-			}
-			if (x.answer->getBool()) {
-				has_enabled = true;
-				if (EL)
-					if(!event_data[i]->omegaIfEnabled())
-					{EL->Append(event_data[i]);
-				printf("IN makeTangibleEnabledList4\n");}
-
-			}
-		} // for i
-		if (has_enabled)
-			return;
-	} // for pl
-}
 void dsde_hlm
 ::makeTangibleEnabledList(traverse_data &x, List <model_event> *EL)
 {
