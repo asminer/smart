@@ -1086,10 +1086,10 @@ bool init_asynchgen::execute()
     new as_procgen(sl)
   );
   // Register Coverability engines
-  RegisterSubengine(em,
-    "ProcessGeneration",
-    "EXPLICITCOV",
-    new as_procgenCOV(sl)
-  );
+  // RegisterSubengine(em,
+  //   "ProcessGeneration",
+  //   "EXPLICITCOV",
+  //   new as_procgenCOV(sl)
+  // );
   return true;
 }
