@@ -880,7 +880,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
 // generate an order using the Noack method with default parameters
 // OrderPair format in case this ordering is used as input to force|other algorithms
 std::vector<OrderPair> noack(MODEL theModel) {
-  printf("In %s\n", __func__);
+  // printf("In %s\n", __func__);
   return noackParam(theModel, 2.0);
 }
 
@@ -1167,13 +1167,22 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   
   std::vector<int> startOrder (best); // try force on the given order
   std::vector<int> forceGiven = generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
-  printf("Done generating initial forcegiven\n");
+  if (out.startReport()) {
+    out.report() << "Done generating initial forcegiven\n";
+    out.stopIO();
+  }
   std::vector<int> soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceGiven);
 
-  printf("Done generating initial soupsgiven\n");
+  if (out.startReport()) {
+    out.report() << "Done generating initial soupsgiven\n";
+    out.stopIO();
+  }
   
   double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
-  printf("Done computing soupscore\n");
+  if (out.startReport()) {
+    out.report() << "Done computing soupscore\n";
+    out.stopIO();
+  }
   if (newScore < bestScore) {
     bestScore = newScore;
     for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1189,9 +1198,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   
   forceGiven = getBFS(theModel);
   soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceGiven);
-  printf("Done generating soupsorder\n");
+  if (out.startReport()) {
+    out.report() << "Done generating soupsorder\n";
+    out.stopIO();
+  }
   newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
-  printf("Done computing soupscore\n");
+  if (out.startReport()) {
+    out.report() << "Done computing soupscore\n";
+    out.stopIO();
+  }
   if (newScore < bestScore) {
     bestScore = newScore;
     for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1211,9 +1226,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   for (int iter = 0; (iter < 1) && (iter < theModel.numPlaces); iter++) {
     std::vector<int> startOrderBFS = getBFSx(theModel, iter);
     startOrderBFS = generateSASOUPSOrder(theModel, soupsIters, startOrderBFS);
-    printf("Done generating soupsorder\n");
+    if (out.startReport()) {
+      out.report() << "Done generating soupsorder\n";
+      out.stopIO();
+    }
     newScore = getSOUPSScore(theModel, startOrderBFS, paramAlpha);// to test soups
-    printf("Done computing soupscore\n");
+    if (out.startReport()) {
+      out.report() << "Done computing soupscore\n";
+      out.stopIO();
+    }
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1230,9 +1251,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     
     std::vector<int> forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
-    printf("Done generating soupsorder\n");
+    if (out.startReport()) {
+      out.report() << "Done generating soupsorder\n";
+      out.stopIO();
+    }
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
-    printf("Done computing soupscore\n");
+    if (out.startReport()) {
+      out.report() << "Done computing soupscore\n";
+      out.stopIO();
+    }
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1250,9 +1277,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       startOrderBFS[fixrev] = (theModel.numPlaces - 1) - startOrderBFS[fixrev];
     }
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, startOrderBFS);
-    printf("Done generating soupsorder\n");
+    if (out.startReport()) {
+      out.report() << "Done generating soupsorder\n";
+      out.stopIO();
+    }
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
-    printf("Done computing soupscore\n");
+    if (out.startReport()) {
+      out.report() << "Done computing soupscore\n";
+      out.stopIO();
+    }
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1267,9 +1300,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     
     forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
-    printf("Done generating soupsorder\n");
+    if (out.startReport()) {
+      out.report() << "Done generating soupsorder\n";
+      out.stopIO();
+    }
     newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);// to test soups
-    printf("Done computing soupscore\n");
+    if (out.startReport()) {
+      out.report() << "Done computing soupscore\n";
+      out.stopIO();
+    }
     if (newScore < bestScore) {
       bestScore = newScore;
       for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1316,10 +1355,16 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   std::vector<int> startOrder (best); // try force on the given order
   std::vector<int> soupsGiven = generateSASOUPSOrder(theModel, soupsIters, startOrder);
 
-  printf("Done generating initial soupsgiven\n");
+  if (out.startReport()) {
+    out.report() << "Done generating initial soupsgiven\n";
+    out.stopIO();
+  }
   
   double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
-  printf("Done computing soupscore\n");
+  if (out.startReport()) {
+    out.report() << "Done computing soupscore\n";
+    out.stopIO();
+  }
   if (newScore < bestScore) {
     bestScore = newScore;
     for (int index = 0; index < theModel.numPlaces; index++) {
@@ -1806,7 +1851,7 @@ MODEL translateModelOLD(dsde_hlm& smartModel) {
   for (unsigned index = 0; index < vecArcs.size(); index++) {
     result.theArcs[index] = vecArcs[index];
     
-    printf("p: %d, t: %d\n", vecArcs[index].source, vecArcs[index].target);
+    //printf("p: %d, t: %d\n", vecArcs[index].source, vecArcs[index].target);
   }
   
   // printf("In translateModel()\n");
@@ -1852,13 +1897,19 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   }
   
   MODEL model = translateModel(*dm);
-  printf("Done with translating model within variable-ordering code\n");
+  if (debug.startReport()) {
+    debug.report() << "Done with translating model within variable-ordering code\n";
+    debug.stopIO();
+  }
 
   const int nIterations = 1000;
   const int nStartingOrders = 10;
   std::vector<int> order = defaultOrder(model, ((alphaParameter >= 0.0) ? alphaParameter : factor), nIterations, nStartingOrders, debug);
   
-  printf("Done with building new variable-ordering\n");
+  if (debug.startReport()) {
+    debug.report() << "Done with building new variable-ordering\n";
+    debug.stopIO();
+  }
   
   
   
