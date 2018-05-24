@@ -11,6 +11,8 @@
 
 #include "ParseSM/lexer.h"
 
+#define YY_NO_INPUT
+
 %}
 
 %s OPTION
