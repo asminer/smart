@@ -4,6 +4,7 @@
 
     States are "indexed" by a unique identifier.
 */
+#include "../_StateLib/lchild_rsiblingt.h"
 
 
 /**
@@ -259,6 +260,474 @@ void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg)
     throw e;
   }
 }
+
+
+
+
+template<class CG, typename UID>
+int isDeadend(List<model_event> e) {
+	return e.Length();
+
+}
+template<class CG, typename UID>
+bool SharedStateEqual(shared_state*node, shared_state* node1) {
+	bool res = true;
+	for (int i = 0; i < node->getNumStateVars(); i++) {
+		if (node->get(i) != node1->get(i))
+			return false;
+	}
+	return true;
+}
+template<class CG, typename UID>
+bool isRepeated(List<shared_state>* slist, shared_state* node) {
+	//printf("\n For Checking: In isRepeated %d", slist->Length());
+	shared_state* temp;
+	for (int i = 0; i < slist->Length(); i++) {
+		bool res = false;
+		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+			if (slist->Item(i)->get(j) != node->get(j)) {
+				res = true;
+			}
+		}
+		if (res == false)
+			return true;
+	}
+
+	return false;
+}
+template<class CG, typename UID>
+void isLessthanNodeUpdate(List<shared_state>* slist, shared_state* node) {
+
+	for (int i = 0; i < slist->Length(); i++) {
+		bool res = true;
+		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+			if (slist->Item(i)->omega(j)) {
+				if (node->omega(j))
+					;
+				else {
+					res = false;
+					break;
+				}
+			} else {
+				if (node->omega(j))
+					continue;
+				else if (slist->Item(i)->get(j) > node->get(j))
+					res = false;
+			}
+
+		}
+		///update!
+		if (res)
+			for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+				if (!slist->Item(i)->omega(j))
+					if (slist->Item(i)->get(j) < node->get(j))
+						node->set_omega(j);
+			}
+	}
+
+}
+template<class CG, typename UID>
+List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
+		shared_state* next_st, CG &cg, List<model_event> enabled,
+		named_msg &debug, bool& current_is_vanishing) {
+	traverse_data x(traverse_data::Compute);
+	result xans;
+
+	x.answer = &xans;
+	x.current_state = curr_st;
+	x.next_state = next_st;
+
+	UID from_id;
+	cg.makeIllegalID(from_id);
+	bool valid_from = false;
+	current_is_vanishing = false;
+	for (;;) {
+		//
+		// Check for signals
+		//
+		if (debug.caughtTerm()) {
+			if (dsm.StartError(0)) {
+				dsm.SendError("Process construction prematurely terminated");
+				dsm.DoneError();
+			}
+			throw subengine::Terminated;
+		}
+
+		//
+		// Get next state to explore, with priority to vanishings.
+		//
+		UID exp_id;
+		if (cg.hasUnexploredVanishing()) {
+			// explore next vanishing
+			exp_id = cg.getUnexploredVanishing(curr_st);
+			current_is_vanishing = true;
+		} else {
+			// No unexplored vanishing; safe to trash them, if desired
+			if (current_is_vanishing) { // assumes we want to eliminate vanishing...
+				cg.clearVanishing(debug);
+			}
+			current_is_vanishing = false;
+			// find next tangible to explore; if none, break out
+			if (cg.hasUnexploredTangible()) {
+				from_id = exp_id = cg.getUnexploredTangible(curr_st);
+				valid_from = true;
+			} else {
+				break;  // done exploring!
+			}
+		}
+		if (debug.startReport()) {
+			debug.report() << "Exploring 1111";
+			debug.report() << "\n";
+			debug.stopIO();
+		}
+
+		//
+		// Make enabling list
+		//
+		if (current_is_vanishing)
+			dsm.makeVanishingEnabledList(x, &enabled);
+		else
+			dsm.makeTangibleEnabledList(x, &enabled);
+	}
+
+	return enabled;
+}
+//Coverability
+//TODO need cleanup
+template<class CG, typename UID>
+lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
+		List<shared_state>* slist, lchild_rsiblingt* node, bool firstTime,
+		shared_state*newcur) {
+
+	shared_state* curr_st = new shared_state(&dsm);
+	shared_state* next_st = new shared_state(&dsm);
+	if (!firstTime) {
+		if (debug.startReport()) {
+			debug.report() << "NOT FIRST TIME " << "\n";
+			debug.stopIO();
+		}
+
+		curr_st->fillFrom(newcur);
+
+		next_st->fillFrom(newcur);
+		for (int i = 0; i < newcur->getNumStateVars(); i++) {
+			if (newcur->omega(i)) {
+				if (debug.startReport()) {
+					debug.report() << "OMEGA RECIVED HERE!!!! " << "\n";
+					debug.stopIO();
+				}
+
+				curr_st->set_omega(i);
+				next_st->set_omega(i);
+			}
+		}
+	}
+	// allocate list of enabled events
+	List<model_event> enabled;
+
+	// set up traverse data and such
+	traverse_data x(traverse_data::Compute);
+	result xans;
+
+	x.answer = &xans;
+	x.current_state = curr_st;
+	x.next_state = next_st;
+
+	try {
+
+		//
+		// Find and insert the initial states
+		//
+		if (firstTime) {
+			for (int i = 0; i < dsm.NumInitialStates(); i++) {
+				dsm.GetInitialState(i, curr_st);
+				dsm.checkVanishing(x);
+				if (!xans.isNormal()) {
+					if (dsm.StartError(0)) {
+						dsm.SendError(
+								"Couldn't determine vanishing / tangible");
+						dsm.DoneError();
+					}
+					throw subengine::Engine_Failed;
+				}
+
+				UID id;
+
+				bool newinit = rg.add(xans.getBool(), curr_st, id);
+				if (!xans.getBool()) {
+					rg.addInitial(id);
+				}
+				if (debug.startReport()) {
+					debug.report() << "COV Adding initial ";
+					rg.show(debug.report(), xans.getBool(), id, curr_st);
+					debug.report() << "\nThe id is :" << id << "\n";
+					debug.stopIO();
+				}
+				if (!newinit)
+					continue;
+				dsm.checkAssertions(x);
+				if (0 == xans.getBool()) {
+					throw subengine::Assertion_Failure;
+				}
+				firstTime = false;
+				node->val = curr_st;
+				slist->Append(curr_st);
+				if (debug.startReport()) {
+					debug.report() << "CALLING FIRST TIME " << "\n";
+					debug.stopIO();
+				}
+			}				// for i
+		}
+		{
+
+			//Not the firstTime.
+			//
+			// Done with initial states, start exploration loop
+			//
+			UID from_id;
+			rg.makeIllegalID(from_id);
+			bool valid_from = false;
+			bool current_is_vanishing = false;
+
+			// Combined tangible + vanishing explore loop!
+			/*for (;;)*/{
+				//
+				// Check for signals
+				//
+				if (debug.caughtTerm()) {
+					if (dsm.StartError(0)) {
+						dsm.SendError(
+								"Process construction prematurely terminated");
+						dsm.DoneError();
+					}
+					throw subengine::Terminated;
+				}
+
+				//
+				// Get next state to explore, with priority to vanishings.
+				//
+				UID exp_id;
+				bool unexploredvanishflag = false;
+				bool unexploredtangibleflag = false;
+				if (debug.startReport()) {
+					debug.report() << "COv HEre in else part of recursive ";
+					debug.report() << "\n";
+					debug.stopIO();
+				}
+
+				//
+				// Make enabling list
+				//
+        /*
+          TBD fix the next statment
+        */
+        bool* boolflag = 0;
+        // bool boolflag[ curr_st->getNumStateVars() ] = { false };
+        /*
+            This ^ causes a compile error, because the array
+            dimension is not a constant known at compile time.
+        */
+				bool myflag=false;
+				for (int i = 0; i < curr_st->getNumStateVars(); i++) {
+					if (curr_st->omega(i)) {
+						myflag=true;
+            boolflag[i]=true;
+						curr_st->set_omega(i);
+
+					}
+				}
+				if(!myflag){
+					curr_st->Unset_omega();
+				}
+				if (current_is_vanishing) {
+					dsm.makeVanishingEnabledList(x, &enabled);
+					if (debug.startReport()) {
+						debug.report() << "IS VANISH ";
+
+						debug.report() << "\n";
+						debug.stopIO();
+					}
+				} else {
+					dsm.makeTangibleEnabledListCov(x, &enabled,boolflag);
+					if (debug.startReport()) {
+						debug.report() << "IS TANGIBLE ";
+
+						debug.report() << "\n";
+						debug.stopIO();
+					}
+				}
+				if (!x.answer->isNormal()) {
+					DCASSERT(1 == enabled.Length());
+					if (dsm.StartError(0)) {
+						dsm.SendError("Bad enabling expression for event ");
+						dsm.SendError(enabled.Item(0)->Name());
+						dsm.SendError(" during process generation");
+						dsm.DoneError();
+					}
+					throw subengine::Engine_Failed;
+				}
+
+				//
+				// Traverse enabled events
+				//
+				if (debug.startReport()) {
+					debug.report() << "COV number of enabled transition "
+							<< enabled.Length();
+					debug.report() << "\n";
+					debug.stopIO();
+				}
+				if (enabled.Length() == 0 && !unexploredtangibleflag
+						&& !unexploredvanishflag) {
+					curr_st->set_type(1);
+					return NULL;
+				}
+
+				for (int e = 0; e < enabled.Length(); e++) {
+					model_event* t = enabled.Item(e);
+					DCASSERT(t);DCASSERT(t->actsLikeImmediate() == current_is_vanishing);
+
+					//
+					// t is enabled, fire and get new state
+					//
+
+					next_st->fillFrom(curr_st);
+
+					if (t->getNextstate()) {
+						t->getNextstate()->Compute(x);
+					}
+					isLessthanNodeUpdate<CG, UID>(slist, next_st);
+
+					if (isRepeated<CG, UID>(slist, next_st)) {
+						if (debug.startReport()) {
+							debug.report() << "REPEATED!! \n";
+							debug.stopIO();
+						}
+						next_st->set_type(0);
+						return NULL;
+
+					}
+
+					if (debug.startReport()) {
+						debug.report() << "Got NEW STATE " << "\n";
+						rg.show(debug.report(), 0,0,
+								next_st);
+						debug.stopIO();
+					}
+
+					if (!xans.isNormal()) {
+						if (dsm.StartError(0)) {
+							dsm.SendError(
+									"Bad next-state expression for event ");
+							dsm.SendError(t->Name());
+							dsm.SendError(" during process generation");
+							dsm.OutOfBoundsError(xans);
+							dsm.DoneError();
+						}
+						throw subengine::Engine_Failed;
+					}
+
+					//
+					// determine if the reached state is tangible or vanishing
+					//
+					SWAP(x.current_state, x.next_state);
+					dsm.checkVanishing(x);
+					SWAP(x.current_state, x.next_state);
+					if (!xans.isNormal()) {
+						if (dsm.StartError(0)) {
+							dsm.SendError(
+									"Couldn't determine vanishing / tangible");
+							dsm.DoneError();
+						}
+						throw subengine::Engine_Failed;
+					}
+
+					//
+					// add reached state to appropriate set
+					//
+					bool next_is_new;
+					UID next_id;
+					bool next_is_vanishing = xans.getBool();
+					next_is_new = rg.add(next_is_vanishing, next_st, next_id);
+					lchild_rsiblingt* newnode = node->addtothisChild(node,
+							next_st);
+
+					if (debug.startReport()) {
+						debug.report() << "\t COV via event " << t->Name()
+								<< " to ";
+						rg.show(debug.report(), next_is_vanishing, next_id,
+								next_st);
+
+						//debug.report() <<next_st->omega(0)<<"\n";
+						debug.stopIO();
+					}
+					if (next_st->omega(0)) {
+						if (debug.startReport()) {
+							debug.report() << "\t COV IS OMEGA ";
+
+							debug.report() << "\n";
+							debug.stopIO();
+						}
+					}
+					//
+					// check assertions
+					//
+					if (next_is_new) {
+						SWAP(x.current_state, x.next_state);
+						dsm.checkAssertions(x);
+						SWAP(x.current_state, x.next_state);
+						if (0 == xans.getBool()) {
+							throw subengine::Assertion_Failure;
+						}
+					} // if next_is_new
+
+					if (rg.statesOnly() || next_is_vanishing)
+						continue;
+
+					//
+					// Add edge to RG
+					//
+					if (valid_from) {
+
+						rg.addEdge(from_id, next_id);
+					} else {
+						// Must be exploring an initial vanishing state
+						rg.addInitial(next_id);
+					}
+					slist->Append(next_st);
+					if (debug.startReport()) {
+						debug.report() << "Recursion Call " << "\n";
+						debug.stopIO();
+					}
+					generateCGT<CG, UID>(debug, dsm, rg, slist, newnode, false,
+							next_st);
+
+				} // for e
+
+			} // infinite loop
+
+			if (debug.startReport()) {
+				debug.report() << "COV Done exploring\n";
+				debug.stopIO();
+			}
+			//
+			// Cleanup
+			//
+			Nullify(x.current_state);
+			Nullify(x.next_state);
+		}
+	} // try
+
+	catch (subengine::error e) {
+		//
+		// Cleanup
+		//
+		Nullify(x.current_state);
+		Nullify(x.next_state);
+		throw e;
+	}
+}
+
+
 
 
 
