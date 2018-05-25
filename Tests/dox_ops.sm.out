@@ -12,18 +12,12 @@ Help topic: unary -
     Operator - is used for numerical negation. It may be used on the 
     following types of expressions:
     - bigint              has type bigint
-    - ctl_path_formula    has type ctlstar_path_formula
-    - ctl_state_formula    has type ctl_state_formula
-    - ctlstar_path_formula    has type ctlstar_path_formula
-    - ctlstar_state_formula    has type ctlstar_state_formula
     - int                 has type int
     - ph int              has type rand int
     - rand int            has type rand int
     - proc int            has type proc int
     - proc ph int         has type proc rand int
     - proc rand int       has type proc rand int
-    - ltl_path_formula    has type ltl_path_formula
-    - ltl_top             has type ltl_top
     - real                has type real
     - ph real             has type rand real
     - rand real           has type rand real
@@ -31,6 +25,13 @@ Help topic: unary -
     - proc ph real        has type proc rand real
     - proc rand real      has type proc rand real
     - tl_simple_path      has type ltl_path_formula
+    - temporal_formula    has type temporal_formula
+    - ctlstar_path_formula    has type ctlstar_path_formula
+    - ctl_path_formula    has type ctlstar_path_formula
+    - ctlstar_state_formula    has type ctlstar_state_formula
+    - ltl_top             has type ltl_top
+    - ltl_path_formula    has type ltl_path_formula
+    - ctl_state_formula    has type ctl_state_formula
 
 Help topic: binary !=
     Operator != is used for inequality comparison. It may be used on the 
@@ -790,13 +791,14 @@ Help topic: binary ->
     bool -> rand bool                      has type rand bool
     bool -> proc bool                      has type proc bool
     bool -> proc rand bool                 has type proc rand bool
-    bool -> ctl_path_formula               has type ctlstar_path_formula
-    bool -> ctl_state_formula              has type ctl_state_formula
-    bool -> ctlstar_path_formula           has type ctlstar_path_formula
-    bool -> ctlstar_state_formula          has type ctlstar_state_formula
-    bool -> ltl_path_formula               has type ltl_path_formula
-    bool -> ltl_top                        has type ltl_top
     bool -> tl_simple_path                 has type ltl_path_formula
+    bool -> temporal_formula               has type temporal_formula
+    bool -> ctlstar_path_formula           has type ctlstar_path_formula
+    bool -> ctl_path_formula               has type ctlstar_path_formula
+    bool -> ctlstar_state_formula          has type ctlstar_state_formula
+    bool -> ltl_top                        has type ltl_top
+    bool -> ltl_path_formula               has type ltl_path_formula
+    bool -> ctl_state_formula              has type ctl_state_formula
     rand bool -> bool                      has type rand bool
     rand bool -> rand bool                 has type rand bool
     rand bool -> proc bool                 has type proc rand bool
@@ -805,57 +807,67 @@ Help topic: binary ->
     proc bool -> rand bool                 has type proc rand bool
     proc bool -> proc bool                 has type proc bool
     proc bool -> proc rand bool            has type proc rand bool
-    proc bool -> ctl_path_formula          has type ctlstar_path_formula
-    proc bool -> ctl_state_formula         has type ctl_state_formula
-    proc bool -> ctlstar_path_formula      has type ctlstar_path_formula
-    proc bool -> ctlstar_state_formula     has type ctlstar_state_formula
-    proc bool -> ltl_path_formula          has type ltl_path_formula
-    proc bool -> ltl_top                   has type ltl_top
     proc bool -> tl_simple_path            has type ltl_path_formula
+    proc bool -> temporal_formula          has type temporal_formula
+    proc bool -> ctlstar_path_formula      has type ctlstar_path_formula
+    proc bool -> ctl_path_formula          has type ctlstar_path_formula
+    proc bool -> ctlstar_state_formula     has type ctlstar_state_formula
+    proc bool -> ltl_top                   has type ltl_top
+    proc bool -> ltl_path_formula          has type ltl_path_formula
+    proc bool -> ctl_state_formula         has type ctl_state_formula
     proc rand bool -> bool                 has type proc rand bool
     proc rand bool -> rand bool            has type proc rand bool
     proc rand bool -> proc bool            has type proc rand bool
     proc rand bool -> proc rand bool       has type proc rand bool
-    ctl_path_formula -> bool               has type ctlstar_path_formula
-    ctl_path_formula -> proc bool          has type ctlstar_path_formula
-    ctl_path_formula -> ctl_path_formula    has type ctlstar_path_formula
-    ctl_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
-    ctl_path_formula -> ltl_path_formula    has type ctlstar_path_formula
-    ctl_path_formula -> tl_simple_path     has type ctlstar_path_formula
-    ctl_state_formula -> bool              has type ctl_state_formula
-    ctl_state_formula -> proc bool         has type ctl_state_formula
-    ctl_state_formula -> ctl_state_formula    has type ctl_state_formula
-    ctl_state_formula -> ctlstar_state_formula    has type ctlstar_state_formula
-    ctl_state_formula -> ltl_top           has type ctlstar_state_formula
-    ctlstar_path_formula -> bool           has type ctlstar_path_formula
-    ctlstar_path_formula -> proc bool      has type ctlstar_path_formula
-    ctlstar_path_formula -> ctl_path_formula    has type ctlstar_path_formula
-    ctlstar_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
-    ctlstar_path_formula -> ltl_path_formula    has type ctlstar_path_formula
-    ctlstar_path_formula -> tl_simple_path    has type ctlstar_path_formula
-    ctlstar_state_formula -> bool          has type ctlstar_state_formula
-    ctlstar_state_formula -> proc bool     has type ctlstar_state_formula
-    ctlstar_state_formula -> ctl_state_formula    has type ctlstar_state_formula
-    ctlstar_state_formula -> ctlstar_state_formula    has type ctlstar_state_formula
-    ctlstar_state_formula -> ltl_top       has type ctlstar_state_formula
-    ltl_path_formula -> bool               has type ltl_path_formula
-    ltl_path_formula -> proc bool          has type ltl_path_formula
-    ltl_path_formula -> ctl_path_formula    has type ctlstar_path_formula
-    ltl_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
-    ltl_path_formula -> ltl_path_formula    has type ltl_path_formula
-    ltl_path_formula -> tl_simple_path     has type ltl_path_formula
-    ltl_top -> bool                        has type ltl_top
-    ltl_top -> proc bool                   has type ltl_top
-    ltl_top -> ctl_state_formula           has type ctlstar_state_formula
-    ltl_top -> ctlstar_state_formula       has type ctlstar_state_formula
-    ltl_top -> ltl_top                     has type ltl_top
     stateset -> stateset                   has type stateset
     tl_simple_path -> bool                 has type ltl_path_formula
     tl_simple_path -> proc bool            has type ltl_path_formula
-    tl_simple_path -> ctl_path_formula     has type ctlstar_path_formula
-    tl_simple_path -> ctlstar_path_formula    has type ctlstar_path_formula
-    tl_simple_path -> ltl_path_formula     has type ltl_path_formula
     tl_simple_path -> tl_simple_path       has type ltl_path_formula
+    tl_simple_path -> ctlstar_path_formula    has type ctlstar_path_formula
+    tl_simple_path -> ctl_path_formula     has type ctlstar_path_formula
+    tl_simple_path -> ltl_path_formula     has type ltl_path_formula
+    temporal_formula -> bool               has type temporal_formula
+    temporal_formula -> proc bool          has type temporal_formula
+    temporal_formula -> temporal_formula    has type temporal_formula
+    temporal_formula -> ctlstar_state_formula    has type ctlstar_state_formula
+    temporal_formula -> ltl_top            has type ctlstar_state_formula
+    temporal_formula -> ctl_state_formula    has type ctlstar_state_formula
+    ctlstar_path_formula -> bool           has type ctlstar_path_formula
+    ctlstar_path_formula -> proc bool      has type ctlstar_path_formula
+    ctlstar_path_formula -> tl_simple_path    has type ctlstar_path_formula
+    ctlstar_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
+    ctlstar_path_formula -> ctl_path_formula    has type ctlstar_path_formula
+    ctlstar_path_formula -> ltl_path_formula    has type ctlstar_path_formula
+    ctl_path_formula -> bool               has type ctlstar_path_formula
+    ctl_path_formula -> proc bool          has type ctlstar_path_formula
+    ctl_path_formula -> tl_simple_path     has type ctlstar_path_formula
+    ctl_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
+    ctl_path_formula -> ctl_path_formula    has type ctlstar_path_formula
+    ctl_path_formula -> ltl_path_formula    has type ctlstar_path_formula
+    ctlstar_state_formula -> bool          has type ctlstar_state_formula
+    ctlstar_state_formula -> proc bool     has type ctlstar_state_formula
+    ctlstar_state_formula -> temporal_formula    has type ctlstar_state_formula
+    ctlstar_state_formula -> ctlstar_state_formula    has type ctlstar_state_formula
+    ctlstar_state_formula -> ltl_top       has type ctlstar_state_formula
+    ctlstar_state_formula -> ctl_state_formula    has type ctlstar_state_formula
+    ltl_top -> bool                        has type ltl_top
+    ltl_top -> proc bool                   has type ltl_top
+    ltl_top -> temporal_formula            has type ctlstar_state_formula
+    ltl_top -> ctlstar_state_formula       has type ctlstar_state_formula
+    ltl_top -> ltl_top                     has type ltl_top
+    ltl_top -> ctl_state_formula           has type ctlstar_state_formula
+    ltl_path_formula -> bool               has type ltl_path_formula
+    ltl_path_formula -> proc bool          has type ltl_path_formula
+    ltl_path_formula -> tl_simple_path     has type ltl_path_formula
+    ltl_path_formula -> ctlstar_path_formula    has type ctlstar_path_formula
+    ltl_path_formula -> ctl_path_formula    has type ctlstar_path_formula
+    ltl_path_formula -> ltl_path_formula    has type ltl_path_formula
+    ctl_state_formula -> bool              has type ctl_state_formula
+    ctl_state_formula -> proc bool         has type ctl_state_formula
+    ctl_state_formula -> temporal_formula    has type ctlstar_state_formula
+    ctl_state_formula -> ctlstar_state_formula    has type ctlstar_state_formula
+    ctl_state_formula -> ltl_top           has type ctlstar_state_formula
+    ctl_state_formula -> ctl_state_formula    has type ctl_state_formula
 
 Help topic: binary /
     Operator / is used for division. It may be used on the following types 
