@@ -41,6 +41,8 @@ protected:
     Unknown,
     /// Variable out of bounds; used for next-state computations
     Out_Of_Bounds,
+	///Omega value
+	omega
   } special;
 
   /// Used by boolean and integer type
@@ -75,6 +77,12 @@ public:
 
   /// Is this an unknown value?
   inline bool isUnknown() const { return Unknown == special; }
+  inline bool isOmega() const { return omega == special; }
+  inline void setOmega() {
+     Delete(other);
+     other = 0;
+     special = omega;
+   }
   inline void setUnknown() {
     Delete(other);
     other = 0;

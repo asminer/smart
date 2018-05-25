@@ -30,7 +30,8 @@ class model_var : public symbol {
 public:
   /// Method by which this variable is stored in the global state.
   enum storage {
-
+    //is Omega
+    Omega,
 
     /// Don't know yet
     Unknown,
@@ -346,7 +347,10 @@ class shared_state : public shared_object {
       If not, it is an integer.
       If this is a null pointer, then every state variable is an integer.
   */
-
+  /** For Coverability we need to have omega markings.
+	 so I define is_omega variable. If it is true, then it has omega.
+	 */
+	bool* is_omega=0;
 
   bool* is_list;
 
@@ -380,7 +384,12 @@ class shared_state : public shared_object {
       will equal \a num_buckets.
   */
   int data_size;
-
+  enum statetype {
+		old, dead_end
+	};
+	/**
+	 */
+	statetype type;
 
 public:
   shared_state(const hldsm* p);
@@ -435,14 +444,26 @@ public:
     CHECK_RANGE(0, i, num_buckets);
     return is_unknown[i];
   }
+  inline bool omega(int i) const {
 
+		if (0 == is_omega)
+			return false;CHECK_RANGE(0, i, num_buckets);
+		return is_omega[i];
+	}
   /// Get value for state variable i; must not be a list.
   inline int get(int i) const {
     DCASSERT(data);
     CHECK_RANGE(0, i, num_buckets);
     DCASSERT((0==is_unknown) || (false==is_unknown[i]));
+    if (is_omega == 0) {
 
-     if (0==is_list) return data[i];
+			return data[i];
+		}
+    if (0==is_list) {if (omega(i) == true) {
+
+				return OOmega;		//-10 ;//-10;
+			} else
+				return data[i];}
     DCASSERT(false==is_list[i]);
 
     // Not implemented yet
@@ -455,10 +476,36 @@ protected:
     DCASSERT(is_unknown);
     for (int b=num_buckets; b; is_unknown[--b]=false);
   }
-
+  inline void clear_omega() {
+		//printf("CLEAR OMEGA\n");
+		DCASSERT(is_omega);
+		for (int b = num_buckets; b; is_omega[--b] = false)
+			;
+	}
 public:
+  inline void set_omega(int i) {
+  		printf("SET OMEGA\n");
+  		CHECK_RANGE(0, i, num_buckets);
+  		if (0 == is_omega) {
+  			is_omega = new bool[num_buckets];
+  			clear_omega();
+  		}
+  		is_omega[i] = true;
+  	}
+  	inline void Unset_omega() {
+  		is_omega=0;
+  		is_omega = new bool[num_buckets];
+  		for(int i=0;i<num_buckets;i++)
+  			is_omega[i]=false;
 
-
+  		}
+      /// Set state type.
+	inline void set_type(int type_code) {
+		if (type_code == 0)
+			this->type = old;
+		else
+			this->type = dead_end;
+	}
   /// Set state variable i to be unknown
   inline void set_unknown(int i) {
     CHECK_RANGE(0, i, num_buckets);
