@@ -150,7 +150,7 @@ void ectl_reachgraph::getTSCCsSatisfying(intset &p) const
 }
 
 
-stateset* ectl_reachgraph::EX(bool revTime, const stateset* p)
+stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
 {
   const char* CTLOP = revTime ? "EY" : "EX";
   if (0==p) return 0; // propogate an earlier error
@@ -210,7 +210,7 @@ stateset* ectl_reachgraph::AX(bool revTime, const stateset* p)
 }
 
 
-stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q)
+stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
 {
   if (0==q) return 0; // propogate an earlier error
 
@@ -386,7 +386,7 @@ stateset* ectl_reachgraph::fairAU(bool revTime, const stateset* p, const statese
 
 
 
-stateset* ectl_reachgraph::unfairEG(bool revTime, const stateset* p)
+stateset* ectl_reachgraph::unfairEG(bool revTime, const stateset* p, trace_data* td)
 {
   if (0==p) return 0; // propogate an earlier error
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);

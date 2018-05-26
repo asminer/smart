@@ -137,19 +137,19 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
   public:
     ectl_reachgraph();
 
-    virtual stateset* EX(bool revTime, const stateset* p);
-    virtual stateset* AX(bool revTime, const stateset* p);
+    virtual stateset* EX(bool revTime, const stateset* p, trace_data* td) override;
+    virtual stateset* AX(bool revTime, const stateset* p) override;
 
-    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q);
-    virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
-    virtual stateset* fairAU(bool revTime, const stateset* p, const stateset* q);
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td) override;
+    virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q) override;
+    virtual stateset* fairAU(bool revTime, const stateset* p, const stateset* q) override;
 
-    virtual stateset* unfairEG(bool revTime, const stateset* p);
-    virtual stateset* fairEG(bool revTime, const stateset* p);
+    virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td) override;
+    virtual stateset* fairEG(bool revTime, const stateset* p) override;
 
-    virtual stateset* AG(bool revTime, const stateset* p);
+    virtual stateset* AG(bool revTime, const stateset* p) override;
 
-    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q);
+    virtual stateset* unfairAEF(bool revTime, const stateset* p, const stateset* q) override;
 
   protected:
     virtual ~ectl_reachgraph();
