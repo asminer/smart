@@ -85,25 +85,25 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // CTL engines
     //
 
-    virtual stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr);
-    virtual stateset* AX(bool revTime, const stateset* p);
-    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr);
-    virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
-    virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
-    virtual stateset* AG(bool revTime, const stateset* p);
+    virtual stateset* EX(bool revTime, const stateset* p, trace_data* td) override;
+    virtual stateset* AX(bool revTime, const stateset* p) override;
+    virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td) override;
+    virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q) override;
+    virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td) override;
+    virtual stateset* AG(bool revTime, const stateset* p) override;
 
     //
     // CTL traces
     //
-    virtual void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
-    virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
-    virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans);
+    virtual void traceEX(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) override;
+    virtual void traceEU(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) override;
+    virtual void traceEG(bool revTime, const stateset* p, const trace_data* td, List<stateset>* ans) override;
 
-    virtual inline trace_data* makeTraceData() const {
+    virtual inline trace_data* makeTraceData() const override {
       return new meddly_trace_data();
     }
 
-    virtual stateset* attachWeight(const stateset* p) const;
+    virtual stateset* attachWeight(const stateset* p) const override;
 
   // 
   // Helpers
@@ -478,11 +478,11 @@ public:
   //
   // CTL engines
   //
-  virtual stateset* EX(bool revTime, const stateset* p, trace_data* td);
+  virtual stateset* EX(bool revTime, const stateset* p, trace_data* td) override;
 //  virtual stateset* AX(bool revTime, const stateset* p);
-  virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td);
+  virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td) override;
 //  virtual stateset* unfairAU(bool revTime, const stateset* p, const stateset* q);
-  virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
+  virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td) override;
 //  virtual stateset* AG(bool revTime, const stateset* p);
 
   //
@@ -497,9 +497,9 @@ protected:
 
   shared_ddedge* newEvmxdEdge();
 
-  virtual void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
-  virtual void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
-  virtual void _traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans);
+  virtual void _traceEX(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans) override;
+  virtual void _traceEU(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans) override;
+  virtual void _traceEG(bool revTime, const shared_ddedge* p, const meddly_trace_data* mtd, List<shared_ddedge>* ans) override;
 
 private:
   meddly_encoder* evmxd_wrap;
