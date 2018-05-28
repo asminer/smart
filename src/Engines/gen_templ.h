@@ -521,7 +521,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
         /*
           TBD fix the next statment
         */
-        bool* boolflag = 0;
+        bool boolflag [curr_st->getNumStateVars()];
         // bool boolflag[ curr_st->getNumStateVars() ] = { false };
         /*
             This ^ causes a compile error, because the array

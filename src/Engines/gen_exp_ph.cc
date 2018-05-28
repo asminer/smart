@@ -519,12 +519,12 @@ bool init_phasegen::execute()
     "EXPLICIT",
     new phase_procgen(sl)
   );
-  // Register Coverability engines
-  // RegisterSubengine(em,
-  //   "ProcessGeneration",
-  //   "EXPLICITCOV",
-  //   new phase_procgen(sl)
-  // );
+//  Register Coverability engines
+  RegisterSubengine(em,
+    "ProcessGeneration",
+    "EXPLICITCOV",
+    new phase_procgen(sl)
+  );
 
   return true;
 }
