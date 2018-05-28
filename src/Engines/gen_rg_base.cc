@@ -151,11 +151,11 @@ bool init_procgen::execute()
       "Explicit process generation"
   );
   RegisterEngine(ProcessGeneration, ExplicitProcessGeneration);
-  // engine* ExplicitProcessGenerationCOV = new engine(
-  //     "EXPLICITCOV",
-  //     "Explicit process generation"
-  // );
-  // RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
+  engine* ExplicitProcessGenerationCOV = new engine(
+      "EXPLICITCOV",
+      "Explicit process generation"
+  );
+  RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
   /*
     Vanishing elimiation styles - as an option
   */
