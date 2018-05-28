@@ -535,6 +535,8 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 						curr_st->set_omega(i);
 
 					}
+          else
+          boolflag[i]=false;
 				}
 				if(!myflag){
 					curr_st->Unset_omega();
