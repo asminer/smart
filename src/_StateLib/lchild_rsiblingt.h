@@ -46,7 +46,8 @@ public:
 	lchild_rsiblingt *addtothisChild(lchild_rsiblingt * n, shared_state* data) {
 		if (n == NULL)
 			return NULL;
-
+		PrintSharedState(n->val);
+		PrintSharedState(data);
 		// Check if child list is not empty.
 		if (n->child)
 			return addSibling(n->child, data);
@@ -96,11 +97,13 @@ public:
 
 		while (root) {
 			if (root->child) {
+				PrintSharedState(root->val);
 				PrintState(root);
 				printf("To");
 				PrintState(root->child);
 				//cout << root->data << "TOO" << root->child->data;
 				showArcsTree(root->child);
+
 			}
 			lchild_rsiblingt* nextroot = root->sibling;
 			if (root != NULL) {
@@ -151,5 +154,11 @@ public:
 			printf(", %d", root->val->get(n));
 		printf("]\n");
 	}
+	void PrintSharedState(shared_state* root) {
+			printf("***[ %d", root->get(0));
+			for (int n = 1; n < root->getNumStateVars(); n++)
+				printf(", %d", root->get(n));
+			printf("]\n");
+		}
 };
 #endif
