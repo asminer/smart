@@ -6,7 +6,6 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
-
 // ******************************************************************
 // *                                                                *
 // *                      graph_lldsm  statics                      *
@@ -66,7 +65,24 @@ void graph_lldsm::showArcs(bool internal) const
     Delete(st);
   }
 }
-
+void graph_lldsm::showArcsCOV(bool internal) const
+{
+  DCASSERT(CG);
+  if (internal) {
+   // RGR->showInternal(em->cout());
+  } else {
+    reachgraph::show_options opts;
+    opts.ORDER = stateDisplayOrder();
+    opts.STYLE = graphDisplayStyle();
+    opts.NODE_NAMES = displayGraphNodeNames();
+    opts.RG_ONLY = true;
+    shared_state* st = new shared_state(parent);
+    DCASSERT(RSS);
+    CG->showArcsTree(CG);
+    //RGR->showArcs(em->cout(), opts, RSS, st);
+    Delete(st);
+  }
+}
 bool graph_lldsm::tooManyArcs(long na, OutputStream *os)
 {
   if (na>=0) {

@@ -1,7 +1,9 @@
 #ifndef LCHILD_RSIBLINGT_H
 #define LCHILD_RSIBLINGT_H
 #include <stdio.h>
-using namespace std;
+#include <string.h>
+#include "statelib.h"
+//using namespace std;
 #include "../ExprLib/mod_vars.h"
 //class shared_state;
 class lchild_rsiblingt {
@@ -77,6 +79,77 @@ public:
 			root = root->sibling;
 		}
 	}
+	int getNumEdges(lchild_rsiblingt* root) {
+		if (root == NULL)
+			return 0;
 
+		while (root) {
+			if (root->child)
+				return 1 + getNumEdges(root->child);
+			root = root->sibling;
+		}
+	}
+
+	void showArcsTree(lchild_rsiblingt* root) {
+		if (root == NULL)
+			return;
+
+		while (root) {
+			if (root->child) {
+				PrintState(root);
+				printf("To");
+				PrintState(root->child);
+				//cout << root->data << "TOO" << root->child->data;
+				showArcsTree(root->child);
+			}
+			lchild_rsiblingt* nextroot = root->sibling;
+			if (root != NULL) {
+				if (nextroot != NULL)
+				{
+					PrintState(root);
+					printf("TO");
+					PrintState(nextroot);
+				}
+					//cout << " " << root->data << "TO" << nextroot->data;
+				root = nextroot;
+			}
+		}
+
+	}
+	 void show(OutputStream &s, shared_state* curr_st)
+	  {
+	    s << " state ";
+	    curr_st->Print(s, 0);
+	  }
+	 void showArcsTreewithOS(lchild_rsiblingt* root,OutputStream &s) {
+	 		if (root == NULL)
+	 			return;
+
+	 		while (root) {
+	 			if (root->child) {
+	 				root->val->Print(s,2);
+	 				printf("To");
+	 				root->child->val->Print(s,2);
+	 				showArcsTree(root->child);
+	 			}
+	 			lchild_rsiblingt* nextroot = root->sibling;
+	 			if (root != NULL) {
+	 				if (nextroot != NULL)
+	 				{
+		 				root->val->Print(s,2);
+	 					printf("TO");
+		 				nextroot->val->Print(s,2);
+	 				}
+	 				root = nextroot;
+	 			}
+	 		}
+
+	 	}
+	void PrintState(lchild_rsiblingt* root) {
+		printf("[ %d", root->val->get(0));
+		for (int n = 1; n < root->val->getNumStateVars(); n++)
+			printf(", %d", root->val->get(n));
+		printf("]\n");
+	}
 };
 #endif
