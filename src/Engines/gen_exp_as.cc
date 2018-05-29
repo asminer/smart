@@ -852,33 +852,12 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 
 	// Report on generation
 	if (stopGen(!procOK, *hm, the_proc, watch)) {
-		Report().report() << "By Zahra";
-
-		// should change here!
-
-		if (!rss->IsStatic()) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(rss->ReportMemTotal(), 3);
-			Report().report() << " required for my state space construction\n";
-			Report().report() << "\t" << rss->Size() << " states generated\n";
-			// Report().report() << "\t" << rss1->Size() << " states from 1 generated\n";
-
-		}
-		if (rg) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(rg->getMemTotal(), 3);
-			Report().report()
-					<< " required for reachability graph construction\n";
-			Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
-			//Report().report() << "\t" << rg->getNumEdges() << " CG graph edges\n";
-		}
 		if (cg) {
 					Report().report().Put('\t');
 					Report().report().PutMemoryCount(cg->getMemTotal(), 3);
 					Report().report()
 							<< " required for COV graph construction\n";
-					Report().report() << "\t" << cg->getNumEdges() << " COV graph edges\n";
-					//Report().report() << "\t" << rg->getNumEdges() << " CG graph edges\n";
+					Report().report() << "\t" << node->getNumEdges(node) << " COV graph edges\n";
 				}
 		if (vc) {
 			Report().report().Put('\t');
@@ -911,6 +890,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 		} else {
 			slm = new stochastic_lldsm(lldsm::CTMC);
 		}
+
 		slm->setRSS(new expl_reachset(rss));
 		lm = slm;
 		hm->SetProcess(lm);
@@ -934,8 +914,9 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	if (nondeterm) {
 		graph_lldsm* glm = smart_cast <graph_lldsm*>(lm);
 		DCASSERT(glm);
-		grlib_reachgraph* erg = new grlib_reachgraph(rg);
-		erg->setInitial(init);
+		//grlib_reachgraph* erg = new grlib_reachgraph(rg);
+		//erg->setInitial(init);
+		glm->setCG(node);
 	//	glm->setRGR(erg);
 	} else {
 		stochastic_lldsm* glm = smart_cast <stochastic_lldsm*>(lm);

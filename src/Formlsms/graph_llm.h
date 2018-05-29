@@ -6,7 +6,7 @@
 
 #include "../Modules/statesets.h" // for now
 #include "../Modules/trace.h"
-
+#include "../_StateLib/lchild_rsiblingt.h"
 class intset;
 class stateset;
 
@@ -23,6 +23,7 @@ class stateset;
 */  
 class graph_lldsm : public state_lldsm {
 public:
+lchild_rsiblingt* CG;
   enum display_style {
     DOT        = 0,
     INCOMING   = 1,
@@ -111,7 +112,7 @@ public:
       /** Show the internal representation of the reachability graph.
             @param  os    Output stream to write to
       */
-      virtual void showInternal(OutputStream &os) const = 0;
+		virtual void showInternal(OutputStream &os) const = 0;
     
       /**
         Show all the edges, in the desired order.
@@ -120,9 +121,8 @@ public:
           @param  RSS   Reachable states
           @param  st    Memory space to use for individual states
       */
-      virtual void showArcs(OutputStream &os, const show_options &opt, 
+		virtual void showArcs(OutputStream &os, const show_options &opt,
         reachset* RSS, shared_state* st) const = 0;
-
 
       /** Compute states satisfying EX(p).
           The default behavior here is to print an error message and 
@@ -352,6 +352,22 @@ public:
     RGR = rgr;
     if (RGR) RGR->attachToParent(this, RSS);
   }
+  //This part is added for coverability
+  inline const lchild_rsiblingt* getCG() const {
+      return CG;
+    }
+
+    inline lchild_rsiblingt* useCR() {
+      return CG;
+    }
+
+    inline void setCG(lchild_rsiblingt* cg) {
+      //DCASSERT(0==CG);
+      CG = cg;
+     // if (CG) CG->attachToParent(this, RSS);
+    }
+
+
 
   inline void getNumArcs(result& count) const {
     DCASSERT(RGR);
@@ -374,7 +390,12 @@ public:
                           are too many edges to display.
   */
   void showArcs(bool internal) const;
-
+  /** Show the COVERability graph.
+        @param  internal  If true, show internal details of state storage only.
+                          If false, show a sane graph, unless there
+                          are too many edges to display.
+  */
+  void showArcsCOV(bool internal) const;
   /** Compare number of edges with option.
         @param  ns    Number of states
         @param  os    If not null, display "too many arcs" message as appropriate.

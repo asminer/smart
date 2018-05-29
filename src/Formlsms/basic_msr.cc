@@ -750,7 +750,8 @@ void showarcsCOV_si::Compute(traverse_data &x, expr** pass, int np) {
 	if (x.answer->isNormal()) {
 		internal = x.answer->getBool();
 	}
-	//gllm->showArcs(internal); //TODO need to replace with another showArcs
+
+	gllm->showArcsCOV(internal); //TODO need to replace with another showArcs
 }
 
 // ******************************************************************
