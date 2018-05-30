@@ -842,7 +842,6 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	try {
 		if (nondeterm) {
 			node = generateCT(dsm, rss1, init, cg);
-		//	generateRG(dsm, rss, init, rg);//TODO should be removed
 		} else
 			generateMC(dsm, rss, init, vc);
 	} catch (error e) {
@@ -858,6 +857,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 					Report().report()
 							<< " required for COV graph construction\n";
 					Report().report() << "\t" << node->getNumEdges(node) << " COV graph edges\n";
+					node->showArcsTree(node);
 				}
 		if (vc) {
 			Report().report().Put('\t');
@@ -963,11 +963,15 @@ lchild_rsiblingt* as_procgenCOV::generateCT(dsde_hlm* dsm,
 	shared_state* curr_st = new shared_state(dsm);
 	//L.Append(curr_st);
 	lchild_rsiblingt* firstNode = new lchild_rsiblingt();
+
 	//firstNode->val = curr_st;
 	if (rg) {
 		indexed_reachgraph myrg(*tandb, *vandb, *rg);
 		generateCGT<indexed_reachgraph, long>(Debug(), *dsm, myrg, &L,
 				firstNode,true,NULL);
+		//shared_state* t=firstNode->val;
+		firstNode->child->PrintSharedState(firstNode->child->val);
+		firstNode->showArcsTree(firstNode);
 		myrg.exportInitial(s0);
 		myrg.finish();
 	} else {
@@ -978,6 +982,7 @@ lchild_rsiblingt* as_procgenCOV::generateCT(dsde_hlm* dsm,
 	}
 
 	delete vandb;
+
 	return firstNode;
 }
 

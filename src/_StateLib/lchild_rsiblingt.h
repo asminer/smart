@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "statelib.h"
-//using namespace std;
 #include "../ExprLib/mod_vars.h"
 //class shared_state;
 class lchild_rsiblingt {
@@ -18,7 +17,9 @@ public:
 		this->child = NULL;
 		this->sibling = NULL;
 	}
+
 	lchild_rsiblingt(shared_state* P) {
+		//this->val->fillFrom(P);
 		val = P;
 		this->child = NULL;
 		this->sibling = NULL;
@@ -27,6 +28,7 @@ public:
 	lchild_rsiblingt* newNode(shared_state* data) {
 		lchild_rsiblingt *newNode = new lchild_rsiblingt();
 		newNode->sibling = newNode->child = NULL;
+		//newNode->val->fillFrom(data);
 		newNode->val = data;
 		return newNode;
 	}
@@ -46,8 +48,8 @@ public:
 	lchild_rsiblingt *addtothisChild(lchild_rsiblingt * n, shared_state* data) {
 		if (n == NULL)
 			return NULL;
-		PrintSharedState(n->val);
-		PrintSharedState(data);
+		//PrintSharedState(n->val);
+		//PrintSharedState(data);
 		// Check if child list is not empty.
 		if (n->child)
 			return addSibling(n->child, data);
@@ -149,10 +151,10 @@ public:
 
 	 	}
 	void PrintState(lchild_rsiblingt* root) {
-		printf("[ %d", root->val->get(0));
+		printf("\n&&&&[ %d", root->val->get(0));
 		for (int n = 1; n < root->val->getNumStateVars(); n++)
 			printf(", %d", root->val->get(n));
-		printf("]\n");
+		printf("]&&&&\n");
 	}
 	void PrintSharedState(shared_state* root) {
 			printf("***[ %d", root->get(0));
