@@ -23,7 +23,6 @@ class stateset;
 */  
 class graph_lldsm : public state_lldsm {
 public:
-lchild_rsiblingt* CG;
   enum display_style {
     DOT        = 0,
     INCOMING   = 1,
@@ -515,6 +514,7 @@ public:
 
 private:
   reachgraph* RGR;
+  lchild_rsiblingt* CG;
 
 // Options
 private:

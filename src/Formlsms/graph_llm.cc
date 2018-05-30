@@ -77,7 +77,7 @@ void graph_lldsm::showArcsCOV(bool internal) const
     opts.NODE_NAMES = displayGraphNodeNames();
     opts.RG_ONLY = true;
     shared_state* st = new shared_state(parent);
-    DCASSERT(RSS);
+    DCASSERT(CG);
     CG->showArcsTree(CG);
     //RGR->showArcs(em->cout(), opts, RSS, st);
     Delete(st);

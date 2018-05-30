@@ -158,7 +158,7 @@ void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg) {
 			//
 			for (int e = 0; e < enabled.Length(); e++) {
 				model_event* t = enabled.Item(e);
-				DCASSERT(t); DCASSERT(t->actsLikeImmediate() == current_is_vanishing);
+				DCASSERT(t);DCASSERT(t->actsLikeImmediate() == current_is_vanishing);
 
 				//
 				// t is enabled, fire and get new state
@@ -398,7 +398,10 @@ template<class CG, typename UID>
 lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 		List<shared_state>* slist, lchild_rsiblingt* node, bool firstTime,
 		shared_state*newcur) {
+	if (node->val != NULL) {
+		node->PrintState(node);
 
+	}
 	shared_state* curr_st = new shared_state(&dsm);
 	shared_state* next_st = new shared_state(&dsm);
 	if (!firstTime) {
@@ -458,8 +461,6 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 					rg.addInitial(id);
 				}
 
-
-
 				if (debug.startReport()) {
 					debug.report() << "COV Adding initial ";
 					rg.show(debug.report(), xans.getBool(), id, curr_st);
@@ -472,7 +473,10 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 				if (0 == xans.getBool()) {
 					throw subengine::Assertion_Failure;
 				}
-				node->val = curr_st;
+				node->val=new shared_state(&dsm);
+				node->val->fillFrom(curr_st);
+				//node->val = curr_st;
+				//node->val->fillFrom(curr_st);
 				slist->Append(curr_st);
 				if (debug.startReport()) {
 					debug.report() << "CALLING FIRST TIME " << "\n";
@@ -651,7 +655,8 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 					next_is_new = rg.add(next_is_vanishing, next_st, next_id);
 					lchild_rsiblingt* newnode = node->addtothisChild(node,
 							next_st);
-
+					newnode->val=new shared_state(&dsm);
+					newnode->val->fillFrom(next_st);
 					if (debug.startReport()) {
 						debug.report() << "\t COV via event " << t->Name()
 								<< " to ";
@@ -661,6 +666,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 						//debug.report() <<next_st->omega(0)<<"\n";
 						debug.stopIO();
 					}
+					//TODO NEEED TO MOVE TO BEST PLACE
 					if (next_st->omega(0)) {
 						if (debug.startReport()) {
 							debug.report() << "\t COV IS OMEGA ";
@@ -668,6 +674,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 							debug.report() << "\n";
 							debug.stopIO();
 						}
+						//newnode->val->set_omega(0);
 					}
 					//
 					// check assertions
@@ -713,6 +720,8 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 			//
 			// Cleanup
 			//
+			//node->PrintState(node);
+
 			Nullify(x.current_state);
 			Nullify(x.next_state);
 		}
@@ -883,7 +892,7 @@ void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp) {
 			//
 			for (int e = 0; e < enabled.Length(); e++) {
 				model_event* t = enabled.Item(e);
-				DCASSERT(t); DCASSERT(t->hasFiringType(model_event::Immediate) == current_is_vanishing);
+				DCASSERT(t);DCASSERT(t->hasFiringType(model_event::Immediate) == current_is_vanishing);
 				if (0 == t->getNextstate())
 					continue;  // firing is "no-op", don't bother
 
@@ -1216,7 +1225,7 @@ void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc) {
 			//
 			for (int e = 0; e < enabled.Length(); e++) {
 				model_event* t = enabled.Item(e);
-				DCASSERT(t); DCASSERT(t->hasFiringType(model_event::Immediate) == current_is_vanishing);
+				DCASSERT(t);DCASSERT(t->hasFiringType(model_event::Immediate) == current_is_vanishing);
 				if (0 == t->getNextstate())
 					continue;  // firing is "no-op", don't bother
 
