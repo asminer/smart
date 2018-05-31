@@ -72,6 +72,13 @@ pn ignored := {
   trans a, b, c, d;
   priority(a:c, d:b);
   priority({a, b}:1, {c, d}:2);
+  arcs(
+    p : a,  a : p,
+    p : b,  b : p,
+    p : c,  c : p,
+    p : d,  d : p
+  );
+  init(p:1);
   bigint ns := num_states;
 };
 

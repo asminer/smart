@@ -793,7 +793,7 @@ class substate_encoder : public meddly_encoder {
 
   int* terms;
   int maxbound;
-  long lastcomputed;
+  // long lastcomputed;
   traverse_data tdx;
   result ans;
   shared_state* expl_state;
@@ -824,7 +824,7 @@ protected:
 
 substate_encoder
 ::substate_encoder(const char* n, forest* f, const hldsm &p, substate_colls* c)
-: meddly_encoder(n, f), tdx(traverse_data::Compute), parent(p)
+: meddly_encoder(n, f), parent(p), tdx(traverse_data::Compute)
 {
   colls = c;
   DCASSERT(parent.hasPartInfo());
@@ -1794,7 +1794,7 @@ private:
   long f_delta;
   substate_colls* colls;
   
-  named_msg &debug;
+  // named_msg &debug;
 };
 
 
@@ -1805,7 +1805,7 @@ private:
 // **************************************************************************
 
 
-derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down), debug(dm)
+derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down) // , debug(dm)
 {
   e_delta = e;
   f_delta = f;
@@ -1830,7 +1830,7 @@ long derive_relation_node::nextOf(long i)
     int sz = 1;
     int chunk[sz];
     int chunk_updated[sz];
-    int curr = 0;
+    // int curr = 0;
     colls->getSubstate(this->getLevel(), i, chunk, sz); 
     
     //Token update is calculated
@@ -2241,25 +2241,25 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
 satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_msg &debug)
 {
   using namespace MEDDLY;
-  exprman* em = getExpressionManager();
-  DCASSERT(em);
+  // exprman* em = getExpressionManager();
+  // DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   
   satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(),ms.getMddForest());
   
   int max_node_count = 10;
   int nEvents = getParent().getNumEvents();
-  int nPlaces = getParent().getNumStateVars();
+  // int nPlaces = getParent().getNumStateVars();
   
   
   int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
-  int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
+  // int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
   std::vector<std::map<int, std::pair<long,long>>> event_table;
   event_table.resize(nEvents);
   //Holds the variables affected in the events from bottom to top
-  int** v_all_fire = (int**)malloc(nEvents*sizeof(int*));
+  // int** v_all_fire = (int**)malloc(nEvents*sizeof(int*));
   //Holds the constant delta of event on certain variable
-  long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
+  // long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
   
   for(int i = 0; i<nEvents; i++) {
     if(enable_deps[i])
@@ -2296,7 +2296,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   
   derive_relation_node** rNode = (derive_relation_node**)malloc(max_node_count*sizeof(derive_relation_node*));
   int rCtr = 0;
-  int avbl = 0;
+  // int avbl = 0;
   
   for(int i = 0; i < nEvents; i++)
     {
@@ -2349,8 +2349,8 @@ int getIndexOf(substate_colls* c_pass, int level, int tokens)
 MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
 {
   using namespace MEDDLY;
-  exprman* em = getExpressionManager();
-  DCASSERT(em);
+  // exprman* em = getExpressionManager();
+  // DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   DCASSERT(c_pass);
   forest* qrmdd = getMddForest();
@@ -2466,11 +2466,11 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
 #else
     for (auto& i : disabling_ddedges) {
       if (i.second.size() == 0) continue;
-      fprintf(stdout, "Level %d, Size %d\n", i.first, i.second.size());
+      fprintf(stdout, "Level %d, Size %lu\n", i.first, i.second.size());
       dd_edge conjunction = i.second[0];
       int counter = 1;
       for (auto& j : i.second) {
-        fprintf(stdout, "\rProcessing edge %d / %ld", counter++, i.second.size());
+        fprintf(stdout, "\rProcessing edge %d / %lu", counter++, i.second.size());
         conjunction *= j;
       }
       fprintf(stdout, "\n");
@@ -2479,7 +2479,7 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
     }
     bool first_time = true;
     int counter = 1;
-    fprintf(stdout, "\nDone with intersections at each level. Combining %d levels\n", disabling_ddedges.size());
+    fprintf(stdout, "\nDone with intersections at each level. Combining %lu levels\n", disabling_ddedges.size());
     for (auto& i : disabling_ddedges) {
       if (i.second.size() == 0) continue;
       fprintf(stdout, "\rProcessing edge %d / %ld", counter++, disabling_ddedges.size());

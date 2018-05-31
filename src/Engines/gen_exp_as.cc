@@ -952,7 +952,7 @@ lchild_rsiblingt* as_procgenCOV::generateCT(dsde_hlm* dsm,
 
 	StateLib::state_db* vandb = statelib->createStateDB(true, false);
 	List<shared_state> L;
-	shared_state* curr_st = new shared_state(dsm);
+	// shared_state* curr_st = new shared_state(dsm);
 	lchild_rsiblingt* firstNode = new lchild_rsiblingt();
 
 	if (rg) {

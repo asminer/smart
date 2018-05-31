@@ -32,10 +32,7 @@ State 3: [q:1, r:1]
 State 4: [r:2]
 Should give an ignore warning:
 WARNING:
-    No initial marking given, assuming zero
-    within model ignored built in file priority.sm near line 79
-WARNING:
     Ignoring priority pairs across priority levels:
-        {d} : b
         {a} : c
-    within model ignored instantiated in file priority.sm near line 79
+        {d} : b
+    within model ignored instantiated in file priority.sm near line 86
