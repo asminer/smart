@@ -154,7 +154,62 @@ void numstates_si::Compute(traverse_data &x, expr** pass, int np)
   if (show) llm->getNumStates(true);
 #endif
 }
+// ******************************************************************
+// *                           num_states   in Coverability         *
+// ******************************************************************
 
+
+class numstatesCOV_si : public proc_noengine {
+public:
+  numstatesCOV_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+
+numstatesCOV_si::numstatesCOV_si()
+#ifdef ALLOW_SHOW_PARAMS
+ : proc_noengine(Nothing, em->BIGINT, "num_statesCOV", 2)
+#else
+ : proc_noengine(Nothing, em->BIGINT, "num_statesCOV", 1)
+#endif
+{
+#ifdef ALLOW_SHOW_PARAMS
+  SetFormal(1, em->BOOL, "show");
+  SetDocumentation("Returns the number of Coverability states.  If show is true, then as a side effect, the Coverability set is displayed to the current output stream (unless there are too many states).");
+#else
+  SetDocumentation("Computes if necessary, and returns the number of coverable states.");
+#endif
+}
+
+void numstatesCOV_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
+  if (0==llm || lldsm::Error == llm->Type()) {
+    x.answer->setNull();
+    return;
+  }
+#ifdef ALLOW_SHOW_PARAMS
+  SafeCompute(pass[1], x);
+  bool show = false;
+  if (x.answer->isNormal()) show = x.answer->getBool();
+  if (!em->hasIO()) show = false;
+#endif
+  llm->getNumStatesCOV(*x.answer);
+  if (!x.answer->isNormal())  return;
+  if (!x.answer->getPtr()) {
+    long ns = x.answer->getInt();
+    x.answer->setPtr(new bigint(ns));
+  }
+#ifdef ALLOW_SHOW_PARAMS
+  if (show) llm->getNumStatesCOV(true);
+#endif
+}
 // ******************************************************************
 // *                            num_arcs                            *
 // ******************************************************************
@@ -1345,6 +1400,7 @@ bool init_basicmsrs::execute()
 
   // Process or model properties
   CML.Append(new numstates_si);
+  CML.Append(new numstatesCOV_si);
   CML.Append(new numarcs_si);
   CML.Append(new numclasses_si);
   CML.Append(new numlevels_si);

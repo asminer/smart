@@ -6,6 +6,7 @@
 #include<vector>
 
 #include "../Modules/statesets.h" // for now
+#include "../_StateLib/lchild_rsiblingt.h"
 
 class stateset;
 
@@ -245,7 +246,17 @@ public:
     if (RSS)  RSS->getNumStates(count);
     else      count.setNull();
   }
-
+  inline void getNumStatesCOV(result& count) const {
+	  int result=CG->getNumState(CG);
+	  //("\n\n$$$$$ %d",result);
+       count.setInt(result);
+    }
+  inline long getNumStatesCOV() const {
+     DCASSERT(CG);
+     //long ns;
+    int res= CG->getNumState(CG);
+     return res;
+   }
   inline long getNumStates() const {
     DCASSERT(RSS);
     long ns;
@@ -298,6 +309,7 @@ public:
 
   protected:
     reachset* RSS;
+    lchild_rsiblingt* CG;
 
   private:  
     static const char* max_state_display_option;

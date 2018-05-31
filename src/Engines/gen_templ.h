@@ -395,13 +395,13 @@ List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 //TODO need cleanup
 
 template<class CG, typename UID>
-lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
+lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 		List<shared_state>* slist, lchild_rsiblingt* node, bool firstTime,
 		shared_state*newcur) {
-	if (node->val != NULL) {
-		node->PrintState(node);
-
-	}
+//	if (node->val != NULL) {
+//		node->PrintState(node);
+//
+//	}
 	shared_state* curr_st = new shared_state(&dsm);
 	shared_state* next_st = new shared_state(&dsm);
 	if (!firstTime) {
@@ -456,19 +456,19 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 
 				UID id;
 
-				bool newinit = rg.add(xans.getBool(), curr_st, id);
-				if (!xans.getBool()) {
-					rg.addInitial(id);
-				}
-
-				if (debug.startReport()) {
-					debug.report() << "COV Adding initial ";
-					rg.show(debug.report(), xans.getBool(), id, curr_st);
-					debug.report() << "\nThe id is :" << id << "\n";
-					debug.stopIO();
-				}
-				if (!newinit)
-					continue;
+//				bool newinit = rg.add(xans.getBool(), curr_st, id);
+//				if (!xans.getBool()) {
+//					rg.addInitial(id);
+//				}
+//
+//				if (debug.startReport()) {
+//					debug.report() << "COV Adding initial ";
+//					rg.show(debug.report(), xans.getBool(), id, curr_st);
+//					debug.report() << "\nThe id is :" << id << "\n";
+//					debug.stopIO();
+//				}
+//				if (!newinit)
+//					continue;
 				dsm.checkAssertions(x);
 				if (0 == xans.getBool()) {
 					throw subengine::Assertion_Failure;
@@ -478,6 +478,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 				//node->val = curr_st;
 				//node->val->fillFrom(curr_st);
 				slist->Append(curr_st);
+				//node->ListOfState.Append(curr_st);
 				if (debug.startReport()) {
 					debug.report() << "CALLING FIRST TIME " << "\n";
 					debug.stopIO();
@@ -491,7 +492,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 			// Done with initial states, start exploration loop
 			//
 			UID from_id;
-			rg.makeIllegalID(from_id);
+			//rg.makeIllegalID(from_id);
 			bool valid_from = false;
 			bool current_is_vanishing = false;
 
@@ -547,20 +548,20 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 				}
 				if (current_is_vanishing) {
 					dsm.makeVanishingEnabledList(x, &enabled);
-					if (debug.startReport()) {
-						debug.report() << "IS VANISH ";
-
-						debug.report() << "\n";
-						debug.stopIO();
-					}
+//					if (debug.startReport()) {
+//						debug.report() << "IS VANISH ";
+//
+//						debug.report() << "\n";
+//						debug.stopIO();
+//					}
 				} else {
 					dsm.makeTangibleEnabledListCov(x, &enabled, boolflag);
-					if (debug.startReport()) {
-						debug.report() << "IS TANGIBLE ";
-
-						debug.report() << "\n";
-						debug.stopIO();
-					}
+//					if (debug.startReport()) {
+//						debug.report() << "IS TANGIBLE ";
+//
+//						debug.report() << "\n";
+//						debug.stopIO();
+//					}
 				}
 				if (!x.answer->isNormal()) {
 					DCASSERT(1 == enabled.Length());
@@ -613,11 +614,11 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 
 					}
 
-					if (debug.startReport()) {
-						debug.report() << "Got NEW STATE " << "\n";
-						rg.show(debug.report(), 0, 0, next_st);
-						debug.stopIO();
-					}
+//					if (debug.startReport()) {
+//						debug.report() << "Got NEW STATE " << "\n";
+//						rg.show(debug.report(), 0, 0, next_st);
+//						debug.stopIO();
+//					}
 
 					if (!xans.isNormal()) {
 						if (dsm.StartError(0)) {
@@ -652,30 +653,29 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 					bool next_is_new;
 					UID next_id;
 					bool next_is_vanishing = xans.getBool();
-					next_is_new = rg.add(next_is_vanishing, next_st, next_id);
+					//next_is_new = rg.add(next_is_vanishing, next_st, next_id);
 					lchild_rsiblingt* newnode = node->addtothisChild(node,
 							next_st);
 					newnode->val=new shared_state(&dsm);
 					newnode->val->fillFrom(next_st);
-					if (debug.startReport()) {
-						debug.report() << "\t COV via event " << t->Name()
-								<< " to ";
-						rg.show(debug.report(), next_is_vanishing, next_id,
-								next_st);
-
-						//debug.report() <<next_st->omega(0)<<"\n";
-						debug.stopIO();
-					}
+//					if (debug.startReport()) {
+//						debug.report() << "\t COV via event " << t->Name()
+//								<< " to ";
+//						rg.show(debug.report(), next_is_vanishing, next_id,
+//								next_st);
+//
+//						//debug.report() <<next_st->omega(0)<<"\n";
+//						debug.stopIO();
+//					}
 					//TODO NEEED TO MOVE TO BEST PLACE
-					if (next_st->omega(0)) {
-						if (debug.startReport()) {
-							debug.report() << "\t COV IS OMEGA ";
-
-							debug.report() << "\n";
-							debug.stopIO();
-						}
-						//newnode->val->set_omega(0);
-					}
+//					if (next_st->omega(0)) {
+//						if (debug.startReport()) {
+//							debug.report() << "\t COV IS OMEGA ";
+//
+//							debug.report() << "\n";
+//							debug.stopIO();
+//						}
+//					}
 					//
 					// check assertions
 					//
@@ -688,25 +688,25 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm, CG &rg,
 						}
 					} // if next_is_new
 
-					if (rg.statesOnly() || next_is_vanishing)
-						continue;
+//					if (rg.statesOnly() || next_is_vanishing)
+//						continue;
 
 					//
 					// Add edge to RG
 					//
-					if (valid_from) {
-
-						rg.addEdge(from_id, next_id);
-					} else {
-						// Must be exploring an initial vanishing state
-						rg.addInitial(next_id);
-					}
+//					if (valid_from) {
+//
+//						rg.addEdge(from_id, next_id);
+//					} else {
+//						// Must be exploring an initial vanishing state
+//						rg.addInitial(next_id);
+//					}
 					slist->Append(next_st);
 					if (debug.startReport()) {
 						debug.report() << "Recursion Call " << "\n";
 						debug.stopIO();
 					}
-					generateCGT<CG, UID>(debug, dsm, rg, slist, newnode, false,
+					generateCGT<CG, UID>(debug, dsm, slist, newnode, false,
 							next_st);
 
 				} // for e

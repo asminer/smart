@@ -2,16 +2,22 @@
 #define LCHILD_RSIBLINGT_H
 #include <stdio.h>
 #include <string.h>
+#include <set>
 #include "statelib.h"
 #include "../ExprLib/mod_vars.h"
+#include "../include/splay.h"
 //class shared_state;
 class lchild_rsiblingt {
 public:
 	shared_state* val;
 	lchild_rsiblingt *child;
 	lchild_rsiblingt *sibling;
-public:
 
+//private:
+	std::set<shared_state*>SetOfState;
+	List<shared_state> ListOfState;
+	//SplayOfPointers <shared_state> p;
+public:
 	lchild_rsiblingt() {
 		val = NULL;
 		this->child = NULL;
@@ -51,6 +57,7 @@ public:
 		//PrintSharedState(n->val);
 		//PrintSharedState(data);
 		// Check if child list is not empty.
+		//count++;
 		if (n->child)
 			return addSibling(n->child, data);
 		else
@@ -93,13 +100,39 @@ public:
 		}
 	}
 
+	int getNumState(lchild_rsiblingt* root) {
+		if (root == NULL)
+			return 0;
+
+		while (root) {
+			SetOfState.insert(root->val);
+
+			//p.Insert(root->val);
+			if (root->child) {
+
+				//ListOfState.Append(root->child->val);
+				SetOfState.insert(root->child->val);
+				getNumState(root->child);
+
+			}
+			lchild_rsiblingt* nextroot = root->sibling;
+			if (root != NULL) {
+				if (nextroot != NULL) {
+					//ListOfState.Append(nextroot->val);
+					SetOfState.insert(nextroot->val);
+				}
+				root = nextroot;
+			}
+		}
+		return SetOfState.size();//ListOfState.Length();
+	}
 	void showArcsTree(lchild_rsiblingt* root) {
 		if (root == NULL)
 			return;
 
 		while (root) {
 			if (root->child) {
-				PrintSharedState(root->val);
+				//PrintSharedState(root->val);
 				PrintState(root);
 				printf("To");
 				PrintState(root->child);
@@ -109,58 +142,55 @@ public:
 			}
 			lchild_rsiblingt* nextroot = root->sibling;
 			if (root != NULL) {
-				if (nextroot != NULL)
-				{
+				if (nextroot != NULL) {
 					PrintState(root);
 					printf("TO");
 					PrintState(nextroot);
 				}
-					//cout << " " << root->data << "TO" << nextroot->data;
+				//cout << " " << root->data << "TO" << nextroot->data;
 				root = nextroot;
 			}
 		}
 
 	}
-	 void show(OutputStream &s, shared_state* curr_st)
-	  {
-	    s << " state ";
-	    curr_st->Print(s, 0);
-	  }
-	 void showArcsTreewithOS(lchild_rsiblingt* root,OutputStream &s) {
-	 		if (root == NULL)
-	 			return;
+	void show(OutputStream &s, shared_state* curr_st) {
+		s << " state ";
+		curr_st->Print(s, 0);
+	}
+	void showArcsTreewithOS(lchild_rsiblingt* root, OutputStream &s) {
+		if (root == NULL)
+			return;
 
-	 		while (root) {
-	 			if (root->child) {
-	 				root->val->Print(s,2);
-	 				printf("To");
-	 				root->child->val->Print(s,2);
-	 				showArcsTree(root->child);
-	 			}
-	 			lchild_rsiblingt* nextroot = root->sibling;
-	 			if (root != NULL) {
-	 				if (nextroot != NULL)
-	 				{
-		 				root->val->Print(s,2);
-	 					printf("TO");
-		 				nextroot->val->Print(s,2);
-	 				}
-	 				root = nextroot;
-	 			}
-	 		}
+		while (root) {
+			if (root->child) {
+				root->val->Print(s, 2);
+				printf("To");
+				root->child->val->Print(s, 2);
+				showArcsTree(root->child);
+			}
+			lchild_rsiblingt* nextroot = root->sibling;
+			if (root != NULL) {
+				if (nextroot != NULL) {
+					root->val->Print(s, 2);
+					printf("TO");
+					nextroot->val->Print(s, 2);
+				}
+				root = nextroot;
+			}
+		}
 
-	 	}
+	}
 	void PrintState(lchild_rsiblingt* root) {
-		printf("\n&&&&[ %d", root->val->get(0));
+		printf("\n[ %d", root->val->get(0));
 		for (int n = 1; n < root->val->getNumStateVars(); n++)
 			printf(", %d", root->val->get(n));
-		printf("]&&&&\n");
+		printf("]\n");
 	}
 	void PrintSharedState(shared_state* root) {
-			printf("***[ %d", root->get(0));
-			for (int n = 1; n < root->getNumStateVars(); n++)
-				printf(", %d", root->get(n));
-			printf("]\n");
-		}
+		printf("***[ %d", root->get(0));
+		for (int n = 1; n < root->getNumStateVars(); n++)
+			printf(", %d", root->get(n));
+		printf("]\n");
+	}
 };
 #endif
