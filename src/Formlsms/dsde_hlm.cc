@@ -287,7 +287,7 @@ void model_event::decideEnabled(traverse_data &x)
 named_msg dsde_hlm::ignored_prio;
 
 dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
-                    model_event** ed, int ne)
+                    model_event** ed, int ne, model_event** dead, int nd)
 : hldsm(Unknown)
 {
   SetParent(p);
@@ -295,6 +295,8 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
   num_vars = nv;
   event_data = ed;
   num_events = ne;
+  dead_events = dead;
+  num_dead = nd;
   assertions = 0;
   num_assertions = 0;
   num_priolevels = 0;
@@ -317,6 +319,13 @@ dsde_hlm::~dsde_hlm()
     Delete(event_data[e]);
   }
   delete[] event_data;
+
+  // trash the dead events (finally!)
+  for (int e=0; e<num_dead; e++) {
+    Delete(dead_events[e]);
+  }
+  delete[] dead_events;
+
   delete[] last_immed;
   delete[] last_timed;
 

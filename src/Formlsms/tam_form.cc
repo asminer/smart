@@ -359,7 +359,7 @@ const tam_tile* tam_square::getCurrentTile(shared_state* st) const
 // ******************************************************************
 
 tam_hlm::tam_hlm(const model_instance* s, model_statevar** V, int nv, model_event** E, int ne)
- : dsde_hlm(s, V, nv, E, ne)
+ : dsde_hlm(s, V, nv, E, ne, 0, 0)
 {
   tileset = 0;
   num_tiles = 0;
