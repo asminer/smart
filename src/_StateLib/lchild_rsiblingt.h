@@ -88,6 +88,8 @@ public:
 				return 1 + traverseTree(root->child);
 			root = root->sibling;
 		}
+    // keep compiler happy
+    return 0;
 	}
 	int getNumEdges(lchild_rsiblingt* root) {
 		if (root == NULL)
@@ -98,6 +100,8 @@ public:
 				return 1 + getNumEdges(root->child);
 			root = root->sibling;
 		}
+    // keep compiler happy
+    return 0;
 	}
 
 	int getNumState(lchild_rsiblingt* root) {

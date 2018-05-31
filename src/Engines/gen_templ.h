@@ -270,7 +270,7 @@ int isDeadend(List<model_event> e) {
 }
 template<class CG, typename UID>
 bool SharedStateEqual(shared_state*node, shared_state* node1) {
-	bool res = true;
+	// bool res = true;
 	for (int i = 0; i < node->getNumStateVars(); i++) {
 		if (node->get(i) != node1->get(i))
 			return false;
@@ -280,7 +280,7 @@ bool SharedStateEqual(shared_state*node, shared_state* node1) {
 template<class CG, typename UID>
 bool isRepeated(List<shared_state>* slist, shared_state* node) {
 	//printf("\n For Checking: In isRepeated %d", slist->Length());
-	shared_state* temp;
+	// shared_state* temp;
 	for (int i = 0; i < slist->Length(); i++) {
 		bool res = false;
 		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
@@ -454,7 +454,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 					throw subengine::Engine_Failed;
 				}
 
-				UID id;
+				// UID id;
 
 //				bool newinit = rg.add(xans.getBool(), curr_st, id);
 //				if (!xans.getBool()) {
@@ -491,9 +491,9 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 			//
 			// Done with initial states, start exploration loop
 			//
-			UID from_id;
+			// UID from_id;
 			//rg.makeIllegalID(from_id);
-			bool valid_from = false;
+			// bool valid_from = false;
 			bool current_is_vanishing = false;
 
 			// Combined tangible + vanishing explore loop!
@@ -513,7 +513,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 				//
 				// Get next state to explore, with priority to vanishings.
 				//
-				UID exp_id;
+				// UID exp_id;
 				bool unexploredvanishflag = false;
 				bool unexploredtangibleflag = false;
 				if (debug.startReport()) {
@@ -651,9 +651,11 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 					// add reached state to appropriate set
 					//
 					bool next_is_new;
-					UID next_id;
-					bool next_is_vanishing = xans.getBool();
+					// UID next_id;
+					// bool next_is_vanishing = xans.getBool();
+          next_is_new = false;    // otherwise next_is_new is uninitialized
 					//next_is_new = rg.add(next_is_vanishing, next_st, next_id);
+
 					lchild_rsiblingt* newnode = node->addtothisChild(node,
 							next_st);
 					newnode->val=new shared_state(&dsm);
@@ -725,6 +727,8 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 			Nullify(x.current_state);
 			Nullify(x.next_state);
 		}
+
+    return 0;
 	} // try
 
 	catch (subengine::error e) {

@@ -119,7 +119,7 @@ void ectl_reachgraph::CTL_traversal::get_met_obligations(intset &x) const
 // *                                                                *
 // ******************************************************************
 
-ectl_reachgraph::ectl_reachgraph()
+ectl_reachgraph::ectl_reachgraph() : graph_lldsm::reachgraph()
 {
   TH = 0;
 }
@@ -127,6 +127,11 @@ ectl_reachgraph::ectl_reachgraph()
 ectl_reachgraph::~ectl_reachgraph()
 {
   delete TH;
+}
+
+const char* ectl_reachgraph::getClassName() const 
+{
+  return "ectl_reachgraph"; 
 }
 
 void ectl_reachgraph::getDeadlocked(intset &r) const

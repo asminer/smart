@@ -153,7 +153,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 
   protected:
     virtual ~ectl_reachgraph();
-    virtual const char* getClassName() const { return "ectl_reachgraph"; }
+    virtual const char* getClassName() const override;
 
     // Build set of deadlocked states (no outgoing edges)
     // Default: builds emptyset

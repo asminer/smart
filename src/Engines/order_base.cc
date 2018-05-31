@@ -538,7 +538,7 @@ DoubleInt getSOUPS(std::vector<TransTree> & theTrees, int abandon) {
     int pou = pointOfUnique(prev, curr);
     int us = (getTop(curr) - pou) + 1;
     int prod = getProdSpan(curr);
-    int top = getTop(curr);
+    // int top = getTop(curr);
     if (prod < us) {
       soups += prod;
     } else {
@@ -785,11 +785,13 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
     double current = 0.0;
     unused.insert(p);
     //for (auto t : dotPs[p]) current += dotTs[t].size();
-    for (unsigned t = dotPs[p].size()-1; t >= 0; t--)
+    // for (unsigned t = dotPs[p].size()-1; t >= 0; t--)
+    for (unsigned t = 0; t < dotPs[p].size(); t++)
       current += dotTs[t].size();
     
     //for (auto t : pDots[p]) current += PARAM_W * (tDots[t].size());
-    for (unsigned t = pDots[p].size()-1; t >= 0; t--)
+    // for (unsigned t = pDots[p].size()-1; t >= 0; t--)
+    for (unsigned t = 0; t < pDots[p].size(); t++)
       current += PARAM_W * (tDots[t].size());
     
     if (pUp[p] > 0) {
@@ -1220,7 +1222,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     out.stopIO();
   }
   
-  int size = theModel.numPlaces - 1;
+  // int size = theModel.numPlaces - 1;
   
   // try force on a number of different BFS orders (bfsIters should be as many as wanted to get good results) 10??
   for (int iter = 0; (iter < 1) && (iter < theModel.numPlaces); iter++) {
@@ -1612,7 +1614,7 @@ double getSatCostParam(MODEL & theModel, std::vector<int> & theOrder, double par
   std::vector<double> sumSatCosts(theModel.numPlaces + 1, 1.0);
   std::vector<double> fireCosts(count, 0);
   for (int level = 0; level < theModel.numPlaces + 1; level++) {
-    double currentCost = 0.0;
+    // double currentCost = 0.0;
     for (int event = theModel.numPlaces; level < count; level++) {
       if (eventMax[event] == level) {
         
@@ -1865,7 +1867,7 @@ MODEL translateModelOLD(dsde_hlm& smartModel) {
 // **************************************************************************
 
 heuristic_varorder::heuristic_varorder(int heuristic, double factor)
-: heuristic(heuristic), factor(factor)
+: factor(factor), heuristic(heuristic)
 {
 }
 

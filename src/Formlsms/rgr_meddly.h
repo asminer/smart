@@ -51,8 +51,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
   protected:
     virtual ~meddly_monolithic_rg();
-    virtual const char* getClassName() const { return "meddly_monolithic_rg"; }
-    virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset* rss);
+    virtual const char* getClassName() const override;
+    virtual void attachToParent(graph_lldsm* p, state_lldsm::reachset* rss) override;
 
   private:
     void setEdges(shared_ddedge* nsf);
@@ -75,11 +75,11 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     // Required
     //
 
-    virtual void getNumArcs(result &na) const;
-    virtual void getNumArcs(long &na) const;
-    virtual void showInternal(OutputStream &os) const;
+    virtual void getNumArcs(result &na) const override;
+    virtual void getNumArcs(long &na) const override;
+    virtual void showInternal(OutputStream &os) const override;
     virtual void showArcs(OutputStream &os, const show_options &opt, 
-      state_lldsm::reachset* RSS, shared_state* st) const;
+      state_lldsm::reachset* RSS, shared_state* st) const override;
 
     //
     // CTL engines

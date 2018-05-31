@@ -64,6 +64,11 @@ meddly_monolithic_rg::~meddly_monolithic_rg()
   Delete(mrss);
 }
 
+const char* meddly_monolithic_rg::getClassName() const 
+{ 
+  return "meddly_monolithic_rg"; 
+}
+
 void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset* rss)
 {
   graph_lldsm::reachgraph::attachToParent(p, rss);
