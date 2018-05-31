@@ -579,7 +579,8 @@ protected:
 
   friend class init_pnform;
 public:
-  petri_hlm(const model_instance* s, place_sv** P, int np, model_event** T, int nt);
+  petri_hlm(const model_instance* s, place_sv** P, int np, 
+      model_event** T, int nt, model_event** dead, int nd);
   virtual ~petri_hlm();
 
   // required for hldsm:
@@ -604,8 +605,9 @@ void petri_hlm::showTokens(OutputStream &s, bool un, int tk)
 
 int petri_hlm::MarkingStyle;
 
-petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np, model_event** T, int nt)
- : dsde_hlm(s, (model_statevar**)P, np, T, nt)
+petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np, 
+  model_event** T, int nt, model_event** dead, int nd)
+ : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd)
 {
 }
 
@@ -1629,7 +1631,8 @@ void petri_def::FinalizeModel(OutputStream &ds)
 
   ds << "}\n";
 
-  petri_hlm* build = new petri_hlm(current, parray, num_places, elist, num_trans); 
+  petri_hlm* build = new petri_hlm(current, parray, num_places, 
+    elist, num_trans, 0, 0); 
 
   // add assertions, if any
   long na = assertion_list->Length();

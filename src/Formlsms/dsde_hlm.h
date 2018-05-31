@@ -296,6 +296,10 @@ protected:
   model_event** event_data;
   /// Total number of events.
   int num_events;
+  /// Array of dead events, never used.
+  model_event** dead_events;
+  /// Total number of dead events.
+  int num_dead;
   /// Number of different priority levels
   int num_priolevels;
   /// Last immediate event (plus one) by priority level
@@ -308,7 +312,20 @@ protected:
   /// Dimension of assertions array.
   int num_assertions;
 public:
-  dsde_hlm(const model_instance* p, model_statevar** sv, int nv, model_event** ed, int ne);
+  /**
+      Build a "compiled" high-level, discrete-event, discrete-state model.
+        @param  p     Parent model instance that built us
+        @param  sv    Array of state variables for this model
+        @param  nv    Number of state variables (sv is at least this large)
+        @param  ed    Array of events for this model
+        @param  ne    Number of events (ed is at least this large)
+
+        @param  dead  Array of dead events.  Included only because
+                      we cannot delete them until we delete the model.
+        @param  nd    Number of dead events.
+  */
+  dsde_hlm(const model_instance* p, model_statevar** sv, int nv, 
+    model_event** ed, int ne, model_event** dead, int nd);
   virtual ~dsde_hlm();
 
   virtual lldsm::model_type GetProcessType() const;

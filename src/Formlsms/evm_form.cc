@@ -359,7 +359,7 @@ int evm_hlm::StateStyle;
 // ******************************************************************
 
 evm_hlm::evm_hlm(const model_instance* s, model_statevar** V, int nv, model_event** E, int ne)
- : dsde_hlm(s, V, nv, E, ne)
+ : dsde_hlm(s, V, nv, E, ne, 0, 0)
 {
 }
 
