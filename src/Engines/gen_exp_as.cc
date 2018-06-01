@@ -882,11 +882,12 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 		} else {
 			slm = new stochastic_lldsm(lldsm::CTMC);
 		}
-
+		
 		slm->setRSS(new expl_reachset(rss));
 		lm = slm;
 		hm->SetProcess(lm);
 	}
+	slm->setCG(node);
 
 	// Neat trick! Specify how to finish building the process:
 	DCASSERT(lm);
