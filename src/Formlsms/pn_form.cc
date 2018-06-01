@@ -1514,7 +1514,9 @@ void petri_def::FinalizeModel(OutputStream &ds)
   }
 
   // "compile" the transitions
-  model_event** elist;
+  model_event** elist;  // active transitions list
+  model_event** dlist;  // dead transitions list
+  int num_dead_trans = 0;
   if (0==num_trans) {
     elist = 0;
     if (StartWarning(no_trans, 0)) {
@@ -1551,18 +1553,32 @@ void petri_def::FinalizeModel(OutputStream &ds)
 
     // (c) finalize the transitions.
     num_trans = 0;
+    num_dead_trans = 0;
     for (transition* t : tvec) {
       DCASSERT(t);
       t->Finalize(ds);
-      if (!t->isDisabled()) num_trans++;
+      if (!t->isDisabled()) {
+        num_trans++;
+      } else {
+        num_dead_trans++;
+      }
     }
 
     elist = new model_event*[num_trans];
+    dlist = new model_event*[num_dead_trans];
     int eptr = 0;
+    int dptr = 0;
     for (transition* t : tvec) {
-      if (!t->isDisabled()) elist[eptr++] = t; else delete t;
+      // if (!t->isDisabled()) elist[eptr++] = t; else delete t;
+      if (!t->isDisabled()) {
+        elist[eptr++] = t;
+      }
+      else {
+        dlist[dptr++] = t;
+      }
     }
     DCASSERT(eptr == num_trans);
+    DCASSERT(dptr == num_dead_trans);
 #endif
   }
 
@@ -1632,7 +1648,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
   ds << "}\n";
 
   petri_hlm* build = new petri_hlm(current, parray, num_places, 
-    elist, num_trans, 0, 0); 
+    elist, num_trans, dlist, num_dead_trans); 
 
   // add assertions, if any
   long na = assertion_list->Length();
