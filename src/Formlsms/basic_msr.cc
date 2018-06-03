@@ -685,6 +685,44 @@ void showstateset_si::Compute(traverse_data &x, expr** pass, int np)
   }
   llm->showStates(internal);
 }
+// ******************************************************************
+// *                           show_stateset For Coverability       *
+// ******************************************************************
+
+class showstatesetCOV_si : public proc_noengine {
+public:
+  showstatesetCOV_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+
+showstatesetCOV_si::showstatesetCOV_si()
+ : proc_noengine(Nothing, em->VOID, "show_statesetCOV", 2)
+{
+  SetDocumentation("Displays the Coverability set to the current output stream.  If parameter `internal' is true, then the internal representation of the stateset is displayed; otherwise, a storage-independent list of stateset is displayed (unless there are too many).");
+  SetFormal(1, em->STATESET, "internal"
+  );
+}
+
+void showstatesetCOV_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
+  if (0==llm || lldsm::Error == llm->Type()) return;
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  llm->showStatesCOV(internal);
+}
 
 // ******************************************************************
 // *                           show_states                          *
@@ -727,6 +765,49 @@ void showstates_si::Compute(traverse_data &x, expr** pass, int np)
   }
   llm->showStates(internal);
 }
+
+// ******************************************************************
+// *                           show_states   For Coverability       *
+// ******************************************************************
+
+class showstatesCOV_si : public proc_noengine {
+public:
+  showstatesCOV_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+
+showstatesCOV_si::showstatesCOV_si()
+ : proc_noengine(Nothing, em->VOID, "show_statesCOV", 2)
+{
+  SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the states is displayed; otherwise, a storage-independent list of states is displayed (unless there are too many).");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal",
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
+}
+
+void showstatesCOV_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  const state_lldsm* llm = BuildProc(
+    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  );
+  if (0==llm || lldsm::Error == llm->Type()) return;
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  llm->showStatesCOV(internal);
+}
+
 
 // ******************************************************************
 // *                            show_arcs                           *
@@ -1409,7 +1490,9 @@ bool init_basicmsrs::execute()
 
   // Process or model display
   CML.Append(new showstates_si);
+  CML.Append(new showstatesCOV_si);
   CML.Append(new showstateset_si);
+  CML.Append(new showstatesetCOV_si);
   CML.Append(new showarcs_si);
   CML.Append(new showarcsCOV_si);
   CML.Append(new showproc_si);

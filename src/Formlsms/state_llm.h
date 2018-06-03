@@ -260,14 +260,14 @@ public:
     else      count.setNull();
   }
   inline void getNumStatesCOV(result& count) const {
-	  int result=CG->getNumState(CG);
+	  int result=CG->getNumState(CG,0);
 	  //("\n\n$$$$$ %d",result);
        count.setInt(result);
     }
   inline long getNumStatesCOV() const {
      DCASSERT(CG);
      //long ns;
-    int res= CG->getNumState(CG);
+    int res= CG->getNumState(CG,0);
      return res;
    }
   inline long getNumStates() const {
@@ -281,7 +281,7 @@ public:
     if (RSS)  RSS->getBounds(count, set_of_places);
     else      count.setNull();
   }
-
+   void showStatesCOV(bool internal)const;
   /** Show the reachable states.
         @param  internal    If true, show the internal representation.
   */
