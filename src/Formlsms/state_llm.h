@@ -262,12 +262,16 @@ public:
   inline void getNumStatesCOV(result& count) const {
 	  int result=CG->getNumState(CG,0);
 	  //("\n\n$$$$$ %d",result);
+    printf("\n\n$$$$$$2 %d",result);
+
        count.setInt(result);
     }
   inline long getNumStatesCOV() const {
      DCASSERT(CG);
      //long ns;
     int res= CG->getNumState(CG,0);
+    printf("\n\n$$$$$$111 %d",res);
+
      return res;
    }
   inline long getNumStates() const {
