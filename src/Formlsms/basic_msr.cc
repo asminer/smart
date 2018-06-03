@@ -183,12 +183,16 @@ numstatesCOV_si::numstatesCOV_si()
 
 void numstatesCOV_si::Compute(traverse_data &x, expr** pass, int np)
 {
+
+
+
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   model_instance* mi = grabModelInstance(x, pass[0]);
   const state_lldsm* llm = BuildProc(
-    mi ? mi->GetCompiledModel() : 0, 1, x.parent
+    mi ? mi->GetCompiledModel() : 0, 0, x.parent
   );
   if (0==llm || lldsm::Error == llm->Type()) {
     x.answer->setNull();
