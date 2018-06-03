@@ -847,7 +847,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 			Report().report() << " required for COV graph construction\n";
 			Report().report() << "\t" << node->getNumEdges(node)
 					<< " COV graph edges\n";
-			Report().report() << "\t" << node->getNumState(node)
+			Report().report() << "\t" << node->getNumState(node,0)
 								<< " Number of COV State\n";
 			node->showArcsTree(node);
 		}
@@ -882,7 +882,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 		} else {
 			slm = new stochastic_lldsm(lldsm::CTMC);
 		}
-		
+
 		slm->setRSS(new expl_reachset(rss));
 		lm = slm;
 		hm->SetProcess(lm);

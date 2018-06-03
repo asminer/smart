@@ -104,26 +104,41 @@ public:
     return 0;
 	}
 
-	int getNumState(lchild_rsiblingt* root) {
+	int getNumState(lchild_rsiblingt* root,bool writeState) {
 		if (root == NULL)
 			return 0;
 
 		while (root) {
-			SetOfState.insert(root->val);
-
+			//SetOfState.insert(root->val);
+			if(SetOfState.insert(root->val).second){
+				if(writeState)
+				{
+					PrintSharedState(root->val);
+				}
+			}
 			//p.Insert(root->val);
 			if (root->child) {
 
 				//ListOfState.Append(root->child->val);
-				SetOfState.insert(root->child->val);
-				getNumState(root->child);
+				if(SetOfState.insert(root->child->val).second){
+					if(writeState)
+					{
+						PrintSharedState(root->child->val);
+					}
+				}
+				getNumState(root->child,writeState);
 
 			}
 			lchild_rsiblingt* nextroot = root->sibling;
 			if (root != NULL) {
 				if (nextroot != NULL) {
 					//ListOfState.Append(nextroot->val);
-					SetOfState.insert(nextroot->val);
+					if(SetOfState.insert(nextroot->val).second){
+						if(writeState)
+						{
+							PrintSharedState(nextroot->val);
+						}
+					}
 				}
 				root = nextroot;
 			}

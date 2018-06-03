@@ -48,7 +48,22 @@ void state_lldsm::showStates(bool internal) const
     Delete(st);
   }
 }
+void state_lldsm::showStatesCOV(bool internal) const
+{
+  DCASSERT(CG);
+  if (internal) {
+  //  RSS->showInternal(em->cout());
+  } else {
+//long num_states;
+  int num_states= CG->getNumState(CG,0);
+  //  RSS->getNumStates(num_states);
+    if (tooManyStates(num_states, &(em->cout()))) return;
 
+  //  shared_state* st = new shared_state(parent);
+    CG->getNumState(CG,1);
+  //  Delete(st);
+  }
+}
 bool state_lldsm::tooManyStates(long ns, OutputStream* os)
 {
   if (ns>=0) {
@@ -241,22 +256,22 @@ bool init_statellm::execute()
   // ------------------------------------------------------------------
   radio_button** do_list = new radio_button*[state_lldsm::num_display_orders];
   do_list[state_lldsm::DISCOVERY] = new radio_button(
-      "DISCOVERY", 
-      "States are displayed in the order in which they are discovered (or defined), if possible.", 
+      "DISCOVERY",
+      "States are displayed in the order in which they are discovered (or defined), if possible.",
       state_lldsm::DISCOVERY
   );
   do_list[state_lldsm::LEXICAL] = new radio_button(
-      "LEXICAL", 
+      "LEXICAL",
       "States are sorted by lexical order.",
       state_lldsm::LEXICAL
   );
   do_list[state_lldsm::NATURAL] = new radio_button(
-      "NATURAL", 
+      "NATURAL",
       "States are displayed in the most natural order for the selected state space data structure.",
       state_lldsm::NATURAL
   );
   state_lldsm::int_display_order = state_lldsm::NATURAL;
-  em->addOption( 
+  em->addOption(
     MakeRadioOption("StateDisplayOrder",
       "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
       do_list, state_lldsm::num_display_orders, state_lldsm::int_display_order
