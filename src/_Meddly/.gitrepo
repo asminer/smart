@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/asminer/meddly.git
+	branch = master
+	commit = 54fe7527dab323af8a5a1f7edc961b6522722128
+	parent = 7b8059efa9b2bbac35423f895d7c276758863945
+	cmdver = 0.3.1
