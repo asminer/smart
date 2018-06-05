@@ -1,11 +1,9 @@
 
 #include "rss_meddly.h"
-#ifdef HAVE_MEDDLY_H
 
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/meddly_ssets.h"
 #include "../Modules/biginttype.h"
-#include "meddly_expert.h"
 
 // #define DEBUG_INDEXSET
 
@@ -396,5 +394,4 @@ void meddly_reachset::lexical_iter::copyState(shared_state* st) const
   wrapper.minterm2state(minterm, st);
 }
 
-#endif
 

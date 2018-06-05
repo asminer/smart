@@ -3,9 +3,7 @@
 
 #include "rgr_meddly.h"
 
-#ifdef HAVE_MEDDLY_H
-
-#include "meddly_expert.h"
+#include "../_Meddly/src/meddly_expert.h"
 
 // ******************************************************************
 // *                                                                *
@@ -1226,4 +1224,3 @@ void meddly_monolithic_min_rg::_traceEG(bool revTime, const shared_ddedge* p, co
   Delete(f);
 }
 
-#endif
