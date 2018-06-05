@@ -34,8 +34,13 @@ TimeOne()
   printf "  %-30s  " $1
   if [ -f $TESTDIR/$b.time ]; then
     read btime < $TESTDIR/$b.time
-    printf "(%6d ms )    " $btime
-    btotal=$[ $btotal + $btime ]
+    if [ $btime ]; then
+      printf "(%6d ms )    " $btime
+      btotal=$[ $btotal + $btime ]
+    else
+      btime=" "
+      printf "( ????? ms )    "
+    fi
   else
     btime=" "
     printf "(          )    "
