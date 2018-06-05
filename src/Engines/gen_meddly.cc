@@ -1,8 +1,6 @@
 
 #include "gen_meddly.h"
 
-#ifdef HAVE_MEDDLY_H
-
 #include "../Options/options.h"
 
 #include "../ExprLib/startup.h"
@@ -3635,4 +3633,3 @@ radio_button** init_genmeddly::makeNDPButtons(int &num_buttons)
 #endif
 //==========================================================================================
 
-#endif // HAVE_MEDDLY_H

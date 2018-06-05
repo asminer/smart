@@ -1,7 +1,4 @@
 
-#include "config.h"
-#ifdef HAVE_MEDDLY_H
-
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Formlsms/graph_llm.h"
@@ -247,5 +244,4 @@ void InitMeddlyStatesets(exprman* em)
 }
 */
 
-#endif
 

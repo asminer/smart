@@ -62,36 +62,6 @@ find_gmp() {
 
 # ============================================================
 
-try_mddlib() {
-  if [ -f $1/meddly.h ]; then
-     if [ -f $2/libmeddly.a ]; then
-        printf "MDD Library found\n"
-        printf "    meddly.h found at $1\n"
-        printf "    libmeddly.a found at $2\n"
-        CPPFLAGS="-I$1 $CPPFLAGS"
-        LDFLAGS="-L$2 $LDFLAGS"
-        export MDD_LIBRARY="$2"
-        return 0
-    fi
-  fi
-  return 1
-}
-
-find_mddlib() {
-  try_mddlib $MDD_INCLUDE $MDD_LIBRARY && return 0
-  try_mddlib /home/zahra/Documents/Smart/Meddly/include /home/zahra/Documents/Smart/Meddly/lib && return 0
-  try_mddlib $HOME/meddly/trunk/include $HOME/meddly/trunk/lib && return 0
-  try_mddlib $HOME/Meddly/trunk/include $HOME/Meddly/trunk/lib && return 0
-  try_mddlib $HOME/meddly/include $HOME/meddly/lib && return 0
-  try_mddlib $HOME/Meddly/include $HOME/Meddly/lib && return 0
-  printf "Cannot find MDD Library, switching to --without-meddly.\n"
-  printf "You can specify the location using environment variables\n"
-  printf "MDD_INCLUDE (the path to meddly.h) and MDD_LIBRARY\n"
-  return 1
-}
-
-# ============================================================
-
 
 printf "\n------------------------------------------------------------\n"
 printf "Building configure script"
@@ -125,7 +95,6 @@ export CPPFLAGS="-std=gnu++11"
 
 
 GMP_STATUS=""
-MEDDLY_STATUS=""
 
 if contains "--without-gmp" $@; then
   echo "Building without GMP library"
@@ -134,12 +103,6 @@ else
   find_gmp || GMP_STATUS="--without-gmp"
 fi
 
-if contains "--without-meddly" $@; then
-  echo "Building without MEDDLY"
-  MEDDLY_STATUS="--without-meddly"
-else
-  find_mddlib || MEDDLY_STATUS="--without-meddly"
-fi
 
 printf "\n"
 printf "\n------------------------------------------------------------\n"
@@ -154,7 +117,7 @@ cd bin-devel
 
 COMMON_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="-ggdb -DDEVELOPMENT_CODE $COMMON_CXXFLAGS"
-../configure --prefix=$PWD $@ $GMP_STATUS $MEDDLY_STATUS
+../configure --prefix=$PWD $@ $GMP_STATUS 
 ok="$?"
 cd ..
 
@@ -174,7 +137,7 @@ fi
 cd bin-release
 
 CXXFLAGS="-O3 $COMMON_CXXFLAGS"
-../configure --prefix=$PWD $@ $GMP_STATUS $MEDDLY_STATUS
+../configure --prefix=$PWD $@ $GMP_STATUS 
 ok="$?"
 cd ..
 
@@ -194,25 +157,5 @@ else
   echo "GMP library: found"
 fi
 
-if [ "$MEDDLY_STATUS" ]; then
-  printf "MEDDLY: NOT FOUND.  Some features will be missing!\n"
-else
-  printf "MEDDLY: found"
-#
-# See if we can determine if MEDDLY was built --without-gmp
-#
-  if [ -f $MDD_LIBRARY/../config.h ]; then
-    if grep -q "#define HAVE_LIBGMP" $MDD_LIBRARY/../config.h; then
-      printf ", built with GMP support\n"
-    else
-      printf ", built without GMP support.\n"
-      if [ ! "$GMP_STATUS" ]; then
-        printf "\tTHIS COULD CAUSE LINKER ERRORS.\n"
-      fi
-    fi
-  else
-    printf "\n"
-  fi
-fi
 
 printf "\n"

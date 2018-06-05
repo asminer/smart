@@ -2,7 +2,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
 ## List any subdirectories where we might want/need to run make
-SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib
+SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib _Meddly
 
 
 ## List executables that we build
@@ -153,9 +153,7 @@ smart_SOURCES = \
   Apps/smart.cc
 
 
-if LINK_MEDDLY
-smart_LDADD = $(MDD_LIBRARY)/libmeddly.a
-endif
+smart_LDADD = _Meddly/src/libmeddly.la
 
 
 ## ============================================================
@@ -231,9 +229,9 @@ icp_SOURCES = \
   \
   Apps/icp.cc
 
-if LINK_MEDDLY
-icp_LDADD = $(MDD_LIBRARY)/libmeddly.a
-endif
+
+icp_LDADD = _Meddly/src/libmeddly.la
+
 
 ## ============================================================
 ##
