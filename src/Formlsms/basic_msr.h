@@ -4,6 +4,8 @@
 
 #include "../include/list.h"
 
+class state_lldsm;
+
 // ******************************************************************
 // *                                                                *
 // *                      proc_noengine  class                      *

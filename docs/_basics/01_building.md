@@ -2,6 +2,11 @@
 title: Building
 ---
 
+## Included packages
+
+* [MEDDLY](https://asminer.github.io/meddly/), for decision diagram support.
+
+
 ## Packages required 
 
 * gcc and g++, or other C/C++ compiler with support for C++11
@@ -15,7 +20,6 @@ title: Building
 ## Packages strongly recommended 
 
 * [GMP](https://gmplib.org), for very large integer support.
-* [MEDDLY](https://meddly.sourceforge.io), for decision diagram support.
 
 
 ## Build Steps
@@ -45,8 +49,6 @@ Environment variable  |  Purpose
 --- | ---
 ```GMP_INCLUDE``` | Path containing GMP header files
 ```GMP_LIBRARY``` | Path containing GMP library files
-```MDD_INCLUDE``` | Path containing MEDDLY header files
-```MDD_LIBRARY``` | Path containing MEDDLY library files
 
 For example, if you built GMP in your home directory, 
 you might use
@@ -60,7 +62,6 @@ The following arguments may be passed to the configuration script:
 Argument | Description
 -------- | -----------
 ```--without-gmp``` | Disables GMP support 
-```--without-meddly``` | Disables MEDDLY support
 
 
       

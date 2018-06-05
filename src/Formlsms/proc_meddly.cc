@@ -2,8 +2,6 @@
 #include "proc_meddly.h"
 #include "rss_meddly.h"
 
-#ifdef HAVE_MEDDLY_H
-
 // ******************************************************************
 // *                                                                *
 // *                     mclib_process  methods                     *
@@ -207,6 +205,4 @@ statedist* meddly_process::getInitialDistribution() const
   DCASSERT(0);
   return 0;
 }
-
-#endif
 

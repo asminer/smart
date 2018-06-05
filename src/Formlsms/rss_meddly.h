@@ -2,13 +2,10 @@
 #ifndef RSS_MEDDLY_H
 #define RSS_MEDDLY_H
 
-#include "config.h"
-#ifdef HAVE_MEDDLY_H
-
 #include "state_llm.h"
 #include "../Modules/glue_meddly.h"
 #include <unordered_map>
-#include "meddly_expert.h"
+#include "../_Meddly/src/meddly_expert.h"
 
 class dsde_hlm;
 
@@ -268,6 +265,5 @@ class meddly_reachset : public state_lldsm::reachset {
     meddly_encoder* mxd_wrap;
 };
 
-#endif
 #endif
 

@@ -10,9 +10,6 @@
 #ifndef MEDDLY_SSETS_H
 #define MEDDLY_SSETS_H
 
-#include "config.h"
-#ifdef HAVE_MEDDLY_H
-
 // These are all in glue_meddly.h
 class shared_domain;
 class shared_ddedge;
@@ -61,6 +58,5 @@ class meddly_stateset : public stateset {
     shared_ddedge* states;
 };
 
-#endif
 #endif
 

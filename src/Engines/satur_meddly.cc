@@ -1,8 +1,6 @@
 
 #include "../Modules/glue_meddly.h"
 
-#ifdef HAVE_MEDDLY_H
-
 #include "satur_meddly.h"
 
 #include "gen_meddly.h"
@@ -22,7 +20,6 @@
 
 #include "../_Timer/timerlib.h"
 #include "../_LSLib/lslib.h"
-#include "meddly_expert.h"
 #include <iostream>
 #include <vector>
 
@@ -2425,4 +2422,3 @@ bool init_saturmeddly::execute()
   return true;
 }
 
-#endif // HAVE_MEDDLY_H

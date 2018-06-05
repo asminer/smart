@@ -25,17 +25,13 @@ TESTS +=  converge.sm courier.sm ctmc_csl.sm ctmc_ctl.sm ctmc_tran.sm \
           phase_deps.sm phase_avg.sm phase_var.sm \
           pn_assert.sm pn_ctl_expl.sm 
           
-if LINK_MEDDLY
 TESTS +=  pn_ctl_meddly.sm 
-endif
 
 TESTS +=  pns.sm print.sm priority.sm \
           queens-expl.sm \
           rg_hash.sm rg_rb.sm rg_splay.sm 
 
-if LINK_MEDDLY
 TESTS +=  rg_mddexpl.sm rg_sat_act.sm rg_sat_pot.sm 
-endif
 
 TESTS +=  sim_avg.sm strings.sm \
           ttt_evm.sm types.sm \
