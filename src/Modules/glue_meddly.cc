@@ -13,9 +13,6 @@
 
 //#define SHOW_CREATE_MINTERMS
 
-#include "config.h"
-#ifdef HAVE_MEDDLY_H
-
 // ******************************************************************
 // *                                                                *
 // *                      smart_output methods                      *
@@ -1196,4 +1193,3 @@ bool init_meddly::execute()
   return true;
 }
 
-#endif

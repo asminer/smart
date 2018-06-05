@@ -1,12 +1,6 @@
 
 #include <string.h>
 
-#include "config.h"
-#ifdef HAVE_MEDDLY_H
-
-#include "meddly.h"
-#include "meddly_expert.h"
-
 #undef CHECK_RANGE
 
 #include "gen_meddly.h"
@@ -3400,4 +3394,3 @@ bool init_explmeddly::execute()
   return true;
 }
 
-#endif

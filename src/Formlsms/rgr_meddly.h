@@ -4,8 +4,6 @@
 
 #include "../Modules/glue_meddly.h"
 
-#ifdef HAVE_MEDDLY_H
-
 #include "graph_llm.h"
 #include "../ExprLib/engine.h"
 #include "../Modules/meddly_ssets.h"
@@ -510,6 +508,5 @@ private:
   void _unfairEG(bool revTime, const shared_ddedge* p, shared_ddedge* ans, List<shared_ddedge>* extra);
 };
 
-#endif
 #endif
 
