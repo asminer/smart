@@ -192,7 +192,7 @@ class meddly_reachset : public state_lldsm::reachset {
     inline long getMintermIndex(const int* mt) const {
       DCASSERT(index_wrap);
       DCASSERT(state_indexes);
-      int index;
+      long index;
       index_wrap->getForest()->evaluate(state_indexes->E, mt, index);
       return index;
     }
