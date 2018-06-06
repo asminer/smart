@@ -366,7 +366,7 @@ void meddly_encoder::buildSymbolicConst(bool t, shared_object* ans)
   try {
     switch (F->getRangeType()) {
       case MEDDLY::forest::INTEGER:
-        F->createEdge(int(t), answer->E);
+        F->createEdge(long(t), answer->E);
         return;
 
       case MEDDLY::forest::REAL:
@@ -396,7 +396,7 @@ void meddly_encoder::buildSymbolicConst(long t, shared_object* ans)
     if (MEDDLY::forest::REAL == F->getRangeType()) {
       F->createEdge(float(t), answer->E);
     } else {
-      F->createEdge(int(t), answer->E);
+      F->createEdge(long(t), answer->E);
     }
   }
   catch (MEDDLY::error e) {
@@ -582,7 +582,7 @@ void meddly_encoder
           F->createEdge(true, out);
           out -= opdd->E;
         } else {
-          F->createEdge(0, out);
+          F->createEdge(long(0), out);
           MEDDLY::apply(MEDDLY::EQUAL, out, opdd->E, out);
         }
         ans->E = out;
@@ -590,7 +590,7 @@ void meddly_encoder
       } 
 
       case exprman::uop_neg: {
-        F->createEdge(0, out);
+        F->createEdge(long(0), out);
         out -= opdd->E;
         ans->E = out;
         return;
@@ -971,7 +971,7 @@ void meddly_encoder
         break;
 
       case MEDDLY::forest::INTEGER:
-         meRows->getForest()->createEdge(int(1), one);
+         meRows->getForest()->createEdge(long(1), one);
         break;
 
       case MEDDLY::forest::REAL:
@@ -1017,7 +1017,7 @@ void meddly_encoder
         break;
 
       case MEDDLY::forest::INTEGER:
-         meCols->getForest()->createEdge(int(1), one);
+         meCols->getForest()->createEdge(long(1), one);
         break;
 
       case MEDDLY::forest::REAL:

@@ -192,7 +192,7 @@ MEDDLY::dd_edge meddly_varoption::buildPotentialDeadlockStates_IMPLICIT(named_ms
 // **************************************************************************
 
 class bounded_encoder : public meddly_encoder {
-  int* terms;
+  long* terms;
   int maxbound;
   long lastcomputed;
   traverse_data tdx;
@@ -229,7 +229,7 @@ bounded_encoder
 {
   DCASSERT(parent.hasPartInfo());
   maxbound = MAX(parent.getPartInfo().num_levels+1, max_var_size);
-  terms = new int[maxbound];
+  terms = new long[maxbound];
   expl_state = new shared_state(&p);
   tdx.answer = &ans;
   tdx.current_state = expl_state;
@@ -604,7 +604,7 @@ void bounded_varoption::buildNoChange(const model_event &e, dd_edge &dd)
   shared_ddedge* xp = smart_cast <shared_ddedge*>(mtmxd_wrap->makeEdge(0));
   DCASSERT(xp);
   dd_edge mask(x->E.getForest());
-  mask.getForest()->createEdge(1, mask);
+  mask.getForest()->createEdge(long(1), mask);
   dd_edge noch(x->E.getForest());
 
   try {
@@ -789,7 +789,7 @@ class substate_encoder : public meddly_encoder {
   substate_colls* colls;
   const hldsm &parent;
 
-  int* terms;
+  long* terms;
   int maxbound;
   // long lastcomputed;
   traverse_data tdx;
@@ -828,7 +828,7 @@ substate_encoder
   DCASSERT(parent.hasPartInfo());
 
   maxbound = MAX(parent.getPartInfo().num_levels+1, 10000);
-  terms = new int[maxbound];
+  terms = new long[maxbound];
   expl_state = new shared_state(&p);
   tdx.answer = &ans;
   tdx.current_state = expl_state;

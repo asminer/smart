@@ -32,7 +32,7 @@
 // **************************************************************************
 
 class icp_encoder : public meddly_encoder {
-  int* terms;
+  long* terms;
   int maxbound;
   result ans;
 protected:
@@ -80,7 +80,7 @@ icp_encoder
   }
 
   // for use with buildSymbolicSV
-  terms = new int[maxbound];
+  terms = new long[maxbound];
 }
 
 icp_encoder::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m, 
@@ -88,7 +88,7 @@ icp_encoder::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m,
 {
   nem = m;
   maxbound = maxb;
-  terms = new int[maxbound];
+  terms = new long[maxbound];
 }
 
 icp_encoder::~icp_encoder()
@@ -506,7 +506,7 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
   MEDDLY::dd_edge constraints(f);
   shared_ddedge* ans = Multiply(cbylevel, N, ddlwrap);
   if (0==ans) {
-    f->createEdge(1, constraints);
+    f->createEdge(long(1), constraints);
   } else {
     constraints = ans->E;
     Delete(ans);
@@ -709,8 +709,8 @@ void icp_mdd_min
   MEDDLY::dd_edge g(f);
   MEDDLY::dd_edge c_amz(f);
   MEDDLY::dd_edge c_z(f);
-  f->createEdge(int(a-z), c_amz);
-  f->createEdge(int(z), c_z);
+  f->createEdge(long(a-z), c_amz);
+  f->createEdge(long(z), c_z);
   g = mdd->legal_states * c_amz;
   g += c_z;
 
@@ -738,7 +738,7 @@ void icp_mdd_min
   // w := (g==m) * constraints
   MEDDLY::dd_edge c_m(f);
   MEDDLY::dd_edge w(f);
-  f->createEdge(int(m), c_m);
+  f->createEdge(long(m), c_m);
   MEDDLY::apply(MEDDLY::EQUAL, g, c_m, w);
 
   // display one of the states
@@ -827,8 +827,8 @@ void icp_mdd_max
   MEDDLY::dd_edge g(f);
   MEDDLY::dd_edge c_zma(f);
   MEDDLY::dd_edge c_a(f);
-  f->createEdge(int(z-a), c_zma);
-  f->createEdge(int(a), c_a);
+  f->createEdge(long(z-a), c_zma);
+  f->createEdge(long(a), c_a);
   g = mdd->legal_states * c_zma;
   g += c_a;
 
@@ -847,7 +847,7 @@ void icp_mdd_max
   // w := (g==m) * constraints
   MEDDLY::dd_edge c_m(f);
   MEDDLY::dd_edge w(f);
-  f->createEdge(int(m), c_m);
+  f->createEdge(long(m), c_m);
   MEDDLY::apply(MEDDLY::EQUAL, g, c_m, w);
 
   // display one of the states
