@@ -566,12 +566,9 @@ void meddly_monolithic_rg::_EU(bool revTime, const shared_ddedge* p, const share
         edges->E.getForest(),
         ans->E.getForest());
 
-      if (revTime) {
-        // TODO: To be implemented
-        return;
-      }
-
-      MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINED_BACKWARD_DFS->buildOperation(&args);
+      MEDDLY::specialized_operation* op = revTime
+        ? MEDDLY::CONSTRAINED_FORWARD_DFS->buildOperation(&args)
+        : MEDDLY::CONSTRAINED_BACKWARD_DFS->buildOperation(&args);
       op->compute(p->E, q->E, edges->E, ans->E);
 
       MEDDLY::destroyOperation(op);
