@@ -5,6 +5,7 @@ title: Building
 ## Included packages
 
 * [MEDDLY](https://asminer.github.io/meddly/), for decision diagram support.
+  This has been included with Smart since version 3.4.0.
 
 
 ## Packages required 
