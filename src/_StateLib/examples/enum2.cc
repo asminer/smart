@@ -84,9 +84,8 @@ int RunTest(int N, int M, bool useind, bool storesize)
   int* state1 = new int[N];
   InitState(state1, N, M);
   for (;;) {
-    long hndl;
     try {
-      hndl = foo->AddState(state1, N);
+      foo->AddState(state1, N);
     }
     catch (StateLib::error e) {
       printf("Couldn't store state: ");

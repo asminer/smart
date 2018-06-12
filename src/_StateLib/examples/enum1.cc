@@ -74,10 +74,14 @@ int TestFor(int N, bool useindex, bool storesizes)
 #ifdef DEBUG
     printf("Encoding state: ");
     PrintState(bits, N);
-#endif
     long hndl;
+#endif
     try {
+#ifdef DEBUG
       hndl = foo->AddState(bits, N);
+#else
+      foo->AddState(bits, N);
+#endif
     }
     catch (StateLib::error e) {
       printf("Couldn't store state: ");
