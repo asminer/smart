@@ -491,8 +491,13 @@ void transition::Finalize(OutputStream &ds)
     int num_enable = num_guards + getNumEnablingExpr();
     int num_fire = getNumFiringExpr();
 
-    for (int i = 0; i < enablings.size(); i++) if (!isEnablingEnabled(i)) num_enable--;
-    for (int i = 0; i < firings.size(); i++) if (!isFiringEnabled(i)) num_fire--;
+    for (unsigned i = 0; i < enablings.size(); i++) 
+      if (!isEnablingEnabled(i)) 
+        num_enable--;
+
+    for (unsigned i = 0; i < firings.size(); i++) 
+      if (!isFiringEnabled(i)) 
+        num_fire--;
 
     if (num_enable == 0) {
       DCASSERT(!isDisabled());
@@ -510,12 +515,12 @@ void transition::Finalize(OutputStream &ds)
     int eptr = 0;
     int fptr = 0;
 
-    for (int i = 0; i < enablings.size(); i++) {
+    for (unsigned i = 0; i < enablings.size(); i++) {
       if (!isEnablingEnabled(i)) continue;
       enablist[eptr++] = enablings[i];
     }
 
-    for (int i = 0; i < firings.size(); i++) {
+    for (unsigned i = 0; i < firings.size(); i++) {
       if (!isFiringEnabled(i)) continue;
       firelist[fptr++] = firings[i];
     }
@@ -1174,7 +1179,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
 
   if (tvec.size() < 1) return false;
   if (num_places < 1) return false;
-  for (int i=0; i<tvec.size(); i++) {
+  for (unsigned i=0; i<tvec.size(); i++) {
     transition* e = tvec[i];
     if (e->hasGuards()) return false;
     int num_enable = e->getNumEnablingExpr();
@@ -1204,7 +1209,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
   std::vector<std::vector<place_long_pair>> enabling_expressions(tvec.size());
   std::vector<std::vector<place_long_pair>> firing_expressions(tvec.size());
 
-  for (int i=0; i<tvec.size(); i++) {
+  for (unsigned i=0; i<tvec.size(); i++) {
     // For each event, e
     //    For each expression in the enabling condition
     //      Add arc from place to e in Pre.
@@ -1269,7 +1274,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
   }
 
   // Process disabled transitions
-  for (int i = 0; i < disabled_transitions.size(); i++) {
+  for (unsigned i = 0; i < disabled_transitions.size(); i++) {
     if (disabled_transitions[i]) { tvec[i]->disable(); }
   }
 
@@ -1327,7 +1332,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
 
   while (found_new_reduceable_place) {
 
-    for (int i=0; i<tvec.size(); i++) {
+    for (unsigned i=0; i<tvec.size(); i++) {
       if (disabled_transitions[i]) continue;
       transition* e = tvec[i];
 
@@ -1382,11 +1387,13 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
       }
     }
 
-    for (int i = 0; i < decreasing_places.size(); i++) decreasing_places[i] = true;
+    for (unsigned i = 0; i < decreasing_places.size(); i++) {
+      decreasing_places[i] = true;
+    }
     increasing_places = decreasing_places;
 
     // Assuming expressions of type: p1 >= c1 & p2 >= c2 & ...
-    for (int i=0; i<tvec.size(); i++) {
+    for (unsigned i=0; i<tvec.size(); i++) {
       if (disabled_transitions[i]) continue;
       transition* e = tvec[i];
 
@@ -1402,13 +1409,13 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
     }
 
     // Process decreasing places
-    for (int i = 0; i < decreasing_places.size(); i++) {
+    for (unsigned i = 0; i < decreasing_places.size(); i++) {
       if (acc_decreasing_places[i]) decreasing_places[i] = false;
       if (decreasing_places[i]) acc_decreasing_places[i] = true;
     }
 
     // Process increasing places
-    for (int i = 0; i < increasing_places.size(); i++) {
+    for (unsigned i = 0; i < increasing_places.size(); i++) {
       if (acc_increasing_places[i]) increasing_places[i] = false;
       if (increasing_places[i]) acc_increasing_places[i] = true;
     }
@@ -1514,8 +1521,8 @@ void petri_def::FinalizeModel(OutputStream &ds)
   }
 
   // "compile" the transitions
-  model_event** elist;  // active transitions list
-  model_event** dlist;  // dead transitions list
+  model_event** elist;    // active transitions list
+  model_event** dlist=0;  // dead transitions list
   int num_dead_trans = 0;
   if (0==num_trans) {
     elist = 0;

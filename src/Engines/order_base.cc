@@ -572,7 +572,7 @@ double getSOUPSScore(MODEL & theModel, std::vector<int> & theOrder, double param
 void doSwap(std::vector<TransTree> & trees, int a, int b) {
   if (a == b) return;
   std::map<int, ArcPair>::iterator found;
-  for (int it = 0; it < trees.size(); it++) {  
+  for (unsigned it = 0; it < trees.size(); it++) {  
     TransTree & tt = trees[it];
     found = tt.arcs.find(a);
     ArcPair apA;
