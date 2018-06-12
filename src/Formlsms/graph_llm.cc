@@ -71,16 +71,18 @@ void graph_lldsm::showArcsCOV(bool internal) const
   if (internal) {
    // RGR->showInternal(em->cout());
   } else {
+/*
     reachgraph::show_options opts;
     opts.ORDER = stateDisplayOrder();
     opts.STYLE = graphDisplayStyle();
     opts.NODE_NAMES = displayGraphNodeNames();
     opts.RG_ONLY = true;
     shared_state* st = new shared_state(parent);
+*/
     DCASSERT(CG);
     CG->showArcsTree(CG);
     //RGR->showArcs(em->cout(), opts, RSS, st);
-    Delete(st);
+    //Delete(st);
   }
 }
 bool graph_lldsm::tooManyArcs(long na, OutputStream *os)
