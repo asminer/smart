@@ -435,7 +435,7 @@ int MEDDLY::base_table::newEntry(int size)
     if (0==ne) {
       fprintf(stderr,
           "Error in allocating array of size %lu at %s, line %d\n",
-          neA * sizeof(int), __FILE__, __LINE__);
+          size_t(neA * sizeof(int)), __FILE__, __LINE__);
       throw error(error::INSUFFICIENT_MEMORY, __FILE__, __LINE__);
     }
     currMemory += (neA - entriesAlloc) * sizeof(int);
@@ -738,7 +738,7 @@ void MEDDLY::base_chained::addEntry()
   if (0==newt) {
     fprintf(stderr,
         "Error in allocating array of size %lu at %s, line %d\n",
-        newsize * sizeof(int), __FILE__, __LINE__);
+        size_t(newsize * sizeof(int)), __FILE__, __LINE__);
     throw error(error::INSUFFICIENT_MEMORY, __FILE__, __LINE__);
   }
 
@@ -778,7 +778,7 @@ void MEDDLY::base_chained::removeStales()
     if (0==newt) {
       fprintf(stderr,
           "Error in allocating array of size %lu at %s, line %d\n",
-          newsize * sizeof(int), __FILE__, __LINE__);
+          size_t(newsize * sizeof(int)), __FILE__, __LINE__);
       throw error(error::INSUFFICIENT_MEMORY, __FILE__, __LINE__); 
     }
 
@@ -1702,7 +1702,7 @@ class MEDDLY::base_unchained : public base_hash {
         tableSize = oldSize;
         fprintf(stderr,
             "Error in allocating array of size %lu at %s, line %d\n",
-            newsize * sizeof(int), __FILE__, __LINE__);
+            size_t(newsize * sizeof(int)), __FILE__, __LINE__);
         throw error(error::INSUFFICIENT_MEMORY, __FILE__, __LINE__);
       }
       for (unsigned i=0; i<newsize; i++) table[i] = 0;
@@ -1750,7 +1750,7 @@ class MEDDLY::base_unchained : public base_hash {
             tableSize = oldSize;
             fprintf(stderr,
                 "Error in allocating array of size %lu at %s, line %d\n",
-                newsize * sizeof(int), __FILE__, __LINE__);
+                size_t(newsize * sizeof(int)), __FILE__, __LINE__);
             throw error(error::INSUFFICIENT_MEMORY, __FILE__, __LINE__);
           }
           for (unsigned i=0; i<newsize; i++) table[i] = 0;
