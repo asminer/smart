@@ -1,6 +1,5 @@
 *.makefile
 *.aux
-*.bbl
 *.blg
 *.idx
 *.ilg
@@ -8,3 +7,5 @@
 *.log
 *.toc
 *.pdf
+comment.cut
+ALL.bib

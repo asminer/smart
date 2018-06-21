@@ -2,6 +2,8 @@
 
 all: SMART-userman.pdf SMART-devman.pdf
 
+bbl: SMART-userman.bbl SMART-devman.bbl
+
 TEXSRC= defines.tex main.tex overview.tex language.tex petri-nets.tex \
         stategen.tex modelchecking.tex numerical-markov.tex examples.tex
 
