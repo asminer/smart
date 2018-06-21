@@ -1,9 +1,9 @@
 #
 
-all: SMART-userman.pdf SMART-userman-private.pdf
+all: SMART-userman.pdf SMART-devman.pdf
 
-TEXSRC= SMARTman.tex overview.tex language.tex petri-nets.tex stategen.tex \
-        modelchecking.tex numerical-markov.tex examples.tex
+TEXSRC= defines.tex main.tex overview.tex language.tex petri-nets.tex \
+        stategen.tex modelchecking.tex numerical-markov.tex examples.tex
 
 
 include figures.makefile
@@ -15,22 +15,23 @@ figures.makefile: $(TEXSRC)
 examples.makefile: $(TEXSRC)
 	cat $(TEXSRC) | awk -F'[{}]' 'BEGIN{print "EXSM = "};/lstinputlisting/{print $$2}' | tr '\n' ' ' | xargs > examples.makefile
 
-SMART-userman.pdf: ALL.bib $(TEXSRC) $(FIGS) $(EXSM)
-	echo "EXTERNAL" | pdflatex SMARTman 
-	bibtex SMARTman 
-	makeindex SMARTman
-	echo "EXTERNAL" | pdflatex SMARTman
-	echo "EXTERNAL" | pdflatex SMARTman
-	mv SMARTman.pdf SMART-userman.pdf
+SMART-userman.pdf: SMART-userman.tex $(TEXSRC) $(FIGS) $(EXSM)
+	makeindex SMART-userman
+	pdflatex SMART-userman
+	pdflatex SMART-userman
 	
+SMART-userman.bbl: ALL.bib
+	pdflatex SMART-userman
+	bibtex SMART-userman
 
-SMART-userman-private.pdf: ALL.bib $(TEXSRC) $(FIGS) $(EXSM)
-	echo "INTERNAL" | pdflatex SMARTman 
-	bibtex SMARTman 
-	makeindex SMARTman
-	echo "INTERNAL" | pdflatex SMARTman
-	echo "INTERNAL" | pdflatex SMARTman
-	mv SMARTman.pdf SMART-userman-private.pdf
+SMART-devman.pdf: SMART-devman.tex $(TEXSRC) $(FIGS) $(EXSM)
+	makeindex SMART-devman
+	pdflatex SMART-devman
+	pdflatex SMART-devman
+	
+SMART-devman.bbl: ALL.bib
+	pdflatex SMART-devman
+	bibtex SMART-devman
 
 #
 #  Generic rules

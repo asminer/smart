@@ -383,7 +383,7 @@ solution to
 where $\Q[\Set{T}, \Set{T}]$ is the submatrix of $\Q$
 corresponding to transitions from transient states to transient states.
 
-\begin{private}
+\begin{developer}
 %        ===========================
 \section{Semi-regenerative processes}\label{SEC:semi-regen-processes}
 %        ===========================
@@ -474,7 +474,7 @@ and then normalizing,
 to obtain the proportion of time spent in any state between regeneration times
 for each state $k\in\mathcal{S}$.
 
-\PRIVATE{
+\DEVELOPER{
 {\smart} actually avoids having to compute and store the entire matrix
 $\gvect{\sigma}\in\Reals^{|\mathcal{E}|\times|\mathcal{S}|}$ by being ``measure driven.''
 That is, $\gvect{\sigma}[i, k]$ for each state $i\in\mathcal{E}$ in turn is used to
@@ -569,9 +569,9 @@ all \Code{false} by default:
 %after regeneration times to depend on the state entered just after such times.
 %It follows that ...
 %Semi-regenerative There is an
-\end{private}
+\end{developer}
 
-\PRIVATE{
+\DEVELOPER{
 %        ======================
 \section{Solving linear systems}
 %        ======================
@@ -619,7 +619,7 @@ in a sparse format, either by rows or by columns.
 {\bf This is the default.}
 \MSG{Should it be GAUSS\_SEIDEL instead?}
 
-\PRIVATE{
+\DEVELOPER{
 \item{\Code{BLOCK\_JACOBI} :}  An experimental block algorithm.
   This should not be used yet, but eventually will be used with distributed
   solutions.
@@ -638,7 +638,7 @@ that allow efficient access to the matrix columns.
 
 \MSG{Discuss relative number of iterations.}
 
-\PRIVATE{
+\DEVELOPER{
 \item{\Code{BLOCK\_GAUSS} :}  An experimental block algorithm, just as
 experimental and not working as block Jacobi.
 }
@@ -649,7 +649,7 @@ relaxation parameter.
 The initial relaxation parameter is taken from the option
 \index{RELAXATION option}\Code{RELAXATION}.
 
-\PRIVATE{
+\DEVELOPER{
 \item{\Code{BICGSTAB} :} Biconjugate Gradient Stabilizer.
 Also experimental (i.e., not thoroughly tested and debugged yet).
 }
