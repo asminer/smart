@@ -154,7 +154,7 @@ dictates whether the set is displayed as a list of state indexes
 or a list of states.
 
 
-\begin{private}
+\begin{developer}
 \section{Counterexamples and witnesses}
 
 \TBD{NOT IMPLEMENTED YET; UPDATE AFTER THAT}
@@ -213,7 +213,7 @@ only upon request, by calling one of the three functions:
 \item \Code{mdd EGtrace(mdd p)}\\
   Finds and prints a shortest witness for $EGq$, starting from the initial state.
   %Returns \Code{true} is such a strace exists, \Code{false} otherwise. 
-  \PRIVATE{{\smart} computes this trace by concatenating two traces.}
+  \DEVELOPER{{\smart} computes this trace by concatenating two traces.}
 \end{itemize}
 
 \LIGHTGREY{
@@ -288,7 +288,7 @@ counter-intuitive when it comes to representing sets, as the necessary
 space is determined by the number of MDD nodes, and not the number of
 encoded states (it is often the case that smaller sets take much more
 memory than larger sets).
-\end{private}
+\end{developer}
 
 \section{Examples}
 
@@ -383,7 +383,7 @@ $\opE[(a \vee b \vee c)~\opU~d]$.
 
 
 
-\begin{private}
+\begin{developer}
 \TBD{Need to implement execution traces!}
 
 
@@ -480,4 +480,4 @@ EF Trace of length 14
 \label{FIG:TraceOutput}
 \end{figure}
 
-\end{private}
+\end{developer}

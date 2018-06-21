@@ -214,10 +214,10 @@ see the ``pn'' help topic (e.g., \Unix{smart -h pn}).
 
 \begin{itemize}
 \item
-\begin{private}
+\begin{developer}
 \Code{proc~bool~empty(place~p);}\\
 Returns \Code{true} if place \Code{p} is empty, \Code{false} otherwise.
-\end{private}
+\end{developer}
 
 \item
 \Code{proc~bool~enabled(trans~t);}\\
@@ -228,14 +228,14 @@ Returns \Code{true} if transition \Code{t} is enabled,
 \Code{proc~int~tk(place p);}\\
 Returns the number of tokens in place \Code{p}.
 
-\begin{private}
+\begin{developer}
 \item
 \Code{proc~bool~fires(trans~t);}\\
 Returns \Code{true} if transition \Code{t} fires, \Code{false} otherwise.
 This is an impulse-type process, and it is required to specify timing
 aspects related to structural state changes in the net, such as the
 \Code{restart} behavior.
-\end{private}
+\end{developer}
 
 \item
 \Code{proc~real~rate(trans~t);}\\
@@ -249,7 +249,7 @@ firing distribution.
 
 
 
-\begin{private}
+\begin{developer}
 
 \section{Formalism-specific functions for stochastic Petri net models}
 \label{SEC:spn-predefined-builder-functions}
@@ -291,7 +291,7 @@ inhibitor arcs (which can only connect places to transitions) thus,
 if an arc is not listed, it is assumed to have cardinality infinity
 (i.e., there is no inhibitor arc).
 
-\PRIVATE{
+\DEVELOPER{
 \item
 \Code{void~prio(trans:trans~t1:s1,~trans:trans~t2:s2,~...);} \TBD{It's ``priority'' now}\\
 Sets an acyclic preselection priority relation \cite{1995StewartBook-DiscreteSPN}
@@ -310,7 +310,7 @@ Sets the guard for transition \Code{t}$i$ to the value of the
 If a guard is not specified for a transition, it is assumed to be
 the constant \Code{true}.
 
-\PRIVATE{
+\DEVELOPER{
 \item
 \Code{void~immediate(trans~t1,~trans~t2,~...);}\\
 Sets the firing time distribution for the argument transitions to the constant
@@ -333,10 +333,10 @@ which must evaluate to a positive finite value in any marking
 where the transition is enabled.
 When \Code{SPLAY} is used, the firing time distribution can instead be
 \Code{ph int} or \Code{ph real} as well.
-\PRIVATE{For simulation, any \Code{rand int} or \Code{rand real} distribution
+\DEVELOPER{For simulation, any \Code{rand int} or \Code{rand real} distribution
 with non-negative support can be specified.}
-\PRIVATE{We need to be explicit about what can be used for \Code{f}$i$.}
-\PRIVATE{The value \Code{const(infinity)}
+\DEVELOPER{We need to be explicit about what can be used for \Code{f}$i$.}
+\DEVELOPER{The value \Code{const(infinity)}
 can be specified for the distribution of the firing time.
 This effectively causes the transition not to fire without being disabled.
 TRUE???}
@@ -370,7 +370,7 @@ The model must then be corrected by modifying the enabling of the
 interested transitions or their weight class specification.
 
 
-\PRIVATE{
+\DEVELOPER{
 \item
 \Code{void~restart(trans:bool~t1:b1,~trans:bool~t2:b2,~...);}\\
 Sets the enabling policy of transition \Code{t}$i$ to the
@@ -460,4 +460,4 @@ Markov chain: any DDP distribution can be used for the firing time of
 the transitions \cite{1995StewartBook-DiscreteSPN}.
 }
 
-\end{private}
+\end{developer}

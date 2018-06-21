@@ -1,0 +1,94 @@
+
+\begin{document}
+
+\frontmatter
+
+\begin{center}
+\sf
+% ~SMARTlogo~\\[8ex]
+\mbox{\huge ~\hspace*{-2ex}{\smartmeaning}}
+\\[4ex]
+{\huge Version 3.2} \\[8ex]
+{\huge \bfseries \manualname} 
+
+\vfill
+  
+{\large 
+\begin{tabular}{l @{\hspace{1.5 in}} l}
+   {\LARGE Design}   & {\LARGE Documentation} \\[0.3ex]
+   Gianfranco Ciardo & Gianfranco Ciardo \\
+   Andrew S.\ Miner  & Robert L.\ Jones, III \\
+                     & Andrew S.\ Miner \\
+                     & Radu I.\ Siminiceanu \\
+                     & Min Wan \\[2ex]
+\end{tabular}
+}
+
+\vfill
+
+  ~ \\
+  Iowa State University\\
+  Department of Computer Science\\
+  Ames, IA, 50011\\
+  \{ciardo, asminer\}@iastate.edu\\
+  http://smart.cs.iastate.edu
+  
+\vfill 
+
+  Copyright \copyright 1996 --- 2008 Gianfranco Ciardo \\
+  All rights reserved
+
+\end{center}
+
+\rm
+\thispagestyle{empty}
+\newpage
+
+% ====================================================================
+
+\input{overview}
+
+\tableofcontents
+
+\mainmatter
+
+\input{language}
+\input{petri-nets}
+
+\input{stategen}
+\input{modelchecking}
+\DEVELOPER{
+  \input{numerical-markov}
+}
+% \input{prob-modelchecking}
+% \begin{developer}
+% \input{approximation-markov}
+% \input{simulation}
+% \end{developer}
+\input{examples}
+
+\appendix
+% \input{appendix-language}
+% \input{appendix-bnf}
+% \input{appendix-phasetype}
+
+\backmatter
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{abbrv}
+\bibliography{ALL}
+
+% \addcontentsline{toc}{chapter}{Release notes}
+
+% \newpage
+
+% \input{releasenotes}
+
+\DEVELOPER{
+\addcontentsline{toc}{chapter}{Index}
+\printindex
+}
+
+
+\end{document}
+

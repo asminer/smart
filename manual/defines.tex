@@ -1,0 +1,169 @@
+
+\usepackage{fullpage}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}  % for cases environment
+\usepackage{amssymb}
+\usepackage{comment}
+\makeindex
+
+
+% For huge swaths of developer text, including figures and other nasties
+% However, the developer environment cannot be nested.
+\specialcomment{developer}{\color{red}}{\color{black}}
+
+
+\renewcommand{\topfraction}{0.999}
+\renewcommand{\floatpagefraction}{0.999}
+\renewcommand{\textfraction}{0.001}
+
+% ====================================================================
+
+\newcommand{\smart}{{\sc{S%
+    \kern-.11em\raise.39ex\hbox{m}%
+    \kern-.22em\raise.0ex\hbox{A}%
+    \kern-.21em\raise.39ex\hbox{r}%
+    \kern-.16em T}}}
+
+\newcommand{\smartmeaning}{Stochastic Model-checking Analyzer for Reliability and Timing}
+
+% For notes applying only to the current release
+\newenvironment{release}{\color{blue}}{\color{black}}
+
+% For shorter current release notes
+\newcommand{\RELEASE}[1]{{\color{blue}#1}}
+
+% ====================================================================
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{muave}{rgb}{0.58,0,0.82}
+
+\lstdefinelanguage{smart}{%
+  keywords={for,converge,guess},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+}
+
+\lstdefinelanguage{output}{}
+
+\lstset{frame=none,   % frame=tb,
+  language=smart,
+  % aboveskip=3mm,
+  % belowskip=3mm,
+  xleftmargin=2em,
+  % xrightmargin=2em,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\ttfamily},
+  % basicstyle={\small\ttfamily},
+  numbers=none,                     % line numbers
+  keywordstyle=\underbar,
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{muave},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=2
+}
+
+% for SMART code
+\newcommand{\Code}[1]{{\tt {#1}}}
+
+% for command-line stuff
+\newcommand{\Unix}[1]{{\tt {#1}}}
+
+
+\newcommand{\Set}[1]{\mathcal{#1}}
+\newcommand{\aset}{\Set{A}}           % absorbing states
+\newcommand{\eset}{\Set{E}}           % event set
+\newcommand{\nset}{\Set{N}}           % next state function (new set of states)
+\newcommand{\pset}{\Set{P}}           % generic sat set
+\newcommand{\qset}{\Set{Q}}           % generic sat set
+\newcommand{\sset}{\Set{S}}           % reachability sets (global, local)
+\newcommand{\tset}{\Set{T}}           % transient states
+
+\newcommand{\pot}[1]{\widehat{#1}}    % potential (as opposed to actual)
+\newcommand{\potsset}{\pot{\sset}}    % potential state space
+\newcommand{\potnset}{\pot{\nset}}    % potential state space
+
+\newcommand{\vect}[1]{\mathbf{#1}}    % does not bold lowercase greek
+\newcommand{\gvect}[1]{\mbox{\boldmath{${#1}$}}} % wrong size for scripts
+\newcommand{\vb}{\vect{b}}            % linear system constants
+\newcommand{\vi}{\vect{i}}            % generic (from) state
+\newcommand{\vj}{\vect{j}}            % generic (to) state
+\newcommand{\vn}{\vect{n}}            % accumulated visits vector
+\newcommand{\vs}{\vect{s}}            % generic state
+\newcommand{\vp}{\vect{p}}            % probability vector
+\newcommand{\vx}{\vect{x}}            % linear system unknowns
+\newcommand{\initstate}{\vs^{init}}   % initial (starting) state
+\newcommand{\vpi}{\gvect{\pi}}
+\newcommand{\vsigma}{\gvect{\sigma}}
+
+\newcommand{\matr}[1]{\mathbf{#1}}    % matrices
+\newcommand{\0}{\matr{0}}            % the zero matrix
+\newcommand{\A}{\matr{A}}             % generic linear system matrix
+\newcommand{\I}{\matr{I}}             % the identity matrix
+\renewcommand{\P}{\matr{P}}           % transition probability matrix
+\newcommand{\Q}{\matr{Q}}             % infinitesimal generator matrix
+\newcommand{\R}{\matr{R}}             % transition rate matrix
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Numeric sets
+\newcommand{\Reals}{\mathbb{R}}      % real numbers
+\newcommand{\Naturals}{\mathbb{N}}   % natural numbers
+\newcommand{\Integers}{\mathbb{Z}}   % integer numbers
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Petri nets
+\newcommand{\mk}[1]{{\framebox{#1}}}     % marking
+\newcommand{\goesto}[1]{{\stackrel{#1}{\rightharpoondown}}} % firing 
+\newcommand{\fires}[1]{\;\mbox{$[ #1 ]\!\!\! \Rightarrow$}\;} % firing, too
+\newcommand{\PRE}{\succ}
+\newcommand{\POST}{\succ\!\!\!\succ}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Logic symbols
+\newcommand{\THEN}{\Rightarrow}                     % implication
+\newcommand{\IFF}{\Leftrightarrow}                  % biimplication
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CTL operators
+
+\newcommand{\opA}{\mathsf{A}}                     % forall
+\newcommand{\opE}{\mathsf{E}}                     % exists
+
+\newcommand{\opF}{\mathsf{F}}                     % future
+\newcommand{\opG}{\mathsf{G}}                     % globally
+\newcommand{\opU}{\mathsf{U}}                     % until
+\newcommand{\opX}{\mathsf{X}}                     % next
+
+\newcommand{\opP}{\mathsf{P}}                     % past (reversed F)
+\newcommand{\opH}{\mathsf{H}}                     % history (reversed G)
+\newcommand{\opS}{\mathsf{S}}                     % since (reversed U)
+\newcommand{\opY}{\mathsf{Y}}                     % reversed X
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Miscellanea
+\newcommand{\IGNORE}[1]{}                        % Ignore the argument
+\newcommand{\TBD}[1]{\DEVELOPER{{\bf TBD}: #1}}    % To Be Done 
+\newcommand{\MSG}[1]{{\color{blue}#1}}    % messages
+\newcommand{\SUPST}{\mbox{$^{\mathrm{st}}$}}     % to put a ^st in text
+\newcommand{\SUPND}{\mbox{$^{\mathrm{nd}}$}}     % to put a ^nd in text
+\newcommand{\SUPRD}{\mbox{$^{\mathrm{rd}}$}}     % to put a ^rd in text
+\newcommand{\SUPTH}{\mbox{$^{\textrm{th}}$}}     % to put a ^th in text
+
+\newcommand{\gfcstudent}{}
+\newcommand{\gfcvisitor}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Temporary stuff to be eliminated
+\definecolor{lightgrey}{rgb}{0.8,0.8,0.8}
+\newcommand{\LIGHTGREY}[1]{\textcolor{lightgrey}{#1}}
+\newcommand{\BLUE}[1]{\textcolor{blue}{#1}}
+
+% ====================================================================
+
