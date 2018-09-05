@@ -1780,7 +1780,7 @@ protected:
 // **************************************************************************
 
 //TBD - Move to someplace better
-class derive_relation_node : public satimpl_opname::relation_node {
+class derive_relation_node : public relation_node {
 public:
   // TBD - clean up this constructor!
   derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
@@ -1803,7 +1803,7 @@ private:
 // **************************************************************************
 
 
-derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):satimpl_opname::relation_node(sign, lvl, down) // , debug(dm)
+derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):relation_node(sign, lvl, down) // , debug(dm)
 {
   e_delta = e;
   f_delta = f;
@@ -1818,12 +1818,12 @@ derive_relation_node::~derive_relation_node()
 //Take the index : find token : update the token : return a new index
 long derive_relation_node::nextOf(long i)
 {
-  if(i>=satimpl_opname::relation_node::getPieceSize())
-    satimpl_opname::relation_node::expandTokenUpdate(i);
+  if(i>=relation_node::getPieceSize())
+    relation_node::expandTokenUpdate(i);
   
    
   
-  if(satimpl_opname::relation_node::getTokenUpdate()[i]==-2)
+  if(relation_node::getTokenUpdate()[i]==-2)
     {
     int sz = 1;
     int chunk[sz];
@@ -1838,10 +1838,10 @@ long derive_relation_node::nextOf(long i)
     
     //New index is received
     long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
-    satimpl_opname::relation_node::setTokenUpdateAtIndex(i,j);
+    relation_node::setTokenUpdateAtIndex(i,j);
     }
   
-  return satimpl_opname::relation_node::getTokenUpdate()[i];
+  return relation_node::getTokenUpdate()[i];
 }
 
 
@@ -2243,7 +2243,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   // DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   
-  satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(),ms.getMddForest());
+  satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(), ms.getMddForest(), ms.getMddForest());
   
   int max_node_count = 10;
   int nEvents = getParent().getNumEvents();
