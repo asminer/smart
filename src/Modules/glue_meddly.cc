@@ -74,7 +74,7 @@ void smart_output::put(double x, int w, int p, char f)
   ds.SetRealFormat(old_rf);
 }
 
-int smart_output::write(int bytes, const unsigned char* buffer)
+size_t smart_output::write(size_t bytes, const unsigned char* buffer)
 {
   // hmm.
   for (int i=0; i<bytes; i++) {

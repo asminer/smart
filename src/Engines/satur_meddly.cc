@@ -1954,7 +1954,7 @@ bigint meddly_otfimplsat::computeNumTransitionsImplRel(
   if (0 == level) return bigint(1l);
   
   int mddLevel = mddf->getNodeLevel(mdd);
-  MEDDLY::satimpl_opname::relation_node* mxdNode = IMPL_NSF->nodeExists(mxd);
+  MEDDLY::relation_node* mxdNode = IMPL_NSF->nodeExists(mxd);
   int mxdLevel = mxdNode->getLevel();
   int levelSize = mddf->getLevelSize(level);
   bigint result;
