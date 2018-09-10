@@ -4,6 +4,9 @@
  States are "indexed" by a unique identifier.
  */
 #include "../_StateLib/lchild_rsiblingt.h"
+#include <set>
+#include <string>
+
 
 /**
  Generate reachability graph from a discrete-event high-level model.
@@ -278,16 +281,26 @@ bool SharedStateEqual(shared_state*node, shared_state* node1) {
 	return true;
 }
 template<class CG, typename UID>
-bool isRepeated(List<shared_state>* slist, shared_state* node) {
-	//printf("\n For Checking: In isRepeated %d", slist->Length());
+bool isRepeated(List<shared_state>* slist, shared_state* node, int level) {
+	printf("\n For Checking: In isRepeated %d", level);
 	// shared_state* temp;
-	for (int i = 0; i < slist->Length(); i++) {
+	for (int i = 0; i < level-1/*slist->Length()*/; i++) {
+		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+			printf("%d", slist->Item(i)->get(j));
+		}
+		printf("&&\n");
+
+	}
+
+	for (int i = 0; i < level-1/*slist->Length()*/; i++) {
 		bool res = false;
 		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+			printf("%d", slist->Item(i)->get(j));
 			if (slist->Item(i)->get(j) != node->get(j)) {
 				res = true;
 			}
 		}
+		printf("\n");
 		if (res == false)
 			return true;
 	}
@@ -295,35 +308,72 @@ bool isRepeated(List<shared_state>* slist, shared_state* node) {
 	return false;
 }
 template<class CG, typename UID>
-void isLessthanNodeUpdate(List<shared_state>* slist, shared_state* node) {
+void isLessthanNodeUpdate(List<shared_state>* slist, shared_state* node, int level) {
 
-	for (int i = 0; i < slist->Length(); i++) {
-		bool res = true;
-		for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
-			if (slist->Item(i)->omega(j)) {
-				if (node->omega(j))
-					;
-				else {
-					res = false;
-					break;
-				}
-			} else {
-				if (node->omega(j))
-					continue;
-				else if (slist->Item(i)->get(j) > node->get(j))
-					res = false;
-			}
-
-		}
-		///update!
-		if (res)
+	bool change = true;
+	bool allOmega = true;
+	while (change) {
+		change = false;
+		for (int i = 0; i < level-1/*slist->Length()*/; i++) {
+			bool res = true;
 			for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
-				if (!slist->Item(i)->omega(j))
-					if (slist->Item(i)->get(j) < node->get(j))
-						node->set_omega(j);
-			}
-	}
+				if (slist->Item(i)->omega(j)) {
+					if (node->omega(j))
+						;
+					else {
+						res = false;
+						break;
+					}
+				} else {
+					if (node->omega(j))
+						continue;
+					else if (slist->Item(i)->get(j) > node->get(j))
+						res = false;
+				}
 
+			}
+
+			///update!
+			if (res) {
+				printf("\nRES inside lessthan TRUE\n");
+				allOmega = true;
+
+				for (int j = 0; j < slist->Item(i)->getNumStateVars(); j++) {
+					if (!slist->Item(i)->omega(j))
+						if ((slist->Item(i)->get(j) < node->get(j))
+								&& (slist->Item(i)->get(j) != node->get(j))) {
+							node->set_omega(j);
+							printf("\nLess than OMEga was set in %d\n",j);
+							for (int j = 0; j < node->getNumStateVars(); j++) {
+										printf("%d", node->get(j));
+									}
+									printf("&&\n");
+							change = true;
+						}
+					if (!node->omega(j)) {
+						allOmega = false;
+					}
+				}
+				if (allOmega)
+					change = false;
+
+				if (!allOmega && change) {
+					printf("Omega is set%i\n",i );
+					change = true;
+				} else {
+					change = false;
+				}
+
+			}
+			else{
+				printf("\nRES inside lessthan False\n");
+			}
+		}
+	}
+	for (int j = 0; j < node->getNumStateVars(); j++) {
+				printf("%d", node->get(j));
+			}
+			printf("&&\n");
 }
 template<class CG, typename UID>
 List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
@@ -397,17 +447,30 @@ List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 template<class CG, typename UID>
 lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 		List<shared_state>* slist, lchild_rsiblingt* node, bool firstTime,
-		shared_state*newcur) {
-//	if (node->val != NULL) {
-//		node->PrintState(node);
-//
-//	}
+		shared_state*newcur, int level) {
+
+	for (int k = 0; k < slist->Length(); k++) {
+		for (int l = 0; l < slist->Item(k)->getNumStateVars(); l++) {
+			printf("%d", slist->Item(k)->get(l));
+		}
+		printf("$^00$\n");
+	}
 	shared_state* curr_st = new shared_state(&dsm);
 	shared_state* next_st = new shared_state(&dsm);
 	if (!firstTime) {
+		for (int k = 0; k < slist->Length(); k++) {
+			for (int l = 0; l < slist->Item(k)->getNumStateVars(); l++) {
+				printf("%d", slist->Item(k)->get(l));
+			}
+			printf("$^11$\n");
+		}
 		if (debug.startReport()) {
 			debug.report() << "NOT FIRST TIME " << "\n";
 			debug.stopIO();
+			if (node->val != NULL) {
+				node->PrintState(node);
+
+			}
 		}
 
 		curr_st->fillFrom(newcur);
@@ -418,12 +481,17 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 				if (debug.startReport()) {
 					debug.report() << "OMEGA RECIVED HERE!!!! " << "\n";
 					debug.stopIO();
+
 				}
 
 				curr_st->set_omega(i);
 				next_st->set_omega(i);
 			}
 		}
+	}
+	if (node->val != NULL) {
+		node->PrintState(node);
+
 	}
 	// allocate list of enabled events
 	List<model_event> enabled;
@@ -442,6 +510,12 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 		// Find and insert the initial states
 		//
 		if (firstTime) {
+			for(int k=0;k<slist->Length();k++){
+								for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+									printf("%d",slist->Item(k)->get(l) );
+								}
+								printf("$^22$\n" );
+							}
 			for (int i = 0; i < dsm.NumInitialStates(); i++) {
 				dsm.GetInitialState(i, curr_st);
 				dsm.checkVanishing(x);
@@ -461,32 +535,53 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 //					rg.addInitial(id);
 //				}
 //
-//				if (debug.startReport()) {
-//					debug.report() << "COV Adding initial ";
-//					rg.show(debug.report(), xans.getBool(), id, curr_st);
-//					debug.report() << "\nThe id is :" << id << "\n";
-//					debug.stopIO();
-//				}
+				// if (debug.startReport()) {
+				// 	debug.report() << "COV Adding initial ";
+				// 	rg.show(debug.report(), xans.getBool(), id, curr_st);
+				// 	debug.report() << "\nThe id is :" << id << "\n";
+				// 	debug.stopIO();
+				// }
 //				if (!newinit)
 //					continue;
 				dsm.checkAssertions(x);
 				if (0 == xans.getBool()) {
 					throw subengine::Assertion_Failure;
 				}
-				node->val=new shared_state(&dsm);
+				node->val = new shared_state(&dsm);
 				node->val->fillFrom(curr_st);
 				//node->val = curr_st;
 				//node->val->fillFrom(curr_st);
 				slist->Append(curr_st);
-				//node->ListOfState.Append(curr_st);
+				for(int k=0;k<slist->Length();k++){
+									for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+										printf("%d",slist->Item(k)->get(l) );
+									}
+									printf("$^33$\n" );
+								}
+				printf("*APPEND**[ %d", curr_st->get(0));
+				for (int n = 1; n < curr_st->getNumStateVars(); n++)
+					printf(", %d", curr_st->get(n));
+				printf("]\n");
+
+				printf("ListCount%d\n", slist->Length());//node->ListOfState.Append(curr_st);
 				if (debug.startReport()) {
 					debug.report() << "CALLING FIRST TIME " << "\n";
 					debug.stopIO();
+					if (node->val != NULL) {
+						node->PrintState(node);
+
+					}
 				}
 			}				// for i
 		}
 		{
 
+			for(int k=0;k<slist->Length();k++){
+								for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+									printf("%d",slist->Item(k)->get(l) );
+								}
+								printf("$^44$\n" );
+							}
 			//Not the firstTime.
 			//
 			// Done with initial states, start exploration loop
@@ -520,6 +615,10 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 					debug.report() << "COv HEre in else part of recursive ";
 					debug.report() << "\n";
 					debug.stopIO();
+					if (node->val != NULL) {
+						node->PrintState(node);
+
+					}
 				}
 
 				//
@@ -548,12 +647,12 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 				}
 				if (current_is_vanishing) {
 					dsm.makeVanishingEnabledList(x, &enabled);
-//					if (debug.startReport()) {
-//						debug.report() << "IS VANISH ";
-//
-//						debug.report() << "\n";
-//						debug.stopIO();
-//					}
+					/*					if (debug.startReport()) {
+					 debug.report() << "IS VANISH ";
+
+					 debug.report() << "\n";
+					 debug.stopIO();
+					 }*/
 				} else {
 					dsm.makeTangibleEnabledListCov(x, &enabled, boolflag);
 //					if (debug.startReport()) {
@@ -582,38 +681,112 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 							<< enabled.Length();
 					debug.report() << "\n";
 					debug.stopIO();
+					if (node->val != NULL) {
+						node->PrintState(node);
+
+					}
 				}
 				if (enabled.Length() == 0 && !unexploredtangibleflag
 						&& !unexploredvanishflag) {
 					curr_st->set_type(1);
 					return NULL;
 				}
-
+				if ( enabled.Length()>0)
+					{
+					level++;
+					}
+				std::set<std::string> transitionName;
+				std::set<shared_state*> sh;
+				for(int e=0;e<enabled.Length();e++){
+					printf("@@@%s",enabled.Item(e)->Name());
+					transitionName.insert(enabled.Item(e)->Name());
+				}
+//				printf("@@@%d",transitionName.size());
 				for (int e = 0; e < enabled.Length(); e++) {
 					model_event* t = enabled.Item(e);
+//					printf("\nTransition Name%s set size%d\n",t->Name(),transitionName.size());
+
+//					if (transitionName.size()>0)
+//					for (std::string const& tr : transitionName)
+//					    {
+//					       printf("&&&%s\n",std::string(tr));
+//					    }
+//					std::string trs(t->Name());
+//
+//					transitionName.insert(trs);
+
+//						printf("\nTransition Name%s set size%d\n",t->Name(),transitionName.size());
+
+//					printf("\nTransition Name%s\n",t->Name());
 					DCASSERT(t);DCASSERT(t->actsLikeImmediate() == current_is_vanishing);
 
+					for(int k=0;k<slist->Length();k++){
+										for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+											printf("%d",slist->Item(k)->get(l) );
+										}
+										printf("$^55$\n" );
+									}
 					//
 					// t is enabled, fire and get new state
 					//
+
 
 					next_st->fillFrom(curr_st);
 
 					if (t->getNextstate()) {
 						t->getNextstate()->Compute(x);
 					}
-					isLessthanNodeUpdate<CG, UID>(slist, next_st);
+					int beforesh=sh.size();
+					printf("XX%d\n",beforesh);
+					sh.insert(next_st);
+					int aftersh=sh.size();
+					printf("XX%d\n",aftersh);
 
-					if (isRepeated<CG, UID>(slist, next_st)) {
+					if(beforesh==aftersh){
+
+					}else{}
+					printf("*curr_st**[ %d", curr_st->get(0));
+										for (int n = 1; n < curr_st->getNumStateVars(); n++)
+											printf(", %d", curr_st->get(n));
+										printf("]\n");
+					printf("*Newnode**[ %d", next_st->get(0));
+					for (int n = 1; n < next_st->getNumStateVars(); n++)
+						printf(", %d", next_st->get(n));
+					printf("]\n");
+//					if(e!=0){
+//											level--;
+//										}
+						printf("NEW LEV=%d",level);
+					for(int k=0;k<slist->Length();k++){
+										for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+											printf("%d",slist->Item(k)->get(l) );
+										}
+										printf("$^66$\n" );
+									}
+					if (isRepeated<CG, UID>(slist, next_st,level)) {
 						if (debug.startReport()) {
 							debug.report() << "REPEATED!! \n";
 							debug.stopIO();
 						}
+						printf("*AfterRepeated**[ %d", next_st->get(0));
+						for (int n = 1; n < next_st->getNumStateVars(); n++)
+							printf(", %d", next_st->get(n));
+						printf("]\n");
 						next_st->set_type(0);
-						return NULL;
-
+						//return NULL;
 					}
-
+					else{
+					isLessthanNodeUpdate<CG, UID>(slist, next_st,level);
+					if (debug.startReport()) {
+						debug.report() << "isLessthanNodeUpdate!! \n";
+						debug.stopIO();
+					}
+					printf("*isLessthanNodeUpdate**[ %d", next_st->get(0));
+					for (int n = 1; n < next_st->getNumStateVars(); n++)
+						printf(", %d", next_st->get(n));
+					printf("]\n");
+					//slist->Append(next_st);
+					//printf("*APPEND**[ %d", next_st->get(0));
 //					if (debug.startReport()) {
 //						debug.report() << "Got NEW STATE " << "\n";
 //						rg.show(debug.report(), 0, 0, next_st);
@@ -653,22 +826,25 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 					bool next_is_new;
 					// UID next_id;
 					// bool next_is_vanishing = xans.getBool();
-          next_is_new = false;    // otherwise next_is_new is uninitialized
+					next_is_new = false; // otherwise next_is_new is uninitialized
 					//next_is_new = rg.add(next_is_vanishing, next_st, next_id);
 
 					lchild_rsiblingt* newnode = node->addtothisChild(node,
 							next_st);
-					newnode->val=new shared_state(&dsm);
+					newnode->val = new shared_state(&dsm);
 					newnode->val->fillFrom(next_st);
-//					if (debug.startReport()) {
-//						debug.report() << "\t COV via event " << t->Name()
-//								<< " to ";
-//						rg.show(debug.report(), next_is_vanishing, next_id,
-//								next_st);
-//
-//						//debug.report() <<next_st->omega(0)<<"\n";
-//						debug.stopIO();
-//					}
+					if (debug.startReport()) {
+						debug.report() << "\t COV via event " << t->Name()
+								<< " to ";
+
+						if (node->val != NULL) {
+							newnode->PrintState(newnode);
+
+						}
+
+						//debug.report() <<next_st->omega(0)<<"\n";
+						debug.stopIO();
+					}
 					//TODO NEEED TO MOVE TO BEST PLACE
 //					if (next_st->omega(0)) {
 //						if (debug.startReport()) {
@@ -703,22 +879,44 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 //						// Must be exploring an initial vanishing state
 //						rg.addInitial(next_id);
 //					}
-					slist->Append(next_st);
+					printf("MMMMMMMListCount%d level%d\n", slist->Length(),level);
+					if(level-1==slist->Length()){
+						 slist->Append(next_st);
+					}
+					else{
+						printf("InElse");
+						slist->Update(level-1,next_st);
+					}
+					printf("MMMMMMMListCount%d level%d\n", slist->Length(),level);
+
+					 printf("*APPENDssss**[ %d", next_st->get(0));
+					for (int n = 1; n < next_st->getNumStateVars(); n++)
+						printf(", %d", next_st->get(n));
+					printf("]\n");
+
+					for(int k=0;k<slist->Length();k++){
+										for(int l=0; l<slist->Item(k)->getNumStateVars();l++){
+											printf("%d",slist->Item(k)->get(l) );
+										}
+										printf("$^77$\n" );
+									}
 					if (debug.startReport()) {
 						debug.report() << "Recursion Call " << "\n";
 						debug.stopIO();
 					}
+					//level++;
 					generateCGT<CG, UID>(debug, dsm, slist, newnode, false,
-							next_st);
-
+							next_st,level);
+					}
 				} // for e
-
+					sh.empty();
 			} // infinite loop
 
 			if (debug.startReport()) {
 				debug.report() << "COV Done exploring\n";
 				debug.stopIO();
 			}
+			printf("LLL%d\n", slist->Length());
 			//
 			// Cleanup
 			//
@@ -728,7 +926,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 			Nullify(x.next_state);
 		}
 
-    return 0;
+		return 0;
 	} // try
 
 	catch (subengine::error e) {
