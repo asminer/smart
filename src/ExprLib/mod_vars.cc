@@ -161,7 +161,7 @@ void model_statevar::AddToState(traverse_data &x, long delta) const {
 
 	long newst = x.current_state->get(GetIndex()) + delta;
 	if (x.current_state->omega(GetIndex())) {
-		printf("NEWST set to OMEGA in next state %d", GetIndex());
+//		printf("NEWST set to OMEGA in next state %d", GetIndex());
 		x.next_state->set_omega(GetIndex());
 		newst = OOmega; // -10 for omega reserved.
 	}
@@ -456,10 +456,10 @@ void shared_state::fillFrom(const shared_state &s) {
 			this->Unset_omega();
 			for (int b = 0; b < num_buckets; b++) {
 				if (s.is_omega[b]) {
-					printf("\nXXX SET OMEGA IN%d\n", b);
+//					printf("\nXXX SET OMEGA IN%d\n", b);
 					this->set_omega(b);
 				}else{
-					printf("\nXXX SET %d TO%d\n",b,s.data[b]);
+//					printf("\nXXX SET %d TO%d\n",b,s.data[b]);
 					this->data[b]=s.data[b];
 				}
 			}
@@ -985,7 +985,6 @@ long clev_op::getLower() const {
 }
 
 void clev_op::Compute(traverse_data &x) {
-	printf("\nInside clev_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
@@ -1000,7 +999,6 @@ void clev_op::Compute(traverse_data &x) {
 		return;
 
 	DCASSERT(x.answer->isNormal());
-	printf("\nPASSSed\n");
 	x.answer->setBool(
 			(lower <= x.answer->getInt()) || (x.answer->getInt() == OOmega));
 }
@@ -1068,7 +1066,7 @@ blev_op::blev_op(const char* fn, int line, expr* b, model_var* v) :
 }
 
 void blev_op::Compute(traverse_data &x) {
-	printf("\nInside blev_op \n");
+//	printf("\nInside blev_op \n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	result* answer = x.answer;
@@ -1187,7 +1185,7 @@ vltc_op::vltc_op(const char* fn, int line, model_var* v, long b) :
 }
 
 void vltc_op::Compute(traverse_data &x) {
-	printf("\nInside vltc_op \n");
+	//printf("\nInside vltc_op \n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
@@ -1265,7 +1263,7 @@ vltb_op::vltb_op(const char* fn, int line, model_var* v, expr* b) :
 }
 
 void vltb_op::Compute(traverse_data &x) {
-	printf("\nInside vltb_op \n");
+//	printf("\nInside vltb_op \n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	result* answer = x.answer;
@@ -1378,7 +1376,7 @@ clevltc_op::clevltc_op(const char* fn, int line, long lb, model_var* v, long ub)
 }
 
 void clevltc_op::Compute(traverse_data &x) {
-	printf("\nInside clevltc_op\n");
+//	printf("\nInside clevltc_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
@@ -1651,7 +1649,7 @@ void cupdate_op::Traverse(traverse_data &x) {
 }
 
 void cupdate_op::Compute(traverse_data &x) {
-	printf("\nInside cupdate_op\n");
+	//printf("\nInside cupdate_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 	if (x.next_state) {
 		// ordinary behavior
@@ -1788,7 +1786,7 @@ void vupdate_op::Traverse(traverse_data &x) {
 }
 
 void vupdate_op::Compute(traverse_data &x) {
-	printf("\nInside vupdate_op\n");
+//	printf("\nInside vupdate_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(x.next_state);DCASSERT(0==x.aggregate);
 	long delta = 0;
 	if (dec_amount) {
@@ -1883,7 +1881,7 @@ void cassign_op::Traverse(traverse_data &x) {
 }
 
 void cassign_op::Compute(traverse_data &x) {
-	printf("\nInside cassign_op\n");
+//	printf("\nInside cassign_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 	var->SetNextState(x, x.next_state, rhs);
 }
@@ -1966,7 +1964,7 @@ void vassign_op::Traverse(traverse_data &x) {
 }
 
 void vassign_op::Compute(traverse_data &x) {
-	printf("\nInside vassign_op\n");
+//	printf("\nInside vassign_op\n");
 	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);DCASSERT(rhs);
 	rhs->Compute(x);
 	if (x.answer->isNormal()) {

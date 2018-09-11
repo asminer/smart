@@ -240,7 +240,7 @@ void model_event::finishPriorityInfo(List<model_event> &keep,
 }
 
 void model_event::decideEnabled(traverse_data &x) {
-	fprintf(stderr,"MAMAMAMAMAM%s\n",Name());
+//	fprintf(stderr,"MAMAMAMAMAM%s\n",Name());
 #ifdef DEBUG_ENABLED
 	fprintf(stderr, "IN  decideEnabled for event %s\n", Name());
 #endif
