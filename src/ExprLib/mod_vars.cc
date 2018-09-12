@@ -48,7 +48,7 @@ model_var::~model_var() {
 }
 
 void model_var::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(0==x.aggregate);
+	DCASSERT(x.answer);DCASSERT(0==x.aggregate);
 	x.answer->setPtr(Share(this));
 }
 
@@ -137,7 +137,7 @@ long model_statevar::GetValueIndex(result& foo) const {
 }
 
 void model_statevar::ComputeInState(traverse_data &x) const {
-	DCASSERT(x.answer); DCASSERT(x.current_state);
+	DCASSERT(x.answer);DCASSERT(x.current_state);
 	const hldsm* hm = x.current_state->Parent();
 	DCASSERT(hm);
 	if (hm->GetParent() != getParent()) {
@@ -152,7 +152,7 @@ void model_statevar::ComputeInState(traverse_data &x) const {
 }
 
 void model_statevar::AddToState(traverse_data &x, long delta) const {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(x.next_state);
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(x.next_state);
 
 	if (x.current_state->unknown(GetIndex())) {
 		x.next_state->set_unknown(GetIndex());
@@ -160,13 +160,20 @@ void model_statevar::AddToState(traverse_data &x, long delta) const {
 	}
 
 	long newst = x.current_state->get(GetIndex()) + delta;
-
+	if (x.current_state->omega(GetIndex())) {
+//		printf("NEWST set to OMEGA in next state %d", GetIndex());
+		x.next_state->set_omega(GetIndex());
+		newst = OOmega; // -10 for omega reserved.
+	}
 	if (bounds) {
 		tempresult.setInt(newst);
 		if (bounds->IndexOf(tempresult) < 0)
 			boundsError(x, newst);
 	} else {
-		if (newst < 0)
+		if (((newst < 0) && (!x.current_state->omega(GetIndex())))
+				|| ((x.current_state->omega(GetIndex())) && (newst != OOmega)))
+
+			//if (newst < 0)
 			boundsError(x, newst);
 	}
 
@@ -175,7 +182,7 @@ void model_statevar::AddToState(traverse_data &x, long delta) const {
 
 void model_statevar::SetNextState(traverse_data &x, shared_state* ns,
 		long rhs) const {
-	DCASSERT(x.answer); DCASSERT(x.current_state);
+	DCASSERT(x.answer);DCASSERT(x.current_state);
 
 	if (bounds) {
 		tempresult.setInt(rhs);
@@ -191,19 +198,19 @@ void model_statevar::SetNextState(traverse_data &x, shared_state* ns,
 }
 
 void model_statevar::SetNextUnknown(traverse_data &x, shared_state* ns) const {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(ns);
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(ns);
 	ns->set_unknown(GetIndex());
 }
 
 void model_statevar::ownerError(traverse_data &x) const {
 	DCASSERT(x.current_state);
 	const hldsm* hm = x.current_state->Parent();
-	DCASSERT(hm); DCASSERT(hm->GetParent() != getParent());
+	DCASSERT(hm);DCASSERT(hm->GetParent() != getParent());
 	if (hm->StartError(x.parent)) {
 		em->cerr() << "state variable " << Name()
 				<< " belongs to another model";
 		hm->DoneError();
-	} DCASSERT(x.answer);
+	}DCASSERT(x.answer);
 	x.answer->setNull();
 }
 
@@ -259,7 +266,7 @@ model_enum::model_enum(const symbol* w, const model_instance* p, symbol* list) :
 		model_enum_value* data = dynamic_cast<model_enum_value*>(ptr);
 		DCASSERT(data);
 		int i = data->GetIndex();
-		CHECK_RANGE(0, i, num_values); DCASSERT(0==values[i]);
+		CHECK_RANGE(0, i, num_values);DCASSERT(0==values[i]);
 		values[i] = data;
 	}
 }
@@ -287,11 +294,11 @@ void model_enum::MakeSortedMap(long* I) const {
 int_statevar::int_statevar(const symbol* wrapper, const model_instance* p,
 		shared_object* b) :
 		model_statevar(wrapper, p, b) {
-	DCASSERT(wrapper); DCASSERT(wrapper->Type() == em->INT);
+	DCASSERT(wrapper);DCASSERT(wrapper->Type() == em->INT);
 }
 
 void int_statevar::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(0==x.aggregate);
+	DCASSERT(x.answer);DCASSERT(0==x.aggregate);
 	x.answer->setInt(value);
 }
 
@@ -311,11 +318,11 @@ void int_statevar::SetToValueNumber(long i) {
 
 bool_statevar::bool_statevar(const symbol* wrapper, const model_instance* p) :
 		model_statevar(wrapper, p, 0) {
-	DCASSERT(wrapper); DCASSERT(wrapper->Type() == em->BOOL);
+	DCASSERT(wrapper);DCASSERT(wrapper->Type() == em->BOOL);
 }
 
 void bool_statevar::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(0==x.aggregate);
+	DCASSERT(x.answer);DCASSERT(0==x.aggregate);
 	x.answer->setBool(value);
 }
 
@@ -417,7 +424,7 @@ shared_state::~shared_state() {
 }
 
 void shared_state::fillFrom(const shared_state &s) {
-	DCASSERT(parent == s.parent); DCASSERT(isFixedSize() == s.isFixedSize()); DCASSERT(getNumStateVars() == s.getNumStateVars());
+	DCASSERT(parent == s.parent);DCASSERT(isFixedSize() == s.isFixedSize());DCASSERT(getNumStateVars() == s.getNumStateVars());
 
 	// Does s have any unknown values?
 	bool has_unknown = false;
@@ -438,20 +445,26 @@ void shared_state::fillFrom(const shared_state &s) {
 	} else {
 		if (is_unknown)
 			clear_unknown();
-	}
 
-	// Copy the data.
-	if (isFixedSize()) {
-		memcpy(data, s.data, data_size * sizeof(int));
-	} else {
-		DCASSERT(0);
-	}
-	if (s.is_omega) {
-		for (int b = 0; b < num_buckets; b++) {
-			if (s.is_omega[b]) {
-				this->set_omega(b);
+		// Copy the data.
+		if (isFixedSize()) {
+			memcpy(data, s.data, data_size * sizeof(int));
+		} else {
+			DCASSERT(0);
+		}
+		if (s.is_omega) {
+			this->Unset_omega();
+			for (int b = 0; b < num_buckets; b++) {
+				if (s.is_omega[b]) {
+//					printf("\nXXX SET OMEGA IN%d\n", b);
+					this->set_omega(b);
+				}else{
+//					printf("\nXXX SET %d TO%d\n",b,s.data[b]);
+					this->data[b]=s.data[b];
+				}
 			}
 		}
+
 	}
 }
 
@@ -582,7 +595,7 @@ bool model_var_stmt::Print(OutputStream &s, int w) const {
 }
 
 void model_var_stmt::Compute(traverse_data &x) {
-	DCASSERT(x.which == traverse_data::Compute); DCASSERT(x.answer);
+	DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);
 	if (x.stopExecution())
 		return;
 	result bset;
@@ -724,7 +737,7 @@ bool model_varray_stmt::Print(OutputStream &s, int w) const {
 }
 
 void model_varray_stmt::Compute(traverse_data &x) {
-	DCASSERT(x.which == traverse_data::Compute); DCASSERT(x.answer);
+	DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);
 	if (x.stopExecution())
 		return;
 	for (int i = 0; i < numvars; i++) {
@@ -800,7 +813,7 @@ bool measure_assign::Print(OutputStream &s, int w) const {
 }
 
 void measure_assign::Compute(traverse_data &x) {
-	DCASSERT(x.which == traverse_data::Compute); DCASSERT(x.answer); DCASSERT(parent);
+	DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);DCASSERT(parent);
 	if (x.stopExecution())
 		return;
 	if (msr_slot < 0) {
@@ -899,7 +912,7 @@ bool measure_array_assign::Print(OutputStream &s, int w) const {
 }
 
 void measure_array_assign::Compute(traverse_data &x) {
-	DCASSERT(x.which == traverse_data::Compute); DCASSERT(x.answer);
+	DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);
 	if (x.stopExecution())
 		return;
 	if (msr_slot < 0) {
@@ -951,7 +964,7 @@ void measure_array_assign::Traverse(traverse_data &x) {
 
 clev_op::clev_op(const char* fn, int line, expr* b, model_var* v) :
 		unary(fn, line, em->BOOL->addProc(), v) {
-	DCASSERT(b); DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
+	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
 	x.answer = &foo;
@@ -972,18 +985,22 @@ long clev_op::getLower() const {
 }
 
 void clev_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 	sv->ComputeInState(x);
 
+	if (x.answer->isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (x.answer->isUnknown())
 		return;
 
 	DCASSERT(x.answer->isNormal());
-
-	x.answer->setBool(lower <= x.answer->getInt());
+	x.answer->setBool(
+			(lower <= x.answer->getInt()) || (x.answer->getInt() == OOmega));
 }
 
 void clev_op::Traverse(traverse_data &x) {
@@ -991,7 +1008,7 @@ void clev_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		unary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 	symbol* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 #ifdef DEBUG_DDLIB
@@ -1049,7 +1066,8 @@ blev_op::blev_op(const char* fn, int line, expr* b, model_var* v) :
 }
 
 void blev_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+//	printf("\nInside blev_op \n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	result* answer = x.answer;
 	result r;
@@ -1057,10 +1075,14 @@ void blev_op::Compute(traverse_data &x) {
 	model_var* sv = smart_cast <model_var*>(right);
 	DCASSERT(sv);
 	sv->ComputeInState(x);
+	if (r.isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (r.isUnknown()) {
 		x.answer->setUnknown();
 		return;
-	} DCASSERT(r.isNormal());
+	}DCASSERT(r.isNormal());
 
 	x.answer = answer;
 	DCASSERT(left);
@@ -1083,7 +1105,7 @@ void blev_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		binary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 
 	left->Traverse(x);
 	if (!x.answer->isNormal())
@@ -1146,7 +1168,7 @@ protected:
 
 vltc_op::vltc_op(const char* fn, int line, model_var* v, expr* b) :
 		unary(fn, line, em->BOOL->addProc(), v) {
-	DCASSERT(b); DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
+	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
 	x.answer = &foo;
@@ -1163,12 +1185,16 @@ vltc_op::vltc_op(const char* fn, int line, model_var* v, long b) :
 }
 
 void vltc_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+	//printf("\nInside vltc_op \n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 	sv->ComputeInState(x);
-
+	if (x.answer->isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (x.answer->isUnknown())
 		return;
 
@@ -1182,7 +1208,7 @@ void vltc_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		unary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 	symbol* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 
@@ -1237,7 +1263,8 @@ vltb_op::vltb_op(const char* fn, int line, model_var* v, expr* b) :
 }
 
 void vltb_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+//	printf("\nInside vltb_op \n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	result* answer = x.answer;
 	result l;
@@ -1245,10 +1272,14 @@ void vltb_op::Compute(traverse_data &x) {
 	model_var* sv = smart_cast <model_var*>(left);
 	DCASSERT(sv);
 	sv->ComputeInState(x);
+	if (l.isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (l.isUnknown()) {
 		x.answer->setUnknown();
 		return;
-	} DCASSERT(l.isNormal());
+	}DCASSERT(l.isNormal());
 
 	x.answer = answer;
 	DCASSERT(right);
@@ -1271,7 +1302,7 @@ void vltb_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		binary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 
 	right->Traverse(x);
 	if (!x.answer->isNormal())
@@ -1322,7 +1353,7 @@ protected:
 clevltc_op::clevltc_op(const char* fn, int line, expr* lb, model_var* v,
 		expr* ub) :
 		unary(fn, line, em->BOOL->addProc(), v) {
-	DCASSERT(lb); DCASSERT(ub); DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0)); DCASSERT(0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0));
+	DCASSERT(lb);DCASSERT(ub);DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0));DCASSERT(0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
 	x.answer = &foo;
@@ -1345,12 +1376,17 @@ clevltc_op::clevltc_op(const char* fn, int line, long lb, model_var* v, long ub)
 }
 
 void clevltc_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+//	printf("\nInside clevltc_op\n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 
 	model_var* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 	sv->ComputeInState(x);
 
+	if (x.answer->isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (x.answer->isUnknown())
 		return;
 
@@ -1365,7 +1401,7 @@ void clevltc_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		unary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 	symbol* sv = smart_cast <model_var*>(opnd);
 	DCASSERT(sv);
 
@@ -1428,7 +1464,7 @@ blevltb_op::blevltb_op(const char* fn, int line, expr* lb, model_var* v,
 }
 
 void blevltb_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate); DCASSERT(left); DCASSERT(right);
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);DCASSERT(left);DCASSERT(right);
 	result* answer = x.answer;
 	result l, m, r;
 	x.answer = &l;
@@ -1439,12 +1475,17 @@ void blevltb_op::Compute(traverse_data &x) {
 	DCASSERT(sv);
 	x.answer = &m;
 	sv->ComputeInState(x);
+	if (l.isOmega()) {
+		x.answer->setBool(true);
+		return;
+	}
 	if (m.isUnknown()) {
 		x.answer->setUnknown();
 		return;
-	} DCASSERT(m.isNormal());
+	}DCASSERT(m.isNormal());
 
 	x.answer = answer;
+
 	if (l.isNormal()) {
 		if (l.getInt() > m.getInt()) {
 			answer->setBool(false);
@@ -1466,7 +1507,7 @@ void blevltb_op::Compute(traverse_data &x) {
 		if (m.getInt() >= r.getInt()) {
 			answer->setBool(false);
 			return;
-		} DCASSERT(!l.isNormal()); // already handled
+		}DCASSERT(!l.isNormal()); // already handled
 		if (l.isInfinity()) {
 			answer->setBool(l.signInfinity() < 0);
 			return;
@@ -1481,7 +1522,7 @@ void blevltb_op::Compute(traverse_data &x) {
 	}
 
 	// What cases are left?
-	DCASSERT(l.isUnknown()); DCASSERT(r.isUnknown());
+	DCASSERT(l.isUnknown());DCASSERT(r.isUnknown());
 	answer->setUnknown();
 }
 
@@ -1490,7 +1531,7 @@ void blevltb_op::Traverse(traverse_data &x) {
 	if (x.which != traverse_data::BuildDD) {
 		trinary::Traverse(x);
 		return;
-	} DCASSERT(x.answer); DCASSERT(x.ddlib);
+	}DCASSERT(x.answer);DCASSERT(x.ddlib);
 
 	left->Traverse(x);
 	if (!x.answer->isNormal())
@@ -1586,7 +1627,7 @@ void cupdate_op::Traverse(traverse_data &x) {
 #ifdef DEBUG_DDLIB
 		fprintf(stderr, "building dd for %s += %ld\n", var->Name(), delta);
 #endif
-		DCASSERT(x.answer); DCASSERT(x.ddlib);
+		DCASSERT(x.answer);DCASSERT(x.ddlib);
 
 		// v := var + delta
 		shared_object* v = x.ddlib->makeEdge(0);
@@ -1608,7 +1649,8 @@ void cupdate_op::Traverse(traverse_data &x) {
 }
 
 void cupdate_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+	//printf("\nInside cupdate_op\n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 	if (x.next_state) {
 		// ordinary behavior
 		var->AddToState(x, delta);
@@ -1692,7 +1734,7 @@ void vupdate_op::Traverse(traverse_data &x) {
 		return;
 
 	case traverse_data::BuildDD: {
-		DCASSERT(x.answer); DCASSERT(x.ddlib);
+		DCASSERT(x.answer);DCASSERT(x.ddlib);
 		// Build DD for inc
 		shared_object* inc;
 		if (inc_amount) {
@@ -1744,7 +1786,8 @@ void vupdate_op::Traverse(traverse_data &x) {
 }
 
 void vupdate_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(x.next_state); DCASSERT(0==x.aggregate);
+//	printf("\nInside vupdate_op\n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(x.next_state);DCASSERT(0==x.aggregate);
 	long delta = 0;
 	if (dec_amount) {
 		dec_amount->Compute(x);
@@ -1820,7 +1863,7 @@ void cassign_op::Traverse(traverse_data &x) {
 		return;
 
 	case traverse_data::BuildDD: {
-		DCASSERT(x.answer); DCASSERT(x.ddlib);
+		DCASSERT(x.answer);DCASSERT(x.ddlib);
 		shared_object* d = x.ddlib->makeEdge(0);
 		x.ddlib->buildSymbolicConst(rhs, d);
 		shared_object* vv = x.ddlib->makeEdge(0);
@@ -1838,7 +1881,8 @@ void cassign_op::Traverse(traverse_data &x) {
 }
 
 void cassign_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate);
+//	printf("\nInside cassign_op\n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);
 	var->SetNextState(x, x.next_state, rhs);
 }
 
@@ -1894,7 +1938,7 @@ void vassign_op::Traverse(traverse_data &x) {
 		return;
 
 	case traverse_data::BuildDD: {
-		DCASSERT(x.answer); DCASSERT(x.ddlib); DCASSERT(rhs);
+		DCASSERT(x.answer);DCASSERT(x.ddlib);DCASSERT(rhs);
 		rhs->Traverse(x);
 		shared_object* d = x.answer->getPtr();
 		if (0 == d) {
@@ -1920,7 +1964,8 @@ void vassign_op::Traverse(traverse_data &x) {
 }
 
 void vassign_op::Compute(traverse_data &x) {
-	DCASSERT(x.answer); DCASSERT(x.current_state); DCASSERT(0==x.aggregate); DCASSERT(rhs);
+//	printf("\nInside vassign_op\n");
+	DCASSERT(x.answer);DCASSERT(x.current_state);DCASSERT(0==x.aggregate);DCASSERT(rhs);
 	rhs->Compute(x);
 	if (x.answer->isNormal()) {
 		var->SetNextState(x, x.next_state, x.answer->getInt());

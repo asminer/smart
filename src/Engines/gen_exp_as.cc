@@ -953,13 +953,14 @@ lchild_rsiblingt* as_procgenCOV::generateCT(dsde_hlm* dsm,
 
 	StateLib::state_db* vandb = statelib->createStateDB(true, false);
 	List<shared_state> L;
+	int level =1;
 	// shared_state* curr_st = new shared_state(dsm);
 	lchild_rsiblingt* firstNode = new lchild_rsiblingt();
 
 	if (rg) {
 		//indexed_reachgraph myrg(*tandb, *vandb, *rg);
 		generateCGT<indexed_reachgraph, long>(Debug(), *dsm, &L,
-				firstNode, true, NULL);
+				firstNode, true, NULL,level);
 		//myrg.exportInitial(s0);
 		//myrg.finish();
 	} else {
