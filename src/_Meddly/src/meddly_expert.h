@@ -2265,6 +2265,11 @@ class MEDDLY::expert_forest: public forest
     */
     long getNodeCount(node_handle node) const;
 
+    /** Count and return the number of non-terminal nodes
+        in the subgraph below the given nodes.
+    */
+    long getNodeCount(const node_handle* roots, int N) const;
+
     /** Count and return the number of edges
         in the subgraph below the given node.
     */
@@ -4861,7 +4866,7 @@ private:
   node_handle transform(node_handle p, int target_level, std::vector<int>& pa);
   node_handle restrict(node_handle p, std::vector<int>& pa);
 
-  bool restrict_exist(node_handle p, const std::vector<int>& pa, unsigned start,
+  bool restrict_exist(node_handle p, const std::vector<int>& pa, int start,
       node_handle& result);
   int signature(node_handle p) const;
 
