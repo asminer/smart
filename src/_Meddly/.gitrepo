@@ -7,5 +7,5 @@
 	remote = https://github.com/asminer/meddly.git
 	branch = master
 	commit = 5c4a7fb5277146db59451fd731531cb580d73ff1
-	parent = 6cbccf096f6e61a2c4e4a29f8e467e94be7d6d9f
+	parent = 4699884ae85f18a318f3586ea369bb217df139ad
 	cmdver = 0.3.1
