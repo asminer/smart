@@ -51,7 +51,7 @@ extern parse_module* pm;
 #define MCC_STATE_SPACE 1
 #define MCC_UPPER_BOUNDS 0
 // #define MCC_DEADLOCK
-// #define ONLY_STATE_SPACE
+#define ONLY_STATE_SPACE
 
 // **************************************************************************
 // *                                                                        *
@@ -1174,7 +1174,7 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       return;
     }
 
-#if 0
+#ifdef ONLY_STATE_SPACE
     // Build a monolithic transition relation
     NSF->bindExtensibleVariables();
     MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
@@ -1489,8 +1489,8 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     }
 
 #ifdef ONLY_STATE_SPACE
-    return;
-#endif
+    // return;
+#else
     
     if (stopGen(false, x.getParent(), watch)) {
       reportGen(false, Report().report());
@@ -1570,7 +1570,9 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
         x.setLevelIndex_token(level_index_to_token);
       }
 #endif
-    
+
+#endif
+
     MEDDLY::node_handle mxd = IMPL_NSF->buildMxdForest();
     shared_ddedge* d = new shared_ddedge(IMPL_NSF->getRelForest());
     d->E.set(mxd);
