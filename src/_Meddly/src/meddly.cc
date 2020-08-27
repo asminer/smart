@@ -64,10 +64,10 @@ namespace MEDDLY {
   // List of operations
   //
   operation** operation::op_list = 0;
-  int* operation::op_holes = 0;
-  int operation::list_size = 0;
-  int operation::list_alloc = 0;
-  int operation::free_list = -1;
+  unsigned* operation::op_holes = 0;
+  unsigned operation::list_size = 0;
+  unsigned operation::list_alloc = 0;
+  unsigned operation::free_list = 0;
 
   //
   // List of all domains
@@ -80,6 +80,7 @@ namespace MEDDLY {
   //
   // List of free unpacked nodes
   unpacked_node* unpacked_node::freeList = 0;
+  unpacked_node* unpacked_node::buildList = 0;
 
   // helper functions
   void purgeMarkedOperations();
@@ -232,7 +233,7 @@ void MEDDLY::apply(const unary_opname* code, const dd_edge &a, dd_edge &c)
   if (0==code)  
     throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
   unary_operation* op = getOperation(code, a, c);
-  op->compute(a, c);
+  op->computeTemp(a, c);
 }
 
 void MEDDLY::apply(const unary_opname* code, const dd_edge &a, long &c)
@@ -274,7 +275,7 @@ void MEDDLY::apply(const binary_opname* code, const dd_edge &a,
   if (0==code)
     throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
   binary_operation* op = getOperation(code, a, b, c);
-  op->compute(a, b, c);
+  op->computeTemp(a, b, c);
 }
 
 //----------------------------------------------------------------------
@@ -324,7 +325,7 @@ void MEDDLY::destroyForest(MEDDLY::forest* &f)
 void MEDDLY::purgeMarkedOperations()
 {
   operation::removeStalesFromMonolithic();
-  for (int i=0; i<operation::getOpListSize(); i++) {
+  for (unsigned i=0; i<operation::getOpListSize(); i++) {
     operation* op = operation::getOpWithIndex(i);
     if (0==op) continue;
     if (op->isMarkedForDeletion()) {

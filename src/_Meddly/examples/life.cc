@@ -574,12 +574,12 @@ int main(int argc, const char** argv)
   C[N].clear();
   delete[] C;
   watch.note_time();
-  cerr << "Constraint combination took " << watch.get_last_interval()/1000000.0;
+  cerr << "Constraint combination took " << watch.get_last_seconds();
   cerr << " seconds\nSet of solutions requires " << answer.getNodeCount();
   cerr << " nodes.\nForest stats:\n";
   cerr.flush();
-  f->garbageCollect();
-  f->compactMemory();
+  // f->garbageCollect();
+  // f->compactMemory();
   f->reportStats(meddlyout, "\t", 
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
@@ -620,7 +620,6 @@ int main(int argc, const char** argv)
       dd_edge mask(f);
       numTrueEquals(scratch, min, mask);
       apply(INTERSECTION, answer, mask, ansmin);
-      long c;
       apply(CARDINALITY, ansmin, c);
       if (0==c) continue;
       cerr << "  previous gens with " << min << " alive cells: " << c << "\n";
@@ -633,7 +632,6 @@ int main(int argc, const char** argv)
       dd_edge mask(f);
       numTrueEquals(scratch, min, mask);
       apply(INTERSECTION, answer, mask, ansmin);
-      long c;
       apply(CARDINALITY, ansmin, c);
       if (0==c) continue;
       cerr << c << " minimal previous generations with ";

@@ -54,27 +54,6 @@ class MEDDLY::base_evplus_mt : public specialized_operation {
     virtual void compute_r(int ht, double* y, node_handle y_ind, const double* x, 
       node_handle x_ind, node_handle A) = 0;
 
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-    virtual bool isStaleEntry(const node_handle*) {
-      throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-    }
-#else
-    virtual MEDDLY::forest::node_status getStatusOfEntry(const node_handle*) {
-      throw error(error::MISCELLANEOUS);
-    }
-#endif
-
-    virtual void discardEntry(const node_handle*) {
-      throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-    }
-    virtual void showEntry(output &, const node_handle*, bool) const {
-      throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-    }
-
-#endif
-
   protected:
     const expert_forest* fx;
     const expert_forest* fA;
@@ -95,11 +74,7 @@ class MEDDLY::base_evplus_mt : public specialized_operation {
 
 MEDDLY::base_evplus_mt::base_evplus_mt(const numerical_opname* code, 
   const dd_edge &x_ind, const dd_edge& A, const dd_edge &y_ind)
-#ifdef OLD_OP_CT
- : specialized_operation(code, 0, 0)
-#else
  : specialized_operation(code, 0)
-#endif
 {
   fx = (const expert_forest*) x_ind.getForest();
   fA = (const expert_forest*) A.getForest();
@@ -140,7 +115,7 @@ class MEDDLY::VM_evplus_mt : public base_evplus_mt {
       node_handle x_ind, node_handle A);
 
     void comp_pr(int k, double* y, node_handle y_ind, const double* x, 
-      node_handle x_ind, int ain, node_handle A);
+      node_handle x_ind, unsigned ain, node_handle A);
 
 };
 
@@ -186,8 +161,8 @@ void MEDDLY::VM_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
     unpacked_node* xR = unpacked_node::newFromNode(fx, x_ind, false);
     unpacked_node* yR = unpacked_node::newFromNode(fy, y_ind, false);
 
-    int xp = 0;
-    int yp = 0;
+    unsigned xp = 0;
+    unsigned yp = 0;
     for (;;) {
       if (xR->i(xp) < yR->i(yp)) {
         xp++;
@@ -230,8 +205,8 @@ void MEDDLY::VM_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
   unpacked_node* xR = unpacked_node::useUnpackedNode();
   xR->initFromNode(fx, x_ind, false);
 
-  int xp = 0;
-  int ap = 0;
+  unsigned xp = 0;
+  unsigned ap = 0;
   for (;;) {
     if (aR->i(ap) < xR->i(xp)) {
       ap++;
@@ -257,7 +232,7 @@ void MEDDLY::VM_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
 }
 
 void MEDDLY::VM_evplus_mt::comp_pr(int k, double* y, node_handle y_ind, 
-  const double* x, node_handle x_ind, int ain, node_handle a)
+  const double* x, node_handle x_ind, unsigned ain, node_handle a)
 {
   // Handles the primed levels of A
   if (0==k) {
@@ -276,8 +251,8 @@ void MEDDLY::VM_evplus_mt::comp_pr(int k, double* y, node_handle y_ind,
   unpacked_node* yR = unpacked_node::newFromNode(fy, y_ind, false);
 
 
-  int yp = 0;
-  int ap = 0;
+  unsigned yp = 0;
+  unsigned ap = 0;
   for (;;) {
     if (aR->i(ap) < yR->i(yp)) {
       ap++;
@@ -318,7 +293,7 @@ class MEDDLY::MV_evplus_mt : public base_evplus_mt {
       node_handle x_ind, node_handle A);
 
     void comp_pr(int k, double* y, node_handle y_ind, const double* x, 
-      node_handle x_ind, int ain, node_handle A);
+      node_handle x_ind, unsigned ain, node_handle A);
 
 };
 
@@ -364,8 +339,8 @@ void MEDDLY::MV_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
     unpacked_node* xR = unpacked_node::newFromNode(fx, x_ind, false);
     unpacked_node* yR = unpacked_node::newFromNode(fy, y_ind, false);
 
-    int xp = 0;
-    int yp = 0;
+    unsigned xp = 0;
+    unsigned yp = 0;
     for (;;) {
       if (xR->i(xp) < yR->i(yp)) {
         xp++;
@@ -408,8 +383,8 @@ void MEDDLY::MV_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
   unpacked_node* yR = unpacked_node::newFromNode(fy, y_ind, false);
 
 
-  int yp = 0;
-  int ap = 0;
+  unsigned yp = 0;
+  unsigned ap = 0;
   for (;;) {
     if (aR->i(ap) < yR->i(yp)) {
       ap++;
@@ -435,7 +410,7 @@ void MEDDLY::MV_evplus_mt::compute_r(int k, double* y, node_handle y_ind,
 }
 
 void MEDDLY::MV_evplus_mt::comp_pr(int k, double* y, node_handle y_ind, 
-  const double* x, node_handle x_ind, int ain, node_handle a)
+  const double* x, node_handle x_ind, unsigned ain, node_handle a)
 {
   // Handles the primed levels of A
   if (0==k) {
@@ -454,8 +429,8 @@ void MEDDLY::MV_evplus_mt::comp_pr(int k, double* y, node_handle y_ind,
   unpacked_node* xR = unpacked_node::newFromNode(fx, x_ind, false);
 
 
-  int xp = 0;
-  int ap = 0;
+  unsigned xp = 0;
+  unsigned ap = 0;
   for (;;) {
     if (aR->i(ap) < xR->i(xp)) {
       ap++;

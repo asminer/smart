@@ -35,13 +35,6 @@
 // *                                                                *
 // ******************************************************************
 
-#ifdef OLD_OP_CT
-MEDDLY::generic_binary_mdd::generic_binary_mdd(const binary_opname* code,
-  expert_forest* arg1, expert_forest* arg2, expert_forest* res)
-  : binary_operation(code, 2, 1, arg1, arg2, res)
-{
-}
-#else
 MEDDLY::generic_binary_mdd::generic_binary_mdd(const binary_opname* code,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : binary_operation(code, 1, arg1, arg2, res)
@@ -53,80 +46,32 @@ MEDDLY::generic_binary_mdd::generic_binary_mdd(const binary_opname* code,
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
 
 MEDDLY::generic_binary_mdd::~generic_binary_mdd()
 {
 }
 
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::generic_binary_mdd::isStaleEntry(const node_handle* data)
-{
-  return arg1F->isStale(data[0]) ||
-         arg2F->isStale(data[1]) ||
-         resF->isStale(data[2]);
-}
-#else
-MEDDLY::forest::node_status
-MEDDLY::generic_binary_mdd::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = arg1F->getNodeStatus(data[0]);
-  MEDDLY::forest::node_status b = arg2F->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[2]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-
-void MEDDLY::generic_binary_mdd::discardEntry(const node_handle* data)
-{
-  arg1F->uncacheNode(data[0]);
-  arg2F->uncacheNode(data[1]);
-  resF->uncacheNode(data[2]);
-}
-
-void
-MEDDLY::generic_binary_mdd ::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  strm << "[" << getName() << "(" << long(data[0]) << ", " << long(data[1]) << "): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << long(data[2]);
-  }
-  strm << "]";
-}
-
-#endif // OLD_OP_CT
-
 void MEDDLY::generic_binary_mdd::computeDDEdge(const dd_edge &a, const dd_edge &b, 
-  dd_edge &c)
+  dd_edge &c, bool userFlag)
 {
+#ifdef TRACE_ALL_OPS
+  printf("computing Top %s(%d, %d)\n", 
+    getName(), a.getNode(), b.getNode()
+  );
+#endif
   node_handle cnode = compute(a.getNode(), b.getNode());
   const int num_levels = resF->getDomain()->getNumVariables();
-  if (resF->isQuasiReduced() && cnode != resF->getTransparentNode()
+  if ( userFlag && resF->isQuasiReduced() && cnode != resF->getTransparentNode()
     && resF->getNodeLevel(cnode) < num_levels) {
     node_handle temp = ((mt_forest*)resF)->makeNodeAtLevel(num_levels, cnode);
     resF->unlinkNode(cnode);
     cnode = temp;
   }
-  c.set(cnode);
 #ifdef TRACE_ALL_OPS
-  printf("completed %s(%d, %d) = %d\n", 
+  printf("completed Top %s(%d, %d) = %d\n", 
     getName(), a.getNode(), b.getNode(), cnode);
 #endif
+  c.set(cnode);
 #ifdef DEVELOPMENT_CODE
   resF->validateIncounts(true);
 #endif
@@ -140,7 +85,19 @@ MEDDLY::generic_binary_mdd::compute(node_handle a, node_handle b)
     return result;
 
   compute_table::entry_key* Key = findResult(a, b, result);
-  if (0==Key) return result;
+  if (0==Key) {
+#ifdef TRACE_ALL_OPS
+    printf("computing %s(%d, %d), got %d from cache\n", getName(), a, b, result);
+    fflush(stdout);
+#endif
+
+    return result;
+  }
+
+#ifdef TRACE_ALL_OPS
+  printf("computing %s(%d, %d)\n", getName(), a, b);
+  fflush(stdout);
+#endif
 
   // Get level information
   const int aLevel = arg1F->getNodeLevel(a);
@@ -170,7 +127,7 @@ MEDDLY::generic_binary_mdd::compute_normal(node_handle a, node_handle b)
   const int aLevel = arg1F->getNodeLevel(a);
   const int bLevel = arg2F->getNodeLevel(b);
   const int resultLevel = MAX(aLevel, bLevel);
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   MEDDLY_DCASSERT(!resF->isExtensibleLevel(resultLevel));
 
@@ -195,13 +152,13 @@ MEDDLY::generic_binary_mdd::compute_normal(node_handle a, node_handle b)
   MEDDLY_DCASSERT(C->isFull() && resultSize == C->getSize());
 
   // do computation
-  for (int i=0; i<resultSize; i++) {
+  for (unsigned i=0; i<resultSize; i++) {
     C->d_ref(i) = compute(A->d(i), B->d(i));
   }
 
   if (resF->isQuasiReduced()) {
     int nextLevel = resultLevel - 1;
-    for (int i = 0; i < C->getSize(); i++) {
+    for (unsigned i = 0; i < C->getSize(); i++) {
       if (resF->getNodeLevel(C->d(i)) < nextLevel) {
         node_handle temp = ((mt_forest*)resF)->makeNodeAtLevel(nextLevel, C->d(i));
         resF->unlinkNode(C->d(i));
@@ -275,13 +232,13 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
   //
   // Loop 1: [0, min(a_last_index,b_last_index)]
   //
-  int A_curr_index = 0;
-  int B_curr_index = 0;
+  unsigned A_curr_index = 0;
+  unsigned B_curr_index = 0;
   int j = 0;
-  int nnz = 0;
+  unsigned nnz = 0;
   for ( ; j <= min_a_b_last_index; j++) {
-    const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
-    const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+    const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+    const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
     node_handle down = compute(a_d, b_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -295,7 +252,7 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
   // Loop 2: [min(a_last_index,b_last_index)+1, max(a_last_index,b_last_index)]
   //
   for ( ; j <= A_last_index; j++) {
-    const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+    const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
     node_handle down = compute(a_d, B_ext_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -304,7 +261,7 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
     }
   }
   for ( ; j <= B_last_index; j++) {
-    const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+    const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
     node_handle down = compute(A_ext_d, b_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -333,7 +290,7 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
 
   if (resF->isQuasiReduced()) {
     int nextLevel = resultLevel - 1;
-    for (int i = 0; i < C->getNNZs(); i++) {
+    for (unsigned i = 0; i < C->getNNZs(); i++) {
       if (resF->getNodeLevel(C->d(i)) < nextLevel) {
         node_handle temp = ((mt_forest*)resF)->makeNodeAtLevel(nextLevel, C->d(i));
         resF->unlinkNode(C->d(i));
@@ -372,8 +329,8 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
     ;
   const node_handle B_ext_d = B->isExtensible()? B->ext_d(): 0;
 
-  const int min_size = MIN(A->getSize(), B->getSize());
-  const int max_size = MAX(A->getSize(), B->getSize());
+  const unsigned min_size = MIN(A->getSize(), B->getSize());
+  const unsigned max_size = MAX(A->getSize(), B->getSize());
 
   const node_handle C_ext_d =
     (A->isExtensible() || B->isExtensible())
@@ -391,7 +348,7 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
   // 
   // Last index: result of A_ext_d and B_ext_d
 
-  int resultSize = max_size + (C_is_extensible? 1: 0);
+  unsigned resultSize = max_size + (C_is_extensible? 1: 0);
   unpacked_node* C = unpacked_node::newFull(resF, resultLevel, resultSize);
 
   //
@@ -429,7 +386,7 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
 
   if (resF->isQuasiReduced()) {
     int nextLevel = resultLevel - 1;
-    for (int i = 0; i < C->getSize(); i++) {
+    for (unsigned i = 0; i < C->getSize(); i++) {
       if (resF->getNodeLevel(C->d(i)) < nextLevel) {
         node_handle temp = ((mt_forest*)resF)->makeNodeAtLevel(nextLevel, C->d(i));
         resF->unlinkNode(C->d(i));
@@ -453,16 +410,6 @@ MEDDLY::generic_binary_mdd::compute_ext(node_handle a, node_handle b)
 // *                                                                *
 // ******************************************************************
 
-#ifdef OLD_OP_CT
-MEDDLY::generic_binary_mxd::generic_binary_mxd(const binary_opname* code,
-  expert_forest* arg1, expert_forest* arg2, expert_forest* res)
-  : binary_operation(code, 2, 1, arg1, arg2, res)
-{
-  // data[0] : arg1
-  // data[1] : arg2
-  // data[2] : result
-}
-#else
 MEDDLY::generic_binary_mxd::generic_binary_mxd(const binary_opname* code,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : binary_operation(code, 1, arg1, arg2, res)
@@ -474,65 +421,13 @@ MEDDLY::generic_binary_mxd::generic_binary_mxd(const binary_opname* code,
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
 
 MEDDLY::generic_binary_mxd::~generic_binary_mxd()
 {
 }
 
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::generic_binary_mxd::isStaleEntry(const node_handle* data)
-{
-  return arg1F->isStale(data[0]) ||
-         arg2F->isStale(data[1]) ||
-         resF->isStale(data[2]);
-}
-#else
-MEDDLY::forest::node_status
-MEDDLY::generic_binary_mxd::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = arg1F->getNodeStatus(data[0]);
-  MEDDLY::forest::node_status b = arg2F->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[2]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-void MEDDLY::generic_binary_mxd::discardEntry(const node_handle* data)
-{
-  arg1F->uncacheNode(data[0]);
-  arg2F->uncacheNode(data[1]);
-  resF->uncacheNode(data[2]);
-}
-
-void
-MEDDLY::generic_binary_mxd ::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  strm << "[" << getName() << "(" << long(data[0]) << ", " << long(data[1]) << "): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << long(data[2]);
-  }
-  strm << "]";
-}
-
-#endif // OLD_OP_CT
-
 void MEDDLY::generic_binary_mxd::computeDDEdge(const dd_edge &a, const dd_edge &b, 
-  dd_edge &c)
+  dd_edge &c, bool userFlag)
 {
   node_handle cnode = compute(a.getNode(), b.getNode());
   c.set(cnode);
@@ -601,7 +496,7 @@ MEDDLY::generic_binary_mxd::compute_r(int in, int k, node_handle a, node_handle 
     : compute_r_normal(in, k, a, b);
 
 #ifdef TRACE_ALL_OPS
-  printf("computed %s(in %d, %d, %d) = %d\n", getName(), in, a, b, result);
+  printf("computed %s(in %d, level %d, %d, %d) = %d\n", getName(), in, k, a, b, result);
   fflush(stdout);
 #endif
 
@@ -618,7 +513,7 @@ MEDDLY::generic_binary_mxd::compute_normal(node_handle a, node_handle b)
   const int aLevel = arg1F->getNodeLevel(a);
   const int bLevel = arg2F->getNodeLevel(b);
   int resultLevel = ABS(topLevel(aLevel, bLevel));
-  int resultSize = resF->getLevelSize(resultLevel);
+  unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   MEDDLY_DCASSERT(!resF->isExtensibleLevel(resultLevel));
 
@@ -639,7 +534,7 @@ MEDDLY::generic_binary_mxd::compute_normal(node_handle a, node_handle b)
   MEDDLY_DCASSERT(!B->isExtensible());
 
   // Do computation
-  for (int j=0; j<resultSize; j++) {
+  for (unsigned j=0; j<resultSize; j++) {
     C->d_ref(j) = compute_r(j, resF->downLevel(resultLevel), A->d(j), B->d(j));
   }
 
@@ -711,13 +606,13 @@ MEDDLY::generic_binary_mxd::compute_ext(node_handle a, node_handle b)
   //
   // Loop 1: [0, min(a_last_index,b_last_index)]
   //
-  int A_curr_index = 0;
-  int B_curr_index = 0;
+  unsigned A_curr_index = 0;
+  unsigned B_curr_index = 0;
   int j = 0;
-  int nnz = 0;
+  unsigned nnz = 0;
   for ( ; j <= min_a_b_last_index; j++) {
-    const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
-    const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+    const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+    const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
     node_handle down = compute_r(j, dwnLevel, a_d, b_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -731,7 +626,7 @@ MEDDLY::generic_binary_mxd::compute_ext(node_handle a, node_handle b)
   // Loop 2: [min(a_last_index,b_last_index)+1, max(a_last_index,b_last_index)]
   //
   for ( ; j <= A_last_index; j++) {
-    const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+    const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
     node_handle down = compute_r(j, dwnLevel, a_d, B_ext_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -740,7 +635,7 @@ MEDDLY::generic_binary_mxd::compute_ext(node_handle a, node_handle b)
     }
   }
   for ( ; j <= B_last_index; j++) {
-    const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+    const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
     node_handle down = compute_r(j, dwnLevel, A_ext_d, b_d);
     if (down) {
       C->d_ref(nnz) = down;
@@ -800,8 +695,8 @@ MEDDLY::generic_binary_mxd::compute_ext(node_handle a, node_handle b)
     ;
   const node_handle B_ext_d = B->isExtensible()? B->ext_d(): 0;
 
-  const int min_size = MIN(A->getSize(), B->getSize());
-  const int max_size = MAX(A->getSize(), B->getSize());
+  const unsigned min_size = MIN(A->getSize(), B->getSize());
+  const unsigned max_size = MAX(A->getSize(), B->getSize());
 
   const node_handle C_ext_d =
     (A->isExtensible() || B->isExtensible())
@@ -819,7 +714,7 @@ MEDDLY::generic_binary_mxd::compute_ext(node_handle a, node_handle b)
   // 
   // Last index: result of A_ext_d and B_ext_d
 
-  int resultSize = max_size + (C_is_extensible? 1: 0);
+  unsigned resultSize = max_size + (C_is_extensible? 1: 0);
   unpacked_node* C = unpacked_node::newFull(resF, resultLevel, resultSize);
 
   //
@@ -871,7 +766,7 @@ MEDDLY::generic_binary_mxd::compute_r_normal(int in, int k, node_handle a, node_
   const int aLevel = arg1F->getNodeLevel(a);
   const int bLevel = arg2F->getNodeLevel(b);
 
-  const int resultSize = resF->getLevelSize(k);
+  const unsigned resultSize = unsigned(resF->getLevelSize(k));
 
   unpacked_node* C = unpacked_node::newFull(resF, k, resultSize);
 
@@ -898,7 +793,7 @@ MEDDLY::generic_binary_mxd::compute_r_normal(int in, int k, node_handle a, node_
   MEDDLY_DCASSERT(B->getSize() == C->getSize());
 
   // Do computation
-  for (int j=0; j<resultSize; j++) {
+  for (unsigned j=0; j<resultSize; j++) {
     C->d_ref(j) = compute(A->d(j), B->d(j));
   }
 
@@ -965,13 +860,13 @@ MEDDLY::generic_binary_mxd::compute_r_ext(int in, int k, node_handle a, node_han
 
     // Loop 1: [0, min(a_last_index,b_last_index)]
     //
-    int A_curr_index = 0;
-    int B_curr_index = 0;
+    unsigned A_curr_index = 0;
+    unsigned B_curr_index = 0;
     int j = 0;
-    int nnz = 0;
+    unsigned nnz = 0;
     for ( ; j <= min_a_b_last_index; j++) {
-      const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
-      const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+      const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+      const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
       node_handle down = compute(a_d, b_d);
       if (down) {
         C->d_ref(nnz) = down;
@@ -984,7 +879,7 @@ MEDDLY::generic_binary_mxd::compute_r_ext(int in, int k, node_handle a, node_han
     // Loop 2: [min(a_last_index,b_last_index)+1, max(a_last_index,b_last_index)]
     //
     for ( ; j <= A_last_index; j++) {
-      const int a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
+      const node_handle a_d = ((j == A->i(A_curr_index))? A->d(A_curr_index++): 0);
       node_handle down = compute(a_d, B_ext_d);
       if (down) {
         C->d_ref(nnz) = down;
@@ -993,7 +888,7 @@ MEDDLY::generic_binary_mxd::compute_r_ext(int in, int k, node_handle a, node_han
       }
     }
     for ( ; j <= B_last_index; j++) {
-      const int b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
+      const node_handle b_d = ((j == B->i(B_curr_index))? B->d(B_curr_index++): 0);
       node_handle down = compute(A_ext_d, b_d);
       if (down) {
         C->d_ref(nnz) = down;
@@ -1058,15 +953,15 @@ MEDDLY::generic_binary_mxd::compute_r_ext(int in, int k, node_handle a, node_han
     ;
   const node_handle B_ext_d = B->isExtensible()? B->ext_d(): 0;
 
-  const int min_size = MIN(A->getSize(), B->getSize());
-  const int max_size = MAX(A->getSize(), B->getSize());
+  const unsigned min_size = MIN(A->getSize(), B->getSize());
+  const unsigned max_size = MAX(A->getSize(), B->getSize());
 
   const node_handle C_ext_d =
     (A->isExtensible() || B->isExtensible())
     ? compute(A_ext_d, B_ext_d)
     : 0;
   const bool C_is_extensible = (C_ext_d != 0);
-  int resultSize = max_size + (C_is_extensible? 1: 0);
+  unsigned resultSize = max_size + (C_is_extensible? 1: 0);
 
   if (resultSize > 0) {
     unpacked_node* C = unpacked_node::newFull(resF, k, resultSize);
@@ -1116,15 +1011,6 @@ MEDDLY::generic_binary_mxd::compute_r_ext(int in, int k, node_handle a, node_han
 // *                                                                *
 // ******************************************************************
 
-#ifdef OLD_OP_CT
-MEDDLY::generic_binbylevel_mxd
-::generic_binbylevel_mxd(const binary_opname* code, expert_forest* arg1, 
-  expert_forest* arg2, expert_forest* res)
- : binary_operation(code, 3, 1, arg1, arg2, res)
-{
-  can_commute = false;
-}
-#else
 MEDDLY::generic_binbylevel_mxd
 ::generic_binbylevel_mxd(const binary_opname* code, expert_forest* arg1, 
   expert_forest* arg2, expert_forest* res)
@@ -1138,67 +1024,13 @@ MEDDLY::generic_binbylevel_mxd
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
 
 MEDDLY::generic_binbylevel_mxd::~generic_binbylevel_mxd()
 {
 }
 
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::generic_binbylevel_mxd::isStaleEntry(const node_handle* data)
-{
-  return arg1F->isStale(data[1]) ||
-         arg2F->isStale(data[2]) ||
-         resF->isStale(data[3]);
-}
-#else
-MEDDLY::forest::node_status
-MEDDLY::generic_binbylevel_mxd::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = arg1F->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status b = arg2F->getNodeStatus(data[2]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[3]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-void MEDDLY::generic_binbylevel_mxd::discardEntry(const node_handle* data)
-{
-  arg1F->uncacheNode(data[1]);
-  arg2F->uncacheNode(data[2]);
-  resF->uncacheNode(data[3]);
-}
-
-void
-MEDDLY::generic_binbylevel_mxd
-::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  strm << "[" << getName() << "(" << long(data[0]) << ", " << long(data[1]) 
-       << ", " << long(data[2]) << "): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << long(data[3]);
-  }
-  strm << "]";
-}
-
-#endif // OLD_OP_CT
-
 void MEDDLY::generic_binbylevel_mxd
-::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c)
+::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c, bool userFlag)
 {
   node_handle result = compute(
     resF->getDomain()->getNumVariables(), a.getNode(), b.getNode()
@@ -1236,7 +1068,7 @@ MEDDLY::generic_binbylevel_mxd
   const int aLevel = arg1F->getNodeLevel(a);
   const int bLevel = arg2F->getNodeLevel(b);
 
-  int resultSize = resF->getLevelSize(resultLevel);
+  unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   unpacked_node* C = unpacked_node::newFull(resF, resultLevel, resultSize);
 
@@ -1270,8 +1102,8 @@ MEDDLY::generic_binbylevel_mxd
 
   // Do computation
   int nextLevel = resF->downLevel(resultLevel);
-  int nnz = 0;
-  for (int j=0; j<resultSize; j++) {
+  unsigned nnz = 0;
+  for (unsigned j=0; j<resultSize; j++) {
     node_handle d = compute_r(j, nextLevel, A->d(j), B->d(j));
     C->d_ref(j) = d;
     if (d) nnz++;
@@ -1290,7 +1122,7 @@ MEDDLY::generic_binbylevel_mxd
   else                CT0->recycle(Key);
 
 #ifdef TRACE_ALL_OPS
-  printf("computed %s(in %d, %d, %d) = %d\n", getName(), in, a, b, result);
+  printf("computed %s(in %d, level %d, %d, %d) = %d\n", getName(), in, resultLevel, a, b, result);
   fflush(stdout);
 #endif
 
@@ -1442,19 +1274,9 @@ MEDDLY::generic_binbylevel_mxd
 // *                                                                *
 // ******************************************************************
 
-#ifdef OLD_OP_CT
-MEDDLY::generic_binary_ev::generic_binary_ev(const binary_opname* code,
-  expert_forest* arg1, expert_forest* arg2, expert_forest* res)
-  : binary_operation(code,
-      // XXX: Cause problem in case of EV*
-      (arg1->edgeBytes() + sizeof(node_handle) + arg2->edgeBytes() + sizeof(node_handle)) / sizeof(node_handle),
-      (res->edgeBytes() + sizeof(node_handle)) / sizeof(node_handle),
-      arg1, arg2, res)
-#else
 MEDDLY::generic_binary_ev::generic_binary_ev(const binary_opname* code,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : binary_operation(code, 1, arg1, arg2, res)
-#endif
 {
   can_commute = false;
 }
@@ -1463,48 +1285,6 @@ MEDDLY::generic_binary_ev::~generic_binary_ev()
 {
 }
 
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::generic_binary_ev::isStaleEntry(const node_handle* data)
-{
-  bool a = arg1F->isStale(data[arg1F->edgeBytes() / sizeof(node_handle)]);
-  bool b = arg2F->isStale(data[(arg1F->edgeBytes() + sizeof(node_handle) + arg2F->edgeBytes()) / sizeof(node_handle)]);
-  bool c = resF->isStale(data[(arg1F->edgeBytes() + sizeof(node_handle) + arg2F->edgeBytes() + sizeof(node_handle) + resF->edgeBytes()) / sizeof(node_handle)]);
-
-  return (a | b | c);
-}
-
-#else
-
-MEDDLY::forest::node_status
-MEDDLY::generic_binary_ev::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = arg1F->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status b = arg2F->getNodeStatus(data[3]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[5]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-void MEDDLY::generic_binary_ev::discardEntry(const node_handle* data)
-{
-  arg1F->uncacheNode(data[arg1F->edgeBytes() / sizeof(node_handle)]);
-  arg2F->uncacheNode(data[(arg1F->edgeBytes() + sizeof(node_handle) + arg2F->edgeBytes()) / sizeof(node_handle)]);
-  resF->uncacheNode(data[(arg1F->edgeBytes() + sizeof(node_handle) + arg2F->edgeBytes() + sizeof(node_handle) + resF->edgeBytes()) / sizeof(node_handle)]);
-}
-
-#endif // OLD_OP_CT
 
 // ******************************************************************
 // *                                                                *
@@ -1516,39 +1296,20 @@ MEDDLY::generic_binary_evplus::generic_binary_evplus(const binary_opname* code,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_ev(code, arg1, arg2, res)
 {
-#ifndef OLD_OP_CT
   compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "LNLN:LN");
   et->setForestForSlot(1, arg1);
   et->setForestForSlot(3, arg2);
   et->setForestForSlot(6, res);
   registerEntryType(0, et);
   buildCTs();
-#endif
 }
 
 MEDDLY::generic_binary_evplus::~generic_binary_evplus()
 {
 }
 
-#ifdef OLD_OP_CT
-
 void MEDDLY::generic_binary_evplus
-::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  strm << "[" << getName() << "(<" << long(data[0]) << ":" << long(data[1]) 
-       << ">, <" << long(data[2]) << ":" << long(data[3]) << ">): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << "<" << long(data[4]) << ":" << long(data[5]) << ">";
-  }
-  strm << "]";
-}
-
-#endif
-
-void MEDDLY::generic_binary_evplus
-::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c)
+::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c, bool userFlag)
 {
   node_handle result;
   long ev = Inf<long>(), aev = Inf<long>(), bev = Inf<long>();
@@ -1576,7 +1337,7 @@ void MEDDLY::generic_binary_evplus
   const int bLevel = arg2F->getNodeLevel(b);
 
   const int resultLevel = MAX(aLevel, bLevel);
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   // Initialize result
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
@@ -1596,7 +1357,7 @@ void MEDDLY::generic_binary_evplus
 
 
   // do computation
-  for (int i=0; i<resultSize; i++) {
+  for (unsigned i=0; i<resultSize; i++) {
     long ev = 0;
     node_handle ed = 0;
     compute(aev + A->ei(i), A->d(i),
@@ -1631,39 +1392,20 @@ MEDDLY::generic_binary_evplus_mxd::generic_binary_evplus_mxd(const binary_opname
   if (!arg1->isForRelations() || !arg2->isForRelations() || !res->isForRelations()) {
     throw error::TYPE_MISMATCH;
   }
-#ifndef OLD_OP_CT
   compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "LNLN:LN");
   et->setForestForSlot(1, arg1);
   et->setForestForSlot(3, arg2);
   et->setForestForSlot(6, res);
   registerEntryType(0, et);
   buildCTs();
-#endif
 }
 
 MEDDLY::generic_binary_evplus_mxd::~generic_binary_evplus_mxd()
 {
 }
 
-#ifdef OLD_OP_CT
-
 void MEDDLY::generic_binary_evplus_mxd
-::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  strm << "[" << getName() << "(<" << long(data[0]) << ":" << long(data[1])
-       << ">, <" << long(data[2]) << ":" << long(data[3]) << ">): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << "<" << long(data[4]) << ":" << long(data[5]) << ">";
-  }
-  strm << "]";
-}
-
-#endif
-
-void MEDDLY::generic_binary_evplus_mxd
-::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c)
+::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c, bool userFlag)
 {
   node_handle result;
   long ev = Inf<long>(), aev = Inf<long>(), bev = Inf<long>();
@@ -1694,7 +1436,7 @@ void MEDDLY::generic_binary_evplus_mxd
   const int bLevel = arg2F->getNodeLevel(b);
 
   const int resultLevel = ABS(isLevelAbove(aLevel, bLevel) ? aLevel: bLevel);
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   // Initialize result
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
@@ -1709,7 +1451,7 @@ void MEDDLY::generic_binary_evplus_mxd
     : unpacked_node::newFromNode(arg2F, b, true);
 
   // do computation
-  for (int i = 0; i < resultSize; i++) {
+  for (unsigned i = 0; i < resultSize; i++) {
 //    long ev = Inf<long>();
     long ev = 0;
     node_handle ed = 0;
@@ -1744,7 +1486,7 @@ void MEDDLY::generic_binary_evplus_mxd
   const int aLevel = arg1F->getNodeLevel(a);
   const int bLevel = arg2F->getNodeLevel(b);
 
-  const int resultSize = resF->getLevelSize(level);
+  const unsigned resultSize = unsigned(resF->getLevelSize(level));
 
   unpacked_node* C = unpacked_node::newFull(resF, level, resultSize);
 
@@ -1769,7 +1511,7 @@ void MEDDLY::generic_binary_evplus_mxd
   }
 
   // Do computation
-  for (int i = 0; i < resultSize; i++) {
+  for (unsigned i = 0; i < resultSize; i++) {
     long ev = 0;
     node_handle e = 0;
     compute(aev + A->ei(i), A->d(i), bev + B->ei(i), B->d(i), ev, e);
@@ -1786,7 +1528,7 @@ void MEDDLY::generic_binary_evplus_mxd
   resF->createReducedNode(in, C, cev, c);
 
 #ifdef TRACE_ALL_OPS
-  printf("computed %s(in %d, %d, %d) = %d\n", getName(), in, a, b, result);
+  printf("computed %s(in %d, %d, %d) = %d\n", getName(), in, a, b, c);
 #endif
 }
 
@@ -1801,46 +1543,20 @@ MEDDLY::generic_binary_evtimes
   expert_forest* arg2, expert_forest* res)
 : generic_binary_ev(code, arg1, arg2, res)
 {
-#ifndef OLD_OP_CT
   compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "FNFN:FN");
   et->setForestForSlot(1, arg1);
   et->setForestForSlot(3, arg2);
   et->setForestForSlot(6, res);
   registerEntryType(0, et);
   buildCTs();
-#endif
 }
 
 MEDDLY::generic_binary_evtimes::~generic_binary_evtimes()
 {
 }
 
-#ifdef OLD_OP_CT
-
 void MEDDLY::generic_binary_evtimes
-::showEntry(output &strm, const node_handle *data, bool key_only) const
-{
-  float ev0;
-  float ev2;
-  float ev4;
-  compute_table::readEV(data+0, ev0);
-  compute_table::readEV(data+2, ev2);
-  strm << "[" << getName() << "(<" << ev0 << ":" << long(data[1]) 
-       << ">, <" << ev2 << ":" << long(data[3]) << ">): ";
-
-  if (key_only) {
-    strm << "?";
-  } else {
-    compute_table::readEV(data+4, ev4);
-    strm << "<" << ev4 << ":" << long(data[5]) << ">]";
-  }
-  strm << "]";
-}
-
-#endif
-
-void MEDDLY::generic_binary_evtimes
-::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c)
+::computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge& c, bool userFlag)
 {
   node_handle result; 
   float ev, aev, bev;
@@ -1875,7 +1591,7 @@ void MEDDLY::generic_binary_evtimes
   // Initialize result
   const int resultLevel = ABS(topLevel(aLevel, bLevel));
   MEDDLY_DCASSERT(resultLevel>0);
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
 
   // Initialize readers
@@ -1892,7 +1608,7 @@ void MEDDLY::generic_binary_evtimes
   MEDDLY_DCASSERT(!A->isExtensible() && !B->isExtensible());
 
   // do computation
-  for (int i=0; i<resultSize; i++) {
+  for (unsigned i=0; i<resultSize; i++) {
     float ev;
     node_handle ed;
     compute_k(
@@ -1938,7 +1654,7 @@ void MEDDLY::generic_binary_evtimes
   const int bLevel = arg2F->getNodeLevel(b);
 
   // Initialize result
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
 
   // Initialize readers
@@ -1964,7 +1680,7 @@ void MEDDLY::generic_binary_evtimes
   MEDDLY_DCASSERT(!A->isExtensible() && !B->isExtensible());
 
   // do computation
-  for (int i=0; i<resultSize; i++) {
+  for (unsigned i=0; i<resultSize; i++) {
     float ev;
     node_handle ed;
     compute(

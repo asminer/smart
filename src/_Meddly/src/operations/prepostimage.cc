@@ -67,58 +67,28 @@ class MEDDLY::image_op : public binary_operation {
     image_op(const binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
-#ifdef OLD_OP_CT
-#ifndef USE_NODE_STATUS
-    virtual bool isStaleEntry(const node_handle* entryData);
-#else
-    virtual MEDDLY::forest::node_status getStatusOfEntry(const node_handle* entryData);
-#endif
-    virtual void discardEntry(const node_handle* entryData);
-    virtual void showEntry(output &strm, const node_handle* entryData, bool key_only) const;
-#endif // OLD_OP_CT
-
     inline compute_table::entry_key* 
     findResult(node_handle a, node_handle b, node_handle &c) 
     {
-#ifdef OLD_OP_CT
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
       compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CTsrch->writeN(b);
-#ifdef OLD_OP_CT
-      compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-      if (!cacheFind) return CTsrch;
-      c = resF->linkNode(cacheFind.readN());
-#else
       CT0->find(CTsrch, CTresult[0]);
       if (!CTresult[0]) return CTsrch;
       c = resF->linkNode(CTresult[0].readN());
-#endif
       CT0->recycle(CTsrch);
       return 0;
     }
     inline node_handle saveResult(compute_table::entry_key* Key, 
       node_handle a, node_handle b, node_handle c) 
     {
-#ifdef OLD_OP_CT
-      argV->cacheNode(a);
-      argM->cacheNode(b);
-      resF->cacheNode(c);
-      static compute_table::entry_result result(1);
-      result.reset();
-      result.writeN(c);
-      CT0->addEntry(Key, result);
-#else
       CTresult[0].reset();
       CTresult[0].writeN(c);
       CT0->addEntry(Key, CTresult[0]);
-#endif
       return c;
     }
-    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c);
+    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c, bool userFlag);
     virtual node_handle compute(node_handle a, node_handle b);
   protected:
     binary_operation* accumulateOp;
@@ -128,24 +98,6 @@ class MEDDLY::image_op : public binary_operation {
     expert_forest* argM;
 };
 
-#ifdef OLD_OP_CT
-MEDDLY::image_op::image_op(const binary_opname* oc, expert_forest* a1,
-  expert_forest* a2, expert_forest* res, binary_operation* acc)
-: binary_operation(oc, 2, 1, a1, a2, res)
-{
-  accumulateOp = acc;
-
-  if (a1->isForRelations()) {
-    argM = a1;
-    argV = a2;
-    if (a2->isForRelations()) throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-  } else {
-    argM = a2;
-    argV = a1;
-    if (!a2->isForRelations()) throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-  }
-}
-#else
 MEDDLY::image_op::image_op(const binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
 : binary_operation(oc, 1, a1, a2, res)
@@ -169,66 +121,27 @@ MEDDLY::image_op::image_op(const binary_opname* oc, expert_forest* a1,
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
-
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::image_op::isStaleEntry(const node_handle* data)
-{
-  return argV->isStale(data[0]) ||
-         argM->isStale(data[1]) ||
-         resF->isStale(data[2]);
-}
-#else
-MEDDLY::forest::node_status
-MEDDLY::image_op::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = argV->getNodeStatus(data[0]);
-  MEDDLY::forest::node_status b = argM->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[2]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-void MEDDLY::image_op::discardEntry(const node_handle* data)
-{
-  argV->uncacheNode(data[0]);
-  argM->uncacheNode(data[1]);
-  resF->uncacheNode(data[2]);
-}
-
-void
-MEDDLY::image_op::showEntry(output &strm, const node_handle* data, bool key_only) const
-{
-  strm  << "[" << getName() << "(" << long(data[0]) << ", " << long(data[1]) << "): ";
-  if (key_only) {
-    strm << "?]";
-  } else {
-    strm << long(data[2]) << "]";
-  }
-}
-
-#endif // OLD_OP_CT
 
 void MEDDLY::image_op
-::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c)
+::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c, bool userFlag)
 {
   node_handle cnode;
   if (a.getForest() == argV) {
+#ifdef TRACE_ALL_OPS
+    printf("computing top-level product(%d, %d)\n", a.getNode(), b.getNode());
+#endif
     cnode = compute(a.getNode(), b.getNode());
+#ifdef TRACE_ALL_OPS
+    printf("computed top-level product(%d, %d) = %d\n", a.getNode(), b.getNode(), cnode);
+#endif
   } else {
+#ifdef TRACE_ALL_OPS
+    printf("computing top-level product(%d, %d)\n", b.getNode(), a.getNode());
+#endif
     cnode = compute(b.getNode(), a.getNode());
+#ifdef TRACE_ALL_OPS
+    printf("computed top-level product(%d, %d) = %d\n", b.getNode(), a.getNode(), cnode);
+#endif
   }
   c.set(cnode);
 }
@@ -287,7 +200,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
   const int mddLevel = argV->getNodeLevel(mdd);
   const int mxdLevel = argM->getNodeLevel(mxd);
   const int rLevel = MAX(ABS(mxdLevel), mddLevel);
-  const int rSize = resF->getLevelSize(rLevel);
+  const unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize mdd reader
@@ -302,7 +215,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
     //
     // Skipped levels in the MXD,
     // that's an important special case that we can handle quickly.
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       C->d_ref(i) = compute_rec(A->d(i), mxd);
     }
   } else {
@@ -311,7 +224,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
     MEDDLY_DCASSERT(ABS(mxdLevel) >= mddLevel);
 
     // clear out result (important!)
-    for (int i=0; i<rSize; i++) C->d_ref(i) = 0;
+    for (unsigned i=0; i<rSize; i++) C->d_ref(i) = 0;
 
     // Initialize mxd readers, note we might skip the unprimed level
     unpacked_node *Ru = unpacked_node::useUnpackedNode();
@@ -322,9 +235,11 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
       Ru->initFromNode(argM, mxd, false);
     }
 
+    dd_edge newstatesE(resF), cdi(resF);
+
     // loop over mxd "rows"
-    for (int iz=0; iz<Ru->getNNZs(); iz++) {
-      int i = Ru->i(iz);
+    for (unsigned iz=0; iz<Ru->getNNZs(); iz++) {
+      unsigned i = Ru->i(iz);
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
@@ -332,8 +247,9 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
       }
 
       // loop over mxd "columns"
-      for (int jz=0; jz<Rp->getNNZs(); jz++) {
-        int j = Rp->i(jz);
+      for (unsigned jz=0; jz<Rp->getNNZs(); jz++) {
+        unsigned j = Rp->i(jz);
+        MEDDLY_DCASSERT(0<=j && j < A->getSize());
         if (0==A->d(j))   continue; 
         // ok, there is an i->j "edge".
         // determine new states to be added (recursively)
@@ -345,10 +261,10 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
           continue;
         }
         // there's new states and existing states; union them.
-        node_handle oldi = C->d(i);
-        C->d_ref(i) = accumulateOp->compute(newstates, oldi);
-        resF->unlinkNode(oldi);
-        resF->unlinkNode(newstates);
+        newstatesE.set(newstates);
+        cdi.set(C->d(i));
+        accumulateOp->computeTemp(newstatesE, cdi, cdi);
+        C->set_d(i, cdi);
       } // for j
   
     } // for i
@@ -410,13 +326,24 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
   // check the cache
   node_handle result = 0;
   compute_table::entry_key* Key = findResult(mdd, mxd, result);
-  if (0==Key) return result;
+  if (0==Key) {
+#ifdef TRACE_ALL_OPS
+    printf("computing new setXrel(%d, %d), got %d from cache\n", mdd, mxd, result);
+#endif
+
+    return result;
+  }
+
+#ifdef TRACE_ALL_OPS
+  printf("computing new setXrel(%d, %d)\n", mdd, mxd);
+#endif
+
 
   // check if mxd and mdd are at the same level
   const int mddLevel = argV->getNodeLevel(mdd);
   const int mxdLevel = argM->getNodeLevel(mxd);
   const int rLevel = MAX(ABS(mxdLevel), mddLevel);
-  const int rSize = resF->getLevelSize(rLevel);
+  const unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize mdd reader
@@ -431,7 +358,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
     //
     // Skipped levels in the MXD,
     // that's an important special case that we can handle quickly.
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       C->d_ref(i) = compute_rec(A->d(i), mxd);
     }
   } else {
@@ -440,7 +367,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
     MEDDLY_DCASSERT(ABS(mxdLevel) >= mddLevel);
 
     // clear out result (important!)
-    for (int i=0; i<rSize; i++) C->d_ref(i) = 0;
+    for (unsigned i=0; i<rSize; i++) C->d_ref(i) = 0;
 
     // Initialize mxd readers, note we might skip the unprimed level
     unpacked_node *Ru = unpacked_node::useUnpackedNode();
@@ -451,9 +378,11 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
       Ru->initFromNode(argM, mxd, false);
     }
 
+    dd_edge newstatesE(resF), cdj(resF);
+
     // loop over mxd "rows"
-    for (int iz=0; iz<Ru->getNNZs(); iz++) {
-      int i = Ru->i(iz);
+    for (unsigned iz=0; iz<Ru->getNNZs(); iz++) {
+      unsigned i = Ru->i(iz);
       if (0==A->d(i))   continue; 
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
@@ -462,8 +391,8 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
       }
 
       // loop over mxd "columns"
-      for (int jz=0; jz<Rp->getNNZs(); jz++) {
-        int j = Rp->i(jz);
+      for (unsigned jz=0; jz<Rp->getNNZs(); jz++) {
+        unsigned j = Rp->i(jz);
         // ok, there is an i->j "edge".
         // determine new states to be added (recursively)
         // and add them
@@ -474,10 +403,10 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
           continue;
         }
         // there's new states and existing states; union them.
-        node_handle oldj = C->d(j);
-        C->d_ref(j) = accumulateOp->compute(newstates, oldj);
-        resF->unlinkNode(oldj);
-        resF->unlinkNode(newstates);
+        newstatesE.set(newstates);
+        cdj.set(C->d(j));
+        accumulateOp->computeTemp(newstatesE, cdj, cdj);
+        C->set_d(j, cdj);
       } // for j
   
     } // for i
@@ -623,34 +552,17 @@ class MEDDLY::image_op_evplus : public binary_operation {
     image_op_evplus(const binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
-#ifdef OLD_OP_CT
-    virtual bool isStaleEntry(const node_handle* entryData);
-    virtual void discardEntry(const node_handle* entryData);
-    virtual void showEntry(output &strm, const node_handle* entryData, bool key_only) const;
-#endif
-
     inline compute_table::entry_key*
     findResult(long ev, node_handle evmdd, node_handle mxd, long& resEv, node_handle &resEvmdd)
     {
-#ifdef OLD_OP_CT
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
       compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(evmdd);
       CTsrch->writeN(mxd);
-#ifdef OLD_OP_CT
-      compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-      if (!cacheFind) return CTsrch;
-      resEv = cacheFind.readL();
-      resEvmdd = resF->linkNode(cacheFind.readN());
-#else
       CT0->find(CTsrch, CTresult[0]);
       if (!CTresult[0]) return CTsrch;
       resEv = CTresult[0].readL();
       resEvmdd = resF->linkNode(CTresult[0].readN());
-#endif
       if (resEvmdd != 0) {
         resEv += ev;
       }
@@ -660,23 +572,12 @@ class MEDDLY::image_op_evplus : public binary_operation {
     inline void saveResult(compute_table::entry_key* Key,
       long ev, node_handle evmdd, node_handle mxd, long resEv, node_handle resEvmdd)
     {
-#ifdef OLD_OP_CT
-      argV->cacheNode(evmdd);
-      argM->cacheNode(mxd);
-      resF->cacheNode(resEvmdd);
-      static compute_table::entry_result result(1 + sizeof(long) / sizeof(node_handle));
-      result.reset();
-      result.writeL(resEvmdd == 0 ? 0L : resEv - ev);
-      result.writeN(resEvmdd);
-      CT0->addEntry(Key, result);
-#else
       CTresult[0].reset();
       CTresult[0].writeL(resEvmdd == 0 ? 0L : resEv - ev);
       CTresult[0].writeN(resEvmdd);
       CT0->addEntry(Key, CTresult[0]);
-#endif
     }
-    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c);
+    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c, bool userFlag);
     virtual void compute(long ev, node_handle evmdd, node_handle mxd, long& resEv, node_handle& resEvmdd);
   protected:
     binary_operation* accumulateOp;
@@ -686,33 +587,6 @@ class MEDDLY::image_op_evplus : public binary_operation {
     expert_forest* argM;
 };
 
-
-#ifdef OLD_OP_CT
-
-MEDDLY::image_op_evplus::image_op_evplus(const binary_opname* oc, expert_forest* a1,
-  expert_forest* a2, expert_forest* res, binary_operation* acc)
-: binary_operation(oc,
-    (sizeof(node_handle) + sizeof(node_handle)) / sizeof(node_handle),
-    (sizeof(long) + sizeof(node_handle)) / sizeof(node_handle),
-    a1, a2, res)
-{
-  accumulateOp = acc;
-
-  argV = a1;
-  argM = a2;
-
-//  if (a1->isForRelations()) {
-//    argM = a1;
-//    argV = a2;
-//    if (a2->isForRelations()) throw error(error::MISCELLANEOUS);
-//  } else {
-//    argM = a2;
-//    argV = a1;
-//    if (!a2->isForRelations()) throw error(error::MISCELLANEOUS);
-//  }
-}
-
-#else
 
 MEDDLY::image_op_evplus::image_op_evplus(const binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
@@ -730,41 +604,8 @@ MEDDLY::image_op_evplus::image_op_evplus(const binary_opname* oc, expert_forest*
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
 
-#ifdef OLD_OP_CT
-
-bool MEDDLY::image_op_evplus::isStaleEntry(const node_handle* data)
-{
-  return argV->isStale(data[0]) ||
-         argM->isStale(data[sizeof(node_handle) / sizeof(node_handle)]) ||
-         resF->isStale(data[(2 * sizeof(node_handle) + sizeof(long)) / sizeof(node_handle)]);
-}
-
-void MEDDLY::image_op_evplus::discardEntry(const node_handle* data)
-{
-  argV->uncacheNode(data[0]);
-  argM->uncacheNode(data[sizeof(node_handle) / sizeof(node_handle)]);
-  resF->uncacheNode(data[(2 * sizeof(node_handle) + sizeof(long)) / sizeof(node_handle)]);
-}
-
-void MEDDLY::image_op_evplus::showEntry(output &strm, const node_handle* data, bool key_only) const
-{
-  strm  << "[" << getName()
-        << "(" << long(data[0])
-        << ", " << long(data[sizeof(node_handle) / sizeof(node_handle)])
-        << "): ";
-  if (key_only) {
-    strm << "?";
-  } else {
-    strm << long(data[(2 * sizeof(node_handle) + sizeof(long)) / sizeof(node_handle)]);
-  }
-  strm << "]";
-}
-
-#endif
-
-void MEDDLY::image_op_evplus::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c)
+void MEDDLY::image_op_evplus::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c, bool userFlag)
 {
   long cev = Inf<long>();
   node_handle cnode = 0;
@@ -843,7 +684,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   const int evmddLevel = argV->getNodeLevel(evmdd);
   const int mxdLevel = argM->getNodeLevel(mxd);
   const int rLevel = MAX(ABS(mxdLevel), evmddLevel);
-  const int rSize = resF->getLevelSize(rLevel);
+  const unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize evmdd reader
@@ -855,7 +696,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     //
     // Skipped levels in the MXD,
     // that's an important special case that we can handle quickly.
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       long nev = Inf<long>();
       node_handle newstates = 0;
       compute_rec(A->ei(i), A->d(i), mxd, nev, newstates);
@@ -869,7 +710,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     MEDDLY_DCASSERT(ABS(mxdLevel) >= evmddLevel);
 
     // clear out result (important!)
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       C->setEdge(i, 0L);
       C->d_ref(i) = 0;
     }
@@ -883,9 +724,11 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       Ru->initFromNode(argM, mxd, false);
     }
 
+    dd_edge newstatesE(resF), cdi(resF);
+
     // loop over mxd "rows"
-    for (int iz=0; iz<Ru->getNNZs(); iz++) {
-      int i = Ru->i(iz);
+    for (unsigned iz=0; iz<Ru->getNNZs(); iz++) {
+      unsigned i = Ru->i(iz);
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
@@ -893,8 +736,8 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       }
 
       // loop over mxd "columns"
-      for (int jz=0; jz<Rp->getNNZs(); jz++) {
-        int j = Rp->i(jz);
+      for (unsigned jz=0; jz<Rp->getNNZs(); jz++) {
+        unsigned j = Rp->i(jz);
         if (0==A->d(j))   continue;
         // ok, there is an i->j "edge".
         // determine new states to be added (recursively)
@@ -910,15 +753,10 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
           continue;
         }
         // there's new states and existing states; union them.
-        node_handle oldi = C->d(i);
-        long cev = Inf<long>();
-        node_handle cnode = 0;
-        accumulateOp->compute(nev, newstates, C->ei(i), oldi, cev, cnode);
-        C->setEdge(i, cev);
-        C->d_ref(i) = cnode;
-
-        resF->unlinkNode(oldi);
-        resF->unlinkNode(newstates);
+        newstatesE.set(newstates, nev);
+        cdi.set(C->d(i), C->ei(i));
+        accumulateOp->computeTemp(newstatesE, cdi, cdi);
+        C->set_de(i, cdi);
       } // for j
 
     } // for i
@@ -994,7 +832,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   const int evmddLevel = argV->getNodeLevel(evmdd);
   const int mxdLevel = argM->getNodeLevel(mxd);
   const int rLevel = MAX(ABS(mxdLevel), evmddLevel);
-  const int rSize = resF->getLevelSize(rLevel);
+  const unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize evmdd reader
@@ -1006,7 +844,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     //
     // Skipped levels in the MXD,
     // that's an important special case that we can handle quickly.
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       long nev = Inf<long>();
       node_handle newstates = 0;
       compute_rec(A->ei(i), A->d(i), mxd, nev, newstates);
@@ -1020,7 +858,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     MEDDLY_DCASSERT(ABS(mxdLevel) >= evmddLevel);
 
     // clear out result (important!)
-    for (int i=0; i<rSize; i++) {
+    for (unsigned i=0; i<rSize; i++) {
       C->setEdge(i, 0L);
       C->d_ref(i) = 0;
     }
@@ -1034,9 +872,11 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       Ru->initFromNode(argM, mxd, false);
     }
 
+    dd_edge newstatesE(resF), cdj(resF);
+
     // loop over mxd "rows"
-    for (int iz=0; iz<Ru->getNNZs(); iz++) {
-      int i = Ru->i(iz);
+    for (unsigned iz=0; iz<Ru->getNNZs(); iz++) {
+      unsigned i = Ru->i(iz);
       if (0==A->d(i))   continue;
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
@@ -1045,8 +885,8 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       }
 
       // loop over mxd "columns"
-      for (int jz=0; jz<Rp->getNNZs(); jz++) {
-        int j = Rp->i(jz);
+      for (unsigned jz=0; jz<Rp->getNNZs(); jz++) {
+        unsigned j = Rp->i(jz);
         // ok, there is an i->j "edge".
         // determine new states to be added (recursively)
         // and add them
@@ -1061,15 +901,10 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
           continue;
         }
         // there's new states and existing states; union them.
-        node_handle oldj = C->d(j);
-        long cev = Inf<long>();
-        node_handle cnode = 0;
-        accumulateOp->compute(nev, newstates, C->ei(j), oldj, cev, cnode);
-        C->setEdge(j, cev);
-        C->d_ref(j) = cnode;
-
-        resF->unlinkNode(oldj);
-        resF->unlinkNode(newstates);
+        newstatesE.set(newstates, nev);
+        cdj.set(C->d(j), C->ei(j));
+        accumulateOp->computeTemp(newstatesE, cdj, cdj);
+        C->set_de(j, cdj);
       } // for j
 
     } // for i
@@ -1217,7 +1052,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
   const int evmxdLevel = argV->getNodeLevel(evmxd);
   const int mxdLevel = argM->getNodeLevel(mxd);
   const int rLevel = MAX(ABS(mxdLevel), ABS(evmxdLevel));
-  const int rSize = resF->getLevelSize(rLevel);
+  const unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize evmdd reader
@@ -1225,7 +1060,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
     ? unpacked_node::newRedundant(argV, rLevel, 0L, evmxd, true)
     : unpacked_node::newFromNode(argV, evmxd, true);
 
-  for (int i = 0; i < rSize; i++) {
+  for (unsigned i = 0; i < rSize; i++) {
     int pLevel = argV->getNodeLevel(A->d(i));
     unpacked_node* B = isLevelAbove(-rLevel, pLevel)
       ? unpacked_node::newIdentity(argV, -rLevel, i, 0L, A->d(i), true)
@@ -1236,7 +1071,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
       //
       // Skipped levels in the MXD,
       // that's an important special case that we can handle quickly.
-      for (int j = 0; j < rSize; j++) {
+      for (unsigned j = 0; j < rSize; j++) {
         long nev = Inf<long>();
         node_handle newstates = 0;
         compute_rec(A->ei(i) + B->ei(j), B->d(j), mxd, nev, newstates);
@@ -1251,7 +1086,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
       MEDDLY_DCASSERT(ABS(mxdLevel) >= ABS(pLevel));
 
       // clear out result (important!)
-      for (int j = 0; j < rSize; j++) {
+      for (unsigned j = 0; j < rSize; j++) {
         D->setEdge(j, 0L);
         D->d_ref(j) = 0;
       }
@@ -1265,9 +1100,11 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
         Ru->initFromNode(argM, mxd, false);
       }
 
+      dd_edge newstatesE(resF), djp(resF);
+
       // loop over mxd "rows"
-      for (int jz = 0; jz < Ru->getNNZs(); jz++) {
-        int j = Ru->i(jz);
+      for (unsigned jz = 0; jz < Ru->getNNZs(); jz++) {
+        unsigned j = Ru->i(jz);
         if (0 == B->d(j)) {
           continue;
         }
@@ -1279,8 +1116,8 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
         }
 
         // loop over mxd "columns"
-        for (int jpz = 0; jpz < Rp->getNNZs(); jpz++) {
-          int jp = Rp->i(jpz);
+        for (unsigned jpz = 0; jpz < Rp->getNNZs(); jpz++) {
+          unsigned jp = Rp->i(jpz);
           // ok, there is an i->j "edge".
           // determine new states to be added (recursively)
           // and add them
@@ -1297,15 +1134,10 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
             continue;
           }
           // there's new states and existing states; union them.
-          node_handle oldjp = D->d(jp);
-          long dev = Inf<long>();
-          node_handle dnode = 0;
-          accumulateOp->compute(nev, newstates, D->ei(jp), oldjp, dev, dnode);
-          D->setEdge(jp, dev);
-          D->d_ref(jp) = dnode;
-
-          resF->unlinkNode(oldjp);
-          resF->unlinkNode(newstates);
+          newstatesE.set(newstates, nev);
+          djp.set(D->d(jp), D->ei(jp));
+          accumulateOp->computeTemp(newstatesE, djp, djp);
+          D->set_de(jp, djp);
         } // for j
 
       } // for i
@@ -1316,7 +1148,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
 
     long cev = Inf<long>();
     node_handle cnode = 0;
-    resF->createReducedNode(i, D, cev, cnode);
+    resF->createReducedNode(int(i), D, cev, cnode);
     C->setEdge(i, cev);
     C->d_ref(i) = cnode;
 
@@ -1328,7 +1160,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
 
   resF->createReducedNode(-1, C, resEv, resEvmdd);
 #ifdef TRACE_ALL_OPS
-  printf("computed new tcXrel(<%ld, %d>, %d) = <%ld, %d>\n", ev, evmdd, mxd, resEv, resEvmdd);
+  printf("computed new tcXrel(<%ld, %d>, %d) = <%ld, %d>\n", ev, evmxd, mxd, resEv, resEvmdd);
 #endif
   saveResult(Key, ev, evmxd, mxd, resEv, resEvmdd);
 }

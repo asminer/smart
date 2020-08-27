@@ -68,11 +68,7 @@ MEDDLY::prepostplus_evplus::prepostplus_evplus(const binary_opname* opcode,
 MEDDLY::compute_table::entry_key* MEDDLY::prepostplus_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-#ifdef OLD_OP_CT
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
   compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
   MEDDLY_DCASSERT(CTsrch);
   MEDDLY_DCASSERT(!can_commute);
   CTsrch->writeL(0);
@@ -80,17 +76,10 @@ MEDDLY::compute_table::entry_key* MEDDLY::prepostplus_evplus::findResult(long ae
   CTsrch->writeL(0);
   CTsrch->writeN(b);
 
-#ifdef OLD_OP_CT
-  compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-  if (!cacheFind) return CTsrch;
-  cev = cacheFind.readL();
-  c = resF->linkNode(cacheFind.readN());
-#else
   CT0->find(CTsrch, CTresult[0]);
   if (!CTresult[0]) return CTsrch;
   cev = CTresult[0].readL();
   c = resF->linkNode(CTresult[0].readN());
-#endif
   if (c != 0) {
     cev += aev + bev;
   }
@@ -101,21 +90,10 @@ MEDDLY::compute_table::entry_key* MEDDLY::prepostplus_evplus::findResult(long ae
 void MEDDLY::prepostplus_evplus::saveResult(compute_table::entry_key* Key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
-#ifdef OLD_OP_CT
-  arg1F->cacheNode(a);
-  arg2F->cacheNode(b);
-  resF->cacheNode(c);
-  static compute_table::entry_result result(1 + sizeof(long) / sizeof(node_handle));
-  result.reset();
-  result.writeL(c == 0 ? 0L : cev - aev - bev);
-  result.writeN(c);
-  CT0->addEntry(Key, result);
-#else
   CTresult[0].reset();
   CTresult[0].writeL(c == 0 ? 0L : cev - aev - bev);
   CTresult[0].writeN(c);
   CT0->addEntry(Key, CTresult[0]);
-#endif
 }
 
 bool MEDDLY::prepostplus_evplus::checkTerminals(long aev, node_handle a, long bev, node_handle b,
@@ -171,7 +149,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
   MEDDLY_DCASSERT(bLevel >= 0);
 
   const int resultLevel = ABS(aLevel) > bLevel ? ABS(aLevel): bLevel;
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   // Initialize result
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
@@ -188,7 +166,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
   ;
 
   // do computation
-  for (int i = 0; i < resultSize; i++) {
+  for (unsigned i = 0; i < resultSize; i++) {
     if (A->d(i) == 0 || B->d(i) == 0) {
       nb->d_ref(i) = 0;
       nb->setEdge(i, 0L);
@@ -202,7 +180,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
 
     unpacked_node* nb2 = unpacked_node::newFull(resF, -resultLevel, resultSize);
 
-    for (int j = 0; j < resultSize; j++) {
+    for (unsigned j = 0; j < resultSize; j++) {
       if (D->d(j) == 0) {
         nb2->d_ref(j) = 0;
         nb2->setEdge(j, 0L);
@@ -223,7 +201,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
     // Reduce
     long dev = Inf<long>();
     node_handle d = 0;
-    resF->createReducedNode(i, nb2, dev, d);
+    resF->createReducedNode(int(i), nb2, dev, d);
 
     nb->d_ref(i) = d;
     nb->setEdge(i, dev);
@@ -278,7 +256,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
   MEDDLY_DCASSERT(bLevel >= 0);
 
   const int resultLevel = ABS(aLevel) > bLevel ? ABS(aLevel): bLevel;
-  const int resultSize = resF->getLevelSize(resultLevel);
+  const unsigned resultSize = unsigned(resF->getLevelSize(resultLevel));
 
   // Initialize result
   unpacked_node* nb = unpacked_node::newFull(resF, resultLevel, resultSize);
@@ -295,7 +273,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
   ;
 
   // do computation
-  for (int i = 0; i < resultSize; i++) {
+  for (unsigned i = 0; i < resultSize; i++) {
     if (A->d(i) == 0) {
       nb->d_ref(i) = 0;
       nb->setEdge(i, 0L);
@@ -309,7 +287,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
 
     unpacked_node* nb2 = unpacked_node::newFull(resF, -resultLevel, resultSize);
 
-    for (int j = 0; j < resultSize; j++) {
+    for (unsigned j = 0; j < resultSize; j++) {
       if (D->d(j) == 0 || B->d(j) == 0) {
         nb2->d_ref(j) = 0;
         nb2->setEdge(j, 0L);
@@ -330,7 +308,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
     // Reduce
     long dev = Inf<long>();
     node_handle d = 0;
-    resF->createReducedNode(i, nb2, dev, d);
+    resF->createReducedNode(int(i), nb2, dev, d);
 
     nb->d_ref(i) = d;
     nb->setEdge(i, dev);
