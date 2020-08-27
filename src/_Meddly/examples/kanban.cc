@@ -86,7 +86,7 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | 
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED |
     expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
 }
@@ -233,7 +233,7 @@ int main(int argc, const char** argv)
 #endif
       }
       printf("Next-state function construction took %.4e seconds\n",
-          start.get_last_interval() / 1000000.0);
+          start.get_last_seconds());
       printStats("MxD", mxd);
     }
 
@@ -283,7 +283,7 @@ int main(int argc, const char** argv)
     start.note_time();
     printf("Done\n");
     printf("Reachability set construction took %.4e seconds\n",
-        start.get_last_interval() / 1000000.0);
+        start.get_last_seconds() );
     fflush(stdout);
 
 #ifdef DUMP_REACHABLE
@@ -314,8 +314,12 @@ int main(int argc, const char** argv)
 #endif
 
     if (build_pdf) {
+      reachable.setLabel("reachable");
       reachable.writePicture("kanban", "pdf");
-      if ('m' == method) nsf.writePicture("kanban-nsf", "pdf");
+      if ('m' == method) {
+        nsf.setLabel("next-state");
+        nsf.writePicture("kanban-nsf", "pdf");
+      }
     }
 
     // cleanup

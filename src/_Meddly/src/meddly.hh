@@ -263,32 +263,6 @@ inline void MEDDLY::forest::statset::decActive(long b) {
   active_nodes -= b;
   MEDDLY_DCASSERT(active_nodes >= 0);
 }
-/*
-inline void MEDDLY::forest::statset::incMemUsed(long b) {
-  memory_used += b;
-  if (memory_used > peak_memory_used) 
-    peak_memory_used = memory_used;
-  MEDDLY_DCASSERT(memory_used >= 0);
-}
-inline void MEDDLY::forest::statset::decMemUsed(long b) {
-  memory_used -= b;
-  MEDDLY_DCASSERT(memory_used >= 0);
-}
-inline void MEDDLY::forest::statset::incMemAlloc(long b) {
-  memory_alloc += b;
-  if (memory_alloc > peak_memory_alloc) 
-    peak_memory_alloc = memory_alloc;
-  MEDDLY_DCASSERT(memory_alloc >= 0);
-}
-inline void MEDDLY::forest::statset::decMemAlloc(long b) {
-  memory_alloc -= b;
-  MEDDLY_DCASSERT(memory_alloc >= 0);
-}
-inline void MEDDLY::forest::statset::sawUTchain(int c) {
-  if (c > max_UT_chain)
-    max_UT_chain = c;
-}
-*/
 // end of forest::statset
 
 // forest::logger::
@@ -353,6 +327,10 @@ inline void MEDDLY::forest::setDefaultPoliciesMXDs(const policies& p)
 
 inline unsigned MEDDLY::forest::FID() const {
   return fid;
+}
+
+inline unsigned MEDDLY::forest::MaxFID() {
+  return gfid;
 }
 
 inline const MEDDLY::domain* MEDDLY::forest::getDomain() const {
@@ -618,20 +596,30 @@ inline int MEDDLY::domain::ID() const { return my_index; }
 
 
 inline void MEDDLY::dd_edge::clear() {
-  assert(index != -1);
+  MEDDLY_DCASSERT(index);
   set(0);
   raw_value = 0;
 }
 
-inline MEDDLY::forest* MEDDLY::dd_edge::getForest() const { return parent; }
+inline MEDDLY::forest* MEDDLY::dd_edge::getForest() const { 
+  return parent; 
+}
 
-inline MEDDLY::node_handle MEDDLY::dd_edge::getNode() const { return node; }
+inline MEDDLY::node_handle MEDDLY::dd_edge::getNode() const { 
+  return node; 
+}
+
+inline const char* MEDDLY::dd_edge::getLabel() const {
+  return label;
+}
 
 inline double MEDDLY::dd_edge::getCardinality() const {
   double c;
   apply(CARDINALITY, *this, c);
   return c;
 }
+
+
 
 inline bool MEDDLY::dd_edge::operator==(const MEDDLY::dd_edge& e) const {
   if (parent != e.parent) return false;
@@ -655,8 +643,13 @@ inline const MEDDLY::dd_edge MEDDLY::dd_edge::operator-(const MEDDLY::dd_edge& e
   return dd_edge(*this) -= e;
 }
 
-inline void MEDDLY::dd_edge::setIndex(int ind) { index = ind; }
-inline int MEDDLY::dd_edge::getIndex() const { return index; }
+inline void MEDDLY::dd_edge::setIndex(unsigned ind) { 
+  index = ind; 
+}
+
+inline unsigned MEDDLY::dd_edge::getIndex() const { 
+  return index; 
+}
 
 inline void MEDDLY::dd_edge::orphan() {
   parent = 0;

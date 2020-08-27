@@ -41,9 +41,15 @@
 #include <vector>
 #include <cstdint>
 #include <map>
+#include <set>
 
-// #define OLD_OP_CT
-// #define USE_NODE_STATUS
+
+// #define DEBUG_MARK_SWEEP
+// #define DEBUG_BUILDLIST
+
+// #define OLD_NODE_HEADERS
+
+// #define KEEP_LL_COMPUTES
 
 namespace MEDDLY {
 
@@ -56,7 +62,7 @@ namespace MEDDLY {
   class unpacked_node;  // replacement for node_reader, node_builder
 
   // EXPERIMENTAL - matrix wrappers for unprimed, primed pairs of nodes
-  class unpacked_matrix;
+  // class unpacked_matrix;
   class relation_node;
   
   /*
@@ -95,6 +101,7 @@ namespace MEDDLY {
   class satpregen_opname;
   class satotf_opname;
   class satimpl_opname;
+  class sathyb_opname;
   class constrained_opname;
 
   class ct_initializer;
@@ -111,6 +118,7 @@ namespace MEDDLY {
   // classes defined elsewhere
   class base_table;
   class unique_table;
+  class impl_unique_table;
 
   class reordering_base;
 
@@ -162,6 +170,11 @@ namespace MEDDLY {
       Transition relation is specified implicitly.
   */
   extern const satimpl_opname* SATURATION_IMPL_FORWARD;
+
+  /** Forward reachability using saturation.
+      Allows hybrid representation of transition relation.
+  */
+  extern const sathyb_opname* SATURATION_HYB_FORWARD;
 
   /** Minimum-witness operations.
   */
@@ -485,10 +498,13 @@ public:
    @param  level          Level affected.
    @param  down           Handle to a relation node below us. 
    */
-  relation_node(unsigned long signature, int level, rel_node_handle down);
-  virtual ~relation_node();
+ relation_node(unsigned long signature, forest* f, int level, node_handle down, long e_val, long f_val, long inh);
+ virtual ~relation_node();
   
   // the following should be inlined in meddly_expert.hh
+
+   // Get the forest to which the node belongs
+  expert_forest* getForest();
   
   /** A signature for this function.
    This helps class implicit_relation to detect duplicate
@@ -504,6 +520,8 @@ public:
   /** Pointer to the (ID of the) next piece of the relation.
    */
   rel_node_handle getDown() const;
+
+  void setDown(rel_node_handle d);
   
   /** The unique ID for this piece.
    */
@@ -521,6 +539,30 @@ public:
    */
   void setTokenUpdate(long* token_update);
   
+  /** Get the enable condition for this piece.
+   */
+  long getEnable() const;
+  
+  /** Set the enable condition for this piece.
+   */
+  void setEnable(long enable_val);
+  
+  /** Get the fire condition for this piece.
+   */
+  long getFire() const;
+  
+  /** Set the fire condition for this piece.
+   */
+  void setFire(long fire_val);
+  
+  /** Get the inhibit condition for this piece.
+   */
+  long getInhibit() const;
+  
+  /** Set the inhibit condition for this piece.
+   */
+  void setInhibit(long inh_val);
+
   /** The size of token_update array for this piece.
    */
   long getPieceSize() const;
@@ -550,7 +592,11 @@ public:
   
 private:
   unsigned long signature;
+  expert_forest* f;
   int level;
+  long enable;
+  long fire;
+  long inhibit;
   rel_node_handle down;
   rel_node_handle ID;
   long* token_update;
@@ -618,15 +664,15 @@ class MEDDLY::unpacked_node {
     void initRedundant(const expert_forest *f, int k, long ev, node_handle node, bool full);
     void initRedundant(const expert_forest *f, int k, float ev, node_handle node, bool full);
 
-    void initIdentity(const expert_forest *f, int k, int i, node_handle node, bool full);
-    void initIdentity(const expert_forest *f, int k, int i, int ev, node_handle node, bool full);
-    void initIdentity(const expert_forest *f, int k, int i, long ev, node_handle node, bool full);
-    void initIdentity(const expert_forest *f, int k, int i, float ev, node_handle node, bool full);
+    void initIdentity(const expert_forest *f, int k, unsigned i, node_handle node, bool full);
+    void initIdentity(const expert_forest *f, int k, unsigned i, int ev, node_handle node, bool full);
+    void initIdentity(const expert_forest *f, int k, unsigned i, long ev, node_handle node, bool full);
+    void initIdentity(const expert_forest *f, int k, unsigned i, float ev, node_handle node, bool full);
 
   /* Create blank node, primarily for writing */
     
-    void initFull(const expert_forest *f, int level, int tsz); 
-    void initSparse(const expert_forest *f, int level, int nnz);
+    void initFull(const expert_forest *f, int level, unsigned tsz); 
+    void initSparse(const expert_forest *f, int level, unsigned nnz);
 
   public:
   /* For convenience: get recycled instance and initialize */
@@ -635,17 +681,18 @@ class MEDDLY::unpacked_node {
     static unpacked_node* newFromNode(const expert_forest *f, node_handle node, storage_style st2);
 
     static unpacked_node* newRedundant(const expert_forest *f, int k, node_handle node, bool full);
-//    static unpacked_node* newRedundant(const expert_forest *f, int k, int ev, node_handle node, bool full);
     static unpacked_node* newRedundant(const expert_forest *f, int k, long ev, node_handle node, bool full);
     static unpacked_node* newRedundant(const expert_forest *f, int k, float ev, node_handle node, bool full);
 
-    static unpacked_node* newIdentity(const expert_forest *f, int k, int i, node_handle node, bool full);
-    static unpacked_node* newIdentity(const expert_forest *f, int k, int i, long ev, node_handle node, bool full);
-//    static unpacked_node* newIdentity(const expert_forest *f, int k, int i, int ev, node_handle node, bool full);
-    static unpacked_node* newIdentity(const expert_forest *f, int k, int i, float ev, node_handle node, bool full);
+    static unpacked_node* newIdentity(const expert_forest *f, int k, unsigned i, node_handle node, bool full);
+    static unpacked_node* newIdentity(const expert_forest *f, int k, unsigned i, long ev, node_handle node, bool full);
+    static unpacked_node* newIdentity(const expert_forest *f, int k, unsigned i, float ev, node_handle node, bool full);
 
-    static unpacked_node* newFull(const expert_forest *f, int level, int tsz);
-    static unpacked_node* newSparse(const expert_forest *f, int level, int nnz);
+    /** Create a zeroed-out full node */
+    static unpacked_node* newFull(const expert_forest *f, int level, unsigned tsz);
+
+    /** Create a zeroed-out sparse node */
+    static unpacked_node* newSparse(const expert_forest *f, int level, unsigned nnz);
 
   public:
   /* Display / access methods */
@@ -672,7 +719,7 @@ class MEDDLY::unpacked_node {
     void* UHdata();
 
     /// Get the number of bytes of unhashed header data.
-    int UHbytes() const;
+    unsigned UHbytes() const;
 
     /// Get a pointer to the hashed header data.
     const void* HHptr() const;
@@ -681,7 +728,7 @@ class MEDDLY::unpacked_node {
     void* HHdata();
 
     /// Get the number of bytes of hashed header data.
-    int HHbytes() const;
+    unsigned HHbytes() const;
 
     /** Get a downward pointer.
           @param  n   Which pointer.
@@ -690,7 +737,7 @@ class MEDDLY::unpacked_node {
                       If this is a sparse reader,
                       return the nth non-zero pointer.
     */
-    node_handle d(int n) const;
+    node_handle d(unsigned n) const;
 
     /** Reference to a downward pointer.
           @param  n   Which pointer.
@@ -699,42 +746,47 @@ class MEDDLY::unpacked_node {
                       If this is a sparse reader,
                       modify the nth non-zero pointer.
     */
-    node_handle& d_ref(int n);
+    node_handle& d_ref(unsigned n);
+
+    /// Set the nth pointer from E, and destroy E.
+    void set_d(unsigned n, dd_edge &E);
 
     /** Get the index of the nth non-zero pointer.
         Use only for sparse readers.
      */
-    int i(int n) const;
+    unsigned i(unsigned n) const;
 
     /** Modify the index of the nth non-zero pointer.
         Use only for sparse readers.
     */
-    int& i_ref(int n);
+    unsigned& i_ref(unsigned n);
 
     /// Get a pointer to an edge
-    const void* eptr(int i) const;
+    const void* eptr(unsigned i) const;
 
     /// Modify pointer to an edge
-    void* eptr_write(int i);
+    void* eptr_write(unsigned i);
+
+    /// Set the nth pointer and edge value from E, and destroy E.
+    void set_de(unsigned n, dd_edge &E);
 
     /// Get the edge value, as an integer.
-//    void getEdge(int i, int& ev) const;
-    void getEdge(int i, long& ev) const;
+    void getEdge(unsigned i, long& ev) const;
 
     /// Get the edge value, as a float.
-    void getEdge(int i, float& ev) const;
+    void getEdge(unsigned i, float& ev) const;
 
     /// Set the edge value, as an integer.
-    void setEdge(int i, long ev);
+    void setEdge(unsigned i, long ev);
 
     /// Set the edge value, as a float.
-    void setEdge(int i, float ev);
+    void setEdge(unsigned i, float ev);
 
     /// Get the edge value, as an integer.
-    long ei(int i) const;
+    long ei(unsigned i) const;
 
     /// Get the edge value, as a float.
-    float ef(int i) const;
+    float ef(unsigned i) const;
 
     // -------------------------------------------------------------------------
     // Methods to access the extensible portion of the node
@@ -766,9 +818,9 @@ class MEDDLY::unpacked_node {
     void markAsExtensible();
     void markAsNotExtensible();
 
-    int ext_d() const;
-    int ext_i() const;
-    int ext_ei() const;
+    node_handle ext_d() const;
+    unsigned ext_i() const;
+    long ext_ei() const;
     float ext_ef() const;
 
     // -------------------- End of extensible portion --------------------------
@@ -780,10 +832,10 @@ class MEDDLY::unpacked_node {
     void setLevel(int k);
 
     /// Get the size of this node (full readers only).
-    int getSize() const;
+    unsigned getSize() const;
 
     /// Get the number of nonzeroes of this node (sparse readers only).
-    int getNNZs() const;
+    unsigned getNNZs() const;
 
     /// Is this a sparse reader?
     bool isSparse() const;
@@ -795,7 +847,7 @@ class MEDDLY::unpacked_node {
     bool hasEdges() const;
 
     /// Number of bytes per edge
-    int edgeBytes() const;
+    unsigned edgeBytes() const;
 
     // For debugging unique table.
     unsigned hash() const;
@@ -818,17 +870,19 @@ class MEDDLY::unpacked_node {
     // checks if the node indices are in ascending order
     bool isSorted() const;
 
+    // Is this a "build" node?  Important for mark and sweep.
+    bool isBuildNode() const;
 
   public:
 
     /// Change the size of a node
-    void resize(int ns);
+    void resize(unsigned ns);
 
     /// Shrink the size of a (truncated) full node
-    void shrinkFull(int ns);
+    void shrinkFull(unsigned ns);
 
     /// Shrink the size of a sparse node
-    void shrinkSparse(int ns);
+    void shrinkSparse(unsigned ns);
 
     /// Called within expert_forest to allocate space.
     ///   @param  p     Parent.
@@ -836,11 +890,15 @@ class MEDDLY::unpacked_node {
     ///   @param  ns    Size of node.
     ///   @param  full  If true, we'll be filling a full reader.
     ///                 Otherwise it is a sparse one.
-    void bind_to_forest(const expert_forest* p, int k, int ns, bool full);
+    void bind_to_forest(const expert_forest* p, int k, unsigned ns, bool full);
 
     /// Called by node_storage when building an unpacked
     /// node based on how it's stored.
     void bind_as_full(bool full);
+
+  protected:
+    void clearFullEdges();
+    void clearSparseEdges();
 
   public:
     // Centralized recycling
@@ -848,54 +906,50 @@ class MEDDLY::unpacked_node {
     static void recycle(unpacked_node* r);
     static void freeRecycled();
 
+    static void addToBuildList(unpacked_node* b);
+    static void removeFromBuildList(unpacked_node* b);
+    static void markBuildListChildren(expert_forest* F);
 
   private:
     const expert_forest* parent;
     static unpacked_node* freeList;
-    unpacked_node* next; // for recycled list
+    static unpacked_node* buildList;
+
+    unpacked_node* next; // for recycled list, and list of nodes being built
+    bool is_in_build_list;
+
     /*
       TBD - extra info that is not hashed
     */
     void* extra_unhashed;
-    int ext_uh_alloc;
-    int ext_uh_size;
+    unsigned ext_uh_alloc;
+    unsigned ext_uh_size;
     /*
      Extra info that is hashed
      */
     void* extra_hashed;
-    int ext_h_alloc;
-    int ext_h_size;
+    unsigned ext_h_alloc;
+    unsigned ext_h_size;
     /*
      Down pointers, indexes, edge values.
      */
     node_handle* down;
-    int* index;
+    unsigned* index;
     void* edge;
     bool is_extensible;
-    int alloc;
-    int ealloc;
-    int size;
-    int nnzs;
+    unsigned alloc;
+    unsigned ealloc;
+    unsigned size;
+    unsigned nnzs;
     int level;
     unsigned h;
-    char edge_bytes; // number of bytes for an edge value.
+    unsigned char edge_bytes; // number of bytes for an edge value.
     bool is_full;
 #ifdef DEVELOPMENT_CODE
     bool has_hash;
 #endif
 };
 
-// ******************************************************************
-// *                                                                *
-// *                     relation_node  class                       *
-// *                                                                *
-// ******************************************************************
-
-/** Class for relation nodes of implicit relation
- Implemented in node_wrappers.cc.
- 
- TBD : inline what we should
- */
 
 
 
@@ -910,6 +964,9 @@ class MEDDLY::unpacked_node {
 
     TBD : inline what we should
 */
+
+#if 0
+
 class MEDDLY::unpacked_matrix {
 
   public:
@@ -1023,6 +1080,7 @@ class MEDDLY::unpacked_matrix {
 
 };  // end of unpacked_matrix class
 
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -1412,13 +1470,29 @@ class MEDDLY::node_headers {
     node_headers(expert_forest &P);
     ~node_headers();
 
+
+    /** Show various memory stats.
+          @param  s       Output stream to write to
+          @param  pad     Padding string, written at the start of
+                          each output line.
+          @param  flags   Which stats to display, as "flags";
+                          use bitwise or to combine values.
+    */
+    void reportStats(output &s, const char* pad, unsigned flags) const;
+
+    /** Display header information, primarily for debugging.
+          @param  s     Output stream to write to
+          @param  p     Node to display
+    */
+    void showHeader(output &s, node_handle p) const;
+
     /**
         Indicate that we don't need to track cache counts.
         The default is that we will track cache counts.
         For efficiency, this should be called soon after 
         construction (otherwise we may allocate space for nothing).
     */
-    void turnOffCacheCounts();
+    // void turnOffCacheCounts();
 
     /**
         Indicate that we don't need to track incoming counts.
@@ -1426,7 +1500,7 @@ class MEDDLY::node_headers {
         For efficiency, this should be called soon after 
         construction (otherwise we may allocate space for nothing).
     */
-    void turnOffIncomingCounts();
+    // void turnOffIncomingCounts();
 
     /**
         Set node recycling to pessimistic or optimistic.
@@ -1472,11 +1546,13 @@ class MEDDLY::node_headers {
   public: // node status
     bool isActive(node_handle p) const;
     /// Is this a zombie node (dead but not able to be deleted yet)
-    bool isZombie(node_handle p) const;
+    // bool isZombie(node_handle p) const;
     /// Is this a deleted node
     bool isDeleted(node_handle p) const;
-    /// Deactivated: 0 address
-    bool isDeactivated(node_handle p) const;
+    /// Deactivated: 0 level  
+    // bool isDeactivated(node_handle p) const;
+
+    void deactivate(node_handle p);
 
 
   public: // address stuff
@@ -1504,7 +1580,7 @@ class MEDDLY::node_headers {
   public: // cache count stuff
 
     /// Are we tracking cache counts
-    bool trackingCacheCounts() const;
+    // bool trackingCacheCounts() const;
 
     /// Get the cache count for node p.
     unsigned long getNodeCacheCount(node_handle p) const;
@@ -1515,10 +1591,21 @@ class MEDDLY::node_headers {
     /// Decrement the cache count for node p.
     void uncacheNode(node_handle p);
     
+  public: // cache bit stuff (if we're not using cache counts)
+    
+    /// Indicate that node p is (or might be) in some cache entry.
+    void setInCacheBit(node_handle p);
+
+    /// Clear cache entry bit for all nodes
+    void clearAllInCacheBits();
+
+    /// Called when done setting InCacheBits
+    void sweepAllInCacheBits();
+
   public: // incoming count stuff
 
     /// Are we tracking incoming counts
-    bool trackingIncomingCounts() const;
+    // bool trackingIncomingCounts() const;
 
     /// Get the incoming count for node p.
     unsigned long getIncomingCount(node_handle p) const;
@@ -1528,7 +1615,18 @@ class MEDDLY::node_headers {
 
     /// Decrement the incoming count for node p.
     void unlinkNode(node_handle p);
-    
+
+  public: // reachable bit stuff (if we're not using incoming counts)
+
+    /// Indicate that node p is (or might be) reachable in the forest.
+    void setReachableBit(node_handle p);
+
+    /// Does node p have its reachable bit set?
+    bool hasReachableBit(node_handle p) const;
+
+    /// Clear reachable bit for all nodes
+    void clearAllReachableBits();
+
   public: // implicit stuff
     
     /// Get whether node p is implicit.
@@ -1542,9 +1640,16 @@ class MEDDLY::node_headers {
 
     void dumpInternal(output &s) const;
 
+
+  private:  // for debugging help
+    void validateFreeLists() const;
+
+#ifndef OLD_NODE_HEADERS
+  public: // interface for node header size changes
+    void changeHeaderSize(unsigned oldbits, unsigned newbits);
+#endif
+
   private:  // helper methods
-//    virtual void getDownPtr(node_address addr, int ind, long& ev,
-//                            node_handle& dn) const = 0;
 
     /// Increase the number of node handles.
     void expandHandleList();
@@ -1552,17 +1657,16 @@ class MEDDLY::node_headers {
     /// Decrease the number of node handles.
     void shrinkHandleList();
 
-    /// Allocate marks if needed.
-    void allocateMarks();
+#ifdef OLD_NODE_HEADERS
 
     node_handle getNextOf(node_handle p) const;
     void setNextOf(node_handle p, node_handle n);
-    void deactivate(node_handle p);
 
   private:
     
     // Nothing to see here.  Move along.
     // Anything below here is subject to change without notice.
+
 
     struct node_header {
           /** Offset to node's data in the corresponding node storage structure.
@@ -1604,17 +1708,31 @@ class MEDDLY::node_headers {
     node_handle a_size;
     /// Last used address.
     node_handle a_last;
+    /// Next time we shink the address list.
+    node_handle a_next_shrink;
+
+    //
+    // Data structure for free lists,
+    // used with cache reference counts
+    //
+
+    /// Number of recycled addresses
+    node_handle a_freed;
     /// Pointer to unused address lists, based on size
     node_handle a_unused[8];  // number of bytes per handle
     /// Lowest non-empty address list
     char a_lowest_index;
-    /// Next time we shink the address list.
-    node_handle a_next_shrink;
+
+    //
+    // Place to search next for free items,
+    // used with mark & sweep cache bits.
+    //
+    node_handle a_sweep;
 
     /// Do we track cache counts
-    bool usesCacheCounts;
+    // bool usesCacheCounts;
     /// Do we track incoming counts
-    bool usesIncomingCounts;
+    // bool usesIncomingCounts;
 
     /// Are we using the pessimistic strategy?
     bool pessimistic;
@@ -1623,6 +1741,169 @@ class MEDDLY::node_headers {
     expert_forest &parent;
 
     static const int a_min_size = 1024;
+
+#else
+
+    size_t getNextOf(size_t p) const;
+    void setNextOf(size_t p, size_t n);
+
+  private:
+
+    class level_array {
+        node_headers &parent;
+        char* data8;
+        short* data16;
+        int* data32;
+        size_t size;
+        unsigned char bytes;
+      public:
+        level_array(node_headers &p, int max_level);
+        ~level_array();
+
+        void expand(size_t ns);
+        void shrink(size_t ns);
+
+        int get(size_t i) const;
+        void set(size_t i, int v);
+        void swap(size_t i, size_t j);
+
+        void show(output &s, size_t first, size_t last, int width) const;
+        size_t entry_bits() const;
+    };
+
+    class counter_array {
+        node_headers &parent;
+        unsigned char* data8;
+        unsigned short* data16;
+        unsigned int* data32;
+        size_t size;
+        size_t counts_09bit;  // number of counts requiring at least 9 bits
+        size_t counts_17bit;  // number of counts requiring at least 17 bits
+        unsigned char bytes;
+      public:
+        counter_array(node_headers &p);
+        ~counter_array();
+
+        void expand(size_t ns);
+        void shrink(size_t ns);
+
+        unsigned int get(size_t i) const;
+        void swap(size_t i, size_t j);
+        void increment(size_t i);
+        void decrement(size_t i);
+
+        bool isZeroBeforeIncrement(size_t i);
+        bool isPositiveAfterDecrement(size_t i);
+
+        void show(output &s, size_t first, size_t last, int width) const;
+        size_t entry_bits() const;
+
+        // Expand from 8-bit to 16-bit entries because of element i
+        void expand8to16(size_t i); 
+        // Expand from 16-bit to 32-bit entries because of element i
+        void expand16to32(size_t i); 
+
+        void shrink16to8(size_t ns); 
+
+        void shrink32to16(size_t ns); 
+        void shrink32to8(size_t ns); 
+    };
+
+    class address_array {
+        node_headers &parent;
+        unsigned int* data32;
+        unsigned long* data64;
+        size_t size;
+        size_t num_large_elements;
+        unsigned char bytes;
+      public:
+        address_array(node_headers &p);
+        ~address_array();
+
+        void expand(size_t ns);
+        void shrink(size_t ns);
+
+        unsigned long get(size_t i) const;
+        void set(size_t i, unsigned long v);
+        void swap(size_t i, size_t j);
+
+        void show(output &s, size_t first, size_t last, int width) const;
+        size_t entry_bits() const;
+
+        void expand32to64();
+        void shrink64to32(size_t ns);
+    };
+
+    class bitvector {
+        node_headers &parent;
+        bool* data;
+        size_t size;
+      public:
+        bitvector(node_headers &p);
+        ~bitvector();
+
+        void expand(size_t ns);
+        void shrink(size_t ns);
+
+        bool get(size_t i) const;
+        void set(size_t i, bool v);
+        void clearAll();
+        void swap(size_t i, size_t j);
+        size_t entry_bits() const;
+
+        /// Return smallest index i >= start with bit i cleared.
+        size_t firstZero(size_t start) const;
+    };
+
+  private:
+    address_array* addresses;
+    level_array* levels;
+    counter_array* cache_counts;
+    bitvector* is_in_cache;
+    counter_array* incoming_counts;
+    bitvector* is_reachable;
+
+    bitvector* implicit_bits;
+
+    /// Last used address.
+    size_t a_last;
+
+    /// Allocated sizes of arrays.
+    size_t a_size;
+
+    /// Next time we shink the address list.
+    size_t a_next_shrink;
+
+    //
+    // Data structure for free lists,
+    // used with cache reference counts
+    //
+
+    /// Number of addresses in free lists
+    size_t a_freed;
+    /// Pointer to unused address lists, based on size
+    size_t a_unused[8];  // number of bytes per handle
+    /// Lowest non-empty address list
+    char a_lowest_index;
+
+    //
+    // Place to search next for free items,
+    // used with mark & sweep cache bits.
+    //
+    size_t a_sweep;
+
+
+    /// Current size of node "header"
+    unsigned h_bits;
+
+    /// Are we using the pessimistic strategy?
+    bool pessimistic;
+
+    /// Parent forest, needed for recycling
+    expert_forest &parent;
+
+#endif
+
 };
 
 
@@ -1734,6 +2015,11 @@ class MEDDLY::node_storage {
     */
     virtual void unlinkDownAndRecycle(node_address addr) = 0;
 
+    /** Mark a node.
+        Traverse the downward pointers, and mark all of them.
+            @param  addr    Address of the node.
+    */
+    virtual void markDownPointers(node_address addr) = 0;
 
     // various ways to read a node
 
@@ -1947,8 +2233,8 @@ class MEDDLY::expert_forest: public forest
 
     /// Display deleted nodes
     static const unsigned int SHOW_DELETED;
-    /// Display zombie nodes
-    static const unsigned int SHOW_ZOMBIE;
+    /// Display unreachable nodes
+    static const unsigned int SHOW_UNREACHABLE;
     /// Display node details
     static const unsigned int SHOW_DETAILS;
     /// Display the node index
@@ -2073,13 +2359,13 @@ class MEDDLY::expert_forest: public forest
 
     memstats& changeMemStats();
     /// Number of bytes for an edge value.
-    char edgeBytes() const;
+    unsigned char edgeBytes() const;
     /// Are edge values included when computing the hash.
     bool areEdgeValuesHashed() const;
     /// Extra bytes per node, not hashed.
-    char unhashedHeaderBytes() const;
+    unsigned char unhashedHeaderBytes() const;
     /// Extra bytes per node, hashed.
-    char hashedHeaderBytes() const;
+    unsigned char hashedHeaderBytes() const;
 
     const expert_domain* getExpertDomain() const;
     expert_domain* useExpertDomain();
@@ -2127,7 +2413,7 @@ class MEDDLY::expert_forest: public forest
   // --------------------------------------------------
   public:
     /// Returns true if we are tracking incoming counts
-    bool trackingInCounts() const;
+    // bool trackingInCounts() const;
 
     /// Returns the in-count for a node.
     unsigned long getNodeInCount(node_handle p) const;
@@ -2137,6 +2423,13 @@ class MEDDLY::expert_forest: public forest
           @return p, for convenience.
     */
     node_handle linkNode(node_handle p);
+
+    /** Increase the link count to this node. Call this when another node is
+        made to point to this node.
+          @return the node handle, for convenience.
+    */
+    node_handle linkNode(const dd_edge &p);
+
     void getDownPtr(node_handle p, int index, long& ev, node_handle& dn) const;
 
     /** Decrease the link count to this node. If link count reduces to 0, this
@@ -2145,18 +2438,26 @@ class MEDDLY::expert_forest: public forest
     */
     void unlinkNode(node_handle p);
 
+    /// Set reachable bits for p and its descendants.
+    void markNode(node_handle p);
+
+    /// Does a node have its reachable bit set?
+    bool hasReachableBit(node_handle p) const;
+
+    /// Mark all "root" nodes; i.e. start the mark phase.
+    /// Not inlined; implemented in forest.cc
+    void markAllRoots();
+
   // --------------------------------------------------
   // Managing cache counts
   // --------------------------------------------------
   public:
     /// Returns true if we are tracking incoming counts
-    bool trackingCacheCounts() const;
-
-    /// Returns the cache count for a node.
-    // long getNodeCacheCount(node_handle p) const;
+    // bool trackingCacheCounts() const;
 
     /** Increase the cache count for this node. Call this whenever this node
         is added to a cache.
+        Do nothing if we are not using reference counts for caches.
           @param  p     Node we care about.
           @return p, for convenience.
     */
@@ -2164,9 +2465,27 @@ class MEDDLY::expert_forest: public forest
 
     /** Increase the cache count for this node. Call this whenever this node
         is added to a cache.
+        Do nothing if we are not using reference counts for caches.
           @param  p     Node we care about.
     */
     void uncacheNode(node_handle p);
+
+    /** Mark the node as belonging to some cache entry.
+        Do nothing if we are using reference counts for caches.
+          @param p    Node we care about.
+    */
+    void setCacheBit(node_handle p);
+
+    /** Clear all cache bits.
+        Do nothing if we are using reference counts for caches.
+    */
+    void clearAllCacheBits();
+
+    /** Sweep all cache bits.
+        Called by CT to indicate we can begin sweep phase
+        on cache bits.
+    */
+    void sweepAllCacheBits();
 
 
   // --------------------------------------------------
@@ -2174,7 +2493,7 @@ class MEDDLY::expert_forest: public forest
   // --------------------------------------------------
   public:
     bool isActiveNode(node_handle p) const;
-    bool isZombieNode(node_handle p) const;
+    // bool isZombieNode(node_handle p) const;
     bool isDeletedNode(node_handle p) const;
     static bool isTerminalNode(node_handle p);
     /// Sanity check: is this a valid nonterminal node index.
@@ -2213,11 +2532,10 @@ class MEDDLY::expert_forest: public forest
     ///   in-count and cache-count are zero.
     /// Pessimistic deletion: A node is said to be stale when the in-count
     ///  is zero regardless of the cache-count.
-// #ifndef USE_NODE_STATUS
-    bool isStale(node_handle node) const;
-// #else
+    /// If we don't use reference counts and instead mark and sweep,
+    ///  then a node cannot be recovered once it is "unreachable"
+    ///  because its children might have been recycled
     MEDDLY::forest::node_status getNodeStatus(node_handle node) const;
-// #endif
 
   // ------------------------------------------------------------
   // non-virtual, handy methods for debugging or logging.
@@ -2232,7 +2550,9 @@ class MEDDLY::expert_forest: public forest
     void dumpInternal(output &s) const;
     void dumpUniqueTable(output &s) const;
     void validateIncounts(bool exact);
+    void validateCacheCounts() const;
     void countNodesByLevel(long* active) const;
+
 
 
   // ------------------------------------------------------------
@@ -2291,7 +2611,7 @@ class MEDDLY::expert_forest: public forest
     /// Write all the nodes in the subgraph below the given nodes
     /// in a graphical format specified by the extension.
     void writeNodeGraphPicture(const char* filename, const char *extension,
-        const node_handle* node, int n) const;
+        const node_handle* nodes, const char* const* labels, int n) const;
 
 
     /** Show various stats for this forest.
@@ -2412,6 +2732,11 @@ class MEDDLY::expert_forest: public forest
    */
   node_handle createRelationNode(MEDDLY::relation_node *un);
 
+  unsigned getImplicitTableCount() const;
+  inline MEDDLY::relation_node* buildImplicitNode(node_handle rnh);
+  inline MEDDLY::node_handle getImplicitTerminalNode() const;
+
+
   /** Return a forest node equal to the one given.
       The node is constructed as necessary.
       This version should be used only for
@@ -2450,8 +2775,8 @@ class MEDDLY::expert_forest: public forest
 
     virtual void writeEdges(output &s, const dd_edge* E, int n) const;
     virtual void readEdges(input &s, dd_edge* E, int n);
-    virtual void garbageCollect();
-    virtual void compactMemory();
+    // virtual void garbageCollect();
+    // virtual void compactMemory();
     virtual void showInfo(output &strm, int verbosity);
 
   // ------------------------------------------------------------
@@ -2670,9 +2995,9 @@ class MEDDLY::expert_forest: public forest
   // ------------------------------------------------------------
   // inlined setters for derived classes to use.
 
-    void setEdgeSize(char ebytes, bool hashed);
-    void setUnhashedSize(char ubytes);
-    void setHashedSize(char hbytes);
+    void setEdgeSize(unsigned char ebytes, bool hashed);
+    void setUnhashedSize(unsigned char ubytes);
+    void setHashedSize(unsigned char hbytes);
 
   // ------------------------------------------------------------
   // virtual, with default implementation.
@@ -2726,7 +3051,7 @@ class MEDDLY::expert_forest: public forest
   // ------------------------------------------------------------
   // inlined helpers for this class
 
-    bool isTimeToGc() const;
+    // bool isTimeToGc() const;
 
     /** Change the location of a node.
         Used by node_storage during compaction.
@@ -2765,6 +3090,10 @@ class MEDDLY::expert_forest: public forest
      */
     node_handle createImplicitNode(MEDDLY::relation_node &nb);
 
+    unsigned getImplTableCount() const;
+    MEDDLY::relation_node* buildImplNode(node_handle rnh);
+    MEDDLY::node_handle getImplTerminalNode() const;
+
 
     /** Apply reduction rule to the temporary extensible node and finalize it. 
         Once a node is reduced, its contents cannot be modified.
@@ -2788,13 +3117,12 @@ class MEDDLY::expert_forest: public forest
     /// uniqueness table, still used by derived classes.
     unique_table* unique;
 
+    /// uniqueness table for relation nodes.
+    impl_unique_table* implUT;
+
     /// Should a terminal node be considered a stale entry in the compute table.
     /// per-forest policy, derived classes may change as appropriate.
-// #ifndef USE_NODE_STATUS
-    bool terminalNodesAreStale;
-// #else
     MEDDLY::forest::node_status terminalNodesStatus;
-// #endif
 
     /// Class that stores nodes.
     node_storage* nodeMan;
@@ -2819,33 +3147,19 @@ class MEDDLY::expert_forest: public forest
 
 
     /// Number of bytes for an edge
-    char edge_bytes;
+    unsigned char edge_bytes;
     /// Are edge values hashed?
     bool hash_edge_values;
     /// Number of bytes of unhashed header
-    char unhashed_bytes;
+    unsigned char unhashed_bytes;
     /// Number of bytes of hashed header
-    char hashed_bytes;
+    unsigned char hashed_bytes;
 
     class nodecounter;
+    class nodemarker;
 };
 // end of expert_forest class.
 
-
-// ******************************************************************
-// *                                                                *
-// *                expert_forest::nodecounter class                *
-// *                                                                *
-// ******************************************************************
-
-class MEDDLY::expert_forest::nodecounter: public edge_visitor {
-    expert_forest* parent;
-    int* counts;
-  public:
-    nodecounter(expert_forest*p, int* c);
-    virtual ~nodecounter();
-    virtual void visit(dd_edge &e);
-};
 
 
 // ******************************************************************
@@ -2991,7 +3305,9 @@ class MEDDLY::numerical_opname : public specialized_opname {
 // *                                                                *
 // ******************************************************************
 
-/// Saturation, with already generated transition relations, operation names.
+/** Saturation, with already generated transition relations, operation names.
+    Implemented in operations/sat_pregen.cc
+*/
 class MEDDLY::satpregen_opname : public specialized_opname {
   public:
     satpregen_opname(const char* n);
@@ -3015,7 +3331,7 @@ class MEDDLY::satpregen_opname : public specialized_opname {
                                   number of calls to addToRelation().
         */
         pregen_relation(forest* inmdd, forest* mxd, forest* outmdd,
-          int num_events);
+          unsigned num_events);
 
         /** Constructor, by levels
               @param  inmdd       MDD forest containing initial states
@@ -3063,8 +3379,8 @@ class MEDDLY::satpregen_opname : public specialized_opname {
         forest* getOutForest() const;
 
         // the following methods assume the relation has been finalized.
-        node_handle* arrayForLevel(int k) const;
-        int lengthForLevel(int k) const;
+        dd_edge* arrayForLevel(int k) const;
+        unsigned lengthForLevel(int k) const;
 
       private:
         // helper for constructors
@@ -3081,23 +3397,23 @@ class MEDDLY::satpregen_opname : public specialized_opname {
         forest* insetF;
         expert_forest* mxdF;
         forest* outsetF;
-        int K;
+        unsigned K;
         // array of sub-relations
-        node_handle* events;
-        // next pointers, unless we're finalized
-        int* next;
+        dd_edge* events;
+        // next pointers (plus one), unless we're finalized
+        unsigned* next;
         // size of events array
-        int num_events;
-        // last used element of events array
-        int last_event;
+        unsigned num_events;
+        // one past last used element of events array
+        unsigned last_event;
 
         // If null, then we are "by levels".  Otherwise, we are "by events",
-        // and before we're finalized, level_index[k] points to a linked-list
-        // of sub-relations that affect level k.
-        // after we're finalized, the events array is sorted, so
-        // level_index[k] is the index of the first event affecting level k.
+        // and before we're finalized, level_index[k] "points" (index plus one)
+        // to a linked-list of sub-relations that affect level k.
+        // After we're finalized, the events array is sorted, so
+        // level_index[k] is the (actual) index of the first event affecting level k.
         // Dimension is number of variables + 1.
-        int* level_index;
+        unsigned* level_index;
     };
 
 };
@@ -3110,7 +3426,9 @@ class MEDDLY::satpregen_opname : public specialized_opname {
 // *                                                                *
 // ******************************************************************
 
-/// Saturation, transition relations built on the fly, operation names.
+/** Saturation, transition relations built on the fly, operation names.
+    Implemented in operations/sat_otf.cc
+*/
 class MEDDLY::satotf_opname : public specialized_opname {
   public:
     satotf_opname(const char* n);
@@ -3348,7 +3666,7 @@ class MEDDLY::satotf_opname : public specialized_opname {
                                 the ith event at this level;
                                 otherwise, 0.
          */
-        node_handle getEvent(int level, int i);
+        const dd_edge& getEvent(int level, int i) const;
 
         /** Rebuild an event.
 
@@ -3360,10 +3678,8 @@ class MEDDLY::satotf_opname : public specialized_opname {
         /** Build a Monolithic Next State Function that is equivalent to
             the union of all events while restricting the size of each
             variable to that of the largest confirmed index.
-
-            @return             union of bounded OTF events.
         */
-        node_handle getBoundedMonolithicNSF();
+        void getBoundedMonolithicNSF(dd_edge &root) const;
 
         /** Bound all extensible variables
             using the maximum confirmed local state as the bound.
@@ -3391,8 +3707,8 @@ class MEDDLY::satotf_opname : public specialized_opname {
 
       protected:
         void enlargeConfirmedArrays(int level, int sz);
-        node_handle getBoundedMxd(node_handle mxd, const int* bounds_array, int sz,
-            std::unordered_map<node_handle, node_handle>& cache);
+        // node_handle getBoundedMxd(node_handle mxd, const int* bounds_array, int sz,
+            // std::unordered_map<node_handle, node_handle>& cache);
 
       private:
         expert_forest* insetF;
@@ -3439,7 +3755,9 @@ class MEDDLY::satotf_opname : public specialized_opname {
 // *                                                                *
 // ******************************************************************
 
-/// Saturation, transition relations stored implcitly, operation names.
+/** Saturation, transition relations stored implcitly, operation names.
+    Implemented in operations/sat_impl.cc
+*/
 class MEDDLY::satimpl_opname: public specialized_opname {
   public:
 
@@ -3674,6 +3992,478 @@ public:
 
 // ******************************************************************
 // *                                                                *
+// *                      sathyb_opname class                      *
+// *                                                                *
+// ******************************************************************
+
+/** Saturation, transition relations stored implcitly, operation names.
+    Implemented in operations/sat_impl.cc
+*/
+class MEDDLY::sathyb_opname: public specialized_opname {
+  public:
+
+    sathyb_opname(const char* n);
+    virtual ~sathyb_opname();
+
+    /// Arguments should have type "implicit_relation", below
+    virtual specialized_operation* buildOperation(arguments* a) const;
+
+  public:
+
+    /** A hybrid relation, as a DAG of relation_nodes and MxD nodes.
+
+        The relation is partitioned by "events", where each event
+        is the "symbolic" conjunction of local functions, and each local function
+        might be specified as a single relation_node or an MxD forest based on the cardinality of dependent variables of the local function.  
+        The relation_nodes are chained together. 
+
+        Ideally it behaves as a combination of MxD forest and implicit relation : covering the best of both worlds.
+    */
+  
+    class hybrid_relation;
+  
+  
+    class subevent { //: public semievent {
+    public:
+      /// Constructor, specify variables that this function depends on,
+      /// and if it is a firing or enabling event.
+      subevent(forest* f, int* v, int nv, bool firing);
+      virtual ~subevent();
+      
+      //semievent* clone();
+      
+      /// Get the forest to which this function belongs to.
+      expert_forest* getForest();
+      
+      /// Get number of variables this function depends on.
+      int getNumVars() const; // Returns 1 for implicit node
+      
+      /// Get array of variables this function depends on.
+      const int* getVars() const; // Returns only 1 value
+      
+      /// Get the DD encoding of this function
+      const dd_edge& getRoot() const; // Non-existent for implicit node
+      
+      /// Get the node_handle of this function
+      const node_handle getRootHandle() const; // getID() for implicit node
+      
+      /// Get the "top" variable for this function
+      int getTop() const; // getLevel() for implicit node
+      
+      /// Is this a firing subevent?
+      bool isFiring() const;
+      
+      /// Is this an enabling subevent
+      bool isEnabling() const;
+      
+      /// Is this an implicit subevent
+      bool isImplicit() const;
+      
+      /** Applicable if implicit node:
+       A signature for this function.
+       This helps class implicit_relation to detect duplicate
+       functions (using a hash table where the signature
+       is taken as the hash value).
+       */
+      //unsigned long getSignature() const;
+      
+      /** Applicable if implicit node :
+       Get the ID of next piece, default = handleForValue(True).
+       */
+      node_handle getDown() const;
+      
+      /** Applicable if implicit node :
+       Set the ID of next piece.
+       */
+      void setDown(node_handle down) ;
+      
+      /** Applicable if implicit node :
+       Set the unique ID for this piece.
+       */
+      void setRootHandle(node_handle ID);
+      
+      //
+      int getEnable() const;
+      int getFire() const;
+      
+      /** Determine if this node is equal to another one.
+       */
+      //virtual bool equals(const relation_node* n) const;
+      
+      /**
+       Rebuild the function to include the
+       local state "index" for the variable "v".
+       Updates root with the updated function.
+       User MUST provide this method.
+       */
+      virtual void confirm(hybrid_relation &rel, int v, int index) = 0;
+      
+      /// If num_minterms > 0,
+      /// Add all minterms to the root
+      /// Delete all minterms.
+      void buildRoot();
+      
+      /// Debugging info
+      void showInfo(output& out) const;
+      
+      long mintermMemoryUsage() const;
+      void clearMinterms();
+      
+    protected:
+      bool addMinterm(const int* from, const int* to);
+      bool usesExtensibleVariables() const;
+      
+      int* vars;
+      int num_vars;
+      dd_edge root; // NULL for implicit node
+      node_handle root_handle;
+      int top; // top = vars[0] for implicit node
+      node_handle down;
+     
+      
+      expert_forest* f;
+      int** unpminterms; // unpminterms[0] for implicit node
+      long enable;
+      int** pminterms; // pminterms[0] for implicit node
+      long fire;
+      int num_minterms;
+      int process_minterm_pos;
+      int processed_minterm_pos;
+      int size_minterms;
+      bool is_firing;
+      bool uses_extensible_variables;
+      
+    };  // end of class subevent
+    
+    // ============================================================
+    
+    /**
+     An "event".
+     Produces part of the transition relation, from its sub-functions.
+     
+     TBD - do we need to split the enabling and updating sub-functions,
+     or will one giant list work fine?
+     */
+    class event {
+      // TBD - put a list of events that have priority over this one
+      
+      // TBD - for priority - when is this event enabled?
+    public:
+
+      event(subevent** se, int nse, relation_node** r, int nr);
+      virtual ~event();
+      
+      /// Get the forest to which the subevents belong to
+      inline expert_forest* getForest() { return f; } 
+      
+      /// Get number of subevents
+      inline int getNumOfSubevents() const { return num_subevents; }
+      
+      /// Get array of subevents
+      inline subevent** getSubevents() const { return subevents; }
+      
+      /// Get number of relation_nodes
+      inline int getNumOfRelnodes() const { return num_relnodes; }
+      
+      /// Get array of relation_nodes
+      inline relation_node** getRelNodes() const { return relnodes; }
+      
+      /// Get number of components
+      inline int getNumOfComponents() const { return num_components; }
+      
+      ///Get the subevent handle or relation node handle whose top level is the given level
+      inline std::set<node_handle> getComponentAt(int level)  { return level_component.find(level)->second; }
+
+      inline node_handle getTopComponent()  { return *level_component[top].begin(); }
+
+      ///Get the entire map of subevent-nodeHandles_by_topLevel
+      inline std::map<int, std::set<node_handle>> getComponents()  { return level_component; }
+      
+      ///Get the entire map of subevent-nodeHandles_by_topLevel
+      inline node_handle* getAllComponents()  {  return all_components; }
+
+      ///Get the type of subevent-nodeHandles
+      inline bool getSubeventType(node_handle nh)  { return component_se_type[nh]; }
+      
+      
+      /// Get the "top" variable for this event
+      inline int getTop() const { return top; }
+      
+      /// Get the number of variables that are effected by this event
+      inline int getNumVars() const { return num_vars; }
+      
+      /// Get a (sorted) array of variables that are effected by this event
+      inline const int* getVars() const { return vars; }
+      
+      inline const dd_edge& getRoot() const { return root; }
+      
+      inline const std::set<node_handle> getRootHandle() const { return root_handle; }
+      
+      inline bool isDisabled() const { return is_disabled; }
+      
+      inline bool needsRebuilding() const { return needs_rebuilding; }
+      
+      inline void markForRebuilding() { needs_rebuilding = true; }
+      
+      /**
+       If this event has been marked for rebuilding:
+       Build this event as a conjunction of its sub-events.
+       
+       @return               true, if the event needed rebuilding and
+       the rebuilding modified the root.
+       false, otherwise.
+       */
+      virtual bool rebuild();
+      
+      /// Get down of a level of event 
+      int downLevel(int level) const;
+      
+      /// Enlarges the "from" variable to be the same size as the "to" variable
+      void enlargeVariables();
+      
+      /// Debugging info
+      void showInfo(output& out) const;
+      
+      long mintermMemoryUsage() const;
+      
+    protected:
+      void buildEventMask();
+      
+    private:
+      subevent** subevents;
+      int num_subevents;
+      relation_node** relnodes;
+      int num_relnodes;
+      int num_components;
+      int top;
+      int num_vars;
+      int* vars;
+
+      // set only if sub-events are conjuncted
+      dd_edge partial_root;
+
+      // set because multiple root_handles may exist if sub-events & relNodes are not conjuncted
+      std::set<node_handle> root_handle; 
+      bool needs_rebuilding;
+      expert_forest* f;
+      dd_edge root;
+      bool is_disabled;
+      int num_firing_vars;
+      int* firing_vars;
+      dd_edge event_mask;
+      int* event_mask_from_minterm;
+      int* event_mask_to_minterm;
+      bool first_time_build;
+
+      
+      int num_rel_vars;
+      int* relNode_vars;
+      
+      std::map<int,std::set<node_handle>> level_component; // stores the set of subevent node_handles whose top is this level.
+      std::map<node_handle,bool> component_se_type; //enabling:0 firing/rn:1
+      node_handle* all_components; // set of subevent's top node_handles 
+      
+    };  // end of class event
+  
+
+
+    /** An implicit relation, as a DAG of relation_nodes.
+
+        The relation is partitioned by "events", where each event
+        is the conjunction of local functions, and each local function
+        is specified as a single relation_node.  The relation_nodes
+        are chained together with at most one relation_node per state
+        variable, and any skipped variables are taken to be unchanged
+        by the event.
+
+        If the bottom portion (suffix) of two events are identical,
+        then they are merged.  This is done by "registering" nodes
+        which assigns a unique ID to each node, not unlike an MDD forest.
+
+        Note: node handles 0 and 1 are reserved.
+        0 means null node.
+        1 means special bottom-level "terminal" node
+        (in case we need to distinguish 0 and 1).
+    */
+    class hybrid_relation : public specialized_opname::arguments {
+      public:
+        /** Constructor.
+
+            @param  inmdd       MDD forest containing initial states
+            @param  outmdd      MDD forest containing result
+
+            Not 100% sure we need these...
+        */
+        hybrid_relation(forest* inmdd, forest* relmxd, forest* outmdd, event** E, int ne);
+        virtual ~hybrid_relation();
+      
+        /// Returns the Relation forest that stores the mix of relation nodes and mxd nodes
+        expert_forest* getHybridForest() const;
+
+
+        /// Returns the MDD forest that stores the initial set of states
+        expert_forest* getInForest() const;
+
+
+        /// Returns the MDD forest that stores the resultant set of states
+        expert_forest* getOutForest() const;
+
+
+        /// If only relation_nodes are present
+        /// return the vector of events pertaining to a given level
+        /// that have the same net effect 
+        std::vector<node_handle> getRelNodeAtLevelWithEffect(int level, long effect);
+
+      private:
+        expert_forest* insetF;
+        expert_forest* outsetF;
+        expert_forest* hybRelF;
+        
+        int num_levels;
+
+      private:
+
+        /// Last used ID of \a relation node.
+        long last_in_node_array;
+
+      private:
+        // TBD - add a data structure for the "uniqueness table"
+        // of relation_nodes, so if we register a node that
+        // is already present in a node_array, we can detect it.
+
+        std::unordered_map<node_handle, relation_node*> impl_unique;
+
+      private:
+        // TBD - add a data structure for list of events with top level k,
+        // for all possible k.
+        // Possibly this data structure is built by method
+        // finalizeNodes().
+
+        node_handle** event_list;
+        long* event_list_alloc; // allocated space
+        long* event_added; //how many events added so far
+
+        int* confirm_states; //total no. of confirmed states of a level
+        bool** confirmed; // stores whether a particular local state is confirmed
+        int* confirmed_array_size; // stores size of confirmed array
+
+
+        // Obtained from OTF :
+      
+        // All events that begin at level i,
+        // are listed in events_by_top_level[i].
+        // An event will appear in only one list
+        // (as there is only one top level per event).
+        // num_events_by_top_level[i] gives the size of events_by_top_level[i]
+        event*** events_by_top_level;
+        int *num_events_by_top_level;
+        
+        // All events that depend on a level i,
+        // are listed in events_by_level[i]
+        // Therefore, an event that depends on n levels,
+        // will appear in n lists
+        // num_events_by_level[i] gives the size of events_by_level[i]
+        event*** events_by_level;
+        int *num_events_by_level;
+        
+        // All subevents that depend on a level i,
+        // are listed in subevents_by_level[i]
+        // Therefore, a subevent that depends on n levels,
+        // will appear in n lists
+        // num_subevents_by_level[i] gives the size of subevents_by_level[i]
+        subevent*** subevents_by_level;
+        int *num_subevents_by_level;
+      
+        // All relation_nodes that depend on a level i,
+        // are listed in relnodes_by_level[i]
+        // A relnode can only appear in one list
+        // num_relnodes_by_level[i] gives the size of relnodes_by_level[i]
+        relation_node*** relnodes_by_level;
+        int *num_relnodes_by_level;
+      
+      public:
+
+        /// Get total number of variables
+        inline int getNumVariables() { return num_levels;}
+
+        /** Rebuild an event.
+         
+         @param  i           index of the event.
+         @return             true, if event was updated.
+         */
+        bool rebuildEvent(int level, int i);
+
+        /// Get total number of events upto given level
+        long getTotalEvent(int level);
+
+        /// Resizes the Event List
+        void resizeEventArray(int level);
+
+        /// Returns the number of events that have this level as top
+        long lengthForLevel(int level) const;
+
+        /// Returns the array of events that have this level as top
+        event** arrayForLevel(int level) const;
+
+        /// Returns an array of local states for this level, such that
+        /// result[i] == isConfirmed(level, i).
+        const bool* getLocalStates(int level);
+
+
+        /// Returns the number of confirmed states at a level
+        int getConfirmedStates(int level) const;
+
+        /// Confirms the local states at a level
+        void setConfirmedStates(int level, int i);
+
+        /// Confirms the local states in the given MDD
+        void setConfirmedStates(const dd_edge &set);
+
+
+        /// Checks if i is confirmed
+        bool isConfirmedState(int level, int i);
+
+        /// Expand confirm array
+        void resizeConfirmedArray(int level, int index);
+
+        /** Bound all extensible variables
+            using the maximum confirmed local state as the bound.
+        */
+        void bindExtensibleVariables();
+
+      public:
+        /// Prints the hybrid relation
+        void show();
+      
+     public:
+      
+      /*
+       Group the list of events at a given level by same next-of values 
+       @param level    level at which saturation is called
+       @param i        number of tokens before event is fired
+       @param R        array of events at level top
+       
+       Return the map.
+       */
+      std::unordered_map<long,std::vector<node_handle>> getListOfNexts(int level, long i, relation_node **R);
+      
+      /*
+       Returns whether there exist a possibility of doing union 
+       @param level    level at which saturation is called
+       @param i        number of tokens before event is fired
+       @param R        array of events at level top
+       
+       Return bool.
+       */
+      bool isUnionPossible(int level, long i, relation_node **R);
+      
+    };  // class hybrid_relation
+
+
+};
+
+// ******************************************************************
+// *                                                                *
 // *                         ct_object class                        *
 // *                                                                *
 // ******************************************************************
@@ -3781,11 +4571,7 @@ class MEDDLY::ct_initializer : public initializer_list {
     static void setCompression(compressionOption co);
 
     // for convenience
-#ifdef OLD_OP_CT
-    static compute_table* createForOp(operation* op);
-#else
     static compute_table* createForOp(operation* op, unsigned slot);
-#endif
 
   private:
     static settings the_settings;
@@ -3842,14 +4628,6 @@ class MEDDLY::compute_table_style {
     Implementation is in compute_table.cc.
 */
 class MEDDLY::compute_table {
-    protected:
-      /// The maximum size of the hash table.
-      unsigned maxSize;
-      /// Do we try to eliminate stales during a "find" operation
-      bool checkStalesOnFind;
-      /// Do we try to eliminate stales during a "resize" operation
-      bool checkStalesOnResize;
-
     public:
 
       //
@@ -3864,6 +4642,7 @@ class MEDDLY::compute_table {
         unsigned long searchHistogram[searchHistogramSize];
         unsigned long numLargeSearches;
         unsigned maxSearchLength;
+        unsigned long resizeScans;
       };
 
       //
@@ -3884,7 +4663,6 @@ class MEDDLY::compute_table {
       // ******************************************************************
       //
 
-#ifndef OLD_OP_CT
       union entry_item {
         int I;
         unsigned int U;
@@ -3895,7 +4673,6 @@ class MEDDLY::compute_table {
         double D;
         ct_object* G;
       };
-#endif
 
       //
       // ******************************************************************
@@ -4059,6 +4836,26 @@ class MEDDLY::compute_table {
  
           /// Should we remove all CT entries of this type?
           bool isMarkedForDeletion() const;
+
+          /** Clear CT bits for any forests this entry type uses.
+                @param  skipF   If skipF[i] is true, then we do nothing 
+                                for forests with ID i.  We set this to 
+                                true after clearing forest with ID i to 
+                                prevent clearing the bits twice.
+
+                @param  N       Size of in_use array, for sanity checks.
+          */
+          void clearForestCTBits(bool* skipF, unsigned N) const;
+
+          /** Notify forests that we're done marking CT bits.
+              The forests can choose to start the sweep phase if they like.
+                @param  whichF  If whichF[i] is true, then we notify the 
+                                forest with ID i, and set whichF[i] to false.
+                                This prevents notifying a forest twice.
+
+                @param  N       Size of in_use array, for sanity checks.
+          */
+          void sweepForestCTBits(bool* skipF, unsigned N) const;
         private:
           /// Unique ID, set by compute table
           unsigned etID;
@@ -4116,18 +4913,10 @@ class MEDDLY::compute_table {
 
         protected:
           /// Start using for this operation
-#ifdef OLD_OP_CT
-          void setup(operation* op, unsigned slots); 
-#else
           void setup(const compute_table::entry_type* et, unsigned repeats);
-#endif
 
         public:
-#ifdef OLD_OP_CT
-          operation* getOp() const;
-#else
           const compute_table::entry_type* getET() const;
-#endif
 
           // interface, for operations.  All inlined in meddly_expert.hh
           void writeN(node_handle nh);
@@ -4140,10 +4929,6 @@ class MEDDLY::compute_table {
 
         public: 
           // interface, for compute_table.  All inlined in meddly_expert.hh
-#ifdef OLD_OP_CT
-          const node_handle* rawData(bool includeOp) const;
-          unsigned dataLength(bool includeOp) const;
-#else
           const entry_item* rawData() const;
           unsigned dataLength() const;
           unsigned numRepeats() const;
@@ -4153,30 +4938,22 @@ class MEDDLY::compute_table {
           void* allocTempData(unsigned bytes);
           /// Increase cache counters for nodes in this portion of the entry.
           void cacheNodes() const;
-#endif
           unsigned getHash() const;
 
         protected:
           // protected interface, for compute_table.  All inlined in meddly_expert.hh
           void setHash(unsigned h);
 
-#ifndef OLD_OP_CT
         private:
           typeID theSlotType() const;
-#endif
 
         private:
-#ifdef OLD_OP_CT
-          operation* op;
-          node_handle* data;
-#else 
           const compute_table::entry_type* etype;
           entry_item* data;
           void* temp_data; 
           unsigned temp_bytes;
           unsigned temp_alloc;
           unsigned num_repeats;
-#endif
           unsigned hash_value;
           unsigned data_alloc;
 
@@ -4205,16 +4982,11 @@ class MEDDLY::compute_table {
       class entry_result {
         public:
           entry_result();
-#ifdef OLD_OP_CT
-          entry_result(unsigned slots);
-#endif
           ~entry_result();
 
         public:
-#ifndef OLD_OP_CT
           // For delayed construction
           void initialize(const entry_type* et);
-#endif
 
           // interface, for operations (reading).
           node_handle readN();
@@ -4235,41 +5007,23 @@ class MEDDLY::compute_table {
           void writeL(long L);
           void writeD(double D);
           void writeG(ct_object* G);
-#ifdef OLD_OP_CT
-          void write_raw(void* data, size_t slots);
-#endif
 
           // interface, for compute tables.
           void setValid();
-#ifndef OLD_OP_CT
           void setValid(const entry_item* d);
-#endif
           void setInvalid();
           operator bool() const;
-#ifndef OLD_OP_CT
           /// Increase cache counters for nodes in this portion of the entry.
           void cacheNodes() const;
-#endif
 
-#ifdef OLD_OP_CT
-          void setResult(const node_handle* d, unsigned sz);
-          const node_handle* rawData() const;
-#else 
           const entry_item* rawData() const;
-#endif
           unsigned dataLength() const;
 
 
         private:
-#ifdef OLD_OP_CT
-          const node_handle* data;
-          node_handle* build;
-          unsigned ansLength;
-#else
           const entry_type* etype;
           entry_item* build;
           const entry_item* data;
-#endif
           bool is_valid;
           unsigned currslot;
       };
@@ -4283,8 +5037,16 @@ class MEDDLY::compute_table {
       static void readEV(const node_handle* p, long &ev);
       static void readEV(const node_handle* p, float &ev);
 
-      /// Constructor
-      compute_table(const ct_initializer::settings &s);
+      /** Constructor.
+            @param  s   Settings for compute table.
+            @param  op  For MONOLITHIC tables, this should be 0;
+                        otherwise, a pointer to the operation specific to
+                        this table.
+            @param  slot  Ignored for MONOLITHIC tables.  For operation-specific
+                          tables, the (op, slot) pair completely identifies
+                          the kinds of entries in the table.
+      */
+      compute_table(const ct_initializer::settings &s, operation* op, unsigned slot);
 
       /** Destructor.
           Does NOT properly discard all table entries;
@@ -4295,11 +5057,7 @@ class MEDDLY::compute_table {
       /**
           Start using an entry_key for the given operation.
       */
-#ifdef OLD_OP_CT
-      static entry_key* useEntryKey(operation* op);
-#else
       static entry_key* useEntryKey(const entry_type* et, unsigned repeats);
-#endif
 
       /**
           Done using an entry_key.
@@ -4308,24 +5066,13 @@ class MEDDLY::compute_table {
 
 
       /// Is this a per-operation compute table?
-      virtual bool isOperationTable() const = 0;
+      bool isOperationTable() const;
 
-      /// Initialize a search key for a given operation.
-      // virtual entry_key* initializeSearchKey(operation* op) = 0;
-
-#ifdef OLD_OP_CT
-      /** Find an entry in the compute table based on the key provided.
-          @param  key   Key to search for.
-          @return       Result, if found.
-      */
-      virtual entry_result& find(entry_key* key) = 0;
-#else
       /** Find an entry in the compute table based on the key provided.
           @param  key   Key to search for.
           @param  res   Where to store the result, if any.
       */
       virtual void find(entry_key* key, entry_result &res) = 0;
-#endif
 
       /**
           Add an entry (key plus result) to the compute table.
@@ -4359,11 +5106,23 @@ class MEDDLY::compute_table {
       /// For debugging.
       virtual void show(output &s, int verbLevel = 0) = 0;
 
+      /** Also for debugging.
+          Examine all entries, and for each pointer to forest f node p,
+          increment counts[p].
+      */
+      virtual void countNodeEntries(const expert_forest* f, size_t* counts) const = 0;
+
+
       static void initialize();
       static void destroy();
 
-#ifndef OLD_OP_CT
     protected:
+      /// Clear CT Bits in forests that could have entries in this table.
+      void clearForestCTBits(bool* skipF, unsigned n) const;
+
+      /// Start sweep phase for forests that could have entries in this table.
+      void sweepForestCTBits(bool* whichF, unsigned n) const;
+
       /** Register an operation.
           Sets aside a number of entry_type slots for the operation.
       */
@@ -4384,20 +5143,25 @@ class MEDDLY::compute_table {
       /// Find entry type for given entryID
       static const entry_type* getEntryType(unsigned etID);
 
-#endif
-
     protected:
       void setHash(entry_key *k, unsigned h);
 
     protected:
+      /// The maximum size of the hash table.
+      unsigned maxSize;
+      /// Do we try to eliminate stales during a "find" operation
+      bool checkStalesOnFind;
+      /// Do we try to eliminate stales during a "resize" operation
+      bool checkStalesOnResize;
+      /// Global entry type, if we're an operation cache; otherwise 0.
+      const entry_type* global_et;
+      /// Performance statistics
       stats perf;
 
-#ifndef OLD_OP_CT
     private:
       static entry_type** entryInfo;
       static unsigned entryInfoAlloc;
       static unsigned entryInfoSize;
-#endif
 
     private:
       static entry_key* free_keys;
@@ -4417,41 +5181,34 @@ class MEDDLY::compute_table {
 */
 class MEDDLY::operation {
     const opname* theOpName;
-    int oplist_index;
+    unsigned oplist_index;
     bool is_marked_for_deletion;
-#ifdef OLD_OP_CT
-    int key_length;   
-    int ans_length;
-#endif
 
     // declared and initialized in meddly.cc
     static compute_table* Monolithic_CT;
     // declared and initialized in meddly.cc
     static operation** op_list;
     // declared and initialized in meddly.cc
-    static int* op_holes;
+    static unsigned* op_holes;
     // declared and initialized in meddly.cc
-    static int list_size;
+    static unsigned list_size;
     // declared and initialized in meddly.cc
-    static int list_alloc;
+    static unsigned list_alloc;
     // declared and initialized in meddly.cc
-    static int free_list;
+    static unsigned free_list;
 
     // should ONLY be called during library cleanup.
     static void destroyAllOps();
 
-#ifndef OLD_OP_CT
     /**
       Starting slot for entry_types, assigned
       by compute_table.
     */
     unsigned first_etid;
-#endif
 
   protected:
     /// Compute table to use (for entry type 0), if any.
     compute_table* CT0;
-#ifndef OLD_OP_CT
     /// Array of compute tables, one per entry type.
     compute_table** CT;
     /** Array of entry types.
@@ -4470,33 +5227,16 @@ class MEDDLY::operation {
       This gives the dimension of arrays CT and etype.
     */
     unsigned num_etids;
-#endif
+
     /// Struct for CT searches.
     // compute_table::entry_key* CTsrch;
     // for cache of operations.
     operation* next;
 
-#ifdef OLD_OP_CT
-    // must stale compute table hits be discarded.
-    // if the result forest is using pessimistic deletion, then true.
-    // otherwise, false.  MUST BE SET BY DERIVED CLASSES.
-    bool discardStaleHits;
-#endif
-
     virtual ~operation();
-#ifdef OLD_OP_CT
-    void setAnswerForest(const expert_forest* f);
-#endif
     void markForDeletion();
     void registerInForest(forest* f);
     void unregisterInForest(forest* f);
-#ifdef OLD_OP_CT
-#ifndef USE_NODE_STATUS
-    virtual bool isStaleEntry(const node_handle* entry) = 0;
-#else
-    virtual MEDDLY::forest::node_status getStatusOfEntry(const node_handle* entry) = 0;
-#endif
-#endif
     void allocEntryForests(int nf);
     void addEntryForest(int index, expert_forest* f);
     void allocEntryObjects(int no);
@@ -4504,10 +5244,8 @@ class MEDDLY::operation {
 
     virtual bool checkForestCompatibility() const = 0;
 
-#ifndef OLD_OP_CT
     void registerEntryType(unsigned slot, compute_table::entry_type* et);
     void buildCTs();
-#endif
 
     friend class forest;
     friend void MEDDLY::destroyOpInternal(operation* op);
@@ -4516,15 +5254,6 @@ class MEDDLY::operation {
     friend class ct_initializer;
 
   public:
-#ifdef OLD_OP_CT
-    /// New constructor.
-    /// @param  n   Operation "name"
-    /// @param  kl  Key length of compute table entries.
-    ///             Use 0 if this operation does not use the compute table.
-    /// @param  al  Answer length of compute table entries.
-    ///             Use 0 if this operation does not use the compute table.
-    operation(const opname* n, int kl, int al);
-#else
     /**
         Constructor.
           @param  n         Operation "name"
@@ -4534,7 +5263,6 @@ class MEDDLY::operation {
                             exactly this many entry types.
     */
     operation(const opname* n, unsigned et_slots);
-#endif
 
     bool isMarkedForDeletion() const;
     void setNext(operation* n);
@@ -4552,57 +5280,26 @@ class MEDDLY::operation {
 
     // for compute tables.
 
-    int getIndex() const;
-    static operation* getOpWithIndex(int i);
-    static int getOpListSize();
+    unsigned getIndex() const;
+    static operation* getOpWithIndex(unsigned i);
+    static unsigned getOpListSize();
 
-#ifndef OLD_OP_CT
     void setFirstETid(unsigned slot);
     unsigned getFirstETid() const;
     unsigned getNumETids() const;
-#endif
 
     // for debugging:
 
     static void showMonolithicComputeTable(output &, int verbLevel);
     static void showAllComputeTables(output &, int verbLevel);
+    static void countAllNodeEntries(const expert_forest* f, size_t* counts);
+
     void showComputeTable(output &, int verbLevel) const;
+    void countCTEntries(const expert_forest* f, size_t* counts) const;
 
     // handy
     const char* getName() const;
     const opname* getOpName() const;
-
-#ifdef OLD_OP_CT
-    /// Number of ints that make up the key (usually the operands).
-    int getKeyLength() const;
-
-    /// Number of ints that make up the answer (usually the results).
-    int getAnsLength() const;
-
-    /// Number of ints that make up the entire record (key + answer)
-    int getCacheEntryLength() const;
-#endif
-
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-    /// Checks if the cache entry (in entryData[]) is stale.
-    bool isEntryStale(const node_handle* data);
-#else
-    /// Returns the status of the compute table entry
-    MEDDLY::forest::node_status getEntryStatus(const node_handle* data);
-#endif
-
-    /// Removes the cache entry (in entryData[]) by informing the
-    /// applicable forests that the nodes in this entry are being removed
-    /// from the cache
-    virtual void discardEntry(const node_handle* entryData) = 0;
-
-    /// Prints a string representation of this cache entry on strm (stream).
-    virtual void showEntry(output &strm, const node_handle *entryData, bool key_only) const = 0;
-
-    bool shouldStaleCacheHitsBeDiscarded() const;
-#endif
 };
 
 // ******************************************************************
@@ -4625,19 +5322,11 @@ class MEDDLY::unary_operation : public operation {
     virtual bool checkForestCompatibility() const;
 
   public:
-#ifdef OLD_OP_CT
-    unary_operation(const unary_opname* code, int kl, int al,
-      expert_forest* arg, expert_forest* res);
-
-    unary_operation(const unary_opname* code, int kl, int al,
-      expert_forest* arg, opnd_type res);
-#else
     unary_operation(const unary_opname* code, unsigned et_slots,
       expert_forest* arg, expert_forest* res);
 
     unary_operation(const unary_opname* code, unsigned et_slots,
       expert_forest* arg, opnd_type res);
-#endif
 
     bool matches(const expert_forest* arg, const expert_forest* res)
       const;
@@ -4645,16 +5334,17 @@ class MEDDLY::unary_operation : public operation {
     bool matches(const expert_forest* arg, opnd_type res) const;
 
     // high-level front-ends
-    virtual void compute(const dd_edge &arg, dd_edge &res);
-    virtual void computeDDEdge(const dd_edge &arg, dd_edge &res);
+
+    /**
+      Checks forest comatability and then calls computeDDEdge().
+    */
+    void compute(const dd_edge &arg, dd_edge &res);
+    void computeTemp(const dd_edge &arg, dd_edge &res);
+
     virtual void compute(const dd_edge &arg, long &res);
     virtual void compute(const dd_edge &arg, double &res);
     virtual void compute(const dd_edge &arg, ct_object &c);
-
-    // TBD: low-level front-ends?
-    // e.g.,
-    // virtual int computeDD(int k, int p);
-    // virtual void computeEvDD(int k, int v, int p, int &w, int &q);
+    virtual void computeDDEdge(const dd_edge &arg, dd_edge &res, bool userFlag);
 };
 
 // ******************************************************************
@@ -4681,23 +5371,26 @@ class MEDDLY::binary_operation : public operation {
     virtual bool checkForestCompatibility() const;
 
   public:
-#ifdef OLD_OP_CT
-    binary_operation(const binary_opname* code, int kl, int al,
-      expert_forest* arg1, expert_forest* arg2, expert_forest* res);
-#else
     binary_operation(const binary_opname* code, unsigned et_slots,
       expert_forest* arg1, expert_forest* arg2, expert_forest* res);
-#endif
 
     bool matches(const expert_forest* arg1, const expert_forest* arg2,
       const expert_forest* res) const;
 
     // high-level front-end
-    virtual void compute(const dd_edge &ar1, const dd_edge &ar2, dd_edge &res);
-    virtual void computeDDEdge(const dd_edge &ar1, const dd_edge &ar2, dd_edge &res)
+
+    /**
+      Checks forest comatability and then calls computeDDEdge().
+    */
+    void compute(const dd_edge &ar1, const dd_edge &ar2, dd_edge &res);
+    void computeTemp(const dd_edge &ar1, const dd_edge &ar2, dd_edge &res);
+
+    virtual void computeDDEdge(const dd_edge &ar1, const dd_edge &ar2, dd_edge &res, bool userFlag)
       = 0;
 
-    // low-level front ends
+    // low-level front ends.  TBD - REMOVE THESE BECAUSE THEY BREAK MARK & SWEEP
+
+#ifdef KEEP_LL_COMPUTES
 
     /// Low-level compute on nodes a and b, return result.
     virtual node_handle compute(node_handle a, node_handle b);
@@ -4716,6 +5409,8 @@ class MEDDLY::binary_operation : public operation {
     virtual void compute(float av, node_handle ap, float bv, node_handle bp,
       float &cv, node_handle &cp);
 
+#endif
+
 };
 
 // ******************************************************************
@@ -4728,11 +5423,7 @@ class MEDDLY::binary_operation : public operation {
 */
 class MEDDLY::specialized_operation : public operation {
   public:
-#ifdef OLD_OP_CT
-    specialized_operation(const specialized_opname* code, int kl, int al);
-#else
     specialized_operation(const specialized_opname* code, unsigned et_slots);
-#endif
   protected:
     virtual ~specialized_operation();
   public:

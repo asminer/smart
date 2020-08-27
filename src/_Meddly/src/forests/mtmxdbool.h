@@ -34,7 +34,7 @@ namespace MEDDLY {
 class MEDDLY::mt_mxd_bool : public mtmxd_forest {
   public:
 
-    mt_mxd_bool(int dsl, domain *d, const policies &p, int* level_reduction_rule=NULL, bool tv=false);
+    mt_mxd_bool(unsigned dsl, domain *d, const policies &p, int* level_reduction_rule=NULL, bool tv=false);
     ~mt_mxd_bool();
 
     virtual void createEdge(bool val, dd_edge &e);
@@ -44,12 +44,17 @@ class MEDDLY::mt_mxd_bool : public mtmxd_forest {
     virtual void evaluate(const dd_edge& f, const int* vlist,
         const int* vplist, bool &term) const;
 
+    virtual node_handle unionOneMinterm(node_handle a,  int* from,  int* to, int level);
+
     virtual void showTerminal(output &s, node_handle tnode) const;
     virtual void writeTerminal(output &s, node_handle tnode) const;
     virtual node_handle readTerminal(input &s);
 
   protected:
     virtual const char* codeChars() const;
+    node_handle unionOneMinterm_r(int index, int vh, node_handle nh,  int* from,  int* to);
+    bool checkTerminalMinterm(node_handle a,  int* from,  int* to,int levelRead, node_handle& c);
+
 };
 
 #endif

@@ -176,7 +176,7 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
     ;
 
   // Initialize result writer
-  int resultSize = A->getNNZs() + B->getNNZs() + 1 + 1;
+  unsigned resultSize = A->getNNZs() + B->getNNZs() + 1 + 1;
   unpacked_node* C = unpacked_node::newSparse(resF, resultLevel, resultSize);
 
   const node_handle A_ext_d = A->isExtensible()? A->ext_d(): 0;
@@ -193,12 +193,13 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
 
   const int max_a_b_last_index = MAX(A_last_index, B_last_index);
 
-  int nnz = 0;
-  int A_curr_index = 0;
-  int B_curr_index = 0;
+  unsigned nnz = 0;
+  unsigned A_curr_index = 0;
+  unsigned B_curr_index = 0;
   for ( ; A_curr_index < A_nnzs && B_curr_index < B_nnzs; ) {
     // get a_i, a_d, b_i, b_d
-    int a_i, a_d, b_i, b_d;
+    unsigned a_i, b_i;
+    node_handle a_d, b_d;
     a_i = A->i(A_curr_index);
     b_i = B->i(B_curr_index);
     if (a_i <= b_i) {
@@ -217,8 +218,8 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
     MEDDLY_DCASSERT(a_d != 0 || b_d != 0);
 
     // compute union(a_d, b_d)
-    int index = (a_d? a_i: b_i);
-    node_handle down = compute_r(index, dwnLevel, a_d, b_d);
+    unsigned index = (a_d? a_i: b_i);
+    node_handle down = compute_r(int(index), dwnLevel, a_d, b_d);
 
     // if union is non-zero, add it to the new node
     if (down) {
@@ -229,8 +230,8 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
   }
   for ( ; A_curr_index < A_nnzs; A_curr_index++) {
     // do union(a_i, b_ext_i)
-    int index = A->i(A_curr_index);
-    node_handle down = compute_r(index, dwnLevel, A->d(A_curr_index), B_ext_d);
+    unsigned index = A->i(A_curr_index);
+    node_handle down = compute_r(int(index), dwnLevel, A->d(A_curr_index), B_ext_d);
     if (down) {
       C->i_ref(nnz) = index;
       C->d_ref(nnz) = down;
@@ -239,8 +240,8 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
   }
   for ( ; B_curr_index < B_nnzs; B_curr_index++) {
     // do union(a_ext_i, b_i)
-    int index = B->i(B_curr_index);
-    node_handle down = compute_r(index, dwnLevel, A_ext_d, B->d(B_curr_index));
+    unsigned index = B->i(B_curr_index);
+    node_handle down = compute_r(int(index), dwnLevel, A_ext_d, B->d(B_curr_index));
     if (down) {
       C->i_ref(nnz) = index;
       C->d_ref(nnz) = down;
@@ -249,9 +250,10 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
   }
   if (A->isExtensible() || B->isExtensible()) {
     int index = max_a_b_last_index+1;
-    int down = compute_r(index, dwnLevel, A_ext_d, B_ext_d);
+    node_handle down = compute_r(index, dwnLevel, A_ext_d, B_ext_d);
     if (down) {
-      C->i_ref(nnz) = index;
+      MEDDLY_DCASSERT(index >= 0);
+      C->i_ref(nnz) = unsigned(index);
       C->d_ref(nnz) = down;
       C->markAsExtensible();
       nnz++;
@@ -303,11 +305,7 @@ MEDDLY::union_min_evplus::union_min_evplus(const binary_opname* opcode,
 MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-#ifdef OLD_OP_CT
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
   compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -320,19 +318,11 @@ MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus::findResult(long aev,
     CTsrch->writeL(bev - aev);
     CTsrch->writeN(b);
   }
-#ifdef OLD_OP_CT
-  compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-  if (!cacheFind) return CTsrch;
-  cev = cacheFind.readL();
-  MEDDLY_DCASSERT(cev == 0);
-  c = resF->linkNode(cacheFind.readN());
-#else
   CT0->find(CTsrch, CTresult[0]);
   if (!CTresult[0]) return CTsrch;
   cev = CTresult[0].readL();
   MEDDLY_DCASSERT(cev == 0);
   c = resF->linkNode(CTresult[0].readN());
-#endif
   if (c != 0) {
     cev = MIN(aev, bev);
   }
@@ -344,21 +334,10 @@ void MEDDLY::union_min_evplus::saveResult(compute_table::entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   MEDDLY_DCASSERT(c == 0 || cev == MIN(aev, bev));
-#ifdef OLD_OP_CT
-  arg1F->cacheNode(a);
-  arg2F->cacheNode(b);
-  resF->cacheNode(c);
-  static compute_table::entry_result result(1 + sizeof(long) / sizeof(node_handle));
-  result.reset();
-  result.writeL(0);   //   Why always 0?
-  result.writeN(c);
-  CT0->addEntry(key, result);
-#else
   CTresult[0].reset();
   CTresult[0].writeL(0);   //   Why always 0?
   CTresult[0].writeN(c);
   CT0->addEntry(key, CTresult[0]);
-#endif
 }
 
 bool MEDDLY::union_min_evplus::checkTerminals(long aev, node_handle a, long bev, node_handle b,
@@ -453,11 +432,7 @@ MEDDLY::union_min_evplus_mxd::union_min_evplus_mxd(const binary_opname* opcode,
 MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus_mxd::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-#ifdef OLD_OP_CT
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
   compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -470,19 +445,11 @@ MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus_mxd::findResult(long 
     CTsrch->writeL(bev - aev);
     CTsrch->writeN(b);
   }
-#ifdef OLD_OP_CT
-  compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-  if (!cacheFind) return CTsrch;
-  cev = cacheFind.readL();
-  MEDDLY_DCASSERT(cev == 0);
-  c = resF->linkNode(cacheFind.readN());
-#else
   CT0->find(CTsrch, CTresult[0]);
   if (!CTresult[0]) return CTsrch;
   cev = CTresult[0].readL();
   MEDDLY_DCASSERT(cev == 0);
   c = resF->linkNode(CTresult[0].readN());
-#endif
   if (c != 0) {
     cev = MIN(aev, bev);
   }
@@ -494,21 +461,10 @@ void MEDDLY::union_min_evplus_mxd::saveResult(compute_table::entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   MEDDLY_DCASSERT(c == 0 || cev == MIN(aev, bev));
-#ifdef OLD_OP_CT
-  arg1F->cacheNode(a);
-  arg2F->cacheNode(b);
-  resF->cacheNode(c);
-  static compute_table::entry_result result(1 + sizeof(long) / sizeof(node_handle));
-  result.reset();
-  result.writeL(0);   // why always 0?
-  result.writeN(c);
-  CT0->addEntry(key, result);
-#else
   CTresult[0].reset();
   CTresult[0].writeL(0);   // why always 0?
   CTresult[0].writeN(c);
   CT0->addEntry(key, CTresult[0]);
-#endif
 }
 
 bool MEDDLY::union_min_evplus_mxd::checkTerminals(long aev, node_handle a, long bev, node_handle b,

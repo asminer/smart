@@ -45,6 +45,9 @@ int N;
 long* scratch;
 const char* lfile;
 bool build_pdf;
+bool pessimistic;
+bool mark_sweep;
+unsigned ct_max;
 
 bool use_folding;
 
@@ -130,11 +133,13 @@ void createQueenNodes(forest* f, int q, dd_edge &col, dd_edge &cp, dd_edge &cm)
   f->createEdgeForVar(q, false, scratch, cm);
 }
 
-bool processArgs(int argc, const char** argv, forest::policies &p)
+bool processArgs(int argc, const char** argv)
 {
   lfile = 0;
   build_pdf = false;
-  p.setPessimistic();
+  mark_sweep = true;
+  pessimistic = true;
+  ct_max = 0;
   bool setN = false;
   use_folding = false;
   for (int i=1; i<argc; i++) {
@@ -147,12 +152,26 @@ bool processArgs(int argc, const char** argv, forest::policies &p)
         use_folding = true;
         continue;
       }
+      if (strcmp("-ms", argv[i])==0) {
+        mark_sweep = true;
+        continue;
+      }
       if (strcmp("-opt", argv[i])==0) {
-        p.setOptimistic();
+        mark_sweep = false;
+        pessimistic = false;
         continue;
       }
       if (strcmp("-pess", argv[i])==0) {
-        p.setPessimistic();
+        mark_sweep = false;
+        pessimistic = true;
+        continue;
+      }
+      if (strcmp("-ct", argv[i])==0) {
+        long ctm = atol(argv[i+1]);
+        i++;
+        if (ctm > 0) {
+          ct_max = ctm;
+        }
         continue;
       }
       if (strcmp("-l", argv[i])==0) {
@@ -186,8 +205,10 @@ int usage(const char* who)
   printf("\t       N:  board dimension\n");
   printf("\t    -acc:  Accumulate constraints in order (default)\n");
   printf("\t   -fold:  Accumulate constraints in pairs\n");
-  printf("\t    -opt:  Optimistic node deletion\n");
-  printf("\t   -pess:  Pessimistic node deletion (default)\n");
+  printf("\t-ct size:  Maximum entries in compute table\n");
+  printf("\t     -ms:  Mark and sweep node deletion (default)\n");
+  printf("\t    -opt:  Reference counts and Optimistic node deletion\n");
+  printf("\t   -pess:  Reference counts and Pessimistic node deletion\n");
   printf("\t-l lfile:  Write logging information to specified file\n");
   printf("\t    -pdf:  Write MDD of solutions to out.pdf\n\n");
   return 1;
@@ -195,29 +216,50 @@ int usage(const char* who)
 
 int main(int argc, const char** argv)
 {
-  initialize();
+  if (!processArgs(argc, argv)) return usage(argv[0]);
+
+  initializer_list* INIT = defaultInitializerList(0);
+  if (ct_max) {
+    ct_initializer::setMaxSize(ct_max);
+  }
+  initialize(INIT);
+
   forest::policies p(false);
-  if (!processArgs(argc, argv, p)) return usage(argv[0]);
-  timer watch;
+  if (mark_sweep) {
+    p.useReferenceCounts = false;
+  } else if (pessimistic) {
+    p.useReferenceCounts = true;
+    p.setPessimistic();
+  } else {
+    p.useReferenceCounts = true;
+    p.setOptimistic();
+  }
   printf("Using %s\n", getLibraryInfo(0));
+
+  timer watch;
   printf("%d-Queens solutions.\n", N);
   scratch = new long[N+1];
   
   watch.note_time();
   printf("Initializing domain and forest\n");
   const char* ndp = "unknown node deletion";
-  switch (p.deletion) {
-    case forest::policies::NEVER_DELETE:
+  if (!p.useReferenceCounts) {
+    // TBD - can we use "never delete" with mark and sweep?
+    ndp = "mark and sweep node deletion";
+  } else {
+    switch (p.deletion) {
+      case forest::policies::NEVER_DELETE:
         ndp = "never delete";
         break;
 
-    case forest::policies::OPTIMISTIC_DELETION:
+      case forest::policies::OPTIMISTIC_DELETION:
         ndp = "optimistic node deletion";
         break;
 
-    case forest::policies::PESSIMISTIC_DELETION:
+      case forest::policies::PESSIMISTIC_DELETION:
         ndp = "pessimistic node deletion";
         break;
+    }
   }
   printf("\tUsing %s policy\n", ndp);
 
@@ -299,7 +341,7 @@ int main(int argc, const char** argv)
   constr[0] = 0;
   watch.note_time();
 
-  printf("Elapsed time: %lf seconds\n", watch.get_last_interval()/1000000.0);
+  printf("Elapsed time: %lf seconds\n", watch.get_last_seconds());
 
   printf("Cleanup\n");
   if (LOG) LOG->newPhase(f, "Cardinality");
@@ -322,8 +364,8 @@ int main(int argc, const char** argv)
   f->reportStats(myout, "\t", 
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS |
-    expert_forest::HOLE_MANAGER_DETAILED
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED | 
+    expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
 
   long c;
@@ -351,9 +393,11 @@ int main(int argc, const char** argv)
   }
 #endif
   if (build_pdf) {
+    solutions->setLabel("queens");
     solutions->writePicture("out", "pdf");
   }
   delete solutions;
+  f->validateCacheCounts();
   operation::showAllComputeTables(myout, 3);
   if (LOG) {
     LOG->newPhase(f, "Cleanup");

@@ -1,4 +1,3 @@
-// $Id$
 
 /*
  Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
@@ -156,6 +155,7 @@ int main(int argc, const char** argv)
     pr.setPessimistic();
     forest::policies p(false);
     p.setPessimistic();
+    // p.setQuasiReduced();
     
     //INITIAL STATE
     int* initialState;
@@ -172,7 +172,7 @@ int main(int argc, const char** argv)
       
       //CREATE FORESTS
       forest* inmdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL,p);
-      forest* relmxd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL,p);
+      forest* relmxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL,pr);
       
       expert_domain* dm = static_cast<expert_domain*>(inmdd->useDomain());
       
@@ -194,9 +194,9 @@ int main(int argc, const char** argv)
       
       
       start.note_time();
-      buildImplicitRelation(model, TRANS, PLACES, BOUNDS, T);
+      buildImplicitRelation(model, TRANS, PLACES, BOUNDS, inmdd, relmxd, T);
       printf("\nNext-state function construction took %.4e seconds\n",
-             start.get_last_interval() / 1000000.0);
+             start.get_last_seconds());
       specialized_operation* sat = 0;
       
       
@@ -213,7 +213,7 @@ int main(int argc, const char** argv)
       
       start.note_time();
       printf("\nReachability set construction took %.4e seconds\n",
-             start.get_last_interval() / 1000000.0);
+             start.get_last_seconds());
       fflush(stdout);
       
 #ifdef DUMP_REACHABLE

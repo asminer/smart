@@ -238,7 +238,7 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
 #endif
     }
     printf("Next-state function construction took %.4e seconds\n",
-      start.get_last_interval() / 1000000.0);
+      start.get_last_seconds() );
     printStats("MxD", mxd);
   }
 
@@ -291,7 +291,7 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
   start.note_time();
   printf("Done\n");
   printf("Reachability set construction took %.4e seconds\n",
-          start.get_last_interval()/1000000.0);
+          start.get_last_seconds());
   fflush(stdout);
 
 #ifdef SHOW_STATES
@@ -318,6 +318,7 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
   // or, don't, and let cleanup() take care of it?
 
   if (build_pdf) {
+    reachable.setLabel("reachable");
     reachable.writePicture("out", "pdf");
   }
 

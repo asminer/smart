@@ -376,7 +376,8 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(mout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED | 
+    expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
 }
 
@@ -572,7 +573,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   }
   start.note_time();
   printf("Next-state function construction took %.4e seconds\n",
-          start.get_last_interval()/1000000.0);
+          start.get_last_seconds());
   if (!ensf) {
     printf("Next-state function MxD has\n\t%d nodes\n\t\%d edges\n",
       nsf.getNodeCount(), nsf.getEdgeCount());
@@ -633,7 +634,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   printf("Done\n");
 
   printf("Reachability set construction took %.4e seconds\n",
-          start.get_last_interval()/1000000.0);
+          start.get_last_seconds() );
   fflush(stdout);
   printf("#Nodes: %d\n", reachableStates.getNodeCount());
   printf("#Edges: %d\n", reachableStates.getEdgeCount());
@@ -709,10 +710,11 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
     }
     start.note_time();
     printf("Iterator traversal time (%0.4e elements): %0.4e seconds\n",
-        double(counter), start.get_last_interval()/double(1000000.0));
+        double(counter), start.get_last_seconds());
   }
 
   if (sw.build_pdf) {
+    reachableStates.setLabel("reachable");
     reachableStates.writePicture("out", "pdf");
   }
 

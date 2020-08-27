@@ -1,4 +1,3 @@
-// $Id$
 
 /*
 Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
@@ -102,7 +101,7 @@ const char* name = who;
 for (const char* ptr=who; *ptr; ptr++) {
 if ('/' == *ptr) name = ptr+1;
 }
-  printf("\nUsage: %s nnnn <-O> order\n\n", name);
+  printf("\nUsage: %s mt dc <-O> order\n\n", name);
   printf("\tnnnn: number of initial tokens\n");
   printf("\torder: the order of variables:123456789\n");
 return 1;
@@ -167,6 +166,7 @@ forest::policies pr(true);
   pr.setPessimistic();
 forest::policies p(false);
   p.setPessimistic();
+  // p.setQuasiReduced();
 
 //INITIAL STATE
 int* initialState;
@@ -185,7 +185,7 @@ if('i' == method)
 
 //CREATE FORESTS
   forest* inmdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL,p);
-  forest* relmxd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL,p);
+  forest* relmxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL,pr);
 
   expert_domain* dm = static_cast<expert_domain*>(inmdd->useDomain());
   dm->enlargeVariableBound(p1_position, false, MT+1);
@@ -205,9 +205,9 @@ if('i' == method)
   satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(inmdd,relmxd,inmdd);
 
   start.note_time();
-  buildImplicitRelation(model, TRANS, PLACES, BOUNDS, T);
+  buildImplicitRelation(model, TRANS, PLACES, BOUNDS, inmdd, relmxd, T);
   printf("\nNext-state function construction took %.4e seconds\n",
-  start.get_last_interval() / 1000000.0);
+  start.get_last_seconds());
   specialized_operation* sat = 0;
 
 
@@ -224,7 +224,7 @@ if('i' == method)
 
   start.note_time();
   printf("\nReachability set construction took %.4e seconds\n",
-  start.get_last_interval() / 1000000.0);
+  start.get_last_seconds());
   fflush(stdout);
 
   #ifdef DUMP_REACHABLE

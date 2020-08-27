@@ -48,6 +48,9 @@ int N;
 FILE* outfile;
 const char* lfile;
 bool build_pdf;
+bool mark_sweep;
+bool pessimistic;
+unsigned ct_maxsize;
 
 dd_edge** qic;
 dd_edge** qidp;
@@ -58,7 +61,9 @@ forest* buildQueenForest(forest::policies &p)
 {
   printf("Initializing domain and forest\n");
   const char* ndp = "unknown node deletion";
-  switch (p.deletion) {
+  if (!p.useReferenceCounts) {
+    ndp = "mark and sweep node deletion";
+  } else switch (p.deletion) {
     case forest::policies::NEVER_DELETE:
         ndp = "never delete";
         break;
@@ -157,20 +162,36 @@ void queenInDiagM(forest* f, int d, dd_edge &e)
   qidm[d+N-1] = new dd_edge(e);
 }
 
-bool processArgs(int argc, const char** argv, forest::policies &p)
+bool processArgs(int argc, const char** argv)
 {
   build_pdf = false;
   lfile = 0;
-  p.setPessimistic();
+  mark_sweep = true;
+  pessimistic = true;
+  ct_maxsize = 0;
   N = -1;
   int i;
   for (i=1; i<argc; i++) {
+    if (strcmp("-ms", argv[i])==0) {
+      mark_sweep = true;
+      continue;
+    }
     if (strcmp("-opt", argv[i])==0) {
-      p.setOptimistic();
+      mark_sweep = false;
+      pessimistic = false;
       continue;
     }
     if (strcmp("-pess", argv[i])==0) {
-      p.setPessimistic();
+      mark_sweep = false;
+      pessimistic = true;
+      continue;
+    }
+    if (strcmp("-ct", argv[i])==0) {
+      long ctm = atol(argv[i+1]);
+      i++;
+      if (ctm > 0) {
+        ct_maxsize = ctm;
+      }
       continue;
     }
     if (strcmp("-l", argv[i])==0) {
@@ -204,10 +225,12 @@ int usage(const char* who)
   for (const char* ptr=who; *ptr; ptr++) {
     if ('/' == *ptr) name = ptr+1;
   }
-  printf("Usage: %s <-opt> <-pess> <-l lfile> N <outfile>\n\n", name);
+  printf("Usage: %s <-opt> <-pess> <-l lfile> <-ct size> N <outfile>\n\n", name);
   printf("\t        N:  board dimension\n");
-  printf("\t     -opt:  Optimistic node deletion\n");
-  printf("\t    -pess:  Pessimistic node deletion (default)\n");
+  printf("\t -ct size:  Maximum entries in compute table\n");
+  printf("\t      -ms:  Mark and sweep node deletion (default)\n");
+  printf("\t     -opt:  Reference counts and Optimistic node deletion\n");
+  printf("\t    -pess:  Reference counts and Pessimistic node deletion\n");
   printf("\t -l lfile:  Write logging information to specified file\n");
   printf("\t     -pdf:  Write MDD of solutions to out.pdf\n\n");
   printf("\t<outfile>:  if specified, we write all solutions to this file\n\n");
@@ -216,9 +239,24 @@ int usage(const char* who)
 
 int main(int argc, const char** argv)
 {
-  initialize();
+  if (!processArgs(argc, argv)) return usage(argv[0]);
+
+  initializer_list* INIT = defaultInitializerList(0);
+  if (ct_maxsize) {
+    ct_initializer::setMaxSize(ct_maxsize);
+  }
+  initialize(INIT);
+
   forest::policies p(false);
-  if (!processArgs(argc, argv, p)) return usage(argv[0]);
+  if (mark_sweep) {
+    p.useReferenceCounts = false;
+  } else if (pessimistic) {
+    p.useReferenceCounts = true;
+    p.setPessimistic();
+  } else {
+    p.useReferenceCounts = true;
+    p.setOptimistic();
+  }
   printf("Using %s\n", getLibraryInfo(0));
 
   timer stopwatch;
@@ -266,7 +304,7 @@ int main(int argc, const char** argv)
   dd_edge solutions(f);
 
   int q;
-  for (q=1; q<=N; q++) {
+  try { for (q=1; q<=N; q++) {
 
     char buffer[80];
     snprintf(buffer, 80, "Trying to cover with %d queens", q);
@@ -317,6 +355,12 @@ int main(int argc, const char** argv)
       break;
     }
   } // for q
+  } // try
+  catch (MEDDLY::error e) {
+    printf("\n\nCaught error: %s (from %s line %d)\n\n", 
+      e.getName(), e.getFile(), e.getLine()
+    );
+  };
 
   // Cleanup
   for (int i=0; i<N; i++) delete qic[i];
@@ -328,16 +372,16 @@ int main(int argc, const char** argv)
   delete[] qidp;
   delete[] qidm;
 
-  printf("\n%lg seconds CPU time elapsed\n", 
-    stopwatch.get_last_interval() / 1000000.0);
+  stopwatch.note_time();
+  printf("\n%lg seconds CPU time elapsed\n", stopwatch.get_last_seconds());
   printf("Forest stats:\n");
   FILE_output myout(stdout);
   expert_forest* ef = (expert_forest*)f;
   ef->reportStats(myout, "\t", 
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS | 
-    expert_forest::HOLE_MANAGER_DETAILED
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED | 
+    expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
   operation::showAllComputeTables(myout, 3);
 
@@ -366,7 +410,10 @@ int main(int argc, const char** argv)
     fprintf(outfile, "\n");
   }
 
+  ef->validateCacheCounts();
+
   if (build_pdf) {
+    solutions.setLabel("queen-cover");
     solutions.writePicture("out", "pdf");
   }
 

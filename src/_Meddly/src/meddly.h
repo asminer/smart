@@ -55,9 +55,10 @@
 #define DCASSERTS_ON
 #endif
 
-
 // #define TRACK_DELETIONS
 // #define TRACK_CACHECOUNT
+// #define TRACK_UNREACHABLE_NODES
+
 
 // Use this for assertions that will fail only when your
 // code is wrong.  Handy for debugging.
@@ -73,7 +74,6 @@
 #else
 #define MEDDLY_CHECK_RANGE(MIN, VALUE, MAX)
 #endif
-
 
 
 namespace MEDDLY {
@@ -766,8 +766,6 @@ class MEDDLY::input {
 
 /** FILE_Input class.
     Use for C-style FILE* input.
-
-    TBD - come up with a way to remove #include <cstdio> and <iostream> from above!
 */
 class MEDDLY::FILE_input : public MEDDLY::input {
   public:
@@ -797,8 +795,6 @@ class MEDDLY::FILE_input : public MEDDLY::input {
 
 /** istream_Input class.
     Use for C++-style istream input.
-
-    TBD - come up with a way to remove #include <cstdio> and <iostream> from above!
 */
 class MEDDLY::istream_input : public MEDDLY::input {
   public:
@@ -906,7 +902,7 @@ class MEDDLY::output {
           @param  human   If false, units will be "bytes".
                           If true, scale units so that output is betwen one and 1000.
     */
-    void put_mem(long m, bool human);
+    void put_mem(size_t m, bool human);
 
 };  // end of output class
 
@@ -918,6 +914,7 @@ inline  MEDDLY::output& operator<< (MEDDLY::output &s, char x)            { s.pu
 inline  MEDDLY::output& operator<< (MEDDLY::output &s, const char* x)     { s.put(x); return s; }
 inline  MEDDLY::output& operator<< (MEDDLY::output &s, int x)             { s.put(long(x)); return s; }
 inline  MEDDLY::output& operator<< (MEDDLY::output &s, long x)            { s.put(x); return s; }
+inline  MEDDLY::output& operator<< (MEDDLY::output &s, unsigned x)        { s.put((unsigned long)x); return s; }
 inline  MEDDLY::output& operator<< (MEDDLY::output &s, unsigned long x)   { s.put(x); return s; }
 inline  MEDDLY::output& operator<< (MEDDLY::output &s, double x)          { s.put(x); return s; }
 
@@ -932,8 +929,6 @@ inline  MEDDLY::output& operator<< (MEDDLY::output &s, double x)          { s.pu
 
 /** FILE_output class.
     Use for C-style FILE* input.
-
-    TBD - come up with a way to remove #include <cstdio> and <iostream> from above!
 */
 class MEDDLY::FILE_output : public MEDDLY::output {
   public:
@@ -961,12 +956,10 @@ class MEDDLY::FILE_output : public MEDDLY::output {
 // *                                                                *
 // ******************************************************************
 
-#ifndef MEDDLY_WITHOUT_IOSTREAM_
+#ifndef _MEDDLY_WITHOUT_IOSTREAM_
 
 /** ostream_output class.
     Use for C++-style ostream input.
-
-    TBD - come up with a way to remove #include <cstdio> and <iostream> from above!
 */
 class MEDDLY::ostream_output : public MEDDLY::output {
   public:
@@ -1148,20 +1141,24 @@ class MEDDLY::forest {
       const node_storage_style* nodestor;
 
       /// Memory compactor: never run if fewer than this many unused slots.
-      int compact_min;
+      // int compact_min;
       /// Memory compactor: always run if more than this many unused slots.
-      int compact_max;
+      // int compact_max;
       /// Memory compactor: fraction of unused slots to trigger.
-      int compact_frac;
+      // int compact_frac;
 
       /// Number of zombie nodes to trigger garbage collection
-      int zombieTrigger;
+      // int zombieTrigger;
       /// Number of orphan nodes to trigger garbage collection
-      int orphanTrigger;
+      // int orphanTrigger;
       /// Should we run the memory compactor after garbage collection
-      bool compactAfterGC;
+      // bool compactAfterGC;
       /// Should we run the memory compactor before trying to expand
-      bool compactBeforeExpand;
+      // bool compactBeforeExpand;
+
+      /// Use reference counts to know when nodes can be recycled.
+      /// Otherwise, use mark and sweep to recycle disconnected nodes.
+      bool useReferenceCounts;
 
       /// Empty constructor, for setting up defaults later
       policies();
@@ -1198,45 +1195,27 @@ class MEDDLY::forest {
 
     /// Collection of various stats for performance measurement
     struct statset {
+      /// Number of times we scanned for reachable nodes
+      long reachable_scans;
       /// Number of times a dead node was resurrected.
       long reclaimed_nodes;
       /// Number of times the forest storage array was compacted
       long num_compactions;
       /// Number of times the garbage collector ran.
       long garbage_collections;
-      /// Current number of zombie nodes (waiting for deletion)
-      long zombie_nodes;
-      /// Current number of orphan nodes (disconnected)
-      long orphan_nodes;
+
+#ifdef TRACK_UNREACHABLE_NODES
+      /// Current number of unreachable (disconnected) nodes
+      long unreachable_nodes;
+#endif
+
       /// Current number of connected nodes
       long active_nodes;
       /// Current number of temporary nodes
-      long temp_nodes;
+      // long temp_nodes;
 
       /// Peak number of active nodes
       long peak_active;
-
-      /*
-      /// Current memory used for nodes
-      long memory_used;
-      /// Current memory allocated for nodes
-      long memory_alloc;
-      /// Peak memory used for nodes
-      long peak_memory_used;
-      /// Peak memory allocated for nodes
-      long peak_memory_alloc;
-      */
-
-      // unique table stats
-
-      /*
-      /// Current memory for UT
-      long memory_UT;
-      /// Peak memory for UT
-      long peak_memory_UT;
-      /// Longest chain search in UT
-      int max_UT_chain;
-      */
 
       statset();
 
@@ -1244,13 +1223,6 @@ class MEDDLY::forest {
 
       void incActive(long b);
       void decActive(long b);
-      /*
-      void incMemUsed(long b);
-      void decMemUsed(long b);
-      void incMemAlloc(long b);
-      void decMemAlloc(long b);
-      void sawUTchain(int c);
-      */
     };
 
     /**
@@ -1342,7 +1314,7 @@ class MEDDLY::forest {
       @param  p       Polcies for reduction, storage, deletion.
       @param  level_reduction_rule       Rules for reduction on different levels.
     */
-    forest(int dslot, domain* d, bool rel, range_type t, edge_labeling ev, 
+    forest(unsigned dslot, domain* d, bool rel, range_type t, edge_labeling ev, 
       const policies &p, int* level_reduction_rule);
 
     /// Destructor.
@@ -1395,6 +1367,9 @@ class MEDDLY::forest {
 
     /// Returns the forest identifier, a unique integer per forest.
     unsigned FID() const;
+
+    /// Returns the largest forest identifier ever seen.
+    static unsigned MaxFID();
 
     /// Returns a non-modifiable pointer to this forest's domain.
     const domain* getDomain() const;
@@ -1556,6 +1531,8 @@ class MEDDLY::forest {
   // ------------------------------------------------------------
   // virtual, with default implementation.
   public:
+
+   virtual node_handle unionOneMinterm(node_handle a,  int* from,  int* to, int level);
 
     /** Create an edge such that
         f(v_1, ..., vh=i, ..., v_n) = terms[i] for 0 <= i < size(vh).
@@ -1994,12 +1971,12 @@ class MEDDLY::forest {
         All disconnected nodes in this forest are discarded along with any
         compute table entries that may include them.
     */
-    virtual void garbageCollect() = 0;
+    // virtual void garbageCollect() = 0;
 
     /** Compact the memory for all variables in this forest.
         This is not the same as garbage collection.
     */
-    virtual void compactMemory() = 0;
+    // virtual void compactMemory() = 0;
 
     /** Create an edge representing the subset of a Matrix Diagram.
 
@@ -2063,14 +2040,14 @@ class MEDDLY::forest {
 
   private:  // Domain info 
     friend class domain;
-    int d_slot;
+    unsigned d_slot;
     domain* d;
 
   private:  // For operation registration
     friend class operation;
 
-    int* opCount;
-    int szOpCount;
+    unsigned* opCount;
+    unsigned szOpCount;
 
     /// Register an operation with this forest.
     /// Called only within operation.
@@ -2083,12 +2060,11 @@ class MEDDLY::forest {
   private:  // For edge registration
     friend class dd_edge;
 
-    // structure to store references to registered dd_edges.
+    /// structure to store references to registered dd_edges.
     struct edge_data {
-      // If nextHole >= 0, this is a hole, in which case nextHole also
-      // refers to the array index of the next hole in edge[]
-      int nextHole;
-      // registered dd_edge
+      /// Index of the next hole (spot with a 0 edge).
+      unsigned nextHole;
+      /// registered dd_edge
       dd_edge* edge;
     };
 
@@ -2096,11 +2072,11 @@ class MEDDLY::forest {
     edge_data *edge;
 
     // Size of edge[]
-    unsigned sz;
+    unsigned edge_sz;
     // Array index: 1 + (last used slot in edge[])
     unsigned firstFree;
     // Array index: most recently created hole in edge[]
-    int firstHole;
+    unsigned firstHole;
 
     void registerEdge(dd_edge& e);
     void unregisterEdge(dd_edge& e);
@@ -2302,7 +2278,7 @@ class MEDDLY::domain {
     void showInfo(output &strm);
 
     /// Free the slot that the forest is using.
-    void unlinkForest(forest* f, int slot);
+    void unlinkForest(forest* f, unsigned slot);
 
     // --------------------------------------------------------------------
 
@@ -2323,10 +2299,10 @@ class MEDDLY::domain {
   private:
     bool is_marked_for_deletion;
     forest** forests;
-    int szForests;
+    unsigned szForests;
 
     /// Find a free slot for a new forest.
-    int findEmptyForestSlot();
+    unsigned findEmptyForestSlot();
 
     /// Mark this domain for deletion
     void markForDeletion();
@@ -2428,6 +2404,9 @@ class MEDDLY::dd_edge {
     */
     forest* getForest() const;
 
+    /// Set the forest owning this edge.
+    void setForest(forest* f);
+
     /** Get this dd_edge's node handle.
         @return         the node handle.
     */
@@ -2439,6 +2418,9 @@ class MEDDLY::dd_edge {
 
     /// Get this dd_edge's edge value (only valid for edge-valued MDDs).
     void getEdgeValue(float& ev) const;
+
+    /// Get this dd_edge's label
+    const char* getLabel() const;
 
     /** Get this dd_edge's level.
         @return         the level.
@@ -2502,6 +2484,11 @@ class MEDDLY::dd_edge {
     void setEdgeValue(int value);
     void setEdgeValue(long value);
     void setEdgeValue(float value);
+
+    /** Set the edge's label.
+        @param  L   Label to use; will be copied.
+    */
+    void setLabel(const char* L);
 
     /** Check for equality.
         @return true    iff this edge has the same parent and refers to
@@ -2599,12 +2586,13 @@ class MEDDLY::dd_edge {
 
   private:
     friend class forest;
+    friend class unpacked_node;
 
-    void setIndex(int ind);
-    int getIndex() const;
+    void setIndex(unsigned ind);
+    unsigned getIndex() const;
 
     forest *parent;
-    int index;  //  our slot number in the parent forest's list
+    unsigned index;  //  our slot number in the parent forest's list, or 0 for no slot.
 
     node_handle node;
     long raw_value;
@@ -2616,6 +2604,9 @@ class MEDDLY::dd_edge {
 
     // called when the parent is destroyed
     void orphan();
+
+    // Label; used only for display purposes
+    char* label;
 };
 
 // ******************************************************************

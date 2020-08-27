@@ -56,75 +56,34 @@ class MEDDLY::mm_mult_op : public binary_operation {
     mm_mult_op(const binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
-#ifdef OLD_OP_CT
-#ifndef USE_NODE_STATUS
-    virtual bool isStaleEntry(const node_handle* entryData);
-#else
-    virtual MEDDLY::forest::node_status getStatusOfEntry(const node_handle* entryData);
-#endif
-    virtual void discardEntry(const node_handle* entryData);
-    virtual void showEntry(output &strm, const node_handle* entryData, bool key_only) const;
-#endif
-
     inline compute_table::entry_key* 
     findResult(node_handle a, node_handle b, node_handle &c) 
     {
-#ifdef OLD_OP_CT
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(this);
-#else
       compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
-#endif
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CTsrch->writeN(b);
-#ifdef OLD_OP_CT
-      compute_table::entry_result& cacheFind = CT0->find(CTsrch);
-      if (!cacheFind) return CTsrch;
-      c = resF->linkNode(cacheFind.readN());
-#else
       CT0->find(CTsrch, CTresult[0]);
       if (!CTresult[0]) return CTsrch;
       c = resF->linkNode(CTresult[0].readN());
-#endif
       CT0->recycle(CTsrch);
       return 0;
     }
     inline node_handle saveResult(compute_table::entry_key* Key, 
       node_handle a, node_handle b, node_handle c) 
     {
-#ifdef OLD_OP_CT
-      arg1F->cacheNode(a);
-      arg2F->cacheNode(b);
-      resF->cacheNode(c);
-      static compute_table::entry_result result(1);
-      result.reset();
-      result.writeN(c);
-      CT0->addEntry(Key, result);
-#else
       CTresult[0].reset();
       CTresult[0].writeN(c);
       CT0->addEntry(Key, CTresult[0]);
-#endif
       return c;
     }
-    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c);
+    virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c, bool userFlag);
     virtual node_handle compute(node_handle a, node_handle b);
   protected:
     binary_operation* accumulateOp;
     virtual node_handle compute_rec(node_handle a, node_handle b) = 0;
 };
 
-#ifdef OLD_OP_CT
-MEDDLY::mm_mult_op::mm_mult_op(const binary_opname* oc, expert_forest* a1,
-  expert_forest* a2, expert_forest* res, binary_operation* acc)
-: binary_operation(oc, 2, 1, a1, a2, res)
-{
-  accumulateOp = acc;
-
-  if (!a1->isForRelations() || !a2->isForRelations())
-    throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
-}
-#else
 MEDDLY::mm_mult_op::mm_mult_op(const binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
 : binary_operation(oc, 1, a1, a2, res)
@@ -141,60 +100,9 @@ MEDDLY::mm_mult_op::mm_mult_op(const binary_opname* oc, expert_forest* a1,
   registerEntryType(0, et);
   buildCTs();
 }
-#endif
-
-#ifdef OLD_OP_CT
-
-#ifndef USE_NODE_STATUS
-bool MEDDLY::mm_mult_op::isStaleEntry(const node_handle* data)
-{
-  return arg1F->isStale(data[0]) ||
-         arg2F->isStale(data[1]) ||
-         resF->isStale(data[2]);
-}
-#else
-MEDDLY::forest::node_status
-MEDDLY::mm_mult_op::getStatusOfEntry(const node_handle* data)
-{
-  MEDDLY::forest::node_status a = arg1F->getNodeStatus(data[0]);
-  MEDDLY::forest::node_status b = arg2F->getNodeStatus(data[1]);
-  MEDDLY::forest::node_status c = resF->getNodeStatus(data[2]);
-
-  if (a == MEDDLY::forest::DEAD ||
-      b == MEDDLY::forest::DEAD ||
-      c == MEDDLY::forest::DEAD)
-    return MEDDLY::forest::DEAD;
-  else if (a == MEDDLY::forest::RECOVERABLE ||
-      b == MEDDLY::forest::RECOVERABLE ||
-      c == MEDDLY::forest::RECOVERABLE)
-    return MEDDLY::forest::RECOVERABLE;
-  else
-    return MEDDLY::forest::ACTIVE;
-}
-#endif
-
-void MEDDLY::mm_mult_op::discardEntry(const node_handle* data)
-{
-  arg1F->uncacheNode(data[0]);
-  arg2F->uncacheNode(data[1]);
-  resF->uncacheNode(data[2]);
-}
-
-void
-MEDDLY::mm_mult_op::showEntry(output &strm, const node_handle* data, bool key_only) const
-{
-  strm  << "[" << getName() << "(" << long(data[0]) << ", " << long(data[1]) << "): ";
-  if (key_only) {
-    strm << "?]";
-  } else {
-    strm << long(data[2]) << "]";
-  }
-}
-
-#endif // OLD_OP_CT
 
 void MEDDLY::mm_mult_op
-::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c)
+::computeDDEdge(const dd_edge &a, const dd_edge &b, dd_edge &c, bool userFlag)
 {
   node_handle cnode;
   cnode = compute(a.getNode(), b.getNode());
@@ -282,11 +190,13 @@ MEDDLY::node_handle MEDDLY::mm_mult_mxd::compute_rec(node_handle a,
   
   // Create a node builder for the result.
   int rLevel = MAX(aLevel, bLevel);
-  int rSize = resF->getLevelSize(rLevel);
+  unsigned rSize = unsigned(resF->getLevelSize(rLevel));
   unpacked_node* nbr = unpacked_node::newFull(resF, rLevel, rSize);
 
+  dd_edge resultik(resF), temp(resF);
+
   // Clear out result (important!)
-  for (int i = 0; i < rSize; ++i) nbr->d_ref(i) = 0;
+  for (unsigned i = 0; i < rSize; ++i) nbr->d_ref(i) = 0;
 
   /**
    * If a is identity reduced (i.e. lower level than b)
@@ -301,18 +211,18 @@ MEDDLY::node_handle MEDDLY::mm_mult_mxd::compute_rec(node_handle a,
     unpacked_node* nrb = unpacked_node::useUnpackedNode();
     unpacked_node* nrbp = unpacked_node::useUnpackedNode();
     nrb->initFromNode(arg2F, b, false);
-    for (int iz = 0; iz < nrb->getNNZs(); ++iz) {
+    for (unsigned iz = 0; iz < nrb->getNNZs(); ++iz) {
       unpacked_node* nbri = unpacked_node::newFull(resF, -rLevel, rSize);
-      for (int i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
+      for (unsigned i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
       nrbp->initFromNode(arg2F, nrb->d(iz), false);
-      int i = nrb->i(iz);
-      for (int jz = 0; jz < nrbp->getNNZs(); ++jz) {
-        int j = nrbp->i(jz);
+      unsigned i = nrb->i(iz);
+      for (unsigned jz = 0; jz < nrbp->getNNZs(); ++jz) {
+        unsigned j = nrbp->i(jz);
         MEDDLY_DCASSERT(0 == nbri->d(j));
         nbri->d_ref(j) = compute_rec(a, nrbp->d(jz));
       }
       MEDDLY_DCASSERT(0 == nbr->d(i));
-      nbr->d_ref(i) = resF->createReducedNode(i, nbri);
+      nbr->d_ref(i) = resF->createReducedNode(int(i), nbri);
     }
     unpacked_node::recycle(nrbp);
     unpacked_node::recycle(nrb);
@@ -322,18 +232,18 @@ MEDDLY::node_handle MEDDLY::mm_mult_mxd::compute_rec(node_handle a,
     unpacked_node* nra = unpacked_node::useUnpackedNode();
     unpacked_node* nrap = unpacked_node::useUnpackedNode();
     nra->initFromNode(arg1F, a, false);
-    for (int iz = 0; iz < nra->getNNZs(); ++iz) {
+    for (unsigned iz = 0; iz < nra->getNNZs(); ++iz) {
       unpacked_node* nbri = unpacked_node::newFull(resF, -rLevel, rSize);
-      for (int i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
+      for (unsigned i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
       nrap->initFromNode(arg1F, nra->d(iz), false);
-      int i = nra->i(iz);
-      for (int jz = 0; jz < nrap->getNNZs(); ++jz) {
-        int j = nrap->i(jz);
+      unsigned i = nra->i(iz);
+      for (unsigned jz = 0; jz < nrap->getNNZs(); ++jz) {
+        unsigned j = nrap->i(jz);
         MEDDLY_DCASSERT(0 == nbri->d(j));
         nbri->d_ref(j) = compute_rec(nrap->d(jz), b);
       }
       MEDDLY_DCASSERT(0 == nbr->d(i));
-      nbr->d_ref(i) = resF->createReducedNode(i, nbri);
+      nbr->d_ref(i) = resF->createReducedNode(int(i), nbri);
     }
     unpacked_node::recycle(nrap);
     unpacked_node::recycle(nra);
@@ -353,7 +263,7 @@ MEDDLY::node_handle MEDDLY::mm_mult_mxd::compute_rec(node_handle a,
     unpacked_node* nrap = unpacked_node::useUnpackedNode();
 
     unpacked_node** nrbp = new unpacked_node*[nrb->getSize()];
-    for (int i = 0; i < nrb->getSize(); ++i) {
+    for (unsigned i = 0; i < nrb->getSize(); ++i) {
       if (0==nrb->d(i)) {
         nrbp[i] = 0;
         continue;
@@ -364,34 +274,35 @@ MEDDLY::node_handle MEDDLY::mm_mult_mxd::compute_rec(node_handle a,
 
     // For all i, j, and k:
     //    result[i][k] += compute_rec(a[i][j], b[j][k])
-    for (int iz = 0; iz < nra->getNNZs(); ++iz) {
+    for (unsigned iz = 0; iz < nra->getNNZs(); ++iz) {
       unpacked_node* nbri = unpacked_node::newFull(resF, -rLevel, rSize);
-      for (int i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
+      for (unsigned i = 0; i < rSize; ++i) nbri->d_ref(i) = 0;
       nrap->initFromNode(arg1F, nra->d(iz), false);
-      int i = nra->i(iz);
-      for (int jz = 0; jz < nrap->getNNZs(); ++jz) {
-        int j = nrap->i(jz);
+      unsigned i = nra->i(iz);
+      for (unsigned jz = 0; jz < nrap->getNNZs(); ++jz) {
+        unsigned j = nrap->i(jz);
         if (0 == nrbp[j]) continue;
-        for (int kz = 0; kz < nrbp[j]->getNNZs(); ++kz) {
-          int result = compute_rec(nrap->d(jz), nrbp[j]->d(kz));
-          if (0 == result) continue;
-          int k = nrbp[j]->i(kz);
+        for (unsigned kz = 0; kz < nrbp[j]->getNNZs(); ++kz) {
+          node_handle res = compute_rec(nrap->d(jz), nrbp[j]->d(kz));
+          if (0 == res) continue;
+          unsigned k = nrbp[j]->i(kz);
           if (0 == nbri->d(k)) {
-            nbri->d_ref(k) = result;
+            nbri->d_ref(k) = res;
             continue;
           }
-          int old = nbri->d(k);
-          nbri->d_ref(k) = accumulateOp->compute(old, result);
-          resF->unlinkNode(old);
-          resF->unlinkNode(result);
+          // Do the union
+          resultik.set(nbri->d(k));
+          temp.set(res);
+          accumulateOp->computeTemp(resultik, temp, resultik);
+          nbri->set_d(k, resultik);
         }
       }
       MEDDLY_DCASSERT(0 == nbr->d(i));
-      nbr->d_ref(i) = resF->createReducedNode(i, nbri);
+      nbr->d_ref(i) = resF->createReducedNode(int(i), nbri);
     }
     unpacked_node::recycle(nrap);
     unpacked_node::recycle(nra);
-    for (int i = 0; i < nrb->getSize(); ++i) {
+    for (unsigned i = 0; i < nrb->getSize(); ++i) {
       if (nrbp[i]) unpacked_node::recycle(nrbp[i]);
     }
     delete[] nrbp;

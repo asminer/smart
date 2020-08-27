@@ -3,6 +3,7 @@
 .dirstamp
 *.log
 *.trs
+.libs
 bug_00
 bug_01
 bug_02
@@ -18,3 +19,4 @@ kan_show
 kanban
 nqueens
 sat_test
+kan_io.data.*

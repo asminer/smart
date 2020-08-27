@@ -1,6 +1,4 @@
 
-// $Id$
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -138,7 +136,7 @@ size_t readNumber(std::istream &in)
   if (('0' > c) || ('9' < c)) {
     parseError(0, "number expected");
   }
-  num = c - '0';
+  num = size_t(c - '0');
   for (;;) {
     c = in.get();
     if (!in) break;
@@ -147,7 +145,7 @@ size_t readNumber(std::istream &in)
       break;
     }
     num *= 10;
-    num += c - '0';
+    num += size_t(c - '0');
   }
 #ifdef DEBUG_PARSER
   std::cerr << "Consumed number " << num << "\n";
