@@ -571,6 +571,27 @@ bool intset::isEmpty() const
   return data->Empty();
 }
 
+bool intset::isSingleCardinality() const
+{
+  DCASSERT(data);
+  bool isSingle = false;
+  long n = -1;
+  while ((n=data->FirstSetAfter(n)) >= 0)
+    {
+      if(!isSingle)
+          isSingle = true;    // set to true for first time
+      else
+         {
+            isSingle = false; //if more than one item exist in set, isSingle is set to false & break from loop
+            break;
+         }
+      
+    }
+ 
+  if (flip)   return !isSingle;
+  else        return isSingle;
+}
+
 void intset::addElement(long n)
 {
   DCASSERT(data);

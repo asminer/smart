@@ -1158,6 +1158,7 @@ public:
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 	virtual bool Print(OutputStream &s, int w) const;
+	virtual long getUpper() const;
 protected:
 	virtual expr* buildAnother(expr *r) const;
 };
@@ -1227,6 +1228,10 @@ bool vltc_op::Print(OutputStream &s, int w) const {
 	s.Put('L');
 #endif
 	return true;
+}
+
+long vltc_op::getUpper() const {
+  return upper;
 }
 
 expr* vltc_op::buildAnother(expr *r) const {
@@ -1342,6 +1347,8 @@ public:
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 	virtual bool Print(OutputStream &s, int w) const;
+	virtual long getLower() const;
+	virtual long getUpper() const;
 protected:
 	virtual expr* buildAnother(expr *r) const;
 };
@@ -1425,6 +1432,14 @@ bool clevltc_op::Print(OutputStream &s, int w) const {
 	s.Put('L');
 #endif
 	return true;
+}
+
+long clevltc_op::getLower() const {
+  return lower;
+}
+
+long clevltc_op::getUpper() const {
+  return upper;
 }
 
 expr* clevltc_op::buildAnother(expr *r) const {
