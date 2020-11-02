@@ -381,3 +381,8 @@ long expr::getLower() const
 {
   return 0;
 }
+
+long expr::getUpper() const
+{
+  return -1;
+}

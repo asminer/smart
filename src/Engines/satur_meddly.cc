@@ -52,6 +52,7 @@ extern parse_module* pm;
 #define MCC_UPPER_BOUNDS 0
 // #define MCC_DEADLOCK
 #define ONLY_STATE_SPACE
+#define TEST_HYB
 
 // **************************************************************************
 // *                                                                        *
@@ -875,7 +876,12 @@ meddly_otfsat the_meddly_otfsat;
 
 meddly_otfsat::meddly_otfsat() : meddly_implicitgen()
 {
-  meddly_procgen::useXdds(true);
+  #ifndef TEST_HYB
+    meddly_procgen::useXdds(true);
+  #else
+    meddly_procgen::useXdds(false);
+  #endif
+
 }
 
 meddly_otfsat::~meddly_otfsat()
@@ -1177,9 +1183,10 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 #ifdef ONLY_STATE_SPACE
     // Build a monolithic transition relation
     NSF->bindExtensibleVariables();
-    MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
+    //MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
     shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
-    d->E.set(mxd);
+    //d->E.set(mxd);
+    NSF->getBoundedMonolithicNSF(d->E);
     setNSF(d);
 
     clearMeddlyComputeTable(x, *NSF);
@@ -1338,16 +1345,32 @@ protected:
   virtual const char* getAlgName() const { return "on the fly implicit nodes saturation"; }
   virtual void postprocess(dsde_hlm &m, meddly_varoption &x);
 private:
+  
   // Build the otfimpl next-state function
   //
   MEDDLY::satimpl_opname::implicit_relation* buildNSF(meddly_varoption &x);
 
-  // Build the reachable set of states
+  // Build the otfimpl next-state function with hybrid
+  //
+  MEDDLY::sathyb_opname::hybrid_relation* buildNSFWithHybrid(meddly_varoption &x);
+
+  // Build the reachable set of states using implicit relations
   //
   void generateRSS(meddly_varoption &x, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
-  // Clear Meddly's compute tables
+  
+  // Build using hybrid relations
+  //
+  void generateRSSWithHybrid(meddly_varoption &x, MEDDLY::sathyb_opname::hybrid_relation* HYB_NSF);
+  
+  // Clear Meddly's compute tables for Implicit
   //
   void clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation &IMPL_NSF);
+  
+  // Clear Meddly's compute tables fot Hybrid
+  //
+  void clearMeddlyComputeTable(meddly_varoption &x,MEDDLY::sathyb_opname::hybrid_relation &HYB_NSF);
+  
+  #if MCC_STATE_SPACE
   // Compute the maximum number of tokens that can occur at any place in the Petri Net
   //
   long computeMaxTokensInPlace(meddly_varoption &x,MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF);
@@ -1387,6 +1410,7 @@ private:
                                MEDDLY::node_handle mdd, MEDDLY::node_handle mxd, int level,
                                MEDDLY::expert_forest* mddf, MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF,
                                NodeNodeIntMap &ct);
+   #endif
   
 };
 
@@ -1395,7 +1419,7 @@ meddly_otfimplsat the_meddly_otfimplsat;
 meddly_otfimplsat::meddly_otfimplsat() : meddly_implicitgen()
 {
   // meddly_procgen::useXdds(false);
-  meddly_procgen::useXdds(true);
+  meddly_procgen::useXdds(false);
 }
 
 meddly_otfimplsat::~meddly_otfimplsat()
@@ -1438,11 +1462,17 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       Report().stopIO();
     }
     
+    #ifndef TEST_HYB
     MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF = buildNSF(x);
     DCASSERT(IMPL_NSF);
     
     IMPL_NSF->setConfirmedStates(x.getInitial());
+    #else
+    MEDDLY::sathyb_opname::hybrid_relation* HYB_NSF = buildNSFWithHybrid(x);
+    DCASSERT(HYB_NSF);
     
+    HYB_NSF->setConfirmedStates(x.getInitial());
+    #endif
     if (Report().startReport()) {
       Report().report() << "Initialized  next-state function builder, took ";
       Report().report() << subwatch.elapsed_seconds() << " seconds\n";
@@ -1474,7 +1504,11 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     em->cout() << "Initial state node (before RSS generation): " << x.getInitial().getNode() << "\n";
 #endif
     
-    generateRSS(x, IMPL_NSF);
+    #ifndef TEST_HYB
+      generateRSS(x, IMPL_NSF);
+    #else
+      generateRSSWithHybrid(x, HYB_NSF);
+    #endif
 
 #ifdef DEBUG_INITIAL
     em->cout() << "Initial state node (after RSS generation): " << x.getInitial().getNode() << "\n";
@@ -1489,6 +1523,12 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     }
 
 #ifdef ONLY_STATE_SPACE
+    if (stopGen(false, x.getParent(), watch)) {
+      reportGen(false, Report().report());
+      x.reportStats(Report().report());
+      // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      Report().stopIO();
+    }
     // return;
 #else
     
@@ -1573,13 +1613,19 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
 
 #endif
 
+    /*
     MEDDLY::node_handle mxd = IMPL_NSF->buildMxdForest();
     shared_ddedge* d = new shared_ddedge(IMPL_NSF->getRelForest());
     d->E.set(mxd);
     setNSF(d);
+    */
 #endif
 
-    delete IMPL_NSF;
+    #ifndef TEST_HYB
+      delete IMPL_NSF;
+    #else
+      delete HYB_NSF;
+    #endif
     
   } // try
   
@@ -1627,6 +1673,13 @@ meddly_otfimplsat::buildNSF(meddly_varoption &x)
   return x.buildNSF_IMPLICIT(Debug());
 }
 
+MEDDLY::sathyb_opname::hybrid_relation*
+meddly_otfimplsat::buildNSFWithHybrid(meddly_varoption &x)
+{
+
+  return x.buildNSF_HYBRID(Debug());
+}
+
 void meddly_otfimplsat::generateRSS(meddly_varoption &x,
                                     MEDDLY::satimpl_opname::implicit_relation* IMPL_NSF)
 {
@@ -1648,6 +1701,28 @@ void meddly_otfimplsat::generateRSS(meddly_varoption &x,
   }
 }
 
+void meddly_otfimplsat::generateRSSWithHybrid(meddly_varoption &x,
+                                    MEDDLY::sathyb_opname::hybrid_relation* HYB_NSF)
+{
+  using namespace MEDDLY;
+  
+  DCASSERT(HYB_NSF);
+  DCASSERT(MEDDLY::SATURATION_HYB_FORWARD);
+  try{
+    specialized_operation* satop = SATURATION_HYB_FORWARD->buildOperation(HYB_NSF);
+    DCASSERT(satop);
+    
+    shared_ddedge* S = x.newMddEdge();
+    satop->compute(x.getInitial(), S->E);
+    x.setStates(S);
+    checkTerm("Generation failed", x.getParent());
+  }
+  catch (MEDDLY::error ce) {
+    convert(ce, "Generation failed", x.getParent());
+  }
+}
+
+#if MCC_STATE_SPACE
 //
 //Place Token Count
 //
@@ -2044,6 +2119,9 @@ bigint meddly_otfimplsat::computeNumTransitionsImplRel(
     }
   return num_transitions;
 }
+
+#endif
+
 
 // **************************************************************************
 // *                                                                        *

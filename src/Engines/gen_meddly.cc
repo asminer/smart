@@ -27,6 +27,7 @@
 
 #define USING_MEDDLY_ADD_MINTERM
 #define USE_FRMDD_FOR_BUILDING_POTENTIAL_DEADLOCK_STATES
+#define TEST_HYB
 
 using namespace MEDDLY;
 
@@ -175,6 +176,11 @@ satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(named_msg &debug)
 }
 
 satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(named_msg &debug)
+{
+  return 0;
+}
+
+sathyb_opname::hybrid_relation* meddly_varoption::buildNSF_HYBRID(named_msg &debug)
 {
   return 0;
 }
@@ -956,6 +962,652 @@ void substate_encoder::FillTerms(const model_statevar* sv, expr* f)
 
 // **************************************************************************
 // *                                                                        *
+// *                    enabling_subevent class for hybrid                  *
+// *                                                                        *
+// **************************************************************************
+
+// TBD - move this somewhere better
+//
+class enabling_subeventI : public sathyb_opname::subevent {
+public:
+  // TBD - clean up this constructor!
+  enabling_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+  virtual ~enabling_subeventI();
+
+protected:
+  virtual void confirm(sathyb_opname::hybrid_relation &rel, int v, int index);
+
+private: // helpers
+#ifndef USING_MEDDLY_ADD_MINTERM
+  // returns true on success
+  bool addMinterm(const int* from, const int* to);
+#endif
+
+  void exploreEnabling(sathyb_opname::hybrid_relation &rel, int dpth);
+
+
+  inline bool maybeEnabled() {
+#ifdef SHORT_CIRCUIT_ENABLING
+    DCASSERT(is_enabled);
+    is_enabled->Compute(td);
+    if (td.answer->isNormal()) {
+      return td.answer->getBool();
+    } else if (td.answer->isUnknown()) {
+      return true;
+    } else {
+      // null?  not sure what to do here
+      return false;
+    }
+#else
+    return true;
+#endif
+  }
+
+private:
+  expr* is_enabled;
+  int** mt_from;
+  int** mt_to;
+  int mt_alloc;
+  int mt_used;
+  int num_levels;
+  // some of this stuff could be shared, one per model,
+  // at the cost of re-initializing stuff every time we need to explore
+  // TBD - option to select between "optimize for speed" and "optimize for memory"
+  // (two different classes?  or make this a template <bool> class?)
+  traverse_data td;
+  shared_state* tdcurr;
+  shared_state* tdnext;
+  int* from_minterm;
+  int* to_minterm;
+
+  // used by exploreFiring
+  int changed_k;
+  int new_index;
+
+  substate_colls* colls;
+
+  // used only for debug info?
+  const model_event* E;
+
+  // TBD - this should be static or accessed via a parent class
+  named_msg &debug;
+};
+
+// **************************************************************************
+// *                        enabling_subeventI  methods                        *
+// **************************************************************************
+
+enabling_subeventI::enabling_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+: sathyb_opname::subevent(f, v, nv, false), td(traverse_data::Compute), debug(d)
+{
+  E = Ev;
+  is_enabled = chunk;
+  colls = c;
+
+  mt_from = 0;
+  mt_to = 0;
+  mt_alloc = mt_used = 0;
+  num_levels = p.getPartInfo().num_levels;
+
+  td.answer = new result;
+  tdcurr = new shared_state(&p);
+  tdnext = new shared_state(&p);
+  td.current_state = tdcurr;
+  td.next_state = tdnext;
+  from_minterm = new int[1+num_levels];
+  to_minterm = new int[1+num_levels];
+
+  from_minterm[0] = DONT_CARE;
+  to_minterm[0] = DONT_CARE;
+  for (int k=1; k<=num_levels; k++) {
+    from_minterm[k] = DONT_CARE;
+    if (event_deps.contains(k)) {
+      to_minterm[k] = DONT_CARE;
+    } else {
+      to_minterm[k] = DONT_CARE;
+    }
+    tdcurr->set_substate_unknown(k);
+    tdnext->set_substate_unknown(k);
+  }
+}
+
+enabling_subeventI::~enabling_subeventI()
+{
+  Delete(is_enabled);
+  for (int i=0; i<mt_used; i++) {
+    delete[] mt_from[i];
+    delete[] mt_to[i];
+  }
+  free(mt_from);
+  free(mt_to);
+
+  delete td.answer;
+  Delete(tdcurr);
+  Delete(tdnext);
+  delete[] from_minterm;
+  delete[] to_minterm;
+}
+
+void enabling_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int index)
+{
+  DCASSERT(E);
+  if (debug.startReport()) {
+    debug.report() << "confirming level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    is_enabled->Print(debug.report(), 0);
+    debug.report() << "\n";
+    debug.stopIO();
+  }
+
+  changed_k = k;
+  new_index = index;
+
+  // Explicitly explore new states and discover minterms to add
+  exploreEnabling(rel, getNumVars());
+
+#ifndef USING_MEDDLY_ADD_MINTERM
+  if (0==mt_used) return;
+
+  if (debug.startReport()) {
+    for (int i = 0; i < mt_used; i++) {
+      debug.report() << "\nFiring:\n";
+      debug.report() << "\nfrom[" << i << "]: [";
+      debug.report().PutArray(mt_from[i]+1, num_levels);
+      debug.report() << "]\nto[" << i << "]: [";
+      debug.report().PutArray(mt_to[i]+1, num_levels);
+      debug.report() << "]\n";
+      debug.report() << "\n\n";
+    }
+    debug.stopIO();
+  }
+
+  // Add those minterms
+  dd_edge add_to_root(getForest());
+  getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
+  mt_used = 0;
+
+  add_to_root += getRoot();
+  setRoot(add_to_root);
+
+  if (debug.startReport()) {
+    debug.report() << "confirmed  level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    is_enabled->Print(debug.report(), 0);
+    debug.newLine();
+    debug.report() << "New root: " << add_to_root.getNode() << "\n";
+    debug.stopIO();
+  }
+#endif
+}
+
+#ifndef USING_MEDDLY_ADD_MINTERM
+bool enabling_subeventI::addMinterm(const int* from, const int* to)
+{
+  if (mt_used >= mt_alloc) {
+    int old_alloc = mt_alloc;
+    if (0==mt_alloc) {
+      mt_alloc = 8;
+      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
+    } else {
+      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
+      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
+    }
+    if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
+    for (int i=old_alloc; i<mt_alloc; i++) {
+      mt_from[i] = 0;
+      mt_to[i] = 0;
+    }
+  }
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[1+num_levels];
+  }
+  if (0==mt_to[mt_used]) {
+    mt_to[mt_used] = new int[1+num_levels];
+  }
+  memcpy(mt_from[mt_used], from, (1+num_levels) * sizeof(int));
+  memcpy(mt_to[mt_used], to, (1+num_levels) * sizeof(int));
+  mt_used++;
+  return true;
+}
+#endif
+
+void enabling_subeventI::exploreEnabling(sathyb_opname::hybrid_relation &rel, int dpth)
+{
+  //
+  // Are we at the bottom?
+  //
+  if (0==dpth) {
+    bool start_d = debug.startReport();
+    if (start_d) {
+      debug.report() << "enabled?\n\tstate ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tfrom minterm [";
+      debug.report().PutArray(from_minterm+1, num_levels);
+      debug.report() << "]\n\t";
+      is_enabled->Print(debug.report(), 0);
+      debug.report() << " : ";
+    }
+#ifdef SHORT_CIRCUIT_ENABLING
+    td.answer->setBool(true);
+#else
+    DCASSERT(is_enabled);
+    is_enabled->Compute(td);
+#endif
+    if (start_d) {
+      if (td.answer->isNormal()) {
+        if (td.answer->getBool())
+          debug.report() << "true";
+        else
+          debug.report() << "false";
+      } else if (td.answer->isUnknown())
+        debug.report() << "?";
+      else
+        debug.report() << "null";
+      debug.report() << "\n";
+      debug.stopIO();
+    }
+
+    DCASSERT(td.answer->isNormal());
+    if (false == td.answer->getBool()) return;
+
+    //
+    // next state -> minterm
+    //
+    /*
+     // ASM - this should already be set!
+
+     for (int dd=0; dd<getNumVars(); dd++) {
+     int kk = getVars()[dd];
+     to_minterm[kk] = DONT_CARE;
+     }
+     */
+
+    //
+    // More debug info
+    //
+    if (debug.startReport()) {
+      debug.report() << "enabled\n\tstate ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tto minterm [";
+      debug.report().PutArray(to_minterm+1, num_levels);
+      debug.report() << "]\n";
+      debug.stopIO();
+    }
+
+    addMinterm(from_minterm, to_minterm);
+
+    return;
+  }
+
+  //
+  // Are we at the level being confirmed?
+  //
+  const int k = getVars()[dpth-1];
+  if (k == changed_k) {
+    tdcurr->set_substate_known(changed_k);
+    int ssz = tdcurr->readSubstateSize(changed_k);
+    int foo = colls->getSubstate(changed_k, new_index, tdcurr->writeSubstate(changed_k), ssz);
+    if (foo<0) throw subengine::Engine_Failed;
+
+    //
+    // check expression and short-circuit if definitely false
+    // tbd - what about definitely true?
+    //
+
+    if (maybeEnabled()) {
+      from_minterm[changed_k] = new_index;
+      exploreEnabling(rel, dpth-1);
+    }
+
+    from_minterm[changed_k] = DONT_CARE;
+    tdcurr->set_substate_unknown(changed_k);
+    return;
+  }
+
+  //
+  // Regular level - explore all confirmed
+  //
+  tdcurr->set_substate_known(k);
+  const int localsize = rel.getHybridForest()->getLevelSize(k);
+  for (int i = 0; i<localsize; i++) {
+    if (!rel.isConfirmedState(k, i)) continue; // skip unconfirmed
+
+    int ssz = tdcurr->readSubstateSize(k);
+    int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
+    if (foo<0) throw subengine::Engine_Failed;
+
+    //
+    // check expression and short-circuit if definitely false
+    //
+
+    if (maybeEnabled()) {
+      from_minterm[k] = i;
+      exploreEnabling(rel, dpth-1);
+    }
+  } // for i
+  from_minterm[k] = DONT_CARE;
+  tdcurr->set_substate_unknown(k);
+}
+
+// **************************************************************************
+// *                                                                        *
+// *                    firing_subevent class for hybrid                    *
+// *                                                                        *
+// **************************************************************************
+class firing_subeventI : public sathyb_opname::subevent {
+public:
+  // TBD - clean up this constructor!
+  firing_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+  virtual ~firing_subeventI();
+
+protected:
+  virtual void confirm(sathyb_opname::hybrid_relation &rel, int v, int index);
+
+private: // helpers
+#ifndef USING_MEDDLY_ADD_MINTERM
+  // returns true on success
+  bool addMinterm(const int* from, const int* to);
+#endif
+
+  void exploreFiring(sathyb_opname::hybrid_relation &rel, int dpth);
+
+private:
+  expr* fire_expr;
+  int** mt_from;
+  int** mt_to;
+  int mt_alloc;
+  int mt_used;
+  int num_levels;
+  // some of this stuff could be shared, one per model,
+  // at the cost of re-initializing stuff every time we need to explore
+  // TBD - option to select between "optimize for speed" and "optimize for memory"
+  // (two different classes?  or make this a template <bool> class?)
+  traverse_data td;
+  shared_state* tdcurr;
+  shared_state* tdnext;
+  int* from_minterm;
+  int* to_minterm;
+
+  // used by exploreFiring
+  int changed_k;
+  int new_index;
+
+  substate_colls* colls;
+
+  // used only for debug info?
+  const model_event* E;
+
+  // TBD - this should be static or accessed via a parent class
+  named_msg &debug;
+};
+
+// **************************************************************************
+// *                        firing_subeventI  methods                        *
+// **************************************************************************
+
+firing_subeventI::firing_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+: sathyb_opname::subevent(f, v, nv, true), td(traverse_data::Compute), debug(d)
+{
+  E = Ev;
+  fire_expr = chunk;
+  colls = c;
+
+  mt_from = 0;
+  mt_to = 0;
+  mt_alloc = mt_used = 0;
+  num_levels = p.getPartInfo().num_levels;
+
+  td.answer = new result;
+  tdcurr = new shared_state(&p);
+  tdnext = new shared_state(&p);
+  td.current_state = tdcurr;
+  td.next_state = tdnext;
+  from_minterm = new int[1+num_levels];
+  to_minterm = new int[1+num_levels];
+
+  from_minterm[0] = DONT_CARE;
+  to_minterm[0] = DONT_CARE;
+  for (int k=1; k<=num_levels; k++) {
+    from_minterm[k] = DONT_CARE;
+    if (event_deps.contains(k)) {
+      to_minterm[k] = DONT_CARE;
+    } else {
+      to_minterm[k] = DONT_CARE;
+    }
+    tdcurr->set_substate_unknown(k);
+    tdnext->set_substate_unknown(k);
+  }
+}
+
+firing_subeventI::~firing_subeventI()
+{
+  Delete(fire_expr);
+  for (int i=0; i<mt_used; i++) {
+    delete[] mt_from[i];
+    delete[] mt_to[i];
+  }
+  free(mt_from);
+  free(mt_to);
+
+  delete td.answer;
+  Delete(tdcurr);
+  Delete(tdnext);
+  delete[] from_minterm;
+  delete[] to_minterm;
+}
+
+void firing_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int index)
+{
+  DCASSERT(E);
+  if (debug.startReport()) {
+    debug.report() << "confirming level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.report(), 0);
+    debug.report() << "\n";
+    debug.stopIO();
+  }
+
+  changed_k = k;
+  new_index = index;
+
+  // Explicitly explore new states and discover minterms to add
+  exploreFiring(rel, getNumVars());
+
+#ifndef USING_MEDDLY_ADD_MINTERM
+  if (0==mt_used) return;
+
+  if (debug.startReport()) {
+    for (int i = 0; i < mt_used; i++) {
+      debug.report() << "\nFiring:\n";
+      debug.report() << "\nfrom[" << i << "]: [";
+      debug.report().PutArray(mt_from[i]+1, num_levels);
+      debug.report() << "]\nto[" << i << "]: [";
+      debug.report().PutArray(mt_to[i]+1, num_levels);
+      debug.report() << "]\n";
+      debug.report() << "\n\n";
+    }
+    debug.stopIO();
+  }
+
+  // Add those minterms
+  dd_edge add_to_root(getForest());
+  getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
+  mt_used = 0;
+
+  add_to_root += getRoot();
+  setRoot(add_to_root);
+
+  if (debug.startReport()) {
+    debug.report() << "confirmed  level " << k << " index " << index;
+    debug.report() << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.report(), 0);
+    debug.newLine();
+    debug.report() << "New root: " << add_to_root.getNode() << "\n";
+    debug.stopIO();
+  }
+#endif
+}
+
+#ifndef USING_MEDDLY_ADD_MINTERM
+bool firing_subeventI::addMinterm(const int* from, const int* to)
+{
+  if (mt_used >= mt_alloc) {
+    int old_alloc = mt_alloc;
+    if (0==mt_alloc) {
+      mt_alloc = 8;
+      mt_from = (int**) malloc(mt_alloc * sizeof(int**));
+      mt_to = (int**) malloc(mt_alloc * sizeof(int**));
+    } else {
+      mt_alloc = MIN(2*mt_alloc, 256 + mt_alloc);
+      mt_from = (int**) realloc(mt_from, mt_alloc * sizeof(int**));
+      mt_to = (int**) realloc(mt_to, mt_alloc * sizeof(int**));
+    }
+    if (0==mt_from || 0==mt_to) return false; // malloc or realloc failed
+    for (int i=old_alloc; i<mt_alloc; i++) {
+      mt_from[i] = 0;
+      mt_to[i] = 0;
+    }
+  }
+  if (0==mt_from[mt_used]) {
+    mt_from[mt_used] = new int[1+num_levels];
+  }
+  if (0==mt_to[mt_used]) {
+    mt_to[mt_used] = new int[1+num_levels];
+  }
+  memcpy(mt_from[mt_used], from, (1+num_levels) * sizeof(int));
+  memcpy(mt_to[mt_used], to, (1+num_levels) * sizeof(int));
+  mt_used++;
+  return true;
+}
+#endif
+
+void firing_subeventI::exploreFiring(sathyb_opname::hybrid_relation &rel, int dpth)
+{
+  //
+  // Are we at the bottom?
+  //
+  if (0==dpth) {
+    bool start_d = debug.startReport();
+    if (start_d) {
+      debug.report() << "firing?\n\tfrom state ";
+      tdcurr->Print(debug.report(), 0);
+      debug.report() << "\n\tfrom minterm [";
+      debug.report().PutArray(from_minterm+1, num_levels);
+      debug.report() << "]\n\t";
+      fire_expr->Print(debug.report(), 0);
+      debug.report() << " : ";
+    }
+    DCASSERT(fire_expr);
+    td.answer->setBool(true);
+    fire_expr->Compute(td);
+    if (start_d) {
+      if (td.answer->isNormal())
+        debug.report() << "ok";
+      else if (td.answer->isUnknown())
+        debug.report() << "?";
+      else if (td.answer->isOutOfBounds()) {
+        td.current_state->Print(debug.report(), 0);
+        debug.report() << "out of bounds";
+      }
+      else
+        debug.report() << "null";
+      debug.report() << "\n";
+      debug.stopIO();
+    }
+
+    if (!td.answer->isNormal()) return; // not enabled after all
+
+    //
+    // next state -> minterm
+    for (int dd=0; dd<getNumVars(); dd++) {
+      int kk = getVars()[dd];
+      to_minterm[kk] = colls->addSubstate(kk,
+                                          tdnext->readSubstate(kk), tdnext->readSubstateSize(kk)
+                                          );
+
+      if (to_minterm[kk]>=0) continue;
+      if (-2==to_minterm[kk]) throw subengine::Out_Of_Memory;
+      throw subengine::Engine_Failed;
+
+    }
+
+    //
+    // More debug info
+    //
+    if (debug.startReport()) {
+      debug.report() << "firing\n\tto state ";
+      tdnext->Print(debug.report(), 0);
+      debug.report() << "\n\tto minterm [";
+      debug.report().PutArray(to_minterm+1, num_levels);
+      debug.report() << "]\n";
+      debug.stopIO();
+    }
+
+    // add minterm to queue
+    //
+    if (!addMinterm(from_minterm, to_minterm))
+      throw subengine::Out_Of_Memory;
+
+    return;
+  }
+
+  //
+  // Are we at the level being confirmed?
+  //
+  const int k = getVars()[dpth-1];
+  if (k == changed_k) {
+    tdcurr->set_substate_known(changed_k);
+    tdnext->set_substate_known(changed_k);
+    int ssz = tdcurr->readSubstateSize(changed_k);
+    int foo = colls->getSubstate(changed_k, new_index, tdcurr->writeSubstate(changed_k), ssz);
+    if (foo<0) throw subengine::Engine_Failed;
+    colls->getSubstate(changed_k, new_index, tdnext->writeSubstate(changed_k), ssz);
+
+    //
+    // tbd - short circuit?
+    //
+
+    from_minterm[changed_k] = new_index;
+    exploreFiring(rel, dpth-1);
+
+    from_minterm[changed_k] = DONT_CARE;
+    to_minterm[changed_k] = DONT_CARE;
+    tdcurr->set_substate_unknown(changed_k);
+    tdnext->set_substate_unknown(changed_k);
+    return;
+  }
+
+  //
+  // Regular level - explore all confirmed
+  //
+  tdcurr->set_substate_known(k);
+  tdnext->set_substate_known(k);
+  const int localsize = rel.getHybridForest()->getLevelSize(k);
+  for (int i = 0; i<localsize; i++) {
+    if (!rel.isConfirmedState(k, i)) continue; // skip unconfirmed
+
+    int ssz = tdcurr->readSubstateSize(k);
+    int foo = colls->getSubstate(k, i, tdcurr->writeSubstate(k), ssz);
+    if (foo<0) throw subengine::Engine_Failed;
+    colls->getSubstate(k, i, tdnext->writeSubstate(k), ssz);
+
+    //
+    // tbd - short circuit?
+    //
+
+    from_minterm[k] = i;
+    exploreFiring(rel, dpth-1);
+  } // for i
+  from_minterm[k] = DONT_CARE;
+  to_minterm[k] = DONT_CARE;
+  tdcurr->set_substate_unknown(k);
+  tdnext->set_substate_unknown(k);
+}
+
+// **************************************************************************
+// *                                                                        *
 // *                        enabling_subevent  class                        *
 // *                                                                        *
 // **************************************************************************
@@ -1644,12 +2296,23 @@ protected:
     inline bool sameDeps(const intset& deps) const {
       return level_deps == deps;
     }
+    inline bool intersectDepsExist(const intset& deps) const {
+      intset result_deps = level_deps * deps;
+      return !result_deps.isEmpty();
+    }
+    inline void unionWithDeps(const intset& deps) {
+      level_deps += deps;
+    }
     inline void addToDeps(intset& deps) const {
       deps += level_deps;
     }
     inline int countDeps() const {
       return level_deps.cardinality();
     }
+    inline bool singleDeps() const {
+      return level_deps.isSingleCardinality();
+    }
+
 
     /**
         Given a list of levels, build the intersection
@@ -1702,6 +2365,7 @@ public:
 
   virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
   virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
+  virtual sathyb_opname::hybrid_relation* buildNSF_HYBRID(named_msg &debug);
   virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(named_msg &debug);
   virtual substate_colls* getSubstateStorage() { return colls; }
 
@@ -1783,13 +2447,14 @@ protected:
 class derive_relation_node : public relation_node {
 public:
   // TBD - clean up this constructor!
-  derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down);
+  derive_relation_node(named_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh);
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
   
 private:
   long e_delta;
   long f_delta;
+  long i_const;
   substate_colls* colls;
   
   // named_msg &debug;
@@ -1803,10 +2468,10 @@ private:
 // **************************************************************************
 
 
-derive_relation_node::derive_relation_node(named_msg &dm, long e, long f, substate_colls* c, unsigned long sign, int lvl, rel_node_handle down):relation_node(sign, lvl, down) // , debug(dm)
-{
+derive_relation_node::derive_relation_node(named_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh):relation_node(141010, fst, lvl, -1, e, f, inh){
   e_delta = e;
   f_delta = f;
+  i_const = inh;
   colls = c;
 }
 
@@ -1820,28 +2485,36 @@ long derive_relation_node::nextOf(long i)
 {
   if(i>=relation_node::getPieceSize())
     relation_node::expandTokenUpdate(i);
-  
-   
-  
+
   if(relation_node::getTokenUpdate()[i]==-2)
     {
     int sz = 1;
     int chunk[sz];
     int chunk_updated[sz];
     // int curr = 0;
-    colls->getSubstate(this->getLevel(), i, chunk, sz); 
-    
+    colls->getSubstate(this->getLevel(), i, chunk, sz);
+
     //Token update is calculated
     chunk_updated[0] = -1;
-    if(chunk[0]>=e_delta) chunk_updated[0] = chunk[0] + f_delta;
+
+    if (i_const!=-1)
+      {
+        if ((chunk[0]>=e_delta) && (chunk[0]<i_const))  chunk_updated[0] = chunk[0] + f_delta;
+      }
+    else
+      {
+        if (chunk[0]>=e_delta)  chunk_updated[0] = chunk[0] + f_delta;
+      }
+
     if(chunk_updated[0]<0) return -1;
-    
+
     //New index is received
     long j = colls->addSubstate(this->getLevel(), chunk_updated, sz);
     relation_node::setTokenUpdateAtIndex(i,j);
     }
-  
+
   return relation_node::getTokenUpdate()[i];
+
 }
 
 
@@ -2306,7 +2979,8 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
       
       int uniq = (e_it->first)*100 + (e_it->second.first)*10 + (e_it->second.first+e_it->second.second);
       sign = sign*10 + uniq;
-      rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
+      rNode[rCtr] = new derive_relation_node(debug, c_pass, get_mxd_forest(), e_it->first, e_it->second.first, e_it->second.second,-1);
+      //rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
       previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
       rCtr ++;
       e_it++;
@@ -2317,6 +2991,336 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   // Return overall implicit relation
   //
   return T;
+}
+
+sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(named_msg &debug)
+{
+   using namespace MEDDLY;
+  exprman* em = getExpressionManager();
+  DCASSERT(em);
+  substate_colls* c_pass = this->getSubstateStorage();
+
+  int max_node_count = 10;
+  int nEvents = getParent().getNumEvents();
+  // int nPlaces = getParent().getNumStateVars();
+
+  //forest* mxdRel = ms.createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+
+  int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
+  // int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
+  std::vector<std::map<int, std::pair<long,long>>> event_table;
+  event_table.resize(nEvents);
+  //Holds the variables affected in the events from bottom to top
+  // int** v_all_fire = (int**)malloc(nEvents*sizeof(int*));
+  //Holds the constant delta of event on certain variable
+  // long** v_delta_fire = (long**)malloc(nEvents*sizeof(int*));
+
+  sathyb_opname::event** T = (sathyb_opname::event**)malloc(nEvents*sizeof(sathyb_opname::event*));
+
+#if 1
+
+  intset depends(num_levels+1);
+
+
+  for (int i=0; i<getParent().getNumEvents(); i++) {
+
+
+    std::map<int, std::vector<long>> rnmap_level_to_enable_inh_del;
+    
+    depends.removeAll();
+
+    unsigned num_subevents = 0;
+    unsigned num_relnodes = 0;
+
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next) {
+      ptr->addToDeps(depends);
+      if (ptr->singleDeps()) num_relnodes++;
+       else num_subevents++;
+    };
+
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next) {
+      ptr->addToDeps(depends);
+      if (ptr->singleDeps()) num_relnodes++;
+      else num_subevents++;
+    }
+
+    printf("\n Initial analysis says se: %d",num_subevents);
+
+    // DCASSERT(num_enabling + num_firing > 0);
+    if (2*num_subevents + num_relnodes == 0) continue;
+
+    //
+    // Build subevents or implicit nodes
+    //
+
+    sathyb_opname::subevent** subevents = new sathyb_opname::subevent* [num_subevents];
+    relation_node** relnodes = new relation_node* [num_relnodes];
+
+    int se = 0;
+    int rn = 0;
+
+    /*
+    * 1. Build firing mxd
+    * 2. Build enabling mxd if v is in firing mxd
+    * 3. Clear them from enable_deps and fire_deps
+    * 4. Build rel from remaining
+    */
+
+     std::set<int> mxd_vars;
+
+     for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next) {
+
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+
+      DCASSERT(length>0); // Multiple expressions are combined. For eg. p1' = p1 + 1 ; p2' = p2 + tk(p1)  -> This gives length 2
+      expr* chunk = 0;
+      if ((length > 1) || !ptr->singleDeps())
+      {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+
+      // build list of variables this piece depends on
+      int nv = ptr->countDeps();
+
+      int* v = new int[nv];
+      int k = 0;
+      for (int vi = 0; vi<nv; vi++) {
+        k = ptr->getLevelAbove(k);
+        DCASSERT(k>0);
+        v[vi] = k;
+        printf(":%d",k);
+        mxd_vars.insert(k);
+      }
+      
+      // Ok, build the firing subevent
+      const model_event* e = getParent().readEvent(i);
+      subevents[se] = new firing_subeventI(debug, getParent(), e, c_pass, depends, chunk, get_mxd_forest(), v, nv);
+      printf("\n Multi variable  firing mxd for levels %d",nv);
+      se++;
+      }
+    }
+
+    //
+    // build enabling expression
+    //
+    
+    #if 0
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next) {
+
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+
+      DCASSERT(length>0);
+      expr* chunk = 0;
+
+      if (1==length) {
+        //
+        // awesomesauce
+        //
+       chunk = Share(ptr->termlist->term);
+        
+        // build list of variables this piece depends on
+        int nv = ptr->countDeps();
+        printf("\n Length == 1: No. of variables it depends = %d",nv);
+
+        int* v = new int[nv];
+        int k = 0;
+        k = ptr->getLevelAbove(k);
+        v[0] = k;
+        if(mxd_vars.find(k)!=mxd_vars.end())
+         {
+           printf("\n Single variable enabling mxd for level %d",v[0]);
+           const model_event* e = getParent().readEvent(i);
+           subevents[se] = new enabling_subeventI(debug, getParent(), e, c_pass, depends, chunk, get_mxd_forest(), v, nv);
+           se++;
+         }
+
+
+        } else {
+        //
+        // Build conjunction
+        //
+        expr** terms = new expr*[length];
+        int ti = 0;
+        for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
+          terms[ti] = Share(t->term);
+        }
+        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
+        if (chunk==0) continue;
+
+        // build list of variables this piece depends on
+        int nv = ptr->countDeps();
+        printf("\n No. of variables it depends = %d",nv);
+
+        int* v = new int[nv];
+        int k = 0;
+        printf("\n{");
+        for (int vi = 0; vi<nv; vi++) {
+          k = ptr->getLevelAbove(k);
+          DCASSERT(k>0);
+          v[vi] = k;
+          printf("%d,",k);
+        }
+        printf("}");
+        const model_event* e = getParent().readEvent(i);
+        subevents[se] = new enabling_subeventI(debug, getParent(), e, c_pass, depends, chunk, get_mxd_forest(), v, nv);
+        se++;
+        printf("\n Enabling Subevent se[%d] with %d variables",se, nv);
+      }
+    }
+    #endif
+
+
+    //
+    // Get enabling conditions for relation_nodes
+    //
+    
+    for (deplist* ptr = enable_deps[i]; ptr; ptr=ptr->next) {
+
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+        }
+
+      if  ((length==1) && (ptr->singleDeps()))  {
+          int k = ptr->getLevelAbove(0);
+          if(mxd_vars.find(k) != mxd_vars.end()) { }
+          else {
+          long upper = ptr->termlist->term->getUpper()>0?ptr->termlist->term->getUpper():-1;
+          std::vector<long> effects;
+          effects.push_back(ptr->termlist->term->getLower());
+          effects.push_back(upper);
+          rnmap_level_to_enable_inh_del.insert(std::make_pair(k,effects));
+          } 
+        }
+    } 
+
+    //
+    // Get firing conditions for relation_nodes
+    //
+    for (deplist* ptr = fire_deps[i]; ptr; ptr=ptr->next) {
+
+      //
+      // build firing expression from list
+      //
+      int length = 0;
+      for (expr_node* t = ptr->termlist; t; t=t->next) {
+        length++;
+      }
+      
+      DCASSERT(length>0);
+      expr* chunk = 0;
+      if (1==length) {
+        //
+        // Can implicit relation node be built?
+        //
+        if (ptr->singleDeps())
+          {
+          int k = ptr->getLevelAbove(0);
+          if(mxd_vars.find(k) != mxd_vars.end())
+          { } else {
+          long delta = ptr->termlist->term->getDelta();
+          long en = ptr->termlist->term->getLower();
+          long in = ptr->termlist->term->getUpper();
+          if (in==0) in = -1;
+            if(rnmap_level_to_enable_inh_del.find(k)!=rnmap_level_to_enable_inh_del.end()){
+                std::vector<long> effects;
+                for(int dh = 0; dh<rnmap_level_to_enable_inh_del[k].size();dh++)
+                effects.push_back(rnmap_level_to_enable_inh_del[k][dh]);
+                effects.push_back(delta);
+                rnmap_level_to_enable_inh_del[k] = effects;
+            } else {
+              std::vector<long> effects;
+              effects.push_back(en);
+              effects.push_back(in);
+              effects.push_back(delta);
+              rnmap_level_to_enable_inh_del.insert(std::make_pair(k,effects));
+            }
+          }
+          }
+        //
+        // awesomesauce
+        //
+        chunk = Share(ptr->termlist->term);
+      }
+    }
+
+    
+    //
+    // Build relation_nodes
+    //
+    for (auto impl_it = rnmap_level_to_enable_inh_del.begin(); impl_it != rnmap_level_to_enable_inh_del.end(); impl_it++ )
+      {
+        int k = impl_it->first;
+        long en,in,fr;
+        int sz = impl_it->second.size();
+
+        switch(sz) {
+            case 1:   en = 0; in = -1; fr = impl_it->second[0]; break;
+            case 2:   en = impl_it->second[0]; in = impl_it->second[1]; fr = 0; break;
+            case 3:   en = impl_it->second[0]; in = impl_it->second[1]; fr = impl_it->second[2]; break;
+            default:  en = 0; in = -1; fr = 0; break;
+        }
+        printf("\n level %d: rn = %d, %d, %d", k, en, fr, in);
+
+	      if(!(en == 0 && in == -1 && fr == 0))
+          {
+            relnodes[rn] = new derive_relation_node(debug, c_pass, get_mxd_forest(), k, en, fr, in);
+            rn++;
+          }
+
+
+
+      }
+
+    /*auto impl_it = rnmap_level_to_enable_inh_del.begin();
+    while(impl_it!=rnmap_level_to_enable_inh_del.end())
+      {
+        impl_it = rnmap_level_to_enable_inh_del.erase(impl_it);
+      }*/
+
+
+    
+   
+    //
+    // Pull these together into the event
+    //
+
+    printf("\n Created %d rn and %d se", rn,se);
+    if ((rn > 0) && (se > 0))
+      T[i] = new sathyb_opname::event((sathyb_opname::subevent**)(&subevents[0]), se, (relation_node**)(&relnodes[0]), rn);
+    else if (rn > 0)
+      T[i] = new sathyb_opname::event(NULL, se, (relation_node**)(&relnodes[0]), rn);
+    else
+      T[i] = new sathyb_opname::event((sathyb_opname::subevent**)(&subevents[0]), se, NULL, rn);
+
+  } // for i
+  #endif
+  sathyb_opname::hybrid_relation* HYB = new sathyb_opname::hybrid_relation(ms.getMddForest(), get_mxd_forest(), ms.getMddForest(), &T[0], nEvents);
+
+  //
+  // Return overall hybrid relation
+  //
+  printf("\n Hybrid IS READY\n");
+  return HYB;
 }
 
 struct int_pair {
@@ -2724,9 +3728,15 @@ void substate_varoption::initEncoders(const meddly_procgen &pg)
   //
   // Initialize MxD forest
   //
+  forest::policies frmxd_policies = pg.buildNSFPolicies();
+  #ifndef TEST_HYB
+  //frmxd_policies.setIdentityReduced();
+  #else
+    frmxd_policies.setFullyReduced();
+  #endif
   forest* mxd = ms.createForest(
     true, forest::BOOLEAN, forest::MULTI_TERMINAL, 
-    pg.buildNSFPolicies()
+    frmxd_policies //pg.buildNSFPolicies()
   );
   DCASSERT(mxd);
 
@@ -2776,7 +3786,17 @@ substate_varoption::getExprDeps(expr* x, int numlevels)
     // check deplist for any with same dependencies
     deplist* find;
     for (find = DL; find; find=find->next) {
+      #ifndef TEST_HYB
       if (find->sameDeps(deps)) break;
+      #else
+      //check deplist for non-null intersecting dependencies to group subevents
+      if (find->intersectDepsExist(deps))
+        {
+          find->unionWithDeps(deps);
+          break;
+        }
+      #endif
+
     } // for find
 
     if (find) {

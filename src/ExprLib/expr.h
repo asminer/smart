@@ -507,7 +507,7 @@ public:
   virtual bool Equals(const shared_object *o) const;
   virtual long getDelta() const;
   virtual long getLower() const;
-
+  virtual long getUpper() const;
 };
 
 

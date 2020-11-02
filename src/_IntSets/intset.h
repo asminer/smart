@@ -44,6 +44,11 @@ public:
   */
   bool isEmpty() const;
 
+  /** Is the set singleton?
+      Usually more efficent than "cardinality() == 0"
+   */
+  bool isSingleCardinality() const;
+
   // element manipulation
 
   /** Complement the set.
