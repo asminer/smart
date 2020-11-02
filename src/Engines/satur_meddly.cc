@@ -52,7 +52,7 @@ extern parse_module* pm;
 #define MCC_UPPER_BOUNDS 0
 // #define MCC_DEADLOCK
 #define ONLY_STATE_SPACE
-#define TEST_HYB
+// #define TEST_HYB
 
 // **************************************************************************
 // *                                                                        *
