@@ -27,7 +27,7 @@
 
 #define USING_MEDDLY_ADD_MINTERM
 #define USE_FRMDD_FOR_BUILDING_POTENTIAL_DEADLOCK_STATES
-#define TEST_HYB
+// #define TEST_HYB
 
 using namespace MEDDLY;
 
