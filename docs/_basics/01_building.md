@@ -73,7 +73,7 @@ cd bin-devel
 ```
 OR
 ```bash
-cd bin-relese
+cd bin-release
 ```
 
 
