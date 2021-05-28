@@ -87,11 +87,11 @@ printf "Checking for libraries"
 printf "\n------------------------------------------------------------\n"
 printf "\n"
 
-export CC=g++
+export CC=gcc
 export CXX=g++
-export CXXFLAGS="$CXXFLAGS -Wall"
+export CXXFLAGS="$CXXFLAGS -std=gnu++11"
 export LDFLAGS="" 
-export CPPFLAGS="-std=gnu++11"
+export CPPFLAGS="-Wall"
 
 
 GMP_STATUS=""
