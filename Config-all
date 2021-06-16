@@ -89,9 +89,9 @@ printf "\n"
 
 export CC=gcc
 export CXX=g++
-export CXXFLAGS="$CXXFLAGS -std=gnu++11"
+export CXXFLAGS="$CXXFLAGS -Wall -std=gnu++11"
 export LDFLAGS="" 
-export CPPFLAGS="-Wall"
+export CPPFLAGS=""
 
 
 GMP_STATUS=""
