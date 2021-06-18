@@ -6,6 +6,6 @@
 [subrepo]
 	remote = https://github.com/asminer/meddly.git
 	branch = master
-	commit = a4263bc9eae971ba87865f9e3b50dc3e4376eaea
-	parent = d2052c8eaea5d15c994d871c12ad6a9cc8c98ddb
+	commit = 7a31ca8609663f130a1b68d53ddbbde878331d95
+	parent = 8dcd1022e76f551fa034a11abca34847192a5fff
 	cmdver = 0.3.1
