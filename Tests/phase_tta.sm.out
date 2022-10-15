@@ -1,0 +1,193 @@
+============================================================
+
+Oz tta example
+Should look like:
+ r -> s;   r -> a
+ s -> r;   s -> a
+
+-------------------------------------------------------
+Information for phase type tta(oz, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 2
+State 2: a
+3 states total
+Accepting state index: 2
+No trap state
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 0 with weight 0.5
+	To state 1 with weight 0.25
+	To state 2 with weight 0.25
+From state 1:
+	To state 0 with weight 0.25
+	To state 1 with weight 0.5
+	To state 2 with weight 0.25
+From state 2:
+	To state 2 with weight 1
+7 edges total
+End of information for phase type
+
+============================================================
+
+Example 2
+Should look like:
+ i -> x;   i -> t
+ x -> a;
+
+-------------------------------------------------------
+Information for phase type tta(ex2, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 0.5
+	To state 2 with weight 0.5
+From state 1:
+	To state 3 with weight 1
+From state 2:
+	To state 2 with weight 1
+From state 3:
+	To state 3 with weight 1
+5 edges total
+End of information for phase type
+
+============================================================
+
+Example 3
+Should look like:
+ i -> x;   i -> t
+ x -> a;
+
+-------------------------------------------------------
+Information for phase type tta(ex3, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: t
+State 3: a
+4 states total
+Accepting state index: 3
+Trap state index: 2
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 0.5
+	To state 2 with weight 0.5
+From state 1:
+	To state 3 with weight 1
+From state 2:
+	To state 2 with weight 1
+From state 3:
+	To state 3 with weight 1
+5 edges total
+End of information for phase type
+
+============================================================
+
+Example 4
+Should look like:
+ x1 -> t;  x1 -> x2;  x1 -> y1
+ x2 -> t;  x2 -> x3;  x2 -> y2
+ x3 -> t;  x3 -> a;
+ y1 -> y2; y2 -> a;
+
+-------------------------------------------------------
+Information for phase type tta(ex4, ...)
+Discrete phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: 3
+State 3: 2
+State 4: 7
+State 5: t
+State 6: a
+7 states total
+Accepting state index: 6
+Trap state index: 5
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 0.5
+	To state 2 with weight 0.25
+	To state 5 with weight 0.25
+From state 1:
+	To state 3 with weight 0.5
+	To state 4 with weight 0.25
+	To state 5 with weight 0.25
+From state 2:
+	To state 4 with weight 1
+From state 3:
+	To state 5 with weight 0.5
+	To state 6 with weight 0.5
+From state 4:
+	To state 6 with weight 1
+From state 5:
+	To state 5 with weight 1
+From state 6:
+	To state 6 with weight 1
+12 edges total
+End of information for phase type
+
+============================================================
+
+Example 5
+Should look like:
+ x1 -> t;  x1 -> x2;  x1 -> y1
+ x2 -> t;  x2 -> x3;  x2 -> y2
+ x3 -> t;  x3 -> a;
+ y1 -> y2; y2 -> a;
+
+-------------------------------------------------------
+Information for phase type tta(ex5, ...)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: 3
+State 3: 2
+State 4: 7
+State 5: t
+State 6: a
+7 states total
+Accepting state index: 6
+Trap state index: 5
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 2
+	To state 2 with weight 1
+	To state 5 with weight 1
+From state 1:
+	To state 3 with weight 2
+	To state 4 with weight 1
+	To state 5 with weight 1
+From state 2:
+	To state 4 with weight 1
+From state 3:
+	To state 5 with weight 1
+	To state 6 with weight 1
+From state 4:
+	To state 6 with weight 1
+From state 5:
+From state 6:
+10 edges total
+End of information for phase type
+

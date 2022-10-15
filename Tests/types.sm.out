@@ -1,0 +1,80 @@
+
+These should all have type void:
+
+Expression print(null) has type: void
+Expression print("foo\n") has type: void
+Expression cond(true, print("bar\n"), null) has type: void
+
+These should have type int:
+
+Expression 2 has type: int
+Expression a has type: int
+Expression (2+a) has type: int
+Expression (b-a) has type: int
+Expression (a*b) has type: int
+
+These should have type real:
+
+Expression 5.1 has type: real
+Expression (5.1+real(a)) has type: real
+Expression (real(b)+c) has type: real
+Expression (real(b)-c) has type: real
+Expression (real(b)*c) has type: real
+Expression (real(b)/c) has type: real
+Expression (a/b) has type: real
+
+Aggregate types:
+
+Expression a:b:c has type: int:int:real
+Expression 3:4:null has type: int:int:null
+
+Testing function promotions:
+
+Should be int:
+Expression myfunc(3) has type: int
+Should be rand int:
+Expression myfunc(R) has type: rand int
+Should be real:
+Expression myfunc(3.5) has type: real
+Should be rand real:
+Expression myfunc(X) has type: rand real
+Definitely real:
+Expression myfunc(X) has type: real
+Depends on promotion distances, currently real:
+Expression myfunc(rand real(R)) has type: real
+
+Testing max() function promotions
+
+Should be int:
+Expression max(3, 4, 5) has type: int
+Should be real:
+Expression max(real(3), 4.1, 5) has type: real
+Should be ph int:
+Expression max(3, 4, equilikely(5, 6)) has type: ph int
+Should be ph real:
+Expression max(real(0), ph real(expo(5))) has type: ph real
+Should be ph real:
+Expression max(erlang(3, 4), ph real(expo(5))) has type: ph real
+Should be rand int:
+Expression max(3, bernoulli(0.5), R) has type: rand int
+Should be rand real:
+Expression max(erlang(3, 4), rand real(expo(5)), X) has type: rand real
+
+Testing ord() promotions
+
+Should be int:
+Expression ord(2, 1, 3, 5) has type: int
+Should be real:
+Expression ord(2, 1.1, 3.3, 5.5) has type: real
+Should be ph int:
+Expression ord(2, equilikely(1, 5), 3, 4) has type: ph int
+Should be ph real:
+Expression ord(2, erlang(1, 1), erlang(2, 2), erlang(3, 3)) has type: ph real
+Should be rand int:
+Expression ord(equilikely(1, 3), 2, 4, 6) has type: rand int
+Expression ord(equilikely(1, 3), 2, 4, R) has type: rand int
+Should be rand real:
+Expression ord(equilikely(1, 3), 2.1, 4.2, 6.3) has type: rand real
+Expression ord(equilikely(1, 3), real(2), real(4), X) has type: rand real
+
+The end

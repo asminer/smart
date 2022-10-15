@@ -1,0 +1,2 @@
+Minimum value 23 obtainted in state [L1a = 1, L1b = 2, L1c = 5, L1d = 8, L1e = 10, L2a = 2, L2b = 8, L2c = 10, R2a = 1, R2b = 5, L3a = 2, L3b = 8, L3c = 10, L3d = 1, R3a = 5, L4a = 8, L4b = 10, R4a = 5, R4b = 1, R4c = 2, L5a = 8, L5b = 10, L5c = 1, R5a = 2, R5b = 5, L6a = 1, R6a = 2, R6b = 5, R6c = 8, R6d = 10, L7a = 1, L7b = 2, R7a = 5, R7b = 8, R7c = 10, R8a = 5, R8b = 8, R8c = 10, R8d = 1, R8e = 2]
+cost: 23

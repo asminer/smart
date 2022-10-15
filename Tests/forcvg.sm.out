@@ -1,0 +1,39 @@
+x[1] converged to 1
+x[2] converged to 2
+x[3] converged to 3
+x[4] converged to 4
+x[5] converged to 5
+x[6] converged to 6
+x[7] converged to 7
+x[8] converged to 8
+x[9] converged to 9
+x[10] converged to 10
+Multiple guess error, for arrays
+ERROR in file forcvg.sm near line 26:
+	Duplicate guess for identifier y
+ERROR in file forcvg.sm near line 29:
+	Array w already defined
+y[8] converged to 1
+w[8] converged to 1
+y[9] converged to 1
+w[9] converged to 1
+y[10] converged to 1
+w[10] converged to 1
+Multiple definition error, for arrays
+ERROR in file forcvg.sm near line 40:
+	Array z already defined
+z[8] converged to 1
+z[9] converged to 1
+z[10] converged to 1
+Wide split converge error for arrays
+ERROR in file forcvg.sm near line 54:
+	Array widesplit already defined
+widesplit[8] should be 80: 80
+widesplit[9] should be 90: 90
+widesplit[10] should be 100: 100
+Near split converge error for arrays
+ERROR in file forcvg.sm near line 68:
+	Array nearsplit already defined
+nearsplit[8] should be 80: 80
+nearsplit[9] should be 90: 90
+nearsplit[10] should be 100: 100

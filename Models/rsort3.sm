@@ -1,0 +1,39 @@
+
+dtmc sort3 := {
+  for (int i in {1..3}, int j in {1..3}, int k in {1..3}) {
+    state s[i][j][k];
+    init (s[i][j][k] : 1);
+  }
+  for (int i in {1..3}, int j in {1..3}, int k in {1..3}) {
+    cond (i>j, 
+      arcs(
+        s[i][j][k] : s[j][i][k] : 1
+      ),
+      null
+    );
+    cond (j>k,
+      arcs(
+        s[i][j][k] : s[i][k][j] : 1
+      ),
+      null
+    );
+  }
+  real mtta := prob_acc(transient, 0, infinity);
+
+  ph int tta := tta(is_absorbed);
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+};
+
+#Report + mc_solve
+
+#GraphDisplayStyle INCOMING
+
+ph int x := sort3.tta;
+
+print("MC has ", sort3.ns, " states, ", sort3.na, " edges\n");
+print("Average #swaps to sort: ", sort3.mtta, "\n");
+
+print_dist(x, 1e-6);
+// print_ph(x);

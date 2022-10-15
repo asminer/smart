@@ -1,0 +1,224 @@
+Natural order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Reachability graph:
+To state 0:
+	From state 4
+To state 1:
+	From state 0
+	From state 2
+To state 2:
+	From state 1
+To state 3:
+	From state 1
+	From state 4
+To state 4:
+	From state 2
+	From state 3
+Natural order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [1, 0, 0, 1, 0]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [0, 1, 0, 0, 1]
+Markov chain:
+To state 0:
+	From state 4 with weight 5.1
+To state 1:
+	From state 0 with weight 1.1
+	From state 2 with weight 2.1
+To state 2:
+	From state 1 with weight 3.1
+To state 3:
+	From state 1 with weight 4.1
+	From state 4 with weight 2.1
+To state 4:
+	From state 2 with weight 4.1
+	From state 3 with weight 3.1
+Lexical order of states and reachability graph
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Reachability graph:
+To state 0:
+	From state 1
+To state 1:
+	From state 2
+	From state 3
+To state 2:
+	From state 4
+To state 3:
+	From state 1
+	From state 4
+To state 4:
+	From state 0
+	From state 2
+Lexical order of states and Markov chain
+State 0: [0, 0, 1, 0, 0]
+State 1: [0, 1, 0, 0, 1]
+State 2: [0, 1, 0, 1, 0]
+State 3: [1, 0, 0, 0, 1]
+State 4: [1, 0, 0, 1, 0]
+Markov chain:
+To state 0:
+	From state 1 with weight 5.1
+To state 1:
+	From state 2 with weight 4.1
+	From state 3 with weight 3.1
+To state 2:
+	From state 4 with weight 3.1
+To state 3:
+	From state 1 with weight 2.1
+	From state 4 with weight 4.1
+To state 4:
+	From state 0 with weight 1.1
+	From state 2 with weight 2.1
+Natural order of states and reachability graph
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+From state 1:
+From state 2:
+	To state 3
+	To state 4
+From state 3:
+	To state 5
+From state 4:
+	To state 6
+From state 5:
+	To state 3
+From state 6:
+	To state 0
+Natural order of states and Markov chain
+State 0: [a]
+State 1: [b]
+State 2: [c]
+State 3: [d]
+State 4: [e]
+State 5: [f]
+State 6: [g]
+Markov chain:
+From state 0:
+	To state 1 with weight 8
+	To state 4 with weight 4
+From state 1:
+	To state 2 with weight 7
+	To state 5 with weight 3
+From state 2:
+	To state 3 with weight 6
+From state 3:
+	To state 0 with weight 5
+From state 4:
+From state 5:
+	To state 6 with weight 2
+From state 6:
+	To state 5 with weight 1
+Discovery order of states and reachability graph
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Reachability graph:
+From state 0:
+	To state 1
+	To state 2
+From state 1:
+From state 2:
+	To state 3
+	To state 4
+From state 3:
+	To state 5
+From state 4:
+	To state 6
+From state 5:
+	To state 3
+From state 6:
+	To state 0
+Discovery order of states and Markov chain
+State 0: [a]
+State 1: [e]
+State 2: [b]
+State 3: [f]
+State 4: [c]
+State 5: [g]
+State 6: [d]
+Markov chain:
+From state 0:
+	To state 1 with weight 4
+	To state 2 with weight 8
+From state 1:
+From state 2:
+	To state 3 with weight 3
+	To state 4 with weight 7
+From state 3:
+	To state 5 with weight 2
+From state 4:
+	To state 6 with weight 6
+From state 5:
+	To state 3 with weight 1
+From state 6:
+	To state 0 with weight 5
+Lexical order of states and reachability graph
+State 0: [g]
+State 1: [f]
+State 2: [e]
+State 3: [d]
+State 4: [c]
+State 5: [b]
+State 6: [a]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+From state 2:
+From state 3:
+	To state 6
+From state 4:
+	To state 3
+From state 5:
+	To state 1
+	To state 4
+From state 6:
+	To state 2
+	To state 5
+Lexical order of states and Markov chain
+State 0: [g]
+State 1: [f]
+State 2: [e]
+State 3: [d]
+State 4: [c]
+State 5: [b]
+State 6: [a]
+Markov chain:
+From state 0:
+	To state 1 with weight 1
+From state 1:
+	To state 0 with weight 2
+From state 2:
+From state 3:
+	To state 6 with weight 5
+From state 4:
+	To state 3 with weight 6
+From state 5:
+	To state 1 with weight 3
+	To state 4 with weight 7
+From state 6:
+	To state 2 with weight 4
+	To state 5 with weight 8

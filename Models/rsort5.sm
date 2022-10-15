@@ -1,0 +1,52 @@
+
+dtmc sort5 := {
+  for (int i in {1..5}, int j in {1..5}, int k in {1..5}, int l in {1..5}, int m in {1..5}) {
+    state s[i][j][k][l][m];
+    init (s[i][j][k][l][m] : 1);
+  }
+  for (int i in {1..5}, int j in {1..5}, int k in {1..5}, int l in {1..5}, int m in {1..5}) {
+    cond (i>j, 
+      arcs(
+        s[i][j][k][l][m] : s[j][i][k][l][m] : 1
+      ),
+      null
+    );
+    cond (j>k,
+      arcs(
+        s[i][j][k][l][m] : s[i][k][j][l][m] : 1
+      ),
+      null
+    );
+    cond (k>l,
+      arcs(
+        s[i][j][k][l][m] : s[i][j][l][k][m] : 1
+      ),
+      null
+    );
+    cond (l>m,
+      arcs(
+        s[i][j][k][l][m] : s[i][j][k][m][l] : 1
+      ),
+      null
+    );
+  }
+  real mtta := prob_acc(transient, 0, infinity);
+
+  ph int tta := tta(is_absorbed);
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+};
+
+#Report + mc_solve
+
+#GraphDisplayStyle INCOMING
+
+ph int x := sort5.tta;
+
+print("MC has ", sort5.ns, " states, ", sort5.na, " edges\n");
+print("Average #swaps to sort: ", sort5.mtta, "\n");
+// print("Average #swaps to sort: ", avg(x), " (alternate)\n");
+
+// print_dist(x, 1e-6);
+print_ph(x);

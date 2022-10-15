@@ -1,0 +1,99 @@
+# 1814400 States (10!/2)
+#
+# $Id$
+#
+# 2x5 tile game, the board looks like:
+#
+#   x11  x12  x13  x14  x15 
+#
+#   x21  x22  x23  x24  x25 
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12, x13, x14, x15,
+	x21, x22, x23, x24, x25;
+	
+INIT
+	x11 :  0, x12 :  1, x13 :  2, x14 :  3, x15 :  4,
+	x21 :  5, x22 :  6, x23 :  7, x24 :  8, x25 :  9;
+
+BOUNDS
+	x11 :  9, x12 :  9, x13 :  9, x14 :  9, x15 :  9,
+	x21 :  9, x22 :  9, x23 :  9, x24 :  9, x25 :  9;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, n13, n14, n15;
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+	x23 : n13 : x23,   n13 : x13 : x23,   
+	x24 : n14 : x24,   n14 : x14 : x24,   
+	x25 : n15 : x25,   n15 : x15 : x25;
+  INHIBITORS
+	x11 : n11,   x12 : n12,   x13 : n13,   x14 : n14,   x15 : n15;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22, s23, s24, s25;
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+	x13 : s23 : x13,   s23 : x23 : x13,   
+	x14 : s24 : x14,   s24 : x24 : x14,   
+	x15 : s25 : x15,   s25 : x25 : x15;
+  INHIBITORS
+	x21 : s21,   x22 : s22,   x23 : s23,   x24 : s24,   x25 : s25;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e13, e14, e15,
+	e22, e23, e24, e25;
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x12 : e13 : x12,   e13 : x13 : x12,
+	x13 : e14 : x13,   e14 : x14 : x13,
+	x14 : e15 : x14,   e15 : x15 : x14,
+
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x22 : e23 : x22,   e23 : x23 : x22,
+	x23 : e24 : x23,   e24 : x24 : x23,
+	x24 : e25 : x24,   e25 : x25 : x24;
+
+  INHIBITORS
+	x12 : e12,   x13 : e13,   x14 : e14,   x15 : e15, 
+	x22 : e22,   x23 : e23,   x24 : e24,   x25 : e25;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w12, w13, w14, 
+	w21, w22, w23, w24;
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x13 : w12 : x13,   w12 : x12 : x13,
+	x14 : w13 : x14,   w13 : x13 : x14,
+	x15 : w14 : x15,   w14 : x14 : x15,
+
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x23 : w22 : x23,   w22 : x22 : x23,
+	x24 : w23 : x24,   w23 : x23 : x24,
+	x25 : w24 : x25,   w24 : x24 : x25;
+
+  INHIBITORS
+	x11 : w11,   x12 : w12,   x13 : w13,   x14 : w14,
+	x21 : w21,   x22 : w22,   x23 : w23,   x24 : w24;
+
+END

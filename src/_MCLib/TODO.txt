@@ -1,0 +1,7 @@
+
+Things to do for Markov chain library.
+
+Library:
+
+* Add lumping options.
+

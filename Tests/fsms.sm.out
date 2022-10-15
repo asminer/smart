@@ -1,0 +1,179 @@
+d0 states:
+State 0: a
+State 1: b
+d0 Reachability graph:
+From state 0:
+	To state 0
+	To state 1
+From state 1:
+	To state 0
+Some bad state name errors:
+ERROR in file fsms.sm near line 38:
+	Duplicate identifier a within model
+ERROR in file fsms.sm near line 42:
+	Unknown identifier: c
+ERROR in file fsms.sm near line 42:
+	No match for arcs(error)
+Warnings for duplicates:
+WARNING in file fsms.sm near line 56:
+	Ignoring duplicate arc from state a to b
+	within model d2 built in file fsms.sm near line 61
+3
+States should appear in definition order: a,b,c,d,e,f,g,h,i,j:
+d3 states:
+State 0: a
+State 1: b
+State 2: c
+State 3: d
+State 4: e
+State 5: f
+State 6: g
+State 7: h
+State 8: i
+State 9: j
+d3 Reachability graph:
+From state 0:
+From state 1:
+	To state 2
+	To state 3
+From state 2:
+	To state 3
+From state 3:
+	To state 1
+From state 4:
+	To state 4
+	To state 5
+From state 5:
+	To state 4
+From state 6:
+	To state 0
+	To state 7
+From state 7:
+	To state 1
+	To state 8
+From state 8:
+	To state 6
+	To state 9
+From state 9:
+	To state 4
+States should still appear in definition order: a,b,c,d,e,f,g,h,i,j:
+d3 states:
+State 0: a
+State 1: b
+State 2: c
+State 3: d
+State 4: e
+State 5: f
+State 6: g
+State 7: h
+State 8: i
+State 9: j
+d3 Reachability graph:
+From state 0:
+From state 1:
+	To state 2
+	To state 3
+From state 2:
+	To state 3
+From state 3:
+	To state 1
+From state 4:
+	To state 4
+	To state 5
+From state 5:
+	To state 4
+From state 6:
+	To state 0
+	To state 7
+From state 7:
+	To state 1
+	To state 8
+From state 8:
+	To state 6
+	To state 9
+From state 9:
+	To state 4
+Birth death with 1 states:
+State 0: s[1]
+Reachability graph:
+From state 0:
+Birth death with 2 states:
+State 0: s[1]
+State 1: s[2]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+Birth death with 3 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+	To state 2
+From state 2:
+	To state 1
+Birth death with 4 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+State 3: s[4]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+	To state 2
+From state 2:
+	To state 1
+	To state 3
+From state 3:
+	To state 2
+Birth death with 5 states:
+State 0: s[1]
+State 1: s[2]
+State 2: s[3]
+State 3: s[4]
+State 4: s[5]
+Reachability graph:
+From state 0:
+	To state 1
+From state 1:
+	To state 0
+	To state 2
+From state 2:
+	To state 1
+	To state 3
+From state 3:
+	To state 2
+	To state 4
+From state 4:
+	To state 3
+Should generate meaningful warnings:
+WARNING in file fsms.sm near line 138:
+	state y is from another model, ignoring as initial state
+	within model foo1 built in file fsms.sm near line 154
+WARNING in file fsms.sm near line 140:
+	state x is from another model, ignoring arc
+	within model foo1 built in file fsms.sm near line 154
+WARNING in file fsms.sm near line 140:
+	state x is from another model, ignoring arc
+	within model foo1 built in file fsms.sm near line 154
+WARNING in file fsms.sm near line 141:
+	state y is from another model, ignoring arc
+	within model foo1 built in file fsms.sm near line 154
+WARNING in file fsms.sm near line 141:
+	state y is from another model, ignoring arc
+	within model foo1 built in file fsms.sm near line 154
+WARNING in file fsms.sm near line 145:
+	state x is from another model, ignoring arc
+	within model foo1 built in file fsms.sm near line 154
+This should be emptyset:
+{}
+This should be emptyset:
+{}
+Done with fsm tests.

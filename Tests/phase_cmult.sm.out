@@ -1,0 +1,135 @@
+=======================================
+Checking 3*expo(3.6)
+=======================================
+Information for phase type expo(3.6)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 3.6
+From state 1:
+1 edges total
+End of information for phase type
+
+Information for phase type 3*expo(3.6)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: a
+2 states total
+Accepting state index: 1
+No trap state
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 1.2
+From state 1:
+1 edges total
+End of information for phase type
+
+=======================================
+Checking 2*erlang(4, 2.8)
+=======================================
+Information for phase type erlang(4, 2.8)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: 2
+State 3: 3
+State 4: a
+5 states total
+Accepting state index: 4
+No trap state
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 2.8
+From state 1:
+	To state 2 with weight 2.8
+From state 2:
+	To state 3 with weight 2.8
+From state 3:
+	To state 4 with weight 2.8
+From state 4:
+4 edges total
+End of information for phase type
+
+Information for phase type 2*erlang(4, 2.8)
+Continuous phase type, state has dimension 1
+Reachable states:
+State 0: 0
+State 1: 1
+State 2: 2
+State 3: 3
+State 4: a
+5 states total
+Accepting state index: 4
+No trap state
+Initial distribution:
+    (0:1)
+Markov chain:
+From state 0:
+	To state 1 with weight 1.4
+From state 1:
+	To state 2 with weight 1.4
+From state 2:
+	To state 3 with weight 1.4
+From state 3:
+	To state 4 with weight 1.4
+From state 4:
+4 edges total
+End of information for phase type
+
+=======================================
+Multiplication by simple choice
+=======================================
+Information for phase type choose((expo(1.1) : 0.25, expo(2.2) : 0.75)
+Continuous phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, a]
+State 1: [2, a, 0]
+State 2: [3, a, a]
+3 states total
+Accepting state index: 2
+No trap state
+Initial distribution:
+    (0:0.25, 1:0.75)
+Markov chain:
+From state 0:
+	To state 2 with weight 1.1
+From state 1:
+	To state 2 with weight 2.2
+From state 2:
+2 edges total
+End of information for phase type
+
+Information for phase type 1.1*choose((expo(1.1) : 0.25, expo(2.2) : 0.75)
+Continuous phase type, state has dimension 3
+Reachable states:
+State 0: [1, 0, a]
+State 1: [2, a, 0]
+State 2: [3, a, a]
+3 states total
+Accepting state index: 2
+No trap state
+Initial distribution:
+    (0:0.25, 1:0.75)
+Markov chain:
+From state 0:
+	To state 2 with weight 1
+From state 1:
+	To state 2 with weight 2
+From state 2:
+2 edges total
+End of information for phase type
+

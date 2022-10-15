@@ -1,0 +1,13 @@
+digraph {
+  rankdir=LR;
+  d; b; c; a;
+  {rank = same; a; }
+  {rank = same; b; c; }
+  a->d;
+  b->c;
+  c->b;
+  b->a;
+  c->a;
+  d->b;
+  d->c;
+}

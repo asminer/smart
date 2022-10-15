@@ -1,0 +1,140 @@
+
+
+
+/* 
+    Test of explicit CTL model checking,
+    on a simple PN model.
+
+    The Petri net generates the following FSM:
+
+	               A
+                  |
+                ^ |
+                | v
+                |
+        +------- B ----------+
+        |        |           |
+        |        |           |
+        v        v           v
+
+        C        D <--+     E:n
+        |         |   |      |
+        |       ^ |   |      |
+        v       | v   |      v
+   +-->         |     |
+   +--- F        I    |      .  
+        |        |    |      . 
+        |        |    |      . 
+        v        v    |       
+                      |      |  
+        G        K    |      |
+        |         |   |      v
+        |       ^ |   |       
+        v       | v   |     E:2
+                |     |      |
+        H --+    J ---+      |
+        ^   |                v
+        |   |
+        +---+               E:1
+
+*/
+
+#StatesetPrintIndexes false
+#PNMarkingStyle SAFE
+#StateDisplayOrder LEXICAL
+#DisplayGraphNodeNames true
+
+
+pn cruft(int n) := {
+  
+  place K, J, I, H, G, F, E, D, C, B, A;
+
+  partition(K, J, I, H, G, F, E, D, C, B, A);
+  bound(A:1, B:1, C:1, D:1, E:n, F:1, G:1, H:1, I:1, J:1, K:1);
+
+  init(A:1);
+
+  trans tAB, tBA, tBC, tBD, tBE, tCF, tDI, tE,
+        tFF, tFG, tGH, tHH, 
+        tID, tIK, tKJ, tJK, tJD;
+
+  arcs(
+    A : tAB, tAB : B,
+    B : tBA, tBA : A,
+    B : tBC, tBC : C,
+    B : tBD, tBD : D,
+    B : tBE, tBE : E : n,
+    C : tCF, tCF : F,
+    D : tDI, tDI : I,
+    E : tE : 2, tE : E,
+    F : tFF, tFF : F,
+    F : tFG, tFG : G,
+    G : tGH, tGH : H,
+    H : tHH, tHH : H,
+    I : tID, tID : D,
+    I : tIK, tIK : K,
+    K : tKJ, tKJ : J,
+    J : tJK, tJK : K,
+    J : tJD, tJD : D
+  );
+  decision aa, bb, cc;
+  //aa:=1;
+  //find the model type:study them
+  
+  void show_rs := show_states(false);
+  void show_dec := show_decisions();
+  void show_rg := show_arcs(false);
+  bigint na := num_arcs;
+  for(int i in {0..5}){
+  	int design_D[i]:=DontKnow;
+  }
+  //int d1 := DontKnow;
+  //or add an array
+  //how to perform concretization here?
+  //rules for compatibility to take design decisions; when to make design_D[i]:=T
+  //how to add enable function;
+
+// should I make a pair of sets? pair<stateset, stateset> SS?  
+
+
+  stateset rs := reachable;
+  stateset apB := reachable & potential(tk(B)>0);
+  stateset apD := reachable & potential(tk(D)>0);
+  stateset apF := reachable & potential(tk(F)>0);
+  stateset apH := reachable & potential(tk(H)>0);
+  stateset apK := reachable & potential(tk(K)>0);
+  stateset apEn:= reachable & potential(tk(E)==1);
+
+  // Existentials
+  
+  stateset prop1 := EX(apD);
+  stateset prop0 := !EF(apD);
+  stateset FS := !prop0;
+  stateset prop2 := EX(EX(apD));
+  stateset prop3 := EX(EX(EX(apD)));
+
+  stateset prop4 := EX(apH);
+
+  stateset prop5 := reachable & !EX(reachable);
+};
+
+print("Reachable states:\n");
+compute(cruft(5).show_rs);
+print("decisions: \n");
+compute(cruft(5).show_dec);
+print("State graph:\n");
+compute(cruft(5).show_rg);
+
+print("\nEX tests:\n--------------------------------------------------\n");
+
+print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop1, "\n");
+print("Should be {[A], [D], [K]}:\n          ", cruft(5).prop2, "\n");
+print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop3, "\n");
+print(     "Should be {[G], [H]}:\n          ", cruft(5).prop4, "\n");
+print(          "Should be {[E]}:\n          ", cruft(5).prop5, "\n");
+print("test: ", cruft(5).prop0,"\n");
+print("False set:::", cruft(5).FS,"\n");
+print("\nErrors:\n--------------------------------------------------\n");
+print(cruft(5).prop1 | cruft(4).prop1, "\n");
+
+print("Done!\n");

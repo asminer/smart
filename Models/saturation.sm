@@ -1,0 +1,9 @@
+
+// # Debug + procgen
+
+// # MeddlyProcessGeneration TRADITIONAL
+# MeddlyProcessGeneration SATURATION
+# MeddlyVariableStyle BOUNDED
+# MeddlyNSFNodeDeletion PESSIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL

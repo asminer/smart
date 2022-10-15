@@ -1,0 +1,280 @@
+# 291987
+
+# $Id$
+#
+#  Triangular peg jumping game.
+#
+#  Note the model considers the triangle as a "right" one,
+#  with the shape:
+#
+#  row 1:	X
+#
+#  row 2:	X   X
+#
+#  row 3:	X   X   X
+#
+#  row 4:	X   X   X   X
+#
+#  row 5:	X   X   X   X   X
+#
+#  row 6:	X   X   X   X   X   X
+#
+
+PN
+PLACES
+	p11,
+	p21, p22,
+	p31, p32, p33,
+	p41, p42, p43, p44,
+	p51, p52, p53, p54, p55,
+	p61, p62, p63, p64, p65, p66;
+
+INIT
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1,
+	p51 : 1, p52 : 1, p53 : 1, p54 : 1, p55 : 1,
+	p61 : 1, p62 : 1, p63 : 1, p64 : 1, p65 : 1, p66 : 1;
+
+BOUNDS
+	p11 : 1,
+	p21 : 1, p22 : 1,
+	p31 : 1, p32 : 1, p33 : 1,
+	p41 : 1, p42 : 1, p43 : 1, p44 : 1,
+	p51 : 1, p52 : 1, p53 : 1, p54 : 1, p55 : 1,
+	p61 : 1, p62 : 1, p63 : 1, p64 : 1, p65 : 1, p66 : 1;
+
+#
+# jumps to the north
+#
+  TRANS	
+	n11, n21, n31, n41,
+	n22, n32, n42,
+	n33, n43,
+	n44;
+
+  ARCS
+	n11 : p11, p21 : n11, p31 : n11,
+	n21 : p21, p31 : n21, p41 : n21,
+	n31 : p31, p41 : n31, p51 : n31,
+	n41 : p41, p51 : n41, p61 : n41,
+
+	n22 : p22, p32 : n22, p42 : n22,
+	n32 : p32, p42 : n32, p52 : n32,
+	n42 : p42, p52 : n42, p62 : n42,
+
+	n33 : p33, p43 : n33, p53 : n33,
+	n43 : p43, p53 : n43, p63 : n43,
+
+	n44 : p44, p54 : n44, p64 : n44;
+
+  INHIBITORS
+	p11 : n11,
+	p21 : n21,
+	p31 : n31,
+	p41 : n41,
+
+	p22 : n22,
+	p32 : n32,
+	p42 : n42,
+
+	p33 : n33,
+	p43 : n43,
+
+	p44 : n44;
+
+#
+# jumps to the south
+#
+  TRANS	
+	s31, s41, s51, s61,
+	s42, s52, s62,
+	s53, s63,
+	s64;
+
+  ARCS
+	p11 : s31, p21 : s31, s31 : p31,
+	p21 : s41, p31 : s41, s41 : p41,
+	p31 : s51, p41 : s51, s51 : p51,
+	p41 : s61, p51 : s61, s61 : p61,
+
+	p22 : s42, p32 : s42, s42 : p42,
+	p32 : s52, p42 : s52, s52 : p52,
+	p42 : s62, p52 : s62, s62 : p62,
+
+	p33 : s53, p43 : s53, s53 : p53,
+	p43 : s63, p53 : s63, s63 : p63,
+
+	p44 : s64, p54 : s64, s64 : p64;
+
+  INHIBITORS
+	p31 : s31,
+	p41 : s41,
+	p51 : s51,
+	p61 : s61,
+
+	p42 : s42,
+	p52 : s52,
+	p62 : s62,
+
+	p53 : s53,
+	p63 : s63,
+
+	p64 : s64;
+
+#
+# jumps to the east
+#
+  TRANS
+	e33, e43, e53, e63,
+	e44, e54, e64,
+	e55, e65,
+	e66;
+
+  ARCS
+	p31 : e33, p32 : e33, e33 : p33,
+	p41 : e43, p42 : e43, e43 : p43,
+	p51 : e53, p52 : e53, e53 : p53,
+	p61 : e63, p62 : e63, e63 : p63,
+
+	p42 : e44, p43 : e44, e44 : p44,
+	p52 : e54, p53 : e54, e54 : p54,
+	p62 : e64, p63 : e64, e64 : p64,
+
+	p53 : e55, p54 : e55, e55 : p55,
+	p63 : e65, p64 : e65, e65 : p65,
+
+	p64 : e66, p65 : e66, e66 : p66;
+	
+  INHIBITORS
+	p33 : e33,
+	p43 : e43,
+	p53 : e53,
+	p63 : e63,
+
+	p44 : e44,
+	p54 : e54,
+	p64 : e64,
+
+	p55 : e55,
+	p65 : e65,
+
+	p66 : e66;
+
+#
+# jumps to the west
+#
+  TRANS
+	w31, w41, w51, w61,
+	w42, w52, w62,
+	w53, w63,
+	w64;
+
+  ARCS
+	w31 : p31,  p32 : w31, p33 : w31,
+	w41 : p41,  p42 : w41, p43 : w41,
+	w51 : p51,  p52 : w51, p53 : w51,
+	w61 : p61,  p62 : w61, p63 : w61,
+
+	w42 : p42,  p43 : w42, p44 : w42,
+	w52 : p52,  p53 : w52, p54 : w52,
+	w62 : p62,  p63 : w62, p64 : w62,
+
+	w53 : p53,  p54 : w53, p55 : w53,
+	w63 : p63,  p64 : w63, p65 : w63,
+
+	w64 : p64,  p65 : w64, p66 : w64;
+
+  INHIBITORS
+	p31 : w31,
+	p41 : w41,
+	p51 : w51,
+	p61 : w61,
+
+	p42 : w42,
+	p52 : w52,
+	p62 : w62,
+
+	p53 : w53,
+	p63 : w63,
+
+	p64 : w64;
+
+#
+# jumps to the north west
+#
+  TRANS
+	nw11, nw21, nw31, nw41,
+        nw22, nw32, nw42, 
+	nw33, nw43,
+  	nw44;
+
+  ARCS
+	nw11 : p11, p22 : nw11, p33 : nw11,
+	nw21 : p21, p32 : nw21, p43 : nw21,
+	nw31 : p31, p42 : nw31, p53 : nw31,
+	nw41 : p41, p52 : nw41, p63 : nw41,
+
+	nw22 : p22, p33 : nw22, p44 : nw22,
+	nw32 : p32, p43 : nw32, p54 : nw32,
+	nw42 : p42, p53 : nw42, p64 : nw42,
+
+	nw33 : p33, p44 : nw33, p55 : nw33,
+	nw43 : p43, p54 : nw43, p65 : nw43,
+
+	nw44 : p44, p55 : nw44, p66 : nw44;
+
+  INHIBITORS
+	p11 : nw11,
+	p21 : nw21,
+	p31 : nw31,
+	p41 : nw41,
+
+	p22 : nw22,
+	p32 : nw32,
+	p42 : nw42,
+
+	p33 : nw33,
+	p43 : nw43,
+
+	p44 : nw44;
+
+#
+# jumps to the south east
+#
+  TRANS
+	se33, se43, se53, se63,
+	se44, se54, se64,
+	se55, se65,
+	se66;
+
+  ARCS
+	p11 : se33, p22 : se33, se33 : p33,
+	p21 : se43, p32 : se43, se43 : p43,
+	p31 : se53, p42 : se53, se53 : p53,
+	p41 : se63, p52 : se63, se63 : p63,
+
+	p22 : se44, p33 : se44, se44 : p44,
+	p32 : se54, p43 : se54, se54 : p54,
+	p42 : se64, p53 : se64, se64 : p64,
+
+	p33 : se55, p44 : se55, se55 : p55,
+	p43 : se65, p54 : se65, se65 : p65,
+
+	p44 : se66, p55 : se66, se66 : p66;
+
+  INHIBITORS
+	p33 : se33,
+	p43 : se43,
+	p53 : se53,
+	p63 : se63,
+
+	p44 : se44,
+	p54 : se54,
+	p64 : se64,
+
+	p55 : se55,
+	p65 : se65,
+
+	p66 : se66;
+END

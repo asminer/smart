@@ -1,0 +1,106 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 orig-dir new-dir"
+  echo "  Determines source code changes between branches"
+  exit 0
+fi
+
+old=$1
+new=$2
+
+if [ ! -d $old/src ]; then
+  echo "Cannot find src/ directory under $old"
+  exit 1
+fi
+
+if [ ! -d $new/src ]; then
+  echo "Cannot find src/ directory under $new"
+  exit 1
+fi
+
+oldsrc=$old/src
+newsrc=$new/src
+
+echo "======================================================================"
+echo "Removed files (number of lines):"
+echo "======================================================================"
+
+remtotal=0
+oldlines=0
+
+for DIR in Apps Engines ExprLib Formlsms FuncLib Modules Options ParseICP ParseSM Streams SymTabs; do
+  
+  for oldf in $oldsrc/$DIR/*; do
+    if [ ! -f $oldf ]; then
+      continue
+    fi
+    l=`cat $oldf | wc -l`
+    oldlines=$[ oldlines + l ]
+    bf=`basename $oldf`
+    if [ ! -f $newsrc/$DIR/$bf ]; then
+      remtotal=$[ remtotal + l ]
+      printf "%8d %s\n" $l $DIR/$bf
+    fi
+  done
+
+done
+
+echo "======================================================================"
+echo "Changed files (diff size):"
+echo "======================================================================"
+
+chtotal=0
+
+for DIR in Apps Engines ExprLib Formlsms FuncLib Modules Options ParseICP ParseSM Streams SymTabs; do
+  
+  for oldf in $oldsrc/$DIR/*; do
+    if [ ! -f $oldf ]; then
+      continue
+    fi
+    bf=`basename $oldf`
+    newf="$newsrc/$DIR/$bf"
+    if [ -f $newf ]; then
+      l=`diff $oldf $newf | wc -l `
+      if [ $l -gt 0 ]; then
+        chtotal=$[ chtotal + l ]
+        printf "%8d %s\n" $l $DIR/$bf
+      fi
+    fi
+  done
+
+done
+
+echo "======================================================================"
+echo "Added files (number of lines):"
+echo "======================================================================"
+
+addtotal=0
+newlines=0
+
+for DIR in Apps Engines ExprLib Formlsms FuncLib Modules Options ParseICP ParseSM Streams SymTabs; do
+  
+  for newf in $newsrc/$DIR/*; do
+    if [ ! -f $newf ]; then
+      continue
+    fi
+    l=`cat $newf | wc -l`
+    newlines=$[ newlines + l ]
+    bf=`basename $newf`
+    if [ ! -f $oldsrc/$DIR/$bf ]; then
+      addtotal=$[ remtotal + l ]
+      printf "%8d %s\n" $l $DIR/$bf
+    fi
+  done
+
+done
+
+echo "======================================================================"
+echo "Summary:"
+echo "======================================================================"
+
+echo "Old src: $oldlines"
+echo "REMOVED: $remtotal"
+echo "CHANGED: $chtotal"
+echo "ADDED  : $addtotal"
+echo "New src: $newlines"

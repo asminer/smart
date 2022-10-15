@@ -1,0 +1,9 @@
+
+// # Debug + rsgen
+
+# MeddlyProcessGeneration TRADITIONAL
+# MeddlyVariableStyle BOUNDED
+# MeddlyNSFNodeDeletion PESSIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL
+

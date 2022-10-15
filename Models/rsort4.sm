@@ -1,0 +1,46 @@
+
+dtmc sort4 := {
+  for (int i in {1..4}, int j in {1..4}, int k in {1..4}, int l in {1..4}) {
+    state s[i][j][k][l];
+    init (s[i][j][k][l] : 1);
+  }
+  for (int i in {1..4}, int j in {1..4}, int k in {1..4}, int l in {1..4}) {
+    cond (i>j, 
+      arcs(
+        s[i][j][k][l] : s[j][i][k][l] : 1
+      ),
+      null
+    );
+    cond (j>k,
+      arcs(
+        s[i][j][k][l] : s[i][k][j][l] : 1
+      ),
+      null
+    );
+    cond (k>l,
+      arcs(
+        s[i][j][k][l] : s[i][j][l][k] : 1
+      ),
+      null
+    );
+  }
+  real mtta := prob_acc(transient, 0, infinity);
+
+  ph int tta := tta(is_absorbed);
+
+  bigint ns := num_states;
+  bigint na := num_arcs;
+};
+
+#Report + mc_solve
+
+#GraphDisplayStyle INCOMING
+
+ph int x := sort4.tta;
+
+print("MC has ", sort4.ns, " states, ", sort4.na, " edges\n");
+print("Average #swaps to sort: ", sort4.mtta, "\n");
+
+print_dist(x, 1e-6);
+// print_ph(x);
+

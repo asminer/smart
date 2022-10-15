@@ -1,0 +1,128 @@
+# 239500800 States (12!/2)
+#
+# $Id$
+#
+# 3x4 tile game, the board looks like:
+#
+#   x11  x12  x13  x14
+#
+#   x21  x22  x23  x24
+#
+#   x31  x32  x33  x34
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12, x13, x14, 
+	x21, x22, x23, x24,
+	x31, x32, x33, x34;
+	
+INIT
+	x11 :  0, x12 :  1, x13 :  2, x14 :  3, 
+	x21 :  4, x22 :  5, x23 :  6, x24 :  7, 
+	x31 :  8, x32 :  9, x33 : 10, x34 : 11;
+
+BOUNDS
+	x11 : 11, x12 : 11, x13 : 11, x14 : 11, 
+	x21 : 11, x22 : 11, x23 : 11, x24 : 11, 
+	x31 : 11, x32 : 11, x33 : 11, x34 : 11;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, n13, n14, 
+	n21, n22, n23, n24;
+
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+	x23 : n13 : x23,   n13 : x13 : x23,   
+	x24 : n14 : x24,   n14 : x14 : x24,   
+
+	x31 : n21 : x31,   n21 : x21 : x31,   
+	x32 : n22 : x32,   n22 : x22 : x32,   
+	x33 : n23 : x33,   n23 : x23 : x33,   
+	x34 : n24 : x34,   n24 : x24 : x34;
+
+  INHIBITORS
+	x11 : n11,   x12 : n12,   x13 : n13,   x14 : n14,
+	x21 : n21,   x22 : n22,   x23 : n23,   x24 : n24;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22, s23, s24, 
+	s31, s32, s33, s34;
+
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+	x13 : s23 : x13,   s23 : x23 : x13,   
+	x14 : s24 : x14,   s24 : x24 : x14,   
+
+	x21 : s31 : x21,   s31 : x31 : x21,   
+	x22 : s32 : x22,   s32 : x32 : x22,   
+	x23 : s33 : x23,   s33 : x33 : x23,   
+	x24 : s34 : x24,   s34 : x34 : x24;
+
+  INHIBITORS
+	x21 : s21,   x22 : s22,   x23 : s23,   x24 : s24,
+	x31 : s31,   x32 : s32,   x33 : s33,   x34 : s34;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e13, e14, 
+	e22, e23, e24, 
+	e32, e33, e34;
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x12 : e13 : x12,   e13 : x13 : x12,
+	x13 : e14 : x13,   e14 : x14 : x13,
+
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x22 : e23 : x22,   e23 : x23 : x22,
+	x23 : e24 : x23,   e24 : x24 : x23,
+
+	x31 : e32 : x31,   e32 : x32 : x31,
+	x32 : e33 : x32,   e33 : x33 : x32,
+	x33 : e34 : x33,   e34 : x34 : x33;
+
+  INHIBITORS
+	x12 : e12,   x13 : e13,   x14 : e14,
+	x22 : e22,   x23 : e23,   x24 : e24,
+	x32 : e32,   x33 : e33,   x34 : e34;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w12, w13, 
+	w21, w22, w23, 
+	w31, w32, w33;
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x13 : w12 : x13,   w12 : x12 : x13,
+	x14 : w13 : x14,   w13 : x13 : x14,
+
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x23 : w22 : x23,   w22 : x22 : x23,
+	x24 : w23 : x24,   w23 : x23 : x24,
+
+	x32 : w31 : x32,   w31 : x31 : x32,
+	x33 : w32 : x33,   w32 : x32 : x33,
+	x34 : w33 : x34,   w33 : x33 : x34;
+
+  INHIBITORS
+	x11 : w11,   x12 : w12,   x13 : w13,
+	x21 : w21,   x22 : w22,   x23 : w23,
+	x31 : w31,   x32 : w32,   x33 : w33;
+
+END

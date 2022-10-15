@@ -1,0 +1,113 @@
+# 20160 States (8!/2)
+#
+# $Id$
+#
+# 4x2 tile game, the board looks like:
+#
+#   x11  x12
+#
+#   x21  x22
+#
+#   x31  x32
+#
+#   x41  x42
+#
+#
+#   and a value of 0 means "empty space", allowing adjacent tiles to be moved.
+
+PN
+PLACES
+	x11, x12,
+	x21, x22,
+	x31, x32,
+	x41, x42;
+	
+INIT
+	x11 :  0, x12 :  1,
+	x21 :  2, x22 :  3,
+	x31 :  4, x32 :  5,
+	x41 :  6, x42 :  7;
+
+BOUNDS
+	x11 :  7, x12 :  7,
+	x21 :  7, x22 :  7,
+	x31 :  7, x32 :  7,
+	x41 :  7, x42 :  7;
+
+#
+# Move to the north
+#
+  TRANS
+	n11, n12, 
+	n21, n22, 
+	n31, n32;
+
+  ARCS
+	x21 : n11 : x21,   n11 : x11 : x21,   
+	x22 : n12 : x22,   n12 : x12 : x22,   
+
+	x31 : n21 : x31,   n21 : x21 : x31,   
+	x32 : n22 : x32,   n22 : x22 : x32,   
+
+	x41 : n31 : x41,   n31 : x31 : x41,   
+	x42 : n32 : x42,   n32 : x32 : x42;
+
+  INHIBITORS
+	x11 : n11,   x12 : n12,
+	x21 : n21,   x22 : n22,
+	x31 : n31,   x32 : n32;
+	
+#
+# Move to the south
+#
+  TRANS
+	s21, s22,
+	s31, s32,
+	s41, s42;
+
+  ARCS
+	x11 : s21 : x11,   s21 : x21 : x11,   
+	x12 : s22 : x12,   s22 : x22 : x12,   
+
+	x21 : s31 : x21,   s31 : x31 : x21,   
+	x22 : s32 : x22,   s32 : x32 : x22,   
+
+	x31 : s41 : x31,   s41 : x41 : x31,   
+	x32 : s42 : x32,   s42 : x42 : x32;
+
+  INHIBITORS
+	x21 : s21,   x22 : s22,
+	x31 : s31,   x32 : s32,
+	x41 : s41,   x42 : s42;
+	
+#
+# Move to the east
+#
+  TRANS
+	e12, e22, e32, e42; 
+
+  ARCS
+	x11 : e12 : x11,   e12 : x12 : x11,
+	x21 : e22 : x21,   e22 : x22 : x21,
+	x31 : e32 : x31,   e32 : x32 : x31,
+	x41 : e42 : x41,   e42 : x42 : x41;
+
+  INHIBITORS
+	x12 : e12,   x22 : e22,   x32 : e32,   x42 : e42;
+
+#
+# Move to the west
+#
+  TRANS
+	w11, w21, w31, w41; 
+
+  ARCS
+	x12 : w11 : x12,   w11 : x11 : x12,
+	x22 : w21 : x22,   w21 : x21 : x22,
+	x32 : w31 : x32,   w31 : x31 : x32,
+	x42 : w41 : x42,   w41 : x41 : x42;
+
+  INHIBITORS
+	x11 : w11,   x21 : w21,   x31 : w31,   x41 : w41;   
+
+END

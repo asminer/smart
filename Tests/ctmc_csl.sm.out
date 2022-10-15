@@ -1,0 +1,34 @@
+Graduation probabilities: 1 year
+	(fr:0.00668813, so:0.0354556, jr:0.162242, sr:0.527494, grad:1)
+Graduation probabilities: 2 years
+	(fr:0.0560177, so:0.158598, jr:0.393029, sr:0.741957, grad:1)
+Graduation probabilities: 3 years
+	(fr:0.152279, so:0.30936, jr:0.56092, sr:0.829151, grad:1)
+Graduation probabilities: 4 years
+	(fr:0.26586, so:0.439196, jr:0.662457, sr:0.864601, grad:1)
+Graduation probabilities: 5 years
+	(fr:0.369801, so:0.533247, jr:0.718691, sr:0.879014, grad:1)
+Graduation probabilities: 6 years
+	(fr:0.45148, so:0.594729, jr:0.748273, sr:0.884874, grad:1)
+Graduation probabilities: no limit
+	(fr:0.604938, so:0.680556, jr:0.777778, sr:0.888889, grad:1)
+Theory:
+	(fr:0.604938, so:0.680556, jr:0.777778, sr:0.888889, grad:1)
+
+Should be all ones: (fr:1, so:1, jr:1, sr:1, fail:1, grad:1)
+Erlang probabilities T=1:
+	(s[5]:0.00774579, s[4]:0.033769, s[3]:0.120513, s[2]:0.337373, s[1]:0.698806, s[0]:1)
+Theory:
+	   5 :0.00774579,   4 :0.033769,   3 :0.120513,   2 :0.337373,   1 :0.698806,   0 :1
+Erlang probabilities T=2:
+	(s[5]:0.0958686, s[4]:0.221277, s[3]:0.430291, s[2]:0.691559, s[1]:0.909282, s[0]:1)
+Theory:
+	   5 :0.0958686,   4 :0.221277,   3 :0.430291,   2 :0.691559,   1 :0.909282,   0 :1
+Erlang probabilities T=3:
+	(s[5]:0.293562, s[4]:0.484784, s[3]:0.697253, s[2]:0.874311, s[1]:0.972676, s[0]:1)
+Theory:
+	   5 :0.293562,   4 :0.484784,   3 :0.697253,   2 :0.874311,   1 :0.972676,   0 :1
+Erlang probabilities T=4:
+	(s[5]:0.523741, s[4]:0.70577, s[3]:0.857461, s[2]:0.952267, s[1]:0.99177, s[0]:1)
+Theory:
+	   5 :0.523741,   4 :0.70577,   3 :0.857461,   2 :0.952267,   1 :0.99177,   0 :1

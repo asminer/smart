@@ -1,0 +1,16 @@
+FMS model with N=1
+	54 states
+	155 arcs
+	phi: 13.9
+FMS model with N=2
+	810 states
+	3699 arcs
+	phi: 29.2
+FMS model with N=3
+	6520 states
+	37394 arcs
+	phi: 44.4
+FMS model with N=4
+	35910 states
+	237120 arcs
+	phi: 59.6

@@ -1,0 +1,84 @@
+# 2895018
+
+# $Id$
+
+# FMS model taken from
+# "A decomposition approach for stochastic reward net models"
+# by G. Ciardo and K. Trivedi
+#
+
+PN
+PLACES
+	P1, P1wM1, P1M1, M1, P1d, P1s, P1wP2,
+	P2, P2wM2, P2M2, M2, P2d, P2s, P2wP1,
+	P12, P12wM3, P12M3, M3, P12s,
+	P3, P3M2, P3s;
+INIT
+	P1 : 5,  # N
+	P2 : 5,  # N
+	P3 : 5,  # N
+	M1 : 3,
+	M2 : 1,
+	M3 : 2;
+TRANS
+	tM1, tM2, tM3, tx,
+	tP1e, tP1j, tP2e, tP2j,
+	tP1, tP1M1, tP1s,
+	tP2, tP2M2, tP2s, 
+	tP12, tP12M3, tP12s,
+	tP3, tP3M2, tP3s;
+ARCS
+  	P1	: tP1	,
+  	tP1	: P1wM1	,
+  	P1wM1	: tM1	,
+  	M1	: tM1	,
+  	tM1	: P1M1	,
+  	P1M1	: tP1M1	,
+  	tP1M1	: M1	,
+  	tP1M1	: P1d	,
+  	P1d	: tP1e	,
+  	tP1e	: P1s	,
+  	P1d	: tP1j	,
+  	tP1j	: P1wP2	,
+  	P1s	: tP1s	: P1s	,
+  	tP1s	: P1	: P1s	,
+
+  	P2	: tP2	,
+  	tP2	: P2wM2	,
+  	P2wM2	: tM2	,
+  	M2	: tM2	,
+  	tM2	: P2M2	,
+  	P2M2	: tP2M2	,
+  	tP2M2	: M2	,
+  	tP2M2	: P2d	,
+  	P2d	: tP2e	,
+  	tP2e	: P2s	,
+  	P2d	: tP2j	,
+  	tP2j	: P2wP1	,
+  	P2s	: tP2s	: P2s	,
+  	tP2s	: P2	: P2s	,
+
+  	P2wP1	: tx	,
+  	P1wP2	: tx	,
+  	tx	: P12	,
+  	P12	: tP12	,
+  	tP12	:P12wM3	,
+  	P12wM3	: tM3	,
+  	M3	: tM3	,
+  	tM3	: P12M3	,
+  	P12M3	:tP12M3	,
+  	tP12M3	: P12s	,
+  	tP12M3	: M3	,
+  	P12s	: tP12s	: P12s	,
+  	tP12s	: P1	: P12s	,
+  	tP12s	: P2	: P12s	,
+
+  	P3	: tP3	,
+  	tP3	: P3M2	,
+  	P3M2	: tP3M2	,
+  	M2	: tP3M2	,
+  	tP3M2	: M2	,
+  	tP3M2	: P3s	,
+  	P3s	: tP3s	: P3s	,
+  	tP3s	: P3	: P3s	;
+END	

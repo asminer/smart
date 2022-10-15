@@ -1,0 +1,11 @@
+Starting in file include.sm; currently on line 6 (6)
+2-lines; file is inc-a.sm; on line 2 (2)
+Back to file include.sm; on line 8 (8)
+in file inc-b.sm; on line 2 (2)
+2-lines; file is inc-a.sm; on line 2 (2)
+leaving file inc-b.sm; on line 4 (4)
+Back to file include.sm; on line 10 (10)
+Circular include, should cause an error:
+WARNING in file include.sm near line 13:
+	circular file dependency caused by #include include.sm, ignoring
+done; last line of file is 15

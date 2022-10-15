@@ -1,0 +1,11 @@
+*.makefile
+*.aux
+*.blg
+*.idx
+*.ilg
+*.ind
+*.log
+*.toc
+*.pdf
+comment.cut
+ALL.bib
