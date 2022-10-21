@@ -6,7 +6,7 @@
 #include "exprman.h"
 #include "engine.h"
 
-#include "strings.h"
+#include "../Lexer/strings.h"
 #include "../include/heap.h"
 
 // ******************************************************************

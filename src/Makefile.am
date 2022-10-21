@@ -47,6 +47,8 @@ smart_SOURCES = \
   \
   Options/options.cc \
   \
+  Lexer/strings.cc \
+	\
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
   ExprLib/superman.cc \
@@ -66,7 +68,6 @@ smart_SOURCES = \
   ExprLib/functions.cc \
   ExprLib/converge.cc \
   ExprLib/sets.cc \
-  ExprLib/strings.cc \
   ExprLib/intervals.cc \
   ExprLib/unary.cc \
   ExprLib/casting.cc \
@@ -171,6 +172,8 @@ icp_SOURCES = \
   Streams/streams.cc  Streams/textfmt.cc \
   \
   Options/options.cc \
+	\
+  Lexer/strings.cc \
   \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -191,7 +194,6 @@ icp_SOURCES = \
   ExprLib/functions.cc \
   ExprLib/converge.cc \
   ExprLib/sets.cc \
-  ExprLib/strings.cc \
   ExprLib/intervals.cc \
   ExprLib/unary.cc \
   ExprLib/casting.cc \

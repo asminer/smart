@@ -52,4 +52,10 @@ Architecture question:
       static generic_initializer* list;
   };
 
+======================================================================  
+
+Long-ish term lexer / parser rewrite plan:
+
+	* shared strings move to lexer directory
+  * use 'location' object instead of filename + lineno, "everywhere"
   

@@ -9,7 +9,7 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../ExprLib/strings.h"
+#include "../Lexer/strings.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/formalism.h"

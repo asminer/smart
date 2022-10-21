@@ -1,7 +1,7 @@
 
 #include "symbols.h"
 #include "exprman.h"
-#include "strings.h"
+#include "../Lexer/strings.h"
 #include "../Streams/streams.h"
 #include "values.h"
 #include "dd_front.h"

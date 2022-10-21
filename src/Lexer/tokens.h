@@ -1,0 +1,113 @@
+#ifndef TOKENS_H
+#define TOKENS_H
+
+/**
+ * Self-contained token from an input file.
+ * Produced by the lexer.  Consumed by the parser.
+ */
+class token {
+	public:
+		enum type {
+				
+				/*
+				 * Single characters
+				 */
+				END				= 0,
+				NEWLINE		=	'\n',
+				SHARP			= '#',
+				COMMA			= ',',
+				DOT				= '.',
+				SEMI			= ';',
+				LPAR			= '(',
+				RPAR			= ')',
+				LBRAK			= '[',
+				RBRAK			= ']',
+				LBRACE		= '{',
+				RBRACE		= '}',
+				GT				= '>',
+				LT				= '<',
+				PLUS			= '+',
+				MINUS			= '-',
+				TIMES			= '*',
+				DIVIDE		=	'/',
+				MOD				= '%',
+				COLON			= ':',
+				QUEST			= '?',
+				BANG			= '!',
+
+				FORALL				= 'A',
+				EXISTS				= 'E',
+				FUTURE				= 'F',
+				PAST					= 'P',
+				GLOBALLY			= 'G',
+				HISTORICALLY	= 'H',
+				UNTIL					= 'U',
+				SINCE					= 'S',
+				NEXT					= 'X',
+				PREV					= 'Y',
+
+				/*
+				 * Stuff with attributes
+				 */
+				BOOLCONST	=	300,
+				INTCONST	=	301,
+				REALCONST = 302,
+				STRCONST	= 303,
+				TYPE			=	304,
+				MODIF			= 305,
+				IDENT			= 306,
+
+				/*
+				 * Symbols
+				 */
+				GETS			=	350,
+				EQUALS		= 351,
+				NEQUAL		= 352,
+				GE				= 353,
+				LE				= 354,
+				OR				= 355,
+				AND				= 356,
+				SET_DIFF	= 357,
+				IMPLIES		= 358,
+				DOTDOT		= 359,
+
+				/*
+				 * Keywords (smart)
+				 */
+				IN				= 450,
+				FOR				= 451,
+				CONVERGE	=	452,
+				GUESS			= 453,
+				DEFAULT		= 454,
+				PROC			= 455,
+				NUL				= 456,
+
+				/*
+				 * Keywords (ICP)
+				 */
+				MAXIMIZE		= 500,
+				MINIMIZE		= 501,
+				SATISFIABLE = 502
+
+		};	
+	private:
+		const char* filename;		/* TBD: use shared string */
+		unsigned lineno;			
+		type tokenID;
+		char* attribute;		/* TBD - use shared string */
+
+	public:
+		token();		/* Zero out everything */
+		~token();		/* unlink shared stuff */
+
+		// token(const token&);
+		// void operator=(const token&);
+
+		inline bool matches(type t) const {	return t == tokenID; }
+
+	// TBD: getters, setters
+	// TBD: display
+	// TBD: lexer as a friend class
+};
+
+#endif

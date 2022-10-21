@@ -6,7 +6,7 @@
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/exprman.h"
-#include "../ExprLib/strings.h"
+#include "../Lexer/strings.h"
 #include "../ExprLib/mod_inst.h"
 #include <string.h>
 
