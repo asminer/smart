@@ -5,7 +5,7 @@
 #include "expr.h"
 #include "exprman.h"
 #include "result.h"
-#include "strings.h"
+#include "../Lexer/strings.h"
 
 #include <string.h>
 

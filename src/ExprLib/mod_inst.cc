@@ -8,7 +8,7 @@
 #include "arrays.h"
 #include "measures.h"
 #include "engine.h"
-#include "strings.h"
+#include "../Lexer/strings.h"
 
 // #define ARRAY_TRACE
 // #define DEBUG_PARTINFO

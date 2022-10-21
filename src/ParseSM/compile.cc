@@ -8,7 +8,7 @@
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_def.h"
 #include "../SymTabs/symtabs.h"
-#include "../ExprLib/strings.h"
+#include "../Lexer/strings.h"
 #include "../ExprLib/formalism.h"
 #include "../include/heap.h"
 #include "parse_sm.h"

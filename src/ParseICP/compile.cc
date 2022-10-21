@@ -6,7 +6,7 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../ExprLib/strings.h"
+#include "../Lexer/strings.h"
 #include "../ExprLib/formalism.h"
 #include "../include/heap.h"
 #include "parse_icp.h"
