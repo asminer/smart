@@ -6,6 +6,7 @@ bin-release/
 compile
 config.*
 configure
+configure~
 configure.ac.old
 depcomp
 install-sh
@@ -16,3 +17,4 @@ missing
 test-driver
 ylwrap
 *.swp
+.DS_Store
