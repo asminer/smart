@@ -1,6 +1,12 @@
 
 #include "location.h"
 
+location::location()
+{
+	filename = 0;
+	linenumber = 0;
+}
+
 location::location(shared_string* fn,  unsigned ln)
 {
 	filename = Share(fn);

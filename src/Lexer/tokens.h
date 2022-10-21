@@ -1,6 +1,8 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include "location.h"
+
 /**
  * Self-contained token from an input file.
  * Produced by the lexer.  Consumed by the parser.
@@ -91,17 +93,16 @@ class token {
 
 		};	
 	private:
-		const char* filename;		/* TBD: use shared string */
-		unsigned lineno;			
+		location where;
 		type tokenID;
-		char* attribute;		/* TBD - use shared string */
+		shared_string* attribute;
 
 	public:
 		token();		/* Zero out everything */
-		~token();		/* unlink shared stuff */
+		token(const token&);
+		void operator=(const token&);
 
-		// token(const token&);
-		// void operator=(const token&);
+		~token();		/* unlink shared stuff */
 
 		inline bool matches(type t) const {	return t == tokenID; }
 

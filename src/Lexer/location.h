@@ -7,6 +7,7 @@ class location {
 		shared_string* filename;
 		unsigned linenumber;
 	public:
+		location();
 		location(shared_string* fn,  unsigned ln);
 		location(const location& L);
 		void operator=(const location& L);
