@@ -401,6 +401,8 @@ void OutputStream::PutInteger(const char* data, int width)
 }
 
 
+// TBD: deprecated;
+// use location::show instead
 void OutputStream::PutFile(const char* fn, int ln)
 {
   if (!ready) return;
