@@ -105,6 +105,14 @@ class token {
 		~token();		/* unlink shared stuff */
 
 		inline bool matches(type t) const {	return t == tokenID; }
+		inline type ID() const { return tokenID; }
+		inline const location& getloc() const { return where; }
+		inline const char* getAttr() const {
+			return attribute ? attribute->getStr() : 0;
+		}
+		inline shared_string* shareAttr() {
+			return Share(attribute);
+		}
 
 	// TBD: getters, setters
 	// TBD: display
