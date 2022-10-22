@@ -104,8 +104,9 @@ class token {
         ~token();		/* unlink shared stuff */
 
         inline bool matches(type t) const {	return t == tokenID; }
-        inline type ID() const { return tokenID; }
-        inline const location& getloc() const { return where; }
+        inline type getId() const { return tokenID; }
+        const char* getIdName() const;
+        inline const location& getLoc() const { return where; }
         inline const char* getAttr() const {
             return attribute ? attribute->getStr() : 0;
         }
@@ -113,9 +114,16 @@ class token {
             return Share(attribute);
         }
 
-        // TBD: getters, setters
-        // TBD: display
-        // TBD: lexer as a friend class
+        // Show the actual text (lexeme)
+        void show(OutputStream &s) const;
+
+        friend class lexer;
 };
+
+inline OutputStream& operator<< (OutputStream& s, const token& t)
+{
+    t.show(s);
+    return s;
+}
 
 #endif
