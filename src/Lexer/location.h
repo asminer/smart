@@ -23,6 +23,14 @@ class location {
 		inline void newline() {
 			++linenumber;
 		}
+		
+		void show(OutputStream &s) const;	
 };
+
+inline OutputStream& operator<< (OutputStream &s, const location &L)
+{
+	L.show(s);
+	return s;
+}
 
 #endif

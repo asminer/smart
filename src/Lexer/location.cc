@@ -1,5 +1,6 @@
 
 #include "location.h"
+#include "../Streams/streams.h"
 
 location::location()
 {
@@ -21,11 +22,11 @@ location::location(const location& L)
 
 void location::operator=(const location& L)
 {
-	if (this != &L) {
+	if (filename != L.filename) {
 		Delete(filename);
 		filename = Share(L.filename);
-		linenumber = L.linenumber;
 	}
+	linenumber = L.linenumber;
 }
 
 location::~location()
@@ -33,4 +34,7 @@ location::~location()
 	Delete(filename);
 }
 
-
+void location::show(OutputStream &s) const
+{
+	s.PutFile( filename ? filename->getStr() : 0, linenumber );
+}

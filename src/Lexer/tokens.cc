@@ -16,12 +16,12 @@ token::token(const token &T)
 
 void token::operator=(const token& T)
 {
-	if (this != &T) {
+	if (attribute != T.attribute) {
 		Delete(attribute);
-		where = T.where;
-		tokenID = T.tokenID;
 		attribute = Share(T.attribute);
 	}
+	where = T.where;
+	tokenID = T.tokenID;
 }
 
 token::~token()
