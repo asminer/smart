@@ -47,6 +47,48 @@ lexer::lexer(const char** fns, unsigned nfs)
     filenames = fns;
     numfiles = nfs;
     fileindex = 0;
+    tlp = 0;
 
-
+    scan_token();
 }
+
+lexer::~lexer()
+{
+    while (topfile) {
+        buffer* n = topfile->getNext();
+        delete topfile;
+        topfile = n;
+    }
+}
+
+void lexer::scan_token()
+{
+    //
+    // Read from appropriate input stream, the next token
+    // into lookaheads[0].
+    //
+
+    for (;;) {
+        //
+        // If topfile is null, then advance fileindex to next in the list.
+        //
+        if (0==topfile) {
+            if (fileindex >= numfiles) {
+                // We're at the end.
+                lookaheads[0].set_end();
+                return;
+            }
+            topfile = new buffer(filenames[fileindex]);
+            ++fileindex;
+        }
+
+        //
+        // Are we at the end of topfile?
+        //
+
+        // TBD!
+
+    }   // infinite loop
+}
+
+

@@ -13,6 +13,10 @@ class location {
 
         ~location();
 
+        inline operator bool() const {
+            return linenumber;
+        }
+
         inline const char* getFile() const {
             return filename ? filename->getStr() : 0;
         }
@@ -26,6 +30,8 @@ class location {
         void show(OutputStream &s) const;
 
         void start(const char* fn);
+
+        void clear();
 };
 
 inline OutputStream& operator<< (OutputStream &s, const location &L)
