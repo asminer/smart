@@ -8,12 +8,6 @@ location::location()
     linenumber = 0;
 }
 
-location::location(shared_string* fn,  unsigned ln)
-{
-    filename = Share(fn);
-    linenumber = ln;
-}
-
 location::location(const location& L)
 {
     filename = Share(L.filename);
@@ -72,4 +66,12 @@ void location::show(OutputStream &s) const
         s.Put(" near line ");
         s.Put(ln);
     }
+}
+
+void location::start(const char* file)
+{
+    Delete(filename);
+    filename = new shared_string;
+    filename->CopyFrom(file);
+    linenumber = 1;
 }

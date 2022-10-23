@@ -8,7 +8,6 @@ class location {
         unsigned linenumber;
     public:
         location();
-        location(shared_string* fn,  unsigned ln);
         location(const location& L);
         void operator=(const location& L);
 
@@ -25,6 +24,8 @@ class location {
         }
 
         void show(OutputStream &s) const;
+
+        void start(const char* fn);
 };
 
 inline OutputStream& operator<< (OutputStream &s, const location &L)
