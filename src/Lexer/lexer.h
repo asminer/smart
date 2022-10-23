@@ -3,8 +3,7 @@
 
 #include <stdio.h>
 #include "location.h"
-
-class token;
+#include "tokens.h"
 
 class lexer {
         class buffer {
@@ -51,6 +50,9 @@ class lexer {
 
         token lookaheads[5];
         unsigned tlp;    // token lookahead pointer
+
+        char* lexeme;
+        bool report_newline;
     public:
         lexer(const char** fns, unsigned nfs);
         ~lexer();
@@ -91,6 +93,15 @@ class lexer {
 
     private:
         void scan_token();
+
+        void ignore_cpp_comment();
+        void ignore_c_comment();
+
+        void consume_strconst();
+        void consume_number();
+        void consume_ident();
+
+        void IllegalChar();
 };
 
 #endif

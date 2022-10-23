@@ -33,7 +33,7 @@ class token {
             DIVIDE          = '/',
             MOD             = '%',
             COLON           = ':',
-            QUEST           = '?',
+            // QUEST           = '?',
             BANG            = '!',
 
             FORALL          = 'A',
