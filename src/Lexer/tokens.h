@@ -105,7 +105,6 @@ class token {
 
         inline bool matches(type t) const {	return t == tokenID; }
         inline type getId() const { return tokenID; }
-        const char* getIdName() const;
         inline const location& getLoc() const { return where; }
         inline const char* getAttr() const {
             return attribute ? attribute->getStr() : 0;
@@ -114,8 +113,14 @@ class token {
             return Share(attribute);
         }
 
+        // Set token to END; unlink attribute
+        void set_end();
+
         // Show the actual text (lexeme)
         void show(OutputStream &s) const;
+
+        // Convert tokenID into a string
+        const char* getIdName() const;
 
         friend class lexer;
 };

@@ -30,6 +30,14 @@ token::~token()
     Delete(attribute);
 }
 
+void token::set_end()
+{
+    tokenID = END;
+    Delete(attribute);
+    attribute = 0;
+    where.clear();
+}
+
 void token::show(OutputStream &s) const
 {
     const char* astr = attribute ? attribute->getStr() : 0;
@@ -107,7 +115,7 @@ void token::show(OutputStream &s) const
     }
 }
 
-const char* token::getName() const
+const char* token::getIdName() const
 {
     switch (tokenID) {
         case END:       return "END";

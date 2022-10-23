@@ -49,14 +49,48 @@ class lexer {
         unsigned numfiles;
         unsigned fileindex;
 
-        // pushed back tokens TBD
+        token lookaheads[5];
+        unsigned tlp;    // token lookahead pointer
     public:
         lexer(const char** fns, unsigned nfs);
         ~lexer();
 
+        void include_input(const char* filename);
+
+        // What's the next token
+        inline const token& peek() const {
+            return lookaheads[tlp];
+        }
+
+        // Consume and discard the next token
+        inline void consume() {
+            if (tlp) {
+                lookaheads[tlp].set_end();
+                --tlp;
+            } else {
+                scan_token();
+            }
+        }
+
+        // Consume the next token and store it
+        inline void consume(token &t) {
+            t = lookaheads[tlp];
+            consume();
+        }
+
+        // Put back a token
+        inline void unconsume(const token &t) {
+            ++tlp;
+            CHECK_RANGE(0, tlp, 5);
+            lookaheads[tlp] = t;
+        }
+
     private:
         lexer(const lexer&) = delete;
         void operator=(const lexer&) = delete;
+
+    private:
+        void scan_token();
 };
 
 #endif

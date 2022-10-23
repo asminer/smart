@@ -75,3 +75,11 @@ void location::start(const char* file)
     filename->CopyFrom(file);
     linenumber = 1;
 }
+
+void location::clear()
+{
+    Delete(filename);
+    filename = 0;
+    linenumber = 0;
+}
+
