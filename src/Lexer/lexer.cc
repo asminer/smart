@@ -5,10 +5,29 @@
 #define BUFSIZE 1024
 #define MAX_LEXEME 1024
 
+//
+// ======================================================================
+//
+
+lexer::lexeme::lexeme(unsigned bmax) : bufmax(bmax)
+{
+    buffer = new char[bufmax+1];
+}
+
+lexer::lexeme::~lexeme()
+{
+    delete[] buffer;
+}
+
+//
+// ======================================================================
+//
+
 lexer::buffer::buffer(const char* fn, buffer* nxt)
 {
     next = nxt;
     inchars = new char[BUFSIZE+1];
+    pushback = 0;
 
     L.start(fn);
 
@@ -37,18 +56,19 @@ void lexer::buffer::refill()
     }
 }
 
+
 //
 // ======================================================================
 //
 
 lexer::lexer(const char** fns, unsigned nfs)
+    : text(MAX_LEXEME)
 {
     topfile = 0;
     filenames = fns;
     numfiles = nfs;
     fileindex = 0;
     tlp = 0;
-    lexeme = new char[MAX_LEXEME+1];
 
     report_newline = false;
     scan_token();
@@ -61,7 +81,6 @@ lexer::~lexer()
         delete topfile;
         topfile = n;
     }
-    delete[] lexeme;
 }
 
 void lexer::scan_token()
@@ -99,9 +118,9 @@ void lexer::scan_token()
             continue;
         }
 
-        lookahead[0] = c;
         lookaheads[0].where = topfile->where();
-        switch (lookahead[0]) {
+        text.start(c);
+        switch (c) {
             //
             // Skip whitespace
             //
@@ -365,4 +384,121 @@ void lexer::scan_token()
     }   // infinite loop
 }
 
+void lexer::ignore_cpp_comment()
+{
+    // We've already consumed the //
+    for (;;) {
+        if ('\n' == topfile->peek()) {
+            return;
+            /* Don't consume, in case we're in
+             * a state that requires us to produce
+             * newline tokens.
+             */
+        }
+        if (EOF == topfile->getc()) {
+            return;
+        }
+    }
+}
+
+void lexer::ignore_c_comment()
+{
+    // We've already consumed the /*
+    // so ignore chars until */ or eof.
+    // Give a warning if we hit eof before */
+    for (;;) {
+        int c = topfile->getc();
+        while ('*' == c) {
+            c = topfile->getc();
+            if ('/' == c) return;
+        }
+        if (EOF == c) {
+            // TBD warning; use lookaheads[0] location as starting point
+            return;
+        }
+    }
+}
+
+void lexer::consume_number()
+{
+    int c;
+    for (;;) {
+        c = topfile->peek();
+        if (('0' <= c) && (c <= '9')) {
+            text.append(topfile->getc());
+            continue;
+        }
+        break;
+    }
+
+    if (('.' != c) && ('e' != c) && ('E' != c)) {
+        finish_token(token::INTCONST);
+        return;
+    }
+
+    //
+    // Special case: distinguish between .digit (consume)
+    // and .. (next token!)
+    //
+    if ('.' == c) {
+        topfile->getc();
+        if ('.' == topfile->peek()) {
+            // Oops, put back the first dot
+            topfile->ungetc('.');
+            finish_token(token::INTCONST);
+            return;
+        }
+        text.append('.');
+    }
+
+    //
+    // We're a real const.
+    // Consume digits until e/E
+    //
+    for (;;) {
+        c = topfile->peek();
+
+        if ('e' == c) break;
+        if ('E' == c) break;
+
+        if (('0' <= c) && (c <= '9')) {
+            text.append(topfile->getc());
+            continue;
+        }
+
+        break;
+    }
+
+    if (('e' == c) || ('E' == c)) {
+        text.append(topfile->getc());
+
+        c = topfile->peek();
+        if (('+' == c) || ('-' == c)) {
+            text.append(topfile->getc());
+        }
+
+        for (;;) {
+            c = topfile->peek();
+            if (('0' <= c) && (c <= '9')) {
+                text.append(topfile->getc());
+                continue;
+            }
+            break;
+        }
+    }
+
+    finish_token(token::REALCONST);
+}
+
+
+void lexer::finish_token(token::type t)
+{
+    text.finish();
+    lookaheads[0].attribute = new shared_string(strdup(text.get()));
+    lookaheads[0].tokenID = t;
+
+    if (text.is_truncated()) {
+        // TBD: warning message here!
+    }
+}
 

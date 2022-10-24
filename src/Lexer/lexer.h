@@ -6,8 +6,49 @@
 #include "tokens.h"
 
 class lexer {
+    private:
+        class lexeme {
+                char* buffer;
+                const unsigned bufmax;
+                unsigned p;
+                bool truncated;
+            public:
+                lexeme(unsigned bmax);
+                ~lexeme();
+
+                inline char start(char c) {
+                    truncated = false;
+                    p = 1;
+                    return buffer[0] = c;
+                }
+
+                inline void append(char c) {
+                    if (p < bufmax) {
+                        buffer[p++] = c;
+                    } else {
+                        truncated = true;
+                    }
+                }
+
+                inline void finish() {
+                    buffer[p] = 0;
+                }
+
+                inline bool is_truncated() const {
+                    return truncated;
+                }
+
+                inline const char* get() const {
+                    return buffer;
+                }
+            private:
+                lexeme(const lexeme&) = delete;
+                void operator=(const lexeme&) = delete;
+        };
+    private:
         class buffer {
                 buffer* next;
+                char pushback;
                 char* inchars;
                 const char* ptr;
                 location L;
@@ -22,16 +63,29 @@ class lexer {
 
                 inline buffer* getNext() const { return next; }
 
-                inline int peek() const { return infile ? *ptr : EOF; }
+                inline int peek() const {
+                    return pushback ? pushback :
+                        (infile ? *ptr : EOF);
+                }
                 inline int getc() {
+                    int ans;
+                    if (pushback) {
+                        ans = pushback;
+                        pushback = 0;
+                        return ans;
+                    }
                     if (infile) {
-                        int ans = *(ptr++);
+                        ans = *(ptr++);
                         if ('\n' == ans) L.newline();
                         if (0==*ptr) refill();
                         return ans;
                     } else {
                         return EOF;
                     }
+                }
+                inline void ungetc(char c) {
+                    DCASSERT(0==pushback);
+                    pushback = c;
                 }
 
                 inline const location& where() const { return L; }
@@ -51,7 +105,8 @@ class lexer {
         token lookaheads[5];
         unsigned tlp;    // token lookahead pointer
 
-        char* lexeme;
+        lexeme text;
+
         bool report_newline;
     public:
         lexer(const char** fns, unsigned nfs);
@@ -102,6 +157,7 @@ class lexer {
         void consume_ident();
 
         void IllegalChar();
+        void finish_token(token::type t);
 };
 
 #endif
