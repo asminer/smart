@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "location.h"
 #include "tokens.h"
+#include <cstring>
 
 class lexer {
     private:
@@ -40,6 +41,10 @@ class lexer {
 
                 inline const char* get() const {
                     return buffer;
+                }
+
+                inline bool matches(const char* text) const {
+                    return (0==strcmp(buffer, text));
                 }
             private:
                 lexeme(const lexeme&) = delete;
@@ -108,6 +113,9 @@ class lexer {
         lexeme text;
 
         bool report_newline;
+        bool report_temporal;
+        bool report_smart_keywords;
+        bool report_icp_keywords;
     public:
         lexer(const char** fns, unsigned nfs);
         ~lexer();
@@ -157,7 +165,7 @@ class lexer {
         void consume_ident();
 
         void IllegalChar();
-        void finish_token(token::type t);
+        void finish_attributed_token(token::type t);
 };
 
 #endif
