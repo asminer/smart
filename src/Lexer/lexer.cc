@@ -1,7 +1,5 @@
 #include "lexer.h"
 
-#include <cstring>
-
 #define BUFSIZE 1024
 #define MAX_LEXEME 1024
 
@@ -71,6 +69,10 @@ lexer::lexer(const char** fns, unsigned nfs)
     tlp = 0;
 
     report_newline = false;
+    report_temporal = true;
+    report_smart_keywords = true;
+    report_icp_keywords = true;
+
     scan_token();
 }
 
@@ -119,8 +121,7 @@ void lexer::scan_token()
         }
 
         lookaheads[0].where = topfile->where();
-        text.start(c);
-        switch (c) {
+        switch (text.start(c)) {
             //
             // Skip whitespace
             //
@@ -137,6 +138,7 @@ void lexer::scan_token()
              * Single char symbols
              */
             case '#':   lookaheads[0].tokenID = token::SHARP;
+                        report_newline = true;
                         return;
 
             case ',':   lookaheads[0].tokenID = token::COMMA;
@@ -432,7 +434,7 @@ void lexer::consume_number()
     }
 
     if (('.' != c) && ('e' != c) && ('E' != c)) {
-        finish_token(token::INTCONST);
+        finish_attributed_token(token::INTCONST);
         return;
     }
 
@@ -445,7 +447,7 @@ void lexer::consume_number()
         if ('.' == topfile->peek()) {
             // Oops, put back the first dot
             topfile->ungetc('.');
-            finish_token(token::INTCONST);
+            finish_attributed_token(token::INTCONST);
             return;
         }
         text.append('.');
@@ -487,11 +489,115 @@ void lexer::consume_number()
         }
     }
 
-    finish_token(token::REALCONST);
+    finish_attributed_token(token::REALCONST);
 }
 
 
-void lexer::finish_token(token::type t)
+void lexer::consume_ident()
+{
+    // We already have the first character.
+    // Build up letters, underscores, digits
+    int c;
+    for (;;) {
+        c = topfile->peek();
+        if (('A' <= c) && (c <= 'Z')) {
+            text.append(topfile->getc());
+            continue;
+        }
+        if (('a' <= c) && (c <= 'z')) {
+            text.append(topfile->getc());
+            continue;
+        }
+        if (('0' <= c) && (c <= '9')) {
+            text.append(topfile->getc());
+            continue;
+        }
+        if ('_' == c) {
+            text.append(topfile->getc());
+            continue;
+        }
+        break;
+    }
+
+    // Check for keywords
+    // Could do a binary search, but there's not very many.
+    // Also, this allows us to turn off keywords more easily.
+    //
+
+    if (text.matches("in")) {
+        lookaheads[0].tokenID = token::IN;
+        return;
+    }
+
+    if (report_smart_keywords) {
+        if (text.matches("for")) {
+            lookaheads[0].tokenID = token::FOR;
+            return;
+        }
+        if (text.matches("converge")) {
+            lookaheads[0].tokenID = token::CONVERGE;
+            return;
+        }
+        if (text.matches("guess")) {
+            lookaheads[0].tokenID = token::GUESS;
+            return;
+        }
+        if (text.matches("default")) {
+            lookaheads[0].tokenID = token::DEFAULT;
+            return;
+        }
+        if (text.matches("proc")) {
+            lookaheads[0].tokenID = token::PROC;
+            return;
+        }
+        if (text.matches("null")) {
+            lookaheads[0].tokenID = token::NUL;
+            return;
+        }
+    }
+
+    if (report_icp_keywords) {
+        if (text.matches("maximize")) {
+            lookaheads[0].tokenID = token::MAXIMIZE;
+            return;
+        }
+        if (text.matches("minimize")) {
+            lookaheads[0].tokenID = token::MINIMIZE;
+            return;
+        }
+        if (text.matches("satisfiable")) {
+            lookaheads[0].tokenID = token::SATISFIABLE;
+            return;
+        }
+    }
+
+    if (report_temporal) if ((text.get()[0] != 0) && (text.get()[1] == 0)) {
+        // it's a one character identifier.
+
+        switch (text.get()[0]) {
+            case 'A':   lookaheads[0].tokenID = token::FORALL;          return;
+            case 'E':   lookaheads[0].tokenID = token::EXISTS;          return;
+            case 'F':   lookaheads[0].tokenID = token::FUTURE;          return;
+            case 'P':   lookaheads[0].tokenID = token::PAST;            return;
+            case 'G':   lookaheads[0].tokenID = token::GLOBALLY;        return;
+            case 'H':   lookaheads[0].tokenID = token::HISTORICALLY;    return;
+            case 'U':   lookaheads[0].tokenID = token::UNTIL;           return;
+            case 'S':   lookaheads[0].tokenID = token::SINCE;           return;
+            case 'X':   lookaheads[0].tokenID = token::NEXT;            return;
+            case 'Y':   lookaheads[0].tokenID = token::PREV;            return;
+        }
+    }
+
+    //
+    // Check for type names, modifier names.
+    // TBD
+    //
+
+    // None of the above
+    finish_attributed_token(token::IDENT);
+}
+
+void lexer::finish_attributed_token(token::type t)
 {
     text.finish();
     lookaheads[0].attribute = new shared_string(strdup(text.get()));
