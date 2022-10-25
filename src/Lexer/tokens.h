@@ -2,6 +2,7 @@
 #define TOKENS_H
 
 #include "location.h"
+#include "../ExprLib/type.h"
 
 /**
  * Self-contained token from an input file.
@@ -50,13 +51,14 @@ class token {
             //
             // Stuff with attributes
             //
-            BOOLCONST   = 300,
-            INTCONST    = 301,
-            REALCONST   = 302,
-            STRCONST    = 303,
-            TYPE        = 304,
-            MODIF       = 305,
-            IDENT       = 306,
+            BOOLCONST   = 300,  // bool_const
+            INTCONST    = 301,  // attribute
+            REALCONST   = 302,  // attribute
+            STRCONST    = 303,  // attribute
+            TYPE        = 304,  // type_attrib
+            FORMALISM   = 305,  // type_attrib
+            MODIF       = 306,  // modifier
+            IDENT       = 307,  // attribute
 
             //
             // Symbols
@@ -94,7 +96,10 @@ class token {
     private:
         location where;
         type tokenID;
-        shared_string* attribute;
+        shared_string*  attribute;
+        const ::type*   type_attrib;
+        modifier        modif_attrib;
+        bool            bool_const;
 
     public:
         token();		/* Zero out everything */

@@ -6,6 +6,8 @@
 #include "tokens.h"
 #include <cstring>
 
+class exprman;
+
 class lexer {
     private:
         class lexeme {
@@ -102,10 +104,12 @@ class lexer {
                 void refill();
         };
     private:
-        buffer* topfile;
+        const exprman* em;
         const char** filenames;
         unsigned numfiles;
         unsigned fileindex;
+
+        buffer* topfile;
 
         token lookaheads[5];
         unsigned tlp;    // token lookahead pointer
@@ -117,7 +121,7 @@ class lexer {
         bool report_smart_keywords;
         bool report_icp_keywords;
     public:
-        lexer(const char** fns, unsigned nfs);
+        lexer(const exprman *_em, const char** fns, unsigned nfs);
         ~lexer();
 
         void include_input(const char* filename);

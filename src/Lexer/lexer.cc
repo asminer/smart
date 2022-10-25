@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "../ExprLib/exprman.h"
 
 #define BUFSIZE 1024
 #define MAX_LEXEME 1024
@@ -59,9 +60,10 @@ void lexer::buffer::refill()
 // ======================================================================
 //
 
-lexer::lexer(const char** fns, unsigned nfs)
+lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     : text(MAX_LEXEME)
 {
+    em = _em;
     topfile = 0;
     filenames = fns;
     numfiles = nfs;
@@ -93,6 +95,7 @@ void lexer::scan_token()
     //
     Delete(lookaheads[0].attribute);
     lookaheads[0].attribute = 0;
+    lookaheads[0].type_attrib = 0;
 
     for (;;) {
         //
@@ -518,6 +521,21 @@ void lexer::consume_ident()
         }
         break;
     }
+    text.finish();
+
+    //
+    // Check for boolean literals
+    //
+    if (text.matches("true")) {
+        lookaheads[0].tokenID = token::BOOLCONST;
+        lookaheads[0].bool_const = true;
+        return;
+    }
+    if (text.matches("false")) {
+        lookaheads[0].tokenID = token::BOOLCONST;
+        lookaheads[0].bool_const = false;
+        return;
+    }
 
     // Check for keywords
     // Could do a binary search, but there's not very many.
@@ -590,8 +608,22 @@ void lexer::consume_ident()
 
     //
     // Check for type names, modifier names.
-    // TBD
     //
+    lookaheads[0].modif_attrib = em->findModifier(text.get());
+    if (lookaheads[0].modif_attrib != NO_SUCH_MODIFIER) {
+        lookaheads[0].tokenID = token::MODIF;
+        return;
+    }
+    const type* t = lookaheads[0].type_attrib = em->findOWDType(text.get());
+    if (t) {
+        lookaheads[0].tokenID
+            = (t->isAFormalism()) ? token::FORMALISM : token::TYPE;
+        return;
+    }
+    if (text.matches("proc")) {
+        lookaheads[0].tokenID = token::PROC;
+        return;
+    }
 
     // None of the above
     finish_attributed_token(token::IDENT);
