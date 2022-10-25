@@ -66,7 +66,7 @@ void token::show(OutputStream &s) const
         case DIVIDE:    s.Put("/");         return;
         case MOD:       s.Put("%");         return;
         case COLON:     s.Put(":");         return;
-        case QUEST:     s.Put("?");         return;
+        // case QUEST:     s.Put("?");         return;
         case BANG:      s.Put("!");         return;
 
         case FORALL:        s.Put("A");     return;
@@ -138,7 +138,7 @@ const char* token::getIdName() const
         case DIVIDE:    return "DIVIDE";
         case MOD:       return "MOD";
         case COLON:     return "COLON";
-        case QUEST:     return "QUEST";
+        // case QUEST:     return "QUEST";
         case BANG:      return "BANG";
 
         case FORALL:        return "FORALL";
