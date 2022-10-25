@@ -302,8 +302,6 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
 		model_event** ed, int ne, model_event** dead, int nd,  model_var** dv, int ndd) :              //add num_dec, model_statevar** dec?
 		hldsm(Unknown) {
 	SetParent(p);
-	decision_data=dv;
-	num_decs=ndd;
 	state_data = sv;
 	num_vars = nv;
 	event_data = ed;
@@ -314,6 +312,8 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
 	num_assertions = 0;
 	num_priolevels = 0;
 	last_timed = last_immed = 0;
+	decision_data=dv;
+	num_decs=ndd;
 	lltype = lldsm::Unknown;
 	determineModelType();
 	ProcessEvents();

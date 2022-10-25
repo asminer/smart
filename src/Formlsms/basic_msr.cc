@@ -1663,6 +1663,7 @@ bool init_basicmsrs::execute()
   CML.Append(new showlevels_si);
   CML.Append(new showevents_si);
   CML.Append(new showvars_si);
+  CML.Append(new showdecisions_si);
   CML.Append(new showdecisionset_si);
 
 

@@ -567,6 +567,40 @@ void transition::Finalize(OutputStream &ds)
 #endif
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                            decision class                              *
+// *                                                                        *
+// **************************************************************************
+
+class decision : public model_var{
+  //int num_decisions;
+  std:: vector<result*> decisions; // will it be a vector of expr or just three valued number?
+  public:
+  decision(const symbol* w, const model_instance* pn);
+  protected:
+  ~decision();
+  public:
+  inline bool isTaken(int i){
+    if (decisions[i]->isUnknown()) return false;
+    else return true; }
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                            decision methods                            *
+// *                                                                        *
+// **************************************************************************
+
+decision::decision(const symbol* w, const model_instance* pn):model_var(w,pn){
+  //num_decisions=0;
+}
+decision::~decision()
+{
+
+}
+
+
 
 // **************************************************************************
 // *                                                                        *
@@ -585,7 +619,7 @@ protected:
   friend class init_pnform;
 public:
   petri_hlm(const model_instance* s, place_sv** P, int np, 
-      model_event** T, int nt, model_event** dead, int nd);// add decisions here?
+      model_event** T, int nt, model_event** dead, int nd, decision** d, int ndd);// add decisions here?
   virtual ~petri_hlm();
 
   // required for hldsm:
@@ -612,8 +646,8 @@ void petri_hlm::showTokens(OutputStream &s, bool un, int tk)
 int petri_hlm::MarkingStyle;
 
 petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np, 
-  model_event** T, int nt, model_event** dead, int nd)
- : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd)
+  model_event** T, int nt, model_event** dead, int nd,decision** d, int ndd)
+ : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd, (model_var**)d, ndd)
 {
 }
 
@@ -861,8 +895,8 @@ model_var* petri_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     return v;
   }
   if (wrap->Type() == decision_type) {
-    model_statevar* v = new place_sv(wrap, current);
-    v->SetIndex(num_decisions);
+    model_var* v = new decision(wrap, current); /// think about a class to store decisions
+    //v->SetIndex(num_decisions);
     num_decisions++;
     v->LinkTo(decisions);
     decisions = v;
@@ -1193,7 +1227,8 @@ void petri_def::InitModel()
   error = false;
   places = 0;
   transitions = 0;
-  num_places = num_trans = 0;
+  decisions=0;
+  num_places = num_trans = num_decisions=0;
   weight_class = 0;
   assertion_list = new List <expr>;
 }
@@ -1540,6 +1575,27 @@ void petri_def::FinalizeModel(OutputStream &ds)
     parray[i]->Affix();
   }
   DCASSERT(0==places);
+//// for decision
+  /*
+  if (0==num_decisions) {
+    // if (StartWarning(no_decision, 0)) {
+    //   em->warn() << "No decisions defined";
+    //   DoneWarning();
+    }
+  } */
+  // move decisions from list into array
+  decision** darray = num_decisions ? new decision*[num_decisions] : 0;
+  //bool has_init = false;
+  for (int i=num_decisions-1; i>=0; i--) {
+    darray[i] = smart_cast <decision*> (decisions);
+    DCASSERT(darray[i]);
+    decisions = decisions->Next();
+    darray[i]->LinkTo(0);
+    //if (darray[i]->hasInit()) has_init = true;
+    //darray[i]->Affix();
+  }
+
+///////////oct 20//////
 
   if (!has_init) if (StartWarning(no_init, 0)) {
     em->warn() << "No initial marking given, assuming zero";
@@ -1692,7 +1748,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
   ds << "}\n";
 
   petri_hlm* build = new petri_hlm(current, parray, num_places, 
-    elist, num_trans, dlist, num_dead_trans); 
+    elist, num_trans, dlist, num_dead_trans, darray, num_decisions); 
 
   // add assertions, if any
   long na = assertion_list->Length();

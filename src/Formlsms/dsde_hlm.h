@@ -288,10 +288,6 @@ private:
   /// Number of "levels".
   // int num_levels;
 protected:
-/// Array of decision variables.
-  model_var** decision_data;
-  /// Total number of decisions.
-  int num_decs;
   /// Array of state variables.
   model_statevar** state_data;
   /// Total number of state variables.
@@ -315,6 +311,10 @@ protected:
   expr** assertions;
   /// Dimension of assertions array.
   int num_assertions;
+  /// Array of decision variables.
+  model_var** decision_data;
+  /// Total number of decisions.
+  int num_decs;
 public:
   /**
       Build a "compiled" high-level, discrete-event, discrete-state model.
@@ -356,18 +356,29 @@ public:
   ////////////////*********//////////
   
    inline const model_var* readDecVar(int i) const {
-	   CHECK_RANGE(0, i, num_decs);
-	   DCASSERT(decision_data);
-	   return decision_data[i];
+	   	if(num_decs!=0){
+		   CHECK_RANGE(0, i, num_decs);
+		   DCASSERT(decision_data);
+		   return decision_data[i];
+		}
 	  }
 	
    inline model_var* getDecVar(int i) {
-	   CHECK_RANGE(0, i, num_decs);
-	   DCASSERT(decision_data);
-	   return decision_data[i];
+	   	if(num_decs!=0){
+		   CHECK_RANGE(0, i, num_decs);
+		   DCASSERT(decision_data);
+		   return decision_data[i];
+		}
 	  }
 	
-   inline int getNumDecVars() const { return 7; }
+   inline int getNumDecVars() const { 
+   	if (num_decs){
+
+   	return num_decs;}
+
+    else 
+    	return 0;
+	}
 	  //virtual int NumDecVars() const;
 	  //virtual bool containsListVar() const;
 	

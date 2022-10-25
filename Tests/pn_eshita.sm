@@ -77,7 +77,7 @@ pn cruft(int n) := {
     J : tJK, tJK : K,
     J : tJD, tJD : D
   );
-  decision aa, bb, cc;
+  decision aa, bb, cc,dd, ee, ff;
   //aa:=1;
   //find the model type:study them
   
