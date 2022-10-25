@@ -418,7 +418,10 @@ void lexer::ignore_c_comment()
             if ('/' == c) return;
         }
         if (EOF == c) {
-            // TBD warning; use lookaheads[0] location as starting point
+            if (em && em->startWarning(lookaheads[0].where, "/*")) {
+                em->warn() << "Unclosed comment";
+                em->stopIO();
+            }
             return;
         }
     }
@@ -636,11 +639,10 @@ void lexer::finish_attributed_token(token::type t)
     lookaheads[0].tokenID = t;
 
     if (text.is_truncated()) {
-        if (em->startWarning(lookaheads[0].where, text.get())) {
+        if (em && em->startWarning(lookaheads[0].where, text.get())) {
             em->warn() << "Token too long; only keeping first " << MAX_LEXEME << " characters.";
             em->stopIO();
         }
-        // TBD: warning message here!
     }
 }
 
