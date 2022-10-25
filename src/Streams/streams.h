@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 class io_environ;
+class location;
 
 /**
   Used for input.
@@ -126,8 +127,8 @@ public:
   inline const char* GetThousandsSeparator() const { return thousands; }
 };
 
-template <class TYPE> 
-inline OutputStream& operator<< (OutputStream& s, TYPE data) 
+template <class TYPE>
+inline OutputStream& operator<< (OutputStream& s, TYPE data)
 {
   s.Put(data);
   return s;
@@ -139,7 +140,7 @@ inline OutputStream& operator<< (OutputStream& s, TYPE data)
 class StringStream : public OutputStream {
 public:
   StringStream();
-  
+
   char* GetString() const;
   inline const char* ReadString() const { return buffer; }
   virtual void flush();
@@ -167,7 +168,7 @@ public:
   void Deactivate();
 
   virtual void flush();
-  
+
   inline void Check() {
     if (ready) if (buftop>display_buffer_size) flush();
   }
@@ -230,8 +231,18 @@ public:
   /** Used to start reporting an error.
         @return true on success.
   */
+  virtual bool StartError(const location& L, const char* text);
+
+  /** Used to start reporting a warning.
+        @return true on success.
+  */
+  virtual bool StartWarning(const location& L, const char* text);
+
+  /** Used to start reporting an error.
+        @return true on success.
+  */
   virtual bool StartError();
-  
+
   /** Used to start reporting a warning.
         @return true on success.
   */
@@ -261,7 +272,7 @@ public:
       Does nothing if no warning/error report is "active".
   */
   virtual void NewLine();
-  
+
   /** Used to continue a report on another line.
       Does nothing if no report is "active".
         @param  what  Report "name", for consistency.
@@ -299,7 +310,7 @@ public:
     @param  e   io environment to use for signal catching.
                 If 0, signals will not be caught
                 (the default before this is called).
-                An internal error occurs if you try to assign 
+                An internal error occurs if you try to assign
                 signal catching to more than one io environment.
 
 */
@@ -313,7 +324,7 @@ void CatchSignals(io_environ *e);
 
     The main idea is to dump strings into the formatter,
     using the comfortable OutputStream interface,
-    and it will automatically wrap lines around, and 
+    and it will automatically wrap lines around, and
     produce generally pleasing results.
 
     Future additions, if necessary:
@@ -336,7 +347,7 @@ public:
       an "entry", e.g., a function header.
   */
   virtual void begin_heading() = 0;
- 
+
   /// Signifies the end of a heading.
   virtual void end_heading() = 0;
 
@@ -345,7 +356,7 @@ public:
 
   /// Decrease level of indentation.
   virtual void end_indent() = 0;
- 
+
   /** Start a "description" environment.
       This is a list of the form:
         item_1  description of item 1

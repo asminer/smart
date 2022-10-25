@@ -11,7 +11,7 @@ bin_PROGRAMS = smart icp teststrms testsplay testinit
 
 BUILT_SOURCES = \
   ParseSM/smartlex.cc ParseSM/smartyacc.hh ParseSM/smartyacc.cc \
-  ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc 
+  ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc
 
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
@@ -48,6 +48,7 @@ smart_SOURCES = \
   Options/options.cc \
   \
   Lexer/strings.cc \
+  Lexer/location.cc \
 	\
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -243,7 +244,7 @@ icp_LDADD = _Meddly/src/libmeddly.la
 
 teststrms_SOURCES = \
   TestApps/teststrms.cc \
-  Streams/streams.cc  Streams/textfmt.cc 
+  Streams/streams.cc  Streams/textfmt.cc
 
 ## ============================================================
 ##
@@ -253,11 +254,11 @@ teststrms_SOURCES = \
 
 testsplay_SOURCES = \
   TestApps/testsplay.cc \
-  Streams/streams.cc  Streams/textfmt.cc 
+  Streams/streams.cc  Streams/textfmt.cc
 
 ## ============================================================
 ##
-## testinit 
+## testinit
 ##
 ## ============================================================
 
