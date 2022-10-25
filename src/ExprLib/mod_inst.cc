@@ -2,13 +2,13 @@
 #include "mod_inst.h"
 #include "mod_vars.h"
 #include "mod_def.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "exprman.h"
 #include "arrays.h"
 #include "measures.h"
 #include "engine.h"
-#include "../Lexer/strings.h"
 
 // #define ARRAY_TRACE
 // #define DEBUG_PARTINFO
@@ -163,7 +163,7 @@ bool hldsm::StartError(const expr* cause) const
 void hldsm::OutOfBoundsError(const result &x) const
 {
   if (!x.isOutOfBounds()) return;
-  const model_statevar* mv 
+  const model_statevar* mv
     = smart_cast <const model_statevar*> (x.getOutOfBounds());
   DCASSERT(mv);
   em->cerr() << ":";
@@ -481,7 +481,7 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
           et->solveMeasures(compiled, mgroups[et->getIndex()]);
           return;
       }
-  
+
       default:
         // any other cases should already have been handled, or is an error
         DCASSERT(0);
@@ -491,11 +491,11 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
   } // try
   catch (subengine::error ee) {
     switch (ee) {
-      case subengine::Engine_Failed:  
+      case subengine::Engine_Failed:
           if (!m->isComputed())  m->SetNull();
           break;  // any errors should have been reported already
-  
-      case subengine::No_Engine:  
+
+      case subengine::No_Engine:
           m->SetNull();
           if (StartError(x.parent)) {
             em->cerr() << "Measure " << m->Name();
@@ -503,7 +503,7 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
             DoneError();
           }
         break;
-      
+
       default:
           m->SetNull();
           if (em->startInternal(__FILE__, __LINE__)) {
@@ -523,7 +523,7 @@ void model_instance::SetConstructionSuccess(hldsm* model)
 
   compiled = model;
   compiled->SetParent(this);
-  
+
   state = Ready;
 }
 
@@ -548,7 +548,7 @@ void model_instance::Deconstruct()
 
   state = Deleted;
 
-  for (int i=0; i<num_symbols; i++)  
+  for (int i=0; i<num_symbols; i++)
     Delete(stab[i]);
   delete[] stab;
   stab = 0;
@@ -572,7 +572,7 @@ bool model_instance
 ::NotProperInstance(const expr* call, const char* who) const
 {
   switch (state) {
-    case Ready:  
+    case Ready:
         return false;
 
     case Constructing:
@@ -660,7 +660,7 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-mi_call::mi_call(const char *fn, int ln, const model_def* p, expr* m, int slot) 
+mi_call::mi_call(const char *fn, int ln, const model_def* p, expr* m, int slot)
   : expr (fn, ln, (typelist*) 0)
 {
   parent = p;
@@ -734,7 +734,7 @@ bool mi_call::Print(OutputStream &s, int) const
   s << ".";
   const symbol* msr = parent->GetSymbol(msr_slot);
   DCASSERT(msr);
-  s << msr->Name();  
+  s << msr->Name();
   return true;
 }
 
@@ -770,8 +770,8 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-mi_acall::mi_acall(const char *fn, int ln, const model_def* p, 
-      expr* m, int slot, expr **i, int ni) 
+mi_acall::mi_acall(const char *fn, int ln, const model_def* p,
+      expr* m, int slot, expr **i, int ni)
   : expr (fn, ln, (typelist*) 0)
 {
   parent = p;
@@ -862,7 +862,7 @@ void mi_acall::Traverse(traverse_data &x)
         }
         return;
     } // Substitute
-  
+
     default:
       expr::Traverse(x);
   }
@@ -880,12 +880,12 @@ bool mi_acall::Print(OutputStream &s, int) const
   const symbol* msr = parent->GetSymbol(msr_slot);
   DCASSERT(msr);
   s << msr->Name();
-  for (int n=0; n<numindx; n++) { 
+  for (int n=0; n<numindx; n++) {
     s << "[";
     if (indx[n])  indx[n]->Print(s, 0);
     else          s << "null";
     s << indx[n] << "]";
-  }  
+  }
   return true;
 }
 
@@ -905,7 +905,7 @@ inline expr* Bailout(expr* ret, expr** p, int np)
   return ret;
 }
 
-const model_def* GrabModelType(const exprman* em, const char* fn, int ln, 
+const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
         bool want_array, const symbol* mi)
 {
   if (0==mi) return 0;
@@ -932,7 +932,7 @@ const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
   return p;
 }
 
-int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p, 
+int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p,
     symbol* mi, bool want_array, const char* msr_name)
 {
   if (0==p || 0==msr_name) return -1;
@@ -972,7 +972,7 @@ int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p,
   return slot;
 }
 
-bool OkMsrArrayCall(const exprman* em, const char* fn, int ln, 
+bool OkMsrArrayCall(const exprman* em, const char* fn, int ln,
       const model_def* p, int slot, expr** pass, int np)
 {
   if (0==p || slot<0) {

@@ -2,7 +2,7 @@
 #include "init_data.h"
 #include "../Options/options.h"
 #include "exprman.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "casting.h"
 #include "sets.h"
 #include "intervals.h"
@@ -47,7 +47,7 @@ protected:
 // *                       bool_type  methods                       *
 // ******************************************************************
 
-bool_type::bool_type() 
+bool_type::bool_type()
 : simple_type("bool", "Boolean type", "Legal values are constants 'true' and 'false'.")
 {
   setPrintable();
@@ -128,7 +128,7 @@ int int_type::compare(const result& a, const result& b) const
     return -b.signInfinity();
   }
   // what else is left?
-  DCASSERT(0); 
+  DCASSERT(0);
   return 0;
 }
 
@@ -232,7 +232,7 @@ int real_type::compare(const result& a, const result& b) const
     return -b.signInfinity();
   }
   // what else is left?
-  DCASSERT(0); 
+  DCASSERT(0);
   return 0;
 }
 
@@ -242,7 +242,7 @@ bool real_type::print_normal(OutputStream &s, const result& r) const
   fprintf(stderr, "print_normal %lf\n", r.getReal());
 #endif
   s.Put(r.getReal());
-  shared_object* o = r.getPtr(); 
+  shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
 }
@@ -253,7 +253,7 @@ bool real_type::print_normal(OutputStream &s, const result& r, int w) const
   fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
 #endif
   s.Put(r.getReal(), w);
-  shared_object* o = r.getPtr(); 
+  shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
 }
@@ -264,7 +264,7 @@ bool real_type::print_normal(OutputStream &s, const result& r, int w, int p) con
   fprintf(stderr, "print_normal %lf:%d:%d\n", r.getReal(), w, p);
 #endif
   s.Put(r.getReal(), w, p);
-  shared_object* o = r.getPtr(); 
+  shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
 }
@@ -306,9 +306,9 @@ class rf_selection : public radio_button {
   OutputStream &os;
   OutputStream::real_format which;
 public:
-  rf_selection(OutputStream &s, OutputStream::real_format w, 
+  rf_selection(OutputStream &s, OutputStream::real_format w,
     const char* n, const char* d, int i);
-  
+
   virtual bool AssignToMe();
 };
 
@@ -332,11 +332,11 @@ option* MakeRFOption(exprman* em, OutputStream &s, const char* name, const char*
 {
   if (!em->hasIO()) return 0;
   radio_button** rfs = new radio_button*[3];
-  rfs[0] = new rf_selection(em->cout(), OutputStream::RF_FIXED, 
+  rfs[0] = new rf_selection(em->cout(), OutputStream::RF_FIXED,
         "FIXED", "Same as printf(%f)", 0);
-  rfs[1] = new rf_selection(em->cout(), OutputStream::RF_GENERAL, 
+  rfs[1] = new rf_selection(em->cout(), OutputStream::RF_GENERAL,
         "GENERAL", "Same as printf(%g)", 1);
-  rfs[2] = new rf_selection(em->cout(), OutputStream::RF_SCIENTIFIC, 
+  rfs[2] = new rf_selection(em->cout(), OutputStream::RF_SCIENTIFIC,
         "SCIENTIFIC", "Same as printf(%e)", 2);
   link = 1;
   return MakeRadioOption(name, doc, rfs, 3, link);
@@ -345,23 +345,23 @@ option* MakeRFOption(exprman* em, OutputStream &s, const char* name, const char*
 void MakeRealFormatOptions(exprman* em)
 {
   if (!em->hasIO())  return;
-  
-  em->addOption( 
+
+  em->addOption(
     MakeRFOption(
-      em, 
-      em->cout(), 
-      "OutputRealFormat", 
-      "Format to use for writing reals to the output stream", 
+      em,
+      em->cout(),
+      "OutputRealFormat",
+      "Format to use for writing reals to the output stream",
       real_type::output_format
     )
   );
-  
-  em->addOption( 
+
+  em->addOption(
     MakeRFOption(
-      em, 
-      em->cout(), 
-      "ReportRealFormat", 
-      "Format to use for writing reals to the reporting stream", 
+      em,
+      em->cout(),
+      "ReportRealFormat",
+      "Format to use for writing reals to the reporting stream",
       real_type::report_format
     )
   );
@@ -402,19 +402,19 @@ option::error thousands_option::GetValue(const char* &v) const
 void MakeSeparatorOptions(exprman* em)
 {
   if (!em->hasIO())  return;
-  
+
   em->addOption(
     new thousands_option(
-      em->cout(), 
-      "OutputThousandSeparator", 
+      em->cout(),
+      "OutputThousandSeparator",
       "Thousands separator to use for the output stream"
     )
   );
 
   em->addOption(
     new thousands_option(
-      em->report(), 
-      "ReportThousandSeparator", 
+      em->report(),
+      "ReportThousandSeparator",
       "Thousands separator to use for the reporting stream"
     )
   );
@@ -540,7 +540,7 @@ elem2set::elem2set() : general_conv()
 {
 }
 
-int elem2set::getDistance(const type* src, const type* dest) const 
+int elem2set::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src);
   DCASSERT(dest);
@@ -621,8 +621,8 @@ public:
 
 precomp_add::converter
  ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x) 
-{ 
+ : typecast(fn, line, nt, x)
+{
   precomputed = false;
   cached.setNull();
   silent = true;
@@ -774,7 +774,7 @@ class int2real : public specific_conv {
     };
 
     class setconv : public typecast {
- 
+
         class int2real_convert : public set_converter::element_convert {
         public:
           virtual void convert(result &x) const {
@@ -811,11 +811,11 @@ public:
 int2real::setconv::int2real_convert int2real::setconv::foo;
 
 int2real::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void int2real::converter::Compute(traverse_data &x) 
+void int2real::converter::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -827,11 +827,11 @@ void int2real::converter::Compute(traverse_data &x)
 }
 
 int2real::setconv::setconv(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void int2real::setconv::Compute(traverse_data &x) 
+void int2real::setconv::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -846,7 +846,7 @@ void int2real::setconv::Compute(traverse_data &x)
 
 
 
-int2real::int2real() : specific_conv(false) 
+int2real::int2real() : specific_conv(false)
 {
 }
 
@@ -905,11 +905,11 @@ public:
 };
 
 real2int::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void real2int::converter::Compute(traverse_data &x) 
+void real2int::converter::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -920,7 +920,7 @@ void real2int::converter::Compute(traverse_data &x)
   }
 }
 
-real2int::real2int() : specific_conv(true) 
+real2int::real2int() : specific_conv(true)
 {
 }
 
@@ -1004,7 +1004,7 @@ void InitTypes(exprman* em)
 
   // options
   option* ip = MakeRealOption(
-      "IndexPrecision", 
+      "IndexPrecision",
       "Epsilon for real set element comparisons.",
       real_type::index_precision,
       true, false, 0,

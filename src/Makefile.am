@@ -43,13 +43,13 @@ smart_SOURCES = \
   _MCLib/mclib.cc _MCLib/error.cc _MCLib/vanishing.cc \
   _MCLib/markov_chain.cc \
   \
-  Streams/streams.cc  Streams/textfmt.cc \
+  Streams/strings.cc \
+  Streams/location.cc \
+  Streams/streams.cc \
+  Streams/textfmt.cc \
   \
   Options/options.cc \
   \
-  Lexer/strings.cc \
-  Lexer/location.cc \
-	\
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
   ExprLib/superman.cc \
@@ -170,12 +170,13 @@ icp_SOURCES = \
   _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
   _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
   \
-  Streams/streams.cc  Streams/textfmt.cc \
+  Streams/strings.cc \
+  Streams/location.cc \
+  Streams/streams.cc \
+  Streams/textfmt.cc \
   \
   Options/options.cc \
 	\
-  Lexer/strings.cc \
-  \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
   ExprLib/superman.cc \
@@ -244,7 +245,10 @@ icp_LDADD = _Meddly/src/libmeddly.la
 
 teststrms_SOURCES = \
   TestApps/teststrms.cc \
-  Streams/streams.cc  Streams/textfmt.cc
+  Streams/strings.cc \
+  Streams/location.cc \
+  Streams/streams.cc \
+  Streams/textfmt.cc
 
 ## ============================================================
 ##
@@ -254,7 +258,10 @@ teststrms_SOURCES = \
 
 testsplay_SOURCES = \
   TestApps/testsplay.cc \
-  Streams/streams.cc  Streams/textfmt.cc
+  Streams/strings.cc \
+  Streams/location.cc \
+  Streams/streams.cc \
+  Streams/textfmt.cc
 
 ## ============================================================
 ##

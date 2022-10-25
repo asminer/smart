@@ -1,11 +1,11 @@
 
 #include "stmts.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "expr.h"
 #include "exprman.h"
 #include "result.h"
-#include "../Lexer/strings.h"
 
 #include <string.h>
 
@@ -90,7 +90,7 @@ void exprstmt::Traverse(traverse_data &td)
   switch (td.which) {
     case traverse_data::Affix:
         return;
-  
+
     default:
          if (x)  x->Traverse(td);
   }
@@ -314,7 +314,7 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-opt_checker::opt_checker(const char* fn, int line, option* o, bool c, 
+opt_checker::opt_checker(const char* fn, int line, option* o, bool c,
   checklist_const** v, int nv) : expr(fn, line, STMT)
 {
   opt = o;
@@ -381,7 +381,7 @@ expr* exprman::makeExprStatement(const char* file, int line, expr* e) const
 #endif
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line, 
+expr* exprman::makeOptionStatement(const char* file, int line,
         option *o, expr *e) const
 {
   if (0==o || 0==e) {
@@ -419,7 +419,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   return new optassign_val(file, line, o, e);
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line, 
+expr* exprman::makeOptionStatement(const char* file, int line,
         option *o, option_const *v) const
 {
   if (0==o || 0==v) {
@@ -439,7 +439,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   }
 
   // check option constant
-  if (v != o->FindConstant(v->Name())) { 
+  if (v != o->FindConstant(v->Name())) {
     // We can only get here if the caller is foobar.
     if (startError()) {
       causedBy(file, line);
@@ -457,7 +457,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   return new optassign_id(file, line, o, rb);
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line, 
+expr* exprman::makeOptionStatement(const char* file, int line,
       option* o, bool check, option_const **vlist, int nv) const
 {
   if (0==o) {
@@ -488,4 +488,4 @@ expr* exprman::makeOptionStatement(const char* file, int line,
 
   return new opt_checker(file, line, o, check, (checklist_const**) vlist, nv);
 }
-  
+

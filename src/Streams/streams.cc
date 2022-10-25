@@ -4,11 +4,8 @@
 */
 
 #include "../include/defines.h"
+#include "location.h"
 #include "streams.h"
-
-// TBD: move location and strings to here?
-
-#include "../Lexer/location.h"
 
 #include <string.h>
 #include <stdlib.h>

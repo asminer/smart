@@ -3,7 +3,7 @@
 
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
 
@@ -144,7 +144,7 @@ void string_equal::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool(strcmp(lss->getStr(), rss->getStr())==0);
-  } 
+  }
 }
 
 expr* string_equal::buildAnother(expr *l, expr *r) const
@@ -189,7 +189,7 @@ void string_neq::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool(strcmp(lss->getStr(), rss->getStr())!=0);
-  } 
+  }
 }
 
 expr* string_neq::buildAnother(expr *l, expr *r) const
@@ -234,7 +234,7 @@ void string_gt::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool(strcmp(lss->getStr(), rss->getStr()) > 0);
-  } 
+  }
 }
 
 expr* string_gt::buildAnother(expr *l, expr *r) const
@@ -279,7 +279,7 @@ void string_ge::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool((strcmp(lss->getStr(), rss->getStr()) >= 0));
-  } 
+  }
 }
 
 expr* string_ge::buildAnother(expr *l, expr *r) const
@@ -324,7 +324,7 @@ void string_lt::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool(strcmp(lss->getStr(), rss->getStr()) < 0);
-  } 
+  }
 }
 
 expr* string_lt::buildAnother(expr *l, expr *r) const
@@ -369,7 +369,7 @@ void string_le::Compute(traverse_data &x)
     DCASSERT(lss);
     DCASSERT(rss);
     x.answer->setBool(strcmp(lss->getStr(), rss->getStr()) <= 0);
-  } 
+  }
 }
 
 expr* string_le::buildAnother(expr *l, expr *r) const
@@ -385,7 +385,7 @@ expr* string_le::buildAnother(expr *l, expr *r) const
 // *                                                                *
 // ******************************************************************
 
-inline const type* 
+inline const type*
 StringResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -398,7 +398,7 @@ StringResultType(const exprman* em, const type* lt, const type* rt)
   return lct;
 }
 
-inline 
+inline
 int StringAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -484,11 +484,11 @@ class string_add_op : public assoc_op {
 public:
   string_add_op();
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
-  virtual int getPromoteDistance(bool flip, const type* lt, 
+  virtual int getPromoteDistance(bool flip, const type* lt,
             const type* rt) const;
-  virtual const type* getExprType(bool flip, const type* lt, 
+  virtual const type* getExprType(bool flip, const type* lt,
             const type* rt) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -520,7 +520,7 @@ const type* string_add_op
   return StringResultType(em, lt, rt);
 }
 
-assoc* string_add_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* string_add_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignStrings(em, list, N);

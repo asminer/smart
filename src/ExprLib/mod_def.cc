@@ -2,7 +2,7 @@
 #include "mod_def.h"
 #include "mod_inst.h"
 #include "mod_vars.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "arrays.h"
 #include "exprman.h"
@@ -20,7 +20,7 @@
 
 named_msg model_def::not_our_var;
 
-model_def::model_def(const char* fn, int ln, const type* t, char* n, 
+model_def::model_def(const char* fn, int ln, const type* t, char* n,
       formal_param **pl, int np)
  : function(fn, ln, t, n)
 {
@@ -67,7 +67,7 @@ int model_def::FindVisible(const char* name) const
   int high = num_symbols;
   while (low < high) {
     int mid = (high+low) / 2;
-    const char* peek = mysymbols[mid]->Name(); 
+    const char* peek = mysymbols[mid]->Name();
     int cmp = strcmp(name, peek);
     if (0==cmp) return mid;
     if (cmp<0) {
@@ -128,10 +128,10 @@ void model_def::BuildModel(traverse_data &x)
   DisplayStream temp(foo);
   if (0==foo) temp.Deactivate();
   else        temp.Activate();
-  
+
   FinalizeModel(temp);
 
-  DCASSERT(current->GetState() == model_instance::Error || 
+  DCASSERT(current->GetState() == model_instance::Error ||
      current->GetState() == model_instance::Ready);
 
   // clear out any data
@@ -180,7 +180,7 @@ void model_def::DoneError() const
   em->stopIO();
 }
 
-bool model_def::isVariableOurs(const model_var* mv, 
+bool model_def::isVariableOurs(const model_var* mv,
         const expr* cause, const char* what) const
 {
   DCASSERT(mv);
@@ -249,9 +249,9 @@ void model_def::Traverse(traverse_data &x)
 int model_def::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::Typecheck: 
+    case traverse_data::Typecheck:
         return formals.check(em, pass, np, Type());
-    
+
     case traverse_data::Promote:
         formals.promote(em, pass, np, Type());
         return Promote_Success;
@@ -292,7 +292,7 @@ model_instance* model_def::Instantiate(traverse_data &x, expr** pass, int np)
 
 bool model_def::SameParams() const
 {
-  if (0==last_build) return false;  
+  if (0==last_build) return false;
   // compare current_params with last_params
   for (int i=0; i<formals.getLength(); i++) {
     const type* t = formals.getType(i);
@@ -341,8 +341,8 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-md_call::md_call(const char *fn, int ln, model_def *m, 
-      expr **p, int np, int slot) 
+md_call::md_call(const char *fn, int ln, model_def *m,
+      expr **p, int np, int slot)
   : expr (fn, ln, (typelist*) 0)
 {
   const symbol* s = m->GetSymbol(slot);
@@ -399,7 +399,7 @@ void md_call::Traverse(traverse_data &x)
           if (newpass[i] != pass[i])  notequal = true;
          } // for i
         if (notequal) {
-          x.answer->setPtr(new md_call(Filename(), Linenumber(), mdl, 
+          x.answer->setPtr(new md_call(Filename(), Linenumber(), mdl,
                 newpass, numpass, msr_slot));
         } else {
           for (int i=0; i<numpass; i++)  Delete(newpass[i]);
@@ -408,9 +408,9 @@ void md_call::Traverse(traverse_data &x)
         }
         return;
     } // traverse_data::Substitute
-  
-    case traverse_data::PreCompute: 
-    case traverse_data::ClearCache: 
+
+    case traverse_data::PreCompute:
+    case traverse_data::ClearCache:
         for (int i=0; i<numpass; i++) if (pass[i]) {
           pass[i]->Traverse(x);
         } // for i
@@ -464,7 +464,7 @@ protected:
   expr** indx;
   int numindx;
 public:
-  md_acall(const char *fn, int ln, model_def* m, expr** p, int np, 
+  md_acall(const char *fn, int ln, model_def* m, expr** p, int np,
     int slot, expr** i, int ni);
   virtual ~md_acall();
 
@@ -474,7 +474,7 @@ public:
 };
 
 md_acall::md_acall(const char *fn, int ln, model_def* m, expr** p, int np,
-      int slot, expr** i, int ni) 
+      int slot, expr** i, int ni)
  : expr (fn, ln, (typelist*) 0)
 {
   const symbol* s = m->GetSymbol(slot);
@@ -559,7 +559,7 @@ void md_acall::Traverse(traverse_data &x)
 
         // build a new call
         if (notequal) {
-          x.answer->setPtr(new md_acall(Filename(), Linenumber(), mdl, 
+          x.answer->setPtr(new md_acall(Filename(), Linenumber(), mdl,
                 newpass, numpass, msr_slot, newindx, numindx));
         } else {
           for (int i=0; i<numpass; i++)  Delete(newpass[i]);
@@ -570,9 +570,9 @@ void md_acall::Traverse(traverse_data &x)
         }
         return;
     } // Substitute
-  
-    case traverse_data::PreCompute: 
-    case traverse_data::ClearCache: 
+
+    case traverse_data::PreCompute:
+    case traverse_data::ClearCache:
         for (int i=0; i<numpass; i++) if (pass[i]) {
           pass[i]->Traverse(x);
         } // for i
@@ -599,7 +599,7 @@ bool md_acall::Print(OutputStream &s, int) const
   }
   const symbol* msr = mdl->GetSymbol(msr_slot);
   s << "." << msr->Name();
-  for (int n=0; n<numindx; n++) { 
+  for (int n=0; n<numindx; n++) {
     s << "[";
     if (indx[n])  indx[n]->Print(s, 0);
     else          s << "null";
@@ -615,7 +615,7 @@ bool md_acall::Print(OutputStream &s, int) const
 // *                                                                *
 // ******************************************************************
 
-void exprman::finishModelDef(model_def* p, expr* stmts, 
+void exprman::finishModelDef(model_def* p, expr* stmts,
       symbol** st, int ns) const
 {
   if (0==p) {
@@ -635,7 +635,7 @@ inline void TrashPass(expr** p, int np)
   delete[] p;
 }
 
-expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m, 
+expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
       expr** p, int np, const char* msr_name) const
 {
   if (0==m || 0==msr_name) {
@@ -676,7 +676,7 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
 }
 
 
-expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m, 
+expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
       expr** p, int np, const char* msr_name,
       expr** indexes, int ni) const
 {

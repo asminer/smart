@@ -1,7 +1,7 @@
 
 #include "symbols.h"
 #include "exprman.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "values.h"
 #include "dd_front.h"
@@ -14,7 +14,7 @@
 // *                                                                *
 // ******************************************************************
 
-symbol::symbol(const char* fn, int line, const type* t, char* n) 
+symbol::symbol(const char* fn, int line, const type* t, char* n)
  : expr(fn, line, t)
 {
   name = (n) ? (new shared_string(n)) : 0;
@@ -73,7 +73,7 @@ bool symbol::Print(OutputStream &s, int width) const
   s.Put(name->getStr(), width);
   return true;
 }
- 
+
 void symbol::Traverse(traverse_data &x)
 {
   DCASSERT(0==x.aggregate);
@@ -301,7 +301,7 @@ protected:
   /// The return expression for the function.
   expr* return_expr;
   /// The cached value
-  result cache; 
+  result cache;
   /// Dependency list.
   List <symbol> *deplist;
 public:
@@ -329,7 +329,7 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-constfunc::constfunc(const char *f, int l, const type* t, char* n, 
+constfunc::constfunc(const char *f, int l, const type* t, char* n,
   expr* rhs, List <symbol> *dl) : symbol(f, l, t, n)
 {
   Initialize(rhs, dl);
@@ -446,7 +446,7 @@ symbol* exprman::makeConstant(const char* fn, int ln, const type* t,
   return 0;
 }
 
-symbol* exprman::makeConstant(const symbol* w, 
+symbol* exprman::makeConstant(const symbol* w,
       expr* rhs, List <symbol> *deps) const
 {
   if (isError(rhs)) return 0;

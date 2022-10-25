@@ -9,7 +9,7 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../ExprLib/formalism.h"
@@ -49,7 +49,7 @@ struct help_object {
   inline void AddFormalism(const formalism* ft) {
     if (ft) within_models = new ftnode(ft, within_models);
   }
-  
+
   inline int Compare(const symbol* xitem) const {
     DCASSERT(item);
     DCASSERT(xitem);
@@ -264,7 +264,7 @@ void help_si::Help(const char* search)
 {
   // First: help topics
   HelpTopics(funcs, search);
-  
+
   // Next: options
   HelpOptions(search);
 
@@ -454,10 +454,10 @@ void env_si::Compute(traverse_data &x, expr** pass, int np)
   int xlen = strlen(key);
   for (int i=0; environment[i]; i++) {
     const char* equals = strstr(environment[i], "=");
-    if (0==equals) continue;  // shouldn't happen, right? 
+    if (0==equals) continue;  // shouldn't happen, right?
     int length = (equals - environment[i]);
     if (length!=xlen) continue;
-    if (strncmp(environment[i], key, length)!=0) continue;  
+    if (strncmp(environment[i], key, length)!=0) continue;
     // match
     x.answer->setPtr(new shared_string(strdup(equals+1)));
     return;
@@ -568,7 +568,7 @@ void stop_timer_si::Compute(traverse_data &x, expr** pass, int np)
     if (id >= 0 && id < 256) {
       x.answer->setReal(watches[id].elapsed_seconds());
       return;
-    } 
+    }
   }
   x.answer->setNull();
 }

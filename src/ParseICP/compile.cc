@@ -2,11 +2,11 @@
 #include "compile.h"
 #include "lexer.h"
 #include "../Options/options.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../Lexer/strings.h"
 #include "../ExprLib/formalism.h"
 #include "../include/heap.h"
 #include "parse_icp.h"
@@ -32,7 +32,7 @@
     and the last element's next pointer is to the front of the list.
     This allows us to quickly add to the tail of the list :^)
     These are indicated by the type parser_list*
-    
+
 
     Other conventions here...
 
@@ -162,7 +162,7 @@ public:
 public:
   expr_term(int o, expr* t);
   virtual ~expr_term();
-  
+
   virtual bool Print(OutputStream &s, int width) const;
   virtual bool Equals(const shared_object* o) const;
 };
@@ -322,8 +322,8 @@ expr* MakeStatementBlock(parser_list* stmts)
   expr** opnds = new expr*[length];
   CopyCircular(stmts, opnds, length);
   RecycleCircular(stmts);
-  return ShowNewStatement("model block\n", 
-    em->makeAssocOp(Filename(), Linenumber(), exprman::aop_semi, 
+  return ShowNewStatement("model block\n",
+    em->makeAssocOp(Filename(), Linenumber(), exprman::aop_semi,
     opnds, 0, length)
   );
 }
@@ -354,7 +354,7 @@ parser_list* AppendExpression(int behv, parser_list* list, expr* item)
         if (em->isOrdinary(item))
           return AppendCircular(list, item);
         return list;
-  
+
     case 2:  // collapse on null or error.
         if (0==list)
           return AppendCircular(0, item);  // correct regardless
@@ -555,7 +555,7 @@ expr* BuildIntegers(char* typ, parser_list* namelist, expr* values)
   symbol** names = new symbol*[N];
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
-    em->makeModelVarDecs(Filename(), Linenumber(), 
+    em->makeModelVarDecs(Filename(), Linenumber(),
       model_under_construction, em->INT, values, names, N)
   );
 }
@@ -576,7 +576,7 @@ expr* BuildBools(char* typ, parser_list* namelist)
   symbol** names = new symbol*[N];
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
-    em->makeModelVarDecs(Filename(), Linenumber(), 
+    em->makeModelVarDecs(Filename(), Linenumber(),
       model_under_construction, em->BOOL, 0, names, N)
   );
 }
@@ -629,10 +629,10 @@ void FinishModel()
   symbol** visible = ModelExternal.MakeArray();
 
   em->finishModelDef(model_under_construction, block, visible, ns);
-  
+
   delete ModelInternal;
   ModelInternal = 0;
-  
+
   pm->num_measures = MeasureNames.Length();
   if (pm->num_measures) {
     pm->measure_names = MeasureNames.CopyAndClear();
@@ -672,7 +672,7 @@ inline expr* BuildMeasure(const type* typ, char* ident, symbol* who, expr* rhs)
     Delete(rhs);
     return 0;
   }
-  
+
   if (0==who)  {
     Delete(rhs);
     return 0;
@@ -682,13 +682,13 @@ inline expr* BuildMeasure(const type* typ, char* ident, symbol* who, expr* rhs)
   pass[0] = Share((expr*) model_under_construction);
   pass[1] = rhs;
   rhs = em->makeFunctionCall(Filename(), Linenumber(), who, pass, 2);
- 
+
   symbol* wrap = em->makeModelSymbol(Filename(), Linenumber(), typ, ident);
 
   // Add measure to symbol tables
   DCASSERT(ModelInternal);
   ModelInternal->AddSymbol(wrap);
-  
+
   ModelExternal.Insert(wrap);
 
   // Add this to the measure list
@@ -816,7 +816,7 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
       showMatching(f2, pass, length, best_score);
       pm->stopError();
     }
-    bailout = true; 
+    bailout = true;
   }
 
   if (bailout) {
@@ -829,7 +829,7 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
 }
 
 
-exprman::unary_opcode Int2Uop(int op) 
+exprman::unary_opcode Int2Uop(int op)
 {
   switch (op) {
     case NOT:     return exprman::uop_not;
@@ -843,7 +843,7 @@ exprman::unary_opcode Int2Uop(int op)
   return exprman::uop_none;
 }
 
-exprman::binary_opcode Int2Bop(int op) 
+exprman::binary_opcode Int2Bop(int op)
 {
   switch (op) {
     case IMPLIES: return exprman::bop_implies;
@@ -863,7 +863,7 @@ exprman::binary_opcode Int2Bop(int op)
   return exprman::bop_none;
 }
 
-exprman::assoc_opcode Int2Aop(int op) 
+exprman::assoc_opcode Int2Aop(int op)
 {
   switch (op) {
     case AND:     return exprman::aop_and;
@@ -913,7 +913,7 @@ expr* BuildInterval(expr* start, expr* stop)
 expr* BuildInterval(expr* start, expr* stop, expr* inc)
 {
   return ShowWhatWeBuilt("set interval: ",
-    em->makeTrinaryOp(Filename(), Linenumber(), 
+    em->makeTrinaryOp(Filename(), Linenumber(),
       exprman::top_interval, start, stop, inc)
   );
 }
@@ -933,7 +933,7 @@ expr* BuildSummation(parser_list* list)
     DeleteCircular(list);
     return foo;
   }
-  
+
   // Fill the list of exprs and flips.
   bool* flip = new bool[length];
   expr** opnds = new expr*[length];
@@ -972,7 +972,7 @@ expr* BuildSummation(parser_list* list)
   }
 
   exprman::assoc_opcode aop = Int2Aop(oper);
-  return ShowWhatWeBuilt(0, 
+  return ShowWhatWeBuilt(0,
     em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
   );
 }
@@ -1031,7 +1031,7 @@ expr* BuildProduct(parser_list* list)
   }
 
   exprman::assoc_opcode aop = Int2Aop(oper);
-  return ShowWhatWeBuilt(0, 
+  return ShowWhatWeBuilt(0,
     em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
   );
 }
