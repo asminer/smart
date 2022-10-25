@@ -6,6 +6,10 @@
 #include "../include/defines.h"
 #include "streams.h"
 
+// TBD: move location and strings to here?
+
+#include "../Lexer/location.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -78,7 +82,7 @@ OutputStream::OutputStream()
   bufsize = initsize;
   buftop = 0;
   buffer[0] = 0;
-  ready = true; 
+  ready = true;
   SetRealFormat(RF_GENERAL);
   intbuf = (char*) malloc(256);
   thousands = strdup("");
@@ -388,7 +392,7 @@ void OutputStream::PutInteger(const char* data, int width)
       strncpy(bufptr(), thousands, thousands_len);
       buftop += thousands_len;
       next_comma += 3;
-    }  
+    }
     buffer[buftop] = data[i];
     buftop++;
     i++;
@@ -410,7 +414,7 @@ void OutputStream::PutFile(const char* fn, int ln)
   if (0==fn[1]) {
     // special files
     switch (fn[0]) {
-      case '-':  
+      case '-':
           Put("in standard input");
           break;
 
@@ -569,9 +573,9 @@ DisplayStream::~DisplayStream()
 void DisplayStream::SwitchDisplay(FILE* out)
 {
   flush();
-  if (display != deflt) { 
+  if (display != deflt) {
     fclose(display);
-  }  
+  }
   display = out ? out : deflt;
 }
 
@@ -670,6 +674,55 @@ bool io_environ::StartInternal(const char* srcfile, int srcline)
   return true;
 }
 
+
+bool io_environ::StartError(const location &L, const char* text)
+{
+    if (WhichError) {
+        Panic("already writing to error stream");
+        return false;  // just in case
+    }
+    WhichError = 2;
+    Error.Activate();
+    Error.Put("ERROR");
+    indents = 1;
+
+    if (L) {
+        Error << " " << L;
+        if (text) {
+            Error << " at text '" << text << "'";
+        }
+    }
+    Error.Put(':');
+    NewLine();
+
+    return true;
+}
+
+bool io_environ::StartWarning(const location &L, const char* text)
+{
+    if (WhichError) {
+        Panic("already writing to error stream");
+        return false;  // just in case
+    }
+    WhichError = 1;
+    Warning.Activate();
+    Warning.Put("WARNING");
+    indents = 1;
+
+    if (L) {
+        Warning << " " << L;
+        if (text) {
+            Warning << " at text '" << text << "'";
+        }
+    }
+    Warning.Put(':');
+    NewLine();
+
+    return true;
+}
+
+
+
 bool io_environ::StartError()
 {
   if (WhichError) {
@@ -709,7 +762,7 @@ void io_environ::CausedBy(const char* file, int line)
     case 2:
         out = &Error;
         break;
-  
+
     case 1:
         out = &Warning;
         break;
@@ -813,7 +866,7 @@ void io_environ::Stop()
         Error.flush();
         Error.Deactivate();
         break;
-  
+
     case 1:
         Warning.Put('\n');
         Output.flush();
@@ -898,7 +951,7 @@ doc_formatter::~doc_formatter()
 
 bool doc_formatter::Matches(const char* item, const char* keyword) const
 {
-  if (NULL==keyword) return true; 
+  if (NULL==keyword) return true;
   int slen = strlen(keyword);
   int last = strlen(item) - slen;
   for (int i=0; i<=last; i++) {

@@ -90,9 +90,9 @@ class group_of_named {
 public:
   group_of_named(int max);
   ~group_of_named();
-   
+
   void AddItem(option_const* foo);
-  
+
   /** Finish the group, and add an appropriate
       checklist item to the owner.
   */
@@ -192,7 +192,7 @@ public:
     This way, we can store the expression manager as a static
     member of every expression without memory overhead.
 
-    Included in this class are centralized collections of 
+    Included in this class are centralized collections of
     options, engines, libraries, and types (including formalisms).
     Before the manager is "finalize()d", new engines, engine types,
     and options may be added, but engines may not be launched.
@@ -316,7 +316,7 @@ public:
 
 public:
   exprman(io_environ* io, option_manager* om);
-  
+
   inline bool isFinalized() const { return is_finalized; }
 
   /// Called when we are done registering objects.
@@ -351,6 +351,19 @@ public:
     io->StartInternal(fn, ln);
     return true;
   }
+
+    inline bool startError(const location& L, const char* text) const {
+        if (!io) return false;
+        io->StartError(L, text);
+        return true;
+    }
+    inline bool startWarning(const location& L, const char* text) const {
+        if (!io) return false;
+        io->StartWarning(L, text);
+        return true;
+    }
+
+  // Deprecated?
   inline bool startError() const {
     if (!io) return false;
     io->StartError();
@@ -519,13 +532,13 @@ public:
                 0 if none exists.
   */
   virtual const type* findType(const char* name) const = 0;
-     
+
   /// Returns the modifier with given name, or NO_SUCH_MODIF.
   virtual modifier findModifier(const char* name) const = 0;
 
   /// Get the current number of registered types.
   virtual int getNumTypes() const = 0;
-  
+
   /// Get the ith registered type.
   virtual const type* getTypeNumber(int i) const = 0;
 
@@ -555,7 +568,7 @@ public:
         @param  c     The value to draw from.
         @return       A new expression.
   */
-  expr* makeLiteral(const char* file, int line, 
+  expr* makeLiteral(const char* file, int line,
       const type* t, const result& c) const;
 
 
@@ -581,7 +594,7 @@ public:
       char* name, expr* vals) const;
 
 
-  /** Make a "constant" (function with no parameters) symbol, 
+  /** Make a "constant" (function with no parameters) symbol,
       not within a converge block.
       Implemented in symbols.cc.
         @param  fn    Filename of the variable.
@@ -598,7 +611,7 @@ public:
       char* name, expr* rhs, List <symbol> *deps) const;
 
 
-  /** Make a "constant" (function with no parameters) symbol, 
+  /** Make a "constant" (function with no parameters) symbol,
       not within a converge block.
       Implemented in symbols.cc.
         @param  w     Wrapper symbol around this one.
@@ -647,7 +660,7 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line, 
+  expr* makeOptionStatement(const char* file, int line,
         option *o, expr *e) const;
 
 
@@ -662,7 +675,7 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line, 
+  expr* makeOptionStatement(const char* file, int line,
       option *o, option_const *v) const;
 
 
@@ -683,7 +696,7 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line, option* o, 
+  expr* makeOptionStatement(const char* file, int line, option* o,
     bool check, option_const **vlist, int nv) const;
 
 
@@ -693,7 +706,7 @@ public:
       a set of iterator variables, and for each assignment,
       will execute another statement (void-type expression).
       Implemented in forloops.cc.
-    
+
         @param  fn    Filename.
         @param  ln    Line number.
         @param  iters Array of iterators.
@@ -704,7 +717,7 @@ public:
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
-  expr* makeForLoop(const char* fn, int ln, 
+  expr* makeForLoop(const char* fn, int ln,
       symbol** iters, int dim, expr* stmt) const;
 
 
@@ -716,7 +729,7 @@ public:
 
   /** Make a new array.
       Implemented in arrays.cc.
-  
+
         @param  fn      Filename of the array.
         @param  ln      Line number of the array.
         @param  t       Type of the array.
@@ -745,7 +758,7 @@ public:
         @return ERROR, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayAssign(const char* fn, int ln, 
+  expr* makeArrayAssign(const char* fn, int ln,
       symbol* array, expr* rhs) const;
 
   // +-----------------------------------------------------------------+
@@ -769,7 +782,7 @@ public:
         @return ERROR, if some error occurred (will make noise).
                 A new expression, otherwise.
   */
-  expr* makeArrayCall(const char* fn, int ln, 
+  expr* makeArrayCall(const char* fn, int ln,
       symbol* array, expr** indexes, int dim) const;
 
   /** Make an expression to call a function.
@@ -777,12 +790,12 @@ public:
 
         @param  fn  Filename we are declared in.
         @param  ln  line number we are declared on.
-        @param  f   The function to call.  Can be user-defined, 
+        @param  f   The function to call.  Can be user-defined,
                     internal, or pretty much anything.
         @param  p   The parameters to pass, as an array of expressions.
         @param  np  Number of passed parameters.
   */
-  expr* makeFunctionCall(const char* fn, int ln, 
+  expr* makeFunctionCall(const char* fn, int ln,
       symbol *f, expr **p, int np) const;
 
   /** Find a (list of) function callable within a model.
@@ -826,7 +839,7 @@ public:
                       (can be a statement block).
         @param  top   True iff this is the topmost converge statement.
                       (If so we will "affix" variables after executing.)
-      
+
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
@@ -896,7 +909,7 @@ public:
         @return ERROR, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayCvgAssign(const char* fn, int ln, 
+  expr* makeArrayCvgAssign(const char* fn, int ln,
         symbol* array, expr* rhs) const;
 
 
@@ -922,14 +935,14 @@ public:
         -  getPromoteDistance(INT, PROC_RAND_INT) = 6
         -  getPromoteDistance(INT, PROC_RAND_REAL) = 7
         -  getPromoteDistance(INT, SET_REAL) = 9
-    
+
         @param  t1  Original type
         @param  t2  Target type
-    
+
         @return -1, if the promotion is impossible
                 0,  if the types are equal
                 n,  a binary encoding of which level(s)
-                    needs changing: 
+                    needs changing:
                     1 for base type,
                     2 for rand / phase / determ,
                     4 for proc / non-proc,
@@ -939,13 +952,13 @@ public:
 
 
   /// Returns true if type t1 can be promoted to type t2.
-  inline bool isPromotable(const type* t1, const type* t2) const { 
-    return getPromoteDistance(t1, t2) >= 0; 
+  inline bool isPromotable(const type* t1, const type* t2) const {
+    return getPromoteDistance(t1, t2) >= 0;
   }
 
   /** Least common type that types a and b can be promoted to.
       Useful for, say, determining the type of
-        rand int + proc real  
+        rand int + proc real
       (which is proc rand real).
 
         @param  a  First type.
@@ -976,12 +989,12 @@ public:
         @param  newtype The desired type.
         @param  e       The original expression.
         @return 0,      if e is 0.
-                ERROR,  if e is ERROR, or if the change of type 
+                ERROR,  if e is ERROR, or if the change of type
                         is impossible.
                 e,      if e already has type \a newtype.
                 a new expression, otherwise.
   */
-  virtual expr* makeTypecast(const char* file, int line, 
+  virtual expr* makeTypecast(const char* file, int line,
       const type* newtype, expr* e) const = 0;
 
   /** Make a type conversion expression.
@@ -997,12 +1010,12 @@ public:
                       both \a e and \a fp must have the same number
                       of components.
         @return 0,      if e is 0.
-                ERROR,  if e is ERROR, or if the change of type 
+                ERROR,  if e is ERROR, or if the change of type
                         is impossible.
                 e,      if e already has type \a newtype.
                 a new expression, otherwise.
   */
-  expr* makeTypecast(const char* file, int line, 
+  expr* makeTypecast(const char* file, int line,
       bool proc, bool rand, const expr *fp, expr* e) const;
 
   /** Make a type conversion expression.
@@ -1104,7 +1117,7 @@ public:
         @return 0,  on any kind of error;
                 the type of the operation, otherwise.
   */
-  virtual const type* getTypeOf(const type* left, binary_opcode op, 
+  virtual const type* getTypeOf(const type* left, binary_opcode op,
           const type* right) const = 0;
 
   /** Determine the type of a trinary operation expression.
@@ -1128,7 +1141,7 @@ public:
         @return 0,  on any kind of error;
                 the type of the operation, otherwise.
   */
-  virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op, 
+  virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op,
           const type* right) const = 0;
 
   /** Make a unary operation expression.
@@ -1141,7 +1154,7 @@ public:
                 ERROR,  if opnd is ERROR, or if there is a type mismatch.
                 a new expression, otherwise.
   */
-  virtual expr* makeUnaryOp(const char* file, int line, 
+  virtual expr* makeUnaryOp(const char* file, int line,
       unary_opcode op, expr* opnd) const = 0;
 
 
@@ -1153,12 +1166,12 @@ public:
         @param  op    The operation to perform.
         @param  rt    The right operand.
         @return NULL,   if either opnd is NULL.
-                ERROR,  if either opnd is ERROR, 
+                ERROR,  if either opnd is ERROR,
                         or if the operand cannot be applied
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeBinaryOp(const char* fn, int ln, 
+  virtual expr* makeBinaryOp(const char* fn, int ln,
       expr* left, binary_opcode op, expr* rt) const = 0;
 
 
@@ -1170,12 +1183,12 @@ public:
         @param  l   The left operand.
         @param  m   The middle operand.
         @param  r   The right operand.
-        @return ERROR,  if any opnd is ERROR, 
+        @return ERROR,  if any opnd is ERROR,
                         or if the operand cannot be applied
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op, 
+  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
         expr* l, expr* m, expr* r) const = 0;
 
 
@@ -1190,12 +1203,12 @@ public:
                       operands should be flipped.
         @param  nops  Number of operands.
         @return NULL,   if any opnd is NULL.
-                ERROR,  if any opnd is ERROR, 
+                ERROR,  if any opnd is ERROR,
                         or if the operand cannot be applied
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op, 
+  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op,
         expr** opnds, bool* f, int nops) const = 0;
 
 
@@ -1232,7 +1245,7 @@ public:
 
         @return  a new placeholder symbol.
   */
-  symbol* makeModelSymbol(const char* fn, int ln, 
+  symbol* makeModelSymbol(const char* fn, int ln,
         const type* t, char* name) const;
 
 
@@ -1240,7 +1253,7 @@ public:
       The array is simply a "placeholder" that will be replaced
       each time the model is instantiated.
       Implemented in mod_vars.cc.
-  
+
         @param  fn      Filename of the array.
         @param  ln      Line number of the array.
         @param  t       Type of the array.
@@ -1253,7 +1266,7 @@ public:
         @return  0, if some error occurred (will make noise).
                 A new array, otherwise.
   */
-  symbol* makeModelArray(const char* fn, int ln, const type* t, char* n, 
+  symbol* makeModelArray(const char* fn, int ln, const type* t, char* n,
       symbol** indexes, int dim) const;
 
 
@@ -1276,7 +1289,7 @@ public:
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelVarDecs(const char* fn, int ln, model_def* p, 
+  expr* makeModelVarDecs(const char* fn, int ln, model_def* p,
     const type* t, expr* bounds, symbol** names, int N) const;
 
 
@@ -1293,12 +1306,12 @@ public:
         @param  arrays  Names of the arrays
                         (they already exist as placeholder symbols).
         @param  N       Number of arrays.
-      
+
         @return NULL,   if any name is NULL,
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelArrayDecs(const char* fn, int ln, model_def* p, 
+  expr* makeModelArrayDecs(const char* fn, int ln, model_def* p,
       const type* t, symbol** arrays, int N) const;
 
 
@@ -1315,9 +1328,9 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureAssign(const char* fn, int ln, 
+  expr* makeModelMeasureAssign(const char* fn, int ln,
       model_def* p, symbol* m, expr* rhs) const;
-      
+
 
   /** Make a statement to build an array of measures in a model.
       Implemented in mod_vars.cc.
@@ -1332,7 +1345,7 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureArray(const char* fn, int ln, 
+  expr* makeModelMeasureArray(const char* fn, int ln,
       model_def* p, symbol* am, expr* rhs) const;
 
 
@@ -1344,11 +1357,11 @@ public:
         @param  stmts   Block of statements to execute when
                         instantiating the model.
         @param  st      Array of externally-visible symbols
-                        (usually measures, or arrays of measures) 
+                        (usually measures, or arrays of measures)
                         of the model.
         @param  ns      Number of externally-visible symbols.
   */
-  void finishModelDef(model_def* p, expr* stmts, 
+  void finishModelDef(model_def* p, expr* stmts,
       symbol** st, int ns) const;
 
 
@@ -1357,7 +1370,7 @@ public:
   // |                Building  model and measure calls                |
   // |                                                                 |
   // +-----------------------------------------------------------------+
-  
+
   /** Determine if a function is actually a model definition.
       (The compiler is unable to determine this by itself.)
   */
@@ -1381,7 +1394,7 @@ public:
                         as appropriate on the error channel.
                 A new expression p(pass).name, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln, model_def* p, 
+  expr* makeMeasureCall(const char* fn, int ln, model_def* p,
       expr** pass, int np, const char* name) const;
 
   /** Make a measure array call expression.
@@ -1400,11 +1413,11 @@ public:
         @param  ni    Number of passed indexes.
 
         @return ERROR,  if some error occurs (e.g., no measure with
-                        the given name, wrong dimension), with error 
+                        the given name, wrong dimension), with error
                         messages relayed as appropriate on the error channel.
                 A new expression p(pass).name[i], otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln, model_def* p, 
+  expr* makeMeasureCall(const char* fn, int ln, model_def* p,
       expr** pass, int np, const char* name,
       expr** i, int ni) const;
 
@@ -1418,7 +1431,7 @@ public:
         @param  ln    Line number of the expression.
         @param  mi    A model instance.
         @param  name  Name of the measure.
-  
+
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
@@ -1437,7 +1450,7 @@ public:
         @param  name  Name of the measure.
         @param  i     Passed array indexes.
         @param  ni    Number of passed indexes.
-  
+
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
@@ -1457,7 +1470,7 @@ public:
         @param  i     Passed array indexes.
         @param  ni    Number of passed indexes.
         @param  name  Name of the measure.
-  
+
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
@@ -1465,7 +1478,7 @@ public:
       symbol* mi, expr** i, int ni,
       const char* name) const;
 
-  
+
   /** Make a measure array call expression.
       For expressions of the form
         m[i].msr[j];
@@ -1480,7 +1493,7 @@ public:
         @param  name  Name of the measure.
         @param  j     Passed array indexes, for name.
         @param  nj    Number of passed indexes for name.
-  
+
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
@@ -1488,14 +1501,14 @@ public:
       symbol* mi, expr** i, int ni,
       const char* name, expr** j, int nj) const;
 
-  
+
 
   // +-----------------------------------------------------------------+
   // |                                                                 |
   // |                        Solution  engines                        |
   // |                                                                 |
   // +-----------------------------------------------------------------+
-  
+
   /** Register a new type of solution engine.
         @param  et  Engine type to register (see engine.h)
         @return true on success
@@ -1510,7 +1523,7 @@ public:
 
   /// Get the current number of registered engine types.
   virtual int getNumEngineTypes() const = 0;
-  
+
   /// Get the ith registered engine type.
   virtual const engtype* getEngineTypeNumber(int i) const = 0;
 
@@ -1520,7 +1533,7 @@ public:
   // |                      Supporting  libraries                      |
   // |                                                                 |
   // +-----------------------------------------------------------------+
-  
+
   /** Register an external supporting library.
         @param  lib  The library to register.
         @return  0,   on success.

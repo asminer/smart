@@ -31,8 +31,8 @@ location::~location()
 void location::show(OutputStream &s) const
 {
     if (0==filename) return;
-    const char* fn = filename->getStr();
 
+    const char* fn = filename->getStr();
     unsigned long ln = linenumber;
 
     if (0==fn[1]) {
@@ -83,3 +83,8 @@ void location::clear()
     linenumber = 0;
 }
 
+const location& location::NOWHERE()
+{
+    static location L;
+    return L;
+}
