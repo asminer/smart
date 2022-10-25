@@ -2,13 +2,13 @@
 #include "compile.h"
 #include "lexer.h"
 #include "../Options/options.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/symbols.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_def.h"
 #include "../SymTabs/symtabs.h"
-#include "../Lexer/strings.h"
 #include "../ExprLib/formalism.h"
 #include "../include/heap.h"
 #include "parse_sm.h"
@@ -34,7 +34,7 @@
     and the last element's next pointer is to the front of the list.
     This allows us to quickly add to the tail of the list :^)
     These are indicated by the type parser_list*
-    
+
 
     Other conventions here...
 
@@ -62,8 +62,8 @@ class optstack {
       top_index = 0;
     }
     inline bool isEmpty() const { return top_index < 0; }
-    inline const option_const* top() const { 
-      return (top_index > 0) ? data[top_index] : 0; 
+    inline const option_const* top() const {
+      return (top_index > 0) ? data[top_index] : 0;
     }
     inline bool push(const option_const* oc) {
       if (top_index >= 15) return false;
@@ -129,8 +129,8 @@ inline bool WithinConverge() { return (converge_depth>0); }
 
 inline bool WithinModel() { return ModelType; }
 
-inline bool WithinBlock() { 
-  return WithinFor() || WithinConverge() || WithinModel(); 
+inline bool WithinBlock() {
+  return WithinFor() || WithinConverge() || WithinModel();
 }
 
 inline bool ignoringBadModelDecl() {
@@ -273,7 +273,7 @@ public:
   model_call_data(model_def* m, expr** p, int n);
   model_call_data(symbol* m);
   virtual ~model_call_data();
-  
+
   void Trash();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -336,7 +336,7 @@ public:
 public:
   expr_term(int o, expr* t);
   virtual ~expr_term();
-  
+
   virtual bool Print(OutputStream &s, int width) const;
   virtual bool Equals(const shared_object* o) const;
 };
@@ -606,7 +606,7 @@ void named_paramarray::initFromList(parser_list* &namedparams)
   //
   if (passlen) {
     CopyCircular(namedparams, pass, passlen);
-  } 
+  }
   RecycleCircular(namedparams);
 }
 
@@ -678,7 +678,7 @@ expr** pos_paramarray::Compactify(int len)
   if (0==len) return 0;
 
   DCASSERT(len <= passalloc);
-  
+
   expr** compact = new expr*[len];
   for (int i=0; i<len; i++) {
     compact[i] = pass[i];
@@ -732,7 +732,7 @@ parser_list* AppendExpression(int behv, parser_list* list, expr* item)
         if ((item!= 0) && (! em->isError(item)))
           return AppendCircular(list, item);
         return list;
-  
+
     case 2:  // collapse on null or error.
         if (0==list)
           return AppendCircular(0, item);  // correct regardless
@@ -835,7 +835,7 @@ expr* BuildForLoop(int count, parser_list* stmts)
 
   // Construct For Loop.
   return ShowNewStatement(
-      "for loop:\n", 
+      "for loop:\n",
       em->makeForLoop(Filename(), Linenumber(), iters, count, block)
   );
 }
@@ -877,7 +877,7 @@ option_const* FindOptionConstant(option* o, char* n)
       pm->cerr() << ", ignoring";
       pm->stopError();
     }
-  } 
+  }
   free(n);
   return oc;
 }
@@ -935,7 +935,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 
   // Build another circular list of option_consts.
   int length = CircularLength(list);
-  parser_list* oclist = 0; 
+  parser_list* oclist = 0;
   for (int i=0; i<length; i++) {
     list = list->next;
     shared_string* s = smart_cast <shared_string*> (list->data);
@@ -950,7 +950,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
       pm->cerr() << ", ignoring";
       pm->stopError();
     }
-  } 
+  }
   DeleteCircular(list);
 
   length = CircularLength(oclist);
@@ -997,7 +997,7 @@ option* BuildOptionHeader(char* name)
   } else {
     answer = pm ? pm->findOption(name) : 0;
   }
-  
+
   if (0==answer) if (pm->startError()) {
     pm->cerr() << "Unknown option " << name;
     if (oc) pm->cerr() << " within " << oc->Name();
@@ -1128,7 +1128,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     free(id);
     return 0;
   }
- 
+
   if (WithinModel()) {
     return BuildMeasure(typ, id, ret);
   }
@@ -1170,12 +1170,12 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     Delete(ret);
     return 0;
   }
-  
+
   // Check that the name is unique among constants
   find = Constants->FindSymbol(id);
   if (find) {
     free(id);
-    
+
     if (find->isDefined()) {
       if (pm->startError()) {
         pm->cerr() << "Re-definition of constant " << find->Name();
@@ -1197,7 +1197,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     ShowWhatWeBuilt("variable: ", find);
   }
 
-  if (WithinConverge()) 
+  if (WithinConverge())
     return ShowNewStatement("assignment:\n",
       em->makeCvgAssign(Filename(), Linenumber(), find, ret)
     );
@@ -1247,13 +1247,13 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
 // --------------------------------------------------------------
 expr* BuildArrayStmt(symbol *a, expr *ret)
 {
-  if (WithinModel()) 
-    return ShowNewStatement("measure array assignment:\n", 
+  if (WithinModel())
+    return ShowNewStatement("measure array assignment:\n",
       em->makeModelMeasureArray(Filename(), Linenumber(),
         model_under_construction, a, ret)
     );
 
-  if (WithinConverge()) 
+  if (WithinConverge())
     return ShowNewStatement("converge array assignment:\n",
       em->makeArrayCvgAssign(Filename(), Linenumber(), a, ret)
     );
@@ -1377,7 +1377,7 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
     function* f = smart_cast <function*> (find);
     if (0==f)   continue;
     if (!f->HasNameConflict(fp, np, scratch))  continue;
-    
+
     if (!conflicts) {
       conflicts = true;
       errIO = pm->startError();
@@ -1447,11 +1447,11 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
     ResetUserFunctionParams(em, Filename(), Linenumber(), match, fp, nfp);
     function_under_construction = match;
     return match;
-  } 
+  }
   if (model_under_construction) {
     // warn if we are hiding a "global" function
     duplicationError(1, findFirstMatch(Funcs, n, (expr**) fp, nfp), "hides");
-  } 
+  }
 
   //
   // This is a brand-new function.
@@ -1512,7 +1512,7 @@ symbol* BuildMeasureArray(const type* typ, char* n, parser_list* list)
     ModelInternal = MakeSymbolTable();
   }
   ModelInternal->AddSymbol(wrap);
-  
+
   ModelExternal.Insert(wrap);
 
   return ShowWhatWeBuilt("measure array: ", wrap);
@@ -1564,14 +1564,14 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
 // --------------------------------------------------------------
 symbol* BuildFormal(const type* typ, char* name)
 {
-  return MakeFormalParam(Filename(), Linenumber(), 
+  return MakeFormalParam(Filename(), Linenumber(),
                           typ, name, model_under_construction);
 }
 
 // --------------------------------------------------------------
 symbol* BuildFormal(const type* typ, char* name, expr* deflt)
 {
-  return MakeFormalParam(em, Filename(), Linenumber(), 
+  return MakeFormalParam(em, Filename(), Linenumber(),
                           typ, name, deflt, model_under_construction);
 }
 
@@ -1667,7 +1667,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
       free(n);
       return 0;
     }
-  } 
+  }
 
   // Check functions and other models
   expr** pass = (expr**) Formals;
@@ -1693,7 +1693,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     delete[] Formals;
     return 0;
   }
-  
+
   // Check against name conflicts
   if (hasNamedParamConflicts(n, Formals, num_Formals)) {
     // Already printed an error message.
@@ -1734,16 +1734,16 @@ expr* BuildModelVarStmt(const type* typ, parser_list* list)
   symbol** slist = new symbol*[numsyms];
   CopyCircular(list, slist, numsyms);
   RecycleCircular(list);
-  
+
   expr* stmt;
   if (WithinFor()) {
     stmt = em->makeModelArrayDecs(
-        Filename(), Linenumber(), model_under_construction, 
+        Filename(), Linenumber(), model_under_construction,
         typ, slist, numsyms
     );
   } else {
     stmt = em->makeModelVarDecs(
-        Filename(), Linenumber(), model_under_construction, 
+        Filename(), Linenumber(), model_under_construction,
         typ, 0, slist, numsyms
     );
   }
@@ -1824,7 +1824,7 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
 
 //
 // Positional parameter matching
-// 
+//
 
 // Helper for FindBest
 function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
@@ -1874,7 +1874,7 @@ void showMatching(symbol* find, expr** pass, int np, int best_score)
 }
 
 // Function/model call scoring (positional parameters)
-function* FindBest(symbol* f1, symbol* f2, expr** pass, 
+function* FindBest(symbol* f1, symbol* f2, expr** pass,
   int length, int first, bool no_match_error)
 {
   if (0==f1 && 0==f2) return 0;
@@ -1924,7 +1924,7 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
 
 //
 // Named parameter matching
-// 
+//
 
 // Helper for FindBest
 function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
@@ -2023,7 +2023,7 @@ void showMatching(symbol* find, symbol** pass, int np, int best_score)
 
 
 // Function/model call scoring (named parameters)
-function* FindBest(symbol* f1, symbol* f2, symbol** pass, 
+function* FindBest(symbol* f1, symbol* f2, symbol** pass,
   int length, bool no_match_error)
 {
   if (0==f1 && 0==f2) return 0;
@@ -2070,7 +2070,7 @@ function* FindBest(symbol* f1, symbol* f2, symbol** pass,
   return best;
 }
 
-exprman::unary_opcode Int2Uop(int op) 
+exprman::unary_opcode Int2Uop(int op)
 {
   switch (op) {
     case NOT:       return exprman::uop_not;
@@ -2089,7 +2089,7 @@ exprman::unary_opcode Int2Uop(int op)
   return exprman::uop_none;
 }
 
-exprman::binary_opcode Int2Bop(int op) 
+exprman::binary_opcode Int2Bop(int op)
 {
   switch (op) {
     case IMPLIES:   return exprman::bop_implies;
@@ -2112,7 +2112,7 @@ exprman::binary_opcode Int2Bop(int op)
   return exprman::bop_none;
 }
 
-exprman::assoc_opcode Int2Aop(int op) 
+exprman::assoc_opcode Int2Aop(int op)
 {
   switch (op) {
     case AND:     return exprman::aop_and;
@@ -2162,7 +2162,7 @@ expr* BuildInterval(expr* start, expr* stop)
 expr* BuildInterval(expr* start, expr* stop, expr* inc)
 {
   return ShowWhatWeBuilt("set interval: ",
-    em->makeTrinaryOp(Filename(), Linenumber(), 
+    em->makeTrinaryOp(Filename(), Linenumber(),
       exprman::top_interval, start, stop, inc
     )
   );
@@ -2183,7 +2183,7 @@ expr* BuildSummation(parser_list* list)
     DeleteCircular(list);
     return foo;
   }
-  
+
   // Fill the list of exprs and flips.
   bool* flip = new bool[length];
   expr** opnds = new expr*[length];
@@ -2221,7 +2221,7 @@ expr* BuildSummation(parser_list* list)
   }
 
   exprman::assoc_opcode aop = Int2Aop(oper);
-  return ShowWhatWeBuilt(0, 
+  return ShowWhatWeBuilt(0,
       em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
   );
 }
@@ -2279,7 +2279,7 @@ expr* BuildProduct(parser_list* list)
   }
 
   exprman::assoc_opcode aop = Int2Aop(oper);
-  return ShowWhatWeBuilt(0, 
+  return ShowWhatWeBuilt(0,
       em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
   );
 }
@@ -2344,7 +2344,7 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
   } else {
     // Either no function exists, or no parameter match
     // Use an ordinary typecast
-    return ShowWhatWeBuilt("typecast: ", 
+    return ShowWhatWeBuilt("typecast: ",
       em->makeTypecast(Filename(), Linenumber(), newtype, opnd)
     );
   }
@@ -2426,7 +2426,7 @@ expr* MakeMCall(shared_object* mcall, char* m)
 
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Filename(), Linenumber(), 
+    foo = em->makeMeasureCall(Filename(), Linenumber(),
       mcd->model1, mcd->pass, mcd->np, m);
   } else {
     foo = em->makeMeasureCall(Filename(), Linenumber(), mcd->model2, m);
@@ -2452,7 +2452,7 @@ expr* MakeAMCall(char* n, parser_list* ind, char* m)
     return em->makeError();
   }
   free(n);
-  
+
   int ni = CircularLength(ind);
   DCASSERT(ni);
   expr** i = new expr*[ni];
@@ -2479,10 +2479,10 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
   RecycleCircular(ind);
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Filename(), Linenumber(), 
+    foo = em->makeMeasureCall(Filename(), Linenumber(),
       mcd->model1, mcd->pass, mcd->np, m, I, length);
   } else {
-    foo = em->makeMeasureCall(Filename(), Linenumber(), 
+    foo = em->makeMeasureCall(Filename(), Linenumber(),
       mcd->model2, m, I, length);
   }
   free(m);
@@ -2506,7 +2506,7 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
     return em->makeError();
   }
   free(n);
-  
+
   int ni = CircularLength(ind);
   DCASSERT(ni);
   expr** i = new expr*[ni];
@@ -2575,7 +2575,7 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
     delete[] pass;
     return 0;
   }
-  
+
   // make sure this is a model!
   model_def* parent = em->isAModelDef(best);
   if (0==parent) {
@@ -2643,7 +2643,7 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
     npa.recycle();
     return 0;
   }
-  
+
   //
   // make sure this is a model!
   //

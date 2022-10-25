@@ -3,7 +3,7 @@
 #include "exprman.h"
 #include "../Streams/streams.h"
 #include "sets.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../Options/options.h"
 #include <stdlib.h>
 
@@ -23,7 +23,7 @@ array_item::array_item(expr* rhs) : shared_object()
 
 array_item::~array_item()
 {
-  r.deletePtr();  
+  r.deletePtr();
   Delete(e);
 }
 
@@ -57,7 +57,7 @@ bool array_item::Equals(const shared_object*) const
     If there is another dimension below this one, then all the
     down pointers will be to other descriptors, otherwise they
     will be to some kind of expression.
-*/  
+*/
 
 struct array_desc : public shared_object {
   /// The values that can be assumed here.
@@ -79,7 +79,7 @@ struct array_desc : public shared_object {
 // *                       array_desc methods                       *
 // ******************************************************************
 
-array_desc::array_desc(shared_set* v) 
+array_desc::array_desc(shared_set* v)
 {
   values = v;
   if (values) {
@@ -90,7 +90,7 @@ array_desc::array_desc(shared_set* v)
   }
 }
 
-array_desc::~array_desc() 
+array_desc::~array_desc()
 {
   if (values) {
     for (long i=0; i<values->Size(); i++)  Delete(down[i]);
@@ -120,7 +120,7 @@ bool array_desc::Equals(const shared_object* o) const
 
 /**   Arrays with actual data.
       Most of the time this is what you want to use.
-*/  
+*/
 
 class array_instance : public array {
 protected:
@@ -146,8 +146,8 @@ array_instance::array_instance(const array* wrapper) : array(wrapper)
   descriptor = 0;
 }
 
-array_instance::array_instance(const char* fn, int line, const type* t, 
-        char* n, iterator** il, int dim) 
+array_instance::array_instance(const char* fn, int line, const type* t,
+        char* n, iterator** il, int dim)
  : array(fn, line, t, n, il, dim)
 {
   descriptor = 0;
@@ -291,7 +291,7 @@ class arrayassign : public expr {
   expr* retval;
 public:
   arrayassign(const char *fn, int l, array *a, expr *e);
-  virtual ~arrayassign(); 
+  virtual ~arrayassign();
 
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
@@ -372,7 +372,7 @@ public:
 // *                         acall  methods                         *
 // ******************************************************************
 
-acall::acall(const char *fn, int line, const type* t, array *f, 
+acall::acall(const char *fn, int line, const type* t, array *f,
     expr **p, int np) : expr(fn, line, t)
 {
   func = f;
@@ -412,7 +412,7 @@ void acall::Traverse(traverse_data &x)
     case traverse_data::Substitute: {
       DCASSERT(x.answer);
       bool changed;
-      
+
       // replace the array itself, if necessary
       func->Traverse(x);
       symbol* fsub = smart_cast <symbol*> (Share(x.answer->getPtr()));
@@ -491,7 +491,7 @@ array::array(const array* wrapper) : symbol(wrapper)
   is_fixed = false;
 }
 
-array::array(const char* fn, int line, const type* t, char* n, 
+array::array(const char* fn, int line, const type* t, char* n,
     iterator** il, int dim) : symbol(fn, line, t, n)
 {
   index_list = il;
@@ -627,7 +627,7 @@ symbol* exprman::makeArray(const char* fn, int ln, const type* t, char* n, symbo
 }
 
 
-expr* exprman::makeArrayAssign(const char* fn, int ln, 
+expr* exprman::makeArrayAssign(const char* fn, int ln,
       symbol* arr, expr* rhs) const
 {
   array* a = dynamic_cast <array*> (arr);
@@ -637,7 +637,7 @@ expr* exprman::makeArrayAssign(const char* fn, int ln,
   }
   if (!isOrdinary(rhs))    return 0;
 
-  // Check return type  
+  // Check return type
   if (!isPromotable(rhs->Type(), a->Type())) {
     if (startError()) {
       causedBy(fn, ln);
@@ -659,7 +659,7 @@ expr* exprman::makeArrayAssign(const char* fn, int ln,
 }
 
 
-expr* exprman::makeArrayCall(const char* fn, int ln, 
+expr* exprman::makeArrayCall(const char* fn, int ln,
       symbol* arr, expr** indexes, int dim) const
 {
   if (0==indexes)  return makeError();

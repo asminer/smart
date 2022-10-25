@@ -6,7 +6,7 @@
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/exprman.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../ExprLib/mod_inst.h"
 #include <string.h>
 
@@ -120,7 +120,7 @@ void substr_si::Compute(traverse_data &x, expr** pass, int np)
   long stopi = stop.getInt();
   long starti = start.getInt();
 
-  if (stopi < 0 || starti > srclen || starti > stopi) {  
+  if (stopi < 0 || starti > srclen || starti > stopi) {
     // definitely empty string
     answer->setPtr(Share(empty_string));
     return;
@@ -134,7 +134,7 @@ void substr_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   // we are a proper substring, fill it
-  char* sub = new char[stopi - starti+2]; 
+  char* sub = new char[stopi - starti+2];
   strncpy(sub, src + starti, 1+(stopi-starti));
   sub[stopi - starti + 1] = 0;
   answer->setPtr(new shared_string(sub));
@@ -175,7 +175,7 @@ int is_null::Traverse(traverse_data &x, expr** pass, int np)
         x.the_type = em->BOOL;
         return 0;
 
-    case traverse_data::Substitute: 
+    case traverse_data::Substitute:
         return Substitute(x, pass, np);
 
     case traverse_data::Typecheck:
@@ -283,18 +283,18 @@ void cond_ci::Compute(traverse_data &x, expr** pass, int np)
 int cond_ci::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = ReturnType(pass, np);
         if (pass[1])  x.the_model_type = pass[1]->GetModelType();
         return 0;
 
-    case traverse_data::Typecheck:   
+    case traverse_data::Typecheck:
         return Typecheck(pass, np);
 
-    case traverse_data::Promote:   
+    case traverse_data::Promote:
         return PromoteParams(pass, np);
 
-    case traverse_data::Substitute:  
+    case traverse_data::Substitute:
         return Substitute(x, pass, np);
 
     case traverse_data::FindRange: {
@@ -303,12 +303,12 @@ int cond_ci::Traverse(traverse_data &x, expr** pass, int np)
         interval_object *b = getInterval(x, pass[2]);
         interval_object *ans = new interval_object;
         computeUnion(*ans, *a, *b);
-        Delete(a); 
+        Delete(a);
         Delete(b);
         x.answer->setPtr(ans);
         return 0;
     }
-  
+
     default:
         return custom_internal::Traverse(x, pass, np);
   }
@@ -460,20 +460,20 @@ void case_ci::Compute(traverse_data &x, expr** pass, int np)
 int case_ci::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = ReturnType(pass, np);
         if (pass[1])  x.the_model_type = pass[1]->GetModelType();
         return 0;
 
-    case traverse_data::Typecheck:   
+    case traverse_data::Typecheck:
         return Typecheck(pass, np);
 
-    case traverse_data::Promote:   
+    case traverse_data::Promote:
         return PromoteParams(pass, np);
 
-    case traverse_data::Substitute: 
+    case traverse_data::Substitute:
         return Substitute(x, pass, np);
-  
+
     default:
         return custom_internal::Traverse(x, pass, np);
   }
@@ -484,7 +484,7 @@ const type* case_ci::ReturnType(expr** pass, int np) const
   if (np < 2)  return 0;
   // Get "selector" type, must be some kind of INT...
   const type* t = em->SafeType(pass[0]);
-  
+
   bool rand = DETERM != GetModifier(t);
   bool proc = HasProc(t);
 
@@ -520,11 +520,11 @@ int case_ci::Typecheck(expr** pass, int np) const
     if (pass[0]->NumComponents() != 1)  return BadParam(0, np);
     t = pass[0]->Type();
     if (GetBase(t) != em->INT)  return BadParam(0, np);
-  } else {  
+  } else {
     // ... or null
     t = em->NULTYPE;
-  } 
-  
+  }
+
   bool rand = DETERM != GetModifier(t);
   bool proc = HasProc(t);
 
@@ -554,7 +554,7 @@ int case_ci::Typecheck(expr** pass, int np) const
   rettype = GetBase(rettype);
   if (rand)  rettype = ModifyType(RAND, rettype);
   if (proc)  rettype = ProcifyType(rettype);
-  
+
   // Ok, this is a valid function call, let's determine the total score
   t = em->SafeType(pass[0]);
   int score = em->getPromoteDistance(t, ApplyPM(rettype, em->INT));
@@ -563,7 +563,7 @@ int case_ci::Typecheck(expr** pass, int np) const
   int pd = em->getPromoteDistance(em->SafeType(pass[1]), rettype);
   DCASSERT(pd >= 0);
   score += pd;
-  
+
   for (int i=2; i<np; i++) {
     pd = em->getPromoteDistance(em->SafeType(pass[i], 0), em->INT);
     DCASSERT(pd>=0);

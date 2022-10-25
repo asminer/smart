@@ -6,7 +6,7 @@
 #include "exprman.h"
 #include "engine.h"
 
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../include/heap.h"
 
 // ******************************************************************
@@ -58,7 +58,7 @@ void measure::Solve(traverse_data &x)
       if (0==class_deps) break;
       measure* m = smart_cast <measure*> (class_deps->Item(i));
       DCASSERT(m);
-      m->Solve(x); 
+      m->Solve(x);
     } // for i
   }
 
@@ -71,7 +71,7 @@ void measure::Solve(traverse_data &x)
       if (0==solve_deps) break;
       measure* m = smart_cast <measure*> (solve_deps->Item(i));
       DCASSERT(m);
-      m->Solve(x); 
+      m->Solve(x);
     }
   }
 
@@ -187,7 +187,7 @@ void measure::classifyNow()
 void measure::waitDepList(List <symbol>* dl)
 {
   if (0==dl) return;
-  for (int i=0; i<dl->Length(); i++) 
+  for (int i=0; i<dl->Length(); i++)
     dl->Item(i)->addToWaitList(this);
 }
 
@@ -234,7 +234,7 @@ class unordered_measures : public set_of_measures {
 public:
   unordered_measures();
   virtual ~unordered_measures();
-  
+
   virtual void addMeasure(measure* m);
   virtual measure* popMeasure();
   virtual bool hasAnyMeasures();
@@ -335,7 +335,7 @@ class timeorder_msrs : public set_of_measures {
 public:
   timeorder_msrs();
   virtual ~timeorder_msrs();
-  
+
   virtual void addMeasure(measure* m);
   virtual measure* popMeasure();
   virtual bool hasAnyMeasures();
@@ -386,7 +386,7 @@ measure* timeorder_msrs::popMeasure()
     if (this_round.Length()==0) {
       Blocked2Next();
       current = 0.0;
-      SWAP(this_round, next_round);  
+      SWAP(this_round, next_round);
       return 0;
     }
     time_measure* tm;

@@ -4,7 +4,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../Lexer/strings.h"
+#include "../Streams/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 
@@ -38,14 +38,14 @@ void read_bool::Compute(traverse_data &x, expr** pass, int np)
   SafeCompute(pass[0], x);
   char c=' ';
   while (1) {
-    if (em->cin().IsDefault()) 
+    if (em->cin().IsDefault())
       if (!x.answer->isNull()) {
         em->cout() << "Enter the [y/n] value for ";
         DCASSERT(em->STRING);
         em->STRING->print(em->cout(), *x.answer);
         em->cout() << " : ";
         em->cout().flush();
-      }     
+      }
     while (1) {
       em->cin().Get(c);
       if (c==' ' || c=='\n' || c=='\t' || c=='\r') continue;
@@ -83,14 +83,14 @@ void read_int::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   SafeCompute(pass[0], x);
-  if (em->cin().IsDefault()) 
+  if (em->cin().IsDefault())
     if (!x.answer->isNull()) {
       em->cout() << "Enter the (integer) value for ";
       DCASSERT(em->STRING);
       em->STRING->print(em->cout(), *x.answer);
       em->cout() << " : ";
       em->cout().flush();
-    }   
+    }
   long ans;
   if (!em->cin().Get(ans)) {
     if (em->startError()) {
@@ -131,14 +131,14 @@ void read_real::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   SafeCompute(pass[0], x);
-  if (em->cin().IsDefault()) 
+  if (em->cin().IsDefault())
     if (!x.answer->isNull()) {
       em->cout() << "Enter the (real) value for ";
       DCASSERT(em->STRING);
       em->STRING->print(em->cout(), *x.answer);
       em->cout() << " : ";
       em->cout().flush();
-    }   
+    }
   double ans;
   if (!em->cin().Get(ans)) {
     if (em->startError()) {
@@ -186,14 +186,14 @@ void read_string::Compute(traverse_data &x, expr** pass, int np)
   }
   int length = x.answer->getInt();
   SafeCompute(pass[0], x);
-  if (em->cin().IsDefault()) 
+  if (em->cin().IsDefault())
     if (!x.answer->isNull()) {
       em->cout() << "Enter the (string, length " << length << ") value for ";
       DCASSERT(em->STRING);
       em->STRING->print(em->cout(), *x.answer);
       em->cout() << " : ";
       em->cout().flush();
-    }   
+    }
   if (length <= 0) {
     x.answer->setNull();
     return;
@@ -302,7 +302,7 @@ void print_type::Compute(traverse_data &x, expr** pass, int np)
 int print_type::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = em->VOID;
         return 0;
 
@@ -332,7 +332,7 @@ generic_print::generic_print(const char* n, const char* h)
 {
 }
 
-void generic_print::compute(OutputStream &s, traverse_data &x, 
+void generic_print::compute(OutputStream &s, traverse_data &x,
         expr** pass, int np)
 {
   if (x.stopExecution())  return;
@@ -347,7 +347,7 @@ void generic_print::compute(OutputStream &s, traverse_data &x,
       DCASSERT(em->INT);
       em->INT->print(s, item);
       continue;
-    } 
+    }
     x.aggregate = 0;
     x.answer = &item;
     pass[i]->Compute(x);
@@ -385,7 +385,7 @@ void generic_print::compute(OutputStream &s, traverse_data &x,
 int generic_print::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::Typecheck: 
+    case traverse_data::Typecheck:
         for (int i=0; i<np; i++) {
           if (0==pass[i])  continue;
           const type* t = pass[i]->Type(0);
@@ -466,7 +466,7 @@ void print_ci::PrintDocs(doc_formatter* df, const char*) const
   df->item("\\t");
   df->Out() << "tab character";
   df->end_description();
-  df->end_indent(); 
+  df->end_indent();
 }
 
 // ******************************************************************
