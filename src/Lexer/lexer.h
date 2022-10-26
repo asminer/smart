@@ -156,6 +156,13 @@ class lexer {
             lookaheads[tlp] = t;
         }
 
+        inline void debug_on() {
+            lexer_debug.Activate();
+        }
+        inline void debug_off() {
+            lexer_debug.Deactivate();
+        }
+
     private:
         lexer(const lexer&) = delete;
         void operator=(const lexer&) = delete;
