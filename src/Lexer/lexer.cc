@@ -1,8 +1,10 @@
-#include "lexer.h"
-#include "../ExprLib/exprman.h"
 
-#define BUFSIZE 1024
+#include "lexer.h"
+
+#define BUFSIZE 16384
 #define MAX_LEXEME 1024
+
+#define DEBUG_LEXER
 
 //
 // ======================================================================
@@ -22,24 +24,23 @@ lexer::lexeme::~lexeme()
 // ======================================================================
 //
 
-lexer::buffer::buffer(const char* fn, buffer* nxt)
+lexer::buffer::buffer(FILE* inf, const char* fn, buffer* nxt)
 {
     next = nxt;
     inchars = new char[BUFSIZE+1];
     pushback = 0;
 
+    infile = inf;
     L.start(fn);
 
-    if ( strcmp("-", fn) ) {
-        infile = fopen(fn, "r");
-    } else {
-        infile = stdin;
-    }
     if (infile) refill();
 }
 
 lexer::buffer::~buffer()
 {
+    if (infile) {
+        if (stdin != infile) fclose(infile);
+    }
     delete[] inchars;
 }
 
@@ -64,6 +65,19 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     : text(MAX_LEXEME)
 {
     em = _em;
+    DCASSERT(em);
+
+    option* debug = em->findOption("Debug");
+    lexer_debug.Initialize(debug,
+        "lexer",
+        "When set, very low-level lexer messages are displayed.",
+#ifdef DEBUG_LEXER
+        true
+#else
+        false
+#endif
+    );
+
     topfile = 0;
     filenames = fns;
     numfiles = nfs;
@@ -87,6 +101,37 @@ lexer::~lexer()
     }
 }
 
+
+bool lexer::push_input(const location& from, const char* filename)
+{
+    if ( 0 == strcmp("-", filename) ) {
+        // Special case: standard input
+        if (lexer_debug.startReport()) {
+            lexer_debug.report() << "opening standard input";
+            lexer_debug.stopIO();
+        }
+
+        topfile = new buffer(stdin, "-", topfile);
+        return true;
+    }
+
+    FILE* inf = fopen(filename, "r");
+    if (inf) {
+        if (lexer_debug.startReport()) {
+            lexer_debug.report() << "opening " << filename;
+            lexer_debug.stopIO();
+        }
+        topfile = new buffer(inf, filename, topfile);
+        return true;
+    }
+
+    em->startError(from, 0);
+    em->cerr() << "Couldn't open file '" << filename << "', ignoring";
+    em->stopIO();
+    return false;
+}
+
+
 void lexer::scan_token()
 {
     //
@@ -107,8 +152,10 @@ void lexer::scan_token()
                 lookaheads[0].set_end();
                 return;
             }
-            topfile = new buffer(filenames[fileindex], topfile);
+
+            push_input(location::NOWHERE(), filenames[fileindex]);
             ++fileindex;
+            continue;
         }
 
         int c = topfile->getc();
@@ -117,6 +164,11 @@ void lexer::scan_token()
         // Handle end of the top file
         //
         if (EOF == c) {
+            if (lexer_debug.startReport()) {
+                lexer_debug.report() << "End of file "
+                                     << topfile->where().getFile();
+                lexer_debug.stopIO();
+            }
             buffer* n = topfile->getNext();
             delete topfile;
             topfile = n;
@@ -135,6 +187,7 @@ void lexer::scan_token()
                         if (!report_newline) continue;
                         lookaheads[0].tokenID = token::NEWLINE;
                         report_newline = false;
+                        debug_token();
                         return;
 
             /*
@@ -142,42 +195,55 @@ void lexer::scan_token()
              */
             case '#':   lookaheads[0].tokenID = token::SHARP;
                         report_newline = true;
+                        debug_token();
                         return;
 
             case ',':   lookaheads[0].tokenID = token::COMMA;
+                        debug_token();
                         return;
 
             case ';':   lookaheads[0].tokenID = token::SEMI;
+                        debug_token();
                         return;
 
             case '(':   lookaheads[0].tokenID = token::LPAR;
+                        debug_token();
                         return;
 
             case ')':   lookaheads[0].tokenID = token::RPAR;
+                        debug_token();
                         return;
 
             case '[':   lookaheads[0].tokenID = token::LBRAK;
+                        debug_token();
                         return;
 
             case ']':   lookaheads[0].tokenID = token::RBRAK;
+                        debug_token();
                         return;
 
             case '{':   lookaheads[0].tokenID = token::LBRACE;
+                        debug_token();
                         return;
 
             case '}':   lookaheads[0].tokenID = token::RBRACE;
+                        debug_token();
                         return;
 
             case '+':   lookaheads[0].tokenID = token::PLUS;
+                        debug_token();
                         return;
 
             case '*':   lookaheads[0].tokenID = token::TIMES;
+                        debug_token();
                         return;
 
             case '%':   lookaheads[0].tokenID = token::MOD;
+                        debug_token();
                         return;
 
             case '\\':  lookaheads[0].tokenID = token::SET_DIFF;
+                        debug_token();
                         return;
 
 
@@ -196,6 +262,7 @@ void lexer::scan_token()
                             continue;
                         }
                         lookaheads[0].tokenID = token::DIVIDE;
+                        debug_token();
                         return;
 
             /*
@@ -207,6 +274,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::DOT;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -218,6 +286,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::COLON;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -229,6 +298,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::BANG;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -240,6 +310,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::MINUS;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -248,6 +319,7 @@ void lexer::scan_token()
             case '=':   if ('=' == topfile->peek()) {
                             topfile->getc();
                             lookaheads[0].tokenID = token::EQUALS;
+                            debug_token();
                             return;
                         }
                         IllegalChar();
@@ -262,6 +334,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::LT;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -273,6 +346,7 @@ void lexer::scan_token()
                         } else {
                             lookaheads[0].tokenID = token::GT;
                         }
+                        debug_token();
                         return;
 
             /*
@@ -281,6 +355,7 @@ void lexer::scan_token()
             case '|':   if ('|' == topfile->peek()) {
                             topfile->getc();
                             lookaheads[0].tokenID = token::OR;
+                            debug_token();
                             return;
                         }
                         IllegalChar();
@@ -292,6 +367,7 @@ void lexer::scan_token()
             case '&':   if ('&' == topfile->peek()) {
                             topfile->getc();
                             lookaheads[0].tokenID = token::AND;
+                            debug_token();
                             return;
                         }
                         IllegalChar();
@@ -301,7 +377,9 @@ void lexer::scan_token()
              * String constants
              */
             case '"':
-                        return consume_strconst();
+                        consume_strconst();
+                        debug_token();
+                        return;
 
             /*
              * Numerical constants
@@ -316,7 +394,9 @@ void lexer::scan_token()
             case '7':
             case '8':
             case '9':
-                        return consume_number();
+                        consume_number();
+                        debug_token();
+                        return;
 
 
             /*
@@ -375,7 +455,9 @@ void lexer::scan_token()
             case 'X':
             case 'Y':
             case 'Z':
-                        return consume_ident();
+                        consume_ident();
+                        debug_token();
+                        return;
 
             /*
              * Illegal character.
