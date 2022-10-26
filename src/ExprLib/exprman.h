@@ -118,6 +118,8 @@ public:
   */
   option_const* Initialize(option* owner, const char* n, const char* docs, bool act);
 
+  inline void Activate()    { active = true; }
+  inline void Deactivate()  { active = false; }
   inline bool isActive() const { return active; }
   inline bool canWrite() const { return active && io; }
 
