@@ -127,6 +127,9 @@ class token {
         // Convert tokenID into a string
         const char* getIdName() const;
 
+        // For debugging: show lots of stuff
+        void debug(OutputStream &s) const;
+
         friend class lexer;
 };
 

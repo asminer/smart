@@ -53,7 +53,7 @@ void location::show(OutputStream &s) const
                 break;
 
             default:
-                s.Put("in file");
+                s.Put("in file ");
                 s.Put(fn);
         } // switch
     } else if (' ' == fn[0]) {

@@ -187,3 +187,9 @@ const char* token::getIdName() const
     }
 }
 
+void token::debug(OutputStream &s)
+{
+    s << "Token " << getIdName() << " " << where << " from text ";
+    show(s);
+}
+

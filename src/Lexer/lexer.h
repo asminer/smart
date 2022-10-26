@@ -3,10 +3,9 @@
 
 #include <stdio.h>
 #include "../Streams/location.h"
+#include "../ExprLib/exprman.h"
 #include "tokens.h"
 #include <cstring>
-
-class exprman;
 
 class lexer {
     private:
@@ -61,7 +60,7 @@ class lexer {
                 location L;
                 FILE* infile;
             public:
-                buffer(const char* filename, buffer* nxt);
+                buffer(FILE* inf, const char* filename, buffer* nxt);
                 ~buffer();
 
                 operator bool() const {
@@ -104,6 +103,8 @@ class lexer {
                 void refill();
         };
     private:
+        named_msg lexer_debug;
+
         const exprman* em;
         const char** filenames;
         unsigned numfiles;
@@ -124,7 +125,8 @@ class lexer {
         lexer(const exprman *_em, const char** fns, unsigned nfs);
         ~lexer();
 
-        void include_input(const char* filename);
+        // Return true on success, false on failure (couldn't open)
+        bool push_input(const location& from, const char* filename);
 
         // What's the next token
         inline const token& peek() const {
@@ -170,6 +172,13 @@ class lexer {
 
         void IllegalChar();
         void finish_attributed_token(token::type t);
+
+        inline void debug_token() {
+            if (lexer_debug.startReport()) {
+                lookaheads[0].debug(lexer_debug.report());
+                lexer_debug.stopIO();
+            }
+        }
 };
 
 #endif
