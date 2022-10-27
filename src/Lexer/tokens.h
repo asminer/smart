@@ -108,6 +108,8 @@ class token {
 
         ~token();		/* unlink shared stuff */
 
+        inline operator bool() const { return tokenID != END; }
+
         inline bool matches(type t) const {	return t == tokenID; }
         inline type getId() const { return tokenID; }
         inline const location& getLoc() const { return where; }

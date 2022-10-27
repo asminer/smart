@@ -26,6 +26,7 @@ lexer::lexeme::~lexeme()
 
 lexer::buffer::buffer(FILE* inf, const char* fn, buffer* nxt)
 {
+    DCASSERT(inf);
     next = nxt;
     inchars = new char[BUFSIZE+1];
     pushback = 0;
@@ -33,7 +34,7 @@ lexer::buffer::buffer(FILE* inf, const char* fn, buffer* nxt)
     infile = inf;
     L.start(fn);
 
-    if (infile) refill();
+    refill();
 }
 
 lexer::buffer::~buffer()
@@ -50,6 +51,9 @@ void lexer::buffer::refill()
     ptr = inchars;
     unsigned long got = fread(inchars, 1, BUFSIZE, infile);
     inchars[got] = 0;
+
+    if (got) return;
+
     if (feof(infile)) {
         if (stdin != infile) fclose(infile);
         infile = 0;
@@ -107,7 +111,7 @@ bool lexer::push_input(const location& from, const char* filename)
     if ( 0 == strcmp("-", filename) ) {
         // Special case: standard input
         if (lexer_debug.startReport()) {
-            lexer_debug.report() << "opening standard input";
+            lexer_debug.report() << "opening standard input\n";
             lexer_debug.stopIO();
         }
 
@@ -118,7 +122,7 @@ bool lexer::push_input(const location& from, const char* filename)
     FILE* inf = fopen(filename, "r");
     if (inf) {
         if (lexer_debug.startReport()) {
-            lexer_debug.report() << "opening " << filename;
+            lexer_debug.report() << "opening " << filename << "\n";
             lexer_debug.stopIO();
         }
         topfile = new buffer(inf, filename, topfile);
@@ -166,7 +170,7 @@ void lexer::scan_token()
         if (EOF == c) {
             if (lexer_debug.startReport()) {
                 lexer_debug.report() << "End of file "
-                                     << topfile->where().getFile();
+                                     << topfile->where().getFile() << "\n";
                 lexer_debug.stopIO();
             }
             buffer* n = topfile->getNext();
@@ -322,7 +326,7 @@ void lexer::scan_token()
                             debug_token();
                             return;
                         }
-                        IllegalChar();
+                        IllegalChar('=');
                         continue;
 
             /*
@@ -358,7 +362,7 @@ void lexer::scan_token()
                             debug_token();
                             return;
                         }
-                        IllegalChar();
+                        IllegalChar('|');
                         continue;
 
             /*
@@ -370,7 +374,7 @@ void lexer::scan_token()
                             debug_token();
                             return;
                         }
-                        IllegalChar();
+                        IllegalChar('&');
                         continue;
 
             /*
@@ -463,7 +467,7 @@ void lexer::scan_token()
              * Illegal character.
              */
             default:
-                        IllegalChar();
+                        IllegalChar(c);
                         continue;
         }
 
@@ -507,6 +511,24 @@ void lexer::ignore_c_comment()
             return;
         }
     }
+}
+
+void lexer::consume_strconst()
+{
+    text.pop(); // remove leading "
+    for (int c=0; c != '"'; ) {
+        c = topfile->getc();
+        if (EOF == c) {
+            if (em && em->startError(lookaheads[0].where, "\"")) {
+                em->cerr() << "Unclosed string";
+                em->stopIO();
+            }
+            c = '"';
+        }
+        text.append(c);
+    }
+    text.pop(); // remove trailing "
+    finish_attributed_token(token::STRCONST);
 }
 
 void lexer::consume_number()
@@ -696,7 +718,7 @@ void lexer::consume_ident()
     //
     lookaheads[0].modif_attrib = em->findModifier(text.get());
     if (lookaheads[0].modif_attrib != NO_SUCH_MODIFIER) {
-        lookaheads[0].tokenID = token::MODIF;
+        finish_attributed_token(token::MODIF);
         return;
     }
     const type* t = lookaheads[0].type_attrib = em->findOWDType(text.get());
@@ -712,6 +734,18 @@ void lexer::consume_ident()
 
     // None of the above
     finish_attributed_token(token::IDENT);
+}
+
+void lexer::IllegalChar(char c)
+{
+    char txt[2];
+    txt[0] = c;
+    txt[1] = 0;
+
+    if (em && em->startError(lookaheads[0].where, txt)) {
+        em->cerr() << "Ignoring unexpected character '" << c << "'";
+        em->stopIO();
+    }
 }
 
 void lexer::finish_attributed_token(token::type t)
