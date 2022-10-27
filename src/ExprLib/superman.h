@@ -52,7 +52,7 @@ class superman : public exprman {
   engtype** ETList;
   int num_ets;
 
- 
+
 public:
   superman(io_environ* io, option_manager* om);
 
@@ -76,6 +76,7 @@ public:
   virtual simple_type* findSimple(const char* name);
   virtual const type* findType(const char* name) const;
   virtual modifier findModifier(const char* name) const;
+  virtual const char* modifierName(modifier m) const;
   virtual int getNumTypes() const;
   virtual const type* getTypeNumber(int i) const;
 
@@ -85,7 +86,7 @@ public:
   virtual void registerConversion(specific_conv *);
   virtual int getPromoteDistance(const type* t1, const type* t2) const;
   virtual bool isCastable(const type* t1, const type* t2) const;
-  virtual expr* makeTypecast(const char* file, int line, 
+  virtual expr* makeTypecast(const char* file, int line,
       const type* newtype, expr* e) const;
   // TBD: others here?
 
@@ -100,18 +101,18 @@ public:
 
   const type* getTypeOf(unary_opcode op, const type* x) const;
   const type* getTypeOf(const type* l, binary_opcode op, const type* r) const;
-  const type* getTypeOf(trinary_opcode op, const type* left, 
+  const type* getTypeOf(trinary_opcode op, const type* left,
       const type* middle, const type* right) const;
-  virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op, 
+  virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op,
       const type* right) const;
 
-  virtual expr* makeUnaryOp(const char* file, int line, 
+  virtual expr* makeUnaryOp(const char* file, int line,
       unary_opcode op, expr* opnd) const;
-  virtual expr* makeBinaryOp(const char* fn, int ln, 
+  virtual expr* makeBinaryOp(const char* fn, int ln,
       expr* left, binary_opcode op, expr* rt) const;
-  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op, 
+  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
       expr* l, expr* m, expr* r) const;
-  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op, 
+  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op,
       expr** opnds, bool* f, int nops) const;
 
   // Solution engine types

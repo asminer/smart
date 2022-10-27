@@ -53,7 +53,7 @@ int Compare(type *a, type* b)
 
   //
   // Check for void types next
-  // 
+  //
 
   if (basea->isVoid() && baseb->isVoid()) {
     int c = strcmp(basea->getName(), baseb->getName());
@@ -110,7 +110,7 @@ int Compare(type *a, type* b)
   if (b->isASet())  bscore += 8;
 
   return ascore - bscore;
-  
+
 }
 
 // ******************************************************************
@@ -194,10 +194,10 @@ superman::~superman()
   delete[] reg_binary;
   delete[] reg_trinary;
   delete[] reg_assoc;
-  
+
   // library registry
   free(extlibs);
- 
+
   // engine type registry
   delete ETTree;
   for (int i=0; i<num_ets; i++)  delete ETList[i];
@@ -207,7 +207,7 @@ superman::~superman()
 void superman::finalize()
 {
   if (is_finalized)  return;
-  
+
   // Convert engine type tree into an ordered list
   num_ets = ETTree->NumElements();
   ETList = new engtype* [num_ets];
@@ -243,11 +243,11 @@ void superman::finalize()
 #endif
 }
 
-//  
+//
 //
 // Special expressions
 //
-//  
+//
 
 expr* superman::makeError() const
 {
@@ -277,11 +277,11 @@ bool superman::isOrdinary(const expr* e) const
 }
 
 
-//  
-//  
+//
+//
 // Types
-//  
-//  
+//
+//
 
 bool superman::registerType(type* t)
 {
@@ -297,7 +297,7 @@ bool superman::registerType(type* t)
   if (last_type >= alloc_types) {
     // too many types, enlarge the list.
     alloc_types += 16;
-    type** foo = 
+    type** foo =
       (type**) realloc(reg_type, alloc_types * sizeof(void*));
     if (0==foo)  {
       alloc_types -= 16;
@@ -375,6 +375,13 @@ modifier superman::findModifier(const char* name) const
   return NO_SUCH_MODIFIER;
 }
 
+const char* superman::modifierName(modifier m) const
+{
+    if (PHASE == m)     return "ph";
+    if (RAND  == m)     return "rand";
+    return "no such modifier";
+}
+
 int superman::getNumTypes() const
 {
   return last_type;
@@ -387,11 +394,11 @@ const type* superman::getTypeNumber(int i) const
 }
 
 
-//  
-//  
+//
+//
 // Promotions and casting
-//  
-//  
+//
+//
 
 void superman::registerConversion(general_conv *c)
 {
@@ -422,14 +429,14 @@ inline const general_conv* findRule(const List <general_conv> &G,
   return 0;
 }
 
-inline bool findRules(const List <general_conv> &G, 
+inline bool findRules(const List <general_conv> &G,
     const List <specific_conv> &S,
-    const type* oldt, const type* &midt, const type* newt, 
+    const type* oldt, const type* &midt, const type* newt,
     const general_conv* &gp, const specific_conv* &sp)
 {
   DCASSERT(oldt);
   DCASSERT(newt);
-  
+
   for (long j=0; j < S.Length(); j++) {
     sp = S.ReadItem(j);
     DCASSERT(sp);
@@ -463,7 +470,7 @@ int superman::getPromoteDistance(const type* t1, const type* t2) const
 
   const specific_conv* s = 0;
   const type* t1mod = 0;
-  if (!findRules(general_rules, promotion_rules, t1, t1mod, t2, g, s)) 
+  if (!findRules(general_rules, promotion_rules, t1, t1mod, t2, g, s))
   return -1;
 
   DCASSERT(s);
@@ -486,11 +493,11 @@ bool superman::isCastable(const type* t1, const type* t2) const
   return findRules(general_rules, casting_rules, t1, midt, t2, g, s);
 }
 
-inline expr* convert(const char* file, int line, expr* e, 
-      const type* t1mod, const type* newtype, 
+inline expr* convert(const char* file, int line, expr* e,
+      const type* t1mod, const type* newtype,
       const general_conv* g, const specific_conv* s)
 {
-  if (0==g) 
+  if (0==g)
    return s->convert(file, line, e, newtype);
 
   if (!g->requiresConversion(t1mod, newtype))
@@ -501,7 +508,7 @@ inline expr* convert(const char* file, int line, expr* e,
 }
 
 
-expr* superman::makeTypecast(const char* file, int line, 
+expr* superman::makeTypecast(const char* file, int line,
       const type* newtype, expr* e) const
 {
   if (!isOrdinary(e))  return e;
@@ -514,7 +521,7 @@ expr* superman::makeTypecast(const char* file, int line,
 
   if (0==getPromoteDistance(oldt, newtype))  return e;
 
-  // Try generic rules 
+  // Try generic rules
   const general_conv* g = findRule(general_rules, oldt, newtype);
   if (g) return g->convert(file, line, e, newtype);
 
@@ -535,11 +542,11 @@ expr* superman::makeTypecast(const char* file, int line,
   return makeError();
 }
 
-//  
-//  
+//
+//
 // Registering operations
-//  
-//  
+//
+//
 
 bool superman::registerOperation(unary_op* op)
 {
@@ -585,18 +592,18 @@ bool superman::registerOperation(assoc_op* op)
   return true;
 }
 
-//  
-//  
+//
+//
 // Building expressions with operators
-//  
-//  
+//
+//
 
 const type* superman::getTypeOf(unary_opcode op, const type* x) const
 {
   const unary_op* list;
   if (op != uop_none) list = reg_unary[op];
   else                list = 0;
-  
+
   const unary_op* match = 0;
   int num_matches = 0;
   for (const unary_op* ptr = list; ptr; ptr=ptr->next) {
@@ -626,7 +633,7 @@ const type* superman
   const binary_op* list;
   if (op != bop_none) list = reg_binary[op];
   else                list = 0;
-  
+
   const binary_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -668,7 +675,7 @@ const type* superman::getTypeOf(trinary_opcode op, const type* lt,
   const trinary_op* list;
   if (op != top_none) list = reg_trinary[op];
   else                list = 0;
-  
+
   const trinary_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -713,7 +720,7 @@ const type* superman
   const assoc_op* list;
   if (op != aop_none) list = reg_assoc[op];
   else                list = 0;
-  
+
   const assoc_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -751,17 +758,17 @@ const type* superman
 
 
 
-expr* superman::makeUnaryOp(const char* file, int line, 
+expr* superman::makeUnaryOp(const char* file, int line,
       unary_opcode op, expr* opnd) const
 {
   if (!isOrdinary(opnd))  return opnd;  // null, error, or default
-  
+
   const unary_op* list;
-  if (op != uop_none) 
+  if (op != uop_none)
   list = reg_unary[op];
   else
   list = 0;
-  
+
   const unary_op* match = 0;
   int num_matches = 0;
   for (const unary_op* ptr = list; ptr; ptr=ptr->next) {
@@ -804,7 +811,7 @@ expr* superman::makeUnaryOp(const char* file, int line,
   return 0;
 }
 
-expr* superman::makeBinaryOp(const char* fn, int ln, 
+expr* superman::makeBinaryOp(const char* fn, int ln,
       expr* lt, binary_opcode op, expr* rt) const
 {
   if (0==lt || 0==rt) {
@@ -821,11 +828,11 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
   DCASSERT(isOrdinary(rt));
 
   const binary_op* list;
-  if (op != bop_none) 
+  if (op != bop_none)
   list = reg_binary[op];
   else
   list = 0;
-  
+
   const binary_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -881,7 +888,7 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
   return 0;
 }
 
-expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op, 
+expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
         expr* l, expr* m, expr* r) const
 {
   if (0==l || 0==m || 0==r) {
@@ -901,11 +908,11 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
   DCASSERT(isOrdinary(r));
 
   const trinary_op* list;
-  if (op != top_none) 
+  if (op != top_none)
   list = reg_trinary[op];
   else
   list = 0;
-  
+
   const trinary_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -968,7 +975,7 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
   return 0;
 }
 
-expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op, 
+expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
         expr** opnds, bool* flip, int N) const
 {
   bool has_null = false;
@@ -993,11 +1000,11 @@ expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
   }
 
   const assoc_op* list;
-  if (op != aop_none) 
+  if (op != aop_none)
   list = reg_assoc[op];
   else
   list = 0;
-  
+
   const assoc_op* match = 0;
   int best_match = -1;
   int num_matches = 0;
@@ -1065,11 +1072,11 @@ expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
   return 0;
 }
 
-//  
-//  
+//
+//
 // Solution  engines
-//  
-//  
+//
+//
 
 bool superman::registerEngineType(engtype* et)
 {
@@ -1119,11 +1126,11 @@ const engtype* superman::getEngineTypeNumber(int i) const
   return ETList[i];
 }
 
-//  
-//  
+//
+//
 // Supporting  libraries
-//  
-//  
+//
+//
 
 char superman::registerLibrary(const library* lib)
 {
@@ -1133,7 +1140,7 @@ char superman::registerLibrary(const library* lib)
   const char* libv = lib->getVersionString();
   if (0==libv)  return 3;
   if (lib->hasFixedPointer()) {
-    // We can use a fast check... 
+    // We can use a fast check...
     for (int i=0; i<num_libs; i++)
       if (extlibs[i]->getVersionString() == libv)
     return 4;

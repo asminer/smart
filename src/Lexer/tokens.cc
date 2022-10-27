@@ -41,10 +41,12 @@ void token::set_end()
 void token::show(OutputStream &s) const
 {
     const char* astr = attribute ? attribute->getStr() : 0;
+    /*
     if (astr) {
         s.Put(astr);
         return;
     }
+    */
     switch (tokenID) {
         case END:       s.Put("(eof)");     return;
         case NEWLINE:   s.Put("(newline)"); return;
@@ -80,14 +82,6 @@ void token::show(OutputStream &s) const
         case NEXT:          s.Put("X");     return;
         case PREV:          s.Put("Y");     return;
 
-        case BOOLCONST:     s.Put("(null boolean literal)");    return;
-        case INTCONST:      s.Put("(null integer literal)");    return;
-        case REALCONST:     s.Put("(null real literal)");       return;
-        case STRCONST:      s.Put("(null string literal)");     return;
-        case TYPE:          s.Put("(null type)");               return;
-        case MODIF:         s.Put("(null modifier)");           return;
-        case IDENT:         s.Put("(null identifier)");         return;
-
         case GETS:      s.Put(":=");    return;
         case EQUALS:    s.Put("==");    return;
         case NEQUAL:    s.Put("!=");    return;
@@ -110,6 +104,44 @@ void token::show(OutputStream &s) const
         case MAXIMIZE:      s.Put("maximize");      return;
         case MINIMIZE:      s.Put("minimize");      return;
         case SATISFIABLE:   s.Put("satisfiable");   return;
+
+        case BOOLCONST:     s.Put(bool_const ? "true" : "false");
+                            return;
+
+        case STRCONST:      if (astr) {
+                                s << "\"" << astr << "\"";
+                            } else {
+                                s.Put("(null)");
+                            }
+                            return;
+
+        case INTCONST:
+        case REALCONST:
+        case IDENT:
+                            if (astr) {
+                                s.Put(astr);
+                            } else {
+                                s.Put("(null)");
+                            }
+                            return;
+
+        case FORMALISM:
+        case TYPE:
+                            if (type_attrib) {
+                                s.Put(type_attrib->getName());
+                            } else {
+                                s.Put("(null)");
+                            }
+                            return;
+
+        case MODIF:
+                            if (astr) {
+                                s << astr << " (index " << modif_attrib << ")";
+                            } else {
+                                s.Put("(null)");
+                            }
+                            return;
+
 
         default:    s.Put("unknown token");
     }
@@ -157,6 +189,7 @@ const char* token::getIdName() const
         case REALCONST:     return "REALCONST";
         case STRCONST:      return "STRCONST";
         case TYPE:          return "TYPE";
+        case FORMALISM:     return "FORMALISM";
         case MODIF:         return "MODIF";
         case IDENT:         return "IDENT";
 
@@ -187,7 +220,7 @@ const char* token::getIdName() const
     }
 }
 
-void token::debug(OutputStream &s)
+void token::debug(OutputStream &s) const
 {
     s << "Token " << getIdName() << " " << where << " from text ";
     show(s);

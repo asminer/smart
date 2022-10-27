@@ -6,7 +6,7 @@ SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib _Meddly
 
 
 ## List executables that we build
-bin_PROGRAMS = smart icp teststrms testsplay testinit
+bin_PROGRAMS = smart icp teststrms testsplay testinit lextest
 
 
 BUILT_SOURCES = \
@@ -272,3 +272,59 @@ testsplay_SOURCES = \
 testinit_SOURCES = \
   TestApps/testinit.cc TestApps/initd.cc \
   ExprLib/startup.cc
+
+## ============================================================
+##
+## lextest
+##
+## ============================================================
+
+lextest_SOURCES = \
+  Streams/strings.cc \
+  Streams/location.cc \
+  Streams/streams.cc \
+  Streams/textfmt.cc \
+  \
+  Options/options.cc \
+  \
+  ExprLib/startup.cc \
+  ExprLib/exprman.cc \
+  ExprLib/superman.cc \
+  ExprLib/engine.cc \
+  ExprLib/formalism.cc \
+  ExprLib/init_data.cc \
+  ExprLib/type.cc \
+  ExprLib/result.cc \
+  ExprLib/expr.cc \
+  ExprLib/bogus.cc \
+  ExprLib/values.cc \
+  ExprLib/symbols.cc \
+  ExprLib/iterators.cc \
+  ExprLib/arrays.cc \
+  ExprLib/stmts.cc \
+  ExprLib/converge.cc \
+  ExprLib/sets.cc \
+  ExprLib/intervals.cc \
+  ExprLib/forloops.cc \
+  ExprLib/functions.cc \
+  ExprLib/unary.cc \
+  ExprLib/casting.cc \
+  ExprLib/binary.cc \
+  ExprLib/trinary.cc \
+  ExprLib/assoc.cc \
+  ExprLib/ops_bool.cc \
+  ExprLib/ops_int.cc \
+  ExprLib/ops_real.cc \
+  ExprLib/ops_set.cc \
+  ExprLib/ops_misc.cc \
+  ExprLib/dd_front.cc \
+  ExprLib/mod_def.cc \
+  ExprLib/mod_vars.cc \
+  ExprLib/mod_inst.cc \
+  ExprLib/measures.cc \
+  \
+  Lexer/tokens.cc \
+  Lexer/lexer.cc \
+  Lexer/lextest.cc
+
+

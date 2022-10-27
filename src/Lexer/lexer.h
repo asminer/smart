@@ -24,6 +24,11 @@ class lexer {
                     return buffer[0] = c;
                 }
 
+                inline char pop() {
+                    if (p) return buffer[--p];
+                    return 0;
+                }
+
                 inline void append(char c) {
                     if (p < bufmax) {
                         buffer[p++] = c;
@@ -177,12 +182,13 @@ class lexer {
         void consume_number();
         void consume_ident();
 
-        void IllegalChar();
+        void IllegalChar(char c);
         void finish_attributed_token(token::type t);
 
         inline void debug_token() {
             if (lexer_debug.startReport()) {
                 lookaheads[0].debug(lexer_debug.report());
+                lexer_debug.report() << "\n";
                 lexer_debug.stopIO();
             }
         }

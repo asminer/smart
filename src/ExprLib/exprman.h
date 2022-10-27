@@ -538,6 +538,9 @@ public:
   /// Returns the modifier with given name, or NO_SUCH_MODIF.
   virtual modifier findModifier(const char* name) const = 0;
 
+  /// Returns the name of a given modifier
+  virtual const char* modifierName(modifier m) const = 0;
+
   /// Get the current number of registered types.
   virtual int getNumTypes() const = 0;
 
