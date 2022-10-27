@@ -7,6 +7,11 @@
 #include "tokens.h"
 #include <cstring>
 
+/*
+ * Brilliantly-designed, perfect in every way,
+ * self-contained lexer class for splitting the input stream(s)
+ * into tokens for use by the compiler.
+ */
 class lexer {
     private:
         class lexeme {
@@ -127,10 +132,25 @@ class lexer {
         bool report_smart_keywords;
         bool report_icp_keywords;
     public:
+        /**
+         * Initialize.
+         *  @param  em      exprman for types vs idents and error streams
+         *  @param  fns     Input file names given on command line
+         *  @param  nfs     Number of input file names
+         */
         lexer(const exprman *_em, const char** fns, unsigned nfs);
+
+        // Cleanup
         ~lexer();
 
-        // Return true on success, false on failure (couldn't open)
+        /**
+         * Immediately start processing another file, for example
+         * due to an #include directive.
+         *  @param  from        Location for error message, if any
+         *  @param  filename    Name of file to start processing
+         *
+         *  @return true on success, false on failure (couldn't open)
+         */
         bool push_input(const location& from, const char* filename);
 
         // What's the next token
@@ -148,7 +168,7 @@ class lexer {
             }
         }
 
-        // Consume the next token and store it
+        // Consume the next token and store it in t
         inline void consume(token &t) {
             t = lookaheads[tlp];
             consume();
@@ -161,9 +181,12 @@ class lexer {
             lookaheads[tlp] = t;
         }
 
+        // Turn on debugging
         inline void debug_on() {
             lexer_debug.Activate();
         }
+
+        // Turn off debugging
         inline void debug_off() {
             lexer_debug.Deactivate();
         }
