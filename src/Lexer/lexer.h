@@ -10,7 +10,7 @@
 /*
  * Brilliantly-designed, perfect in every way,
  * self-contained lexer class for splitting the input stream(s)
- * into tokens for use by the compiler.
+ * into tokens for use by the parser(s).
  */
 class lexer {
     private:

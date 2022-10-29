@@ -87,15 +87,17 @@ int main(int argc, const char** argv)
 
     // Lexer initialization
     lexer LEX(em, argv+1, argc-1);
-    LEX.debug_on();
 
     // finalize expression manager
     em->finalize();
 
     // Strip off tokens
-    while (LEX.peek()) {
-        LEX.consume();
-    }
+    token t;
+    do {
+        LEX.consume(t);
+        t.debug(em->cout());
+        em->cout() << "\n";
+    } while (t);
 
     //
     // Cleanup

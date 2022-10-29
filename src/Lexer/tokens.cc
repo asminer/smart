@@ -30,14 +30,6 @@ token::~token()
     Delete(attribute);
 }
 
-void token::set_end()
-{
-    tokenID = END;
-    Delete(attribute);
-    attribute = 0;
-    where.clear();
-}
-
 void token::show(OutputStream &s) const
 {
     const char* astr = attribute ? attribute->getStr() : 0;
@@ -49,6 +41,7 @@ void token::show(OutputStream &s) const
     */
     switch (tokenID) {
         case END:       s.Put("(eof)");     return;
+        case BEGIN:     s.Put("(bof)");     return;
         case NEWLINE:   s.Put("(newline)"); return;
         case SHARP:     s.Put("#");         return;
         case COMMA:     s.Put(",");         return;
@@ -151,6 +144,7 @@ const char* token::getIdName() const
 {
     switch (tokenID) {
         case END:       return "END";
+        case BEGIN:     return "BEGIN";
         case NEWLINE:   return "NEWLINE";
         case SHARP:     return "SHARP";
         case COMMA:     return "COMMA";
@@ -224,5 +218,13 @@ void token::debug(OutputStream &s) const
 {
     s << "Token " << getIdName() << " " << where << " from text ";
     show(s);
+}
+
+void token::set_special(type t)
+{
+    Delete(attribute);
+    attribute = 0;
+    where.clear();
+    tokenID = t;
 }
 
