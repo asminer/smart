@@ -4,7 +4,7 @@
 #define BUFSIZE 16384
 #define MAX_LEXEME 1024
 
-#define DEBUG_LEXER
+// #define DEBUG_LEXER
 
 //
 // ======================================================================
@@ -93,7 +93,7 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     report_smart_keywords = true;
     report_icp_keywords = true;
 
-    scan_token();
+    lookaheads[0].set_begin();
 }
 
 lexer::~lexer()

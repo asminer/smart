@@ -14,7 +14,8 @@ class token {
             //
             // Single characters
             //
-            END             = 0,
+            END             = 0,        // special, end of file token
+            BEGIN           = 1,        // special, beginning of file token
             NEWLINE         = '\n',
             SHARP           = '#',
             COMMA           = ',',
@@ -121,7 +122,18 @@ class token {
         }
 
         // Set token to END; unlink attribute
-        void set_end();
+        inline void set_end() {
+            set_special(END);
+        }
+
+        // Set token to BEGIN; unlink attribute
+        inline void set_begin() {
+            set_special(BEGIN);
+        }
+
+        inline bool is_begin() const {
+            return BEGIN == tokenID;
+        }
 
         // Show the actual text (lexeme)
         void show(OutputStream &s) const;
@@ -133,6 +145,9 @@ class token {
         void debug(OutputStream &s) const;
 
         friend class lexer;
+
+    private:
+        void set_special(type t);
 };
 
 inline OutputStream& operator<< (OutputStream& s, const token& t)
