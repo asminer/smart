@@ -22,17 +22,17 @@ List <msr_func> initializer::CML;
 
 inline void DEBUG(const char* S)
 {
-  if (initializer::isDebugging()) {
-    fputs(S, stderr);
-  }
+    if (initializer::isDebugging()) {
+        fputs(S, stderr);
+    }
 }
 
 template <class T>
 inline void DEBUG(const char* fmt, T t)
 {
-  if (initializer::isDebugging()) {
-    fprintf(stderr, fmt, t);
-  }
+    if (initializer::isDebugging()) {
+        fprintf(stderr, fmt, t);
+    }
 }
 
 // ******************************************************************
@@ -42,17 +42,17 @@ inline void DEBUG(const char* fmt, T t)
 // ******************************************************************
 
 class initializer::resource {
-    const char* name;
-    List <initializer> builders;
-    bool ready;
-  public:
-    resource* next;
-  public: 
-    resource(const char* n);
-    bool isReady();
-    void addBuilder(initializer* b);
+        const char* name;
+        List <initializer> builders;
+        bool ready;
+    public:
+        resource* next;
+    public:
+        resource(const char* n);
+        bool isReady();
+        void addBuilder(initializer* b);
 
-    friend class initializer;
+        friend class initializer;
 };
 
 // ******************************************************************
@@ -61,34 +61,36 @@ class initializer::resource {
 
 initializer::resource::resource(const char* n)
 {
-  name = n;
-  next = 0;
-  ready = false;
+    name = n;
+    next = 0;
+    ready = false;
 }
 
 bool initializer::resource::isReady()
 {
-  if (ready) {
+    if (ready) {
+        DEBUG("\t\tResource %s is ready\n", name);
+        return true;
+    }
+    DEBUG("\t\tChecking resource %s\n", name);
+    for (int i=0; i<builders.Length(); i++) {
+        if (builders.ReadItem(i)->executed) {
+            DEBUG("\t\t\tBuilder %s has executed\n",
+                builders.ReadItem(i)->name);
+            continue;
+        }
+        DEBUG("\t\t\tBuilder %s has not executed\n",
+            builders.ReadItem(i)->name);
+        return false;
+    }
+    ready = true;
     DEBUG("\t\tResource %s is ready\n", name);
     return true;
-  }
-  DEBUG("\t\tChecking resource %s\n", name);
-  for (int i=0; i<builders.Length(); i++) {
-    if (builders.ReadItem(i)->hasExecuted()) {
-      DEBUG("\t\t\tBuilder %s has executed\n", builders.ReadItem(i)->Name());
-      continue;
-    }
-    DEBUG("\t\t\tBuilder %s has not executed\n", builders.ReadItem(i)->Name());
-    return false;
-  }
-  ready = true;
-  DEBUG("\t\tResource %s is ready\n", name);
-  return true;
 }
 
 void initializer::resource::addBuilder(initializer *b)
 {
-  builders.Append(b);
+    builders.Append(b);
 }
 
 // ******************************************************************
@@ -99,126 +101,126 @@ void initializer::resource::addBuilder(initializer *b)
 
 initializer::initializer(const char* n)
 {
-  name = n;
-  next = waiting_list;
-  waiting_list = this;
-  executed = false;
+    name = n;
+    next = waiting_list;
+    waiting_list = this;
+    executed = false;
 }
 
 initializer::~initializer()
 {
 }
 
-bool initializer::isReady()
-{
-  for (int i=0; i<resources_used.Length(); i++) {
-    if (resources_used.Item(i)->isReady()) continue;
-    return false;
-  }
-  return true;
-}
-
 bool initializer::executeAll()
 {
-  //
-  // Giant debugging chunk here: show resource list
-  //
-  if (isDebugging()) {
-    fprintf(stderr, "Initializer resource list:\n");
+    //
+    // Giant debugging chunk here: show resource list
+    //
+    if (isDebugging()) {
+        fprintf(stderr, "Initializer resource list:\n");
 
-    for (resource* curr = resource_list; curr; curr=curr->next) {
-      fprintf(stderr, "\t%s\n", curr->name);
+        for (resource* curr = resource_list; curr; curr=curr->next) {
+            fprintf(stderr, "\t%s\n", curr->name);
+        }
+        fprintf(stderr, "End of resource list\n");
     }
-    fprintf(stderr, "End of resource list\n");
-  }
 
-  //
-  // Actual code here
-  //
-  while (waiting_list) {
-    int ran = executeWaiting();
-    if (0==ran) return false; // STUCK!
-  }
-  return true;
-}
-
-int initializer::executeWaiting()
-{
-  int count = 0;
-  initializer* run_list = waiting_list;
-  waiting_list = 0;
-
-  DEBUG("Running through waiting initializers\n");
-
-  while (run_list) {
-    DEBUG("\tChecking %s\n", run_list->name);
-    initializer* next = run_list->next;
-    if (run_list->isReady()) {
-      DEBUG("\tExecuting %s\n", run_list->name);
-      count++;
-      bool ok = run_list->execute();
-      run_list->executed = true;
-      if (ok) {
-        DEBUG("\tExecution of %s succeeded\n", run_list->name);
-        run_list->next = completed_list;
-        completed_list = run_list;
-      } else {
-        DEBUG("\tExecution of %s failed\n", run_list->name);
-        run_list->next = failed_list;
-        failed_list = run_list;
-      }
-    } else {
-      DEBUG("\tInitializer %s not ready\n", run_list->name);
-      run_list->next = waiting_list;
-      waiting_list = run_list;
+    //
+    // Actual code here
+    //
+    while (waiting_list) {
+        int ran = executeWaiting();
+        if (0==ran) return false; // STUCK!
     }
-    run_list = next;
-  }
-  return count;
-}
-
-initializer::resource* initializer::findResource(const char* name)
-{
-  // traverse list, find item with name, and move it to front
-  // otherwise, if not present, create a new entry in front
-
-  resource* prev = 0;
-  resource* curr = resource_list;
-
-  while (curr) {
-
-    if (0==strcmp(name, curr->name)) {  // found!
-      if (prev) {
-        // Not at front; move it there
-        prev->next = curr->next;
-        curr->next = resource_list;
-        resource_list = curr;
-      }
-      return resource_list;
-    }
-    prev = curr;
-    curr = curr->next;
-  }
-
-  // still here?  Wasn't found
-
-  curr = new resource(name);
-  curr->next = resource_list;
-  resource_list = curr;
-  return resource_list;
+    return true;
 }
 
 // ******************************************************************
 
 void initializer::buildsResource(const char* name)
 {
-  resource* r = findResource(name);
-  DCASSERT(r);
-  r->addBuilder(this);
+    resource* r = findResource(name);
+    DCASSERT(r);
+    r->addBuilder(this);
 }
 
 void initializer::usesResource(const char* name)
 {
-  resources_used.Append(findResource(name));
+    resources_used.Append(findResource(name));
+}
+
+// ******************************************************************
+
+bool initializer::isReady()
+{
+    for (int i=0; i<resources_used.Length(); i++) {
+        if (resources_used.Item(i)->isReady()) continue;
+        return false;
+    }
+    return true;
+}
+
+
+int initializer::executeWaiting()
+{
+    int count = 0;
+    initializer* run_list = waiting_list;
+    waiting_list = 0;
+
+    DEBUG("Running through waiting initializers\n");
+
+    while (run_list) {
+        DEBUG("\tChecking %s\n", run_list->name);
+        initializer* next = run_list->next;
+        if (run_list->isReady()) {
+            DEBUG("\tExecuting %s\n", run_list->name);
+            count++;
+            bool ok = run_list->execute();
+            run_list->executed = true;
+            if (ok) {
+                DEBUG("\tExecution of %s succeeded\n", run_list->name);
+                add_to_completed(run_list);
+            } else {
+                DEBUG("\tExecution of %s failed\n", run_list->name);
+                add_to_failed(run_list);
+            }
+        } else {
+            DEBUG("\tInitializer %s not ready\n", run_list->name);
+            add_to_waiting(run_list);
+        }
+        run_list = next;
+    }
+    return count;
+}
+
+initializer::resource* initializer::findResource(const char* name)
+{
+    // traverse list, find item with name, and move it to front
+    // otherwise, if not present, create a new entry in front
+
+    resource* prev = 0;
+    resource* curr = resource_list;
+
+    while (curr) {
+
+        if (0==strcmp(name, curr->name)) {  // found!
+            if (prev) {
+                // Not at front; move it there
+                prev->next = curr->next;
+                curr->next = resource_list;
+                resource_list = curr;
+            }
+            return resource_list;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    // still here?  Wasn't found
+
+    curr = new resource(name);
+    curr->next = resource_list;
+    resource_list = curr;
+    return resource_list;
 }
 
