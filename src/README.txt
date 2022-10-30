@@ -1,7 +1,7 @@
 
 Module          Description
 --------------  --------------------------------------------------
-Apps            Top-level applications.  
+Apps            Top-level applications.
 
 Engines         Centralized manager of various solution engines.
                 Automatically generates and utilizes options when
@@ -13,6 +13,8 @@ ExprLib         Expression construction, manipulation, and evaluation.
 Formlsms        Modules for high-level and low-level formalisms.
 
 FuncLib         Collection of built-in functions for use in expressions.
+
+Lexer           New lexer implementation; not hooked up yet
 
 Modules         Misc. language modules, such as strings and bigints.
 
@@ -27,7 +29,7 @@ Streams         Centralized I/O, reporting, and documentation.
 
 SymTabs         Symbol tables.
 
-TestApps        Test applications, for testing individual 
+TestApps        Test applications, for testing individual
                 or groups of modules together.
 
 include         Templates and other headers.

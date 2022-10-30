@@ -15,77 +15,91 @@ class msr_func;
 // ******************************************************************
 
 class initializer {
-  public:
-    initializer(const char* n);
-  protected:
-    virtual ~initializer();
-  public:
-    // Public, but hidden?  Ok
-    class resource;
+        class resource;
+    public:
+        initializer(const char* n);
+    protected:
+        virtual ~initializer();
+    public:
 
-    /**
-      Returns true on success, false on failure.
-    */
-    virtual bool execute() = 0;
-    bool isReady();
-    inline bool hasExecuted() const { return executed; }
+        /**
+            Provided by derived classes.
+            Returns true on success, false on failure.
+        */
+        virtual bool execute() = 0;
 
-    /**
-      Execute all initializers.
-      Order is arbitrary, except we guarantee that 
-      all "builders" of a resource are executed 
-      before "users" of a resource.
+        inline static void setDebugging() {
+            debug = true;
+        }
 
-      Returns true if all initializers had a chance to execute,
-      false otherwise (happens if "deadlock" occurs).
-    */
-    static bool executeAll();
+        inline static bool isDebugging() {
+            return debug;
+        }
 
-    inline static void setDebugging() {
-      debug = true;
-    }
+        /**
+            Execute all initializers.
+            Order is arbitrary, except we guarantee that
+            all "builders" of a resource are executed
+            before "users" of a resource.
 
-    inline static bool isDebugging() { 
-      return debug;
-    }
+            Returns true if all initializers had a chance to execute,
+            false otherwise (happens if "deadlock" occurs).
+        */
+        static bool executeAll();
 
-    inline const char* Name() const {
-      return name;
-    }
+    protected:
+        void buildsResource(const char* name);
+        void usesResource(const char* name);
 
-  private:
-    // helper for executeAll
-    static int executeWaiting();
-    resource* findResource(const char* name);
+    protected:
+        // stuff that our initializers will want to use.
+        // convention: these member names are also resource names.
 
-  private:
-    const char* name;
-    initializer* next;
-    bool executed;
-    List <resource> resources_used;
+        static exprman* em;
+        static symbol_table* st;
+        static const char** env;
+        static const char* version;
+        static List <msr_func> CML;
 
-    // Current implementation assumes not many resources
-    static resource* resource_list;
 
-    static initializer* waiting_list;
-    static initializer* completed_list;
-    static initializer* failed_list;
+    private:
+        /// Checks if all required resources are ready.
+        bool isReady();
 
-    static bool debug;
+        /// Execute all waiting initializers;
+        /// put them in the appropriate list.
+        static int executeWaiting();
 
-  protected:
-    void buildsResource(const char* name);
-    void usesResource(const char* name);
+        resource* findResource(const char* name);
 
-  protected:
-    // stuff that our initializers will want to use.
-    // convention: these member names are also resource names.
+        static inline void add_to_waiting(initializer* r) {
+            r->next = waiting_list;
+            waiting_list = r;
+        }
+        static inline void add_to_completed(initializer* r) {
+            r->next = completed_list;
+            completed_list = r;
+        }
+        static inline void add_to_failed(initializer* r) {
+            r->next = failed_list;
+            failed_list = r;
+        }
 
-    static exprman* em;
-    static symbol_table* st;
-    static const char** env;
-    static const char* version;
-    static List <msr_func> CML;
+    private:
+        const char* name;
+        initializer* next;
+        bool executed;
+        List <resource> resources_used;
+
+        // Current implementation assumes not many resources
+        // TBD: use a splay tree instead
+        static resource* resource_list;
+
+        static initializer* waiting_list;
+        static initializer* completed_list;
+        static initializer* failed_list;
+
+        static bool debug;
 };
 
 #endif
