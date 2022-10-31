@@ -75,7 +75,7 @@ stoch_msr::stoch_msr(const type* rettype, const char* name, int np)
  : msr_func(Stochastic, rettype, name, np)
 {
 }
-
+ //please check this one//i need 
 // *******************************************************************
 // *                                                                 *
 // *                            basess_si                            *

@@ -733,8 +733,8 @@ bool init_set_statesets::execute()
   if (0==st) return false;
 
   // Functions
-  st->AddSymbol(  new card_si   );
-  st->AddSymbol(  new empty_si  );
+  //st->AddSymbol(  new card_ssi   );
+  st->AddSymbol(  new empty_ssi  );
   return true;
 }
 
