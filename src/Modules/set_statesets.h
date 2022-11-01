@@ -98,15 +98,15 @@ public:
             Cardinality is output here.
             On overflow, \a card will be negative.
         @param i
-        	Index of statset for cardinality to compute
+        	Index of stateset for cardinality to compute
   */
-  virtual void getCardinality(long &card, int i) const = 0;
+  // virtual void getCardinality(long &card, int i) const = 0;
 
   /** Get the set cardinality, as a bigint.
         @param  x
             On output, x will be a bigint storing the cardinality of the set.
   */
-  virtual void getCardinality(result &x, int i) const = 0;
+  // virtual void getCardinality(result &x, int i) const = 0;
 
   /// Is the set empty?
   virtual bool isEmpty() const = 0;
@@ -142,7 +142,6 @@ private:
   const state_lldsm* parent;
   static bool print_indexes;
   friend class init_set_statesets;
-  std::vector<stateset*> data;
 
 };
 

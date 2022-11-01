@@ -62,31 +62,38 @@ bool expl_tri_printer::visit()
 
 expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f) : set_stateset(p)
 {
-  data.push_back(t);
-  data.push_back(f);
+  trueset = expl_stateset(p,t);
+  falseset = expl_stateset(p,f);
+}
+
+expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : set_stateset(p)
+{
+  trueset = t;
+  falseset = f;
 }
 
 expl_tri_set_stateset::~expl_tri_set_stateset()
 {
-  delete true_data;
-  delete false_data;
+  delete trueset;
+  delete falseset;
 }
 
 stateset* expl_tri_set_stateset::DeepCopy() const
 {
-  DCASSERT(data);
-  return new expl_tri_set_stateset(getParent(), new intset (*true_data), new intset(*false_data) );
+  DCASSERT(trueset);
+  DCASSERT(falseset);
+  return new expl_tri_set_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
 }
 
 bool expl_tri_set_stateset::Complement() 
 {
-  intset* tmp = true_data;
-  true_data = false_data;
-  false_data = tmp;
+  intset* tmp = trueset;
+  trueset = falseset;
+  falseset = tmp;
   return true;
 }
 
-bool expl_tri_set_stateset::Union(const expr* c, const char* op, const stateset* x)
+bool expl_tri_set_stateset::Union(const expr* c, const char* op, const set_stateset* x)
 {
   if (0==data) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
@@ -95,12 +102,12 @@ bool expl_tri_set_stateset::Union(const expr* c, const char* op, const stateset*
     return false;
   }
 
-  (*true_data) += *(ex->true_data); 
-  (*false_data) += *(ex->false_data);
+  trueset->Union(ex->trueset);
+  falseset->Intersect(ex->falseset); // verify
   return true;
 }
 
-bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const stateset* x)
+bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const set_stateset* x)
 {
   if (0==data) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
@@ -109,32 +116,70 @@ bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const state
     return false;
   }
 
-  (*true_data) *= *(ex->true_data); 
-  (*false_data) *= *(ex->false_data); 
+  trueset->Intersect(ex->trueset);
+  falseset->Intersect(ex->falseset);
   return true;
 }
 
-bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const stateset* x)
+bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const set_stateset* x)
 {
   return Intersect(c, op, x);
 }
 
-void expl_tri_set_stateset::getCardinality(long &card) const
+// void expl_tri_set_stateset::getCardinality(long &card) const
+// {
+//   DCASSERT(trueset);
+//   DCASSERT(falseset);
+//   card = data->cardinality();
+// }
+
+// void expl_tri_set_stateset::getCardinality(result &x) const
+// {
+//   DCASSERT(data);
+//   x.setPtr(new bigint(data->cardinality()));
+// }
+  
+void getTrueCardinality(long &card) const
 {
-  DCASSERT(true_data);
-  DCASSERT(false_data);
-  card = data->cardinality();
+  DCASSERT(trueset);
+  card = trueset->cardinality;
 }
 
-void expl_tri_set_stateset::getCardinality(result &x) const
+void getTrueCardinality(result &x) const
 {
-  DCASSERT(data);
-  x.setPtr(new bigint(data->cardinality()));
+  DCASSERT(trueset);
+  x.setPtr(new bigint(trueset->getCardinality()));
+}
+
+void getFalseCardinality(long &card) const
+{
+  DCASSERT(falseset);
+  card = falseset->getCardinality();
+}
+
+void getFalseCardinality(result &x) const
+{
+  DCASSERT(falseset);
+  x.setPtr(new bigint(falseset->getCardinality()));
+}
+
+void getUnknownCardinality(long &card) const
+{
+  DCASSERT(trueset);
+  DCASSERT(falseset);
+  // ???
+}
+
+void getUnknownCardinality(result &x) const
+{
+  DCASSERT(trueset);
+  DCASSERT(falseset);
+  // ???
 }
 
 bool expl_tri_set_stateset::isEmpty() const
 {
-  DCASSERT(data);
+  DCASSERT(trueset);
   return data->isEmpty();
 }
 
@@ -196,19 +241,19 @@ intset_lib intset_lib_data;
 // *                                                                *
 // ******************************************************************
 
-class init_explssets : public initializer {
+class init_expltrissets : public initializer {
   public:
-    init_explssets();
+    init_expltrissets();
     virtual bool execute();
 };
-init_explssets the_explsset_initializer;
+init_expltrissets the_explsset_initializer;
 
-init_explssets::init_explssets() : initializer("init_explssets")
+init_expltrissets::init_expltrissets() : initializer("init_expltrissets")
 {
   usesResource("em");
 }
 
-bool init_explssets::execute()
+bool init_expltrissets::execute()
 {
   if (0==em)  return false;
   
