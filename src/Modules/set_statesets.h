@@ -36,7 +36,7 @@ class set_stateset: public shared_object {
 public:
 	set_stateset(const state_lldsm* p);
 protected:
-	virtual ~set_set_stateset();
+	virtual ~set_stateset();
 
 public:
 	// what methods do we need for set of set_statesets?
@@ -109,7 +109,7 @@ public:
   // virtual void getCardinality(result &x, int i) const = 0;
 
   /// Is the set empty?
-  virtual bool isEmpty() const = 0;
+  // virtual bool isEmpty() const = 0;
 
   /**
       Helper: check that A and B have the same parents.

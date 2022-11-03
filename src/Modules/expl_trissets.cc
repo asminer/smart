@@ -10,60 +10,18 @@
 // external library
 #include "../_IntSets/intset.h"
 
+#include "expl_trissets.h"
 
 // ******************************************************************
 // *                                                                *
-// *                       expl_tri_printer class                   *
-// *                                                                *
-// ******************************************************************
-
-class expl_tri_printer : public state_lldsm::state_visitor {
-  OutputStream &out;
-  const intset &toprint;
-  bool print_indexes;
-  bool comma;
-public:
-  expl_tri_printer(const hldsm* mdl, OutputStream &s, const intset &p, bool pi);
-  virtual bool canSkipIndex();
-  virtual bool visit();
-};
-
-expl_tri_printer
-::expl_tri_printer(const hldsm* m, OutputStream &s, const intset &p, bool pi)
- : state_visitor(m), out(s), toprint(p)
-{
-  print_indexes = pi;
-  comma = false;
-}
-
-bool expl_tri_printer::canSkipIndex()
-{
-  return (! toprint.contains(x.current_state_index) );
-}
-
-bool expl_tri_printer::visit()
-{
-  if (comma)  out << ", ";
-  else        comma = true;
-  if (print_indexes) {
-    out.Put(x.current_state_index); 
-  } else {
-    x.current_state->Print(out, 0);
-  }
-  out.can_flush();  // otherwise, huge sets will overflow the buffer
-  return false;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                     expl_tri_set_stateset  methods                     *
+// *                     expl_tri_set_stateset  methods             *
 // *                                                                *
 // ******************************************************************
 
 expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f) : set_stateset(p)
 {
-  trueset = expl_stateset(p,t);
-  falseset = expl_stateset(p,f);
+  trueset = new expl_stateset(p,t);
+  falseset = new expl_stateset(p,f);
 }
 
 expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : set_stateset(p)
@@ -74,11 +32,11 @@ expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset
 
 expl_tri_set_stateset::~expl_tri_set_stateset()
 {
-  delete trueset;
-  delete falseset;
+  // delete trueset;
+  // delete falseset;
 }
 
-stateset* expl_tri_set_stateset::DeepCopy() const
+set_stateset* expl_tri_set_stateset::DeepCopy() const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
@@ -87,7 +45,7 @@ stateset* expl_tri_set_stateset::DeepCopy() const
 
 bool expl_tri_set_stateset::Complement() 
 {
-  intset* tmp = trueset;
+  expl_stateset* tmp = trueset;
   trueset = falseset;
   falseset = tmp;
   return true;
@@ -95,29 +53,29 @@ bool expl_tri_set_stateset::Complement()
 
 bool expl_tri_set_stateset::Union(const expr* c, const char* op, const set_stateset* x)
 {
-  if (0==data) return false;
+  if (0==trueset || 0==falseset) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
   if (0==ex) {
     storageMismatchError(c, op);
     return false;
   }
 
-  trueset->Union(ex->trueset);
-  falseset->Intersect(ex->falseset); // verify
+  trueset->Union(c,op,ex->trueset);
+  falseset->Intersect(c,op,ex->falseset); // verify
   return true;
 }
 
 bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const set_stateset* x)
 {
-  if (0==data) return false;
+  if (0==trueset || 0==falseset) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
   if (0==ex) {
     storageMismatchError(c, op);
     return false;
   }
 
-  trueset->Intersect(ex->trueset);
-  falseset->Intersect(ex->falseset);
+  trueset->Intersect(c,op,ex->trueset);
+  falseset->Intersect(c,op,ex->falseset);
   return true;
 }
 
@@ -139,56 +97,61 @@ bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const set_states
 //   x.setPtr(new bigint(data->cardinality()));
 // }
   
-void getTrueCardinality(long &card) const
+void expl_tri_set_stateset::getTrueCardinality(long &card) const
 {
   DCASSERT(trueset);
-  card = trueset->cardinality;
+  trueset->getCardinality(card);
 }
 
-void getTrueCardinality(result &x) const
+void expl_tri_set_stateset::getTrueCardinality(result &x) const
 {
   DCASSERT(trueset);
-  x.setPtr(new bigint(trueset->getCardinality()));
+  trueset->getCardinality(x);
 }
 
-void getFalseCardinality(long &card) const
+void expl_tri_set_stateset::getFalseCardinality(long &card) const
 {
   DCASSERT(falseset);
-  card = falseset->getCardinality();
+  falseset->getCardinality(card);
 }
 
-void getFalseCardinality(result &x) const
+void expl_tri_set_stateset::getFalseCardinality(result &x) const
 {
   DCASSERT(falseset);
-  x.setPtr(new bigint(falseset->getCardinality()));
+  falseset->getCardinality(x);
 }
 
-void getUnknownCardinality(long &card) const
-{
-  DCASSERT(trueset);
-  DCASSERT(falseset);
-  // ???
-}
-
-void getUnknownCardinality(result &x) const
+void expl_tri_set_stateset::getUnknownCardinality(long &card) const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
   // ???
 }
 
-bool expl_tri_set_stateset::isEmpty() const
+void expl_tri_set_stateset::getUnknownCardinality(result &x) const
 {
   DCASSERT(trueset);
-  return data->isEmpty();
+  DCASSERT(falseset);
+  // ???
 }
+
+// bool expl_tri_set_stateset::isEmpty() const
+// {
+//   DCASSERT(trueset);
+//   return data->isEmpty();
+// }
 
 bool expl_tri_set_stateset::Print(OutputStream &s, int) const
 {
-  expl_tri_printer foo(getGrandparent(), s, *data, printIndexes());
-  s.Put('{');
-  getParent()->visitStates(foo);
+  s.Put('True {');
+  trueset->Print(s,0);
   s.Put('}');
+  s.Put('False {');
+  falseset->Print(s,0);
+  s.Put('}');
+  // s.Put('Unknown set {');
+  // falseset->Print(s,0);
+  // s.Put('}');
   return true;
 }
 
@@ -202,10 +165,12 @@ bool expl_tri_set_stateset::Equals(const shared_object *o) const
 
   // Not sure if data can ever be 0, but this is probably 
   // the correct way to handle it if it is possible.
-  if (0==data && 0==b->data) return true; 
-  if (0==data || 0==b->data) return false;
+  if (0==trueset && 0==b->trueset) return true; 
+  if (0==trueset || 0==b->trueset) return false;
+  if (0==falseset && 0==b->falseset) return true; 
+  if (0==falseset || 0==b->falseset) return false;
   
-  return (*data) == *(b->data);
+  return trueset->Equals(b->trueset) && falseset->Equals(b->falseset); 
 }
 
 

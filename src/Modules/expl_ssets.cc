@@ -70,7 +70,7 @@ expl_stateset::~expl_stateset()
   delete data;
 }
 
-stateset* expl_stateset::DeepCopy() const
+expl_stateset* expl_stateset::DeepCopy() const
 {
   DCASSERT(data);
   return new expl_stateset(getParent(), new intset (*data) );
