@@ -83,19 +83,6 @@ bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const set_states
 {
   return Intersect(c, op, x);
 }
-
-// void expl_tri_set_stateset::getCardinality(long &card) const
-// {
-//   DCASSERT(trueset);
-//   DCASSERT(falseset);
-//   card = data->cardinality();
-// }
-
-// void expl_tri_set_stateset::getCardinality(result &x) const
-// {
-//   DCASSERT(data);
-//   x.setPtr(new bigint(data->cardinality()));
-// }
   
 void expl_tri_set_stateset::getTrueCardinality(long &card) const
 {
@@ -135,11 +122,17 @@ void expl_tri_set_stateset::getUnknownCardinality(result &x) const
   // ???
 }
 
-// bool expl_tri_set_stateset::isEmpty() const
-// {
-//   DCASSERT(trueset);
-//   return data->isEmpty();
-// }
+bool expl_tri_set_stateset::isTrueEmpty() const
+{
+  DCASSERT(trueset);
+  return trueset->isEmpty();
+}
+
+bool expl_tri_set_stateset::isFalseEmpty() const
+{
+  DCASSERT(falseset);
+  return falseset->isEmpty();
+}
 
 bool expl_tri_set_stateset::Print(OutputStream &s, int) const
 {
