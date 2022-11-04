@@ -12,29 +12,6 @@
 class io_environ;
 class location;
 
-/**
-  Used for input.
-*/
-class InputStream {
-protected:
-  FILE* deflt;
-  FILE* input;
-public:
-  InputStream();
-  void Initialize(FILE* in);
-
-  void SwitchInput(FILE* in);
-  inline bool IsDefault() { return (input==deflt); }
-
-  // Handy...
-  inline bool Eof() { return feof(input); }
-
-  // return true on success.
-  inline bool Get(char &x) { x = getc(input); return (x!=EOF); }
-  inline bool Get(long &x) { return (1==fscanf(input, "%ld", &x)); }
-  inline bool Get(double &x) { return (1==fscanf(input, "%lf", &x)); }
-  inline bool Get(unsigned long &x) { return (1==fscanf(input, "%lu", &x)); }
-};
 
 /** Abstract base class for output.
     All output goes to the buffer, for speed.
@@ -192,7 +169,7 @@ class io_environ {
   bool catchterm;
   int indents;
 public:
-  InputStream Input;
+  // InputStream Input;
   DisplayStream Output;
   DisplayStream Report;     // 0
   DisplayStream Warning;    // 1
