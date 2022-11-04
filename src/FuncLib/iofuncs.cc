@@ -18,7 +18,7 @@
 // ******************************************************************
 
 class input_file : public simple_internal {
-        std::fstream fin;
+        std::ifstream fin;
     public:
         input_file();
         virtual void Compute(traverse_data &x, expr** pass, int np);
