@@ -18,28 +18,6 @@
 
 // #define DEBUG_STREAM
 
-// ==================================================================
-// |                                                                |
-// |                      InputStream  methods                      |
-// |                                                                |
-// ==================================================================
-
-InputStream::InputStream()
-{
-  input = deflt = 0;
-}
-
-void InputStream::Initialize(FILE* in)
-{
-  input = deflt = in;
-}
-
-void InputStream::SwitchInput(FILE* in)
-{
-  if (input!=deflt) fclose(input);
-  if (in) input = in;
-  else    input = deflt;
-}
 
 // ==================================================================
 // |                                                                |
@@ -611,7 +589,7 @@ void DisplayStream::can_flush()
 io_environ::io_environ()
 {
   WhichError = 0;
-  Input.Initialize(stdin);
+  // Input.Initialize(stdin);
 
   Output.Initialize(stdout);
   Output.SetParent(this);

@@ -8,52 +8,122 @@
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 
+#include <iostream>
+#include <fstream>
+
 // #define DEBUG_FILE
+
+// ******************************************************************
+// *                        input_file class                        *
+// ******************************************************************
+
+class input_file : public simple_internal {
+        std::fstream fin;
+    public:
+        input_file();
+        virtual void Compute(traverse_data &x, expr** pass, int np);
+
+        inline bool isOpen() const {
+            return fin.is_open();
+        }
+        inline bool isClosed() const {
+            return !fin.is_open();
+        }
+        inline void switchInput() {
+            if (fin.is_open()) fin.close();
+        }
+        inline bool switchInput(const char* infile) {
+            if (fin.is_open()) fin.close();
+            fin.open(infile, std::fstream::in);
+            return fin.good();
+        }
+
+        // Get next character (raw)
+        inline int getc() {
+            if (fin.is_open()) {
+                return fin.get();
+            } else {
+                return std::cin.get();
+            }
+        }
+
+        // Get next item (formatted)
+        template <class T>
+        inline bool get(T &x)
+        {
+            if (fin.is_open()) {
+                fin >> x;
+                return fin.good();
+            } else {
+                std::cin >> x;
+                return std::cin.good();
+            }
+        }
+};
+
+
+input_file::input_file() : simple_internal(em->BOOL, "input_file", 1)
+{
+    SetFormal(0, em->STRING, "filename");
+    SetDocumentation("Switch the input stream from the specified filename.  If the filename is null, the input stream is switched to standard input. If the filename does not exist or cannot be opened, return false. Returns true on success.");
+}
+
+void input_file::Compute(traverse_data &x, expr** pass, int np)
+{
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(np==1);
+    SafeCompute(pass[0], x);
+    if (x.answer->isNull()) {
+        switchInput();
+        x.answer->setBool(true);
+        return;
+    }
+
+    shared_string *xss = smart_cast <shared_string*> (x.answer->getPtr());
+    DCASSERT(xss);
+    x.answer->setBool( switchInput(xss->getStr()) );
+}
 
 // ******************************************************************
 // *                        read_bool  class                        *
 // ******************************************************************
 
 class read_bool : public simple_internal {
-public:
-  read_bool();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+        input_file &infile;
+    public:
+        read_bool(input_file &infile);
+        virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-read_bool::read_bool() : simple_internal(em->BOOL, "read_bool", 1)
+read_bool::read_bool(input_file &_inf)
+    : simple_internal(em->BOOL, "read_bool", 1), infile(_inf)
 {
-  SetFormal(0, em->STRING, "prompt");
-  SetDocumentation("Read a boolean value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
+    SetFormal(0, em->STRING, "prompt");
+    SetDocumentation("Read a boolean value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
 void read_bool::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(1==np);
-  if (!em->hasIO()) {
-    x.answer->setNull();
-    return;
-  }
-  SafeCompute(pass[0], x);
-  char c=' ';
-  while (1) {
-    if (em->cin().IsDefault())
-      if (!x.answer->isNull()) {
-        em->cout() << "Enter the [y/n] value for ";
-        DCASSERT(em->STRING);
-        em->STRING->print(em->cout(), *x.answer);
-        em->cout() << " : ";
-        em->cout().flush();
-      }
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    SafeCompute(pass[0], x);
+    char c=' ';
     while (1) {
-      em->cin().Get(c);
-      if (c==' ' || c=='\n' || c=='\t' || c=='\r') continue;
-      break;
+        if (infile.isClosed()) {
+            if (!x.answer->isNull()) {
+                em->cout() << "Enter the [y/n] value for ";
+                DCASSERT(em->STRING);
+                em->STRING->print(em->cout(), *x.answer);
+                em->cout() << " : ";
+                em->cout().flush();
+            }
+        }
+        infile.get(c);
+        if (c=='y' || c=='Y' || c=='n' || c=='N') break;
     }
-    if (c=='y' || c=='Y' || c=='n' || c=='N') break;
-  }
-  x.answer->setBool(c=='y' || c=='Y');
+    x.answer->setBool(c=='y' || c=='Y');
 }
 
 // ******************************************************************
@@ -61,47 +131,46 @@ void read_bool::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 
 class read_int : public simple_internal {
-public:
-  read_int();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+        input_file &infile;
+    public:
+        read_int(input_file &inf);
+        virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-read_int::read_int() : simple_internal(em->INT, "read_int", 1)
+read_int::read_int(input_file &_inf)
+    : simple_internal(em->INT, "read_int", 1), infile(_inf)
 {
-  SetFormal(0, em->STRING, "prompt");
-  SetDocumentation("Read an integer value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
+    SetFormal(0, em->STRING, "prompt");
+    SetDocumentation("Read an integer value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
 void read_int::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(x.parent);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(1==np);
-  if (!em->hasIO()) {
-    x.answer->setNull();
-    return;
-  }
-  SafeCompute(pass[0], x);
-  if (em->cin().IsDefault())
-    if (!x.answer->isNull()) {
-      em->cout() << "Enter the (integer) value for ";
-      DCASSERT(em->STRING);
-      em->STRING->print(em->cout(), *x.answer);
-      em->cout() << " : ";
-      em->cout().flush();
+    DCASSERT(x.answer);
+    DCASSERT(x.parent);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    SafeCompute(pass[0], x);
+    if (infile.isClosed()) {
+        if (!x.answer->isNull()) {
+            em->cout() << "Enter the (integer) value for ";
+            DCASSERT(em->STRING);
+            em->STRING->print(em->cout(), *x.answer);
+            em->cout() << " : ";
+            em->cout().flush();
+        }
     }
-  long ans;
-  if (!em->cin().Get(ans)) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Expecting integer from input stream";
-      em->stopIO();
+    long ans;
+    if (!infile.get(ans)) {
+        if (em->startError()) {
+            em->causedBy(x.parent);
+            em->cerr() << "Expecting integer from input stream";
+            em->stopIO();
+        }
+        x.answer->setNull();
+    } else {
+        x.answer->setInt(ans);
     }
-    x.answer->setNull();
-  } else {
-    x.answer->setInt(ans);
-  }
 }
 
 // ******************************************************************
@@ -109,47 +178,46 @@ void read_int::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 
 class read_real : public simple_internal {
-public:
-  read_real();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+        input_file &infile;
+    public:
+        read_real(input_file &inf);
+        virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-read_real::read_real() : simple_internal(em->REAL, "read_real", 1)
+read_real::read_real(input_file &_inf)
+    : simple_internal(em->REAL, "read_real", 1), infile(_inf)
 {
-  SetFormal(0, em->STRING, "prompt");
-  SetDocumentation("Read a real value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
+    SetFormal(0, em->STRING, "prompt");
+    SetDocumentation("Read a real value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
 void read_real::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(x.parent);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(1==np);
-  if (!em->hasIO()) {
-    x.answer->setNull();
-    return;
-  }
-  SafeCompute(pass[0], x);
-  if (em->cin().IsDefault())
-    if (!x.answer->isNull()) {
-      em->cout() << "Enter the (real) value for ";
-      DCASSERT(em->STRING);
-      em->STRING->print(em->cout(), *x.answer);
-      em->cout() << " : ";
-      em->cout().flush();
+    DCASSERT(x.answer);
+    DCASSERT(x.parent);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    SafeCompute(pass[0], x);
+    if (infile.isClosed()) {
+        if (!x.answer->isNull()) {
+            em->cout() << "Enter the (real) value for ";
+            DCASSERT(em->STRING);
+            em->STRING->print(em->cout(), *x.answer);
+            em->cout() << " : ";
+            em->cout().flush();
+        }
     }
-  double ans;
-  if (!em->cin().Get(ans)) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Expecting real from input stream";
-      em->stopIO();
+    double ans;
+    if (!infile.get(ans)) {
+        if (em->startError()) {
+            em->causedBy(x.parent);
+            em->cerr() << "Expecting real from input stream";
+            em->stopIO();
+        }
+        x.answer->setNull();
+    } else {
+        x.answer->setReal(ans);
     }
-    x.answer->setNull();
-  } else {
-    x.answer->setReal(ans);
-  }
 }
 
 // ******************************************************************
@@ -157,112 +225,74 @@ void read_real::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 
 class read_string : public simple_internal {
-public:
-  read_string();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+        input_file &infile;
+    public:
+        read_string(input_file &_inf);
+        virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-read_string::read_string() : simple_internal(em->STRING, "read_string", 2)
+read_string::read_string(input_file &_inf)
+    : simple_internal(em->STRING, "read_string", 2), infile(_inf)
 {
-  SetFormal(0, em->STRING, "prompt");
-  SetFormal(1, em->INT, "n");
-  SetDocumentation("Read at most n characters, or until whitespace is seen, from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
+    SetFormal(0, em->STRING, "prompt");
+    SetFormal(1, em->INT, "n");
+    SetDocumentation("Read at most n characters, or until whitespace is seen, from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
 void read_string::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(x.parent);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(2==np);
-  if (!em->hasIO()) {
-    x.answer->setNull();
-    return;
-  }
-  SafeCompute(pass[1], x);
-  if (!x.answer->isNormal()) {
-    x.answer->setNull();
-    return;
-  }
-  int length = x.answer->getInt();
-  SafeCompute(pass[0], x);
-  if (em->cin().IsDefault())
-    if (!x.answer->isNull()) {
-      em->cout() << "Enter the (string, length " << length << ") value for ";
-      DCASSERT(em->STRING);
-      em->STRING->print(em->cout(), *x.answer);
-      em->cout() << " : ";
-      em->cout().flush();
+    DCASSERT(x.answer);
+    DCASSERT(x.parent);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(2==np);
+    SafeCompute(pass[1], x);
+    if (!x.answer->isNormal()) {
+        x.answer->setNull();
+        return;
     }
-  if (length <= 0) {
-    x.answer->setNull();
-    return;
-  }
-  char* buffer = new char[length+2];
-  char c;
-  do {
-    if (!em->cin().Get(c)) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "End of input stream before expected string\n";
-        em->stopIO();
-      }
-      x.answer->setNull();
-      delete[] buffer;
-      return;
+    int length = x.answer->getInt();
+    SafeCompute(pass[0], x);
+    if (infile.isClosed()) {
+        if (!x.answer->isNull()) {
+            em->cout() << "Enter the (string, length " << length << ") value for ";
+            DCASSERT(em->STRING);
+            em->STRING->print(em->cout(), *x.answer);
+            em->cout() << " : ";
+            em->cout().flush();
+        }
     }
-  } while ((c==' ') || (c=='\t') || (c=='\n'));
-  int i;
-  for (i=0; i<length; i++) {
-    buffer[i] = c;
-    if (0==c) break;
-    if (!em->cin().Get(c)) c=0;
-    if ((c==' ') || (c=='\t') || (c=='\n')) c=0;
-  }
-  buffer[i] = 0;  // in case we go past the end
-  x.answer->setPtr(new shared_string(buffer));
-}
-
-// ******************************************************************
-// *                        input_file class                        *
-// ******************************************************************
-
-class input_file : public simple_internal {
-public:
-  input_file();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-};
-
-input_file::input_file() : simple_internal(em->BOOL, "input_file", 1)
-{
-  SetFormal(0, em->STRING, "filename");
-  SetDocumentation("Switch the input stream from the specified filename.  If the filename is null, the input stream is switched to standard input. If the filename does not exist or cannot be opened, return false. Returns true on success.");
-}
-
-void input_file::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(np==1);
-  if (!em->hasIO()) {
-    x.answer->setNull();
-    return;
-  }
-  SafeCompute(pass[0], x);
-  if (x.answer->isNull()) {
-    em->cin().SwitchInput(0);
-    x.answer->setBool(true);
-    return;
-  }
-  shared_string *xss = smart_cast <shared_string*> (x.answer->getPtr());
-  DCASSERT(xss);
-  FILE* infile = fopen(xss->getStr(), "r");
-  if (0==infile) {
-    x.answer->setBool(false);
-  } else {
-    em->cin().SwitchInput(infile);
-    x.answer->setBool(true);
-  }
+    if (length <= 0) {
+        x.answer->setNull();
+        return;
+    }
+    char* buffer = new char[length+2];
+    // Skip whitespace for first character
+    char c;
+    if (!infile.get(c)) {
+        if (em->startError()) {
+            em->causedBy(x.parent);
+            em->cerr() << "End of input stream before expected string\n";
+            em->stopIO();
+        }
+        x.answer->setNull();
+        delete[] buffer;
+        return;
+    }
+    buffer[0] = c;
+    for (int i=1; i<length; i++) {
+        int rc = infile.getc();
+        if (EOF == rc) {
+            buffer[i] = 0;
+            break;
+        }
+        if ((rc==' ') || (rc=='\t') || (rc=='\n')) {
+            buffer[i] = 0;
+            break;
+        }
+        buffer[i] = rc;
+    }
+    buffer[length] = 0; // failsafe
+    x.answer->setPtr(new shared_string(buffer));
 }
 
 // ******************************************************************
@@ -673,11 +703,13 @@ bool init_iofuncs::execute()
 {
   if (0==st || 0==em)  return false;
 
-  st->AddSymbol(  new read_bool     );
-  st->AddSymbol(  new read_int      );
-  st->AddSymbol(  new read_real     );
-  st->AddSymbol(  new read_string   );
-  st->AddSymbol(  new input_file    );
+  input_file* inf = new input_file;
+  st->AddSymbol(  inf  );
+
+  st->AddSymbol(  new read_bool(*inf)   );
+  st->AddSymbol(  new read_int(*inf)    );
+  st->AddSymbol(  new read_real(*inf)   );
+  st->AddSymbol(  new read_string(*inf) );
 
   st->AddSymbol(  new print_type    );
   st->AddSymbol(  new sprint_ci     );

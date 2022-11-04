@@ -42,20 +42,13 @@ Architecture question:
       const char** env
 
       // valid for module, engines
-      // throws something: 
+      // throws something:
       //    fail, means don't bother to try again
       //    delay, means something else must be initialized first
       virtual void initialize() = 0;
-    
+
     private:
       generic_initializer* next;
       static generic_initializer* list;
   };
 
-======================================================================  
-
-Long-ish term lexer / parser rewrite plan:
-
-	* shared strings move to lexer directory
-  * use 'location' object instead of filename + lineno, "everywhere"
-  

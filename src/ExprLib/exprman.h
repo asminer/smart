@@ -404,10 +404,6 @@ public:
     DCASSERT(io);
     io->Stop();
   }
-  inline InputStream& cin() const {
-    DCASSERT(io);
-    return io->Input;
-  }
   inline DisplayStream& cout() const {
     DCASSERT(io);
     return io->Output;
