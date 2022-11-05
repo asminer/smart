@@ -107,8 +107,10 @@ public:
 
   friend void PrintSimLibraryVersions(OutputStream &s);
   friend class jump_distance_option;
-  friend class seed_rng_option;
   friend class init_simul;
+
+  friend class jump_watcher;
+  friend class seed_watcher;
 };
 
 rng_manager* sim_engine::rngm = 0;
@@ -293,83 +295,78 @@ sim_experiment* sim_rr_avg::MakeExperiment(expr* e, traverse_data &x) const
 
 sim_rr_avg the_sim_rr_avg;
 
+
 // **************************************************************************
 // *                                                                        *
-// *                       jump_distance_option class                       *
+// *                           jump_watcher class                           *
 // *                                                                        *
 // **************************************************************************
 
-class jump_distance_option : public custom_option {
-public:
-  jump_distance_option(const char* name, const char* doc);
-  virtual error SetValue(long v);
-  virtual error GetValue(long &v) const;
-  virtual void ShowRange(doc_formatter* df) const;
+class jump_watcher : public option::watcher {
+        long jump;
+    public:
+        jump_watcher();
+        virtual ~jump_watcher();
+        virtual void notify(const option* opt);
+
+        inline long& Link() { return jump; }
 };
 
-jump_distance_option::jump_distance_option(const char* name, const char* doc)
- : custom_option(option::Integer, name, doc, 0)
+jump_watcher::jump_watcher()
+{
+    jump = sim_engine::rngm->GetJumpValue();
+}
+
+jump_watcher::~jump_watcher()
 {
 }
 
-option::error jump_distance_option::SetValue(long v)
+void jump_watcher::notify(const option* opt)
 {
-  if (0==sim_engine::rngm)  return NullFunction;
-  if (sim_engine::rngm->SetJumpValue(v))  {
-      return notifyWatchers();
-  }
-  else                                    return RangeError;
-}
+#ifdef DEVELOPMENT_CODE
+    long v;
+    DCASSERT(option::Success == opt->GetValue(v));
+    DCASSERT(v == jump);
+#endif
 
-option::error jump_distance_option::GetValue(long &v) const
-{
-  if (0==sim_engine::rngm)  return NullFunction;
-  v = sim_engine::rngm->GetJumpValue();
-  return Success;
-}
-
-void jump_distance_option::ShowRange(doc_formatter* df) const
-{
-  DCASSERT(df);
-  df->Out() << "Legal values: integers in [";
-  df->Out() << sim_engine::rngm->MinimumJumpValue();
-  df->Out() << ", ..., ";
-  df->Out() << sim_engine::rngm->MaximumJumpValue() << "]";
+    sim_engine::rngm->SetJumpValue(jump);
 }
 
 // **************************************************************************
 // *                                                                        *
-// *                         seed_rng_option  class                         *
+// *                           seed_watcher class                           *
 // *                                                                        *
 // **************************************************************************
 
-class seed_rng_option : public custom_option {
-  long last_seed;
-public:
-  seed_rng_option(const char* name, const char* doc);
-  virtual error SetValue(long v);
-  virtual error GetValue(long &v) const;
+class seed_watcher : public option::watcher {
+        long seed;
+    public:
+        seed_watcher();
+        virtual ~seed_watcher();
+        virtual void notify(const option* opt);
+
+        inline long& Link() { return seed; }
 };
 
-seed_rng_option::seed_rng_option(const char* name, const char* doc)
- : custom_option(option::Integer, name, doc, "positive integers")
+seed_watcher::seed_watcher()
 {
-  SetValue(12345);
+    seed = 12345;
+    sim_engine::rngm->InitStreamFromSeed(sim_engine::rng_main, seed);
 }
 
-option::error seed_rng_option::SetValue(long v)
+seed_watcher::~seed_watcher()
 {
-  if (0==sim_engine::rng_main)  return NullFunction;
-  if (v<=0)      return RangeError;
-  last_seed = v;
-  sim_engine::rngm->InitStreamFromSeed(sim_engine::rng_main, v);
-  return notifyWatchers();
 }
 
-option::error seed_rng_option::GetValue(long &v) const
+void seed_watcher::notify(const option* opt)
 {
-  v = last_seed;
-  return Success;
+#ifdef DEVELOPMENT_CODE
+    long v;
+    DCASSERT(option::Success == opt->GetValue(v));
+    DCASSERT(v == seed);
+#endif
+
+    sim_engine::rngm->InitStreamFromSeed(sim_engine::rng_main, seed);
 }
 
 // ******************************************************************
@@ -399,6 +396,8 @@ bool init_simul::execute()
   // Simulation options
   //
   if (0==em) return false;
+
+  option* o = 0;
 
   sim_engine::Samples = 100000;
   em->addOption(
@@ -458,22 +457,28 @@ bool init_simul::execute()
   //
   DCASSERT(0== sim_engine::rngm);
   sim_engine::rngm = RNG_MakeStreamManager();
-  if (sim_engine::rngm)
+  if (sim_engine::rngm) {
     sim_engine::rng_main = sim_engine::rngm->NewBlankStream();
+  }
 
-  em->addOption(
-    new jump_distance_option(
-      "RngStreamSeparation",
-      "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d."
-    )
+  jump_watcher* jw = new jump_watcher();
+  o = MakeIntOption("RngStreamSeparation",
+      "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d.",
+      jw->Link(),
+      sim_engine::rngm->MinimumJumpValue(),
+      sim_engine::rngm->MaximumJumpValue()
   );
+  o->registerWatcher(jw);
+  em->addOption(o);
 
-  em->addOption(
-    new seed_rng_option(
-      "SeedRng",
-      "Re-set the random number generator state based on the given seed value."
-    )
-  );
+
+  seed_watcher* sw = new seed_watcher();
+
+  o = MakeIntOption("SeedRng",
+      "Re-set the random number generator state based on the given seed value.",
+      sw->Link(), 0, LONG_MAX);
+  o->registerWatcher(sw);
+  em->addOption(o);
 
 
   //
