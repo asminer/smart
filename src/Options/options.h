@@ -55,11 +55,22 @@ class option {
             /// Checklist options.
             Checklist
         };
+        /// Subscribers: notify when option is changed
+        class watcher {
+            public:
+                watcher();
+                virtual ~watcher();
+                virtual void notify(const option* opt) = 0;
+            private:
+                watcher* next;  // we'll have a list of these
+                friend class option;
+        };
     private:
         type mytype;
         const char* name;
         const char* documentation;
         bool hidden;
+        watcher* watchlist;
 
     public:
         /** Constructor.
@@ -177,6 +188,10 @@ class option {
 
         /// Recursively document children as appropriate.
         virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
+
+        void registerWatcher(watcher* w);
+    protected:
+        error notifyWatchers() const;
 };
 
 // **************************************************************************

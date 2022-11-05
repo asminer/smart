@@ -70,7 +70,7 @@ fcall::fcall(const expr* fnlnt, function* f, expr** p, int np)
   DCASSERT(GetModelType() == func->DetermineModelType(p, np));
 }
 
-fcall::fcall(const char* fn, int line, const type* t, 
+fcall::fcall(const char* fn, int line, const type* t,
   function* f, expr** p, int np) : expr(fn, line, t)
 {
   construct(f, p, np);
@@ -123,7 +123,7 @@ void fcall::Traverse(traverse_data &x)
         }
         break;
     } // traverse_data::Substitute
-  
+
     case traverse_data::GetVarDeps:
     case traverse_data::GetSymbols:
     case traverse_data::PreCompute: {
@@ -154,7 +154,7 @@ bool fcall::Print(OutputStream &s, int w) const
       if (pass[i]) {
         prev_written = pass[i]->Print(s, 0);
       } else {
-        s.Put("null");  
+        s.Put("null");
         prev_written = true;
       }
     }
@@ -344,13 +344,13 @@ bool named_param::Print(OutputStream &s, int width) const
 /** Formal parameters, abstract base class.
     Most functionality here is for user-defined functions,
     but we also use them for models and internal functions.
- 
+
     Note: if the name is NULL, we assume that the parameter is "hidden".
 
-*/  
+*/
 
 class formal_param : public symbol {
-  /** Do we have a default?  
+  /** Do we have a default?
       This is necessary because the default might be NULL!
    */
   bool hasdefault;
@@ -440,7 +440,7 @@ bool formal_param::PrintHeader(OutputStream &s, bool hide)
 
 /** Formal parameters with a corresponding stack location.
     Used for internal functions and top-level user-defined functions.
-*/  
+*/
 class fp_onstack : public formal_param {
   /** Pointer to the current stack space for the function call.
       Used only for user-defined function calls.
@@ -518,7 +518,7 @@ void fp_onstack::Compute(traverse_data &x)
 /** Formal parameters as placeholders.
     Used for user-defined functions within models.
     (Each model instance will create its own user-defined function).
-*/  
+*/
 class fp_wrapper : public formal_param {
   formal_param* link;
 public:
@@ -567,7 +567,7 @@ fplist::fplist()
 {
   formal = 0;
   num_formal = 0;
-  repeat_point = -1; 
+  repeat_point = -1;
 }
 
 fplist::~fplist()
@@ -781,7 +781,7 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
 
 
     if (j<0) {
-      // 
+      //
       // Same FP name cannot appear in other name list.
       //
 
@@ -801,13 +801,13 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
     // appears in both name lists.
     //
     if (formal[i]->Type() != pl[j]->Type()) {
-      // 
+      //
       // Types can distinguish.  No conflict.
       return false;
     }
 
     //
-    // Still here?  This FP cannot distinguish the function calls.  
+    // Still here?  This FP cannot distinguish the function calls.
     // Keep looking.
   }
 
@@ -908,20 +908,20 @@ void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
         SetAllScores(scores, err);
         return;
       }
-      continue;  
+      continue;
     }
 
     if (0==pass[i]) { // null parameter, may be ok
       addToScores(em, err, em->NULTYPE, formal[fp]->Type(), scores);
       continue;
-    } 
+    }
 
     if (pass[i]->NumComponents() != formal[fp]->NumComponents()) {
       SetAllScores(scores, err);
       return;
     }
 
-    for (int a=pass[i]->NumComponents()-1; a>=0; a--) 
+    for (int a=pass[i]->NumComponents()-1; a>=0; a--)
       addToScores(em, err, pass[i]->Type(a), formal[fp]->Type(a), scores);
 
   } // for i
@@ -1016,7 +1016,7 @@ void fplist::traverse(traverse_data &x)
 }
 
 int fplist
-::named2Positional(exprman* em, symbol** np, int nnp, 
+::named2Positional(exprman* em, symbol** np, int nnp,
     expr** buffer, int bufsize) const
 {
   // if buffer is not large enough, don't bother!
@@ -1039,9 +1039,9 @@ int fplist
     named_param* npi = dynamic_cast <named_param*> (np[i]);
     if (0==npi) return -1-i;
 
-    int j = findIndex(npi->Name()); 
-    if (j < 0) return -1-i; 
-    
+    int j = findIndex(npi->Name());
+    if (j < 0) return -1-i;
+
     if (buffer) {
       // Replace j with our passed expression
       Delete(buffer[j]);  // should be default
@@ -1129,14 +1129,14 @@ bool simple_internal::HasNameConflict(symbol** fp, int np, int* tmp) const
 int simple_internal::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::Typecheck: 
+    case traverse_data::Typecheck:
         return formals.check(em, pass, np, Type());
 
     case traverse_data::GetType:
         x.the_type = formals.getType(em, pass, np, Type());
         return 0;
-    
-    case traverse_data::Promote: 
+
+    case traverse_data::Promote:
         formals.promote(em, pass, np, Type());
         return Promote_Success;
 
@@ -1239,7 +1239,7 @@ protected:
   expr* return_expr;
 public:
   user_func(function* f, formal_param** pl, int np);
-  user_func(const char* fn, int line, const type* t, char* n, 
+  user_func(const char* fn, int line, const type* t, char* n,
            formal_param **pl, int np);
   virtual ~user_func();
 
@@ -1263,7 +1263,7 @@ public:
 
   virtual bool HeadersMatch(const type* t, symbol** pl, int np) const;
   virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
- 
+
   virtual bool DocumentHeader(doc_formatter* df) const;
   virtual void DocumentBehavior(doc_formatter* df) const;
   inline void ShowWhereDefined(OutputStream &s) const {
@@ -1281,7 +1281,7 @@ user_func::user_func(function* f, formal_param** pl, int np) : function(f)
   return_expr = 0;
 }
 
-user_func::user_func(const char* fn, int line, const type* t, char* n, 
+user_func::user_func(const char* fn, int line, const type* t, char* n,
   formal_param **pl, int np) : function(fn, line, t, n)
 {
   formals.setAll(np, pl, false);
@@ -1296,9 +1296,9 @@ user_func::~user_func()
 int user_func::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::Typecheck: 
+    case traverse_data::Typecheck:
         return formals.check(em, pass, np, Type());
-    
+
     case traverse_data::GetType:
         x.the_type = formals.getType(em, pass, np, Type());
         return 0;
@@ -1379,7 +1379,7 @@ int user_func
 
 /**   Class for top-level user-defined functions.
       Note the new, static stack used for function calls.
-*/  
+*/
 class top_user_func : public user_func {
   static result* stack;
   static long stack_size;
@@ -1387,7 +1387,7 @@ class top_user_func : public user_func {
   static result* stackptr;
 public:
   top_user_func(function* f, formal_param** pl, int np);
-  top_user_func(const char* fn, int line, const type* t, char* n, 
+  top_user_func(const char* fn, int line, const type* t, char* n,
            formal_param **pl, int np);
 
   virtual void ResetFormals(formal_param** newformal, int nfp);
@@ -1411,13 +1411,13 @@ top_user_func::top_user_func(function* f, formal_param** pl, int np)
   formals.setStack(&stackptr);
 }
 
-top_user_func::top_user_func(const char* fn, int line, const type* t, char* n, 
+top_user_func::top_user_func(const char* fn, int line, const type* t, char* n,
   formal_param **pl, int np) : user_func(fn, line, t, n, pl, np)
 {
   formals.setStack(&stackptr);
 }
 
-void top_user_func::ResetFormals(formal_param** newformal, int nfp) 
+void top_user_func::ResetFormals(formal_param** newformal, int nfp)
 {
   DCASSERT(!isDefined());
   DCASSERT(nfp == formals.getLength());
@@ -1461,11 +1461,11 @@ void top_user_func::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(return_expr);
   x.answer = answer;
   return_expr->Compute(x);
-  
+
   // Clear and pop the parameters
   for (int i=0; i<np; i++) {
     stack_top--;
-    stack[stack_top].deletePtr(); 
+    stack[stack_top].deletePtr();
   }
   stackptr = old_stackptr;
 }
@@ -1494,12 +1494,12 @@ int top_user_func::Traverse(traverse_data &x, expr** pass, int np)
 /**   Class for user-defined functions inside models.
       This is basically a wrapper and we will construct
       the "actual" function when the model is instantiated.
-*/  
+*/
 class wrapped_user_func : public user_func {
 protected:
   top_user_func* link;
 public:
-  wrapped_user_func(const char* fn, int line, const type* t, char* n, 
+  wrapped_user_func(const char* fn, int line, const type* t, char* n,
            formal_param **pl, int np);
   virtual void ResetFormals(formal_param** newformal, int nfp);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
@@ -1515,13 +1515,13 @@ public:
   symbol* instantiate();
 };
 
-wrapped_user_func::wrapped_user_func(const char* fn, int line, const type* t, 
+wrapped_user_func::wrapped_user_func(const char* fn, int line, const type* t,
   char* n, formal_param **pl, int np) : user_func(fn, line, t, n, pl, np)
 {
   link = 0;
 }
 
-void wrapped_user_func::ResetFormals(formal_param** newformal, int nfp) 
+void wrapped_user_func::ResetFormals(formal_param** newformal, int nfp)
 {
   DCASSERT(!isDefined());
   DCASSERT(nfp == formals.getLength());
@@ -1623,7 +1623,7 @@ void func_stmt::Compute(traverse_data &x)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   if (x.stopExecution()) return;
-  
+
   DCASSERT(parent);
   symbol* f = wuf->instantiate();
   parent->AcceptSymbolOwnership(f);
@@ -1673,7 +1673,7 @@ option::error stack_size_option::SetValue(long s)
   delete[] top_user_func::stack;
   top_user_func::stack = newstack;
   top_user_func::stack_size = s;
-  return Success;
+  return notifyWatchers();
 }
 
 option::error stack_size_option::GetValue(long &v) const
@@ -1688,7 +1688,7 @@ option::error stack_size_option::GetValue(long &v) const
 // *                                                                *
 // ******************************************************************
 
-expr* exprman::makeFunctionCall(const char* fn, int ln, 
+expr* exprman::makeFunctionCall(const char* fn, int ln,
       symbol *f, expr **p, int np) const
 {
   function* func = dynamic_cast <function*> (f);
@@ -1745,22 +1745,22 @@ expr* exprman::makeFunctionCall(const char* fn, int ln,
 
 const int init_stack_size = 1024;
 
-symbol* MakeFormalParam(const char* fn, int ln, 
+symbol* MakeFormalParam(const char* fn, int ln,
       const type* t, char* name, bool in_model)
 {
   if (in_model) {
     return new fp_wrapper(fn, ln, t, name);
   } else {
-    return new fp_onstack(fn, ln, t, name); 
+    return new fp_onstack(fn, ln, t, name);
   }
 }
 
 symbol* MakeFormalParam(typelist* t, char* name)
 {
-  return new fp_onstack(t, name); 
+  return new fp_onstack(t, name);
 }
 
-symbol* MakeFormalParam(const exprman* em, const char* fn, int ln, 
+symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
       const type* t, char* name, expr* def, bool in_model)
 {
   // check return type for default
@@ -1768,7 +1768,7 @@ symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
   if (!em->isPromotable(dt, t)) {
     if (em->startError()) {
       em->causedBy(fn, ln);
-      em->cerr() << "default type does not match parameter " << name;  
+      em->cerr() << "default type does not match parameter " << name;
       em->stopIO();
     }
     free(name);
@@ -1780,7 +1780,7 @@ symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
   if (in_model) {
     fp = new fp_wrapper(fn, ln, t, name);
   } else {
-    fp = new fp_onstack(fn, ln, t, name); 
+    fp = new fp_onstack(fn, ln, t, name);
   }
   fp->SetDefault(def);
   return fp;
@@ -1791,7 +1791,7 @@ symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass)
   return new named_param(fn, ln, name, pass);
 }
 
-function* MakeUserFunction(const exprman* em, const char* fn, int ln, 
+function* MakeUserFunction(const exprman* em, const char* fn, int ln,
       const type* t, char* name, symbol** formals, int np, bool in_model)
 {
   if (0==formals) {
@@ -1816,7 +1816,7 @@ function* MakeUserFunction(const exprman* em, const char* fn, int ln,
   }
 }
 
-function* MakeUserConstFunc(const exprman* em, const char* fn, int ln, 
+function* MakeUserConstFunc(const exprman* em, const char* fn, int ln,
       const type* t, char* name, bool in_model)
 {
   if (in_model) {
@@ -1826,7 +1826,7 @@ function* MakeUserConstFunc(const exprman* em, const char* fn, int ln,
   }
 }
 
-void ResetUserFunctionParams(const exprman* em, const char* fn, int ln, 
+void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
       symbol* userfunc, symbol** formals, int nfp)
 {
   function* f = dynamic_cast <function*> (userfunc);

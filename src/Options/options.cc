@@ -164,16 +164,32 @@ bool checkall::IsChecked() const
 // *                             option methods                             *
 // **************************************************************************
 
+option::watcher::watcher()
+{
+    next = 0;
+}
+
+option::watcher::~watcher()
+{
+}
+
+
 option::option(type t, const char *n, const char* d)
 {
   mytype = t;
   name = n;
   documentation = d;
   hidden = false;
+  watchlist = 0;
 }
 
 option::~option()
 {
+    while (watchlist) {
+        watcher* next = watchlist->next;
+        delete watchlist;
+        watchlist = next;
+    }
 }
 
 void option::show(OutputStream &s) const
@@ -301,6 +317,20 @@ void option::RecurseDocs(doc_formatter* df, const char* keyword) const
 {
 }
 
+void option::registerWatcher(watcher* w)
+{
+    w->next = watchlist;
+    watchlist = w;
+}
+
+option::error option::notifyWatchers() const
+{
+    for (watcher* w = watchlist; w; w=w->next) {
+        w->notify(this);
+    }
+    return Success;
+}
+
 // **************************************************************************
 // *                         custom_option  methods                         *
 // **************************************************************************
@@ -390,7 +420,7 @@ public:
   virtual ~bool_opt() { }
   virtual error SetValue(bool b) {
     value = b;
-    return Success;
+    return notifyWatchers();
   }
   virtual error GetValue(bool &b) const {
     b = value;
@@ -451,7 +481,7 @@ option::error int_opt::SetValue(long b)
     if ((b<min) || (b>max)) return RangeError;
   }
   value = b;
-  return Success;
+  return notifyWatchers();
 }
 
 option* MakeIntOption(const char* name, const char* doc,
@@ -547,7 +577,7 @@ option::error real_opt::SetValue(double b)
   }
 
   value = b;
-  return Success;
+  return notifyWatchers();
 }
 
 option* MakeRealOption(const char* name, const char* doc, double &v,
@@ -572,7 +602,9 @@ public:
   virtual ~string_opt() { delete[] value; }
   virtual error SetValue(char *v) {
     if (0==v)      return RangeError;
-    delete[] value; value = v;   return Success;
+    delete[] value;
+    value = v;
+    return notifyWatchers();
   }
   virtual error GetValue(const char* &v) const {
     v = value;
@@ -654,7 +686,7 @@ option::error radio_opt::SetValue(option_enum* v)
     if (v != possible[rb->getIndex()])  return WrongType;
     if (! rb->AssignToMe()) return WrongType;
     which = rb->getIndex();
-    return Success;
+    return notifyWatchers();
 }
 
 int radio_opt::NumConstants() const
