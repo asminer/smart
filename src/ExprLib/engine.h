@@ -19,8 +19,8 @@ class measure;
 class set_of_measures;
 class engine_list;
 class engine_tree;
-class radio_button;
 class option_manager;
+class option_enum;
 
 // ******************************************************************
 // *                                                                *
@@ -197,7 +197,7 @@ private:
       Build a radio button for this engine
       Called by engtype methods, probably should not be called otherwise.
   */
-  radio_button* BuildOptionConst(int index);
+  option_enum* BuildOptionConst(int ndx);
 
   /// Are there internal options for this engine
   inline bool hasOptions() const { return options; }
@@ -252,13 +252,18 @@ private:
   const char* doc;
   calling_form form;
   int index;
+
+  bool finalized;
+
   // pre-finalization
   engine_tree* EngTree;
-  engine* default_engine;
   // post-finalize
+  engine** engineList;
+  unsigned numEngines;
+  //
   engine* selected_engine;
-  unsigned selected_engine_index;
-  friend class engine_selection;
+
+  friend class engine_watcher;
 public:
   engtype(const char* n, const char* d, calling_form f);
   virtual ~engtype();
@@ -284,21 +289,24 @@ public:
 
   inline int getIndex() const { return index; }
 
-  /// Register a solution engine.
+  /**
+        Register a solution engine.
+        The first solution engine to be registered will also
+        be set as the default.
+  */
   void registerEngine(engine* e);
 
-  /** Reset the default engine.
-      If this is never called, then the first registered engine
-      becomes the default.
-
-        @param  d   Engine to use as the default.
-                    If 0, then the next registered engine becomes the default.
-                    If 0 and no more engines are registered,
-                    then some engine will be arbitrarily chosen as default.
-
-        @throws An appropriate error code.
+  /**
+        Register a solution engine, as the default.
+        Overwrites any previous default solution engine.
   */
-  void setDefaultEngine(engine* d);
+  inline void registerEngineAsDefault(engine* e) {
+    if (!finalized && e) {
+        selected_engine = 0;
+        registerEngine(e);
+    }
+  }
+
 
   /** Register a solution sub-engine.
       Registry must not be finalized.

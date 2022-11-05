@@ -18,41 +18,32 @@ public:
 };
 
 // ********************************************************
-// *               engine_selection  class                *
+// *                engine_watcher  class                 *
 // ********************************************************
 
-class engine_selection : public radio_button {
-  engine* solution;
-  engtype* parent;
-public:
-  engine_selection(engtype* p, engine* s, int i);
-  virtual ~engine_selection();
-  virtual bool AssignToMe();
+/*
+ * This updates the selected engine in the engtype object,
+ * when there's an option statement.
+ */
+class engine_watcher : public option::watcher {
+        unsigned selected;
+        engtype* ET;
+    public:
+        engine_watcher(engtype* et);
+        inline unsigned& Link() { return selected; }
+        virtual void notify(const option* opt);
 };
 
-// ********************************************************
-// *              engine_selection  methods               *
-// ********************************************************
-
-engine_selection::engine_selection(engtype* p, engine* s, int i)
- : radio_button(s->Name(), s->Documentation(), i)
+engine_watcher::engine_watcher(engtype* et)
 {
-  parent = p;
-  solution = s;
-  DCASSERT(solution->getType() == parent);
+    ET = et;
+    DCASSERT(ET);
 }
 
-engine_selection::~engine_selection()
+void engine_watcher::notify(const option* opt)
 {
-  delete solution;
-  // don't delete parent!
-}
-
-bool engine_selection::AssignToMe()
-{
-  if (0==parent)  return false;
-  parent->selected_engine = solution;
-  return true;
+    CHECK_RANGE(0, selected, ET->numEngines);
+    ET->selected_engine = ET->engineList[selected];
 }
 
 // ********************************************************
@@ -188,12 +179,12 @@ int engine::Compare(const char* name2) const
   return strcmp(name, name2);
 }
 
-radio_button* engine::BuildOptionConst(int index)
+option_enum* engine::BuildOptionConst(int ndx)
 {
   DCASSERT(Name());
   DCASSERT(Documentation());
 
-  radio_button* rb = new engine_selection(etype, this, index);
+  option_enum* rb = new radio_button(Name(), Documentation(), ndx);
 
   if (options) {
     options->DoneAddingOptions();
@@ -212,10 +203,15 @@ engtype::engtype(const char* n, const char* d, calling_form f)
   name = n;
   doc = d;
   form = f;
-  EngTree = 0;
-  default_engine = 0;
-  selected_engine = 0;
   index = 0;
+
+  finalized = false;
+
+  EngTree = 0;
+  engineList = 0;
+  numEngines = 0;
+
+  selected_engine = 0;
 }
 
 engtype::~engtype()
@@ -227,15 +223,15 @@ void engtype::registerEngine(engine* e)
 {
   if (0==e)  throw subengine::No_Engine;
   e->etype = this;
-  if (selected_engine)  throw subengine::Finalized;
+  if (finalized) throw subengine::Finalized;
   if (Nothing == form) {
-    if (0==default_engine) default_engine = e;
+    if (0==selected_engine) selected_engine = e;
     return;
   }
   if (0==EngTree)  EngTree = new engine_tree(16, 0);
   engine* f = EngTree->Insert(e);
   if (f==e)  {
-    if (0==default_engine) default_engine = e;
+    if (0==selected_engine) selected_engine = e;
     return;
   }
   // there is an engine with the same name.
@@ -243,18 +239,11 @@ void engtype::registerEngine(engine* e)
   throw subengine::Duplicate;
 }
 
-void engtype::setDefaultEngine(engine* d)
-{
-  if (selected_engine) throw subengine::Finalized;
-  if (d) if (EngTree->FindIndex(d)<0) throw subengine::No_Engine;
-  default_engine = d;
-}
-
 void engtype::registerSubengine(const char* name, subengine* se)
 {
   if (0==se)            return;
   if (0==name)          throw  subengine::No_Engine;
-  if (selected_engine)  throw  subengine::Finalized;
+  if (finalized)        throw  subengine::Finalized;
   engine* f = EngTree->Find(name);
   if (0==f)             throw  subengine::No_Engine;
   f->AddSubEngine(se);
@@ -262,60 +251,40 @@ void engtype::registerSubengine(const char* name, subengine* se)
 
 void engtype::finalizeRegistry(option_manager* om)
 {
-  if (selected_engine)  return;
-  if (0==EngTree)  return;
-  if (0==default_engine) {
-    default_engine = EngTree->GetItem(0);
-  }
-  selected_engine = default_engine;
-  selected_engine_index = EngTree->FindIndex(selected_engine);
-  DCASSERT(selected_engine_index >= 0);
-  long N = EngTree->NumElements();
-  DCASSERT(N>0);
+  if (finalized)        return;
+  if (0==EngTree)       return;
 
   //
-  // Convert engines into an array
+  // Convert engines into an ordered array
   //
-  engine** sorted_engines = new engine*[N];
-  EngTree->CopyToArray(sorted_engines);
+  numEngines = EngTree->NumElements();
+  DCASSERT(numEngines > 0);
+  engineList = new engine*[numEngines];
+  EngTree->CopyToArray(engineList);
   killEngTree();
 
-  //
-  // Check if we need an option
-  //
-  bool needsOption = N>1;
-  if (1==N) {
-    needsOption = sorted_engines[0]->hasOptions();
-  }
-  if (0==om) {
-    needsOption = false;
+  finalized = true;
+
+  if (0==om) return;    // Can't build an option
+  if (numEngines < 2) {
+      if (!engineList[0]->hasOptions()) return;
   }
 
   //
-  // Build an option, automagically, if necessary
+  // Build an option, automagically
   //
-  if (needsOption) {
-      //
-      // Build radio buttons
-      //
-      radio_button** values = new radio_button* [N];
-      for (int i=0; i<N; i++) {
-        engine* e = sorted_engines[i];
-        DCASSERT(e);
-        values[i] = e->BuildOptionConst(i);
-        if (selected_engine == e) selected_engine_index = i;
-      } // for i
 
-      //
-      // build the option
-      //
-      option* foo = MakeRadioOption(Name(), Documentation(),
-            values, N, selected_engine_index);
-      DCASSERT(om);
-      om->AddOption(foo);
+  engine_watcher* EW = new engine_watcher(this);
+  option* ro = MakeRadioOption(Name(), Documentation(), numEngines, EW->Link());
+  ro->registerWatcher(EW);
+  for (unsigned i=0; i<numEngines; i++) {
+      DCASSERT(engineList[i]);
+      if (engineList[i] == selected_engine) {
+          EW->Link() = i;
+      }
+      ro->AddRadioButton( engineList[i]->BuildOptionConst(i) );
   }
-
-  delete[] sorted_engines;
+  om->AddOption(ro);
 }
 
 void engtype::runEngine(result* pass, int np, traverse_data &x)
