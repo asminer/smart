@@ -413,14 +413,15 @@ public:
 // **************************************************************************
 
 class bool_opt : public option {
-  bool& value;
+    bool& value;
 public:
-  bool_opt(const char* n, const char* d, bool &v)
-   : option(Boolean, n, d), value(v) { }
-  virtual ~bool_opt() { }
-  virtual error SetValue(bool b) {
-    value = b;
-    return notifyWatchers();
+    bool_opt(const char* n, const char* d, bool &v)
+        : option(Boolean, n, d), value(v) { }
+    virtual ~bool_opt() { }
+    virtual error SetValue(bool b) {
+        if (b == value) return Success;
+        value = b;
+        return notifyWatchers();
   }
   virtual error GetValue(bool &b) const {
     b = value;
@@ -476,7 +477,7 @@ public:
 
 option::error int_opt::SetValue(long b)
 {
-  if (0==value)  return NullFunction;
+  if (b == value) return Success;
   if (min<max) {
     if ((b<min) || (b>max)) return RangeError;
   }
@@ -556,7 +557,7 @@ real_opt::real_opt(const char* n, const char* d, double &v,
 
 option::error real_opt::SetValue(double b)
 {
-  if (0==value) return NullFunction;
+  if (b == value) return Success;
   bool bad = false;
   if (has_min) {
     if (includes_min) {
@@ -684,6 +685,7 @@ option::error radio_opt::SetValue(option_enum* v)
     if (0==rb) return WrongType;
     if (rb->getIndex() >= numpossible) return WrongType;
     if (v != possible[rb->getIndex()])  return WrongType;
+    if (rb->getIndex() == which) return Success;
     if (! rb->AssignToMe()) return WrongType;
     which = rb->getIndex();
     return notifyWatchers();

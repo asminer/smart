@@ -1396,7 +1396,8 @@ public:
 
   // friends, because of stack manipulation
   friend void InitFunctions(exprman* om);
-  friend class stack_size_option;
+
+  friend class stack_size_watcher;
 };
 
 result* top_user_func::stack;
@@ -1643,43 +1644,36 @@ void func_stmt::Traverse(traverse_data &x)
 
 // ******************************************************************
 // *                                                                *
-// *                    stack_size_option  class                    *
+// *                    stack_size_watcher class                    *
 // *                                                                *
 // ******************************************************************
 
-class stack_size_option : public custom_option {
-public:
-  stack_size_option(const char* name, const char* doc);
-  virtual error SetValue(long n);
-  virtual error GetValue(long &v) const;
+class stack_size_watcher : public option::watcher {
+        long size;
+    public:
+        stack_size_watcher();
+        virtual void notify(const option* opt);
+        inline long& Link() { return size; }
 };
 
-stack_size_option::stack_size_option(const char* name, const char* doc)
- : custom_option(option::Integer, name, doc, "non-negative integers")
+stack_size_watcher::stack_size_watcher()
 {
+    size = top_user_func::stack_size;
 }
 
-option::error stack_size_option::SetValue(long s)
+void stack_size_watcher::notify(const option* opt)
 {
-  // this is slow and sure, but since this is RARELY called, should be ok.
-  if (s<0) return RangeError;
-  if (s == top_user_func::stack_size) {
-    return Success;
-  }
-  result* newstack = new result[s];
-  for (long i=0; i<top_user_func::stack_top; i++) {
-    newstack[i] = top_user_func::stack[i];
-  }
-  delete[] top_user_func::stack;
-  top_user_func::stack = newstack;
-  top_user_func::stack_size = s;
-  return notifyWatchers();
-}
+#ifdef DEVELOPMENT_CODE
+    long v;
+    DCASSERT(option::Success == opt->GetValue(v));
+    DCASSERT(v == size);
+#endif
 
-option::error stack_size_option::GetValue(long &v) const
-{
-  v = top_user_func::stack_size;
-  return Success;
+    DCASSERT(0 == top_user_func::stack_top);
+
+    delete[] top_user_func::stack;
+    top_user_func::stack = new result[size];
+    top_user_func::stack_size = size;
 }
 
 // ******************************************************************
@@ -1927,9 +1921,15 @@ void InitFunctions(exprman* em)
   top_user_func::stack_size = init_stack_size;
   top_user_func::stack_top = 0;
 
-  DCASSERT(em);
-  em->addOption(
-    new stack_size_option("StackSize", "Size of run-time stack to use for function calls.")
+  stack_size_watcher* sw = new stack_size_watcher();
+  option* o = MakeIntOption("StackSize",
+          "Size of run-time stack to use for function calls.",
+          sw->Link(),
+          0,
+          LONG_MAX
   );
+  o->registerWatcher(sw);
+  DCASSERT(em);
+  em->addOption(o);
 }
 
