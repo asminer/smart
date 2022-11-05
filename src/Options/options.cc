@@ -1,5 +1,6 @@
 
 #include "../include/defines.h"
+#include "../Utils/strings.h"
 #include "options.h"
 #include "opt_enum.h"
 #include "optman.h"
@@ -213,7 +214,7 @@ option::error option::SetValue(double)
   return WrongType;
 }
 
-option::error option::SetValue(char*)
+option::error option::SetValue(shared_string *)
 {
   return WrongType;
 }
@@ -243,7 +244,7 @@ option::error option::GetValue(double &v) const
   return WrongType;
 }
 
-option::error option::GetValue(const char* &v) const
+option::error option::GetValue(shared_string* &v) const
 {
   return WrongType;
 }
@@ -369,9 +370,9 @@ void custom_option::ShowHeader(OutputStream &s) const
         return;
     }
     case String: {
-        const char* value;
+        shared_string* value;
         GetValue(value);
-        if (value)  s << '"' << value << '"';
+        if (value)  s << '"' << value->getStr() << '"';
         else        s << "null";
         return;
     }
@@ -596,25 +597,26 @@ option* MakeRealOption(const char* name, const char* doc, double &v,
 // **************************************************************************
 
 class string_opt : public option {
-  char* &value;
+  shared_string* &value;
 public:
-  string_opt(const char* n, const char* d, char* &v)
+  string_opt(const char* n, const char* d, shared_string* &v)
    : option(String, n, d), value(v) { }
-  virtual ~string_opt() { delete[] value; }
-  virtual error SetValue(char *v) {
+  virtual ~string_opt() { Nullify(value); }
+  virtual error SetValue(shared_string* v) {
     if (0==v)      return RangeError;
-    delete[] value;
-    value = v;
+    Delete(value);
+    value = Share(v);
     return notifyWatchers();
   }
-  virtual error GetValue(const char* &v) const {
-    v = value;
+  virtual error GetValue(shared_string* &v) const {
+    Delete(v);
+    v = Share(value);
     return Success;
   }
   virtual void ShowHeader(OutputStream &s) const {
     show(s);
     s.Put(' ');
-    if (value) s << '"' << value << '"';
+    if (value) s << '"' << value->getStr() << '"';
     else s << "null";
   }
   virtual void ShowRange(doc_formatter* df) const {
@@ -623,7 +625,7 @@ public:
   }
 };
 
-option* MakeStringOption(const char* name, const char* doc, char* &v)
+option* MakeStringOption(const char* name, const char* doc, shared_string* &v)
 {
   return new string_opt(name, doc, v);
 }

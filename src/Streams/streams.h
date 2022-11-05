@@ -12,6 +12,7 @@
 class io_environ;
 class location;
 
+class shared_string;
 
 /** Abstract base class for output.
     All output goes to the buffer, for speed.
@@ -36,8 +37,7 @@ private:
   const char* doubleprecformat;
   const io_environ* parent;
   char* intbuf;
-  char* thousands;
-  int thousands_len;
+  shared_string* thousands;
 protected:
   void ExpandBuffer(int newsize);
   inline char* bufptr() { return buffer+buftop; }
@@ -100,8 +100,9 @@ public:
   void SetRealFormat(real_format rf);
   real_format GetRealFormat() const;
 
-  void SetThousandsSeparator(char* comma);
-  inline const char* GetThousandsSeparator() const { return thousands; }
+  inline shared_string* & linkThousands() {
+      return thousands;
+  }
 };
 
 template <class TYPE>

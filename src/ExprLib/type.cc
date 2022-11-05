@@ -12,7 +12,7 @@
 // *                          type methods                          *
 // ******************************************************************
 
-char* type::infinity_string;
+shared_string* type::infinity_string;
 
 type::type(const char* n)
 {
@@ -67,12 +67,12 @@ bool type::hasProc() const
 {
   return false;
 }
-  
+
 const type* type::removeProc() const
 {
   return this;
 }
-  
+
 const type* type::addProc() const
 {
   return 0;
@@ -104,7 +104,7 @@ bool type::print(OutputStream &s, const result& r) const
   if (r.isInfinity()) {
     DCASSERT(infinity_string);
     if (r.signInfinity() < 0)   s.Put('-');
-    s.Put(infinity_string);
+    s.Put(infinity_string->getStr());
     return true;
   }
   if (r.isNull()) {
@@ -123,11 +123,11 @@ bool type::print(OutputStream &s, const result& r, int width) const
   }
   if (r.isInfinity()) {
     DCASSERT(infinity_string);
-    int inflen = strlen(infinity_string);
+    int inflen = infinity_string->length();
     if (r.signInfinity() < 0)   inflen++;
     if (width > 0)              s.Pad(' ', width - inflen);
     if (r.signInfinity() < 0)   s.Put('-');
-    s.Put(infinity_string);
+    s.Put(infinity_string->getStr());
     if (width < 0)              s.Pad(' ', (-width) - inflen);
     return true;
   }
@@ -157,7 +157,7 @@ void type::show(OutputStream &s, const result& r) const
   if (r.isInfinity()) {
     DCASSERT(infinity_string);
     if (r.signInfinity() < 0)  s.Put('-');
-    s.Put(infinity_string);
+    s.Put(infinity_string->getStr());
     return;
   }
   if (r.isNull()) {
@@ -179,8 +179,8 @@ void type::assignFromString(result& r, const char* s) const
 bool type::equals(const result &x, const result &y) const
 {
   if (x.isNormal() && y.isNormal())  return equals_normal(x, y);
-  
-  if (x.isInfinity() && y.isInfinity()) 
+
+  if (x.isInfinity() && y.isInfinity())
     return x.signInfinity() == y.signInfinity();
 
   if (x.isNull() && y.isNull()) return true;
@@ -308,7 +308,7 @@ const type* simple_type::addProc() const
   return proc_this;
 }
 
-void simple_type::setProc(const type* t) 
+void simple_type::setProc(const type* t)
 {
   DCASSERT(0==proc_this);
   proc_this = t;
@@ -406,13 +406,13 @@ const type* modif_type::removeModif() const
 {
   return base;
 }
-  
+
 const type* modif_type::addProc() const
 {
   return proc_this;
 }
 
-void modif_type::setProc(const type* t) 
+void modif_type::setProc(const type* t)
 {
   DCASSERT(0==proc_this);
   proc_this = t;
@@ -584,11 +584,11 @@ void InitTypeOptions(exprman* em)
 {
   if (0==em)  return;
 
-  type::infinity_string = strdup("infinity");
+  type::infinity_string = new shared_string(strdup("infinity"));
   em->addOption(
     MakeStringOption(
-      "InfinityString", 
-      "Output string for infinity.", 
+      "InfinityString",
+      "Output string for infinity.",
       type::infinity_string
     )
   );

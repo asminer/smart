@@ -3,7 +3,7 @@
 #define TYPE_H
 
 #include "../include/defines.h"
-#include "../include/shared.h"
+#include "../Utils/strings.h"
 #include <string.h>
 
 class result;
@@ -46,15 +46,17 @@ class type {
   bool printable;
 
 protected:
-  static char* infinity_string;
+  static shared_string* infinity_string;
   friend void InitTypeOptions(exprman* em);
 
   inline void setVoid() { is_void = true; }
 public:
   type(const char* n);
-  virtual ~type(); 
-  
-  static const char* getInfinityString() { return infinity_string; }
+  virtual ~type();
+
+  static const char* getInfinityString() {
+      return infinity_string ? infinity_string->getStr() : 0;
+  }
 
   inline const char* getName() const { return name; }
   inline bool matches(const char* n) const { return 0 == strcmp(n, name); }
@@ -65,7 +67,7 @@ public:
 
   inline bool canDefineFuncOfThis() const { return func_definable; }
   inline bool canDefineVarOfThis() const { return var_definable; }
-  
+
   inline bool isVoid() const { return is_void; }
   virtual bool isAFormalism() const;
 
@@ -76,7 +78,7 @@ public:
   virtual modifier getModifier() const;
   virtual const type* modifyType(modifier m) const;
   virtual const type* removeModif() const;
-  
+
   virtual bool hasProc() const;
   virtual const type* removeProc() const;
   virtual const type* addProc() const;
@@ -90,14 +92,14 @@ public:
 
   /** Comparison, for purposes of maintaining sets of this type.
       Default behavior is to throw an error.
-      Works like "strcmp". 
+      Works like "strcmp".
       Any total ordering can be used for elements of the type,
       even an ordering different from operators "<", ">", etc.
-      But it must be transitive: 
+      But it must be transitive:
         compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
       and it must be the case that
         compare(a,b)==0 iff a==b
-     
+
       @param  a  First item.
       @param  b  second item.
       @return positive,   if a is larger than b,
@@ -177,7 +179,7 @@ protected:
 
 
 /// Safe way to get a modifier
-inline modifier GetModifier(const type* t) 
+inline modifier GetModifier(const type* t)
 {
   if (t)  return t->getModifier();
   return NO_SUCH_MODIFIER;
@@ -306,7 +308,7 @@ public:
 class void_type : public simple_type {
 public:
   void_type(const char* n, const char* sd, const char* ld);
-  
+
   /// Default comparison: check addresses of "other" field pointers.
   virtual int compare(const result& a, const result& b) const;
 };

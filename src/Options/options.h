@@ -10,6 +10,7 @@
 class OutputStream;  // defined in streams.h
 class doc_formatter;   // defined in streams.h
 class option_manager;
+class shared_string;
 
 #include "opt_enum.h"
 #include "optman.h"
@@ -111,7 +112,7 @@ class option {
                 @param  c  Value to set.
                 @return Appropriate error code.
         */
-        virtual error SetValue(char *c);
+        virtual error SetValue(shared_string *c);
 
         /** Set the value for a radio button option.
                 @param  c  Value to set.
@@ -151,7 +152,7 @@ class option {
                 @param  v  Value stored here.
                 @return Appropriate error code.
         */
-        virtual error GetValue(const char* &v) const;
+        virtual error GetValue(shared_string* &v) const;
 
         virtual int NumConstants() const;
         virtual option_enum* GetConstant(long i) const;
@@ -323,7 +324,7 @@ option* MakeRealOption(const char* name, const char* doc, double &link,
       @param  link  Link to the value.
       @return  A new option, or NULL on error.
 */
-option* MakeStringOption(const char* name, const char* doc, char* &link);
+option* MakeStringOption(const char* name, const char* doc, shared_string* &link);
 
 
 #endif

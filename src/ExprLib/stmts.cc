@@ -170,7 +170,7 @@ void optassign_val::Compute(traverse_data &td)
 
     case option::String: {
         shared_string* s = smart_cast <shared_string*> (foo.getPtr());
-        err = opt->SetValue(strdup(s->getStr()));
+        err = opt->SetValue(s);
         break;
     }
 
