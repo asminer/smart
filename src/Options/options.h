@@ -152,13 +152,13 @@ class option {
                 @param  v  The new checklist item.
                 @return Appropriate error code.
         */
-        virtual error AddCheckItem(checklist_enum* v);
+        virtual error AddCheckItem(option_enum* v);
 
         /** Add a radio button while building a radio button option.
                 @param  v  The new radio button item.
                 @return Appropriate error code.
         */
-        virtual error AddRadioButton(radio_button* v);
+        virtual error AddRadioButton(option_enum* v);
 
         /// Will be called when the option list is finalized.
         virtual void Finish();

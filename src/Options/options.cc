@@ -246,12 +246,12 @@ void option::ShowCurrent(OutputStream &s) const
   ShowHeader(s);
 }
 
-option::error option::AddCheckItem(checklist_enum* v)
+option::error option::AddCheckItem(option_enum* v)
 {
   return WrongType;
 }
 
-option::error option::AddRadioButton(radio_button* v)
+option::error option::AddRadioButton(option_enum* v)
 {
   return WrongType;
 }
@@ -613,7 +613,7 @@ public:
     virtual int NumConstants() const;
     virtual option_enum* GetConstant(long i) const;
 
-    virtual error AddRadioButton(radio_button* v);
+    virtual error AddRadioButton(option_enum* v);
     virtual void Finish();
 
     virtual void ShowHeader(OutputStream &s) const;
@@ -686,9 +686,11 @@ option_enum* radio_opt::FindConstant(const char* name) const
   return 0;
 }
 
-option::error radio_opt::AddRadioButton(radio_button* v)
+option::error radio_opt::AddRadioButton(option_enum* v)
 {
     if (0==v) return NullFunction;
+    radio_button* rb = smart_cast <radio_button*> (v);
+    if (0==rb) return WrongType;
 
     if (numadded >= numpossible) return RangeError;
 
@@ -702,7 +704,7 @@ option::error radio_opt::AddRadioButton(radio_button* v)
         }
         if (cmp<0) {
             // element i-1 is less than this one, so it can go in slot i.
-            possible[i] = v;
+            possible[i] = rb;
             ++numadded;
             return Success;
         }
@@ -711,7 +713,7 @@ option::error radio_opt::AddRadioButton(radio_button* v)
         possible[i-1] = 0;
     }
     // New element is the smallest, add it to the front.
-    possible[0] = v;
+    possible[0] = rb;
     ++numadded;
     return Success;
 }
@@ -828,7 +830,7 @@ public:
   // These are a bit more interesting...
   virtual option_enum* FindConstant(const char* name) const;
   virtual void ShowRange(doc_formatter* df) const;
-  virtual error AddCheckItem(checklist_enum* v);
+  virtual error AddCheckItem(option_enum* v);
   virtual void Finish();
   virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
 };
@@ -908,11 +910,13 @@ void checklist_opt::ShowRange(doc_formatter* df) const
   df->end_description();
 }
 
-option::error checklist_opt::AddCheckItem(checklist_enum* v)
+option::error checklist_opt::AddCheckItem(option_enum* v)
 {
   if (0==itemlist)  return Finalized;
-  option_enum* foo = itemlist->Insert(v);
-  if (v != foo)     return Duplicate;
+  checklist_enum* cv = smart_cast <checklist_enum*> (v);
+  if (0==cv) return WrongType;
+  option_enum* foo = itemlist->Insert(cv);
+  if (cv != foo)     return Duplicate;
   return Success;
 }
 
