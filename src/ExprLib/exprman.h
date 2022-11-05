@@ -29,7 +29,7 @@ class trinary_op;
 class assoc_op;
 
 class option;
-class option_const;
+class option_enum;
 
 class general_conv;
 class specific_conv;
@@ -86,12 +86,12 @@ public:
 class group_of_named {
   int alloc;
   int curr;
-  option_const** items;
+  option_enum** items;
 public:
   group_of_named(int max);
   ~group_of_named();
 
-  void AddItem(option_const* foo);
+  void AddItem(option_enum* foo);
 
   /** Finish the group, and add an appropriate
       checklist item to the owner.
@@ -116,7 +116,7 @@ public:
 
         @return       Created option constant, if any.
   */
-  option_const* Initialize(option* owner, const char* n, const char* docs, bool act);
+  option_enum* Initialize(option* owner, const char* n, const char* docs, bool act);
 
   inline void Activate()    { active = true; }
   inline void Deactivate()  { active = false; }
@@ -666,7 +666,7 @@ public:
                 A new statement, otherwise.
   */
   expr* makeOptionStatement(const char* file, int line,
-      option *o, option_const *v) const;
+      option *o, option_enum *v) const;
 
 
   /** Make a checkbox-setting statement.
@@ -687,7 +687,7 @@ public:
                 A new statement, otherwise.
   */
   expr* makeOptionStatement(const char* file, int line, option* o,
-    bool check, option_const **vlist, int nv) const;
+    bool check, option_enum **vlist, int nv) const;
 
 
   /** Make a for loop statement.

@@ -436,7 +436,7 @@ expr* BuildOptionStatement(option* o, expr* v)
 expr* BuildOptionStatement(option* o, char* n)
 {
   expr* foo;
-  option_const* oc = o ? o->FindConstant(n) : 0;
+  option_enum* oc = o ? o->FindConstant(n) : 0;
   if (0==oc) {
     if (o && pm->startError()) {
       pm->cerr() << "Illegal value " << n << " for option " << o->Name();
@@ -461,14 +461,14 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
   }
   if (0==list)  return 0;
 
-  // Count valid option_consts.
+  // Count valid option_enums.
   int length = CircularLength(list);
   int actual_length = 0;
   for (int i=0; i<length; i++) {
     list = list->next;
     shared_string* s = smart_cast <shared_string*> (list->data);
     const char* name = s ? s->getStr() : 0;
-    option_const* oc = name ? o->FindConstant(name) : 0;
+    option_enum* oc = name ? o->FindConstant(name) : 0;
     if (oc) {
       actual_length++;
       continue;
@@ -485,14 +485,14 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
     return 0;
   }
 
-  // Build list of option_consts
-  option_const** vlist = new option_const*[actual_length];
+  // Build list of option_enums
+  option_enum** vlist = new option_enum*[actual_length];
   int i=0;
   for (int j=0; j<length; j++) {
     list = list->next;
     shared_string* s = smart_cast <shared_string*> (list->data);
     const char* name = s ? s->getStr() : 0;
-    option_const* oc = name ? o->FindConstant(name) : 0;
+    option_enum* oc = name ? o->FindConstant(name) : 0;
     if (0==oc) continue;
 
     vlist[i] = oc;

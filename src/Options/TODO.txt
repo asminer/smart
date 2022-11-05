@@ -1,3 +1,9 @@
 
 To do list for option module:
 
+* Split into pieces
+* Add documentation
+
+* Moved named_msg stuff here
+  and maybe then hide checklist_enums?
+

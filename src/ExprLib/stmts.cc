@@ -303,10 +303,10 @@ void optassign_id::Traverse(traverse_data &td)
 class opt_checker : public expr {
   option* opt;
   bool check;
-  checklist_const** vals;
+  checklist_enum** vals;
   int numvals;
 public:
-  opt_checker(const char* fn, int line, option* o, bool c, checklist_const** v, int nv);
+  opt_checker(const char* fn, int line, option* o, bool c, checklist_enum** v, int nv);
   virtual ~opt_checker();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -315,7 +315,7 @@ public:
 };
 
 opt_checker::opt_checker(const char* fn, int line, option* o, bool c,
-  checklist_const** v, int nv) : expr(fn, line, STMT)
+  checklist_enum** v, int nv) : expr(fn, line, STMT)
 {
   opt = o;
   check = c;
@@ -420,7 +420,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
 }
 
 expr* exprman::makeOptionStatement(const char* file, int line,
-        option *o, option_const *v) const
+        option *o, option_enum *v) const
 {
   if (0==o || 0==v) {
     return 0;
@@ -458,7 +458,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
 }
 
 expr* exprman::makeOptionStatement(const char* file, int line,
-      option* o, bool check, option_const **vlist, int nv) const
+      option* o, bool check, option_enum **vlist, int nv) const
 {
   if (0==o) {
     delete[] vlist;
@@ -481,11 +481,11 @@ expr* exprman::makeOptionStatement(const char* file, int line,
 #ifdef DEVELOPMENT_CODE
   for (int i=0; i<nv; i++) {
     if (0==vlist[i])  continue;
-    checklist_const* foo = dynamic_cast <checklist_const*> (vlist[i]);
+    checklist_enum* foo = dynamic_cast <checklist_enum*> (vlist[i]);
     DCASSERT(foo);
   }
 #endif
 
-  return new opt_checker(file, line, o, check, (checklist_const**) vlist, nv);
+  return new opt_checker(file, line, o, check, (checklist_enum**) vlist, nv);
 }
 

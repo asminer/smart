@@ -11,85 +11,7 @@ class OutputStream;  // defined in streams.h
 class doc_formatter;   // defined in streams.h
 class option_manager;
 
-// **************************************************************************
-// *                         option_const interface                         *
-// **************************************************************************
-
-/** Abstract base class for option constants.
-    Used by Radio button and checkbox type options.
-    Neat trick!  We can have suboptions for these now!
-*/
-class option_const {
-private:
-  /// Name of the constant.
-  const char* name;
-  /// Documentation.
-  const char* doc;
-protected:
-  /// Settings for this button
-  const option_manager* settings;
-public:
-  option_const(const char* n, const char* d);
-  virtual ~option_const();
-
-  inline const char* Name() const { return name; }
-  inline const char* Documentation() const { return doc; }
-
-  void show(OutputStream &s) const;
-
-  int Compare(const option_const* b) const;
-  int Compare(const char* name) const;
-
-  inline const option_manager* readSettings() const { return settings; }
-  inline void makeSettings(const option_manager* s) { settings = s; }
-
-  bool isApropos(const doc_formatter* df, const char* keyword) const;
-};
-
-// **************************************************************************
-// *                           radio_button class                           *
-// **************************************************************************
-
-/** Radio button.
-    If a "customized" radio button option is needed, derive the radio
-    button items from this class and provide an AssignToMe()
-    method.
-*/
-class radio_button : public option_const {
-  int index;
-public:
-  radio_button(const char* n, const char* d, int i);
-  inline int GetIndex() const { return index; }
-  /** Called when this radio button is selected.
-        @return  true on success, false otherwise.
-  */
-  virtual bool AssignToMe();
-};
-
-// **************************************************************************
-// *                         checklist_const  class                         *
-// **************************************************************************
-
-/** Constant in a checklist.
-    Can be an actual item, or a virtual item (e.g., a group of items).
-*/
-class checklist_const : public option_const {
-public:
-  checklist_const(const char* n, const char* d);
-
-  /** Called when this item is checked in a checklist.
-        @return  true on success, false otherwise.
-  */
-  virtual bool CheckMe() = 0;
-
-  /** Called when this item is unchecked in a checklist.
-        @return  true on success, false otherwise.
-  */
-  virtual bool UncheckMe() = 0;
-
-  /// Returns true iff this is a checked item in a checklist.
-  virtual bool IsChecked() const = 0;
-};
+#include "opt_enum.h"
 
 // **************************************************************************
 // *                            option interface                            *
@@ -182,7 +104,7 @@ public:
         @param  c  Value to set.
         @return Appropriate error code.
   */
-  virtual error SetValue(radio_button* c); 
+  virtual error SetValue(radio_button* c);
 
   /** Find the option constant for this option,
       with the specified name.
@@ -192,7 +114,7 @@ public:
         @return An option constant "owned" by this option
                 with the given name, if it exists; 0 otherwise.
   */
-  virtual option_const* FindConstant(const char* name) const;
+  virtual option_enum* FindConstant(const char* name) const;
 
   /** Get the value for a boolean option.
         @param  v  Value stored here.
@@ -225,7 +147,7 @@ public:
   virtual error GetValue(const radio_button* &v) const;
 
   virtual int NumConstants() const;
-  virtual option_const* GetConstant(long i) const;
+  virtual option_enum* GetConstant(long i) const;
 
   virtual void ShowHeader(OutputStream &s) const = 0;
   virtual void ShowCurrent(OutputStream &s) const;
@@ -235,7 +157,7 @@ public:
         @param  v  The new checklist item.
         @return Appropriate error code.
   */
-  virtual error AddCheckItem(checklist_const* v);
+  virtual error AddCheckItem(checklist_enum* v);
 
   /// Will be called when the option list is finalized.
   virtual void Finish();
@@ -333,7 +255,7 @@ public:
       @return A new option, or NULL on error.
               An error will occur if the values are not sorted!
 */
-option* MakeRadioOption(const char* name, const char* doc, 
+option* MakeRadioOption(const char* name, const char* doc,
            radio_button** values, int numvalues,
            int& link);
 
@@ -344,7 +266,7 @@ option* MakeRadioOption(const char* name, const char* doc,
       @param  link  Link to "are we checked or not".
       @return A new constant, or NULL on error.
 */
-checklist_const* MakeChecklistConstant(const char* name, const char* doc, bool &link);
+checklist_enum* MakeChecklistConstant(const char* name, const char* doc, bool &link);
 
 /** Make a new option constant for a group of checklist items.
       @param  name  The constant name
@@ -353,7 +275,7 @@ checklist_const* MakeChecklistConstant(const char* name, const char* doc, bool &
       @param  ni    Dimension of items array.
       @return A new constant, or NULL on error.
 */
-checklist_const* MakeChecklistGroup(const char* name, const char* doc, checklist_const** items, int ni);
+checklist_enum* MakeChecklistGroup(const char* name, const char* doc, checklist_enum** items, int ni);
 
 /** Make a new option of type "checklist".
     Possible items on the list are added dynamically.
@@ -403,7 +325,7 @@ option* MakeIntOption(const char* name, const char* doc,
       @param  upper           Upper bound.
       @return A new option, or NULL on error.
 */
-option* MakeRealOption(const char* name, const char* doc, double &link, 
+option* MakeRealOption(const char* name, const char* doc, double &link,
       bool has_lower, bool includes_lower, double lower,
       bool has_upper, bool includes_upper, double upper);
 

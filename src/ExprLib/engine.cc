@@ -84,13 +84,13 @@ const char* subengine::getNameOfError(error e)
     case Duplicate:
         return "Duplicate engine name";
 
-    case Call_Mismatch:  
+    case Call_Mismatch:
         return "Incorrect measure signature";
 
-    case Out_Of_Memory:  
+    case Out_Of_Memory:
         return "Engine ran out of memory";
 
-    case Terminated:  
+    case Terminated:
         return "Engine was terminated";
 
     case Assertion_Failure:
@@ -99,7 +99,7 @@ const char* subengine::getNameOfError(error e)
     case Bad_Value:
         return "Illegal value for engine parameter";
 
-    case Engine_Failed:  
+    case Engine_Failed:
         return "Engine failed";
   }
   return "Unknown error";
@@ -309,7 +309,7 @@ void engtype::finalizeRegistry(option_manager* om)
       //
       // build the option
       //
-      option* foo = MakeRadioOption(Name(), Documentation(), 
+      option* foo = MakeRadioOption(Name(), Documentation(),
             values, N, selected_engine_index);
       DCASSERT(om);
       om->AddOption(foo);
@@ -436,7 +436,7 @@ void func_engine::Compute(traverse_data &x, expr** pass, int np)
         }
     }
     x.answer->setNull();
-  } // catch 
+  } // catch
 }
 
 
