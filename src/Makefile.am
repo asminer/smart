@@ -51,6 +51,7 @@ smart_SOURCES = \
   \
   Options/opt_enum.cc \
   Options/options.cc \
+  Options/optman.cc \
   \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -180,6 +181,7 @@ icp_SOURCES = \
   \
   Options/opt_enum.cc \
   Options/options.cc \
+  Options/optman.cc \
 	\
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -292,6 +294,7 @@ lextest_SOURCES = \
   \
   Options/opt_enum.cc \
   Options/options.cc \
+  Options/optman.cc \
   \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
