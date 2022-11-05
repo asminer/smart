@@ -2,7 +2,7 @@
 #include "mod_def.h"
 #include "mod_inst.h"
 #include "mod_vars.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../Streams/streams.h"
 #include "arrays.h"
 #include "exprman.h"

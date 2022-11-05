@@ -6,7 +6,7 @@
 #include "exprman.h"
 #include "engine.h"
 
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../include/heap.h"
 
 // ******************************************************************

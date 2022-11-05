@@ -11,6 +11,9 @@ Utils/      Global utilities like streams, options, etc.,
 Streams: replace OutputStream with ostream;
 
 
+Report: move internally to a named_report object
+
+
 ======================================================================
 
 Long-ish term lexer / parser rewrite plan:
@@ -26,3 +29,5 @@ Long-ish term lexer / parser rewrite plan:
       startup objects
 
       a struct containing all these objects?
+
+

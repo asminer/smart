@@ -3,7 +3,7 @@
 
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
 

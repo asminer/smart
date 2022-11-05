@@ -2,7 +2,7 @@
 #include "init_data.h"
 #include "../Options/options.h"
 #include "exprman.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "casting.h"
 #include "sets.h"
 #include "intervals.h"
