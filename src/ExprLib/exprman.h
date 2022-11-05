@@ -337,17 +337,6 @@ public:
 
   inline bool hasIO() const { return io; }
 
-  inline bool isInteractive() const {
-    if (io)  return io->IsInteractive();
-    else  return false;
-  }
-  inline void setInteractive() {
-    if (io)  io->SetInteractive();
-  }
-  inline void setBatch() {
-    if (io)  io->SetBatch();
-  }
-
   inline bool startInternal(const char* fn, int ln) const {
     if (!io) return false;
     io->StartInternal(fn, ln);
