@@ -58,7 +58,7 @@ public:
   virtual void createMinterms(const int* const* f, const int* const* t,
                                 int n, shared_object* a);
 
-  virtual meddly_encoder* 
+  virtual meddly_encoder*
   copyWithDifferentForest(const char* n, MEDDLY::forest*) const;
 };
 
@@ -67,8 +67,8 @@ public:
 // **************************************************************************
 
 icp_encoder
-::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m) 
- : meddly_encoder(n, f) 
+::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m)
+ : meddly_encoder(n, f)
 {
   nem = m;
 
@@ -83,8 +83,8 @@ icp_encoder
   terms = new long[maxbound];
 }
 
-icp_encoder::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m, 
-  int maxb) : meddly_encoder(n, f) 
+icp_encoder::icp_encoder(const char* n, MEDDLY::forest *f, no_event_model* m,
+  int maxb) : meddly_encoder(n, f)
 {
   nem = m;
   maxbound = maxb;
@@ -153,14 +153,14 @@ void icp_encoder::createMinterms(const int* const*, int, shared_object*)
   throw Failed;
 }
 
-void icp_encoder::createMinterms(const int* const*, const int* const*, 
+void icp_encoder::createMinterms(const int* const*, const int* const*,
                             int, shared_object*)
 {
   DCASSERT(0);
   throw Failed;
 }
 
-meddly_encoder* 
+meddly_encoder*
 icp_encoder::copyWithDifferentForest(const char* n, MEDDLY::forest* nf) const
 {
   return new icp_encoder(n, nf, nem, maxbound);
@@ -261,9 +261,9 @@ class icp_symbgen : public subengine {
 protected:
   static named_msg report;
   static named_msg debug;
-  static int combine_method;
-  static const int ACCUMULATE = 0;
-  static const int FOLD       = 1;
+  static unsigned combine_method;
+  static const unsigned ACCUMULATE = 0;
+  static const unsigned FOLD       = 1;
   friend class init_dcpsymbolic;
 public:
   icp_symbgen();
@@ -282,12 +282,12 @@ public:
 
   shared_ddedge* ProcessConjunct(expr** cl, int K, meddly_encoder* wr) const;
 
-  inline static 
+  inline static
   shared_ddedge* Multiply(shared_ddedge** cl, int N, meddly_encoder* wr) {
     switch (combine_method) {
       case ACCUMULATE:
           return wr->accumulate(MEDDLY::MULTIPLY, cl, N, &debug);
-      
+
       case FOLD:
           return wr->fold(MEDDLY::MULTIPLY, cl, N, &debug);
 
@@ -318,14 +318,14 @@ protected:
         report.report() << " required for state generation\n";
       }
       return true;
-    } 
+    }
     return false;
   };
 
 };
 named_msg icp_symbgen::report;
 named_msg icp_symbgen::debug;
-int icp_symbgen::combine_method;
+unsigned icp_symbgen::combine_method;
 
 // **************************************************************************
 // *                    icp_symbgen helper class methods                    *
@@ -449,7 +449,7 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
     char* name = strdup(mv->Name());
     vars[i+1] = MEDDLY::createVariable(mv->NumPossibleValues(), name);
   }
- 
+
 #ifdef DEBUG_STUFF
   em->cout() << "Inside symbolic RunEngine\n";
   em->cout() << "Building domain\n";
@@ -595,7 +595,7 @@ public:
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void SolveMeasure(hldsm* m, measure* what);
 protected:
-  virtual void SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem,
                               mdd_states_only* mdd, measure* what) = 0;
 };
 
@@ -657,7 +657,7 @@ public:
     return thing;
   }
 protected:
-  virtual void SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem,
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -757,7 +757,7 @@ void icp_mdd_min
   em->cout() << "Minimum value " << m << " obtainted in state ";
   nem->ShowCurrentState(em->cout());
   em->cout() << "\n";
-  
+
   Delete(me);
 }
 
@@ -777,7 +777,7 @@ public:
     return thing;
   }
 protected:
-  virtual void SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem,
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -866,7 +866,7 @@ void icp_mdd_max
   em->cout() << "Minimum value " << m << " obtainted in state ";
   nem->ShowCurrentState(em->cout());
   em->cout() << "\n";
-  
+
   Delete(me);
 }
 
@@ -886,7 +886,7 @@ public:
     return thing;
   }
 protected:
-  virtual void SolveImplicit(no_event_model* nem, 
+  virtual void SolveImplicit(no_event_model* nem,
                               mdd_states_only* mdd, measure* what);
 };
 
@@ -1018,24 +1018,24 @@ bool init_dcpsymbolic::execute()
   DCASSERT(icp_mdd_analyzer::SSGen);
   RegisterEngine(
     icp_mdd_analyzer::SSGen,
-    "MEDDLY", 
+    "MEDDLY",
     "Logical manipulation using Meddly.",
     icp_symbgen::getInstance()
   );
 
-  RegisterEngine(em, 
+  RegisterEngine(em,
       "MinExpr",
       "IMPLICIT",
       "Builds constraints and expression implicitly (using MDDs), find minimim value in MDD",
       icp_mdd_min::getInstance()
   );
-  RegisterEngine(em, 
+  RegisterEngine(em,
       "MaxExpr",
       "IMPLICIT",
       "Builds constraints and expression implicitly (using MDDs), find maximum value in MDD",
       icp_mdd_max::getInstance()
   );
-  RegisterEngine(em, 
+  RegisterEngine(em,
       "SatExpr",
       "IMPLICIT",
       "Builds constraints and expression implicitly (using MDDs), check for satisfiability",

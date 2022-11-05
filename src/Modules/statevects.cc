@@ -28,20 +28,20 @@
 
 class statevect_printer : public state_lldsm::state_visitor {
   OutputStream &out;
-  int display_style;
+  unsigned display_style;
   double* myvect;
   long nextz;
   bool comma;
 public:
-  statevect_printer(const hldsm* mdl, OutputStream &s, const statevect* d, 
-    int style);
+  statevect_printer(const hldsm* mdl, OutputStream &s, const statevect* d,
+    unsigned style);
   ~statevect_printer();
   virtual bool canSkipIndex();
   virtual bool visit();
 };
 
-statevect_printer::statevect_printer(const hldsm* m, OutputStream &s, 
-  const statevect* d, int style) : state_visitor(m), out(s)
+statevect_printer::statevect_printer(const hldsm* m, OutputStream &s,
+  const statevect* d, unsigned style) : state_visitor(m), out(s)
 {
   display_style = style;
   comma = false;
@@ -67,9 +67,9 @@ bool statevect_printer::visit()
 {
   if (comma)  out << ", ";
   else        comma = true;
-  
+
   if (statevect::SINDEX==display_style) {
-    out.Put(x.current_state_index); 
+    out.Put(x.current_state_index);
     out.Put(':');
   }
   if (statevect::SSTATE==display_style) {
@@ -88,7 +88,7 @@ bool statevect_printer::visit()
 // *                                                                *
 // ******************************************************************
 
-int statevect::display_style;
+unsigned statevect::display_style;
 
 statevect::statevect(const stochastic_lldsm* p, const double* d, long N)
 : shared_object()
@@ -148,7 +148,7 @@ statevect::statevect(const stochastic_lldsm* p, long* I, double* D, long N)
   vectsize = N;
 }
 
-statevect::statevect(const stochastic_lldsm* p, LS_Vector &V, 
+statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
   const GraphLib::node_renumberer *Ren) : shared_object()
 {
   parent = p;
@@ -227,7 +227,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
     indexes = new long[nnz];
     vect = new double[nnz];
     vectsize = nnz;
-    
+
     if (V.index) {
       //
       // V is sparse - copy
@@ -268,7 +268,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
 
 statevect::~statevect()
 {
-  // printf("Destroying state vector\n");  
+  // printf("Destroying state vector\n");
   delete[] indexes;
   delete[] vect;
 }
@@ -288,7 +288,7 @@ void statevect::ExportTo(double *d) const
   long num_states = parent->getNumStates();
 
   for (long i=0; i<num_states; i++) d[i] = 0;
-  
+
   if (indexes) {
     for (long z=0; z<vectsize; z++) {
       CHECK_RANGE(0, indexes[z], num_states);
@@ -352,7 +352,7 @@ bool statevect::Equals(const shared_object *o) const
   const statevect* b = dynamic_cast <const statevect*> (o);
   if (0==b) return false;
   if (parent != b->parent) return false;  // TBD: may want to allow this
-  
+
   DCASSERT(vectsize == b->vectsize);
 
   for (long i=0; i<vectsize; i++) {
@@ -368,16 +368,16 @@ void statevect::greater_than(double v, intset* I) const
   if (v>=0) {
     //
     // skipped elements in vector - not set in I
-    // 
+    //
     I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z] > v) 
+        if (vect[z] > v)
           I->addElement(indexes[z]);
       }
     } else {
@@ -397,11 +397,11 @@ void statevect::greater_than(double v, intset* I) const
 
     // go through vector and see what to remove
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z] <= v) 
+        if (vect[z] <= v)
           I->removeElement(indexes[z]);
       }
     } else {
@@ -422,16 +422,16 @@ void statevect::less_than(double v, intset* I) const
   if (v<=0) {
     //
     // skipped elements in vector - not set in I
-    // 
+    //
     I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z] < v) 
+        if (vect[z] < v)
           I->addElement(indexes[z]);
       }
     } else {
@@ -451,11 +451,11 @@ void statevect::less_than(double v, intset* I) const
 
     // go through vector and see what to remove
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z] >= v) 
+        if (vect[z] >= v)
           I->removeElement(indexes[z]);
       }
     } else {
@@ -470,7 +470,7 @@ void statevect::less_than(double v, intset* I) const
   }
 }
 
-void statevect::equals(double v, intset* I) const 
+void statevect::equals(double v, intset* I) const
 {
   if (0==I) return;
   //
@@ -479,16 +479,16 @@ void statevect::equals(double v, intset* I) const
   if (v) {
     //
     // skipped elements in vector - not set in I
-    // 
+    //
     I->removeAll();
 
     // go through vector and see what to add
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z] == v) 
+        if (vect[z] == v)
           I->addElement(indexes[z]);
       }
     } else {
@@ -508,11 +508,11 @@ void statevect::equals(double v, intset* I) const
 
     // go through vector and see what to remove
     if (indexes) {
-      // 
+      //
       // sparse
       //
       for (long z=0; z<vectsize; z++) {
-        if (vect[z]) 
+        if (vect[z])
           I->removeElement(indexes[z]);
       }
     } else {
@@ -560,7 +560,7 @@ double statevect::dot_product(const statevect* x) const
       }
 
       truncsize = 1+MIN(mymax, xmax);
-      
+
       temp = new double[truncsize];
       for (long i=0; i<truncsize; i++) temp[i] = 0;
       for (long z=0; z<x->vectsize; z++) {
@@ -714,7 +714,7 @@ statedist::statedist(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
-statedist::statedist(const stochastic_lldsm* p, LS_Vector &V, 
+statedist::statedist(const stochastic_lldsm* p, LS_Vector &V,
   const GraphLib::node_renumberer* ren) : statevect(p, V, ren)
 {
 }
@@ -769,7 +769,7 @@ statemsrs::statemsrs(const stochastic_lldsm* p, long* I, double* D, long N)
 {
 }
 
-statemsrs::statemsrs(const stochastic_lldsm* p, LS_Vector &V, 
+statemsrs::statemsrs(const stochastic_lldsm* p, LS_Vector &V,
   const GraphLib::node_renumberer* ren) : statevect(p, V, ren)
 {
 }
@@ -874,10 +874,10 @@ void gt_si::Compute(traverse_data &x, expr** pass, int np)
   const stochastic_lldsm* llm = p->getParent();
   long ns = llm->getNumStates();
   intset* ans = new intset(ns);
-  p->greater_than(v, ans);  
+  p->greater_than(v, ans);
 
   //
-  // Finalize & Cleanup 
+  // Finalize & Cleanup
   //
   x.answer->setPtr( new expl_stateset(llm, ans) );
   Delete(p);
@@ -927,11 +927,11 @@ void ge_si::Compute(traverse_data &x, expr** pass, int np)
   const stochastic_lldsm* llm = p->getParent();
   long ns = llm->getNumStates();
   intset* ans = new intset(ns);
-  p->less_than(v, ans);  
+  p->less_than(v, ans);
   ans->complement();
 
   //
-  // Finalize & Cleanup 
+  // Finalize & Cleanup
   //
   x.answer->setPtr( new expl_stateset(llm, ans) );
   Delete(p);
@@ -981,10 +981,10 @@ void lt_si::Compute(traverse_data &x, expr** pass, int np)
   const stochastic_lldsm* llm = p->getParent();
   long ns = llm->getNumStates();
   intset* ans = new intset(ns);
-  p->less_than(v, ans);  
+  p->less_than(v, ans);
 
   //
-  // Finalize & Cleanup 
+  // Finalize & Cleanup
   //
   x.answer->setPtr( new expl_stateset(llm, ans) );
   Delete(p);
@@ -1034,11 +1034,11 @@ void le_si::Compute(traverse_data &x, expr** pass, int np)
   const stochastic_lldsm* llm = p->getParent();
   long ns = llm->getNumStates();
   intset* ans = new intset(ns);
-  p->greater_than(v, ans);  
+  p->greater_than(v, ans);
   ans->complement();
 
   //
-  // Finalize & Cleanup 
+  // Finalize & Cleanup
   //
   x.answer->setPtr( new expl_stateset(llm, ans) );
   Delete(p);
@@ -1100,7 +1100,7 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
 
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -1136,7 +1136,7 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   //
-  // Cleanup 
+  // Cleanup
   //
   Delete(p);
   Delete(e);
@@ -1213,7 +1213,7 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
   // Ready to do actual computation
   //
   double prob = 0.0;
-  const intset eis = e->getExplicit();  
+  const intset eis = e->getExplicit();
   long i = -1;
   while ( (i=eis.getSmallestAfter(i)) >= 0) {
     prob += p->readFull(i);
@@ -1327,7 +1327,7 @@ init_statevects::init_statevects() : initializer("init_statevects")
 bool init_statevects::execute()
 {
   if (0==em)  return false;
-  
+
   // Type registry
   // ------------------------------------------------------------------
   simple_type* t_statedist = new statedist_type;
@@ -1362,7 +1362,7 @@ bool init_statevects::execute()
       "Vectors are displayed in sparse format, with states.",
       statevect::SSTATE
   );
-  statevect::display_style = statevect::SINDEX; 
+  statevect::display_style = statevect::SINDEX;
   em->addOption(
     MakeRadioOption("StatevectDisplayStyle",
       "Style to display a statedist, stateprobs, or statemsrs vector.",

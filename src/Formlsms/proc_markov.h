@@ -41,15 +41,15 @@ class markov_process : public stochastic_lldsm::process {
   private:
     static LS_Options* lsopts;
     // options, shared by all Markov-chain low-level models.
-    static int solver;
-    static const int GAUSS_SEIDEL = 0;
-    static const int JACOBI       = 1;
-    static const int ROW_JACOBI   = 2;
-    static const int NUM_SOLVERS  = 3;
+    static unsigned solver;
+    static const unsigned GAUSS_SEIDEL = 0;
+    static const unsigned JACOBI       = 1;
+    static const unsigned ROW_JACOBI   = 2;
+    static const unsigned NUM_SOLVERS  = 3;
     static named_msg report;
-    static int access;
-    static const int BY_COLUMNS = 0;
-    static const int BY_ROWS    = 1;
+    static unsigned access;
+    static const unsigned BY_COLUMNS = 0;
+    static const unsigned BY_ROWS    = 1;
   protected:
     static reporter* my_timer;
 
@@ -69,7 +69,7 @@ class markov_process : public stochastic_lldsm::process {
     void stopTTAReport(timer& w, long iters) const;
     void startAccumulatedReport(timer& w, double t) const;
     void stopAccumulatedReport(timer& w, long iters) const;
-  
+
     void startRevTransReport(timer& w, double t) const;
     void stopRevTransReport(timer& w, long iters) const;
 

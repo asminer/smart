@@ -78,7 +78,7 @@ void converge_stmt::Compute(traverse_data &x)
     if (block)  block->Compute(x);
     x.which = traverse_data::Update;
     if (block)  block->Traverse(x);
-    if (!x.wantsToRepeat()) break;   
+    if (!x.wantsToRepeat()) break;
   }
 
   if (0==iters) if (em->startWarning()) {
@@ -170,7 +170,7 @@ void converge_var::Compute(traverse_data &x)
 */
 class fixpoint_stmt : public expr {
   static double precision;
-  static int relative;
+  static unsigned relative;
   static bool use_current;
 public:
   fixpoint_stmt(const char* fn, int line);
@@ -186,7 +186,7 @@ protected:
 
 named_msg fixpoint_stmt::converge_debug;
 double fixpoint_stmt::precision;
-int fixpoint_stmt::relative;
+unsigned fixpoint_stmt::relative;
 bool fixpoint_stmt::use_current;
 
 // ******************************************************************
@@ -313,7 +313,7 @@ public:
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
   virtual bool Print(OutputStream &s, int) const;
-  
+
   void Update();
 };
 
@@ -358,10 +358,10 @@ void assign_stmt::Compute(traverse_data &x)
     if (delta > GetPrecision())
       x.setRepeat();
   } else if (! var->update.isNull()) {
-    if (! var->Type()->equals(var->current, var->update)) 
+    if (! var->Type()->equals(var->current, var->update))
       x.setRepeat();
   }
-  
+
   // Update, if now is the time.
   if (UseCurrent())  Update();
 }
@@ -537,7 +537,7 @@ public:
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
   virtual bool Print(OutputStream &s, int) const;
-  
+
   void Update(converge_var* var);
 };
 
@@ -601,10 +601,10 @@ void array_assign_stmt::Compute(traverse_data &x)
     if (delta > GetPrecision())
       x.setRepeat();
   } else if (! ccv->update.isNull()) {
-    if (! var->Type()->equals(ccv->current, ccv->update)) 
+    if (! var->Type()->equals(ccv->current, ccv->update))
       x.setRepeat();
   }
-  
+
   // Update, if now is the time.
   if (UseCurrent())  Update(ccv);
 }
@@ -694,7 +694,7 @@ expr* exprman::makeConverge(const char* fn, int ln, expr* stmt, bool top) const
 }
 
 
-expr* MakeCvgThing(const exprman* em, const char* fn, int ln, 
+expr* MakeCvgThing(const exprman* em, const char* fn, int ln,
       symbol* cvgvar, expr* rhs, bool guess)
 {
   if (0==em || em->isError(rhs))  return 0;
@@ -719,7 +719,7 @@ expr* MakeCvgThing(const exprman* em, const char* fn, int ln,
   DCASSERT(! em->isError(rhs) );
   if (guess) {
     var->setGuessed();
-    return new guess_stmt(fn, ln, var, rhs); 
+    return new guess_stmt(fn, ln, var, rhs);
   } else {
     var->setDefined();
     return new assign_stmt(fn, ln, var, rhs);
@@ -739,7 +739,7 @@ expr* exprman::makeCvgAssign(const char* fn, int ln, symbol* cvgvar, expr* rhs) 
 }
 
 
-expr* MakeArrayThing(const exprman* em, const char* fn, int ln, 
+expr* MakeArrayThing(const exprman* em, const char* fn, int ln,
       symbol* a, expr* rhs, bool guess)
 {
   if (0==em || em->isError(rhs))  return 0;
@@ -764,7 +764,7 @@ expr* MakeArrayThing(const exprman* em, const char* fn, int ln,
   DCASSERT(! em->isError(rhs) );
   if (guess) {
     var->setGuessed();
-    return new array_guess_stmt(fn, ln, var, rhs); 
+    return new array_guess_stmt(fn, ln, var, rhs);
   } else {
     var->setDefined();
     return new array_assign_stmt(fn, ln, var, rhs);
@@ -803,13 +803,13 @@ void InitConvergeOptions(exprman* em)
   );
 
   converge_stmt::max_iters = 1000;
-  option* max_iters = MakeIntOption("MaxConvergeIters", 
+  option* max_iters = MakeIntOption("MaxConvergeIters",
       "Maximum number of iterations of a converge statement.",
       converge_stmt::max_iters, 1, 2000000000
   );
 
   fixpoint_stmt::precision = 1e-5;
-  option* precision = MakeRealOption("ConvergePrecision", 
+  option* precision = MakeRealOption("ConvergePrecision",
       "Desired precision for values within a converge statement.",
       fixpoint_stmt::precision, true, false, 0, true, false, 1
   );

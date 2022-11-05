@@ -57,10 +57,10 @@ bool option_enum::isApropos(const doc_formatter* df, const char* key) const
 // *                          radio_button methods                          *
 // **************************************************************************
 
-radio_button::radio_button(const char* n, const char* d, int i)
+radio_button::radio_button(const char* n, const char* d, unsigned ndx)
     : option_enum(n, d)
 {
-    index = i;
+    index = ndx;
 }
 
 bool radio_button::AssignToMe()

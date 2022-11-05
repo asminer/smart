@@ -12,7 +12,7 @@
 // *                                                                *
 // ******************************************************************
 
-int graph_lldsm::graph_display_style;
+unsigned graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
 long graph_lldsm::max_arc_display = 100000000;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
@@ -354,22 +354,22 @@ bool init_graphllm::execute()
   // ------------------------------------------------------------------
   radio_button** gds_list = new radio_button*[graph_lldsm::num_graph_display_styles];
   gds_list[graph_lldsm::DOT] = new radio_button(
-      "DOT", 
+      "DOT",
       "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
       graph_lldsm::DOT
   );
   gds_list[graph_lldsm::INCOMING] = new radio_button(
-      "INCOMING", 
+      "INCOMING",
       "Graphs are displayed by listing the incoming edges for each node.",
       graph_lldsm::INCOMING
   );
   gds_list[graph_lldsm::OUTGOING] = new radio_button(
-      "OUTGOING", 
+      "OUTGOING",
       "Graphs are displayed by listing the outgoing edges for each node.",
       graph_lldsm::OUTGOING
   );
   gds_list[graph_lldsm::TRIPLES] = new radio_button(
-      "TRIPLES", 
+      "TRIPLES",
       "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
       graph_lldsm::TRIPLES
   );
@@ -384,7 +384,7 @@ bool init_graphllm::execute()
   // ------------------------------------------------------------------
   em->addOption(
     MakeBoolOption("DisplayGraphNodeNames",
-      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.", 
+      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.",
       graph_lldsm::display_graph_node_names
     )
   );

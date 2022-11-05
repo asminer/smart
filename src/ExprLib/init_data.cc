@@ -193,15 +193,15 @@ protected:
   virtual bool equals_normal(const result &x, const result &y) const;
 private:
   static double index_precision;
-  static int output_format;
-  static int report_format;
+  static unsigned output_format;
+  static unsigned report_format;
   friend void InitTypes(exprman* em);
   friend void MakeRealFormatOptions(exprman* em);
 };
 
 double real_type::index_precision = 1e-5;
-int real_type::output_format;
-int real_type::report_format;
+unsigned real_type::output_format;
+unsigned real_type::report_format;
 
 // ******************************************************************
 // *                       real_type  methods                       *
@@ -328,7 +328,7 @@ bool rf_selection::AssignToMe()
   return true;
 }
 
-option* MakeRFOption(exprman* em, OutputStream &s, const char* name, const char* doc, int &link)
+option* MakeRFOption(exprman* em, OutputStream &s, const char* name, const char* doc, unsigned &link)
 {
   if (!em->hasIO()) return 0;
   radio_button** rfs = new radio_button*[3];

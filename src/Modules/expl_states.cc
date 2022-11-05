@@ -379,15 +379,15 @@ exp_state_lib::exp_state_lib() : library(false, false)
 
 class my_exp_state_lib : public exp_state_lib {
   static long max_stack_depth;
-  int storage;
-  static const int HASHING  = 0;
-  static const int RED_BLACK  = 1;
-  static const int SPLAY  = 2;
+  unsigned storage;
+  static const unsigned HASHING  = 0;
+  static const unsigned RED_BLACK  = 1;
+  static const unsigned SPLAY  = 2;
   // methods for substate dbs
-  int substate_style;
-  static const int SEPARATED = 0;
-  static const int SHARED = 1;
-  static const int SYNCHRONIZED = 2;
+  unsigned substate_style;
+  static const unsigned SEPARATED = 0;
+  static const unsigned SHARED = 1;
+  static const unsigned SYNCHRONIZED = 2;
 public:
   my_exp_state_lib(exprman* em);
   virtual const char* getVersionString() const;
@@ -436,7 +436,7 @@ my_exp_state_lib::my_exp_state_lib(exprman* em) : exp_state_lib()
   int shift = sizeof(long)*8-2;
   max_stack_depth = 1L << shift;
   em->addOption(
-    MakeIntOption("ExplicitStateStackLimit", 
+    MakeIntOption("ExplicitStateStackLimit",
       "Maximum stack size to use for search trees for explicit state storage.",
       max_stack_depth, 1, max_stack_depth
     )
@@ -468,14 +468,14 @@ my_exp_state_lib::my_exp_state_lib(exprman* em) : exp_state_lib()
   );
 }
 
-const char* my_exp_state_lib::getVersionString() const 
+const char* my_exp_state_lib::getVersionString() const
 {
   return StateLib::LibraryVersion();
 }
 
-bool my_exp_state_lib::hasFixedPointer() const 
-{ 
-  return false; 
+bool my_exp_state_lib::hasFixedPointer() const
+{
+  return false;
 }
 
 const char* my_exp_state_lib::getDBMethod() const
@@ -488,7 +488,7 @@ const char* my_exp_state_lib::getDBMethod() const
   return "keep dumb compilers happy";
 }
 
-StateLib::state_db* 
+StateLib::state_db*
 my_exp_state_lib::createStateDB(bool indexed, bool store_sizes) const
 {
   StateLib::state_db* sdb = 0;
@@ -498,12 +498,12 @@ my_exp_state_lib::createStateDB(bool indexed, bool store_sizes) const
       break;
 
     case RED_BLACK:
-      sdb = StateLib::CreateStateDB(StateLib::SDBT_RedBlack, indexed, 
+      sdb = StateLib::CreateStateDB(StateLib::SDBT_RedBlack, indexed,
         store_sizes);
       break;
 
     default:
-      sdb = StateLib::CreateStateDB(StateLib::SDBT_Splay, indexed, 
+      sdb = StateLib::CreateStateDB(StateLib::SDBT_Splay, indexed,
         store_sizes);
   }
   if (sdb) {
@@ -545,9 +545,9 @@ substate_colls* my_exp_state_lib
 class coll_sorter {
   const StateLib::state_coll* ss;
   long* map;
-  // temps 
+  // temps
   shared_state* full1;
-  shared_state* full2; 
+  shared_state* full2;
 public:
   coll_sorter(const hldsm* own, const StateLib::state_coll* sc, long* m);
   ~coll_sorter();
@@ -566,7 +566,7 @@ public:
   }
 };
 
-coll_sorter::coll_sorter(const hldsm* owner, 
+coll_sorter::coll_sorter(const hldsm* owner,
   const StateLib::state_coll* sc, long* m)
 {
   DCASSERT(false == owner->containsListVar());
@@ -602,11 +602,11 @@ class coll_sorter2 {
   const StateLib::state_coll* ss;
   const long* s2h;
   long* map;
-  // temps 
+  // temps
   shared_state* full1;
-  shared_state* full2; 
+  shared_state* full2;
 public:
-  coll_sorter2(const hldsm* p, const StateLib::state_coll* sc, 
+  coll_sorter2(const hldsm* p, const StateLib::state_coll* sc,
     const long* s2h, long* m);
   ~coll_sorter2();
   // required for heapsort:
@@ -625,7 +625,7 @@ public:
 };
 
 coll_sorter2
-::coll_sorter2(const hldsm* p, const StateLib::state_coll* sc, 
+::coll_sorter2(const hldsm* p, const StateLib::state_coll* sc,
   const long* sh, long* m)
 {
   DCASSERT(false == p->containsListVar());
@@ -673,7 +673,7 @@ void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss, long* map)
   HeapSortAbstract(&foo, ss->Size());
 }
 
-void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss, 
+void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss,
   const long* sh, long* m)
 {
   DCASSERT(hm);

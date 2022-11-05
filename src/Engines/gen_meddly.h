@@ -42,14 +42,14 @@ class minterm_pool {
   int** minterms;
   int alloc;
   int used;
-  int free_list;  
+  int free_list;
   int term_depth;
 protected:
   int* allocMinterm();
 public:
   minterm_pool(int max_minterms, int depth);
   ~minterm_pool();
-  
+
   inline int* shareMinterm(int* m) {
     DCASSERT(m);
     DCASSERT(m[term_depth]>0);
@@ -110,7 +110,7 @@ public:
 // **************************************************************************
 
 /** Variable options for Meddly.
-    Abstracts away different state variable encoding and exploration 
+    Abstracts away different state variable encoding and exploration
     algorithms.
 
     TBD - REDESIGN THIS CRAP
@@ -124,7 +124,7 @@ private:
   meddly_encoder* mxd_wrap;
   const dsde_hlm &parent;
 protected:
-  bool built_ok; 
+  bool built_ok;
   MEDDLY::dd_edge** event_enabling;
   MEDDLY::dd_edge** event_firing;
   meddly_reachset &ms;
@@ -183,11 +183,11 @@ public:
   inline const MEDDLY::dd_edge& getStates() {
     return ms.getStates();
   }
-  
+
   inline void setLevel_maxTokens(std::vector<long> level_to_max_tokens){
     ms.setLevel_maxTokens(level_to_max_tokens);
   }
-  
+
   inline void setLevelIndex_token(std::vector< std::vector<long> > level_index_to_token){
     ms.setLevelIndex_token(level_index_to_token);
   }
@@ -234,7 +234,7 @@ public:
         @throws   An appropriate error code.
   */
   virtual void updateEvents(named_msg &d, bool* cl) = 0;
-   
+
   /// For the given set, determine which levels have "changed".
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl) = 0;
 
@@ -248,8 +248,8 @@ public:
   //
   // TBD - not yet
   //
-  // virtual MEDDLY::satotf_opname::subfunc* buildSubfunc(int* v, int nv, 
-  //    
+  // virtual MEDDLY::satotf_opname::subfunc* buildSubfunc(int* v, int nv,
+  //
 
   //
   // TBD - for now
@@ -272,34 +272,34 @@ public:
 
 
 /** Process construction using Meddly.
-    
-    I.e., different algorithms to build the reachability set 
+
+    I.e., different algorithms to build the reachability set
     and such are derived from this class.
 */
 class meddly_procgen : public process_generator {
   // storage option
-  static int proc_storage;
-  static const int EVMXD = 0;
-  static const int MTMXD = 1;
+  static unsigned proc_storage;
+  static const unsigned EVMXD = 0;
+  static const unsigned MTMXD = 1;
 
   // style option
-  static int edge_style;
-  static const int ACTUAL = 0;
-  static const int POTENTIAL = 1;
+  static unsigned edge_style;
+  static const unsigned ACTUAL = 0;
+  static const unsigned POTENTIAL = 1;
 
   // Variable option
-  static int var_type;
-  static const int BOUNDED    = 0;
-  static const int EXPANDING  = 1;
-  static const int ON_THE_FLY = 2;
-  static const int PREGEN     = 3;
+  static unsigned var_type;
+  static const unsigned BOUNDED    = 0;
+  static const unsigned EXPANDING  = 1;
+  static const unsigned ON_THE_FLY = 2;
+  static const unsigned PREGEN     = 3;
 
   // node deletion policy options
-  static int nsf_ndp;
-  static int rss_ndp;
-  static const int NEVER        = 0;
-  static const int OPTIMISTIC   = 1;
-  static const int PESSIMISTIC  = 2;
+  static unsigned nsf_ndp;
+  static unsigned rss_ndp;
+  static const unsigned NEVER        = 0;
+  static const unsigned OPTIMISTIC   = 1;
+  static const unsigned PESSIMISTIC  = 2;
 
   // Use extensible variables in decision diagrams for on-the-fly saturation
   static bool uses_xdds;
@@ -344,7 +344,7 @@ protected:
         @param  ms  meddly_reachset object, for final result (shared).
         @return     A new object of type meddly_varoption, or 0 on error.
   */
-  inline meddly_varoption* 
+  inline meddly_varoption*
   makeVariableOption(const dsde_hlm &m, meddly_reachset &ms) const {
     switch (var_type) {
       case BOUNDED:     return makeBounded(m, ms);
@@ -354,7 +354,7 @@ protected:
     }
     return 0;
   }
-  
+
 private:
   meddly_varoption* makeBounded(const dsde_hlm &m, meddly_reachset &ms) const;
   meddly_varoption* makeExpanding(const dsde_hlm &m, meddly_reachset &ms) const;

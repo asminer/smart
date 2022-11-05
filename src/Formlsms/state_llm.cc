@@ -13,7 +13,7 @@
 // *                                                                *
 // ******************************************************************
 
-int state_lldsm::int_display_order;
+unsigned state_lldsm::int_display_order;
 long state_lldsm::max_state_display = 100000000;
 const char* state_lldsm::max_state_display_option = "MaxStateDisplay";
 exprman* state_lldsm::reachset::em = 0;

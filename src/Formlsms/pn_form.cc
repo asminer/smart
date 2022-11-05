@@ -48,7 +48,7 @@ public:
 
   inline long getInit() const { return init; }
 
-  inline void addInit(long i) { 
+  inline void addInit(long i) {
     DCASSERT(i>=0);
     init += i;
   }
@@ -125,7 +125,7 @@ public:
   inline expr* getEnabling() const  { return enabling;  }
   inline expr* getFiring() const    { return firing;  }
 
-  inline int Compare(const model_var* p) const { 
+  inline int Compare(const model_var* p) const {
     return SIGN(SafeID(place) - SafeID(p));
   }
   inline int Compare(const arc_entry* x) const {
@@ -181,7 +181,7 @@ void arc_entry::Compile(const exprman* em)
     inhibit = makeSum(em, inhibits);
   }
 
-  if (input || inhibit) 
+  if (input || inhibit)
     enabling = MakeBleVltB(em, Share(input), Share(place), Share(inhibit));
   if (input || output)
     firing = MakeVarUpdate(em, Share(place), Share(input), Share(output));
@@ -201,7 +201,7 @@ void arc_entry::WriteDotArc(OutputStream &ds, void* t) const
   }
   if (output) {
     ds << "\tt";
-    ds.PutAddr(t); 
+    ds.PutAddr(t);
     ds << " -> p";
     ds.PutAddr(place);
     ds << " [label=\"";
@@ -491,12 +491,12 @@ void transition::Finalize(OutputStream &ds)
     int num_enable = num_guards + getNumEnablingExpr();
     int num_fire = getNumFiringExpr();
 
-    for (unsigned i = 0; i < enablings.size(); i++) 
-      if (!isEnablingEnabled(i)) 
+    for (unsigned i = 0; i < enablings.size(); i++)
+      if (!isEnablingEnabled(i))
         num_enable--;
 
-    for (unsigned i = 0; i < firings.size(); i++) 
-      if (!isFiringEnabled(i)) 
+    for (unsigned i = 0; i < firings.size(); i++)
+      if (!isFiringEnabled(i))
         num_fire--;
 
     if (num_enable == 0) {
@@ -534,7 +534,7 @@ void transition::Finalize(OutputStream &ds)
     }
 
     if (eptr > 0) {
-      expr* compiled_enabling = 
+      expr* compiled_enabling =
         (eptr == 1)
         ? enablist[0]
         : em->makeAssocOp(0, -1, exprman::aop_and, enablist, 0, eptr);
@@ -542,7 +542,7 @@ void transition::Finalize(OutputStream &ds)
       if (eptr < 2) delete[] enablist;
     }
     if (fptr > 0) {
-      expr* compiled_firing = 
+      expr* compiled_firing =
         (fptr == 1)
         ? firelist[0]
         : em->makeAssocOp(0, -1, exprman::aop_semi, firelist, 0, fptr);
@@ -576,15 +576,15 @@ void transition::Finalize(OutputStream &ds)
 
 class petri_hlm : public dsde_hlm {
 protected:
-  static int MarkingStyle;
-  static const int INDEXED = 0;
-  static const int SAFE    = 1;
-  static const int SPARSE  = 2;
-  static const int VECTOR  = 3;
+  static unsigned MarkingStyle;
+  static const unsigned INDEXED = 0;
+  static const unsigned SAFE    = 1;
+  static const unsigned SPARSE  = 2;
+  static const unsigned VECTOR  = 3;
 
   friend class init_pnform;
 public:
-  petri_hlm(const model_instance* s, place_sv** P, int np, 
+  petri_hlm(const model_instance* s, place_sv** P, int np,
       model_event** T, int nt, model_event** dead, int nd);
   virtual ~petri_hlm();
 
@@ -608,9 +608,9 @@ void petri_hlm::showTokens(OutputStream &s, bool un, int tk)
   else    s.Put(tk);
 }
 
-int petri_hlm::MarkingStyle;
+unsigned petri_hlm::MarkingStyle;
 
-petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np, 
+petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np,
   model_event** T, int nt, model_event** dead, int nd)
  : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd)
 {
@@ -658,7 +658,7 @@ void petri_hlm::showState(OutputStream &s, const shared_state* st) const
       default:
           if (em->startInternal(__FILE__, __LINE__)) {
             em->noCause();
-            em->internal() << "Unknown marking style " << MarkingStyle;
+            em->internal() << "Unknown marking style " << (unsigned long) MarkingStyle;
             em->stopIO();
           }
     } // switch
@@ -730,7 +730,7 @@ class petri_def : public dsde_def {
 
   int weight_class;
 public:
-  petri_def(const char* fn, int line, const type* t, char*n, 
+  petri_def(const char* fn, int line, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~petri_def();
@@ -750,13 +750,13 @@ public:
   inline int NewWeightClass() { return ++weight_class; }
   void AddWeight(const expr* call, transition* t, expr* wt, int wc);
   void AddAssertion(expr* a);
-  
+
 
 protected:
   virtual void InitModel();
   virtual void FinalizeModel(OutputStream &ds);
 
-  
+
   /** Builds an incidence matrix if the Petri Net is a regular
       net with integer weighted arcs.
 
@@ -791,7 +791,7 @@ named_msg petri_def::zero_bound;
 // *                       petri_def  methods                       *
 // ******************************************************************
 
-petri_def::petri_def(const char* fn, int line, const type* t, 
+petri_def::petri_def(const char* fn, int line, const type* t,
    char*n, formal_param **pl, int np) : dsde_def(fn, line, t, n, pl, np)
 {
   error = 0;
@@ -860,7 +860,7 @@ void petri_def::AddInit(const expr* call, model_var* v, int tokens)
     DoneError();
     return;
   }
-  
+
   if (pn_debug.startReport()) {
     pn_debug.report() << "adding " << tokens << " tokens to place ";
     pn_debug.report() << pl->Name() << " in initial marking\n";
@@ -895,7 +895,7 @@ void petri_def::AddBound(const expr* call, shared_set* pset, int upper)
     pset->GetElement(z, elem);
     DCASSERT(elem.isNormal());
     place_sv* pl = smart_cast <place_sv*> (elem.getPtr());
-    DCASSERT(pl);  
+    DCASSERT(pl);
     if (!isVariableOurs(pl, call, "ignoring bound")) continue;
 
     if (pn_debug.startReport()) {
@@ -1071,7 +1071,7 @@ void petri_def::AddFiring(const expr* call, transition* t, expr* dist)
       DoneWarning();
     }
     return;
-  }  
+  }
 
   // get range of values for dist
   DCASSERT(dist);
@@ -1100,7 +1100,7 @@ void petri_def::AddFiring(const expr* call, transition* t, expr* dist)
     Delete(dist);
     t->setImmediate();
     return;
-  } 
+  }
 
   // still here?  not immediate.
   t->setTimed(dist);
@@ -1128,7 +1128,7 @@ void petri_def::AddWeight(const expr* call, transition* t, expr* wt, int wc)
       DoneWarning();
     }
     return;
-  }  
+  }
 
   t->setWeight(wc, wt);
 }
@@ -1489,7 +1489,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
       em->warn() << "No places defined";
       DoneWarning();
     }
-  } 
+  }
 
   // move places from list into array
   place_sv** parray = num_places ? new place_sv*[num_places] : 0;
@@ -1625,7 +1625,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
     em->newLine(1);
     em->warn() << "{";
     bool printed = false;
-    for (int i=0; i<num_trans; i++) 
+    for (int i=0; i<num_trans; i++)
       if (elist[i]->hasFiringType(model_event::Nondeterm)) {
         if (printed) em->warn() << ", ";
         em->warn() << elist[i]->Name();
@@ -1640,7 +1640,7 @@ void petri_def::FinalizeModel(OutputStream &ds)
     em->newLine(1);
     em->warn() << "{";
     bool printed = false;
-    for (int i=0; i<num_trans; i++) 
+    for (int i=0; i<num_trans; i++)
       if (elist[i]->hasFiringType(model_event::Immediate))
         if (0==elist[i]->getWeight()) {
           if (printed) em->warn() << ", ";
@@ -1654,8 +1654,8 @@ void petri_def::FinalizeModel(OutputStream &ds)
 
   ds << "}\n";
 
-  petri_hlm* build = new petri_hlm(current, parray, num_places, 
-    elist, num_trans, dlist, num_dead_trans); 
+  petri_hlm* build = new petri_hlm(current, parray, num_places,
+    elist, num_trans, dlist, num_dead_trans);
 
   // add assertions, if any
   long na = assertion_list->Length();
@@ -1695,7 +1695,7 @@ petri_formalism
 {
 }
 
-model_def* petri_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* petri_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
@@ -1749,7 +1749,7 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1812,7 +1812,7 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1878,7 +1878,7 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1896,7 +1896,7 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     DCASSERT(second.isNormal());
 
-    // TBD: add error checking of first and second here   
+    // TBD: add error checking of first and second here
 
     model_var* pl;
     transition* t;
@@ -1927,7 +1927,7 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
 int pn_arcs::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = em->VOID;
         return 0;
 
@@ -1946,9 +1946,9 @@ int pn_arcs::Typecheck(expr** pass, int np) const
 {
   if (np<2)    return NotEnoughParams(np);
 
-  if ((0==pass[0]) || (pass[0]->NumComponents() > 1) 
-       || !em->isPromotable(pass[0]->Type(), em->MODEL)) 
-  return BadParam(0, np); 
+  if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
+       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+  return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
     if (0==pass[i] || pass[i]->NumComponents()<2 || pass[i]->NumComponents()>3)
@@ -1956,7 +1956,7 @@ int pn_arcs::Typecheck(expr** pass, int np) const
 
     bool ok1 = (pass[i]->Type(0)==PLACE) && (pass[i]->Type(1)==TRANS);
     bool ok2 = (pass[i]->Type(0)==TRANS) && (pass[i]->Type(1)==PLACE);
-    if (!(ok1 || ok2)) 
+    if (!(ok1 || ok2))
       return BadParam(i, np);
 
     // check cardinality, if it is there
@@ -2027,7 +2027,7 @@ void pn_inhibit::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2045,7 +2045,7 @@ void pn_inhibit::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     DCASSERT(second.isNormal());
 
-    // TBD: add error checking of first and second here   
+    // TBD: add error checking of first and second here
 
     model_var* pl;
     transition* t;
@@ -2062,7 +2062,7 @@ void pn_inhibit::Compute(traverse_data &x, expr** pass, int np)
 int pn_inhibit::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = em->VOID;
         return 0;
 
@@ -2081,16 +2081,16 @@ int pn_inhibit::Typecheck(expr** pass, int np) const
 {
   if (np<2)    return NotEnoughParams(np);
 
-  if ((0==pass[0]) || (pass[0]->NumComponents() > 1) 
-       || !em->isPromotable(pass[0]->Type(), em->MODEL)) 
-          return BadParam(0, np); 
+  if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
+       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+          return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
     if (0==pass[i] || pass[i]->NumComponents()<2 || pass[i]->NumComponents()>3)
       return BadParam(i, np);
 
     bool ok1 = (pass[i]->Type(0)==PLACE) && (pass[i]->Type(1)==TRANS);
-    if (!ok1) 
+    if (!ok1)
       return BadParam(i, np);
 
     // check cardinality, if it is there
@@ -2155,7 +2155,7 @@ void pn_guard::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2210,7 +2210,7 @@ void pn_firing::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2230,7 +2230,7 @@ void pn_firing::Compute(traverse_data &x, expr** pass, int np)
 int pn_firing::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = em->VOID;
         return 0;
 
@@ -2249,9 +2249,9 @@ int pn_firing::Typecheck(expr** pass, int np) const
 {
   if (np<2)    return NotEnoughParams(np);
 
-  if ((0==pass[0]) || (pass[0]->NumComponents() > 1) 
-       || !em->isPromotable(pass[0]->Type(), em->MODEL)) 
-          return BadParam(0, np); 
+  if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
+       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+          return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
     if (0==pass[i] || pass[i]->NumComponents()!=2)
@@ -2301,7 +2301,7 @@ void pn_weight::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2349,7 +2349,7 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2409,7 +2409,7 @@ void pn_assert::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2447,7 +2447,7 @@ void pn_hide::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   petri_def* mdl = smart_cast<petri_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -2565,7 +2565,7 @@ void pn_rate::Compute(traverse_data &x, expr** pass, int np)
     }
     x.answer->setNull();
     return;
-  } 
+  }
 
   // first: check if the transition is enabled in this state
   SafeCompute(t->getEnabling(), x);
@@ -2619,7 +2619,7 @@ void pn_enabled::Compute(traverse_data &x, expr** pass, int np)
   // find out who is enabled
   List <model_event> enablist;
   mypn->makeEnabledList(x, &enablist);
-  
+
   // Get the set of transitions
   SafeCompute(pass[1], x);
   if (!x.answer->isNormal()) return;
@@ -2703,7 +2703,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_transitions::pn_transitions(const type* ts) 
+pn_transitions::pn_transitions(const type* ts)
  : model_internal(ts, "transitions", 1)
 {
   tset = ts;
@@ -2936,7 +2936,7 @@ bool init_pnform::execute()
   Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
   Add_MCC_varfuncs(petri_def::place_type, pnsyms);
 
-  pn->setFunctions(pnsyms); 
+  pn->setFunctions(pnsyms);
   pn->addCommonFuncs(CML);
 
   return true;

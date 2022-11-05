@@ -18,163 +18,170 @@ class option_manager;
 // **************************************************************************
 
 /**  Base class for options.
-     Derived classes are "hidden" in options.cc.
+     Some derived classes are "hidden" in options.cc.
 */
 class option {
-public:
-  /// Errors for options.
-  enum error {
-    /// The operation was successful.
-    Success = 0,
-    /// Type mismatch error.
-    WrongType,
-    /// Tried to set a value out of range.
-    RangeError,
-    /// Null action set/get function or pointer.
-    NullFunction,
-    /// Option is already finalized.
-    Finalized,
-    /// Duplicate checklist item.
-    Duplicate
-  };
-  /// Types for options.
-  enum type {
-    /// Dummy type
-    NoType = 0,
-    /// Boolean options.
-    Boolean,
-    /// Integer options.
-    Integer,
-    /// Real options.
-    Real,
-    /// String options.
-    String,
-    /// Radio button options.
-    RadioButton,
-    /// Checklist options.
-    Checklist
-  };
-private:
-  type mytype;
-  const char* name;
-  const char* documentation;
-  bool hidden;
-public:
-  /** Constructor.
-        @param  t  The type of option.
-        @param  n  The option name.
-        @param  d  Documentation for the option.
-  */
-  option(type t, const char* n, const char* d);
-  virtual ~option();
-  inline type Type() const { return mytype; }
-  inline const char* Name() const { return name; }
-  inline const char* GetDocumentation() const { return documentation; }
-  inline bool IsUndocumented() const { return hidden; }
+    public:
+        /// Errors for options.
+        enum error {
+            /// The operation was successful.
+            Success = 0,
+            /// Type mismatch error.
+            WrongType,
+            /// Tried to set a value out of range.
+            RangeError,
+            /// Null action set/get function or pointer.
+            NullFunction,
+            /// Option is already finalized.
+            Finalized,
+            /// Duplicate checklist item.
+            Duplicate
+        };
+        /// Types for options.
+        enum type {
+            /// Dummy type
+            NoType = 0,
+            /// Boolean options.
+            Boolean,
+            /// Integer options.
+            Integer,
+            /// Real options.
+            Real,
+            /// String options.
+            String,
+            /// Radio button options.
+            RadioButton,
+            /// Checklist options.
+            Checklist
+        };
+    private:
+        type mytype;
+        const char* name;
+        const char* documentation;
+        bool hidden;
 
-  inline void Hide() { hidden = true; }
+    public:
+        /** Constructor.
+                @param  t  The type of option.
+                @param  n  The option name.
+                @param  d  Documentation for the option.
+        */
+        option(type t, const char* n, const char* d);
+        virtual ~option();
 
-  void show(OutputStream &s) const;
+        inline type Type() const { return mytype; }
+        inline const char* Name() const { return name; }
+        inline const char* GetDocumentation() const { return documentation; }
+        inline bool IsUndocumented() const { return hidden; }
+        inline void Hide() { hidden = true; }
 
-  /** Set the value for a boolean option.
-        @param  b  Value to set.
-        @return Appropriate error code.
-  */
-  virtual error SetValue(bool b);
+        void show(OutputStream &s) const;
 
-  /** Set the value for an integer option.
-        @param  n  Value to set.
-        @return Appropriate error code.
-  */
-  virtual error SetValue(long n);
+        /** Set the value for a boolean option.
+                @param  b  Value to set.
+                @return Appropriate error code.
+        */
+        virtual error SetValue(bool b);
 
-  /** Set the value for a real option.
-        @param  r  Value to set.
-        @return Appropriate error code.
-  */
-  virtual error SetValue(double r);
+        /** Set the value for an integer option.
+                @param  n  Value to set.
+                @return Appropriate error code.
+        */
+        virtual error SetValue(long n);
 
-  /** Set the value for a string option.
-        @param  c  Value to set.
-        @return Appropriate error code.
-  */
-  virtual error SetValue(char *c);
+        /** Set the value for a real option.
+                @param  r  Value to set.
+                @return Appropriate error code.
+        */
+        virtual error SetValue(double r);
 
-  /** Set the value for a radio button option.
-        @param  c  Value to set.
-        @return Appropriate error code.
-  */
-  virtual error SetValue(radio_button* c);
+        /** Set the value for a string option.
+                @param  c  Value to set.
+                @return Appropriate error code.
+        */
+        virtual error SetValue(char *c);
 
-  /** Find the option constant for this option,
-      with the specified name.
-      If this is not a RadioButton or CheckList option,
-      we always return 0.
-        @param  name  Name of option constant to find.
-        @return An option constant "owned" by this option
-                with the given name, if it exists; 0 otherwise.
-  */
-  virtual option_enum* FindConstant(const char* name) const;
+        /** Set the value for a radio button option.
+                @param  c  Value to set.
+                @return Appropriate error code.
+        */
+        virtual error SetValue(option_enum* c);
 
-  /** Get the value for a boolean option.
-        @param  v  Value stored here.
-        @return Appropriate error code.
-  */
-  virtual error GetValue(bool &v) const;
+        /** Find the option constant for this option,
+            with the specified name.
+            If this is not a RadioButton or CheckList option,
+            we always return 0.
+                @param  name  Name of option constant to find.
+                @return An option constant "owned" by this option
+                        with the given name, if it exists; 0 otherwise.
+        */
+        virtual option_enum* FindConstant(const char* name) const;
 
-  /** Get the value for an integer option.
-        @param  v  Value stored here.
-        @return Appropriate error code.
-  */
-  virtual error GetValue(long &v) const;
+        /** Get the value for a boolean option.
+                @param  v  Value stored here.
+                @return Appropriate error code.
+        */
+        virtual error GetValue(bool &v) const;
 
-  /** Get the value for a real option.
-        @param  v  Value stored here.
-        @return Appropriate error code.
-  */
-  virtual error GetValue(double &v) const;
+        /** Get the value for an integer option.
+                @param  v  Value stored here.
+                @return Appropriate error code.
+        */
+        virtual error GetValue(long &v) const;
 
-  /** Get the value for a string option.
-        @param  v  Value stored here.
-        @return Appropriate error code.
-  */
-  virtual error GetValue(const char* &v) const;
+        /** Get the value for a real option.
+                @param  v  Value stored here.
+                @return Appropriate error code.
+        */
+        virtual error GetValue(double &v) const;
 
-  /** Get the value for a radio button option.
-        @param  v  Value stored here.
-        @return Appropriate error code.
-  */
-  virtual error GetValue(const radio_button* &v) const;
+        /** Get the value for a string option.
+                @param  v  Value stored here.
+                @return Appropriate error code.
+        */
+        virtual error GetValue(const char* &v) const;
 
-  virtual int NumConstants() const;
-  virtual option_enum* GetConstant(long i) const;
+        /** Get the value for a radio button option.
+                @param  v  Value stored here.
+                @return Appropriate error code.
+        */
+        virtual error GetValue(const radio_button* &v) const;
 
-  virtual void ShowHeader(OutputStream &s) const = 0;
-  virtual void ShowCurrent(OutputStream &s) const;
-  virtual void ShowRange(doc_formatter* df) const = 0;
+        virtual int NumConstants() const;
+        virtual option_enum* GetConstant(long i) const;
 
-  /** Add a new item to a checklist option.
-        @param  v  The new checklist item.
-        @return Appropriate error code.
-  */
-  virtual error AddCheckItem(checklist_enum* v);
+        virtual void ShowHeader(OutputStream &s) const = 0;
+        virtual void ShowCurrent(OutputStream &s) const;
+        virtual void ShowRange(doc_formatter* df) const = 0;
 
-  /// Will be called when the option list is finalized.
-  virtual void Finish();
+        /** Add a new item to a checklist option.
+                @param  v  The new checklist item.
+                @return Appropriate error code.
+        */
+        virtual error AddCheckItem(checklist_enum* v);
 
-  int Compare(const option* b) const;
-  int Compare(const char* name) const;
+        /** Add a radio button while building a radio button option.
+                @param  v  The new radio button item.
+                @return Appropriate error code.
+        */
+        virtual error AddRadioButton(radio_button* v);
 
-  /// Determine if this option matches the given keyword.
-  virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+        /// Will be called when the option list is finalized.
+        virtual void Finish();
 
-  /** Write documentation header and body for this option.
-        @param  df  Document formatter; output is sent here.
-  */
-  void PrintDocs(doc_formatter* df, const char* keyword) const;
+        int Compare(const option* b) const;
+        int Compare(const char* name) const;
 
-  /// Recursively document children as appropriate.
-  virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
+        /// Determine if this option matches the given keyword.
+        virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+
+        /** Write documentation header and body for this option.
+            @param  df  Document formatter; output is sent here.
+        */
+        void PrintDocs(doc_formatter* df, const char* keyword) const;
+
+        /// Recursively document children as appropriate.
+        virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
 };
 
 // **************************************************************************
@@ -246,18 +253,31 @@ public:
 // **************************************************************************
 
 
-/** Make a new option of type "radio button".
+/** Make a new option of type "radio button",
+    with radio buttons to be added later.
       @param  name      The option name
       @param  doc       Documentation for the option.
-      @param  values    Possible values the option can assume
-      @param  numvalues Number of values.
+      @param  values    Radio buttons to add.
+      @param  numvalues Number of radio buttons to be added.
       @param  link      Link to current selection (the value index).
       @return A new option, or NULL on error.
               An error will occur if the values are not sorted!
 */
 option* MakeRadioOption(const char* name, const char* doc,
-           radio_button** values, int numvalues,
-           int& link);
+           radio_button** values, unsigned numvalues, unsigned& link);
+
+
+/** Make a new option of type "radio button",
+    with radio buttons to be added later.
+      @param  name      The option name
+      @param  doc       Documentation for the option.
+      @param  numvalues Number of radio buttons to be added.
+      @param  link      Link to current selection (the value index).
+      @return A new option, or NULL on error.
+              An error will occur if the values are not sorted!
+*/
+option* MakeRadioOption(const char* name, const char* doc,
+           unsigned numvalues, unsigned& link);
 
 
 /** Make a new option constant for a checklist.

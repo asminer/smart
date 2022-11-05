@@ -59,7 +59,7 @@ public:
       @param  V     Vector; will be "ours" now
       @param  Ren   Renumbering map, or 0 to indicate no renumbering.
   */
-  statevect(const stochastic_lldsm* p, LS_Vector &V, 
+  statevect(const stochastic_lldsm* p, LS_Vector &V,
     const GraphLib::node_renumberer* Ren);
 
   virtual ~statevect();
@@ -144,10 +144,10 @@ private:
     return (tsize * sizeof(double) <= nnz * (sizeof(double)+sizeof(long)));
   }
 private:
-  static int display_style;
-  static const int FULL = 0;
-  static const int SINDEX = 1;
-  static const int SSTATE = 2;
+  static unsigned display_style;
+  static const unsigned FULL = 0;
+  static const unsigned SINDEX = 1;
+  static const unsigned SSTATE = 2;
   friend class init_statevects;
   friend class statevect_printer;
 };
@@ -163,7 +163,7 @@ class statedist : public statevect {
   public:
     statedist(const stochastic_lldsm *p, const double *d, long N);
     statedist(const stochastic_lldsm* p, long* I, double* D, long N);
-    statedist(const stochastic_lldsm* p, LS_Vector &V, 
+    statedist(const stochastic_lldsm* p, LS_Vector &V,
       const GraphLib::node_renumberer* Ren);
 
     /// Normalize vector if possible; returns original sum of elements.
@@ -181,7 +181,7 @@ class stateprobs : public statevect {
   public:
     stateprobs(const stochastic_lldsm *p, const double *d, long N);
     stateprobs(const stochastic_lldsm* p, long* I, double* D, long N);
-    stateprobs(const stochastic_lldsm* p, LS_Vector &V, 
+    stateprobs(const stochastic_lldsm* p, LS_Vector &V,
       const GraphLib::node_renumberer* Ren);
 
   // ANY difference?
@@ -198,7 +198,7 @@ class statemsrs : public statevect {
   public:
     statemsrs(const stochastic_lldsm *p, const double *d, long N);
     statemsrs(const stochastic_lldsm* p, long* I, double* D, long N);
-    statemsrs(const stochastic_lldsm* p, LS_Vector &V, 
+    statemsrs(const stochastic_lldsm* p, LS_Vector &V,
       const GraphLib::node_renumberer* Ren);
 
   // ANY difference?

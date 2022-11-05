@@ -18,7 +18,7 @@
 
 named_msg process_generator::report;
 named_msg process_generator::debug;
-int process_generator::remove_vanishing;
+unsigned process_generator::remove_vanishing;
 
 process_generator::process_generator()
  : subengine()

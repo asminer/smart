@@ -2,7 +2,7 @@
 #include "simul.h"
 
 // External libs
-#include "../_SimLib/sim.h" 
+#include "../_SimLib/sim.h"
 #include "../_RngLib/rng.h"
 #include "../_Timer/timerlib.h"
 
@@ -50,7 +50,7 @@ class conf_intl : public shared_object {
   float conf_level;
 public:
   conf_intl(double hw, float cl);
-  
+
   virtual bool Print(OutputStream &s, int prec) const;
   virtual bool Equals(const shared_object *o) const;
 };
@@ -81,7 +81,7 @@ bool conf_intl::Equals(const shared_object* o) const
 // **************************************************************************
 
 /** Abstract base class for all simulation engines.
-    This allows us to define a single, static, random number 
+    This allows us to define a single, static, random number
     generator stream manager.
     And, it provides encapsulation for the simulation and RNG options.
 */
@@ -90,12 +90,12 @@ class sim_engine : public subengine {
   static long Samples;
   static double Confidence;
   static double Precision;
-  static int Type;
+  static unsigned Type;
 protected:
   static rng_stream* rng_main;
-  static const int V_CONFIDENCE  = 0;
-  static const int V_PRECISION   = 1;
-  static const int V_SAMPLES   = 2;
+  static const unsigned V_CONFIDENCE  = 0;
+  static const unsigned V_PRECISION   = 1;
+  static const unsigned V_SAMPLES   = 2;
 public:
   sim_engine();
   virtual ~sim_engine();
@@ -116,7 +116,7 @@ rng_stream* sim_engine::rng_main = 0;
 long sim_engine::Samples;
 double sim_engine::Confidence;
 double sim_engine::Precision;
-int sim_engine::Type;
+unsigned sim_engine::Type;
 
 // **************************************************************************
 // *                           sim_engine methods                           *
@@ -188,7 +188,7 @@ void monte_carlo_engine
   e->PreCompute();
   sim_experiment* se = MakeExperiment(e, x);
   if (0==se)  throw Engine_Failed;
- 
+
   rng_stream* old = x.stream;
   x.stream = rng_main;
 
@@ -213,7 +213,7 @@ void monte_carlo_engine
   } // switch
 
   if (avg.is_valid) {
-    x.answer->setConfidence( avg.average, 
+    x.answer->setConfidence( avg.average,
       new conf_intl(avg.half_width, avg.confidence) );
   } else {
     x.answer->setNull();
@@ -233,7 +233,7 @@ void monte_carlo_engine
       report.report() << watch.elapsed_seconds() << " seconds\n";
       report.stopIO();
   }
-   
+
   x.stream = old;
   delete se;
 }
@@ -401,8 +401,8 @@ bool init_simul::execute()
   sim_engine::Samples = 100000;
   em->addOption(
     MakeIntOption(
-      "SimSamples", 
-      "Number of samples to collect during simulations, if fixed (see option SimType).", 
+      "SimSamples",
+      "Number of samples to collect during simulations, if fixed (see option SimType).",
       sim_engine::Samples, 50, 2000000000
     )
   );
@@ -410,8 +410,8 @@ bool init_simul::execute()
   sim_engine::Confidence = 0.95;
   em->addOption(
     MakeRealOption(
-      "SimConfidence", 
-      "Desired level of confidence for simulations, if fixed (see option SimType).", 
+      "SimConfidence",
+      "Desired level of confidence for simulations, if fixed (see option SimType).",
       sim_engine::Confidence, true, false, 0.0, true, false, 1.0
     )
   );
@@ -419,8 +419,8 @@ bool init_simul::execute()
   sim_engine::Precision = 0.001;
   em->addOption(
     MakeRealOption(
-      "SimPrecision", 
-      "Desired level of (relative) precision for simulations, i.e., the desired half-width size as a fraction of the interval midpoint, if fixed (see option SimType).  Note: for a fixed confidence, one more digit of precision requires 100 times more samples.", 
+      "SimPrecision",
+      "Desired level of (relative) precision for simulations, i.e., the desired half-width size as a fraction of the interval midpoint, if fixed (see option SimType).  Note: for a fixed confidence, one more digit of precision requires 100 times more samples.",
       sim_engine::Precision, true, false, 0.0, true, false, 1.0)
   );
 
@@ -432,14 +432,14 @@ bool init_simul::execute()
       "PRECISION", "Half-width precision varies", sim_engine::V_PRECISION
   );
   stval[sim_engine::V_SAMPLES] = new radio_button(
-      "SAMPLES", 
+      "SAMPLES",
       "Number of samples (i.e., iterations) varies", sim_engine::V_SAMPLES
   );
   sim_engine::Type = sim_engine::V_SAMPLES;
   em->addOption(
     MakeRadioOption(
-      "SimType", 
-      "Simulation parameters can be tuned with options SimSamples, SimConfidence, and SimPrecision.  However, only two of the three values can be fixed, as the third is a function of the other two.  This option essentially determines which of the three is allowed to vary in the simulation.", 
+      "SimType",
+      "Simulation parameters can be tuned with options SimSamples, SimConfidence, and SimPrecision.  However, only two of the three values can be fixed, as the third is a function of the other two.  This option essentially determines which of the three is allowed to vary in the simulation.",
       stval, 3, sim_engine::Type
     )
   );
@@ -456,12 +456,12 @@ bool init_simul::execute()
   //
   DCASSERT(0== sim_engine::rngm);
   sim_engine::rngm = RNG_MakeStreamManager();
-  if (sim_engine::rngm) 
+  if (sim_engine::rngm)
     sim_engine::rng_main = sim_engine::rngm->NewBlankStream();
 
   em->addOption(
     new jump_distance_option(
-      "RngStreamSeparation", 
+      "RngStreamSeparation",
       "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d."
     )
   );
@@ -479,7 +479,7 @@ bool init_simul::execute()
   //
   RegisterEngine(em,
     "AvgRandReal",
-    "MONTE_CARLO", 
+    "MONTE_CARLO",
     "Average determined using Monte-Carlo simulation.",
     &the_sim_rr_avg
   );
