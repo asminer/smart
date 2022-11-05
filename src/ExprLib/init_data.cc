@@ -373,34 +373,6 @@ void MakeRealFormatOptions(exprman* em)
 // *                                                                *
 // ******************************************************************
 
-/*
-class thousands_option : public custom_option {
-  OutputStream &os;
-public:
-  thousands_option(OutputStream &s, const char* name, const char* doc);
-  virtual error SetValue(char* n);
-  virtual error GetValue(const char* &v) const;
-};
-
-thousands_option
-::thousands_option(OutputStream& s, const char* name, const char* doc)
- :custom_option(option::String, name, doc, "any string"), os(s)
-{
-}
-
-option::error thousands_option::SetValue(char* s)
-{
-  os.SetThousandsSeparator(s);
-  return notifyWatchers();
-}
-
-option::error thousands_option::GetValue(const char* &v) const
-{
-  v = os.GetThousandsSeparator();
-  return Success;
-}
-*/
-
 void MakeSeparatorOptions(exprman* em)
 {
   if (!em->hasIO())  return;
