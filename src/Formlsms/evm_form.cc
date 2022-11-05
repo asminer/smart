@@ -44,7 +44,7 @@ public:
     return firing;
   }
 
-  inline int Compare(const model_var* p) const { 
+  inline int Compare(const model_var* p) const {
     return SIGN(SafeID(lhs) - SafeID(p));
   }
   inline int Compare(const assign_entry* x) const {
@@ -96,7 +96,7 @@ public:
     init = i;
     has_init = true;
   }
-  inline long getInit() const { 
+  inline long getInit() const {
     DCASSERT(has_init);
     return init;
   }
@@ -141,7 +141,7 @@ void evm_intvar::AddToState(traverse_data &x, long delta) const
   DCASSERT(x.current_state);
   DCASSERT(x.next_state);
   DCASSERT(bounds);
-  
+
   result foo;
   long index = x.current_state->get(GetIndex());
   bounds->GetElement(index, foo);
@@ -149,7 +149,7 @@ void evm_intvar::AddToState(traverse_data &x, long delta) const
     foo.setInt(foo.getInt() + delta);
     index = bounds->IndexOf(foo);
     if (index < 0)  boundsError(x, foo.getInt());
-  } 
+  }
   x.next_state->set(GetIndex(), index);
 }
 
@@ -158,7 +158,7 @@ void evm_intvar
 {
   DCASSERT(x.answer);
   DCASSERT(bounds);
-  
+
   result foo;
   foo.setInt(newst);
   long index = bounds->IndexOf(foo);
@@ -320,7 +320,7 @@ void evm_event::Finalize(OutputStream &ds)
     if (1==na) setNextstate(nextlist[0]);
     delete[] nextlist;
   }
-  
+
   delete build_data;
   build_data = 0;
 }
@@ -333,11 +333,11 @@ void evm_event::Finalize(OutputStream &ds)
 
 class evm_hlm : public dsde_hlm {
 protected:
-  static int StateStyle;
-  static const int INDEXED = 0;
-  static const int SAFE    = 1;
-  static const int SPARSE  = 2;
-  static const int VECTOR  = 3;
+  static unsigned StateStyle;
+  static const unsigned INDEXED = 0;
+  static const unsigned SAFE    = 1;
+  static const unsigned SPARSE  = 2;
+  static const unsigned VECTOR  = 3;
 
   friend class init_evmform;
 public:
@@ -352,7 +352,7 @@ public:
   virtual double GetInitialState(int n, shared_state* s) const;
 };
 
-int evm_hlm::StateStyle;
+unsigned evm_hlm::StateStyle;
 
 // ******************************************************************
 // *                        evm_hlm  methods                        *
@@ -405,7 +405,7 @@ void evm_hlm::showState(OutputStream &s, const shared_state* st) const
       default:
           if (em->startInternal(__FILE__, __LINE__)) {
             em->noCause();
-            em->internal() << "Unknown state style " << StateStyle;
+            em->internal() << "Unknown state style " << (unsigned long) StateStyle;
             em->stopIO();
           }
     } // switch
@@ -467,7 +467,7 @@ class evm_def : public dsde_def {
 
   friend class init_evmform;
 public:
-  evm_def(const char* fn, int line, const type* t, char*n, 
+  evm_def(const char* fn, int line, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~evm_def();
@@ -506,7 +506,7 @@ const type* evm_def::event_type;
 // *                        evm_def  methods                        *
 // ******************************************************************
 
-evm_def::evm_def(const char* fn, int line, const type* t, 
+evm_def::evm_def(const char* fn, int line, const type* t,
    char*n, formal_param **pl, int np) : dsde_def(fn, line, t, n, pl, np)
 {
   error = 0;
@@ -562,7 +562,7 @@ void evm_def::AddRange(const expr* call, shared_set* vset, shared_set* range)
     vset->GetElement(z, elem);
     DCASSERT(elem.isNormal());
     model_statevar* pl = smart_cast <model_statevar*> (elem.getPtr());
-    DCASSERT(pl);  
+    DCASSERT(pl);
     if (!isVariableOurs(pl, call, "ignoring range")) continue;
 
     if (pl->HasBounds()) {
@@ -649,7 +649,7 @@ void evm_def::AddInit(const expr* call, model_var* v, long initval)
 
   evm_intvar* iv = smart_cast <evm_intvar*> (v);
   DCASSERT(iv);
-  
+
   if (iv->hasInit()) {
     if (StartWarning(dup_init, call)) {
         em->warn() << "Duplicate initial value for " << v->Name();
@@ -801,7 +801,7 @@ evm_formalism
 {
 }
 
-model_def* evm_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* evm_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   return new evm_def(fn, ln, this, name, (formal_param**) formals, np);
@@ -917,7 +917,7 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -980,7 +980,7 @@ void evm_enabled::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1040,7 +1040,7 @@ void evm_assign::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1100,7 +1100,7 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1116,7 +1116,7 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
       em->cerr() << "Bad integer for init, ignoring";
       mdl->DoneError();
       continue;
-    } 
+    }
 
     result first;
     x.answer = &first;
@@ -1163,7 +1163,7 @@ void evm_hide::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1206,7 +1206,7 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   evm_def* mdl = smart_cast<evm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1292,7 +1292,7 @@ bool init_evmform::execute()
   evmsyms->AddSymbol(  new evm_assert   );
   Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
   Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
-  evm->setFunctions(evmsyms); 
+  evm->setFunctions(evmsyms);
   evm->addCommonFuncs(CML);
 
 

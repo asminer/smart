@@ -1,5 +1,5 @@
 
-/** 
+/**
   \file engine.h
   The engine interface is specified here.
   Note that you should only need to include this file
@@ -32,7 +32,7 @@ class option_manager;
     All solution engines should be derived from this class,
     and included as part of an "engine" (see below).
 
-    Essentially, a sub-engine is an algorithm 
+    Essentially, a sub-engine is an algorithm
     for performing a certain task (e.g., state space generation),
     on a certain class of models (e.g., asynchronous event models).
 
@@ -99,7 +99,7 @@ public:
 // ******************************************************************
 
 /** Engine class.
-    This is a collection of similar subengines that can be 
+    This is a collection of similar subengines that can be
     applied to different model types.
 
     For example, there could be a single engine for
@@ -125,13 +125,13 @@ public:
   void AddSubEngine(subengine* child);
 
   void AddOption(option* o);
-  
+
   inline const engtype* getType() const { return etype; }
   inline const char* Name() const { return name; }
   inline const char* Documentation() const { return doc; }
 
   // Name comparison, so we can put it in a tree
-  int Compare(const char* name2) const;  
+  int Compare(const char* name2) const;
   inline int Compare(const engine* x) const {
     const char* n2 = x ? x->name : 0;
     return Compare(n2);
@@ -193,7 +193,7 @@ public:
   friend void InitEngines(exprman* em);
 
 private:
-  /** 
+  /**
       Build a radio button for this engine
       Called by engtype methods, probably should not be called otherwise.
   */
@@ -226,9 +226,9 @@ private:
     will correspond to the possible choices for the option.
     The option name is taken from the engine type name.
 
-    After the engine type is "finalize()d", new engines may not be 
-    registered, but engines may be launched.  If there are multiple 
-    solution engines registered for a given type, we will use the 
+    After the engine type is "finalize()d", new engines may not be
+    registered, but engines may be launched.  If there are multiple
+    solution engines registered for a given type, we will use the
     current option setting to decide which solution engine to launch.
 */
 class engtype {
@@ -257,11 +257,11 @@ private:
   engine* default_engine;
   // post-finalize
   engine* selected_engine;
-  int selected_engine_index;
+  unsigned selected_engine_index;
   friend class engine_selection;
 public:
   engtype(const char* n, const char* d, calling_form f);
-  virtual ~engtype(); 
+  virtual ~engtype();
 
   inline const char* Name() const { return name; }
   inline const char* Documentation() const { return doc; }
@@ -284,16 +284,16 @@ public:
 
   inline int getIndex() const { return index; }
 
-  /// Register a solution engine. 
+  /// Register a solution engine.
   void registerEngine(engine* e);
 
   /** Reset the default engine.
-      If this is never called, then the first registered engine 
+      If this is never called, then the first registered engine
       becomes the default.
 
         @param  d   Engine to use as the default.
                     If 0, then the next registered engine becomes the default.
-                    If 0 and no more engines are registered, 
+                    If 0 and no more engines are registered,
                     then some engine will be arbitrarily chosen as default.
 
         @throws An appropriate error code.
@@ -400,7 +400,7 @@ public:
 protected:
   virtual void BuildParams(traverse_data &x, expr** pass, int np) = 0;
 
-  inline result& setParam(int i) { 
+  inline result& setParam(int i) {
     CHECK_RANGE(0, i, formals.getLength());
     return engpass[i];
   }
@@ -435,7 +435,7 @@ engine* MakeRedirectionEngine(const char* n, const char* d, engtype* e);
 
 /** Safe and proper registration of engine types.
 */
-inline engtype* MakeEngineType(exprman* em, const char* n, 
+inline engtype* MakeEngineType(exprman* em, const char* n,
                             const char* d, engtype::calling_form f)
 {
   DCASSERT(em);
@@ -481,7 +481,7 @@ RegisterEngine(engtype* et, const char* name, const char* doc, subengine* se)
 }
 
 inline engine*
-RegisterEngine(exprman* em, const char* etname, 
+RegisterEngine(exprman* em, const char* etname,
                 const char* name, const char* doc, subengine* se)
 {
   return RegisterEngine(em ? em->findEngineType(etname) : 0, name, doc, se);
@@ -499,7 +499,7 @@ RegisterSubengine(engtype* et, const char* engname, subengine* se)
 }
 
 inline void
-RegisterSubengine(exprman* em, const char* etname, 
+RegisterSubengine(exprman* em, const char* etname,
                   const char* engname, subengine* se)
 {
   RegisterSubengine(em ? em->findEngineType(etname) : 0, engname, se);

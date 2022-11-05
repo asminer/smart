@@ -20,7 +20,7 @@ class stateset;
       Essentially, kripke structures, but without the labeling function.
       In other words, models that can be checked against properties
       expressed in temporal logics like LTL and CTL.
-*/  
+*/
 class graph_lldsm : public state_lldsm {
 public:
   enum display_style {
@@ -29,7 +29,7 @@ public:
     OUTGOING   = 2,
     TRIPLES    = 3
   };
-  static const int num_graph_display_styles = 4;
+  static const unsigned num_graph_display_styles = 4;
 
 public:
   inline static display_style graphDisplayStyle() {
@@ -81,7 +81,7 @@ public:
 
       /**
           Hook for any desired preprocessing.
-          The reachable states are also given, in case finishing the 
+          The reachable states are also given, in case finishing the
           reachability graph requires renumbering the states.
           Default behavior simply sets the parent.
       */
@@ -99,9 +99,9 @@ public:
       /** Get the number of edges in the reachability graph.
           The default version provided here will only work if
           the number of edges fits in a long.
-            @param  na    Number of edges is stored here, as a "bigint" 
+            @param  na    Number of edges is stored here, as a "bigint"
       */
-      virtual void getNumArcs(result &na) const;  
+      virtual void getNumArcs(result &na) const;
 
       /** Get the number of edges in the reachability graph.
             @param  na    Number of edges is stored here
@@ -112,7 +112,7 @@ public:
             @param  os    Output stream to write to
       */
 		virtual void showInternal(OutputStream &os) const = 0;
-    
+
       /**
         Show all the edges, in the desired order.
           @param  os    Output stream to write to
@@ -124,8 +124,8 @@ public:
         reachset* RSS, shared_state* st) const = 0;
 
       /** Compute states satisfying EX(p).
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute EY.
             @param  p         Set of states.
@@ -138,11 +138,11 @@ public:
       virtual stateset* EX(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying AX(p).
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute AY.
-            @param  p         Set of states 
+            @param  p         Set of states
             @return   New set of states satisfying AX(p) or AY(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
@@ -150,8 +150,8 @@ public:
       virtual stateset* AX(bool revTime, const stateset* p);
 
       /** Compute states satisfying E p U q.
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute ES.
             @param  p         Set of states for p.  If 0, then
@@ -167,8 +167,8 @@ public:
       virtual stateset* EU(bool revTime, const stateset* p, const stateset* q, trace_data* td = nullptr);
 
       /** Compute states satisfying A p U q, not restricted to fair paths.
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute AS.
             @param  p         Set of states for p.  If 0, then
@@ -183,8 +183,8 @@ public:
 
 
       /** Compute states satisfying A p U q, restricted to fair paths.
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute AS.
             @param  p         Set of states for p.  If 0, then
@@ -199,8 +199,8 @@ public:
 
 
       /** Compute states satisfying EG(p), not restricted to fair paths.
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, switch to unfairEH.
             @param  p         Set of states satisfying p.
@@ -213,8 +213,8 @@ public:
       virtual stateset* unfairEG(bool revTime, const stateset* p, trace_data* td = nullptr);
 
       /** Compute states satisfying EG(p), restricted to fair paths.
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, switch to unfairEH.
             @param  p         Set of states satisfying p.
@@ -226,11 +226,11 @@ public:
 
 
       /** Compute states satisfying AG(p).
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
             @param  revTime   If true, reverse time and compute AH.
-            @param  p         Set of states 
+            @param  p         Set of states
             @return   New set of states satisfying AG(p) or AH(p).
                       OR, if an error occurs, prints an appropriate message
                       and returns 0.
@@ -245,9 +245,9 @@ public:
           Thus AE false F q = AF q and AE true F q = EF q.
 
           Really useful for games or other control problems.
-      
-          The default behavior here is to print an error message and 
-          return null, so normally this method will be overridden in 
+
+          The default behavior here is to print an error message and
+          return null, so normally this method will be overridden in
           some derived class.
 
             @param  revTime   Why reverse time?  Because we can.
@@ -265,13 +265,13 @@ public:
           default behavior here is to print an error message.
             @param  src     Set of starting states.
             @param  dest    Set of destination states.
-            @param  count   On return, the number (as a bigint) of distinct 
-                            paths from some starting state, that ends in a 
-                            destination state.  Will be infinite if there is 
-                            a loop on any path from a starting state to a 
+            @param  count   On return, the number (as a bigint) of distinct
+                            paths from some starting state, that ends in a
+                            destination state.  Will be infinite if there is
+                            a loop on any path from a starting state to a
                             destination state.
       */
-      virtual void countPaths(const stateset* src, const stateset* dest, 
+      virtual void countPaths(const stateset* src, const stateset* dest,
           result& count);
 
       /** Compute a trace verifying EX(q).
@@ -519,7 +519,7 @@ private:
 // Options
 private:
   static long max_arc_display;
-  static int graph_display_style;
+  static unsigned graph_display_style;
   static bool display_graph_node_names;
 
   friend class init_graphllm;

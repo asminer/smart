@@ -201,7 +201,7 @@ option::error option::SetValue(char*)
   return WrongType;
 }
 
-option::error option::SetValue(radio_button*)
+option::error option::SetValue(option_enum*)
 {
   return WrongType;
 }
@@ -252,6 +252,11 @@ void option::ShowCurrent(OutputStream &s) const
 }
 
 option::error option::AddCheckItem(checklist_enum* v)
+{
+  return WrongType;
+}
+
+option::error option::AddRadioButton(radio_button* v)
 {
   return WrongType;
 }
@@ -601,68 +606,83 @@ option* MakeStringOption(const char* name, const char* doc, char* &v)
 // **************************************************************************
 
 class radio_opt : public option {
-  int& which;
-  radio_button** possible;
-  int numpossible;
+    unsigned& which;
+    radio_button** possible;
+    unsigned numpossible;
+    unsigned numadded;
 public:
-  radio_opt(const char* n, const char* d, radio_button** p, long np, int &w);
-  virtual ~radio_opt();
-  virtual error SetValue(radio_button* v) {
-    which = v->getIndex();
-    return v->AssignToMe() ? Success : WrongType;
-  }
-  virtual option::error GetValue(const radio_button* &v) const {
-    v = possible[which];
-    return Success;
-  }
-  virtual option_enum* FindConstant(const char* name) const;
-  virtual int NumConstants() const;
-  virtual option_enum* GetConstant(long i) const;
+    radio_opt(const char* n, const char* d, unsigned np, unsigned& w);
+    virtual ~radio_opt();
+    virtual error SetValue(option_enum* v);
+    virtual option::error GetValue(const radio_button* &v) const {
+        v = possible[which];
+        return Success;
+    }
+    virtual option_enum* FindConstant(const char* name) const;
+    virtual int NumConstants() const;
+    virtual option_enum* GetConstant(long i) const;
 
-  virtual void ShowHeader(OutputStream &s) const;
-  virtual void ShowRange(doc_formatter* df) const;
-  virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
-  virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
+    virtual error AddRadioButton(radio_button* v);
+    virtual void Finish();
+
+    virtual void ShowHeader(OutputStream &s) const;
+    virtual void ShowRange(doc_formatter* df) const;
+    virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+    virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
 };
 
 // **************************************************************************
 // *                           radio_opt  methods                           *
 // **************************************************************************
 
-radio_opt::radio_opt(const char* n, const char* d, radio_button** p,
-  long np, int &w) : option(RadioButton, n, d), which(w)
+radio_opt::radio_opt(const char* n, const char* d, unsigned np, unsigned &w)
+    : option(RadioButton, n, d), which(w)
 {
-  possible = p;
-  numpossible = np;
-  possible[which]->AssignToMe();
+    possible = new radio_button* [np];
+    for (unsigned i=0; i<np; i++) {
+        possible[i] = 0;
+    }
+    numpossible = np;
+    numadded = 0;
 }
 
 radio_opt::~radio_opt()
 {
-  for (int i=0; i<numpossible; i++) {
-    delete possible[i];
-  }
-  delete[] possible;
+    for (int i=0; i<numpossible; i++) {
+        delete possible[i];
+    }
+    delete[] possible;
+}
+
+option::error radio_opt::SetValue(option_enum* v)
+{
+    radio_button* rb = smart_cast <radio_button*> (v);
+    if (0==rb) return WrongType;
+    if (rb->getIndex() >= numpossible) return WrongType;
+    if (v != possible[rb->getIndex()])  return WrongType;
+    if (! rb->AssignToMe()) return WrongType;
+    which = rb->getIndex();
+    return Success;
 }
 
 int radio_opt::NumConstants() const
 {
-  return numpossible;
+    return numpossible;
 }
 
 option_enum* radio_opt::GetConstant(long i) const
 {
-  if (i>=numpossible) return 0;
-  return possible[i];
+    if (i>=numpossible) return 0;
+    return possible[i];
 }
 
 option_enum* radio_opt::FindConstant(const char* name) const
 {
   // binary search
-  int low = 0;
-  int high = numpossible;
+  unsigned low = 0;
+  unsigned high = numpossible;
   while (low < high) {
-    int mid = (low+high)/2;
+    unsigned mid = (low+high)/2;
     int cmp = strcmp(possible[mid]->Name(), name);
     if (0==cmp) return possible[mid];
     if (cmp>0) {
@@ -675,81 +695,122 @@ option_enum* radio_opt::FindConstant(const char* name) const
   return 0;
 }
 
+option::error radio_opt::AddRadioButton(radio_button* v)
+{
+    if (0==v) return NullFunction;
+
+    if (numadded >= numpossible) return RangeError;
+
+    // Insertion sort; for now we don't have any radio options
+    // with more than a dozen choices so no worries about inefficiency.
+
+    for (unsigned i=numadded; i; i--) {
+        int cmp = strcmp(possible[i-1]->Name(), v->Name());
+        if (0==cmp) {
+            return Duplicate;
+        }
+        if (cmp<0) {
+            // element i-1 is less than this one, so it can go in slot i.
+            possible[i] = v;
+            ++numadded;
+            return Success;
+        }
+        // element i-1 is greater than this one, move it and keep looking
+        possible[i] = possible[i-1];
+        possible[i-1] = 0;
+    }
+    // New element is the smallest, add it to the front.
+    possible[0] = v;
+    ++numadded;
+    return Success;
+}
+
+void radio_opt::Finish()
+{
+    DCASSERT(numadded == numpossible);
+
+    for (unsigned i=0; i<numpossible; i++) {
+        if (possible[i]->getIndex() == which) {
+            possible[i]->AssignToMe();
+        }
+    }
+}
+
 void radio_opt::ShowHeader(OutputStream &s) const
 {
-  show(s);
-  s.Put(' ');
-  s.Put(possible[which]->Name());
+    show(s);
+    s.Put(' ');
+    s.Put(possible[which]->Name());
 }
 
 void radio_opt::ShowRange(doc_formatter* df) const
 {
-  DCASSERT(numpossible);
-  df->Out() << "Legal values:";
-  int i;
-  int maxenum = 0;
-  for (i=0; i<numpossible; i++)  {
-    int l = strlen(possible[i]->Name());
-    maxenum = MAX(maxenum, l);
-  }
-  df->begin_description(maxenum);
-  for (i=0; i<numpossible; i++) {
-    df->item(possible[i]->Name());
-    df->Out() << possible[i]->Documentation();
-  }
-  df->end_description();
+    DCASSERT(numpossible);
+    df->Out() << "Legal values:";
+    unsigned i;
+    int maxenum = 0;
+    for (i=0; i<numpossible; i++)  {
+        int l = strlen(possible[i]->Name());
+        maxenum = MAX(maxenum, l);
+    }
+    df->begin_description(maxenum);
+    for (i=0; i<numpossible; i++) {
+        df->item(possible[i]->Name());
+        df->Out() << possible[i]->Documentation();
+    }
+    df->end_description();
 }
 
 bool radio_opt::isApropos(const doc_formatter* df, const char* keyword) const
 {
-  if (0==df)                          return false;
-  if (df->Matches(Name(), keyword))   return true;
-  for (int i=0; i<numpossible; i++) {
-    if (possible[i]->isApropos(df, keyword)) return true;
-  }
-  return false;
+    if (0==df)                          return false;
+    if (df->Matches(Name(), keyword))   return true;
+    for (unsigned i=0; i<numpossible; i++) {
+        if (possible[i]->isApropos(df, keyword)) return true;
+    }
+    return false;
 }
 
 void radio_opt::RecurseDocs(doc_formatter* df, const char* keyword) const
 {
-  if (0==df) return;
-  for (int i=0; i<numpossible; i++) {
-    if (0==possible[i]->readSettings()) continue;
+    if (0==df) return;
+    for (unsigned i=0; i<numpossible; i++) {
+        if (0==possible[i]->readSettings()) continue;
 
-    if (df->Matches(possible[i]->Name(), keyword)) {
-      // Print all options
-      df->Out() << "\nAll settings for " << possible[i]->Name() << ":\n";
-      df->begin_indent();
-      possible[i]->readSettings()->DocumentOptions(df, 0);
-      df->end_indent();
-      continue;
+        if (df->Matches(possible[i]->Name(), keyword)) {
+            // Print all options
+            df->Out() << "\nAll settings for " << possible[i]->Name() << ":\n";
+            df->begin_indent();
+            possible[i]->readSettings()->DocumentOptions(df, 0);
+            df->end_indent();
+            continue;
+        }
+
+        // Ok, just print matching settings, if any
+        df->Out() << "\nMatching settings for " << possible[i]->Name() << ":\n";
+        df->begin_indent();
+        possible[i]->readSettings()->DocumentOptions(df, keyword);
+        df->end_indent();
     }
-
-    // Ok, just print matching settings, if any
-    df->Out() << "\nMatching settings for " << possible[i]->Name() << ":\n";
-    df->begin_indent();
-    possible[i]->readSettings()->DocumentOptions(df, keyword);
-    df->end_indent();
-  }
 }
 
 option* MakeRadioOption(const char* name, const char* doc,
-                       radio_button** values, int numv,
-           int &link)
+            unsigned numv, unsigned &link)
 {
-  DCASSERT(values);
-  // Check that the values are sorted and indexed properly
-  DCASSERT(values[0]);
-  if (values[0]->getIndex() != 0)  return 0;
-  int i;
-  for (i=1; i<numv; i++) {
-    DCASSERT(values[i]);
-    int cmp = strcmp(values[i]->Name(), values[i-1]->Name());
-    if (cmp<=0) return 0;  // NOT SORTED, BAIL OUT!!!!
-    if (values[i]->getIndex() != i)  return 0;
-  }
-  return new radio_opt(name, doc, values, numv, link);
+    return new radio_opt(name, doc, numv, link);
 }
+
+
+option* MakeRadioOption(const char* name, const char* doc,
+            radio_button** values, unsigned numv, unsigned &link)
+{
+    radio_opt* ro = new radio_opt(name, doc, numv, link);
+    for (unsigned i=0; i<numv; i++) {
+        ro->AddRadioButton(values[i]);
+    }
+    return ro;
+}
+
 
 // **************************************************************************
 // *                           checklist  options                           *

@@ -20,10 +20,10 @@ class process_generator : public subengine {
   static named_msg report;
   static named_msg debug;
 protected:
-  static int remove_vanishing;
+  static unsigned remove_vanishing;
 public:
-  static const int BY_PATH = 0;
-  static const int BY_SUBGRAPH = 1;
+  static const unsigned BY_PATH = 0;
+  static const unsigned BY_SUBGRAPH = 1;
 public:
   process_generator();
   virtual ~process_generator();

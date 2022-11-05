@@ -18,9 +18,9 @@
 // ******************************************************************
 
 LS_Options* markov_process::lsopts = 0;
-int markov_process::solver;
+unsigned markov_process::solver;
 named_msg markov_process::report;
-int markov_process::access = markov_process::BY_COLUMNS;
+unsigned markov_process::access = markov_process::BY_COLUMNS;
 markov_process::reporter* markov_process::my_timer = 0;
 
 // ******************************************************************
@@ -164,7 +164,7 @@ void markov_process::stopReachAcceptReport(timer& watch, long iters) const
 }
 
 
-const char* markov_process::getSolver() 
+const char* markov_process::getSolver()
 {
   switch (solver) {
     case GAUSS_SEIDEL:    return "Gauss-Seidel";
@@ -180,12 +180,12 @@ const char* markov_process::getSolver()
 // *                                                                *
 // ******************************************************************
 
-markov_process::reporter::reporter(const exprman* The_em) 
-: GraphLib::timer_hook() 
+markov_process::reporter::reporter(const exprman* The_em)
+: GraphLib::timer_hook()
 {
   em = The_em;
   option* parent = em ? em->findOption("Report") : 0;
-  report.Initialize(parent, 
+  report.Initialize(parent,
     "mc_finish",
     "When set, performance details for Markov chain finalization steps are reported.",
     false
@@ -202,7 +202,7 @@ void markov_process::reporter::start(const char* w)
     DCASSERT(0);
     return;
   }
-  
+
   report.report() << w;
   long written = strlen(w);
   report.report().Pad('.', 30-written);
@@ -229,8 +229,8 @@ public:
   virtual const char* getVersionString() const {
     return MCLib::Version();
   }
-  virtual bool hasFixedPointer() const { 
-    return true; 
+  virtual bool hasFixedPointer() const {
+    return true;
   }
 };
 
@@ -246,8 +246,8 @@ public:
   virtual const char* getVersionString() const {
     return LS_LibraryVersion();
   }
-  virtual bool hasFixedPointer() const { 
-    return true; 
+  virtual bool hasFixedPointer() const {
+    return true;
   }
 };
 
@@ -274,10 +274,10 @@ init_markovproc::init_markovproc() : initializer("init_markovproc")
 bool init_markovproc::execute()
 {
   if (0==em)  return false;
-  
+
   static mc_lib* mcl = 0;
   static ls_lib* lsl = 0;
- 
+
   if (0==mcl) {
     mcl = new mc_lib;
     em->registerLibrary(mcl);
@@ -307,14 +307,14 @@ bool init_markovproc::execute()
       "GAUSS_SEIDEL", "Gauss-Seidel", markov_process::GAUSS_SEIDEL
   );
   solvers[markov_process::JACOBI] = new radio_button(
-      "JACOBI", "Jacobi, using matrix-vector multiply", 
+      "JACOBI", "Jacobi, using matrix-vector multiply",
       markov_process::JACOBI
   );
   solvers[markov_process::ROW_JACOBI] = new radio_button(
-      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time", 
+      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
       markov_process::ROW_JACOBI
   );
-   
+
   markov_process::solver = markov_process::GAUSS_SEIDEL;
   em->addOption(
     MakeRadioOption(
@@ -323,7 +323,7 @@ bool init_markovproc::execute()
       solvers, 3, markov_process::solver
     )
   );
-  
+
   //
   // Add settings for each solver radio button (cool, huh?)
   //
@@ -334,7 +334,7 @@ bool init_markovproc::execute()
     option_manager* settings = MakeOptionManager();
     settings->AddOption(
       MakeIntOption(
-        "MinIters", 
+        "MinIters",
         "Minimum number of iterations.  Guarantees that at least this many iterations will occur.",
         markov_process::lsopts[i].min_iters, 0, 2000000000
       )
@@ -342,7 +342,7 @@ bool init_markovproc::execute()
 
     settings->AddOption(
       MakeIntOption(
-        "MaxIters", 
+        "MaxIters",
         "Maximum number of iterations.  Once the minimum number of iterations has been reached, the solver will terminate if either the termination criteria has been met (see options for Precision), or the maximum number of iterations has been reached.",
         markov_process::lsopts[i].max_iters, 0, 2000000000
       )
@@ -350,9 +350,9 @@ bool init_markovproc::execute()
 
     settings->AddOption(
       MakeRealOption(
-        "Precision", 
+        "Precision",
         "Desired precision.  Solvers will run until each solution vector element has changed less than epsilon.  Relative or absolute precision may be used, see option TBD.",
-        markov_process::lsopts[i].precision, 
+        markov_process::lsopts[i].precision,
         true, false, 0.0,
         true, false, 1.0
       )
@@ -360,15 +360,15 @@ bool init_markovproc::execute()
 
     settings->AddOption(
       MakeRealOption(
-        "Relaxation", 
+        "Relaxation",
         "Relaxation parameter to use (or start with).",
-        markov_process::lsopts[i].relaxation, 
+        markov_process::lsopts[i].relaxation,
         true, false, 0.0,
         true, false, 2.0
       )
     );
 
-    // 
+    //
     // Option for auxiliary vectors, only applies to solvers
     // that use auxiliary vectors like JACOBI
     //
@@ -380,7 +380,7 @@ bool init_markovproc::execute()
           "FloatsForAuxVectors",
           "Should we use floats (instead of doubles) for any auxiliary solution vectors.",
           markov_process::lsopts[i].float_vectors
-        ) 
+        )
       );
     }
 
@@ -406,13 +406,13 @@ bool init_markovproc::execute()
 
   radio_button** alist = new radio_button*[2];
   alist[markov_process::BY_COLUMNS] = new radio_button(
-      "COLUMNS", 
-      "Access to columns", 
+      "COLUMNS",
+      "Access to columns",
       markov_process::BY_COLUMNS
   );
   alist[markov_process::BY_ROWS] = new radio_button(
-      "ROWS", 
-      "Access to rows", 
+      "ROWS",
+      "Access to rows",
       markov_process::BY_ROWS
   );
   em->addOption(
@@ -421,7 +421,7 @@ bool init_markovproc::execute()
       alist, 2, markov_process::access
     )
   );
-  
+
   return true;
 }
 

@@ -64,9 +64,9 @@ class option_enum {
 */
 class radio_button : public option_enum {
     public:
-        radio_button(const char* n, const char* d, int i);
+        radio_button(const char* n, const char* d, unsigned ndx);
 
-        inline int getIndex() const { return index; }
+        inline unsigned getIndex() const { return index; }
 
         /** Called when this radio button is selected.
             @return  true on success, false otherwise.
@@ -74,7 +74,7 @@ class radio_button : public option_enum {
         virtual bool AssignToMe();
 
     private:
-        int index;
+        unsigned index;
 };
 
 // **************************************************************************

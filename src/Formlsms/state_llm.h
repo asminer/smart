@@ -35,7 +35,7 @@ public:
     LEXICAL    = 1,
     NATURAL    = 2
   };
-  static const int num_display_orders = 3;
+  static const unsigned num_display_orders = 3;
 
   inline static display_order stateDisplayOrder() {
     switch (int_display_order) {
@@ -331,7 +331,7 @@ public:
   private:
     static const char* max_state_display_option;
     static long max_state_display;
-    static int int_display_order;
+    static unsigned int_display_order;
 
     friend class init_statellm;
 

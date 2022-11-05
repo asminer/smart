@@ -50,7 +50,7 @@
 
 // Handy stuff
 
-inline void convert(MEDDLY::error ce) 
+inline void convert(MEDDLY::error ce)
 {
   switch (ce.getCode()) {
     case MEDDLY::error::INSUFFICIENT_MEMORY:  throw  subengine::Out_Of_Memory;
@@ -58,7 +58,7 @@ inline void convert(MEDDLY::error ce)
   }
 }
 
-inline void convert(sv_encoder::error sve) 
+inline void convert(sv_encoder::error sve)
 {
   switch (sve) {
     case sv_encoder::Out_Of_Memory:     throw  subengine::Out_Of_Memory;
@@ -128,7 +128,7 @@ public:
     time_mtadd += clock->elapsed();
 #endif
     if (used < alloc) return;
-    addBatch();  
+    addBatch();
   }
 
   // required for interface, but should never be called
@@ -154,7 +154,7 @@ public:
     time_mtadd += clock->elapsed();
 #endif
     if (used < alloc) return;
-    addBatch();  
+    addBatch();
   }
   inline void addTVEdge(int* from, int* to, double wt) {
     DCASSERT(0);
@@ -317,15 +317,15 @@ void edge_minterms::addBatch()
 /** Canonical matrix diagram class.
     Yanked from the implementation for the 2001 paper,
     except the real values have been removed.
- 
+
     Conventions:
 
     Levels are numbered in reverse.  The level 0 matrices are at
     the bottom, with no downward pointers.  (We actually do have
     downward pointers but we ignore them.)
-  
-    Limits: 
-    \begin{tabular}{lll} 
+
+    Limits:
+    \begin{tabular}{lll}
        {\bf Spec} & {\bf Limit} & {\bf Reason} \\ \hline
        Number of variables/levels & 65,535 & stored as unsigned short\\
        Submatrix size & 65,535 x 65,535 & stored as unsigned short\\
@@ -401,11 +401,11 @@ class edge_2001_cmds {
       RECYCLED = 3
     };
 
-    /** Status of this submatrix. 
-      
+    /** Status of this submatrix.
+
         Possible values:
         \begin{description}
-        
+
         \item[BUILDING]
         The submatrix is still under construction.  {\em The submatrix must
         have exactly one incoming pointer!}   Otherwise we might change
@@ -456,11 +456,11 @@ class edge_2001_cmds {
   /// List of merged submatrices
   submatrix* merged_list;
   /// List of recycled submatrices
-  submatrix* freed;        
+  submatrix* freed;
   /// List of recycled elements;
   submatrix::element *oldelements;
   /// Allocation of submatrices
-  // heaparray <submatrix> *Nodes;  
+  // heaparray <submatrix> *Nodes;
   /// Uniqueness table
   HashTable <submatrix> *Table;
   /// Forest for final MxD
@@ -494,7 +494,7 @@ public:
   void reportStats(DisplayStream &out, const char* name) const;
 
   // copy into meddly forest
-  shared_ddedge* shareProc(); 
+  shared_ddedge* shareProc();
 
   void addBatch();
 
@@ -612,7 +612,7 @@ void edge_2001_cmds::submatrix
   // If it exists, it will be returned in "curr".  Otherwise,
   // "curr" will be NULL.
   // "prev" will be set to the element immediately before "curr",
-  // regardless of whether "curr" exists.  
+  // regardless of whether "curr" exists.
   // If "prev" is NULL, then there is no element in the list before "curr".
 {
   DCASSERT(state==BUILDING || state==CANONICAL);
@@ -664,7 +664,7 @@ int edge_2001_cmds::submatrix::Nonzeroes()
   DCASSERT(lists);
   int nnz = 0;
   int i;
-  for (i=0; i<size; i++) 
+  for (i=0; i<size; i++)
     if (lists[i]) nnz += lists[i]->Nonzeroes();
   return nnz;
 }
@@ -935,7 +935,7 @@ edge_2001_cmds::submatrix* edge_2001_cmds::NewTempMatrix(int k)
   memused += sizeof(submatrix);
   // set up submatrix
   next->state = submatrix::BUILDING;
-  next->Alloc(mxdfor->getDomain()->getVariableBound(k, false), memused); 
+  next->Alloc(mxdfor->getDomain()->getVariableBound(k, false), memused);
   maxused = MAX(memused, maxused);
   next->level = k;
   return next;
@@ -948,9 +948,9 @@ void edge_2001_cmds::Recycle(submatrix* n)
   DCASSERT(n->incoming > 0);
   n->incoming--;
   if (n->incoming) return;
-  
+
   Table->Remove(n);
-  UnlinkDown(n); 
+  UnlinkDown(n);
   memused -= sizeof(submatrix);
   n->Free(oldelements, memused);
   n->state = submatrix::RECYCLED;
@@ -1018,15 +1018,15 @@ edge_2001_cmds::submatrix* edge_2001_cmds::Reduce(submatrix* n)
 /** New canonical matrix diagram class.
     Yanked from the implementation for the 2001 paper,
     complete with real values.
- 
+
     Conventions:
 
     Levels are numbered in reverse.  The level 0 matrices are at
     the bottom, with no downward pointers.  (We actually do have
     downward pointers but we ignore them.)
-  
-    Limits: 
-    \begin{tabular}{lll} 
+
+    Limits:
+    \begin{tabular}{lll}
        {\bf Spec} & {\bf Limit} & {\bf Reason} \\ \hline
        Number of variables/levels & 65,535 & stored as unsigned short\\
        Submatrix size & 65,535 x 65,535 & stored as unsigned short\\
@@ -1034,7 +1034,7 @@ edge_2001_cmds::submatrix* edge_2001_cmds::Reduce(submatrix* n)
     \end{tabular}
  */
 class real_2001_cmds {
-  
+
   /// The nodes of the md.
   struct submatrix {
     // required for hash table
@@ -1095,7 +1095,7 @@ class real_2001_cmds {
 
     /// If we're stored by rows, the number of columns.
     // unsigned short length;
-     
+
     /// Are we stored by rows?
     // bool is_by_rows;
 
@@ -1105,29 +1105,29 @@ class real_2001_cmds {
       MERGED = 2,
       RECYCLED = 3
     };
-    /** Status of this submatrix. 
-      
+    /** Status of this submatrix.
+
         Possible values:
         \begin{description}
-        
-        \item[BUILDING]                The submatrix is still under construction.  
+
+        \item[BUILDING]                The submatrix is still under construction.
                                 {\em The submatrix must have exactly
-                                one incoming pointer!}   Otherwise we might 
+                                one incoming pointer!}   Otherwise we might
                                 change something we're not supposed to!
-                                It hasn't been inserted into the uniqueness 
+                                It hasn't been inserted into the uniqueness
                                 table yet.  {\em lists} is active.
 
-        \item[CANONICAL]        The submatrix is unique, and is present in 
+        \item[CANONICAL]        The submatrix is unique, and is present in
                                 the uniqueness table.  {\em lists} is active.
 
-        \item[MERGED]                The submatrix {\em lists} have been deleted, 
-                                because we have been merged with a canonical 
-                                submatrix.  {\em mergedptr} points to the 
+        \item[MERGED]                The submatrix {\em lists} have been deleted,
+                                because we have been merged with a canonical
+                                submatrix.  {\em mergedptr} points to the
                                 canonical submatrix.  Used to update pointers.
 
         \item[RECYCLED]                The submatrix {\em lists} have been deleted.
-                                The structure is on the recycled list.  
-                                {\em nextrecycled} is a pointer to the next 
+                                The structure is on the recycled list.
+                                {\em nextrecycled} is a pointer to the next
                                 recycled submatrix.
 
         \end{description}
@@ -1171,9 +1171,9 @@ class real_2001_cmds {
   submatrix* freed;
   /// List of recycled elements
   submatrix::element *oldelements;
-  
+
   /// Allocation of submatrices
-  // heaparray <submatrix> *Nodes;  
+  // heaparray <submatrix> *Nodes;
 
   /// Uniqueness table
   HashTable <submatrix> *Table;
@@ -1250,7 +1250,7 @@ class real_2001_cmds {
         won't delete it.
     */
     void Recycle(submatrix *n);
-  
+
     /** Called before we delete a node.
         The downward pointers of this node are counted in the nodes pointed at.
         Before destroying the downward pointers of this node, we must
@@ -1286,7 +1286,7 @@ class real_2001_cmds {
     }
 
     /** Recursively reduce the given MD.
-        If we're a top-level node, then we'll also normalize the 
+        If we're a top-level node, then we'll also normalize the
         nodes below us.
     */
     submatrix* Canonicalize(submatrix* root);
@@ -1374,7 +1374,7 @@ void real_2001_cmds::submatrix
   // If it exists, it will be returned in "curr".  Otherwise,
   // "curr" will be NULL.
   // "prev" will be set to the element immediately before "curr",
-  // regardless of whether "curr" exists.  
+  // regardless of whether "curr" exists.
   // If "prev" is NULL, then there is no element in the list before "curr".
 {
   DCASSERT(state==BUILDING || state==CANONICAL);
@@ -1392,7 +1392,7 @@ void real_2001_cmds::submatrix::MultiplyBy(double a)
 {
   int i;
   element *ptr;
-  for (i=0; i<size; i++) 
+  for (i=0; i<size; i++)
     for (ptr = lists[i]; ptr; ptr = ptr->next)
       ptr->value *= a;
 }
@@ -1426,7 +1426,7 @@ void real_2001_cmds::submatrix::Show(OutputStream &s, bool summarize)
       */
       if (lists) {
         for (i=0; i<size; i++) {
-          // if (is_by_rows) 
+          // if (is_by_rows)
             s << "\tRow";
           // else s << "\tColumn";
           s << " " << i << " : ";
@@ -1443,7 +1443,7 @@ int real_2001_cmds::submatrix::Nonzeroes()
   DCASSERT(lists);
   int nnz = 0;
   int i;
-  for (i=0; i<size; i++) 
+  for (i=0; i<size; i++)
     if (lists[i]) nnz += lists[i]->Nonzeroes();
   return nnz;
 }
@@ -1663,10 +1663,10 @@ real_2001_cmds::submatrix* real_2001_cmds::Canonicalize(submatrix* sm)
   int i;
   for (i=0; i<sm->size; i++) {
     submatrix::element *ptr;
-    for (ptr = sm->lists[i]; ptr; ptr = ptr->next) if (ptr->down) 
+    for (ptr = sm->lists[i]; ptr; ptr = ptr->next) if (ptr->down)
       ptr->down = Canonicalize(ptr->down);
   }
-  
+
   submatrix *find = Table->UniqueInsert(sm);
   if (sm==find) {
     // We're the canonical
@@ -1687,7 +1687,7 @@ real_2001_cmds::submatrix* real_2001_cmds::Canonicalize(submatrix* sm)
     find->incoming++;
     // OutLog->getStream() << "#incoming of " << find->number << " : " << find->incoming << "\n";
   }
-  
+
   return find;
 }
 
@@ -1713,7 +1713,7 @@ double real_2001_cmds::Normalize(submatrix* sm)
   // Don't bother scaling if we're already...
   if (scale==1.0) return scale;
   // this shouldn't happen either...
-  if (scale==0.0) return scale;  
+  if (scale==0.0) return scale;
   // Now, scale the elements so that max=1.0
   sm->MultiplyBy(1/scale);
   return scale;
@@ -1757,13 +1757,13 @@ void real_2001_cmds::Accumulate(submatrix* build, const submatrix* canon)
         else bindex = INT_MAX;
       } else if (bindex == cptr->index) {
         // equal index
-         if (k==1) { 
+         if (k==1) {
           // bottom level, just add the values!
           bptr->value += cptr->value;
         } else {
           // skip scaling if values are equal
           if (bptr->value != cptr->value) {
-            double downscale = bptr->value / cptr->value;        
+            double downscale = bptr->value / cptr->value;
             bptr->down->MultiplyBy(downscale);
             bptr->value = cptr->value;
           }
@@ -1826,7 +1826,7 @@ void real_2001_cmds::UnlinkDown(submatrix* sm)
     // OutLog->getStream() << "Unlinking " << node << ": ";
     int i;
     submatrix::element *ptr;
-    for (i=0; i<sm->size; i++) 
+    for (i=0; i<sm->size; i++)
       for (ptr = sm->lists[i]; ptr; ptr = ptr->next) if (ptr->down) {
         // OutLog->getStream() << ptr->down << " ";
         Recycle(ptr->down);
@@ -2459,7 +2459,7 @@ class gen_wrapper_templ {
       return states_only;
     }
 
-    inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const 
+    inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const
     {
       if (isVan) s << "vanishing state: ";
       else       s << "tangible  state: ";
@@ -2559,7 +2559,7 @@ class gen_wrapper_templ {
 class meddly_explgen : public meddly_procgen {
   friend class init_explmeddly;
   static long batch_size;
-  static int  matrix_style;
+  static unsigned matrix_style;
   static bool batch_removal;
   static bool maximize_batch_refills;
   static long level_change;
@@ -2567,14 +2567,14 @@ class meddly_explgen : public meddly_procgen {
 
 protected:
 #ifdef ENABLE_CMDS
-  static const int CMD = 0;
-  static const int IRMXD = 1;
-  static const int QRMXD = 2;
-  static const int NUM_MX_STYLES = 3;
+  static const unsigned CMD = 0;
+  static const unsigned IRMXD = 1;
+  static const unsigned QRMXD = 2;
+  static const unsigned NUM_MX_STYLES = 3;
 #else
-  static const int IRMXD = 0;
-  static const int QRMXD = 1;
-  static const int NUM_MX_STYLES = 2;
+  static const unsigned IRMXD = 0;
+  static const unsigned QRMXD = 1;
+  static const unsigned NUM_MX_STYLES = 2;
 #endif
 
 public:
@@ -2587,7 +2587,7 @@ protected:
 
 public:
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual void RunEngine(hldsm* m, result &states_only); 
+  virtual void RunEngine(hldsm* m, result &states_only);
 
   inline static int getBatchSize() { return batch_size; }
   inline static bool getMBR() { return maximize_batch_refills; }
@@ -2730,7 +2730,7 @@ private:
       throw;
     }
   }
-    
+
   template <class GWRAP>
   inline void DoMC(dsde_hlm &hm, GWRAP &G) {
     //
@@ -2789,12 +2789,12 @@ private:
       throw;
     }
   }
-    
-    
+
+
 };
 
 long meddly_explgen::batch_size;
-int  meddly_explgen::matrix_style;
+unsigned meddly_explgen::matrix_style;
 bool meddly_explgen::batch_removal;
 bool meddly_explgen::maximize_batch_refills;
 long meddly_explgen::level_change;
@@ -2811,17 +2811,17 @@ meddly_explgen::meddly_explgen() : meddly_procgen()
 {
 }
 
-MEDDLY::forest::policies 
+MEDDLY::forest::policies
 meddly_explgen::buildRSSPolicies() const
 {
   MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
   if (QRMXD == matrix_style) {
     p.setQuasiReduced();
-  } 
+  }
   return p;
 }
 
-void meddly_explgen::preprocess(dsde_hlm &m) 
+void meddly_explgen::preprocess(dsde_hlm &m)
 {
   if (m.buildPartInfo()) return;
   if (m.StartError(0)) {
@@ -2849,11 +2849,11 @@ void meddly_explgen::RunEngine(hldsm* hm, result &states_only)
     if (0==e)                   return;
     if (states_only.getBool())  return;
     if (e!=this)                return e->RunEngine(hm, states_only);
-  } 
+  }
 
   dsde_hlm* dhm = smart_cast <dsde_hlm*> (hm);
   DCASSERT(dhm);
-  if (0==lm) { 
+  if (0==lm) {
     // Preprocess
     try {
       preprocess(*dhm);
@@ -2922,11 +2922,11 @@ void meddly_explgen::generateRS(dsde_hlm &hm, meddly_reachset* rss)
       G(
         level_change, true, mp,
         new mt_br_stategroup(*rss, *mp, getBatchSize(), getMBR()),
-        new mt_br_stategroup(*rss, *mp, getBatchSize(), getMBR()), 
+        new mt_br_stategroup(*rss, *mp, getBatchSize(), getMBR()),
         (edge_minterms*) 0,
         rss, 0, 0
       );
-    
+
     DoRS(hm, G);
     return;
   } else {
@@ -2941,7 +2941,7 @@ void meddly_explgen::generateRS(dsde_hlm &hm, meddly_reachset* rss)
         (edge_minterms*) 0,
         rss, 0, 0
       );
-    
+
     DoRS(hm, G);
     return;
   }
@@ -2958,10 +2958,10 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
   // Storage for the reachgraph
   //
   meddly_monolithic_rg* rgr = new meddly_monolithic_rg(rss->shareVars(), rss->grabMxdWrapper());
-   
+
   //
   // A little ugly - consider all possible cases "by hand"
-  // 
+  //
 
   //
   // CMDs
@@ -2984,7 +2984,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
             new edge_2001_cmds(rgr->useMxdWrapper(), getBatchSize()),
             rss, rgr, 0
           );
-    
+
           DoRG(hm, G);
           return;
       } else {
@@ -2999,7 +2999,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
             new edge_2001_cmds(rgr->useMxdWrapper(), getBatchSize()),
             rss, rgr, 0
           );
-      
+
           DoRG(hm, G);
           return;
       }
@@ -3019,7 +3019,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
             new edge_2001_cmds(rgr->useMxdWrapper(), getBatchSize()),
             rss, rgr, 0
           );
-    
+
           DoRG(hm, G);
           return;
       } else {
@@ -3034,7 +3034,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
             new edge_2001_cmds(rgr->useMxdWrapper(), getBatchSize()),
             rss, rgr, 0
           );
-      
+
           DoRG(hm, G);
           return;
       }
@@ -3061,7 +3061,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(rgr->useMxdWrapper(), *mp, getBatchSize(), false),
           rss, rgr, 0
         );
-  
+
         DoRG(hm, G);
         return;
     } else {
@@ -3076,7 +3076,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(rgr->useMxdWrapper(), *mp, getBatchSize(), false),
           rss, rgr, 0
         );
-    
+
         DoRG(hm, G);
         return;
     }
@@ -3096,7 +3096,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(rgr->useMxdWrapper(), *mp, getBatchSize(), false),
           rss, rgr, 0
         );
-  
+
         DoRG(hm, G);
         return;
     } else {
@@ -3111,7 +3111,7 @@ void meddly_explgen::generateRG(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(rgr->useMxdWrapper(), *mp, getBatchSize(), false),
           rss, rgr, 0
         );
-    
+
         DoRG(hm, G);
         return;
     }
@@ -3128,13 +3128,13 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
   // Storage for the reachgraph and process
   //
   meddly_monolithic_rg* rgr = new meddly_monolithic_rg(rss->shareVars(), rss->grabMxdWrapper());
-  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL, 
+  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL,
     useEVMXD() ? MEDDLY::forest::EVTIMES : MEDDLY::forest::MULTI_TERMINAL);
   meddly_process* proc = new meddly_process( procmxd );
 
   //
   // A little ugly - consider all possible cases "by hand"
-  // 
+  //
 
   //
   // CMDs
@@ -3157,7 +3157,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
             new real_2001_cmds(proc->useMxdWrapper(), getBatchSize()),
             rss, rgr, proc
           );
-    
+
           DoMC(hm, G);
           return;
       } else {
@@ -3172,7 +3172,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
             new real_2001_cmds(proc->useMxdWrapper(), getBatchSize()),
             rss, rgr, proc
           );
-      
+
           DoMC(hm, G);
           return;
       }
@@ -3192,7 +3192,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
             new real_2001_cmds(proc->useMxdWrapper(), getBatchSize()),
             rss, rgr, proc
           );
-    
+
           DoMC(hm, G);
           return;
       } else {
@@ -3207,7 +3207,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
             new real_2001_cmds(proc->useMxdWrapper(), getBatchSize()),
             rss, rgr, proc
           );
-      
+
           DoMC(hm, G);
           return;
       }
@@ -3234,7 +3234,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(proc->useMxdWrapper(), *mp, getBatchSize(), true),
           rss, rgr, proc
         );
-  
+
         DoMC(hm, G);
         return;
     } else {
@@ -3249,7 +3249,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(proc->useMxdWrapper(), *mp, getBatchSize(), true),
           rss, rgr, proc
         );
-    
+
         DoMC(hm, G);
         return;
     }
@@ -3269,7 +3269,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(proc->useMxdWrapper(), *mp, getBatchSize(), true),
           rss, rgr, proc
         );
-  
+
         DoMC(hm, G);
         return;
     } else {
@@ -3284,7 +3284,7 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
           new edge_minterms(proc->useMxdWrapper(), *mp, getBatchSize(), true),
           rss, rgr, proc
         );
-    
+
         DoMC(hm, G);
         return;
     }
@@ -3324,7 +3324,7 @@ bool init_explmeddly::execute()
     "MeddlyProcessGeneration",
     "EXPLICIT",
     "Explicit generation using MDDs.  States are added to the MDD in batches to improve efficiency.",
-    &the_meddly_explgen 
+    &the_meddly_explgen
   );
 
   /* Initialize batch size option */
@@ -3357,7 +3357,7 @@ bool init_explmeddly::execute()
       meddly_explgen::maximize_batch_refills
     )
   );
-  
+
   /* Initialize LevelChange option */
   meddly_explgen::level_change = 1000000;
   expl_eng->AddOption(
