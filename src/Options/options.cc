@@ -1,6 +1,7 @@
 
 #include "../include/defines.h"
 #include "options.h"
+#include "opt_enum.h"
 #include "../Streams/streams.h"
 #include <stdlib.h>
 #include "../include/splay.h"
@@ -9,80 +10,12 @@
 
 //#define DEBUG_SORT
 
-// **************************************************************************
-// *                          option_const methods                          *
-// **************************************************************************
-
-option_const::option_const(const char* n, const char* d)
-{
-  name = n;
-  doc = d;
-  settings = 0;
-}
-
-option_const::~option_const()
-{
-  // don't delete the name or the documentation
-  // for now, don't delete the settings
-}
-
-void option_const::show(OutputStream &s) const
-{
-  if (name)   s << name;
-  else        s << "(no name)";
-}
-
-int option_const::Compare(const option_const* b) const
-{ 
-  if (b)  return strcmp(Name(), b->Name());
-  else    return 1;
-}
-
-int option_const::Compare(const char* n) const
-{ 
-  return strcmp(Name(), n);
-}
-
-bool option_const::isApropos(const doc_formatter* df, const char* key) const
-{
-  if (df->Matches(name, key))  return true;
-  if (0==settings) return false;
-  for (int n=0; n<settings->NumOptions(); n++) {
-    option* rec = settings->GetOptionNumber(n);
-    if (rec->isApropos(df, key)) return true;
-  }
-  return false;
-}
-
-// **************************************************************************
-// *                          radio_button methods                          *
-// **************************************************************************
-
-radio_button::radio_button(const char* n, const char* d, int i) 
- : option_const(n, d)
-{
-  index = i;
-}
-
-bool radio_button::AssignToMe()
-{
-  return true;
-}
-
-// **************************************************************************
-// *                        checklist_const  methods                        *
-// **************************************************************************
-
-checklist_const::checklist_const(const char* n, const char* d) 
- : option_const(n, d)
-{
-}
 
 // **************************************************************************
 // *                            checklist  items                            *
 // **************************************************************************
 
-class checklist_item : public checklist_const {
+class checklist_item : public checklist_enum {
   bool &is_set;
 public:
   checklist_item(const char* n, const char* d, bool &l);
@@ -92,7 +25,7 @@ public:
 };
 
 checklist_item::checklist_item(const char* n, const char* d, bool &l)
- : checklist_const(n, d), is_set(l)
+ : checklist_enum(n, d), is_set(l)
 {
 }
 
@@ -113,7 +46,7 @@ bool checklist_item::IsChecked() const
   return is_set;
 }
 
-checklist_const* MakeChecklistConstant(const char* n, const char* d, bool &link)
+checklist_enum* MakeChecklistConstant(const char* n, const char* d, bool &link)
 {
   return new checklist_item(n, d, link);
 }
@@ -122,11 +55,11 @@ checklist_const* MakeChecklistConstant(const char* n, const char* d, bool &link)
 // *                            checklist groups                            *
 // **************************************************************************
 
-class checklist_group : public checklist_const {
-  checklist_const** items;
+class checklist_group : public checklist_enum {
+  checklist_enum** items;
   int num_items;
 public:
-  checklist_group(const char* n, const char* d, checklist_const** i, int ni);
+  checklist_group(const char* n, const char* d, checklist_enum** i, int ni);
   virtual ~checklist_group();
   virtual bool CheckMe();
   virtual bool UncheckMe();
@@ -134,8 +67,8 @@ public:
 };
 
 checklist_group
-::checklist_group(const char* n, const char* d, checklist_const** i, int ni)
- : checklist_const(n, d)
+::checklist_group(const char* n, const char* d, checklist_enum** i, int ni)
+ : checklist_enum(n, d)
 {
   items = i;
   num_items = ni;
@@ -167,17 +100,18 @@ bool checklist_group::IsChecked() const
   return false;
 }
 
-checklist_const* MakeChecklistGroup(const char* name, const char* doc, checklist_const** items, int ni)
+checklist_enum* MakeChecklistGroup(const char* name, const char* doc, checklist_enum** items, int ni)
 {
   return new checklist_group(name, doc, items, ni);
 }
+
 
 // **************************************************************************
 // *                             checkall class                             *
 // **************************************************************************
 
 /// Class to check or uncheck everything on a checklist.
-class checkall : public checklist_const {
+class checkall : public checklist_enum {
   option* parent;
 public:
   checkall(const char* n, const char* d, option* p);
@@ -187,7 +121,7 @@ public:
 };
 
 checkall::checkall(const char* n, const char* d, option* p)
- : checklist_const(n,d)
+ : checklist_enum(n,d)
 {
   parent = p;
 }
@@ -195,9 +129,9 @@ checkall::checkall(const char* n, const char* d, option* p)
 bool checkall::CheckMe()
 {
   long i = parent->NumConstants();
-  checklist_const* item = 0;
+  checklist_enum* item = 0;
   for (i--; i>=0; i--) {
-    item = smart_cast <checklist_const*> (parent->GetConstant(i));
+    item = smart_cast <checklist_enum*> (parent->GetConstant(i));
     DCASSERT(item);
     if (item != this) {
       if (!item->CheckMe())  return false;
@@ -209,9 +143,9 @@ bool checkall::CheckMe()
 bool checkall::UncheckMe()
 {
   long i = parent->NumConstants();
-  checklist_const* item = 0;
+  checklist_enum* item = 0;
   for (i--; i>=0; i--) {
-    item = smart_cast <checklist_const*> (parent->GetConstant(i));
+    item = smart_cast <checklist_enum*> (parent->GetConstant(i));
     DCASSERT(item);
     if (item != this) {
       if (!item->UncheckMe())  return false;
@@ -224,7 +158,6 @@ bool checkall::IsChecked() const
 {
   return false;
 }
-
 
 // **************************************************************************
 // *                             option methods                             *
@@ -273,7 +206,7 @@ option::error option::SetValue(radio_button*)
   return WrongType;
 }
 
-option_const* option::FindConstant(const char*) const
+option_enum* option::FindConstant(const char*) const
 {
   return 0;
 }
@@ -303,12 +236,12 @@ option::error option::GetValue(const radio_button* &v) const
   return WrongType;
 }
 
-int option::NumConstants() const 
+int option::NumConstants() const
 {
   return 0;
 }
 
-option_const* option::GetConstant(long i) const
+option_enum* option::GetConstant(long i) const
 {
   return 0;
 }
@@ -318,7 +251,7 @@ void option::ShowCurrent(OutputStream &s) const
   ShowHeader(s);
 }
 
-option::error option::AddCheckItem(checklist_const* v)
+option::error option::AddCheckItem(checklist_enum* v)
 {
   return WrongType;
 }
@@ -329,13 +262,13 @@ void option::Finish()
 }
 
 int option::Compare(const option* b) const
-{ 
+{
   if (b)  return strcmp(Name(), b->Name());
   else    return 1;
 }
 
 int option::Compare(const char* n) const
-{ 
+{
   return strcmp(Name(), n);
 }
 
@@ -381,9 +314,9 @@ custom_option::~custom_option()
 {
 }
 
-void custom_option::ShowHeader(OutputStream &s) const 
-{ 
-  show(s); 
+void custom_option::ShowHeader(OutputStream &s) const
+{
+  show(s);
   s.Put(' ');
   switch (Type()) {
     case Boolean: {
@@ -416,11 +349,11 @@ void custom_option::ShowHeader(OutputStream &s) const
   }
 }
 
-void custom_option::ShowRange(doc_formatter* df) const 
-{ 
+void custom_option::ShowRange(doc_formatter* df) const
+{
   DCASSERT(df);
   DCASSERT(range);
-  df->Out() << "Legal values: " << range; 
+  df->Out() << "Legal values: " << range;
   return;
 }
 
@@ -453,12 +386,12 @@ class bool_opt : public option {
 public:
   bool_opt(const char* n, const char* d, bool &v)
    : option(Boolean, n, d), value(v) { }
-  virtual ~bool_opt() { } 
-  virtual error SetValue(bool b) { 
-    value = b; 
+  virtual ~bool_opt() { }
+  virtual error SetValue(bool b) {
+    value = b;
     return Success;
   }
-  virtual error GetValue(bool &b) const { 
+  virtual error GetValue(bool &b) const {
     b = value;
     return Success;
   }
@@ -491,8 +424,8 @@ public:
   int_opt(const char* n, const char* d, long &v, long mn, long mx)
    : option(Integer, n ,d), value(v) { max = mx; min = mn; }
   virtual ~int_opt() { }
-  virtual error SetValue(long v); 
-  virtual error GetValue(long &v) const { 
+  virtual error SetValue(long v);
+  virtual error GetValue(long &v) const {
     v = value;
     return Success;
   }
@@ -511,16 +444,16 @@ public:
 };
 
 option::error int_opt::SetValue(long b)
-{ 
+{
   if (0==value)  return NullFunction;
   if (min<max) {
     if ((b<min) || (b>max)) return RangeError;
   }
-  value = b; 
+  value = b;
   return Success;
 }
 
-option* MakeIntOption(const char* name, const char* doc, 
+option* MakeIntOption(const char* name, const char* doc,
       long& v, long min, long max)
 {
   return new int_opt(name, doc, v, min, max);
@@ -543,10 +476,10 @@ class real_opt : public option {
   double max;
   double &value;
 public:
-  real_opt(const char* n, const char* d, double &v, 
-     bool hl, bool il, double l, 
+  real_opt(const char* n, const char* d, double &v,
+     bool hl, bool il, double l,
      bool hu, bool iu, double u);
-  ~real_opt() { } 
+  ~real_opt() { }
   virtual error SetValue(double b);
   virtual error GetValue(double &v) const {
     v = value;
@@ -578,10 +511,10 @@ public:
   }
 };
 
-real_opt::real_opt(const char* n, const char* d, double &v, 
+real_opt::real_opt(const char* n, const char* d, double &v,
        bool hl, bool il, double l, bool hu, bool iu, double u)
  : option(Real, n, d), value(v)
-{ 
+{
   has_min = hl;
   includes_min = il;
   min = l;
@@ -590,8 +523,8 @@ real_opt::real_opt(const char* n, const char* d, double &v,
   max = u;
 }
 
-option::error real_opt::SetValue(double b) 
-{ 
+option::error real_opt::SetValue(double b)
+{
   if (0==value) return NullFunction;
   bool bad = false;
   if (has_min) {
@@ -612,16 +545,16 @@ option::error real_opt::SetValue(double b)
     if (bad) return RangeError;
   }
 
-  value = b; 
+  value = b;
   return Success;
 }
 
-option* MakeRealOption(const char* name, const char* doc, double &v, 
-      bool hasmin, bool incmin, double min, 
+option* MakeRealOption(const char* name, const char* doc, double &v,
+      bool hasmin, bool incmin, double min,
       bool hasmax, bool incmax, double max)
 {
-  return new real_opt(name, doc, v, 
-      hasmin, incmin, min, 
+  return new real_opt(name, doc, v,
+      hasmin, incmin, min,
       hasmax, incmax, max);
 }
 
@@ -636,11 +569,11 @@ public:
   string_opt(const char* n, const char* d, char* &v)
    : option(String, n, d), value(v) { }
   virtual ~string_opt() { delete[] value; }
-  virtual error SetValue(char *v) { 
+  virtual error SetValue(char *v) {
     if (0==v)      return RangeError;
     delete[] value; value = v;   return Success;
   }
-  virtual error GetValue(const char* &v) const { 
+  virtual error GetValue(const char* &v) const {
     v = value;
     return Success;
   }
@@ -675,16 +608,16 @@ public:
   radio_opt(const char* n, const char* d, radio_button** p, long np, int &w);
   virtual ~radio_opt();
   virtual error SetValue(radio_button* v) {
-    which = v->GetIndex();
+    which = v->getIndex();
     return v->AssignToMe() ? Success : WrongType;
   }
   virtual option::error GetValue(const radio_button* &v) const {
     v = possible[which];
     return Success;
   }
-  virtual option_const* FindConstant(const char* name) const;
+  virtual option_enum* FindConstant(const char* name) const;
   virtual int NumConstants() const;
-  virtual option_const* GetConstant(long i) const;
+  virtual option_enum* GetConstant(long i) const;
 
   virtual void ShowHeader(OutputStream &s) const;
   virtual void ShowRange(doc_formatter* df) const;
@@ -696,34 +629,34 @@ public:
 // *                           radio_opt  methods                           *
 // **************************************************************************
 
-radio_opt::radio_opt(const char* n, const char* d, radio_button** p, 
+radio_opt::radio_opt(const char* n, const char* d, radio_button** p,
   long np, int &w) : option(RadioButton, n, d), which(w)
-{ 
+{
   possible = p;
   numpossible = np;
   possible[which]->AssignToMe();
 }
 
-radio_opt::~radio_opt() 
-{ 
+radio_opt::~radio_opt()
+{
   for (int i=0; i<numpossible; i++) {
     delete possible[i];
   }
-  delete[] possible; 
+  delete[] possible;
 }
 
-int radio_opt::NumConstants() const 
-{ 
-  return numpossible; 
+int radio_opt::NumConstants() const
+{
+  return numpossible;
 }
 
-option_const* radio_opt::GetConstant(long i) const 
+option_enum* radio_opt::GetConstant(long i) const
 {
   if (i>=numpossible) return 0;
   return possible[i];
 }
 
-option_const* radio_opt::FindConstant(const char* name) const
+option_enum* radio_opt::FindConstant(const char* name) const
 {
   // binary search
   int low = 0;
@@ -742,15 +675,15 @@ option_const* radio_opt::FindConstant(const char* name) const
   return 0;
 }
 
-void radio_opt::ShowHeader(OutputStream &s) const 
-{ 
-  show(s); 
+void radio_opt::ShowHeader(OutputStream &s) const
+{
+  show(s);
   s.Put(' ');
   s.Put(possible[which]->Name());
 }
 
-void radio_opt::ShowRange(doc_formatter* df) const 
-{ 
+void radio_opt::ShowRange(doc_formatter* df) const
+{
   DCASSERT(numpossible);
   df->Out() << "Legal values:";
   int i;
@@ -800,20 +733,20 @@ void radio_opt::RecurseDocs(doc_formatter* df, const char* keyword) const
   }
 }
 
-option* MakeRadioOption(const char* name, const char* doc, 
+option* MakeRadioOption(const char* name, const char* doc,
                        radio_button** values, int numv,
            int &link)
 {
   DCASSERT(values);
   // Check that the values are sorted and indexed properly
   DCASSERT(values[0]);
-  if (values[0]->GetIndex() != 0)  return 0;
+  if (values[0]->getIndex() != 0)  return 0;
   int i;
   for (i=1; i<numv; i++) {
     DCASSERT(values[i]);
     int cmp = strcmp(values[i]->Name(), values[i-1]->Name());
     if (cmp<=0) return 0;  // NOT SORTED, BAIL OUT!!!!
-    if (values[i]->GetIndex() != i)  return 0;
+    if (values[i]->getIndex() != i)  return 0;
   }
   return new radio_opt(name, doc, values, numv, link);
 }
@@ -823,14 +756,14 @@ option* MakeRadioOption(const char* name, const char* doc,
 // **************************************************************************
 
 class checklist_opt : public option {
-  SplayOfPointers <checklist_const>* itemlist;
-  checklist_const** possible;
+  SplayOfPointers <checklist_enum>* itemlist;
+  checklist_enum** possible;
   int numpossible;
 public:
   checklist_opt(const char* n, const char* d);
   virtual ~checklist_opt();
   virtual int NumConstants() const { return numpossible; }
-  virtual option_const* GetConstant(long i) const {
+  virtual option_enum* GetConstant(long i) const {
     if (i>=numpossible) return 0;
     return possible[i];
   }
@@ -841,9 +774,9 @@ public:
   }
   virtual void ShowCurrent(OutputStream &s) const;
   // These are a bit more interesting...
-  virtual option_const* FindConstant(const char* name) const;
+  virtual option_enum* FindConstant(const char* name) const;
   virtual void ShowRange(doc_formatter* df) const;
-  virtual error AddCheckItem(checklist_const* v);
+  virtual error AddCheckItem(checklist_enum* v);
   virtual void Finish();
   virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
 };
@@ -853,7 +786,7 @@ checklist_opt::checklist_opt(const char* n, const char* d)
 {
   possible = 0;
   numpossible = 0;
-  itemlist = new SplayOfPointers <checklist_const> (10, 0);
+  itemlist = new SplayOfPointers <checklist_enum> (10, 0);
 
   itemlist->Insert(
     new checkall("ALL", "Alias for all possible items", this)
@@ -882,10 +815,10 @@ void checklist_opt::ShowCurrent(OutputStream &s) const
 /** Find the appropriate value for this name.
     If the name is bad (i.e., not found), we return NULL.
 */
-option_const* checklist_opt::FindConstant(const char* name) const
+option_enum* checklist_opt::FindConstant(const char* name) const
 {
   if (itemlist) {
-    option_const* find = itemlist->Find(name);
+    option_enum* find = itemlist->Find(name);
     return find;
   }
   // binary search
@@ -923,10 +856,10 @@ void checklist_opt::ShowRange(doc_formatter* df) const
   df->end_description();
 }
 
-option::error checklist_opt::AddCheckItem(checklist_const* v)
+option::error checklist_opt::AddCheckItem(checklist_enum* v)
 {
   if (0==itemlist)  return Finalized;
-  option_const* foo = itemlist->Insert(v);
+  option_enum* foo = itemlist->Insert(v);
   if (v != foo)     return Duplicate;
   return Success;
 }
@@ -935,7 +868,7 @@ void checklist_opt::Finish()
 {
   if (0==itemlist) return;
   numpossible = itemlist->NumElements();
-  possible = new checklist_const* [numpossible];
+  possible = new checklist_enum* [numpossible];
   itemlist->CopyToArray(possible);
   delete itemlist;
   itemlist = 0;
@@ -974,8 +907,8 @@ public:
   virtual void AddOption(option *);
   virtual void DoneAddingOptions();
   virtual option* FindOption(const char* name) const;
-  virtual long NumOptions() const { 
-    return NumSortedOptions; 
+  virtual long NumOptions() const {
+    return NumSortedOptions;
   }
   virtual option* GetOptionNumber(long i) const {
     if (i>=NumSortedOptions) return 0;
@@ -987,7 +920,7 @@ public:
 };
 
 
-option_heap::option_heap() : option_manager() 
+option_heap::option_heap() : option_manager()
 {
   optlist = new SplayOfPointers <option> (16, 0);
   SortedOptions = 0;
@@ -1035,18 +968,18 @@ option* option_heap::FindOption(const char* name) const
   return 0;
 }
 
-void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const 
+void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);
-  for (int i=0; i<NumSortedOptions; i++) 
+  for (int i=0; i<NumSortedOptions; i++)
     if (SortedOptions[i]->isApropos(df, keyword)) {
       df->Out() << "\n";
       SortedOptions[i]->PrintDocs(df, keyword);
     }
 }
 
-void option_heap::ListOptions(doc_formatter* df) const 
+void option_heap::ListOptions(doc_formatter* df) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);

@@ -52,7 +52,7 @@ group_of_named::group_of_named(int max)
   alloc = max;
   curr = 0;
   DCASSERT(max>=0);
-  if (max)  items = new option_const*[max];
+  if (max)  items = new option_enum*[max];
   else      items = 0;
 }
 
@@ -61,7 +61,7 @@ group_of_named::~group_of_named()
   delete[] items;
 }
 
-void group_of_named::AddItem(option_const* foo)
+void group_of_named::AddItem(option_enum* foo)
 {
   if (0==foo) return;
   CHECK_RANGE(0, curr, alloc);
@@ -73,12 +73,12 @@ void group_of_named::Finish(option* owner, const char* n, const char* docs)
 {
   if (0==owner) return;
   if (0==curr)  return;
-  checklist_const** boxes = new checklist_const*[curr];
+  checklist_enum** boxes = new checklist_enum*[curr];
   for (int i=0; i<curr; i++) {
-    boxes[i] = smart_cast <checklist_const*> (items[i]);
+    boxes[i] = smart_cast <checklist_enum*> (items[i]);
     DCASSERT(boxes[i]);
   }
-  checklist_const* foo = MakeChecklistGroup(n, docs, boxes, curr);
+  checklist_enum* foo = MakeChecklistGroup(n, docs, boxes, curr);
   DCASSERT(foo);
   CHECK_RETURN( owner->AddCheckItem(foo), option::Success );
 }
@@ -88,13 +88,13 @@ void group_of_named::Finish(option* owner, const char* n, const char* docs)
 // ******************************************************************
 
 io_environ* named_msg::io = 0;
-option_const* named_msg
+option_enum* named_msg
 ::Initialize(option* owner, const char* n, const char* docs, bool act)
 {
   name = n;
   active = act;
   if (owner) {
-    checklist_const* foo = MakeChecklistConstant(n, docs, active);
+    checklist_enum* foo = MakeChecklistConstant(n, docs, active);
     DCASSERT(foo);
     CHECK_RETURN( owner->AddCheckItem(foo), option::Success );
     return foo;
@@ -163,7 +163,7 @@ option* exprman::findOption(const char* name) const
 // |                       Building  constants                       |
 // +-----------------------------------------------------------------+
 
-expr* exprman::makeLiteral(const char* file, int line, 
+expr* exprman::makeLiteral(const char* file, int line,
       const type* t, const result& c) const
 {
   return new value(file, line, t, c);
@@ -209,7 +209,7 @@ const type* exprman::getLeastCommonType(const type* a, const type* b) const
 }
 
 
-expr* exprman::makeTypecast(const char* file, int line, 
+expr* exprman::makeTypecast(const char* file, int line,
       bool proc, bool rand, const expr *fp, expr* e) const
 {
   if (0==e || isError(e) || isDefault(e))  return e;
@@ -245,7 +245,7 @@ expr* exprman::makeTypecast(const char* file, int line,
       break;
     }
   }
-  if (!same && !null) { 
+  if (!same && !null) {
     Delete(e);
     return makeAssocOp(file, line, aop_colon, newagg, 0, nc);
   }
@@ -261,7 +261,7 @@ expr* exprman::promote(expr* e, const type* newtype) const
 
   if (!isPromotable(e->Type(), newtype))  return makeError();
 
-  return makeTypecast(e->Filename(), e->Linenumber(), newtype, e); 
+  return makeTypecast(e->Filename(), e->Linenumber(), newtype, e);
 }
 
 expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
@@ -273,7 +273,7 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
   }
   DCASSERT(! isError(fp));
   DCASSERT(! isDefault(fp));
-  if (fp->NumComponents() != e->NumComponents())  
+  if (fp->NumComponents() != e->NumComponents())
   return makeError();
 
   bool changetype = false;
@@ -296,13 +296,13 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
       promote_arg.stopIO();
     }
   }
-  return makeTypecast(e->Filename(), e->Linenumber(), proc, rand, fp, e); 
+  return makeTypecast(e->Filename(), e->Linenumber(), proc, rand, fp, e);
 }
 
 // +-----------------------------------------------------------------+
 // |                      Building  expressions                      |
 // +-----------------------------------------------------------------+
- 
+
 const char* exprman::getOp(unary_opcode op)
 {
   switch (op) {
@@ -434,7 +434,7 @@ const char* exprman::documentOp(bool flip, assoc_opcode op)
 // |                         Building models                         |
 // +-----------------------------------------------------------------+
 
-model_def* exprman::makeModel(const char* fn, int ln, const type* t, 
+model_def* exprman::makeModel(const char* fn, int ln, const type* t,
         char* name, symbol** formals, int np) const
 {
   const formalism* f = smart_cast <const formalism*> (t);
@@ -445,7 +445,7 @@ model_def* exprman::makeModel(const char* fn, int ln, const type* t,
 #ifdef TURN_OFF
   for (int i=0; i<np; i++)  Delete(formals[i]);
 #endif
-  delete[] formals; 
+  delete[] formals;
   return 0;
 }
 
@@ -469,7 +469,7 @@ bool builtManager = 0;
 
 exprman* Initialize_Expressions(io_environ* io, option_manager* om)
 {
-  if (builtManager)  return The_Man;  
+  if (builtManager)  return The_Man;
   builtManager = 1;
 
   named_msg::io = io;
@@ -487,8 +487,8 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   // Option initialization
   //
   option* debug = om ? om->FindOption("Debug") : 0;
-  expr::expr_debug.Initialize(debug, 
-      "exprs", 
+  expr::expr_debug.Initialize(debug,
+      "exprs",
       "When set, low-level expression and statement messages are displayed.",
       false
   );
@@ -499,13 +499,13 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
 
   expr::waitlist_debug.Initialize(debug,
       "waitlist",
-      "When set, diagnostic messages are displayed regarding symbol waiting lists.", 
+      "When set, diagnostic messages are displayed regarding symbol waiting lists.",
       false
   );
 
   expr::model_debug.Initialize(debug,
       "models",
-      "When set, diagnostic messages are displayed regarding model construction.", 
+      "When set, diagnostic messages are displayed regarding model construction.",
       false
   );
 

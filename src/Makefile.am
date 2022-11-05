@@ -49,6 +49,7 @@ smart_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
+  Options/opt_enum.cc \
   Options/options.cc \
   \
   ExprLib/startup.cc \
@@ -177,6 +178,7 @@ icp_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
+  Options/opt_enum.cc \
   Options/options.cc \
 	\
   ExprLib/startup.cc \
@@ -288,6 +290,7 @@ lextest_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
+  Options/opt_enum.cc \
   Options/options.cc \
   \
   ExprLib/startup.cc \

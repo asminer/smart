@@ -55,22 +55,22 @@ int yyparse();
 // Helper class - stack of options
 //
 class optstack {
-    const option_const* data[16]; // max depth
+    const option_enum* data[16]; // max depth
     int top_index;
   public:
     optstack() {
       top_index = 0;
     }
     inline bool isEmpty() const { return top_index < 0; }
-    inline const option_const* top() const {
+    inline const option_enum* top() const {
       return (top_index > 0) ? data[top_index] : 0;
     }
-    inline bool push(const option_const* oc) {
+    inline bool push(const option_enum* oc) {
       if (top_index >= 15) return false;
       data[++top_index] = oc;
       return true;
     }
-    inline const option_const* pop() {
+    inline const option_enum* pop() {
       if (top_index<0) return 0;
       return data[top_index--];
     }
@@ -868,9 +868,9 @@ expr* BuildOptionStatement(option* o, expr* v)
 // --------------------------------------------------------------
 
 // Helper for BuildOptionStatement and StartOptionBlock
-option_const* FindOptionConstant(option* o, char* n)
+option_enum* FindOptionConstant(option* o, char* n)
 {
-  option_const* oc = o ? o->FindConstant(n) : 0;
+  option_enum* oc = o ? o->FindConstant(n) : 0;
   if (0==oc) {
     if (o && pm->startError()) {
       pm->cerr() << "Illegal value " << n << " for option " << o->Name();
@@ -885,7 +885,7 @@ option_const* FindOptionConstant(option* o, char* n)
 // --------------------------------------------------------------
 expr* BuildOptionStatement(option* o, char* n)
 {
-  option_const* oc = FindOptionConstant(o, n);
+  option_enum* oc = FindOptionConstant(o, n);
   expr* foo;
   if (oc) {
     foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
@@ -898,7 +898,7 @@ expr* BuildOptionStatement(option* o, char* n)
 // --------------------------------------------------------------
 expr* StartOptionBlock(option* o, char* n)
 {
-  option_const* oc = FindOptionConstant(o, n);
+  option_enum* oc = FindOptionConstant(o, n);
   expr* foo;
   if (oc) {
     if (!Options.push(oc)) {
@@ -933,14 +933,14 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
   }
   if (0==list)  return 0;
 
-  // Build another circular list of option_consts.
+  // Build another circular list of option_enums.
   int length = CircularLength(list);
   parser_list* oclist = 0;
   for (int i=0; i<length; i++) {
     list = list->next;
     shared_string* s = smart_cast <shared_string*> (list->data);
     const char* name = s ? s->getStr() : 0;
-    option_const* oc = name ? o->FindConstant(name) : 0;
+    option_enum* oc = name ? o->FindConstant(name) : 0;
     if (oc) {
       oclist = AppendGeneric(oclist, oc);
       continue;
@@ -956,10 +956,10 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
   length = CircularLength(oclist);
   if (length<1)  return 0;
 
-  option_const** vlist = new option_const*[length];
+  option_enum** vlist = new option_enum*[length];
   for (int i=0; i<length; i++) {
     oclist = oclist->next;
-    vlist[i] = (option_const*) oclist->data;
+    vlist[i] = (option_enum*) oclist->data;
   }
   RecycleCircular(oclist);
 
@@ -989,7 +989,7 @@ option* BuildOptionHeader(char* name)
 
   option* answer;
 
-  const option_const* oc = Options.top();
+  const option_enum* oc = Options.top();
 
   if (oc) {
     const option_manager* om = oc->readSettings();
