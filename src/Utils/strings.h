@@ -19,6 +19,7 @@ class shared_string : public shared_object {
                         by the object created.
         */
         shared_string(char* s);
+        unsigned length() const;
     protected:
         virtual ~shared_string();
     public:

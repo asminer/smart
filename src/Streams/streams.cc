@@ -5,6 +5,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/location.h"
+#include "../Utils/strings.h"
 #include "streams.h"
 
 #include <string.h>
@@ -60,8 +61,7 @@ OutputStream::OutputStream()
   ready = true;
   SetRealFormat(RF_GENERAL);
   intbuf = (char*) malloc(256);
-  thousands = strdup("");
-  thousands_len = 0;
+  thousands = new shared_string(strdup(""));
 }
 
 void OutputStream::SetParent(const io_environ* p)
@@ -332,6 +332,7 @@ void OutputStream::Put(double data, int width, int prec)
 void OutputStream::PutInteger(const char* data, int width)
 {
   if (!ready) return;
+  const int thousands_len = thousands->length();
   if (0==thousands_len) {
     Put(data, width);
     return;
@@ -364,7 +365,7 @@ void OutputStream::PutInteger(const char* data, int width)
   if (i>next_comma) next_comma += 3;
   while (data[i]) {
     if (i==next_comma) {
-      strncpy(bufptr(), thousands, thousands_len);
+      strncpy(bufptr(), thousands->getStr(), thousands_len);
       buftop += thousands_len;
       next_comma += 3;
     }
@@ -485,13 +486,6 @@ OutputStream::real_format OutputStream::GetRealFormat() const
     case 'e':   return RF_SCIENTIFIC;
     default:    return RF_GENERAL;
   }
-}
-
-void OutputStream::SetThousandsSeparator(char* comma)
-{
-  if (thousands) free(thousands);
-  thousands = comma;
-  thousands_len = comma ? strlen(comma) : 0;
 }
 
 

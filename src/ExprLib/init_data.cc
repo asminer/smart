@@ -369,10 +369,11 @@ void MakeRealFormatOptions(exprman* em)
 
 // ******************************************************************
 // *                                                                *
-// *                     thousands_option class                     *
+// *                       thousands  options                       *
 // *                                                                *
 // ******************************************************************
 
+/*
 class thousands_option : public custom_option {
   OutputStream &os;
 public:
@@ -398,24 +399,25 @@ option::error thousands_option::GetValue(const char* &v) const
   v = os.GetThousandsSeparator();
   return Success;
 }
+*/
 
 void MakeSeparatorOptions(exprman* em)
 {
   if (!em->hasIO())  return;
 
   em->addOption(
-    new thousands_option(
-      em->cout(),
+    MakeStringOption(
       "OutputThousandSeparator",
-      "Thousands separator to use for the output stream"
+      "Thousands separator to use for the output stream",
+      em->cout().linkThousands()
     )
   );
 
   em->addOption(
-    new thousands_option(
-      em->report(),
+    MakeStringOption(
       "ReportThousandSeparator",
-      "Thousands separator to use for the reporting stream"
+      "Thousands separator to use for the reporting stream",
+      em->report().linkThousands()
     )
   );
 }

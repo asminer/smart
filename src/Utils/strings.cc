@@ -25,6 +25,12 @@ shared_string::~shared_string()
     free(string);
 }
 
+unsigned shared_string::length() const
+{
+    if (string) return strlen(string);
+    return 0;
+}
+
 void shared_string::CopyFrom(const char* s)
 {
     free(string);
