@@ -103,16 +103,6 @@ public:
   inline void stopDebug() {
     lexer_debug.stopIO();
   }
-  inline void setInteractive() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    parent->em->setInteractive();
-  }
-  inline void setBatch() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    parent->em->setBatch();
-  }
   inline bool StackFull() const { return (topfile+1 >= max_file_depth); }
 
   const char* Filename() const;
@@ -132,7 +122,7 @@ public:
   }
 
   void Initialize(parse_module* p);
-  
+
   bool AlreadyOpen(const char* name) const;
 
   // returns true on success
@@ -156,7 +146,7 @@ class inputfile {
   const char* name;
   FILE* input;
   yy_buffer_state* buffer;
-  int consumed_lines; 
+  int consumed_lines;
   int counter_start;
 public:
   /// Create lex buffer for this file.
@@ -181,12 +171,12 @@ public:
   inline const char* Name() const { return name; }
 
   /// Current linenumber of input file.
-  inline int Line() const { 
+  inline int Line() const {
     return consumed_lines + (yylineno - counter_start);
   }
 
   /// Are we reading from standard input?
-  inline bool is_stdin() const { 
+  inline bool is_stdin() const {
     if (name[0] != '-')  return false;
     return 0==name[1];
   }
@@ -216,9 +206,9 @@ inputfile::inputfile(FILE* f, const char* n)
 
 inputfile::~inputfile()
 {
-  if (buffer)  yy_delete_buffer(buffer); 
+  if (buffer)  yy_delete_buffer(buffer);
   if (input)   if (stdin != input) fclose(input);
-  // don't delete name, 
+  // don't delete name,
   // lots of expressions could be pointing to it!
 }
 
@@ -520,7 +510,7 @@ int ProcessTemporalAnd()
 int ProcessBool()
 {
   yylval.name = strdup(yytext);
-  return ProcessToken(BOOLCONST); 
+  return ProcessToken(BOOLCONST);
 }
 
 int ProcessInt()
@@ -546,8 +536,8 @@ int ProcessString()
       lexdata.cerr() << "Unclosed quote";
       lexdata.stopError();
     }
-  } else 
-    yylval.name[yyleng-2] = '\0'; // erase close quote 
+  } else
+    yylval.name[yyleng-2] = '\0'; // erase close quote
 
   return ProcessToken(STRCONST);
 }
@@ -579,7 +569,7 @@ int ProcessTemporalOperator()
     case 'U':   return ProcessToken(UNTIL);
     // weak until?
     case 'X':   return ProcessToken(NEXT);
-    default:    
+    default:
       if (lexdata.startInternal(__FILE__, __LINE__)) {
         lexdata.internal() << "Temporal operator error, unknown operator '";
         lexdata.internal() << yytext[0] << "'.";
@@ -676,7 +666,7 @@ void Include()
   // Check for circular dependency
   if (lexdata.AlreadyOpen(fn)) {
     if (lexdata.startWarning()) {
-      lexdata.warn() << "circular file dependency caused by #include "; 
+      lexdata.warn() << "circular file dependency caused by #include ";
       lexdata.warn() << fn << ", ignoring";
       lexdata.stopError();
     }
@@ -767,9 +757,6 @@ bool lexer_mod::Open(inputfile* fi)
     stopDebug();
   }
 
-  if (filestack[topfile]->is_stdin()) setInteractive();
-  else                                setBatch();
-
   return true;
 }
 
@@ -800,9 +787,6 @@ bool lexer_mod::CloseCurrent()
         stopDebug();
       }
 
-      if (filestack[topfile]->is_stdin()) setInteractive();
-      else                                setBatch();
-
       return true;
     }
     // still here?  We couldn't open the file
@@ -829,7 +813,7 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
     const char* fname = files[filecount-topfile-1];
     filestack[topfile] = new inputfile(fname);
   };
-  
+
   // switch to a valid file
   for (topfile--; topfile>=0; topfile--) {
     if (filestack[topfile]->StartTokenizing()) {
@@ -840,9 +824,6 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
         debug().Put('\n');
         stopDebug();
       }
-
-      if (filestack[topfile]->is_stdin()) setInteractive();
-      else                                setBatch();
 
       return true;
     }
@@ -856,18 +837,18 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
 
 
 // ==================================================================
-// 
+//
 //                            Global front end
 //
 // ==================================================================
 
-const char* Filename() 
-{ 
+const char* Filename()
+{
   return lexdata.Filename();
 }
 
-int Linenumber() 
-{ 
+int Linenumber()
+{
   return lexdata.Linenumber();
 }
 
@@ -884,6 +865,6 @@ bool SetInputs(parse_module* pm, const char** files, int filecount)
 bool SetInput(parse_module* pm, FILE* file, const char* name)
 {
   inputfile* fi = new inputfile(file, name);
-  return lexdata.Open(fi);  
+  return lexdata.Open(fi);
 }
 

@@ -57,7 +57,7 @@ public:
   int Linenumber() const;
 
   void Initialize(parse_module* p);
-  
+
   bool AlreadyOpen(const char* name) const;
 
   // returns true on success
@@ -122,16 +122,6 @@ public:
   inline void stopDebug() {
     lexer_debug.stopIO();
   }
-  inline void setInteractive() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    parent->em->setInteractive();
-  }
-  inline void setBatch() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    parent->em->setBatch();
-  }
 };
 
 lexer_mod lexdata;
@@ -146,7 +136,7 @@ class inputfile {
   const char* name;
   FILE* input;
   yy_buffer_state* buffer;
-  int consumed_lines; 
+  int consumed_lines;
   int counter_start;
 public:
   /// Create lex buffer for this file.
@@ -171,12 +161,12 @@ public:
   inline const char* Name() const { return name; }
 
   /// Current linenumber of input file.
-  inline int Line() const { 
+  inline int Line() const {
     return consumed_lines + (yylineno - counter_start);
   }
 
   /// Are we reading from standard input?
-  inline bool is_stdin() const { 
+  inline bool is_stdin() const {
     if (name[0] != '-')  return false;
     return 0==name[1];
   }
@@ -206,9 +196,9 @@ inputfile::inputfile(FILE* f, const char* n)
 
 inputfile::~inputfile()
 {
-  if (buffer)  yy_delete_buffer(buffer); 
+  if (buffer)  yy_delete_buffer(buffer);
   if (input)   if (stdin != input) fclose(input);
-  // don't delete name, 
+  // don't delete name,
   // lots of expressions could be pointing to it!
 }
 
@@ -438,7 +428,7 @@ int ProcessLe()
 int ProcessBool()
 {
   yylval.name = strdup(yytext);
-  return ProcessToken(BOOLCONST); 
+  return ProcessToken(BOOLCONST);
 }
 
 int ProcessInt()
@@ -537,7 +527,7 @@ void Include()
   // Check for circular dependency
   if (lexdata.AlreadyOpen(fn)) {
     if (lexdata.startWarning()) {
-      lexdata.warn() << "circular file dependency caused by #include "; 
+      lexdata.warn() << "circular file dependency caused by #include ";
       lexdata.warn() << fn << ", ignoring";
       lexdata.stopError();
     }
@@ -629,10 +619,6 @@ bool lexer_mod::Open(inputfile* fi)
     stopDebug();
   }
 
-  if (ioenv) {
-    if (filestack[topfile]->is_stdin())   ioenv->SetInteractive();
-    else                                  ioenv->SetBatch();
-  }
   return true;
 }
 
@@ -663,11 +649,6 @@ bool lexer_mod::CloseCurrent()
         stopDebug();
       }
 
-      if (ioenv) {
-        if (filestack[topfile]->is_stdin())   ioenv->SetInteractive();
-        else                                  ioenv->SetBatch();
-      }
-
       return true;
     }
     // still here?  We couldn't open the file
@@ -694,7 +675,7 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
     const char* fname = files[filecount-topfile-1];
     filestack[topfile] = new inputfile(fname);
   };
-  
+
   // switch to a valid file
   for (topfile--; topfile>=0; topfile--) {
     if (filestack[topfile]->StartTokenizing()) {
@@ -704,11 +685,6 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
         debug().Put(filestack[topfile]->Name());
         debug().Put('\n');
         stopDebug();
-      }
-
-      if (ioenv) {
-        if (filestack[topfile]->is_stdin())   ioenv->SetInteractive();
-        else                                  ioenv->SetBatch();
       }
 
       return true;
@@ -723,18 +699,18 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
 
 
 // ==================================================================
-// 
+//
 //                            Global front end
 //
 // ==================================================================
 
-const char* Filename() 
-{ 
+const char* Filename()
+{
   return lexdata.Filename();
 }
 
-int Linenumber() 
-{ 
+int Linenumber()
+{
   return lexdata.Linenumber();
 }
 
@@ -751,6 +727,6 @@ bool SetInputs(parse_module* pm, const char** files, int filecount)
 bool SetInput(parse_module* pm, FILE* file, const char* name)
 {
   inputfile* fi = new inputfile(file, name);
-  return lexdata.Open(fi);  
+  return lexdata.Open(fi);
 }
 

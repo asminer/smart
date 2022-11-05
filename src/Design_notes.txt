@@ -8,7 +8,7 @@ Utils/      Global utilities like streams, options, etc.,
             that nearly everything needs.
 
 
-Streams: can we just use ifstream and ofstream?
+Streams: replace OutputStream with ostream;
 
 
 ======================================================================
