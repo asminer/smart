@@ -4,7 +4,7 @@ New Lexer/Parser "gradual rewrite" of 2022/2023
 
 How to reorganize code, ideas for gradual migration
 
-Global/     Global utilities like streams, options, etc.,
+Utils/      Global utilities like streams, options, etc.,
             that nearly everything needs.
 
 
