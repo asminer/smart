@@ -390,7 +390,7 @@ thousands_option
 option::error thousands_option::SetValue(char* s)
 {
   os.SetThousandsSeparator(s);
-  return Success;
+  return notifyWatchers();
 }
 
 option::error thousands_option::GetValue(const char* &v) const

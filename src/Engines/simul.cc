@@ -315,7 +315,9 @@ jump_distance_option::jump_distance_option(const char* name, const char* doc)
 option::error jump_distance_option::SetValue(long v)
 {
   if (0==sim_engine::rngm)  return NullFunction;
-  if (sim_engine::rngm->SetJumpValue(v))  return Success;
+  if (sim_engine::rngm->SetJumpValue(v))  {
+      return notifyWatchers();
+  }
   else                                    return RangeError;
 }
 
@@ -361,7 +363,7 @@ option::error seed_rng_option::SetValue(long v)
   if (v<=0)      return RangeError;
   last_seed = v;
   sim_engine::rngm->InitStreamFromSeed(sim_engine::rng_main, v);
-  return Success;
+  return notifyWatchers();
 }
 
 option::error seed_rng_option::GetValue(long &v) const
