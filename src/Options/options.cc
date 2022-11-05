@@ -231,11 +231,6 @@ option::error option::GetValue(const char* &v) const
   return WrongType;
 }
 
-option::error option::GetValue(const radio_button* &v) const
-{
-  return WrongType;
-}
-
 int option::NumConstants() const
 {
   return 0;
@@ -614,10 +609,6 @@ public:
     radio_opt(const char* n, const char* d, unsigned np, unsigned& w);
     virtual ~radio_opt();
     virtual error SetValue(option_enum* v);
-    virtual option::error GetValue(const radio_button* &v) const {
-        v = possible[which];
-        return Success;
-    }
     virtual option_enum* FindConstant(const char* name) const;
     virtual int NumConstants() const;
     virtual option_enum* GetConstant(long i) const;
