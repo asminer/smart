@@ -2,7 +2,7 @@
 #define LEXER_H
 
 #include <stdio.h>
-#include "../Streams/location.h"
+#include "../Utils/location.h"
 #include "../ExprLib/exprman.h"
 #include "tokens.h"
 #include <cstring>

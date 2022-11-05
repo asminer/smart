@@ -1,6 +1,6 @@
 
 #include "stmts.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "expr.h"

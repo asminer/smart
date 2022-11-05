@@ -4,7 +4,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 

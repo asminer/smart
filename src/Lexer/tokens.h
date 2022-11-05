@@ -1,7 +1,7 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
-#include "../Streams/location.h"
+#include "../Utils/location.h"
 #include "../ExprLib/type.h"
 
 /**

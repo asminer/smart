@@ -3,7 +3,7 @@
 #include "exprman.h"
 #include "../Streams/streams.h"
 #include "sets.h"
-#include "../Streams/strings.h"
+#include "../Utils/strings.h"
 #include "../Options/options.h"
 #include <stdlib.h>
 
