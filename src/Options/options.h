@@ -190,31 +190,14 @@ class option {
         /// Recursively document children as appropriate.
         virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
 
+        /*
+         * Add a subscriber to the list.
+         * Any time the option changes, all subscribers are notified.
+         */
         void registerWatcher(watcher* w);
     protected:
         error notifyWatchers() const;
 };
-
-// **************************************************************************
-// *                        custom_option  interface                        *
-// **************************************************************************
-
-/** If you want setting / getting option values to trigger an action,
-    derive a class from this one and use it for your option.
-    You must provide the appropriate SetValue() and GetValue() methods.
-*/
-class custom_option : public option {
-  const char* range;
-public:
-  custom_option(type t, const char* name, const char* doc, const char* range);
-
-  virtual ~custom_option();
-
-  virtual void ShowHeader(OutputStream &s) const;
-  virtual void ShowRange(doc_formatter* df) const;
-  virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
-};
-
 
 // **************************************************************************
 // *                            Global interface                            *
