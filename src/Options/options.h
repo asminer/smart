@@ -141,12 +141,6 @@ class option {
         */
         virtual error GetValue(const char* &v) const;
 
-        /** Get the value for a radio button option.
-                @param  v  Value stored here.
-                @return Appropriate error code.
-        */
-        virtual error GetValue(const radio_button* &v) const;
-
         virtual int NumConstants() const;
         virtual option_enum* GetConstant(long i) const;
 
