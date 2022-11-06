@@ -80,30 +80,6 @@ option_enum* option::FindConstant(const char*) const
   return 0;
 }
 
-#if 0
-
-option::error option::GetValue(bool &v) const
-{
-  return WrongType;
-}
-
-option::error option::GetValue(long &v) const
-{
-  return WrongType;
-}
-
-option::error option::GetValue(double &v) const
-{
-  return WrongType;
-}
-
-option::error option::GetValue(shared_string* &v) const
-{
-  return WrongType;
-}
-
-#endif
-
 int option::NumConstants() const
 {
   return 0;

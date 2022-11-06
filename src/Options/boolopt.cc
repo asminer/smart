@@ -19,12 +19,6 @@ option::error bool_opt::SetValue(bool b)
     return notifyWatchers();
 }
 
-option::error bool_opt::GetValue(bool &b) const
-{
-    b = value;
-    return Success;
-}
-
 void bool_opt::ShowHeader(OutputStream &s) const
 {
     show(s);

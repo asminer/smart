@@ -22,13 +22,6 @@ option::error string_opt::SetValue(shared_string* v)
     return notifyWatchers();
 }
 
-option::error string_opt::GetValue(shared_string* &v) const
-{
-    Delete(v);
-    v = Share(value);
-    return Success;
-}
-
 void string_opt::ShowHeader(OutputStream &s) const
 {
     show(s);

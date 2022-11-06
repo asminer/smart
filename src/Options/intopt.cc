@@ -22,12 +22,6 @@ option::error int_opt::SetValue(long b)
     return notifyWatchers();
 }
 
-option::error int_opt::GetValue(long &v) const
-{
-    v = value;
-    return Success;
-}
-
 void int_opt::ShowHeader(OutputStream &s) const
 {
     show(s);

@@ -18,7 +18,6 @@ public:
     int_opt(const char* n, const char* d, long &v, long mn, long mx);
     virtual ~int_opt();
     virtual error SetValue(long v);
-    virtual error GetValue(long &v) const;
     virtual void ShowHeader(OutputStream &s) const;
     virtual void ShowRange(doc_formatter* df) const;
 };

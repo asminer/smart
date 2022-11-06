@@ -45,12 +45,6 @@ option::error real_opt::SetValue(double b)
     return notifyWatchers();
 }
 
-option::error real_opt::GetValue(double &v) const
-{
-    v = value;
-    return Success;
-}
-
 void real_opt::ShowHeader(OutputStream &s) const
 {
     show(s);
