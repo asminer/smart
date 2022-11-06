@@ -4,7 +4,9 @@
 
 #include "dcp_symb.h"
 
+#include "../Options/optman.h"
 #include "../Options/options.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
@@ -980,13 +982,13 @@ bool init_dcpsymbolic::execute()
   option* report = em->findOption("Report");
   option* debug = em->findOption("Debug");
 
-  icp_symbgen::report.Initialize(report,
+  icp_symbgen::report.Initialize(report, 0,
     "implicit_dcp_gen",
     "When set, implicit reachability set performance is reported.",
     false
   );
 
-  icp_symbgen::debug.Initialize(debug,
+  icp_symbgen::debug.Initialize(debug, 0,
     "implicit_dcp_gen",
     "When set, implicit reachability set details are displayed.",
     false
@@ -994,24 +996,24 @@ bool init_dcpsymbolic::execute()
 
   // accumulate vs. fold option
   icp_symbgen::combine_method = icp_symbgen::FOLD;
-  radio_button** methods = new radio_button*[2];
-  methods[icp_symbgen::ACCUMULATE] = new radio_button(
-    "ACCUMULATE",
-    "Combine MDDs in order",
-    icp_symbgen::ACCUMULATE
-  );
-  methods[icp_symbgen::FOLD] = new radio_button(
-    "FOLD",
-    "Pairwise combine small MDDs together; repeat",
-    icp_symbgen::FOLD
-  );
-  em->addOption(
-    MakeRadioOption(
+
+  if (em->OptMan()) {
+    option* mccm = em->OptMan()->addRadioOption(
       "MeddlyConstraintCombinationMethod",
       "How to combine constraints when MEDDLY is used for ImplicitDCSolve",
-      methods, 2, icp_symbgen::combine_method
-    )
-  );
+      2, icp_symbgen::combine_method
+    );
+    mccm->addRadioButton(
+      "ACCUMULATE",
+      "Combine MDDs in order",
+      icp_symbgen::ACCUMULATE
+    );
+    mccm->addRadioButton(
+      "FOLD",
+      "Pairwise combine small MDDs together; repeat",
+      icp_symbgen::FOLD
+    );
+  }
 
   // Register engines
   icp_mdd_analyzer::SSGen = em->findEngineType("ImplicitDCSolve");

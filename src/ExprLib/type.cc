@@ -3,7 +3,7 @@
 #include "type.h"
 #include "result.h"
 #include "exprman.h"
-#include "../Options/options.h"
+#include "../Options/optman.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -583,14 +583,13 @@ type* newSetType(const char* n, simple_type* base)
 void InitTypeOptions(exprman* em)
 {
   if (0==em)  return;
+  if (0==em->OptMan()) return;
 
   type::infinity_string = new shared_string(strdup("infinity"));
-  em->addOption(
-    MakeStringOption(
+  em->OptMan()->addStringOption(
       "InfinityString",
       "Output string for infinity.",
       type::infinity_string
-    )
   );
 }
 

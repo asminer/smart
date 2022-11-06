@@ -1,5 +1,6 @@
 
 #include "converge.h"
+#include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../Streams/streams.h"
 #include "exprman.h"
@@ -794,44 +795,40 @@ expr* exprman::makeArrayCvgAssign(const char* fn, int ln, symbol* arr, expr* rhs
 void InitConvergeOptions(exprman* em)
 {
   if (0==em)  return;
+  if (0==em->OptMan()) return;
 
   option* debug = em->findOption("Debug");
-  fixpoint_stmt::converge_debug.Initialize(debug,
+  fixpoint_stmt::converge_debug.Initialize(debug, 0,
       "converges",
       "Use to view the sequence of assignments during the execution of a converge statement.",
       false
   );
 
   converge_stmt::max_iters = 1000;
-  option* max_iters = MakeIntOption("MaxConvergeIters",
+  em->OptMan()->addIntOption("MaxConvergeIters",
       "Maximum number of iterations of a converge statement.",
       converge_stmt::max_iters, 1, 2000000000
   );
 
   fixpoint_stmt::precision = 1e-5;
-  option* precision = MakeRealOption("ConvergePrecision",
+  em->OptMan()->addRealOption("ConvergePrecision",
       "Desired precision for values within a converge statement.",
       fixpoint_stmt::precision, true, false, 0, true, false, 1
   );
 
-  radio_button** pt_list = new radio_button*[2];
-  pt_list[0] = new radio_button("ABSOLUTE", "Use absolute precision", 0);
-  pt_list[1] = new radio_button("RELATIVE", "Use relative precision", 1);
-  fixpoint_stmt::relative = 1;
-  option* prec_test = MakeRadioOption("ConvergePrecisionTest",
+  option* prec_test = em->OptMan()->addRadioOption("ConvergePrecisionTest",
       "Comparison to use for convergence test of values within a converge statement.",
-      pt_list, 2, fixpoint_stmt::relative
+      2, fixpoint_stmt::relative
   );
+  DCASSERT(prec_test);
+  prec_test->addRadioButton("ABSOLUTE", "Use absolute precision", 0);
+  prec_test->addRadioButton("RELATIVE", "Use relative precision", 1);
+  fixpoint_stmt::relative = 1;
 
   fixpoint_stmt::use_current = true;
-  option* use_current = MakeBoolOption("UseCurrent",
+  em->OptMan()->addBoolOption("UseCurrent",
       "Should variables within a converge statement be updated immediately.",
       fixpoint_stmt::use_current
   );
-
-  em->addOption(max_iters);
-  em->addOption(precision);
-  em->addOption(prec_test);
-  em->addOption(use_current);
 }
 

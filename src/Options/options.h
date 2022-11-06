@@ -9,11 +9,11 @@
 
 class OutputStream;  // defined in streams.h
 class doc_formatter;   // defined in streams.h
-class option_manager;
 class shared_string;
 
-#include "opt_enum.h"
-#include "optman.h"
+class option_enum;
+class radio_button;
+class checklist_enum;
 
 // **************************************************************************
 // *                            option interface                            *
@@ -130,6 +130,7 @@ class option {
         */
         virtual option_enum* FindConstant(const char* name) const;
 
+#if 0
         /** Get the value for a boolean option.
                 @param  v  Value stored here.
                 @return Appropriate error code.
@@ -153,6 +154,7 @@ class option {
                 @return Appropriate error code.
         */
         virtual error GetValue(shared_string* &v) const;
+#endif
 
         virtual int NumConstants() const;
         virtual option_enum* GetConstant(long i) const;
@@ -160,18 +162,6 @@ class option {
         virtual void ShowHeader(OutputStream &s) const = 0;
         virtual void ShowCurrent(OutputStream &s) const;
         virtual void ShowRange(doc_formatter* df) const = 0;
-
-        /** Add a new item to a checklist option.
-                @param  v  The new checklist item.
-                @return Appropriate error code.
-        */
-        virtual error AddCheckItem(option_enum* v);
-
-        /** Add a radio button while building a radio button option.
-                @param  v  The new radio button item.
-                @return Appropriate error code.
-        */
-        virtual error AddRadioButton(option_enum* v);
 
         /// Will be called when the option list is finalized.
         virtual void Finish();
@@ -195,120 +185,46 @@ class option {
          * Any time the option changes, all subscribers are notified.
          */
         void registerWatcher(watcher* w);
+
+        /**
+            Build and add a radio button to this option.
+                @param  name    Button name.
+                @param  doc     Button documentation.
+                @param  ndx     Button index.
+
+                @return NULL, if this is not a radio button option,
+                              or some other error occurred.
+                        The radio button (as an option_enum), otherwise.
+        */
+        virtual radio_button* addRadioButton(const char* name,
+                                const char* doc, unsigned ndx);
+
+        /**
+            Build and add an item to a checklist.
+                @param  grp   Group, or null for none.
+                @param  name  The item name
+                @param  doc   Documentation for the item.
+                @param  link  Link to "are we checked or not".
+
+                @return A new item, or NULL on error.
+        */
+        virtual checklist_enum* addChecklistItem(checklist_enum* grp,
+                const char* name, const char* doc, bool &link);
+
+        /**
+            Build and add an item that's a group of items to a checklist.
+                @param  name    The item name
+                @param  doc     Documentation for the item.
+                @param  ni      Max items to add to the group.
+
+                @return A new item, or NULL on error.
+        */
+        virtual checklist_enum* addChecklistGroup(const char* name,
+                const char* doc, unsigned ni);
+
     protected:
         error notifyWatchers() const;
 };
-
-// **************************************************************************
-// *                            Global interface                            *
-// **************************************************************************
-
-
-/** Make a new option of type "radio button",
-    with radio buttons to be added later.
-      @param  name      The option name
-      @param  doc       Documentation for the option.
-      @param  values    Radio buttons to add.
-      @param  numvalues Number of radio buttons to be added.
-      @param  link      Link to current selection (the value index).
-      @return A new option, or NULL on error.
-              An error will occur if the values are not sorted!
-*/
-option* MakeRadioOption(const char* name, const char* doc,
-           radio_button** values, unsigned numvalues, unsigned& link);
-
-
-/** Make a new option of type "radio button",
-    with radio buttons to be added later.
-      @param  name      The option name
-      @param  doc       Documentation for the option.
-      @param  numvalues Number of radio buttons to be added.
-      @param  link      Link to current selection (the value index).
-      @return A new option, or NULL on error.
-              An error will occur if the values are not sorted!
-*/
-option* MakeRadioOption(const char* name, const char* doc,
-           unsigned numvalues, unsigned& link);
-
-
-/** Make a new option constant for a checklist.
-      @param  name  The constant name
-      @param  doc   Documentation for the option.
-      @param  link  Link to "are we checked or not".
-      @return A new constant, or NULL on error.
-*/
-checklist_enum* MakeChecklistConstant(const char* name, const char* doc, bool &link);
-
-/** Make a new option constant for a group of checklist items.
-      @param  name  The constant name
-      @param  doc   Documentation for the option.
-      @param  items Items that this group contains.
-      @param  ni    Dimension of items array.
-      @return A new constant, or NULL on error.
-*/
-checklist_enum* MakeChecklistGroup(const char* name, const char* doc, checklist_enum** items, int ni);
-
-/** Make a new option of type "checklist".
-    Possible items on the list are added dynamically.
-      @param  name  The option name
-      @param  doc   Documentation for the option.
-      @return A new option, or NULL on error.
-*/
-option* MakeChecklistOption(const char* name, const char* doc);
-
-/** Make a new option of type boolean.
-      @param  name  The option name
-      @param  doc   Documentation for the option.
-      @param  link  Link to the boolean value; value can be
-                    changed by the option or otherwise.
-      @return A new option, or NULL on error.
-*/
-option* MakeBoolOption(const char* name, const char* doc, bool &link);
-
-/** Make a new option of type integer.
-      @param  name  The option name
-      @param  doc   Documentation for the option.
-      @param  link  Link to the value; value can be changed by
-                    the option or otherwise.
-      @param  min   The minimum allowed value.
-      @param  max   The maximum allowed value.
-                    Use min > max for all possible integers.
-      @return A new option, or NULL on error.
-*/
-option* MakeIntOption(const char* name, const char* doc,
-      long &link, long min, long max);
-
-
-/** Make a new option of type real.
-      @param  name            The option name
-      @param  doc             Documentation for the option.
-      @param  link            Link to the value; value can be changed by
-                              the option or otherwise.
-      @param  has_lower       Does the option have a lower bound?
-                              If not, ignore the lower bound parameters.
-      @param  includes_lower  Is the lower bound included in the
-                              set of possible values?
-      @param  lower           Lower bound.
-      @param  has_upper       Does the option have an upper bound?
-                              If not, ignore the upper bound parameters.
-      @param  includes_upper  Is the upper bound included in the
-                              set of possible values?
-      @param  upper           Upper bound.
-      @return A new option, or NULL on error.
-*/
-option* MakeRealOption(const char* name, const char* doc, double &link,
-      bool has_lower, bool includes_lower, double lower,
-      bool has_upper, bool includes_upper, double upper);
-
-
-/** Make a new option of type string.
-      @param  name  The option name.
-      @param  doc   Documentation for the option.
-      @param  link  Link to the value.
-      @return  A new option, or NULL on error.
-*/
-option* MakeStringOption(const char* name, const char* doc, shared_string* &link);
-
 
 #endif
 

@@ -49,9 +49,15 @@ smart_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
-  Options/opt_enum.cc \
-  Options/options.cc \
   Options/optman.cc \
+  Options/options.cc \
+  Options/opt_enum.cc \
+  Options/boolopt.cc \
+  Options/intopt.cc \
+  Options/realopt.cc \
+  Options/stropt.cc \
+  Options/checklist.cc \
+  Options/radio_opt.cc \
   \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -179,9 +185,15 @@ icp_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
-  Options/opt_enum.cc \
-  Options/options.cc \
   Options/optman.cc \
+  Options/options.cc \
+  Options/opt_enum.cc \
+  Options/boolopt.cc \
+  Options/intopt.cc \
+  Options/realopt.cc \
+  Options/stropt.cc \
+  Options/checklist.cc \
+  Options/radio_opt.cc \
 	\
   ExprLib/startup.cc \
   ExprLib/exprman.cc \
@@ -292,9 +304,15 @@ lextest_SOURCES = \
   Streams/streams.cc \
   Streams/textfmt.cc \
   \
-  Options/opt_enum.cc \
-  Options/options.cc \
   Options/optman.cc \
+  Options/options.cc \
+  Options/opt_enum.cc \
+  Options/boolopt.cc \
+  Options/intopt.cc \
+  Options/realopt.cc \
+  Options/stropt.cc \
+  Options/checklist.cc \
+  Options/radio_opt.cc \
   \
   ExprLib/startup.cc \
   ExprLib/exprman.cc \

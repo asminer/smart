@@ -6,6 +6,8 @@
 #include "gen_meddly.h"
 
 #include "../Options/options.h"
+#include "../Options/optman.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
@@ -2474,30 +2476,30 @@ bool init_saturmeddly::execute()
 
   // Options
 
-  radio_button** orders = new radio_button*[3];
-  orders[0] = new radio_button(
-    "HIGH_TO_LOW",
-    "Events whose group dependencies are higher are processed first",
-    meddly_implicitgen::ORDER_HIGH_TO_LOW
-  );
-  orders[1] = new radio_button(
-    "LOW_TO_HIGH",
-    "Events whose group dependencies are lower are processed first",
-    meddly_implicitgen::ORDER_LOW_TO_HIGH
-  );
-  orders[2] = new radio_button(
-    "MODEL",
-    "Events are processed in order of declaration in the model",
-    meddly_implicitgen::ORDER_MODEL
-  );
   meddly_implicitgen::order_policy = meddly_implicitgen::ORDER_LOW_TO_HIGH;
-  em->addOption(
-    MakeRadioOption(
+  if (em->OptMan()) {
+    option* meo = em->OptMan()->addRadioOption(
       "MeddlyEventOrder",
       "Order to add events to the next state function, for implicit generation algorithms using Meddly.",
-      orders, 3, meddly_implicitgen::order_policy
-    )
-  );
+      3, meddly_implicitgen::order_policy
+    );
+    DCASSERT(meo);
+    meo->addRadioButton(
+      "HIGH_TO_LOW",
+      "Events whose group dependencies are higher are processed first",
+      meddly_implicitgen::ORDER_HIGH_TO_LOW
+    );
+    meo->addRadioButton(
+      "LOW_TO_HIGH",
+      "Events whose group dependencies are lower are processed first",
+      meddly_implicitgen::ORDER_LOW_TO_HIGH
+    );
+    meo->addRadioButton(
+      "MODEL",
+      "Events are processed in order of declaration in the model",
+      meddly_implicitgen::ORDER_MODEL
+    );
+  }
 
   return true;
 }

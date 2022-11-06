@@ -2,6 +2,7 @@
 #include "gen_meddly.h"
 
 #include "../Options/options.h"
+#include "../Options/optman.h"
 
 #include "../ExprLib/startup.h"
 #include "../Modules/glue_meddly.h"
@@ -4487,7 +4488,8 @@ class init_genmeddly : public initializer {
     virtual bool execute();
 
   private:
-    radio_button** makeNDPButtons(int &num_buttons);
+    unsigned numNDPButtons();
+    void addNDPButtons(option* o);
 };
 init_genmeddly the_genmeddly_initializer;
 
@@ -4514,134 +4516,137 @@ bool init_genmeddly::execute()
   );
   RegisterEngine(em, "ProcessGeneration", meddlygen);
 
-  // EVMxD vs MTMxD option
+  //
+  // Option defaults
   meddly_procgen::proc_storage = meddly_procgen::MTMXD;
-  radio_button** styles = new radio_button*[2];
-  styles[meddly_procgen::MTMXD] = new radio_button(
-    "MTMXD",
-    "Multi-terminal MDD for matrices",
-    meddly_procgen::MTMXD
-  );
-  styles[meddly_procgen::EVMXD] = new radio_button(
-    "EVMXD",
-    "Edge-valued (using *) MDD for matrices",
-    meddly_procgen::EVMXD
-  );
-  em->addOption(
-    MakeRadioOption(
+  meddly_procgen::edge_style = meddly_procgen::POTENTIAL;
+  meddly_procgen::var_type = meddly_procgen::BOUNDED;
+  meddly_procgen::nsf_ndp = meddly_procgen::PESSIMISTIC;
+  meddly_procgen::rss_ndp = meddly_procgen::PESSIMISTIC;
+  meddly_varoption::vars_named = false;
+
+  // Build options
+  if (em->OptMan()) {
+    //
+    // EVMxD vs MTMxD option
+    option* mps = em->OptMan()->addRadioOption(
       "MeddlyProcessStorage",
       "Type of forest to use for process storage, using Meddly",
-      styles, 2, meddly_procgen::proc_storage
-    )
-  );
+      2, meddly_procgen::proc_storage
+    );
 
-  // potential vs. actual edge option
-  meddly_procgen::edge_style = meddly_procgen::POTENTIAL;
-  styles = new radio_button*[2];
-  styles[meddly_procgen::ACTUAL] = new radio_button(
-    "ACTUAL",
-    "Outgoing edges only for reachable states; unreachable states have no outgoing edges",
-    meddly_procgen::ACTUAL
-  );
-  styles[meddly_procgen::POTENTIAL] = new radio_button(
-    "POTENTIAL",
-    "Unreachable states may have outgoing edges",
-    meddly_procgen::POTENTIAL
-  );
-  em->addOption(
-    MakeRadioOption(
+    mps->addRadioButton(
+      "MTMXD",
+      "Multi-terminal MDD for matrices",
+      meddly_procgen::MTMXD
+    );
+    mps->addRadioButton(
+      "EVMXD",
+      "Edge-valued (using *) MDD for matrices",
+      meddly_procgen::EVMXD
+    );
+
+    //
+    // potential vs. actual edge option
+    option* mpes = em->OptMan()->addRadioOption(
       "MeddlyProcessEdgeStyle",
       "Style for representing the underlying process, using Meddly",
-      styles, 2, meddly_procgen::edge_style
-    )
-  );
+      2, meddly_procgen::edge_style
+    );
 
-  // variable type option
-  styles = new radio_button*[4];
-  styles[meddly_procgen::BOUNDED] = new radio_button(
-    "BOUNDED",
-    "All state variables have declared bounds",
-    meddly_procgen::BOUNDED
-  );
-  styles[meddly_procgen::EXPANDING] = new radio_button(
-    "EXPANDING",
-    "State variable bounds are discovered during generation",
-    meddly_procgen::EXPANDING
-  );
-  styles[meddly_procgen::ON_THE_FLY] = new radio_button(
-    "ON_THE_FLY",
-    "Local state spaces are discovered during generation",
-    meddly_procgen::ON_THE_FLY
-  );
-  styles[meddly_procgen::PREGEN] = new radio_button(
-    "PREGEN",
-    "Local state spaces are generated in before generating reachability set",
-    meddly_procgen::PREGEN
-  );
-  meddly_procgen::var_type = meddly_procgen::BOUNDED;
-  em->addOption(
-    MakeRadioOption(
+    mpes->addRadioButton(
+      "ACTUAL",
+      "Outgoing edges only for reachable states; unreachable states have no outgoing edges",
+      meddly_procgen::ACTUAL
+    );
+    mpes->addRadioButton(
+      "POTENTIAL",
+      "Unreachable states may have outgoing edges",
+      meddly_procgen::POTENTIAL
+    );
+
+    //
+    // variable type option
+    option* mvs = em->OptMan()->addRadioOption(
       "MeddlyVariableStyle",
       "Method for determining sizes of state variables, for Meddly-based process generation",
-      styles, 4, meddly_procgen::var_type
-    )
-  );
+      4, meddly_procgen::var_type
+    );
+    mvs->addRadioButton(
+      "BOUNDED",
+      "All state variables have declared bounds",
+      meddly_procgen::BOUNDED
+    );
+    mvs->addRadioButton(
+      "EXPANDING",
+      "State variable bounds are discovered during generation",
+      meddly_procgen::EXPANDING
+    );
+    mvs->addRadioButton(
+      "ON_THE_FLY",
+      "Local state spaces are discovered during generation",
+      meddly_procgen::ON_THE_FLY
+    );
+    mvs->addRadioButton(
+      "PREGEN",
+      "Local state spaces are generated in before generating reachability set",
+      meddly_procgen::PREGEN
+    );
 
-  // Node deletion policy options
-  radio_button** ndps;
-  int num_ndps;
-  ndps = makeNDPButtons(num_ndps);
-  meddly_procgen::nsf_ndp = meddly_procgen::PESSIMISTIC;
-  em->addOption(
-    MakeRadioOption(
-      "MeddlyNSFNodeDeletion",
-      "Node deletion policy to use for next-state function forests in Meddly",
-      ndps, num_ndps, meddly_procgen::nsf_ndp
-    )
-  );
+    //
+    // Node deletion policy options
 
-  ndps = makeNDPButtons(num_ndps);
-  meddly_procgen::rss_ndp = meddly_procgen::PESSIMISTIC;
-  em->addOption(
-    MakeRadioOption(
-      "MeddlyRSSNodeDeletion",
-      "Node deletion policy to use for reachable state space forests in Meddly",
-      ndps, num_ndps, meddly_procgen::rss_ndp
-    )
-  );
+    addNDPButtons(
+      em->OptMan()->addRadioOption(
+        "MeddlyNSFNodeDeletion",
+        "Node deletion policy to use for next-state function forests in Meddly",
+        numNDPButtons(), meddly_procgen::nsf_ndp
+      )
+    );
 
-  meddly_varoption::vars_named = false;
-  em->addOption(
-    MakeBoolOption(
+    addNDPButtons(
+      em->OptMan()->addRadioOption(
+        "MeddlyRSSNodeDeletion",
+        "Node deletion policy to use for reachable state space forests in Meddly",
+        numNDPButtons(), meddly_procgen::rss_ndp
+      )
+    );
+
+    //
+    // Variable names
+    em->OptMan()->addBoolOption(
       "MeddlyVarsAreNamed",
       "Should the variables internal to MEDDLY be named appropriately.  If true, when MDDs and MxDs are displayed (typically for debugging), more useful information is shown for the level names.  Should be set to false for speed if possible.",
       meddly_varoption::vars_named
-    )
-  );
+    );
+  }
 
   return true;
 }
 
-radio_button** init_genmeddly::makeNDPButtons(int &num_buttons)
+
+unsigned init_genmeddly::numNDPButtons()
 {
-  num_buttons = 3;
-  radio_button** ndps = new radio_button*[num_buttons];
-  ndps[meddly_procgen::NEVER] = new radio_button(
+    return 3;
+}
+
+void init_genmeddly::addNDPButtons(option* o)
+{
+  o->addRadioButton(
     "NEVER",
     "Never delete nodes; useful for debugging",
     meddly_procgen::NEVER
   );
-  ndps[meddly_procgen::OPTIMISTIC] = new radio_button(
+  o->addRadioButton(
     "OPTIMISTIC",
     "Nodes are marked for deletion and are recycled once they do not appear in the compute table; useful when nodes are likely to be re-used",
     meddly_procgen::OPTIMISTIC
   );
-  ndps[meddly_procgen::PESSIMISTIC] = new radio_button(
+  o->addRadioButton(
     "PESSIMISTIC",
     "Nodes are recycled as soon as possible; useful when nodes are unlikely to be re-used, or to reduce memory",
     meddly_procgen::PESSIMISTIC
   );
-  return ndps;
 }
 
 

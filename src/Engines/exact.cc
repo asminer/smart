@@ -88,7 +88,7 @@ protected:
 
   void GenerateProc(hldsm* m) const;
 
-  inline bool startMsrs(const char* what, const char* name) { 
+  inline bool startMsrs(const char* what, const char* name) {
     if (eng_report.startReport()) {
       eng_report.report() << "Computing ";
       if (what) eng_report.report() << what << " ";
@@ -171,7 +171,7 @@ bool exact_mcmsr::realmsr_visitor::visit()
       } else {
         ans.setInfinity(SIGN(term));
       }
-    } else { 
+    } else {
       // this term is finite
       if (ans.isInfinity()) {
         // do nothing
@@ -180,8 +180,8 @@ bool exact_mcmsr::realmsr_visitor::visit()
       }
     }
     return false;
-  } 
-    
+  }
+
   if (tmp.isInfinity()) {
     int termsign = SIGN(p[x.current_state_index] * tmp.signInfinity());
     if (ans.isInfinity()) {
@@ -250,9 +250,9 @@ exact_mcmsr::exact_mcmsr() : subengine()
 
 bool exact_mcmsr::AppliesToModelType(hldsm::model_type mt) const
 {
-  return 
-    (hldsm::Enumerated == mt)  || 
-    (hldsm::Asynch_Events == mt)   || 
+  return
+    (hldsm::Enumerated == mt)  ||
+    (hldsm::Asynch_Events == mt)   ||
     (hldsm::Synch_Events == mt);
 }
 
@@ -306,7 +306,7 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
-  const stochastic_lldsm* proc = 
+  const stochastic_lldsm* proc =
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   long NS = proc->getNumStates();
@@ -410,7 +410,7 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
-  const stochastic_lldsm* proc = 
+  const stochastic_lldsm* proc =
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
@@ -539,7 +539,7 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
-  const stochastic_lldsm* proc = 
+  const stochastic_lldsm* proc =
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
@@ -654,7 +654,7 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
-  const stochastic_lldsm* proc = 
+  const stochastic_lldsm* proc =
     smart_cast<const stochastic_lldsm*> (mdl->GetProcess());
   DCASSERT(proc);
   DCASSERT(proc->Type() == lldsm::DTMC || proc->Type() == lldsm::CTMC);
@@ -815,7 +815,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
     proc->setAcceptProb(0);
     proc->setTrapProb(1);
     proc->setInfiniteMTTA();
-    proc->setVTTA(0); 
+    proc->setVTTA(0);
     return;
   }
   long trap = proc->getTrapState();
@@ -841,11 +841,11 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
     eng_report.report() << "Computing time spent in states\n";
     eng_report.stopIO();
   }
-  
+
   statedist* initial = proc->getInitialDistribution();
   initial->ExportTo(init);
   Delete(initial);
-  
+
   if (!proc->computeClassProbs(init, vx)) {
     throw Engine_Failed;
   }
@@ -874,7 +874,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
     if (0==proc->getAcceptProb()) {
       // always get to trap,
       // means we're "constant infinity"
-      proc->setVTTA(0); 
+      proc->setVTTA(0);
     } else {
       proc->setInfiniteVTTA();
     }
@@ -903,7 +903,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
       //      which we do by solving
       //        v(Pzz-I) = -2(n-p0)
       //      by using 2(n-p0) as the initial distribution.
-      //  
+      //
       //  Extreme magic, continuous case:
       //      Also from "Neuts", second moment is
       //        E[X^2] = 2 alpha T^{-2} e
@@ -920,7 +920,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
         eng_report.stopIO();
         watch.reset();
       }
-    
+
       //
       //  Build fake initial vector
       //
@@ -935,7 +935,7 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
           init[i] = 2*vx[i];
         }
       }
-    
+
       //
       // Compute our v vector
       //
@@ -963,8 +963,8 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
       //
       if (X->isDiscrete()) {
         // so far, we have vtta = E[X(X-1)] = E[XX] - E[X]
-        vtta += mtta; 
-      } 
+        vtta += mtta;
+      }
       // vtta is currently the second moment
       vtta -= mtta * mtta;
       proc->setVTTA(vtta);
@@ -1004,16 +1004,16 @@ bool init_exactengines::execute()
   if (0==em)  return false;
 
   option* debug = em->findOption("Debug");
-  exact_mcmsr::eng_debug.Initialize(debug,
+  exact_mcmsr::eng_debug.Initialize(debug, 0,
     "exact_solver",
-    "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.", 
+    "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",
     false
   );
 
   option* report = em->findOption("Report");
-  exact_mcmsr::eng_report.Initialize(report,
+  exact_mcmsr::eng_report.Initialize(report, 0,
     "exact_solver",
-    "When set, exact solution measure performance is reported.", 
+    "When set, exact solution measure performance is reported.",
     false
   );
 

@@ -2,6 +2,8 @@
 #include "engine.h"
 #include "../include/splay.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
+#include "../Options/radio_opt.h"
 #include "measures.h"
 #include "mod_inst.h"
 #include "exprman.h"
@@ -162,6 +164,7 @@ void engine::AddSubEngine(subengine* child)
   } // for i
 }
 
+/*
 void engine::AddOption(option* o)
 {
   if (0==o) return;
@@ -170,6 +173,7 @@ void engine::AddOption(option* o)
   }
   options->AddOption(o);
 }
+*/
 
 int engine::Compare(const char* name2) const
 {
@@ -179,19 +183,26 @@ int engine::Compare(const char* name2) const
   return strcmp(name, name2);
 }
 
-option_enum* engine::BuildOptionConst(int ndx)
+void engine::addButtonToOption(option* o, unsigned ndx)
 {
-  DCASSERT(Name());
-  DCASSERT(Documentation());
+    DCASSERT(o);
+    DCASSERT(Name());
+    DCASSERT(Documentation());
 
-  option_enum* rb = new radio_button(Name(), Documentation(), ndx);
+    option_enum* rb = o->addRadioButton(Name(), Documentation(), ndx);
 
-  if (options) {
-    options->DoneAddingOptions();
-    rb->makeSettings(options);
-  }
+    if (options) {
+        options->DoneAddingOptions();
+        rb->makeSettings(options);
+    }
+}
 
-  return rb;
+option_manager* engine::internalOpts()
+{
+    if (!options) {
+        options = MakeOptionManager();
+    }
+    return options;
 }
 
 // ******************************************************************
@@ -275,16 +286,15 @@ void engtype::finalizeRegistry(option_manager* om)
   //
 
   engine_watcher* EW = new engine_watcher(this);
-  option* ro = MakeRadioOption(Name(), Documentation(), numEngines, EW->Link());
+  option* ro = om->addRadioOption(Name(), Documentation(), numEngines, EW->Link());
   ro->registerWatcher(EW);
   for (unsigned i=0; i<numEngines; i++) {
       DCASSERT(engineList[i]);
       if (engineList[i] == selected_engine) {
           EW->Link() = i;
       }
-      ro->AddRadioButton( engineList[i]->BuildOptionConst(i) );
+      engineList[i]->addButtonToOption(ro, i);
   }
-  om->AddOption(ro);
 }
 
 void engtype::runEngine(result* pass, int np, traverse_data &x)

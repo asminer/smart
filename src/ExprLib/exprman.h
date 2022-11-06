@@ -29,7 +29,9 @@ class trinary_op;
 class assoc_op;
 
 class option;
+class option_manager;
 class option_enum;
+class checklist_enum;
 
 class general_conv;
 class specific_conv;
@@ -80,24 +82,6 @@ public:
 };
 
 
-/** Struct for dealing with groups of named messages.
-    Used almost entirely automatically by struct named_msg.
-*/
-class group_of_named {
-  int alloc;
-  int curr;
-  option_enum** items;
-public:
-  group_of_named(int max);
-  ~group_of_named();
-
-  void AddItem(option_enum* foo);
-
-  /** Finish the group, and add an appropriate
-      checklist item to the owner.
-  */
-  void Finish(option* owner, const char* n, const char* docs);
-};
 
 /** Struct for named report/warning/debug messages.
 */
@@ -110,13 +94,14 @@ public:
   /** Initialize.
         @param  owner If nonzero, a new checklist constant for this
                       item will be created and added to owner.
+        @param  grp   If nonzero, the checklist const will also be
+                      added to the specified group.
         @param  n     Name of the item.
         @param  d     Documentation (not required if \a owner is 0).
         @param  act   Are we initially active or not.
-
-        @return       Created option constant, if any.
   */
-  option_enum* Initialize(option* owner, const char* n, const char* docs, bool act);
+  void Initialize(option* owner, checklist_enum* grp,
+          const char* n, const char* docs, bool act);
 
   inline void Activate()    { active = true; }
   inline void Deactivate()  { active = false; }
@@ -211,6 +196,7 @@ protected:
   named_msg promote_arg;
 
 public:
+
   // "Fundamental" types, these need to be known lots of places.
   simple_type*  VOID;
   simple_type*  NULTYPE;
@@ -324,9 +310,8 @@ public:
   /// Called when we are done registering objects.
   virtual void finalize() = 0;
 
-  inline const option_manager* OptMan() const { return om; }
+  inline option_manager* OptMan() { return om; }
 
-  void addOption(option* o);
   option* findOption(const char* name) const;
 
   // +-----------------------------------------------------------------+

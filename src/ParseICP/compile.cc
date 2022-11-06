@@ -1190,12 +1190,12 @@ void InitCompiler(parse_module* parent)
   MeasureNames.Clear();
 
   option* debug = pm ? pm->findOption("Debug") : 0;
-  parser_debug.Initialize(debug,
+  parser_debug.Initialize(debug, 0,
     "parser_debug",
     "When set, very low-level parser messages are displayed.",
     false
   );
-  compiler_debug.Initialize(debug,
+  compiler_debug.Initialize(debug, 0,
     "compiler_debug",
     "When set, low-level compiler messages are displayed.",
     false

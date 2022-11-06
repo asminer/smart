@@ -1,6 +1,7 @@
 
 #include "exprman.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "result.h"
 #include "engine.h"
 
@@ -43,63 +44,20 @@ void library::printReleaseDate(doc_formatter*) const
   DCASSERT(0);
 }
 
-// ******************************************************************
-// *                     group_of_named methods                     *
-// ******************************************************************
-
-group_of_named::group_of_named(int max)
-{
-  alloc = max;
-  curr = 0;
-  DCASSERT(max>=0);
-  if (max)  items = new option_enum*[max];
-  else      items = 0;
-}
-
-group_of_named::~group_of_named()
-{
-  delete[] items;
-}
-
-void group_of_named::AddItem(option_enum* foo)
-{
-  if (0==foo) return;
-  CHECK_RANGE(0, curr, alloc);
-  items[curr] = foo;
-  curr++;
-}
-
-void group_of_named::Finish(option* owner, const char* n, const char* docs)
-{
-  if (0==owner) return;
-  if (0==curr)  return;
-  checklist_enum** boxes = new checklist_enum*[curr];
-  for (int i=0; i<curr; i++) {
-    boxes[i] = smart_cast <checklist_enum*> (items[i]);
-    DCASSERT(boxes[i]);
-  }
-  checklist_enum* foo = MakeChecklistGroup(n, docs, boxes, curr);
-  DCASSERT(foo);
-  CHECK_RETURN( owner->AddCheckItem(foo), option::Success );
-}
 
 // ******************************************************************
 // *                       named_msg  methods                       *
 // ******************************************************************
 
 io_environ* named_msg::io = 0;
-option_enum* named_msg
-::Initialize(option* owner, const char* n, const char* docs, bool act)
+void named_msg::Initialize(option* owner, checklist_enum* grp,
+        const char* n, const char* docs, bool act)
 {
-  name = n;
-  active = act;
-  if (owner) {
-    checklist_enum* foo = MakeChecklistConstant(n, docs, active);
-    DCASSERT(foo);
-    CHECK_RETURN( owner->AddCheckItem(foo), option::Success );
-    return foo;
-  }
-  return 0;
+    name = n;
+    active = act;
+    if (owner) {
+        owner->addChecklistItem(grp, n, docs, active);
+    }
 }
 
 // ******************************************************************
@@ -135,7 +93,7 @@ exprman::exprman(io_environ* i, option_manager* o)
   BLOCKED_ENGINE = 0;
 
   option* warning = om->FindOption("Warning");
-  promote_arg.Initialize(warning,
+  promote_arg.Initialize(warning, 0,
     "promote_args",
     "When arguments are automatically promoted in a function call",
     false
@@ -144,13 +102,6 @@ exprman::exprman(io_environ* i, option_manager* o)
 
 exprman::~exprman()
 {
-}
-
-void exprman::addOption(option* o)
-{
-  if (0==o) return;
-  if (om)   om->AddOption(o);
-  else      delete o;
 }
 
 option* exprman::findOption(const char* name) const
@@ -487,7 +438,7 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   // Option initialization
   //
   option* debug = om ? om->FindOption("Debug") : 0;
-  expr::expr_debug.Initialize(debug,
+  expr::expr_debug.Initialize(debug, 0,
       "exprs",
       "When set, low-level expression and statement messages are displayed.",
       false
@@ -497,13 +448,13 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   expr::expr_debug.active = true;
 #endif
 
-  expr::waitlist_debug.Initialize(debug,
+  expr::waitlist_debug.Initialize(debug, 0,
       "waitlist",
       "When set, diagnostic messages are displayed regarding symbol waiting lists.",
       false
   );
 
-  expr::model_debug.Initialize(debug,
+  expr::model_debug.Initialize(debug, 0,
       "models",
       "When set, diagnostic messages are displayed regarding model construction.",
       false

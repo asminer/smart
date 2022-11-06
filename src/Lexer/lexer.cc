@@ -72,7 +72,7 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     DCASSERT(em);
 
     option* debug = em->findOption("Debug");
-    lexer_debug.Initialize(debug,
+    lexer_debug.Initialize(debug, 0,
         "lexer",
         "When set, very low-level lexer messages are displayed.",
 #ifdef DEBUG_LEXER

@@ -7,6 +7,7 @@
 #include "../ExprLib/mod_inst.h"
 
 #include "../Options/options.h"
+#include "../Options/optman.h"
 
 #include "../_Timer/timerlib.h"
 
@@ -129,13 +130,13 @@ bool init_procgen::execute()
   option* report = em->findOption("Report");
   option* debug = em->findOption("Debug");
 
-  process_generator::report.Initialize(report,
+  process_generator::report.Initialize(report, 0,
     "procgen",
     "When set, process generation performance is reported.",
     false
   );
 
-  process_generator::debug.Initialize(debug,
+  process_generator::debug.Initialize(debug, 0,
     "procgen",
     "When set, process generation details are displayed.",
     false
@@ -159,26 +160,27 @@ bool init_procgen::execute()
   /*
     Vanishing elimiation styles - as an option
   */
-  radio_button** rlist = new radio_button*[2];
-  rlist[process_generator::BY_PATH] = new radio_button(
-    "BY_PATH",
-    "Recursively search vanishing paths until tangibles are reached.",
-    process_generator::BY_PATH
-  );
-  rlist[process_generator::BY_SUBGRAPH] = new radio_button(
-    "BY_SUBGRAPH",
-    "Explore vanishing portions of graph, then eliminate; can handle vanishing cycles.",
-    process_generator::BY_SUBGRAPH
-  );
   process_generator::remove_vanishing = process_generator::BY_SUBGRAPH;
-
-  em->addOption(
-    MakeRadioOption(
+  if (em->OptMan()) {
+    option* rmvan = em->OptMan()->addRadioOption(
       "RemoveVanishing",
       "Method to remove vanishing states",
-      rlist, 2, process_generator::remove_vanishing
-    )
-  );
+      2, process_generator::remove_vanishing
+    );
+    DCASSERT(rmvan);
+
+    rmvan->addRadioButton(
+      "BY_PATH",
+      "Recursively search vanishing paths until tangibles are reached.",
+      process_generator::BY_PATH
+    );
+    rmvan->addRadioButton(
+      "BY_SUBGRAPH",
+      "Explore vanishing portions of graph, then eliminate; can handle vanishing cycles.",
+      process_generator::BY_SUBGRAPH
+    );
+  }
+
 
   return true;
 }

@@ -11,9 +11,10 @@
 #include "../SymTabs/symtabs.h"
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
-#include "../Options/options.h"
 #include "../ExprLib/formalism.h"
 #include "../include/splay.h"
+
+#include "../Options/optman.h"
 
 // ******************************************************************
 // *                        help_base  class                        *

@@ -1,7 +1,7 @@
 
 /*
     Main program for integer constraint programming.
-    
+
     Basically, our job is to
       (1)  Initialize modules
       (2)  Process command-line arguments
@@ -10,7 +10,7 @@
 */
 
 #include "../Streams/streams.h"
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ParseICP/parse_icp.h"
@@ -48,11 +48,11 @@ bool first_init::execute()
 void InitOptions(option_manager* om)
 {
   if (0==om)  return;
-  om->AddOption( 
-    MakeChecklistOption("Report", "Switches to control what information, if any, is written to the report stream.")
+  om->addChecklistOption("Report",
+    "Switches to control what information, if any, is written to the report stream."
   );
-  om->AddOption( 
-    MakeChecklistOption("Debug", "Switches to control what low-level debugging information, if any, is written to the report stream.")
+  om->addChecklistOption("Debug",
+    "Switches to control what low-level debugging information, if any, is written to the report stream."
   );
 }
 
@@ -121,11 +121,11 @@ int main(int argc, const char** argv, const char** env)
 
   // Finalize
   em->finalize();
-  
+
   //
   // Process command line, start parser
   //
-  
+
   int code = 0;
   if (argc < 2) {
     // ==================================================================
@@ -137,7 +137,7 @@ int main(int argc, const char** argv, const char** env)
     cout << "Usage : \n";
     cout << "icp <file1> <file2> ... <filen>\n";
     cout << "      Use the filename `-' to denote standard input\n";
-    cout << "\n";  
+    cout << "\n";
     // ==================================================================
   } else {
     code = pm.ParseICPFiles(argv+1, argc-1);

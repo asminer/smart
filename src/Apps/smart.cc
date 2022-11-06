@@ -1,7 +1,7 @@
 
 /*
     Main program for Smart.
-    
+
     Basically, our job is to
       (1)  Initialize modules
       (2)  Process command-line arguments
@@ -21,14 +21,14 @@
       Added monolithic "expression manager" to allow registration
       of types, operations, and solution engines at run time;
       different applications can register different things.
-  
+
     2.0, internal release spring 2008
       Re-implementation of nearly everything from version 1.0
 */
 
 #include "config.h"
 #include "../Streams/streams.h"
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
@@ -108,14 +108,14 @@ const char* first_init::getLongName()
 void InitOptions(option_manager* om)
 {
   if (0==om)  return;
-  om->AddOption( 
-    MakeChecklistOption("Report", "Switches to control what reports, if any, are written to the report stream.")
+  om->addChecklistOption("Report",
+    "Switches to control what reports, if any, are written to the report stream."
   );
-  om->AddOption( 
-    MakeChecklistOption("Debug", "Switches to control what low-level debugging information, if any, is written to the report stream.")
+  om->addChecklistOption("Debug",
+    "Switches to control what low-level debugging information, if any, is written to the report stream."
   );
-  om->AddOption(
-    MakeChecklistOption("Warning", "Switches to control which warning messages are displayed and which are suppressed.")
+  om->addChecklistOption("Warning",
+    "Switches to control which warning messages are displayed and which are suppressed."
   );
 }
 
@@ -130,10 +130,10 @@ int Usage(exprman* em)
   cout << "Usage : \n";
   cout << "smart <file1> <file2> ... <filen>\n";
   cout << "      Use the filename `-' to denote standard input\n";
-  cout << "\n";  
-  cout << "For full copyright information, type `smart -c'\n";  
+  cout << "\n";
+  cout << "For full copyright information, type `smart -c'\n";
   cout << "For help, view documentation with `smart -h keywords'\n";
-  cout << "\n";  
+  cout << "\n";
   return 0;
 }
 
@@ -210,15 +210,15 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
 int process_args(parse_module& pm, exprman* em, symbol_table* st,
   int argc, const char** argv)
 {
-  if (argc < 2) 
+  if (argc < 2)
     return Usage(em);
-  
+
   if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'c' && argv[1][2] == 0)
     return Copyrights(em);
 
-  if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0) 
+  if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0)
     return CmdLineHelp(em, st, argv+2, argc-2);
-  
+
   if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
     if (0==em) return 1;
     em->startError();
@@ -227,7 +227,7 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
     em->stopIO();
     return 1;
   }
-  
+
   return pm.ParseSmartFiles(argv+1, argc-1);
 }
 
@@ -244,7 +244,7 @@ int main(int argc, const char** argv, const char** env)
   exprman* em = Initialize_Expressions(&myio, om);
 
   // Start the symbol table for builtin functions
-  symbol_table* st = MakeSymbolTable(); 
+  symbol_table* st = MakeSymbolTable();
 
   // Bootstrap initializers, and run them
   first_init the_first_init(em, st, env);

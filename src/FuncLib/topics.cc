@@ -4,13 +4,14 @@
 #include "../include/defines.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../Options/options.h"
 #include "../include/heap.h"
 #include "../ExprLib/symbols.h"
 #include "../SymTabs/symtabs.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
+
+#include "../Options/optman.h"
 
 // ******************************************************************
 // *                       topic_topics class                       *
@@ -33,7 +34,7 @@ void topic_topics::PrintDocs(doc_formatter* df, const char*) const
   long num_names = st->NumNames();
   const symbol** list = new const symbol*[num_names];
   st->CopyToArray(list);
-  
+
   // get the longest topic name
   int maxname = 0;
   for (long i=0; i<num_names; i++) {
@@ -146,7 +147,7 @@ void topic_types::PrintDocs(doc_formatter* df, const char*) const
 // ******************************************************************
 
 class topic_promotions : public help_topic {
-  
+
   class one_promotion {
     int typeno;
     int distance;
@@ -301,7 +302,7 @@ void topic_operators::PrintDocs(doc_formatter* df, const char*) const
   df->Out() << "\nThe following binary operators may be used when constructing expressions in Smart:\n\n";
 
   df->begin_description(2);
-  df->item(em->getOp(0, exprman::aop_plus)); 
+  df->item(em->getOp(0, exprman::aop_plus));
   df->Out() << em->documentOp(0, exprman::aop_plus);
   df->item(em->getOp(1, exprman::aop_plus));
   df->Out() << em->documentOp(1, exprman::aop_plus);
@@ -340,7 +341,7 @@ void topic_operators::PrintDocs(doc_formatter* df, const char*) const
   df->end_description();
   df->Out() << "\n";
   df->begin_description(2);
-  df->item(em->getOp(0, exprman::aop_semi)); 
+  df->item(em->getOp(0, exprman::aop_semi));
   df->Out() << em->documentOp(0, exprman::aop_semi);
   df->end_description();
 
@@ -408,9 +409,9 @@ public:
 };
 
 topic_unaryop::topic_unaryop(exprman::unary_opcode u)
- : help_topic() 
-{ 
-  op = u; 
+ : help_topic()
+{
+  op = u;
   StringStream foo;
   foo << "unary " << em->getOp(op);
   setName(foo.GetString());
@@ -457,9 +458,9 @@ public:
 };
 
 topic_binaryop::topic_binaryop(exprman::binary_opcode b)
- : help_topic() 
-{ 
-  op = b; 
+ : help_topic()
+{
+  op = b;
   StringStream foo;
   foo << "binary " << em->getOp(op);
   setName(foo.GetString());
@@ -510,9 +511,9 @@ public:
 };
 
 topic_trinaryop::topic_trinaryop(exprman::trinary_opcode b)
- : help_topic() 
-{ 
-  op = b; 
+ : help_topic()
+{
+  op = b;
   StringStream foo;
   foo << "trinary " << em->getFirst(op) << " " << em->getSecond(op);
   setName(foo.GetString());
@@ -570,9 +571,9 @@ public:
 };
 
 topic_assocop::topic_assocop(bool f, exprman::assoc_opcode b)
- : help_topic() 
-{ 
-  op = b; 
+ : help_topic()
+{
+  op = b;
   flipped = f;
   StringStream foo;
   foo << "binary " << em->getOp(flipped, op);
@@ -624,8 +625,8 @@ public:
 };
 
 topic_simpletype::topic_simpletype(const simple_type* t)
- : help_topic(t->getName(), t->shortDocs()) 
-{ 
+ : help_topic(t->getName(), t->shortDocs())
+{
   st = t;
 }
 
@@ -652,8 +653,8 @@ public:
 };
 
 topic_formalism::topic_formalism(const formalism* t)
- : help_topic(t->getName(), t->shortDocs()) 
-{ 
+ : help_topic(t->getName(), t->shortDocs())
+{
   ft = t;
 }
 
@@ -690,7 +691,7 @@ void topic_formalism::PrintDocs(doc_formatter* df, const char*) const
     delete[] list;
   } // if num_names
 
-  // Print formalism functions, if any 
+  // Print formalism functions, if any
   num_names = ft->numFuncNames();
   if (num_names) {
     df->Out() << "\nFunctions usable in this formalism:\n";

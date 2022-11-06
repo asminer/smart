@@ -1,5 +1,5 @@
 
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/unary.h"
@@ -125,7 +125,7 @@ void stateset_not::Compute(traverse_data &x)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(x); 
+  opnd->Compute(x);
 
   if (!x.answer->isNormal()) return;
 
@@ -193,7 +193,7 @@ void stateset_diff::Compute(traverse_data &x)
     notR = Share(notR);
   }
 
-  // 
+  //
   // We have !R.
   //
   SafeCompute(left, x); // Deletes old x.answer
@@ -286,7 +286,7 @@ void stateset_implies::Compute(traverse_data &x)
     notL->Complement();
   }
 
-  // 
+  //
   // We have !L.
   //
   SafeCompute(right, x);      // Deletes old x.answer
@@ -384,7 +384,7 @@ void stateset_union::Compute(traverse_data &x)
     bool ok = false;
     if (stateset::parentsMatch(this, "union", total, curr)) {
       ok = total->Union(this, curr);
-    } 
+    }
     if (!ok) {
       Delete(total);
       x.answer->setNull();
@@ -453,7 +453,7 @@ void stateset_intersect::Compute(traverse_data &x)
     bool ok = false;
     if (stateset::parentsMatch(this, "intersection", total, curr)) {
       ok = total->Intersect(this, curr);
-    } 
+    }
     if (!ok) {
       Delete(total);
       x.answer->setNull();
@@ -505,7 +505,7 @@ const type* stateset_not_op::getExprType(const type* t) const
   DCASSERT(em);
   DCASSERT(em->STATESET);
   if (0==t)    return 0;
-  if (t->isASet())  return 0; 
+  if (t->isASet())  return 0;
   if (t != em->STATESET)  return 0;
   return t;
 }
@@ -694,7 +694,7 @@ const type* stateset_assoc_op
 class stateset_union_op : public stateset_assoc_op {
 public:
   stateset_union_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -706,7 +706,7 @@ stateset_union_op::stateset_union_op() : stateset_assoc_op(exprman::aop_or)
 {
 }
 
-assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
@@ -714,7 +714,7 @@ assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
-    delete[] list;  
+    delete[] list;
     return 0;
   }
   return new stateset_union(fn, ln, em->STATESET, list, N);
@@ -730,7 +730,7 @@ assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
 class stateset_intersect_op : public stateset_assoc_op {
 public:
   stateset_intersect_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -743,7 +743,7 @@ stateset_intersect_op::stateset_intersect_op()
 {
 }
 
-assoc* stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
@@ -751,7 +751,7 @@ assoc* stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
-    delete[] list;  
+    delete[] list;
     return 0;
   }
   return new stateset_intersect(fn, ln, em->STATESET, list, N);
@@ -859,7 +859,7 @@ bool init_statesets::execute()
   if (0==em)  return false;
 
   stateset::em = em;
-  
+
   // Library registry
   // em->registerLibrary(  &intset_lib_data );
 
@@ -877,12 +877,11 @@ bool init_statesets::execute()
 
   // Options
   stateset::print_indexes = true;
-  em->addOption(
-    MakeBoolOption("StatesetPrintIndexes", 
-      "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
-      stateset::print_indexes
-    )
-  );
+  if (em->OptMan())
+      em->OptMan()->addBoolOption("StatesetPrintIndexes",
+        "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
+        stateset::print_indexes
+      );
 
   if (0==st) return false;
 

@@ -4,6 +4,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/formalism.h"
 
 #include "../ExprLib/sets.h"
@@ -2775,109 +2776,113 @@ bool init_pnform::execute()
 
   // Set up options
   option* debug = em->findOption("Debug");
-  petri_def::pn_debug.Initialize(debug,
+  petri_def::pn_debug.Initialize(debug, 0,
     "pns",
     "When set, diagnostic messages are displayed regarding Petri net model construction.",
     false
   );
 
+
   option* warning = em->findOption("Warning");
-  group_of_named pnwarnings(13);
-  pnwarnings.AddItem(petri_def::zero_init.Initialize(warning,
+  checklist_enum* pnwarnings = warning->addChecklistGroup(
+    "pn_ALL", "Group of all Petri net warnings", 13
+  );
+
+  petri_def::zero_init.Initialize(warning, pnwarnings,
     "pn_zero_init",
     "For zero tokens specified in an initial marking in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::zero_bound.Initialize(warning,
+  );
+  petri_def::zero_bound.Initialize(warning, pnwarnings,
     "pn_zero_bound",
     "For zero tokens specified as an upper bound in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::no_trans.Initialize(warning,
+  );
+  petri_def::no_trans.Initialize(warning, pnwarnings,
     "pn_no_trans",
     "For absence of transitions in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::no_place.Initialize(warning,
+  );
+  petri_def::no_place.Initialize(warning, pnwarnings,
     "pn_no_place",
     "For absence of places in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::no_init.Initialize(warning,
+  );
+  petri_def::no_init.Initialize(warning, pnwarnings,
     "pn_no_init",
     "For no specified initial marking in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::no_fire.Initialize(warning,
+  );
+  petri_def::no_fire.Initialize(warning, pnwarnings,
     "pn_no_fire",
     "If some, but not all, transitions are given a firing distribution",
     true
-  ));
-  pnwarnings.AddItem(petri_def::no_weight.Initialize(warning,
+  );
+  petri_def::no_weight.Initialize(warning, pnwarnings,
     "pn_no_weight",
     "For immediate transitions with no weight given",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_init.Initialize(warning,
+  );
+  petri_def::dup_init.Initialize(warning, pnwarnings,
     "pn_dup_init",
     "For duplicate place token initialization in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_bound.Initialize(warning,
+  );
+  petri_def::dup_bound.Initialize(warning, pnwarnings,
     "pn_dup_bound",
     "For duplicate place token bounding in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_arc.Initialize(warning,
+  );
+  petri_def::dup_arc.Initialize(warning, pnwarnings,
     "pn_dup_arc",
     "For duplicate arcs in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_guard.Initialize(warning,
+  );
+  petri_def::dup_guard.Initialize(warning, pnwarnings,
     "pn_dup_guard",
     "For multiple guards on the same transition in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_fire.Initialize(warning,
+  );
+  petri_def::dup_fire.Initialize(warning, pnwarnings,
     "pn_dup_fire",
     "For multiple firing assignments on the same transition in Petri net models",
     true
-  ));
-  pnwarnings.AddItem(petri_def::dup_weight.Initialize(warning,
+  );
+  petri_def::dup_weight.Initialize(warning, pnwarnings,
     "pn_dup_weight",
     "For multiple weight assignments on the same transition in Petri net models",
     true
-  ));
-  pnwarnings.Finish(warning, "pn_ALL", "Group of all Petri net warnings");
+  );
 
-  radio_button** ms_list = new radio_button*[4];
-  ms_list[petri_hlm::INDEXED] = new radio_button(
-    "INDEXED",
-    "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]",
-    petri_hlm::INDEXED
-  );
-  ms_list[petri_hlm::SAFE] = new radio_button(
-    "SAFE",
-    "Format is [p1, p3:2, p6]",
-    petri_hlm::SAFE
-  );
-  ms_list[petri_hlm::SPARSE] = new radio_button(
-    "SPARSE",
-    "Format is [p1:1, p3:2, p6:1]",
-    petri_hlm::SPARSE
-  );
-  ms_list[petri_hlm::VECTOR] = new radio_button(
-    "VECTOR",
-    "Format is [1, 0, 2, 0, 0, 1]",
-    petri_hlm::VECTOR
-  );
-  petri_hlm::MarkingStyle = petri_hlm::SPARSE;
-  em->addOption(
-    MakeRadioOption("PNMarkingStyle",
+  if (em->OptMan()) {
+    option* sty = em->OptMan()->addRadioOption( "PNMarkingStyle",
       "How to display a Petri net marking",
-      ms_list, 4, petri_hlm::MarkingStyle
-    )
-  );
+      4, petri_hlm::MarkingStyle
+    );
+    DCASSERT(sty);
+    sty->addRadioButton(
+        "INDEXED",
+        "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]",
+        petri_hlm::INDEXED
+    );
+    sty->addRadioButton(
+        "SAFE",
+        "Format is [p1, p3:2, p6]",
+        petri_hlm::SAFE
+    );
+    sty->addRadioButton(
+        "SPARSE",
+        "Format is [p1:1, p3:2, p6:1]",
+        petri_hlm::SPARSE
+    );
+    sty->addRadioButton(
+        "VECTOR",
+        "Format is [1, 0, 2, 0, 0, 1]",
+        petri_hlm::VECTOR
+    );
+  }
+  petri_hlm::MarkingStyle = petri_hlm::SPARSE;
+
 
   // Set up and register formalisms
   const char* longdocs = "The Petri net formalism allows high-level description of a model as a Petri net.  The places and transitions are declared, and connections between the two (e.g., input, output, and inhibitor arcs) and other features (e.g., transition guards) are specified via the appropriate function calls.";
