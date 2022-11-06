@@ -130,32 +130,6 @@ class option {
         */
         virtual option_enum* FindConstant(const char* name) const;
 
-#if 0
-        /** Get the value for a boolean option.
-                @param  v  Value stored here.
-                @return Appropriate error code.
-        */
-        virtual error GetValue(bool &v) const;
-
-        /** Get the value for an integer option.
-                @param  v  Value stored here.
-                @return Appropriate error code.
-        */
-        virtual error GetValue(long &v) const;
-
-        /** Get the value for a real option.
-                @param  v  Value stored here.
-                @return Appropriate error code.
-        */
-        virtual error GetValue(double &v) const;
-
-        /** Get the value for a string option.
-                @param  v  Value stored here.
-                @return Appropriate error code.
-        */
-        virtual error GetValue(shared_string* &v) const;
-#endif
-
         virtual int NumConstants() const;
         virtual option_enum* GetConstant(long i) const;
 
