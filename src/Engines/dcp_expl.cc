@@ -28,8 +28,8 @@ public:
   virtual const char* getVersionString() const {
     return StateLib::LibraryVersion();
   }
-  virtual bool hasFixedPointer() const { 
-    return false; 
+  virtual bool hasFixedPointer() const {
+    return false;
   }
   virtual void printCopyright(doc_formatter* df) const;
 };
@@ -110,7 +110,7 @@ protected:
     return false;
   }
   // returns true if the report stream is open
-  inline bool stopGen(bool err, const char* n, const timer& w, 
+  inline bool stopGen(bool err, const char* n, const timer& w,
                                                 long mem, long ns) {
     if (report.startReport()) {
       if (err)  report.report() << "Incomplete";
@@ -131,7 +131,7 @@ protected:
         report.report() << "\n";
       }
       return true;
-    } 
+    }
     return false;
   }
   inline void terminateError() const {
@@ -190,7 +190,7 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
     bounds[i] = mv->NumPossibleValues();
     current[i] = 0;
   }
- 
+
   em->waitTerm();
   states = StateLib::CreateCollection(false, false);
   bool OK = true;
@@ -203,7 +203,7 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
     foo = e;
   }
 
-  if (stopGen(!OK, hm->Name(), watch, 
+  if (stopGen(!OK, hm->Name(), watch,
               states->ReportMemTotal(), states->Size())) {
     em->stopIO();
   }
@@ -230,7 +230,7 @@ void icp_stategen::Generate_NE_rec(int k)
         em->cerr() << "Out of memory when adding to state space";
         nem->DoneError();
       }
-      throw Out_Of_Memory; 
+      throw Out_Of_Memory;
     }
     if (debug.startReport()) {
       debug.report() << "Valid state: ";
@@ -242,7 +242,7 @@ void icp_stategen::Generate_NE_rec(int k)
   }
   for (current[k] = 0; current[k] < bounds[k]; current[k]++) {
     // Check for sigterm
-    if (em->caughtTerm()) return terminateError(); 
+    if (em->caughtTerm()) return terminateError();
 
     nem->GetVar(k)->SetToValueNumber(current[k]);
     if (nem->SatisfiesConstraintsAt(k)) {
@@ -266,7 +266,7 @@ public:
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void SolveMeasure(hldsm* m, measure* what);
 protected:
-  virtual void SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem,
     const StateLib::state_coll* sc, measure* what) = 0;
 };
 
@@ -324,7 +324,7 @@ class icp_minimize : public icp_ss_analyzer {
 public:
   icp_minimize();
 protected:
-  virtual void SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem,
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -334,7 +334,7 @@ icp_minimize::icp_minimize() : icp_ss_analyzer()
 {
 }
 
-void icp_minimize ::SolveExplicit(no_event_model* nem, 
+void icp_minimize ::SolveExplicit(no_event_model* nem,
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
@@ -370,10 +370,10 @@ void icp_minimize ::SolveExplicit(no_event_model* nem,
 
   foo.setReal(min);
   what->SetValue(foo);
- 
+
   // Need option or something to decide how many optima to show here...
   sc->GetStateKnown(min_st, current, N);
-  nem->SetState(current); 
+  nem->SetState(current);
   em->cout() << "Minimum value " << min << " obtainted in state ";
   nem->ShowCurrentState(em->cout());
   em->cout() << "\n";
@@ -393,7 +393,7 @@ class icp_maximize : public icp_ss_analyzer {
 public:
   icp_maximize();
 protected:
-  virtual void SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem,
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -403,13 +403,13 @@ icp_maximize::icp_maximize() : icp_ss_analyzer()
 {
 }
 
-void icp_maximize::SolveExplicit(no_event_model* nem, 
+void icp_maximize::SolveExplicit(no_event_model* nem,
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
   DCASSERT(sc);
   DCASSERT(what);
-  
+
   if (0==sc->Size()) {
     what->SetNull();
     return;
@@ -439,10 +439,10 @@ void icp_maximize::SolveExplicit(no_event_model* nem,
 
   foo.setReal(max);
   what->SetValue(foo);
- 
+
   // Need option or something to decide how many optima to show here...
   sc->GetStateKnown(max_st, current, N);
-  nem->SetState(current); 
+  nem->SetState(current);
   em->cout() << "Maximum value " << max << " obtainted in state ";
   nem->ShowCurrentState(em->cout());
   em->cout() << "\n";
@@ -462,7 +462,7 @@ class icp_satisfiable : public icp_ss_analyzer {
 public:
   icp_satisfiable();
 protected:
-  virtual void SolveExplicit(no_event_model* nem, 
+  virtual void SolveExplicit(no_event_model* nem,
     const StateLib::state_coll* sc, measure* what);
 };
 
@@ -472,13 +472,13 @@ icp_satisfiable::icp_satisfiable() : icp_ss_analyzer()
 {
 }
 
-void icp_satisfiable::SolveExplicit(no_event_model* nem, 
+void icp_satisfiable::SolveExplicit(no_event_model* nem,
   const StateLib::state_coll* sc, measure* what)
 {
   DCASSERT(nem);
   DCASSERT(sc);
   DCASSERT(what);
-  
+
   int N = nem->NumVars();
   int* current = new int[N];
   traverse_data x(traverse_data::Compute);
@@ -495,7 +495,7 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
     if (foo.getBool())  break;  // satisfiable, stop!
   }
   what->SetValue(foo);
- 
+
   // Need option or something to decide how many to show here...
   if (foo.getBool()) {
     em->cout() << "Satisfiable in state ";
@@ -539,13 +539,13 @@ bool init_dcpengines::execute()
   option* report = em->findOption("Report");
   option* debug = em->findOption("Debug");
 
-  icp_stategen::report.Initialize(report,
+  icp_stategen::report.Initialize(report, 0,
     "explicit_dcp_gen",
     "When set, explicit reachability set performance is reported.",
     false
   );
 
-  icp_stategen::debug.Initialize(debug,
+  icp_stategen::debug.Initialize(debug, 0,
     "explicit_dcp_gen",
     "When set, explicit reachability set generation details are displayed.",
     false
@@ -563,17 +563,17 @@ bool init_dcpengines::execute()
   );
   RegisterEngine(em,
       "MinExpr",
-      "EXPLICIT", 
+      "EXPLICIT",
       "Generates assignments satisfying constraints, explicitly, then checks them all for the minimum value of the expression",
       &the_icp_minimize
   );
-  RegisterEngine(em, 
+  RegisterEngine(em,
       "MaxExpr",
       "EXPLICIT",
       "Generates assignments satisfying constraints, explicitly, then checks them all for the maximum value of the expression",
       &the_icp_maximize
   );
-  RegisterEngine(em, 
+  RegisterEngine(em,
       "SatExpr",
       "EXPLICIT",
       "Generates assignments satisfying constraints, explicitly, then checks them all until the expression is satisfied",

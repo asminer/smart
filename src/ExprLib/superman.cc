@@ -10,7 +10,7 @@
 
 #include "casting.h"
 
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../include/heap.h"
 
 // #define DEBUG_TYPE_SORTING

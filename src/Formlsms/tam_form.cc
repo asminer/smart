@@ -49,7 +49,7 @@ public:
   tam_glue(const symbol* w, const model_instance* p);
 
   inline bool hasStrengthDefined() const { return strength_defined; }
-  inline long getStrength() const { 
+  inline long getStrength() const {
     DCASSERT(strength_defined);
     return strength;
   }
@@ -113,8 +113,8 @@ public:
     return west ? west->getStrength() : 0;
   }
 
-  inline long getBinding( const tam_tile* n, const tam_tile* e, 
-                          const tam_tile* s, const tam_tile* w) 
+  inline long getBinding( const tam_tile* n, const tam_tile* e,
+                          const tam_tile* s, const tam_tile* w)
   {
     long x = 0;
     if (n && n->getSouth()  == north) x += getNorthStrength();
@@ -170,7 +170,7 @@ public:
   inline bool hasInit() const {
     return init;
   }
-  inline const tam_tile* getInit() const { 
+  inline const tam_tile* getInit() const {
     return init;
   }
   inline bool hasPrio() const {
@@ -221,7 +221,7 @@ void tam_canput::Compute(traverse_data &x, expr** pass, int np)
 
   tam_square* q = smart_cast <tam_square*>(pass[1]);
   DCASSERT(q);
-  
+
   // if q already has a tile, then definitely no
   if (q->getCurrentTile(x.current_state)) {
     x.answer->setBool(false);
@@ -248,7 +248,7 @@ void tam_canput::Compute(traverse_data &x, expr** pass, int np)
 int tam_canput::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
-    case traverse_data::GetType:  
+    case traverse_data::GetType:
         x.the_type = em->BOOL->addProc();
         return 0;
 
@@ -333,7 +333,7 @@ public:
 // *                                                                *
 // ******************************************************************
 
-tam_square::tam_square(const char* fn, int ln, const type* t, char* n, 
+tam_square::tam_square(const char* fn, int ln, const type* t, char* n,
  const model_instance* p) : model_statevar(fn, ln, t, n, p, 0)
 {
   init = 0;
@@ -341,7 +341,7 @@ tam_square::tam_square(const char* fn, int ln, const type* t, char* n,
   prio = 0;
 }
 
-const tam_tile* tam_square::getCurrentTile(shared_state* st) const 
+const tam_tile* tam_square::getCurrentTile(shared_state* st) const
 {
   DCASSERT(parent);
   const hldsm* hm = parent->GetCompiledModel();
@@ -414,7 +414,7 @@ double tam_hlm::GetInitialState(int n, shared_state* st) const
   return 1.0;
 }
 
-void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng) 
+void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
 {
   DCASSERT(0==glueset);
   glueset = gs;
@@ -446,7 +446,7 @@ void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
 }
 
 
-void tam_hlm::setTiles(named_msg &warn, tam_tile** ts, int nt) 
+void tam_hlm::setTiles(named_msg &warn, tam_tile** ts, int nt)
 {
   DCASSERT(0==tileset);
   tileset = ts;
@@ -550,7 +550,7 @@ class tam_def : public model_def {
   friend class init_tamform;
 
 public:
-  tam_def(const char* fn, int line, const type* t, char* n, 
+  tam_def(const char* fn, int line, const type* t, char* n,
           formal_param** pl, int np);
   virtual ~tam_def();
 
@@ -636,7 +636,7 @@ named_msg tam_def::empty_tileset;
 // *                        tam_def  methods                        *
 // ******************************************************************
 
-tam_def::tam_def(const char* fn, int line, const type* t, char*n, 
+tam_def::tam_def(const char* fn, int line, const type* t, char*n,
     formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
 {
   tiles = glues = 0;
@@ -761,7 +761,7 @@ void tam_def::setBorder(const expr* cause, int b, tam_tile* t, tam_glue* g)
   }
 }
 
-void tam_def::setBoardSize(const expr* cause, long xl, long xh, 
+void tam_def::setBoardSize(const expr* cause, long xl, long xh,
                             long yl, long yh)
 {
   if (board_is_set) {
@@ -908,7 +908,7 @@ void tam_def::InitModel()
 
 void tam_def::FinalizeModel(OutputStream &ds)
 {
-  // 
+  //
   // Compact glue, tile lists
   //
   DCASSERT(num_tiles >= 0);
@@ -974,13 +974,13 @@ void tam_def::FinalizeModel(OutputStream &ds)
 
       for (long t = 1; t<=num_tiles; t++) {
         // build event
-        snprintf(buffer, bufsize, "put(%s,%ld,%ld)", tileset[t]->Name(), x, y); 
+        snprintf(buffer, bufsize, "put(%s,%ld,%ld)", tileset[t]->Name(), x, y);
         char* en = strdup(buffer);
         CHECK_RANGE(0, eindx, nev);
         eventlist[eindx] = new model_event(b_fn, b_ln, 0, en, current);
 
         eventlist[eindx]->setPriorityLevel(prio);
-        
+
         // build enabling
         expr** pass = new expr*[6];
         pass[0] = Share(tileset[t]);
@@ -1052,7 +1052,7 @@ tam_formalism
 {
 }
 
-model_def* tam_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* tam_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   return new tam_def(fn, ln, this, name, (formal_param**) formals, np);
@@ -1107,7 +1107,7 @@ void tam_strength::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   tam_def* mdl = smart_cast<tam_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1125,7 +1125,7 @@ void tam_strength::Compute(traverse_data &x, expr** pass, int np)
     x.answer = &second;
     x.aggregate = 1;
     SafeCompute(pass[i], x);
-    
+
     for (int z=0; z<gset->Size(); z++) {
       result gl;
       gset->GetElement(z, gl);
@@ -1175,7 +1175,7 @@ void tam_tiledef::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   tam_def* mdl = smart_cast<tam_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
@@ -1216,8 +1216,8 @@ public:
   tam_board();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 protected:
-  inline bool grabInt(traverse_data &x, model_def* m, 
-                      const char* who, expr* p, long &L) 
+  inline bool grabInt(traverse_data &x, model_def* m,
+                      const char* who, expr* p, long &L)
   {
     result* answer = x.answer;
     x.answer = &tmp;
@@ -1255,7 +1255,7 @@ void tam_board::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(5==np);
   tam_def* mdl = smart_cast<tam_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
 
   long x_low, x_high, y_low, y_high;
@@ -1313,7 +1313,7 @@ void tam_init::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   tam_def* mdl = smart_cast<tam_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
 
   result* answer = x.answer;
@@ -1333,7 +1333,7 @@ void tam_init::Compute(traverse_data &x, expr** pass, int np)
     if (!tmp.isNormal()) continue;
     DCASSERT(tmp.isNormal());
     tam_tile* t = smart_cast <tam_tile*> (tmp.getPtr());
-    
+
     mdl->setInit(pass[i], x_pos, y_pos, t);
   }
   x.aggregate = 0;
@@ -1384,7 +1384,7 @@ void tam_prio::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   tam_def* mdl = smart_cast<tam_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
 
   result* answer = x.answer;
@@ -1402,7 +1402,7 @@ void tam_prio::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 2;
     SafeCompute(pass[i], x);
     if (!okInt(tmp, prio, mdl, pass[i], "p")) continue;
-    
+
     mdl->setPriority(pass[i], x_pos, y_pos, prio);
   }
   x.aggregate = 0;
@@ -1517,21 +1517,21 @@ bool init_tamform::execute()
   tamsyms->AddSymbol(  new tam_init     );
   tamsyms->AddSymbol(  new tam_prio     );
   tamsyms->AddSymbol(  new tam_export   );
-  tam->setFunctions(tamsyms); 
+  tam->setFunctions(tamsyms);
   tam->addCommonFuncs(CML);
 
   // fill identifier table
   symbol_table* tamids = MakeSymbolTable();
-  tamids->AddSymbol(  
+  tamids->AddSymbol(
     new tam_border(tam_def::border_type, strdup("north"), tam_def::NORTH)
   );
-  tamids->AddSymbol(  
+  tamids->AddSymbol(
     new tam_border(tam_def::border_type, strdup("south"), tam_def::SOUTH)
   );
-  tamids->AddSymbol(  
+  tamids->AddSymbol(
     new tam_border(tam_def::border_type, strdup("east"), tam_def::EAST)
   );
-  tamids->AddSymbol(  
+  tamids->AddSymbol(
     new tam_border(tam_def::border_type, strdup("west"), tam_def::WEST)
   );
   tam->setIdentifiers(tamids);
@@ -1539,71 +1539,72 @@ bool init_tamform::execute()
   // warnings, reports, and such
 
   option* debug = em->findOption("Debug");
-  tam_def::tam_debug.Initialize(debug,
+  tam_def::tam_debug.Initialize(debug, 0,
     "tams",
     "When set, diagnostic messages are displayed regarding tile assembly model construction.",
     false
   );
 
   option* warning = em->findOption("Warning");
-  group_of_named tamwarnings(11);
+  checklist_enum* tamwarn = warning->addChecklistGroup(
+    "tam_ALL", "Group of all tile assembly model warnings", 11
+  );
 
-  tamwarnings.AddItem(tam_def::dup_tiledef.Initialize(warning,
+  tam_def::dup_tiledef.Initialize(warning, tamwarn,
     "tam_dup_tiledef",
     "For multiple glue type assignments to a given tile, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::dup_gluedef.Initialize(warning,
+  );
+  tam_def::dup_gluedef.Initialize(warning, tamwarn,
     "tam_dup_gluedef",
     "For multiple glue strength assignments, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::dup_init.Initialize(warning,
+  );
+  tam_def::dup_init.Initialize(warning, tamwarn,
     "tam_dup_init",
     "For multiple initializations of the same square, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::dup_prio.Initialize(warning,
+  );
+  tam_def::dup_prio.Initialize(warning, tamwarn,
     "tam_dup_prio",
     "For multiple priority assignments for the same square, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::dup_board.Initialize(warning,
+  );
+  tam_def::dup_board.Initialize(warning, tamwarn,
     "tam_dup_board",
     "For multiple board specifications, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::no_tiledef.Initialize(warning,
+  );
+  tam_def::no_tiledef.Initialize(warning, tamwarn,
     "tam_no_tiledef",
     "For tiles with no glue type assignments, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::no_gluedef.Initialize(warning,
+  );
+  tam_def::no_gluedef.Initialize(warning, tamwarn,
     "tam_no_gluedef",
     "For glues with no strength assignments, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::no_init.Initialize(warning,
+  );
+  tam_def::no_init.Initialize(warning, tamwarn,
     "tam_no_init",
     "For missing board initializations, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::no_board.Initialize(warning,
+  );
+  tam_def::no_board.Initialize(warning, tamwarn,
     "tam_no_board",
     "For missing board specifications, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::empty_board.Initialize(warning,
+  );
+  tam_def::empty_board.Initialize(warning, tamwarn,
     "tam_empty_board",
     "For board specifications with no squares, in tile assembly models",
     true
-  ));
-  tamwarnings.AddItem(tam_def::empty_tileset.Initialize(warning,
+  );
+  tam_def::empty_tileset.Initialize(warning, tamwarn,
     "tam_empty_tileset",
     "For tile assembly models with no tiles defined",
     true
-  ));
-  tamwarnings.Finish(warning, "tam_ALL", "Group of all tile assembly model warnings");
+  );
 
   return true;
 }

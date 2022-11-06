@@ -1,7 +1,11 @@
 
 #include "compile.h"
 #include "lexer.h"
+
+#include "../Options/optman.h"
 #include "../Options/options.h"
+#include "../Options/opt_enum.h"
+
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
@@ -2929,12 +2933,12 @@ void InitCompiler(parse_module* parent)
   }
 
   option* debug = pm ? pm->findOption("Debug") : 0;
-  parser_debug.Initialize(debug,
+  parser_debug.Initialize(debug, 0,
     "parser",
     "When set, very low-level parser messages are displayed.",
     false
   );
-  compiler_debug.Initialize(debug,
+  compiler_debug.Initialize(debug, 0,
     "compiler",
     "When set, low-level compiler messages are displayed.",
     false

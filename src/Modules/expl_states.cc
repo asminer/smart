@@ -1,5 +1,6 @@
 
 #include "expl_states.h"
+#include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
@@ -407,65 +408,61 @@ long my_exp_state_lib::max_stack_depth;
 
 my_exp_state_lib::my_exp_state_lib(exprman* em) : exp_state_lib()
 {
-  radio_button** es_list = new radio_button*[3];
-  es_list[HASHING] = new radio_button(
-    "HASHING",
-    "States are stored in a hash table.",
-    HASHING
-  );
-  es_list[RED_BLACK] = new radio_button(
-    "RED_BLACK",
-    "States are stored in a red-black tree.",
-    RED_BLACK
-  );
-  es_list[SPLAY] = new radio_button(
-    "SPLAY",
-    "States are stored in a splay tree.",
-    SPLAY
-  );
-  storage = HASHING;    // Default.  Currently fastest.
-  // storage = SPLAY;
-  em->addOption(
-    MakeRadioOption(
-      "ExplicitStateStorage",
-      "Data structure to use for explicitly storing states.",
-      es_list, 3, storage
-    )
-  );
+    if (0==em) return;
+    if (0==em->OptMan()) return;
 
-  int shift = sizeof(long)*8-2;
-  max_stack_depth = 1L << shift;
-  em->addOption(
-    MakeIntOption("ExplicitStateStackLimit",
+    option* ess = em->OptMan()->addRadioOption(
+        "ExplicitStateStorage",
+        "Data structure to use for explicitly storing states.",
+        3, storage
+    );
+    ess->addRadioButton(
+        "HASHING",
+        "States are stored in a hash table.",
+        HASHING
+    );
+    ess->addRadioButton(
+        "RED_BLACK",
+        "States are stored in a red-black tree.",
+        RED_BLACK
+    );
+    ess->addRadioButton(
+        "SPLAY",
+        "States are stored in a splay tree.",
+        SPLAY
+    );
+    storage = HASHING;    // Default.  Currently fastest.
+
+
+    int shift = sizeof(long)*8-2;
+    max_stack_depth = 1L << shift;
+    em->OptMan()->addIntOption("ExplicitStateStackLimit",
       "Maximum stack size to use for search trees for explicit state storage.",
       max_stack_depth, 1, max_stack_depth
-    )
-  );
+    );
 
-  radio_button** ss_list = new radio_button*[3];
-  ss_list[SEPARATED] = new radio_button(
-    "SEPARATED",
-    "Substates are stored in separate collections.",
-    SEPARATED
-  );
-  ss_list[SHARED] = new radio_button(
-    "SHARED",
-    "Substates are stored in a shared collection, but substate indexes are different for each submodel.",
-    SHARED
-  );
-  ss_list[SYNCHRONIZED] = new radio_button(
-    "SYNCHRONIZED",
-    "Substates are stored in a common collection, with the same indexes.",
-    SYNCHRONIZED
-  );
-  substate_style = SHARED;
-  em->addOption(
-    MakeRadioOption(
+
+    option* sss = em->OptMan()->addRadioOption(
       "SubstateStorageStyle",
       "For a model composed of submodels, how should the substates be stored.",
-      ss_list, 3, substate_style
-    )
-  );
+      3, substate_style
+    );
+    sss->addRadioButton(
+        "SEPARATED",
+        "Substates are stored in separate collections.",
+        SEPARATED
+    );
+    sss->addRadioButton(
+        "SHARED",
+        "Substates are stored in a shared collection, but substate indexes are different for each submodel.",
+        SHARED
+    );
+    sss->addRadioButton(
+        "SYNCHRONIZED",
+        "Substates are stored in a common collection, with the same indexes.",
+        SYNCHRONIZED
+    );
+    substate_style = SHARED;
 }
 
 const char* my_exp_state_lib::getVersionString() const

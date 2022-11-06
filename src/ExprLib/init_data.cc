@@ -1,6 +1,7 @@
 
 #include "init_data.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "exprman.h"
 #include "../Utils/strings.h"
 #include "casting.h"
@@ -200,8 +201,6 @@ private:
 };
 
 double real_type::index_precision = 1e-5;
-unsigned real_type::output_format;
-unsigned real_type::report_format;
 
 // ******************************************************************
 // *                       real_type  methods                       *
@@ -298,73 +297,68 @@ bool real_type::equals_normal(const result &x, const result &y) const
 
 // ******************************************************************
 // *                                                                *
-// *                       rf_selection class                       *
+// *                        rf_watcher class                        *
 // *                                                                *
 // ******************************************************************
 
-class rf_selection : public radio_button {
-  OutputStream &os;
-  OutputStream::real_format which;
-public:
-  rf_selection(OutputStream &s, OutputStream::real_format w,
-    const char* n, const char* d, int i);
-
-  virtual bool AssignToMe();
+class rf_watcher : public option::watcher {
+        OutputStream &os;
+    public:
+        unsigned selected;
+        OutputStream::real_format formats[3];
+    public:
+        rf_watcher(OutputStream &s);
+        virtual void notify(const option* o);
 };
 
-// ******************************************************************
-// *                      rf_selection methods                      *
-// ******************************************************************
-
-rf_selection::rf_selection(OutputStream &s, OutputStream::real_format w,
-  const char* n, const char* d, int i) : radio_button(n, d, i), os(s)
+rf_watcher::rf_watcher(OutputStream &s) : os(s)
 {
-  which = w;
 }
 
-bool rf_selection::AssignToMe()
+void rf_watcher::notify(const option* o)
 {
-  os.SetRealFormat(which);
-  return true;
+    os.SetRealFormat(formats[selected]);
 }
 
-option* MakeRFOption(exprman* em, OutputStream &s, const char* name, const char* doc, unsigned &link)
+
+void MakeRFOption(exprman* em, OutputStream &s, const char* n, const char* d)
 {
-  if (!em->hasIO()) return 0;
-  radio_button** rfs = new radio_button*[3];
-  rfs[0] = new rf_selection(em->cout(), OutputStream::RF_FIXED,
-        "FIXED", "Same as printf(%f)", 0);
-  rfs[1] = new rf_selection(em->cout(), OutputStream::RF_GENERAL,
-        "GENERAL", "Same as printf(%g)", 1);
-  rfs[2] = new rf_selection(em->cout(), OutputStream::RF_SCIENTIFIC,
-        "SCIENTIFIC", "Same as printf(%e)", 2);
-  link = 1;
-  return MakeRadioOption(name, doc, rfs, 3, link);
+    if (!em->hasIO()) return;
+    if (0==em->OptMan()) return;
+
+    rf_watcher* rw = new rf_watcher(s);
+    option* rbo = em->OptMan()->addRadioOption(n, d, 3, rw->selected);
+    DCASSERT(rbo);
+    rbo->registerWatcher(rw);
+
+    rbo->addRadioButton("FIXED", "Same as printf(%f)", 0);
+    rw->formats[0] = OutputStream::RF_FIXED;
+
+    rbo->addRadioButton("GENERAL", "Same as printf(%g)", 1);
+    rw->formats[1] = OutputStream::RF_GENERAL;
+
+    rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", 2);
+    rw->formats[2] = OutputStream::RF_SCIENTIFIC;
+
+    rw->selected = 1;
 }
 
 void MakeRealFormatOptions(exprman* em)
 {
-  if (!em->hasIO())  return;
-
-  em->addOption(
+    if (0==em) return;
     MakeRFOption(
       em,
       em->cout(),
       "OutputRealFormat",
-      "Format to use for writing reals to the output stream",
-      real_type::output_format
-    )
-  );
+      "Format to use for writing reals to the output stream"
+    );
 
-  em->addOption(
     MakeRFOption(
       em,
-      em->cout(),
+      em->report(),
       "ReportRealFormat",
-      "Format to use for writing reals to the reporting stream",
-      real_type::report_format
-    )
-  );
+      "Format to use for writing reals to the reporting stream"
+    );
 }
 
 // ******************************************************************
@@ -376,21 +370,18 @@ void MakeRealFormatOptions(exprman* em)
 void MakeSeparatorOptions(exprman* em)
 {
   if (!em->hasIO())  return;
+  if (0==em->OptMan()) return;
 
-  em->addOption(
-    MakeStringOption(
+  em->OptMan()->addStringOption(
       "OutputThousandSeparator",
       "Thousands separator to use for the output stream",
       em->cout().linkThousands()
-    )
   );
 
-  em->addOption(
-    MakeStringOption(
+  em->OptMan()->addStringOption(
       "ReportThousandSeparator",
       "Thousands separator to use for the reporting stream",
       em->report().linkThousands()
-    )
   );
 }
 
@@ -977,7 +968,7 @@ void InitTypes(exprman* em)
   em->registerConversion( new real2int        );
 
   // options
-  option* ip = MakeRealOption(
+  if (em->OptMan()) em->OptMan()->addRealOption(
       "IndexPrecision",
       "Epsilon for real set element comparisons.",
       real_type::index_precision,
@@ -985,7 +976,6 @@ void InitTypes(exprman* em)
       false, false, 0
   );
 
-  em->addOption(ip);
   MakeRealFormatOptions(em);
   MakeSeparatorOptions(em);
 

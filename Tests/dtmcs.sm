@@ -1,7 +1,7 @@
 
 
 
-/* 
+/*
    Tests for dtmc formalism and internal stuff
 */
 
@@ -18,8 +18,8 @@ dtmc d0 := {
       b:a:1
   );
 
-  void show := { 
-    print("d0 states:\n"); 
+  void show := {
+    print("d0 states:\n");
     show_states(false);
     print("d0 ");
     show_proc(false);
@@ -42,7 +42,7 @@ dtmc d1 := {
   );
 };
 
-// 
+//
 // Warnings for duplicate arcs and such
 //
 
@@ -89,9 +89,9 @@ dtmc d3(int dummy) := {
       d : b : 1
   );
 
-  void show := { 
-    print("d3 states:\n"); 
-    show_states(false); 
+  void show := {
+    print("d3 states:\n");
+    show_states(false);
     print("d3 ");
     show_proc(false);
   };
@@ -121,8 +121,8 @@ dtmc d4(int N) := {
   for (int i in {2..N}) {
     arcs(s[i-1] : s[i] : 1, s[i] : s[i-1] : 2);
   }
-  void show := { 
-    show_states(false); 
+  void show := {
+    show_states(false);
     show_proc(false);
   };
 };
@@ -134,7 +134,7 @@ for (int n in {1..5}) {
 
 //
 // crazy stuff that should not be allowed
-// 
+//
 
 dtmc foo1(state a, state b) := {
   state c, d, e;
@@ -244,7 +244,9 @@ dtmc flip := {
   real sb := prob_ss(in_state(b));
 };
 
-# MCSolver JACOBI
+# MCSolver JACOBI {
+#   Relaxation 1
+# }
 
 compute(flip.sa);
 

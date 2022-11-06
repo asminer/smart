@@ -1,15 +1,11 @@
 
+#include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-// #include "../ExprLib/unary.h"
-// #include "../ExprLib/binary.h"
-// #include "../ExprLib/assoc.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
-// #include "biginttype.h"
 #include "../ExprLib/mod_vars.h"
-// #include "../ExprLib/dd_front.h"
 
 #include "../Formlsms/stoch_llm.h"
 
@@ -1346,34 +1342,33 @@ bool init_statevects::execute()
 
   // Options
   // ------------------------------------------------------------------
-  radio_button** style = new radio_button*[3];
-  style[statevect::FULL] = new radio_button(
-      "FULL",
-      "Vectors are displayed in (raw) full.",
-      statevect::FULL
-  );
-  style[statevect::SINDEX] = new radio_button(
-      "SPARSE_INDEX",
-      "Vectors are displayed in sparse format, with state indexes.",
-      statevect::SINDEX
-  );
-  style[statevect::SSTATE] = new radio_button(
-      "SPARSE_STATE",
-      "Vectors are displayed in sparse format, with states.",
-      statevect::SSTATE
-  );
+  if (em->OptMan()) {
+        option* o = em->OptMan()->addRadioOption("StatevectDisplayStyle",
+            "Style to display a statedist, stateprobs, or statemsrs vector.",
+            3, statevect::display_style
+        );
+        o->addRadioButton(
+            "FULL",
+            "Vectors are displayed in (raw) full.",
+            statevect::FULL
+        );
+        o->addRadioButton(
+            "SPARSE_INDEX",
+            "Vectors are displayed in sparse format, with state indexes.",
+            statevect::SINDEX
+        );
+        o->addRadioButton(
+            "SPARSE_STATE",
+            "Vectors are displayed in sparse format, with states.",
+            statevect::SSTATE
+        );
+  }
   statevect::display_style = statevect::SINDEX;
-  em->addOption(
-    MakeRadioOption("StatevectDisplayStyle",
-      "Style to display a statedist, stateprobs, or statemsrs vector.",
-      style, 3, statevect::display_style
-    )
-  );
 
-  if (0==st) return false;
 
   // Functions
   // ------------------------------------------------------------------
+  if (0==st) return false;
   st->AddSymbol(  new gt_si                     );
   st->AddSymbol(  new ge_si                     );
   st->AddSymbol(  new lt_si                     );

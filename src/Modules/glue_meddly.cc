@@ -1,7 +1,7 @@
 
 #include "glue_meddly.h"
 #include "biginttype.h"
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 
 // #define DEBUG_PLUS
@@ -9,7 +9,7 @@
 // #define DEBUG_SHAREDEDGE
 
 // #define DEBUG_ASSOC
-// #define DEBUG_CARD 
+// #define DEBUG_CARD
 
 //#define SHOW_CREATE_MINTERMS
 
@@ -69,7 +69,7 @@ void smart_output::put(double x, int w, int p, char f)
         ds.SetRealFormat(OutputStream::RF_GENERAL);
         break;
   };
-  ds.Put(x, w, p); 
+  ds.Put(x, w, p);
 
   ds.SetRealFormat(old_rf);
 }
@@ -109,12 +109,12 @@ shared_domain::~shared_domain()
   MEDDLY::destroyDomain(D);
 }
 
-bool shared_domain::Print(OutputStream &s, int) const 
-{ 
+bool shared_domain::Print(OutputStream &s, int) const
+{
   s << "Meddly domain";
   return true;
 }
-  
+
 bool shared_domain::Equals(const shared_object* x) const
 {
   const shared_domain* foo = dynamic_cast <const shared_domain*> (x);
@@ -178,8 +178,8 @@ mdd_lib mdd_lib_data;
 // ******************************************************************
 
 shared_ddedge::shared_ddedge(MEDDLY::forest* p)
-: shared_object(), E(p) 
-{ 
+: shared_object(), E(p)
+{
 #ifdef DEBUG_SHAREDEDGE
   fprintf(stderr, "created shared_ddedge\n");
 #endif
@@ -187,8 +187,8 @@ shared_ddedge::shared_ddedge(MEDDLY::forest* p)
 }
 
 shared_ddedge::shared_ddedge(const shared_ddedge &e)
-: shared_object(), E(e.E) 
-{ 
+: shared_object(), E(e.E)
+{
 #ifdef DEBUG_SHAREDEDGE
   fprintf(stderr, "created shared_ddedge\n");
 #endif
@@ -204,12 +204,12 @@ shared_ddedge::~shared_ddedge()
   delete iter;
 }
 
-bool shared_ddedge::Print(OutputStream &s, int) const 
-{ 
+bool shared_ddedge::Print(OutputStream &s, int) const
+{
   s << "Meddly edge: " << E.getNode();
   return true;
 }
-  
+
 bool shared_ddedge::Equals(const shared_object* x) const
 {
   const shared_ddedge* foo = dynamic_cast <const shared_ddedge*> (x);
@@ -422,7 +422,7 @@ void meddly_encoder::buildSymbolicConst(double t, shared_object* ans)
 }
 
 
-const int* 
+const int*
 meddly_encoder::firstMinterm(shared_object* set) const
 {
   shared_ddedge* S = dynamic_cast<shared_ddedge*> (set);
@@ -432,7 +432,7 @@ meddly_encoder::firstMinterm(shared_object* set) const
   return S->getIterMinterm();
 }
 
-const int* 
+const int*
 meddly_encoder::nextMinterm(shared_object* set) const
 {
   shared_ddedge* S = dynamic_cast<shared_ddedge*> (set);
@@ -562,7 +562,7 @@ void meddly_encoder::createMinterms(const int* const* from, const int* const* to
 }
 
 void meddly_encoder
-::buildUnary(exprman::unary_opcode op, const shared_object* opnd, 
+::buildUnary(exprman::unary_opcode op, const shared_object* opnd,
               shared_object* answer)
 {
   const shared_ddedge* opdd = dynamic_cast<const shared_ddedge*> (opnd);
@@ -587,7 +587,7 @@ void meddly_encoder
         }
         ans->E = out;
         return;
-      } 
+      }
 
       case exprman::uop_neg: {
         F->createEdge(long(0), out);
@@ -607,7 +607,7 @@ void meddly_encoder
 
 
 void meddly_encoder
-::buildBinary(const shared_object* left, exprman::binary_opcode op, 
+::buildBinary(const shared_object* left, exprman::binary_opcode op,
               const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
@@ -677,7 +677,7 @@ void meddly_encoder
           MEDDLY::LESS_THAN_EQUAL, meL->E, meR->E, out
         );
         break;
-        
+
       default:
         throw Failed;
 
@@ -691,7 +691,7 @@ void meddly_encoder
 
 
 void meddly_encoder
-::buildAssoc(const shared_object* left, bool flip, exprman::assoc_opcode op, 
+::buildAssoc(const shared_object* left, bool flip, exprman::assoc_opcode op,
              const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
@@ -742,7 +742,7 @@ void meddly_encoder
           MEDDLY::apply(
             MEDDLY::MAXIMUM, meL->E, meR->E, out
           );
-        else 
+        else
           MEDDLY::apply(
             MEDDLY::UNION, meL->E, meR->E, out
           );
@@ -825,7 +825,7 @@ void meddly_encoder
 #ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
 #endif
-  } 
+  }
   catch (MEDDLY::error e) {
 #ifdef HAVE_LIBGMP
     mpz_clear(mpz_card);
@@ -890,7 +890,7 @@ void meddly_encoder
 }
 
 void meddly_encoder
-::preImageStar(const shared_object* x, const shared_object* E, 
+::preImageStar(const shared_object* x, const shared_object* E,
                 shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
@@ -907,11 +907,11 @@ void meddly_encoder
     if (image_star_uses_saturation) {
       MEDDLY::apply(
         MEDDLY::REVERSE_REACHABLE_DFS, mex->E, meE->E, ans->E
-      );  
+      );
     } else {
       MEDDLY::apply(
         MEDDLY::REVERSE_REACHABLE_BFS, mex->E, meE->E, ans->E
-      );  
+      );
     }
   }
   catch (MEDDLY::error e) {
@@ -920,7 +920,7 @@ void meddly_encoder
 }
 
 void meddly_encoder
-::postImageStar(const shared_object* x, const shared_object* E, 
+::postImageStar(const shared_object* x, const shared_object* E,
                 shared_object* a)
 {
   const shared_ddedge* mex = dynamic_cast<const shared_ddedge*> (x);
@@ -937,11 +937,11 @@ void meddly_encoder
     if (image_star_uses_saturation) {
       MEDDLY::apply(
         MEDDLY::REACHABLE_STATES_DFS, mex->E, meE->E, ans->E
-      );  
+      );
     } else {
       MEDDLY::apply(
         MEDDLY::REACHABLE_STATES_BFS, mex->E, meE->E, ans->E
-      );  
+      );
     }
   }
   catch (MEDDLY::error e) {
@@ -1069,7 +1069,7 @@ void meddly_encoder::reportStats(OutputStream &out)
   putMem(out, "Peak", name, F->getPeakMemoryUsed());
 }
 
-shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op, 
+shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
                       shared_ddedge** list, int N, named_msg* debug) const
 {
   if (0==N || 0==list) return 0;
@@ -1108,7 +1108,7 @@ shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
     }
 
     N = newlength;
-        
+
   } // while length
 
   shared_ddedge* answer = list[0];
@@ -1171,7 +1171,7 @@ init_meddly::init_meddly() : initializer("init_meddly")
 bool init_meddly::execute()
 {
   if (0==em)  return false;
-  
+
   // Library registry
   em->registerLibrary(  &mdd_lib_data  );
 
@@ -1179,13 +1179,12 @@ bool init_meddly::execute()
   //
   // TBD - this one belongs under rgr_meddly or somewhere else
   //
+  if (em->OptMan())
+      em->OptMan()->addBoolOption("MeddlyImageStarUsesSaturation",
+        "If true, MEDDLY uses saturation for forward and backward reachability during CTL model checking; otherwise, the traditional iteration is used.",
+        meddly_encoder::image_star_uses_saturation
+      );
   meddly_encoder::image_star_uses_saturation = true;
-  em->addOption(
-    MakeBoolOption("MeddlyImageStarUsesSaturation",
-      "If true, MEDDLY uses saturation for forward and backward reachability during CTL model checking; otherwise, the traditional iteration is used.",
-      meddly_encoder::image_star_uses_saturation
-    )
-  );
 
   // initialize the library.
   MEDDLY::initialize();

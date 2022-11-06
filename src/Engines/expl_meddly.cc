@@ -7,6 +7,7 @@
 #include "expl_meddly.h"
 
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 
 // Modules
@@ -3326,69 +3327,63 @@ bool init_explmeddly::execute()
     "Explicit generation using MDDs.  States are added to the MDD in batches to improve efficiency.",
     &the_meddly_explgen
   );
+  option_manager* subopts = expl_eng->internalOpts();
+  DCASSERT(subopts);
+
 
   /* Initialize batch size option */
   meddly_explgen::batch_size = 1024;
-  expl_eng->AddOption(
-    MakeIntOption(
+  subopts->addIntOption(
       "BatchAddSize",
       "Maximum batch size for adding states or edges",
       meddly_explgen::batch_size,
       1, 1000000
-    )
   );
 
   /* Initialize batch removal option */
   meddly_explgen::batch_removal = true;
-  expl_eng->AddOption(
-    MakeBoolOption(
+  subopts->addBoolOption(
       "UseBatchRemoval",
       "Should unexplored states be processed in batch?  If false, then they are processed one at a time.",
       meddly_explgen::batch_removal
-    )
   );
 
   /* Initialize MaximizeBatchRefills option */
   meddly_explgen::maximize_batch_refills = false;
-  expl_eng->AddOption(
-    MakeBoolOption(
+  subopts->addBoolOption(
       "MaximizeBatchRefills",
       "For batch removal of unexplored states, should we try to refill the batches as much as possible; otherwise, we take a more relaxed approach.",
       meddly_explgen::maximize_batch_refills
-    )
   );
 
   /* Initialize LevelChange option */
   meddly_explgen::level_change = 1000000;
-  expl_eng->AddOption(
-    MakeIntOption(
+  subopts->addIntOption(
       "LevelChange",
       "Force process edges to be accumulated whenever the source state changes at this level or above.  Use 0 for constant accumulations, #levels for no accumulations except at the end.  Notes: (1) we are still limited by the batch size; see option BatchAddSize. (2) this may not be supported for all variations of explicit Meddly generation.",
       meddly_explgen::level_change,
       0, 1000000
-    )
   );
 
   /* Initialize matrix style option */
-  radio_button** mlist = new radio_button*[meddly_explgen::NUM_MX_STYLES];
+  meddly_explgen::matrix_style = meddly_explgen::IRMXD;
+  option* sty = subopts->addRadioOption(
+      "MatrixStyle",
+      "Data structure to use for matrix for underlying process",
+      meddly_explgen::NUM_MX_STYLES, meddly_explgen::matrix_style
+  );
+
+
 #ifdef ENABLE_CMDS
-  mlist[meddly_explgen::CMD] = new radio_button(
+  sty->addRadioButton(
     "CMD", "Canonical Matrix Diagram (from 2001 paper)", meddly_explgen::CMD
   );
 #endif
-  mlist[meddly_explgen::IRMXD] = new radio_button(
+  sty->addRadioButton(
     "IRMXD", "Identity-reduced matrix diagram", meddly_explgen::IRMXD
   );
-  mlist[meddly_explgen::QRMXD] = new radio_button(
+  sty->addRadioButton(
     "QRMXD", "Quasi-reduced matrix diagram", meddly_explgen::QRMXD
-  );
-  meddly_explgen::matrix_style = meddly_explgen::IRMXD;
-  expl_eng->AddOption(
-    MakeRadioOption(
-      "MatrixStyle",
-      "Data structure to use for matrix for underlying process",
-      mlist, meddly_explgen::NUM_MX_STYLES, meddly_explgen::matrix_style
-    )
   );
 
   return true;

@@ -71,7 +71,7 @@ class markov_def : public model_def {
   static named_msg dup_arc;
   friend class init_mcform;
 public:
-  markov_def(const char* fn, int line, const type* t, bool d, char*n, 
+  markov_def(const char* fn, int line, const type* t, bool d, char*n,
       formal_param **pl, int np);
 
   virtual ~markov_def();
@@ -82,7 +82,7 @@ public:
   // For model construction:
   void AddInitial(const expr* cause, model_enum_value* st, double weight);
 
-  void AddEdge(const expr* cause, 
+  void AddEdge(const expr* cause,
     model_enum_value* from, model_enum_value* to, double weight);
 
   inline bool isDiscrete() const { return discrete; }
@@ -104,7 +104,7 @@ named_msg markov_def::dup_arc;
 markov_def::markov_def(const char* fn, int line, const type* t, bool d,
    char*n, formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   mymc = 0;
   initial = 0;
@@ -140,7 +140,7 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   // Build a state in the frontend MC
   model_var* s = new model_enum_value(wrap, current, state_count);
   state_count++;
-  
+
   // add to statelist (reverse order)
   s->LinkTo(statelist);
   statelist = s;
@@ -188,7 +188,7 @@ void markov_def::AddEdge(const expr* cause,
       em->warn() << f->Name() << " to " << t->Name();
       DoneWarning();
     }
-  } 
+  }
   catch (GraphLib::error e) {
     if (StartError(cause)) {
       em->cerr() << e.getString() << " when adding edge from ";
@@ -201,7 +201,7 @@ void markov_def::AddEdge(const expr* cause,
 
 void markov_def::InitModel()
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   DCASSERT(0==mymc);
   mymc = new GraphLib::dynamic_summable<double> (isDiscrete(), true);
@@ -271,7 +271,7 @@ void markov_def::FinalizeModel(OutputStream &ds)
 
   //
   // Build reachable states
-  // 
+  //
   enum_reachset* rss = new enum_reachset(mcstate);
 
   //
@@ -328,11 +328,11 @@ markov_formalism
   discrete = d;
 }
 
-model_def* markov_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* markov_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new markov_def(fn, ln, this, discrete, 
+  return new markov_def(fn, ln, this, discrete,
       name, (formal_param**) formals, np);
 }
 
@@ -387,7 +387,7 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
     model_debug.report() << "Calling init in model " << mdl->Name() << "\n";
     model_debug.stopIO();
   }
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result state;
@@ -456,7 +456,7 @@ void mc_arcs::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   markov_def* mdl = smart_cast<markov_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result from;
@@ -543,7 +543,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_transient::mc_transient() 
+mc_transient::mc_transient()
  : model_internal(em->BOOL->addProc(), "transient", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in a transient state.");
@@ -579,7 +579,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_absorbing::mc_absorbing() 
+mc_absorbing::mc_absorbing()
  : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in an absorbing state (this includes deadlocked states).");
@@ -599,7 +599,7 @@ void mc_absorbing::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(bar);
   const stochastic_lldsm* cruft = smart_cast<const stochastic_lldsm*>(bar);
   DCASSERT(cruft);
-  
+
   x.answer->setBool(cruft->isAbsorbing(x.current_state_index));
 }
 
@@ -613,7 +613,7 @@ public:
   mc_tta(bool disc);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
     stochastic_lldsm* &cruft, shared_object* &ss) {
 
       DCASSERT(x.answer);
@@ -635,7 +635,7 @@ public:
 
 mc_tta::mc_tta(bool disc)
 : model_internal(
-    disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE), 
+    disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE),
     "tta", 2
   )
 {
@@ -693,24 +693,24 @@ bool init_mcform::execute()
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
-  markov_def::mc_debug.Initialize(debug,
+  markov_def::mc_debug.Initialize(debug, 0,
     "mcs",
     "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
     false
   );
 
   option* warning = em->findOption("Warning");
-  markov_def::dup_init.Initialize(warning,
+  markov_def::dup_init.Initialize(warning, 0,
     "mc_dup_init",
     "For duplicatation of initial probabilities in Markov chain models",
     true
   );
-  markov_def::no_init.Initialize(warning,
+  markov_def::no_init.Initialize(warning, 0,
     "mc_no_init",
     "For absence of initial probabilities in Markov chain models",
     true
   );
-  markov_def::dup_arc.Initialize(warning,
+  markov_def::dup_arc.Initialize(warning, 0,
     "mc_dup_arc",
     "For duplicate arcs in Markov chain models",
     true
@@ -719,9 +719,9 @@ bool init_mcform::execute()
   // Set up and register formalisms
   const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
 
-  formalism* dtmc = new markov_formalism("dtmc", 
+  formalism* dtmc = new markov_formalism("dtmc",
       "Discrete-time Markov chain", longdocs, true);
-  formalism* ctmc = new markov_formalism("ctmc", 
+  formalism* ctmc = new markov_formalism("ctmc",
       "Continuous-time Markov chain", longdocs, false);
   ok = em->registerType(dtmc);
   if (!ok) {

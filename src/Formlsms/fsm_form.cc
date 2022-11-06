@@ -43,7 +43,7 @@ class fsm_def : public model_def {
   static named_msg dup_arc;
   friend class init_fsms;
 public:
-  fsm_def(const char* fn, int line, const type* t, char*n, 
+  fsm_def(const char* fn, int line, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~fsm_def();
@@ -74,7 +74,7 @@ named_msg fsm_def::dup_arc;
 fsm_def::fsm_def(const char* fn, int line, const type* t,
    char*n, formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   mygr = 0;
   initial = 0;
@@ -114,7 +114,7 @@ model_var* fsm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     fsm_debug.report() << "adding state " << s->Name() << "\n";
     fsm_debug.stopIO();
   }
-  
+
   // add to statelist (reverse order)
   s->LinkTo(statelist);
   statelist = s;
@@ -141,7 +141,7 @@ void fsm_def::AddInitial(const expr* cause, model_enum_value* foo)
     fsm_debug.report() << "adding " << foo->Name() << " to initial set\n";
     fsm_debug.stopIO();
   }
-  
+
 }
 
 void fsm_def::AddEdge(const expr* c, model_enum_value* f, model_enum_value* t)
@@ -176,7 +176,7 @@ void fsm_def::AddEdge(const expr* c, model_enum_value* f, model_enum_value* t)
 
 void fsm_def::InitModel()
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   DCASSERT(0==mygr);
   mygr = new GraphLib::dynamic_digraph(true);
@@ -266,7 +266,7 @@ fsm_formalism
 {
 }
 
-model_def* fsm_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* fsm_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
@@ -371,7 +371,7 @@ void fsm_arcs::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   fsm_def* mdl = smart_cast<fsm_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result from;
@@ -454,7 +454,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_absorbing::fsm_absorbing() 
+fsm_absorbing::fsm_absorbing()
  : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
 {
   SetDocumentation("Returns true iff the finite state machine is in an absorbing state (this includes deadlocked states).");
@@ -488,7 +488,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_deadlocked::fsm_deadlocked() 
+fsm_deadlocked::fsm_deadlocked()
  : model_internal(em->BOOL->addProc(), "is_deadlocked", 1)
 {
   SetDocumentation("Returns true iff the finite state machine is in a deadlocked state (no outgoing edges).");
@@ -510,7 +510,7 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(cruft);
   const grlib_reachgraph* RG = smart_cast <const grlib_reachgraph*> (cruft->getRGR());
   DCASSERT(RG);
-  
+
   x.answer->setBool(RG->isDeadlocked(x.current_state_index));
 }
 
@@ -526,8 +526,8 @@ public:
   virtual const char* getVersionString() const {
     return GraphLib::Version();
   }
-  virtual bool hasFixedPointer() const { 
-    return true; 
+  virtual bool hasFixedPointer() const {
+    return true;
   }
 
   static void Init(exprman* em);
@@ -536,7 +536,7 @@ public:
 void fsm_lib::Init(exprman* em)
 {
   static fsm_lib* fsml = 0;
- 
+
   if (0==fsml) {
     fsml = new fsm_lib;
     em->registerLibrary(fsml);
@@ -573,24 +573,24 @@ bool init_fsms::execute()
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
-  fsm_def::fsm_debug.Initialize(debug,
+  fsm_def::fsm_debug.Initialize(debug, 0,
     "fsms",
     "When set, diagnostic messages are displayed regarding FSM model construction.",
     false
   );
 
   option* warning = em->findOption("Warning");
-  fsm_def::dup_init.Initialize(warning,
+  fsm_def::dup_init.Initialize(warning, 0,
     "fsm_dup_init",
     "For duplicatation of initial states in finite state machine models",
     true
   );
-  fsm_def::no_init.Initialize(warning,
+  fsm_def::no_init.Initialize(warning, 0,
     "fsm_no_init",
     "For absence of initial states in finite state machine models",
     true
   );
-  fsm_def::dup_arc.Initialize(warning,
+  fsm_def::dup_arc.Initialize(warning, 0,
     "fsm_dup_arc",
     "For duplicate arcs in finite state machine models",
     true

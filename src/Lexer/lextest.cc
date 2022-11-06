@@ -5,7 +5,7 @@
 
 #include "config.h"
 #include "../Streams/streams.h"
-#include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
 #include "lexer.h"
@@ -42,8 +42,8 @@ bool first_init::execute()
 void InitOptions(option_manager* om)
 {
     if (0==om)  return;
-    om->AddOption(
-        MakeChecklistOption("Debug", "Switches to control what low-level debugging information, if any, is written to the report stream.")
+    om->addChecklistOption("Debug",
+      "Switches to control what low-level debugging information, if any, is written to the report stream."
     );
 }
 

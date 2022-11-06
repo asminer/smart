@@ -1308,30 +1308,30 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np) {
 // ******************************************************************
 
 class init_dsde: public initializer {
-public:
-	init_dsde();
-	virtual bool execute();
+    public:
+	    init_dsde();
+	    virtual bool execute();
 };
 init_dsde the_dsde_initializer;
 
-init_dsde::init_dsde() :
-		initializer("init_dsde") {
+init_dsde::init_dsde() : initializer("init_dsde")
+{
 	usesResource("em");
 }
 
-bool init_dsde::execute() {
-	if (0 == em)
-		return false;
+bool init_dsde::execute()
+{
+	if (0 == em) return false;
 
 	option* warning = em->findOption("Warning");
-	dsde_def::dup_part.Initialize(warning, "dup_part",
+	dsde_def::dup_part.Initialize(warning, 0, "dup_part",
 			"For multiple partition definitions for a state variable", true);
-	dsde_def::no_part.Initialize(warning, "no_part",
+	dsde_def::no_part.Initialize(warning, 0, "no_part",
 			"If some, but not all, state variables are assiged to groups using partition",
 			true);
-	dsde_def::dup_prio.Initialize(warning, "dup_prio",
+	dsde_def::dup_prio.Initialize(warning, 0, "dup_prio",
 			"For multiple priority level definitions for a model event", true);
-	dsde_hlm::ignored_prio.Initialize(warning, "ignored_prio",
+	dsde_hlm::ignored_prio.Initialize(warning, 0, "ignored_prio",
 			"For ignored priority pairs (between events in different priority levels)",
 			true);
 

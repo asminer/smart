@@ -2,6 +2,7 @@
 #include "state_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -14,7 +15,7 @@
 // ******************************************************************
 
 unsigned state_lldsm::int_display_order;
-long state_lldsm::max_state_display = 100000000;
+long state_lldsm::max_state_display = 0;
 const char* state_lldsm::max_state_display_option = "MaxStateDisplay";
 exprman* state_lldsm::reachset::em = 0;
 
@@ -242,40 +243,43 @@ bool init_statellm::execute()
 
   state_lldsm::reachset::em = em;
 
+  state_lldsm::max_state_display = 100000000;
+  state_lldsm::int_display_order = state_lldsm::NATURAL;
+
   // set up options
   // ------------------------------------------------------------------
-  em->addOption(
-    MakeIntOption(
+
+  if (em->OptMan()) {
+
+    em->OptMan()->addIntOption(
       state_lldsm::max_state_display_option,
       "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
       state_lldsm::max_state_display,
       0, 1000000000
-    )
-  );
+    );
 
-  // ------------------------------------------------------------------
-  radio_button** do_list = new radio_button*[state_lldsm::num_display_orders];
-  do_list[state_lldsm::DISCOVERY] = new radio_button(
+    // ------------------------------------------------------------------
+    option* sdo = em->OptMan()->addRadioOption("StateDisplayOrder",
+      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
+      state_lldsm::num_display_orders, state_lldsm::int_display_order
+    );
+
+    sdo->addRadioButton(
       "DISCOVERY",
       "States are displayed in the order in which they are discovered (or defined), if possible.",
       state_lldsm::DISCOVERY
-  );
-  do_list[state_lldsm::LEXICAL] = new radio_button(
+    );
+    sdo->addRadioButton(
       "LEXICAL",
       "States are sorted by lexical order.",
       state_lldsm::LEXICAL
-  );
-  do_list[state_lldsm::NATURAL] = new radio_button(
+    );
+    sdo->addRadioButton(
       "NATURAL",
       "States are displayed in the most natural order for the selected state space data structure.",
       state_lldsm::NATURAL
-  );
-  state_lldsm::int_display_order = state_lldsm::NATURAL;
-  em->addOption(
-    MakeRadioOption("StateDisplayOrder",
-      "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
-      do_list, state_lldsm::num_display_orders, state_lldsm::int_display_order
-    )
-  );
+    );
+  }
+
   return true;
 }

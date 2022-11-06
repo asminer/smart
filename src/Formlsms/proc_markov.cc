@@ -1,6 +1,11 @@
 
 #include "proc_markov.h"
+
 #include "../Options/options.h"
+#include "../Options/optman.h"
+#include "../Options/opt_enum.h"
+#include "../Options/radio_opt.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
@@ -185,7 +190,7 @@ markov_process::reporter::reporter(const exprman* The_em)
 {
   em = The_em;
   option* parent = em ? em->findOption("Report") : 0;
-  report.Initialize(parent,
+  report.Initialize(parent, 0,
     "mc_finish",
     "When set, performance details for Markov chain finalization steps are reported.",
     false
@@ -263,6 +268,8 @@ class init_markovproc : public initializer {
   public:
     init_markovproc();
     virtual bool execute();
+
+    option_manager* makeSubsettings(unsigned i, bool auxvectors);
 };
 init_markovproc the_markovproc_initializer;
 
@@ -298,130 +305,128 @@ bool init_markovproc::execute()
   markov_process::lsopts[markov_process::JACOBI].method = LS_Jacobi;
   markov_process::lsopts[markov_process::ROW_JACOBI].method = LS_Row_Jacobi;
 
+  markov_process::solver = markov_process::GAUSS_SEIDEL;
+
   //
   // Set up the radio buttons for the solvers
   //
-  radio_button** solvers = new radio_button*[markov_process::NUM_SOLVERS];
-
-  solvers[markov_process::GAUSS_SEIDEL] = new radio_button(
-      "GAUSS_SEIDEL", "Gauss-Seidel", markov_process::GAUSS_SEIDEL
-  );
-  solvers[markov_process::JACOBI] = new radio_button(
-      "JACOBI", "Jacobi, using matrix-vector multiply",
-      markov_process::JACOBI
-  );
-  solvers[markov_process::ROW_JACOBI] = new radio_button(
-      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
-      markov_process::ROW_JACOBI
-  );
-
-  markov_process::solver = markov_process::GAUSS_SEIDEL;
-  em->addOption(
-    MakeRadioOption(
+  if (em->OptMan()) {
+    option* solvers = em->OptMan()->addRadioOption(
       "MCSolver",
       "Numerical method to use for solving linear systems during Markov chain analysis.",
-      solvers, 3, markov_process::solver
-    )
-  );
-
-  //
-  // Add settings for each solver radio button (cool, huh?)
-  //
-  for (int i=0; i<markov_process::NUM_SOLVERS; i++) {
-#ifdef DEBUG_NUMERICAL_ITERATIONS
-    markov_process::lsopts[i].debug = true;
-#endif
-    option_manager* settings = MakeOptionManager();
-    settings->AddOption(
-      MakeIntOption(
-        "MinIters",
-        "Minimum number of iterations.  Guarantees that at least this many iterations will occur.",
-        markov_process::lsopts[i].min_iters, 0, 2000000000
-      )
+      3, markov_process::solver
     );
 
-    settings->AddOption(
-      MakeIntOption(
-        "MaxIters",
-        "Maximum number of iterations.  Once the minimum number of iterations has been reached, the solver will terminate if either the termination criteria has been met (see options for Precision), or the maximum number of iterations has been reached.",
-        markov_process::lsopts[i].max_iters, 0, 2000000000
-      )
+    option_enum* currsolv = solvers->addRadioButton(
+      "GAUSS_SEIDEL", "Gauss-Seidel",
+      markov_process::GAUSS_SEIDEL
+    );
+    currsolv->makeSettings(
+            makeSubsettings(markov_process::GAUSS_SEIDEL, false)
     );
 
-    settings->AddOption(
-      MakeRealOption(
-        "Precision",
-        "Desired precision.  Solvers will run until each solution vector element has changed less than epsilon.  Relative or absolute precision may be used, see option TBD.",
-        markov_process::lsopts[i].precision,
-        true, false, 0.0,
-        true, false, 1.0
-      )
+    currsolv = solvers->addRadioButton(
+      "JACOBI", "Jacobi, using matrix-vector multiply",
+      markov_process::JACOBI
+    );
+    currsolv->makeSettings(
+            makeSubsettings(markov_process::JACOBI, true)
     );
 
-    settings->AddOption(
-      MakeRealOption(
-        "Relaxation",
-        "Relaxation parameter to use (or start with).",
-        markov_process::lsopts[i].relaxation,
-        true, false, 0.0,
-        true, false, 2.0
-      )
+    currsolv = solvers->addRadioButton(
+      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
+      markov_process::ROW_JACOBI
+    );
+    currsolv->makeSettings(
+            makeSubsettings(markov_process::ROW_JACOBI, true)
     );
 
-    //
-    // Option for auxiliary vectors, only applies to solvers
-    // that use auxiliary vectors like JACOBI
-    //
-    if ( (markov_process::JACOBI == i) || (markov_process::ROW_JACOBI == i) ) {
 
-      markov_process::lsopts[i].float_vectors = false;
-      settings->AddOption(
-        MakeBoolOption(
-          "FloatsForAuxVectors",
-          "Should we use floats (instead of doubles) for any auxiliary solution vectors.",
-          markov_process::lsopts[i].float_vectors
-        )
-      );
-    }
+    option* mcby = em->OptMan()->addRadioOption("MCAccessBy",
+      "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
+      2, markov_process::access
+    );
 
-    // put these settings into the radio button
+    mcby->addRadioButton(
+      "COLUMNS",
+      "Access to columns",
+      markov_process::BY_COLUMNS
+    );
+    mcby->addRadioButton(
+      "ROWS",
+      "Access to rows",
+      markov_process::BY_ROWS
+    );
+  }
 
-    settings->DoneAddingOptions();
-    solvers[i]->makeSettings(settings);
-
-    // Memory leak, because we never clean up settings, but probably ok
-  } // for i
-
-
-
-
+  markov_process::solver = markov_process::GAUSS_SEIDEL;
+  markov_process::access = markov_process::BY_COLUMNS;
 
   option* report = em->findOption("Report");
-  markov_process::report.Initialize(report,
+  markov_process::report.Initialize(report, 0,
       "mc_solve",
       "When set, Markov chain solution performance is reported.",
       false
   );
 
-
-  radio_button** alist = new radio_button*[2];
-  alist[markov_process::BY_COLUMNS] = new radio_button(
-      "COLUMNS",
-      "Access to columns",
-      markov_process::BY_COLUMNS
-  );
-  alist[markov_process::BY_ROWS] = new radio_button(
-      "ROWS",
-      "Access to rows",
-      markov_process::BY_ROWS
-  );
-  em->addOption(
-    MakeRadioOption("MCAccessBy",
-      "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
-      alist, 2, markov_process::access
-    )
-  );
-
   return true;
 }
 
+option_manager* init_markovproc::makeSubsettings(unsigned i, bool auxvectors)
+{
+#ifdef DEBUG_NUMERICAL_ITERATIONS
+    markov_process::lsopts[i].debug = true;
+#endif
+    option_manager* settings = MakeOptionManager();
+    settings->addIntOption(
+        "MinIters",
+        "Minimum number of iterations.  Guarantees that at least this many iterations will occur.",
+        markov_process::lsopts[i].min_iters, 0, 2000000000
+    );
+    markov_process::lsopts[i].min_iters = 10;
+
+    settings->addIntOption(
+        "MaxIters",
+        "Maximum number of iterations.  Once the minimum number of iterations has been reached, the solver will terminate if either the termination criteria has been met (see options for Precision), or the maximum number of iterations has been reached.",
+        markov_process::lsopts[i].max_iters, 0, 2000000000
+    );
+    markov_process::lsopts[i].max_iters = 5000;
+
+    settings->addRealOption(
+        "Precision",
+        "Desired precision.  Solvers will run until each solution vector element has changed less than epsilon.  Relative or absolute precision may be used, see option TBD.",
+        markov_process::lsopts[i].precision,
+        true, false, 0.0,
+        true, false, 1.0
+    );
+    markov_process::lsopts[i].precision = 1e-5;
+
+
+    settings->addRealOption(
+        "Relaxation",
+        "Relaxation parameter to use (or start with).",
+        markov_process::lsopts[i].relaxation,
+        true, false, 0.0,
+        true, false, 2.0
+    );
+    markov_process::lsopts[i].relaxation = 0.98;
+
+    //
+    // Option for auxiliary vectors, only applies to solvers
+    // that use auxiliary vectors like JACOBI
+    //
+    if (auxvectors) {
+
+      settings->addBoolOption(
+          "FloatsForAuxVectors",
+          "Should we use floats (instead of doubles) for any auxiliary solution vectors.",
+          markov_process::lsopts[i].float_vectors
+      );
+    }
+    markov_process::lsopts[i].float_vectors = false;
+
+    // That's all
+    settings->DoneAddingOptions();
+
+    return settings;
+}

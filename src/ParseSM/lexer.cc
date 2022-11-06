@@ -717,7 +717,7 @@ void lexer_mod::Initialize(parse_module* p)
   if (p == parent)  return;
   parent = p;
   option* debug = parent ? parent->findOption("Debug") : 0;
-  lexer_debug.Initialize(debug,
+  lexer_debug.Initialize(debug, 0,
     "lexer",
     "When set, very low-level lexer messages are displayed.",
     false

@@ -54,28 +54,3 @@ bool option_enum::isApropos(const doc_formatter* df, const char* key) const
     return false;
 }
 
-// **************************************************************************
-// *                          radio_button methods                          *
-// **************************************************************************
-
-radio_button::radio_button(const char* n, const char* d, unsigned ndx)
-    : option_enum(n, d)
-{
-    index = ndx;
-}
-
-bool radio_button::AssignToMe()
-{
-    return true;
-}
-
-// **************************************************************************
-// *                        checklist_enum  methods                        *
-// **************************************************************************
-
-checklist_enum::checklist_enum(const char* n, const char* d)
-    : option_enum(n, d)
-{
-}
-
-

@@ -2,6 +2,7 @@
 #include "graph_llm.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -330,63 +331,59 @@ bool init_graphllm::execute()
   // ------------------------------------------------------------------
   option* report = em->findOption("Report");
   graph_lldsm::reachgraph::numpaths_report.Initialize(
-    report,
+    report, 0,
     "num_paths",
     "When set, performance data for counting number of paths is displayed.",
     false
   );
-  graph_lldsm::reachgraph::ctl_report.Initialize(report,
+  graph_lldsm::reachgraph::ctl_report.Initialize(report, 0,
     "CTL_engines",
     "When set, CTL engine performance is reported.",
     false
   );
 
   // ------------------------------------------------------------------
-  em->addOption(
-    MakeIntOption(
+  if (em->OptMan()) em->OptMan()->addIntOption(
       MAX_ARC_DISPLAY_OPTION,
       "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
       graph_lldsm::max_arc_display,
       0, 1000000000
-    )
   );
 
   // ------------------------------------------------------------------
-  radio_button** gds_list = new radio_button*[graph_lldsm::num_graph_display_styles];
-  gds_list[graph_lldsm::DOT] = new radio_button(
+  if (em->OptMan()) {
+    option* gds = em->OptMan()->addRadioOption("GraphDisplayStyle",
+        "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
+        graph_lldsm::num_graph_display_styles,
+        graph_lldsm::graph_display_style
+    );
+    gds->addRadioButton(
       "DOT",
       "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
       graph_lldsm::DOT
-  );
-  gds_list[graph_lldsm::INCOMING] = new radio_button(
+    );
+    gds->addRadioButton(
       "INCOMING",
       "Graphs are displayed by listing the incoming edges for each node.",
       graph_lldsm::INCOMING
-  );
-  gds_list[graph_lldsm::OUTGOING] = new radio_button(
+    );
+    gds->addRadioButton(
       "OUTGOING",
       "Graphs are displayed by listing the outgoing edges for each node.",
       graph_lldsm::OUTGOING
-  );
-  gds_list[graph_lldsm::TRIPLES] = new radio_button(
+    );
+    gds->addRadioButton(
       "TRIPLES",
       "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
       graph_lldsm::TRIPLES
-  );
+    );
+  }
   graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
-  em->addOption(
-    MakeRadioOption("GraphDisplayStyle",
-      "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
-      gds_list, graph_lldsm::num_graph_display_styles, graph_lldsm::graph_display_style
-    )
-  );
 
   // ------------------------------------------------------------------
-  em->addOption(
-    MakeBoolOption("DisplayGraphNodeNames",
+  if (em->OptMan()) em->OptMan()->addBoolOption("DisplayGraphNodeNames",
       "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.",
       graph_lldsm::display_graph_node_names
-    )
   );
 
   return true;

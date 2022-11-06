@@ -1,6 +1,7 @@
 
 #include "evm_form.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -1298,85 +1299,86 @@ bool init_evmform::execute()
 
   // Set up options
   option* debug = em->findOption("Debug");
-  evm_def::evm_debug.Initialize(debug,
+  evm_def::evm_debug.Initialize(debug, 0,
     "evms",
     "When set, diagnostic messages are displayed regarding evm (event & variable model) construction.",
     false
   );
 
   option* warning = em->findOption("Warning");
-  group_of_named evmwarnings(8);
-  evmwarnings.AddItem(evm_def::no_event.Initialize(warning,
+  checklist_enum* evmwarnings = warning->addChecklistGroup(
+    "evm_ALL", "Group of all evm warnings", 8
+  );
+
+  evm_def::no_event.Initialize(warning, evmwarnings,
     "evm_no_event",
     "For absence of events in event & variable models",
     true
-  ));
-  evmwarnings.AddItem(evm_def::no_vars.Initialize(warning,
+  );
+
+  evm_def::no_vars.Initialize(warning, evmwarnings,
     "evm_no_vars",
     "For absence of variables in event & variable models",
     true
-  ));
-  evmwarnings.AddItem(evm_def::no_part.Initialize(warning,
+  );
+  evm_def::no_part.Initialize(warning, evmwarnings,
     "evm_no_part",
     "If some, but not all, variables are assiged to groups using partition",
     true
-  ));
-  evmwarnings.AddItem(evm_def::dup_part.Initialize(warning,
+  );
+  evm_def::dup_part.Initialize(warning, evmwarnings,
     "evm_dup_part",
     "For multiple partition definitions for a variable",
     true
-  ));
-  evmwarnings.AddItem(evm_def::dup_range.Initialize(warning,
+  );
+  evm_def::dup_range.Initialize(warning, evmwarnings,
     "evm_dup_range",
     "For duplicate variable ranges in event & variable models",
     true
-  ));
-  evmwarnings.AddItem(evm_def::dup_assign.Initialize(warning,
+  );
+  evm_def::dup_assign.Initialize(warning, evmwarnings,
     "evm_dup_assign",
     "For multiple assignments on the same variable and event in event & variable models",
     true
-  ));
-  evmwarnings.AddItem(evm_def::dup_init.Initialize(warning,
+  );
+  evm_def::dup_init.Initialize(warning, evmwarnings,
     "evm_dup_init",
     "For multiple calls to init for the same variable in event & variable models",
     true
-  ));
-  evmwarnings.AddItem(evm_def::dup_hide.Initialize(warning,
+  );
+  evm_def::dup_hide.Initialize(warning, evmwarnings,
     "evm_dup_hide",
     "For multiple calls to hide for the same variable in event & variable models",
     true
-  ));
-  evmwarnings.Finish(warning, "evm_ALL", "Group of all evm warnings");
+  );
 
-
-  radio_button** ms_list = new radio_button*[4];
-  ms_list[evm_hlm::INDEXED] = new radio_button(
-    "INDEXED",
-    "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
-    evm_hlm::INDEXED
-  );
-  ms_list[evm_hlm::SAFE] = new radio_button(
-    "SAFE",
-    "Format is [v1, v3:2, v6]",
-    evm_hlm::SAFE
-  );
-  ms_list[evm_hlm::SPARSE] = new radio_button(
-    "SPARSE",
-    "Format is [v1:1, v3:2, v6:1]",
-    evm_hlm::SPARSE
-  );
-  ms_list[evm_hlm::VECTOR] = new radio_button(
-    "VECTOR",
-    "Format is [1, 0, 2, 0, 0, 1]",
-    evm_hlm::VECTOR
-  );
+  if (em->OptMan()) {
+    option* sty = em->OptMan()->addRadioOption("EVMStateStyle",
+        "How to display a state in an event & variable model",
+        4, evm_hlm::StateStyle
+    );
+    sty->addRadioButton(
+        "INDEXED",
+        "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
+        evm_hlm::INDEXED
+    );
+    sty->addRadioButton(
+        "SAFE",
+        "Format is [v1, v3:2, v6]",
+        evm_hlm::SAFE
+    );
+    sty->addRadioButton(
+        "SPARSE",
+        "Format is [v1:1, v3:2, v6:1]",
+        evm_hlm::SPARSE
+    );
+    sty->addRadioButton(
+        "VECTOR",
+        "Format is [1, 0, 2, 0, 0, 1]",
+        evm_hlm::VECTOR
+    );
+  }
   evm_hlm::StateStyle = evm_hlm::SPARSE;
-  em->addOption(
-    MakeRadioOption("EVMStateStyle",
-      "How to display a state in an event & variable model",
-      ms_list, 4, evm_hlm::StateStyle
-    )
-  );
 
   return true;
 }

@@ -2,6 +2,7 @@
 #include "../Streams/streams.h"
 #include "exprman.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "functions.h"
 #include "mod_def.h"
 #include "mod_inst.h"
@@ -1663,12 +1664,6 @@ stack_size_watcher::stack_size_watcher()
 
 void stack_size_watcher::notify(const option* opt)
 {
-#ifdef DEVELOPMENT_CODE
-    long v;
-    DCASSERT(option::Success == opt->GetValue(v));
-    DCASSERT(v == size);
-#endif
-
     DCASSERT(0 == top_user_func::stack_top);
 
     delete[] top_user_func::stack;
@@ -1921,15 +1916,16 @@ void InitFunctions(exprman* em)
   top_user_func::stack_size = init_stack_size;
   top_user_func::stack_top = 0;
 
+  if (0==em) return;
+  if (0==em->OptMan()) return;
+
   stack_size_watcher* sw = new stack_size_watcher();
-  option* o = MakeIntOption("StackSize",
+  option* o = em->OptMan()->addIntOption("StackSize",
           "Size of run-time stack to use for function calls.",
           sw->Link(),
           0,
           LONG_MAX
   );
   o->registerWatcher(sw);
-  DCASSERT(em);
-  em->addOption(o);
 }
 

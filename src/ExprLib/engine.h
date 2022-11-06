@@ -124,7 +124,8 @@ public:
 
   void AddSubEngine(subengine* child);
 
-  void AddOption(option* o);
+  /// Start internal options for this engine
+  option_manager* internalOpts();
 
   inline const engtype* getType() const { return etype; }
   inline const char* Name() const { return name; }
@@ -197,7 +198,7 @@ private:
       Build a radio button for this engine
       Called by engtype methods, probably should not be called otherwise.
   */
-  option_enum* BuildOptionConst(int ndx);
+  void addButtonToOption(option* o, unsigned ndx);
 
   /// Are there internal options for this engine
   inline bool hasOptions() const { return options; }

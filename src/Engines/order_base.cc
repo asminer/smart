@@ -5,7 +5,7 @@
 #include "../ExprLib/engine.h"
 #include "../Formlsms/dsde_hlm.h"
 
-#include "../Options/options.h"
+#include "../Options/optman.h"
 
 #include <vector>
 #include <algorithm>
@@ -46,7 +46,7 @@ class user_varorder : public static_varorder {
 public:
   user_varorder();
   virtual ~user_varorder();
-  
+
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
   virtual void RunEngine(hldsm* m, result &);
 };
@@ -73,12 +73,12 @@ void user_varorder::RunEngine(hldsm* hm, result &)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
-  
+
   if (hm->hasPartInfo()) return;  // already done!
-  
+
   dsde_hlm* dm = dynamic_cast <dsde_hlm*> (hm);
   DCASSERT(dm);
-  
+
   if (debug.startReport()) {
     debug.report() << "using user-defined variable order\n";
     debug.stopIO();
@@ -101,7 +101,7 @@ public:
 private:
   double factor;
   int heuristic;
-  
+
 };
 heuristic_varorder the_force_000_varorder(0, 0.0);
 heuristic_varorder the_force_025_varorder(0, 0.25);
@@ -138,88 +138,88 @@ init_static_varorder::init_static_varorder() : initializer("init_static_varorder
 bool init_static_varorder::execute()
 {
   if (0==em)  return false;
-  
+
   // Initialize options
   option* report = em->findOption("Report");
   option* debug = em->findOption("Debug");
-  
-  static_varorder::report.Initialize(report,
+
+  static_varorder::report.Initialize(report, 0,
                                      "varorder",
                                      "When set, static variable ordering heuristic performance is reported.",
                                      false
                                      );
-  
-  static_varorder::debug.Initialize(debug,
+
+  static_varorder::debug.Initialize(debug, 0,
                                     "varorder",
                                     "When set, static variable ordering heuristic details are displayed.",
                                     false
                                     );
-  
+
   MakeEngineType(em,
                  "VariableOrdering",
                  "Algorithm to use to determine the (static) variable order for a high-level model",
                  engtype::Model
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "USER_DEFINED",
                  "Variable order is determined by calls to partition() in the model",
                  &the_user_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE000",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_000_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE025",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_025_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE050",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_050_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE0625",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_0625_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE075",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_075_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE0875",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_0875_varorder
                  );
-  
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "FORCE100",
                  "Variable order is determined by calls to partition() in the model",
                  &the_force_100_varorder
                  );
-  
-  
+
+
   // BEGIN EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
-  
+
   engine* variable_engine = RegisterEngine(em,
                                            "VariableOrdering",
                                            "FORCEPARAM",
@@ -227,28 +227,25 @@ bool init_static_varorder::execute()
                                            &the_force_param
                                            );
   //
-  variable_engine->AddOption(
-                             MakeRealOption(
+  variable_engine->internalOpts()->addRealOption(
                                             "SosSotAlpha",
                                             "Weight given to sum of spans vs. sum of tops.",
                                             heuristic_varorder::alphaParameter,
                                             true, true, 0.0,
                                             true, true, 1.0
-                                            )
                              );
-  //settings->DoneAddingOptions();
-  
-  
+
+
   // END EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
-  
-  
+
+
   RegisterEngine(em,
                  "VariableOrdering",
                  "NOACK",
                  "Variable order is determined by calls to partition() in the model",
                  &the_noack_varorder
                  );
-  
+
   return true;
 }
 
@@ -335,16 +332,16 @@ bool compareTree(const TransTree  & a, const TransTree  & b) {
   std::map<int, ArcPair>::const_iterator itB = b.arcs.begin();
   int bBottom = itB->first;
   if (aBottom != bBottom) return (aBottom < bBottom); // bottoms are different
-  
+
   std::set<int> levSet; // sorted set of levels with arcs
-  
+
   for (; itA!=a.arcs.end(); ++itA) {
     levSet.emplace(itA->first);
   }
   for (; itB!=b.arcs.end(); ++itB) {
     levSet.emplace(itB->first);
   }
-  
+
   for (auto it = levSet.begin(); it !=levSet.end(); ++it) {
     itA = a.arcs.find(*it);
     if (itA == a.arcs.end()) {
@@ -356,7 +353,7 @@ bool compareTree(const TransTree  & a, const TransTree  & b) {
       // no arc. point of difference
       return false;
     }
-    
+
     ArcPair apA = itA->second;
     ArcPair apB = itB->second;
     if (apA.placeToTrans != apB.placeToTrans) {
@@ -376,7 +373,7 @@ bool compareTree(const TransTree  & a, const TransTree  & b) {
 bool setContains(std::set<int> theSet, int element) {
   std::set<int>::iterator isUsed = theSet.find(element);
   return (isUsed != theSet.end());
-} 
+}
 
 
 // check if a map contains a given key
@@ -384,12 +381,12 @@ bool setContains(std::set<int> theSet, int element) {
 bool mapContainsKey(std::map<int, double> theMap, int key) {
   std::map<int, double>::iterator isUsed = theMap.find(key);
   return (isUsed != theMap.end());
-} 
+}
 
 void outputTree(TransTree & a) {
   for (auto it = a.arcs.begin(); it != a.arcs.end(); ++it) {
     ArcPair ap = it->second;
-    std::cout << "outputTree has ap value " << ap.placeToTrans << "," << ap.transToPlace << 
+    std::cout << "outputTree has ap value " << ap.placeToTrans << "," << ap.transToPlace <<
     " at it->first " << it->first << std::endl;
   }
 }
@@ -409,24 +406,24 @@ int pointOfUnique(TransTree & a, TransTree & b) {
     return itB->first;
   }
   DCASSERT(!b.arcs.empty());
-  
+
   std::map<int, ArcPair>::iterator itA = a.arcs.begin();
   int aBottom = itA->first;
   std::map<int, ArcPair>::iterator itB = b.arcs.begin();
   int bBottom = itB->first;
   if (aBottom != bBottom) return (bBottom); // bottoms are different
-  
+
   std::set<int> levSet; // sorted set of levels with arcs
-  
+
   for (; itA!=a.arcs.end(); ++itA) {
     levSet.emplace(itA->first);
   }
   for (; itB!=b.arcs.end(); ++itB) {
     levSet.emplace(itB->first);
   }
-  
+
   int current = aBottom;
-  
+
   do {
     auto itA = a.arcs.lower_bound(current);
     auto itB = b.arcs.lower_bound(current);
@@ -442,7 +439,7 @@ int pointOfUnique(TransTree & a, TransTree & b) {
     ArcPair apB = itB->second;
     if ((apA.placeToTrans != apB.placeToTrans) || (apA.transToPlace != apB.transToPlace)) {
       return current;
-    }  
+    }
     itA = a.arcs.upper_bound(current);
     itB = b.arcs.upper_bound(current);
     if (itA == a.arcs.end() || itB == b.arcs.end()) {
@@ -451,7 +448,7 @@ int pointOfUnique(TransTree & a, TransTree & b) {
     // std::cout << "itA: " << itA->second.placeToTrans << ", itB: " << itB->second.placeToTrans << "\n";
     current = std::min(itA->first, itB->first);
   } while (true);
-  
+
   return 0; // should never get here
 }
 
@@ -461,7 +458,7 @@ int getProdSpan(TransTree & tt) {
     ArcPair ap = it->second;
     if (ap.placeToTrans != ap.transToPlace) {
       return ((top - it->first) + 1); // it has a productive span
-    } 
+    }
   }
   return 0;
 }
@@ -470,13 +467,13 @@ int getProdSpan(TransTree & tt) {
 // assuming that the startOrder is a mapping (place->level) IMPORTANT! BS
 std::vector<TransTree> getTrees(MODEL & theModel, std::vector<int> & startOrder) {
   std::map<int, ArcPair>::iterator found;
-  
+
   std::vector<int> plOrder (startOrder);
   for (int index = 0; index < theModel.numPlaces; index++) {
     plOrder[startOrder[index]] = index;// try this
   }
-  
-  
+
+
   // create the empty trees for each transition
   std::vector<TransTree> result;
   for (int t = 0; t < theModel.numTrans; t++) {
@@ -527,10 +524,10 @@ std::vector<TransTree> getTrees(MODEL & theModel, std::vector<int> & startOrder)
 DoubleInt getSOUPS(std::vector<TransTree> & theTrees, int abandon) {
   // sort the trans trees
   std::sort(theTrees.begin(), theTrees.end(), compareTree);
-  
+
   // use the sorted order to find lowest point of uniqueness
   TransTree prev; // an empty tree, to force the first transition to be all unique
-  
+
   int soups = 0;
   int countTrans = 0;
   for (auto it = theTrees.begin(); it != theTrees.end(); ++it) {
@@ -547,7 +544,7 @@ DoubleInt getSOUPS(std::vector<TransTree> & theTrees, int abandon) {
     prev = curr;
     if (soups > abandon) break;
     countTrans++;
-    
+
   }
   DoubleInt result;
   result.theDouble = 1.0 - ((double)countTrans) / ((double)theTrees.size());
@@ -559,10 +556,10 @@ DoubleInt getSOUPS(std::vector<TransTree> & theTrees, int abandon) {
 double getSOUPSScore(MODEL & theModel, std::vector<int> & theOrder, double param) {
   // param is ignored, but kept to have the same signature as the spantop calc
   std::vector<TransTree> trees = getTrees(theModel, theOrder);
-  
+
   int score = 2147483647;
   DoubleInt result = getSOUPS(trees, score);
-  
+
   double toDouble = (double)result.theInt;
   return toDouble;
 }
@@ -572,7 +569,7 @@ double getSOUPSScore(MODEL & theModel, std::vector<int> & theOrder, double param
 void doSwap(std::vector<TransTree> & trees, int a, int b) {
   if (a == b) return;
   std::map<int, ArcPair>::iterator found;
-  for (unsigned it = 0; it < trees.size(); it++) {  
+  for (unsigned it = 0; it < trees.size(); it++) {
     TransTree & tt = trees[it];
     found = tt.arcs.find(a);
     ArcPair apA;
@@ -607,12 +604,12 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
   std::default_random_engine generator;
   std::uniform_int_distribution<int> dist(0, theModel.numPlaces - 1);
   std::uniform_real_distribution<double> arand(0.0, 1.0);
-  
+
   std::vector<TransTree> trees = getTrees(theModel, startOrder);
-  
+
   int a = 0;  // starting swaps (no swap in first iteration)
   int b = 0;
-  
+
   int score = 2147483647; // "best" score so far
   int prevScore = score;  // score from previous iteration
   for (int iter = 0; iter < numIter; iter++) {
@@ -636,7 +633,7 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
         current[a] = current[b];
         current[b] = temp;
         doSwap(trees, a, b);
-      } 
+      }
       if (arand(generator) > .98) {
         trees = getTrees(theModel, resultOrder);
         for (int index = 0; index < theModel.numPlaces; index++) {
@@ -656,7 +653,7 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
     current[b] = temp;
     doSwap(trees, a, b);
   }
-  
+
   return resultOrder;
 }
 
@@ -665,12 +662,12 @@ std::vector<int> generateSASOUPSOrder(MODEL theModel, int numIter, std::vector<i
 // used by Noack
 std::map<int, std::set<int> > getDotP(MODEL theModel) {
   std::map<int, std::set<int> > result;
-  
+
   for (int p = 0; p < theModel.numPlaces; p++) {
     std::set<int> temp;
     result[p] = temp;
   }
-  
+
   for (int a = 0; a < theModel.numArcs; a++) {
     if (theModel.theArcs[a].source < theModel.numPlaces) {
       // source is a place
@@ -679,7 +676,7 @@ std::map<int, std::set<int> > getDotP(MODEL theModel) {
       result[theModel.theArcs[a].target].insert(theModel.theArcs[a].source);
     }
   }
-  
+
   return result;
 }
 
@@ -687,12 +684,12 @@ std::map<int, std::set<int> > getDotP(MODEL theModel) {
 // used by Noack
 std::map<int, std::set<int> > getPDot(MODEL theModel) {
   std::map<int, std::set<int> > result;
-  
+
   for (int p = 0; p < theModel.numPlaces; p++) {
     std::set<int> temp;
     result[p] = temp;
   }
-  
+
   for (int a = 0; a < theModel.numArcs; a++) {
     if (theModel.theArcs[a].source < theModel.numPlaces) {
       // source is a place
@@ -701,7 +698,7 @@ std::map<int, std::set<int> > getPDot(MODEL theModel) {
       // target is the place
     }
   }
-  
+
   return result;
 }
 
@@ -710,7 +707,7 @@ std::map<int, std::set<int> > getPDot(MODEL theModel) {
 std::vector<int> getpUp(std::map<int, std::set<int> > dotp,
                         std::map<int, std::set<int> > pdot, MODEL theModel) {
   std::vector<int> result;
-  
+
   for (int p = 0; p < theModel.numPlaces; p++) {
     std::set<int> temp (dotp[p]);
     std::set<int>& pp = pdot[p];
@@ -718,7 +715,7 @@ std::vector<int> getpUp(std::map<int, std::set<int> > dotp,
     //for (auto pp : pdot[p]) { temp.insert(pp); }
     result.push_back(temp.size());
   }
-  
+
   return result;
 }
 
@@ -726,12 +723,12 @@ std::vector<int> getpUp(std::map<int, std::set<int> > dotp,
 // used by Noack
 std::map<int, std::set<int> > getDotT(MODEL theModel) {
   std::map<int, std::set<int> > result;
-  
+
   for (int p = 0; p < theModel.numTrans; p++) {
     std::set<int> temp;
     result[p + theModel.numPlaces] = temp;
   }
-  
+
   for (int a = 0; a < theModel.numArcs; a++) {
     if (theModel.theArcs[a].source < theModel.numPlaces) {
       // source is a place
@@ -740,7 +737,7 @@ std::map<int, std::set<int> > getDotT(MODEL theModel) {
       // target is the place
     }
   }
-  
+
   return result;
 }
 
@@ -748,12 +745,12 @@ std::map<int, std::set<int> > getDotT(MODEL theModel) {
 // used by Noack
 std::map<int, std::set<int> > getTDot(MODEL theModel) {
   std::map<int, std::set<int> > result;
-  
+
   for (int p = 0; p < theModel.numTrans; p++) {
     std::set<int> temp;
     result[p + theModel.numPlaces] = temp;
   }
-  
+
   for (int a = 0; a < theModel.numArcs; a++) {
     if (theModel.theArcs[a].source < theModel.numPlaces) {
       // source is a place
@@ -762,7 +759,7 @@ std::map<int, std::set<int> > getTDot(MODEL theModel) {
       result[theModel.theArcs[a].source].insert(theModel.theArcs[a].target);
     }
   }
-  
+
   return result;
 }
 
@@ -777,7 +774,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
   std::map<int, std::set<int> > dotTs = getDotT(theModel);
   std::map<int, std::set<int> > tDots = getTDot(theModel);
   std::vector<int> pUp = getpUp(dotPs, pDots, theModel);
-  
+
   double bestStart = 0.0;
   int start = 0;
   std::set<int> unused;
@@ -788,12 +785,12 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
     // for (unsigned t = dotPs[p].size()-1; t >= 0; t--)
     for (unsigned t = 0; t < dotPs[p].size(); t++)
       current += dotTs[t].size();
-    
+
     //for (auto t : pDots[p]) current += PARAM_W * (tDots[t].size());
     // for (unsigned t = pDots[p].size()-1; t >= 0; t--)
     for (unsigned t = 0; t < pDots[p].size(); t++)
       current += PARAM_W * (tDots[t].size());
-    
+
     if (pUp[p] > 0) {
       current /= (double)pUp[p];
       if (current > bestStart) {
@@ -802,7 +799,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
       }
     }
   }
-  
+
   std::map<int, std::map<int, double> > adders;
   //for (auto p : unused) {
   for (std::set<int>::iterator p = unused.begin(); p != unused.end(); p++) {
@@ -833,7 +830,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
     }
     adders[*p] = totals;
   }
-  
+
   double * currentWeights = new double[theModel.numPlaces];
   int current = start;
   int count = 0;
@@ -842,7 +839,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
   op.item = start;
   resultOrder.push_back(op);
   count++;
-  
+
   do {
     // keep track of best weight so far
     double maxWeight = -1.0;
@@ -871,7 +868,7 @@ std::vector<OrderPair> noackParam(MODEL theModel, double param) {
     count++;
     resultOrder.push_back(theNext);
   } while (unused.size() > 1);
-  
+
   delete [] currentWeights;
   return resultOrder;
 }
@@ -920,19 +917,19 @@ std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int
   std::vector<int> resultOrder (startOrder);
   const int CYCLE = 5;
   double bestScore = std::numeric_limits<double>::max();
-  
+
   u64 * cycleCheck = new u64[CYCLE];
   for (int index = 0; index < CYCLE; index++) {
     cycleCheck[index] = 0;
   }
-  
+
   int iter = 0; // in case # iterations wanted after a cycle breaks
   for (iter = 0; iter < numIter; iter++) {
     u64 theNew = cogFix(theModel, current);
     int hash = theNew % CYCLE;
     if (theNew == cycleCheck[hash]) break;
     cycleCheck[hash] = theNew;
-    
+
     double score = getSpanTopParam(theModel, current, param);
     if (score < bestScore) {
       bestScore = score;
@@ -941,9 +938,9 @@ std::vector<int> generateForceOrder(MODEL theModel, int numIter, std::vector<int
       }
     }
   }
-  
+
   delete [] cycleCheck;
-  
+
   return resultOrder;
 }
 
@@ -955,18 +952,18 @@ std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> 
    for (int index = 0; index < theModel.numPlaces; index++) {
    inverse[current[index]] = index;
    }
-   
+
    double bestScore = getSpanTopParam(theModel, current, param); // find the score to beat
-   
+
    for (int index = 0; index < (theModel.numPlaces - 1); index++) {
    for (int swap = index + 1; swap < theModel.numPlaces; swap++) {
    int tempA = inverse[index];
    int tempB = inverse[swap];
-   
+
    // swap in current
    current[tempA] = swap;
    current[tempB] = index;
-   
+
    // measure
    double score = getSpanTopParam(theModel, current, param);
    if (score < bestScore) {
@@ -987,7 +984,7 @@ std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> 
    }
    // output score?
    */
-  
+
   return resultOrder;
 }
 
@@ -995,22 +992,22 @@ std::vector<int> searchOrderAlpha(MODEL theModel, int numIter, std::vector<int> 
 std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int> startOrder, double param) {
   std::vector<int> current (startOrder);  // gets changed
   std::vector<int> resultOrder (startOrder);
-  
+
   double currentBest = getSpanTopParam(theModel, current, param); // find the score to beat
-  
+
   int changes = 0;
   int iters = 0;
   do {
     changes = 0;
-    
+
     for (int index = 0; index < (theModel.numPlaces - 1); index++) {
       for (int swap = index + 1; swap < theModel.numPlaces; swap++) {
-        
+
         // swap in current
         int temp = current[index];
         current[index] = current[swap];
         current[swap] = temp;
-        
+
         // measure, keep if better
         double score = getSpanTopParam(theModel, current, param);
         if (score < currentBest) {
@@ -1019,21 +1016,21 @@ std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int>
           for (int i = 0; i < theModel.numPlaces; i++) {
             resultOrder[i] = current[i];
           }
-        } 
+        }
         // undo the swap
         temp = current[index];
         current[index] = current[swap];
         current[swap] = temp;
       }
     }
-    
-    
+
+
     for (int i = 0; i < theModel.numPlaces; i++) {
       current[i] = resultOrder[i];
     }
     iters++;
   } while ((changes != 0) && (iters < numIter));
-  
+
   return resultOrder;
 }
 
@@ -1041,15 +1038,15 @@ std::vector<int> swapPositionAlpha(MODEL theModel, int numIter, std::vector<int>
 
 // generate a breadth first order from the given model, starting with variable "start"
 std::vector<int> getBFSx(MODEL theModel, int start) {
-  
+
   std::vector<int> result;
-  
+
   std::set<int> used;
   std::set<int>::iterator isUsed;
-  
+
   std::map<int, std::set<int> > connections;
   std::map<int, std::set<int> >::iterator found;
-  
+
   for (int a = 0; a < theModel.numArcs; a++) {
     int source = theModel.theArcs[a].source;
     int target = theModel.theArcs[a].target;
@@ -1064,7 +1061,7 @@ std::vector<int> getBFSx(MODEL theModel, int start) {
       connections[source].insert(target);
     }
   }
-  
+
   for (int p = 0; p < theModel.numPlaces; p++) {
     int s = ((p + start) % theModel.numPlaces);
     std::queue<int> theQueue;
@@ -1098,12 +1095,12 @@ std::vector<int> getBFSx(MODEL theModel, int start) {
       }
     }
   }
-  
+
   std::vector<int> inv_result(result.size());
   for (int i = 0; i < int(result.size()); i++) {
     inv_result[result[i]] = i;
   }
-  
+
   return inv_result;
 }
 
@@ -1148,25 +1145,25 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
                               named_msg& out){
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
   int soupsIters = 2000;
-  
+
   std::vector<int> best (theModel.numPlaces, 0);
   // start with best as the given order until found otherwise
   for (int index = 0; index < theModel.numPlaces; index++) {
-    best[index] = index;  
+    best[index] = index;
   }
-  
+
   if (out.startReport()) {
     out.report() << "In default order : " << paramAlpha << "\n\n";
     out.stopIO();
   }
-  
+
   double bestScore = getSOUPSScore(theModel, best, paramAlpha);// to test soups
-  
+
   if (out.startReport()) {
     out.report() << "Score[given-order]: " << bestScore << "\n\n";
     out.stopIO();
   }
-  
+
   std::vector<int> startOrder (best); // try force on the given order
   std::vector<int> forceGiven = generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
   if (out.startReport()) {
@@ -1179,7 +1176,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     out.report() << "Done generating initial soupsgiven\n";
     out.stopIO();
   }
-  
+
   double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
   if (out.startReport()) {
     out.report() << "Done computing soupscore\n";
@@ -1191,13 +1188,13 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       best[index] = soupsGiven[index];
     }
   }
-  
+
   if (out.startReport()) {
     out.report() << "Score[SA(force(given-order))]: " << newScore << "\n";
     out.report() << "Best Score: " << bestScore << "\n\n";
     out.stopIO();
   }
-  
+
   forceGiven = getBFS(theModel);
   soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceGiven);
   if (out.startReport()) {
@@ -1215,15 +1212,15 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       best[index] = soupsGiven[index];
     }
   }
-  
+
   if (out.startReport()) {
     out.report() << "Score[SA(bfs)]: " << newScore << "\n";
     out.report() << "Best Score: " << bestScore << "\n\n";
     out.stopIO();
   }
-  
+
   // int size = theModel.numPlaces - 1;
-  
+
   // try force on a number of different BFS orders (bfsIters should be as many as wanted to get good results) 10??
   for (int iter = 0; (iter < 1) && (iter < theModel.numPlaces); iter++) {
     std::vector<int> startOrderBFS = getBFSx(theModel, iter);
@@ -1248,9 +1245,9 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.report() << "Best Score: " << bestScore << "\n\n";
       out.stopIO();
     }
-    
-    
-    
+
+
+
     std::vector<int> forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
     if (out.startReport()) {
@@ -1273,7 +1270,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.report() << "Best Score: " << bestScore << "\n\n";
       out.stopIO();
     }
-    
+
     // reverse the order
     for (int fixrev = 0; fixrev < theModel.numPlaces; fixrev++) {
       startOrderBFS[fixrev] = (theModel.numPlaces - 1) - startOrderBFS[fixrev];
@@ -1299,7 +1296,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.report() << "Best Score: " << bestScore << "\n\n";
       out.stopIO();
     }
-    
+
     forceBFS = generateForceOrder(theModel, maxIter, startOrderBFS, paramAlpha);
     soupsGiven = generateSASOUPSOrder(theModel, soupsIters, forceBFS);
     if (out.startReport()) {
@@ -1323,7 +1320,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       out.stopIO();
     }
   }
-  
+
   return best;
 }
 
@@ -1335,25 +1332,25 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
   // int soupsIters = 10000;
   int soupsIters = 5000;
-  
+
   std::vector<int> best (theModel.numPlaces, 0);
   // start with best as the given order until found otherwise
   for (int index = 0; index < theModel.numPlaces; index++) {
-    best[index] = index;  
+    best[index] = index;
   }
-  
+
   if (out.startReport()) {
     out.report() << "In default order : " << paramAlpha << "\n\n";
     out.stopIO();
   }
-  
+
   double bestScore = getSOUPSScore(theModel, best, paramAlpha);// to test soups
-  
+
   if (out.startReport()) {
     out.report() << "Score[given-order]: " << bestScore << "\n\n";
     out.stopIO();
   }
-  
+
   std::vector<int> startOrder (best); // try force on the given order
   std::vector<int> soupsGiven = generateSASOUPSOrder(theModel, soupsIters, startOrder);
 
@@ -1361,7 +1358,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
     out.report() << "Done generating initial soupsgiven\n";
     out.stopIO();
   }
-  
+
   double newScore = getSOUPSScore(theModel, soupsGiven, paramAlpha);
   if (out.startReport()) {
     out.report() << "Done computing soupscore\n";
@@ -1373,13 +1370,13 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
       best[index] = soupsGiven[index];
     }
   }
-  
+
   if (out.startReport()) {
     out.report() << "Score[SA(given-order)]: " << newScore << "\n";
     out.report() << "Best Score: " << bestScore << "\n\n";
     out.stopIO();
   }
-  
+
   return best;
 }
 
@@ -1422,9 +1419,9 @@ u64 cogFix(MODEL & theModel, std::vector<int>& theOrder) {
       counts[index] = 0;
       totals[index].theDouble = 0.0;
     }
-    totals[index].theInt = index; // "names" 0..numPlaces - 1 
-  } 
-  
+    totals[index].theInt = index; // "names" 0..numPlaces - 1
+  }
+
   // for every arc, update the cog value
   for (int index = 0; index < theModel.numArcs; index++) {
     int source = theModel.theArcs[index].source;
@@ -1460,13 +1457,13 @@ u64 cogFix(MODEL & theModel, std::vector<int>& theOrder) {
       totals[index].theDouble = (double)theModel.numPlaces;
     }
     totals[index].theInt = index;
-  } 
-  
+  }
+
   // sort by the cog values
   std::vector<DoubleInt> toBeSorted;
   toBeSorted.assign(totals, totals + theModel.numPlaces);
   std::stable_sort(toBeSorted.begin(), toBeSorted.end(), comparePair);
-  
+
   // update the order, and calc a quick hash (FNV1a - modified)
   u64 base = 109951168211ULL;//theOrder.size();
   u64 result = 14695981039346656037ULL;
@@ -1476,10 +1473,10 @@ u64 cogFix(MODEL & theModel, std::vector<int>& theOrder) {
     result ^= toBeSorted[index].theInt;
     result *= base;
   }
-  
+
   delete [] totals;
   delete [] counts;
-  
+
   return result;
 }
 
@@ -1493,7 +1490,7 @@ double getSpanTopParam(MODEL & theModel, std::vector<int> & theOrder, double par
   for (int index = 0; index < (count); index++) {
     eventMax[index] = 0;
     eventMin[index] = theModel.numPlaces;
-  } 
+  }
   u64 tops = 0LL;
   for (int index = 0; index < theModel.numArcs; index++) {
     int source = theModel.theArcs[index].source;
@@ -1539,7 +1536,7 @@ double getSpanTopParam(MODEL & theModel, std::vector<OrderPair> & theOrder,
   for (int index = 0; index < (count); index++) {
     eventMax[index] = 0;
     eventMin[index] = theModel.numPlaces;
-  }  
+  }
   u64 tops = 0LL;
   for (int index = 0; index < theModel.numArcs; index++) {
     int source = theModel.theArcs[index].source;
@@ -1582,7 +1579,7 @@ double getSatCostParam(MODEL & theModel, std::vector<int> & theOrder, double par
   int count = theModel.numTrans + theModel.numPlaces;
   std::vector<int> eventMax(count, 0);
   std::vector<int> eventMin(count, theModel.numPlaces);
-  
+
   // get the sums and tops for all transitions
   for (int index = 0; index < theModel.numArcs; index++) {
     int source = theModel.theArcs[index].source;
@@ -1617,12 +1614,12 @@ double getSatCostParam(MODEL & theModel, std::vector<int> & theOrder, double par
     // double currentCost = 0.0;
     for (int event = theModel.numPlaces; level < count; level++) {
       if (eventMax[event] == level) {
-        
+
       }
     }
   }
-  
-  
+
+
   double result = 0;
   return result;
   }
@@ -1636,10 +1633,10 @@ double getSatCostParam(MODEL & theModel, std::vector<int> & theOrder, double par
 // heuristics: {0: FORCE, 1: NOACK}
 std::vector<int> primaryOrder(MODEL theModel, int heuristic, double paramAlpha) {
   int maxIter = 10000;
-  
+
   if (heuristic == 0) {
     std::vector<int> startOrder = getBFS(theModel);
-    
+
     return generateForceOrder(theModel, maxIter, startOrder, paramAlpha);
   }
   return pairToInt(noack(theModel));  // noack with default params
@@ -1655,10 +1652,10 @@ std::vector<int> primaryOrder(MODEL theModel, int heuristic, double paramAlpha) 
  if((it->source==from)&&(it->target==to))
  return it->cardinality;
  }
- 
+
  return 0;
  }
- 
+
  // for model translation
  std::vector<int> findSelfLoopItems(std::vector<int> enable_var,std::vector<int> fire_var)
  {
@@ -1676,7 +1673,7 @@ std::vector<int> primaryOrder(MODEL theModel, int heuristic, double paramAlpha) 
  self_loop_var.push_back(*e_it);
  }
  }
- 
+
  return self_loop_var;
  }
  */
@@ -1689,16 +1686,16 @@ MODEL translateModel(dsde_hlm& smartModel) {
   std::vector<ARC> vecArcs;
   std::map<long, ARC> pairs;
   long ptBase = result.numPlaces + result.numTrans;
-  
+
   for (int index = 0; index < result.numTrans; index++) {
     model_event * theEvent = smartModel.getEvent(index);
     int arcTarget = index + result.numPlaces;
     // using target as the transition
     //Create a list of variables that enable this transition as per smart paradigm (i.e Enabling is non-zero)
     std::vector<int> enabling_var;
-    
+
     expr* enabling = theEvent->getEnabling();
-    
+
     if (0 != enabling){
       List <expr> E;
       enabling->BuildExprList(traverse_data::GetProducts, 0, &E);
@@ -1713,7 +1710,7 @@ MODEL translateModel(dsde_hlm& smartModel) {
           if (0!=v){
             enabling_var.push_back(v->GetIndex());
             long enab_con = clev_exp->getLower(); // lower is the lower bound of the enabling condition
-            if (enab_con!=0) {  
+            if (enab_con!=0) {
               ARC tempArc;
               tempArc.target = v->GetIndex();
               tempArc.source = arcTarget;
@@ -1721,19 +1718,19 @@ MODEL translateModel(dsde_hlm& smartModel) {
               //std::cout << "ENABLING ARC SOURCE " << tempArc.source << " TARGET " << tempArc.target << " CARD " << tempArc.cardinality << std::endl;
               vecArcs.push_back(tempArc);
               long ptIndex = ((long)tempArc.target) + (((long)tempArc.source) * ptBase);
-              pairs[ptIndex] = tempArc;// hold onto the arcs 
+              pairs[ptIndex] = tempArc;// hold onto the arcs
             }
-          } 
+          }
         }
-      } 
+      }
     }
   }
-  
+
   for (int index = 0; index < result.numTrans; index++) {
     model_event * theEvent = smartModel.getEvent(index);
     int arcTarget = index + result.numPlaces;
     expr* enabling = theEvent->getNextstate();
-    
+
     //Create a list of variables that are affected by this transition as per smart paradigm (i.e delta is non-zero)
     if (0 != enabling) {
       List <expr> E;
@@ -1751,7 +1748,7 @@ MODEL translateModel(dsde_hlm& smartModel) {
             tempArc.target = arcTarget;
             tempArc.source = v->GetIndex();
             long delta = cupdate_exp->getDelta(); // delta = firing_cardinality - enabling_cardinality
-            
+
             long ptIndex = ((long)tempArc.source) + (((long)tempArc.target) * ptBase);
             long enable_tok = 0LL;
             auto hasEnabling = pairs.find(ptIndex);
@@ -1759,18 +1756,18 @@ MODEL translateModel(dsde_hlm& smartModel) {
               // there is an enabling arc
               enable_tok = pairs[ptIndex].cardinality;
               pairs.erase(ptIndex);// remove it so we know what gets left in (non-productive self-loops)
-            } 
+            }
             long fire_tok = delta + enable_tok;
             tempArc.cardinality = fire_tok;
             if (fire_tok != 0) {
               vecArcs.push_back(tempArc); // only store the arc if is has cardinality != 0
-            } 
-          }  
+            }
+          }
         }
       }
     }
-  } 
-  
+  }
+
   // self loops
   for (auto it = pairs.begin(); it != pairs.end(); ++it) {
     ARC sl = it->second;
@@ -1780,7 +1777,7 @@ MODEL translateModel(dsde_hlm& smartModel) {
     tempArc.cardinality = sl.cardinality;
     vecArcs.push_back(tempArc); // add this self-looper
   }
-  
+
   result.numArcs = vecArcs.size();
   result.theArcs = new ARC[vecArcs.size()];
   for (unsigned index = 0; index < vecArcs.size(); index++) {
@@ -1793,7 +1790,7 @@ MODEL translateModel(dsde_hlm& smartModel) {
       << i.cardinality << "\n";
   }
 #endif
-  
+
   return result;
 }
 
@@ -1802,15 +1799,15 @@ MODEL translateModelOLD(dsde_hlm& smartModel) {
   MODEL result;
   result.numPlaces = smartModel.getNumStateVars();
   result.numTrans = smartModel.getNumEvents();
-  
+
   std::vector<ARC> vecArcs;
-  
+
   for (int index = 0; index < result.numTrans; index++) {
     model_event * theEvent = smartModel.getEvent(index);
     int arcTarget = index + result.numPlaces;  // using target as the transition
-    
+
     expr* enabling = theEvent->getEnabling();
-    
+
     if (0 != enabling) {
       // Using the magic "List" from SMART with O(1) random access?
       List <symbol> L;
@@ -1821,15 +1818,15 @@ MODEL translateModelOLD(dsde_hlm& smartModel) {
         if (0 != mv) {
           ARC tempArc;
           tempArc.target = arcTarget;
-          tempArc.source = mv->GetIndex(); 
+          tempArc.source = mv->GetIndex();
           tempArc.cardinality = 1;  // temporary incorrect workaround BS
           vecArcs.push_back(tempArc);
-        } 
+        }
       }
     }
-    
+
     enabling = theEvent->getNextstate();
-    
+
     if (0 != enabling) {
       // Using the magic "List" from SMART with O(1) random access?
       List <symbol> L;
@@ -1840,24 +1837,24 @@ MODEL translateModelOLD(dsde_hlm& smartModel) {
         if (0 != mv) {
           ARC tempArc;
           tempArc.target = mv->GetIndex();
-          tempArc.source = arcTarget; 
+          tempArc.source = arcTarget;
           tempArc.cardinality = 1;  // temporary incorrect workaround BS
           vecArcs.push_back(tempArc);
-        } 
+        }
       }
     }
   }
-  
+
   result.numArcs = vecArcs.size();
   result.theArcs = new ARC[vecArcs.size()];
   for (unsigned index = 0; index < vecArcs.size(); index++) {
     result.theArcs[index] = vecArcs[index];
-    
+
     //printf("p: %d, t: %d\n", vecArcs[index].source, vecArcs[index].target);
   }
-  
+
   // printf("In translateModel()\n");
-  
+
   return result;
 }
 
@@ -1879,17 +1876,17 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
 {
   DCASSERT(hm);
   DCASSERT(AppliesToModelType(hm->Type()));
-  
+
   if (hm->hasPartInfo()) return;  // already done!
-  
+
   dsde_hlm* dm = dynamic_cast <dsde_hlm*> (hm);
   DCASSERT(dm);
-  
+
   if (debug.startReport()) {
     debug.report() << "using "
     << (heuristic == 0? "force": "noack")
     << "-defined variable order\n";
-    
+
     debug.report() << "Given Order: \n";
     for (int i = 0; i < dm->getNumStateVars(); i++) {
       model_statevar* var = dm->getStateVar(i);
@@ -1897,7 +1894,7 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
     }
     debug.stopIO();
   }
-  
+
   MODEL model = translateModel(*dm);
   if (debug.startReport()) {
     debug.report() << "Done with translating model within variable-ordering code\n";
@@ -1907,22 +1904,22 @@ void heuristic_varorder::RunEngine(hldsm* hm, result &)
   const int nIterations = 1000;
   const int nStartingOrders = 10;
   std::vector<int> order = defaultOrder(model, ((alphaParameter >= 0.0) ? alphaParameter : factor), nIterations, nStartingOrders, debug);
-  
+
   if (debug.startReport()) {
     debug.report() << "Done with building new variable-ordering\n";
     debug.stopIO();
   }
-  
-  
-  
+
+
+
   //std::vector<int> order = defaultOrder(model, factor, nIterations, nStartingOrders, debug);
   //std::vector<int> order = defaultOrder(model, ((heuristic_varorder::alphaParameter >= 0.0) ? heuristic_varorder::alphaParameter : factor), nIterations, nStartingOrders, debug);
-  
+
   for (int j = 0; j < int(order.size()); j++) {
     dm->getStateVar(j)->SetPart(order[j]+1);
   }
   dm->useHeuristicVarOrder();
-  
+
   if (debug.startReport()) {
     debug.report() << "Generated Order: \n";
     for (int i = 0; i < dm->getNumStateVars(); i++) {
