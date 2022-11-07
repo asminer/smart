@@ -250,6 +250,14 @@ void lexer::scan_token()
                         debug_token();
                         return;
 
+            case '|':   lookaheads[0].tokenID = token::OR;
+                        debug_token();
+                        return;
+
+            case '&':   lookaheads[0].tokenID = token::AND;
+                        debug_token();
+                        return;
+
 
             /*
              * Various comments, or division :)
@@ -352,30 +360,6 @@ void lexer::scan_token()
                         }
                         debug_token();
                         return;
-
-            /*
-             * OR
-             */
-            case '|':   if ('|' == topfile->peek()) {
-                            topfile->getc();
-                            lookaheads[0].tokenID = token::OR;
-                            debug_token();
-                            return;
-                        }
-                        IllegalChar('|');
-                        continue;
-
-            /*
-             * AND
-             */
-            case '&':   if ('&' == topfile->peek()) {
-                            topfile->getc();
-                            lookaheads[0].tokenID = token::AND;
-                            debug_token();
-                            return;
-                        }
-                        IllegalChar('&');
-                        continue;
 
             /*
              * String constants
