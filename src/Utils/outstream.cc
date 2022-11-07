@@ -1,5 +1,5 @@
 
-#include "swstream.h"
+#include "outstream.h"
 
 outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
 {

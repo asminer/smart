@@ -1,6 +1,6 @@
 
-#ifndef SWSTREAM_H
-#define SWSTREAM_H
+#ifndef OUTSTREAM_H
+#define OUTSTREAM_H
 
 #include <iostream>
 #include <fstream>
