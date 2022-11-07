@@ -267,8 +267,56 @@ public:
    }
 
 };
+/*
 
+// **************************************************************************
+// *                                                                        *
+// *                            decision class                              *
+// *                                                                        *
+// **************************************************************************
 
+class decision : public model_var{
+  bool dec; //this will be a three valued data
+  //int num_decisions;
+  //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
+  public:
+  decision(const symbol* w, const model_instance* pn);
+  protected:
+  ~decision();
+  public:
+    // add get and set method
+    inline bool getDecision(){
+      return dec; 
+    }
+    inline void setDecision(){
+    	dec=true;
+
+    }
+  inline bool isTaken(){
+    if (dec==false )return false;
+    else return true; 
+	}
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                            decision methods                            *
+// *                                                                        *
+// **************************************************************************
+
+decision::decision(const symbol* w, const model_instance* pn):model_var(w,pn){
+  dec=false;
+}
+decision::decision(const char* fn, int line, const type* t, char* n,
+		const model_instance* p) :
+		model_var(fn, line, t, n, p) {
+	dec=false;
+}
+decision::~decision()
+{
+
+}
+*/
 // **************************************************************************
 // *                                                                        *
 // *                             dsde_hlm class                             *
@@ -369,19 +417,26 @@ public:
 		   DCASSERT(decision_data);
 		   return decision_data[i];
 		}
-	  }
+	 }
 	
    inline int getNumDecVars() const { 
-   	if (num_decs){
+   		if (num_decs){
 
-   	return num_decs;}
+   			return num_decs;
+   		}
 
-    else 
-    	return 0;
+    	else 
+    		return 0;
 	}
-	  //virtual int NumDecVars() const;
-	  //virtual bool containsListVar() const;
-	
+
+/*
+	inline void showEvents(OutputStream &s) const {
+    for (int i=0; i<num_decs; i++) {
+      DCASSERT(decision_data[i]);
+      Print(decision_data[i],0);
+    }
+  }
+	*/  
 
 //////////////**********///////////////
   inline const model_statevar* readStateVar(int i) const {

@@ -881,6 +881,52 @@ void showstates_si::Compute(traverse_data &x, expr** pass, int np)
   llm->showStates(internal);
 }
 
+// ******************************************************************
+// *                           num_decisions                          *
+// ******************************************************************
+
+class numdecisions_si : public proc_noengine {
+public:
+  numdecisions_si();
+  virtual void Compute(traverse_data &x, expr** pass, int ndd);
+};
+
+
+numdecisions_si::numdecisions_si()
+ : proc_noengine(Nothing, em->VOID, "show_num_decisions", 2)
+{
+  SetDocumentation("Displays the number of decisions to the current output stream.");
+  result def;
+  def.setBool(false);
+  SetFormal(1, em->BOOL, "internal",
+    em->makeLiteral(0, -1, em->BOOL, def)
+  );
+}
+
+void numdecisions_si::Compute(traverse_data &x, expr** pass, int ndd)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  dsde_hlm* mypn;
+  mypn = smart_cast <dsde_hlm*> (mi->GetCompiledModel());
+  //const state_lldsm* llm = BuildProc(
+    //mi ? mi->GetCompiledModel() : 0, 1, x.parent
+  //);
+  //if (0==llm || lldsm::Error == llm->Type()) return;
+
+  bool internal = false;
+  SafeCompute(pass[1], x);
+  if (x.answer->isNormal()) {
+    internal = x.answer->getBool();
+  }
+  //shared_state* st = new shared_state(x.parent);
+  std::cout << mypn->getNumDecVars();
+  //llm->showStates(internal);
+  //mypn->showDec(em->cout(),st);
+}
 
 // ******************************************************************
 // *                           show_decisions                          *
@@ -923,8 +969,11 @@ void showdecisions_si::Compute(traverse_data &x, expr** pass, int ndd)
   if (x.answer->isNormal()) {
     internal = x.answer->getBool();
   }
-  //shared_state* st = new shared_state(x.parent);
-  std::cout << mypn->getNumDecVars();
+  //shared_state* st = new shared_state(mypn->);
+  int num_dec = mypn->getNumDecVars();
+  for (int i=0;i<num_dec;i++){
+    std::cout << mypn->getDecVar(i)->Name() << "\n";
+  }
   //llm->showStates(internal);
   //mypn->showDec(em->cout(),st);
 }

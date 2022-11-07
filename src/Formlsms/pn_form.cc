@@ -574,13 +574,24 @@ void transition::Finalize(OutputStream &ds)
 // **************************************************************************
 
 class decision : public model_var{
+  //bool dec; //this will be a three valued data
   //int num_decisions;
-  std:: vector<result*> decisions; // will it be a vector of expr or just three valued number?
+  std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   public:
   decision(const symbol* w, const model_instance* pn);
   protected:
   ~decision();
   public:
+    /*
+    // add get and set method
+    inline bool getDecision(){
+      return dec; 
+    }
+    inline void setDecision(){
+      dec=true;
+
+    }
+    */
   inline bool isTaken(int i){
     if (decisions[i]->isUnknown()) return false;
     else return true; }
@@ -600,7 +611,45 @@ decision::~decision()
 
 }
 
+/*
+// **************************************************************************
+// *                                                                        *
+// *                            decisions class                              *
+// *                                                                        *
+// **************************************************************************
 
+class decisions : public decision{
+  std::vector<decision*> all_decisions;
+  //std:: vector<expr*> decisions;
+  //int num_decisions;
+  //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
+  public:
+  decisions(const symbol* w, const model_instance* pn);
+  protected:
+  ~decisions();
+  public:
+   
+  inline bool isTaken(int i){
+    if (decision[i]->isUnknown()) return false;
+    else return true; }
+    
+};
+
+// **************************************************************************
+// *                                                                        *
+// *                            decision methods                            *
+// *                                                                        *
+// **************************************************************************
+
+decisions::decisions(const symbol* w, const model_instance* pn):decision(w,pn){
+  //num_decisions=0;
+}
+decisions::~decisions()
+{
+
+}
+
+*/
 
 // **************************************************************************
 // *                                                                        *
@@ -678,7 +727,7 @@ void petri_hlm::showDec(OutputStream &s, const shared_state* st) const
   printf("]\n");
 }
 
-
+ // where is it being called()??
 void petri_hlm::showState(OutputStream &s, const shared_state* st) const
 {
   DCASSERT(st);
