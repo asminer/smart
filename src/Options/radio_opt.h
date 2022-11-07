@@ -46,8 +46,8 @@ class radio_opt : public option {
         virtual ~radio_opt();
         virtual error SetValue(option_enum* v);
         virtual option_enum* FindConstant(const char* name) const;
-        virtual int NumConstants() const;
-        virtual option_enum* GetConstant(long i) const;
+        virtual unsigned NumConstants() const;
+        virtual option_enum* GetConstant(unsigned i) const;
 
         virtual void Finish();
 

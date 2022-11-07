@@ -47,7 +47,7 @@ bool option_enum::isApropos(const doc_formatter* df, const char* key) const
 {
     if (df->Matches(name, key))  return true;
     if (0==settings) return false;
-    for (int n=0; n<settings->NumOptions(); n++) {
+    for (unsigned n=0; n<settings->NumOptions(); n++) {
         option* rec = settings->GetOptionNumber(n);
         if (rec->isApropos(df, key)) return true;
     }

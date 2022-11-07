@@ -80,12 +80,12 @@ option_enum* option::FindConstant(const char*) const
   return 0;
 }
 
-int option::NumConstants() const
+unsigned option::NumConstants() const
 {
   return 0;
 }
 
-option_enum* option::GetConstant(long i) const
+option_enum* option::GetConstant(unsigned i) const
 {
   return 0;
 }
