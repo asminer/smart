@@ -2,6 +2,7 @@
 #include "../include/defines.h"
 #include "../Streams/streams.h"
 #include "checklist.h"
+
 #include <cstring>
 
 // **************************************************************************
@@ -93,10 +94,10 @@ checkall::checkall(const char* n, const char* d, option* p)
 
 bool checkall::CheckMe()
 {
-  long i = parent->NumConstants();
-  checklist_enum* item = 0;
-  for (i--; i>=0; i--) {
-    item = smart_cast <checklist_enum*> (parent->GetConstant(i));
+  const unsigned numconsts = parent->NumConstants();
+  for (unsigned i=0; i<numconsts; i++) {
+    checklist_enum* item
+        = smart_cast <checklist_enum*> (parent->GetConstant(i));
     DCASSERT(item);
     if (item != this) {
       if (!item->CheckMe())  return false;
@@ -107,10 +108,10 @@ bool checkall::CheckMe()
 
 bool checkall::UncheckMe()
 {
-  long i = parent->NumConstants();
-  checklist_enum* item = 0;
-  for (i--; i>=0; i--) {
-    item = smart_cast <checklist_enum*> (parent->GetConstant(i));
+  const unsigned numconsts = parent->NumConstants();
+  for (unsigned i=0; i<numconsts; i++) {
+    checklist_enum* item
+        = smart_cast <checklist_enum*> (parent->GetConstant(i));
     DCASSERT(item);
     if (item != this) {
       if (!item->UncheckMe())  return false;
@@ -148,12 +149,12 @@ checklist_opt::~checklist_opt()
   delete[] possible;
 }
 
-int checklist_opt:: NumConstants() const
+unsigned checklist_opt:: NumConstants() const
 {
     return numpossible;
 }
 
-option_enum* checklist_opt::GetConstant(long i) const
+option_enum* checklist_opt::GetConstant(unsigned i) const
 {
     if (i>=numpossible) return 0;
     return possible[i];
@@ -170,7 +171,7 @@ void checklist_opt::ShowCurrent(OutputStream &s) const
   show(s);
   s << " {";
   bool printed = false;
-  for (int i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
+  for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
     if (printed) s << ", ";
     s.Put(possible[i]->Name());
     printed = true;
@@ -188,10 +189,10 @@ option_enum* checklist_opt::FindConstant(const char* name) const
     return find;
   }
   // binary search
-  int low = 0;
-  int high = numpossible;
+  unsigned low = 0;
+  unsigned high = numpossible;
   while (low < high) {
-    int mid = (low+high)/2;
+    unsigned mid = (low+high)/2;
     int cmp = strcmp(possible[mid]->Name(), name);
     if (0==cmp) return possible[mid];
     if (cmp>0) {
@@ -208,10 +209,10 @@ void checklist_opt::ShowRange(doc_formatter* df) const
 {
   DCASSERT(df);
   df->Out() << "Legal values to be set or unset:";
-  int i;
-  int maxenum = 0;
+  unsigned i;
+  unsigned maxenum = 0;
   for (i=0; i<numpossible; i++)  {
-    int l = strlen(possible[i]->Name());
+    unsigned l = strlen(possible[i]->Name());
     maxenum = MAX(maxenum, l);
   }
   df->begin_description(maxenum);
@@ -236,8 +237,9 @@ bool checklist_opt::isApropos(const doc_formatter* df, const char* keyword) cons
 {
   if (0==df)                          return false;
   if (df->Matches(Name(), keyword))   return true;
-  for (int i=0; i<numpossible; i++)
-  if (df->Matches(possible[i]->Name(), keyword))  return true;
+  for (unsigned i=0; i<numpossible; i++) {
+    if (df->Matches(possible[i]->Name(), keyword))  return true;
+  }
   return false;
 }
 
