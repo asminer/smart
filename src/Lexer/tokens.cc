@@ -63,6 +63,8 @@ void token::show(OutputStream &s) const
         case COLON:     s.Put(":");         return;
         // case QUEST:     s.Put("?");         return;
         case BANG:      s.Put("!");         return;
+        case OR:        s.Put("|");         return;
+        case AND:       s.Put("&");         return;
 
         case FORALL:        s.Put("A");     return;
         case EXISTS:        s.Put("E");     return;
@@ -80,8 +82,6 @@ void token::show(OutputStream &s) const
         case NEQUAL:    s.Put("!=");    return;
         case GE:        s.Put(">=");    return;
         case LE:        s.Put("<=");    return;
-        case OR:        s.Put("||");    return;
-        case AND:       s.Put("&&");    return;
         case SET_DIFF:  s.Put("\\");    return;
         case IMPLIES:   s.Put("->");    return;
         case DOTDOT:    s.Put("..");    return;
@@ -166,6 +166,8 @@ const char* token::getIdName() const
         case COLON:     return "COLON";
         // case QUEST:     return "QUEST";
         case BANG:      return "BANG";
+        case OR:        return "OR";
+        case AND:       return "AND";
 
         case FORALL:        return "FORALL";
         case EXISTS:        return "EXISTS";
@@ -192,8 +194,6 @@ const char* token::getIdName() const
         case NEQUAL:    return "NEQUAL";
         case GE:        return "GE";
         case LE:        return "LE";
-        case OR:        return "OR";
-        case AND:       return "AND";
         case SET_DIFF:  return "SET_DIFF";
         case IMPLIES:   return "IMPLIES";
         case DOTDOT:    return "DOTDOT";

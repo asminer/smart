@@ -37,6 +37,8 @@ class token {
             COLON           = ':',
             // QUEST           = '?',
             BANG            = '!',
+            OR              = '|',
+            AND             = '&',
 
             FORALL          = 'A',
             EXISTS          = 'E',
@@ -69,8 +71,6 @@ class token {
             NEQUAL      = 352,
             GE          = 353,
             LE          = 354,
-            OR          = 355,
-            AND         = 356,
             SET_DIFF    = 357,
             IMPLIES     = 358,
             DOTDOT      = 359,
