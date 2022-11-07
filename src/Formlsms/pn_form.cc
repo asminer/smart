@@ -567,89 +567,6 @@ void transition::Finalize(OutputStream &ds)
 #endif
 }
 
-// **************************************************************************
-// *                                                                        *
-// *                            decision class                              *
-// *                                                                        *
-// **************************************************************************
-
-class decision : public model_var{
-  //bool dec; //this will be a three valued data
-  //int num_decisions;
-  std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
-  public:
-  decision(const symbol* w, const model_instance* pn);
-  protected:
-  ~decision();
-  public:
-    /*
-    // add get and set method
-    inline bool getDecision(){
-      return dec; 
-    }
-    inline void setDecision(){
-      dec=true;
-
-    }
-    */
-  inline bool isTaken(int i){
-    if (decisions[i]->isUnknown()) return false;
-    else return true; }
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                            decision methods                            *
-// *                                                                        *
-// **************************************************************************
-
-decision::decision(const symbol* w, const model_instance* pn):model_var(w,pn){
-  //num_decisions=0;
-}
-decision::~decision()
-{
-
-}
-
-/*
-// **************************************************************************
-// *                                                                        *
-// *                            decisions class                              *
-// *                                                                        *
-// **************************************************************************
-
-class decisions : public decision{
-  std::vector<decision*> all_decisions;
-  //std:: vector<expr*> decisions;
-  //int num_decisions;
-  //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
-  public:
-  decisions(const symbol* w, const model_instance* pn);
-  protected:
-  ~decisions();
-  public:
-   
-  inline bool isTaken(int i){
-    if (decision[i]->isUnknown()) return false;
-    else return true; }
-    
-};
-
-// **************************************************************************
-// *                                                                        *
-// *                            decision methods                            *
-// *                                                                        *
-// **************************************************************************
-
-decisions::decisions(const symbol* w, const model_instance* pn):decision(w,pn){
-  //num_decisions=0;
-}
-decisions::~decisions()
-{
-
-}
-
-*/
 
 // **************************************************************************
 // *                                                                        *
@@ -696,7 +613,7 @@ int petri_hlm::MarkingStyle;
 
 petri_hlm::petri_hlm(const model_instance* s, place_sv** P, int np, 
   model_event** T, int nt, model_event** dead, int nd,decision** d, int ndd)
- : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd, (model_var**)d, ndd)
+ : dsde_hlm(s, (model_statevar**)P, np, T, nt, dead, nd, d, ndd)
 {
 }
 

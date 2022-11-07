@@ -299,7 +299,7 @@ void model_event::decideEnabled(traverse_data &x) {
 named_msg dsde_hlm::ignored_prio;
 
 dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,   
-		model_event** ed, int ne, model_event** dead, int nd,  model_var** dv, int ndd) :              //add num_dec, model_statevar** dec?
+		model_event** ed, int ne, model_event** dead, int nd,  decision** dv, int ndd) :              //add num_dec, model_statevar** dec?
 		hldsm(Unknown) {
 	SetParent(p);
 	state_data = sv;

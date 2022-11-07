@@ -267,7 +267,7 @@ public:
    }
 
 };
-/*
+
 
 // **************************************************************************
 // *                                                                        *
@@ -276,24 +276,28 @@ public:
 // **************************************************************************
 
 class decision : public model_var{
-  bool dec; //this will be a three valued data
+  result* dec; //this will be a three valued data
   //int num_decisions;
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   public:
-  decision(const symbol* w, const model_instance* pn);
+  decision(const symbol* w, const model_instance* pn) : model_var(w,pn){
+    dec->setUnknown();
+  }
+  // decision(const char* fn, int line, const type* t, char* n,
+		// const model_instance* p);
   protected:
-  ~decision();
+  ~decision() { }
   public:
     // add get and set method
-    inline bool getDecision(){
+    inline result* getDecision(){
       return dec; 
     }
     inline void setDecision(){
-    	dec=true;
+    	dec->setBool(true);
 
     }
   inline bool isTaken(){
-    if (dec==false )return false;
+    if (dec->getBool()==false)return false;
     else return true; 
 	}
 };
@@ -304,19 +308,17 @@ class decision : public model_var{
 // *                                                                        *
 // **************************************************************************
 
-decision::decision(const symbol* w, const model_instance* pn):model_var(w,pn){
-  dec=false;
-}
-decision::decision(const char* fn, int line, const type* t, char* n,
-		const model_instance* p) :
-		model_var(fn, line, t, n, p) {
-	dec=false;
-}
-decision::~decision()
-{
+// decision::decision(const symbol* w, const model_instance* pn):
 
-}
-*/
+// decision::decision(const char* fn, int line, const type* t, char* n,
+// 		const model_instance* p) :
+// 		model_var(fn, line, t, n, p) {
+// }
+// decision::~decision()
+// {
+
+// }
+
 // **************************************************************************
 // *                                                                        *
 // *                             dsde_hlm class                             *
@@ -360,7 +362,7 @@ protected:
   /// Dimension of assertions array.
   int num_assertions;
   /// Array of decision variables.
-  model_var** decision_data;
+  decision** decision_data;
   /// Total number of decisions.
   int num_decs;
 public:
@@ -379,7 +381,7 @@ public:
         @param  ndd   Number of decision variables for this model
   */
   dsde_hlm(const model_instance* p, model_statevar** sv, int nv, 
-    model_event** ed, int ne, model_event** dead, int nd, model_var** dv=NULL, int ndd=0);
+    model_event** ed, int ne, model_event** dead, int nd, decision** dv=NULL, int ndd=0);
   virtual ~dsde_hlm();
 
   virtual lldsm::model_type GetProcessType() const;
