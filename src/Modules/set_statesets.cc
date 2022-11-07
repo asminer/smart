@@ -381,10 +381,10 @@ set_stateset_not_op::set_stateset_not_op() : unary_op(exprman::uop_not)
 const type* set_stateset_not_op::getExprType(const type* t) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   if (0==t)    return 0;
   if (t->isASet())  return 0; 
-  if (t != em->set_stateset)  return 0;
+  if (t != em->SETSTATESET)  return 0;
   return t;
 }
 
@@ -423,10 +423,10 @@ set_stateset_binary::set_stateset_binary(exprman::binary_opcode opc) : binary_op
 int set_stateset_binary::getPromoteDistance(const type* lt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
-  int ld = em->getPromoteDistance(lt, em->set_stateset);
+  DCASSERT(em->SETSTATESET);
+  int ld = em->getPromoteDistance(lt, em->SETSTATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, em->set_stateset);
+  int rd = em->getPromoteDistance(rt, em->SETSTATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
@@ -434,10 +434,10 @@ int set_stateset_binary::getPromoteDistance(const type* lt, const type* rt) cons
 const type* set_stateset_binary::getExprType(const type* l, const type* r) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   if (em->NULTYPE==l) return 0;
   if (em->NULTYPE==r) return 0;
-  return em->set_stateset;
+  return em->SETSTATESET;
 }
 
 
@@ -529,10 +529,10 @@ set_stateset_assoc_op::set_stateset_assoc_op(exprman::assoc_opcode op) : assoc_o
 int set_stateset_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(list[i]), em->set_stateset);
+    int dx = em->getPromoteDistance(em->SafeType(list[i]), em->SETSTATESET);
     if (dx < 0) return dx;
     d += dx;
   }
@@ -543,10 +543,10 @@ int set_stateset_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
-  int ld = em->getPromoteDistance(lt, em->set_stateset);
+  DCASSERT(em->SETSTATESET);
+  int ld = em->getPromoteDistance(lt, em->SETSTATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, em->set_stateset);
+  int rd = em->getPromoteDistance(rt, em->SETSTATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
@@ -555,10 +555,10 @@ const type* set_stateset_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   if (em->NULTYPE==l) return 0;
   if (em->NULTYPE==r) return 0;
-  return em->set_stateset;
+  return em->SETSTATESET;
 }
 
 
@@ -588,14 +588,14 @@ assoc* set_stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
     delete[] list;  
     return 0;
   }
-  return new set_stateset_union(fn, ln, em->set_stateset, list, N);
+  return new set_stateset_union(fn, ln, em->SETSTATESET, list, N);
 }
 
 
@@ -625,14 +625,14 @@ assoc* set_stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->set_stateset);
+  DCASSERT(em->SETSTATESET);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
     delete[] list;  
     return 0;
   }
-  return new set_stateset_intersect(fn, ln, em->set_stateset, list, N);
+  return new set_stateset_intersect(fn, ln, em->SETSTATESET, list, N);
 }
 
 
@@ -648,32 +648,32 @@ assoc* set_stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
 // *                         empty_ssi class                         *
 // ******************************************************************
 
-class empty_ssi : public simple_internal {
-public:
-  empty_ssi();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-};
+// class empty_ssi : public simple_internal {
+// public:
+//   empty_ssi();
+//   virtual void Compute(traverse_data &x, expr** pass, int np);
+// };
 
-empty_ssi::empty_ssi() : simple_internal(em->BOOL, "empty", 1)
-{
-  DCASSERT(em->set_stateset);
-  SetFormal(0, em->set_stateset, "P");
-  SetDocumentation("Returns true if and only if the set P is empty.");
-}
+// empty_ssi::empty_ssi() : simple_internal(em->BOOL, "empty", 1)
+// {
+//   DCASSERT(em->SETSTATESET);
+//   SetFormal(0, em->SETSTATESET, "P");
+//   SetDocumentation("Returns true if and only if the set P is empty.");
+// }
 
-void empty_ssi::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  DCASSERT(1==np);
-  DCASSERT(0==x.aggregate);
+// void empty_ssi::Compute(traverse_data &x, expr** pass, int np)
+// {
+//   DCASSERT(x.answer);
+//   DCASSERT(1==np);
+//   DCASSERT(0==x.aggregate);
 
-  SafeCompute(pass[0], x);
-  if (!x.answer->isNormal()) return;
+//   SafeCompute(pass[0], x);
+//   if (!x.answer->isNormal()) return;
 
-  set_stateset* ss = smart_cast <set_stateset*> (x.answer->getPtr());
-  DCASSERT(ss);
-  x.answer->setBool(ss->isEmpty());
-}
+//   set_stateset* ss = smart_cast <set_stateset*> (x.answer->getPtr());
+//   DCASSERT(ss);
+//   x.answer->setBool(ss->isEmpty());
+// }
 
 
 // ******************************************************************
@@ -734,7 +734,7 @@ bool init_set_statesets::execute()
 
   // Functions
   //st->AddSymbol(  new card_ssi   );
-  st->AddSymbol(  new empty_ssi  );
+  // st->AddSymbol(  new empty_ssi  );
   return true;
 }
 

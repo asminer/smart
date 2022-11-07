@@ -43,7 +43,8 @@ class expl_tri_set_stateset : public set_stateset {
     virtual void getUnknownCardinality(long &card) const;
     virtual void getUnknownCardinality(result &x) const;
 
-    virtual bool isEmpty() const;
+    virtual bool isTrueEmpty() const;
+    virtual bool isFalseEmpty() const;
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
@@ -60,7 +61,6 @@ class expl_tri_set_stateset : public set_stateset {
 
   private:
     expl_stateset *trueset, *falseset;
-    // or expl_stateset*?
 };
 
 #endif

@@ -25,7 +25,7 @@ class expl_stateset : public stateset {
     virtual ~expl_stateset();
 
   public:
-    virtual stateset* DeepCopy() const;
+    virtual expl_stateset* DeepCopy() const;
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
