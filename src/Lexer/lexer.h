@@ -1,11 +1,11 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <stdio.h>
 #include "../Utils/location.h"
 #include "../ExprLib/exprman.h"
 #include "tokens.h"
 #include <cstring>
+#include <fstream>
 
 /*
  * Brilliantly-designed, perfect in every way,
@@ -63,45 +63,36 @@ class lexer {
         };
     private:
         class buffer {
+                std::ifstream infile;
+                std::istream* from; // either &infile or &cin
                 buffer* next;
-                char pushback;
-                char* inchars;
-                const char* ptr;
                 location L;
-                FILE* infile;
             public:
-                buffer(FILE* inf, const char* filename, buffer* nxt);
+                /// For reading from a file
+                buffer(const char* filename, buffer* nxt);
+
+                /// For reading from stdin
+                buffer(buffer* nxt);
+
                 ~buffer();
 
-                operator bool() const {
-                    return infile;
+                inline bool isGood() const {
+                    return from->good();
                 }
 
                 inline buffer* getNext() const { return next; }
 
-                inline int peek() const {
-                    return pushback ? pushback :
-                        (infile ? *ptr : EOF);
+                inline int peek() {
+                    return from->peek();
                 }
                 inline int getc() {
-                    int ans;
-                    if (pushback) {
-                        ans = pushback;
-                        pushback = 0;
-                        return ans;
-                    }
-                    if (infile) {
-                        ans = *(ptr++);
-                        if ('\n' == ans) L.newline();
-                        if (0==*ptr) refill();
-                        return ans;
-                    } else {
-                        return EOF;
-                    }
+                    int c = from->get();
+                    if ('\n' == c) L.newline();
+                    return c;
                 }
                 inline void ungetc(char c) {
-                    DCASSERT(0==pushback);
-                    pushback = c;
+                    DCASSERT('\n' != c);
+                    from->unget();
                 }
 
                 inline const location& where() const { return L; }
@@ -109,8 +100,6 @@ class lexer {
             private:
                 buffer(const buffer&) = delete;
                 void operator=(const buffer&) = delete;
-
-                void refill();
         };
     private:
         named_msg lexer_debug;

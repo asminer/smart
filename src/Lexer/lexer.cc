@@ -1,6 +1,8 @@
 
 #include "lexer.h"
 
+#include <iostream>
+
 #define BUFSIZE 16384
 #define MAX_LEXEME 1024
 
@@ -24,42 +26,24 @@ lexer::lexeme::~lexeme()
 // ======================================================================
 //
 
-lexer::buffer::buffer(FILE* inf, const char* fn, buffer* nxt)
+lexer::buffer::buffer(const char* fn, buffer* nxt)
 {
-    DCASSERT(inf);
     next = nxt;
-    inchars = new char[BUFSIZE+1];
-    pushback = 0;
-
-    infile = inf;
+    infile.open(fn, std::fstream::in);
+    from = &infile;
     L.start(fn);
+}
 
-    refill();
+lexer::buffer::buffer(buffer* nxt)
+{
+    next = nxt;
+    from = &std::cin;
+    L.start("-");
 }
 
 lexer::buffer::~buffer()
 {
-    if (infile) {
-        if (stdin != infile) fclose(infile);
-    }
-    delete[] inchars;
 }
-
-void lexer::buffer::refill()
-{
-    DCASSERT(infile);
-    ptr = inchars;
-    unsigned long got = fread(inchars, 1, BUFSIZE, infile);
-    inchars[got] = 0;
-
-    if (got) return;
-
-    if (feof(infile)) {
-        if (stdin != infile) fclose(infile);
-        infile = 0;
-    }
-}
-
 
 //
 // ======================================================================
@@ -115,23 +99,23 @@ bool lexer::push_input(const location& from, const char* filename)
             lexer_debug.stopIO();
         }
 
-        topfile = new buffer(stdin, "-", topfile);
-        return true;
-    }
-
-    FILE* inf = fopen(filename, "r");
-    if (inf) {
+        topfile = new buffer(topfile);
+    } else {
         if (lexer_debug.startReport()) {
             lexer_debug.report() << "opening " << filename << "\n";
             lexer_debug.stopIO();
         }
-        topfile = new buffer(inf, filename, topfile);
-        return true;
+        topfile = new buffer(filename, topfile);
     }
+
+    if (topfile->isGood()) return true;
 
     em->startError(from, 0);
     em->cerr() << "Couldn't open file '" << filename << "', ignoring";
     em->stopIO();
+    buffer* next = topfile->getNext();
+    delete topfile;
+    topfile = next;
     return false;
 }
 
@@ -705,7 +689,7 @@ void lexer::consume_ident()
         finish_attributed_token(token::MODIF);
         return;
     }
-    const type* t = lookaheads[0].type_attrib = em->findOWDType(text.get());
+    const type* t = (lookaheads[0].type_attrib = em->findOWDType(text.get()));
     if (t) {
         lookaheads[0].tokenID
             = (t->isAFormalism()) ? token::FORMALISM : token::TYPE;
