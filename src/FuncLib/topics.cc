@@ -7,7 +7,7 @@
 #include "../include/heap.h"
 #include "../ExprLib/symbols.h"
 #include "../SymTabs/symtabs.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
 

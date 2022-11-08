@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "radio_opt.h"
 #include "optman.h"
 #include <cstring>

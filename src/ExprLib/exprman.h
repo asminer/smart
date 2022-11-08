@@ -33,6 +33,8 @@ class option_manager;
 class option_enum;
 class checklist_enum;
 
+class doc_formatter;
+
 class general_conv;
 class specific_conv;
 

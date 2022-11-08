@@ -1,5 +1,5 @@
 
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "exprman.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"

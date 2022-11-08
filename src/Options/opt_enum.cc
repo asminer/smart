@@ -3,7 +3,7 @@
 #include "opt_enum.h"
 #include "options.h"
 #include "optman.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 
 #include <cstring>
 

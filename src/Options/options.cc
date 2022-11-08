@@ -1,13 +1,13 @@
 
 #include "../include/defines.h"
 #include "../Utils/strings.h"
+#include "../Streams/textfmt.h"
 #include "options.h"
 #include "opt_enum.h"
-#include "../Streams/streams.h"
 #include <stdlib.h>
 #include "../include/splay.h"
 
-#include <string.h>
+#include <cstring>
 
 //#define DEBUG_SORT
 

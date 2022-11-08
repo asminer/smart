@@ -2,7 +2,34 @@
 #include "textfmt.h"
 #include "streams.h"
 
+#include <cstring>
+
 const int item_sep=4;  // separation distance in descriptions
+
+// ==================================================================
+// |                                                                |
+// |                     doc_formatter  methods                     |
+// |                                                                |
+// ==================================================================
+
+doc_formatter::doc_formatter()
+{
+}
+
+doc_formatter::~doc_formatter()
+{
+}
+
+bool doc_formatter::Matches(const char* item, const char* keyword) const
+{
+  if (NULL==keyword) return true;
+  int slen = strlen(keyword);
+  int last = strlen(item) - slen;
+  for (int i=0; i<=last; i++) {
+    if (0==strncasecmp(item+i, keyword, slen)) return true;
+  }
+  return false;
+}
 
 // ******************************************************************
 // *                                                                *
@@ -81,7 +108,7 @@ void text_formatter::begin_indent()
   FlushText();
   indent_depth++;
   left += 4;
-  right -= 4; 
+  right -= 4;
 }
 
 void text_formatter::end_indent()
@@ -96,7 +123,7 @@ void text_formatter::end_indent()
 void text_formatter::begin_description(int w)
 {
   FlushText();
-  desc_width = w; 
+  desc_width = w;
 }
 
 void text_formatter::item(const char* s)
@@ -189,7 +216,7 @@ void text_formatter::FlushText()
     out.Put('\n');
   } // while doc[ptr]
   out.flush();
-  buffer.flush(); 
+  buffer.flush();
 }
 
 

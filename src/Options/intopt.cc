@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "intopt.h"
 
 int_opt::int_opt(const char* n, const char* d, long &v, long mn, long mx)

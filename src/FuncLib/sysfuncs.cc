@@ -10,7 +10,7 @@
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../Utils/strings.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "../ExprLib/formalism.h"
 #include "../include/splay.h"
 

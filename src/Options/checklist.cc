@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "checklist.h"
 
 #include <cstring>
