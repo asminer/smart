@@ -6,6 +6,9 @@
 #include "options.h"
 #include "../include/splay.h"
 
+#include <iostream>
+#include <fstream>
+
 // **************************************************************************
 // *                                                                        *
 // *                          checklist_enum class                          *
@@ -91,12 +94,12 @@ public:
 class checklist_opt : public option {
     SplayOfPointers <checklist_enum>* itemlist;
     checklist_enum** possible;
-    int numpossible;
+    unsigned numpossible;
 public:
     checklist_opt(const char* n, const char* d);
     virtual ~checklist_opt();
-    virtual int NumConstants() const;
-    virtual option_enum* GetConstant(long i) const;
+    virtual unsigned NumConstants() const;
+    virtual option_enum* GetConstant(unsigned i) const;
     virtual void ShowHeader(OutputStream &s) const;
     virtual void ShowCurrent(OutputStream &s) const;
     // These are a bit more interesting...

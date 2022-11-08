@@ -130,8 +130,8 @@ class option {
         */
         virtual option_enum* FindConstant(const char* name) const;
 
-        virtual int NumConstants() const;
-        virtual option_enum* GetConstant(long i) const;
+        virtual unsigned NumConstants() const;
+        virtual option_enum* GetConstant(unsigned i) const;
 
         virtual void ShowHeader(OutputStream &s) const = 0;
         virtual void ShowCurrent(OutputStream &s) const;

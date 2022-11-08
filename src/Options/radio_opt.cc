@@ -55,12 +55,12 @@ option::error radio_opt::SetValue(option_enum* x)
     return notifyWatchers();
 }
 
-int radio_opt::NumConstants() const
+unsigned radio_opt::NumConstants() const
 {
     return numpossible;
 }
 
-option_enum* radio_opt::GetConstant(long i) const
+option_enum* radio_opt::GetConstant(unsigned i) const
 {
     if (i>=numpossible) return 0;
     return possible[i];
@@ -85,40 +85,6 @@ option_enum* radio_opt::FindConstant(const char* name) const
   return 0;
 }
 
-/*
-option::error radio_opt::AddRadioButton(option_enum* v)
-{
-    if (0==v) return NullFunction;
-    radio_button* rb = smart_cast <radio_button*> (v);
-    if (0==rb) return WrongType;
-
-    if (numadded >= numpossible) return RangeError;
-
-    // Insertion sort; for now we don't have any radio options
-    // with more than a dozen choices so no worries about inefficiency.
-
-    for (unsigned i=numadded; i; i--) {
-        int cmp = strcmp(possible[i-1]->Name(), v->Name());
-        if (0==cmp) {
-            return Duplicate;
-        }
-        if (cmp<0) {
-            // element i-1 is less than this one, so it can go in slot i.
-            possible[i] = rb;
-            ++numadded;
-            return Success;
-        }
-        // element i-1 is greater than this one, move it and keep looking
-        possible[i] = possible[i-1];
-        possible[i-1] = 0;
-    }
-    // New element is the smallest, add it to the front.
-    possible[0] = rb;
-    ++numadded;
-    return Success;
-}
-*/
-
 void radio_opt::Finish()
 {
     DCASSERT(numadded == numpossible);
@@ -142,9 +108,9 @@ void radio_opt::ShowRange(doc_formatter* df) const
     DCASSERT(numpossible);
     df->Out() << "Legal values:";
     unsigned i;
-    int maxenum = 0;
+    unsigned maxenum = 0;
     for (i=0; i<numpossible; i++)  {
-        int l = strlen(possible[i]->Name());
+        unsigned l = strlen(possible[i]->Name());
         maxenum = MAX(maxenum, l);
     }
     df->begin_description(maxenum);
