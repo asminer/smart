@@ -27,7 +27,11 @@ class location {
             ++linenumber;
         }
 
+#ifdef OLD_STREAMS
         void show(OutputStream &s) const;
+#else
+        void show(std::ostream &s) const;
+#endif
 
         void start(const char* fn);
 
@@ -37,10 +41,18 @@ class location {
 };
 
 
+#ifdef OLD_STREAMS
 inline OutputStream& operator<< (OutputStream &s, const location &L)
 {
     L.show(s);
     return s;
 }
+#else
+inline std::ostream& operator<< (std::ostream &s, const location &L)
+{
+    L.show(s);
+    return s;
+}
+#endif
 
 #endif

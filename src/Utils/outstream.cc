@@ -26,6 +26,22 @@ void outputStream::defaultOutput()
     }
 }
 
+// ======================================================================
+//
+// These will eventually become global functions
+//
+// ======================================================================
+
+
+void Pad(std::ostream &s, char repeat, int count)
+{
+    for (; count>0; count--) {
+        s.put(repeat);
+    }
+}
+
+
+
 void outputStream::PutMemoryCount(size_t bytes, int prec)
 {
     const double kilo = bytes / 1024.0;
@@ -54,13 +70,6 @@ void outputStream::PutMemoryCount(size_t bytes, int prec)
 
     Put(show, 0, prec);
     out() << units;
-}
-
-void outputStream::Pad(char repeat, int count)
-{
-    for (; count>0; count--) {
-        out().put(repeat);
-    }
 }
 
 void outputStream::PutHex(unsigned char data)

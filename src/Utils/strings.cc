@@ -37,7 +37,11 @@ void shared_string::CopyFrom(const char* s)
     string = strdup(s);
 }
 
+#ifdef OLD_STREAMS
 bool shared_string::Print(OutputStream &s, int width) const
+#else
+bool shared_string::Print(std::ostream &s, int width) const
+#endif
 {
     DCASSERT(string);
 
@@ -65,35 +69,51 @@ bool shared_string::Print(OutputStream &s, int width) const
 
     // nice trick: if no special chars, just print it!
     if (0==correction && 0==has_special) {
+#ifdef OLD_STREAMS
         s.Put(string, width);
+#else
+        s << std::setw(width) << string;
+#endif
         return true;
     }
 
     // right justify
-    if (width>0) s.Pad(' ', width-stlen+correction);
+    if (width>0) {
+#ifdef OLD_STREAMS
+        s.Pad(' ', width-stlen+correction);
+#else
+        Pad(s, ' ', width-stlen+correction);
+#endif
+    }
 
     // print the string, taking special chars into account
     for (int i=0; i<stlen; i++) {
         if (string[i] != '\\') {
-            s.Put(string[i]);
+            s << string[i];
             continue;
         }
         // special char.
         i++;
         if (i>=stlen) break;
         switch (string[i]) {
-            case 'a'  :  s.Put('\a'); break;
-            case 'b'  :  s.Put('\b'); break;
-            case 'f'  :  s.flush();   break;  // does this work?
-            case 'n'  :  s.Put('\n'); break;
-            case 'q'  :  s.Put('"');  break;
-            case 't'  :  s.Put('\t'); break;
-            case '\\' :  s.Put('\\'); break;
+            case 'a'  :  s << '\a'; break;
+            case 'b'  :  s << '\b'; break;
+            case 'f'  :  s.flush(); break;  // does this work?
+            case 'n'  :  s << '\n'; break;
+            case 'q'  :  s << '"';  break;
+            case 't'  :  s << '\t'; break;
+            case '\\' :  s << '\\'; break;
         }
     }
 
     // left justify
-    if (width<0) s.Pad(' ', correction-width-stlen);
+    if (width<0) {
+#ifdef OLD_STREAMS
+        s.Pad(' ', correction-width-stlen);
+#else
+        Pad(s, ' ', correction-width-stlen);
+#endif
+    }
 
     return true;
 }

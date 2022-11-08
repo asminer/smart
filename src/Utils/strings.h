@@ -25,7 +25,11 @@ class shared_string : public shared_object {
     public:
         void CopyFrom(const char* s);
         inline const char* getStr() const { return string; }
+#ifdef OLD_STREAMS
         virtual bool Print(OutputStream &s, int width) const;
+#else
+        virtual bool Print(std::ostream &s, int width) const;
+#endif
         virtual bool Equals(const shared_object *o) const;
         int Compare(const shared_string* s) const;
 };
