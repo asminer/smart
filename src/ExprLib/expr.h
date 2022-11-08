@@ -11,9 +11,9 @@
 class named_msg;
 class exprman;
 class result;
-class rng_stream; 
+class rng_stream;
 
-class OutputStream;  // defined in Streams module
+// class OutputStream;  // defined in Streams module
 class io_environ;    // defined in Streams module
 
 class option_manager;   // defined in Options module
@@ -63,7 +63,7 @@ struct traverse_data {
     Block,
     /// Affix values.  Used primarily in converge statements.
     Affix,
-    /// Create a copy with values substituted for certain symbols. 
+    /// Create a copy with values substituted for certain symbols.
     Substitute,
     /// Get a list of symbols.
     GetSymbols,
@@ -108,13 +108,13 @@ struct traverse_data {
 
   /// Parent model, if any.
   model_def* model;
-  
+
   /// The return value, usually.
   result* answer;
 
   /// Output: type, used by functions.
   const type* the_type;
-  
+
   /// Output: model type, used by functions.
   const model_def* the_model_type;
 
@@ -160,13 +160,13 @@ public:
   /** Statements: should we stop execution?
       for later expansion as necessary.
   */
-  inline bool stopExecution() const { return false; } 
+  inline bool stopExecution() const { return false; }
 
   /** For converge statements:
       would (some) statement like to execute again?
   */
   inline bool wantsToRepeat() const { return needs_repeating; }
-  
+
   inline void setRepeat() { needs_repeating = true; }
   inline void clrRepeat() { needs_repeating = false; }
 };
@@ -180,7 +180,7 @@ public:
 
 
 /**   The base class of all expressions and statements.
- 
+
       Possible states of an expression.
       Some of these states only make sense for symbols, a derived class.
         -2  = error:      Construction error, set to special "error" expr.
@@ -197,7 +197,7 @@ public:
       New: expressions contain a unique identifier (an integer)
       for comparisons; this is to be preferred (for portability)
       over comparing pointers, but the effect is exactly the same.
-*/  
+*/
 
 class expr : public shared_object {
   // static things and their manipulation.
@@ -217,9 +217,9 @@ protected:
 
 private:
   /// The name of the file we were declared in.
-  const char* filename;  
+  const char* filename;
   /// The line number of the file we were declared on.
-  int linenumber;  
+  int linenumber;
   /// Faster and easier to just define types here.
   const type* simple;
   typelist* aggtype;
@@ -257,7 +257,7 @@ protected:
   virtual ~expr();
 
    /// Helper for constructors
-  void Init(const char* fn, int ln, const type* st, 
+  void Init(const char* fn, int ln, const type* st,
             typelist* at, const model_def* mt);
 
 public:
@@ -272,10 +272,10 @@ public:
   inline bool isDefined() const { return state >= 2; }
   inline bool isGuessed() const { return state >= 1; }
 
-  inline void setGuessed() { 
+  inline void setGuessed() {
     DCASSERT(state >= 0);
     DCASSERT(state < 1);
-    state = 1; 
+    state = 1;
   }
   inline void setDefined() {
     DCASSERT(state >= 0);
@@ -307,7 +307,7 @@ public:
 
   /** Useful for rare cases when we do not know the expression
       type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0 
+      constructed either with type 0, or a typelist of 0
       (the two are equivalent).
         @param  t  The type of the expression.
   */
@@ -315,7 +315,7 @@ public:
 
   /** Useful for rare cases when we do not know the expression
       type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0 
+      constructed either with type 0, or a typelist of 0
       (the two are equivalent).
         @param  t  The type of the expression.
   */
@@ -323,7 +323,7 @@ public:
 
   /** Useful for rare cases when we do not know the expression
       type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0 
+      constructed either with type 0, or a typelist of 0
       (the two are equivalent).
         @param  t  Expression to take the type from.
   */
@@ -340,11 +340,11 @@ public:
 
   inline const model_def* GetModelType() const { return model_type; }
 
-  inline const char* Filename() const { return filename; } 
+  inline const char* Filename() const { return filename; }
   inline int Linenumber() const { return linenumber; }
 
   /// The number of aggregate components in this expression.
-  inline int NumComponents() const { 
+  inline int NumComponents() const {
     return (aggtype) ? aggtype->Length() : 1;
   }
 
@@ -352,7 +352,7 @@ public:
   virtual expr* GetComponent(int i);
 
   /// The type of component i.
-  inline const type* Type(int i) const { 
+  inline const type* Type(int i) const {
     if (aggtype) {
       return aggtype->GetItem(i);
     } else {
@@ -413,7 +413,7 @@ public:
         real m := avg_ss(tk(p) + Fib(20));
 
       Also, causes execution of converge "guess" statements.
- 
+
       This method is a front-end for Traverse().
   */
   void PreCompute();
@@ -424,12 +424,12 @@ public:
   void Affix();
 
   /** Create a copy of this expression with values substituted
-      for certain symbols. 
+      for certain symbols.
       (The symbols themselves determine the substitution.)
       Normally this is used by arrays within for loops.
       We make shallow copies (shared pointers to expressions)
       whenever possible.
-        @param  i  The component to substitute.  
+        @param  i  The component to substitute.
    */
   expr* Substitute(int i);
 
@@ -464,7 +464,7 @@ public:
       appropriate members of the passed parameter.
 
       @param  x  Struct of data for traversals.
-      
+
       Based on the value of \a which, we do the following.
       For all of them, \a aggregate specifies
       the component to use of an aggregate expression.
@@ -479,7 +479,7 @@ public:
         clear any memory used by PreCompute.
 
       Substitute:
-        Make a copy of this expression, with values 
+        Make a copy of this expression, with values
         substituted for the appropriate symbols,
         and return an expression pointer in \a answer.
 

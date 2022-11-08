@@ -42,15 +42,22 @@ class text_formatter : public doc_formatter {
   int left;
   int right;
   OutputStream& out;
+#ifdef OLD_STREAMS
   StringStream buffer;
+#else
+  std::stringstream buffer;
+#endif
 
   bool in_heading;
   int indent_depth;
   int desc_width;
 public:
   text_formatter(int width, OutputStream &out);
-
+#ifdef OLD_STREAMS
   virtual OutputStream& Out() { return buffer; }
+#else
+  virtual std::ostream& Out() { return buffer; }
+#endif
 
   virtual void section(const char* name);
   virtual void begin_heading();
@@ -132,9 +139,15 @@ void text_formatter::item(const char* s)
   left += desc_width+item_sep;
   FlushText();
   left = old_left;
+#ifdef OLD_STREAMS
   out.Pad(' ', left);
   out.Put(s, -desc_width);
   out.Pad(' ', item_sep);
+#else
+  Pad(out, ' ', left);
+  out << std::setw(-desc_width) << s;
+  Pad(out, ' ', item_sep);
+#endif
 }
 
 void text_formatter::end_description()
@@ -153,7 +166,11 @@ void text_formatter::eject_page()
 
 void text_formatter::FlushText()
 {
+#ifdef OLD_STREAMS
   const char* doc = buffer.ReadString();
+#else
+  std::string doc = buffer.str();
+#endif
   int ptr = 0;
   int linewidth = right - left;
   bool ignore_marg = desc_width;
@@ -167,15 +184,19 @@ void text_formatter::FlushText()
     if (ignore_marg) {
       ignore_marg = false;
     } else {
+#ifdef OLD_STREAMS
       out.Pad(' ', left);
+#else
+      Pad(out, ' ', left);
+#endif
     }
     //
     // write first word, regardless of length
     int written = 0;
     while (1) {
       if (EndOfWord(doc[ptr]))  break;
-      if ('~'==doc[ptr])  out.Put(' ');
-      else                out.Put(doc[ptr]);
+      if ('~'==doc[ptr])  out << ' ';
+      else                out << doc[ptr];
       written++;
       ptr++;
     }
@@ -191,7 +212,7 @@ void text_formatter::FlushText()
         break;
       }
       // print inter-word space
-      out.Put(' ');
+      out << ' ';
       written++;
       // advance to start of next word
       while (doc[ptr]==' ') ptr++;
@@ -206,17 +227,21 @@ void text_formatter::FlushText()
         // write the next word
         while (1) {
           if (EndOfWord(doc[ptr])) break;
-          if ('~'==doc[ptr]) out.Put(' ');
-          else out.Put(doc[ptr]);
+          if ('~'==doc[ptr]) out << ' ';
+          else out << doc[ptr];
           ptr++;
         }
       }
     } // while written
     // That's all we can fit on this line, or it is the last line.
-    out.Put('\n');
+    out << '\n';
   } // while doc[ptr]
   out.flush();
+#ifdef OLD_STREAMS
   buffer.flush();
+#else
+  buffer.str(std::string());    // clear the buffer
+#endif
 }
 
 

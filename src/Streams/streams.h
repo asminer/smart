@@ -159,6 +159,7 @@ public:
 #else
 
 #include "../Utils/outstream.h"
+typedef     std::ostream   OutputStream;
 
 #endif
 

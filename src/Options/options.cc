@@ -28,11 +28,11 @@ option::watcher::~watcher()
 
 option::option(type t, const char *n, const char* d)
 {
-  mytype = t;
-  name = n;
-  documentation = d;
-  hidden = false;
-  watchlist = 0;
+    mytype = t;
+    name = n;
+    documentation = d;
+    hidden = false;
+    watchlist = 0;
 }
 
 option::~option()
@@ -46,53 +46,52 @@ option::~option()
 
 void option::show(OutputStream &s) const
 {
-  s.Put('#');
-  s.Put(name);
+    s << '#' << name;
 }
 
 option::error option::SetValue(bool)
 {
-  return WrongType;
+    return WrongType;
 }
 
 option::error option::SetValue(long)
 {
-  return WrongType;
+    return WrongType;
 }
 
 option::error option::SetValue(double)
 {
-  return WrongType;
+    return WrongType;
 }
 
 option::error option::SetValue(shared_string *)
 {
-  return WrongType;
+    return WrongType;
 }
 
 option::error option::SetValue(option_enum*)
 {
-  return WrongType;
+    return WrongType;
 }
 
 option_enum* option::FindConstant(const char*) const
 {
-  return 0;
+    return 0;
 }
 
 unsigned option::NumConstants() const
 {
-  return 0;
+    return 0;
 }
 
 option_enum* option::GetConstant(unsigned i) const
 {
-  return 0;
+    return 0;
 }
 
 void option::ShowCurrent(OutputStream &s) const
 {
-  ShowHeader(s);
+    ShowHeader(s);
 }
 
 void option::Finish()

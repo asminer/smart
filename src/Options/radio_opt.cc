@@ -99,8 +99,7 @@ void radio_opt::Finish()
 void radio_opt::ShowHeader(OutputStream &s) const
 {
     show(s);
-    s.Put(' ');
-    s.Put(possible[which]->Name());
+    s << ' ' << possible[which]->Name();
 }
 
 void radio_opt::ShowRange(doc_formatter* df) const

@@ -25,7 +25,7 @@ option::error string_opt::SetValue(shared_string* v)
 void string_opt::ShowHeader(OutputStream &s) const
 {
     show(s);
-    s.Put(' ');
+    s << ' ';
     if (value) s << '"' << value->getStr() << '"';
     else s << "null";
 }

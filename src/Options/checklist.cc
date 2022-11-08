@@ -173,7 +173,7 @@ void checklist_opt::ShowCurrent(OutputStream &s) const
   bool printed = false;
   for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
     if (printed) s << ", ";
-    s.Put(possible[i]->Name());
+    s << possible[i]->Name();
     printed = true;
   }
   s << "}";

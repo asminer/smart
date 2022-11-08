@@ -7,8 +7,9 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-class OutputStream;  // defined in streams.h
-class doc_formatter;   // defined in streams.h
+#include "../Streams/streams.h"
+
+class doc_formatter;
 class shared_string;
 
 class option_enum;
