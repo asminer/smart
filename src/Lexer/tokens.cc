@@ -6,6 +6,7 @@ token::token()
 {
     tokenID = END;
     attribute = 0;
+    type_attrib = 0;
 }
 
 token::token(const token &T)
@@ -13,6 +14,8 @@ token::token(const token &T)
     where = T.where;
     tokenID = T.tokenID;
     attribute = Share(T.attribute);
+    type_attrib = T.type_attrib;
+    bool_const = T.bool_const;
 }
 
 void token::operator=(const token& T)
@@ -23,6 +26,8 @@ void token::operator=(const token& T)
     }
     where = T.where;
     tokenID = T.tokenID;
+    type_attrib = T.type_attrib;
+    bool_const = T.bool_const;
 }
 
 token::~token()
@@ -121,9 +126,11 @@ void token::show(OutputStream &s) const
         case FORMALISM:
         case TYPE:
                             if (type_attrib) {
-                                s.Put(type_attrib->getName());
+                                const char* tn = type_attrib->getName();
+                                if (tn) s.Put(tn);
+                                else    s.Put("(null type name)");
                             } else {
-                                s.Put("(null)");
+                                s.Put("(null type)");
                             }
                             return;
 
