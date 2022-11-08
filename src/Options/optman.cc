@@ -80,15 +80,15 @@ option* option_manager::addChecklistOption(const char* name, const char* doc)
 class option_heap : public option_manager {
   SplayOfPointers <option> *optlist;
   option** SortedOptions;
-  long NumSortedOptions;
+  unsigned NumSortedOptions;
 public:
   option_heap();
   virtual void DoneAddingOptions();
   virtual option* FindOption(const char* name) const;
-  virtual long NumOptions() const {
+  virtual unsigned NumOptions() const {
     return NumSortedOptions;
   }
-  virtual option* GetOptionNumber(long i) const {
+  virtual option* GetOptionNumber(unsigned i) const {
     if (i>=NumSortedOptions) return 0;
     if (0==SortedOptions) return 0;
     return SortedOptions[i];
@@ -122,7 +122,7 @@ void option_heap::DoneAddingOptions()
   optlist->CopyToArray(SortedOptions);
   delete optlist;
   optlist = 0;
-  for (int i=0; i<NumSortedOptions; i++) SortedOptions[i]->Finish();
+  for (unsigned i=0; i<NumSortedOptions; i++) SortedOptions[i]->Finish();
 }
 
 option* option_heap::FindOption(const char* name) const
@@ -133,10 +133,10 @@ option* option_heap::FindOption(const char* name) const
   }
   DCASSERT(SortedOptions);
   // binary search
-  int low = 0;
-  int high = NumSortedOptions;
+  unsigned low = 0;
+  unsigned high = NumSortedOptions;
   while (low < high) {
-    int mid = (low+high)/2;
+    unsigned mid = (low+high)/2;
     int cmp = SortedOptions[mid]->Compare(name);
     if (0==cmp) return SortedOptions[mid];
     if (cmp>0) {
@@ -153,7 +153,7 @@ void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);
-  for (int i=0; i<NumSortedOptions; i++)
+  for (unsigned i=0; i<NumSortedOptions; i++)
     if (SortedOptions[i]->isApropos(df, keyword)) {
       df->Out() << "\n";
       SortedOptions[i]->PrintDocs(df, keyword);
@@ -164,7 +164,7 @@ void option_heap::ListOptions(doc_formatter* df) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);
-  for (int i=0; i<NumSortedOptions; i++) {
+  for (unsigned i=0; i<NumSortedOptions; i++) {
 #ifndef DEVELOPMENT_CODE
     if (SortedOptions[i]->IsUndocumented())  continue;
 #endif

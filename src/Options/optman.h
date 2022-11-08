@@ -2,6 +2,8 @@
 #ifndef OPTMAN_H
 #define OPTMAN_H
 
+#include <iostream>
+
 class doc_formatter;   // defined in streams.h
 class option;
 class shared_string;
@@ -32,14 +34,14 @@ class option_manager {
         virtual option* FindOption(const char* name) const = 0;
 
         /// Total number of options.
-        virtual long NumOptions() const = 0;
+        virtual unsigned NumOptions() const = 0;
 
         /** Retrieve an option by index.
             This is useful for enumerating all options.
             @param  i  Index of option to retrieve.
             @return The ith option.
         */
-        virtual option* GetOptionNumber(long i) const = 0;
+        virtual option* GetOptionNumber(unsigned i) const = 0;
 
         /** For online help and documentation.
             Show documentation of all options matching the given keyword.
