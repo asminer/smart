@@ -40,6 +40,10 @@ class outputStream {
             return (fout.is_open()) ? fout : deflt;
         }
 
+        inline void flush() {
+            out().flush();
+        }
+
         /*
          * A bit ugly, but it allows us to use an outputStream
          * in place of an ostream before <<
@@ -48,10 +52,6 @@ class outputStream {
         inline std::ostream& operator<< (X x) {
             return out() << x;
         }
-
-        //
-        // Repeat the given character
-        void Pad(char repeat, int count);
 
         //
         // Custom put thingies here for convenience
@@ -88,6 +88,13 @@ class outputStream {
         std::ofstream fout;
         shared_string* thousands;
 };
+
+
+/*
+ * Repeat the given character.
+ */
+void Pad(std::ostream &s, char repeat, int count);
+
 
 #endif
 

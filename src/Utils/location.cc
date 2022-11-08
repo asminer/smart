@@ -28,7 +28,11 @@ location::~location()
     Delete(filename);
 }
 
+#ifdef OLD_STREAMS
 void location::show(OutputStream &s) const
+#else
+void location::show(std::ostream &s) const
+#endif
 {
     if (0==filename) return;
 
@@ -39,32 +43,30 @@ void location::show(OutputStream &s) const
         // special files
         switch (fn[0]) {
             case '-':
-                s.Put("in standard input");
+                s << "in standard input";
                 break;
 
             case '>':
-                s.Put("on command line");
+                s << "on command line";
 				ln = 0;
                 break;
 
             case '<':
-                s.Put("at end of input");
+                s << "at end of input";
 				ln = 0;
                 break;
 
             default:
-                s.Put("in file ");
-                s.Put(fn);
+                s << "in file " << fn;
         } // switch
+
     } else if (' ' == fn[0]) {
-        s.Put(fn+1);
+        s << fn+1;
     } else {
-        s.Put("in file ");
-        s.Put(fn);
+        s << "in file " << fn;
     }
     if (ln) {
-        s.Put(" near line ");
-        s.Put(ln);
+        s << " near line " << ln;
     }
 }
 

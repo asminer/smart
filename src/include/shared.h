@@ -3,11 +3,10 @@
 #define SHARED_H
 
 #include "defines.h"
+#include "../Streams/streams.h"
 
 // #define DEBUG_LINKCOUNTS
 // #define DISPLAY_LINKCOUNTS
-
-class OutputStream;
 
 #ifdef DEBUG_LINKCOUNTS
   #include "streams.h"
@@ -23,7 +22,7 @@ class OutputStream;
 // ******************************************************************
 
 /** Abstract base class for sharing pointers to objects.
-  
+
     In particular, this is used for all computed results
     of expressions, except for the basic types of BOOL,
     INT, and REAL (for speed).
@@ -38,8 +37,8 @@ protected:
   virtual ~shared_object() {
   }
 public:
-  inline long numRefs() const { 
-    return linkcount; 
+  inline long numRefs() const {
+    return linkcount;
   }
   /// Safer to call template function Share() below.
   inline void ShareMe() {
@@ -68,7 +67,11 @@ public:
         @return  true  if anything was printed, false otherwise.
 
   */
+#ifdef OLD_STREAMS
   virtual bool Print(OutputStream &s, int width) const = 0;
+#else
+  virtual bool Print(std::ostream &s, int width) const = 0;
+#endif
   virtual bool Equals(const shared_object *o) const = 0;
   friend void Delete(shared_object* o);
 };
@@ -91,8 +94,8 @@ inline SHARED* Share(SHARED *o)
 }
 
 /** Delete a shared object.
-    This should *always* be called instead of doing it "by hand", 
-    because the object might be shared.  This version takes sharing 
+    This should *always* be called instead of doing it "by hand",
+    because the object might be shared.  This version takes sharing
     into account.
 */
 inline void Delete(shared_object* o)

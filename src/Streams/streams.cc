@@ -19,6 +19,11 @@
 
 // #define DEBUG_STREAM
 
+// ==================================================================
+// OLD IMPLEMENTATION
+// ==================================================================
+
+#ifdef OLD_STREAMS
 
 // ==================================================================
 // |                                                                |
@@ -905,3 +910,28 @@ void CatchSignals(io_environ* )
 #endif
 
 
+
+
+#else
+// ==================================================================
+// NEW IMPLEMENTATION
+// ==================================================================
+
+io_environ::io_environ()
+    : Output(std::cout), Report(std::cout),
+      Warning(std::cerr), Error(std::cerr), Internal(std::cerr)
+{
+  WhichError = 0;
+
+  sigx = 0;
+  catchterm = false;
+  indents = 0;
+}
+
+io_environ::~io_environ()
+{
+  Output.flush();
+}
+
+
+#endif

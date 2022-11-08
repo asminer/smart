@@ -7,12 +7,15 @@
 #define STREAMS_H
 
 
-#include <stdio.h>
+#define OLD_STREAMS
 
 class io_environ;
 class location;
-
 class shared_string;
+
+#ifdef OLD_STREAMS
+
+#include <stdio.h>
 
 /** Abstract base class for output.
     All output goes to the buffer, for speed.
@@ -153,6 +156,11 @@ public:
   virtual void can_flush();
 };
 
+#else
+
+#include "../Utils/outstream.h"
+
+#endif
 
 /** Centralized i/o and error reporting class.
 
@@ -169,12 +177,19 @@ class io_environ {
   bool catchterm;
   int indents;
 public:
-  // InputStream Input;
+#ifdef OLD_STREAMS
   DisplayStream Output;
   DisplayStream Report;     // 0
   DisplayStream Warning;    // 1
   DisplayStream Error;      // 2
   DisplayStream Internal;   // 3
+#else
+  outputStream Output;
+  outputStream Report;
+  outputStream Warning;
+  outputStream Error;
+  outputStream Internal;
+#endif
 public:
   io_environ();
   virtual ~io_environ();
