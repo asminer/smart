@@ -56,18 +56,17 @@ void real_opt::ShowRange(doc_formatter* df) const
     DCASSERT(df);
     df->Out() << "Legal values: reals in ";
     if (has_min) {
-        if (includes_min)  df->Out().Put('[');
-        else     df->Out().Put('(');
+        if (includes_min)  df->Out() << '[';
+        else     df->Out() << '(';
         df->Out() << min;
     } else {
         df->Out() << "(-oo";
     }
-    df->Out().Put(',');
-    df->Out().Put(' ');
+    df->Out() << ", ";
     if (has_max) {
         df->Out() << max;
-        if (includes_max) df->Out().Put(']');
-        else df->Out().Put(')');
+        if (includes_max) df->Out() << ']';
+        else df->Out() << ')';
     } else {
         df->Out() << "oo)";
     }

@@ -9,8 +9,9 @@
 #ifndef OPT_ENUM_H
 #define OPT_ENUM_H
 
-class OutputStream;
-class doc_formatter;   // defined in streams.h
+#include "../Streams/streams.h"
+
+class doc_formatter;
 class option_manager;
 
 // **************************************************************************

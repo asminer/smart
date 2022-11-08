@@ -24,7 +24,11 @@ public:
   virtual ~doc_formatter();
 
   /// For writing text.
+#ifdef OLD_STREAMS
   virtual OutputStream& Out() = 0;
+#else
+  virtual std::ostream& Out() = 0;
+#endif
 
   /// Start a new section, with given name.
   virtual void section(const char* name) = 0;

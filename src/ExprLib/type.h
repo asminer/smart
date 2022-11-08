@@ -8,7 +8,7 @@
 
 class result;
 class io_environ;
-class OutputStream;
+// class OutputStream;
 
 // all of this required for infinity string option.
 // class option;
