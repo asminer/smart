@@ -97,6 +97,7 @@ int main(int argc, const char** argv)
         LEX.consume(t);
         t.debug(em->cout());
         em->cout() << "\n";
+        em->cout().flush();
     } while (t);
 
     //
