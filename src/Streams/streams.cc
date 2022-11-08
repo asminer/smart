@@ -904,30 +904,4 @@ void CatchSignals(io_environ* )
 }
 #endif
 
-// ==================================================================
-// |                                                                |
-// |                     doc_formatter  methods                     |
-// |                                                                |
-// ==================================================================
-
-doc_formatter::doc_formatter()
-{
-}
-
-doc_formatter::~doc_formatter()
-{
-}
-
-bool doc_formatter::Matches(const char* item, const char* keyword) const
-{
-  if (NULL==keyword) return true;
-  int slen = strlen(keyword);
-  int last = strlen(item) - slen;
-  for (int i=0; i<=last; i++) {
-    if (0==strncasecmp(item+i, keyword, slen)) return true;
-  }
-  return false;
-}
-
-#include "textfmt.h"
 

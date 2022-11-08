@@ -12,6 +12,7 @@
 
 #include "../Options/optman.h"
 #include "../include/heap.h"
+#include "../Streams/textfmt.h"
 
 // #define DEBUG_TYPE_SORTING
 

@@ -7,6 +7,7 @@
 #include "../ExprLib/assoc.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
+#include "../Streams/textfmt.h"
 #include "biginttype.h"
 
 #include <math.h>
@@ -70,12 +71,12 @@ int bigint::bufsize = 0;
 
 bigint::bigint() : shared_object()
 {
-  mpz_init(value); 
+  mpz_init(value);
 }
 
 bigint::bigint(long x) : shared_object()
 {
-  mpz_init_set_si(value, x); 
+  mpz_init_set_si(value, x);
 }
 
 bigint::bigint(const char* c) : shared_object()
@@ -95,7 +96,7 @@ bigint::bigint(const bigint& b) : shared_object()
 
 bigint::~bigint()
 {
-  mpz_clear(value); 
+  mpz_clear(value);
 }
 
 bool bigint::Print(OutputStream &s, int width) const
@@ -245,11 +246,11 @@ public:
 
 int2bigint::converter
 ::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void int2bigint::converter::Compute(traverse_data &x) 
+void int2bigint::converter::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -260,7 +261,7 @@ void int2bigint::converter::Compute(traverse_data &x)
   }
 }
 
-int2bigint::int2bigint() : specific_conv(false) 
+int2bigint::int2bigint() : specific_conv(false)
 {
 }
 
@@ -308,11 +309,11 @@ public:
 
 bigint2int::converter
 ::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void bigint2int::converter::Compute(traverse_data &x) 
+void bigint2int::converter::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -334,7 +335,7 @@ void bigint2int::converter::Compute(traverse_data &x)
   }
 }
 
-bigint2int::bigint2int() : specific_conv(true) 
+bigint2int::bigint2int() : specific_conv(true)
 {
 }
 
@@ -382,11 +383,11 @@ public:
 
 bigint2real::converter
 ::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+ : typecast(fn, ln, nt, x)
+{
 }
 
-void bigint2real::converter::Compute(traverse_data &x) 
+void bigint2real::converter::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -408,7 +409,7 @@ void bigint2real::converter::Compute(traverse_data &x)
   }
 }
 
-bigint2real::bigint2real() : specific_conv(true) 
+bigint2real::bigint2real() : specific_conv(true)
 {
 }
 
@@ -500,11 +501,11 @@ protected:
 // ******************************************************************
 
 bigint_add::
-bigint_add(const char* fn, int line, const type* t, expr** x, bool* f, int n) 
- : summation(fn, line, exprman::aop_plus, t, x, f, n) 
-{ 
+bigint_add(const char* fn, int line, const type* t, expr** x, bool* f, int n)
+ : summation(fn, line, exprman::aop_plus, t, x, f, n)
+{
 }
-  
+
 void bigint_add::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -539,7 +540,7 @@ void bigint_add::Compute(traverse_data &x)
         // infinite addition
         unknown = false;  // infinity + ? = infinity
         (*sum) = foo;
-        break;  
+        break;
       }
       if (foo.isUnknown()) {
         unknown = true;
@@ -561,7 +562,7 @@ void bigint_add::Compute(traverse_data &x)
   // sum so far is +/- infinity, or we are out of operands.
   // Check the remaining operands, if any, and throw an
   // error if we have infinity - infinity.
-  
+
   for (i++; i<opnd_count; i++) {
     DCASSERT(sum->isInfinity());
     DCASSERT(operands[i]);
@@ -620,11 +621,11 @@ protected:
 // ******************************************************************
 
 bigint_mult
-::bigint_mult(const char* fn, int line, const type* t, expr **x, int n) 
+::bigint_mult(const char* fn, int line, const type* t, expr **x, int n)
  : product(fn, line, exprman::aop_times, t, x, 0, n)
-{ 
+{
 }
-  
+
 void bigint_mult::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -639,14 +640,14 @@ void bigint_mult::Compute(traverse_data &x)
 
   //
   // Three states of computation: finite multiply, zero, infinity
-  //  
+  //
   // finite * zero -> zero,
   // finite * infinity -> infinity,
   // zero * infinity -> error,
-  // 
+  //
   // infinity multiply: only keep track of sign, check for errors
   //
-  // zero multiply: check only for errors 
+  // zero multiply: check only for errors
   //
   result foo;
   x.answer = &foo;
@@ -662,7 +663,7 @@ void bigint_mult::Compute(traverse_data &x)
           prod->setPtr(new bigint(0L));
           unknown = false;
           break;  // change state
-        } 
+        }
         // normal finite multiply
         bi_prod->mul(*bi_prod, *a);
         continue;
@@ -673,7 +674,7 @@ void bigint_mult::Compute(traverse_data &x)
         prod->setInfinity(foo.signInfinity() * prodsign);
         break;
       }
-      // Still here?  
+      // Still here?
       prod->deletePtr();
       if (foo.isUnknown()) {
         unknown = true;
@@ -726,7 +727,7 @@ void bigint_mult::Compute(traverse_data &x)
       x.answer = prod;
       return;
     } // for i
-  } 
+  }
 
   // The zero case
   if (prod->getPtr()) {
@@ -764,7 +765,7 @@ void bigint_mult::Compute(traverse_data &x)
   x.answer = prod;
 }
 
-expr* bigint_mult::buildAnother(expr **x, bool* f, int n) const 
+expr* bigint_mult::buildAnother(expr **x, bool* f, int n) const
 {
   DCASSERT(0==f);
   return new bigint_mult(Filename(), Linenumber(), Type(), x, n);
@@ -781,7 +782,7 @@ expr* bigint_mult::buildAnother(expr **x, bool* f, int n) const
  */
 class bigint_multdiv : public product {
 public:
-  bigint_multdiv(const char* fn, int line, const type* t, 
+  bigint_multdiv(const char* fn, int line, const type* t,
       expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
@@ -792,12 +793,12 @@ protected:
 // *                     bigint_multdiv methods                     *
 // ******************************************************************
 
-bigint_multdiv::bigint_multdiv(const char* fn, int line, const type* t, 
+bigint_multdiv::bigint_multdiv(const char* fn, int line, const type* t,
   expr** x, bool* f, int n) : product(fn, line, exprman::aop_times, t, x, f, n)
-{ 
+{
   DCASSERT(f);
 }
-  
+
 void bigint_multdiv::Compute(traverse_data &x)
 {
   DCASSERT(flip);
@@ -812,14 +813,14 @@ void bigint_multdiv::Compute(traverse_data &x)
 
   //
   // Three states of computation: finite multiply, zero, infinity
-  //  
+  //
   // finite * zero -> zero,
   // finite * infinity -> infinity,
   // zero * infinity -> error,
-  // 
+  //
   // infinity multiply: only keep track of sign, check for errors
   //
-  // zero multiply: check only for errors 
+  // zero multiply: check only for errors
   //
   result* prod = x.answer;
   result foo;
@@ -865,7 +866,7 @@ void bigint_multdiv::Compute(traverse_data &x)
         break;
       } // if foo.isInfinity()
 
-      // Still here?  
+      // Still here?
       Delete(numer);
       Delete(denom);
       numer = 0;
@@ -919,7 +920,7 @@ void bigint_multdiv::Compute(traverse_data &x)
           prod->setNull();
           x.answer = prod;
           return;  // short circuit.
-        } 
+        }
       } // if foo.isInfinity()
       if (foo.isUnknown()) {
         unknown = true;  // can't be sure of sign
@@ -1013,7 +1014,7 @@ void bigint_multdiv::Compute(traverse_data &x)
   }
 }
 
-expr* bigint_multdiv::buildAnother(expr **x, bool* f, int n) const 
+expr* bigint_multdiv::buildAnother(expr **x, bool* f, int n) const
 {
   return new bigint_multdiv(Filename(), Linenumber(), Type(), x, f, n);
 }
@@ -1039,10 +1040,10 @@ protected:
 
 bigint_mod
 ::bigint_mod(const char* fn, int line, const type* t, expr *l, expr *r)
- : modulo(fn, line, t, l, r) 
-{ 
+ : modulo(fn, line, t, l, r)
+{
 }
-  
+
 void bigint_mod::Compute(traverse_data &x)
 {
   result l, r;
@@ -1068,7 +1069,7 @@ void bigint_mod::Compute(traverse_data &x)
       x.answer->setNull();
     }
     return;
-  } 
+  }
   if (l.isNull() || r.isNull()) {
     x.answer->setNull();
     return;
@@ -1131,8 +1132,8 @@ protected:
 
 bigint_equal
 ::bigint_equal(const char* fn, int line, const type* nt, expr *l, expr *r)
- : eqop(fn, line, nt, l, r) 
-{ 
+ : eqop(fn, line, nt, l, r)
+{
 }
 
 void bigint_equal::Compute(traverse_data &x)
@@ -1149,7 +1150,7 @@ void bigint_equal::Compute(traverse_data &x)
   }
 }
 
-expr* bigint_equal::buildAnother(expr *l, expr *r) const 
+expr* bigint_equal::buildAnother(expr *l, expr *r) const
 {
   return new bigint_equal(Filename(), Linenumber(), Type(), l, r);
 }
@@ -1175,10 +1176,10 @@ protected:
 
 bigint_neq
 ::bigint_neq(const char* fn, int line, const type* t, expr *l, expr *r)
- : neqop(fn, line, t, l, r) 
-{ 
+ : neqop(fn, line, t, l, r)
+{
 }
-  
+
 void bigint_neq::Compute(traverse_data &x)
 {
   result l, r;
@@ -1218,8 +1219,8 @@ protected:
 // ******************************************************************
 
 bigint_gt::bigint_gt(const char* fn, int line, const type* t, expr *l, expr *r)
- : gtop(fn, line, t, l, r) 
-{ 
+ : gtop(fn, line, t, l, r)
+{
 }
 
 void bigint_gt::Compute(traverse_data &x)
@@ -1261,8 +1262,8 @@ protected:
 // ******************************************************************
 
 bigint_ge::bigint_ge(const char* fn, int line, const type* t, expr *l, expr *r)
- : geop(fn, line, t, l, r) 
-{ 
+ : geop(fn, line, t, l, r)
+{
 }
 
 void bigint_ge::Compute(traverse_data &x)
@@ -1304,8 +1305,8 @@ protected:
 // ******************************************************************
 
 bigint_lt::bigint_lt(const char* fn, int line, const type* t, expr *l, expr *r)
- : ltop(fn, line, t, l, r) 
-{ 
+ : ltop(fn, line, t, l, r)
+{
 }
 
 void bigint_lt::Compute(traverse_data &x)
@@ -1347,8 +1348,8 @@ protected:
 // ******************************************************************
 
 bigint_le::bigint_le(const char* fn, int line, const type* t, expr *l, expr *r)
- : leop(fn, line, t, l, r) 
-{ 
+ : leop(fn, line, t, l, r)
+{
 }
 
 void bigint_le::Compute(traverse_data &x)
@@ -1378,7 +1379,7 @@ expr* bigint_le::buildAnother(expr *l, expr *r) const
 // *                                                                *
 // ******************************************************************
 
-inline const type* 
+inline const type*
 BigintResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -1391,7 +1392,7 @@ BigintResultType(const exprman* em, const type* lt, const type* rt)
   return lct;
 }
 
-inline int 
+inline int
 BigintAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -1591,7 +1592,7 @@ const type* bigint_neg_op::getExprType(const type* t) const
   DCASSERT(em);
   DCASSERT(em->BIGINT);
   if (0==t)    return 0;
-  if (t->isASet())  return 0; 
+  if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
   if (bt != em->BIGINT)  return 0;
   return t;
@@ -1616,7 +1617,7 @@ unary* bigint_neg_op::makeExpr(const char* fn, int ln, expr* x) const
 class bigint_add_op : public bigint_assoc_op {
 public:
   bigint_add_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1628,7 +1629,7 @@ bigint_add_op::bigint_add_op() : bigint_assoc_op(exprman::aop_plus)
 {
 }
 
-assoc* bigint_add_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* bigint_add_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
@@ -1664,7 +1665,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1697,7 +1698,7 @@ const type* bigint_mult_op
   return BigintResultType(em, l, r);
 }
 
-assoc* bigint_mult_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* bigint_mult_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
@@ -1722,7 +1723,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1764,7 +1765,7 @@ const type* bigint_multdiv_op
   return lct;
 }
 
-assoc* bigint_multdiv_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* bigint_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
@@ -2053,7 +2054,7 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(bl);
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
-    
+
     c->div_q(*bl, *br);
     return;
   }
@@ -2076,7 +2077,7 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   if (r.isInfinity()) {
-    // finite / infinity = 0  
+    // finite / infinity = 0
     answer->setPtr(new bigint(0L));
     return;
   }
@@ -2114,7 +2115,7 @@ init_bigints::init_bigints() : initializer("init_bigints")
 bool init_bigints::execute()
 {
   if (0==em)  return false;
-  
+
   // Library registry
 #ifdef HAVE_LIBGMP
   em->registerLibrary(  &gmp_lib_data  );

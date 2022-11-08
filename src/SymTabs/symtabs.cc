@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "../ExprLib/symbols.h"
 #include "symtabs.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 
 // #define DEBUG_ADD
 // #define DEBUG_REMOVE
@@ -174,7 +174,7 @@ void my_symtable::AddSymbol(symbol* s)
 {
   if (0==s) return;
   symbol_list* tmp = NewList();
-  tmp->Fill(s); 
+  tmp->Fill(s);
   symbol_list* root = table->Insert(tmp);
   if (root == tmp) {
     // new node in tree
@@ -251,7 +251,7 @@ symbol* my_symtable::Pop()
   if (0==foo)  return 0;  // hmmm, stack underflow?
   symbol* find = foo->front;
   if (find->Next())   return 0;  // definitely chaining!
-  
+
   // ok, we can remove this safely.
   num_syms--;
   num_names--;

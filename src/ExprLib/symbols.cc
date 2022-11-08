@@ -2,7 +2,7 @@
 #include "symbols.h"
 #include "exprman.h"
 #include "../Utils/strings.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "values.h"
 #include "dd_front.h"
 #include "functions.h"

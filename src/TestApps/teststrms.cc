@@ -3,7 +3,7 @@
 	Test of streams.
 */
 
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 
 io_environ myio;
 

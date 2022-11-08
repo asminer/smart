@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "boolopt.h"
 
 bool_opt::bool_opt(const char* n, const char* d, bool &v)

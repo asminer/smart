@@ -1,6 +1,7 @@
 
 #include "glue_meddly.h"
 #include "biginttype.h"
+#include "../Streams/textfmt.h"
 #include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 

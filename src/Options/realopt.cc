@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/streams.h"
+#include "../Streams/textfmt.h"
 #include "realopt.h"
 
 real_opt::real_opt(const char* n, const char* d, double &v,
