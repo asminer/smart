@@ -436,11 +436,8 @@ bool init_simul::execute()
     );
   }
 
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-      "Monte_Carlo",
-      "When set, Monte Carlo Simulation performance data is displayed.",
-      monte_carlo_engine::report
+  monte_carlo_engine::report.initialize(em->OptMan(), "Monte_Carlo",
+    "When set, Monte Carlo Simulation performance data is displayed."
   );
 
   //

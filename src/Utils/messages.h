@@ -8,6 +8,9 @@
 // For causedBy
 #include "../ExprLib/expr.h"
 
+class option_manager;
+class checklist_enum;
+
 /**
  * Base class for named messages.
  * I.e., warning messages, reporting messages, debugging messages,
@@ -22,6 +25,7 @@ protected:
     static io_environ* io;
 
     inline const char* getName() const { return name; }
+    inline void setName(const char* n) { name = n; }
 public:
     abstract_msg();
 
@@ -71,6 +75,16 @@ class warning_msg : public abstract_msg {
     public:
         warning_msg();
 
+        /// Returns true if we were able to add to the warning option.
+        bool initialize(const option_manager* om, checklist_enum* grp,
+                const char* name, const char* doc);
+
+        inline bool initialize(const option_manager* om,
+                const char* name, const char* doc)
+        {
+            return initialize(om, 0, name, doc);
+        }
+
         inline bool startWarning() const {
             if (!active) return false;
             if (!io)     return false;
@@ -89,6 +103,16 @@ class warning_msg : public abstract_msg {
 class reporting_msg : public abstract_msg {
     public:
         reporting_msg();
+
+        /// Returns true if we were able to add to the report option.
+        bool initialize(const option_manager* om, checklist_enum* grp,
+                const char* name, const char* doc);
+
+        inline bool initialize(const option_manager* om,
+                const char* name, const char* doc)
+        {
+            return initialize(om, 0, name, doc);
+        }
 
         inline bool startReport() const {
             if (!active)  return false;
@@ -112,6 +136,16 @@ class reporting_msg : public abstract_msg {
 class debugging_msg : public abstract_msg {
     public:
         debugging_msg();
+
+        /// Returns true if we were able to add to the debug option.
+        bool initialize(const option_manager* om, checklist_enum* grp,
+                const char* name, const char* doc);
+
+        inline bool initialize(const option_manager* om,
+                const char* name, const char* doc)
+        {
+            return initialize(om, 0, name, doc);
+        }
 
         inline bool startReport() const {
             if (!active)  return false;

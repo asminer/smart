@@ -16,7 +16,7 @@ class option_enum;
 class radio_button;
 class checklist_enum;
 
-class abstract_msg;
+// class abstract_msg;
 
 // **************************************************************************
 // *                            option interface                            *
@@ -185,8 +185,8 @@ class option {
 
                 @return A new item, or NULL on error.
         */
-        // virtual checklist_enum* addChecklistItem(checklist_enum* grp,
-                // const char* name, const char* doc, bool &link);
+        virtual checklist_enum* addChecklistItem(checklist_enum* grp,
+                    const char* name, const char* doc, bool &link);
 
         /**
             Build and add an item to a messaging checklist.
@@ -197,6 +197,7 @@ class option {
 
                 @return A new item, or NULL on error.
         */
+        /*
         virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, abstract_msg &m);
 
@@ -205,6 +206,7 @@ class option {
         {
             return addChecklistItem(0, name, doc, m);
         }
+        */
 
         /**
             Build and add an item that's a group of items to a checklist.

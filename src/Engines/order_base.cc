@@ -141,18 +141,12 @@ bool init_static_varorder::execute()
   if (0==em)  return false;
 
   // Initialize options
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-      "varorder",
-      "When set, static variable ordering heuristic performance is reported.",
-      static_varorder::report
+  static_varorder::report.initialize(em->OptMan(), "varorder",
+      "When set, static variable ordering heuristic performance is reported."
   );
 
-  option* debug = em->findOption("Debug");
-  if (debug) debug->addChecklistItem(
-      "varorder",
-      "When set, static variable ordering heuristic details are displayed.",
-      static_varorder::debug
+  static_varorder::debug.initialize(em->OptMan(), "varorder",
+      "When set, static variable ordering heuristic details are displayed."
   );
 
   MakeEngineType(em,

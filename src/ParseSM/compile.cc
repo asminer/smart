@@ -995,12 +995,13 @@ option* BuildOptionHeader(char* name)
 
   const option_enum* oc = Options.top();
 
+  const option_manager* om = 0;
   if (oc) {
-    const option_manager* om = oc->readSettings();
-    answer = om ? om->FindOption(name) : 0;
+    om = oc->readSettings();
   } else {
-    answer = pm ? pm->findOption(name) : 0;
+    om = pm->OptMan();
   }
+  answer = om ? om->FindOption(name) : 0;
 
   if (0==answer) if (pm->startError()) {
     pm->cerr() << "Unknown option " << name;
@@ -2932,19 +2933,12 @@ void InitCompiler(parse_module* parent)
     ONE = 0;
   }
 
-  option* debug = pm ? pm->findOption("Debug") : 0;
-  if (debug) {
-    debug->addChecklistItem(
-        "parser",
-        "When set, very low-level parser messages are displayed.",
-        parser_debug
-    );
-    debug->addChecklistItem(
-        "compiler",
-        "When set, low-level compiler messages are displayed.",
-        compiler_debug
-    );
-  }
+  parser_debug.initialize(em ? em->OptMan() : 0, "parser",
+    "When set, very low-level parser messages are displayed."
+  );
+  compiler_debug.initialize(em ? em->OptMan() : 0, "compiler",
+    "When set, low-level compiler messages are displayed."
+  );
 #ifdef PARSER_DEBUG
   parser_debug.Activate();
 #endif

@@ -76,12 +76,7 @@ exprman::exprman(io_environ* i, option_manager* o)
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
 
-  option* warning = om->FindOption("Warning");
-  if (warning) warning->addChecklistItem(
-    "promote_args",
-    "When arguments are automatically promoted in a function call",
-    promote_arg
-  );
+  promote_arg.initialize(om, "promote_args", "When arguments are automatically promoted in a function call");
   promote_arg.Deactivate();
 }
 
@@ -422,27 +417,19 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   //
   // Option initialization
   //
-  option* debug = om ? om->FindOption("Debug") : 0;
-  DCASSERT(debug);
-  debug->addChecklistItem(
-      "exprs",
-      "When set, low-level expression and statement messages are displayed.",
-      expr::expr_debug
+  expr::expr_debug.initialize(om, "exprs",
+      "When set, low-level expression and statement messages are displayed."
   );
 #ifdef EXPR_DEBUG
   expr::expr_debug.Activate();
 #endif
 
-  debug->addChecklistItem(
-      "waitlist",
-      "When set, diagnostic messages are displayed regarding symbol waiting lists.",
-      expr::waitlist_debug
+  expr::waitlist_debug.initialize(om, "waitlist",
+      "When set, diagnostic messages are displayed regarding symbol waiting lists."
   );
 
-  debug->addChecklistItem(
-      "models",
-      "When set, diagnostic messages are displayed regarding model construction.",
-      expr::model_debug
+  expr::model_debug.initialize(om, "models",
+      "When set, diagnostic messages are displayed regarding model construction."
   );
 
   // Other options to initialize

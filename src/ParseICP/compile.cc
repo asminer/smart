@@ -2,6 +2,7 @@
 #include "compile.h"
 #include "lexer.h"
 #include "../Options/options.h"
+#include "../Options/optman.h"
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
@@ -510,7 +511,8 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 option* BuildOptionHeader(char* name)
 {
   if (0==name) return 0;
-  option* answer = pm ? pm->findOption(name) : 0;
+  option_manager* om = pm ? pm->OptMan() : 0;
+  option* answer = om ? om->FindOption(name) : 0;
 
   if (0==answer) if (pm->startError()) {
     pm->cerr() << "Unknown option " << name;
@@ -1189,16 +1191,11 @@ void InitCompiler(parse_module* parent)
 
   MeasureNames.Clear();
 
-  option* debug = pm ? pm->findOption("Debug") : 0;
-  if (debug) debug->addChecklistItem(
-    "parser_debug",
-    "When set, very low-level parser messages are displayed.",
-    parser_debug
+  parser_debug.initialize(em ? em->OptMan() : 0, "parser",
+    "When set, very low-level parser messages are displayed."
   );
-  if (debug) debug->addChecklistItem(
-    "compiler_debug",
-    "When set, low-level compiler messages are displayed.",
-    compiler_debug
+  compiler_debug.initialize(em ? em->OptMan() : 0, "compiler",
+    "When set, low-level compiler messages are displayed."
   );
 #ifdef PARSER_DEBUG
   parser_debug.Activate();

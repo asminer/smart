@@ -979,18 +979,11 @@ bool init_dcpsymbolic::execute()
   // InitMEDDLy(em);
 
   // Initialize options
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-    "implicit_dcp_gen",
-    "When set, implicit reachability set performance is reported.",
-    icp_symbgen::report
+  icp_symbgen::report.initialize(em->OptMan(), "implicit_dcp_gen",
+    "When set, implicit reachability set performance is reported."
   );
-
-  option* debug = em->findOption("Debug");
-  if (debug) debug->addChecklistItem(
-    "implicit_dcp_gen",
-    "When set, implicit reachability set details are displayed.",
-    icp_symbgen::debug
+  icp_symbgen::debug.initialize(em->OptMan(), "implicit_dcp_gen",
+    "When set, implicit reachability set details are displayed."
   );
 
   // accumulate vs. fold option

@@ -329,18 +329,13 @@ bool init_graphllm::execute()
   graph_lldsm::reachgraph::em = em;
 
   // ------------------------------------------------------------------
-  option* report = em->findOption("Report");
-  DCASSERT(report);
-
-  report->addChecklistItem(
+  graph_lldsm::reachgraph::numpaths_report.initialize(em->OptMan(),
     "num_paths",
-    "When set, performance data for counting number of paths is displayed.",
-    graph_lldsm::reachgraph::numpaths_report
+    "When set, performance data for counting number of paths is displayed."
   );
-  report->addChecklistItem(
+  graph_lldsm::reachgraph::ctl_report.initialize(em->OptMan(),
     "CTL_engines",
-    "When set, CTL engine performance is reported.",
-    graph_lldsm::reachgraph::ctl_report
+    "When set, CTL engine performance is reported."
   );
 
   // ------------------------------------------------------------------

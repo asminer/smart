@@ -578,11 +578,8 @@ void lexer_mod::Initialize(parse_module* p)
 {
   if (p == parent)  return;
   parent = p;
-  option* debug = parent ? parent->findOption("Debug") : 0;
-  if (debug) debug->addChecklistItem(
-    "lexer_debug",
-    "When set, very low-level lexer messages are displayed.",
-    lexer_debug
+  lexer_debug.initialize(parent ? parent->OptMan() : 0, "lexer",
+    "When set, very low-level lexer messages are displayed."
   );
 #ifdef LEXER_DEBUG
   lexer_debug.Activate();
