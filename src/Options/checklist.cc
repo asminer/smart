@@ -1,7 +1,7 @@
 
 #include "../include/defines.h"
 #include "../Streams/textfmt.h"
-#include "../Utils/messages.h"
+// #include "../Utils/messages.h"
 
 #include "checklist.h"
 
@@ -246,7 +246,6 @@ bool checklist_opt::isApropos(const doc_formatter* df, const char* keyword) cons
 }
 
 
-/*
 checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link)
 {
@@ -259,8 +258,8 @@ checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
     if (clg) clg->addItem(item);
     return itemlist->Insert(item);
 }
-*/
 
+/*
 checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, abstract_msg &m)
 {
@@ -274,6 +273,7 @@ checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
     if (clg) clg->addItem(item);
     return itemlist->Insert(item);
 }
+*/
 
 
 

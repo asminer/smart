@@ -537,18 +537,12 @@ bool init_dcpengines::execute()
   em->registerLibrary(&state_lib_data);
 
   // Initialize options
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-    "explicit_dcp_gen",
-    "When set, explicit reachability set performance is reported.",
-    icp_stategen::report
+  icp_stategen::report.initialize(em->OptMan(), "explicit_dcp_gen",
+    "When set, explicit reachability set performance is reported."
   );
 
-  option* debug = em->findOption("Debug");
-  if (debug) debug->addChecklistItem(
-    "explicit_dcp_gen",
-    "When set, explicit reachability set generation details are displayed.",
-    icp_stategen::debug
+  icp_stategen::debug.initialize(em->OptMan(), "explicit_dcp_gen",
+    "When set, explicit reachability set generation details are displayed."
   );
 
 

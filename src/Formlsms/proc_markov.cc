@@ -189,11 +189,8 @@ markov_process::reporter::reporter(const exprman* The_em)
 : GraphLib::timer_hook()
 {
   em = The_em;
-  option* parent = em ? em->findOption("Report") : 0;
-  if (parent) parent->addChecklistItem(
-    "mc_finish",
-    "When set, performance details for Markov chain finalization steps are reported.",
-    report
+  report.initialize(em->OptMan(), "mc_finish",
+    "When set, performance details for Markov chain finalization steps are reported."
   );
 }
 
@@ -362,11 +359,8 @@ bool init_markovproc::execute()
   markov_process::solver = markov_process::GAUSS_SEIDEL;
   markov_process::access = markov_process::BY_COLUMNS;
 
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-      "mc_solve",
-      "When set, Markov chain solution performance is reported.",
-      markov_process::report
+  markov_process::report.initialize(em->OptMan(), "mc_solve",
+      "When set, Markov chain solution performance is reported."
   );
 
   return true;

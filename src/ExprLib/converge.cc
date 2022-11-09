@@ -797,13 +797,8 @@ void InitConvergeOptions(exprman* em)
   if (0==em)  return;
   if (0==em->OptMan()) return;
 
-  option* debug = em->findOption("Debug");
-  DCASSERT(debug);
-
-  debug->addChecklistItem(
-      "converges",
-      "Use to view the sequence of assignments during the execution of a converge statement.",
-      fixpoint_stmt::converge_debug
+  fixpoint_stmt::converge_debug.initialize(em->OptMan(), "converges",
+      "Use to view the sequence of assignments during the execution of a converge statement."
   );
 
   converge_stmt::max_iters = 1000;

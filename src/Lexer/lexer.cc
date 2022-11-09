@@ -57,11 +57,9 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     em = _em;
     DCASSERT(em);
 
-    option* debug = em->findOption("Debug");
-    if (debug) debug->addChecklistItem(
-        "lexer",
-        "When set, very low-level lexer messages are displayed.",
-        lexer_debug
+
+    lexer_debug.initialize(em->OptMan(), "lexer",
+        "When set, very low-level lexer messages are displayed."
     );
 #ifdef DEBUG_LEXER
     lexer_debug.Activate();

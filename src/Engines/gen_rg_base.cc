@@ -127,18 +127,12 @@ bool init_procgen::execute()
   if (0==em)  return false;
 
   // Initialize options
-  option* report = em->findOption("Report");
-  if (report) report->addChecklistItem(
-    "procgen",
-    "When set, process generation performance is reported.",
-    process_generator::report
+  process_generator::report.initialize(em->OptMan(), "procgen",
+    "When set, process generation performance is reported."
   );
 
-  option* debug = em->findOption("Debug");
-  if (debug) debug->addChecklistItem(
-    "procgen",
-    "When set, process generation details are displayed.",
-    process_generator::debug
+  process_generator::debug.initialize(em->OptMan(), "procgen",
+    "When set, process generation details are displayed."
   );
 
   engtype* ProcessGeneration = MakeEngineType(em,

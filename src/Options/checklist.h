@@ -108,12 +108,12 @@ public:
     virtual void Finish();
     virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
 
-    /*
     virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link);
-                */
+    /*
     virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, abstract_msg &m);
+                */
     virtual checklist_enum* addChecklistGroup(const char* name,
                 const char* doc, unsigned ni);
 };

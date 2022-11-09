@@ -735,11 +735,8 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
 void InitModelDefs(exprman* em)
 {
     if (0==em) return;
-    option* warning = em->findOption("Warning");
-    if (warning) warning->addChecklistItem(
-        "model_var_owner",
-        "For mismatches in model variable ownership",
-        model_def::not_our_var
+    model_def::not_our_var.initialize(em->OptMan(), "model_var_owner",
+        "For mismatches in model variable ownership"
     );
 }
 

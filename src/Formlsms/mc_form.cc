@@ -694,32 +694,18 @@ bool init_mcform::execute()
 
   bool ok;
   // Set up options
-  option* debug = em->findOption("Debug");
-  DCASSERT(debug);
-
-  debug->addChecklistItem(
-    "mcs",
-    "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
-    markov_def::mc_debug
+  markov_def::mc_debug.initialize(em->OptMan(), "mcs",
+    "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction."
   );
 
-  option* warning = em->findOption("Warning");
-  DCASSERT(warning);
-
-  warning->addChecklistItem(
-    "mc_dup_init",
-    "For duplicatation of initial probabilities in Markov chain models",
-    markov_def::dup_init
+  markov_def::dup_init.initialize(em->OptMan(), "mc_dup_init",
+    "For duplicatation of initial probabilities in Markov chain models"
   );
-  warning->addChecklistItem(
-    "mc_no_init",
-    "For absence of initial probabilities in Markov chain models",
-    markov_def::no_init
+  markov_def::no_init.initialize(em->OptMan(), "mc_no_init",
+    "For absence of initial probabilities in Markov chain models"
   );
-  warning->addChecklistItem(
-    "mc_dup_arc",
-    "For duplicate arcs in Markov chain models",
-    markov_def::dup_arc
+  markov_def::dup_arc.initialize(em->OptMan(), "mc_dup_arc",
+    "For duplicate arcs in Markov chain models"
   );
 
   // Set up and register formalisms

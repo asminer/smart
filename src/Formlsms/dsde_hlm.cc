@@ -1324,21 +1324,18 @@ bool init_dsde::execute()
 {
 	if (0 == em) return false;
 
-	option* warning = em->findOption("Warning");
-    DCASSERT(warning);
-
-	warning->addChecklistItem("dup_part",
-			"For multiple partition definitions for a state variable",
-            dsde_def::dup_part);
-	warning->addChecklistItem("no_part",
-			"If some, but not all, state variables are assiged to groups using partition",
-			dsde_def::no_part);
-	warning->addChecklistItem("dup_prio",
-			"For multiple priority level definitions for a model event",
-            dsde_def::dup_prio);
-	warning->addChecklistItem("ignored_prio",
-			"For ignored priority pairs (between events in different priority levels)",
-			dsde_hlm::ignored_prio);
+    dsde_def::dup_part.initialize(em->OptMan(), "dup_part",
+	    "For multiple partition definitions for a state variable"
+    );
+    dsde_def::no_part.initialize(em->OptMan(), "no_part",
+		"If some, but not all, state variables are assiged to groups using partition"
+    );
+    dsde_def::dup_prio.initialize(em->OptMan(), "dup_prio",
+		"For multiple priority level definitions for a model event"
+    );
+    dsde_hlm::ignored_prio.initialize(em->OptMan(), "ignored_prio",
+		"For ignored priority pairs (between events in different priority levels)"
+    );
 
 	return true;
 }

@@ -64,7 +64,7 @@ public:
         @param  file  "file" to read from.
         @param  name  Filename string to use for errors.
                       Use "-" to display "standard input".
-                      Use a string with a leading space to 
+                      Use a string with a leading space to
                       avoid printing "file" in error messages.
         @return 0 on success?
   */
@@ -92,10 +92,7 @@ public:
 
 
 public:
-  inline option* findOption(const char* name) const {
-    DCASSERT(em);
-    return em->findOption(name);
-  }
+  inline option_manager* OptMan() { return em->OptMan(); }
   inline const type* FindOWDType(const char* s) const {
     DCASSERT(em);
     return em->findOWDType(s);
