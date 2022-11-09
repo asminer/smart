@@ -102,7 +102,7 @@ class lexer {
                 void operator=(const buffer&) = delete;
         };
     private:
-        named_msg lexer_debug;
+        debugging_msg lexer_debug;
 
         const exprman* em;
         const char** filenames;

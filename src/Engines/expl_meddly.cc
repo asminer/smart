@@ -134,7 +134,7 @@ public:
 
   // required for interface, but should never be called
 
-  inline void eliminateVanishing(named_msg &) {
+  inline void eliminateVanishing(debugging_msg &) {
     DCASSERT(0);
     throw subengine::Engine_Failed;
   }
@@ -2281,7 +2281,7 @@ class gen_wrapper_templ {
     // Really convenient methods
     //
 
-    inline void generateRG(named_msg &debug, dsde_hlm &hm) {
+    inline void generateRG(debugging_msg &debug, dsde_hlm &hm) {
       generateRGt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
@@ -2295,7 +2295,7 @@ class gen_wrapper_templ {
       }
     }
 
-    inline void generateMC(named_msg &debug, dsde_hlm &hm) {
+    inline void generateMC(debugging_msg &debug, dsde_hlm &hm) {
       generateMCt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
@@ -2309,7 +2309,7 @@ class gen_wrapper_templ {
       }
     }
 
-    inline void generateSMP(named_msg &debug, dsde_hlm &hm) {
+    inline void generateSMP(debugging_msg &debug, dsde_hlm &hm) {
       generateSMPt<gen_wrapper_templ <TANGR, VANGR, EDGEGR>, int*>
         (debug, hm, *this);
 
@@ -2447,7 +2447,7 @@ class gen_wrapper_templ {
       return tangible->getUnexplored(s);
     }
 
-    inline void clearVanishing(named_msg &debug) {
+    inline void clearVanishing(debugging_msg &debug) {
       if (debug.startReport()) {
         debug.report() << "Eliminating vanishing states\n";
         debug.stopIO();
@@ -2498,7 +2498,7 @@ class gen_wrapper_templ {
     // required methods for MC generation
     //
 
-    inline void eliminateVanishing(named_msg &debug) {
+    inline void eliminateVanishing(debugging_msg &debug) {
       if (debug.startReport()) {
         debug.report() << "Eliminating vanishing states\n";
         debug.stopIO();

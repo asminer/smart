@@ -157,7 +157,7 @@ checklist_enum* option::addChecklistItem(checklist_enum* grp,
 }
 
 checklist_enum* option::addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, named_msg &m, bool act)
+                const char* name, const char* doc, abstract_msg &m, bool act)
 {
     return 0;
 }

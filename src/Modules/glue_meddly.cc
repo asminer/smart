@@ -1071,7 +1071,7 @@ void meddly_encoder::reportStats(OutputStream &out)
 }
 
 shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
-                      shared_ddedge** list, int N, named_msg* debug) const
+                      shared_ddedge** list, int N, debugging_msg* debug) const
 {
   if (0==N || 0==list) return 0;
   DCASSERT(F);
@@ -1119,7 +1119,7 @@ shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
 }
 
 shared_ddedge* meddly_encoder::accumulate(const MEDDLY::binary_opname* op,
-                      shared_ddedge** list, int N, named_msg* debug) const
+                      shared_ddedge** list, int N, debugging_msg* debug) const
 {
   if (0==N || 0==list) return 0;
   DCASSERT(F);

@@ -171,22 +171,22 @@ void meddly_varoption::reportStats(DisplayStream &out) const
   if (mxd_wrap) mxd_wrap->reportStats(out);
 }
 
-satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(named_msg &debug)
+satotf_opname::otf_relation* meddly_varoption::buildNSF_OTF(debugging_msg &debug)
 {
   return 0;
 }
 
-satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(named_msg &debug)
+satimpl_opname::implicit_relation* meddly_varoption::buildNSF_IMPLICIT(debugging_msg &debug)
 {
   return 0;
 }
 
-sathyb_opname::hybrid_relation* meddly_varoption::buildNSF_HYBRID(named_msg &debug)
+sathyb_opname::hybrid_relation* meddly_varoption::buildNSF_HYBRID(debugging_msg &debug)
 {
   return 0;
 }
 
-MEDDLY::dd_edge meddly_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+MEDDLY::dd_edge meddly_varoption::buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug)
 {
   MEDDLY::dd_edge result(getMddForest());
   return result;
@@ -376,9 +376,9 @@ public:
 
   virtual ~bounded_varoption();
 
-  virtual void initializeEvents(named_msg &d);
+  virtual void initializeEvents(debugging_msg &d);
 
-  virtual void updateEvents(named_msg &d, bool* cl);
+  virtual void updateEvents(debugging_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 
@@ -422,12 +422,12 @@ bounded_varoption::~bounded_varoption()
   Delete(mtmxd_wrap);
 }
 
-void bounded_varoption::initializeEvents(named_msg &d)
+void bounded_varoption::initializeEvents(debugging_msg &d)
 {
   // Nothing to do?
 }
 
-void bounded_varoption::updateEvents(named_msg &d, bool* cl)
+void bounded_varoption::updateEvents(debugging_msg &d, bool* cl)
 {
   DCASSERT(built_ok);
   DCASSERT(event_enabling);
@@ -972,7 +972,7 @@ void substate_encoder::FillTerms(const model_statevar* sv, expr* f)
 class enabling_subeventI : public sathyb_opname::subevent {
 public:
   // TBD - clean up this constructor!
-  enabling_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+  enabling_subeventI(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
   virtual ~enabling_subeventI();
 
 protected:
@@ -1031,14 +1031,14 @@ private:
   const model_event* E;
 
   // TBD - this should be static or accessed via a parent class
-  named_msg &debug;
+  debugging_msg &debug;
 };
 
 // **************************************************************************
 // *                        enabling_subeventI  methods                        *
 // **************************************************************************
 
-enabling_subeventI::enabling_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+enabling_subeventI::enabling_subeventI(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
 : sathyb_opname::subevent(f, v, nv, false), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
@@ -1300,7 +1300,7 @@ void enabling_subeventI::exploreEnabling(sathyb_opname::hybrid_relation &rel, in
 class firing_subeventI : public sathyb_opname::subevent {
 public:
   // TBD - clean up this constructor!
-  firing_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+  firing_subeventI(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
   virtual ~firing_subeventI();
 
 protected:
@@ -1341,14 +1341,14 @@ private:
   const model_event* E;
 
   // TBD - this should be static or accessed via a parent class
-  named_msg &debug;
+  debugging_msg &debug;
 };
 
 // **************************************************************************
 // *                        firing_subeventI  methods                        *
 // **************************************************************************
 
-firing_subeventI::firing_subeventI(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+firing_subeventI::firing_subeventI(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
 : sathyb_opname::subevent(f, v, nv, true), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
@@ -1618,8 +1618,8 @@ void firing_subeventI::exploreFiring(sathyb_opname::hybrid_relation &rel, int dp
 class enabling_subevent : public satotf_opname::subevent {
   public:
     // TBD - clean up this constructor!
-    // enabling_subevent(named_msg &d, const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
-    enabling_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+    // enabling_subevent(debugging_msg &d, const dsde_hlm &p, substate_colls *c, intset event_deps, expr* chunk, int* v, int nv);
+    enabling_subevent(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
     virtual ~enabling_subevent();
 
   protected:
@@ -1676,15 +1676,15 @@ class enabling_subevent : public satotf_opname::subevent {
     const model_event* E;
 
     // TBD - this should be static or accessed via a parent class
-    named_msg &debug;
+    debugging_msg &debug;
 };
 
 // **************************************************************************
 // *                       enabling_subevent  methods                       *
 // **************************************************************************
 
-// enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
-enabling_subevent::enabling_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+// enabling_subevent::enabling_subevent(debugging_msg &d, const dsde_hlm &p, substate_colls* c, intset event_deps, expr* chunk, int* v, int nv)
+enabling_subevent::enabling_subevent(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
  : satotf_opname::subevent(f, v, nv, false), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
@@ -1949,7 +1949,7 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
 class firing_subevent : public satotf_opname::subevent {
   public:
     // TBD - clean up this constructor!
-    firing_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
+    firing_subevent(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls *c, intset event_deps, expr* chunk, forest* f, int* v, int nv);
     virtual ~firing_subevent();
 
   protected:
@@ -1990,14 +1990,14 @@ class firing_subevent : public satotf_opname::subevent {
     const model_event* E;
 
     // TBD - this should be static or accessed via a parent class
-    named_msg &debug;
+    debugging_msg &debug;
 };
 
 // **************************************************************************
 // *                        firing_subevent  methods                        *
 // **************************************************************************
 
-firing_subevent::firing_subevent(named_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
+firing_subevent::firing_subevent(debugging_msg &d, const dsde_hlm &p, const model_event* Ev, substate_colls* c, intset event_deps, expr* chunk, forest* f, int* v, int nv)
  : satotf_opname::subevent(f, v, nv, true), td(traverse_data::Compute), debug(d)
 {
   E = Ev;
@@ -2357,17 +2357,17 @@ public:
     const exprman* em, const meddly_procgen &pg);
   virtual ~substate_varoption();
   virtual void initializeVars();
-  virtual void initializeEvents(named_msg &d);
+  virtual void initializeEvents(debugging_msg &d);
   virtual void reportStats(DisplayStream &out) const;
 
   //
   // TBD - for now
   //
 
-  virtual satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
-  virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
-  virtual sathyb_opname::hybrid_relation* buildNSF_HYBRID(named_msg &debug);
-  virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(named_msg &debug);
+  virtual satotf_opname::otf_relation* buildNSF_OTF(debugging_msg &debug);
+  virtual satimpl_opname::implicit_relation* buildNSF_IMPLICIT(debugging_msg &debug);
+  virtual sathyb_opname::hybrid_relation* buildNSF_HYBRID(debugging_msg &debug);
+  virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug);
   virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
@@ -2393,7 +2393,7 @@ private:
                           Otherwise, zero-terminated list of levels with
                           unexplored locals to pull from.
   */
-  void exploreEnabling(named_msg &d, deplist &dl, int k, const int* changed);
+  void exploreEnabling(debugging_msg &d, deplist &dl, int k, const int* changed);
 
 
   /**
@@ -2405,7 +2405,7 @@ private:
                           Otherwise, zero-terminated list of levels with
                           unexplored locals to pull from.
   */
-  void exploreNextstate(named_msg &d, deplist &dl, int k, const int* changed);
+  void exploreNextstate(debugging_msg &d, deplist &dl, int k, const int* changed);
 
 protected:
   /**
@@ -2416,7 +2416,7 @@ protected:
         @param  levels    Zero-terminated list of levels, from
                           lowest to highest.
   */
-  void updateLevels(named_msg &d, const int* levels);
+  void updateLevels(debugging_msg &d, const int* levels);
 
   /**
       Build the list of levels that have confirmed, unexplored locals.
@@ -2448,7 +2448,7 @@ protected:
 class derive_relation_node : public relation_node {
 public:
   // TBD - clean up this constructor!
-  derive_relation_node(named_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh);
+  derive_relation_node(debugging_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh);
   virtual ~derive_relation_node();
   virtual long nextOf(long i) override;
 
@@ -2458,7 +2458,7 @@ private:
   long i_const;
   substate_colls* colls;
 
-  // named_msg &debug;
+  // debugging_msg &debug;
 };
 
 
@@ -2469,7 +2469,7 @@ private:
 // **************************************************************************
 
 
-derive_relation_node::derive_relation_node(named_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh):relation_node(141010, fst, lvl, -1, e, f, inh){
+derive_relation_node::derive_relation_node(debugging_msg &dm, substate_colls* c, forest* fst, int lvl, long e, long f, long inh):relation_node(141010, fst, lvl, -1, e, f, inh){
   e_delta = e;
   f_delta = f;
   i_const = inh;
@@ -2692,7 +2692,7 @@ void substate_varoption::initializeVars()
 }
 
 void
-substate_varoption::initializeEvents(named_msg &d)
+substate_varoption::initializeEvents(debugging_msg &d)
 {
   if (d.startReport()) {
     d.report() << "preprocessing event expressions\n";
@@ -2761,7 +2761,7 @@ void substate_varoption::reportStats(DisplayStream &out) const
 }
 
 
-satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
+satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &debug)
 {
   using namespace MEDDLY;
 
@@ -2910,7 +2910,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(named_msg &debug)
   );
 }
 
-satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_msg &debug)
+satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
   // exprman* em = getExpressionManager();
@@ -2994,7 +2994,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(named_m
   return T;
 }
 
-sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(named_msg &debug)
+sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_msg &debug)
 {
    using namespace MEDDLY;
   exprman* em = getExpressionManager();
@@ -3349,7 +3349,7 @@ int getIndexOf(substate_colls* c_pass, int level, int tokens)
 //
 // potential deadlock states = conjunction of transition disabling expressions
 #ifdef USE_FRMDD_FOR_BUILDING_POTENTIAL_DEADLOCK_STATES
-MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
   // exprman* em = getExpressionManager();
@@ -3553,7 +3553,7 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_
   return qr_result;
 }
 #else
-MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(named_msg &debug)
+MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
   exprman* em = getExpressionManager();
@@ -3834,7 +3834,7 @@ substate_varoption::clearList(deplist* &L)
 
 
 void substate_varoption
-::exploreEnabling(named_msg &d, deplist &dl, int k, const int* changed)
+::exploreEnabling(debugging_msg &d, deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
@@ -3948,7 +3948,7 @@ void substate_varoption
 
 
 void substate_varoption
-::exploreNextstate(named_msg &d, deplist &dl, int k, const int* changed)
+::exploreNextstate(debugging_msg &d, deplist &dl, int k, const int* changed)
 {
   DCASSERT(k>0);
   int ssz = tdcurr->readSubstateSize(k);
@@ -4104,7 +4104,7 @@ void substate_varoption
 
 
 
-void substate_varoption::updateLevels(named_msg &d, const int* levels)
+void substate_varoption::updateLevels(debugging_msg &d, const int* levels)
 {
   DCASSERT(tmpLevels);
   if (d.startReport()) {
@@ -4228,7 +4228,7 @@ public:
   pregen_varoption(meddly_reachset &x, const dsde_hlm &p,
     const exprman* em, const meddly_procgen &pg);
 
-  virtual void updateEvents(named_msg &d, bool* cl);
+  virtual void updateEvents(debugging_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 };
@@ -4247,7 +4247,7 @@ pregen_varoption
 }
 
 void
-pregen_varoption::updateEvents(named_msg &d, bool* cl)
+pregen_varoption::updateEvents(debugging_msg &d, bool* cl)
 {
   int* updated = new int[num_levels+1];
 
@@ -4299,7 +4299,7 @@ public:
   onthefly_varoption(meddly_reachset &x, const dsde_hlm &p,
     const exprman* em, const meddly_procgen &pg);
 
-  virtual void updateEvents(named_msg &d, bool* cl);
+  virtual void updateEvents(debugging_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 };
@@ -4317,7 +4317,7 @@ onthefly_varoption
 {
 }
 
-void onthefly_varoption::updateEvents(named_msg &d, bool* cl)
+void onthefly_varoption::updateEvents(debugging_msg &d, bool* cl)
 {
   // throw subengine::Engine_Failed;
 }
@@ -4338,7 +4338,7 @@ public:
   ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
                              const exprman* em, const meddly_procgen &pg);
 
-  virtual void updateEvents(named_msg &d, bool* cl);
+  virtual void updateEvents(debugging_msg &d, bool* cl);
 
   virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 };
@@ -4356,7 +4356,7 @@ ontheflyimplicit_varoption
 {
 }
 
-void ontheflyimplicit_varoption::updateEvents(named_msg &d, bool* cl)
+void ontheflyimplicit_varoption::updateEvents(debugging_msg &d, bool* cl)
 {
   // throw subengine::Engine_Failed;
 }

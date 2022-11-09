@@ -24,8 +24,8 @@ const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 // *                                                                *
 // ******************************************************************
 
-named_msg graph_lldsm::reachgraph::ctl_report;
-named_msg graph_lldsm::reachgraph::numpaths_report;
+reporting_msg graph_lldsm::reachgraph::ctl_report;
+reporting_msg graph_lldsm::reachgraph::numpaths_report;
 exprman* graph_lldsm::reachgraph::em = 0;
 
 // ******************************************************************

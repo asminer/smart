@@ -261,8 +261,8 @@ class icp_symbgen : public subengine {
 
 
 protected:
-  static named_msg report;
-  static named_msg debug;
+  static reporting_msg report;
+  static debugging_msg debug;
   static unsigned combine_method;
   static const unsigned ACCUMULATE = 0;
   static const unsigned FOLD       = 1;
@@ -325,8 +325,8 @@ protected:
   };
 
 };
-named_msg icp_symbgen::report;
-named_msg icp_symbgen::debug;
+reporting_msg icp_symbgen::report;
+debugging_msg icp_symbgen::debug;
 unsigned icp_symbgen::combine_method;
 
 // **************************************************************************

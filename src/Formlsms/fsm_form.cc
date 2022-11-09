@@ -39,10 +39,10 @@ class fsm_def : public model_def {
 
   bool error;
 
-  static named_msg fsm_debug;
-  static named_msg dup_init;
-  static named_msg no_init;
-  static named_msg dup_arc;
+  static debugging_msg fsm_debug;
+  static warning_msg dup_init;
+  static warning_msg no_init;
+  static warning_msg dup_arc;
   friend class init_fsms;
 public:
   fsm_def(const char* fn, int line, const type* t, char*n,
@@ -64,10 +64,10 @@ protected:
 
 };
 
-named_msg fsm_def::fsm_debug;
-named_msg fsm_def::dup_init;
-named_msg fsm_def::no_init;
-named_msg fsm_def::dup_arc;
+debugging_msg fsm_def::fsm_debug;
+warning_msg fsm_def::dup_init;
+warning_msg fsm_def::no_init;
+warning_msg fsm_def::dup_arc;
 
 // ******************************************************************
 // *                        fsm_def  methods                        *

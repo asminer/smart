@@ -297,7 +297,7 @@ void model_event::decideEnabled(traverse_data &x) {
 // *                                                                *
 // ******************************************************************
 
-named_msg dsde_hlm::ignored_prio;
+warning_msg dsde_hlm::ignored_prio;
 
 dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
 		model_event** ed, int ne, model_event** dead, int nd) :
@@ -838,9 +838,9 @@ void dsde_hlm::ProcessEvents() {
 // *                                                                        *
 // **************************************************************************
 
-named_msg dsde_def::dup_part;
-named_msg dsde_def::no_part;
-named_msg dsde_def::dup_prio;
+warning_msg dsde_def::dup_part;
+warning_msg dsde_def::no_part;
+warning_msg dsde_def::dup_prio;
 
 dsde_def::dsde_def(const char* fn, int line, const type* t, char*n,
 		formal_param **pl, int np) :

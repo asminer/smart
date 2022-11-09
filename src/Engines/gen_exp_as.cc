@@ -81,7 +81,7 @@ public:
 		tandb.GetStateKnown(tan_unexp, s->writeState(), s->getStateSize());
 		return tan_unexp++;
 	}
-	inline void clearVanishing(named_msg &debug) {
+	inline void clearVanishing(debugging_msg &debug) {
 		if (debug.startReport()) {
 			debug.report() << "Eliminating vanishing states\n";
 			debug.stopIO();
@@ -89,7 +89,7 @@ public:
 		vandb.Clear();
 		van_unexp = 0;
 	}
-	inline void eliminateVanishing(named_msg &debug) {
+	inline void eliminateVanishing(debugging_msg &debug) {
 		clearVanishing(debug);
 	}
 	inline static bool statesOnly() {
@@ -271,7 +271,7 @@ public:
 	inline static bool statesOnly() {
 		return false;
 	}
-	inline void eliminateVanishing(named_msg &debug) {
+	inline void eliminateVanishing(debugging_msg &debug) {
 		clearVanishing(debug);
 		try {
 			smp.eliminateVanishing(vansolver);

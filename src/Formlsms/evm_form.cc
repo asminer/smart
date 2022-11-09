@@ -453,15 +453,15 @@ class evm_def : public dsde_def {
 
   static assign_entry* tmp_arc;
 
-  static named_msg evm_debug;
-  static named_msg dup_range;
-  static named_msg dup_assign;
-  static named_msg dup_init;
-  static named_msg dup_hide;
-  static named_msg dup_part;
-  static named_msg no_event;
-  static named_msg no_vars;
-  static named_msg no_part;
+  static debugging_msg evm_debug;
+  static warning_msg dup_range;
+  static warning_msg dup_assign;
+  static warning_msg dup_init;
+  static warning_msg dup_hide;
+  static warning_msg dup_part;
+  static warning_msg no_event;
+  static warning_msg no_vars;
+  static warning_msg no_part;
 
   static const type* intvar_type;
   static const type* event_type;
@@ -490,15 +490,15 @@ protected:
 };
 
 assign_entry* evm_def::tmp_arc = 0;
-named_msg evm_def::evm_debug;
-named_msg evm_def::dup_range;
-named_msg evm_def::dup_assign;
-named_msg evm_def::dup_init;
-named_msg evm_def::dup_hide;
-named_msg evm_def::dup_part;
-named_msg evm_def::no_event;
-named_msg evm_def::no_vars;
-named_msg evm_def::no_part;
+debugging_msg evm_def::evm_debug;
+warning_msg evm_def::dup_range;
+warning_msg evm_def::dup_assign;
+warning_msg evm_def::dup_init;
+warning_msg evm_def::dup_hide;
+warning_msg evm_def::dup_part;
+warning_msg evm_def::no_event;
+warning_msg evm_def::no_vars;
+warning_msg evm_def::no_part;
 
 const type* evm_def::intvar_type;
 const type* evm_def::event_type;

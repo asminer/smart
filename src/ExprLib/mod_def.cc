@@ -19,7 +19,7 @@
 // *                                                                *
 // ******************************************************************
 
-named_msg model_def::not_our_var;
+warning_msg model_def::not_our_var;
 
 model_def::model_def(const char* fn, int ln, const type* t, char* n,
       formal_param **pl, int np)
@@ -149,7 +149,7 @@ void model_def::BuildModel(traverse_data &x)
   }
 }
 
-bool model_def::StartWarning(const named_msg &who, const expr* cause) const
+bool model_def::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
   who.causedBy(cause);

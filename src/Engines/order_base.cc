@@ -25,8 +25,8 @@
 // *                                                                        *
 // **************************************************************************
 
-named_msg static_varorder::report;
-named_msg static_varorder::debug;
+reporting_msg static_varorder::report;
+debugging_msg static_varorder::debug;
 
 static_varorder::static_varorder()
 : subengine()
@@ -1144,7 +1144,7 @@ std::vector<int> leastToMostConnected(MODEL theModel) {
 
 // default parameters ordering
 std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
-                              named_msg& out){
+                              debugging_msg& out){
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
   int soupsIters = 2000;
 
@@ -1330,7 +1330,7 @@ std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, in
 
 // default parameters ordering
 std::vector<int> defaultOrder(MODEL theModel, double paramAlpha, int maxIter, int bfsIters,
-                              named_msg& out){
+                              debugging_msg& out){
   // paramAlpha: 1.0 is all spans, 0.0 is all tops, recommend >= 100 for iter
   // int soupsIters = 10000;
   int soupsIters = 5000;

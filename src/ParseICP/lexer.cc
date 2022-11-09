@@ -39,7 +39,7 @@ class inputfile;
 
 struct lexer_mod {
   parse_module* parent;
-  named_msg lexer_debug;
+  debugging_msg lexer_debug;
   /// Stack of input files.
   inputfile** filestack;
   /// Top of file stack.

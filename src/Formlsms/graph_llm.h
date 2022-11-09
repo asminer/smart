@@ -70,8 +70,8 @@ public:
     private:
       const graph_lldsm* parent;
     protected:
-      static named_msg ctl_report;
-      static named_msg numpaths_report;
+      static reporting_msg ctl_report;
+      static reporting_msg numpaths_report;
       static exprman* em;
     public:
       reachgraph();

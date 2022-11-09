@@ -67,10 +67,10 @@ class markov_def : public model_def {
   bool error;
   bool discrete;
 
-  static named_msg mc_debug;
-  static named_msg dup_init;
-  static named_msg no_init;
-  static named_msg dup_arc;
+  static debugging_msg mc_debug;
+  static warning_msg dup_init;
+  static warning_msg no_init;
+  static warning_msg dup_arc;
   friend class init_mcform;
 public:
   markov_def(const char* fn, int line, const type* t, bool d, char*n,
@@ -94,10 +94,10 @@ protected:
 
 };
 
-named_msg markov_def::mc_debug;
-named_msg markov_def::dup_init;
-named_msg markov_def::no_init;
-named_msg markov_def::dup_arc;
+debugging_msg markov_def::mc_debug;
+warning_msg markov_def::dup_init;
+warning_msg markov_def::no_init;
+warning_msg markov_def::dup_arc;
 
 // ******************************************************************
 // *                       markov_def methods                       *

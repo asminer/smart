@@ -15,7 +15,7 @@
 
 class measure;
 class model_var;
-  
+
 // ******************************************************************
 // *                                                                *
 // *                        model_def  class                        *
@@ -26,7 +26,7 @@ class model_var;
 
       Specific formalisms should be derived from this class.
 
-      Instances of this class (well, of derived classes) 
+      Instances of this class (well, of derived classes)
       are used to store the language part of a user-defined model.
       It contains a list of statements and lots of wrappers and any
       other useful (usually compile-time) information about a user-defined
@@ -35,10 +35,10 @@ class model_var;
 
       To better handle the hidden model parameter for model functions,
       "Substitute" will return the current model_instance.
-*/  
+*/
 class model_def : public function {
   /// Warning option.
-  static named_msg not_our_var;
+  static warning_msg not_our_var;
 
   friend void InitModelDefs(exprman* em);
 
@@ -87,7 +87,7 @@ public:
   */
   inline void SetStatementBlock(expr* b) {
     DCASSERT(0==stmt_block);
-    stmt_block = b; 
+    stmt_block = b;
   }
 
   /** Set the symbol table (done by compiler).
@@ -125,17 +125,17 @@ public:
   /** Start a warning message.
       Returns true on success.
   */
-  bool StartWarning(const named_msg &who, const expr* cause) const;
+  bool StartWarning(const warning_msg &who, const expr* cause) const;
 
   /** Finish a warning message.
   */
   void DoneWarning() const;
-  
+
   /** Start an error message.
       Returns true on success.
   */
   bool StartError(const expr* cause) const;
-  
+
   /** Finish an error message.
   */
   void DoneError() const;
@@ -148,7 +148,7 @@ public:
         @return true  If the model variable belongs to us;
                 false otherwise.
   */
-  bool isVariableOurs(const model_var* mv, const expr* cause, 
+  bool isVariableOurs(const model_var* mv, const expr* cause,
             const char* what) const;
 
   /** Build an actual instance of the model.

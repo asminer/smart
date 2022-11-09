@@ -84,8 +84,8 @@ expl_states_only::~expl_states_only()
 /// Explicit state generator for integer constraint models.
 class icp_stategen : public subengine {
 protected:
-  static named_msg report;
-  static named_msg debug;
+  static reporting_msg report;
+  static debugging_msg debug;
   friend class init_dcpengines;
 public:
   icp_stategen();
@@ -144,8 +144,8 @@ protected:
     throw Terminated;
   }
 };
-named_msg icp_stategen::report;
-named_msg icp_stategen::debug;
+reporting_msg icp_stategen::report;
+debugging_msg icp_stategen::debug;
 
 icp_stategen the_icp_stategen;
 

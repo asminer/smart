@@ -49,8 +49,8 @@ int yyparse();
 
 parse_module* pm;
 exprman* em;
-named_msg parser_debug;
-named_msg compiler_debug;
+debugging_msg parser_debug;
+debugging_msg compiler_debug;
 
 // Expression for the integer constant 1.
 expr* ONE = 0;

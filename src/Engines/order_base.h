@@ -14,8 +14,8 @@
 class static_varorder : public subengine {
   friend class init_static_varorder;
 protected:
-  static named_msg report;
-  static named_msg debug;
+  static reporting_msg report;
+  static debugging_msg debug;
 public:
   static_varorder();
   virtual ~static_varorder();
