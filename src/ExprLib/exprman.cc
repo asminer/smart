@@ -407,7 +407,7 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   if (builtManager)  return The_Man;
   builtManager = 1;
 
-  named_msg::initStatic(io);
+  abstract_msg::initStatic(io);
   The_Man = new superman(io, om);
   InitTypes(The_Man);
   InitEngines(The_Man);

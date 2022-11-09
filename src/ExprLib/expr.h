@@ -8,7 +8,7 @@
 #include "type.h"
 #include "result.h"
 
-class named_msg;
+class debugging_msg;
 class exprman;
 class result;
 class rng_stream;
@@ -205,11 +205,11 @@ protected:
   /// Type to use for statements.
   static const type* STMT;
   /// Expression debugging.
-  static named_msg expr_debug;
+  static debugging_msg expr_debug;
   /// Symbol waiting list debugging.
-  static named_msg waitlist_debug;
+  static debugging_msg waitlist_debug;
   /// Model debugging.
-  static named_msg model_debug;
+  static debugging_msg model_debug;
   /// Expression manager, for "global" options and such.
   static exprman* em;
   // friend, needed to initialize the static items.

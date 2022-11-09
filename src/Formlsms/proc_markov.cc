@@ -24,7 +24,7 @@
 
 LS_Options* markov_process::lsopts = 0;
 unsigned markov_process::solver;
-named_msg markov_process::report;
+reporting_msg markov_process::report;
 unsigned markov_process::access = markov_process::BY_COLUMNS;
 markov_process::reporter* markov_process::my_timer = 0;
 

@@ -3,26 +3,43 @@
 
 #include "../Options/options.h"
 
-io_environ* named_msg::io = 0;
+io_environ* abstract_msg::io = 0;
 
 // ******************************************************************
-// *                       named_msg  methods                       *
+// *                      abstract_msg methods                      *
 // ******************************************************************
 
-named_msg::named_msg()
+abstract_msg::abstract_msg()
 {
-    active = false;
     name = 0;
 }
 
-/*
-void named_msg::Initialize(option* owner, checklist_enum* grp,
-        const char* n, const char* docs, bool act)
+// ******************************************************************
+// *                      warning_msg  methods                      *
+// ******************************************************************
+
+warning_msg::warning_msg()
 {
-    name = n;
-    active = act;
-    if (owner) {
-        owner->addChecklistItem(grp, n, docs, active);
-    }
+    active = true;
 }
-*/
+
+// ******************************************************************
+// *                     reporting_msg  methods                     *
+// ******************************************************************
+
+reporting_msg::reporting_msg()
+{
+    active = false;
+}
+
+// ******************************************************************
+// *                     debugging_msg  methods                     *
+// ******************************************************************
+
+debugging_msg::debugging_msg()
+{
+    active = false;
+}
+
+
+

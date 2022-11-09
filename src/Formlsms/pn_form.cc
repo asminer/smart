@@ -712,20 +712,20 @@ class petri_def : public dsde_def {
   static expr* ONE;
   static arc_entry* tmp_arc;
 
-  static named_msg pn_debug;
-  static named_msg dup_init;
-  static named_msg dup_bound;
-  static named_msg dup_arc;
-  static named_msg dup_guard;
-  static named_msg dup_fire;
-  static named_msg dup_weight;
-  static named_msg no_trans;
-  static named_msg no_place;
-  static named_msg no_init;
-  static named_msg no_fire;
-  static named_msg no_weight;
-  static named_msg zero_init;
-  static named_msg zero_bound;
+  static debugging_msg pn_debug;
+  static warning_msg dup_init;
+  static warning_msg dup_bound;
+  static warning_msg dup_arc;
+  static warning_msg dup_guard;
+  static warning_msg dup_fire;
+  static warning_msg dup_weight;
+  static warning_msg no_trans;
+  static warning_msg no_place;
+  static warning_msg no_init;
+  static warning_msg no_fire;
+  static warning_msg no_weight;
+  static warning_msg zero_init;
+  static warning_msg zero_bound;
 
   friend class init_pnform;
 
@@ -773,20 +773,20 @@ const type* petri_def::trans_type;
 expr* petri_def::ONE = 0;
 arc_entry* petri_def::tmp_arc = 0;
 
-named_msg petri_def::pn_debug;
-named_msg petri_def::dup_init;
-named_msg petri_def::dup_bound;
-named_msg petri_def::dup_arc;
-named_msg petri_def::dup_guard;
-named_msg petri_def::dup_fire;
-named_msg petri_def::dup_weight;
-named_msg petri_def::no_trans;
-named_msg petri_def::no_place;
-named_msg petri_def::no_init;
-named_msg petri_def::no_fire;
-named_msg petri_def::no_weight;
-named_msg petri_def::zero_init;
-named_msg petri_def::zero_bound;
+debugging_msg petri_def::pn_debug;
+warning_msg petri_def::dup_init;
+warning_msg petri_def::dup_bound;
+warning_msg petri_def::dup_arc;
+warning_msg petri_def::dup_guard;
+warning_msg petri_def::dup_fire;
+warning_msg petri_def::dup_weight;
+warning_msg petri_def::no_trans;
+warning_msg petri_def::no_place;
+warning_msg petri_def::no_init;
+warning_msg petri_def::no_fire;
+warning_msg petri_def::no_weight;
+warning_msg petri_def::zero_init;
+warning_msg petri_def::zero_bound;
 
 // ******************************************************************
 // *                       petri_def  methods                       *

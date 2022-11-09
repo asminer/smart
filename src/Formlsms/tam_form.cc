@@ -319,9 +319,9 @@ public:
   virtual double GetInitialState(int n, shared_state* s) const;
 
   // glueset defintion
-  void setGlues(named_msg &warn, tam_glue** gs, int ng);
+  void setGlues(warning_msg &warn, tam_glue** gs, int ng);
   // tileset defintion
-  void setTiles(named_msg &warn, tam_tile** ts, int nt);
+  void setTiles(warning_msg &warn, tam_tile** ts, int nt);
 
   // Super handy
   bool Export(OutputStream &s) const;
@@ -414,7 +414,7 @@ double tam_hlm::GetInitialState(int n, shared_state* st) const
   return 1.0;
 }
 
-void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
+void tam_hlm::setGlues(warning_msg &warn, tam_glue** gs, int ng)
 {
   DCASSERT(0==glueset);
   glueset = gs;
@@ -446,7 +446,7 @@ void tam_hlm::setGlues(named_msg &warn, tam_glue** gs, int ng)
 }
 
 
-void tam_hlm::setTiles(named_msg &warn, tam_tile** ts, int nt)
+void tam_hlm::setTiles(warning_msg &warn, tam_tile** ts, int nt)
 {
   DCASSERT(0==tileset);
   tileset = ts;
@@ -520,18 +520,18 @@ class tam_def : public model_def {
   static const type* glue_type;
   static const type* border_type;
 
-  static named_msg tam_debug;
-  static named_msg dup_tiledef;
-  static named_msg dup_gluedef;
-  static named_msg dup_init;
-  static named_msg dup_prio;
-  static named_msg dup_board;
-  static named_msg no_tiledef;
-  static named_msg no_gluedef;
-  static named_msg no_init;
-  static named_msg no_board;
-  static named_msg empty_board;
-  static named_msg empty_tileset;
+  static debugging_msg tam_debug;
+  static warning_msg dup_tiledef;
+  static warning_msg dup_gluedef;
+  static warning_msg dup_init;
+  static warning_msg dup_prio;
+  static warning_msg dup_board;
+  static warning_msg no_tiledef;
+  static warning_msg no_gluedef;
+  static warning_msg no_init;
+  static warning_msg no_board;
+  static warning_msg empty_board;
+  static warning_msg empty_tileset;
 
   static const int NORTH = 1;
   static const int EAST = 2;
@@ -618,18 +618,18 @@ const type* tam_def::tile_type;
 const type* tam_def::glue_type;
 const type* tam_def::border_type;
 
-named_msg tam_def::tam_debug;
-named_msg tam_def::dup_tiledef;
-named_msg tam_def::dup_gluedef;
-named_msg tam_def::dup_init;
-named_msg tam_def::dup_prio;
-named_msg tam_def::dup_board;
-named_msg tam_def::no_tiledef;
-named_msg tam_def::no_gluedef;
-named_msg tam_def::no_init;
-named_msg tam_def::no_board;
-named_msg tam_def::empty_board;
-named_msg tam_def::empty_tileset;
+debugging_msg tam_def::tam_debug;
+warning_msg tam_def::dup_tiledef;
+warning_msg tam_def::dup_gluedef;
+warning_msg tam_def::dup_init;
+warning_msg tam_def::dup_prio;
+warning_msg tam_def::dup_board;
+warning_msg tam_def::no_tiledef;
+warning_msg tam_def::no_gluedef;
+warning_msg tam_def::no_init;
+warning_msg tam_def::no_board;
+warning_msg tam_def::empty_board;
+warning_msg tam_def::empty_tileset;
 
 
 // ******************************************************************

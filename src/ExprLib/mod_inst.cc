@@ -133,7 +133,7 @@ bool hldsm::Equals(const shared_object* ptr) const
   return (ptr == this);
 }
 
-bool hldsm::StartWarning(const named_msg &who, const expr* cause) const
+bool hldsm::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
   who.causedBy(cause);
@@ -351,7 +351,7 @@ model_instance::~model_instance()
   Deconstruct();
 }
 
-bool model_instance::StartWarning(const named_msg &who, const expr* cause) const
+bool model_instance::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
   who.causedBy(cause);

@@ -115,7 +115,7 @@ protected:
   option_manager* om;
 
   // warnings and such
-  named_msg promote_arg;
+  warning_msg promote_arg;
 
 public:
 

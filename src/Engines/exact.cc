@@ -29,8 +29,8 @@
 
 class exact_mcmsr : public subengine {
 protected:
-  static named_msg eng_debug;
-  static named_msg eng_report;
+  static debugging_msg eng_debug;
+  static reporting_msg eng_report;
   static engtype* ProcessGeneration;
   friend class init_exactengines;
 public:
@@ -129,8 +129,8 @@ protected:
   }
 };
 
-named_msg exact_mcmsr::eng_debug;
-named_msg exact_mcmsr::eng_report;
+debugging_msg exact_mcmsr::eng_debug;
+reporting_msg exact_mcmsr::eng_report;
 engtype* exact_mcmsr::ProcessGeneration = 0;
 
 // **************************************************************************

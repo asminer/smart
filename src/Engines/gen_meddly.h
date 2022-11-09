@@ -208,7 +208,7 @@ public:
 
 public:
   /// Any pre-processing for the next-state function goes here.
-  virtual void initializeEvents(named_msg &debug) = 0;
+  virtual void initializeEvents(debugging_msg &debug) = 0;
 
 
   inline const MEDDLY::dd_edge& getEventEnabling(int ev_index) const {
@@ -233,7 +233,7 @@ public:
 
         @throws   An appropriate error code.
   */
-  virtual void updateEvents(named_msg &d, bool* cl) = 0;
+  virtual void updateEvents(debugging_msg &d, bool* cl) = 0;
 
   /// For the given set, determine which levels have "changed".
   virtual bool hasChangedLevels(const MEDDLY::dd_edge &s, bool* cl) = 0;
@@ -256,10 +256,10 @@ public:
   //
   // Default returns 0
   //
-  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF(named_msg &debug);
-  virtual MEDDLY::satimpl_opname::implicit_relation* buildNSF_IMPLICIT(named_msg &debug);
-  virtual MEDDLY::sathyb_opname::hybrid_relation* buildNSF_HYBRID(named_msg &debug);
-  virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(named_msg &debug);
+  virtual MEDDLY::satotf_opname::otf_relation* buildNSF_OTF(debugging_msg &debug);
+  virtual MEDDLY::satimpl_opname::implicit_relation* buildNSF_IMPLICIT(debugging_msg &debug);
+  virtual MEDDLY::sathyb_opname::hybrid_relation* buildNSF_HYBRID(debugging_msg &debug);
+  virtual MEDDLY::dd_edge buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug);
 
 };
 

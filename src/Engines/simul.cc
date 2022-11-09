@@ -146,7 +146,7 @@ sim_engine::~sim_engine()
     can be easily derived from this class.
 */
 class monte_carlo_engine : public sim_engine {
-  static named_msg report;
+  static reporting_msg report;
 public:
   monte_carlo_engine();
   virtual ~monte_carlo_engine();
@@ -160,7 +160,7 @@ public:
   friend class init_simul;
 };
 
-named_msg monte_carlo_engine::report;
+reporting_msg monte_carlo_engine::report;
 
 // **************************************************************************
 // *                       monte_carlo_engine methods                       *

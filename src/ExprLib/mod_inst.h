@@ -21,8 +21,10 @@ class model_statevar;
 class hldsm;
 class intset;
 
+class warning_msg;
+
 class subengine;
-  
+
 // ******************************************************************
 // *                                                                *
 // *                          lldsm  class                          *
@@ -33,7 +35,7 @@ class subengine;
     New in this version: low-level models can be "partially generated"
     (for example, states only) and then we can continue construction
     using a specific (sub)engine.
-*/  
+*/
 class lldsm : public shared_object {
   /// Engine to call for continuing to build the model.
   subengine* next_phase;
@@ -75,7 +77,7 @@ public:
 
   inline model_type Type() const { return type; }
   inline void SetParent(const hldsm* p) {
-    DCASSERT(0==parent || p==parent); 
+    DCASSERT(0==parent || p==parent);
     parent = p;
   }
   inline const hldsm* GetParent() const { return parent; }
@@ -91,7 +93,7 @@ public:
   // shared object requirements:
   virtual bool Print(OutputStream &, int) const;
   virtual bool Equals(const shared_object*) const;
-  
+
   /** Write memory information to the reporting stream.
         @param  em      Will write to the report stream of this manager.
         @param  prefix  Prefix to write before each line.
@@ -136,7 +138,7 @@ public:
     Phase_Type = 2,
     /// Models with no events (used for optimization problems)
     No_Events = 3,
-    /// Events are asynchronous 
+    /// Events are asynchronous
     Asynch_Events = 4,
     /// Events are synchronous (e.g., all phase ints)
     Synch_Events = 5,
@@ -157,7 +159,7 @@ public:
   struct partinfo {
       /// Number of levels of state variables.
       int num_levels;
-      /** Pointer to first state variable, per level.  
+      /** Pointer to first state variable, per level.
           An array of dimension \a 1+num_levels.
           pointer[k] gives the index of the last element in array \a variable
           that is assigned to level k.
@@ -170,8 +172,8 @@ public:
           An array of dimension \a num_vars.
       */
       model_statevar** variable;
-    
-      friend class hldsm; 
+
+      friend class hldsm;
     protected:
       /** Constructor.  Sets up everything.
           May reorder state variables.
@@ -195,7 +197,7 @@ public:
 
 private:
   model_type type;
-  const symbol* parent; 
+  const symbol* parent;
   /// Saved partition information.
   partinfo* part;
 protected:
@@ -206,7 +208,7 @@ protected:
   virtual ~hldsm();
 public:
   static void initOptions(exprman* om);
-  inline model_type Type() const { return type; } 
+  inline model_type Type() const { return type; }
   inline void setType(model_type t) {
     DCASSERT(Unknown == type);
     type = t;
@@ -235,12 +237,12 @@ public:
   inline const char* Name() const {
     return parent ? parent->Name() : 0;
   }
-  inline void SetProcess(lldsm* proc)  { 
-    process = proc; 
+  inline void SetProcess(lldsm* proc)  {
+    process = proc;
     if (proc) proc->SetParent(this);
   }
   inline lldsm* GetProcess()     { return process; }
-  
+
   virtual lldsm::model_type GetProcessType() const = 0;
 
   //
@@ -252,7 +254,7 @@ public:
   inline bool hasPartInfo() const { return part; }
   inline const partinfo& getPartInfo() const {
     DCASSERT(part);
-    return *part; 
+    return *part;
   }
   /*
   inline void reorderPartInfo() {
@@ -274,12 +276,12 @@ public:
   /** Start a warning message.
       Returns true on success.
   */
-  bool StartWarning(const named_msg &who, const expr* cause) const;
+  bool StartWarning(const warning_msg &who, const expr* cause) const;
 
   /** Finish a warning message.
   */
   void DoneWarning() const;
-  
+
   /** Start an error message.
       Returns true on success.
   */
@@ -293,7 +295,7 @@ public:
 
   /// Send an error value
   void SendRealError(const result &x) const;
- 
+
   /** Finish an error message.
   */
   void DoneError() const;
@@ -335,7 +337,7 @@ protected:
 
       model m := dining_philosophers(100);
 
-*/  
+*/
 class model_instance : public symbol {
 public:
   /// Possible states of a model instance
@@ -368,9 +370,9 @@ private:
   /** Symbols that can be exported (usually measures or arrays of measures).
       Stored as an array of symbols, sorted by name.
   */
-  symbol **stab;  
+  symbol **stab;
   /// Number of entries in array stab.
-  int num_symbols;  
+  int num_symbols;
 
   /** List of owned symbols.
       Held only so they can be trashed when the model instance is trashed.
@@ -388,23 +390,23 @@ public:
   /** Start a warning message.
       Returns true on success.
   */
-  bool StartWarning(const named_msg &who, const expr* cause) const;
+  bool StartWarning(const warning_msg &who, const expr* cause) const;
 
   /** Finish a warning message.
   */
   void DoneWarning() const;
-  
+
   /** Start an error message.
       Returns true on success.
   */
   bool StartError(const expr* cause) const;
-  
+
   /** Finish an error message.
   */
   void DoneError() const;
 
   /** Add a symbol to our list of symbols to destroy when
-      the model instance is destroyed.  Currently this 
+      the model instance is destroyed.  Currently this
       includes arrays of model variables and functions.
       External symbols (e.g., measures) should instead
       be given to the external symbol list.

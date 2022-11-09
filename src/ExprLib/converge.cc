@@ -182,10 +182,10 @@ public:
 
   friend void InitConvergeOptions(exprman* om);
 protected:
-  static named_msg converge_debug;
+  static debugging_msg converge_debug;
 };
 
-named_msg fixpoint_stmt::converge_debug;
+debugging_msg fixpoint_stmt::converge_debug;
 double fixpoint_stmt::precision;
 unsigned fixpoint_stmt::relative;
 bool fixpoint_stmt::use_current;

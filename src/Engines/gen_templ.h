@@ -26,7 +26,7 @@
  bool hasUnexploredTangible();
  UID  getUnexploredVanishing(shared_state*);
  UID  getUnexploredTangible(shared_state*);
- void clearVanishing(named_msg &debug);
+ void clearVanishing(debugging_msg &debug);
  bool statesOnly();
  void addInitial(const UID id);
  void addEdge(UID from, UID to);
@@ -37,7 +37,7 @@
 
  */
 template<class RG, typename UID>
-void generateRGt(named_msg &debug, dsde_hlm &dsm, RG &rg) {
+void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 	// allocate temporary states
 	shared_state* curr_st = new shared_state(&dsm);
 	shared_state* next_st = new shared_state(&dsm);
@@ -378,7 +378,7 @@ void isLessthanNodeUpdate(List<shared_state>* slist, shared_state* node, int lev
 template<class CG, typename UID>
 List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 		shared_state* next_st, CG &cg, List<model_event> enabled,
-		named_msg &debug, bool& current_is_vanishing) {
+		debugging_msg &debug, bool& current_is_vanishing) {
 	traverse_data x(traverse_data::Compute);
 	result xans;
 
@@ -445,7 +445,7 @@ List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 //TODO need cleanup
 
 template<class CG, typename UID>
-lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
+lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 		List<shared_state>* slist, lchild_rsiblingt* node, bool firstTime,
 		shared_state*newcur, int level) {
 
@@ -958,7 +958,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
  bool hasUnexploredTangible();
  UID  getUnexploredVanishing(shared_state*);
  UID  getUnexploredTangible(shared_state*);
- void eliminateVanishing(named_msg &debug);
+ void eliminateVanishing(debugging_msg &debug);
  bool statesOnly();
  void addInitial(bool isVanishing, const UID id, double wt);
  void addTTEdge(UID from, UID to, double wt);
@@ -972,7 +972,7 @@ lchild_rsiblingt* generateCGT(named_msg &debug, dsde_hlm &dsm,
 
  */
 template<class SMP, typename UID>
-void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp) {
+void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 	// allocate temporary states
 	shared_state* curr_st = new shared_state(&dsm);
 	shared_state* next_st = new shared_state(&dsm);
@@ -1274,7 +1274,7 @@ void generateSMPt(named_msg &debug, dsde_hlm &dsm, SMP &smp) {
 
  */
 template<class MC, typename UID>
-void generateMCt(named_msg &debug, dsde_hlm &dsm, MC &mc) {
+void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 	//
 	// Build a buffer of states and incoming rates
 	//

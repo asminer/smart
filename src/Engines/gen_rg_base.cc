@@ -17,8 +17,8 @@
 // *                                                                        *
 // **************************************************************************
 
-named_msg process_generator::report;
-named_msg process_generator::debug;
+reporting_msg process_generator::report;
+debugging_msg process_generator::debug;
 unsigned process_generator::remove_vanishing;
 
 process_generator::process_generator()

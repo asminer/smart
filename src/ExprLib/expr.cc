@@ -7,6 +7,7 @@
 #include "symbols.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
+#include "../Utils/messages.h"
 #include "../include/list.h"
 #include "type.h"
 #include "result.h"
@@ -110,9 +111,9 @@ bool traverse_data::Print(OutputStream &s) const
 // ******************************************************************
 
 const type* expr::STMT = 0;
-named_msg expr::expr_debug;
-named_msg expr::waitlist_debug;
-named_msg expr::model_debug;
+debugging_msg expr::expr_debug;
+debugging_msg expr::waitlist_debug;
+debugging_msg expr::model_debug;
 exprman* expr::em = 0;
 int expr::global_IDnum = 0;
 
@@ -129,7 +130,7 @@ expr::expr(const char* fn, int line, typelist* t) : shared_object()
 expr::expr(const expr* x) : shared_object()
 {
   if (x) {
-    Init(x->Filename(), x->Linenumber(), x->simple, 
+    Init(x->Filename(), x->Linenumber(), x->simple,
           Share(x->aggtype), x->model_type);
   } else {
     setNull();
@@ -250,7 +251,7 @@ bool expr::Matches(const expr* sym) const
   const char* myname = Name();
   const char* sname = sym->Name();
   if ((0==myname) != (0==sname))  return 0;
-  if (myname) 
+  if (myname)
   if (strcmp(myname, sname))  return 0;
   if (aggtype)
     return aggtype->Equals(sym->aggtype);

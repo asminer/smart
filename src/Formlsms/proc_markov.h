@@ -20,7 +20,7 @@ class markov_process : public stochastic_lldsm::process {
   protected:
     class reporter : public GraphLib::timer_hook {
       const exprman* em;
-      named_msg report;
+      reporting_msg report;
       timer watch;
     public:
       reporter(const exprman* The_em);
@@ -46,7 +46,7 @@ class markov_process : public stochastic_lldsm::process {
     static const unsigned JACOBI       = 1;
     static const unsigned ROW_JACOBI   = 2;
     static const unsigned NUM_SOLVERS  = 3;
-    static named_msg report;
+    static reporting_msg report;
     static unsigned access;
     static const unsigned BY_COLUMNS = 0;
     static const unsigned BY_ROWS    = 1;

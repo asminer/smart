@@ -281,7 +281,7 @@ public:
 */
 class dsde_hlm : public hldsm {
 private:
-  static named_msg ignored_prio;
+  static warning_msg ignored_prio;
   friend class init_dsde;
   /// Low level model type.
   lldsm::model_type lltype;
@@ -324,7 +324,7 @@ public:
                       we cannot delete them until we delete the model.
         @param  nd    Number of dead events.
   */
-  dsde_hlm(const model_instance* p, model_statevar** sv, int nv, 
+  dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
     model_event** ed, int ne, model_event** dead, int nd);
   virtual ~dsde_hlm();
 
@@ -493,9 +493,9 @@ protected:
     into a single spot.
 */
 class dsde_def : public model_def {
-  static named_msg dup_part;
-  static named_msg no_part;
-  static named_msg dup_prio;
+  static warning_msg dup_part;
+  static warning_msg no_part;
+  static warning_msg dup_prio;
   int last_level;
   friend class init_dsde;
 public:
