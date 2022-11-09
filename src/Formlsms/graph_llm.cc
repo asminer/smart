@@ -330,16 +330,17 @@ bool init_graphllm::execute()
 
   // ------------------------------------------------------------------
   option* report = em->findOption("Report");
-  graph_lldsm::reachgraph::numpaths_report.Initialize(
-    report, 0,
+  DCASSERT(report);
+
+  report->addChecklistItem(
     "num_paths",
     "When set, performance data for counting number of paths is displayed.",
-    false
+    graph_lldsm::reachgraph::numpaths_report, false
   );
-  graph_lldsm::reachgraph::ctl_report.Initialize(report, 0,
+  report->addChecklistItem(
     "CTL_engines",
     "When set, CTL engine performance is reported.",
-    false
+    graph_lldsm::reachgraph::ctl_report, false
   );
 
   // ------------------------------------------------------------------

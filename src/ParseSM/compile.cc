@@ -2933,16 +2933,18 @@ void InitCompiler(parse_module* parent)
   }
 
   option* debug = pm ? pm->findOption("Debug") : 0;
-  parser_debug.Initialize(debug, 0,
-    "parser",
-    "When set, very low-level parser messages are displayed.",
-    false
-  );
-  compiler_debug.Initialize(debug, 0,
-    "compiler",
-    "When set, low-level compiler messages are displayed.",
-    false
-  );
+  if (debug) {
+    debug->addChecklistItem(
+        "parser",
+        "When set, very low-level parser messages are displayed.",
+        parser_debug, false
+    );
+    debug->addChecklistItem(
+        "compiler",
+        "When set, low-level compiler messages are displayed.",
+        compiler_debug, false
+    );
+  }
 #ifdef PARSER_DEBUG
   parser_debug.active = true;
 #endif

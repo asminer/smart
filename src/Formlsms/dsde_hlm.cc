@@ -5,6 +5,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/sets.h"
 #include "../SymTabs/symtabs.h"
+#include "../Options/options.h"
 #include "../include/heap.h"
 
 // #define DEBUG_PART
@@ -1324,16 +1325,20 @@ bool init_dsde::execute()
 	if (0 == em) return false;
 
 	option* warning = em->findOption("Warning");
-	dsde_def::dup_part.Initialize(warning, 0, "dup_part",
-			"For multiple partition definitions for a state variable", true);
-	dsde_def::no_part.Initialize(warning, 0, "no_part",
+    DCASSERT(warning);
+
+	warning->addChecklistItem("dup_part",
+			"For multiple partition definitions for a state variable",
+            dsde_def::dup_part, true);
+	warning->addChecklistItem("no_part",
 			"If some, but not all, state variables are assiged to groups using partition",
-			true);
-	dsde_def::dup_prio.Initialize(warning, 0, "dup_prio",
-			"For multiple priority level definitions for a model event", true);
-	dsde_hlm::ignored_prio.Initialize(warning, 0, "ignored_prio",
+			dsde_def::no_part, true);
+	warning->addChecklistItem("dup_prio",
+			"For multiple priority level definitions for a model event",
+            dsde_def::dup_prio, true);
+	warning->addChecklistItem("ignored_prio",
 			"For ignored priority pairs (between events in different priority levels)",
-			true);
+			dsde_hlm::ignored_prio, true);
 
 	return true;
 }

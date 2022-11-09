@@ -4,6 +4,7 @@
 #include "mod_vars.h"
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
+#include "../Options/options.h"
 #include "arrays.h"
 #include "exprman.h"
 
@@ -733,12 +734,12 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
 
 void InitModelDefs(exprman* em)
 {
-  if (0==em) return;
-  option* warning = em->findOption("Warning");
-  model_def::not_our_var.Initialize(warning, 0,
-    "model_var_owner",
-    "For mismatches in model variable ownership",
-    true
-  );
+    if (0==em) return;
+    option* warning = em->findOption("Warning");
+    if (warning) warning->addChecklistItem(
+        "model_var_owner",
+        "For mismatches in model variable ownership",
+        model_def::not_our_var, true
+    );
 }
 

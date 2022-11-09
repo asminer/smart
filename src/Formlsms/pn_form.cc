@@ -2776,82 +2776,83 @@ bool init_pnform::execute()
 
   // Set up options
   option* debug = em->findOption("Debug");
-  petri_def::pn_debug.Initialize(debug, 0,
+  debug->addChecklistItem(
     "pns",
     "When set, diagnostic messages are displayed regarding Petri net model construction.",
-    false
+    petri_def::pn_debug, false
   );
 
 
   option* warning = em->findOption("Warning");
+  DCASSERT(warning);
   checklist_enum* pnwarnings = warning->addChecklistGroup(
     "pn_ALL", "Group of all Petri net warnings", 13
   );
 
-  petri_def::zero_init.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_zero_init",
     "For zero tokens specified in an initial marking in Petri net models",
-    true
+    petri_def::zero_init, true
   );
-  petri_def::zero_bound.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_zero_bound",
     "For zero tokens specified as an upper bound in Petri net models",
-    true
+    petri_def::zero_bound, true
   );
-  petri_def::no_trans.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_no_trans",
     "For absence of transitions in Petri net models",
-    true
+    petri_def::no_trans, true
   );
-  petri_def::no_place.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_no_place",
     "For absence of places in Petri net models",
-    true
+    petri_def::no_place, true
   );
-  petri_def::no_init.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_no_init",
     "For no specified initial marking in Petri net models",
-    true
+    petri_def::no_init, true
   );
-  petri_def::no_fire.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_no_fire",
     "If some, but not all, transitions are given a firing distribution",
-    true
+    petri_def::no_fire, true
   );
-  petri_def::no_weight.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_no_weight",
     "For immediate transitions with no weight given",
-    true
+    petri_def::no_weight, true
   );
-  petri_def::dup_init.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_init",
     "For duplicate place token initialization in Petri net models",
-    true
+    petri_def::dup_init, true
   );
-  petri_def::dup_bound.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_bound",
     "For duplicate place token bounding in Petri net models",
-    true
+    petri_def::dup_bound, true
   );
-  petri_def::dup_arc.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_arc",
     "For duplicate arcs in Petri net models",
-    true
+    petri_def::dup_arc, true
   );
-  petri_def::dup_guard.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_guard",
     "For multiple guards on the same transition in Petri net models",
-    true
+    petri_def::dup_guard, true
   );
-  petri_def::dup_fire.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_fire",
     "For multiple firing assignments on the same transition in Petri net models",
-    true
+    petri_def::dup_fire, true
   );
-  petri_def::dup_weight.Initialize(warning, pnwarnings,
+  warning->addChecklistItem(pnwarnings,
     "pn_dup_weight",
     "For multiple weight assignments on the same transition in Petri net models",
-    true
+    petri_def::dup_weight, true
   );
 
   if (em->OptMan()) {

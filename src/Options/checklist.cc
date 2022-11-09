@@ -1,6 +1,8 @@
 
 #include "../include/defines.h"
 #include "../Streams/textfmt.h"
+#include "../Utils/messages.h"
+
 #include "checklist.h"
 
 #include <cstring>
@@ -256,6 +258,22 @@ checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
     if (clg) clg->addItem(item);
     return itemlist->Insert(item);
 }
+
+checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
+                const char* name, const char* doc, named_msg &m, bool act)
+{
+    if (0==itemlist) return 0;
+    if (itemlist->Find(name)) return 0; // duplicate
+
+    checklist_enum* item = new checklist_item(name, doc, m.active);
+    m.name = name;
+    m.active = act;
+
+    checklist_group* clg = smart_cast <checklist_group*>(grp);
+    if (clg) clg->addItem(item);
+    return itemlist->Insert(item);
+}
+
 
 
 checklist_enum* checklist_opt::addChecklistGroup(const char* name,

@@ -44,22 +44,6 @@ void library::printReleaseDate(doc_formatter*) const
   DCASSERT(0);
 }
 
-
-// ******************************************************************
-// *                       named_msg  methods                       *
-// ******************************************************************
-
-io_environ* named_msg::io = 0;
-void named_msg::Initialize(option* owner, checklist_enum* grp,
-        const char* n, const char* docs, bool act)
-{
-    name = n;
-    active = act;
-    if (owner) {
-        owner->addChecklistItem(grp, n, docs, active);
-    }
-}
-
 // ******************************************************************
 // *                        exprman  methods                        *
 // ******************************************************************
@@ -93,10 +77,10 @@ exprman::exprman(io_environ* i, option_manager* o)
   BLOCKED_ENGINE = 0;
 
   option* warning = om->FindOption("Warning");
-  promote_arg.Initialize(warning, 0,
+  if (warning) warning->addChecklistItem(
     "promote_args",
     "When arguments are automatically promoted in a function call",
-    false
+    promote_arg, false
   );
 }
 
@@ -423,7 +407,7 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   if (builtManager)  return The_Man;
   builtManager = 1;
 
-  named_msg::io = io;
+  named_msg::initStatic(io);
   The_Man = new superman(io, om);
   InitTypes(The_Man);
   InitEngines(The_Man);
@@ -438,26 +422,28 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   // Option initialization
   //
   option* debug = om ? om->FindOption("Debug") : 0;
-  expr::expr_debug.Initialize(debug, 0,
+  DCASSERT(debug);
+  debug->addChecklistItem(
       "exprs",
       "When set, low-level expression and statement messages are displayed.",
+      expr::expr_debug,
+#ifdef EXPR_DEBUG
+      true
+#else
       false
+#endif
   );
 
-#ifdef EXPR_DEBUG
-  expr::expr_debug.active = true;
-#endif
-
-  expr::waitlist_debug.Initialize(debug, 0,
+  debug->addChecklistItem(
       "waitlist",
       "When set, diagnostic messages are displayed regarding symbol waiting lists.",
-      false
+      expr::waitlist_debug, false
   );
 
-  expr::model_debug.Initialize(debug, 0,
+  debug->addChecklistItem(
       "models",
       "When set, diagnostic messages are displayed regarding model construction.",
-      false
+      expr::model_debug, false
   );
 
   // Other options to initialize

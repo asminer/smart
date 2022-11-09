@@ -45,6 +45,7 @@ smart_SOURCES = \
   \
   Utils/strings.cc \
   Utils/location.cc \
+  Utils/messages.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \
@@ -181,6 +182,7 @@ icp_SOURCES = \
   \
   Utils/strings.cc \
   Utils/location.cc \
+  Utils/messages.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \
@@ -300,6 +302,7 @@ testinit_SOURCES = \
 lextest_SOURCES = \
   Utils/strings.cc \
   Utils/location.cc \
+  Utils/messages.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \

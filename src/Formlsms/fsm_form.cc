@@ -4,6 +4,8 @@
 #include "rgr_grlib.h"
 #include "enum_hlm.h"
 
+#include "../Options/options.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -573,27 +575,31 @@ bool init_fsms::execute()
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
-  fsm_def::fsm_debug.Initialize(debug, 0,
+  DCASSERT(debug);
+
+  debug->addChecklistItem(
     "fsms",
     "When set, diagnostic messages are displayed regarding FSM model construction.",
-    false
+    fsm_def::fsm_debug, false
   );
 
   option* warning = em->findOption("Warning");
-  fsm_def::dup_init.Initialize(warning, 0,
+  DCASSERT(warning);
+
+  warning->addChecklistItem(
     "fsm_dup_init",
     "For duplicatation of initial states in finite state machine models",
-    true
+    fsm_def::dup_init, true
   );
-  fsm_def::no_init.Initialize(warning, 0,
+  warning->addChecklistItem(
     "fsm_no_init",
     "For absence of initial states in finite state machine models",
-    true
+    fsm_def::no_init, true
   );
-  fsm_def::dup_arc.Initialize(warning, 0,
+  warning->addChecklistItem(
     "fsm_dup_arc",
     "For duplicate arcs in finite state machine models",
-    true
+    fsm_def::dup_arc, true
   );
 
   // Set up and register formalisms
