@@ -1,6 +1,8 @@
 
 #include "lexer.h"
 
+#include "../Options/options.h"
+
 #include <iostream>
 
 #define BUFSIZE 16384
@@ -56,9 +58,10 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     DCASSERT(em);
 
     option* debug = em->findOption("Debug");
-    lexer_debug.Initialize(debug, 0,
+    if (debug) debug->addChecklistItem(
         "lexer",
         "When set, very low-level lexer messages are displayed.",
+        lexer_debug,
 #ifdef DEBUG_LEXER
         true
 #else

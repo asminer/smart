@@ -4,6 +4,8 @@
 #include "proc_mclib.h"
 #include "enum_hlm.h"
 
+#include "../Options/options.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -693,27 +695,31 @@ bool init_mcform::execute()
   bool ok;
   // Set up options
   option* debug = em->findOption("Debug");
-  markov_def::mc_debug.Initialize(debug, 0,
+  DCASSERT(debug);
+
+  debug->addChecklistItem(
     "mcs",
     "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
-    false
+    markov_def::mc_debug, false
   );
 
   option* warning = em->findOption("Warning");
-  markov_def::dup_init.Initialize(warning, 0,
+  DCASSERT(warning);
+
+  warning->addChecklistItem(
     "mc_dup_init",
     "For duplicatation of initial probabilities in Markov chain models",
-    true
+    markov_def::dup_init, true
   );
-  markov_def::no_init.Initialize(warning, 0,
+  warning->addChecklistItem(
     "mc_no_init",
     "For absence of initial probabilities in Markov chain models",
-    true
+    markov_def::no_init, true
   );
-  markov_def::dup_arc.Initialize(warning, 0,
+  warning->addChecklistItem(
     "mc_dup_arc",
     "For duplicate arcs in Markov chain models",
-    true
+    markov_def::dup_arc, true
   );
 
   // Set up and register formalisms

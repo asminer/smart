@@ -16,6 +16,8 @@ class option_enum;
 class radio_button;
 class checklist_enum;
 
+class named_msg;
+
 // **************************************************************************
 // *                            option interface                            *
 // **************************************************************************
@@ -185,6 +187,25 @@ class option {
         */
         virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link);
+
+        /**
+            Build and add an item to a messaging checklist.
+                @param  grp   Group, or null for none.
+                @param  name  The item name
+                @param  doc   Documentation for the item.
+                @param  m     The named message we're linked to.
+                @param  act   Is the named message initially active?
+
+                @return A new item, or NULL on error.
+        */
+        virtual checklist_enum* addChecklistItem(checklist_enum* grp,
+                const char* name, const char* doc, named_msg &m, bool act);
+
+        inline checklist_enum* addChecklistItem(const char* name,
+                const char* doc, named_msg &m, bool act)
+        {
+            return addChecklistItem(0, name, doc, m, act);
+        }
 
         /**
             Build and add an item that's a group of items to a checklist.

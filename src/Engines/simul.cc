@@ -437,10 +437,10 @@ bool init_simul::execute()
   }
 
   option* report = em->findOption("Report");
-  monte_carlo_engine::report.Initialize(report, 0,
+  if (report) report->addChecklistItem(
       "Monte_Carlo",
       "When set, Monte Carlo Simulation performance data is displayed.",
-      false
+      monte_carlo_engine::report, false
   );
 
   //

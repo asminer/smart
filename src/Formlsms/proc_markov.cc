@@ -190,10 +190,10 @@ markov_process::reporter::reporter(const exprman* The_em)
 {
   em = The_em;
   option* parent = em ? em->findOption("Report") : 0;
-  report.Initialize(parent, 0,
+  if (parent) parent->addChecklistItem(
     "mc_finish",
     "When set, performance details for Markov chain finalization steps are reported.",
-    false
+    report, false
   );
 }
 
@@ -363,10 +363,10 @@ bool init_markovproc::execute()
   markov_process::access = markov_process::BY_COLUMNS;
 
   option* report = em->findOption("Report");
-  markov_process::report.Initialize(report, 0,
+  if (report) report->addChecklistItem(
       "mc_solve",
       "When set, Markov chain solution performance is reported.",
-      false
+      markov_process::report, false
   );
 
   return true;

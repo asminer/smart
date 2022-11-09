@@ -5,6 +5,7 @@
 #include "../ExprLib/engine.h"
 #include "../Formlsms/dsde_hlm.h"
 
+#include "../Options/options.h"
 #include "../Options/optman.h"
 
 #include <vector>
@@ -141,19 +142,20 @@ bool init_static_varorder::execute()
 
   // Initialize options
   option* report = em->findOption("Report");
+  if (report) report->addChecklistItem(
+      "varorder",
+      "When set, static variable ordering heuristic performance is reported.",
+      static_varorder::report,
+      false
+  );
+
   option* debug = em->findOption("Debug");
-
-  static_varorder::report.Initialize(report, 0,
-                                     "varorder",
-                                     "When set, static variable ordering heuristic performance is reported.",
-                                     false
-                                     );
-
-  static_varorder::debug.Initialize(debug, 0,
-                                    "varorder",
-                                    "When set, static variable ordering heuristic details are displayed.",
-                                    false
-                                    );
+  if (debug) debug->addChecklistItem(
+      "varorder",
+      "When set, static variable ordering heuristic details are displayed.",
+      static_varorder::debug,
+      false
+  );
 
   MakeEngineType(em,
                  "VariableOrdering",

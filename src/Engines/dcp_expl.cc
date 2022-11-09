@@ -2,6 +2,7 @@
 #include "dcp_expl.h"
 
 #include "../Streams/textfmt.h"
+#include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
@@ -537,18 +538,17 @@ bool init_dcpengines::execute()
 
   // Initialize options
   option* report = em->findOption("Report");
-  option* debug = em->findOption("Debug");
-
-  icp_stategen::report.Initialize(report, 0,
+  if (report) report->addChecklistItem(
     "explicit_dcp_gen",
     "When set, explicit reachability set performance is reported.",
-    false
+    icp_stategen::report, false
   );
 
-  icp_stategen::debug.Initialize(debug, 0,
+  option* debug = em->findOption("Debug");
+  if (debug) debug->addChecklistItem(
     "explicit_dcp_gen",
     "When set, explicit reachability set generation details are displayed.",
-    false
+    icp_stategen::debug, false
   );
 
 

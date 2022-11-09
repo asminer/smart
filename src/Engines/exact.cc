@@ -1,6 +1,8 @@
 
 #include "exact.h"
 
+#include "../Options/options.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
@@ -1004,17 +1006,17 @@ bool init_exactengines::execute()
   if (0==em)  return false;
 
   option* debug = em->findOption("Debug");
-  exact_mcmsr::eng_debug.Initialize(debug, 0,
+  if (debug) debug->addChecklistItem(
     "exact_solver",
     "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",
-    false
+    exact_mcmsr::eng_debug, false
   );
 
   option* report = em->findOption("Report");
-  exact_mcmsr::eng_report.Initialize(report, 0,
+  if (report) report->addChecklistItem(
     "exact_solver",
     "When set, exact solution measure performance is reported.",
-    false
+    exact_mcmsr::eng_report, false
   );
 
   const char* exact = "EXACT";

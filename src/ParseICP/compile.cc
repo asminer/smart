@@ -1190,15 +1190,15 @@ void InitCompiler(parse_module* parent)
   MeasureNames.Clear();
 
   option* debug = pm ? pm->findOption("Debug") : 0;
-  parser_debug.Initialize(debug, 0,
+  if (debug) debug->addChecklistItem(
     "parser_debug",
     "When set, very low-level parser messages are displayed.",
-    false
+    parser_debug, false
   );
-  compiler_debug.Initialize(debug, 0,
+  if (debug) debug->addChecklistItem(
     "compiler_debug",
     "When set, low-level compiler messages are displayed.",
-    false
+    compiler_debug, false
   );
 #ifdef PARSER_DEBUG
   parser_debug.active = true;

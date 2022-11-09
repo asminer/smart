@@ -1299,57 +1299,59 @@ bool init_evmform::execute()
 
   // Set up options
   option* debug = em->findOption("Debug");
-  evm_def::evm_debug.Initialize(debug, 0,
+  DCASSERT(debug);
+  debug->addChecklistItem(
     "evms",
     "When set, diagnostic messages are displayed regarding evm (event & variable model) construction.",
-    false
+    evm_def::evm_debug, false
   );
 
   option* warning = em->findOption("Warning");
+  DCASSERT(warning);
+
   checklist_enum* evmwarnings = warning->addChecklistGroup(
     "evm_ALL", "Group of all evm warnings", 8
   );
 
-  evm_def::no_event.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_no_event",
     "For absence of events in event & variable models",
-    true
+    evm_def::no_event, true
   );
-
-  evm_def::no_vars.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_no_vars",
     "For absence of variables in event & variable models",
-    true
+    evm_def::no_vars, true
   );
-  evm_def::no_part.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_no_part",
     "If some, but not all, variables are assiged to groups using partition",
-    true
+    evm_def::no_part, true
   );
-  evm_def::dup_part.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_dup_part",
     "For multiple partition definitions for a variable",
-    true
+    evm_def::dup_part, true
   );
-  evm_def::dup_range.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_dup_range",
     "For duplicate variable ranges in event & variable models",
-    true
+    evm_def::dup_range, true
   );
-  evm_def::dup_assign.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_dup_assign",
     "For multiple assignments on the same variable and event in event & variable models",
-    true
+    evm_def::dup_assign, true
   );
-  evm_def::dup_init.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_dup_init",
     "For multiple calls to init for the same variable in event & variable models",
-    true
+    evm_def::dup_init, true
   );
-  evm_def::dup_hide.Initialize(warning, evmwarnings,
+  warning->addChecklistItem(evmwarnings,
     "evm_dup_hide",
     "For multiple calls to hide for the same variable in event & variable models",
-    true
+    evm_def::dup_hide, true
   );
 
   if (em->OptMan()) {

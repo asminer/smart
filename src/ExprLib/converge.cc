@@ -798,9 +798,12 @@ void InitConvergeOptions(exprman* em)
   if (0==em->OptMan()) return;
 
   option* debug = em->findOption("Debug");
-  fixpoint_stmt::converge_debug.Initialize(debug, 0,
+  DCASSERT(debug);
+
+  debug->addChecklistItem(
       "converges",
       "Use to view the sequence of assignments during the execution of a converge statement.",
+      fixpoint_stmt::converge_debug,
       false
   );
 

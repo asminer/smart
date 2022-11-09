@@ -110,6 +110,8 @@ public:
 
     virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link);
+    virtual checklist_enum* addChecklistItem(checklist_enum* grp,
+                const char* name, const char* doc, named_msg &m, bool act);
     virtual checklist_enum* addChecklistGroup(const char* name,
                 const char* doc, unsigned ni);
 };
