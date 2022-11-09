@@ -131,14 +131,14 @@ bool init_procgen::execute()
   if (report) report->addChecklistItem(
     "procgen",
     "When set, process generation performance is reported.",
-    process_generator::report, false
+    process_generator::report
   );
 
   option* debug = em->findOption("Debug");
   if (debug) debug->addChecklistItem(
     "procgen",
     "When set, process generation details are displayed.",
-    process_generator::debug, false
+    process_generator::debug
   );
 
   engtype* ProcessGeneration = MakeEngineType(em,

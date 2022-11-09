@@ -145,16 +145,14 @@ bool init_static_varorder::execute()
   if (report) report->addChecklistItem(
       "varorder",
       "When set, static variable ordering heuristic performance is reported.",
-      static_varorder::report,
-      false
+      static_varorder::report
   );
 
   option* debug = em->findOption("Debug");
   if (debug) debug->addChecklistItem(
       "varorder",
       "When set, static variable ordering heuristic details are displayed.",
-      static_varorder::debug,
-      false
+      static_varorder::debug
   );
 
   MakeEngineType(em,

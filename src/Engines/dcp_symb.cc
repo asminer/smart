@@ -983,14 +983,14 @@ bool init_dcpsymbolic::execute()
   if (report) report->addChecklistItem(
     "implicit_dcp_gen",
     "When set, implicit reachability set performance is reported.",
-    icp_symbgen::report, false
+    icp_symbgen::report
   );
 
   option* debug = em->findOption("Debug");
   if (debug) debug->addChecklistItem(
     "implicit_dcp_gen",
     "When set, implicit reachability set details are displayed.",
-    icp_symbgen::debug, false
+    icp_symbgen::debug
   );
 
   // accumulate vs. fold option

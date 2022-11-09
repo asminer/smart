@@ -185,8 +185,8 @@ class option {
 
                 @return A new item, or NULL on error.
         */
-        virtual checklist_enum* addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, bool &link);
+        // virtual checklist_enum* addChecklistItem(checklist_enum* grp,
+                // const char* name, const char* doc, bool &link);
 
         /**
             Build and add an item to a messaging checklist.
@@ -194,17 +194,16 @@ class option {
                 @param  name  The item name
                 @param  doc   Documentation for the item.
                 @param  m     The named message we're linked to.
-                @param  act   Is the named message initially active?
 
                 @return A new item, or NULL on error.
         */
         virtual checklist_enum* addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, abstract_msg &m, bool act);
+                const char* name, const char* doc, abstract_msg &m);
 
         inline checklist_enum* addChecklistItem(const char* name,
-                const char* doc, abstract_msg &m, bool act)
+                const char* doc, abstract_msg &m)
         {
-            return addChecklistItem(0, name, doc, m, act);
+            return addChecklistItem(0, name, doc, m);
         }
 
         /**

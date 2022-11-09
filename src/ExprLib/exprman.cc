@@ -80,8 +80,9 @@ exprman::exprman(io_environ* i, option_manager* o)
   if (warning) warning->addChecklistItem(
     "promote_args",
     "When arguments are automatically promoted in a function call",
-    promote_arg, false
+    promote_arg
   );
+  promote_arg.Deactivate();
 }
 
 exprman::~exprman()
@@ -426,24 +427,22 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   debug->addChecklistItem(
       "exprs",
       "When set, low-level expression and statement messages are displayed.",
-      expr::expr_debug,
-#ifdef EXPR_DEBUG
-      true
-#else
-      false
-#endif
+      expr::expr_debug
   );
+#ifdef EXPR_DEBUG
+  expr::expr_debug.Activate();
+#endif
 
   debug->addChecklistItem(
       "waitlist",
       "When set, diagnostic messages are displayed regarding symbol waiting lists.",
-      expr::waitlist_debug, false
+      expr::waitlist_debug
   );
 
   debug->addChecklistItem(
       "models",
       "When set, diagnostic messages are displayed regarding model construction.",
-      expr::model_debug, false
+      expr::model_debug
   );
 
   // Other options to initialize

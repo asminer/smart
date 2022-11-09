@@ -541,14 +541,14 @@ bool init_dcpengines::execute()
   if (report) report->addChecklistItem(
     "explicit_dcp_gen",
     "When set, explicit reachability set performance is reported.",
-    icp_stategen::report, false
+    icp_stategen::report
   );
 
   option* debug = em->findOption("Debug");
   if (debug) debug->addChecklistItem(
     "explicit_dcp_gen",
     "When set, explicit reachability set generation details are displayed.",
-    icp_stategen::debug, false
+    icp_stategen::debug
   );
 
 

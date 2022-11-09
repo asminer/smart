@@ -246,6 +246,7 @@ bool checklist_opt::isApropos(const doc_formatter* df, const char* keyword) cons
 }
 
 
+/*
 checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link)
 {
@@ -258,16 +259,16 @@ checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
     if (clg) clg->addItem(item);
     return itemlist->Insert(item);
 }
+*/
 
 checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, abstract_msg &m, bool act)
+                const char* name, const char* doc, abstract_msg &m)
 {
     if (0==itemlist) return 0;
     if (itemlist->Find(name)) return 0; // duplicate
 
     checklist_enum* item = new checklist_item(name, doc, m.active);
     m.name = name;
-    m.active = act;
 
     checklist_group* clg = smart_cast <checklist_group*>(grp);
     if (clg) clg->addItem(item);

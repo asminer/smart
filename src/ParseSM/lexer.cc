@@ -720,10 +720,10 @@ void lexer_mod::Initialize(parse_module* p)
   if (debug) debug->addChecklistItem(
     "lexer",
     "When set, very low-level lexer messages are displayed.",
-    lexer_debug, false
+    lexer_debug
   );
 #ifdef LEXER_DEBUG
-  lexer_debug.active = true;
+  lexer_debug.Activate();
 #endif
 }
 

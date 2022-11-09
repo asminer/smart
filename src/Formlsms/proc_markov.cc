@@ -193,7 +193,7 @@ markov_process::reporter::reporter(const exprman* The_em)
   if (parent) parent->addChecklistItem(
     "mc_finish",
     "When set, performance details for Markov chain finalization steps are reported.",
-    report, false
+    report
   );
 }
 
@@ -366,7 +366,7 @@ bool init_markovproc::execute()
   if (report) report->addChecklistItem(
       "mc_solve",
       "When set, Markov chain solution performance is reported.",
-      markov_process::report, false
+      markov_process::report
   );
 
   return true;

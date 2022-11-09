@@ -335,12 +335,12 @@ bool init_graphllm::execute()
   report->addChecklistItem(
     "num_paths",
     "When set, performance data for counting number of paths is displayed.",
-    graph_lldsm::reachgraph::numpaths_report, false
+    graph_lldsm::reachgraph::numpaths_report
   );
   report->addChecklistItem(
     "CTL_engines",
     "When set, CTL engine performance is reported.",
-    graph_lldsm::reachgraph::ctl_report, false
+    graph_lldsm::reachgraph::ctl_report
   );
 
   // ------------------------------------------------------------------

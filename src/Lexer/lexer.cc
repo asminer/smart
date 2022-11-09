@@ -61,13 +61,11 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     if (debug) debug->addChecklistItem(
         "lexer",
         "When set, very low-level lexer messages are displayed.",
-        lexer_debug,
-#ifdef DEBUG_LEXER
-        true
-#else
-        false
-#endif
+        lexer_debug
     );
+#ifdef DEBUG_LEXER
+    lexer_debug.Activate();
+#endif
 
     topfile = 0;
     filenames = fns;

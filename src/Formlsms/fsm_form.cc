@@ -580,7 +580,7 @@ bool init_fsms::execute()
   debug->addChecklistItem(
     "fsms",
     "When set, diagnostic messages are displayed regarding FSM model construction.",
-    fsm_def::fsm_debug, false
+    fsm_def::fsm_debug
   );
 
   option* warning = em->findOption("Warning");
@@ -589,17 +589,17 @@ bool init_fsms::execute()
   warning->addChecklistItem(
     "fsm_dup_init",
     "For duplicatation of initial states in finite state machine models",
-    fsm_def::dup_init, true
+    fsm_def::dup_init
   );
   warning->addChecklistItem(
     "fsm_no_init",
     "For absence of initial states in finite state machine models",
-    fsm_def::no_init, true
+    fsm_def::no_init
   );
   warning->addChecklistItem(
     "fsm_dup_arc",
     "For duplicate arcs in finite state machine models",
-    fsm_def::dup_arc, true
+    fsm_def::dup_arc
   );
 
   // Set up and register formalisms
