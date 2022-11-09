@@ -700,7 +700,7 @@ bool init_mcform::execute()
   debug->addChecklistItem(
     "mcs",
     "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
-    markov_def::mc_debug, false
+    markov_def::mc_debug
   );
 
   option* warning = em->findOption("Warning");
@@ -709,17 +709,17 @@ bool init_mcform::execute()
   warning->addChecklistItem(
     "mc_dup_init",
     "For duplicatation of initial probabilities in Markov chain models",
-    markov_def::dup_init, true
+    markov_def::dup_init
   );
   warning->addChecklistItem(
     "mc_no_init",
     "For absence of initial probabilities in Markov chain models",
-    markov_def::no_init, true
+    markov_def::no_init
   );
   warning->addChecklistItem(
     "mc_dup_arc",
     "For duplicate arcs in Markov chain models",
-    markov_def::dup_arc, true
+    markov_def::dup_arc
   );
 
   // Set up and register formalisms

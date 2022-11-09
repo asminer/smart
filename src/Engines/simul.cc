@@ -440,7 +440,7 @@ bool init_simul::execute()
   if (report) report->addChecklistItem(
       "Monte_Carlo",
       "When set, Monte Carlo Simulation performance data is displayed.",
-      monte_carlo_engine::report, false
+      monte_carlo_engine::report
   );
 
   //

@@ -1009,14 +1009,14 @@ bool init_exactengines::execute()
   if (debug) debug->addChecklistItem(
     "exact_solver",
     "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",
-    exact_mcmsr::eng_debug, false
+    exact_mcmsr::eng_debug
   );
 
   option* report = em->findOption("Report");
   if (report) report->addChecklistItem(
     "exact_solver",
     "When set, exact solution measure performance is reported.",
-    exact_mcmsr::eng_report, false
+    exact_mcmsr::eng_report
   );
 
   const char* exact = "EXACT";

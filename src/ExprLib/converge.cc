@@ -803,8 +803,7 @@ void InitConvergeOptions(exprman* em)
   debug->addChecklistItem(
       "converges",
       "Use to view the sequence of assignments during the execution of a converge statement.",
-      fixpoint_stmt::converge_debug,
-      false
+      fixpoint_stmt::converge_debug
   );
 
   converge_stmt::max_iters = 1000;

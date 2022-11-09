@@ -1193,18 +1193,18 @@ void InitCompiler(parse_module* parent)
   if (debug) debug->addChecklistItem(
     "parser_debug",
     "When set, very low-level parser messages are displayed.",
-    parser_debug, false
+    parser_debug
   );
   if (debug) debug->addChecklistItem(
     "compiler_debug",
     "When set, low-level compiler messages are displayed.",
-    compiler_debug, false
+    compiler_debug
   );
 #ifdef PARSER_DEBUG
-  parser_debug.active = true;
+  parser_debug.Activate();
 #endif
 #ifdef COMPILE_DEBUG
-  compiler_debug.active = true;
+  compiler_debug.Activate();
 #endif
 
   // Compiler stats

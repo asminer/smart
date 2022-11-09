@@ -1542,7 +1542,7 @@ bool init_tamform::execute()
   if (debug) debug->addChecklistItem(
     "tams",
     "When set, diagnostic messages are displayed regarding tile assembly model construction.",
-    tam_def::tam_debug, false
+    tam_def::tam_debug
   );
 
   option* warning = em->findOption("Warning");
@@ -1554,57 +1554,57 @@ bool init_tamform::execute()
     warning->addChecklistItem(tamwarn,
       "tam_dup_tiledef",
       "For multiple glue type assignments to a given tile, in tile assembly models",
-      tam_def::dup_tiledef, true
+      tam_def::dup_tiledef
     );
     warning->addChecklistItem(tamwarn,
       "tam_dup_gluedef",
       "For multiple glue strength assignments, in tile assembly models",
-      tam_def::dup_gluedef, true
+      tam_def::dup_gluedef
     );
     warning->addChecklistItem(tamwarn,
       "tam_dup_init",
       "For multiple initializations of the same square, in tile assembly models",
-      tam_def::dup_init, true
+      tam_def::dup_init
     );
     warning->addChecklistItem(tamwarn,
       "tam_dup_prio",
       "For multiple priority assignments for the same square, in tile assembly models",
-      tam_def::dup_prio, true
+      tam_def::dup_prio
     );
     warning->addChecklistItem(tamwarn,
       "tam_dup_board",
       "For multiple board specifications, in tile assembly models",
-      tam_def::dup_board, true
+      tam_def::dup_board
     );
     warning->addChecklistItem(tamwarn,
       "tam_no_tiledef",
       "For tiles with no glue type assignments, in tile assembly models",
-      tam_def::no_tiledef, true
+      tam_def::no_tiledef
     );
     warning->addChecklistItem(tamwarn,
       "tam_no_gluedef",
       "For glues with no strength assignments, in tile assembly models",
-      tam_def::no_gluedef, true
+      tam_def::no_gluedef
     );
     warning->addChecklistItem(tamwarn,
       "tam_no_init",
       "For missing board initializations, in tile assembly models",
-      tam_def::no_init, true
+      tam_def::no_init
     );
     warning->addChecklistItem(tamwarn,
       "tam_no_board",
       "For missing board specifications, in tile assembly models",
-      tam_def::no_board, true
+      tam_def::no_board
     );
     warning->addChecklistItem(tamwarn,
       "tam_empty_board",
       "For board specifications with no squares, in tile assembly models",
-      tam_def::empty_board, true
+      tam_def::empty_board
     );
     warning->addChecklistItem(tamwarn,
       "tam_empty_tileset",
       "For tile assembly models with no tiles defined",
-      tam_def::empty_tileset, true
+      tam_def::empty_tileset
     );
   }
 

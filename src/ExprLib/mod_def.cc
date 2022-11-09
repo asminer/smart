@@ -739,7 +739,7 @@ void InitModelDefs(exprman* em)
     if (warning) warning->addChecklistItem(
         "model_var_owner",
         "For mismatches in model variable ownership",
-        model_def::not_our_var, true
+        model_def::not_our_var
     );
 }
 
