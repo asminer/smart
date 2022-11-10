@@ -773,6 +773,7 @@ public:
   void AddOutput(const expr* call, transition* t, model_var* pl, expr* card);
   void AddInhibitor(const expr* call, model_var* pl, transition* t, expr* card);
   void AddGuard(const expr* call, transition* t, expr* guard);
+  void AddDecEnabling(const expr* call, decision* d, expr* decEnabling);
   void HideTransition(const expr* call, transition* t);
   void AddFiring(const expr* call, transition* t, expr* dist);
   inline int NewWeightClass() { return ++weight_class; }
@@ -1063,6 +1064,29 @@ void petri_def::AddGuard(const expr* call, transition* t, expr* guard)
     em->warn() << "Merging guards on transition " << t->Name();
     DoneWarning();
   }
+}
+
+void petri_def::AddDecEnabling(const expr* call, decision* d, expr* decEnabling)
+{
+  DCASSERT(d);
+  DCASSERT(decEnabling);
+  if (!isVariableOurs(d, call, "ignoring decision enabling")) return;
+
+  if (pn_debug.startReport()) {
+    pn_debug.report() << "adding decision enabling ";
+    pn_debug.report() << d->Name() << " : ";
+    decEnabling->Print(pn_debug.report(), 0);
+    pn_debug.report().Put('\n');
+    pn_debug.stopIO();
+  }
+  d->addEnablingCond(decEnabling);
+/*
+  bool dup = t->addGuard(guard);
+
+  if (dup) if (StartWarning(dup_guard, call)) {
+    em->warn() << "Merging guards on transition " << t->Name();
+    DoneWarning();
+  }*/
 }
 
 void petri_def::HideTransition(const expr* call, transition* t)
@@ -2240,6 +2264,62 @@ void pn_guard::Compute(traverse_data &x, expr** pass, int np)
   x.answer = answer;
 }
 
+
+// ********************************************************
+// *                    pn_enable_dec  class                    *
+// ********************************************************
+
+class pn_enable_dec : public model_internal {
+public:
+  pn_enable_dec();
+  virtual void Compute(traverse_data &x, expr** pass, int ndd);
+};
+
+pn_enable_dec::pn_enable_dec() : model_internal(em->VOID, "enable_decision", 2)
+{
+  typelist* d = new typelist(2);
+  const type* decision = em->findType("decision");
+  d->SetItem(0, decision->getSetOfThis());
+  d->SetItem(1, em->BOOL);
+  SetFormal(1, d, "dset:b");
+  SetRepeat(1);
+  SetDocumentation("For each decision d in the set dset, adds guard b on decision d(t cannot fire if b is false).");
+}
+
+void pn_enable_dec::Compute(traverse_data &x, expr** pass, int ndd)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  DCASSERT(pass[0]);
+  petri_def* mdl = smart_cast<petri_def*>(pass[0]);
+  DCASSERT(mdl);
+  
+  if (x.stopExecution())  return;
+  result* answer = x.answer;
+
+  for (int i=1; i<ndd; i++) {
+    DCASSERT(pass[i]);
+    result first;
+    x.answer = &first;
+    SafeCompute(pass[i], x);
+    DCASSERT(first.isNormal());
+    shared_set* dset = smart_cast <shared_set*> (first.getPtr());
+    DCASSERT(dset);
+    expr* decEnabling = pass[i]->Substitute(1);
+
+    for (int z=0; z<dset->Size(); z++) {
+      result tr;
+      dset->GetElement(z, tr);
+      decision* d = smart_cast <decision*> (tr.getPtr());
+      DCASSERT(d);
+      mdl->AddDecEnabling(pass[i], d, decEnabling);
+    }
+  }
+  x.answer = answer;
+}
+
+
 // ********************************************************
 // *                   pn_firing  class                   *
 // ********************************************************
@@ -3049,6 +3129,7 @@ bool init_pnform::execute()
   pnsyms->AddSymbol(  new pn_arcs     );
   pnsyms->AddSymbol(  new pn_inhibit  );
   pnsyms->AddSymbol(  new pn_guard    );
+  pnsyms->AddSymbol( new pn_enable_dec);
   pnsyms->AddSymbol(  new pn_firing   );
   pnsyms->AddSymbol(  new pn_weight   );
   pnsyms->AddSymbol(  new pn_weight2  );

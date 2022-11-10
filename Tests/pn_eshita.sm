@@ -78,6 +78,7 @@ pn cruft(int n) := {
     J : tJD, tJD : D
   );
   decision aa, bb, cc,dd, ee, ff;
+  enable_decision( aa : true);
   //aa:=1;
   //find the model type:study them
   
@@ -104,6 +105,11 @@ pn cruft(int n) := {
   stateset apH := reachable & potential(tk(H)>0);
   stateset apK := reachable & potential(tk(K)>0);
   stateset apEn:= reachable & potential(tk(E)==1);
+
+  //bigint mc := AG(aa & apD);
+
+
+  //void show_dec_eval := show_decision_evaluation();
 
   // Existentials
   

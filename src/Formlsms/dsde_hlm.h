@@ -279,10 +279,14 @@ class decision : public model_var{
   result* dec; //this will be a three valued data
   //int num_decisions;
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
+  expr* enable_cond;
   public:
   decision(const symbol* w, const model_instance* pn) : model_var(w,pn){
+  	dec= new result();
     dec->setUnknown();
+    enable_cond=0;
   }
+
   // decision(const char* fn, int line, const type* t, char* n,
 		// const model_instance* p);
   protected:
@@ -300,6 +304,10 @@ class decision : public model_var{
     if (dec->getBool()==false)return false;
     else return true; 
 	}
+	
+ inline void addEnablingCond(expr* e){
+ 	enable_cond=e;
+ } 
 };
 
 // **************************************************************************
