@@ -46,8 +46,6 @@ struct lexer_mod {
   /// Top of file stack.
   int topfile;
 
-  location where_copy;
-
 public:
   lexer_mod();
   ~lexer_mod();

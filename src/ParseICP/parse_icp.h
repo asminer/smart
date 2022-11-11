@@ -75,8 +75,7 @@ public:
 
   void Finish();
 
-  const char* filename() const;
-  int linenumber() const;
+  const location& where() const;
 public:
   inline option_manager* OptMan() { return em->OptMan(); }
   inline const type* FindOWDType(const char* s) const {
@@ -95,7 +94,7 @@ public:
   inline bool startInternal(const char* file, int line) {
     DCASSERT(em);
     if (em->startInternal(file, line)) {
-      em->causedBy(filename(), linenumber());
+      em->causedBy(where());
       return true;
     }
     return false;
@@ -108,7 +107,7 @@ public:
   inline bool startError() {
     DCASSERT(em);
     if (em->startError()) {
-      em->causedBy(filename(), linenumber());
+      em->causedBy(where());
       return true;
     }
     return false;
@@ -123,22 +122,6 @@ public:
     if (em->hasIO())
       em->stopIO();
   }
-  /*
-  inline bool startReport(const named_msg &who) {
-    DCASSERT(em);
-    return em->startReport(who);
-  }
-  inline OutputStream& report() {
-    DCASSERT(em);
-    DCASSERT(em->hasIO());
-    return em->report();
-  }
-  inline void stopReport() {
-    DCASSERT(em);
-    if (em->hasIO())
-      em->stopIO();
-  }
-  */
 };
 
 #endif
