@@ -9,7 +9,7 @@
 parse_module::parse_module(exprman* the_em)
 {
   em = the_em;
-  
+
   num_measures = 0;
   measure_names = 0;
   measure_calls = 0;
@@ -45,12 +45,7 @@ void parse_module::Finish()
   FinishModel();
 }
 
-const char* parse_module::filename() const 
+const location& parse_module::where() const
 {
-  return Filename();
-}
-
-int parse_module::linenumber() const
-{
-  return Linenumber();
+    return Where();
 }

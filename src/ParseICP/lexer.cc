@@ -53,8 +53,7 @@ public:
 
   inline bool StackFull() const { return (topfile+1 >= max_file_depth); }
 
-  const char* Filename() const;
-  int Linenumber() const;
+  const location& Where() const;
 
   void Initialize(parse_module* p);
 
@@ -102,7 +101,7 @@ public:
     DCASSERT(parent->em);
     if (parent->em->hasIO()) {
       parent->em->startWarning();
-      parent->em->causedBy(Filename(), Linenumber());
+      parent->em->causedBy(Where());
       return true;
     }
     return false;
@@ -133,7 +132,7 @@ lexer_mod lexdata;
 // ******************************************************************
 
 class inputfile {
-  const char* name;
+  location where;
   FILE* input;
   yy_buffer_state* buffer;
   int consumed_lines;
@@ -157,18 +156,22 @@ public:
   /// Stop (perhaps temporarily) consuming tokens from this file.
   void StopTokenizing();
 
-  /// The input file name.
-  inline const char* Name() const { return name; }
+  inline const location& Where() {
+      where.setline( consumed_lines + (yylineno - counter_start) );
+      return where;
+  }
 
-  /// Current linenumber of input file.
-  inline int Line() const {
-    return consumed_lines + (yylineno - counter_start);
+  inline const char* Name() const {
+      return where.getFile();
   }
 
   /// Are we reading from standard input?
   inline bool is_stdin() const {
-    if (name[0] != '-')  return false;
-    return 0==name[1];
+    return where.is_stdin();
+  }
+
+  inline bool matches(const char* fname) const {
+    return 0 == strcmp(where.getFile(), fname);
   }
 };
 
@@ -178,7 +181,12 @@ public:
 
 inputfile::inputfile(const char* n)
 {
-  name = n;
+  DCASSERT(n);
+  if (n[0] == '-' && n[1] == 0) {
+    where.reset(0, 1);
+  } else {
+    where.reset(new shared_string(n), 1);
+  }
   input = 0;
   buffer = 0;
   consumed_lines = 1;
@@ -187,7 +195,12 @@ inputfile::inputfile(const char* n)
 
 inputfile::inputfile(FILE* f, const char* n)
 {
-  name = n;
+  DCASSERT(n);
+  if (n[0] == '-' && n[1] == 0) {
+    where.reset(0, 1);
+  } else {
+    where.reset(new shared_string(n), 1);
+  }
   input = f;
   buffer = 0;
   consumed_lines = 1;
@@ -198,19 +211,19 @@ inputfile::~inputfile()
 {
   if (buffer)  yy_delete_buffer(buffer);
   if (input)   if (stdin != input) fclose(input);
-  // don't delete name,
-  // lots of expressions could be pointing to it!
 }
 
 bool inputfile::StartTokenizing()
 {
   // open file if necessary
   if (0==input) {
-    if (('-'==name[0]) && (0==name[1]))   input = stdin;
-    else                                  input = fopen(name, "r");
+
+    if (is_stdin())     input = stdin;
+    else                input = fopen(where.getFile(), "r");
+
     if (0==input) {
       if (lexdata.startError()) {
-        lexdata.cerr() << "couldn't open file " << name << ", ignoring";
+        lexdata.cerr() << "couldn't open file " << where.getFile() << ", ignoring";
         lexdata.stopError();
       }
       return false;
@@ -564,14 +577,13 @@ lexer_mod::~lexer_mod()
   delete[] filestack;
 }
 
-const char* lexer_mod::Filename() const
+const location& lexer_mod::Where() const
 {
-  return (topfile<0) ? "<" : filestack[topfile]->Name();
-}
-
-int lexer_mod::Linenumber() const
-{
-  return (topfile<0) ? -1 : filestack[topfile]->Line();
+    if (topfile < 0) {
+        return location::EOINPUT();
+    } else {
+        return filestack[topfile]->Where();
+    }
 }
 
 void lexer_mod::Initialize(parse_module* p)
@@ -589,7 +601,7 @@ void lexer_mod::Initialize(parse_module* p)
 bool lexer_mod::AlreadyOpen(const char* name) const
 {
   for (int i=0; i<=topfile; i++) {
-    if (0==strcmp(name, filestack[i]->Name()))  return true;
+    if (filestack[i]->matches(name)) return true;
   }
   return false;
 }
@@ -701,14 +713,9 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
 //
 // ==================================================================
 
-const char* Filename()
+const location& Where()
 {
-  return lexdata.Filename();
-}
-
-int Linenumber()
-{
-  return lexdata.Linenumber();
+    return lexdata.Where();
 }
 
 void InitLexer(parse_module* pm)

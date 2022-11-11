@@ -5,10 +5,13 @@
 #include "../Options/optman.h"
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
-#include "../SymTabs/symtabs.h"
 #include "../ExprLib/formalism.h"
+#include "../ExprLib/values.h"
+
+#include "../SymTabs/symtabs.h"
 #include "../include/heap.h"
 #include "parse_icp.h"
 #include <string.h>
@@ -324,7 +327,7 @@ expr* MakeStatementBlock(parser_list* stmts)
   CopyCircular(stmts, opnds, length);
   RecycleCircular(stmts);
   return ShowNewStatement("model block\n",
-    em->makeAssocOp(Filename(), Linenumber(), exprman::aop_semi,
+    em->makeAssocOp(Where(), exprman::aop_semi,
     opnds, 0, length)
   );
 }
@@ -420,7 +423,7 @@ expr* MakeConstraint(expr *x)
   pass[0] = Share((expr*) model_under_construction);
   pass[1] = x;
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Filename(), Linenumber(), best, pass, 2)
+    em->makeFunctionCall(Where(), best, pass, 2)
   );
 }
 
@@ -429,7 +432,7 @@ expr* BuildOptionStatement(option* o, expr* v)
 {
   return ShowNewStatement(
     "option statement:\n",
-    em->makeOptionStatement(Filename(), Linenumber(), o, v)
+    em->makeOptionStatement(Where(), o, v)
   );
 }
 
@@ -446,7 +449,7 @@ expr* BuildOptionStatement(option* o, char* n)
     }
     foo = 0;
   } else {
-    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
+    foo = em->makeOptionStatement(Where(), o, oc);
   }
   free(n);
 
@@ -503,7 +506,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 
   return ShowNewStatement(
   "option statement:\n",
-    em->makeOptionStatement(Filename(), Linenumber(), o, check, vlist, length)
+    em->makeOptionStatement(Where(), o, check, vlist, length)
   );
 }
 
@@ -526,7 +529,7 @@ option* BuildOptionHeader(char* name)
 expr* BuildExprStatement(expr *x)
 {
   if (!em->isOrdinary(x))  return 0;
-  return em->makeExprStatement(Filename(), Linenumber(), x);
+  return em->makeExprStatement(Where(), x);
 }
 
 
@@ -557,7 +560,7 @@ expr* BuildIntegers(char* typ, parser_list* namelist, expr* values)
   symbol** names = new symbol*[N];
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
-    em->makeModelVarDecs(Filename(), Linenumber(),
+    em->makeModelVarDecs(Where(),
       model_under_construction, em->INT, values, names, N)
   );
 }
@@ -578,7 +581,7 @@ expr* BuildBools(char* typ, parser_list* namelist)
   symbol** names = new symbol*[N];
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
-    em->makeModelVarDecs(Filename(), Linenumber(),
+    em->makeModelVarDecs(Where(),
       model_under_construction, em->BOOL, 0, names, N)
   );
 }
@@ -614,7 +617,7 @@ void StartModel()
     DCASSERT(0==model_under_construction);
     DCASSERT(0==ModelInternal);
     char* name = strdup(" ");
-    model_under_construction = em->makeModel(0, -1, ICP_TYPE, name, 0, 0);
+    model_under_construction = em->makeModel(location::NOWHERE(), ICP_TYPE, name, 0, 0);
     ModelInternal = MakeSymbolTable();
     ModelType = smart_cast <const formalism*> (ICP_TYPE);
     DCASSERT(ModelType);
@@ -643,7 +646,7 @@ void FinishModel()
 
   // Build measure calls
   for (int i=0; i<pm->num_measures; i++) {
-    pm->measure_calls[i] = em->makeMeasureCall(Filename(), Linenumber(),
+    pm->measure_calls[i] = em->makeMeasureCall(Where(),
       model_under_construction, 0, 0, pm->measure_names[i]);
   }
 
@@ -659,7 +662,7 @@ parser_list* AddModelVar(parser_list* varlist, char* ident)
     return varlist;
   }
 
-  symbol* ms = em->makeModelSymbol(Filename(), Linenumber(), 0, ident);
+  symbol* ms = em->makeModelSymbol(Where(), 0, ident);
   ModelInternal->AddSymbol(ms);
   ShowWhatWeBuilt("symbol ", ms);
 
@@ -683,9 +686,9 @@ inline expr* BuildMeasure(const type* typ, char* ident, symbol* who, expr* rhs)
   expr** pass = new expr* [2];
   pass[0] = Share((expr*) model_under_construction);
   pass[1] = rhs;
-  rhs = em->makeFunctionCall(Filename(), Linenumber(), who, pass, 2);
+  rhs = em->makeFunctionCall(Where(), who, pass, 2);
 
-  symbol* wrap = em->makeModelSymbol(Filename(), Linenumber(), typ, ident);
+  symbol* wrap = em->makeModelSymbol(Where(), typ, ident);
 
   // Add measure to symbol tables
   DCASSERT(ModelInternal);
@@ -697,7 +700,7 @@ inline expr* BuildMeasure(const type* typ, char* ident, symbol* who, expr* rhs)
   MeasureNames.Append(ident);
 
   return ShowNewStatement("measure assignment:\n",
-    em->makeModelMeasureAssign(Filename(), Linenumber(),
+    em->makeModelMeasureAssign(Where(),
         model_under_construction, wrap, rhs)
   );
 }
@@ -901,7 +904,7 @@ expr* BuildElementSet(expr* elem)
     return em->makeError();
   }
   return ShowWhatWeBuilt("set element: ",
-    em->makeTypecast(Filename(), Linenumber(), set_type, elem)
+    em->makeTypecast(Where(), set_type, elem)
    );
 }
 
@@ -915,7 +918,7 @@ expr* BuildInterval(expr* start, expr* stop)
 expr* BuildInterval(expr* start, expr* stop, expr* inc)
 {
   return ShowWhatWeBuilt("set interval: ",
-    em->makeTrinaryOp(Filename(), Linenumber(),
+    em->makeTrinaryOp(Where(),
       exprman::top_interval, start, stop, inc)
   );
 }
@@ -975,7 +978,7 @@ expr* BuildSummation(parser_list* list)
 
   exprman::assoc_opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-    em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
+    em->makeAssocOp(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -1034,7 +1037,7 @@ expr* BuildProduct(parser_list* list)
 
   exprman::assoc_opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-    em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
+    em->makeAssocOp(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -1056,7 +1059,7 @@ expr* BuildAssociative(int op, parser_list* list)
   exprman::assoc_opcode aop = Int2Aop(op);
 
   return ShowWhatWeBuilt(0,
-    em->makeAssocOp(Filename(), Linenumber(), aop, opnds, 0, length)
+    em->makeAssocOp(Where(), aop, opnds, 0, length)
   );
 }
 
@@ -1064,14 +1067,14 @@ expr* BuildAssociative(int op, parser_list* list)
 expr* BuildBinary(expr* left, int op, expr* right)
 {
   exprman::binary_opcode bop = Int2Bop(op);
-  return em->makeBinaryOp(Filename(), Linenumber(), left, bop, right);
+  return em->makeBinaryOp(Where(), left, bop, right);
 }
 
 // --------------------------------------------------------------
 expr* BuildUnary(int op, expr* opnd)
 {
   exprman::unary_opcode uop = Int2Uop(op);
-  return em->makeUnaryOp(Filename(), Linenumber(), uop, opnd);
+  return em->makeUnaryOp(Where(), uop, opnd);
 }
 
 // --------------------------------------------------------------
@@ -1084,7 +1087,7 @@ expr* MakeBoolConst(char* s)
 
   if (c.isNormal()) {
     free(s);
-    return em->makeLiteral(Filename(), Linenumber(), em->BOOL, c);
+    return new value(Where(), em->BOOL, c);
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Bad boolean constant: " << s;
@@ -1101,7 +1104,7 @@ expr* MakeIntConst(char* s)
   result c;
   DCASSERT(em->INT);
   em->INT->assignFromString(c, s);
-  expr* foo = em->makeLiteral(Filename(), Linenumber(), em->INT, c);
+  expr* foo = new value(Where(), em->INT, c);
   free(s);
   return foo;
 }
@@ -1165,7 +1168,7 @@ expr* BuildFunctionCall(char* n, parser_list* posparams)
   function* best = FindBest(find, find2, pass, length, first);
   if (0==best)  return em->makeError();
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Filename(), Linenumber(), best, pass, length)
+    em->makeFunctionCall(Where(), best, pass, length)
   );
 }
 
@@ -1182,12 +1185,8 @@ void InitCompiler(parse_module* parent)
   em = pm ? pm->em : 0;
 
   // init globals here.
-  if (em) {
-    result one(1L);
-    ONE = em->makeLiteral(0, -1, em->INT, one);
-  } else {
-    ONE = 0;
-  }
+  result one(1L);
+  ONE = new value(location::NOWHERE(), em->INT, one);
 
   MeasureNames.Clear();
 

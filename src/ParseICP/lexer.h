@@ -4,12 +4,14 @@
 
 #include <stdio.h>
 
+#include "../Utils/location.h"
+
 /** \file lexer.h
    Utilities for tokenization of ICP input files.
    Also, minimalist front-end functions to obtain
    the current file being processed, and linenumber.
 */
- 
+
 // Handy for lexer and parser.
 
 const char* TokenName(int tk);
@@ -163,10 +165,7 @@ bool SetInputs(parse_module* pm, const char** files, int filecount);
 */
 bool SetInput(parse_module* pm, FILE* file, const char* name);
 
-/// The current file being read.
-const char* Filename();
-
-/// The linenumber of the current file.
-int Linenumber();
+/// Position in the current file being read.
+const location& Where();
 
 #endif
