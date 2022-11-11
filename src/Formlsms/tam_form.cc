@@ -25,7 +25,7 @@ public:
 };
 
 tam_border::tam_border(const type* t, char* n, long v)
- : symbol(0, -1, t, n)
+ : symbol(location::NOWHERE(), t, n)
 {
   which = v;
 }
@@ -163,7 +163,7 @@ class tam_square : public model_statevar {
   long prio;
   bool has_prio;
 public:
-  tam_square(const char* fn, int ln, const type* t, char* n, const model_instance* p);
+  tam_square(const location &W, const type* t, char* n, const model_instance* p);
   inline void setInit(const tam_tile* i) {
     init = i;
   }
@@ -333,8 +333,8 @@ public:
 // *                                                                *
 // ******************************************************************
 
-tam_square::tam_square(const char* fn, int ln, const type* t, char* n,
- const model_instance* p) : model_statevar(fn, ln, t, n, p, 0)
+tam_square::tam_square(const location &W, const type* t, char* n,
+ const model_instance* p) : model_statevar(W, t, n, p, 0)
 {
   init = 0;
   has_prio = false;
@@ -511,8 +511,7 @@ class tam_def : public model_def {
 
   // board squares and such
   tam_square **board;
-  const char* b_fn;
-  int b_ln;
+  location b_where;
 
   // "globals"
 
@@ -550,7 +549,7 @@ class tam_def : public model_def {
   friend class init_tamform;
 
 public:
-  tam_def(const char* fn, int line, const type* t, char* n,
+  tam_def(const location &W, const type* t, char* n,
           formal_param** pl, int np);
   virtual ~tam_def();
 
@@ -609,7 +608,7 @@ protected:
     snprintf(buffer, 50, "sq(%d,%d)", x, y);
     char* n = strdup(buffer);
     return (
-      board[pos2index(x, y)] = new tam_square(b_fn, b_ln, tile_type, n, current)
+      board[pos2index(x, y)] = new tam_square(b_where, tile_type, n, current)
     );
   }
 };
@@ -636,8 +635,8 @@ warning_msg tam_def::empty_tileset;
 // *                        tam_def  methods                        *
 // ******************************************************************
 
-tam_def::tam_def(const char* fn, int line, const type* t, char*n,
-    formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
+tam_def::tam_def(const location &W, const type* t, char*n,
+    formal_param **pl, int np) : model_def(W, t, n, pl, np)
 {
   tiles = glues = 0;
   num_tiles = num_glues = 0;
@@ -800,14 +799,7 @@ void tam_def::setBoardSize(const expr* cause, long xl, long xh,
   board = new tam_square*[nsq];
   for (long i=0; i<nsq; i++) board[i] = 0;
 
-  if (cause) {
-    b_fn = cause->Filename();
-    b_ln = cause->Linenumber();
-  } else {
-    b_fn = 0;
-    b_ln = -1;
-  }
-
+  b_where = cause ? cause->Where() : location::NOWHERE();
 }
 
 void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
@@ -902,8 +894,6 @@ void tam_def::InitModel()
   num_tiles = num_glues = 0;
   board_is_set = false;
   board = 0;
-  b_fn = 0;
-  b_ln = -1;
 }
 
 void tam_def::FinalizeModel(OutputStream &ds)
@@ -977,7 +967,7 @@ void tam_def::FinalizeModel(OutputStream &ds)
         snprintf(buffer, bufsize, "put(%s,%ld,%ld)", tileset[t]->Name(), x, y);
         char* en = strdup(buffer);
         CHECK_RANGE(0, eindx, nev);
-        eventlist[eindx] = new model_event(b_fn, b_ln, 0, en, current);
+        eventlist[eindx] = new model_event(b_where, 0, en, current);
 
         eventlist[eindx]->setPriorityLevel(prio);
 
@@ -990,7 +980,7 @@ void tam_def::FinalizeModel(OutputStream &ds)
         pass[4] = Share(s);
         pass[5] = Share(w);
         eventlist[eindx]->setEnabling(
-          em->makeFunctionCall(b_fn, b_ln, &the_tam_canput, pass, 6)
+          em->makeFunctionCall(b_where, &the_tam_canput, pass, 6)
         );
 
         // build next-state
@@ -1034,7 +1024,7 @@ class tam_formalism : public formalism {
 public:
   tam_formalism(const char* n, const char* sd, const char* ld);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -1052,10 +1042,10 @@ tam_formalism
 {
 }
 
-model_def* tam_formalism::makeNewModel(const char* fn, int ln, char* name,
+model_def* tam_formalism::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
-  return new tam_def(fn, ln, this, name, (formal_param**) formals, np);
+  return new tam_def(W, this, name, (formal_param**) formals, np);
 }
 
 bool tam_formalism::canDeclareType(const type* vartype) const
@@ -1502,7 +1492,7 @@ bool init_tamform::execute()
   formalism* tam = new tam_formalism("tam", "Tile assembly Model", longdocs);
   if (!em->registerType(tam)) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register tam type";
       em->stopIO();
     }

@@ -22,8 +22,8 @@ class forstmt : public expr {
   int dimension;
   expr* block;
 public:
-  forstmt(const char *fn, int l, iterator** i, int d, expr* b);
-  virtual ~forstmt(); 
+  forstmt(const location &W, iterator** i, int d, expr* b);
+  virtual ~forstmt();
 
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
@@ -51,8 +51,8 @@ protected:
 // *                        forstmt  methods                        *
 // ******************************************************************
 
-forstmt::forstmt(const char *fn, int l, iterator** i, int d, expr* b)
-  : expr(fn, l, STMT)
+forstmt::forstmt(const location &W, iterator** i, int d, expr* b)
+  : expr(W, STMT)
 {
   index = i;
   dimension = d;
@@ -109,7 +109,7 @@ void forstmt::Traverse(traverse_data &x)
     case traverse_data::Affix:
         Traverse(0, x);
         return;
-    
+
   // symbols? substitute?
 
     default:
@@ -152,7 +152,7 @@ void forstmt::Traverse(int d, traverse_data &x)
 
 void forstmt::ShowAssignments(OutputStream &s) const
 {
-  
+
 }
 
 // ******************************************************************
@@ -161,7 +161,7 @@ void forstmt::ShowAssignments(OutputStream &s) const
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeIterator(const char* fn, int ln, 
+symbol* exprman::makeIterator(const location &W,
       const type* t, char* name, expr* vals) const
 {
   if (isError(vals) || 0==t) {
@@ -173,7 +173,7 @@ symbol* exprman::makeIterator(const char* fn, int ln,
 
   if (0==t->getSetOfThis()) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Illegal type for iterator " << name;
       stopIO();
     }
@@ -186,11 +186,11 @@ symbol* exprman::makeIterator(const char* fn, int ln,
 
   if (0==vals) {
     if (startWarning()) {
-      causedBy(fn, ln);
+      causedBy(W);
       warn() << "Empty set for iterator " << name;
       stopIO();
     }
-    s = new iterator(fn, ln, t, name, vals);
+    s = new iterator(W, t, name, vals);
   } else {
 
     const type* vt = vals->Type();
@@ -199,7 +199,7 @@ symbol* exprman::makeIterator(const char* fn, int ln,
     // Check that the set type matches the iterator.
     if (getPromoteDistance(vt, t->getSetOfThis()) < 0) {
       if (startError()) {
-        causedBy(fn, ln);
+        causedBy(W);
         cerr() << "Type mismatch: iterator " << name;
         cerr() << " expects set of type " << t->getName();
         stopIO();
@@ -208,8 +208,8 @@ symbol* exprman::makeIterator(const char* fn, int ln,
       free(name);
       return 0;
     }
-    vals = makeTypecast(fn, ln, t->getSetOfThis(), vals);
-    s = new iterator(fn, ln, t, name, vals);
+    vals = makeTypecast(W, t->getSetOfThis(), vals);
+    s = new iterator(W, t, name, vals);
   } // if getPromoteDistance
   if (s->OK())  return s;
   Delete(s);
@@ -218,7 +218,7 @@ symbol* exprman::makeIterator(const char* fn, int ln,
 
 
 
-expr* exprman::makeForLoop(const char* fn, int ln, 
+expr* exprman::makeForLoop(const location &W,
       symbol** iters, int dim, expr* stmt) const
 {
   if (!isOrdinary(stmt))  {
@@ -231,7 +231,7 @@ expr* exprman::makeForLoop(const char* fn, int ln,
     DCASSERT(foo);
   }
 #endif
-  expr* x = new forstmt(fn, ln, (iterator**) iters, dim, stmt);
+  expr* x = new forstmt(W, (iterator**) iters, dim, stmt);
   if (x->OK())  return x;
   if (x->hadError()) {
     Delete(x);

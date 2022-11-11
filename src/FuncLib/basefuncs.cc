@@ -8,7 +8,7 @@
 #include "../ExprLib/exprman.h"
 #include "../Utils/strings.h"
 #include "../ExprLib/mod_inst.h"
-#include <string.h>
+// #include <string.h>
 
 // ******************************************************************
 // *                        delete_si  class                        *
@@ -57,7 +57,7 @@ public:
 
 substr_si::substr_si() : simple_internal(em->STRING, "substr", 3)
 {
-  empty_string = new shared_string(strdup(""));
+  empty_string = new shared_string("");
   SetFormal(0, em->STRING, "x");
   SetFormal(1, em->INT, "left");
   SetFormal(2, em->INT, "right");

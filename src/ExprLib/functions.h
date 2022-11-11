@@ -43,7 +43,7 @@ class model_instance;
 
       This is the third generation design for functions.
       Hopefully it will be clean, efficient, and easy to use.
-*/  
+*/
 
 class function : public symbol {
 public:
@@ -53,7 +53,7 @@ public:
 
 public:
   function(const function* f);
-  function(const char* fn, int line, const type* t, char* n);
+  function(const location &W, const type* t, char* n);
 
 protected:
   virtual ~function();
@@ -76,11 +76,11 @@ public:
         @param  np  Number of passed parameters.
         @return The code for "parameter i is bad".
   */
-  inline static int BadParam(int i, int np) { 
+  inline static int BadParam(int i, int np) {
     CHECK_RANGE(0, i, np);
-    return -i-1; 
+    return -i-1;
   }
-  
+
   /** Is a given formal parameter hidden?
         @param  fpnum  Formal parameter number.
   */
@@ -139,7 +139,7 @@ public:
         @param  pass  Passed (positional) parameters.
         @param  np    Number of passed parameters.
         @return A value based on the type of traversal:
-    
+
           - Typecheck:
             returns a score of how well the given
             parameters match the formal ones in type.
@@ -169,13 +169,13 @@ public:
         real sqrt(real x)
 
         @param  s     Output stream to use.
-        @param  hide  If true,  when the first parameter is hidden for 
+        @param  hide  If true,  when the first parameter is hidden for
                                 model functions, indicate that this function
                                 must appear in a model.
                       If false, shows the complete function header.
   */
   virtual void PrintHeader(OutputStream &s, bool hide) const = 0;
-  
+
   /** Document the header only.
   */
   virtual bool DocumentHeader(doc_formatter* df) const;
@@ -234,15 +234,15 @@ public:
   /** Convert named parameters to positional ones.
       Does NO typechecking; only converts based on parameter names.
 
-        @param  np      Input: Array of named parameters 
+        @param  np      Input: Array of named parameters
         @param  nnp     Input: Number of named parameters
         @param  buffer  Output: Positional parameters will be stored here
-        @param  bufsize Input: Size of buffer. Must be at least 
+        @param  bufsize Input: Size of buffer. Must be at least
                         as large as maxNamedParams().
 
         @return non-negative:     number of positional parameters
-                -1..-nnp:         negated position of first 
-                                  named parameter not found 
+                -1..-nnp:         negated position of first
+                                  named parameter not found
                 -nnp-1..-nnp-mnp: position of required positional parameter,
                                   not provided (negated, and decreased by nnp).
 
@@ -364,7 +364,7 @@ public:
   */
   inline void setRepeat(int r) { repeat_point = r; }
 
-  /// Prints the formal params, surrounded by parens. 
+  /// Prints the formal params, surrounded by parens.
   void PrintHeader(OutputStream &s, bool hide) const;
 
   /// Compute formals, assuming no repeats!
@@ -435,7 +435,7 @@ public:
 
 
   /** Return type, based on passed parameters.
-      Assumes the passed parameters will fit with some kind of 
+      Assumes the passed parameters will fit with some kind of
       formal parameter promotion.
 
       @param  em    Expression manager.
@@ -446,7 +446,7 @@ public:
       @return Modified return type, according to promotions
               necessary to formal parameters.
   */
-  const type* getType(const exprman* em, expr** pass, 
+  const type* getType(const exprman* em, expr** pass,
         int np, const type* rt) const;
 
   /** Promote passed parameters as necessary.
@@ -465,26 +465,26 @@ public:
       Does NO typechecking; only converts based on parameter names.
 
         @param  em      Expression manager; needed to build defaults.
-        @param  np      Input: Array of named parameters 
+        @param  np      Input: Array of named parameters
         @param  nnp     Input: Number of named parameters
         @param  buffer  Output: Positional parameters will be stored here
-        @param  bufsize Input: Size of buffer. Must be at least 
+        @param  bufsize Input: Size of buffer. Must be at least
                         as large as maxNamedParams().
 
         @return non-negative:     number of positional parameters
-                -1..-nnp:         negated position of first 
-                                  named parameter not found 
+                -1..-nnp:         negated position of first
+                                  named parameter not found
                 -nnp-1..-nnp-mnp: position of required positional parameter,
                                   not provided (negated, and decreased by nnp).
 
                 -a lot            if we cannot do it (default implementation
                                   returns this).
   */
-  int named2Positional(exprman* em, symbol** np, int nnp, 
+  int named2Positional(exprman* em, symbol** np, int nnp,
           expr** buffer, int bufsize) const;
 
 private:
-  
+
   // Helper for hasNameConflict
   int findParamWithName(symbol** pl, int np, int* tmp, const char* name) const;
 };
@@ -498,7 +498,7 @@ private:
 /**   An abstract base class of internal functions.
       This class handles documentation, which is common
       for all derived classes.
-*/  
+*/
 class internal_func : public function {
   const char* docs;
   bool hidden;  // not documented in release version
@@ -528,7 +528,7 @@ public:
 /**   The base class of internal functions with formal parameters.
 
       Use for built-in functions without customized type checking.
-*/  
+*/
 class simple_internal : public internal_func {
 protected:
   fplist formals;
@@ -608,7 +608,7 @@ public:
 
       Basically, a thin wrapper around simple_internal,
       automatically adding the hidden model parameter.
-*/  
+*/
 class model_internal : public simple_internal {
 public:
   /** Constructor.
@@ -627,7 +627,7 @@ public:
 // ******************************************************************
 
 /**   The base class of internal functions with crazy type checking.
-*/  
+*/
 class custom_internal : public internal_func {
   const char* header;
 public:
@@ -647,7 +647,7 @@ symbol* MakeFormalParam(typelist* t, char* name);
 
 /** Used primarily by compiler.
     Build a formal parameter for a function or model.
-    
+
       @param  fn        Filename of declaration
       @param  ln        Line number of declaration
       @param  t         Data type of parameter
@@ -656,16 +656,15 @@ symbol* MakeFormalParam(typelist* t, char* name);
 
       @return An appropriate symbol.
 */
-symbol* MakeFormalParam(const char* fn, int ln, 
+symbol* MakeFormalParam(const location &W,
                         const type* t, char* name, bool in_model);
 
 
 /** Used primarily by compiler.
     Build a formal parameter with a default value for a function or model.
-    
+
       @param  em        Expression manager for error reporting.
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  t         Data type of parameter
       @param  name      Parameter name
       @param  def       The default value (an expression)
@@ -673,29 +672,27 @@ symbol* MakeFormalParam(const char* fn, int ln,
 
       @return An appropriate symbol, or 0 on error (will make noise).
 */
-symbol* MakeFormalParam(const exprman* em, const char* fn, int ln, 
+symbol* MakeFormalParam(const exprman* em, const location &W,
                         const type* t, char* name, expr* def, bool in_model);
 
 
 /** Used primarily by compiler.
     Build a named parameter.
 
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  name      Parameter name
       @param  pass      Expression passed to the parameter
 
       @return An appropriate symbol.
 */
-symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass);
+symbol* MakeNamedParam(const location &W, char* name, expr* pass);
 
 
 /** Used primarily by compiler.
     Build a user-function "header".
 
       @param  em        Expression manager for error reporting.
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  t         Return type of function
       @param  name      Name of function
       @param  formals   Array of formal parameters
@@ -704,22 +701,21 @@ symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass);
 
       @return An appropriate function, or 0 on error (will make noise).
 */
-function* MakeUserFunction(const exprman* em, const char* fn, int ln, 
+function* MakeUserFunction(const exprman* em, const location &W,
             const type* t, char* name, symbol** formals, int np, bool in_model);
 
 /** Used primarily by compiler.
     Build a user-defined "header" with no parameters.
 
       @param  em        Expression manager for error reporting.
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  t         Return type of function
       @param  name      Name of function
       @param  in_model  Is this function defined within a model?
 
       @return An appropriate function, or 0 on error (will make noise).
 */
-function* MakeUserConstFunc(const exprman* em, const char* fn, int ln, 
+function* MakeUserConstFunc(const exprman* em, const location &W,
             const type* t, char* name, bool in_model);
 
 /** Used primarily by compiler, for forward-defined functions.
@@ -729,13 +725,12 @@ function* MakeUserConstFunc(const exprman* em, const char* fn, int ln,
       int foo(int c, int d) := c+d;
     The old formal parameters are destroyed.
       @param  em        Expression manager for error reporting.
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  userfunc  User function to modify.
       @param  formals   Array of formal parameters
       @param  nfp       Number of formal parameters
 */
-void ResetUserFunctionParams(const exprman* em, const char* fn, int ln, 
+void ResetUserFunctionParams(const exprman* em, const location &W,
                               symbol* userfunc, symbol** formals, int nfp);
 
 
@@ -746,8 +741,7 @@ void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
     value for the function (and return 0); otherwise an actual
     statement is required.
       @param  em        Expression manager for error reporting.
-      @param  fn        Filename of declaration
-      @param  ln        Line number of declaration
+      @param  W         Location of declaration
       @param  userfunc  User function to modify.
                         Should have been created using
                         MakeUserFunction().
@@ -757,7 +751,7 @@ void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
       @return 0, if mdl is 0 or an error occurred.
               An appropriate void type expression (statement) otherwise.
 */
-expr* DefineUserFunction(const exprman* em, const char* fn, int ln, 
+expr* DefineUserFunction(const exprman* em, const location &W,
                           symbol* userfunc, expr* rhs, model_def* mdl);
 
 void InitFunctions(exprman* om);

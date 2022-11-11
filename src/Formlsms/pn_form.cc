@@ -1,18 +1,20 @@
 
 #include <limits.h>
 #include "pn_form.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
+
 #include "../Options/options.h"
 #include "../Options/optman.h"
-#include "../ExprLib/formalism.h"
 
+#include "../ExprLib/startup.h"
+#include "../ExprLib/exprman.h"
+#include "../ExprLib/formalism.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
 #include "../ExprLib/measures.h"
+#include "../ExprLib/values.h"
 
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
@@ -248,7 +250,7 @@ expr* arc_entry::makeSum(const exprman* em, List <expr> * &x)
   args = x->CopyAndClear();
   delete x;
   x = 0;
-  return em->makeAssocOp(0, -1, exprman::aop_plus, args, 0, nargs);
+  return em->makeAssocOp(location::NOWHERE(), exprman::aop_plus, args, 0, nargs);
 }
 
 // **************************************************************************
@@ -431,7 +433,7 @@ void transition::ignoreFiringExpr(int i) { ignore_firing[i] = true; }
 expr* makeBoolExpr(const exprman* em, bool v) {
   result* bool_result = new result;
   bool_result->setBool(v);
-  return em->makeLiteral(0, 01, em->BOOL, *bool_result);
+  return new value(location::NOWHERE(), em->BOOL, *bool_result);
 }
 
 void transition::disable()
@@ -538,7 +540,7 @@ void transition::Finalize(OutputStream &ds)
       expr* compiled_enabling =
         (eptr == 1)
         ? enablist[0]
-        : em->makeAssocOp(0, -1, exprman::aop_and, enablist, 0, eptr);
+        : em->makeAssocOp(location::NOWHERE(), exprman::aop_and, enablist, 0, eptr);
       setEnabling(compiled_enabling);
       if (eptr < 2) delete[] enablist;
     }
@@ -546,7 +548,7 @@ void transition::Finalize(OutputStream &ds)
       expr* compiled_firing =
         (fptr == 1)
         ? firelist[0]
-        : em->makeAssocOp(0, -1, exprman::aop_semi, firelist, 0, fptr);
+        : em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, firelist, 0, fptr);
       setNextstate(compiled_firing);
       if (fptr < 2) delete[] firelist;
     }
@@ -658,7 +660,7 @@ void petri_hlm::showState(OutputStream &s, const shared_state* st) const
 
       default:
           if (em->startInternal(__FILE__, __LINE__)) {
-            em->noCause();
+            em->causedBy(0);
             em->internal() << "Unknown marking style " << (unsigned long) MarkingStyle;
             em->stopIO();
           }
@@ -731,7 +733,7 @@ class petri_def : public dsde_def {
 
   int weight_class;
 public:
-  petri_def(const char* fn, int line, const type* t, char*n,
+  petri_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~petri_def();
@@ -792,8 +794,8 @@ warning_msg petri_def::zero_bound;
 // *                       petri_def  methods                       *
 // ******************************************************************
 
-petri_def::petri_def(const char* fn, int line, const type* t,
-   char*n, formal_param **pl, int np) : dsde_def(fn, line, t, n, pl, np)
+petri_def::petri_def(const location &W, const type* t,
+   char*n, formal_param **pl, int np) : dsde_def(W, t, n, pl, np)
 {
   error = 0;
 }
@@ -1675,7 +1677,7 @@ class petri_formalism : public formalism {
 public:
   petri_formalism(const char* n, const char* sd, const char* ld);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -1696,11 +1698,11 @@ petri_formalism
 {
 }
 
-model_def* petri_formalism::makeNewModel(const char* fn, int ln, char* name,
+model_def* petri_formalism::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new petri_def(fn, ln, this, name, (formal_param**) formals, np);
+  return new petri_def(W, this, name, (formal_param**) formals, np);
 }
 
 bool petri_formalism::canDeclareType(const type* vartype) const
@@ -1985,8 +1987,7 @@ int pn_arcs::Promote(expr** pass, int np) const
     newagg[0] = Share(pass[i]->GetComponent(0));
     newagg[1] = Share(pass[i]->GetComponent(1));
     newagg[2] = picard;
-    expr* newpass = em->makeAssocOp(pass[i]->Filename(), pass[i]->Linenumber(),
-        exprman::aop_colon, newagg, 0, 3);
+    expr* newpass = em->makeAssocOp(pass[i]->Where(), exprman::aop_colon, newagg, 0, 3);
     Delete(pass[i]);
     pass[i] = newpass;
   } // for i
@@ -2119,8 +2120,7 @@ int pn_inhibit::Promote(expr** pass, int np) const
     newagg[0] = Share(pass[i]->GetComponent(0));
     newagg[1] = Share(pass[i]->GetComponent(1));
     newagg[2] = picard;
-    expr* newpass = em->makeAssocOp(pass[i]->Filename(), pass[i]->Linenumber(),
-        exprman::aop_colon, newagg, 0, 3);
+    expr* newpass = em->makeAssocOp(pass[i]->Where(), exprman::aop_colon, newagg, 0, 3);
     Delete(pass[i]);
     pass[i] = newpass;
   } // for i
@@ -2772,7 +2772,7 @@ bool init_pnform::execute()
 
   // misc. static vars
   result one(1L);
-  petri_def::ONE = em->makeLiteral(0, -1, em->INT->addProc(), one);
+  petri_def::ONE = new value(location::NOWHERE(), em->INT->addProc(), one);
 
   // Set up options
   petri_def::pn_debug.initialize(em->OptMan(), "pns",
@@ -2860,7 +2860,7 @@ bool init_pnform::execute()
   formalism* pn = new petri_formalism("pn", "Petri net", longdocs);
   if (!em->registerType(pn)) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register pn type";
       em->stopIO();
     }

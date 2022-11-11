@@ -17,6 +17,7 @@
 #include "type.h"
 #include "expr.h"
 #include "../Utils/messages.h"
+#include "../Utils/location.h"
 
 class symbol;
 class function;
@@ -273,20 +274,14 @@ public:
     io->StartWarning();
     return true;
   }
+  inline void causedBy(const location& w) const {
+    DCASSERT(io);
+    io->CausedBy(w);
+  }
   inline void causedBy(const expr* x) const {
     DCASSERT(io);
-    if (x)
-      io->CausedBy(x->Filename(), x->Linenumber());
-    else
-      io->NoCause();
-  }
-  inline void causedBy(const char* fn, int ln) const {
-    DCASSERT(io);
-    io->CausedBy(fn, ln);
-  }
-  inline void noCause() const {
-    DCASSERT(io);
-    io->NoCause();
+    if (x) io->CausedBy(x->Where());
+    else   io->CausedBy(location::NOWHERE());
   }
   inline void newLine(int delta = 0) const {
     DCASSERT(io);
@@ -454,24 +449,6 @@ public:
 
   // +-----------------------------------------------------------------+
   // |                                                                 |
-  // |                       Building  constants                       |
-  // |                                                                 |
-  // +-----------------------------------------------------------------+
-
-
-  /** Make a "literal" value.
-        @param  file  Filename of definition.
-        @param  line  Line number of definition.
-        @param  t     Type of the value.
-        @param  c     The value to draw from.
-        @return       A new expression.
-  */
-  expr* makeLiteral(const char* file, int line,
-      const type* t, const result& c) const;
-
-
-  // +-----------------------------------------------------------------+
-  // |                                                                 |
   // |                        Building  symbols                        |
   // |                                                                 |
   // +-----------------------------------------------------------------+
@@ -480,32 +457,30 @@ public:
   /** Make an iterator variable.
       I.e., a variable used as an array index, also as for-loop iterators.
       Implemented in forloops.cc.
-        @param  fn    Filename of the variable.
-        @param  ln    Line number of the variable.
+        @param  W     Where defined.
         @param  t     Type of the variable.
         @param  name  Name of the variable.
         @param  vals  Set of values for the variable.
         @return 0, if some error occurred.
                 A new expression, otherwise.
   */
-  symbol* makeIterator(const char* fn, int ln, const type* t,
+  symbol* makeIterator(const location& W, const type* t,
       char* name, expr* vals) const;
 
 
   /** Make a "constant" (function with no parameters) symbol,
       not within a converge block.
       Implemented in symbols.cc.
-        @param  fn    Filename of the variable.
-        @param  ln    Line number of the variable.
+        @param  W     Where defined.
         @param  t     Type of the variable.
         @param  name  Name of the variable.
         @param  rhs   Expression to assign to this symbol.
         @param  deps  List of symbols that must be
-                      "computed" before this one.
+                      computed" before this one.
         @return 0, if some error occurred.
                 A new expression, otherwise.
   */
-  symbol* makeConstant(const char* fn, int ln, const type* t,
+  symbol* makeConstant(const location& W, const type* t,
       char* name, expr* rhs, List <symbol> *deps) const;
 
 
@@ -537,43 +512,40 @@ public:
       which will simply cause the expression to be computed and printed.
       Implemented in stmts.cc.
 
-        @param  fn  Filename.
-        @param  ln  Line number.
+        @param  W     Where defined.
         @param  e   Expression
 
         @return ERROR, if an error ocurred.
                 A new "compute statement", otherwise.
   */
-  expr* makeExprStatement(const char* file, int line, expr* e) const;
+  expr* makeExprStatement(const location& W, expr* e) const;
 
 
   /** Make an option-setting statement.
       Implemented in stmts.cc.
 
-        @param  file  Filename.
-        @param  line  Line number.
+        @param  W     Where defined.
         @param  o     Option to set.
         @param  e     Value to assign to the option.
 
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line,
+  expr* makeOptionStatement(const location& W,
         option *o, expr *e) const;
 
 
   /** Make an option-setting statement.
       Implemented in stmts.cc.
 
-        @param  file  Filename.
-        @param  line  Line number.
+        @param  W     Where defined.
         @param  o     Option to set.
         @param  v     Constant to assign to the option.
 
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line,
+  expr* makeOptionStatement(const location& W,
       option *o, option_enum *v) const;
 
 
@@ -583,8 +555,7 @@ public:
       for display purposes.
       Implemented in stmts.cc.
 
-        @param  file  Filename.
-        @param  line  Line number.
+        @param  W     Where defined.
         @param  o     Option.
         @param  check If true, we will "check the box";
                       otherwise, we will "uncheck the box".
@@ -594,7 +565,7 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const char* file, int line, option* o,
+  expr* makeOptionStatement(const location& W, option* o,
     bool check, option_enum **vlist, int nv) const;
 
 
@@ -605,8 +576,7 @@ public:
       will execute another statement (void-type expression).
       Implemented in forloops.cc.
 
-        @param  fn    Filename.
-        @param  ln    Line number.
+        @param  W     Where defined.
         @param  iters Array of iterators.
         @param  dim   Dimension of the loop (number of iterators).
         @param  stmt  The statement to execute within the loop.
@@ -615,7 +585,7 @@ public:
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
-  expr* makeForLoop(const char* fn, int ln,
+  expr* makeForLoop(const location& W,
       symbol** iters, int dim, expr* stmt) const;
 
 
@@ -628,8 +598,7 @@ public:
   /** Make a new array.
       Implemented in arrays.cc.
 
-        @param  fn      Filename of the array.
-        @param  ln      Line number of the array.
+        @param  W     Where defined.
         @param  t       Type of the array.
         @param  name    Name of the array.
         @param  indexes List of iterators, which define the "shape"
@@ -640,7 +609,7 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new array, otherwise.
   */
-  symbol* makeArray(const char* fn, int ln, const type* t,
+  symbol* makeArray(const location& W, const type* t,
       char* n, symbol** indexes, int dim) const;
 
   /** Make an array assignment statement, not within a converge block.
@@ -648,15 +617,14 @@ public:
         int a[i][j][k] := rhs;
       Implemented in arrays.cc.
 
-        @param  fn    Filename of the statement.
-        @param  ln    Line number of the statement.
+        @param  W     Where defined.
         @param  array Array to use for the assignment.
                       Must have been created by a call to MakeArray().
         @param  rhs   The right-hand side of the assignment.
         @return ERROR, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayAssign(const char* fn, int ln,
+  expr* makeArrayAssign(const location& W,
       symbol* array, expr* rhs) const;
 
   // +-----------------------------------------------------------------+
@@ -671,8 +639,7 @@ public:
         a[3][5+n][4-3*foobar(7, x)]
       Implemented in arrays.cc.
 
-        @param  fn      Filename of the expression.
-        @param  ln      Line number of the expression.
+        @param  W     Where defined.
         @param  array   Array to use.
                         Must have been created by a call to MakeArray().
         @param  indexes List of indices to be "passed" to the array.
@@ -680,20 +647,19 @@ public:
         @return ERROR, if some error occurred (will make noise).
                 A new expression, otherwise.
   */
-  expr* makeArrayCall(const char* fn, int ln,
+  expr* makeArrayCall(const location& W,
       symbol* array, expr** indexes, int dim) const;
 
   /** Make an expression to call a function.
       Passed parameters must match exactly in type.
 
-        @param  fn  Filename we are declared in.
-        @param  ln  line number we are declared on.
+        @param  W     Where defined.
         @param  f   The function to call.  Can be user-defined,
                     internal, or pretty much anything.
         @param  p   The parameters to pass, as an array of expressions.
         @param  np  Number of passed parameters.
   */
-  expr* makeFunctionCall(const char* fn, int ln,
+  expr* makeFunctionCall(const location& W,
       symbol *f, expr **p, int np) const;
 
   /** Find a (list of) function callable within a model.
@@ -719,20 +685,18 @@ public:
   /** Make a variable within a converge block.
       Implemented in converge.cc.
 
-        @param  fn  Filename of the variable.
-        @param  ln  Line number of the variable.
+        @param  W     Where defined.
         @param  t   Type of the variable.
         @param  n   Name of the variable.
         @return 0, if some error occurred (will make noise).
                 A new variable, otherwise.
   */
-  symbol* makeCvgVar(const char* fn, int ln, const type* t, char* name) const;
+  symbol* makeCvgVar(const location& W, const type* t, char* name) const;
 
   /** Make a converge statement.
       Implemented in converge.cc.
 
-        @param  fn    Filename.
-        @param  ln    Line number.
+        @param  W     Where defined.
         @param  stmt  The statement to execute within the converge.
                       (can be a statement block).
         @param  top   True iff this is the topmost converge statement.
@@ -741,7 +705,7 @@ public:
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
-  expr* makeConverge(const char* fn, int ln, expr* stmt, bool top) const;
+  expr* makeConverge(const location& W, expr* stmt, bool top) const;
 
 
   /** Make a guess statement for inside a converge block.
@@ -749,15 +713,14 @@ public:
         real foo guess rhs;
       Implemented in converge.cc.
 
-        @param  fn      Filename of the statement.
-        @param  ln      Line number of the statement.
+        @param  W     Where defined.
         @param  cvgvar  Converge variable to use.
                         Must have been created by a call to MakeCvgVar().
         @param  rhs     The right-hand side of the guess.
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeCvgGuess(const char* fn, int ln, symbol* cvgvar, expr* rhs) const;
+  expr* makeCvgGuess(const location& W, symbol* cvgvar, expr* rhs) const;
 
 
   /** Make an assignment statement for inside a converge block.
@@ -766,15 +729,14 @@ public:
       that appear within a converge block.
       Implemented in converge.cc.
 
-        @param  fn      Filename of the statement.
-        @param  ln      Line number of the statement.
+        @param  W     Where defined.
         @param  cvgvar  Converge variable to use.
                         Must have been created by a call to MakeCvgVar().
         @param  rhs     The right-hand side of the assignment.
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeCvgAssign(const char* fn, int ln, symbol* cvgvar, expr* rhs) const;
+  expr* makeCvgAssign(const location& W, symbol* cvgvar, expr* rhs) const;
 
 
   /** Make an array guess statement for inside a converge block.
@@ -782,15 +744,14 @@ public:
         real foo[i][j] guess rhs;
       Implemented in converge.cc.
 
-        @param  fn      Filename of the statement.
-        @param  ln      Line number of the statement.
+        @param  W     Where defined.
         @param  cvgvar  Converge variable to use.
                         Must have been created by a call to MakeCvgVar().
         @param  rhs     The right-hand side of the guess.
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayCvgGuess(const char* fn, int ln, symbol* array, expr* guess) const;
+  expr* makeArrayCvgGuess(const location& W, symbol* array, expr* guess) const;
 
 
   /** Make an array assignment statement, within a converge block.
@@ -799,15 +760,14 @@ public:
       that appear within a converge block.
       Implemented in converge.cc.
 
-        @param  fn    Filename of the statement.
-        @param  ln    Line number of the statement.
+        @param  W     Where defined.
         @param  array Array to use for the assignment.
                       Must have been created by a call to MakeArray().
         @param  rhs   The right-hand side of the assignment.
         @return ERROR, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayCvgAssign(const char* fn, int ln,
+  expr* makeArrayCvgAssign(const location& W,
         symbol* array, expr* rhs) const;
 
 
@@ -882,8 +842,7 @@ public:
 
   /** Make a type conversion expression.
 
-        @param  file    Filename of the expression.
-        @param  line    Line number of the expression.
+        @param  W     Where defined.
         @param  newtype The desired type.
         @param  e       The original expression.
         @return 0,      if e is 0.
@@ -892,15 +851,14 @@ public:
                 e,      if e already has type \a newtype.
                 a new expression, otherwise.
   */
-  virtual expr* makeTypecast(const char* file, int line,
+  virtual expr* makeTypecast(const location& W,
       const type* newtype, expr* e) const = 0;
 
   /** Make a type conversion expression.
       If a component of e is not promotable as requested, we return ERROR.
       If all components of e are already of the specified type, we return it.
 
-        @param  file  Filename of the expression.
-        @param  line  Line number of the expression.
+        @param  W     Where defined.
         @param  proc  Should components of fp be promoted to proc.
         @param  rand  Should components of fp be promoted to rand.
         @param  fp    An expression whose type we want to match.
@@ -913,7 +871,7 @@ public:
                 e,      if e already has type \a newtype.
                 a new expression, otherwise.
   */
-  expr* makeTypecast(const char* file, int line,
+  expr* makeTypecast(const location& W,
       bool proc, bool rand, const expr *fp, expr* e) const;
 
   /** Make a type conversion expression.
@@ -1044,22 +1002,20 @@ public:
 
   /** Make a unary operation expression.
 
-        @param  file  Filename of the expression.
-        @param  line  Line number of the expression.
+        @param  W     Where defined.
         @param  op    The operation to perform.
         @param  opnd  The operand.
         @return NULL,   if opnd is NULL.
                 ERROR,  if opnd is ERROR, or if there is a type mismatch.
                 a new expression, otherwise.
   */
-  virtual expr* makeUnaryOp(const char* file, int line,
+  virtual expr* makeUnaryOp(const location& W,
       unary_opcode op, expr* opnd) const = 0;
 
 
   /** Make a binary operation expression.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  left  The left operand.
         @param  op    The operation to perform.
         @param  rt    The right operand.
@@ -1069,14 +1025,13 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeBinaryOp(const char* fn, int ln,
+  virtual expr* makeBinaryOp(const location& W,
       expr* left, binary_opcode op, expr* rt) const = 0;
 
 
   /** Make a trinary operation expression.
 
-        @param  fn  Filename of the expression.
-        @param  ln  Line number of the expression.
+        @param  W     Where defined.
         @param  op  The operation to perform.
         @param  l   The left operand.
         @param  m   The middle operand.
@@ -1086,14 +1041,13 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
+  virtual expr* makeTrinaryOp(const location& W, trinary_opcode op,
         expr* l, expr* m, expr* r) const = 0;
 
 
   /** Make an associative operation expression.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  op    The operation to perform.
         @param  opnds Array of operands.
         @param  f     For each operand, should it be "flipped"?
@@ -1106,7 +1060,7 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op,
+  virtual expr* makeAssocOp(const location& W, assoc_opcode op,
         expr** opnds, bool* f, int nops) const = 0;
 
 
@@ -1118,8 +1072,7 @@ public:
 
 
   /** Start construction of a model definition, for a given model type.
-        @param  fn      Filename of the model definition.
-        @param  ln      Line number of the model definition.
+        @param  W     Where defined.
         @param  t       Type of formalism.
         @param  name    Name of the model.
         @param  formals List of formal parameters.
@@ -1128,7 +1081,7 @@ public:
         @return NULL,  if some error occurred.
                 A new model definition, otherwise.
   */
-  model_def* makeModel(const char* fn, int ln, const type* t,
+  model_def* makeModel(const location& W, const type* t,
         char* name, symbol** formals, int np) const;
 
   /** Make a symbol within a model definition.
@@ -1136,14 +1089,13 @@ public:
       each time the model is instantiated.
       Implemented in mod_vars.cc.
 
-        @param  fn    Filename of the symbol.
-        @param  ln    Line number of the symbol.
+        @param  W     Where defined.
         @param  t     Type of the symbol.
         @param  name  Name of the symbol.
 
         @return  a new placeholder symbol.
   */
-  symbol* makeModelSymbol(const char* fn, int ln,
+  symbol* makeModelSymbol(const location& W,
         const type* t, char* name) const;
 
 
@@ -1152,8 +1104,7 @@ public:
       each time the model is instantiated.
       Implemented in mod_vars.cc.
 
-        @param  fn      Filename of the array.
-        @param  ln      Line number of the array.
+        @param  W     Where defined.
         @param  t       Type of the array.
         @param  name    Name of the array.
         @param  indexes List of iterators, which define the "shape"
@@ -1164,7 +1115,7 @@ public:
         @return  0, if some error occurred (will make noise).
                 A new array, otherwise.
   */
-  symbol* makeModelArray(const char* fn, int ln, const type* t, char* n,
+  symbol* makeModelArray(const location& W, const type* t, char* n,
       symbol** indexes, int dim) const;
 
 
@@ -1174,8 +1125,7 @@ public:
       within a model.
       Implemented in mod_vars.cc.
 
-        @param  fn      Filename of the declaration.
-        @param  ln      Line number of the declaration.
+        @param  W     Where defined.
         @param  p       Model definition block containing the declaration.
         @param  t       Type of the variables.
         @param  bounds  Bounds for the variables (a set of something), or 0.
@@ -1187,7 +1137,7 @@ public:
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelVarDecs(const char* fn, int ln, model_def* p,
+  expr* makeModelVarDecs(const location& W, model_def* p,
     const type* t, expr* bounds, symbol** names, int N) const;
 
 
@@ -1197,8 +1147,7 @@ public:
       within a model.
       Implemented in mod_vars.cc.
 
-        @param  fn      Filename of the declaration.
-        @param  ln      Line number of the declaration.
+        @param  W     Where defined.
         @param  p       Model definition block containing the declaration.
         @param  t       Type of the arrays.
         @param  arrays  Names of the arrays
@@ -1209,15 +1158,14 @@ public:
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelArrayDecs(const char* fn, int ln, model_def* p,
+  expr* makeModelArrayDecs(const location& W, model_def* p,
       const type* t, symbol** arrays, int N) const;
 
 
   /** Make a statement to build a measure in a model.
       Implemented in mod_vars.cc.
 
-        @param  fn  Filename of the statement.
-        @param  ln  Line number of the statement.
+        @param  W     Where defined.
         @param  p   Model definition block containing the statement.
         @param  m   The measure.
         @param  rhs Right-hand side of the measure assignment.
@@ -1226,15 +1174,14 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureAssign(const char* fn, int ln,
+  expr* makeModelMeasureAssign(const location& W,
       model_def* p, symbol* m, expr* rhs) const;
 
 
   /** Make a statement to build an array of measures in a model.
       Implemented in mod_vars.cc.
 
-        @param  fn  Filename of the statement.
-        @param  ln  Line number of the statement.
+        @param  W     Where defined.
         @param  p   Model definition block containing the statement.
         @param  am  The array of measures.
         @param  rhs Right-hand side of the measure assignment.
@@ -1243,7 +1190,7 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureArray(const char* fn, int ln,
+  expr* makeModelMeasureArray(const location& W,
       model_def* p, symbol* am, expr* rhs) const;
 
 
@@ -1280,8 +1227,7 @@ public:
       I.e., to be used when we call the model definition directly.
       Implemented in mod_def.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  p     Model definition block containing the measure.
         @param  pass  Parameters to pass to the model definition.
         @param  np    Number of passed parameters.
@@ -1292,7 +1238,7 @@ public:
                         as appropriate on the error channel.
                 A new expression p(pass).name, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln, model_def* p,
+  expr* makeMeasureCall(const location& W, model_def* p,
       expr** pass, int np, const char* name) const;
 
   /** Make a measure array call expression.
@@ -1301,8 +1247,7 @@ public:
       I.e., to be used when we call the model definition directly.
       Implemented in mod_def.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  p     Model definition block containing the measure.
         @param  pass  Parameters to pass to the model definition.
         @param  np    Number of passed parameters.
@@ -1315,7 +1260,7 @@ public:
                         messages relayed as appropriate on the error channel.
                 A new expression p(pass).name[i], otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln, model_def* p,
+  expr* makeMeasureCall(const location& W, model_def* p,
       expr** pass, int np, const char* name,
       expr** i, int ni) const;
 
@@ -1325,15 +1270,14 @@ public:
       where m is a constant with type "model".
       Implemented in mod_inst.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  mi    A model instance.
         @param  name  Name of the measure.
 
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln,
+  expr* makeMeasureCall(const location& W,
       symbol* mi, const char* name) const;
 
   /** Make a measure array call expression.
@@ -1342,8 +1286,7 @@ public:
       where m is a constant with type "model".
       Implemented in mod_inst.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  mi    A model instance.
         @param  name  Name of the measure.
         @param  i     Passed array indexes.
@@ -1352,7 +1295,7 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln,
+  expr* makeMeasureCall(const location& W,
       symbol* mi, const char* name,
       expr** i, int ni) const;
 
@@ -1362,8 +1305,7 @@ public:
       where m is a constant with type "model".
       Implemented in mod_inst.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  mi    A model instance array.
         @param  i     Passed array indexes.
         @param  ni    Number of passed indexes.
@@ -1372,7 +1314,7 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln,
+  expr* makeMeasureCall(const location& W,
       symbol* mi, expr** i, int ni,
       const char* name) const;
 
@@ -1383,8 +1325,7 @@ public:
       where m is a constant with type "model".
       Implemented in mod_inst.cc.
 
-        @param  fn    Filename of the expression.
-        @param  ln    Line number of the expression.
+        @param  W     Where defined.
         @param  mi    A model instance array.
         @param  i     Passed array indexes, for mi.
         @param  ni    Number of passed indexes for mi.
@@ -1395,7 +1336,7 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const char* fn, int ln,
+  expr* makeMeasureCall(const location& W,
       symbol* mi, expr** i, int ni,
       const char* name, expr** j, int nj) const;
 

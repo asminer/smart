@@ -42,7 +42,7 @@ protected:
   /// The actual addition / subtraction expression.
   class expression : public summation {
   public:
-    expression(const char* fn, int line, const type* t, 
+    expression(const location &W, const type* t,
     expr **x, bool* f, int n);
     virtual void Compute(traverse_data &x);
   protected:
@@ -51,7 +51,7 @@ protected:
 
 public:
   int_add_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -66,7 +66,7 @@ protected:
   /// The actual multiply expression; only products.
   class expression : public product {
     public:
-      expression(const char* fn, int line, const type* t, expr **x, int n);
+      expression(const location &W, const type* t, expr **x, int n);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -76,7 +76,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 

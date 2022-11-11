@@ -494,22 +494,22 @@ bool superman::isCastable(const type* t1, const type* t2) const
   return findRules(general_rules, casting_rules, t1, midt, t2, g, s);
 }
 
-inline expr* convert(const char* file, int line, expr* e,
+inline expr* convert(const location& W, expr* e,
       const type* t1mod, const type* newtype,
       const general_conv* g, const specific_conv* s)
 {
   if (0==g)
-   return s->convert(file, line, e, newtype);
+   return s->convert(W, e, newtype);
 
   if (!g->requiresConversion(t1mod, newtype))
-  return s->convert(file, line, e, newtype);
+  return s->convert(W, e, newtype);
 
-  expr* me = s->convert(file, line, e, t1mod);
-  return g->convert(file, line, me, newtype);
+  expr* me = s->convert(W, e, t1mod);
+  return g->convert(W, me, newtype);
 }
 
 
-expr* superman::makeTypecast(const char* file, int line,
+expr* superman::makeTypecast(const location& W,
       const type* newtype, expr* e) const
 {
   if (!isOrdinary(e))  return e;
@@ -524,18 +524,18 @@ expr* superman::makeTypecast(const char* file, int line,
 
   // Try generic rules
   const general_conv* g = findRule(general_rules, oldt, newtype);
-  if (g) return g->convert(file, line, e, newtype);
+  if (g) return g->convert(W, e, newtype);
 
   // Try promotion rules
   const specific_conv* s = 0;
   const type* midt = 0;
   if (findRules(general_rules, promotion_rules, oldt, midt, newtype, g, s)) {
-    return convert(file, line, e, midt, newtype, g, s);
+    return convert(W, e, midt, newtype, g, s);
   }
 
   // Try casting rules
   if (findRules(general_rules, casting_rules, oldt, midt, newtype, g, s)) {
-    return convert(file, line, e, midt, newtype, g, s);
+    return convert(W, e, midt, newtype, g, s);
   }
 
   // Slipped through the cracks?  Must be impossible.
@@ -618,7 +618,7 @@ const type* superman::getTypeOf(unary_opcode op, const type* x) const
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      noCause();
+      causedBy(0);
       internal() << "Cannot decide on unary operation: ";
       internal() << getOp(op) << " ";
       if (x)  internal() << x->getName();
@@ -658,7 +658,7 @@ const type* superman
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      noCause();
+      causedBy(0);
       internal() << "Cannot decide on binary operation: ";
       if (lt) internal() << lt->getName();
       else    internal() << "notype";
@@ -700,7 +700,7 @@ const type* superman::getTypeOf(trinary_opcode op, const type* lt,
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      noCause();
+      causedBy(0);
       internal() << "Cannot decide on trinary operation: ";
       if (lt) internal() << lt->getName();
       else    internal() << "notype";
@@ -745,7 +745,7 @@ const type* superman
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      noCause();
+      causedBy(0);
       internal() << "Cannot decide on associative operation: ";
       if (lt) internal() << lt->getName();
       else    internal() << "notype";
@@ -759,7 +759,7 @@ const type* superman
 
 
 
-expr* superman::makeUnaryOp(const char* file, int line,
+expr* superman::makeUnaryOp(const location& W,
       unary_opcode op, expr* opnd) const
 {
   if (!isOrdinary(opnd))  return opnd;  // null, error, or default
@@ -780,7 +780,7 @@ expr* superman::makeUnaryOp(const char* file, int line,
 
   if (0==num_matches) {
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Undefined unary operation: ";
       cerr() << getOp(op) << " ";
       opnd->PrintType(cerr());
@@ -792,9 +792,9 @@ expr* superman::makeUnaryOp(const char* file, int line,
 
   if (1==num_matches) {
     DCASSERT(match);
-    expr* answer = match->makeExpr(file, line, opnd);
+    expr* answer = match->makeExpr(W, opnd);
     if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(file, line);
+      causedBy(W);
       internal() << "Couldn't build unary expression for " << getOp(op);
       stopIO();
     }
@@ -803,7 +803,7 @@ expr* superman::makeUnaryOp(const char* file, int line,
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      causedBy(file, line);
+      causedBy(W);
       internal() << "Cannot decide on unary operation: ";
       internal() << getOp(op) << " ";
       opnd->PrintType(internal());
@@ -812,7 +812,7 @@ expr* superman::makeUnaryOp(const char* file, int line,
   return 0;
 }
 
-expr* superman::makeBinaryOp(const char* fn, int ln,
+expr* superman::makeBinaryOp(const location &W,
       expr* lt, binary_opcode op, expr* rt) const
 {
   if (0==lt || 0==rt) {
@@ -854,7 +854,7 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
 
   if (0==num_matches) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Undefined binary operation: ";
       lt->PrintType(cerr());
       cerr() << " " << getOp(op) << " ";
@@ -868,9 +868,9 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
 
   if (1==num_matches) {
     DCASSERT(match);
-    expr* answer = match->makeExpr(fn, ln, lt, rt);
+    expr* answer = match->makeExpr(W, lt, rt);
     if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(fn, ln);
+      causedBy(W);
       internal() << "Couldn't build binary expression for " << getOp(op);
       stopIO();
     }
@@ -879,7 +879,7 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-    causedBy(fn, ln);
+    causedBy(W);
     internal() << "Cannot decide on binary operation: ";
     lt->PrintType(internal());
     internal() << " " << getOp(op) << " ";
@@ -889,7 +889,7 @@ expr* superman::makeBinaryOp(const char* fn, int ln,
   return 0;
 }
 
-expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
+expr* superman::makeTrinaryOp(const location &W, trinary_opcode op,
         expr* l, expr* m, expr* r) const
 {
   if (0==l || 0==m || 0==r) {
@@ -934,7 +934,7 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
 
   if (0==num_matches) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Undefined trinary operation: ";
       l->PrintType(cerr());
       cerr() << " " << getFirst(op) << " ";
@@ -951,9 +951,9 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
 
   if (1==num_matches) {
     DCASSERT(match);
-    expr* answer = match->makeExpr(fn, ln, l, m, r);
+    expr* answer = match->makeExpr(W, l, m, r);
     if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(fn, ln);
+      causedBy(W);
       internal() << "Couldn't build trinary expression for ";
       internal() << getFirst(op) << " ";
       internal() << getSecond(op);
@@ -964,7 +964,7 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-    causedBy(fn, ln);
+    causedBy(W);
     internal() << "Cannot decide on trinary operation: ";
     l->PrintType(internal());
     cerr() << " " << getFirst(op) << " ";
@@ -976,7 +976,7 @@ expr* superman::makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
   return 0;
 }
 
-expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
+expr* superman::makeAssocOp(const location &W, assoc_opcode op,
         expr** opnds, bool* flip, int N) const
 {
   bool has_null = false;
@@ -1026,7 +1026,7 @@ expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
 
   if (0==num_matches) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Undefined associative operation: ";
       if (opnds[0])  opnds[0]->PrintType(cerr());
       else    cerr() << NULTYPE->getName();
@@ -1046,9 +1046,9 @@ expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
 
   if (1==num_matches) {
     DCASSERT(match);
-    expr* answer = match->makeExpr(fn, ln, opnds, flip, N);
+    expr* answer = match->makeExpr(W, opnds, flip, N);
     if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(fn, ln);
+      causedBy(W);
       internal() << "Couldn't build associative expression for ";
       internal() << getOp(0, op);
       stopIO();
@@ -1058,7 +1058,7 @@ expr* superman::makeAssocOp(const char* fn, int ln, assoc_opcode op,
 
   // too many matches, this should not happen!
   if (startInternal(__FILE__, __LINE__)) {
-      causedBy(fn, ln);
+      causedBy(W);
       internal() << "Cannot decide on associative operation: ";
       if (opnds[0])   opnds[0]->PrintType(internal());
       else            internal() << NULTYPE->getName();

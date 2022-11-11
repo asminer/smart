@@ -27,16 +27,16 @@ assoc_op::~assoc_op()
 // *                                                                *
 // ******************************************************************
 
-assoc::assoc(const char* fn, int line, exprman::assoc_opcode oc, 
-  const type* t, expr **x, int n) : expr(fn, line, t) 
+assoc::assoc(const location &W, exprman::assoc_opcode oc,
+  const type* t, expr **x, int n) : expr(W, t)
 {
   opnd_count = n;
   operands = x;
   opcode = oc;
 }
 
-assoc::assoc(const char* fn, int line, exprman::assoc_opcode oc, 
-  typelist* t, expr **x, int n) : expr(fn, line, t) 
+assoc::assoc(const location &W, exprman::assoc_opcode oc,
+  typelist* t, expr **x, int n) : expr(W, t)
 {
   opnd_count = n;
   operands = x;
@@ -67,7 +67,7 @@ void assoc::Traverse(traverse_data &x)
       x.answer->setPtr(MakeAnother(newops, opnd_count));
       return;
     }
- 
+
     case traverse_data::BuildDD: {
       DCASSERT(x.answer);
       DCASSERT(x.ddlib);
@@ -92,7 +92,7 @@ void assoc::Traverse(traverse_data &x)
             // error
             Delete(dd);
             dd = 0;
-          } 
+          }
           Delete(tmp);
         } else {
           Delete(dd);
@@ -149,8 +149,8 @@ expr* assoc::MakeAnother(expr **newx, int newn)
 // *                                                                *
 // ******************************************************************
 
-flipassoc::flipassoc(const char* fn, int line, exprman::assoc_opcode oc,
- const type* t, expr** x, bool* f, int n) : assoc(fn, line, oc, t, x, n)
+flipassoc::flipassoc(const location &W, exprman::assoc_opcode oc,
+ const type* t, expr** x, bool* f, int n) : assoc(W, oc, t, x, n)
 {
   flip = checkFlip(f, n);
 }
@@ -235,7 +235,7 @@ void flipassoc::Traverse(traverse_data &x)
   }
 }
 
-bool flipassoc::Print(OutputStream &s, int) const 
+bool flipassoc::Print(OutputStream &s, int) const
 {
   s.Put('(');
   if (flip && flip[0]) s << em->getOp(true, opcode);
@@ -290,9 +290,9 @@ expr* flipassoc::buildAnother(expr** newx, int newn) const
 // *                                                                *
 // ******************************************************************
 
-summation::summation(const char* fn, int line, exprman::assoc_opcode oc, 
+summation::summation(const location &W, exprman::assoc_opcode oc,
   const type* t, expr** x, bool* f, int n)
- : flipassoc(fn, line, oc, t, x, f, n)
+ : flipassoc(W, oc, t, x, f, n)
 {
 }
 
@@ -302,16 +302,16 @@ summation::summation(const char* fn, int line, exprman::assoc_opcode oc,
 // *                                                                *
 // ******************************************************************
 
-product::product(const char* fn, int line, exprman::assoc_opcode oc,
+product::product(const location &W, exprman::assoc_opcode oc,
   const type* t, expr** x, bool* f, int n)
- : flipassoc(fn, line, oc, t, x, f, n)
+ : flipassoc(W, oc, t, x, f, n)
 {
 }
 
 void product::Traverse(traverse_data &x)
 {
   switch (x.which) {
-    case traverse_data::GetProducts: 
+    case traverse_data::GetProducts:
         if (flip) for (int i=0; i<opnd_count; i++) if (flip[i]) {
           flipassoc::Traverse(x);  // overkill, for now...
           return;

@@ -53,7 +53,7 @@ private:
   }
 public:
   fcall(const expr* fnlnt, function* f, expr** p, int np);
-  fcall(const char* fn, int line, const type* t, function* f, expr** p, int np);
+  fcall(const location &W, const type* t, function* f, expr** p, int np);
   virtual ~fcall();
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
@@ -71,8 +71,8 @@ fcall::fcall(const expr* fnlnt, function* f, expr** p, int np)
   DCASSERT(GetModelType() == func->DetermineModelType(p, np));
 }
 
-fcall::fcall(const char* fn, int line, const type* t,
-  function* f, expr** p, int np) : expr(fn, line, t)
+fcall::fcall(const location &W, const type* t,
+  function* f, expr** p, int np) : expr(W, t)
 {
   construct(f, p, np);
   SetModelType(func->DetermineModelType(p, np));
@@ -176,8 +176,8 @@ function::function(const function* f)
 {
 }
 
-function::function(const char* fn, int line, const type* t, char* n)
- : symbol(fn, line, t, n)
+function::function(const location &W, const type* t, char* n)
+ : symbol(W, t, n)
 {
 }
 
@@ -214,7 +214,7 @@ const model_def* function::DetermineModelType(expr** pass, int np)
 void function::Compute(traverse_data &x)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Trying to compute a function expression: ";
     Print(em->internal(), 0);
     em->stopIO();
@@ -302,7 +302,7 @@ class named_param : public symbol {
   expr* pass;
 
 public:
-  named_param(const char* fn, int line, char* n, expr* p);
+  named_param(const location &W, char* n, expr* p);
   virtual ~named_param();
 
   virtual bool Print(OutputStream &s, int width) const;
@@ -313,8 +313,8 @@ public:
 };
 
 
-named_param::named_param(const char* fn, int line, char* n, expr* p)
- : symbol(fn, line, (const type*) 0, n)
+named_param::named_param(const location &W, char* n, expr* p)
+ : symbol(W, (const type*) 0, n)
 {
   SetType(p);
   pass = p;
@@ -373,7 +373,7 @@ public:
   /// Use this constructor for builtin functions, aggregate params
   formal_param(typelist* t, const char* n);
   /// Use this constructor for user-defined functions.
-  formal_param(const char* fn, int line, const type* t, char* n);
+  formal_param(const location &W, const type* t, char* n);
   virtual ~formal_param();
 
   inline void SetDefault(expr *d) { deflt = d; hasdefault = true; }
@@ -396,19 +396,19 @@ formal_param::formal_param(const formal_param* fp) : symbol(fp)
 }
 
 formal_param::formal_param(const type* t, const char* n)
-  : symbol(0, -1, t, n ? strdup(n) : 0)
+  : symbol(location::NOWHERE(), t, n ? strdup(n) : 0)
 {
   Construct();
 }
 
 formal_param::formal_param(typelist* t, const char* n)
-  : symbol(0, -1, t, n ? strdup(n) : 0)
+  : symbol(location::NOWHERE(), t, n ? strdup(n) : 0)
 {
   Construct();
 }
 
-formal_param::formal_param(const char* fn, int line, const type* t, char* n)
-  : symbol(fn, line, t, n)
+formal_param::formal_param(const location &W, const type* t, char* n)
+  : symbol(W, t, n)
 {
   Construct();
 }
@@ -462,7 +462,7 @@ public:
   /// Use this constructor for builtin functions, aggregate params
   fp_onstack(typelist* t, const char* n);
   /// Use this constructor for user-defined functions.
-  fp_onstack(const char* fn, int line, const type* t, char* n);
+  fp_onstack(const location &W, const type* t, char* n);
   virtual ~fp_onstack();
 
   inline void LinkStackLocation(result** s, int off) {
@@ -489,8 +489,8 @@ fp_onstack::fp_onstack(typelist* t, const char* n) : formal_param(t, n)
   Construct();
 }
 
-fp_onstack::fp_onstack(const char* fn, int line, const type* t, char* n)
-  : formal_param(fn, line, t, n)
+fp_onstack::fp_onstack(const location &W, const type* t, char* n)
+  : formal_param(W, t, n)
 {
   Construct();
 }
@@ -523,7 +523,7 @@ void fp_onstack::Compute(traverse_data &x)
 class fp_wrapper : public formal_param {
   formal_param* link;
 public:
-  fp_wrapper(const char* fn, int line, const type* t, char* n);
+  fp_wrapper(const location &W, const type* t, char* n);
 
   inline formal_param* newCopy() {
 #ifdef DEBUG_FUNC_WRAPPERS
@@ -537,8 +537,8 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-fp_wrapper::fp_wrapper(const char* fn, int line, const type* t, char* n)
-  : formal_param(fn, line, t, n)
+fp_wrapper::fp_wrapper(const location &W, const type* t, char* n)
+  : formal_param(W, t, n)
 {
   link = 0;
 }
@@ -649,7 +649,7 @@ void fplist::build(int n, const type* t, const char* name, bool deflt)
   result c;
   c.setBool(deflt);
   formal[n]->SetDefault(
-    new value(0, -1, t, c)
+    new value(location::NOWHERE(), t, c)
   );
 }
 
@@ -660,7 +660,7 @@ void fplist::build(int n, const type* t, const char* name, long deflt)
   result c;
   c.setInt(deflt);
   formal[n]->SetDefault(
-    new value(0, -1, t, c)
+    new value(location::NOWHERE(), t, c)
   );
 }
 
@@ -671,7 +671,7 @@ void fplist::build(int n, const type* t, const char* name, double deflt)
   result c;
   c.setReal(deflt);
   formal[n]->SetDefault(
-    new value(0, -1, t, c)
+    new value(location::NOWHERE(), t, c)
   );
 }
 
@@ -1075,7 +1075,7 @@ int fplist
 // ******************************************************************
 
 internal_func::internal_func(const type* t, const char* name)
- : function(" internally", -1, t, strdup(name))
+ : function(location::INTERNALLY(), t, strdup(name))
 {
   docs = 0;
   hidden = false;
@@ -1240,7 +1240,7 @@ protected:
   expr* return_expr;
 public:
   user_func(function* f, formal_param** pl, int np);
-  user_func(const char* fn, int line, const type* t, char* n,
+  user_func(const location &W, const type* t, char* n,
            formal_param **pl, int np);
   virtual ~user_func();
 
@@ -1269,7 +1269,7 @@ public:
   virtual void DocumentBehavior(doc_formatter* df) const;
   inline void ShowWhereDefined(OutputStream &s) const {
     if (return_expr) {
-      s.PutFile(return_expr->Filename(), return_expr->Linenumber());
+      s << Where();
     }
   };
   virtual int maxNamedParams() const;
@@ -1282,8 +1282,8 @@ user_func::user_func(function* f, formal_param** pl, int np) : function(f)
   return_expr = 0;
 }
 
-user_func::user_func(const char* fn, int line, const type* t, char* n,
-  formal_param **pl, int np) : function(fn, line, t, n)
+user_func::user_func(const location &W, const type* t, char* n,
+  formal_param **pl, int np) : function(W, t, n)
 {
   formals.setAll(np, pl, false);
   return_expr = 0;
@@ -1355,8 +1355,7 @@ bool user_func::DocumentHeader(doc_formatter* df) const
 
 void user_func::DocumentBehavior(doc_formatter* df) const
 {
-  df->Out() << "Defined ";
-  df->Out().PutFile(Filename(), Linenumber());
+  df->Out() << "Defined " << Where();
 }
 
 int user_func::maxNamedParams() const
@@ -1388,7 +1387,7 @@ class top_user_func : public user_func {
   static result* stackptr;
 public:
   top_user_func(function* f, formal_param** pl, int np);
-  top_user_func(const char* fn, int line, const type* t, char* n,
+  top_user_func(const location &W, const type* t, char* n,
            formal_param **pl, int np);
 
   virtual void ResetFormals(formal_param** newformal, int nfp);
@@ -1413,8 +1412,8 @@ top_user_func::top_user_func(function* f, formal_param** pl, int np)
   formals.setStack(&stackptr);
 }
 
-top_user_func::top_user_func(const char* fn, int line, const type* t, char* n,
-  formal_param **pl, int np) : user_func(fn, line, t, n, pl, np)
+top_user_func::top_user_func(const location &W, const type* t, char* n,
+  formal_param **pl, int np) : user_func(W, t, n, pl, np)
 {
   formals.setStack(&stackptr);
 }
@@ -1501,7 +1500,7 @@ class wrapped_user_func : public user_func {
 protected:
   top_user_func* link;
 public:
-  wrapped_user_func(const char* fn, int line, const type* t, char* n,
+  wrapped_user_func(const location &W, const type* t, char* n,
            formal_param **pl, int np);
   virtual void ResetFormals(formal_param** newformal, int nfp);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
@@ -1517,8 +1516,8 @@ public:
   symbol* instantiate();
 };
 
-wrapped_user_func::wrapped_user_func(const char* fn, int line, const type* t,
-  char* n, formal_param **pl, int np) : user_func(fn, line, t, n, pl, np)
+wrapped_user_func::wrapped_user_func(const location &W, const type* t,
+  char* n, formal_param **pl, int np) : user_func(W, t, n, pl, np)
 {
   link = 0;
 }
@@ -1590,7 +1589,7 @@ class func_stmt : public expr {
   wrapped_user_func* wuf;
   model_def* parent;
 public:
-  func_stmt(const char* fn, int ln, model_def* p, wrapped_user_func* f);
+  func_stmt(const location &W, model_def* p, wrapped_user_func* f);
   virtual ~func_stmt();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -1599,8 +1598,8 @@ public:
 };
 
 func_stmt
-::func_stmt(const char* fn, int ln, model_def* p, wrapped_user_func* f)
- : expr(fn, ln, STMT)
+::func_stmt(const location &W, model_def* p, wrapped_user_func* f)
+ : expr(W, STMT)
 {
   parent = p;
   wuf = f;
@@ -1677,7 +1676,7 @@ void stack_size_watcher::notify(const option* opt)
 // *                                                                *
 // ******************************************************************
 
-expr* exprman::makeFunctionCall(const char* fn, int ln,
+expr* exprman::makeFunctionCall(const location &W,
       symbol *f, expr **p, int np) const
 {
   function* func = dynamic_cast <function*> (f);
@@ -1691,7 +1690,7 @@ expr* exprman::makeFunctionCall(const char* fn, int ln,
     case function::Promote_MTMismatch:
         bail_out = true;
         if (startError()) {
-          causedBy(fn, ln);
+          causedBy(W);
           cerr() << "Model parameters in call to function " << f->Name();
           cerr() << " must have the same parent";
           stopIO();
@@ -1700,7 +1699,7 @@ expr* exprman::makeFunctionCall(const char* fn, int ln,
 
     case function::Promote_Dependent:
         if (startWarning()) {
-          causedBy(fn, ln);
+          causedBy(W);
           warn() << "Function " << f->Name();
           warn() << " requires independent parameters.";
           newLine();
@@ -1721,7 +1720,7 @@ expr* exprman::makeFunctionCall(const char* fn, int ln,
     return makeError();
   }
 
-  return new fcall(fn, ln, t, func, p, np);
+  return new fcall(W, t, func, p, np);
 }
 
 
@@ -1734,13 +1733,13 @@ expr* exprman::makeFunctionCall(const char* fn, int ln,
 
 const int init_stack_size = 1024;
 
-symbol* MakeFormalParam(const char* fn, int ln,
+symbol* MakeFormalParam(const location &W,
       const type* t, char* name, bool in_model)
 {
   if (in_model) {
-    return new fp_wrapper(fn, ln, t, name);
+    return new fp_wrapper(W, t, name);
   } else {
-    return new fp_onstack(fn, ln, t, name);
+    return new fp_onstack(W, t, name);
   }
 }
 
@@ -1749,14 +1748,14 @@ symbol* MakeFormalParam(typelist* t, char* name)
   return new fp_onstack(t, name);
 }
 
-symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
+symbol* MakeFormalParam(const exprman* em, const location &W,
       const type* t, char* name, expr* def, bool in_model)
 {
   // check return type for default
   const type* dt = em->SafeType(def);
   if (!em->isPromotable(dt, t)) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "default type does not match parameter " << name;
       em->stopIO();
     }
@@ -1767,20 +1766,20 @@ symbol* MakeFormalParam(const exprman* em, const char* fn, int ln,
 
   formal_param* fp;
   if (in_model) {
-    fp = new fp_wrapper(fn, ln, t, name);
+    fp = new fp_wrapper(W, t, name);
   } else {
-    fp = new fp_onstack(fn, ln, t, name);
+    fp = new fp_onstack(W, t, name);
   }
   fp->SetDefault(def);
   return fp;
 }
 
-symbol* MakeNamedParam(const char* fn, int ln, char* name, expr* pass)
+symbol* MakeNamedParam(const location &W, char* name, expr* pass)
 {
-  return new named_param(fn, ln, name, pass);
+  return new named_param(W, name, pass);
 }
 
-function* MakeUserFunction(const exprman* em, const char* fn, int ln,
+function* MakeUserFunction(const exprman* em, const location &W,
       const type* t, char* name, symbol** formals, int np, bool in_model)
 {
   if (0==formals) {
@@ -1799,23 +1798,23 @@ function* MakeUserFunction(const exprman* em, const char* fn, int ln,
   }
 
   if (in_model) {
-    return new wrapped_user_func(fn, ln, t, name, (formal_param**) formals, np);
+    return new wrapped_user_func(W, t, name, (formal_param**) formals, np);
   } else {
-    return new top_user_func(fn, ln, t, name, (formal_param**) formals, np);
+    return new top_user_func(W, t, name, (formal_param**) formals, np);
   }
 }
 
-function* MakeUserConstFunc(const exprman* em, const char* fn, int ln,
+function* MakeUserConstFunc(const exprman* em, const location &W,
       const type* t, char* name, bool in_model)
 {
   if (in_model) {
-    return new wrapped_user_func(fn, ln, t, name, 0, 0);
+    return new wrapped_user_func(W, t, name, 0, 0);
   } else {
-    return new top_user_func(fn, ln, t, name, 0, 0);
+    return new top_user_func(W, t, name, 0, 0);
   }
 }
 
-void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
+void ResetUserFunctionParams(const exprman* em, const location &W,
       symbol* userfunc, symbol** formals, int nfp)
 {
   function* f = dynamic_cast <function*> (userfunc);
@@ -1828,7 +1827,7 @@ void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
   user_func* uf = dynamic_cast <user_func*> (f);
   if (0==uf) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Function declaration conflicts with existing function:";
       em->newLine();
       f->PrintHeader(em->cerr(), true);
@@ -1842,7 +1841,7 @@ void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
   // check if f is defined already
   if (uf->isDefined()) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Function ";
       f->PrintHeader(em->cerr(), true);
       em->cerr() << " was already defined";
@@ -1867,7 +1866,7 @@ void ResetUserFunctionParams(const exprman* em, const char* fn, int ln,
   }
 }
 
-expr* DefineUserFunction(const exprman* em, const char* fn, int ln,
+expr* DefineUserFunction(const exprman* em, const location &W,
       symbol* userfunc, expr* rhs, model_def* mdl)
 {
   user_func* uf = dynamic_cast <user_func*> (userfunc);
@@ -1886,7 +1885,7 @@ expr* DefineUserFunction(const exprman* em, const char* fn, int ln,
   const type* target = uf->Type();
   if (!em->isPromotable(rhs->Type(), target)) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Return type for function " << uf->Name();
       em->cerr() << " should be ";
       uf->PrintType(em->cerr());
@@ -1904,7 +1903,7 @@ expr* DefineUserFunction(const exprman* em, const char* fn, int ln,
   wrapped_user_func* wuf = smart_cast <wrapped_user_func*>(uf);
   DCASSERT(wuf);
 
-  return new func_stmt(fn, ln, mdl, wuf);
+  return new func_stmt(W, mdl, wuf);
 }
 
 

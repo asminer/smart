@@ -89,7 +89,7 @@ private:
 
 public:
   model_event(const symbol* wrapper, const model_instance* p);
-  model_event(const char* fn, int line, const type* t, char* n,
+  model_event(const location &W, const type* t, char* n,
               const model_instance* p);
 protected:
   void Init();
@@ -499,7 +499,7 @@ class dsde_def : public model_def {
   int last_level;
   friend class init_dsde;
 public:
-  dsde_def(const char* fn, int line, const type* t, char*n,
+  dsde_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~dsde_def();

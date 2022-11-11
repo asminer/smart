@@ -30,7 +30,7 @@ class converge_stmt : public expr {
   expr* block;
   bool topmost;
 public:
-  converge_stmt(const char* fn, int line, expr* b, bool top);
+  converge_stmt(const location &W, expr* b, bool top);
   virtual ~converge_stmt();
 
   virtual void Compute(traverse_data &x);
@@ -48,8 +48,8 @@ long converge_stmt::max_iters = 1000;
 // *                     converge_stmt  methods                     *
 // ******************************************************************
 
-converge_stmt::converge_stmt(const char* fn, int line, expr* b, bool top)
- : expr(fn, line, STMT)
+converge_stmt::converge_stmt(const location &W, expr* b, bool top)
+ : expr(W, STMT)
 {
   block = b;
   topmost = top;
@@ -138,7 +138,7 @@ public:
   bool was_updated;
   bool was_computed;
 public:
-  converge_var(const char* fn, int line, char* n);
+  converge_var(const location &W, char* n);
   virtual void Compute(traverse_data &x);
 };
 
@@ -146,8 +146,8 @@ public:
 // *                      converge_var methods                      *
 // ******************************************************************
 
-converge_var::converge_var(const char* fn, int line, char* n)
- : symbol(fn, line, em->REAL, n)
+converge_var::converge_var(const location &W, char* n)
+ : symbol(W, em->REAL, n)
 {
   current.setNull();
   update.setNull();
@@ -174,7 +174,7 @@ class fixpoint_stmt : public expr {
   static unsigned relative;
   static bool use_current;
 public:
-  fixpoint_stmt(const char* fn, int line);
+  fixpoint_stmt(const location &W);
 
   inline double GetPrecision() const { return precision; }
   inline bool RelativePrecision() const { return relative; }
@@ -194,7 +194,7 @@ bool fixpoint_stmt::use_current;
 // *                     fixpoint_stmt  methods                     *
 // ******************************************************************
 
-fixpoint_stmt::fixpoint_stmt(const char* fn, int line) : expr(fn, line, STMT)
+fixpoint_stmt::fixpoint_stmt(const location &W) : expr(W, STMT)
 {
 }
 
@@ -213,7 +213,7 @@ class guess_stmt : public fixpoint_stmt {
   converge_var* var;
   expr* guess;
 public:
-  guess_stmt(const char* fn, int line, converge_var* var, expr* rhs);
+  guess_stmt(const location &W, converge_var* var, expr* rhs);
   virtual ~guess_stmt();
 
   virtual void Compute(traverse_data &x);
@@ -227,8 +227,8 @@ public:
 // *                       guess_stmt methods                       *
 // ******************************************************************
 
-guess_stmt::guess_stmt(const char* fn, int line, converge_var* v, expr* g)
- : fixpoint_stmt(fn, line)
+guess_stmt::guess_stmt(const location &W, converge_var* v, expr* g)
+ : fixpoint_stmt(W)
 {
   var = v;
   DCASSERT(var);
@@ -308,7 +308,7 @@ class assign_stmt : public fixpoint_stmt {
   converge_var* var;
   expr* rhs;
 public:
-  assign_stmt(const char* fn, int line, converge_var* var, expr* r);
+  assign_stmt(const location &W, converge_var* var, expr* r);
   virtual ~assign_stmt();
 
   virtual void Compute(traverse_data &x);
@@ -322,8 +322,8 @@ public:
 // *                      assign_stmt  methods                      *
 // ******************************************************************
 
-assign_stmt::assign_stmt(const char* fn, int line, converge_var* v, expr* r)
- : fixpoint_stmt(fn, line)
+assign_stmt::assign_stmt(const location &W, converge_var* v, expr* r)
+ : fixpoint_stmt(W)
 {
   var = v;
   DCASSERT(var);
@@ -427,7 +427,7 @@ class array_guess_stmt : public fixpoint_stmt {
   array* var;
   expr* guess;
 public:
-  array_guess_stmt(const char* fn, int line, array* var, expr* rhs);
+  array_guess_stmt(const location &W, array* var, expr* rhs);
   virtual ~array_guess_stmt();
 
   virtual void Compute(traverse_data &x);
@@ -441,8 +441,8 @@ public:
 // *                    array_guess_stmt methods                    *
 // ******************************************************************
 
-array_guess_stmt::array_guess_stmt(const char* fn, int line, array* v, expr* g)
- : fixpoint_stmt(fn, line)
+array_guess_stmt::array_guess_stmt(const location &W, array* v, expr* g)
+ : fixpoint_stmt(W)
 {
   var = v;
   DCASSERT(var);
@@ -504,7 +504,7 @@ void array_guess_stmt::Guess(traverse_data &x)
     ccv = smart_cast <converge_var*> (curr->e);
     DCASSERT(ccv);
   } else {
-    ccv = new converge_var(Filename(), Linenumber(), 0);
+    ccv = new converge_var(Where(), 0);
     var->SetCurrentReturn(ccv, true);
   }
 
@@ -532,7 +532,7 @@ class array_assign_stmt : public fixpoint_stmt {
   array* var;
   expr* rhs;
 public:
-  array_assign_stmt(const char* fn, int line, array* var, expr* r);
+  array_assign_stmt(const location &W, array* var, expr* r);
   virtual ~array_assign_stmt();
 
   virtual void Compute(traverse_data &x);
@@ -546,8 +546,8 @@ public:
 // *                   array_assign_stmt  methods                   *
 // ******************************************************************
 
-array_assign_stmt::array_assign_stmt(const char* fn, int line, array* v, expr* r)
- : fixpoint_stmt(fn, line)
+array_assign_stmt::array_assign_stmt(const location &W, array* v, expr* r)
+ : fixpoint_stmt(W)
 {
   var = v;
   DCASSERT(var);
@@ -571,7 +571,7 @@ void array_assign_stmt::Compute(traverse_data &x)
     ccv = smart_cast <converge_var*> (curr->e);
     DCASSERT(ccv);
   } else {
-    ccv = new converge_var(Filename(), Linenumber(), 0);
+    ccv = new converge_var(Where(), 0);
     var->SetCurrentReturn(ccv, true);
   }
 
@@ -672,30 +672,30 @@ void array_assign_stmt::Update(converge_var* var)
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeCvgVar(const char* fn, int ln, const type* t, char* name) const
+symbol* exprman::makeCvgVar(const location &W, const type* t, char* name) const
 {
   if (0==t || !t->matches("real")) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Converge variable " << name << " must have type real";
       stopIO();
     }
     free(name);
     return 0;
   }
-  return new converge_var(fn, ln, name);
+  return new converge_var(W, name);
 }
 
 
-expr* exprman::makeConverge(const char* fn, int ln, expr* stmt, bool top) const
+expr* exprman::makeConverge(const location &W, expr* stmt, bool top) const
 {
-  if (isOrdinary(stmt))   return new converge_stmt(fn, ln, stmt, top);
+  if (isOrdinary(stmt))   return new converge_stmt(W, stmt, top);
 
   return Share(stmt);
 }
 
 
-expr* MakeCvgThing(const exprman* em, const char* fn, int ln,
+expr* MakeCvgThing(const exprman* em, const location &W,
       symbol* cvgvar, expr* rhs, bool guess)
 {
   if (0==em || em->isError(rhs))  return 0;
@@ -707,7 +707,7 @@ expr* MakeCvgThing(const exprman* em, const char* fn, int ln,
   const type* gt = em->SafeType(rhs);
   if (!em->isPromotable(gt, em->REAL)) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Return type for identifier " << var->Name();
       em->cerr() << " should be ";
       var->PrintType(em->cerr());
@@ -720,27 +720,27 @@ expr* MakeCvgThing(const exprman* em, const char* fn, int ln,
   DCASSERT(! em->isError(rhs) );
   if (guess) {
     var->setGuessed();
-    return new guess_stmt(fn, ln, var, rhs);
+    return new guess_stmt(W, var, rhs);
   } else {
     var->setDefined();
-    return new assign_stmt(fn, ln, var, rhs);
+    return new assign_stmt(W, var, rhs);
   }
 }
 
 
-expr* exprman::makeCvgGuess(const char* fn, int ln, symbol* cvgvar, expr* rhs) const
+expr* exprman::makeCvgGuess(const location &W, symbol* cvgvar, expr* rhs) const
 {
-  return MakeCvgThing(this, fn, ln, cvgvar, rhs, true);
+  return MakeCvgThing(this, W, cvgvar, rhs, true);
 }
 
 
-expr* exprman::makeCvgAssign(const char* fn, int ln, symbol* cvgvar, expr* rhs) const
+expr* exprman::makeCvgAssign(const location &W, symbol* cvgvar, expr* rhs) const
 {
-  return MakeCvgThing(this, fn, ln, cvgvar, rhs, false);
+  return MakeCvgThing(this, W, cvgvar, rhs, false);
 }
 
 
-expr* MakeArrayThing(const exprman* em, const char* fn, int ln,
+expr* MakeArrayThing(const exprman* em, const location &W,
       symbol* a, expr* rhs, bool guess)
 {
   if (0==em || em->isError(rhs))  return 0;
@@ -752,7 +752,7 @@ expr* MakeArrayThing(const exprman* em, const char* fn, int ln,
   const type* gt = em->SafeType(rhs);
   if (!em->isPromotable(gt, em->REAL)) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Return type for array " << var->Name();
       em->cerr() << " should be ";
       var->PrintType(em->cerr());
@@ -765,23 +765,23 @@ expr* MakeArrayThing(const exprman* em, const char* fn, int ln,
   DCASSERT(! em->isError(rhs) );
   if (guess) {
     var->setGuessed();
-    return new array_guess_stmt(fn, ln, var, rhs);
+    return new array_guess_stmt(W, var, rhs);
   } else {
     var->setDefined();
-    return new array_assign_stmt(fn, ln, var, rhs);
+    return new array_assign_stmt(W, var, rhs);
   }
 }
 
 
-expr* exprman::makeArrayCvgGuess(const char* fn, int ln, symbol* arr, expr* gss) const
+expr* exprman::makeArrayCvgGuess(const location &W, symbol* arr, expr* gss) const
 {
-  return MakeArrayThing(this, fn, ln, arr, gss, true);
+  return MakeArrayThing(this, W, arr, gss, true);
 }
 
 
-expr* exprman::makeArrayCvgAssign(const char* fn, int ln, symbol* arr, expr* rhs) const
+expr* exprman::makeArrayCvgAssign(const location &W, symbol* arr, expr* rhs) const
 {
-  return MakeArrayThing(this, fn, ln, arr, rhs, false);
+  return MakeArrayThing(this, W, arr, rhs, false);
 }
 
 

@@ -73,7 +73,7 @@ class markov_def : public model_def {
   static warning_msg dup_arc;
   friend class init_mcform;
 public:
-  markov_def(const char* fn, int line, const type* t, bool d, char*n,
+  markov_def(const location &W, const type* t, bool d, char*n,
       formal_param **pl, int np);
 
   virtual ~markov_def();
@@ -103,8 +103,8 @@ warning_msg markov_def::dup_arc;
 // *                       markov_def methods                       *
 // ******************************************************************
 
-markov_def::markov_def(const char* fn, int line, const type* t, bool d,
-   char*n, formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
+markov_def::markov_def(const location &W, const type* t, bool d,
+   char*n, formal_param **pl, int np) : model_def(W, t, n, pl, np)
 {
   statelist = 0;
   state_count = 0;
@@ -308,7 +308,7 @@ class markov_formalism : public formalism {
 public:
   markov_formalism(const char* n, const char* sd, const char* ld, bool d);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -330,11 +330,11 @@ markov_formalism
   discrete = d;
 }
 
-model_def* markov_formalism::makeNewModel(const char* fn, int ln, char* name,
+model_def* markov_formalism::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new markov_def(fn, ln, this, discrete,
+  return new markov_def(W, this, discrete,
       name, (formal_param**) formals, np);
 }
 
@@ -718,7 +718,7 @@ bool init_mcform::execute()
   ok = em->registerType(dtmc);
   if (!ok) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register dtmc type";
       em->stopIO();
     }
@@ -727,7 +727,7 @@ bool init_mcform::execute()
   ok = em->registerType(ctmc);
   if (!ok) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register ctmc type";
       em->stopIO();
     }

@@ -38,6 +38,7 @@ public:
   inline bool isActive() const { return active; }
   inline bool canWrite() const { return active && io; }
 
+  /*
   inline void causedBy(const expr* x) const {
     DCASSERT(io);
     if (x)
@@ -45,13 +46,10 @@ public:
     else
       io->NoCause();
   }
-  inline void causedBy(const char* fn, int ln) const {
+  */
+  inline void causedBy(const location &L) const {
     DCASSERT(io);
-    io->CausedBy(fn, ln);
-  }
-  inline void noCause() const {
-    DCASSERT(io);
-    io->NoCause();
+    io->CausedBy(L);
   }
   inline void newLine() const {
     DCASSERT(io);

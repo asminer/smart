@@ -45,7 +45,7 @@ class fsm_def : public model_def {
   static warning_msg dup_arc;
   friend class init_fsms;
 public:
-  fsm_def(const char* fn, int line, const type* t, char*n,
+  fsm_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~fsm_def();
@@ -73,8 +73,8 @@ warning_msg fsm_def::dup_arc;
 // *                        fsm_def  methods                        *
 // ******************************************************************
 
-fsm_def::fsm_def(const char* fn, int line, const type* t,
-   char*n, formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
+fsm_def::fsm_def(const location &W, const type* t,
+   char*n, formal_param **pl, int np) : model_def(W, t, n, pl, np)
 {
   statelist = 0;
   state_count = 0;
@@ -249,7 +249,7 @@ class fsm_formalism : public formalism {
 public:
   fsm_formalism(const char* n, const char* sd, const char* ld);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -268,11 +268,11 @@ fsm_formalism
 {
 }
 
-model_def* fsm_formalism::makeNewModel(const char* fn, int ln, char* name,
+model_def* fsm_formalism::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new fsm_def(fn, ln, this, name, (formal_param**) formals, np);
+  return new fsm_def(W, this, name, (formal_param**) formals, np);
 }
 
 bool fsm_formalism::canDeclareType(const type* vartype) const
@@ -595,7 +595,7 @@ bool init_fsms::execute()
   ok = em->registerType(fsm);
   if (!ok) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register fsm type";
       em->stopIO();
     }

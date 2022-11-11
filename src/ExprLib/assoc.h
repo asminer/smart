@@ -41,7 +41,7 @@ public:
                     to apply "lt opcode rt".
                 -1  if we cannot promote lt or rt to satisfy the operator.
   */
-  virtual int getPromoteDistance(bool flip, const type* lt, 
+  virtual int getPromoteDistance(bool flip, const type* lt,
           const type* rt) const = 0;
 
   /** Total promotion distance, if any, for operands.
@@ -74,13 +74,12 @@ public:
         @param  rt    Type of right operand.
         @return Type of the expression, will be 0 if undefined.
   */
-  virtual const type* getExprType(bool flip, const type* lt, 
+  virtual const type* getExprType(bool flip, const type* lt,
           const type* rt) const = 0;
 
   /** Build an expression.
       The operands are promoted as necessary.
-        @param  fn    Filename of expression.
-        @param  ln    Line number of expression.
+        @param  W     Location of expression.
         @param  list  List of operands.
         @param  flip  For flippable operands, designation of
                       "flipped or not" for each operand.
@@ -89,7 +88,7 @@ public:
         @return A new expression, or 0 if an error occurred.
                 Will return 0 if "isDefinedForTypes()" returns false.
   */
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location& W, expr** list,
         bool* flip, int N) const = 0;
 
 private:
@@ -117,9 +116,9 @@ protected:
   expr** operands;
   exprman::assoc_opcode opcode;
 public:
-  assoc(const char* fn, int line, exprman::assoc_opcode oc,
+  assoc(const location &W, exprman::assoc_opcode oc,
         const type* t, expr **x, int n);
-  assoc(const char* fn, int line, exprman::assoc_opcode oc,
+  assoc(const location &W, exprman::assoc_opcode oc,
         typelist* t, expr **x, int n);
 protected:
   virtual ~assoc();
@@ -142,7 +141,7 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**  Slightly fancier associative operators, in which we 
+/**  Slightly fancier associative operators, in which we
      are allowed to "invert" or "flip" some of the operands.
      Allows us to do things like
         a + b - c + d;
@@ -153,7 +152,7 @@ protected:
   /// Can be NULL to signify "no flips".
   bool* flip;
 public:
-  flipassoc(const char* fn, int line, exprman::assoc_opcode oc, 
+  flipassoc(const location &W, exprman::assoc_opcode oc,
     const type* t, expr** x, bool* f, int n);
 protected:
   virtual ~flipassoc();
@@ -186,7 +185,7 @@ protected:
 // ******************************************************************
 
 /**   The base class of addition classes.
- 
+
       This saves you from having to implement a few of
       the virtual functions, because they are all the
       same for addition.
@@ -196,17 +195,17 @@ protected:
       This is now a fancier operation: we can "negate" some
       of the operands.  I.e., this class can handle expressions:
         a + b - c + d;
-*/  
+*/
 
 class summation : public flipassoc {
 public:
-  summation(const char* fn, int line, exprman::assoc_opcode oc, 
+  summation(const location &W, exprman::assoc_opcode oc,
     const type* t, expr** x, bool* f, int n);
 protected:
   inline void inftyMinusInfty(const expr* opnd) const {
     DCASSERT(opnd);
     if (em->startError()) {
-      em->causedBy(opnd->Filename(), opnd->Linenumber());
+      em->causedBy(opnd);
       em->cerr() << "Undefined operation (infty-infty) due to ";
       opnd->Print(em->cerr(), 0);
       em->stopIO();
@@ -221,24 +220,24 @@ protected:
 // ******************************************************************
 
 /**   The base class of multiplication classes.
- 
+
       This saves you from having to implement a few of
       the virtual functions, because they are all the
       same for multiplication.
 
       Note: this includes logical and
-*/  
+*/
 
 class product : public flipassoc {
 public:
-  product(const char* fn, int line, exprman::assoc_opcode oc,
+  product(const location &W, exprman::assoc_opcode oc,
     const type* t, expr** x, bool* f, int n);
   virtual void Traverse(traverse_data &x);
 protected:
   inline void divideByZero(const expr* opnd) const {
     DCASSERT(opnd);
     if (em->startError()) {
-      em->causedBy(opnd->Filename(), opnd->Linenumber());
+      em->causedBy(opnd);
       em->cerr() << "Undefined operation (divide by 0) due to ";
       opnd->Print(em->cerr(), 0);
       em->stopIO();
@@ -247,16 +246,16 @@ protected:
   inline void zeroTimesInfty(const expr* opnd) const {
     DCASSERT(opnd);
     if (em->startError()) {
-      em->causedBy(opnd->Filename(), opnd->Linenumber());
+      em->causedBy(opnd);
       em->cerr() << "Undefined operation (0 * infty) due to ";
       opnd->Print(em->cerr(), 0);
       em->stopIO();
     }
-  } 
+  }
   inline void inftyTimesZero(bool flip, const expr* opnd) const {
     DCASSERT(opnd);
     if (em->startError()) {
-      em->causedBy(opnd->Filename(), opnd->Linenumber());
+      em->causedBy(opnd);
       em->cerr() << "Undefined operation (infty ";
       if (flip) em->cerr() << "/"; else em->cerr() << "*";
       em->cerr() << "0) due to ";
@@ -267,7 +266,7 @@ protected:
   inline void inftyDivInfty(const expr* opnd) const {
     DCASSERT(opnd);
     if (em->startError()) {
-      em->causedBy(opnd->Filename(), opnd->Linenumber());
+      em->causedBy(opnd);
       em->cerr() << "Undefined operation (infty / infty) due to ";
       opnd->Print(em->cerr(), 0);
       em->stopIO();

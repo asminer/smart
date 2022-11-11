@@ -25,8 +25,8 @@ unary_op::~unary_op()
 // *                                                                *
 // ******************************************************************
 
-unary::unary(const char* fn, int line, const type* t, expr *x)
- : expr(fn, line, t)
+unary::unary(const location& W, const type* t, expr *x)
+ : expr(W, t)
 {
   DCASSERT(em);
   DCASSERT(em->isOrdinary(x));
@@ -62,7 +62,7 @@ void unary::Traverse(traverse_data &x)
       return;
 
     default:
-      opnd->Traverse(x);  
+      opnd->Traverse(x);
   }
 }
 
@@ -73,13 +73,13 @@ void unary::Traverse(traverse_data &x)
 // ******************************************************************
 
 negop
-::negop(const char* F, int L, exprman::unary_opcode oc, const type* t, expr* x)
- : unary(F, L, t, x)
+::negop(const location& W, exprman::unary_opcode oc, const type* t, expr* x)
+ : unary(W, t, x)
 {
   opcode = oc;
 }
 
-bool negop::Print(OutputStream &s, int) const 
+bool negop::Print(OutputStream &s, int) const
 {
   s << em->getOp(opcode);
   DCASSERT(opnd);
@@ -123,8 +123,8 @@ void negop::Traverse(traverse_data &x)
 // ******************************************************************
 
 unary_temporal_expr
-::unary_temporal_expr(const char* F, int L, exprman::unary_opcode oc, const type* t, expr* x)
- : unary(F, L, t, x)
+::unary_temporal_expr(const location &W, exprman::unary_opcode oc, const type* t, expr* x)
+ : unary(W, t, x)
 {
   opcode = oc;
 }

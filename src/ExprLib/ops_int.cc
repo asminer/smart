@@ -16,7 +16,7 @@
 //#define DEBUG_DEEP
 
 
-inline const type* 
+inline const type*
 IntResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -36,9 +36,9 @@ inline int IntAlignDistance(const exprman* em, const type* lt, const type* rt)
   const type* lct = IntResultType(em, lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);   
+  int dl = em->getPromoteDistance(lt, lct);
   if (dl<0) return -1;
-  int dr = em->getPromoteDistance(rt, lct);  
+  int dr = em->getPromoteDistance(rt, lct);
   if (dr<0) return -1;
 
   return dl+dr;
@@ -125,29 +125,29 @@ class int_neg_op : public unary_op {
   /// Negation expression
   class expression : public negop {
   public:
-    expression(const char* fn, int line, expr *x);
+    expression(const location &W, expr *x);
     virtual void Compute(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *x) const {
-      return new expression(Filename(), Linenumber(), x);
+      return new expression(Where(), x);
     }
   };
 
 public:
   int_neg_op();
   virtual const type* getExprType(const type* t) const;
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+  virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
 // *                       int_neg_op methods                       *
 // ******************************************************************
 
-int_neg_op::expression::expression(const char* fn, int line, expr *x)
- : negop(fn, line, exprman::uop_neg, x->Type(), x) 
-{ 
+int_neg_op::expression::expression(const location &W, expr *x)
+ : negop(W, exprman::uop_neg, x->Type(), x)
+{
 }
-  
+
 void int_neg_op::expression::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -172,20 +172,20 @@ const type* int_neg_op::getExprType(const type* t) const
   DCASSERT(em);
   DCASSERT(em->INT);
   if (0==t)    return 0;
-  if (t->isASet())  return 0; 
+  if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
   if (bt != em->INT)  return 0;
   return Phase2Rand(t);
 }
 
-unary* int_neg_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* int_neg_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   if (!isDefinedForType(x->Type())) {
     Delete(x);
     return 0;
   }
-  return new expression(fn, ln, x);
+  return new expression(W, x);
 }
 
 
@@ -226,19 +226,19 @@ const type* int_assoc_op
 // ******************************************************************
 
 int_add_op::expression
-::expression(const char* fn, int line, const type* t, expr **x, bool* f, int n)
- : summation(fn, line, exprman::aop_plus, t, x, f, n)
-{ 
+::expression(const location &W, const type* t, expr **x, bool* f, int n)
+ : summation(W, exprman::aop_plus, t, x, f, n)
+{
 }
-  
+
 void int_add_op::expression::Compute(traverse_data &x)
 {
   //
   // Two states of computation: finite addition, infinity
-  //  
+  //
   // finite + finite -> finite,
   // finite + infinity -> infinity,
-  // 
+  //
   // infinity add: just check for infinity - infinity
   //
 
@@ -260,8 +260,8 @@ void int_add_op::expression::Compute(traverse_data &x)
       operands[i]->Compute(x);
       if (sum->isNormal()) {
         // normal finite addition
-        if (flip && flip[i])  answer -= sum->getInt();  
-        else                  answer += sum->getInt();  
+        if (flip && flip[i])  answer -= sum->getInt();
+        else                  answer += sum->getInt();
         continue;
       }
       if (sum->isInfinity()) {
@@ -271,7 +271,7 @@ void int_add_op::expression::Compute(traverse_data &x)
         else                  answer =  sum->signInfinity();
         infinite = true;
         normal = false;
-        break;  
+        break;
       }
       if (sum->isUnknown()) {
         unknown = true;
@@ -280,12 +280,12 @@ void int_add_op::expression::Compute(traverse_data &x)
       }
       // must be an error; short circuit
       sum->setNull();
-      return; 
+      return;
   } // for i
 
   // Check the remaining operands, if any, and throw an
   // error if we have infinity - infinity.
-  
+
   for (i++; i<opnd_count; i++) {
     DCASSERT(infinite);
     DCASSERT(operands[i]);
@@ -302,7 +302,7 @@ void int_add_op::expression::Compute(traverse_data &x)
     } // infinity
     // must be an error; short circuit
     sum->setNull();
-    return; 
+    return;
   } // for i
 
   if (normal) {
@@ -313,14 +313,14 @@ void int_add_op::expression::Compute(traverse_data &x)
     sum->setUnknown();
     return;
   }
-  
+
   sum->setInfinity(answer);
 }
 
 
 expr* int_add_op::expression::buildAnother(expr** x, bool* f, int n) const
 {
-  return new expression(Filename(), Linenumber(), Type(), x, f, n);
+  return new expression(Where(), Type(), x, f, n);
 }
 
 
@@ -334,7 +334,7 @@ int_add_op::int_add_op() : int_assoc_op(exprman::aop_plus)
 {
 }
 
-assoc* int_add_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* int_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignIntegers(em, list, N);
@@ -351,7 +351,7 @@ assoc* int_add_op::makeExpr(const char* fn, int ln, expr** list,
       flip = 0;
     }
   }
-  if (lct)  return new expression(fn, ln, lct, list, flip, N);
+  if (lct)  return new expression(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -367,23 +367,23 @@ assoc* int_add_op::makeExpr(const char* fn, int ln, expr** list,
 // ******************************************************************
 
 int_mult_op::expression
-::expression(const char* fn, int line, const type* t, expr **x, int n) 
- : product(fn, line, exprman::aop_times, t, x, 0, n) 
-{ 
+::expression(const location &W, const type* t, expr **x, int n)
+ : product(W, exprman::aop_times, t, x, 0, n)
+{
 }
-  
+
 void int_mult_op::expression::Compute(traverse_data &x)
 {
   //
   // Three states of computation: finite multiply, zero, infinity
-  //  
+  //
   // finite * zero -> zero,
   // finite * infinity -> infinity,
   // zero * infinity -> error,
-  // 
+  //
   // infinity multiply: only keep track of sign, check for errors
   //
-  // zero multiply: check only for errors 
+  // zero multiply: check only for errors
   //
 
   DCASSERT(x.answer);
@@ -407,12 +407,12 @@ void int_mult_op::expression::Compute(traverse_data &x)
           // normal finite multiply
           answer *= prod->getInt();
           continue;
-        } 
+        }
         // change to "zero multiply" state.
         answer = 0;
         normal = true;
         unknown = false;
-        break;  
+        break;
       }
       if (prod->isInfinity()) {
         // change to "infinity" state.
@@ -428,7 +428,7 @@ void int_mult_op::expression::Compute(traverse_data &x)
       }
       // must be an error; short circuit
       prod->setNull();
-      return; 
+      return;
   } // for i
 
   // The infinity case
@@ -475,7 +475,7 @@ void int_mult_op::expression::Compute(traverse_data &x)
       }
       // some kind of error, short circuit.
       prod->setNull();
-      return;  
+      return;
     } // for i
   }
 
@@ -491,9 +491,9 @@ void int_mult_op::expression::Compute(traverse_data &x)
   prod->setInfinity(answer);
 }
 
-expr* int_mult_op::expression::buildAnother(expr **x, bool* f, int n) const 
+expr* int_mult_op::expression::buildAnother(expr **x, bool* f, int n) const
 {
-  return new expression(Filename(), Linenumber(), Type(), x, n);
+  return new expression(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -527,13 +527,13 @@ const type* int_mult_op
   return IntResultType(em, l, r);
 }
 
-assoc* int_mult_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* int_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignIntegers(em, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i])  lct = 0;
   delete[] flip;
-  if (lct)  return new expression(fn, ln, lct, list, N);
+  if (lct)  return new expression(W, lct, list, N);
   // there was an error
   delete[] list;
   return 0;
@@ -551,7 +551,7 @@ assoc* int_mult_op::makeExpr(const char* fn, int ln, expr** list,
  */
 class int_multdiv : public product {
 public:
-  int_multdiv(const char* fn, int line, const type* t, expr **x, bool* f, int n);
+  int_multdiv(const location &W, const type* t, expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -562,24 +562,24 @@ protected:
 // ******************************************************************
 
 int_multdiv
- ::int_multdiv(const char* fn, int line, const type* t, expr **x, bool *f, int n) 
- : product(fn, line, exprman::aop_times, t, x, f, n) 
-{ 
+ ::int_multdiv(const location &W, const type* t, expr **x, bool *f, int n)
+ : product(W, exprman::aop_times, t, x, f, n)
+{
   DCASSERT(f);  // otherwise, use int_mult!
 }
-  
+
 void int_multdiv::Compute(traverse_data &x)
 {
   //
   // Three states of computation: finite multiply, zero, infinity
-  //  
+  //
   // finite * zero -> zero,
   // finite * infinity -> infinity,
   // zero * infinity -> error,
-  // 
+  //
   // infinity multiply: only keep track of sign, check for errors
   //
-  // zero multiply: check only for errors 
+  // zero multiply: check only for errors
   //
   DCASSERT(flip);
   DCASSERT(x.answer);
@@ -604,13 +604,13 @@ void int_multdiv::Compute(traverse_data &x)
           if (flip[i])  answer /= prod->getInt();
           else          answer *= prod->getInt();
           continue;
-        } 
+        }
         // we have a zero term
         if (flip[i]) {
           divideByZero(operands[i]); // divide by zero, bail out
           prod->setNull();
           return;  // short circuit.
-        } 
+        }
         // multiply by zero.
         answer = 0;
         unknown = false;
@@ -638,7 +638,7 @@ void int_multdiv::Compute(traverse_data &x)
     }
     // must be an error, short circuit
     prod->setNull();
-    return; 
+    return;
   } // for i
 
 
@@ -724,9 +724,9 @@ void int_multdiv::Compute(traverse_data &x)
   prod->setInfinity(SIGN(answer));
 }
 
-expr* int_multdiv::buildAnother(expr **x, bool* f, int n) const 
+expr* int_multdiv::buildAnother(expr **x, bool* f, int n) const
 {
-  return new int_multdiv(Filename(), Linenumber(), Type(), x, f, n);
+  return new int_multdiv(Where(), Type(), x, f, n);
 }
 
 // ******************************************************************
@@ -741,7 +741,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -783,7 +783,7 @@ const type* int_multdiv_op
   return lct;
 }
 
-assoc* int_multdiv_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* int_multdiv_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignIntegers(em, list, N);
@@ -798,7 +798,7 @@ assoc* int_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
     if (unflipped)  lct = 0;
   }
   if (lct)  lct = lct->changeBaseType(em->REAL);
-  if (lct)  return new int_multdiv(fn, ln, lct, list, flip, N);
+  if (lct)  return new int_multdiv(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -815,7 +815,7 @@ assoc* int_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
 /// Modulo arithmetic for integer expressions.
 class int_mod : public modulo {
 public:
-  int_mod(const char* fn, int line, const type* t, expr* l, expr* r);
+  int_mod(const location &W, const type* t, expr* l, expr* r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr* l, expr* r) const;
@@ -825,11 +825,11 @@ protected:
 // *                        int_mod  methods                        *
 // ******************************************************************
 
-int_mod::int_mod(const char* fn, int line, const type* t, expr *l, expr *r)
- : modulo(fn, line, t, l, r) 
-{ 
+int_mod::int_mod(const location &W, const type* t, expr *l, expr *r)
+ : modulo(W, t, l, r)
+{
 }
-  
+
 void int_mod::Compute(traverse_data &x)
 {
   result l, r;
@@ -849,7 +849,7 @@ void int_mod::Compute(traverse_data &x)
       x.answer->setNull();
     }
     return;
-  } 
+  }
   if (l.isNull() || r.isNull()) {
     x.answer->setNull();
     return;
@@ -888,7 +888,7 @@ void int_mod::Compute(traverse_data &x)
 
 expr* int_mod::buildAnother(expr *l, expr *r) const
 {
-  return new int_mod(Filename(), Linenumber(), Type(), l, r);
+  return new int_mod(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -958,7 +958,7 @@ const type* int_comp_op::getExprType(const type* l, const type* r) const
 class int_mod_op : public int_binary_op {
 public:
   int_mod_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -969,11 +969,11 @@ int_mod_op::int_mod_op() : int_binary_op(exprman::bop_mod)
 {
 }
 
-binary* int_mod_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_mod_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  return new int_mod(fn, ln, lct, l, r);
+  return new int_mod(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -985,7 +985,7 @@ binary* int_mod_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check equality of two integer expressions.
 class int_equal : public eqop {
 public:
-  int_equal(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_equal(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -995,11 +995,11 @@ protected:
 // *                       int_equal  methods                       *
 // ******************************************************************
 
-int_equal::int_equal(const char* fn, int line, const type* t, expr *l, expr *r)
- : eqop(fn, line, t, l, r) 
-{ 
+int_equal::int_equal(const location &W, const type* t, expr *l, expr *r)
+ : eqop(W, t, l, r)
+{
 }
-  
+
 void int_equal::Compute(traverse_data &x)
 {
   result l, r;
@@ -1015,7 +1015,7 @@ void int_equal::Compute(traverse_data &x)
 
 expr* int_equal::buildAnother(expr *l, expr *r) const
 {
-  return new int_equal(Filename(), Linenumber(), Type(), l, r);
+  return new int_equal(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1027,7 +1027,7 @@ expr* int_equal::buildAnother(expr *l, expr *r) const
 class int_equal_op : public int_comp_op {
 public:
   int_equal_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1038,13 +1038,13 @@ int_equal_op::int_equal_op() : int_comp_op(exprman::bop_equals)
 {
 }
 
-binary* int_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_equal(fn, ln, lct, l, r);
+  return new int_equal(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1057,7 +1057,7 @@ binary* int_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
  */
 class int_neq : public neqop {
 public:
-  int_neq(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_neq(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1067,11 +1067,11 @@ protected:
 // *                        int_neq  methods                        *
 // ******************************************************************
 
-int_neq::int_neq(const char* fn, int line, const type* t, expr *l, expr *r)
- : neqop(fn, line, t, l, r) 
-{ 
+int_neq::int_neq(const location &W, const type* t, expr *l, expr *r)
+ : neqop(W, t, l, r)
+{
 }
-  
+
 void int_neq::Compute(traverse_data &x)
 {
   result l, r;
@@ -1085,9 +1085,9 @@ void int_neq::Compute(traverse_data &x)
   }
 }
 
-expr* int_neq::buildAnother(expr *l, expr *r) const 
+expr* int_neq::buildAnother(expr *l, expr *r) const
 {
-  return new int_neq(Filename(), Linenumber(), Type(), l, r);
+  return new int_neq(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1099,7 +1099,7 @@ expr* int_neq::buildAnother(expr *l, expr *r) const
 class int_neq_op : public int_comp_op {
 public:
   int_neq_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1110,13 +1110,13 @@ int_neq_op::int_neq_op() : int_comp_op(exprman::bop_nequal)
 {
 }
 
-binary* int_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_neq(fn, ln, lct, l, r);
+  return new int_neq(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1128,7 +1128,7 @@ binary* int_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one integer expression is greater than another.
 class int_gt : public gtop {
 public:
-  int_gt(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_gt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1138,9 +1138,9 @@ protected:
 // *                         int_gt methods                         *
 // ******************************************************************
 
-int_gt::int_gt(const char* fn, int line, const type* t, expr *l, expr *r)
- : gtop(fn, line, t, l, r) 
-{ 
+int_gt::int_gt(const location &W, const type* t, expr *l, expr *r)
+ : gtop(W, t, l, r)
+{
 }
 
 void int_gt::Compute(traverse_data &x)
@@ -1156,9 +1156,9 @@ void int_gt::Compute(traverse_data &x)
   }
 }
 
-expr* int_gt::buildAnother(expr *l, expr *r) const 
+expr* int_gt::buildAnother(expr *l, expr *r) const
 {
-  return new int_gt(Filename(), Linenumber(), Type(), l, r);
+  return new int_gt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1170,7 +1170,7 @@ expr* int_gt::buildAnother(expr *l, expr *r) const
 class int_gt_op : public int_comp_op {
 public:
   int_gt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1181,13 +1181,13 @@ int_gt_op::int_gt_op() : int_comp_op(exprman::bop_gt)
 {
 }
 
-binary* int_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_gt(fn, ln, lct, l, r);
+  return new int_gt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1199,7 +1199,7 @@ binary* int_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one integer expression is greater than or equal another.
 class int_ge : public geop {
 public:
-  int_ge(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_ge(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1209,11 +1209,11 @@ protected:
 // *                         int_ge methods                         *
 // ******************************************************************
 
-int_ge::int_ge(const char* fn, int line, const type* t, expr *l, expr *r)
- : geop(fn, line, t, l, r) 
-{ 
+int_ge::int_ge(const location &W, const type* t, expr *l, expr *r)
+ : geop(W, t, l, r)
+{
 }
-  
+
 void int_ge::Compute(traverse_data &x)
 {
   result l, r;
@@ -1227,9 +1227,9 @@ void int_ge::Compute(traverse_data &x)
   }
 }
 
-expr* int_ge::buildAnother(expr *l, expr *r) const 
+expr* int_ge::buildAnother(expr *l, expr *r) const
 {
-  return new int_ge(Filename(), Linenumber(), Type(), l, r);
+  return new int_ge(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1241,7 +1241,7 @@ expr* int_ge::buildAnother(expr *l, expr *r) const
 class int_ge_op : public int_comp_op {
 public:
   int_ge_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1252,13 +1252,13 @@ int_ge_op::int_ge_op() : int_comp_op(exprman::bop_ge)
 {
 }
 
-binary* int_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_ge(fn, ln, lct, l, r);
+  return new int_ge(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1270,7 +1270,7 @@ binary* int_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one integer expression is less than another.
 class int_lt : public ltop {
 public:
-  int_lt(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_lt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1280,11 +1280,11 @@ protected:
 // *                         int_lt methods                         *
 // ******************************************************************
 
-int_lt::int_lt(const char* fn, int line, const type* t, expr *l, expr *r)
- : ltop(fn, line, t, l, r) 
-{ 
+int_lt::int_lt(const location &W, const type* t, expr *l, expr *r)
+ : ltop(W, t, l, r)
+{
 }
-  
+
 void int_lt::Compute(traverse_data &x)
 {
   result l, r;
@@ -1298,9 +1298,9 @@ void int_lt::Compute(traverse_data &x)
   }
 }
 
-expr* int_lt::buildAnother(expr *l, expr *r) const 
+expr* int_lt::buildAnother(expr *l, expr *r) const
 {
-  return new int_lt(Filename(), Linenumber(), Type(), l, r);
+  return new int_lt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1312,7 +1312,7 @@ expr* int_lt::buildAnother(expr *l, expr *r) const
 class int_lt_op : public int_comp_op {
 public:
   int_lt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1323,13 +1323,13 @@ int_lt_op::int_lt_op() : int_comp_op(exprman::bop_lt)
 {
 }
 
-binary* int_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_lt(fn, ln, lct, l, r);
+  return new int_lt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1341,7 +1341,7 @@ binary* int_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one integer expression is less than or equal another.
 class int_le : public leop {
 public:
-  int_le(const char* fn, int line, const type* t, expr *l, expr *r);
+  int_le(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1351,11 +1351,11 @@ protected:
 // *                         int_le methods                         *
 // ******************************************************************
 
-int_le::int_le(const char* fn, int line, const type* t, expr *l, expr *r)
- : leop(fn, line, t, l, r) 
-{ 
+int_le::int_le(const location &W, const type* t, expr *l, expr *r)
+ : leop(W, t, l, r)
+{
 }
-  
+
 void int_le::Compute(traverse_data &x)
 {
   result l, r;
@@ -1371,7 +1371,7 @@ void int_le::Compute(traverse_data &x)
 
 expr* int_le::buildAnother(expr *l, expr *r) const
 {
-  return new int_le(Filename(), Linenumber(), Type(), l, r);
+  return new int_le(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1383,7 +1383,7 @@ expr* int_le::buildAnother(expr *l, expr *r) const
 class int_le_op : public int_comp_op {
 public:
   int_le_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1394,13 +1394,13 @@ int_le_op::int_le_op() : int_comp_op(exprman::bop_le)
 {
 }
 
-binary* int_le_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* int_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new int_le(fn, ln, lct, l, r);
+  return new int_le(W, lct, l, r);
 }
 
 // ******************************************************************

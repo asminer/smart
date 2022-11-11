@@ -16,7 +16,7 @@
 // ******************************************************************
 
 measure::measure(const expr* e, engtype* which, model_def* parent, expr* rhs)
-  : symbol(e->Filename(), e->Linenumber(), e->Type(), 0)
+  : symbol(e->Where(), e->Type(), 0)
 {
   which_engine = which;
   SetSubstitution(false);
@@ -440,7 +440,7 @@ msr_func::~msr_func()
 void msr_func::Compute(traverse_data &x, expr** pass, int np)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Trying to compute measure-generating function: ";
     Print(em->internal(), 0);
     em->stopIO();
@@ -485,7 +485,7 @@ msr_noengine::~msr_noengine()
 void msr_noengine::Compute(traverse_data &x, expr** pass, int np)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "No Compute() method provided for function: ";
     Print(em->internal(), 0);
     em->stopIO();
@@ -495,9 +495,8 @@ void msr_noengine::Compute(traverse_data &x, expr** pass, int np)
 measure* msr_noengine
 ::buildMeasure(traverse_data &x, expr** pass, int np)
 {
-  const char* fn = x.parent ? x.parent->Filename() : 0;
-  int ln = x.parent ? x.parent->Linenumber() : -1;
-  expr* comp = em->makeFunctionCall(fn, ln, this, pass, np);
+  expr* comp = em->makeFunctionCall(
+          x.parent ? x.parent->Where() : location::NOWHERE(), this, pass, np);
   engtype* et = em->NO_ENGINE;
   return new measure(x.parent, et, x.model, comp);
 }

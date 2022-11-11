@@ -23,7 +23,7 @@ class dcp_def : public model_def {
   List <expr> *constraints;
   int num_vars;
 public:
-  dcp_def(const char* fn, int line, const type* t, char*n, 
+  dcp_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~dcp_def();
@@ -42,8 +42,8 @@ protected:
 // *                        dcp_def  methods                        *
 // ******************************************************************
 
-dcp_def::dcp_def(const char* fn, int line, const type* t, char*n, 
-  formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
+dcp_def::dcp_def(const location &W, const type* t, char*n,
+  formal_param **pl, int np) : model_def(W, t, n, pl, np)
 {
   statelist = 0;
   num_vars = 0;
@@ -109,7 +109,7 @@ void dcp_def::FinalizeModel(OutputStream &ds)
 #ifdef DEBUG_DCP
   em->cout() << "Finalizing dcp_def...\n";
 #endif
-  
+
   model_statevar** varlist = new model_statevar*[num_vars];
   for (int i = num_vars-1; i>=0; i--) {
     varlist[i] = smart_cast <model_statevar*> (statelist);
@@ -141,7 +141,7 @@ class dcp_form : public formalism {
 public:
   dcp_form(const char* n, const char* sd, const char* ld);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -160,11 +160,11 @@ dcp_form::dcp_form(const char* n, const char* sd, const char* ld)
 {
 }
 
-model_def* dcp_form::makeNewModel(const char* fn, int ln, char* name, 
+model_def* dcp_form::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new dcp_def(fn, ln, this, name, (formal_param**) formals, np);
+  return new dcp_def(W, this, name, (formal_param**) formals, np);
 }
 
 bool dcp_form::canDeclareType(const type* vartype) const
@@ -222,7 +222,7 @@ void dcp_constraint::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dcp_def* mdl = smart_cast<dcp_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   for (int i=1; i<np; i++) {
     if (0==pass[i])  continue;
@@ -256,7 +256,7 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   dcp_def* mdl = smart_cast<dcp_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
 
   for (int i=1; i<np; i++) {
@@ -264,10 +264,9 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
     for (int j=i+1; j<np; j++) {
       if (0==pass[j]) continue;
 
-      const char* fn = x.parent ? x.parent->Filename() : 0;
-      int line = x.parent ? x.parent->Linenumber() : -1;
       expr* vineqvj = em->makeBinaryOp(
-        fn, line, Share(pass[i]), exprman::bop_nequal, Share(pass[j])
+        x.parent ? x.parent->Where() : location::NOWHERE(),
+        Share(pass[i]), exprman::bop_nequal, Share(pass[j])
       );
       DCASSERT(vineqvj);
       mdl->AddConstraint(vineqvj);
@@ -305,7 +304,7 @@ bool init_dcps::execute()
   formalism* dcp = new dcp_form("dcp", "discrete constraint program", "foobar");
   if (! em->registerType(dcp)) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register dcp type";
       em->stopIO();
     }

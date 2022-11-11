@@ -5,9 +5,6 @@
 #include "exprman.h"
 #include "../Options/optman.h"
 
-#include <string.h>
-#include <stdlib.h>
-
 // ******************************************************************
 // *                          type methods                          *
 // ******************************************************************
@@ -585,7 +582,7 @@ void InitTypeOptions(exprman* em)
   if (0==em)  return;
   if (0==em->OptMan()) return;
 
-  type::infinity_string = new shared_string(strdup("infinity"));
+  type::infinity_string = new shared_string("infinity");
   em->OptMan()->addStringOption(
       "InfinityString",
       "Output string for infinity.",

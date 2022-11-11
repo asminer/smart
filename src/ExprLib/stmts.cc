@@ -40,7 +40,7 @@ inline const type* Opt2Type(const exprman* em, option::type ot)
 class exprstmt : public expr {
   expr *x;
 public:
-  exprstmt(const char* fn, int line, expr *e);
+  exprstmt(const location &W, expr *e);
   virtual ~exprstmt();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -48,7 +48,7 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-exprstmt::exprstmt(const char* fn, int line, expr *e) : expr(fn, line, STMT)
+exprstmt::exprstmt(const location &W, expr *e) : expr(W, STMT)
 {
   x = e;
 }
@@ -114,7 +114,7 @@ class optassign_val : public expr {
   option* opt;
   expr* val;
 public:
-  optassign_val(const char* fn, int line, option* o, expr* v);
+  optassign_val(const location &W, option* o, expr* v);
   virtual ~optassign_val();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -122,8 +122,8 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-optassign_val::optassign_val(const char* fn, int line, option* o, expr *v)
- : expr(fn, line, STMT)
+optassign_val::optassign_val(const location &W, option* o, expr *v)
+ : expr(W, STMT)
 {
   opt = o;
   val = v;
@@ -229,7 +229,7 @@ class optassign_id : public expr {
   option* opt;
   radio_button* val;
 public:
-  optassign_id(const char* fn, int line, option* o, radio_button* v);
+  optassign_id(const location &W, option* o, radio_button* v);
   virtual ~optassign_id();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -237,8 +237,8 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-optassign_id::optassign_id(const char* fn, int line, option* o, radio_button* v)
- : expr(fn, line, STMT)
+optassign_id::optassign_id(const location &W, option* o, radio_button* v)
+ : expr(W, STMT)
 {
   opt = o;
   val = v;
@@ -309,7 +309,7 @@ class opt_checker : public expr {
   checklist_enum** vals;
   int numvals;
 public:
-  opt_checker(const char* fn, int line, option* o, bool c, checklist_enum** v, int nv);
+  opt_checker(const location &W, option* o, bool c, checklist_enum** v, int nv);
   virtual ~opt_checker();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -317,8 +317,8 @@ public:
   virtual void Traverse(traverse_data &x);
 };
 
-opt_checker::opt_checker(const char* fn, int line, option* o, bool c,
-  checklist_enum** v, int nv) : expr(fn, line, STMT)
+opt_checker::opt_checker(const location &W, option* o, bool c,
+  checklist_enum** v, int nv) : expr(W, STMT)
 {
   opt = o;
   check = c;
@@ -369,7 +369,7 @@ void opt_checker::Traverse(traverse_data &td)
 // *                                                                *
 // ******************************************************************
 
-expr* exprman::makeExprStatement(const char* file, int line, expr* e) const
+expr* exprman::makeExprStatement(const location &W, expr* e) const
 {
   if (0==e)  {
     Delete(e);
@@ -377,14 +377,14 @@ expr* exprman::makeExprStatement(const char* file, int line, expr* e) const
   }
   if (e->Type()->matches("void"))  return Share(e);
 #ifdef ALLOW_NON_VOID_EXPRSTMT
-  return new exprstmt(file, line, e);
+  return new exprstmt(W, e);
 #else
   // print an error message here
   return makeError();
 #endif
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line,
+expr* exprman::makeOptionStatement(const location &W,
         option *o, expr *e) const
 {
   if (0==o || 0==e) {
@@ -395,7 +395,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   if (0==ot) {
     // we have a selection-type option, trying to plug a value.
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Option ";
       o->show(cerr());
       cerr() << " is a selction-type option";
@@ -409,7 +409,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   DCASSERT(et);
   if (!isPromotable(et, ot)) {
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Option ";
       o->show(cerr());
       cerr() << " expects type " << ot->getName();
@@ -419,10 +419,10 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   }
 
   e = promote(e, ot);
-  return new optassign_val(file, line, o, e);
+  return new optassign_val(W, o, e);
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line,
+expr* exprman::makeOptionStatement(const location &W,
         option *o, option_enum *v) const
 {
   if (0==o || 0==v) {
@@ -432,7 +432,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   // check option type
   if (option::RadioButton != o->Type()) {
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Option ";
       o->show(cerr());
       cerr() << " is not a selection-type option";
@@ -445,7 +445,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   if (v != o->FindConstant(v->Name())) {
     // We can only get here if the caller is foobar.
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Option ";
       o->show(cerr());
       cerr() << " cannot be set to ";
@@ -457,10 +457,10 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   radio_button* rb = smart_cast <radio_button*> (v);
   DCASSERT(rb);
 
-  return new optassign_id(file, line, o, rb);
+  return new optassign_id(W, o, rb);
 }
 
-expr* exprman::makeOptionStatement(const char* file, int line,
+expr* exprman::makeOptionStatement(const location &W,
       option* o, bool check, option_enum **vlist, int nv) const
 {
   if (0==o) {
@@ -472,7 +472,7 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   // check option type
   if (option::Checklist != o->Type()) {
     if (startError()) {
-      causedBy(file, line);
+      causedBy(W);
       cerr() << "Option ";
       o->show(cerr());
       cerr() << " is not a checklist-type option";
@@ -489,6 +489,6 @@ expr* exprman::makeOptionStatement(const char* file, int line,
   }
 #endif
 
-  return new opt_checker(file, line, o, check, (checklist_enum**) vlist, nv);
+  return new opt_checker(W, o, check, (checklist_enum**) vlist, nv);
 }
 

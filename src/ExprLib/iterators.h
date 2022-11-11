@@ -3,7 +3,7 @@
 #define ITERATORS_H
 
 /** \file iterators.h
-  
+
   For loop iterators.
   Since this is required by both for loops and arrays,
   we define the class here and keep it hidden from the rest.
@@ -20,7 +20,7 @@
 
 /** For loop iterator variable.
     Also used as "formal parameters for arrays".
-*/  
+*/
 
 class iterator : public symbol {
 protected:
@@ -31,9 +31,9 @@ protected:
   /// Index in the above set for the current value.
   long index;
 public:
-  iterator(const char *fn, int line, const type* t, char *n, expr *v);
+  iterator(const location &W, const type* t, char *n, expr *v);
 protected:
-  virtual ~iterator(); 
+  virtual ~iterator();
 public:
   virtual void Compute(traverse_data &x);
 
@@ -59,7 +59,7 @@ public:
       Required by for loops.
         @return true on success.
    */
-  inline bool FirstIndex() { 
+  inline bool FirstIndex() {
     if (0==current) return false;
     if (current->Size() < 1) return false;
     index = 0;
@@ -70,7 +70,7 @@ public:
       Required by for loops.
         @return true on success.
    */
-  inline bool NextValue() { 
+  inline bool NextValue() {
     DCASSERT(current);
     index++;
     return (index < current->Size());
@@ -79,8 +79,8 @@ public:
   /** The element number of the current set that we are "on".
       Required for arrays.
    */
-  inline long Index() { 
-    return index; 
+  inline long Index() {
+    return index;
   }
 
   /** Copy the current range of values.

@@ -75,7 +75,7 @@ const type* sequence_op
  */
 class void_seq : public assoc {
 public:
-  void_seq(const char* fn, int ln, expr** x, int n);
+  void_seq(const location &W, expr** x, int n);
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
 protected:
@@ -86,9 +86,9 @@ protected:
 // *                        void_seq methods                        *
 // ******************************************************************
 
-void_seq::void_seq(const char* fn, int ln, expr** x, int n)
- : assoc(fn, ln, exprman::aop_semi, em->VOID, x, n) 
-{ 
+void_seq::void_seq(const location &W, expr** x, int n)
+ : assoc(W, exprman::aop_semi, em->VOID, x, n)
+{
 }
 
 bool void_seq::Print(OutputStream &s, int d) const
@@ -116,9 +116,9 @@ void void_seq::Compute(traverse_data &x)
   } // for i
 }
 
-expr* void_seq::buildAnother(expr **x, int n) const 
+expr* void_seq::buildAnother(expr **x, int n) const
 {
-  return new void_seq(Filename(), Linenumber(), x, n);
+  return new void_seq(Where(), x, n);
 }
 
 // ******************************************************************
@@ -130,7 +130,7 @@ expr* void_seq::buildAnother(expr **x, int n) const
 class void_seq_op : public sequence_op {
 public:
   void_seq_op(const type* vtype);
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -142,12 +142,12 @@ void_seq_op::void_seq_op(const type* vtype) : sequence_op(vtype)
 {
 }
 
-assoc* void_seq_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* void_seq_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   delete[] flip;
   if (isDefinedForTypes(list, 0, N)) {
-    return new void_seq(fn, ln, list, N);
+    return new void_seq(W, list, N);
   }
   for (int i=0; i<N; i++)  Delete(list[i]);
   delete[] list;
@@ -163,7 +163,7 @@ assoc* void_seq_op::makeExpr(const char* fn, int ln, expr** list,
 /// Sequence of state change expressions, separated by semicolon.
 class next_state_seq : public assoc {
 public:
-  next_state_seq(const char* fn, int ln, expr** x, int n);
+  next_state_seq(const location &W, expr** x, int n);
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
@@ -175,9 +175,9 @@ protected:
 // *                     next_state_seq methods                     *
 // ******************************************************************
 
-next_state_seq::next_state_seq(const char* fn, int ln, expr** x, int n)
- : assoc(fn, ln, exprman::aop_semi, em->NEXT_STATE, x, n) 
-{ 
+next_state_seq::next_state_seq(const location &W, expr** x, int n)
+ : assoc(W, exprman::aop_semi, em->NEXT_STATE, x, n)
+{
 }
 
 bool next_state_seq::Print(OutputStream &s, int d) const
@@ -211,14 +211,14 @@ void next_state_seq::Traverse(traverse_data &x)
   if (x.elist) {
     for (int i=0; i<opnd_count; i++) {
       x.elist->Append(operands[i]);
-    } 
+    }
   }
   x.answer->setInt(x.answer->getInt()+opnd_count);
 }
 
-expr* next_state_seq::buildAnother(expr **x, int n) const 
+expr* next_state_seq::buildAnother(expr **x, int n) const
 {
-  return new next_state_seq(Filename(), Linenumber(), x, n);
+  return new next_state_seq(Where(), x, n);
 }
 
 // ******************************************************************
@@ -230,7 +230,7 @@ expr* next_state_seq::buildAnother(expr **x, int n) const
 class next_state_seq_op : public sequence_op {
 public:
   next_state_seq_op(const type* the_type);
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -243,12 +243,12 @@ next_state_seq_op::next_state_seq_op(const type* the_type)
 {
 }
 
-assoc* next_state_seq_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* next_state_seq_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   delete[] flip;
   if (isDefinedForTypes(list, 0, N)) {
-    return new next_state_seq(fn, ln, list, N);
+    return new next_state_seq(W, list, N);
   }
   for (int i=0; i<N; i++)  Delete(list[i]);
   delete[] list;
@@ -262,16 +262,16 @@ assoc* next_state_seq_op::makeExpr(const char* fn, int ln, expr** list,
 // ******************************************************************
 
 /**   The class used to aggregate expressions.
- 
+
       We are derived from assoc, but most of the
       provided functions of assoc must be overloaded
       (because of the special nature of aggregates).
-*/  
+*/
 
 class aggregates : public assoc {
 public:
   /// Constructor.
-  aggregates(const char* fn, int line, expr **x, int nc);
+  aggregates(const location &W, expr **x, int nc);
   virtual expr* GetComponent(int i);
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
@@ -285,9 +285,9 @@ protected:
 // *                       aggregates methods                       *
 // ******************************************************************
 
-aggregates::aggregates(const char* fn, int line, expr **x, int nc)
- : assoc (fn, line, exprman::aop_colon, (typelist*) 0, x, nc) 
-{ 
+aggregates::aggregates(const location &W, expr **x, int nc)
+ : assoc (W, exprman::aop_colon, (typelist*) 0, x, nc)
+{
   DCASSERT(nc>0);
   // determine the type
   typelist* tl = new typelist(nc);
@@ -297,10 +297,10 @@ aggregates::aggregates(const char* fn, int line, expr **x, int nc)
   SetType(tl);
 }
 
-expr* aggregates::GetComponent(int i) 
-{ 
+expr* aggregates::GetComponent(int i)
+{
   CHECK_RANGE(0, i, opnd_count);
-  return operands[i]; 
+  return operands[i];
 }
 
 void aggregates::Compute(traverse_data &x)
@@ -355,7 +355,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -384,11 +384,11 @@ const type* aggreg_op::getExprType(bool f, const type* l, const type* r) const
   return 0;
 }
 
-assoc* aggreg_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* aggreg_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   delete[] flip;
-  return new aggregates(fn, ln, list, N);
+  return new aggregates(W, list, N);
 }
 
 

@@ -65,7 +65,7 @@ void string_type::assign_normal(result& r, const char* s) const
  */
 class string_add : public summation {
 public:
-  string_add(const char* fn, int line, expr **x, int n);
+  string_add(const location &W, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -75,8 +75,8 @@ protected:
 // *                       string_add methods                       *
 // ******************************************************************
 
-string_add::string_add(const char* fn, int line, expr **x, int n)
- : summation(fn, line, exprman::aop_plus, em->STRING, x, 0, n)
+string_add::string_add(const location &W, expr **x, int n)
+ : summation(W, exprman::aop_plus, em->STRING, x, 0, n)
 {
 }
 
@@ -104,7 +104,7 @@ void string_add::Compute(traverse_data &x)
 expr* string_add::buildAnother(expr **x, bool* f, int n) const
 {
   DCASSERT(0==f);
-  return new string_add(Filename(), Linenumber(), x, n);
+  return new string_add(Where(), x, n);
 }
 
 // ******************************************************************
@@ -116,7 +116,7 @@ expr* string_add::buildAnother(expr **x, bool* f, int n) const
 /// Check equality of two string expressions.
 class string_equal : public eqop {
 public:
-  string_equal(const char* fn, int line, expr *l, expr *r);
+  string_equal(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -126,8 +126,8 @@ protected:
 // *                      string_equal methods                      *
 // ******************************************************************
 
-string_equal::string_equal(const char* fn, int line, expr *l, expr *r)
- : eqop(fn, line, em->BOOL, l, r)
+string_equal::string_equal(const location &W, expr *l, expr *r)
+ : eqop(W, em->BOOL, l, r)
 {
 }
 
@@ -149,7 +149,7 @@ void string_equal::Compute(traverse_data &x)
 
 expr* string_equal::buildAnother(expr *l, expr *r) const
 {
-  return new string_equal(Filename(), Linenumber(), l, r);
+  return new string_equal(Where(), l, r);
 }
 
 // ******************************************************************
@@ -161,7 +161,7 @@ expr* string_equal::buildAnother(expr *l, expr *r) const
 /// Check inequality of two string expressions.
 class string_neq : public neqop {
 public:
-  string_neq(const char* fn, int line, expr *l, expr *r);
+  string_neq(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -171,8 +171,8 @@ protected:
 // *                       string_neq methods                       *
 // ******************************************************************
 
-string_neq::string_neq(const char* fn, int line, expr *l, expr *r)
- : neqop(fn, line, em->BOOL, l, r)
+string_neq::string_neq(const location &W, expr *l, expr *r)
+ : neqop(W, em->BOOL, l, r)
 {
 }
 
@@ -194,7 +194,7 @@ void string_neq::Compute(traverse_data &x)
 
 expr* string_neq::buildAnother(expr *l, expr *r) const
 {
-  return new string_neq(Filename(), Linenumber(), l, r);
+  return new string_neq(Where(), l, r);
 }
 
 // ******************************************************************
@@ -206,7 +206,7 @@ expr* string_neq::buildAnother(expr *l, expr *r) const
 /// Check if one string expression is greater than another.
 class string_gt : public gtop {
 public:
-  string_gt(const char* fn, int line, expr *l, expr *r);
+  string_gt(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -216,8 +216,8 @@ protected:
 // *                       string_gt  methods                       *
 // ******************************************************************
 
-string_gt::string_gt(const char* fn, int line, expr *l, expr *r)
- : gtop(fn, line, em->BOOL, l, r)
+string_gt::string_gt(const location &W, expr *l, expr *r)
+ : gtop(W, em->BOOL, l, r)
 {
 }
 
@@ -239,7 +239,7 @@ void string_gt::Compute(traverse_data &x)
 
 expr* string_gt::buildAnother(expr *l, expr *r) const
 {
-  return new string_gt(Filename(), Linenumber(), l, r);
+  return new string_gt(Where(), l, r);
 }
 
 // ******************************************************************
@@ -251,7 +251,7 @@ expr* string_gt::buildAnother(expr *l, expr *r) const
 /// Check if one string expression is greater than or equal another.
 class string_ge : public geop {
 public:
-  string_ge(const char* fn, int line, expr *l, expr *r);
+  string_ge(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -261,8 +261,8 @@ protected:
 // *                       string_ge  methods                       *
 // ******************************************************************
 
-string_ge::string_ge(const char* fn, int line, expr *l, expr *r)
- : geop(fn, line, em->BOOL, l, r)
+string_ge::string_ge(const location &W, expr *l, expr *r)
+ : geop(W, em->BOOL, l, r)
 {
 }
 
@@ -284,7 +284,7 @@ void string_ge::Compute(traverse_data &x)
 
 expr* string_ge::buildAnother(expr *l, expr *r) const
 {
-  return new string_ge(Filename(), Linenumber(), l, r);
+  return new string_ge(Where(), l, r);
 }
 
 // ******************************************************************
@@ -296,7 +296,7 @@ expr* string_ge::buildAnother(expr *l, expr *r) const
 /// Check if one string expression is less than another.
 class string_lt : public ltop {
 public:
-  string_lt(const char* fn, int line, expr *l, expr *r);
+  string_lt(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -306,8 +306,8 @@ protected:
 // *                       string_lt  methods                       *
 // ******************************************************************
 
-string_lt::string_lt(const char* fn, int line, expr *l, expr *r)
- : ltop(fn, line, em->BOOL, l, r)
+string_lt::string_lt(const location &W, expr *l, expr *r)
+ : ltop(W, em->BOOL, l, r)
 {
 }
 
@@ -329,7 +329,7 @@ void string_lt::Compute(traverse_data &x)
 
 expr* string_lt::buildAnother(expr *l, expr *r) const
 {
-  return new string_lt(Filename(), Linenumber(), l, r);
+  return new string_lt(Where(), l, r);
 }
 
 // ******************************************************************
@@ -341,7 +341,7 @@ expr* string_lt::buildAnother(expr *l, expr *r) const
 /// Check if one string expression is less than or equal another.
 class string_le : public leop {
 public:
-  string_le(const char* fn, int line, expr *l, expr *r);
+  string_le(const location &W, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -351,8 +351,8 @@ protected:
 // *                       string_le  methods                       *
 // ******************************************************************
 
-string_le::string_le(const char* fn, int line, expr *l, expr *r)
- : leop(fn, line, em->BOOL, l, r)
+string_le::string_le(const location &W, expr *l, expr *r)
+ : leop(W, em->BOOL, l, r)
 {
 }
 
@@ -374,7 +374,7 @@ void string_le::Compute(traverse_data &x)
 
 expr* string_le::buildAnother(expr *l, expr *r) const
 {
-  return new string_le(Filename(), Linenumber(), l, r);
+  return new string_le(Where(), l, r);
 }
 
 // ******************************************************************
@@ -488,7 +488,7 @@ public:
             const type* rt) const;
   virtual const type* getExprType(bool flip, const type* lt,
             const type* rt) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -520,13 +520,13 @@ const type* string_add_op
   return StringResultType(em, lt, rt);
 }
 
-assoc* string_add_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* string_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignStrings(em, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i]) lct = 0;
   delete[] flip;
-  if (lct)  return new string_add(fn, ln, list, N);
+  if (lct)  return new string_add(W, list, N);
   // there was an error
   delete[] list;
   return 0;
@@ -543,9 +543,9 @@ public:
   string_binary_op(exprman::binary_opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 protected:
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const = 0;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const = 0;
 };
 
 // ******************************************************************
@@ -567,11 +567,11 @@ const type* string_binary_op::getExprType(const type* l, const type* r) const
 }
 
 binary* string_binary_op
-::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return makeValid(fn, ln, l, r);
+  return makeValid(W, l, r);
 }
 
 // ******************************************************************
@@ -583,7 +583,7 @@ binary* string_binary_op
 class string_equal_op : public string_binary_op {
 public:
   string_equal_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -594,11 +594,11 @@ string_equal_op::string_equal_op() : string_binary_op(exprman::bop_equals)
 {
 }
 
-binary* string_equal_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_equal_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_equal(fn, ln, l, r);
+  return new string_equal(W, l, r);
 }
 
 // ******************************************************************
@@ -610,7 +610,7 @@ binary* string_equal_op::makeValid(const char* fn, int ln, expr* l, expr* r) con
 class string_neq_op : public string_binary_op {
 public:
   string_neq_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -621,11 +621,11 @@ string_neq_op::string_neq_op() : string_binary_op(exprman::bop_nequal)
 {
 }
 
-binary* string_neq_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_neq_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_neq(fn, ln, l, r);
+  return new string_neq(W, l, r);
 }
 
 // ******************************************************************
@@ -637,7 +637,7 @@ binary* string_neq_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
 class string_gt_op : public string_binary_op {
 public:
   string_gt_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -648,11 +648,11 @@ string_gt_op::string_gt_op() : string_binary_op(exprman::bop_gt)
 {
 }
 
-binary* string_gt_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_gt_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_gt(fn, ln, l, r);
+  return new string_gt(W, l, r);
 }
 
 // ******************************************************************
@@ -664,7 +664,7 @@ binary* string_gt_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
 class string_ge_op : public string_binary_op {
 public:
   string_ge_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -676,11 +676,11 @@ string_ge_op::string_ge_op()
 {
 }
 
-binary* string_ge_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_ge_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_ge(fn, ln, l, r);
+  return new string_ge(W, l, r);
 }
 
 // ******************************************************************
@@ -692,7 +692,7 @@ binary* string_ge_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
 class string_lt_op : public string_binary_op {
 public:
   string_lt_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -703,11 +703,11 @@ string_lt_op::string_lt_op() : string_binary_op(exprman::bop_lt)
 {
 }
 
-binary* string_lt_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_lt_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_lt(fn, ln, l, r);
+  return new string_lt(W, l, r);
 }
 
 // ******************************************************************
@@ -719,7 +719,7 @@ binary* string_lt_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
 class string_le_op : public string_binary_op {
 public:
   string_le_op();
-  virtual binary* makeValid(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeValid(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -730,11 +730,11 @@ string_le_op::string_le_op() : string_binary_op(exprman::bop_le)
 {
 }
 
-binary* string_le_op::makeValid(const char* fn, int ln, expr* l, expr* r) const
+binary* string_le_op::makeValid(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(em, l, r);
   if (0==lct)  return 0;
-  return new string_le(fn, ln, l, r);
+  return new string_le(W, l, r);
 }
 
 // ******************************************************************

@@ -70,10 +70,10 @@ void lldsm::reportMemUsage(exprman* em, const char* prefix) const
 {
 }
 
-long lldsm::bailOut(const char* fn, int ln, const char* why) const
+long lldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 {
-  if (em->startInternal(fn, ln)) {
-    em->noCause();
+  if (em->startInternal(sfile, sline)) {
+    em->causedBy(0);
     em->internal() << why << " for low level model: ";
     em->internal() << getNameOf(Type());
     const char* cn = getClassName();
@@ -136,7 +136,7 @@ bool hldsm::Equals(const shared_object* ptr) const
 bool hldsm::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
-  who.causedBy(cause);
+  who.causedBy(cause ? cause->Where() : location::NOWHERE() );
   return true;
 }
 
@@ -147,8 +147,7 @@ void hldsm::DoneWarning() const
   if (Name()) em->warn() << Name();
   else        em->warn() << "(no name)";
   if (parent) {
-    em->warn() << " instantiated ";
-    em->warn().PutFile(parent->Filename(), parent->Linenumber());
+    em->warn() << " instantiated " << parent->Where();
   }
   em->stopIO();
 }
@@ -189,16 +188,15 @@ void hldsm::DoneError() const
   if (Name()) em->cerr() << Name();
   else        em->cerr() << "(no name)";
   if (parent) {
-    em->cerr() << " instantiated ";
-    em->cerr().PutFile(parent->Filename(), parent->Linenumber());
+    em->cerr() << " instantiated " << parent->Where();
   }
   em->stopIO();
 }
 
-void hldsm::bailOut(const char* fn, int ln, const char* why) const
+void hldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 {
-  if (em->startInternal(fn, ln)) {
-    em->noCause();
+  if (em->startInternal(sfile, sline)) {
+    em->causedBy(0);
     em->internal() << why << " for high level model ";
     if (parent) em->internal() << parent->Name();
     em->stopIO();
@@ -310,8 +308,8 @@ void hldsm::partinfo::sort(model_statevar** vars)
 // *                                                                *
 // ******************************************************************
 
-model_instance::model_instance(const char* fn, int ln, const model_def* dfn)
- : symbol(fn, ln, em->MODEL, 0)
+model_instance::model_instance(const location &W, const model_def* dfn)
+ : symbol(W, em->MODEL, 0)
 {
   Rename(dfn->SharedName());
   SetModelType(dfn);
@@ -354,15 +352,14 @@ model_instance::~model_instance()
 bool model_instance::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
-  who.causedBy(cause);
+  who.causedBy(cause ? cause->Where() : location::NOWHERE() );
   return true;
 }
 
 void model_instance::DoneWarning() const
 {
   em->newLine();
-  em->warn() << "within model " << Name() << " instantiated ";
-  em->warn().PutFile(Filename(), Linenumber());
+  em->warn() << "within model " << Name() << " instantiated " << Where();
   em->stopIO();
 }
 
@@ -376,8 +373,7 @@ bool model_instance::StartError(const expr* cause) const
 void model_instance::DoneError() const
 {
   em->newLine();
-  em->cerr() << "within model " << Name() << " instantiated ";
-  em->cerr().PutFile(Filename(), Linenumber());
+  em->cerr() << "within model " << Name() << " instantiated " << Where();
   em->stopIO();
 }
 
@@ -507,7 +503,7 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
       default:
           m->SetNull();
           if (em->startInternal(__FILE__, __LINE__)) {
-            em->noCause();
+            em->causedBy(0);
             em->internal() << subengine::getNameOfError(ee);
             em->internal() << " on measure ";
             em->internal() << m->Name();
@@ -652,7 +648,7 @@ protected:
   expr* mdl;
   int msr_slot;
 public:
-  mi_call(const char *fn, int line, const model_def* p, expr* m, int slot);
+  mi_call(const location &W, const model_def* p, expr* m, int slot);
   virtual ~mi_call();
 
   virtual void Compute(traverse_data &x);
@@ -660,8 +656,8 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-mi_call::mi_call(const char *fn, int ln, const model_def* p, expr* m, int slot)
-  : expr (fn, ln, (typelist*) 0)
+mi_call::mi_call(const location &W, const model_def* p, expr* m, int slot)
+  : expr (W, (typelist*) 0)
 {
   parent = p;
   mdl = m;
@@ -712,7 +708,7 @@ void mi_call::Traverse(traverse_data &x)
         mdl->Traverse(x);
         newmdl = smart_cast <expr*> (Share(x.answer->getPtr()));
         if (newmdl != mdl) {
-          x.answer->setPtr(new mi_call(Filename(), Linenumber(), parent,
+          x.answer->setPtr(new mi_call(Where(), parent,
           newmdl, msr_slot));
         } else {
           x.answer->setPtr(Share(this));
@@ -761,7 +757,7 @@ protected:
   expr **indx;
   int numindx;
 public:
-  mi_acall(const char *fn, int line, const model_def* p, expr* m,
+  mi_acall(const location &W, const model_def* p, expr* m,
     int slot, expr **i, int ni);
   virtual ~mi_acall();
 
@@ -770,9 +766,9 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-mi_acall::mi_acall(const char *fn, int ln, const model_def* p,
+mi_acall::mi_acall(const location &W, const model_def* p,
       expr* m, int slot, expr **i, int ni)
-  : expr (fn, ln, (typelist*) 0)
+  : expr (W, (typelist*) 0)
 {
   parent = p;
   mdl = m;
@@ -853,7 +849,7 @@ void mi_acall::Traverse(traverse_data &x)
 
         // build a new call
         if (notequal) {
-          x.answer->setPtr(new mi_acall(Filename(), Linenumber(), parent,
+          x.answer->setPtr(new mi_acall(Where(), parent,
                             newmdl, msr_slot, newindx, numindx));
         } else {
           for (int i=0; i<numindx; i++)  Delete(newindx[i]);
@@ -905,7 +901,7 @@ inline expr* Bailout(expr* ret, expr** p, int np)
   return ret;
 }
 
-const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
+const model_def* GrabModelType(const exprman* em, const location &W,
         bool want_array, const symbol* mi)
 {
   if (0==mi) return 0;
@@ -913,7 +909,7 @@ const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
   const array* foo = dynamic_cast <const array*> (mi);
   if (want_array != (foo != 0)) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << mi->Name();
       if (foo)  em->cerr() << " is an array";
       else      em->cerr() << " is not an array";
@@ -923,7 +919,7 @@ const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
   }
   const model_def* p = mi->GetModelType();
   if (0==p) if (em->startError()) {
-    em->causedBy(fn, ln);
+    em->causedBy(W);
     em->cerr() << mi->Name();
     if (foo)  em->cerr() << " does not appear to be an array of models";
     else      em->cerr() << " does not appear to be a model";
@@ -932,14 +928,14 @@ const model_def* GrabModelType(const exprman* em, const char* fn, int ln,
   return p;
 }
 
-int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p,
+int GrabMsrSlot(const exprman* em, const location &W, const model_def* p,
     symbol* mi, bool want_array, const char* msr_name)
 {
   if (0==p || 0==msr_name) return -1;
   int slot = p->FindVisible(msr_name);
   if (slot < 0) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Measure " << msr_name;
       const array* foo = dynamic_cast <const array*> (mi);
       if (foo)  em->cerr() << " does not exist in model array ";
@@ -957,7 +953,7 @@ int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p,
 
   if (want_array != is_array) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Measure " << msr_name;
       const array* foo = dynamic_cast <const array*> (mi);
       if (foo)  em->cerr() << " in model array ";
@@ -972,7 +968,7 @@ int GrabMsrSlot(const exprman* em, const char* fn, int ln, const model_def* p,
   return slot;
 }
 
-bool OkMsrArrayCall(const exprman* em, const char* fn, int ln,
+bool OkMsrArrayCall(const exprman* em, const location &W,
       const model_def* p, int slot, expr** pass, int np)
 {
   if (0==p || slot<0) {
@@ -985,7 +981,7 @@ bool OkMsrArrayCall(const exprman* em, const char* fn, int ln,
   const symbol* foo = p->GetSymbol(slot);
   const array* msr = smart_cast <const array*> (foo);
   DCASSERT(msr);
-  bool ok = msr->checkArrayCall(fn, ln, pass, np);
+  bool ok = msr->checkArrayCall(W, pass, np);
   if (ok) return true;
   if (pass) {
     for (int i=0; i<np; i++) Delete(pass[i]);
@@ -995,52 +991,52 @@ bool OkMsrArrayCall(const exprman* em, const char* fn, int ln,
 }
 
 
-expr* exprman::makeMeasureCall(const char* fn, int ln,
+expr* exprman::makeMeasureCall(const location &W,
       symbol* mi, const char* msr_name) const
 {
-  const model_def* p = GrabModelType(this, fn, ln, false, mi);
-  int slot = GrabMsrSlot(this, fn, ln, p, mi, false, msr_name);
+  const model_def* p = GrabModelType(this, W, false, mi);
+  int slot = GrabMsrSlot(this, W, p, mi, false, msr_name);
   if (slot<0) return makeError();
-  return new mi_call(fn, ln, p, mi, slot);
+  return new mi_call(W, p, mi, slot);
 }
 
 
-expr* exprman::makeMeasureCall(const char* fn, int ln,
+expr* exprman::makeMeasureCall(const location &W,
       symbol* mi, expr** indexes, int ni, const char* msr_name) const
 {
-  const model_def* p = GrabModelType(this, fn, ln, true, mi);
-  int slot = GrabMsrSlot(this, fn, ln, p, mi, false, msr_name);
+  const model_def* p = GrabModelType(this, W, true, mi);
+  int slot = GrabMsrSlot(this, W, p, mi, false, msr_name);
   expr* m;
-  if (slot >= 0)  m = makeArrayCall(fn, ln, mi, indexes, ni);
+  if (slot >= 0)  m = makeArrayCall(W, mi, indexes, ni);
   else            m = Bailout(makeError(), indexes, ni);
   if (!isOrdinary(m))  return m;
-  return new mi_call(fn, ln, p, m, slot);
+  return new mi_call(W, p, m, slot);
 }
 
 
-expr* exprman::makeMeasureCall(const char* fn, int ln,
+expr* exprman::makeMeasureCall(const location &W,
       symbol* mi, const char* msr_name, expr** indexes, int ni) const
 {
-  const model_def* p = GrabModelType(this, fn, ln, false, mi);
-  int slot = GrabMsrSlot(this, fn, ln, p, mi, true, msr_name);
-  if (OkMsrArrayCall(this, fn, ln, p, slot, indexes, ni))
-    return new mi_acall(fn, ln, p, mi, slot, indexes, ni);
+  const model_def* p = GrabModelType(this, W, false, mi);
+  int slot = GrabMsrSlot(this, W, p, mi, true, msr_name);
+  if (OkMsrArrayCall(this, W, p, slot, indexes, ni))
+    return new mi_acall(W, p, mi, slot, indexes, ni);
   else
     return makeError();
 }
 
-expr* exprman::makeMeasureCall(const char* fn, int ln,
+expr* exprman::makeMeasureCall(const location &W,
       symbol* mi, expr** i, int ni,
       const char* msr_name, expr** j, int nj) const
 {
-  const model_def* p = GrabModelType(this, fn, ln, true, mi);
-  int slot = GrabMsrSlot(this, fn, ln, p, mi, true, msr_name);
+  const model_def* p = GrabModelType(this, W, true, mi);
+  int slot = GrabMsrSlot(this, W, p, mi, true, msr_name);
   expr* m;
-  if (slot >= 0)  m = makeArrayCall(fn, ln, mi, i, ni);
+  if (slot >= 0)  m = makeArrayCall(W, mi, i, ni);
   else            m = Bailout(makeError(), i, ni);
   if (!isOrdinary(m))  return Bailout(m, j, nj);
-  if (OkMsrArrayCall(this, fn, ln, p, slot, j, nj))
-    return new mi_acall(fn, ln, p, m, slot, j, nj);
+  if (OkMsrArrayCall(this, W, p, slot, j, nj))
+    return new mi_acall(W, p, m, slot, j, nj);
   else
     return makeError();
 }

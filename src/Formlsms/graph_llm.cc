@@ -276,7 +276,7 @@ void graph_lldsm::reachgraph::reportIters(const char* who, long iters)
 void graph_lldsm::reachgraph::showError(const char* s)
 {
   if (em->startError()) {
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << s;
     em->stopIO();
   }
@@ -285,7 +285,7 @@ void graph_lldsm::reachgraph::showError(const char* s)
 stateset* graph_lldsm::reachgraph::notImplemented(const char* op) const
 {
   if (em->startError()) {
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Operation " << op << " not implemented in class " << getClassName();
     em->stopIO();
   }
@@ -295,7 +295,7 @@ stateset* graph_lldsm::reachgraph::notImplemented(const char* op) const
 stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
 {
   if (em->startError()) {
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Incompatible operand for " << op << " in class " << getClassName();
     em->stopIO();
   }

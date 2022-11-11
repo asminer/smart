@@ -70,8 +70,7 @@ public:
   */
   int ParseSmartFile(FILE* file, const char* name);
 
-  const char* filename() const;
-  int linenumber() const;
+  const location& where() const;
 
   // Are we lexing the temporal operators?
   inline bool scanForTemporal() const {
@@ -113,7 +112,7 @@ public:
   inline bool startInternal(const char* file, int line) {
     DCASSERT(em);
     if (em->startInternal(file, line)) {
-      em->causedBy(filename(), linenumber());
+      em->causedBy(where());
       return true;
     }
     return false;
@@ -126,7 +125,7 @@ public:
   inline bool startError() {
     DCASSERT(em);
     if (em->startError()) {
-      em->causedBy(filename(), linenumber());
+      em->causedBy(where());
       return true;
     }
     return false;
@@ -139,7 +138,7 @@ public:
   inline bool startWarning() {
     DCASSERT(em);
     if (em->startWarning()) {
-      em->causedBy(filename(), linenumber());
+      em->causedBy(where());
       return true;
     }
     return false;

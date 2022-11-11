@@ -13,7 +13,7 @@
     but does NOT store any data.
     Arrays plus data are represented by a hidden, derived class.
 
-*/    
+*/
 
 #include "expr.h"
 #include "result.h"
@@ -62,10 +62,10 @@ public:
 // ******************************************************************
 
 /**   The base class of arrays.
-      
+
       Note that this handles dimensions and indices,
       but does NOT store any data.
-*/  
+*/
 
 class array : public symbol {
 protected:
@@ -77,7 +77,7 @@ protected:
   bool is_fixed;
 public:
   array(const array* wrapper);
-  array(const char* fn, int ln, const type* t, char* n, iterator** il, int dim);
+  array(const location &W, const type* t, char* n, iterator** il, int dim);
 protected:
   virtual ~array();
 
@@ -124,7 +124,7 @@ public:
                           should have length equal to the "dimension".
 
         @param  x         Used to propogate any index errors.
-  
+
         @return   0, if any of the indexes were out of range.
                   The return value, otherwise.
   */
@@ -139,7 +139,7 @@ public:
                         to match the expected type and number.
                 false,  otherwise (will make noise).
   */
-  bool checkArrayCall(const char* fn, int ln, expr** indexes, int dim) const;
+  bool checkArrayCall(const location &W, expr** indexes, int dim) const;
 
   virtual void Traverse(traverse_data &x);
   void PrintHeader(OutputStream &s) const;

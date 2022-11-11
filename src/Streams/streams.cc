@@ -723,7 +723,7 @@ bool io_environ::StartWarning()
   return true;
 }
 
-void io_environ::CausedBy(const char* file, int line)
+void io_environ::CausedBy(const location &L)
 {
   DisplayStream* out = 0;
   bool cont = false;
@@ -744,37 +744,17 @@ void io_environ::CausedBy(const char* file, int line)
     default:
         return;
   }
-  if (file) {
+  if (L) {
     if (cont) {
-      NewLine();
-      out->Put("caused ");
+        NewLine();
+        *out << "caused";
     } else {
-      out->Put(' ');
+        *out << ' ';
     }
-    out->PutFile(file, line);
+    *out << L;
   }
-  out->Put(':');
+  *out  << ':';
   NewLine();
-}
-
-void io_environ::NoCause()
-{
-  switch (WhichError) {
-    case 3:
-        Internal.Put(':');
-        NewLine();
-        return;
-
-    case 2:
-        Error.Put(':');
-        NewLine();
-        return;
-
-    case 1:
-        Warning.Put(':');
-        NewLine();
-        return;
-  }
 }
 
 void io_environ::ChangeIndent(int delta)
@@ -883,7 +863,7 @@ void CatchSignals(io_environ *e)
   if (e) {
     if (catcher) {
       e->StartInternal(__FILE__, __LINE__);
-      e->NoCause();
+      e->CausedBy(location::NOWHERE());
       e->Internal << "Multiple sigterm catchers";
       e->Stop();
     } else {

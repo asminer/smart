@@ -1,26 +1,37 @@
 
 #include "location.h"
 #include "../Streams/streams.h"
+#include <cstring>
 
 location::location()
 {
     filename = 0;
     linenumber = 0;
+    ltype = ' ';
+}
+
+location::location(shared_string* fn, unsigned ln)
+{
+    filename = Share(fn);
+    linenumber = ln;
+    ltype = 'f';
 }
 
 location::location(const location& L)
 {
     filename = Share(L.filename);
     linenumber = L.linenumber;
+    ltype = 'f';
 }
 
-void location::operator=(const location& L)
+void location::reset(shared_string* fn, unsigned ln)
 {
-    if (filename != L.filename) {
-	    Delete(filename);
-	    filename = Share(L.filename);
+    if (filename != fn) {
+      Delete(filename);
+      filename = Share(fn);
     }
-    linenumber = L.linenumber;
+    linenumber = ln;
+    ltype = 'f';
 }
 
 location::~location()
@@ -34,39 +45,19 @@ void location::show(OutputStream &s) const
 void location::show(std::ostream &s) const
 #endif
 {
-    if (0==filename) return;
+    switch (ltype) {
+        case 'c':   s << "on command line";     return;
+        case 'i':   s << "internally";          return;
+        case '$':   s << "at end of input";     return;
+        case 'f':   break;
+        default :   return; // includes "nowhere" case
+    };
 
-    const char* fn = filename->getStr();
-    unsigned long ln = linenumber;
+    if (filename) s << "in file " << filename;
+    else          s << "in standard input";
 
-    if (0==fn[1]) {
-        // special files
-        switch (fn[0]) {
-            case '-':
-                s << "in standard input";
-                break;
-
-            case '>':
-                s << "on command line";
-				ln = 0;
-                break;
-
-            case '<':
-                s << "at end of input";
-				ln = 0;
-                break;
-
-            default:
-                s << "in file " << fn;
-        } // switch
-
-    } else if (' ' == fn[0]) {
-        s << fn+1;
-    } else {
-        s << "in file " << fn;
-    }
-    if (ln) {
-        s << " near line " << ln;
+    if (linenumber) {
+        s << " near line " << long(linenumber);
     }
 }
 
@@ -85,8 +76,31 @@ void location::clear()
     linenumber = 0;
 }
 
+const location& location::CMDLINE()
+{
+    static location L;
+    L.ltype = 'c';
+    return L;
+}
+
+const location& location::EOINPUT()
+{
+    static location L;
+    L.ltype = '$';
+    return L;
+}
+
 const location& location::NOWHERE()
 {
     static location L;
+    L.ltype = ' ';
     return L;
 }
+
+const location& location::INTERNALLY()
+{
+    static location L;
+    L.ltype = 'i';
+    return L;
+}
+

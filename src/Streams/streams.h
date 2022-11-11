@@ -244,11 +244,8 @@ public:
         @param  fn  File name.  If null, will not be displayed.
         @param  ln  Line number.  If negative, will not be displayed.
   */
-  virtual void CausedBy(const char* fn, int ln);
+  virtual void CausedBy(const location &L);
 
-  /** No filename or line number cause for the error.
-  */
-  virtual void NoCause();
 
   /** Change the indent level.
       Affects NewLine() methods.

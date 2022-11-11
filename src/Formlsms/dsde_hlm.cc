@@ -64,9 +64,9 @@ model_event::model_event(const symbol* wrapper, const model_instance* p) :
 	Init();
 }
 
-model_event::model_event(const char* fn, int line, const type* t, char* n,
+model_event::model_event(const location &W, const type* t, char* n,
 		const model_instance* p) :
-		model_var(fn, line, t, n, p) {
+		model_var(W, t, n, p) {
 	Init();
 }
 
@@ -389,7 +389,7 @@ void dsde_hlm::useDefaultVarOrder() {
 
 	if (1 == num_levels) {
 		if (em->startWarning()) {
-			em->noCause();
+			em->causedBy(0);
 			em->warn()
 					<< "user-specified partition groups all variables together;";
 			em->newLine();
@@ -842,9 +842,9 @@ warning_msg dsde_def::dup_part;
 warning_msg dsde_def::no_part;
 warning_msg dsde_def::dup_prio;
 
-dsde_def::dsde_def(const char* fn, int line, const type* t, char*n,
+dsde_def::dsde_def(const location &W, const type* t, char*n,
 		formal_param **pl, int np) :
-		model_def(fn, line, t, n, pl, np) {
+		model_def(W, t, n, pl, np) {
 }
 
 dsde_def::~dsde_def() {

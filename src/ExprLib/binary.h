@@ -5,7 +5,7 @@
 /** \file binary.h
 
   Base class for all binary operations.
-  
+
  */
 
 #include "exprman.h"
@@ -64,15 +64,14 @@ public:
 
   /** Build an expression "left opcode right".
       The left and right operands are promoted as necessary.
-        @param  fn    Filename of expression.
-        @param  ln    Line number of expression.
+        @param  W     Location of the expression.
         @param  left  Left operand.
         @param  right Right operand.
         @return A new expression "left opcode right", or
                 0 if an error occurred.
                 Will return 0 if "isDefinedForTypes()" returns false.
   */
-  virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const = 0;
+  virtual binary* makeExpr(const location& W, expr* left, expr* right) const = 0;
 
 private:
   const  binary_op* next;
@@ -97,7 +96,7 @@ protected:
   expr* right;
   exprman::binary_opcode opcode;
 public:
-  binary(const char* fn, int line, exprman::binary_opcode oc,
+  binary(const location &W, exprman::binary_opcode oc,
    const type* t, expr* l, expr* r);
 protected:
   virtual ~binary();
@@ -146,15 +145,15 @@ protected:
 // ******************************************************************
 
 /**   The base class of modulo classes.
- 
+
       This saves you from having to implement a few of
       the virtual functions, because they are all the
       same for modulo.
-*/  
+*/
 
 class modulo : public binary {
 public:
-  modulo(const char* fn, int line, const type* t, expr* l, expr* r);
+  modulo(const location &W, const type* t, expr* l, expr* r);
 };
 
 // ******************************************************************
@@ -163,14 +162,14 @@ public:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for equality check, for numerical non-constants 
-*/  
+/**   The base class for equality check, for numerical non-constants
+*/
 
 class eqop : public binary {
 public:
-  eqop(const char* fn, int line, const type* t, expr* l, expr* r);
+  eqop(const location &W, const type* t, expr* l, expr* r);
 protected:
-  /** Common to all eqops. 
+  /** Common to all eqops.
       Handles non-normal cases of operands.
         @param l  The value of the left operand (already computed).
         @param r  The value of the right operand (already computed).
@@ -214,14 +213,14 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for inequality check, for non-constants 
-*/  
+/**   The base class for inequality check, for non-constants
+*/
 
 class neqop : public binary {
 public:
-  neqop(const char* fn, int line, const type* t, expr* l, expr* r);
+  neqop(const location &W, const type* t, expr* l, expr* r);
 protected:
-  /** Common to all neqops. 
+  /** Common to all neqops.
       Handles non-normal cases of operands.
         @param l  The value of the left operand (already computed).
         @param r  The value of the right operand (already computed).
@@ -265,12 +264,12 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for greater than check, for non-constants 
-*/  
+/**   The base class for greater than check, for non-constants
+*/
 
 class gtop : public binary {
 public:
-  gtop(const char* fn, int line, const type* t, expr* l, expr* r);
+  gtop(const location &W, const type* t, expr* l, expr* r);
 protected:
   /** Common to all gtops.
       Handles non-normal cases of operands.
@@ -321,12 +320,12 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for greater-equal check, for non-constants 
-*/  
+/**   The base class for greater-equal check, for non-constants
+*/
 
 class geop : public binary {
 public:
-  geop(const char* fn, int line, const type* t, expr* l, expr* r);
+  geop(const location &W, const type* t, expr* l, expr* r);
 protected:
   /** Common to all geops.
       Handles non-normal cases of operands.
@@ -376,12 +375,12 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for less than check, for non-constants 
-*/  
+/**   The base class for less than check, for non-constants
+*/
 
 class ltop : public binary {
 public:
-  ltop(const char* fn, int line, const type* t, expr* l, expr* r);
+  ltop(const location &W, const type* t, expr* l, expr* r);
 protected:
   /** Common to all ltops.
       Handles non-normal cases of operands.
@@ -401,7 +400,7 @@ protected:
         x.answer->setNull();
         return;
       }
-      // different sign.  
+      // different sign.
       x.answer->setBool(r.signInfinity() > 0);
       return;
     }
@@ -431,12 +430,12 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-/**   The base class for less-equal check, for non-constants 
-*/  
+/**   The base class for less-equal check, for non-constants
+*/
 
 class leop : public binary {
 public:
-  leop(const char* fn, int line, const type* t, expr* l, expr* r);
+  leop(const location &W, const type* t, expr* l, expr* r);
 protected:
   /** Common to all leops.
       Handles non-normal cases of operands.

@@ -51,7 +51,7 @@ protected:
 	const model_instance* parent;
 public:
 	model_var(const symbol* wrapper, const model_instance* p);
-	model_var(const char* fn, int line, const type* t, char* n,
+	model_var(const location &W, const type* t, char* n,
 			const model_instance* p);
 protected:
 	virtual ~model_var();
@@ -141,7 +141,7 @@ protected:
 public:
 	model_statevar(const symbol* wrapper, const model_instance* p,
 			shared_object* bnds);
-	model_statevar(const char* fn, int line, const type* t, char* n,
+	model_statevar(const location &W, const type* t, char* n,
 			const model_instance* p, shared_object* bnds);
 protected:
 	void Init(shared_object* bnds);
@@ -632,8 +632,8 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs);
 class clev_op: public unary {
 	long lower;
 public:
-	clev_op(const char* fn, int line, expr* b, model_var* v);
-	clev_op(const char* fn, int line, long b, model_var* v);
+	clev_op(const location &W, expr* b, model_var* v);
+	clev_op(const location &W, long b, model_var* v);
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 	virtual bool Print(OutputStream &s, int w) const;
@@ -656,7 +656,7 @@ class cupdate_op: public expr {
 	model_var* var;
 	long delta;
 public:
-	cupdate_op(const char* fn, int line, model_var* v, long delta);
+	cupdate_op(const location &W, model_var* v, long delta);
 	virtual ~cupdate_op();
 	virtual long getDelta() const override;
 	virtual void Traverse(traverse_data &x) override;

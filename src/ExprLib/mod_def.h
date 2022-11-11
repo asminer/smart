@@ -70,7 +70,7 @@ protected:
   model_instance* current;
 
 public:
-  model_def(const char* fn, int line, const type* t, char* n,
+  model_def(const location &W, const type* t, char* n,
     formal_param **pl, int np);
 protected:
   virtual ~model_def();

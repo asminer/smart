@@ -21,9 +21,9 @@
 
 warning_msg model_def::not_our_var;
 
-model_def::model_def(const char* fn, int ln, const type* t, char* n,
+model_def::model_def(const location &W, const type* t, char* n,
       formal_param **pl, int np)
- : function(fn, ln, t, n)
+ : function(W, t, n)
 {
   stmt_block = 0;
   mysymbols = 0;
@@ -97,16 +97,7 @@ void model_def::BuildModel(traverse_data &x)
   }
 
   // Build new instance
-  const char* FN;
-  int LN;
-  if (x.parent) {
-    FN = x.parent->Filename();
-    LN = x.parent->Linenumber();
-  } else {
-    FN = 0;
-    LN = -1;
-  }
-  current = new model_instance(FN, LN, this);
+  current = new model_instance(x.parent ? x.parent->Where() : location::NOWHERE(), this);
 
   InitModel();
   DCASSERT(stmt_block);
@@ -152,7 +143,7 @@ void model_def::BuildModel(traverse_data &x)
 bool model_def::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
-  who.causedBy(cause);
+  who.causedBy(cause ? cause->Where() : location::NOWHERE());
   return true;
 }
 
@@ -160,8 +151,7 @@ void model_def::DoneWarning() const
 {
   DCASSERT(current);
   em->newLine();
-  em->warn() << "within model " << Name() << " built ";
-  em->warn().PutFile(current->Filename(), current->Linenumber());
+  em->warn() << "within model " << Name() << " built " << current->Where();
   em->stopIO();
 }
 
@@ -176,8 +166,7 @@ void model_def::DoneError() const
 {
   DCASSERT(current);
   em->newLine();
-  em->cerr() << "within model " << Name() << " built ";
-  em->cerr().PutFile(current->Filename(), current->Linenumber());
+  em->cerr() << "within model " << Name() << " built " << current->Where();
   em->stopIO();
 }
 
@@ -334,7 +323,7 @@ protected:
   int numpass;
   int msr_slot;
 public:
-  md_call(const char *fn, int line, model_def *m, expr **p, int np, int slot);
+  md_call(const location &W, model_def *m, expr **p, int np, int slot);
   virtual ~md_call();
 
   virtual void Compute(traverse_data &x);
@@ -342,9 +331,9 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-md_call::md_call(const char *fn, int ln, model_def *m,
+md_call::md_call(const location &W, model_def *m,
       expr **p, int np, int slot)
-  : expr (fn, ln, (typelist*) 0)
+  : expr (W, (typelist*) 0)
 {
   const symbol* s = m->GetSymbol(slot);
   SetType(em->SafeType(s));
@@ -400,7 +389,7 @@ void md_call::Traverse(traverse_data &x)
           if (newpass[i] != pass[i])  notequal = true;
          } // for i
         if (notequal) {
-          x.answer->setPtr(new md_call(Filename(), Linenumber(), mdl,
+          x.answer->setPtr(new md_call(Where(), mdl,
                 newpass, numpass, msr_slot));
         } else {
           for (int i=0; i<numpass; i++)  Delete(newpass[i]);
@@ -465,7 +454,7 @@ protected:
   expr** indx;
   int numindx;
 public:
-  md_acall(const char *fn, int ln, model_def* m, expr** p, int np,
+  md_acall(const location &W, model_def* m, expr** p, int np,
     int slot, expr** i, int ni);
   virtual ~md_acall();
 
@@ -474,9 +463,9 @@ public:
   virtual bool Print(OutputStream &s, int) const;
 };
 
-md_acall::md_acall(const char *fn, int ln, model_def* m, expr** p, int np,
+md_acall::md_acall(const location &W, model_def* m, expr** p, int np,
       int slot, expr** i, int ni)
- : expr (fn, ln, (typelist*) 0)
+ : expr (W, (typelist*) 0)
 {
   const symbol* s = m->GetSymbol(slot);
   SetType(em->SafeType(s));
@@ -560,7 +549,7 @@ void md_acall::Traverse(traverse_data &x)
 
         // build a new call
         if (notequal) {
-          x.answer->setPtr(new md_acall(Filename(), Linenumber(), mdl,
+          x.answer->setPtr(new md_acall(Where(), mdl,
                 newpass, numpass, msr_slot, newindx, numindx));
         } else {
           for (int i=0; i<numpass; i++)  Delete(newpass[i]);
@@ -636,7 +625,7 @@ inline void TrashPass(expr** p, int np)
   delete[] p;
 }
 
-expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
+expr* exprman::makeMeasureCall(const location &W, model_def* m,
       expr** p, int np, const char* msr_name) const
 {
   if (0==m || 0==msr_name) {
@@ -647,7 +636,7 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
   int slot = m->FindVisible(msr_name);
   if (slot < 0) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Measure " << msr_name;
       cerr() << " does not exist in model ";
       if (m->Name()) cerr() << m->Name();
@@ -662,7 +651,7 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
   const array* foo = dynamic_cast <const array*> (msr);
   if (foo) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Measure " << msr->Name();
       cerr() << " within model " << m->Name();
       cerr() << " is an array";
@@ -673,11 +662,11 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
   }
 
   m->PromoteParams(p, np);
-  return new md_call(fn, ln, m, p, np, slot);
+  return new md_call(W, m, p, np, slot);
 }
 
 
-expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
+expr* exprman::makeMeasureCall(const location &W, model_def* m,
       expr** p, int np, const char* msr_name,
       expr** indexes, int ni) const
 {
@@ -690,7 +679,7 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
   int slot = m->FindVisible(msr_name);
   if (slot < 0) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Measure " << msr_name;
       cerr() << " does not exist in model " << m->Name();
       stopIO();
@@ -705,7 +694,7 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
   const array* msr = dynamic_cast <const array*> (foo);
   if (!msr) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Measure " << foo->Name();
       cerr() << " within model " << m->Name();
       cerr() << " is not an array";
@@ -716,14 +705,14 @@ expr* exprman::makeMeasureCall(const char* fn, int ln, model_def* m,
     return makeError();
   }
 
-  if (!msr->checkArrayCall(fn, ln, indexes, ni)) {
+  if (!msr->checkArrayCall(W, indexes, ni)) {
     TrashPass(p, np);
     TrashPass(indexes, ni);
     return makeError();
   }
 
   m->PromoteParams(p, np);
-  return new md_acall(fn, ln, m, p, np, slot, indexes, ni);
+  return new md_acall(W, m, p, np, slot, indexes, ni);
 }
 
 // ******************************************************************

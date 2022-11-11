@@ -23,8 +23,8 @@ trinary_op::~trinary_op()
 // *                                                                *
 // ******************************************************************
 
-trinary::trinary(const char* fn, int line, const type* t, expr* l, expr* m, expr* r)
- : expr(fn, line, t) 
+trinary::trinary(const location &W, const type* t, expr* l, expr* m, expr* r)
+ : expr(W, t)
 {
   left = l;
   middle = m;

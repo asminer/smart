@@ -5,7 +5,7 @@
 /** \file unary.h
 
   Base class for all unary operations.
-  
+
  */
 
 #include "exprman.h"
@@ -51,15 +51,14 @@ public:
   }
 
   /** Build an expression "opcode x".
-        @param  fn  Filename of expression.
-        @param  ln  Line number of expression.
+        @param  W   Where the expression was in input.
         @param  x   Operand.
         @return A new expression "opcode x", or
                 0 if an error occurred.
                 Will return 0 if "isDefinedForType()" returns false
                 for the type of \a x.
   */
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const = 0;
+  virtual unary* makeExpr(const location& W, expr* x) const = 0;
 
 private:
   const  unary_op* next;
@@ -81,7 +80,7 @@ class unary : public expr {
 protected:
   expr* opnd;
 public:
-  unary(const char* fn, int line, const type* t, expr* x);
+  unary(const location& W, const type* t, expr* x);
 protected:
   virtual ~unary();
 public:
@@ -111,14 +110,14 @@ protected:
 
 /** The base class for negation.
     Note: this includes binary "not"
-    Negation expressions should be derived from this one. 
-*/  
+    Negation expressions should be derived from this one.
+*/
 
 class negop : public unary {
   // So we know if it is "!" or "-".
   exprman::unary_opcode opcode;
 public:
-  negop(const char* fn, int line, exprman::unary_opcode oc, const type* t, expr* x);
+  negop(const location& W, exprman::unary_opcode oc, const type* t, expr* x);
   virtual bool Print(OutputStream &s, int) const;
   virtual void Traverse(traverse_data &x);
 };
@@ -135,7 +134,7 @@ public:
 class unary_temporal_expr : public unary {
   exprman::unary_opcode opcode;
 public:
-  unary_temporal_expr(const char* fn, int line, exprman::unary_opcode oc, const type* t, expr* x);
+  unary_temporal_expr(const location& W, exprman::unary_opcode oc, const type* t, expr* x);
   virtual bool Print(OutputStream &s, int) const;
 
   exprman::unary_opcode GetOpCode() const

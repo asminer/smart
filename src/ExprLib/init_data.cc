@@ -434,8 +434,8 @@ public:
   virtual bool requiresConversion(const type*, const type*) const {
     return false;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new typecast(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new typecast(W, t, e);
   }
 };
 
@@ -462,11 +462,11 @@ class elem2set : public general_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -476,13 +476,13 @@ public:
   virtual bool requiresConversion(const type* src, const type* dest) const {
     return true;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* d) const {
-    return new converter(fn, ln, d, e);
+  virtual expr* convert(const location &W, expr* e, const type* d) const {
+    return new converter(W, d, e);
   }
 };
 
-elem2set::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+elem2set::converter::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
   DCASSERT(x);
   DCASSERT(x->Type());
@@ -527,7 +527,7 @@ public:
   virtual bool requiresConversion(const type*, const type*) const {
     return false;
   }
-  virtual expr* convert(const char*, int, expr* src, const type*) const {
+  virtual expr* convert(const location &, expr* src, const type*) const {
     return src;
   }
 };
@@ -564,12 +564,12 @@ class precomp_add : public general_conv {
       result cached;
       bool precomputed;
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
       virtual void Traverse(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -579,14 +579,14 @@ public:
   virtual bool requiresConversion(const type*, const type*) const {
     return true;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new converter(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
   }
 };
 
 precomp_add::converter
- ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x)
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
   precomputed = false;
   cached.setNull();
@@ -686,8 +686,8 @@ public:
   virtual bool requiresConversion(const type*, const type*) const {
     return false;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new typecast(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new typecast(W, t, e);
   }
 };
 
@@ -730,11 +730,11 @@ class int2real : public specific_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -753,11 +753,11 @@ class int2real : public specific_conv {
   static int2real_convert foo;
 
     public:
-      setconv(const char* fn, int line, const type* nt, expr* x);
+      setconv(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new setconv(Filename(), Linenumber(), Type(), x);
+        return new setconv(Where(), Type(), x);
       }
     };
 
@@ -770,13 +770,13 @@ public:
     return SIMPLE_CONV;
   }
   virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  virtual expr* convert(const location &, expr*, const type*) const;
 };
 
 int2real::setconv::int2real_convert int2real::setconv::foo;
 
-int2real::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+int2real::converter::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -791,8 +791,8 @@ void int2real::converter::Compute(traverse_data &x)
   }
 }
 
-int2real::setconv::setconv(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+int2real::setconv::setconv(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -831,10 +831,10 @@ const type* int2real::promotesTo(const type* src) const
   return dest;
 }
 
-expr* int2real::convert(const char* fn, int ln, expr* e, const type* nt) const
+expr* int2real::convert(const location &W, expr* e, const type* nt) const
 {
-  if (nt->isASet())  return new setconv(fn, ln, nt, e);
-  return new converter(fn, ln, nt, e);
+  if (nt->isASet())  return new setconv(W, nt, e);
+  return new converter(W, nt, e);
 }
 
 // ******************************************************************
@@ -850,11 +850,11 @@ class real2int : public specific_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -866,11 +866,11 @@ public:
     return SIMPLE_CONV;
   }
   virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  virtual expr* convert(const location &, expr*, const type*) const;
 };
 
-real2int::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+real2int::converter::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -904,10 +904,10 @@ const type* real2int::promotesTo(const type* src) const
   return dest;
 }
 
-expr* real2int::convert(const char* fn, int ln, expr* e, const type* nt) const
+expr* real2int::convert(const location &W, expr* e, const type* nt) const
 {
   // TBD: {real} to {int}
-  return new converter(fn, ln, nt, e);
+  return new converter(W, nt, e);
 }
 
 // ******************************************************************

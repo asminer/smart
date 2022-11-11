@@ -7,7 +7,8 @@
 // *                       bogus_expr methods                       *
 // ******************************************************************
 
-bogus_expr::bogus_expr(const char* w) : expr(0, -1, (typelist*) 0)
+bogus_expr::bogus_expr(const char* w)
+    : expr( location::NOWHERE(), (typelist*) 0)
 {
   which = w;
 }
@@ -37,7 +38,7 @@ void bogus_expr::Traverse(traverse_data &x)
 {
   DCASSERT(em);
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Trying to traverse the " << which << " expression";
     em->stopIO();
   }

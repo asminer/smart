@@ -128,7 +128,7 @@ protected:
   array_desc* descriptor;
 public:
   array_instance(const array* wrapper);
-  array_instance(const char* fn, int line, const type* t, char* n, iterator** il, int dim);
+  array_instance(const location &W, const type* t, char* n, iterator** il, int dim);
 
   virtual ~array_instance();
 
@@ -146,9 +146,9 @@ array_instance::array_instance(const array* wrapper) : array(wrapper)
   descriptor = 0;
 }
 
-array_instance::array_instance(const char* fn, int line, const type* t,
+array_instance::array_instance(const location &W, const type* t,
         char* n, iterator** il, int dim)
- : array(fn, line, t, n, il, dim)
+ : array(W, t, n, il, dim)
 {
   descriptor = 0;
 }
@@ -183,7 +183,7 @@ void array_instance::SetCurrentReturn(expr* retval, bool rename)
   if (curr) {
     // we already have a value...
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "array reassignment?";
       em->stopIO();
     }
@@ -290,7 +290,7 @@ class arrayassign : public expr {
   array* f;
   expr* retval;
 public:
-  arrayassign(const char *fn, int l, array *a, expr *e);
+  arrayassign(const location &W, array *a, expr *e);
   virtual ~arrayassign();
 
   virtual bool Print(OutputStream &s, int) const;
@@ -302,8 +302,8 @@ public:
 // *                      arrayassign  methods                      *
 // ******************************************************************
 
-arrayassign::arrayassign(const char *fn, int l, array *a, expr *e)
-  : expr(fn, l, STMT)
+arrayassign::arrayassign(const location &W, array *a, expr *e)
+  : expr(W, STMT)
 {
   f = a;
   retval = e;
@@ -331,7 +331,7 @@ void arrayassign::Compute(traverse_data &td)
 {
   // De-iterate the return value
   expr* rv = (retval) ? (retval->Substitute(0)) : 0;
-  expr* arrayval = em->makeConstant(Filename(), Linenumber(), f->Type(), 0, rv, 0);
+  expr* arrayval = em->makeConstant(Where(), f->Type(), 0, rv, 0);
   f->SetCurrentReturn(arrayval, true);
   if (expr_debug.startReport()) {
     expr_debug.report() << "executing assignment: ";
@@ -361,7 +361,7 @@ protected:
   expr** pass;
   int numpass;
 public:
-  acall(const char *fn, int line, const type* t, array *f, expr **p, int np);
+  acall(const location &W, const type* t, array *f, expr **p, int np);
   virtual ~acall();
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
@@ -372,8 +372,8 @@ public:
 // *                         acall  methods                         *
 // ******************************************************************
 
-acall::acall(const char *fn, int line, const type* t, array *f,
-    expr **p, int np) : expr(fn, line, t)
+acall::acall(const location &W, const type* t, array *f,
+    expr **p, int np) : expr(W, t)
 {
   func = f;
   pass = p;
@@ -432,7 +432,7 @@ void acall::Traverse(traverse_data &x)
 
       if (changed) {
         x.answer->setPtr(
-          em->makeArrayCall(Filename(), Linenumber(), fsub, newpass, numpass)
+          em->makeArrayCall(Where(), fsub, newpass, numpass)
         );
       } else {
         Delete(fsub);
@@ -491,8 +491,8 @@ array::array(const array* wrapper) : symbol(wrapper)
   is_fixed = false;
 }
 
-array::array(const char* fn, int line, const type* t, char* n,
-    iterator** il, int dim) : symbol(fn, line, t, n)
+array::array(const location &W, const type* t, char* n,
+    iterator** il, int dim) : symbol(W, t, n)
 {
   index_list = il;
   dimension = dim;
@@ -511,7 +511,7 @@ array::~array()
 void array::SetCurrentReturn(expr*, bool)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Attempting to set return value on data-less array.";
     em->stopIO();
   }
@@ -520,7 +520,7 @@ void array::SetCurrentReturn(expr*, bool)
 array_item* array::GetCurrentReturn()
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Attempting to obtain value from data-less array.";
     em->stopIO();
   }
@@ -530,19 +530,19 @@ array_item* array::GetCurrentReturn()
 array_item* array::GetItem(expr**, result &x)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Attempting to obtain value from data-less array.";
     em->stopIO();
   }
   return 0;
 }
 
-bool array::checkArrayCall(const char* fn, int ln, expr** indexes, int dim) const
+bool array::checkArrayCall(const location &W, expr** indexes, int dim) const
 {
   // check that dim matches our dimension
   if (GetDimension() != dim) {
     if (em->startError()) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->cerr() << "Array " << Name();
       em->cerr() << " has dimension " << GetDimension();
       em->stopIO();
@@ -554,7 +554,7 @@ bool array::checkArrayCall(const char* fn, int ln, expr** indexes, int dim) cons
   for (int i=0; i<dim; i++) {
     if (!em->isPromotable(indexes[i]->Type(), GetIndexType(i))) {
       if (em->startError()) {
-        em->causedBy(fn, ln);
+        em->causedBy(W);
         em->cerr() << "Array ";
         PrintHeader(em->cerr());
         const type* at = GetIndexType(i);
@@ -606,7 +606,7 @@ array* array::instantiateMe() const
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeArray(const char* fn, int ln, const type* t, char* n, symbol** indexes, int dim) const
+symbol* exprman::makeArray(const location &W, const type* t, char* n, symbol** indexes, int dim) const
 {
   if (0==indexes) {
     free(n);
@@ -623,11 +623,11 @@ symbol* exprman::makeArray(const char* fn, int ln, const type* t, char* n, symbo
     return 0;
   }
 
-  return new array_instance(fn, ln, t, n, (iterator**) indexes, dim);
+  return new array_instance(W, t, n, (iterator**) indexes, dim);
 }
 
 
-expr* exprman::makeArrayAssign(const char* fn, int ln,
+expr* exprman::makeArrayAssign(const location &W,
       symbol* arr, expr* rhs) const
 {
   array* a = dynamic_cast <array*> (arr);
@@ -640,7 +640,7 @@ expr* exprman::makeArrayAssign(const char* fn, int ln,
   // Check return type
   if (!isPromotable(rhs->Type(), a->Type())) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Type mismatch in assignment for array ";
       cerr() << a->Name();
       stopIO();
@@ -655,11 +655,11 @@ expr* exprman::makeArrayAssign(const char* fn, int ln,
   // This array is not in a converge, so we can use the values immediately:
   a->setDefined();
   a->Affix();
-  return new arrayassign(fn, ln, a, rhs);
+  return new arrayassign(W, a, rhs);
 }
 
 
-expr* exprman::makeArrayCall(const char* fn, int ln,
+expr* exprman::makeArrayCall(const location &W,
       symbol* arr, expr** indexes, int dim) const
 {
   if (0==indexes)  return makeError();
@@ -680,7 +680,7 @@ expr* exprman::makeArrayCall(const char* fn, int ln,
 
   // check that dim matches dimension of a!
   if (!err && !nul) {
-    err = !a->checkArrayCall(fn, ln, indexes, dim);
+    err = !a->checkArrayCall(W, indexes, dim);
   }
 
   if (err || nul) {
@@ -690,6 +690,6 @@ expr* exprman::makeArrayCall(const char* fn, int ln,
     else      return makeError();
   }
 
-  return new acall(fn, ln, a->Type(), a, indexes, dim);
+  return new acall(W, a->Type(), a, indexes, dim);
 }
 

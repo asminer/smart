@@ -86,7 +86,7 @@ public:
   virtual void registerConversion(specific_conv *);
   virtual int getPromoteDistance(const type* t1, const type* t2) const;
   virtual bool isCastable(const type* t1, const type* t2) const;
-  virtual expr* makeTypecast(const char* file, int line,
+  virtual expr* makeTypecast(const location& W,
       const type* newtype, expr* e) const;
   // TBD: others here?
 
@@ -106,13 +106,13 @@ public:
   virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op,
       const type* right) const;
 
-  virtual expr* makeUnaryOp(const char* file, int line,
+  virtual expr* makeUnaryOp(const location& W,
       unary_opcode op, expr* opnd) const;
-  virtual expr* makeBinaryOp(const char* fn, int ln,
+  virtual expr* makeBinaryOp(const location& W,
       expr* left, binary_opcode op, expr* rt) const;
-  virtual expr* makeTrinaryOp(const char* fn, int ln, trinary_opcode op,
+  virtual expr* makeTrinaryOp(const location& W, trinary_opcode op,
       expr* l, expr* m, expr* r) const;
-  virtual expr* makeAssocOp(const char* fn, int ln, assoc_opcode op,
+  virtual expr* makeAssocOp(const location& W, assoc_opcode op,
       expr** opnds, bool* f, int nops) const;
 
   // Solution engine types

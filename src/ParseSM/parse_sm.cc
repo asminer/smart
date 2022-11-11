@@ -56,12 +56,7 @@ int parse_module::ParseSmartFile(FILE* file, const char* name)
   return -1;
 }
 
-const char* parse_module::filename() const
+const location& parse_module::where() const
 {
-  return Filename();
-}
-
-int parse_module::linenumber() const
-{
-  return Linenumber();
+    return Where();
 }
