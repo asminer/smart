@@ -9,7 +9,7 @@
   These include:
   the set operator: start .. stop .. increment
   the if-then-else operator: test ? tval : fval
-  
+
 */
 
 #include "exprman.h"
@@ -69,8 +69,7 @@ public:
 
   /** Build an expression.
       The operands are promoted as necessary.
-        @param  fn      Filename of expression.
-        @param  ln      Line number of expression.
+        @param  W       Location of expression.
         @param  left    Left operand.
         @param  middle  Middle operand.
         @param  right   Right operand.
@@ -78,7 +77,7 @@ public:
                 0 if an error occurred.
                 Will return 0 if "isDefinedForTypes()" returns false.
   */
-  virtual trinary* makeExpr(const char* fn, int ln, expr* left, 
+  virtual trinary* makeExpr(const location& W, expr* left,
         expr* middle, expr* right) const = 0;
 
 private:
@@ -103,7 +102,7 @@ protected:
   expr* middle;
   expr* right;
 public:
-  trinary(const char* fn, int line, const type* t, expr* l, expr* m, expr* r);
+  trinary(const location &W, const type* t, expr* l, expr* m, expr* r);
 protected:
   virtual ~trinary();
 public:

@@ -2829,7 +2829,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
+        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_and, terms, 0, length);
       }
 
       // build list of variables this piece depends on
@@ -2875,7 +2875,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, terms, 0, length);
       }
 
       // build list of variables this piece depends on
@@ -3091,7 +3091,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_semi, terms, 0, length);
+        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, terms, 0, length);
 
       // build list of variables this piece depends on
       int nv = ptr->countDeps();
@@ -3164,7 +3164,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(0, -1, exprman::aop_and, terms, 0, length);
+        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_and, terms, 0, length);
         if (chunk==0) continue;
 
         // build list of variables this piece depends on

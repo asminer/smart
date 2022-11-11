@@ -29,9 +29,12 @@
 #include "config.h"
 #include "../Streams/textfmt.h"
 #include "../Options/optman.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
+#include "../ExprLib/values.h"
+
 #include "../SymTabs/symtabs.h"
 #include "../ParseSM/parse_sm.h"
 
@@ -170,14 +173,14 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
   symbol* help = st->FindSymbol("help");
   if (0==help) {
     em->startError();
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "No online help found\n";
     em->stopIO();
     return 1;
   }
   if (help->Next()) {
     em->startError();
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Overloaded online help\n";
     em->stopIO();
     return 1;
@@ -191,13 +194,13 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
 
   if (0==argc) {
     em->STRING->assignFromString(keyword, "");
-    expr* foo = em->makeLiteral(0, -1, em->STRING, keyword);
+    expr* foo = new value(location::NOWHERE(), em->STRING, keyword);
     hf->Compute(x, &foo, 1);
     Delete(foo);
   } else {
     for (int i=0; i<argc; i++) {
       em->STRING->assignFromString(keyword, argv[i]);
-      expr* foo = em->makeLiteral(0, -1, em->STRING, keyword);
+      expr* foo = new value(location::NOWHERE(), em->STRING, keyword);
       hf->Compute(x, &foo, 1);
       Delete(foo);
     }
@@ -222,7 +225,7 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
   if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
     if (0==em) return 1;
     em->startError();
-    em->noCause();
+    em->causedBy(location::CMDLINE());
     em->cerr() << "Help system is now -h\n";
     em->stopIO();
     return 1;

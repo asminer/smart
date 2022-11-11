@@ -12,7 +12,7 @@
    Implementation of simple set stuff.
 */
 
-inline const type* 
+inline const type*
 SetResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -87,7 +87,7 @@ inline const type* AlignSets(const exprman* em, expr** x, int N)
  */
 class int_ivlexpr : public trinary {
 public:
-  int_ivlexpr(const char* fn, int line, expr* s, expr* e, expr* i);
+  int_ivlexpr(const location &W, expr* s, expr* e, expr* i);
   virtual void Compute(traverse_data &x);
   virtual bool Print(OutputStream &s, int) const;
 protected:
@@ -98,12 +98,12 @@ protected:
 // *                      int_ivlexpr  methods                      *
 // ******************************************************************
 
-int_ivlexpr::int_ivlexpr(const char* f, int l, expr* s, expr* e, expr* i)
- : trinary(f, l, em->INT->getSetOfThis(), s, e, i)
+int_ivlexpr::int_ivlexpr(const location &W, expr* s, expr* e, expr* i)
+ : trinary(W, em->INT->getSetOfThis(), s, e, i)
 {
-  DCASSERT(s); 
-  DCASSERT(e); 
-  DCASSERT(i); 
+  DCASSERT(s);
+  DCASSERT(e);
+  DCASSERT(i);
   DCASSERT(Type());
   DCASSERT(s->Type()==Type()->getSetElemType());
   DCASSERT(e->Type()==Type()->getSetElemType());
@@ -124,7 +124,7 @@ void int_ivlexpr::Compute(traverse_data &x)
     // that means an interval with just the start element.
     x.answer->setPtr( MakeSingleton(left->Type(), s) );
     return;
-  } 
+  }
 
   if ((!e.isNormal()) || (!i.isNormal())) {
     x.answer->setNull();
@@ -133,13 +133,13 @@ void int_ivlexpr::Compute(traverse_data &x)
 
   if (((s.getInt() > e.getInt()) && (i.getInt()>0))
      ||
-     ((s.getInt() < e.getInt()) && (i.getInt()<0))) 
+     ((s.getInt() < e.getInt()) && (i.getInt()<0)))
   {
     // empty interval
     x.answer->setPtr( MakeSet(Type(), 0, 0, 0) );
     return;
-  } 
-  
+  }
+
   // we have an ordinary interval
   x.answer->setPtr( MakeRangeSet(s.getInt(), e.getInt(), i.getInt()) );
 }
@@ -158,7 +158,7 @@ bool int_ivlexpr::Print(OutputStream &s, int) const
 
 expr* int_ivlexpr::buildAnother(expr* newl, expr* newm, expr* newr) const
 {
-  return new int_ivlexpr(Filename(), Linenumber(), newl, newm, newr);
+  return new int_ivlexpr(Where(), newl, newm, newr);
 }
 
 // ******************************************************************
@@ -171,11 +171,11 @@ class int_ivlop : public trinary_op {
 public:
   int_ivlop();
 
-  virtual int getPromoteDistance(const type* lt, const type* mt, 
+  virtual int getPromoteDistance(const type* lt, const type* mt,
         const type* rt) const;
-  virtual const type* getExprType(const type* lt, const type* mt, 
+  virtual const type* getExprType(const type* lt, const type* mt,
         const type* rt) const;
-  virtual trinary* makeExpr(const char* fn, int ln, expr* left, 
+  virtual trinary* makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const;
 };
 
@@ -200,7 +200,7 @@ getPromoteDistance(const type* lt, const type* mt, const type* rt) const
   return dl + dm + dr;
 }
 
-const type* int_ivlop::getExprType(const type* lt, const type* mt, 
+const type* int_ivlop::getExprType(const type* lt, const type* mt,
         const type* rt) const
 {
   if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return 0;
@@ -210,7 +210,7 @@ const type* int_ivlop::getExprType(const type* lt, const type* mt,
   return em->INT->getSetOfThis();
 }
 
-trinary* int_ivlop::makeExpr(const char* fn, int ln, expr* left, 
+trinary* int_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
   left = em->promote(left, em->INT);
@@ -224,7 +224,7 @@ trinary* int_ivlop::makeExpr(const char* fn, int ln, expr* left,
     return 0;
   }
 
-  return new int_ivlexpr(fn, ln, left, middle, right);
+  return new int_ivlexpr(W, left, middle, right);
 }
 
 // ******************************************************************
@@ -237,7 +237,7 @@ trinary* int_ivlop::makeExpr(const char* fn, int ln, expr* left,
  */
 class real_ivlexpr : public trinary {
 public:
-  real_ivlexpr(const char* fn, int line, expr* s, expr* e, expr* i);
+  real_ivlexpr(const location &W, expr* s, expr* e, expr* i);
   virtual void Compute(traverse_data &x);
   virtual bool Print(OutputStream &s, int) const;
 protected:
@@ -249,12 +249,12 @@ protected:
 // *                      real_ivlexpr methods                      *
 // ******************************************************************
 
-real_ivlexpr::real_ivlexpr(const char* f, int l, expr* s, expr* e, expr* i)
- : trinary(f, l, em->REAL->getSetOfThis(), s, e, i)
+real_ivlexpr::real_ivlexpr(const location &W, expr* s, expr* e, expr* i)
+ : trinary(W, em->REAL->getSetOfThis(), s, e, i)
 {
-  DCASSERT(s); 
-  DCASSERT(e); 
-  DCASSERT(i); 
+  DCASSERT(s);
+  DCASSERT(e);
+  DCASSERT(i);
   DCASSERT(s->Type()==Type()->getSetElemType());
   DCASSERT(e->Type()==Type()->getSetElemType());
   DCASSERT(i->Type()==Type()->getSetElemType());
@@ -274,7 +274,7 @@ void real_ivlexpr::Compute(traverse_data &x)
     // that means an interval with just the start element.
     x.answer->setPtr( MakeSingleton(left->Type(), s) );
     return;
-  } 
+  }
 
   if ((!e.isNormal()) || (!i.isNormal())) {
     x.answer->setNull();
@@ -283,15 +283,15 @@ void real_ivlexpr::Compute(traverse_data &x)
 
   if (((s.getReal() > e.getReal()) && (i.getReal()>0))
      ||
-     ((s.getReal() < e.getReal()) && (i.getReal()<0))) 
+     ((s.getReal() < e.getReal()) && (i.getReal()<0)))
   {
     // empty interval
     x.answer->setPtr( MakeSet(left->Type(), 0, 0, 0) );
     return;
-  } 
-  
+  }
+
   // we have an ordinary interval
-  x.answer->setPtr( MakeRangeSet(left->Type(), s.getReal(), 
+  x.answer->setPtr( MakeRangeSet(left->Type(), s.getReal(),
       e.getReal(), i.getReal()) );
 }
 
@@ -309,7 +309,7 @@ bool real_ivlexpr::Print(OutputStream &s, int) const
 
 expr* real_ivlexpr::buildAnother(expr* newl, expr* newm, expr* newr) const
 {
-  return new real_ivlexpr(Filename(), Linenumber(), newl, newm, newr);
+  return new real_ivlexpr(Where(), newl, newm, newr);
 }
 
 // ******************************************************************
@@ -322,11 +322,11 @@ class real_ivlop : public trinary_op {
 public:
   real_ivlop();
 
-  virtual int getPromoteDistance(const type* lt, const type* mt, 
+  virtual int getPromoteDistance(const type* lt, const type* mt,
         const type* rt) const;
-  virtual const type* getExprType(const type* lt, const type* mt, 
+  virtual const type* getExprType(const type* lt, const type* mt,
         const type* rt) const;
-  virtual trinary* makeExpr(const char* fn, int ln, expr* left, 
+  virtual trinary* makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const;
 };
 
@@ -351,7 +351,7 @@ getPromoteDistance(const type* lt, const type* mt, const type* rt) const
   return dl + dm + dr;
 }
 
-const type* real_ivlop::getExprType(const type* lt, const type* mt, 
+const type* real_ivlop::getExprType(const type* lt, const type* mt,
         const type* rt) const
 {
   if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return 0;
@@ -361,7 +361,7 @@ const type* real_ivlop::getExprType(const type* lt, const type* mt,
   return em->REAL->getSetOfThis();
 }
 
-trinary* real_ivlop::makeExpr(const char* fn, int ln, expr* left, 
+trinary* real_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
   left = em->promote(left, em->REAL);
@@ -375,7 +375,7 @@ trinary* real_ivlop::makeExpr(const char* fn, int ln, expr* left,
     return 0;
   }
 
-  return new real_ivlexpr(fn, ln, left, middle, right);
+  return new real_ivlexpr(W, left, middle, right);
 }
 
 
@@ -403,7 +403,7 @@ protected:
   /// Top of stack.
   long stack_top;
   /// Size of stack (max depth).
-  long stack_size; 
+  long stack_size;
   /// Items stored in the tree/list.
   result* item;
   /// Left pointers.
@@ -505,7 +505,7 @@ protected:
     if (GP >= 0) {
       if (left[GP] == P)
         left[GP] = C;
-      else 
+      else
         right[GP] = C;
     }
   }
@@ -642,7 +642,7 @@ bool SplayOfResults::Insert(const result& key)
     if (cmp > 0) {
       long l = left[root];
       left[newroot] = l;
-      if (l>=0) right[l] = newroot;     
+      if (l>=0) right[l] = newroot;
       right[newroot] = root;
       left[root] = newroot;
     } else {
@@ -679,7 +679,7 @@ void SplayOfResults::FillOrderArray(long* a)
       slot++;
     }
     return;
-  } 
+  }
   // non-recursive, inorder tree traversal
   StackClear();
   i = root;
@@ -744,7 +744,7 @@ void SplayOfResults::ConvertToTree()
 */
 class set_union : public summation {
 public:
-  set_union(const char* fn, int line, const type* settype, expr** x, int n);
+  set_union(const location &W, const type* settype, expr** x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr** newx, bool* f, int newn) const;
@@ -755,8 +755,8 @@ protected:
 // ******************************************************************
 
 set_union
-::set_union(const char* fn, int line, const type* settype, expr** x, int n)
- : summation(fn, line, exprman::aop_union, settype, x, 0, n)
+::set_union(const location &W, const type* settype, expr** x, int n)
+ : summation(W, exprman::aop_union, settype, x, 0, n)
 {
 }
 
@@ -776,7 +776,7 @@ void set_union::Compute(traverse_data &x)
       result item;
       s->GetElement(e, item);
       answer.Insert(item);
-    } 
+    }
   }
   // prepare result
   long newsize = answer.NumElements();
@@ -790,7 +790,7 @@ void set_union::Compute(traverse_data &x)
 expr* set_union::buildAnother(expr** newx, bool* f, int newn) const
 {
   DCASSERT(0==f);
-  return new set_union(Filename(), Linenumber(), Type(), newx, newn);
+  return new set_union(Where(), Type(), newx, newn);
 }
 
 
@@ -804,11 +804,11 @@ class set_union_op : public assoc_op {
 public:
   set_union_op();
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
-  virtual int getPromoteDistance(bool flip, const type* lt, 
+  virtual int getPromoteDistance(bool flip, const type* lt,
           const type* rt) const;
-  virtual const type* getExprType(bool flip, const type* lt, 
+  virtual const type* getExprType(bool flip, const type* lt,
           const type* rt) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
           bool* flip, int N) const;
 };
 
@@ -839,12 +839,12 @@ const type* set_union_op
   return SetResultType(em, lt, rt);
 }
 
-assoc* set_union_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* set_union_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   delete[] flip;
   const type* lct = AlignSets(em, list, N);
-  if (lct)  return new set_union(fn, ln, lct, list, N);
+  if (lct)  return new set_union(W, lct, list, N);
   // there was an error
   delete[] list;
   return 0;

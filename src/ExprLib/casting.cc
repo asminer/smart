@@ -35,9 +35,9 @@ specific_conv::specific_conv(bool c)
 // *                                                                *
 // ******************************************************************
 
-typecast::typecast(const char* fn, int line, const type* newt, expr* x)
- : unary(fn, line, newt, x) 
-{ 
+typecast::typecast(const location &W, const type* newt, expr* x)
+ : unary(W, newt, x)
+{
   silent = false;
 }
 
@@ -68,6 +68,6 @@ void typecast::Compute(traverse_data &x)
 
 expr* typecast::buildAnother(expr* x) const
 {
-  return new typecast(Filename(), Linenumber(), Type(), x);
+  return new typecast(Where(), Type(), x);
 }
 

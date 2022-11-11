@@ -105,7 +105,7 @@ protected:
   /** Start an appopriate internal error message.
          @return  -2, for convenience.
   */
-  long bailOut(const char* fn, int ln, const char* why) const;
+  long bailOut(const char* sfile, unsigned sline, const char* why) const;
 };
 
 
@@ -321,7 +321,7 @@ public:
 
 protected:
   /// Start an appopriate internal error message.
-  void bailOut(const char* fn, int ln, const char* why) const;
+  void bailOut(const char* sfile, unsigned sline, const char* why) const;
 };
 
 // ******************************************************************
@@ -380,7 +380,7 @@ private:
   symbol* slist;
 
 public:
-  model_instance(const char* fn, int line, const model_def* defn);
+  model_instance(const location &W, const model_def* defn);
 protected:
   virtual ~model_instance();
 public:

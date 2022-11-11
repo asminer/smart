@@ -224,11 +224,11 @@ class int2bigint : public specific_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -241,12 +241,12 @@ public:
     return RANGE_EXPAND;
   }
   virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  virtual expr* convert(const location &, expr*, const type*) const;
 };
 
 int2bigint::converter
-::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -272,9 +272,9 @@ const type* int2bigint::promotesTo(const type* src) const
   return em->BIGINT;
 }
 
-expr* int2bigint::convert(const char* fn, int ln, expr* e, const type* nt) const
+expr* int2bigint::convert(const location &W, expr* e, const type* nt) const
 {
-  return new converter(fn, ln, nt, e);
+  return new converter(W, nt, e);
 }
 
 // ******************************************************************
@@ -288,11 +288,11 @@ class bigint2int : public specific_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -304,12 +304,12 @@ public:
     return (src == em->BIGINT) ? RANGE_EXPAND : -1;
   }
   virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  virtual expr* convert(const location &, expr*, const type*) const;
 };
 
 bigint2int::converter
-::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -346,9 +346,9 @@ const type* bigint2int::promotesTo(const type* src) const
   return em->INT;
 }
 
-expr* bigint2int::convert(const char* fn, int ln, expr* e, const type* nt) const
+expr* bigint2int::convert(const location &W, expr* e, const type* nt) const
 {
-  return new converter(fn, ln, nt, e);
+  return new converter(W, nt, e);
 }
 
 // ******************************************************************
@@ -362,11 +362,11 @@ class bigint2real : public specific_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -378,12 +378,12 @@ public:
     return (src == em->BIGINT) ? SIMPLE_CONV : -1;
   }
   virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  virtual expr* convert(const location &, expr*, const type*) const;
 };
 
 bigint2real::converter
-::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x)
+::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
 {
 }
 
@@ -421,9 +421,9 @@ const type* bigint2real::promotesTo(const type* src) const
 }
 
 expr* bigint2real
-::convert(const char* fn, int ln, expr* e, const type* nt) const
+::convert(const location &W, expr* e, const type* nt) const
 {
-  return new converter(fn, ln, nt, e);
+  return new converter(W, nt, e);
 }
 
 
@@ -444,7 +444,7 @@ expr* bigint2real
 /// Negation of a bigint expression.
 class bigint_neg : public negop {
 public:
-  bigint_neg(const char* fn, int line, expr *x);
+  bigint_neg(const location &W, expr *x);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x) const;
@@ -454,8 +454,8 @@ protected:
 // *                       bigint_neg methods                       *
 // ******************************************************************
 
-bigint_neg::bigint_neg(const char* fn, int line, expr *x)
- : negop(fn, line, exprman::uop_neg, x->Type(), x)
+bigint_neg::bigint_neg(const location &W, expr *x)
+ : negop(W, exprman::uop_neg, x->Type(), x)
 {
 }
 
@@ -478,7 +478,7 @@ void bigint_neg::Compute(traverse_data &x)
 
 expr* bigint_neg::buildAnother(expr *x) const
 {
-  return new bigint_neg(Filename(), Linenumber(), x);
+  return new bigint_neg(Where(), x);
 }
 
 // ******************************************************************
@@ -490,7 +490,7 @@ expr* bigint_neg::buildAnother(expr *x) const
 /// Addition of bigint expressions.
 class bigint_add : public summation {
 public:
-  bigint_add(const char* fn, int line, const type* t, expr **x, bool* f, int n);
+  bigint_add(const location &W, const type* t, expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -501,8 +501,8 @@ protected:
 // ******************************************************************
 
 bigint_add::
-bigint_add(const char* fn, int line, const type* t, expr** x, bool* f, int n)
- : summation(fn, line, exprman::aop_plus, t, x, f, n)
+bigint_add(const location &W, const type* t, expr** x, bool* f, int n)
+ : summation(W, exprman::aop_plus, t, x, f, n)
 {
 }
 
@@ -597,7 +597,7 @@ void bigint_add::Compute(traverse_data &x)
 
 expr* bigint_add::buildAnother(expr** x, bool* f, int n) const
 {
-  return new bigint_add(Filename(), Linenumber(), Type(), x, f, n);
+  return new bigint_add(Where(), Type(), x, f, n);
 }
 
 
@@ -610,7 +610,7 @@ expr* bigint_add::buildAnother(expr** x, bool* f, int n) const
 /// Multiplication of bigint expressions.
 class bigint_mult : public product {
 public:
-  bigint_mult(const char* fn, int line, const type* t, expr **x, int n);
+  bigint_mult(const location &W, const type* t, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -621,8 +621,8 @@ protected:
 // ******************************************************************
 
 bigint_mult
-::bigint_mult(const char* fn, int line, const type* t, expr **x, int n)
- : product(fn, line, exprman::aop_times, t, x, 0, n)
+::bigint_mult(const location &W, const type* t, expr **x, int n)
+ : product(W, exprman::aop_times, t, x, 0, n)
 {
 }
 
@@ -768,7 +768,7 @@ void bigint_mult::Compute(traverse_data &x)
 expr* bigint_mult::buildAnother(expr **x, bool* f, int n) const
 {
   DCASSERT(0==f);
-  return new bigint_mult(Filename(), Linenumber(), Type(), x, n);
+  return new bigint_mult(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -782,7 +782,7 @@ expr* bigint_mult::buildAnother(expr **x, bool* f, int n) const
  */
 class bigint_multdiv : public product {
 public:
-  bigint_multdiv(const char* fn, int line, const type* t,
+  bigint_multdiv(const location &W, const type* t,
       expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
@@ -793,8 +793,8 @@ protected:
 // *                     bigint_multdiv methods                     *
 // ******************************************************************
 
-bigint_multdiv::bigint_multdiv(const char* fn, int line, const type* t,
-  expr** x, bool* f, int n) : product(fn, line, exprman::aop_times, t, x, f, n)
+bigint_multdiv::bigint_multdiv(const location &W, const type* t,
+  expr** x, bool* f, int n) : product(W, exprman::aop_times, t, x, f, n)
 {
   DCASSERT(f);
 }
@@ -1016,7 +1016,7 @@ void bigint_multdiv::Compute(traverse_data &x)
 
 expr* bigint_multdiv::buildAnother(expr **x, bool* f, int n) const
 {
-  return new bigint_multdiv(Filename(), Linenumber(), Type(), x, f, n);
+  return new bigint_multdiv(Where(), Type(), x, f, n);
 }
 
 // ******************************************************************
@@ -1028,7 +1028,7 @@ expr* bigint_multdiv::buildAnother(expr **x, bool* f, int n) const
 /// Modulo arithmetic for bigint expressions.
 class bigint_mod : public modulo {
 public:
-  bigint_mod(const char* fn, int line, const type* t, expr* l, expr* r);
+  bigint_mod(const location &W, const type* t, expr* l, expr* r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr* l, expr* r) const;
@@ -1039,8 +1039,8 @@ protected:
 // ******************************************************************
 
 bigint_mod
-::bigint_mod(const char* fn, int line, const type* t, expr *l, expr *r)
- : modulo(fn, line, t, l, r)
+::bigint_mod(const location &W, const type* t, expr *l, expr *r)
+ : modulo(W, t, l, r)
 {
 }
 
@@ -1108,7 +1108,7 @@ void bigint_mod::Compute(traverse_data &x)
 
 expr* bigint_mod::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_mod(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_mod(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1120,7 +1120,7 @@ expr* bigint_mod::buildAnother(expr *l, expr *r) const
 /// Check equality of two bigint expressions.
 class bigint_equal : public eqop {
 public:
-  bigint_equal(const char* fn, int line, const type* nt, expr *l, expr *r);
+  bigint_equal(const location &W, const type* nt, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1131,8 +1131,8 @@ protected:
 // ******************************************************************
 
 bigint_equal
-::bigint_equal(const char* fn, int line, const type* nt, expr *l, expr *r)
- : eqop(fn, line, nt, l, r)
+::bigint_equal(const location &W, const type* nt, expr *l, expr *r)
+ : eqop(W, nt, l, r)
 {
 }
 
@@ -1152,7 +1152,7 @@ void bigint_equal::Compute(traverse_data &x)
 
 expr* bigint_equal::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_equal(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_equal(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1164,7 +1164,7 @@ expr* bigint_equal::buildAnother(expr *l, expr *r) const
 /// Check inequality of two bigint expressions.
 class bigint_neq : public neqop {
 public:
-  bigint_neq(const char* fn, int line, const type* t, expr *l, expr *r);
+  bigint_neq(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1175,8 +1175,8 @@ protected:
 // ******************************************************************
 
 bigint_neq
-::bigint_neq(const char* fn, int line, const type* t, expr *l, expr *r)
- : neqop(fn, line, t, l, r)
+::bigint_neq(const location &W, const type* t, expr *l, expr *r)
+ : neqop(W, t, l, r)
 {
 }
 
@@ -1196,7 +1196,7 @@ void bigint_neq::Compute(traverse_data &x)
 
 expr* bigint_neq::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_neq(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_neq(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1208,7 +1208,7 @@ expr* bigint_neq::buildAnother(expr *l, expr *r) const
 /// Check if one bigint expression is greater than another.
 class bigint_gt : public gtop {
 public:
-  bigint_gt(const char* fn, int line, const type* t, expr *l, expr *r);
+  bigint_gt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1218,8 +1218,8 @@ protected:
 // *                       bigint_gt  methods                       *
 // ******************************************************************
 
-bigint_gt::bigint_gt(const char* fn, int line, const type* t, expr *l, expr *r)
- : gtop(fn, line, t, l, r)
+bigint_gt::bigint_gt(const location &W, const type* t, expr *l, expr *r)
+ : gtop(W, t, l, r)
 {
 }
 
@@ -1239,7 +1239,7 @@ void bigint_gt::Compute(traverse_data &x)
 
 expr* bigint_gt::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_gt(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_gt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1251,7 +1251,7 @@ expr* bigint_gt::buildAnother(expr *l, expr *r) const
 /// Check if one bigint expression is greater or equal another.
 class bigint_ge : public geop {
 public:
-  bigint_ge(const char* fn, int line, const type* t, expr *l, expr *r);
+  bigint_ge(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1261,8 +1261,8 @@ protected:
 // *                       bigint_ge  methods                       *
 // ******************************************************************
 
-bigint_ge::bigint_ge(const char* fn, int line, const type* t, expr *l, expr *r)
- : geop(fn, line, t, l, r)
+bigint_ge::bigint_ge(const location &W, const type* t, expr *l, expr *r)
+ : geop(W, t, l, r)
 {
 }
 
@@ -1282,7 +1282,7 @@ void bigint_ge::Compute(traverse_data &x)
 
 expr* bigint_ge::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_ge(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_ge(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1294,7 +1294,7 @@ expr* bigint_ge::buildAnother(expr *l, expr *r) const
 /// Check if one bigint expression is less than another.
 class bigint_lt : public ltop {
 public:
-  bigint_lt(const char* fn, int line, const type* t, expr *l, expr *r);
+  bigint_lt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1304,8 +1304,8 @@ protected:
 // *                       bigint_lt  methods                       *
 // ******************************************************************
 
-bigint_lt::bigint_lt(const char* fn, int line, const type* t, expr *l, expr *r)
- : ltop(fn, line, t, l, r)
+bigint_lt::bigint_lt(const location &W, const type* t, expr *l, expr *r)
+ : ltop(W, t, l, r)
 {
 }
 
@@ -1325,7 +1325,7 @@ void bigint_lt::Compute(traverse_data &x)
 
 expr* bigint_lt::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_lt(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_lt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1337,7 +1337,7 @@ expr* bigint_lt::buildAnother(expr *l, expr *r) const
 /// Check if one bigint expression is less or equal another.
 class bigint_le : public leop {
 public:
-  bigint_le(const char* fn, int line, const type* t, expr *l, expr *r);
+  bigint_le(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1347,8 +1347,8 @@ protected:
 // *                       bigint_le  methods                       *
 // ******************************************************************
 
-bigint_le::bigint_le(const char* fn, int line, const type* t, expr *l, expr *r)
- : leop(fn, line, t, l, r)
+bigint_le::bigint_le(const location &W, const type* t, expr *l, expr *r)
+ : leop(W, t, l, r)
 {
 }
 
@@ -1368,7 +1368,7 @@ void bigint_le::Compute(traverse_data &x)
 
 expr* bigint_le::buildAnother(expr *l, expr *r) const
 {
-  return new bigint_le(Filename(), Linenumber(), Type(), l, r);
+  return new bigint_le(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1576,7 +1576,7 @@ class bigint_neg_op : public unary_op {
 public:
   bigint_neg_op();
   virtual const type* getExprType(const type* t) const;
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+  virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -1598,14 +1598,14 @@ const type* bigint_neg_op::getExprType(const type* t) const
   return t;
 }
 
-unary* bigint_neg_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* bigint_neg_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   if (!isDefinedForType(x->Type())) {
     Delete(x);
     return 0;
   }
-  return new bigint_neg(fn, ln, x);
+  return new bigint_neg(W, x);
 }
 
 // ******************************************************************
@@ -1617,7 +1617,7 @@ unary* bigint_neg_op::makeExpr(const char* fn, int ln, expr* x) const
 class bigint_add_op : public bigint_assoc_op {
 public:
   bigint_add_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1629,7 +1629,7 @@ bigint_add_op::bigint_add_op() : bigint_assoc_op(exprman::aop_plus)
 {
 }
 
-assoc* bigint_add_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* bigint_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
@@ -1646,7 +1646,7 @@ assoc* bigint_add_op::makeExpr(const char* fn, int ln, expr** list,
       flip = 0;
     }
   }
-  if (lct)  return new bigint_add(fn, ln, lct, list, flip, N);
+  if (lct)  return new bigint_add(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -1665,7 +1665,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1698,13 +1698,13 @@ const type* bigint_mult_op
   return BigintResultType(em, l, r);
 }
 
-assoc* bigint_mult_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* bigint_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i])  lct = 0;
   delete[] flip;
-  if (lct)  return new bigint_mult(fn, ln, lct, list, N);
+  if (lct)  return new bigint_mult(W, lct, list, N);
   // there was an error
   delete[] list;
   return 0;
@@ -1723,7 +1723,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -1765,7 +1765,7 @@ const type* bigint_multdiv_op
   return lct;
 }
 
-assoc* bigint_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* bigint_multdiv_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBigints(em, list, N);
@@ -1780,7 +1780,7 @@ assoc* bigint_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
     if (unflipped)  lct = 0;
   }
   if (lct)  lct = lct->changeBaseType(em->REAL);
-  if (lct)  return new bigint_multdiv(fn, ln, lct, list, flip, N);
+  if (lct)  return new bigint_multdiv(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -1796,7 +1796,7 @@ assoc* bigint_multdiv_op::makeExpr(const char* fn, int ln, expr** list,
 class bigint_mod_op : public bigint_binary_op {
 public:
   bigint_mod_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1807,11 +1807,11 @@ bigint_mod_op::bigint_mod_op() : bigint_binary_op(exprman::bop_mod)
 {
 }
 
-binary* bigint_mod_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_mod_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  return new bigint_mod(fn, ln, lct, l, r);
+  return new bigint_mod(W, lct, l, r);
 }
 
 
@@ -1824,7 +1824,7 @@ binary* bigint_mod_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 class bigint_equal_op : public bigint_comp_op {
 public:
   bigint_equal_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1836,13 +1836,13 @@ bigint_equal_op::bigint_equal_op() : bigint_comp_op(exprman::bop_equals)
 }
 
 binary* bigint_equal_op
- ::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+ ::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_equal(fn, ln, lct, l, r);
+  return new bigint_equal(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1854,7 +1854,7 @@ binary* bigint_equal_op
 class bigint_neq_op : public bigint_comp_op {
 public:
   bigint_neq_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1865,13 +1865,13 @@ bigint_neq_op::bigint_neq_op() : bigint_comp_op(exprman::bop_nequal)
 {
 }
 
-binary* bigint_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_neq(fn, ln, lct, l, r);
+  return new bigint_neq(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1883,7 +1883,7 @@ binary* bigint_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 class bigint_gt_op : public bigint_comp_op {
 public:
   bigint_gt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1894,13 +1894,13 @@ bigint_gt_op::bigint_gt_op() : bigint_comp_op(exprman::bop_gt)
 {
 }
 
-binary* bigint_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_gt(fn, ln, lct, l, r);
+  return new bigint_gt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1912,7 +1912,7 @@ binary* bigint_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 class bigint_ge_op : public bigint_comp_op {
 public:
   bigint_ge_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1923,13 +1923,13 @@ bigint_ge_op::bigint_ge_op() : bigint_comp_op(exprman::bop_ge)
 {
 }
 
-binary* bigint_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_ge(fn, ln, lct, l, r);
+  return new bigint_ge(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1941,7 +1941,7 @@ binary* bigint_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 class bigint_lt_op : public bigint_comp_op {
 public:
   bigint_lt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1952,13 +1952,13 @@ bigint_lt_op::bigint_lt_op() : bigint_comp_op(exprman::bop_lt)
 {
 }
 
-binary* bigint_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_lt(fn, ln, lct, l, r);
+  return new bigint_lt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1970,7 +1970,7 @@ binary* bigint_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 class bigint_le_op : public bigint_comp_op {
 public:
   bigint_le_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1981,13 +1981,13 @@ bigint_le_op::bigint_le_op() : bigint_comp_op(exprman::bop_le)
 {
 }
 
-binary* bigint_le_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bigint_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new bigint_le(fn, ln, lct, l, r);
+  return new bigint_le(W, lct, l, r);
 }
 
 // ******************************************************************

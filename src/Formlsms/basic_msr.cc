@@ -4,6 +4,7 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
 #include "../ExprLib/sets.h"
+#include "../ExprLib/values.h"
 
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/dsde_hlm.h"
@@ -746,7 +747,7 @@ showstates_si::showstates_si()
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal",
-    em->makeLiteral(0, -1, em->BOOL, def)
+    new value(location::NOWHERE(), em->BOOL, def)
   );
 }
 
@@ -788,7 +789,7 @@ showstatesCOV_si::showstatesCOV_si()
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal",
-    em->makeLiteral(0, -1, em->BOOL, def)
+    new value(location::NOWHERE(), em->BOOL, def)
   );
 }
 
@@ -830,7 +831,7 @@ showarcs_si::showarcs_si()
   result def;
   def.setBool(false);
   SetFormal(1, em->BOOL, "internal",
-    em->makeLiteral(0, -1, em->BOOL, def)
+    new value(location::NOWHERE(), em->BOOL, def)
   );
 }
 
@@ -871,7 +872,9 @@ showarcsCOV_si::showarcsCOV_si() :
 			"Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
 	result def;
 	def.setBool(false);
-	SetFormal(1, em->BOOL, "internal", em->makeLiteral(0, -1, em->BOOL, def));
+	SetFormal(1, em->BOOL, "internal",
+        new value(location::NOWHERE(), em->BOOL, def)
+    );
 }
 
 void showarcsCOV_si::Compute(traverse_data &x, expr** pass, int np) {
@@ -910,7 +913,9 @@ showproc_si::showproc_si() :
 			"Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
 	result def;
 	def.setBool(false);
-	SetFormal(1, em->BOOL, "internal", em->makeLiteral(0, -1, em->BOOL, def));
+	SetFormal(1, em->BOOL, "internal",
+        new value(location::NOWHERE(), em->BOOL, def)
+    );
 }
 
 void showproc_si::Compute(traverse_data &x, expr** pass, int np) {

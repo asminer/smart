@@ -20,7 +20,7 @@
 #include <math.h>
 
 /* TBD:
-  
+
     poisson
 
 */
@@ -45,7 +45,7 @@ struct symbol_count {
 
 /** Get variable dependencies that are shared by more than one expression.
       @param  i       Aggregate number
-      @param  elist   List of expressions 
+      @param  elist   List of expressions
       @param  N       number of expressions
       @param  shared  Output: list is stored here
 */
@@ -79,7 +79,7 @@ void findCommonDependencies(int i, expr** elist, int N, List <symbol> &shared)
   // Copy the duplicates
   shared.Clear();
   for (int j=0; j<len; j++) {
-    if (A[j]->count > 1) 
+    if (A[j]->count > 1)
       if (A[j]->s->Type()->getModifier()==PHASE)
         shared.Append(A[j]->s);
     delete A[j];
@@ -90,9 +90,9 @@ void findCommonDependencies(int i, expr** elist, int N, List <symbol> &shared)
 /// Show variable dependencies.
 void showCommonDependencies(const exprman* em, List <symbol> &shared, symbol* who)
 {
-  if (who) 
+  if (who)
     em->warn() << "Common dependencies in parameters to " << who->Name() << "():";
-  else 
+  else
     em->warn() << "Common dependencies:";
   for (int i=0; i<shared.Length(); i++) {
     em->newLine((i>0) ? 0 : 1);
@@ -109,7 +109,7 @@ bool haveDependencies(const exprman* em, symbol* who, expr** pass, int np)
   // Check for independence
   findCommonDependencies(0, pass, np, foo);
   if (foo.Length()) if (em->startWarning()) { // TBD: name this warning?
-    em->noCause();
+    em->causedBy(0);
     showCommonDependencies(em, foo, who);
     em->stopIO();
     return true;
@@ -197,7 +197,7 @@ public:
   }
 };
 
-bernoulli::bernoulli(const type* rettype, const type* parmtype) 
+bernoulli::bernoulli(const type* rettype, const type* parmtype)
  : distribution(rettype, "bernoulli", 1)
 {
   SetFormal(0, parmtype, "p");
@@ -206,7 +206,7 @@ bernoulli::bernoulli(const type* rettype, const type* parmtype)
 
 int bernoulli::Traverse(traverse_data &x, expr** pass, int np)
 {
-  if (x.which != traverse_data::FindRange) 
+  if (x.which != traverse_data::FindRange)
         return distribution::Traverse(x, pass, np);
 
   // TBD: check the parameter value for degenerate cases
@@ -238,8 +238,8 @@ void bernoulli_ph::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   x.answer->setNull();
   SafeCompute(pass[0], x);
-  if (x.answer->isNormal() 
-    && (x.answer->getReal()>=0.0) 
+  if (x.answer->isNormal()
+    && (x.answer->getReal()>=0.0)
     && (x.answer->getReal()<=1.0)) {
 
       shared_object* X = makeBernoulli(x.answer->getReal());
@@ -280,7 +280,7 @@ void bernoulli_rand::Compute(traverse_data &x, expr** pass, int np)
       // p value is in legal range; sample the value
       generateBernoulli(x.answer->getReal(), x);
       return;
-    } 
+    }
     // illegal p value
     out_of_range = true;
   }
@@ -305,7 +305,7 @@ public:
   }
 };
 
-geometric::geometric(const type* rettype, const type* parmtype) 
+geometric::geometric(const type* rettype, const type* parmtype)
  : distribution(rettype, "geometric", 1)
 {
   SetFormal(0, parmtype, "p");
@@ -336,7 +336,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-geometric_ph::geometric_ph(const type* rettype, const type* parmtype) 
+geometric_ph::geometric_ph(const type* rettype, const type* parmtype)
  : geometric(rettype, parmtype)
 {
 }
@@ -346,10 +346,10 @@ void geometric_ph::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   x.answer->setNull();
   SafeCompute(pass[0], x);
-  if (x.answer->isNormal() 
-    && (x.answer->getReal()>=0.0) 
+  if (x.answer->isNormal()
+    && (x.answer->getReal()>=0.0)
     && (x.answer->getReal()<=1.0)) {
-  
+
       shared_object* X = makeGeom(x.answer->getReal());
       x.answer->setPtr(X);
   } else {
@@ -367,7 +367,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-geometric_rand::geometric_rand(const type* rettype, const type* parmtype) 
+geometric_rand::geometric_rand(const type* rettype, const type* parmtype)
  : geometric(rettype, parmtype)
 {
 }
@@ -387,7 +387,7 @@ void geometric_rand::Compute(traverse_data &x, expr** pass, int np)
       // p value is in legal range; sample the value
       generateGeometric(x.answer->getReal(), x);
       return;
-    } 
+    }
     // illegal p value
     out_of_range = true;
   }
@@ -405,11 +405,11 @@ class equilikely : public distribution {
 public:
   equilikely(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  
+
   inline bool isBadParam(const char* which, traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(em, x, em->INT, which, " for phase int"); 
+    OutOfRange(em, x, em->INT, which, " for phase int");
     x.answer->setNull();
     return true;
   }
@@ -424,10 +424,10 @@ public:
     }
     x.answer->setNull();
   }
-  
+
 };
 
-equilikely::equilikely(const type* rettype, const type* parmtype) 
+equilikely::equilikely(const type* rettype, const type* parmtype)
  : distribution(rettype, "equilikely", 2)
 {
   SetFormal(0, parmtype, "a");
@@ -448,7 +448,7 @@ int equilikely::Traverse(traverse_data &x, expr** pass, int np)
   pass[0]->Traverse(x);
   if (!x.answer->isNormal()) return 0;
   interval_object* r0 = smart_cast <interval_object*> (Share(x.answer->getPtr()));
-  
+
   pass[1]->Traverse(x);
   if (!x.answer->isNormal()) {
     Delete(r0);
@@ -477,13 +477,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-equilikely_ph::equilikely_ph(const type* rettype, const type* parmtype) 
+equilikely_ph::equilikely_ph(const type* rettype, const type* parmtype)
  : equilikely(rettype, parmtype)
 {
 }
 
 void equilikely_ph::Compute(traverse_data &x, expr** pass, int np)
-{  
+{
   DCASSERT(x.answer);
   x.answer->setNull();
   SafeCompute(pass[0], x);
@@ -495,7 +495,7 @@ void equilikely_ph::Compute(traverse_data &x, expr** pass, int np)
   if (a>b) {
     aGTb(x, a, b);
     return;
-  } 
+  }
   shared_object* X = makeEquilikely(a, b);
   x.answer->setPtr(X);
 }
@@ -510,13 +510,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-equilikely_rand::equilikely_rand(const type* rettype, const type* parmtype) 
+equilikely_rand::equilikely_rand(const type* rettype, const type* parmtype)
  : equilikely(rettype, parmtype)
 {
 }
 
 void equilikely_rand::Compute(traverse_data &x, expr** pass, int np)
-{  
+{
   DCASSERT(0==x.aggregate);
   DCASSERT(2==np);
   DCASSERT(x.answer);
@@ -544,7 +544,7 @@ void equilikely_rand::Compute(traverse_data &x, expr** pass, int np)
   }
 
   // TBD: do we want to display error messages?
-  
+
   answer->setNull();
 }
 
@@ -564,7 +564,7 @@ public:
     x.answer->setNull();
     return true;
   }
-  
+
   inline bool isBadP(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) {
@@ -598,7 +598,7 @@ int binomial::Traverse(traverse_data &x, expr** pass, int np)
   pass[0]->Traverse(x);
   if (!x.answer->isNormal()) return 0;
   interval_object* r0 = smart_cast <interval_object*> (Share(x.answer->getPtr()));
-  
+
   interval_object* ra = new interval_object;
   ra->Left().setNormal(true, 0);
   if (r0)  ra->Right() = r0->Right();
@@ -624,7 +624,7 @@ binomial_ph::binomial_ph(const type* rettype, const type* nt, const type* pt)
 }
 
 void binomial_ph::Compute(traverse_data &x, expr** pass, int np)
-{  
+{
   DCASSERT(x.answer);
   x.answer->setNull();
   SafeCompute(pass[0], x);
@@ -654,7 +654,7 @@ binomial_rand
 }
 
 void binomial_rand::Compute(traverse_data &x, expr** pass, int np)
-{  
+{
   DCASSERT(0==x.aggregate);
   DCASSERT(2==np);
   DCASSERT(x.answer);
@@ -693,7 +693,7 @@ public:
   }
 };
 
-expo_dist::expo_dist(const type* rettype, const type* parmtype) 
+expo_dist::expo_dist(const type* rettype, const type* parmtype)
  : distribution(rettype, "expo", 1)
 {
   SetFormal(0, parmtype, "p");
@@ -768,8 +768,8 @@ void expo_ph::Compute(traverse_data &x, expr** pass, int np)
       } else {
         shared_object* X = makeErlang(1, x.answer->getReal());
         x.answer->setPtr(X);
-      } 
-  } 
+      }
+  }
   else {
     BadLambda(x);
   }
@@ -808,7 +808,7 @@ void expo_rand::Compute(traverse_data &x, expr** pass, int np)
     generateExpo(x.answer->getReal(), x);
     return;
   }
-  
+
   if (x.answer->isInfinity()) {
     if (x.answer->signInfinity() > 0) {
       // expo(infinity) is zero
@@ -836,7 +836,7 @@ public:
     x.answer->setNull();
     return true;
   }
-  
+
   inline bool isBadRate(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) {
@@ -949,7 +949,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-uniform::uniform(const type* RR) 
+uniform::uniform(const type* RR)
  : distribution(RR, "uniform", 2)
 {
   SetFormal(0, RR, "a");
@@ -980,13 +980,13 @@ void uniform::Compute(traverse_data &x, expr** pass, int np)
   } // normal behavior
 
   // TBD: do we want to display error messages?
-  
+
   answer->setNull();
 }
 
 int uniform::Traverse(traverse_data &x, expr** pass, int np)
 {
-  if (traverse_data::FindRange != x.which) 
+  if (traverse_data::FindRange != x.which)
     return distribution::Traverse(x, pass, np);
 
   DCASSERT(x.answer);
@@ -998,7 +998,7 @@ int uniform::Traverse(traverse_data &x, expr** pass, int np)
   pass[0]->Traverse(x);
   if (!x.answer->isNormal()) return 0;
   interval_object* r0 = smart_cast <interval_object*> (Share(x.answer->getPtr()));
-  
+
   pass[1]->Traverse(x);
   if (!x.answer->isNormal()) {
     Delete(r0);
@@ -1019,7 +1019,7 @@ int uniform::Traverse(traverse_data &x, expr** pass, int np)
   } else {
     ra->Right().setNull();
   }
-  
+
   x.answer->setPtr(ra);
   Delete(r0);
   Delete(r1);
@@ -1049,7 +1049,7 @@ class phase_add_op : public assoc_op {
   /// The actual addition expression.
   class myexpr : public summation {
   public:
-    myexpr(const char* fn, int line, const type* t, expr **x, bool* f, int n);
+    myexpr(const location &W, const type* t, expr **x, bool* f, int n);
     virtual void Compute(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -1060,7 +1060,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 
   inline bool bogustype(const type* t) const {
@@ -1103,11 +1103,11 @@ public:
 // ******************************************************************
 
 phase_add_op::myexpr
-::myexpr(const char* fn, int line, const type* t, expr **x, bool* f, int n)
- : summation(fn, line, exprman::aop_plus, t, x, f, n)
-{ 
+::myexpr(const location &W, const type* t, expr **x, bool* f, int n)
+ : summation(W, exprman::aop_plus, t, x, f, n)
+{
 }
-  
+
 void phase_add_op::myexpr::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -1141,7 +1141,7 @@ void phase_add_op::myexpr::Compute(traverse_data &x)
     unknown = false;
     break;
   } // for i
-  
+
   if (normal) {
     phase_hlm* foo = makeSum(answers, opnd_count);
     DCASSERT(foo);
@@ -1158,7 +1158,7 @@ void phase_add_op::myexpr::Compute(traverse_data &x)
 
 expr* phase_add_op::myexpr::buildAnother(expr** x, bool* f, int n) const
 {
-  return new myexpr(Filename(), Linenumber(), Type(), x, f, n);
+  return new myexpr(Where(), Type(), x, f, n);
 }
 
 // ******************************************************************
@@ -1213,12 +1213,12 @@ const type* phase_add_op
 
   if (em->getPromoteDistance(l, anstype) < 0) return 0;
   if (em->getPromoteDistance(r, anstype) < 0) return 0;
-  
+
   return anstype;
 }
 
 assoc* phase_add_op
-::makeExpr(const char* fn, int ln, expr** list, bool* flip, int N) const
+::makeExpr(const location &W, expr** list, bool* flip, int N) const
 {
   if (flip) {
     for (int i=0; i<N; i++) if (flip[i]) {
@@ -1239,7 +1239,7 @@ assoc* phase_add_op
   List <symbol> foo;
   findCommonDependencies(0, list, N, foo);
   if (foo.Length()) if (em->startWarning()) { // TBD: name this warning?
-    em->causedBy(fn, ln);
+    em->causedBy(W);
     em->warn() << "operands in phase-type addition are not independent;";
     em->newLine();
     em->warn() << "phase-type model will incorrectly treat them as such.";
@@ -1248,7 +1248,7 @@ assoc* phase_add_op
     em->stopIO();
   }
 
-  return new myexpr(fn, ln, anstype, list, 0, N);
+  return new myexpr(W, anstype, list, 0, N);
 }
 
 
@@ -1269,7 +1269,7 @@ class phase_mult_op : public int_mult_op {
   class myexpr : public product {
     expr* const_part;
   public:
-    myexpr(const char* fn, int line, const type* t, expr **x, int n);
+    myexpr(const location &W, const type* t, expr **x, int n);
     virtual void Compute(traverse_data &x);
   protected:
     virtual ~myexpr();
@@ -1281,7 +1281,7 @@ public:
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 
   inline bool bogustype(const type* t) const {
@@ -1320,8 +1320,8 @@ public:
 // ******************************************************************
 
 phase_mult_op::myexpr
-::myexpr(const char* fn, int line, const type* t, expr **x, int n)
- : product(fn, line, exprman::aop_times, t, x, 0, n)
+::myexpr(const location &W, const type* t, expr **x, int n)
+ : product(W, exprman::aop_times, t, x, 0, n)
 {
   if (n==2) {
     const_part = Share(x[1]);
@@ -1330,7 +1330,7 @@ phase_mult_op::myexpr
     for (int i=1; i<n; i++) opnds[i-1] = Share(x[i]);
     const type* noph = opnds[1]->Type();
     DCASSERT(noph);
-    const_part = new expression(fn, line, noph, opnds, n-1);
+    const_part = new expression(W, noph, opnds, n-1);
   }
 }
 
@@ -1396,7 +1396,7 @@ void phase_mult_op::myexpr::Compute(traverse_data &x)
 expr* phase_mult_op::myexpr::buildAnother(expr** x, bool* f, int n) const
 {
   DCASSERT(0==f);
-  return new myexpr(Filename(), Linenumber(), Type(), x, n);
+  return new myexpr(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -1490,7 +1490,7 @@ const type* phase_mult_op
 }
 
 assoc* phase_mult_op
-::makeExpr(const char* fn, int ln, expr** list, bool* flip, int N) const
+::makeExpr(const location &W, expr** list, bool* flip, int N) const
 {
   if (flip) {
     for (int i=0; i<N; i++) if (flip[i]) {
@@ -1521,7 +1521,7 @@ assoc* phase_mult_op
     list[i] = em->promote(list[i], con);
     if (0==list[i]) return killArgs(list, N);
   }
-  return new myexpr(fn, ln, ph, list, N);
+  return new myexpr(W, ph, list, N);
 }
 
 
@@ -2274,7 +2274,7 @@ void print_range::Compute(traverse_data &x, expr** pass, int np)
   em->cout() << "Random variable ";
   if (pass[0]) {
     pass[0]->Print(em->cout(), 0);
-    pass[0]->Traverse(x); 
+    pass[0]->Traverse(x);
   }
   else {
     em->cout() << "null";
@@ -2380,7 +2380,7 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
   } else {
     em->cout() << "(null)\n";
   }
-  
+
 #ifdef PRINT_PHASE_CLASSES
   long nc = proc->getNumClasses(true);
   em->cout() << nc << " recurrent classes\n";
@@ -2488,9 +2488,9 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
     em->cout().flush();
     return;
   }
-  
+
   // print the distribution
-  
+
 
   //
   // Print distribution
@@ -2635,9 +2635,9 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   x.answer->setBool(ok);
 
   if (!ok) return;
-  
+
   // print the distribution
-  
+
 
   //
   // Print distribution
@@ -2768,8 +2768,8 @@ public:
   virtual bool requiresConversion(const type* src, const type* dest) const {
     return false;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new typecast(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new typecast(W, t, e);
   }
 };
 
@@ -2812,12 +2812,12 @@ class int2phint : public general_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
       virtual void Traverse(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -2827,15 +2827,15 @@ public:
   virtual bool requiresConversion(const type* src, const type* dest) const {
     return true;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new converter(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
   }
 };
 
 int2phint::converter
- ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x) 
-{ 
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
+{
   silent = true;
 }
 
@@ -2875,7 +2875,7 @@ void int2phint::converter::Compute(traverse_data &x)
       x.answer->setPtr(X);
     }
     return;
-  } 
+  }
   x.answer->setNull();
 }
 
@@ -2930,12 +2930,12 @@ class real2phreal : public general_conv {
 
     class converter : public typecast {
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
       virtual void Traverse(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -2945,15 +2945,15 @@ public:
   virtual bool requiresConversion(const type* src, const type* dest) const {
     return true;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new converter(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
   }
 };
 
 real2phreal::converter
- ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x) 
-{ 
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
+{
   silent = true;
 }
 
@@ -2991,7 +2991,7 @@ void real2phreal::converter::Compute(traverse_data &x)
         em->stopIO();
       }
     }
-  } 
+  }
   x.answer->setNull();
 }
 
@@ -3047,12 +3047,12 @@ class ph2rand : public general_conv {
       phase_hlm* cached;
       bool precomputed;
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
       virtual void Traverse(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -3062,15 +3062,15 @@ public:
   virtual bool requiresConversion(const type* src, const type* dest) const {
     return true;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new converter(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
   }
 };
 
 ph2rand::converter
- ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x) 
-{ 
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
+{
   precomputed = false;
   cached = 0;
   silent = true;
@@ -3143,12 +3143,12 @@ class phint2randreal : public specific_conv {
       phase_hlm* cached;
       bool precomputed;
     public:
-      converter(const char* fn, int line, const type* nt, expr* x);
+      converter(const location &W, const type* nt, expr* x);
       virtual void Compute(traverse_data &x);
       virtual void Traverse(traverse_data &x);
     protected:
       virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
+        return new converter(Where(), Type(), x);
       }
     };
 
@@ -3171,15 +3171,15 @@ public:
     DCASSERT(dest);
     return dest;
   }
-  virtual expr* convert(const char* fn, int ln, expr* e, const type* t) const {
-    return new converter(fn, ln, t, e);
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
   }
 };
 
 phint2randreal::converter
- ::converter(const char* fn, int line, const type* nt, expr* x)
- : typecast(fn, line, nt, x) 
-{ 
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
+{
   precomputed = false;
   cached = 0;
 }
@@ -3275,7 +3275,7 @@ bool init_stochtypes::execute()
 
   type* t_rand_real  = newModifiedType("rand real", RAND, em->REAL);
   type* t_proc_rand_real= newProcType("proc rand real", t_rand_real);
-  
+
 
   // register types
   em->registerType( t_expo            );

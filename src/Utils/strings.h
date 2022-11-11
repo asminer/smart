@@ -3,6 +3,7 @@
 #define STRINGS_H
 
 #include "../include/shared.h"
+#include "../Streams/streams.h"
 
 /** Shared strings.
     Used so we can "share" strings without copying them.
@@ -14,11 +15,9 @@ class shared_string : public shared_object {
         /// Constructor, sets string to null.
         shared_string();
         /** Constructor.
-            @param  s   String to fill from.
-                        Will be taken (i.e., owned)
-                        by the object created.
+            @param  s   String to fill from.  Will be copied.
         */
-        shared_string(char* s);
+        shared_string(const char* s);
         unsigned length() const;
     protected:
         virtual ~shared_string();
@@ -32,6 +31,15 @@ class shared_string : public shared_object {
 #endif
         virtual bool Equals(const shared_object *o) const;
         int Compare(const shared_string* s) const;
+        int Compare(const char* x) const;
 };
+
+
+inline OutputStream& operator<< (OutputStream& s, const shared_string* x)
+{
+    if (0==x)   return s << "(null string)";
+    return s << x->getStr();
+}
+
 
 #endif

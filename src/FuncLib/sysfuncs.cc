@@ -346,26 +346,30 @@ void helpfunc_si::Help(const char* search)
 // ******************************************************************
 
 class version_si : public simple_internal {
-  const char* version_string;
+  shared_string* version_string;
 public:
   version_si(const char* str);
+  virtual ~version_si();
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
 version_si::version_si(const char* str)
  : simple_internal(em->STRING, "version", 0)
 {
-  version_string = str;
+  version_string = new shared_string(str);
   SetDocumentation("Return a string indicating the current version of this software.");
+}
+
+version_si::~version_si()
+{
+    Delete(version_string);
 }
 
 void version_si::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
   DCASSERT(x.parent);
-  shared_object* ans;
-  ans = version_string ? new shared_string(strdup(version_string)) : 0;
-  x.answer->setPtr(ans);
+  x.answer->setPtr(Share(version_string));
 }
 
 
@@ -389,9 +393,7 @@ void filename_si::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
   DCASSERT(x.parent);
-  const char* fn = x.parent->Filename();
-  shared_object* ans = fn ? new shared_string(strdup(fn)) : 0;
-  x.answer->setPtr(ans);
+  x.answer->setPtr( x.parent->Where().shareFile() );
 }
 
 // ******************************************************************
@@ -414,10 +416,11 @@ void linenumber_si::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
   DCASSERT(x.parent);
-  if (x.parent->Linenumber() < 0)
+  if (x.parent->Where().getLine()) {
+    x.answer->setInt(x.parent->Where().getLine());
+  } else {
     x.answer->setNull();
-  else
-    x.answer->setInt(x.parent->Linenumber());
+  }
 }
 
 // ******************************************************************

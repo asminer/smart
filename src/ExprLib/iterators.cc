@@ -11,8 +11,8 @@
 // *                                                                *
 // ******************************************************************
 
-iterator::iterator(const char *fn, int line, const type* t, char *n, expr *v) 
-  : symbol(fn, line, t, n)
+iterator::iterator(const location &W, const type* t, char *n, expr *v)
+  : symbol(W, t, n)
 {
   values = v;
   current = 0;
@@ -46,7 +46,7 @@ void iterator::PrintAll(OutputStream &s) const
   s.Put('}');
 }
 
-void iterator::ComputeCurrent(traverse_data &x) 
+void iterator::ComputeCurrent(traverse_data &x)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);

@@ -66,7 +66,7 @@ public:
 
   // Required in derived classes:
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location& W, char* name,
                                   symbol** formals, int np) const = 0;
 
   virtual bool canDeclareType(const type* vartype) const = 0;

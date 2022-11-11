@@ -8,12 +8,15 @@
 
 #include "../Utils/strings.h"
 #include "../Streams/streams.h"
+#include "../SymTabs/symtabs.h"
+
 #include "../ExprLib/exprman.h"
+#include "../ExprLib/values.h"
 #include "../ExprLib/symbols.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_def.h"
-#include "../SymTabs/symtabs.h"
 #include "../ExprLib/formalism.h"
+
 #include "../include/heap.h"
 #include "parse_sm.h"
 #include <string.h>
@@ -502,7 +505,7 @@ expr* MakeStatementBlock(parser_list* stmts)
   CopyCircular(stmts, opnds, length);
   RecycleCircular(stmts);
   return em->makeAssocOp(
-      Filename(), Linenumber(), exprman::aop_semi, opnds, 0, length
+      Where(), exprman::aop_semi, opnds, 0, length
   );
 }
 
@@ -840,7 +843,7 @@ expr* BuildForLoop(int count, parser_list* stmts)
   // Construct For Loop.
   return ShowNewStatement(
       "for loop:\n",
-      em->makeForLoop(Filename(), Linenumber(), iters, count, block)
+      em->makeForLoop(Where(), iters, count, block)
   );
 }
 
@@ -856,7 +859,7 @@ expr* FinishConverge(parser_list* stmts)
   // Construct converge statement.
   return ShowNewStatement(
       "converge:\n",
-      em->makeConverge(Filename(), Linenumber(), block, (0==converge_depth))
+      em->makeConverge(Where(), block, (0==converge_depth))
   );
 }
 
@@ -865,7 +868,7 @@ expr* BuildOptionStatement(option* o, expr* v)
 {
   return ShowNewStatement(
       "option statement:\n",
-      em->makeOptionStatement(Filename(), Linenumber(), o, v)
+      em->makeOptionStatement(Where(), o, v)
   );
 }
 
@@ -892,7 +895,7 @@ expr* BuildOptionStatement(option* o, char* n)
   option_enum* oc = FindOptionConstant(o, n);
   expr* foo;
   if (oc) {
-    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
+    foo = em->makeOptionStatement(Where(), o, oc);
   } else {
     foo = 0;
   }
@@ -911,7 +914,7 @@ expr* StartOptionBlock(option* o, char* n)
         pm->stopError();
       }
     }
-    foo = em->makeOptionStatement(Filename(), Linenumber(), o, oc);
+    foo = em->makeOptionStatement(Where(), o, oc);
   } else {
     foo = 0;
   }
@@ -969,7 +972,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 
   return ShowNewStatement(
     "option statement:\n",
-    em->makeOptionStatement(Filename(), Linenumber(), o, check, vlist, length)
+    em->makeOptionStatement(Where(), o, check, vlist, length)
   );
 }
 
@@ -977,7 +980,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 expr* BuildExprStatement(expr *x)
 {
   if (!em->isOrdinary(x))  return 0;
-  return em->makeExprStatement(Filename(), Linenumber(), x);
+  return em->makeExprStatement(Where(), x);
 }
 
 // --------------------------------------------------------------
@@ -1034,7 +1037,7 @@ expr* BuildFuncStmt(symbol* f, expr* r)
 {
   DCASSERT(function_under_construction==f);
   expr* foo = DefineUserFunction(
-    em, Filename(), Linenumber(), f, r, model_under_construction
+    em, Where(), f, r, model_under_construction
   );
   function_under_construction = 0;
   return ShowNewStatement("function statement:\n", foo);
@@ -1101,26 +1104,26 @@ expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
     /* Special case - proc "constant" in a model;
        implement this as a function with 0 parameters */
     wrap = MakeUserConstFunc(
-        em, Filename(), Linenumber(), typ, ident, true
+        em, Where(), typ, ident, true
     );
     ModelInternal->AddSymbol(wrap);
 
     return ShowNewStatement("const func statement:\n",
       DefineUserFunction(
-        em, Filename(), Linenumber(), wrap, rhs, model_under_construction
+        em, Where(), wrap, rhs, model_under_construction
       )
     );
 
   } else {
 
     /* Ordinary measure */
-    wrap = em->makeModelSymbol(Filename(), Linenumber(), typ, ident);
+    wrap = em->makeModelSymbol(Where(), typ, ident);
     ModelExternal.Insert(wrap);
     ModelInternal->AddSymbol(wrap);
 
     return ShowNewStatement("measure assignment:\n",
       em->makeModelMeasureAssign(
-        Filename(), Linenumber(), model_under_construction, wrap, rhs
+        Where(), model_under_construction, wrap, rhs
       )
     );
   }
@@ -1166,8 +1169,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
       pm->cerr() << "Constant declaration conflicts with existing identifier:";
       pm->newLine(1);
       match->PrintHeader(pm->cerr(), true);
-      pm->cerr() << " declared ";
-      pm->cerr().PutFile(match->Filename(), match->Linenumber());
+      pm->cerr() << " declared " << match->Where();
       pm->changeIndent(-1);
       pm->stopError();
     }
@@ -1192,9 +1194,9 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   } else {
     // Make the symbol
     if (WithinConverge()) {
-      find = em->makeCvgVar(Filename(), Linenumber(), typ, id);
+      find = em->makeCvgVar(Where(), typ, id);
     } else {
-      find = em->makeConstant(Filename(), Linenumber(), typ, id, ret, 0);
+      find = em->makeConstant(Where(), typ, id, ret, 0);
     }
     // Add to symbol table
     if (0==find)  return 0;
@@ -1204,7 +1206,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
 
   if (WithinConverge())
     return ShowNewStatement("assignment:\n",
-      em->makeCvgAssign(Filename(), Linenumber(), find, ret)
+      em->makeCvgAssign(Where(), find, ret)
     );
 
   return 0;
@@ -1238,14 +1240,14 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
       return 0;
     }
   } else {
-    find = em->makeCvgVar(Filename(), Linenumber(), typ, id);
+    find = em->makeCvgVar(Where(), typ, id);
     if (0==find)  return 0;
     Constants->AddSymbol(find);
     ShowWhatWeBuilt("variable: ", find);
   }
 
   return ShowNewStatement("guess:\n",
-    em->makeCvgGuess(Filename(), Linenumber(), find, ret)
+    em->makeCvgGuess(Where(), find, ret)
   );
 }
 
@@ -1254,18 +1256,18 @@ expr* BuildArrayStmt(symbol *a, expr *ret)
 {
   if (WithinModel())
     return ShowNewStatement("measure array assignment:\n",
-      em->makeModelMeasureArray(Filename(), Linenumber(),
+      em->makeModelMeasureArray(Where(),
         model_under_construction, a, ret)
     );
 
   if (WithinConverge())
     return ShowNewStatement("converge array assignment:\n",
-      em->makeArrayCvgAssign(Filename(), Linenumber(), a, ret)
+      em->makeArrayCvgAssign(Where(), a, ret)
     );
 
   // ordinary array
   return ShowNewStatement("array assignment:\n",
-    em->makeArrayAssign(Filename(), Linenumber(), a, ret)
+    em->makeArrayAssign(Where(), a, ret)
   );
 }
 
@@ -1286,7 +1288,7 @@ expr* BuildArrayGuess(symbol* a, expr* ret)
       Delete(ret);
       return 0;
     }
-    stmt = em->makeArrayCvgGuess(Filename(), Linenumber(), a, ret);
+    stmt = em->makeArrayCvgGuess(Where(), a, ret);
   } else {
     if (pm->startError()) {
       pm->cerr() << "Guess for " << a->Name();
@@ -1310,7 +1312,7 @@ expr* BuildArrayGuess(symbol* a, expr* ret)
 symbol* BuildIterator(const type* typ, char* n, expr* values)
 {
   return ShowWhatWeBuilt("iterator: ",
-    em->makeIterator(Filename(), Linenumber(), typ, n, values)
+    em->makeIterator(Where(), typ, n, values)
    );
 }
 
@@ -1352,8 +1354,7 @@ void duplicationError(bool warning_only, function* f, const char* how)
   pm->newLine(1);
   f->PrintHeader(s, true);
   pm->newLine();
-  s << "declared ";
-  s.PutFile(f->Filename(), f->Linenumber());
+  s << "declared " << f->Where();
   pm->changeIndent(-1);
   pm->stopError();
 }
@@ -1449,7 +1450,7 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
       match = 0;
     }
     free(n);
-    ResetUserFunctionParams(em, Filename(), Linenumber(), match, fp, nfp);
+    ResetUserFunctionParams(em, Where(), match, fp, nfp);
     function_under_construction = match;
     return match;
   }
@@ -1474,7 +1475,7 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
   // All clear; build the function
   //
   function_under_construction = MakeUserFunction(
-      em, Filename(), Linenumber(), typ, n, fp, nfp, model_under_construction
+      em, Where(), typ, n, fp, nfp, model_under_construction
   );
 
   if (model_under_construction) {
@@ -1509,7 +1510,7 @@ symbol* BuildMeasureArray(const type* typ, char* n, parser_list* list)
     indexes[i] = Share(Iterators->GetItem(i));
   }
   symbol* wrap = em->makeModelArray(
-      Filename(), Linenumber(), typ, n, indexes, dim
+      Where(), typ, n, indexes, dim
   );
 
   // Add measure to symbol tables
@@ -1561,7 +1562,7 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
   for (int i=0; i<dim; i++) {
     indexes[i] = Share(Iterators->GetItem(i));
   }
-  symbol* f = em->makeArray(Filename(), Linenumber(), typ, n, indexes, dim);
+  symbol* f = em->makeArray(Where(), typ, n, indexes, dim);
   if (f) Arrays->AddSymbol(f);
   return ShowWhatWeBuilt("array: ", f);
 }
@@ -1569,21 +1570,21 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
 // --------------------------------------------------------------
 symbol* BuildFormal(const type* typ, char* name)
 {
-  return MakeFormalParam(Filename(), Linenumber(),
+  return MakeFormalParam(Where(),
                           typ, name, model_under_construction);
 }
 
 // --------------------------------------------------------------
 symbol* BuildFormal(const type* typ, char* name, expr* deflt)
 {
-  return MakeFormalParam(em, Filename(), Linenumber(),
+  return MakeFormalParam(em, Where(),
                           typ, name, deflt, model_under_construction);
 }
 
 // --------------------------------------------------------------
 symbol* BuildNamed(char* name, expr* pass)
 {
-  symbol* s = MakeNamedParam(Filename(), Linenumber(), name, pass);
+  symbol* s = MakeNamedParam(Where(), name, pass);
   return ShowWhatWeBuilt("named parameter: ", s);
 }
 
@@ -1664,8 +1665,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
         pm->cerr() << "Model declaration conflicts with existing identifier:";
         pm->newLine(1);
         find->PrintType(pm->cerr());
-        pm->cerr() << " " << find->Name() << " declared ";
-        pm->cerr().PutFile(find->Filename(), find->Linenumber());
+        pm->cerr() << " " << find->Name() << " declared " << find->Where();
         pm->changeIndent(-1);
         pm->stopError();
       }
@@ -1686,8 +1686,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
       pm->cerr() << "Model declaration conflicts with existing identifier:";
       pm->newLine(1);
       f->PrintHeader(pm->cerr(), true);
-      pm->cerr() << " declared ";
-      pm->cerr().PutFile(f->Filename(), f->Linenumber());
+      pm->cerr() << " declared " << f->Where();
       pm->changeIndent(-1);
       pm->stopError();
     }
@@ -1713,7 +1712,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
 
 
   model_under_construction =
-    em->makeModel(Filename(), Linenumber(), typ, n, Formals, num_Formals);
+    em->makeModel(Where(), typ, n, Formals, num_Formals);
 
   if (0==model_under_construction) {
     if (pm->startError()) {
@@ -1743,12 +1742,12 @@ expr* BuildModelVarStmt(const type* typ, parser_list* list)
   expr* stmt;
   if (WithinFor()) {
     stmt = em->makeModelArrayDecs(
-        Filename(), Linenumber(), model_under_construction,
+        Where(), model_under_construction,
         typ, slist, numsyms
     );
   } else {
     stmt = em->makeModelVarDecs(
-        Filename(), Linenumber(), model_under_construction,
+        Where(), model_under_construction,
         typ, 0, slist, numsyms
     );
   }
@@ -1771,7 +1770,7 @@ parser_list* AddModelVar(parser_list* varlist, char* ident)
     return varlist;
   }
 
-  symbol* ms = em->makeModelSymbol(Filename(), Linenumber(), 0, ident);
+  symbol* ms = em->makeModelSymbol(Where(), 0, ident);
   if (0==ModelInternal) {
     ModelInternal = MakeSymbolTable();
   }
@@ -1811,7 +1810,7 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
   }
 
   symbol* ms = em->makeModelArray(
-      Filename(), Linenumber(), 0, ident, indexes, dim
+      Where(), 0, ident, indexes, dim
   );
   if (0==ModelInternal) {
     ModelInternal = MakeSymbolTable();
@@ -2153,7 +2152,7 @@ expr* BuildElementSet(expr* elem)
     return em->makeError();
   }
   return ShowWhatWeBuilt("set element: ",
-    em->makeTypecast(Filename(), Linenumber(), set_type, elem)
+    em->makeTypecast(Where(), set_type, elem)
   );
 }
 
@@ -2167,7 +2166,7 @@ expr* BuildInterval(expr* start, expr* stop)
 expr* BuildInterval(expr* start, expr* stop, expr* inc)
 {
   return ShowWhatWeBuilt("set interval: ",
-    em->makeTrinaryOp(Filename(), Linenumber(),
+    em->makeTrinaryOp(Where(),
       exprman::top_interval, start, stop, inc
     )
   );
@@ -2227,7 +2226,7 @@ expr* BuildSummation(parser_list* list)
 
   exprman::assoc_opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
+      em->makeAssocOp(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -2285,7 +2284,7 @@ expr* BuildProduct(parser_list* list)
 
   exprman::assoc_opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Filename(), Linenumber(), aop, opnds, flip, length)
+      em->makeAssocOp(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -2307,7 +2306,7 @@ expr* BuildAssociative(int op, parser_list* list)
   exprman::assoc_opcode aop = Int2Aop(op);
 
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Filename(), Linenumber(), aop, opnds, 0, length)
+      em->makeAssocOp(Where(), aop, opnds, 0, length)
   );
 }
 
@@ -2315,14 +2314,14 @@ expr* BuildAssociative(int op, parser_list* list)
 expr* BuildBinary(expr* left, int op, expr* right)
 {
   exprman::binary_opcode bop = Int2Bop(op);
-  return em->makeBinaryOp(Filename(), Linenumber(), left, bop, right);
+  return em->makeBinaryOp(Where(), left, bop, right);
 }
 
 // --------------------------------------------------------------
 expr* BuildUnary(int op, expr* opnd)
 {
   exprman::unary_opcode uop = Int2Uop(op);
-  return em->makeUnaryOp(Filename(), Linenumber(), uop, opnd);
+  return em->makeUnaryOp(Where(), uop, opnd);
 }
 
 // --------------------------------------------------------------
@@ -2344,13 +2343,13 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
     expr** pass = new expr*[1];
     pass[0] = opnd;
     return ShowWhatWeBuilt(0,
-      em->makeFunctionCall(Filename(), Linenumber(), best, pass, 1)
+      em->makeFunctionCall(Where(), best, pass, 1)
     );
   } else {
     // Either no function exists, or no parameter match
     // Use an ordinary typecast
     return ShowWhatWeBuilt("typecast: ",
-      em->makeTypecast(Filename(), Linenumber(), newtype, opnd)
+      em->makeTypecast(Where(), newtype, opnd)
     );
   }
 }
@@ -2365,7 +2364,7 @@ expr* MakeBoolConst(char* s)
 
   if (c.isNormal()) {
     free(s);
-    return em->makeLiteral(Filename(), Linenumber(), em->BOOL, c);
+    return new value(Where(), em->BOOL, c);
   }
   if (pm->startInternal(__FILE__, __LINE__)) {
     pm->internal() << "Bad boolean constant: " << s;
@@ -2387,10 +2386,10 @@ expr* MakeIntConst(char* s)
     // did we overflow?  try bigints
     if (em->BIGINT) {
       em->BIGINT->assignFromString(c, s);
-      answer = em->makeLiteral(Filename(), Linenumber(), em->BIGINT, c);
+      answer = new value(Where(), em->BIGINT, c);
     }
   } else {
-    answer = em->makeLiteral(Filename(), Linenumber(), em->INT, c);
+    answer = new value(Where(), em->INT, c);
   }
   free(s);
   return answer;
@@ -2403,7 +2402,7 @@ expr* MakeRealConst(char* s)
   result c;
   DCASSERT(em->REAL);
   em->REAL->assignFromString(c, s);
-  expr* foo = em->makeLiteral(Filename(), Linenumber(), em->REAL, c);
+  expr* foo = new value(Where(), em->REAL, c);
   free(s);
   return foo;
 }
@@ -2414,7 +2413,7 @@ expr* MakeStringConst(char *s)
   result c;
   DCASSERT(em->STRING);
   em->STRING->assignFromString(c, s);
-  expr* foo = em->makeLiteral(Filename(), Linenumber(), em->STRING, c);
+  expr* foo = new value(Where(), em->STRING, c);
   free(s);
   return foo;
 }
@@ -2431,10 +2430,10 @@ expr* MakeMCall(shared_object* mcall, char* m)
 
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Filename(), Linenumber(),
+    foo = em->makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m);
   } else {
-    foo = em->makeMeasureCall(Filename(), Linenumber(), mcd->model2, m);
+    foo = em->makeMeasureCall(Where(), mcd->model2, m);
   }
   free(m);
   Delete(mcall);
@@ -2463,7 +2462,7 @@ expr* MakeAMCall(char* n, parser_list* ind, char* m)
   expr** i = new expr*[ni];
   CopyCircular(ind, i, ni);
   RecycleCircular(ind);
-  expr* foo = em->makeMeasureCall(Filename(), Linenumber(), find, i, ni, m);
+  expr* foo = em->makeMeasureCall(Where(), find, i, ni, m);
   free(m);
   return ShowWhatWeBuilt(0, foo);
 }
@@ -2484,10 +2483,10 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
   RecycleCircular(ind);
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Filename(), Linenumber(),
+    foo = em->makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m, I, length);
   } else {
-    foo = em->makeMeasureCall(Filename(), Linenumber(),
+    foo = em->makeMeasureCall(Where(),
       mcd->model2, m, I, length);
   }
   free(m);
@@ -2525,7 +2524,7 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
   RecycleCircular(ind2);
 
   expr* foo = em->makeMeasureCall(
-      Filename(), Linenumber(), find, i, ni, m, j, nj
+      Where(), find, i, ni, m, j, nj
   );
   free(m);
   return ShowWhatWeBuilt(0, foo);
@@ -2593,8 +2592,7 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
         pm->cerr() << ", but it matches";
         pm->newLine(1);
         best->PrintHeader(pm->cerr(), true);
-        pm->cerr() << " declared ";
-        pm->cerr().PutFile(best->Filename(), best->Linenumber());
+        pm->cerr() << " declared " << best->Where();
         pm->changeIndent(-1);
       } // length
       pm->stopError();
@@ -2663,8 +2661,7 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
         pm->cerr() << ", but it matches";
         pm->newLine(1);
         best->PrintHeader(pm->cerr(), true);
-        pm->cerr() << " declared ";
-        pm->cerr().PutFile(best->Filename(), best->Linenumber());
+        pm->cerr() << " declared " << best->Where();
         pm->changeIndent(-1);
       } // length
       pm->stopError();
@@ -2758,7 +2755,7 @@ expr* BuildArrayCall(char* n, parser_list* ind)
   CopyCircular(ind, pass, length);
   RecycleCircular(ind);
   return ShowWhatWeBuilt(0,
-    em->makeArrayCall(Filename(), Linenumber(), find, pass, length)
+    em->makeArrayCall(Where(), find, pass, length)
   );
 }
 
@@ -2815,7 +2812,7 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
     return em->makeError();
   }
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Filename(), Linenumber(), best, pass, length)
+    em->makeFunctionCall(Where(), best, pass, length)
   );
 }
 
@@ -2882,7 +2879,7 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 
   expr** posparams = ppa.Compactify(np);
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Filename(), Linenumber(), best, posparams, np)
+    em->makeFunctionCall(Where(), best, posparams, np)
   );
 }
 
@@ -2911,21 +2908,21 @@ void InitCompiler(parse_module* parent)
   // init globals and such here.
   if (em) {
     result one(1L);
-    ONE = em->makeLiteral(0, -1, em->INT, one);
+    ONE = new value(location::NOWHERE(), em->INT, one);
 
     result dk;
     dk.setUnknown();
     Constants->AddSymbol(
-      em->makeConstant(0, -1, em->INT, strdup("DontKnow"),
-          em->makeLiteral(0, -1, em->INT, dk), 0
+      em->makeConstant(location::NOWHERE(), em->INT, strdup("DontKnow"),
+          new value(location::NOWHERE(), em->INT, dk), 0
       )
     );
 
     result inf;
     inf.setInfinity(1);
     Constants->AddSymbol(
-      em->makeConstant(0, -1, em->INT, strdup("infinity"),
-        em->makeLiteral(0, -1, em->INT, inf), 0
+      em->makeConstant(location::NOWHERE(), em->INT, strdup("infinity"),
+        new value(location::NOWHERE(), em->INT, inf), 0
       )
     );
   } else {

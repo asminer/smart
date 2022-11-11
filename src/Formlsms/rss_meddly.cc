@@ -49,7 +49,7 @@ bool meddly_reachset::createVars(MEDDLY::variable** v, int nv)
   }
   catch (MEDDLY::error de) {
     if (em->startError()) {
-      em->noCause();
+      em->causedBy(0);
       em->cerr() << "Error creating domain: " << de.getName();
       em->stopIO();
     }
@@ -89,14 +89,14 @@ void meddly_reachset::reportStats(OutputStream &out) const
   if (index_wrap) index_wrap->reportStats(out);
 }
 
-void meddly_reachset::setStates(shared_ddedge* S) 
+void meddly_reachset::setStates(shared_ddedge* S)
 {
   if (states == S) {
     // could happen?
     Delete(S);
-    return;  
+    return;
   }
-  
+
   if (0 != states) {
     Delete(states);
   }
@@ -167,12 +167,12 @@ void meddly_reachset::getBounds(long &ns, std::vector<int> set_of_places) const
 }
 
 long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
-                                               int offset, 
+                                               int offset,
                                                std::unordered_map < MEDDLY::node_handle, long > &ct,
                                                std::vector<int> &set_of_places) const
 {
-  
-  
+
+
   if (-1 == offset) return 0;
   DCASSERT(0 != mdd);
   int level = set_of_places[offset];
@@ -181,7 +181,7 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
   MEDDLY::expert_forest* mddf = smart_cast<MEDDLY::expert_forest*>(states->E.getForest());
   int mddLevel = mddf->getNodeLevel(mdd);
   long result = 0;
-  
+
   if (mddLevel < level) {
     // if mddLevel < level
     // --- level was fully skipped, return level_size * compute(mdd, mxd, level-1)
@@ -203,7 +203,7 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
         if (iter != ct.end()) {
           return iter->second;
         }
-      
+
         // expand mdd
         for (int i = 0; i < mdd_nr->getNNZs(); i++) {
           result = MAX( result,
@@ -215,13 +215,13 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
     // insert into compute table
     ct[mdd] = result;
   }
-  
+
   return result;
 }
 
 long meddly_reachset::computeMaxTokensPerSet(std::vector<int> &set_of_places) const
 {
-  
+
   //states is of type shared_ddedge
   if (0 == states->E.getNode()) return 0;
 
@@ -233,7 +233,7 @@ long meddly_reachset::computeMaxTokensPerSet(std::vector<int> &set_of_places) co
                                 set_of_places);
   else
     return -1;
-  
+
 }
 
 void meddly_reachset::showInternal(OutputStream &os) const
@@ -248,7 +248,7 @@ void meddly_reachset::showState(OutputStream &os, const shared_state* st) const
   st->Print(os, 0);
 }
 
-state_lldsm::reachset::iterator& 
+state_lldsm::reachset::iterator&
 meddly_reachset::iteratorForOrder(state_lldsm::display_order ord)
 {
   DCASSERT(natorder);

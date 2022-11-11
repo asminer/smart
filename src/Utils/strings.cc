@@ -1,8 +1,8 @@
 
 #include "../Streams/streams.h"
 #include "strings.h"
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 // ******************************************************************
 // *                                                                *
@@ -15,9 +15,9 @@ shared_string::shared_string() : shared_object()
     string = 0;
 }
 
-shared_string::shared_string(char* s) : shared_object()
+shared_string::shared_string(const char* s) : shared_object()
 {
-    string = s;
+    string = strdup(s);
 }
 
 shared_string::~shared_string()
@@ -135,5 +135,13 @@ int shared_string::Compare(const shared_string* s) const
     if (0==string) return -1;
     if (0==s->string) return 1;
     return strcmp(string, s->string);
+}
+
+int shared_string::Compare(const char* s) const
+{
+    if ( (0==string) && (0==s) ) return 0;
+    if (0==string) return -1;
+    if (0==s) return 1;
+    return strcmp(string, s);
 }
 

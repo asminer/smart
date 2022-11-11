@@ -6,6 +6,7 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/casting.h"
+#include "../ExprLib/values.h"
 
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
@@ -294,14 +295,16 @@ void evm_event::Finalize(OutputStream &ds)
     guards = 0;
   }
   if (ng > 1) {
-    setEnabling(em->makeAssocOp(0, -1, exprman::aop_and, guards, 0, ng));
+    setEnabling(em->makeAssocOp(location::NOWHERE(), exprman::aop_and, guards, 0, ng));
   } else {
     if (1==ng) {
       setEnabling(guards[0]);
     } else {
       result always_enabled;
       always_enabled.setBool(true);
-      setEnabling(em->makeLiteral(0, -1, em->BOOL, always_enabled));
+      setEnabling(
+        new value(location::NOWHERE(), em->BOOL, always_enabled)
+      );
     }
     delete[] guards;
   }
@@ -316,7 +319,7 @@ void evm_event::Finalize(OutputStream &ds)
     nextlist[i] = a->getFiring();
   }
   if (na > 1) {
-    setNextstate(em->makeAssocOp(0, -1, exprman::aop_semi, nextlist, 0, na));
+    setNextstate(em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, nextlist, 0, na));
   } else {
     if (1==na) setNextstate(nextlist[0]);
     delete[] nextlist;
@@ -405,7 +408,7 @@ void evm_hlm::showState(OutputStream &s, const shared_state* st) const
 
       default:
           if (em->startInternal(__FILE__, __LINE__)) {
-            em->noCause();
+            em->causedBy(0);
             em->internal() << "Unknown state style " << (unsigned long) StateStyle;
             em->stopIO();
           }
@@ -468,7 +471,7 @@ class evm_def : public dsde_def {
 
   friend class init_evmform;
 public:
-  evm_def(const char* fn, int line, const type* t, char*n,
+  evm_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
 
   virtual ~evm_def();
@@ -507,8 +510,8 @@ const type* evm_def::event_type;
 // *                        evm_def  methods                        *
 // ******************************************************************
 
-evm_def::evm_def(const char* fn, int line, const type* t,
-   char*n, formal_param **pl, int np) : dsde_def(fn, line, t, n, pl, np)
+evm_def::evm_def(const location &W, const type* t,
+   char*n, formal_param **pl, int np) : dsde_def(W, t, n, pl, np)
 {
   error = 0;
 }
@@ -783,7 +786,7 @@ class evm_formalism : public formalism {
 public:
   evm_formalism(const char* n, const char* sd, const char* ld);
 
-  virtual model_def* makeNewModel(const char* fn, int ln, char* name,
+  virtual model_def* makeNewModel(const location &W, char* name,
           symbol** formals, int np) const;
 
   virtual bool canDeclareType(const type* vartype) const;
@@ -802,10 +805,10 @@ evm_formalism
 {
 }
 
-model_def* evm_formalism::makeNewModel(const char* fn, int ln, char* name,
+model_def* evm_formalism::makeNewModel(const location &W, char* name,
           symbol** formals, int np) const
 {
-  return new evm_def(fn, ln, this, name, (formal_param**) formals, np);
+  return new evm_def(W, this, name, (formal_param**) formals, np);
 }
 
 bool evm_formalism::canDeclareType(const type* vartype) const
@@ -1275,7 +1278,7 @@ bool init_evmform::execute()
   formalism* evm = new evm_formalism("evm", "Event & Variable Model", longdocs);
   if (!em->registerType(evm)) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->noCause();
+      em->causedBy(0);
       em->internal() << "Couldn't register evm type";
       em->stopIO();
     }

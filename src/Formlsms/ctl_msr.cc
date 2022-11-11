@@ -80,7 +80,7 @@ protected:
         em->cerr() << "Stateset in " << Name();
         em->cerr() << " expression is from a different model";
         em->stopIO();
-      }   
+      }
       return 0;
     }
     return Share(ss);
@@ -97,7 +97,7 @@ protected:
 
 private:
   static engtype* ProcGen;
- 
+
   friend class init_ctlmsrs;
 
   bool reverse_time;
@@ -422,7 +422,7 @@ public:
   AY_si();
 };
 
-AY_si::AY_si() : AX_base("AY", true) 
+AY_si::AY_si() : AX_base("AY", true)
 {
   SetDocumentation("CTL AY operator: build the set of final states, to which all paths have the form:\n~~~~... ? ---> ? ---> p ---> ?");
 }
@@ -452,7 +452,7 @@ void AF_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   const graph_lldsm* llm = getLLM(x, pass[0]);
   stateset* p = grabParam(llm, pass[1], x);
-  setAnswer(x, 
+  setAnswer(x,
     llm->isFairModel() ?  llm->fairAU(revTime(), 0, p) :  llm->unfairAU(revTime(), 0, p)
   );
   Delete(p);
@@ -485,7 +485,7 @@ public:
   AP_si();
 };
 
-AP_si::AP_si() : AF_base("AP", true) 
+AP_si::AP_si() : AF_base("AP", true)
 {
   SetDocumentation("CTL AP operator: build the set of final states, to which all paths have the form:\n~~~~... ? ---> p ---> ? ---> ... ---> ?");
 }
@@ -546,7 +546,7 @@ public:
   AH_si();
 };
 
-AH_si::AH_si() : AG_base("AH", true) 
+AH_si::AH_si() : AG_base("AH", true)
 {
   SetDocumentation("CTL AH operator: build the set of final states, to which all paths have the form:\n~~~~... p ---> p ---> p ---> p");
 }
@@ -582,7 +582,7 @@ void AU_base::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   stateset* q = grabParam(llm, pass[2], x);
-  setAnswer(x, 
+  setAnswer(x,
     llm->isFairModel() ?  llm->fairAU(revTime(), p, q) :  llm->unfairAU(revTime(), p, q)
   );
   Delete(p);
@@ -809,9 +809,8 @@ int CTL_trace::Traverse(traverse_data &x, expr** pass, int np)
   }
 
   // Trace functions won't be measurified
-  const char* fn = x.parent ? x.parent->Filename() : 0;
-  int ln = x.parent ? x.parent->Linenumber() : -1;
-  expr* comp = em->makeFunctionCall(fn, ln, this, pass, np);
+  expr* comp = em->makeFunctionCall(
+          x.parent ? x.parent->Where() : location::NOWHERE(), this, pass, np);
   setAnswer(x, comp);
   return 1;
 }
@@ -926,12 +925,12 @@ void And_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 5;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(left));
+  ps[1] = new value(Where(), em->STATESET, result(left));
   ps[2] = left_cb;
-  ps[3] = new value(Filename(), Linenumber(), em->STATESET, result(right));
+  ps[3] = new value(Where(), em->STATESET, result(right));
   ps[4] = right_cb;
 
-  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_and_trace_ex, ps, nps);
+  expr* fc = em->makeFunctionCall(Where(), &the_and_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1020,11 +1019,11 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
-  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[1] = new value(Where(), em->STATESET, result(p));
+  ps[2] = new value(Where(), em->VOID, result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EX_trace_ex, ps, nps);
+  expr* fc = em->makeFunctionCall(Where(), &the_EX_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1113,11 +1112,11 @@ void EF_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
-  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[1] = new value(Where(), em->STATESET, result(p));
+  ps[2] = new value(Where(), em->VOID, result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EF_trace_ex, ps, nps);
+  expr* fc = em->makeFunctionCall(Where(), &the_EF_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1208,11 +1207,11 @@ void EG_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
-  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[1] = new value(Where(), em->STATESET, result(p));
+  ps[2] = new value(Where(), em->VOID, result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EG_trace_ex, ps, nps);
+  expr* fc = em->makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1322,12 +1321,12 @@ void EU_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 5;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Filename(), Linenumber(), em->STATESET, result(p));
-  ps[2] = new value(Filename(), Linenumber(), em->VOID, result(td));
+  ps[1] = new value(Where(), em->STATESET, result(p));
+  ps[2] = new value(Where(), em->VOID, result(td));
   ps[3] = pcb;
   ps[4] = qcb;
 
-  expr* fc = em->makeFunctionCall(Filename(), Linenumber(), &the_EG_trace_ex, ps, nps);
+  expr* fc = em->makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }

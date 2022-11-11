@@ -13,8 +13,8 @@
 // *                                                                *
 // ******************************************************************
 
-value::value(const char* fn, int line, const type* t, const result &x)
- : expr (fn, line, t)
+value::value(const location &W, const type* t, const result &x)
+ : expr (W, t)
 {
   val = x;
 }
@@ -33,7 +33,7 @@ bool value::Print(OutputStream &s, int width) const
     s << t->getName() << "(";
     bt->show(s, val);
     s << ")";
-  } else 
+  } else
 #endif
     bt->show(s, val);
 
@@ -133,7 +133,7 @@ void value::Traverse(traverse_data &x)
         } // catch
         return;
     }
-  
+
     case traverse_data::BuildExpoRateDD:
       DCASSERT(x.answer);
       x.answer->setNull();

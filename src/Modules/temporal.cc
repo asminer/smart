@@ -29,7 +29,7 @@ inline bool isAtomicType(const exprman* em, const type* t)
 // *                                                                *
 // ******************************************************************
 
-temporal_type::temporal_type(bool pf, const char* name, const char* short_doc, 
+temporal_type::temporal_type(bool pf, const char* name, const char* short_doc,
   const char* long_doc) : simple_type(name, short_doc, long_doc)
 {
   is_path_formula = pf;
@@ -54,7 +54,7 @@ temporal_type::temporal_type(bool pf, const char* name, const char* short_doc,
 
 class temporal_unary : public unary {
   public:
-    temporal_unary(const char* fn, int line, exprman::unary_opcode, 
+    temporal_unary(const location &W, exprman::unary_opcode,
       const type* t, expr* x);
     virtual bool Print(OutputStream &s, int) const;
     virtual void Traverse(traverse_data &x);
@@ -71,9 +71,9 @@ class temporal_unary : public unary {
 
 // ******************************************************************
 
-temporal_unary::temporal_unary(const char* fn, int line, 
+temporal_unary::temporal_unary(const location &W,
   exprman::unary_opcode op, const type* t, expr *x)
- : unary(fn, line, t, x)
+ : unary(W, t, x)
 {
   opcode = op;
 }
@@ -143,7 +143,7 @@ void temporal_unary::TraverseOperand(traverse_data &x) const
 
 class temporal_A : public temporal_unary {
   public:
-    temporal_A(const char* fn, int line, const type* t, expr* x);
+    temporal_A(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -151,14 +151,14 @@ class temporal_A : public temporal_unary {
 
 // ******************************************************************
 
-temporal_A::temporal_A(const char* fn, int line, const type* t, expr *x)
- : temporal_unary(fn, line, exprman::uop_forall, t, x)
+temporal_A::temporal_A(const location &W, const type* t, expr *x)
+ : temporal_unary(W, exprman::uop_forall, t, x)
 {
 }
 
 expr* temporal_A::buildAnother(expr *x) const
 {
-  return new temporal_A(Filename(), Linenumber(), Type(), x);
+  return new temporal_A(Where(), Type(), x);
 }
 
 void temporal_A::Traverse(traverse_data &x)
@@ -177,7 +177,7 @@ void temporal_A::Traverse(traverse_data &x)
 
 class temporal_E : public temporal_unary {
   public:
-    temporal_E(const char* fn, int line, const type* t, expr* x);
+    temporal_E(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -185,14 +185,14 @@ class temporal_E : public temporal_unary {
 
 // ******************************************************************
 
-temporal_E::temporal_E(const char* fn, int line, const type* t, expr *x)
- : temporal_unary(fn, line, exprman::uop_exists, t, x)
+temporal_E::temporal_E(const location &W, const type* t, expr *x)
+ : temporal_unary(W, exprman::uop_exists, t, x)
 {
 }
 
 expr* temporal_E::buildAnother(expr *x) const
 {
-  return new temporal_E(Filename(), Linenumber(), Type(), x);
+  return new temporal_E(Where(), Type(), x);
 }
 
 void temporal_E::Traverse(traverse_data &x)
@@ -216,7 +216,7 @@ void temporal_E::Traverse(traverse_data &x)
 
 class temporal_F : public temporal_unary {
   public:
-    temporal_F(const char* fn, int line, const type* t, expr* x);
+    temporal_F(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -224,14 +224,14 @@ class temporal_F : public temporal_unary {
 
 // ******************************************************************
 
-temporal_F::temporal_F(const char* fn, int line, const type* t, expr *x)
- : temporal_unary(fn, line, exprman::uop_future, t, x)
+temporal_F::temporal_F(const location &W, const type* t, expr *x)
+ : temporal_unary(W, exprman::uop_future, t, x)
 {
 }
 
 expr* temporal_F::buildAnother(expr *x) const
 {
-  return new temporal_F(Filename(), Linenumber(), Type(), x);
+  return new temporal_F(Where(), Type(), x);
 }
 
 void temporal_F::Traverse(traverse_data &x)
@@ -293,7 +293,7 @@ void temporal_F::Traverse(traverse_data &x)
 
 class temporal_G : public temporal_unary {
   public:
-    temporal_G(const char* fn, int line, const type* t, expr* x);
+    temporal_G(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -301,14 +301,14 @@ class temporal_G : public temporal_unary {
 
 // ******************************************************************
 
-temporal_G::temporal_G(const char* fn, int line, const type* t, expr *x)
- : temporal_unary(fn, line, exprman::uop_globally, t, x)
+temporal_G::temporal_G(const location &W, const type* t, expr *x)
+ : temporal_unary(W, exprman::uop_globally, t, x)
 {
 }
 
 expr* temporal_G::buildAnother(expr *x) const
 {
-  return new temporal_G(Filename(), Linenumber(), Type(), x);
+  return new temporal_G(Where(), Type(), x);
 }
 
 void temporal_G::Traverse(traverse_data &x)
@@ -370,7 +370,7 @@ void temporal_G::Traverse(traverse_data &x)
 
 class temporal_X : public temporal_unary {
   public:
-    temporal_X(const char* fn, int line, const type* t, expr* x);
+    temporal_X(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -378,14 +378,14 @@ class temporal_X : public temporal_unary {
 
 // ******************************************************************
 
-temporal_X::temporal_X(const char* fn, int line, const type* t, expr *x)
- : temporal_unary(fn, line, exprman::uop_next, t, x)
+temporal_X::temporal_X(const location &W, const type* t, expr *x)
+ : temporal_unary(W, exprman::uop_next, t, x)
 {
 }
 
 expr* temporal_X::buildAnother(expr *x) const
 {
-  return new temporal_X(Filename(), Linenumber(), Type(), x);
+  return new temporal_X(Where(), Type(), x);
 }
 
 void temporal_X::Traverse(traverse_data &x)
@@ -447,7 +447,7 @@ void temporal_X::Traverse(traverse_data &x)
 
 class temporal_U : public binary {
   public:
-    temporal_U(const char* fn, int line, const type* t, expr* l, expr* r);
+    temporal_U(const location &W, const type* t, expr* l, expr* r);
     virtual bool Print(OutputStream &s, int) const;
     virtual void Traverse(traverse_data &x);
   protected:
@@ -459,8 +459,8 @@ class temporal_U : public binary {
 
 // ******************************************************************
 
-temporal_U::temporal_U(const char* fn, int line, const type* t, expr *l, expr *r)
- : binary(fn, line, exprman::bop_until, t, l, r)
+temporal_U::temporal_U(const location &W, const type* t, expr *l, expr *r)
+ : binary(W, exprman::bop_until, t, l, r)
 {
 }
 
@@ -478,7 +478,7 @@ bool temporal_U::Print(OutputStream &s, int) const
 
 expr* temporal_U::buildAnother(expr *l, expr *r) const
 {
-  return new temporal_U(Filename(), Linenumber(), Type(), l, r);
+  return new temporal_U(Where(), Type(), l, r);
 }
 
 void temporal_U::Traverse(traverse_data &x)
@@ -585,7 +585,7 @@ void temporal_U::TraverseOperand(traverse_data &x, expr* p) const
 
 class temporal_neg : public negop {
   public:
-    temporal_neg(const char* fn, int line, const type* t, expr* x);
+    temporal_neg(const location &W, const type* t, expr* x);
   protected:
     virtual expr* buildAnother(expr *x) const;
     virtual void Traverse(traverse_data &x);
@@ -593,14 +593,14 @@ class temporal_neg : public negop {
 
 // ******************************************************************
 
-temporal_neg::temporal_neg(const char* fn, int line, const type* t, expr *x)
- : negop(fn, line, exprman::uop_neg, t, x)
+temporal_neg::temporal_neg(const location &W, const type* t, expr *x)
+ : negop(W, exprman::uop_neg, t, x)
 {
 }
 
 expr* temporal_neg::buildAnother(expr *x) const
 {
-  return new temporal_neg(Filename(), Linenumber(), Type(), x);
+  return new temporal_neg(Where(), Type(), x);
 }
 
 void temporal_neg::Traverse(traverse_data &x)
@@ -619,7 +619,7 @@ void temporal_neg::Traverse(traverse_data &x)
 
 class temporal_and : public binary {
   public:
-    temporal_and(const char* fn, int line, const type* t, expr* l, expr* r);
+    temporal_and(const location &W, const type* t, expr* l, expr* r);
     virtual void Traverse(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *nl, expr *nr) const;
@@ -630,14 +630,14 @@ class temporal_and : public binary {
 
 // ******************************************************************
 
-temporal_and::temporal_and(const char* fn, int line, const type* t,
-  expr* l, expr *r) : binary(fn, line, exprman::bop_and, t, l, r)
+temporal_and::temporal_and(const location &W, const type* t,
+  expr* l, expr *r) : binary(W, exprman::bop_and, t, l, r)
 {
 }
 
 expr* temporal_and::buildAnother(expr *l, expr *r) const
 {
-  return new temporal_and(Filename(), Linenumber(), Type(), l, r);
+  return new temporal_and(Where(), Type(), l, r);
 }
 
 void temporal_and::Traverse(traverse_data &x)
@@ -735,7 +735,7 @@ void temporal_and::TraverseOperand(traverse_data &x, expr* p) const
 
 class temporal_implies : public binary {
   public:
-    temporal_implies(const char* fn, int line, const type* t, expr* l, expr* r);
+    temporal_implies(const location &W, const type* t, expr* l, expr* r);
     virtual void Traverse(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *nl, expr *nr) const;
@@ -743,14 +743,14 @@ class temporal_implies : public binary {
 
 // ******************************************************************
 
-temporal_implies::temporal_implies(const char* fn, int line, const type* t,
-  expr* l, expr *r) : binary(fn, line, exprman::bop_implies, t, l, r)
+temporal_implies::temporal_implies(const location &W, const type* t,
+  expr* l, expr *r) : binary(W, exprman::bop_implies, t, l, r)
 {
 }
 
 expr* temporal_implies::buildAnother(expr *l, expr *r) const
 {
-  return new temporal_implies(Filename(), Linenumber(), Type(), l, r);
+  return new temporal_implies(Where(), Type(), l, r);
 }
 
 void temporal_implies::Traverse(traverse_data &x)
@@ -781,7 +781,7 @@ class temporal_quantifier_op : public unary_op {
   public:
     temporal_quantifier_op(exprman::unary_opcode op);
     virtual const type* getExprType(const type* t) const;
-    virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+    virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -791,7 +791,7 @@ temporal_quantifier_op::temporal_quantifier_op(exprman::unary_opcode op)
 {
   if ((op != exprman::uop_forall) && (op != exprman::uop_exists)) {
     em->startInternal(__FILE__, __LINE__);
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_quantifier_op";
     em->stopIO();
   }
@@ -805,7 +805,7 @@ const type* temporal_quantifier_op::getExprType(const type* t) const
   return tt->quantify();
 }
 
-unary* temporal_quantifier_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* temporal_quantifier_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   const type* t = getExprType(x->Type());
@@ -815,19 +815,19 @@ unary* temporal_quantifier_op::makeExpr(const char* fn, int ln, expr* x) const
   }
   switch (getOpcode()) {
     case exprman::uop_forall:
-        return new temporal_A(fn, ln, t, x);
+        return new temporal_A(W, t, x);
 
     case exprman::uop_exists:
-        return new temporal_E(fn, ln, t, x);
+        return new temporal_E(W, t, x);
 
     default:
         em->startInternal(__FILE__, __LINE__);
-        em->noCause();
+        em->causedBy(0);
         em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_quantifier_op";
         em->stopIO();
   }
   // shouldn't get here
-  return 0; 
+  return 0;
 }
 
 
@@ -843,7 +843,7 @@ class temporal_unarypath_op : public unary_op {
   public:
     temporal_unarypath_op(exprman::unary_opcode op);
     virtual const type* getExprType(const type* t) const;
-    virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+    virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -853,7 +853,7 @@ temporal_unarypath_op::temporal_unarypath_op(exprman::unary_opcode op)
 {
   if ((op != exprman::uop_future) && (op != exprman::uop_globally) && (op != exprman::uop_next)) {
     em->startInternal(__FILE__, __LINE__);
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_unarypath_op";
     em->stopIO();
   }
@@ -871,7 +871,7 @@ const type* temporal_unarypath_op::getExprType(const type* t) const
   return tt->pathify();
 }
 
-unary* temporal_unarypath_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* temporal_unarypath_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   const type* t = getExprType(x->Type());
@@ -881,22 +881,22 @@ unary* temporal_unarypath_op::makeExpr(const char* fn, int ln, expr* x) const
   }
   switch (getOpcode()) {
     case exprman::uop_future:
-        return new temporal_F(fn, ln, t, x);
+        return new temporal_F(W, t, x);
 
     case exprman::uop_globally:
-        return new temporal_G(fn, ln, t, x);
+        return new temporal_G(W, t, x);
 
     case exprman::uop_next:
-        return new temporal_X(fn, ln, t, x);
+        return new temporal_X(W, t, x);
 
     default:
         em->startInternal(__FILE__, __LINE__);
-        em->noCause();
+        em->causedBy(0);
         em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_unarypath_op";
         em->stopIO();
   }
   // shouldn't get here
-  return 0; 
+  return 0;
 }
 
 
@@ -912,7 +912,7 @@ class temporal_binarypath_op : public binary_op {
     temporal_binarypath_op(exprman::binary_opcode op);
     virtual int getPromoteDistance(const type* lt, const type* rt) const;
     virtual const type* getExprType(const type* lt, const type* rt) const;
-    virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const;
+    virtual binary* makeExpr(const location &W, expr* left, expr* right) const;
   private:
     inline bool isValidOperandType(const type* t) const {
       if (isAtomicType(em, t))  return true;
@@ -928,7 +928,7 @@ temporal_binarypath_op::temporal_binarypath_op(exprman::binary_opcode op)
   // TBD - should we add release, weak until?
   if (op != exprman::bop_until) {
     em->startInternal(__FILE__, __LINE__);
-    em->noCause();
+    em->causedBy(0);
     em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_binarypath_op";
     em->stopIO();
   }
@@ -1002,7 +1002,7 @@ const type* temporal_binarypath_op::getExprType(const type* lt, const type* rt) 
   return temporal_types::t_ctlstar_pathform;
 }
 
-binary* temporal_binarypath_op::makeExpr(const char* fn, int ln, expr* left, 
+binary* temporal_binarypath_op::makeExpr(const location &W, expr* left,
   expr* right) const
 {
   DCASSERT(left);
@@ -1017,7 +1017,7 @@ binary* temporal_binarypath_op::makeExpr(const char* fn, int ln, expr* left,
 
   switch (getOpcode()) {
     case exprman::bop_until:
-        return new temporal_U(fn, ln, t, left, right);
+        return new temporal_U(W, t, left, right);
 
     // Release would go here
 
@@ -1025,12 +1025,12 @@ binary* temporal_binarypath_op::makeExpr(const char* fn, int ln, expr* left,
 
     default:
         em->startInternal(__FILE__, __LINE__);
-        em->noCause();
+        em->causedBy(0);
         em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_binarypath_op";
         em->stopIO();
   }
   // shouldn't get here
-  return 0; 
+  return 0;
 }
 
 
@@ -1045,7 +1045,7 @@ class temporal_neg_op : public unary_op {
   public:
     temporal_neg_op();
     virtual const type* getExprType(const type* t) const;
-    virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+    virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -1063,7 +1063,7 @@ const type* temporal_neg_op::getExprType(const type* t) const
 }
 
 
-unary* temporal_neg_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* temporal_neg_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   const type* t = getExprType(x->Type());
@@ -1071,7 +1071,7 @@ unary* temporal_neg_op::makeExpr(const char* fn, int ln, expr* x) const
     Delete(x);
     return 0;
   }
-  return new temporal_neg(fn, ln, t, x);
+  return new temporal_neg(W, t, x);
 }
 
 // ******************************************************************
@@ -1085,7 +1085,7 @@ class temporal_and_op : public binary_op {
     temporal_and_op();
     virtual int getPromoteDistance(const type* lt, const type* rt) const;
     virtual const type* getExprType(const type* lt, const type* rt) const;
-    virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const;
+    virtual binary* makeExpr(const location &W, expr* left, expr* right) const;
 };
 
 // ******************************************************************
@@ -1173,7 +1173,7 @@ const type* temporal_and_op::getExprType(const type* lt, const type* rt) const
   else                        return temporal_types::t_ctlstar_stateform;
 }
 
-binary* temporal_and_op::makeExpr(const char* fn, int ln, expr* left,
+binary* temporal_and_op::makeExpr(const location &W, expr* left,
   expr* right) const
 {
   DCASSERT(left);
@@ -1186,7 +1186,7 @@ binary* temporal_and_op::makeExpr(const char* fn, int ln, expr* left,
     return 0;
   }
 
-  return new temporal_and(fn, ln, t, left, right);
+  return new temporal_and(W, t, left, right);
 }
 
 // ******************************************************************
@@ -1200,7 +1200,7 @@ class temporal_implies_op : public binary_op {
     temporal_implies_op();
     virtual int getPromoteDistance(const type* lt, const type* rt) const;
     virtual const type* getExprType(const type* lt, const type* rt) const;
-    virtual binary* makeExpr(const char* fn, int ln, expr* left, expr* right) const;
+    virtual binary* makeExpr(const location &W, expr* left, expr* right) const;
 };
 
 // ******************************************************************
@@ -1288,7 +1288,7 @@ const type* temporal_implies_op::getExprType(const type* lt, const type* rt) con
   else                        return temporal_types::t_ctlstar_stateform;
 }
 
-binary* temporal_implies_op::makeExpr(const char* fn, int ln, expr* left, 
+binary* temporal_implies_op::makeExpr(const location &W, expr* left,
   expr* right) const
 {
   DCASSERT(left);
@@ -1301,7 +1301,7 @@ binary* temporal_implies_op::makeExpr(const char* fn, int ln, expr* left,
     return 0;
   }
 
-  return new temporal_implies(fn, ln, t, left, right);
+  return new temporal_implies(W, t, left, right);
 }
 
 // ******************************************************************
@@ -1421,7 +1421,7 @@ bool init_temporal::execute()
   em->registerType(t_ctlstar_stateform);
 
   // ******************************************************************
-  // Operations  
+  // Operations
   // ******************************************************************
 
   em->registerOperation(  new temporal_quantifier_op(exprman::uop_forall)   );

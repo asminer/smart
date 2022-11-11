@@ -26,24 +26,23 @@ protected:
   static const int MAKE_RAND = 6;
   static const int MAKE_PROC = 9;
   static const int MAKE_SET = 20;
-  const exprman* em;  
+  const exprman* em;
   friend class superman;
 public:
   base_conv();
   virtual ~base_conv();
 
   /** Convert an expression according to this rule.
-        @param  file  Filename causing the promotion.
-        @param  line  Linenumber causing the promotion.
+        @param  W     Where the promotion is happening.
         @param  src   Original expression.
         @param  dest  Desired type.  Can be the target type, or
                       anything that is a "no op" promotion
                       from the target type.
         @return 0, if it is impossible to convert \a src to type \a dest,
-                at least according to this rule.  Otherwise, 
+                at least according to this rule.  Otherwise,
                 convert src to the new type.
   */
-  virtual expr* convert(const char* file, int line,
+  virtual expr* convert(const location& W,
       expr* src, const type* dest) const = 0;
 };
 
@@ -66,9 +65,9 @@ public:
       If -1, the rule does not handle promotions of this form.
         @param  src   Starting type.
         @param  dest  Desired type to reach.
-        @return  Distance of the promotion from src to dest, 
+        @return  Distance of the promotion from src to dest,
                 -1 if impossible, according to this rule.
-  */ 
+  */
   virtual int getDistance(const type* src, const type* dest) const = 0;
 
   /** Is a conversion necessary for this promotion.
@@ -110,9 +109,9 @@ public:
         @param  src  Starting type.
         @return Distance of the promotion from src to the destination, or
                 -1 if impossible, according to this rule.
-  */ 
+  */
   virtual int getDistance(const type* src) const = 0;
-  
+
   /** According to this "rule", get destination type for the given source type.
         @param  src  Starting type.
         @return Destination type, or 0 if the rule does not apply.
@@ -129,13 +128,13 @@ public:
 /**  Base class for all typecast operations (expressions).
      Also a useful default, catch-all type converter
      for promotions that require "no operation".
-*/   
+*/
 class typecast : public unary {
 protected:
   /// For display only.
   bool silent;
 public:
-  typecast(const char* fn, int line, const type* newt, expr* x);
+  typecast(const location &W, const type* newt, expr* x);
   virtual bool Print(OutputStream &s, int) const;
   virtual void Compute(traverse_data &x);
 protected:

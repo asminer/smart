@@ -15,16 +15,16 @@
      That means things like "3.2", "infinity".
 */
 class value : public expr {
-  result val;
+    result val;
 public:
-  value(const char* fn, int line, const type* t, const result &x);
+    value(const location& where, const type* t, const result &x);
 protected:
-  virtual ~value();
+    virtual ~value();
 public:
-  virtual bool Print(OutputStream &s, int width) const;
-  virtual bool Equals(const shared_object* o) const;
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
+    virtual bool Print(OutputStream &s, int width) const;
+    virtual bool Equals(const shared_object* o) const;
+    virtual void Compute(traverse_data &x);
+    virtual void Traverse(traverse_data &x);
 };
 
 #endif

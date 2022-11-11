@@ -23,9 +23,9 @@ binary_op::~binary_op()
 // *                                                                *
 // ******************************************************************
 
-binary::binary(const char* fn, int line, exprman::binary_opcode oc, 
+binary::binary(const location &W, exprman::binary_opcode oc,
  const type* t, expr *l, expr *r)
- : expr(fn, line, t) 
+ : expr(W, t)
 {
   left = l;
   right = r;
@@ -113,8 +113,8 @@ bool binary::Print(OutputStream &s, int) const
 // *                                                                *
 // ******************************************************************
 
-modulo::modulo(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_mod, t, l, r)
+modulo::modulo(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_mod, t, l, r)
 {
 }
 
@@ -124,8 +124,8 @@ modulo::modulo(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-eqop::eqop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_equals, t, l, r)
+eqop::eqop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_equals, t, l, r)
 {
 }
 
@@ -135,8 +135,8 @@ eqop::eqop(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-neqop::neqop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_nequal, t, l, r)
+neqop::neqop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_nequal, t, l, r)
 {
 }
 
@@ -146,8 +146,8 @@ neqop::neqop(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-gtop::gtop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_gt, t, l, r)
+gtop::gtop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_gt, t, l, r)
 {
 }
 
@@ -157,8 +157,8 @@ gtop::gtop(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-geop::geop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_ge, t, l, r)
+geop::geop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_ge, t, l, r)
 {
 }
 
@@ -168,8 +168,8 @@ geop::geop(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-ltop::ltop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_lt, t, l, r)
+ltop::ltop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_lt, t, l, r)
 {
 }
 
@@ -179,8 +179,8 @@ ltop::ltop(const char* fn, int line, const type* t, expr* l, expr* r)
 // *                                                                *
 // ******************************************************************
 
-leop::leop(const char* fn, int line, const type* t, expr* l, expr* r)
- : binary(fn, line, exprman::bop_le, t, l, r)
+leop::leop(const location &W, const type* t, expr* l, expr* r)
+ : binary(W, exprman::bop_le, t, l, r)
 {
 }
 

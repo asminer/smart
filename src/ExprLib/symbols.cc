@@ -14,8 +14,8 @@
 // *                                                                *
 // ******************************************************************
 
-symbol::symbol(const char* fn, int line, const type* t, char* n)
- : expr(fn, line, t)
+symbol::symbol(const location &W, const type* t, char* n)
+ : expr(W, t)
 {
   name = (n) ? (new shared_string(n)) : 0;
   substitute_value = true;
@@ -23,8 +23,8 @@ symbol::symbol(const char* fn, int line, const type* t, char* n)
   waitlist = 0;
 }
 
-symbol::symbol(const char* fn, int line, typelist* t, char* n)
- : expr(fn, line, t)
+symbol::symbol(const location &W, typelist* t, char* n)
+ : expr(W, t)
 {
   name = (n) ? (new shared_string(n)) : 0;
   substitute_value = true;
@@ -87,7 +87,7 @@ void symbol::Traverse(traverse_data &x)
           result ans;
           xx.answer = &ans;
           Compute(xx);
-          x.answer->setPtr(new value(Filename(), Linenumber(), Type(), ans));
+          x.answer->setPtr(new value(Where(), Type(), ans));
         }
         return;
 
@@ -140,8 +140,7 @@ void symbol::PrintDocs(doc_formatter* df, const char* keyword) const
   df->Out() << " " << name->getStr();
   df->end_heading();
   df->begin_indent();
-  df->Out() << "Defined ";
-  df->Out().PutFile(Filename(), Linenumber());
+  df->Out() << "Defined " << Where();
   df->end_indent();
 }
 
@@ -213,13 +212,13 @@ void symbol::notifyList()
 // ******************************************************************
 
 help_topic::help_topic(const char* n, const char* s)
- : symbol(0, -1, (typelist*) 0, strdup(n))
+ : symbol(location::NOWHERE(), (typelist*) 0, strdup(n))
 {
   summary = s;
 }
 
 help_topic::help_topic()
- : symbol(0, -1, (typelist*) 0, 0)
+ : symbol(location::NOWHERE(), (typelist*) 0, 0)
 {
   summary = 0;
 }
@@ -305,7 +304,7 @@ protected:
   /// Dependency list.
   List <symbol> *deplist;
 public:
-  constfunc(const char *fn, int line, const type* t, char *n, expr* rhs, List <symbol> *dl);
+  constfunc(const location &W, const type* t, char *n, expr* rhs, List <symbol> *dl);
   constfunc(const symbol* wrap, expr* rhs, List <symbol> *dl);
   virtual ~constfunc();
   virtual void Compute(traverse_data &x);
@@ -329,8 +328,8 @@ protected:
 // *                                                                *
 // ******************************************************************
 
-constfunc::constfunc(const char *f, int l, const type* t, char* n,
-  expr* rhs, List <symbol> *dl) : symbol(f, l, t, n)
+constfunc::constfunc(const location &W, const type* t, char* n,
+  expr* rhs, List <symbol> *dl) : symbol(W, t, n)
 {
   Initialize(rhs, dl);
 }
@@ -415,7 +414,7 @@ void constfunc::Traverse(traverse_data &x)
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeConstant(const char* fn, int ln, const type* t,
+symbol* exprman::makeConstant(const location &W, const type* t,
       char* name, expr* rhs, List <symbol> *deps) const
 {
   if (0==t || isError(rhs)) {
@@ -427,7 +426,7 @@ symbol* exprman::makeConstant(const char* fn, int ln, const type* t,
 
   if (!isPromotable(rhstype, t)) {
     if (startError()) {
-      causedBy(fn, ln);
+      causedBy(W);
       cerr() << "Return type for identifier ";
       if (name)   cerr() << name;
       else        cerr() << "(no name)";
@@ -439,7 +438,7 @@ symbol* exprman::makeConstant(const char* fn, int ln, const type* t,
     return 0;
   }
   rhs = promote(rhs, t);
-  symbol* s = new constfunc(fn, ln, t, name, rhs, deps);
+  symbol* s = new constfunc(W, t, name, rhs, deps);
   if (rhs) s->SetModelType(rhs->GetModelType());
   if (s->OK())  return s;
   Delete(s);

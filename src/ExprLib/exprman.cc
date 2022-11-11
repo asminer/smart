@@ -91,16 +91,6 @@ option* exprman::findOption(const char* name) const
 }
 
 // +-----------------------------------------------------------------+
-// |                       Building  constants                       |
-// +-----------------------------------------------------------------+
-
-expr* exprman::makeLiteral(const char* file, int line,
-      const type* t, const result& c) const
-{
-  return new value(file, line, t, c);
-}
-
-// +-----------------------------------------------------------------+
 // |                   Array and function  "calls"                   |
 // +-----------------------------------------------------------------+
 
@@ -140,7 +130,7 @@ const type* exprman::getLeastCommonType(const type* a, const type* b) const
 }
 
 
-expr* exprman::makeTypecast(const char* file, int line,
+expr* exprman::makeTypecast(const location& where,
       bool proc, bool rand, const expr *fp, expr* e) const
 {
   if (0==e || isError(e) || isDefault(e))  return e;
@@ -156,7 +146,7 @@ expr* exprman::makeTypecast(const char* file, int line,
     const type* fpt = fp->Type();             DCASSERT(fpt);
     if (rand) fpt = fpt->modifyType(RAND);    DCASSERT(fpt);
     if (proc) fpt = fpt->addProc();           DCASSERT(fpt);
-    return makeTypecast(file, line, fpt, e);
+    return makeTypecast(where, fpt, e);
   }
 
   expr** newagg = new expr*[nc];
@@ -168,7 +158,7 @@ expr* exprman::makeTypecast(const char* file, int line,
     if (rand) fpt = fpt->modifyType(RAND);    DCASSERT(fpt);
     if (proc) fpt = fpt->addProc();           DCASSERT(fpt);
     expr* thisone = Share(e->GetComponent(i));
-    newagg[i] = makeTypecast(file, line, fpt, thisone);
+    newagg[i] = makeTypecast(where, fpt, thisone);
     if (newagg[i] != thisone) same = false;
     if (thisone) if (0==newagg[i] || isError(newagg[i])) {
       // we couldn't typecast this component
@@ -178,7 +168,7 @@ expr* exprman::makeTypecast(const char* file, int line,
   }
   if (!same && !null) {
     Delete(e);
-    return makeAssocOp(file, line, aop_colon, newagg, 0, nc);
+    return makeAssocOp(where, aop_colon, newagg, 0, nc);
   }
   delete[] newagg;
   if (same) return e;
@@ -192,7 +182,7 @@ expr* exprman::promote(expr* e, const type* newtype) const
 
   if (!isPromotable(e->Type(), newtype))  return makeError();
 
-  return makeTypecast(e->Filename(), e->Linenumber(), newtype, e);
+  return makeTypecast(e->Where(), newtype, e);
 }
 
 expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
@@ -219,7 +209,7 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
   }
   if (changetype) {
     if (promote_arg.startWarning()) {
-      promote_arg.causedBy(e);
+      promote_arg.causedBy(e->Where());
       promote_arg.warn() << "Promoting argument ";
       e->Print(promote_arg.warn(), 0);
       promote_arg.warn() << " to type ";
@@ -227,7 +217,7 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
       promote_arg.stopIO();
     }
   }
-  return makeTypecast(e->Filename(), e->Linenumber(), proc, rand, fp, e);
+  return makeTypecast(e->Where(), proc, rand, fp, e);
 }
 
 // +-----------------------------------------------------------------+
@@ -365,11 +355,11 @@ const char* exprman::documentOp(bool flip, assoc_opcode op)
 // |                         Building models                         |
 // +-----------------------------------------------------------------+
 
-model_def* exprman::makeModel(const char* fn, int ln, const type* t,
+model_def* exprman::makeModel(const location& W, const type* t,
         char* name, symbol** formals, int np) const
 {
   const formalism* f = smart_cast <const formalism*> (t);
-  if (f) return f->makeNewModel(fn, ln, name, formals, np);
+  if (f) return f->makeNewModel(W, name, formals, np);
 
   // error
   free(name);

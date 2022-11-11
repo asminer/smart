@@ -105,7 +105,7 @@ stateset_type::stateset_type() : simple_type("stateset", "Set of states", "Type 
 /// Negation of a stateset expression.
 class stateset_not : public negop {
 public:
-  stateset_not(const char* fn, int line, expr *x);
+  stateset_not(const location &W, expr *x);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x) const;
@@ -115,8 +115,8 @@ protected:
 // *                      stateset_not methods                      *
 // ******************************************************************
 
-stateset_not::stateset_not(const char* fn, int line, expr *x)
- : negop(fn, line, exprman::uop_not, x->Type(), x)
+stateset_not::stateset_not(const location &W, expr *x)
+ : negop(W, exprman::uop_not, x->Type(), x)
 {
 }
 
@@ -143,7 +143,7 @@ void stateset_not::Compute(traverse_data &x)
 
 expr* stateset_not::buildAnother(expr *x) const
 {
-  return new stateset_not(Filename(), Linenumber(), x);
+  return new stateset_not(Where(), x);
 }
 
 // ******************************************************************
@@ -155,7 +155,7 @@ expr* stateset_not::buildAnother(expr *x) const
 /// Difference of two statesets.
 class stateset_diff : public binary {
 public:
-  stateset_diff(const char* fn, int line, expr *l, expr* r);
+  stateset_diff(const location &W, expr *l, expr* r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x, expr* y) const;
@@ -165,8 +165,8 @@ protected:
 // *                     stateset_diff methods                      *
 // ******************************************************************
 
-stateset_diff::stateset_diff(const char* fn, int line, expr *l, expr* r)
- : binary(fn, line, exprman::bop_diff, l->Type(), l, r)
+stateset_diff::stateset_diff(const location &W, expr *l, expr* r)
+ : binary(W, exprman::bop_diff, l->Type(), l, r)
 {
 }
 
@@ -236,7 +236,7 @@ void stateset_diff::Compute(traverse_data &x)
 
 expr* stateset_diff::buildAnother(expr *x, expr* y) const
 {
-  return new stateset_diff(Filename(), Linenumber(), x, y);
+  return new stateset_diff(Where(), x, y);
 }
 
 // ******************************************************************
@@ -248,7 +248,7 @@ expr* stateset_diff::buildAnother(expr *x, expr* y) const
 /// Implication (ugh!) of two statesets.
 class stateset_implies : public binary {
 public:
-  stateset_implies(const char* fn, int line, expr *l, expr* r);
+  stateset_implies(const location &W, expr *l, expr* r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x, expr* y) const;
@@ -258,8 +258,8 @@ protected:
 // *                   stateset_implies  methods                    *
 // ******************************************************************
 
-stateset_implies::stateset_implies(const char* fn, int line, expr *l, expr* r)
- : binary(fn, line, exprman::bop_implies, l->Type(), l, r)
+stateset_implies::stateset_implies(const location &W, expr *l, expr* r)
+ : binary(W, exprman::bop_implies, l->Type(), l, r)
 {
 }
 
@@ -329,7 +329,7 @@ void stateset_implies::Compute(traverse_data &x)
 
 expr* stateset_implies::buildAnother(expr *x, expr* y) const
 {
-  return new stateset_implies(Filename(), Linenumber(), x, y);
+  return new stateset_implies(Where(), x, y);
 }
 
 // ******************************************************************
@@ -341,7 +341,7 @@ expr* stateset_implies::buildAnother(expr *x, expr* y) const
 /// Union of stateset expressions.
 class stateset_union : public summation {
 public:
-  stateset_union(const char* fn, int line, const type* t, expr **x, int n);
+  stateset_union(const location &W, const type* t, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -352,8 +352,8 @@ protected:
 // ******************************************************************
 
 stateset_union
-::stateset_union(const char* fn, int line, const type* t, expr **x, int n)
- : summation(fn, line, exprman::aop_or, t, x, 0, n)
+::stateset_union(const location &W, const type* t, expr **x, int n)
+ : summation(W, exprman::aop_or, t, x, 0, n)
 {
 }
 
@@ -398,7 +398,7 @@ void stateset_union::Compute(traverse_data &x)
 expr* stateset_union::buildAnother(expr **x, bool* f, int n) const
 {
   DCASSERT(0==f);
-  return new stateset_union(Filename(), Linenumber(), Type(), x, n);
+  return new stateset_union(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -410,7 +410,7 @@ expr* stateset_union::buildAnother(expr **x, bool* f, int n) const
 /// Intersection of stateset expressions.
 class stateset_intersect : public product {
 public:
-  stateset_intersect(const char* fn, int line, const type* t, expr **x, int n);
+  stateset_intersect(const location &W, const type* t, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -421,8 +421,8 @@ protected:
 // ******************************************************************
 
 stateset_intersect
-::stateset_intersect(const char* fn, int line, const type* t, expr **x, int n)
- : product(fn, line, exprman::aop_and, t, x, 0, n)
+::stateset_intersect(const location &W, const type* t, expr **x, int n)
+ : product(W, exprman::aop_and, t, x, 0, n)
 {
 }
 
@@ -467,7 +467,7 @@ void stateset_intersect::Compute(traverse_data &x)
 expr* stateset_intersect::buildAnother(expr **x, bool* f, int n) const
 {
   DCASSERT(0==f);
-  return new stateset_intersect(Filename(), Linenumber(), Type(), x, n);
+  return new stateset_intersect(Where(), Type(), x, n);
 }
 
 
@@ -489,7 +489,7 @@ class stateset_not_op : public unary_op {
 public:
   stateset_not_op();
   virtual const type* getExprType(const type* t) const;
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+  virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -510,14 +510,14 @@ const type* stateset_not_op::getExprType(const type* t) const
   return t;
 }
 
-unary* stateset_not_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* stateset_not_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   if (!isDefinedForType(x->Type())) {
     Delete(x);
     return 0;
   }
-  return new stateset_not(fn, ln, x);
+  return new stateset_not(W, x);
 }
 
 // ******************************************************************
@@ -572,7 +572,7 @@ const type* stateset_binary::getExprType(const type* l, const type* r) const
 class stateset_diff_op : public stateset_binary {
 public:
   stateset_diff_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -584,14 +584,14 @@ stateset_diff_op::stateset_diff_op() : stateset_binary(exprman::bop_diff)
 }
 
 binary* stateset_diff_op
-::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+::makeExpr(const location &W, expr* l, expr* r) const
 {
   if (0==l || 0==r) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  return new stateset_diff(fn, ln, l, r);
+  return new stateset_diff(W, l, r);
 }
 
 // ******************************************************************
@@ -603,7 +603,7 @@ binary* stateset_diff_op
 class stateset_implies_op : public stateset_binary {
 public:
   stateset_implies_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -616,14 +616,14 @@ stateset_implies_op::stateset_implies_op()
 }
 
 binary* stateset_implies_op
-::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+::makeExpr(const location &W, expr* l, expr* r) const
 {
   if (0==l || 0==r) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  return new stateset_implies(fn, ln, l, r);
+  return new stateset_implies(W, l, r);
 }
 
 // ******************************************************************
@@ -694,7 +694,7 @@ const type* stateset_assoc_op
 class stateset_union_op : public stateset_assoc_op {
 public:
   stateset_union_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -706,7 +706,7 @@ stateset_union_op::stateset_union_op() : stateset_assoc_op(exprman::aop_or)
 {
 }
 
-assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* stateset_union_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
@@ -717,7 +717,7 @@ assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
     delete[] list;
     return 0;
   }
-  return new stateset_union(fn, ln, em->STATESET, list, N);
+  return new stateset_union(W, em->STATESET, list, N);
 }
 
 
@@ -730,7 +730,7 @@ assoc* stateset_union_op::makeExpr(const char* fn, int ln, expr** list,
 class stateset_intersect_op : public stateset_assoc_op {
 public:
   stateset_intersect_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list,
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -743,7 +743,7 @@ stateset_intersect_op::stateset_intersect_op()
 {
 }
 
-assoc* stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
+assoc* stateset_intersect_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
@@ -754,7 +754,7 @@ assoc* stateset_intersect_op::makeExpr(const char* fn, int ln, expr** list,
     delete[] list;
     return 0;
   }
-  return new stateset_intersect(fn, ln, em->STATESET, list, N);
+  return new stateset_intersect(W, em->STATESET, list, N);
 }
 
 

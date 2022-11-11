@@ -3,13 +3,14 @@
 #define LEXER_H
 
 #include <stdio.h>
+#include "../Utils/location.h"
 
 /** \file lexer.h
    Utilities for tokenization of SMART input files.
    Also, minimalist front-end functions to obtain
    the current file being processed, and linenumber.
 */
- 
+
 // Handy for lexer and parser.
 
 const char* TokenName(int tk);
@@ -55,7 +56,7 @@ int ProcessReal();
 /// quoted string token.
 int ProcessString();
 
-/** 
+/**
     Is the parser wanting LTL and CTL operators?
     Returns a character instead of boolean in case
     the lexer has to be compiled as C code.
@@ -63,7 +64,7 @@ int ProcessString();
 */
 char isTemporalActive();
 
-/** 
+/**
     Is this character a Temporal Operator?
     Ok, the name is horrible, because we also match path
     quantifiers A and E.  Suggest a better one :^)
@@ -214,10 +215,7 @@ bool SetInputs(parse_module* pm, const char** files, int filecount);
 */
 bool SetInput(parse_module* pm, FILE* file, const char* name);
 
-/// The current file being read.
-const char* Filename();
-
-/// The linenumber of the current file.
-int Linenumber();
+/// Position in the current file being read.
+const location& Where();
 
 #endif

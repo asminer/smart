@@ -41,7 +41,7 @@ protected:
   void MCError(hldsm* m, const char* what, MCLib::error e) const;
   inline void terminateError() const {
     if (em->startError()) {
-      em->noCause();
+      em->causedBy(0);
       em->cerr() << "Process construction prematurely terminated";
       em->stopIO();
     }

@@ -9,13 +9,13 @@
 //#define OPTIMIZE_AND_ORDER
 //#define OPTIMIZE_OR_ORDER
 
-/** 
+/**
 
    Implementation of operator classes, for bool variables.
 
  */
 
-inline const type* 
+inline const type*
 BoolResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -116,7 +116,7 @@ inline const type* AlignBooleans(const exprman* em, expr** x, bool* f, int N)
 /// Negation of a boolean expression.
 class bool_not_expr : public negop {
 public:
-  bool_not_expr(const char* fn, int line, expr *x);
+  bool_not_expr(const location &W, expr *x);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x) const;
@@ -126,9 +126,9 @@ protected:
 // *                     bool_not_expr  methods                     *
 // ******************************************************************
 
-bool_not_expr::bool_not_expr(const char* fn, int line, expr *x)
- : negop(fn, line, exprman::uop_not, x->Type(), x) 
-{ 
+bool_not_expr::bool_not_expr(const location &W, expr *x)
+ : negop(W, exprman::uop_not, x->Type(), x)
+{
 }
 
 void bool_not_expr::Compute(traverse_data &x)
@@ -136,16 +136,16 @@ void bool_not_expr::Compute(traverse_data &x)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(opnd);
-  opnd->Compute(x); 
+  opnd->Compute(x);
 
   if (!x.answer->isNormal()) return;
 
   x.answer->setBool( !x.answer->getBool() );
 }
 
-expr* bool_not_expr::buildAnother(expr *x) const 
+expr* bool_not_expr::buildAnother(expr *x) const
 {
-  return new bool_not_expr(Filename(), Linenumber(), x);
+  return new bool_not_expr(Where(), x);
 }
 
 // ******************************************************************
@@ -158,7 +158,7 @@ class bool_not_op : public unary_op {
 public:
   bool_not_op();
   virtual const type* getExprType(const type* t) const;
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+  virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -172,7 +172,7 @@ bool_not_op::bool_not_op() : unary_op(exprman::uop_not)
 const type* bool_not_op::getExprType(const type* t) const
 {
   if (0==t)    return 0;
-  if (t->isASet())  return 0; 
+  if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
   DCASSERT(em);
   DCASSERT(em->BOOL);
@@ -180,14 +180,14 @@ const type* bool_not_op::getExprType(const type* t) const
   return t;
 }
 
-unary* bool_not_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* bool_not_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   if (!isDefinedForType(x->Type())) {
     Delete(x);
     return 0;
   }
-  return new bool_not_expr(fn, ln, x);
+  return new bool_not_expr(W, x);
 }
 
 // ******************************************************************
@@ -199,7 +199,7 @@ unary* bool_not_op::makeExpr(const char* fn, int ln, expr* x) const
 /// Or of boolean expressions.
 class bool_or : public summation {
 public:
-  bool_or(const char* fn, int line, const type* t, expr **x, int n);
+  bool_or(const location &W, const type* t, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -209,9 +209,9 @@ protected:
 // *                        bool_or  methods                        *
 // ******************************************************************
 
-bool_or::bool_or(const char* fn, int line, const type* t, expr **x, int n)
- : summation(fn, line, exprman::aop_or, t, x, 0, n) 
-{ 
+bool_or::bool_or(const location &W, const type* t, expr **x, int n)
+ : summation(W, exprman::aop_or, t, x, 0, n)
+{
 }
 
 void bool_or::Compute(traverse_data &x)
@@ -244,7 +244,7 @@ void bool_or::Compute(traverse_data &x)
 
 expr* bool_or::buildAnother(expr **x, bool* f, int n) const
 {
-  return new bool_or(Filename(), Linenumber(), Type(), x, n);
+  return new bool_or(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -298,7 +298,7 @@ const type* bool_assoc_op
 class bool_or_op : public bool_assoc_op {
 public:
   bool_or_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -310,12 +310,12 @@ bool_or_op::bool_or_op() : bool_assoc_op(exprman::aop_or)
 {
 }
 
-assoc* bool_or_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* bool_or_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBooleans(em, list, flip, N);
   delete[] flip;
-  if (lct)  return new bool_or(fn, ln, lct, list, N);
+  if (lct)  return new bool_or(W, lct, list, N);
   // there was an error
   delete[] list;
   return 0;
@@ -331,7 +331,7 @@ assoc* bool_or_op::makeExpr(const char* fn, int ln, expr** list,
 /// And of boolean expressions.
 class bool_and : public product {
 public:
-  bool_and(const char* fn, int line, const type* t, expr **x, int n);
+  bool_and(const location &W, const type* t, expr **x, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -341,9 +341,9 @@ protected:
 // *                        bool_and methods                        *
 // ******************************************************************
 
-bool_and::bool_and(const char* fn, int line, const type* t, expr **x, int n) 
- : product(fn, line, exprman::aop_and, t, x, 0, n) 
-{ 
+bool_and::bool_and(const location &W, const type* t, expr **x, int n)
+ : product(W, exprman::aop_and, t, x, 0, n)
+{
 }
 
 void bool_and::Compute(traverse_data &x)
@@ -376,7 +376,7 @@ void bool_and::Compute(traverse_data &x)
 
 expr* bool_and::buildAnother(expr **x, bool* f, int n) const
 {
-  return new bool_and(Filename(), Linenumber(), Type(), x, n);
+  return new bool_and(Where(), Type(), x, n);
 }
 
 // ******************************************************************
@@ -388,7 +388,7 @@ expr* bool_and::buildAnother(expr **x, bool* f, int n) const
 class bool_and_op : public bool_assoc_op {
 public:
   bool_and_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -400,12 +400,12 @@ bool_and_op::bool_and_op() : bool_assoc_op(exprman::aop_and)
 {
 }
 
-assoc* bool_and_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* bool_and_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignBooleans(em, list, flip, N);
   delete[] flip;
-  if (lct)  return new bool_and(fn, ln, lct, list, N);
+  if (lct)  return new bool_and(W, lct, list, N);
   // there was an error
   delete[] list;
   return 0;
@@ -421,7 +421,7 @@ assoc* bool_and_op::makeExpr(const char* fn, int ln, expr** list,
 /// Implication.
 class bool_implies : public binary {
 public:
-  bool_implies(const char* fn, int line, const type* t, expr *l, expr* r);
+  bool_implies(const location &W, const type* t, expr *l, expr* r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr* l, expr* r) const;
@@ -431,9 +431,9 @@ protected:
 // *                      bool_implies methods                      *
 // ******************************************************************
 
-bool_implies::bool_implies(const char* fn, int line, const type* t, expr *l, expr* r)
- : binary(fn, line, exprman::bop_implies, t, l, r) 
-{ 
+bool_implies::bool_implies(const location &W, const type* t, expr *l, expr* r)
+ : binary(W, exprman::bop_implies, t, l, r)
+{
 }
 
 void bool_implies::Compute(traverse_data &x)
@@ -449,8 +449,8 @@ void bool_implies::Compute(traverse_data &x)
     x.answer->setNull();
     return;
   }
-  DCASSERT(lv.isNormal() || lv.isUnknown());  
-  DCASSERT(rv.isNormal() || rv.isUnknown());  
+  DCASSERT(lv.isNormal() || lv.isUnknown());
+  DCASSERT(rv.isNormal() || rv.isUnknown());
   // left and right are either both unknown, or
   // at most one is known; see if we have enough
   // information to determine the result
@@ -468,7 +468,7 @@ void bool_implies::Compute(traverse_data &x)
 
 expr* bool_implies::buildAnother(expr* l, expr* r) const
 {
-  return new bool_implies(Filename(), Linenumber(), Type(), l, r);
+  return new bool_implies(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -511,7 +511,7 @@ const type* bool_binary_op::getExprType(const type* l, const type* r) const
 class bool_implies_op : public bool_binary_op {
 public:
   bool_implies_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -522,11 +522,11 @@ bool_implies_op::bool_implies_op() : bool_binary_op(exprman::bop_implies)
 {
 }
 
-binary* bool_implies_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bool_implies_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBooleans(em, l, r);
   if (0==lct)  return 0;
-  return new bool_implies(fn, ln, lct, l, r);
+  return new bool_implies(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -538,7 +538,7 @@ binary* bool_implies_op::makeExpr(const char* fn, int ln, expr* l, expr* r) cons
 /// Check equality of two boolean expressions.
 class bool_equal : public eqop {
 public:
-  bool_equal(const char* fn, int line, const type* t, expr *l, expr *r);
+  bool_equal(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr* r) const;
@@ -548,11 +548,11 @@ protected:
 // *                       bool_equal methods                       *
 // ******************************************************************
 
-bool_equal::bool_equal(const char* fn, int line, const type* t, expr *l, expr *r) 
- : eqop(fn, line, t, l, r) 
-{ 
+bool_equal::bool_equal(const location &W, const type* t, expr *l, expr *r)
+ : eqop(W, t, l, r)
+{
 }
-  
+
 void bool_equal::Compute(traverse_data &x)
 {
   result lv, rv;
@@ -567,7 +567,7 @@ void bool_equal::Compute(traverse_data &x)
 
 expr* bool_equal::buildAnother(expr *l, expr* r) const
 {
-  return new bool_equal(Filename(), Linenumber(), Type(), l, r);
+  return new bool_equal(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -579,7 +579,7 @@ expr* bool_equal::buildAnother(expr *l, expr* r) const
 class bool_equal_op : public bool_binary_op {
 public:
   bool_equal_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -590,11 +590,11 @@ bool_equal_op::bool_equal_op() : bool_binary_op(exprman::bop_equals)
 {
 }
 
-binary* bool_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bool_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBooleans(em, l, r);
   if (0==lct)  return 0;
-  return new bool_equal(fn, ln, lct, l, r);
+  return new bool_equal(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -606,7 +606,7 @@ binary* bool_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check inequality of two boolean expressions.
 class bool_neq : public neqop {
 public:
-  bool_neq(const char* fn, int line, const type* t, expr *l, expr *r);
+  bool_neq(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -616,11 +616,11 @@ protected:
 // *                        bool_neq methods                        *
 // ******************************************************************
 
-bool_neq::bool_neq(const char* fn, int line, const type* t, expr *l, expr *r)
- : neqop(fn, line, t, l, r) 
-{ 
+bool_neq::bool_neq(const location &W, const type* t, expr *l, expr *r)
+ : neqop(W, t, l, r)
+{
 }
-  
+
 void bool_neq::Compute(traverse_data &x)
 {
   result lv, rv;
@@ -635,7 +635,7 @@ void bool_neq::Compute(traverse_data &x)
 
 expr* bool_neq::buildAnother(expr *l, expr *r) const
 {
-  return new bool_neq(Filename(), Linenumber(), Type(), l, r);
+  return new bool_neq(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -647,7 +647,7 @@ expr* bool_neq::buildAnother(expr *l, expr *r) const
 class bool_neq_op : public bool_binary_op {
 public:
   bool_neq_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -658,11 +658,11 @@ bool_neq_op::bool_neq_op() : bool_binary_op(exprman::bop_nequal)
 {
 }
 
-binary* bool_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* bool_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBooleans(em, l, r);
   if (0==lct)  return 0;
-  return new bool_neq(fn, ln, lct, l, r);
+  return new bool_neq(W, lct, l, r);
 }
 
 // ******************************************************************

@@ -6,7 +6,7 @@
 #include "binary.h"
 #include "assoc.h"
 
-/** 
+/**
 
    Implementation of operator classes, for reals.
 
@@ -14,7 +14,7 @@
 
 //#define DEBUG_DEEP
 
-inline const type* 
+inline const type*
 RealResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
@@ -34,9 +34,9 @@ inline int RealAlignDistance(const exprman* em, const type* lt, const type* rt)
   const type* lct = RealResultType(em, lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);   
+  int dl = em->getPromoteDistance(lt, lct);
   if (dl<0) return -1;
-  int dr = em->getPromoteDistance(rt, lct);  
+  int dr = em->getPromoteDistance(rt, lct);
   if (dr<0) return -1;
 
   return dl+dr;
@@ -115,7 +115,7 @@ inline const type* AlignReals(const exprman* em, expr** x, int N)
 /// Negation of a real expression.
 class real_neg_expr : public negop {
 public:
-  real_neg_expr(const char* fn, int line, expr *x);
+  real_neg_expr(const location &W, expr *x);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *x) const;
@@ -125,11 +125,11 @@ protected:
 // *                     real_neg_expr  methods                     *
 // ******************************************************************
 
-real_neg_expr::real_neg_expr(const char* fn, int line, expr *x)
- : negop(fn, line, exprman::uop_neg, x->Type(), x) 
-{ 
+real_neg_expr::real_neg_expr(const location &W, expr *x)
+ : negop(W, exprman::uop_neg, x->Type(), x)
+{
 }
-  
+
 void real_neg_expr::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
@@ -144,9 +144,9 @@ void real_neg_expr::Compute(traverse_data &x)
   }
 }
 
-expr* real_neg_expr::buildAnother(expr *x) const 
+expr* real_neg_expr::buildAnother(expr *x) const
 {
-  return new real_neg_expr(Filename(), Linenumber(), x);
+  return new real_neg_expr(Where(), x);
 }
 
 // ******************************************************************
@@ -159,7 +159,7 @@ class real_neg_op : public unary_op {
 public:
   real_neg_op();
   virtual const type* getExprType(const type* t) const;
-  virtual unary* makeExpr(const char* fn, int ln, expr* x) const;
+  virtual unary* makeExpr(const location &W, expr* x) const;
 };
 
 // ******************************************************************
@@ -173,20 +173,20 @@ real_neg_op::real_neg_op() : unary_op(exprman::uop_neg)
 const type* real_neg_op::getExprType(const type* t) const
 {
   if (0==t)    return 0;
-  if (t->isASet())  return 0; 
+  if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
   if (bt != em->REAL)  return 0;
   return Phase2Rand(t);
 }
 
-unary* real_neg_op::makeExpr(const char* fn, int ln, expr* x) const
+unary* real_neg_op::makeExpr(const location &W, expr* x) const
 {
   DCASSERT(x);
   if (!isDefinedForType(x->Type())) {
     Delete(x);
     return 0;
   }
-  return new real_neg_expr(fn, ln, x);
+  return new real_neg_expr(W, x);
 }
 
 // ******************************************************************
@@ -198,7 +198,7 @@ unary* real_neg_op::makeExpr(const char* fn, int ln, expr* x) const
 /// Addition of real expressions.
 class real_add : public summation {
 public:
-  real_add(const char* fn, int line, const type* t, expr **x, bool* f, int n);
+  real_add(const location &W, const type* t, expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -209,19 +209,19 @@ protected:
 // ******************************************************************
 
 real_add
-::real_add(const char* fn, int line, const type* t, expr** x, bool* f, int n)
- : summation(fn, line, exprman::aop_plus, t, x, f, n) 
-{ 
+::real_add(const location &W, const type* t, expr** x, bool* f, int n)
+ : summation(W, exprman::aop_plus, t, x, f, n)
+{
 }
-  
+
 void real_add::Compute(traverse_data &x)
 {
   //
   // Two states of computation: finite addition, infinity
-  //  
+  //
   // finite + finite -> finite,
   // finite + infinity -> infinity,
-  // 
+  //
   // infinity add: just check for infinity - infinity
   //
 
@@ -243,8 +243,8 @@ void real_add::Compute(traverse_data &x)
       operands[i]->Compute(x);
       if (sum->isNormal()) {
         // normal finite addition
-        if (flip && flip[i])  answer -= sum->getReal();  
-        else                  answer += sum->getReal();  
+        if (flip && flip[i])  answer -= sum->getReal();
+        else                  answer += sum->getReal();
         continue;
       }
       if (sum->isInfinity()) {
@@ -254,7 +254,7 @@ void real_add::Compute(traverse_data &x)
         else                  answer =  sum->signInfinity();
         infinite = true;
         normal = false;
-        break;  
+        break;
       }
       if (sum->isUnknown()) {
         unknown = true;
@@ -263,12 +263,12 @@ void real_add::Compute(traverse_data &x)
       }
       // must be an error; short circuit
       sum->setNull();
-      return; 
+      return;
   } // for i
 
   // Check the remaining operands, if any, and throw an
   // error if we have infinity - infinity.
-  
+
   for (i++; i<opnd_count; i++) {
     DCASSERT(infinite);
     DCASSERT(operands[i]);
@@ -286,7 +286,7 @@ void real_add::Compute(traverse_data &x)
     } // infinity
     // must be an error; short circuit
     sum->setNull();
-    return; 
+    return;
   } // for i
 
   if (normal) {
@@ -297,13 +297,13 @@ void real_add::Compute(traverse_data &x)
     sum->setUnknown();
     return;
   }
-  
+
   sum->setInfinity(SIGN(answer));
 }
 
-expr* real_add::buildAnother(expr **x, bool* f, int n) const 
+expr* real_add::buildAnother(expr **x, bool* f, int n) const
 {
-  return new real_add(Filename(), Linenumber(), Type(), x, f, n);
+  return new real_add(Where(), Type(), x, f, n);
 }
 
 // ******************************************************************
@@ -355,7 +355,7 @@ const type* real_assoc_op
 class real_add_op : public real_assoc_op {
 public:
   real_add_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -367,7 +367,7 @@ real_add_op::real_add_op() : real_assoc_op(exprman::aop_plus)
 {
 }
 
-assoc* real_add_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* real_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignReals(em, list, N);
@@ -384,7 +384,7 @@ assoc* real_add_op::makeExpr(const char* fn, int ln, expr** list,
       flip = 0;
     }
   }
-  if (lct)  return new real_add(fn, ln, lct, list, flip, N);
+  if (lct)  return new real_add(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -402,7 +402,7 @@ assoc* real_add_op::makeExpr(const char* fn, int ln, expr** list,
 /// Multiplication of real expressions.
 class real_mult : public product {
 public:
-  real_mult(const char* fn, int line, const type* t, expr **x, bool* f, int n);
+  real_mult(const location &W, const type* t, expr **x, bool* f, int n);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, bool* f, int n) const;
@@ -413,23 +413,23 @@ protected:
 // ******************************************************************
 
 real_mult
-::real_mult(const char* fn, int line, const type* t, expr **x, bool* f, int n)
- : product(fn, line, exprman::aop_times, t, x, f, n) 
-{ 
+::real_mult(const location &W, const type* t, expr **x, bool* f, int n)
+ : product(W, exprman::aop_times, t, x, f, n)
+{
 }
-  
+
 void real_mult::Compute(traverse_data &x)
 {
   //
   // Three states of computation: finite multiply, zero, infinity
-  //  
+  //
   // finite * zero -> zero,
   // finite * infinity -> infinity,
   // zero * infinity -> error,
-  // 
+  //
   // infinity multiply: only keep track of sign, check for errors
   //
-  // zero multiply: check only for errors 
+  // zero multiply: check only for errors
   //
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -453,14 +453,14 @@ void real_mult::Compute(traverse_data &x)
           if (flip && flip[i])  answer /= prod->getReal();
           else                  answer *= prod->getReal();
           continue;
-        } 
+        }
         // we have a zero term
         if (flip && flip[i]) {
           // divide by zero, bail out
           divideByZero(operands[i]);
           prod->setNull();
           return;  // short circuit.
-        } 
+        }
         // multiply by zero.
         answer = 0;
         unknown = false;
@@ -488,7 +488,7 @@ void real_mult::Compute(traverse_data &x)
     }
     // must be an error, short circuit
     prod->setNull();
-    return; 
+    return;
   } // for i
 
 
@@ -574,9 +574,9 @@ void real_mult::Compute(traverse_data &x)
   prod->setInfinity(SIGN(answer));
 }
 
-expr* real_mult::buildAnother(expr **x, bool* f, int n) const 
+expr* real_mult::buildAnother(expr **x, bool* f, int n) const
 {
-  return new real_mult(Filename(), Linenumber(), Type(), x, f, n);
+  return new real_mult(Where(), Type(), x, f, n);
 }
 
 // ******************************************************************
@@ -588,7 +588,7 @@ expr* real_mult::buildAnother(expr **x, bool* f, int n) const
 class real_mult_op : public real_assoc_op {
 public:
   real_mult_op();
-  virtual assoc* makeExpr(const char* fn, int ln, expr** list, 
+  virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 };
 
@@ -600,7 +600,7 @@ real_mult_op::real_mult_op() : real_assoc_op(exprman::aop_times)
 {
 }
 
-assoc* real_mult_op::makeExpr(const char* fn, int ln, expr** list, 
+assoc* real_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   const type* lct = AlignReals(em, list, N);
@@ -617,7 +617,7 @@ assoc* real_mult_op::makeExpr(const char* fn, int ln, expr** list,
       flip = 0;
     }
   }
-  if (lct)  return new real_mult(fn, ln, lct, list, flip, N);
+  if (lct)  return new real_mult(W, lct, list, flip, N);
   // there was an error
   delete[] list;
   delete[] flip;
@@ -636,7 +636,7 @@ assoc* real_mult_op::makeExpr(const char* fn, int ln, expr** list,
  */
 class real_equal : public eqop {
 public:
-  real_equal(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_equal(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -646,11 +646,11 @@ protected:
 // *                       real_equal methods                       *
 // ******************************************************************
 
-real_equal::real_equal(const char* fn, int line, const type* t, expr *l, expr *r)
- : eqop(fn, line, t, l, r) 
-{ 
+real_equal::real_equal(const location &W, const type* t, expr *l, expr *r)
+ : eqop(W, t, l, r)
+{
 }
-  
+
 void real_equal::Compute(traverse_data &x)
 {
   result l,r;
@@ -666,7 +666,7 @@ void real_equal::Compute(traverse_data &x)
 
 expr* real_equal::buildAnother(expr *l, expr *r) const
 {
-  return new real_equal(Filename(), Linenumber(), Type(), l, r);
+  return new real_equal(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -737,7 +737,7 @@ const type* real_comp_op::getExprType(const type* l, const type* r) const
 class real_equal_op : public real_comp_op {
 public:
   real_equal_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -748,13 +748,13 @@ real_equal_op::real_equal_op() : real_comp_op(exprman::bop_equals)
 {
 }
 
-binary* real_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_equal(fn, ln, lct, l, r);
+  return new real_equal(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -766,7 +766,7 @@ binary* real_equal_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check inequality of two real expressions.
 class real_neq : public neqop {
 public:
-  real_neq(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_neq(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -776,11 +776,11 @@ protected:
 // *                        real_neq methods                        *
 // ******************************************************************
 
-real_neq::real_neq(const char* fn, int line, const type* t, expr *l, expr *r)
- : neqop(fn, line, t, l, r) 
-{ 
+real_neq::real_neq(const location &W, const type* t, expr *l, expr *r)
+ : neqop(W, t, l, r)
+{
 }
-  
+
 void real_neq::Compute(traverse_data &x)
 {
   result l, r;
@@ -794,9 +794,9 @@ void real_neq::Compute(traverse_data &x)
   }
 }
 
-expr* real_neq::buildAnother(expr *l, expr *r) const 
+expr* real_neq::buildAnother(expr *l, expr *r) const
 {
-  return new real_neq(Filename(), Linenumber(), Type(), l, r);
+  return new real_neq(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -808,7 +808,7 @@ expr* real_neq::buildAnother(expr *l, expr *r) const
 class real_neq_op : public real_comp_op {
 public:
   real_neq_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -819,13 +819,13 @@ real_neq_op::real_neq_op() : real_comp_op(exprman::bop_nequal)
 {
 }
 
-binary* real_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_neq(fn, ln, lct, l, r);
+  return new real_neq(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -837,21 +837,21 @@ binary* real_neq_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one real expression is greater than another.
 class real_gt : public gtop {
 public:
-  real_gt(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_gt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
-  virtual expr* buildAnother(expr *l, expr *r) const; 
+  virtual expr* buildAnother(expr *l, expr *r) const;
 };
 
 // ******************************************************************
 // *                        real_gt  methods                        *
 // ******************************************************************
 
-real_gt::real_gt(const char* fn, int line, const type* t, expr *l, expr *r)
- : gtop(fn, line, t, l, r) 
-{ 
+real_gt::real_gt(const location &W, const type* t, expr *l, expr *r)
+ : gtop(W, t, l, r)
+{
 }
-  
+
 void real_gt::Compute(traverse_data &x)
 {
   result l, r;
@@ -867,7 +867,7 @@ void real_gt::Compute(traverse_data &x)
 
 expr* real_gt::buildAnother(expr *l, expr *r) const
 {
-  return new real_gt(Filename(), Linenumber(), Type(), l, r);
+  return new real_gt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -879,7 +879,7 @@ expr* real_gt::buildAnother(expr *l, expr *r) const
 class real_gt_op : public real_comp_op {
 public:
   real_gt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -890,13 +890,13 @@ real_gt_op::real_gt_op() : real_comp_op(exprman::bop_gt)
 {
 }
 
-binary* real_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_gt(fn, ln, lct, l, r);
+  return new real_gt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -908,7 +908,7 @@ binary* real_gt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one real expression is greater than or equal another.
 class real_ge : public geop {
 public:
-  real_ge(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_ge(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -918,11 +918,11 @@ protected:
 // *                        real_ge  methods                        *
 // ******************************************************************
 
-real_ge::real_ge(const char* fn, int line, const type* t, expr *l, expr *r)
- : geop(fn, line, t, l, r) 
-{ 
+real_ge::real_ge(const location &W, const type* t, expr *l, expr *r)
+ : geop(W, t, l, r)
+{
 }
-  
+
 void real_ge::Compute(traverse_data &x)
 {
   result l, r;
@@ -938,7 +938,7 @@ void real_ge::Compute(traverse_data &x)
 
 expr* real_ge::buildAnother(expr *l, expr *r) const
 {
-  return new real_ge(Filename(), Linenumber(), Type(), l, r);
+  return new real_ge(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -950,7 +950,7 @@ expr* real_ge::buildAnother(expr *l, expr *r) const
 class real_ge_op : public real_comp_op {
 public:
   real_ge_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -961,13 +961,13 @@ real_ge_op::real_ge_op() : real_comp_op(exprman::bop_ge)
 {
 }
 
-binary* real_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_ge(fn, ln, lct, l, r);
+  return new real_ge(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -979,7 +979,7 @@ binary* real_ge_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one real expression is less than another.
 class real_lt : public ltop {
 public:
-  real_lt(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_lt(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -989,11 +989,11 @@ protected:
 // *                        real_lt  methods                        *
 // ******************************************************************
 
-real_lt::real_lt(const char* fn, int line, const type* t, expr *l, expr *r)
- : ltop(fn, line, t, l, r) 
-{ 
+real_lt::real_lt(const location &W, const type* t, expr *l, expr *r)
+ : ltop(W, t, l, r)
+{
 }
-  
+
 void real_lt::Compute(traverse_data &x)
 {
   result l, r;
@@ -1007,9 +1007,9 @@ void real_lt::Compute(traverse_data &x)
   }
 }
 
-expr* real_lt::buildAnother(expr *l, expr *r) const 
+expr* real_lt::buildAnother(expr *l, expr *r) const
 {
-  return new real_lt(Filename(), Linenumber(), Type(), l, r);
+  return new real_lt(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1021,7 +1021,7 @@ expr* real_lt::buildAnother(expr *l, expr *r) const
 class real_lt_op : public real_comp_op {
 public:
   real_lt_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1032,13 +1032,13 @@ real_lt_op::real_lt_op() : real_comp_op(exprman::bop_lt)
 {
 }
 
-binary* real_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_lt(fn, ln, lct, l, r);
+  return new real_lt(W, lct, l, r);
 }
 
 // ******************************************************************
@@ -1050,7 +1050,7 @@ binary* real_lt_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
 /// Check if one real expression is less than or equal another.
 class real_le : public leop {
 public:
-  real_le(const char* fn, int line, const type* t, expr *l, expr *r);
+  real_le(const location &W, const type* t, expr *l, expr *r);
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr *l, expr *r) const;
@@ -1060,11 +1060,11 @@ protected:
 // *                        real_le  methods                        *
 // ******************************************************************
 
-real_le::real_le(const char* fn, int line, const type* t, expr *l, expr *r)
- : leop(fn, line, t, l, r) 
-{ 
+real_le::real_le(const location &W, const type* t, expr *l, expr *r)
+ : leop(W, t, l, r)
+{
 }
-  
+
 void real_le::Compute(traverse_data &x)
 {
   result l, r;
@@ -1078,9 +1078,9 @@ void real_le::Compute(traverse_data &x)
   }
 }
 
-expr* real_le::buildAnother(expr *l, expr *r) const 
+expr* real_le::buildAnother(expr *l, expr *r) const
 {
-  return new real_le(Filename(), Linenumber(), Type(), l, r);
+  return new real_le(Where(), Type(), l, r);
 }
 
 // ******************************************************************
@@ -1092,7 +1092,7 @@ expr* real_le::buildAnother(expr *l, expr *r) const
 class real_le_op : public real_comp_op {
 public:
   real_le_op();
-  virtual binary* makeExpr(const char* fn, int ln, expr* l, expr* r) const;
+  virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
 };
 
 // ******************************************************************
@@ -1103,13 +1103,13 @@ real_le_op::real_le_op() : real_comp_op(exprman::bop_le)
 {
 }
 
-binary* real_le_op::makeExpr(const char* fn, int ln, expr* l, expr* r) const
+binary* real_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(em->BOOL);
   DCASSERT(lct);
-  return new real_le(fn, ln, lct, l, r);
+  return new real_le(W, lct, l, r);
 }
 
 // ******************************************************************

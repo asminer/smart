@@ -5,6 +5,7 @@
 #include "../include/defines.h"
 #include "../include/shared.h"
 #include "../include/list.h"
+#include "../Utils/location.h"
 #include "type.h"
 #include "result.h"
 
@@ -216,10 +217,8 @@ protected:
   friend exprman* Initialize_Expressions(io_environ* io, option_manager *om);
 
 private:
-  /// The name of the file we were declared in.
-  const char* filename;
-  /// The line number of the file we were declared on.
-  int linenumber;
+  /// Where the expression was declared.
+  location where;
   /// Faster and easier to just define types here.
   const type* simple;
   typelist* aggtype;
@@ -233,18 +232,16 @@ private:
   static int global_IDnum;
 public:
   /** Constructor for simple types.
-        @param  fn    Filename.
-        @param  line  Line number.
+        @param  W     Where declared.
         @param  t     simple type of expression.
   */
-  expr(const char* fn, int line, const type* t);
+  expr(const location& W, const type* t);
 
   /** Constructor for aggregates.
-        @param  fn    Filename.
-        @param  line  Line number.
+        @param  W     Where declared.
         @param  t     Aggregate type, will be "owned" by expression.
   */
-  expr(const char* fn, int line, typelist* t);
+  expr(const location& W, typelist* t);
 
   /** NOT a copy constructor.
       Sets the filename, linenumber, and type
@@ -257,7 +254,7 @@ protected:
   virtual ~expr();
 
    /// Helper for constructors
-  void Init(const char* fn, int ln, const type* st,
+  void Init(const location &W, const type* st,
             typelist* at, const model_def* mt);
 
 public:
@@ -340,8 +337,7 @@ public:
 
   inline const model_def* GetModelType() const { return model_type; }
 
-  inline const char* Filename() const { return filename; }
-  inline int Linenumber() const { return linenumber; }
+  inline const location& Where() const { return where; }
 
   /// The number of aggregate components in this expression.
   inline int NumComponents() const {

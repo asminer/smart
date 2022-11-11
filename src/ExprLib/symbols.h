@@ -18,11 +18,11 @@ class function;
       That includes formal parameters, for loop iterators,
       functions, and model objects like states, places, and transitions.
 
-      Note: we derive symbols from expressions because it 
+      Note: we derive symbols from expressions because it
       greatly simplifies for-loop iterators
       (otherwise you have an expression wrapped around
       an iterator, and that is unnecessary overhead.)
-*/  
+*/
 
 class symbol : public expr {
 private:
@@ -35,8 +35,8 @@ private:
   /// List of symbols waiting on us
   List <symbol> *waitlist;
 public:
-  symbol(const char* fn, int line, const type* t, char* n);
-  symbol(const char* fn, int line, typelist* t, char* n);
+  symbol(const location &W, const type* t, char* n);
+  symbol(const location &W, typelist* t, char* n);
   symbol(const symbol* wrapper);
 protected:
   virtual ~symbol();
@@ -54,7 +54,7 @@ public:
                   a constant equal to our current value.
                   If sv is false, whenever an expression calls
                   "Substitute", we will copy ourself.
-   */ 
+   */
   inline void SetSubstitution(bool sv) { substitute_value = sv; }
 
   inline bool WillSubstitute() const { return substitute_value; }

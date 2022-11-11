@@ -117,21 +117,20 @@ debugging_msg expr::model_debug;
 exprman* expr::em = 0;
 int expr::global_IDnum = 0;
 
-expr::expr(const char* fn, int line, const type* t) : shared_object()
+expr::expr(const location &W, const type* t) : shared_object()
 {
-  Init(fn, line, t, 0, 0);
+  Init(W, t, 0, 0);
 }
 
-expr::expr(const char* fn, int line, typelist* t) : shared_object()
+expr::expr(const location &W, typelist* t) : shared_object()
 {
-  Init(fn, line, 0, t, 0);
+  Init(W, 0, t, 0);
 }
 
 expr::expr(const expr* x) : shared_object()
 {
   if (x) {
-    Init(x->Filename(), x->Linenumber(), x->simple,
-          Share(x->aggtype), x->model_type);
+    Init(x->Where(), x->simple, Share(x->aggtype), x->model_type);
   } else {
     setNull();
   }
@@ -142,19 +141,18 @@ expr::~expr()
   Delete(aggtype);
 }
 
-void expr::Init(const char* fn, int ln, const type* st, typelist* at, const model_def* mt)
+void expr::Init(const location &W, const type* st, typelist* at, const model_def* mt)
 {
   global_IDnum++;
   if (global_IDnum < 0) {
     if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(fn, ln);
+      em->causedBy(W);
       em->internal() << "Too many expressions, global ID overflow";
       em->stopIO();
     }
   }
   IDnum = global_IDnum;
-  filename = fn;
-  linenumber = ln;
+  where = W;
   simple = st;
   aggtype = at;
   model_type = mt;
@@ -216,7 +214,7 @@ void expr::PrintType(OutputStream &s) const
 void expr::Compute(traverse_data &x)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Trying to compute uncomputable expression: ";
     Print(em->internal(), 0);
     em->stopIO();
@@ -236,7 +234,7 @@ shared_object* expr::SharedName() const
 void expr::Rename(shared_object* n)
 {
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "Trying to rename an unnamed expression: ";
     Print(em->internal(), 0);
     em->internal() << " to: ";
@@ -357,7 +355,7 @@ void expr::Traverse(traverse_data &x)
   // bail out
   DCASSERT(em);
   if (em->startInternal(__FILE__, __LINE__)) {
-    em->noCause();
+    em->causedBy(0);
     em->internal() << "No traversal handler ";
     x.Print(em->internal());
     em->internal() << " for expression: ";

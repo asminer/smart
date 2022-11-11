@@ -718,7 +718,7 @@ void lexer::IllegalChar(char c)
 void lexer::finish_attributed_token(token::type t)
 {
     text.finish();
-    lookaheads[0].attribute = new shared_string(strdup(text.get()));
+    lookaheads[0].attribute = new shared_string(text.get());
     lookaheads[0].tokenID = t;
 
     if (text.is_truncated()) {
