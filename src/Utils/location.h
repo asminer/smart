@@ -25,17 +25,16 @@ class location {
         location(shared_string* fn, unsigned ln);
         location(const location& L);
 
-        void reset(shared_string* fn, unsigned ln);
-
         inline void operator=(const location& L) {
             reset(L.filename, L.linenumber);
         }
 
-        ~location();
-
+        /// Checks if the location is different from nowhere.
         inline operator bool() const {
-            return filename;
+            return (' ' != ltype);
         }
+
+        ~location();
 
         // TBD: need to remove these:
         //
@@ -79,6 +78,9 @@ class location {
         static const location& EOINPUT();
         static const location& NOWHERE();
         static const location& INTERNALLY();
+
+    private:
+        void reset(shared_string* fn, unsigned ln);
 };
 
 

@@ -31,11 +31,13 @@ unsigned shared_string::length() const
     return 0;
 }
 
+/*
 void shared_string::CopyFrom(const char* s)
 {
     free(string);
     string = strdup(s);
 }
+*/
 
 #ifdef OLD_STREAMS
 bool shared_string::Print(OutputStream &s, int width) const

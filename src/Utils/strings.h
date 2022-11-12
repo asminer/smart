@@ -22,7 +22,7 @@ class shared_string : public shared_object {
     protected:
         virtual ~shared_string();
     public:
-        void CopyFrom(const char* s);
+//        void CopyFrom(const char* s);
         inline const char* getStr() const { return string; }
 #ifdef OLD_STREAMS
         virtual bool Print(OutputStream &s, int width) const;
@@ -33,13 +33,5 @@ class shared_string : public shared_object {
         int Compare(const shared_string* s) const;
         int Compare(const char* x) const;
 };
-
-
-inline OutputStream& operator<< (OutputStream& s, const shared_string* x)
-{
-    if (0==x)   return s << "(null string)";
-    return s << x->getStr();
-}
-
 
 #endif

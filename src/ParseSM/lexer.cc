@@ -193,9 +193,9 @@ inputfile::inputfile(const char* n)
 {
   DCASSERT(n);
   if (n[0] == '-' && n[1] == 0) {
-    where.reset(0, 1);
+    where.start(0);
   } else {
-    where.reset(new shared_string(n), 1);
+    where.start(n);
   }
   input = 0;
   buffer = 0;
@@ -207,9 +207,9 @@ inputfile::inputfile(FILE* f, const char* n)
 {
   DCASSERT(n);
   if (n[0] == '-' && n[1] == 0) {
-    where.reset(0, 1);
+    where.start(0);
   } else {
-    where.reset(new shared_string(n), 1);
+    where.start(n);
   }
   input = f;
   buffer = 0;

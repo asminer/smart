@@ -167,8 +167,9 @@ expr* exprman::makeTypecast(const location& where,
     }
   }
   if (!same && !null) {
-    Delete(e);
-    return makeAssocOp(where, aop_colon, newagg, 0, nc);
+    expr* foo = makeAssocOp(where, aop_colon, newagg, 0, nc);
+    Delete(e);  // need to delete e AFTER we use where ^ here
+    return foo;
   }
   delete[] newagg;
   if (same) return e;

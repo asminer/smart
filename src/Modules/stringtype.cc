@@ -42,8 +42,7 @@ void string_type::show_normal(OutputStream &s, const result& r) const
 
 void string_type::assign_normal(result& r, const char* s) const
 {
-  shared_string* ss = new shared_string;
-  ss->CopyFrom(s);
+  shared_string* ss = new shared_string(s);
   r.setPtr(ss);
 }
 
