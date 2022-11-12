@@ -66,6 +66,7 @@ void location::start(const char* file)
     Delete(filename);
     filename = file ? new shared_string(file) : 0;
     linenumber = 1;
+    ltype = 'f';
 }
 
 void location::clear()
@@ -73,6 +74,7 @@ void location::clear()
     Delete(filename);
     filename = 0;
     linenumber = 0;
+    ltype = ' ';
 }
 
 const location& location::CMDLINE()
