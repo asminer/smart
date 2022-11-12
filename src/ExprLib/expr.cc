@@ -120,20 +120,48 @@ int expr::global_IDnum = 0;
 expr::expr(const location &W, const type* t) : shared_object()
 {
   Init(W, t, 0, 0);
+
+#ifdef DEBUG_LOC
+  if (em) {
+    em->cout() << "Built expr " << IDnum << " " << where << "\n";
+    em->cout().flush();
+  }
+#endif
 }
 
 expr::expr(const location &W, typelist* t) : shared_object()
 {
   Init(W, 0, t, 0);
+
+#ifdef DEBUG_LOC
+  if (em) {
+    em->cout() << "Built expr " << IDnum << " " << where << "\n";
+    em->cout().flush();
+  }
+#endif
 }
 
 expr::expr(const expr* x) : shared_object()
 {
   if (x) {
     Init(x->Where(), x->simple, Share(x->aggtype), x->model_type);
+#ifdef DEBUG_LOC
+    if (em) {
+        em->cout() << "Built expr " << IDnum << " from " << x->IDnum
+               << " kept " << where << "\n";
+        em->cout().flush();
+    }
+#endif
   } else {
     setNull();
+#ifdef DEBUG_LOC
+    if (em) {
+        em->cout() << "Built expr " << IDnum << " from null\n";
+        em->cout().flush();
+    }
+#endif
   }
+
 }
 
 expr::~expr()
@@ -153,6 +181,7 @@ void expr::Init(const location &W, const type* st, typelist* at, const model_def
   }
   IDnum = global_IDnum;
   where = W;
+
   simple = st;
   aggtype = at;
   model_type = mt;

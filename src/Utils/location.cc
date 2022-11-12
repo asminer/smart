@@ -53,7 +53,7 @@ void location::show(std::ostream &s) const
         default :   return; // includes "nowhere" case
     };
 
-    if (filename) s << "in file " << filename;
+    if (filename) s << "in file " << filename->getStr();
     else          s << "in standard input";
 
     if (linenumber) {
@@ -64,8 +64,7 @@ void location::show(std::ostream &s) const
 void location::start(const char* file)
 {
     Delete(filename);
-    filename = new shared_string;
-    filename->CopyFrom(file);
+    filename = file ? new shared_string(file) : 0;
     linenumber = 1;
 }
 

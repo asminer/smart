@@ -143,7 +143,11 @@ void model_def::BuildModel(traverse_data &x)
 bool model_def::StartWarning(const warning_msg &who, const expr* cause) const
 {
   if (!who.startWarning())  return false;
-  who.causedBy(cause ? cause->Where() : location::NOWHERE());
+  if (cause) {
+      who.causedBy(cause->Where());
+  } else {
+      who.causedBy(location::NOWHERE());
+  }
   return true;
 }
 

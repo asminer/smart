@@ -218,7 +218,7 @@ void next_state_seq::Traverse(traverse_data &x)
 
 expr* next_state_seq::buildAnother(expr **x, int n) const
 {
-  return new next_state_seq(Where(), x, n);
+  return new next_state_seq(this->Where(), x, n);
 }
 
 // ******************************************************************
