@@ -281,8 +281,8 @@ class decision : public model_var{
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   expr* enable_cond;
   public:
-  decision(const symbol* w, const model_instance* pn) : model_var(w,pn){
-  	dec= new result();
+  decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
+  	dec = new result();
     dec->setUnknown();
     enable_cond=0;
   }
@@ -312,20 +312,35 @@ class decision : public model_var{
 
 // **************************************************************************
 // *                                                                        *
-// *                            decision methods                            *
+// *                            decisionset methods                         *
 // *                                                                        *
 // **************************************************************************
 
-// decision::decision(const symbol* w, const model_instance* pn):
+class decisionset : public model_var {
+  std::vector<decision*> decisions;
 
-// decision::decision(const char* fn, int line, const type* t, char* n,
-// 		const model_instance* p) :
-// 		model_var(fn, line, t, n, p) {
-// }
-// decision::~decision()
-// {
+  public:
+  decisionset(const symbol* w, const model_instance* pn) : model_var(w,pn){}
 
-// }
+  protected:
+  ~decisionset() { }
+  public:
+    // add get and set method
+    inline decision* getDecision(int i){
+      if(i < decisions.size()) {
+        return decisions[i]; 
+      }
+      return NULL; // fix
+    }
+
+    inline std::vector<decision*>* getDecisionSet() {
+      return &decisions;
+    }
+
+    inline void addDecision(decision* d){
+    	decisions.push_back(d);
+    }
+};
 
 // **************************************************************************
 // *                                                                        *

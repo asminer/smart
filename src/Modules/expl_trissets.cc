@@ -18,13 +18,13 @@
 // *                                                                *
 // ******************************************************************
 
-expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f) : set_stateset(p)
+expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f) : stateset(p)
 {
   trueset = new expl_stateset(p,t);
   falseset = new expl_stateset(p,f);
 }
 
-expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : set_stateset(p)
+expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : stateset(p)
 {
   trueset = t;
   falseset = f;
@@ -36,7 +36,7 @@ expl_tri_set_stateset::~expl_tri_set_stateset()
   // delete falseset;
 }
 
-set_stateset* expl_tri_set_stateset::DeepCopy() const
+stateset* expl_tri_set_stateset::DeepCopy() const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
@@ -51,7 +51,7 @@ bool expl_tri_set_stateset::Complement()
   return true;
 }
 
-bool expl_tri_set_stateset::Union(const expr* c, const char* op, const set_stateset* x)
+bool expl_tri_set_stateset::Union(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
@@ -65,7 +65,7 @@ bool expl_tri_set_stateset::Union(const expr* c, const char* op, const set_state
   return true;
 }
 
-bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const set_stateset* x)
+bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
   const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
@@ -79,9 +79,19 @@ bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const set_s
   return true;
 }
 
-bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const set_stateset* x)
+bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const stateset* x)
 {
   return Intersect(c, op, x);
+}
+
+void expl_tri_set_stateset::getCardinality(long &card) const
+{
+  DCASSERT(false);
+}
+
+void expl_tri_set_stateset::getCardinality(result &x) const
+{
+  DCASSERT(false);
 }
   
 void expl_tri_set_stateset::getTrueCardinality(long &card) const
@@ -120,6 +130,12 @@ void expl_tri_set_stateset::getUnknownCardinality(result &x) const
   DCASSERT(trueset);
   DCASSERT(falseset);
   // ???
+}
+
+bool expl_tri_set_stateset::isEmpty() const
+{
+  // TODO: error
+  return false; 
 }
 
 bool expl_tri_set_stateset::isTrueEmpty() const
