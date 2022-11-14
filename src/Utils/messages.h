@@ -76,8 +76,17 @@ class warning_msg : public abstract_msg {
     public:
         warning_msg();
 
-        bool switchOutput(const char* outfile);
-        void defaultOutput();
+        inline static bool switchOutput(const char* outfile) {
+            FILE* outf = fopen(outfile, "a");
+            if (outfile) {
+                io->Warning.SwitchDisplay(outf);
+                return true;
+            }
+            return false;
+        }
+        inline static void defaultOutput() {
+            io->Warning.SwitchDisplay(0);
+        }
 
         inline bool startWarning(const location &L) const {
             if (!isActive()) return false;
@@ -108,8 +117,17 @@ class reporting_msg : public abstract_msg {
     public:
         reporting_msg();
 
-        bool switchOutput(const char* outfile);
-        void defaultOutput();
+        inline static bool switchOutput(const char* outfile) {
+            FILE* outf = fopen(outfile, "a");
+            if (outfile) {
+                io->Report.SwitchDisplay(outf);
+                return true;
+            }
+            return false;
+        }
+        inline static void defaultOutput() {
+            io->Report.SwitchDisplay(0);
+        }
 
         inline bool startReport() const {
             if (!isActive()) return false;
@@ -146,10 +164,6 @@ class reporting_msg : public abstract_msg {
 class debugging_msg : public abstract_msg {
     public:
         debugging_msg();
-
-        bool switchOutput(const char* outfile);
-        void defaultOutput();
-
 
         inline bool startReport() const {
             if (!isActive()) return false;
