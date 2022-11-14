@@ -611,50 +611,6 @@ void output_file::Compute(traverse_data &x, expr** pass, int np)
 }
 
 // ******************************************************************
-// *                       report_file  class                       *
-// ******************************************************************
-
-class report_file : public generic_file {
-public:
-  report_file();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-};
-
-report_file::report_file() : generic_file("report_file")
-{
-  SetDocumentation("Append the report stream to the specified filename. If the file does not exist, it is created. If the filename is null, the report stream is switched to standard output. Returns true on success.");
-}
-
-void report_file::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  if (em->hasIO())  compute(em->report(), x, pass, np);
-  else              x.answer->setBool(false);
-}
-
-// ******************************************************************
-// *                       warning_file class                       *
-// ******************************************************************
-
-class warning_file : public generic_file {
-public:
-  warning_file();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-};
-
-warning_file::warning_file() : generic_file("warning_file")
-{
-  SetDocumentation("Append the warning stream to the specified filename. If the file does not exist, it is created. If the filename is null, the warning stream is switched to standard error. Returns true on success.");
-}
-
-void warning_file::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  if (em->hasIO())  compute(em->warn(), x, pass, np);
-  else              x.answer->setBool(false);
-}
-
-// ******************************************************************
 // *                        error_file class                        *
 // ******************************************************************
 
@@ -676,6 +632,96 @@ void error_file::Compute(traverse_data &x, expr** pass, int np)
   else              x.answer->setBool(false);
 }
 
+
+// ******************************************************************
+// *                       report_file  class                       *
+// ******************************************************************
+
+class report_file : public simple_internal {
+public:
+    report_file();
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+report_file::report_file() : simple_internal(em->BOOL, "report_file", 1)
+{
+    SetFormal(0, em->STRING, "filename");
+    SetDocumentation("Append the report stream to the specified filename. If the file does not exist, it is created. If the filename is null, the report stream is switched to standard output. Returns true on success.");
+}
+
+void report_file::Compute(traverse_data &x, expr** pass, int np)
+{
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    SafeCompute(pass[0], x);
+    if (x.answer->isNull()) {
+#ifdef DEBUG_FILE
+        fprintf(stderr, "Switching reporting stream to normal display\n");
+#endif
+        reporting_msg::defaultOutput();
+        x.answer->setBool(true);
+        return;
+    }
+    shared_string* xss = smart_cast <shared_string*> (x.answer->getPtr());
+    DCASSERT(xss);
+#ifdef DEBUG_FILE
+    fprintf(stderr, "Switching reporting stream to file %s...\n", xss->getStr());
+#endif
+    x.answer->setBool(reporting_msg::switchOutput(xss->getStr()));
+#ifdef DEBUG_FILE
+    if (x.answer->getBool()) {
+        fprintf(stderr, "...successful\n");
+    } else {
+        fprintf(stderr, "...error opening\n");
+    }
+#endif
+}
+
+// ******************************************************************
+// *                       warning_file class                       *
+// ******************************************************************
+
+class warning_file : public simple_internal {
+public:
+    warning_file();
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+warning_file::warning_file() : simple_internal(em->BOOL, "warning_file", 1)
+{
+    SetFormal(0, em->STRING, "filename");
+    SetDocumentation("Append the warning stream to the specified filename. If the file does not exist, it is created. If the filename is null, the warning stream is switched to standard error. Returns true on success.");
+}
+
+void warning_file::Compute(traverse_data &x, expr** pass, int np)
+{
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    SafeCompute(pass[0], x);
+    if (x.answer->isNull()) {
+#ifdef DEBUG_FILE
+        fprintf(stderr, "Switching warning stream to normal display\n");
+#endif
+        warning_msg::defaultOutput();
+        x.answer->setBool(true);
+        return;
+    }
+    shared_string* xss = smart_cast <shared_string*> (x.answer->getPtr());
+    DCASSERT(xss);
+#ifdef DEBUG_FILE
+    fprintf(stderr, "Switching warning stream to file %s...\n", xss->getStr());
+#endif
+    x.answer->setBool(warning_msg::switchOutput(xss->getStr()));
+#ifdef DEBUG_FILE
+    if (x.answer->getBool()) {
+        fprintf(stderr, "...successful\n");
+    } else {
+        fprintf(stderr, "...error opening\n");
+    }
+#endif
+}
 
 // ******************************************************************
 // *                                                                *

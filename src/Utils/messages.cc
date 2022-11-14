@@ -4,6 +4,10 @@
 #include "../Options/optman.h"
 #include "../Options/options.h"
 
+#include <cstdio>
+
+// #define DEBUG_FILE
+
 io_environ* abstract_msg::io = 0;
 
 // ******************************************************************
@@ -40,7 +44,6 @@ warning_msg::warning_msg() : abstract_msg("Warning")
 {
     Activate();
 }
-
 
 // ******************************************************************
 // *                     reporting_msg  methods                     *
