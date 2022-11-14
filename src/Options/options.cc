@@ -156,14 +156,6 @@ checklist_enum* option::addChecklistItem(checklist_enum* grp,
     return 0;
 }
 
-/*
-checklist_enum* option::addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, abstract_msg &m)
-{
-    return 0;
-}
-*/
-
 checklist_enum* option::addChecklistGroup(const char* name, const char* doc,
         unsigned ni)
 {
