@@ -188,25 +188,6 @@ class option {
         virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                     const char* name, const char* doc, bool &link);
 
-        /**
-            Build and add an item to a messaging checklist.
-                @param  grp   Group, or null for none.
-                @param  name  The item name
-                @param  doc   Documentation for the item.
-                @param  m     The named message we're linked to.
-
-                @return A new item, or NULL on error.
-        */
-        /*
-        virtual checklist_enum* addChecklistItem(checklist_enum* grp,
-                const char* name, const char* doc, abstract_msg &m);
-
-        inline checklist_enum* addChecklistItem(const char* name,
-                const char* doc, abstract_msg &m)
-        {
-            return addChecklistItem(0, name, doc, m);
-        }
-        */
 
         /**
             Build and add an item that's a group of items to a checklist.

@@ -135,9 +135,11 @@ bool hldsm::Equals(const shared_object* ptr) const
 
 bool hldsm::StartWarning(const warning_msg &who, const expr* cause) const
 {
-  if (!who.startWarning())  return false;
-  who.causedBy(cause ? cause->Where() : location::NOWHERE() );
-  return true;
+    if (cause) {
+        return who.startWarning(cause->Where());
+    } else {
+        return who.startWarning(location::NOWHERE());
+    }
 }
 
 void hldsm::DoneWarning() const
@@ -351,9 +353,11 @@ model_instance::~model_instance()
 
 bool model_instance::StartWarning(const warning_msg &who, const expr* cause) const
 {
-  if (!who.startWarning())  return false;
-  who.causedBy(cause ? cause->Where() : location::NOWHERE() );
-  return true;
+    if (cause) {
+        return who.startWarning(cause->Where());
+    } else {
+        return who.startWarning(location::NOWHERE());
+    }
 }
 
 void model_instance::DoneWarning() const

@@ -209,8 +209,7 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
     if (d>0) changetype = true;
   }
   if (changetype) {
-    if (promote_arg.startWarning()) {
-      promote_arg.causedBy(e->Where());
+    if (promote_arg.startWarning(e->Where())) {
       promote_arg.warn() << "Promoting argument ";
       e->Print(promote_arg.warn(), 0);
       promote_arg.warn() << " to type ";
