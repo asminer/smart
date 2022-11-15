@@ -85,12 +85,15 @@ class indexed_reachset : public state_lldsm::reachset {
   private:
     class pot_visit : public state_lldsm::state_visitor {
       expr* p;
-      intset &pset;
+      intset &tset;
+      intset &fset;
       result tmp;
       bool ok;
+      bool unk;
     public:
-      pot_visit(const hldsm* mdl, expr* _p, intset &ps);
+      pot_visit(const hldsm* mdl, expr* _p, intset &ts, intset &fs);
       inline bool isOK() const { return ok; }
+      inline bool hasUnknowns() const { return unk; }
       virtual bool visit();
     };
 

@@ -225,7 +225,6 @@ public:
   simple_type*  STRING;
   simple_type*  BIGINT;
   simple_type*  STATESET;
-  simple_type*  SETSTATESET;
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
   simple_type*  TEMPORAL;

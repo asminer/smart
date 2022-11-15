@@ -14,36 +14,36 @@
 
 // ******************************************************************
 // *                                                                *
-// *                     expl_tri_set_stateset  methods             *
+// *                     expl_tri_stateset  methods                 *
 // *                                                                *
 // ******************************************************************
 
-expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f) : stateset(p)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, intset* t, intset* f) : stateset(p)
 {
   trueset = new expl_stateset(p,t);
   falseset = new expl_stateset(p,f);
 }
 
-expl_tri_set_stateset::expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : stateset(p)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : stateset(p)
 {
   trueset = t;
   falseset = f;
 }
 
-expl_tri_set_stateset::~expl_tri_set_stateset()
+expl_tri_stateset::~expl_tri_stateset()
 {
   // delete trueset;
   // delete falseset;
 }
 
-stateset* expl_tri_set_stateset::DeepCopy() const
+stateset* expl_tri_stateset::DeepCopy() const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
-  return new expl_tri_set_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
+  return new expl_tri_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
 }
 
-bool expl_tri_set_stateset::Complement() 
+bool expl_tri_stateset::Complement() 
 {
   expl_stateset* tmp = trueset;
   trueset = falseset;
@@ -51,10 +51,10 @@ bool expl_tri_set_stateset::Complement()
   return true;
 }
 
-bool expl_tri_set_stateset::Union(const expr* c, const char* op, const stateset* x)
+bool expl_tri_stateset::Union(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
-  const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
+  const expl_tri_stateset* ex = dynamic_cast <const expl_tri_stateset*> (x);
   if (0==ex) {
     storageMismatchError(c, op);
     return false;
@@ -65,10 +65,10 @@ bool expl_tri_set_stateset::Union(const expr* c, const char* op, const stateset*
   return true;
 }
 
-bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const stateset* x)
+bool expl_tri_stateset::Intersect(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
-  const expl_tri_set_stateset* ex = dynamic_cast <const expl_tri_set_stateset*> (x);
+  const expl_tri_stateset* ex = dynamic_cast <const expl_tri_stateset*> (x);
   if (0==ex) {
     storageMismatchError(c, op);
     return false;
@@ -79,83 +79,85 @@ bool expl_tri_set_stateset::Intersect(const expr* c, const char* op, const state
   return true;
 }
 
-bool expl_tri_set_stateset::Plus(const expr* c, const char* op, const stateset* x)
+bool expl_tri_stateset::Plus(const expr* c, const char* op, const stateset* x)
 {
   return Intersect(c, op, x);
 }
 
-void expl_tri_set_stateset::getCardinality(long &card) const
+void expl_tri_stateset::getCardinality(long &card) const
 {
   DCASSERT(false);
 }
 
-void expl_tri_set_stateset::getCardinality(result &x) const
+void expl_tri_stateset::getCardinality(result &x) const
 {
   DCASSERT(false);
 }
   
-void expl_tri_set_stateset::getTrueCardinality(long &card) const
+void expl_tri_stateset::getTrueCardinality(long &card) const
 {
   DCASSERT(trueset);
   trueset->getCardinality(card);
 }
 
-void expl_tri_set_stateset::getTrueCardinality(result &x) const
+void expl_tri_stateset::getTrueCardinality(result &x) const
 {
   DCASSERT(trueset);
   trueset->getCardinality(x);
 }
 
-void expl_tri_set_stateset::getFalseCardinality(long &card) const
+void expl_tri_stateset::getFalseCardinality(long &card) const
 {
   DCASSERT(falseset);
   falseset->getCardinality(card);
 }
 
-void expl_tri_set_stateset::getFalseCardinality(result &x) const
+void expl_tri_stateset::getFalseCardinality(result &x) const
 {
   DCASSERT(falseset);
   falseset->getCardinality(x);
 }
 
-void expl_tri_set_stateset::getUnknownCardinality(long &card) const
+void expl_tri_stateset::getUnknownCardinality(long &card) const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
   // ???
 }
 
-void expl_tri_set_stateset::getUnknownCardinality(result &x) const
+void expl_tri_stateset::getUnknownCardinality(result &x) const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
   // ???
 }
 
-bool expl_tri_set_stateset::isEmpty() const
+bool expl_tri_stateset::isEmpty() const
 {
   // TODO: error
   return false; 
 }
 
-bool expl_tri_set_stateset::isTrueEmpty() const
+bool expl_tri_stateset::isTrueEmpty() const
 {
   DCASSERT(trueset);
   return trueset->isEmpty();
 }
 
-bool expl_tri_set_stateset::isFalseEmpty() const
+bool expl_tri_stateset::isFalseEmpty() const
 {
   DCASSERT(falseset);
   return falseset->isEmpty();
 }
 
-bool expl_tri_set_stateset::Print(OutputStream &s, int) const
+bool expl_tri_stateset::Print(OutputStream &s, int) const
 {
-  s.Put('True {');
+  s.Put('T');
+  s.Put('{');
   trueset->Print(s,0);
   s.Put('}');
-  s.Put('False {');
+  s.Put('F');
+  s.Put('{');
   falseset->Print(s,0);
   s.Put('}');
   // s.Put('Unknown set {');
@@ -164,9 +166,9 @@ bool expl_tri_set_stateset::Print(OutputStream &s, int) const
   return true;
 }
 
-bool expl_tri_set_stateset::Equals(const shared_object *o) const
+bool expl_tri_stateset::Equals(const shared_object *o) const
 {
-  const expl_tri_set_stateset* b = dynamic_cast <const expl_tri_set_stateset*> (o);
+  const expl_tri_stateset* b = dynamic_cast <const expl_tri_stateset*> (o);
   if (0==b) return false;
   // TBD : may want to allow comparisons with other implementations
 
@@ -180,59 +182,5 @@ bool expl_tri_set_stateset::Equals(const shared_object *o) const
   if (0==falseset || 0==b->falseset) return false;
   
   return trueset->Equals(b->trueset) && falseset->Equals(b->falseset); 
-}
-
-
-// ******************************************************************
-// *                                                                *
-// *                     intset library credits                     *
-// *                                                                *
-// ******************************************************************
-
-class intset_lib : public library {
-public:
-  intset_lib();
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return true; }
-};
-
-intset_lib::intset_lib() : library(false, false)
-{
-}
-
-const char* intset_lib::getVersionString() const
-{
-  return intset::getVersion();
-}
-
-intset_lib intset_lib_data;
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                         Initialization                         *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-class init_expltrissets : public initializer {
-  public:
-    init_expltrissets();
-    virtual bool execute();
-};
-init_expltrissets the_explsset_initializer;
-
-init_expltrissets::init_expltrissets() : initializer("init_expltrissets")
-{
-  usesResource("em");
-}
-
-bool init_expltrissets::execute()
-{
-  if (0==em)  return false;
-  
-  // Library registry
-  em->registerLibrary(  &intset_lib_data );
-  return true;
 }
 

@@ -88,6 +88,7 @@ smart_SOURCES = \
   \
   Modules/biginttype.cc \
   Modules/expl_ssets.cc \
+  Modules/expl_trissets.cc \
   Modules/expl_states.cc \
   Modules/glue_meddly.cc \
   Modules/meddly_ssets.cc \

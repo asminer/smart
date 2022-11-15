@@ -1,30 +1,27 @@
 
 /** \file expl_trissets.h
 
-    Module for set_statesets, implemented explicity with a pair of bitvectors.
+    Module for expl_tri_stateset, implemented explicity with a pair of bitvectors.
 
 */
 
 #include "expl_ssets.h"
-#include "set_statesets.h"
 
 #ifndef EXPL_TRISSETS_H
 #define EXPL_TRISSETS_H
 
-class intset;
-
 // ******************************************************************
 // *                                                                *
-// *                      expl_tri_set_stateset  class                      *
+// *                      expl_tri_stateset  class                  *
 // *                                                                *
 // ******************************************************************
 
-class expl_tri_set_stateset : public stateset {
+class expl_tri_stateset : public stateset {
   public:
-    expl_tri_set_stateset(const state_lldsm* p, intset* t, intset* f);
-    expl_tri_set_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
+    expl_tri_stateset(const state_lldsm* p, intset* t, intset* f);
+    expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
   protected:
-    virtual ~expl_tri_set_stateset();
+    virtual ~expl_tri_stateset();
 
   public:
     virtual stateset* DeepCopy() const;

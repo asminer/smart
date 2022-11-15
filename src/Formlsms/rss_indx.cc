@@ -1,6 +1,9 @@
 
 #include "rss_indx.h"
 #include "../Modules/expl_ssets.h"
+#include "../Modules/expl_trissets.h"
+
+#include <iostream>
 
 // External libs
 #include "../_LSLib/lslib.h"    // for LS_Vector
@@ -31,20 +34,27 @@ stateset* indexed_reachset::getReachable() const
 stateset* indexed_reachset::getPotential(expr* p) const
 {
   long num_states;
+  bool unk = false;
   getNumStates(num_states);
-  intset* pset = new intset(num_states);
+  intset* tset = new intset(num_states);
+  intset* fset = new intset(num_states);
   if (p) {
     const hldsm* HM = getGrandParent();
-    pot_visit pv(HM, p, *pset);
+    pot_visit pv(HM, p, *tset, *fset);
     visitStates(pv);
     if (!pv.isOK()) {
-      delete pset;
+      delete tset;
       return 0;
     }
+    unk = pv.hasUnknowns();
   } else {
-    pset->removeAll();
+    tset->removeAll();
   }
-  return new expl_stateset(getParent(), pset);
+
+  if (unk) {
+    return new expl_tri_stateset(getParent(), tset, fset);
+  }
+  return new expl_stateset(getParent(), tset);
 }
 
 stateset* indexed_reachset::getInitialStates() const
@@ -159,24 +169,35 @@ void indexed_reachset::indexed_iterator::setMap(long* m)
 // *              indexed_reachset::pot_visit  methods              *
 // ******************************************************************
 
-indexed_reachset::pot_visit::pot_visit(const hldsm* mdl, expr* _p, intset &ps)
- : state_visitor(mdl), pset(ps)
+indexed_reachset::pot_visit::pot_visit(const hldsm* mdl, expr* _p, intset &ts, intset &fs)
+ : state_visitor(mdl), tset(ts), fset(fs)
 {
   p = _p;
   p->PreCompute();
   x.answer = &tmp;
-  pset.removeAll();
+  tset.removeAll();
+  fset.removeAll();
   ok = true;
+  unk = false;
 }
 
 bool indexed_reachset::pot_visit::visit()
 {
   p->Compute(x);
-  if (!tmp.isNormal()) {
+
+  if (tmp.isUnknown()) {
+    unk = true;
+    return false;
+  } else if (!tmp.isNormal()) {
     ok = false;
     return true;
   }
-  if (tmp.getBool()) pset.addElement(x.current_state_index);
+
+  if (tmp.getBool()) {
+    tset.addElement(x.current_state_index);
+  } else {
+    fset.addElement(x.current_state_index);
+  }
   return false;
 }
 

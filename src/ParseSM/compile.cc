@@ -2916,6 +2916,14 @@ void InitCompiler(parse_module* parent)
       )
     );
 
+    result dkb;
+    dkb.setUnknown();
+    Constants->AddSymbol(
+      em->makeConstant(0, -1, em->BOOL, strdup("DontKnowBool"),
+          em->makeLiteral(0, -1, em->BOOL, dkb), 0
+      )
+    );
+
     result inf;
     inf.setInfinity(1);
     Constants->AddSymbol(

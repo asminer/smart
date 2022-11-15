@@ -1,4 +1,4 @@
-
+#include "iostream"
 #include "rgr_ectl.h"
 #include "rss_indx.h"
 
@@ -161,6 +161,8 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
   if (0==p) return 0; // propogate an earlier error
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
+
+  // ep->Print(ep->getGrandparent()->getEM()->cout(),0);
 
   const intset& ip = ep->getExplicit(); 
   if (!TH) TH = new CTL_traversal(ip.getSize());
