@@ -20,6 +20,7 @@ class expl_tri_stateset : public stateset {
   public:
     expl_tri_stateset(const state_lldsm* p, intset* t, intset* f);
     expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
+    expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
   protected:
     virtual ~expl_tri_stateset();
 
@@ -29,6 +30,13 @@ class expl_tri_stateset : public stateset {
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
     virtual bool Plus(const expr* c, const char* op, const stateset* x);
+
+    inline const expl_stateset* getTrueSet() const {
+      return trueset;
+    };
+    inline const expl_stateset* getFalseSet() const {
+      return falseset;
+    };
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;

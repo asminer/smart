@@ -5,6 +5,7 @@
 #include "../Streams/streams.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
+#include "../Modules/expl_trissets.h"
 
 // external library
 #include "../_IntSets/intset.h"
@@ -160,7 +161,15 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
   const char* CTLOP = revTime ? "EY" : "EX";
   if (0==p) return 0; // propogate an earlier error
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
-  if (0==ep) return incompatibleOperand(CTLOP);
+  if (0==ep) {
+    const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
+
+    return new expl_tri_stateset(p->getParent(), EX(revTime, etp->getTrueSet(), td), 
+                                                 AX(revTime, etp->getFalseSet()));
+
+  } else {
+    return incompatibleOperand(CTLOP);
+  }
 
   // ep->Print(ep->getGrandparent()->getEM()->cout(),0);
 

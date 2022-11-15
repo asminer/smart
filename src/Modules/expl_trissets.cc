@@ -30,6 +30,12 @@ expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, exp
   falseset = f;
 }
 
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f) :  stateset(p)
+{
+  trueset = dynamic_cast<expl_stateset*>(t);
+  falseset = dynamic_cast<expl_stateset*>(f);
+}
+
 expl_tri_stateset::~expl_tri_stateset()
 {
   // delete trueset;
