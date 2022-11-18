@@ -164,12 +164,14 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
   if (0==ep) {
     const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
 
+    if (0==etp) {
+      return incompatibleOperand(CTLOP);
+    }
+
     return new expl_tri_stateset(p->getParent(), EX(revTime, etp->getTrueSet(), td), 
                                                  AX(revTime, etp->getFalseSet()));
 
-  } else {
-    return incompatibleOperand(CTLOP);
-  }
+  } 
 
   // ep->Print(ep->getGrandparent()->getEM()->cout(),0);
 
