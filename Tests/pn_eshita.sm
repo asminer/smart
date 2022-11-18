@@ -52,7 +52,7 @@ pn cruft(int n) := {
   partition(K, J, I, H, G, F, E, D, C, B, A);
   bound(A:1, B:1, C:1, D:1, E:n, F:1, G:1, H:1, I:1, J:1, K:1);
 
-  init(A:1);
+  init(I:1);
 
   trans tAB, tBA, tBC, tBD, tBE, tCF, tDI, tE,
         tFF, tFG, tGH, tHH, 
@@ -77,8 +77,7 @@ pn cruft(int n) := {
     J : tJK, tJK : K,
     J : tJD, tJD : D
   );
-  decision aa, bb, cc,dd, ee, ff;
-  enable_decision( aa : true);
+  decision aa, bb, cc;
   //aa:=1;
   //find the model type:study them
   
@@ -100,19 +99,21 @@ pn cruft(int n) := {
 
   stateset rs := reachable;
   stateset apB := reachable & potential(tk(B)>0);
+  stateset apBaa := reachable & potential(tk(B)>0);
   stateset apD := reachable & potential(tk(D)>0);
   stateset apF := reachable & potential(tk(F)>0);
   stateset apH := reachable & potential(tk(H)>0);
   stateset apK := reachable & potential(tk(K)>0);
   stateset apEn:= reachable & potential(tk(E)==1);
 
-  //bigint mc := AG(aa & apD);
+  stateset test1 := potential(tk(I)>0 & true);
+  stateset test2 := potential(tk(I)>0 | DontKnowBool);
 
+  stateset test3 := EX(test2);
 
-  //void show_dec_eval := show_decision_evaluation();
 
   // Existentials
-  
+
   stateset prop1 := EX(apD);
   stateset prop0 := !EF(apD);
   stateset FS := !prop0;
@@ -130,8 +131,12 @@ print("decisions: \n");
 compute(cruft(5).show_dec);
 print("State graph:\n");
 compute(cruft(5).show_rg);
+print("\n");
+print(cruft(5).test1);
+print("\n", cruft(5).test2);
+print("\n", cruft(5).test3);
 
-print("\nEX tests:\n--------------------------------------------------\n");
+/*print("\nEX tests:\n--------------------------------------------------\n");
 
 print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop1, "\n");
 print("Should be {[A], [D], [K]}:\n          ", cruft(5).prop2, "\n");
@@ -141,6 +146,6 @@ print(          "Should be {[E]}:\n          ", cruft(5).prop5, "\n");
 print("test: ", cruft(5).prop0,"\n");
 print("False set:::", cruft(5).FS,"\n");
 print("\nErrors:\n--------------------------------------------------\n");
-print(cruft(5).prop1 | cruft(4).prop1, "\n");
-
+print(cruft(5).prop1 | cruft(5).prop1, "\n");
+*/
 print("Done!\n");
