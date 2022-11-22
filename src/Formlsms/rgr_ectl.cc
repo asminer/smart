@@ -171,7 +171,7 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
     return new expl_tri_stateset(p->getParent(), EX(revTime, etp->getTrueSet(), td), 
                                                  AX(revTime, etp->getFalseSet()));
 
-  } 
+  }
 
   // ep->Print(ep->getGrandparent()->getEM()->cout(),0);
 

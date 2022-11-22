@@ -131,7 +131,7 @@ public:
     ivalue = v;
   }
   inline bool getBool() const {
-    DCASSERT(Normal == special || Unknown == special);
+    DCASSERT(Normal == special);
     return ivalue;
   }
 

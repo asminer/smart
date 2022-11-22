@@ -3,8 +3,8 @@
 # See the README file for more details.
 #
 
-AC_PREREQ(2.59)
-AC_INIT([smartpack], [3.4.1], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
+AC_PREREQ([2.71])
+AC_INIT([smartpack],[3.4.1],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 # Allow silent builds, and make it the default, if we can:
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -14,12 +14,12 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Check for programs
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX(11)
+AX_CXX_COMPILE_STDCXX
 AM_PROG_LEX
 AC_PROG_YACC
 # Use AM_PROG_AR if we can...
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-AM_PROG_LIBTOOL
+LT_INIT
 
 #
 # Check for GMP
@@ -44,7 +44,19 @@ AC_CHECK_HEADERS([sys/time.h unistd.h])
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_REALLOC
-AC_TYPE_SIGNAL
+m4_warn([obsolete],
+[your code may safely assume C89 semantics that RETSIGTYPE is void.
+Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
+AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([#include <sys/types.h>
+#include <signal.h>
+],
+		 [return *(signal (0, 0)) (0) == 1;])],
+		   [ac_cv_type_signal=int],
+		   [ac_cv_type_signal=void])])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
+		    (`int' or `void').])
+
 
 # Our configuration stuff
 

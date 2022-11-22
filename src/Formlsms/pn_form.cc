@@ -6,6 +6,7 @@
 #include "../Options/options.h"
 #include "../ExprLib/formalism.h"
 
+#include "../ExprLib/casting.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/mod_def.h"
@@ -2938,6 +2939,66 @@ void pn_decisions::Compute(traverse_data &x, expr** pass, int ndd)
   
 }
 
+class dec2bool : public specific_conv {
+
+    class converter : public typecast {
+    public:
+      converter(const char* fn, int line, const type* nt, expr* x);
+      virtual void Compute(traverse_data &x);
+    protected:
+      virtual expr* buildAnother(expr* x) const {
+        return new converter(Filename(), Linenumber(), Type(), x);
+      }
+    };
+
+public:
+  dec2bool();
+  virtual int getDistance(const type* src) const {
+    DCASSERT(src);
+    // if (src->getBaseType() != em) return -1;
+    return SIMPLE_CONV;
+  }
+  virtual const type* promotesTo(const type* src) const;
+  virtual expr* convert(const char*, int, expr*, const type*) const;
+};
+
+dec2bool::converter::converter(const char* fn, int ln, const type* nt, expr* x)
+ : typecast(fn, ln, nt, x) 
+{ 
+}
+
+void dec2bool::converter::Compute(traverse_data &x) 
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(opnd);
+  opnd->Compute(x);
+}
+
+dec2bool::dec2bool() : specific_conv(true) 
+{
+}
+
+const type* dec2bool::promotesTo(const type* src) const
+{
+  DCASSERT(src);
+  // DCASSERT(em->REAL == src->getBaseType());
+  const type* dest = em->BOOL;
+  DCASSERT(dest);
+  // if (src->getModifier() != DETERM) dest = dest->modifyType(RAND);
+  // DCASSERT(dest);
+  if (src->hasProc()) dest = dest->addProc();
+  DCASSERT(dest);
+  // if (src->isASet()) dest = dest->getSetOfThis();
+  // DCASSERT(dest);
+  return dest;
+}
+
+expr* dec2bool::convert(const char* fn, int ln, expr* e, const type* nt) const
+{
+  return new converter(fn, ln, nt, e);
+}
+
 ///add a function to show the decisions
 
 // ******************************************************************
@@ -3109,6 +3170,9 @@ bool init_pnform::execute()
   type* t_set_decision = newSetType("{decision}", t_decision);
   em->registerType(t_decision);
   em->registerType(t_set_decision);
+
+
+  em->registerConversion(new dec2bool);
 
   // another formalism may have already registered these types.
   // all we care is that they are registered.
