@@ -156,66 +156,6 @@ void numstates_si::Compute(traverse_data &x, expr** pass, int np)
 #endif
 }
 
-
-
-// ******************************************************************
-// *                           num_decs                           *
-// ******************************************************************
-/*
-
-class numdecs_si : public proc_noengine {
-public:
-  numdecs_si();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-};
-
-
-numdecs_si::numdecs_si()
-#ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_decs", 2)
-#else
- : proc_noengine(Nothing, em->BIGINT, "num_decs", 1)
-#endif
-{
-#ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
-  SetDocumentation("Returns the number of reachable states.  If show is true, then as a side effect, the reachability set is displayed to the current output stream (unless there are too many states).");
-#else
-  SetDocumentation("Computes if necessary, and returns the number of reachable states.");
-#endif
-}
-
-void numdecs_si::Compute(traverse_data &x, expr** pass, int np)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
-  model_instance* mi = grabModelInstance(x, pass[0]);
-  const state_lldsm* llm = BuildProc(
-    mi ? mi->GetCompiledModel() : 0, 1, x.parent
-  );
-  if (0==llm || lldsm::Error == llm->Type()) {
-    x.answer->setNull();
-    return;
-  }
-#ifdef ALLOW_SHOW_PARAMS
-  SafeCompute(pass[1], x);
-  bool show = false;
-  if (x.answer->isNormal()) show = x.answer->getBool();
-  if (!em->hasIO()) show = false;
-#endif
-  llm->getNumDecs(*x.answer);
-  if (!x.answer->isNormal())  return;
-  if (!x.answer->getPtr()) {
-    long ns = x.answer->getInt();
-    x.answer->setPtr(new bigint(ns));
-  }
-#ifdef ALLOW_SHOW_PARAMS
-  if (show) llm->getNumDecs(true);
-#endif
-}
-*/
-
 // ******************************************************************
 // *                           num_states   in Coverability         *
 // ******************************************************************

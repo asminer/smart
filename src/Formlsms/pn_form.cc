@@ -2939,67 +2939,49 @@ void pn_decisions::Compute(traverse_data &x, expr** pass, int ndd)
   
 }
 
-class dec2bool : public specific_conv {
 
-    class converter : public typecast {
-    public:
-      converter(const char* fn, int line, const type* nt, expr* x);
-      virtual void Compute(traverse_data &x);
-    protected:
-      virtual expr* buildAnother(expr* x) const {
-        return new converter(Filename(), Linenumber(), Type(), x);
-      }
-    };
+// ******************************************************************
+// *                           is_taken                             *
+// ******************************************************************
 
+class pn_istaken : public proc_noengine {
 public:
-  dec2bool();
-  virtual int getDistance(const type* src) const {
-    DCASSERT(src);
-    // if (src->getBaseType() != em) return -1;
-    return SIMPLE_CONV;
-  }
-  virtual const type* promotesTo(const type* src) const;
-  virtual expr* convert(const char*, int, expr*, const type*) const;
+  pn_istaken();
+  virtual void Compute(traverse_data &x, expr** pass, int ndd);
 };
 
-dec2bool::converter::converter(const char* fn, int ln, const type* nt, expr* x)
- : typecast(fn, ln, nt, x) 
-{ 
+
+pn_istaken::pn_istaken()
+ : proc_noengine(Nothing, em->BOOL, "istaken", 2)
+{
+  const type* dec = em->findType("decision"); 
+  SetFormal(1, dec, "d");
+  SetDocumentation("Displays the value of d.");
 }
 
-void dec2bool::converter::Compute(traverse_data &x) 
+void pn_istaken::Compute(traverse_data &x, expr** pass, int ndd)
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
-  DCASSERT(opnd);
-  opnd->Compute(x);
+  DCASSERT(pass);
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  dsde_hlm* mypn;
+  mypn = smart_cast <dsde_hlm*> (mi->GetCompiledModel());
+
+  decision* d = smart_cast <decision*> (pass[1]);
+
+  if (d) {
+    if (d->isTaken()) {
+      x.answer->setBool(true);
+    } else {
+      x.answer->setUnknown();
+    }
+  } else {
+    std::cerr << "help!\n";
+  }
 }
 
-dec2bool::dec2bool() : specific_conv(true) 
-{
-}
-
-const type* dec2bool::promotesTo(const type* src) const
-{
-  DCASSERT(src);
-  // DCASSERT(em->REAL == src->getBaseType());
-  const type* dest = em->BOOL;
-  DCASSERT(dest);
-  // if (src->getModifier() != DETERM) dest = dest->modifyType(RAND);
-  // DCASSERT(dest);
-  if (src->hasProc()) dest = dest->addProc();
-  DCASSERT(dest);
-  // if (src->isASet()) dest = dest->getSetOfThis();
-  // DCASSERT(dest);
-  return dest;
-}
-
-expr* dec2bool::convert(const char* fn, int ln, expr* e, const type* nt) const
-{
-  return new converter(fn, ln, nt, e);
-}
-
-///add a function to show the decisions
 
 // ******************************************************************
 // *                                                                *
@@ -3172,7 +3154,7 @@ bool init_pnform::execute()
   em->registerType(t_set_decision);
 
 
-  em->registerConversion(new dec2bool);
+  // em->registerConversion(new dec2bool);
 
   // another formalism may have already registered these types.
   // all we care is that they are registered.
@@ -3202,6 +3184,7 @@ bool init_pnform::execute()
   pnsyms->AddSymbol(  new pn_tk       );
   pnsyms->AddSymbol(  new pn_rate     );
   pnsyms->AddSymbol(  new pn_enabled  );
+  pnsyms->AddSymbol(  new pn_istaken  );
   pnsyms->AddSymbol(  new pn_places(t_set_place)        );
   pnsyms->AddSymbol(  new pn_transitions(t_set_trans)   );
   pnsyms->AddSymbol(  new pn_decisions(t_set_decision)   );

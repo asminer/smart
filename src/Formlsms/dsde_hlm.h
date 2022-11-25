@@ -301,8 +301,10 @@ class decision : public model_var{
 
     }
   inline bool isTaken(){
-    if (dec->getBool()==false)return false;
-    else return true; 
+    if ((!dec->isUnknown()) && dec->getBool()) {
+      return true;
+    }
+    return false;
 	}
 	
  inline void addEnablingCond(expr* e){
