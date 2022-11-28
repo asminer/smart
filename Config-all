@@ -48,6 +48,7 @@ try_gmp() {
 find_gmp() {
   try_gmp $GMP_INCLUDE $GMP_LIBRARY && return 0
   try_gmp /opt/local/include /opt/local/lib && return 0
+  try_gmp /opt/homebrew/include /opt/homebrew/lib && return 0
   try_gmp /usr/local/include /usr/local/lib && return 0
   try_gmp /usr/local/include /usr/local/lib64 && return 0
   try_gmp /usr/include /usr/lib && return 0
@@ -74,7 +75,7 @@ printf "configure: configure.ac\n\tautoreconf --force --install\n\n" > $tmpmf
 awk '/AC_CONFIG_FILES/{p=1} {if (p) print} /\]\)/{p=0}' configure.ac | sed 's/AC_CONFIG_FILES(\[//' | tr -d ')]' | AddAM >> $tmpmf
 
 make -f $tmpmf
-if [ "$?" -ne "0" ]; then 
+if [ "$?" -ne "0" ]; then
   printf "\nCouldn't build configure script, bailing out.\n\n"
   rm $tmpmf
   exit 1
@@ -90,7 +91,7 @@ printf "\n"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="$CXXFLAGS -Wall -std=gnu++11"
-export LDFLAGS="" 
+export LDFLAGS=""
 export CPPFLAGS=""
 
 
@@ -117,7 +118,7 @@ cd bin-devel
 
 COMMON_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="-ggdb -DDEVELOPMENT_CODE $COMMON_CXXFLAGS"
-../configure --prefix=$PWD $@ $GMP_STATUS 
+../configure --prefix=$PWD $@ $GMP_STATUS
 ok="$?"
 cd ..
 
@@ -137,7 +138,7 @@ fi
 cd bin-release
 
 CXXFLAGS="-O3 $COMMON_CXXFLAGS"
-../configure --prefix=$PWD $@ $GMP_STATUS 
+../configure --prefix=$PWD $@ $GMP_STATUS
 ok="$?"
 cd ..
 
