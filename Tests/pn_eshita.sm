@@ -107,9 +107,11 @@ pn cruft(int n) := {
   stateset apEn:= reachable & potential(tk(E)==1);
 
   stateset test1 := potential(tk(I)>0 & true);
-  stateset test2 := potential(tk(I)>0 | DontKnowBool);
+  stateset test2 := potential(tk(I)>0 | istaken(aa));
 
   stateset test3 := EX(test2);
+
+  stateset test4 := !test2;
 
 
   // Existentials
@@ -135,6 +137,7 @@ print("\n");
 print(cruft(5).test1);
 print("\n", cruft(5).test2);
 print("\n", cruft(5).test3);
+print("\n", cruft(5).test4);
 
 /*print("\nEX tests:\n--------------------------------------------------\n");
 
